@@ -1,0 +1,13 @@
+com.veadan.folib.validation.configuration.StorageProviderValidator
+com.veadan.folib.validation.configuration.DescribableEnumValueValidator
+com.veadan.folib.validation.configuration.LayoutProviderValueValidator
+com.veadan.folib.validation.configuration.UniqueStorageValidator
+com.veadan.folib.validation.configuration.ShouldNotContainValidator
+com.veadan.folib.validation.configuration.routing.RoutingRuleRepositoryFormValidator
+
+com.veadan.folib.validation.users.PasswordValidator
+com.veadan.folib.validation.users.UniqueUsernameValidator
+
+com.veadan.folib.validation.UniqueRoleNameValidator
+
+com.veadan.folib.validation.cron.CronTaskConfigurationFormValidator

@@ -1,0 +1,9 @@
+Package: folib
+Version: [[version]]
+Architecture: all
+Section: Miscellaneous
+Priority: low
+Homepage: https://github.com/folib/folib
+Description: The Strongbox artifact repository manager
+Maintainer: Martin Todorov <nacosaas@gmail.com>
+Recommends: java8-runtime | java8-runtime-headless

@@ -1,0 +1,7 @@
+folib:
+    db:
+      janusgraph:
+        config-location: file:${folib.home}/etc/conf/janusgraph-cassandra.properties
+      cassandra:
+        config-location: file:${folib.home}/etc/conf/cassandra.yaml
+        storage-root: ${folib.vault}/db

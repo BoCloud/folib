@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>com.veadan.folib</groupId>
+        <artifactId>folib-parent</artifactId>
+        <version>1.0-SNAPSHOT</version>
+        <relativePath/>
+    </parent>
+
+    <artifactId>folib-server</artifactId>
+    <version>1.0-SNAPSHOT</version>
+    <packaging>pom</packaging>
+
+    <name>Folib: Server</name>
+
+
+
+    <inceptionYear>2019</inceptionYear>
+
+     <scm>
+        <url>http://git.folib.com/folib/folib-server</url>
+        <connection>scm:git:git://git.folib.com/folib/folib-server.git</connection>
+        <developerConnection>scm:git:git://git.folib.com/folib/folib-server.git</developerConnection>
+    </scm>
+
+
+    <modules>
+        <module>folib-resources</module>
+        <module>folib-commons</module>
+        <module>folib-configuration</module>
+        <module>folib-event-api</module>
+        <module>folib-security</module>
+        <module>folib-testing</module>
+        <module>folib-client</module>
+        <module>folib-rest-client</module>
+        <module>folib-cron</module>
+        <module>folib-storage</module>
+        <module>folib-data-service</module>
+        <module>folib-aql</module>
+        <module>folib-web-forms</module>
+        <module>folib-web-core</module>
+        <module>folib-distribution</module>
+    </modules>
+
+    <profiles>
+        <profile>
+            <id>dependency-check</id>
+
+            <activation>
+                <activeByDefault>false</activeByDefault>
+            </activation>
+
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.owasp</groupId>
+                        <artifactId>dependency-check-maven</artifactId>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+
+        <profile>
+            <id>checkstyle</id>
+
+            <activation>
+                <activeByDefault>false</activeByDefault>
+            </activation>
+
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-checkstyle-plugin</artifactId>
+                        <version>3.0.0</version>
+                        <dependencies>
+                            <dependency>
+                                <groupId>com.puppycrawl.tools</groupId>
+                                <artifactId>checkstyle</artifactId>
+                                <version>8.29</version>
+                            </dependency>
+                        </dependencies>
+                        <configuration>
+                            <configLocation>folib-checks.xml</configLocation>
+                            <consoleOutput>true</consoleOutput>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
+</project>

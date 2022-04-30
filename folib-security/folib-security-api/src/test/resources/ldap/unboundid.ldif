@@ -1,0 +1,93 @@
+# Depending on the server, this may already exist. 
+# If the test fails, try commenting the lines below.
+dn: dc=carlspring,dc=com
+objectClass: top
+objectClass: domain
+dc: carlspring
+
+# Create a place where users are stored
+dn: ou=Users, dc=carlspring, dc=com
+ou: Users
+description: All strongbox users.
+objectclass: organizationalUnit
+
+# Create users (passwords: password)
+dn: uid=mtodorov,ou=Users,dc=carlspring,dc=com
+objectClass: inetOrgPerson
+objectClass: organizationalPerson
+objectClass: person
+objectClass: top
+uid: mtodorov
+cn: Martin Todorov
+mail: mtodorov@carlspring.com
+givenName: Martin
+surname: Todorov
+userPassword: password
+
+dn: uid=stodorov,ou=Users,dc=carlspring,dc=com
+objectClass: inetOrgPerson
+objectClass: organizationalPerson
+objectClass: person
+objectClass: top
+uid: stodorov
+cn: Steve Todorov
+mail: stodorov@carlspring.com
+givenName: Steve
+surname: Todorov
+userPassword: password
+
+dn: uid=testuser1,ou=Users,dc=carlspring,dc=com
+objectClass: inetOrgPerson
+objectClass: organizationalPerson
+objectClass: person
+objectClass: top
+uid: testuser1
+cn: Test User1
+givenName: Test
+surname: User1
+userPassword: password
+
+# Create groups
+dn: ou=Groups, dc=carlspring, dc=com
+changetype: add
+ou: Groups
+description: Base group organization unit.
+objectClass: organizationalUnit
+
+# Employees
+dn: ou=Employees, ou=Groups, dc=carlspring, dc=com
+changetype: add
+ou: Employees
+cn: Employees
+description: All employees
+objectClass: groupOfUniqueNames
+uniqueMember: cn=NULL
+
+# Employees -> Developers
+dn: ou=Developers, ou=Employees, ou=Groups, dc=carlspring, dc=com
+changetype: add
+ou: Developers
+cn: Developers
+description: All developers
+objectClass: groupOfUniqueNames
+uniqueMember: uid=mtodorov,ou=Users,dc=carlspring,dc=com
+uniqueMember: uid=stodorov,ou=Users,dc=carlspring,dc=com
+
+# Employees -> Managers
+dn: ou=Managers, ou=Employees, ou=Groups, dc=carlspring, dc=com
+changetype: add
+ou: Managers
+cn: Managers
+description: All managers
+objectClass: groupOfUniqueNames
+uniqueMember: uid=mtodorov,ou=Users,dc=carlspring,dc=com
+
+# Employees -> Admins
+dn: ou=Admins, ou=Employees, ou=Groups, dc=carlspring, dc=com
+changetype: add
+ou: Admins
+cn: Admins
+description: All admins
+objectClass: groupOfUniqueNames
+uniqueMember: uid=stodorov,ou=Users,dc=carlspring,dc=com
+

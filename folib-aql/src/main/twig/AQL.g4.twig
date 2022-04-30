@@ -1,0 +1,309 @@
+grammar AQL;
+
+query
+:
+    queryExp+ orderExp? pageExp? EOF
+;
+
+pageExp
+:
+    PAGE_SKIP COLON NUMBER
+;
+
+orderExp
+:
+    orderDirection COLON orderValue
+;
+
+orderValue
+:
+    STORAGE
+    | REPOSITORY
+    | LAYOUT
+    | VERSION
+    | TAG
+    | AGE
+    | layoutCoordinateKeyword
+;
+
+orderDirection
+:
+    ASC
+    | DESC
+;
+
+queryExp
+:
+    tokenPrefix? ROUND_BRACKET_LEFT vNestedQueryExp = queryExp
+    ROUND_BRACKET_RIGHT
+    | vQueryExpLeft = queryExp logicalOp? vQueryExpRight = queryExp
+    | tokenPrefix? tokenExp
+;
+
+tokenExp
+:
+    LAYOUT COLON layoutValue | tokenKey COLON tokenValue
+;
+
+tokenPrefix
+:
+    PLUS
+    | NEGATION
+    | PLUS NEGATION
+;
+
+tokenKey
+:
+    tokenKeyword
+    | layoutCoordinateKeyword
+;
+
+layoutValue:
+    {% for layout, layoutDesc in layoutMap -%}
+        {{ (loop.first) ? 'LAYOUT_' ~ (layoutDesc.layoutAlias | upper) : (" | " ~ 'LAYOUT_' ~ layoutDesc.layoutAlias | upper) }}       
+    {%- endfor %}
+;
+
+tokenValue
+:
+    VALUE
+    | STRING
+;
+
+tokenKeyword
+:
+    STORAGE
+    | REPOSITORY
+    | LAYOUT
+    | VERSION
+    | TAG
+    | FROM
+    | TO
+    | AGE
+;
+
+layoutCoordinateKeyword
+:
+    {% for layout, layoutDesc in layoutMap -%}
+        
+        {{ (loop.first) ? "" : (" | ") }}
+        
+        {% for layoutCoordinate in layoutDesc.artifactCoordinates -%}
+            
+            {% set layoutCoordinateRuleName = 'LAYOUT_COORDINATE_' ~ (layout | upper) ~ "_" ~ (layoutCoordinate | upper) %}
+            
+            {{ (loop.first) ? layoutCoordinateRuleName : (" | " ~ layoutCoordinateRuleName) }}
+        {%- endfor %}
+    {%- endfor %}
+;
+
+logicalOp
+:
+    and
+    | or
+;
+
+and
+:
+    AND
+    | AMP
+    | DOUBLE_AMP
+;
+
+or
+:
+    OR
+    | PIPE
+    | DOUBLE_PIPE
+;
+
+{#
+fragment A : [aA];
+fragment B : [bB];
+fragment C : [cC];
+fragment D : [dD];
+fragment E : [eE];
+fragment F : [fF];
+fragment G : [gG];
+fragment H : [hH];
+fragment I : [iI];
+fragment J : [jJ];
+fragment K : [kK];
+fragment L : [lL];
+fragment M : [mM];
+fragment N : [nN];
+fragment O : [oO];
+fragment P : [pP];
+fragment Q : [qQ];
+fragment R : [rR];
+fragment S : [sS];
+fragment T : [tT];
+fragment U : [uU];
+fragment V : [vV];
+fragment W : [wW];
+fragment X : [xX];
+fragment Y : [yY];
+fragment Z : [zZ];
+#}
+
+{% for layout, layoutDesc in layoutMap -%}
+    {{ 'LAYOUT_' ~ (layoutDesc.layoutAlias | upper) }}:  
+
+    '{{layoutDesc.layoutAlias}}'
+
+{#
+    {% for l in split(layoutDesc.layoutAlias, '') -%}
+        {{ (l | upper) ~ ' ' }}
+    {%- endfor %}
+#}
+
+    {{ ';\n\n' }}
+{%- endfor %}
+
+{% for layout, layoutDesc in layoutMap -%}
+    {% for layoutCoordinate in layoutDesc.artifactCoordinates -%}
+    
+        {{ 'LAYOUT_COORDINATE_' ~ (layout | upper) ~ "_" ~ (layoutCoordinate | upper) }}:  
+        
+        '{{ layoutCoordinate }}'
+
+{#
+        {% for l in split(layoutCoordinate, '') -%}
+            {{ (l | upper) ~ ' ' }}
+        {%- endfor %}
+#}
+
+        {{ ';\n\n' }}
+    {%- endfor %}
+{%- endfor %}
+
+STORAGE
+:
+    'storage'
+;
+
+REPOSITORY
+:
+    'repository'
+;
+
+LAYOUT
+:
+    'layout'
+;
+
+VERSION
+:
+    'version'
+;
+
+TAG
+:
+    'tag'
+;
+
+FROM
+:
+    'from'
+;
+
+TO
+:
+    'to'
+;
+
+AGE
+:
+    'age'
+;
+
+ASC
+:
+    'asc'
+;
+
+DESC
+:
+    'desc'
+;
+
+PAGE_SKIP
+:
+    'skip'
+;
+
+AMP
+:
+    '&'
+;
+
+DOUBLE_AMP
+:
+    '&&'
+;
+
+AND
+:
+    'and'
+;
+
+PIPE
+:
+    '|'
+;
+
+DOUBLE_PIPE
+:
+    '||'
+;
+
+OR
+:
+    'or'
+;
+
+PLUS
+:
+    '+'
+;
+
+NEGATION
+:
+    '!'
+    | '~'
+;
+
+COLON
+:
+    ':'
+;
+
+ROUND_BRACKET_LEFT
+:
+    '('
+;
+
+ROUND_BRACKET_RIGHT
+:
+    ')'
+;
+
+NUMBER
+:
+    [0-9]+
+;
+
+VALUE
+:
+    [-_a-zA-Z0-9*.]+
+;
+
+STRING
+:
+    ["\\'] ~["\\'\r\n]* ["\\']
+;
+
+WHITESPACE
+:
+    [ ] -> skip
+;

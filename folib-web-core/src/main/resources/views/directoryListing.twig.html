@@ -1,0 +1,68 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+    <title>Strongbox</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+    <link href="https://fonts.googleapis.com/css?family=Open+Sans" rel="stylesheet">
+    <base href="{{currentUrl}}/">
+    <style type="text/css">
+        body {
+            font-family: "Open Sans", "Trebuchet MS", verdana, lucida, arial, helvetica, sans-serif;
+        }
+
+        table {
+            padding-left: 5px;
+        }
+
+        table thead th,
+        table tbody td {
+            padding: 0px 30px 0px 0px;
+            vertical-align: middle;
+            text-align: left;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Index of {{ currentUrl }}/</h1>
+
+    <table>
+        <thead>
+        <tr>
+            <th>Name</th>
+            <th>Last modified</th>
+            <th>Size</th>
+            <th>Description</th>
+        </tr>
+        </thead>
+        <tbody>
+        {% if showBack|default(true) %}
+        <tr>
+            <td colspan="4">
+                <a href="../">..</a>
+            </td>
+        </tr>
+        {% endif %}
+
+        {% for directory in directories %}
+        <tr>
+            <td><a href="{{ directory.name }}/">{{ directory.name }}/</a></td>
+            <td>{% if directory.lastModified %}{{ directory.lastModified }}{% else %}-{% endif %}</td>
+            <td>{% if directory.size %}{{ directory.size }}{% else %}-{% endif %}</td>
+            <td>{% if directory.description %}{{ directory.description }}{% else %}-{% endif %}</td>
+        </tr>
+        {% endfor %}
+
+        {% for file in files %}
+        <tr>
+            <td><a href="{{ downloadBaseUrl }}/{{ file.name }}">{{ file.name }}</a></td>
+            <td>{% if file.lastModified %}{{ file.lastModified }}{% else %}-{% endif %}</td>
+            <td>{{ file.size | default("-") | humanReadableSize  }}</td>
+            <td>{% if file.description %}{{ file.description }}{% else %}-{% endif %}</td>
+        </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+
+</body>
+</html>

@@ -1,0 +1,11 @@
+cronTasksConfiguration:
+  cronTaskConfigurations:
+    - uuid: baa164a5-c900-43ff-8d13-7a0d0e509d1d
+      name: Test Java Cron Job
+      jobClass: TestJavaCronJob
+      cronExpression: 0 0 1 * * ?
+      oneTimeExecution: false
+      immediateExecution: false
+      properties:
+          storageId: "storage0"
+          repositoryId: "releases"

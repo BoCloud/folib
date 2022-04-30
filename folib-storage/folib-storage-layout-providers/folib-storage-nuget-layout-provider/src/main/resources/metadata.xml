@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<edmx:Edmx Version="1.0" xmlns:edmx="http://schemas.microsoft.com/ado/2007/06/edmx">
+    <edmx:DataServices xmlns:m="http://schemas.microsoft.com/ado/2007/08/dataservices/metadata" m:DataServiceVersion="2.0">
+        <Schema Namespace="NuGet.Server.DataServices" xmlns:d="http://schemas.microsoft.com/ado/2007/08/dataservices" xmlns:m="http://schemas.microsoft.com/ado/2007/08/dataservices/metadata" xmlns="http://schemas.microsoft.com/ado/2006/04/edm">
+            <EntityType Name="Package" m:HasStream="true">
+                <Key>
+                    <PropertyRef Name="Id" />
+                    <PropertyRef Name="Version" />
+                </Key>
+                <Property Name="Id" Type="Edm.String" Nullable="false" m:FC_TargetPath="SyndicationTitle" m:FC_ContentKind="text" m:FC_KeepInContent="false" />
+
+                <Property Name="Version" Type="Edm.String" Nullable="false" />
+                <Property Name="Title" Type="Edm.String" Nullable="true" />
+                <Property Name="Authors" Type="Edm.String" Nullable="true" m:FC_TargetPath="SyndicationAuthorName" m:FC_ContentKind="text" m:FC_KeepInContent="false" />
+                <Property Name="IconUrl" Type="Edm.String" Nullable="true" />
+                <Property Name="LicenseUrl" Type="Edm.String" Nullable="true" />
+                <Property Name="ProjectUrl" Type="Edm.String" Nullable="true" />
+                <Property Name="ReportAbuseUrl" Type="Edm.String" Nullable="true" />
+                <Property Name="DownloadCount" Type="Edm.Int32" Nullable="false" />
+                <Property Name="VersionDownloadCount" Type="Edm.Int32" Nullable="false" />
+
+                <Property Name="RatingsCount" Type="Edm.Int32" Nullable="false" />
+                <Property Name="VersionRatingsCount" Type="Edm.Int32" Nullable="false" />
+                <Property Name="Rating" Type="Edm.Double" Nullable="false" />
+                <Property Name="VersionRating" Type="Edm.Double" Nullable="false" />
+                <Property Name="RequireLicenseAcceptance" Type="Edm.Boolean" Nullable="false" />
+                <Property Name="Description" Type="Edm.String" Nullable="true" />
+                <Property Name="Summary" Type="Edm.String" Nullable="true" m:FC_TargetPath="SyndicationSummary" m:FC_ContentKind="text" m:FC_KeepInContent="false" />
+                <Property Name="ReleaseNotes" Type="Edm.String" Nullable="true" />
+                <Property Name="Language" Type="Edm.String" Nullable="true" />
+
+                <Property Name="Published" Type="Edm.DateTime" Nullable="false" />
+                <Property Name="LastUpdated" Type="Edm.DateTime" Nullable="false" m:FC_TargetPath="SyndicationUpdated" m:FC_ContentKind="text" m:FC_KeepInContent="false" />
+                <Property Name="Price" Type="Edm.Decimal" Nullable="false" />
+                <Property Name="Dependencies" Type="Edm.String" Nullable="true" />
+                <Property Name="PackageHash" Type="Edm.String" Nullable="true" />
+                <Property Name="PackageSize" Type="Edm.Int64" Nullable="false" />
+                <Property Name="ExternalPackageUri" Type="Edm.String" Nullable="true" />
+                <Property Name="Categories" Type="Edm.String" Nullable="true" />
+                <Property Name="Copyright" Type="Edm.String" Nullable="true" />
+
+                <Property Name="PackageType" Type="Edm.String" Nullable="true" />
+                <Property Name="Tags" Type="Edm.String" Nullable="true" />
+                <Property Name="IsLatestVersion" Type="Edm.Boolean" Nullable="false" />
+            </EntityType>
+            <EntityContainer Name="PackageContext" m:IsDefaultEntityContainer="true">
+                <EntitySet Name="Packages" EntityType="NuGet.Server.DataServices.Package" />
+                <FunctionImport Name="Search" EntitySet="Packages" ReturnType="Collection(NuGet.Server.DataServices.Package)" m:HttpMethod="GET">
+                    <Parameter Name="searchTerm" Type="Edm.String" Mode="In" />
+                    <Parameter Name="targetFramework" Type="Edm.String" Mode="In" />
+                </FunctionImport>
+            </EntityContainer>
+        </Schema>
+    </edmx:DataServices>
+</edmx:Edmx>

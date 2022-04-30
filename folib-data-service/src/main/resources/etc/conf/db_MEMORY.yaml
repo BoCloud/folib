@@ -1,0 +1,4 @@
+folib:
+    db:
+      janusgraph:
+        config-location: file:${folib.home}/etc/conf/janusgraph-inmemory.properties

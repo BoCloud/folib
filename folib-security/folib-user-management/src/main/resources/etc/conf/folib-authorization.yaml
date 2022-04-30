@@ -1,0 +1,104 @@
+authorizationConfiguration:
+  roles:
+    # Custom roles definition
+    - name: CUSTOM_ROLE
+      description: Custom role configuration example
+      accessModel:
+        # TODO: there will be `uiAuthorities` as well
+        apiAuthorities:
+          - CONFIGURATION_VIEW
+        storageAuthorities:
+          - storageId: private-storage
+            repositoryPrivileges:
+              - repositoryId: private-releases
+                repositoryPrivileges:
+                  - ARTIFACTS_VIEW
+                  - ARTIFACTS_RESOLVE
+                pathPrivileges:
+                  - path: org/carlspring/*
+                    wildcard: true
+                    privileges:
+                      - ARTIFACTS_DEPLOY
+                      - ARTIFACTS_DELETE
+    # System roles definition (prevented to be changed with API, UI or Configuration files)
+    - name: ADMIN
+      # ADMIN role will have all privileges by default
+      description: Super User role with all possible privileges
+      
+    - name: GLOBAL_CONFIGURATION_MANAGER
+      description: Role with all global configuration related privileges
+      accessModel:
+        apiAuthorities:
+          - CONFIGURATION_UPLOAD
+          - CONFIGURATION_VIEW
+          - CONFIGURATION_SET_INSTANCE_NAME
+          - CONFIGURATION_VIEW_INSTANCE_NAME
+          - CONFIGURATION_SET_BASE_URL
+          - CONFIGURATION_VIEW_BASE_URL
+          - CONFIGURATION_SET_PORT
+          - CONFIGURATION_VIEW_PORT
+          - CONFIGURATION_SET_GLOBAL_PROXY_CFG
+          - CONFIGURATION_VIEW_GLOBAL_PROXY_CFG
+          - CONFIGURATION_ADD_UPDATE_STORAGE
+          - CONFIGURATION_VIEW_STORAGE_CONFIGURATION
+          - CONFIGURATION_DELETE_STORAGE_CONFIGURATION
+          - CONFIGURATION_ADD_UPDATE_REPOSITORY
+          - CONFIGURATION_VIEW_REPOSITORY
+          - CONFIGURATION_DELETE_REPOSITORY
+          - CONFIGURATION_ADD_LOGGER
+          - CONFIGURATION_UPDATE_LOGGER
+          - CONFIGURATION_DELETE_LOGGER
+          - CONFIGURATION_RETRIEVE_LOG
+          - CONFIGURATION_RETRIEVE_LOGBACK_CFG
+          - CONFIGURATION_UPLOAD_LOGBACK_CFG
+    - name: REPOSITORY_MANAGER
+      description: Role with all repository related privileges
+      accessModel:
+        apiAuthorities:
+          - ADMIN_CREATE_REPO
+          - ADMIN_UPDATE_REPO
+          - ADMIN_DELETE_REPO
+          - ADMIN_LIST_REPO
+    - name: ARTIFACTS_MANAGER
+      description: Role with all artifact related privileges
+      accessModel:
+        apiAuthorities:
+          - ARTIFACTS_DEPLOY
+          - ARTIFACTS_DELETE
+          - ARTIFACTS_VIEW
+          - ARTIFACTS_RESOLVE
+          - ARTIFACTS_COPY
+    - name: USER_MANAGER
+      description: Role with all user related privileges
+      accessModel:
+        apiAuthorities:
+          - CREATE_USER
+          - UPDATE_USER
+          - VIEW_USER
+          - IMPERSONATE_USER
+          - DELETE_USER
+    - name: TOKEN_MANAGER
+      description: Role with all token related privileges
+      accessModel:
+        apiAuthorities:
+          - VIEW_OWN_TOKEN
+          - VIEW_ANY_TOKEN
+    - name: LOGS_MANAGER
+      description: Role with all logs related privileges
+      accessModel:
+        apiAuthorities:
+          - VIEW_LOGS
+          - CONFIGURE_LOGS
+          - RSS_FEED
+    - name: UI_MANAGER
+      description: Role with all user interface related privileges
+      accessModel:
+        apiAuthorities:
+          - UI_LOGIN
+          - UI_BROWSE
+    - name: ANONYMOUS
+      description: Anonymous user role
+      accessModel:
+        apiAuthorities:
+          - ARTIFACTS_RESOLVE
+          - SEARCH_ARTIFACTS

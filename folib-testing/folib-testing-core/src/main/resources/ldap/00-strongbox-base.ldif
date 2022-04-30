@@ -1,0 +1,122 @@
+#
+# This LDIF file is to test LDAP functionality across multiple modules and contains some "generic" records to avoid
+# having to repeat yourself.
+#
+# Notes:
+#  *  Changes here are fine, but should be done carefully, since it might break some tests in other modules.
+#  *  ALL user passwords in this LDIF file MUST be `password` to avoid guessing.
+#  *  You should also keep in mind this file is DIRECTLY imported in the OpenLDAP container when you do `docker-compose up openldap`.
+#  *  Changes MUST be compatible with OpenLDAP as well or it will break the openldap container startup.
+
+# Create an organizational unit where users will be stored.
+dn: ou=Users,dc=carlspring,dc=com
+changeType: add
+ou: Users
+description: All strongbox users.
+objectclass: organizationalUnit
+
+# Create users
+dn: uid=mtodorov,ou=Users,dc=carlspring,dc=com
+changeType: add
+objectClass: inetOrgPerson
+objectClass: organizationalPerson
+objectClass: person
+objectClass: top
+uid: mtodorov
+cn: Martin Todorov
+sn: Martin
+mail: mtodorov@carlspring.com
+givenName: Martin
+userPassword: {bcrypt}$2a$10$lpwlxyjvXKzN1ccCrw2PBuZx.eVesWbfmTbsrCboMU.gsNWVcZWMi
+
+dn: uid=stodorov,ou=Users,dc=carlspring,dc=com
+changeType: add
+objectClass: inetOrgPerson
+objectClass: organizationalPerson
+objectClass: person
+objectClass: top
+uid: stodorov
+cn: Steve Todorov
+sn: Steve
+mail: stodorov@carlspring.com
+givenName: Steve
+userPassword: {MD5}{+0ZDjBqe9MQD0RE7FAQrvuBJu89w7XY1kOxjP5PbilQ=}d0f27c20288118f0fdde9e91e5e9ffb9
+
+dn: uid=przemyslaw.fusik,ou=Users,dc=carlspring,dc=com
+changeType: add
+objectClass: inetOrgPerson
+objectClass: organizationalPerson
+objectClass: person
+objectClass: top
+uid: przemyslaw.fusik
+cn: Przemyslaw Fusik
+sn: Przemyslaw
+mail: przemyslaw.fusik@gmail.com
+givenName: Przemyslaw
+userPassword: {SHA-256}{mujKRdqeWWYAWhczNwVnBl6L6dHNwWO5eIGZ/G7pnBg=}bb63813f5b6f64ae306ebbbb23dcbb1c6f49eb9b989fc466b1b1a24a011bb2ce
+
+dn: uid=testuser1,ou=Users,dc=carlspring,dc=com
+changeType: add
+objectClass: inetOrgPerson
+objectClass: organizationalPerson
+objectClass: person
+objectClass: top
+uid: testuser1
+cn: Test User1
+sn: Test1
+givenName: Test
+userPassword: {SHA-1}{mDhUc/Vlf/amwY9QzEX+N7ZE5XK/6jc5+ZOUypVrB/U=}9f06588201782cb6dcc454f81468e851d09171a9
+
+# Create groups
+dn: ou=Groups,dc=carlspring,dc=com
+changeType: add
+ou: Groups
+description: Base group organization unit.
+objectClass: organizationalUnit
+
+# Employees
+dn: ou=Employees,ou=Groups,dc=carlspring,dc=com
+changeType: add
+ou: Employees
+cn: Employees
+description: All employees
+objectClass: groupOfUniqueNames
+uniqueMember: cn=NULL
+
+# Employees -> Developers
+dn: ou=Developers,ou=Employees,ou=Groups,dc=carlspring,dc=com
+changeType: add
+ou: Developers
+cn: Developers
+description: All developers
+objectClass: groupOfUniqueNames
+uniqueMember: uid=mtodorov,ou=Users,dc=carlspring,dc=com
+uniqueMember: uid=stodorov,ou=Users,dc=carlspring,dc=com
+uniqueMember: uid=przemyslaw.fusik,ou=Users,dc=carlspring,dc=com
+
+# Employees -> Contributors
+dn: ou=Contributors,ou=Employees,ou=Groups,dc=carlspring,dc=com
+changeType: add
+ou: Contributors
+cn: Contributors
+description: All contributors
+objectClass: groupOfUniqueNames
+uniqueMember: uid=przemyslaw.fusik,ou=Users,dc=carlspring,dc=com
+
+# Employees -> Managers
+dn: ou=Managers,ou=Employees,ou=Groups,dc=carlspring,dc=com
+changeType: add
+ou: Managers
+cn: Managers
+description: All managers
+objectClass: groupOfUniqueNames
+uniqueMember: uid=mtodorov,ou=Users,dc=carlspring,dc=com
+
+# Employees -> Admins
+dn: ou=Admins,ou=Employees,ou=Groups,dc=carlspring,dc=com
+changeType: add
+ou: Admins
+cn: Admins
+description: All admins
+objectClass: groupOfUniqueNames
+uniqueMember: uid=stodorov,ou=Users,dc=carlspring,dc=com

@@ -1,0 +1,241 @@
+#!/usr/bin/env bash
+
+SCRIPT_PATH=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd -P)
+BASE_DIR=$(realpath $SCRIPT_PATH/../)
+
+FOLIB_DEFAULT_HOME=$BASE_DIR
+FOLIB_DEFAULT_VAULT=$(realpath $FOLIB_DEFAULT_HOME/../folib-vault)
+
+FOLIB_HOME="${FOLIB_HOME:-$FOLIB_DEFAULT_HOME}"
+FOLIB_VAULT="${FOLIB_VAULT:-$FOLIB_DEFAULT_VAULT}"
+FOLIB_PID_FILE="$FOLIB_VAULT/folib.pid"
+FOLIB_JVM_XMX="${FOLIB_JVM_XMX:-512}"
+FOLIB_PORT="${FOLIB_PORT:-48080}"
+FOLIB_DB_PROFILE="${FOLIB_DB_PROFILE:-db_EMBEDDED}"
+FOLIB_GREMLIN_SERVER_ENABLED="${FOLIB_GREMLIN_SERVER_ENABLED:-false}"
+FOLIB_LOG_CONSOLE_ENABLED="${FOLIB_LOG_CONSOLE_ENABLED:-false}"
+FOLIB_LOG_FILE_ENABLED="${FOLIB_LOG_FILE_ENABLED:-true}"
+FOLIB_LOG_FILE_SIZE_SINGLE="${FOLIB_LOG_FILE_SIZE_SINGLE:-128MB}"
+FOLIB_LOG_FILE_SIZE_TOTAL="${FOLIB_LOG_FILE_SIZE_TOTAL:-1GB}"
+FOLIB_LOG_FILE_HISTORY="${FOLIB_LOG_FILE_HISTORY:-31}"
+FOLIB_DEBUG="${FOLIB_DEBUG:-false}"
+FOLIB_NPM_REMOTE_CHANGES_ENABLED="${FOLIB_NPM_REMOTE_CHANGES_ENABLED:-false}"
+FOLIB_NUGET_DOWNLOAD_FEED="${FOLIB_NUGET_DOWNLOAD_FEED:-false}"
+FOLIB_DOWNLOAD_INDEXES="${FOLIB_DOWNLOAD_INDEXES:-false}"
+
+print_banner()
+{
+    echo ""
+    echo "   _____   _                                    _                    ";
+    echo "  / ____| | |                                  | |                   ";
+    echo " | (___   | |_   _ __    ___    _ __     __ _  | |__     ___   __  __";
+    echo "  \___ \  | __| | '__|  / _ \  | '_ \   / _\` | | '_ \   / _ \  \ \/ /";
+    echo "  ____) | | |_  | |    | (_) | | | | | | (_| | | |_) | | (_) |  >  < ";
+    echo " |_____/   \__| |_|     \___/  |_| |_|  \__, | |_.__/   \___/  /_/\_\\";
+    echo "                                         __/ |                       ";
+    echo "                                        |___/                        ";
+    echo ""
+}
+
+print_env_vars()
+{
+    printf "  === Environment vars\n"
+
+    OPTS=`declare -p | grep -iP "FOLIB_.+" | grep -vi "_default_" | grep -vi "password" | grep -vi "pwd" | grep -vi "token" | cut -d " " -f 3-`
+
+    for LINE in $OPTS; do
+        KEY=`echo $LINE | cut -f 1 -d "="`
+        VALUE=`echo "$LINE" | awk '{gsub(/^.+=/,"");}1'`
+        printf "  %-40s %-30s \n" "$KEY" $VALUE
+    done
+
+    printf "  %-40s %-30s \n" "JAVA_OPTS" "\"${JAVA_OPTS:-}\""
+    printf "\n"
+}
+
+print_help()
+{
+    print_banner
+    printf " Usage:\n"
+    printf "  %-20s %-30s \n" "start"   "Start Strongbox in the background"
+    printf "  %-20s %-30s \n" "console" "Start Strongbox in the console"
+    printf "  %-20s %-30s \n" "debug"   "Start Strongbox in the remote debug and console mode"
+    printf "  %-20s %-30s \n" "stop"    "Stop Strongbox"
+    printf "  %-20s %-30s \n" "restart" "Restart Strongbox"
+    printf "  %-20s %-30s \n" "status"  "Print if Strongbox is running or not"
+}
+
+get_pid()
+{
+    echo `cat $FOLIB_PID_FILE 2>/dev/null | xargs`
+}
+
+pre_check()
+{
+    if [[ -f $FOLIB_PID_FILE ]]; then
+        PID=`get_pid`
+        IS_RUNNING=`ps aux | grep -i $PID | wc -l`
+        if [[ $IS_RUNNING -gt 1 ]]; then
+            printf "  Strongbox is already running: PID %s\n\n" "$PID"
+            exit 1
+        fi
+    fi
+
+    if [[ ! -d $FOLIB_VAULT ]]; then
+        mkdir -p $FOLIB_VAULT
+    fi
+}
+
+run()
+{
+    JAVA_OPTS="${JAVA_OPTS} -Dappserver.home=. -Dappserver.base=${FOLIB_HOME} -Djetty.logs=${FOLIB_HOME}/logs"
+    JAVA_OPTS+=" -Djava.io.tmpdir=${FOLIB_HOME}/tmp"
+    JAVA_OPTS+=" -Dserver.port=${FOLIB_PORT}"
+    JAVA_OPTS+=" -Dehcache.disk.store.dir=${FOLIB_VAULT}/cache"
+    JAVA_OPTS+=" -Dlogging.config=${FOLIB_HOME}/etc/logback-spring.xml"
+    JAVA_OPTS+=" -Dlogging.debug=${FOLIB_DEBUG}"
+    JAVA_OPTS+=" -Dlogging.file.enabled=${FOLIB_LOG_FILE_ENABLED}"
+    JAVA_OPTS+=" -Dlogging.file.size.single=${FOLIB_LOG_FILE_SIZE_SINGLE}"
+    JAVA_OPTS+=" -Dlogging.file.size.total=${FOLIB_LOG_FILE_SIZE_TOTAL}"
+    JAVA_OPTS+=" -Dlogging.file.history=${FOLIB_LOG_FILE_HISTORY}"
+    JAVA_OPTS+=" -Dlogging.console.enabled=${FOLIB_LOG_CONSOLE_ENABLED}"
+    JAVA_OPTS+=" -Dlogging.dir=${FOLIB_VAULT}/logs"
+    JAVA_OPTS+=" -Dlogging.file.name=${FOLIB_VAULT}/logs/folib.log"
+    JAVA_OPTS+=" -Dfolib.home=${FOLIB_HOME}"
+    JAVA_OPTS+=" -Dfolib.vault=${FOLIB_VAULT}"
+    JAVA_OPTS+=" -Dfolib.storage.booter.basedir=${FOLIB_VAULT}/storages"
+    JAVA_OPTS+=" -Dfolib.port=${FOLIB_PORT}"
+    JAVA_OPTS+=" -Dfolib.db.profile=${FOLIB_DB_PROFILE}"
+    JAVA_OPTS+=" -Dfolib.graph.gremlin.server=${FOLIB_GREMLIN_SERVER_ENABLED}"
+    JAVA_OPTS+=" -Dfolib.npm.remote.changes.enabled=${FOLIB_NPM_REMOTE_CHANGES_ENABLED}"
+    JAVA_OPTS+=" -Dfolib.nuget.download.feed=${FOLIB_NUGET_DOWNLOAD_FEED}"
+    JAVA_OPTS+=" -Dfolib.download.indexes=${FOLIB_DOWNLOAD_INDEXES}"
+    JAVA_OPTS+=" -Dfolib.authentication.providers.yaml=${FOLIB_HOME}/etc/conf/folib-authentication-providers.yaml"
+
+    JDK_VERSION=$(java -version 2>&1 | awk -F '"' '/version/ {print $2}')
+
+    if [[ "$JDK_VERSION" == 11* ]]; then
+       JAVA_OPTS+=" -Dsun.misc.URLClassPath.disableJarChecking=true
+                    -Djdk.attach.allowAttachSelf=true
+                    --add-exports java.base/jdk.internal.misc=ALL-UNNAMED
+                    --add-exports java.base/jdk.internal.ref=ALL-UNNAMED
+                    --add-exports java.base/sun.nio.ch=ALL-UNNAMED
+                    --add-exports java.management.rmi/com.sun.jmx.remote.internal.rmi=ALL-UNNAMED
+                    --add-exports java.rmi/sun.rmi.registry=ALL-UNNAMED
+                    --add-exports java.rmi/sun.rmi.server=ALL-UNNAMED
+                    --add-exports java.sql/java.sql=ALL-UNNAMED
+                    --add-opens java.base/java.lang.module=ALL-UNNAMED
+                    --add-opens java.base/jdk.internal.loader=ALL-UNNAMED
+                    --add-opens java.base/jdk.internal.ref=ALL-UNNAMED
+                    --add-opens java.base/jdk.internal.reflect=ALL-UNNAMED
+                    --add-opens java.base/jdk.internal.math=ALL-UNNAMED
+                    --add-opens java.base/jdk.internal.module=ALL-UNNAMED
+                    --add-opens java.base/jdk.internal.util.jar=ALL-UNNAMED
+                    --add-opens jdk.management/com.sun.management.internal=ALL-UNNAMED"
+    fi
+
+    JAR_ARGS="-showversion -jar ${JAVA_OPTS} ./lib/folib-web-core-*-spring-boot.jar"
+
+    CMD="java $JAR_ARGS"
+    if [[ $1 == "console" ]]; then
+        CMD="java $JAR_ARGS"
+    fi
+
+    printf "  === Starting instance\n"
+
+    cd $FOLIB_HOME;
+    set -eo pipefail;
+
+    if [[ $1 != "console" ]]; then
+        $CMD >/dev/null 2>&1 & echo $! > $FOLIB_PID_FILE
+        printf "  PID: $(get_pid) \n"
+        printf "  CMD: $CMD\n\n"
+    else
+        trap "kill -SIGTERM $(get_pid) && sleep 3" SIGTERM
+        trap "echo 'Exiting!'; (set -ex; rm -rf $FOLIB_PID_FILE)" EXIT
+        echo $$ > $FOLIB_PID_FILE; exec $CMD
+    fi
+}
+
+common()
+{
+    print_banner
+    pre_check
+    print_env_vars
+}
+
+start()
+{
+    common
+    run "background"
+}
+
+stop()
+{
+    if [[ -f $FOLIB_PID_FILE ]]; then
+        set -eo pipefail;
+        PID=`get_pid`
+        IS_RUNNING=`ps aux | grep -i $PID | wc -l`
+
+        if [[ $IS_RUNNING -gt 1 ]]; then
+            printf "  Stopping Strongbox [PID: %s]\n\n" "$PID"
+            kill -SIGTERM $PID
+            sleep 2
+        else
+            printf "  Strongbox is not running.. removing staled pid.\n"
+        fi
+
+        rm -rf $FOLIB_PID_FILE
+    else
+        echo "  Strongbox is not running."
+    fi
+
+}
+
+restart()
+{
+    stop
+    sleep 3
+    start
+}
+
+console()
+{
+    FOLIB_LOG_CONSOLE_ENABLED=true
+    common
+    run "console"
+}
+
+debug()
+{
+    JAVA_OPTS="$JAVA_OPTS -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=$1 "
+    console
+}
+
+status()
+{
+    if [[ -f $FOLIB_PID_FILE ]]; then
+        PID=`get_pid`
+        IS_RUNNING=`ps aux | grep -i $PID | wc -l`
+        if [[ $IS_RUNNING -gt 1 ]]; then
+            printf "  Strongbox is running [PID: %s]\n" "$PID"
+        else
+            printf "  Strongbox has died or PID file contains stale data (PID: %s)\n" "$PID"
+        fi
+    else
+        printf "  Strongbox is not running\n"
+    fi
+}
+
+case "$1" in
+    start)   start;;
+    stop)    stop;;
+    restart) restart;;
+    console) console;;
+    debug)   debug ${2:-5005};;
+    status)  status;;
+    *)
+        print_help
+        exit 1
+    ;;
+esac

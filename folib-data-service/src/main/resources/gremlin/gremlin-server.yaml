@@ -1,0 +1,39 @@
+host: 0.0.0.0
+port: 8182
+scriptEvaluationTimeout: 30000
+channelizer: org.apache.tinkerpop.gremlin.server.channel.WebSocketChannelizer
+graphs: {}
+scriptEngines:
+  gremlin-groovy:
+    plugins:
+      org.janusgraph.graphdb.tinkerpop.plugin.JanusGraphGremlinPlugin: {}
+      org.apache.tinkerpop.gremlin.server.jsr223.GremlinServerGremlinPlugin: {}
+      org.apache.tinkerpop.gremlin.jsr223.ImportGremlinPlugin:
+        classImports:
+          - java.lang.Math
+          - org.opencypher.gremlin.traversal.CustomFunctions
+          - org.opencypher.gremlin.traversal.CustomPredicate
+        methodImports:
+          - java.lang.Math#*
+          - org.opencypher.gremlin.traversal.CustomPredicate#*
+          - org.opencypher.gremlin.traversal.CustomFunctions#*
+serializers:
+  - className: org.apache.tinkerpop.gremlin.driver.ser.GryoMessageSerializerV3d0
+    config:
+      ioRegistries:
+        - org.janusgraph.graphdb.tinkerpop.JanusGraphIoRegistry
+  - className: org.apache.tinkerpop.gremlin.driver.ser.GryoMessageSerializerV3d0
+    config:
+      serializeResultToString: true
+  - className: org.apache.tinkerpop.gremlin.driver.ser.GraphSONMessageSerializerV3d0
+    config:
+      ioRegistries:
+        - org.janusgraph.graphdb.tinkerpop.JanusGraphIoRegistry
+processors:
+  - className: org.apache.tinkerpop.gremlin.server.op.session.SessionOpProcessor
+    config:
+      sessionTimeout: 28800000
+  - className: org.apache.tinkerpop.gremlin.server.op.traversal.TraversalOpProcessor
+    config:
+      cacheExpirationTime: 600000
+      cacheMaxSize: 1000

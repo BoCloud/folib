@@ -1,0 +1,5 @@
+folib:
+    db:
+      janusgraph:
+        # Note: Configuring JG with a remote Cassandra instance would require you to set the `storage.hostname` property in JanusGraph.
+        config-location: file:${folib.home}/etc/conf/janusgraph-cassandra.properties

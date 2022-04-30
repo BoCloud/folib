@@ -1,0 +1,13 @@
+users:
+  user:
+    - username: test-user
+      password: "{bcrypt}$2a$10$WqtVx7Iio0cndyR1lEaKW.SWhUYmF/zHHG5hkAXvH5hUmklM7QfMO"
+      roles:
+        - ADMIN
+      securityTokenKey: user-secret
+    - username: test-deployer
+      password: "{bcrypt}$2a$10$WqtVx7Iio0cndyR1lEaKW.SWhUYmF/zHHG5hkAXvH5hUmklM7QfMO"
+      roles:
+        - UI_MANAGER
+        - ARTIFACTS_MANAGER
+      securityTokenKey: deployer-secret

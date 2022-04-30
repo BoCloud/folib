@@ -1,0 +1,1 @@
+Strongbox default authentication provider.

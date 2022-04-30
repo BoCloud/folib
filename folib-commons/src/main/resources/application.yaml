@@ -1,0 +1,99 @@
+server:
+  port: 48080
+spring:
+  liquibase:
+    enabled: false
+  servlet:
+    multipart:
+      enabled: true
+folib:
+  basedir: .
+  home: ${folib.basedir}/folib
+  vault: ${folib.basedir}/folib-vault
+  etc: ${folib.home}/etc
+  temp: ${folib.home}/tmp
+  config:
+    file: ${folib.home}/etc/conf/folib.yaml
+  storage:
+    booter:
+      basedir: ${folib.vault}/storages
+  host: localhost
+  port: 48080
+  nuget:
+    download:
+      feed: false
+  version: @{project.version}
+  revision: @{folib.revision}
+  users:
+    external:
+      cache:
+        seconds: 300
+  sse:
+    timeoutMillis: 600000
+  graph:
+    gremlin:
+        server:
+            enabled: false
+# Changes to these properties must also be applied to [folib/folib-web-integration-tests] and possibly the pipeline.
+# Please ping us on our chat channel (https://chat.carlspring.org/) to confirm.
+logging:
+  debug: false
+  console:
+    enabled: true
+  file:
+    name: ${logging.dir}/folib.log
+    enabled: true
+    size:
+      single: 128MB
+      total: 1GB
+    history: 31
+  dir: ${folib.vault}/logs
+java:
+  io:
+    tmpdir: ${folib.vault}/tmp
+ehcache:
+  disk:
+    store:
+      dir: ${folib.vault}/cache
+management:
+  health:
+    neo4j:
+      enabled: false
+  endpoint:
+    health:
+      show-details: always
+    shutdown:
+      enabled: true
+  endpoints:
+    web:
+      exposure:
+        include: health,info,beans,metrics,trace,scheduledtasks,threaddump,loggers,startup
+      base-path: /api/monitoring
+cacheManagerConfiguration:
+  groupConfig:
+    name: folib
+    password: password
+  enableMulticastConfig: false
+  multicast:
+    multicastGroup: 224.2.2.3
+    multicastPort: 54327
+    multicastTimeoutSeconds: 2
+    multicastTimeToLive: 32
+    trustedInterfaces: en0,en1
+    loopbackModeEnabled: false
+  instanceId: folib
+  caches:
+    remoteRepositoryAliveness:
+      maxSizeLimit: 1000
+      maxSizePolicy: FREE_HEAP_SIZE
+      evictionPolicy: LFU
+    tags:
+      maxSizeLimit: 1000
+      maxSizePolicy: FREE_HEAP_SIZE
+      evictionPolicy: LFU
+    authentications:
+      cacheLocalEntries: true
+      evictionConfigSize: 1000
+      evictionConfigMaxSizePolicy: ENTRY_COUNT
+      invalidateOnChange: true
+      timeToLiveSeconds: 10

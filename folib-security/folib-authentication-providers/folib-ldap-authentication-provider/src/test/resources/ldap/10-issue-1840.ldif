@@ -1,0 +1,41 @@
+# {ALG}base64encode(password)
+dn: uid=issue1840-type-1,ou=Users,dc=carlspring,dc=com
+changeType: add
+objectClass: inetOrgPerson
+objectClass: organizationalPerson
+objectClass: person
+objectClass: top
+uid: issue1840-type-1
+cn: issue1840-type-1
+sn: issue1840-type-1
+mail: issue1840-type-1@carlspring.com
+givenName: issue1840-type-1
+userPassword: {MD5}X03MO1qnZdYdgyfeuILPmQ==
+
+# base64encode({ALG}hash(password))
+dn: uid=issue1840-type-2,ou=Users,dc=carlspring,dc=com
+changeType: add
+objectClass: inetOrgPerson
+objectClass: organizationalPerson
+objectClass: person
+objectClass: top
+uid: issue1840-type-2
+cn: issue1840-type-2
+sn: issue1840-type-2
+mail: issue1840-type-2@carlspring.com
+givenName: issue1840-type-2
+userPassword: e2JjcnlwdH0kMmEkMTAkbHB3bHh5anZYS3pOMWNjQ3J3MlBCdVp4LmVWZXNXYmZtVGJzckNib01VLmdzTldWY1pXTWk=
+
+# Employees -> Developers
+dn: ou=Developers,ou=Employees,ou=Groups,dc=carlspring,dc=com
+changeType: modify
+add: uniqueMember
+uniqueMember: uid=issue1840-type-1,ou=Users,dc=carlspring,dc=com
+uniqueMember: uid=issue1840-type-2,ou=Users,dc=carlspring,dc=com
+
+# Employees -> Contributors
+dn: ou=Contributors,ou=Employees,ou=Groups,dc=carlspring,dc=com
+changetype: modify
+add: uniqueMember
+uniqueMember: uid=issue1840-type-1,ou=Users,dc=carlspring,dc=com
+uniqueMember: uid=issue1840-type-2,ou=Users,dc=carlspring,dc=com
