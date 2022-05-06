@@ -41,8 +41,8 @@ import org.springframework.web.bind.annotation.*;
  * @author Pablo Tirado
  */
 @RestController
-@RequestMapping("/api/configuration/strongbox/storages")
-@Api(value = "/api/configuration/strongbox/storages")
+@RequestMapping("/api/configuration/folib/storages")
+@Api(value = "/api/configuration/folib/storages")
 public class StoragesConfigurationController
         extends BaseConfigurationController
 {

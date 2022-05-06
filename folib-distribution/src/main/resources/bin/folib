@@ -57,12 +57,12 @@ print_help()
 {
     print_banner
     printf " Usage:\n"
-    printf "  %-20s %-30s \n" "start"   "Start Strongbox in the background"
-    printf "  %-20s %-30s \n" "console" "Start Strongbox in the console"
-    printf "  %-20s %-30s \n" "debug"   "Start Strongbox in the remote debug and console mode"
-    printf "  %-20s %-30s \n" "stop"    "Stop Strongbox"
-    printf "  %-20s %-30s \n" "restart" "Restart Strongbox"
-    printf "  %-20s %-30s \n" "status"  "Print if Strongbox is running or not"
+    printf "  %-20s %-30s \n" "start"   "Start Folib in the background"
+    printf "  %-20s %-30s \n" "console" "Start Folib in the console"
+    printf "  %-20s %-30s \n" "debug"   "Start Folib in the remote debug and console mode"
+    printf "  %-20s %-30s \n" "stop"    "Stop Folib"
+    printf "  %-20s %-30s \n" "restart" "Restart Folib"
+    printf "  %-20s %-30s \n" "status"  "Print if Folib is running or not"
 }
 
 get_pid()
@@ -76,7 +76,7 @@ pre_check()
         PID=`get_pid`
         IS_RUNNING=`ps aux | grep -i $PID | wc -l`
         if [[ $IS_RUNNING -gt 1 ]]; then
-            printf "  Strongbox is already running: PID %s\n\n" "$PID"
+            printf "  Folib is already running: PID %s\n\n" "$PID"
             exit 1
         fi
     fi
@@ -178,16 +178,16 @@ stop()
         IS_RUNNING=`ps aux | grep -i $PID | wc -l`
 
         if [[ $IS_RUNNING -gt 1 ]]; then
-            printf "  Stopping Strongbox [PID: %s]\n\n" "$PID"
+            printf "  Stopping Folib [PID: %s]\n\n" "$PID"
             kill -SIGTERM $PID
             sleep 2
         else
-            printf "  Strongbox is not running.. removing staled pid.\n"
+            printf "  Folib is not running.. removing staled pid.\n"
         fi
 
         rm -rf $FOLIB_PID_FILE
     else
-        echo "  Strongbox is not running."
+        echo "  Folib is not running."
     fi
 
 }
@@ -218,12 +218,12 @@ status()
         PID=`get_pid`
         IS_RUNNING=`ps aux | grep -i $PID | wc -l`
         if [[ $IS_RUNNING -gt 1 ]]; then
-            printf "  Strongbox is running [PID: %s]\n" "$PID"
+            printf "  Folib is running [PID: %s]\n" "$PID"
         else
-            printf "  Strongbox has died or PID file contains stale data (PID: %s)\n" "$PID"
+            printf "  Folib has died or PID file contains stale data (PID: %s)\n" "$PID"
         fi
     else
-        printf "  Strongbox is not running\n"
+        printf "  Folib is not running\n"
     fi
 }
 

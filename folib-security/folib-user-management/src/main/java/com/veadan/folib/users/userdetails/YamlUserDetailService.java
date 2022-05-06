@@ -39,7 +39,7 @@ public class YamlUserDetailService
             throw new UsernameNotFoundException("Cannot find user with that name");
         }
 
-        UserDetails springUser = new StrongboxUserDetails(user);
+        UserDetails springUser = new FolibUserDetails(user);
         logger.info("Authorise under {}", springUser);
 
         return springUser;

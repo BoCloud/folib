@@ -1,12 +1,12 @@
 [Unit]
-Description=Strongbox Repository Manager
+Description=Folib Repository Manager
 Documentation=https://folib.github.io/
 After=network-online.target firewalld.service
 Wants=network-online.target
 
 [Service]
 Type=simple
-User=strongbox
+User=Folib
 Environment=FOLIB_HOME=/opt/folib
 Environment=FOLIB_VAULT=/opt/folib-vault
 Environment=FOLIB_PORT=48080

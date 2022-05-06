@@ -420,7 +420,7 @@ public class NpmArtifactController
     /**
      * Resolves if a passed name contains '/-rev' substring.
      * Npm 'unpublish' a single version package comprises 4 requests: GET, PUT, GET, DELETE, and
-     * PUT method has a path that Strongbox maps on
+     * PUT method has a path that Folib maps on
      * {@link NpmArtifactController#publish(Repository, String, HttpServletRequest)}.
      * Example of PUT path: http://localhost:8080/@scope/package/-rev/0-0000000000000000.
      * As publishing doesn't play any role in 'unpublish' process, it should be skipped.

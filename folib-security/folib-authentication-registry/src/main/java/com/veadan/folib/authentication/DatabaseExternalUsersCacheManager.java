@@ -5,8 +5,8 @@ import com.veadan.folib.domain.User;
 import com.veadan.folib.users.domain.UserData;
 import com.veadan.folib.users.service.UserAlreadyExistsException;
 import com.veadan.folib.users.service.impl.DatabaseUserService;
-import com.veadan.folib.users.userdetails.StrongboxExternalUsersCacheManager;
-import com.veadan.folib.users.userdetails.StrongboxUserDetails;
+import com.veadan.folib.users.userdetails.FolibExternalUsersCacheManager;
+import com.veadan.folib.users.userdetails.FolibUserDetails;
 import com.veadan.folib.domain.UserEntity;
 import com.veadan.folib.util.LocalDateTimeInstance;
 
@@ -24,7 +24,7 @@ import org.springframework.stereotype.Component;
  */
 @Component
 @Transactional
-public class DatabaseExternalUsersCacheManager extends DatabaseUserService implements StrongboxExternalUsersCacheManager
+public class DatabaseExternalUsersCacheManager extends DatabaseUserService implements FolibExternalUsersCacheManager
 {
 
 
@@ -33,7 +33,7 @@ public class DatabaseExternalUsersCacheManager extends DatabaseUserService imple
     public User cacheExternalUserDetails(String sourceId,
                                          UserDetails springUser)
     {
-        User user = springUser instanceof StrongboxUserDetails ? ((StrongboxUserDetails) springUser).getUser()
+        User user = springUser instanceof FolibUserDetails ? ((FolibUserDetails) springUser).getUser()
                 : new UserData(springUser);
         String username = user.getUsername();
         

@@ -96,7 +96,7 @@ public class StorageBooter
     private void initializeStorages(final Map<String, Storage> storages)
             throws IOException
     {
-        logger.info("Running Strongbox storage booter...");
+        logger.info("Running folib storage booter...");
         logger.info(" -> Creating storage directory skeleton...");
 
         for (Map.Entry<String, Storage> stringStorageEntry : storages.entrySet())

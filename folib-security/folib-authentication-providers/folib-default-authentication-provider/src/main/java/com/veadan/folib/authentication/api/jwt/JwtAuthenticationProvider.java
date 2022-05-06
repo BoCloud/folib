@@ -23,6 +23,7 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
  * @author Sergey Bespalov
  *
  */
+
 public class JwtAuthenticationProvider extends AbstractUserDetailsAuthenticationProvider
 {
 
@@ -102,7 +103,8 @@ public class JwtAuthenticationProvider extends AbstractUserDetailsAuthentication
     @Override
     public boolean supports(Class<?> authentication)
     {
-        return JwtAuthentication.class.isAssignableFrom(authentication);
+        //请注意是当前路径下的JwtAuthentication，不是JwtAuthenticationClaimsProvider.JwtAuthentication
+        return com.veadan.folib.authentication.api.jwt.JwtAuthentication.class.isAssignableFrom(authentication);
     }
 
 }

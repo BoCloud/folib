@@ -70,7 +70,7 @@ public class AccessModelData
         Set<Privileges> privileges = new HashSet<>();
         for (final StoragePrivileges storage : storages)
         {
-            String storageKey = "/storages/" + storage.getStorageId();
+            String storageKey = "/folib/" + storage.getStorageId();
             if (!normalizedUrl.startsWith(storageKey))
             {
                 continue;

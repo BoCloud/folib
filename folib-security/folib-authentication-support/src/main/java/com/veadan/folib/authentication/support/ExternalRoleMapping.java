@@ -8,7 +8,7 @@ public class ExternalRoleMapping
 
     private String externalRole;
 
-    private String strongboxRole;
+    private String folibRole;
 
     public ExternalRoleMapping()
     {
@@ -16,11 +16,11 @@ public class ExternalRoleMapping
     }
 
     public ExternalRoleMapping(String externalRole,
-                               String strongboxRole)
+                               String folibRole)
     {
         super();
         this.externalRole = externalRole;
-        this.strongboxRole = strongboxRole;
+        this.folibRole = folibRole;
     }
 
     public String getExternalRole()
@@ -33,13 +33,13 @@ public class ExternalRoleMapping
         this.externalRole = ldapRole;
     }
 
-    public String getStrongboxRole()
+    public String getFolibRole()
     {
-        return strongboxRole;
+        return folibRole;
     }
 
-    public void setStrongboxRole(final String strongboxRole)
+    public void setFolibRole(final String folibRole)
     {
-        this.strongboxRole = strongboxRole;
+        this.folibRole = folibRole;
     }
 }

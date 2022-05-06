@@ -37,8 +37,8 @@ import org.springframework.web.bind.annotation.*;
  * @author Pablo Tirado
  */
 @Controller
-@RequestMapping("/api/configuration/strongbox")
-@Api(value = "/api/configuration/strongbox")
+@RequestMapping("/api/configuration/folib")
+@Api(value = "/api/configuration/folib")
 public class ServerConfigurationController
         extends BaseConfigurationController
 {
@@ -167,7 +167,7 @@ public class ServerConfigurationController
 
     @ApiOperation(value = "Sets the port of the service.")
     @ApiResponses(value = { @ApiResponse(code = 200, message = "The port was updated."),
-                            @ApiResponse(code = 400, message = "Could not update the strongbox port.") })
+                            @ApiResponse(code = 400, message = "Could not update the Folib port.") })
     @PreAuthorize("hasAnyAuthority('CONFIGURATION_SET_PORT', 'GLOBAL_CONFIGURATION_MANAGE')")
     @PutMapping(value = "/port/{port}",
                 produces = { MediaType.TEXT_PLAIN_VALUE,
@@ -186,7 +186,7 @@ public class ServerConfigurationController
         }
         catch (ConfigurationException e)
         {
-            String message = "Could not update the strongbox port.";
+            String message = "Could not update the Folib port.";
             logger.error(message, e);
 
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
@@ -196,7 +196,7 @@ public class ServerConfigurationController
 
     @ApiOperation(value = "Sets the port of the service.")
     @ApiResponses(value = { @ApiResponse(code = 200, message = "The port was updated."),
-                            @ApiResponse(code = 400, message = "Could not update the strongbox port.") })
+                            @ApiResponse(code = 400, message = "Could not update the Folib port.") })
     @PreAuthorize("hasAnyAuthority('CONFIGURATION_SET_PORT', 'GLOBAL_CONFIGURATION_MANAGE')")
     @PutMapping(value = "/port",
                 produces = { MediaType.TEXT_PLAIN_VALUE,

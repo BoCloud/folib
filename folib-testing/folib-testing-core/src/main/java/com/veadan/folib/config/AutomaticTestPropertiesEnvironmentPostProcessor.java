@@ -19,7 +19,7 @@ import org.springframework.core.env.MapPropertySource;
 @Order(100) // No signficance other than to preserve consistent load order
 class AutomaticTestPropertiesEnvironmentPostProcessor implements EnvironmentPostProcessor
 {
-    private static final String PROPERTY_SOURCE_NAME = "strongboxAutomaticTestProperties";
+    private static final String PROPERTY_SOURCE_NAME = "folibAutomaticTestProperties";
 
     @Override
     public void postProcessEnvironment(final ConfigurableEnvironment environment,

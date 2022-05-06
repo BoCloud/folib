@@ -1,6 +1,6 @@
 
 /*
- * Copyright 2019 Carlspring Consulting & Development Ltd.
+ * Copyright 2019 Veadan Team & Development Ltd.
  * Copyright 2014 Dmitry Sviridov
  *
  * Licensed under the Apache License, Version 2.0 (the "License");

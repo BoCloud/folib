@@ -24,7 +24,7 @@ public class PingController
 
     static final String READY_STREAM_VALUE = "event:ready\ndata: \n\n";
 
-    @ApiResponses(value = { @ApiResponse(code = 200, message = "Strongbox is up and working.") })
+    @ApiResponses(value = { @ApiResponse(code = 200, message = "Folib is up and working.") })
     @GetMapping(produces = { MediaType.TEXT_EVENT_STREAM_VALUE + ";charset=UTF-8" })
     public ResponseEntity ping()
     {

@@ -68,7 +68,7 @@ class PropertiesPathResolverConfig
             final String defaultPathPrefixOverride = environment.getProperty(PREFIX_OVERRIDE_PROPERTY);
             if (StringUtils.isEmpty(defaultPathPrefixOverride))
             {
-                pathPrefix = "file://" + getStrongboxHome();
+                pathPrefix = "file://" + getFolibHome();
             }
             else
             {
@@ -81,9 +81,9 @@ class PropertiesPathResolverConfig
             return resolved;
         }
 
-        private String getStrongboxHome() {
-            final String strongboxHome = ensureParentOrCurrentDirAbsolute(environment.getRequiredProperty("folib.home"));
-            return strongboxHome.endsWith("/") ? strongboxHome : strongboxHome + "/";
+        private String getFolibHome() {
+            final String folibHome = ensureParentOrCurrentDirAbsolute(environment.getRequiredProperty("folib.home"));
+            return folibHome.endsWith("/") ? folibHome : folibHome + "/";
         }
 
         private String ensureParentOrCurrentDirAbsolute(final String path) {

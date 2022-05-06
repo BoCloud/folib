@@ -12,7 +12,7 @@ import com.veadan.folib.domain.SecurityRole;
 import org.springframework.stereotype.Component;
 
 @Component
-public class UserDetailsMapper implements StrongboxUserToUserDetails
+public class UserDetailsMapper implements FolibUserToUserDetails
 {
 
     @Inject

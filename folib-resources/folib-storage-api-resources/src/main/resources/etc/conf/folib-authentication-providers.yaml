@@ -21,11 +21,11 @@ folib:
       managerPassword: password
       rolesMapping:
         - externalRole: Admins
-          strongboxRole: ADMIN
+          folibRole: ADMIN
         - externalRole: Developers
-          strongboxRole: REPOSITORY_MANAGER
+          folibRole: REPOSITORY_MANAGER
         - externalRole: Contributors
-          strongboxRole: USER_ROLE
+          folibRole: USER_ROLE
       userDnPatterns:
         - uid={0},ou=Users
       userSearchBase: ou=Users

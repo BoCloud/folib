@@ -1,8 +1,0 @@
-folib:
-  authentication:
-    passwordAuthenticationProvider:
-      order: 0
-      enabled: true
-    emptyAuthenticationProvider:
-      order: 1
-      enabled: true

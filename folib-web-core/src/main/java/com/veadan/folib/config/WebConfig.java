@@ -19,7 +19,7 @@ import com.veadan.folib.services.DirectoryListingService;
 import com.veadan.folib.services.DirectoryListingServiceImpl;
 import com.veadan.folib.yaml.YAMLMapperFactory;
 import org.apache.commons.lang.StringUtils;
-import com.veadan.folib.configuration.StrongboxSecurityConfig;
+import com.veadan.folib.configuration.FolibSecurityConfig;
 import com.veadan.folib.jtwig.extensions.ByteSizeConversionExtension;
 import com.veadan.folib.utils.CustomAntPathMatcher;
 import com.veadan.folib.web.CustomRequestMappingHandlerMapping;
@@ -66,7 +66,7 @@ import org.springframework.web.servlet.view.InternalResourceView;
 import org.springframework.web.servlet.view.InternalResourceViewResolver;
 
 @Configuration
-@ComponentScan({ "com.carlspring.folib.controllers",
+@ComponentScan({ "com.veadan.folib.controllers",
                  "com.veadan.folib.controllers",
                  "com.veadan.folib.validation",
                  "com.veadan.folib.web",
@@ -74,7 +74,7 @@ import org.springframework.web.servlet.view.InternalResourceViewResolver;
                  "com.veadan.folib.utils",
                  "com.veadan.folib.actuator" })
 @Import({ CommonConfig.class,
-          StrongboxSecurityConfig.class,
+          FolibSecurityConfig.class,
           StorageApiConfig.class,
           EventsConfig.class,
           StorageCoreConfig.class,

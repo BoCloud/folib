@@ -95,13 +95,13 @@ public class RestClient
     public int setConfiguration(MutableConfiguration configuration)
             throws IOException
     {
-        return setServerConfiguration(configuration, "/api/configuration/strongbox");
+        return setServerConfiguration(configuration, "/api/configuration/folib");
     }
 
     public MutableConfiguration getConfiguration()
             throws IOException
     {
-        return getServerConfiguration("/api/configuration/strongbox");
+        return getServerConfiguration("/api/configuration/folib");
     }
 
     public int setServerConfiguration(MutableConfiguration configuration,
@@ -162,7 +162,7 @@ public class RestClient
      */
     public int setListeningPort(int port)
     {
-        String url = getContextBaseUrl() + "/api/configuration/strongbox/port/" + port;
+        String url = getContextBaseUrl() + "/api/configuration/folib/port/" + port;
 
         WebTarget resource = getClientInstance().target(url);
         setupAuthentication(resource);
@@ -179,7 +179,7 @@ public class RestClient
      */
     public int getListeningPort()
     {
-        String url = getContextBaseUrl() + "/api/configuration/strongbox/port";
+        String url = getContextBaseUrl() + "/api/configuration/folib/port";
 
         WebTarget resource = getClientInstance().target(url);
         setupAuthentication(resource);
@@ -195,7 +195,7 @@ public class RestClient
      */
     public int setBaseUrl(String baseUrl)
     {
-        String url = getContextBaseUrl() + "/api/configuration/strongbox/baseUrl/" + baseUrl;
+        String url = getContextBaseUrl() + "/api/configuration/folib/baseUrl/" + baseUrl;
 
         WebTarget resource = getClientInstance().target(url);
         setupAuthentication(resource);
@@ -212,7 +212,7 @@ public class RestClient
      */
     public String getBaseUrl()
     {
-        String url = getContextBaseUrl() + "/api/configuration/strongbox/baseUrl";
+        String url = getContextBaseUrl() + "/api/configuration/folib/baseUrl";
 
         WebTarget resource = getClientInstance().target(url);
         setupAuthentication(resource);
@@ -223,7 +223,7 @@ public class RestClient
     public int setProxyConfiguration(MutableProxyConfiguration proxyConfiguration)
             throws IOException
     {
-        String url = getContextBaseUrl() + "/api/configuration/strongbox/proxy-configuration";
+        String url = getContextBaseUrl() + "/api/configuration/folib/proxy-configuration";
 
         WebTarget resource = getClientInstance().target(url);
         setupAuthentication(resource);
@@ -243,7 +243,7 @@ public class RestClient
                                                            String repositoryId)
             throws IOException
     {
-        String url = getContextBaseUrl() + "/api/configuration/strongbox/proxy-configuration" +
+        String url = getContextBaseUrl() + "/api/configuration/folib/proxy-configuration" +
                      (storageId != null && repositoryId != null ?
                       "?storageId=" + storageId + "&repositoryId=" + repositoryId : "");
 
@@ -279,7 +279,7 @@ public class RestClient
      */
     public int addStorage(StorageForm storage)
     {
-        String url = getContextBaseUrl() + "/api/configuration/strongbox/storages";
+        String url = getContextBaseUrl() + "/api/configuration/folib/storages";
 
         WebTarget resource = getClientInstance().target(url);
         setupAuthentication(resource);
@@ -299,7 +299,7 @@ public class RestClient
      */
     public Storage getStorage(String storageId)
     {
-        String url = getContextBaseUrl() + "/api/configuration/strongbox/storages/" + storageId;
+        String url = getContextBaseUrl() + "/api/configuration/folib/storages/" + storageId;
 
         WebTarget resource = getClientInstance().target(url);
         setupAuthentication(resource);
@@ -328,7 +328,7 @@ public class RestClient
     public int deleteStorage(String storageId,
                              boolean force)
     {
-        String url = getContextBaseUrl() + "/api/configuration/strongbox/storages/" + storageId +
+        String url = getContextBaseUrl() + "/api/configuration/folib/storages/" + storageId +
                      (force ? "?force=true" : "");
 
         WebTarget resource = getClientInstance().target(url);
@@ -360,7 +360,7 @@ public class RestClient
 
         try
         {
-            String url = getContextBaseUrl() + "/api/configuration/strongbox/storages/" +
+            String url = getContextBaseUrl() + "/api/configuration/folib/storages/" +
                          storageId + "/" + repositoryForm.getId();
 
             logger.debug("Sending request to create repository " + url);
@@ -392,7 +392,7 @@ public class RestClient
     public RepositoryData getRepository(String storageId,
                                         String repositoryId)
     {
-        String url = getContextBaseUrl() + "/api/configuration/strongbox/storages/" + storageId + "/" + repositoryId;
+        String url = getContextBaseUrl() + "/api/configuration/folib/storages/" + storageId + "/" + repositoryId;
 
         WebTarget resource = getClientInstance().target(url);
         setupAuthentication(resource);
@@ -424,7 +424,7 @@ public class RestClient
                                 boolean force)
     {
         String url = getContextBaseUrl() +
-                     "/api/configuration/strongbox/storages/" + storageId + "/" + repositoryId +
+                     "/api/configuration/folib/storages/" + storageId + "/" + repositoryId +
                      (force ? "?force=true" : "");
 
         WebTarget resource = getClientInstance().target(url);

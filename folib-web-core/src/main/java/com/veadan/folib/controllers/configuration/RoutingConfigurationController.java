@@ -27,8 +27,8 @@ import org.springframework.web.bind.annotation.*;
  * @author Przemyslaw Fusik
  */
 @Controller
-@RequestMapping("/api/configuration/strongbox/routing/rules")
-@Api(value = "/api/configuration/strongbox/routing/rules")
+@RequestMapping("/api/configuration/folib/routing/rules")
+@Api(value = "/api/configuration/folib/routing/rules")
 public class RoutingConfigurationController
         extends BaseConfigurationController
 {

@@ -1,5 +1,6 @@
 package com.veadan.folib.security.authentication.suppliers;
 
+import com.alibaba.fastjson.JSONObject;
 import com.veadan.folib.controllers.login.LoginController;
 import com.veadan.folib.controllers.login.LoginInput;
 import com.veadan.folib.authentication.api.password.PasswordAuthentication;
@@ -8,6 +9,7 @@ import javax.annotation.Nonnull;
 import javax.inject.Inject;
 import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
+import java.util.stream.Collectors;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
@@ -40,6 +42,7 @@ public class JsonFormLoginSupplier implements AuthenticationSupplier
         try
         {
             loginInput = objectMapper.readValue(request.getInputStream(), LoginInput.class);
+
         }
         catch (IOException e)
         {

@@ -47,7 +47,7 @@ public class AuthenticationProvidersRegistry
     private Map<String, Object> authenticationPropertiesMap;
 
     @Inject
-    private ApplicationContext strongboxApplicationContext;
+    private ApplicationContext folibApplicationContext;
 
     @Inject
     private AuthenticationResourceManager authenticationResourceManager;
@@ -100,8 +100,8 @@ public class AuthenticationProvidersRegistry
         throws IOException
     {
         Resource authenticationPropertiesResource = authenticationResourceManager.getAuthenticationPropertiesResource();
-        Map<String, Object> authenticationPropertiesMapLocal = yamlMapper.readValue(authenticationPropertiesResource.getInputStream(),
-                                                                                    Map.class);
+        Map<String, Object> authenticationPropertiesMapLocal = yamlMapper.readValue(authenticationPropertiesResource.getInputStream(),Map.class);
+//        logger.info("===============》"+authenticationPropertiesMapLocal.toString());
         return authenticationPropertiesMapLocal;
     }
 
@@ -110,11 +110,11 @@ public class AuthenticationProvidersRegistry
     {
         AuthenticationConfigurationContext authenticationContext = new AuthenticationConfigurationContext();
 
-        ClassLoader entryClassLoader = strongboxApplicationContext.getClassLoader();
+        ClassLoader entryClassLoader = folibApplicationContext.getClassLoader();
         ClassLoader requiredClassLoader = externalAuthenticatorsHelper.getExternalAuthenticatorsClassLoader(entryClassLoader);
 
         Resource authenticationConfigurationResource = authenticationResourceManager.getAuthenticationConfigurationResource();
-        authenticationContext.setParent(strongboxApplicationContext);
+        authenticationContext.setParent(folibApplicationContext);
         authenticationContext.setClassLoader(requiredClassLoader);
         authenticationContext.load(authenticationConfigurationResource);
 

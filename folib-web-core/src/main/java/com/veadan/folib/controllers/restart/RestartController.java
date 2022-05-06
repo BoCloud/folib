@@ -30,6 +30,6 @@ public class RestartController
     public void restart()
     {
         FolibSpringBootApplication.restart();
-        logger.info("Restarting strongbox application.");
+        logger.info("Restarting folib application.");
     }
 }

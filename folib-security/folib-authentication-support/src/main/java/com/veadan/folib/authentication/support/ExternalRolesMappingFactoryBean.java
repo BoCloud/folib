@@ -53,7 +53,7 @@ public class ExternalRolesMappingFactoryBean extends AbstractFactoryBean<Map<Str
         String[] propertyNames = ((EnumerablePropertySource<?>) propertySource).getPropertyNames();
 
         Map<String, String> externalRolesMap = new HashMap<>();
-        Map<String, String> strongboxRolesMap = new HashMap<>();
+        Map<String, String> folibRolesMap = new HashMap<>();
 
         for (String propertyName : propertyNames)
         {
@@ -68,9 +68,9 @@ public class ExternalRolesMappingFactoryBean extends AbstractFactoryBean<Map<Str
                 externalRolesMap.put(propertyName.replace(prefix, ""),
                                      env.getProperty(propertyName));
             }
-            else if (propertyName.endsWith("strongboxRole"))
+            else if (propertyName.endsWith("folibRole"))
             {
-                strongboxRolesMap.put(propertyName.replace(prefix, ""),
+                folibRolesMap.put(propertyName.replace(prefix, ""),
                                       env.getProperty(propertyName));
             }
         }
@@ -78,10 +78,10 @@ public class ExternalRolesMappingFactoryBean extends AbstractFactoryBean<Map<Str
         for (Entry<String, String> externalRoleEntry : externalRolesMap.entrySet())
         {
             String externalRole = externalRoleEntry.getValue();
-            String strongboxRole = strongboxRolesMap.get(externalRoleEntry.getKey().replace("externalRole",
-                                                                                            "strongboxRole"));
+            String folibRole = folibRolesMap.get(externalRoleEntry.getKey().replace("externalRole",
+                                                                                            "folibRole"));
 
-            roleMappingMap.put(externalRole, strongboxRole);
+            roleMappingMap.put(externalRole, folibRole);
         }
 
         return roleMappingMap;

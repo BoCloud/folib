@@ -155,7 +155,7 @@ public class LdapAuthenticationConfigurationManager
                          {
                              {
                                  put("externalRole", rm.getExternalRole());
-                                 put("strongboxRole", rm.getStrongboxRole());
+                                 put("folibRole", rm.getFolibRole());
                              }
                          })
                          .collect(Collectors.toList()));
@@ -205,7 +205,7 @@ public class LdapAuthenticationConfigurationManager
         result.setRoleMappingList(((List<Map<String, String>>) source.get(ROLES_MAPPING)).stream()
                                                                                          .map(rm -> new ExternalRoleMapping(
                                                                                                  rm.get("externalRole"),
-                                                                                                 rm.get("strongboxRole")))
+                                                                                                 rm.get("folibRole")))
                                                                                          .collect(Collectors.toList()));
 
         return result;

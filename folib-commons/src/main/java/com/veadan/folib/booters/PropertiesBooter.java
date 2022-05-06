@@ -37,13 +37,13 @@ public class PropertiesBooter
     private int port;
 
     @Value("${folib.nuget.download.feed}")
-    private boolean strongboxNugetDownloadFeed;
+    private boolean folibNugetDownloadFeed;
 
     @Value("${folib.version}")
-    private String strongboxVersion;
+    private String folibVersion;
 
     @Value("${folib.revision}")
-    private String strongboxRevision;
+    private String folibRevision;
 
     public String getHomeDirectory()
     {
@@ -125,33 +125,33 @@ public class PropertiesBooter
         this.port = port;
     }
 
-    public boolean shouldDownloadStrongboxNugetFeed()
+    public boolean shouldDownloadFolibNugetFeed()
     {
-        return strongboxNugetDownloadFeed;
+        return folibNugetDownloadFeed;
     }
 
-    public void setStrongboxNugetDownloadFeed(boolean strongboxNugetDownloadFeed)
+    public void setFolibNugetDownloadFeed(boolean folibNugetDownloadFeed)
     {
-        this.strongboxNugetDownloadFeed = strongboxNugetDownloadFeed;
+        this.folibNugetDownloadFeed = folibNugetDownloadFeed;
     }
 
-    public String getStrongboxVersion()
+    public String getFolibVersion()
     {
-        return strongboxVersion;
+        return folibVersion;
     }
 
-    public void setStrongboxVersion(String strongboxVersion)
+    public void setFolibVersion(String folibVersion)
     {
-        this.strongboxVersion = strongboxVersion;
+        this.folibVersion = folibVersion;
     }
 
-    public String getStrongboxRevision()
+    public String getFolibRevision()
     {
-        return strongboxRevision;
+        return folibRevision;
     }
 
-    public void setStrongboxRevision(String strongboxRevision)
+    public void setFolibRevision(String folibRevision)
     {
-        this.strongboxRevision = strongboxRevision;
+        this.folibRevision = folibRevision;
     }
 }

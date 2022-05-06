@@ -1,3 +1,3 @@
 # folib-distribution
 
-This is the Strongbox standalone assembly.
+This is the Folib standalone assembly.

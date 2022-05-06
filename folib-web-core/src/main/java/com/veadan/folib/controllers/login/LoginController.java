@@ -2,11 +2,13 @@ package com.veadan.folib.controllers.login;
 
 import static com.veadan.folib.controllers.login.LoginController.REQUEST_MAPPING;
 
+import java.security.Principal;
 import java.util.Map;
 import java.util.Optional;
 
 import javax.inject.Inject;
 
+import com.veadan.folib.authentication.api.password.PasswordAuthentication;
 import com.veadan.folib.security.authentication.suppliers.JsonFormLoginSupplier;
 import com.veadan.folib.controllers.BaseController;
 
@@ -23,10 +25,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.authentication.InsufficientAuthenticationException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
@@ -62,21 +61,21 @@ public class LoginController
     @ApiResponses(value = { @ApiResponse(code = 200, message = "Returns generated JWT token"),
                             @ApiResponse(code = 401, message = "Invalid credentials"),
                             @ApiResponse(code = 500, message = "org.springframework.security.core.Authentication " +
-                                                               "fetched by the strongbox security implementation " +
+                                                               "fetched by the folib security implementation " +
                                                                "is not supported") })
-    @PreAuthorize("hasAuthority('UI_LOGIN')")
+//    @PreAuthorize("hasAuthority('UI_LOGIN')")
     @GetMapping(produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity login(Authentication authentication) {
         return formLogin(authentication);
     }
-    
+
     @ApiOperation(value = "Returns the JWT authentication token for provided username and password")
     @ApiResponses(value = { @ApiResponse(code = 200, message = "Returns generated JWT token"),
                             @ApiResponse(code = 401, message = "Invalid credentials"),
                             @ApiResponse(code = 500, message = "org.springframework.security.core.Authentication " +
-                                                               "fetched by the strongbox security implementation " +
+                                                               "fetched by the folib security implementation " +
                                                                "is not supported") })
-    @PreAuthorize("hasAuthority('UI_LOGIN')")
+//    @PreAuthorize("hasAuthority('UI_LOGIN')")
     @PostMapping(produces = MediaType.APPLICATION_JSON_VALUE, consumes = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity formLogin(Authentication authentication)
     {
@@ -93,13 +92,14 @@ public class LoginController
         if (!(principal instanceof SpringSecurityUser)) {
             return toResponseEntityError("Unsupported authentication principal " + Optional.ofNullable(principal).orElse(null));
         }
-        
+
         String token;
         try
         {
+
             SpringSecurityUser user = (SpringSecurityUser) principal;
             String subject = user.getUsername();
-            
+
             Integer timeout = configurationManager.getSessionTimeoutSeconds();
             Map<String, String> claims = jwtClaimsProvider.getClaims(user);
             token = securityTokenProvider.getToken(subject, claims, timeout, null);
@@ -113,5 +113,37 @@ public class LoginController
 
         return ResponseEntity.ok().body(new LoginOutput(token, authentication.getAuthorities()));
     }
+
+
+////    @PreAuthorize("hasAuthority('UI_LOGIN')")
+//    @ApiOperation(value = "Returns the JWT authentication token for provided username and password")
+//    @PostMapping(produces = MediaType.APPLICATION_JSON_VALUE, consumes = MediaType.APPLICATION_JSON_VALUE,value = "/remote")
+//    public ResponseEntity formLoginRemote(@RequestBody LoginParam loginParam)
+//    {
+//        if (loginParam == null||loginParam.getUsername()==null||loginParam.getPassword()==null)
+//        {
+//            throw new InsufficientAuthenticationException("unauthorized");
+//        }
+//        Authentication authentication = new PasswordAuthentication(loginParam.getUsername(),loginParam.getPassword());
+//        String token;
+//        try
+//        {
+//
+//            SpringSecurityUser user = (SpringSecurityUser) authentication.getPrincipal();;
+//            String subject = user.getUsername();
+//
+//            Integer timeout = configurationManager.getSessionTimeoutSeconds();
+//            Map<String, String> claims = jwtClaimsProvider.getClaims(user);
+//            token = securityTokenProvider.getToken(subject, claims, timeout, null);
+//        }
+//        catch (JoseException e)
+//        {
+//            logger.error("Unable to create JWT token.", e);
+//
+//            return toResponseEntityError("Unable to create JWT token.", HttpStatus.BAD_REQUEST);
+//        }
+//
+//        return ResponseEntity.ok().body(new LoginOutput(token, authentication.getAuthorities()));
+//    }
 
 }

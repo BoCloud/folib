@@ -46,11 +46,11 @@ public class JanusGraphDbProfile
         return name;
     }
 
-    public Map<String, Object> loadConfiguration(String strongboxHome)
+    public Map<String, Object> loadConfiguration(String folibHome)
         throws IOException
     {
         String classPathResourceName = "classpath:etc/conf/" + name + ".yaml";
-        Optional<Resource> dbConfigResourceOptional = Optional.ofNullable(strongboxHome)
+        Optional<Resource> dbConfigResourceOptional = Optional.ofNullable(folibHome)
                                                               .map(p -> Paths.get(p, "etc/conf"))
                                                               .map(p -> p.resolve(name + ".yaml"))
                                                               .map(FileSystemResource::new)

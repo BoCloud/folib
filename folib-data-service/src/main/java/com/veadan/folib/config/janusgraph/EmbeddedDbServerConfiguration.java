@@ -109,7 +109,7 @@ public class EmbeddedDbServerConfiguration implements Condition
         }
         catch (IOException e)
         {
-            logger.warn(String.format("Failed to extract Strongbox storage resource from [%s], reason [%s].",
+            logger.warn(String.format("Failed to extract folib storage resource from [%s], reason [%s].",
                                       PATH_FOLIB_DB, e.getMessage()));
         }
     }

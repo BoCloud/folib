@@ -74,29 +74,29 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-dependency-plugin</artifactId>
-                <executions>
-                    <execution>
-                        <id>unpack-web-ui</id>
-                        <phase>process-resources</phase>
-                        <goals>
-                            <goal>unpack</goal>
-                        </goals>
-                        <configuration>
-                            <artifactItems>
-                                <artifactItem>
-                                    <groupId>org.carlspring.strongbox</groupId>
-                                    <artifactId>strongbox-web-ui</artifactId>
-                                    <version>1.0-SNAPSHOT</version>
-                                    <type>zip</type>
+<!--                <executions>-->
+<!--                    <execution>-->
+<!--                        <id>unpack-web-ui</id>-->
+<!--                        <phase>process-resources</phase>-->
+<!--                        <goals>-->
+<!--                            <goal>unpack</goal>-->
+<!--                        </goals>-->
+<!--                        <configuration>-->
+<!--                            <artifactItems>-->
+<!--                                <artifactItem>-->
+<!--                                    <groupId>org.carlspring.strongbox</groupId>-->
+<!--                                    <artifactId>strongbox-web-ui</artifactId>-->
+<!--                                    <version>1.0-SNAPSHOT</version>-->
+<!--                                    <type>zip</type>-->
 
-                                    <overWrite>true</overWrite>
-                                    <outputDirectory>${project.build.outputDirectory}</outputDirectory>
-                                    <includes>**</includes>
-                                </artifactItem>
-                            </artifactItems>
-                        </configuration>
-                    </execution>
-                </executions>
+<!--                                    <overWrite>true</overWrite>-->
+<!--                                    <outputDirectory>${project.build.outputDirectory}</outputDirectory>-->
+<!--                                    <includes>**</includes>-->
+<!--                                </artifactItem>-->
+<!--                            </artifactItems>-->
+<!--                        </configuration>-->
+<!--                    </execution>-->
+<!--                </executions>-->
             </plugin>
 
             <plugin>
@@ -138,6 +138,11 @@
             <groupId>${project.groupId}</groupId>
             <artifactId>folib-commons</artifactId>
             <version>1.0-SNAPSHOT</version>
+        </dependency>
+        <dependency>
+            <groupId>com.alibaba</groupId>
+            <artifactId>fastjson</artifactId>
+            <version>1.2.75</version>
         </dependency>
         <dependency>
             <groupId>${project.groupId}</groupId>
@@ -303,12 +308,12 @@
             <artifactId>folib-aql</artifactId>
             <version>1.0-SNAPSHOT</version>
         </dependency>
-        <dependency>
-            <groupId>org.carlspring.strongbox</groupId>
-            <artifactId>strongbox-web-ui</artifactId>
-            <version>1.0-SNAPSHOT</version>
-            <type>zip</type>
-        </dependency>
+<!--        <dependency>-->
+<!--            <groupId>org.carlspring.strongbox</groupId>-->
+<!--            <artifactId>strongbox-web-ui</artifactId>-->
+<!--            <version>1.0-SNAPSHOT</version>-->
+<!--            <type>zip</type>-->
+<!--        </dependency>-->
 
         <!-- Maven artifact management -->
         <dependency>

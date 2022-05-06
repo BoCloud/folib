@@ -20,7 +20,7 @@ public class Http401AuthenticationEntryPoint implements AuthenticationEntryPoint
 
     private static final String IS_AJAX_REQUEST_HEADER_VALUE = "XMLHttpRequest";
 
-    private static final String FOLIB_REALM = "Strongbox Repository Manager";
+    private static final String FOLIB_REALM = "Folib Repository Manager";
 
     private static final String IS_REQUEST_OPTIONS = "options";
 
@@ -35,11 +35,11 @@ public class Http401AuthenticationEntryPoint implements AuthenticationEntryPoint
     {
         String message = Optional.ofNullable(authException).map(e -> e.getMessage()).orElse("unauthorized");
         
-        if (!IS_AJAX_REQUEST_HEADER_VALUE.equals(request.getHeader(IS_AJAX_REQUEST_HEADER_NAME)) &&
-            !request.getMethod().equalsIgnoreCase(IS_REQUEST_OPTIONS))
-        {
-            response.setHeader("WWW-Authenticate", "Basic realm=\"" + FOLIB_REALM + "\"");
-        }
+//        if (!IS_AJAX_REQUEST_HEADER_VALUE.equals(request.getHeader(IS_AJAX_REQUEST_HEADER_NAME)) &&
+//            !request.getMethod().equalsIgnoreCase(IS_REQUEST_OPTIONS))
+//        {
+//            response.setHeader("WWW-Authenticate", "Basic realm=\"" + FOLIB_REALM + "\"");
+//        }
 
         response.setContentType(MediaType.APPLICATION_JSON_VALUE);
         response.getWriter().println(objectMapper.writeValueAsString(new ErrorResponseEntityBody(message)));

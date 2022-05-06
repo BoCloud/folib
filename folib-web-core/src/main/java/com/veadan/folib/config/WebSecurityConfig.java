@@ -2,7 +2,7 @@ package com.veadan.folib.config;
 
 import com.veadan.folib.security.CustomAccessDeniedHandler;
 import com.veadan.folib.security.authentication.Http401AuthenticationEntryPoint;
-import com.veadan.folib.security.authentication.StrongboxAuthenticationFilter;
+import com.veadan.folib.security.authentication.FolibAuthenticationFilter;
 import com.veadan.folib.security.authentication.suppliers.AuthenticationSupplier;
 import com.veadan.folib.security.authentication.suppliers.AuthenticationSuppliers;
 import com.veadan.folib.security.vote.MethodAccessDecisionManager;
@@ -27,6 +27,7 @@ import org.springframework.security.access.AccessDecisionManager;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.AuthenticationTrustResolver;
 import org.springframework.security.authentication.AuthenticationTrustResolverImpl;
+import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.method.configuration.EnableGlobalMethodSecurity;
 import org.springframework.security.config.annotation.method.configuration.GlobalMethodSecurityConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -79,7 +80,7 @@ public class WebSecurityConfig
     protected void configure(HttpSecurity http)
             throws Exception
     {
-        http.addFilterAfter(strongboxAuthenticationFilter(),
+        http.addFilterAfter(folibAuthenticationFilter(),
                             ExceptionTranslationFilter.class)
             .sessionManagement()
             .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
@@ -103,6 +104,11 @@ public class WebSecurityConfig
             .disable();
     }
 
+    @Override
+    protected void configure(AuthenticationManagerBuilder auth) throws Exception {
+
+    }
+
     @Bean
     public CorsConfigurationSource corsConfigurationSource(ConfigurationManagementService configurationManagementService)
     {
@@ -122,7 +128,7 @@ public class WebSecurityConfig
             }
             if (internalCorsConfiguration.getAllowedOrigins() != null)
             {
-                configuration.setAllowedOrigins(new ArrayList<>(internalCorsConfiguration.getAllowedOrigins()));
+                configuration.setAllowedOriginPatterns(new ArrayList<>(internalCorsConfiguration.getAllowedOrigins()));
             }
             if (internalCorsConfiguration.getExposedHeaders() != null)
             {
@@ -157,10 +163,11 @@ public class WebSecurityConfig
     }
 
     @Bean
-    StrongboxAuthenticationFilter strongboxAuthenticationFilter()
+    FolibAuthenticationFilter folibAuthenticationFilter()
     {
-        return new StrongboxAuthenticationFilter(new AuthenticationSuppliers(suppliers), authenticationManager);
+        return new FolibAuthenticationFilter(new AuthenticationSuppliers(suppliers), authenticationManager);
     }
+
 
     @Bean
     AnonymousAuthenticationFilter anonymousAuthenticationFilter()
@@ -172,6 +179,7 @@ public class WebSecurityConfig
                                                  "anonymousUser",
                                                  authorities);
     }
+
 
 
     /**

@@ -183,7 +183,7 @@ public class BootProgressBeanPostProcessor
             return;
         }
         
-        logger.info("Notifying clients Strongbox has booted.");
+        logger.info("Notifying clients Folib has booted.");
         progress.onComplete();
 
         // Slightly delay stopping the server to leave enough time for existing responses to complete.

@@ -8,15 +8,15 @@ import javax.xml.bind.annotation.XmlRootElement;
 /**
  * @author Przemyslaw Fusik
  */
-@XmlRootElement(name = "login-input")
-@XmlAccessorType(XmlAccessType.NONE)
+//@XmlRootElement(name = "login-input")
+//@XmlAccessorType(XmlAccessType.NONE)
 public class LoginInput
 {
 
-    @XmlElement
+//    @XmlElement
     private String username;
 
-    @XmlElement
+//    @XmlElement
     private String password;
 
     public String getUsername()

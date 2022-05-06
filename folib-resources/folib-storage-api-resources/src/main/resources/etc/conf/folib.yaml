@@ -2,8 +2,8 @@ configuration:
   instanceName: folib
   version: ${project.version}
   revision: ${folib.revision}
-  baseUrl: http://localhost:48080/
-  port: 48080
+  baseUrl: http://localhost:38080/
+  port: 38080
   sessionConfiguration:
     timeoutSeconds: 3600
   remoteRepositoriesConfiguration:

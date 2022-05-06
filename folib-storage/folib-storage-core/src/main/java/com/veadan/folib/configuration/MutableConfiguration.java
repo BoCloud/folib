@@ -23,7 +23,7 @@ public class MutableConfiguration
 
     private String id;
 
-    private String instanceName = "strongbox";
+    private String instanceName = "folib";
 
     private String version = "1.0";
 

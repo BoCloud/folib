@@ -60,13 +60,13 @@ public class ResourcesBooter implements ApplicationContextInitializer<Configurab
         return diff.toArray(new Resource[diff.size()]);
     }
 
-    public void copyConfigurationFilesFromClasspath(String strongboxHome, String resourcesBasedir)
+    public void copyConfigurationFilesFromClasspath(String folibHome, String resourcesBasedir)
             throws IOException
     {
         final Resource[] resources = getResourcesExistingOnClasspathOnly(
                 getConfigurationResourcesFromClasspath(resourcesBasedir));
 
-        final Path configDir = Paths.get(strongboxHome, resourcesBasedir);
+        final Path configDir = Paths.get(folibHome, resourcesBasedir);
         if (!Files.exists(configDir))
         {
             Files.createDirectories(configDir);

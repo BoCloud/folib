@@ -23,8 +23,8 @@ import org.springframework.web.bind.annotation.*;
  * @author Pablo Tirado
  */
 @Controller
-@RequestMapping("/api/configuration/strongbox/proxy-configuration")
-@Api(value = "/api/configuration/strongbox/proxy-configuration")
+@RequestMapping("/api/configuration/folib/proxy-configuration")
+@Api(value = "/api/configuration/folib/proxy-configuration")
 public class ProxyConfigurationController
         extends BaseConfigurationController
 {

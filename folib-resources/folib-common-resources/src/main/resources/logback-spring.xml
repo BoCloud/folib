@@ -96,7 +96,7 @@
             <logger name="org.janusgraph" level="INFO" />
             <logger name="springfox" level="INFO" />
 
-            <!-- Strongbox packages -->
+            <!-- Folib packages -->
             <logger name="com.veadan.folib" level="DEBUG"/>
             <logger name="com.veadan.folib.security.authentication" level="DEBUG"/>
             <logger name="com.veadan.folib.security.vote" level="DEBUG"/>
@@ -104,7 +104,7 @@
             <logger name="com.veadan.folib.data.tx" level="WARN"/>
             <logger name="com.veadan.folib.data.criteria" level="DEBUG"/>
             <logger name="com.veadan.folib.data.server" level="DEBUG"/>
-            <!-- Strongbox packages -->
+            <!-- Folib packages -->
 
             <!-- Third-party packages -->
             <logger name="ch.qos.logback" level="ERROR"/>
@@ -136,7 +136,7 @@
             <root level="DEBUG"/>
         </then>
         <else>
-            <!-- Strongbox packages -->
+            <!-- Folib packages -->
             <logger name="com.veadan.folib" level="INFO"/>
             <logger name="com.veadan.folib.security.authentication" level="INFO"/>
             <logger name="com.veadan.folib.security.vote" level="INFO"/>
@@ -144,7 +144,7 @@
             <logger name="com.veadan.folib.data.tx" level="INFO"/>
             <logger name="com.veadan.folib.data.criteria" level="INFO"/>
             <logger name="com.veadan.folib.data.server" level="INFO"/>
-            <!-- Strongbox packages -->
+            <!-- Folib packages -->
 
             <!-- Third-party packages -->
             <logger name="liquibase" level="WARN"/>

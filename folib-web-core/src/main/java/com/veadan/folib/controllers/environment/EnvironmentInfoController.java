@@ -53,7 +53,7 @@ public class EnvironmentInfoController
         propertiesMap.put("environment", getEnvironmentVariables());
         propertiesMap.put("system", getSystemProperties());
         propertiesMap.put("jvm", getJvmArguments());
-        propertiesMap.put("strongbox", getStrongboxInfo());
+        propertiesMap.put("folib", getFolibInfo());
 
         try
         {
@@ -67,9 +67,9 @@ public class EnvironmentInfoController
         }
     }
 
-    private List<EnvironmentInfo> getStrongboxInfo()
+    private List<EnvironmentInfo> getFolibInfo()
     {
-        List<EnvironmentInfo> strongboxInfo = new ArrayList();
+        List<EnvironmentInfo> folibInfo = new ArrayList();
 
         Map<String, Storage> storageMap = getConfiguration().getStorages();
         Long repositoriesCount = storageMap.values()
@@ -77,23 +77,23 @@ public class EnvironmentInfoController
                                            .map(e -> e.getRepository(e.getId()))
                                            .count();
 
-        strongboxInfo.add(new EnvironmentInfo("repositories", String.valueOf(repositoriesCount)));
+        folibInfo.add(new EnvironmentInfo("repositories", String.valueOf(repositoriesCount)));
 
         Long storagesCount = storageMap.values()
                                        .stream()
                                        .count();
 
-        strongboxInfo.add(new EnvironmentInfo("storages", String.valueOf(storagesCount)));
+        folibInfo.add(new EnvironmentInfo("storages", String.valueOf(storagesCount)));
 
         Long usersCount = userService.getUsers()
                                      .getUsers()
                                      .stream()
                                      .count();
 
-        strongboxInfo.add(new EnvironmentInfo("users", String.valueOf(usersCount)));
+        folibInfo.add(new EnvironmentInfo("users", String.valueOf(usersCount)));
 
 
-        return strongboxInfo;
+        return folibInfo;
     }
 
     private List<EnvironmentInfo> getEnvironmentVariables()

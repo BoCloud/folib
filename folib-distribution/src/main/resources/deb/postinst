@@ -3,7 +3,7 @@ set -e
 mkdir -p /opt/folib/tmp /opt/folib/logs /opt/folib-vault
 
 getent group folib >/dev/null 2>&1 || groupadd --system folib
-id -u folib >/dev/null 2>&1 || adduser --quiet --system --ingroup strongbox --home /opt/folib folib
+id -u folib >/dev/null 2>&1 || adduser --quiet --system --ingroup folib --home /opt/folib folib
 
 chown -R folib:folib /opt/folib /opt/folib-vault
 chmod -R 770 /opt/folib /opt/folib-vault

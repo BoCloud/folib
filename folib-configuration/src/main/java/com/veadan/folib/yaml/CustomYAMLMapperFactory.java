@@ -17,6 +17,6 @@ public class CustomYAMLMapperFactory
     @Override
     public YAMLMapper create(@Nonnull Set<Class<?>> contextClasses)
     {
-        return new StrongboxYamlMapper(contextClasses);
+        return new FolibYamlMapper(contextClasses);
     }
 }

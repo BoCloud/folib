@@ -20,17 +20,17 @@ public class SwaggerConfig
 {
 
     @Value("${folib.version}")
-    public String strongboxVersion;
+    public String folibVersion;
 
     @Bean
-    public Docket strongboxApiDocket()
+    public Docket folibApiDocket()
     {
-        Contact contact = new Contact("Strongbox",
+        Contact contact = new Contact("Folib",
                                       "http://github.com/folib/folib/",
                                       "folib-dev@veadan.com");
-        ApiInfo apiInfo = new ApiInfo("Carlspring Consulting & Development Ltd.",
-                                      "This is the documentation of Strongbox's REST API.",
-                                      strongboxVersion,
+        ApiInfo apiInfo = new ApiInfo("Veadan Team & Development Ltd.",
+                                      "This is the documentation of Folib's REST API.",
+                                      folibVersion,
                                       "http://github.com/folib/folib/",
                                       contact,
                                       "Apache 2.0",

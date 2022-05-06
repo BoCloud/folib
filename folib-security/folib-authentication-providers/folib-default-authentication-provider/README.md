@@ -1,1 +1,1 @@
-Strongbox default authentication provider.
+folib default authentication provider.

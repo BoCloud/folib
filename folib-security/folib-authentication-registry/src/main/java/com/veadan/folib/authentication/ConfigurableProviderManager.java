@@ -8,7 +8,7 @@ import com.veadan.folib.authentication.api.CustomAuthenticationItemMapper;
 import com.veadan.folib.authentication.support.AuthenticationConfigurationContext;
 import com.veadan.folib.domain.User;
 import com.veadan.folib.users.service.UserAlreadyExistsException;
-import com.veadan.folib.users.userdetails.StrongboxExternalUsersCacheManager;
+import com.veadan.folib.users.userdetails.FolibExternalUsersCacheManager;
 import com.veadan.folib.users.userdetails.UserDetailsMapper;
 import com.veadan.folib.util.LocalDateTimeInstance;
 
@@ -27,6 +27,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.ApplicationContext;
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Primary;
 import org.springframework.context.event.ContextRefreshedEvent;
 import org.springframework.context.event.EventListener;
@@ -62,7 +63,7 @@ public class ConfigurableProviderManager extends ProviderManager implements User
     private UserDetailsMapper userDetailsMapper;
 
     @Inject
-    private StrongboxExternalUsersCacheManager strongboxUserManager;
+    private FolibExternalUsersCacheManager folibExternalUsersCacheManager;
 
     private final Map<String, AuthenticationProvider> authenticationProviderMap = new HashMap<>();
 
@@ -109,7 +110,7 @@ public class ConfigurableProviderManager extends ProviderManager implements User
 
     private Optional<User> loadUserDetails(String username)
     {
-        Optional<User> optionalUser = Optional.ofNullable(strongboxUserManager.findByUsername(username)).filter(this::isInternalOrValidExternalUser);
+        Optional<User> optionalUser = Optional.ofNullable(folibExternalUsersCacheManager.findByUsername(username)).filter(this::isInternalOrValidExternalUser);
         if (optionalUser.isPresent()) {
             return optionalUser;
         }
@@ -136,7 +137,7 @@ public class ConfigurableProviderManager extends ProviderManager implements User
         
             try
             {
-                return Optional.of(strongboxUserManager.cacheExternalUserDetails(sourceId, externalUser));
+                return Optional.of(folibExternalUsersCacheManager.cacheExternalUserDetails(sourceId, externalUser));
             }
             catch (UserAlreadyExistsException e)
             {

@@ -171,6 +171,68 @@ public class FormDataController
                 ImmutableList.of(FormDataValues.fromCollection("repositoryNames", repositoryNames))));
     }
 
+
+    @ApiOperation(value = "Returns a list of repository ")
+    @ApiResponses(value = { @ApiResponse(code = 200, message = "List of repository ") })
+    @PreAuthorize("hasAuthority('CONFIGURATION_VIEW_REPOSITORY')")
+    @GetMapping(value = "/repositoryList", produces = { MediaType.APPLICATION_JSON_VALUE })
+    public ResponseEntity getRepositoryList(@ApiParam(value = "Search for repository names in a specific storageId")
+                                             @RequestParam(value = "storageId", required = false)
+                                             String storageId,
+                                             @ApiParam(value = "Search for repository names")
+                                             @RequestParam(value = SEARCH_PARAM_NAME, required = false)
+                                             String filter,
+                                             @ApiParam(value = "Return the repository names formatted as storageId:repositoryId")
+                                             @RequestParam(value = "withStorageId", required = false)
+                                             boolean withStorageId,
+                                             @ApiParam(value = "Filter repository names by type (i.e. hosted, group, proxy)")
+                                             @RequestParam(value = "type", required = false)
+                                             String type,
+                                             @ApiParam(value = "Filter repository names by repository layout")
+                                             @RequestParam(value = "layout", required = false)
+                                             String layout
+    )
+    {
+        Collection<? extends Repository> repositories = new HashSet<>();
+
+        if (StringUtils.isNotBlank(storageId))
+        {
+            Storage storage = configurationManagementService.getConfiguration().getStorage(storageId);
+            if (storage != null)
+            {
+                repositories = storage.getRepositories().values();
+            }
+        }
+        else
+        {
+            repositories = configurationManagementService.getConfiguration().getRepositories();
+        }
+
+//        Set<String> repositoryNames = Collections.emptySet();
+
+        if (repositories.size() > 0)
+        {
+            boolean filterByType = StringUtils.isNotBlank(type);
+            boolean filterByTerm = StringUtils.isNotBlank(filter);
+            boolean filterByLayout = StringUtils.isNotBlank(layout);
+
+
+
+            repositories = repositories.stream()
+                    .distinct()
+                    .filter(r -> !filterByLayout || r.getLayout().equalsIgnoreCase(layout))
+                    .filter(r -> !filterByType || r.isType(type))
+                    .filter(r -> !filterByTerm || StringUtils.containsIgnoreCase(r.getId(), filter))
+                    .collect(Collectors.toSet());
+
+        }
+
+        return ResponseEntity.ok(repositories);
+    }
+
+
+
+
     @ApiOperation(value = "Returns a list of repository names in group repositories")
     @ApiResponses(value = { @ApiResponse(code = 200, message = "List of repository names") })
     @PreAuthorize("hasAuthority('CONFIGURATION_VIEW_REPOSITORY')")

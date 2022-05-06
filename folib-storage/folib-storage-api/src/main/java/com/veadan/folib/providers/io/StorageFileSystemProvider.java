@@ -53,7 +53,7 @@ public abstract class StorageFileSystemProvider
         extends FileSystemProvider
 {
 
-    public static final String FOLIB_SCHEME = "strongbox";
+    public static final String FOLIB_SCHEME = "folib";
 
     private static final Logger logger = LoggerFactory.getLogger(StorageFileSystemProvider.class);
 

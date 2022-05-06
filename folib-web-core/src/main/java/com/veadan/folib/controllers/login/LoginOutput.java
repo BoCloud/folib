@@ -13,15 +13,15 @@ import org.springframework.security.core.GrantedAuthority;
 /**
  * @author Przemyslaw Fusik
  */
-@XmlRootElement(name = "login-output")
-@XmlAccessorType(XmlAccessType.NONE)
+//@XmlRootElement(name = "login-output")
+//@XmlAccessorType(XmlAccessType.NONE)
 public class LoginOutput
 {
 
-    @XmlElement
+//    @XmlElement
     private String token;
 
-    @XmlElement()
+//    @XmlElement()
     private LinkedHashSet<String> authorities;
 
 
