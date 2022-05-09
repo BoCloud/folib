@@ -40,11 +40,11 @@ configuration:
       - Content-Type
       - Content-Range,Range
   storages:
-    storage0:
-      id: storage0
+    folib-default:
+      id: folib-default
       repositories:
-        releases:
-          id: releases
+        releases-maven:
+          id: releases-maven
           policy: release
           storageProvider: local
           layout: Maven 2
@@ -55,8 +55,8 @@ configuration:
             type: Maven 2
             indexingEnabled: true
             cronExpression: "0 0 2 * * ?"
-        snapshots:
-          id: snapshots
+        snapshots-maven:
+          id: snapshots-maven
           policy: snapshot
           storageProvider: local
           layout: Maven 2
@@ -67,11 +67,11 @@ configuration:
             type: Maven 2
             indexingEnabled: true
             cronExpression: "0 0 2 * * ?"
-    storage-common-proxies:
-      id: storage-common-proxies
+    folib-common:
+      id: folib-common
       repositories:
-        maven-central:
-          id: maven-central
+        central-maven:
+          id: central-maven
           policy: release
           storageProvider: local
           layout: Maven 2
@@ -85,145 +85,19 @@ configuration:
             type: Maven 2
             indexingEnabled: true
             cronExpression: "0 0 2 * * ?"
-        carlspring:
-          id: carlspring
+        aliyun-maven:
+          id: aliyun-maven
           policy: mixed
           storageProvider: local
           layout: Maven 2
           type: proxy
           remoteRepository:
-            url: http://dev.carlspring.org/nexus/content/groups/carlspring
+            url: http://maven.aliyun.com/nexus/content/repositories/central/
             downloadRemoteIndexes: true
             autoBlocking: true
             checksumValidation: true
-        apache-snapshots:
-          id: apache-snapshots
-          policy: snapshot
-          storageProvider: local
-          layout: Maven 2
-          type: proxy
-          remoteRepository:
-            url: https://repository.apache.org/snapshots/
-            downloadRemoteIndexes: true
-            autoBlocking: true
-            checksumValidation: true
-        jboss-public-releases:
-          id: jboss-public-releases
-          policy: release
-          storageProvider: local
-          layout: Maven 2
-          type: proxy
-          remoteRepository:
-            url: http://repository.jboss.org/nexus/content/groups/public-jboss/
-            downloadRemoteIndexes: true
-            autoBlocking: true
-            checksumValidation: true
-        maven-oracle:
-          id: maven-oracle
-          policy: release
-          storageProvider: local
-          layout: Maven 2
-          type: proxy
-          remoteRepository:
-            url: https://maven.oracle.com
-            downloadRemoteIndexes: true
-            autoBlocking: true
-            checksumValidation: true
-            allowsDirectoryBrowsing: false
-        group-common-proxies:
-          id: group-common-proxies
-          policy: release
-          storageProvider: local
-          layout: Maven 2
-          type: group
-          secured: true
-          repositoryConfiguration:
-            type: Maven 2
-            indexingEnabled: true
-            cronExpression: "0 0 2 * * ?"
-          groupRepositories:
-            - carlspring
-            - maven-central
-            - apache-snapshots
-            - jboss-public-releases
-        nuget.org:
-          id: nuget.org
-          policy: release
-          storageProvider: local
-          layout: NuGet
-          type: proxy
-          remoteRepository:
-            url: https://www.nuget.org/api/v2
-          repositoryConfiguration:
-            type: NuGet
-            remoteFeedPageSize: 1000
-    storage-springsource-proxies:
-      id: storage-springsource-proxies
-      repositories:
-        springsource-snapshots:
-          id: springsource-snapshots
-          policy: snapshot
-          storageProvider: local
-          layout: Maven 2
-          type: proxy
-          remoteRepository:
-            url: http://repo.spring.io/snapshot
-            downloadRemoteIndexes: true
-            autoBlocking: true
-            checksumValidation: true
-        springsource-releases:
-          id: springsource-releases
-          policy: release
-          storageProvider: local
-          layout: Maven 2
-          type: proxy
-          remoteRepository:
-            url: http://repo.spring.io/libs-release
-            downloadRemoteIndexes: true
-            autoBlocking: true
-            checksumValidation: true
-        springsource-milestones:
-          id: springsource-milestones
-          policy: release
-          storageProvider: local
-          layout: Maven 2
-          type: proxy
-          remoteRepository:
-            url: http://repo.spring.io/milestone
-            downloadRemoteIndexes: true
-            autoBlocking: true
-            checksumValidation: true
-        springsource-proxies:
-          id: springsource-proxies
-          policy: mixed
-          storageProvider: local
-          layout: Maven 2
-          type: group
-          secured: true
-          repositoryConfiguration:
-            type: Maven 2
-            indexingEnabled: true
-            cronExpression: "0 0 2 * * ?"
-          groupRepositories:
-            - springsource-snapshots
-            - springsource-releases
-            - springsource-milestones
-    storage-ivy-proxies:
-      id: storage-ivy-proxies
-      repositories:
-        typesafe-releases:
-          id: typesafe-releases
-          policy: release
-          storageProvider: local
-          layout: Maven 2
-          type: proxy
-          remoteRepository:
-            url: https://repo.typesafe.com/typesafe/releases
-            downloadRemoteIndexes: true
-            autoBlocking: true
-            checksumValidation: true
-        typesafe-ivy-releases:
-          id: typesafe-ivy-releases
+        typesafe-releases-ivy:
+          id: typesafe-releases-ivy
           policy: release
           storageProvider: local
           layout: Maven 2
@@ -233,25 +107,54 @@ configuration:
             downloadRemoteIndexes: true
             autoBlocking: true
             checksumValidation: true
-        group-ivy-proxies:
-          id: group-ivy-proxies
+        jboss-releases-maven:
+          id: jboss-releases-maven
           policy: release
           storageProvider: local
           layout: Maven 2
-          type: group
-          secured: true
+          type: proxy
+          remoteRepository:
+            url: http://repository.jboss.org/nexus/content/groups/public-jboss/
+            downloadRemoteIndexes: true
+            autoBlocking: true
+            checksumValidation: true
+        nuget.org-nuget:
+          id: nuget.org-nuget
+          policy: release
+          storageProvider: local
+          layout: NuGet
+          type: proxy
+          remoteRepository:
+            url: https://www.nuget.org/api/v2
           repositoryConfiguration:
-            type: Maven 2
-            indexingEnabled: true
-            cronExpression: "0 0 2 * * ?"
-          groupRepositories:
-            - typesafe-releases
-            - typesafe-ivy-releases
-    storage-sbt-proxies:
-      id: storage-sbt-proxies
-      repositories:
-        sbt-plugin-releases:
-          id: sbt-plugin-releases
+            type: NuGet
+            remoteFeedPageSize: 1000
+        taobao-npm:
+          id: taobao-npm
+          policy: release
+          storageProvider: local
+          layout: npm
+          type: proxy
+          remoteRepository:
+            url: https://registry.npm.taobao.org
+            customConfiguration:
+              type: npm
+              lastChangeId: 0
+              replicateUrl: https://registry.npm.taobao.org
+        taobao-yarn:
+          id: taobao-yarn
+          policy: release
+          storageProvider: local
+          layout: npm
+          type: proxy
+          remoteRepository:
+            url: https://registry.npm.taobao.org
+            customConfiguration:
+              type: npm
+              lastChangeId: 0
+              replicateUrl: https://registry.npm.taobao.org
+        plugin-releases-sbt:
+          id: plugin-releases-sbt
           policy: release
           storageProvider: local
           layout: Maven 2
@@ -261,144 +164,25 @@ configuration:
             downloadRemoteIndexes: true
             autoBlocking: true
             checksumValidation: true
-        group-sbt-proxies:
-          id: group-sbt-proxies
-          policy: release
-          storageProvider: local
-          layout: Maven 2
-          type: group
-          secured: true
-          repositoryConfiguration:
-            type: Maven 2
-            indexingEnabled: true
-            cronExpression: "0 0 2 * * ?"
-          groupRepositories:
-            - storage-common-proxies:maven-central
-            - sbt-plugin-releases
-            - storage-ivy-proxies:group-ivy-proxies
-    storage-third-party:
-      id: storage-third-party
-      repositories:
-        third-party:
-          id: third-party
-          policy: release
-          storageProvider: local
-          layout: Maven 2
-          type: hosted
-          allowsForceDeletion: true
-          checksumHeadersEnabled: true
-        nuget-third-party:
-          id: nuget-third-party
-          policy: release
-          storageProvider: local
-          layout: NuGet
-          type: hosted
-          allowsForceDeletion: true
-          checksumHeadersEnabled: true
-    storage-npm:
-      id: storage-npm
-      repositories:
-        npm-releases:
-          id: npm-releases
-          policy: release
-          storageProvider: local
-          layout: npm
-          type: hosted
-          allowsForceDeletion: true
-          checksumHeadersEnabled: true
-        npmjs:
-          id: npmjs
-          policy: release
-          storageProvider: local
-          layout: npm
-          type: proxy
-          remoteRepository:
-            url: https://registry.npmjs.org/
-            customConfiguration:
-              type: npm
-              lastChangeId: 0
-              replicateUrl: https://replicate.npmjs.com/
-    storage-nuget:
-      id: storage-nuget
-      repositories:
-        nuget-releases:
-          id: nuget-releases
-          policy: release
-          storageProvider: local
-          layout: NuGet
-          type: hosted
-          allowsForceDeletion: true
-          checksumHeadersEnabled: true
-    storage-pypi:
-      id: storage-pypi
-      repositories:
-        pypi-releases:
-          id: pypi-releases
+        python-local-pypi:
+          id: python-local-pypi
           policy: release
           storageProvider: local
           layout: PyPi
           type: hosted
           allowsForceDeletion: true
           checksumHeadersEnabled: true
-    storage-raw:
-      id: storage-raw
-      repositories:
-        raw-releases:
-          id: raw-releases
+        python-proxy-pypi:
+          id: python-proxy-pypi
           policy: release
           storageProvider: local
-          layout: Raw
-          type: hosted
-          allowsForceDeletion: true
-          checksumHeadersEnabled: true
-    public:
-      id: public
-      repositories:
-        maven-group:
-          id: maven-group
-          policy: mixed
-          storageProvider: local
-          layout: Maven 2
-          type: group
-          secured: true
-          repositoryConfiguration:
-            type: Maven 2
-            indexingEnabled: true
-            cronExpression: "0 0 2 * * ?"
-          groupRepositories:
-            - storage0:releases
-            - storage0:snapshots
-            - storage-common-proxies:group-common-proxies
-            - storage-springsource-proxies:springsource-proxies
-            - storage-ivy-proxies:group-ivy-proxies
-            - storage-sbt-proxies:group-sbt-proxies
-            - storage-third-party:third-party
-        nuget-group:
-          id: nuget-group
-          policy: mixed
-          storageProvider: local
-          layout: NuGet
-          type: group
-          secured: true
-          groupRepositories:
-            - storage-common-proxies:nuget.org
-            - storage-third-party:nuget-third-party
-        npm-group:
-          id: npm-group
-          policy: mixed
-          storageProvider: local
-          layout: npm
-          type: group
-          secured: true
-          groupRepositories:
-            - storage-npm:npmjs
+          layout: PyPi
+          type: proxy
+          remoteRepository:
+            url: https://pypi.tuna.tsinghua.edu.cn/simple
+            downloadRemoteIndexes: true
+            autoBlocking: true
+            checksumValidation: true
   routingRules:
     rules:
-      - uuid: 0f84a9a7-b2ce-47ed-8a01-085e235a1946
-        storageId: storage-common-proxies
-        groupRepositoryId: group-common-proxies
-        pattern: "(com|org)/carlspring.*"
-        type: deny
-        repositories:
-          - storageId: storage-common-proxies
-            repositoryId: jboss-public-releases
+

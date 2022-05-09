@@ -84,7 +84,7 @@
 <!--                        <configuration>-->
 <!--                            <artifactItems>-->
 <!--                                <artifactItem>-->
-<!--                                    <groupId>org.carlspring.strongbox</groupId>-->
+<!--                                    <groupId>com.veadan.folib</groupId>-->
 <!--                                    <artifactId>strongbox-web-ui</artifactId>-->
 <!--                                    <version>1.0-SNAPSHOT</version>-->
 <!--                                    <type>zip</type>-->
@@ -309,7 +309,7 @@
             <version>1.0-SNAPSHOT</version>
         </dependency>
 <!--        <dependency>-->
-<!--            <groupId>org.carlspring.strongbox</groupId>-->
+<!--            <groupId>com.veadan.folib</groupId>-->
 <!--            <artifactId>strongbox-web-ui</artifactId>-->
 <!--            <version>1.0-SNAPSHOT</version>-->
 <!--            <type>zip</type>-->
