@@ -19,10 +19,10 @@
     <name>Folib: Storage [Docker Layout Provider]</name>
 
 
-    <properties>
-        <dir.strongbox.home>${project.build.directory}/strongbox</dir.strongbox.home>
-        <dir.strongbox.vault>${project.build.directory}/strongbox-vault</dir.strongbox.vault>
-    </properties>
+<!--    <properties>-->
+<!--        <dir.strongbox.home>${project.build.directory}/strongbox</dir.strongbox.home>-->
+<!--        <dir.strongbox.vault>${project.build.directory}/strongbox-vault</dir.strongbox.vault>-->
+<!--    </properties>-->
 
     <build>
         <plugins>
@@ -35,20 +35,20 @@
                 <artifactId>maven-source-plugin</artifactId>
             </plugin>
 
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-surefire-plugin</artifactId>
-                <configuration>
-                    <systemPropertyVariables>
-                        <strongbox.home>${project.build.directory}/strongbox</strongbox.home>
-                        <strongbox.vault>${project.build.directory}/strongbox-vault</strongbox.vault>
-                        <strongbox.storage.booter.basedir>${project.build.directory}/strongbox-vault/storages</strongbox.storage.booter.basedir>
-                        <repository.config.xml>${project.build.directory}/strongbox/etc/conf/strongbox.yaml</repository.config.xml>
-                        <java.io.tmpdir>${dir.strongbox.vault}/tmp</java.io.tmpdir>
-                        <ehcache.disk.store.dir>${project.build.directory}/strongbox/cache</ehcache.disk.store.dir>
-                    </systemPropertyVariables>
-                </configuration>
-            </plugin>
+<!--            <plugin>-->
+<!--                <groupId>org.apache.maven.plugins</groupId>-->
+<!--                <artifactId>maven-surefire-plugin</artifactId>-->
+<!--                <configuration>-->
+<!--                    <systemPropertyVariables>-->
+<!--                        <strongbox.home>${project.build.directory}/strongbox</strongbox.home>-->
+<!--                        <strongbox.vault>${project.build.directory}/strongbox-vault</strongbox.vault>-->
+<!--                        <strongbox.storage.booter.basedir>${project.build.directory}/strongbox-vault/storages</strongbox.storage.booter.basedir>-->
+<!--                        <repository.config.xml>${project.build.directory}/strongbox/etc/conf/strongbox.yaml</repository.config.xml>-->
+<!--                        <java.io.tmpdir>${dir.strongbox.vault}/tmp</java.io.tmpdir>-->
+<!--                        <ehcache.disk.store.dir>${project.build.directory}/strongbox/cache</ehcache.disk.store.dir>-->
+<!--                    </systemPropertyVariables>-->
+<!--                </configuration>-->
+<!--            </plugin>-->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-failsafe-plugin</artifactId>
@@ -69,7 +69,7 @@
                             <artifactItems>
                                 <artifactItem>
                                     <groupId>${project.groupId}</groupId>
-                                    <artifactId>strongbox-common-resources</artifactId>
+                                    <artifactId>folib-common-resources</artifactId>
                                     <version>${project.version}</version>
                                     <type>jar</type>
 
@@ -90,7 +90,7 @@
                             <artifactItems>
                                 <artifactItem>
                                     <groupId>${project.groupId}</groupId>
-                                    <artifactId>strongbox-common-resources</artifactId>
+                                    <artifactId>folib-common-resources</artifactId>
                                     <version>${project.version}</version>
                                     <type>jar</type>
 
@@ -111,7 +111,7 @@
                             <artifactItems>
                                 <artifactItem>
                                     <groupId>${project.groupId}</groupId>
-                                    <artifactId>strongbox-common-resources</artifactId>
+                                    <artifactId>folib-common-resources</artifactId>
                                     <version>${project.version}</version>
                                     <type>jar</type>
 
@@ -217,10 +217,10 @@
             <scope>test</scope>
         </dependency>
 
-        <dependency>
-            <groupId>org.springframework</groupId>
-            <artifactId>spring-tx</artifactId>
-        </dependency>        
+<!--        <dependency>-->
+<!--            <groupId>org.springframework</groupId>-->
+<!--            <artifactId>spring-tx</artifactId>-->
+<!--        </dependency>-->
         <dependency>
             <groupId>org.springframework</groupId>
             <artifactId>spring-context</artifactId>
