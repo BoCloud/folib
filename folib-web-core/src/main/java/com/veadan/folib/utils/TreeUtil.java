@@ -26,6 +26,7 @@ public class TreeUtil {
                 list.add(new FileObj() {{
                     setName(current);
                     setType("DIR");
+                    setIsLeaf(false);
                     ArrayList<FileObj> objects = new ArrayList<>();
                     str2List(str.replaceFirst(current + "/", ""), objects);
                     setChildren(objects);
@@ -37,7 +38,7 @@ public class TreeUtil {
             list.add(new FileObj() {{
                 setName(str);
                 setType("FILE");
-                setChildren(null);
+                setIsLeaf(true);
             }});
         }
     }
@@ -53,6 +54,16 @@ public class TreeUtil {
     class FileObj {
         private String name;
         private String type;
+        private boolean isLeaf;
+
+        public boolean getIsLeaf() {
+            return isLeaf;
+        }
+
+        public void setIsLeaf(boolean isLeaf) {
+            this.isLeaf = isLeaf;
+        }
+
         private List<FileObj> children;
 
         public String getName() {
