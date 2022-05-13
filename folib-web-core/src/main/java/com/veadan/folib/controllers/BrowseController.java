@@ -1,19 +1,34 @@
 package com.veadan.folib.controllers;
 
+import cn.hutool.core.date.DateUtil;
+import cn.hutool.core.util.XmlUtil;
+import com.alibaba.fastjson.JSONObject;
+import com.veadan.folib.artifact.coordinates.ArtifactCoordinates;
+import com.veadan.folib.artifact.coordinates.MavenArtifactCoordinates;
+import com.veadan.folib.artifact.coordinates.NpmArtifactCoordinates;
+import com.veadan.folib.domain.Artifact;
 import com.veadan.folib.providers.io.RepositoryFiles;
 import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.domain.DirectoryListing;
 import com.veadan.folib.services.DirectoryListingService;
 import com.veadan.folib.storage.Storage;
 import com.veadan.folib.storage.repository.Repository;
+import com.veadan.folib.utils.TreeUtil;
 import com.veadan.folib.web.RepositoryMapping;
 
 import javax.inject.Inject;
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.net.URL;
 import java.nio.file.Files;
-import java.util.Map;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.ZoneId;
+import java.time.ZoneOffset;
+import java.util.*;
 
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
@@ -31,6 +46,9 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.ui.ModelMap;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.ModelAndView;
+import org.w3c.dom.Document;
+
+import static org.springframework.http.HttpStatus.OK;
 
 /**
  * REST API for browsing storage/repository/filesystem structures.
@@ -51,7 +69,81 @@ public class BrowseController
     @Inject
     @Qualifier("browseRepositoryDirectoryListingService")
     private volatile DirectoryListingService directoryListingService;
-    
+
+    //    @PreAuthorize("authenticated")
+    @GetMapping(value = "/getArtifact/{storageId}/{repositoryId}/{artifactPath:.+}")
+    public ResponseEntity getArtifact(@RequestHeader HttpHeaders httpHeaders,
+                                      @PathVariable String artifactPath,
+                                      @PathVariable String storageId,
+                                      @PathVariable String repositoryId,
+                                      @RequestParam("type") String type,
+                                      HttpServletRequest request,
+                                      HttpServletResponse response)
+    {
+        Artifact artifact= repositoryPathResolver.findOneArtifact(storageId,repositoryId,artifactPath);
+        JSONObject jsonObject = new JSONObject();
+        if(artifact!=null) {
+
+            TreeUtil treeUtil = new TreeUtil();
+
+            SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+
+            if (artifact.getCreated() != null) {
+                String createdTime = DateUtil.format(Date.from(artifact.getCreated().atZone(ZoneId.of("Asia/Shanghai")).toOffsetDateTime().toInstant()), df);
+                jsonObject.put("createdTime", createdTime);
+
+            }
+            if (artifact.getLastUsed() != null) {
+                String lastUsedTime = DateUtil.format(Date.from(artifact.getLastUsed().atZone(ZoneId.of("Asia/Shanghai")).toOffsetDateTime().toInstant()), df);
+                jsonObject.put("lastUsedTime", lastUsedTime);
+            }
+            if(type.equals("maven")){
+                MavenArtifactCoordinates artifactCoordinates = (MavenArtifactCoordinates) artifact.getArtifactCoordinates();
+                String mavenStr = null;
+                String gradleStr = null;
+                String ivyStr = null;
+                String sbtStr = null;
+                if (artifactCoordinates != null && artifactCoordinates.getExtension().equals("jar")) {
+                    Set<String> fileNames = artifact.getArtifactArchiveListing().getFilenames();
+                    List listTree = treeUtil.toTree(fileNames);
+
+                    mavenStr =
+                            "<dependency>\n" +
+                                    "    <groupId>" + artifactCoordinates.getGroupId() + "</groupId>\n" +
+                                    "    <artifactId>" + artifactCoordinates.getArtifactId() + "</artifactId>\n" +
+                                    "    <version>" + artifactCoordinates.getVersion() + "</version>\n" +
+                                    "</dependency>";
+
+//            mavenStr= XmlUtil.toStr(XmlUtil.parseXml(mavenStr),true);
+                    gradleStr = "compile(group: '" + artifactCoordinates.getGroupId() + "', name: '" + artifactCoordinates.getArtifactId() + "', version: '" + artifactCoordinates.getVersion() + "')";
+                    ivyStr = "<dependency org=\"" + artifactCoordinates.getGroupId() + "\" name=\"" + artifactCoordinates.getArtifactId() + "\" rev=\"" + artifactCoordinates.getVersion() + "\">\n" +
+                            "    <artifact name=\"" + artifactCoordinates.getArtifactId() + "\" ext=\"" + artifactCoordinates.getExtension() + "\"/>\n" +
+                            "</dependency>";
+//            ivyStr= XmlUtil.toStr(XmlUtil.parseXml(ivyStr),true);
+                    sbtStr = "libraryDependencies += \"" + artifactCoordinates.getGroupId() + "\" % \"" + artifactCoordinates.getArtifactId() + "\" % \"" + artifactCoordinates.getVersion() + "\"";
+                    jsonObject.put("mavenStr", mavenStr);
+                    jsonObject.put("gradleStr", gradleStr);
+                    jsonObject.put("ivyStr", ivyStr);
+                    jsonObject.put("sbtStr", sbtStr);
+                    jsonObject.put("listTree", listTree);
+                }
+            }else if(type.equals("npm")){
+                NpmArtifactCoordinates artifactCoordinates = (NpmArtifactCoordinates) artifact.getArtifactCoordinates();
+            }
+
+
+
+            jsonObject.put("downloadCount", artifact.getDownloadCount());
+            jsonObject.put("sha", artifact.getChecksums().get("SHA-1"));
+            jsonObject.put("md5", artifact.getChecksums().get("MD5"));
+            jsonObject.put("artifact", artifact);
+        }
+
+        return ResponseEntity.status(OK)
+                .body(jsonObject);
+    }
+
+
     @ApiOperation(value = "List configured storages.")
     @ApiResponses(value = { @ApiResponse(code = 200, message = "The list was returned."),
                             @ApiResponse(code = 500, message = "An error occurred.") })

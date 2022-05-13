@@ -89,7 +89,11 @@ public class RepositoryPathResolver
         
         return new LazyRepositoryPath(repositoryPath.resolve(path));
     }
-    
+
+    public Artifact findOneArtifact(String storageId, String repositoryId, String path) {
+        return artifactEntityRepository.findOneArtifact(storageId, repositoryId, path);
+    }
+
     private class LazyRepositoryPath extends RepositoryPath
     {
 
