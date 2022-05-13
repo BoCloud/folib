@@ -227,7 +227,6 @@ public class NpmArtifactController
         RepositorySearchRequest predicate = createSearchPredicate(packageScope, packageName);
 
         RepositoryProvider provider = repositoryProviderRegistry.getProvider(repository.getType());
-
         Paginator paginator = new Paginator();
         paginator.setProperty("version");
 
