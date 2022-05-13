@@ -75,9 +75,4 @@ public class DockerLayoutProviderConfig {
         return new DockerFileSystem(propertiesBooter, repository, storageFileSystem, provider);
     }
 
-    @Autowired(required = false)
-    public void test(){
-        System.out.println("11");
-        int a =0;
-    }
 }
