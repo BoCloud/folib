@@ -12,8 +12,8 @@ import javax.inject.Inject;
 import java.util.Map;
 import java.util.Objects;
 
-import liquibase.util.StringUtils;
 import org.apache.commons.collections4.MapUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.core.MethodParameter;
 import org.springframework.web.bind.MissingPathVariableException;
 import org.springframework.web.bind.support.WebDataBinderFactory;

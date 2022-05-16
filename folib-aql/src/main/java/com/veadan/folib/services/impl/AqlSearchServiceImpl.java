@@ -6,6 +6,7 @@ import java.util.List;
 
 import javax.inject.Inject;
 import javax.persistence.EntityManager;
+import javax.persistence.PersistenceContext;
 import javax.transaction.Transactional;
 
 import com.veadan.folib.data.criteria.OQueryTemplate;
@@ -28,7 +29,7 @@ import org.springframework.stereotype.Component;
 public class AqlSearchServiceImpl implements AqlSearchService
 {
 
-    //@PersistenceContext
+//    @PersistenceContext
     private EntityManager entityManager;
 
     @Inject
