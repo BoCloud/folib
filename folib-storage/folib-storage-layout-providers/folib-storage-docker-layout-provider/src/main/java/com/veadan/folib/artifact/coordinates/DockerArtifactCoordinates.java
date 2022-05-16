@@ -1,21 +1,18 @@
 package com.veadan.folib.artifact.coordinates;
 
-import com.veadan.folib.artifact.coordinates.versioning.SemanticVersion;
+import com.veadan.folib.db.schema.Vertices;
+import com.veadan.folib.domain.LayoutArtifactCoordinatesEntity;
+import org.apache.commons.lang3.StringUtils;
+import org.neo4j.ogm.annotation.NodeEntity;
 
-import javax.persistence.Entity;
-import javax.validation.constraints.NotBlank;
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlRootElement;
 import java.net.URI;
-import java.util.List;
+import java.util.Arrays;
 import java.util.Map;
-
-import com.veadan.folib.db.schema.Vertices;
-import com.veadan.folib.domain.LayoutArtifactCoordinatesEntity;
-import org.apache.commons.lang3.StringUtils;
-import org.codehaus.commons.nullanalysis.NotNull;
-import org.neo4j.ogm.annotation.NodeEntity;
+import java.util.Objects;
+import java.util.stream.Collectors;
 
 /**
  * @author carlspring
@@ -36,16 +33,22 @@ public class DockerArtifactCoordinates
 
     public static final String TAG = "tag";
 
+    public static final String LAYERS = "layers";
+
+    public static  final String ARTIFACT_PATH= "path";
+
 
     public DockerArtifactCoordinates()
     {
         resetCoordinates(REPOSITORY,
                 TAG);
     }
+
+
     //
     // TODO: We will have to think about something like this:
     //
-    // public static final String LAYERS = "layers";
+
 
     public DockerArtifactCoordinates(String repository,
                                      String reference)
@@ -68,10 +71,53 @@ public class DockerArtifactCoordinates
         // setLayers(layers);
     }
 
+    public DockerArtifactCoordinates(String repository,
+                                     String reference,
+                                     String layers,
+                                     String artifactPath)
+    {
+        // if any of the required arguments are empty, throw an error
+        if (StringUtils.isBlank(repository))
+        {
+            throw new IllegalArgumentException("The repository field is mandatory.");
+        }
+
+        if (StringUtils.isBlank(reference))
+        {
+            throw new IllegalArgumentException("The reference field is mandatory.");
+        }
+
+        setId(repository);
+        setVersion(reference);
+        setLayers(layers);
+        setArtifactPath(artifactPath);
+
+        // TODO:
+        // setLayers(layers);
+    }
+
     public static DockerArtifactCoordinates parse(String path)
     {
         // TODO:
-        return null;
+        if(Objects.isNull(path)){
+            return null;
+        }
+        String [] strings = path.split("/");
+        String repository  =  strings[0];
+        String tag = path;
+        String artifactPath = ARTIFACT_PATH;
+
+        String layers = LAYERS;
+        if(strings[strings.length-1].indexOf("sha256:")>-1){
+            layers = strings[strings.length-1];
+            String finalLayers = layers;
+            artifactPath = Arrays.stream(strings).filter(data->!Objects.equals(finalLayers,data) || !Objects.equals(repository,data))
+                    .collect(Collectors.joining("/"));
+
+        }
+
+
+        return  new DockerArtifactCoordinates(repository,tag,layers,artifactPath);
     }
 
     @Override
@@ -147,12 +193,50 @@ public class DockerArtifactCoordinates
 
     @Override
     public String convertToPath(DockerArtifactCoordinates artifactCoordinates) {
-        return new DockerArtifactGenerator(artifactCoordinates.getPath()).getImageManifestPath().toString();
+        return  artifactCoordinates.getArtifactPath();
+       // return new  DockerArtifactGenerator(artifactCoordinates.getPath()).getImageManifestPath().toString();
+      //  return String.format("%s/%s/%s/%s", artifactCoordinates.g, c.getName(), c.getVersion(), c.getArtifactFileName());
     }
 
     @Override
     public URI convertToResource(DockerArtifactCoordinates artifactCoordinates) {
         return super.convertToResource(artifactCoordinates);
+    }
+
+
+    @Override
+    public void setUuid(String uuid) {
+        super.setUuid(uuid);
+    }
+
+
+    @ArtifactLayoutCoordinate
+    public String getTAG()
+    {
+        return getCoordinate(TAG);
+    }
+
+    public  void setTAG(String tag) {
+        setCoordinate(TAG, tag);
+    }
+
+    @ArtifactLayoutCoordinate
+    public  String getLayers() {
+        return getCoordinate(LAYERS);
+    }
+
+    public  void setLayers(String layers) {
+        setCoordinate(LAYERS,layers);
+    }
+
+
+    @ArtifactLayoutCoordinate
+    public  String getArtifactPath() {
+        return getCoordinate(ARTIFACT_PATH);
+    }
+
+    public void  setArtifactPath(String artifactPath) {
+        setCoordinate(ARTIFACT_PATH,artifactPath);
     }
 
 

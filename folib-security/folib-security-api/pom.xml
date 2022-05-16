@@ -169,36 +169,36 @@
 
             <build>
                 <plugins>
-                    <plugin>
-                        <groupId>org.carlspring.maven</groupId>
-                        <artifactId>unboundid-maven-plugin</artifactId>
+<!--                    <plugin>-->
+<!--                        <groupId>org.carlspring.maven</groupId>-->
+<!--                        <artifactId>unboundid-maven-plugin</artifactId>-->
 
-                        <configuration>
-                            <baseDn>dc=carlspring,dc=com</baseDn>
-                            <portSSL>${port.unboundid}</portSSL>
-                            <useSSL>true</useSSL>
-                            <keyStorePassword>password</keyStorePassword>
-                            <keyStorePath>${folib.home}/etc/ssl/keystore.jks</keyStorePath>
-                            <trustStorePath>${folib.home}/etc/ssl/truststore.jks</trustStorePath>
-                        </configuration>
+<!--                        <configuration>-->
+<!--                            <baseDn>dc=carlspring,dc=com</baseDn>-->
+<!--                            <portSSL>${port.unboundid}</portSSL>-->
+<!--                            <useSSL>true</useSSL>-->
+<!--                            <keyStorePassword>password</keyStorePassword>-->
+<!--                            <keyStorePath>${folib.home}/etc/ssl/keystore.jks</keyStorePath>-->
+<!--                            <trustStorePath>${folib.home}/etc/ssl/truststore.jks</trustStorePath>-->
+<!--                        </configuration>-->
 
-                        <executions>
-                            <execution>
-                                <id>unboundid-start</id>
+<!--                        <executions>-->
+<!--                            <execution>-->
+<!--                                <id>unboundid-start</id>-->
 
-                                <phase>test-compile</phase>
-                                <goals>
-                                    <goal>start</goal>
-                                </goals>
+<!--                                <phase>test-compile</phase>-->
+<!--                                <goals>-->
+<!--                                    <goal>start</goal>-->
+<!--                                </goals>-->
 
-                                <configuration>
-                                    <ldifFiles>
-                                        <ldifFile>${basedir}/src/test/resources/ldap/unboundid.ldif</ldifFile>
-                                    </ldifFiles>
-                                </configuration>
-                            </execution>
-                        </executions>
-                    </plugin>
+<!--                                <configuration>-->
+<!--                                    <ldifFiles>-->
+<!--                                        <ldifFile>${basedir}/src/test/resources/ldap/unboundid.ldif</ldifFile>-->
+<!--                                    </ldifFiles>-->
+<!--                                </configuration>-->
+<!--                            </execution>-->
+<!--                        </executions>-->
+<!--                    </plugin>-->
 
                     <plugin>
                         <groupId>org.carlspring.maven</groupId>

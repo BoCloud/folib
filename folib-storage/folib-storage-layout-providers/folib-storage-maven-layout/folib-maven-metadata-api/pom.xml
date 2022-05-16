@@ -84,6 +84,7 @@
         <dependency>
             <groupId>org.apache.maven.indexer</groupId>
             <artifactId>indexer-core</artifactId>
+            <version>6.1.1</version>
         </dependency>
         <dependency>
             <groupId>org.apache.maven</groupId>
