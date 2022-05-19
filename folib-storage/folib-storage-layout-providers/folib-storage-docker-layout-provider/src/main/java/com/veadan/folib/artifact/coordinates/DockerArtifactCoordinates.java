@@ -29,7 +29,7 @@ public class DockerArtifactCoordinates
 
     public static final String LAYOUT_ALIAS = "Docker";
 
-    public static final String REPOSITORY = "repository";
+    //public static final String REPOSITORY = "repository";
 
     public static final String TAG = "tag";
 
@@ -40,7 +40,7 @@ public class DockerArtifactCoordinates
 
     public DockerArtifactCoordinates()
     {
-        resetCoordinates(REPOSITORY,
+        resetCoordinates(LAYERS,
                 TAG);
     }
 
@@ -104,7 +104,7 @@ public class DockerArtifactCoordinates
         }
         String [] strings = path.split("/");
         String repository  =  strings[0];
-        String tag = path;
+        String tag = strings[strings.length-2];
         String artifactPath = ARTIFACT_PATH;
 
         String layers = LAYERS;
@@ -123,19 +123,19 @@ public class DockerArtifactCoordinates
     @Override
     public String getId()
     {
-        return getCoordinate(REPOSITORY);
+        return getLayers();
     }
 
 
     public void setId(String id)
     {
-        setCoordinate(REPOSITORY, id);
+        setLayers(id);
     }
 
     @Override
     public String getVersion()
     {
-        return getCoordinate(TAG);
+        return getTAG();
     }
 
     @Override
@@ -146,7 +146,7 @@ public class DockerArtifactCoordinates
     @Override
     public void setVersion(String version)
     {
-        setCoordinate(TAG, version);
+        setTAG(version);
     }
 
 
