@@ -4,8 +4,8 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.veadan.folib.artifact.coordinates.ArtifactCoordinates;
 import com.veadan.folib.dependency.snippet.CodeSnippet;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * @author mtodorov
@@ -32,6 +32,33 @@ public class SearchResult
     @JsonProperty
     private List<CodeSnippet> snippets = new ArrayList<>();
 
+    private Set<String> checksums = new HashSet<>();
+
+    private Long sizeInBytes;
+
+    public Long getSizeInBytes() {
+        return sizeInBytes;
+    }
+
+    public void setSizeInBytes(Long sizeInBytes) {
+        this.sizeInBytes = sizeInBytes;
+    }
+
+    public Map<String, String> getChecksums()
+    {
+        return checksums.stream().filter(e -> !e.trim().isEmpty())
+                .collect(Collectors.toMap(e -> e.substring(1, e.indexOf("}")),
+                        e -> e.substring(e.indexOf("}") + 1)));
+    }
+
+    public void setChecksums(Map<String, String> checksums)
+    {
+        this.checksums.clear();
+        this.checksums.addAll(checksums.entrySet()
+                .stream()
+                .map(e -> "{" + e.getKey() + "}" + e.getValue())
+                .collect(Collectors.toSet()));
+    }
 
     public SearchResult()
     {

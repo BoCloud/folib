@@ -29,7 +29,7 @@ import org.springframework.stereotype.Repository;
 @Transactional
 public class ArtifactRepository extends GremlinVertexRepository<Artifact>
 {
-
+//查找标记
     @Inject
     ArtifactAdapter artifactAdapter;
     @Inject
@@ -69,6 +69,23 @@ public class ArtifactRepository extends GremlinVertexRepository<Artifact>
         return new PageImpl<>(EntityTraversalUtils.reduceHierarchy(result.toList()), pagination, result.getTotalElements());
     }
 
+    public Page<Artifact> findMatching1(String artifactName,
+                                       Pageable pagination)
+    {
+        Page<Artifact> result = queries.findMatching1(artifactName,pagination);
+
+        return new PageImpl<>(EntityTraversalUtils.reduceHierarchy(result.toList()), pagination, result.getTotalElements());
+    }
+
+    public Page<Artifact> findMatching2(String artifactName,
+                                        String storageId,
+                                        String repositoryId,
+                                        Pageable pagination)
+    {
+        Page<Artifact> result = queries.findMatching2(artifactName,storageId,repositoryId,pagination);
+
+        return new PageImpl<>(EntityTraversalUtils.reduceHierarchy(result.toList()), pagination, result.getTotalElements());
+    }
     public Boolean artifactEntityExists(String storageId,
                                         String repositoryId,
                                         String path)
@@ -114,7 +131,6 @@ public class ArtifactRepository extends GremlinVertexRepository<Artifact>
         {
             return null;
         }
-
         return t.next();
     }
 
@@ -157,5 +173,36 @@ interface ArtifactEntityQueries extends org.springframework.data.repository.Repo
     Boolean artifactEntityExists(@Param("storageId") String storageId,
                                  @Param("repositoryId") String repositoryId,
                                  @Param("path") String path);
+
+
+    @Query(value = "MATCH (genericCoordinates:GenericArtifactCoordinates)<-[r1]-(artifact:Artifact) " +
+            "WHERE artifact.uuid Contains  $artifactName" +
+            "WITH artifact, r1, genericCoordinates " +
+            "OPTIONAL MATCH (artifact)-[r4]->(tag:ArtifactTag) " +
+            "WITH artifact, r1, genericCoordinates, r4, tag " +
+            "MATCH (genericCoordinates)<-[r2]-(layoutCoordinates) " +
+            "WITH artifact, r1, genericCoordinates, r2, layoutCoordinates, r4, tag " +
+            "RETURN artifact, r1, genericCoordinates, r2, layoutCoordinates, r4, tag",
+            countQuery = "MATCH (artifact:Artifact) " +
+                    "WHERE  artifact.uuid Contains $artifactName" +
+                    "RETURN count(artifact)")
+    Page<Artifact> findMatching1(@Param("artifactName") String artifactName,
+                                Pageable page);
+
+    @Query(value = "MATCH (genericCoordinates:GenericArtifactCoordinates)<-[r1]-(artifact:Artifact) " +
+            "WHERE artifact.uuid Contains  $artifactName and artifact.storageId=$storageId and artifact.repositoryId=$repositoryId " +
+            "WITH artifact, r1, genericCoordinates " +
+            "OPTIONAL MATCH (artifact)-[r4]->(tag:ArtifactTag) " +
+            "WITH artifact, r1, genericCoordinates, r4, tag " +
+            "MATCH (genericCoordinates)<-[r2]-(layoutCoordinates) " +
+            "WITH artifact, r1, genericCoordinates, r2, layoutCoordinates, r4, tag " +
+            "RETURN artifact, r1, genericCoordinates, r2, layoutCoordinates, r4, tag",
+            countQuery = "MATCH (artifact:Artifact) " +
+                    "WHERE  artifact.uuid Contains $artifactName and artifact.storageId=$storageId and artifact.repositoryId=$repositoryId " +
+                    "RETURN count(artifact)")
+    Page<Artifact> findMatching2(@Param("artifactName") String artifactName,
+                                 @Param("storageId") String storageId,
+                                 @Param("repositoryId") String repositoryId,
+                                 Pageable page);
 
 }

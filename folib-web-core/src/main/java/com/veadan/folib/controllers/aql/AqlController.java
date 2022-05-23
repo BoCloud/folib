@@ -1,8 +1,6 @@
 package com.veadan.folib.controllers.aql;
 
-import com.veadan.folib.aql.grammar.AqlQueryParser;
-import com.veadan.folib.data.criteria.Selector;
-import com.veadan.folib.services.AqlSearchService;
+import com.veadan.folib.services.impl.FqlSearchService;
 import com.veadan.folib.storage.search.SearchResults;
 import com.veadan.folib.controllers.BaseController;
 import com.veadan.folib.domain.ArtifactEntity;
@@ -24,25 +22,27 @@ import org.springframework.web.bind.annotation.RequestParam;
  *
  */
 @Controller
-@RequestMapping("/api/aql")
-@Api(value = "/api/aql")
+@RequestMapping("/api/fql")
+@Api(value = "/api/fql")
 public class AqlController extends BaseController
 {
 
+//    @Inject
+//    private AqlSearchService aqlSearchService;
+
     @Inject
-    private AqlSearchService aqlSearchService;
+    private FqlSearchService fqlSearchService;
 
     @ApiOperation(value = "Used to search for artifacts.", response = SearchResults.class)
     @ApiResponses(value = { @ApiResponse(code = 200, message = "OK") })
     @PreAuthorize("hasAuthority('SEARCH_ARTIFACTS')")
     @GetMapping(produces = { MediaType.APPLICATION_JSON_VALUE })
-    public ResponseEntity search(@ApiParam(value = "Search query", required = true) @RequestParam(name = "query", required = true) String query)
-        throws IOException
-    {
-        AqlQueryParser parser = new AqlQueryParser(query);
-        Selector<ArtifactEntity> selector = parser.parseQuery();
-
-        SearchResults result = aqlSearchService.search(selector);
+    public ResponseEntity search(@RequestParam(name = "artifactName", required = true) String artifactName,
+                                 @RequestParam(name = "storageId", required = false) String storageId,
+                                 @RequestParam(name = "repositoryId", required = false) String repositoryId,
+                                 @RequestParam(name = "limit", required = true) int limit,
+                                 @RequestParam(name = "page", required = true) int page) throws IOException {
+        SearchResults result = fqlSearchService.artfactQuery(artifactName, storageId, repositoryId, limit, page);
 
         return ResponseEntity.ok(result);
     }

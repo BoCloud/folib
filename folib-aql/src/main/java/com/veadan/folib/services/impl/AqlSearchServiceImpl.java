@@ -12,8 +12,11 @@ import javax.transaction.Transactional;
 import com.veadan.folib.data.criteria.OQueryTemplate;
 import com.veadan.folib.data.criteria.QueryTemplate;
 import com.veadan.folib.data.criteria.Selector;
+import com.veadan.folib.db.schema.Vertices;
 import com.veadan.folib.dependency.snippet.CodeSnippet;
 import com.veadan.folib.dependency.snippet.SnippetGenerator;
+import com.veadan.folib.domain.Artifact;
+import com.veadan.folib.gremlin.dsl.EntityTraversal;
 import com.veadan.folib.providers.io.RepositoryFiles;
 import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.providers.io.RepositoryPathResolver;
@@ -22,6 +25,7 @@ import com.veadan.folib.storage.search.SearchResults;
 import com.veadan.folib.domain.ArtifactEntity;
 import com.veadan.folib.services.AqlSearchService;
 import com.veadan.folib.storage.repository.Repository;
+import org.apache.tinkerpop.gremlin.structure.Vertex;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -44,18 +48,18 @@ public class AqlSearchServiceImpl implements AqlSearchService
         SearchResults result = new SearchResults();
 
         QueryTemplate<List<ArtifactEntity>, ArtifactEntity> queryTemplate = new OQueryTemplate<>(entityManager);
-        for (ArtifactEntity artifactEntry : queryTemplate.select(selector))
+        for (ArtifactEntity artifactEntity : queryTemplate.select(selector))
         {
             SearchResult r = new SearchResult();
             result.getResults().add(r);
 
-            r.setStorageId(artifactEntry.getStorageId());
-            r.setRepositoryId(artifactEntry.getRepositoryId());
-            r.setArtifactCoordinates(artifactEntry.getArtifactCoordinates());
+            r.setStorageId(artifactEntity.getStorageId());
+            r.setRepositoryId(artifactEntity.getRepositoryId());
+            r.setArtifactCoordinates(artifactEntity.getArtifactCoordinates());
 
-            RepositoryPath repositoryPath = repositoryPathResolver.resolve(artifactEntry.getStorageId(),
-                                                                           artifactEntry.getRepositoryId(),
-                                                                           artifactEntry.getArtifactPath());
+            RepositoryPath repositoryPath = repositoryPathResolver.resolve(artifactEntity.getStorageId(),
+                                                                           artifactEntity.getRepositoryId(),
+                                                                           artifactEntity.getArtifactPath());
 
             Repository repository = repositoryPath.getRepository();
 
@@ -63,7 +67,7 @@ public class AqlSearchServiceImpl implements AqlSearchService
             r.setUrl(artifactResource.toString());
 
             List<CodeSnippet> snippets = snippetGenerator.generateSnippets(repository.getLayout(),
-                                                                             artifactEntry.getArtifactCoordinates());
+                                                                             artifactEntity.getArtifactCoordinates());
             r.setSnippets(snippets);
         }
 

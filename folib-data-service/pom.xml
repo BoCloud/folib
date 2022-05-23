@@ -13,18 +13,8 @@
     <artifactId>folib-data-service</artifactId>
     <version>1.0-SNAPSHOT</version>
     <packaging>jar</packaging>
-
     <name>Folib: Data Service</name>
-
-
     <inceptionYear>2019</inceptionYear>
-
-<!--     <scm>-->
-<!--        <url>http://git.folib.com/folib/folib-server</url>-->
-<!--        <connection>scm:git:git://git.folib.com/folib/folib-server.git</connection>-->
-<!--        <developerConnection>scm:git:git://git.folib.com/folib/folib-server.git</developerConnection>-->
-<!--    </scm>-->
-
     <properties>
         <dir.folib.home>${project.build.directory}/folib</dir.folib.home>
         <dir.folib.vault>${project.build.directory}/folib-vault</dir.folib.vault>
@@ -170,18 +160,6 @@
             <artifactId>jsr305</artifactId>
         </dependency>
 
-        <dependency>
-            <groupId>org.liquibase</groupId>
-            <artifactId>liquibase-core</artifactId>
-        </dependency>
-<!--        <dependency>-->
-<!--            <groupId>org.unbroken-dome.liquibase-orientdb</groupId>-->
-<!--            <artifactId>liquibase-orientdb</artifactId>-->
-<!--        </dependency>-->
-        <dependency>
-            <groupId>com.mattbertolini</groupId>
-            <artifactId>liquibase-slf4j</artifactId>
-        </dependency>
         <dependency>
             <groupId>org.hibernate.validator</groupId>
             <artifactId>hibernate-validator</artifactId>

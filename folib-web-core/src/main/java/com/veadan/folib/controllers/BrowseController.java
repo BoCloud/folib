@@ -6,6 +6,8 @@ import com.alibaba.fastjson.JSONObject;
 import com.veadan.folib.artifact.coordinates.ArtifactCoordinates;
 import com.veadan.folib.artifact.coordinates.MavenArtifactCoordinates;
 import com.veadan.folib.artifact.coordinates.NpmArtifactCoordinates;
+import com.veadan.folib.dependency.snippet.CodeSnippet;
+import com.veadan.folib.dependency.snippet.SnippetGenerator;
 import com.veadan.folib.domain.Artifact;
 import com.veadan.folib.providers.io.RepositoryFiles;
 import com.veadan.folib.providers.io.RepositoryPath;
@@ -67,8 +69,12 @@ public class BrowseController
     public final static String ROOT_CONTEXT = "/api/browse";
 
     @Inject
+    private SnippetGenerator snippetGenerator;
+
+    @Inject
     @Qualifier("browseRepositoryDirectoryListingService")
     private volatile DirectoryListingService directoryListingService;
+
 
     //    @PreAuthorize("authenticated")
     @GetMapping(value = "/getArtifact/{storageId}/{repositoryId}/{artifactPath:.+}")
@@ -80,8 +86,18 @@ public class BrowseController
                                       HttpServletRequest request,
                                       HttpServletResponse response)
     {
-        Artifact artifact= repositoryPathResolver.findOneArtifact(storageId,repositoryId,artifactPath);
         JSONObject jsonObject = new JSONObject();
+        Artifact artifact= repositoryPathResolver.findOneArtifact(storageId,repositoryId,artifactPath);
+        RepositoryPath repositoryPath = repositoryPathResolver.resolve(storageId,repositoryId,artifactPath);
+        Repository repository = repositoryPath.getRepository();
+        if(artifact!=null){
+            List<CodeSnippet> snippets = snippetGenerator.generateSnippets(repository.getLayout(),
+                    artifact.getArtifactCoordinates());
+            jsonObject.put("snippets",snippets);
+        }
+
+
+
         if(artifact!=null) {
 
             TreeUtil treeUtil = new TreeUtil();
@@ -131,12 +147,11 @@ public class BrowseController
                 NpmArtifactCoordinates artifactCoordinates = (NpmArtifactCoordinates) artifact.getArtifactCoordinates();
             }
 
-
-
             jsonObject.put("downloadCount", artifact.getDownloadCount());
             jsonObject.put("sha", artifact.getChecksums().get("SHA-1"));
             jsonObject.put("md5", artifact.getChecksums().get("MD5"));
             jsonObject.put("artifact", artifact);
+
         }
 
         return ResponseEntity.status(OK)

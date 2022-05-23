@@ -95,7 +95,7 @@
                                     <type>jar</type>
 
                                     <overWrite>true</overWrite>
-                                    <outputDirectory>${dir.strongbox.home}</outputDirectory>
+                                    <outputDirectory>${dir.folib.home}</outputDirectory>
                                     <includes>etc/**</includes>
                                 </artifactItem>
                             </artifactItems>
