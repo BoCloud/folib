@@ -170,10 +170,10 @@
             <artifactId>javax.transaction-api</artifactId>
         </dependency>
 
-        <dependency>
-            <groupId>com.github.ThoughtWire</groupId>
-            <artifactId>hazelcast-locks</artifactId>
-        </dependency>
+<!--        <dependency>-->
+<!--            <groupId>com.github.ThoughtWire</groupId>-->
+<!--            <artifactId>hazelcast-locks</artifactId>-->
+<!--        </dependency>-->
         
     </dependencies>
     

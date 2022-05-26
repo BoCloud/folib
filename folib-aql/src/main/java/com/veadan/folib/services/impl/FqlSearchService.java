@@ -1,5 +1,6 @@
 package com.veadan.folib.services.impl;
 
+import cn.hutool.core.date.DateUtil;
 import com.veadan.folib.artifact.coordinates.ArtifactLayoutDescription;
 import com.veadan.folib.artifact.coordinates.ArtifactLayoutLocator;
 import com.veadan.folib.configuration.ConfigurationManager;
@@ -23,6 +24,7 @@ import com.veadan.folib.storage.repository.Repository;
 import com.veadan.folib.storage.search.SearchResult;
 import com.veadan.folib.storage.search.SearchResults;
 import com.veadan.folib.util.LocalDateTimeInstance;
+import com.veadan.folib.utils.TreeUtil;
 import org.apache.tinkerpop.gremlin.structure.Vertex;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -33,9 +35,13 @@ import javax.inject.Inject;
 import javax.transaction.Transactional;
 import java.io.IOException;
 import java.net.URL;
+import java.text.SimpleDateFormat;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.util.Date;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 @Component
 @Transactional
@@ -67,7 +73,7 @@ public class FqlSearchService extends GremlinVertexRepository<Artifact> implemen
                                        String repositoryId,
                                        int limit,int page) throws IOException {
 
-        Pageable pageable = PageRequest.of(page, limit).next();
+        Pageable pageable = PageRequest.of(page, limit).first();
         Page<Artifact> artifacts = null;
         if(storageId == null||repositoryId==null){
              artifacts= artifactRepository.findMatching1(artifactName,pageable);
@@ -77,6 +83,7 @@ public class FqlSearchService extends GremlinVertexRepository<Artifact> implemen
         }
         List<Artifact> artifactEntityList = artifacts.getContent();
         SearchResults result = new SearchResults();
+        SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
         for (Artifact artifact:artifactEntityList){
             SearchResult r = new SearchResult();
             result.getResults().add(r);
@@ -91,15 +98,32 @@ public class FqlSearchService extends GremlinVertexRepository<Artifact> implemen
 
             r.setChecksums(artifact.getChecksums());
             r.setSizeInBytes(artifact.getSizeInBytes());
+            r.setDownloadCount(artifact.getDownloadCount());
 
+            String createdTime = DateUtil.format(Date.from(artifact.getCreated().atZone(ZoneId.of("Asia/Shanghai")).toOffsetDateTime().toInstant()), df);
+            r.setCreated(createdTime);
+            String lastUpdatedTime = DateUtil.format(Date.from(artifact.getLastUsed().atZone(ZoneId.of("Asia/Shanghai")).toOffsetDateTime().toInstant()), df);
+            String lastUsedTime = DateUtil.format(Date.from(artifact.getLastUsed().atZone(ZoneId.of("Asia/Shanghai")).toOffsetDateTime().toInstant()), df);
+            r.setLastUpdated(lastUpdatedTime);
+            r.setLastUsed(lastUsedTime);
+            r.setSha(artifact.getChecksums().get("SHA-1"));
+            r.setMd5(artifact.getChecksums().get("MD5"));
+
+            //生成snippets
             Repository repository = repositoryPath.getRepository();
-
             URL artifactResource = RepositoryFiles.readResourceUrl(repositoryPath);
             r.setUrl(artifactResource.toString());
 
             List<CodeSnippet> snippets = snippetGenerator.generateSnippets(repository.getLayout(),
                     artifact.getArtifactCoordinates());
             r.setSnippets(snippets);
+
+            TreeUtil treeUtil = new TreeUtil();
+            Set<String> fileNames = artifact.getArtifactArchiveListing().getFilenames();
+            if(fileNames!=null&&fileNames.size()>0){
+                List listTree = treeUtil.toTree(fileNames);
+                r.setTreeNode(listTree);
+            }
         }
         return result;
     }

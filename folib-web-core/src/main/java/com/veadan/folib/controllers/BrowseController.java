@@ -113,38 +113,11 @@ public class BrowseController
                 String lastUsedTime = DateUtil.format(Date.from(artifact.getLastUsed().atZone(ZoneId.of("Asia/Shanghai")).toOffsetDateTime().toInstant()), df);
                 jsonObject.put("lastUsedTime", lastUsedTime);
             }
-            if(type.equals("maven")){
-                MavenArtifactCoordinates artifactCoordinates = (MavenArtifactCoordinates) artifact.getArtifactCoordinates();
-                String mavenStr = null;
-                String gradleStr = null;
-                String ivyStr = null;
-                String sbtStr = null;
-                if (artifactCoordinates != null && artifactCoordinates.getExtension().equals("jar")) {
+
                     Set<String> fileNames = artifact.getArtifactArchiveListing().getFilenames();
-                    List listTree = treeUtil.toTree(fileNames);
-
-                    mavenStr =
-                            "<dependency>\n" +
-                                    "    <groupId>" + artifactCoordinates.getGroupId() + "</groupId>\n" +
-                                    "    <artifactId>" + artifactCoordinates.getArtifactId() + "</artifactId>\n" +
-                                    "    <version>" + artifactCoordinates.getVersion() + "</version>\n" +
-                                    "</dependency>";
-
-//            mavenStr= XmlUtil.toStr(XmlUtil.parseXml(mavenStr),true);
-                    gradleStr = "compile(group: '" + artifactCoordinates.getGroupId() + "', name: '" + artifactCoordinates.getArtifactId() + "', version: '" + artifactCoordinates.getVersion() + "')";
-                    ivyStr = "<dependency org=\"" + artifactCoordinates.getGroupId() + "\" name=\"" + artifactCoordinates.getArtifactId() + "\" rev=\"" + artifactCoordinates.getVersion() + "\">\n" +
-                            "    <artifact name=\"" + artifactCoordinates.getArtifactId() + "\" ext=\"" + artifactCoordinates.getExtension() + "\"/>\n" +
-                            "</dependency>";
-//            ivyStr= XmlUtil.toStr(XmlUtil.parseXml(ivyStr),true);
-                    sbtStr = "libraryDependencies += \"" + artifactCoordinates.getGroupId() + "\" % \"" + artifactCoordinates.getArtifactId() + "\" % \"" + artifactCoordinates.getVersion() + "\"";
-                    jsonObject.put("mavenStr", mavenStr);
-                    jsonObject.put("gradleStr", gradleStr);
-                    jsonObject.put("ivyStr", ivyStr);
-                    jsonObject.put("sbtStr", sbtStr);
-                    jsonObject.put("listTree", listTree);
-                }
-            }else if(type.equals("npm")){
-                NpmArtifactCoordinates artifactCoordinates = (NpmArtifactCoordinates) artifact.getArtifactCoordinates();
+            if(fileNames!=null&&fileNames.size()>0){
+                List listTree = treeUtil.toTree(fileNames);
+                jsonObject.put("listTree", listTree);
             }
 
             jsonObject.put("downloadCount", artifact.getDownloadCount());

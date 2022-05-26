@@ -3,7 +3,10 @@ package com.veadan.folib.storage.search;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.veadan.folib.artifact.coordinates.ArtifactCoordinates;
 import com.veadan.folib.dependency.snippet.CodeSnippet;
+import com.veadan.folib.gremlin.adapters.DateConverter;
+import org.neo4j.ogm.annotation.typeconversion.Convert;
 
+import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -35,6 +38,76 @@ public class SearchResult
     private Set<String> checksums = new HashSet<>();
 
     private Long sizeInBytes;
+
+
+    private String lastUpdated;
+
+    private String lastUsed;
+
+    private String created;
+
+    private String sha;
+    private String md5;
+
+    private List treeNode;
+
+    public List getTreeNode() {
+        return treeNode;
+    }
+
+    public void setTreeNode(List treeNode) {
+        this.treeNode = treeNode;
+    }
+
+    public String getLastUpdated() {
+        return lastUpdated;
+    }
+
+    public void setLastUpdated(String lastUpdated) {
+        this.lastUpdated = lastUpdated;
+    }
+
+    public String getLastUsed() {
+        return lastUsed;
+    }
+
+    public void setLastUsed(String lastUsed) {
+        this.lastUsed = lastUsed;
+    }
+
+    public String getCreated() {
+        return created;
+    }
+
+    public void setCreated(String created) {
+        this.created = created;
+    }
+
+    public String getSha() {
+        return sha;
+    }
+
+    public void setSha(String sha) {
+        this.sha = sha;
+    }
+
+    public String getMd5() {
+        return md5;
+    }
+
+    public void setMd5(String md5) {
+        this.md5 = md5;
+    }
+
+    public Integer getDownloadCount() {
+        return downloadCount;
+    }
+
+    public void setDownloadCount(Integer downloadCount) {
+        this.downloadCount = downloadCount;
+    }
+
+    private Integer downloadCount = Integer.valueOf(0);
 
     public Long getSizeInBytes() {
         return sizeInBytes;

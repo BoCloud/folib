@@ -130,6 +130,12 @@
         </dependency>
 
         <dependency>
+            <groupId>cn.hutool</groupId>
+            <artifactId>hutool-all</artifactId>
+            <version>5.7.20</version>
+        </dependency>
+
+        <dependency>
             <groupId>org.jtwig</groupId>
             <artifactId>jtwig-core</artifactId>
             <scope>provided</scope>   

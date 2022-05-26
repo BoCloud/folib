@@ -23,10 +23,10 @@ authorizationConfiguration:
     # System roles definition (prevented to be changed with API, UI or Configuration files)
     - name: ADMIN
       # ADMIN role will have all privileges by default
-      description: Super User role with all possible privileges
+      description: 超级用户角色，拥有所有可能的特权
       
     - name: GLOBAL_CONFIGURATION_MANAGER
-      description: Role with all global configuration related privileges
+      description: 具有所有全局配置相关特权的角色
       accessModel:
         apiAuthorities:
           - CONFIGURATION_UPLOAD
@@ -52,7 +52,7 @@ authorizationConfiguration:
           - CONFIGURATION_RETRIEVE_LOGBACK_CFG
           - CONFIGURATION_UPLOAD_LOGBACK_CFG
     - name: REPOSITORY_MANAGER
-      description: Role with all repository related privileges
+      description: 具有所有制品仓库相关权限的角色
       accessModel:
         apiAuthorities:
           - ADMIN_CREATE_REPO
@@ -60,7 +60,7 @@ authorizationConfiguration:
           - ADMIN_DELETE_REPO
           - ADMIN_LIST_REPO
     - name: ARTIFACTS_MANAGER
-      description: Role with all artifact related privileges
+      description: 具有所有制品相关特权的角色
       accessModel:
         apiAuthorities:
           - ARTIFACTS_DEPLOY
@@ -69,7 +69,7 @@ authorizationConfiguration:
           - ARTIFACTS_RESOLVE
           - ARTIFACTS_COPY
     - name: USER_MANAGER
-      description: Role with all user related privileges
+      description: 具有所有用户相关权限的角色
       accessModel:
         apiAuthorities:
           - CREATE_USER
@@ -78,26 +78,26 @@ authorizationConfiguration:
           - IMPERSONATE_USER
           - DELETE_USER
     - name: TOKEN_MANAGER
-      description: Role with all token related privileges
+      description: 具有所有令牌相关特权的角色
       accessModel:
         apiAuthorities:
           - VIEW_OWN_TOKEN
           - VIEW_ANY_TOKEN
     - name: LOGS_MANAGER
-      description: Role with all logs related privileges
+      description: 具有所有日志相关权限的角色
       accessModel:
         apiAuthorities:
           - VIEW_LOGS
           - CONFIGURE_LOGS
           - RSS_FEED
     - name: UI_MANAGER
-      description: Role with all user interface related privileges
+      description: 具有所有用户界面相关权限的角色
       accessModel:
         apiAuthorities:
           - UI_LOGIN
           - UI_BROWSE
     - name: ANONYMOUS
-      description: Anonymous user role
+      description: 匿名用户角色
       accessModel:
         apiAuthorities:
           - ARTIFACTS_RESOLVE
