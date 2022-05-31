@@ -30,6 +30,7 @@ public class DockerArtifactCoordinates
     public static final String LAYOUT_ALIAS = "Docker";
 
     //public static final String REPOSITORY = "repository";
+    public static final String IMAGE_NAME = "name";
 
     public static final String TAG = "tag";
 
@@ -38,10 +39,9 @@ public class DockerArtifactCoordinates
     public static  final String ARTIFACT_PATH= "path";
 
 
-    public DockerArtifactCoordinates()
+    public  DockerArtifactCoordinates()
     {
-        resetCoordinates(LAYERS,
-                TAG);
+        resetCoordinates(LAYERS,ARTIFACT_PATH);
     }
 
 
@@ -82,13 +82,14 @@ public class DockerArtifactCoordinates
             throw new IllegalArgumentException("The repository field is mandatory.");
         }
 
-        if (StringUtils.isBlank(reference))
-        {
-            throw new IllegalArgumentException("The reference field is mandatory.");
-        }
+//        if (StringUtils.isBlank(reference))
+//        {
+//            throw new IllegalArgumentException("The reference field is mandatory.");
+//        }
 
         setId(repository);
         setVersion(reference);
+        setTAG(reference);
         setLayers(layers);
         setArtifactPath(artifactPath);
 
@@ -96,17 +97,24 @@ public class DockerArtifactCoordinates
         // setLayers(layers);
     }
 
+    // todo 优化
     public static DockerArtifactCoordinates parse(String path)
     {
         // TODO:
         if(Objects.isNull(path)){
             return null;
         }
-        String [] strings = path.split("/");
-        String repository  =  strings[0];
-        String tag = strings[strings.length-2];
-        String artifactPath = ARTIFACT_PATH;
+        String tag = null;
+        String [] strings =null;
+        strings = path.split("/");
+        if(path.indexOf("/blobs/")<=-1){
+            tag = strings[strings.length-2];
+        }else {
+            tag = "v2";
+        }
 
+        String repository  =  strings[0];
+        String artifactPath = ARTIFACT_PATH;
         String layers = LAYERS;
         if(strings[strings.length-1].indexOf("sha256:")>-1){
             layers = strings[strings.length-1];
@@ -114,28 +122,43 @@ public class DockerArtifactCoordinates
             artifactPath = Arrays.stream(strings).filter(data->!Objects.equals(finalLayers,data) || !Objects.equals(repository,data))
                     .collect(Collectors.joining("/"));
 
+        }else if(strings[strings.length-1].indexOf("manifest.json")>-1){
+            layers = strings[strings.length-1];
+            String finalLayers = layers;
+            artifactPath = Arrays.stream(strings).filter(data->!Objects.equals(finalLayers,data) || !Objects.equals(repository,data))
+                    .collect(Collectors.joining("/"));
         }
 
 
         return  new DockerArtifactCoordinates(repository,tag,layers,artifactPath);
     }
 
+    public String getIMAGE_NAME(){
+        String str = getArtifactPath().replace("/"+getLayers(),"");
+        str = str.replace("/",":");
+        return str;
+    }
+
+    public void setIMAGE_NAME(String imageName){
+        setCoordinate(IMAGE_NAME,imageName);
+    }
+
     @Override
     public String getId()
     {
-        return getLayers();
+        return getIMAGE_NAME();
     }
 
 
     public void setId(String id)
     {
-        setLayers(id);
+        setIMAGE_NAME(id);
     }
 
     @Override
     public String getVersion()
     {
-        return getTAG();
+        return super.getVersion();
     }
 
     @Override
@@ -146,7 +169,8 @@ public class DockerArtifactCoordinates
     @Override
     public void setVersion(String version)
     {
-        setTAG(version);
+        //setCoordinate(TAG,version);
+        super.setVersion(version);
     }
 
 
@@ -157,7 +181,7 @@ public class DockerArtifactCoordinates
     public String toPath()
     {
         // TODO:
-        return null;
+        return ARTIFACT_PATH;
     }
 
     /**
@@ -176,7 +200,7 @@ public class DockerArtifactCoordinates
     public Map<String, String> dropVersion()
     {
         Map<String, String> result = getCoordinates();
-        result.remove(TAG);
+        result.remove(super.getVersion());
 
         return result;
     }

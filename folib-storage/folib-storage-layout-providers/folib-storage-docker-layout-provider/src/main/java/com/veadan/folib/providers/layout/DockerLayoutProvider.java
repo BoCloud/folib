@@ -13,6 +13,7 @@ import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 import java.io.IOException;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -32,6 +33,8 @@ public class DockerLayoutProvider
     private static final Logger logger = LoggerFactory.getLogger(DockerLayoutProvider.class);
 
     public static final String ALIAS = DockerArtifactCoordinates.LAYOUT_NAME;
+
+    public static final String  IMAGES_MANIFEST = "manifest.json";
 
     public static final String USER_AGENT_PREFIX =ALIAS;
 
@@ -61,15 +64,15 @@ public class DockerLayoutProvider
     public boolean isArtifactMetadata(RepositoryPath path)
     {
         // TODO: Fix
-        return false;
+        return path.getFileName().toString().endsWith(".sha256");
     }
 
     public boolean isMetadata(RepositoryPath path)
     {
         // TODO: Fix
-        return false;
+        return Objects.equals(IMAGES_MANIFEST,path.getFileName().toString());
     }
-    
+
     @Override
     protected Map<RepositoryFileAttributeType, Object> getRepositoryFileAttributes(RepositoryPath repositoryPath,
                                                                                    RepositoryFileAttributeType... attributeTypes)
@@ -85,31 +88,31 @@ public class DockerLayoutProvider
             {
                 case ARTIFACT:
                     value = (Boolean) value && !isMetadata(repositoryPath);
-    
+
                     if (value != null)
                     {
                         result.put(attributeType, value);
                     }
-    
+
                     break;
                 case METADATA:
                     value = (Boolean) value || isMetadata(repositoryPath);
-    
+
                     if (value != null)
                     {
                         result.put(attributeType, value);
                     }
-    
+
                     break;
                 default:
-    
+
                     break;
             }
         }
 
         return result;
     }
-    
+
     @Override
     public RepositoryManagementStrategy getRepositoryManagementStrategy()
     {

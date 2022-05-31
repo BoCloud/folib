@@ -27,7 +27,7 @@ public class FileUtils {
 
 
     private static final Logger logger = LoggerFactory.getLogger(FileUtils.class);
-    final String TEM_DIR = "/tem";
+    final String TEMP_DIR = "/temp";
 
     /**
      * jar所在的目录
@@ -107,8 +107,9 @@ public class FileUtils {
 
             long chunkSize = 0;
             //写入该分片数据
-            long offset = bytes.length;
+            long offset = 0;
             byte[] fileData = bytes;
+            logger.info("------------------>:fileName:{} file.szie:{}",fileName,bytes.length);
             mappedByteBuffer = fileChannel
                     .map(FileChannel.MapMode.READ_WRITE, offset, fileData.length);
             mappedByteBuffer.put(fileData);
@@ -118,8 +119,8 @@ public class FileUtils {
             logger.error(e.getMessage(), e);
         } finally {
             try {
-                tempRaf.close();
                 fileChannel.close();
+                tempRaf.close();
             } catch (IOException e) {
                 e.printStackTrace();
             }
@@ -137,7 +138,7 @@ public class FileUtils {
     protected File createTmpFile(String fileDir, String fileName) {
         String dir = new StringBuffer()
                 .append(getJarHomePath())
-                .append(TEM_DIR).append("/")
+                .append(TEMP_DIR).append("/")
                 .append(fileDir).toString();
         File tmpDir = new File(dir);
         File tmpFile = new File(dir, fileName);
@@ -156,7 +157,7 @@ public class FileUtils {
     public void deleteDir(String fileDir, String fileName) {
         String dir = new StringBuffer()
                 .append(getJarHomePath())
-                .append(TEM_DIR).append("/")
+                .append(TEMP_DIR).append("/")
                 .append(fileDir).append("/")
                 .append(fileName).toString();
 
@@ -195,7 +196,7 @@ public class FileUtils {
         try {
             String filePath = new StringBuffer()
                     .append(getJarHomePath())
-                    .append(TEM_DIR).append("/")
+                    .append(TEMP_DIR).append("/")
                     .append(fileDir).append("/")
                     .append(fileName).toString();
 
@@ -213,7 +214,7 @@ public class FileUtils {
         try {
             String filePath = new StringBuffer()
                     .append(getJarHomePath())
-                    .append(TEM_DIR).append("/")
+                    .append(TEMP_DIR).append("/")
                     .append(fileDir).append("/")
                     .append(fileName).toString();
 
@@ -238,7 +239,7 @@ public class FileUtils {
         long offset = 0L;
         String filePath = new StringBuffer()
                 .append(getJarHomePath())
-                .append(TEM_DIR).append("/")
+                .append(TEMP_DIR).append("/")
                 .append(fileDir).append("/")
                 .append(fileName).toString();
         FileChannel to = null;
