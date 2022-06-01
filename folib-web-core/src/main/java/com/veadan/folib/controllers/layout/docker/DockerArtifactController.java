@@ -5,15 +5,18 @@ import cn.hutool.core.lang.UUID;
 import com.veadan.folib.controllers.BaseArtifactController;
 
 import com.veadan.folib.domain.Artifact;
+import com.veadan.folib.providers.ProviderImplementationException;
 import com.veadan.folib.providers.io.RepositoryPath;
 
 import com.veadan.folib.repositories.ArtifactRepository;
 
+import com.veadan.folib.storage.validation.artifact.ArtifactCoordinatesValidationException;
 import com.veadan.folib.utils.DockerApiHeader;
 import com.veadan.folib.utils.FileUtils;
 
 import io.swagger.annotations.*;
 
+import org.jetbrains.annotations.NotNull;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -28,9 +31,12 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.*;
 
+import java.nio.file.Files;
 import java.security.MessageDigest;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+
+import static org.springframework.http.HttpStatus.NOT_FOUND;
 
 
 /**
@@ -473,14 +479,31 @@ public class DockerArtifactController extends BaseArtifactController {
             String shaChecksum = getFileChecksum(shaDigest, new ByteArrayInputStream(bytes));
             String sha256 = String.format("sha256:%s", shaChecksum);
             String artifactPath = String.format("%s/manifest/%s", name, sha256);
-            RepositoryPath repositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, artifactPath);
-            logger.info(String.valueOf(System.currentTimeMillis()));
-            artifactManagementService.validateAndStore(repositoryPath, stream);
+
+
+            //判断镜像清单是否在
+            if(!mirrorLayerExists(artifactPath,  storageId,  repositoryId)){
+                RepositoryPath repositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, artifactPath);
+                logger.info(String.valueOf(System.currentTimeMillis()));
+                artifactManagementService.validateAndStore(repositoryPath, stream);
+            }
 
             String destArtifactPath = String.format("%s/%s/%s", name, tag, sha256);
+            String artifactName = String.format("%s/%s", name, tag);
 
+            //判断镜像清单是否发生变化
+            String tagSha256 =  verifyTagSha256( artifactName, storageId,  repositoryId);
             RepositoryPath destPath = repositoryPathResolver.resolve(storageId, repositoryId, destArtifactPath);
-            artifactManagementService.validateAndStore(destPath, destStream);
+
+            //如果存在并发生变化删除更新
+            if(Objects.isNull(tagSha256)){
+                artifactManagementService.validateAndStore(destPath, destStream);
+            }else if(!Objects.equals(tagSha256,sha256)){
+                RepositoryPath deletePath = repositoryPathResolver.resolve(storageId, repositoryId, destArtifactPath.replace(sha256,tagSha256));
+                artifactManagementService.delete(deletePath, true);
+                artifactManagementService.validateAndStore(destPath, destStream);
+            }
+
             //copy 没有存储数据库
             //artifactManagementService.copy(srcPath, destPath);
             manifestSha256 = sha256;
@@ -493,6 +516,7 @@ public class DockerArtifactController extends BaseArtifactController {
             return manifestSha256;
         }
     }
+
 
     private String getFileChecksum(MessageDigest digest, InputStream stream) throws IOException {
         //Get file input stream for reading the file content
@@ -562,10 +586,7 @@ public class DockerArtifactController extends BaseArtifactController {
         String fileName = data.get(digest);
         return utils.getFile(fileDir, fileName);
     }
-
-
-    // todo 引用计数
-    final ConcurrentHashMap<String, String> manifestsSha = new ConcurrentHashMap<String, String>();
+    ;
 
 
     @ApiOperation(value = "Existing Manifests 现有清单")
@@ -626,6 +647,46 @@ public class DockerArtifactController extends BaseArtifactController {
         return entity;
     }
 
+    public String verifyTagSha256(String artifactName, String storageId, String repositoryId) {
+        return getLayers(artifactName, storageId, repositoryId);
+    }
+
+
+    //是否存在镜像层
+    @NotNull
+    private Boolean mirrorLayerExists(String artifactName, String storageId, String repositoryId) {
+        Page<Artifact> artifacts = getArtifact(artifactName,storageId,repositoryId);
+        Boolean result = false;
+        if (Objects.nonNull(artifacts) && artifacts.getContent().size() > 0) {
+            List<Artifact> artifactEntityList = artifacts.getContent();
+            Artifact artifact = artifactEntityList.get(0);
+            result =   Objects.nonNull(artifact);
+        }
+        return result;
+    }
+
+    private String getLayers(String artifactName, String storageId, String repositoryId) {
+        Page<Artifact> artifacts = getArtifact(artifactName,storageId,repositoryId);
+        String layers = null;
+        if (Objects.nonNull(artifacts) && artifacts.getContent().size() > 0) {
+            List<Artifact> artifactEntityList = artifacts.getContent();
+            Artifact artifact = artifactEntityList.get(0);
+            Map<String, String> mapCoordinates = artifact.getArtifactCoordinates().getCoordinates();
+
+            if (Objects.nonNull(mapCoordinates) && mapCoordinates.containsKey("layers")) {
+                layers = mapCoordinates.get("layers");
+            }
+        }
+        return layers;
+    }
+
+    public Page<Artifact> getArtifact(String artifactName, String storageId, String repositoryId) {
+        int limit = 10;
+        int page = 1;
+        Pageable pageable = PageRequest.of(page, limit).first();
+        return artifactRepository.findMatching2(artifactName, storageId, repositoryId, pageable);
+    }
+
 
     @ApiOperation(value = "Pulling an Image Manifest 获取镜像清单")
     @ApiImplicitParams({
@@ -652,15 +713,12 @@ public class DockerArtifactController extends BaseArtifactController {
             RepositoryPath repositoryPath = artifactResolutionService.resolvePath(storageId, repositoryId, artifactPath);
             response.reset();
             response.setDateHeader(DockerApiHeader.DATE.key(), System.currentTimeMillis());
-
+            entity = ResponseEntity.status(HttpStatus.OK).build();
             response.addHeader(DockerApiHeader.DOCKER_CONTENT_DIGEST.key(), digest);
             response.addHeader(DockerApiHeader.DOCKER_DISTRIBUTION_API_VERSION.key(), DockerApiHeader.DOCKER_DISTRIBUTION_API_VERSION.value());
             provideArtifactDownloadResponse(request, response, httpHeaders, repositoryPath);
         } catch (Exception e) {
             logger.error(e.getMessage(), e);
-        } finally {
-            manifestsSha.remove(digest);
-
         }
         return entity;
     }
@@ -694,11 +752,9 @@ public class DockerArtifactController extends BaseArtifactController {
             response.addHeader(DockerApiHeader.DOCKER_CONTENT_DIGEST.key(), digest);
             response.addHeader(DockerApiHeader.DOCKER_DISTRIBUTION_API_VERSION.key(), DockerApiHeader.DOCKER_DISTRIBUTION_API_VERSION.value());
             provideArtifactDownloadResponse(request, response, httpHeaders, repositoryPath);
+            entity = ResponseEntity.status(HttpStatus.OK).build();
         } catch (Exception e) {
             logger.error(e.getMessage(), e);
-        } finally {
-            manifestsSha.remove(digest);
-
         }
         return entity;
     }
