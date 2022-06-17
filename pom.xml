@@ -35,7 +35,6 @@
         <module>folib-configuration</module>
         <module>folib-event-api</module>
         <module>folib-security</module>
-        <module>folib-testing</module>
         <module>folib-client</module>
         <module>folib-rest-client</module>
         <module>folib-cron</module>

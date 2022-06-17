@@ -19,10 +19,10 @@
     <name>Folib: Storage [Docker Layout Provider]</name>
 
 
-<!--    <properties>-->
-<!--        <dir.strongbox.home>${project.build.directory}/strongbox</dir.strongbox.home>-->
-<!--        <dir.strongbox.vault>${project.build.directory}/strongbox-vault</dir.strongbox.vault>-->
-<!--    </properties>-->
+    <properties>
+        <dir.folib.home>${project.build.directory}/folib</dir.folib.home>
+        <dir.folib.vault>${project.build.directory}/folin-vault</dir.folib.vault>
+    </properties>
 
     <build>
         <plugins>
@@ -74,7 +74,7 @@
                                     <type>jar</type>
 
                                     <overWrite>true</overWrite>
-                                    <outputDirectory>${dir.strongbox.home}/etc</outputDirectory>
+                                    <outputDirectory>${dir.folib.home}/etc</outputDirectory>
                                     <includes>logback*xml</includes>
                                 </artifactItem>
                             </artifactItems>
@@ -116,7 +116,7 @@
                                     <type>jar</type>
 
                                     <overWrite>true</overWrite>
-                                    <outputDirectory>${dir.strongbox.home}/etc</outputDirectory>
+                                    <outputDirectory>${dir.folib.home}/etc</outputDirectory>
                                     <includes>logback*xml</includes>
                                 </artifactItem>
                             </artifactItems>
@@ -183,19 +183,6 @@
             <groupId>${project.groupId}</groupId>
             <artifactId>folib-common-resources</artifactId>
             <version>${project.version}</version>
-            <scope>test</scope>
-        </dependency>
-<!--        <dependency>-->
-<!--            <groupId>${project.groupId}</groupId>-->
-<!--            <artifactId>folib-testing-storage</artifactId>-->
-<!--            <version>${project.version}</version>-->
-<!--            <scope>test</scope>-->
-<!--        </dependency>-->
-        <dependency>
-            <groupId>${project.groupId}</groupId>
-            <artifactId>folib-testing-core</artifactId>
-            <version>${project.version}</version>
-            <type>test-jar</type>
             <scope>test</scope>
         </dependency>
         <dependency>

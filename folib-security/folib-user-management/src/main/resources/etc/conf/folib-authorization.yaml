@@ -2,7 +2,7 @@ authorizationConfiguration:
   roles:
     # Custom roles definition
     - name: CUSTOM_ROLE
-      description: Custom role configuration example
+      description: 自定义角色类型
       accessModel:
         # TODO: there will be `uiAuthorities` as well
         apiAuthorities:

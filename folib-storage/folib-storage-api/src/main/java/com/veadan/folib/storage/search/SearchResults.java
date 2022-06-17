@@ -16,6 +16,15 @@ public class SearchResults
     @JsonProperty("artifact")
     private Set<SearchResult> results = new LinkedHashSet<>();
 
+    private long total;
+
+    public long getTotal() {
+        return total;
+    }
+
+    public void setTotal(long total) {
+        this.total = total;
+    }
 
     public SearchResults()
     {

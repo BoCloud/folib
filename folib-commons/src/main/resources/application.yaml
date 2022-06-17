@@ -59,6 +59,8 @@ management:
   health:
     neo4j:
       enabled: false
+    ldap:
+      enabled: false
   endpoint:
     health:
       show-details: always

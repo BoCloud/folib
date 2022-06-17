@@ -5,7 +5,7 @@
 
     <modelVersion>4.0.0</modelVersion>
 
- <parent>
+    <parent>
         <groupId>com.veadan.folib</groupId>
         <artifactId>folib-parent</artifactId>
         <version>1.0-SNAPSHOT</version>
@@ -17,10 +17,6 @@
     <packaging>jar</packaging>
 
     <name>Folib: Web Core</name>
-
-
-
-
 
     <inceptionYear>2019</inceptionYear>
 
@@ -147,7 +143,7 @@
         <dependency>
             <groupId>com.alibaba</groupId>
             <artifactId>fastjson</artifactId>
-            <version>1.2.75</version>
+            <version>1.2.83</version>
         </dependency>
         <dependency>
             <groupId>${project.groupId}</groupId>
@@ -276,13 +272,13 @@
             <type>test-jar</type>
             <scope>test</scope>
         </dependency>
-        <dependency>
-            <groupId>${project.groupId}</groupId>
-            <artifactId>folib-testing-web</artifactId>
-            <version>1.0-SNAPSHOT</version>
-            <type>test-jar</type>
-            <scope>test</scope>
-        </dependency>
+<!--        <dependency>-->
+<!--            <groupId>${project.groupId}</groupId>-->
+<!--            <artifactId>folib-testing-web</artifactId>-->
+<!--            <version>1.0-SNAPSHOT</version>-->
+<!--            <type>test-jar</type>-->
+<!--            <scope>test</scope>-->
+<!--        </dependency>-->
         <dependency>
             <groupId>${project.groupId}</groupId>
             <artifactId>folib-storage-api-resources</artifactId>
@@ -293,19 +289,19 @@
             <artifactId>folib-common-resources</artifactId>
             <version>1.0-SNAPSHOT</version>
         </dependency>
-        <dependency>
-            <groupId>${project.groupId}</groupId>
-            <artifactId>folib-testing-core</artifactId>
-            <version>1.0-SNAPSHOT</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>${project.groupId}</groupId>
-            <artifactId>folib-testing-core</artifactId>
-            <version>1.0-SNAPSHOT</version>
-            <type>test-jar</type>
-            <scope>test</scope>
-        </dependency>
+<!--        <dependency>-->
+<!--            <groupId>${project.groupId}</groupId>-->
+<!--            <artifactId>folib-testing-core</artifactId>-->
+<!--            <version>1.0-SNAPSHOT</version>-->
+<!--            <scope>test</scope>-->
+<!--        </dependency>-->
+<!--        <dependency>-->
+<!--            <groupId>${project.groupId}</groupId>-->
+<!--            <artifactId>folib-testing-core</artifactId>-->
+<!--            <version>1.0-SNAPSHOT</version>-->
+<!--            <type>test-jar</type>-->
+<!--            <scope>test</scope>-->
+<!--        </dependency>-->
         <dependency>
             <groupId>${project.groupId}</groupId>
             <artifactId>folib-storage-api</artifactId>

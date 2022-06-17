@@ -73,7 +73,12 @@ public class FqlSearchService extends GremlinVertexRepository<Artifact> implemen
                                        String repositoryId,
                                        int limit,int page) throws IOException {
 
-        Pageable pageable = PageRequest.of(page, limit).first();
+        Pageable pageable = null;
+        if(page==1) {
+            pageable = PageRequest.of(page, limit).first();
+        }else if(page>1){
+            pageable = PageRequest.of(page, limit).next();
+        }
         Page<Artifact> artifacts = null;
         if(storageId == null||repositoryId==null){
              artifacts= artifactRepository.findMatching1(artifactName,pageable);
@@ -82,7 +87,9 @@ public class FqlSearchService extends GremlinVertexRepository<Artifact> implemen
             artifacts= artifactRepository.findMatching2(artifactName,storageId,repositoryId,pageable);
         }
         List<Artifact> artifactEntityList = artifacts.getContent();
+
         SearchResults result = new SearchResults();
+        result.setTotal(artifacts.getTotalElements());
         SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
         for (Artifact artifact:artifactEntityList){
             SearchResult r = new SearchResult();

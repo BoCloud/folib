@@ -205,4 +205,6 @@ interface ArtifactEntityQueries extends org.springframework.data.repository.Repo
                                  @Param("repositoryId") String repositoryId,
                                  Pageable page);
 
+
+
 }
