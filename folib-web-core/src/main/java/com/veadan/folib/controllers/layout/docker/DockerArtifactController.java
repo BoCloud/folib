@@ -46,8 +46,8 @@ import static org.springframework.http.HttpStatus.NOT_FOUND;
  *
  * @author Martin Todorov
  * @author Alex Oreshkevich
- * @author Przemyslaw Fusik
- * @author Sergey Bespalov
+ * @author veadan
+ * @author @author veadan
  * @see{@linkplain http://docs.spring.io/spring/docs/current/spring-framework-reference/html/mvc.html#mvc-config-path-matching}
  */
 @RestController
@@ -353,18 +353,19 @@ public class DockerArtifactController extends BaseArtifactController {
             response.addHeader("Accept-Ranges", "bytes");
             response.addHeader(DockerApiHeader.DOCKER_CONTENT_DIGEST.key(), digest);
             String artifactName = String.format("%s/blobs/%s", name, digest);
-            int limit = 10;
-            int page = 1;
+//            int limit = 10;
+//            int page = 1;
             //仓库查询是否存在
-            Page<Artifact> artifacts = null;
-            String manifest = null;
-            //镜像不存在 404 Not Found
-            Pageable pageable = PageRequest.of(page, limit).first();
-            artifacts = artifactRepository.findMatching2(artifactName, storageId, repositoryId, pageable);
-            List<Artifact> artifactEntityList = artifacts.getContent();
+//            Page<Artifact> artifacts = null;
+//            String manifest = null;
+//            //镜像不存在 404 Not Found
+//            Pageable pageable = PageRequest.of(page, limit).first();
+            boolean isNotExist=artifactRepository.artifactExists(storageId,repositoryId,artifactName);
+//            artifacts = artifactRepository.findMatching2(artifactName, storageId, repositoryId, pageable);
+//            List<Artifact> artifactEntityList = artifacts.getContent();
 
             //todo 200已经存在 404不存在
-            if (Objects.nonNull(artifactEntityList) && artifactEntityList.size() > 0) {
+            if (isNotExist) {
                 return new ResponseEntity<>("OK", HttpStatus.ACCEPTED);
             } else {
                 return new ResponseEntity<>(null, HttpStatus.NOT_FOUND);
@@ -606,23 +607,18 @@ public class DockerArtifactController extends BaseArtifactController {
                                             @PathVariable String tag) {
 
         String artifactName = String.format("%s/%s/", name, tag);
-        int limit = 10;
-        int page = 1;
+
         //仓库查询是否存在
-        Page<Artifact> artifacts = null;
+       Artifact artifact = null;
         String manifest = null;
         //镜像不存在 404 Not Found
         ResponseEntity entity = ResponseEntity.status(HttpStatus.NOT_FOUND).build();
         try {
-            Pageable pageable = PageRequest.of(page, limit).first();
-            artifacts = artifactRepository.findMatching2(artifactName, storageId, repositoryId, pageable);
+            artifact =artifactRepository.findOneArtifact(storageId,repositoryId,artifactName);
         } catch (Exception e) {
             logger.error(e.getMessage(), e);
         } finally {
-            if (Objects.nonNull(artifacts) && artifacts.getContent().size() > 0) {
-
-                List<Artifact> artifactEntityList = artifacts.getContent();
-                Artifact artifact = artifactEntityList.get(0);
+            if (Objects.nonNull(artifact)) {
                 Map<String, String> mapCoordinates = artifact.getArtifactCoordinates().getCoordinates();
                 if (Objects.nonNull(mapCoordinates) && mapCoordinates.containsKey("layers")) {
                     manifest = mapCoordinates.get("layers");
@@ -655,23 +651,15 @@ public class DockerArtifactController extends BaseArtifactController {
     //是否存在镜像层
     @NotNull
     private Boolean mirrorLayerExists(String artifactName, String storageId, String repositoryId) {
-        Page<Artifact> artifacts = getArtifact(artifactName,storageId,repositoryId);
-        Boolean result = false;
-        if (Objects.nonNull(artifacts) && artifacts.getContent().size() > 0) {
-            List<Artifact> artifactEntityList = artifacts.getContent();
-            Artifact artifact = artifactEntityList.get(0);
-            result =   Objects.nonNull(artifact);
-        }
-        return result;
+
+        return  artifactRepository.artifactExists(storageId,repositoryId,artifactName);
     }
 
     private String getLayers(String artifactName, String storageId, String repositoryId) {
-        Page<Artifact> artifacts = getArtifact(artifactName,storageId,repositoryId);
+        Artifact artifacts = getArtifact(artifactName,storageId,repositoryId);
         String layers = null;
-        if (Objects.nonNull(artifacts) && artifacts.getContent().size() > 0) {
-            List<Artifact> artifactEntityList = artifacts.getContent();
-            Artifact artifact = artifactEntityList.get(0);
-            Map<String, String> mapCoordinates = artifact.getArtifactCoordinates().getCoordinates();
+        if (Objects.nonNull(artifacts)) {
+            Map<String, String> mapCoordinates = artifacts.getArtifactCoordinates().getCoordinates();
 
             if (Objects.nonNull(mapCoordinates) && mapCoordinates.containsKey("layers")) {
                 layers = mapCoordinates.get("layers");
@@ -680,11 +668,9 @@ public class DockerArtifactController extends BaseArtifactController {
         return layers;
     }
 
-    public Page<Artifact> getArtifact(String artifactName, String storageId, String repositoryId) {
-        int limit = 10;
-        int page = 1;
-        Pageable pageable = PageRequest.of(page, limit).first();
-        return artifactRepository.findMatching2(artifactName, storageId, repositoryId, pageable);
+    public Artifact getArtifact(String artifactName, String storageId, String repositoryId) {
+
+        return artifactRepository.findOneArtifact( storageId, repositoryId, artifactName);
     }
 
 
@@ -706,7 +692,6 @@ public class DockerArtifactController extends BaseArtifactController {
 
         String artifactPath = String.format("%s/manifest/%s", name, digest);
         ResponseEntity entity = ResponseEntity.status(HttpStatus.NOT_FOUND).build();
-
 
         try {
             logger.info("pullingAnImageManifest params [storageId:{}, repositoryId:{}, artifactPath:{}", storageId, repositoryId, artifactPath);
