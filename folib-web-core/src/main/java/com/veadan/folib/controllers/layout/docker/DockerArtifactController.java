@@ -5,11 +5,14 @@ import cn.hutool.core.lang.UUID;
 import com.veadan.folib.controllers.BaseArtifactController;
 
 import com.veadan.folib.domain.Artifact;
+import com.veadan.folib.domain.DirectoryListing;
+import com.veadan.folib.domain.FileContent;
 import com.veadan.folib.providers.ProviderImplementationException;
 import com.veadan.folib.providers.io.RepositoryPath;
 
 import com.veadan.folib.repositories.ArtifactRepository;
 
+import com.veadan.folib.services.DirectoryListingService;
 import com.veadan.folib.storage.validation.artifact.ArtifactCoordinatesValidationException;
 import com.veadan.folib.utils.DockerApiHeader;
 import com.veadan.folib.utils.FileUtils;
@@ -17,6 +20,7 @@ import com.veadan.folib.utils.FileUtils;
 import io.swagger.annotations.*;
 
 import org.jetbrains.annotations.NotNull;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -35,8 +39,10 @@ import java.nio.file.Files;
 import java.security.MessageDigest;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 
 import static org.springframework.http.HttpStatus.NOT_FOUND;
+
 
 
 /**
@@ -54,7 +60,9 @@ import static org.springframework.http.HttpStatus.NOT_FOUND;
 //@LayoutRequestMapping(DockerArtifactCoordinates.LAYOUT_NAME)
 public class DockerArtifactController extends BaseArtifactController {
 
-
+    @Inject
+    @Qualifier("browseRepositoryDirectoryListingService")
+    private volatile DirectoryListingService directoryListingService;
     @Inject
     ArtifactRepository artifactRepository;
 
@@ -614,7 +622,11 @@ public class DockerArtifactController extends BaseArtifactController {
         //镜像不存在 404 Not Found
         ResponseEntity entity = ResponseEntity.status(HttpStatus.NOT_FOUND).build();
         try {
-            artifact =artifactRepository.findOneArtifact(storageId,repositoryId,artifactName);
+            RepositoryPath repositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, artifactName);
+            DirectoryListing directoryListing = directoryListingService.fromRepositoryPath(repositoryPath);
+            List<FileContent> fileContents = directoryListing.getFiles().stream().filter(file -> !(file.getName().endsWith(".sha256"))).collect(Collectors.toList());  //+propertiesBooter.getStorageBooterBasedir()+"/"+propertiesBooter.getVaultDirectory() + "/storages/"
+            FileContent fileContent = fileContents.get(0);
+            artifact =artifactRepository.findOneArtifact(storageId,repositoryId,fileContent.getArtifactPath());
         } catch (Exception e) {
             logger.error(e.getMessage(), e);
         } finally {
