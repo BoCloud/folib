@@ -16,7 +16,7 @@ import org.springframework.util.Assert;
 import com.google.common.collect.ImmutableMap;
 
 /**
- * @author Przemyslaw Fusik
+ * @author veadan
  */
 public class AuthoritiesExternalToInternalMapper
         implements InitializingBean,

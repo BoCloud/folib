@@ -3,7 +3,7 @@ package com.veadan.folib.providers.io;
 import java.io.IOException;
 
 /**
- * @author Przemyslaw Fusik
+ * @author veadan
  */
 public interface ExpiredRepositoryPathHandler
 {

@@ -9,7 +9,7 @@ import org.apache.commons.lang3.ObjectUtils;
 
 
 /**
- * @author Przemyslaw Fusik
+ * @author veadan
  */
 @CronTaskConfigurationFormValid(message = "Invalid cron task configuration")
 public class CronTaskConfigurationForm

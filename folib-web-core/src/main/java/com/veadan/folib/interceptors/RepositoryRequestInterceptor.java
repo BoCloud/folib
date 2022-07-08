@@ -12,7 +12,7 @@ import static com.veadan.folib.web.Constants.*;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
 
 /**
- * @author Przemyslaw Fusik
+ * @author veadan
  */
 public class RepositoryRequestInterceptor
         extends HandlerInterceptorAdapter

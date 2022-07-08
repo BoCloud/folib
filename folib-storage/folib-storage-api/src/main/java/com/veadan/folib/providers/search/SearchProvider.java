@@ -5,7 +5,7 @@ import com.veadan.folib.storage.search.SearchResult;
 import com.veadan.folib.storage.search.SearchResults;
 
 /**
- * @author carlspring
+ * @author Veadan
  */
 public interface SearchProvider
 {

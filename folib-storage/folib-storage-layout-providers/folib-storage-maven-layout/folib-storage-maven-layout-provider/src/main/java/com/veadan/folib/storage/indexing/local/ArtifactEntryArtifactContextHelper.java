@@ -1,7 +1,7 @@
 package com.veadan.folib.storage.indexing.local;
 
 /**
- * @author Przemyslaw Fusik
+ * @author veadan
  */
 public class ArtifactEntryArtifactContextHelper
 {

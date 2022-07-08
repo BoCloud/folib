@@ -1,7 +1,7 @@
 package com.veadan.folib.web;
 
 /**
- * @author Przemyslaw Fusik
+ * @author veadan
  */
 public final class Constants
 {

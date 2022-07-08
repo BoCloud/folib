@@ -6,7 +6,7 @@ import java.util.List;
 import org.springframework.stereotype.Component;
 
 /**
- * @author Przemyslaw Fusik
+ * @author veadan
  */
 @Component
 public class CronTaskConfigurationFormFieldTypeValidatorsRegistry

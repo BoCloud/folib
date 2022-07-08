@@ -1,7 +1,7 @@
 package com.veadan.folib.data.service;
 
 /**
- * @author Przemyslaw Fusik
+ * @author veadan
  */
 public class DataServiceException
         extends RuntimeException

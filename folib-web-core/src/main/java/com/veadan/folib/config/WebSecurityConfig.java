@@ -185,7 +185,7 @@ public class WebSecurityConfig
     /**
      * This Configuration enables @PreAuthorize annotations
      *
-     * @author Sergey Bespalov
+     * @author @author veadan
      */
     @Configuration
     @EnableGlobalMethodSecurity(prePostEnabled = true)

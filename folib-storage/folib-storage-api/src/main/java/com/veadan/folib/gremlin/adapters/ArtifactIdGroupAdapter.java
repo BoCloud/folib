@@ -27,7 +27,7 @@ import com.veadan.folib.gremlin.dsl.EntityTraversalUtils;
 import org.springframework.stereotype.Component;
 
 /**
- * @author sbespalov
+ * @author xuxinping
  */
 @Component
 public class ArtifactIdGroupAdapter implements VertexEntityTraversalAdapter<ArtifactIdGroup>

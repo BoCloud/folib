@@ -7,7 +7,7 @@ import javax.validation.constraints.NotNull;
 import com.veadan.folib.authentication.api.ldap.LdapConfiguration;
 
 /**
- * @author Przemyslaw Fusik
+ * @author veadan
  */
 public class LdapConfigurationTestForm
 {

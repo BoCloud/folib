@@ -6,7 +6,7 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.GrantedAuthority;
 
 /**
- * @author Sergey Bespalov
+ * @author @author veadan
  *
  */
 public class PasswordAuthentication extends UsernamePasswordAuthenticationToken

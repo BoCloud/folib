@@ -9,7 +9,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 /**
- * @author Przemyslaw Fusik
+ * @author veadan
  */
 public class FormDataValues<T>
 {

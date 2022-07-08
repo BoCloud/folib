@@ -15,7 +15,7 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 
 /**
- * @author carlspring
+ * @author Veadan
  */
 @NodeEntity(Vertices.DOCKER_ARTIFACT_COORDINATES)
 @XmlRootElement(name = "DockerArtifactCoordinates")

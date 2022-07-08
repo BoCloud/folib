@@ -7,7 +7,7 @@ import java.util.List;
 import org.springframework.util.StringUtils;
 
 /**
- * @author Przemyslaw Fusik
+ * @author veadan
  */
 @Immutable
 public class Sort

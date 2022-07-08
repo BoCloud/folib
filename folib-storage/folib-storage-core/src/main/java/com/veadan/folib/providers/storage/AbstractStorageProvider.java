@@ -3,7 +3,7 @@ package com.veadan.folib.providers.storage;
 import javax.inject.Inject;
 
 /**
- * @author carlspring
+ * @author Veadan
  */
 public abstract class AbstractStorageProvider
         implements StorageProvider

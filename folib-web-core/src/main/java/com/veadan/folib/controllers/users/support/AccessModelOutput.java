@@ -6,7 +6,7 @@ import java.util.Objects;
 import java.util.Optional;
 
 /**
- * @author Przemyslaw Fusik
+ * @author veadan
  */
 public class AccessModelOutput
 {

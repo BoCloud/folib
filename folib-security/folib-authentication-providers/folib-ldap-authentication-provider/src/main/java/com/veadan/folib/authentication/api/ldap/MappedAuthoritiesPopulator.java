@@ -9,7 +9,7 @@ import org.springframework.security.ldap.authentication.NullLdapAuthoritiesPopul
 import org.springframework.security.ldap.userdetails.LdapAuthoritiesPopulator;
 
 /**
- * @author sbespalov
+ * @author xuxinping
  *
  */
 public class MappedAuthoritiesPopulator implements LdapAuthoritiesPopulator

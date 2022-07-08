@@ -7,7 +7,7 @@ import java.net.URISyntaxException;
 import org.apache.commons.lang.StringUtils;
 
 /**
- * @author Przemyslaw Fusik
+ * @author veadan
  */
 public class LdapUriValidator
         implements ConstraintValidator<LdapUri, String>

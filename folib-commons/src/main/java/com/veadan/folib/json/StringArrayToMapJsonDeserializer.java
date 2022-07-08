@@ -12,7 +12,7 @@ import com.fasterxml.jackson.databind.JsonDeserializer;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 
 /**
- * @author Przemyslaw Fusik
+ * @author veadan
  */
 public class StringArrayToMapJsonDeserializer
         extends JsonDeserializer<Map<String, String>>

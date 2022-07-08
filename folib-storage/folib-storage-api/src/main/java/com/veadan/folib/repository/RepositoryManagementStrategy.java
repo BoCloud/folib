@@ -5,7 +5,7 @@ import com.veadan.folib.storage.repository.Repository;
 import java.io.IOException;
 
 /**
- * @author carlspring
+ * @author Veadan
  */
 public interface RepositoryManagementStrategy
 {

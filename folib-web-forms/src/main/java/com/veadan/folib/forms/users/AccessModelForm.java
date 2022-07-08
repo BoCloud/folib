@@ -5,7 +5,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * @author Przemyslaw Fusik
+ * @author veadan
  */
 public class AccessModelForm
 {

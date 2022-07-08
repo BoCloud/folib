@@ -1,7 +1,7 @@
 package com.veadan.folib.storage.routing;
 
 /**
- * @author Przemyslaw Fusik
+ * @author veadan
  */
 public interface RepositoryIdentifiable
 {

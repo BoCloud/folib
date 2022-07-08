@@ -11,7 +11,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
  * @author Alex Oreshkevich
- * @author Przemyslaw Fusik
+ * @author veadan
  * @author Pablo Tirado
  */
 public class PathPrivilegesDto

@@ -1,7 +1,7 @@
 package com.veadan.folib.event.cron;
 
 /**
- * @author carlspring
+ * @author Veadan
  */
 public enum CronTaskEventTypeEnum
 {

@@ -6,7 +6,7 @@ import java.util.regex.Matcher;
 import static org.apache.maven.artifact.Artifact.VERSION_FILE_PATTERN;
 
 /**
- * @author Przemyslaw Fusik
+ * @author veadan
  */
 public class SnapshotVersionDecomposition
 {

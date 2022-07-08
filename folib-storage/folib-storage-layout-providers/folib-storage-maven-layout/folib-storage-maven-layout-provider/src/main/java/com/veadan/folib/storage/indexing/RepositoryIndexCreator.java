@@ -13,7 +13,7 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
 import java.io.IOException;
 
 /**
- * @author Przemyslaw Fusik
+ * @author veadan
  */
 public interface RepositoryIndexCreator
         extends ThrowingFunction<Repository, RepositoryPath>

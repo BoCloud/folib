@@ -1,7 +1,7 @@
 package com.veadan.folib.domain;
 
 /**
- * @author sbespalov
+ * @author xuxinping
  */
 public interface ArtifactIdGroup extends ArtifactGroup
 {

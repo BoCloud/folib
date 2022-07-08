@@ -22,7 +22,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.quartz.CronExpression;
 
 /**
- * @author Przemyslaw Fusik
+ * @author veadan
  */
 public class CronTaskConfigurationFormValidator
         implements ConstraintValidator<CronTaskConfigurationFormValid, CronTaskConfigurationForm>

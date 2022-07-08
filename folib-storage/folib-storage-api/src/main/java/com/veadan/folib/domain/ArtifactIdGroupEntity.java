@@ -11,8 +11,8 @@ import org.neo4j.ogm.annotation.NodeEntity;
 import org.neo4j.ogm.annotation.Relationship;
 
 /**
- * @author Przemyslaw Fusik
- * @author sbespalov
+ * @author veadan
+ * @author xuxinping
  */
 @NodeEntity(Vertices.ARTIFACT_ID_GROUP)
 public class ArtifactIdGroupEntity extends DomainEntity implements ArtifactIdGroup

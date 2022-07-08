@@ -3,7 +3,7 @@ package com.veadan.folib.validation.cron.type;
 import org.springframework.stereotype.Component;
 
 /**
- * @author Przemyslaw Fusik
+ * @author veadan
  */
 @Component
 public class StringCronTaskConfigurationFormFieldTypeValidator

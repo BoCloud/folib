@@ -15,7 +15,7 @@ import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.stereotype.Component;
 
 /**
- * @author Przemyslaw Fusik
+ * @author veadan
  */
 @Component
 public class GroupRepositorySetCollector

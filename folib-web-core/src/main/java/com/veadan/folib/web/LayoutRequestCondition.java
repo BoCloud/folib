@@ -13,8 +13,8 @@ import org.springframework.web.servlet.mvc.condition.AbstractRequestCondition;
 import static com.veadan.folib.web.Constants.ARTIFACT_ROOT_PATH;
 
 /**
- * @author sbespalov
- * @author Przemyslaw Fusik
+ * @author xuxinping
+ * @author veadan
  */
 public class LayoutRequestCondition
         extends AbstractRequestCondition<ExposableRequestCondition>

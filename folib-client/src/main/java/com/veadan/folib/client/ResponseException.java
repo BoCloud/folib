@@ -1,7 +1,6 @@
 package com.veadan.folib.client;
 
 /**
- * @author mtodorov
  */
 public class ResponseException extends Exception
 {

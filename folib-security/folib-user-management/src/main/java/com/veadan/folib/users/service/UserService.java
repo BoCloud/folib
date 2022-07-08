@@ -6,7 +6,7 @@ import org.jose4j.lang.JoseException;
 
 /**
  * @author Alex Oreshkevich
- * @author Przemyslaw Fusik
+ * @author veadan
  */
 public interface UserService
 {

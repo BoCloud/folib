@@ -13,7 +13,7 @@ import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.web.access.AccessDeniedHandler;
 
 /**
- * @author Przemyslaw Fusik
+ * @author veadan
  */
 public class CustomAccessDeniedHandler
         implements AccessDeniedHandler

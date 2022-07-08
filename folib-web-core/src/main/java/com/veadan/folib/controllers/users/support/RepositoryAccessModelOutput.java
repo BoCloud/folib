@@ -4,7 +4,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 
 /**
- * @author Przemyslaw Fusik
+ * @author veadan
  */
 public class RepositoryAccessModelOutput
 {

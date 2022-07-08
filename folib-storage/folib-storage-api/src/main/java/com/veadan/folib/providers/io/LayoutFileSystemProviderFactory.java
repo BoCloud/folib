@@ -4,7 +4,7 @@ import com.veadan.folib.providers.layout.LayoutFileSystemProvider;
 import com.veadan.folib.storage.repository.Repository;
 
 /**
- * @author sbespalov
+ * @author xuxinping
  *
  */
 @FunctionalInterface

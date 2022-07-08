@@ -6,6 +6,7 @@ import cn.hutool.core.util.XmlUtil;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
+import com.beust.jcommander.internal.Lists;
 import com.veadan.folib.artifact.coordinates.ArtifactCoordinates;
 import com.veadan.folib.artifact.coordinates.MavenArtifactCoordinates;
 import com.veadan.folib.artifact.coordinates.NpmArtifactCoordinates;
@@ -133,37 +134,50 @@ public class BrowseController
                 jsonObject.put("artifact", artifact);
             }
         } else {
+            String[] a = artifactPath.split("/");
+            String aName = a[0];
+            String aVersion = a[1];
             RepositoryPath repositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, artifactPath);
+            String blobsPath=aName+"/blobs";
+            RepositoryPath repositoryPathBlobs = repositoryPathResolver.resolve(storageId, repositoryId, blobsPath);
             try {
                 DirectoryListing directoryListing = directoryListingService.fromRepositoryPath(repositoryPath);
+
+                //获取blobs下的文件列表，为了获取层的大小。
+                DirectoryListing blobsListing = directoryListingService.fromRepositoryPath(repositoryPathBlobs);
+
+
+
                 List<FileContent> fileContents = directoryListing.getFiles().stream().filter(file -> !(file.getName().endsWith(".sha256"))).collect(Collectors.toList());  //+propertiesBooter.getStorageBooterBasedir()+"/"+propertiesBooter.getVaultDirectory() + "/storages/"
                 FileContent fileContent = fileContents.get(0);
 
                 String menifestString = FileUtil.readString(repositoryPath.toFile().getPath()+"/"+fileContent.getName(), "UTF-8");
-                String[] a = artifactPath.split("/");
-                String aName = a[0];
-                String aVersion = a[1];
+
                 String iamgeName = configurationManagementService.getConfiguration().getBaseUrl().replace("http://", "") + storageId + "/" + repositoryId + "/" + aName + ":" + aVersion;
                 String code = "docker  pull  " + iamgeName;
                 CodeSnippet codeSnippet = new CodeSnippet("Docker", code);
                 List<CodeSnippet> snippets = new ArrayList<>();
                 snippets.add(codeSnippet);
-
-
                 ImageManifest menifest = JSON.parseObject(menifestString, ImageManifest.class);
+
+                List<String> digestList = menifest.getLayers().stream().map(LayerManifest::getDigest).collect(Collectors.toList());
+                List<FileContent> fileblobs= Optional.ofNullable(blobsListing.getFiles()).orElse(Lists.newArrayList()).stream().filter(file ->digestList.contains(file.getName())).collect(Collectors.toList());
                 String configDigest= menifest.getConfig().getDigest();
                 String imagePath=repositoryPath.toFile().getPath().substring(0,repositoryPath.toFile().getPath().lastIndexOf("/"));
                 String manifestConfigString=FileUtil.readString(imagePath+"/blobs/"+configDigest,"UTF-8");
 
-                Long size = 0L;
-                for (LayerManifest layer : menifest.getLayers()) {
-                    size = size + layer.getSize();
-                }
+                Long size =fileblobs.stream().mapToLong(FileContent::getSize).sum();
+
                 jsonObject.put("sha256", menifest.getConfig().getDigest());
                 jsonObject.put("snippets", snippets);
                 jsonObject.put("manifest", menifest);
                 JSONObject object = JSON.parseObject(manifestConfigString);
                 jsonObject.put("manifestConfig",object);
+
+                SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+                dateFormat.setTimeZone(TimeZone.getTimeZone("Asia/Shanghai"));
+                String format = dateFormat.format(fileContent.getLastModified());
+                jsonObject.put("lastModified",format);
                 jsonObject.put("size",size);
                 jsonObject.put("imageName",iamgeName);
 

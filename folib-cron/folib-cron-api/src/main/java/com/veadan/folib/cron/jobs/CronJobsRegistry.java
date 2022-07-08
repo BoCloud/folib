@@ -10,7 +10,6 @@ import org.reflections.Reflections;
 import org.springframework.stereotype.Component;
 
 /**
- * @author Przemyslaw Fusik
  */
 @Component
 class CronJobsRegistry

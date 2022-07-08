@@ -12,7 +12,7 @@ import com.google.common.collect.ImmutableSet;
 import org.springframework.core.env.Environment;
 
 /**
- * @author Sergey Bespalov
+ * @author @author veadan
  */
 public class DownloadRemoteFeedCronJob
         extends JavaCronJob

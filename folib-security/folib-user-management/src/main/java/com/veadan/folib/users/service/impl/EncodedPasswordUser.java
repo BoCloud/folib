@@ -11,7 +11,7 @@ import com.veadan.folib.domain.SecurityRole;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 /**
- * @author sbespalov
+ * @author xuxinping
  *
  */
 public class EncodedPasswordUser implements User

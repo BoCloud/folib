@@ -10,7 +10,7 @@ import com.veadan.folib.yaml.configuration.repository.NugetRepositoryConfigurati
 import com.veadan.folib.yaml.configuration.repository.RawRepositoryConfigurationDto;
 
 /**
- * @author Przemyslaw Fusik
+ * @author veadan
  */
 public enum CustomRepositoryConfigurationFormConverter
         implements CustomRepositoryConfigurationFormVisitor<CustomRepositoryConfigurationDto>

@@ -19,7 +19,7 @@ import com.google.common.collect.ImmutableSortedMap;
 import static java.util.stream.Collectors.toMap;
 
 /**
- * @author Przemyslaw Fusik
+ * @author veadan
  */
 @Immutable
 public class Configuration

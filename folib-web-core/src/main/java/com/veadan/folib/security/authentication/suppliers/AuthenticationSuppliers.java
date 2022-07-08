@@ -11,7 +11,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
 
 /**
- * @author Przemyslaw Fusik
+ * @author veadan
  */
 public class AuthenticationSuppliers
         implements AuthenticationSupplier

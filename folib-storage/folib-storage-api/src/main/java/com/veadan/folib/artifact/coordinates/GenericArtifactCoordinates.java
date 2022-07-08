@@ -6,7 +6,7 @@ import com.veadan.folib.data.domain.DomainObject;
 import com.veadan.folib.data.domain.EntityHierarchyNode;
 
 /**
- * @author sbespalov
+ * @author xuxinping
  *
  */
 public interface GenericArtifactCoordinates extends DomainObject, EntityHierarchyNode<GenericArtifactCoordinates>

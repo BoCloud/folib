@@ -13,7 +13,7 @@ import java.nio.charset.StandardCharsets;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 /**
- * @author Przemyslaw Fusik
+ * @author veadan
  */
 public class DirectoryTraversalFilter
         extends OncePerRequestFilter

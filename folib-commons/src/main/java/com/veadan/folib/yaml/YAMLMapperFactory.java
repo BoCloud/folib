@@ -6,7 +6,7 @@ import java.util.Set;
 import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 
 /**
- * @author Przemyslaw Fusik
+ * @author veadan
  */
 public interface YAMLMapperFactory
 {

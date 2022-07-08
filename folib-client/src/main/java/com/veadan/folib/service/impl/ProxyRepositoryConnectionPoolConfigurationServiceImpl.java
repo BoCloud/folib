@@ -29,7 +29,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 /**
- * @author korest
+ * @author veadan
  */
 @Component
 public class ProxyRepositoryConnectionPoolConfigurationServiceImpl

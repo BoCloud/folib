@@ -16,7 +16,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Component;
 
 /**
- * @author Przemyslaw Fusik
+ * @author veadan
  * @see <a href="https://folib.github.io/user-guide/artifact-routing-rules.html">Artifact Routing Rules</a>
  */
 @Component

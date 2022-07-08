@@ -7,7 +7,7 @@ import com.veadan.folib.storage.repository.RepositoryDto;
 import org.springframework.core.convert.converter.Converter;
 
 /**
- * @author Przemyslaw Fusik
+ * @author veadan
  */
 public enum RepositoryFormConverter
         implements Converter<RepositoryForm, RepositoryDto>

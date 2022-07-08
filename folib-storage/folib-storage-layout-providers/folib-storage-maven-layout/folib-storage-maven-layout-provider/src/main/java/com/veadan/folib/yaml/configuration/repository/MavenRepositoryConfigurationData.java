@@ -11,7 +11,7 @@ import com.fasterxml.jackson.annotation.JsonTypeName;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 /**
- * @author Przemyslaw Fusik
+ * @author veadan
  */
 @Immutable
 @XmlAccessorType(XmlAccessType.FIELD)

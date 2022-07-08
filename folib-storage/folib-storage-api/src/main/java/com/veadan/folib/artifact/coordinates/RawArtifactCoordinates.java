@@ -5,7 +5,7 @@ import com.veadan.folib.domain.LayoutArtifactCoordinatesEntity;
 import org.neo4j.ogm.annotation.NodeEntity;
 
 /**
- * @author carlspring
+ * @author Veadan
  */
 @NodeEntity(Vertices.RAW_ARTIFACT_COORDINATES)
 @ArtifactCoordinatesLayout(name = RawArtifactCoordinates.LAYOUT_NAME, alias = RawArtifactCoordinates.LAYOUT_ALIAS)

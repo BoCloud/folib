@@ -4,7 +4,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 /**
- * @author carlspring
+ * @author Veadan
  */
 public abstract class AbstractMappedProviderRegistryWithNestedMap<T>
 {

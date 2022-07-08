@@ -4,7 +4,7 @@ import com.veadan.folib.data.criteria.ExpressionBuilder;
 import com.veadan.folib.data.criteria.ExpressionDialect;
 
 /**
- * @author sbespalov
+ * @author xuxinping
  *
  */
 public class ArtifactEntryExpressionBuilder extends ExpressionBuilder<ArtifactEntryExpressionBuilder, ArtifactEntity>

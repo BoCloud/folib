@@ -7,7 +7,6 @@ import javax.xml.bind.annotation.XmlRootElement;
 import java.io.Serializable;
 
 /**
- * @author Przemyslaw Fusik
  */
 @XmlRootElement(name = "retry-artifact-download-configuration")
 @XmlAccessorType(XmlAccessType.FIELD)

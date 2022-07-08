@@ -3,7 +3,7 @@ package com.veadan.folib.controllers.forms;
 import java.util.Collection;
 
 /**
- * @author Przemyslaw Fusik
+ * @author veadan
  */
 public class FormDataValuesCollection
 {

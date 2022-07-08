@@ -27,8 +27,8 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
 /**
- * @author carlspring
- * @author Przemyslaw Fusik
+ * @author Veadan
+ * @author veadan
  */
 @Component
 @RepositoryIndexCreatorQualifier(RepositoryTypeEnum.PROXY)

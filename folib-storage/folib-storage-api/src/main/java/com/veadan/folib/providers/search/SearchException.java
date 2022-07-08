@@ -1,7 +1,7 @@
 package com.veadan.folib.providers.search;
 
 /**
- * @author carlspring
+ * @author Veadan
  */
 public class SearchException
         extends Exception

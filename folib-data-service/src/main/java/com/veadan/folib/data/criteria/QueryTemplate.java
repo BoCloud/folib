@@ -6,7 +6,7 @@ import com.veadan.folib.data.domain.DomainObject;
  * You can perform concrete queries under concrete DB implementations with
  * implementations of {@link QueryTemplate}.
  * 
- * @author sbespalov
+ * @author xuxinping
  *
  */
 public interface QueryTemplate<R, T extends DomainObject>

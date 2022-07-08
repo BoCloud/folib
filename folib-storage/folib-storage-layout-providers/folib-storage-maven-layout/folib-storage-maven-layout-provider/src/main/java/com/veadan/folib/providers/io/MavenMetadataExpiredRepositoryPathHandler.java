@@ -20,7 +20,7 @@ import java.util.Optional;
 import static com.veadan.folib.storage.metadata.maven.MetadataExpirationStrategy.Decision.*;
 
 /**
- * @author Przemyslaw Fusik
+ * @author veadan
  */
 @Component
 public class MavenMetadataExpiredRepositoryPathHandler

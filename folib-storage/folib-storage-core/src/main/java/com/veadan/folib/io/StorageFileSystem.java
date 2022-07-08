@@ -19,7 +19,7 @@ import com.veadan.folib.storage.Storage;
 /**
  * This class decoretes storage {@link FileSystem} implementation.
  *
- * @author Sergey Bespalov
+ * @author @author veadan
  * 
  * @see StorageProvider
  */

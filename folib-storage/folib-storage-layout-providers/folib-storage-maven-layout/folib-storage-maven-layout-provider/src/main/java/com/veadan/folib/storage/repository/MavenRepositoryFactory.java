@@ -9,7 +9,7 @@ import java.util.LinkedHashSet;
 import org.springframework.stereotype.Component;
 
 /**
- * @author carlspring
+ * @author Veadan
  */
 @Component
 public class MavenRepositoryFactory

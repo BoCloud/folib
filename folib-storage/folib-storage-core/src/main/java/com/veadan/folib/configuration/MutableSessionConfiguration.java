@@ -3,7 +3,7 @@ package com.veadan.folib.configuration;
 import java.io.Serializable;
 
 /**
- * @author Przemyslaw Fusik
+ * @author veadan
  * @author Pablo Tirado
  */
 public class MutableSessionConfiguration

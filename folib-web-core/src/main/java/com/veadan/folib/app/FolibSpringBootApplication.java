@@ -15,7 +15,7 @@ import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.Import;
 
 /**
- * @author carlspring
+ * @author Veadan
  */
 @SpringBootApplication(exclude = { DataSourceAutoConfiguration.class,
                                    HibernateJpaAutoConfiguration.class,

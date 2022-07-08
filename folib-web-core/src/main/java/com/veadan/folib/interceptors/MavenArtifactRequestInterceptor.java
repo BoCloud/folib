@@ -20,7 +20,7 @@ import static com.veadan.folib.storage.metadata.MetadataHelper.*;
 import static org.springframework.http.HttpStatus.BAD_REQUEST;
 
 /**
- * @author Przemyslaw Fusik
+ * @author veadan
  */
 public class MavenArtifactRequestInterceptor
         extends ArtifactRequestInterceptor

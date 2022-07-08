@@ -7,7 +7,7 @@ import java.nio.file.Path;
 
 /**
  * @author mtodorov
- * @author Przemyslaw Fusik
+ * @author veadan
  */
 public class ArtifactVersionDirectoryFilter
         implements DirectoryStream.Filter<Path>

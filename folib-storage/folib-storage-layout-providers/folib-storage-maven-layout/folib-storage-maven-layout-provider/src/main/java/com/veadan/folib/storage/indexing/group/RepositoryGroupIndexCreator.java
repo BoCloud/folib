@@ -20,7 +20,7 @@ import org.apache.lucene.store.SimpleFSDirectory;
 import org.springframework.stereotype.Component;
 
 /**
- * @author Przemyslaw Fusik
+ * @author veadan
  */
 @Component
 @RepositoryIndexCreator.RepositoryIndexCreatorQualifier(RepositoryTypeEnum.GROUP)

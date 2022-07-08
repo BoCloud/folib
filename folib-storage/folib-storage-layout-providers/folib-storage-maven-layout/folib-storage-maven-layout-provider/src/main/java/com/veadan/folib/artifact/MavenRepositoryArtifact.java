@@ -19,7 +19,7 @@ import org.apache.maven.index.artifact.Gav;
 import org.apache.maven.index.artifact.VersionUtils;
 
 /**
- * @author Przemyslaw Fusik
+ * @author veadan
  */
 public class MavenRepositoryArtifact
         implements MavenArtifact

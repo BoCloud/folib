@@ -3,7 +3,7 @@ package com.veadan.folib.providers.io;
 import org.apache.commons.lang3.StringUtils;
 
 /**
- * @author Przemyslaw Fusik
+ * @author veadan
  */
 public abstract class RepositoryPathConstructionException
         extends RuntimeException

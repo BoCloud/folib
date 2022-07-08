@@ -31,7 +31,7 @@ import org.springframework.util.CollectionUtils;
 /**
  * @author Yougeshwar
  * @author Pablo Tirado
- * @author Przemyslaw Fusik
+ * @author veadan
  */
 @Service
 public class CronTaskDataServiceImpl

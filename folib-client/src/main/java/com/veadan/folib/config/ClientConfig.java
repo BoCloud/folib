@@ -7,7 +7,6 @@ import org.springframework.context.annotation.PropertySource;
 import org.springframework.context.support.PropertySourcesPlaceholderConfigurer;
 
 /**
- * @author korest
  */
 @Configuration
 @ComponentScan({ "com.veadan.folib.service.impl",

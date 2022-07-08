@@ -30,7 +30,7 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.apache.commons.lang3.StringUtils;
 
 /**
- * @author Przemyslaw Fusik
+ * @author veadan
  */
 @Immutable
 @XmlAccessorType(XmlAccessType.FIELD)

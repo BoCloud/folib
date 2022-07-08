@@ -5,7 +5,7 @@ import org.springframework.context.annotation.Configuration;
 
 
 /**
- * @author Przemyslaw Fusik
+ * @author veadan
  */
 @Configuration
 @ComponentScan({ "com.veadan.folib.authorization" })

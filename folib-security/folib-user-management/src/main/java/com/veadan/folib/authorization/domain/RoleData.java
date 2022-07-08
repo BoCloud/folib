@@ -9,7 +9,7 @@ import com.veadan.folib.users.dto.AccessModel;
 import com.veadan.folib.users.dto.AccessModelDto;
 
 /**
- * @author Przemyslaw Fusik
+ * @author veadan
  */
 @Immutable
 public class RoleData implements Role

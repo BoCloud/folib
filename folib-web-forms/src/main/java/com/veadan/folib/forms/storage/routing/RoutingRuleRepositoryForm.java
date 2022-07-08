@@ -5,7 +5,7 @@ import com.veadan.folib.validation.configuration.routing.RoutingRuleRepositoryFo
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 /**
- * @author Przemyslaw Fusik
+ * @author veadan
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
 @RoutingRuleRepositoryFormValid

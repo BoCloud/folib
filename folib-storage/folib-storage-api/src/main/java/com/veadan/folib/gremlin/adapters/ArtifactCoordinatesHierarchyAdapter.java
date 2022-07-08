@@ -11,7 +11,7 @@ import com.veadan.folib.db.schema.Edges;
 import org.springframework.stereotype.Component;
 
 /**
- * @author sbespalov
+ * @author xuxinping
  */
 @Component
 public class ArtifactCoordinatesHierarchyAdapter

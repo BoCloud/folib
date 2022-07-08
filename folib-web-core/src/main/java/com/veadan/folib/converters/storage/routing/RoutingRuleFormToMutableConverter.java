@@ -11,7 +11,7 @@ import org.springframework.core.convert.converter.Converter;
 
 /**
  * @author Pablo Tirado
- * @author Przemyslaw Fusik
+ * @author veadan
  */
 public class RoutingRuleFormToMutableConverter
         implements Converter<RoutingRuleForm, MutableRoutingRule>

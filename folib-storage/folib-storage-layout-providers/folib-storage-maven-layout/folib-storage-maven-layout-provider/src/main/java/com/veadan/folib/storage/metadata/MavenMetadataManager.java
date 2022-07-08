@@ -45,7 +45,7 @@ import org.springframework.stereotype.Component;
 /**
  * @author Martin Todorov
  * @author Steve Todorov
- * @author Sergey Bespalov
+ * @author @author veadan
  * @author Ekaterina Novik
  */
 @Component

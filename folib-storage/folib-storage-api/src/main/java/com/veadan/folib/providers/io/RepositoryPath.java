@@ -26,7 +26,7 @@ import com.veadan.folib.util.PathUtils;
  * This implementation decorates storage {@link Path} implementation, which can be an "Cloud Path" or common
  * "File System Path".
  *
- * @author Sergey Bespalov
+ * @author @author veadan
  *
  * @see RepositoryPathResolver
  *

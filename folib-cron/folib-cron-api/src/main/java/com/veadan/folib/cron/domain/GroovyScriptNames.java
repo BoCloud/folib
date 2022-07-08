@@ -8,7 +8,7 @@ import java.util.List;
 import com.google.common.collect.ImmutableList;
 
 /**
- * @author Przemyslaw Fusik
+ * @author veadan
  */
 @Immutable
 public class GroovyScriptNames

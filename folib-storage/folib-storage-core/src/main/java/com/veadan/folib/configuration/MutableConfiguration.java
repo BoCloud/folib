@@ -14,7 +14,7 @@ import com.google.common.base.Objects;
 /**
  * @author mtodorov
  * @author Pablo Tirado
- * @author Przemyslaw Fusik
+ * @author veadan
  */
 @JsonRootName("configuration")
 public class MutableConfiguration

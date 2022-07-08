@@ -3,7 +3,6 @@ package com.veadan.folib.client;
 import javax.annotation.concurrent.Immutable;
 
 /**
- * @author Przemyslaw Fusik
  */
 @Immutable
 public class RemoteRepositoryRetryArtifactDownloadConfiguration

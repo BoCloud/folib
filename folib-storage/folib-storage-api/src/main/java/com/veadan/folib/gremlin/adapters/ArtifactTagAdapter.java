@@ -15,7 +15,7 @@ import com.veadan.folib.domain.ArtifactTagEntity;
 import org.springframework.stereotype.Component;
 
 /**
- * @author sbespalov
+ * @author xuxinping
  */
 @Component
 public class ArtifactTagAdapter implements VertexEntityTraversalAdapter<ArtifactTag>

@@ -9,7 +9,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
 /**
- * @author carlspring
+ * @author Veadan
  */
 @Component
 public class ArtifactEventListenerRegistry extends AbstractEventListenerRegistry

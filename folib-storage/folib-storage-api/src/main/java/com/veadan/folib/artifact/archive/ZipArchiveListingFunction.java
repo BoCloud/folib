@@ -13,7 +13,7 @@ import org.apache.commons.compress.archivers.ArchiveInputStream;
 import org.apache.commons.compress.archivers.zip.ZipArchiveInputStream;
 
 /**
- * @author Przemyslaw Fusik
+ * @author veadan
  */
 public enum ZipArchiveListingFunction
         implements ArchiveListingFunction

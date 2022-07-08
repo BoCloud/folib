@@ -9,7 +9,7 @@ import com.veadan.folib.gremlin.repositories.GremlinVertexRepository;
 import org.springframework.stereotype.Repository;
 
 /**
- * @author sbespalov
+ * @author xuxinping
  */
 @Repository
 @Transactional

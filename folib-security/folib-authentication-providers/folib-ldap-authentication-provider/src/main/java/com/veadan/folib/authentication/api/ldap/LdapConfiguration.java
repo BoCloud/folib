@@ -13,7 +13,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonUnwrapped;
 
 /**
- * @author Przemyslaw Fusik
+ * @author veadan
  */
 public class LdapConfiguration
 {

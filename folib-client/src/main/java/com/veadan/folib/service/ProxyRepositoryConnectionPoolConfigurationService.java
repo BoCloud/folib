@@ -6,7 +6,7 @@ import org.apache.http.pool.PoolStats;
 import javax.ws.rs.client.Client;
 
 /**
- * @author korest
+ * @author veadan
  */
 public interface ProxyRepositoryConnectionPoolConfigurationService
 {

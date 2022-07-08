@@ -1,7 +1,7 @@
 package com.veadan.folib.providers;
 
 /**
- * @author carlspring
+ * @author Veadan
  */
 public class ProviderImplementationException extends Exception
 {

@@ -8,7 +8,7 @@ import java.util.Set;
 import com.google.common.collect.Sets;
 
 /**
- * @author carlspring
+ * @author Veadan
  */
 public interface MavenArtifactCoordinatesValidator extends ArtifactCoordinatesValidator
 {

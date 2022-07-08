@@ -7,7 +7,7 @@ import javax.servlet.http.HttpServletRequest;
 import org.springframework.security.core.Authentication;
 
 /**
- * @author Przemyslaw Fusik
+ * @author veadan
  */
 public interface AuthenticationSupplier
 {

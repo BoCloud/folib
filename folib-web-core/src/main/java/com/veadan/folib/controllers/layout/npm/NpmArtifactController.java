@@ -90,7 +90,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 /**
  * This Controller used to handle npm requests.
  *
- * @author Sergey Bespalov
+ * @author @author veadan
  */
 @RestController
 @LayoutRequestMapping(NpmArtifactCoordinates.LAYOUT_NAME)

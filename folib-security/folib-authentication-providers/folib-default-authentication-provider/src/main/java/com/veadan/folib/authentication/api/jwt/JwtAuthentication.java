@@ -3,7 +3,7 @@ package com.veadan.folib.authentication.api.jwt;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 
 /**
- * @author Sergey Bespalov
+ * @author @author veadan
  *
  */
 public class JwtAuthentication extends UsernamePasswordAuthenticationToken

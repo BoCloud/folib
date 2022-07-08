@@ -5,7 +5,7 @@ import java.util.Comparator;
 import org.apache.maven.artifact.versioning.ComparableVersion;
 
 /**
- * @author carlspring
+ * @author Veadan
  */
 public class VersionComparator
         implements Comparator<String>

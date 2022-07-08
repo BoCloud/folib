@@ -4,7 +4,7 @@ import com.veadan.folib.domain.ArtifactGroup;
 import com.veadan.folib.services.ArtifactGroupService;
 
 /**
- * @author sbespalov
+ * @author xuxinping
  *
  * @param <T>
  */

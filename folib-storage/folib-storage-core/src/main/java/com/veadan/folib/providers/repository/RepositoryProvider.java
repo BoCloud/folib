@@ -19,7 +19,7 @@ import org.springframework.transaction.annotation.Transactional;
  * 
  * TODO: should be replaced with `RepositoryFileSystemProvider`
  * 
- * @author carlspring
+ * @author Veadan
  */
 public interface RepositoryProvider
 {

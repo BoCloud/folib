@@ -9,7 +9,7 @@ import java.io.Serializable;
 import java.util.List;
 
 /**
- * @author Przemyslaw Fusik
+ * @author veadan
  * @author Pablo Tirado
  */
 public class StorageForm

@@ -25,7 +25,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
 /**
- * @author Sergey Bespalov
+ * @author @author veadan
  */
 @Component
 public class NpmLayoutProvider

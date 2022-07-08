@@ -12,8 +12,8 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.core.io.Resource;
 
 /**
- * @author Przemyslaw Fusik
- * @author sbespalov
+ * @author veadan
+ * @author xuxinping
  */
 @Configuration
 @ConditionalOnProperty(prefix = "folib.graph.gremlin.server", name = "enabled", havingValue = "true")

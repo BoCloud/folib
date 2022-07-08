@@ -5,7 +5,7 @@ import com.veadan.folib.yaml.repository.remote.CustomRemoteRepositoryConfigurati
 import java.io.Serializable;
 
 /**
- * @author Przemyslaw Fusik
+ * @author veadan
  */
 public interface RemoteRepository
         extends Serializable

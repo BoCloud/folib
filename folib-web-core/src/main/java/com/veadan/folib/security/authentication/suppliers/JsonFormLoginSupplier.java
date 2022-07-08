@@ -23,7 +23,7 @@ import org.springframework.stereotype.Component;
 /**
  * Works in conjunction {@link LoginController}
  *
- * @author Przemyslaw Fusik
+ * @author veadan
  */
 @Component
 @Order(1)

@@ -10,7 +10,7 @@ import org.apache.commons.compress.archivers.ArchiveEntry;
 import org.apache.commons.compress.archivers.ArchiveInputStream;
 
 /**
- * @author Przemyslaw Fusik
+ * @author veadan
  */
 @FunctionalInterface
 public interface ArchiveListingFunction

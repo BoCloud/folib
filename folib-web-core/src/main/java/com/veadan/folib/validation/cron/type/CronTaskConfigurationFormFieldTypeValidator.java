@@ -1,7 +1,7 @@
 package com.veadan.folib.validation.cron.type;
 
 /**
- * @author Przemyslaw Fusik
+ * @author veadan
  */
 public interface CronTaskConfigurationFormFieldTypeValidator
 {

@@ -8,7 +8,7 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
- * @author Przemyslaw Fusik
+ * @author veadan
  * @author Pablo Tirado
  */
 public class MutableRoutingRuleRepository

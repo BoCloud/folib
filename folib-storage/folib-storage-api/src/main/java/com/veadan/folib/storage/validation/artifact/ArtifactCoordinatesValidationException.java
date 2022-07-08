@@ -1,7 +1,7 @@
 package com.veadan.folib.storage.validation.artifact;
 
 /**
- * @author carlspring
+ * @author Veadan
  */
 public class ArtifactCoordinatesValidationException extends Exception
 {

@@ -78,7 +78,7 @@ import io.swagger.annotations.ApiResponses;
 /**
  * This Controller used to handle Nuget requests.
  * 
- * @author Sergey Bespalov
+ * @author @author veadan
  *
  */
 @RestController

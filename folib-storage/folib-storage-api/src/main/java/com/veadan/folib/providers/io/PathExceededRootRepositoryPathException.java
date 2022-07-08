@@ -1,7 +1,7 @@
 package com.veadan.folib.providers.io;
 
 /**
- * @author Przemyslaw Fusik
+ * @author veadan
  */
 public class PathExceededRootRepositoryPathException
         extends RepositoryPathConstructionException

@@ -7,7 +7,7 @@ import java.util.ServiceLoader;
 import java.util.Set;
 
 /**
- * @author Przemyslaw Fusik
+ * @author veadan
  */
 public final class ServiceLoaderUtils
 {

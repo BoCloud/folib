@@ -20,7 +20,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 /**
- * @author carlspring
+ * @author Veadan
  */
 @RestController
 @LayoutRequestMapping(RawLayoutProvider.ALIAS)

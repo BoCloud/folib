@@ -27,7 +27,7 @@ import org.folib.db.server.janusgraph.TransactionalVertexIDAssigner;
  * @see RepositoriesConfig#cronJobTransactionManager(TransactionalIdBlockQueueSuppiler)
  * @see RepositoriesConfig#defaultTransactionManager(TransactionalIdBlockQueueSuppiler)
  *
- * @author sbespalov
+ * @author xuxinping
  */
 public class TransactionalIdBlockQueueSuppiler implements Supplier<IdBlockQueueSession>
 {

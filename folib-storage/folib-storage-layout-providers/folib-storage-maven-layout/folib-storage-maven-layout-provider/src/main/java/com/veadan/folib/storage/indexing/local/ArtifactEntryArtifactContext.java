@@ -13,7 +13,7 @@ import com.veadan.folib.domain.MavenArtifactEntryUtils;
 import org.codehaus.plexus.util.StringUtils;
 
 /**
- * @author Przemyslaw Fusik
+ * @author veadan
  */
 public class ArtifactEntryArtifactContext
         extends ArtifactContext

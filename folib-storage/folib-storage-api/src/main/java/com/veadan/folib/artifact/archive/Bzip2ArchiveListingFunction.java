@@ -14,7 +14,7 @@ import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
 import org.apache.commons.compress.compressors.bzip2.BZip2CompressorInputStream;
 
 /**
- * @author Przemyslaw Fusik
+ * @author veadan
  */
 public enum Bzip2ArchiveListingFunction
         implements ArchiveListingFunction

@@ -6,7 +6,6 @@ import java.io.InputStream;
 /**
  * Artifact processing API.
  *
- * @author Alex Oreshkevich
  */
 public interface IArtifactClient    // named with I prefix because of existing ArtifactClient class in master branch
 {

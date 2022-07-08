@@ -15,7 +15,7 @@ import com.veadan.folib.users.dto.RepositoryPrivileges;
 import com.google.common.collect.ImmutableSet;
 
 /**
- * @author Przemyslaw Fusik
+ * @author veadan
  */
 @Immutable
 public class RepositoryPrivilegesData

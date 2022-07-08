@@ -3,7 +3,7 @@ package com.veadan.folib.storage.repository.remote.heartbeat;
 import com.veadan.folib.storage.repository.remote.RemoteRepository;
 
 /**
- * @author sbespalov
+ * @author xuxinping
  *
  */
 public interface RemoteRepositoryAlivenessService

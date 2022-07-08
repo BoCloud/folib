@@ -7,7 +7,7 @@ import com.fasterxml.jackson.databind.JsonSerializer;
 import com.fasterxml.jackson.databind.SerializerProvider;
 
 /**
- * @author Przemyslaw Fusik
+ * @author veadan
  */
 public class CronJobFieldJsonSerializer
         extends JsonSerializer<CronJobField>

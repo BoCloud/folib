@@ -34,7 +34,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Component;
 
 /**
- * @author Przemyslaw Fusik
+ * @author veadan
  */
 @Component
 @RepositoryIndexCreatorQualifier(RepositoryTypeEnum.HOSTED)

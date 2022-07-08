@@ -7,7 +7,7 @@ import javax.validation.ConstraintValidator;
 import javax.validation.ConstraintValidatorContext;
 
 /**
- * @author Przemyslaw Fusik
+ * @author veadan
  */
 public class LayoutProviderValueValidator
         implements ConstraintValidator<LayoutProviderValue, String>

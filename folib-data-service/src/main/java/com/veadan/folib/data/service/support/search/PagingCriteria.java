@@ -5,7 +5,7 @@ import javax.annotation.concurrent.Immutable;
 import java.util.Objects;
 
 /**
- * @author Przemyslaw Fusik
+ * @author veadan
  */
 @Immutable
 public class PagingCriteria

@@ -10,7 +10,7 @@ import java.util.Set;
 import com.google.common.collect.ImmutableSet;
 
 /**
- * @author Przemyslaw Fusik
+ * @author veadan
  */
 public class ObjectMapperSubtypes
 {

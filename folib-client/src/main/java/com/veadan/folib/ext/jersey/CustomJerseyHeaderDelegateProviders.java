@@ -15,7 +15,7 @@ import org.glassfish.jersey.message.internal.UriProvider;
 import org.glassfish.jersey.spi.HeaderDelegateProvider;
 
 /**
- * @author Przemyslaw Fusik
+ * @author veadan
  *
  * @see MessagingBinders.HeaderDelegateProviders
  */

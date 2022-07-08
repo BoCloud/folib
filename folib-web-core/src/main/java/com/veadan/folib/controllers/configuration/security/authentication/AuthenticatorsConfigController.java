@@ -24,7 +24,7 @@ import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
 
 /**
- * @author Przemyslaw Fusik
+ * @author veadan
  * @author Pablo Tirado
  */
 @RestController

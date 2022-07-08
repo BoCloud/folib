@@ -22,7 +22,7 @@ import org.springframework.scheduling.quartz.QuartzJobBean;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
- * @author carlspring
+ * @author Veadan
  */
 @DisallowConcurrentExecution
 @Transactional("cronJobTransactionManager")

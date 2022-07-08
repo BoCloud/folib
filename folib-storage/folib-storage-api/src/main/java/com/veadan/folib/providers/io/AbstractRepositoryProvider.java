@@ -43,7 +43,7 @@ import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.util.Assert;
 
 /**
- * @author carlspring
+ * @author Veadan
  */
 public abstract class AbstractRepositoryProvider implements RepositoryProvider, RepositoryStreamCallback
 {

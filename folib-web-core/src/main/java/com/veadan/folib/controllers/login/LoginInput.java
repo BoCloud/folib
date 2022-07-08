@@ -6,7 +6,7 @@ import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlRootElement;
 
 /**
- * @author Przemyslaw Fusik
+ * @author veadan
  */
 //@XmlRootElement(name = "login-input")
 //@XmlAccessorType(XmlAccessType.NONE)

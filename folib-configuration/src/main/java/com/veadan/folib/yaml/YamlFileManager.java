@@ -19,7 +19,7 @@ import org.springframework.core.io.Resource;
 import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 
 /**
- * @author Przemyslaw Fusik
+ * @author veadan
  * @author Pablo Tirado
  * @author cbono
  */

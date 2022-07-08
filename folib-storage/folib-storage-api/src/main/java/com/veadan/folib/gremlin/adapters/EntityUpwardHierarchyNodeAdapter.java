@@ -4,7 +4,7 @@ import org.apache.tinkerpop.gremlin.structure.Vertex;
 import com.veadan.folib.data.domain.DomainObject;
 
 /**
- * @author sbespalov
+ * @author xuxinping
  */
 public interface EntityUpwardHierarchyNodeAdapter<E extends DomainObject> extends EntityTraversalAdapter<Vertex, E>
 {

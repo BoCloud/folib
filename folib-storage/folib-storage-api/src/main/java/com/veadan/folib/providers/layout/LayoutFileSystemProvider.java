@@ -42,7 +42,7 @@ import org.slf4j.LoggerFactory;
  * This class decorates {@link StorageFileSystemProvider} with common layout specific
  * logic. <br>
  * 
- * @author sbespalov
+ * @author xuxinping
  * 
  * @see LayoutProvider
  */

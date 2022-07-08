@@ -5,7 +5,7 @@ import java.time.Duration;
 import java.time.LocalDateTime;
 
 /**
- * @author carlspring
+ * @author Veadan
  */
 public class LocalDateTimeInstance
 {

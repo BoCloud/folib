@@ -54,7 +54,7 @@ import static org.springframework.http.HttpStatus.BAD_REQUEST;
  * @author Martin Todorov
  * @author Pablo Tirado
  * @author Aditya Srinivasan
- * @author Przemyslaw Fusik
+ * @author veadan
  */
 @Controller
 @Api(value = ROOT_CONTEXT)

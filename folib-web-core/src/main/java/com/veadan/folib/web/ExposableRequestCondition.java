@@ -5,7 +5,7 @@ import javax.servlet.http.HttpServletRequest;
 import org.springframework.web.servlet.mvc.condition.AbstractRequestCondition;
 
 /**
- * @author Przemyslaw Fusik
+ * @author veadan
  */
 public abstract class ExposableRequestCondition
         extends AbstractRequestCondition<ExposableRequestCondition>

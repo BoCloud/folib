@@ -3,7 +3,7 @@ package com.veadan.folib.event;
 import java.nio.file.Path;
 
 /**
- * @author carlspring
+ * @author Veadan
  */
 public class RepositoryBasedEvent<T extends Path> extends Event
 {

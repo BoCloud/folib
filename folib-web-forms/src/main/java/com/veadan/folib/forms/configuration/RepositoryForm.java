@@ -17,7 +17,7 @@ import java.util.Set;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 
 /**
- * @author Przemyslaw Fusik
+ * @author veadan
  */
 public class RepositoryForm
 {

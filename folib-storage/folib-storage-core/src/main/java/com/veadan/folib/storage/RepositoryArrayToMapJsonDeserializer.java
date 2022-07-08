@@ -16,7 +16,7 @@ import com.fasterxml.jackson.databind.JsonDeserializer;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 /**
- * @author Przemyslaw Fusik
+ * @author veadan
  */
 public class RepositoryArrayToMapJsonDeserializer
         extends JsonDeserializer<Map<String, Repository>>

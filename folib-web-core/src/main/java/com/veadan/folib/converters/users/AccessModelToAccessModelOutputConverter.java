@@ -13,7 +13,7 @@ import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.core.convert.converter.Converter;
 
 /**
- * @author Przemyslaw Fusik
+ * @author veadan
  */
 public enum AccessModelToAccessModelOutputConverter
         implements Converter<AccessModelData, AccessModelOutput>

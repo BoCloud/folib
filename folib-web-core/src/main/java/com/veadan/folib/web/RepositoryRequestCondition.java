@@ -10,7 +10,7 @@ import java.util.Collections;
 import static com.veadan.folib.web.Constants.REPOSITORY_REQUEST_ATTRIBUTE;
 
 /**
- * @author Przemyslaw Fusik
+ * @author veadan
  */
 public class RepositoryRequestCondition
         extends ExposableRequestCondition

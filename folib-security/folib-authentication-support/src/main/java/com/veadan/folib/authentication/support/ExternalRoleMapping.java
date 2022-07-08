@@ -1,7 +1,7 @@
 package com.veadan.folib.authentication.support;
 
 /**
- * @author Przemyslaw Fusik
+ * @author veadan
  */
 public class ExternalRoleMapping
 {

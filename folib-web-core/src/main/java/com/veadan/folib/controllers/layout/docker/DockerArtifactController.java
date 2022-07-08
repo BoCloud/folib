@@ -656,7 +656,11 @@ public class DockerArtifactController extends BaseArtifactController {
     }
 
     public String verifyTagSha256(String artifactName, String storageId, String repositoryId) {
-        return getLayers(artifactName, storageId, repositoryId);
+        try {
+            return getLayers(artifactName, storageId, repositoryId);
+        } catch (IOException e) {
+            return null;
+        }
     }
 
 
@@ -667,7 +671,7 @@ public class DockerArtifactController extends BaseArtifactController {
         return  artifactRepository.artifactExists(storageId,repositoryId,artifactName);
     }
 
-    private String getLayers(String artifactName, String storageId, String repositoryId) {
+    private String getLayers(String artifactName, String storageId, String repositoryId) throws IOException {
         Artifact artifacts = getArtifact(artifactName,storageId,repositoryId);
         String layers = null;
         if (Objects.nonNull(artifacts)) {
@@ -680,9 +684,14 @@ public class DockerArtifactController extends BaseArtifactController {
         return layers;
     }
 
-    public Artifact getArtifact(String artifactName, String storageId, String repositoryId) {
+    public Artifact getArtifact(String artifactName, String storageId, String repositoryId) throws IOException {
 
-        return artifactRepository.findOneArtifact( storageId, repositoryId, artifactName);
+        RepositoryPath repositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, artifactName);
+        DirectoryListing directoryListing = directoryListingService.fromRepositoryPath(repositoryPath);
+        List<FileContent> fileContents = directoryListing.getFiles().stream().filter(file -> !(file.getName().endsWith(".sha256"))).collect(Collectors.toList());  //+propertiesBooter.getStorageBooterBasedir()+"/"+propertiesBooter.getVaultDirectory() + "/storages/"
+        FileContent fileContent = fileContents.get(0);
+
+        return  artifactRepository.findOneArtifact(storageId,repositoryId,fileContent.getArtifactPath());
     }
 
 

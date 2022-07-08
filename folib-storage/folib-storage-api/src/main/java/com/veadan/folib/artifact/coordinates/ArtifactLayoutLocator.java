@@ -11,7 +11,7 @@ import org.slf4j.LoggerFactory;
  * With this class you can get all available Layouts from classpath.
  * 
  * 
- * @author sbespalov
+ * @author xuxinping
  * 
  * @see ArtifactCoordinatesLayout 
  * @see ArtifactLayoutCoordinate

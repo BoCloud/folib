@@ -9,7 +9,7 @@ import java.util.UUID;
 import com.google.common.collect.ImmutableMap;
 
 /**
- * @author Przemyslaw Fusik
+ * @author veadan
  * @author Pablo Tirado
  */
 @Immutable

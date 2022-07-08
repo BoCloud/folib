@@ -4,7 +4,7 @@ import com.veadan.folib.artifact.MavenArtifactUtils;
 import org.apache.maven.index.artifact.Gav;
 
 /**
- * @author Przemyslaw Fusik
+ * @author veadan
  */
 public class MavenArtifactEntryUtils
 {

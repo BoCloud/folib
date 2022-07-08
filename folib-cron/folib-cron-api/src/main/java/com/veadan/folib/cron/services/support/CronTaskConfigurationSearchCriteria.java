@@ -6,7 +6,7 @@ import java.util.Map;
 import org.springframework.util.CollectionUtils;
 
 /**
- * @author Przemyslaw Fusik
+ * @author veadan
  */
 public class CronTaskConfigurationSearchCriteria
 {

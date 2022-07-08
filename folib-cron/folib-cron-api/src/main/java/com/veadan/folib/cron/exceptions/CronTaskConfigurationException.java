@@ -1,7 +1,7 @@
 package com.veadan.folib.cron.exceptions;
 
 /**
- * @author Przemyslaw Fusik
+ * @author veadan
  */
 public class CronTaskConfigurationException
         extends RuntimeException

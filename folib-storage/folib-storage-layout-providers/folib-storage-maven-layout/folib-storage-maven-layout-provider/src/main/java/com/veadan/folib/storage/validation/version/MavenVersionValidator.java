@@ -5,8 +5,8 @@ import com.veadan.folib.storage.validation.MavenArtifactCoordinatesValidator;
 import org.apache.maven.artifact.ArtifactUtils;
 
 /**
- * @author Przemyslaw Fusik
- * @author carlspring
+ * @author veadan
+ * @author Veadan
  */
 interface MavenVersionValidator
         extends MavenArtifactCoordinatesValidator

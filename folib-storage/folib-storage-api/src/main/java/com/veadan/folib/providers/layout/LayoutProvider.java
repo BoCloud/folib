@@ -11,7 +11,7 @@ import com.veadan.folib.domain.ArtifactGroup;
 import com.veadan.folib.providers.io.RepositoryPath;
 
 /**
- * @author carlspring
+ * @author Veadan
  */
 public interface LayoutProvider<T extends ArtifactCoordinates>
 {

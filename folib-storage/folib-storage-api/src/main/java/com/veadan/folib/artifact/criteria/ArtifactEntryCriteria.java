@@ -6,7 +6,7 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * @author sbespalov
+ * @author xuxinping
  *
  */
 public class ArtifactEntryCriteria

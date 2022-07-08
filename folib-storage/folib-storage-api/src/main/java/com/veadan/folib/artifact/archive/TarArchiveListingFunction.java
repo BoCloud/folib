@@ -13,7 +13,7 @@ import org.apache.commons.compress.archivers.ArchiveInputStream;
 import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
 
 /**
- * @author Przemyslaw Fusik
+ * @author veadan
  */
 public enum TarArchiveListingFunction
         implements ArchiveListingFunction

@@ -3,7 +3,7 @@ package com.veadan.folib.forms.configuration;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 
 /**
- * @author Przemyslaw Fusik
+ * @author veadan
  */
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "layout")
 public abstract class CustomRepositoryConfigurationForm

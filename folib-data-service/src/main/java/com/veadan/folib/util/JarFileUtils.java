@@ -11,7 +11,7 @@ import java.util.Collections;
 import org.apache.commons.lang.StringUtils;
 
 /**
- * @author Przemyslaw Fusik
+ * @author veadan
  */
 public class JarFileUtils
 {

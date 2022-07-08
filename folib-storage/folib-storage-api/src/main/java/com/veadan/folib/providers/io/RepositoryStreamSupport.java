@@ -27,7 +27,7 @@ import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.support.DefaultTransactionDefinition;
 
 /**
- * @author sbespalov
+ * @author xuxinping
  *
  */
 public class RepositoryStreamSupport

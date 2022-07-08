@@ -20,7 +20,7 @@ import org.folib.util.Commons;
 /**
  * Utility methods to work with {@link EntityTraversalDsl} traversals.
  *
- * @author sbespalov
+ * @author xuxinping
  */
 public class EntityTraversalUtils
 {

@@ -12,7 +12,7 @@ import com.veadan.folib.users.dto.PathPrivilegesDto;
 import com.google.common.collect.ImmutableSet;
 
 /**
- * @author Przemyslaw Fusik
+ * @author veadan
  */
 @Immutable
 public class PathPrivilegesData

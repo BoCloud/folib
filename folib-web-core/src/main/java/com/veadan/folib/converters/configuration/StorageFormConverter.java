@@ -12,7 +12,7 @@ import java.util.Map;
 import org.springframework.core.convert.converter.Converter;
 
 /**
- * @author Przemyslaw Fusik
+ * @author veadan
  */
 public enum StorageFormConverter
         implements Converter<StorageForm, StorageDto>

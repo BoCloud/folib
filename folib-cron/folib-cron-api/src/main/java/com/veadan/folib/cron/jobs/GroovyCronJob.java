@@ -14,7 +14,7 @@ import groovy.lang.GroovyClassLoader;
 import groovy.lang.GroovyCodeSource;
 
 /**
- * @author carlspring
+ * @author Veadan
  * @author Yougeshwar
  */
 public class GroovyCronJob

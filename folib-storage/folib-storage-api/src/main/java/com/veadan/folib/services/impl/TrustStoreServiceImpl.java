@@ -20,7 +20,7 @@ import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Service;
 
 /**
- * @author Przemyslaw Fusik
+ * @author veadan
  */
 @Service
 public class TrustStoreServiceImpl

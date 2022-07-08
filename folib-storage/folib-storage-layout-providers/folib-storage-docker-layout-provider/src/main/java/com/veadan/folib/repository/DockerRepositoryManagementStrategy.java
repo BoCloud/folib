@@ -3,7 +3,7 @@ package com.veadan.folib.repository;
 import org.springframework.stereotype.Component;
 
 /**
- * @author carlspring
+ * @author Veadan
  */
 @Component
 public class DockerRepositoryManagementStrategy

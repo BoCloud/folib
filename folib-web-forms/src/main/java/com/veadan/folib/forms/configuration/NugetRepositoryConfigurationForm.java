@@ -5,7 +5,7 @@ import com.veadan.folib.providers.layout.NugetLayoutProvider;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 
 /**
- * @author Przemyslaw Fusik
+ * @author veadan
  */
 @JsonTypeName(NugetLayoutProvider.ALIAS)
 public class NugetRepositoryConfigurationForm

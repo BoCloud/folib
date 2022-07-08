@@ -7,7 +7,7 @@ import org.springframework.core.convert.converter.Converter;
 
 /**
  * @author Pablo Tirado
- * @author Przemyslaw Fusik
+ * @author veadan
  */
 public enum UserFormToUserDtoConverter
         implements Converter<UserForm, UserDto>

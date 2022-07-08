@@ -6,7 +6,7 @@ import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 
 /**
- * @author carlspring
+ * @author Veadan
  */
 @Component
 @Order(Ordered.HIGHEST_PRECEDENCE)

@@ -7,7 +7,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * @author sbespalov
+ * @author xuxinping
  *
  */
 public class RawFileSystemProvider extends LayoutFileSystemProvider

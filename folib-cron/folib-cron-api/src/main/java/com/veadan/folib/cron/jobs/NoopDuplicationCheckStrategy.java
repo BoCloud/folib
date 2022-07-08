@@ -5,7 +5,7 @@ import com.veadan.folib.cron.domain.CronTaskConfigurationDto;
 import java.util.Collection;
 
 /**
- * @author Przemyslaw Fusik
+ * @author veadan
  */
 public class NoopDuplicationCheckStrategy
         implements CronJobDuplicationCheckStrategy

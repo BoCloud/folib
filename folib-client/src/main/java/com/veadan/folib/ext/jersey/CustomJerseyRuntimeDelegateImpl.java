@@ -6,7 +6,7 @@ import org.glassfish.jersey.internal.AbstractRuntimeDelegate;
 import org.glassfish.jersey.server.ContainerFactory;
 
 /**
- * @author Przemyslaw Fusik
+ * @author veadan
  * @see org.glassfish.jersey.server.internal.RuntimeDelegateImpl
  */
 public class CustomJerseyRuntimeDelegateImpl

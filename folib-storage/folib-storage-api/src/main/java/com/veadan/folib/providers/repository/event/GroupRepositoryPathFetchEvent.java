@@ -4,7 +4,7 @@ import com.veadan.folib.event.RepositoryBasedEvent;
 import com.veadan.folib.providers.io.RepositoryPath;
 
 /**
- * @author Przemyslaw Fusik
+ * @author veadan
  */
 public class GroupRepositoryPathFetchEvent
         extends RepositoryBasedEvent<RepositoryPath>

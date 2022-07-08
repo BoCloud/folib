@@ -25,7 +25,7 @@ import org.springframework.stereotype.Component;
  * Used to get and verify security tokens. <br>
  * This implementation based on JSON Web Token (JWT) which is RFC 7519 standard. <br>
  *
- * @author Sergey Bespalov
+ * @author @author veadan
  */
 @Component
 public class SecurityTokenProvider

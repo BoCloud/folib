@@ -30,7 +30,7 @@ import org.springframework.stereotype.Component;
  * &emsp;└─&lt;packageID&gt;.nuspec<br>
  * 
  * 
- * @author Sergey Bespalov
+ * @author @author veadan
  *
  */
 @Component

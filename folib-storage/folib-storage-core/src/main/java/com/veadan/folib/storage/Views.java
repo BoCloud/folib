@@ -1,7 +1,7 @@
 package com.veadan.folib.storage;
 
 /**
- * @author Przemyslaw Fusik
+ * @author veadan
  */
 public interface Views
 {

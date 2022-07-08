@@ -11,7 +11,7 @@ import org.glassfish.jersey.message.internal.MediaTypeProvider;
 import org.springframework.util.Assert;
 
 /**
- * @author Przemyslaw Fusik
+ * @author veadan
  */
 public class CustomJerseyMediaTypeProvider
         extends MediaTypeProvider

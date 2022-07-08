@@ -12,7 +12,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
 /**
- * @author carlspring
+ * @author Veadan
  */
 @Component("filesystemStorageProvider")
 public class FileSystemStorageProvider

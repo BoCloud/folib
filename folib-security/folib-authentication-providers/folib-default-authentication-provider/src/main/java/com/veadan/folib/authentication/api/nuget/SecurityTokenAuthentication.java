@@ -3,7 +3,7 @@ package com.veadan.folib.authentication.api.nuget;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 
 /**
- * @author Sergey Bespalov
+ * @author @author veadan
  *
  */
 public class SecurityTokenAuthentication extends UsernamePasswordAuthenticationToken

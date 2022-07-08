@@ -10,7 +10,7 @@ import java.util.List;
 
 /**
  * @author Alex Oreshkevich
- * @author Przemyslaw Fusik
+ * @author veadan
  */
 public interface AuthorizationConfigService
 {

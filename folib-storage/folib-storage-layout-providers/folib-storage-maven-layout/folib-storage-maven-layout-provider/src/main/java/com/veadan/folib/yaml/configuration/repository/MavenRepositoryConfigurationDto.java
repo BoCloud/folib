@@ -8,7 +8,7 @@ import com.veadan.folib.yaml.repository.CustomRepositoryConfigurationDto;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 
 /**
- * @author carlspring
+ * @author Veadan
  * @author Pablo Tirado
  */
 @JsonTypeName(Maven2LayoutProvider.ALIAS)

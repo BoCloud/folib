@@ -24,7 +24,7 @@ import org.springframework.web.bind.annotation.*;
 
 /**
  * @author Pablo Tirado
- * @author Przemyslaw Fusik
+ * @author veadan
  */
 @Controller
 @RequestMapping("/api/configuration/folib/routing/rules")

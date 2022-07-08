@@ -1,7 +1,7 @@
 package com.veadan.folib.services.support;
 
 /**
- * @author Przemyslaw Fusik
+ * @author veadan
  */
 public class ArtifactEntrySearchCriteria
 {

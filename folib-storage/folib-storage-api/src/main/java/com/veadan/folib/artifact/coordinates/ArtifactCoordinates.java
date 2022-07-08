@@ -5,8 +5,8 @@ import java.net.URI;
 import javax.xml.bind.annotation.XmlRootElement;
 
 /**
- * @author carlspring
- * @author sbespalov
+ * @author Veadan
+ * @author xuxinping
  */
 @XmlRootElement(name = "artifactCoordinates")
 public interface ArtifactCoordinates<C extends ArtifactCoordinates<C, V>, V extends Comparable<V>>

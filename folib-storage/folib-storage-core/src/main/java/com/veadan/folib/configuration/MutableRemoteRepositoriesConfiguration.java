@@ -5,7 +5,7 @@ import com.veadan.folib.client.MutableRemoteRepositoryRetryArtifactDownloadConfi
 import java.io.Serializable;
 
 /**
- * @author Przemyslaw Fusik
+ * @author veadan
  * @author Pablo Tirado
  */
 public class MutableRemoteRepositoriesConfiguration

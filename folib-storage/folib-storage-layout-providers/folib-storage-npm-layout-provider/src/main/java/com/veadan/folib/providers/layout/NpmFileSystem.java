@@ -10,7 +10,7 @@ import com.veadan.folib.providers.io.LayoutFileSystem;
 import com.veadan.folib.storage.repository.Repository;
 
 /**
- * @author sbespalov
+ * @author xuxinping
  *
  */
 public class NpmFileSystem extends LayoutFileSystem

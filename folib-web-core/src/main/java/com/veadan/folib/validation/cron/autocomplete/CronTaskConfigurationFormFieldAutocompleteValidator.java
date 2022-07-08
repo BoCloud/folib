@@ -1,7 +1,7 @@
 package com.veadan.folib.validation.cron.autocomplete;
 
 /**
- * @author Przemyslaw Fusik
+ * @author veadan
  */
 public interface CronTaskConfigurationFormFieldAutocompleteValidator
 {

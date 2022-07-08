@@ -6,7 +6,7 @@ import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 
 /**
- * @author Przemyslaw Fusik
+ * @author veadan
  */
 @JsonInclude(JsonInclude.Include.ALWAYS)
 public class RequestBodyValidationError

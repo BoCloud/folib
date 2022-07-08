@@ -18,8 +18,8 @@ import org.springframework.web.servlet.mvc.method.RequestMappingInfo;
 import org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerMapping;
 
 /**
- * @author sbespalov
- * @author Przemyslaw Fusik
+ * @author xuxinping
+ * @author veadan
  */
 public class CustomRequestMappingHandlerMapping
         extends RequestMappingHandlerMapping

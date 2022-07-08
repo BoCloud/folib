@@ -22,7 +22,7 @@ import org.springframework.util.CollectionUtils;
 /**
  * The application specific Gremlin DSL extension. Provides shortcut methods for the traversals that commonly used.
  *
- * @author sbespalov
+ * @author xuxinping
  *
  * @param <S>
  * @param <E>

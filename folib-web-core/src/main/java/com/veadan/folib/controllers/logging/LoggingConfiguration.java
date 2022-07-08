@@ -11,7 +11,7 @@ import org.springframework.context.annotation.Scope;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 /**
- * @author Przemyslaw Fusik
+ * @author veadan
  */
 @Configuration
 @EnableConfigurationProperties(LogFileWebEndpointProperties.class)

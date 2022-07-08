@@ -13,7 +13,7 @@ import com.veadan.folib.db.schema.Edges;
 import org.neo4j.ogm.annotation.Relationship;
 
 /**
- * @author sbespalov
+ * @author xuxinping
  */
 public abstract class LayoutArtifactCoordinatesEntity<C extends LayoutArtifactCoordinatesEntity<C, V>, V extends Comparable<V>>
         extends DomainEntity

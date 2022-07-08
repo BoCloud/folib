@@ -1,7 +1,7 @@
 package com.veadan.folib.repository;
 
 /**
- * @author carlspring
+ * @author Veadan
  */
 public class P2RepositoryManagementStrategy
         extends AbstractRepositoryManagementStrategy

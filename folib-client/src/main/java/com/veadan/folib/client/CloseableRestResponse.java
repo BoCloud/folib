@@ -5,7 +5,6 @@ import java.io.Closeable;
 import java.io.IOException;
 
 /**
- * @author Przemyslaw Fusik
  */
 public class CloseableRestResponse
         implements Closeable

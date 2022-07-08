@@ -10,7 +10,7 @@ import java.util.Map;
 import org.springframework.stereotype.Component;
 
 /**
- * @author Przemyslaw Fusik
+ * @author veadan
  */
 @Component
 public class CronTaskConfigurationFormFieldRepositoryIdAutocompleteValidator

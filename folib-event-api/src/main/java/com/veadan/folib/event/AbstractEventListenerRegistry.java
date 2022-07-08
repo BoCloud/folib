@@ -5,7 +5,7 @@ import javax.inject.Inject;
 import org.springframework.context.ApplicationEventPublisher;
 
 /**
- * @author carlspring
+ * @author Veadan
  */
 public abstract class AbstractEventListenerRegistry
 {

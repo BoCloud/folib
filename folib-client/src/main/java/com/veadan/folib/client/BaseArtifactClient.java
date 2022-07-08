@@ -9,7 +9,6 @@ import org.slf4j.LoggerFactory;
 /**
  * Implements basic API for artifact processing. Subclasses may specify particular remote method implementations.
  *
- * @author Alex Oreshkevich
  */
 public abstract class BaseArtifactClient
         implements IArtifactClient

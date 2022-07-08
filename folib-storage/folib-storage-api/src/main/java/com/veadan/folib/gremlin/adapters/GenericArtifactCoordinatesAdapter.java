@@ -18,7 +18,7 @@ import com.veadan.folib.domain.GenericArtifactCoordinatesEntity;
 import org.springframework.stereotype.Component;
 
 /**
- * @author sbespalov
+ * @author xuxinping
  */
 @Component
 public class GenericArtifactCoordinatesAdapter

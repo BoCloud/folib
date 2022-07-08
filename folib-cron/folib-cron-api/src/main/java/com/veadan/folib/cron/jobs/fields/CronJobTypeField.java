@@ -1,7 +1,7 @@
 package com.veadan.folib.cron.jobs.fields;
 
 /**
- * @author Przemyslaw Fusik
+ * @author veadan
  */
 public abstract class CronJobTypeField
         extends CronJobField

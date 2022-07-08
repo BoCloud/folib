@@ -1,7 +1,7 @@
 package com.veadan.folib.api;
 
 /**
- * @author Przemyslaw Fusik
+ * @author veadan
  */
 public interface Describable
 {

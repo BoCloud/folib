@@ -6,7 +6,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 /**
- * @author carlspring
+ * @author Veadan
  */
 @Component
 public class HeaderMappingRegistry

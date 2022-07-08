@@ -3,7 +3,7 @@ package com.veadan.folib.cron.jobs.fields;
 import javax.annotation.concurrent.Immutable;
 
 /**
- * @author Przemyslaw Fusik
+ * @author veadan
  */
 @Immutable
 public class CronJobIntegerTypeField

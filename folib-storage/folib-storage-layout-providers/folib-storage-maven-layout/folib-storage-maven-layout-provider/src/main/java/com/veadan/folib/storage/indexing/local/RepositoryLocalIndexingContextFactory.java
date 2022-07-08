@@ -11,7 +11,7 @@ import javax.inject.Inject;
 import org.springframework.stereotype.Component;
 
 /**
- * @author Przemyslaw Fusik
+ * @author veadan
  */
 @Component
 @RepositoryIndexingContextFactoryQualifier(IndexTypeEnum.LOCAL)

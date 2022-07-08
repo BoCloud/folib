@@ -20,7 +20,7 @@ import org.apache.maven.index.context.IndexCreator;
 import org.apache.maven.index.context.IndexingContext;
 
 /**
- * @author Przemyslaw Fusik
+ * @author veadan
  */
 public class RepositoryCloseableIndexingContext
         implements IndexingContext, Closeable

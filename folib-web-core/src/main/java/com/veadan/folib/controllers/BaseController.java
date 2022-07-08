@@ -35,7 +35,7 @@ import org.springframework.http.ResponseEntity;
  *
  * @author Alex Oreshkevich
  * @author Pablo Tirado
- * @author Przemyslaw Fusik
+ * @author veadan
  */
 public abstract class BaseController
 {

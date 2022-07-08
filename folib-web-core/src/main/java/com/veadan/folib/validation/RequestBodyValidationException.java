@@ -3,7 +3,7 @@ package com.veadan.folib.validation;
 import org.springframework.validation.Errors;
 
 /**
- * @author Przemyslaw Fusik
+ * @author veadan
  */
 public class RequestBodyValidationException
         extends RuntimeException

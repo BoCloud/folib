@@ -1,7 +1,7 @@
 package com.veadan.folib.storage.checksum;
 
 /**
- * @author carlspring
+ * @author Veadan
  */
 public interface ChecksumManager
 {

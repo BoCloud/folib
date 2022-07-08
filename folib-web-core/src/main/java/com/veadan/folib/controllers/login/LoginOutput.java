@@ -11,7 +11,7 @@ import java.util.stream.Collectors;
 import org.springframework.security.core.GrantedAuthority;
 
 /**
- * @author Przemyslaw Fusik
+ * @author veadan
  */
 //@XmlRootElement(name = "login-output")
 //@XmlAccessorType(XmlAccessType.NONE)

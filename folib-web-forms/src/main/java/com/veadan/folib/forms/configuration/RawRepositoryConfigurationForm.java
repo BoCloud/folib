@@ -3,7 +3,7 @@ package com.veadan.folib.forms.configuration;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 
 /**
- * @author Przemyslaw Fusik
+ * @author veadan
  */
 @JsonTypeName("Raw")
 public class RawRepositoryConfigurationForm

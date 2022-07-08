@@ -43,8 +43,8 @@ import org.springframework.stereotype.Component;
 
 /**
  * 
- * @author carlspring
- * @author Sergey Bespalov
+ * @author Veadan
+ * @author @author veadan
  */
 @Component
 public class NugetRepositoryFeatures

@@ -27,7 +27,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
- * @author Przemyslaw Fusik
+ * @author veadan
  */
 @Component
 public class LocalStorageProxyRepositoryExpiredArtifactsCleaner

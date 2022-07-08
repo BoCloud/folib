@@ -7,7 +7,7 @@ import java.nio.file.attribute.BasicFileAttributes;
 import org.springframework.util.Assert;
 
 /**
- * @author Przemyslaw Fusik
+ * @author veadan
  * @see org.springframework.util.FileSystemUtils
  */
 public final class FileSystemUtils

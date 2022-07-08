@@ -8,7 +8,7 @@ import java.util.stream.Collectors;
 import com.google.common.collect.ImmutableSet;
 
 /**
- * @author Przemyslaw Fusik
+ * @author veadan
  */
 @Immutable
 public class CronTasksConfiguration

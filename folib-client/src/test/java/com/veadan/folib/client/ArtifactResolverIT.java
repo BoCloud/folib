@@ -17,7 +17,7 @@ import org.springframework.test.context.ContextConfiguration;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * @author korest
+ * @author veadan
  */
 @SpringBootTest
 @ActiveProfiles(profiles = "test")

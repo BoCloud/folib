@@ -6,7 +6,7 @@ import com.veadan.folib.storage.repository.remote.RemoteRepositoryDto;
 import org.springframework.core.convert.converter.Converter;
 
 /**
- * @author Przemyslaw Fusik
+ * @author veadan
  */
 public enum RemoteRepositoryFormConverter
         implements Converter<RemoteRepositoryForm, RemoteRepositoryDto>

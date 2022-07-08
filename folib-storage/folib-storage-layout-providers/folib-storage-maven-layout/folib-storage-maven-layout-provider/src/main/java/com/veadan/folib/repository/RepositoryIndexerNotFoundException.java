@@ -1,7 +1,7 @@
 package com.veadan.folib.repository;
 
 /**
- * @author Przemyslaw Fusik
+ * @author veadan
  */
 public class RepositoryIndexerNotFoundException
         extends RuntimeException

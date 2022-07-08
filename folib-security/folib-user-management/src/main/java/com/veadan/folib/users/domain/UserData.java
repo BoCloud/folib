@@ -17,7 +17,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 import com.google.common.collect.ImmutableSet;
 
 /**
- * @author Przemyslaw Fusik
+ * @author veadan
  */
 @Immutable
 public class UserData implements Serializable, User

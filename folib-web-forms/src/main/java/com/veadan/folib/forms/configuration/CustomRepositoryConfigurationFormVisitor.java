@@ -1,7 +1,7 @@
 package com.veadan.folib.forms.configuration;
 
 /**
- * @author Przemyslaw Fusik
+ * @author veadan
  */
 public interface CustomRepositoryConfigurationFormVisitor<T>
 {

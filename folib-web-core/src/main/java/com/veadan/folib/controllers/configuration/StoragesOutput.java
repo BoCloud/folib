@@ -9,7 +9,7 @@ import com.fasterxml.jackson.annotation.JsonRootName;
 import com.fasterxml.jackson.annotation.JsonView;
 
 /**
- * @author Przemyslaw Fusik
+ * @author veadan
  */
 @JsonRootName("storages")
 public class StoragesOutput

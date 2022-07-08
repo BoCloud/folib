@@ -11,7 +11,7 @@ import com.fasterxml.jackson.databind.SerializerProvider;
 import org.springframework.util.MultiValueMap;
 
 /**
- * @author Przemyslaw Fusik
+ * @author veadan
  */
 public class RequestBodyValidationErrorsJsonSerializer
         extends JsonSerializer<MultiValueMap<String, String>>

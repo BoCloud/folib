@@ -18,7 +18,7 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import static java.util.stream.Collectors.toMap;
 
 /**
- * @author Przemyslaw Fusik
+ * @author veadan
  */
 @Immutable
 @XmlAccessorType(XmlAccessType.FIELD)

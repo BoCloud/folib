@@ -25,7 +25,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 
 /**
- * @author korest
+ * @author veadan
  * @author Pablo Tirado
  */
 @Controller

@@ -1,7 +1,7 @@
 package com.veadan.folib.forms.cron;
 
 /**
- * @author Przemyslaw Fusik
+ * @author veadan
  */
 public class CronTaskConfigurationFormField
 {

@@ -10,7 +10,7 @@ import javax.xml.bind.annotation.XmlAccessorType;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 /**
- * @author Przemyslaw Fusik
+ * @author veadan
  */
 @Immutable
 @XmlAccessorType(XmlAccessType.FIELD)

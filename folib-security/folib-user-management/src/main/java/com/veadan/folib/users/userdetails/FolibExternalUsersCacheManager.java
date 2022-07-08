@@ -17,7 +17,7 @@ import org.springframework.security.core.userdetails.UserDetails;
  * method called, this extends the period during which the external user remains
  * valid.
  * 
- * @author sbespalov
+ * @author xuxinping
  */
 public interface FolibExternalUsersCacheManager
 {

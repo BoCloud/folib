@@ -4,7 +4,7 @@ import com.veadan.folib.data.criteria.Expression.ExpOperator;
 import com.veadan.folib.data.domain.DomainObject;
 
 /**
- * @author sbespalov
+ * @author xuxinping
  *
  * @param <T>
  */

@@ -24,7 +24,7 @@ import org.slf4j.LoggerFactory;
  *     ArtifactOutputStream aos = (ArtifactOutputStream) Files.newOutputStream(repositoryPath); 
  * </pre>
  * 
- * @author Sergey Bespalov
+ * @author @author veadan
  */
 public class LayoutOutputStream extends MultipleDigestOutputStream
 {

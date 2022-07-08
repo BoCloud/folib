@@ -19,7 +19,7 @@ import com.veadan.folib.storage.repository.Repository;
  * logic. <br>
  * Root folder is the {@link Repository} base directory.
  *
- * @author Sergey Bespalov
+ * @author @author veadan
  * 
  * @see Repository
  * @see LayoutProvider

@@ -37,7 +37,7 @@ import static com.veadan.folib.users.security.JwtAuthenticationClaimsProvider.Jw
 /**
  * Works in conjunction with {@link JsonFormLoginSupplier}
  *
- * @author Przemyslaw Fusik
+ * @author veadan
  */
 @RestController
 @RequestMapping(value = REQUEST_MAPPING)

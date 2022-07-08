@@ -23,8 +23,8 @@ import org.neo4j.ogm.annotation.Relationship;
 import org.neo4j.ogm.annotation.typeconversion.Convert;
 
 /**
- * @author carlspring
- * @author sbespalov
+ * @author Veadan
+ * @author xuxinping
  */
 @NodeEntity(Vertices.ARTIFACT)
 public class ArtifactEntity

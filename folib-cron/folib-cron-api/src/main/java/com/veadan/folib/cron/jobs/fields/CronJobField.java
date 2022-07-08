@@ -4,7 +4,7 @@ import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import org.springframework.util.Assert;
 
 /**
- * @author Przemyslaw Fusik
+ * @author veadan
  */
 @JsonSerialize(using = CronJobFieldJsonSerializer.class)
 public abstract class CronJobField

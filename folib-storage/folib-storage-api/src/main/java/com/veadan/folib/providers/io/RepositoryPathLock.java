@@ -17,7 +17,7 @@ import org.springframework.util.Assert;
 import com.google.common.util.concurrent.Striped;
 
 /**
- * @author Przemyslaw Fusik
+ * @author veadan
  */
 @Component
 public class RepositoryPathLock

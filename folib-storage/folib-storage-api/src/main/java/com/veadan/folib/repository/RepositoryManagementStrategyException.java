@@ -1,7 +1,7 @@
 package com.veadan.folib.repository;
 
 /**
- * @author carlspring
+ * @author Veadan
  */
 public class RepositoryManagementStrategyException extends Exception
 {

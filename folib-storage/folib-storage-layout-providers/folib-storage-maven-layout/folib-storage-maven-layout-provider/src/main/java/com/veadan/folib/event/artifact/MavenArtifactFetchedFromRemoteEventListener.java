@@ -29,7 +29,7 @@ import org.codehaus.plexus.util.xml.pull.XmlPullParserException;
 import org.springframework.stereotype.Component;
 
 /**
- * @author Przemyslaw Fusik
+ * @author veadan
  */
 @Component
 public class MavenArtifactFetchedFromRemoteEventListener

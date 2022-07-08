@@ -1,7 +1,7 @@
 package com.veadan.folib.providers.layout;
 
 /**
- * @author Przemyslaw Fusik
+ * @author veadan
  */
 public class IndexingDisabledException extends RuntimeException
 {

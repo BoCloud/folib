@@ -1,7 +1,7 @@
 package com.veadan.folib.storage.repository.remote.heartbeat.monitor;
 
 /**
- * @author Przemyslaw Fusik
+ * @author veadan
  */
 @FunctionalInterface
 public interface RemoteRepositoryHeartbeatMonitorStrategy

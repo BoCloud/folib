@@ -4,7 +4,7 @@ import com.veadan.folib.data.criteria.Selector;
 import com.veadan.folib.domain.ArtifactEntity;
 
 /**
- * @author sbespalov
+ * @author xuxinping
  *
  */
 public class NugetODataFilterVisitorImpl extends NugetODataFilterBaseVisitor<Selector<ArtifactEntity>>

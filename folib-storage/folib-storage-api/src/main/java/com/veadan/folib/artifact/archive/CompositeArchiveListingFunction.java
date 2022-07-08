@@ -8,7 +8,7 @@ import java.util.Objects;
 import java.util.Set;
 
 /**
- * @author Przemyslaw Fusik
+ * @author veadan
  */
 public class CompositeArchiveListingFunction
         implements ArchiveListingFunction

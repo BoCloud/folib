@@ -13,7 +13,7 @@ import java.nio.file.Files;
  * "transaction" will be rolled back and temporary file will be removed.
  *
  * @see StorageFileSystemProvider.TempOutputStream
- * @author sbespalov
+ * @author xuxinping
  *
  */
 public class TempRepositoryPath extends RepositoryPath

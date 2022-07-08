@@ -1,7 +1,7 @@
 package com.veadan.folib.data.criteria;
 
 /**
- * @author sbespalov
+ * @author xuxinping
  *
  */
 public class Expression

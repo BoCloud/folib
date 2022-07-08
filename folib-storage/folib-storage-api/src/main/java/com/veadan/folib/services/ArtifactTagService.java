@@ -3,7 +3,7 @@ package com.veadan.folib.services;
 import com.veadan.folib.artifact.ArtifactTag;
 
 /**
- * @author Sergey Bespalov
+ * @author @author veadan
  *
  */
 public interface ArtifactTagService

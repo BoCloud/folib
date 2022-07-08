@@ -30,7 +30,7 @@ import org.slf4j.LoggerFactory;
 
 /**
  * @author mtodorov
- * @author Przemyslaw Fusik
+ * @author veadan
  */
 public class RestClient
         extends ArtifactClient

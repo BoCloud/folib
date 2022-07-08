@@ -7,7 +7,7 @@ import com.veadan.folib.storage.metadata.maven.MetadataExpirationStrategyType;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 
 /**
- * @author Przemyslaw Fusik
+ * @author veadan
  */
 @JsonTypeName(Maven2LayoutProvider.ALIAS)
 public class MavenRepositoryConfigurationForm

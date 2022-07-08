@@ -5,7 +5,7 @@ import com.veadan.folib.services.support.TrustStoreCertificateOperationException
 import java.io.IOException;
 
 /**
- * @author Przemyslaw Fusik
+ * @author veadan
  */
 public interface TrustStoreService
 {

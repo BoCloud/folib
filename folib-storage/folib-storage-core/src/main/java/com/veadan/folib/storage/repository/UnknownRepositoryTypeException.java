@@ -1,7 +1,7 @@
 package com.veadan.folib.storage.repository;
 
 /**
- * @author carlspring
+ * @author Veadan
  */
 public class UnknownRepositoryTypeException
         extends Exception

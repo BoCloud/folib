@@ -12,7 +12,7 @@ import com.google.common.collect.ImmutableSet;
 
 /**
  * @author Kate Novik.
- * @author Przemyslaw Fusik
+ * @author veadan
  */
 public class ClearRepositoryTrashCronJob
         extends JavaCronJob

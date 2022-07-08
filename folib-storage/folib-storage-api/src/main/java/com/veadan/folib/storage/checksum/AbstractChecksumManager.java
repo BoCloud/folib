@@ -1,7 +1,7 @@
 package com.veadan.folib.storage.checksum;
 
 /**
- * @author carlspring
+ * @author Veadan
  */
 public class AbstractChecksumManager implements ChecksumManager
 {

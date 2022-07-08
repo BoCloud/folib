@@ -6,7 +6,7 @@ import com.veadan.folib.cron.domain.GroovyScriptNamesDto;
 import java.util.UUID;
 
 /**
- * @author carlspring
+ * @author Veadan
  * @author Pablo Tirado
  */
 public interface CronJobSchedulerService

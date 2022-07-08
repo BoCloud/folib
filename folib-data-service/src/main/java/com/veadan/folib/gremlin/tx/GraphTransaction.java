@@ -21,7 +21,7 @@ import org.springframework.data.neo4j.transaction.SessionHolder;
 /**
  * Exposes current thread bound {@link Graph} transaction.
  *
- * @author sbespalov
+ * @author xuxinping
  */
 public class GraphTransaction implements Graph
 {

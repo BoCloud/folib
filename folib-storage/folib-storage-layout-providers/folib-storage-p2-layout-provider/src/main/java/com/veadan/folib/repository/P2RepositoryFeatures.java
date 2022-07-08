@@ -13,7 +13,7 @@ import java.util.Set;
 import org.springframework.stereotype.Component;
 
 /**
- * @author carlspring
+ * @author Veadan
  */
 @Component
 public class P2RepositoryFeatures

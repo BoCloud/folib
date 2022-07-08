@@ -3,7 +3,7 @@ package com.veadan.folib.storage.repository;
 import java.io.Serializable;
 
 /**
- * @author korest
+ * @author veadan
  * @author Pablo Tirado
  */
 public class MutableHttpConnectionPool

@@ -6,7 +6,7 @@ import org.apache.tinkerpop.gremlin.process.traversal.Traverser;
 import org.apache.tinkerpop.gremlin.structure.Vertex;
 
 /**
- * @author sbespalov
+ * @author xuxinping
  *
  */
 public interface DomainObject extends Serializable

@@ -24,8 +24,8 @@ import static com.veadan.folib.config.Maven2LayoutProviderConfig.FILE_SYSTEM_ALI
 
 /**
  * @author Kate Novik
- * @author carlspring
- * @author Przemyslaw Fusik
+ * @author Veadan
+ * @author veadan
  */
 @RestController
 @RequestMapping("/api/maven/index")

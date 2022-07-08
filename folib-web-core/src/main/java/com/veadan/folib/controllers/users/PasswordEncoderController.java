@@ -22,7 +22,7 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 /**
- * @author Przemyslaw Fusik
+ * @author veadan
  */
 @Controller
 @RequestMapping("/api/users/encrypt/password")

@@ -43,7 +43,7 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Component;
 
 /**
- * @author sbespalov
+ * @author xuxinping
  *
  */
 @Primary

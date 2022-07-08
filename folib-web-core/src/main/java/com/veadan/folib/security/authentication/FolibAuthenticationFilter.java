@@ -17,7 +17,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 /**
- * @author Przemyslaw Fusik
+ * @author veadan
  */
 public class FolibAuthenticationFilter
         extends OncePerRequestFilter

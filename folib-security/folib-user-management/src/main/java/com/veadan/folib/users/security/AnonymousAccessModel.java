@@ -9,7 +9,7 @@ import com.veadan.folib.users.dto.AccessModel;
 
 
 /**
- * @author sbespalov
+ * @author xuxinping
  *
  */
 public class AnonymousAccessModel implements AccessModel

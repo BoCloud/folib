@@ -9,7 +9,7 @@ import com.veadan.folib.storage.repository.Repository;
 import javax.inject.Inject;
 
 /**
- * @author Przemyslaw Fusik
+ * @author veadan
  */
 public abstract class AbstractRepositoryIndexDirectoryPathResolver
         implements RepositoryIndexDirectoryPathResolver

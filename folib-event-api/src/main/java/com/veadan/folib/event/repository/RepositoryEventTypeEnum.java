@@ -1,7 +1,7 @@
 package com.veadan.folib.event.repository;
 
 /**
- * @author carlspring
+ * @author Veadan
  */
 public enum RepositoryEventTypeEnum
 {

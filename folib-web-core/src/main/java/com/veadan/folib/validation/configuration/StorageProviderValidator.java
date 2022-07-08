@@ -8,7 +8,7 @@ import javax.validation.ConstraintValidator;
 import javax.validation.ConstraintValidatorContext;
 
 /**
- * @author carlspring
+ * @author Veadan
  */
 public class StorageProviderValidator
         implements ConstraintValidator<StorageProviderValue, String>

@@ -4,7 +4,7 @@ import com.veadan.folib.authentication.api.jwt.JwtAuthenticationProvider;
 import com.veadan.folib.users.security.JwtClaimsProvider;
 
 /**
- * @author Sergey Bespalov
+ * @author @author veadan
  *
  */
 public class SecurityTokenAuthenticationProvider extends JwtAuthenticationProvider

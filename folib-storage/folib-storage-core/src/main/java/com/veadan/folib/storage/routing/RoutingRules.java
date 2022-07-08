@@ -8,7 +8,7 @@ import com.google.common.collect.ImmutableList;
 import static java.util.stream.Collectors.toList;
 
 /**
- * @author Przemyslaw Fusik
+ * @author veadan
  */
 @Immutable
 public class RoutingRules

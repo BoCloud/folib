@@ -8,7 +8,7 @@ import com.veadan.folib.domain.ArtifactGroup;
 import com.veadan.folib.storage.repository.Repository;
 
 /**
- * @author Przemyslaw Fusik
+ * @author veadan
  */
 public interface ArtifactGroupService<T extends ArtifactGroup>
 {

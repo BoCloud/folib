@@ -9,7 +9,7 @@ import java.nio.file.FileSystem;
 import java.util.Set;
 
 /**
- * @author carlspring
+ * @author Veadan
  */
 public class DockerFileSystem
         extends LayoutFileSystem

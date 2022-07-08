@@ -3,7 +3,7 @@ package com.veadan.folib.repository;
 import java.io.IOException;
 
 /**
- * @author carlspring
+ * @author Veadan
  */
 public class RepositoryInitializationException
         extends IOException

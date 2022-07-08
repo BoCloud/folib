@@ -1,7 +1,7 @@
 package com.veadan.folib.net;
 
 /**
- * @author Przemyslaw Fusik
+ * @author veadan
  */
 @SuppressWarnings("PMD.ClassNamingConventions")
 public final class MediaType

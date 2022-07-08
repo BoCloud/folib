@@ -15,7 +15,7 @@ import org.folib.db.server.JanusGraphServer;
 import org.folib.db.server.JanusGraphWithRemoteCassandra;
 
 /**
- * @author sbespalov
+ * @author xuxinping
  */
 @Configuration
 @Conditional(RemoteDbServerConfiguration.class)

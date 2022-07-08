@@ -13,7 +13,7 @@ import java.util.LinkedList;
  * 
  * For example it can be used as Mulitpart Stream Adapter to change boundary bytes.
  * 
- * @author Sergey Bespalov
+ * @author @author veadan
  * 
  */
 public class ReplacingInputStream

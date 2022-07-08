@@ -9,7 +9,7 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * @author Przemyslaw Fusik
+ * @author veadan
  */
 @Documented
 @Constraint(validatedBy = LdapUriValidator.class)

@@ -5,7 +5,7 @@ import com.veadan.folib.db.schema.Vertices;
 import org.springframework.stereotype.Component;
 
 /**
- * @author sbespalov
+ * @author xuxinping
  */
 @Component
 public class RawArtifactCoordinatesAdapter

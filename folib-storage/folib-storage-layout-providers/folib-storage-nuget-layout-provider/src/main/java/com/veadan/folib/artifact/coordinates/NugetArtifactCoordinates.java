@@ -16,7 +16,7 @@ import org.neo4j.ogm.annotation.NodeEntity;
 import org.springframework.util.Assert;
 
 /**
- * @author Sergey Bespalov
+ * @author @author veadan
  *
  */
 @NodeEntity(Vertices.NUGET_ARTIFACT_COORDINATES)

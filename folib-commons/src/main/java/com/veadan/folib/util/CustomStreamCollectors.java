@@ -7,7 +7,7 @@ import java.util.stream.Collector;
 import java.util.stream.Collectors;
 
 /**
- * @author Przemyslaw Fusik
+ * @author veadan
  */
 @SuppressWarnings("PMD.ClassNamingConventions")
 public final class CustomStreamCollectors

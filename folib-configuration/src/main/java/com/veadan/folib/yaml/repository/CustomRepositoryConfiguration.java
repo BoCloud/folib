@@ -5,7 +5,7 @@ import javax.annotation.concurrent.Immutable;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 
 /**
- * @author Przemyslaw Fusik
+ * @author veadan
  */
 @Immutable
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "layout")

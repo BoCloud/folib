@@ -22,7 +22,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
 /**
- * @author Przemyslaw Fusik
+ * @author veadan
  */
 @Component
 public class ProxyRepositoryArtifactResolver
@@ -103,9 +103,7 @@ public class ProxyRepositoryArtifactResolver
          artifactManagementService.store(repositoryPath, is);
          
         // TODO: Add a policy for validating the checksums of downloaded artifacts
-        // TODO: Validate the local checksum against the remote's checksums
-        // sbespalov: we have checksum validation within ArtifactManagementService.store() method, but it's not strict for now (see SB-949)
-        
+        // TODO: Validate the local checksum against the remote's checksums    徐新平
         // Serve the downloaded artifact
         return repositoryPath;
     }

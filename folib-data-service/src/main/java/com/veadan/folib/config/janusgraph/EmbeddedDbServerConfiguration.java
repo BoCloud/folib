@@ -33,8 +33,8 @@ import org.folib.db.server.JanusGraphServer;
 import org.folib.db.server.JanusGraphWithEmbeddedCassandra;
 
 /**
- * @author Przemyslaw Fusik
- * @author sbespalov
+ * @author veadan
+ * @author xuxinping
  */
 @Configuration
 @Conditional(EmbeddedDbServerConfiguration.class)

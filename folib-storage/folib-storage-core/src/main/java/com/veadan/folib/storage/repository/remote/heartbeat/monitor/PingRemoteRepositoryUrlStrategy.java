@@ -3,7 +3,7 @@ package com.veadan.folib.storage.repository.remote.heartbeat.monitor;
 import static com.veadan.folib.utils.Ping.pingHost;
 
 /**
- * @author Przemyslaw Fusik
+ * @author veadan
  */
 enum PingRemoteRepositoryUrlStrategy
         implements RemoteRepositoryHeartbeatMonitorStrategy

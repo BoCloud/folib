@@ -29,7 +29,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * @author sbespalov
+ * @author xuxinping
  *
  */
 public abstract class QueryParser<T extends ParseTree, E extends DomainObject, V extends ParseTreeVisitor<Selector<E>>>

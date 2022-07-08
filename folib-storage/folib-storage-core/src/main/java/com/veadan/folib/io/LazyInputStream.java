@@ -10,7 +10,7 @@ import java.io.InputStream;
  * when reading directly occures. <br>
  * For example this needed if resource should be locked before reading.
  * 
- * @author sbespalov
+ * @author xuxinping
  */
 public class LazyInputStream extends FilterInputStream
 {

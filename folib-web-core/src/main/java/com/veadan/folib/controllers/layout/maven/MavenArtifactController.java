@@ -40,8 +40,8 @@ import static org.springframework.http.HttpStatus.NOT_FOUND;
  *
  * @author Martin Todorov
  * @author Alex Oreshkevich
- * @author Przemyslaw Fusik
- * @author Sergey Bespalov
+ * @author veadan
+ * @author @author veadan
  *
  * @see {@linkplain http://docs.spring.io/spring/docs/current/spring-framework-reference/html/mvc.html#mvc-config-path-matching}
  */

@@ -1,7 +1,7 @@
 package com.veadan.folib.event.artifact;
 
 /**
- * @author carlspring
+ * @author Veadan
  */
 public enum ArtifactEventTypeEnum
 {

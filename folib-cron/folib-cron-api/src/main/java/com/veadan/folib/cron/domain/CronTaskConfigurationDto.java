@@ -13,7 +13,7 @@ import org.springframework.util.Assert;
 /**
  * @author Yougeshwar
  * @author Pablo Tirado
- * @author Przemyslaw Fusik
+ * @author veadan
  */
 public class CronTaskConfigurationDto
         implements Serializable

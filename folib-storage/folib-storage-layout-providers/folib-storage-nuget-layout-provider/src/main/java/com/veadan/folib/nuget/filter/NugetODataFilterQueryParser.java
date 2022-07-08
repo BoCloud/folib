@@ -8,7 +8,7 @@ import org.antlr.v4.runtime.Parser;
 import com.veadan.folib.domain.ArtifactEntity;
 
 /**
- * @author sbespalov
+ * @author xuxinping
  *
  */
 public class NugetODataFilterQueryParser extends QueryParser<NugetODataFilterParser.FilterContext, ArtifactEntity, NugetODataFilterVisitorImpl>

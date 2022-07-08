@@ -1,7 +1,7 @@
 package com.veadan.folib.event.server;
 
 /**
- * @author carlspring
+ * @author Veadan
  */
 public enum ServerEventTypeEnum
 {

@@ -5,7 +5,7 @@ import java.nio.file.Paths;
 import java.util.Objects;
 
 /**
- * @author Przemyslaw Fusik
+ * @author veadan
  */
 public final class PathUtils
 {

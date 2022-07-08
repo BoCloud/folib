@@ -18,7 +18,7 @@ import org.springframework.context.annotation.Import;
  * Spring configuration for all user-related code.
  *
  * @author Alex Oreshkevich
- * @author Przemyslaw Fusik
+ * @author veadan
  */
 @Configuration
 @ComponentScan({ "com.veadan.folib.users" })

@@ -7,7 +7,7 @@ import java.util.Set;
 import org.springframework.util.Assert;
 
 /**
- * @author Przemyslaw Fusik
+ * @author veadan
  */
 public class CronJobDefinition
 {

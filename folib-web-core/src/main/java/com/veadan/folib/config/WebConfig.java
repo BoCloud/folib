@@ -72,6 +72,7 @@ import org.springframework.web.servlet.view.InternalResourceViewResolver;
                  "com.veadan.folib.web",
                  "com.veadan.folib.mapper",
                  "com.veadan.folib.utils",
+                 "com.veadan.folib.gremlin",
                  "com.veadan.folib.actuator" })
 @Import({ CommonConfig.class,
           FolibSecurityConfig.class,

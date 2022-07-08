@@ -13,7 +13,7 @@ import org.apache.maven.index.context.IndexingContext;
  * We need to support .index/nexus-maven-repository-index.XXX.gz requests
  * but the real path is under `local` or `remote` sub-path
  *
- * @author Przemyslaw Fusik
+ * @author veadan
  */
 public class MavenRepositoryIndexPathTransformer
         implements Function<String, String>

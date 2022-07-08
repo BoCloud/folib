@@ -3,7 +3,7 @@ package com.veadan.folib.dependency.snippet;
 import com.veadan.folib.artifact.coordinates.ArtifactCoordinates;
 
 /**
- * @author carlspring
+ * @author Veadan
  */
 public interface DependencySynonymFormatter
 {

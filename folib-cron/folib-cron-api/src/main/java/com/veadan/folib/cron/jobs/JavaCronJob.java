@@ -1,7 +1,7 @@
 package com.veadan.folib.cron.jobs;
 
 /**
- * @author carlspring
+ * @author Veadan
  */
 public abstract class JavaCronJob
         extends AbstractCronJob

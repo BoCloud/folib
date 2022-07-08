@@ -16,7 +16,7 @@ import com.veadan.folib.storage.repository.Repository;
 import org.springframework.stereotype.Component;
 
 /**
- * @author Przemyslaw Fusik
+ * @author veadan
  */
 @Component
 public class RepositoryPathResolver

@@ -16,7 +16,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 /**
- * @author Przemyslaw Fusik
+ * @author veadan
  */
 @Configuration
 public class HazelcastConfiguration

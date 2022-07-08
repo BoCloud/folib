@@ -9,7 +9,7 @@ import java.lang.annotation.Retention;
 import static java.lang.annotation.RetentionPolicy.RUNTIME;
 
 /**
- * @author Przemyslaw Fusik
+ * @author veadan
  */
 public interface RepositoryIndexingContextFactory
 {

@@ -10,7 +10,7 @@ import java.nio.file.Path;
 import java.util.Collection;
 
 /**
- * @author Przemyslaw Fusik
+ * @author veadan
  */
 public final class ClassLoaderFactory
 {

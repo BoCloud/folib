@@ -17,7 +17,7 @@ import org.springframework.core.env.Environment;
 
 /**
  * @author Kate Novik
- * @author carlspring
+ * @author Veadan
  */
 public class DownloadRemoteMavenIndexCronJob
         extends JavaCronJob

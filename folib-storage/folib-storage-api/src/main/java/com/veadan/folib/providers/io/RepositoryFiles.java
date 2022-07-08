@@ -19,7 +19,7 @@ import com.veadan.folib.storage.repository.Repository;
 /**
  * This utility class contains common methods to work with {@link RepositoryPath}
  * 
- * @author sbespalov
+ * @author xuxinping
  * 
  * @see RepositoryPath
  * @see Files

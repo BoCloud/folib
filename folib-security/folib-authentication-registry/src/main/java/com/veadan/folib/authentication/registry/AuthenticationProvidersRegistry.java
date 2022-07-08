@@ -29,8 +29,8 @@ import org.springframework.stereotype.Component;
 import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 
 /**
- * @author Przemyslaw Fusik
- * @author sbespalov
+ * @author veadan
+ * @author xuxinping
  */
 @Component
 public class AuthenticationProvidersRegistry

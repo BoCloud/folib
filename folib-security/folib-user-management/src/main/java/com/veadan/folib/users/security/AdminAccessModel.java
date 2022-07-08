@@ -6,7 +6,7 @@ import com.veadan.folib.users.domain.Privileges;
 import com.veadan.folib.users.dto.AccessModel;
 
 /**
- * @author sbespalov
+ * @author xuxinping
  *
  */
 public class AdminAccessModel implements AccessModel

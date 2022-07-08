@@ -15,7 +15,7 @@ import java.nio.file.FileSystem;
 import java.util.Set;
 
 /**
- * @author sbespalov
+ * @author xuxinping
  */
 public class MavenFileSystem
         extends LayoutFileSystem

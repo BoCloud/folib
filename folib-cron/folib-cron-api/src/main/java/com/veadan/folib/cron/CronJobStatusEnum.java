@@ -1,7 +1,7 @@
 package com.veadan.folib.cron;
 
 /**
- * @author carlspring
+ * @author Veadan
  */
 public enum CronJobStatusEnum
 {

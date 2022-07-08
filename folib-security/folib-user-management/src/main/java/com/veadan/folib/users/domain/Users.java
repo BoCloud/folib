@@ -13,7 +13,7 @@ import com.veadan.folib.users.dto.UsersDto;
 import com.google.common.collect.ImmutableSet;
 
 /**
- * @author Przemyslaw Fusik
+ * @author veadan
  */
 @Immutable
 public class Users

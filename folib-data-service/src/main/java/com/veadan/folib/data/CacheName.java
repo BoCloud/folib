@@ -1,7 +1,7 @@
 package com.veadan.folib.data;
 
 /**
- * @author Przemyslaw Fusik
+ * @author veadan
  */
 public final class CacheName
 {

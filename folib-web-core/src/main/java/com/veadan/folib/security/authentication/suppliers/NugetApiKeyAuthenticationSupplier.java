@@ -17,7 +17,7 @@ import org.springframework.security.web.authentication.preauth.PreAuthenticatedC
 import org.springframework.stereotype.Component;
 
 /**
- * @author Sergey Bespalov
+ * @author @author veadan
  */
 @Component
 public class NugetApiKeyAuthenticationSupplier

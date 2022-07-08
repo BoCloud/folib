@@ -12,7 +12,7 @@ import org.springframework.data.repository.Repository;
  * @param <S>
  * @param <E>
  *
- * @author sbespalov
+ * @author xuxinping
  */
 public interface EntityTraversalAdapter<S extends Element, E extends DomainObject>
 {

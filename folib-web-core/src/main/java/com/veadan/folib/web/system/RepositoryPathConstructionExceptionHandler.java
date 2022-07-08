@@ -13,7 +13,7 @@ import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
 
 /**
- * @author Przemyslaw Fusik
+ * @author veadan
  */
 @ControllerAdvice
 public class RepositoryPathConstructionExceptionHandler

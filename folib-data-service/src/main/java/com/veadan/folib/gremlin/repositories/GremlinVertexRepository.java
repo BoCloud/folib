@@ -15,7 +15,7 @@ import com.veadan.folib.gremlin.adapters.UnfoldEntityTraversal;
  *
  * @param <E>
  *
- * @author sbespalov
+ * @author xuxinping
  */
 @Transactional
 public abstract class GremlinVertexRepository<E extends DomainObject> extends GremlinRepository<Vertex, E>

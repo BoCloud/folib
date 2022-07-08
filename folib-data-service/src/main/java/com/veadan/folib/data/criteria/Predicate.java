@@ -9,7 +9,7 @@ import java.util.List;
  * Each {@link Predicate} is search conditions tree node, also have an logical
  * {@link Expression} and nested nodes joined with {@link BooleanOperator}.
  * 
- * @author sbespalov
+ * @author xuxinping
  *
  */
 public class Predicate

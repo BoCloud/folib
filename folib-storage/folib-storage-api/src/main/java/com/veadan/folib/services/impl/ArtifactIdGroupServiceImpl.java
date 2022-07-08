@@ -30,8 +30,8 @@ import org.springframework.util.Assert;
 import com.google.common.collect.Iterables;
 
 /**
- * @author Przemyslaw Fusik
- * @author sbespalov
+ * @author veadan
+ * @author xuxinping
  */
 @Service
 @Transactional

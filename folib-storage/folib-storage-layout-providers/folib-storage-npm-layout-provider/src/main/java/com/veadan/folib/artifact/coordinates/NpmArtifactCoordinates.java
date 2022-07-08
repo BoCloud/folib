@@ -21,7 +21,7 @@ import org.springframework.util.StringUtils;
  * See <a href="https://docs.npmjs.com/files/package.json">Official npm package
  * specification</a>.
  * 
- * @author sbespalov
+ * @author xuxinping
  */
 @NodeEntity(Vertices.NPM_ARTIFACT_COORDINATES)
 @XmlRootElement(name = "npmArtifactCoordinates")

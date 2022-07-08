@@ -7,7 +7,7 @@ import com.veadan.folib.storage.indexing.RepositoryIndexDirectoryPathResolver.Re
 import org.springframework.stereotype.Component;
 
 /**
- * @author Przemyslaw Fusik
+ * @author veadan
  */
 @Component
 @RepositoryIndexDirectoryPathResolverQualifier(IndexTypeEnum.LOCAL)

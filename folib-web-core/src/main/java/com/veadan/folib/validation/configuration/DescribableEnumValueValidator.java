@@ -7,7 +7,7 @@ import javax.validation.ConstraintValidatorContext;
 import java.util.Arrays;
 
 /**
- * @author Przemyslaw Fusik
+ * @author veadan
  */
 public class DescribableEnumValueValidator
         implements ConstraintValidator<DescribableEnumValue, String>

@@ -7,7 +7,7 @@ import com.veadan.folib.aql.grammar.AQLParser.TokenKeyContext;
 import com.veadan.folib.aql.grammar.AQLParser.TokenValueContext;
 
 /**
- * @author sbespalov
+ * @author xuxinping
  *
  */
 public class AqlExpressionVisitor extends AQLBaseVisitor<ArtifactEntryExpressionBuilder>

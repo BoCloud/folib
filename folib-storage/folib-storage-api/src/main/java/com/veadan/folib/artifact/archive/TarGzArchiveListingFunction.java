@@ -14,7 +14,7 @@ import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
 import org.apache.commons.compress.compressors.gzip.GzipCompressorInputStream;
 
 /**
- * @author Przemyslaw Fusik
+ * @author veadan
  */
 public enum TarGzArchiveListingFunction
         implements ArchiveListingFunction

@@ -18,7 +18,7 @@ import java.nio.file.Files;
 import org.springframework.stereotype.Component;
 
 /**
- * @author carlspring
+ * @author Veadan
  */
 @Component
 public class MavenRepositoryManagementStrategy

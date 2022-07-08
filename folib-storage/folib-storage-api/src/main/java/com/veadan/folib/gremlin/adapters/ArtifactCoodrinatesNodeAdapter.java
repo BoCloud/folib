@@ -3,7 +3,7 @@ package com.veadan.folib.gremlin.adapters;
 import com.veadan.folib.artifact.coordinates.GenericArtifactCoordinates;
 
 /**
- * @author sbespalov
+ * @author xuxinping
  */
 public interface ArtifactCoodrinatesNodeAdapter extends EntityUpwardHierarchyNodeAdapter<GenericArtifactCoordinates>
 {

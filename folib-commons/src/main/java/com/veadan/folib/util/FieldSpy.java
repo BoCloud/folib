@@ -6,7 +6,7 @@ import java.util.Set;
 import org.apache.commons.lang3.reflect.FieldUtils;
 
 /**
- * @author Przemyslaw Fusik
+ * @author veadan
  */
 public class FieldSpy<T>
 {

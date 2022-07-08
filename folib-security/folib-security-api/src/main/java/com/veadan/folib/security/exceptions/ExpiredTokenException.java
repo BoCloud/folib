@@ -1,7 +1,7 @@
 package com.veadan.folib.security.exceptions;
 
 /**
- * @author Przemyslaw Fusik
+ * @author veadan
  */
 public class ExpiredTokenException extends InvalidTokenException
 {

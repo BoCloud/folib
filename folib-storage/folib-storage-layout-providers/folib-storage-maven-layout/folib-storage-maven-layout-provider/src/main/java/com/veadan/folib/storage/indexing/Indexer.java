@@ -6,7 +6,7 @@ import org.apache.maven.index.DefaultQueryCreator;
 import org.apache.maven.index.DefaultSearchEngine;
 
 /**
- * @author Przemyslaw Fusik
+ * @author veadan
  */
 public class Indexer
 {

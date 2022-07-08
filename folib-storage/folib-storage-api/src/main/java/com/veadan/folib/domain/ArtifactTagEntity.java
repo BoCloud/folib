@@ -6,7 +6,7 @@ import com.veadan.folib.db.schema.Vertices;
 import org.neo4j.ogm.annotation.NodeEntity;
 
 /**
- * @author Sergey Bespalov
+ * @author @author veadan
  *
  */
 @NodeEntity(Vertices.ARTIFACT_TAG)

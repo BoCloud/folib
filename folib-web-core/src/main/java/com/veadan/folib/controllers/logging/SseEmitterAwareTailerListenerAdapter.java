@@ -12,7 +12,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 /**
- * @author Przemyslaw Fusik
+ * @author veadan
  */
 public class SseEmitterAwareTailerListenerAdapter
         extends TailerListenerAdapter

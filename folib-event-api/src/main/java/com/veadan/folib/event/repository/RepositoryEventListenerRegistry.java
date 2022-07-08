@@ -4,7 +4,7 @@ import com.veadan.folib.event.AbstractEventListenerRegistry;
 import org.springframework.stereotype.Component;
 
 /**
- * @author carlspring
+ * @author Veadan
  */
 @Component
 public class RepositoryEventListenerRegistry

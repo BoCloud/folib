@@ -7,7 +7,7 @@ import java.util.Set;
 import com.fasterxml.jackson.annotation.JsonRootName;
 
 /**
- * @author Przemyslaw Fusik
+ * @author veadan
  * @author Pablo Tirado
  */
 @JsonRootName("cronTasksConfiguration")

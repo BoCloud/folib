@@ -8,7 +8,7 @@ import java.util.Objects;
 import org.apache.commons.collections4.CollectionUtils;
 
 /**
- * @author Przemyslaw Fusik
+ * @author veadan
  */
 public class PerRepositoryDuplicationCheckStrategy
         implements CronJobDuplicationCheckStrategy

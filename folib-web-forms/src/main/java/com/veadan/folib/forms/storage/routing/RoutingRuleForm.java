@@ -11,7 +11,7 @@ import java.util.List;
 
 /**
  * @author Pablo Tirado
- * @author Przemyslaw Fusik
+ * @author veadan
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class RoutingRuleForm

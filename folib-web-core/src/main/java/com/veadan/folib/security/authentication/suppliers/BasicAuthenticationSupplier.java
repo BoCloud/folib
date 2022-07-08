@@ -16,7 +16,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.util.Assert;
 
 /**
- * @author Przemyslaw Fusik
+ * @author veadan
  */
 @Component
 @Order(4)

@@ -3,7 +3,7 @@ package com.veadan.folib.storage.repository;
 import javax.annotation.concurrent.Immutable;
 
 /**
- * @author Przemyslaw Fusik
+ * @author veadan
  */
 @Immutable
 public abstract class CustomConfiguration

@@ -47,7 +47,7 @@ import org.springframework.util.FileSystemUtils;
  *
  * TODO: we need a proper implementation against Service Provider Interface (SPI) specification
  *
- * @author Sergey Bespalov
+ * @author @author veadan
  */
 public abstract class StorageFileSystemProvider
         extends FileSystemProvider

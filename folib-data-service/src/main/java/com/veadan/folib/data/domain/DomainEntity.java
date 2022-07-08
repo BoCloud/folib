@@ -5,7 +5,7 @@ import org.apache.tinkerpop.gremlin.structure.Vertex;
 import org.neo4j.ogm.annotation.Id;
 
 /**
- * @author sbespalov
+ * @author xuxinping
  *
  */
 public class DomainEntity implements DomainObject

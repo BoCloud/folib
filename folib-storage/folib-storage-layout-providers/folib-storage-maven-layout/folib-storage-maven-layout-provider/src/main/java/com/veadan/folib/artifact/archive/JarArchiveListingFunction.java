@@ -13,7 +13,7 @@ import org.apache.commons.compress.archivers.ArchiveInputStream;
 import org.apache.commons.compress.archivers.jar.JarArchiveInputStream;
 
 /**
- * @author Przemyslaw Fusik
+ * @author veadan
  */
 public enum JarArchiveListingFunction
         implements ArchiveListingFunction

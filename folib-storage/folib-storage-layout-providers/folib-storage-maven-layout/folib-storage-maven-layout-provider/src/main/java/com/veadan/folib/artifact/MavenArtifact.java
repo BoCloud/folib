@@ -7,7 +7,7 @@ import java.io.File;
 import org.apache.maven.artifact.Artifact;
 
 /**
- * @author Przemyslaw Fusik
+ * @author veadan
  */
 public interface MavenArtifact
         extends Artifact

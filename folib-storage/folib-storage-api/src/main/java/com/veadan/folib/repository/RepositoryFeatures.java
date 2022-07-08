@@ -3,7 +3,7 @@ package com.veadan.folib.repository;
 import java.util.Set;
 
 /**
- * @author carlspring
+ * @author Veadan
  */
 public interface RepositoryFeatures
 {
