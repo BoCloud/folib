@@ -12,7 +12,7 @@ import org.springframework.util.AntPathMatcher;
 /**
  * Re-implements URL processing to let {path:.+} behaves like **. Also populates necessary path variables.
  *
- * @author Alex Oreshkevich
+ * @author 
  */
 @Component
 public class CustomAntPathMatcher

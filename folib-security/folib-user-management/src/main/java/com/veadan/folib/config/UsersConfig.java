@@ -17,7 +17,7 @@ import org.springframework.context.annotation.Import;
 /**
  * Spring configuration for all user-related code.
  *
- * @author Alex Oreshkevich
+ * @author 
  * @author veadan
  */
 @Configuration

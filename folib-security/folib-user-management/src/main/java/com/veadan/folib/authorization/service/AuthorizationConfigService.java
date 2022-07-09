@@ -9,7 +9,7 @@ import java.io.IOException;
 import java.util.List;
 
 /**
- * @author Alex Oreshkevich
+ * @author 
  * @author veadan
  */
 public interface AuthorizationConfigService

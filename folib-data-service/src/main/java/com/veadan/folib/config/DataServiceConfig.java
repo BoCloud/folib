@@ -23,7 +23,7 @@ import com.hazelcast.spring.cache.HazelcastCacheManager;
 /**
  * Spring configuration for data service project.
  *
- * @author Alex Oreshkevich
+ * @author 
  * @author veadan
  * @author xuxinping
  */

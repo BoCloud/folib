@@ -9,7 +9,7 @@ import org.springframework.security.core.GrantedAuthority;
  * Security system atomic item that is used for access restriction. Privileges represent a single permission, such as:
  * Read, Deploy, Admin, View Log etc.
  *
- * @author Alex Oreshkevich
+ * @author 
  * @see {@linkplain https://dev.carlspring.org/youtrack/issue/SB-122}
  * @see {@linkplain https://dev.carlspring.org/youtrack/issue/SB-126}
  */

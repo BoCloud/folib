@@ -39,7 +39,7 @@ import static org.springframework.http.HttpStatus.NOT_FOUND;
  * Thanks to custom URL processing any path variable like '{artifactPath:.+}' will be processed as '**'.
  *
  * @author Martin Todorov
- * @author Alex Oreshkevich
+ * @author 
  * @author veadan
  * @author @author veadan
  *

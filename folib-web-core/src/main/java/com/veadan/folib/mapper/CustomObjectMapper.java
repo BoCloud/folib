@@ -18,7 +18,7 @@ import com.fasterxml.jackson.databind.type.TypeFactory;
 import com.fasterxml.jackson.module.jaxb.JaxbAnnotationIntrospector;
 
 /**
- * @author Alex Oreshkevich
+ * @author 
  */
 @Component
 @Primary

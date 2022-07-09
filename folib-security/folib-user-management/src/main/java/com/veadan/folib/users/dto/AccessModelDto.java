@@ -9,7 +9,7 @@ import com.veadan.folib.users.domain.AccessModelData;
 import com.veadan.folib.users.domain.Privileges;
 
 /**
- * @author Alex Oreshkevich
+ * @author 
  * @author Veadan
  * @author veadan
  */

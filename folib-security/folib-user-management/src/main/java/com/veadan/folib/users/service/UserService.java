@@ -5,7 +5,7 @@ import com.veadan.folib.users.domain.Users;
 import org.jose4j.lang.JoseException;
 
 /**
- * @author Alex Oreshkevich
+ * @author 
  * @author veadan
  */
 public interface UserService

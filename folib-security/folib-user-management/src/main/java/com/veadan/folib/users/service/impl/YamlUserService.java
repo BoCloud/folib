@@ -20,7 +20,7 @@ import com.veadan.folib.users.service.impl.YamlUserService.Yaml;
 import org.springframework.stereotype.Service;
 
 /**
- * @author Alex Oreshkevich
+ * @author 
  * @author veadan
  */
 @Service

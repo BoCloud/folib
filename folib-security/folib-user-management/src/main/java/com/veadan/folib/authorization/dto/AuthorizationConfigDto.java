@@ -9,7 +9,7 @@ import com.fasterxml.jackson.annotation.JsonRootName;
 /**
  * Java representation for authorization config that stored in YAML file.
  *
- * @author Alex Oreshkevich
+ * @author 
  * @author Veadan
  * @see /src/main/resources/etc/conf/folib-authorization.yaml
  * @see {@linkplain https://dev.carlspring.org/youtrack/issue/SB-126}

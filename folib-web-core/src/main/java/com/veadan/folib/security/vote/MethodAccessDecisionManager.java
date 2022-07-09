@@ -10,7 +10,7 @@ import org.springframework.security.access.vote.RoleVoter;
 import org.springframework.stereotype.Component;
 
 /**
- * @author Alex Oreshkevich
+ * @author 
  */
 @Component
 public class MethodAccessDecisionManager

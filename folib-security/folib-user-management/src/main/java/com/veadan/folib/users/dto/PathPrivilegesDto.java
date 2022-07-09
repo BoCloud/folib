@@ -10,7 +10,7 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
- * @author Alex Oreshkevich
+ * @author 
  * @author veadan
  * @author Veadan
  */

@@ -33,7 +33,7 @@ import org.springframework.http.ResponseEntity;
 /**
  * Provides common subroutines that will be useful for any backend controllers.
  *
- * @author Alex Oreshkevich
+ * @author 
  * @author Veadan
  * @author veadan
  */

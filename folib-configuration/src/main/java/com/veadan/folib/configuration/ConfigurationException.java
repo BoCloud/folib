@@ -3,7 +3,7 @@ package com.veadan.folib.configuration;
 /**
  * Corresponds to any issues related to wrong configuration settings.
  *
- * @author Alex Oreshkevich
+ * @author 
  */
 public class ConfigurationException
         extends RuntimeException

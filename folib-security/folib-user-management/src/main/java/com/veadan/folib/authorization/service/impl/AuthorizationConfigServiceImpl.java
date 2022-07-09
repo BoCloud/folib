@@ -23,7 +23,7 @@ import org.springframework.stereotype.Service;
 
 
 /**
- * @author Alex Oreshkevich
+ * @author 
  * @author veadan
  */
 @Service
