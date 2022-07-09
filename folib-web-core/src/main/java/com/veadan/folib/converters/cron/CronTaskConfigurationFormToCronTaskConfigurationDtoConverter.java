@@ -11,7 +11,7 @@ import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.core.convert.converter.Converter;
 
 /**
- * @author Pablo Tirado
+ * @author Veadan
  */
 public enum CronTaskConfigurationFormToCronTaskConfigurationDtoConverter
         implements Converter<CronTaskConfigurationForm, CronTaskConfigurationDto>

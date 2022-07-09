@@ -10,7 +10,7 @@ import java.util.List;
 
 /**
  * @author veadan
- * @author Pablo Tirado
+ * @author Veadan
  */
 public class StorageForm
 {

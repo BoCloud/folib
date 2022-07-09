@@ -6,7 +6,7 @@ import com.veadan.folib.users.dto.UserDto;
 import org.springframework.core.convert.converter.Converter;
 
 /**
- * @author Pablo Tirado
+ * @author Veadan
  * @author veadan
  */
 public enum UserFormToUserDtoConverter

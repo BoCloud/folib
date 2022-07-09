@@ -34,7 +34,7 @@ import static org.springframework.http.HttpStatus.PARTIAL_CONTENT;
 import static org.springframework.http.HttpStatus.REQUESTED_RANGE_NOT_SATISFIABLE;
 
 /**
- * @author Pablo Tirado
+ * @author Veadan
  */
 public class ArtifactControllerHelper
 {

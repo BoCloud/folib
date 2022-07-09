@@ -7,7 +7,7 @@ import java.util.UUID;
 
 /**
  * @author Veadan
- * @author Pablo Tirado
+ * @author Veadan
  */
 public interface CronJobSchedulerService
 {

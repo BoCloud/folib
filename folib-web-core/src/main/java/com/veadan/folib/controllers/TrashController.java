@@ -25,7 +25,7 @@ import org.springframework.web.bind.annotation.*;
 
 /**
  * @author Martin Todorov
- * @author Pablo Tirado
+ * @author Veadan
  */
 @Controller
 @RequestMapping("/api/trash")

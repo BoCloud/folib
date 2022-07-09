@@ -11,7 +11,7 @@ import java.util.UUID;
 
 /**
  * @author Yougeshwar
- * @author Pablo Tirado
+ * @author Veadan
  */
 public interface CronTaskDataService
 {

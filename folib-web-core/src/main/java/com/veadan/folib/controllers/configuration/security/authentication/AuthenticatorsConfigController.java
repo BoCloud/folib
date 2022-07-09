@@ -25,7 +25,7 @@ import io.swagger.annotations.ApiResponses;
 
 /**
  * @author veadan
- * @author Pablo Tirado
+ * @author Veadan
  */
 @RestController
 @PreAuthorize("hasAuthority('ADMIN')")
@@ -35,30 +35,30 @@ public class AuthenticatorsConfigController
         extends BaseController
 {
 
-    public static final String SUCCESSFUL_UPDATE = "Update succeeded.";
+    public static final String SUCCESSFUL_UPDATE = "更新成功";
     
-    public static final String SUCCESSFUL_REORDER = "Re-order succeeded.";
+    public static final String SUCCESSFUL_REORDER = "排序成功";
 
-    public static final String FAILED_REORDER = "Could not reorder authentication items.";
+    public static final String FAILED_REORDER = "身份验证失败无法重新排序";
     
-    public static final String FAILED_UPDATE= "Could not update authentication configuration.";
+    public static final String FAILED_UPDATE= "无法更新用户配置";
 
-    public static final String SUCCESSFUL_RELOAD = "Authentication configuration re-load succeeded.";
+    public static final String SUCCESSFUL_RELOAD = "重新加载认证配置成功";
 
-    public static final String FAILED_RELOAD = "Could not reload authentication configuration.";
+    public static final String FAILED_RELOAD = "无法重新加载身份验证配置";
 
     @Inject
     private ConfigurableProviderManager providerManager;
 
-    @ApiOperation(value = "Enumerates ordered collection of authenticators with order number and name")
-    @ApiResponses(value = { @ApiResponse(code = 200, message = "The list was returned successfully.") })
+    @ApiOperation(value = "枚举具有序号和名称的已排序身份验证器集合 ")
+    @ApiResponses(value = { @ApiResponse(code = 200, message = "成功返回列表") })
     @GetMapping(produces = MediaType.APPLICATION_JSON_VALUE)
     public AuthenticationItems list()
     {
         return providerManager.getAuthenticationItems();
     }
 
-    @ApiOperation(value = "Reorders authenticators by their names")
+    @ApiOperation(value = "按身份验证器的名称重新排序")
     @ApiResponses(value = { @ApiResponse(code = 200, message = SUCCESSFUL_REORDER),
                             @ApiResponse(code = 400, message = FAILED_REORDER) })
     @PutMapping(path = "/reorder/{first}/{second}",
@@ -79,7 +79,7 @@ public class AuthenticatorsConfigController
         }
     }
 
-    @ApiOperation(value = "Reorders authenticators by their indexes")
+    @ApiOperation(value = "根据身份验证器的索引重新排序")
     @ApiResponses(value = { @ApiResponse(code = 200, message = SUCCESSFUL_REORDER),
                             @ApiResponse(code = 400, message = FAILED_REORDER) })
     @PutMapping(consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
@@ -97,7 +97,7 @@ public class AuthenticatorsConfigController
         }
     }
     
-    @ApiOperation(value = "Reloads authenticators registry")
+    @ApiOperation(value = "重新加载的身份验证器注册")
     @ApiResponses(value = { @ApiResponse(code = 200, message = SUCCESSFUL_RELOAD),
                             @ApiResponse(code = 500, message = FAILED_RELOAD) })
     @PutMapping(path = "/reload",

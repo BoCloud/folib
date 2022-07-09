@@ -19,7 +19,7 @@ import org.springframework.context.event.ContextStartedEvent;
 import org.springframework.stereotype.Service;
 
 /**
- * @author Pablo Tirado
+ * @author Veadan
  */
 @Service
 class CronTaskConfigurationServiceImpl

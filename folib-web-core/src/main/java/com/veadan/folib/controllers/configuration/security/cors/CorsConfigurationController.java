@@ -29,7 +29,7 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 /**
  * @author veadan
- * @author Pablo Tirado
+ * @author Veadan
  */
 @RestController
 @PreAuthorize("hasAuthority('ADMIN')")
@@ -38,9 +38,9 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 public class CorsConfigurationController
         extends BaseController
 {
-    public static final String SUCCESSFUL_UPDATE = "CORS allowed origins was updated.";
+    public static final String SUCCESSFUL_UPDATE = "CORS 允许的来源已更新";
 
-    public static final String FAILED_UPDATE = "Could not update CORS allowed origins.";
+    public static final String FAILED_UPDATE = "无法更新 CORS 允许的来源";
 
     private static final Logger logger = LoggerFactory.getLogger(CorsConfigurationController.class);
 
@@ -50,7 +50,7 @@ public class CorsConfigurationController
     @Inject
     private ConfigurationManagementService configurationManagementService;
 
-    @ApiOperation(value = "Returns allowed origins")
+    @ApiOperation(value = "返回允许的来源")
     @ApiResponses(value = @ApiResponse(code = 200, message = "Allowed origins."))
     @GetMapping(produces = { MediaType.TEXT_PLAIN_VALUE,
                              MediaType.APPLICATION_JSON_VALUE })

@@ -14,7 +14,7 @@ import com.fasterxml.jackson.dataformat.yaml.YAMLGenerator;
 import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 
 /**
- * @author Pablo Tirado
+ * @author Veadan
  */
 public class FolibYamlMapper
         extends YAMLMapper

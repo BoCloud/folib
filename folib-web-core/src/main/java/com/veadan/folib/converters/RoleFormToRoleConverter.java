@@ -7,7 +7,7 @@ import com.veadan.folib.users.dto.AccessModelDto;
 import org.springframework.core.convert.converter.Converter;
 
 /**
- * @author Pablo Tirado
+ * @author Veadan
  */
 public class RoleFormToRoleConverter
         implements Converter<RoleForm, RoleDto>

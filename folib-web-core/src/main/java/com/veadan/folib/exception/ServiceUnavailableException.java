@@ -1,7 +1,7 @@
 package com.veadan.folib.exception;
 
 /**
- * @author Pablo Tirado
+ * @author Veadan
  */
 public class ServiceUnavailableException
         extends RuntimeException

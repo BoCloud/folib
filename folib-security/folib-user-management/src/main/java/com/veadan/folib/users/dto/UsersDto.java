@@ -10,7 +10,7 @@ import org.apache.commons.collections4.CollectionUtils;
 
 /**
  * @author mtodorov
- * @author Pablo Tirado
+ * @author Veadan
  */
 @JsonRootName("users")
 public class UsersDto

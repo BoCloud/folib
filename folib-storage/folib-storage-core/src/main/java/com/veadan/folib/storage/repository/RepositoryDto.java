@@ -18,7 +18,7 @@ import org.apache.commons.lang3.StringUtils;
 
 /**
  * @author mtodorov
- * @author Pablo Tirado
+ * @author Veadan
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class RepositoryDto

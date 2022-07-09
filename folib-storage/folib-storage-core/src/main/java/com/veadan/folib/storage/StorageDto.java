@@ -14,7 +14,7 @@ import com.fasterxml.jackson.annotation.JsonRootName;
 
 /**
  * @author mtodorov
- * @author Pablo Tirado
+ * @author Veadan
  */
 @JsonRootName("storage")
 public class StorageDto

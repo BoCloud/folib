@@ -52,7 +52,7 @@ import static org.springframework.http.HttpStatus.BAD_REQUEST;
  * This controllers provides a simple wrapper over REST API for the LoggingManagementService.
  *
  * @author Martin Todorov
- * @author Pablo Tirado
+ * @author Veadan
  * @author Aditya Srinivasan
  * @author veadan
  */

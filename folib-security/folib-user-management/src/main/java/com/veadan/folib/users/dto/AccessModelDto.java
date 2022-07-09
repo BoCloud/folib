@@ -10,7 +10,7 @@ import com.veadan.folib.users.domain.Privileges;
 
 /**
  * @author Alex Oreshkevich
- * @author Pablo Tirado
+ * @author Veadan
  * @author veadan
  */
 public class AccessModelDto

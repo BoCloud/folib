@@ -8,7 +8,7 @@ import com.veadan.folib.authorization.service.AuthorizationConfigService;
 import org.springframework.util.StringUtils;
 
 /**
- * @author Pablo Tirado
+ * @author Veadan
  */
 public class UniqueRoleNameValidator
         implements ConstraintValidator<UniqueRoleName, String>

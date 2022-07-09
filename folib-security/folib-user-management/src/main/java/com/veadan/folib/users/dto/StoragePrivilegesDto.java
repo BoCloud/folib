@@ -10,7 +10,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
  * @author Alex Oreshkevich
- * @author Pablo Tirado
+ * @author Veadan
  */
 public class StoragePrivilegesDto
         implements Serializable, StoragePrivileges

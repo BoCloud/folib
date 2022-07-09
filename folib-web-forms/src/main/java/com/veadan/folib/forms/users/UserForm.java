@@ -12,7 +12,7 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.google.common.collect.ImmutableSet;
 
 /**
- * @author Pablo Tirado
+ * @author Veadan
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class UserForm

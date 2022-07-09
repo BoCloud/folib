@@ -8,7 +8,7 @@ import com.fasterxml.jackson.annotation.JsonTypeName;
 
 /**
  * @author Veadan
- * @author Pablo Tirado
+ * @author Veadan
  */
 @JsonTypeName(NugetLayoutProvider.ALIAS)
 public class NugetRepositoryConfigurationDto

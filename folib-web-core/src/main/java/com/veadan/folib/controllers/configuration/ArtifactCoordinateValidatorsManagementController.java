@@ -25,7 +25,7 @@ import org.springframework.web.bind.annotation.*;
 
 /**
  * @author veadan
- * @author Pablo Tirado
+ * @author Veadan
  * @author Aditya Srinivasan
  */
 @RestController
@@ -36,25 +36,25 @@ public class ArtifactCoordinateValidatorsManagementController
         extends BaseController
 {
 
-    static final String SUCCESSFUL_LIST = "All version validators of the requested repository";
+    static final String SUCCESSFUL_LIST = "所请求存储库的所有版本验证器";
     
-    static final String NOT_FOUND_STORAGE_MESSAGE = "Could not find requested storage ${storageId}.";
+    static final String NOT_FOUND_STORAGE_MESSAGE = "找不到请求的存储空间 ${storageId}.";
     
-    static final String NOT_FOUND_REPOSITORY_MESSAGE = "Could not find requested repository ${storageId}:${repositoryId}.";
+    static final String NOT_FOUND_REPOSITORY_MESSAGE = "找不到请求的存储库 ${storageId}:${repositoryId}.";
     
-    static final String NOT_FOUND_LAYOUT_PROVIDER_MESSAGE = "Could not find requested artifact coordinate validator for layout provider ${layoutProvider}.";
+    static final String NOT_FOUND_LAYOUT_PROVIDER_MESSAGE = "找不到布局提供程序的请求工件坐标验证器 ${layoutProvider}.";
 
-    static final String SUCCESSFUL_ADD = "Version validator type was added to the requested repository.";
+    static final String SUCCESSFUL_ADD = "版本验证器类型已添加到请求的存储库中.";
 
-    static final String SUCCESSFUL_DELETE = "Version validator type was deleted from the requested repository.";
+    static final String SUCCESSFUL_DELETE = "版本验证器类型已从请求的存储库中删除.";
     
-    static final String NOT_FOUND_ALIAS_MESSAGE = "Could not delete requested alias from the requested repository.";
+    static final String NOT_FOUND_ALIAS_MESSAGE = "无法从请求的存储库中删除请求的别名.";
 
     @Inject
     private ArtifactCoordinatesValidatorRegistry artifactCoordinatesValidatorRegistry;
     
     
-    @ApiOperation(value = "Enumerates all version validators of the requested repository")
+    @ApiOperation(value = "枚举所请求存储库的所有版本验证器")
     @ApiResponses(value = { @ApiResponse(code = 200, message = SUCCESSFUL_LIST),
                             @ApiResponse(code = 404, message = NOT_FOUND_REPOSITORY_MESSAGE) })
     @GetMapping(value = "/{storageId}/{repositoryId}",
@@ -69,7 +69,7 @@ public class ArtifactCoordinateValidatorsManagementController
         return getJSONListResponseEntityBody("versionValidators", versionValidators);
     }
 
-    @ApiOperation(value = "Adds version validator type to the requested repository")
+    @ApiOperation(value = "将版本验证器类型添加到请求的存储库")
     @ApiResponses(value = { @ApiResponse(code = 200, message = SUCCESSFUL_ADD),
                             @ApiResponse(code = 404, message = NOT_FOUND_REPOSITORY_MESSAGE) })
     @PutMapping(value = "/{storageId}/{repositoryId}/{alias}",
@@ -110,7 +110,7 @@ public class ArtifactCoordinateValidatorsManagementController
         return getSuccessfulResponseEntity(SUCCESSFUL_DELETE, acceptHeader);
     }
 
-    @ApiOperation(value = "Returns a list of all the available artifact coordinate validators in the registry")
+    @ApiOperation(value = "返回注册表中所有可用工件坐标验证器的列表")
     @ApiResponses(value = { @ApiResponse(code = 200, message = SUCCESSFUL_LIST),
                             @ApiResponse(code = 404, message = NOT_FOUND_REPOSITORY_MESSAGE) })
     @GetMapping(value = "/validators",
@@ -122,7 +122,7 @@ public class ArtifactCoordinateValidatorsManagementController
                                                                                  .entrySet());
     }
 
-    @ApiOperation(value = "Returns a list of artifact coordinate validators supported for a given layout provider")
+    @ApiOperation(value = "返回给定布局提供程序支持的工件坐标验证器列表")
     @ApiResponses(value = { @ApiResponse(code = 200, message = SUCCESSFUL_LIST),
                             @ApiResponse(code = 404, message = NOT_FOUND_REPOSITORY_MESSAGE) })
     @GetMapping(value = "/validators/{layoutProvider}",

@@ -12,7 +12,7 @@ import org.springframework.util.Assert;
 
 /**
  * @author Yougeshwar
- * @author Pablo Tirado
+ * @author Veadan
  * @author veadan
  */
 public class CronTaskConfigurationDto

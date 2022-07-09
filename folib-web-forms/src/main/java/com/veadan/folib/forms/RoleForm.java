@@ -8,7 +8,7 @@ import com.veadan.folib.validation.UniqueRoleName;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 /**
- * @author Pablo Tirado
+ * @author Veadan
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class RoleForm

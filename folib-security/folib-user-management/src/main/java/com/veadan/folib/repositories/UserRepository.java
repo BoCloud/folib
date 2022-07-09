@@ -9,6 +9,7 @@ import com.veadan.folib.gremlin.dsl.EntityTraversal;
 import com.veadan.folib.gremlin.repositories.GremlinVertexRepository;
 
 import javax.inject.Inject;
+import javax.inject.Named;
 import javax.transaction.Transactional;
 
 import java.util.ArrayList;
@@ -28,6 +29,7 @@ import org.springframework.util.StopWatch;
 public class UserRepository extends GremlinVertexRepository<User>
         implements UserQueries
 {
+
 
     @Inject
     UserQueries queries;
@@ -59,8 +61,8 @@ public class UserRepository extends GremlinVertexRepository<User>
 
 //        StopWatch sw = new StopWatch();
 //        sw.start("第1");
-        EntityTraversal<Vertex, User> a=g().V().hasLabel(Vertices.USER)
-                .inE(Edges.USER_HAS_SECURITY_ROLES).hasLabel(Vertices.SECURITY_ROLE).map(adapter.fold());
+//        EntityTraversal<Vertex, User> a=g().V().hasLabel(Vertices.USER)
+//                .inE(Edges.USER_HAS_SECURITY_ROLES).hasLabel(Vertices.SECURITY_ROLE).map(adapter.fold());
 //
 //        System.out.println(a.toList());
 //        List<User> list= new ArrayList<>();

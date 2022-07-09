@@ -40,7 +40,7 @@ import org.springframework.web.bind.annotation.*;
  * Defines cron task processing API.
  *
  * @author Alex Oreshkevich
- * @author Pablo Tirado
+ * @author Veadan
  */
 @Controller
 @RequestMapping("/api/configuration/crontasks")

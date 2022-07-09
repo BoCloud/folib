@@ -25,7 +25,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
- * @author Pablo Tirado
+ * @author Veadan
  */
 @RestController
 @PreAuthorize("hasAuthority('ADMIN')")

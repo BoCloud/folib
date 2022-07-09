@@ -1,7 +1,7 @@
 package com.veadan.folib.cron.exceptions;
 
 /**
- * @author Pablo Tirado
+ * @author Veadan
  */
 public class CronTaskUUIDNotUniqueException
         extends RuntimeException

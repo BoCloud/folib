@@ -7,7 +7,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
  * @author Steve Todorov
- * @author Pablo Tirado
+ * @author Veadan
  */
 public class MutableSmtpConfiguration
         implements Serializable

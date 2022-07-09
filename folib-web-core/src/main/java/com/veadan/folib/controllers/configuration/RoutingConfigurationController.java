@@ -23,7 +23,7 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 /**
- * @author Pablo Tirado
+ * @author Veadan
  * @author veadan
  */
 @Controller
@@ -33,21 +33,21 @@ public class RoutingConfigurationController
         extends BaseConfigurationController
 {
 
-    static final String SUCCESSFUL_ADD_ROUTING_RULE = "Successfully added routing rule.";
+    static final String SUCCESSFUL_ADD_ROUTING_RULE = "成功添加路由规则.";
 
-    static final String FAILED_ADD_ROUTING_RULE_FORM_ERRORS = "Routing rule cannot be added because the submitted form contains errors!";
+    static final String FAILED_ADD_ROUTING_RULE_FORM_ERRORS = "提交的表单包含错误，无法添加路由规则!";
 
-    static final String FAILED_ADD_ROUTING_RULE = "Routing rule cannot be added.";
+    static final String FAILED_ADD_ROUTING_RULE = "无法添加路由规则.";
 
-    static final String SUCCESSFUL_REMOVE_ROUTING_RULE = "Routing rule removed successfully.";
+    static final String SUCCESSFUL_REMOVE_ROUTING_RULE = "路由规则删除成功.";
 
-    static final String FAILED_REMOVE_ROUTING_RULE = "Routing rule cannot be removed.";
+    static final String FAILED_REMOVE_ROUTING_RULE = "无法删除路由规则.";
 
-    static final String NOT_FOUND_REPOSITORY = "Routing rule could not be found.";
+    static final String NOT_FOUND_REPOSITORY = "找不到路由规则.";
 
-    static final String FAILED_UPDATE_ROUTING_RULE = "Successfully updated routing rule.";
+    static final String FAILED_UPDATE_ROUTING_RULE = "成功更新路由规则.";
 
-    static final String FAILED_UPDATE_ROUTING_RULE_FORM_ERROR = "Routing rule cannot be updated because the submitted form contains errors!";
+    static final String FAILED_UPDATE_ROUTING_RULE_FORM_ERROR = "无法更新路由规则，因为提交的表单包含错误!";
 
     private final ConversionService conversionService;
 
@@ -58,7 +58,7 @@ public class RoutingConfigurationController
         this.conversionService = conversionService;
     }
 
-    @ApiOperation(value = "Returns routing rule for uuid.")
+    @ApiOperation(value = "返回 uuid 的路由规则.")
     @ApiResponses(value = { @ApiResponse(code = 200, message = "Everything went ok."),
                             @ApiResponse(code = 404, message = NOT_FOUND_REPOSITORY) })
     @GetMapping(value = "{uuid}",
@@ -77,7 +77,7 @@ public class RoutingConfigurationController
         return ResponseEntity.ok(body);
     }
 
-    @ApiOperation(value = "Returns routing rules.")
+    @ApiOperation(value = "返回路由规则.")
     @ApiResponses(value = { @ApiResponse(code = 200, message = "Everything went ok.") })
     @GetMapping(produces = { MediaType.TEXT_PLAIN_VALUE,
                              MediaType.APPLICATION_JSON_VALUE })
@@ -87,7 +87,7 @@ public class RoutingConfigurationController
         return ResponseEntity.ok(body);
     }
 
-    @ApiOperation(value = "Adds a routing rule.")
+    @ApiOperation(value = "添加路由规则.")
     @ApiResponses(value = { @ApiResponse(code = 200, message = SUCCESSFUL_ADD_ROUTING_RULE),
                             @ApiResponse(code = 400, message = FAILED_ADD_ROUTING_RULE_FORM_ERRORS),
                             @ApiResponse(code = 404, message = FAILED_ADD_ROUTING_RULE) })
@@ -109,7 +109,7 @@ public class RoutingConfigurationController
         return getResponse(added, SUCCESSFUL_ADD_ROUTING_RULE, FAILED_ADD_ROUTING_RULE, acceptHeader);
     }
 
-    @ApiOperation(value = "Removes routing rule having provided uuid.")
+    @ApiOperation(value = "删除提供了 uuid 的路由规则.")
     @ApiResponses(value = { @ApiResponse(code = 200, message = SUCCESSFUL_REMOVE_ROUTING_RULE),
                             @ApiResponse(code = 404, message = FAILED_ADD_ROUTING_RULE) })
     @DeleteMapping(value = "/{uuid}",
@@ -123,7 +123,7 @@ public class RoutingConfigurationController
         return getResponse(removed, SUCCESSFUL_REMOVE_ROUTING_RULE, FAILED_REMOVE_ROUTING_RULE, acceptHeader);
     }
 
-    @ApiOperation(value = "Updates routing rule at the specified index.")
+    @ApiOperation(value = "更新指定索引处的路由规则.")
     @ApiResponses(value = { @ApiResponse(code = 200, message = FAILED_UPDATE_ROUTING_RULE),
                             @ApiResponse(code = 400, message = FAILED_UPDATE_ROUTING_RULE_FORM_ERROR),
                             @ApiResponse(code = 404, message = NOT_FOUND_REPOSITORY) })

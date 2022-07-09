@@ -34,7 +34,7 @@ import org.springframework.http.ResponseEntity;
  * Provides common subroutines that will be useful for any backend controllers.
  *
  * @author Alex Oreshkevich
- * @author Pablo Tirado
+ * @author Veadan
  * @author veadan
  */
 public abstract class BaseController

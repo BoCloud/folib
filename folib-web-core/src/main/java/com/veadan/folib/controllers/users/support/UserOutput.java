@@ -13,7 +13,7 @@ import com.google.common.collect.ImmutableSet;
 
 /**
  * @author veadan
- * @author Pablo Tirado
+ * @author Veadan
  * @JsonInclude used because com.veadan.folib.users.domain.User is annotated with it
  */
 @JsonInclude(JsonInclude.Include.NON_NULL)

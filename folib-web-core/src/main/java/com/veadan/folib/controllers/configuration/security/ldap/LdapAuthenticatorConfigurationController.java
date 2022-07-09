@@ -29,7 +29,7 @@ import io.swagger.annotations.ApiResponses;
 
 /**
  * @author veadan
- * @author Pablo Tirado
+ * @author Veadan
  */
 @RestController
 @PreAuthorize("hasAuthority('ADMIN')")
@@ -39,25 +39,25 @@ public class LdapAuthenticatorConfigurationController
         extends BaseController
 {
 
-    private static final String FAILED_PUT_LDAP = "LDAP configuration cannot be updated because the submitted form contains errors!";
+    private static final String FAILED_PUT_LDAP = "无法更新 LDAP 配置，因为提交的表单包含错误！";
 
-    private static final String FAILED_PUT_LDAP_TEST = "LDAP configuration cannot be tested because the submitted form contains errors!";
+    private static final String FAILED_PUT_LDAP_TEST = "无法测试 LDAP 配置，因为提交的表单包含错误!";
 
-    private static final String ERROR_PUT_LDAP = "Failed to update LDAP configuration.";
+    private static final String ERROR_PUT_LDAP = "更新 LDAP 配置失败.";
 
-    private static final String SUCCESS_PUT_LDAP = "LDAP configuration update succeeded";
+    private static final String SUCCESS_PUT_LDAP = "LDAP 配置更新成功";
 
-    private static final String LDAP_TEST_PASSED = "LDAP configuration test passed";
+    private static final String LDAP_TEST_PASSED = "LDAP 配置测试通过";
 
-    private static final String LDAP_TEST_FAILED = "LDAP configuration test failed";
+    private static final String LDAP_TEST_FAILED = "LDAP 配置测试失败";
 
-    private static final String ERROR_PUT_LDAP_TEST = "Failed to test LDAP configuration.";
+    private static final String ERROR_PUT_LDAP_TEST = "未能测试 LDAP 配置。";
 
     @Inject
     private LdapAuthenticationConfigurationManager ldapAuthenticationManager;
     
-    @ApiOperation(value = "Tests LDAP configuration settings")
-    @ApiResponses(value = { @ApiResponse(code = 200, message = "LDAP configuration test has passed.") })
+    @ApiOperation(value = "测试 LDAP 配置设置")
+    @ApiResponses(value = { @ApiResponse(code = 200, message = "LDAP 配置测试已通过。") })
     @PutMapping(value = "/test", produces = { MediaType.APPLICATION_JSON_VALUE })
     public ResponseEntity testLdapConfiguration(@RequestBody @Validated LdapConfigurationTestForm form,
                                                 BindingResult bindingResult,
@@ -86,8 +86,8 @@ public class LdapAuthenticatorConfigurationController
         return getSuccessfulResponseEntity(LDAP_TEST_PASSED, acceptHeader);
     }
 
-    @ApiOperation(value = "Update the LDAP configuration settings")
-    @ApiResponses(value = { @ApiResponse(code = 200, message = "LDAP configuration updated successfully.") })
+    @ApiOperation(value = "更新 LDAP 配置设置")
+    @ApiResponses(value = { @ApiResponse(code = 200, message = "LDAP 配置更新成功。") })
     @PutMapping(produces = { MediaType.APPLICATION_JSON_VALUE })
     public ResponseEntity putLdapConfiguration(@RequestBody @Validated LdapConfiguration configuration,
                                                BindingResult bindingResult,
@@ -110,8 +110,8 @@ public class LdapAuthenticatorConfigurationController
         return getSuccessfulResponseEntity(SUCCESS_PUT_LDAP, acceptHeader);
     }
 
-    @ApiOperation(value = "Returns LDAP configuration")
-    @ApiResponses(value = { @ApiResponse(code = 200, message = "The LDAP configuration.") })
+    @ApiOperation(value = "返回 LDAP 配置")
+    @ApiResponses(value = { @ApiResponse(code = 200, message = "LDAP 配置。") })
     @GetMapping(produces = { MediaType.APPLICATION_JSON_VALUE })
     public LdapConfiguration getLdapConfiguration(@RequestHeader(HttpHeaders.ACCEPT) String acceptHeader)
     {

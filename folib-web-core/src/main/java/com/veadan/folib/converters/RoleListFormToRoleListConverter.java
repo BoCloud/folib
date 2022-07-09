@@ -10,7 +10,7 @@ import java.util.List;
 import org.springframework.core.convert.converter.Converter;
 
 /**
- * @author Pablo Tirado
+ * @author Veadan
  */
 public class RoleListFormToRoleListConverter
         implements Converter<RoleListForm, List<RoleDto>>

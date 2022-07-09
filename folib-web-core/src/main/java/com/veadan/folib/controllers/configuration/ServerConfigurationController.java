@@ -34,7 +34,7 @@ import org.springframework.validation.Validator;
 import org.springframework.web.bind.annotation.*;
 
 /**
- * @author Pablo Tirado
+ * @author Veadan
  */
 @Controller
 @RequestMapping("/api/configuration/folib")
@@ -43,11 +43,11 @@ public class ServerConfigurationController
         extends BaseConfigurationController
 {
 
-    static final String SUCCESSFUL_SAVE_SERVER_SETTINGS = "The server settings were updated successfully.";
+    static final String SUCCESSFUL_SAVE_SERVER_SETTINGS = "服务器设置已成功更新.";
 
-    static final String FAILED_SAVE_SERVER_SETTINGS = "Server settings cannot be saved because the submitted form contains errors!";
+    static final String FAILED_SAVE_SERVER_SETTINGS = "无法保存服务器设置，因为提交的表单包含错误!";
 
-    static final String FAILED_EMPTY_FORM = "Empty form was provided";
+    static final String FAILED_EMPTY_FORM = "提供了空表格";
 
     private final Validator validator;
 
@@ -59,8 +59,8 @@ public class ServerConfigurationController
     }
 
     @ApiOperation(value = "Updates the instance name.")
-    @ApiResponses(value = { @ApiResponse(code = 200, message = "The instance's name was updated."),
-                            @ApiResponse(code = 400, message = "Could not update the instance's name.") })
+    @ApiResponses(value = { @ApiResponse(code = 200, message = "实例名称已更新."),
+                            @ApiResponse(code = 400, message = "无法更新实例的名称.") })
     @PreAuthorize("hasAnyAuthority('CONFIGURATION_SET_INSTANCE_NAME', 'GLOBAL_CONFIGURATION_MANAGE')")
     @PutMapping(value = "/instanceName",
                 produces = { MediaType.TEXT_PLAIN_VALUE,

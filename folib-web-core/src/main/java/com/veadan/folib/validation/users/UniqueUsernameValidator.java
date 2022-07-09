@@ -9,7 +9,7 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.util.StringUtils;
 
 /**
- * @author Pablo Tirado
+ * @author Veadan
  */
 public class UniqueUsernameValidator
         implements ConstraintValidator<UniqueUsername, String>

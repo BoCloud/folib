@@ -10,7 +10,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * @author Pablo Tirado
+ * @author Veadan
  * @author veadan
  */
 @JsonIgnoreProperties(ignoreUnknown = true)

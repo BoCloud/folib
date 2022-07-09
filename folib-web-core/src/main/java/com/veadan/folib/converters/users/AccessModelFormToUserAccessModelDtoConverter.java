@@ -14,7 +14,7 @@ import com.veadan.folib.users.dto.StoragePrivilegesDto;
 import org.springframework.core.convert.converter.Converter;
 
 /**
- * @author Pablo Tirado
+ * @author Veadan
  * @author veadan
  */
 public enum AccessModelFormToUserAccessModelDtoConverter

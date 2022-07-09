@@ -10,7 +10,7 @@ import java.util.UUID;
 import org.quartz.SchedulerException;
 
 /**
- * @author Pablo Tirado
+ * @author Veadan
  */
 public interface CronTaskConfigurationService
 {

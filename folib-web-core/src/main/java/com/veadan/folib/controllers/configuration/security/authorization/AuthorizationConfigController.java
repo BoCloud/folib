@@ -42,7 +42,7 @@ import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
 
 /**
- * @author Pablo Tirado
+ * @author Veadan
  */
 @Controller
 @PreAuthorize("hasAuthority('ADMIN')")
@@ -52,19 +52,19 @@ public class AuthorizationConfigController
         extends BaseController
 {
 
-    static final String SUCCESSFUL_ADD_ROLE = "The role was created successfully.";
-    static final String FAILED_ADD_ROLE = "Role cannot be saved because the submitted form contains errors!";
+    static final String SUCCESSFUL_ADD_ROLE = "角色创建成功";
+    static final String FAILED_ADD_ROLE = "由于提交的表单包含错误，无法保存角色";
 
-    static final String SUCCESSFUL_GET_CONFIG = "Everything went ok.";
-    static final String FAILED_GET_CONFIG = "Could not retrieve the folib-authorization.yaml configuration file.";
+    static final String SUCCESSFUL_GET_CONFIG = "一切顺利";
+    static final String FAILED_GET_CONFIG = "无法检索 folib-authorization.yaml 配置文件";
 
-    static final String SUCCESSFUL_DELETE_ROLE = "The role was deleted.";
-    static final String FAILED_DELETE_ROLE = "Could not delete the role.";
+    static final String SUCCESSFUL_DELETE_ROLE = "该角色已被删除";
+    static final String FAILED_DELETE_ROLE = "无法删除角色";
 
-    static final String SUCCESSFUL_ASSIGN_PRIVILEGES = "The privileges were assigned.";
-    static final String FAILED_ASSIGN_PRIVILEGES = "Privileges cannot be saved because the submitted form contains errors!";
+    static final String SUCCESSFUL_ASSIGN_PRIVILEGES = "特权已分配";
+    static final String FAILED_ASSIGN_PRIVILEGES = "由于提交的表单包含错误，无法保存权限！";
 
-    static final String AUTHORIZATION_CONFIG_OPERATION_FAILED = "Error during config processing.";
+    static final String AUTHORIZATION_CONFIG_OPERATION_FAILED = "配置处理期间出错";
 
     @Inject
     private AuthorizationConfigService authorizationConfigService;
@@ -80,7 +80,7 @@ public class AuthorizationConfigController
     private ConversionService conversionService;
 
 
-    @ApiOperation(value = "Used to add new roles")
+    @ApiOperation(value = "用于添加新角色")
     @ApiResponses(value = { @ApiResponse(code = 200, message = SUCCESSFUL_ADD_ROLE),
                             @ApiResponse(code = 400, message = FAILED_ADD_ROLE) })
     @PostMapping(value = "/role",
@@ -102,7 +102,7 @@ public class AuthorizationConfigController
         return processConfig(() -> SUCCESSFUL_ADD_ROLE, acceptHeader);
     }
 
-    @ApiOperation(value = "Retrieves the folib-authorization.yaml configuration file.")
+    @ApiOperation(value = "检索 folib-authorization.yaml 配置文件")
     @ApiResponses(value = { @ApiResponse(code = 200, message = SUCCESSFUL_GET_CONFIG),
                             @ApiResponse(code = 500, message = FAILED_GET_CONFIG) })
     @GetMapping(produces = { com.veadan.folib.net.MediaType.APPLICATION_YAML_VALUE,
@@ -112,7 +112,7 @@ public class AuthorizationConfigController
         return processConfig(null, acceptHeader);
     }
 
-    @ApiOperation(value = "Deletes a role by name.")
+    @ApiOperation(value = "按名称删除角色")
     @ApiResponses(value = { @ApiResponse(code = 200, message = SUCCESSFUL_DELETE_ROLE),
                             @ApiResponse(code = 400, message = FAILED_DELETE_ROLE) })
     @DeleteMapping(value = "/role/{name}",
@@ -148,7 +148,7 @@ public class AuthorizationConfigController
         }
     }
 
-    @ApiOperation(value = "Used to assign privileges to the anonymous user")
+    @ApiOperation(value = "用于为匿名用户分配权限")
     @ApiResponses(value = { @ApiResponse(code = 200, message = SUCCESSFUL_ASSIGN_PRIVILEGES),
                             @ApiResponse(code = 400, message = FAILED_ASSIGN_PRIVILEGES) })
     @PostMapping(value = "/anonymous/privileges",

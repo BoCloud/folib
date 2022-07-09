@@ -4,7 +4,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 
 /**
- * @author Pablo Tirado
+ * @author Veadan
  */
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
 public abstract class RemoteRepositoryConfigurationDto

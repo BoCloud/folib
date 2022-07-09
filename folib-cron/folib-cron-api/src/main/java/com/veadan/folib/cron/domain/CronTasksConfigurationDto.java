@@ -8,7 +8,7 @@ import com.fasterxml.jackson.annotation.JsonRootName;
 
 /**
  * @author veadan
- * @author Pablo Tirado
+ * @author Veadan
  */
 @JsonRootName("cronTasksConfiguration")
 public class CronTasksConfigurationDto

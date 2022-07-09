@@ -6,7 +6,7 @@ import java.io.Serializable;
 
 /**
  * @author veadan
- * @author Pablo Tirado
+ * @author Veadan
  */
 public class MutableRemoteRepositoriesConfiguration
         implements Serializable

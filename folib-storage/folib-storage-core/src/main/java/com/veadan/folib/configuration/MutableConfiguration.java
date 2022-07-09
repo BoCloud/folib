@@ -13,7 +13,7 @@ import com.google.common.base.Objects;
 
 /**
  * @author mtodorov
- * @author Pablo Tirado
+ * @author Veadan
  * @author veadan
  */
 @JsonRootName("configuration")

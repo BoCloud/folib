@@ -10,7 +10,7 @@ import com.google.common.collect.ImmutableMap;
 
 /**
  * @author veadan
- * @author Pablo Tirado
+ * @author Veadan
  */
 @Immutable
 public class CronTaskConfiguration

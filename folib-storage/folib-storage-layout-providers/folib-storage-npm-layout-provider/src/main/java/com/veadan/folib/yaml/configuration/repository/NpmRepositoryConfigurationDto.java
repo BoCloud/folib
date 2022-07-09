@@ -8,7 +8,7 @@ import com.fasterxml.jackson.annotation.JsonTypeName;
 
 /**
  * @author Veadan
- * @author Pablo Tirado
+ * @author Veadan
  */
 @JsonTypeName(NpmLayoutProvider.ALIAS)
 public class NpmRepositoryConfigurationDto

@@ -20,7 +20,7 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 /**
- * @author Pablo Tirado
+ * @author Veadan
  */
 @Controller
 @RequestMapping("/api/configuration/folib/proxy-configuration")
@@ -29,11 +29,11 @@ public class ProxyConfigurationController
         extends BaseConfigurationController
 {
 
-    static final String SUCCESSFUL_UPDATE = "The proxy configuration was updated successfully.";
-    static final String FAILED_UPDATE_FORM_ERROR = "Proxy configuration cannot be updated because the submitted form contains errors!";
-    static final String FAILED_UPDATE = "Failed to update the proxy configuration!";
+    static final String SUCCESSFUL_UPDATE = "代理配置已成功更新.";
+    static final String FAILED_UPDATE_FORM_ERROR = "无法更新代理配置，因为提交的表单包含错误!";
+    static final String FAILED_UPDATE = "更新代理配置失败!";
 
-    static final String NOT_FOUND_PROXY_CFG = "The proxy configuration for '${storageId}:${repositoryId}' was not found.";
+    static final String NOT_FOUND_PROXY_CFG = "找不到'${storageId}:${repositoryId}'的代理配置.";
 
     private final ConversionService conversionService;
 
@@ -44,7 +44,7 @@ public class ProxyConfigurationController
         this.conversionService = conversionService;
     }
 
-    @ApiOperation(value = "Updates the proxy configuration for a repository, if one is specified, or, otherwise, the global proxy settings.")
+    @ApiOperation(value = "更新存储库的代理配置（如果指定），否则更新全局代理设置.")
     @ApiResponses(value = { @ApiResponse(code = 200, message = SUCCESSFUL_UPDATE),
                             @ApiResponse(code = 400, message = FAILED_UPDATE_FORM_ERROR),
                             @ApiResponse(code = 500, message = FAILED_UPDATE) })
@@ -58,7 +58,7 @@ public class ProxyConfigurationController
                                                 @ApiParam(value = "The repositoryId")
                                                 @RequestParam(value = "repositoryId", required = false)
                                                         String repositoryId,
-                                                @ApiParam(value = "The proxy configuration for this proxy repository", required = true)
+                                                @ApiParam(value = "此代理存储库的代理配置", required = true)
                                                 @RequestBody @Validated({ Default.class,
                                                                           ProxyConfigurationForm.ProxyConfigurationFormChecks.class })
                                                         ProxyConfigurationForm proxyConfigurationForm,
@@ -73,7 +73,7 @@ public class ProxyConfigurationController
 
         MutableProxyConfiguration proxyConfiguration = conversionService.convert(proxyConfigurationForm,
                                                                                  MutableProxyConfiguration.class);
-        logger.debug("Received proxy configuration\n: {}", proxyConfiguration);
+        logger.debug("收到代理配置\n: {}", proxyConfiguration);
 
         try
         {
@@ -86,7 +86,7 @@ public class ProxyConfigurationController
         }
     }
 
-    @ApiOperation(value = "Returns the proxy configuration for a repository, if one is specified, or, otherwise, the global proxy settings.")
+    @ApiOperation(value = "如果已指定，则返回存储库的代理配置，否则返回全局代理设置.")
     @ApiResponses(value = { @ApiResponse(code = 200, message = ""),
                             @ApiResponse(code = 404, message = NOT_FOUND_PROXY_CFG) })
     @PreAuthorize("hasAuthority('CONFIGURATION_VIEW_GLOBAL_PROXY_CFG')")
@@ -119,7 +119,7 @@ public class ProxyConfigurationController
         }
         else
         {
-            String message = "The proxy configuration" +
+            String message = "代理配置" +
                              (storageId != null ? " for " + storageId + ":" + repositoryId : "") +
                              " was not found.";
 

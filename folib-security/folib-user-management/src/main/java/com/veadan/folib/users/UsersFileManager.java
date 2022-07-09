@@ -12,7 +12,7 @@ import org.springframework.stereotype.Component;
 
 /**
  * @author veadan
- * @author Pablo Tirado
+ * @author Veadan
  */
 @Component
 public class UsersFileManager

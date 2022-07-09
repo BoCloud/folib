@@ -8,7 +8,7 @@ import javax.validation.constraints.NotNull;
 import com.veadan.folib.users.domain.Privileges;
 
 /**
- * @author Pablo Tirado
+ * @author Veadan
  */
 public class PrivilegeListForm
 {

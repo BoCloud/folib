@@ -11,7 +11,7 @@ import com.google.common.base.Objects;
 
 /**
  * @author mtodorov
- * @author Pablo Tirado
+ * @author Veadan
  */
 public class MutableProxyConfiguration
         implements Serializable

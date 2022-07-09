@@ -8,7 +8,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
  * @author veadan
- * @author Pablo Tirado
+ * @author Veadan
  */
 public class MutableCorsConfiguration
         implements Serializable

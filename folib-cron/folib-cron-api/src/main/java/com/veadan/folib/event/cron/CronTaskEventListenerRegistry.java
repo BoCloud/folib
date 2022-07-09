@@ -10,7 +10,7 @@ import org.springframework.stereotype.Component;
 
 /**
  * @author Veadan
- * @author Pablo Tirado
+ * @author Veadan
  */
 @Component
 public class CronTaskEventListenerRegistry

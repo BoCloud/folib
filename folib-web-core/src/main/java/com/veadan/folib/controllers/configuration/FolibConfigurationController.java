@@ -18,7 +18,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import java.io.IOException;
 
 /**
- * @author Pablo Tirado
+ * @author Veadan
  */
 @Controller
 @RequestMapping("/api/configuration/folib")
@@ -32,7 +32,7 @@ public class FolibConfigurationController
         super(configurationManagementService);
     }
 
-    @ApiOperation(value = "Upload a folib.yaml and reload the server's configuration.")
+    @ApiOperation(value = "上传 folib.yaml 并重新加载服务器的配置.")
     @ApiResponses(value = { @ApiResponse(code = 200, message = "The configuration was updated successfully."),
                             @ApiResponse(code = 500, message = "An error occurred.") })
     @PreAuthorize("hasAuthority('CONFIGURATION_UPLOAD')")
@@ -47,13 +47,13 @@ public class FolibConfigurationController
     {
         configurationManagementService.setConfiguration(configuration);
 
-        logger.info("Received new configuration over REST.");
+        logger.info("通过 REST 接收新配置");
 
-        return new ResponseEntity<>(ResponseMessage.empty().withMessage("The configuration was updated successfully."),
+        return new ResponseEntity<>(ResponseMessage.empty().withMessage("配置更新成功."),
                                     HttpStatus.OK);
     }
 
-    @ApiOperation(value = "Retrieves the folib.yaml configuration file.")
+    @ApiOperation(value = "检索 folib.yaml 配置文件。")
     @ApiResponses(value = { @ApiResponse(code = 200, message = ""),
                             @ApiResponse(code = 500, message = "An error occurred.") })
     @PreAuthorize("hasAuthority('CONFIGURATION_VIEW')")

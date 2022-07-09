@@ -38,7 +38,7 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 /**
- * @author Pablo Tirado
+ * @author Veadan
  */
 @RestController
 @RequestMapping("/api/configuration/folib/storages")

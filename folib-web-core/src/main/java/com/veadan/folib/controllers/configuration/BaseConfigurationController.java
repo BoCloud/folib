@@ -4,7 +4,7 @@ import com.veadan.folib.controllers.BaseController;
 import com.veadan.folib.services.ConfigurationManagementService;
 
 /**
- * @author Pablo Tirado
+ * @author Veadan
  */
 public abstract class BaseConfigurationController
         extends BaseController

@@ -7,7 +7,7 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
 
 /**
  * @author Veadan
- * @author Pablo Tirado
+ * @author Veadan
  */
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
 public abstract class MutableCustomConfiguration

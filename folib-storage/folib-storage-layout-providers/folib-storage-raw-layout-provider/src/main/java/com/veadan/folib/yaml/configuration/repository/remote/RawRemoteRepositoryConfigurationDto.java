@@ -7,7 +7,7 @@ import com.veadan.folib.yaml.repository.remote.RemoteRepositoryConfigurationDto;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 
 /**
- * @author Pablo Tirado
+ * @author Veadan
  */
 @JsonTypeName(RawLayoutProvider.ALIAS)
 public class RawRemoteRepositoryConfigurationDto

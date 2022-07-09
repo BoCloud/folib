@@ -9,7 +9,7 @@ import com.fasterxml.jackson.annotation.JsonTypeName;
 
 /**
  * @author Veadan
- * @author Pablo Tirado
+ * @author Veadan
  */
 @JsonTypeName(Maven2LayoutProvider.ALIAS)
 public class MavenRepositoryConfigurationDto

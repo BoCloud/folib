@@ -4,7 +4,7 @@ import java.io.Serializable;
 
 /**
  * @author veadan
- * @author Pablo Tirado
+ * @author Veadan
  */
 public class MutableSessionConfiguration
         implements Serializable

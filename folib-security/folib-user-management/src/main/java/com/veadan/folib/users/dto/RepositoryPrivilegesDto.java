@@ -12,7 +12,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
  * @author Alex Oreshkevich
- * @author Pablo Tirado
+ * @author Veadan
  * @author veadan
  */
 public class RepositoryPrivilegesDto

@@ -13,7 +13,7 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.google.common.collect.Lists;
 
 /**
- * @author Pablo Tirado
+ * @author Veadan
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class ProxyConfigurationForm

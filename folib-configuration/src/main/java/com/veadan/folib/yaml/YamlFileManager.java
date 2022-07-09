@@ -20,7 +20,7 @@ import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 
 /**
  * @author veadan
- * @author Pablo Tirado
+ * @author Veadan
  * @author cbono
  */
 public abstract class YamlFileManager<T>

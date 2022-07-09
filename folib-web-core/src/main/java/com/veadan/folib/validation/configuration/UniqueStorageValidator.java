@@ -8,7 +8,7 @@ import javax.validation.ConstraintValidator;
 import javax.validation.ConstraintValidatorContext;
 
 /**
- * @author Pablo Tirado
+ * @author Veadan
  */
 public class UniqueStorageValidator
         implements ConstraintValidator<UniqueStorage, String>

@@ -17,7 +17,7 @@ import org.springframework.stereotype.Service;
 
 /**
  * @author Yougeshwar
- * @author Pablo Tirado
+ * @author Veadan
  */
 @Service
 public class CronJobSchedulerServiceImpl

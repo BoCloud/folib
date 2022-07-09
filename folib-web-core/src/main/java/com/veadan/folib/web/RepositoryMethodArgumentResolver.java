@@ -25,7 +25,7 @@ import org.springframework.web.servlet.HandlerMapping;
 import static com.veadan.folib.web.Constants.REPOSITORY_REQUEST_ATTRIBUTE;
 
 /**
- * @author Pablo Tirado
+ * @author Veadan
  */
 public class RepositoryMethodArgumentResolver
         implements HandlerMethodArgumentResolver

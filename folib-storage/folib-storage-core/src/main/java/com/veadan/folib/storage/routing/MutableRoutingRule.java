@@ -7,7 +7,7 @@ import java.util.UUID;
 
 /**
  * @author mtodorov
- * @author Pablo Tirado
+ * @author Veadan
  */
 public class MutableRoutingRule
         implements Serializable

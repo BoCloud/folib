@@ -26,7 +26,7 @@ import org.springframework.web.bind.annotation.*;
 
 /**
  * @author veadan
- * @author Pablo Tirado
+ * @author Veadan
  */
 @Controller
 @PreAuthorize("hasAuthority('ADMIN')")
@@ -44,10 +44,10 @@ public class HttpConnectionPoolConfigurationManagementController
         this.proxyRepositoryConnectionPoolConfigurationService = proxyRepositoryConnectionPoolConfigurationService;
     }
 
-    @ApiOperation(value = "Update number of pool connections pool for proxy repository")
-    @ApiResponses(value = { @ApiResponse(code = 200, message = "Number of pool connections for proxy repository was updated successfully."),
-                            @ApiResponse(code = 400, message = "The proxy repository has no associated remote repository."),
-                            @ApiResponse(code = 404, message = "The (storage/repository) does not exist!") })
+    @ApiOperation(value = "更新代理存储库的池连接池数")
+    @ApiResponses(value = { @ApiResponse(code = 200, message = "代理存储库的池连接数已成功更新."),
+                            @ApiResponse(code = 400, message = "代理存储库没有关联的远程存储库"),
+                            @ApiResponse(code = 404, message = " (storage/repository) 不存在") })
     @PutMapping(value = "{storageId}/{repositoryId}/{numberOfConnections}",
                 produces = { MediaType.TEXT_PLAIN_VALUE,
                              MediaType.APPLICATION_JSON_VALUE })
@@ -62,7 +62,7 @@ public class HttpConnectionPoolConfigurationManagementController
         if (immutableRepository.getRemoteRepository() == null)
         {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                                 .body(getResponseEntityBody("The proxy repository has no associated remote repository.", accept));
+                                 .body(getResponseEntityBody("代理存储库没有关联的远程存储库.", accept));
         }
 
         configurationManagementService.setProxyRepositoryMaxConnections(storageId, repositoryId, numberOfConnections);
@@ -70,16 +70,16 @@ public class HttpConnectionPoolConfigurationManagementController
                 immutableRepository.getRemoteRepository().getUrl(),
                 numberOfConnections);
 
-        String message = "Number of pool connections for repository was updated successfully.";
+        String message = "存储库的池连接数已成功更新.";
 
         return ResponseEntity.ok(getResponseEntityBody(message, accept));
     }
 
-    @ApiOperation(value = "Get proxy repository pool stats")
+    @ApiOperation(value = "获取代理存储库池统计信息")
     @ApiResponses(value = { @ApiResponse(code = 200,
-                                         message = "Proxy repository pool stats where retrieved."),
+                                         message = "检索到的代理存储库池统计信息"),
                             @ApiResponse(code = 400,
-                                         message = "Repository doesn't have remote repository!"),
+                                         message = "存储库没有远程存储库!"),
                             @ApiResponse(code = 404,
                                     message = "The (storage/repository) does not exist!") })
     @GetMapping(value = "{storageId}/{repositoryId}",
@@ -92,7 +92,7 @@ public class HttpConnectionPoolConfigurationManagementController
         if (immutableRepository.getRemoteRepository() == null)
         {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                                 .body(getResponseEntityBody("Repository doesn't have remote repository!", accept));
+                                 .body(getResponseEntityBody("存储库没有远程存储库!", accept));
         }
 
         PoolStats poolStats = proxyRepositoryConnectionPoolConfigurationService
@@ -102,11 +102,11 @@ public class HttpConnectionPoolConfigurationManagementController
         return ResponseEntity.ok(getPoolStatsEntityBody(poolStats, accept));
     }
 
-    @ApiOperation(value = "Update default number of connections for proxy repository")
+    @ApiOperation(value = "更新代理存储库的默认连接数")
     @ApiResponses(value = { @ApiResponse(code = 200,
-                                         message = "Default number of connections for proxy repository was updated successfully."),
+                                         message = "代理存储库的默认连接数已成功更新。"),
                             @ApiResponse(code = 400,
-                                         message = "Could not update default number of connections for proxy repository.") })
+                                         message = "无法更新代理存储库的默认连接数") })
     @PutMapping(value = "default/{numberOfConnections}",
                 produces = { MediaType.TEXT_PLAIN_VALUE,
                              MediaType.APPLICATION_JSON_VALUE })
@@ -115,15 +115,15 @@ public class HttpConnectionPoolConfigurationManagementController
                                                                           @RequestHeader(HttpHeaders.ACCEPT) String accept)
     {
         proxyRepositoryConnectionPoolConfigurationService.setDefaultMaxPerRepository(numberOfConnections);
-        String message = "Default number of connections for proxy repository was updated successfully.";
+        String message = "代理存储库的默认连接数已成功更新.";
         return ResponseEntity.ok(getResponseEntityBody(message, accept));
     }
 
-    @ApiOperation(value = "Get default number of connections for proxy repository")
+    @ApiOperation(value = "获取代理存储库的默认连接数")
     @ApiResponses(value = { @ApiResponse(code = 200,
-                                         message = "Default number of connections was retrieved."),
+                                         message = "已检索到默认连接数."),
                             @ApiResponse(code = 400,
-                                         message = "Could not get default number of connections for proxy repository.") })
+                                         message = "无法获取代理存储库的默认连接数.") })
     @GetMapping(value = "default-number",
                 produces = { MediaType.TEXT_PLAIN_VALUE,
                              MediaType.APPLICATION_JSON_VALUE })
@@ -133,11 +133,11 @@ public class HttpConnectionPoolConfigurationManagementController
         return ResponseEntity.ok(getNumberOfConnectionsEntityBody(defaultNumber, accept));
     }
 
-    @ApiOperation(value = "Update max number of connections for proxy repository")
+    @ApiOperation(value = "更新代理存储库的最大连接数")
     @ApiResponses(value = { @ApiResponse(code = 200,
-                                         message = "Max number of connections for proxy repository was updated successfully."),
+                                         message = "代理存储库的最大连接数已成功更新."),
                             @ApiResponse(code = 400,
-                                         message = "Could not update max number of connections for proxy repository.") })
+                                         message = "无法更新代理存储库的最大连接数.") })
     @PutMapping(value = "max/{numberOfConnections}",
                 produces = { MediaType.TEXT_PLAIN_VALUE,
                              MediaType.APPLICATION_JSON_VALUE })
@@ -146,15 +146,15 @@ public class HttpConnectionPoolConfigurationManagementController
                                                                       @RequestHeader(HttpHeaders.ACCEPT) String accept)
     {
         proxyRepositoryConnectionPoolConfigurationService.setMaxTotal(numberOfConnections);
-        String message = "Max number of connections for proxy repository was updated successfully.";
+        String message = "代理存储库的最大连接数已成功更新.";
         return ResponseEntity.ok(getResponseEntityBody(message, accept));
     }
 
-    @ApiOperation(value = "Get max number of connections for proxy repository")
+    @ApiOperation(value = "获取代理存储库的最大连接数")
     @ApiResponses(value = { @ApiResponse(code = 200,
-                                         message = "Max number of connections for proxy repository was retrieved."),
+                                         message = "已检索到代理存储库的最大连接数."),
                             @ApiResponse(code = 400,
-                                         message = "Could not get max number of connections for proxy repository.") })
+                                         message = "无法获得代理存储库的最大连接数.") })
     @GetMapping(produces = { MediaType.TEXT_PLAIN_VALUE,
                              MediaType.APPLICATION_JSON_VALUE })
     public ResponseEntity getMaxNumberOfConnectionsForProxyRepository(@RequestHeader(HttpHeaders.ACCEPT) String accept)

@@ -5,7 +5,7 @@ import javax.validation.Payload;
 import java.lang.annotation.*;
 
 /**
- * @author Pablo Tirado
+ * @author Veadan
  */
 @Documented
 @Constraint(validatedBy = {})
