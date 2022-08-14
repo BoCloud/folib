@@ -27,6 +27,8 @@ public class UserEntity extends DomainEntity implements User
 
     private Boolean enabled = true;
 
+    private String email;
+
     @Relationship(type = USER_HAS_SECURITY_ROLES, direction = OUTGOING)
     private Set<SecurityRole> roles = new HashSet<>();
 
@@ -44,6 +46,15 @@ public class UserEntity extends DomainEntity implements User
     public UserEntity(String username)
     {
         setUuid(username);
+    }
+
+    @Override
+    public String getEmail() {
+        return email;
+    }
+
+    public void setEmail(String email) {
+        this.email = email;
     }
 
     @Override

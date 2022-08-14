@@ -24,6 +24,7 @@ public enum UserFormToUserDtoConverter
         user.setEnabled(userForm.isEnabled());
         user.setRoleNames(userForm.getRoles());
         user.setSecurityTokenKey(userForm.getSecurityTokenKey());
+        user.setEmail(userForm.getEmail());
 
         return user;
     }

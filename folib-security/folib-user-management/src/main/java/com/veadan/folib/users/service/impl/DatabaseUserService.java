@@ -137,6 +137,7 @@ public class DatabaseUserService implements UserService
         userEntity.setEnabled(user.isEnabled());
         userEntity.setRoles(user.getRoles());
         userEntity.setSecurityTokenKey(user.getSecurityTokenKey());
+        userEntity.setEmail(user.getEmail());
         userEntity.setLastUpdated(now);
 
         if (StringUtils.isNotBlank(user.getSourceId()) || StringUtils.isNotBlank(userEntity.getSourceId()))

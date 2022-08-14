@@ -53,12 +53,12 @@ public class DatabaseExternalUsersCacheManager extends DatabaseUserService imple
             {
                 userEntry.setPassword(user.getPassword());
             }
+            userEntry.setEmail(user.getEmail());
             userEntry.setEnabled(user.isEnabled());
             userEntry.setRoles(user.getRoles());
             userEntry.setSecurityTokenKey(user.getSecurityTokenKey());
             userEntry.setLastUpdated(LocalDateTimeInstance.now());
             userEntry.setSourceId(sourceId);
-
             return userRepository.save(userEntry);
         }
         catch (SchemaViolationException e)

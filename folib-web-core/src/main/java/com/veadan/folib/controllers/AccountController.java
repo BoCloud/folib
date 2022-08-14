@@ -107,6 +107,7 @@ public class AccountController
         UserDto user = new UserDto();
         user.setUsername(loggedUser.getUsername());
         user.setPassword(userToUpdate.getPassword());
+        user.setEmail(userToUpdate.getEmail());
         user.setSecurityTokenKey(userToUpdate.getSecurityTokenKey());
 
         userService.updateAccountDetailsByUsername(new EncodedPasswordUser(user, passwordEncoder));

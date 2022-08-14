@@ -27,6 +27,7 @@ public class UserForm
     @Password(groups = { ExistingUser.class }, allowNull = true, min = 8)
     private String password;
 
+    private String email;
     private boolean enabled;
 
     private Set<String> roles;
@@ -81,6 +82,15 @@ public class UserForm
     public void setSecurityTokenKey(String securityTokenKey)
     {
         this.securityTokenKey = securityTokenKey;
+    }
+
+
+    public String getEmail() {
+        return email;
+    }
+
+    public void setEmail(String email) {
+        this.email = email;
     }
 
     public interface NewUser

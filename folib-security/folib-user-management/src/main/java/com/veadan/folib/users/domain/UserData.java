@@ -22,12 +22,13 @@ import com.google.common.collect.ImmutableSet;
 @Immutable
 public class UserData implements Serializable, User
 {
-
     public static final String SECURITY_TOKEN_KEY = "security-token-key";
 
     private final String username;
 
     private final String password;
+
+    private final String email;
 
     private final Boolean enabled;
 
@@ -50,6 +51,7 @@ public class UserData implements Serializable, User
                            .collect(Collectors.toSet());
         this.securityTokenKey = null;
         this.lastUpdate = null;
+        this.email=null;
     }
 
     public UserData(final UserDto source)
@@ -61,6 +63,7 @@ public class UserData implements Serializable, User
         this.securityTokenKey = source.getSecurityTokenKey();
         this.lastUpdate = source.getLastUpdated();
         this.sourceId = source.getSourceId();
+        this.email=source.getEmail();
     }
 
     private Set<SecurityRole> immuteRoles(final Set<SecurityRole> source)
@@ -78,6 +81,11 @@ public class UserData implements Serializable, User
     public String getUsername()
     {
         return username;
+    }
+
+    @Override
+    public String getEmail() {
+        return email;
     }
 
     @Override
@@ -125,6 +133,8 @@ public class UserData implements Serializable, User
           .append('\'');
         sb.append(", roles=")
           .append(roles);
+        sb.append(", email=")
+                .append(email);
         sb.append('}');
         return sb.toString();
     }

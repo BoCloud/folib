@@ -25,9 +25,19 @@ public class UserOutput
 
     private boolean enabled;
 
+    private String email;
+
     private Set<String> roles;
 
     private String securityTokenKey;
+
+    public String getEmail() {
+        return email;
+    }
+
+    public void setEmail(String email) {
+        this.email = email;
+    }
 
     public String getUsername()
     {
@@ -78,6 +88,7 @@ public class UserOutput
                             .map(SecurityRole::getRoleName)
                             .collect(Collectors.toSet()));
         output.setUsername(user.getUsername());
+        output.setEmail(user.getEmail());
         output.setSecurityTokenKey(user.getSecurityTokenKey());
         return output;
     }

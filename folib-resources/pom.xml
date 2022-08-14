@@ -5,7 +5,7 @@
     
     <modelVersion>4.0.0</modelVersion>
     
- <parent>
+    <parent>
         <groupId>com.veadan.folib</groupId>
         <artifactId>folib-parent</artifactId>
         <version>1.0-SNAPSHOT</version>

@@ -21,7 +21,9 @@ import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.domain.DirectoryListing;
 import com.veadan.folib.schema2.ImageManifest;
 import com.veadan.folib.schema2.LayerManifest;
+import com.veadan.folib.services.ArtifactManagementService;
 import com.veadan.folib.services.DirectoryListingService;
+import com.veadan.folib.storage.ArtifactStorageException;
 import com.veadan.folib.storage.Storage;
 import com.veadan.folib.storage.repository.Repository;
 import com.veadan.folib.utils.TreeUtil;
@@ -62,6 +64,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.ModelAndView;
 import org.w3c.dom.Document;
 
+import static org.springframework.http.HttpStatus.NOT_FOUND;
 import static org.springframework.http.HttpStatus.OK;
 
 /**
@@ -78,7 +81,8 @@ public class BrowseController
 
     // must be the same as @RequestMapping value on the class definition
     public final static String ROOT_CONTEXT = "/api/browse";
-
+    @Inject
+    protected ArtifactManagementService artifactManagementService;
     @Inject
     private SnippetGenerator snippetGenerator;
 
@@ -294,6 +298,46 @@ public class BrowseController
             String message = "Attempt to browse repositories failed. Check server logs for more information.";
             return getExceptionResponseEntity(HttpStatus.INTERNAL_SERVER_ERROR, message, e, acceptHeader);
         }
+    }
+
+    @ApiOperation(value = "Deletes a path from a repository.")
+    @ApiResponses(value = { @ApiResponse(code = 200, message = "The artifact was deleted."),
+            @ApiResponse(code = 400, message = "Bad request."),
+            @ApiResponse(code = 404, message = "The specified storageId/repositoryId/path does not exist!") })
+    @PreAuthorize("hasAuthority('ARTIFACTS_DELETE')")
+    @DeleteMapping(value = "/{storageId}/{repositoryId}/{artifactPath:.+}")
+    public ResponseEntity delete(@RepositoryMapping Repository repository,
+                                 @ApiParam(value = "Whether to use force delete")
+                                 @RequestParam(defaultValue = "false",
+                                         name = "force",
+                                         required = false) boolean force,
+                                 @PathVariable String artifactPath)
+            throws IOException
+    {
+        final String storageId = repository.getStorage().getId();
+        final String repositoryId = repository.getId();
+        logger.info("Deleting {}:{}/{}...", storageId, repositoryId, artifactPath);
+
+        try
+        {
+            final RepositoryPath repositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, artifactPath);
+            if (!Files.exists(repositoryPath))
+            {
+                return ResponseEntity.status(NOT_FOUND)
+                        .body("The specified path does not exist!");
+            }
+
+            artifactManagementService.delete(repositoryPath, force);
+        }
+        catch (ArtifactStorageException e)
+        {
+            logger.error(e.getMessage(), e);
+
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(e.getMessage());
+        }
+
+        return ResponseEntity.ok("The artifact was deleted.");
     }
 
     @ApiOperation(value = "List the contents for a repository.")

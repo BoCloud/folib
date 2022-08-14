@@ -58,35 +58,35 @@ public class UserController
         extends BaseController
 {
 
-    public static final String SUCCESSFUL_CREATE_USER = "The user was created successfully.";
+    public static final String SUCCESSFUL_CREATE_USER = "用户创建成功.";
 
-    public static final String FAILED_CREATE_USER = "User cannot be created because the submitted form contains errors!";
+    public static final String FAILED_CREATE_USER = "无法创建用户，因为提交的表单包含错误!";
 
-    public static final String SUCCESSFUL_GET_USER = "User was retrieved successfully.";
+    public static final String SUCCESSFUL_GET_USER = "已成功检索用户.";
 
-    public static final String NOT_FOUND_USER = "The specified user does not exist!";
+    public static final String NOT_FOUND_USER = "指定的用户不存在!";
 
-    public static final String SUCCESSFUL_GET_USERS = "Users were retrieved successfully.";
+    public static final String SUCCESSFUL_GET_USERS = "已成功检索用户.";
 
-    public static final String SUCCESSFUL_UPDATE_USER = "The user was updated successfully.";
+    public static final String SUCCESSFUL_UPDATE_USER = "用户更新成功.";
 
-    public static final String FAILED_UPDATE_USER = "User cannot be updated because the submitted form contains errors!";
+    public static final String FAILED_UPDATE_USER = "由于提交的表单包含错误，无法更新用户!";
 
-    public static final String SUCCESSFUL_DELETE_USER = "The user was deleted.";
+    public static final String SUCCESSFUL_DELETE_USER = "该用户已被删除.";
 
-    public static final String FAILED_DELETE_USER = "Could not delete the user.";
+    public static final String FAILED_DELETE_USER = "无法删除用户.";
 
-    public static final String OWN_USER_DELETE_FORBIDDEN = "Unable to delete yourself";
+    public static final String OWN_USER_DELETE_FORBIDDEN = "无法删除自己";
 
-    public static final String SUCCESSFUL_GENERATE_SECURITY_TOKEN = "The security token was generated.";
+    public static final String SUCCESSFUL_GENERATE_SECURITY_TOKEN = "安全令牌已生成.";
 
-    public static final String FAILED_GENERATE_SECURITY_TOKEN = "Failed to generate SecurityToken";
+    public static final String FAILED_GENERATE_SECURITY_TOKEN = "无法生成 SecurityToken";
 
-    public static final String SUCCESSFUL_UPDATE_ACCESS_MODEL = "The custom access model was updated.";
+    public static final String SUCCESSFUL_UPDATE_ACCESS_MODEL = "自定义访问模型已更新";
 
-    public static final String FAILED_UPDATE_ACCESS_MODEL = "Could not update the access model.";
+    public static final String FAILED_UPDATE_ACCESS_MODEL = "无法更新访问模型.";
 
-    public static final String USER_DELETE_FORBIDDEN = "Deleting this account is forbidden!";
+    public static final String USER_DELETE_FORBIDDEN = "禁止删除此帐户";
 
     @Inject
     @Database

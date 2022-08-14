@@ -37,7 +37,7 @@ public class TrashController
     @Inject
     private RepositoryManagementService repositoryManagementService;
 
-    @ApiOperation(value = "Used to delete the trash for a specified repository.")
+    @ApiOperation(value = "用于删除指定仓库的垃圾.")
     @ApiResponses(value = { @ApiResponse(code = 200,
                                          message = "The trash for ${storageId}:${repositoryId}' was removed successfully."),
                             @ApiResponse(code = 400,
@@ -74,7 +74,7 @@ public class TrashController
         return ResponseEntity.ok(getResponseEntityBody(message, accept));
     }
 
-    @ApiOperation(value = "Used to delete the trash for all repositories.")
+    @ApiOperation(value = "用于删除所有存储库的垃圾箱.")
     @ApiResponses(value = { @ApiResponse(code = 200,
                                          message = "The trash for all repositories was successfully removed."),
                             @ApiResponse(code = 400,
@@ -104,7 +104,7 @@ public class TrashController
         return ResponseEntity.ok(getResponseEntityBody(message, accept));
     }
 
-    @ApiOperation(value = "Used to undelete the trash for a path under a specified repository.")
+    @ApiOperation(value = "用于取消删除指定仓库下路径的垃圾箱.")
     @ApiResponses(value = { @ApiResponse(code = 200,
                                          message = "The trash for '${storageId}:${repositoryId}' was restored successfully."),
                             @ApiResponse(code = 400,
@@ -149,7 +149,7 @@ public class TrashController
         return ResponseEntity.ok(getResponseEntityBody(message, accept));
     }
 
-    @ApiOperation(value = "Used to undelete the trash for a specified repository.")
+    @ApiOperation(value = "用于取消删除指定存储库的垃圾箱.")
     @ApiResponses(value = { @ApiResponse(code = 200,
                                          message = "The trash for '${storageId}:${repositoryId}' was restored successfully."),
                             @ApiResponse(code = 400,
@@ -183,7 +183,7 @@ public class TrashController
                                                        "has been restored successfully.", accept));
     }
 
-    @ApiOperation(value = "Used to undelete the trash for all repositories.")
+    @ApiOperation(value = "用于取消删除所有存储库的垃圾箱.")
     @ApiResponses(value = { @ApiResponse(code = 200,
                                          message = "The trash for all repositories was successfully restored."),
                             @ApiResponse(code = 400,

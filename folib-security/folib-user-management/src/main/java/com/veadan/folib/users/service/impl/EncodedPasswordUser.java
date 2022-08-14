@@ -38,6 +38,11 @@ public class EncodedPasswordUser implements User
         return user.getUsername();
     }
 
+    @Override
+    public String getEmail() {
+        return user.getEmail();
+    }
+
     public String getPassword()
     {
         String password = user.getPassword();
