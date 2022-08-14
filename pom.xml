@@ -30,7 +30,6 @@
 
 
     <modules>
-        <module>folib-resources</module>
         <module>folib-commons</module>
         <module>folib-configuration</module>
         <module>folib-event-api</module>
