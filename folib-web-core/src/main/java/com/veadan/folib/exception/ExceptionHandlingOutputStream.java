@@ -5,8 +5,8 @@ package com.veadan.folib.exception;
 
 import java.io.IOException;
 import java.io.OutputStream;
-import org.eclipse.jetty.io.EofException;
 import org.apache.commons.io.output.ProxyOutputStream;
+import org.eclipse.jetty.io.EofException;
 
 /**
  * @author Bogdan Sukonnov

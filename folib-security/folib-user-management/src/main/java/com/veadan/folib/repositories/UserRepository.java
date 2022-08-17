@@ -1,6 +1,7 @@
 package com.veadan.folib.repositories;
 
 import com.veadan.folib.db.schema.Edges;
+import com.veadan.folib.db.schema.Properties;
 import com.veadan.folib.db.schema.Vertices;
 import com.veadan.folib.domain.User;
 import com.veadan.folib.gremlin.adapters.EntityTraversalAdapter;
@@ -61,19 +62,18 @@ public class UserRepository extends GremlinVertexRepository<User>
 
 //        StopWatch sw = new StopWatch();
 //        sw.start("第1");
-//        EntityTraversal<Vertex, User> a=g().V().hasLabel(Vertices.USER)
+//        EntityTraversal<Vertex, User> a=g().V().has(Properties.USER_TYPE,"general").hasLabel(Vertices.USER)
 //                .inE(Edges.USER_HAS_SECURITY_ROLES).hasLabel(Vertices.SECURITY_ROLE).map(adapter.fold());
 //
-//        System.out.println(a.toList());
+//
 //        List<User> list= new ArrayList<>();
 //        if(a.hasNext()){
 //            list.add(a.next());
 //        }
-//
-//
+//        System.out.println(list);
 //        sw.stop();
-//        List<User> users= queries.findUsersWithRole("ADMIN");
-
+////        List<User> users= queries.findUsersWithRole("ADMIN");
+//
 //        System.out.println(sw.prettyPrint());
         return queries.findAllUsers();
     }
@@ -90,6 +90,7 @@ interface UserQueries extends org.springframework.data.repository.Repository<Use
     List<User> findUsersWithRole(@Param("role") String role);
 
     @Query("MATCH (user:User)-[r]->(securityRole:SecurityRole) " +
+            "WHERE user.userType='general' AND user.enabled='true'"+
            "RETURN user, r, securityRole")
     List<User> findAllUsers();
 

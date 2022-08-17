@@ -30,6 +30,8 @@ public class UserData implements Serializable, User
 
     private final String email;
 
+    private final String userType;
+
     private final Boolean enabled;
 
     private final Set<SecurityRole> roles;
@@ -52,6 +54,7 @@ public class UserData implements Serializable, User
         this.securityTokenKey = null;
         this.lastUpdate = null;
         this.email=null;
+        this.userType=null;
     }
 
     public UserData(final UserDto source)
@@ -64,6 +67,7 @@ public class UserData implements Serializable, User
         this.lastUpdate = source.getLastUpdated();
         this.sourceId = source.getSourceId();
         this.email=source.getEmail();
+        this.userType=source.getUserType();
     }
 
     private Set<SecurityRole> immuteRoles(final Set<SecurityRole> source)
@@ -86,6 +90,11 @@ public class UserData implements Serializable, User
     @Override
     public String getEmail() {
         return email;
+    }
+
+    @Override
+    public String getUserType() {
+        return userType;
     }
 
     @Override

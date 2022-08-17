@@ -20,6 +20,10 @@ public class SpringSecurityUser
 
     private String password;
 
+    private String email;
+
+    private String userType="general";
+
     private Boolean enabled;
 
     private Set<Role> roles = Collections.emptySet();
@@ -89,6 +93,22 @@ public class SpringSecurityUser
     public void setRoles(Set<Role> roles)
     {
         this.roles = roles;
+    }
+
+    public String getEmail() {
+        return email;
+    }
+
+    public void setEmail(String email) {
+        this.email = email;
+    }
+
+    public String getUserType() {
+        return userType;
+    }
+
+    public void setUserType(String userType) {
+        this.userType = userType;
     }
 
     @Override

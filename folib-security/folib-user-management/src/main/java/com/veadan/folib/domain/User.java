@@ -29,6 +29,8 @@ public interface User extends DomainObject
     String getEmail();
 
 
+    default String getUserType(){ return "general";}
+
     String getPassword();
 
     Set<SecurityRole> getRoles();

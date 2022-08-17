@@ -27,6 +27,9 @@ public class UserDto
 
     private String email;
 
+
+    private String userType="general";
+
     private Boolean enabled = true;
 
     private Set<String> roles = new HashSet<>();
@@ -61,6 +64,14 @@ public class UserDto
     public void setUsername(String username)
     {
         this.username = username;
+    }
+
+    public String getUserType() {
+        return userType;
+    }
+
+    public void setUserType(String userType) {
+        this.userType = userType;
     }
 
     @Override

@@ -139,11 +139,12 @@ public class DatabaseUserService implements UserService
         userEntity.setSecurityTokenKey(user.getSecurityTokenKey());
         userEntity.setEmail(user.getEmail());
         userEntity.setLastUpdated(now);
+        userEntity.setUserType("general");
 
-        if (StringUtils.isNotBlank(user.getSourceId()) || StringUtils.isNotBlank(userEntity.getSourceId()))
-        {
-            throw new IllegalStateException("Can't modify external users.");
-        }
+//        if (StringUtils.isNotBlank(user.getSourceId()) || StringUtils.isNotBlank(userEntity.getSourceId()))
+//        {
+//            throw new IllegalStateException("Can't modify external users.");
+//        }
         
         return userRepository.save(userEntity);
     }

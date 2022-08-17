@@ -1,5 +1,13 @@
 server:
   port: 38080
+  connection-timeout: 50000
+  server:
+    session:
+      timeout: 50000
+  jetty:
+    acceptor: 32 # Number of acceptor threads to use.
+    max-http-post-size: 524288000 # Maximum size in bytes of the HTTP post or put content.
+    selectors: 64 # Number of selector threads to use.
 spring:
   liquibase:
     enabled: false
@@ -28,7 +36,7 @@ folib:
   users:
     external:
       cache:
-        seconds: 300
+        seconds: 3600
   sse:
     timeoutMillis: 600000
   graph:

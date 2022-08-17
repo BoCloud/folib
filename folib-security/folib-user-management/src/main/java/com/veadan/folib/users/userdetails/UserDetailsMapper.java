@@ -24,6 +24,8 @@ public class UserDetailsMapper implements FolibUserToUserDetails
 
         SpringSecurityUser springUser = new SpringSecurityUser();
         springUser.setEnabled(user.isEnabled());
+        springUser.setEmail(user.getEmail());
+        springUser.setUserType("general");
         springUser.setPassword(getPasswordWithEncodingAlgorithm(user.getPassword()));
         springUser.setUsername(user.getUsername());
         springUser.setRoles(user.getRoles()

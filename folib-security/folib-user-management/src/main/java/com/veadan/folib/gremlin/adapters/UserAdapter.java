@@ -49,6 +49,8 @@ public class UserAdapter implements VertexEntityTraversalAdapter<User>
                                           "uuid",
                                           "password",
                                           "enabled",
+                                          "email",
+                                          "userType",
                                           "roles",
                                           "securityTokenKey",
                                           "lastUpdated",
@@ -57,6 +59,8 @@ public class UserAdapter implements VertexEntityTraversalAdapter<User>
                  .by(__.enrichPropertyValue("uuid"))
                  .by(__.enrichPropertyValue("password"))
                  .by(__.enrichPropertyValue("enabled"))
+                 .by(__.enrichPropertyValue("email"))
+                 .by(__.enrichPropertyValue("userType"))
                  .by(__.outE(Edges.USER_HAS_SECURITY_ROLES)
                        .inV()
                        .map(securityRoleAdapter.fold())
@@ -72,9 +76,10 @@ public class UserAdapter implements VertexEntityTraversalAdapter<User>
     {
         UserEntity result = new UserEntity(extractObject(String.class, t.get().get("uuid")));
         result.setNativeId(extractObject(Long.class, t.get().get("id")));
-
         result.setPassword(extractObject(String.class, t.get().get("password")));
         result.setEnabled(extractObject(Boolean.class, t.get().get("enabled")));
+        result.setEmail(extractObject(String.class,t.get().get("email")));
+        result.setUserType(extractObject(String.class,t.get().get("userType")));
         List<SecurityRole> userRoles = (List<SecurityRole>) t.get().get("roles");
         result.setRoles(new HashSet<>(userRoles));
         result.setSecurityTokenKey(extractObject(String.class, t.get().get("securityTokenKey")));
@@ -122,6 +127,14 @@ public class UserAdapter implements VertexEntityTraversalAdapter<User>
         if (entity.getPassword() != null)
         {
             t = t.property(single, "password", entity.getPassword());
+        }
+        if (entity.getUserType() != null)
+        {
+            t = t.property(single, "userType", entity.getUserType());
+        }
+        if (entity.getEmail() != null)
+        {
+            t = t.property(single, "email", entity.getEmail());
         }
         if (entity.getSecurityTokenKey() != null)
         {

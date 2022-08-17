@@ -138,7 +138,7 @@
         <dependency>
             <groupId>org.jtwig</groupId>
             <artifactId>jtwig-core</artifactId>
-            <scope>provided</scope>   
+            <scope>provided</scope>
         </dependency>
 
         <dependency>

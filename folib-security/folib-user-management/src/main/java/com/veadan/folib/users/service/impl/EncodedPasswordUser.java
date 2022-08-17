@@ -43,6 +43,11 @@ public class EncodedPasswordUser implements User
         return user.getEmail();
     }
 
+    @Override
+    public String getUserType() {
+        return user.getUserType();
+    }
+
     public String getPassword()
     {
         String password = user.getPassword();
@@ -52,6 +57,8 @@ public class EncodedPasswordUser implements User
                        .map(p -> passwordEncoder.encode(p))
                        .orElse(password);
     }
+
+
 
     public Set<SecurityRole> getRoles()
     {

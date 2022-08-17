@@ -39,6 +39,17 @@ public class UserEntity extends DomainEntity implements User
 
     private String sourceId;
 
+    private String userType="general";
+
+
+    public String getUserType() {
+        return userType;
+    }
+
+    public void setUserType(String userType) {
+        this.userType = userType;
+    }
+
     UserEntity()
     {
     }
