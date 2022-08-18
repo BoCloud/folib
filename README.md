@@ -2,7 +2,8 @@
 ##### 第一步  私有化maven仓库配置
 确保folib-settings.xml中的本地仓库是你自己的存放路径
 ##### 第二步  环境需求
-确保maven 3.6.3 或以上版本。 JDK11,  nodejs14   yarn 1.22.x
+- 确保为了防止存在一些莫名奇妙的问题浪费时间，希望你个人电脑尽可能是linux内核或者unix内核的环境，通过IDEA进行开发。4核16G以上。该工程真的有点大，启动起来有点慢。
+- maven 3.6.3 或以上版本。 JDK11,  nodejs14   yarn 1.22.x
 
 #### 第三部  预编译
 执行folib-package.sh 脚本 在工程的根目录下
@@ -28,4 +29,5 @@ folib-commons/src/main/resources/application.yaml
 ```
 - 启动后所有配置文件在folib文件夹下面，application.yaml中如果需要增加配置，需要将环境变量暴露出来
 
-
+#### 打包发布
+通过执行打包脚本，folib-distribution会自动将安装包和配置文件打包好，在：folib-distribution/target/目录下
