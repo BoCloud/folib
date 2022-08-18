@@ -1,0 +1,69 @@
+// _tags.scss
+// 
+// Template's form tag styles.
+// 
+
+.form-tag.ant-tag {
+	border-radius: 20px;
+	padding: 4px 10px;
+	font-size: 12px;
+	font-weight: 500;
+	margin-right: 3.75px;
+	margin-bottom: 3.75px;
+	background-color: #3a416f;
+	border: 1px solid #3a416f;
+	color: #fff;
+}
+
+.form-tag.ant-tag .anticon-close {
+	color: #fff;
+	height: 16px;
+	border-left: 1px solid hsla(0,0%,100%,.3);
+	padding-left: 5px;
+	padding-top: 2px;
+	opacity: .75;
+}
+
+.form-tag.ant-tag .anticon-close:hover {
+	color: #fff;
+	opacity: 1;
+}
+
+.tags-field .ant-input {
+	margin-bottom: 5px;
+	margin-top: 4px;
+}
+
+.tags-field .ant-select {
+	.ant-select-selection__choice__remove i {
+		color: #fff;
+		height: 16px;
+		border-left: 1px solid hsla(0,0%,100%,.3);
+		padding-left: 5px;
+		padding-top: 2px;
+		opacity: .75;
+
+		&:hover {
+			color: #fff;
+			opacity: 1;
+		}
+	}
+	.ant-select-selection__rendered > ul > li:not(.ant-select-search) {
+		border-radius: 20px;
+		padding: 2px 27px 2px 10px;
+		font-size: 12px;
+		font-weight: 500;
+		margin-right: 3.75px;
+		margin-bottom: 3.75px;
+		background-color: #3a416f;
+		border: 1px solid #3a416f;
+		color: #fff;
+		line-height: 2;
+		height: 30px;
+	}
+	.ant-select-selection--multiple {
+		padding: 8px 10px;
+	}
+}
+
+// / Template's form tag styles.

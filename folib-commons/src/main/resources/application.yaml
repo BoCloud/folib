@@ -12,9 +12,9 @@ spring:
   datasource:
     type: com.alibaba.druid.pool.DruidDataSource
     driver-class-name: com.mysql.cj.jdbc.Driver
-    url: jdbc:mysql://${mysql_host:xpboot.cn}:${mysql_port:3306}/${mysql_db:folib_scanner}?useSSL=false&tinyInt1isBit=false&allowPublicKeyRetrieval=true&useUnicode=true&characterEncoding=UTF8
-    username: ${mysql_user:root}
-    password: ${mysql_pass:199088926}
+    url: jdbc:mysql://${folib.mysql.host:xpboot.cn}:${folib.mysql.port:3306}/${folib.mysql.db:folib_scanner}?useSSL=false&tinyInt1isBit=false&allowPublicKeyRetrieval=true&useUnicode=true&characterEncoding=UTF8
+    username: ${folib.mysql.user:root}
+    password: ${folib.mysql.password:199088926}
 
   jackson:
     date-format: yyyy-MM-dd HH:mm:ss
@@ -33,7 +33,7 @@ mapper:
   identity: MYSQL
 
 scan:
-  base-proxy: ${BASE_PROXY:110.40.184.113:9998/}    #扫描网络代理地址
+  base-proxy: ${folib.nvd:110.40.184.113:9998/}    #扫描网络代理地址
   storage-base: ${folib.vault}/
   thread-pool: 200
 

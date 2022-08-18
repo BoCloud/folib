@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="110px" height="95px" viewBox="0 0 110 95" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+    <title>logo-google-drive</title>
+    <defs>
+        <linearGradient x1="0%" y1="-0.273828214%" x2="100%" y2="100.273828%" id="linearGradient-1">
+            <stop stop-color="#F6C338" offset="0%"></stop>
+            <stop stop-color="#FFD351" offset="52.3%"></stop>
+            <stop stop-color="#F6C338" offset="100%"></stop>
+        </linearGradient>
+        <linearGradient x1="100%" y1="0.47349632%" x2="0%" y2="99.5265037%" id="linearGradient-2">
+            <stop stop-color="#286EE6" offset="0%"></stop>
+            <stop stop-color="#4286FB" offset="52.1%"></stop>
+            <stop stop-color="#286EE6" offset="100%"></stop>
+        </linearGradient>
+        <linearGradient x1="65.3317787%" y1="0%" x2="35.9558139%" y2="100%" id="linearGradient-3">
+            <stop stop-color="#069B5A" offset="0%"></stop>
+            <stop stop-color="#11AA62" offset="53.1%"></stop>
+            <stop stop-color="#069B5A" offset="100%"></stop>
+        </linearGradient>
+    </defs>
+    <g id="Page-1" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+        <g id="logo-google-drive" fill-rule="nonzero">
+            <polygon id="Path" fill="url(#linearGradient-1)" points="36 0 74.1354951 0 110 62 71.7788072 62"></polygon>
+            <polygon id="Path" fill="url(#linearGradient-2)" points="110 62 90.8194707 95 19 95 38.223535 62"></polygon>
+            <polygon id="Path" fill="url(#linearGradient-3)" points="19.078125 95 0 61.9173442 35.7929688 0 55 33.1684734"></polygon>
+            <path d="M19,95 L54.7377127,61.9173442 L38.223535,61.9173442 L19,95 Z M110,61.9173442 L71.6819471,61.9173442 L63.2528355,47.4141825 L110,61.9173442 Z M35.729206,0 L46.7816635,47.1996387 L54.952741,33.1684734 L35.729206,0 Z" id="Shape" fill="#000000" opacity="0.1"></path>
+        </g>
+    </g>
+</svg>

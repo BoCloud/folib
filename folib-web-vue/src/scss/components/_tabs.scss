@@ -1,0 +1,41 @@
+// _tabs.scss
+// 
+// Template's tabs styles.
+// 
+
+.tabs-sliding {
+
+	&.ant-tabs {
+		overflow: initial;
+	}
+	.ant-tabs-nav {
+    	z-index: 0;
+	}
+	.ant-tabs-nav .ant-tabs-tab {
+    	z-index: 10;
+	}
+	&.ant-tabs-top .ant-tabs-ink-bar-animated,
+	&.ant-tabs-bottom .ant-tabs-ink-bar-animated {
+		z-index: 0;
+		height: 35px;
+    	background-color: #ffffff;
+    	border-radius: .5rem;
+    	box-shadow: 0 1px 5px 1px #ddd;
+    	margin: 10.5px 0;
+	}
+	.ant-tabs-nav .ant-tabs-tab {
+		padding-top: 17px;
+		padding-bottom: 17px;
+		margin: 0 5px;
+		color: #344767;
+		font-size: 16px;
+	}
+	.ant-tabs-nav .ant-tabs-tab:hover {
+		color: #344767;
+	}
+	.ant-tabs-bar {
+		border: 0;
+	}
+}
+
+// Template's tabs styles.

@@ -1,0 +1,276 @@
+// _dashboard-rtl.scss
+// 
+// Template's rtl dashboard layout styles.
+// 
+
+// Dashboard Layout
+.layout-dashboard-rtl {
+	background: transparent;
+	text-align: right;
+	direction: rtl;
+	position: relative;
+	overflow-x: hidden;
+				
+	@media( min-width: $lg ){
+		overflow: auto;
+	}
+
+	.ant-page-header-heading-title {
+		float: right;
+	}
+
+	// Primary Sidebar
+	.ant-layout-sider.sider-primary {
+		right: 0;
+		left: auto;
+		
+		@media( min-width: $lg ){
+			margin: 20px 20px 0 0;
+			height: calc(100vh - 20px);
+			padding: 0px;
+
+			>.ant-layout-sider-children {
+				padding: 13px 20px;
+			}
+		}
+		.ant-menu-item,
+		.ant-menu-submenu {
+			.icon {
+				margin-left: 11px;
+				margin-right: 0;
+			}
+		}
+
+		&.ant-layout-sider-white {
+			margin: 20px 20px 64px 0px;
+		}
+
+		.ant-menu-submenu-arrow {
+			left: 16px;
+			right: auto;
+			top: 56%;
+		}
+
+		.brand {
+			padding-right: 16px;
+			padding-left: 0;
+
+			span {
+				margin-left: 0;
+				margin-right: 7px;
+			}
+		}
+
+		.ant-menu-submenu .ant-menu-item-group-list {
+			padding-left: 0;
+			margin-left: 0;
+			padding-right: 16px;
+			margin-right: 24px;
+
+			.ant-menu-item-group-list {
+				padding-right: 0;
+				margin-right: 0;
+			}
+				
+			a,
+			.ant-menu-submenu-title {
+				margin-left: 4px;
+
+				&::before {
+					left: auto;
+					right: -14px;
+					top: 53%;
+					transform: translateY(-50%);
+				}
+				&.router-link-exact-active {
+					&::before {
+						left: auto;
+						right: -15.5px;
+					}
+				}
+			}
+		}
+	}
+	
+	&.sidebar-minimized.has-sidebar .ant-layout-sider.sider-primary {
+		@media( min-width: $lg ){
+			transition: all 0.1s ease-in;
+
+			&+.ant-layout {
+				transition: all 0.1s ease-in;
+			}
+		}
+		.label,
+		.ant-menu-submenu-title .label,
+		.ant-menu-item a,
+		.ant-menu-submenu .ant-menu-submenu .ant-menu-submenu-title {
+			transition: margin 0.1s ease-in, padding 0.1s ease-in;
+		}
+		.ant-menu-submenu-arrow {
+			transition: all 0.1s ease-in;
+		}
+		.ant-menu-item a {
+			&::before {
+				transition: all 0.1s ease-in;
+			}
+		}
+		.ant-menu-submenu-title .icon+.label {
+			transition: all 0.3s ease-in;
+			display: inline-block;
+			width: auto;
+			opacity: 1;
+			letter-spacing: normal;
+		}
+		.brand {
+			img {
+				transition: all 0.1s ease-in;
+			}
+			span {
+				transition: all 0.1s ease-in;
+			}
+		}
+	}
+	&.sidebar-minimized.has-sidebar .ant-layout-sider.sider-primary:not(:hover) {
+		overflow-x: hidden;
+
+		@media( min-width: $lg ){
+			min-width: 120px !important;
+			max-width: 120px !important;
+			width: 120px !important;
+			margin: 20px 0 0 20px;
+			padding: 0px;
+
+			>.ant-layout-sider-children {
+				width: 103px;
+				transition: none;
+				padding: 13px 20px;
+			}
+
+			.brand {
+				span {
+					display: none;
+					display: inline-block;
+					width: 0;
+					opacity: 0;
+					overflow: hidden;
+				}
+			}
+
+			.ant-menu-submenu-arrow {
+				opacity: 0;
+			}
+			.label {
+				letter-spacing: 11px;
+				max-width: 27px;
+				overflow: hidden;
+				display: inline-block;
+			}
+			.ant-menu-submenu-title .label {
+				display: none;
+			}
+			.ant-menu-submenu-title .icon+.label {
+				display: inline-block;
+				width: 0;
+				opacity: 0;
+				letter-spacing: normal;
+			}
+			.ant-menu-item a {
+				padding: 10px 0;
+				margin-left: 0;
+				margin-right: -22px;
+			}
+			>.ant-layout-sider-children>ul.ant-menu>li.ant-menu-item>a {
+				padding: 10px 16px;
+				margin: 0;
+
+				.label {
+					transition: all 0.3s ease-in;
+					display: inline-block;
+					width: 0;
+					opacity: 0;
+					letter-spacing: -.3px;
+				}
+			}
+			.ant-menu-submenu .ant-menu-submenu .ant-menu-submenu-title {
+				padding-right: 0 !important;
+				padding-left: 0 !important;
+				margin-left: auto;
+				margin-right: -22px;
+				letter-spacing: 11px;
+				max-width: 27px;
+				overflow: hidden;
+				text-overflow: clip;
+			}
+			.footer-box {
+				>*:not(.icon) {
+					display: none;
+				}
+				.icon {
+    				margin-bottom: 0;
+				}
+			}
+
+			.ant-menu-item a,
+			.ant-menu-submenu-title {
+				&::before {
+					opacity: 0;
+					left: -30px;
+				}
+			}
+
+			&+.ant-layout {
+				margin-left: 0;
+				margin-right: 140px;
+			}
+		}
+	}
+
+	// / Primary Sidebar
+	.header-notifications-list {
+		.ant-list-item-meta-description {
+			svg {
+				margin-left: 4px;
+				margin-right: 0;
+			}
+		}
+	}
+	// / Header Notification Dropdown
+	
+	.header-control {
+		.btn-sign-in {
+			svg {
+				margin-left: 4px;
+				margin-right: 0;
+			}
+		}
+	}
+	// / Page Header
+
+	// Content/Main Layout
+	.ant-layout {
+		@media( min-width: $lg ){
+			margin-right: 270px;
+			margin-left: 0;
+		}
+	}
+
+	// Page Footer
+	.ant-layout-footer {
+		@media( min-width: $md ){
+			margin: 0px 20px 20px 0;
+		}
+		.ant-menu-horizontal {
+			@media( min-width: $md ){
+				text-align: left;
+			}
+		}
+		.copyright {
+			@media( min-width: $md ){
+				text-align: right;
+			}
+		}
+	}
+	// / Page Footer
+}
+
+// / Template's rtl dashboard layout styles.

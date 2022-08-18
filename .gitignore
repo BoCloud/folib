@@ -47,3 +47,5 @@ lib/*
 .idea
 /folib/
 /folib-vault/
+/folib-web-vue/node_modules/
+/folib-web-vue/dist/

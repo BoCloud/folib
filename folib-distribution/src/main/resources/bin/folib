@@ -23,6 +23,14 @@ FOLIB_NPM_REMOTE_CHANGES_ENABLED="${FOLIB_NPM_REMOTE_CHANGES_ENABLED:-false}"
 FOLIB_NUGET_DOWNLOAD_FEED="${FOLIB_NUGET_DOWNLOAD_FEED:-false}"
 FOLIB_DOWNLOAD_INDEXES="${FOLIB_DOWNLOAD_INDEXES:-false}"
 
+##scanner相关配置
+FOLIB_MYSQL_HOST="${FOLIB_MYSQL_HOST:-xpboot.cn}"
+FOLIB_MYSQL_PORT="${FOLIB_MYSQL_PORT:-3306}"
+FOLIB_MYSQL_DB="${FOLIB_MYSQL_DB:-folib_scanner}"
+FOLIB_MYSQL_USER="${FOLIB_MYSQL_USER:-root}"
+FOLIB_MYSQL_PASSWORD="${FOLIB_MYSQL_PASSWORD:-199088926}"
+FOLIB_NVD="${FOLIB_NVD:-nvd.folib.com}"
+
 print_banner()
 {
     echo "  _____ ___  _     ___ ____  ";
@@ -107,6 +115,12 @@ run()
     JAVA_OPTS+=" -Dfolib.nuget.download.feed=${FOLIB_NUGET_DOWNLOAD_FEED}"
     JAVA_OPTS+=" -Dfolib.download.indexes=${FOLIB_DOWNLOAD_INDEXES}"
     JAVA_OPTS+=" -Dfolib.authentication.providers.yaml=${FOLIB_HOME}/etc/conf/folib-authentication-providers.yaml"
+    JAVA_OPTS+=" -Dfolib.mysql.host=${FOLIB_MYSQL_HOST}"
+    JAVA_OPTS+=" -Dfolib.mysql.port=${FOLIB_MYSQL_PORT}"
+    JAVA_OPTS+=" -Dfolib.mysql.db=${FOLIB_MYSQL_DB}"
+    JAVA_OPTS+=" -Dfolib.mysql.user=${FOLIB_MYSQL_USER}"
+    JAVA_OPTS+=" -Dfolib.mysql.password=${FOLIB_MYSQL_PASSWORD}"
+    JAVA_OPTS+=" -Dfolib.nvd=${FOLIB_NVD}"
 
     JDK_VERSION=$(java -version 2>&1 | awk -F '"' '/version/ {print $2}')
 

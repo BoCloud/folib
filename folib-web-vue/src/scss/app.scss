@@ -1,0 +1,62 @@
+
+  // =========================================================
+
+  // * The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+
+// app.scss
+//
+// Template's main stylesheet.
+//
+
+// Base
+@import "./base/_variables" ;
+@import "./base/_utilities" ;
+@import "./base/_override" ;
+@import "./base/_typography" ;
+// / Base
+
+// Layouts
+@import "./layouts/default" ;
+@import "./layouts/dashboard" ;
+@import "./layouts/dashboard-rtl" ;
+// Layouts
+
+// Components
+@import "./components/_alerts" ;
+@import "./components/_avatar" ;
+@import "./components/_badge" ;
+@import "./components/_button" ;
+@import "./components/_dropdown" ;
+@import "./components/_card" ;
+@import "./components/_chart" ;
+@import "./components/_kanban" ;
+@import "./components/_list" ;
+@import "./components/_photoswipe" ;
+@import "./components/_progress" ;
+@import "./components/_settings-drawer" ;
+@import "./components/_space" ;
+@import "./components/_notifications" ;
+@import "./components/_table" ;
+@import "./components/_tabs" ;
+@import "./components/_tag" ;
+@import "./components/_timeline" ;
+@import "./components/_widget" ;
+@import "./components/_fullcalendar" ;
+// / Components
+
+// Form
+@import "./form/_input" ;
+@import "./form/_checkbox" ;
+@import "./form/_tags" ;
+@import "./form/_quill" ;
+// / Form
+
+// Pages
+@import "./pages/_pricing" ; 
+@import "./pages/_invoice" ;
+@import "./pages/_profile" ;
+@import "./pages/_sign-in" ;
+@import "./pages/_sign-up" ;
+// Pages
+
+// / Template's main stylesheet.

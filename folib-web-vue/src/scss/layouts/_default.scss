@@ -1,0 +1,532 @@
+// _default.scss
+// 
+// Template's default layout styles.
+// 
+
+
+html,
+body {
+	background-color: $color-gray-2;
+}
+
+body {
+	padding: 0 0 30px 0;
+}
+
+hr.gradient-line {
+	margin: 18px 0;
+	border: none;
+	height: 1px;
+	background-color: #F5F5F5;
+	background-image: linear-gradient(
+	90deg
+	, transparent, rgba(0, 0, 0, 0.4), transparent);
+	opacity: .25;
+}
+
+.divider {
+	text-align: center;
+    padding-top: .75em;
+	hr {
+		margin: 0;
+	}
+	>p {
+		margin: 0;
+		margin-top: -.75em;
+		position: relative;
+	}
+	.label {
+		display: inline-block;
+		background: #ffffff;
+		padding: 0 20px;
+	}
+}
+
+// Default Layout
+.layout-default {
+	background: transparent;
+	text-align: left;
+	position: relative;
+	overflow-x: hidden;
+				
+	@media( min-width: $lg ){
+		overflow: auto;
+	}
+	.ant-layout-header {
+		display: flex;
+		position: relative;
+		background-color: $color-gray-1;
+		color: $color-gray-12;
+		box-shadow: $shadow-1;
+		flex-direction: column;
+		padding: 20px;
+		height: auto;
+		line-height: 1.5;
+				
+		@media( min-width: $lg ){
+			flex-direction: row;
+			padding: 0 50px;
+			height: 64px;
+			line-height: 64px;
+		}
+
+		.header-brand {
+			margin-right: auto;
+			margin-left: auto;
+			display: flex;
+			justify-content: space-between;
+			width: 100%;
+			align-items: center;
+			margin-bottom: 20px;
+				
+			@media( min-width: $lg ){
+				margin-right: auto;
+				margin-left: 0;
+				display: block;
+				width: auto;
+				margin-bottom: 0px;
+			}
+
+			.btn-menu-trigger {
+				display: block;
+				
+				@media( min-width: $lg ){
+					display: none;
+				}
+			}
+
+			h6 {
+				white-space: nowrap;
+				font-size: 16px;
+				color: $color-gray-12;
+				margin: 0;
+			}
+				
+			@media( min-width: $lg ){
+				h6 {
+					font-size: 14px;
+				}
+			}
+		}
+		.header-menu .ant-menu-submenu a svg {
+			margin-right: 5px;
+		}
+		.header-nav {
+			margin-right: auto;
+			margin-left: auto;
+			width: 100%;
+				
+			@media( min-width: $lg ){
+				margin-right: auto;
+				margin-left: auto;
+			}
+
+			
+			a {
+				color: $color-gray-12;
+				font-weight: $fw-regular;
+				font-size: 14px;
+			}
+
+			.submenu-title-wrapper {
+				font-weight: $fw-regular;
+			}
+			>ul >li > .ant-menu-submenu-title,
+			>ul >li > a {
+				color: $color-gray-12;
+				padding: 6px 12px;
+				font-weight: $fw-regular;
+				font-size: 14px;
+
+				svg {
+					margin-right: 5px;
+				}
+			}
+
+			.menu-large {
+				display: none;
+					
+				@media( min-width: $lg ){
+					display: block;
+				}
+			}
+			
+			.ant-menu-horizontal {
+				border: none;
+				margin-top: 0px;
+				text-align: center;
+				background-color: transparent;
+					
+				@media( min-width: $md ){
+					margin-top: 0;
+				}
+				> .ant-menu-item,
+				> .ant-menu-submenu {
+					padding: 0;
+				}
+
+				.ant-menu-submenu-title > span:not(.submenu-title-wrapper) { // Ellipsis element
+					vertical-align: 6px;
+				}
+				> .ant-menu-item,
+				> .ant-menu-item:hover,
+				> .ant-menu-item-active,
+				> .ant-menu-item-selected,
+				> .ant-menu-submenu,
+				> .ant-menu-submenu:hover,
+				> .ant-menu-submenu-active,
+				> .ant-menu-submenu-selected {
+					color: $color-gray-7;
+					font-weight: $fw-semibold;
+					border: none;
+				}
+				> .ant-menu-item:hover,
+				> .ant-menu-item-active,
+				> .ant-menu-item-selected,
+				> .ant-menu-submenu:hover,
+				> .ant-menu-submenu-active,
+				> .ant-menu-submenu-selected {
+					color: $color-gray-10;
+				}
+
+				.ant-menu-submenu-title {
+					font-size: 14px;
+					font-weight: bold;
+				}
+			}
+
+			.menu-small {
+				display: block;
+					
+				@media( min-width: $lg ){
+					display: none;
+				}
+				
+				.ant-collapse > .ant-collapse-item > .ant-collapse-header {
+					display: none;
+				}
+				.ant-collapse-content {
+					border: none;
+				}
+				.ant-collapse > .ant-collapse-item {
+					border: 0;
+					border-radius: 4px;
+				}
+				
+				.ant-collapse-item:last-child > .ant-collapse-content {
+					border-radius: 4px;
+					border-color: $color-gray-12;
+					border-top: 0;
+				}
+				.ant-collapse {
+					background-color: transparent;
+					border: 0;
+				}
+				
+				.ant-collapse-content-box {
+					padding: 0;
+				}
+				
+				.ant-collapse-content > .ant-collapse-content-box {
+					padding: 0;
+				}
+				
+				.ant-menu-inline {
+					border: none;
+					.ant-menu-item,
+					.ant-menu-submenu {
+						margin: 0;
+						overflow: visible;
+						&::after {
+							display: none;
+						}
+					}
+					.ant-menu-submenu-title {
+						overflow: visible;
+					}
+				}
+				.ant-menu-item,
+				.ant-menu-submenu {
+					padding: 0 !important;
+					height: auto;
+					line-height: normal;
+
+					&.ant-menu-item:active,
+					&.ant-menu-submenu-title:active,
+					&.ant-menu-item-selected,
+					.ant-menu-submenu:active,
+					.ant-menu-submenu-selected {
+						background-color: transparent;
+					}
+
+					a {
+						padding: 10px 16px;
+						color: $color-gray-12;
+						border-radius: 8px;
+					}
+
+					.icon {
+						display: inline-flex;
+						width: 32px;
+						height: 32px;
+						background-color: $color-gray-1;
+						box-shadow: $shadow-2;
+						border-radius: 6px;
+						justify-content: center;
+						align-items: center;
+						margin-right: 11px;
+						vertical-align: middle;
+					}
+					svg path {
+						fill: $color-gray-6;
+					}
+					.label {
+						vertical-align: middle;
+					}
+					&.ant-menu-item-selected .router-link-active,
+					.router-link-active {
+						background-color: $color-gray-1;
+						
+						.icon {
+							background-color: $color-primary;
+						}
+						svg path {
+							fill: $color-gray-1;
+						}
+						.label {
+							font-weight: $fw-semibold;
+						}
+					}
+					a:hover {
+						color: $color-gray-12;
+						.icon {
+							transition: box-shadow 0.1s ease-in;
+						}
+					}
+					&.menu-item-header {
+						padding: 10px 16px !important;
+						color: $color-gray-7;
+						font-weight: $fw-bold;
+						font-size: 13px;
+						text-transform: uppercase;
+					}
+				}
+				.ant-menu-submenu {
+					.ant-menu-submenu-title {
+						padding: 0 !important;
+						height: auto;
+						line-height: normal;
+						padding: 10px 16px !important;
+						color: #141414;
+						border-radius: 8px;
+						background-color: transparent;
+						box-shadow: none;
+						transition: all 0.3s ease-in-out;
+						.icon {
+							transition: all 0.3s ease-in-out;
+						}
+						svg path {
+							transition: all 0.3s ease-in-out;
+						}
+						.label {
+							transition: all 0.3s ease-in-out;
+						}
+					}
+
+					&.ant-menu-submenu-open {
+						.ant-menu-submenu-title {
+							background-color: $color-gray-1;
+							
+							.icon {
+								background-color: $color-primary;
+							}
+							svg path {
+								fill: $color-gray-1;
+							}
+							.label {
+								font-weight: $fw-semibold;
+							}
+						}
+					}
+					.ant-menu-item-group-title {
+						display: none;
+					}
+
+					.ant-menu-item-group-list {
+						padding-left: 16px;
+						margin-left: 24px;
+
+						.ant-menu-submenu-title {
+							background-color: transparent;
+							box-shadow: none;
+							transition: all 0.3s ease-in-out;
+							transition: none;
+							.icon {
+								transition: all 0.3s ease-in-out;
+							}
+							svg path {
+								transition: all 0.3s ease-in-out;
+							}
+							.label {
+								transition: all 0.3s ease-in-out;
+							}
+						}
+						
+
+						a,
+						.ant-menu-submenu-title {
+							position: relative;
+							margin-left: 4px;
+
+							&::before {
+								content: "";
+								position: absolute;
+								left: -14px;
+								top: 53%;
+								transform: translateY(-50%);
+								height: 5px;
+								width: 5px;
+								border-radius: 1.5rem;
+								background: rgba(58,65,111,.5);
+							}
+
+							&.router-link-exact-active,
+							&.router-link-active {
+								background-color: transparent;
+								box-shadow: none;
+
+								.label {
+									font-weight: $fw-regular;
+								}
+							}
+
+							&.router-link-exact-active {
+								.label {
+									font-weight: $fw-semibold;
+								}
+								&::before {
+									height: 8px;
+									width: 8px;
+									background: #3a416f;
+								}
+							}
+						}
+
+						.ant-menu-item-group-list {
+							padding-left: 0;
+							margin-left: 0;
+
+							a::before {
+								display: none;
+							}
+						}
+					}
+				}
+				hr {
+					margin: 18px 0;
+					border: none;
+					height: 1px;
+					background-color: $color-gray-3;
+					background-image: linear-gradient( 90deg, transparent, rgba(0,0,0,.4), transparent ) ;
+					opacity: .25;
+				}
+			}
+
+		}
+		.header-btn {
+				
+			@media( min-width: $lg ){
+				margin-left: auto;
+			}
+
+			.ant-btn-round.ant-btn-sm {
+				font-size: 12px;
+				width: 100%;
+				
+				@media( min-width: $lg ){
+					width: auto;
+				}
+			}
+		}
+	}
+	.ant-layout-content {
+		padding-top: 40px;
+	}
+	.ant-layout-footer {
+		padding: 24px 0px;
+		color: rgba(0, 0, 0, 0.65);
+		font-size: 14px;
+		background: transparent;
+		text-align: center;
+			
+		@media( min-width: $md ) {
+			padding: 24px 50px;
+		}
+			
+		.ant-menu-horizontal {
+			border: none;
+			line-height: 1.5;
+			margin: 0 0 30px;
+			background-color: transparent;
+			font-size: 16px;
+				
+			@media( min-width: $md ){
+			}
+			> .ant-menu-item,
+			> .ant-menu-item:hover,
+			> .ant-menu-item-active,
+			> .ant-menu-item-selected,
+			> .ant-menu-submenu,
+			> .ant-menu-submenu:hover,
+			> .ant-menu-submenu-active,
+			> .ant-menu-submenu-selected {
+				color: $color-gray-7;
+				border: none;
+			}
+			> .ant-menu-item:hover,
+			> .ant-menu-item-active,
+			> .ant-menu-item-selected,
+			> .ant-menu-submenu:hover,
+			> .ant-menu-submenu-active,
+			> .ant-menu-submenu-selected {
+				color: $color-gray-10;
+			}
+
+			.ant-menu-submenu-title {
+				font-size: 16px;
+				font-weight: bold;
+			}
+		}
+
+		.menu-nav-social {
+			a svg {
+				fill: $color-muted;
+				vertical-align: middle;
+			}
+			a:hover svg {
+				fill: $color-primary;
+			}
+		}
+
+		.copyright {
+			margin: 0;
+			font-size: 16px;
+			color: $color-muted;
+			
+			svg {
+				width: 16px;
+				height: 16px;
+				vertical-align: -2px;
+				path {
+					fill: $color-danger;
+				}
+			}
+			a {
+				color: inherit;
+			}
+		}
+	}
+}
+// Default Layout
+
+// / Template's default layout styles.

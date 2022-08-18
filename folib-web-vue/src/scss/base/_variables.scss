@@ -1,0 +1,107 @@
+// _variables.scss
+// 
+// Template's variables for colors, font weight and... .
+// 
+
+
+// Base Colors
+$color-primary: #1890FF;
+$color-secondary: #B37FEB;
+$color-success: #52C41A;
+$color-warning: #FADB14;
+$color-danger: #F5222D;
+$color-dark: #141414;
+$color-white: #FFFFFF;
+// / Base Colors
+
+// Neutral Colors
+$color-gray-1: #FFFFFF;
+$color-gray-2: #FAFAFA;
+$color-gray-3: #F5F5F5;
+$color-gray-4: #F0F0F0;
+$color-gray-5: #D9D9D9;
+$color-gray-6: #BFBFBF;
+$color-gray-7: #8C8C8C;
+$color-gray-8: #595959;
+$color-gray-9: #434343;
+$color-gray-10: #262626;
+$color-gray-11: #1F1F1F;
+$color-gray-12: #141414;
+$color-muted: $color-gray-7;
+// / Neutral Colors
+
+// Gradient Colors
+$primary-gradient:            #7928CA !default;
+$primary-gradient-state:      #FF0080 !default;
+
+$secondary-gradient:          #627594 !default;
+$secondary-gradient-state:    #A8B8D8 !default;
+
+$info-gradient:               #2152ff !default;
+$info-gradient-state:         #21d4fd !default;
+
+$success-gradient:            #17ad37 !default;
+$success-gradient-state:      #98ec2d !default;
+
+$danger-gradient:             #ea0606 !default;
+$danger-gradient-state:       #ff667c !default;
+
+$warning-gradient:            #f53939 !default;
+$warning-gradient-state:      #fbcf33 !default;
+
+$dark-gradient:               #141727 !default;
+$dark-gradient-state:         #3A416F !default;
+
+$light-gradient:              #CED4DA !default;
+$light-gradient-state:        #EBEFF4 !default;
+// / Gradient Colors
+
+// Font Weights
+$fw-regular: 400;
+$fw-semibold: 600;
+$fw-bold: 700;
+// / Font Weights
+
+// Font Family
+$f-family: "open sans", Helvetica, Arial, sans-serif;
+// / Font Family
+
+// Responsive Breakpoints
+$xs: 480px ;
+$sm: 576px ;
+$md: 768px ;
+$lg: 992px ;
+$xl: 1200px ;
+$xxl: 1600px ;
+// / Responsive Breakpoints
+
+// Ant Design Vars
+$btn-height-base: 40px;
+$btn-height-lg: 48px;
+$btn-height-sm: 34px;
+$btn-padding-base: 0px 15px;
+$btn-shadow: 0px 2px 4px rgba(0, 0, 0, 0.07);
+$btn-border-radius-base: 6px;
+$btn-font-size-base: 12px;
+$btn-font-size-lg: 16px;
+$btn-font-size-sm: 12px;
+$btn-font-weight: $fw-bold;
+$input-color: $color-gray-7;
+$input-border-color: $color-gray-5;
+$input-hover-border-color: $color-primary;
+$input-height-base: $btn-height-base;
+$input-height-lg: $btn-height-lg;
+$input-height-sm: $btn-height-sm;
+$select-color: $color-gray-7;
+$select-border-color: $color-gray-5;
+$select-hover-border-color: $color-primary;
+// / Ant Design Vars
+
+// Template Vars
+$shadow-0: none;
+$shadow-1: 0px 20px 27px rgba(0, 0, 0, 0.05);
+$shadow-2: 0px 4px 6px rgba(0, 0, 0, 0.12);
+$shadow-3: 0px 5px 10px rgba(0, 0, 0, 0.12);
+// / Template Vars
+
+// / Template's variables for colors, font weight and... .

@@ -1,0 +1,68 @@
+// _kanban.scss
+// 
+// Template's kanban styles.
+// 
+
+.kanban-page {
+	
+	.kanban-head {
+		display: flex;
+		align-items: center;
+		
+		>div {
+			padding: 0 25px;
+			position: relative;
+
+			&:first-child::before {
+				content: '';
+				position: absolute;
+				background-color: #333333;
+				opacity: .2;
+				width: 1px;
+				right: 0;
+				top: 10px;
+				bottom: 10px;
+				margin: auto;
+			}
+		}
+	}
+
+	.kanban {
+		overflow: auto;
+
+		img {
+			max-width: 100%;
+		}
+	}
+
+	.kanban-board {
+		min-width: 450px;
+		box-shadow: none;
+		background: #e9ecef;
+		margin-right: 20px;
+
+		>.ant-card-body {
+			padding-bottom: 30px;
+		}
+
+		.ant-form {
+			textarea {
+				box-shadow: $shadow-1;
+			}
+		}
+	}
+
+	.kanban-boards {
+		display: flex;
+		align-items: flex-start;
+	}
+
+	.kanban-card {
+		img {
+			border-radius: 4px;
+		}
+	}
+
+}
+
+// / Template's kanban styles.

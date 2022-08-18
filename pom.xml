@@ -43,6 +43,7 @@
         <module>folib-web-forms</module>
         <module>folib-web-core</module>
         <module>folib-distribution</module>
+        <module>folib-web-vue</module>
     </modules>
 
     <profiles>
@@ -72,22 +73,29 @@
 
             <build>
                 <plugins>
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-checkstyle-plugin</artifactId>
-                        <version>3.0.0</version>
-                        <dependencies>
-                            <dependency>
-                                <groupId>com.puppycrawl.tools</groupId>
-                                <artifactId>checkstyle</artifactId>
-                                <version>8.29</version>
-                            </dependency>
-                        </dependencies>
-                        <configuration>
-                            <configLocation>folib-checks.xml</configLocation>
-                            <consoleOutput>true</consoleOutput>
-                        </configuration>
-                    </plugin>
+<!--                    <plugin>-->
+<!--                        <artifactId>exec-maven-plugin</artifactId>-->
+<!--                        <groupId>org.codehaus.mojo</groupId>-->
+<!--                        <version>3.1.0</version>-->
+<!--                        <executions>-->
+<!--                            <execution>-->
+<!--                                <id>build web</id>-->
+<!--                                <phase>package</phase>-->
+<!--                                <goals>-->
+<!--                                    <goal>exec</goal>-->
+<!--                                </goals>-->
+<!--                                <configuration>-->
+<!--                                    <executable>/bin/bash</executable>-->
+<!--                                    <arguments>-->
+<!--                                        <argument>-->
+<!--                                            ${basedir}/folib-package.sh-->
+<!--                                        </argument>-->
+<!--                                    </arguments>-->
+<!--                                </configuration>-->
+<!--                            </execution>-->
+<!--                        </executions>-->
+<!--                    </plugin>-->
+
                 </plugins>
             </build>
         </profile>

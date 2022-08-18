@@ -1,0 +1,151 @@
+// _button.scss
+// 
+// Template's button styles.
+// 
+
+.ant-btn svg {
+	margin-right: 5px;
+}
+.mr-0.anticon svg,
+.m-0.anticon svg {
+	margin-right: 0;
+}
+
+.ant-btn.ant-btn-icon-only svg {
+	margin-right: 0;
+}
+
+.ant-btn > .anticon + span {
+    margin-left: 0;
+}
+
+.ant-btn > span + .anticon {
+    margin-left: 5px;
+}
+
+.ant-btn > svg {
+    vertical-align: middle;
+}
+
+.ant-btn > svg + span {
+    vertical-align: middle;
+}
+
+.ant-btn-icon-only.ant-btn-lg:not(.ant-btn-round),
+.ant-btn-icon-only.ant-btn:not(.ant-btn-round),
+.ant-btn-icon-only.ant-btn-sm:not(.ant-btn-round) {
+	padding: 0;
+}
+
+.ant-btn-circle, .ant-btn-circle-outline {
+    border-radius: 50%;
+}
+
+.ant-btn.fab {
+	width: 50px;
+	height: 50px;
+	background-color: $color-white;
+	position: fixed;
+    bottom: 30px;
+    right: 30px;
+	box-shadow: $shadow-3;
+
+	svg {
+		margin: 0;
+	}
+}
+
+.ant-btn.fab {
+	width: 50px;
+	height: 50px;
+	background-color: $color-white;
+	position: fixed;
+    bottom: 30px;
+    right: 30px;
+	box-shadow: $shadow-3;
+
+	svg {
+		margin: 0;
+	}
+}
+
+@each $name, $value in $colors {
+	.ant-btn.bg-#{$name} {
+		background-color: $value;
+		color: #ffffff;
+
+		&:hover {
+			background-color: lighten($value, 5);
+			border-color: darken($value, 10);
+			color: #ffffff;
+		}
+	}
+}
+
+.ant-btn.bg-warning {
+	color: #333333;
+
+	&:hover {
+		color: #333333;
+	}
+}
+
+.layout-dashboard-rtl {
+	.ant-btn-group .ant-btn {
+		border-radius: 0;
+	}
+	.ant-btn-group > .ant-btn:first-child:not(:last-child), .ant-btn-group > span:first-child:not(:last-child) > .ant-btn {
+		border-radius: 0;
+		border-top-right-radius: 4px;
+		border-bottom-right-radius: 4px;
+	}
+	.ant-btn-group > .ant-btn:last-child:not(:first-child), .ant-btn-group > span:last-child:not(:first-child) > .ant-btn {
+		border-radius: 0;
+		border-top-left-radius: 4px;
+		border-bottom-left-radius: 4px;
+	}
+	.ant-btn-group .ant-btn + .ant-btn, .ant-btn + .ant-btn-group, .ant-btn-group span + .ant-btn, .ant-btn-group .ant-btn + span, .ant-btn-group > span + span, .ant-btn-group + .ant-btn, .ant-btn-group + .ant-btn-group {
+		margin-right: -1px;
+		margin-left: 0;
+	}
+
+	.ant-radio-button-wrapper {
+		border-left: 1px solid $color-gray-5;
+		border-right-width: 0;
+	}
+	.ant-radio-button-wrapper:first-child {
+		border-right-width: 1px;
+		border-radius: 0 4px 4px 0;
+	}
+	.ant-radio-button-wrapper:last-child {
+		border-radius: 4px 0 0 4px;
+		border-left: 1px solid $color-gray-5;
+	}
+	.ant-radio-group-solid .ant-radio-button-wrapper-checked:not(.ant-radio-button-wrapper-disabled) {
+		color: $color-gray-1;
+		border-color: $color-primary;
+	}
+	.ant-radio-group-outline .ant-radio-button-wrapper-checked:not(.ant-radio-button-wrapper-disabled) {
+		color: $color-primary;
+		border-color: $color-primary;
+	}
+	.ant-radio-button-wrapper:not(:first-child)::before {
+		left: auto;
+		right: -1px;
+	}
+	.ant-btn svg {
+		margin-left: 5px;
+		margin-right: 0;
+	}
+
+	.ant-btn.fab {
+		left: 30px;
+		right: auto;
+
+		svg {
+			margin: 0;
+		}
+	}
+}
+
+// / Template's button styles.
