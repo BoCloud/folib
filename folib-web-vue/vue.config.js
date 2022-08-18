@@ -1,6 +1,6 @@
 module.exports = {
 	publicPath: './',
-	outputDir: '../folib-web-core/src/main/resources/static',
+	outputDir: '../folib-web-core/src/main/resources/ui',
 	assetsDir: 'static',
 	runtimeCompiler: true,
 	chainWebpack: config => {

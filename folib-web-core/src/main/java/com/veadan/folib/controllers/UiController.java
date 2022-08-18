@@ -7,6 +7,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.servlet.view.RedirectView;
 
 /**
  * @author Steve Todorov
@@ -16,17 +17,17 @@ public class UiController implements ErrorController
 {
 
     @GetMapping(path = { "/**", "/error" }, produces = { MediaType.TEXT_HTML_VALUE })
-    public String indexWithRoute(HttpServletResponse response)
+    public RedirectView indexWithRoute(HttpServletResponse response)
     {
         response.setStatus(HttpStatus.NOT_FOUND.value());
         
-        return "/index.html";
+        return new RedirectView("/ui/index.html");
     }
 
     @GetMapping(path = { "/" }, produces = { MediaType.TEXT_HTML_VALUE })
-    public String index()
+    public RedirectView index()
     {
-        return "/index.html";
+        return new RedirectView("/ui/index.html");
     }
 
     @Override

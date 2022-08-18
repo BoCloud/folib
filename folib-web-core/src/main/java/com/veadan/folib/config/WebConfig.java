@@ -41,12 +41,16 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration;
+import org.springframework.boot.web.server.ConfigurableWebServerFactory;
+import org.springframework.boot.web.server.ErrorPage;
+import org.springframework.boot.web.server.WebServerFactoryCustomizer;
 import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 import org.springframework.format.FormatterRegistry;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.converter.*;
 import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
@@ -56,10 +60,7 @@ import org.springframework.web.context.request.RequestContextListener;
 import org.springframework.web.filter.CommonsRequestLoggingFilter;
 import org.springframework.web.filter.RequestContextFilter;
 import org.springframework.web.method.support.HandlerMethodArgumentResolver;
-import org.springframework.web.servlet.config.annotation.ContentNegotiationConfigurer;
-import org.springframework.web.servlet.config.annotation.PathMatchConfigurer;
-import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
-import org.springframework.web.servlet.config.annotation.WebMvcConfigurationSupport;
+import org.springframework.web.servlet.config.annotation.*;
 import org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerMapping;
 import org.springframework.web.servlet.resource.GzipResourceResolver;
 import org.springframework.web.servlet.resource.PathResourceResolver;
@@ -175,6 +176,8 @@ public class WebConfig
         converters.add(new ResourceHttpMessageConverter());
     }
 
+
+
     @Override
     public void configureContentNegotiation(ContentNegotiationConfigurer configurer)
     {
@@ -218,6 +221,7 @@ public class WebConfig
         return new DirectoryListingServiceImpl(finalUrl);
     }
 
+
     @Bean
     @Qualifier("browseRepositoryDirectoryListingService")
     public DirectoryListingService getBrowseRepositoryDirectoryListingService()
@@ -247,8 +251,8 @@ public class WebConfig
                 .addResourceLocations("classpath:/")
                 .setCachePeriod(3600);
 
-        registry.addResourceHandler("/static/**")
-                .addResourceLocations("classpath:/static/")
+        registry.addResourceHandler("/ui/**")
+                .addResourceLocations("classpath:/ui/")
                 .setCachePeriod(3600)
                 .resourceChain(true)
                 .addResolver(new GzipResourceResolver())

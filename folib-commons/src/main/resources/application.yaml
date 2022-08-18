@@ -1,8 +1,7 @@
 server:
   port: 38080
   connection-timeout: 50000
-  server:
-    session:
+  session:
       timeout: 50000
   jetty:
     acceptor: 32 # Number of acceptor threads to use.

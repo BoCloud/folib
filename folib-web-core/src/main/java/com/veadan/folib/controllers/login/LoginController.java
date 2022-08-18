@@ -57,7 +57,7 @@ public class LoginController
     @JwtAuthentication
     private JwtClaimsProvider jwtClaimsProvider;
 
-    @ApiOperation(value = "Returns the JWT authentication token for provided username and password")
+    @ApiOperation(value = "返回提供的用户名和密码的 JWT 身份验证令牌")
     @ApiResponses(value = { @ApiResponse(code = 200, message = "Returns generated JWT token"),
                             @ApiResponse(code = 401, message = "Invalid credentials"),
                             @ApiResponse(code = 500, message = "org.springframework.security.core.Authentication " +
@@ -69,7 +69,7 @@ public class LoginController
         return formLogin(authentication);
     }
 
-    @ApiOperation(value = "Returns the JWT authentication token for provided username and password")
+    @ApiOperation(value = "返回提供的用户名和密码的 JWT 身份验证令牌")
     @ApiResponses(value = { @ApiResponse(code = 200, message = "Returns generated JWT token"),
                             @ApiResponse(code = 401, message = "Invalid credentials"),
                             @ApiResponse(code = 500, message = "org.springframework.security.core.Authentication " +

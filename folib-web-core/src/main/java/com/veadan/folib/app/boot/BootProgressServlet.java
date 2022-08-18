@@ -37,7 +37,7 @@ class BootProgressServlet
     private static final Logger logger = LoggerFactory.getLogger(BootProgressServlet.class);
 
     public static final String pingRequestURI = "/api/ping";
-    public static final String assetsRequestURI = "/static/assets/";
+    public static final String assetsRequestURI = "/ui/";
     
     private final Observable<String> observable;
     
