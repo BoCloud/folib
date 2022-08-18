@@ -40,6 +40,7 @@ import org.jtwig.web.servlet.JtwigRenderer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration;
 import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
@@ -64,6 +65,9 @@ import org.springframework.web.servlet.resource.GzipResourceResolver;
 import org.springframework.web.servlet.resource.PathResourceResolver;
 import org.springframework.web.servlet.view.InternalResourceView;
 import org.springframework.web.servlet.view.InternalResourceViewResolver;
+import tk.mybatis.mapper.autoconfigure.MapperAutoConfiguration;
+import tk.mybatis.mapper.autoconfigure.MapperProperties;
+import tk.mybatis.mapper.autoconfigure.MybatisProperties;
 
 @Configuration
 @ComponentScan({ "com.veadan.folib.controllers",
@@ -72,6 +76,7 @@ import org.springframework.web.servlet.view.InternalResourceViewResolver;
                  "com.veadan.folib.web",
                  "com.veadan.folib.mapper",
                  "com.veadan.folib.utils",
+                 "com.veadan.folib.scanner",
                  "com.veadan.folib.gremlin",
                  "com.veadan.folib.actuator" })
 @Import({ CommonConfig.class,
@@ -83,6 +88,8 @@ import org.springframework.web.servlet.view.InternalResourceViewResolver;
           WebSecurityConfig.class,
           ClientConfig.class,
           CronTasksConfig.class,
+          DataSourceAutoConfiguration.class,
+          MapperAutoConfiguration.class,
           SwaggerConfig.class })
 @EnableCaching(order = 105)
 public class WebConfig
@@ -240,8 +247,8 @@ public class WebConfig
                 .addResourceLocations("classpath:/")
                 .setCachePeriod(3600);
 
-        registry.addResourceHandler("/static/assets/**")
-                .addResourceLocations("classpath:/static/assets/")
+        registry.addResourceHandler("/static/**")
+                .addResourceLocations("classpath:/static/")
                 .setCachePeriod(3600)
                 .resourceChain(true)
                 .addResolver(new GzipResourceResolver())

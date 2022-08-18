@@ -201,11 +201,11 @@ public class UserController
             return getFailedResponseEntity(HttpStatus.BAD_REQUEST, message, accept);
         }
 
-        final UserDetails loggedUser = (UserDetails) authentication.getPrincipal();
-        if (StringUtils.equals(loggedUser.getUsername(), username))
-        {
-            return getFailedResponseEntity(HttpStatus.FORBIDDEN, OWN_USER_DELETE_FORBIDDEN, accept);
-        }
+//        final UserDetails loggedUser = (UserDetails) authentication.getPrincipal();
+//        if (StringUtils.equals(loggedUser.getUsername(), username))
+//        {
+//            return getFailedResponseEntity(HttpStatus.FORBIDDEN, OWN_USER_DELETE_FORBIDDEN, accept);
+//        }
 
         UserDto user = conversionService.convert(userToUpdate, UserDto.class);
         userService.save(new EncodedPasswordUser(user, passwordEncoder));

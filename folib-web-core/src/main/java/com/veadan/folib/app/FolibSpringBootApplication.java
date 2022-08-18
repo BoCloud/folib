@@ -13,6 +13,8 @@ import org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfigurat
 import org.springframework.boot.context.metrics.buffering.BufferingApplicationStartup;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.Import;
+import org.springframework.scheduling.annotation.EnableAsync;
+import tk.mybatis.spring.annotation.MapperScan;
 
 /**
  * @author Veadan
@@ -21,6 +23,8 @@ import org.springframework.context.annotation.Import;
                                    HibernateJpaAutoConfiguration.class,
                                    Neo4jDataAutoConfiguration.class})
 @Import(WebConfig.class)
+@MapperScan(basePackages = "com.veadan.folib.scanner.mapper")
+@EnableAsync
 public class FolibSpringBootApplication
 {
 
