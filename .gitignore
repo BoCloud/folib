@@ -49,3 +49,4 @@ lib/*
 /folib-vault/
 /folib-web-vue/node_modules/
 /folib-web-vue/dist/
+/folib-web-core/src/main/resources/ui/

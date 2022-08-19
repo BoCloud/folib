@@ -7,7 +7,7 @@ import com.veadan.folib.scanner.biz.FolibScannerBiz;
 import com.veadan.folib.scanner.biz.ScanRulesBiz;
 import com.veadan.folib.scanner.common.constant.ScanConstans;
 import com.veadan.folib.scanner.common.exception.BusinessException;
-import com.veadan.folib.scanner.common.util.file.TikaFileType;
+//import com.veadan.folib.scanner.common.util.file.TikaFileType;
 import com.veadan.folib.scanner.config.ScanConfig;
 import com.veadan.folib.scanner.entity.FolibScanner;
 import com.veadan.folib.scanner.entity.ScanRules;
@@ -179,7 +179,7 @@ public class ScanService {
             String repository = pathArray[storagesIndex + 2];
             //获取存储空间名称和仓库名称
 
-            String type = TikaFileType.getFileType(new File(path));
+            String type = FileUtil.getType(new File(path));
             String shortPath = path.substring(path.lastIndexOf("storages/"));
             FolibScanner folibScanner = new FolibScanner();
 

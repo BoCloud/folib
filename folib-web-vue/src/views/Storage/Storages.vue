@@ -218,7 +218,7 @@
                             shape="square"
                             style="border-radius: 8px; background-image: linear-gradient( 310deg, #020202, #5c6391 );"
                         >
-                          <img src="/images/folib/raw.svg" style="width: 100%;" alt="">
+                          <img src="images/folib/raw.svg" style="width: 100%;" alt="">
                         </a-avatar>
                       </div>
                       <h6>Raw</h6>
@@ -233,7 +233,7 @@
                             shape="square"
                             style="border-radius: 8px; background-image: linear-gradient( 310deg, #020202, #5c6391 );"
                         >
-                          <img src="/images/folib/maven.svg" style="width: 100%;" alt="">
+                          <img src="images/folib/maven.svg" style="width: 100%;" alt="">
                         </a-avatar>
                       </div>
                       <h6>Maven</h6>
@@ -248,7 +248,7 @@
                             shape="square"
                             style="border-radius: 8px; background-image: linear-gradient( 310deg, #020202, #5c6391 );"
                         >
-                          <img src="/images/folib/npm.svg" style="width: 100%;" alt="">
+                          <img src="images/folib/npm.svg" style="width: 100%;" alt="">
                         </a-avatar>
                       </div>
                       <h6>npm</h6>
@@ -263,7 +263,7 @@
                             shape="square"
                             style="border-radius: 8px; background-image: linear-gradient( 310deg, #020202, #5c6391 );"
                         >
-                          <img src="/images/folib/yarn.svg" style="width: 100%;" alt="">
+                          <img src="images/folib/yarn.svg" style="width: 100%;" alt="">
                         </a-avatar>
                       </div>
                       <h6>yarn</h6>
@@ -278,7 +278,7 @@
                             shape="square"
                             style="border-radius: 8px; background-image: linear-gradient( 310deg, #020202, #5c6391 );"
                         >
-                          <img src="/images/folib/nuget.svg" style="width: 100%;" alt="">
+                          <img src="images/folib/nuget.svg" style="width: 100%;" alt="">
                         </a-avatar>
                       </div>
                       <h6>NuGet</h6>
@@ -293,7 +293,7 @@
                             shape="square"
                             style="border-radius: 8px; background-image: linear-gradient( 310deg, #020202, #5c6391 );"
                         >
-                          <img src="/images/folib/ivy.svg" style="width: 100%;" alt="">
+                          <img src="images/folib/ivy.svg" style="width: 100%;" alt="">
                         </a-avatar>
                       </div>
                       <h6>Ivy</h6>
@@ -308,7 +308,7 @@
                             shape="square"
                             style="border-radius: 8px; background-image: linear-gradient( 310deg, #020202, #5c6391 );"
                         >
-                          <img src="/images/folib/sbt.svg" style="width: 100%;" alt="">
+                          <img src="images/folib/sbt.svg" style="width: 100%;" alt="">
                         </a-avatar>
                       </div>
                       <h6>sbt</h6>
@@ -323,7 +323,7 @@
                             shape="square"
                             style="border-radius: 8px; background-image: linear-gradient( 310deg, #020202, #5c6391 );"
                         >
-                          <img src="/images/folib/gradle.svg" style="width: 100%;" alt="">
+                          <img src="images/folib/gradle.svg" style="width: 100%;" alt="">
                         </a-avatar>
                       </div>
                       <h6>Gradle</h6>
@@ -338,7 +338,7 @@
                             shape="square"
                             style="border-radius: 8px; background-image: linear-gradient( 310deg, #020202, #5c6391 );"
                         >
-                          <img src="/images/folib/rpm.svg" style="width: 100%;" alt="">
+                          <img src="images/folib/rpm.svg" style="width: 100%;" alt="">
                         </a-avatar>
                       </div>
                       <h6>rpm</h6>
@@ -353,7 +353,7 @@
                             shape="square"
                             style="border-radius: 8px; background-image: linear-gradient( 310deg, #020202, #5c6391 );"
                         >
-                          <img src="/images/folib/docker.svg" style="width: 100%;" alt="">
+                          <img src="images/folib/docker.svg" style="width: 100%;" alt="">
                         </a-avatar>
                       </div>
                       <h6>Docker</h6>
@@ -368,7 +368,7 @@
                             shape="square"
                             style="border-radius: 8px; background-image: linear-gradient( 310deg, #020202, #5c6391 );"
                         >
-                          <img src="/images/folib/php.svg" style="width: 100%;" alt="">
+                          <img src="images/folib/php.svg" style="width: 100%;" alt="">
                         </a-avatar>
                       </div>
                       <h6>php</h6>
@@ -383,7 +383,7 @@
                             shape="square"
                             style="border-radius: 8px; background-image: linear-gradient( 310deg, #020202, #5c6391 );"
                         >
-                          <img src="/images/folib/pypi.svg" style="width: 100%;" alt="">
+                          <img src="images/folib/pypi.svg" style="width: 100%;" alt="">
                         </a-avatar>
                       </div>
                       <h6>PyPi</h6>
@@ -398,7 +398,7 @@
                             shape="square"
                             style="border-radius: 8px; background-image: linear-gradient( 310deg, #020202, #5c6391 );"
                         >
-                          <img src="/images/folib/conan.svg" style="width: 100%;" alt="">
+                          <img src="images/folib/conan.svg" style="width: 100%;" alt="">
                         </a-avatar>
                       </div>
                       <h6>Conan</h6>
@@ -413,7 +413,7 @@
                             shape="square"
                             style="border-radius: 8px; background-image: linear-gradient( 310deg, #020202, #5c6391 );"
                         >
-                          <img src="/images/folib/helm.svg" style="width: 100%;" alt="">
+                          <img src="images/folib/helm.svg" style="width: 100%;" alt="">
                         </a-avatar>
                       </div>
                       <h6>Helm</h6>
