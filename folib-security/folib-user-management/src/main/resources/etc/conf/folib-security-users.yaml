@@ -1,14 +1,14 @@
 users:
   user:
     - username: admin  #folib@v587
-      password: "{bcrypt}$2a$10$Uww1K3ZM6RYtNo2yPKK88.Ao4WxzAbirmpcx7lVPlKBTqv.1r9F5S"
+      password: "{bcrypt}$2a$10$I26A5.bJ5byupcXlJ3JGq.mJoQrFWxG4aIqv0XFE3psRqcH4yhV8u"
       roles:
         - ADMIN
       securityTokenKey: admin-secret
       email: "admin@folib.com"
       userType: "general"
     - username: deployer
-      password: "{bcrypt}$2a$10$Uww1K3ZM6RYtNo2yPKK88.Ao4WxzAbirmpcx7lVPlKBTqv.1r9F5S"
+      password: "{bcrypt}$2a$10$I26A5.bJ5byupcXlJ3JGq.mJoQrFWxG4aIqv0XFE3psRqcH4yhV8u"
       roles:
         - UI_MANAGER
         - ARTIFACTS_MANAGER

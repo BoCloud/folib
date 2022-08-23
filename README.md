@@ -28,7 +28,7 @@ folib-web-core/src/main/java/com/veadan/folib/app/FolibSpringBootApplication.jav
 folib-commons/src/main/resources/application.yaml
 ```
 - 启动后所有配置文件在folib文件夹下面，application.yaml中如果需要增加配置，需要将环境变量暴露出来
-
+- IDEA启动注意事项：如果
 #### 打包发布
 通过执行打包脚本，folib-distribution会自动将安装包和配置文件打包好，在：folib-distribution/target/目录下
 
