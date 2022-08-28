@@ -183,7 +183,7 @@ public class StoragesConfigurationController
         StoragesOutput storagesOutput =new StoragesOutput(storages);
         if(!loggedUser.getUsername().equals("admin")){
             List<Storage> list=storagesOutput.getStorages();
-            List<Storage> collect = list.stream().filter(s -> s.getUsers().contains(loggedUser.getUsername())).collect(Collectors.toList());
+            List<Storage> collect = list.stream().filter(s -> s.getUsers()!=null&&s.getUsers().contains(loggedUser.getUsername())).collect(Collectors.toList());
             storagesOutput.setStorages(collect);
         }
 
