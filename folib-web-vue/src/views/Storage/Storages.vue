@@ -19,7 +19,7 @@
                 </a-col>
                 <a-col :span="24" :md="12" style="display: flex; align-items: center; justify-content: flex-end">
                   <a class="text-center text-muted font-bold">
-                    <h3 class="font-semibold text-muted mb-0" @click="showsTorageFormModal = true">+</h3>
+                    <h3 v-if="$store.state.user.roles.indexOf('ADMIN')>-1" class="font-semibold text-muted mb-0" @click="createHandleView">+</h3>
                   </a>
                 </a-col>
               </a-row>
@@ -55,7 +55,7 @@
                 </div>
               </a-col>
               <a-col :span="24" :md="12" style="display: flex; align-items: center; justify-content: flex-end">
-                <div @click="showStorageUpdate = true">
+                <div v-if="$store.state.user.roles.indexOf('ADMIN')>-1" @click="updateHandleView">
                   <svg width="20px" height="20px" viewBox="0 0 40 40" version="1.1" xmlns="http://www.w3.org/2000/svg"
                        xmlns:xlink="http://www.w3.org/1999/xlink">
                     <title>settings</title>
@@ -864,7 +864,6 @@ export default {
       folibVisible: false,
       storageData: [{"id": "", "basedir": null}],
       currentStorage: {
-        id: "folib-common"
       },
       showsTorageFormModal: false,
       delForm: this.$form.createForm(this, {name: "del"}),
@@ -997,17 +996,27 @@ export default {
   },
   created() {
     this.getStorages();
-    this.getUsersList();
-    this.getBaseUrl();
 
+    this.getBaseUrl();
     const params = storage.get('libView_repository')
     if (params) {
       this.currentStorage.id = params.item.storageId
+    }
+    if(!this.currentStorage.id){
+      this.currentStorage.id=this.storageData[0].id
     }
     this.getLibrary(this.currentStorage)
   },
   computed: {},
   methods: {
+    createHandleView(){
+      this.showsTorageFormModal = true
+      this.getUsersList()
+    },
+    updateHandleView(){
+      this.showStorageUpdate = true
+      this.getUsersList()
+    },
     proxyConfigurationHandle() {
       if (this.enableHostProxy) {
         if (!this.folibRepository.proxyConfiguration) {

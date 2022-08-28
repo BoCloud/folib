@@ -1,6 +1,5 @@
 <template>
-	
-	<!-- Main Sidebar -->
+
 	<a-layout-sider
 		collapsible
 		class="sider-primary"
@@ -20,14 +19,6 @@
 			<a-menu theme="light" mode="inline"
       			:open-keys="openKeys"
 				@openChange="onOpenChange">
-<!--        <a-menu-item>-->
-<!--          <router-link to="/dashboards/crm">-->
-<!--						<span class="icon">-->
-<!--							<a-icon type="dashboard" theme="filled" class="m-0" />-->
-<!--						</span>-->
-<!--            <span class="label">首页</span>-->
-<!--          </router-link>-->
-<!--        </a-menu-item>-->
 				<a-menu-item class="menu-item-header">
 					功能管理
 				</a-menu-item>
@@ -47,11 +38,11 @@
             <span class="label">安全扫描</span>
           </router-link>
         </a-menu-item>
-				<a-menu-item class="menu-item-header">
+				<a-menu-item  v-if="userInfo.roles.indexOf('ADMIN')>-1" class="menu-item-header">
 					<hr class="mt-5">
 					设置管理
 				</a-menu-item>
-        <a-menu-item>
+        <a-menu-item v-if="userInfo.roles.indexOf('ADMIN')>-1">
           <router-link to="/users">
 						<span class="icon">
 							<a-icon type="smile" theme="filled" class="m-0" />
@@ -59,7 +50,7 @@
             <span class="label">用户管理</span>
           </router-link>
         </a-menu-item>
-        <a-menu-item>
+        <a-menu-item v-if="userInfo.roles.indexOf('ADMIN')>-1">
           <router-link to="/settings">
 						<span class="icon">
 							<a-icon type="tool" theme="filled" class="m-0" />
@@ -67,7 +58,7 @@
             <span class="label">全局设置</span>
           </router-link>
         </a-menu-item>
-        <a-menu-item>
+        <a-menu-item v-if="userInfo.roles.indexOf('ADMIN')>-1">
           <router-link to="/monitor">
 						<span class="icon">
 							<a-icon type="fund" theme="filled" class="m-0" />
@@ -103,7 +94,7 @@
 </template>
 
 <script>
-
+import store from '@/store'
 	export default ({
 		props: {
 			// Sidebar collapsed status.
@@ -128,9 +119,13 @@
 			return {
       			rootSubmenuKeys: ['dashboards', 'pages', 'applications', 'ecommerce', 'authentication', 'basic', 'components', 'changelog'],
 				openKeys: this.$route.meta.sidebarMap,
+        userInfo:{},
 			}
 		},
-		methods: {
+    created() {
+      this.userInfo=store.state.user
+    },
+    methods: {
 			onOpenChange(openKeys)
 			{
 				const latestOpenKey = openKeys.find( key => this.openKeys.indexOf( key ) === -1) ;

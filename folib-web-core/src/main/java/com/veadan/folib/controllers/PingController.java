@@ -60,9 +60,9 @@ public class PingController
     @ApiResponses(value = { @ApiResponse(code = 200, message = "Successful activated") })
     @PreAuthorize("hasAuthority('AUTHENTICATED_USER')")
     @GetMapping("/activate")
-    public ResponseEntity activate(@RequestParam("key") String key){
+    public ResponseEntity activate(@RequestParam("key") String key,@RequestParam("isPoc") boolean isPoc){
         try {
-            return ResponseEntity.ok().body(codeActivateService.activate(key));
+            return ResponseEntity.ok().body(codeActivateService.activate(key,isPoc));
 
         } catch (Exception e) {
             return ResponseEntity.status(500).body("获取机器码异常");

@@ -80,6 +80,7 @@ const user = {
         commit('SET_ROLES', [])
         storage.remove(ACCESS_TOKEN)
         storage.remove(USER_INFO)
+        storage.remove("libView_repository")
         router.push({ name: 'login' })
       })
     }

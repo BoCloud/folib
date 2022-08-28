@@ -48,9 +48,9 @@ export function getMachineCode () {
   })
 }
 
-export function postActivate (key) {
+export function postActivate (key,isPoc) {
   return axios({
-    url: '/api/ping/activate?key='+key,
+    url: '/api/ping/activate?key='+key+'&isPoc='+isPoc,
     method: 'get'
   })
 }

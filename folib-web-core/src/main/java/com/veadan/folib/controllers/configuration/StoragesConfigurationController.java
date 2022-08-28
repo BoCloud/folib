@@ -172,7 +172,7 @@ public class StoragesConfigurationController
     @JsonView(Views.ShortStorage.class)
     @ApiOperation(value = "Retrieve the basic info about storages.")
     @ApiResponses(value = { @ApiResponse(code = 200, message = "") })
-    @PreAuthorize("hasAuthority('CONFIGURATION_VIEW_STORAGE_CONFIGURATION')")
+    @PreAuthorize("hasAuthority('ARTIFACTS_VIEW')")
     @GetMapping(produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity getStorages(Authentication authentication)
     {
