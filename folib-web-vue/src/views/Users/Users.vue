@@ -71,7 +71,7 @@
                           {{item.enabled?"可用":"不可用"}}
                         </a-descriptions-item>
                         <a-descriptions-item label="Email">
-                          oliver@burrito.com
+                          {{item.email?item.email:"NaN"}}
                         </a-descriptions-item>
                         <a-descriptions-item label="角色信息">
                           {{item.roles}}

@@ -154,7 +154,7 @@
 
 		},
     created() {
-      console.log('aaaaa'+storage.get(USER_INFO))
+
     },
     computed: {
 			// Sets layout's element's class based on route's meta data.

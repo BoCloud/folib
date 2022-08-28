@@ -10,6 +10,7 @@ import com.veadan.folib.services.StorageManagementService;
 import com.veadan.folib.services.support.ConfigurationException;
 import com.veadan.folib.services.ConfigurationManagementService;
 import com.veadan.folib.storage.Storage;
+import com.veadan.folib.storage.StorageData;
 import com.veadan.folib.storage.StorageDto;
 import com.veadan.folib.storage.Views;
 import com.veadan.folib.storage.repository.Repository;
@@ -23,6 +24,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import com.fasterxml.jackson.annotation.JsonView;
 import io.swagger.annotations.*;
@@ -33,6 +35,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
@@ -114,6 +118,7 @@ public class StoragesConfigurationController
         try
         {
             StorageDto storage = conversionService.convert(storageForm, StorageDto.class);
+            storage.setUsers(storageForm.getUsers());
             storageManagementService.saveStorage(storage);
 
             return getSuccessfulResponseEntity(SUCCESSFUL_SAVE_STORAGE, accept);
@@ -153,6 +158,7 @@ public class StoragesConfigurationController
         try
         {
             StorageDto storage = conversionService.convert(storageFormToUpdate, StorageDto.class);
+            storage.setUsers(storageFormToUpdate.getUsers());
             storageManagementService.saveStorage(storage);
 
             return getSuccessfulResponseEntity(SUCCESSFUL_UPDATE_STORAGE, accept);
@@ -168,12 +174,20 @@ public class StoragesConfigurationController
     @ApiResponses(value = { @ApiResponse(code = 200, message = "") })
     @PreAuthorize("hasAuthority('CONFIGURATION_VIEW_STORAGE_CONFIGURATION')")
     @GetMapping(produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity getStorages()
+    public ResponseEntity getStorages(Authentication authentication)
     {
         final List<Storage> storages = new ArrayList<>(configurationManagementService.getConfiguration()
                                                                                      .getStorages()
                                                                                      .values());
-        return ResponseEntity.ok(new StoragesOutput(storages));
+        final UserDetails loggedUser = (UserDetails) authentication.getPrincipal();
+        StoragesOutput storagesOutput =new StoragesOutput(storages);
+        if(!loggedUser.getUsername().equals("admin")){
+            List<Storage> list=storagesOutput.getStorages();
+            List<Storage> collect = list.stream().filter(s -> s.getUsers().contains(loggedUser.getUsername())).collect(Collectors.toList());
+            storagesOutput.setStorages(collect);
+        }
+
+        return ResponseEntity.ok(storagesOutput);
     }
 
     @JsonView(Views.LongStorage.class)

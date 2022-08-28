@@ -1,5 +1,6 @@
 package com.veadan.folib.storage;
 
+import com.fasterxml.jackson.databind.ser.std.ArraySerializerBase;
 import com.veadan.folib.json.MapValuesJsonSerializer;
 import com.veadan.folib.storage.repository.Repository;
 import com.veadan.folib.storage.repository.RepositoryData;
@@ -9,6 +10,7 @@ import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
 import java.util.Collections;
 import java.util.Map;
+import java.util.Set;
 
 import com.fasterxml.jackson.annotation.JsonView;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
@@ -32,6 +34,9 @@ public class StorageData implements Storage
     @JsonView(Views.ShortStorage.class)
     private String basedir;
 
+    @JsonView(Views.ShortStorage.class)
+    private Set<String> users;
+
     @JsonView(Views.LongStorage.class)
     @JsonSerialize(using = MapValuesJsonSerializer.class)
     @JsonDeserialize(using = RepositoryArrayToMapJsonDeserializer.class)
@@ -46,6 +51,7 @@ public class StorageData implements Storage
     {
         this.id = delegate.getId();
         this.basedir = delegate.getBasedir();
+        this.users = delegate.getUsers();
         this.repositories = immuteRepositories(delegate.getRepositories());
     }
 
@@ -76,6 +82,11 @@ public class StorageData implements Storage
     public String getBasedir()
     {
         return basedir;
+    }
+
+    @Override
+    public Set<String> getUsers() {
+        return users;
     }
 
     @Override

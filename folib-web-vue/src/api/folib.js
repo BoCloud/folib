@@ -36,11 +36,25 @@ export function getLibraryByQuery (dataQuery) {
   })
 }
 
-export function updateStorages (data) {
+export function createStorages (data) {
   return axios({
     url: '/api/configuration/folib/storages',
     method: 'put',
     data: data
+  })
+}
+
+export function updateStorages (data) {
+  return axios({
+    url: '/api/configuration/folib/storages/'+data.id,
+    method: 'put',
+    data: data
+  })
+}
+export function deleteStorages (data,force) {
+  return axios({
+    url: '/api/configuration/folib/storages/'+data.id+'?force='+force,
+    method: 'delete'
   })
 }
 

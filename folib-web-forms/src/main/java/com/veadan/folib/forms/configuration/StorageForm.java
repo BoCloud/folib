@@ -6,7 +6,9 @@ import javax.validation.Valid;
 import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.Pattern;
 import java.io.Serializable;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 
 /**
  * @author veadan
@@ -21,6 +23,16 @@ public class StorageForm
     private String id;
 
     private String basedir;
+
+    private Set<String> users= new LinkedHashSet<>();
+
+    public Set<String> getUsers() {
+        return users;
+    }
+
+    public void setUsers(Set<String> users) {
+        this.users = users;
+    }
 
     @Valid
     private List<RepositoryForm> repositories;

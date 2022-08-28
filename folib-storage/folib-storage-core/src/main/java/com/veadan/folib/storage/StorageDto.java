@@ -1,8 +1,7 @@
 package com.veadan.folib.storage;
 
 import java.io.Serializable;
-import java.util.LinkedHashMap;
-import java.util.Map;
+import java.util.*;
 
 import com.veadan.folib.storage.repository.Repository;
 import com.veadan.folib.storage.repository.RepositoryDto;
@@ -24,16 +23,27 @@ public class StorageDto
     
     private String basedir;
 
+    private Set<String> users = new LinkedHashSet<>();
+
     private Map<String, RepositoryDto> repositories = new LinkedHashMap<>();
 
     public StorageDto()
     {
     }
 
+    public Set<String> getUsers() {
+        return users;
+    }
+
+    public void setUsers(Set<String> users) {
+        this.users = users;
+    }
+
     @JsonCreator
-    public StorageDto(@JsonProperty(value = "id", required = true) String id)
+    public StorageDto(@JsonProperty(value = "id", required = true) String id,@JsonProperty(value = "users", required = false) Set<String> users)
     {
         this.id = id;
+        this.users=users;
     }
 
     public boolean containsRepository(String repository)

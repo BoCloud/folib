@@ -1,9 +1,9 @@
 import storage from 'store'
 import { login, getInfo, logout } from '@/api/login'
 import {ACCESS_TOKEN, USER_INFO} from '@/store/mutation-types'
-import { welcome } from '@/utils/util'
 import jwt_decode from "jwt-decode";
 import router from "../../router";
+import store from '@/store'
 
 const user = {
   state: {
@@ -61,7 +61,11 @@ const user = {
             commit('SET_NAME', result.username)
             commit('SET_TOKEN_KEY', result.securityTokenKey)
 
-            storage.set(USER_INFO,user.state)
+
+
+            // console.log(store.state)
+            // storage.set(USER_INFO,user.state)
+          //
 
           resolve(response)
         }).catch(error => {

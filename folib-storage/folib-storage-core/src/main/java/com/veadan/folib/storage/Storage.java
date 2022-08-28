@@ -1,6 +1,7 @@
 package com.veadan.folib.storage;
 
 import java.util.Map;
+import java.util.Set;
 
 import com.veadan.folib.storage.repository.Repository;
 
@@ -12,6 +13,8 @@ public interface Storage
     String getId();
 
     String getBasedir();
+
+    Set<String> getUsers();
 
     Map<String, ? extends Repository> getRepositories();
 
