@@ -218,7 +218,7 @@ export default {
   },
   created() {
 
-    console.log(store.state)
+    // console.log(store.state)
     this.userInfo = store.state.user
     window.addEventListener('resize', this.resizeEventHandler)
   },

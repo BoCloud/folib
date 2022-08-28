@@ -36,9 +36,27 @@ import './utils/filter' // global filter
 
 Vue.config.productionTip = false
 
+// 在页面加载时读取sessionStorage里的状态信息
+if (sessionStorage.getItem('store')) {
+  store.replaceState(
+      Object.assign(
+          {},
+          store.state,
+          JSON.parse(sessionStorage.getItem('store'))
+      )
+  )
+}
+// 在页面刷新时将vuex里的信息保存到sessionStorage里
+// beforeunload事件在页面刷新时先触发
+window.addEventListener('beforeunload', () => {
+  sessionStorage.setItem('store', JSON.stringify(this.$store.state))
+})
+
 // Initialize Vue
 new Vue({
   router,
   store,
   render: h => h(App)
 }).$mount('#app')
+
+
