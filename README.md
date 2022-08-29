@@ -182,7 +182,4 @@ public class ArtifactEventHandlingExample
 
 }
 ```
-
-:::warning 注意事项
-在启动前请使用，netstat -tunlp 命令查看，38080，如果修改可以在folib中进行修改
-:::
+### 布局架构说明
