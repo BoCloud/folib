@@ -1,3 +1,9 @@
+ ### [详情文档请看WIKI](http://58.210.154.140:8888/folib/folib-server/-/wikis/home)
+
+- [新手上手，看看能否跑起来](http://58.210.154.140:8888/folib/folib-server/-/wikis/%E6%96%B0%E6%89%8B%E4%B8%8A%E6%89%8B)
+- [进一步了解，看看各个模块拥有哪些功能](http://58.210.154.140:8888/folib/folib-server/-/wikis/%E8%BF%9B%E4%B8%80%E6%AD%A5%E4%BA%86%E8%A7%A3)
+- [动手开发并了解各种布局和详细](http://58.210.154.140:8888/folib/folib-server/-/wikis/%E8%BF%9B%E9%98%B6%E7%BA%A7%E5%AD%A6%E4%B9%A0)
+
 ### 开发说明
 ##### 第一步  私有化maven仓库配置
 确保folib-settings.xml中的本地仓库是你自己的存放路径
@@ -182,4 +188,107 @@ public class ArtifactEventHandlingExample
 
 }
 ```
-### 布局架构说明
+### 事件监听机制
+#### 事件
+事件的扩展基于com.veadan.folib.event.Event 类，主要用来制品包仓库创建等上传下载，事件分发和监听的实现，例如：制品上传后需要进行安全扫描等场景。
+
+#### 事件监听器注册表
+事件侦听器实例必须在相应实现的侦听器注册表中注册，该注册表将用于向它们分派事件。
+
+所有事件侦听器都必须扩展com.veadan.folib.event.AbstractEventListenerRegistry基类。
+
+考虑以下示例，说明如何注册您的侦听器(具体参考实际已有的代码)：
+```java
+public class ArtifactEventHandlingExample
+{
+
+    @Inject
+    ArtifactEventListenerRegistry artifactEventListenerRegistry;
+
+    public void doStuff()
+    {
+        // Create the listener
+        DummyArtifactEventListener listener = new DummyArtifactEventListener();
+
+        // Add the listener to the registry
+        artifactEventListenerRegistry.addListener(listener);
+
+        // Create an event
+        ArtifactEvent artifactEvent = new ArtifactEvent(ArtifactEvent.EVENT_ARTIFACT_UPLOADED);
+
+        // Tell the registry to dispatch the event to all registered listeners:
+        artifactEventListenerRegistry.dispatchEvent(artifactEvent);
+    }
+
+    private class DummyArtifactEventListener implements ArtifactEventListener
+    {
+
+        @Override
+        public void handle(ArtifactEvent event)
+        {
+            System.out.println("Caught artifact event type " + event.getType() + ".");
+        }
+
+    }
+
+}
+```
+### 架构说明
+#### 布局关系说明
+下图是 Storages, Repositories 和 Layout Providers之间的关系，如果你要扩展其他工具布局需要了解。
+![folib-layout](uploads/a6cfcdb5e53382ca78b97fbf4f1850bc/folib-layout.png)
+
+##### Repository 仓库
+- Hosted 本地模式
+- Proxy 代理模式
+- Group 组合模式
+
+##### Layout 布局
+- Maven
+- NPM
+- NuGet
+- Raw
+- Docker
+- 等其他布局
+
+##### Storage 存储
+- File存储模式 （NFS已经支持）
+- AWS S3 (对象存储，将来需要支持)
+
+所有层都是松散耦合的，实现上并不相互依赖。
+
+#### 布局实现逻辑
+制品artifacts只是普通的文件，我们的实现主要是基于JDK File I/O（Featuring NIO.2）实体。
+![class](uploads/a1d05b19a8b8682b2eb5ef94163a5d01/class.png)
+
+##### 需要实现的类
+- ConcreteLayoutFileSystemProvider
+- ConcreteLayoutFileSystem
+- LayoutProvider
+- ArtifactCoordinates
+  具体参考现有代码，可能不太对。
+
+#### Artifact Coordinates
+##### ArtifactCoordinates.java实现的要求
+- 每个ArtifactCoordinates实现都应该有一个id、 version。
+- 每个id和version对每个存储库都必须是唯一的。
+- 应该有一个传递函数，ArtifactCoordinates反之亦然Path。
+##### 每个布局实现都应该放在模块下的单独模块
+```java
+folib-storage/folib-storage-layout-providers 下
+```
+#### Artifact 接口控制器实现
+ArtifactCoorsinates默认支持一些API。大多数工具都使用 HTTP 进行交互，在 Folib 中，使用Spring MVC实现。BaseArtifactController.java支持默认的 API 方法（下载、上传等），可进行扩展。
+
+#### 特定布局I/O实现和扩展
+要使布局实现真正可用，有时候存在一些特定的 I/O，例如 Streams ( InputStream, OutputStream) 和文件系统相关实体 ( FileSystemProvider, FileSystem, LayoutProvider)。
+##### 需要扩展以下：
+- LayoutFileSystem
+- LayoutFileSystemProvider
+- AbstractLayoutProvider
+##### 另外几乎所有的包括Layout相关的组件都由 Spring 的 IoC 容器管理，以下工厂类需要放在上下文中：
+- LayoutFileSystemProviderFactory
+- LayoutFileSystemFactory
+
+#### 流程时序图
+![flow](uploads/dfff7b25cbbb9668adb4602b8587475e/flow.png)
