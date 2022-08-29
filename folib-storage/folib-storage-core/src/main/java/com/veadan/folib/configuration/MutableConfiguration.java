@@ -154,6 +154,12 @@ public class MutableConfiguration
 
         storages.put(key, storage);
     }
+
+    public void upDateStorage(StorageDto storage)
+    {
+
+
+    }
     
     public void addStorageIfNotExist(StorageDto storage)
     {
@@ -260,5 +266,6 @@ public class MutableConfiguration
                           .add("\n\tsmtpConfiguration", smtpConfiguration)
                           .toString();
     }
+
 
 }

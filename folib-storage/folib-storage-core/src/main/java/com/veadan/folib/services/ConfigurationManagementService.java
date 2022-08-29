@@ -36,7 +36,7 @@ public interface ConfigurationManagementService
                                String repositoryId,
                                MutableProxyConfiguration proxyConfiguration) throws IOException;
 
-    void saveStorage(StorageDto storage) throws IOException;
+    void createStorage(StorageDto storage) throws IOException;
     
     void addStorageIfNotExists(StorageDto storage) throws IOException;
 
@@ -96,4 +96,5 @@ public interface ConfigurationManagementService
 
     void setSmtpSettings(MutableSmtpConfiguration smtpConfiguration) throws IOException;
 
+    void updateStorage(StorageDto storage) throws IOException;
 }

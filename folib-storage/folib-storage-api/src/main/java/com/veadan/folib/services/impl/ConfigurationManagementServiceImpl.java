@@ -183,7 +183,15 @@ public class ConfigurationManagementServiceImpl
     }
 
     @Override
-    public void saveStorage(StorageDto storage) throws IOException
+    public void updateStorage(StorageDto storage) throws IOException
+    {
+        StorageDto storageDto = configuration.getStorage(storage.getId());
+        storageDto.setUsers(storage.getUsers());
+        modifyInLock(configuration -> configuration.addStorage(storageDto));
+    }
+
+    @Override
+    public void createStorage(StorageDto storage) throws IOException
     {
         modifyInLock(configuration -> configuration.addStorage(storage));
     }

@@ -30,10 +30,17 @@ public class StorageManagementServiceImpl implements StorageManagementService
     private RepositoryManagementService repositoryManagementService;
 
     @Override
-    public void saveStorage(StorageDto storage)
+    public void updateStorage(StorageDto storage)
             throws IOException
     {
-        configurationManagementService.saveStorage(storage);
+        configurationManagementService.updateStorage(storage);
+    }
+
+    @Override
+    public void createStorage(StorageDto storage)
+            throws IOException
+    {
+        configurationManagementService.createStorage(storage);
     }
 
     @Override

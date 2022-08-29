@@ -119,7 +119,7 @@ public class StoragesConfigurationController
         {
             StorageDto storage = conversionService.convert(storageForm, StorageDto.class);
             storage.setUsers(storageForm.getUsers());
-            storageManagementService.saveStorage(storage);
+            storageManagementService.createStorage(storage);
 
             return getSuccessfulResponseEntity(SUCCESSFUL_SAVE_STORAGE, accept);
         }
@@ -159,11 +159,9 @@ public class StoragesConfigurationController
         {
             StorageDto storage = conversionService.convert(storageFormToUpdate, StorageDto.class);
             storage.setUsers(storageFormToUpdate.getUsers());
-            storageManagementService.saveStorage(storage);
-
+            storageManagementService.updateStorage(storage);
             return getSuccessfulResponseEntity(SUCCESSFUL_UPDATE_STORAGE, accept);
-        }
-        catch (ConfigurationException | IOException e)
+        } catch (ConfigurationException|IOException e)
         {
             return getExceptionResponseEntity(HttpStatus.INTERNAL_SERVER_ERROR, FAILED_UPDATE_STORAGE_ERROR, e, accept);
         }
