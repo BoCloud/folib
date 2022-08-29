@@ -211,7 +211,6 @@
       <a-form
           :form="delForm"
           :hideRequiredMark="true"
-          @submit.prevent="delRepositoryResponseEntity"
       >
         <a-row :gutter="[24]">
           <a-col :span="24">
@@ -230,9 +229,19 @@
           <a-col :span="8">
             <!--            <a-button key="back" @click="deleteCurrentTask" class="px-30" size="small" type="danger">Delete</a-button>-->
           </a-col>
-          <a-col :span="24" class="text-right">
-            <a-button key="submit" class="px-30" size="small" type="danger" htmlType="submit">删除</a-button>
+        </a-row>
+        <p>说明（请谨慎操作！！！）:</p>
+        <ul class="pl-15 text-muted">
+          <li>删除:只逻辑删除，不删除安装包</li>
+          <li>若强制删除则无法恢复仓库列表</li>
+        </ul>
+        <a-row :span="24">
+          <a-col :span="12" class="text-left">
             <a-button key="back" @click="deleteFormVisible = false" class="px-30 ml-10" size="small">取消</a-button>
+          </a-col>
+          <a-col :span="12" class="text-right">
+            <a-button  @click="delRepositoryResponseEntity" class="px-30 ml-10" type="danger" size="small">删除</a-button>
+            <a-button  @click="delRepositoryResponseEntityForce" class="px-30 ml-10" type="dashed" size="small">强制删除</a-button>
           </a-col>
         </a-row>
       </a-form>
@@ -1276,7 +1285,7 @@ export default {
         if (!err) {
           // console.log(values,this.willDelId)
           if (this.willDelId === values.id) {
-            delRepositoryResponseEntity(this.currentStorage.id, values.id).then(response => {
+            delRepositoryResponseEntity(this.currentStorage.id, values.id,false).then(response => {
               setTimeout(() => {
                 this.$notification.open({
                   class: 'ant-notification-success',
@@ -1298,6 +1307,36 @@ export default {
             }, 1000);
           }
 
+        }
+      });
+    },
+    delRepositoryResponseEntityForce(){
+      this.delForm.validateFields((err, values) => {
+        // console.log(values,this.willDelId)
+        if (!err) {
+          // console.log(values,this.willDelId)
+          if (this.willDelId === values.id) {
+            delRepositoryResponseEntity(this.currentStorage.id, values.id,true).then(response => {
+              setTimeout(() => {
+                this.$notification.open({
+                  class: 'ant-notification-success',
+                  message: '成功',
+                  description: values.id + '已删除',
+                });
+              }, 100)
+            })
+
+            this.deleteFormVisible = false;
+            this.getLibrary(this.currentStorage)
+          } else {
+            setTimeout(() => {
+              this.$notification.open({
+                class: 'ant-notification-warning',
+                message: '填写错误',
+                description: '要删除的内容填写错误',
+              });
+            }, 1000);
+          }
 
         }
       });

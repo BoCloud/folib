@@ -135,3 +135,50 @@ folib-commons/src/main/resources/application.yaml
 
 - [folib-web-forms](http://git.folib.com/folib/folib-server/src/branch/dev/folib-web-forms)
   这个模块包含了所有的web表单所用到的实体对象，有的有用有的没用了。
+
+
+### 事件监听机制
+#### 事件
+事件的扩展基于com.veadan.folib.event.Event 类
+
+#### 事件监听器注册表
+事件侦听器实例必须在相应实现的侦听器注册表中注册，该注册表将用于向它们分派事件。
+
+所有事件侦听器都必须扩展com.veadan.folib.event.AbstractEventListenerRegistry基类。
+
+考虑以下示例，说明如何注册您的侦听器(具体参考实际已有的代码)：
+```java
+public class ArtifactEventHandlingExample
+{
+
+    @Inject
+    ArtifactEventListenerRegistry artifactEventListenerRegistry;
+
+    public void doStuff()
+    {
+        // Create the listener
+        DummyArtifactEventListener listener = new DummyArtifactEventListener();
+
+        // Add the listener to the registry
+        artifactEventListenerRegistry.addListener(listener);
+
+        // Create an event
+        ArtifactEvent artifactEvent = new ArtifactEvent(ArtifactEvent.EVENT_ARTIFACT_UPLOADED);
+
+        // Tell the registry to dispatch the event to all registered listeners:
+        artifactEventListenerRegistry.dispatchEvent(artifactEvent);
+    }
+
+    private class DummyArtifactEventListener implements ArtifactEventListener
+    {
+
+        @Override
+        public void handle(ArtifactEvent event)
+        {
+            System.out.println("Caught artifact event type " + event.getType() + ".");
+        }
+
+    }
+
+}
+```

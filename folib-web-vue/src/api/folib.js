@@ -21,9 +21,9 @@ export function getRepositoryResponseEntity (storageId,repositoryId) {
   })
 }
 
-export function delRepositoryResponseEntity (storageId,repositoryId) {
+export function delRepositoryResponseEntity (storageId,repositoryId,force) {
   return axios({
-    url: '/api/configuration/folib/storages/'+storageId+'/'+repositoryId,
+    url: '/api/configuration/folib/storages/'+storageId+'/'+repositoryId+'?force='+force,
     method: 'delete'
   })
 }
