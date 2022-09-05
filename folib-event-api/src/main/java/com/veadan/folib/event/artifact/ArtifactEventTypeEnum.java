@@ -3,12 +3,11 @@ package com.veadan.folib.event.artifact;
 /**
  * @author Veadan
  */
-public enum ArtifactEventTypeEnum
-{
+public enum ArtifactEventTypeEnum {
 
     /**
      * Occurs when a directory has been created.
-     *
+     * <p>
      * TODO: Not yet implemented.
      */
     EVENT_ARTIFACT_DIRECTORY_CREATED(1),
@@ -101,20 +100,37 @@ public enum ArtifactEventTypeEnum
     /**
      * Occurs when an artifact file has been physically stored.
      */
-    EVENT_ARTIFACT_FILE_STORED(22);
+    EVENT_ARTIFACT_FILE_STORED(22),
+    /**
+     * Occurs when an artifact directory has been deleted.
+     */
+    EVENT_ARTIFACT_DIRECTORY_PATH_DELETED(23),
+    ;
 
 
     private int type;
 
 
-    ArtifactEventTypeEnum(int type)
-    {
+    ArtifactEventTypeEnum(int type) {
         this.type = type;
     }
 
-    public int getType()
-    {
+    public int getType() {
         return type;
     }
 
+    /**
+     * 根据类型查询枚举类型
+     *
+     * @param type 类型
+     * @return 枚举类型
+     */
+    public static ArtifactEventTypeEnum queryArtifactEventTypeEnumByType(int type) {
+        for (ArtifactEventTypeEnum artifactEventTypeEnum : ArtifactEventTypeEnum.values()) {
+            if (artifactEventTypeEnum.getType() == type) {
+                return artifactEventTypeEnum;
+            }
+        }
+        return null;
+    }
 }

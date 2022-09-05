@@ -125,6 +125,16 @@ public class ArtifactEventListenerRegistry extends AbstractEventListenerRegistry
         dispatchEvent(event);
     }
 
+    public void dispatchArtifactDirectoryPathDeletedEvent(Path path)
+    {
+        ArtifactEvent event = new ArtifactEvent(path,
+                ArtifactEventTypeEnum.EVENT_ARTIFACT_DIRECTORY_PATH_DELETED.getType());
+
+        logger.debug("Dispatching ArtifactEventTypeEnum.EVENT_ARTIFACT_DIRECTORY_PATH_DELETED event for {}...", path);
+
+        dispatchEvent(event);
+    }
+
     public void dispatchArtifactArchivingEvent(Path path)
     {
         ArtifactEvent event = new ArtifactEvent(path,
