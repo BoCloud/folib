@@ -30,5 +30,13 @@ public interface FolibScannerMapper extends CommonMapper<FolibScanner> {
     List<ScanSumByDate> weekDayCount();
 
     ScanSumByDate getCountByDayOne(@Param("dateNum") int dateNum);
+
+    /**
+     * 根据制品目录进行批量删除
+     * @param storage 存储空间
+     * @param repository 仓库名称
+     * @param path 目录
+     */
+    void deleteByPathLike(@Param("storage") String storage, @Param("repository") String repository, @Param("path") String path);
 	
 }
