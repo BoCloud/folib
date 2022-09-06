@@ -65,6 +65,7 @@ public class BootProgressBeanPostProcessor
             { "maven2LayoutProvider", "Loading Maven layout provider.." },
             { "nugetLayoutProvider", "Loading Nuget layout provider.." },
             { "npmLayoutProvider", "Loading NPM layout provider.." },
+            { "rpmLayoutProvider", "Loading Rpm layout provider.." },
             { "rawLayoutProvider", "Loading Raw layout provider.." },
             { "transactionManager", "Loading transaction manager..." },
             { WebSecurityConfig.class.getName(), "Loading security configuration..." },
