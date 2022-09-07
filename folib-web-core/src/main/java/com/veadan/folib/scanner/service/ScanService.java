@@ -2,6 +2,7 @@ package com.veadan.folib.scanner.service;
 
 
 import cn.hutool.core.io.FileUtil;
+import cn.hutool.core.io.IoUtil;
 import com.alibaba.fastjson.JSONArray;
 import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.scanner.biz.FolibScannerBiz;
@@ -13,6 +14,7 @@ import com.veadan.folib.scanner.entity.FolibScanner;
 import com.veadan.folib.scanner.entity.ScanRules;
 import com.veadan.folib.scanner.mapper.FolibScannerMapper;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.owasp.dependencycheck.data.update.exception.UpdateException;
 import org.owasp.dependencycheck.dependency.Dependency;
 import org.owasp.dependencycheck.utils.Settings;
@@ -22,6 +24,7 @@ import org.springframework.stereotype.Service;
 
 import java.io.File;
 import java.io.FileFilter;
+import java.io.FileInputStream;
 import java.nio.file.Path;
 import java.nio.file.WatchEvent;
 import java.util.Date;
@@ -169,7 +172,7 @@ public class ScanService {
         return false;
     }
 
-    public void checkScan(RepositoryPath repositoryPath, String type) {
+    public void checkScan(RepositoryPath repositoryPath, String type, String filePath) {
         String path = "storages" + repositoryPath.toUri().getPath();
         String storagesName = repositoryPath.getStorageId();
         String repository = repositoryPath.getRepositoryId();
@@ -179,31 +182,24 @@ public class ScanService {
             onScan = scanRules.isOnScan();
         }
         log.info("=====>>>>>存储空间：{}，仓库：{}，扫描开启状态 ：{}", storagesName, repository, onScan);
-        FolibScanner folibScanner = folibScannerBiz.selectById(path);
+        if (StringUtils.isBlank(filePath)) {
+            filePath = repositoryPath.toAbsolutePath().toString();
+        }
+        FolibScanner folibScanner = buildFolibScanner(filePath);
         if (ScanConstans.ADD.equals(type)) {
-            folibScanner = new FolibScanner();
-            String fileType = path.substring(path.lastIndexOf(".") + 1);
-            folibScanner.setPath(path)
-                    .setFileType(fileType).setRepository(repository)
-                    .setStorage(storagesName);
-            folibScanner.setOnScan(onScan);
-            saveScanningData(folibScanner);
+            if (Objects.nonNull(folibScanner)) {
+                saveScanningData(folibScanner);
+            }
         } else if (ScanConstans.DEL.equals(type)) {
-            deleteScanningData(folibScanner);
+            if (Objects.nonNull(folibScanner)) {
+                deleteScanningData(folibScanner);
+            }
         } else if (ScanConstans.DEL_DIRECTORY.equals(type)) {
             deleteScanningDataLike(storagesName, repository, path);
         } else {
-            if (Objects.isNull(folibScanner)) {
-                folibScanner = new FolibScanner();
-                String fileType = path.substring(path.lastIndexOf(".") + 1);
-                folibScanner.setPath(path)
-                        .setFileType(fileType).setRepository(repository)
-                        .setStorage(storagesName);
-                folibScanner.setOnScan(onScan);
-                saveScanningData(folibScanner);
-                return;
+            if (Objects.nonNull(folibScanner)) {
+                updateScanningData(folibScanner);
             }
-            updateScanningData(folibScanner);
         }
     }
 
@@ -217,11 +213,25 @@ public class ScanService {
                     storagesIndex = i;
                 }
             }
+            //获取存储空间名称和仓库名称
             String storagesName = pathArray[storagesIndex + 1];
             String repository = pathArray[storagesIndex + 2];
-            //获取存储空间名称和仓库名称
-
-            String type = FileUtil.getType(new File(path));
+            File file = new File(path);
+            String type = "";
+            if (file.exists()) {
+                //先取后缀
+                type = FileUtil.getSuffix(file);
+                if (StringUtils.isBlank(type)) {
+                    //后缀无法获取，使用魔法值获取类型
+                    type = FileUtil.getType(file);
+                }
+                try {
+                    String hex = IoUtil.readHex28Lower(new FileInputStream(file));
+                    log.info("=====>>>>> 路径：{}，类型：{}，hex：{}", file.getName(), type, hex);
+                } catch (Exception ex) {
+                    ex.printStackTrace();
+                }
+            }
             String shortPath = path.substring(path.lastIndexOf("storages/"));
             FolibScanner folibScanner = new FolibScanner();
 
@@ -229,7 +239,11 @@ public class ScanService {
                     .setFileType(type).setRepository(repository)
                     .setStorage(storagesName);
             ScanRules scanRules = scanRulesBiz.selectById(storagesName + "-" + repository);
-            folibScanner.setOnScan(scanRules.isOnScan());
+            boolean flag = false;
+            if (Objects.nonNull(scanRules)) {
+                flag = scanRules.isOnScan();
+            }
+            folibScanner.setOnScan(flag);
             return folibScanner;
         } else {
             return null;

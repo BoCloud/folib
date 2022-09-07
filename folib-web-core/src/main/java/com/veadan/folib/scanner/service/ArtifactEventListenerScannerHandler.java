@@ -1,5 +1,8 @@
 package com.veadan.folib.scanner.service;
 
+import cn.hutool.core.io.FileTypeUtil;
+import cn.hutool.core.io.FileUtil;
+import cn.hutool.core.io.IoUtil;
 import com.veadan.folib.artifact.archive.JarArchiveListingFunction;
 import com.veadan.folib.event.AsyncEventListener;
 import com.veadan.folib.event.artifact.ArtifactEvent;
@@ -9,10 +12,19 @@ import com.veadan.folib.providers.layout.*;
 import com.veadan.folib.scanner.common.constant.ScanConstans;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
+import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
+import org.apache.commons.compress.compressors.gzip.GzipCompressorInputStream;
+import org.apache.commons.compress.utils.IOUtils;
+import org.apache.commons.compress.utils.Lists;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
@@ -36,14 +48,55 @@ public class ArtifactEventListenerScannerHandler {
         if (!flag) {
             return;
         }
-        if (ArtifactEventTypeEnum.EVENT_ARTIFACT_PATH_DELETED.getType() == source) {
-            scanService.checkScan(repositoryPath, ScanConstans.DEL);
-        } else if (ArtifactEventTypeEnum.EVENT_ARTIFACT_FILE_STORED.getType() == source) {
-            scanService.checkScan(repositoryPath, ScanConstans.ADD);
-        } else if (ArtifactEventTypeEnum.EVENT_ARTIFACT_DIRECTORY_PATH_DELETED.getType() == source) {
-            scanService.checkScan(repositoryPath, ScanConstans.DEL_DIRECTORY);
+        if (repositoryPath.getFileSystem() instanceof DockerFileSystem) {
+            //docker布局
+            boolean isReadFile = ArtifactEventTypeEnum.EVENT_ARTIFACT_PATH_DELETED.getType() != source && ArtifactEventTypeEnum.EVENT_ARTIFACT_DIRECTORY_PATH_DELETED.getType() != source;
+            if (isReadFile) {
+                File file = new File(repositoryPath.toAbsolutePath().toString());
+                //增加魔数类型
+                FileTypeUtil.putFileType("1f8b08000000000000ff", "gz");
+                try {
+                    String hex = IoUtil.readHex28Lower(new FileInputStream(file));
+                    log.info("=====>>>>> 路径：{}，hex：{}", file.getName(), hex);
+                } catch (Exception ex) {
+                    ex.printStackTrace();
+                }
+                String type = FileTypeUtil.getType(file);
+                String gz = "gz";
+                if (gz.equals(type)) {
+                    log.info("=====>>>>> 路径：{}，类型：{}", file.getName(), type);
+                    List<String> filePathList = readTarFile(file);
+                    if (CollectionUtils.isNotEmpty(filePathList)) {
+                        filePathList.forEach(filePath -> {
+                            handlerScan(repositoryPath, source, filePath);
+                        });
+                    }
+                }
+            } else {
+                handlerScan(repositoryPath, source, "");
+            }
         } else {
-            scanService.checkScan(repositoryPath, null);
+            //非docker布局
+            handlerScan(repositoryPath, source, "");
+        }
+    }
+
+    /**
+     * 处理扫描逻辑
+     *
+     * @param repositoryPath 制品信息
+     * @param source         事件类型
+     * @param filePath       文件路径
+     */
+    private void handlerScan(RepositoryPath repositoryPath, int source, String filePath) {
+        if (ArtifactEventTypeEnum.EVENT_ARTIFACT_PATH_DELETED.getType() == source) {
+            scanService.checkScan(repositoryPath, ScanConstans.DEL, filePath);
+        } else if (ArtifactEventTypeEnum.EVENT_ARTIFACT_FILE_STORED.getType() == source) {
+            scanService.checkScan(repositoryPath, ScanConstans.ADD, filePath);
+        } else if (ArtifactEventTypeEnum.EVENT_ARTIFACT_DIRECTORY_PATH_DELETED.getType() == source) {
+            scanService.checkScan(repositoryPath, ScanConstans.DEL_DIRECTORY, filePath);
+        } else {
+            scanService.checkScan(repositoryPath, null, filePath);
         }
     }
 
@@ -95,7 +148,12 @@ public class ArtifactEventListenerScannerHandler {
         boolean flag = false;
         if (repositoryPath.getFileSystem() instanceof DockerFileSystem) {
             log.info("=====>>>>> docker布局");
-            //docker布局 TODO
+            String blobs = "blobs";
+            return false;
+            //docker布局
+//            if (repositoryPath.toAbsolutePath().toString().contains(blobs)) {
+//                return true;
+//            }
         } else if (repositoryPath.getFileSystem() instanceof MavenFileSystem) {
             log.info("=====>>>>> maven布局");
             //maven布局
@@ -107,7 +165,9 @@ public class ArtifactEventListenerScannerHandler {
             flag = endsWith(repositoryPath.getFileName().toString(), suffixList);
         } else if (repositoryPath.getFileSystem() instanceof NugetFileSystem) {
             log.info("=====>>>>> nuget布局");
-            //nuget布局 TODO
+            //nuget布局
+            List<String> suffixList = Arrays.asList(".nupkg", ".nuspec", ".config");
+            flag = endsWith(repositoryPath.getFileName().toString(), suffixList);
         } else if (repositoryPath.getFileSystem() instanceof PypiFileSystem) {
             log.info("=====>>>>> pypi布局");
             //pypi布局
@@ -140,6 +200,65 @@ public class ArtifactEventListenerScannerHandler {
             }
         }
         return flag;
+    }
+
+    /**
+     * 读取tar.gz 文件
+     *
+     * @param tarFile 文件信息
+     * @return 文件路径列表
+     */
+    public static List<String> readTarFile(File tarFile) {
+        FileInputStream fileInputStream = null;
+        GzipCompressorInputStream gzipCompressorInputStream = null;
+        TarArchiveInputStream tarArchiveInputStream = null;
+        List<String> pathList = Lists.newArrayList();
+        try {
+            fileInputStream = new FileInputStream(tarFile);
+            gzipCompressorInputStream = new GzipCompressorInputStream(fileInputStream);
+            tarArchiveInputStream = new TarArchiveInputStream(gzipCompressorInputStream);
+            TarArchiveEntry entry = null;
+            List<String> list = Arrays.asList("jar", "war", "ear", "zip", "json", "js", "tgz", "nupkg", "nuspec", "config", "whl", "egg", "zip", "gz");
+            String extractPath = tarFile.getParent() + "/temp";
+            File extractFolder = new File(extractPath);
+            while ((entry = tarArchiveInputStream.getNextTarEntry()) != null) {
+                if (entry.isDirectory()) {
+                    break;
+                }
+                if (entry.getSize() > 0) {
+                    String type = FileUtil.getSuffix(entry.getName());
+                    if (list.contains(type)) {
+                        File curFile = new File(extractFolder, entry.getName());
+                        File parent = curFile.getParentFile();
+                        if (!parent.exists()) {
+                            parent.mkdirs();
+                        }
+                        FileOutputStream fileOutputStream = new FileOutputStream(curFile);
+                        IOUtils.copy(tarArchiveInputStream, fileOutputStream);
+                        IOUtils.closeQuietly(fileOutputStream);
+                        pathList.add(curFile.getPath());
+                        log.info("=====>>>>> 文件名称：{}，文件类型：{}，生成文件路径：{}", entry.getName(), type, curFile.getPath());
+                    }
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        } finally {
+            try {
+                if (Objects.nonNull(fileInputStream)) {
+                    fileInputStream.close();
+                }
+                if (Objects.nonNull(gzipCompressorInputStream)) {
+                    gzipCompressorInputStream.close();
+                }
+                if (Objects.nonNull(tarArchiveInputStream)) {
+                    tarArchiveInputStream.close();
+                }
+            } catch (IOException ex) {
+                ex.printStackTrace();
+            }
+        }
+        return pathList;
     }
 
 }
