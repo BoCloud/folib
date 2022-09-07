@@ -133,5 +133,15 @@
         WHERE a.on_scan = 1 AND DATE_SUB(CURDATE(), INTERVAL #{dateNum} DAY)&lt;= date(a.scan_time)
     </select>
 
+    <delete id="deleteByPathLike">
+        DELETE
+        FROM
+            folib_scanner
+        WHERE
+            `storage` = #{storage}
+            AND repository = #{repository}
+            AND path LIKE CONCAT(#{path}, '%')
+    </delete>
+
 
 </mapper>

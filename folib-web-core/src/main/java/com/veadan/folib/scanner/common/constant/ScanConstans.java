@@ -6,8 +6,9 @@ public class ScanConstans {
     public static final String SCANED = "SCANED";  //扫描完成
     public static final String SCANFAILED = "SCANFAILED"; //扫描失败
 
-    public static final String ADD="ADD";
-    public static final String UPDATE="UPDATE";
-    public static final String DEL="DEL";
-    public static final String OVERFLOW="OVERFLOW";
+    public static final String ADD = "ADD";
+    public static final String UPDATE = "UPDATE";
+    public static final String DEL = "DEL";
+    public static final String OVERFLOW = "OVERFLOW";
+    public static final String DEL_DIRECTORY = "DEL_DIRECTORY";
 }
