@@ -753,6 +753,46 @@
           ></prism-editor>
         </a-timeline-item>
       </a-timeline>
+      <a-timeline v-if="repositoryType==='rpm'">
+        <a-timeline-item color="primary">
+          RPM配置
+          <small>centOS yum源配置</small>
+          <p>
+            在/etc/yum.repos.d/中添加一个local_test.repo文件,镜像服务器为阿里云,操作如下:
+          </p>
+
+          <prism-editor
+              class="my-editor height-300"
+              :value="
+        '[local_test]'+ '\n'+
+        'name=CentOS-$releasever - Base - mirrors.aliyun.com'+ '\n'+
+        'enabled=1'+ '\n'+
+        'baseurl=http://XXXXXX:38080/storages/zhangsan/lisi-rpm/ #folib仓地址'+ '\n'+
+        'gpgcheck=0'"
+              :highlight="highlighterHandle"
+              :line-numbers="false"
+              :readonly="true"
+          ></prism-editor>
+        </a-timeline-item>
+        <a-timeline-item color="primary">
+          命令操作
+          <small>yum 使用命令</small>
+          <p>
+            仅供参考，详情请查相关文档
+          </p>
+
+          <prism-editor
+              class="my-editor height-300"
+              :value="
+    'yum clean all #清除YUM缓存'+ '\n'+
+    'yum repolist #显示所有仓库'+ '\n'+
+    'yum install --downloadonly --downloaddir=/folib_test/mysql mysql #拉mysql 相关rpm包到/folib_test/mysql 目录下'"
+              :highlight="highlighterHandle"
+              :line-numbers="false"
+              :readonly="true"
+          ></prism-editor>
+        </a-timeline-item>
+      </a-timeline>
       <a-timeline v-if="repositoryType==='yarn'">
         <a-timeline-item color="primary">
           Yarn配置
