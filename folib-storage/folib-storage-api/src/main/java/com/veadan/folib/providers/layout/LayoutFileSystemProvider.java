@@ -262,6 +262,8 @@ public abstract class LayoutFileSystemProvider extends StorageFileSystemProvider
         if (!directory)
         {
             artifactEventListenerRegistry.dispatchArtifactPathDeletedEvent(path);
+        }else{
+            artifactEventListenerRegistry.dispatchArtifactDirectoryPathDeletedEvent(path);
         }
 
         logger.debug("Deleted [{}]", path);
