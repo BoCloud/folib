@@ -767,7 +767,7 @@
         '[local_test]'+ '\n'+
         'name=CentOS-$releasever - Base - mirrors.aliyun.com'+ '\n'+
         'enabled=1'+ '\n'+
-        'baseurl=http://XXXXXX:38080/storages/zhangsan/lisi-rpm/ #folib仓地址'+ '\n'+
+        'baseurl='+baseUrl +'storages/'+folibRepository.storageId +'/'+folibRepository.id+'/'+' #folib仓地址'+ '\n'+
         'gpgcheck=0'"
               :highlight="highlighterHandle"
               :line-numbers="false"
