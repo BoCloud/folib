@@ -3,6 +3,7 @@ package com.veadan.folib.scanner.service;
 import cn.hutool.core.io.FileTypeUtil;
 import cn.hutool.core.io.FileUtil;
 import cn.hutool.core.io.IoUtil;
+import com.alibaba.fastjson.JSON;
 import com.veadan.folib.artifact.archive.JarArchiveListingFunction;
 import com.veadan.folib.event.AsyncEventListener;
 import com.veadan.folib.event.artifact.ArtifactEvent;
@@ -10,6 +11,8 @@ import com.veadan.folib.event.artifact.ArtifactEventTypeEnum;
 import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.providers.layout.*;
 import com.veadan.folib.scanner.common.constant.ScanConstans;
+import com.veadan.folib.schema2.ImageManifest;
+import com.veadan.folib.schema2.LayerManifest;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
@@ -25,9 +28,11 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 /**
  * @author leipenghui
@@ -41,7 +46,7 @@ public class ArtifactEventListenerScannerHandler {
     private ScanService scanService;
 
     @AsyncEventListener
-    protected void handle(final ArtifactEvent<RepositoryPath> event) {
+    protected void handle(final ArtifactEvent<RepositoryPath> event) throws IOException {
         RepositoryPath repositoryPath = event.getPath();
         int source = (int) event.getSource();
         boolean flag = check(event);
@@ -52,24 +57,21 @@ public class ArtifactEventListenerScannerHandler {
             //docker布局
             boolean isReadFile = ArtifactEventTypeEnum.EVENT_ARTIFACT_PATH_DELETED.getType() != source && ArtifactEventTypeEnum.EVENT_ARTIFACT_DIRECTORY_PATH_DELETED.getType() != source;
             if (isReadFile) {
-                File file = new File(repositoryPath.toAbsolutePath().toString());
-                //增加魔数类型
-                FileTypeUtil.putFileType("1f8b08000000000000ff", "gz");
-                try {
-                    String hex = IoUtil.readHex28Lower(new FileInputStream(file));
-                    log.info("=====>>>>> 路径：{}，hex：{}", file.getName(), hex);
-                } catch (Exception ex) {
-                    ex.printStackTrace();
-                }
-                String type = FileTypeUtil.getType(file);
-                String gz = "gz";
-                if (gz.equals(type)) {
-                    log.info("=====>>>>> 路径：{}，类型：{}", file.getName(), type);
-                    List<String> filePathList = readTarFile(file);
-                    if (CollectionUtils.isNotEmpty(filePathList)) {
-                        filePathList.forEach(filePath -> {
-                            handlerScan(repositoryPath, source, filePath);
-                        });
+                String path = repositoryPath.toAbsolutePath().toString();
+                File file = FileUtil.file(path);
+                //版本目录
+                File parentFile = file.getParentFile();
+                //获取图层中的digest列表
+                String manifestString = FileUtil.readString(path, StandardCharsets.UTF_8);
+                ImageManifest manifest = JSON.parseObject(manifestString, ImageManifest.class);
+                List<String> digestList = manifest.getLayers().stream().map(LayerManifest::getDigest).collect(Collectors.toList());
+                //存放解压文件的目录路径
+                String tempPath = parentFile.getPath() + File.separator + "temp";
+                if (CollectionUtils.isNotEmpty(digestList)) {
+                    String blobsPath = "";
+                    for (String digest : digestList) {
+                        blobsPath = parentFile.getParent() + File.separator + "blobs" + File.separator + digest;
+                        handlerDockerBlobFile(repositoryPath, source, blobsPath, tempPath);
                     }
                 }
             } else {
@@ -78,6 +80,37 @@ public class ArtifactEventListenerScannerHandler {
         } else {
             //非docker布局
             handlerScan(repositoryPath, source, "");
+        }
+    }
+
+    /**
+     * 处理docker文件
+     *
+     * @param repositoryPath 制品信息
+     * @param source         事件类型
+     * @param path           文件路径
+     * @param tempPath       存放解压文件的目录路径
+     */
+    private void handlerDockerBlobFile(RepositoryPath repositoryPath, int source, String path, String tempPath) {
+        File file = new File(path);
+        //增加魔数类型
+        FileTypeUtil.putFileType("1f8b08000000000000ff", "gz");
+        try {
+            String hex = IoUtil.readHex28Lower(new FileInputStream(file));
+            log.info("=====>>>>> 路径：{}，hex：{}", file.getName(), hex);
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        }
+        String type = FileTypeUtil.getType(file);
+        String gz = "gz";
+        if (gz.equals(type)) {
+            log.info("=====>>>>> 路径：{}，类型：{}", file.getName(), type);
+            List<String> filePathList = readTarFile(file, tempPath);
+            if (CollectionUtils.isNotEmpty(filePathList)) {
+                filePathList.forEach(filePath -> {
+                    handlerScan(repositoryPath, source, filePath);
+                });
+            }
         }
     }
 
@@ -149,11 +182,12 @@ public class ArtifactEventListenerScannerHandler {
         if (repositoryPath.getFileSystem() instanceof DockerFileSystem) {
             log.info("=====>>>>> docker布局");
             String blobs = "blobs";
-            return false;
+            String manifest = "manifest";
+            String path = repositoryPath.toAbsolutePath().toString();
             //docker布局
-//            if (repositoryPath.toAbsolutePath().toString().contains(blobs)) {
-//                return true;
-//            }
+            if (!path.contains(blobs) && !path.contains(manifest) && !path.endsWith(".sha256")) {
+                return true;
+            }
         } else if (repositoryPath.getFileSystem() instanceof MavenFileSystem) {
             log.info("=====>>>>> maven布局");
             //maven布局
@@ -205,10 +239,11 @@ public class ArtifactEventListenerScannerHandler {
     /**
      * 读取tar.gz 文件
      *
-     * @param tarFile 文件信息
+     * @param tarFile  文件信息
+     * @param tempPath 存放解压文件的目录路径
      * @return 文件路径列表
      */
-    public static List<String> readTarFile(File tarFile) {
+    public static List<String> readTarFile(File tarFile, String tempPath) {
         FileInputStream fileInputStream = null;
         GzipCompressorInputStream gzipCompressorInputStream = null;
         TarArchiveInputStream tarArchiveInputStream = null;
@@ -219,8 +254,7 @@ public class ArtifactEventListenerScannerHandler {
             tarArchiveInputStream = new TarArchiveInputStream(gzipCompressorInputStream);
             TarArchiveEntry entry = null;
             List<String> list = Arrays.asList("jar", "war", "ear", "zip", "json", "js", "tgz", "nupkg", "nuspec", "config", "whl", "egg", "zip", "gz");
-            String extractPath = tarFile.getParent() + "/temp";
-            File extractFolder = new File(extractPath);
+            File extractFolder = new File(tempPath);
             while ((entry = tarArchiveInputStream.getNextTarEntry()) != null) {
                 if (entry.isDirectory()) {
                     break;

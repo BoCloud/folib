@@ -1,14 +1,14 @@
 package com.veadan.folib.scanner.service;
 
-import cn.hutool.core.io.FileUtil;
-import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.StringUtils;
-import org.owasp.dependencycheck.exception.ReportException;
+import com.alibaba.fastjson.JSONArray;
+import com.alibaba.fastjson.JSONObject;
+import org.apache.commons.compress.utils.Lists;
 import org.owasp.dependencycheck.utils.Settings;
 
 import java.io.File;
+import java.util.List;
+import java.util.stream.Collectors;
 
-@Slf4j
 public class CheckDD {
     private static final File REPORT_DIR = new File("target/test-scan-agent/report/");
 
@@ -29,7 +29,19 @@ public class CheckDD {
 //        } catch (ReportException e) {
 //            e.printStackTrace();
 //        }
+//        String path = "/Users/leipenghui/project/java/boyun/Folib-Server/folib-vault/storages/folib-common/test-docker/allinone/1.0/sha256:553dee01492b434a54c3c73fb130147fb942551e2f5dfd6055021a2a7becd161";
+//        File file = FileUtil.file(path);
+//        String manifestString = FileUtil.readString(path, StandardCharsets.UTF_8);
+//        System.out.println(manifestString);
+//        ImageManifest manifest = JSON.parseObject(manifestString, ImageManifest.class);
+//        List<String> digestList = manifest.getLayers().stream().map(LayerManifest::getDigest).collect(Collectors.toList());
+//        File parentFile = file.getParentFile();
+//        System.out.println(parentFile.getPath() + File.separator + "temp");
+//        for(String digest : digestList){
+//            System.out.println(parentFile.getParent() + File.separator + "blobs" + File.separator + digest);
+//        }
     }
+
 
     private static Settings getSettings() {
         Settings settings = new Settings();

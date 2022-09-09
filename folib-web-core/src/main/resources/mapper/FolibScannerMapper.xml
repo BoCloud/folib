@@ -22,6 +22,21 @@
         <result property="cveUpdateTime" column="cve_update_time"/>
     </resultMap>
 
+    <sql id="storageCommon">
+        <if test="baseQuery.storageIdList!= null and baseQuery.storageIdList.size() > 0">
+            AND a.storage IN
+            <foreach collection="baseQuery.storageIdList" item="storageId" open="(" close=")" separator=",">
+                #{storageId}
+            </foreach>
+        </if>
+        <if test="baseQuery.notInStorageIdList!= null and baseQuery.notInStorageIdList.size() > 0">
+            AND a.storage NOT IN
+            <foreach collection="baseQuery.notInStorageIdList" item="storageId" open="(" close=")" separator=",">
+                #{storageId}
+            </foreach>
+        </if>
+    </sql>
+
     <update id="updateByStorage">
         update folib_scanner
         set on_scan=#{enableScan}
@@ -48,24 +63,30 @@
                IFNULL(SUM(a.vulnerabilites_count), 0) AS vulnerabilitesSum,
                IFNULL(SUM(a.suppressed_count), 0)     AS suppressedSum
         FROM folib_scanner a
-        WHERE a.on_scan = 1
+        <where>
+            a.on_scan = 1
+            <include refid="storageCommon"/>
+        </where>
     </select>
 
     <select id="getScannerSumDifVoList" resultType="com.veadan.folib.scanner.entity.ScannerSumDifVo">
         SELECT DISTINCT r.`storage`,
-                        r.`repository`,
-                        r.layout,
-                        IFNULL(COUNT(f.path), 0)               AS countFolib,
-                        IFNULL(SUM(f.dependency_count), 0)     AS denpendencySum,
-                        IFNULL(SUM(f.vulnerable_count), 0)     AS vulnerableSum,
-                        IFNULL(SUM(f.vulnerabilites_count), 0) AS vulnerabilitesSum,
-                        IFNULL(SUM(f.suppressed_count), 0)     AS suppressedSum
+            r.`repository`,
+            r.layout,
+            IFNULL(COUNT(a.path), 0)               AS countFolib,
+            IFNULL(SUM(a.dependency_count), 0)     AS denpendencySum,
+            IFNULL(SUM(a.vulnerable_count), 0)     AS vulnerableSum,
+            IFNULL(SUM(a.vulnerabilites_count), 0) AS vulnerabilitesSum,
+            IFNULL(SUM(a.suppressed_count), 0)     AS suppressedSum
         FROM scan_rules r
-                 LEFT JOIN folib_scanner AS f ON r.`storage` = f.`storage`
-            AND r.repository = f.repository
-        WHERE r.on_scan = 1
+        LEFT JOIN folib_scanner AS a ON r.`storage` = a.`storage`
+        AND r.repository = a.repository
+        <where>
+            r.on_scan = 1
+            <include refid="storageCommon"/>
+        </where>
         GROUP BY repository,
-                 `storage`
+        `storage`
     </select>
 
 
@@ -104,9 +125,11 @@
         IFNULL( SUM( a.suppressed_count ), 0 ) AS suppressedSum
         FROM
         folib_scanner a
-        WHERE
-        a.on_scan = 1
-        AND DATE_SUB( CURDATE(), INTERVAL 7 DAY ) &lt;= date( a.scan_time )
+        <where>
+            a.on_scan = 1
+            <include refid="storageCommon"/>
+            AND DATE_SUB( CURDATE(), INTERVAL 7 DAY ) &lt;= date( a.scan_time )
+        </where>
         GROUP BY
         date( a.scan_time )
         ) T ON T.date = d.date
@@ -120,7 +143,11 @@
         IFNULL( SUM(a.vulnerabilites_count),0) AS vulnerabilitesSum,
         IFNULL( SUM(a.suppressed_count) ,0) AS suppressedSum
         FROM folib_scanner a
-        WHERE a.on_scan = 1 AND DATE_SUB(CURDATE(), INTERVAL 30 DAY)&lt;= date(a.scan_time) GROUP BY date(a.scan_time)
+        <where>
+            a.on_scan = 1
+            <include refid="storageCommon"/>
+            AND DATE_SUB(CURDATE(), INTERVAL 30 DAY)&lt;= date(a.scan_time) GROUP BY date(a.scan_time)
+        </where>
     </select>
 
     <select id="getCountByDayOne" resultType="com.veadan.folib.scanner.entity.ScanSumByDate">
@@ -130,7 +157,63 @@
         IFNULL( SUM(a.vulnerabilites_count),0) AS vulnerabilitesSum,
         IFNULL( SUM(a.suppressed_count) ,0) AS suppressedSum
         FROM folib_scanner a
-        WHERE a.on_scan = 1 AND DATE_SUB(CURDATE(), INTERVAL #{dateNum} DAY)&lt;= date(a.scan_time)
+        <where>
+            a.on_scan = 1
+            <include refid="storageCommon"/>
+            AND DATE_SUB(CURDATE(), INTERVAL #{dateNum} DAY)&lt;= date(a.scan_time)
+        </where>
+    </select>
+    <select id="selectFolibScannerCount" resultType="java.lang.Integer">
+        SELECT count(a.path) FROM folib_scanner a
+        <where>
+            <include refid="storageCommon"/>
+            <if test="folibScanner.onScan != null">
+                AND a.on_scan = #{folibScanner.onScan}
+            </if>
+            <if test="folibScanner.scanStatus != null">
+                AND a.scan_status = #{folibScanner.scanStatus}
+            </if>
+        </where>
+    </select>
+    <select id="selectDockerList" resultType="com.veadan.folib.scanner.entity.FolibScannerDockerTableVO">
+        SELECT
+            a.`repository`,
+            a.`storage`,
+            MAX(a.`scan_time`) scanTime,
+            IFNULL(SUM(a.`dependency_count`),0) dependencyCount,
+            IFNULL(SUM(a.`vulnerable_count`),0) vulnerableCount,
+            IFNULL(SUM(a.`vulnerabilites_count`),0) vulnerabilitesCount,
+            IFNULL(SUM(a.`suppressed_count`),0) suppressedCount,
+            MAX(a.`cve_checked_time`) cveCheckedTime,
+            MAX(a.`cve_update_time`) cveUpdateTime,
+            SUBSTRING_INDEX( a.path, '/temp', 1 ) versionPath,
+            SUBSTRING_INDEX( SUBSTRING_INDEX( SUBSTRING_INDEX( path, repository,- 1 ), '/temp', 1 ), '/',- 1 ) version
+        FROM
+            folib_scanner a
+        <where>
+            a.storage = #{storage}
+            AND a.repository = #{repository}
+        </where>
+        GROUP BY versionPath
+    </select>
+    <select id="selectDockerChildList" resultType="com.veadan.folib.scanner.entity.FolibScanner">
+        SELECT
+            a.`repository`,
+            a.`storage`,
+            a.`scan_time` scanTime,
+            a.`dependency_count` dependencyCount,
+            a.`vulnerable_count` vulnerableCount,
+            a.`vulnerabilites_count` vulnerabilitesCount,
+            a.`suppressed_count` suppressedCount,
+            a.`cve_checked_time` cveCheckedTime,
+            a.`cve_update_time` cveUpdateTime,
+            a.path
+        FROM
+            folib_scanner a
+        WHERE
+            a.storage = #{storage}
+            AND a.repository = #{repository}
+            AND SUBSTRING_INDEX( a.path, '/temp', 1 )  = #{version}
     </select>
 
     <delete id="deleteByPathLike">

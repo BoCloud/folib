@@ -1,5 +1,6 @@
 package com.veadan.folib.scanner.entity;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import lombok.Data;
@@ -64,6 +65,7 @@ private static final long serialVersionUID = 1L;
 
 	@ApiModelProperty("扫描时间")
 	@Column(name = "scan_time")
+	@JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
 	private Date scanTime;
 	
 		//安全级别
