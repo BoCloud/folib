@@ -33,14 +33,13 @@ import org.neo4j.ogm.annotation.NodeEntity;
  * @author Ilya Shatalov <ilya@alov.me>
  */
 @NodeEntity(Vertices.RPM_ARTIFACT_COORDINATES)
-@SuppressWarnings("serial")
-@XmlRootElement(name = "PypiArtifactCoordinates")
+@XmlRootElement(name = "RpmArtifactCoordinates")
 @XmlAccessorType(XmlAccessType.NONE)
 @ArtifactCoordinatesLayout(name = RpmArtifactCoordinates.LAYOUT_NAME, alias = RpmArtifactCoordinates.LAYOUT_ALIAS)
 public class RpmArtifactCoordinates
         extends LayoutArtifactCoordinatesEntity<RpmArtifactCoordinates, SemanticVersion>
 {
-    public static final String LAYOUT_NAME = "RPM";
+    public static final String LAYOUT_NAME = "rpm";
 
     public static final String LAYOUT_ALIAS = "rpm";
 
@@ -193,5 +192,30 @@ public class RpmArtifactCoordinates
     {
         return RpmArtifactCoordinatesUtils.parse(path);
     }
-    
+    public static String calculatePackageId(String packageScope, String packageName)
+    {
+        return packageScope == null ? packageName : String.format("%s/%s", packageScope, packageName);
+    }
+
+    public static RpmArtifactCoordinates of(String packageId,
+                                            String version)
+    {
+        if (packageId.contains("/"))
+        {
+            String[] nameSplit = packageId.split("/");
+
+            return new RpmArtifactCoordinates(nameSplit[0], nameSplit[1], version, RpmPackageType.SOURCE);
+        }
+
+        return new RpmArtifactCoordinates(null, packageId, version, RpmPackageType.BINARY);
+    }
+
+    public String getName() {
+        return "test";
+
+    }
+
+    public String getScope() {
+        return "dev";
+    }
 }

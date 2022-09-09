@@ -28,7 +28,7 @@ import java.util.stream.Collectors;
 
 import com.fasterxml.jackson.annotation.JsonView;
 import io.swagger.annotations.*;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.core.convert.ConversionService;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;

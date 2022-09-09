@@ -41,9 +41,9 @@ import org.slf4j.LoggerFactory;
 /**
  * This class decorates {@link StorageFileSystemProvider} with common layout specific
  * logic. <br>
- *
+ * 
  * @author xuxinping
- *
+ * 
  * @see LayoutProvider
  */
 public abstract class LayoutFileSystemProvider extends StorageFileSystemProvider
@@ -53,10 +53,10 @@ public abstract class LayoutFileSystemProvider extends StorageFileSystemProvider
 
     @Inject
     private ArtifactEventListenerRegistry artifactEventListenerRegistry;
-
+    
     @Inject
     private RepositoryEventListenerRegistry repositoryEventListenerRegistry;
-
+    
     @Inject
     private ArtifactRepository artifactEntityRepository;
 
@@ -67,12 +67,12 @@ public abstract class LayoutFileSystemProvider extends StorageFileSystemProvider
     }
 
     protected abstract AbstractLayoutProvider getLayoutProvider();
-
+    
     @Override
     public LazyInputStream newInputStream(Path path,
                                           OpenOption... options)
             throws IOException
-    {
+    {        
         return new LazyInputStream(() -> {
             try
             {
@@ -80,14 +80,14 @@ public abstract class LayoutFileSystemProvider extends StorageFileSystemProvider
                 {
                     throw new ArtifactNotFoundException(path.toUri());
                 }
-
+                
                 if (Files.isDirectory(path))
                 {
                     throw new ArtifactNotFoundException(path.toUri(),
                                                         String.format("The artifact path is a directory: [%s]",
                                                                       path.toString()));
                 }
-
+                
                 ByteRangeInputStream bris = new ByteRangeInputStream(super.newInputStream(path, options));
                 bris.setReloadableInputStreamHandler(new FSReloadableInputStreamHandler(path));
                 bris.setLength(Files.size(path));
@@ -121,7 +121,7 @@ public abstract class LayoutFileSystemProvider extends StorageFileSystemProvider
 
         return path.resolveSibling(path.getFileName().toString().concat(checksumExtension));
     }
-
+    
     @Override
     public LazyOutputStream newOutputStream(Path path,
                                             OpenOption... options)
@@ -153,13 +153,13 @@ public abstract class LayoutFileSystemProvider extends StorageFileSystemProvider
     {
         Set<String> digestAlgorithmSet = path.getFileSystem().getDigestAlgorithmSet();
         LayoutOutputStream result = new LayoutOutputStream(os);
-
+        
         // Add digest algorithm only if it is not a Checksum (we don't need a Checksum of Checksum).
         if (Boolean.TRUE.equals(RepositoryFiles.isChecksum(path)))
         {
             return result;
         }
-
+        
         digestAlgorithmSet.stream()
                           .forEach(e -> {
                               try
@@ -173,7 +173,7 @@ public abstract class LayoutFileSystemProvider extends StorageFileSystemProvider
                           });
         return result;
     }
-
+    
     public void storeChecksum(RepositoryPath basePath,
                               boolean forceRegeneration)
             throws IOException
@@ -203,7 +203,7 @@ public abstract class LayoutFileSystemProvider extends StorageFileSystemProvider
              });
     }
 
-
+    
     protected void writeChecksum(RepositoryPath path,
                                  boolean force)
             throws IOException
@@ -253,7 +253,7 @@ public abstract class LayoutFileSystemProvider extends StorageFileSystemProvider
         if (!Files.exists(path))
         {
             logger.warn("Path not found: path-[{}]", path);
-
+            
             return;
         }
 
@@ -278,14 +278,14 @@ public abstract class LayoutFileSystemProvider extends StorageFileSystemProvider
             super.doDeletePath(repositoryPath, force);
             return;
         }
-
+        
         Artifact artifactEntry = Optional.ofNullable(repositoryPath.getArtifactEntry())
                                          .orElseGet(() -> fetchArtifactEntry(repositoryPath));
         if (artifactEntry != null)
         {
             artifactEntityRepository.delete(artifactEntry);
         }
-
+        
         super.doDeletePath(repositoryPath, force);
     }
 
@@ -324,8 +324,8 @@ public abstract class LayoutFileSystemProvider extends StorageFileSystemProvider
         logger.debug("Trash for {}:{} removed.", storage.getId(), repository.getId());
     }
 
-
-
+    
+    
     @Override
     public void undelete(RepositoryPath path)
             throws IOException
@@ -334,7 +334,7 @@ public abstract class LayoutFileSystemProvider extends StorageFileSystemProvider
         Storage storage = repository.getStorage();
 
         logger.debug("Attempting to restore: [{}]; ", path);
-
+        
         super.undelete(path);
 
         repositoryEventListenerRegistry.dispatchUndeleteTrashEvent(storage.getId(), repository.getId());
@@ -349,17 +349,17 @@ public abstract class LayoutFileSystemProvider extends StorageFileSystemProvider
     {
         return getLayoutProvider().getRepositoryFileAttributes(repositoryRelativePath, attributeTypes);
     }
-
+    
     protected void deleteMetadata(RepositoryPath repositoryPath)
             throws IOException
     {
 
     }
-
+    
     public class PathOutputStreamSupplier implements OutputStreamSupplier
     {
         private Path path;
-
+        
         private OpenOption[] options;
 
         public PathOutputStreamSupplier(Path path,
