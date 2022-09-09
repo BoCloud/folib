@@ -195,7 +195,7 @@ public class ArtifactEventListenerScannerHandler {
         } else if (repositoryPath.getFileSystem() instanceof NpmFileSystem) {
             log.info("=====>>>>> npm布局");
             //npm布局
-            List<String> suffixList = Arrays.asList(".json", ".js", ".tgz");
+            List<String> suffixList = Arrays.asList(".json", ".tgz");
             flag = endsWith(repositoryPath.getFileName().toString(), suffixList);
         } else if (repositoryPath.getFileSystem() instanceof NugetFileSystem) {
             log.info("=====>>>>> nuget布局");
@@ -211,6 +211,11 @@ public class ArtifactEventListenerScannerHandler {
             log.info("=====>>>>> raw布局");
             //raw布局
             return true;
+        } else if (repositoryPath.getFileSystem() instanceof RpmFileSystem) {
+            log.info("=====>>>>> rpm布局");
+            //rpm布局
+            List<String> suffixList = Arrays.asList(".rpm");
+            flag = endsWith(repositoryPath.getFileName().toString(), suffixList);
         }
         log.info("=====>>>>> 是否是该布局支持的类型：{}", flag);
         return flag;
@@ -253,7 +258,7 @@ public class ArtifactEventListenerScannerHandler {
             gzipCompressorInputStream = new GzipCompressorInputStream(fileInputStream);
             tarArchiveInputStream = new TarArchiveInputStream(gzipCompressorInputStream);
             TarArchiveEntry entry = null;
-            List<String> list = Arrays.asList("jar", "war", "ear", "zip", "json", "js", "tgz", "nupkg", "nuspec", "config", "whl", "egg", "zip", "gz");
+            List<String> list = Arrays.asList("jar", "war", "ear", "zip", "json", "tgz", "nupkg", "nuspec", "config", "whl", "egg", "zip", "gz", "rpm");
             File extractFolder = new File(tempPath);
             while ((entry = tarArchiveInputStream.getNextTarEntry()) != null) {
                 if (entry.isDirectory()) {
