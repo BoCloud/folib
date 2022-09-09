@@ -166,12 +166,27 @@ export function folibScannerPage (query) {
     params: query
   })
 }
+export function folibScannerDockerPage (query) {
+  return axios({
+    url: '/api/folibScanner/dockerPage',
+    method: 'get',
+    params: query
+  })
+}
 export function folibScannerGetOne (id) {
   return axios({
     url: '/api/folibScanner/folibScannerGetOne?id='+id,
     method: 'get',
   })
 }
+export function getSeverity(id) {
+  return axios({
+    url: '/api/folibScanner/severity?id='+id,
+    method: 'get'
+  })
+}
+
+
 
 
 

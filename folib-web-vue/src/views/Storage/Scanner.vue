@@ -15,7 +15,7 @@
               <a-statistic
                   title="扫描包总数"
                   :value="countData.totalCount.onScanCount"
-                  :suffix="((countData.totalCount.onScanCount/(countData.totalCount.onScanCount+countData.totalCount.notScanCount))*100).toFixed(2)+'%'"
+                  :suffix="onScanProportion.toFixed(2)+'%'"
                   class="text-success"
               >
               </a-statistic>
@@ -46,7 +46,7 @@
               <a-statistic
                   title="扫描成功的包数量"
                   :value="countData.totalCount.onScanAndScaned"
-                  :suffix="((countData.totalCount.onScanAndScaned/(countData.totalCount.onScanAndScaned+countData.totalCount.onScanAndUnScan+countData.totalCount.onScanAndScanFailed))*100).toFixed(2)+'%'"
+                  :suffix="onScanAndScanedProportion.toFixed(2)+'%'"
                   class="text-success"
               >
               </a-statistic>
@@ -94,7 +94,7 @@
               <a-statistic
                   title="具有漏洞的包数量"
                   :value="countData.denpendencyCount.vulnerableSum"
-                  :suffix="((countData.denpendencyCount.vulnerableSum/(countData.totalCount.onScanCount))*100).toFixed(2)+'%'"
+                  :suffix="vulnerableSumProportion.toFixed(2)+'%'"
                   class="text-danger"
               >
               </a-statistic>
@@ -110,7 +110,7 @@
               <a-statistic
                   title="漏洞总数"
                   :value="countData.denpendencyCount.vulnerabilitesSum"
-                  :suffix="((countData.denpendencyCount.vulnerabilitesSum/(countData.denpendencyCount.denpendencySum))*100).toFixed(2)+'%'"
+                  :suffix="vulnerabilitesSumProportion.toFixed(2)+'%'"
                   class="text-danger"
               >
               </a-statistic>
@@ -289,8 +289,8 @@ export default ({
         }, ],
       },
       countData: {
-        denpendencyCount: {denpendencySum: 531, vulnerableSum: 34, vulnerabilitesSum: 46, suppressedSum: 0},
-        totalCount: {onScanCount: 479, onScanAndUnScan: 0, onScanAndScanFailed: 0, notScanCount: 0,onScanAndScaned:0}
+        denpendencyCount: {denpendencySum: 0, vulnerableSum: 0, vulnerabilitesSum: 0, suppressedSum: 0},
+        totalCount: {onScanCount: 0, onScanAndUnScan: 0, onScanAndScanFailed: 0, notScanCount: 0,onScanAndScaned:0}
       },
       columns: [
         {
@@ -329,13 +329,29 @@ export default ({
         }
       ],
       folibScanData:[],
-      weekCompare:{}
+      weekCompare:{},
+      onScanProportion: 0.00,
+      onScanAndScanedProportion: 0.00,
+      vulnerableSumProportion: 0.00,
+      vulnerabilitesSumProportion: 0.00,
     }
   },
   methods: {
     getCountData() {
       getCount().then(res => {
         this.countData = res.data
+        if(this.countData.totalCount.onScanCount+this.countData.totalCount.notScanCount > 0){
+           this.onScanProportion = ((this.countData.totalCount.onScanCount/(this.countData.totalCount.onScanCount+this.countData.totalCount.notScanCount))*100)
+        }
+        if(this.countData.totalCount.onScanAndScaned+this.countData.totalCount.onScanAndUnScan+this.countData.totalCount.onScanAndScanFailed > 0){
+           this.onScanAndScanedProportion = ((this.countData.totalCount.onScanAndScaned/(this.countData.totalCount.onScanAndScaned+this.countData.totalCount.onScanAndUnScan+this.countData.totalCount.onScanAndScanFailed))*100)
+        }
+        if(this.countData.totalCount.onScanCount > 0){
+           this.vulnerableSumProportion = ((this.countData.denpendencyCount.vulnerableSum/(this.countData.totalCount.onScanCount))*100)
+        }
+        if(this.countData.denpendencyCount.denpendencySum > 0){
+           this.vulnerabilitesSumProportion = ((this.countData.denpendencyCount.vulnerabilitesSum/(this.countData.denpendencyCount.denpendencySum))*100)
+        }
       })
       getScannerSumDifVoList().then(res =>{
         this.folibScanData=res.data

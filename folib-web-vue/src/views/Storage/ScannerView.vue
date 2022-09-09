@@ -108,23 +108,44 @@
                   </a-col>
                 </a-row>
               </template>
-              <a-table :columns="columns" :data-source="rowData" :pagination="false">
-                <template slot="path" slot-scope="text, record">
-                  <div @click="folibScannerGetOne(record)">
-                    <a>
-                      <h6 class="m-0">
-                        {{ record.path }}
-                      </h6>
-                    </a>
-                  </div>
+               <a-table v-if="scanCurrentData.layout != 'docker'" :columns="columns" :data-source="rowData" :pagination="false">
+                  <template slot="path" slot-scope="text, record">
+                    <div @click="folibScannerGetOne(record)">
+                      <a>
+                        <h6 class="m-0">
+                          {{ record.path }}
+                        </h6>
+                      </a>
+                    </div>
+                  </template>
 
-                </template>
-                <template slot="star" slot-scope="star">
-                  <div class="rating">
-                    <a-icon type="star" v-for="n in star" :key="n" theme="filled" />
-                    <a-icon type="star" v-for="n in (5 - star)" :key="6 - n" />
-                  </div>
-                </template>
+                  <template slot="star" slot-scope="star">
+                    <div class="rating">
+                      <a-icon type="star" v-for="n in star" :key="n" theme="filled" />
+                      <a-icon type="star" v-for="n in (5 - star)" :key="6 - n" />
+                    </div>
+                  </template>
+              </a-table>
+            </a-table>
+              <a-table v-if="scanCurrentData.layout == 'docker'" :columns="dockerColumns" :data-source="rowData" :pagination="false">
+                  <a-table rowKey="id" :columns="innerColumns" slot="expandedRowRender" slot-scope="record" :data-source="record.childList" :pagination="false">
+                    <template slot="path" slot-scope="text, record">
+                      <div @click="folibScannerGetOne(record)">
+                        <a>
+                          <h6 class="m-0">
+                            {{ record.path }}
+                          </h6>
+                        </a>
+                      </div>
+                    </template>
+
+                    <template slot="star" slot-scope="star">
+                      <div class="rating">
+                        <a-icon type="star" v-for="n in star" :key="n" theme="filled" />
+                        <a-icon type="star" v-for="n in (5 - star)" :key="6 - n" />
+                      </div>
+                    </template>
+                </a-table>
               </a-table>
             </a-card>
           </a-col>
@@ -228,8 +249,8 @@
                 </template>
                 <template slot="v2_exploitabilityScore" slot-scope="text, record">{{ record.cvssV2.score }}</template>
                 <template slot="v3_exploitabilityScore" slot-scope="text, record">{{ record.cvssV3.baseScore }}</template>
-                <template slot="versionStartIncluding" slot-scope="text, record">{{ record.matchedVulnerableSoftware.versionStartIncluding }}</template>
-                <template slot="versionEndExcluding" slot-scope="text, record">{{ record.matchedVulnerableSoftware.versionEndExcluding }}</template>
+                <template slot="versionStartIncluding" slot-scope="text, record" v-if="record.matchedVulnerableSoftwareStart">{{ record.matchedVulnerableSoftwareStart.versionStartIncluding }}</template>
+                <template slot="versionEndExcluding" slot-scope="text, record" v-if="record.matchedVulnerableSoftwareEnd">{{ record.matchedVulnerableSoftwareEnd.versionEndExcluding }}</template>
 
               </a-table>
               </a-col>
@@ -243,7 +264,7 @@
 
 <script>
 
-import {folibScannerGetOne, folibScannerPage} from "@/api/folib";
+import {folibScannerGetOne, folibScannerPage, folibScannerDockerPage} from "@/api/folib";
 import {getLayoutType2} from "@/utils/layoutUtil";
 import ChartBar from '@/components/Charts/ChartBar' ;
 import ChartLine from '@/components/Charts/ChartLine'
@@ -282,14 +303,14 @@ export default ({
           scopedSlots: { customRender: 'v3_exploitabilityScore' },
         },
         {
-          title: '引入版本',
-          dataIndex: 'matchedVulnerableSoftware',
-          scopedSlots: { customRender: 'versionStartIncluding' },
+        title: '引入版本',
+        dataIndex: 'matchedVulnerableSoftwareStart',
+        scopedSlots: { customRender: 'versionStartIncluding' },
         },
         {
-          title: '修复版本',
-          dataIndex: 'matchedVulnerableSoftware',
-          scopedSlots: { customRender: 'versionEndExcluding' },
+        title: '修复版本',
+        dataIndex: 'matchedVulnerableSoftwareEnd',
+        scopedSlots: { customRender: 'versionEndExcluding' },
         }
       ],
       detialVisible:false,
@@ -337,6 +358,72 @@ export default ({
           dataIndex: 'scanTime',
         },
       ],
+      dockerColumns: [
+        {
+          title: '镜像名称',
+          dataIndex: 'path',
+          scopedSlots: { customRender: 'path' },
+        },
+        {
+          title: '版本号',
+          dataIndex: 'version',
+          width: 100,
+        },
+        {
+          title: '漏洞数',
+          dataIndex: 'vulnerabilitesCount',
+          scopedSlots: { customRender: 'vulnerabilitesCount' },
+          width: 100,
+        },
+        {
+          title: '依赖数',
+          dataIndex: 'dependencyCount',
+          width: 100,
+        },
+        {
+          title: '封存漏洞',
+          dataIndex: 'suppressedCount',
+          width: 100,
+        },
+        {
+          title: '问题依赖数',
+          dataIndex: 'vulnerableCount',
+          scopedSlots: { customRender: 'vulnerableCount' },
+        }
+      ],
+      innerColumns: [
+          {
+            title: '包路径',
+            dataIndex: 'path',
+            scopedSlots: { customRender: 'path' },
+          },
+          {
+            title: '漏洞数',
+            dataIndex: 'vulnerabilitesCount',
+            scopedSlots: { customRender: 'vulnerabilitesCount' },
+            width: 100,
+          },
+          {
+            title: '依赖数',
+            dataIndex: 'dependencyCount',
+            width: 100,
+          },
+          {
+            title: '封存漏洞',
+            dataIndex: 'suppressedCount',
+            width: 100,
+          },
+
+          {
+            title: '问题依赖数',
+            dataIndex: 'vulnerableCount',
+            scopedSlots: { customRender: 'vulnerableCount' },
+          },
+          {
+            title: '扫描时间',
+            dataIndex: 'scanTime',
+          },
+      ],
       query:{
         page:1,
         limit:10
@@ -354,7 +441,17 @@ export default ({
       this.query.repository=this.scanCurrentData.repository
       this.query.storage=this.scanCurrentData.storage
           // this.query.vulnerableCount=1
-      this.getList();
+      if(this.scanCurrentData.layout === 'docker'){
+        this.getDockerList()
+      }else{
+        this.getList()
+      }
+    },
+    getDockerList(){
+      folibScannerDockerPage(this.query).then(res=>{
+        this.rowData=res.data.rows
+        this.total=res.data.total
+      })
     },
     getList(){
       folibScannerPage(this.query).then(res=>{
@@ -363,11 +460,11 @@ export default ({
       })
     },
     folibScannerGetOne(row){
-      folibScannerGetOne(row.path).then(res=>{
-        this.currentRow=row
-        this.currentReport=res.data
-        this.detialVisible=true
-      })
+        folibScannerGetOne(row.path).then(res=>{
+          this.currentRow=row
+          this.currentReport=res.data
+          this.detialVisible=true
+        })
     },
     onShowSizeChange(current, pageSize) {
       this.query.limit = pageSize;
