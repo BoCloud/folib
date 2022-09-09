@@ -3,7 +3,7 @@
           xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
           xsi:schemaLocation="http://maven.apache.org/SETTINGS/1.0.0 http://maven.apache.org/xsd/settings-1.0.0.xsd">
     <!--本地依赖位置按照实际情况进行修改-->
-    <localRepository>/Users/leipenghui/apps/m2/repository</localRepository>
+    <localRepository>/Users/xuxinping/maven/repository2</localRepository>
 
     <mirrors>
         <mirror>
