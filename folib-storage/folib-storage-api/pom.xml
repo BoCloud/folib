@@ -108,7 +108,6 @@
             <groupId>${project.groupId}</groupId>
             <artifactId>folib-common-resources</artifactId>
             <version>1.0-SNAPSHOT</version>
-            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>${project.groupId}</groupId>
@@ -157,7 +156,6 @@
         <dependency>
             <groupId>com.fasterxml.jackson.jaxrs</groupId>
             <artifactId>jackson-jaxrs-json-provider</artifactId>
-            <scope>test</scope>
         </dependency>
 
         <dependency>

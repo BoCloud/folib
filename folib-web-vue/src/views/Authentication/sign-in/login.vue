@@ -12,7 +12,7 @@
 			<a-col :span="24" :md="{ span: 14, offset: 2 }" :lg="10" :xl="6" class="col-form mr-auto">
 
 				<h4 class="mb-15">登录</h4>
-				<p class="text-muted">使用用户名和密码进行登录操作(体验账号:admin/password)</p>
+				<p class="text-muted">使用用户名和密码进行登录操作</p>
 
 				<!-- Sign in Form -->
 				<a-form

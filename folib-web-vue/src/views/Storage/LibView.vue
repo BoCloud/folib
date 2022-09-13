@@ -1662,6 +1662,7 @@ export default {
 .table-severity-info {
  display: inline-block;
  height: 30px;
+  margin-left: 30px;
 }
 .severity-info {
  display: inline-block;

@@ -42,6 +42,7 @@ const user = {
       return new Promise((resolve, reject) => {
         storage.remove(ACCESS_TOKEN)
         login(userInfo).then(response => {
+          console.log(jwt_decode(response.token).exp)
           storage.set(ACCESS_TOKEN, response.token, jwt_decode(response.token).exp)
           commit('SET_TOKEN', response.token)
           resolve(response)
