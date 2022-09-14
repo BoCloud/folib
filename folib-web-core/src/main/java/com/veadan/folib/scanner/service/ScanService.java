@@ -4,6 +4,8 @@ package com.veadan.folib.scanner.service;
 import cn.hutool.core.io.FileUtil;
 import cn.hutool.core.io.IoUtil;
 import com.alibaba.fastjson.JSONArray;
+import com.alibaba.fastjson.JSONException;
+import com.alibaba.fastjson.JSONObject;
 import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.scanner.biz.FolibScannerBiz;
 import com.veadan.folib.scanner.biz.ScanRulesBiz;
@@ -17,6 +19,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.owasp.dependencycheck.data.update.exception.UpdateException;
 import org.owasp.dependencycheck.dependency.Dependency;
+import org.owasp.dependencycheck.dependency.Vulnerability;
 import org.owasp.dependencycheck.utils.Settings;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Async;
@@ -27,9 +30,7 @@ import java.io.FileFilter;
 import java.io.FileInputStream;
 import java.nio.file.Path;
 import java.nio.file.WatchEvent;
-import java.util.Date;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 
@@ -108,12 +109,23 @@ public class ScanService {
 
     //根据依赖构建并补充报告内容数据
     private FolibScanner buildReport(FolibScanner folibScanner, Dependency[] dependencyList) {
-        folibScanner.setReport(JSONArray.toJSONString(dependencyList));
-//       JSONArray dependencies = report.getJSONArray("dependencies");
         int vulnCount = 0;
         int vulnSuppressedCount = 0;
         int cpeSuppressedCount = 0;
         int vulnDepCount = 0;
+        List<Dependency> dependencyLists = Arrays.asList(dependencyList);
+        dependencyLists.sort((a, b) -> {
+            Integer count1 = 0;
+            Integer count2 = 0;
+            try {
+                count1 = a.getVulnerabilitiesCount();
+                count2 = b.getVulnerabilitiesCount();
+            } catch (JSONException e) {
+                e.printStackTrace();
+            }
+            return count2.compareTo(count1);
+        });
+        folibScanner.setReport(JSONArray.toJSONString(dependencyLists));
         for (Dependency dependency : dependencyList) {
             if (dependency.getVulnerabilities().size() > 0) {
                 vulnDepCount = vulnDepCount + 1;

@@ -58,7 +58,10 @@ public class SeverityVO implements Serializable {
      * 低危的数量
      */
     private Long low;
-
+    /**
+     * 漏洞数量
+     */
+    private Integer vulnerabilitesCount;
     /**
      * 前端是否展示
      */
