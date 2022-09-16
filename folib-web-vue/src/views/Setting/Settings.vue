@@ -184,20 +184,11 @@
                           option-filter-prop="children"
                           :filter-option="filterOption"
                       >
-                        <a-select-option value="None">
+                        <a-select-option value="">
                           None
-                        </a-select-option>
-                        <a-select-option value="Direct">
-                          Direct
                         </a-select-option>
                         <a-select-option value="HTTP">
                           HTTP
-                        </a-select-option>
-                        <a-select-option value="SOCKS4">
-                          SOCKS4
-                        </a-select-option>
-                        <a-select-option value="SOCKS5">
-                          SOCKS5
                         </a-select-option>
                       </a-select>
                     </a-form-item>

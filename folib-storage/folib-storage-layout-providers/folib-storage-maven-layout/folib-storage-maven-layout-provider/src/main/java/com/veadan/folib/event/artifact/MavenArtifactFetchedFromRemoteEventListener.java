@@ -107,7 +107,7 @@ public class MavenArtifactFetchedFromRemoteEventListener
     {
         Repository repository = metadataPath.getRepository();
         RemoteRepository remoteRepository = repository.getRemoteRepository();
-        RestArtifactResolver client = restArtifactResolverFactory.newInstance(remoteRepository);
+        RestArtifactResolver client = restArtifactResolverFactory.newInstance(remoteRepository, artifactAbsolutePath);
         
         Lock lock = repositoryPathLock.lock(metadataPath).writeLock();
         lock.lock();

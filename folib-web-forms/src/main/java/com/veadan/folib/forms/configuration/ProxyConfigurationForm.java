@@ -19,18 +19,15 @@ import com.google.common.collect.Lists;
 public class ProxyConfigurationForm
 {
 
-    @NotBlank(message = "A host must be specified.", groups = ProxyConfigurationFormChecks.class)
     private String host;
 
-    @NotNull(message = "A port must be provided.", groups = ProxyConfigurationFormChecks.class)
     @Min(value = 1, message = "The port number must be an integer between 1 and 65535.", groups = ProxyConfigurationFormChecks.class)
     @Max(value = 65535, message = "The port number must be an integer between 1 and 65535.", groups = ProxyConfigurationFormChecks.class)
     private Integer port;
 
-    @NotBlank(message = "A proxy type must be specified.", groups = ProxyConfigurationFormChecks.class)
-    @Pattern(regexp = "DIRECT|HTTP|SOCKS4|SOCKS5",
+    @Pattern(regexp = "HTTP|",
             flags = Pattern.Flag.CASE_INSENSITIVE,
-            message = "The proxy type must contain one the following strings as value: DIRECT, HTTP, SOCKS4, SOCKS5",
+            message = "The proxy type must contain one the following strings as value: HTTP",
             groups = ProxyConfigurationFormChecks.class)
     private String type;
 
