@@ -146,7 +146,7 @@ public class NpmRepositoryFeatures implements RepositoryFeatures
         String remoteRepositoryUrl = remoteRepository.getUrl();
 
         SearchResults searchResults;
-        Client restClient = proxyRepositoryConnectionPoolConfigurationService.getRestClient();
+        Client restClient = proxyRepositoryConnectionPoolConfigurationService.getRestClient(storageId,repositoryId);
         try
         {
             logger.debug("Search NPM packages for [{}].", remoteRepositoryUrl);
@@ -227,7 +227,8 @@ public class NpmRepositoryFeatures implements RepositoryFeatures
         throws IOException
     {
         int result = 0;
-        Client restClient = proxyRepositoryConnectionPoolConfigurationService.getRestClient();
+        Client restClient = proxyRepositoryConnectionPoolConfigurationService.
+                getRestClient(repository.getStorage().getId(),repository.getId());//todo 修复
         try
         {
             logger.debug("Fetching remote changes for [{}] since [{}].", replicateUrl, since);
@@ -344,7 +345,7 @@ public class NpmRepositoryFeatures implements RepositoryFeatures
         String remoteRepositoryUrl = remoteRepository.getUrl();
 
         PackageFeed packageFeed;
-        Client restClient = proxyRepositoryConnectionPoolConfigurationService.getRestClient();
+        Client restClient = proxyRepositoryConnectionPoolConfigurationService.getRestClient(storageId,repositoryId);
         try
         {
             logger.debug("Downloading NPM changes feed for [{}].", remoteRepositoryUrl);

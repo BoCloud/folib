@@ -143,7 +143,7 @@ public class NugetRepositoryFeatures
         paginator.setSkip(skip);
 
         PackageFeed packageFeed;
-        Client restClient = proxyRepositoryConnectionPoolConfigurationService.getRestClient();
+        Client restClient = proxyRepositoryConnectionPoolConfigurationService.getRestClient(storageId,repositoryId);
         try
         {
             logger.debug("Downloading remote feed for [{}].", remoteRepositoryUrl);
@@ -267,7 +267,7 @@ public class NugetRepositoryFeatures
 
             logger.debug("Remote repository [{}] cached package count is [{}]", repository.getId(), packageCount);
 
-            Client restClient = proxyRepositoryConnectionPoolConfigurationService.getRestClient();
+            Client restClient = proxyRepositoryConnectionPoolConfigurationService.getRestClient(storageId, repositoryId);
             PackageFeed feed;
             try
             {

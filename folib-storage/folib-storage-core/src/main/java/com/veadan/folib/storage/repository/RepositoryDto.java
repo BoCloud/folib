@@ -1,6 +1,7 @@
 package com.veadan.folib.storage.repository;
 
 import com.veadan.folib.configuration.MutableProxyConfiguration;
+import com.veadan.folib.configuration.ProxyConfiguration;
 import com.veadan.folib.providers.storage.FileSystemStorageProvider;
 import com.veadan.folib.storage.repository.remote.RemoteRepositoryDto;
 import com.veadan.folib.yaml.repository.CustomRepositoryConfigurationDto;
@@ -241,6 +242,11 @@ public class RepositoryDto
     public RemoteRepositoryDto getRemoteRepository()
     {
         return remoteRepository;
+    }
+
+    @Override
+    public ProxyConfiguration getProxyConfig() {
+        return null;
     }
 
     public void setRemoteRepository(RemoteRepositoryDto remoteRepository)

@@ -1,32 +1,34 @@
-package com.veadan.folib.service.impl;
+package com.veadan.folib.services.impl;
 
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.util.concurrent.TimeUnit;
-
-import javax.annotation.PostConstruct;
-import javax.annotation.PreDestroy;
-import javax.ws.rs.client.Client;
-import javax.ws.rs.client.ClientBuilder;
-
+import com.veadan.folib.configuration.ProxyConfiguration;
+import com.veadan.folib.service.ProxyRepositoryConnectionPoolConfigurationService;
+import com.veadan.folib.services.ConfigurationManagementService;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpHost;
 import org.apache.http.conn.routing.HttpRoute;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
 import org.apache.http.pool.PoolStats;
-
-import com.veadan.folib.service.ProxyRepositoryConnectionPoolConfigurationService;
-
 import org.glassfish.jersey.apache.connector.ApacheClientProperties;
 import org.glassfish.jersey.apache.connector.ApacheConnectorProvider;
 import org.glassfish.jersey.client.ClientConfig;
+import org.glassfish.jersey.client.ClientProperties;
 import org.glassfish.jersey.logging.LoggingFeature;
 import org.glassfish.jersey.logging.LoggingFeature.Verbosity;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
+
+import javax.annotation.PostConstruct;
+import javax.annotation.PreDestroy;
+import javax.ws.rs.client.Client;
+import javax.ws.rs.client.ClientBuilder;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.util.concurrent.TimeUnit;
 
 /**
  * @author veadan
@@ -41,6 +43,9 @@ public class ProxyRepositoryConnectionPoolConfigurationServiceImpl
 
     private PoolingHttpClientConnectionManager poolingHttpClientConnectionManager;
     private IdleConnectionMonitorThread idleConnectionMonitorThread;
+
+    @Autowired
+    private ConfigurationManagementService configurationManagementService;
 
     @Value("${pool.maxConnections:200}")
     private int maxTotal;
@@ -70,11 +75,35 @@ public class ProxyRepositoryConnectionPoolConfigurationServiceImpl
     }
 
     @Override
-    public Client getRestClient()
-    {
+    public Client getRestClient() {
         ClientConfig config = new ClientConfig();
         config.connectorProvider(new ApacheConnectorProvider());
         config.property(ApacheClientProperties.CONNECTION_MANAGER, poolingHttpClientConnectionManager);
+        config.property(ApacheClientProperties.CONNECTION_MANAGER_SHARED, true);
+        java.util.logging.Logger logger = java.util.logging.Logger.getLogger("com.veadan.folib.RestClient");
+        return ClientBuilder.newBuilder()
+                .register(new LoggingFeature(logger, Verbosity.PAYLOAD_TEXT))
+                .withConfig(config)
+                .build();
+    }
+
+    @Override
+    public Client getRestClient(String storageId,String repositoryId)
+    {
+        logger.info("get rest client storageId [{}] repositoryId [{}]",storageId,repositoryId);
+        ClientConfig config = new ClientConfig();
+
+        //全局代理
+        ProxyConfiguration globalProxyConfig = configurationManagementService.getConfiguration().
+                getProxyConfiguration();
+
+        //仓库代理
+        ProxyConfiguration repositoryProxyConfig = configurationManagementService.
+                getConfiguration().getRepository(storageId, repositoryId).getProxyConfig();
+        config.connectorProvider(new ApacheConnectorProvider());
+        isExistProxy(globalProxyConfig,repositoryProxyConfig,config);
+        config.property(ApacheClientProperties.CONNECTION_MANAGER, poolingHttpClientConnectionManager);
+
         // property to prevent closing connection manager when client is closed
         config.property(ApacheClientProperties.CONNECTION_MANAGER_SHARED, true);
 
@@ -89,6 +118,41 @@ public class ProxyRepositoryConnectionPoolConfigurationServiceImpl
                             .register(new LoggingFeature(logger, Verbosity.PAYLOAD_TEXT))
                             .withConfig(config)
                             .build();
+    }
+
+    private void isExistProxy(ProxyConfiguration globalProxyConfig, ProxyConfiguration repositoryProxyConfig, ClientConfig config) {
+        if (null != repositoryProxyConfig) {
+            handleRepositoryProxy(globalProxyConfig, repositoryProxyConfig, config);
+        } else {
+            handleGlobalProxy(globalProxyConfig, config);
+        }
+    }
+
+    private static void handleRepositoryProxy(ProxyConfiguration globalProxyConfig,
+                                              ProxyConfiguration repositoryProxyConfig, ClientConfig config) {
+        if (StringUtils.isNotBlank(repositoryProxyConfig.getHost()) && null != repositoryProxyConfig.getPort()) {
+            config.property(ClientProperties.PROXY_URI,
+                    "http://" + repositoryProxyConfig.getHost() + ":" + repositoryProxyConfig.getPort());
+            config.property(ClientProperties.PROXY_USERNAME, repositoryProxyConfig.getUsername());
+            config.property(ClientProperties.PROXY_PASSWORD, repositoryProxyConfig.getPassword());
+            logger.info("get repository proxy config:host [{}] port [{}] username [{}]",
+                    repositoryProxyConfig.getHost(), repositoryProxyConfig.getPort(), repositoryProxyConfig.getUsername());
+        } else {
+            handleGlobalProxy(globalProxyConfig, config);
+        }
+    }
+
+    private static void handleGlobalProxy(ProxyConfiguration globalProxyConfig, ClientConfig config) {
+        if (null != globalProxyConfig) {
+            if (StringUtils.isNotBlank(globalProxyConfig.getHost()) && null != globalProxyConfig.getPort()) {
+                config.property(ClientProperties.PROXY_URI,
+                        "http://" + globalProxyConfig.getHost() + ":" + globalProxyConfig.getPort());
+                config.property(ClientProperties.PROXY_USERNAME, globalProxyConfig.getUsername());
+                config.property(ClientProperties.PROXY_PASSWORD, globalProxyConfig.getPassword());
+                logger.info("get global proxy config:host [{}] port [{}] username [{}]",
+                        globalProxyConfig.getHost(), globalProxyConfig.getPort(), globalProxyConfig.getUsername());
+            }
+        }
     }
 
     @Override
