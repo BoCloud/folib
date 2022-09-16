@@ -36,7 +36,7 @@ import java.util.stream.Collectors;
 
 /**
  * @author leipenghui
- * 制品删除事件监听处理
+ * 制品事件监听处理
  */
 @Slf4j
 @Component

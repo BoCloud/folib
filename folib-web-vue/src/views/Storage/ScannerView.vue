@@ -159,7 +159,21 @@
         <template #expandIcon="props">
           <a-icon type="caret-right" :rotate="props.isActive ? 90 : 0" />
         </template>
-        <a-collapse-panel v-for="(item,index) in currentReport" :key="index" key="index" :header="item.fileName" style='background: #f7f7f7;border-radius: 4px;margin-bottom: 24px;border: 0;overflow: hidden'>
+        <a-collapse-panel v-for="(item,index) in currentReport" :key="index" key="index" style='background: #f7f7f7;border-radius: 4px;margin-bottom: 24px;border: 0;overflow: hidden'>
+          <template slot="header">
+            <div class="collapse-panel-header-info">
+              <span class="file-name">{{item.fileName}}</span>
+               <a-tooltip v-if="item.vulnerabilitiesCount>0">
+                  <template slot="title">漏洞数量</template>
+                  <a-avatar :size="24" :src="'images/folib/bug.svg'" />
+                  <span class="mb-0 text-dark bug-count">{{item.vulnerabilitiesCount}}</span>
+               </a-tooltip>
+               <a-tooltip v-else>
+                   <template slot="title">健康</template>
+                   <a-avatar :size="24" :src="'images/folib/healthy.svg'" />
+               </a-tooltip>
+            </div>
+         </template>
           <a-card :bordered="false" class="card-order header-solid mb-24 mx-auto mt-20 mb-50" :bodyStyle="{paddingTop: 0}">
             <template #title>
               <h6 class="mb-0">{{ item.fileName }}</h6>
@@ -502,5 +516,16 @@ $md: 768px;
       position: static;
     }
   }
+}
+
+.collapse-panel-header-info {
+ display: inline-block;
+}
+.collapse-panel-header-info .file-name,.bug-count {
+  margin-right: 10px;
+}
+.collapse-panel-header-info .bug-count {
+  vertical-align: middle;
+  margin-left: 2.5px;
 }
 </style>
