@@ -61,7 +61,7 @@
                   <a-icon type="question-circle" theme="filled" />
                 </small>
               </a>
-              <div v-if="folibRepository.layout!=='Docker'">
+              <div>
                 <span class="mr-15">{{ scan.onScan ? '扫描开启' : '扫描关闭' }}</span>
                 <a-switch default-checked v-model="scan.onScan" @change="scannerChange" />
               </div>
