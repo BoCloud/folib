@@ -61,7 +61,7 @@
                   <a-icon type="question-circle" theme="filled" />
                 </small>
               </a>
-              <div v-if="folibRepository.layout!=='Docker'">
+              <div>
                 <span class="mr-15">{{ scan.onScan ? '扫描开启' : '扫描关闭' }}</span>
                 <a-switch default-checked v-model="scan.onScan" @change="scannerChange" />
               </div>
@@ -341,7 +341,7 @@
                    :columns="columns"
                    :data-source="searchData"
                    @change="handleTableChange"
-                   :pagination="{pageSize: artifactQuery.limit,current:artifactQuery.page,total:100,showLessItems:true}"
+                   :pagination="{pageSize: artifactQuery.limit,current:artifactQuery.page,total:artifactQuery.total,showLessItems:true}"
           >
 
             <template slot="path" slot-scope="text, record">
@@ -1174,8 +1174,8 @@
                 </template>
                 <template slot="v2_exploitabilityScore" slot-scope="text, record">{{ record.cvssV2.score }}</template>
                 <template slot="v3_exploitabilityScore" slot-scope="text, record">{{ record.cvssV3.baseScore }}</template>
-                <template slot="versionStartIncluding" slot-scope="text, record" v-if="record.matchedVulnerableSoftwareStart">{{ record.matchedVulnerableSoftwareStart.versionStartIncluding }}</template>
-                <template slot="versionEndExcluding" slot-scope="text, record" v-if="record.matchedVulnerableSoftwareEnd">{{ record.matchedVulnerableSoftwareEnd.versionEndExcluding }}</template>
+                <template slot="versionStartIncluding" slot-scope="text, record">{{ record.matchedVulnerableSoftware.versionStartIncluding }}</template>
+                <template slot="versionEndExcluding" slot-scope="text, record">{{ record.matchedVulnerableSoftware.versionEndExcluding }}</template>
 
               </a-table>
               </a-col>
@@ -1253,7 +1253,7 @@ export default {
         repositoryId:null,
         limit:5,
         page:1,
-        total:100
+        total:0
       },
       searchData:[],
       searchDataCurrentSelect:{},
@@ -1306,16 +1306,14 @@ export default {
             dataIndex: 'cvssV3',
             scopedSlots: { customRender: 'v3_exploitabilityScore' },
           },
-          {
-            title: '引入版本',
-            dataIndex: 'matchedVulnerableSoftwareStart',
-            scopedSlots: { customRender: 'versionStartIncluding' },
-          },
-          {
-            title: '修复版本',
-            dataIndex: 'matchedVulnerableSoftwareEnd',
-            scopedSlots: { customRender: 'versionEndExcluding' },
-          }
+        {
+          title: '引入版本',
+          scopedSlots: { customRender: 'versionStartIncluding' }
+        },
+        {
+         title: '建议修复版本',
+         scopedSlots: { customRender: 'versionEndExcluding' }
+        }
       ],
     }
   },
@@ -1362,7 +1360,7 @@ export default {
       this.artifactQuery.repositoryId=this.folibRepository.id
       fql(this.artifactQuery).then(res =>{
         this.searchData=res.artifact
-        this.artifactQuery.total.res.total
+        this.artifactQuery.total = res.total
         if(this.searchData){
           this.searchDataHandle(this.searchData[0])
         }

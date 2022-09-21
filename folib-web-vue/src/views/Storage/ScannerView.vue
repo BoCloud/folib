@@ -263,8 +263,8 @@
                 </template>
                 <template slot="v2_exploitabilityScore" slot-scope="text, record">{{ record.cvssV2.score }}</template>
                 <template slot="v3_exploitabilityScore" slot-scope="text, record">{{ record.cvssV3.baseScore }}</template>
-                <template slot="versionStartIncluding" slot-scope="text, record" v-if="record.matchedVulnerableSoftwareStart">{{ record.matchedVulnerableSoftwareStart.versionStartIncluding }}</template>
-                <template slot="versionEndExcluding" slot-scope="text, record" v-if="record.matchedVulnerableSoftwareEnd">{{ record.matchedVulnerableSoftwareEnd.versionEndExcluding }}</template>
+                <template slot="versionStartIncluding" slot-scope="text, record">{{ record.matchedVulnerableSoftware.versionStartIncluding }}</template>
+                <template slot="versionEndExcluding" slot-scope="text, record">{{ record.matchedVulnerableSoftware.versionEndExcluding }}</template>
 
               </a-table>
               </a-col>
@@ -317,14 +317,12 @@ export default ({
           scopedSlots: { customRender: 'v3_exploitabilityScore' },
         },
         {
-        title: '引入版本',
-        dataIndex: 'matchedVulnerableSoftwareStart',
-        scopedSlots: { customRender: 'versionStartIncluding' },
+          title: '引入版本',
+          scopedSlots: { customRender: 'versionStartIncluding' }
         },
         {
-        title: '修复版本',
-        dataIndex: 'matchedVulnerableSoftwareEnd',
-        scopedSlots: { customRender: 'versionEndExcluding' },
+         title: '建议修复版本',
+         scopedSlots: { customRender: 'versionEndExcluding' }
         }
       ],
       detialVisible:false,
