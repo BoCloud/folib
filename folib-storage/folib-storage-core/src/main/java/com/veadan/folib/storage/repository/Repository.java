@@ -2,6 +2,7 @@ package com.veadan.folib.storage.repository;
 
 import java.util.Set;
 
+import com.veadan.folib.configuration.ProxyConfiguration;
 import com.veadan.folib.storage.repository.remote.RemoteRepository;
 import com.veadan.folib.yaml.repository.RepositoryConfiguration;
 import com.veadan.folib.storage.Storage;
@@ -66,5 +67,7 @@ public interface Repository
     boolean isType(String type);
 
     RemoteRepository getRemoteRepository();
-    
+
+    ProxyConfiguration getProxyConfig();
+
 }

@@ -287,6 +287,11 @@ public class RepositoryData
         return remoteRepository;
     }
 
+    @Override
+    public ProxyConfiguration getProxyConfig() {
+        return this.proxyConfiguration;
+    }
+
     public HttpConnectionPool getHttpConnectionPool()
     {
         return httpConnectionPool;

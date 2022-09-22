@@ -755,8 +755,8 @@
                 <a-col :span="4">
                   <a-form-item class="mb-10" label="协议" :colon="false">
                     <a-select default-value="None" v-model="folibRepository.proxyConfiguration.type">
-                      <a-select-option value="TCP">
-                        TCP
+                      <a-select-option value="">
+                        None
                       </a-select-option>
                       <a-select-option value="HTTP">
                         HTTP

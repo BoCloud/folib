@@ -3,10 +3,12 @@ package com.veadan.folib.providers.repository.proxied;
 import java.util.Objects;
 
 import javax.inject.Inject;
+import javax.ws.rs.client.Client;
 
 import com.veadan.folib.configuration.ConfigurationManager;
 import com.veadan.folib.client.RemoteRepositoryRetryArtifactDownloadConfiguration;
 import com.veadan.folib.client.RestArtifactResolver;
+import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.service.ProxyRepositoryConnectionPoolConfigurationService;
 import com.veadan.folib.storage.repository.remote.RemoteRepository;
 import com.veadan.folib.storage.repository.remote.heartbeat.RemoteRepositoryAlivenessService;
@@ -29,21 +31,24 @@ public class RestArtifactResolverFactory
     @Inject
     private RemoteRepositoryAlivenessService remoteRepositoryAlivenessCacheManager;
 
-    public RestArtifactResolver newInstance(RemoteRepository repository)
+    public RestArtifactResolver newInstance(RemoteRepository repository, RepositoryPath repositoryPath)
     {
         Objects.requireNonNull(repository);
+
         
         RemoteRepositoryRetryArtifactDownloadConfiguration configuration = configurationManager.getConfiguration()
                                                                                                .getRemoteRepositoriesConfiguration()
                                                                                                .getRemoteRepositoryRetryArtifactDownloadConfiguration();
-        
+
         String username = repository.getUsername();
         String password = repository.getPassword();
         String url = repository.getUrl();
         
         final HttpAuthenticationFeature authenticationFeature = (username != null && password != null) ? HttpAuthenticationFeature.basic(username, password) : null;
-                
-        return new RestArtifactResolver(proxyRepositoryConnectionPoolConfigurationService.getRestClient(), url,
+
+        Client client  = proxyRepositoryConnectionPoolConfigurationService.getRestClient(repositoryPath.getStorageId(),repositoryPath.getRepositoryId());
+
+        return new RestArtifactResolver(client , url,
                                         configuration,
                                         authenticationFeature)
                                 {

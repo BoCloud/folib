@@ -6,6 +6,8 @@ import com.veadan.folib.security.exceptions.ExpiredTokenException;
 import javax.inject.Inject;
 import java.io.UnsupportedEncodingException;
 import java.security.Key;
+import java.util.Calendar;
+import java.util.Locale;
 import java.util.Map;
 
 import org.jose4j.jws.AlgorithmIdentifiers;
@@ -31,6 +33,8 @@ import org.springframework.stereotype.Component;
 public class SecurityTokenProvider
 {
     private static final String MESSAGE_INVALID_JWT = "Invalid JWT: value-[%s]";
+
+    private static final Integer DEFAULT_EXPIRE_SECONDS = 7200;
     /**
      * Secret key which is used to encode and verify tokens.<br>
      * All previous tokens will be invalid, if it changed.
@@ -71,22 +75,12 @@ public class SecurityTokenProvider
         claims.setIssuer("Folib");
         claims.setGeneratedJwtId();
         claims.setSubject(subject);
-        claims.setIssuedAt(issuedAt);
-
-        if (issuedAt == null)
-        {
-            claims.setIssuedAtToNow();
-        }
-
         claimMap.entrySet().stream().forEach((e) ->
                                              {
                                                  claims.setClaim(e.getKey(), e.getValue());
                                              });
 
-        if (expireSeconds != null)
-        {
-            claims.setExpirationTime(NumericDate.fromMilliseconds(System.currentTimeMillis() + expireSeconds * 1000));
-        }
+        handleExpiration(expireSeconds, claims);
 
         JsonWebSignature jws = new JsonWebSignature();
         jws.setPayload(claims.toJson());
@@ -95,6 +89,17 @@ public class SecurityTokenProvider
         jws.setAlgorithmHeaderValue(AlgorithmIdentifiers.HMAC_SHA256);
 
         return jws.getCompactSerialization();
+    }
+
+    private static void handleExpiration(Integer expireSeconds, JwtClaims claims) {
+        Calendar issuedCalendar = Calendar.getInstance(Locale.ROOT);
+        Calendar expirationCalendar = Calendar.getInstance(Locale.ROOT);
+        expirationCalendar.setTime(issuedCalendar.getTime());
+        expireSeconds = expireSeconds == null ? DEFAULT_EXPIRE_SECONDS : expireSeconds;
+        expirationCalendar.add(Calendar.SECOND, expireSeconds);
+
+        claims.setIssuedAt(NumericDate.fromMilliseconds(issuedCalendar.getTimeInMillis()));
+        claims.setExpirationTime(NumericDate.fromMilliseconds(expirationCalendar.getTimeInMillis()));
     }
 
     public String getSubject(String token)
