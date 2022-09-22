@@ -321,11 +321,11 @@
             <a-row type="flex" :gutter="24">
               <a-col :span="24" md="12">
                 <a-select v-model="artifactQuery.limit" @change="onPageSizeChange" style="width: 70px">
-                  <a-select-option value="5">5</a-select-option>
-                  <a-select-option value="10">10</a-select-option>
-                  <a-select-option value="15">15</a-select-option>
-                  <a-select-option value="20">20</a-select-option>
-                  <a-select-option value="25">25</a-select-option>
+                  <a-select-option :value="5">5</a-select-option>
+                  <a-select-option :value="10">10</a-select-option>
+                  <a-select-option :value="15">15</a-select-option>
+                  <a-select-option :value="20">20</a-select-option>
+                  <a-select-option :value="25">25</a-select-option>
                 </a-select>
                 <label for="" class="ml-10">显示数量</label>
               </a-col>
@@ -373,10 +373,10 @@
                   :size="24"
                   shape="square"
                   :src="
-                  'images/folib/' + getFileType(searchDataCurrentSelect.path) + '.svg'
+                  'images/folib/' + getFileType(searchDataCurrentSelect?searchDataCurrentSelect.path:'') + '.svg'
                 "
               />
-              {{ searchDataCurrentSelect.path }}
+              {{ searchDataCurrentSelect?searchDataCurrentSelect.path:'' }}
             </h6>
           </template>
           <a-button
@@ -387,11 +387,11 @@
             预览
             <a-icon :size="24" shape="square" type="eye"></a-icon>
           </a-button>
-          <a class="text-dark" :href="searchDataCurrentSelect.url" target="_blank">{{
-              searchDataCurrentSelect.url
+          <a class="text-dark" :href="searchDataCurrentSelect?searchDataCurrentSelect.url:''" target="_blank">{{
+              searchDataCurrentSelect?searchDataCurrentSelect.url:''
             }}</a>
           <hr class="my-25" />
-          <a-descriptions title="基本信息" :column="1">
+          <a-descriptions title="基本信息" :column="1" v-if="searchDataCurrentSelect">
             <a-descriptions-item label="所属空间">
               {{ searchDataCurrentSelect.storageId }}
             </a-descriptions-item>
@@ -515,6 +515,7 @@
     <a-drawer
         placement="right"
         width="45%"
+        v-if="searchDataCurrentSelect"
         :title="searchDataCurrentSelect.path"
         :visible="searchViewCodeVisible"
         @close="closeSearchviewCodeDialog"
@@ -1113,7 +1114,7 @@
             <a-row :gutter="[24]" type="flex" class="order-products" align="middle">
               <a-col :span="24" :md="12">
                 <div class="d-flex">
-                  <a-avatar class="mr-15" :src="'images/folib/'+item.ecosystem+'.svg'"
+                  <a-avatar class="mr-15" :src="'images/folib/'+getImage(item.ecosystem)+'.svg'"
                             shape="square" :size="80" />
                   <div>
                     <h6 class="mb-0 mt-10 font-semibold">{{ item.name }}</h6>
@@ -1349,12 +1350,15 @@ export default {
       console.log(pagination);
     },
     onPageSizeChange(){
-      this.search(this.artifactQuery.artifactName)
+      this.search(this.artifactQuery.artifactName,1)
     },
     searchBoxMouseStatus (bool) {
       this.mouseEnter = bool
     },
-    search(value){
+    search(value,page){
+      if(page){
+        this.artifactQuery.page = page
+      }
       this.artifactQuery.artifactName=value
       this.artifactQuery.storageId=this.folibRepository.storageId
       this.artifactQuery.repositoryId=this.folibRepository.id
@@ -1369,7 +1373,7 @@ export default {
     },
     searchDataHandle(item){
       this.searchDataCurrentSelect=item
-      if(this.searchDataCurrentSelect.snippets){
+      if(this.searchDataCurrentSelect&&this.searchDataCurrentSelect.snippets){
         this.changeCodeTye(this.searchDataCurrentSelect.snippets[0])
       }
       // console.log(item)
@@ -1401,11 +1405,10 @@ export default {
       this.folibRepository = params.item
       this.baseUrl = params.baseUrl
 
-      this.repositoryType = getLayoutType(this.folibRepository)
+      this.repositoryType = this.getLayoutTypeHandle()
       this.isNotSearch=false
     },
     getLayoutTypeHandle () {
-      // console.log(getLayoutType(this.folibRepository))
       return getLayoutType(this.folibRepository)
     },
     getBrowse () {
@@ -1626,6 +1629,9 @@ export default {
     closeDialog(){
       this.detialVisible=false
     },
+    getImage(ecosystem){
+     return ecosystem?ecosystem:this.getLayoutTypeHandle()
+    }
   }
 }
 </script>

@@ -201,6 +201,12 @@
             <artifactId>javax.transaction-api</artifactId>
         </dependency>
 
+        <dependency>
+            <groupId>org.janusgraph</groupId>
+            <artifactId>janusgraph-es</artifactId>
+            <version>0.5.3</version>
+        </dependency>
+
     </dependencies>
 
 </project>

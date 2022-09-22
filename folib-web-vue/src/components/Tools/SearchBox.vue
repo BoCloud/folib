@@ -21,7 +21,7 @@ export default {
   },
   methods: {
     search () {
-      this.$emit('search', this.value)
+      this.$emit('search', this.value, 1)
     },
     mouse (bool) {
       this.$emit('mouse', bool)
