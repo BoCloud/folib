@@ -7,10 +7,17 @@ import java.util.Optional;
 import javax.inject.Inject;
 import javax.transaction.Transactional;
 
+import com.google.common.collect.Lists;
 import com.veadan.folib.artifact.coordinates.ArtifactLayoutDescription;
 import com.veadan.folib.artifact.coordinates.ArtifactLayoutLocator;
 import com.veadan.folib.configuration.ConfigurationManager;
 import com.veadan.folib.gremlin.dsl.EntityTraversal;
+import com.veadan.folib.gremlin.dsl.__;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.tinkerpop.gremlin.groovy.jsr223.GroovyTranslator;
+import org.apache.tinkerpop.gremlin.process.traversal.P;
+import org.apache.tinkerpop.gremlin.process.traversal.Scope;
+import org.janusgraph.core.attribute.Text;
 import org.apache.tinkerpop.gremlin.structure.Vertex;
 import com.veadan.folib.db.schema.Edges;
 import com.veadan.folib.db.schema.Vertices;
@@ -24,6 +31,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.neo4j.annotation.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
+
 
 @Repository
 @Transactional
@@ -83,7 +91,6 @@ public class ArtifactRepository extends GremlinVertexRepository<Artifact>
                                         Pageable pagination)
     {
         Page<Artifact> result = queries.findMatching2(artifactName,storageId,repositoryId,pagination);
-
         return new PageImpl<>(EntityTraversalUtils.reduceHierarchy(result.toList()), pagination, result.getTotalElements());
     }
     public Boolean artifactEntityExists(String storageId,
@@ -91,6 +98,37 @@ public class ArtifactRepository extends GremlinVertexRepository<Artifact>
                                         String path)
     {
         return Optional.ofNullable(queries.artifactEntityExists(storageId, repositoryId, path)).orElse(Boolean.FALSE);
+    }
+
+    public Page<Artifact> findMatchingByIndex(Pageable pagination, String artifactName,
+                                     String storageId,
+                                     String repositoryId)
+    {
+        Long count = buildEntityTraversal(artifactName, storageId, repositoryId).count().tryNext().orElse(0L);
+        long low =  pagination.getPageNumber() * pagination.getPageSize();
+        long high =  (pagination.getPageNumber() + 1) * pagination.getPageSize();
+        com.veadan.folib.storage.repository.Repository repository = configurationManager.getRepository(storageId, repositoryId);
+        List<Artifact> artifactList = buildEntityTraversal(artifactName, storageId, repositoryId)
+                .range(low,high)
+                .map(artifactAdapter.fold(Optional.ofNullable(repository)
+                        .map(com.veadan.folib.storage.repository.Repository::getLayout)
+                        .map(ArtifactLayoutLocator.getLayoutByNameEntityMap()::get)
+                        .map(ArtifactLayoutDescription::getArtifactCoordinatesClass))).toList();
+        return new PageImpl<>(EntityTraversalUtils.reduceHierarchy(artifactList), pagination, count);
+    }
+
+    private EntityTraversal<Vertex, Vertex> buildEntityTraversal(String artifactName,
+                                                                 String storageId,
+                                                                 String repositoryId){
+        EntityTraversal<Vertex, Vertex> entityTraversal = g().V().hasLabel(Vertices.ARTIFACT)
+                .has("uuid", Text.textContains(artifactName));
+        if (StringUtils.isNotBlank(storageId)) {
+            entityTraversal = entityTraversal.has("storageId", storageId);
+        }
+        if (StringUtils.isNotBlank(repositoryId)) {
+            entityTraversal = entityTraversal.has("repositoryId", repositoryId);
+        }
+        return entityTraversal;
     }
 
     public Boolean artifactExists(String storageId,
@@ -113,8 +151,9 @@ public class ArtifactRepository extends GremlinVertexRepository<Artifact>
                                     String repositoryId,
                                     String path)
     {
+
         com.veadan.folib.storage.repository.Repository repository = configurationManager.getRepository(storageId, repositoryId);
-        
+
         EntityTraversal<Vertex, Artifact> t = g().V()
                                                  .hasLabel(Vertices.GENERIC_ARTIFACT_COORDINATES)
                                                  .has("uuid", path)
@@ -126,7 +165,7 @@ public class ArtifactRepository extends GremlinVertexRepository<Artifact>
                                                  .map(artifactAdapter.fold(Optional.ofNullable(repository)
                                                                            .map(com.veadan.folib.storage.repository.Repository::getLayout)
                                                                            .map(ArtifactLayoutLocator.getLayoutByNameEntityMap()::get)
-                                                                           .map(ArtifactLayoutDescription::getArtifactCoordinatesClass)));
+                                                                           .map(ArtifactLayoutDescription::getArtifactCoordinatesClass))).range(0, 1);
         if (!t.hasNext())
         {
             return null;
@@ -174,7 +213,6 @@ interface ArtifactEntityQueries extends org.springframework.data.repository.Repo
                                  @Param("repositoryId") String repositoryId,
                                  @Param("path") String path);
 
-
     @Query(value = "MATCH (genericCoordinates:GenericArtifactCoordinates)<-[r1]-(artifact:Artifact) " +
             "WHERE artifact.uuid Contains  $artifactName" +
             "WITH artifact, r1, genericCoordinates " +
@@ -198,7 +236,7 @@ interface ArtifactEntityQueries extends org.springframework.data.repository.Repo
             "WITH artifact, r1, genericCoordinates, r2, layoutCoordinates, r4, tag " +
             "RETURN artifact, r1, genericCoordinates, r2, layoutCoordinates, r4, tag",
             countQuery = "MATCH (artifact:Artifact) " +
-                    "WHERE  artifact.uuid Contains $artifactName and artifact.storageId=$storageId and artifact.repositoryId=$repositoryId " +
+                    "WHERE  artifact.uuid CONTAINS $artifactName and artifact.storageId=$storageId and artifact.repositoryId=$repositoryId " +
                     "RETURN count(artifact)")
     Page<Artifact> findMatching2(@Param("artifactName") String artifactName,
                                  @Param("storageId") String storageId,

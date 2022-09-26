@@ -67,16 +67,10 @@ public class FqlSearchService extends GremlinVertexRepository<Artifact> implemen
         Pageable pageable = null;
         if(page==1) {
             pageable = PageRequest.of(page, limit).first();
-        }else if(page>1){
-            pageable = PageRequest.of(page, limit).next();
+        }else{
+            pageable = PageRequest.of(page, limit).previous();
         }
-        Page<Artifact> artifacts = null;
-        if(storageId == null||repositoryId==null){
-             artifacts= artifactRepository.findMatching1(artifactName,pageable);
-
-        }else {
-            artifacts= artifactRepository.findMatching2(artifactName,storageId,repositoryId,pageable);
-        }
+        Page<Artifact> artifacts = artifactRepository.findMatchingByIndex(pageable, artifactName, storageId, repositoryId);
         List<Artifact> artifactEntityList = artifacts.getContent();
 
         SearchResults result = new SearchResults();

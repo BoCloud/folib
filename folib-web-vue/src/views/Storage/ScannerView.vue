@@ -202,7 +202,7 @@
             <a-row :gutter="[24]" type="flex" class="order-products" align="middle">
               <a-col :span="24" :md="12">
                 <div class="d-flex">
-                  <a-avatar class="mr-15" :src="'images/folib/'+item.ecosystem+'.svg'"
+                  <a-avatar class="mr-15" :src="'images/folib/'+ getImage(item.ecosystem) +'.svg'"
                             shape="square" :size="80" />
                   <div>
                     <h6 class="mb-0 mt-10 font-semibold">{{ item.name }}</h6>
@@ -488,6 +488,9 @@ export default ({
     },
     LayoutTypeBuild() {
       return getLayoutType2(this.scanCurrentData.layout,this.scanCurrentData.repository,'black')
+    },
+    getImage(ecosystem){
+    return ecosystem?ecosystem:this.LayoutTypeBuild()
     }
   }
 })
