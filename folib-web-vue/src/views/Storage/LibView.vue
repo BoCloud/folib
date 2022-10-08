@@ -121,7 +121,7 @@
                   'images/folib/' + getFileType(currentTreeNode.name) + '.svg'
                 "
               />
-              {{ currentTreeNode.name }}
+              {{ currentTreeNode.name}}
              <div class="table-severity-info" v-if="severity.show" @click="detialVisible=true">
                 <template v-if="severity.vulnerabilitesCount>0">
                     <a-tooltip>
@@ -377,6 +377,47 @@
                 "
               />
               {{ searchDataCurrentSelect?searchDataCurrentSelect.path:'' }}
+              <div class="table-severity-info" v-if="severity.show" @click="detialVisible=true">
+                <template v-if="severity.vulnerabilitesCount>0">
+                    <a-tooltip>
+                    <template slot="title">严重</template>
+                    <div class="severity-info">
+                    <a-avatar :size="24" :src="'images/folib/critical.svg'" />
+                    <span class="mb-0 text-dark">{{severity.critical}}</span>
+                    </div>
+                    </a-tooltip>
+
+                    <a-tooltip>
+                    <template slot="title">高危</template>
+                    <div class="severity-info">
+                    <a-avatar :size="24" :src="'images/folib/high.svg'" />
+                    <span class="mb-0 text-dark">{{severity.high}}</span>
+                    </div>
+                    </a-tooltip>
+
+                    <a-tooltip>
+                    <template slot="title">中危</template>
+                    <div class="severity-info">
+                    <a-avatar :size="24" :src="'images/folib/medium.svg'" />
+                    <span class="mb-0 text-dark">{{severity.medium}}</span>
+                    </div>
+                    </a-tooltip>
+
+                    <a-tooltip>
+                    <template slot="title">低危</template>
+                    <div class="severity-info">
+                    <a-avatar :size="24" :src="'images/folib/low.svg'" />
+                    <span class="mb-0 text-dark">{{severity.low}}</span>
+                    </div>
+                    </a-tooltip>
+                </template>
+                <template v-else>
+                    <a-tooltip>
+                    <template slot="title">健康</template>
+                    <a-avatar :size="24" :src="'images/folib/healthy.svg'" />
+                    </a-tooltip>
+                </template>
+             </div>
             </h6>
           </template>
           <a-button
@@ -1376,6 +1417,8 @@ export default {
       if(this.searchDataCurrentSelect&&this.searchDataCurrentSelect.snippets){
         this.changeCodeTye(this.searchDataCurrentSelect.snippets[0])
       }
+      var id = "storages/" + this.searchDataCurrentSelect.storageId + "/" + this.searchDataCurrentSelect.repositoryId + "/" + this.searchDataCurrentSelect.path
+      this.handlerSeverity(id)
       // console.log(item)
     },
     closeSearchviewCodeDialog(){
@@ -1510,6 +1553,7 @@ export default {
         this.handlerSeverity()
       } else if (this.currentTreeNode.type === 'dir') {
         this.currentFileDetial = null
+        this.severity = {show:false}
       }
     },
     getFileType (name) {
@@ -1610,11 +1654,13 @@ export default {
         }, 100)
       })
     },
-    handlerSeverity(){
-      var id = "storages/" + this.currentTreeNode.storageId + "/" + this.currentTreeNode.repositoryId + "/" + this.currentTreeNode.artifactPath
+    handlerSeverity(id){
+      this.severity = {show:false}
+      if (!id) {
+        id = "storages/" + this.currentTreeNode.storageId + "/" + this.currentTreeNode.repositoryId + "/" + this.currentTreeNode.artifactPath
+      }
       var flag = id.endsWith('.sha') || id.endsWith('.sha1') || id.endsWith('.sha256') || id.endsWith('.sha512') || id.endsWith('.md5')
       if(flag){
-        this.severity = {show:false}
         return
       }
       getSeverity(id).then(res =>{

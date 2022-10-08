@@ -5,7 +5,13 @@ import cn.hutool.core.io.FileUtil;
 import cn.hutool.core.io.IoUtil;
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONException;
-import com.alibaba.fastjson.JSONObject;
+import com.beust.jcommander.internal.Sets;
+import com.veadan.folib.artifact.global.ArtifactGlobalCommonTransactional;
+import com.veadan.folib.artifact.global.VulnerabilityGlobalCommonTransactional;
+import com.veadan.folib.domain.Artifact;
+import com.veadan.folib.domain.VulnerabilityEntity;
+import com.veadan.folib.enums.SafeLevelEnum;
+import com.veadan.folib.enums.VulnerabilityPlatformEnum;
 import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.scanner.biz.FolibScannerBiz;
 import com.veadan.folib.scanner.biz.ScanRulesBiz;
@@ -14,9 +20,13 @@ import com.veadan.folib.scanner.common.exception.BusinessException;
 import com.veadan.folib.scanner.config.ScanConfig;
 import com.veadan.folib.scanner.entity.FolibScanner;
 import com.veadan.folib.scanner.entity.ScanRules;
+import com.veadan.folib.scanner.enums.SeverityTypeEnum;
 import com.veadan.folib.scanner.mapper.FolibScannerMapper;
+import com.veadan.folib.services.ArtifactResolutionService;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.owasp.dependencycheck.data.update.exception.UpdateException;
 import org.owasp.dependencycheck.dependency.Dependency;
 import org.owasp.dependencycheck.dependency.Vulnerability;
@@ -25,6 +35,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
+import javax.inject.Inject;
 import java.io.File;
 import java.io.FileFilter;
 import java.io.FileInputStream;
@@ -33,23 +44,34 @@ import java.nio.file.WatchEvent;
 import java.util.*;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
+import java.util.stream.Collectors;
 
 //import com.veadan.folib.scanner.common.util.file.TikaFileType;
 
 @Slf4j
 @Service
 public class ScanService {
+
     @Autowired
     private ScanConfig scanConfig;
 
     @Autowired
     private ScanRulesBiz scanRulesBiz;
 
-
     @Autowired
     private FolibScannerMapper folibScannerMapper;
+
     @Autowired
     private FolibScannerBiz folibScannerBiz;
+
+    @Inject
+    protected ArtifactResolutionService artifactResolutionService;
+
+    @Inject
+    private ArtifactGlobalCommonTransactional artifactGlobalCommonTransactional;
+
+    @Inject
+    private VulnerabilityGlobalCommonTransactional vulnerabilityGlobalCommonTransactional;
 
     private Executor threadPool = Executors.newFixedThreadPool(100);
 
@@ -77,11 +99,13 @@ public class ScanService {
             //将数据库中该记录变为扫描中
             folibScanner.setScanStatus(ScanConstans.SCANING);
             folibScannerBiz.updateSelectiveById(folibScanner);
+            handlerArtifact(folibScanner, null, null, SafeLevelEnum.SCANNING);
             //执行扫描
             scanWorker(folibScanner);
         } catch (Exception e) {
             folibScanner.setScanStatus(ScanConstans.SCANFAILED);
             folibScannerBiz.updateSelectiveById(folibScanner);
+            handlerArtifact(folibScanner, null, null, SafeLevelEnum.SCAN_FAIL);
             e.printStackTrace();
             throw new BusinessException("文件解析失败");
         }
@@ -126,10 +150,13 @@ public class ScanService {
             return count2.compareTo(count1);
         });
         folibScanner.setReport(JSONArray.toJSONString(dependencyLists));
+        Set<Vulnerability> vulnerabilitySet = Sets.newHashSet();
+        Integer evidenceQuantity = 0;
         for (Dependency dependency : dependencyList) {
             if (dependency.getVulnerabilities().size() > 0) {
                 vulnDepCount = vulnDepCount + 1;
                 vulnCount = vulnCount + dependency.getVulnerabilities().size();
+                vulnerabilitySet.addAll(dependency.getVulnerabilities());
             }
             if (dependency.getSuppressedIdentifiers().size() > 0) {
                 cpeSuppressedCount = cpeSuppressedCount + 1;
@@ -137,13 +164,114 @@ public class ScanService {
             if (dependency.getSuppressedVulnerabilities().size() > 0) {
                 vulnSuppressedCount = vulnSuppressedCount + dependency.getSuppressedVulnerabilities().size();
             }
+            evidenceQuantity = evidenceQuantity + dependency.getEvidence().size();
         }
         folibScanner.setVulnerabilitesCount(vulnCount);
         folibScanner.setVulnerableCount(vulnDepCount);
         folibScanner.setSuppressedCount(vulnSuppressedCount);
         folibScanner.setDependencyCount(dependencyList.length);
         folibScanner.setScanTime(new Date());
+        handlerVulnerability(folibScanner, vulnerabilitySet);
+        handlerArtifact(folibScanner, evidenceQuantity, vulnerabilitySet, SafeLevelEnum.SCAN_COMPLETE);
         return folibScanner;
+    }
+
+    /**
+     * 更新制品扫描数据到图数据库
+     *
+     * @param folibScanner     扫描信息
+     * @param evidenceQuantity 风险凭证个数
+     * @param vulnerabilitySet 漏洞数据
+     * @param safeLevelEnum    安全级别
+     */
+    private void handlerArtifact(FolibScanner folibScanner, Integer evidenceQuantity, Set<Vulnerability> vulnerabilitySet, SafeLevelEnum safeLevelEnum) {
+        try {
+            String storageId = folibScanner.getStorage();
+            String repositoryId = folibScanner.getRepository();
+            String path = folibScanner.getPath();
+            String artifactPath = path.replace(String.format("storages/%s/%s", storageId, repositoryId), "").replaceFirst("/", "");
+            RepositoryPath repositoryPath = artifactResolutionService.resolvePath(storageId, repositoryId, artifactPath);
+            if (Objects.nonNull(repositoryPath)) {
+                Artifact artifact = repositoryPath.getArtifactEntry();
+                if (Objects.nonNull(artifact)) {
+                    artifact.setSafeLevel(safeLevelEnum.getLevel());
+                    if (CollectionUtils.isNotEmpty(vulnerabilitySet)) {
+                        Set<String> vulnerabilityNameSet = vulnerabilitySet.stream().map(Vulnerability::getName).collect(Collectors.toSet());
+                        artifact.setEvidenceQuantity(evidenceQuantity);
+                        artifact.setVulnerabilities(vulnerabilityNameSet);
+                        artifact.setDependencyCount(folibScanner.getDependencyCount());
+                        artifact.setDependencyVulnerabilitiesCount(folibScanner.getVulnerableCount());
+                        artifact.setVulnerabilitiesCount(folibScanner.getVulnerabilitesCount());
+                        artifact.setSuppressedVulnerabilitiesCount(folibScanner.getSuppressedCount());
+                        long critical = vulnerabilitySet.stream().filter(item -> SeverityTypeEnum.CRITICAL.getType().equals(item.getHighestSeverityText())).count();
+                        artifact.setCriticalVulnerabilitiesCount((int) critical);
+                        long high = vulnerabilitySet.stream().filter(item -> SeverityTypeEnum.HIGH.getType().equals(item.getHighestSeverityText())).count();
+                        artifact.setHighVulnerabilitiesCount((int) high);
+                        long medium = vulnerabilitySet.stream().filter(item -> SeverityTypeEnum.MEDIUM.getType().equals(item.getHighestSeverityText())).count();
+                        artifact.setMediumVulnerabilitiesCount((int) medium);
+                        long low = vulnerabilitySet.stream().filter(item -> SeverityTypeEnum.LOW.getType().equals(item.getHighestSeverityText())).count();
+                        artifact.setLowVulnerabilitiesCount((int) low);
+//                        Set<com.veadan.folib.domain.Vulnerability> vulnerabilitySets = Sets.newLinkedHashSet();
+//                        for (Vulnerability vulnerability : vulnerabilitySet) {
+//                            VulnerabilityEntity vulnerabilityEntity = new VulnerabilityEntity();
+//                            vulnerabilityEntity.setUuid(vulnerability.getName());
+//                            vulnerabilityEntity.setVulnerabilityPlatformName(VulnerabilityPlatformEnum.NVD.getName());
+//                            vulnerabilityEntity.setCvssV2Score(String.valueOf(vulnerability.getCvssV2().getScore()));
+//                            vulnerabilityEntity.setCvssV2Severity(vulnerability.getCvssV2().getSeverity());
+//                            vulnerabilityEntity.setCvssV3Score(String.valueOf(vulnerability.getCvssV3().getBaseScore()));
+//                            vulnerabilityEntity.setCvssV3Severity(vulnerability.getCvssV3().getBaseSeverity());
+//                            vulnerabilityEntity.setDescription(vulnerability.getDescription());
+//                            vulnerabilityEntity.setHighestSeverityText(vulnerability.getHighestSeverityText());
+//                            vulnerabilityEntity.setVersionEndExcluding(vulnerability.getMatchedVulnerableSoftware().getVersionEndExcluding());
+//                            vulnerabilitySets.add(vulnerabilityEntity);
+//                        }
+//                        artifact.setVulnerabilitySet(vulnerabilitySets);
+                    }
+                    artifactGlobalCommonTransactional.handleArtifact(artifact);
+                }
+            }
+        } catch (Exception ex) {
+            log.error("=====>>>>>更新制品扫描数据到图数据库失败：{}", ExceptionUtils.getStackTrace(ex));
+        }
+    }
+
+    /**
+     * 更新制品扫描数据到图数据库
+     *
+     * @param folibScanner     扫描信息
+     * @param vulnerabilitySet 漏洞数据
+     */
+    private void handlerVulnerability(FolibScanner folibScanner, Set<Vulnerability> vulnerabilitySet) {
+        try {
+            String storageId = folibScanner.getStorage();
+            String repositoryId = folibScanner.getRepository();
+            String path = folibScanner.getPath();
+            String artifactPath = path.replace(String.format("storages/%s/%s", storageId, repositoryId), "").replaceFirst("/", "");
+            RepositoryPath repositoryPath = artifactResolutionService.resolvePath(storageId, repositoryId, artifactPath);
+            if (Objects.nonNull(repositoryPath)) {
+                Artifact artifact = repositoryPath.getArtifactEntry();
+                if (Objects.nonNull(artifact)) {
+                    if (CollectionUtils.isNotEmpty(vulnerabilitySet)) {
+                        VulnerabilityEntity vulnerabilityEntity = null;
+                        for (Vulnerability vulnerability : vulnerabilitySet) {
+                            vulnerabilityEntity = new VulnerabilityEntity();
+                            vulnerabilityEntity.setUuid(vulnerability.getName());
+                            vulnerabilityEntity.setVulnerabilityPlatformName(VulnerabilityPlatformEnum.NVD.getName());
+                            vulnerabilityEntity.setCvssV2Score(String.valueOf(vulnerability.getCvssV2().getScore()));
+                            vulnerabilityEntity.setCvssV2Severity(vulnerability.getCvssV2().getSeverity());
+                            vulnerabilityEntity.setCvssV3Score(String.valueOf(vulnerability.getCvssV3().getBaseScore()));
+                            vulnerabilityEntity.setCvssV3Severity(vulnerability.getCvssV3().getBaseSeverity());
+                            vulnerabilityEntity.setDescription(vulnerability.getDescription());
+                            vulnerabilityEntity.setHighestSeverityText(vulnerability.getHighestSeverityText());
+                            vulnerabilityEntity.setVersionEndExcluding(vulnerability.getMatchedVulnerableSoftware().getVersionEndExcluding());
+                            vulnerabilityGlobalCommonTransactional.handleVulnerability(vulnerabilityEntity);
+                        }
+                    }
+                }
+            }
+        } catch (Exception ex) {
+            log.error("=====>>>>>更新制品扫描数据到图数据库失败：{}", ExceptionUtils.getStackTrace(ex));
+        }
     }
 
     @Async("asyncThreadPoolTaskExecutor")

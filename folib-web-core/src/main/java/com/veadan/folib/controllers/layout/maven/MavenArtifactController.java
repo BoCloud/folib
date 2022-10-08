@@ -1,5 +1,7 @@
 package com.veadan.folib.controllers.layout.maven;
 
+import com.veadan.folib.domain.Artifact;
+import com.veadan.folib.enums.SafeLevelEnum;
 import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.storage.ArtifactStorageException;
 import com.veadan.folib.artifact.coordinates.MavenArtifactCoordinates;
@@ -12,6 +14,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.util.concurrent.RejectedExecutionException;
 
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
@@ -39,7 +42,7 @@ import static org.springframework.http.HttpStatus.NOT_FOUND;
  * Thanks to custom URL processing any path variable like '{artifactPath:.+}' will be processed as '**'.
  *
  * @author Martin Todorov
- * @author 
+ * @author
  * @author veadan
  * @author @author veadan
  *
@@ -78,7 +81,10 @@ public class MavenArtifactController
 
         artifactPath = correctIndexPathIfNecessary(repository, artifactPath);
         RepositoryPath repositoryPath = artifactResolutionService.resolvePath(storageId, repositoryId, artifactPath);
-
+//        boolean flag = !SafeLevelEnum.SCAN_COMPLETE.getLevel().equals(artifact.getSafeLevel()) || artifact.getVulnerabilitiesCount() > 0;
+//        if (flag) {
+//            throw new RejectedExecutionException("该制品存在漏洞，禁止下载！！！");
+//        }
         provideArtifactDownloadResponse(request, response, httpHeaders, repositoryPath);
     }
 
