@@ -27,7 +27,6 @@ public class ScannerTask {
 
     @Scheduled(cron = "0 0/5 * * * ? ")
     public void run() {
-
         //将正在扫描中的变为失败
         folibScannerBiz.updateScaning();
         List<FolibScanner> folibScanners = folibScannerBiz.selectEnableScan();

@@ -8,20 +8,12 @@ import com.alibaba.excel.write.metadata.fill.FillConfig;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.veadan.folib.domain.Artifact;
-import com.veadan.folib.gremlin.adapters.ArtifactAdapter;
-import com.veadan.folib.gremlin.adapters.EntityTraversalAdapter;
-import com.veadan.folib.gremlin.dsl.EntityTraversalSource;
 import com.veadan.folib.gremlin.entity.vo.ArtifactVo;
-import com.veadan.folib.gremlin.repositories.GremlinVertexRepository;
-import com.veadan.folib.gremlin.service.ArtifactService;
+import com.veadan.folib.gremlin.service.ArtifactWebService;
 import com.veadan.folib.repositories.ArtifactRepository;
-import com.veadan.folib.util.LocalDateTimeInstance;
 import org.apache.commons.collections4.CollectionUtils;
-import org.apache.tinkerpop.gremlin.structure.Graph;
-import org.apache.tinkerpop.gremlin.structure.Vertex;
-import org.janusgraph.core.JanusGraph;
 import org.springframework.beans.BeanUtils;
-import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Service;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 
@@ -30,7 +22,6 @@ import javax.servlet.http.HttpServletResponse;
 import javax.transaction.Transactional;
 import java.io.IOException;
 import java.io.InputStream;
-import java.lang.reflect.UndeclaredThrowableException;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.net.URLEncoder;
@@ -41,40 +32,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-@Component
+@Service
 @Transactional
-public class ArtifactServiceImpl extends GremlinVertexRepository<Artifact> implements ArtifactService {
-
-    @Inject
-    private ArtifactAdapter artifactAdapter;
+public class ArtifactWebServiceImpl implements ArtifactWebService {
 
     @Inject
     private ArtifactRepository artifactRepository;
-
-    @Inject
-    private JanusGraph janusGraph;
-
-
-    @Override
-    protected EntityTraversalAdapter<Vertex, Artifact> adapter() {
-        return artifactAdapter;
-    }
-
-
-    @Override
-    public void saveOrUpdateArtifact(Artifact artifact) {
-        Graph g = janusGraph.tx().createThreadedTx();
-        try {
-            artifact.setLastUpdated(LocalDateTimeInstance.now());
-            merge(() -> g.traversal(EntityTraversalSource.class), artifact);
-            g.tx().commit();
-        } catch (Throwable e) {
-            g.tx().rollback();
-            throw new UndeclaredThrowableException(e);
-        } finally {
-            g.tx().close();
-        }
-    }
 
     @Override
     public void exportExcel(String vulnerabilityUuid, String storageId, String repositoryId) throws IOException {
@@ -102,10 +65,6 @@ public class ArtifactServiceImpl extends GremlinVertexRepository<Artifact> imple
                         if (artifact.getLastUsed() != null) {
                             String lastUsedTime = DateUtil.format(Date.from(artifact.getLastUsed().atZone(ZoneId.of("Asia/Shanghai")).toOffsetDateTime().toInstant()), df);
                             artifactVo.setLastUsedTime(lastUsedTime);
-                        }
-                        if (artifact.getLastUpdated() != null) {
-                            String lastModified = DateUtil.format(Date.from(artifact.getLastUpdated().atZone(ZoneId.of("Asia/Shanghai")).toOffsetDateTime().toInstant()), df);
-                            artifactVo.setLastModified(lastModified);
                         }
                         artifactVo.setSha(artifact.getChecksums().get("SHA-1"));
                         artifactVo.setMd5(artifact.getChecksums().get("MD5"));

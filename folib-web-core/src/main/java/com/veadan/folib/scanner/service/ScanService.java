@@ -6,8 +6,6 @@ import cn.hutool.core.io.IoUtil;
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONException;
 import com.beust.jcommander.internal.Sets;
-import com.veadan.folib.artifact.global.ArtifactGlobalCommonTransactional;
-import com.veadan.folib.artifact.global.VulnerabilityGlobalCommonTransactional;
 import com.veadan.folib.domain.Artifact;
 import com.veadan.folib.domain.VulnerabilityEntity;
 import com.veadan.folib.enums.SafeLevelEnum;
@@ -23,13 +21,15 @@ import com.veadan.folib.scanner.entity.ScanRules;
 import com.veadan.folib.scanner.enums.SeverityTypeEnum;
 import com.veadan.folib.scanner.mapper.FolibScannerMapper;
 import com.veadan.folib.services.ArtifactResolutionService;
+import com.veadan.folib.services.ArtifactService;
+import com.veadan.folib.services.VulnerabilityService;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.compress.utils.Lists;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.owasp.dependencycheck.data.update.exception.UpdateException;
-import org.owasp.dependencycheck.dependency.Dependency;
-import org.owasp.dependencycheck.dependency.Vulnerability;
+import org.owasp.dependencycheck.dependency.*;
 import org.owasp.dependencycheck.utils.Settings;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Async;
@@ -68,10 +68,10 @@ public class ScanService {
     protected ArtifactResolutionService artifactResolutionService;
 
     @Inject
-    private ArtifactGlobalCommonTransactional artifactGlobalCommonTransactional;
+    private VulnerabilityService vulnerabilityService;
 
     @Inject
-    private VulnerabilityGlobalCommonTransactional vulnerabilityGlobalCommonTransactional;
+    private ArtifactService artifactService;
 
     private Executor threadPool = Executors.newFixedThreadPool(100);
 
@@ -106,7 +106,7 @@ public class ScanService {
             folibScanner.setScanStatus(ScanConstans.SCANFAILED);
             folibScannerBiz.updateSelectiveById(folibScanner);
             handlerArtifact(folibScanner, null, null, SafeLevelEnum.SCAN_FAIL);
-            e.printStackTrace();
+            log.error("=====>>>>>执行扫描失败：{}", ExceptionUtils.getStackTrace(e));
             throw new BusinessException("文件解析失败");
         }
 
@@ -145,7 +145,7 @@ public class ScanService {
                 count1 = a.getVulnerabilitiesCount();
                 count2 = b.getVulnerabilitiesCount();
             } catch (JSONException e) {
-                e.printStackTrace();
+                log.error("=====>>>>>处理扫描报告失败：{}", ExceptionUtils.getStackTrace(e));
             }
             return count2.compareTo(count1);
         });
@@ -211,27 +211,13 @@ public class ScanService {
                         artifact.setMediumVulnerabilitiesCount((int) medium);
                         long low = vulnerabilitySet.stream().filter(item -> SeverityTypeEnum.LOW.getType().equals(item.getHighestSeverityText())).count();
                         artifact.setLowVulnerabilitiesCount((int) low);
-//                        Set<com.veadan.folib.domain.Vulnerability> vulnerabilitySets = Sets.newLinkedHashSet();
-//                        for (Vulnerability vulnerability : vulnerabilitySet) {
-//                            VulnerabilityEntity vulnerabilityEntity = new VulnerabilityEntity();
-//                            vulnerabilityEntity.setUuid(vulnerability.getName());
-//                            vulnerabilityEntity.setVulnerabilityPlatformName(VulnerabilityPlatformEnum.NVD.getName());
-//                            vulnerabilityEntity.setCvssV2Score(String.valueOf(vulnerability.getCvssV2().getScore()));
-//                            vulnerabilityEntity.setCvssV2Severity(vulnerability.getCvssV2().getSeverity());
-//                            vulnerabilityEntity.setCvssV3Score(String.valueOf(vulnerability.getCvssV3().getBaseScore()));
-//                            vulnerabilityEntity.setCvssV3Severity(vulnerability.getCvssV3().getBaseSeverity());
-//                            vulnerabilityEntity.setDescription(vulnerability.getDescription());
-//                            vulnerabilityEntity.setHighestSeverityText(vulnerability.getHighestSeverityText());
-//                            vulnerabilityEntity.setVersionEndExcluding(vulnerability.getMatchedVulnerableSoftware().getVersionEndExcluding());
-//                            vulnerabilitySets.add(vulnerabilityEntity);
-//                        }
-//                        artifact.setVulnerabilitySet(vulnerabilitySets);
                     }
-                    artifactGlobalCommonTransactional.handleArtifact(artifact);
+                    artifactService.saveOrUpdateArtifact(artifact);
                 }
             }
         } catch (Exception ex) {
             log.error("=====>>>>>更新制品扫描数据到图数据库失败：{}", ExceptionUtils.getStackTrace(ex));
+            throw new RuntimeException(ex);
         }
     }
 
@@ -242,35 +228,31 @@ public class ScanService {
      * @param vulnerabilitySet 漏洞数据
      */
     private void handlerVulnerability(FolibScanner folibScanner, Set<Vulnerability> vulnerabilitySet) {
-        try {
-            String storageId = folibScanner.getStorage();
-            String repositoryId = folibScanner.getRepository();
-            String path = folibScanner.getPath();
-            String artifactPath = path.replace(String.format("storages/%s/%s", storageId, repositoryId), "").replaceFirst("/", "");
-            RepositoryPath repositoryPath = artifactResolutionService.resolvePath(storageId, repositoryId, artifactPath);
-            if (Objects.nonNull(repositoryPath)) {
-                Artifact artifact = repositoryPath.getArtifactEntry();
-                if (Objects.nonNull(artifact)) {
-                    if (CollectionUtils.isNotEmpty(vulnerabilitySet)) {
-                        VulnerabilityEntity vulnerabilityEntity = null;
-                        for (Vulnerability vulnerability : vulnerabilitySet) {
-                            vulnerabilityEntity = new VulnerabilityEntity();
-                            vulnerabilityEntity.setUuid(vulnerability.getName());
-                            vulnerabilityEntity.setVulnerabilityPlatformName(VulnerabilityPlatformEnum.NVD.getName());
-                            vulnerabilityEntity.setCvssV2Score(String.valueOf(vulnerability.getCvssV2().getScore()));
-                            vulnerabilityEntity.setCvssV2Severity(vulnerability.getCvssV2().getSeverity());
-                            vulnerabilityEntity.setCvssV3Score(String.valueOf(vulnerability.getCvssV3().getBaseScore()));
-                            vulnerabilityEntity.setCvssV3Severity(vulnerability.getCvssV3().getBaseSeverity());
-                            vulnerabilityEntity.setDescription(vulnerability.getDescription());
-                            vulnerabilityEntity.setHighestSeverityText(vulnerability.getHighestSeverityText());
-                            vulnerabilityEntity.setVersionEndExcluding(vulnerability.getMatchedVulnerableSoftware().getVersionEndExcluding());
-                            vulnerabilityGlobalCommonTransactional.handleVulnerability(vulnerabilityEntity);
-                        }
-                    }
+        if (CollectionUtils.isNotEmpty(vulnerabilitySet)) {
+            List<com.veadan.folib.domain.Vulnerability> vulnerabilityList = Lists.newArrayList();
+            for (Vulnerability vulnerability : vulnerabilitySet) {
+                VulnerabilityEntity vulnerabilityEntity = new VulnerabilityEntity();
+                vulnerabilityEntity.setUuid(vulnerability.getName());
+                vulnerabilityEntity.setVulnerabilityPlatformName(VulnerabilityPlatformEnum.NVD.getName());
+                CvssV2 cvssV2 = vulnerability.getCvssV2();
+                if (Objects.nonNull(cvssV2)) {
+                    vulnerabilityEntity.setCvssV2Score(String.valueOf(cvssV2.getScore()));
+                    vulnerabilityEntity.setCvssV2Severity(cvssV2.getSeverity());
                 }
+                CvssV3 cvssV3 = vulnerability.getCvssV3();
+                if (Objects.nonNull(cvssV3)) {
+                    vulnerabilityEntity.setCvssV3Score(String.valueOf(cvssV3.getBaseScore()));
+                    vulnerabilityEntity.setCvssV3Severity(cvssV3.getBaseSeverity());
+                }
+                vulnerabilityEntity.setDescription(vulnerability.getDescription());
+                vulnerabilityEntity.setHighestSeverityText(vulnerability.getHighestSeverityText());
+                VulnerableSoftware vulnerableSoftware = vulnerability.getMatchedVulnerableSoftware();
+                if (Objects.nonNull(vulnerableSoftware)) {
+                    vulnerabilityEntity.setVersionEndExcluding(vulnerableSoftware.getVersionEndExcluding());
+                }
+                vulnerabilityList.add(vulnerabilityEntity);
             }
-        } catch (Exception ex) {
-            log.error("=====>>>>>更新制品扫描数据到图数据库失败：{}", ExceptionUtils.getStackTrace(ex));
+            vulnerabilityService.saveOrUpdateVulnerabilityBatch(vulnerabilityList);
         }
     }
 
@@ -369,7 +351,7 @@ public class ScanService {
                     String hex = IoUtil.readHex28Lower(new FileInputStream(file));
                     log.info("=====>>>>> 路径：{}，类型：{}，hex：{}", file.getName(), type, hex);
                 } catch (Exception ex) {
-                    ex.printStackTrace();
+                    log.error("=====>>>>>读取魔数类型失败：{}", ExceptionUtils.getStackTrace(ex));
                 }
             }
             String shortPath = path.substring(path.lastIndexOf("storages/"));

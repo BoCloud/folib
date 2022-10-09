@@ -1,13 +1,11 @@
 package com.veadan.folib.gremlin.controller;
 
 import com.veadan.folib.controllers.BaseController;
-import com.veadan.folib.gremlin.service.ArtifactService;
+import com.veadan.folib.gremlin.service.ArtifactWebService;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
-import org.springframework.http.MediaType;
-import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -25,7 +23,7 @@ import java.io.IOException;
 public class ArtifactController extends BaseController {
 
     @Inject
-    private ArtifactService artifactService;
+    private ArtifactWebService artifactWebService;
 
     @ApiOperation(value = "导出漏洞的影响范围")
     @ApiResponses(value = {@ApiResponse(code = 200, message = "OK")})
@@ -33,7 +31,7 @@ public class ArtifactController extends BaseController {
     public void exportExcel(@RequestParam(name = "vulnerabilityUuid") String vulnerabilityUuid,
                             @RequestParam(name = "storageId", required = false) String storageId,
                             @RequestParam(name = "repositoryId", required = false) String repositoryId) throws IOException {
-        artifactService.exportExcel(vulnerabilityUuid, storageId, repositoryId);
+        artifactWebService.exportExcel(vulnerabilityUuid, storageId, repositoryId);
     }
 
 }
