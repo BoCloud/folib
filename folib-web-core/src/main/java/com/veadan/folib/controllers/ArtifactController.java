@@ -1,7 +1,7 @@
-package com.veadan.folib.gremlin.controller;
+package com.veadan.folib.controllers;
 
 import com.veadan.folib.controllers.BaseController;
-import com.veadan.folib.gremlin.service.ArtifactWebService;
+import com.veadan.folib.services.ArtifactWebService;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiResponse;

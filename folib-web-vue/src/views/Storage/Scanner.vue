@@ -5,7 +5,6 @@
 
 <template>
   <div class="dashboard">
-
     <a-row :gutter="24" type="flex" align="stretch">
       <a-col :span="24" :lg="24">
         <a-row :gutter="24">
@@ -140,34 +139,75 @@
           <a-col :span="24" :lg="24" class="mb-24" style="position: relative; z-index: 1;">
             <a-card :bordered="false" class="header-solid h-full" :bodyStyle="{padding: 0,}">
               <template #title>
-                <a-row type="flex" align="middle">
-                  <a-col :span="24" :md="12">
-                    <h6>仓库扫描情况</h6>
-                  </a-col>
-                  <a-col :span="24" :md="12" style="display: flex; align-items: center; justify-content: flex-end">
-                  </a-col>
-                </a-row>
+                <a-tabs class="tabs-sliding" default-active-key="1">
+                  <a-tab-pane key="1" tab="仓库扫描情况">
+                    <a-table :columns="columns" :data-source="folibScanData" :pagination="false">
+                      <template slot="repository" slot-scope="text, record" >
+                        <div @click="goToDetial(record)">
+                          <a>
+                            <h6 class="m-0">
+                              <a-avatar :size="42" shape="square" :src="'images/folib/' + LayoutTypeBuild(record) + '.svg'" style="border-radius: 8px; background-image: linear-gradient( 310deg, #f6f5f5, #e2e2e3 );" class="mr-10"></a-avatar>
+                              {{ record.repository }}
+                            </h6>
+                          </a>
+                        </div>
+                      </template>
+                      <template slot="star" slot-scope="star">
+                        <div class="rating">
+                          <a-icon type="star" v-for="n in star" :key="n" theme="filled" />
+                          <a-icon type="star" v-for="n in (5 - star)" :key="6 - n" />
+                        </div>
+                      </template>
+                    </a-table>
+                  </a-tab-pane>
+                  <a-tab-pane key="2" tab="平台漏洞情况">
+                    <a-table :columns="vulnerabilityColumns" :data-source="vulnerabilityData" 
+                    @change="handleVulnerabilityTableChange"
+                    :pagination="{pageSize: vulnerabilityQuery.limit,current:vulnerabilityQuery.page,total:vulnerabilityQuery.total,showLessItems:true}">
+                      <template slot="cvssV2Severity" slot-scope="cvssV2Severity">
+                        <div class="table-avatar-info" v-if="cvssV2Severity">
+                          <a-avatar v-if="['CRITICAL','MEDIUM','HIGH','LOW'].indexOf(cvssV2Severity)!=-1" :size="24" :src="'images/folib/'+cvssV2Severity.toLowerCase()+'.svg'" />
+                          <a-avatar v-else shape="circle" :size="24">{{ cvssV2Severity.slice(0, 1) }}</a-avatar>
+                          <div class="avatar-info">
+                            <p class="mb-0 text-dark">{{ cvssV2Severity==='CRITICAL'?'严重':cvssV2Severity==='MEDIUM'?'中危':cvssV2Severity==='HIGH'?'高危':cvssV2Severity==='LOW'?'低危':cvssV2Severity}}</p>
+                          </div>
+                        </div>
+                      </template>
+                      <template slot="cvssV3Severity" slot-scope="cvssV3Severity">
+                        <div class="table-avatar-info" v-if="cvssV3Severity">
+                          <a-avatar v-if="['CRITICAL','MEDIUM','HIGH','LOW'].indexOf(cvssV3Severity)!=-1" :size="24" :src="'images/folib/'+cvssV3Severity.toLowerCase()+'.svg'" />
+                          <a-avatar v-else shape="circle" :size="24">{{ cvssV3Severity.slice(0, 1) }}</a-avatar>
+                          <div class="avatar-info">
+                            <p class="mb-0 text-dark">{{ cvssV3Severity==='CRITICAL'?'严重':cvssV3Severity==='MEDIUM'?'中危':cvssV3Severity==='HIGH'?'高危':cvssV3Severity==='LOW'?'低危':cvssV3Severity}}</p>
+                          </div>
+                        </div>
+                      </template>
+                      <template slot="expandedRowRender" slot-scope="record">
+                        <a-tag color="#87d068" class="description-title">漏洞描述</a-tag>
+                        <a-textarea class="description" :autoSize="true" :read-only="true" v-model="record.description" />
+                      </template>
+                      <template slot="highestSeverityText" slot-scope="highestSeverityText">
+                        <div class="table-avatar-info">
+                          <a-avatar v-if="['CRITICAL','MEDIUM','HIGH','LOW'].indexOf(highestSeverityText)!=-1" :size="24" :src="'images/folib/'+highestSeverityText.toLowerCase()+'.svg'" />
+                          <a-avatar v-else shape="circle" :size="24">{{ highestSeverityText.slice(0, 1) }}</a-avatar>
+                          <div class="avatar-info">
+                            <p class="mb-0 text-dark">{{ highestSeverityText==='CRITICAL'?'严重':highestSeverityText==='MEDIUM'?'中危':highestSeverityText==='HIGH'?'高危':highestSeverityText==='LOW'?'低危':highestSeverityText}}</p>
+                          </div>
+                        </div>
+                      </template>
+                      <template slot="operation" slot-scope="text, record">
+                        <a-button type="primary" class="v-btn down-excel" @click="downExcel(record)">下载Excel</a-button>
+                        <a-button type="default" class="v-btn show-graph" @click="showGraph(record)">查看图谱</a-button>
+                        <!-- <a-button type="danger">黑白名单</a-button> -->
+                        <!-- <a-button type="ghost" class="px-25">2</a-button> -->
+                        <!-- <a-button type="link" class="px-25">4</a-button> -->
+                        <!-- <a-button type="text" class="px-25">5</a-button> -->
+                        <!-- <a-button type="default" class="px-25">6</a-button> -->
+                      </template>
+                    </a-table>
+                  </a-tab-pane>
+                </a-tabs>
               </template>
-              <a-table :columns="columns" :data-source="folibScanData" :pagination="false">
-                <template slot="repository" slot-scope="text, record" >
-                  <div @click="goToDetial(record)">
-                    <a>
-                      <h6 class="m-0">
-                        <a-avatar :size="42" shape="square" :src="'images/folib/' + LayoutTypeBuild(record) + '.svg'" style="border-radius: 8px; background-image: linear-gradient( 310deg, #f6f5f5, #e2e2e3 );" class="mr-10"></a-avatar>
-                        {{ record.repository }}
-                      </h6>
-                    </a>
-
-                  </div>
-
-                </template>
-                <template slot="star" slot-scope="star">
-                  <div class="rating">
-                    <a-icon type="star" v-for="n in star" :key="n" theme="filled" />
-                    <a-icon type="star" v-for="n in (5 - star)" :key="6 - n" />
-                  </div>
-                </template>
-              </a-table>
             </a-card>
           </a-col>
         </a-row>
@@ -236,7 +276,7 @@
 
 <script>
 
-import {getCount,getScannerSumDifVoList,weekDayCount,mounthDayCount} from "@/api/folib";
+import {getCount,getScannerSumDifVoList,vulnerabilityPage,vulnerabilityExportExcel,weekDayCount,mounthDayCount} from "@/api/folib";
 import {getLayoutType2} from "@/utils/layoutUtil";
 import ChartBar from '@/components/Charts/ChartBar' ;
 import ChartLine from '@/components/Charts/ChartLine'
@@ -250,6 +290,7 @@ export default ({
   },
   created() {
     this.getCountData()
+    this.getVulnerabilityPage()
   },
   data() {
     return {
@@ -328,7 +369,72 @@ export default ({
           scopedSlots: { customRender: 'star' },
         }
       ],
+      vulnerabilityColumns: [
+        {
+          title: '漏洞编号',
+          dataIndex: 'uuid',
+          scopedSlots: { customRender: 'uuid' },
+        },
+        {
+          title: '创建时间',
+          dataIndex: 'created',
+          scopedSlots: { customRender: 'created' },
+        },
+        // {
+        //   title: '最后更新时间',
+        //   dataIndex: 'lastUpdated',
+        //   scopedSlots: { customRender: 'lastUpdated' },
+        // },
+        {
+          title: 'CvssV2评分',
+          dataIndex: 'cvssV2Score',
+          scopedSlots: { customRender: 'cvssV2Score' },
+        },
+        {
+          title: 'CvssV2漏洞等级',
+          dataIndex: 'cvssV2Severity',
+          scopedSlots: { customRender: 'cvssV2Severity' },
+        },
+        {
+          title: 'CvssV3评分',
+          dataIndex: 'cvssV3Score',
+          scopedSlots: { customRender: 'cvssV3Score' },
+        },
+        {
+          title: 'CvssV3漏洞等级',
+          dataIndex: 'cvssV3Severity',
+          scopedSlots: { customRender: 'cvssV3Severity' },
+        },
+        // {
+        //   title: '漏洞描述',
+        //   dataIndex: 'description',
+        //   scopedSlots: { customRender: 'description' },
+        //   ellipsis: true,
+        // },
+        {
+          title: '最高漏洞等级',
+          dataIndex: 'highestSeverityText',
+          scopedSlots: { customRender: 'highestSeverityText' },
+        },
+        {
+          title: '建议修复版本',
+          dataIndex: 'versionEndExcluding',
+          scopedSlots: { customRender: 'versionEndExcluding' },
+        },
+        {
+          title: '操作',
+          dataIndex: 'operation',
+          scopedSlots: { customRender: 'operation' },
+
+        },
+      ],
       folibScanData:[],
+      vulnerabilityData:[],
+      vulnerabilityQuery:{
+        page:1,
+        limit:10,
+        total: 0,
+      },
       weekCompare:{},
       onScanProportion: 0.00,
       onScanAndScanedProportion: 0.00,
@@ -383,7 +489,45 @@ export default ({
       this.$router.push({
         name: 'scannerDetial'
       })
-    }
+    },
+    getVulnerabilityPage (){
+      vulnerabilityPage(this.vulnerabilityQuery).then(res=>{
+        this.vulnerabilityData = res.data.rows
+        this.vulnerabilityQuery.total = res.data.total
+      })
+    },
+    handleVulnerabilityTableChange (pagination){
+       this.vulnerabilityQuery.page = pagination.current
+       this.getVulnerabilityPage()
+    },
+    downExcel (record){
+      vulnerabilityExportExcel({vulnerabilityUuid:record.uuid}).then(res => {
+        if(!res){
+          return
+        }
+        const blob = new Blob([res], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
+        let fileName = "漏洞" + record.uuid + "的影响范围.xlsx"
+        if (window.navigator.msSaveOrOpenBlob) {
+            //兼容IE10
+            navigator.msSaveBlob(blob, fileName)
+        } else {
+          const url = window.URL.createObjectURL(blob)
+          const link = document.createElement('a')
+          link.href = url
+          link.setAttribute('download', fileName)    
+          document.body.appendChild(link)
+          link.click()
+          document.body.removeChild(link)
+          window.URL.revokeObjectURL(url)
+        }
+      })
+      .catch(err => {
+        console.log(err)
+      })
+    },
+    showGraph (record){
+
+    },
   }
 })
 
@@ -409,5 +553,25 @@ $md: 768px;
       position: static;
     }
   }
+}
+
+.table-avatar-info .ant-avatar {
+  margin-right: 8px;
+}
+
+.description{
+  width: 95%;
+  border: none;
+  box-shadow: none;
+  resize: none;
+  background: #fbfbfb;
+  vertical-align: middle;
+}
+.description-title{
+  vertical-align: middle;
+}
+.v-btn{
+  margin-right: 5px;
+  width: 90px;
 }
 </style>

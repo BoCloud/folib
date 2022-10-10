@@ -6,6 +6,7 @@ import com.veadan.folib.configuration.MutableConfiguration;
 import com.veadan.folib.configuration.MutableProxyConfiguration;
 import com.veadan.folib.configuration.MutableSmtpConfiguration;
 import com.veadan.folib.storage.StorageDto;
+import com.veadan.folib.storage.VulnerabilitiesDto;
 import com.veadan.folib.storage.repository.RepositoryDto;
 import com.veadan.folib.storage.routing.MutableRoutingRule;
 import com.veadan.folib.storage.routing.MutableRoutingRules;
@@ -97,4 +98,46 @@ public interface ConfigurationManagementService
     void setSmtpSettings(MutableSmtpConfiguration smtpConfiguration) throws IOException;
 
     void updateStorage(StorageDto storage) throws IOException;
+
+    /**
+     * 设置平台级别白名单
+     * @param whites 平台级别白名单
+     * @throws IOException io异常
+     */
+    void setVulnerabilitiesWhites(String whites) throws IOException;
+
+    /**
+     * 设置平台级别黑名单
+     * @param blacks 平台级别黑名单
+     * @throws IOException io异常
+     */
+    void setVulnerabilitiesBlacks(String blacks) throws IOException;
+
+    /**
+     * 添加平台级别白名单
+     * @param white 平台级别白名单
+     * @throws IOException io异常
+     */
+    void addVulnerabilitiesWhite(String white) throws IOException;
+
+    /**
+     * 添加平台级别黑名单
+     * @param black 平台级别黑名单
+     * @throws IOException io异常
+     */
+    void addVulnerabilitiesBlack(String black) throws IOException;
+
+    /**
+     * 删除平台级别白名单
+     * @param white 平台级别白名单
+     * @throws IOException io异常
+     */
+    void removeVulnerabilitiesWhite(String white) throws IOException;
+
+    /**
+     * 删除平台级别黑名单
+     * @param black 平台级别黑名单
+     * @throws IOException io异常
+     */
+    void removeVulnerabilitiesBlack(String black) throws IOException;
 }

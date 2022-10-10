@@ -1733,12 +1733,12 @@ export default {
 .table-severity-info {
  display: inline-block;
  height: 30px;
-  margin-left: 30px;
+ margin-left: 30px;
 }
 .severity-info {
  display: inline-block;
- width: 30px;
- margin-right: 15px;
+ width: 40px;
+ margin-right: 20px;
 }
 
 // Using vuejs "Deep Selectors"

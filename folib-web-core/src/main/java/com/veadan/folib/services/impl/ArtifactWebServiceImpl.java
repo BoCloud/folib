@@ -1,4 +1,4 @@
-package com.veadan.folib.gremlin.service.impl;
+package com.veadan.folib.services.impl;
 
 import cn.hutool.core.date.DateUtil;
 import com.alibaba.excel.EasyExcel;
@@ -9,7 +9,7 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.veadan.folib.domain.Artifact;
 import com.veadan.folib.gremlin.entity.vo.ArtifactVo;
-import com.veadan.folib.gremlin.service.ArtifactWebService;
+import com.veadan.folib.services.ArtifactWebService;
 import com.veadan.folib.repositories.ArtifactRepository;
 import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.beans.BeanUtils;
@@ -51,13 +51,13 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
             map.put("vulnerabilityID", vulnerabilityUuid);
             excelWriter.fill(map, writeSheet);
             if (CollectionUtils.isNotEmpty(artifactList)) {
+                SimpleDateFormat df = DateUtil.newSimpleFormat("yyyy-MM-dd HH:mm:ss");
                 List<List<Artifact>> list = Lists.partition(artifactList, 200);
                 for (List<Artifact> itemList : list) {
                     // 放入数据
                     excelWriter.fill(itemList.stream().map(artifact -> {
                         ArtifactVo artifactVo = ArtifactVo.builder().build();
                         BeanUtils.copyProperties(artifact, artifactVo);
-                        SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
                         if (artifact.getCreated() != null) {
                             String createdTime = DateUtil.format(Date.from(artifact.getCreated().atZone(ZoneId.of("Asia/Shanghai")).toOffsetDateTime().toInstant()), df);
                             artifactVo.setCreatedTime(createdTime);

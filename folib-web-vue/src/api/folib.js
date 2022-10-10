@@ -145,6 +145,23 @@ export function getScannerSumDifVoList () {
   })
 }
 
+export function vulnerabilityPage (query) {
+  return axios({
+    url: '/api/vulnerability/page',
+    method: 'get',
+    params: query
+  })
+}
+
+export function vulnerabilityExportExcel (query) {
+  return axios({
+    url: '/api/artifact/exportExcel',
+    method: 'get',
+    params: query,
+    responseType: 'blob'
+  })
+}
+
 export function weekDayCount () {
   return axios({
     url: '/api/folibScanner/weekDayCount',
@@ -182,6 +199,13 @@ export function folibScannerGetOne (id) {
 export function getSeverity(id) {
   return axios({
     url: '/api/folibScanner/severity?id='+id,
+    method: 'get'
+  })
+}
+
+export function getVulnerabilities () {
+  return axios({
+    url: '/api/vulnerability/getVulnerabilities',
     method: 'get'
   })
 }
