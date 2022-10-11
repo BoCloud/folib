@@ -6,7 +6,6 @@ import com.veadan.folib.configuration.MutableConfiguration;
 import com.veadan.folib.configuration.MutableProxyConfiguration;
 import com.veadan.folib.configuration.MutableSmtpConfiguration;
 import com.veadan.folib.storage.StorageDto;
-import com.veadan.folib.storage.VulnerabilitiesDto;
 import com.veadan.folib.storage.repository.RepositoryDto;
 import com.veadan.folib.storage.routing.MutableRoutingRule;
 import com.veadan.folib.storage.routing.MutableRoutingRules;
@@ -18,8 +17,7 @@ import java.util.UUID;
 /**
  * @author mtodorov
  */
-public interface ConfigurationManagementService
-{
+public interface ConfigurationManagementService {
 
     MutableConfiguration getMutableConfigurationClone();
 
@@ -38,7 +36,7 @@ public interface ConfigurationManagementService
                                MutableProxyConfiguration proxyConfiguration) throws IOException;
 
     void createStorage(StorageDto storage) throws IOException;
-    
+
     void addStorageIfNotExists(StorageDto storage) throws IOException;
 
     void removeStorage(String storageId) throws IOException;
@@ -101,6 +99,7 @@ public interface ConfigurationManagementService
 
     /**
      * 设置平台级别白名单
+     *
      * @param whites 平台级别白名单
      * @throws IOException io异常
      */
@@ -108,6 +107,7 @@ public interface ConfigurationManagementService
 
     /**
      * 设置平台级别黑名单
+     *
      * @param blacks 平台级别黑名单
      * @throws IOException io异常
      */
@@ -115,6 +115,7 @@ public interface ConfigurationManagementService
 
     /**
      * 添加平台级别白名单
+     *
      * @param white 平台级别白名单
      * @throws IOException io异常
      */
@@ -122,6 +123,7 @@ public interface ConfigurationManagementService
 
     /**
      * 添加平台级别黑名单
+     *
      * @param black 平台级别黑名单
      * @throws IOException io异常
      */
@@ -129,6 +131,7 @@ public interface ConfigurationManagementService
 
     /**
      * 删除平台级别白名单
+     *
      * @param white 平台级别白名单
      * @throws IOException io异常
      */
@@ -136,8 +139,22 @@ public interface ConfigurationManagementService
 
     /**
      * 删除平台级别黑名单
+     *
      * @param black 平台级别黑名单
      * @throws IOException io异常
      */
     void removeVulnerabilitiesBlack(String black) throws IOException;
+
+    /**
+     * 获取平台级别白名单
+     * @return 平台级别白名单
+     */
+    List<String> getVulnerabilitiesWhiteList();
+
+    /**
+     * 获取平台级别黑名单
+     * @return 平台级别黑名单
+     */
+    List<String> getVulnerabilitiesBlackList();
+
 }

@@ -1,5 +1,6 @@
 package com.veadan.folib.services.impl;
 
+import com.google.common.collect.Lists;
 import com.veadan.folib.client.MutableRemoteRepositoryRetryArtifactDownloadConfiguration;
 import com.veadan.folib.configuration.*;
 import com.veadan.folib.event.repository.RepositoryEvent;
@@ -10,7 +11,6 @@ import com.veadan.folib.providers.layout.LayoutProviderRegistry;
 import com.veadan.folib.service.ProxyRepositoryConnectionPoolConfigurationService;
 import com.veadan.folib.services.ConfigurationManagementService;
 import com.veadan.folib.storage.StorageDto;
-import com.veadan.folib.storage.VulnerabilitiesDto;
 import com.veadan.folib.storage.repository.*;
 import com.veadan.folib.storage.routing.MutableRoutingRule;
 import com.veadan.folib.storage.routing.MutableRoutingRules;
@@ -552,6 +552,18 @@ public class ConfigurationManagementServiceImpl
         modifyInLock(configuration -> {
             configuration.removeVulnerabilitiesBlack(black);
         });
+    }
+
+    @Override
+    public List<String> getVulnerabilitiesWhiteList() {
+        String white = getConfiguration().getVulnerabilities().getWhite();
+        return StringUtils.isBlank(white) ? Collections.emptyList() : Lists.newArrayList(Arrays.asList(white.split(",")));
+    }
+
+    @Override
+    public List<String> getVulnerabilitiesBlackList() {
+        String black = getConfiguration().getVulnerabilities().getBlack();
+        return StringUtils.isBlank(black) ? Collections.emptyList() : Lists.newArrayList(Arrays.asList(black.split(",")));
     }
 
     private void setProxyRepositoryConnectionPoolConfigurations() throws IOException {

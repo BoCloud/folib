@@ -4,7 +4,7 @@
  -->
 
 <template>
-  <div class="dashboard">
+  <div class="dashboard scanner">
     <a-row :gutter="24" type="flex" align="stretch">
       <a-col :span="24" :lg="24">
         <a-row :gutter="24">
@@ -139,7 +139,7 @@
           <a-col :span="24" :lg="24" class="mb-24" style="position: relative; z-index: 1;">
             <a-card :bordered="false" class="header-solid h-full" :bodyStyle="{padding: 0,}">
               <template #title>
-                <a-tabs class="tabs-sliding" default-active-key="1">
+                <a-tabs class="tabs-sliding" default-active-key="1" @change="tabChange($event)">
                   <a-tab-pane key="1" tab="仓库扫描情况">
                     <a-table :columns="columns" :data-source="folibScanData" :pagination="false">
                       <template slot="repository" slot-scope="text, record" >
@@ -162,7 +162,7 @@
                   </a-tab-pane>
                   <a-tab-pane key="2" tab="平台漏洞情况">
                     <a-table :columns="vulnerabilityColumns" :data-source="vulnerabilityData" 
-                    @change="handleVulnerabilityTableChange"
+                    @change="handleVulnerabilityTableChange" :loading="vulnerabilityTableLoading"
                     :pagination="{pageSize: vulnerabilityQuery.limit,current:vulnerabilityQuery.page,total:vulnerabilityQuery.total,showLessItems:true}">
                       <template slot="cvssV2Severity" slot-scope="cvssV2Severity">
                         <div class="table-avatar-info" v-if="cvssV2Severity">
@@ -196,13 +196,56 @@
                         </div>
                       </template>
                       <template slot="operation" slot-scope="text, record">
-                        <a-button type="primary" class="v-btn down-excel" @click="downExcel(record)">下载Excel</a-button>
-                        <a-button type="default" class="v-btn show-graph" @click="showGraph(record)">查看图谱</a-button>
-                        <!-- <a-button type="danger">黑白名单</a-button> -->
-                        <!-- <a-button type="ghost" class="px-25">2</a-button> -->
-                        <!-- <a-button type="link" class="px-25">4</a-button> -->
-                        <!-- <a-button type="text" class="px-25">5</a-button> -->
-                        <!-- <a-button type="default" class="px-25">6</a-button> -->
+                        <a-button class="o-btn" :loading="downLoading" @click="downExcel(record)">
+                          <img src="images/folib/download.svg"/>
+                        </a-button>
+                        <a-button class="o-btn o-graph" @click="showGraph(record)">
+                          <img src="images/folib/graph.svg"/>
+                        </a-button>
+                        <a-popconfirm
+                          title="确定要加入到白名单吗？"
+                          ok-text="确定"
+                          cancel-text="取消"
+                          @confirm="addWhite(record)"
+                          v-if="userInfo.roles.indexOf('ADMIN')>-1 && record.white == 0 && record.black == 0" 
+                        >
+                        <div class="o-btn">
+                          <img src="images/folib/white.svg"/>
+                        </div>   
+                        </a-popconfirm>
+                        <a-popconfirm
+                          title="确定要加入到黑名单吗？"
+                          ok-text="确定"
+                          cancel-text="取消"
+                          @confirm="addBlack(record)"
+                          v-if="userInfo.roles.indexOf('ADMIN')>-1 && record.white == 0 && record.black == 0" 
+                        >
+                        <div class="o-btn o-black">
+                          <img src="images/folib/black.svg"/>
+                        </div>   
+                        </a-popconfirm>
+                        <a-popconfirm
+                          title="确定要从白名单移除吗？"
+                          ok-text="确定"
+                          cancel-text="取消"
+                          @confirm="removeWhite(record)"
+                          v-if="userInfo.roles.indexOf('ADMIN')>-1 && record.white == 1" 
+                        >
+                        <div class="o-btn o-rm">
+                          <img src="images/folib/white.svg"/>
+                        </div>   
+                        </a-popconfirm>
+                        <a-popconfirm
+                          title="确定要从黑名单移除吗？"
+                          ok-text="确定"
+                          cancel-text="取消"
+                          @confirm="removeBlack(record)"
+                          v-if="userInfo.roles.indexOf('ADMIN')>-1 && record.black == 1" 
+                        >
+                        <div class="o-btn o-rm">
+                          <img src="images/folib/black.svg"/>
+                        </div>   
+                        </a-popconfirm>
                       </template>
                     </a-table>
                   </a-tab-pane>
@@ -276,11 +319,13 @@
 
 <script>
 
-import {getCount,getScannerSumDifVoList,vulnerabilityPage,vulnerabilityExportExcel,weekDayCount,mounthDayCount} from "@/api/folib";
+import {getCount,getScannerSumDifVoList,vulnerabilityPage,vulnerabilityExportExcel,weekDayCount,mounthDayCount,addVulnerabilitiesWhite,addVulnerabilitiesBlack,removeVulnerabilitiesWhite,removeVulnerabilitiesBlack} from "@/api/folib";
 import {getLayoutType2} from "@/utils/layoutUtil";
 import ChartBar from '@/components/Charts/ChartBar' ;
 import ChartLine from '@/components/Charts/ChartLine'
 import storage from "store";
+import store from '@/store'
+
 
 export default ({
   components: {
@@ -289,11 +334,12 @@ export default ({
 
   },
   created() {
+    this.userInfo=store.state.user
     this.getCountData()
-    this.getVulnerabilityPage()
   },
   data() {
     return {
+      userInfo:{},
       lineChartData: {
         labels: [],
         datasets: [{
@@ -333,6 +379,7 @@ export default ({
         denpendencyCount: {denpendencySum: 0, vulnerableSum: 0, vulnerabilitesSum: 0, suppressedSum: 0},
         totalCount: {onScanCount: 0, onScanAndUnScan: 0, onScanAndScanFailed: 0, notScanCount: 0,onScanAndScaned:0}
       },
+      activeKey: "1",
       columns: [
         {
           title: '仓库',
@@ -376,45 +423,40 @@ export default ({
           scopedSlots: { customRender: 'uuid' },
         },
         {
-          title: '创建时间',
+          title: '引入时间',
           dataIndex: 'created',
           scopedSlots: { customRender: 'created' },
+          align: "center",
         },
-        // {
-        //   title: '最后更新时间',
-        //   dataIndex: 'lastUpdated',
-        //   scopedSlots: { customRender: 'lastUpdated' },
-        // },
         {
           title: 'CvssV2评分',
           dataIndex: 'cvssV2Score',
           scopedSlots: { customRender: 'cvssV2Score' },
+          align: "center",
         },
         {
           title: 'CvssV2漏洞等级',
           dataIndex: 'cvssV2Severity',
           scopedSlots: { customRender: 'cvssV2Severity' },
+          align: "center",
         },
         {
           title: 'CvssV3评分',
           dataIndex: 'cvssV3Score',
           scopedSlots: { customRender: 'cvssV3Score' },
+          align: "center",
         },
         {
           title: 'CvssV3漏洞等级',
           dataIndex: 'cvssV3Severity',
           scopedSlots: { customRender: 'cvssV3Severity' },
+          align: "center",
         },
-        // {
-        //   title: '漏洞描述',
-        //   dataIndex: 'description',
-        //   scopedSlots: { customRender: 'description' },
-        //   ellipsis: true,
-        // },
         {
           title: '最高漏洞等级',
           dataIndex: 'highestSeverityText',
           scopedSlots: { customRender: 'highestSeverityText' },
+          align: "center",
         },
         {
           title: '建议修复版本',
@@ -425,11 +467,11 @@ export default ({
           title: '操作',
           dataIndex: 'operation',
           scopedSlots: { customRender: 'operation' },
-
         },
       ],
       folibScanData:[],
       vulnerabilityData:[],
+      vulnerabilityTableLoading: false,
       vulnerabilityQuery:{
         page:1,
         limit:10,
@@ -440,6 +482,7 @@ export default ({
       onScanAndScanedProportion: 0.00,
       vulnerableSumProportion: 0.00,
       vulnerabilitesSumProportion: 0.00,
+      downLoading: false,
     }
   },
   methods: {
@@ -461,7 +504,6 @@ export default ({
       })
       getScannerSumDifVoList().then(res =>{
         this.folibScanData=res.data
-
       })
       weekDayCount().then(res=>{
         res.data.weekCount.forEach((item) => {
@@ -491,16 +533,27 @@ export default ({
       })
     },
     getVulnerabilityPage (){
+      this.vulnerabilityTableLoading = true
       vulnerabilityPage(this.vulnerabilityQuery).then(res=>{
         this.vulnerabilityData = res.data.rows
         this.vulnerabilityQuery.total = res.data.total
+      }).finally(() =>{
+        this.vulnerabilityTableLoading = false
       })
     },
     handleVulnerabilityTableChange (pagination){
-       this.vulnerabilityQuery.page = pagination.current
-       this.getVulnerabilityPage()
+      if(pagination){
+        this.vulnerabilityQuery.page = pagination.current
+      }
+      this.getVulnerabilityPage()
+    },
+    tabChange(activeKey){
+      if(activeKey === '2'){
+        this.getVulnerabilityPage()
+      }
     },
     downExcel (record){
+      this.downLoading = true
       vulnerabilityExportExcel({vulnerabilityUuid:record.uuid}).then(res => {
         if(!res){
           return
@@ -520,14 +573,52 @@ export default ({
           document.body.removeChild(link)
           window.URL.revokeObjectURL(url)
         }
-      })
-      .catch(err => {
+      }).catch(err => {
         console.log(err)
+      }).finally(() => {
+        this.downLoading = false
       })
     },
     showGraph (record){
 
     },
+    addWhite (record){
+      addVulnerabilitiesWhite({white: record.uuid}).then(res=>{
+        this.successMsg(record.uuid + "添加到白名单成功")
+      }).finally(() => {
+        this.handleVulnerabilityTableChange()
+      })
+    },
+    addBlack (record){
+      addVulnerabilitiesBlack({black: record.uuid}).then(res=>{
+        this.successMsg(record.uuid + "添加到黑名单成功")
+      }).finally(() => {
+        this.handleVulnerabilityTableChange()
+      })
+    },
+    removeWhite (record){
+      removeVulnerabilitiesWhite({white: record.uuid}).then(res=>{
+        this.successMsg(record.uuid + "从白名单移除成功")
+      }).finally(() => {
+        this.handleVulnerabilityTableChange()
+      })
+    },
+    removeBlack (record){
+      removeVulnerabilitiesBlack({black: record.uuid}).then(res=>{
+        this.successMsg(record.uuid + "从黑名单移除成功")
+      }).finally(() => {
+        this.handleVulnerabilityTableChange()
+      })
+    },
+    successMsg(message){
+      if(!message){
+        message = "操作成功"
+      }
+      this.$notification["success"]({
+        message: message,
+        description: ""
+      })
+    }
   }
 })
 
@@ -567,11 +658,38 @@ $md: 768px;
   background: #fbfbfb;
   vertical-align: middle;
 }
+
 .description-title{
   vertical-align: middle;
 }
-.v-btn{
-  margin-right: 5px;
-  width: 90px;
+
+.o-btn {
+  width: 36px;
+  height: 36px;
+  margin-right: 8px;
+  background-color: #1890FF;
+  border-radius: 8px;
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
 }
+.o-btn img{
+  width: 20px;
+  height: 20px;
+  cursor: pointer;
+}
+
+.o-graph{
+  background-color: #7adcfc;
+}
+
+.o-black{
+  background-color: #f58080
+}
+
+.o-rm{
+  background-color: #d81e06
+}
+
+
 </style>

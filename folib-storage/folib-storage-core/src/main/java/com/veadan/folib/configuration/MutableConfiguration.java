@@ -206,21 +206,41 @@ public class MutableConfiguration
         this.vulnerabilities = vulnerabilities;
     }
 
-    public void addVulnerabilitiesWhite(String white) {
-        if (StringUtils.isBlank(white)) {
-            return;
-        }
+    public List<String> getVulnerabilitiesWhite() {
         List<String> whiteList;
         if (StringUtils.isNotBlank(this.vulnerabilities.getWhite())) {
             whiteList = Lists.newArrayList(Arrays.asList(this.vulnerabilities.getWhite().split(",")));
         } else {
             whiteList = Lists.newArrayList();
         }
+        return whiteList;
+    }
+
+    public List<String> getVulnerabilitiesBlack() {
+        List<String> blackList;
+        if (StringUtils.isNotBlank(this.vulnerabilities.getBlack())) {
+            blackList = Lists.newArrayList(Arrays.asList(this.vulnerabilities.getBlack().split(",")));
+        } else {
+            blackList = Lists.newArrayList();
+        }
+        return blackList;
+    }
+
+    public void addVulnerabilitiesWhite(String white) {
+        if (StringUtils.isBlank(white)) {
+            return;
+        }
+        List<String> blackList = getVulnerabilitiesBlack();
+        List<String> whiteList = getVulnerabilitiesWhite();
         List<String> addWhiteList = Lists.newArrayList(Arrays.asList(white.split(",")));
         addWhiteList.forEach(item -> {
-            if (!whiteList.contains(item)) {
-                whiteList.add(item);
+            if (whiteList.contains(item)) {
+                throw new RuntimeException(item + "已在白名单中");
             }
+            if (blackList.contains(item)) {
+                throw new RuntimeException(item + "已在黑名单中");
+            }
+            whiteList.add(item);
         });
         this.vulnerabilities.setWhite(String.join(",", whiteList));
     }
@@ -229,17 +249,17 @@ public class MutableConfiguration
         if (StringUtils.isBlank(black)) {
             return;
         }
-        List<String> blackList;
-        if (StringUtils.isNotBlank(this.vulnerabilities.getBlack())) {
-            blackList = Lists.newArrayList(Arrays.asList(this.vulnerabilities.getBlack().split(",")));
-        } else {
-            blackList = Lists.newArrayList();
-        }
+        List<String> blackList = getVulnerabilitiesBlack();
+        List<String> whiteList = getVulnerabilitiesWhite();
         List<String> addBlackList = Lists.newArrayList(Arrays.asList(black.split(",")));
         addBlackList.forEach(item -> {
-            if (!blackList.contains(item)) {
-                blackList.add(item);
+            if (whiteList.contains(item)) {
+                throw new RuntimeException(item + "已在白名单中");
             }
+            if (blackList.contains(item)) {
+                throw new RuntimeException(item + "已在黑名单中");
+            }
+            blackList.add(item);
         });
         this.vulnerabilities.setBlack(String.join(",", blackList));
     }
@@ -248,7 +268,7 @@ public class MutableConfiguration
         if (StringUtils.isNotBlank(white) && StringUtils.isNotBlank(this.vulnerabilities.getWhite())) {
             List<String> whiteList = Lists.newArrayList(Arrays.asList(this.vulnerabilities.getWhite().split(",")));
             List<String> removeWhiteList = Lists.newArrayList(Arrays.asList(white.split(",")));
-            removeWhiteList.forEach(item ->{
+            removeWhiteList.forEach(item -> {
                 whiteList.removeIf(whiteIterator -> whiteIterator.equals(item));
             });
             this.vulnerabilities.setWhite(String.join(",", whiteList));
@@ -259,10 +279,10 @@ public class MutableConfiguration
         if (StringUtils.isNotBlank(black) && StringUtils.isNotBlank(this.vulnerabilities.getBlack())) {
             List<String> blackList = Lists.newArrayList(Arrays.asList(this.vulnerabilities.getBlack().split(",")));
             List<String> removeBlackList = Lists.newArrayList(Arrays.asList(black.split(",")));
-            removeBlackList.forEach(item ->{
+            removeBlackList.forEach(item -> {
                 blackList.removeIf(whiteIterator -> whiteIterator.equals(item));
             });
-            this.vulnerabilities.setWhite(String.join(",", blackList));
+            this.vulnerabilities.setBlack(String.join(",", blackList));
         }
     }
 
