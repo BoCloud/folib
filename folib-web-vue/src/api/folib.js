@@ -242,6 +242,14 @@ export function removeVulnerabilitiesBlack (data) {
   })
 }
 
+export function vulnerabilityGraph (query) {
+  return axios({
+    url: '/api/vulnerability/graph',
+    method: 'get',
+    params: query
+  })
+}
+
 
 
 
