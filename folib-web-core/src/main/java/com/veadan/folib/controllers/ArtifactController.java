@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import javax.inject.Inject;
+import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 
 /**
@@ -30,8 +31,8 @@ public class ArtifactController extends BaseController {
     @GetMapping(value = "/exportExcel")
     public void exportExcel(@RequestParam(name = "vulnerabilityUuid") String vulnerabilityUuid,
                             @RequestParam(name = "storageId", required = false) String storageId,
-                            @RequestParam(name = "repositoryId", required = false) String repositoryId) throws IOException {
-        artifactWebService.exportExcel(vulnerabilityUuid, storageId, repositoryId);
+                            @RequestParam(name = "repositoryId", required = false) String repositoryId, HttpServletResponse response) throws IOException {
+        artifactWebService.exportExcel(vulnerabilityUuid, storageId, repositoryId, response);
     }
 
 }

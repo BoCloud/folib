@@ -40,10 +40,9 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
     private ArtifactRepository artifactRepository;
 
     @Override
-    public void exportExcel(String vulnerabilityUuid, String storageId, String repositoryId) throws IOException {
+    public void exportExcel(String vulnerabilityUuid, String storageId, String repositoryId, HttpServletResponse response) throws IOException {
         List<Artifact> artifactList = artifactRepository.findMatchingByVulnerabilityUuid(vulnerabilityUuid, storageId, repositoryId);
         InputStream template = this.getClass().getResourceAsStream("/template/vulnerabilityTemplate.xlsx");
-        HttpServletResponse response = ((ServletRequestAttributes) RequestContextHolder.currentRequestAttributes()).getResponse();
         try (ExcelWriter excelWriter = EasyExcel.write(response.getOutputStream()).withTemplate(template).build()) {
             WriteSheet writeSheet = EasyExcel.writerSheet().build();
             FillConfig fillConfig = FillConfig.builder().build();
