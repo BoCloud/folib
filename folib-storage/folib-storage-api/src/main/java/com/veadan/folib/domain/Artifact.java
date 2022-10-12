@@ -1,15 +1,14 @@
 package com.veadan.folib.domain;
 
+import com.veadan.folib.artifact.ArtifactTag;
+import com.veadan.folib.artifact.coordinates.ArtifactCoordinates;
+import com.veadan.folib.data.domain.DomainObject;
+
 import java.time.LocalDateTime;
 import java.util.Map;
 import java.util.Set;
 
-import com.veadan.folib.artifact.coordinates.ArtifactCoordinates;
-import com.veadan.folib.artifact.ArtifactTag;
-import com.veadan.folib.data.domain.DomainObject;
-
-public interface Artifact extends DomainObject
-{
+public interface Artifact extends DomainObject {
 
     String getStorageId();
 
@@ -57,4 +56,51 @@ public interface Artifact extends DomainObject
 
     String getArtifactPath();
 
+    String getSafeLevel();
+
+    void setSafeLevel(String safeLevel);
+
+    Integer getDependencyCount();
+
+    void setDependencyCount(Integer dependencyCount);
+
+    Integer getDependencyVulnerabilitiesCount();
+
+    void setDependencyVulnerabilitiesCount(Integer dependencyVulnerabilitiesCount);
+
+    Integer getVulnerabilitiesCount();
+
+    void setVulnerabilitiesCount(Integer vulnerabilitiesCount);
+
+    Integer getCriticalVulnerabilitiesCount();
+
+    void setCriticalVulnerabilitiesCount(Integer criticalVulnerabilitiesCount);
+
+    Integer getHighVulnerabilitiesCount();
+
+    void setHighVulnerabilitiesCount(Integer highVulnerabilitiesCount);
+
+    Integer getMediumVulnerabilitiesCount();
+
+    void setMediumVulnerabilitiesCount(Integer mediumVulnerabilitiesCount);
+
+    Integer getLowVulnerabilitiesCount();
+
+    void setLowVulnerabilitiesCount(Integer lowVulnerabilitiesCount);
+
+    Integer getSuppressedVulnerabilitiesCount();
+
+    void setSuppressedVulnerabilitiesCount(Integer suppressedVulnerabilitiesCount);
+
+    Integer getEvidenceQuantity();
+
+    void setEvidenceQuantity(Integer evidenceQuantity);
+
+    Set<String> getVulnerabilities();
+
+    void setVulnerabilities(Set<String> vulnerabilities);
+
+    Set<Vulnerability> getVulnerabilitySet();
+
+    void setVulnerabilitySet(Set<Vulnerability> vulnerabilitySet);
 }

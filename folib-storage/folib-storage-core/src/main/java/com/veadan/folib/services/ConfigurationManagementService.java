@@ -17,8 +17,7 @@ import java.util.UUID;
 /**
  * @author mtodorov
  */
-public interface ConfigurationManagementService
-{
+public interface ConfigurationManagementService {
 
     MutableConfiguration getMutableConfigurationClone();
 
@@ -37,7 +36,7 @@ public interface ConfigurationManagementService
                                MutableProxyConfiguration proxyConfiguration) throws IOException;
 
     void createStorage(StorageDto storage) throws IOException;
-    
+
     void addStorageIfNotExists(StorageDto storage) throws IOException;
 
     void removeStorage(String storageId) throws IOException;
@@ -97,4 +96,65 @@ public interface ConfigurationManagementService
     void setSmtpSettings(MutableSmtpConfiguration smtpConfiguration) throws IOException;
 
     void updateStorage(StorageDto storage) throws IOException;
+
+    /**
+     * 设置平台级别白名单
+     *
+     * @param whites 平台级别白名单
+     * @throws IOException io异常
+     */
+    void setVulnerabilitiesWhites(String whites) throws IOException;
+
+    /**
+     * 设置平台级别黑名单
+     *
+     * @param blacks 平台级别黑名单
+     * @throws IOException io异常
+     */
+    void setVulnerabilitiesBlacks(String blacks) throws IOException;
+
+    /**
+     * 添加平台级别白名单
+     *
+     * @param white 平台级别白名单
+     * @throws IOException io异常
+     */
+    void addVulnerabilitiesWhite(String white) throws IOException;
+
+    /**
+     * 添加平台级别黑名单
+     *
+     * @param black 平台级别黑名单
+     * @throws IOException io异常
+     */
+    void addVulnerabilitiesBlack(String black) throws IOException;
+
+    /**
+     * 删除平台级别白名单
+     *
+     * @param white 平台级别白名单
+     * @throws IOException io异常
+     */
+    void removeVulnerabilitiesWhite(String white) throws IOException;
+
+    /**
+     * 删除平台级别黑名单
+     *
+     * @param black 平台级别黑名单
+     * @throws IOException io异常
+     */
+    void removeVulnerabilitiesBlack(String black) throws IOException;
+
+    /**
+     * 获取平台级别白名单
+     * @return 平台级别白名单
+     */
+    List<String> getVulnerabilitiesWhiteList();
+
+    /**
+     * 获取平台级别黑名单
+     * @return 平台级别黑名单
+     */
+    List<String> getVulnerabilitiesBlackList();
+
 }

@@ -21,6 +21,7 @@ import org.apache.commons.compress.compressors.gzip.GzipCompressorInputStream;
 import org.apache.commons.compress.utils.IOUtils;
 import org.apache.commons.compress.utils.Lists;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -99,7 +100,7 @@ public class ArtifactEventListenerScannerHandler {
             String hex = IoUtil.readHex28Lower(new FileInputStream(file));
             log.info("=====>>>>> 路径：{}，hex：{}", file.getName(), hex);
         } catch (Exception ex) {
-            ex.printStackTrace();
+            log.error("=====>>>>>读取魔数类型失败：{}", ExceptionUtils.getStackTrace(ex));
         }
         String type = FileTypeUtil.getType(file);
         String gz = "gz";
@@ -281,7 +282,7 @@ public class ArtifactEventListenerScannerHandler {
                 }
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            log.error("=====>>>>>读取tar.gz文件失败：{}", ExceptionUtils.getStackTrace(e));
         } finally {
             try {
                 if (Objects.nonNull(fileInputStream)) {
@@ -294,7 +295,7 @@ public class ArtifactEventListenerScannerHandler {
                     tarArchiveInputStream.close();
                 }
             } catch (IOException ex) {
-                ex.printStackTrace();
+                log.error("=====>>>>>关闭IO流失败：{}", ExceptionUtils.getStackTrace(ex));
             }
         }
         return pathList;

@@ -85,18 +85,19 @@ public abstract class BusinessBiz<M extends CommonMapper<T>, T> extends BaseBiz<
      * @return 有权限访问的存储空间id列表
      */
     public List<String> havePermissionStorageIdList() {
+        List<String> storageIdList = Lists.newArrayList();
         String username = loginUsername();
         String admin = "admin";
-        List<String> storageIdList = Lists.newArrayList();
+        if (admin.equals(username)) {
+            storageIdList = new ArrayList<>(mutableConfiguration().getStorages().keySet());
+            return storageIdList;
+        }
         for (Map.Entry<String, StorageDto> entry : mutableConfiguration().getStorages().entrySet()) {
             Set<String> userSet = entry.getValue().getUsers();
             if (CollectionUtils.isNotEmpty(userSet)) {
                 if (userSet.contains(username)) {
                     storageIdList.add(entry.getKey());
                 }
-            } else if (admin.equals(username)) {
-                //管理员可以查看没有指定用户的存储空间，其他用户都需要查询指定用户的存储空间
-                storageIdList.add(entry.getKey());
             }
         }
         return storageIdList;

@@ -1,6 +1,6 @@
 <template>
   <div id="settings">
-    <a-tabs class="tabs-sliding" default-active-key="1" @change="tabChange">
+    <a-tabs class="tabs-sliding" default-active-key="1" @change="tabChange($event)">
       <a-tab-pane key="1" tab="全局配置">
         <a-row type="flex" :gutter="[24,24]">
           <a-col :span="24" :lg="6">
@@ -264,12 +264,67 @@
         </a-row>
       </a-tab-pane>
       <a-tab-pane key="2" tab="安全策略">
-        <a-card class="header-solid"
-                :bodyStyle="{padding: '50px', height: '300px', display: 'flex', alignItems: 'center', justifyContent: 'center'}">
-          <a href="#" class="text-center text-muted font-bold">
-            <h6 class="font-semibold text-muted">安全策略用来配置Folib-Scanner相关的</h6>
-          </a>
-        </a-card>
+        <div class="header-solid"
+                style="height:60vh;display:flex;alignItems:center;justifyContent:center"> 
+          <a-card class="white-card">
+            <template #title>
+              <p>白名单</p>
+            </template>
+            <div class="o-btn" @click="() => (showVulnerabilitiesModal = true,vulnerabilitiesType=1)">
+              <img src="images/folib/white.svg"/>
+            </div>  
+            <div class="white-group">
+              <a-list item-layout="vertical" size="large" :data-source="vulnerabilities.whiteList" :pagination="{pageSize: 5,total:vulnerabilities.whiteList.length,showLessItems:true}">
+                <a-list-item slot="renderItem" key="index" slot-scope="item, index">
+                  <label>{{item}}</label>
+                  <template #extra>
+                    <a-popconfirm
+                          title="确定要从白名单移除吗？"
+                          ok-text="确定"
+                          cancel-text="取消"
+                          class="d-popconfirm"
+                          @confirm="removeWhite(item)"
+                        >
+                      <svg width="16" height="16" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path class="fill-danger" fill-rule="evenodd" clip-rule="evenodd" d="M9 2C8.62123 2 8.27497 2.214 8.10557 2.55279L7.38197 4H4C3.44772 4 3 4.44772 3 5C3 5.55228 3.44772 6 4 6L4 16C4 17.1046 4.89543 18 6 18H14C15.1046 18 16 17.1046 16 16V6C16.5523 6 17 5.55228 17 5C17 4.44772 16.5523 4 16 4H12.618L11.8944 2.55279C11.725 2.214 11.3788 2 11 2H9ZM7 8C7 7.44772 7.44772 7 8 7C8.55228 7 9 7.44772 9 8V14C9 14.5523 8.55228 15 8 15C7.44772 15 7 14.5523 7 14V8ZM12 7C11.4477 7 11 7.44772 11 8V14C11 14.5523 11.4477 15 12 15C12.5523 15 13 14.5523 13 14V8C13 7.44772 12.5523 7 12 7Z" fill="#111827"/>
+                      </svg>
+                      <span class="text-danger">DELETE</span>
+                    </a-popconfirm>
+                  </template>
+                </a-list-item>
+              </a-list>
+            </div>
+          </a-card>
+          <a-card class="black-card">
+            <template #title>
+              <p>黑名单</p>
+            </template>
+            <div class="o-btn o-black" @click="() => (showVulnerabilitiesModal = true,vulnerabilitiesType=2)">
+              <img src="images/folib/black.svg"/>
+            </div>   
+            <div class="black-group">
+              <a-list item-layout="vertical" size="large" :data-source="vulnerabilities.blackList" :pagination="{pageSize: 5,total:vulnerabilities.blackList.length,showLessItems:true}">
+                <a-list-item slot="renderItem" key="index" slot-scope="item, index">
+                  {{item}}
+                  <template #extra>
+                    <a-popconfirm
+                          title="确定要从黑名单移除吗？"
+                          ok-text="确定"
+                          cancel-text="取消"
+                          class="d-popconfirm"
+                          @confirm="removeBlack(item)"
+                        >
+                      <svg width="16" height="16" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path class="fill-danger" fill-rule="evenodd" clip-rule="evenodd" d="M9 2C8.62123 2 8.27497 2.214 8.10557 2.55279L7.38197 4H4C3.44772 4 3 4.44772 3 5C3 5.55228 3.44772 6 4 6L4 16C4 17.1046 4.89543 18 6 18H14C15.1046 18 16 17.1046 16 16V6C16.5523 6 17 5.55228 17 5C17 4.44772 16.5523 4 16 4H12.618L11.8944 2.55279C11.725 2.214 11.3788 2 11 2H9ZM7 8C7 7.44772 7.44772 7 8 7C8.55228 7 9 7.44772 9 8V14C9 14.5523 8.55228 15 8 15C7.44772 15 7 14.5523 7 14V8ZM12 7C11.4477 7 11 7.44772 11 8V14C11 14.5523 11.4477 15 12 15C12.5523 15 13 14.5523 13 14V8C13 7.44772 12.5523 7 12 7Z" fill="#111827"/>
+                      </svg>
+                      <span class="text-danger">DELETE</span>
+                    </a-popconfirm>
+                  </template>
+                </a-list-item>
+              </a-list>
+            </div>
+          </a-card>
+        </div>
       </a-tab-pane>
       <a-tab-pane key="3" tab="LDAP配置">
         <div class="mx-auto mt-50" style="max-width: 1000px;">
@@ -538,6 +593,18 @@
         </a-row>
       </a-tab-pane>
     </a-tabs>
+    <a-modal
+      v-model="showVulnerabilitiesModal"
+      :title="vulnerabilitiesType===1?'添加白名单':'添加黑名单'"
+      :maskClosable="false"
+      cancelText="取消"
+      okText="确定"
+      @cancel="vulnerabilitiesModalCancel()"
+      @ok="addVulnerabilities()"
+      centered
+    >
+      <a-input v-model="uuid" placeholder="请输入漏洞编号" />
+    </a-modal>
   </div>
 
 </template>
@@ -546,6 +613,8 @@
 
 import {getServerSettings, postServerSettings, getLdap, putLdap, getMachineCode,postActivate,checkMachineCode} from "@/api/settings";
 import {getUsersCreateFields} from "@/api/users";
+import {getVulnerabilities,addVulnerabilitiesWhite,addVulnerabilitiesBlack,removeVulnerabilitiesWhite,removeVulnerabilitiesBlack} from "@/api/folib";
+
 
 
 export default {
@@ -589,8 +658,14 @@ export default {
         }
       },
       machineInfo:{mac:null,haveError:true,dalyOut:true,object:null},
-      activateCode:null
-
+      activateCode:null,
+      vulnerabilities: {
+        whiteList: [],
+        blackList: [],
+      },
+      showVulnerabilitiesModal: false,
+      vulnerabilitiesType: null,
+      uuid: "",
     };
   },
   computed: {},
@@ -599,6 +674,7 @@ export default {
     this.getLdap()
     this.getUsersCreateFields()
     this.getMachineCode()
+    this.getVulnerabilities()
   },
   methods: {
     handleSubmit(e) {
@@ -609,7 +685,9 @@ export default {
       });
     },
     tabChange(key) {
-
+      if(key === '2'){
+        this.getVulnerabilities()
+      }
     },
     moveStep(distance) {
       this.step += distance;
@@ -711,7 +789,86 @@ export default {
           });
         }, 100)
       }
-
+    },
+    getVulnerabilities(type){
+      getVulnerabilities().then(res =>{
+        let white = res.white
+        let black = res.black
+        if(white && type !==2){
+          this.vulnerabilities.whiteList = white.split(",")
+        }
+        if(black && type !==1){
+          this.vulnerabilities.blackList = black.split(",")
+        }
+      })
+    },
+    removeWhite (uuid){
+      removeVulnerabilitiesWhite({white: uuid}).then(res=>{
+        this.successMsg(uuid + "从白名单移除成功")
+      }).finally(() => {
+        this.getVulnerabilities(1)
+      })
+    },
+    removeBlack (uuid){
+      removeVulnerabilitiesBlack({black: uuid}).then(res=>{
+        this.successMsg(uuid + "从黑名单移除成功")
+      }).finally(() => {
+        this.getVulnerabilities(2)
+      })
+    },
+    addWhite (uuid){
+      addVulnerabilitiesWhite({white: uuid}).then(res=>{
+        this.successMsg(uuid + "添加到白名单成功")
+      }).catch((err)=> {
+        this.$notification["error"]({
+          message: err.response.data.error,
+          description: ""
+        })
+      }).finally(() => {
+        this.uuid = ""
+        this.showVulnerabilitiesModal = false
+        this.getVulnerabilities(1)
+      })
+    },
+    addBlack (uuid){
+      addVulnerabilitiesBlack({black: uuid}).then(res=>{
+        this.successMsg(uuid + "添加到黑名单成功")
+      }).catch((err)=> {
+        this.$notification["error"]({
+          message: err.response.data.error,
+          description: ""
+        })
+      }).finally(() => {
+        this.uuid = ""
+        this.showVulnerabilitiesModal = false
+        this.getVulnerabilities(2)
+      })
+    },
+    vulnerabilitiesModalCancel(){
+      this.showVulnerabilitiesModal = false
+    },
+    addVulnerabilities(){
+      if(!this.uuid){
+        this.$notification["warning"]({
+          message: '请输入漏洞编号',
+          description: ""
+        })
+        return
+      }
+      if(this.vulnerabilitiesType === 1){
+        this.addWhite(this.uuid)
+      }else if(this.vulnerabilitiesType === 2){
+        this.addBlack(this.uuid)
+      }
+    },
+    successMsg(message){
+      if(!message){
+        message = "操作成功"
+      }
+      this.$notification["success"]({
+        message: message,
+        description: ""
+      })
     }
   },
 };
@@ -840,6 +997,70 @@ export default {
     .ant-select-selection--multiple {
       padding: 8px 10px;
     }
+  }
+  .white-group,.black-group {
+    width:100%;
+    display: inline-flex;
+    justify-content: flex-start;
+    flex-wrap: wrap;
+  }
+
+  .white-group .ant-list-item-main,.black-group .ant-list-item-main{
+    min-width: unset;
+  }
+
+  .white-group .white,.black-group .black{
+    margin-right: 10px;
+    margin-bottom: 10px;
+    width: calc((100% - 50px) / 5);
+  }
+
+  .white-card,.black-card{
+    height:100%;
+    margin-right: 10px;
+    width: calc((100% - 20px) / 2);
+    overflow-y: auto;
+  }
+  .white-group .uuid,.black-group .uuid{
+    font-size: 5px;
+  }
+
+  .d-popconfirm{
+    height: 34px;
+    font-size: 12px;
+    font-weight: 600;
+    margin-right: 20px;
+  }
+
+  .d-popconfirm > svg + span {
+    vertical-align: middle;
+    display: inline-block;
+    transition: margin-left 0.3s cubic-bezier(0.645, 0.045, 0.355, 1);
+    pointer-events: none;
+  }
+  .d-popconfirm svg {
+    vertical-align: middle;
+    margin-right: 5px;
+  }
+
+  .o-btn {
+    width: 36px;
+    height: 36px;
+    margin-right: 8px;
+    background-color: #1890FF;
+    border-radius: 8px;
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
+  }
+  .o-btn img{
+    width: 20px;
+    height: 20px;
+    cursor: pointer;
+  }
+
+  .o-black{
+    background-color: #f58080
   }
 }
 </style>

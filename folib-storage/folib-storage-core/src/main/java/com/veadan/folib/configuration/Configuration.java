@@ -3,6 +3,7 @@ package com.veadan.folib.configuration;
 import com.veadan.folib.storage.StorageData;
 import com.veadan.folib.storage.StorageDto;
 import com.veadan.folib.storage.Storage;
+import com.veadan.folib.storage.VulnerabilitiesDto;
 import com.veadan.folib.storage.repository.HttpConnectionPool;
 import com.veadan.folib.storage.repository.RepositoryData;
 import com.veadan.folib.storage.repository.Repository;
@@ -51,6 +52,11 @@ public class Configuration
 
     private final SmtpConfiguration smtpConfiguration;
 
+    /**
+     * 漏洞黑白名单
+     */
+    private VulnerabilitiesDto vulnerabilities;
+
     public Configuration(final MutableConfiguration delegate)
     {
 
@@ -68,6 +74,7 @@ public class Configuration
         routingRules = immuteRoutingRules(delegate.getRoutingRules());
         corsConfiguration = immuteCorsConfiguration(delegate.getCorsConfiguration());
         smtpConfiguration = immuteSmtpConfiguration(delegate.getSmtpConfiguration());
+        vulnerabilities = immuteVulnerabilities(delegate.getVulnerabilities());
     }
 
     private ProxyConfiguration immuteProxyConfiguration(final MutableProxyConfiguration source)
@@ -104,6 +111,11 @@ public class Configuration
     private SmtpConfiguration immuteSmtpConfiguration(final MutableSmtpConfiguration source)
     {
         return source != null ? new SmtpConfiguration(source) : null;
+    }
+
+    private VulnerabilitiesDto immuteVulnerabilities(final VulnerabilitiesDto source)
+    {
+        return source != null ? new VulnerabilitiesDto(source) : null;
     }
 
     public String getId()
@@ -263,5 +275,13 @@ public class Configuration
     public SmtpConfiguration getSmtpConfiguration()
     {
         return smtpConfiguration;
+    }
+
+    public VulnerabilitiesDto getVulnerabilities() {
+        return vulnerabilities;
+    }
+
+    public void setVulnerabilities(VulnerabilitiesDto vulnerabilities) {
+        this.vulnerabilities = vulnerabilities;
     }
 }

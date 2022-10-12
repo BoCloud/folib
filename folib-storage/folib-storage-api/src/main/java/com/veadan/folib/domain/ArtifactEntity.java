@@ -1,26 +1,21 @@
 package com.veadan.folib.domain;
 
-import java.time.LocalDateTime;
-import java.util.HashSet;
-import java.util.LinkedHashSet;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.Set;
-import java.util.stream.Collectors;
-
-import javax.persistence.Transient;
-
-import com.veadan.folib.artifact.coordinates.ArtifactCoordinates;
 import com.veadan.folib.artifact.ArtifactTag;
+import com.veadan.folib.artifact.coordinates.ArtifactCoordinates;
 import com.veadan.folib.artifact.coordinates.GenericArtifactCoordinates;
 import com.veadan.folib.data.domain.DomainEntity;
 import com.veadan.folib.db.schema.Edges;
 import com.veadan.folib.db.schema.Vertices;
+import com.veadan.folib.enums.SafeLevelEnum;
 import com.veadan.folib.gremlin.adapters.DateConverter;
 import org.neo4j.ogm.annotation.NodeEntity;
 import org.neo4j.ogm.annotation.Relationship;
 import org.neo4j.ogm.annotation.typeconversion.Convert;
+
+import javax.persistence.Transient;
+import java.time.LocalDateTime;
+import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * @author Veadan
@@ -28,8 +23,7 @@ import org.neo4j.ogm.annotation.typeconversion.Convert;
  */
 @NodeEntity(Vertices.ARTIFACT)
 public class ArtifactEntity
-        extends DomainEntity implements Artifact
-{
+        extends DomainEntity implements Artifact {
 
     private String storageId;
 
@@ -56,20 +50,68 @@ public class ArtifactEntity
     @Convert(DateConverter.class)
     private LocalDateTime created;
 
-    private Integer downloadCount = Integer.valueOf(0);
+    private Integer downloadCount = 0;
 
     private final ArtifactArchiveListing artifactArchiveListing = new ArtifactEntityArchiveListing();
-    
+
     private Boolean artifactFileExists = Boolean.TRUE;
-    
-    ArtifactEntity()
-    {
+
+    /**
+     * 安全级别
+     */
+    private String safeLevel = SafeLevelEnum.INIT.getLevel();
+    /**
+     * 风险凭证个数
+     */
+    private Integer evidenceQuantity = 0;
+    /**
+     * 依赖数量
+     */
+    private Integer dependencyCount = 0;
+    /**
+     * 有漏洞的依赖数量
+     */
+    private Integer dependencyVulnerabilitiesCount = 0;
+    /**
+     * 漏洞数量
+     */
+    private Integer vulnerabilitiesCount = 0;
+    /**
+     * 严重的漏洞数量
+     */
+    private Integer criticalVulnerabilitiesCount = 0;
+    /**
+     * 高危的漏洞数量
+     */
+    private Integer highVulnerabilitiesCount = 0;
+    /**
+     * 中危的漏洞数量
+     */
+    private Integer mediumVulnerabilitiesCount = 0;
+    /**
+     * 低危的漏洞数量
+     */
+    private Integer lowVulnerabilitiesCount = 0;
+    /**
+     * 被封存的漏洞数量
+     */
+    private Integer suppressedVulnerabilitiesCount = 0;
+    /**
+     * 漏洞列表
+     */
+    private Set<String> vulnerabilities = new LinkedHashSet<>();
+    /**
+     * 漏洞列表
+     */
+    @Relationship(type = Edges.ARTIFACT_HAS_VULNERABILITIES, direction = Relationship.OUTGOING)
+    private Set<Vulnerability> vulnerabilitySet;
+
+    public ArtifactEntity() {
     }
 
     public ArtifactEntity(String storageId,
                           String repositoryId,
-                          ArtifactCoordinates artifactCoordinates)
-    {
+                          ArtifactCoordinates artifactCoordinates) {
         Objects.nonNull(artifactCoordinates);
 
         this.storageId = storageId;
@@ -79,185 +121,278 @@ public class ArtifactEntity
     }
 
     @Override
-    public String getStorageId()
-    {
+    public String getStorageId() {
         return storageId;
     }
 
     @Override
-    public void setStorageId(String storageId)
-    {
+    public void setStorageId(String storageId) {
         this.storageId = storageId;
     }
 
     @Override
-    public String getRepositoryId()
-    {
+    public String getRepositoryId() {
         return repositoryId;
     }
 
     @Override
-    public void setRepositoryId(String repositoryId)
-    {
+    public void setRepositoryId(String repositoryId) {
         this.repositoryId = repositoryId;
     }
 
     @Override
-    public ArtifactCoordinates getArtifactCoordinates()
-    {
-        if (artifactCoordinates instanceof ArtifactCoordinates)
-        {
+    public ArtifactCoordinates getArtifactCoordinates() {
+        if (artifactCoordinates instanceof ArtifactCoordinates) {
             return (ArtifactCoordinates) artifactCoordinates;
         }
-        
+
         return (ArtifactCoordinates) artifactCoordinates.getHierarchyChild();
     }
 
     @Override
-    public void setArtifactCoordinates(ArtifactCoordinates artifactCoordinates)
-    {
+    public void setArtifactCoordinates(ArtifactCoordinates artifactCoordinates) {
         this.artifactCoordinates = artifactCoordinates;
     }
 
     @Override
-    public Set<ArtifactTag> getTagSet()
-    {
+    public Set<ArtifactTag> getTagSet() {
         return tagSet = Optional.ofNullable(tagSet).orElse(new HashSet<>());
     }
 
-    public void setTagSet(Set<ArtifactTag> tagSet)
-    {
+    public void setTagSet(Set<ArtifactTag> tagSet) {
         this.tagSet = tagSet;
     }
 
     @Override
-    public Map<String, String> getChecksums()
-    {
+    public Map<String, String> getChecksums() {
         return checksums.stream().filter(e -> !e.trim().isEmpty())
-                                 .collect(Collectors.toMap(e -> e.substring(1, e.indexOf("}")),
-                                                           e -> e.substring(e.indexOf("}") + 1)));
-    }
-
-    public void setChecksums(Map<String, String> checksums)
-    {
-        this.checksums.clear();
-        this.checksums.addAll(checksums.entrySet()
-                                       .stream()
-                                       .map(e -> "{" + e.getKey() + "}" + e.getValue())
-                                       .collect(Collectors.toSet()));
-    }
-
-    public void addChecksums(Set<String> checksums)
-    {
-        if (checksums == null)
-        {
-            return;
-        }
-        checksums.stream()
-                 .filter(e -> e.startsWith("{"))
-                 .filter(e -> e.indexOf("}") > 1)
-                 .filter(e -> !e.endsWith("}"))
-                 .forEach(this.checksums::add);
+                .collect(Collectors.toMap(e -> e.substring(1, e.indexOf("}")),
+                        e -> e.substring(e.indexOf("}") + 1)));
     }
 
     @Override
-    public Long getSizeInBytes()
-    {
+    public void setChecksums(Map<String, String> checksums) {
+        this.checksums.clear();
+        this.checksums.addAll(checksums.entrySet()
+                .stream()
+                .map(e -> "{" + e.getKey() + "}" + e.getValue())
+                .collect(Collectors.toSet()));
+    }
+
+    public void addChecksums(Set<String> checksums) {
+        if (checksums == null) {
+            return;
+        }
+        checksums.stream()
+                .filter(e -> e.startsWith("{"))
+                .filter(e -> e.indexOf("}") > 1)
+                .filter(e -> !e.endsWith("}"))
+                .forEach(this.checksums::add);
+    }
+
+    @Override
+    public Long getSizeInBytes() {
         return sizeInBytes;
     }
 
     @Override
-    public void setSizeInBytes(Long sizeInBytes)
-    {
+    public void setSizeInBytes(Long sizeInBytes) {
         this.sizeInBytes = sizeInBytes;
     }
 
     @Override
-    public LocalDateTime getLastUpdated()
-    {
+    public LocalDateTime getLastUpdated() {
         return lastUpdated;
     }
 
     @Override
-    public void setLastUpdated(LocalDateTime lastUpdated)
-    {
+    public void setLastUpdated(LocalDateTime lastUpdated) {
         this.lastUpdated = lastUpdated;
     }
 
     @Override
-    public LocalDateTime getLastUsed()
-    {
+    public LocalDateTime getLastUsed() {
         return lastUsed;
     }
 
     @Override
-    public void setLastUsed(LocalDateTime lastUsed)
-    {
+    public void setLastUsed(LocalDateTime lastUsed) {
         this.lastUsed = lastUsed;
     }
 
     @Override
-    public LocalDateTime getCreated()
-    {
+    public LocalDateTime getCreated() {
         return created;
     }
 
     @Override
-    public void setCreated(LocalDateTime created)
-    {
+    public void setCreated(LocalDateTime created) {
         this.created = created;
     }
 
     @Override
-    public Integer getDownloadCount()
-    {
+    public Integer getDownloadCount() {
         return downloadCount;
     }
 
     @Override
-    public void setDownloadCount(Integer downloadCount)
-    {
+    public void setDownloadCount(Integer downloadCount) {
         this.downloadCount = downloadCount;
     }
 
     @Override
-    public ArtifactArchiveListing getArtifactArchiveListing()
-    {
+    public ArtifactArchiveListing getArtifactArchiveListing() {
         return artifactArchiveListing;
     }
-    
-    public Boolean getArtifactFileExists()
-    {
+
+    @Override
+    public Boolean getArtifactFileExists() {
         return artifactFileExists;
     }
 
-    public void setArtifactFileExists(Boolean cached)
-    {
+    @Override
+    public void setArtifactFileExists(Boolean cached) {
         this.artifactFileExists = cached;
     }
 
     @Override
     @Transient
-    public String getArtifactPath()
-    {
+    public String getArtifactPath() {
         return Optional.of(getArtifactCoordinates())
-                       .map(c -> c.buildPath())
-                       .orElseThrow(() -> new IllegalStateException("ArtifactCoordinates required to be set."));
+                .map(c -> c.buildPath())
+                .orElseThrow(() -> new IllegalStateException("ArtifactCoordinates required to be set."));
     }
 
-    public class ArtifactEntityArchiveListing implements ArtifactArchiveListing
-    {
+    @Override
+    public String getSafeLevel() {
+        return safeLevel;
+    }
 
-        public Set<String> getFilenames()
-        {
+    @Override
+    public void setSafeLevel(String safeLevel) {
+        this.safeLevel = safeLevel;
+    }
+
+    @Override
+    public Integer getDependencyCount() {
+        return dependencyCount;
+    }
+
+    @Override
+    public void setDependencyCount(Integer dependencyCount) {
+        this.dependencyCount = dependencyCount;
+    }
+
+    @Override
+    public Integer getDependencyVulnerabilitiesCount() {
+        return dependencyVulnerabilitiesCount;
+    }
+
+    @Override
+    public void setDependencyVulnerabilitiesCount(Integer dependencyVulnerabilitiesCount) {
+        this.dependencyVulnerabilitiesCount = dependencyVulnerabilitiesCount;
+    }
+
+    @Override
+    public Integer getVulnerabilitiesCount() {
+        return vulnerabilitiesCount;
+    }
+
+    @Override
+    public void setVulnerabilitiesCount(Integer vulnerabilitiesCount) {
+        this.vulnerabilitiesCount = vulnerabilitiesCount;
+    }
+
+    @Override
+    public Integer getCriticalVulnerabilitiesCount() {
+        return criticalVulnerabilitiesCount;
+    }
+
+    @Override
+    public void setCriticalVulnerabilitiesCount(Integer criticalVulnerabilitiesCount) {
+        this.criticalVulnerabilitiesCount = criticalVulnerabilitiesCount;
+    }
+
+    @Override
+    public Integer getHighVulnerabilitiesCount() {
+        return highVulnerabilitiesCount;
+    }
+
+    @Override
+    public void setHighVulnerabilitiesCount(Integer highVulnerabilitiesCount) {
+        this.highVulnerabilitiesCount = highVulnerabilitiesCount;
+    }
+
+    @Override
+    public Integer getMediumVulnerabilitiesCount() {
+        return mediumVulnerabilitiesCount;
+    }
+
+    @Override
+    public void setMediumVulnerabilitiesCount(Integer mediumVulnerabilitiesCount) {
+        this.mediumVulnerabilitiesCount = mediumVulnerabilitiesCount;
+    }
+
+    @Override
+    public Integer getLowVulnerabilitiesCount() {
+        return lowVulnerabilitiesCount;
+    }
+
+    @Override
+    public void setLowVulnerabilitiesCount(Integer lowVulnerabilitiesCount) {
+        this.lowVulnerabilitiesCount = lowVulnerabilitiesCount;
+    }
+
+    @Override
+    public Integer getSuppressedVulnerabilitiesCount() {
+        return suppressedVulnerabilitiesCount;
+    }
+
+    @Override
+    public void setSuppressedVulnerabilitiesCount(Integer suppressedVulnerabilitiesCount) {
+        this.suppressedVulnerabilitiesCount = suppressedVulnerabilitiesCount;
+    }
+
+    public class ArtifactEntityArchiveListing implements ArtifactArchiveListing {
+        @Override
+        public Set<String> getFilenames() {
             return ArtifactEntity.this.filenames.stream().filter(e -> !e.isEmpty()).collect(Collectors.toSet());
         }
 
-        public void setFilenames(final Set<String> filenames)
-        {
+        @Override
+        public void setFilenames(final Set<String> filenames) {
             ArtifactEntity.this.filenames = filenames;
         }
 
     }
 
+    @Override
+    public Integer getEvidenceQuantity() {
+        return evidenceQuantity;
+    }
+
+    @Override
+    public void setEvidenceQuantity(Integer evidenceQuantity) {
+        this.evidenceQuantity = evidenceQuantity;
+    }
+
+    @Override
+    public Set<String> getVulnerabilities() {
+        return Optional.ofNullable(vulnerabilities).orElse(new LinkedHashSet<>());
+    }
+
+    @Override
+    public void setVulnerabilities(Set<String> vulnerabilities) {
+        this.vulnerabilities = vulnerabilities;
+    }
+
+    @Override
+    public Set<Vulnerability> getVulnerabilitySet() {
+        return vulnerabilitySet = Optional.ofNullable(vulnerabilitySet).orElse(new HashSet<>());
+    }
+
+    @Override
+    public void setVulnerabilitySet(Set<Vulnerability> vulnerabilitySet) {
+        this.vulnerabilitySet = vulnerabilitySet;
+    }
 }
