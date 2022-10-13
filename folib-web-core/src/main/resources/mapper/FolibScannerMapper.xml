@@ -83,7 +83,18 @@
         AND r.repository = a.repository
         <where>
             r.on_scan = 1
-            <include refid="storageCommon"/>
+            <if test="baseQuery.storageIdList!= null and baseQuery.storageIdList.size() > 0">
+                AND r.storage IN
+                <foreach collection="baseQuery.storageIdList" item="storageId" open="(" close=")" separator=",">
+                    #{storageId}
+                </foreach>
+            </if>
+            <if test="baseQuery.notInStorageIdList!= null and baseQuery.notInStorageIdList.size() > 0">
+                AND r.storage NOT IN
+                <foreach collection="baseQuery.notInStorageIdList" item="storageId" open="(" close=")" separator=",">
+                    #{storageId}
+                </foreach>
+            </if>
         </where>
         GROUP BY repository,
         `storage`

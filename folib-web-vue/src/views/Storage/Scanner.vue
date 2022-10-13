@@ -161,6 +161,13 @@
                     </a-table>
                   </a-tab-pane>
                   <a-tab-pane key="2" tab="平台漏洞情况">
+                    <div class="mx-25">
+                      <a-row type="flex" :gutter="24">
+                        <a-col :span="24" class="text-right">
+                            <a-input-search placeholder="输入漏洞编号查询" style="max-width: 200px;" v-model="vulnerabilityQuery.vulnerabilityUuid" @search="vulnerabilityTableSearch()" />
+                        </a-col>
+                      </a-row>
+                    </div>
                     <a-table :columns="vulnerabilityColumns" :data-source="vulnerabilityData" 
                     @change="handleVulnerabilityTableChange" :loading="vulnerabilityTableLoading"
                     :pagination="{pageSize: vulnerabilityQuery.limit,current:vulnerabilityQuery.page,total:vulnerabilityQuery.total,showLessItems:true}">
@@ -318,8 +325,10 @@
       title="图谱"
       cancelText="取消"
       okText="确定"
-      width="1500"
       @ok="()=>{showGraphModal=false}"
+      width="80vw"
+      id="graphModal"
+      class="graph-modal"
       centered
     >
     <div class="vulnerability-g6" id="vulnerabilityG6" ref="vulnerabilityG6"></div>
@@ -483,13 +492,14 @@ export default ({
         },
       ],
       folibScanData:[],
-      vulnerabilityData:[],
-      vulnerabilityTableLoading: false,
-      vulnerabilityQuery:{
-        page:1,
+      vulnerabilityQuery: {
+        page: 1,
         limit:10,
         total: 0,
+        vulnerabilityUuid:'',
       },
+      vulnerabilityData:[],
+      vulnerabilityTableLoading: false,
       weekCompare:{},
       onScanProportion: 0.00,
       onScanAndScanedProportion: 0.00,
@@ -548,7 +558,7 @@ export default ({
         name: 'scannerDetial'
       })
     },
-    getVulnerabilityPage (){
+    getVulnerabilityPage () {
       this.vulnerabilityTableLoading = true
       vulnerabilityPage(this.vulnerabilityQuery).then(res=>{
         this.vulnerabilityData = res.data.rows
@@ -556,6 +566,10 @@ export default ({
       }).finally(() =>{
         this.vulnerabilityTableLoading = false
       })
+    },
+    vulnerabilityTableSearch(){
+      this.vulnerabilityQuery.page = 1
+      this.handleVulnerabilityTableChange()
     },
     handleVulnerabilityTableChange (pagination){
       if(pagination){
@@ -623,8 +637,9 @@ export default ({
         },
       }
       //宽高
-      const width = 1500
-      const height = 666
+      const container = document.getElementById('vulnerabilityG6');
+      const width = container.scrollWidth;
+      const height = container.scrollHeight || 500;
       //颜色
       const colors = {
         B: '#5B8FF9',
@@ -1141,7 +1156,13 @@ $md: 768px;
   background-color: #d81e06
 }
 
-.vulnerability-g6{
+.graph-modal{
+  height: 90vh;
+}
+
+.vulnerability-g6 {
+  width: 90vw;
+  height: 75vh;
 }
 
 .g6-component-tooltip {

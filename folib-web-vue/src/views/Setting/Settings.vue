@@ -1005,10 +1005,6 @@ export default {
     flex-wrap: wrap;
   }
 
-  .white-group .ant-list-item-main,.black-group .ant-list-item-main{
-    min-width: unset;
-  }
-
   .white-group .white,.black-group .black{
     margin-right: 10px;
     margin-bottom: 10px;
@@ -1061,6 +1057,12 @@ export default {
 
   .o-black{
     background-color: #f58080
+  }
+  .ant-pagination-prev .ant-pagination-item-link, .ant-pagination-next .ant-pagination-item-link{
+    margin-top:2.5px;
+  }
+  .ant-pagination-item{
+    margin-top:5px;
   }
 }
 </style>
