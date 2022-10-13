@@ -1447,7 +1447,6 @@ export default {
       const params = storage.get('libView_repository')
       this.folibRepository = params.item
       this.baseUrl = params.baseUrl
-
       this.repositoryType = this.getLayoutTypeHandle()
       this.isNotSearch=false
     },
