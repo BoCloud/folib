@@ -121,7 +121,7 @@
                   'images/folib/' + getFileType(currentTreeNode.name) + '.svg'
                 "
               />
-              {{ currentTreeNode.name }}
+              {{ currentTreeNode.name}}
              <div class="table-severity-info" v-if="severity.show" @click="detialVisible=true">
                 <template v-if="severity.vulnerabilitesCount>0">
                     <a-tooltip>
@@ -321,11 +321,11 @@
             <a-row type="flex" :gutter="24">
               <a-col :span="24" md="12">
                 <a-select v-model="artifactQuery.limit" @change="onPageSizeChange" style="width: 70px">
-                  <a-select-option value="5">5</a-select-option>
-                  <a-select-option value="10">10</a-select-option>
-                  <a-select-option value="15">15</a-select-option>
-                  <a-select-option value="20">20</a-select-option>
-                  <a-select-option value="25">25</a-select-option>
+                  <a-select-option :value="5">5</a-select-option>
+                  <a-select-option :value="10">10</a-select-option>
+                  <a-select-option :value="15">15</a-select-option>
+                  <a-select-option :value="20">20</a-select-option>
+                  <a-select-option :value="25">25</a-select-option>
                 </a-select>
                 <label for="" class="ml-10">显示数量</label>
               </a-col>
@@ -373,10 +373,51 @@
                   :size="24"
                   shape="square"
                   :src="
-                  'images/folib/' + getFileType(searchDataCurrentSelect.path) + '.svg'
+                  'images/folib/' + getFileType(searchDataCurrentSelect?searchDataCurrentSelect.path:'') + '.svg'
                 "
               />
-              {{ searchDataCurrentSelect.path }}
+              {{ searchDataCurrentSelect?searchDataCurrentSelect.path:'' }}
+              <div class="table-severity-info" v-if="severity.show" @click="detialVisible=true">
+                <template v-if="severity.vulnerabilitesCount>0">
+                    <a-tooltip>
+                    <template slot="title">严重</template>
+                    <div class="severity-info">
+                    <a-avatar :size="24" :src="'images/folib/critical.svg'" />
+                    <span class="mb-0 text-dark">{{severity.critical}}</span>
+                    </div>
+                    </a-tooltip>
+
+                    <a-tooltip>
+                    <template slot="title">高危</template>
+                    <div class="severity-info">
+                    <a-avatar :size="24" :src="'images/folib/high.svg'" />
+                    <span class="mb-0 text-dark">{{severity.high}}</span>
+                    </div>
+                    </a-tooltip>
+
+                    <a-tooltip>
+                    <template slot="title">中危</template>
+                    <div class="severity-info">
+                    <a-avatar :size="24" :src="'images/folib/medium.svg'" />
+                    <span class="mb-0 text-dark">{{severity.medium}}</span>
+                    </div>
+                    </a-tooltip>
+
+                    <a-tooltip>
+                    <template slot="title">低危</template>
+                    <div class="severity-info">
+                    <a-avatar :size="24" :src="'images/folib/low.svg'" />
+                    <span class="mb-0 text-dark">{{severity.low}}</span>
+                    </div>
+                    </a-tooltip>
+                </template>
+                <template v-else>
+                    <a-tooltip>
+                    <template slot="title">健康</template>
+                    <a-avatar :size="24" :src="'images/folib/healthy.svg'" />
+                    </a-tooltip>
+                </template>
+             </div>
             </h6>
           </template>
           <a-button
@@ -387,11 +428,11 @@
             预览
             <a-icon :size="24" shape="square" type="eye"></a-icon>
           </a-button>
-          <a class="text-dark" :href="searchDataCurrentSelect.url" target="_blank">{{
-              searchDataCurrentSelect.url
+          <a class="text-dark" :href="searchDataCurrentSelect?searchDataCurrentSelect.url:''" target="_blank">{{
+              searchDataCurrentSelect?searchDataCurrentSelect.url:''
             }}</a>
           <hr class="my-25" />
-          <a-descriptions title="基本信息" :column="1">
+          <a-descriptions title="基本信息" :column="1" v-if="searchDataCurrentSelect">
             <a-descriptions-item label="所属空间">
               {{ searchDataCurrentSelect.storageId }}
             </a-descriptions-item>
@@ -515,6 +556,7 @@
     <a-drawer
         placement="right"
         width="45%"
+        v-if="searchDataCurrentSelect"
         :title="searchDataCurrentSelect.path"
         :visible="searchViewCodeVisible"
         @close="closeSearchviewCodeDialog"
@@ -1113,7 +1155,7 @@
             <a-row :gutter="[24]" type="flex" class="order-products" align="middle">
               <a-col :span="24" :md="12">
                 <div class="d-flex">
-                  <a-avatar class="mr-15" :src="'images/folib/'+item.ecosystem+'.svg'"
+                  <a-avatar class="mr-15" :src="'images/folib/'+getImage(item.ecosystem)+'.svg'"
                             shape="square" :size="80" />
                   <div>
                     <h6 class="mb-0 mt-10 font-semibold">{{ item.name }}</h6>
@@ -1349,12 +1391,15 @@ export default {
       console.log(pagination);
     },
     onPageSizeChange(){
-      this.search(this.artifactQuery.artifactName)
+      this.search(this.artifactQuery.artifactName,1)
     },
     searchBoxMouseStatus (bool) {
       this.mouseEnter = bool
     },
-    search(value){
+    search(value,page){
+      if(page){
+        this.artifactQuery.page = page
+      }
       this.artifactQuery.artifactName=value
       this.artifactQuery.storageId=this.folibRepository.storageId
       this.artifactQuery.repositoryId=this.folibRepository.id
@@ -1369,9 +1414,11 @@ export default {
     },
     searchDataHandle(item){
       this.searchDataCurrentSelect=item
-      if(this.searchDataCurrentSelect.snippets){
+      if(this.searchDataCurrentSelect&&this.searchDataCurrentSelect.snippets){
         this.changeCodeTye(this.searchDataCurrentSelect.snippets[0])
       }
+      var id = "storages/" + this.searchDataCurrentSelect.storageId + "/" + this.searchDataCurrentSelect.repositoryId + "/" + this.searchDataCurrentSelect.path
+      this.handlerSeverity(id)
       // console.log(item)
     },
     closeSearchviewCodeDialog(){
@@ -1400,12 +1447,10 @@ export default {
       const params = storage.get('libView_repository')
       this.folibRepository = params.item
       this.baseUrl = params.baseUrl
-
-      this.repositoryType = getLayoutType(this.folibRepository)
+      this.repositoryType = this.getLayoutTypeHandle()
       this.isNotSearch=false
     },
     getLayoutTypeHandle () {
-      // console.log(getLayoutType(this.folibRepository))
       return getLayoutType(this.folibRepository)
     },
     getBrowse () {
@@ -1507,6 +1552,7 @@ export default {
         this.handlerSeverity()
       } else if (this.currentTreeNode.type === 'dir') {
         this.currentFileDetial = null
+        this.severity = {show:false}
       }
     },
     getFileType (name) {
@@ -1607,11 +1653,13 @@ export default {
         }, 100)
       })
     },
-    handlerSeverity(){
-      var id = "storages/" + this.currentTreeNode.storageId + "/" + this.currentTreeNode.repositoryId + "/" + this.currentTreeNode.artifactPath
+    handlerSeverity(id){
+      this.severity = {show:false}
+      if (!id) {
+        id = "storages/" + this.currentTreeNode.storageId + "/" + this.currentTreeNode.repositoryId + "/" + this.currentTreeNode.artifactPath
+      }
       var flag = id.endsWith('.sha') || id.endsWith('.sha1') || id.endsWith('.sha256') || id.endsWith('.sha512') || id.endsWith('.md5')
       if(flag){
-        this.severity = {show:false}
         return
       }
       getSeverity(id).then(res =>{
@@ -1626,6 +1674,9 @@ export default {
     closeDialog(){
       this.detialVisible=false
     },
+    getImage(ecosystem){
+     return ecosystem?ecosystem:this.getLayoutTypeHandle()
+    }
   }
 }
 </script>
@@ -1681,12 +1732,12 @@ export default {
 .table-severity-info {
  display: inline-block;
  height: 30px;
-  margin-left: 30px;
+ margin-left: 30px;
 }
 .severity-info {
  display: inline-block;
- width: 30px;
- margin-right: 15px;
+ width: 40px;
+ margin-right: 20px;
 }
 
 // Using vuejs "Deep Selectors"

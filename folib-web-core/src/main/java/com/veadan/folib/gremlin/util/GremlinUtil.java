@@ -21,7 +21,7 @@ public class GremlinUtil {
         // GryoMapper.Builder builder = GryoMapper.build().addRegistry(JanusGraphIoRegistry.getInstance());
         GryoMapper.Builder builder = GryoMapper.build().addRegistry(registry);
         MessageSerializer serializer = new GryoMessageSerializerV3d0(builder);
-        return Cluster.build().
+        return Cluster.build().maxContentLength(65536*10).
                 addContactPoint(host).
                 port(port).
                 serializer(serializer).

@@ -15,6 +15,7 @@ public class DomainEntity implements DomainObject
     @Id
     private String uuid;
 
+    @Override
     public Long getNativeId()
     {
         return id;

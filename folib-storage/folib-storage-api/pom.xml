@@ -35,6 +35,10 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
+                <configuration>
+                    <source>11</source>
+                    <target>11</target>
+                </configuration>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -177,7 +181,11 @@
             <artifactId>fastjson</artifactId>
             <version>1.2.83</version>
         </dependency>
-
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <version>1.18.24</version>
+        </dependency>
         <!--        <dependency>-->
 <!--            <groupId>com.github.ThoughtWire</groupId>-->
 <!--            <artifactId>hazelcast-locks</artifactId>-->

@@ -42,6 +42,7 @@ public abstract class LayoutArtifactCoordinatesEntity<C extends LayoutArtifactCo
         this.genericArtifactCoordinates = (GenericArtifactCoordinatesEntity) node;
     }
 
+    @Override
     public void setUuid(String uuid)
     {
         super.setUuid(uuid);

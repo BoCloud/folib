@@ -43,7 +43,6 @@ public class AqlController extends BaseController
                                  @RequestParam(name = "limit", required = true) int limit,
                                  @RequestParam(name = "page", required = true) int page) throws IOException {
         SearchResults result = fqlSearchService.artfactQuery(artifactName, storageId, repositoryId, limit, page);
-
         return ResponseEntity.ok(result);
     }
 

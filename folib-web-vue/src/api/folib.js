@@ -145,6 +145,23 @@ export function getScannerSumDifVoList () {
   })
 }
 
+export function vulnerabilityPage (query) {
+  return axios({
+    url: '/api/vulnerability/page',
+    method: 'get',
+    params: query
+  })
+}
+
+export function vulnerabilityExportExcel (query) {
+  return axios({
+    url: '/api/artifact/exportExcel',
+    method: 'get',
+    params: query,
+    responseType: 'blob'
+  })
+}
+
 export function weekDayCount () {
   return axios({
     url: '/api/folibScanner/weekDayCount',
@@ -183,6 +200,53 @@ export function getSeverity(id) {
   return axios({
     url: '/api/folibScanner/severity?id='+id,
     method: 'get'
+  })
+}
+
+export function getVulnerabilities () {
+  return axios({
+    url: '/api/vulnerability/getVulnerabilities',
+    method: 'get'
+  })
+}
+
+export function addVulnerabilitiesWhite (data) {
+  return axios({
+    url: '/api/vulnerability/addWhite',
+    method: 'put',
+    data: data
+  })
+}
+
+export function removeVulnerabilitiesWhite (data) {
+  return axios({
+    url: '/api/vulnerability/removeWhite',
+    method: 'delete',
+    data: data
+  })
+}
+
+export function addVulnerabilitiesBlack (data) {
+  return axios({
+    url: '/api/vulnerability/addBlack',
+    method: 'put',
+    data: data
+  })
+}
+
+export function removeVulnerabilitiesBlack (data) {
+  return axios({
+    url: '/api/vulnerability/removeBlack',
+    method: 'delete',
+    data: data
+  })
+}
+
+export function vulnerabilityGraph (query) {
+  return axios({
+    url: '/api/vulnerability/graph',
+    method: 'get',
+    params: query
   })
 }
 

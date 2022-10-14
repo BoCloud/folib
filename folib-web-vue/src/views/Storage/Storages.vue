@@ -1005,7 +1005,6 @@ export default {
   },
   created() {
     this.getStorages();
-
     this.getBaseUrl();
     const params = storage.get('libView_repository')
     if (params) {
@@ -1132,18 +1131,30 @@ export default {
     getStorages() {
       getStorages().then(response => {
         this.storageData = response.storages;
+        this.cacheStorage()
       })
     },
     setCurrentStorage(item) {
-
       this.currentStorage = item
       this.getLibrary(item);
     },
     getLibrary(item) {
-
       getLibrary(item.id).then(response => {
         this.repositories = response.repositories
       })
+    },
+    cacheStorage(){
+      let cache = storage.get("libView_repository");
+      if(!cache || !cache.item.id){
+        if(this.storageData){
+          let item = this.storageData[0]
+          if(item && item.id){
+            this.setCurrentStorage(item)
+            item.storageId = item.id
+            storage.set("libView_repository", {item, baseUrl: this.baseUrl})
+          }
+        }
+      }
     },
     getLayoutType(item) {
       // console.log(getLayoutType(item))

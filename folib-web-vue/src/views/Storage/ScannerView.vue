@@ -126,7 +126,6 @@
                     </div>
                   </template>
               </a-table>
-            </a-table>
               <a-table v-if="scanCurrentData.layout == 'docker'" :columns="dockerColumns" :data-source="rowData" :pagination="false">
                   <a-table rowKey="id" :columns="innerColumns" slot="expandedRowRender" slot-scope="record" :data-source="record.childList" :pagination="false">
                     <template slot="path" slot-scope="text, record">
@@ -159,7 +158,7 @@
         <template #expandIcon="props">
           <a-icon type="caret-right" :rotate="props.isActive ? 90 : 0" />
         </template>
-        <a-collapse-panel v-for="(item,index) in currentReport" :key="index" key="index" style='background: #f7f7f7;border-radius: 4px;margin-bottom: 24px;border: 0;overflow: hidden'>
+        <a-collapse-panel v-for="(item,index) in currentReport" :key="index" style='background: #f7f7f7;border-radius: 4px;margin-bottom: 24px;border: 0;overflow: hidden'>
           <template slot="header">
             <div class="collapse-panel-header-info">
               <span class="file-name">{{item.fileName}}</span>
@@ -202,7 +201,7 @@
             <a-row :gutter="[24]" type="flex" class="order-products" align="middle">
               <a-col :span="24" :md="12">
                 <div class="d-flex">
-                  <a-avatar class="mr-15" :src="'images/folib/'+item.ecosystem+'.svg'"
+                  <a-avatar class="mr-15" :src="'images/folib/'+ getImage(item.ecosystem) +'.svg'"
                             shape="square" :size="80" />
                   <div>
                     <h6 class="mb-0 mt-10 font-semibold">{{ item.name }}</h6>
@@ -488,6 +487,9 @@ export default ({
     },
     LayoutTypeBuild() {
       return getLayoutType2(this.scanCurrentData.layout,this.scanCurrentData.repository,'black')
+    },
+    getImage(ecosystem){
+    return ecosystem?ecosystem:this.LayoutTypeBuild()
     }
   }
 })
