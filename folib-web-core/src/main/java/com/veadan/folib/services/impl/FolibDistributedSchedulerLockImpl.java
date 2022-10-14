@@ -25,6 +25,7 @@ public class FolibDistributedSchedulerLockImpl implements FolibDistributedSchedu
     @Autowired
     private FolibLockProperties properties;
 
+    @Autowired
     private ClusterSyncService clusterSyncService;
 
     @Override
