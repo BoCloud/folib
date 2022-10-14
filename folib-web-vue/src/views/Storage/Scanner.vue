@@ -164,7 +164,12 @@
                     <div class="mx-25">
                       <a-row type="flex" :gutter="24">
                         <a-col :span="24" class="text-right">
-                            <a-input-search placeholder="输入漏洞编号查询" style="max-width: 200px;" v-model="vulnerabilityQuery.vulnerabilityUuid" @search="vulnerabilityTableSearch()" />
+                          <a-select default-value="lucy" placeholder="时间范围搜索" style="width: 150px" v-model="vulnerabilityQuery.dateSearchType" :allowClear="true" @change="vulnerabilityTableSearch()">
+                            <a-select-option v-for="(i,index) in dateSearchTypes" :key="index" :value="i.value">
+                              {{ i.label }}
+                            </a-select-option>
+                          </a-select>
+                          <a-input-search placeholder="输入漏洞编号查询" style="max-width: 200px;" v-model="vulnerabilityQuery.vulnerabilityUuid" @search="vulnerabilityTableSearch()" />
                         </a-col>
                       </a-row>
                     </div>
@@ -496,8 +501,27 @@ export default ({
         page: 1,
         limit:10,
         total: 0,
+        dateSearchType: undefined,
         vulnerabilityUuid:'',
       },
+      dateSearchTypes: [
+        {
+          label: "最近一周",
+          value: 1,
+        },
+        {
+          label: "最近一个月",
+          value: 2,
+        },
+        {
+          label: "最近三个月",
+          value: 3,
+        },
+        {
+          label: "最近半年",
+          value: 4,
+        },
+      ],
       vulnerabilityData:[],
       vulnerabilityTableLoading: false,
       weekCompare:{},
