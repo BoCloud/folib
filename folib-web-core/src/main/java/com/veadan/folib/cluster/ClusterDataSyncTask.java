@@ -1,0 +1,104 @@
+package com.veadan.folib.cluster;
+
+import com.alibaba.fastjson.JSONObject;
+import com.veadan.folib.controllers.cluster.dto.SyncRepositoryDto;
+import com.veadan.folib.controllers.cluster.dto.SyncStorageDto;
+import com.veadan.folib.entity.ClusterDataSyncTaskPo;
+import com.veadan.folib.mapper.ClusterDataSyncTaskMapper;
+import com.veadan.folib.services.ClusterSyncService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.scheduling.annotation.EnableScheduling;
+import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.stereotype.Component;
+import org.springframework.util.CollectionUtils;
+
+import java.util.List;
+import java.util.Objects;
+
+
+@Component
+@ConditionalOnProperty(name = "folib.cluster.openflag", havingValue = "true")
+@EnableScheduling
+public class ClusterDataSyncTask {
+    private static final Logger logger = LoggerFactory.getLogger(ClusterDataSyncTask.class);
+
+    @Autowired
+    private FolibLockProperties ipProperties;
+
+    @Autowired
+    private ClusterDataSyncTaskMapper clusterDataSyncTaskMapper;
+
+    @Autowired
+    private ClusterSyncService clusterSyncService;
+
+    private Boolean reExecuteFlag = false;
+
+    /**
+     * 集群模式下当前实例操作 同步有问题的实例数据
+     */
+    @Scheduled(cron = "0 0/1 * * * ? ")
+    public void handleSyncData() {
+        if (reExecuteFlag) {
+            return;
+        }
+        reExecuteFlag = true;
+        logger.info("start handle abnormal node data");
+
+        // 查询 cluster_datasync_task
+        List<ClusterDataSyncTaskPo> list = clusterDataSyncTaskMapper.getClusterDataSyncTaskList(
+                SyncDataStatusEnum.WILL_EXECUTE_STATUS.getStatus(), ipProperties.getFolibLockIp());
+        if (CollectionUtils.isEmpty(list)) {
+            logger.info("handle data is empty");
+            reExecuteFlag = false;
+            return;
+        }
+        list.forEach(task -> {
+            try {
+                String url = task.getUrl();
+                //同步STORAGE
+                if (Objects.equals(SyncDataTypeEnum.STORAGE.getValue(), task.getTaskType())) {
+                    SyncStorageDto storageDto = JSONObject.parseObject(task.getDataJson(),
+                            SyncStorageDto.class);
+                    logger.info("start sync storage data [{} {}]", storageDto.getStorageId(), url);
+
+                    ClusterSyncResultEnum syncResult = clusterSyncService.handleSyncStorage(storageDto.getStorageId(), storageDto, url, true);
+                    isSuccess(syncResult, task);
+                    logger.info("sync data end [{} {}]", storageDto.getStorageId(), url);
+                }
+                //同步REPOSITORY
+                if (Objects.equals(SyncDataTypeEnum.REPOSITORY.getValue(), task.getTaskType())) {
+
+                    SyncRepositoryDto syncRepositoryDto = JSONObject.parseObject(task.getDataJson(),
+                            SyncRepositoryDto.class);
+
+                    logger.info("start sync repository data [{} {} {} ]",
+                            syncRepositoryDto.getStorageId(), syncRepositoryDto.getRepositoryId(), url);
+
+                    ClusterSyncResultEnum syncResult = clusterSyncService.handleSyncRepository(syncRepositoryDto.getStorageId(),
+                            syncRepositoryDto.getRepositoryId(), syncRepositoryDto, url, true);
+                    isSuccess(syncResult, task);
+                    logger.info("sync repository data end [{} {} {} ]",
+                            syncRepositoryDto.getStorageId(), syncRepositoryDto.getRepositoryId(), url);
+                }
+
+            } catch (Exception e) {
+                logger.error("error {}", e.getMessage());
+            }
+        });
+        reExecuteFlag = false;
+        logger.info(" handle abnormal node data end ");
+    }
+
+    private void isSuccess(ClusterSyncResultEnum syncResult, ClusterDataSyncTaskPo task) {
+        if (syncResult.getCode() == 200) {
+            // 更新task 状态
+            task.setStatus(SyncDataStatusEnum.COMPLETE_STATUS.getStatus());
+            clusterDataSyncTaskMapper.updateTask(task);
+            logger.info("sync success");
+        }
+    }
+
+}

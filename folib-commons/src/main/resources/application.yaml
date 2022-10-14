@@ -11,7 +11,7 @@ spring:
   datasource:
     type: com.alibaba.druid.pool.DruidDataSource
     driver-class-name: com.mysql.cj.jdbc.Driver
-    url: jdbc:mysql://${folib.mysql.host:xpboot.cn}:${folib.mysql.port:3306}/${folib.mysql.db:folib_scanner}?useSSL=false&tinyInt1isBit=false&allowPublicKeyRetrieval=true&useUnicode=true&characterEncoding=UTF8
+    url: jdbc:mysql://${folib.mysql.host:10.50.8.55}:${folib.mysql.port:3306}/${folib.mysql.db:folib_scanner}?useSSL=false&tinyInt1isBit=false&allowPublicKeyRetrieval=true&useUnicode=true&characterEncoding=UTF8
     username: ${folib.mysql.user:root}
     password: ${folib.mysql.password:199088926}
 
@@ -42,6 +42,11 @@ folib:
   vault: ${folib.basedir}/folib-vault
   etc: ${folib.home}/etc
   temp: ${folib.home}/tmp
+  cluster:
+    openflag: ${folib.openflag:false}
+    hostnode: ${folib.hostnode:http://10.50.8.55:38080} # 多个节点逗号隔开
+  distributed:
+    lockip: ${folib.scheduled.lockip:10.50.8.55} # 实例 host ip
   config:
     file: ${folib.home}/etc/conf/folib.yaml
   storage:
