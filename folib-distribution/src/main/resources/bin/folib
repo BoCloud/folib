@@ -5,6 +5,11 @@ BASE_DIR=$(realpath $SCRIPT_PATH/../)
 
 FOLIB_DEFAULT_HOME=$BASE_DIR
 FOLIB_DEFAULT_VAULT=$(realpath $FOLIB_DEFAULT_HOME/../folib-vault)
+# 配置用户环境变量
+FOLIB_DISTRIBUTED_LOCKIP="${FOLIB_DISTRIBUTED_LOCKIP:-10.50.8.55}"
+FOLIB_STORAGE_BASE_DIR="${FOLIB_STORAGE_BASE_DIR:-/opt/bo/}"
+FOLIB_CLUSTER_OPENFLAG="${FOLIB_CLUSTER_OPENFLAG:-true}"
+FOLIB_CLUSTER_HOSTNODE="${FOLIB_CLUSTER_HOSTNODE:-http://10.50.8.82:38080}"
 
 FOLIB_HOME="${FOLIB_HOME:-$FOLIB_DEFAULT_HOME}"
 FOLIB_VAULT="${FOLIB_VAULT:-$FOLIB_DEFAULT_VAULT}"
@@ -24,7 +29,7 @@ FOLIB_NUGET_DOWNLOAD_FEED="${FOLIB_NUGET_DOWNLOAD_FEED:-false}"
 FOLIB_DOWNLOAD_INDEXES="${FOLIB_DOWNLOAD_INDEXES:-false}"
 
 ##scanner相关配置
-FOLIB_MYSQL_HOST="${FOLIB_MYSQL_HOST:-10.10.33.145}"
+FOLIB_MYSQL_HOST="${FOLIB_MYSQL_HOST:-10.50.8.55}"
 FOLIB_MYSQL_PORT="${FOLIB_MYSQL_PORT:-3306}"
 FOLIB_MYSQL_DB="${FOLIB_MYSQL_DB:-folib_scanner}"
 FOLIB_MYSQL_USER="${FOLIB_MYSQL_USER:-root}"
@@ -107,8 +112,9 @@ run()
     JAVA_OPTS+=" -Dlogging.file.name=${FOLIB_VAULT}/logs/folib.log"
     JAVA_OPTS+=" -Dfolib.home=${FOLIB_HOME}"
     JAVA_OPTS+=" -Dfolib.vault=${FOLIB_VAULT}"
-    JAVA_OPTS+=" -Dfolib.storage.booter.basedir=${FOLIB_VAULT}/storages"
+    JAVA_OPTS+=" -Dfolib.storage.booter.basedir=${FOLIB_STORAGE_BASE_DIR}/storages"
     JAVA_OPTS+=" -Dfolib.port=${FOLIB_PORT}"
+    JAVA_OPTS+=" -Dfolib.distributed.lockip=${FOLIB_DISTRIBUTED_LOCKIP}"
     JAVA_OPTS+=" -Dfolib.db.profile=${FOLIB_DB_PROFILE}"
     JAVA_OPTS+=" -Dfolib.graph.gremlin.server=${FOLIB_GREMLIN_SERVER_ENABLED}"
     JAVA_OPTS+=" -Dfolib.npm.remote.changes.enabled=${FOLIB_NPM_REMOTE_CHANGES_ENABLED}"
@@ -121,6 +127,9 @@ run()
     JAVA_OPTS+=" -Dfolib.mysql.user=${FOLIB_MYSQL_USER}"
     JAVA_OPTS+=" -Dfolib.mysql.password=${FOLIB_MYSQL_PASSWORD}"
     JAVA_OPTS+=" -Dfolib.nvd=${FOLIB_NVD}"
+    JAVA_OPTS+=" -Dfolib.cluster.openflag=${FOLIB_CLUSTER_OPENFLAG}"
+    JAVA_OPTS+=" -Dfolib.cluster.hostnode=${FOLIB_CLUSTER_HOSTNODE}"
+    JAVA_OPTS+=" -Dscan.storage-base=${FOLIB_STORAGE_BASE_DIR}"
 
     JDK_VERSION=$(java -version 2>&1 | awk -F '"' '/version/ {print $2}')
 
@@ -218,7 +227,7 @@ console()
 
 debug()
 {
-    JAVA_OPTS="$JAVA_OPTS -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=$1 "
+    JAVA_OPTS="$JAVA_OPTS -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:$1 "
     console
 }
 

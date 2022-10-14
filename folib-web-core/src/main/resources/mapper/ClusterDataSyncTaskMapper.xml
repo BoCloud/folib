@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.veadan.folib.mapper.ClusterDataSyncTaskMapper">
+
+    <insert id="addTask" parameterType="com.veadan.folib.entity.ClusterDataSyncTaskPo">
+        INSERT INTO
+            cluster_datasync_task
+            (id,
+             host,
+             data_json,
+             task_type,
+             status,
+             url,
+             current_time_millis
+             )
+        VALUES(
+               #{id},
+               #{host},
+               #{dataJson},
+               #{taskType},
+               #{status},
+               #{url},
+               #{currentTimeMillis}
+               )
+    </insert>
+
+    <update id="updateTask" parameterType="com.veadan.folib.entity.ClusterDataSyncTaskPo">
+        UPDATE
+            cluster_datasync_task
+        SET
+            status=#{status}
+        WHERE id=#{id}
+    </update>
+
+    <select id="getClusterDataSyncTaskList" resultType="com.veadan.folib.entity.ClusterDataSyncTaskPo">
+        SELECT
+               id,
+               host,
+               data_json as dataJson,
+               task_type as taskType,
+               status,
+               url,
+               current_time_millis as currentTimeMillis
+        FROM cluster_datasync_task
+        where host=#{host}
+             and status=#{status}
+        order by current_time_millis
+    </select>
+
+
+
+
+</mapper>

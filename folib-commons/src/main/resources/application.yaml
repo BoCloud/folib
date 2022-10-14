@@ -11,9 +11,9 @@ spring:
   datasource:
     type: com.alibaba.druid.pool.DruidDataSource
     driver-class-name: com.mysql.cj.jdbc.Driver
-    url: jdbc:mysql://${folib.mysql.host:127.0.0.1}:${folib.mysql.port:3306}/${folib.mysql.db:folib_scanner}?useSSL=false&tinyInt1isBit=false&allowPublicKeyRetrieval=true&useUnicode=true&characterEncoding=UTF8
+    url: jdbc:mysql://${folib.mysql.host:10.50.8.55}:${folib.mysql.port:3306}/${folib.mysql.db:folib_scanner}?useSSL=false&tinyInt1isBit=false&allowPublicKeyRetrieval=true&useUnicode=true&characterEncoding=UTF8
     username: ${folib.mysql.user:root}
-    password: ${folib.mysql.password:123456}
+    password: ${folib.mysql.password:199088926}
 
   jackson:
     date-format: yyyy-MM-dd HH:mm:ss
@@ -26,8 +26,6 @@ spring:
 
 mybatis:
   mapper-locations: "classpath*:mapper/*.xml"
-  configuration:
-    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
 
 mapper:
   mappers: com.veadan.folib.scanner.common.base.CommonMapper
@@ -44,6 +42,11 @@ folib:
   vault: ${folib.basedir}/folib-vault
   etc: ${folib.home}/etc
   temp: ${folib.home}/tmp
+  cluster:
+    openflag: ${folib.openflag:false}
+    hostnode: ${folib.hostnode:http://10.50.8.55:38080} # 多个节点逗号隔开
+  distributed:
+    lockip: ${folib.scheduled.lockip:10.50.8.55} # 实例 host ip
   config:
     file: ${folib.home}/etc/conf/folib.yaml
   storage:
