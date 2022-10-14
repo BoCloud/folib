@@ -666,14 +666,16 @@
                 </a-col>
                 <a-col :span="6">
                   <a-form-item class="mb-10" label="用户名" :colon="false">
-                    <a-input v-model:value="folibRepository.remoteRepository.username"
-                             placeholder="远程仓库访问用户名"/>
+                    <a-input v-model="folibRepository.remoteRepository.username"
+                      autocomplete="new-text"
+                      placeholder="远程仓库访问用户名"/>
                   </a-form-item>
                 </a-col>
                 <a-col :span="6">
                   <a-form-item class="mb-10" label="密码" :colon="false">
-                    <a-input-password v-model:value="folibRepository.remoteRepository.password"
-                                      placeholder="远程仓库访问密码"/>
+                    <a-input-password v-model="folibRepository.remoteRepository.password"
+                      autocomplete="new-password"
+                      placeholder="远程仓库访问密码"/>
                   </a-form-item>
                 </a-col>
                 <a-col :span="4">
@@ -1201,6 +1203,7 @@ export default {
               this.layoutChecked = null
               this.step = 0
               this.folibRepository = this.folibRepositoryBack
+              this.folibRepositoryIds = ""
               this.folibVisible = true
             } else {
               setTimeout(() => {
