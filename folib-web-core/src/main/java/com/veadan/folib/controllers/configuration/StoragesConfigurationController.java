@@ -1,16 +1,18 @@
 package com.veadan.folib.controllers.configuration;
 
+import com.veadan.folib.cluster.SyncRepositoryEnum;
+import com.veadan.folib.cluster.SyncStorageEnum;
 import com.veadan.folib.forms.configuration.ProxyConfigurationForm;
 import com.veadan.folib.forms.configuration.RepositoryForm;
 import com.veadan.folib.forms.configuration.StorageForm;
 import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.repository.RepositoryManagementStrategyException;
+import com.veadan.folib.services.ClusterSyncService;
 import com.veadan.folib.services.RepositoryManagementService;
 import com.veadan.folib.services.StorageManagementService;
 import com.veadan.folib.services.support.ConfigurationException;
 import com.veadan.folib.services.ConfigurationManagementService;
 import com.veadan.folib.storage.Storage;
-import com.veadan.folib.storage.StorageData;
 import com.veadan.folib.storage.StorageDto;
 import com.veadan.folib.storage.Views;
 import com.veadan.folib.storage.repository.Repository;
@@ -29,6 +31,7 @@ import java.util.stream.Collectors;
 import com.fasterxml.jackson.annotation.JsonView;
 import io.swagger.annotations.*;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.convert.ConversionService;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -84,6 +87,9 @@ public class StoragesConfigurationController
 
     private final ConversionService conversionService;
 
+    @Autowired
+    private ClusterSyncService clusterSyncService;
+
     public StoragesConfigurationController(ConfigurationManagementService configurationManagementService,
                                            StorageManagementService storageManagementService,
                                            RepositoryManagementService repositoryManagementService,
@@ -120,6 +126,8 @@ public class StoragesConfigurationController
             StorageDto storage = conversionService.convert(storageForm, StorageDto.class);
             storage.setUsers(storageForm.getUsers());
             storageManagementService.createStorage(storage);
+            // 向其他集群节点同步storage
+            clusterSyncService.syncStorage(storage,null, SyncStorageEnum.CREATE);
 
             return getSuccessfulResponseEntity(SUCCESSFUL_SAVE_STORAGE, accept);
         }
@@ -160,6 +168,7 @@ public class StoragesConfigurationController
             StorageDto storage = conversionService.convert(storageFormToUpdate, StorageDto.class);
             storage.setUsers(storageFormToUpdate.getUsers());
             storageManagementService.updateStorage(storage);
+            clusterSyncService.syncStorage(storage, storageId,SyncStorageEnum.UPDATE);
             return getSuccessfulResponseEntity(SUCCESSFUL_UPDATE_STORAGE, accept);
         } catch (ConfigurationException|IOException e)
         {
@@ -235,6 +244,7 @@ public class StoragesConfigurationController
                 configurationManagementService.removeStorage(storageId);
 
                 logger.debug("Removed storage {}.", storageId);
+                clusterSyncService.syncStorage(null, storageId, SyncStorageEnum.DELETE);
 
                 return getSuccessfulResponseEntity(SUCCESSFUL_STORAGE_REMOVAL, accept);
             }
@@ -290,6 +300,7 @@ public class StoragesConfigurationController
                 {
                     repositoryManagementService.createRepository(storageId, repository.getId());
                 }
+                clusterSyncService.syncRepository(storageId,repositoryId,repository, SyncRepositoryEnum.ADD_OR_UPDATE);
 
                 return getSuccessfulResponseEntity(SUCCESSFUL_REPOSITORY_SAVE, accept);
             }
@@ -337,6 +348,8 @@ public class StoragesConfigurationController
             }
 
             configurationManagementService.removeRepository(storageId, repositoryId);
+
+            clusterSyncService.syncRepository(storageId,repositoryId,null,SyncRepositoryEnum.DELETE);
 
             logger.debug("Removed repository {}:{}.", storageId, repositoryId);
 

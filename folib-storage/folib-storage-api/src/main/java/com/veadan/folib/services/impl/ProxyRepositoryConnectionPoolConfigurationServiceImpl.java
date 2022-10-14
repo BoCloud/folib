@@ -78,6 +78,12 @@ public class ProxyRepositoryConnectionPoolConfigurationServiceImpl
     public Client getRestClient() {
         ClientConfig config = new ClientConfig();
         config.connectorProvider(new ApacheConnectorProvider());
+
+        //全局代理配置
+        ProxyConfiguration globalProxyConfig = configurationManagementService.getConfiguration().
+                getProxyConfiguration();
+        isExistProxy(globalProxyConfig, null, config);
+
         config.property(ApacheClientProperties.CONNECTION_MANAGER, poolingHttpClientConnectionManager);
         config.property(ApacheClientProperties.CONNECTION_MANAGER_SHARED, true);
         java.util.logging.Logger logger = java.util.logging.Logger.getLogger("com.veadan.folib.RestClient");

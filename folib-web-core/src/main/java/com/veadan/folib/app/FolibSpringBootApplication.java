@@ -23,7 +23,7 @@ import tk.mybatis.spring.annotation.MapperScan;
                                    HibernateJpaAutoConfiguration.class,
                                    Neo4jDataAutoConfiguration.class})
 @Import(WebConfig.class)
-@MapperScan(basePackages = "com.veadan.folib.scanner.mapper")
+@MapperScan(basePackages = {"com.veadan.folib.scanner.mapper","com.veadan.folib.mapper"})
 @EnableAsync
 public class FolibSpringBootApplication
 {
