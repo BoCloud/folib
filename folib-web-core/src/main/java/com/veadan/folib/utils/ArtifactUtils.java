@@ -9,6 +9,7 @@ import org.apache.commons.lang3.StringUtils;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * @author leipenghui
@@ -45,43 +46,45 @@ public class ArtifactUtils {
      */
     public static boolean layoutSupports(RepositoryPath repositoryPath) {
         boolean flag = false;
-        if (repositoryPath.getFileSystem() instanceof DockerFileSystem) {
-            log.info("=====>>>>> docker布局");
-            String blobs = "blobs";
-            String manifest = "manifest";
-            String path = repositoryPath.toAbsolutePath().toString();
-            //docker布局
-            if (!path.contains(blobs) && !path.contains(manifest) && !path.endsWith(".sha256")) {
+        if (Objects.nonNull(repositoryPath)) {
+            if (repositoryPath.getFileSystem() instanceof DockerFileSystem) {
+                log.info("=====>>>>> docker布局");
+                String blobs = "blobs";
+                String manifest = "manifest";
+                String path = repositoryPath.toAbsolutePath().toString();
+                //docker布局
+                if (!path.contains(blobs) && !path.contains(manifest) && !path.endsWith(".sha256")) {
+                    return true;
+                }
+            } else if (repositoryPath.getFileSystem() instanceof MavenFileSystem) {
+                log.info("=====>>>>> maven布局");
+                //maven布局
+                flag = JarArchiveListingFunction.INSTANCE.supports(repositoryPath);
+            } else if (repositoryPath.getFileSystem() instanceof NpmFileSystem) {
+                log.info("=====>>>>> npm布局");
+                //npm布局
+                List<String> suffixList = Arrays.asList(".json", ".tgz");
+                flag = endsWith(repositoryPath.getFileName().toString(), suffixList);
+            } else if (repositoryPath.getFileSystem() instanceof NugetFileSystem) {
+                log.info("=====>>>>> nuget布局");
+                //nuget布局
+                List<String> suffixList = Arrays.asList(".nupkg", ".nuspec", ".config");
+                flag = endsWith(repositoryPath.getFileName().toString(), suffixList);
+            } else if (repositoryPath.getFileSystem() instanceof PypiFileSystem) {
+                log.info("=====>>>>> pypi布局");
+                //pypi布局
+                List<String> suffixList = Arrays.asList(".whl", ".egg", ".zip", ".gz");
+                flag = endsWith(repositoryPath.getFileName().toString(), suffixList);
+            } else if (repositoryPath.getFileSystem() instanceof RawFileSystem) {
+                log.info("=====>>>>> raw布局");
+                //raw布局
                 return true;
+            } else if (repositoryPath.getFileSystem() instanceof RpmFileSystem) {
+                log.info("=====>>>>> rpm布局");
+                //rpm布局
+                List<String> suffixList = Arrays.asList(".rpm");
+                flag = endsWith(repositoryPath.getFileName().toString(), suffixList);
             }
-        } else if (repositoryPath.getFileSystem() instanceof MavenFileSystem) {
-            log.info("=====>>>>> maven布局");
-            //maven布局
-            flag = JarArchiveListingFunction.INSTANCE.supports(repositoryPath);
-        } else if (repositoryPath.getFileSystem() instanceof NpmFileSystem) {
-            log.info("=====>>>>> npm布局");
-            //npm布局
-            List<String> suffixList = Arrays.asList(".json", ".tgz");
-            flag = endsWith(repositoryPath.getFileName().toString(), suffixList);
-        } else if (repositoryPath.getFileSystem() instanceof NugetFileSystem) {
-            log.info("=====>>>>> nuget布局");
-            //nuget布局
-            List<String> suffixList = Arrays.asList(".nupkg", ".nuspec", ".config");
-            flag = endsWith(repositoryPath.getFileName().toString(), suffixList);
-        } else if (repositoryPath.getFileSystem() instanceof PypiFileSystem) {
-            log.info("=====>>>>> pypi布局");
-            //pypi布局
-            List<String> suffixList = Arrays.asList(".whl", ".egg", ".zip", ".gz");
-            flag = endsWith(repositoryPath.getFileName().toString(), suffixList);
-        } else if (repositoryPath.getFileSystem() instanceof RawFileSystem) {
-            log.info("=====>>>>> raw布局");
-            //raw布局
-            return true;
-        } else if (repositoryPath.getFileSystem() instanceof RpmFileSystem) {
-            log.info("=====>>>>> rpm布局");
-            //rpm布局
-            List<String> suffixList = Arrays.asList(".rpm");
-            flag = endsWith(repositoryPath.getFileName().toString(), suffixList);
         }
         log.info("=====>>>>> 是否是该布局支持的类型：{}", flag);
         return flag;
