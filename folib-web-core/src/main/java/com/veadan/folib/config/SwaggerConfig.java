@@ -26,15 +26,15 @@ public class SwaggerConfig
     public Docket folibApiDocket()
     {
         Contact contact = new Contact("Folib",
-                                      "http://github.com/folib/folib/",
+                                      "http://folib.com",
                                       "folib-dev@veadan.com");
-        ApiInfo apiInfo = new ApiInfo("Veadan Team & Development Ltd.",
-                                      "This is the documentation of Folib's REST API.",
+        ApiInfo apiInfo = new ApiInfo("Bocloud-牧品团队提供服务",
+                                      "这是Folib制品库默认的对外开放的所有API（需要通过token访问）",
                                       folibVersion,
-                                      "http://github.com/folib/folib/",
+                                      "http://folib.com",
                                       contact,
-                                      "Apache 2.0",
-                                      "http://www.apache.org/licenses/LICENSE-2.0.html",
+                                      "",
+                                      "",
                                       Collections.EMPTY_LIST);
         
         return new Docket(DocumentationType.SWAGGER_2).protocols(Sets.newHashSet("http", "https"))

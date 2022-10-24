@@ -25,8 +25,8 @@
             </includes>
         </fileSet>
         <fileSet>
-            <directory>target/assembly/folib-${project.version}/logs</directory>
-            <outputDirectory>folib-${project.version}/logs</outputDirectory>
+            <directory>target/assembly/folib-vault/logs</directory>
+            <outputDirectory>folib-vault/logs</outputDirectory>
             <fileMode>0744</fileMode>
         </fileSet>
         <fileSet>
