@@ -1,21 +1,20 @@
 package com.veadan.folib.storage.repository;
 
-import com.veadan.folib.configuration.MutableProxyConfiguration;
-import com.veadan.folib.configuration.ProxyConfiguration;
-import com.veadan.folib.providers.storage.FileSystemStorageProvider;
-import com.veadan.folib.storage.repository.remote.RemoteRepositoryDto;
-import com.veadan.folib.yaml.repository.CustomRepositoryConfigurationDto;
-import com.veadan.folib.storage.StorageDto;
-import com.veadan.folib.storage.Storage;
-
-import java.io.Serializable;
-import java.util.*;
-
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.veadan.folib.configuration.MutableProxyConfiguration;
+import com.veadan.folib.configuration.ProxyConfiguration;
+import com.veadan.folib.providers.storage.FileSystemStorageProvider;
+import com.veadan.folib.storage.Storage;
+import com.veadan.folib.storage.StorageDto;
+import com.veadan.folib.storage.repository.remote.RemoteRepositoryDto;
+import com.veadan.folib.yaml.repository.CustomRepositoryConfigurationDto;
 import org.apache.commons.lang3.StringUtils;
+
+import java.io.Serializable;
+import java.util.*;
 
 /**
  * @author mtodorov
@@ -23,8 +22,7 @@ import org.apache.commons.lang3.StringUtils;
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class RepositoryDto
-        implements Serializable, Repository
-{
+        implements Serializable, Repository {
 
     private String id;
 
@@ -75,172 +73,148 @@ public class RepositoryDto
 
     private Set<String> artifactCoordinateValidators = new LinkedHashSet<>();
 
+    /**
+     * 白名单列表
+     */
+    private Set<String> vulnerabilityWhites = new LinkedHashSet<>();
+    /**
+     * 黑名单列表
+     */
+    private Set<String> vulnerabilityBlacks = new LinkedHashSet<>();
+
     @JsonIgnore
     private StorageDto storage;
 
 
-    public RepositoryDto()
-    {
+    public RepositoryDto() {
     }
 
     @JsonCreator
-    public RepositoryDto(@JsonProperty(value = "id", required = true) String id)
-    {
+    public RepositoryDto(@JsonProperty(value = "id", required = true) String id) {
         this.id = id;
     }
 
-    public String getId()
-    {
+    public String getId() {
         return id;
     }
 
-    public void setId(String id)
-    {
+    public void setId(String id) {
         this.id = id;
     }
 
-    public String getBasedir()
-    {
+    public String getBasedir() {
         return basedir;
     }
 
-    public void setBasedir(String basedir)
-    {
+    public void setBasedir(String basedir) {
         this.basedir = basedir;
     }
 
-    public String getPolicy()
-    {
+    public String getPolicy() {
         return policy;
     }
 
-    public void setPolicy(String policy)
-    {
+    public void setPolicy(String policy) {
         this.policy = policy;
     }
 
-    public String getStorageProvider()
-    {
+    public String getStorageProvider() {
         return storageProvider;
     }
 
-    public void setStorageProvider(String storageProvider)
-    {
+    public void setStorageProvider(String storageProvider) {
         this.storageProvider = storageProvider;
     }
 
-    public String getLayout()
-    {
+    public String getLayout() {
         return layout;
     }
 
-    public void setLayout(String layout)
-    {
+    public void setLayout(String layout) {
         this.layout = layout;
     }
 
-    public String getType()
-    {
+    public String getType() {
         return type;
     }
 
-    public void setType(String type)
-    {
+    public void setType(String type) {
         this.type = type;
     }
 
-    public boolean isSecured()
-    {
+    public boolean isSecured() {
         return secured;
     }
 
-    public void setSecured(boolean secured)
-    {
+    public void setSecured(boolean secured) {
         this.secured = secured;
     }
 
-    public String getStatus()
-    {
+    public String getStatus() {
         return status;
     }
 
-    public void setStatus(String status)
-    {
+    public void setStatus(String status) {
         this.status = status;
     }
 
-    public boolean isInService()
-    {
+    public boolean isInService() {
         return RepositoryStatusEnum.IN_SERVICE.getStatus().equalsIgnoreCase(getStatus());
     }
 
-    public void putInService()
-    {
+    public void putInService() {
         status = RepositoryStatusEnum.IN_SERVICE.getStatus();
     }
 
-    public void putOutOfService()
-    {
+    public void putOutOfService() {
         status = RepositoryStatusEnum.OUT_OF_SERVICE.getStatus();
     }
 
-    public boolean isTrashEnabled()
-    {
+    public boolean isTrashEnabled() {
         return trashEnabled;
     }
 
-    public void setTrashEnabled(boolean trashEnabled)
-    {
+    public void setTrashEnabled(boolean trashEnabled) {
         this.trashEnabled = trashEnabled;
     }
 
-    public boolean allowsDeletion()
-    {
+    public boolean allowsDeletion() {
         return allowsDelete;
     }
 
-    public boolean allowsForceDeletion()
-    {
+    public boolean allowsForceDeletion() {
         return allowsForceDeletion;
     }
 
-    public boolean allowsDeployment()
-    {
+    public boolean allowsDeployment() {
         return allowsDeployment;
     }
 
-    public boolean allowsRedeployment()
-    {
+    public boolean allowsRedeployment() {
         return allowsRedeployment;
     }
 
-    public boolean allowsDirectoryBrowsing()
-    {
+    public boolean allowsDirectoryBrowsing() {
         return allowsDirectoryBrowsing;
     }
 
-    public boolean isChecksumHeadersEnabled()
-    {
+    public boolean isChecksumHeadersEnabled() {
         return checksumHeadersEnabled;
     }
 
-    public void setChecksumHeadersEnabled(boolean checksumHeadersEnabled)
-    {
+    public void setChecksumHeadersEnabled(boolean checksumHeadersEnabled) {
         this.checksumHeadersEnabled = checksumHeadersEnabled;
     }
 
-    public MutableProxyConfiguration getProxyConfiguration()
-    {
+    public MutableProxyConfiguration getProxyConfiguration() {
         return proxyConfiguration;
     }
 
-    public void setProxyConfiguration(MutableProxyConfiguration proxyConfiguration)
-    {
+    public void setProxyConfiguration(MutableProxyConfiguration proxyConfiguration) {
         this.proxyConfiguration = proxyConfiguration;
     }
 
-    public RemoteRepositoryDto getRemoteRepository()
-    {
+    public RemoteRepositoryDto getRemoteRepository() {
         return remoteRepository;
     }
 
@@ -249,100 +223,81 @@ public class RepositoryDto
         return null;
     }
 
-    public void setRemoteRepository(RemoteRepositoryDto remoteRepository)
-    {
+    public void setRemoteRepository(RemoteRepositoryDto remoteRepository) {
         this.remoteRepository = remoteRepository;
     }
 
-    public Set<String> getGroupRepositories()
-    {
+    public Set<String> getGroupRepositories() {
         return groupRepositories;
     }
 
-    public void setGroupRepositories(Set<String> groupRepositories)
-    {
+    public void setGroupRepositories(Set<String> groupRepositories) {
         this.groupRepositories = groupRepositories;
     }
 
-    public void addRepositoryToGroup(String repositoryId)
-    {
+    public void addRepositoryToGroup(String repositoryId) {
         groupRepositories.add(repositoryId);
     }
 
-    public void removeRepositoryFromGroup(String repositoryId)
-    {
+    public void removeRepositoryFromGroup(String repositoryId) {
         groupRepositories.remove(repositoryId);
     }
 
-    public boolean acceptsSnapshots()
-    {
+    public boolean acceptsSnapshots() {
         return RepositoryPolicyEnum.ofPolicy(getPolicy()).acceptsSnapshots();
     }
 
-    public boolean acceptsReleases()
-    {
+    public boolean acceptsReleases() {
         return RepositoryPolicyEnum.ofPolicy(getPolicy()).acceptsReleases();
     }
 
-    public Storage getStorage()
-    {
+    public Storage getStorage() {
         return storage;
     }
 
-    public void setStorage(StorageDto storage)
-    {
+    public void setStorage(StorageDto storage) {
         this.storage = storage;
     }
 
     @Override
-    public String toString()
-    {
+    public String toString() {
         return id;
     }
 
-    public MutableHttpConnectionPool getHttpConnectionPool()
-    {
+    public MutableHttpConnectionPool getHttpConnectionPool() {
         return httpConnectionPool;
     }
 
-    public void setHttpConnectionPool(MutableHttpConnectionPool httpConnectionPool)
-    {
+    public void setHttpConnectionPool(MutableHttpConnectionPool httpConnectionPool) {
         this.httpConnectionPool = httpConnectionPool;
     }
 
-    public List<MutableCustomConfiguration> getCustomConfigurations()
-    {
+    public List<MutableCustomConfiguration> getCustomConfigurations() {
         return customConfigurations;
     }
 
-    public void setCustomConfigurations(List<MutableCustomConfiguration> customConfigurations)
-    {
+    public void setCustomConfigurations(List<MutableCustomConfiguration> customConfigurations) {
         this.customConfigurations = customConfigurations;
     }
 
-    public CustomRepositoryConfigurationDto getRepositoryConfiguration()
-    {
+    public CustomRepositoryConfigurationDto getRepositoryConfiguration() {
         return repositoryConfiguration;
     }
 
-    public void setRepositoryConfiguration(CustomRepositoryConfigurationDto repositoryConfiguration)
-    {
+    public void setRepositoryConfiguration(CustomRepositoryConfigurationDto repositoryConfiguration) {
         this.repositoryConfiguration = repositoryConfiguration;
     }
 
     @Override
     @JsonIgnore
-    public String getStorageIdAndRepositoryId()
-    {
+    public String getStorageIdAndRepositoryId() {
         StringJoiner storageAndRepositoryId = new StringJoiner(":");
 
-        if (StringUtils.isNotBlank(getStorage().getId()))
-        {
+        if (StringUtils.isNotBlank(getStorage().getId())) {
             storageAndRepositoryId.add(getStorage().getId());
         }
 
-        if (StringUtils.isNotBlank(getId()))
-        {
+        if (StringUtils.isNotBlank(getId())) {
             storageAndRepositoryId.add(getId());
         }
 
@@ -350,81 +305,99 @@ public class RepositoryDto
     }
 
     @Override
-    public boolean isType(String compareType)
-    {
+    public boolean isType(String compareType) {
         return type.equalsIgnoreCase(compareType);
     }
 
-    public void setAllowsForceDeletion(boolean allowsForceDeletion)
-    {
+    public void setAllowsForceDeletion(boolean allowsForceDeletion) {
         this.allowsForceDeletion = allowsForceDeletion;
     }
 
-    public void setAllowsDeployment(boolean allowsDeployment)
-    {
+    public void setAllowsDeployment(boolean allowsDeployment) {
         this.allowsDeployment = allowsDeployment;
     }
 
-    public void setAllowsRedeployment(boolean allowsRedeployment)
-    {
+    public void setAllowsRedeployment(boolean allowsRedeployment) {
         this.allowsRedeployment = allowsRedeployment;
     }
 
-    public void setAllowsDelete(boolean allowsDelete)
-    {
+    public void setAllowsDelete(boolean allowsDelete) {
         this.allowsDelete = allowsDelete;
     }
 
-    public void setAllowsDirectoryBrowsing(boolean allowsDirectoryBrowsing)
-    {
+    public void setAllowsDirectoryBrowsing(boolean allowsDirectoryBrowsing) {
         this.allowsDirectoryBrowsing = allowsDirectoryBrowsing;
     }
 
-    public boolean isHostedRepository()
-    {
+    public boolean isHostedRepository() {
         return RepositoryTypeEnum.HOSTED.getType().equals(getType());
     }
 
-    public boolean isProxyRepository()
-    {
+    public boolean isProxyRepository() {
         return RepositoryTypeEnum.PROXY.getType().equals(getType());
     }
 
-    public boolean isGroupRepository()
-    {
+    public boolean isGroupRepository() {
         return RepositoryTypeEnum.GROUP.getType().equals(getType());
     }
 
-    public boolean isVirtualRepository()
-    {
+    public boolean isVirtualRepository() {
         return RepositoryTypeEnum.VIRTUAL.getType().equals(getType());
     }
 
-    public long getArtifactMaxSize()
-    {
+    public long getArtifactMaxSize() {
         return artifactMaxSize;
     }
 
-    public void setArtifactMaxSize(long artifactMaxSize)
-    {
+    public void setArtifactMaxSize(long artifactMaxSize) {
         this.artifactMaxSize = artifactMaxSize;
     }
 
-    public Set<String> getArtifactCoordinateValidators()
-    {
+    public Set<String> getArtifactCoordinateValidators() {
         return artifactCoordinateValidators;
     }
 
-    public void setArtifactCoordinateValidators(Set<String> artifactCoordinateValidators)
-    {
+    public void setArtifactCoordinateValidators(Set<String> artifactCoordinateValidators) {
         this.artifactCoordinateValidators = artifactCoordinateValidators;
     }
 
-    public boolean isEligibleForCustomConnectionPool()
-    {
+    public boolean isEligibleForCustomConnectionPool() {
         return this.getHttpConnectionPool() != null &&
-               this.getRemoteRepository() != null &&
-               this.getRemoteRepository().getUrl() != null;
+                this.getRemoteRepository() != null &&
+                this.getRemoteRepository().getUrl() != null;
     }
 
+    @Override
+    public Set<String> getVulnerabilityWhites() {
+        return vulnerabilityWhites;
+    }
+
+    public void setVulnerabilityWhites(Set<String> vulnerabilityWhites) {
+        this.vulnerabilityWhites = vulnerabilityWhites;
+    }
+
+    @Override
+    public Set<String> getVulnerabilityBlacks() {
+        return vulnerabilityBlacks;
+    }
+
+    public void setVulnerabilityBlacks(Set<String> vulnerabilityBlacks) {
+        this.vulnerabilityBlacks = vulnerabilityBlacks;
+    }
+
+    public void addVulnerabilityWhites(Set<String> whites) {
+        this.vulnerabilityWhites.addAll(whites);
+    }
+
+    public void removeVulnerabilityWhites(Set<String> whites) {
+        this.vulnerabilityWhites.removeAll(whites);
+    }
+
+    public void addVulnerabilityBlacks(Set<String> blacks) {
+        this.vulnerabilityBlacks.addAll(blacks);
+    }
+
+    public void removeVulnerabilityBlacks(Set<String> blacks) {
+        this.vulnerabilityBlacks.removeAll(blacks);
+    }
 }

@@ -6,12 +6,14 @@ import com.veadan.folib.configuration.MutableConfiguration;
 import com.veadan.folib.configuration.MutableProxyConfiguration;
 import com.veadan.folib.configuration.MutableSmtpConfiguration;
 import com.veadan.folib.storage.StorageDto;
+import com.veadan.folib.configuration.MutableSecurityPolicyConfiguration;
 import com.veadan.folib.storage.repository.RepositoryDto;
 import com.veadan.folib.storage.routing.MutableRoutingRule;
 import com.veadan.folib.storage.routing.MutableRoutingRules;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 /**
@@ -46,6 +48,24 @@ public interface ConfigurationManagementService {
 
     void removeRepositoryFromAssociatedGroups(String storageId,
                                               String repositoryId) throws IOException;
+
+    void addRepositoryVulnerabilityWhites(String storageId, String repositoryId,
+                                                   Set<String> whites) throws IOException;
+
+    void removeRepositoryVulnerabilityWhites(String storageId, String repositoryId,
+                                             Set<String> whites) throws IOException;
+
+    void addRepositoryVulnerabilityBlacks(String storageId, String repositoryId,
+                                          Set<String> blacks) throws IOException;
+
+    void removeRepositoryVulnerabilityBlacks(String storageId, String repositoryId,
+                                             Set<String> blacks) throws IOException;
+
+    void setRepositoryVulnerabilityWhites(String storageId, String repositoryId,
+                                          Set<String> whites) throws IOException;
+
+    void setRepositoryVulnerabilityBlacks(String storageId, String repositoryId,
+                                          Set<String> blacks) throws IOException;
 
     void removeRepository(String storageId,
                           String repositoryId) throws IOException;
@@ -147,14 +167,30 @@ public interface ConfigurationManagementService {
 
     /**
      * 获取平台级别白名单
+     *
      * @return 平台级别白名单
      */
-    List<String> getVulnerabilitiesWhiteList();
+    Set<String> getVulnerabilityWhites();
 
     /**
      * 获取平台级别黑名单
+     *
      * @return 平台级别黑名单
      */
-    List<String> getVulnerabilitiesBlackList();
+    Set<String> getVulnerabilityBlacks();
 
+    /**
+     * 保存或者更新平台通知配置
+     *
+     * @param mutableSecurityPolicyConfiguration 参数
+     * @throws IOException io异常
+     */
+    void saveOrUpdateNotify(MutableSecurityPolicyConfiguration mutableSecurityPolicyConfiguration) throws IOException;
+    /**
+     * 保存或者更新平台阻断配置
+     *
+     * @param mutableSecurityPolicyConfiguration 参数
+     * @throws IOException io异常
+     */
+    void saveOrUpdateBlock(MutableSecurityPolicyConfiguration mutableSecurityPolicyConfiguration) throws IOException;
 }

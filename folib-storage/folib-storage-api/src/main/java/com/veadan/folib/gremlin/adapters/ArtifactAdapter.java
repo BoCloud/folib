@@ -6,10 +6,7 @@ import com.veadan.folib.artifact.coordinates.GenericArtifactCoordinates;
 import com.veadan.folib.db.schema.Edges;
 import com.veadan.folib.db.schema.Properties;
 import com.veadan.folib.db.schema.Vertices;
-import com.veadan.folib.domain.Artifact;
-import com.veadan.folib.domain.ArtifactArchiveListing;
-import com.veadan.folib.domain.ArtifactEntity;
-import com.veadan.folib.domain.Vulnerability;
+import com.veadan.folib.domain.*;
 import com.veadan.folib.gremlin.dsl.EntityTraversal;
 import com.veadan.folib.gremlin.dsl.EntityTraversalUtils;
 import com.veadan.folib.gremlin.dsl.__;
@@ -117,6 +114,130 @@ public class ArtifactAdapter implements VertexEntityTraversalAdapter<Artifact> {
                         .fold())
                 .by(__.enrichPropertyValue("artifactFileExists"))
                 .map(this::map);
+    }
+
+    public EntityTraversal<Vertex, VulnerabilityArtifactDomain> vulnerabilityFold() {
+        return __.<Vertex, Object>project("id","vulnerabilityID",
+                "uuid",
+                "storageId",
+                "repositoryId",
+                "lastUpdated",
+                "lastUsed",
+                "created",
+                "sizeInBytes",
+                "downloadCount",
+                "safeLevel",
+                "evidenceQuantity",
+                "vulnerabilities",
+                "dependencyCount",
+                "dependencyVulnerabilitiesCount",
+                "vulnerabilitiesCount",
+                "criticalVulnerabilitiesCount",
+                "highVulnerabilitiesCount",
+                "mediumVulnerabilitiesCount",
+                "lowVulnerabilitiesCount",
+                "suppressedVulnerabilitiesCount",
+                "filenames",
+                "checksums",
+                "artifactCoordinates",
+                "tags",
+                "vulnerabilitySet",
+                "artifactFileExists")
+                .by(__.id())
+                .by(__.select("v").values("uuid"))
+                .by(__.enrichPropertyValue("uuid"))
+                .by(__.enrichPropertyValue("storageId"))
+                .by(__.enrichPropertyValue("repositoryId"))
+                .by(__.enrichPropertyValue("lastUpdated"))
+                .by(__.enrichPropertyValue("lastUsed"))
+                .by(__.enrichPropertyValue("created"))
+                .by(__.enrichPropertyValue("sizeInBytes"))
+                .by(__.enrichPropertyValue("downloadCount"))
+                .by(__.enrichPropertyValue("safeLevel"))
+                .by(__.enrichPropertyValue("evidenceQuantity"))
+                .by(__.enrichPropertyValues("vulnerabilities"))
+                .by(__.enrichPropertyValue("dependencyCount"))
+                .by(__.enrichPropertyValue("dependencyVulnerabilitiesCount"))
+                .by(__.enrichPropertyValue("vulnerabilitiesCount"))
+                .by(__.enrichPropertyValue("criticalVulnerabilitiesCount"))
+                .by(__.enrichPropertyValue("highVulnerabilitiesCount"))
+                .by(__.enrichPropertyValue("mediumVulnerabilitiesCount"))
+                .by(__.enrichPropertyValue("lowVulnerabilitiesCount"))
+                .by(__.enrichPropertyValue("suppressedVulnerabilitiesCount"))
+                .by(__.enrichPropertyValues("filenames"))
+                .by(__.enrichPropertyValues("checksums"))
+                .by(__.outE(Edges.ARTIFACT_HAS_ARTIFACT_COORDINATES)
+                        .mapToObject(__.inV()
+                                .map(artifactCoordinatesAdapter.fold(Optional.empty()))
+                                .map(EntityTraversalUtils::castToObject)))
+                .by(__.outE(Edges.ARTIFACT_HAS_TAGS)
+                        .inV()
+                        .map(artifactTagAdapter.fold())
+                        .map(EntityTraversalUtils::castToObject)
+                        .fold())
+                .by(__.outE(Edges.ARTIFACT_HAS_VULNERABILITIES)
+                        .inV()
+                        .map(vulnerabilityAdapter.fold())
+                        .map(EntityTraversalUtils::castToObject)
+                        .fold())
+                .by(__.enrichPropertyValue("artifactFileExists"))
+                .map(this::vulnerabilityMap);
+    }
+
+    private VulnerabilityArtifactDomain vulnerabilityMap(Traverser<Map<String, Object>> t) {
+        String storageId = extractObject(String.class, t.get().get("storageId"));
+        String repositoryId = extractObject(String.class, t.get().get("repositoryId"));
+        ArtifactCoordinates artifactCoordinates = extractObject(ArtifactCoordinates.class,
+                t.get().get("artifactCoordinates"));
+
+        VulnerabilityArtifactDomain result = new VulnerabilityArtifactDomain();
+        result.setStorageId(storageId);
+        result.setRepositoryId(repositoryId);
+        result.setArtifactCoordinates(artifactCoordinates);
+        result.setNativeId(extractObject(Long.class, t.get().get("id")));
+        result.setUuid(extractObject(String.class, t.get().get("uuid")));
+        result.setVulnerabilityId(extractObject(String.class, t.get().get("vulnerabilityID")));
+        result.setCreated(toLocalDateTime(extractObject(Long.class, t.get().get("created"))));
+        result.setLastUpdated(toLocalDateTime(extractObject(Long.class, t.get().get("lastUpdated"))));
+        result.setLastUsed(toLocalDateTime(extractObject(Long.class, t.get().get("lastUsed"))));
+        result.setSizeInBytes(extractObject(Long.class, t.get().get("sizeInBytes")));
+        result.setDownloadCount(extractObject(Integer.class, t.get().get("downloadCount")));
+
+        result.setSafeLevel(extractObject(String.class, t.get().get("safeLevel")));
+        result.setEvidenceQuantity(extractObject(Integer.class, t.get().get("evidenceQuantity")));
+        result.setVulnerabilities(extractPropertyList(String.class, t.get().get("vulnerabilities")).stream()
+                .filter(e -> !e.trim().isBlank())
+                .collect(Collectors.toSet()));
+        result.setDependencyCount(extractObject(Integer.class, t.get().get("dependencyCount")));
+        result.setDependencyVulnerabilitiesCount(extractObject(Integer.class, t.get().get("dependencyVulnerabilitiesCount")));
+        result.setVulnerabilitiesCount(extractObject(Integer.class, t.get().get("vulnerabilitiesCount")));
+        result.setCriticalVulnerabilitiesCount(extractObject(Integer.class, t.get().get("criticalVulnerabilitiesCount")));
+        result.setHighVulnerabilitiesCount(extractObject(Integer.class, t.get().get("highVulnerabilitiesCount")));
+        result.setMediumVulnerabilitiesCount(extractObject(Integer.class, t.get().get("mediumVulnerabilitiesCount")));
+        result.setLowVulnerabilitiesCount(extractObject(Integer.class, t.get().get("lowVulnerabilitiesCount")));
+        result.setSuppressedVulnerabilitiesCount(extractObject(Integer.class, t.get().get("suppressedVulnerabilitiesCount")));
+
+        result.getArtifactArchiveListing()
+                .setFilenames(extractPropertyList(String.class, t.get().get("filenames")).stream()
+                        .filter(e -> !e.trim().isEmpty())
+                        .collect(Collectors.toSet()));
+
+        result.addChecksums(extractPropertyList(String.class, t.get().get("checksums")).stream()
+                .filter(e -> !e.trim().isEmpty())
+                .collect(Collectors.toSet()));
+
+        List<ArtifactTag> tags = (List<ArtifactTag>) t.get().get("tags");
+        result.setTagSet(new HashSet<>(tags));
+
+        Object vulnerabilityObject = t.get().get("vulnerabilitySet");
+        if (Objects.nonNull(vulnerabilityObject)) {
+            List<Vulnerability> vulnerabilityList = (List<Vulnerability>) vulnerabilityObject;
+            result.setVulnerabilitySet(new LinkedHashSet<>(vulnerabilityList));
+        }
+
+        result.setArtifactFileExists(extractObject(Boolean.class, t.get().get("artifactFileExists")));
+
+        return result;
     }
 
     private Artifact map(Traverser<Map<String, Object>> t) {

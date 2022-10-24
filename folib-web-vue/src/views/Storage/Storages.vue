@@ -135,7 +135,18 @@
                 <a-icon slot="prefix" type="appstore"/>
               </a-input>
             </a-form-item>
-            <a-form-item class="tags-field mb-10" label="用户成员选择" :colon="false">
+            <a-form-item class="tags-field mb-10" v-if="userInfo.roles.indexOf('ADMIN')>-1" label="管理员选择" :colon="false">
+              <a-select v-model="storageCreateData.admin"
+                        style="width: 100%"
+                        model="default"
+                        show-search
+                        placeholder="请选择管理员">
+                <a-select-option v-for="(tag,index) in userList" :key="index" :value="tag.username">
+                  {{ tag.username }}
+                </a-select-option>
+              </a-select>
+            </a-form-item>
+            <a-form-item class="tags-field mb-10" v-if="userInfo.name===currentStorage.admin" label="用户成员选择" :colon="false">
               <a-select v-model="storageCreateData.users" mode="tags" :defaultValue="storageCreateData.users"
                         style="width: 100%"
                         placeholder="例如：*">
@@ -172,7 +183,18 @@
                 <a-icon slot="prefix" type="appstore"/>
               </a-input>
             </a-form-item>
-            <a-form-item class="tags-field mb-10" label="用户成员选择" :colon="false">
+            <a-form-item class="tags-field mb-10" v-if="userInfo.roles.indexOf('ADMIN')>-1" label="管理员选择" :colon="false">
+              <a-select v-model="currentStorage.admin"
+                        style="width: 100%"
+                        model="default"
+                        show-search
+                        placeholder="请选择管理员">
+                <a-select-option v-for="(tag,index) in userList" :key="index" :value="tag.username">
+                  {{ tag.username }}
+                </a-select-option>
+              </a-select>
+            </a-form-item>
+            <a-form-item class="tags-field mb-10" v-if="userInfo.name===currentStorage.admin" label="用户成员选择" :colon="false">
               <a-select v-model="currentStorage.users" mode="tags" :defaultValue="currentStorage.users"
                         style="width: 100%"
                         placeholder="例如：*">
@@ -191,7 +213,7 @@
         </a-row>
         <p>说明（请谨慎操作！！！）:</p>
         <ul class="pl-15 text-muted">
-          <li>你选择的成员列表将拥有该存储空间的使用权限</li>
+          <li>你选择的管理员/成员列表将拥有该存储空间的使用权限</li>
           <li>删除:只删除存储配置，每日0点会定时清理</li>
           <li>若强制删除则无法恢复仓库列表</li>
         </ul>
@@ -852,11 +874,12 @@ import {
 } from "@/api/folib"
 import {getUsers} from "@/api/users";
 import CardProjectFolib from "@/components/Cards/CardProjectFolib"
-import {getLayoutType, genLayoutType, groupRepositoriesBuild, ObjectToGroupRepositories} from "@/utils/layoutUtil"
+import {getLayoutType, genLayoutType, groupRepositoriesBuild, objectToGroupRepositories} from "@/utils/layoutUtil"
 import draggable from "vuedraggable";
 import FolibKanbanBoard from "@/components/Kanban/FolibKanbanBoard";
 import FolibKanbanTask from "@/components/Kanban/FolibKanbanTask";
 import storage from 'store';
+import store from '@/store';
 import {checkMachineCode} from "@/api/settings";
 
 export default {
@@ -869,6 +892,7 @@ export default {
   props: ['navbarFixed'],
   data() {
     return {
+      userInfo: {},
       showStorageUpdate: false,
       userList: [],
       baseUrl: null,
@@ -881,6 +905,7 @@ export default {
       storageCreateData: {
         id: null,
         basedir: null,
+        admin: undefined,
         users: []
       },
       storageForm: this.$form.createForm(this, {name: "storage"}),
@@ -1006,6 +1031,7 @@ export default {
     };
   },
   created() {
+    this.userInfo=store.state.user
     this.getStorages();
     this.getBaseUrl();
     const params = storage.get('libView_repository')
@@ -1137,6 +1163,12 @@ export default {
       })
     },
     setCurrentStorage(item) {
+      if(!item.admin || item.admin === ''){
+        item.admin = undefined
+      }
+      if(!item.users || item.users.length == 0){
+        item.users = []
+      }
       this.currentStorage = item
       this.getLibrary(item);
     },
@@ -1172,8 +1204,7 @@ export default {
       this.queryData.storageId = this.currentStorage.id
       this.queryData.layout = this.genLayoutType(this.layoutChecked)
       getLibraryByQuery(this.queryData).then(res => {
-        const tasksObj = ObjectToGroupRepositories(this.folibRepository.groupRepositories, res, this.folibRepository.id)
-        // console.log(tasksObj)
+        const tasksObj = objectToGroupRepositories(this.folibRepository.groupRepositories, res, this.folibRepository.id)
         this.boards[0].tasks = tasksObj.enableSelect
         this.boards[1].tasks = tasksObj.isSelect
       })

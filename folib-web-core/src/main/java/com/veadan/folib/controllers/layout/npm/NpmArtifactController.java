@@ -335,6 +335,7 @@ public class NpmArtifactController
         }
 
         RepositoryPath path = artifactResolutionService.resolvePath(storageId, repositoryId, coordinates.buildPath());
+        vulnerabilityBlock(path);
         provideArtifactDownloadResponse(request, response, httpHeaders, path);
     }
 
@@ -376,6 +377,7 @@ public class NpmArtifactController
         }
 
         RepositoryPath path = artifactResolutionService.resolvePath(storageId, repositoryId, coordinates.buildPath());
+        vulnerabilityBlock(path);
         provideArtifactDownloadResponse(request, response, httpHeaders, path);
     }
 

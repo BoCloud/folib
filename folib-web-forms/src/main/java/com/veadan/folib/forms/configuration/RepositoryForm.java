@@ -1,26 +1,25 @@
 package com.veadan.folib.forms.configuration;
 
-import com.veadan.folib.validation.configuration.DescribableEnumValue;
-import com.veadan.folib.validation.configuration.LayoutProviderValue;
-import com.veadan.folib.validation.configuration.StorageProviderValue;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.veadan.folib.storage.repository.RepositoryPolicyEnum;
 import com.veadan.folib.storage.repository.RepositoryStatusEnum;
 import com.veadan.folib.storage.repository.RepositoryTypeEnum;
+import com.veadan.folib.validation.configuration.DescribableEnumValue;
+import com.veadan.folib.validation.configuration.LayoutProviderValue;
+import com.veadan.folib.validation.configuration.StorageProviderValue;
 
 import javax.validation.Valid;
 import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.Pattern;
 import javax.validation.constraints.PositiveOrZero;
+import java.io.Serializable;
 import java.util.LinkedHashSet;
 import java.util.Set;
-
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 
 /**
  * @author veadan
  */
-public class RepositoryForm
-{
+public class RepositoryForm {
 
     @NotEmpty(message = "An id must be specified.")
     @Pattern(regexp = "[a-zA-Z0-9\\-\\_\\.]+")
@@ -78,229 +77,222 @@ public class RepositoryForm
     @Valid
     private CustomRepositoryConfigurationForm repositoryConfiguration;
 
-    private Set<String> groupRepositories ;
+    private Set<String> groupRepositories;
 
     private Set<String> artifactCoordinateValidators;
 
-    public String getId()
-    {
+    /**
+     * 白名单列表
+     */
+    @NotEmpty(message = "请填写白名单", groups = {RepositoryForm.WhiteGroup.class})
+    private Set<String> vulnerabilityWhites;
+    /**
+     * 黑名单列表
+     */
+    @NotEmpty(message = "请填写黑名单", groups = {RepositoryForm.BlackGroup.class})
+    private Set<String> vulnerabilityBlacks;
+
+    public String getId() {
         return id;
     }
 
-    public void setId(final String id)
-    {
+    public void setId(final String id) {
         this.id = id;
     }
 
-    public String getBasedir()
-    {
+    public String getBasedir() {
         return basedir;
     }
 
-    public void setBasedir(final String basedir)
-    {
+    public void setBasedir(final String basedir) {
         this.basedir = basedir;
     }
 
-    public String getPolicy()
-    {
+    public String getPolicy() {
         return policy;
     }
 
-    public void setPolicy(final String policy)
-    {
+    public void setPolicy(final String policy) {
         this.policy = policy;
     }
 
-    public String getStorageProvider()
-    {
+    public String getStorageProvider() {
         return storageProvider;
     }
 
-    public void setStorageProvider(final String storageProvider)
-    {
+    public void setStorageProvider(final String storageProvider) {
         this.storageProvider = storageProvider;
     }
 
-    public String getLayout()
-    {
+    public String getLayout() {
         return layout;
     }
 
-    public void setLayout(final String layout)
-    {
+    public void setLayout(final String layout) {
         this.layout = layout;
     }
 
-    public String getType()
-    {
+    public String getType() {
         return type;
     }
 
-    public void setType(final String type)
-    {
+    public void setType(final String type) {
         this.type = type;
     }
 
-    public boolean isSecured()
-    {
+    public boolean isSecured() {
         return secured;
     }
 
-    public void setSecured(final boolean secured)
-    {
+    public void setSecured(final boolean secured) {
         this.secured = secured;
     }
 
-    public String getStatus()
-    {
+    public String getStatus() {
         return status;
     }
 
-    public void setStatus(final String status)
-    {
+    public void setStatus(final String status) {
         this.status = status;
     }
 
-    public long getArtifactMaxSize()
-    {
+    public long getArtifactMaxSize() {
         return artifactMaxSize;
     }
 
-    public void setArtifactMaxSize(final long artifactMaxSize)
-    {
+    public void setArtifactMaxSize(final long artifactMaxSize) {
         this.artifactMaxSize = artifactMaxSize;
     }
 
-    public boolean isTrashEnabled()
-    {
+    public boolean isTrashEnabled() {
         return trashEnabled;
     }
 
-    public void setTrashEnabled(final boolean trashEnabled)
-    {
+    public void setTrashEnabled(final boolean trashEnabled) {
         this.trashEnabled = trashEnabled;
     }
 
-    public boolean isAllowsForceDeletion()
-    {
+    public boolean isAllowsForceDeletion() {
         return allowsForceDeletion;
     }
 
-    public void setAllowsForceDeletion(final boolean allowsForceDeletion)
-    {
+    public void setAllowsForceDeletion(final boolean allowsForceDeletion) {
         this.allowsForceDeletion = allowsForceDeletion;
     }
 
-    public boolean isAllowsDeployment()
-    {
+    public boolean isAllowsDeployment() {
         return allowsDeployment;
     }
 
-    public void setAllowsDeployment(final boolean allowsDeployment)
-    {
+    public void setAllowsDeployment(final boolean allowsDeployment) {
         this.allowsDeployment = allowsDeployment;
     }
 
-    public boolean isAllowsRedeployment()
-    {
+    public boolean isAllowsRedeployment() {
         return allowsRedeployment;
     }
 
-    public void setAllowsRedeployment(final boolean allowsRedeployment)
-    {
+    public void setAllowsRedeployment(final boolean allowsRedeployment) {
         this.allowsRedeployment = allowsRedeployment;
     }
 
-    public boolean isAllowsDelete()
-    {
+    public boolean isAllowsDelete() {
         return allowsDelete;
     }
 
-    public void setAllowsDelete(final boolean allowsDelete)
-    {
+    public void setAllowsDelete(final boolean allowsDelete) {
         this.allowsDelete = allowsDelete;
     }
 
-    public boolean isAllowsDirectoryBrowsing()
-    {
+    public boolean isAllowsDirectoryBrowsing() {
         return allowsDirectoryBrowsing;
     }
 
-    public void setAllowsDirectoryBrowsing(final boolean allowsDirectoryBrowsing)
-    {
+    public void setAllowsDirectoryBrowsing(final boolean allowsDirectoryBrowsing) {
         this.allowsDirectoryBrowsing = allowsDirectoryBrowsing;
     }
 
-    public boolean isChecksumHeadersEnabled()
-    {
+    public boolean isChecksumHeadersEnabled() {
         return checksumHeadersEnabled;
     }
 
-    public void setChecksumHeadersEnabled(final boolean checksumHeadersEnabled)
-    {
+    public void setChecksumHeadersEnabled(final boolean checksumHeadersEnabled) {
         this.checksumHeadersEnabled = checksumHeadersEnabled;
     }
 
-    public ProxyConfigurationForm getProxyConfiguration()
-    {
+    public ProxyConfigurationForm getProxyConfiguration() {
         return proxyConfiguration;
     }
 
-    public void setProxyConfiguration(final ProxyConfigurationForm proxyConfiguration)
-    {
+    public void setProxyConfiguration(final ProxyConfigurationForm proxyConfiguration) {
         this.proxyConfiguration = proxyConfiguration;
     }
 
-    public RemoteRepositoryForm getRemoteRepository()
-    {
+    public RemoteRepositoryForm getRemoteRepository() {
         return remoteRepository;
     }
 
-    public void setRemoteRepository(final RemoteRepositoryForm remoteRepository)
-    {
+    public void setRemoteRepository(final RemoteRepositoryForm remoteRepository) {
         this.remoteRepository = remoteRepository;
     }
 
-    public Integer getHttpConnectionPool()
-    {
+    public Integer getHttpConnectionPool() {
         return httpConnectionPool;
     }
 
-    public void setHttpConnectionPool(final Integer httpConnectionPool)
-    {
+    public void setHttpConnectionPool(final Integer httpConnectionPool) {
         this.httpConnectionPool = httpConnectionPool;
     }
 
-    public CustomRepositoryConfigurationForm getRepositoryConfiguration()
-    {
+    public CustomRepositoryConfigurationForm getRepositoryConfiguration() {
         return repositoryConfiguration;
     }
 
-    public void setRepositoryConfiguration(final CustomRepositoryConfigurationForm repositoryConfiguration)
-    {
+    public void setRepositoryConfiguration(final CustomRepositoryConfigurationForm repositoryConfiguration) {
         this.repositoryConfiguration = repositoryConfiguration;
     }
 
-    public Set<String> getGroupRepositories()
-    {
+    public Set<String> getGroupRepositories() {
         return groupRepositories;
     }
 
-    @JsonDeserialize(as=LinkedHashSet.class)
-    public void setGroupRepositories(final Set<String> groupRepositories)
-    {
+    @JsonDeserialize(as = LinkedHashSet.class)
+    public void setGroupRepositories(final Set<String> groupRepositories) {
         this.groupRepositories = groupRepositories;
     }
 
-    public Set<String> getArtifactCoordinateValidators()
-    {
+    public Set<String> getArtifactCoordinateValidators() {
         return artifactCoordinateValidators;
     }
 
-    public void setArtifactCoordinateValidators(final Set<String> artifactCoordinateValidators)
-    {
+    public void setArtifactCoordinateValidators(final Set<String> artifactCoordinateValidators) {
         this.artifactCoordinateValidators = artifactCoordinateValidators;
+    }
+
+    public Set<String> getVulnerabilityWhites() {
+        return vulnerabilityWhites;
+    }
+
+    public void setVulnerabilityWhites(Set<String> vulnerabilityWhites) {
+        this.vulnerabilityWhites = vulnerabilityWhites;
+    }
+
+    public Set<String> getVulnerabilityBlacks() {
+        return vulnerabilityBlacks;
+    }
+
+    public void setVulnerabilityBlacks(Set<String> vulnerabilityBlacks) {
+        this.vulnerabilityBlacks = vulnerabilityBlacks;
+    }
+
+    public interface WhiteGroup
+            extends Serializable {
+        // 白名单组
+    }
+
+    public interface BlackGroup
+            extends Serializable {
+        // 白名单组
     }
 
 }

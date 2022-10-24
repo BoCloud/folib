@@ -6,10 +6,13 @@ import com.veadan.folib.domain.SecurityRole;
 import java.util.Collection;
 import java.util.stream.Collectors;
 
+import lombok.extern.slf4j.Slf4j;
+
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
+@Slf4j
 public class FolibUserDetails implements UserDetails
 {
 

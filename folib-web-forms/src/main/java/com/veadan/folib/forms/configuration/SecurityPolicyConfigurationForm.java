@@ -1,14 +1,15 @@
 package com.veadan.folib.forms.configuration;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.veadan.folib.configuration.MutableVulnerabilityConfiguration;
-import com.veadan.folib.configuration.VulnerabilityConfiguration;
+import com.veadan.folib.configuration.MutableSecurityPolicyConfiguration;
+import com.veadan.folib.configuration.SecurityPolicyConfiguration;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import javax.validation.constraints.NotBlank;
+import javax.validation.constraints.NotNull;
 import java.io.Serializable;
 import java.util.Optional;
 import java.util.Set;
@@ -20,7 +21,7 @@ import java.util.Set;
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
-public class VulnerabilitiesConfigurationForm
+public class SecurityPolicyConfigurationForm
         implements Serializable {
 
     /**
@@ -59,23 +60,38 @@ public class VulnerabilitiesConfigurationForm
      * 黑名单列表
      */
     private Set<String> blacks;
+    /**
+     * 阻断类型 1 全量阻断 2 黑名单阻断
+     */
+    @NotNull(message = "请选择阻断方式", groups = {BlockGroup.class})
+    private Integer blockType;
+    /**
+     * 阻断漏洞等级
+     */
+    private Set<String> blockLevels;
+    /**
+     * 过滤白名单
+     */
+    private Boolean filterWhites;
 
-    public VulnerabilitiesConfigurationForm(Set<String> levels, Set<String> notifyScopes, Set<String> receiverUsers, Set<String> receiverEmails, Set<String> whites, Set<String> blacks) {
-        this.levels = levels;
-        this.notifyScopes = notifyScopes;
-        this.receiverUsers = receiverUsers;
-        this.receiverEmails = receiverEmails;
-        this.whites = whites;
-        this.blacks = blacks;
+    public SecurityPolicyConfigurationForm(SecurityPolicyConfiguration securityPolicyConfiguration) {
+        this.levels = securityPolicyConfiguration.getLevels();
+        this.notifyScopes = securityPolicyConfiguration.getNotifyScopes();
+        this.receiverUsers = securityPolicyConfiguration.getReceiverUsers();
+        this.receiverEmails = securityPolicyConfiguration.getReceiverEmails();
+        this.whites = securityPolicyConfiguration.getWhites();
+        this.blacks = securityPolicyConfiguration.getBlacks();
+        this.blockType = securityPolicyConfiguration.getBlockType();
+        this.blockLevels = securityPolicyConfiguration.getBlockLevels();
+        this.filterWhites = securityPolicyConfiguration.getFilterWhites();
     }
 
     @JsonIgnore()
-    public static VulnerabilitiesConfigurationForm fromConfiguration(VulnerabilityConfiguration source) {
-        VulnerabilityConfiguration configuration = Optional.ofNullable(source).orElse(
-                new VulnerabilityConfiguration(new MutableVulnerabilityConfiguration())
+    public static SecurityPolicyConfigurationForm fromConfiguration(SecurityPolicyConfiguration source) {
+        SecurityPolicyConfiguration configuration = Optional.ofNullable(source).orElse(
+                new SecurityPolicyConfiguration(new MutableSecurityPolicyConfiguration())
         );
-        return new VulnerabilitiesConfigurationForm(configuration.getLevels(), configuration.getNotifyScopes(), configuration.getReceiverUsers(),
-                configuration.getReceiverEmails(), configuration.getWhites(), configuration.getBlacks());
+        return new SecurityPolicyConfigurationForm(configuration);
     }
 
     public interface WhiteGroup
@@ -86,6 +102,11 @@ public class VulnerabilitiesConfigurationForm
     public interface BlackGroup
             extends Serializable {
         // 白名单组
+    }
+
+    public interface BlockGroup
+            extends Serializable {
+        // 阻断组
     }
 
 }

@@ -12,6 +12,8 @@ public interface Storage
 
     String getId();
 
+    String getAdmin();
+
     String getBasedir();
 
     Set<String> getUsers();

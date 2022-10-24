@@ -23,6 +23,8 @@ public class StorageDto
     
     private String basedir;
 
+    private String admin;
+
     private Set<String> users = new LinkedHashSet<>();
 
     private Map<String, RepositoryDto> repositories = new LinkedHashMap<>();
@@ -31,6 +33,7 @@ public class StorageDto
     {
     }
 
+    @Override
     public Set<String> getUsers() {
         return users;
     }
@@ -46,11 +49,13 @@ public class StorageDto
         this.users=users;
     }
 
+    @Override
     public boolean containsRepository(String repository)
     {
         return getRepositories().containsKey(repository);
     }
 
+    @Override
     public String getId()
     {
         return id;
@@ -61,6 +66,7 @@ public class StorageDto
         this.id = id;
     }
 
+    @Override
     public String getBasedir()
     {
         return basedir;
@@ -69,6 +75,15 @@ public class StorageDto
     public void setBasedir(String basedir)
     {
         this.basedir = basedir;
+    }
+
+    @Override
+    public String getAdmin() {
+        return admin;
+    }
+
+    public void setAdmin(String admin) {
+        this.admin = admin;
     }
 
     @Override
@@ -87,6 +102,7 @@ public class StorageDto
         repositories.put(repository.getId(), repository);
     }
 
+    @Override
     public RepositoryDto getRepository(String repositoryId)
     {
         return repositories.get(repositoryId);

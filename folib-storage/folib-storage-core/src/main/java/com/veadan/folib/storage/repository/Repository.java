@@ -70,4 +70,8 @@ public interface Repository
 
     ProxyConfiguration getProxyConfig();
 
+    Set<String> getVulnerabilityWhites();
+
+    Set<String> getVulnerabilityBlacks();
+
 }

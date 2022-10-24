@@ -195,14 +195,14 @@ public class ScanService {
                 Artifact artifact = repositoryPath.getArtifactEntry();
                 if (Objects.nonNull(artifact)) {
                     artifact.setSafeLevel(safeLevelEnum.getLevel());
+                    artifact.setEvidenceQuantity(evidenceQuantity);
+                    artifact.setDependencyCount(folibScanner.getDependencyCount());
+                    artifact.setDependencyVulnerabilitiesCount(folibScanner.getVulnerableCount());
+                    artifact.setVulnerabilitiesCount(folibScanner.getVulnerabilitesCount());
+                    artifact.setSuppressedVulnerabilitiesCount(folibScanner.getSuppressedCount());
                     if (CollectionUtils.isNotEmpty(vulnerabilitySet)) {
                         Set<String> vulnerabilityNameSet = vulnerabilitySet.stream().map(Vulnerability::getName).collect(Collectors.toSet());
-                        artifact.setEvidenceQuantity(evidenceQuantity);
                         artifact.setVulnerabilities(vulnerabilityNameSet);
-                        artifact.setDependencyCount(folibScanner.getDependencyCount());
-                        artifact.setDependencyVulnerabilitiesCount(folibScanner.getVulnerableCount());
-                        artifact.setVulnerabilitiesCount(folibScanner.getVulnerabilitesCount());
-                        artifact.setSuppressedVulnerabilitiesCount(folibScanner.getSuppressedCount());
                         long critical = vulnerabilitySet.stream().filter(item -> SeverityTypeEnum.CRITICAL.getType().equals(item.getHighestSeverityText())).count();
                         artifact.setCriticalVulnerabilitiesCount((int) critical);
                         long high = vulnerabilitySet.stream().filter(item -> SeverityTypeEnum.HIGH.getType().equals(item.getHighestSeverityText())).count();
@@ -211,6 +211,12 @@ public class ScanService {
                         artifact.setMediumVulnerabilitiesCount((int) medium);
                         long low = vulnerabilitySet.stream().filter(item -> SeverityTypeEnum.LOW.getType().equals(item.getHighestSeverityText())).count();
                         artifact.setLowVulnerabilitiesCount((int) low);
+                    } else {
+                        artifact.setVulnerabilities(Collections.emptySet());
+                        artifact.setCriticalVulnerabilitiesCount(0);
+                        artifact.setHighVulnerabilitiesCount(0);
+                        artifact.setMediumVulnerabilitiesCount(0);
+                        artifact.setLowVulnerabilitiesCount(0);
                     }
                     artifactService.saveOrUpdateArtifact(artifact);
                 }

@@ -4,16 +4,14 @@ import com.beust.jcommander.internal.Lists;
 import com.fasterxml.jackson.annotation.JsonRootName;
 import com.google.common.base.MoreObjects;
 import com.google.common.base.Objects;
+import com.google.common.collect.Sets;
 import com.veadan.folib.storage.StorageDto;
-import com.veadan.folib.storage.VulnerabilitiesDto;
 import com.veadan.folib.storage.routing.MutableRoutingRules;
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 
 import java.io.Serializable;
-import java.util.Arrays;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * @author mtodorov
@@ -50,11 +48,10 @@ public class MutableConfiguration
      * V: storage
      */
     private Map<String, StorageDto> storages = new LinkedHashMap<>();
-
     /**
-     * 平台级别漏洞黑白名单
+     * 安全策略配置
      */
-    private VulnerabilitiesDto vulnerabilities = new VulnerabilitiesDto();
+    private MutableSecurityPolicyConfiguration securityPolicyConfiguration = new MutableSecurityPolicyConfiguration();
 
     private MutableRoutingRules routingRules = new MutableRoutingRules();
 
@@ -198,91 +195,82 @@ public class MutableConfiguration
         this.smtpConfiguration = smtpConfiguration;
     }
 
-    public VulnerabilitiesDto getVulnerabilities() {
-        return vulnerabilities;
+    public MutableSecurityPolicyConfiguration getSecurityPolicyConfiguration() {
+        return securityPolicyConfiguration;
     }
 
-    public void setVulnerabilities(VulnerabilitiesDto vulnerabilities) {
-        this.vulnerabilities = vulnerabilities;
+    public void setSecurityPolicyConfiguration(MutableSecurityPolicyConfiguration securityPolicyConfiguration) {
+        this.securityPolicyConfiguration = securityPolicyConfiguration;
     }
 
-    public List<String> getVulnerabilitiesWhite() {
-        List<String> whiteList;
-        if (StringUtils.isNotBlank(this.vulnerabilities.getWhite())) {
-            whiteList = Lists.newArrayList(Arrays.asList(this.vulnerabilities.getWhite().split(",")));
-        } else {
-            whiteList = Lists.newArrayList();
-        }
-        return whiteList;
+    public void saveOrUpdateNotify(MutableSecurityPolicyConfiguration mutableSecurityPolicyConfiguration) {
+        this.securityPolicyConfiguration.setLevels(mutableSecurityPolicyConfiguration.getLevels());
+        this.securityPolicyConfiguration.setNotifyScopes(mutableSecurityPolicyConfiguration.getNotifyScopes());
+        this.securityPolicyConfiguration.setReceiverUsers(mutableSecurityPolicyConfiguration.getReceiverUsers());
+        this.securityPolicyConfiguration.setReceiverEmails(mutableSecurityPolicyConfiguration.getReceiverEmails());
     }
 
-    public List<String> getVulnerabilitiesBlack() {
-        List<String> blackList;
-        if (StringUtils.isNotBlank(this.vulnerabilities.getBlack())) {
-            blackList = Lists.newArrayList(Arrays.asList(this.vulnerabilities.getBlack().split(",")));
-        } else {
-            blackList = Lists.newArrayList();
-        }
-        return blackList;
+    public void saveOrUpdateBlock(MutableSecurityPolicyConfiguration mutableSecurityPolicyConfiguration) {
+        this.securityPolicyConfiguration.setBlockType(mutableSecurityPolicyConfiguration.getBlockType());
+        this.securityPolicyConfiguration.setBlockLevels(mutableSecurityPolicyConfiguration.getBlockLevels());
+        this.securityPolicyConfiguration.setFilterWhites(mutableSecurityPolicyConfiguration.getFilterWhites());
+    }
+
+    public void setVulnerabilityBlacks(Set<String> blacks) {
+        this.securityPolicyConfiguration.setBlacks(blacks);
+    }
+
+    public void setVulnerabilityWhites(Set<String> whites) {
+        this.securityPolicyConfiguration.setWhites(whites);
     }
 
     public void addVulnerabilitiesWhite(String white) {
         if (StringUtils.isBlank(white)) {
             return;
         }
-        List<String> blackList = getVulnerabilitiesBlack();
-        List<String> whiteList = getVulnerabilitiesWhite();
-        List<String> addWhiteList = Lists.newArrayList(Arrays.asList(white.split(",")));
-        addWhiteList.forEach(item -> {
-            if (whiteList.contains(item)) {
+        List<String> addWhites = Lists.newArrayList(Arrays.asList(white.split(",")));
+        addWhites.forEach(item -> {
+            if (this.securityPolicyConfiguration.getWhites().contains(item)) {
                 throw new RuntimeException(item + "已在白名单中");
             }
-            if (blackList.contains(item)) {
+            if (this.securityPolicyConfiguration.getBlacks().contains(item)) {
                 throw new RuntimeException(item + "已在黑名单中");
             }
-            whiteList.add(item);
+            this.securityPolicyConfiguration.addWhite(item);
         });
-        this.vulnerabilities.setWhite(String.join(",", whiteList));
     }
 
     public void addVulnerabilitiesBlack(String black) {
         if (StringUtils.isBlank(black)) {
             return;
         }
-        List<String> blackList = getVulnerabilitiesBlack();
-        List<String> whiteList = getVulnerabilitiesWhite();
-        List<String> addBlackList = Lists.newArrayList(Arrays.asList(black.split(",")));
-        addBlackList.forEach(item -> {
-            if (whiteList.contains(item)) {
+        List<String> addBlacks = Lists.newArrayList(Arrays.asList(black.split(",")));
+        addBlacks.forEach(item -> {
+            if (this.securityPolicyConfiguration.getWhites().contains(item)) {
                 throw new RuntimeException(item + "已在白名单中");
             }
-            if (blackList.contains(item)) {
+            if (this.securityPolicyConfiguration.getBlacks().contains(item)) {
                 throw new RuntimeException(item + "已在黑名单中");
             }
-            blackList.add(item);
+            this.securityPolicyConfiguration.addBlack(item);
         });
-        this.vulnerabilities.setBlack(String.join(",", blackList));
     }
 
     public void removeVulnerabilitiesWhite(String white) {
-        if (StringUtils.isNotBlank(white) && StringUtils.isNotBlank(this.vulnerabilities.getWhite())) {
-            List<String> whiteList = Lists.newArrayList(Arrays.asList(this.vulnerabilities.getWhite().split(",")));
-            List<String> removeWhiteList = Lists.newArrayList(Arrays.asList(white.split(",")));
-            removeWhiteList.forEach(item -> {
-                whiteList.removeIf(whiteIterator -> whiteIterator.equals(item));
-            });
-            this.vulnerabilities.setWhite(String.join(",", whiteList));
+        Set<String> whites = getSecurityPolicyConfiguration().getWhites();
+        if (StringUtils.isNotBlank(white) && CollectionUtils.isNotEmpty(whites)) {
+            Set<String> removeWhites = Sets.newHashSet(Arrays.asList(white.split(",")));
+            whites.removeAll(removeWhites);
+            this.securityPolicyConfiguration.setWhites(whites);
         }
     }
 
     public void removeVulnerabilitiesBlack(String black) {
-        if (StringUtils.isNotBlank(black) && StringUtils.isNotBlank(this.vulnerabilities.getBlack())) {
-            List<String> blackList = Lists.newArrayList(Arrays.asList(this.vulnerabilities.getBlack().split(",")));
-            List<String> removeBlackList = Lists.newArrayList(Arrays.asList(black.split(",")));
-            removeBlackList.forEach(item -> {
-                blackList.removeIf(whiteIterator -> whiteIterator.equals(item));
-            });
-            this.vulnerabilities.setBlack(String.join(",", blackList));
+        Set<String> blacks = getSecurityPolicyConfiguration().getBlacks();
+        if (StringUtils.isNotBlank(black) && CollectionUtils.isNotEmpty(blacks)) {
+            Set<String> removeBlacks = Sets.newHashSet(Arrays.asList(black.split(",")));
+            blacks.removeAll(removeBlacks);
+            this.securityPolicyConfiguration.setBlacks(blacks);
         }
     }
 
@@ -306,13 +294,13 @@ public class MutableConfiguration
                 Objects.equal(remoteRepositoriesConfiguration, that.remoteRepositoriesConfiguration) &&
                 Objects.equal(corsConfiguration, that.corsConfiguration) &&
                 Objects.equal(smtpConfiguration, that.smtpConfiguration) &&
-                Objects.equal(vulnerabilities, that.vulnerabilities);
+                Objects.equal(securityPolicyConfiguration, that.securityPolicyConfiguration);
     }
 
     @Override
     public int hashCode() {
         return Objects.hashCode(version, baseUrl, port, proxyConfiguration, sessionConfiguration, storages,
-                routingRules, vulnerabilities, remoteRepositoriesConfiguration, corsConfiguration, smtpConfiguration);
+                routingRules, securityPolicyConfiguration, remoteRepositoriesConfiguration, corsConfiguration, smtpConfiguration);
     }
 
     @Override
@@ -326,7 +314,7 @@ public class MutableConfiguration
                 .add("\n\tsessionConfiguration", sessionConfiguration)
                 .add("\n\tstorages", storages)
                 .add("\n\troutingRules", routingRules)
-                .add("\n\tvulnerabilities", vulnerabilities)
+                .add("\n\tsecurityPolicyConfiguration", securityPolicyConfiguration)
                 .add("\n\tremoteRepositoriesConfiguration", remoteRepositoriesConfiguration)
                 .add("\n\tcorsConfiguration", corsConfiguration)
                 .add("\n\tsmtpConfiguration", smtpConfiguration)

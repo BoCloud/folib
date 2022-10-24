@@ -11,6 +11,7 @@ import com.veadan.folib.domain.Artifact;
 import com.veadan.folib.gremlin.entity.vo.ArtifactVo;
 import com.veadan.folib.services.ArtifactWebService;
 import com.veadan.folib.repositories.ArtifactRepository;
+import com.veadan.folib.util.FileSizeConvertUtils;
 import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
@@ -67,7 +68,7 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
                         }
                         artifactVo.setSha(artifact.getChecksums().get("SHA-1"));
                         artifactVo.setMd5(artifact.getChecksums().get("MD5"));
-                        artifactVo.setSize(fileSizeConvert(artifact.getSizeInBytes()));
+                        artifactVo.setSize(FileSizeConvertUtils.convert(artifact.getSizeInBytes()));
                         artifactVo.setName(artifact.getUuid().substring(artifact.getUuid().lastIndexOf("/") + 1));
                         return artifactVo;
                     }).collect(Collectors.toList()), fillConfig, writeSheet);
@@ -82,32 +83,6 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
             excelWriter.finish();
         }
     }
-
-    private String fileSizeConvert(Long sizeInBytes) {
-        BigDecimal bigDecimal = BigDecimal.valueOf(sizeInBytes);
-        String size = "";
-        double kb = 1024;
-        double mb = 1024 * 1024;
-        double gb = 1024 * 1024 * 1024;
-        double bSize = 0.1 * kb;
-        double kbSize = 0.1 * mb;
-        double mbSize = 0.1 * gb;
-        if (sizeInBytes < bSize) {
-            //如果小于0.1KB转化成B
-            size = bigDecimal.setScale(2, RoundingMode.HALF_UP) + "B";
-        } else if (sizeInBytes < kbSize) {
-            //如果小于0.1MB转化成KB
-            size = bigDecimal.divide(BigDecimal.valueOf(kb), 2, RoundingMode.HALF_UP) + "KB";
-        } else if (sizeInBytes < mbSize) {
-            //如果小于0.1GB转化成MB
-            size = bigDecimal.divide(BigDecimal.valueOf(mb), 2, RoundingMode.HALF_UP) + "MB";
-        } else {
-            //其他转化成GB
-            size = bigDecimal.divide(BigDecimal.valueOf(gb), 2, RoundingMode.HALF_UP) + "GB";
-        }
-        return size;
-    }
-
 
     @Override
     public void exportPdf(String vulnerabilityUuid, String storageId, String repositoryId) {

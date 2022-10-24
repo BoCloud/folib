@@ -401,6 +401,7 @@ public class NugetArtifactController
      * 
      * @return
      */
+    @Override
     @ApiOperation(value = "Used to check storage availability")
     @ApiResponses(value = { @ApiResponse(code = HttpURLConnection.HTTP_OK, message = "Storage available."),
                             @ApiResponse(code = HttpURLConnection.HTTP_UNAUTHORIZED, message = "Storage requires authorization.") })
@@ -505,6 +506,7 @@ public class NugetArtifactController
         String path = String.format("%s/%s/%s", packageId, packageVersion, fileName);
 
         RepositoryPath repositoryPath = artifactResolutionService.resolvePath(storageId, repositoryId, path);
+        vulnerabilityBlock(repositoryPath);
         if (provideArtifactDownloadResponse(request, response, httpHeaders, repositoryPath))
         {
             response.setHeader("Content-Disposition", String.format("attachment; filename=\"%s\"", fileName));

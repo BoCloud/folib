@@ -11,4 +11,5 @@ public class ScannerSumDifVo extends ScanSumVo{
     private String layout;
     private int countFolib;
     private int star;
+    private String id;
 }

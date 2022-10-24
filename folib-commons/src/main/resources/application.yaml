@@ -11,9 +11,9 @@ spring:
   datasource:
     type: com.alibaba.druid.pool.DruidDataSource
     driver-class-name: com.mysql.cj.jdbc.Driver
-    url: jdbc:mysql://${folib.mysql.host:10.50.8.55}:${folib.mysql.port:3306}/${folib.mysql.db:folib_scanner}?useSSL=false&tinyInt1isBit=false&allowPublicKeyRetrieval=true&useUnicode=true&characterEncoding=UTF8
+    url: jdbc:mysql://${folib.mysql.host:127.0.0.1}:${folib.mysql.port:3306}/${folib.mysql.db:folib_scanner}?useSSL=false&tinyInt1isBit=false&allowPublicKeyRetrieval=true&useUnicode=true&characterEncoding=UTF8
     username: ${folib.mysql.user:root}
-    password: ${folib.mysql.password:199088926}
+    password: ${folib.mysql.password:123456}
 
   jackson:
     date-format: yyyy-MM-dd HH:mm:ss

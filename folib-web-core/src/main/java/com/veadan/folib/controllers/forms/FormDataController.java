@@ -223,7 +223,7 @@ public class FormDataController
                     .filter(r -> !filterByLayout || r.getLayout().equalsIgnoreCase(layout))
                     .filter(r -> !filterByType || r.isType(type))
                     .filter(r -> !filterByTerm || StringUtils.containsIgnoreCase(r.getId(), filter))
-                    .collect(Collectors.toSet());
+                    .collect(Collectors.toCollection(LinkedHashSet::new));
 
         }
 

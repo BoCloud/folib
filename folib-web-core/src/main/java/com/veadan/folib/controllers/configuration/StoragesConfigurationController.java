@@ -124,6 +124,7 @@ public class StoragesConfigurationController
         try
         {
             StorageDto storage = conversionService.convert(storageForm, StorageDto.class);
+            storage.setAdmin(storageForm.getAdmin());
             storage.setUsers(storageForm.getUsers());
             storageManagementService.createStorage(storage);
             // 向其他集群节点同步storage
@@ -166,6 +167,7 @@ public class StoragesConfigurationController
         try
         {
             StorageDto storage = conversionService.convert(storageFormToUpdate, StorageDto.class);
+            storage.setAdmin(storageFormToUpdate.getAdmin());
             storage.setUsers(storageFormToUpdate.getUsers());
             storageManagementService.updateStorage(storage);
             clusterSyncService.syncStorage(storage, storageId,SyncStorageEnum.UPDATE);
@@ -305,6 +307,278 @@ public class StoragesConfigurationController
                 return getSuccessfulResponseEntity(SUCCESSFUL_REPOSITORY_SAVE, accept);
             }
             catch (IOException | ConfigurationException | RepositoryManagementStrategyException e)
+            {
+                return getExceptionResponseEntity(HttpStatus.INTERNAL_SERVER_ERROR, FAILED_REPOSITORY_SAVE, e, accept);}
+        }
+        else
+        {
+            return getFailedResponseEntity(HttpStatus.NOT_FOUND, STORAGE_NOT_FOUND, accept);
+        }
+    }
+
+    @ApiOperation(value = "add repository whites.")
+    @ApiResponses(value = { @ApiResponse(code = 200, message = "The repository was updated successfully."),
+            @ApiResponse(code = 404, message = "The repository ${repositoryId} was not found!")})
+    @PreAuthorize("hasAuthority('CONFIGURATION_ADD_UPDATE_REPOSITORY')")
+    @PutMapping(value = "/whites/{storageId}/{repositoryId}",
+            consumes = MediaType.APPLICATION_JSON_VALUE,
+            produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity addRepositoryWhites(@ApiParam(value = "The storageId", required = true)
+                                                @PathVariable String storageId,
+                                                @ApiParam(value = "The repositoryId", required = true)
+                                                @PathVariable
+                                                        String repositoryId,
+                                                @ApiParam(value = "The repository object", required = true)
+                                                @RequestBody
+                                                @Validated({ RepositoryForm.WhiteGroup.class })
+                                                        RepositoryForm repositoryForm,
+                                                BindingResult bindingResult,
+                                                @RequestHeader(HttpHeaders.ACCEPT) String accept)
+    {
+        if (configurationManagementService.getConfiguration().getStorage(storageId) != null)
+        {
+            if (bindingResult.hasErrors())
+            {
+                throw new RequestBodyValidationException(FAILED_SAVE_REPOSITORY, bindingResult);
+            }
+
+            try
+            {
+                RepositoryDto repository = getMutableConfigurationClone().getStorage(storageId)
+                        .getRepository(repositoryId);
+                repository.setVulnerabilityWhites(repositoryForm.getVulnerabilityWhites());
+                logger.debug("新增仓库级别白名单 {}:{}...", storageId, repositoryId);
+                configurationManagementService.addRepositoryVulnerabilityWhites(storageId, repositoryId, repository.getVulnerabilityWhites());
+                clusterSyncService.syncRepository(storageId,repositoryId,repository, SyncRepositoryEnum.ADD_OR_UPDATE);
+                return getSuccessfulResponseEntity(SUCCESSFUL_REPOSITORY_SAVE, accept);
+            }
+            catch (IOException | ConfigurationException e)
+            {
+                return getExceptionResponseEntity(HttpStatus.INTERNAL_SERVER_ERROR, FAILED_REPOSITORY_SAVE, e, accept);}
+        }
+        else
+        {
+            return getFailedResponseEntity(HttpStatus.NOT_FOUND, STORAGE_NOT_FOUND, accept);
+        }
+    }
+
+    @ApiOperation(value = "remove repository whites.")
+    @ApiResponses(value = { @ApiResponse(code = 200, message = "The repository was updated successfully."),
+            @ApiResponse(code = 404, message = "The repository ${repositoryId} was not found!")})
+    @PreAuthorize("hasAuthority('CONFIGURATION_ADD_UPDATE_REPOSITORY')")
+    @DeleteMapping(value = "/whites/{storageId}/{repositoryId}",
+            consumes = MediaType.APPLICATION_JSON_VALUE,
+            produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity removeRepositoryWhites(@ApiParam(value = "The storageId", required = true)
+                                              @PathVariable String storageId,
+                                              @ApiParam(value = "The repositoryId", required = true)
+                                              @PathVariable
+                                                      String repositoryId,
+                                              @ApiParam(value = "The repository object", required = true)
+                                              @RequestBody
+                                              @Validated({ RepositoryForm.WhiteGroup.class })
+                                                      RepositoryForm repositoryForm,
+                                              BindingResult bindingResult,
+                                              @RequestHeader(HttpHeaders.ACCEPT) String accept)
+    {
+        if (configurationManagementService.getConfiguration().getStorage(storageId) != null)
+        {
+            if (bindingResult.hasErrors())
+            {
+                throw new RequestBodyValidationException(FAILED_SAVE_REPOSITORY, bindingResult);
+            }
+
+            try
+            {
+                RepositoryDto repository = getMutableConfigurationClone().getStorage(storageId)
+                        .getRepository(repositoryId);
+                repository.setVulnerabilityWhites(repositoryForm.getVulnerabilityWhites());
+                logger.debug("删除仓库级别白名单 {}:{}...", storageId, repositoryId);
+                configurationManagementService.removeRepositoryVulnerabilityWhites(storageId, repositoryId, repository.getVulnerabilityWhites());
+                clusterSyncService.syncRepository(storageId,repositoryId,repository, SyncRepositoryEnum.ADD_OR_UPDATE);
+                return getSuccessfulResponseEntity(SUCCESSFUL_REPOSITORY_SAVE, accept);
+            }
+            catch (IOException | ConfigurationException e)
+            {
+                return getExceptionResponseEntity(HttpStatus.INTERNAL_SERVER_ERROR, FAILED_REPOSITORY_SAVE, e, accept);}
+        }
+        else
+        {
+            return getFailedResponseEntity(HttpStatus.NOT_FOUND, STORAGE_NOT_FOUND, accept);
+        }
+    }
+
+    @ApiOperation(value = "add repository blacks.")
+    @ApiResponses(value = { @ApiResponse(code = 200, message = "The repository was updated successfully."),
+            @ApiResponse(code = 404, message = "The repository ${repositoryId} was not found!")})
+    @PreAuthorize("hasAuthority('CONFIGURATION_ADD_UPDATE_REPOSITORY')")
+    @PutMapping(value = "/blacks/{storageId}/{repositoryId}",
+            consumes = MediaType.APPLICATION_JSON_VALUE,
+            produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity addRepositoryBlacks(@ApiParam(value = "The storageId", required = true)
+                                              @PathVariable String storageId,
+                                              @ApiParam(value = "The repositoryId", required = true)
+                                              @PathVariable
+                                                      String repositoryId,
+                                              @ApiParam(value = "The repository object", required = true)
+                                              @RequestBody
+                                              @Validated({ RepositoryForm.BlackGroup.class })
+                                                      RepositoryForm repositoryForm,
+                                              BindingResult bindingResult,
+                                              @RequestHeader(HttpHeaders.ACCEPT) String accept)
+    {
+        if (configurationManagementService.getConfiguration().getStorage(storageId) != null)
+        {
+            if (bindingResult.hasErrors())
+            {
+                throw new RequestBodyValidationException(FAILED_SAVE_REPOSITORY, bindingResult);
+            }
+
+            try
+            {
+                RepositoryDto repository = getMutableConfigurationClone().getStorage(storageId)
+                        .getRepository(repositoryId);
+                repository.setVulnerabilityBlacks(repositoryForm.getVulnerabilityBlacks());
+                logger.debug("新增仓库级别黑名单 {}:{}...", storageId, repositoryId);
+                configurationManagementService.addRepositoryVulnerabilityBlacks(storageId, repositoryId, repository.getVulnerabilityBlacks());
+                clusterSyncService.syncRepository(storageId,repositoryId,repository, SyncRepositoryEnum.ADD_OR_UPDATE);
+                return getSuccessfulResponseEntity(SUCCESSFUL_REPOSITORY_SAVE, accept);
+            }
+            catch (IOException | ConfigurationException e)
+            {
+                return getExceptionResponseEntity(HttpStatus.INTERNAL_SERVER_ERROR, FAILED_REPOSITORY_SAVE, e, accept);}
+        }
+        else
+        {
+            return getFailedResponseEntity(HttpStatus.NOT_FOUND, STORAGE_NOT_FOUND, accept);
+        }
+    }
+
+    @ApiOperation(value = "remove repository blacks.")
+    @ApiResponses(value = { @ApiResponse(code = 200, message = "The repository was updated successfully."),
+            @ApiResponse(code = 404, message = "The repository ${repositoryId} was not found!")})
+    @PreAuthorize("hasAuthority('CONFIGURATION_ADD_UPDATE_REPOSITORY')")
+    @DeleteMapping(value = "/blacks/{storageId}/{repositoryId}",
+            consumes = MediaType.APPLICATION_JSON_VALUE,
+            produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity removeRepositoryBlacks(@ApiParam(value = "The storageId", required = true)
+                                                 @PathVariable String storageId,
+                                                 @ApiParam(value = "The repositoryId", required = true)
+                                                 @PathVariable
+                                                         String repositoryId,
+                                                 @ApiParam(value = "The repository object", required = true)
+                                                 @RequestBody
+                                                 @Validated({ RepositoryForm.BlackGroup.class })
+                                                         RepositoryForm repositoryForm,
+                                                 BindingResult bindingResult,
+                                                 @RequestHeader(HttpHeaders.ACCEPT) String accept)
+    {
+        if (configurationManagementService.getConfiguration().getStorage(storageId) != null)
+        {
+            if (bindingResult.hasErrors())
+            {
+                throw new RequestBodyValidationException(FAILED_SAVE_REPOSITORY, bindingResult);
+            }
+
+            try
+            {
+                RepositoryDto repository = getMutableConfigurationClone().getStorage(storageId)
+                        .getRepository(repositoryId);
+                repository.setVulnerabilityBlacks(repositoryForm.getVulnerabilityBlacks());
+                logger.debug("删除仓库级别黑名单 {}:{}...", storageId, repositoryId);
+                configurationManagementService.removeRepositoryVulnerabilityBlacks(storageId, repositoryId, repository.getVulnerabilityBlacks());
+                clusterSyncService.syncRepository(storageId,repositoryId,repository, SyncRepositoryEnum.ADD_OR_UPDATE);
+                return getSuccessfulResponseEntity(SUCCESSFUL_REPOSITORY_SAVE, accept);
+            }
+            catch (IOException | ConfigurationException e)
+            {
+                return getExceptionResponseEntity(HttpStatus.INTERNAL_SERVER_ERROR, FAILED_REPOSITORY_SAVE, e, accept);}
+        }
+        else
+        {
+            return getFailedResponseEntity(HttpStatus.NOT_FOUND, STORAGE_NOT_FOUND, accept);
+        }
+    }
+
+    @ApiOperation(value = "set repository whites.")
+    @ApiResponses(value = { @ApiResponse(code = 200, message = "The repository was updated successfully."),
+            @ApiResponse(code = 404, message = "The repository ${repositoryId} was not found!")})
+    @PreAuthorize("hasAuthority('CONFIGURATION_ADD_UPDATE_REPOSITORY')")
+    @PutMapping(value = "/setWhites/{storageId}/{repositoryId}",
+            consumes = MediaType.APPLICATION_JSON_VALUE,
+            produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity setRepositoryWhites(@ApiParam(value = "The storageId", required = true)
+                                              @PathVariable String storageId,
+                                              @ApiParam(value = "The repositoryId", required = true)
+                                              @PathVariable
+                                                      String repositoryId,
+                                              @ApiParam(value = "The repository object", required = true)
+                                              @RequestBody RepositoryForm repositoryForm,
+                                              BindingResult bindingResult,
+                                              @RequestHeader(HttpHeaders.ACCEPT) String accept)
+    {
+        if (configurationManagementService.getConfiguration().getStorage(storageId) != null)
+        {
+            if (bindingResult.hasErrors())
+            {
+                throw new RequestBodyValidationException(FAILED_SAVE_REPOSITORY, bindingResult);
+            }
+
+            try
+            {
+                RepositoryDto repository = getMutableConfigurationClone().getStorage(storageId)
+                        .getRepository(repositoryId);
+                repository.setVulnerabilityWhites(repositoryForm.getVulnerabilityWhites());
+                logger.debug("设置仓库级别白名单 {}:{}...", storageId, repositoryId);
+                configurationManagementService.setRepositoryVulnerabilityWhites(storageId, repositoryId, repository.getVulnerabilityWhites());
+                clusterSyncService.syncRepository(storageId,repositoryId,repository, SyncRepositoryEnum.ADD_OR_UPDATE);
+                return getSuccessfulResponseEntity(SUCCESSFUL_REPOSITORY_SAVE, accept);
+            }
+            catch (IOException | ConfigurationException e)
+            {
+                return getExceptionResponseEntity(HttpStatus.INTERNAL_SERVER_ERROR, FAILED_REPOSITORY_SAVE, e, accept);}
+        }
+        else
+        {
+            return getFailedResponseEntity(HttpStatus.NOT_FOUND, STORAGE_NOT_FOUND, accept);
+        }
+    }
+
+    @ApiOperation(value = "set repository blacks.")
+    @ApiResponses(value = { @ApiResponse(code = 200, message = "The repository was updated successfully."),
+            @ApiResponse(code = 404, message = "The repository ${repositoryId} was not found!")})
+    @PreAuthorize("hasAuthority('CONFIGURATION_ADD_UPDATE_REPOSITORY')")
+    @PutMapping(value = "/setBlacks/{storageId}/{repositoryId}",
+            consumes = MediaType.APPLICATION_JSON_VALUE,
+            produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity setRepositoryBlacks(@ApiParam(value = "The storageId", required = true)
+                                              @PathVariable String storageId,
+                                              @ApiParam(value = "The repositoryId", required = true)
+                                              @PathVariable
+                                                      String repositoryId,
+                                              @ApiParam(value = "The repository object", required = true)
+                                              @RequestBody RepositoryForm repositoryForm,
+                                              BindingResult bindingResult,
+                                              @RequestHeader(HttpHeaders.ACCEPT) String accept)
+    {
+        if (configurationManagementService.getConfiguration().getStorage(storageId) != null)
+        {
+            if (bindingResult.hasErrors())
+            {
+                throw new RequestBodyValidationException(FAILED_SAVE_REPOSITORY, bindingResult);
+            }
+
+            try
+            {
+                RepositoryDto repository = getMutableConfigurationClone().getStorage(storageId)
+                        .getRepository(repositoryId);
+                repository.setVulnerabilityBlacks(repositoryForm.getVulnerabilityBlacks());
+                logger.debug("设置仓库级别黑名单 {}:{}...", storageId, repositoryId);
+                configurationManagementService.setRepositoryVulnerabilityBlacks(storageId, repositoryId, repository.getVulnerabilityBlacks());
+                clusterSyncService.syncRepository(storageId,repositoryId,repository, SyncRepositoryEnum.ADD_OR_UPDATE);
+                return getSuccessfulResponseEntity(SUCCESSFUL_REPOSITORY_SAVE, accept);
+            }
+            catch (IOException | ConfigurationException e)
             {
                 return getExceptionResponseEntity(HttpStatus.INTERNAL_SERVER_ERROR, FAILED_REPOSITORY_SAVE, e, accept);}
         }

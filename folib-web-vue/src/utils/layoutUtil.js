@@ -54,15 +54,16 @@ export function groupRepositoriesBuild (repositories) {
     return groupRepositories;
 }
 
-export function ObjectToGroupRepositories (groupRepositoriesNameList,allRepositories,currentRepositoryId) {
-    // console.log(currentRepositoryId)
+export function objectToGroupRepositories (groupRepositoriesNameList,allRepositories,currentRepositoryId) {
     const aaa= allRepositories.filter(item => item.id!==currentRepositoryId)
     // console.log(aaa)
     let bordObjcet={
         isSelect: aaa.filter(item => groupRepositoriesNameList.indexOf(item.id)>-1),
         enableSelect: aaa.filter(item => !(groupRepositoriesNameList.indexOf(item.id)>-1))
     }
-
+    bordObjcet.isSelect.sort((a,b)=>{
+        return groupRepositoriesNameList.indexOf(a.id)- groupRepositoriesNameList.indexOf(b.id);
+    });
     return bordObjcet;
 }
 
