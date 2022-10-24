@@ -91,6 +91,10 @@ public class ArtifactVo {
      */
     private Integer suppressedVulnerabilitiesCount;
     /**
+     * 漏洞id
+     */
+    private String vulnerabilityId;
+    /**
      * 漏洞列表
      */
     private Set<String> vulnerabilities;

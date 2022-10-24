@@ -79,7 +79,8 @@ import tk.mybatis.mapper.autoconfigure.MybatisProperties;
                  "com.veadan.folib.utils",
                  "com.veadan.folib.scanner",
                  "com.veadan.folib.gremlin",
-                 "com.veadan.folib.actuator" })
+                 "com.veadan.folib.actuator",
+                 "com.veadan.folib.components"})
 @Import({ CommonConfig.class,
           FolibSecurityConfig.class,
           StorageApiConfig.class,

@@ -14,8 +14,7 @@ import java.util.Set;
  * @author veadan
  * @author Veadan
  */
-public class StorageForm
-{
+public class StorageForm {
 
     @NotEmpty(message = "An id must be specified.")
     @UniqueStorage(groups = NewStorage.class, message = "The storage id already exists.")
@@ -24,7 +23,15 @@ public class StorageForm
 
     private String basedir;
 
-    private Set<String> users= new LinkedHashSet<>();
+    /**
+     * 管理员
+     */
+    private String admin;
+
+    /**
+     * 普通用户
+     */
+    private Set<String> users = new LinkedHashSet<>();
 
     public Set<String> getUsers() {
         return users;
@@ -37,45 +44,45 @@ public class StorageForm
     @Valid
     private List<RepositoryForm> repositories;
 
-    public String getId()
-    {
+    public String getId() {
         return id;
     }
 
-    public void setId(final String id)
-    {
+    public void setId(final String id) {
         this.id = id;
     }
 
-    public String getBasedir()
-    {
+    public String getBasedir() {
         return basedir;
     }
 
-    public void setBasedir(final String basedir)
-    {
+    public void setBasedir(final String basedir) {
         this.basedir = basedir;
     }
 
-    public List<RepositoryForm> getRepositories()
-    {
+    public List<RepositoryForm> getRepositories() {
         return repositories;
     }
 
-    public void setRepositories(final List<RepositoryForm> repositories)
-    {
+    public void setRepositories(final List<RepositoryForm> repositories) {
         this.repositories = repositories;
     }
 
+    public String getAdmin() {
+        return admin;
+    }
+
+    public void setAdmin(String admin) {
+        this.admin = admin;
+    }
+
     public interface NewStorage
-            extends Serializable
-    {
+            extends Serializable {
         // validation group marker interface for new storages.
     }
 
     public interface ExistingStorage
-            extends Serializable
-    {
+            extends Serializable {
         // validation group marker interface for existing storages.
     }
 

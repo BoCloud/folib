@@ -141,7 +141,7 @@
               <template #title>
                 <a-tabs class="tabs-sliding" default-active-key="1" @change="tabChange($event)">
                   <a-tab-pane key="1" tab="仓库扫描情况">
-                    <a-table :columns="columns" :data-source="folibScanData" :pagination="false">
+                    <a-table rowKey="id" :columns="columns" :data-source="folibScanData" :pagination="false">
                       <template slot="repository" slot-scope="text, record" >
                         <div @click="goToDetial(record)">
                           <a>
@@ -161,105 +161,7 @@
                     </a-table>
                   </a-tab-pane>
                   <a-tab-pane key="2" tab="平台漏洞情况">
-                    <div class="mx-25">
-                      <a-row type="flex" :gutter="24">
-                        <a-col :span="24" class="text-right">
-                          <a-select default-value="lucy" placeholder="时间范围搜索" style="width: 150px" v-model="vulnerabilityQuery.dateSearchType" :allowClear="true" @change="vulnerabilityTableSearch()">
-                            <a-select-option v-for="(i,index) in dateSearchTypes" :key="index" :value="i.value">
-                              {{ i.label }}
-                            </a-select-option>
-                          </a-select>
-                          <a-input-search placeholder="输入漏洞编号查询" style="max-width: 200px;" v-model="vulnerabilityQuery.vulnerabilityUuid" @search="vulnerabilityTableSearch()" />
-                        </a-col>
-                      </a-row>
-                    </div>
-                    <a-table :columns="vulnerabilityColumns" :data-source="vulnerabilityData" 
-                    @change="handleVulnerabilityTableChange" :loading="vulnerabilityTableLoading"
-                    :pagination="{pageSize: vulnerabilityQuery.limit,current:vulnerabilityQuery.page,total:vulnerabilityQuery.total,showLessItems:true}">
-                      <template slot="cvssV2Severity" slot-scope="cvssV2Severity">
-                        <div class="table-avatar-info" v-if="cvssV2Severity">
-                          <a-avatar v-if="['CRITICAL','MEDIUM','HIGH','LOW'].indexOf(cvssV2Severity)!=-1" :size="24" :src="'images/folib/'+cvssV2Severity.toLowerCase()+'.svg'" />
-                          <a-avatar v-else shape="circle" :size="24">{{ cvssV2Severity.slice(0, 1) }}</a-avatar>
-                          <div class="avatar-info">
-                            <p class="mb-0 text-dark">{{ cvssV2Severity==='CRITICAL'?'严重':cvssV2Severity==='MEDIUM'?'中危':cvssV2Severity==='HIGH'?'高危':cvssV2Severity==='LOW'?'低危':cvssV2Severity}}</p>
-                          </div>
-                        </div>
-                      </template>
-                      <template slot="cvssV3Severity" slot-scope="cvssV3Severity">
-                        <div class="table-avatar-info" v-if="cvssV3Severity">
-                          <a-avatar v-if="['CRITICAL','MEDIUM','HIGH','LOW'].indexOf(cvssV3Severity)!=-1" :size="24" :src="'images/folib/'+cvssV3Severity.toLowerCase()+'.svg'" />
-                          <a-avatar v-else shape="circle" :size="24">{{ cvssV3Severity.slice(0, 1) }}</a-avatar>
-                          <div class="avatar-info">
-                            <p class="mb-0 text-dark">{{ cvssV3Severity==='CRITICAL'?'严重':cvssV3Severity==='MEDIUM'?'中危':cvssV3Severity==='HIGH'?'高危':cvssV3Severity==='LOW'?'低危':cvssV3Severity}}</p>
-                          </div>
-                        </div>
-                      </template>
-                      <template slot="expandedRowRender" slot-scope="record">
-                        <a-tag color="#87d068" class="description-title">漏洞描述</a-tag>
-                        <a-textarea class="description" :autoSize="true" :read-only="true" v-model="record.description" />
-                      </template>
-                      <template slot="highestSeverityText" slot-scope="highestSeverityText">
-                        <div class="table-avatar-info">
-                          <a-avatar v-if="['CRITICAL','MEDIUM','HIGH','LOW'].indexOf(highestSeverityText)!=-1" :size="24" :src="'images/folib/'+highestSeverityText.toLowerCase()+'.svg'" />
-                          <a-avatar v-else shape="circle" :size="24">{{ highestSeverityText.slice(0, 1) }}</a-avatar>
-                          <div class="avatar-info">
-                            <p class="mb-0 text-dark">{{ highestSeverityText==='CRITICAL'?'严重':highestSeverityText==='MEDIUM'?'中危':highestSeverityText==='HIGH'?'高危':highestSeverityText==='LOW'?'低危':highestSeverityText}}</p>
-                          </div>
-                        </div>
-                      </template>
-                      <template slot="operation" slot-scope="text, record">
-                        <a-button class="o-btn" :loading="downLoading" @click="downExcel(record)">
-                          <img src="images/folib/download.svg"/>
-                        </a-button>
-                        <a-button class="o-btn o-graph" @click="showGraph(record)">
-                          <img src="images/folib/graph.svg"/>
-                        </a-button>
-                        <a-popconfirm
-                          title="确定要加入到白名单吗？"
-                          ok-text="确定"
-                          cancel-text="取消"
-                          @confirm="addWhite(record)"
-                          v-if="userInfo.roles.indexOf('ADMIN')>-1 && record.white == 0 && record.black == 0" 
-                        >
-                        <div class="o-btn">
-                          <img src="images/folib/white.svg"/>
-                        </div>   
-                        </a-popconfirm>
-                        <a-popconfirm
-                          title="确定要加入到黑名单吗？"
-                          ok-text="确定"
-                          cancel-text="取消"
-                          @confirm="addBlack(record)"
-                          v-if="userInfo.roles.indexOf('ADMIN')>-1 && record.white == 0 && record.black == 0" 
-                        >
-                        <div class="o-btn o-black">
-                          <img src="images/folib/black.svg"/>
-                        </div>   
-                        </a-popconfirm>
-                        <a-popconfirm
-                          title="确定要从白名单移除吗？"
-                          ok-text="确定"
-                          cancel-text="取消"
-                          @confirm="removeWhite(record)"
-                          v-if="userInfo.roles.indexOf('ADMIN')>-1 && record.white == 1" 
-                        >
-                        <div class="o-btn o-rm">
-                          <img src="images/folib/white.svg"/>
-                        </div>   
-                        </a-popconfirm>
-                        <a-popconfirm
-                          title="确定要从黑名单移除吗？"
-                          ok-text="确定"
-                          cancel-text="取消"
-                          @confirm="removeBlack(record)"
-                          v-if="userInfo.roles.indexOf('ADMIN')>-1 && record.black == 1" 
-                        >
-                        <div class="o-btn o-rm">
-                          <img src="images/folib/black.svg"/>
-                        </div>   
-                        </a-popconfirm>
-                      </template>
-                    </a-table>
+                    <Vulnerability :vulnerabilityColumns="vulnerabilityColumns" :vulnerabilityLevel="1" :queryStorageId="false" :queryRepositoryId="false" ref="vulnerability"></Vulnerability>
                   </a-tab-pane>
                 </a-tabs>
               </template>
@@ -325,31 +227,18 @@
       </a-col>
     </a-row>
     <!-- / Charts -->
-    <a-modal
-      v-model="showGraphModal"
-      title="图谱"
-      cancelText="取消"
-      okText="确定"
-      @ok="()=>{showGraphModal=false}"
-      width="80vw"
-      id="graphModal"
-      class="graph-modal"
-      centered
-    >
-    <div class="vulnerability-g6" id="vulnerabilityG6" ref="vulnerabilityG6"></div>
-    </a-modal>
   </div>
 </template>
 
 <script>
 
-import {getCount,getScannerSumDifVoList,vulnerabilityPage,vulnerabilityExportExcel,weekDayCount,mounthDayCount,addVulnerabilitiesWhite,addVulnerabilitiesBlack,removeVulnerabilitiesWhite,removeVulnerabilitiesBlack,vulnerabilityGraph} from "@/api/folib";
+import {getCount,getScannerSumDifVoList,weekDayCount,mounthDayCount} from "@/api/folib";
 import {getLayoutType2} from "@/utils/layoutUtil";
-import ChartBar from '@/components/Charts/ChartBar' ;
-import ChartLine from '@/components/Charts/ChartLine'
+import ChartBar from '@/components/Charts/ChartBar';
+import ChartLine from '@/components/Charts/ChartLine';
+import Vulnerability from '@/components/Vulnerabilities/Vulnerability';
 import storage from "store";
 import store from '@/store';
-import G6 from '@antv/g6';
 import insertCss from 'insert-css';
 
 
@@ -358,7 +247,7 @@ export default ({
   components: {
     ChartBar,
     ChartLine,
-
+    Vulnerability,
   },
   created() {
     this.userInfo=store.state.user
@@ -497,42 +386,11 @@ export default ({
         },
       ],
       folibScanData:[],
-      vulnerabilityQuery: {
-        page: 1,
-        limit:10,
-        total: 0,
-        dateSearchType: undefined,
-        vulnerabilityUuid:'',
-      },
-      dateSearchTypes: [
-        {
-          label: "最近一周",
-          value: 1,
-        },
-        {
-          label: "最近一个月",
-          value: 2,
-        },
-        {
-          label: "最近三个月",
-          value: 3,
-        },
-        {
-          label: "最近半年",
-          value: 4,
-        },
-      ],
-      vulnerabilityData:[],
-      vulnerabilityTableLoading: false,
       weekCompare:{},
       onScanProportion: 0.00,
       onScanAndScanedProportion: 0.00,
       vulnerableSumProportion: 0.00,
       vulnerabilitesSumProportion: 0.00,
-      downLoading: false,
-      showGraphModal: false,
-      graph:null,
-      graphData: {},
     }
   },
   methods: {
@@ -560,7 +418,9 @@ export default ({
           this.barChartData.labels.push(item.date)
           this.barChartData.datasets[0].data.push(item.vulnerabilitesSum)
         })
-        this.$refs.volFolib.buildData()
+        if(this.$refs.volFolib){
+          this.$refs.volFolib.buildData()
+        }
         this.weekCompare=res.data.compare
       })
       mounthDayCount().then(res=>{
@@ -569,7 +429,9 @@ export default ({
           this.lineChartData.datasets[0].data.push(item.denpendencySum)
           this.lineChartData.datasets[1].data.push(item.vulnerabilitesSum)
         })
-        this.$refs.d30map.buildData()
+        if(this.$refs.d30map){
+          this.$refs.d30map.buildData()
+        }
       })
     },
     LayoutTypeBuild(record) {
@@ -582,522 +444,12 @@ export default ({
         name: 'scannerDetial'
       })
     },
-    getVulnerabilityPage () {
-      this.vulnerabilityTableLoading = true
-      vulnerabilityPage(this.vulnerabilityQuery).then(res=>{
-        this.vulnerabilityData = res.data.rows
-        this.vulnerabilityQuery.total = res.data.total
-      }).finally(() =>{
-        this.vulnerabilityTableLoading = false
-      })
-    },
-    vulnerabilityTableSearch(){
-      this.vulnerabilityQuery.page = 1
-      this.handleVulnerabilityTableChange()
-    },
-    handleVulnerabilityTableChange (pagination){
-      if(pagination){
-        this.vulnerabilityQuery.page = pagination.current
-      }
-      this.getVulnerabilityPage()
-    },
     tabChange(activeKey){
       if(activeKey === '2'){
-        this.getVulnerabilityPage()
-      }
-    },
-    downExcel (record){
-      this.downLoading = true
-      vulnerabilityExportExcel({vulnerabilityUuid:record.uuid}).then(res => {
-        if(!res){
-          return
+        if(this.$refs.vulnerability){
+          this.$refs.vulnerability.getVulnerabilityPage();
         }
-        const blob = new Blob([res], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
-        let fileName = "漏洞" + record.uuid + "的影响范围.xlsx"
-        if (window.navigator.msSaveOrOpenBlob) {
-            //兼容IE10
-            navigator.msSaveBlob(blob, fileName)
-        } else {
-          const url = window.URL.createObjectURL(blob)
-          const link = document.createElement('a')
-          link.href = url
-          link.setAttribute('download', fileName)    
-          document.body.appendChild(link)
-          link.click()
-          document.body.removeChild(link)
-          window.URL.revokeObjectURL(url)
-        }
-      }).catch(err => {
-        console.log(err)
-      }).finally(() => {
-        this.downLoading = false
-      })
-    },
-    showGraph (record){
-      if(this.graph){
-        //如果存在画布，销毁画布，重新渲染
-        this.graph.destroy()
       }
-      this.showGraphModal = true
-      this.initGraph(record.uuid)
-    },
-    vulnerabilityGraph(uuid){
-      vulnerabilityGraph({uuid:uuid}).then(res => {
-        this.graphData = res
-        this.configGraph()
-      });
-    },
-    configGraph(){
-      //组件props
-      const props = {
-        //数据
-        data: this.graphData,
-        config: {
-          padding: [20, 50],
-          defaultLevel: 3,
-          defaultZoom: 0.8,
-          //缩放和拖拽
-          modes: { default: ['zoom-canvas', 'drag-canvas'] },
-        },
-      }
-      //宽高
-      const container = document.getElementById('vulnerabilityG6');
-      const width = container.scrollWidth;
-      const height = container.scrollHeight || 500;
-      //颜色
-      const colors = {
-        B: '#5B8FF9',
-        R: '#F46649',
-        Y: '#EEBC20',
-        G: '#5BD8A6',
-        DI: '#A7A7A7',
-      }
-      // 默认配置
-      const defaultConfig = {
-        width,
-        height,
-        modes: {
-          //缩放和拖拽
-          default: ['zoom-canvas', 'drag-canvas'],
-        },
-        fitView: true,
-        animate: true,
-        defaultNode: {
-          type: 'flow-rect',
-        },
-        defaultEdge: {
-          type: 'cubic-horizontal',
-          style: {
-            stroke: '#CED4D9',
-          },
-        },
-        layout: {
-          type: 'indented',
-          direction: 'LR',
-          dropCap: false,
-          indent: 300,
-          getHeight: () => {
-            return 60;
-          },
-        },
-      }
-      // 自定义节点、边
-      const registerFn = () => {
-        /**
-         * 自定义节点
-         */
-        G6.registerNode(
-          'flow-rect',
-          {
-            shapeType: 'flow-rect',
-            draw(cfg, group) {
-              const {
-                name = '',
-                variableName,
-                variableValue,
-                variableUp = '',
-                label,
-                collapsed,
-                currency,
-                status,
-                rate,
-              } = cfg;
-              const grey = '#CED4D9';
-              // 逻辑不应该在这里判断
-              const rectConfig = {
-                width: 202,
-                height: 60,
-                lineWidth: 1,
-                fontSize: 12,
-                fill: '#fff',
-                radius: 4,
-                stroke: grey,
-                opacity: 1,
-              };
-
-              /**
-               * format the string
-               * @param {string} str The origin string
-               * @param {number} maxWidth max width
-               * @param {number} fontSize font size
-               * @return {string} the processed result
-               */
-              const fittingString = (str, maxWidth, fontSize) => {
-                let currentWidth = 0;
-                let res = str;
-                const pattern = new RegExp('[\u4E00-\u9FA5]+'); // distinguish the Chinese charactors and letters
-                str.split('').forEach((letter, i) => {
-                  if (currentWidth > maxWidth) return;
-                  if (pattern.test(letter)) {
-                    // Chinese charactors
-                    currentWidth += fontSize;
-                  } else {
-                    // get the width of single letter according to the fontSize
-                    currentWidth += G6.Util.getLetterWidth(letter, fontSize);
-                  }
-                  if (currentWidth > maxWidth) {
-                    res = `${str.substr(0, i)}\n${str.substr(i)}`;
-                  }
-                });
-                return res;
-              };
-
-              const nodeOrigin = {
-                x: -rectConfig.width / 2,
-                y: -rectConfig.height / 2,
-              };
-
-              const textConfig = {
-                textAlign: 'left',
-                textBaseline: 'bottom',
-              };
-
-              const rect = group.addShape('rect', {
-                attrs: {
-                  x: nodeOrigin.x,
-                  y: nodeOrigin.y,
-                  ...rectConfig,
-                },
-              });
-
-              const rectBBox = rect.getBBox();
-
-              // label title
-              group.addShape('text', {
-                attrs: {
-                  ...textConfig,
-                  x: 12 + nodeOrigin.x,
-                  y: 20 + nodeOrigin.y,
-                  text: name.length > 28 ? name.substr(0, 28) + '...' : name,
-                  fontSize: 12,
-                  opacity: 0.85,
-                  fill: '#000',
-                  cursor: 'pointer',
-                },
-                name: 'name-shape',
-              });
-
-              // price
-              const price = group.addShape('text', {
-                attrs: {
-                  ...textConfig,
-                  x: 12 + nodeOrigin.x,
-                  y: rectBBox.maxY - 12,
-                  text: fittingString(label, 170, 11),
-                  fontSize: 11,
-                  fill: '#000',
-                  opacity: 0.85,
-                },
-              });
-
-              // label currency
-              group.addShape('text', {
-                attrs: {
-                  ...textConfig,
-                  x: price.getBBox().maxX + 5,
-                  y: rectBBox.maxY - 12,
-                  text: currency,
-                  fontSize: 9,
-                  fill: '#000',
-                  opacity: 0.75,
-                },
-              });
-
-              // percentage
-              const percentText = group.addShape('text', {
-                attrs: {
-                  ...textConfig,
-                  x: rectBBox.maxX - 8,
-                  y: rectBBox.maxY - 12,
-                  text: variableValue,
-                  fontSize: 12,
-                  textAlign: 'right',
-                  fill: colors[status],
-                },
-              });
-
-              // percentage triangle
-              let symbol = variableUp ? 'triangle' : 'triangle-down'
-              const triangle = group.addShape('marker', {
-                attrs: {
-                  ...textConfig,
-                  x: percentText.getBBox().minX - 10,
-                  y: rectBBox.maxY - 12 - 6,
-                  symbol,
-                  r: 6,
-                  fill: colors[status],
-                },
-              });
-
-              // variable name
-              group.addShape('text', {
-                attrs: {
-                  ...textConfig,
-                  x: triangle.getBBox().minX - 4,
-                  y: rectBBox.maxY - 12,
-                  text:  variableName?('建议修复版本 ' + variableName):'',
-                  fontSize: 6,
-                  textAlign: 'right',
-                  fill: '#000',
-                  opacity: 0.45,
-                },
-              });
-
-              // bottom line background
-              const bottomBackRect = group.addShape('rect', {
-                attrs: {
-                  x: nodeOrigin.x,
-                  y: rectBBox.maxY - 4,
-                  width: rectConfig.width,
-                  height: 4,
-                  radius: [0, 0, rectConfig.radius, rectConfig.radius],
-                  fill: '#E0DFE3',
-                },
-              });
-
-              let color = 'B'
-              if(name === '漏洞编号'){
-                color = 'R'
-              }
-              // bottom percent
-              const bottomRect = group.addShape('rect', {
-                attrs: {
-                  x: nodeOrigin.x,
-                  y: rectBBox.maxY - 4,
-                  width: rate * rectBBox.width,
-                  height: 4,
-                  radius: [0, 0, 0, rectConfig.radius],
-                  fill: colors[color],
-                },
-              });
-
-              // collapse rect
-              if (cfg.children && cfg.children.length) {
-                group.addShape('rect', {
-                  attrs: {
-                    x: rectConfig.width / 2 - 8,
-                    y: -8,
-                    width: 16,
-                    height: 16,
-                    stroke: 'rgba(0, 0, 0, 0.25)',
-                    cursor: 'pointer',
-                    fill: '#fff',
-                  },
-                  name: 'collapse-back',
-                  modelId: cfg.id,
-                });
-
-                // collpase text
-                group.addShape('text', {
-                  attrs: {
-                    x: rectConfig.width / 2,
-                    y: -1,
-                    textAlign: 'center',
-                    textBaseline: 'middle',
-                    text: collapsed ? '+' : '-',
-                    fontSize: 16,
-                    cursor: 'pointer',
-                    fill: 'rgba(0, 0, 0, 0.25)',
-                  },
-                  name: 'collapse-text',
-                  modelId: cfg.id,
-                });
-              }
-
-              this.drawLinkPoints(cfg, group);
-              return rect;
-            },
-            update(cfg, item) {
-              const group = item.getContainer();
-              this.updateLinkPoints(cfg, group);
-            },
-            setState(name, value, item) {
-              if (name === 'collapse') {
-                const group = item.getContainer();
-                const collapseText = group.find((e) => e.get('name') === 'collapse-text');
-                if (collapseText) {
-                  if (!value) {
-                    collapseText.attr({
-                      text: '-',
-                    });
-                  } else {
-                    collapseText.attr({
-                      text: '+',
-                    });
-                  }
-                }
-              }
-            },
-            getAnchorPoints() {
-              return [
-                [0, 0.5],
-                [1, 0.5],
-              ];
-            },
-          },
-          'rect',
-        );
-
-        G6.registerEdge(
-          'flow-cubic',
-          {
-            getControlPoints(cfg) {
-              let controlPoints = cfg.controlPoints; // 指定controlPoints
-              if (!controlPoints || !controlPoints.length) {
-                const { startPoint, endPoint, sourceNode, targetNode } = cfg;
-                const { x: startX, y: startY, coefficientX, coefficientY } = sourceNode
-                  ? sourceNode.getModel()
-                  : startPoint;
-                const { x: endX, y: endY } = targetNode ? targetNode.getModel() : endPoint;
-                let curveStart = (endX - startX) * coefficientX;
-                let curveEnd = (endY - startY) * coefficientY;
-                curveStart = curveStart > 40 ? 40 : curveStart;
-                curveEnd = curveEnd < -30 ? curveEnd : -30;
-                controlPoints = [
-                  { x: startPoint.x + curveStart, y: startPoint.y },
-                  { x: endPoint.x + curveEnd, y: endPoint.y },
-                ];
-              }
-              return controlPoints;
-            },
-            getPath(points) {
-              const path = [];
-              path.push(['M', points[0].x, points[0].y]);
-              path.push([
-                'C',
-                points[1].x,
-                points[1].y,
-                points[2].x,
-                points[2].y,
-                points[3].x,
-                points[3].y,
-              ]);
-              return path;
-            },
-          },
-          'single-line',
-        );
-      }
-      registerFn()
-      const { data } = props;
-      const initGraph = (data) => {
-        if (!data) {
-          return;
-        }
-        const { onInit, config } = props;
-        const tooltip = new G6.Tooltip({
-          // offsetX and offsetY include the padding of the parent container
-          offsetX: 20,
-          offsetY: 30,
-          // the types of items that allow the tooltip show up
-          // 允许出现 tooltip 的 item 类型
-          itemTypes: ['node'],
-          // custom the tooltip's content
-          // 自定义 tooltip 内容
-          getContent: (e) => {
-            const outDiv = document.createElement('div');
-            //outDiv.style.padding = '0px 0px 20px 0px';
-            const nodeName = e.item.getModel().name;
-            let formatedNodeName = '';
-            for (let i = 0; i < nodeName.length; i++) {
-              formatedNodeName = `${formatedNodeName}${nodeName[i]}`;
-              if (i !== 0 && i % 20 === 0) formatedNodeName = `${formatedNodeName}<br/>`;
-            }
-            outDiv.innerHTML = `${formatedNodeName}`;
-            return outDiv;
-          },
-          shouldBegin: (e) => {
-            if (e.target.get('name') === 'name-shape') return true;
-            return false;
-          },
-        });
-       this.graph = new G6.TreeGraph({
-          container: 'vulnerabilityG6',
-          ...defaultConfig,
-          ...config,
-          plugins: [tooltip],
-        });
-        if (typeof onInit === 'function') {
-          onInit(this.graph);
-        }
-        this.graph.data(data);
-        this.graph.render();
-        this.graph.zoom(config.defaultZoom || 1);
-
-        const handleCollapse = (e) => {
-          const target = e.target;
-          const id = target.get('modelId');
-          const item = this.graph.findById(id);
-          const nodeModel = item.getModel();
-          nodeModel.collapsed = !nodeModel.collapsed;
-          this.graph.layout();
-          this.graph.setItemState(item, 'collapse', nodeModel.collapsed);
-        };
-        this.graph.on('collapse-text:click', (e) => {
-          handleCollapse(e);
-        });
-        this.graph.on('collapse-back:click', (e) => {
-          handleCollapse(e);
-        });
-      }
-      initGraph(data);
-      if (typeof window !== 'undefined')
-        window.onresize = () => {
-          if (!this.graph || this.graph.get('destroyed')) return;
-          if (!container || !container.scrollWidth || !container.scrollHeight) return;
-          this.graph.changeSize(container.scrollWidth, container.scrollHeight);
-      }
-    },
-    initGraph(uuid){
-      this.vulnerabilityGraph(uuid)
-    },
-    addWhite (record){
-      addVulnerabilitiesWhite({white: record.uuid}).then(res=>{
-        this.successMsg(record.uuid + "添加到白名单成功")
-      }).finally(() => {
-        this.handleVulnerabilityTableChange()
-      })
-    },
-    addBlack (record){
-      addVulnerabilitiesBlack({black: record.uuid}).then(res=>{
-        this.successMsg(record.uuid + "添加到黑名单成功")
-      }).finally(() => {
-        this.handleVulnerabilityTableChange()
-      })
-    },
-    removeWhite (record){
-      removeVulnerabilitiesWhite({white: record.uuid}).then(res=>{
-        this.successMsg(record.uuid + "从白名单移除成功")
-      }).finally(() => {
-        this.handleVulnerabilityTableChange()
-      })
-    },
-    removeBlack (record){
-      removeVulnerabilitiesBlack({black: record.uuid}).then(res=>{
-        this.successMsg(record.uuid + "从黑名单移除成功")
-      }).finally(() => {
-        this.handleVulnerabilityTableChange()
-      })
     },
     successMsg(message){
       if(!message){
@@ -1133,70 +485,6 @@ $md: 768px;
       position: static;
     }
   }
-}
 
-.table-avatar-info .ant-avatar {
-  margin-right: 8px;
 }
-
-.description{
-  width: 95%;
-  border: none;
-  box-shadow: none;
-  resize: none;
-  background: #fbfbfb;
-  vertical-align: middle;
-}
-
-.description-title{
-  vertical-align: middle;
-}
-
-.o-btn {
-  width: 36px;
-  height: 36px;
-  margin-right: 8px;
-  background-color: #1890FF;
-  border-radius: 8px;
-  display: inline-flex;
-  justify-content: center;
-  align-items: center;
-}
-.o-btn img{
-  width: 20px;
-  height: 20px;
-  cursor: pointer;
-}
-
-.o-graph{
-  background-color: #7adcfc;
-}
-
-.o-black{
-  background-color: #f58080
-}
-
-.o-rm{
-  background-color: #d81e06
-}
-
-.graph-modal{
-  height: 90vh;
-}
-
-.vulnerability-g6 {
-  width: 90vw;
-  height: 75vh;
-}
-
-.g6-component-tooltip {
-  background-color: rgba(0,0,0, 0.65);
-  padding: 10px;
-  box-shadow: rgb(174, 174, 174) 0px 0px 10px;
-  width: fit-content;
-  color: #fff;
-  border-radius: 4px;
-}
-
-
 </style>

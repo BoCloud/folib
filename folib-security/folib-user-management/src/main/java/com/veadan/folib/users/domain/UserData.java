@@ -134,17 +134,17 @@ public class UserData implements Serializable, User
     }
 
     @Override
-    public String toString()
-    {
-        final StringBuilder sb = new StringBuilder("User{");
-        sb.append("username='")
-          .append(username)
-          .append('\'');
-        sb.append(", roles=")
-          .append(roles);
-        sb.append(", email=")
-                .append(email);
-        sb.append('}');
-        return sb.toString();
+    public String toString() {
+        return "UserData{" +
+                "username='" + username + '\'' +
+                ", password='" + password + '\'' +
+                ", email='" + email + '\'' +
+                ", userType='" + userType + '\'' +
+                ", enabled=" + enabled +
+                ", roles=" + roles +
+                ", securityTokenKey='" + securityTokenKey + '\'' +
+                ", lastUpdate=" + lastUpdate +
+                ", sourceId='" + sourceId + '\'' +
+                '}';
     }
 }

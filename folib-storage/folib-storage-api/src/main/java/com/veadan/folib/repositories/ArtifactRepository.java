@@ -1,16 +1,24 @@
 package com.veadan.folib.repositories;
 
+import com.google.common.collect.Maps;
 import com.veadan.folib.artifact.coordinates.ArtifactLayoutDescription;
 import com.veadan.folib.artifact.coordinates.ArtifactLayoutLocator;
 import com.veadan.folib.configuration.ConfigurationManager;
 import com.veadan.folib.db.schema.Edges;
+import com.veadan.folib.db.schema.Properties;
 import com.veadan.folib.db.schema.Vertices;
 import com.veadan.folib.domain.Artifact;
+import com.veadan.folib.domain.ArtifactEntity;
+import com.veadan.folib.domain.VulnerabilityArtifactDomain;
+import com.veadan.folib.enums.VulnerabilityPlatformEnum;
 import com.veadan.folib.gremlin.adapters.ArtifactAdapter;
 import com.veadan.folib.gremlin.dsl.EntityTraversal;
 import com.veadan.folib.gremlin.dsl.EntityTraversalUtils;
+import com.veadan.folib.gremlin.dsl.__;
 import com.veadan.folib.gremlin.repositories.GremlinVertexRepository;
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.tinkerpop.gremlin.process.traversal.P;
 import org.apache.tinkerpop.gremlin.structure.Vertex;
 import org.janusgraph.core.attribute.Text;
 import org.springframework.data.domain.Page;
@@ -24,7 +32,9 @@ import javax.inject.Inject;
 import javax.transaction.Transactional;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 
 
 @Repository
@@ -121,6 +131,30 @@ public class ArtifactRepository extends GremlinVertexRepository<Artifact> {
         return EntityTraversalUtils.reduceHierarchy(artifactList);
     }
 
+    public Long countByStorageIdAndRepositoryId(String storageId, String repositoryId) {
+        return g().V().hasLabel(Vertices.ARTIFACT).has(Properties.STORAGE_ID, storageId).has(Properties.REPOSITORY_ID, repositoryId).count().tryNext().orElse(0L);
+    }
+
+    public Map<Object, Object> countArtifactByStorageIdAndRepositoryId(String storageId, String repositoryId) {
+        EntityTraversal<Vertex, Map<Object, Object>> entityTraversal = g().V().hasLabel(Vertices.ARTIFACT).has(Properties.STORAGE_ID, storageId).has(Properties.REPOSITORY_ID, repositoryId)
+                .properties(Properties.DOWNLOAD_COUNT, Properties.DEPENDENCY_COUNT).
+                        group().by(__.key()).by(__.value().sum());
+        return entityTraversal.tryNext().orElse(Maps.newHashMap());
+    }
+
+    public List<VulnerabilityArtifactDomain> findMatchingHasVulnerabilityByStorageIdsAndLevels(List<String> storageIdList, Set<String> levels) {
+        EntityTraversal<Vertex, Vertex> entityTraversal = g().V().hasLabel(Vertices.VULNERABILITY).has(Properties.VULNERABILITY_PLATFORM_NAME, P.within(VulnerabilityPlatformEnum.values()))
+                .has(Properties.HIGHEST_SEVERITY_TEXT, P.within(levels)).as("v");
+        if (CollectionUtils.isNotEmpty(storageIdList)) {
+            entityTraversal = entityTraversal.inE(Edges.ARTIFACT_HAS_VULNERABILITIES).outV()
+                    .has(Properties.STORAGE_ID, P.within(storageIdList));
+        } else {
+            entityTraversal = entityTraversal.inE(Edges.ARTIFACT_HAS_VULNERABILITIES).outV();
+        }
+        List<VulnerabilityArtifactDomain> artifactList = entityTraversal.map(artifactAdapter.vulnerabilityFold()).toList();
+        return artifactList;
+    }
+
     private EntityTraversal<Vertex, Vertex> buildEntityTraversal(String artifactName,
                                                                  String storageId,
                                                                  String repositoryId) {
@@ -139,7 +173,7 @@ public class ArtifactRepository extends GremlinVertexRepository<Artifact> {
                                                                                     String storageId,
                                                                                     String repositoryId) {
         EntityTraversal<Vertex, Vertex> entityTraversal = g().V().hasLabel(Vertices.VULNERABILITY)
-                .has("uuid", vulnerabilityUuid).inE("ArtifactHasVulnerabilities").outV();
+                .has("uuid", vulnerabilityUuid).inE(Edges.ARTIFACT_HAS_VULNERABILITIES).outV();
         if (StringUtils.isNotBlank(storageId)) {
             entityTraversal = entityTraversal.has("storageId", storageId);
         }

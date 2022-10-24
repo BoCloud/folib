@@ -70,7 +70,7 @@
     </select>
 
     <select id="getScannerSumDifVoList" resultType="com.veadan.folib.scanner.entity.ScannerSumDifVo">
-        SELECT DISTINCT r.`storage`,
+        SELECT DISTINCT r.id,r.`storage`,
             r.`repository`,
             r.layout,
             IFNULL(COUNT(a.path), 0)               AS countFolib,

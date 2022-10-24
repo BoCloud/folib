@@ -1,5 +1,7 @@
 package com.veadan.folib.forms.configuration;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.veadan.folib.configuration.MutableSmtpConfiguration;
 import com.veadan.folib.configuration.SmtpConfiguration;
 
@@ -7,12 +9,8 @@ import javax.validation.constraints.*;
 import java.io.Serializable;
 import java.util.Optional;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class SmtpConfigurationForm
-{
+public class SmtpConfigurationForm {
 
     @NotBlank(message = "An SMTP host must be provided.", groups = SmtpConfigurationFormChecks.class)
     private String host;
@@ -27,21 +25,19 @@ public class SmtpConfigurationForm
     private String password;
 
     @Pattern(regexp = "plain|ssl|tls",
-             flags = Pattern.Flag.CASE_INSENSITIVE,
-             message = "Please, set a valid SMTP connection type.",
-             groups = SmtpConfigurationFormChecks.class)
+            flags = Pattern.Flag.CASE_INSENSITIVE,
+            message = "Please, set a valid SMTP connection type.",
+            groups = SmtpConfigurationFormChecks.class)
     private String connection;
 
-    public SmtpConfigurationForm()
-    {
+    public SmtpConfigurationForm() {
     }
 
     public SmtpConfigurationForm(String host,
                                  Integer port,
                                  String connection,
                                  String username,
-                                 String password)
-    {
+                                 String password) {
         this.host = host;
         this.port = port;
         this.connection = connection;
@@ -49,83 +45,70 @@ public class SmtpConfigurationForm
         this.password = password;
     }
 
-    public String getHost()
-    {
+    public String getHost() {
         return host;
     }
 
-    public void setHost(String host)
-    {
+    public void setHost(String host) {
         this.host = host;
     }
 
-    public Integer getPort()
-    {
+    public Integer getPort() {
         return port;
     }
 
-    public void setPort(Integer port)
-    {
+    public void setPort(Integer port) {
         this.port = port;
     }
 
-    public String getUsername()
-    {
+    public String getUsername() {
         return username;
     }
 
-    public void setUsername(String username)
-    {
+    public void setUsername(String username) {
         this.username = username;
     }
 
-    public String getPassword()
-    {
+    public String getPassword() {
         return password;
     }
 
-    public void setPassword(String password)
-    {
+    public void setPassword(String password) {
         this.password = password;
     }
 
-    public String getConnection()
-    {
+    public String getConnection() {
         return connection;
     }
 
-    public void setConnection(String connection)
-    {
+    public void setConnection(String connection) {
         this.connection = connection;
     }
 
     @JsonIgnore()
-    public MutableSmtpConfiguration getMutableSmtpConfiguration()
-    {
+    public MutableSmtpConfiguration getMutableSmtpConfiguration() {
         return new MutableSmtpConfiguration(this.host,
-                                            this.port,
-                                            this.connection,
-                                            this.username,
-                                            this.password);
+                this.port,
+                this.connection,
+                this.username,
+                this.password);
     }
 
     @JsonIgnore()
-    public static SmtpConfigurationForm fromConfiguration(SmtpConfiguration source)
-    {
+    public static SmtpConfigurationForm fromConfiguration(SmtpConfiguration source) {
         SmtpConfiguration configuration = Optional.ofNullable(source).orElse(
                 new SmtpConfiguration(new MutableSmtpConfiguration())
         );
 
         return new SmtpConfigurationForm(configuration.getHost(),
-                                         configuration.getPort(),
-                                         configuration.getConnection(),
-                                         configuration.getUsername(),
-                                         null);
+                configuration.getPort(),
+                configuration.getConnection(),
+                configuration.getUsername(),
+                configuration.getPassword());
     }
 
     public interface SmtpConfigurationFormChecks
-            extends Serializable
-    {
+            extends Serializable {
         // validation group marker interface for fields.
     }
 

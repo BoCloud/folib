@@ -1,12 +1,12 @@
 package com.veadan.folib.configuration;
 
+import com.google.common.collect.ImmutableSortedMap;
+import com.veadan.folib.storage.Storage;
 import com.veadan.folib.storage.StorageData;
 import com.veadan.folib.storage.StorageDto;
-import com.veadan.folib.storage.Storage;
-import com.veadan.folib.storage.VulnerabilitiesDto;
 import com.veadan.folib.storage.repository.HttpConnectionPool;
-import com.veadan.folib.storage.repository.RepositoryData;
 import com.veadan.folib.storage.repository.Repository;
+import com.veadan.folib.storage.repository.RepositoryData;
 import com.veadan.folib.storage.repository.RepositoryTypeEnum;
 import com.veadan.folib.storage.routing.MutableRoutingRules;
 import com.veadan.folib.storage.routing.RoutingRules;
@@ -16,15 +16,13 @@ import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import com.google.common.collect.ImmutableSortedMap;
 import static java.util.stream.Collectors.toMap;
 
 /**
  * @author veadan
  */
 @Immutable
-public class Configuration
-{
+public class Configuration {
 
     private final String id;
 
@@ -53,12 +51,11 @@ public class Configuration
     private final SmtpConfiguration smtpConfiguration;
 
     /**
-     * 漏洞黑白名单
+     * 安全策略配置
      */
-    private VulnerabilitiesDto vulnerabilities;
+    private SecurityPolicyConfiguration securityPolicyConfiguration;
 
-    public Configuration(final MutableConfiguration delegate)
-    {
+    public Configuration(final MutableConfiguration delegate) {
 
         id = delegate.getId();
         instanceName = delegate.getInstanceName();
@@ -74,186 +71,151 @@ public class Configuration
         routingRules = immuteRoutingRules(delegate.getRoutingRules());
         corsConfiguration = immuteCorsConfiguration(delegate.getCorsConfiguration());
         smtpConfiguration = immuteSmtpConfiguration(delegate.getSmtpConfiguration());
-        vulnerabilities = immuteVulnerabilities(delegate.getVulnerabilities());
+        securityPolicyConfiguration = immuteSecurityPolicyConfiguration(delegate.getSecurityPolicyConfiguration());
     }
 
-    private ProxyConfiguration immuteProxyConfiguration(final MutableProxyConfiguration source)
-    {
+    private ProxyConfiguration immuteProxyConfiguration(final MutableProxyConfiguration source) {
         return source != null ? new ProxyConfiguration(source) : null;
     }
 
-    private SessionConfiguration immuteSessionConfiguration(final MutableSessionConfiguration source)
-    {
+    private SessionConfiguration immuteSessionConfiguration(final MutableSessionConfiguration source) {
         return source != null ? new SessionConfiguration(source) : null;
     }
 
-    private Map<String, Storage> immuteStorages(final Map<String, StorageDto> source)
-    {
+    private Map<String, Storage> immuteStorages(final Map<String, StorageDto> source) {
         return source != null ? ImmutableSortedMap.copyOf(source.entrySet().stream().collect(
                 toMap(Map.Entry::getKey, e -> new StorageData(e.getValue())))) : Collections.emptyMap();
     }
 
-    private RemoteRepositoriesConfiguration immuteRemoteRepositoriesConfiguration(final MutableRemoteRepositoriesConfiguration source)
-    {
+    private RemoteRepositoriesConfiguration immuteRemoteRepositoriesConfiguration(final MutableRemoteRepositoriesConfiguration source) {
         return source != null ? new RemoteRepositoriesConfiguration(source) : null;
     }
 
-    private RoutingRules immuteRoutingRules(final MutableRoutingRules source)
-    {
+    private RoutingRules immuteRoutingRules(final MutableRoutingRules source) {
         return source != null ? new RoutingRules(source) : null;
     }
 
-    private CorsConfiguration immuteCorsConfiguration(final MutableCorsConfiguration source)
-    {
+    private CorsConfiguration immuteCorsConfiguration(final MutableCorsConfiguration source) {
         return source != null ? new CorsConfiguration(source) : null;
     }
 
-    private SmtpConfiguration immuteSmtpConfiguration(final MutableSmtpConfiguration source)
-    {
+    private SmtpConfiguration immuteSmtpConfiguration(final MutableSmtpConfiguration source) {
         return source != null ? new SmtpConfiguration(source) : null;
     }
 
-    private VulnerabilitiesDto immuteVulnerabilities(final VulnerabilitiesDto source)
-    {
-        return source != null ? new VulnerabilitiesDto(source) : null;
+    private SecurityPolicyConfiguration immuteSecurityPolicyConfiguration(final MutableSecurityPolicyConfiguration source) {
+        return source != null ? new SecurityPolicyConfiguration(source) : null;
     }
 
-    public String getId()
-    {
+    public String getId() {
         return id;
     }
 
-    public String getInstanceName()
-    {
+    public String getInstanceName() {
         return instanceName;
     }
 
-    public String getVersion()
-    {
+    public String getVersion() {
         return version;
     }
 
-    public String getRevision()
-    {
+    public String getRevision() {
         return revision;
     }
 
-    public String getBaseUrl()
-    {
+    public String getBaseUrl() {
         return baseUrl;
     }
 
-    public int getPort()
-    {
+    public int getPort() {
         return port;
     }
 
-    public ProxyConfiguration getProxyConfiguration()
-    {
+    public ProxyConfiguration getProxyConfiguration() {
         return proxyConfiguration;
     }
 
-    public SessionConfiguration getSessionConfiguration()
-    {
+    public SessionConfiguration getSessionConfiguration() {
         return sessionConfiguration;
     }
 
-    public RemoteRepositoriesConfiguration getRemoteRepositoriesConfiguration()
-    {
+    public RemoteRepositoriesConfiguration getRemoteRepositoriesConfiguration() {
         return remoteRepositoriesConfiguration;
     }
 
-    public Map<String, Storage> getStorages()
-    {
+    public Map<String, Storage> getStorages() {
         return storages;
     }
 
-    public Storage getStorage(final String storageId)
-    {
+    public Storage getStorage(final String storageId) {
         return storages.get(storageId);
     }
 
-    public RoutingRules getRoutingRules()
-    {
+    public RoutingRules getRoutingRules() {
         return routingRules;
     }
 
     public List<Repository> getRepositoriesWithLayout(String storageId,
-                                                      String layout)
-    {
+                                                      String layout) {
         Stream<? extends Repository> repositories;
-        if (storageId != null)
-        {
+        if (storageId != null) {
             Storage storage = getStorage(storageId);
-            if (storage != null)
-            {
+            if (storage != null) {
                 repositories = storage.getRepositories().values().stream();
-            }
-            else
-            {
+            } else {
                 return Collections.emptyList();
             }
-        }
-        else
-        {
+        } else {
             repositories = getStorages().values().stream().flatMap(
                     storage -> storage.getRepositories().values().stream());
         }
 
         return repositories.filter(repository -> repository.getLayout().equals(layout))
-                           .collect(Collectors.toList());
+                .collect(Collectors.toList());
     }
 
-    public List<Repository> getRepositories()
-    {
+    public List<Repository> getRepositories() {
         List<Repository> repositories = new ArrayList<>();
 
-        for (Storage storage : getStorages().values())
-        {
+        for (Storage storage : getStorages().values()) {
             repositories.addAll(storage.getRepositories().values());
         }
 
         return repositories;
     }
 
-    public List<Repository> getGroupRepositories()
-    {
+    public List<Repository> getGroupRepositories() {
         List<Repository> groupRepositories = new ArrayList<>();
 
-        for (Storage storage : getStorages().values())
-        {
+        for (Storage storage : getStorages().values()) {
             groupRepositories.addAll(storage.getRepositories()
-                                            .values()
-                                            .stream()
-                                            .filter(repository -> repository.getType()
-                                                                            .equals(RepositoryTypeEnum.GROUP.getType()))
-                                            .collect(Collectors.toList()));
+                    .values()
+                    .stream()
+                    .filter(repository -> repository.getType()
+                            .equals(RepositoryTypeEnum.GROUP.getType()))
+                    .collect(Collectors.toList()));
         }
 
         return groupRepositories;
     }
 
     public Repository getRepository(String storageId,
-                                    String repositoryId)
-    {
+                                    String repositoryId) {
         return getStorage(storageId).getRepository(repositoryId);
     }
 
     public List<Repository> getGroupRepositoriesContaining(String storageId,
-                                                           String repositoryId)
-    {
+                                                           String repositoryId) {
         String storageAndRepositoryId = storageId + ":" + repositoryId;
         List<Repository> groupRepositories = getGroupRepositories();
-        for (Iterator<Repository> it = groupRepositories.iterator(); it.hasNext(); )
-        {
+        for (Iterator<Repository> it = groupRepositories.iterator(); it.hasNext(); ) {
             Repository repository = it.next();
             Optional<String> exists = repository.getGroupRepositories()
-                                                .stream()
-                                                .filter(groupName -> (groupName.equals(storageAndRepositoryId) ||
-                                                                      (repository.getStorage().getId().equals(storageId) && groupName.equals(repositoryId))))
-                                                .findFirst();
-            if (!exists.isPresent())
-            {
+                    .stream()
+                    .filter(groupName -> (groupName.equals(storageAndRepositoryId) ||
+                            (repository.getStorage().getId().equals(storageId) && groupName.equals(repositoryId))))
+                    .findFirst();
+            if (!exists.isPresent()) {
                 it.remove();
             }
         }
@@ -261,27 +223,20 @@ public class Configuration
     }
 
     public HttpConnectionPool getHttpConnectionPoolConfiguration(String storageId,
-                                                                 String repositoryId)
-    {
+                                                                 String repositoryId) {
         Repository repository = getStorage(storageId).getRepository(repositoryId);
-        return ((RepositoryData)repository).getHttpConnectionPool();
+        return ((RepositoryData) repository).getHttpConnectionPool();
     }
 
-    public CorsConfiguration getCorsConfiguration()
-    {
+    public CorsConfiguration getCorsConfiguration() {
         return corsConfiguration;
     }
 
-    public SmtpConfiguration getSmtpConfiguration()
-    {
+    public SmtpConfiguration getSmtpConfiguration() {
         return smtpConfiguration;
     }
 
-    public VulnerabilitiesDto getVulnerabilities() {
-        return vulnerabilities;
-    }
-
-    public void setVulnerabilities(VulnerabilitiesDto vulnerabilities) {
-        this.vulnerabilities = vulnerabilities;
+    public SecurityPolicyConfiguration getSecurityPolicyConfiguration() {
+        return securityPolicyConfiguration;
     }
 }

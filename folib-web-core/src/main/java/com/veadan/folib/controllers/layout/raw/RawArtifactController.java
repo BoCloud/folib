@@ -72,6 +72,7 @@ public class RawArtifactController
         logger.debug("Requested /{}/{}/{}.", storageId, repositoryId, path);
 
         RepositoryPath repositoryPath = artifactResolutionService.resolvePath(storageId, repositoryId, path);
+        vulnerabilityBlock(repositoryPath);
         provideArtifactDownloadResponse(request, response, httpHeaders, repositoryPath);
     }
 

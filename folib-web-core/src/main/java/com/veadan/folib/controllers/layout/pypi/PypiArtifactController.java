@@ -215,7 +215,7 @@ public class PypiArtifactController extends BaseArtifactController
                                                                               repository.getStorage().getId(),
                                                                               repository.getId(),
                                                                               coordinates.buildPath());
-
+        vulnerabilityBlock(repositoryPath);
         provideArtifactDownloadResponse(request, response, headers, repositoryPath);
     }
 

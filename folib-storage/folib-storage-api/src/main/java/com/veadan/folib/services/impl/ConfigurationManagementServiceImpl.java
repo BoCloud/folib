@@ -1,6 +1,6 @@
 package com.veadan.folib.services.impl;
 
-import com.google.common.collect.Lists;
+import com.beust.jcommander.internal.Sets;
 import com.veadan.folib.client.MutableRemoteRepositoryRetryArtifactDownloadConfiguration;
 import com.veadan.folib.configuration.*;
 import com.veadan.folib.event.repository.RepositoryEvent;
@@ -32,6 +32,7 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
 
 /**
  * @author mtodorov
@@ -159,11 +160,14 @@ public class ConfigurationManagementServiceImpl
     public void updateStorage(StorageDto storage) throws IOException {
         StorageDto storageDto = configuration.getStorage(storage.getId());
         storageDto.setUsers(storage.getUsers());
+        storageDto.setAdmin(storage.getAdmin());
+        checkUsersContainsAdmin(storage);
         modifyInLock(configuration -> configuration.addStorage(storageDto));
     }
 
     @Override
     public void createStorage(StorageDto storage) throws IOException {
+        checkUsersContainsAdmin(storage);
         modifyInLock(configuration -> configuration.addStorage(storage));
     }
 
@@ -201,7 +205,6 @@ public class ConfigurationManagementServiceImpl
         {
             List<Repository> includedInGroupRepositories = getConfiguration().getGroupRepositoriesContaining(
                     storageId, repositoryId);
-
             if (!includedInGroupRepositories.isEmpty()) {
                 for (Repository repository : includedInGroupRepositories) {
                     configuration.getStorage(repository.getStorage().getId())
@@ -209,6 +212,70 @@ public class ConfigurationManagementServiceImpl
                             .getGroupRepositories().remove(repositoryId);
                 }
             }
+        });
+    }
+
+    @Override
+    public void addRepositoryVulnerabilityWhites(String storageId, String repositoryId, Set<String> whites) throws IOException {
+        modifyInLock(configuration ->
+        {
+            final RepositoryDto repository = configuration.getStorage(storageId)
+                    .getRepository(repositoryId);
+            checkPlatformVulnerability(whites, repository);
+            repository.addVulnerabilityWhites(whites);
+        });
+    }
+
+    @Override
+    public void removeRepositoryVulnerabilityWhites(String storageId, String repositoryId, Set<String> whites) throws IOException {
+        modifyInLock(configuration ->
+        {
+            final RepositoryDto repository = configuration.getStorage(storageId)
+                    .getRepository(repositoryId);
+            repository.removeVulnerabilityWhites(whites);
+        });
+    }
+
+    @Override
+    public void addRepositoryVulnerabilityBlacks(String storageId, String repositoryId, Set<String> blacks) throws IOException {
+        modifyInLock(configuration ->
+        {
+            final RepositoryDto repository = configuration.getStorage(storageId)
+                    .getRepository(repositoryId);
+            checkPlatformVulnerability(blacks, repository);
+            repository.addVulnerabilityBlacks(blacks);
+        });
+    }
+
+    @Override
+    public void removeRepositoryVulnerabilityBlacks(String storageId, String repositoryId, Set<String> blacks) throws IOException {
+        modifyInLock(configuration ->
+        {
+            final RepositoryDto repository = configuration.getStorage(storageId)
+                    .getRepository(repositoryId);
+            repository.removeVulnerabilityBlacks(blacks);
+        });
+    }
+
+    @Override
+    public void setRepositoryVulnerabilityWhites(String storageId, String repositoryId, Set<String> whites) throws IOException {
+        modifyInLock(configuration ->
+        {
+            final RepositoryDto repository = configuration.getStorage(storageId)
+                    .getRepository(repositoryId);
+            checkPlatformVulnerability(whites, repository);
+            repository.setVulnerabilityWhites(whites);
+        });
+    }
+
+    @Override
+    public void setRepositoryVulnerabilityBlacks(String storageId, String repositoryId, Set<String> blacks) throws IOException {
+        modifyInLock(configuration ->
+        {
+            final RepositoryDto repository = configuration.getStorage(storageId)
+                    .getRepository(repositoryId);
+            checkPlatformVulnerability(blacks, repository);
+            repository.setVulnerabilityBlacks(blacks);
         });
     }
 
@@ -501,16 +568,22 @@ public class ConfigurationManagementServiceImpl
     @Override
     public void setVulnerabilitiesWhites(String whites) throws IOException {
         modifyInLock(configuration -> {
-            configuration.getVulnerabilities()
-                    .setWhite(whites);
+            Set<String> set = new LinkedHashSet<>();
+            if (StringUtils.isNotBlank(whites)) {
+                set.addAll(Arrays.asList(whites.split(",")));
+            }
+            configuration.getSecurityPolicyConfiguration().setWhites(set);
         });
     }
 
     @Override
     public void setVulnerabilitiesBlacks(String blacks) throws IOException {
         modifyInLock(configuration -> {
-            configuration.getVulnerabilities()
-                    .setBlack(blacks);
+            Set<String> set = new LinkedHashSet<>();
+            if (StringUtils.isNotBlank(blacks)) {
+                set.addAll(Arrays.asList(blacks.split(",")));
+            }
+            configuration.getSecurityPolicyConfiguration().setBlacks(set);
         });
     }
 
@@ -555,15 +628,27 @@ public class ConfigurationManagementServiceImpl
     }
 
     @Override
-    public List<String> getVulnerabilitiesWhiteList() {
-        String white = getConfiguration().getVulnerabilities().getWhite();
-        return StringUtils.isBlank(white) ? Collections.emptyList() : Lists.newArrayList(Arrays.asList(white.split(",")));
+    public Set<String> getVulnerabilityWhites() {
+        return getMutableConfigurationClone().getSecurityPolicyConfiguration().getWhites();
     }
 
     @Override
-    public List<String> getVulnerabilitiesBlackList() {
-        String black = getConfiguration().getVulnerabilities().getBlack();
-        return StringUtils.isBlank(black) ? Collections.emptyList() : Lists.newArrayList(Arrays.asList(black.split(",")));
+    public Set<String> getVulnerabilityBlacks() {
+        return getMutableConfigurationClone().getSecurityPolicyConfiguration().getBlacks();
+    }
+
+    @Override
+    public void saveOrUpdateNotify(MutableSecurityPolicyConfiguration mutableSecurityPolicyConfiguration) throws IOException {
+        modifyInLock(configuration -> {
+            configuration.saveOrUpdateNotify(mutableSecurityPolicyConfiguration);
+        });
+    }
+
+    @Override
+    public void saveOrUpdateBlock(MutableSecurityPolicyConfiguration mutableSecurityPolicyConfiguration) throws IOException {
+        modifyInLock(configuration -> {
+            configuration.saveOrUpdateBlock(mutableSecurityPolicyConfiguration);
+        });
     }
 
     private void setProxyRepositoryConnectionPoolConfigurations() throws IOException {
@@ -609,6 +694,43 @@ public class ConfigurationManagementServiceImpl
             }
         } finally {
             writeLock.unlock();
+        }
+    }
+
+    private void checkUsersContainsAdmin(StorageDto storage) {
+        if (StringUtils.isNotBlank(storage.getAdmin())) {
+            if (Objects.isNull(storage.getUsers())) {
+                storage.setUsers(Sets.newHashSet());
+            }
+            if (!storage.getUsers().contains(storage.getAdmin())) {
+                storage.getUsers().add(storage.getAdmin());
+            }
+        }
+    }
+
+    private void checkPlatformVulnerability(Set<String> sets, RepositoryDto repositoryDto) {
+        if (CollectionUtils.isEmpty(sets)) {
+            return;
+        }
+//        Set<String> platformWhites = getVulnerabilityWhites();
+//        List<String> platformWhitesContains = platformWhites.stream().filter(sets::contains).distinct().collect(Collectors.toList());
+//        if (CollectionUtils.isNotEmpty(platformWhitesContains)) {
+//            throw new RuntimeException(platformWhitesContains + "已在平台级别白名单中");
+//        }
+//        Set<String> platformBlacks = getVulnerabilityBlacks();
+//        List<String> platformBlacksContains = platformBlacks.stream().filter(sets::contains).distinct().collect(Collectors.toList());
+//        if (CollectionUtils.isNotEmpty(platformBlacksContains)) {
+//            throw new RuntimeException(platformBlacksContains + "已在平台级别黑白名单中");
+//        }
+        //白名单
+        List<String> whitesContains = repositoryDto.getVulnerabilityWhites().stream().filter(sets::contains).distinct().collect(Collectors.toList());
+        if (CollectionUtils.isNotEmpty(whitesContains)) {
+            throw new RuntimeException(whitesContains + "已在白名单中");
+        }
+        //黑名单
+        List<String> blacksContains = repositoryDto.getVulnerabilityBlacks().stream().filter(sets::contains).distinct().collect(Collectors.toList());
+        if (CollectionUtils.isNotEmpty(blacksContains)) {
+            throw new RuntimeException(blacksContains + "已在黑白名单中");
         }
     }
 

@@ -203,16 +203,9 @@ export function getSeverity(id) {
   })
 }
 
-export function getVulnerabilities () {
-  return axios({
-    url: '/api/vulnerability/getVulnerabilities',
-    method: 'get'
-  })
-}
-
 export function addVulnerabilitiesWhite (data) {
   return axios({
-    url: '/api/vulnerability/addWhite',
+    url: '/api/configuration/folib/securityPolicy/addWhite',
     method: 'put',
     data: data
   })
@@ -220,7 +213,7 @@ export function addVulnerabilitiesWhite (data) {
 
 export function removeVulnerabilitiesWhite (data) {
   return axios({
-    url: '/api/vulnerability/removeWhite',
+    url: '/api/configuration/folib/securityPolicy/removeWhite',
     method: 'delete',
     data: data
   })
@@ -228,7 +221,7 @@ export function removeVulnerabilitiesWhite (data) {
 
 export function addVulnerabilitiesBlack (data) {
   return axios({
-    url: '/api/vulnerability/addBlack',
+    url: '/api/configuration/folib/securityPolicy/addBlack',
     method: 'put',
     data: data
   })
@@ -236,7 +229,7 @@ export function addVulnerabilitiesBlack (data) {
 
 export function removeVulnerabilitiesBlack (data) {
   return axios({
-    url: '/api/vulnerability/removeBlack',
+    url: '/api/configuration/folib/securityPolicy/removeBlack',
     method: 'delete',
     data: data
   })
@@ -250,7 +243,84 @@ export function vulnerabilityGraph (query) {
   })
 }
 
+export function saveOrUpdateVulnerabilityNotify (data) {
+  return axios({
+    url: '/api/configuration/folib/securityPolicy/notify',
+    method: 'put',
+    data: data
+  })
+}
 
+export function vulnerabilityConfig () {
+  return axios({
+    url: '/api/configuration/folib/securityPolicy/config',
+    method: 'get',
+  })
+}
+
+export function addRepositoryWhites (storageId,repositoryId,obj) {
+  return axios({
+    url: '/api/configuration/folib/storages/whites/'+storageId+'/'+repositoryId,
+    method: 'put',
+    data: obj
+  })
+}
+
+export function removeRepositoryWhites (storageId,repositoryId,obj) {
+  return axios({
+    url: '/api/configuration/folib/storages/whites/'+storageId+'/'+repositoryId,
+    method: 'delete',
+    data: obj
+  })
+}
+
+export function addRepositoryBlacks (storageId,repositoryId,obj) {
+  return axios({
+    url: '/api/configuration/folib/storages/blacks/'+storageId+'/'+repositoryId,
+    method: 'put',
+    data: obj
+  })
+}
+
+export function removeRepositoryBlacks (storageId,repositoryId,obj) {
+  return axios({
+    url: '/api/configuration/folib/storages/blacks/'+storageId+'/'+repositoryId,
+    method: 'delete',
+    data: obj
+  })
+}
+
+export function setRepositoryWhites (storageId,repositoryId,obj) {
+  return axios({
+    url: '/api/configuration/folib/storages/setWhites/'+storageId+'/'+repositoryId,
+    method: 'put',
+    data: obj
+  })
+}
+
+export function setRepositoryBlacks (storageId,repositoryId,obj) {
+  return axios({
+    url: '/api/configuration/folib/storages/setBlacks/'+storageId+'/'+repositoryId,
+    method: 'put',
+    data: obj
+  })
+}
+
+export function repositoryVulnerabilityStatistics (query) {
+  return axios({
+    url: '/api/vulnerability/repositoryVulnerabilityStatistics',
+    method: 'get',
+    params: query
+  })
+}
+
+export function securityPolicyBlock (data) {
+  return axios({
+    url: '/api/configuration/folib/securityPolicy/block',
+    method: 'put',
+    data: data
+  })
+}
 
 
 

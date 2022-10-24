@@ -717,6 +717,7 @@ public class DockerArtifactController extends BaseArtifactController {
         try {
             logger.info("pullingAnImageManifest params [storageId:{}, repositoryId:{}, artifactPath:{}", storageId, repositoryId, artifactPath);
             RepositoryPath repositoryPath = artifactResolutionService.resolvePath(storageId, repositoryId, artifactPath);
+            vulnerabilityBlock(repositoryPath);
             response.reset();
             response.setDateHeader(DockerApiHeader.DATE.key(), System.currentTimeMillis());
             entity = ResponseEntity.status(HttpStatus.OK).build();
@@ -752,6 +753,7 @@ public class DockerArtifactController extends BaseArtifactController {
         try {
             logger.info("pullingALayer params [storageId:{}, repositoryId:{}, artifactPath:{}", storageId, repositoryId, artifactPath);
             RepositoryPath repositoryPath = artifactResolutionService.resolvePath(storageId, repositoryId, artifactPath);
+            vulnerabilityBlock(repositoryPath);
             response.reset();
             response.setDateHeader(DockerApiHeader.DATE.key(), System.currentTimeMillis());
 
