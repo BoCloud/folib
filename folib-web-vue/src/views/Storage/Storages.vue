@@ -146,7 +146,7 @@
                 </a-select-option>
               </a-select>
             </a-form-item>
-            <a-form-item class="tags-field mb-10" v-if="userInfo.name===currentStorage.admin" label="用户成员选择" :colon="false">
+            <a-form-item class="tags-field mb-10" v-if="userInfo.roles.indexOf('ADMIN')>-1 || userInfo.name===currentStorage.admin" label="用户成员选择" :colon="false">
               <a-select v-model="storageCreateData.users" mode="tags" :defaultValue="storageCreateData.users"
                         style="width: 100%"
                         placeholder="例如：*">
@@ -194,7 +194,7 @@
                 </a-select-option>
               </a-select>
             </a-form-item>
-            <a-form-item class="tags-field mb-10" v-if="userInfo.name===currentStorage.admin" label="用户成员选择" :colon="false">
+            <a-form-item class="tags-field mb-10" v-if="userInfo.roles.indexOf('ADMIN')>-1 || userInfo.name===currentStorage.admin" label="用户成员选择" :colon="false">
               <a-select v-model="currentStorage.users" mode="tags" :defaultValue="currentStorage.users"
                         style="width: 100%"
                         placeholder="例如：*">

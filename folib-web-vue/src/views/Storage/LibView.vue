@@ -1,100 +1,16 @@
 <template>
   <div class="lib-view">
     <!-- Header Background Image -->
-    <div v-if="tabActiveKey == 1" class="profile-nav-bg">
+    <div class="profile-nav-bg">
       <div :class="[mouseEnter ? 'mouse-enter nested' : 'nested']"
         style="background:url(images/bg-profile.jpg) center/cover;transition:all .3s" />
       <a-row type="flex" :md="8" :xs="4">
         <search-box @mouse="searchBoxMouseStatus" @search="search" />
       </a-row>
     </div>
-    <a-row v-if="tabActiveKey == 2" type="flex" :gutter="24">
-      <div class="profile-nav-bg statistics-bg">
-        <div class="nested" style="background:url(images/bg-profile.jpg) center/cover;transition:all .3s" />
-      </div>
-      <a-col :span="24" :xl="4" class="mb-24 statistics">
-        <a-card :bordered="false" class="widget-2">
-          <a-statistic :value="vulnerabilityStatistics.artifactCount">
-            <template #title>
-              <div class="icon">
-                <a-icon type="appstore" theme="filled" />
-              </div>
-              <h6>制品</h6>
-              <p>{{ folibRepository.id }} 制品总数</p>
-            </template>
-          </a-statistic>
-        </a-card>
-      </a-col>
-      <a-col :span="24" :xl="4" class="mb-24 statistics">
-        <a-card :bordered="false" class="widget-2">
-          <a-statistic :value="vulnerabilityStatistics.downloadCount">
-            <template #title>
-              <div class="icon">
-                <a-icon type="cloud-download" />
-              </div>
-              <h6>下载</h6>
-              <p>{{ folibRepository.id }} 下载总数</p>
-            </template>
-          </a-statistic>
-        </a-card>
-      </a-col>
-      <a-col :span="24" :xl="4" class="mb-24 statistics">
-        <a-card :bordered="false" class="widget-2">
-          <a-statistic :value="vulnerabilityStatistics.dependencyCount">
-            <template #title>
-              <div class="icon">
-                <a-icon type="control" theme="filled" />
-              </div>
-              <h6>依赖</h6>
-              <p>{{ folibRepository.id }} 依赖总数</p>
-            </template>
-          </a-statistic>
-        </a-card>
-      </a-col>
-      <a-col :span="24" :xl="4" class="mb-24 statistics">
-        <a-card :bordered="false" class="widget-2">
-          <a-statistic :value="vulnerabilityStatistics.vulnerabilityCount">
-            <template #title>
-              <div class="icon">
-                <a-icon type="bug" theme="filled" />
-              </div>
-              <h6>漏洞</h6>
-              <p>{{ folibRepository.id }} 漏洞总数</p>
-            </template>
-          </a-statistic>
-        </a-card>
-      </a-col>
-      <a-col :span="24" :xl="4" class="mb-24 statistics">
-        <a-card :bordered="false" class="widget-2 vulnerability-count" @click="vulnerabilityDrawerShow(1)">
-          <a-statistic :value="vulnerabilityStatistics.whiteCount"
-            :value-style="{ color: 'green', 'text-decoration': 'underline' }">
-            <template #title>
-              <div class="icon">
-                <a-icon type="file-done" />
-              </div>
-              <h6>白名单</h6>
-              <p>{{ folibRepository.id }} 漏洞白名单</p>
-            </template>
-          </a-statistic>
-        </a-card>
-      </a-col>
-      <a-col :span="24" :xl="4" class="mb-24 statistics">
-        <a-card :bordered="false" class="widget-2 vulnerability-count" @click="vulnerabilityDrawerShow(2)">
-          <a-statistic :value="vulnerabilityStatistics.blackCount"
-            :value-style="{ color: '#cf1322', 'text-decoration': 'underline' }">
-            <template #title>
-              <div class="icon">
-                <a-icon type="exception" />
-              </div>
-              <h6>黑名单</h6>
-              <p>{{ folibRepository.id }} 漏洞黑名单</p>
-            </template>
-          </a-statistic>
-        </a-card>
-      </a-col>
-    </a-row>
-    <a-tabs class="tabs-sliding" default-active-key="1" @change="tabChange($event)">
-      <a-tab-pane key="1" tab="仓库">
+    <a-tabs class="tabs-sliding" :default-active-key="1" :activeKey="tabActiveKey"
+      @change="tabChange($event)">
+      <a-tab-pane :key="1" tab="仓库">
         <a-affix :offset-top="50" class="repository-affix">
           <a-row>
             <a-col :span="24" :md="24" class="mb-24">
@@ -105,7 +21,8 @@
                   <a-row type="flex" align="middle">
                     <a-col :span="24" :md="12" class="col-info">
                       <a>
-                        <a-icon type="backward" :style="{ fontSize: '32px', marginRight: '20px', opacity: '0.8' }"
+                        <a-icon type="backward"
+                          :style="{ fontSize: '32px', marginRight: '20px', opacity: '0.8', color: '#BFBFBFFF' }"
                           @click="goBack()" />
                       </a>
                       <a>
@@ -501,11 +418,98 @@
           </a-col>
         </a-row>
       </a-tab-pane>
-      <a-tab-pane key="2" tab="安全">
-        <Vulnerability :vulnerabilityColumns="vulnerabilityColumns" :queryStorageId="false" :vulnerabilityLevel="2"
-          :queryRepositoryId="false" :storageId="folibRepository.storageId" :repositoryId="folibRepository.id"
-          ref="vulnerability">
-        </Vulnerability>
+      <a-tab-pane :key="2" tab="安全">
+        <a-row v-if="tabActiveKey == 2" type="flex" :gutter="24">
+          <!-- <div class="profile-nav-bg statistics-bg">
+        <div class="nested" style="background:url(images/bg-profile.jpg) center/cover;transition:all .3s" />
+      </div> -->
+          <a-col :span="24" :xl="4" class="mb-24 statistics">
+            <a-card :bordered="false" class="widget-2">
+              <a-statistic :value="vulnerabilityStatistics.artifactCount">
+                <template #title>
+                  <div class="icon">
+                    <a-icon type="appstore" theme="filled" :style="{ fontSize: '28px' }" />
+                  </div>
+                  <h6>制品</h6>
+                  <p>制品总数（个）</p>
+                </template>
+              </a-statistic>
+            </a-card>
+          </a-col>
+          <a-col :span="24" :xl="4" class="mb-24 statistics">
+            <a-card :bordered="false" class="widget-2">
+              <a-statistic :value="vulnerabilityStatistics.downloadCount">
+                <template #title>
+                  <div class="icon">
+                    <a-icon type="cloud-download" :style="{ fontSize: '28px' }" />
+                  </div>
+                  <h6>下载</h6>
+                  <p>下载总数（次）</p>
+                </template>
+              </a-statistic>
+            </a-card>
+          </a-col>
+          <a-col :span="24" :xl="4" class="mb-24 statistics">
+            <a-card :bordered="false" class="widget-2">
+              <a-statistic :value="vulnerabilityStatistics.dependencyCount">
+                <template #title>
+                  <div class="icon">
+                    <a-icon type="control" theme="filled" :style="{ fontSize: '28px' }" />
+                  </div>
+                  <h6>依赖</h6>
+                  <p>依赖总数</p>
+                </template>
+              </a-statistic>
+            </a-card>
+          </a-col>
+          <a-col :span="24" :xl="4" class="mb-24 statistics">
+            <a-card :bordered="false" class="widget-2">
+              <a-statistic :value="vulnerabilityStatistics.vulnerabilityCount">
+                <template #title>
+                  <div class="icon">
+                    <a-icon type="bug" theme="filled" :style="{ fontSize: '28px' }" />
+                  </div>
+                  <h6>漏洞</h6>
+                  <p>漏洞总数</p>
+                </template>
+              </a-statistic>
+            </a-card>
+          </a-col>
+          <a-col :span="24" :xl="4" class="mb-24 statistics">
+            <a-card :bordered="false" class="widget-2 vulnerability-count" @click="vulnerabilityDrawerShow(1)">
+              <a-statistic :value="vulnerabilityStatistics.whiteCount"
+                :value-style="{ color: 'green', 'text-decoration': 'underline' }">
+                <template #title>
+                  <div class="icon">
+                    <a-icon type="file-done" :style="{ fontSize: '28px' }" />
+                  </div>
+                  <h6>白名单</h6>
+                  <p>漏洞白名单</p>
+                </template>
+              </a-statistic>
+            </a-card>
+          </a-col>
+          <a-col :span="24" :xl="4" class="mb-24 statistics">
+            <a-card :bordered="false" class="widget-2 vulnerability-count" @click="vulnerabilityDrawerShow(2)">
+              <a-statistic :value="vulnerabilityStatistics.blackCount"
+                :value-style="{ color: '#cf1322', 'text-decoration': 'underline' }">
+                <template #title>
+                  <div class="icon">
+                    <a-icon type="exception" :style="{ fontSize: '28px' }" />
+                  </div>
+                  <h6>黑名单</h6>
+                  <p>漏洞黑名单</p>
+                </template>
+              </a-statistic>
+            </a-card>
+          </a-col>
+        </a-row>
+        <a-card>
+          <Vulnerability :vulnerabilityColumns="vulnerabilityColumns" :queryStorageId="false" :vulnerabilityLevel="2"
+            :queryRepositoryId="false" :storageId="folibRepository.storageId" :repositoryId="folibRepository.id"
+            ref="vulnerability">
+          </Vulnerability>
+        </a-card>
       </a-tab-pane>
     </a-tabs>
     <!-- / Header Background Image -->
@@ -1335,6 +1339,7 @@ export default {
       if (page) {
         this.artifactQuery.page = page
       }
+      this.tabActiveKey = 1
       this.artifactQuery.artifactName = value
       this.artifactQuery.storageId = this.folibRepository.storageId
       this.artifactQuery.repositoryId = this.folibRepository.id
@@ -1545,35 +1550,35 @@ export default {
     closeUsedVisibleDialog() {
       this.usedVisible = false
     },
-    UsedHelperVisible(){
-      if(this.repositoryType==='ivy'){
-        this.ivyCode="<ivysettings>\n" +
-            "   <settings defaultResolver=\""+this.folibRepository.id+"\" defaultConflictManager=\"all\" />\n" +
-            "   <resolvers>\n" +
-            "        <ibiblio name=\"releases\" root=\""+this.baseUrl +'storages/' +this.folibRepository.storageId +'/'+this.folibRepository.id+"\" m2compatible=\"true\" usepoms=\"true\"/>\n" +
-            "   </resolvers>\n" +
-            "</ivysettings>"
-      }else if(this.repositoryType==='docker'){
-        this.dockerCode.ubuntu="sudo mkdir -p /etc/docker\n" +
-            "sudo tee /etc/docker/daemon.json <<-'EOF'\n" +
-            "{\n" +
-            "\"insecure-registries\": [\""+this.baseUrl.replace("http://","").replace("/","") +"\"]\n" +
-            "}\n" +
-            "EOF\n" +
-            "sudo systemctl daemon-reload\n" +
-            "sudo systemctl restart docker"
-        this.dockerCode.centos="sudo mkdir -p /etc/docker\n" +
-            "sudo tee /etc/docker/daemon.json <<-'EOF'\n" +
-            "{\n" +
-            "\"insecure-registries\": [\""+this.baseUrl.replace("http://","").replace("/","") +"\"]\n" +
-            "}\n" +
-            "EOF\n" +
-            "sudo systemctl daemon-reload\n" +
-            "sudo systemctl restart docker"
-        this.dockerCode.macos=this.baseUrl
-        this.dockerCode.windows="{\n" +
-            "  \"insecure-registries\": [\""+this.baseUrl.replace("http://","").replace("/","") +"\"]\n" +
-            "}"
+    UsedHelperVisible() {
+      if (this.repositoryType === 'ivy') {
+        this.ivyCode = "<ivysettings>\n" +
+          "   <settings defaultResolver=\"" + this.folibRepository.id + "\" defaultConflictManager=\"all\" />\n" +
+          "   <resolvers>\n" +
+          "        <ibiblio name=\"releases\" root=\"" + this.baseUrl + 'storages/' + this.folibRepository.storageId + '/' + this.folibRepository.id + "\" m2compatible=\"true\" usepoms=\"true\"/>\n" +
+          "   </resolvers>\n" +
+          "</ivysettings>"
+      } else if (this.repositoryType === 'docker') {
+        this.dockerCode.ubuntu = "sudo mkdir -p /etc/docker\n" +
+          "sudo tee /etc/docker/daemon.json <<-'EOF'\n" +
+          "{\n" +
+          "\"insecure-registries\": [\"" + this.baseUrl.replace("http://", "").replace("/", "") + "\"]\n" +
+          "}\n" +
+          "EOF\n" +
+          "sudo systemctl daemon-reload\n" +
+          "sudo systemctl restart docker"
+        this.dockerCode.centos = "sudo mkdir -p /etc/docker\n" +
+          "sudo tee /etc/docker/daemon.json <<-'EOF'\n" +
+          "{\n" +
+          "\"insecure-registries\": [\"" + this.baseUrl.replace("http://", "").replace("/", "") + "\"]\n" +
+          "}\n" +
+          "EOF\n" +
+          "sudo systemctl daemon-reload\n" +
+          "sudo systemctl restart docker"
+        this.dockerCode.macos = this.baseUrl
+        this.dockerCode.windows = "{\n" +
+          "  \"insecure-registries\": [\"" + this.baseUrl.replace("http://", "").replace("/", "") + "\"]\n" +
+          "}"
       }
       this.usedVisible = true
     },
