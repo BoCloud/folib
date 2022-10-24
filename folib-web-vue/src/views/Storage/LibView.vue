@@ -1039,7 +1039,7 @@
               :readonly="true"
           ></prism-editor>
           <p>
-            加到"registry-mirrors"的数组里，点击 Apply & Restart按钮，等待Docker重启
+            加到"insecure-registries"的数组里，点击 Apply & Restart按钮，等待Docker重启
           </p>
         </a-timeline-item>
         <a-timeline-item color="primary">
@@ -1623,7 +1623,7 @@ export default {
         this.dockerCode.ubuntu="sudo mkdir -p /etc/docker\n" +
             "sudo tee /etc/docker/daemon.json <<-'EOF'\n" +
             "{\n" +
-            "\"insecure-registries\": [\""+this.baseUrl +"\"]\n" +
+            "\"insecure-registries\": [\""+this.baseUrl.replace("http://","").replace("/","") +"\"]\n" +
             "}\n" +
             "EOF\n" +
             "sudo systemctl daemon-reload\n" +
@@ -1631,14 +1631,14 @@ export default {
         this.dockerCode.centos="sudo mkdir -p /etc/docker\n" +
             "sudo tee /etc/docker/daemon.json <<-'EOF'\n" +
             "{\n" +
-            "\"insecure-registries\": [\""+this.baseUrl +"\"]\n" +
+            "\"insecure-registries\": [\""+this.baseUrl.replace("http://","").replace("/","") +"\"]\n" +
             "}\n" +
             "EOF\n" +
             "sudo systemctl daemon-reload\n" +
             "sudo systemctl restart docker"
         this.dockerCode.macos=this.baseUrl
         this.dockerCode.windows="{\n" +
-            "  \"insecure-registries\": [\""+this.baseUrl +"\"]\n" +
+            "  \"insecure-registries\": [\""+this.baseUrl.replace("http://","").replace("/","") +"\"]\n" +
             "}"
       }
       this.usedVisible=true

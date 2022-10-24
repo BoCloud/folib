@@ -149,6 +149,25 @@
                                     <outputDirectory>${dir.folib.standalone}</outputDirectory>
                                     <includes>etc/conf/folib.yaml,META-INF/spring/**</includes>
                                 </artifactItem>
+                                <artifactItem>
+                                    <groupId>${project.groupId}</groupId>
+                                    <artifactId>folib-db-server</artifactId>
+                                    <version>${project.version}</version>
+                                    <type>jar</type>
+                                    <overWrite>true</overWrite>
+                                    <outputDirectory>${dir.folib.standalone}</outputDirectory>
+                                    <includes>etc/conf/cassandra.yaml,etc/conf/janusgraph-cassandra.properties,etc/conf/janusgraph-inmemory.properties</includes>
+                                </artifactItem>
+
+                                <artifactItem>
+                                    <groupId>${project.groupId}</groupId>
+                                    <artifactId>folib-data-service</artifactId>
+                                    <version>${project.version}</version>
+                                    <type>jar</type>
+                                    <overWrite>true</overWrite>
+                                    <outputDirectory>${dir.folib.standalone}</outputDirectory>
+                                    <includes>etc/conf/db_EMBEDDED.yaml,etc/conf/db_MEMORY.yaml,etc/conf/db_REMOTE.yaml</includes>
+                                </artifactItem>
                             </artifactItems>
                         </configuration>
                     </execution>
@@ -207,7 +226,7 @@
                             <tasks>
                                 <mkdir dir="${dir.folib.vault}/"/>
                                 <mkdir dir="${dir.folib.standalone}/tmp"/>
-                                <mkdir dir="${dir.folib.standalone}/logs"/>
+                                <mkdir dir="${dir.folib.vault}/logs"/>
                             </tasks>
                         </configuration>
                         <goals>
@@ -280,7 +299,7 @@
                                 </data>
 
                                 <data>
-                                    <src>${basedir}/target/assembly/folib-${project.version}/logs</src>
+                                    <src>${basedir}/target/assembly/folib-vault/logs</src>
                                     <type>directory</type>
                                     <mapper>
                                     <type>perm</type>
@@ -438,7 +457,7 @@
                                     <directory>/opt/folib/logs</directory>
                                     <sources>
                                         <source>
-                                            <location>${project.build.directory}/assembly/folib-${project.version}/logs</location>
+                                            <location>${project.build.directory}/assembly/folib-vault/logs</location>
                                         </source>
                                     </sources>
                                 </mapping>
