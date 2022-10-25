@@ -19,6 +19,7 @@ import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
 import tk.mybatis.mapper.entity.Example;
 
+import java.text.DecimalFormat;
 import java.text.NumberFormat;
 import java.util.List;
 import java.util.Map;
@@ -70,14 +71,13 @@ public class FolibScannerBiz extends BusinessBiz<FolibScannerMapper, FolibScanne
 
     public List<ScannerSumDifVo> getScannerSumDifVoList() {
         List<ScannerSumDifVo> scannerSumDifVos = this.mapper.getScannerSumDifVoList(getBaseQuery());
-        NumberFormat numberformat = NumberFormat.getInstance();
-        numberformat.setMaximumFractionDigits(2);
+        DecimalFormat decimalFormat = new DecimalFormat(".00");
         scannerSumDifVos.forEach(scannerSumDifVo -> {
             String r;
             if (scannerSumDifVo.getCountFolib() == 0) {
                 r = "100";
             } else {
-                r = numberformat.format((float) scannerSumDifVo.getVulnerableSum() / (float) scannerSumDifVo.getCountFolib() * 100);
+                r = decimalFormat.format((float) scannerSumDifVo.getVulnerableSum() / (float) scannerSumDifVo.getCountFolib() * 100);
             }
             double s = Double.parseDouble(r);
             int star = s == 100.0 ? 5 : s > 0 && s < 20 ? 4 : s > 20 && s < 40 ? 3 : s > 40 && s < 60 ? 2 : 1;
