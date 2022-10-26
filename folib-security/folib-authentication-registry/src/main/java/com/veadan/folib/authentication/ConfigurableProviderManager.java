@@ -6,6 +6,7 @@ import com.veadan.folib.authentication.api.AuthenticationItemConfigurationManage
 import com.veadan.folib.authentication.api.AuthenticationItems;
 import com.veadan.folib.authentication.api.CustomAuthenticationItemMapper;
 import com.veadan.folib.authentication.support.AuthenticationConfigurationContext;
+import com.veadan.folib.configuration.ConfigurationManager;
 import com.veadan.folib.domain.User;
 import com.veadan.folib.users.service.UserAlreadyExistsException;
 import com.veadan.folib.users.userdetails.FolibExternalUsersCacheManager;
@@ -52,9 +53,6 @@ public class ConfigurableProviderManager extends ProviderManager implements User
 {
 
     private static final Logger logger = LoggerFactory.getLogger(ConfigurableProviderManager.class);
-
-    @Value("${users.external.cache.seconds:300}")
-    private int externalUsersInvalidateSeconds;
     
     @Inject
     private AuthenticationProvidersRegistry authenticationProvidersRegistry;
@@ -64,6 +62,9 @@ public class ConfigurableProviderManager extends ProviderManager implements User
 
     @Inject
     private FolibExternalUsersCacheManager folibExternalUsersCacheManager;
+
+    @Inject
+    protected ConfigurationManager configurationManager;
 
     private final Map<String, AuthenticationProvider> authenticationProviderMap = new HashMap<>();
 
@@ -153,9 +154,11 @@ public class ConfigurableProviderManager extends ProviderManager implements User
 
     private boolean isInternalOrValidExternalUser(User user)
     {
+        Integer timeout = configurationManager.getSessionTimeoutSeconds();
+
         LocalDateTime userLastUpdate = Optional.ofNullable(user.getLastUpdated())
                                                .orElse(LocalDateTime.MIN);
-        LocalDateTime userExpireDate = userLastUpdate.plusSeconds(externalUsersInvalidateSeconds);
+        LocalDateTime userExpireDate = userLastUpdate.plusSeconds(timeout);
         LocalDateTime nowDate = LocalDateTimeInstance.now();
 
         return StringUtils.isBlank(user.getSourceId()) || nowDate.isBefore(userExpireDate);

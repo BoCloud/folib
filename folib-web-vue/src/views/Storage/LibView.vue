@@ -8,8 +8,7 @@
         <search-box @mouse="searchBoxMouseStatus" @search="search" />
       </a-row>
     </div>
-    <a-tabs class="tabs-sliding" :default-active-key="1" :activeKey="tabActiveKey"
-      @change="tabChange($event)">
+    <a-tabs class="tabs-sliding" :default-active-key="1" :activeKey="tabActiveKey" @change="tabChange($event)">
       <a-tab-pane :key="1" tab="仓库">
         <a-affix :offset-top="50" class="repository-affix">
           <a-row>
@@ -1623,6 +1622,11 @@ export default {
     },
     tabChange(activeKey) {
       this.tabActiveKey = activeKey
+      if (activeKey == 2) {
+        if (this.$refs.vulnerability) {
+          this.$refs.vulnerability.getVulnerabilityPage()
+        }
+      }
     },
     goBack() {
       this.$router.push({ name: 'storages' })

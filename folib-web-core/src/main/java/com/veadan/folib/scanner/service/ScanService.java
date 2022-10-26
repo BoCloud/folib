@@ -191,6 +191,9 @@ public class ScanService {
             String path = folibScanner.getPath();
             String artifactPath = path.replace(String.format("storages/%s/%s", storageId, repositoryId), "").replaceFirst("/", "");
             RepositoryPath repositoryPath = artifactResolutionService.resolvePath(storageId, repositoryId, artifactPath);
+            if (Objects.isNull(repositoryPath) && StringUtils.isNotBlank(folibScanner.getArtifactPath())) {
+                repositoryPath = artifactResolutionService.resolvePath(storageId, repositoryId, folibScanner.getArtifactPath());
+            }
             if (Objects.nonNull(repositoryPath)) {
                 Artifact artifact = repositoryPath.getArtifactEntry();
                 if (Objects.nonNull(artifact)) {
@@ -300,20 +303,27 @@ public class ScanService {
         return false;
     }
 
-    public void checkScan(RepositoryPath repositoryPath, String type, String filePath) {
+    public void checkScan(RepositoryPath repositoryPath, String type, String filePath, String artifactFilePath) {
         String path = "storages" + repositoryPath.toUri().getPath();
-        String storagesName = repositoryPath.getStorageId();
+        String storageId = repositoryPath.getStorageId();
         String repository = repositoryPath.getRepositoryId();
-        ScanRules scanRules = scanRulesBiz.selectById(storagesName + "-" + repository);
+        ScanRules scanRules = scanRulesBiz.selectById(storageId + "-" + repository);
         boolean onScan = false;
         if (Objects.nonNull(scanRules)) {
             onScan = scanRules.isOnScan();
         }
-        log.info("=====>>>>>存储空间：{}，仓库：{}，扫描开启状态 ：{}", storagesName, repository, onScan);
+        log.info("=====>>>>>存储空间：{}，仓库：{}，扫描开启状态 ：{}", storageId, repository, onScan);
         if (StringUtils.isBlank(filePath)) {
             filePath = repositoryPath.toAbsolutePath().toString();
         }
         FolibScanner folibScanner = buildFolibScanner(filePath);
+        if (StringUtils.isNotBlank(artifactFilePath)) {
+            artifactFilePath = artifactFilePath.substring(artifactFilePath.indexOf("/storages/"));
+            String artifactPath = artifactFilePath.replace(String.format("/storages/%s/%s/", storageId, repository), "");
+            if (Objects.nonNull(folibScanner)) {
+                folibScanner.setArtifactPath(artifactPath);
+            }
+        }
         if (ScanConstans.ADD.equals(type)) {
             if (Objects.nonNull(folibScanner)) {
                 saveScanningData(folibScanner);
@@ -323,7 +333,7 @@ public class ScanService {
                 deleteScanningData(folibScanner);
             }
         } else if (ScanConstans.DEL_DIRECTORY.equals(type)) {
-            deleteScanningDataLike(storagesName, repository, path);
+            deleteScanningDataLike(storageId, repository, path);
         } else {
             if (Objects.nonNull(folibScanner)) {
                 updateScanningData(folibScanner);

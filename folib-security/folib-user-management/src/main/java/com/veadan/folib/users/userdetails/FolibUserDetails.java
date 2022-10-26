@@ -74,4 +74,10 @@ public class FolibUserDetails implements UserDetails
         return user;
     }
 
+    @Override
+    public String toString() {
+        return "FolibUserDetails{" +
+                "user=" + user +
+                '}';
+    }
 }
