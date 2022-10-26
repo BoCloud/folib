@@ -8,6 +8,7 @@
         <result property="path" column="path"/>
         <result property="repository" column="repository"/>
         <result property="storage" column="storage"/>
+        <result property="artifactPath" column="artifact_path"/>
         <result property="report" column="report"/>
         <result property="fileType" column="file_type"/>
         <result property="scanStatus" column="scan_status"/>
