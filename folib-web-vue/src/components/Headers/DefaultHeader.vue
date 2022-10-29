@@ -15,22 +15,13 @@
 		<div class="header-col header-nav">
 
 			<!-- Navigation Menu For Large Screens -->
-			<a-menu mode="horizontal" class="menu-large">
-				<a-sub-menu>
+			<a-menu v-if="dalyOut||haveError" mode="horizontal" class="menu-large">
+				<a-sub-menu >
 					<span slot="title" class="submenu-title-wrapper">
 						<a-icon type="home" theme="filled" class="m-0" />
 						<span>官网</span>
 					</span>
-<!--					<a-menu-item>-->
-<!--						<router-link to="/dashboards/" class="nav-link">-->
-<!--							<span>folib</span>-->
-<!--						</router-link>-->
-<!--					</a-menu-item>-->
-<!--					<a-menu-item>-->
-<!--						<router-link to="/dashboards/crm/" class="nav-link">-->
-<!--							<span>flib-xray</span>-->
-<!--						</router-link>-->
-<!--					</a-menu-item>-->
+
 				</a-sub-menu>
 				<a-sub-menu>
 					<span slot="title" class="submenu-title-wrapper">
@@ -39,7 +30,7 @@
 					</span>
 
 				</a-sub-menu>
-				<a-sub-menu>
+				<a-sub-menu  >
 					<span slot="title" class="submenu-title-wrapper">
 						<a-icon type="eye" theme="filled" class="m-0" />
 						<span>关于我们</span>
@@ -65,15 +56,21 @@
 			<!-- / Collapsible Navigation Menu For Small Screens -->
 
 		</div>
-		<div class="header-col header-btn">
+		<div v-if="dalyOut||haveError" class="header-col header-btn">
 			<a-button size="small" type="dark" class="px-30 border-dark" shape="round" href="http://folib.com" target="_blank">购买正式版</a-button>
 		</div>
+
+    <div v-if="!(dalyOut||haveError)" class="header-col header-btn">
+      <a-button size="small" type="dark" class="px-30 border-dark" shape="round" href="http://folib.com/core/use.html" target="_blank">使用文档</a-button>
+    </div>
 	</a-layout-header>
 	<!-- / Layout Header ( Navbar ) -->
 
 </template>
 
 <script>
+import {checkMachineCode} from "@/api/settings";
+
 
 	export default ({
 		data() {
@@ -86,7 +83,8 @@
 					type: Boolean,
 					default: false,
 				},
-				
+        haveError: false,
+        dalyOut: false,
 				// Main sidebar color.
 				sidebarColor: {
 					type: String,
@@ -102,7 +100,14 @@
 				openKeys: null,
 			}
 		},
-		methods: {
+    created() {
+      checkMachineCode().then(res=>{
+
+        this.haveError=res.haveError
+        this.dalyOut=res.dalyOut
+      })
+    },
+    methods: {
 			onOpenChange(openKeys)
 			{
 				this.openKeys = this.openKeys ? this.openKeys : this.$route.meta.sidebarMap ;
