@@ -52,7 +52,7 @@ public class S3FileSystemStorageProvider
         List<FileSystemProvider> installedProviders = FileSystemProvider.installedProviders();
         for (FileSystemProvider fileSystemProvider : installedProviders)
         {
-            boolean a=fileSystemProvider.getClass().getSimpleName().contains("S3");
+            boolean a=fileSystemProvider.getClass().getSimpleName().equals("S3FileSystemProvider");
 //            if (!"file".equals(fileSystemProvider.getScheme()))
 //            {
 //                continue;

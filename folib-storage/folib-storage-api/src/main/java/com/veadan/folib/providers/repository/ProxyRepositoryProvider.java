@@ -9,9 +9,7 @@ import java.nio.file.Path;
 import java.util.List;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
-
 import javax.inject.Inject;
-
 import com.veadan.folib.providers.repository.event.ProxyRepositoryPathExpiredEvent;
 import com.veadan.folib.providers.repository.event.RemoteRepositorySearchEvent;
 import com.veadan.folib.providers.repository.proxied.ProxyRepositoryArtifactResolver;

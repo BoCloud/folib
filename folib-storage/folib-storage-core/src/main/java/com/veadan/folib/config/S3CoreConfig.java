@@ -36,7 +36,7 @@ public class S3CoreConfig {
         env.put(SECRET_KEY, secretKey);
         env.put(REGION,"bo-nj-cn");
 
-        return FileSystems.newFileSystem(URI.create("s3://10.50.8.82:9000/"),
+        return FileSystems.newFileSystem(URI.create("s3://127.0.0.1:9000/"),
                 env,
                 Thread.currentThread().getContextClassLoader());
     }
