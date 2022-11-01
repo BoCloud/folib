@@ -1,5 +1,8 @@
 package com.veadan.folib.util;
 
+import com.veadan.folib.cloud.storage.s3fs.S3FileSystem;
+import com.veadan.folib.cloud.storage.s3fs.S3Path;
+
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Objects;
@@ -18,6 +21,10 @@ public final class PathUtils
     public static boolean isRelativized(final Path base,
                                         final String successor)
     {
+        if (base instanceof S3Path) {
+            return isRelativized(base, new S3Path((S3FileSystem) base.getFileSystem(), successor));
+        }
+
         return isRelativized(base, Paths.get(successor));
     }
 

@@ -1,5 +1,6 @@
 package com.veadan.folib.scanner.service;
 
+
 import lombok.extern.slf4j.Slf4j;
 import org.owasp.dependencycheck.Engine;
 import org.owasp.dependencycheck.data.nvdcve.DatabaseProperties;
@@ -7,6 +8,7 @@ import org.owasp.dependencycheck.exception.ExceptionCollection;
 import org.owasp.dependencycheck.exception.ReportException;
 import org.owasp.dependencycheck.reporting.ReportGenerator;
 import org.owasp.dependencycheck.utils.Settings;
+
 
 import javax.annotation.Nullable;
 import javax.validation.constraints.NotNull;

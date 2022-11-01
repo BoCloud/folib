@@ -33,6 +33,7 @@ import java.util.Set;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
+import com.veadan.folib.cloud.storage.s3fs.S3Path;
 import org.apache.commons.io.output.ProxyOutputStream;
 import com.veadan.folib.storage.repository.Repository;
 import org.slf4j.Logger;
@@ -373,7 +374,12 @@ public abstract class StorageFileSystemProvider
         {
             Files.delete(path.getTarget());
         }
-        Files.move(tempPath.getTarget(), path.getTarget(), StandardCopyOption.ATOMIC_MOVE);
+        if(path.getTarget() instanceof S3Path){
+            Files.move(tempPath.getTarget(), path.getTarget(), StandardCopyOption.REPLACE_EXISTING);
+        }else {
+            Files.move(tempPath.getTarget(), path.getTarget(), StandardCopyOption.ATOMIC_MOVE);
+        }
+
 
         //path.artifactEntry = tempPath.artifactEntry;
 

@@ -32,7 +32,7 @@ public class ScannerTask {
     @Autowired
     private FolibDistributedSchedulerLock folibDistributedSchedulerLock;
 
-    @Scheduled(cron = "0 0/2 * * * ? ")
+    @Scheduled(cron = "0 0/5 * * * ? ")
     public void run() {
         logger.info("Wait for the lock [folib.ScannerTask]");
         if(folibDistributedSchedulerLock.getLock("folib.ScannerTask",300L)){

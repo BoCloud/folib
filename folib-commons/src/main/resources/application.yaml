@@ -134,3 +134,12 @@ cacheManagerConfiguration:
       evictionConfigMaxSizePolicy: ENTRY_COUNT
       invalidateOnChange: true
       timeToLiveSeconds: 10
+s3fs:
+  bucket:
+    name: pjzy
+  protocol: http
+  region: bo-nj-cn
+  access:
+    key: ERevhJMgrz0JUKD8
+  secret:
+    key: UGo8B5wcjFasU3xKxanxxYKEyVNGxyfH

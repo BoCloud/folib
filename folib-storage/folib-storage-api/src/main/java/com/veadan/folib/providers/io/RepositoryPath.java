@@ -364,6 +364,7 @@ public class RepositoryPath
         final Path sibling = result;
         final String repositoryRootPath = getRoot().toString(); // String, intentionally
         if (sibling.isAbsolute() && !sibling.startsWith(repositoryRootPath))
+
         {
             throw new PathExceededRootRepositoryPathException();
         }
