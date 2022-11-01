@@ -78,7 +78,7 @@ public class FolibScanner implements Serializable {
      */
     @ApiModelProperty("是否扫描")
     @Column(name = "on_scan")
-    private boolean onScan;
+    private Boolean onScan;
 
     /**
      * 扫描时间

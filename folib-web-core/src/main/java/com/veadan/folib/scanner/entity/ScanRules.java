@@ -43,7 +43,7 @@ private static final long serialVersionUID = 1L;
 		//是否扫描
 	@ApiModelProperty("是否扫描")
 	@Column(name = "on_scan")
-	private boolean onScan;
+	private Boolean onScan;
 	
 		//扫描规则
 	@ApiModelProperty("扫描规则")
