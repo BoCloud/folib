@@ -22,6 +22,9 @@ public class ClusterProperties {
     @Value("${folib.cluster.hostnode}")
     private String hostNode;
 
+    @Value("${folib.cluster.protocol}")
+    private String protocol;
+
     public Boolean getOpenFlag() {
         return openFlag;
     }
@@ -45,6 +48,9 @@ public class ClusterProperties {
                 return Collections.emptyList();
             }
             String[] array = nodeArray.split(",");
+            for (int i = 0; i < array.length; ) {
+                array[i] = protocol + "://" + array[i];
+            }
             return Arrays.asList(array);
         } catch (Exception e) {
             logger.error("get host node list error {}", e.getMessage());

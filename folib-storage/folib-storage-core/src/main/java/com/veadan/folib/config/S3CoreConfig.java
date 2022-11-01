@@ -22,6 +22,11 @@ public class S3CoreConfig {
     @Value("${s3fs.secret.key}")
     private String secretKey;
 
+    @Value("${s3fs.uri}")
+    private String s3Uri;
+
+    @Value("${s3fs.region}")
+    private String region;
 
     @Bean
     public FileSystem s3FileSystem()
@@ -29,14 +34,11 @@ public class S3CoreConfig {
     {
 
         Map<String, String> env = new HashMap<>();
-
-//        env.put("access-key","ERevhJMgrz0JUKD8");
-//        env.put("secret-key","UGo8B5wcjFasU3xKxanxxYKEyVNGxyfH");
         env.put(ACCESS_KEY, accessKey);
         env.put(SECRET_KEY, secretKey);
-        env.put(REGION,"bo-nj-cn");
+        env.put(REGION, region);
 
-        return FileSystems.newFileSystem(URI.create("s3://127.0.0.1:9000/"),
+        return FileSystems.newFileSystem(URI.create(s3Uri),
                 env,
                 Thread.currentThread().getContextClassLoader());
     }

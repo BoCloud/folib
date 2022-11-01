@@ -128,17 +128,35 @@ public class MavenMetadataManager
                      try
                      {
                          Path metadataPath = MetadataHelper.getMetadataPath(metadataBasePath, version, metadataType);
-                         try (OutputStream os = new MultipleDigestOutputStream(metadataPath,
-                                                                               Files.newOutputStream(metadataPath,
-                                                                                                     StandardOpenOption.CREATE,
-                                                                                                     StandardOpenOption.TRUNCATE_EXISTING)))
-                         {
-                             Writer writer = WriterFactory.newXmlWriter(os);
+                         if (metadataPath.toString().startsWith("s3://")) {
+                             try (
+                                     OutputStream os = Files.newOutputStream(metadataPath,
+                                             StandardOpenOption.CREATE,
+                                             StandardOpenOption.TRUNCATE_EXISTING)) {
+                                 Writer writer = WriterFactory.newXmlWriter(os);
 
-                             MetadataXpp3Writer mappingWriter = new MetadataXpp3Writer();
-                             mappingWriter.write(writer, metadata);
+                                 MetadataXpp3Writer mappingWriter = new MetadataXpp3Writer();
+                                 mappingWriter.write(writer, metadata);
 
-                             os.flush();
+                                 os.flush();
+
+                             } catch (Exception e) {
+                                 e.printStackTrace();
+                             }
+                         } else {
+                             try (OutputStream os = new MultipleDigestOutputStream(metadataPath,
+                                     Files.newOutputStream(metadataPath,
+                                             StandardOpenOption.CREATE,
+                                             StandardOpenOption.TRUNCATE_EXISTING)))
+                             {
+                                 Writer writer = WriterFactory.newXmlWriter(os);
+
+                                 MetadataXpp3Writer mappingWriter = new MetadataXpp3Writer();
+                                 mappingWriter.write(writer, metadata);
+
+                                 os.flush();
+
+                             }
                          }
                      }
                      catch (Exception ex)
