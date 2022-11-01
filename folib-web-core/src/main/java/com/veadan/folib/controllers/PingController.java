@@ -89,7 +89,6 @@ public class PingController
     }
 
     @ApiResponses(value = { @ApiResponse(code = 200, message = "Successful machineCode") })
-    @PreAuthorize("hasAuthority('AUTHENTICATED_USER')")
     @GetMapping("/checkMachineCode")
     public ResponseEntity checkMachineCode(){
 

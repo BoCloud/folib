@@ -569,7 +569,7 @@
         <profile>
             <id>jdk-default</id>
             <activation>
-                <jdk>!11</jdk>
+                <jdk>11</jdk>
             </activation>
             <build>
                 <plugins>

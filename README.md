@@ -22,6 +22,7 @@ yarn run build
 cd ..
 mvn  package --settings folib-settings.xml -Dmaven.test.skip=true
 ```
+
 注意事项：
 -  本项目为 all in one 前端vue+后端Springboot 但是打包时会整合到后端进行统一打包
 - folib-web-vue是前端工程，该脚本会先将buid到 folib-web-core/src/main/resources目录下，然后进行整体工程打包。打包完成后方可本地进行启动。
@@ -36,9 +37,57 @@ folib-commons/src/main/resources/application.yaml
 - 启动后所有配置文件在folib文件夹下面，application.yaml中如果需要增加配置，需要将环境变量暴露出来
 - IDEA启动注意事项：如果
 #### 打包发布
-通过执行打包脚本，folib-distribution会自动将安装包和配置文件打包好，在：folib-distribution/target/目录下
+- 通过执行打包脚本，folib-distribution会自动将安装包和配置文件打包好，在：folib-distribution/target/目录下
 
+- 可以通过 unzip解压folib-distribution-1.0-SNAPSHOT.zip 后存在如下啊文件夹内容：
+```shell
+├── Dockerfile
+├── folib-1.0-SNAPSHOT
+└── folib-vault
+```
+- 在该目录下利用Dockerfile进行build
+```shell
+docker build -t folib-1.0 .
+```
+- docker启动
+```shell
+docker run -itd  --restart always --name folib -p 38081:38081 \
+-e FOLIB_MYSQL_HOST=192.168.5.166 \
+-e FOLIB_MYSQL_PORT=3306 \
+-e FOLIB_MYSQL_DB=folib \
+-e FOLIB_MYSQL_USER=root \
+-e FOLIB_MYSQL_PASSWORD=folib \
+-e FOLIB_ES_HOST=192.168.5.166 \
+-e FOLIB_PORT=38081 \
+folib-1.0:latest
+```
+- 环镜变量描述
 
+| 变量名称                     | 含义                               | 默认值        | 是否必填 | 使用场景            |
+| ---------------------------- | ---------------------------------- | ------------- | -------- | ------------------- |
+| FOLIB_PORT                   | 主程序端口号                       | 38080         | 是       |                     |
+| FOLIB_JVM_XMX                | 最大JVM内存                        | 512           | 是       |                     |
+| FOLIB_DB_PROFILE             | db模式                             | db_EMBEDDED   | 是       |                     |
+| FOLIB_DISTRIBUTED_LOCKIP     | 集群模式下对外其他节点暴露自身的IP | 无            |          |                     |
+| FOLIB_CLUSTER_OPENFLAG       | 是否开启集群模式                   | false         | 是       |                     |
+| FOLIB_CLUSTER_HOSTNODE       | 其他集群节点地址逗号隔开           | 无            |          |                     |
+| FOLIB_GREMLIN_SERVER_ENABLED | GREMLIN图数据服务是否对外开启      | false         | 是       |                     |
+| FOLIB_LOG_FILE_ENABLED       | 日志文件开启                       | true          | 是       |                     |
+| FOLIB_LOG_FILE_SIZE_SINGLE   | 日志单个大小                       | 128MB         | 是       |                     |
+| FOLIB_LOG_FILE_SIZE_TOTAL    | 日志文件总大小                     | 1GB           | 是       |                     |
+| FOLIB_LOG_FILE_HISTORY       | 历史存储数量                       | 31            | 是       |                     |
+| FOLIB_ES_HOST                | 索引ES存储地址                     | 10.50.8.55    | 是       |                     |
+| FOLIB_MYSQL_HOST             | MySQL地址                          | 10.50.8.55    | 是       |                     |
+| FOLIB_MYSQL_PORT             | MySQL端口                          | 3306          | 是       |                     |
+| FOLIB_MYSQL_DB               | MySQL数据库名称                    | folib_scanner | 是       |                     |
+| FOLIB_MYSQL_USER             | MySQL数据库账号                    |               | 是       |                     |
+| FOLIB_MYSQL_PASSWORD         | MySQL数据库密码                    |               | 是       |                     |
+| FOLIB_NVD                    | 安全策略镜像地址                   | nvd.folib.com | 否       |                     |
+| FOLIB_JMX_PORT               | JMX监控端口                        | 7199          | 是       |                     |
+| FOLIB_REMOTE_DB_HOST         | 外置图数据库持久化地址             | 127.0.0.1     | 否       | db_REMOTE模式下有效 |
+| FOLIB_REMOTE_DB_PORT         | 外置图数据库持久化端口             | 49142         | 否       | db_REMOTE模式下有效 |
+| FOLIB_REMOTE_DB_USER         | 外置图数据库用户名                 | cassandra     | 否       | db_REMOTE模式下有效 |
+| FOLIB_REMOTE_DB_PASS         | 外置图数据持久化密码               | cassandra     | 否       | db_REMOTE模式下有效 |
 #### 模块明细说明:
 
 - [folib-aql](http://58.210.154.140:8888/folib/folib-server/src/branch/dev/folib-aql)
