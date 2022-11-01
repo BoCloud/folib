@@ -8,7 +8,7 @@ FOLIB_DEFAULT_VAULT=$(realpath $FOLIB_DEFAULT_HOME/../folib-vault)
 # 配置用户环境变量
 FOLIB_DISTRIBUTED_LOCKIP="${FOLIB_DISTRIBUTED_LOCKIP:-10.50.8.55}"     #当前机器内网IP(并非VIP)用来做多实例集群标识当前机器的内网IP的
 FOLIB_STORAGE_BASE_DIR="${FOLIB_STORAGE_BASE_DIR:-FOLIB_DEFAULT_VAULT}"   #如果NAS存储地址不在VAULT下请配置其他地址
-FOLIB_CLUSTER_OPENFLAG="${FOLIB_CLUSTER_OPENFLAG:-true}"
+FOLIB_CLUSTER_OPENFLAG="${FOLIB_CLUSTER_OPENFLAG:-false}"
 FOLIB_CLUSTER_HOSTNODE="${FOLIB_CLUSTER_HOSTNODE:-http://10.50.8.82:38080}"
 
 FOLIB_HOME="${FOLIB_HOME:-$FOLIB_DEFAULT_HOME}"
@@ -27,6 +27,20 @@ FOLIB_DEBUG="${FOLIB_DEBUG:-false}"
 FOLIB_NPM_REMOTE_CHANGES_ENABLED="${FOLIB_NPM_REMOTE_CHANGES_ENABLED:-false}"
 FOLIB_NUGET_DOWNLOAD_FEED="${FOLIB_NUGET_DOWNLOAD_FEED:-false}"
 FOLIB_DOWNLOAD_INDEXES="${FOLIB_DOWNLOAD_INDEXES:-false}"
+
+#REMOT cassandra相关只有db_REMOTE时才生效
+FOLIB_REMOTE_DB_HOST="${FOLIB_REMOTE_DB_HOST:-127.0.0.1}"
+FOLIB_REMOTE_DB_PORT="${FOLIB_REMOTE_DB_PORT:-49142}"
+FOLIB_REMOTE_DB_USER="${FOLIB_REMOTE_DB_USER:-cassandra}"
+FOLIB_REMOTE_DB_PASS="${FOLIB_REMOTE_DB_PASS:-cassandra}"
+
+#jmx相关
+FOLIB_JMX_PORT="${FOLIB_JMX_PORT:-7199}"
+
+
+
+##图数据库索引ES节点配置
+FOLIB_ES_HOST="${FOLIB_ES_HOST:-10.50.8.55}"
 
 ##scanner相关配置
 FOLIB_MYSQL_HOST="${FOLIB_MYSQL_HOST:-10.50.8.55}"
@@ -60,6 +74,7 @@ print_env_vars()
 
     printf "  %-40s %-30s \n" "JAVA_OPTS" "\"${JAVA_OPTS:-}\""
     printf "\n"
+
 }
 
 print_help()
@@ -130,6 +145,18 @@ run()
     JAVA_OPTS+=" -Dfolib.cluster.openflag=${FOLIB_CLUSTER_OPENFLAG}"
     JAVA_OPTS+=" -Dfolib.cluster.hostnode=${FOLIB_CLUSTER_HOSTNODE}"
     JAVA_OPTS+=" -Dscan.storage-base=${FOLIB_STORAGE_BASE_DIR}"
+    JAVA_OPTS+=" -DES_HOST=${FOLIB_ES_HOST}"
+
+    if [[ "$FOLIB_DB_PROFILE" == db_REMOTE ]]; then
+    JAVA_OPTS+=" -DREMOTE_DB_HOST=${FOLIB_REMOTE_DB_HOST}"
+    JAVA_OPTS+=" -DREMOTE_DB_PORT=${FOLIB_REMOTE_DB_PORT}"
+    JAVA_OPTS+=" -DREMOTE_DB_USER=${FOLIB_REMOTE_DB_USER}"
+    JAVA_OPTS+=" -DREMOTE_DB_PASS=${FOLIB_REMOTE_DB_PASS}"
+    fi
+
+    JAVA_OPTS+=" -Dcassandra.jmx.remote.port=${FOLIB_JMX_PORT}
+                 -Dcom.sun.management.jmxremote.rmi.port=${FOLIB_JMX_PORT}
+                 -Dcom.sun.management.jmxremote.authenticate=false"
 
     JDK_VERSION=$(java -version 2>&1 | awk -F '"' '/version/ {print $2}')
 
@@ -159,6 +186,9 @@ run()
     if [[ $1 == "console" ]]; then
         CMD="java $JAR_ARGS"
     fi
+    printf "  === FOLIB第一次初始化admin的密码为:\n"
+
+    printf "  ***** folib@v587 **** 请及时修改\n"
 
     printf "  === Starting instance\n"
 
@@ -214,7 +244,7 @@ stop()
 restart()
 {
     stop
-    sleep 3
+    sleep 9
     start
 }
 

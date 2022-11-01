@@ -5,12 +5,12 @@
         <format>tar.gz</format>
         <format>zip</format>
     </formats>
-<!--    <files>-->
-<!--        <file>-->
-<!--            <source>src/main/resources/META-INF/LICENSE</source>-->
-<!--            <outputDirectory>folib-${project.version}</outputDirectory>-->
-<!--        </file>-->
-<!--    </files>-->
+    <files>
+        <file>
+            <source>src/main/resources/Dockerfile</source>
+            <outputDirectory>folib-${project.version}/../</outputDirectory>
+        </file>
+    </files>
     <fileSets>
         <fileSet>
             <directory>target/assembly/folib-${project.version}/etc</directory>
