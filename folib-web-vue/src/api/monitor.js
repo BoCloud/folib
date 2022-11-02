@@ -60,3 +60,29 @@ export function gremlinEdge (eid,sourceName) {
     }
   })
 }
+
+export function getCassandraClusterInfo () {
+  return axios({
+    url: '/api/node/cassandraClusterInfo',
+    method: 'get'
+  })
+}
+
+export function cassandraRemoveNode (token) {
+  return axios({
+    url: '/api/node/removeNode',
+    method: 'put',
+    data: {},
+    params: {
+      token: token
+    }
+  })
+}
+
+export function cassandraRepair () {
+  return axios({
+    url: '/api/node/repair',
+    method: 'put',
+    data: {}
+  })
+}
