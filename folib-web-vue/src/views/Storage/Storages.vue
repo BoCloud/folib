@@ -1009,7 +1009,7 @@ export default {
       userList: [],
       baseUrl: null,
       folibVisible: false,
-      storageData: [{"id": "", "basedir": null}],
+      storageData: [],
       currentStorage: {
         id: null,
         basedir: null,
@@ -1174,15 +1174,22 @@ export default {
     this.userInfo = store.state.user
     this.getStorages();
     this.getBaseUrl();
+
     const params = storage.get('libView_repository')
+
     if (params) {
       this.currentStorage.id = params.item.storageId
-      this.currentStorage.basedir=params.item.basedir
     }
+
+
     if (!this.currentStorage.id) {
       this.currentStorage.id = this.storageData[0].id
+      this.currentStorage.basedir=this.storageData[0].basedir
     }
+
     this.getLibrary(this.currentStorage)
+
+
   },
   computed: {},
   methods: {
@@ -1346,6 +1353,8 @@ export default {
         this.storageData = response.storages;
         this.cacheStorage()
       })
+
+
     },
     setCurrentStorage(item) {
       if (!item.admin || item.admin === '') {
@@ -1386,6 +1395,13 @@ export default {
           }
         }
       }
+    if(this.currentStorage.id){
+
+      this.currentStorage.basedir=this.storageData.filter(f=>f.id===this.currentStorage.id)[0].basedir
+
+    }
+
+
     },
     getLayoutType(item) {
       // console.log(getLayoutType(item))
@@ -1397,6 +1413,7 @@ export default {
     closeUserDialog() {
       this.folibVisible = false
       this.folibRepository=this.folibRepositoryBack
+
     },
     repositoryList() {
       this.queryData.storageId = this.currentStorage.id
@@ -1492,8 +1509,8 @@ export default {
         this.folibRepository.groupRepositories = null
         this.folibRepository.proxyConfiguration = null
         this.folibRepository.remoteRepository = null
-
       }
+
 
       delete this.folibRepository.customConfigurations
       delete this.folibRepository.storageId
