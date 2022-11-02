@@ -111,11 +111,11 @@
                 len: list.length
             }
         }
-        console.log(arrayMeta)
+       // console.log(arrayMeta)
         const maxLevel = arrayMeta.reduce((a, b) => {
             return a.len > b.len ? a : b
         }).len;
-        console.log(maxLevel)
+        //console.log(maxLevel)
         let buffer = [] // key 缓存区 json.org ,json.org.apache
 
         for (let l = 0; l < maxLevel; l++) {
@@ -148,7 +148,7 @@
                 // deep(key) = 
             })
 
-            console.log(keys)
+           // console.log(keys)
 
         }
         // console.log(json)
