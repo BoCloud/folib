@@ -106,21 +106,20 @@ public class DirectoryListingServiceImpl implements DirectoryListingService
         List<Path> contentPaths;
         try (Stream<Path> pathStream = Files.list(path))
         {
-            contentPaths = pathStream
-                                   .filter(p -> !p.toFile().getName().startsWith("."))
-                                   .filter(p -> {
-                                       try
-                                       {
-                                           return !Files.isHidden(p);
-                                       }
-                                       catch (IOException e)
-                                       {
-                                           logger.debug("Error accessing path {}", p);
-                                           return false;
-                                       }
-                                   })
-                                   .sorted()
-                                   .collect(Collectors.toList());
+            contentPaths = pathStream.filter(p -> !p.toString().startsWith("."))
+                    .filter(p -> !p.toString().contains("/.")).filter(p -> {
+                        try
+                        {
+                            return !Files.isHidden(p);
+                        }
+                        catch (IOException e)
+                        {
+                            logger.debug("Error accessing path {}", p);
+                            return false;
+                        }
+                    })
+                    .sorted()
+                    .collect(Collectors.toList());
         }
 
         for (Path contentPath : contentPaths)

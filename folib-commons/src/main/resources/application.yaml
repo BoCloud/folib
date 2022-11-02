@@ -44,7 +44,8 @@ folib:
   temp: ${folib.home}/tmp
   cluster:
     openflag: ${folib.openflag:false}
-    hostnode: ${folib.hostnode:http://10.50.8.55:38080} # 多个节点逗号隔开
+    hostnode: ${folib.hostnode:10.50.8.55:38080} # 多个节点逗号隔开
+    protocol: http
   distributed:
     lockip: ${folib.scheduled.lockip:10.50.8.55} # 实例 host ip
   config:
@@ -139,6 +140,7 @@ s3fs:
     name: pjzy
   protocol: http
   region: bo-nj-cn
+  uri: s3://127.0.0.1:9000/
   access:
     key: ERevhJMgrz0JUKD8
   secret:
