@@ -137,10 +137,10 @@ cacheManagerConfiguration:
       timeToLiveSeconds: 10
 s3fs:
   bucket:
-    name: pjzy
+    name: folib
   protocol: http
   region: bo-nj-cn
-  uri: s3://127.0.0.1:9000/
+  uri: s3://192.168.2.8:9000/
   access:
     key: ERevhJMgrz0JUKD8
   secret:
