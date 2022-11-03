@@ -73,9 +73,12 @@ public class Maven2FileSystemProvider extends LayoutFileSystemProvider
         
         logger.debug("Removing {}...", repositoryPath);
 
-        if (Files.isDirectory(repositoryPath))
-        {
-            cleanupDirectory(repositoryPath.relativize(), force);
+        if (Files.isDirectory(repositoryPath)) {
+            if (path.toString().startsWith("s3://")) {
+                cleanupDirectory(repositoryPath, force);
+            } else {
+                cleanupDirectory(repositoryPath.relativize(), force);
+            }
         }
 
         super.delete(repositoryPath, force);
@@ -103,7 +106,7 @@ public class Maven2FileSystemProvider extends LayoutFileSystemProvider
             groupId.append((groupId.length() == 0) ? element : "." + element);
         }
 
-        String artifactId = artifactCoordinateElements.get(artifactCoordinateElements.size() - 2);
+        String artifactId = artifactCoordinateElements.get(artifactCoordinateElements.size() - 2).replace("/","");
         String version = artifactCoordinateElements.get(artifactCoordinateElements.size() - 1);
 
         RepositoryPath pomFilePath = repositoryPathRelative.resolve(artifactId + "-" + version + ".pom");

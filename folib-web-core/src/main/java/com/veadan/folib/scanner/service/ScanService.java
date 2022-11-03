@@ -370,7 +370,7 @@ public class ScanService {
                     log.error("=====>>>>>读取魔数类型失败：{}", ExceptionUtils.getStackTrace(ex));
                 }
             }
-            String shortPath = path.substring(path.lastIndexOf("storages/"));
+            String shortPath = path.startsWith("s3://") ? path : path.substring(path.lastIndexOf("storages/"));
             FolibScanner folibScanner = new FolibScanner();
 
             folibScanner.setPath(shortPath)

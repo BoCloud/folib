@@ -140,8 +140,8 @@ s3fs:
     name: pjzy
   protocol: http
   region: bo-nj-cn
-  uri: s3://127.0.0.1:9000/
+  uri: s3://localhost:9000/
   access:
-    key: ERevhJMgrz0JUKD8
+    key: SjggJIJqnHzm2mb1
   secret:
-    key: UGo8B5wcjFasU3xKxanxxYKEyVNGxyfH
+    key: M9kbw3DImRzS9Y5Hmol6EriatsmVj3bn
