@@ -19,7 +19,8 @@
                 </a-col>
                 <a-col :span="24" :md="12" style="display: flex; align-items: center; justify-content: flex-end">
                   <a class="text-center text-muted font-bold">
-                    <h3 v-if="$store.state.user.roles.indexOf('ADMIN')>-1" class="font-semibold text-muted mb-0" @click="createHandleView">+</h3>
+                    <h3 v-if="$store.state.user.roles.indexOf('ADMIN')>-1" class="font-semibold text-muted mb-0"
+                        @click="createHandleView">+</h3>
                   </a>
                 </a-col>
               </a-row>
@@ -28,7 +29,7 @@
               <a-anchor-link v-for="(item,index) in storageData" :key="index" href="javascript:void(null)"
                              :class="{ slectActive: item.id === currentStorage.id }">
                 <div slot="title" class="ant-list-item-meta" @click="setCurrentStorage(item)">
-                  <a-icon type="appstore" theme="filled" class="text-gray-6 text-lg"/>
+                  <a-icon :type="item.basedir===null?'appstore':'cloud'" theme="filled" class="text-gray-6 text-lg"/>
                   <h4 class="ant-list-item-meta-title">
                     <span class="font-regular">{{ item.id }}</span>
                   </h4>
@@ -48,35 +49,54 @@
               <a-col :span="24" :md="12" class="col-info">
                 <a-avatar :size="74" shape="square" src="images/folib/storage.svg"/>
                 <div class="avatar-info">
-                  <h4 class="font-semibold m-0">{{ currentStorage.id }}</h4>
+                  <h4 class="font-semibold m-0">
+                    <span>{{ currentStorage.id }}</span>
+                    <a-tooltip placement="topLeft">
+                      <template slot="title">
+                        <span>S3存储</span>
+                      </template>
+                      <a-icon style="margin-left: 15px" v-if="currentStorage.basedir!=null" type="cloud" theme="filled"
+                              class="text-gray-6 text-lg"/>
+                    </a-tooltip>
+                  </h4>
                   <p>{{ baseUrl }}api/browse/{{ currentStorage.id }} <a>
-                    <a-icon type="copy" @click="copy(baseUrl+'api/browse/'+currentStorage.id)"/>
+                    <a-tooltip placement="topLeft">
+                      <template slot="title">
+                        <span>复制存储空间路径</span>
+                      </template>
+                      <a-icon type="copy" @click="copy(baseUrl+'api/browse/'+currentStorage.id)"/>
+                    </a-tooltip>
                   </a></p>
                 </div>
               </a-col>
               <a-col :span="24" :md="12" style="display: flex; align-items: center; justify-content: flex-end">
-                <div v-if="$store.state.user.roles.indexOf('ADMIN')>-1" @click="updateHandleView">
-                  <svg width="20px" height="20px" viewBox="0 0 40 40" version="1.1" xmlns="http://www.w3.org/2000/svg"
-                       xmlns:xlink="http://www.w3.org/1999/xlink">
-                    <title>settings</title>
-                    <g stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
-                      <g transform="translate(-2020.000000, -442.000000)" class="fill-dark" fill="#FFFFFF"
-                         fill-rule="nonzero">
-                        <g transform="translate(1716.000000, 291.000000)">
-                          <g transform="translate(304.000000, 151.000000)">
-                            <polygon class="color-background" opacity="0.596981957"
-                                     points="18.0883333 15.7316667 11.1783333 8.82166667 13.3333333 6.66666667 6.66666667 0 0 6.66666667 6.66666667 13.3333333 8.82166667 11.1783333 15.315 17.6716667"></polygon>
-                            <path class="color-background"
-                                  d="M31.5666667,23.2333333 C31.0516667,23.2933333 30.53,23.3333333 30,23.3333333 C29.4916667,23.3333333 28.9866667,23.3033333 28.48,23.245 L22.4116667,30.7433333 L29.9416667,38.2733333 C32.2433333,40.575 35.9733333,40.575 38.275,38.2733333 L38.275,38.2733333 C40.5766667,35.9716667 40.5766667,32.2416667 38.275,29.94 L31.5666667,23.2333333 Z"
-                                  opacity="0.596981957"></path>
-                            <path class="color-background"
-                                  d="M33.785,11.285 L28.715,6.215 L34.0616667,0.868333333 C32.82,0.315 31.4483333,0 30,0 C24.4766667,0 20,4.47666667 20,10 C20,10.99 20.1483333,11.9433333 20.4166667,12.8466667 L2.435,27.3966667 C0.95,28.7083333 0.0633333333,30.595 0.00333333333,32.5733333 C-0.0583333333,34.5533333 0.71,36.4916667 2.11,37.89 C3.47,39.2516667 5.27833333,40 7.20166667,40 C9.26666667,40 11.2366667,39.1133333 12.6033333,37.565 L27.1533333,19.5833333 C28.0566667,19.8516667 29.01,20 30,20 C35.5233333,20 40,15.5233333 40,10 C40,8.55166667 39.685,7.18 39.1316667,5.93666667 L33.785,11.285 Z"></path>
+                <a-tooltip placement="topLeft">
+                  <template slot="title">
+                    <span>修改存储空间</span>
+                  </template>
+                  <div v-if="$store.state.user.roles.indexOf('ADMIN')>-1" @click="updateHandleView">
+                    <svg width="20px" height="20px" viewBox="0 0 40 40" version="1.1" xmlns="http://www.w3.org/2000/svg"
+                         xmlns:xlink="http://www.w3.org/1999/xlink">
+                      <title>settings</title>
+                      <g stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+                        <g transform="translate(-2020.000000, -442.000000)" class="fill-dark" fill="#FFFFFF"
+                           fill-rule="nonzero">
+                          <g transform="translate(1716.000000, 291.000000)">
+                            <g transform="translate(304.000000, 151.000000)">
+                              <polygon class="color-background" opacity="0.596981957"
+                                       points="18.0883333 15.7316667 11.1783333 8.82166667 13.3333333 6.66666667 6.66666667 0 0 6.66666667 6.66666667 13.3333333 8.82166667 11.1783333 15.315 17.6716667"></polygon>
+                              <path class="color-background"
+                                    d="M31.5666667,23.2333333 C31.0516667,23.2933333 30.53,23.3333333 30,23.3333333 C29.4916667,23.3333333 28.9866667,23.3033333 28.48,23.245 L22.4116667,30.7433333 L29.9416667,38.2733333 C32.2433333,40.575 35.9733333,40.575 38.275,38.2733333 L38.275,38.2733333 C40.5766667,35.9716667 40.5766667,32.2416667 38.275,29.94 L31.5666667,23.2333333 Z"
+                                    opacity="0.596981957"></path>
+                              <path class="color-background"
+                                    d="M33.785,11.285 L28.715,6.215 L34.0616667,0.868333333 C32.82,0.315 31.4483333,0 30,0 C24.4766667,0 20,4.47666667 20,10 C20,10.99 20.1483333,11.9433333 20.4166667,12.8466667 L2.435,27.3966667 C0.95,28.7083333 0.0633333333,30.595 0.00333333333,32.5733333 C-0.0583333333,34.5533333 0.71,36.4916667 2.11,37.89 C3.47,39.2516667 5.27833333,40 7.20166667,40 C9.26666667,40 11.2366667,39.1133333 12.6033333,37.565 L27.1533333,19.5833333 C28.0566667,19.8516667 29.01,20 30,20 C35.5233333,20 40,15.5233333 40,10 C40,8.55166667 39.685,7.18 39.1316667,5.93666667 L33.785,11.285 Z"></path>
+                            </g>
                           </g>
                         </g>
                       </g>
-                    </g>
-                  </svg>
-                </div>
+                    </svg>
+                  </div>
+                </a-tooltip>
               </a-col>
             </a-row>
           </template>
@@ -121,7 +141,7 @@
       </a-col>
     </a-row>
     <a-modal v-model="showsTorageFormModal" :footer="null" :forceRender="true" title="新建存储空间"
-             on-ok="showsTorageFormModal = false">
+             on-ok="showsTorageFormModal = false" width="50%">
       <a-form
           :form="storageCreateData"
           :hideRequiredMark="true"
@@ -135,7 +155,51 @@
                 <a-icon slot="prefix" type="appstore"/>
               </a-input>
             </a-form-item>
-            <a-form-item class="tags-field mb-10" v-if="userInfo.roles.indexOf('ADMIN')>-1" label="管理员选择" :colon="false">
+            <a-form-item class="tags-field mb-10" label="存储类型" :colon="false">
+              <a-radio-group name="radioGroup" default-value="local" @change="changeStorageType()"
+                             v-model="storageCreateData.type">
+                <a-radio value="local">
+                  本地存储
+                </a-radio>
+                <a-radio value="S3">
+                  S3存储
+                </a-radio>
+              </a-radio-group>
+            </a-form-item>
+            <p>说明:</p>
+            <ul class="pl-15 text-muted">
+              <li>默认为本地存储即:NFS本地目录存储</li>
+              <li>S3存储：默认以存储空间名称作为桶名,您也可以自定义桶名称</li>
+              <li><strong>注意：存储空间名称、存储类型、S3存储桶路径，一旦创建不可修改</strong></li>
+            </ul>
+            <a-form-item v-if="storageCreateData.type==='S3'" class="tags-field mb-10" label="S3路径" :colon="false">
+              <a-card :bordered="false" class="bg-gray-3 shadow-0 mb-24" :bodyStyle="{padding: '8px'}">
+                <a-row type="flex" align="middle">
+                  <a-col>
+                    <strong
+                        class="font-semibold">{{
+                        storageCreateData.bucket ? '/' + storageCreateData.bucket : null
+                      }}/{{ storageCreateData.id }}</strong>
+                  </a-col>
+                  <a-col class="ml-auto">
+                    <a-input v-if="storageCreateData.isNotCustom" v-model="storageCreateData.bucket"
+                             placeholder="桶名称" class="font-regular text-sm text-dark" style="width: 150px;">
+                      <a-icon slot="prefix" type="cloud"/>
+                    </a-input>
+                    <a-button v-if="!storageCreateData.isNotCustom"
+                              @click="() => (storageCreateData.isNotCustom = true)" size="small" type="link"
+                              class="ml-10 px-25 font-bold">自定义
+                    </a-button>
+                    <a-button v-if="storageCreateData.isNotCustom"
+                              @click="() => (storageCreateData.isNotCustom = false, delete storageCreateData.bucket)"
+                              size="small" type="link" class="ml-10 px-25 font-bold">取消自定义
+                    </a-button>
+                  </a-col>
+                </a-row>
+              </a-card>
+            </a-form-item>
+            <a-form-item class="tags-field mb-10" v-if="userInfo.roles.indexOf('ADMIN')>-1" label="管理员选择"
+                         :colon="false">
               <a-select v-model="storageCreateData.admin"
                         style="width: 100%"
                         model="default"
@@ -146,7 +210,9 @@
                 </a-select-option>
               </a-select>
             </a-form-item>
-            <a-form-item class="tags-field mb-10" v-if="userInfo.roles.indexOf('ADMIN')>-1 || userInfo.name===currentStorage.admin" label="用户成员选择" :colon="false">
+            <a-form-item class="tags-field mb-10"
+                         v-if="userInfo.roles.indexOf('ADMIN')>-1 || userInfo.name===currentStorage.admin"
+                         label="用户成员选择" :colon="false">
               <a-select v-model="storageCreateData.users" mode="tags" :defaultValue="storageCreateData.users"
                         style="width: 100%"
                         placeholder="例如：*">
@@ -171,19 +237,62 @@
     </a-modal>
 
     <a-modal v-model="showStorageUpdate" :footer="null" :forceRender="true" title="修改或删除存储空间"
-             on-ok="showStorageUpdate = false">
+             on-ok="showStorageUpdate = false" width="50%">
       <a-form
           :hideRequiredMark="true"
       >
         <a-row :gutter="[24]">
           <a-col :span="24">
             <a-form-item class="tags-field mb-10" label="存储空间名称" :colon="false">
-              <a-input v-model="currentStorage.id"
+              <a-input disabled v-model="currentStorage.id"
                        placeholder="存储空间名称">
                 <a-icon slot="prefix" type="appstore"/>
               </a-input>
             </a-form-item>
-            <a-form-item class="tags-field mb-10" v-if="userInfo.roles.indexOf('ADMIN')>-1" label="管理员选择" :colon="false">
+            <a-form-item class="tags-field mb-10" label="存储类型" :colon="false">
+              <a-radio-group disabled name="radioGroup" default-value="local" @change="changeStorageUpdateType()"
+                             v-model="currentStorage.type">
+                <a-radio value="local">
+                  本地存储
+                </a-radio>
+                <a-radio value="S3">
+                  S3存储
+                </a-radio>
+              </a-radio-group>
+            </a-form-item>
+            <p>Tip:</p>
+            <ul class="pl-15 text-muted">
+              <li>存储空间名称不允许修改</li>
+              <li>存储类型、S3类型的桶均不允许修改</li>
+            </ul>
+            <a-form-item v-if="currentStorage.type==='S3'" class="tags-field mb-10" label="S3路径" :colon="false">
+              <a-card :bordered="false" class="bg-gray-3 shadow-0 mb-24" :bodyStyle="{padding: '8px'}">
+                <a-row type="flex" align="middle">
+                  <a-col>
+                    <strong
+                        class="font-semibold">{{
+                        currentStorage.bucket ? '/' + currentStorage.bucket : null
+                      }}/{{ currentStorage.id }}</strong>
+                  </a-col>
+                  <a-col class="ml-auto">
+                    <a-input v-if="currentStorage.isNotCustom" v-model="currentStorage.bucket"
+                             placeholder="桶名称" class="font-regular text-sm text-dark" style="width: 150px;">
+                      <a-icon slot="prefix" type="cloud"/>
+                    </a-input>
+                    <a-button disabled v-if="!currentStorage.isNotCustom"
+                              @click="() => (currentStorage.isNotCustom = true)" size="small" type="link"
+                              class="ml-10 px-25 font-bold">自定义
+                    </a-button>
+                    <a-button v-if="currentStorage.isNotCustom"
+                              @click="() => (currentStorage.isNotCustom = false,  currentStorage.bucket=null)"
+                              size="small" type="link" class="ml-10 px-25 font-bold">取消自定义
+                    </a-button>
+                  </a-col>
+                </a-row>
+              </a-card>
+            </a-form-item>
+            <a-form-item class="tags-field mb-10" v-if="userInfo.roles.indexOf('ADMIN')>-1" label="管理员选择"
+                         :colon="false">
               <a-select v-model="currentStorage.admin"
                         style="width: 100%"
                         model="default"
@@ -194,7 +303,9 @@
                 </a-select-option>
               </a-select>
             </a-form-item>
-            <a-form-item class="tags-field mb-10" v-if="userInfo.roles.indexOf('ADMIN')>-1 || userInfo.name===currentStorage.admin" label="用户成员选择" :colon="false">
+            <a-form-item class="tags-field mb-10"
+                         v-if="userInfo.roles.indexOf('ADMIN')>-1 || userInfo.name===currentStorage.admin"
+                         label="用户成员选择" :colon="false">
               <a-select v-model="currentStorage.users" mode="tags" :defaultValue="currentStorage.users"
                         style="width: 100%"
                         placeholder="例如：*">
@@ -219,12 +330,13 @@
         </ul>
         <a-row :span="24">
           <a-col :span="12" class="text-left">
-            <a-button @click="handleUpdateSubmit" class="px-30" size="small" type="primary" htmlType="submit">修改</a-button>
+            <a-button @click="handleUpdateSubmit" class="px-30" size="small" type="primary" htmlType="submit">修改
+            </a-button>
             <a-button @click="showStorageUpdate = false" class="px-30 ml-10" size="small">取消</a-button>
           </a-col>
           <a-col :span="12" class="text-right">
-            <a-button  @click="storageDelHandle" class="px-30 ml-10" type="danger" size="small">删除</a-button>
-            <a-button  @click="storageForceDelHandle" class="px-30 ml-10" type="dashed" size="small">强制删除</a-button>
+            <a-button @click="storageDelHandle" class="px-30 ml-10" type="danger" size="small">删除</a-button>
+            <a-button @click="storageForceDelHandle" class="px-30 ml-10" type="dashed" size="small">强制删除</a-button>
           </a-col>
         </a-row>
       </a-form>
@@ -262,8 +374,9 @@
             <a-button key="back" @click="deleteFormVisible = false" class="px-30 ml-10" size="small">取消</a-button>
           </a-col>
           <a-col :span="12" class="text-right">
-            <a-button  @click="delRepositoryResponseEntity" class="px-30 ml-10" type="danger" size="small">删除</a-button>
-            <a-button  @click="delRepositoryResponseEntityForce" class="px-30 ml-10" type="dashed" size="small">强制删除</a-button>
+            <a-button @click="delRepositoryResponseEntity" class="px-30 ml-10" type="danger" size="small">删除</a-button>
+            <a-button @click="delRepositoryResponseEntityForce" class="px-30 ml-10" type="dashed" size="small">强制删除
+            </a-button>
           </a-col>
         </a-row>
       </a-form>
@@ -272,9 +385,8 @@
       <div class="mx-auto m-50" style="max-width: 1000px;">
 
         <!-- Header -->
-        <h3 class="mt-25 mb-5 text-center">开始新建你的制品库</h3>
-        <h5 class="text-center font-regular">将会在<a>{{ currentStorage.id }}</a>存储空间下新建制品仓库</h5>
-
+        <h3 class="mt-25 mb-5 text-center">开始{{folibRepositoryEditDisabled?'修改':'新建'}}你的制品库</h3>
+        <h5 class="text-center font-regular">将会在<a>{{ currentStorage.id }}</a>存储空间下{{folibRepositoryEditDisabled?'修改':'新建'}}制品仓库</h5>
         <div class="my-50" style="max-width: 1000px;">
 
           <!-- Steps -->
@@ -300,8 +412,8 @@
               v-if="step === 0&&(folibRepository.type==='hosted'||folibRepository.type==='proxy'||folibRepository.type==='group')"
               :bordered="false" class="header-solid">
 
-            <h5 class="font-regular text-center">不知道怎么选择? </h5>
-            <p class="text-center">根据图标以及下发的类型名称进行识别，找到你要选择的仓库类型吧！</p>
+            <h5 class="font-regular text-center">{{folibRepositoryEditDisabled?'不可修改，请点击下一步':'不知道怎么选择?'}} </h5>
+            <p class="text-center">{{folibRepositoryEditDisabled?'修改模式下不可以更换仓库类型！':'根据图标以及下发的类型名称进行识别，找到你要选择的仓库类型吧！'}}</p>
 
             <a-form
                 :form="form"
@@ -551,13 +663,13 @@
               <a-row :gutter="[24]">
                 <a-col :span="12">
                   <a-form-item class="mb-10" label="仓库名称" :colon="false">
-                    <a-input placeholder="不要出现仓库类型的关键字" v-model="folibRepositoryIds"
+                    <a-input :disabled="folibRepositoryEditDisabled"  placeholder="不要出现仓库类型的关键字" v-model="folibRepositoryIds"
                              :addon-after="'-'+layoutChecked"/>
                   </a-form-item>
                 </a-col>
                 <a-col :span="6">
                   <a-form-item class="mb-10" label="策略" :colon="false">
-                    <a-select :disabled="layoutChecked==='docker'" default-value="hosted"
+                    <a-select  :disabled="layoutChecked==='docker'||folibRepositoryEditDisabled" default-value="hosted"
                               v-model="folibRepository.type">
                       <a-select-option value="hosted">
                         本地
@@ -689,15 +801,15 @@
                 <a-col :span="6">
                   <a-form-item class="mb-10" label="用户名" :colon="false">
                     <a-input v-model="folibRepository.remoteRepository.username"
-                      autocomplete="new-text"
-                      placeholder="远程仓库访问用户名"/>
+                             autocomplete="new-text"
+                             placeholder="远程仓库访问用户名"/>
                   </a-form-item>
                 </a-col>
                 <a-col :span="6">
                   <a-form-item class="mb-10" label="密码" :colon="false">
                     <a-input-password v-model="folibRepository.remoteRepository.password"
-                      autocomplete="new-password"
-                      placeholder="远程仓库访问密码"/>
+                                      autocomplete="new-password"
+                                      placeholder="远程仓库访问密码"/>
                   </a-form-item>
                 </a-col>
                 <a-col :span="4">
@@ -897,8 +1009,24 @@ export default {
       userList: [],
       baseUrl: null,
       folibVisible: false,
-      storageData: [{"id": "", "basedir": null}],
+      storageData: [],
       currentStorage: {
+        id: null,
+        basedir: null,
+        admin: undefined,
+        users: [],
+        isNotCustom: false,
+        type: 'local',
+        bucket: null,
+      },
+      currentDefultStorage: {
+        id: null,
+        basedir: null,
+        admin: undefined,
+        users: [],
+        isNotCustom: false,
+        type: 'local',
+        bucket: null,
       },
       showsTorageFormModal: false,
       delForm: this.$form.createForm(this, {name: "del"}),
@@ -906,6 +1034,18 @@ export default {
         id: null,
         basedir: null,
         admin: undefined,
+        isNotCustom: false,
+        type: 'local',
+        bucket: null,
+        users: []
+      },
+      storageCreateDefultData: {
+        id: null,
+        basedir: null,
+        admin: undefined,
+        isNotCustom: false,
+        type: 'local',
+        bucket: null,
         users: []
       },
       storageForm: this.$form.createForm(this, {name: "storage"}),
@@ -923,7 +1063,6 @@ export default {
         type: null,
         layout: null
       },
-
       //抽屉相关
       layoutChecked: null,
       enableHostProxy: false,
@@ -938,6 +1077,7 @@ export default {
       form: this.$form.createForm(this, {name: 'steps'}),
       folibRepositoryIds: "",
       artifactMaxSize: 100,
+      folibRepositoryEditDisabled: false,
       folibRepository: {
         allowsDelete: true,
         allowsDeployment: true,
@@ -1031,25 +1171,49 @@ export default {
     };
   },
   created() {
-    this.userInfo=store.state.user
+    this.userInfo = store.state.user
     this.getStorages();
     this.getBaseUrl();
+
     const params = storage.get('libView_repository')
+
     if (params) {
       this.currentStorage.id = params.item.storageId
     }
-    if(!this.currentStorage.id){
-      this.currentStorage.id=this.storageData[0].id
+
+
+    if (!this.currentStorage.id) {
+      this.currentStorage.id = this.storageData[0].id
+      this.currentStorage.basedir=this.storageData[0].basedir
     }
+
     this.getLibrary(this.currentStorage)
+
+
   },
   computed: {},
   methods: {
-    createHandleView(){
+    changeStorageType() {
+      if (this.storageCreateData.type === 'S3') {
+        this.storageCreateData.isNotCustom = false
+      } else {
+        delete this.storageCreateData.bucket
+      }
+    },
+    changeStorageUpdateType() {
+      if (this.currentStorage.type === 'S3') {
+        this.currentStorage.isNotCustom = false
+      } else {
+        delete this.currentStorage.bucket
+      }
+    },
+    createHandleView() {
+
       this.showsTorageFormModal = true
       this.getUsersList()
     },
-    updateHandleView(){
+    updateHandleView() {
+
       this.showStorageUpdate = true
       this.getUsersList()
     },
@@ -1065,7 +1229,6 @@ export default {
             username: null
           }
         }
-
       } else {
         this.folibRepository.proxyConfiguration = null
       }
@@ -1097,7 +1260,8 @@ export default {
     },
     storageDelHandle(e) {
       if (this.currentStorage.id != null) {
-        deleteStorages(this.currentStorage,false).then(response => {
+        this.deleteStoragesKeyBuff()
+        deleteStorages(this.currentStorage, false).then(response => {
           setTimeout(() => {
             this.$notification.success({
               message: response.message,
@@ -1106,11 +1270,25 @@ export default {
           this.showStorageUpdate = false;
           this.getStorages();
         })
+        this.currentStorage=this.currentDefultStorage
       }
     },
-    storageForceDelHandle(){
+    deleteStoragesKeyBuff() {
       if (this.currentStorage.id != null) {
-        deleteStorages(this.currentStorage,true).then(response => {
+        if (this.currentStorage.type === 'S3') {
+          this.currentStorage.basedir = this.currentStorage.bucket ? '/' + this.currentStorage.bucket + '/' + this.currentStorage.id : '/' + this.currentStorage.id
+        } else {
+          this.currentStorage.basedir = null
+        }
+        delete this.currentStorage.bucket
+        delete this.currentStorage.isNotCustom
+        delete this.currentStorage.type
+      }
+    },
+    storageForceDelHandle() {
+      if (this.currentStorage.id != null) {
+        this.deleteStoragesKeyBuff()
+        deleteStorages(this.currentStorage, true).then(response => {
           setTimeout(() => {
             this.$notification.success({
               message: response.message,
@@ -1119,10 +1297,20 @@ export default {
           this.showStorageUpdate = false;
           this.getStorages();
         })
+        this.currentStorage=this.currentDefultStorage
       }
     },
     handleCreateSubmit(e) {
       if (this.storageCreateData.id != null) {
+        if (this.storageCreateData.type === 'S3') {
+          this.storageCreateData.basedir = this.storageCreateData.bucket ? '/' + this.storageCreateData.bucket + '/' + this.storageCreateData.id : '/' + this.storageCreateData.id
+        } else {
+          this.storageCreateData.basedir = null
+        }
+        delete this.storageCreateData.bucket
+        delete this.storageCreateData.isNotCustom
+        delete this.storageCreateData.type
+
         createStorages(this.storageCreateData).then(response => {
           setTimeout(() => {
             this.$notification.success({
@@ -1132,12 +1320,15 @@ export default {
           this.showsTorageFormModal = false;
           this.getStorages();
         })
+        this.storageCreateData=this.storageCreateDefultData
 
       }
 
     },
     handleUpdateSubmit(e) {
       if (this.currentStorage.id != null) {
+        this.deleteStoragesKeyBuff()
+
         updateStorages(this.currentStorage).then(response => {
           setTimeout(() => {
             this.$notification.success({
@@ -1147,6 +1338,7 @@ export default {
           this.showStorageUpdate = false;
           this.getStorages();
         })
+        this.currentStorage=this.currentDefultStorage
 
       }
 
@@ -1161,15 +1353,29 @@ export default {
         this.storageData = response.storages;
         this.cacheStorage()
       })
+
+
     },
     setCurrentStorage(item) {
-      if(!item.admin || item.admin === ''){
+      if (!item.admin || item.admin === '') {
         item.admin = undefined
       }
-      if(!item.users || item.users.length == 0){
+      if (!item.users || item.users.length == 0) {
         item.users = []
       }
-      this.currentStorage = item
+      this.currentStorage.id = item.id
+      this.currentStorage.basedir = item.basedir
+      this.currentStorage.admin = item.admin
+      this.currentStorage.users = item.users
+      if (this.currentStorage.basedir !== null) {
+        this.currentStorage.type = 'S3'
+        this.currentStorage.isNotCustom = false
+        this.currentStorage.bucket = null
+      } else {
+        this.currentStorage.type = 'local'
+        this.currentStorage.isNotCustom = false
+        this.currentStorage.bucket = null
+      }
       this.getLibrary(item);
     },
     getLibrary(item) {
@@ -1177,18 +1383,25 @@ export default {
         this.repositories = response.repositories
       })
     },
-    cacheStorage(){
+    cacheStorage() {
       let cache = storage.get("libView_repository");
-      if(!cache || !cache.item.id){
-        if(this.storageData){
+      if (!cache || !cache.item.id) {
+        if (this.storageData) {
           let item = this.storageData[0]
-          if(item && item.id){
+          if (item && item.id) {
             this.setCurrentStorage(item)
             item.storageId = item.id
             storage.set("libView_repository", {item, baseUrl: this.baseUrl})
           }
         }
       }
+    if(this.currentStorage.id){
+
+      this.currentStorage.basedir=this.storageData.filter(f=>f.id===this.currentStorage.id)[0].basedir
+
+    }
+
+
     },
     getLayoutType(item) {
       // console.log(getLayoutType(item))
@@ -1199,6 +1412,8 @@ export default {
     },
     closeUserDialog() {
       this.folibVisible = false
+      this.folibRepository=this.folibRepositoryBack
+
     },
     repositoryList() {
       this.queryData.storageId = this.currentStorage.id
@@ -1230,10 +1445,13 @@ export default {
               });
             }, 1000);
           } else {
+
+
             if (this.currentStorage.id) {
+              this.folibRepositoryEditDisabled=false
               this.layoutChecked = null
               this.step = 0
-              this.folibRepository = this.folibRepositoryBack
+
               this.folibRepositoryIds = ""
               this.folibVisible = true
             } else {
@@ -1266,6 +1484,15 @@ export default {
       this.layoutChecked = item
     },
     addOrUpdateRepositoryHandel() {
+      this.folibRepository.id = this.folibRepositoryIds + '-' + this.layoutChecked
+      //构建basedir
+      if(this.currentStorage.basedir){
+        this.folibRepository.basedir=this.currentStorage.basedir+'/'+this.folibRepository.id
+        this.folibRepository.storageProvider='s3'
+      }else {
+        this.folibRepository.basedir=null
+        this.folibRepository.storageProvider='local'
+      }
       //将选中的layout图标转换为接口识别的
       this.folibRepository.layout = genLayoutType(this.layoutChecked)
       //将组合好的仓库转为groupRepository
@@ -1282,13 +1509,12 @@ export default {
         this.folibRepository.groupRepositories = null
         this.folibRepository.proxyConfiguration = null
         this.folibRepository.remoteRepository = null
-
       }
-      this.folibRepository.id = this.folibRepositoryIds + '-' + this.layoutChecked
+
+
       delete this.folibRepository.customConfigurations
       delete this.folibRepository.storageId
       this.folibRepository.artifactMaxSize = this.artifactMaxSize * 1024 * 1024
-      // console.log(this.folibRepository)
       addOrUpdateRepository(this.currentStorage.id, this.folibRepository.id, this.folibRepository).then(res => {
         if (!res.error) {
           setTimeout(() => {
@@ -1299,10 +1525,10 @@ export default {
             });
           }, 1000);
         }
+        this.folibRepository = this.folibRepositoryBack
         this.folibVisible = false
         this.getLibrary(this.currentStorage)
         this.step = 0
-        this.folibRepository = this.folibRepositoryBack
       })
 
     },
@@ -1318,6 +1544,7 @@ export default {
           }
 
           // console.log(this.layoutChecked)
+          this.folibRepositoryEditDisabled=true
           this.folibVisible = true
 
         }
@@ -1330,7 +1557,7 @@ export default {
         if (!err) {
           // console.log(values,this.willDelId)
           if (this.willDelId === values.id) {
-            delRepositoryResponseEntity(this.currentStorage.id, values.id,false).then(response => {
+            delRepositoryResponseEntity(this.currentStorage.id, values.id, false).then(response => {
               setTimeout(() => {
                 this.$notification.open({
                   class: 'ant-notification-success',
@@ -1355,13 +1582,13 @@ export default {
         }
       });
     },
-    delRepositoryResponseEntityForce(){
+    delRepositoryResponseEntityForce() {
       this.delForm.validateFields((err, values) => {
         // console.log(values,this.willDelId)
         if (!err) {
           // console.log(values,this.willDelId)
           if (this.willDelId === values.id) {
-            delRepositoryResponseEntity(this.currentStorage.id, values.id,true).then(response => {
+            delRepositoryResponseEntity(this.currentStorage.id, values.id, true).then(response => {
               setTimeout(() => {
                 this.$notification.open({
                   class: 'ant-notification-success',

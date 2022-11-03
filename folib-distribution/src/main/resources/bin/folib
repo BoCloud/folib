@@ -7,7 +7,7 @@ FOLIB_DEFAULT_HOME=$BASE_DIR
 FOLIB_DEFAULT_VAULT=$(realpath $FOLIB_DEFAULT_HOME/../folib-vault)
 # 配置用户环境变量
 FOLIB_DISTRIBUTED_LOCKIP="${FOLIB_DISTRIBUTED_LOCKIP:-10.50.8.55}"     #当前机器内网IP(并非VIP)用来做多实例集群标识当前机器的内网IP的
-FOLIB_STORAGE_BASE_DIR="${FOLIB_STORAGE_BASE_DIR:-FOLIB_DEFAULT_VAULT}"   #如果NAS存储地址不在VAULT下请配置其他地址
+FOLIB_STORAGE_BASE_DIR="${FOLIB_STORAGE_BASE_DIR:-$FOLIB_DEFAULT_VAULT}"   #如果NAS存储地址不在VAULT下请配置其他地址
 FOLIB_CLUSTER_OPENFLAG="${FOLIB_CLUSTER_OPENFLAG:-false}"
 FOLIB_CLUSTER_HOSTNODE="${FOLIB_CLUSTER_HOSTNODE:-http://10.50.8.82:38080}"
 
@@ -82,6 +82,7 @@ print_help()
     print_banner
     printf " Usage:\n"
     printf "  %-20s %-30s \n" "start"   "Start Folib in the background"
+    printf "  %-20s %-30s \n" "repair_start" "Repair Start Folib in the background dangerous operation"
     printf "  %-20s %-30s \n" "console" "Start Folib in the console"
     printf "  %-20s %-30s \n" "debug"   "Start Folib in the remote debug and console mode"
     printf "  %-20s %-30s \n" "stop"    "Stop Folib"
@@ -112,7 +113,8 @@ pre_check()
 
 run()
 {
-    JAVA_OPTS="${JAVA_OPTS} -Dappserver.home=. -Dappserver.base=${FOLIB_HOME} -Djetty.logs=${FOLIB_HOME}/logs"
+    JAVA_OPTS="${JAVA_OPTS} -XX:+ExitOnOutOfMemoryError -XX:+CrashOnOutOfMemoryError"
+    JAVA_OPTS+=" -Dappserver.home=. -Dappserver.base=${FOLIB_HOME} -Djetty.logs=${FOLIB_HOME}/logs"
     JAVA_OPTS+=" -Djava.io.tmpdir=${FOLIB_HOME}/tmp"
     JAVA_OPTS+=" -Dserver.port=${FOLIB_PORT}"
     JAVA_OPTS+=" -Dehcache.disk.store.dir=${FOLIB_VAULT}/cache"
@@ -154,7 +156,8 @@ run()
     JAVA_OPTS+=" -DREMOTE_DB_PASS=${FOLIB_REMOTE_DB_PASS}"
     fi
 
-    JAVA_OPTS+=" -Dcassandra.jmx.remote.port=${FOLIB_JMX_PORT}
+    JAVA_OPTS+=" -Dcom.sun.jndi.rmiURLParsing=legacy
+                 -Dcassandra.jmx.remote.port=${FOLIB_JMX_PORT}
                  -Dcom.sun.management.jmxremote.rmi.port=${FOLIB_JMX_PORT}
                  -Dcom.sun.management.jmxremote.authenticate=false"
 
@@ -219,6 +222,16 @@ start()
     run "background"
 }
 
+repair_start()
+{
+    if [[ ${FOLIB_VAULT}/db ]];then
+    echo "ready to delete ${FOLIB_VAULT}/db"
+    rm -rf ${FOLIB_VAULT}/db
+    echo "${FOLIB_VAULT}/db delete complete"
+    fi;
+    start
+}
+
 stop()
 {
     if [[ -f $FOLIB_PID_FILE ]]; then
@@ -278,6 +291,7 @@ status()
 
 case "$1" in
     start)   start;;
+    repair_start) repair_start;;
     stop)    stop;;
     restart) restart;;
     console) console;;

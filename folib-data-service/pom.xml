@@ -207,6 +207,12 @@
             <version>0.5.3</version>
         </dependency>
 
+        <dependency>
+            <groupId>org.psjava</groupId>
+            <artifactId>psjava</artifactId>
+            <version>0.1.19</version>
+        </dependency>
+
     </dependencies>
 
 </project>

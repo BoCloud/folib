@@ -310,7 +310,7 @@ public class ScanService {
         ScanRules scanRules = scanRulesBiz.selectById(storageId + "-" + repository);
         boolean onScan = false;
         if (Objects.nonNull(scanRules)) {
-            onScan = scanRules.isOnScan();
+            onScan = scanRules.getOnScan();
         }
         log.info("=====>>>>>存储空间：{}，仓库：{}，扫描开启状态 ：{}", storageId, repository, onScan);
         if (StringUtils.isBlank(filePath)) {
@@ -379,7 +379,7 @@ public class ScanService {
             ScanRules scanRules = scanRulesBiz.selectById(storagesName + "-" + repository);
             boolean flag = false;
             if (Objects.nonNull(scanRules)) {
-                flag = scanRules.isOnScan();
+                flag = scanRules.getOnScan();
             }
             folibScanner.setOnScan(flag);
             return folibScanner;
@@ -424,7 +424,7 @@ public class ScanService {
 
     @Async("asyncThreadPoolTaskExecutor")
     public void scanByScanRules(ScanRules scanRules) {
-        if (scanRules.isOnScan()) {
+        if (scanRules.getOnScan()) {
             String path = scanConfig.getWatchMonitorPath() + "storages/" + scanRules.getStorage() + "/" + scanRules.getRepository() + "/";
             List<File> files = FileUtil.loopFiles(new File(path), new FileFilter() {
                 @Override
@@ -438,7 +438,7 @@ public class ScanService {
             });
             for (File file : files) {
                 FolibScanner folibScanner = buildFolibScanner(file.getPath());
-                folibScanner.setOnScan(scanRules.isOnScan());
+                folibScanner.setOnScan(scanRules.getOnScan());
 //           Long q=folibScannerBiz.selectCount(folibScanner);
                 saveScanningData(folibScanner);
             }

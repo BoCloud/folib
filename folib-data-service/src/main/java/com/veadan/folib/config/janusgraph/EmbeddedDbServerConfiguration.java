@@ -51,12 +51,12 @@ public class EmbeddedDbServerConfiguration implements Condition
                                       JanusGraphConfiguration janusGraphConfiguration)
     {
 
-        if (!Files.exists(Paths.get(cassandraConfiguration.getStorageRoot())))
-        {
-            logger.info(String.format("Extract storage from [%s].", PATH_FOLIB_DB));
-            initStorage(cassandraConfiguration);
-            logger.info(String.format("Storage extracted to [%s].", cassandraConfiguration.getStorageRoot()));
-        }
+//        if (!Files.exists(Paths.get(cassandraConfiguration.getStorageRoot())))
+//        {
+//            logger.info(String.format("Extract storage from [%s].", PATH_FOLIB_DB));
+//            initStorage(cassandraConfiguration);
+//            logger.info(String.format("Storage extracted to [%s].", cassandraConfiguration.getStorageRoot()));
+//        }
 
         return new JanusGraphWithEmbeddedCassandra(cassandraConfiguration, janusGraphConfiguration, idBlockQueueSupplier);
     }
@@ -94,6 +94,7 @@ public class EmbeddedDbServerConfiguration implements Condition
                     Files.createDirectories(filePath);
                     continue;
                 }
+                logger.info(String.format("=====>>>>>从 [%s] 提取文件到 [%s].", file.getName(), filePath.toAbsolutePath().toString()));
 
                 try (InputStream is = new BufferedInputStream(jar.getInputStream(file)))
                 {
