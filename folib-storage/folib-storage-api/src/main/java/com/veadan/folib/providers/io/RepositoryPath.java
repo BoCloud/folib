@@ -69,6 +69,10 @@ public class RepositoryPath
         return target;
     }
 
+    public void setTarget(Path target) {
+        this.target = target;
+    }
+
     public Artifact getArtifactEntry() throws IOException
     {
         return artifact;

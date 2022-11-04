@@ -1,5 +1,7 @@
 package com.veadan.folib.providers.layout;
 
+import com.veadan.folib.cloud.storage.s3fs.S3Iterator;
+import com.veadan.folib.cloud.storage.s3fs.S3Path;
 import com.veadan.folib.providers.io.*;
 import com.veadan.folib.providers.search.SearchException;
 import com.veadan.folib.services.ArtifactSearchService;
@@ -7,7 +9,6 @@ import com.veadan.folib.storage.search.SearchRequest;
 import com.veadan.folib.storage.search.SearchResult;
 import com.veadan.folib.storage.search.SearchResults;
 import com.veadan.folib.artifact.MavenArtifactUtils;
-import com.veadan.folib.providers.io.*;
 import com.veadan.folib.storage.Storage;
 import com.veadan.folib.storage.metadata.MavenMetadataManager;
 import com.veadan.folib.storage.metadata.MetadataHelper;
@@ -73,9 +74,26 @@ public class Maven2FileSystemProvider extends LayoutFileSystemProvider
         
         logger.debug("Removing {}...", repositoryPath);
 
-        if (Files.isDirectory(repositoryPath))
-        {
-            cleanupDirectory(repositoryPath.relativize(), force);
+        if (Files.isDirectory(repositoryPath)) {
+            if (path.toString().startsWith("s3://")) {
+                S3Path paths = (S3Path) repositoryPath.getTarget();
+                S3Iterator s3Iterator = new S3Iterator(paths);
+                while (s3Iterator.hasNext()) {
+                    try {
+                        S3Path s3Path = s3Iterator.next();
+                        ((RepositoryPath) path).setTarget(s3Path);
+                        if (s3Path.getFileSystem().provider().exists(s3Path)) {
+                            super.delete(path, force);
+                        }
+                    } catch (Throwable e) {
+                        logger.error("S3Iterator delete error :{} ", e.getMessage());
+                        throw new IOException("S3Iterator delete error");
+                    }
+                }
+                cleanupDirectory(repositoryPath, force);
+            } else {
+                cleanupDirectory(repositoryPath.relativize(), force);
+            }
         }
 
         super.delete(repositoryPath, force);
