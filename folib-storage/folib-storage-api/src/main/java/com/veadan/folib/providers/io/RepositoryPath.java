@@ -64,7 +64,7 @@ public class RepositoryPath
         return getRepository().getId();
     }
     
-    protected Path getTarget()
+    public Path getTarget()
     {
         return target;
     }

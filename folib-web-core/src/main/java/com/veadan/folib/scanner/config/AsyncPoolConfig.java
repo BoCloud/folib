@@ -53,5 +53,20 @@ public class AsyncPoolConfig {
         executor.initialize();
         return executor;
     }
+
+    @Bean
+    public ThreadPoolTaskExecutor asyncSecurityPolicyConfigurationThreadPoolExecutor(){
+        ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
+        executor.setCorePoolSize(10);
+        executor.setMaxPoolSize(200);
+        executor.setQueueCapacity(25);
+        executor.setKeepAliveSeconds(200);
+        executor.setThreadNamePrefix("asyncSecurityPolicyConfigurationThread");
+        executor.setWaitForTasksToCompleteOnShutdown(true);
+        executor.setAwaitTerminationSeconds(60);
+        executor.setRejectedExecutionHandler(new ThreadPoolExecutor.CallerRunsPolicy());
+        executor.initialize();
+        return executor;
+    }
 }
 

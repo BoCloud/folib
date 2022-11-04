@@ -651,6 +651,13 @@ public class ConfigurationManagementServiceImpl
         });
     }
 
+    @Override
+    public void saveOrUpdateSecurityPolicy(MutableSecurityPolicyConfiguration mutableSecurityPolicyConfiguration) throws IOException {
+        modifyInLock(configuration -> {
+            configuration.setSecurityPolicyConfiguration(mutableSecurityPolicyConfiguration);
+        });
+    }
+
     private void setProxyRepositoryConnectionPoolConfigurations() throws IOException {
         modifyInLock(configuration ->
         {

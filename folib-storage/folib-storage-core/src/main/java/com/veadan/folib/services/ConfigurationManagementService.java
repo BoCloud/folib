@@ -193,4 +193,12 @@ public interface ConfigurationManagementService {
      * @throws IOException io异常
      */
     void saveOrUpdateBlock(MutableSecurityPolicyConfiguration mutableSecurityPolicyConfiguration) throws IOException;
+
+    /**
+     * 保存或者更新平台安全策略配置
+     *
+     * @param mutableSecurityPolicyConfiguration 参数
+     * @throws IOException io异常
+     */
+    void saveOrUpdateSecurityPolicy(MutableSecurityPolicyConfiguration mutableSecurityPolicyConfiguration) throws IOException;
 }

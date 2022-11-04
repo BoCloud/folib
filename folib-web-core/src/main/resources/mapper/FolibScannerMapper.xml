@@ -205,6 +205,9 @@
         <where>
             a.storage = #{storage}
             AND a.repository = #{repository}
+            <if test="artifactName != null and artifactName != ''">
+                AND LOCATE(#{artifactName}, a.path) > 0
+            </if>
         </where>
         GROUP BY versionPath
     </select>
