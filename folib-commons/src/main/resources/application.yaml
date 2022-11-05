@@ -13,13 +13,13 @@ spring:
     driver-class-name: com.mysql.cj.jdbc.Driver
     url: jdbc:mysql://${folib.mysql.host:127.0.0.1}:${folib.mysql.port:3306}/${folib.mysql.db:folib_scanner}?useSSL=false&tinyInt1isBit=false&allowPublicKeyRetrieval=true&useUnicode=true&characterEncoding=UTF8
     username: ${folib.mysql.user:root}
-    password: ${folib.mysql.password:199088926}
+    password: ${folib.mysql.password:folib}
+  liquibase:
+      change-log: classpath:db/changelog-master.xml
 
   jackson:
     date-format: yyyy-MM-dd HH:mm:ss
     time-zone: GMT+8
-  liquibase:
-    enabled: false
   servlet:
     multipart:
       enabled: true
