@@ -26,7 +26,6 @@ import com.veadan.folib.services.ArtifactResolutionService;
 import com.veadan.folib.services.ArtifactService;
 import com.veadan.folib.services.ConfigurationManagementService;
 import com.veadan.folib.services.VulnerabilityService;
-import com.veadan.folib.storage.StorageDto;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.compress.utils.Lists;
@@ -225,13 +224,10 @@ public class ScanService {
         String storageId = folibScanner.getStorage();
         String repositoryId = folibScanner.getRepository();
         String path = folibScanner.getPath();
-        String artifactPath = "";
-        if (path.startsWith("storages/")) {
-            artifactPath = path.replace(String.format("storages/%s/%s", storageId, repositoryId), "").replaceFirst("/", "");
-        } else {
-            String bucketName = getBucketName(storageId);
-            String temp = path.substring(path.indexOf(bucketName));
-            artifactPath = temp.replace(String.format("%s/%s/%s", bucketName, storageId, repositoryId), "").replaceFirst("/", "");
+        String temp = String.format("/%s/%s", storageId, repositoryId);
+        String artifactPath = path.substring(path.indexOf(temp) + temp.length());
+        if (artifactPath.startsWith("/")) {
+            artifactPath = artifactPath.replaceFirst("/", "");
         }
         RepositoryPath repositoryPath = artifactResolutionService.resolvePath(storageId, repositoryId, artifactPath);
         if (Objects.isNull(repositoryPath) && StringUtils.isNotBlank(folibScanner.getArtifactPath())) {
@@ -357,6 +353,9 @@ public class ScanService {
             folibScanner = buildFolibScanner(storageId, repository, s3Path);
             if (Objects.nonNull(folibScanner)) {
                 folibScanner.setPath(filePath);
+                if (StringUtils.isBlank(folibScanner.getFileType())) {
+                    folibScanner.setFileType(FileUtil.getSuffix(filePath));
+                }
             }
             pathLike = repositoryPath.toString();
         } else {
@@ -425,12 +424,9 @@ public class ScanService {
     private FolibScanner buildFolibScanner(String storageId, String repository, S3Path s3Path) {
         if (!PathUtil.isDirectory(s3Path)) {
             String s3FilePath = s3Path.toString();
-            String bucketName = getBucketName(storageId);
-            String shortPath = s3FilePath.substring(s3FilePath.lastIndexOf(bucketName + "/"));
             FolibScanner folibScanner = new FolibScanner();
             String type = FileUtil.getSuffix(s3FilePath);
-            folibScanner.setPath(shortPath)
-                    .setFileType(type).setRepository(repository)
+            folibScanner.setFileType(type).setRepository(repository)
                     .setStorage(storageId);
             ScanRules scanRules = scanRulesBiz.selectById(storageId + "-" + repository);
             boolean flag = false;
@@ -502,25 +498,4 @@ public class ScanService {
         }
 //        return files;
     }
-
-    private String getBucketName(String storageId) {
-        String bucketName = "";
-        StorageDto storageDto = configurationManagementService.getMutableConfigurationClone().getStorage(storageId);
-        if (Objects.nonNull(storageDto)) {
-            String separator = "/";
-            String baseDir = storageDto.getBasedir();
-            if (StringUtils.isNotBlank(baseDir)) {
-                if (baseDir.startsWith(separator)) {
-                    baseDir = baseDir.replaceFirst(separator, "");
-                }
-                if (baseDir.contains(separator)) {
-                    bucketName = baseDir.substring(0, baseDir.indexOf(separator));
-                } else {
-                    bucketName = baseDir;
-                }
-            }
-        }
-        return bucketName;
-    }
-
 }
