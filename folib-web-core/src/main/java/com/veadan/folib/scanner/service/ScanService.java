@@ -24,7 +24,9 @@ import com.veadan.folib.scanner.enums.SeverityTypeEnum;
 import com.veadan.folib.scanner.mapper.FolibScannerMapper;
 import com.veadan.folib.services.ArtifactResolutionService;
 import com.veadan.folib.services.ArtifactService;
+import com.veadan.folib.services.ConfigurationManagementService;
 import com.veadan.folib.services.VulnerabilityService;
+import com.veadan.folib.storage.StorageDto;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.compress.utils.Lists;
@@ -78,8 +80,8 @@ public class ScanService {
     @Inject
     private ArtifactService artifactService;
 
-    @Value("${s3fs.bucket.name:storages}")
-    private String bucketName;
+    @Inject
+    private ConfigurationManagementService configurationManagementService;
 
     @Value("${folib.temp}")
     private String tempPath;
@@ -227,6 +229,7 @@ public class ScanService {
         if (path.startsWith("storages/")) {
             artifactPath = path.replace(String.format("storages/%s/%s", storageId, repositoryId), "").replaceFirst("/", "");
         } else {
+            String bucketName = getBucketName(storageId);
             String temp = path.substring(path.indexOf(bucketName));
             artifactPath = temp.replace(String.format("%s/%s/%s", bucketName, storageId, repositoryId), "").replaceFirst("/", "");
         }
@@ -422,6 +425,7 @@ public class ScanService {
     private FolibScanner buildFolibScanner(String storageId, String repository, S3Path s3Path) {
         if (!PathUtil.isDirectory(s3Path)) {
             String s3FilePath = s3Path.toString();
+            String bucketName = getBucketName(storageId);
             String shortPath = s3FilePath.substring(s3FilePath.lastIndexOf(bucketName + "/"));
             FolibScanner folibScanner = new FolibScanner();
             String type = FileUtil.getSuffix(s3FilePath);
@@ -497,6 +501,26 @@ public class ScanService {
 
         }
 //        return files;
+    }
+
+    private String getBucketName(String storageId) {
+        String bucketName = "";
+        StorageDto storageDto = configurationManagementService.getMutableConfigurationClone().getStorage(storageId);
+        if (Objects.nonNull(storageDto)) {
+            String separator = "/";
+            String baseDir = storageDto.getBasedir();
+            if (StringUtils.isNotBlank(baseDir)) {
+                if (baseDir.startsWith(separator)) {
+                    baseDir = baseDir.replaceFirst(separator, "");
+                }
+                if (baseDir.contains(separator)) {
+                    bucketName = baseDir.substring(0, baseDir.indexOf(separator));
+                } else {
+                    bucketName = baseDir;
+                }
+            }
+        }
+        return bucketName;
     }
 
 }
