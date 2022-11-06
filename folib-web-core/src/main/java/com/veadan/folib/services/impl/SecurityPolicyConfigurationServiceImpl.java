@@ -1,9 +1,11 @@
 package com.veadan.folib.services.impl;
 
+import com.veadan.folib.cluster.SyncStorageEnum;
 import com.veadan.folib.configuration.MutableSecurityPolicyConfiguration;
 import com.veadan.folib.domain.Vulnerability;
 import com.veadan.folib.forms.configuration.SecurityPolicyConfigurationForm;
 import com.veadan.folib.repositories.VulnerabilityRepository;
+import com.veadan.folib.services.ClusterSyncService;
 import com.veadan.folib.services.ConfigurationManagementService;
 import com.veadan.folib.services.SecurityPolicyConfigurationService;
 import org.springframework.stereotype.Service;
@@ -27,39 +29,48 @@ public class SecurityPolicyConfigurationServiceImpl implements SecurityPolicyCon
     @Inject
     private ConfigurationManagementService configurationManagementService;
 
+    @Inject
+    private ClusterSyncService clusterSyncService;
+
 
     @Override
     public void setVulnerabilitiesWhites(String whites) throws IOException {
         configurationManagementService.setVulnerabilitiesWhites(whites);
+        syncDataSecurityPolicyConfiguration();
     }
 
     @Override
     public void setVulnerabilitiesBlacks(String blacks) throws IOException {
         configurationManagementService.setVulnerabilitiesBlacks(blacks);
+        syncDataSecurityPolicyConfiguration();
     }
 
     @Override
     public void addVulnerabilitiesWhite(String white) throws IOException {
         checkParams(white);
         configurationManagementService.addVulnerabilitiesWhite(white);
+        syncDataSecurityPolicyConfiguration();
     }
 
     @Override
     public void addVulnerabilitiesBlack(String black) throws IOException {
         checkParams(black);
         configurationManagementService.addVulnerabilitiesBlack(black);
+        syncDataSecurityPolicyConfiguration();
     }
 
     @Override
     public void removeVulnerabilitiesWhite(String white) throws IOException {
         checkParams(white);
         configurationManagementService.removeVulnerabilitiesWhite(white);
+        syncDataSecurityPolicyConfiguration();
     }
 
     @Override
     public void removeVulnerabilitiesBlack(String black) throws IOException {
         checkParams(black);
         configurationManagementService.removeVulnerabilitiesBlack(black);
+        syncDataSecurityPolicyConfiguration();
     }
 
     @Override
@@ -67,6 +78,7 @@ public class SecurityPolicyConfigurationServiceImpl implements SecurityPolicyCon
         MutableSecurityPolicyConfiguration mutableSecurityPolicyConfiguration = MutableSecurityPolicyConfiguration.builder().levels(securityPolicyConfigurationForm.getLevels())
                 .notifyScopes(securityPolicyConfigurationForm.getNotifyScopes()).receiverUsers(securityPolicyConfigurationForm.getReceiverUsers()).receiverEmails(securityPolicyConfigurationForm.getReceiverEmails()).build();
         configurationManagementService.saveOrUpdateNotify(mutableSecurityPolicyConfiguration);
+        syncDataSecurityPolicyConfiguration();
     }
 
     @Override
@@ -74,6 +86,7 @@ public class SecurityPolicyConfigurationServiceImpl implements SecurityPolicyCon
         MutableSecurityPolicyConfiguration mutableSecurityPolicyConfiguration = MutableSecurityPolicyConfiguration.builder().blockType(securityPolicyConfigurationForm.getBlockType())
                 .blockLevels(securityPolicyConfigurationForm.getBlockLevels()).filterWhites(securityPolicyConfigurationForm.getFilterWhites()).build();
         configurationManagementService.saveOrUpdateBlock(mutableSecurityPolicyConfiguration);
+        syncDataSecurityPolicyConfiguration();
     }
 
 
@@ -87,5 +100,12 @@ public class SecurityPolicyConfigurationServiceImpl implements SecurityPolicyCon
         if (!vulnerabilityOptional.isPresent()) {
             throw new RuntimeException(uuid + "漏洞编号不存在！");
         }
+    }
+
+    /**
+     * 向其他集群节点同步安全策略配置
+     */
+    private void syncDataSecurityPolicyConfiguration() {
+        clusterSyncService.syncSecurityPolicyConfiguration(configurationManagementService.getMutableConfigurationClone().getSecurityPolicyConfiguration());
     }
 }

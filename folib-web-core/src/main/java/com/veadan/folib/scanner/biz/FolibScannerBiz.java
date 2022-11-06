@@ -20,7 +20,6 @@ import org.springframework.stereotype.Service;
 import tk.mybatis.mapper.entity.Example;
 
 import java.text.DecimalFormat;
-import java.text.NumberFormat;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -120,8 +119,15 @@ public class FolibScannerBiz extends BusinessBiz<FolibScannerMapper, FolibScanne
             query1.remove("page");
             query1.remove("limit");
             for (Map.Entry<String, Object> entry : query1.entrySet()) {
+                if (StringUtils.isBlank(entry.getValue().toString())) {
+                    continue;
+                }
                 Example.Criteria criteria = example.createCriteria();
-                criteria.andEqualTo(entry.getKey(), entry.getValue().toString());
+                if (entry.getKey().equals("artifactName")) {
+                    criteria.andLike("path", "%" + entry.getValue().toString() + "%");
+                } else {
+                    criteria.andEqualTo(entry.getKey(), entry.getValue().toString());
+                }
                 example.and(criteria);
             }
         }
@@ -188,8 +194,12 @@ public class FolibScannerBiz extends BusinessBiz<FolibScannerMapper, FolibScanne
         if (query.containsKey(repositoryKey)) {
             repository = query.get(repositoryKey).toString();
         }
+        String artifactNameKey = "artifactName", artifactName = "";
+        if (query.containsKey(artifactNameKey)) {
+            artifactName = query.get(artifactNameKey).toString();
+        }
         Page<Object> result = PageHelper.startPage(query.getPage(), query.getLimit());
-        List<FolibScannerDockerTableVO> list = this.mapper.selectDockerList(storage, repository);
+        List<FolibScannerDockerTableVO> list = this.mapper.selectDockerList(storage, repository, artifactName);
         if (CollectionUtils.isNotEmpty(list)) {
             list.forEach(item -> {
                 item.setPath(item.getVersionPath());

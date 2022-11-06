@@ -48,7 +48,7 @@ public class ClusterProperties {
                 return Collections.emptyList();
             }
             String[] array = nodeArray.split(",");
-            for (int i = 0; i < array.length; ) {
+            for (int i = 0; i < array.length; i++) {
                 array[i] = protocol + "://" + array[i];
             }
             return Arrays.asList(array);

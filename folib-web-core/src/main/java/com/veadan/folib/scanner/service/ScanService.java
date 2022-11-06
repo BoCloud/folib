@@ -2,15 +2,17 @@ package com.veadan.folib.scanner.service;
 
 
 import cn.hutool.core.io.FileUtil;
-import cn.hutool.core.io.IoUtil;
+import cn.hutool.core.io.file.PathUtil;
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONException;
 import com.beust.jcommander.internal.Sets;
+import com.veadan.folib.cloud.storage.s3fs.S3Path;
 import com.veadan.folib.domain.Artifact;
 import com.veadan.folib.domain.VulnerabilityEntity;
 import com.veadan.folib.enums.SafeLevelEnum;
 import com.veadan.folib.enums.VulnerabilityPlatformEnum;
 import com.veadan.folib.providers.io.RepositoryPath;
+import com.veadan.folib.providers.layout.DockerFileSystem;
 import com.veadan.folib.scanner.biz.FolibScannerBiz;
 import com.veadan.folib.scanner.biz.ScanRulesBiz;
 import com.veadan.folib.scanner.common.constant.ScanConstans;
@@ -22,7 +24,9 @@ import com.veadan.folib.scanner.enums.SeverityTypeEnum;
 import com.veadan.folib.scanner.mapper.FolibScannerMapper;
 import com.veadan.folib.services.ArtifactResolutionService;
 import com.veadan.folib.services.ArtifactService;
+import com.veadan.folib.services.ConfigurationManagementService;
 import com.veadan.folib.services.VulnerabilityService;
+import com.veadan.folib.storage.StorageDto;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.compress.utils.Lists;
@@ -32,15 +36,18 @@ import org.owasp.dependencycheck.data.update.exception.UpdateException;
 import org.owasp.dependencycheck.dependency.*;
 import org.owasp.dependencycheck.utils.Settings;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
+import software.amazon.awssdk.services.s3.model.GetObjectRequest;
 
 import javax.inject.Inject;
 import java.io.File;
 import java.io.FileFilter;
-import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.WatchEvent;
 import java.util.*;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
@@ -72,6 +79,12 @@ public class ScanService {
 
     @Inject
     private ArtifactService artifactService;
+
+    @Inject
+    private ConfigurationManagementService configurationManagementService;
+
+    @Value("${folib.temp}")
+    private String tempPath;
 
     private Executor threadPool = Executors.newFixedThreadPool(100);
 
@@ -114,16 +127,48 @@ public class ScanService {
 
     //扫描执行方法
     public void scanWorker(FolibScanner folibScanner) throws Exception {
-        XpEngine engine = new XpEngine(getSettings());
-        engine.scan(scanConfig.getWatchMonitorPath() + folibScanner.getPath());
-        engine.analyzeDependencies();
-        Dependency[] dependencies = engine.getDependencies();
-        folibScanner.setScanStatus(ScanConstans.SCANED);
-        folibScanner.setScanTime(new Date());
-        analysisReport(folibScanner, dependencies);
-        folibScannerBiz.updateSelectiveById(folibScanner);
-        //删除临时文件
-//
+        String parentPath = null;
+        try {
+            XpEngine engine = new XpEngine(getSettings());
+            RepositoryPath repositoryPath = resolvePath(folibScanner);
+            String filePath = "";
+            if (repositoryPath.getTarget() instanceof S3Path) {
+                S3Path s3RepositoryPath = (S3Path) repositoryPath.getTarget();
+                parentPath = tempPath + File.separator + UUID.randomUUID();
+                InputStream inputStream = null;
+                //s3存储
+                if (repositoryPath.getFileSystem() instanceof DockerFileSystem) {
+                    String temp = folibScanner.getPath().substring(folibScanner.getPath().indexOf(repositoryPath.getStorageId()));
+                    S3Path s3Path = new S3Path(s3RepositoryPath.getFileSystem(), temp);
+                    filePath = parentPath + File.separator + s3Path.getFileName();
+                    inputStream = s3Path.getFileSystem().getClient().getObject(GetObjectRequest.builder().bucket(s3RepositoryPath.getBucketName())
+                            .key(s3Path.getKey()).build());
+                } else {
+                    filePath = parentPath + File.separator + s3RepositoryPath.getFileName();
+                    inputStream = Files.newInputStream(repositoryPath);
+                }
+                File tempFile = new File(filePath);
+                FileUtil.writeFromStream(inputStream, tempFile, true);
+            } else {
+                filePath = scanConfig.getWatchMonitorPath() + folibScanner.getPath();
+            }
+            engine.scan(filePath);
+            engine.analyzeDependencies();
+            Dependency[] dependencies = engine.getDependencies();
+            folibScanner.setScanStatus(ScanConstans.SCANED);
+            folibScanner.setScanTime(new Date());
+            analysisReport(folibScanner, dependencies);
+            folibScannerBiz.updateSelectiveById(folibScanner);
+        } catch (Exception ex) {
+            log.error("=====>>>>>scanWorker error：{}", ExceptionUtils.getStackTrace(ex));
+            throw new RuntimeException(ex);
+        } finally {
+            //删除临时文件
+            if (Objects.nonNull(parentPath)) {
+                FileUtil.del(new File(parentPath));
+            }
+        }
+
     }
 
     //开启扫描
@@ -176,6 +221,25 @@ public class ScanService {
         return folibScanner;
     }
 
+    private RepositoryPath resolvePath(FolibScanner folibScanner) throws IOException {
+        String storageId = folibScanner.getStorage();
+        String repositoryId = folibScanner.getRepository();
+        String path = folibScanner.getPath();
+        String artifactPath = "";
+        if (path.startsWith("storages/")) {
+            artifactPath = path.replace(String.format("storages/%s/%s", storageId, repositoryId), "").replaceFirst("/", "");
+        } else {
+            String bucketName = getBucketName(storageId);
+            String temp = path.substring(path.indexOf(bucketName));
+            artifactPath = temp.replace(String.format("%s/%s/%s", bucketName, storageId, repositoryId), "").replaceFirst("/", "");
+        }
+        RepositoryPath repositoryPath = artifactResolutionService.resolvePath(storageId, repositoryId, artifactPath);
+        if (Objects.isNull(repositoryPath) && StringUtils.isNotBlank(folibScanner.getArtifactPath())) {
+            repositoryPath = artifactResolutionService.resolvePath(storageId, repositoryId, folibScanner.getArtifactPath());
+        }
+        return repositoryPath;
+    }
+
     /**
      * 更新制品扫描数据到图数据库
      *
@@ -186,14 +250,7 @@ public class ScanService {
      */
     private void handlerArtifact(FolibScanner folibScanner, Integer evidenceQuantity, Set<Vulnerability> vulnerabilitySet, SafeLevelEnum safeLevelEnum) {
         try {
-            String storageId = folibScanner.getStorage();
-            String repositoryId = folibScanner.getRepository();
-            String path = folibScanner.getPath();
-            String artifactPath = path.replace(String.format("storages/%s/%s", storageId, repositoryId), "").replaceFirst("/", "");
-            RepositoryPath repositoryPath = artifactResolutionService.resolvePath(storageId, repositoryId, artifactPath);
-            if (Objects.isNull(repositoryPath) && StringUtils.isNotBlank(folibScanner.getArtifactPath())) {
-                repositoryPath = artifactResolutionService.resolvePath(storageId, repositoryId, folibScanner.getArtifactPath());
-            }
+            RepositoryPath repositoryPath = resolvePath(folibScanner);
             if (Objects.nonNull(repositoryPath)) {
                 Artifact artifact = repositoryPath.getArtifactEntry();
                 if (Objects.nonNull(artifact)) {
@@ -279,32 +336,9 @@ public class ScanService {
 
     }
 
-    ///Users/veadan/IdeaProjects/folib2/folib-server/folib-vault/storages/folib-common/aliyun-maven/com/alibaba/fastjson/1.2.70-> fastjson-1.2.70.jar
-    public boolean checkScan(WatchEvent<?> event, Path currentPath, String type) {
-        String filePath = currentPath.toString() + "/" + event.context();
-        File file = new File(filePath);
-
-        if (FileUtil.isNotEmpty(file) && !FileUtil.isDirectory(file)) {
-            //如果是jar包则存入待扫描区域
-            FolibScanner folibScanner = buildFolibScanner(filePath);
-            if (folibScanner.getFileType().equals(".jar")) {
-                if (ScanConstans.ADD.equals(type)) {
-                    saveScanningData(folibScanner);
-                } else if (ScanConstans.UPDATE.equals(type)) {
-                    updateScanningData(folibScanner);
-                } else if (ScanConstans.DEL.equals(type)) {
-                    deleteScanningData(folibScanner);
-                } else if (ScanConstans.OVERFLOW.equals(type)) {
-                    updateScanningData(folibScanner);
-                }
-                return true;
-            }
-        }
-        return false;
-    }
-
     public void checkScan(RepositoryPath repositoryPath, String type, String filePath, String artifactFilePath) {
-        String path = "storages" + repositoryPath.toUri().getPath();
+        Path path = repositoryPath.getTarget();
+        String pathLike = "";
         String storageId = repositoryPath.getStorageId();
         String repository = repositoryPath.getRepositoryId();
         ScanRules scanRules = scanRulesBiz.selectById(storageId + "-" + repository);
@@ -312,14 +346,32 @@ public class ScanService {
         if (Objects.nonNull(scanRules)) {
             onScan = scanRules.getOnScan();
         }
-        log.info("=====>>>>>存储空间：{}，仓库：{}，扫描开启状态 ：{}", storageId, repository, onScan);
+        log.debug("=====>>>>>存储空间：{}，仓库：{}，扫描开启状态 ：{}", storageId, repository, onScan);
         if (StringUtils.isBlank(filePath)) {
             filePath = repositoryPath.toAbsolutePath().toString();
         }
-        FolibScanner folibScanner = buildFolibScanner(filePath);
+        FolibScanner folibScanner = null;
+        if (path instanceof S3Path) {
+            log.debug("=====>>>>>S3存储");
+            S3Path s3Path = (S3Path) path;
+            folibScanner = buildFolibScanner(storageId, repository, s3Path);
+            if (Objects.nonNull(folibScanner)) {
+                folibScanner.setPath(filePath);
+            }
+            pathLike = repositoryPath.toString();
+        } else {
+            log.debug("=====>>>>>文件存储");
+            folibScanner = buildFolibScanner(storageId, repository, filePath);
+            pathLike = "storages" + repositoryPath.toUri().getPath();
+        }
         if (StringUtils.isNotBlank(artifactFilePath)) {
-            artifactFilePath = artifactFilePath.substring(artifactFilePath.indexOf("/storages/"));
-            String artifactPath = artifactFilePath.replace(String.format("/storages/%s/%s/", storageId, repository), "");
+            String artifactPath;
+            if (path instanceof S3Path) {
+                artifactPath = artifactFilePath.replace(String.format("%s/%s/", storageId, repository), "");
+            } else {
+                artifactFilePath = artifactFilePath.substring(artifactFilePath.indexOf("/storages/"));
+                artifactPath = artifactFilePath.replace(String.format("/storages/%s/%s/", storageId, repository), "");
+            }
             if (Objects.nonNull(folibScanner)) {
                 folibScanner.setArtifactPath(artifactPath);
             }
@@ -333,7 +385,7 @@ public class ScanService {
                 deleteScanningData(folibScanner);
             }
         } else if (ScanConstans.DEL_DIRECTORY.equals(type)) {
-            deleteScanningDataLike(storageId, repository, path);
+            deleteScanningDataLike(storageId, repository, pathLike);
         } else {
             if (Objects.nonNull(folibScanner)) {
                 updateScanningData(folibScanner);
@@ -341,19 +393,8 @@ public class ScanService {
         }
     }
 
-    private FolibScanner buildFolibScanner(String path) {
+    private FolibScanner buildFolibScanner(String storageId, String repository, String path) {
         if (!FileUtil.isDirectory(path)) {
-            //获取path,从storages往后的
-            String[] pathArray = path.split("/");
-            int storagesIndex = 0;
-            for (int i = 0; i < pathArray.length; i++) {
-                if (pathArray[i].equals("storages")) {
-                    storagesIndex = i;
-                }
-            }
-            //获取存储空间名称和仓库名称
-            String storagesName = pathArray[storagesIndex + 1];
-            String repository = pathArray[storagesIndex + 2];
             File file = new File(path);
             String type = "";
             if (file.exists()) {
@@ -363,20 +404,13 @@ public class ScanService {
                     //后缀无法获取，使用魔法值获取类型
                     type = FileUtil.getType(file);
                 }
-                try {
-                    String hex = IoUtil.readHex28Lower(new FileInputStream(file));
-                    log.info("=====>>>>> 路径：{}，类型：{}，hex：{}", file.getName(), type, hex);
-                } catch (Exception ex) {
-                    log.error("=====>>>>>读取魔数类型失败：{}", ExceptionUtils.getStackTrace(ex));
-                }
             }
-            String shortPath = path.startsWith("s3://") ? path : path.substring(path.lastIndexOf("storages/"));
+            String shortPath = path.substring(path.lastIndexOf("storages/"));
             FolibScanner folibScanner = new FolibScanner();
-
             folibScanner.setPath(shortPath)
                     .setFileType(type).setRepository(repository)
-                    .setStorage(storagesName);
-            ScanRules scanRules = scanRulesBiz.selectById(storagesName + "-" + repository);
+                    .setStorage(storageId);
+            ScanRules scanRules = scanRulesBiz.selectById(storageId + "-" + repository);
             boolean flag = false;
             if (Objects.nonNull(scanRules)) {
                 flag = scanRules.getOnScan();
@@ -388,10 +422,29 @@ public class ScanService {
         }
     }
 
+    private FolibScanner buildFolibScanner(String storageId, String repository, S3Path s3Path) {
+        if (!PathUtil.isDirectory(s3Path)) {
+            String s3FilePath = s3Path.toString();
+            String bucketName = getBucketName(storageId);
+            String shortPath = s3FilePath.substring(s3FilePath.lastIndexOf(bucketName + "/"));
+            FolibScanner folibScanner = new FolibScanner();
+            String type = FileUtil.getSuffix(s3FilePath);
+            folibScanner.setPath(shortPath)
+                    .setFileType(type).setRepository(repository)
+                    .setStorage(storageId);
+            ScanRules scanRules = scanRulesBiz.selectById(storageId + "-" + repository);
+            boolean flag = false;
+            if (Objects.nonNull(scanRules)) {
+                flag = scanRules.getOnScan();
+            }
+            folibScanner.setOnScan(flag);
+            return folibScanner;
+        } else {
+            return null;
+        }
+    }
 
     //新增制品是新增持久化，并设为没有进行安全扫描
-
-
     public void saveScanningData(FolibScanner folibScanner) {
 
         FolibScanner folib = folibScannerBiz.selectById(folibScanner.getPath());
@@ -437,7 +490,7 @@ public class ScanService {
                 }
             });
             for (File file : files) {
-                FolibScanner folibScanner = buildFolibScanner(file.getPath());
+                FolibScanner folibScanner = buildFolibScanner(scanRules.getStorage(), scanRules.getRepository(), file.getPath());
                 folibScanner.setOnScan(scanRules.getOnScan());
 //           Long q=folibScannerBiz.selectCount(folibScanner);
                 saveScanningData(folibScanner);
@@ -450,5 +503,24 @@ public class ScanService {
 //        return files;
     }
 
+    private String getBucketName(String storageId) {
+        String bucketName = "";
+        StorageDto storageDto = configurationManagementService.getMutableConfigurationClone().getStorage(storageId);
+        if (Objects.nonNull(storageDto)) {
+            String separator = "/";
+            String baseDir = storageDto.getBasedir();
+            if (StringUtils.isNotBlank(baseDir)) {
+                if (baseDir.startsWith(separator)) {
+                    baseDir = baseDir.replaceFirst(separator, "");
+                }
+                if (baseDir.contains(separator)) {
+                    bucketName = baseDir.substring(0, baseDir.indexOf(separator));
+                } else {
+                    bucketName = baseDir;
+                }
+            }
+        }
+        return bucketName;
+    }
 
 }

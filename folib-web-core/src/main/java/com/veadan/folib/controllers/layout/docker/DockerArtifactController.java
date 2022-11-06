@@ -2,27 +2,19 @@ package com.veadan.folib.controllers.layout.docker;
 
 
 import cn.hutool.core.lang.UUID;
+import com.veadan.folib.cloud.storage.s3fs.S3Iterator;
+import com.veadan.folib.cloud.storage.s3fs.S3Path;
 import com.veadan.folib.controllers.BaseArtifactController;
-
 import com.veadan.folib.domain.Artifact;
 import com.veadan.folib.domain.DirectoryListing;
 import com.veadan.folib.domain.FileContent;
-import com.veadan.folib.providers.ProviderImplementationException;
 import com.veadan.folib.providers.io.RepositoryPath;
-
 import com.veadan.folib.repositories.ArtifactRepository;
-
 import com.veadan.folib.services.DirectoryListingService;
-import com.veadan.folib.storage.validation.artifact.ArtifactCoordinatesValidationException;
 import com.veadan.folib.utils.DockerApiHeader;
 import com.veadan.folib.utils.FileUtils;
-
 import io.swagger.annotations.*;
-
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -33,16 +25,15 @@ import javax.inject.Inject;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.validation.constraints.NotNull;
-import java.io.*;
-
-import java.nio.file.Files;
+import java.io.ByteArrayInputStream;
+import java.io.DataInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.file.Path;
 import java.security.MessageDigest;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
-
-import static org.springframework.http.HttpStatus.NOT_FOUND;
-
 
 
 /**
@@ -51,7 +42,7 @@ import static org.springframework.http.HttpStatus.NOT_FOUND;
  * Thanks to custom URL processing any path variable like '{artifactPath:.+}' will be processed as '**'.
  *
  * @author Martin Todorov
- * @author 
+ * @author
  * @author veadan
  * @author @author veadan
  * @see{@linkplain http://docs.spring.io/spring/docs/current/spring-framework-reference/html/mvc.html#mvc-config-path-matching}
@@ -368,7 +359,7 @@ public class DockerArtifactController extends BaseArtifactController {
 //            String manifest = null;
 //            //镜像不存在 404 Not Found
 //            Pageable pageable = PageRequest.of(page, limit).first();
-            boolean isNotExist=artifactRepository.artifactExists(storageId,repositoryId,artifactName);
+            boolean isNotExist = artifactRepository.artifactExists(storageId, repositoryId, artifactName);
 //            artifacts = artifactRepository.findMatching2(artifactName, storageId, repositoryId, pageable);
 //            List<Artifact> artifactEntityList = artifacts.getContent();
 
@@ -491,7 +482,7 @@ public class DockerArtifactController extends BaseArtifactController {
 
 
             //判断镜像清单是否在
-            if(!mirrorLayerExists(artifactPath,  storageId,  repositoryId)){
+            if (!mirrorLayerExists(artifactPath, storageId, repositoryId)) {
                 RepositoryPath repositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, artifactPath);
                 logger.info(String.valueOf(System.currentTimeMillis()));
                 artifactManagementService.validateAndStore(repositoryPath, stream);
@@ -501,14 +492,14 @@ public class DockerArtifactController extends BaseArtifactController {
             String artifactName = String.format("%s/%s", name, tag);
 
             //判断镜像清单是否发生变化
-            String tagSha256 =  verifyTagSha256( artifactName, storageId,  repositoryId);
+            String tagSha256 = verifyTagSha256(artifactName, storageId, repositoryId);
             RepositoryPath destPath = repositoryPathResolver.resolve(storageId, repositoryId, destArtifactPath);
 
             //如果存在并发生变化删除更新
-            if(Objects.isNull(tagSha256)){
+            if (Objects.isNull(tagSha256)) {
                 artifactManagementService.validateAndStore(destPath, destStream);
-            }else if(!Objects.equals(tagSha256,sha256)){
-                RepositoryPath deletePath = repositoryPathResolver.resolve(storageId, repositoryId, destArtifactPath.replace(sha256,tagSha256));
+            } else if (!Objects.equals(tagSha256, sha256)) {
+                RepositoryPath deletePath = repositoryPathResolver.resolve(storageId, repositoryId, destArtifactPath.replace(sha256, tagSha256));
                 artifactManagementService.delete(deletePath, true);
                 artifactManagementService.validateAndStore(destPath, destStream);
             }
@@ -595,6 +586,7 @@ public class DockerArtifactController extends BaseArtifactController {
         String fileName = data.get(digest);
         return utils.getFile(fileDir, fileName);
     }
+
     ;
 
 
@@ -617,7 +609,7 @@ public class DockerArtifactController extends BaseArtifactController {
         String artifactName = String.format("%s/%s/", name, tag);
 
         //仓库查询是否存在
-       Artifact artifact = null;
+        Artifact artifact = null;
         String manifest = null;
         //镜像不存在 404 Not Found
         ResponseEntity entity = ResponseEntity.status(HttpStatus.NOT_FOUND).build();
@@ -626,7 +618,7 @@ public class DockerArtifactController extends BaseArtifactController {
             DirectoryListing directoryListing = directoryListingService.fromRepositoryPath(repositoryPath);
             List<FileContent> fileContents = directoryListing.getFiles().stream().filter(file -> !(file.getName().endsWith(".sha256"))).collect(Collectors.toList());  //+propertiesBooter.getStorageBooterBasedir()+"/"+propertiesBooter.getVaultDirectory() + "/storages/"
             FileContent fileContent = fileContents.get(0);
-            artifact =artifactRepository.findOneArtifact(storageId,repositoryId,fileContent.getArtifactPath());
+            artifact = artifactRepository.findOneArtifact(storageId, repositoryId, fileContent.getArtifactPath());
         } catch (Exception e) {
             logger.error(e.getMessage(), e);
         } finally {
@@ -668,11 +660,11 @@ public class DockerArtifactController extends BaseArtifactController {
     @NotNull
     private Boolean mirrorLayerExists(String artifactName, String storageId, String repositoryId) {
 
-        return  artifactRepository.artifactExists(storageId,repositoryId,artifactName);
+        return artifactRepository.artifactExists(storageId, repositoryId, artifactName);
     }
 
     private String getLayers(String artifactName, String storageId, String repositoryId) throws IOException {
-        Artifact artifacts = getArtifact(artifactName,storageId,repositoryId);
+        Artifact artifacts = getArtifact(artifactName, storageId, repositoryId);
         String layers = null;
         if (Objects.nonNull(artifacts)) {
             Map<String, String> mapCoordinates = artifacts.getArtifactCoordinates().getCoordinates();
@@ -685,13 +677,31 @@ public class DockerArtifactController extends BaseArtifactController {
     }
 
     public Artifact getArtifact(String artifactName, String storageId, String repositoryId) throws IOException {
-
         RepositoryPath repositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, artifactName);
-        DirectoryListing directoryListing = directoryListingService.fromRepositoryPath(repositoryPath);
-        List<FileContent> fileContents = directoryListing.getFiles().stream().filter(file -> !(file.getName().endsWith(".sha256"))).collect(Collectors.toList());  //+propertiesBooter.getStorageBooterBasedir()+"/"+propertiesBooter.getVaultDirectory() + "/storages/"
-        FileContent fileContent = fileContents.get(0);
-
-        return  artifactRepository.findOneArtifact(storageId,repositoryId,fileContent.getArtifactPath());
+        Path path = repositoryPath.getTarget();
+        String artifactPath = "";
+        if (path instanceof S3Path) {
+            //S3存储
+            S3Path s3Path = (S3Path) path;
+            S3Iterator iterators = new S3Iterator(s3Path);
+            S3Path imagePath = null;
+            while (iterators.hasNext()) {
+                S3Path itemS3Path = iterators.next();
+                if (!itemS3Path.endsWith(".sha256")) {
+                    imagePath = itemS3Path;
+                    break;
+                }
+            }
+            if (Objects.nonNull(imagePath)) {
+                artifactPath = imagePath.getKey().replace(String.format("%s/%s/", repositoryPath.getStorageId(), repositoryPath.getRepositoryId()), "");
+            }
+        } else {
+            DirectoryListing directoryListing = directoryListingService.fromRepositoryPath(repositoryPath);
+            List<FileContent> fileContents = directoryListing.getFiles().stream().filter(file -> !(file.getName().endsWith(".sha256"))).collect(Collectors.toList());
+            FileContent fileContent = fileContents.get(0);
+            artifactPath = fileContent.getArtifactPath();
+        }
+        return artifactRepository.findOneArtifact(storageId, repositoryId, artifactPath);
     }
 
 

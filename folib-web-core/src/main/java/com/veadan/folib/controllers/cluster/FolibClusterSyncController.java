@@ -1,6 +1,7 @@
 package com.veadan.folib.controllers.cluster;
 
 
+import com.veadan.folib.configuration.MutableSecurityPolicyConfiguration;
 import com.veadan.folib.controllers.BaseController;
 import com.veadan.folib.controllers.cluster.dto.SyncRepositoryDto;
 import com.veadan.folib.controllers.cluster.dto.SyncStorageDto;
@@ -46,6 +47,18 @@ public class FolibClusterSyncController extends BaseController {
         return ResponseEntity.ok("sync storage ok");
     }
 
+    @PostMapping("syncSecurityPolicyConfiguration")
+    public ResponseEntity syncSecurityPolicyConfiguration(@RequestBody MutableSecurityPolicyConfiguration mutableSecurityPolicyConfiguration) {
+        try {
+            configurationManagementService.saveOrUpdateSecurityPolicy(mutableSecurityPolicyConfiguration);
+            logger.info("sycn securityPolicyConfiguration success");
+        } catch (Exception e) {
+            logger.error("sync securityPolicyConfiguration error {}", e.getMessage());
+            return getBadRequestResponseEntity(e.getMessage(), "");
+        }
+        return ResponseEntity.ok("sync securityPolicyConfiguration ok");
+    }
+
     @PostMapping("syncRepository")
     public ResponseEntity syncRepository(@RequestBody SyncRepositoryDto syncRepositoryDto) {
         try {
@@ -63,6 +76,5 @@ public class FolibClusterSyncController extends BaseController {
         }
         return ResponseEntity.ok("sync repository ok");
     }
-
 
 }

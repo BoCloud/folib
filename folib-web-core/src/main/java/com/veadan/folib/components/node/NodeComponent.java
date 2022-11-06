@@ -113,6 +113,7 @@ public class NodeComponent {
             cassandraClusterForm.setDcsMap(dcsMap);
         } catch (Exception ex) {
             log.error("=====>>>>>获取cassandra集群信息错误：{}", ExceptionUtils.getStackTrace(ex));
+            throw new RuntimeException("获取集群信息错误，请稍候重试");
         }
         return cassandraClusterForm;
     }
@@ -142,6 +143,7 @@ public class NodeComponent {
             nodeProbe.repairAsync(System.out, keyspace, options);
         } catch (IOException ex) {
             log.error("=====>>>>>修复cassandra集群错误：{}", ExceptionUtils.getStackTrace(ex));
+            throw new RuntimeException("修复错误，请稍候重试");
         }
     }
 

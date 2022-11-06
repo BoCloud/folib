@@ -3,7 +3,8 @@ package com.veadan.folib.cluster;
 public enum SyncDataTypeEnum {
 
     STORAGE(1),
-    REPOSITORY(2);
+    REPOSITORY(2),
+    SECURITY_POLICY(3);
 
     private Integer value;
 

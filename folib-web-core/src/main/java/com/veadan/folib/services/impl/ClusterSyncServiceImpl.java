@@ -2,6 +2,7 @@ package com.veadan.folib.services.impl;
 
 import com.alibaba.fastjson.JSON;
 import com.veadan.folib.cluster.*;
+import com.veadan.folib.configuration.MutableSecurityPolicyConfiguration;
 import com.veadan.folib.controllers.cluster.dto.SyncRepositoryDto;
 import com.veadan.folib.controllers.cluster.dto.SyncStorageDto;
 import com.veadan.folib.entity.ClusterDataSyncTaskPo;
@@ -31,6 +32,7 @@ public class ClusterSyncServiceImpl implements ClusterSyncService {
 
     private final String SYCN_STORAGE_URI = "/api/configuration/cluster/syncStorage";
     private final String SYCN_REPOSITORY_URI = "/api/configuration/cluster/syncRepository";
+    private final String SYCN_SECURITY_POLICY_URI = "/api/configuration/cluster/syncSecurityPolicyConfiguration";
 
     @Autowired
     private ProxyRepositoryConnectionPoolConfigurationService clientPool;
@@ -65,6 +67,20 @@ public class ClusterSyncServiceImpl implements ClusterSyncService {
 
     }
 
+    @Override
+    @Async("asyncSecurityPolicyConfigurationThreadPoolExecutor")
+    public void syncSecurityPolicyConfiguration(MutableSecurityPolicyConfiguration mutableSecurityPolicyConfiguration) {
+        if (!isNeedClusterSync()) {
+            logger.info("cluster mode not opened");
+            return;
+        }
+        logger.info("folib sync securityPolicyConfiguration");
+        clusterProperties.getHostNodeList().forEach(nodeUrl -> {
+            handleSyncSecurityPolicyConfiguration(mutableSecurityPolicyConfiguration, nodeUrl, false);
+        });
+    }
+
+    @Override
     public ClusterSyncResultEnum handleSyncStorage(String storageId, SyncStorageDto syncStorageDto, String nodeUrl, Boolean isScheduled) {
         Response response = null;
         Client client = null;
@@ -100,6 +116,7 @@ public class ClusterSyncServiceImpl implements ClusterSyncService {
         return ClusterSyncResultEnum.SUCCESS;
     }
 
+    @Override
     public void addduledScheTask(ClusterDataSyncTaskPo clusterDataSyncTaskPo) {
         clusterDataSyncTaskMapper.addTask(clusterDataSyncTaskPo);
     }
@@ -121,6 +138,7 @@ public class ClusterSyncServiceImpl implements ClusterSyncService {
         });
     }
 
+    @Override
     public ClusterSyncResultEnum handleSyncRepository(String storageId, String repositoryId, SyncRepositoryDto syncRepositoryDto,
                                                       String nodeUrl, Boolean isScheduled) {
         Response response = null;
@@ -152,6 +170,42 @@ public class ClusterSyncServiceImpl implements ClusterSyncService {
                 response.close();
             }
 
+            if (null != client) {
+                client.close();
+            }
+        }
+        return ClusterSyncResultEnum.SUCCESS;
+    }
+
+    @Override
+    public ClusterSyncResultEnum handleSyncSecurityPolicyConfiguration(MutableSecurityPolicyConfiguration mutableSecurityPolicyConfiguration, String nodeUrl, Boolean isScheduled) {
+        Response response = null;
+        Client client = null;
+        try {
+            client = clientPool.getRestClient();
+            WebTarget target = client.target(nodeUrl + SYCN_SECURITY_POLICY_URI);
+            response = target.request().post(Entity.entity(mutableSecurityPolicyConfiguration, MediaType.APPLICATION_JSON));
+            if (response.getStatus() > 210) {
+                logger.error("sync securityPolicyConfiguration error {}", nodeUrl);
+                throw new RuntimeException("Failed with HTTP error code : " + response.getStatus());
+            }
+        } catch (Exception e) {
+            logger.error("sync securityPolicyConfiguration error {} ", e.getMessage());
+            if (!isScheduled) {
+                addduledScheTask(
+                        new ClusterDataSyncTaskPo(UUID.randomUUID().toString(),
+                                ipProperties.getFolibLockIp(),
+                                JSON.toJSONString(mutableSecurityPolicyConfiguration),
+                                SyncDataTypeEnum.SECURITY_POLICY.getValue(),
+                                SyncDataStatusEnum.WILL_EXECUTE_STATUS.getStatus()
+                                , nodeUrl, BigInteger.valueOf(System.currentTimeMillis())
+                        ));
+            }
+            return ClusterSyncResultEnum.FAIL;
+        } finally {
+            if (null != response) {
+                response.close();
+            }
             if (null != client) {
                 client.close();
             }
