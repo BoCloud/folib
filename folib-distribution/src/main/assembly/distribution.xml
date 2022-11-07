@@ -10,6 +10,10 @@
             <source>src/main/resources/Dockerfile</source>
             <outputDirectory>folib-${project.version}/../</outputDirectory>
         </file>
+        <file>
+            <source>src/main/resources/start-folib-1.0.yaml</source>
+            <outputDirectory>folib-${project.version}/../</outputDirectory>
+        </file>
     </files>
     <fileSets>
         <fileSet>
