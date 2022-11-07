@@ -58,16 +58,16 @@ public class FetchRemoteRpmChangesFeedCronJob         extends JavaCronJob
     {
         return CronJobDefinition.newBuilder()
                 .jobClass(FetchRemoteRpmChangesFeedCronJob.class.getName())
-                .name("Fetch Remote Npm Changes Feed Cron Job")
-                .description("Fetch Remote Npm Changes Feed Cron Job")
+                .name("定时拉取远程RPM仓库Feed记录的任务").scope(RPM)
+                .description("该任务用于定时拉取远程RPM仓库Feed记录的任务")
                 .fields(FIELDS)
                 .build();
     }
 
     public static boolean shouldDownloadRemoteChangesFeed()
     {
-        return System.getProperty("folib.npm.remote.changes.enabled") == null ||
-                Boolean.parseBoolean(System.getProperty("folib.npm.remote.changes.enabled"));
+        return System.getProperty("folib.rpm.remote.changes.enabled") == null ||
+                Boolean.parseBoolean(System.getProperty("folib.rpm.remote.changes.enabled"));
     }
 }
 

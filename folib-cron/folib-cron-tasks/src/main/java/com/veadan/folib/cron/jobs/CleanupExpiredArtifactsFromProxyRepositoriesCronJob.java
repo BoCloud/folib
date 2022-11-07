@@ -72,8 +72,9 @@ public class CleanupExpiredArtifactsFromProxyRepositoriesCronJob
     {
         return CronJobDefinition.newBuilder()
                                 .jobClass(CleanupExpiredArtifactsFromProxyRepositoriesCronJob.class.getName())
-                                .name("Cleanup Expired Artifacts From Proxy Repositories Cron Job")
-                                .description("Cleanup Expired Artifacts From Proxy Repositories Cron Job")
+                                .name("代理仓库清理过期制品")
+                                .scope("SYSTEM")
+                                .description("可设定过期日期，该任务会过期日期之前的制品包。")
                                 .fields(FIELDS)
                                 .build();
     }

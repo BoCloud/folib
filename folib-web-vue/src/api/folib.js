@@ -322,6 +322,45 @@ export function securityPolicyBlock (data) {
   })
 }
 
+export function crontasksList (scope) {
+  return axios({
+    url: '/api/configuration/crontasks/types/list?scope='+scope,
+    method: 'get'
+  })
+}
+export function crontasksByRepository (storageId,repositoryId) {
+  return axios({
+    url: '/api/configuration/crontasks/getByRepository',
+    method: 'get',
+    params: {storageId:storageId,repositoryId:repositoryId}
+  })
+}
+
+export function creatCronOne (data) {
+  return axios({
+    url: '/api/configuration/crontasks',
+    method: 'put',
+    data: data
+  })
+}
+
+export function updateCronOne (data,uuid) {
+  return axios({
+    url: '/api/configuration/crontasks/'+uuid,
+    method: 'put',
+    data: data
+  })
+}
+
+export function delCronOne (uuid) {
+  return axios({
+    url: '/api/configuration/crontasks/'+uuid,
+    method: 'delete'
+  })
+}
+
+
+
 
 
 

@@ -50,7 +50,7 @@ public class GroovyCronJob
     {
         return CronJobDefinition.newBuilder()
                                 .jobClass(GroovyCronJob.class.getName())
-                                .name("Groovy Cron Job")
+                                .name("Groovy Cron Job").scope("SYSTEM")
                                 .fields(FIELDS)
                                 .build();
     }

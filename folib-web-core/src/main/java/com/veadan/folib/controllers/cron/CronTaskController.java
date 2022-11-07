@@ -4,6 +4,7 @@ import com.veadan.folib.booters.PropertiesBooter;
 import com.veadan.folib.cron.domain.CronTaskConfigurationDto;
 import com.veadan.folib.cron.domain.CronTasksConfigurationDto;
 import com.veadan.folib.cron.domain.GroovyScriptNamesDto;
+import com.veadan.folib.cron.jobs.CronJobDefinition;
 import com.veadan.folib.cron.jobs.CronJobsDefinitionsRegistry;
 import com.veadan.folib.cron.jobs.GroovyCronJob;
 import com.veadan.folib.cron.services.CronJobSchedulerService;
@@ -19,12 +20,15 @@ import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
 import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.core.convert.ConversionService;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -54,25 +58,25 @@ public class CronTaskController
     static final String CRON_CONFIG_FILE_NAME_KEY = "fileName";
     static final String CRON_CONFIG_SCRIPT_PATH_KEY = "script.path";
 
-    private static final String SUCCESSFUL_SAVE_CONFIGURATION = "The configuration was saved successfully.";
-    private static final String FAILED_SAVE_CONFIGURATION = "Could not save the configuration.";
+    private static final String SUCCESSFUL_SAVE_CONFIGURATION = "配置保存成功.";
+    private static final String FAILED_SAVE_CONFIGURATION = "无法保存定时配置.";
 
-    private static final String SUCCESSFUL_UPDATE_CONFIGURATION = "The configuration was updated successfully.";
-    private static final String FAILED_UPDATE_CONFIGURATION = "Could not update the configuration.";
+    private static final String SUCCESSFUL_UPDATE_CONFIGURATION = "定时配置更新成功.";
+    private static final String FAILED_UPDATE_CONFIGURATION = "无法更新定时配置.";
 
-    private static final String SUCCESSFUL_DELETE_CONFIGURATION = "The configuration was deleted successfully.";
-    private static final String FAILED_DELETE_CONFIGURATION = "Could not delete the configuration.";
+    private static final String SUCCESSFUL_DELETE_CONFIGURATION = "删除定时配置成功.";
+    private static final String FAILED_DELETE_CONFIGURATION = "无法删除配置配置.";
 
-    private static final String SUCCESSFUL_GET_CONFIGURATIONS = "Configurations retrieved successfully.";
-    private static final String NOT_FOUND_CONFIGURATIONS = "There are no cron task configs";
+    private static final String SUCCESSFUL_GET_CONFIGURATIONS = "配置检索成功.";
+    private static final String NOT_FOUND_CONFIGURATIONS = "没有 cron 任务配置";
 
-    private static final String SUCCESSFUL_GET_CONFIGURATION = "The configuration retrieved successfully.";
-    private static final String NOT_FOUND_CONFIGURATION = "Cron task config not found by this uuid!";
+    private static final String SUCCESSFUL_GET_CONFIGURATION = "配置检索成功.";
+    private static final String NOT_FOUND_CONFIGURATION = "此 uuid 未找到 Cron 任务配置!";
 
-    private static final String SUCCESSFUL_UPLOAD_GROOVY_SCRIPT = "The groovy script uploaded successfully.";
-    private static final String FAILED_UPLOAD_GROOVY_SCRIPT = "Could not upload the groovy script.";
+    private static final String SUCCESSFUL_UPLOAD_GROOVY_SCRIPT = "groovy脚本上传成功.";
+    private static final String FAILED_UPLOAD_GROOVY_SCRIPT = "无法上传 groovy 脚本.";
 
-    private static final String SUCCESSFUL_GET_GROOVY_SCRIPTS = "The groovy scripts named retrieved successfully.";
+    private static final String SUCCESSFUL_GET_GROOVY_SCRIPTS = "成功检索名为的 groovy 脚本.";
 
     @Inject
     private CronTaskConfigurationService cronTaskConfigurationService;
@@ -208,14 +212,19 @@ public class CronTaskController
         return getSuccessfulResponseEntity(SUCCESSFUL_DELETE_CONFIGURATION, acceptHeader);
     }
 
-    @ApiOperation(value = "Lists all of the cron task types and the field types of those tasks.")
+    @ApiOperation(value = "列出所有 cron 任务类型和这些任务的字段类型.")
     @ApiResponses(value = { @ApiResponse(code = 200, message = SUCCESSFUL_GET_CONFIGURATION),
                             @ApiResponse(code = 404, message = NOT_FOUND_CONFIGURATION) })
     @GetMapping(value = "/types/list",
                 produces = { MediaType.APPLICATION_JSON_VALUE })
-    public ResponseEntity listCronJobs()
+    public ResponseEntity listCronJobs(@RequestParam(value = "scope",required = false) String scope)
     {
-        return ResponseEntity.ok(cronJobsDefinitionsRegistry.getCronJobDefinitions());
+        Set<CronJobDefinition> cronJobDefinitions=cronJobsDefinitionsRegistry.getCronJobDefinitions();
+        if(StringUtils.isNotBlank(scope)){
+            cronJobDefinitions= cronJobsDefinitionsRegistry.getCronJobDefinitions().stream()
+                    .filter(cjd -> cjd.getScope().equals(scope)||cjd.getScope().equals("GLOBAL")).collect(Collectors.toSet());
+        }
+        return ResponseEntity.ok(cronJobDefinitions);
     }
 
     @ApiOperation(value = "Used to get the configuration on given cron task UUID")
@@ -236,7 +245,7 @@ public class CronTaskController
         return ResponseEntity.ok(config);
     }
 
-    @ApiOperation(value = "Used to get list of all the configurations")
+    @ApiOperation(value = "获取所有已经设置的定时任务")
     @ApiResponses(value = { @ApiResponse(code = 200, message = SUCCESSFUL_GET_CONFIGURATIONS),
                             @ApiResponse(code = 404, message = NOT_FOUND_CONFIGURATIONS) })
     @GetMapping(produces = { MediaType.APPLICATION_JSON_VALUE,
@@ -251,6 +260,30 @@ public class CronTaskController
 
         return ResponseEntity.ok(config);
     }
+
+    @ApiOperation(value = "获取仓库已经设置的定时任务")
+    @ApiResponses(value = { @ApiResponse(code = 200, message = SUCCESSFUL_GET_CONFIGURATIONS),
+            @ApiResponse(code = 404, message = NOT_FOUND_CONFIGURATIONS) })
+    @GetMapping(value = "/getByRepository",produces = { MediaType.APPLICATION_JSON_VALUE,
+            com.veadan.folib.net.MediaType.APPLICATION_YAML_VALUE })
+    public ResponseEntity getConfigurationsByRepository(@RequestHeader(HttpHeaders.ACCEPT) String acceptHeader,
+                                                        @RequestParam("storageId") String storageId,
+                                                        @RequestParam("repositoryId") String repositoryId)
+
+    {
+
+        CronTasksConfigurationDto config = cronTaskConfigurationService.getTasksConfigurationDto();
+        config.setCronTaskConfigurations(config.getCronTaskConfigurations().stream().filter(cron ->storageId.equals(cron.getProperty("storageId"))&&repositoryId.equals(cron.getProperty("repositoryId"))).collect(Collectors.toSet()));
+
+        if (config == null || CollectionUtils.isEmpty(config.getCronTaskConfigurations()))
+        {
+            return ResponseEntity.ok(config);
+        }
+
+        return ResponseEntity.ok(config);
+    }
+
+
 
     @ApiOperation(value = "Used to upload groovy script for groovy cron task")
     @ApiResponses(value = { @ApiResponse(code = 200, message = SUCCESSFUL_UPLOAD_GROOVY_SCRIPT),

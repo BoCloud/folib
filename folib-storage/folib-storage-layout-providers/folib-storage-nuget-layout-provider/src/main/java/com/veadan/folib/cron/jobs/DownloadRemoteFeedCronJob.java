@@ -58,8 +58,8 @@ public class DownloadRemoteFeedCronJob
     {
         return CronJobDefinition.newBuilder()
                                 .jobClass(DownloadRemoteFeedCronJob.class.getName())
-                                .name("Download Remote Feed Cron Job")
-                                .description("Download Remote Feed Cron Job")
+                                .name("定时拉取远程NUGET仓库Feed记录的任务").scope(NUGET)
+                                .description("用于定时拉取远程NUGET仓库Feed记录的任务")
                                 .fields(FIELDS)
                                 .build();
     }

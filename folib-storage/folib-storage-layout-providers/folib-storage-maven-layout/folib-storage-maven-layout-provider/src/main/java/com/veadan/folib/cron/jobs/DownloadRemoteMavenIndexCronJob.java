@@ -87,8 +87,8 @@ public class DownloadRemoteMavenIndexCronJob
     {
         return CronJobDefinition.newBuilder()
                                 .jobClass(DownloadRemoteMavenIndexCronJob.class.getName())
-                                .name("Download Remote Maven Index Cron Job")
-                                .description("Download Remote Maven Index Cron Job")
+                                .name("定时拉取远程Maven仓库索引").scope(MAVEN)
+                                .description("该任务用于定时拉取远程仓库下的索引文件。")
                                 .fields(FIELDS)
                                 .build();
     }
