@@ -7,4 +7,11 @@ public abstract class JavaCronJob
         extends AbstractCronJob
 {
 
+    public static final String GLOBAL="GLOBAL";
+    public static final String MAVEN="MAVEN";
+    public static final String NPM="NPM";
+    public static final String RPM="RPM";
+    public static final String DOCKER="DOCKER";
+    public static final String NUGET="NUGET";
+
 }

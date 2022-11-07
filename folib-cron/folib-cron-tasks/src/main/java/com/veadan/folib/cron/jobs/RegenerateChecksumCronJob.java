@@ -84,8 +84,9 @@ public class RegenerateChecksumCronJob
     {
         return CronJobDefinition.newBuilder()
                                 .jobClass(RegenerateChecksumCronJob.class.getName())
-                                .name("Regenerate Checksum Cron Job")
-                                .description("Regenerate Checksum Cron Job")
+                                .name("定时重新生成制品的Checksum文件")
+                                .scope(GLOBAL)
+                                .description("该任务用于重新生成Checksum,但需要指定仓库下的基础路径(PROPERTY_BASE_PATH)")
                                 .fields(FIELDS)
                                 .build();
     }

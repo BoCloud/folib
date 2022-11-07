@@ -64,8 +64,8 @@ public class RebuildMavenIndexesCronJob
     {
         return CronJobDefinition.newBuilder()
                                 .jobClass(RebuildMavenIndexesCronJob.class.getName())
-                                .name("Rebuild Maven Indexes Cron Job")
-                                .description("Rebuild Maven Indexes Cron Job")
+                                .name("定时重建Maven仓库的索引任务").scope(MAVEN)
+                                .description("该任务用于定时重建Maven仓库的索引")
                                 .fields(FIELDS)
                                 .build();
     }

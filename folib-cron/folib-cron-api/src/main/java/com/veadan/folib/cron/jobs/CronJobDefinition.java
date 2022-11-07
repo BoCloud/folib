@@ -16,8 +16,20 @@ public class CronJobDefinition
 
     private String name;
 
+    private String scope;
+
+    private String description;
+
     private Set<CronJobField> fields;
 
+    public String getScope() {
+        return scope;
+    }
+
+    public String getDescription()
+    {
+        return description;
+    }
     public String getJobClass()
     {
         return jobClass;
@@ -32,6 +44,8 @@ public class CronJobDefinition
     {
         return fields;
     }
+
+
 
     @Override
     public boolean equals(Object o)
@@ -58,7 +72,10 @@ public class CronJobDefinition
         Assert.notNull(builder.jobClass, "jobClass should not be null");
         jobClass = builder.jobClass;
         name = builder.name;
+        description=builder.description;
         fields = builder.fields;
+        scope = builder.scope;
+
     }
 
     public static Builder newBuilder()
@@ -72,6 +89,7 @@ public class CronJobDefinition
 
         private String jobClass;
         private String name;
+        private String scope;
         private String description;
         private Set<CronJobField> fields;
 
@@ -88,6 +106,11 @@ public class CronJobDefinition
         public Builder name(String val)
         {
             name = val;
+            return this;
+        }
+        public Builder scope(String val)
+        {
+            scope = val;
             return this;
         }
 

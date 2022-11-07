@@ -15,13 +15,13 @@ import org.apache.commons.lang3.ObjectUtils;
 public class CronTaskConfigurationForm
 {
 
-    private String jobClass;
+    private String jobClass;                //用户选择哪个类
 
-    private String cronExpression;
+    private String cronExpression;         //表达式
 
-    private boolean oneTimeExecution;
+    private boolean oneTimeExecution;      //false 循环执行，true执行1次
 
-    private boolean immediateExecution;
+    private boolean immediateExecution;   //是否立即执行
 
     private List<CronTaskConfigurationFormField> fields;
 

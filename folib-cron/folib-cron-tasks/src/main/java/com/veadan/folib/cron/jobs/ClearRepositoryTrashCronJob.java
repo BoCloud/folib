@@ -53,8 +53,9 @@ public class ClearRepositoryTrashCronJob
     {
         return CronJobDefinition.newBuilder()
                                 .jobClass(ClearRepositoryTrashCronJob.class.getName())
-                                .name("Clear Repository Trash Cron Job")
-                                .description("Clear Repository Trash Cron Job")
+                                .name("仓库垃圾回收站定时清理任务")
+                                .scope(GLOBAL)
+                                .description("该任务可定时删除制品仓库下的.trash垃圾回收站下的文件。")
                                 .fields(FIELDS)
                                 .build();
     }

@@ -64,8 +64,8 @@ public class FetchRemoteNpmChangesFeedCronJob
     {
         return CronJobDefinition.newBuilder()
                                 .jobClass(FetchRemoteNpmChangesFeedCronJob.class.getName())
-                                .name("Fetch Remote Npm Changes Feed Cron Job")
-                                .description("Fetch Remote Npm Changes Feed Cron Job")
+                                .name("定时拉取远程Npm的Feed更改记录").scope(NPM)
+                                .description("该任务用于定时拉取远程Npm的Feed更改记录")
                                 .fields(FIELDS)
                                 .build();
     }

@@ -98,8 +98,8 @@ public class RemoveTimestampedMavenSnapshotCronJob
     {
         return CronJobDefinition.newBuilder()
                                 .jobClass(RemoveTimestampedMavenSnapshotCronJob.class.getName())
-                                .name("Remove Timestamped Maven Snapshot Cron Job")
-                                .description("Remove Timestamped Maven Snapshot Cron Job")
+                                .name("定时删除SNAPSHOT的Maven制品").scope(MAVEN)
+                                .description("定时删除SNAPSHOT，带有时间日期快照的制品包")
                                 .fields(FIELDS)
                                 .build();
     }

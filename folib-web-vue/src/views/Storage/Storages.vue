@@ -399,6 +399,7 @@
                 title="基础信息"/>
             <a-step v-if="folibRepository.type==='proxy'" title="远程配置"/>
             <a-step v-if="folibRepository.type==='group'" title="组合配置"/>
+            <a-step title="定时策略"/>
           </a-steps>
           <!-- / Steps -->
 
@@ -408,8 +409,7 @@
         <!-- Wizard form cards -->
         <div class="mb-50">
           <!-- Step 1 : About -->
-          <a-card
-              v-if="step === 0&&(folibRepository.type==='hosted'||folibRepository.type==='proxy'||folibRepository.type==='group')"
+          <a-card v-if="step === 0&&(folibRepository.type==='hosted'||folibRepository.type==='proxy'||folibRepository.type==='group')"
               :bordered="false" class="header-solid">
 
             <h5 class="font-regular text-center">{{folibRepositoryEditDisabled?'不可修改，请点击下一步':'不知道怎么选择?'}} </h5>
@@ -650,8 +650,7 @@
           </a-card>
 
           <!-- Step 2 : Account -->
-          <a-card
-              v-else-if="step === 1&&(folibRepository.type==='hosted'||folibRepository.type==='proxy'||folibRepository.type==='group')"
+          <a-card v-else-if="step === 1&&(folibRepository.type==='hosted'||folibRepository.type==='proxy'||folibRepository.type==='group')"
               :bordered="false" class="header-solid">
             <h5 class="font-regular text-center">OK,接下来要填写基础信息</h5>
             <p class="text-center">
@@ -772,9 +771,11 @@
                   <a-button @click="moveStep(-1)" class="px-25">回退</a-button>
                 </a-col>
                 <a-col :span="12" class="text-right">
-                  <a-button v-if="folibRepository.type==='hosted'" type="primary" @click="addOrUpdateRepositoryHandel()"
-                            class="px-25">完成
+                  <a-button v-if="folibRepository.type==='hosted'" type="primary" @click="addOrUpdateRepositoryHandel(false)"
+                            class="px-25">完成{{folibRepositoryEditDisabled?'修改':'创建'}}
                   </a-button>
+                  <a-button v-if="folibRepository.type==='hosted'" style="margin-left: 20px"  @click="addOrUpdateRepositoryHandel(true)" class="px-25">{{folibRepositoryEditDisabled?'修改':'创建'}}并设置定时策略</a-button>
+
                   <a-button v-else-if="folibRepository.type!=='hosted'" type="primary" @click="moveStep(1)"
                             class="px-25">下一步
                   </a-button>
@@ -919,7 +920,8 @@
                   <a-button @click="moveStep(-1)" class="px-25">回退</a-button>
                 </a-col>
                 <a-col :span="12" class="text-right">
-                  <a-button type="primary" @click="addOrUpdateRepositoryHandel()" class="px-25">完成</a-button>
+                  <a-button type="primary" @click="addOrUpdateRepositoryHandel(false)" class="px-25">完成{{folibRepositoryEditDisabled?'修改':'创建'}}</a-button>
+                  <a-button style="margin-left: 20px"  @click="addOrUpdateRepositoryHandel(true)" class="px-25">{{folibRepositoryEditDisabled?'修改':'创建'}}并设置定时策略</a-button>
                 </a-col>
               </a-row>
             </a-form>
@@ -959,14 +961,86 @@
                 <a-button @click="moveStep(-1)" class="px-25">回退</a-button>
               </a-col>
               <a-col :span="12" class="text-right">
-                <a-button type="primary" @click="addOrUpdateRepositoryHandel()" class="px-25">完成</a-button>
+                <a-button type="primary" @click="addOrUpdateRepositoryHandel(false)" class="px-25">>完成{{folibRepositoryEditDisabled?'修改':'创建'}}</a-button>
+                <a-button style="margin-left:20px" @click="addOrUpdateRepositoryHandel(true)" class="px-25">{{folibRepositoryEditDisabled?'修改':'创建'}}并设置定时策略</a-button>
               </a-col>
             </a-row>
           </a-card>
+          <a-card v-else-if="step === 3" :bordered="false"  class="header-solid">
+            <h5 class="font-regular text-center">给仓库配置定制策略</h5>
+            <p class="text-center">定时策略用来设定仓库垃圾清理，同步等相关策略</p>
+            <a-form
+                :form="form"
+                :hideRequiredMark="true"
+            >
 
+              <div v-for="(i, index) in cronCanSetList">
+              <a-row type="flex" align="middle">
+                <a-col style="min-width: 40px;" class="text-center">
+                  <a-icon type="clock-circle" class="text-gray-6" style="font-size: 18px;" />
+                </a-col>
+                <a-col class="pl-15">
+                  <p class="mb-0">{{i.name}}</p>
+                  <small class="text-dark">{{i.description}}</small>
+                </a-col>
+                <a-col :span="24" :md="12" class="ml-auto" style="display: flex; align-items: center; justify-content: flex-end">
+                  <a-tag v-if="i.isSetted&&i.isSetted.uuid" color="success" class="ant-tag-success font-bold">已设定</a-tag>
+                  <span class="ml-5">{{ i.scope }}</span>
+                  <a-button @click="cronShowHandle(i,index)" type="link" class="btn-more ml-5">
+                    展开设定 <a-icon :type="i.isShow?'arrow-down':'arrow-right'" />
+                  </a-button>
+                </a-col>
+              </a-row>
+                <a-card v-if="i.isShow" :bordered="false" class="bg-gray-3 shadow-0 mb-24" :bodyStyle="{padding: '8px'}">
+                  <a-row type="flex" align="middle">
+                    <a-col><p class="font-semibold mb-0 ml-10">{{i.isSetted.jobClass}}</p></a-col>
+                    <a-col class="ml-auto">
+                      <a-input v-model="i.isSetted.cronExpression" size="small" class="font-regular text-sm text-dark" style="width: 100px;" />
+                    </a-col>
+                    <a-col class="ml-auto">
+                      <span class="mr-15">{{ i.isSetted.oneTimeExecution?'执行一次':'循环执行' }}</span>
+                      <a-switch  v-model="i.isSetted.oneTimeExecution"  @change="()=>{$forceUpdate()}"/>
+                    </a-col>
+                    <a-col class="ml-auto">
+                      <span class="mr-15">{{ i.isSetted.immediateExecution ? '立即执行' : '不立即执行' }}</span>
+                      <a-switch v-model="i.isSetted.immediateExecution"  @change="()=>{$forceUpdate()}" />
+                    </a-col>
+                  </a-row>
+                  <hr v-if="i.fields.length>2" class="gradient-line my-10">
+                  <a-row type="flex" align="middle">
+                    <a-col v-if="i.fields.length>2" style="margin-right: 15px"><p class="font-semibold mb-0 ml-10">其他参数:</p></a-col>
+                    <div v-if="i.fields.length>2" v-for="(f,index) in i.fields">
+                    <a-col v-if="f.name!=='storageId'&&f.name!=='repositoryId'" class="ml-auto">
+                      <span style="margin-left: 15px" class="mr-15">{{ f.name }}</span>
+                      <a-input v-if="f.type==='string'" v-model="f.value" size="small" class="font-regular text-sm text-dark" style="width: 250px;" />
+                      <a-input-number v-if="f.type==='int'&&f.name==='numberToKeep'" v-model="f.value" size="small" class="font-regular text-sm text-dark" style="width: 120px;" />
+                      <a-date-picker v-if="f.type==='int'&&f.name==='keepPeriod'" v-model="f.value" size="small" class="font-regular text-sm text-dark" style="width: 120px;" />
+                      <a-switch v-if="f.type==='boolean'" v-model="f.value"  @change="()=>{$forceUpdate()}"/>
+                    </a-col>
+                    </div>
+                  </a-row>
+                  <a-row :gutter="[24]">
+                    <a-col :span="12">
+                    </a-col>
+                    <a-col :span="12" class="text-right">
+                      <a-button @click="saveCronOneSetHandle(i)" type="primary" size="small" shape="circle" icon="save" />
+                      <a-button v-if="i.isSetted.uuid" @click="delCronOneSetHandle(i)" style="margin-left: 15px" type="danger" size="small" shape="circle" icon="delete" />
+                    </a-col>
+                  </a-row>
+                </a-card>
+              <hr class="gradient-line my-10">
+              </div>
+              <hr class="gradient-line my-10">
+              <a-row :gutter="[24]">
+                <a-col :span="12">
+                </a-col>
+                <a-col :span="12" class="text-right">
+                  <a-button type="primary" @click="andCronSetHandle"  class="px-25">完成策略设定</a-button>
+                </a-col>
+              </a-row>
+            </a-form>
+          </a-card>
         </div>
-        <!-- / Wizard form cards -->
-
       </div>
     </a-drawer>
   </div>
@@ -982,7 +1056,14 @@ import {
   addOrUpdateRepository,
   getRepositoryResponseEntity,
   delRepositoryResponseEntity,
-  getBaseUrl, createStorages, deleteStorages
+  getBaseUrl,
+  createStorages,
+  deleteStorages,
+  crontasksList,
+  crontasksByRepository,
+  creatCronOne,
+  updateCronOne,
+  delCronOne
 } from "@/api/folib"
 import {getUsers} from "@/api/users";
 import CardProjectFolib from "@/components/Cards/CardProjectFolib"
@@ -1010,6 +1091,8 @@ export default {
       baseUrl: null,
       folibVisible: false,
       storageData: [],
+      cronCanSetList:[],
+      cronSettedList:[],
       currentStorage: {
         id: null,
         basedir: null,
@@ -1413,6 +1496,7 @@ export default {
     closeUserDialog() {
       this.folibVisible = false
       this.folibRepository=this.folibRepositoryBack
+      this.step=0
 
     },
     repositoryList() {
@@ -1470,8 +1554,7 @@ export default {
       })
 
     },
-    //抽屉=========
-    // Move step by a distance.
+
     moveStep(distance) {
       this.step += distance;
       if (this.step === 2 && this.folibRepository.type === "group") {
@@ -1483,7 +1566,87 @@ export default {
     toggleCheckbox(item) {
       this.layoutChecked = item
     },
-    addOrUpdateRepositoryHandel() {
+
+    cronShowHandle(i,index){
+      if(i.isShow){
+        i.isShow=false
+      }else {
+        i.isShow=true
+        this.cronCanSetList.splice(index,i)
+      }
+      this.$forceUpdate()
+
+    },
+    delCronOneSetHandle(i){
+      delCronOne(i.isSetted.uuid).then(res =>{
+        setTimeout(() => {
+          this.$notification.open({
+            class: 'ant-notification-success',
+            message: '成功',
+            description: res,
+          });
+        }, 100)
+      })
+      this.crontasksListHandle()
+    },
+    saveCronOneSetHandle(i){
+      if(i.fields&&i.isSetted){
+        let fiedsNew=[]
+        i.fields.forEach(f =>{
+          if(f.value!==null&&f.value!==undefined){
+            fiedsNew.push({name:f.name,value:f.value})
+          }
+
+        })
+        i.isSetted.fields=fiedsNew
+       if(i.isSetted.uuid){
+         let uuid=i.isSetted.uuid
+         delete i.isSetted.uuid
+         delete i.isSetted.name
+         delete i.isSetted.properties
+         updateCronOne(i.isSetted,uuid).then(res =>{
+           setTimeout(() => {
+             this.$notification.open({
+               class: 'ant-notification-success',
+               message: '成功',
+               description: res,
+             });
+           }, 100)
+         }).catch((err) =>{
+           setTimeout(() => {
+             this.$notification.open({
+               class: 'ant-notification-warning',
+               message: '失败',
+               description: err.response.data.error,
+             });
+           }, 100)
+
+         })
+       }else {
+         creatCronOne(i.isSetted).then(res =>{
+           setTimeout(() => {
+             this.$notification.open({
+               class: 'ant-notification-success',
+               message: '成功',
+               description: res,
+             });
+           }, 100)
+         }).catch((err) =>{
+           setTimeout(() => {
+             this.$notification.open({
+               class: 'ant-notification-warning',
+               message: '失败',
+               description: err.response.data.error,
+             });
+           }, 100)
+
+         })
+       }
+
+      }
+      this.crontasksListHandle()
+    },
+    addOrUpdateRepositoryHandel(isNotSetCron) {
       this.folibRepository.id = this.folibRepositoryIds + '-' + this.layoutChecked
       //构建basedir
       if(this.currentStorage.basedir){
@@ -1520,17 +1683,84 @@ export default {
           setTimeout(() => {
             this.$notification.open({
               class: 'ant-notification-success',
-              message: '仓库配置完成',
+              message: this.folibRepositoryEditDisabled?'仓库已修改完成，如需求配置定时策略请继续设置':'仓库已新增完成，如需求配置定时策略请继续设置',
               description: res.message,
             });
           }, 1000);
         }
-        this.folibRepository = this.folibRepositoryBack
-        this.folibVisible = false
+
+
         this.getLibrary(this.currentStorage)
-        this.step = 0
+
+        if(!isNotSetCron){
+          this.step = 0
+          this.folibVisible = false
+          this.folibRepository = this.folibRepositoryBack
+        }else if(isNotSetCron){
+          if(this.folibRepository.type==='hosted'){
+            this.moveStep(2)
+          }else {
+            this.moveStep(1)
+          }
+          this.crontasksListHandle()
+        }
+
       })
 
+    },
+    andCronSetHandle(){
+      this.step = 0
+      this.folibVisible = false
+      this.folibRepository = this.folibRepositoryBack
+      this.cronCanSetList=[]
+      this.cronSettedList=[]
+    },
+
+    crontasksListHandle(){
+      crontasksList(this.folibRepository.layout==='Maven 2'?'MAVEN':this.folibRepository.layout.toUpperCase()).then(res =>{
+        this.cronCanSetList=res
+        crontasksByRepository(this.currentStorage.id,this.folibRepository.id).then(res=>{
+          //已经被设置的定时任务列表
+          this.cronSettedList=res.cronTaskConfigurations
+
+          //当前仓库可设置的全量列表
+          this.cronCanSetList.forEach(c =>{
+            c.isShow=false
+            c.isSetted={jobClass:c.jobClass,cronExpression:'0 0 2 * * ?',oneTimeExecution:true,immediateExecution:false}
+
+            //循环给fields添加
+            c.fields.forEach(o =>{
+              if(o.name==='storageId'){
+                o.value=this.currentStorage.id
+              }else if(o.name === 'repositoryId'){
+                o.value=this.folibRepository.id
+              }
+            })
+
+              //将已经设置好的properties写入给fields，便于后续update
+            this.cronSettedList.forEach(s =>{
+              if(c.jobClass===s.jobClass){
+                c.isSetted=s;
+                for( let key in s.properties ){
+                  c.fields.forEach(o =>{
+                    if(o.name===key){
+                      o.value=s.properties[key]==='true'?true:s.properties[key]==='false'?false:s.properties[key]
+                    }
+                  })
+                }
+              }
+            })
+
+
+
+
+          })
+
+          this.$forceUpdate()
+
+        })
+
+      })
     },
     getRepositoryResponseEntity(repositoryId) {
       getRepositoryResponseEntity(this.currentStorage.id, repositoryId).then(res => {
