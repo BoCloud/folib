@@ -14,6 +14,7 @@ spring:
     url: jdbc:mysql://${folib.mysql.host:127.0.0.1}:${folib.mysql.port:3306}/${folib.mysql.db:folib_scanner}?createDatabaseIfNotExist=true&useSSL=false&tinyInt1isBit=false&allowPublicKeyRetrieval=true&useUnicode=true&characterEncoding=UTF8
     username: ${folib.mysql.user:root}
     password: ${folib.mysql.password:folib}
+    schema: classpath:db/sql/database-init.sql
   liquibase:
       change-log: classpath:db/changelog-master.xml
 
