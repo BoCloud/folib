@@ -13,18 +13,19 @@ services:
     restart: always
     privileged: true
     ports:
-      - 3356:3306
+      - 3306:3306
   elasticsearch:  #服务名称
     container_name: elasticsearch #容器名称，可与服务报名保持一致
     image: 58.210.154.140:2477/folib-common/folib-docker/elasticsearch:7.3.1
     environment:
       - node.name=node-1 #节点名称，与另外一个节点区分开
-      - cluster.initial_master_nodes=node-1
-      - discovery.seed_hosts=elasticsearch:9300
+      - cluster.initial_master_nodes=node-1 #初始主节点
+      - discovery.seed_hosts=elasticsearch:9300 #配置集群的主机地址
       - cluster.name=docker-elasticsearch-cluster #集群名称，两个节点需要保持一致
-      - bootstrap.memory_lock=true  #可根据需要配置
+      - bootstrap.memory_lock=true  #禁用交换内存，提升效率
       - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
     volumes:
+      - ~/folib/es/conf:/usr/share/elasticsearch/conf
       - ~/folib/es/data:/usr/share/elasticsearch/data
       - ~/folib/es/plugins:/usr/share/elasticsearch/plugins
     ulimits:
@@ -42,12 +43,12 @@ services:
   folib-mirror:  #服务名称
     container_name: folib-mirror #容器名称，可与服务报名保持一致
     image: 58.210.154.140:2477/folib-common/folib-docker/folib-mirror:1.0
+    volumes:
+      - ~/folib/mirror:/usr/local/apache2/htdocs
     restart: always
     privileged: true
     ports:
       - 8919:80
-    volumes:
-    - ~/folib/mirror:/usr/local/apache2/htdocs
   folib-server:  #服务名称
     container_name: folib-server #容器名称，可与服务报名保持一致
     image: 58.210.154.140:2477/folib-common/folib-docker/folib-server:1.0
@@ -66,9 +67,9 @@ services:
       - FOLIB_NPM_REMOTE_CHANGES_ENABLED=false
       - FOLIB_NUGET_DOWNLOAD_FEED=false
       - FOLIB_DOWNLOAD_INDEXES=false
-      - FOLIB_ES_HOST=elasticsearch
+      - FOLIB_ES_HOST=elasticsearch:9200
       - FOLIB_MYSQL_HOST=mysql
-      - FOLIB_MYSQL_PORT=3356
+      - FOLIB_MYSQL_PORT=3306
       - FOLIB_MYSQL_DB=folib_scanner
       - FOLIB_MYSQL_USER=root
       - FOLIB_MYSQL_PASSWORD=folib@v587
@@ -86,7 +87,8 @@ services:
       - FOLIB_S3_ACCESS_KEY=folib
       - FOLIB_S3_SECRET_KEY=folib
     volumes:
-    - ~/folib/folib-vault:/opt/folib/folib-vault
+      - ~/folib/folib-conf:/opt/folib/folib-1.0-SNAPSHOT/etc/conf
+      - ~/folib/folib-vault:/opt/folib/folib-vault
     restart: always
     privileged: true
     ports:
@@ -96,6 +98,10 @@ services:
       - 7199:7199
       - 49142:49142
       - 8182:8182
+    links:
+      - mysql:mysql
+      - elasticsearch:elasticsearch
+      - folib-mirror:folib-mirror
     depends_on:
       - mysql
       - elasticsearch
