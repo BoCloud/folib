@@ -15,6 +15,7 @@ import org.springframework.context.annotation.Import;
                  "com.veadan.folib.url",
                  "com.veadan.folib.util",
                  "com.veadan.folib.yaml",
+                 "com.veadan.folib.promotion",
                  "com.veadan.folib.cluster"})
 @Import(PropertiesPathResolverConfig.class)
 public class CommonConfig
