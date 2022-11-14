@@ -1,6 +1,6 @@
 package com.veadan.folib.controllers;
 
-import com.veadan.folib.node.CassandraClusterForm;
+import com.veadan.folib.forms.node.CassandraClusterForm;
 import com.veadan.folib.services.NodeService;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;

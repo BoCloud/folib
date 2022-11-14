@@ -1,4 +1,4 @@
-package com.veadan.folib.node;
+package com.veadan.folib.forms.node;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;

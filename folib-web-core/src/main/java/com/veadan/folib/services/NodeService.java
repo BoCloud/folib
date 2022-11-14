@@ -1,6 +1,6 @@
 package com.veadan.folib.services;
 
-import com.veadan.folib.node.CassandraClusterForm;
+import com.veadan.folib.forms.node.CassandraClusterForm;
 
 /**
  * @author leipenghui

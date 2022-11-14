@@ -74,7 +74,7 @@ folib:
 # Changes to these properties must also be applied to [folib/folib-web-integration-tests] and possibly the pipeline.
 # Please ping us on our chat channel (https://chat.carlspring.org/) to confirm.
 logging:
-  debug: true
+  debug: false
   console:
     enabled: true
   file:

@@ -658,6 +658,16 @@ public class ConfigurationManagementServiceImpl
         });
     }
 
+    @Override
+    public List<Repository> getRepositoriesWithLayout(String storageId, String layout) {
+        return getConfiguration().getRepositoriesWithLayout(storageId, layout);
+    }
+
+    @Override
+    public List<Repository> getRepositoriesWithType(String storageId, String repositoryType) {
+        return getConfiguration().getRepositoriesWithType(storageId, repositoryType);
+    }
+
     private void setProxyRepositoryConnectionPoolConfigurations() throws IOException {
         modifyInLock(configuration ->
         {

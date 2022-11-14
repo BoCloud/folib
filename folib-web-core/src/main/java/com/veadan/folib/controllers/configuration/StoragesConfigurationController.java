@@ -26,11 +26,14 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 import com.fasterxml.jackson.annotation.JsonView;
 import io.swagger.annotations.*;
+import org.apache.commons.compress.utils.Lists;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.convert.ConversionService;
 import org.springframework.http.HttpHeaders;
@@ -259,6 +262,25 @@ public class StoragesConfigurationController
         {
             return getFailedResponseEntity(HttpStatus.NOT_FOUND, STORAGE_NOT_FOUND, accept);
         }
+    }
+
+    @ApiOperation(value = "Get repository list..")
+    @ApiResponses(value = { @ApiResponse(code = 200, message = "") })
+    @PreAuthorize("hasAuthority('CONFIGURATION_VIEW_REPOSITORY')")
+    @GetMapping(value = "/repositories/{storageId}/{repositoryType}", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity repositories(@ApiParam(value = "The storageId", required = true)
+                                                @PathVariable String storageId,
+                                                @ApiParam(value = "The repositoryType", required = true)
+                                                @PathVariable
+                                                        String repositoryType)
+    {
+        List<Repository> repositories = configurationManagementService.getRepositoriesWithType(storageId,repositoryType);
+        List<RepositoryForm> repositoryForms = Optional.ofNullable(repositories).orElse(Lists.newArrayList()).stream().map(item ->{
+            RepositoryForm repository = new RepositoryForm();
+            BeanUtils.copyProperties(item, repository);
+            return repository;
+        }).collect(Collectors.toList());
+        return ResponseEntity.ok(repositoryForms);
     }
 
     @ApiOperation(value = "Adds or updates a repository.")

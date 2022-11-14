@@ -1,29 +1,26 @@
 package com.veadan.folib.client;
 
-import javax.ws.rs.ServerErrorException;
-import javax.ws.rs.client.*;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
-import java.io.Closeable;
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.Map;
-
 import org.apache.http.HttpStatus;
 import org.glassfish.jersey.apache.connector.ApacheConnectorProvider;
 import org.glassfish.jersey.client.ClientConfig;
 import org.glassfish.jersey.client.authentication.HttpAuthenticationFeature;
 import org.springframework.security.authentication.AuthenticationServiceException;
+
+import javax.ws.rs.ServerErrorException;
+import javax.ws.rs.client.*;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
+import java.io.Closeable;
+import java.io.InputStream;
+import java.util.Map;
+
 import static org.apache.http.HttpStatus.SC_FORBIDDEN;
 import static org.apache.http.HttpStatus.SC_UNAUTHORIZED;
 
 /**
- * @author mtodorov
+ * @author veadan
  */
-public class ArtifactClient
-        extends BaseArtifactClient
-        implements Closeable
-{
+public class ArtifactClient extends BaseArtifactClient implements Closeable {
 
     private static final String HEADER_VALUE_MAVEN = "Maven/*";
 
@@ -36,40 +33,28 @@ public class ArtifactClient
     private String protocol = "http";
 
     private String host = System.getProperty("folib.host") != null ?
-                          System.getProperty("folib.host") : "localhost";
+            System.getProperty("folib.host") : "localhost";
 
     private int port = System.getProperty("folib.port") != null ?
-                       Integer.parseInt(System.getProperty("folib.port")) : 48080;
+            Integer.parseInt(System.getProperty("folib.port")) : 38080;
 
     private String contextBaseUrl;
 
     private Client client;
 
 
-    public ArtifactClient()
-    {
+    public ArtifactClient() {
     }
 
-    public static ArtifactClient getTestInstance()
-    {
-        return getTestInstance("deployer", "password");
-    }
-
-    public static ArtifactClient getTestInstanceLoggedInAsAdmin()
-    {
-        return getTestInstance("admin", "password");
-    }
-
-    public static ArtifactClient getTestInstance(String username,
-                                                 String password)
-    {
+    public static ArtifactClient getArtifactClientInstance(String username,
+                                                           String password) {
         String host = System.getProperty("folib.host") != null ?
-                      System.getProperty("folib.host") :
-                      "localhost";
+                System.getProperty("folib.host") :
+                "localhost";
 
         int port = System.getProperty("folib.port") != null ?
-                   Integer.parseInt(System.getProperty("folib.port")) :
-                   48080;
+                Integer.parseInt(System.getProperty("folib.port")) :
+                38080;
 
         ArtifactClient client = new ArtifactClient();
         client.setUsername(username != null ? username : "deployer");
@@ -80,89 +65,75 @@ public class ArtifactClient
         return client;
     }
 
-    public Client getClientInstance()
-    {
-        if (client == null)
-        {
+    public Client getClientInstance() {
+        if (client == null) {
             ClientConfig config = getClientConfig();
             client = ClientBuilder.newClient(config);
-
             return client;
-        }
-        else
-        {
+        } else {
             return client;
         }
     }
 
-    private ClientConfig getClientConfig()
-    {
+    private ClientConfig getClientConfig() {
         ClientConfig config = new ClientConfig();
         config.connectorProvider(new ApacheConnectorProvider());
-
         return config;
     }
 
     @Override
-    public void close()
-    {
-        if (client != null)
-        {
+    public void close() {
+        if (client != null) {
             client.close();
         }
     }
 
+    @Override
     public void deployFile(InputStream is,
                            String url,
                            String fileName)
-            throws ArtifactOperationException
-    {
+            throws ArtifactOperationException {
         put(is, url, fileName, MediaType.APPLICATION_OCTET_STREAM);
     }
 
+    @Override
     public void deployMetadata(InputStream is,
                                String url,
                                String fileName)
-            throws ArtifactOperationException
-    {
+            throws ArtifactOperationException {
         put(is, url, fileName, MediaType.APPLICATION_XML);
     }
 
+    @Override
     public void put(InputStream is,
                     String url,
                     String fileName,
                     String mediaType)
-            throws ArtifactOperationException
-    {
+            throws ArtifactOperationException {
         String contentDisposition = "attachment; filename=\"" + fileName + "\"";
 
         WebTarget resource = getClientInstance().target(url);
         setupAuthentication(resource);
 
         Response response = resource.request(mediaType)
-                                    .header("Content-Disposition", contentDisposition)
-                                    .header(HEADER_NAME_USER_AGENT, HEADER_VALUE_MAVEN)
-                                    .put(Entity.entity(is, mediaType));
+                .header("Content-Disposition", contentDisposition)
+                .header(HEADER_NAME_USER_AGENT, HEADER_VALUE_MAVEN)
+                .put(Entity.entity(is, mediaType));
 
         handleFailures(response, "Failed to upload file!");
     }
 
 
+    @Override
     public InputStream getResource(String path,
-                                   long offset)
-            throws ArtifactTransportException,
-                   IOException
-    {
+                                   long offset) {
         return getResource(path, offset, null, null);
     }
 
     public InputStream getResource(String path,
                                    long offset,
                                    MediaType mediaType,
-                                   Map<String, String> headers)
-            throws ArtifactTransportException,
-                   IOException
-    {
+                                   Map<String, String> headers) {
         String url = getContextBaseUrl() + (!path.startsWith("/") ? "/" : "") + path;
 
         logger.debug("Getting {}...", url);
@@ -171,37 +142,28 @@ public class ArtifactClient
         setupAuthentication(resource);
 
         Invocation.Builder request = resource.request();
-        if (mediaType != null)
-        {
+        if (mediaType != null) {
             resource.request(mediaType.getType());
         }
 
-        if (headers != null)
-        {
-            for (Map.Entry<String, String> header : headers.entrySet())
-            {
+        if (headers != null) {
+            for (Map.Entry<String, String> header : headers.entrySet()) {
                 resource.request().header(header.getKey(), header.getValue());
             }
         }
 
         Response response;
 
-        if (offset > 0)
-        {
+        if (offset > 0) {
             response = request.header("Range", "bytes=" + offset + "-").get();
-        }
-        else
-        {
+        } else {
             response = request.get();
         }
 
         return response.readEntity(InputStream.class);
     }
 
-    public Response getResourceWithResponse(String path)
-            throws ArtifactTransportException,
-                   IOException
-    {
+    public Response getResourceWithResponse(String path) {
         String url = getContextBaseUrl() + (!path.startsWith("/") ? "/" : "") + path;
 
         logger.debug("Getting {}...", url);
@@ -212,25 +174,25 @@ public class ArtifactClient
         return resource.request(MediaType.TEXT_PLAIN).header(HEADER_NAME_USER_AGENT, HEADER_VALUE_MAVEN).get();
     }
 
+    @Override
     public void delete(String storageId,
                        String repositoryId,
                        String path)
-            throws ArtifactOperationException
-    {
+            throws ArtifactOperationException {
         delete(storageId, repositoryId, path, false);
     }
 
+    @Override
     public void delete(String storageId,
                        String repositoryId,
                        String path,
                        boolean force)
-            throws ArtifactOperationException
-    {
+            throws ArtifactOperationException {
         String url = getContextBaseUrl() + "/storages/" + storageId + "/" + repositoryId + "/" + path +
-                     (force ? "?force=" + force : "");
+                (force ? "?force=" + force : "");
 
         logger.info("Getting {}...", url);
-        
+
         WebTarget resource = getClientInstance().target(url);
         setupAuthentication(resource);
 
@@ -239,10 +201,10 @@ public class ArtifactClient
         handleFailures(response, "Failed to delete artifact!");
     }
 
+    @Override
     public void deleteTrash(String storageId,
                             String repositoryId)
-            throws ArtifactOperationException
-    {
+            throws ArtifactOperationException {
         String url = getUrlForTrash(storageId, repositoryId);
 
         WebTarget resource = getClientInstance().target(url);
@@ -253,9 +215,9 @@ public class ArtifactClient
         handleFailures(response, "Failed to delete the trash for " + storageId + ":" + repositoryId + "!");
     }
 
+    @Override
     public void deleteTrash()
-            throws ArtifactOperationException
-    {
+            throws ArtifactOperationException {
         String url = getContextBaseUrl() + "/api/trash";
 
         WebTarget resource = getClientInstance().target(url);
@@ -266,11 +228,11 @@ public class ArtifactClient
         handleFailures(response, "Failed to delete trash for all repositories!");
     }
 
-    public void undelete(String storageId,
+    @Override
+    public void unDelete(String storageId,
                          String repositoryId,
                          String path)
-            throws ArtifactOperationException
-    {
+            throws ArtifactOperationException {
         @SuppressWarnings("ConstantConditions")
         String url = getUrlForTrash(storageId, repositoryId) + "/" + path;
 
@@ -278,46 +240,43 @@ public class ArtifactClient
         setupAuthentication(resource);
 
         Response response = resource.request(MediaType.TEXT_PLAIN)
-                                    .header(HEADER_NAME_USER_AGENT, HEADER_VALUE_MAVEN)
-                                    .post(Entity.entity("Undelete", MediaType.TEXT_PLAIN));
+                .header(HEADER_NAME_USER_AGENT, HEADER_VALUE_MAVEN)
+                .post(Entity.entity("Undelete", MediaType.TEXT_PLAIN));
 
         handleFailures(response, "Failed to delete the trash for " + storageId + ":" + repositoryId + "!");
     }
 
-    public void undeleteTrash(String storageId,
+    @Override
+    public void unDeleteTrash(String storageId,
                               String repositoryId)
-            throws ArtifactOperationException
-    {
+            throws ArtifactOperationException {
         String url = getUrlForTrash(storageId, repositoryId);
 
         WebTarget resource = getClientInstance().target(url);
         setupAuthentication(resource);
 
         Response response = resource.request(MediaType.TEXT_PLAIN)
-                                    .header(HEADER_NAME_USER_AGENT, HEADER_VALUE_MAVEN)
-                                    .post(Entity.entity("Undelete", MediaType.TEXT_PLAIN));
+                .header(HEADER_NAME_USER_AGENT, HEADER_VALUE_MAVEN)
+                .post(Entity.entity("Undelete", MediaType.TEXT_PLAIN));
 
         handleFailures(response, "Failed to delete the trash for " + storageId + ":" + repositoryId + "!");
     }
 
-    public void undeleteTrash()
-            throws ArtifactOperationException
-    {
+    @Override
+    public void unDeleteTrash()
+            throws ArtifactOperationException {
         String url = getContextBaseUrl() + "/api/trash";
-
         WebTarget resource = getClientInstance().target(url);
         setupAuthentication(resource);
-
         Response response = resource.request(MediaType.TEXT_PLAIN)
-                                    .header(HEADER_NAME_USER_AGENT, HEADER_VALUE_MAVEN)
-                                    .post(Entity.entity("Undelete", MediaType.TEXT_PLAIN));
-
+                .header(HEADER_NAME_USER_AGENT, HEADER_VALUE_MAVEN)
+                .post(Entity.entity("Undelete", MediaType.TEXT_PLAIN));
         handleFailures(response, "Failed to delete the trash!");
     }
 
 
-    public boolean pathExists(String path)
-    {
+    @Override
+    public boolean pathExists(String path) {
         String url = escapeUrl(path);
 
         logger.debug("Path to artifact: {}", url);
@@ -326,37 +285,29 @@ public class ArtifactClient
         setupAuthentication(resource);
 
         Response response = resource.request(MediaType.TEXT_PLAIN).header(HEADER_NAME_USER_AGENT, HEADER_VALUE_MAVEN).get();
-        try
-        {
+        try {
             return response.getStatus() == HttpStatus.SC_OK;
-        }
-        finally
-        {
+        } finally {
             response.close();
         }
     }
 
     public void handleFailures(Response response,
                                String message)
-            throws ArtifactOperationException, AuthenticationServiceException
-    {
+            throws ArtifactOperationException, AuthenticationServiceException {
 
         int status = response.getStatus();
 
-        if (status == SC_UNAUTHORIZED || status == SC_FORBIDDEN)
-        {
+        if (status == SC_UNAUTHORIZED || status == SC_FORBIDDEN) {
             // TODO Handle authentication exceptions in a right way
             throw new AuthenticationServiceException(message +
-                                                     "\nUser is unauthorized to execute that operation. " +
-                                                     "Check assigned roles and privileges.");
-        }
-        else if (status != 200)
-        {
+                    "\nUser is unauthorized to execute that operation. " +
+                    "Check assigned roles and privileges.");
+        } else if (status != 200) {
             StringBuilder messageBuilder = new StringBuilder();
             messageBuilder.append("\n ERROR ").append(status).append(" ").append(message).append("\n");
             Object entity = response.getEntity();
-            if (entity != null)
-            {
+            if (entity != null) {
                 messageBuilder.append(entity.toString());
             }
             logger.error(messageBuilder.toString());
@@ -364,87 +315,71 @@ public class ArtifactClient
     }
 
     public String getUrlForTrash(String storageId,
-                                 String repositoryId)
-    {
+                                 String repositoryId) {
         return getContextBaseUrl() + "/api/trash/" + storageId + "/" + repositoryId;
     }
 
-    public WebTarget setupAuthentication(WebTarget target)
-    {
-        if (username != null && password != null)
-        {
+    public WebTarget setupAuthentication(WebTarget target) {
+        if (username != null && password != null) {
             logger.trace("[setupAuthentication] {}", username);
             target.register(HttpAuthenticationFeature.basic(username, password));
             return target;
-        }
-        else
-        {
+        } else {
             throw new ServerErrorException("Unable to setup authentication", Response.Status.INTERNAL_SERVER_ERROR);
         }
     }
 
-    public String getProtocol()
-    {
+    public String getProtocol() {
         return protocol;
     }
 
-    public void setProtocol(String protocol)
-    {
+    public void setProtocol(String protocol) {
         this.protocol = protocol;
     }
 
-    public String getHost()
-    {
+    public String getHost() {
         return host;
     }
 
-    public void setHost(String host)
-    {
+    public void setHost(String host) {
         this.host = host;
     }
 
-    public int getPort()
-    {
+    public int getPort() {
         return port;
     }
 
-    public void setPort(int port)
-    {
+    public void setPort(int port) {
         this.port = port;
     }
 
-    public String getContextBaseUrl()
-    {
-        if (contextBaseUrl == null)
-        {
+
+    @Override
+    public String getContextBaseUrl() {
+        if (contextBaseUrl == null) {
             contextBaseUrl = protocol + "://" + host + ":" + port;
         }
 
         return contextBaseUrl;
     }
 
-    public void setContextBaseUrl(String contextBaseUrl)
-    {
+    public void setContextBaseUrl(String contextBaseUrl) {
         this.contextBaseUrl = contextBaseUrl;
     }
 
-    public String getUsername()
-    {
+    public String getUsername() {
         return username;
     }
 
-    public void setUsername(String username)
-    {
+    public void setUsername(String username) {
         this.username = username;
     }
 
-    public String getPassword()
-    {
+    public String getPassword() {
         return password;
     }
 
-    public void setPassword(String password)
-    {
+    public void setPassword(String password) {
         this.password = password;
     }
 

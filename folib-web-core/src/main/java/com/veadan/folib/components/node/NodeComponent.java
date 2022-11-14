@@ -1,7 +1,7 @@
 package com.veadan.folib.components.node;
 
 import com.google.common.collect.Maps;
-import com.veadan.folib.node.CassandraClusterForm;
+import com.veadan.folib.forms.node.CassandraClusterForm;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.cassandra.repair.RepairParallelism;
 import org.apache.cassandra.repair.messages.RepairOption;
