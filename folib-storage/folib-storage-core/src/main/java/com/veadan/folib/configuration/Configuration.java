@@ -174,6 +174,25 @@ public class Configuration {
                 .collect(Collectors.toList());
     }
 
+    public List<Repository> getRepositoriesWithType(String storageId,
+                                                      String repositoryType) {
+        Stream<? extends Repository> repositories;
+        if (storageId != null) {
+            Storage storage = getStorage(storageId);
+            if (storage != null) {
+                repositories = storage.getRepositories().values().stream();
+            } else {
+                return Collections.emptyList();
+            }
+        } else {
+            repositories = getStorages().values().stream().flatMap(
+                    storage -> storage.getRepositories().values().stream());
+        }
+
+        return repositories.filter(repository -> repository.getType().equals(repositoryType))
+                .collect(Collectors.toList());
+    }
+
     public List<Repository> getRepositories() {
         List<Repository> repositories = new ArrayList<>();
 

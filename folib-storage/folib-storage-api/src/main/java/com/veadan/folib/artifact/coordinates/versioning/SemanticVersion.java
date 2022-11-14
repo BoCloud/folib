@@ -27,6 +27,7 @@ import java.util.Arrays;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang.StringUtils;
 
 /**
@@ -42,6 +43,7 @@ import org.apache.commons.lang.StringUtils;
  *
  * @author Julien Eluard and contributors
  */
+@Slf4j
 @Immutable
 public class SemanticVersion
         implements Comparable<SemanticVersion>
@@ -273,6 +275,11 @@ public class SemanticVersion
         Matcher matcher = DIGITS_ONLY.matcher(id);
         if (matcher.matches())
         {
+            Long result = Long.parseLong(id);
+            if ( (result>>32) != 0 && (result>>32) != -1) {
+                log.info("=====>>>>> parseSpecialId 发生int溢出：{}", result);
+                return new StringId(id);
+            }
             return new IntId(Integer.parseInt(id));
         }
         else

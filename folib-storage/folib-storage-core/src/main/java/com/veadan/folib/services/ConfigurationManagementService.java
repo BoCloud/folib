@@ -1,12 +1,9 @@
 package com.veadan.folib.services;
 
 import com.veadan.folib.client.MutableRemoteRepositoryRetryArtifactDownloadConfiguration;
-import com.veadan.folib.configuration.Configuration;
-import com.veadan.folib.configuration.MutableConfiguration;
-import com.veadan.folib.configuration.MutableProxyConfiguration;
-import com.veadan.folib.configuration.MutableSmtpConfiguration;
+import com.veadan.folib.configuration.*;
 import com.veadan.folib.storage.StorageDto;
-import com.veadan.folib.configuration.MutableSecurityPolicyConfiguration;
+import com.veadan.folib.storage.repository.Repository;
 import com.veadan.folib.storage.repository.RepositoryDto;
 import com.veadan.folib.storage.routing.MutableRoutingRule;
 import com.veadan.folib.storage.routing.MutableRoutingRules;
@@ -50,7 +47,7 @@ public interface ConfigurationManagementService {
                                               String repositoryId) throws IOException;
 
     void addRepositoryVulnerabilityWhites(String storageId, String repositoryId,
-                                                   Set<String> whites) throws IOException;
+                                          Set<String> whites) throws IOException;
 
     void removeRepositoryVulnerabilityWhites(String storageId, String repositoryId,
                                              Set<String> whites) throws IOException;
@@ -186,6 +183,7 @@ public interface ConfigurationManagementService {
      * @throws IOException io异常
      */
     void saveOrUpdateNotify(MutableSecurityPolicyConfiguration mutableSecurityPolicyConfiguration) throws IOException;
+
     /**
      * 保存或者更新平台阻断配置
      *
@@ -201,4 +199,22 @@ public interface ConfigurationManagementService {
      * @throws IOException io异常
      */
     void saveOrUpdateSecurityPolicy(MutableSecurityPolicyConfiguration mutableSecurityPolicyConfiguration) throws IOException;
+
+    /**
+     * 按布局查询存储空间下的仓库列表
+     *
+     * @param storageId 存储空间id
+     * @param layout    布局
+     * @return 仓库列表
+     */
+    List<Repository> getRepositoriesWithLayout(String storageId, String layout);
+
+    /**
+     * 按类型查询存储空间下的仓库列表
+     *
+     * @param storageId      存储空间id
+     * @param repositoryType 仓库类型
+     * @return 仓库列表
+     */
+    List<Repository> getRepositoriesWithType(String storageId, String repositoryType);
 }
