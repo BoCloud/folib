@@ -1,6 +1,8 @@
 package com.veadan.folib.client;
 
 import com.alibaba.fastjson.JSONArray;
+import com.veadan.folib.forms.RepositoryForm;
+import com.veadan.folib.forms.StorageForm;
 import com.veadan.folib.vo.Repository;
 import com.veadan.folib.vo.Storage;
 import org.apache.commons.lang3.StringUtils;
@@ -50,6 +52,24 @@ public class RestClient extends ArtifactClient {
         client.setPassword(password);
         client.setPort(port);
         client.setContextBaseUrl("http://" + host + ":" + client.getPort());
+        return client;
+    }
+
+    /**
+     * 获取客户端实例
+     *
+     * @param baseUrl  地址
+     * @param username 用户名
+     * @param password 密码
+     * @return 客户端实例
+     */
+    public static RestClient getRestClientInstance(String baseUrl, String username, String password) {
+        int port = Integer.parseInt(baseUrl.substring(baseUrl.lastIndexOf(":") + 1));
+        RestClient client = new RestClient();
+        client.setUsername(username);
+        client.setPassword(password);
+        client.setPort(port);
+        client.setContextBaseUrl(baseUrl);
         return client;
     }
 
@@ -118,23 +138,20 @@ public class RestClient extends ArtifactClient {
         return resource.request(MediaType.TEXT_PLAIN).get(String.class);
     }
 
-//    /**
-//     * Creates a new storage.
-//     *
-//     * @param storage The storage object to create.
-//     * @return The response code.
-//     */
-//    public int addStorage(StorageForm storage) {
-//        String url = getContextBaseUrl() + "/api/configuration/folib/storages";
-//
-//        WebTarget resource = getClientInstance().target(url);
-//        setupAuthentication(resource);
-//
-//        Response response = resource.request(MediaType.APPLICATION_JSON_TYPE)
-//                .put(Entity.entity(storage, MediaType.APPLICATION_JSON_TYPE));
-//
-//        return response.getStatus();
-//    }
+    /**
+     * 创建存储空间
+     *
+     * @param storage 存储空间信息
+     * @return 响应状态码
+     */
+    public int addStorage(StorageForm storage) {
+        String url = getContextBaseUrl() + "/api/configuration/folib/storages";
+        WebTarget resource = getClientInstance().target(url);
+        setupAuthentication(resource);
+        Response response = resource.request(MediaType.APPLICATION_JSON_TYPE)
+                .put(Entity.entity(storage, MediaType.APPLICATION_JSON_TYPE));
+        return response.getStatus();
+    }
 
     /**
      * 按照存储空间名称查询存储空间信息
@@ -152,6 +169,8 @@ public class RestClient extends ArtifactClient {
             storage = response.readEntity(Storage.class);
         } else {
             displayResponseError(response);
+            throw new ServerErrorException(response.getStatus() + " | Unable to greet()",
+                    Response.Status.INTERNAL_SERVER_ERROR);
         }
         return storage;
     }
@@ -172,41 +191,39 @@ public class RestClient extends ArtifactClient {
         return response.getStatus();
     }
 
-//    public int addRepository(String storageId,
-//                             RepositoryForm repositoryForm) {
-//        if (repositoryForm == null) {
-//            logger.error("Unable to add non-existing repository.");
-//            throw new ServerErrorException("Unable to add non-existing repository.",
-//                    Response.Status.INTERNAL_SERVER_ERROR);
-//        }
-//
-//        WebTarget resource;
-//
-//        if (storageId == null) {
-//            logger.error("Storage associated with repo is null.");
-//            throw new ServerErrorException("Storage associated with repo is null.",
-//                    Response.Status.INTERNAL_SERVER_ERROR);
-//        }
-//
-//        try {
-//            String url = getContextBaseUrl() + "/api/configuration/folib/storages/" +
-//                    storageId + "/" + repositoryForm.getId();
-//
-//            logger.debug("Sending request to create repository " + url);
-//
-//            resource = getClientInstance().target(url);
-//        } catch (RuntimeException e) {
-//            logger.error("Unable to create web resource.", e);
-//            throw new ServerErrorException(Response.Status.INTERNAL_SERVER_ERROR);
-//        }
-//
-//        setupAuthentication(resource);
-//
-//        Response response = resource.request(MediaType.APPLICATION_JSON)
-//                .put(Entity.entity(repositoryForm, MediaType.APPLICATION_JSON));
-//
-//        return response.getStatus();
-//    }
+    /**
+     * 创建仓库
+     *
+     * @param storageId      存储空间名称
+     * @param repositoryForm 仓库信息
+     * @return 响应状态码
+     */
+    public int addRepository(String storageId, RepositoryForm repositoryForm) {
+        if (repositoryForm == null) {
+            logger.error("Unable to add non-existing repository.");
+            throw new ServerErrorException("Unable to add non-existing repository.",
+                    Response.Status.INTERNAL_SERVER_ERROR);
+        }
+        WebTarget resource;
+        if (storageId == null) {
+            logger.error("Storage associated with repo is null.");
+            throw new ServerErrorException("Storage associated with repo is null.",
+                    Response.Status.INTERNAL_SERVER_ERROR);
+        }
+        try {
+            String url = getContextBaseUrl() + "/api/configuration/folib/storages/" +
+                    storageId + "/" + repositoryForm.getId();
+            logger.debug("Sending request to create repository " + url);
+            resource = getClientInstance().target(url);
+        } catch (RuntimeException e) {
+            logger.error("Unable to create web resource.", e);
+            throw new ServerErrorException(Response.Status.INTERNAL_SERVER_ERROR);
+        }
+        setupAuthentication(resource);
+        Response response = resource.request(MediaType.APPLICATION_JSON)
+                .put(Entity.entity(repositoryForm, MediaType.APPLICATION_JSON));
+        return response.getStatus();
+    }
 
     /**
      * 按照存储空间名称和仓库名称查询存储信息
@@ -225,6 +242,8 @@ public class RestClient extends ArtifactClient {
             repository = response.readEntity(Repository.class);
         } else {
             displayResponseError(response);
+            throw new ServerErrorException(response.getStatus() + " | Unable to greet()",
+                    Response.Status.INTERNAL_SERVER_ERROR);
         }
         return repository;
     }
@@ -240,10 +259,10 @@ public class RestClient extends ArtifactClient {
     public int deleteRepository(String storageId, String repositoryId, boolean force) {
         String url = getContextBaseUrl() +
                 "/api/configuration/folib/storages/" + storageId + "/" + repositoryId +
-                (force ? "?force=true" : "");
+                ("?force=" + force);
         WebTarget resource = getClientInstance().target(url);
         setupAuthentication(resource);
-        Response response = resource.request().delete();
+        Response response = resource.request().accept(MediaType.WILDCARD).delete();
         return response.getStatus();
     }
 
@@ -365,7 +384,7 @@ public class RestClient extends ArtifactClient {
      * 按照存储空间名称和仓库类型查询存储空间下的仓库列表
      *
      * @param storageId      存储空间名称
-     * @param repositoryType 仓库类型 hosted 本地库 proxy 代理库 group 组合库
+     * @param repositoryType 仓库类型 hosted 本地库 proxy 代理库 group 组合库 all 所有仓库类型
      * @return 存储空间下的仓库列表
      */
     public List<Repository> getRepositories(String storageId, String repositoryType) {

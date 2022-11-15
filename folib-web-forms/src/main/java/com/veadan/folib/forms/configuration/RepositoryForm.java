@@ -49,6 +49,8 @@ public class RepositoryForm {
     @DescribableEnumValue(message = "The status value is invalid.", type = RepositoryStatusEnum.class)
     private String status;
 
+    private String storageId;
+
     private long artifactMaxSize;
 
     private boolean trashEnabled = true;
@@ -283,6 +285,14 @@ public class RepositoryForm {
 
     public void setVulnerabilityBlacks(Set<String> vulnerabilityBlacks) {
         this.vulnerabilityBlacks = vulnerabilityBlacks;
+    }
+
+    public String getStorageId() {
+        return storageId;
+    }
+
+    public void setStorageId(String storageId) {
+        this.storageId = storageId;
     }
 
     public interface WhiteGroup

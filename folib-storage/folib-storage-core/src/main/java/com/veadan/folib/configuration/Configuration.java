@@ -175,7 +175,7 @@ public class Configuration {
     }
 
     public List<Repository> getRepositoriesWithType(String storageId,
-                                                      String repositoryType) {
+                                                    String repositoryType) {
         Stream<? extends Repository> repositories;
         if (storageId != null) {
             Storage storage = getStorage(storageId);
@@ -188,9 +188,11 @@ public class Configuration {
             repositories = getStorages().values().stream().flatMap(
                     storage -> storage.getRepositories().values().stream());
         }
-
-        return repositories.filter(repository -> repository.getType().equals(repositoryType))
-                .collect(Collectors.toList());
+        if (!"all".equals(repositoryType)) {
+            return repositories.filter(repository -> repository.getType().equals(repositoryType))
+                    .collect(Collectors.toList());
+        }
+        return repositories.collect(Collectors.toList());
     }
 
     public List<Repository> getRepositories() {
