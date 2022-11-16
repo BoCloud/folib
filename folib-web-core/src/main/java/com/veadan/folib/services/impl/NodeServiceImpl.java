@@ -1,7 +1,7 @@
 package com.veadan.folib.services.impl;
 
 import com.veadan.folib.components.node.NodeComponent;
-import com.veadan.folib.node.CassandraClusterForm;
+import com.veadan.folib.forms.node.CassandraClusterForm;
 import com.veadan.folib.services.NodeService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;

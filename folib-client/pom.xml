@@ -58,11 +58,14 @@
 
     <dependencies>
         <dependency>
-            <groupId>${project.groupId}</groupId>
-            <artifactId>folib-commons</artifactId>
-            <version>1.0-SNAPSHOT</version>
+            <groupId>javax.ws.rs</groupId>
+            <artifactId>javax.ws.rs-api</artifactId>
+            <version>2.1</version>
         </dependency>
-
+        <dependency>
+            <groupId>com.google.code.findbugs</groupId>
+            <artifactId>annotations</artifactId>
+        </dependency>
         <dependency>
             <groupId>org.springframework.security</groupId>
             <artifactId>spring-security-core</artifactId>
@@ -71,18 +74,42 @@
         <dependency>
             <groupId>org.glassfish.jersey.core</groupId>
             <artifactId>jersey-common</artifactId>
+            <exclusions>
+                <exclusion>
+                    <artifactId>jakarta.ws.rs-api</artifactId>
+                    <groupId>jakarta.ws.rs</groupId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>org.glassfish.jersey.containers</groupId>
             <artifactId>jersey-container-servlet-core</artifactId>
+            <exclusions>
+                <exclusion>
+                    <artifactId>jakarta.ws.rs-api</artifactId>
+                    <groupId>jakarta.ws.rs</groupId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>org.glassfish.jersey.core</groupId>
             <artifactId>jersey-client</artifactId>
+            <exclusions>
+                <exclusion>
+                    <artifactId>jakarta.ws.rs-api</artifactId>
+                    <groupId>jakarta.ws.rs</groupId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>org.glassfish.jersey.connectors</groupId>
             <artifactId>jersey-apache-connector</artifactId>
+            <exclusions>
+                <exclusion>
+                    <artifactId>jakarta.ws.rs-api</artifactId>
+                    <groupId>jakarta.ws.rs</groupId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>org.glassfish.jersey.inject</groupId>

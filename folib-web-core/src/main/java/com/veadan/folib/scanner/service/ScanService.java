@@ -151,6 +151,7 @@ public class ScanService {
             } else {
                 filePath = scanConfig.getWatchMonitorPath() + folibScanner.getPath();
             }
+            log.debug("=====>>>>> 扫描路径：{}", filePath);
             engine.scan(filePath);
             engine.analyzeDependencies();
             Dependency[] dependencies = engine.getDependencies();

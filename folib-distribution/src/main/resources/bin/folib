@@ -150,7 +150,7 @@ run()
     JAVA_OPTS+=" -Dfolib.nvd=${FOLIB_NVD}"
     JAVA_OPTS+=" -Dfolib.cluster.openflag=${FOLIB_CLUSTER_OPENFLAG}"
     JAVA_OPTS+=" -Dfolib.cluster.hostnode=${FOLIB_CLUSTER_HOSTNODE}"
-    JAVA_OPTS+=" -Dscan.storage-base=${FOLIB_STORAGE_BASE_DIR}"
+    JAVA_OPTS+=" -Dscan.storage-base=${FOLIB_STORAGE_BASE_DIR}/"
     JAVA_OPTS+=" -DES_HOST=${FOLIB_ES_HOST}"
 
     JAVA_OPTS+=" -Ds3fs.uri=${FOLIB_S3_URI}"
