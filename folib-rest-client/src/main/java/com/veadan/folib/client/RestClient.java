@@ -5,6 +5,7 @@ import com.alibaba.fastjson.JSONObject;
 import com.google.common.collect.Lists;
 import com.veadan.folib.forms.RepositoryForm;
 import com.veadan.folib.forms.StorageForm;
+import com.veadan.folib.vo.ArtifactInfo;
 import com.veadan.folib.vo.Folder;
 import com.veadan.folib.vo.Repository;
 import com.veadan.folib.vo.Storage;
@@ -456,6 +457,28 @@ public class RestClient extends ArtifactClient {
         }
     }
 
+    /**
+     * 获取制品信息
+     *
+     * @param storageId    存储空间名称
+     * @param repositoryId 仓库名称
+     * @param path         路径
+     * @return 制品信息
+     */
+    public ArtifactInfo getArtifactInfo(String storageId, String repositoryId, String path) {
+        String url = getContextBaseUrl() + "/api/browse/getArtifact/%s/%s/%s";
+        url = String.format(url, storageId, repositoryId, path);
+        WebTarget resource = getClientInstance().target(url);
+        setupAuthentication(resource);
+        Response response = resource.request(MediaType.APPLICATION_JSON).get();
+        if (response.getStatus() != HttpStatus.SC_OK) {
+            displayResponseError(response);
+            throw new ServerErrorException(response.getStatus() + " | Unable to greet()",
+                    Response.Status.INTERNAL_SERVER_ERROR);
+        } else {
+            return response.readEntity(ArtifactInfo.class);
+        }
+    }
 
     public WebTarget prepareTarget(String arg) {
         return setupAuthentication(prepareUnauthenticatedTarget(arg));

@@ -42,7 +42,7 @@ services:
       - 9300:9300 #重要：该集群对外映射出去的transport端口号
   folib-mirror:  #服务名称
     container_name: folib-mirror #容器名称，可与服务报名保持一致
-    image: 58.210.154.140:2477/folib-common/folib-docker/folib-mirror:1.0
+    image: 58.210.154.140:2477/folib-common/folib-docker/folib-mirror:1.1
     volumes:
       - ~/folib/mirror:/usr/local/apache2/htdocs
     restart: always
