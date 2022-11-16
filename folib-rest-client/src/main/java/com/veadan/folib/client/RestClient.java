@@ -1,14 +1,18 @@
 package com.veadan.folib.client;
 
 import com.alibaba.fastjson.JSONArray;
+import com.alibaba.fastjson.JSONObject;
+import com.google.common.collect.Lists;
 import com.veadan.folib.forms.RepositoryForm;
 import com.veadan.folib.forms.StorageForm;
+import com.veadan.folib.vo.Folder;
 import com.veadan.folib.vo.Repository;
 import com.veadan.folib.vo.Storage;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.util.CollectionUtils;
 
 import javax.ws.rs.ServerErrorException;
 import javax.ws.rs.client.Entity;
@@ -406,6 +410,52 @@ public class RestClient extends ArtifactClient {
             }
         }
     }
+
+    /**
+     * 按照存储空间名称和仓库名称获取仓库下的文件列表
+     *
+     * @param storageId    存储空间名称
+     * @param repositoryId 仓库名称
+     * @param path         路径
+     * @return 仓库下的文件列表
+     */
+    public List<Folder> folders(String storageId, String repositoryId, String path) {
+        String url = getContextBaseUrl() + "/api/browse/%s/%s/%s";
+        url = String.format(url, storageId, repositoryId, path);
+        WebTarget resource = getClientInstance().target(url);
+        setupAuthentication(resource);
+        Response response = resource.request(MediaType.APPLICATION_JSON).get();
+        if (response.getStatus() != HttpStatus.SC_OK) {
+            displayResponseError(response);
+            throw new ServerErrorException(response.getStatus() + " | Unable to greet()",
+                    Response.Status.INTERNAL_SERVER_ERROR);
+        } else {
+            String res = response.readEntity(String.class);
+            if (StringUtils.isNotBlank(res)) {
+                List<Folder> folders = Lists.newArrayList(), directories, files;
+                JSONObject folderJson = JSONObject.parseObject(res);
+                String directoriesKey = "directories", filesKey = "files";
+                boolean addFiles = true;
+                if (folderJson.containsKey(directoriesKey) && StringUtils.isNotBlank(folderJson.getString(directoriesKey))) {
+                    directories = JSONArray.parseArray(folderJson.getString(directoriesKey), Folder.class);
+                    if (!CollectionUtils.isEmpty(directories)) {
+                        directories.forEach(item -> item.setFolder(true));
+                        folders.addAll(directories);
+                        addFiles = false;
+                    }
+                }
+                if (addFiles && folderJson.containsKey(filesKey) && StringUtils.isNotBlank(folderJson.getString(filesKey))) {
+                    files = JSONArray.parseArray(folderJson.getString(filesKey), Folder.class);
+                    files.forEach(item -> item.setFolder(false));
+                    folders.addAll(files);
+                }
+                return folders;
+            } else {
+                return Collections.emptyList();
+            }
+        }
+    }
+
 
     public WebTarget prepareTarget(String arg) {
         return setupAuthentication(prepareUnauthenticatedTarget(arg));
