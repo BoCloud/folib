@@ -2,19 +2,24 @@ package com.veadan.folib.controllers.promotion;
 
 import com.veadan.folib.controllers.BaseArtifactController;
 import com.veadan.folib.domain.ArtifactPromotion;
+import com.veadan.folib.domain.PromotionNodeOption;
+import com.veadan.folib.dto.ArtifactDto;
+import com.veadan.folib.dto.PromotionArtifactDto;
 import com.veadan.folib.services.ArtifactPromotionService;
 import com.veadan.folib.validation.RequestBodyValidationException;
 import io.swagger.annotations.Api;
+import io.swagger.annotations.ApiOperation;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.annotation.Validated;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 
 /**
  * 制品晋级控制层
@@ -47,6 +52,50 @@ public class ArtifactPromotionController extends BaseArtifactController {
             throw new RequestBodyValidationException("请求参数错误", bindingResult);
         }
         return artifactPromotionService.move(artifactPromotion);
+    }
+
+    // 节点晋级
+    @PostMapping("/nodeOption")
+//    @PreAuthorize("hasAuthority('CONFIGURATION_ADD_UPDATE_STORAGE')")
+    public ResponseEntity nodeOption(@RequestBody @Validated PromotionNodeOption promotionNodeOption,
+                                     HttpServletRequest request,
+                                     BindingResult bindingResult) {
+        if (bindingResult.hasErrors()) {
+            throw new RequestBodyValidationException("请求参数错误", bindingResult);
+        }
+        return artifactPromotionService.nodeOption(promotionNodeOption, request);
+    }
+
+    // 上传接口
+    @PostMapping(value = "/upload-files")
+    @ApiOperation(value = "文件上传(支持批量)", notes = "文件上传(支持批量)")
+//    @PreAuthorize("hasAuthority('CONFIGURATION_ADD_UPDATE_STORAGE')")
+    public ResponseEntity upload(@RequestParam("files") MultipartFile[] files,
+                                 @RequestParam("storageId") String storageId,
+                                 @RequestParam("repostoryId") String repostoryId,
+                                 @RequestParam("filePathMap") String filePathMap) {
+        return artifactPromotionService.upload(files, storageId, repostoryId, filePathMap);
+    }
+
+    // 下载接口
+    @GetMapping(value = "/download")
+//    @PreAuthorize("hasAuthority('CONFIGURATION_ADD_UPDATE_STORAGE')")
+    public ResponseEntity download(@RequestBody @Validated ArtifactDto artifactDto,
+                                   HttpServletResponse response, BindingResult bindingResult) {
+        if (bindingResult.hasErrors()) {
+            throw new RequestBodyValidationException("请求参数错误", bindingResult);
+        }
+        return artifactPromotionService.download(artifactDto, response);
+    }
+
+    @PostMapping(value = "/pull-files")
+//    @PreAuthorize("hasAuthority('CONFIGURATION_ADD_UPDATE_STORAGE')")
+    public ResponseEntity pull(@RequestBody @Validated PromotionArtifactDto promotionArtifactDto,
+                               BindingResult bindingResult) {
+        if (bindingResult.hasErrors()) {
+            throw new RequestBodyValidationException("请求参数错误", bindingResult);
+        }
+        return artifactPromotionService.pull(promotionArtifactDto);
     }
 
 }
