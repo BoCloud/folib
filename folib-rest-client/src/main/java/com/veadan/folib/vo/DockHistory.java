@@ -1,6 +1,5 @@
 package com.veadan.folib.vo;
 
-import com.alibaba.fastjson.annotation.JSONField;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -24,7 +23,6 @@ public class DockHistory {
     /**
      * 作者
      */
-    @JSONField(name = "created_by")
     private String createdBy;
 
     /**
@@ -35,6 +33,5 @@ public class DockHistory {
     /**
      * 是否是空层 true 是 false 不是
      */
-    @JSONField(name = "empty_layer")
     private Boolean emptyLayer;
 }

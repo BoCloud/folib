@@ -1,5 +1,6 @@
 package com.veadan.folib.vo;
 
+import com.alibaba.fastjson.JSONObject;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -36,7 +37,19 @@ public class ManifestConfig {
     /**
      * 配置信息
      */
-    private DockerConfig config;
+    private JSONObject config;
+    /**
+     * 容器
+     */
+    private String container;
+    /**
+     * 容器配置信息
+     */
+    private JSONObject containerConfig;
+    /**
+     * 制作Docker版本
+     */
+    private String dockerVersion;
     /**
      * 制作历史
      */

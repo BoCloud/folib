@@ -1,6 +1,5 @@
 package com.veadan.folib.vo;
 
-import com.alibaba.fastjson.annotation.JSONField;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -21,7 +20,6 @@ public class DockerRootFs {
     /**
      * diffIds
      */
-    @JSONField(name = "diff_ids")
     private List<String> diffIds;
 
     /**
