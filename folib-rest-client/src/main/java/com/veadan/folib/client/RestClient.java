@@ -70,7 +70,9 @@ public class RestClient extends ArtifactClient {
      * @return 客户端实例
      */
     public static RestClient getRestClientInstance(String baseUrl, String username, String password) {
-        int port = Integer.parseInt(baseUrl.substring(baseUrl.lastIndexOf(":") + 1));
+        String ports = baseUrl.substring(baseUrl.lastIndexOf(":") + 1);
+        ports = ports.replace("/", "");
+        int port = Integer.parseInt(ports);
         RestClient client = new RestClient();
         client.setUsername(username);
         client.setPassword(password);
@@ -173,6 +175,8 @@ public class RestClient extends ArtifactClient {
         Storage storage = null;
         if (response.getStatus() == HttpStatus.SC_OK) {
             storage = response.readEntity(Storage.class);
+        } else if (response.getStatus() == HttpStatus.SC_NOT_FOUND) {
+            return null;
         } else {
             displayResponseError(response);
             throw new ServerErrorException(response.getStatus() + " | Unable to greet()",
