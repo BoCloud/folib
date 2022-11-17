@@ -24,6 +24,7 @@ import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * folib rest client
@@ -421,6 +422,8 @@ public class RestClient extends ArtifactClient {
      * @return 仓库下的文件列表
      */
     public List<Folder> folders(String storageId, String repositoryId, String path) {
+        Repository repository = getRepository(storageId, repositoryId);
+        String layout = repository.getLayout();
         String url = getContextBaseUrl() + "/api/browse/%s/%s/%s";
         url = String.format(url, storageId, repositoryId, path);
         WebTarget resource = getClientInstance().target(url);
@@ -433,15 +436,22 @@ public class RestClient extends ArtifactClient {
         } else {
             String res = response.readEntity(String.class);
             if (StringUtils.isNotBlank(res)) {
-                List<Folder> folders = Lists.newArrayList(), directories, files;
+                List<Folder> folders = Lists.newArrayList(), directories, files, dockerFiles;
                 JSONObject folderJson = JSONObject.parseObject(res);
                 String directoriesKey = "directories", filesKey = "files";
                 boolean addFiles = true;
                 if (folderJson.containsKey(directoriesKey) && StringUtils.isNotBlank(folderJson.getString(directoriesKey))) {
                     directories = JSONArray.parseArray(folderJson.getString(directoriesKey), Folder.class);
                     if (!CollectionUtils.isEmpty(directories)) {
-                        directories.forEach(item -> item.setFolder(true));
-                        folders.addAll(directories);
+                        if ("docker".equalsIgnoreCase(layout) && StringUtils.isNotBlank(path)) {
+                            //docker布局
+                            dockerFiles = directories.stream().filter(f -> (!"blobs".equalsIgnoreCase(f.getName())) && (!"manifest".equalsIgnoreCase(f.getName()))).collect(Collectors.toList());
+                            dockerFiles.forEach(item -> item.setFolder(false));
+                            folders.addAll(dockerFiles);
+                        } else {
+                            directories.forEach(item -> item.setFolder(true));
+                            folders.addAll(directories);
+                        }
                         addFiles = false;
                     }
                 }
