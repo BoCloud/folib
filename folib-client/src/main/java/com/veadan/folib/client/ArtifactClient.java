@@ -188,7 +188,7 @@ public class ArtifactClient extends BaseArtifactClient implements Closeable {
                        String path,
                        boolean force)
             throws ArtifactOperationException {
-        String url = getContextBaseUrl() + "/storages/" + storageId + "/" + repositoryId + "/" + path +
+        String url = getContextBaseUrl() + "/browse/" + storageId + "/" + repositoryId + "/" + path +
                 (force ? "?force=" + force : "");
 
         logger.info("Getting {}...", url);
