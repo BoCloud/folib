@@ -3,16 +3,16 @@ package com.veadan.folib.client;
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import com.google.common.collect.Lists;
+import com.veadan.folib.dto.ArtifactPromotion;
 import com.veadan.folib.forms.RepositoryForm;
 import com.veadan.folib.forms.StorageForm;
-import com.veadan.folib.vo.ArtifactInfo;
-import com.veadan.folib.vo.Folder;
-import com.veadan.folib.vo.Repository;
-import com.veadan.folib.vo.Storage;
+import com.veadan.folib.forms.UploadArtifactFrom;
+import com.veadan.folib.vo.*;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.http.ResponseEntity;
 import org.springframework.util.CollectionUtils;
 
 import javax.ws.rs.ServerErrorException;
@@ -493,6 +493,71 @@ public class RestClient extends ArtifactClient {
             return response.readEntity(ArtifactInfo.class);
         }
     }
+
+    /**
+     * 制品复制操作
+     *
+     * @param artifactPromotion 制品复制参数
+     * @return ResponseEntity 响应实体
+     */
+    public ResponseEntity copy(ArtifactPromotion artifactPromotion) {
+        String url = getContextBaseUrl() + "/api/artifact/folib/promotion/copy";
+        WebTarget resource = getClientInstance().target(url);
+        setupAuthentication(resource);
+        Response response = resource.request(MediaType.APPLICATION_JSON).
+                post(Entity.entity(artifactPromotion, MediaType.APPLICATION_JSON));
+        if (response.getStatus() != HttpStatus.SC_OK) {
+            displayResponseError(response);
+            throw new ServerErrorException(response.getStatus() + " | Unable to greet()",
+                    Response.Status.INTERNAL_SERVER_ERROR);
+        } else {
+            return  ResponseEntity.ok("Artifact copying");
+        }
+    }
+
+    /**
+     * 制品移动操作
+     *
+     * @param artifactPromotion 制品移动参数
+     * @return ResponseEntity 响应实体
+     */
+    public ResponseEntity move(ArtifactPromotion artifactPromotion) {
+        String url = getContextBaseUrl() + "/api/artifact/folib/promotion/move";
+        WebTarget resource = getClientInstance().target(url);
+        setupAuthentication(resource);
+        Response response = resource.request(MediaType.APPLICATION_JSON).
+                post(Entity.entity(artifactPromotion, MediaType.APPLICATION_JSON));
+        if (response.getStatus() != HttpStatus.SC_OK) {
+            displayResponseError(response);
+            throw new ServerErrorException(response.getStatus() + " | Unable to greet()",
+                    Response.Status.INTERNAL_SERVER_ERROR);
+        } else {
+            return  ResponseEntity.ok("Artifact moving");
+        }
+    }
+
+    /**
+     * 上传制品
+     *
+     * @param uploadArtifactFrom 上传参数
+     * @return ResponseEntity 响应实体
+     */
+    public ResponseEntity upload(UploadArtifactFrom uploadArtifactFrom) {
+        String url = getContextBaseUrl() + "/api/artifact/folib/promotion/upload-files";
+        WebTarget resource = getClientInstance().target(url);
+        setupAuthentication(resource);
+        Response response = resource.request().
+                post(Entity.entity(uploadArtifactFrom, MediaType.MULTIPART_FORM_DATA_TYPE));
+        if (response.getStatus() != HttpStatus.SC_OK) {
+            displayResponseError(response);
+            throw new ServerErrorException(response.getStatus() + " | Unable to greet()",
+                    Response.Status.INTERNAL_SERVER_ERROR);
+        } else {
+            return  ResponseEntity.ok("上传成功");
+        }
+    }
+
+
 
     public WebTarget prepareTarget(String arg) {
         return setupAuthentication(prepareUnauthenticatedTarget(arg));
