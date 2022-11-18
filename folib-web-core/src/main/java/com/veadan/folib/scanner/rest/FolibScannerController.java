@@ -76,12 +76,13 @@ public class FolibScannerController extends BaseController<FolibScannerBiz, Foli
     /**
      * 获取制品的漏洞严重程度信息
      *
-     * @param id 制品id
+     * @param id    制品id
+     * @param fuzzy 模糊匹配 0 否 1 是
      * @return 制品的漏洞严重程度信息
      */
     @GetMapping("/severity")
-    public ObjectRestResponse<SeverityVO> severity(@RequestParam("id") String id) {
-        return new ObjectRestResponse<SeverityVO>(true, this.baseBiz.severity(id), "成功");
+    public ObjectRestResponse<SeverityVO> severity(@RequestParam("id") String id, @RequestParam(name = "fuzzy", required = false, defaultValue = "0") Integer fuzzy) {
+        return new ObjectRestResponse<SeverityVO>(true, this.baseBiz.severity(id, fuzzy), "成功");
     }
 
     /**

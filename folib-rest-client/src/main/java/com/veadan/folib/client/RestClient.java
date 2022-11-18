@@ -5,10 +5,7 @@ import com.alibaba.fastjson.JSONObject;
 import com.google.common.collect.Lists;
 import com.veadan.folib.forms.RepositoryForm;
 import com.veadan.folib.forms.StorageForm;
-import com.veadan.folib.vo.ArtifactInfo;
-import com.veadan.folib.vo.Folder;
-import com.veadan.folib.vo.Repository;
-import com.veadan.folib.vo.Storage;
+import com.veadan.folib.vo.*;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpStatus;
 import org.slf4j.Logger;
@@ -491,6 +488,43 @@ public class RestClient extends ArtifactClient {
                     Response.Status.INTERNAL_SERVER_ERROR);
         } else {
             return response.readEntity(ArtifactInfo.class);
+        }
+    }
+
+    /**
+     * 获取制品漏洞报告信息
+     *
+     * @param storageId    存储空间名称
+     * @param repositoryId 仓库名称
+     * @param path         路径
+     * @return 制品漏洞报告信息
+     */
+    public VulnerabilityReport vulnerabilityReport(String storageId, String repositoryId, String path) {
+        String artifactPath = storageId + "/" + repositoryId + "/" + path;
+        String url = getContextBaseUrl() + "/api/folibScanner/severity?fuzzy=1&id=" + artifactPath;
+        WebTarget resource = getClientInstance().target(url);
+        setupAuthentication(resource);
+        Response response = resource.request(MediaType.APPLICATION_JSON).get();
+        if (response.getStatus() != HttpStatus.SC_OK) {
+            displayResponseError(response);
+            throw new ServerErrorException(response.getStatus() + " | Unable to greet()",
+                    Response.Status.INTERNAL_SERVER_ERROR);
+        } else {
+            String data = response.readEntity(String.class);
+            if (StringUtils.isNotBlank(data)) {
+                JSONObject dataJson = JSONObject.parseObject(data).getJSONObject("data");
+                VulnerabilityReport vulnerabilityReport = JSONObject.toJavaObject(dataJson, VulnerabilityReport.class);
+                String report = dataJson.getString("report");
+                if (StringUtils.isNotBlank(report)) {
+                    vulnerabilityReport.setDependencies(JSONObject.parseArray(report));
+                }
+                Boolean scanComplete = dataJson.getBoolean("show");
+                Integer vulnerabilitiesCount = dataJson.getInteger("vulnerabilitesCount");
+                vulnerabilityReport.setVulnerabilitiesCount(vulnerabilitiesCount);
+                vulnerabilityReport.setScanComplete(scanComplete);
+                return vulnerabilityReport;
+            }
+            return null;
         }
     }
 
