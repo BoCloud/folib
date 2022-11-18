@@ -89,6 +89,9 @@ public class BrowseController
                                       @PathVariable String repositoryId,
                                       @RequestParam(value = "type", required = false) String type, @RepositoryMapping Repository repositoryParam) {
         JSONObject jsonObject = new JSONObject();
+        if (StringUtils.isBlank(type)) {
+            type = repositoryParam.getLayout();
+        }
         if (!type.equalsIgnoreCase("docker")) {
             Artifact artifact = repositoryPathResolver.findOneArtifact(storageId, repositoryId, artifactPath);
             RepositoryPath repositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, artifactPath);
