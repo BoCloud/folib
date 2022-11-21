@@ -196,7 +196,7 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
                 PromotionNodeOptionDto uploadDto = promotionUtil.getPromotionUploadDto(promotionArtifactDto);
 
                 //向目标仓库推包
-                PromotionUtil.upload(targetUrl + upLoadURI, uploadDto);
+                promotionUtil.upload(targetUrl + upLoadURI, uploadDto);
 
             } else if (targetPath.contains(requestURL)) {
                 // 从源仓路径 pull 到目标仓路径
@@ -288,7 +288,7 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
             PromotionNodeOptionDto promotionNodeOptionDto = promotionUtil.getPromotionPullDto(promotionArtifactDto);
 
             // 向目标仓库传
-            PromotionUtil.upload(promotionArtifactDto.getUploadHost(), promotionNodeOptionDto);
+            promotionUtil.upload(promotionArtifactDto.getUploadHost(), promotionNodeOptionDto);
         } catch (Exception e) {
             log.error("pull exception {}", e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)

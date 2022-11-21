@@ -24,6 +24,8 @@ spring:
   servlet:
     multipart:
       enabled: true
+      max-file-size: 2048MB
+      max-request-size: 2048MB
 
 mybatis:
   mapper-locations: "classpath*:mapper/*.xml"
@@ -46,6 +48,7 @@ folib:
   multipart:
     maxFileSize: 20             # 单个上传文件大小 （MB）
     maxRequestSize: 1024        # 单次个上传文件总大小 （MB）
+
   cluster:
     openflag: ${folib.openflag:false}
     hostnode: ${folib.hostnode:10.50.8.55:38080} # 多个节点逗号隔开
@@ -72,8 +75,8 @@ folib:
     timeoutMillis: 600000
   graph:
     gremlin:
-        server:
-            enabled: true
+      server:
+        enabled: true
 # Changes to these properties must also be applied to [folib/folib-web-integration-tests] and possibly the pipeline.
 # Please ping us on our chat channel (https://chat.carlspring.org/) to confirm.
 logging:
@@ -142,8 +145,8 @@ cacheManagerConfiguration:
 s3fs:
   protocol: http
   region: bo-nj-cn
-  uri: s3://192.168.2.8:9000/
+  uri: s3://localhost:9000/
   access:
-    key: ERevhJMgrz0JUKD8
+    key: Yac7ckbGIkdSrfP0
   secret:
-    key: UGo8B5wcjFasU3xKxanxxYKEyVNGxyfH
+    key: ISPHfdFqnsBUvcOT4Xqr58BQtBguUl5d

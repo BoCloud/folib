@@ -1,5 +1,6 @@
 package com.veadan.folib.promotion;
 
+import cn.hutool.core.collection.CollectionUtil;
 import cn.hutool.extra.spring.SpringUtil;
 import com.alibaba.fastjson.JSON;
 import com.veadan.folib.cloud.storage.s3fs.S3FileSystem;
@@ -12,6 +13,7 @@ import com.veadan.folib.dto.PromotionNodeOptionDto;
 import com.veadan.folib.dto.TargetRepositoyDto;
 import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.providers.io.RepositoryPathResolver;
+import com.veadan.folib.service.ProxyRepositoryConnectionPoolConfigurationService;
 import com.veadan.folib.services.ArtifactManagementService;
 import com.veadan.folib.services.ArtifactResolutionService;
 import com.veadan.folib.services.ConfigurationManagementService;
@@ -43,7 +45,12 @@ import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
 import org.apache.http.util.EntityUtils;
+import org.glassfish.jersey.media.multipart.FormDataMultiPart;
+import org.glassfish.jersey.media.multipart.file.FileDataBodyPart;
+import org.glassfish.jersey.media.multipart.file.StreamDataBodyPart;
+import org.glassfish.jersey.media.multipart.internal.MultiPartWriter;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.stereotype.Component;
@@ -52,6 +59,11 @@ import javax.inject.Inject;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
+import javax.ws.rs.client.Client;
+import javax.ws.rs.client.Entity;
+import javax.ws.rs.client.WebTarget;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -90,6 +102,9 @@ public class PromotionUtil {
 
     @Autowired
     private ThreadPoolTaskExecutor asyncRepositoryThreadPoolExecutor;
+
+    @Autowired
+    private ProxyRepositoryConnectionPoolConfigurationService clientPool;
 
     @Async("asyncStorageThreadPoolExecutor")
     public void executeHanleCopy(String path, Repository destRepository, Repository srcRepository) {
@@ -544,7 +559,8 @@ public class PromotionUtil {
      * @param uploadDto 晋级上传参数实体
      * @return string
      */
-    public static String upload(String url, PromotionNodeOptionDto uploadDto) throws Exception {
+    public String upload(String url, PromotionNodeOptionDto uploadDto) throws Exception {
+
         // 创建Http实例
         CloseableHttpClient httpClient = HttpClients.createDefault();
         // 创建HttpPost实例
