@@ -123,8 +123,6 @@ public class StoragesConfigurationController
 
         try {
             StorageDto storage = conversionService.convert(storageForm, StorageDto.class);
-            storage.setAdmin(storageForm.getAdmin());
-            storage.setUsers(storageForm.getUsers());
             storageManagementService.createStorage(storage);
             // 向其他集群节点同步storage
             clusterSyncService.syncStorage(storage, null, SyncStorageEnum.CREATE);
@@ -160,8 +158,6 @@ public class StoragesConfigurationController
 
         try {
             StorageDto storage = conversionService.convert(storageFormToUpdate, StorageDto.class);
-            storage.setAdmin(storageFormToUpdate.getAdmin());
-            storage.setUsers(storageFormToUpdate.getUsers());
             storageManagementService.updateStorage(storage);
             clusterSyncService.syncStorage(storage, storageId, SyncStorageEnum.UPDATE);
             return getSuccessfulResponseEntity(SUCCESSFUL_UPDATE_STORAGE, accept);

@@ -1,14 +1,12 @@
 package com.veadan.folib.controllers.aql;
 
+import com.veadan.folib.controllers.BaseController;
 import com.veadan.folib.services.impl.FqlSearchService;
 import com.veadan.folib.storage.search.SearchResults;
-import com.veadan.folib.controllers.BaseController;
-import com.veadan.folib.domain.ArtifactEntity;
-
-import javax.inject.Inject;
-import java.io.IOException;
-
-import io.swagger.annotations.*;
+import io.swagger.annotations.Api;
+import io.swagger.annotations.ApiOperation;
+import io.swagger.annotations.ApiResponse;
+import io.swagger.annotations.ApiResponses;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -17,15 +15,16 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
+import javax.inject.Inject;
+import java.io.IOException;
+
 /**
  * @author xuxinping
- *
  */
 @Controller
 @RequestMapping("/api/fql")
 @Api(value = "/api/fql")
-public class AqlController extends BaseController
-{
+public class AqlController extends BaseController {
 
 //    @Inject
 //    private AqlSearchService aqlSearchService;
@@ -34,15 +33,19 @@ public class AqlController extends BaseController
     private FqlSearchService fqlSearchService;
 
     @ApiOperation(value = "Used to search for artifacts.", response = SearchResults.class)
-    @ApiResponses(value = { @ApiResponse(code = 200, message = "OK") })
+    @ApiResponses(value = {@ApiResponse(code = 200, message = "OK")})
     @PreAuthorize("hasAuthority('SEARCH_ARTIFACTS')")
-    @GetMapping(produces = { MediaType.APPLICATION_JSON_VALUE })
+    @GetMapping(produces = {MediaType.APPLICATION_JSON_VALUE})
     public ResponseEntity search(@RequestParam(name = "artifactName", required = true) String artifactName,
                                  @RequestParam(name = "storageId", required = false) String storageId,
                                  @RequestParam(name = "repositoryId", required = false) String repositoryId,
-                                 @RequestParam(name = "limit", required = true) int limit,
-                                 @RequestParam(name = "page", required = true) int page) throws IOException {
-        SearchResults result = fqlSearchService.artfactQuery(artifactName, storageId, repositoryId, limit, page);
+                                 @RequestParam(name = "beginDate", required = false) String beginDate,
+                                 @RequestParam(name = "endDate", required = false) String endDate,
+                                 @RequestParam(name = "sortField", required = false) String sortField,
+                                 @RequestParam(name = "sortOrder", required = false) String sortOrder,
+                                 @RequestParam(name = "limit") int limit,
+                                 @RequestParam(name = "page") int page) throws IOException {
+        SearchResults result = fqlSearchService.artfactQuery(artifactName, storageId, repositoryId, beginDate, endDate, sortField, sortOrder, limit, page);
         return ResponseEntity.ok(result);
     }
 

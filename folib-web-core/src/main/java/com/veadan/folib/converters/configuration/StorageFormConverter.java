@@ -25,7 +25,8 @@ public enum StorageFormConverter
         StorageDto result = new StorageDto();
         result.setBasedir(source.getBasedir());
         result.setId(source.getId());
-        
+        result.setAdmin(source.getAdmin());
+        result.setUsers(source.getUsers());
         List<RepositoryForm> repositories = source.getRepositories();
         if (repositories != null)
         {

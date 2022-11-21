@@ -198,7 +198,7 @@
       </a-tab-pane>
       <a-tab-pane key="4" tab="集群信息" class="cluster">
         <a-row :gutter="24" type="flex" align="stretch">
-          <a-col :span="24" class="text-left mb-10">
+          <a-col :span="24" class="text-left mb-10" v-if="cassandraClusterInfo.dcsMap.dc>1">
             <a-button type="primary" @click="cassandraRepair()">
               数据修复
             </a-button>

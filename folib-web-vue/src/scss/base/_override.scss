@@ -304,12 +304,12 @@ a.ant-btn-sm {
 .ant-calendar .ant-calendar-ok-btn {
 	font-weight: $fw-semibold ;
 	box-shadow: $btn-shadow ;
-	height: $btn-height-base ;
+	height: $btn-height-base * 0.75;
 	padding: $btn-padding-base ;
 	border-radius: $btn-border-radius-base ;
 	background-color: $color-primary ;
 	border-color: $color-primary ;
-	line-height: 30px ;
+	line-height: $btn-height-base * 0.75;
 }
 .ant-calendar .ant-calendar-ok-btn-lg {
 	height: $btn-height-lg ;

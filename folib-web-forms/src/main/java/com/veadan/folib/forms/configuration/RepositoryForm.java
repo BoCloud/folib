@@ -39,6 +39,8 @@ public class RepositoryForm {
     @LayoutProviderValue(message = "The layout value is invalid.")
     private String layout;
 
+    private String subLayout;
+
     @NotEmpty(message = "A type must be specified.")
     @DescribableEnumValue(message = "The type value is invalid.", type = RepositoryTypeEnum.class)
     private String type;
@@ -293,6 +295,14 @@ public class RepositoryForm {
 
     public void setStorageId(String storageId) {
         this.storageId = storageId;
+    }
+
+    public String getSubLayout() {
+        return subLayout;
+    }
+
+    public void setSubLayout(String subLayout) {
+        this.subLayout = subLayout;
     }
 
     public interface WhiteGroup

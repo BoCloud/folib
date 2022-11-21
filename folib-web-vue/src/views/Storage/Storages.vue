@@ -344,6 +344,7 @@
     <a-modal v-model="deleteFormVisible" :footer="null" :forceRender="true" on-back="deleteFormVisible = false">
       <a-form
           :form="delForm"
+          ref="delForm"
           :hideRequiredMark="true"
       >
         <a-row :gutter="[24]">
@@ -662,8 +663,7 @@
               <a-row :gutter="[24]">
                 <a-col :span="12">
                   <a-form-item class="mb-10" label="仓库名称" :colon="false">
-                    <a-input :disabled="folibRepositoryEditDisabled"  placeholder="不要出现仓库类型的关键字" v-model="folibRepositoryIds"
-                             :addon-after="'-'+layoutChecked"/>
+                    <a-input :disabled="folibRepositoryEditDisabled"  placeholder="不要出现仓库类型的关键字" v-model="folibRepositoryIds"/>
                   </a-form-item>
                 </a-col>
                 <a-col :span="6">
@@ -903,13 +903,13 @@
                 </a-col>
                 <a-col :span="4">
                   <a-form-item class="mb-10" label="用户名" :colon="false">
-                    <a-input v-model:value="folibRepository.proxyConfiguration.username"
+                    <a-input v-model="folibRepository.proxyConfiguration.username"
                              placeholder="proxy的用户名，没有可以不填写"/>
                   </a-form-item>
                 </a-col>
                 <a-col :span="4">
                   <a-form-item class="mb-10" label="密码" :colon="false">
-                    <a-input-password v-model:value="folibRepository.proxyConfiguration.password"
+                    <a-input-password v-model="folibRepository.proxyConfiguration.password"
                                       placeholder="远程仓库访问密码"/>
                   </a-form-item>
                 </a-col>
@@ -974,7 +974,7 @@
                 :hideRequiredMark="true"
             >
 
-              <div v-for="(i, index) in cronCanSetList">
+              <div v-for="(i, index) in cronCanSetList" :key="index">
               <a-row type="flex" align="middle">
                 <a-col style="min-width: 40px;" class="text-center">
                   <a-icon type="clock-circle" class="text-gray-6" style="font-size: 18px;" />
@@ -1175,6 +1175,7 @@ export default {
         httpConnectionPool: null,
         id: "",
         layout: "",
+        subLayout: "",
         policy: "release",
         proxyConfiguration: {
           host: "",
@@ -1647,7 +1648,7 @@ export default {
       this.crontasksListHandle()
     },
     addOrUpdateRepositoryHandel(isNotSetCron) {
-      this.folibRepository.id = this.folibRepositoryIds + '-' + this.layoutChecked
+      this.folibRepository.id = this.folibRepositoryIds
       //构建basedir
       if(this.currentStorage.basedir){
         this.folibRepository.basedir=this.currentStorage.basedir+'/'+this.folibRepository.id
@@ -1657,6 +1658,7 @@ export default {
         this.folibRepository.storageProvider='local'
       }
       //将选中的layout图标转换为接口识别的
+      this.folibRepository.subLayout = this.layoutChecked
       this.folibRepository.layout = genLayoutType(this.layoutChecked)
       //将组合好的仓库转为groupRepository
       if (this.step === 2 && this.folibRepository.type === 'group' && this.boards[1].tasks.length > 0) {
@@ -1768,12 +1770,7 @@ export default {
           this.folibRepository = res
           this.layoutChecked = getLayoutType(res)
           this.artifactMaxSize = this.folibRepository.artifactMaxSize / (1024 * 1024)
-          const a = this.folibRepository.id;
-          if (a.search(this.layoutChecked) !== -1) {
-            this.folibRepositoryIds = a.substring(0, a.indexOf('-' + this.layoutChecked))
-          }
-
-          // console.log(this.layoutChecked)
+          this.folibRepositoryIds = this.folibRepository.id
           this.folibRepositoryEditDisabled=true
           this.folibVisible = true
 
@@ -1849,6 +1846,11 @@ export default {
       } else if (e === "delete" && title !== null) {
         this.willDelId = title
         this.deleteFormVisible = true
+        if (this.$refs.delForm) {
+          this.delForm.setFieldsValue({
+            id: ''
+          })
+        }
       }
 
     },
