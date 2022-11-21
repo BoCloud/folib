@@ -10,6 +10,7 @@ import com.veadan.folib.vo.*;
 import com.veadan.folib.forms.UploadArtifactFrom;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpStatus;
+import org.glassfish.jersey.media.multipart.Boundary;
 import org.glassfish.jersey.media.multipart.FormDataMultiPart;
 import org.glassfish.jersey.media.multipart.file.StreamDataBodyPart;
 import org.glassfish.jersey.media.multipart.internal.MultiPartWriter;
@@ -595,8 +596,8 @@ public class RestClient extends ArtifactClient {
                     uploadArtifactFrom.getFiles()[0].getOriginalFilename()));
             WebTarget resource = getClientInstance().register(MultiPartWriter.class).target(url);
             setupAuthentication(resource);
-            Response response = resource.request(MediaType.MULTIPART_FORM_DATA).
-                    post(Entity.entity(part, MediaType.MULTIPART_FORM_DATA_TYPE));
+            Response response = resource.request(new String[]{"application/json"}).header("Mime-Version", "1.0").
+                    post(Entity.entity(part, Boundary.addBoundary(MediaType.MULTIPART_FORM_DATA_TYPE)));
             if (response.getStatus() != HttpStatus.SC_OK) {
                 displayResponseError(response);
                 throw new ServerErrorException(response.getStatus() + " | Unable to greet()",
