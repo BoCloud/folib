@@ -7,7 +7,11 @@ import 'ant-design-vue/dist/antd.css';
 import { VueAxios } from './utils/request'
 import store from './store/'
 
-Vue.use(Antd);
+Vue.use(Antd)
+
+import doitUIWeb from 'doit-ui-web'
+import 'doit-ui-web/lib/doituiweb.css'
+Vue.use(doitUIWeb)
 
 // Photoswipe Gallery
 import Photoswipe from 'vue-pswipe'

@@ -20,6 +20,8 @@ public interface Repository
 
     String getLayout();
 
+    String getSubLayout();
+
     String getType();
 
     boolean isSecured();

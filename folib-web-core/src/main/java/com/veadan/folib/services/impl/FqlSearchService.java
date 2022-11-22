@@ -36,17 +36,18 @@ import java.util.Set;
 
 @Component
 @Transactional
-public class FqlSearchService extends GremlinVertexRepository<Artifact> implements AqlSearchService{
+public class FqlSearchService extends GremlinVertexRepository<Artifact> implements AqlSearchService {
     @Inject
     ArtifactAdapter artifactAdapter;
 
     @Inject
-    ArtifactRepository  artifactRepository;
+    ArtifactRepository artifactRepository;
 
     @Inject
     private RepositoryPathResolver repositoryPathResolver;
     @Inject
     private SnippetGenerator snippetGenerator;
+
     @Override
     public SearchResults search(Selector<ArtifactEntity> selector) throws IOException {
 
@@ -60,23 +61,27 @@ public class FqlSearchService extends GremlinVertexRepository<Artifact> implemen
 
 
     public SearchResults artfactQuery(String artifactName,
-                                       String storageId,
-                                       String repositoryId,
-                                       int limit,int page) throws IOException {
+                                      String storageId,
+                                      String repositoryId,
+                                      String beginDate,
+                                      String endDate,
+                                      String sortField,
+                                      String sortOrder,
+                                      int limit, int page) throws IOException {
 
         Pageable pageable = null;
-        if(page==1) {
+        if (page == 1) {
             pageable = PageRequest.of(page, limit).first();
-        }else{
+        } else {
             pageable = PageRequest.of(page, limit).previous();
         }
-        Page<Artifact> artifacts = artifactRepository.findMatchingByIndex(pageable, artifactName, storageId, repositoryId);
+        Page<Artifact> artifacts = artifactRepository.findMatchingByIndex(pageable, artifactName, storageId, repositoryId, beginDate, endDate, sortField, sortOrder);
         List<Artifact> artifactEntityList = artifacts.getContent();
 
         SearchResults result = new SearchResults();
         result.setTotal(artifacts.getTotalElements());
         SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-        for (Artifact artifact:artifactEntityList){
+        for (Artifact artifact : artifactEntityList) {
             SearchResult r = new SearchResult();
             result.getResults().add(r);
 
@@ -112,7 +117,7 @@ public class FqlSearchService extends GremlinVertexRepository<Artifact> implemen
 
             TreeUtil treeUtil = new TreeUtil();
             Set<String> fileNames = artifact.getArtifactArchiveListing().getFilenames();
-            if(fileNames!=null&&fileNames.size()>0){
+            if (fileNames != null && fileNames.size() > 0) {
                 List listTree = treeUtil.toTree(fileNames);
                 r.setTreeNode(listTree);
             }

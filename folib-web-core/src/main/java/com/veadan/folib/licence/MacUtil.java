@@ -1,9 +1,6 @@
 package com.veadan.folib.licence;
 
 
-import cn.hutool.Hutool;
-import cn.hutool.system.oshi.CpuInfo;
-
 import java.net.InetAddress;
 import java.net.NetworkInterface;
 import java.net.SocketException;
@@ -19,7 +16,7 @@ public class MacUtil {
 
     private static final int SPLITLENGTH = 4;
 
-    public static String getMachineCode() throws Exception{
+    public static String getMachineCode() throws Exception {
         Set<String> result = new HashSet<>();
 //        String mac = getMacId();
         result.add("folib");
@@ -78,8 +75,9 @@ public class MacUtil {
         return stringBuilder.toString();
     }
 
-    public static void main(String[] args) {
-        System.out.printf(getMacId());
+    public static void main(String[] args) throws Exception {
+        String mac = getMachineCode();
+        System.out.println("mac：" + mac);
     }
 
     public static String getMacId() {
@@ -92,7 +90,8 @@ public class MacUtil {
                     .getNetworkInterfaces();
             while (netInterfaces.hasMoreElements()) {
                 if (bFindIP) {
-                    break;}
+                    break;
+                }
                 ni = (NetworkInterface) netInterfaces
                         .nextElement();
                 Enumeration<InetAddress> ips = ni.getInetAddresses();
@@ -156,4 +155,5 @@ public class MacUtil {
         }
         return null;
     }*/
+
 }

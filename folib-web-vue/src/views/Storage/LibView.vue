@@ -155,7 +155,7 @@
                 }}</a>
 
 
-              <a-popconfirm placement="topRight" ok-text="删除" cancel-text="取消" okType="danger"
+              <!-- <a-popconfirm placement="topRight" ok-text="删除" cancel-text="取消" okType="danger"
                 @confirm="deletePackageHandle">
                 <template slot="title">
                   <p>确定删除么？</p>
@@ -166,7 +166,23 @@
                   删除
                   <a-icon :size="24" shape="square" type="delete"></a-icon>
                 </a-button>
-              </a-popconfirm>
+              </a-popconfirm> -->
+              <a-dropdown v-if="currentTreeNode.url">
+                <a-menu slot="overlay" @click="handleMenuClick">
+                  <a-menu-item key="1">
+                    <a-icon type="copy" />复制
+                  </a-menu-item>
+                  <a-menu-item key="2">
+                    <a-icon type="swap" />移动
+                  </a-menu-item>
+                  <a-menu-item key="3">
+                    <a-icon type="delete" />删除
+                  </a-menu-item>
+                </a-menu>
+                <a-button style="margin-left: 8px">操作
+                  <a-icon type="down" />
+                </a-button>
+              </a-dropdown>
               <hr class="my-25" />
               <a-descriptions v-if="folibRepository.layout !== 'Docker'" title="基本信息" :column="1">
                 <a-descriptions-item label="所属空间">
@@ -261,12 +277,13 @@
         </a-row>
         <a-row v-if="isNotSearch === true" type="flex" :gutter="24">
           <!-- Platform Settings Column -->
-          <a-col :span="24" :md="10" class="mb-24">
+          <a-col :span="24" :md="24" class="mb-24">
             <a-card :bordered="false" style="max-height:1024px;min-height:454px;overflow-y: auto" class="header-solid"
               :bodyStyle="{ paddingTop: 0, paddingBottom: 0 }">
               <div class="mx-25">
                 <a-row type="flex" :gutter="24">
                   <a-col :span="24" md="12">
+                    <label for="" class="mr-10">显示数量</label>
                     <a-select v-model="artifactQuery.limit" @change="onPageSizeChange" style="width: 70px">
                       <a-select-option :value="5">5</a-select-option>
                       <a-select-option :value="10">10</a-select-option>
@@ -274,7 +291,11 @@
                       <a-select-option :value="20">20</a-select-option>
                       <a-select-option :value="25">25</a-select-option>
                     </a-select>
-                    <label for="" class="ml-10">显示数量</label>
+                    <label for="" class="ml-10 mr-10">日期搜索</label>
+                    <a-config-provider :locale="locale">
+                      <a-range-picker :show-time="{ placeholder: '选择时间', format: 'HH:mm' }" format="YYYY-MM-DD HH:mm"
+                        :placeholder="['开始日期', '结束日期']" @change="dateChange" @ok="dateConfirm" />
+                    </a-config-provider>
                   </a-col>
                   <a-col :span="24" md="12">
                   </a-col>
@@ -300,119 +321,6 @@
                 <template slot="sizeInBytes" slot-scope="sizeInBytes">{{ fileSizeConver(sizeInBytes) }}</template>
 
               </a-table>
-            </a-card>
-          </a-col>
-
-          <a-col :span="24" :md="14" class="mb-24">
-            <a-card :bordered="false" class="header-solid h-full card-profile-information"
-              :bodyStyle="{ paddingTop: 0, paddingBottom: '16px' }" :headStyle="{ paddingRight: 0 }">
-              <template #title>
-                <h6 class="font-semibold m-0">
-                  <a-avatar :size="24" shape="square" :src="
-                    'images/folib/' + getFileType(searchDataCurrentSelect ? searchDataCurrentSelect.path : '') + '.svg'
-                  " />
-                  {{ searchDataCurrentSelect ? searchDataCurrentSelect.path : '' }}
-                  <div class="table-severity-info" v-if="severity.show" @click="detialVisible = true">
-                    <template v-if="severity.vulnerabilitesCount > 0">
-                      <a-tooltip>
-                        <template slot="title">严重</template>
-                        <div class="severity-info">
-                          <a-avatar :size="24" :src="'images/folib/critical.svg'" />
-                          <span class="mb-0 text-dark">{{ severity.critical }}</span>
-                        </div>
-                      </a-tooltip>
-
-                      <a-tooltip>
-                        <template slot="title">高危</template>
-                        <div class="severity-info">
-                          <a-avatar :size="24" :src="'images/folib/high.svg'" />
-                          <span class="mb-0 text-dark">{{ severity.high }}</span>
-                        </div>
-                      </a-tooltip>
-
-                      <a-tooltip>
-                        <template slot="title">中危</template>
-                        <div class="severity-info">
-                          <a-avatar :size="24" :src="'images/folib/medium.svg'" />
-                          <span class="mb-0 text-dark">{{ severity.medium }}</span>
-                        </div>
-                      </a-tooltip>
-
-                      <a-tooltip>
-                        <template slot="title">低危</template>
-                        <div class="severity-info">
-                          <a-avatar :size="24" :src="'images/folib/low.svg'" />
-                          <span class="mb-0 text-dark">{{ severity.low }}</span>
-                        </div>
-                      </a-tooltip>
-                    </template>
-                    <template v-else>
-                      <a-tooltip>
-                        <template slot="title">健康</template>
-                        <a-avatar :size="24" :src="'images/folib/healthy.svg'" />
-                      </a-tooltip>
-                    </template>
-                  </div>
-                </h6>
-              </template>
-              <a-button type="link" slot="extra" @click="searchViewCodeHandle()">
-                预览
-                <a-icon :size="24" shape="square" type="eye"></a-icon>
-              </a-button>
-              <a class="text-dark" :href="searchDataCurrentSelect ? searchDataCurrentSelect.url : ''" target="_blank">{{
-                  searchDataCurrentSelect ? searchDataCurrentSelect.url : ''
-              }}</a>
-              <hr class="my-25" />
-              <a-descriptions title="基本信息" :column="1" v-if="searchDataCurrentSelect">
-                <a-descriptions-item label="所属空间">
-                  {{ searchDataCurrentSelect.storageId }}
-                </a-descriptions-item>
-                <a-descriptions-item label="所属仓库">
-                  {{ searchDataCurrentSelect.repositoryId }}
-                </a-descriptions-item>
-                <a-descriptions-item label="名称">
-                  {{ searchDataCurrentSelect.path }}
-                </a-descriptions-item>
-                <a-descriptions-item label="文件大小">
-                  {{ fileSizeConver(searchDataCurrentSelect.sizeInBytes) }}
-                </a-descriptions-item>
-                <a-descriptions-item label="修改时间">
-                  {{ searchDataCurrentSelect.lastUpdated }}
-                </a-descriptions-item>
-                <a-descriptions-item label="最近使用时间">
-                  {{ searchDataCurrentSelect.lastUsed }}
-                </a-descriptions-item>
-                <a-descriptions-item v-if="currentFileDetial" label="下载次数">
-                  {{ searchDataCurrentSelect.downloadCount }}
-                </a-descriptions-item>
-                <a-descriptions-item label="MD5">
-                  {{ searchDataCurrentSelect.md5 }}
-                </a-descriptions-item>
-                <a-descriptions-item label="SHA-1">
-                  {{ searchDataCurrentSelect.sha }}
-                </a-descriptions-item>
-              </a-descriptions>
-              <hr class="my-25" />
-
-              <a-col :span="24" v-if="searchDataCurrentSelect && searchDataCurrentSelect.snippets">
-                <a-card :bordered="false" class="card-billing-info">
-                  <div class="col-info">
-                    <a-descriptions :title="'使用示例(' + codeParam.type + ')'" :column="1">
-                      <a-descriptions-item v-if="searchDataCurrentSelect">
-                        <prism-editor class="my-editor height-300" v-if="searchDataCurrentSelect"
-                          v-model="codeParam.code" :highlight="highlighterHandle" :line-numbers="false"
-                          :readonly="true"></prism-editor>
-                      </a-descriptions-item>
-                    </a-descriptions>
-                  </div>
-                  <div class="col-action">
-                    <a-button v-for="(item, index) in this.searchDataCurrentSelect.snippets" :key="index" type="link"
-                      size="small" @click="changeCodeTye(item)">
-                      <a-avatar :size="20" shape="square" :src="'images/folib/' + getCodeImg(item) + '.svg'" />
-                    </a-button>
-                  </div>
-                </a-card>
-              </a-col>
             </a-card>
           </a-col>
         </a-row>
@@ -514,6 +422,118 @@
     <!-- / Header Background Image -->
 
     <!-- User Profile Card -->
+
+    <a-drawer placement="right" width="65%" title="制品详情" :visible="artifactVisible" @close="artifactVisible = false">
+      <a-card :bordered="false" class="header-solid h-full card-profile-information"
+        :bodyStyle="{ paddingTop: 0, paddingBottom: '16px' }" :headStyle="{ paddingRight: 0 }">
+        <template #title>
+          <h6 class="font-semibold m-0">
+            <a-avatar :size="24" shape="square" :src="
+              'images/folib/' + getFileType(searchDataCurrentSelect ? searchDataCurrentSelect.path : '') + '.svg'
+            " />
+            {{ searchDataCurrentSelect ? searchDataCurrentSelect.path : '' }}
+            <div class="table-severity-info" v-if="severity.show" @click="detialVisible = true">
+              <template v-if="severity.vulnerabilitesCount > 0">
+                <a-tooltip>
+                  <template slot="title">严重</template>
+                  <div class="severity-info">
+                    <a-avatar :size="24" :src="'images/folib/critical.svg'" />
+                    <span class="mb-0 text-dark">{{ severity.critical }}</span>
+                  </div>
+                </a-tooltip>
+
+                <a-tooltip>
+                  <template slot="title">高危</template>
+                  <div class="severity-info">
+                    <a-avatar :size="24" :src="'images/folib/high.svg'" />
+                    <span class="mb-0 text-dark">{{ severity.high }}</span>
+                  </div>
+                </a-tooltip>
+
+                <a-tooltip>
+                  <template slot="title">中危</template>
+                  <div class="severity-info">
+                    <a-avatar :size="24" :src="'images/folib/medium.svg'" />
+                    <span class="mb-0 text-dark">{{ severity.medium }}</span>
+                  </div>
+                </a-tooltip>
+
+                <a-tooltip>
+                  <template slot="title">低危</template>
+                  <div class="severity-info">
+                    <a-avatar :size="24" :src="'images/folib/low.svg'" />
+                    <span class="mb-0 text-dark">{{ severity.low }}</span>
+                  </div>
+                </a-tooltip>
+              </template>
+              <template v-else>
+                <a-tooltip>
+                  <template slot="title">健康</template>
+                  <a-avatar :size="24" :src="'images/folib/healthy.svg'" />
+                </a-tooltip>
+              </template>
+            </div>
+          </h6>
+        </template>
+        <a-button type="link" slot="extra" @click="searchViewCodeHandle()">
+          预览
+          <a-icon :size="24" shape="square" type="eye"></a-icon>
+        </a-button>
+        <a class="text-dark" :href="searchDataCurrentSelect ? searchDataCurrentSelect.url : ''" target="_blank">{{
+            searchDataCurrentSelect ? searchDataCurrentSelect.url : ''
+        }}</a>
+        <hr class="my-25" />
+        <a-descriptions title="基本信息" :column="1" v-if="searchDataCurrentSelect">
+          <a-descriptions-item label="所属空间">
+            {{ searchDataCurrentSelect.storageId }}
+          </a-descriptions-item>
+          <a-descriptions-item label="所属仓库">
+            {{ searchDataCurrentSelect.repositoryId }}
+          </a-descriptions-item>
+          <a-descriptions-item label="名称">
+            {{ searchDataCurrentSelect.path }}
+          </a-descriptions-item>
+          <a-descriptions-item label="文件大小">
+            {{ fileSizeConver(searchDataCurrentSelect.sizeInBytes) }}
+          </a-descriptions-item>
+          <a-descriptions-item label="修改时间">
+            {{ searchDataCurrentSelect.lastUpdated }}
+          </a-descriptions-item>
+          <a-descriptions-item label="最近使用时间">
+            {{ searchDataCurrentSelect.lastUsed }}
+          </a-descriptions-item>
+          <a-descriptions-item v-if="currentFileDetial" label="下载次数">
+            {{ searchDataCurrentSelect.downloadCount }}
+          </a-descriptions-item>
+          <a-descriptions-item label="MD5">
+            {{ searchDataCurrentSelect.md5 }}
+          </a-descriptions-item>
+          <a-descriptions-item label="SHA-1">
+            {{ searchDataCurrentSelect.sha }}
+          </a-descriptions-item>
+        </a-descriptions>
+        <hr class="my-25" />
+
+        <a-col :span="24" v-if="searchDataCurrentSelect && searchDataCurrentSelect.snippets">
+          <a-card :bordered="false" class="card-billing-info">
+            <div class="col-info">
+              <a-descriptions :title="'使用示例(' + codeParam.type + ')'" :column="1">
+                <a-descriptions-item v-if="searchDataCurrentSelect">
+                  <prism-editor class="my-editor height-300" v-if="searchDataCurrentSelect" v-model="codeParam.code"
+                    :highlight="highlighterHandle" :line-numbers="false" :readonly="true"></prism-editor>
+                </a-descriptions-item>
+              </a-descriptions>
+            </div>
+            <div class="col-action">
+              <a-button v-for="(item, index) in this.searchDataCurrentSelect.snippets" :key="index" type="link"
+                size="small" @click="changeCodeTye(item)">
+                <a-avatar :size="20" shape="square" :src="'images/folib/' + getCodeImg(item) + '.svg'" />
+              </a-button>
+            </div>
+          </a-card>
+        </a-col>
+      </a-card>
+    </a-drawer>
 
     <a-drawer placement="right" width="45%" :title="currentTreeNode.name" :visible="viewCodeVisible"
       @close="closeViewCodeDialog">
@@ -1096,6 +1116,75 @@
       </a-list>
       <!-- </a-card> -->
     </a-drawer>
+
+    <a-modal v-model="showOperationFormModal" :footer="null" :forceRender="true" :centered="true"
+      :title="operationTitle" on-ok="showCopyFormModal = false">
+      <a-form :form="operationForm" ref="operationForm" layout="vertical" @submit.prevent="handleOperationSubmit">
+        <a-row :gutter="[24]">
+          <a-col :span="24">
+            <a-form-item class="tags-field mb-10" label="目标仓库" :colon="false" ref="targetRepositories"
+              prop="targetRepositories">
+              <gb-ant-select-two-cascader allowClear placeholder="请选择目标仓库" v-decorator="[
+                'targetRepositories',
+                {
+                  initialValue: [],
+                  rules: [{ required: true, message: '请选择目标仓库', type: 'array' }]
+                }
+              ]" :selectOptionsConfig="{ key: 'key', value: 'key', text: 'name', children: 'children' }"
+                dropdownClassName="customer-multiple-cascader" :treeData="repositories" />
+            </a-form-item>
+            <a-form-item class="tags-field mb-10" :colon="false" :label="customTitle" valuePropName="checked">
+              <a-switch v-decorator="['custom',
+                {
+                  valuePropName: 'checked',
+                  rules: [
+                    { required: false, message: '' },
+                  ],
+                },
+              ]" style="width:10%;" @change="customChange">
+              </a-switch>
+            </a-form-item>
+            <a-form-item class="tags-field mb-10" v-if="!custom" label="目标目录" prop="path" :colon="false">
+              <a-input v-decorator="['path',
+                {
+                  rules: [
+                    { required: true, message: '请输入目标目录' },
+                  ],
+                },
+              ]" :disabled="true" placeholder="请输入目标目录">
+              </a-input>
+            </a-form-item>
+            <a-form-item class="tags-field mb-10" v-if="custom" label="目标目录" prop="path" :colon="false">
+              <a-input v-decorator="['path',
+                {
+                  rules: [
+                    { required: true, message: '请输入目标目录' },
+                  ],
+                },
+              ]" :disabled="false" placeholder="请输入目标目录">
+              </a-input>
+            </a-form-item>
+          </a-col>
+          <a-col :span="12" class="text-right">
+            <a-button key="submit" class="px-30" size="small" type="primary" htmlType="submit">创建</a-button>
+            <a-button key="back" @click="operationFormModalClose()" class="px-30 ml-10" size="small">取消</a-button>
+          </a-col>
+        </a-row>
+      </a-form>
+    </a-modal>
+
+    <a-modal v-model="showDeleteModal" :footer="null" :forceRender="true" :centered="true" title="确定删除吗？"
+      on-ok="showDeleteModal = false"  class="delete-modal">
+      <a-row :gutter="[24]">
+        <a-col :span="24">
+          <p>不要冲动，再好好想想</p>
+        </a-col>
+        <a-col :span="24" class="text-right">
+          <a-button @click="showDeleteModal = false" type="default">取消</a-button>
+          <a-button @click="deletePackageHandle" class="ml-10" type="danger">删除</a-button>
+        </a-col>
+      </a-row>
+    </a-modal>
   </div>
 </template>
 
@@ -1103,14 +1192,14 @@
 import storage from 'store'
 import CardPackageTree from '@/components/Cards/CardPackageTree'
 import CardProfileInformation from '../../components/Cards/CardProfileInformation'
-import Vulnerability from '@/components/Vulnerabilities/Vulnerability';
+import Vulnerability from '@/components/Vulnerabilities/Vulnerability'
 import {
   getLayoutType,
   getFileType,
   fileSizeConver,
   formateDate
 } from '@/utils/layoutUtil'
-import { browse, getArtifact, viewArtifactFile, fql, scannerRules, insertOrUpdateRules, getDockerArtifact, deleteArtifact, getSeverity, repositoryVulnerabilityStatistics } from '@/api/folib'
+import { browse, getArtifact, viewArtifactFile, fql, scannerRules, insertOrUpdateRules, getDockerArtifact, deleteArtifact, getSeverity, repositoryVulnerabilityStatistics, getStoragesAndRepositories, } from '@/api/folib'
 import { PrismEditor } from 'vue-prism-editor'
 import 'vue-prism-editor/dist/prismeditor.min.css' // import the styles somewhere
 // import highlighting library (you can use any library you want just return html string)
@@ -1119,6 +1208,8 @@ import 'prismjs/components/prism-clike'
 import 'prismjs/components/prism-javascript'
 import 'prismjs/themes/prism-tomorrow.css'
 import SearchBox from '@/components/Tools/SearchBox'
+import zhCN from 'ant-design-vue/es/locale/zh_CN'
+import { JSONLoader } from '../../plugins/three/threejs'
 export default {
   inject: ["reload"],
   components: {
@@ -1168,7 +1259,11 @@ export default {
         repositoryId: null,
         limit: 5,
         page: 1,
-        total: 0
+        total: 0,
+        sortField: null,
+        sortOrder: null,
+        beginDate: null,
+        endDate: null,
       },
       searchData: [],
       searchDataCurrentSelect: {},
@@ -1177,23 +1272,33 @@ export default {
       // Table columns
       columns: [
         {
-          title: 'ARTFACT',
+          title: '制品路径',
           dataIndex: 'path',
-          sorter(a, b, attr) {
-            if (a.path < b.path)
-              return -1;
-            if (a.path > b.path)
-              return 1;
-            return 0;
-          },
-          sortDirections: ['descend', 'ascend'],
           scopedSlots: { customRender: 'path' },
         },
         {
-          title: 'SIZE',
-          dataIndex: 'sizeInBytes',
-          sorter: (a, b) => parseFloat(a.sizeInBytes) - parseFloat(b.sizeInBytes),
+          title: '创建时间',
+          dataIndex: 'created',
+          sorter: true,
           sortDirections: ['descend', 'ascend'],
+          scopedSlots: { customRender: 'created' },
+        },
+        {
+          title: '最近使用时间',
+          dataIndex: 'lastUsed',
+          sorter: true,
+          scopedSlots: { customRender: 'lastUsed' },
+        },
+        {
+          title: '下载次数',
+          dataIndex: 'downloadCount',
+          sorter: true,
+          scopedSlots: { customRender: 'created' },
+        },
+        {
+          title: '制品大小',
+          dataIndex: 'sizeInBytes',
+          sorter: true,
           scopedSlots: { customRender: 'sizeInBytes' },
         },
       ],
@@ -1295,6 +1400,16 @@ export default {
       vulnerabilityDrawerVisible: false,
       vulnerabilityDrawerTitle: '',
       vulnerabilityDrawerData: [],
+      artifactVisible: false,
+      locale: zhCN,
+      showOperationFormModal: false,
+      operationTitle: '',
+      customTitle: '',
+      operationForm: this.$form.createForm(this, { name: 'operation_form' }),
+      repositories: [],
+      storages: [],
+      custom: false,
+      showDeleteModal: false,
     }
   },
   created() {
@@ -1325,7 +1440,20 @@ export default {
       })
     },
     handleTableChange(pagination, filters, sorter) {
-      this.artifactQuery.page = pagination.current
+      this.artifactQuery.sortField = null
+      this.artifactQuery.sortOrder = null
+      if (pagination) {
+        this.artifactQuery.page = pagination.current
+      }
+      if (sorter) {
+        this.artifactQuery.sortField = sorter.field
+        if (sorter.order) {
+          this.artifactQuery.sortOrder = 'asc'
+          if (sorter.order.indexOf("desc") !== -1) {
+            this.artifactQuery.sortOrder = 'desc'
+          }
+        }
+      }
       this.search(this.artifactQuery.artifactName)
     },
     onPageSizeChange() {
@@ -1338,16 +1466,15 @@ export default {
       if (page) {
         this.artifactQuery.page = page
       }
+      if (value) {
+        this.artifactQuery.artifactName = value
+      }
       this.tabActiveKey = 1
-      this.artifactQuery.artifactName = value
       this.artifactQuery.storageId = this.folibRepository.storageId
       this.artifactQuery.repositoryId = this.folibRepository.id
       fql(this.artifactQuery).then(res => {
         this.searchData = res.artifact
         this.artifactQuery.total = res.total
-        if (this.searchData) {
-          this.searchDataHandle(this.searchData[0])
-        }
       })
       this.isNotSearch = true
     },
@@ -1358,7 +1485,7 @@ export default {
       }
       var id = "storages/" + this.searchDataCurrentSelect.storageId + "/" + this.searchDataCurrentSelect.repositoryId + "/" + this.searchDataCurrentSelect.path
       this.handlerSeverity(id)
-      // console.log(item)
+      this.artifactVisible = true
     },
     closeSearchviewCodeDialog() {
       this.searchViewCodeVisible = false
@@ -1654,6 +1781,74 @@ export default {
         description: ""
       })
     },
+    dateChange(value, dateString) {
+      if (dateString) {
+        this.artifactQuery.beginDate = dateString[0]
+        this.artifactQuery.endDate = dateString[1]
+        if (this.artifactQuery.beginDate === '' && this.artifactQuery.endDate === '') {
+          this.dateConfirm()
+        }
+      }
+    },
+    dateConfirm() {
+      this.search(this.artifactQuery.artifactName, 1)
+    },
+    handleMenuClick(active) {
+      this.operationForm.resetFields()
+      this.$nextTick(() => {
+        if (this.$refs.operationForm) {
+          this.operationForm.setFieldsValue({
+            path: this.currentTreeNode.artifactPath,
+          })
+        }
+      })
+      if (active.key === '1' || active.key === '2') {
+        //复制 或 移动
+        this.showOperationFormModal = true
+        this.getStoragesAndRepositories(this.folibRepository.type, this.folibRepository.layout)
+        this.operationTitle = active.key === '1' ? '复制 ' + this.currentTreeNode.artifactPath : '移动  ' + this.currentTreeNode.artifactPath
+        this.customTitle = active.key === '1' ? '复制到自定义目录' : '移动到自定义目录'
+      } else if (active.key === '3') {
+        //删除
+        this.showDeleteModal = true
+      }
+    },
+    getStoragesAndRepositories(type, layout) {
+      getStoragesAndRepositories({ type: type, layout: layout }).then(res => {
+        this.repositories = res
+      })
+    },
+    customChange(value) {
+      this.custom = value
+      if (!value) {
+        this.$nextTick(() => {
+          if (this.$refs.operationForm) {
+            this.operationForm.setFieldsValue({
+              path: this.currentTreeNode.artifactPath,
+            })
+          }
+        })
+      }
+    },
+    operationFormModalClose() {
+      this.showOperationFormModal = false
+    },
+    handleOperationSubmit(e) {
+      e.preventDefault()
+      this.operationForm.validateFields((err, values) => {
+        if (!err) {
+          values.srcStorageId = this.folibRepository.storageId
+          values.srcRepositoryId = this.folibRepository.id
+          let targetRepositoyList = []
+          values.targetRepositories.forEach(item => {
+            let split = item.split(",")
+            targetRepositoyList.push({ targetStorageId: split[0], targetRepositoryId: split[1] })
+          })
+          values.targetRepositoyList = targetRepositoyList
+          console.log("operationForm：", JSON.stringify(values))
+        }
+      });
+    }
   }
 }
 </script>
@@ -1770,6 +1965,14 @@ $md: 768px;
   .vulnerability-count {
     cursor: pointer;
   }
+
+  .delete-modal>.ant-modal {
+    min-width: 200px;
+  }
+}
+
+.delete-modal>.ant-modal {
+  min-width: 200px;
 }
 
 .d-popconfirm {

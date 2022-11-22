@@ -1,8 +1,10 @@
 package com.veadan.folib.controllers.configuration;
 
+import cn.hutool.core.collection.CollectionUtil;
 import com.fasterxml.jackson.annotation.JsonView;
 import com.veadan.folib.cluster.SyncRepositoryEnum;
 import com.veadan.folib.cluster.SyncStorageEnum;
+import com.veadan.folib.forms.common.StorageTreeForm;
 import com.veadan.folib.forms.configuration.ProxyConfigurationForm;
 import com.veadan.folib.forms.configuration.RepositoryForm;
 import com.veadan.folib.forms.configuration.StorageForm;
@@ -27,7 +29,6 @@ import org.apache.commons.compress.utils.Lists;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.convert.ConversionService;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -44,6 +45,7 @@ import javax.validation.groups.Default;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -123,8 +125,6 @@ public class StoragesConfigurationController
 
         try {
             StorageDto storage = conversionService.convert(storageForm, StorageDto.class);
-            storage.setAdmin(storageForm.getAdmin());
-            storage.setUsers(storageForm.getUsers());
             storageManagementService.createStorage(storage);
             // 向其他集群节点同步storage
             clusterSyncService.syncStorage(storage, null, SyncStorageEnum.CREATE);
@@ -160,8 +160,6 @@ public class StoragesConfigurationController
 
         try {
             StorageDto storage = conversionService.convert(storageFormToUpdate, StorageDto.class);
-            storage.setAdmin(storageFormToUpdate.getAdmin());
-            storage.setUsers(storageFormToUpdate.getUsers());
             storageManagementService.updateStorage(storage);
             clusterSyncService.syncStorage(storage, storageId, SyncStorageEnum.UPDATE);
             return getSuccessfulResponseEntity(SUCCESSFUL_UPDATE_STORAGE, accept);
@@ -186,8 +184,50 @@ public class StoragesConfigurationController
             List<Storage> collect = list.stream().filter(s -> s.getUsers() != null && s.getUsers().contains(loggedUser.getUsername())).collect(Collectors.toList());
             storagesOutput.setStorages(collect);
         }
-
         return ResponseEntity.ok(storagesOutput);
+    }
+
+    @ApiOperation(value = "Retrieve the basic info about storages and repositories.")
+    @ApiResponses(value = {@ApiResponse(code = 200, message = "")})
+    @PreAuthorize("hasAuthority('ARTIFACTS_VIEW')")
+    @GetMapping(value = "/getStoragesAndRepositories", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity getStoragesAndRepositories(@ApiParam(value = "Search for repository names in a specific storageId")
+                                                     @RequestParam(value = "storageId", required = false)
+                                                             String storageId,
+                                                     @ApiParam(value = "Filter repository names by type (i.e. hosted, group, proxy)")
+                                                     @RequestParam(value = "type", required = false)
+                                                             String type,
+                                                     @ApiParam(value = "Filter repository names by repository layout")
+                                                     @RequestParam(value = "layout", required = false)
+                                                             String layout, Authentication authentication) {
+        List<Storage> storages = new ArrayList<>(configurationManagementService.getConfiguration()
+                .getStorages()
+                .values());
+        final UserDetails loggedUser = (UserDetails) authentication.getPrincipal();
+        List<StorageTreeForm> storageTreeForms = Lists.newArrayList();
+        if (CollectionUtil.isNotEmpty(storages)) {
+            if (!loggedUser.getUsername().equals("admin")) {
+                storages = storages.stream().filter(s -> s.getUsers() != null && s.getUsers().contains(loggedUser.getUsername())).collect(Collectors.toList());
+            }
+            if (StringUtils.isNotBlank(storageId)) {
+                storages = storages.stream().filter(item -> item.getId().equalsIgnoreCase(storageId)).collect(Collectors.toList());
+            }
+            StorageTreeForm storageTreeForm;
+            List<Repository> repositories;
+            for (Storage storage : storages) {
+                storageTreeForm = StorageTreeForm.builder().id(storage.getId()).key(storage.getId()).name(storage.getId()).build();
+                repositories = new LinkedList<Repository>(storage.getRepositories().values());
+                if (StringUtils.isNotBlank(type)) {
+                    repositories = repositories.stream().filter(repository -> repository.getType().equalsIgnoreCase(type)).collect(Collectors.toList());
+                }
+                if (StringUtils.isNotBlank(layout)) {
+                    repositories = repositories.stream().filter(repository -> repository.getLayout().equalsIgnoreCase(layout)).collect(Collectors.toList());
+                }
+                storageTreeForm.setChildren(repositories.stream().map(repository -> StorageTreeForm.builder().id(repository.getId()).key(storage.getId() + "," + repository.getId()).name(repository.getId()).type(repository.getType()).layout(repository.getLayout()).build()).collect(Collectors.toList()));
+                storageTreeForms.add(storageTreeForm);
+            }
+        }
+        return ResponseEntity.ok(storageTreeForms);
     }
 
     @JsonView(Views.LongStorage.class)

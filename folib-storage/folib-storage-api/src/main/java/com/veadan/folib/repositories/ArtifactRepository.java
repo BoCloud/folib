@@ -1,5 +1,7 @@
 package com.veadan.folib.repositories;
 
+import cn.hutool.core.date.DatePattern;
+import cn.hutool.core.date.DateUtil;
 import com.google.common.collect.Maps;
 import com.veadan.folib.artifact.coordinates.ArtifactLayoutDescription;
 import com.veadan.folib.artifact.coordinates.ArtifactLayoutLocator;
@@ -8,7 +10,6 @@ import com.veadan.folib.db.schema.Edges;
 import com.veadan.folib.db.schema.Properties;
 import com.veadan.folib.db.schema.Vertices;
 import com.veadan.folib.domain.Artifact;
-import com.veadan.folib.domain.ArtifactEntity;
 import com.veadan.folib.domain.VulnerabilityArtifactDomain;
 import com.veadan.folib.enums.VulnerabilityPlatformEnum;
 import com.veadan.folib.gremlin.adapters.ArtifactAdapter;
@@ -18,6 +19,7 @@ import com.veadan.folib.gremlin.dsl.__;
 import com.veadan.folib.gremlin.repositories.GremlinVertexRepository;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.tinkerpop.gremlin.process.traversal.Order;
 import org.apache.tinkerpop.gremlin.process.traversal.P;
 import org.apache.tinkerpop.gremlin.structure.Vertex;
 import org.janusgraph.core.attribute.Text;
@@ -30,6 +32,7 @@ import org.springframework.stereotype.Repository;
 
 import javax.inject.Inject;
 import javax.transaction.Transactional;
+import java.text.DateFormat;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
@@ -99,21 +102,25 @@ public class ArtifactRepository extends GremlinVertexRepository<Artifact> {
 
     public Page<Artifact> findMatchingByIndex(Pageable pagination, String artifactName,
                                               String storageId,
-                                              String repositoryId) {
-        Long count = buildEntityTraversal(artifactName, storageId, repositoryId).count().tryNext().orElse(0L);
+                                              String repositoryId,
+                                              String beginDate,
+                                              String endDate,
+                                              String sortField,
+                                              String sortOrder) {
+        Long count = buildEntityTraversal(artifactName, storageId, repositoryId, beginDate, endDate, sortField, sortOrder).count().tryNext().orElse(0L);
         long low = pagination.getPageNumber() * pagination.getPageSize();
         long high = (pagination.getPageNumber() + 1) * pagination.getPageSize();
         com.veadan.folib.storage.repository.Repository repository = null;
         if (StringUtils.isNotBlank(storageId) && StringUtils.isNotBlank(repositoryId)) {
             repository = configurationManager.getRepository(storageId, repositoryId);
         }
-        List<Artifact> artifactList = buildEntityTraversal(artifactName, storageId, repositoryId)
+        List<Artifact> artifactList = buildEntityTraversal(artifactName, storageId, repositoryId, beginDate, endDate, sortField, sortOrder)
                 .range(low, high)
                 .map(artifactAdapter.fold(Optional.ofNullable(repository)
                         .map(com.veadan.folib.storage.repository.Repository::getLayout)
                         .map(ArtifactLayoutLocator.getLayoutByNameEntityMap()::get)
                         .map(ArtifactLayoutDescription::getArtifactCoordinatesClass))).toList();
-        return new PageImpl<>(EntityTraversalUtils.reduceHierarchy(artifactList), pagination, count);
+        return new PageImpl<>(artifactList, pagination, count);
     }
 
     public List<Artifact> findMatchingByVulnerabilityUuid(String vulnerabilityUuid,
@@ -157,14 +164,28 @@ public class ArtifactRepository extends GremlinVertexRepository<Artifact> {
 
     private EntityTraversal<Vertex, Vertex> buildEntityTraversal(String artifactName,
                                                                  String storageId,
-                                                                 String repositoryId) {
+                                                                 String repositoryId,
+                                                                 String beginDate,
+                                                                 String endDate,
+                                                                 String sortField,
+                                                                 String sortOrder) {
         EntityTraversal<Vertex, Vertex> entityTraversal = g().V().hasLabel(Vertices.ARTIFACT)
-                .has("uuid", Text.textContains(artifactName));
+                .has(Properties.UUID, Text.textContains(artifactName));
         if (StringUtils.isNotBlank(storageId)) {
-            entityTraversal = entityTraversal.has("storageId", storageId);
+            entityTraversal = entityTraversal.has(Properties.STORAGE_ID, storageId);
         }
         if (StringUtils.isNotBlank(repositoryId)) {
-            entityTraversal = entityTraversal.has("repositoryId", repositoryId);
+            entityTraversal = entityTraversal.has(Properties.REPOSITORY_ID, repositoryId);
+        }
+        if (StringUtils.isNotBlank(sortField) && StringUtils.isNotBlank(sortOrder)) {
+            entityTraversal = entityTraversal.order().by(sortField, Order.valueOf(sortOrder));
+        }
+        if (StringUtils.isNotBlank(beginDate) && StringUtils.isNotBlank(endDate)) {
+            LocalDateTime beginLocalDateTime = DateUtil.parseLocalDateTime(beginDate, DatePattern.NORM_DATETIME_MINUTE_PATTERN);
+            LocalDateTime endLocalDateTime = DateUtil.parseLocalDateTime(endDate, DatePattern.NORM_DATETIME_MINUTE_PATTERN);
+            Long begin = EntityTraversalUtils.toLong(beginLocalDateTime);
+            Long end = EntityTraversalUtils.toLong(endLocalDateTime);
+            entityTraversal = entityTraversal.has(Properties.CREATED, P.between(begin, end));
         }
         return entityTraversal;
     }

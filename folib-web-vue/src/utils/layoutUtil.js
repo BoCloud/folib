@@ -1,28 +1,25 @@
 export function getLayoutType (item) {
     const layout=item.layout
-    const id=item.id.toLowerCase()
     let layoutCast
     if(layout==="Maven 2"){
-        layoutCast = id.search("ivy")!== -1?"ivy":id.search("sbt")!== -1?"sbt":id.search("gradle")!== -1?"gradle":"maven"
+        layoutCast = item.subLayout?item.subLayout:'maven'
         return layoutCast
     }
     if(layout==="npm"){
-        layoutCast = id.search("yarn")!== -1?"yarn":"npm"
+        layoutCast = item.subLayout?item.subLayout:'npm'
         return layoutCast
     }
     return layout==="NuGet"?"nuget":layout==="Raw"?"raw":layout==="PyPi"?"pypi":layout==="Docker"?"docker":layout==="rpm"?"rpm":layout
 }
 
 export function getLayoutType2 (layout,repository,type) {
-
-    const id=repository.toLowerCase()
     let layoutCast
     if(layout==="Maven 2"&&type==="black"){
-        layoutCast = id.search("ivy")!== -1?"ivy":id.search("sbt")!== -1?"sbt":id.search("gradle")!== -1?"gradle":"maven_black"
+        layoutCast = repository.subLayout?repository.subLayout:'maven_black'
         return layoutCast
     }
     if(layout==="npm"){
-        layoutCast = id.search("yarn")!== -1?"yarn":"npm"
+        layoutCast = repository.subLayout?repository.subLayout:'npm'
         return layoutCast
     }
     return layout==="NuGet"?"nuget":layout==="Raw"?"raw":layout==="PyPi"?"pypi":layout==="Docker"?"docker":layout==="rpm"?"rpm":layout
