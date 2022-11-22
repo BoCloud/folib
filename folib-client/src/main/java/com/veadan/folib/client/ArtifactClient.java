@@ -188,7 +188,7 @@ public class ArtifactClient extends BaseArtifactClient implements Closeable {
                        String path,
                        boolean force)
             throws ArtifactOperationException {
-        String url = getContextBaseUrl() + "/browse/" + storageId + "/" + repositoryId + "/" + path +
+        String url = getContextBaseUrl() + "/api/browse/" + storageId + "/" + repositoryId + "/" + path +
                 (force ? "?force=" + force : "");
 
         logger.info("Getting {}...", url);
@@ -196,7 +196,7 @@ public class ArtifactClient extends BaseArtifactClient implements Closeable {
         WebTarget resource = getClientInstance().target(url);
         setupAuthentication(resource);
 
-        Response response = resource.request().header(HEADER_NAME_USER_AGENT, HEADER_VALUE_MAVEN).delete();
+        Response response = resource.request().delete();
 
         handleFailures(response, "Failed to delete artifact!");
     }
