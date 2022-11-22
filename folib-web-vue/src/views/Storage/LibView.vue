@@ -1118,55 +1118,72 @@
     </a-drawer>
 
     <a-modal v-model="showOperationFormModal" :footer="null" :forceRender="true" :centered="true"
-      :title="operationTitle" on-ok="showCopyFormModal = false" width="30%">
-      <a-form-model :model="operationForm" ref="operationForm" :rules="operationFormRules"
-        @submit.prevent="handleOperationSubmit">
+      :title="operationTitle" on-ok="showCopyFormModal = false">
+      <a-form :form="operationForm" ref="operationForm" layout="vertical" @submit.prevent="handleOperationSubmit">
         <a-row :gutter="[24]">
           <a-col :span="24">
-            <a-form-model-item class="tags-field mb-10" label="目标仓库" :colon="false" ref="targetRepositoyList"
-              prop="targetRepositoyList">
-              <!-- <a-select v-model="operationForm.targetRepositoyList" style="width: 100%" mode="tags" show-search
-                placeholder="请选择目标仓库">
-                <a-select-option v-for="(repository, index) in repositories" :key="index" :value="repository.id">
-                  {{ repository.id }}
-                </a-select-option>
-              </a-select> -->
-              <gb-ant-select-two-cascader v-decorator="[
-                'menuIds',
+            <a-form-item class="tags-field mb-10" label="目标仓库" :colon="false" ref="targetRepositories"
+              prop="targetRepositories">
+              <gb-ant-select-two-cascader allowClear placeholder="请选择目标仓库" v-decorator="[
+                'targetRepositories',
                 {
-                  initialValue: undefined,
-                  rules: [{ required: true, message: '请选择' }]
+                  initialValue: [],
+                  rules: [{ required: true, message: '请选择目标仓库', type: 'array' }]
                 }
-              ]" allowClear style="width:360px;" :maxTagCount="3" :maxTagTextLength="7" placeholder="请选择"
-                :selectOptionsConfig="{
-                  key: 'id',
-                  value: 'id',
-                  text: 'name',
-                  children: 'children'
-                }" dropdownClassName="customer-multiple-cascader" :treeData="treeData"
-                />
-            </a-form-model-item>
-            <a-form-model-item class="tags-field mb-10" :colon="false" label="复制到自定义目录">
-              <a-switch v-model="operationForm.custom" style="width:10%;" @change="customChange">
+              ]" :selectOptionsConfig="{ key: 'key', value: 'key', text: 'name', children: 'children' }"
+                dropdownClassName="customer-multiple-cascader" :treeData="repositories" />
+            </a-form-item>
+            <a-form-item class="tags-field mb-10" :colon="false" :label="customTitle" valuePropName="checked">
+              <a-switch v-decorator="['custom',
+                {
+                  valuePropName: 'checked',
+                  rules: [
+                    { required: false, message: '' },
+                  ],
+                },
+              ]" style="width:10%;" @change="customChange">
               </a-switch>
-            </a-form-model-item>
-            <a-form-model-item class="tags-field mb-10" v-if="!operationForm.custom" label="目标目录" prop="path"
-              :colon="false">
-              <a-input v-model="operationForm.path" :disabled="true" placeholder="请输入目标目录">
+            </a-form-item>
+            <a-form-item class="tags-field mb-10" v-if="!custom" label="目标目录" prop="path" :colon="false">
+              <a-input v-decorator="['path',
+                {
+                  rules: [
+                    { required: true, message: '请输入目标目录' },
+                  ],
+                },
+              ]" :disabled="true" placeholder="请输入目标目录">
               </a-input>
-            </a-form-model-item>
-            <a-form-model-item class="tags-field mb-10" v-if="operationForm.custom" label="目标目录" prop="path"
-              :colon="false">
-              <a-input v-model="operationForm.path" placeholder="请输入目标目录">
+            </a-form-item>
+            <a-form-item class="tags-field mb-10" v-if="custom" label="目标目录" prop="path" :colon="false">
+              <a-input v-decorator="['path',
+                {
+                  rules: [
+                    { required: true, message: '请输入目标目录' },
+                  ],
+                },
+              ]" :disabled="false" placeholder="请输入目标目录">
               </a-input>
-            </a-form-model-item>
+            </a-form-item>
           </a-col>
           <a-col :span="12" class="text-right">
             <a-button key="submit" class="px-30" size="small" type="primary" htmlType="submit">创建</a-button>
             <a-button key="back" @click="operationFormModalClose()" class="px-30 ml-10" size="small">取消</a-button>
           </a-col>
         </a-row>
-      </a-form-model>
+      </a-form>
+    </a-modal>
+
+    <a-modal v-model="showDeleteModal" :footer="null" :forceRender="true" :centered="true" title="确定删除吗？"
+      on-ok="showDeleteModal = false"  class="delete-modal">
+      <a-row :gutter="[24]">
+        <a-col :span="24">
+          <p>不要冲动，再好好想想</p>
+        </a-col>
+        <a-col :span="24" class="text-right">
+          <a-button @click="showDeleteModal = false" type="default">取消</a-button>
+          <a-button @click="deletePackageHandle" class="ml-10" type="danger">删除</a-button>
+        </a-col>
+      </a-row>
     </a-modal>
   </div>
 </template>
@@ -1182,7 +1199,7 @@ import {
   fileSizeConver,
   formateDate
 } from '@/utils/layoutUtil'
-import { browse, getArtifact, viewArtifactFile, fql, scannerRules, insertOrUpdateRules, getDockerArtifact, deleteArtifact, getSeverity, repositoryVulnerabilityStatistics, getStorages, getLibraryByQuery } from '@/api/folib'
+import { browse, getArtifact, viewArtifactFile, fql, scannerRules, insertOrUpdateRules, getDockerArtifact, deleteArtifact, getSeverity, repositoryVulnerabilityStatistics, getStoragesAndRepositories, } from '@/api/folib'
 import { PrismEditor } from 'vue-prism-editor'
 import 'vue-prism-editor/dist/prismeditor.min.css' // import the styles somewhere
 // import highlighting library (you can use any library you want just return html string)
@@ -1387,19 +1404,12 @@ export default {
       locale: zhCN,
       showOperationFormModal: false,
       operationTitle: '',
-      operationForm: {
-        srcStorageId: '',
-        srcRepositoryId: '',
-        targetRepositoyList: null,
-        custom: false,
-        path: null,
-      },
-      operationFormRules: {
-        targetRepositoyList: [{ required: true, message: '请选择目标仓库' }],
-        path: [{ required: true, message: '请输入目标目录' }],
-      },
+      customTitle: '',
+      operationForm: this.$form.createForm(this, { name: 'operation_form' }),
       repositories: [],
-      storages:[],
+      storages: [],
+      custom: false,
+      showDeleteModal: false,
     }
   },
   created() {
@@ -1784,47 +1794,60 @@ export default {
       this.search(this.artifactQuery.artifactName, 1)
     },
     handleMenuClick(active) {
-      this.$refs.operationForm.resetFields()
-      this.operationForm.srcStorageId = this.folibRepository.storageId
-      this.operationForm.srcRepositoryId = this.folibRepository.id
-      this.operationForm.path = this.currentTreeNode.artifactPath
-      this.getStorages()
-      if (active.key === '1') {
-        //复制
+      this.operationForm.resetFields()
+      this.$nextTick(() => {
+        if (this.$refs.operationForm) {
+          this.operationForm.setFieldsValue({
+            path: this.currentTreeNode.artifactPath,
+          })
+        }
+      })
+      if (active.key === '1' || active.key === '2') {
+        //复制 或 移动
         this.showOperationFormModal = true
-        this.getRepositories(this.folibRepository.storageId, this.folibRepository.type, this.folibRepository.layout)
-      } else if (active.key === '2') {
-        //移动
-        this.showOperationFormModal = true
-        this.getRepositories(this.folibRepository.storageId, this.folibRepository.type, this.folibRepository.layout)
+        this.getStoragesAndRepositories(this.folibRepository.type, this.folibRepository.layout)
+        this.operationTitle = active.key === '1' ? '复制 ' + this.currentTreeNode.artifactPath : '移动  ' + this.currentTreeNode.artifactPath
+        this.customTitle = active.key === '1' ? '复制到自定义目录' : '移动到自定义目录'
       } else if (active.key === '3') {
         //删除
+        this.showDeleteModal = true
       }
     },
-    getStorages() {
-      getStorages().then(res => {
-        this.storages = res
-        console.log("storages：", JSON.stringify(this.storages))
-      })
-    },
-    getRepositories(storageId, type, layout) {
-      getLibraryByQuery({ storageId: storageId, type: type, layout: layout }).then(res => {
+    getStoragesAndRepositories(type, layout) {
+      getStoragesAndRepositories({ type: type, layout: layout }).then(res => {
         this.repositories = res
       })
     },
     customChange(value) {
-      this.operationForm.path = this.currentTreeNode.artifactPath
+      this.custom = value
+      if (!value) {
+        this.$nextTick(() => {
+          if (this.$refs.operationForm) {
+            this.operationForm.setFieldsValue({
+              path: this.currentTreeNode.artifactPath,
+            })
+          }
+        })
+      }
     },
     operationFormModalClose() {
-      this.$refs.operationForm.resetFields()
       this.showOperationFormModal = false
     },
-    handleOperationSubmit() {
-      this.$refs.operationForm.validate(valid => {
-        if (valid) {
-          console.log("operationForm：", JSON.stringify(this.operationForm))
+    handleOperationSubmit(e) {
+      e.preventDefault()
+      this.operationForm.validateFields((err, values) => {
+        if (!err) {
+          values.srcStorageId = this.folibRepository.storageId
+          values.srcRepositoryId = this.folibRepository.id
+          let targetRepositoyList = []
+          values.targetRepositories.forEach(item => {
+            let split = item.split(",")
+            targetRepositoyList.push({ targetStorageId: split[0], targetRepositoryId: split[1] })
+          })
+          values.targetRepositoyList = targetRepositoyList
+          console.log("operationForm：", JSON.stringify(values))
         }
-      })
+      });
     }
   }
 }
@@ -1942,6 +1965,14 @@ $md: 768px;
   .vulnerability-count {
     cursor: pointer;
   }
+
+  .delete-modal>.ant-modal {
+    min-width: 200px;
+  }
+}
+
+.delete-modal>.ant-modal {
+  min-width: 200px;
 }
 
 .d-popconfirm {

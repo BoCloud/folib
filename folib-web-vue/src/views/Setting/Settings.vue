@@ -1079,7 +1079,7 @@ export default {
       );
     },
     blockFormSubmit(e) {
-      e.preventDefault();
+      e.preventDefault()
       this.blockForm.validateFieldsAndScroll((err, values) => {
         if (!err) {
           securityPolicyBlock(values).then(res => {

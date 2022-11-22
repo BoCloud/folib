@@ -36,6 +36,14 @@ export function getLibraryByQuery (dataQuery) {
   })
 }
 
+export function getStoragesAndRepositories (dataQuery) {
+  return axios({
+    url: '/api/configuration/folib/storages/getStoragesAndRepositories',
+    method: 'get',
+    params: dataQuery
+  })
+}
+
 export function createStorages (data) {
   return axios({
     url: '/api/configuration/folib/storages',

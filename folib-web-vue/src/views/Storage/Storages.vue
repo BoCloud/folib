@@ -141,7 +141,7 @@
       </a-col>
     </a-row>
     <a-modal v-model="showsTorageFormModal" :footer="null" :forceRender="true" title="新建存储空间"
-             on-ok="showsTorageFormModal = false" width="50%">
+             on-ok="showsTorageFormModal = false">
       <a-form
           :form="storageCreateData"
           :hideRequiredMark="true"
@@ -237,7 +237,7 @@
     </a-modal>
 
     <a-modal v-model="showStorageUpdate" :footer="null" :forceRender="true" title="修改或删除存储空间"
-             on-ok="showStorageUpdate = false" width="50%">
+             on-ok="showStorageUpdate = false">
       <a-form
           :hideRequiredMark="true"
       >
