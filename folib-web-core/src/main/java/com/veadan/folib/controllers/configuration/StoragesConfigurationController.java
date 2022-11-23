@@ -197,32 +197,43 @@ public class StoragesConfigurationController
                                                      @ApiParam(value = "Filter repository names by type (i.e. hosted, group, proxy)")
                                                      @RequestParam(value = "type", required = false)
                                                              String type,
+                                                     @ApiParam(value = "Search for exclude repository names")
+                                                     @RequestParam(value = "excludeRepositoryId", required = false)
+                                                             String excludeRepositoryId,
                                                      @ApiParam(value = "Filter repository names by repository layout")
                                                      @RequestParam(value = "layout", required = false)
-                                                             String layout, Authentication authentication) {
+                                                             String layout,
+                                                     @ApiParam(value = "Filter repository names by repository policy")
+                                                         @RequestParam(value = "policy", required = false)
+                                                                 String policy,Authentication authentication) {
         List<Storage> storages = new ArrayList<>(configurationManagementService.getConfiguration()
                 .getStorages()
                 .values());
         final UserDetails loggedUser = (UserDetails) authentication.getPrincipal();
         List<StorageTreeForm> storageTreeForms = Lists.newArrayList();
         if (CollectionUtil.isNotEmpty(storages)) {
-            if (!loggedUser.getUsername().equals("admin")) {
-                storages = storages.stream().filter(s -> s.getUsers() != null && s.getUsers().contains(loggedUser.getUsername())).collect(Collectors.toList());
-            }
-            if (StringUtils.isNotBlank(storageId)) {
-                storages = storages.stream().filter(item -> item.getId().equalsIgnoreCase(storageId)).collect(Collectors.toList());
-            }
+            boolean filterByUser = !loggedUser.getUsername().equals("admin");
+            boolean filterByStorageId = StringUtils.isNotBlank(storageId);
+            boolean filterByType = StringUtils.isNotBlank(type);
+            boolean filterByLayout = StringUtils.isNotBlank(layout);
+            boolean filterByExcludeRepositoryId = StringUtils.isNotBlank(excludeRepositoryId);
+            boolean filterByPolicy = StringUtils.isNotBlank(policy);
+            storages = storages.stream()
+                    .distinct()
+                    .filter(s -> !filterByUser || (s.getUsers() != null && s.getUsers().contains(loggedUser.getUsername())))
+                    .filter(s -> !filterByStorageId || s.getId().equalsIgnoreCase(storageId))
+                    .collect(Collectors.toCollection(LinkedList::new));
             StorageTreeForm storageTreeForm;
             List<Repository> repositories;
             for (Storage storage : storages) {
                 storageTreeForm = StorageTreeForm.builder().id(storage.getId()).key(storage.getId()).name(storage.getId()).build();
                 repositories = new LinkedList<Repository>(storage.getRepositories().values());
-                if (StringUtils.isNotBlank(type)) {
-                    repositories = repositories.stream().filter(repository -> repository.getType().equalsIgnoreCase(type)).collect(Collectors.toList());
-                }
-                if (StringUtils.isNotBlank(layout)) {
-                    repositories = repositories.stream().filter(repository -> repository.getLayout().equalsIgnoreCase(layout)).collect(Collectors.toList());
-                }
+                repositories = repositories.stream().distinct()
+                        .filter(r -> !filterByType || r.getType().equalsIgnoreCase(type))
+                        .filter(r -> !filterByLayout || r.getLayout().equalsIgnoreCase(layout))
+                        .filter(r -> !filterByPolicy || r.getPolicy().equalsIgnoreCase(policy))
+                        .filter(r -> !filterByExcludeRepositoryId || !r.getId().equalsIgnoreCase(excludeRepositoryId))
+                        .collect(Collectors.toCollection(LinkedList::new));
                 storageTreeForm.setChildren(repositories.stream().map(repository -> StorageTreeForm.builder().id(repository.getId()).key(storage.getId() + "," + repository.getId()).name(repository.getId()).type(repository.getType()).layout(repository.getLayout()).build()).collect(Collectors.toList()));
                 storageTreeForms.add(storageTreeForm);
             }

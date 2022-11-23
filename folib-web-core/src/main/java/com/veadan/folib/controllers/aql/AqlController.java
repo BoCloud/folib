@@ -37,15 +37,16 @@ public class AqlController extends BaseController {
     @PreAuthorize("hasAuthority('SEARCH_ARTIFACTS')")
     @GetMapping(produces = {MediaType.APPLICATION_JSON_VALUE})
     public ResponseEntity search(@RequestParam(name = "artifactName", required = true) String artifactName,
+                                 @RequestParam(name = "regex", required = false) Boolean regex,
                                  @RequestParam(name = "storageId", required = false) String storageId,
                                  @RequestParam(name = "repositoryId", required = false) String repositoryId,
                                  @RequestParam(name = "beginDate", required = false) String beginDate,
                                  @RequestParam(name = "endDate", required = false) String endDate,
                                  @RequestParam(name = "sortField", required = false) String sortField,
                                  @RequestParam(name = "sortOrder", required = false) String sortOrder,
-                                 @RequestParam(name = "limit") int limit,
-                                 @RequestParam(name = "page") int page) throws IOException {
-        SearchResults result = fqlSearchService.artfactQuery(artifactName, storageId, repositoryId, beginDate, endDate, sortField, sortOrder, limit, page);
+                                 @RequestParam(name = "limit", required = false) Integer limit,
+                                 @RequestParam(name = "page", required = false) Integer page) throws IOException {
+        SearchResults result = fqlSearchService.artifactQuery(regex, artifactName, storageId, repositoryId, beginDate, endDate, sortField, sortOrder, limit, page);
         return ResponseEntity.ok(result);
     }
 
