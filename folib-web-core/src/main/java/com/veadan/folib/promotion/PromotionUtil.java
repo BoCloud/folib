@@ -338,6 +338,41 @@ public class PromotionUtil {
         s3FilesPaths.clear();
     }
 
+    public List<String> getFileRelativePaths(RepositoryPath repositoryPath) throws Exception {
+        String repositoryId = repositoryPath.getRepository().getId();
+        String storageId = repositoryPath.getRepository().getStorage().getId();
+        String absolutePath = repositoryPath.toAbsolutePath().toString();
+        List<String> list = new ArrayList<String>();
+        if (absolutePath.contains("s3://")) {
+            S3Path s3Path = new S3Path(SpringUtil.getBean(S3FileSystem.class), repositoryPath.getTarget().toString());
+            List<S3Path> s3FilesPaths = getS3FiePaths(s3Path);
+            for (S3Path file : s3FilesPaths) {
+                String filePathStr = file.toAbsolutePath().toString();
+                int indexTemp = filePathStr.indexOf(storageId + "/" + repositoryId);
+                String temp = filePathStr.
+                        substring(indexTemp + (storageId + "/" + repositoryId).length(), filePathStr.length());
+                if (temp.startsWith("/")) {
+                    temp = temp.substring(1, temp.length());
+                }
+                list.add(temp);
+            }
+        } else {
+            List<File> files = getNFSFiles(absolutePath);
+            for (File file : files) {
+                String fileAbsolutePath = file.getAbsolutePath();
+                int indexTemp = fileAbsolutePath.indexOf(storageId + "/" + repositoryId);
+                String temp = fileAbsolutePath.
+                        substring(indexTemp + (storageId + "/" + repositoryId).length(), fileAbsolutePath.length());
+                if (temp.startsWith("/")) {
+                    temp = temp.substring(1, temp.length());
+                }
+                list.add(temp);
+            }
+        }
+        return list;
+    }
+
+
     public static String getBucket(String path) {
         return path.replace("s3://", "").split("/")[1];
     }
