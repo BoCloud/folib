@@ -98,4 +98,14 @@ public class ArtifactPromotionController extends BaseArtifactController {
         return artifactPromotionService.pull(promotionArtifactDto);
     }
 
+    @PostMapping(value = "/getFileRelativePaths")
+//    @PreAuthorize("hasAuthority('CONFIGURATION_ADD_UPDATE_STORAGE')")
+    public ResponseEntity getFiles(@RequestBody @Validated ArtifactDto artifactDto,
+                               BindingResult bindingResult) {
+        if (bindingResult.hasErrors()) {
+            throw new RequestBodyValidationException("请求参数错误", bindingResult);
+        }
+        return artifactPromotionService.getFileRelativePaths(artifactDto);
+    }
+
 }
