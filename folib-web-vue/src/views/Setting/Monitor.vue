@@ -198,7 +198,7 @@
       </a-tab-pane>
       <a-tab-pane key="4" tab="集群信息" class="cluster">
         <a-row :gutter="24" type="flex" align="stretch">
-          <a-col :span="24" class="text-left mb-10" v-if="cassandraClusterInfo.dcsMap.dc>1">
+          <a-col :span="24" class="text-left mb-10" v-if="repair">
             <a-button type="primary" @click="cassandraRepair()">
               数据修复
             </a-button>
@@ -317,6 +317,7 @@ export default {
           total: 0
         }
       },
+      repair: false,
       cassandraClusterInfo: {
         endpoint: "",
         localHostId: "",
@@ -649,6 +650,14 @@ export default {
     queryCassandraClusterInfo() {
       getCassandraClusterInfo().then(res => {
         this.cassandraClusterInfo = res
+        if (this.cassandraClusterInfo.hostIDMap) {
+          let hostIDKeys = Object.keys(this.cassandraClusterInfo.hostIDMap)
+          if (hostIDKeys.length > 1) {
+            this.repair = true
+          } else {
+            this.repair = false
+          }
+        }
       })
     },
     tabChange(active) {
