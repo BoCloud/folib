@@ -17,7 +17,6 @@ import java.io.Serializable;
 import java.util.*;
 
 /**
- * @author mtodorov
  * @author Veadan
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
@@ -33,6 +32,8 @@ public class RepositoryDto
     private String storageProvider = FileSystemStorageProvider.ALIAS;
 
     private String layout;
+
+    private String subLayout;
 
     private String type = RepositoryTypeEnum.HOSTED.getType();
 
@@ -302,6 +303,15 @@ public class RepositoryDto
         }
 
         return storageAndRepositoryId.toString();
+    }
+
+    @Override
+    public String getSubLayout() {
+        return subLayout;
+    }
+
+    public void setSubLayout(String subLayout) {
+        this.subLayout = subLayout;
     }
 
     @Override

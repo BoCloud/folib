@@ -48,6 +48,8 @@ public class RepositoryData
 
     private String layout;
 
+    private String subLayout;
+
     private String type;
 
     private boolean secured;
@@ -142,6 +144,7 @@ public class RepositoryData
                 delegate.getVulnerabilityBlacks());
         this.storage = storage != null ? storage : immuteStorage(delegate.getStorage());
         this.basedir = delegate.getBasedir();
+        this.subLayout = delegate.getSubLayout();
     }
 
     private ProxyConfiguration immuteProxyConfiguration(final MutableProxyConfiguration source) {
@@ -385,5 +388,14 @@ public class RepositoryData
 
     public void setVulnerabilityBlacks(Set<String> vulnerabilityBlacks) {
         this.vulnerabilityBlacks = vulnerabilityBlacks;
+    }
+
+    @Override
+    public String getSubLayout() {
+        return subLayout;
+    }
+
+    public void setSubLayout(String subLayout) {
+        this.subLayout = subLayout;
     }
 }

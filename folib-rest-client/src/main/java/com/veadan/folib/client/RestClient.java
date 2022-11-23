@@ -1,22 +1,42 @@
 package com.veadan.folib.client;
 
+import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONArray;
-import com.veadan.folib.vo.Repository;
-import com.veadan.folib.vo.Storage;
+import com.alibaba.fastjson.JSONObject;
+import com.alibaba.fastjson.TypeReference;
+import com.google.common.collect.Lists;
+import com.veadan.folib.dto.ArtifactPromotion;
+import com.veadan.folib.forms.RepositoryForm;
+import com.veadan.folib.forms.SearchArtifact;
+import com.veadan.folib.forms.StorageForm;
+import com.veadan.folib.forms.UploadArtifactFrom;
+import com.veadan.folib.vo.*;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.http.HttpStatus;
+import org.glassfish.jersey.media.multipart.Boundary;
+import org.glassfish.jersey.media.multipart.FormDataMultiPart;
+import org.glassfish.jersey.media.multipart.file.StreamDataBodyPart;
+import org.glassfish.jersey.media.multipart.internal.MultiPartWriter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.http.ResponseEntity;
+import org.springframework.util.CollectionUtils;
 
 import javax.ws.rs.ServerErrorException;
 import javax.ws.rs.client.Entity;
 import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+import java.io.IOException;
+import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * folib rest client
@@ -50,6 +70,26 @@ public class RestClient extends ArtifactClient {
         client.setPassword(password);
         client.setPort(port);
         client.setContextBaseUrl("http://" + host + ":" + client.getPort());
+        return client;
+    }
+
+    /**
+     * 获取客户端实例
+     *
+     * @param baseUrl  地址
+     * @param username 用户名
+     * @param password 密码
+     * @return 客户端实例
+     */
+    public static RestClient getRestClientInstance(String baseUrl, String username, String password) {
+        String ports = baseUrl.substring(baseUrl.lastIndexOf(":") + 1);
+        ports = ports.replace("/", "");
+        int port = Integer.parseInt(ports);
+        RestClient client = new RestClient();
+        client.setUsername(username);
+        client.setPassword(password);
+        client.setPort(port);
+        client.setContextBaseUrl(baseUrl);
         return client;
     }
 
@@ -118,23 +158,20 @@ public class RestClient extends ArtifactClient {
         return resource.request(MediaType.TEXT_PLAIN).get(String.class);
     }
 
-//    /**
-//     * Creates a new storage.
-//     *
-//     * @param storage The storage object to create.
-//     * @return The response code.
-//     */
-//    public int addStorage(StorageForm storage) {
-//        String url = getContextBaseUrl() + "/api/configuration/folib/storages";
-//
-//        WebTarget resource = getClientInstance().target(url);
-//        setupAuthentication(resource);
-//
-//        Response response = resource.request(MediaType.APPLICATION_JSON_TYPE)
-//                .put(Entity.entity(storage, MediaType.APPLICATION_JSON_TYPE));
-//
-//        return response.getStatus();
-//    }
+    /**
+     * 创建存储空间
+     *
+     * @param storage 存储空间信息
+     * @return 响应状态码
+     */
+    public int addStorage(StorageForm storage) {
+        String url = getContextBaseUrl() + "/api/configuration/folib/storages";
+        WebTarget resource = getClientInstance().target(url);
+        setupAuthentication(resource);
+        Response response = resource.request(MediaType.APPLICATION_JSON_TYPE)
+                .put(Entity.entity(storage, MediaType.APPLICATION_JSON_TYPE));
+        return response.getStatus();
+    }
 
     /**
      * 按照存储空间名称查询存储空间信息
@@ -150,8 +187,12 @@ public class RestClient extends ArtifactClient {
         Storage storage = null;
         if (response.getStatus() == HttpStatus.SC_OK) {
             storage = response.readEntity(Storage.class);
+        } else if (response.getStatus() == HttpStatus.SC_NOT_FOUND) {
+            return null;
         } else {
             displayResponseError(response);
+            throw new ServerErrorException(response.getStatus() + " | Unable to greet()",
+                    Response.Status.INTERNAL_SERVER_ERROR);
         }
         return storage;
     }
@@ -172,41 +213,39 @@ public class RestClient extends ArtifactClient {
         return response.getStatus();
     }
 
-//    public int addRepository(String storageId,
-//                             RepositoryForm repositoryForm) {
-//        if (repositoryForm == null) {
-//            logger.error("Unable to add non-existing repository.");
-//            throw new ServerErrorException("Unable to add non-existing repository.",
-//                    Response.Status.INTERNAL_SERVER_ERROR);
-//        }
-//
-//        WebTarget resource;
-//
-//        if (storageId == null) {
-//            logger.error("Storage associated with repo is null.");
-//            throw new ServerErrorException("Storage associated with repo is null.",
-//                    Response.Status.INTERNAL_SERVER_ERROR);
-//        }
-//
-//        try {
-//            String url = getContextBaseUrl() + "/api/configuration/folib/storages/" +
-//                    storageId + "/" + repositoryForm.getId();
-//
-//            logger.debug("Sending request to create repository " + url);
-//
-//            resource = getClientInstance().target(url);
-//        } catch (RuntimeException e) {
-//            logger.error("Unable to create web resource.", e);
-//            throw new ServerErrorException(Response.Status.INTERNAL_SERVER_ERROR);
-//        }
-//
-//        setupAuthentication(resource);
-//
-//        Response response = resource.request(MediaType.APPLICATION_JSON)
-//                .put(Entity.entity(repositoryForm, MediaType.APPLICATION_JSON));
-//
-//        return response.getStatus();
-//    }
+    /**
+     * 创建仓库
+     *
+     * @param storageId      存储空间名称
+     * @param repositoryForm 仓库信息
+     * @return 响应状态码
+     */
+    public int addRepository(String storageId, RepositoryForm repositoryForm) {
+        if (repositoryForm == null) {
+            logger.error("Unable to add non-existing repository.");
+            throw new ServerErrorException("Unable to add non-existing repository.",
+                    Response.Status.INTERNAL_SERVER_ERROR);
+        }
+        WebTarget resource;
+        if (storageId == null) {
+            logger.error("Storage associated with repo is null.");
+            throw new ServerErrorException("Storage associated with repo is null.",
+                    Response.Status.INTERNAL_SERVER_ERROR);
+        }
+        try {
+            String url = getContextBaseUrl() + "/api/configuration/folib/storages/" +
+                    storageId + "/" + repositoryForm.getId();
+            logger.debug("Sending request to create repository " + url);
+            resource = getClientInstance().target(url);
+        } catch (RuntimeException e) {
+            logger.error("Unable to create web resource.", e);
+            throw new ServerErrorException(Response.Status.INTERNAL_SERVER_ERROR);
+        }
+        setupAuthentication(resource);
+        Response response = resource.request(MediaType.APPLICATION_JSON)
+                .put(Entity.entity(repositoryForm, MediaType.APPLICATION_JSON));
+        return response.getStatus();
+    }
 
     /**
      * 按照存储空间名称和仓库名称查询存储信息
@@ -225,6 +264,8 @@ public class RestClient extends ArtifactClient {
             repository = response.readEntity(Repository.class);
         } else {
             displayResponseError(response);
+            throw new ServerErrorException(response.getStatus() + " | Unable to greet()",
+                    Response.Status.INTERNAL_SERVER_ERROR);
         }
         return repository;
     }
@@ -240,10 +281,10 @@ public class RestClient extends ArtifactClient {
     public int deleteRepository(String storageId, String repositoryId, boolean force) {
         String url = getContextBaseUrl() +
                 "/api/configuration/folib/storages/" + storageId + "/" + repositoryId +
-                (force ? "?force=true" : "");
+                ("?force=" + force);
         WebTarget resource = getClientInstance().target(url);
         setupAuthentication(resource);
-        Response response = resource.request().delete();
+        Response response = resource.request().accept(MediaType.WILDCARD).delete();
         return response.getStatus();
     }
 
@@ -365,7 +406,7 @@ public class RestClient extends ArtifactClient {
      * 按照存储空间名称和仓库类型查询存储空间下的仓库列表
      *
      * @param storageId      存储空间名称
-     * @param repositoryType 仓库类型 hosted 本地库 proxy 代理库 group 组合库
+     * @param repositoryType 仓库类型 hosted 本地库 proxy 代理库 group 组合库 all 所有仓库类型
      * @return 存储空间下的仓库列表
      */
     public List<Repository> getRepositories(String storageId, String repositoryType) {
@@ -388,6 +429,236 @@ public class RestClient extends ArtifactClient {
         }
     }
 
+    /**
+     * 按照存储空间名称和仓库名称获取仓库下的文件列表
+     *
+     * @param storageId    存储空间名称
+     * @param repositoryId 仓库名称
+     * @param path         路径
+     * @return 仓库下的文件列表
+     */
+    public List<Folder> folders(String storageId, String repositoryId, String path) {
+        Repository repository = getRepository(storageId, repositoryId);
+        String layout = repository.getLayout();
+        String url = getContextBaseUrl() + "/api/browse/%s/%s/%s";
+        url = String.format(url, storageId, repositoryId, path);
+        WebTarget resource = getClientInstance().target(url);
+        setupAuthentication(resource);
+        Response response = resource.request(MediaType.APPLICATION_JSON).get();
+        if (response.getStatus() != HttpStatus.SC_OK) {
+            displayResponseError(response);
+            throw new ServerErrorException(response.getStatus() + " | Unable to greet()",
+                    Response.Status.INTERNAL_SERVER_ERROR);
+        } else {
+            String res = response.readEntity(String.class);
+            if (StringUtils.isNotBlank(res)) {
+                List<Folder> folders = Lists.newArrayList(), directories, files, dockerFiles;
+                JSONObject folderJson = JSONObject.parseObject(res);
+                String directoriesKey = "directories", filesKey = "files";
+                if (folderJson.containsKey(directoriesKey) && StringUtils.isNotBlank(folderJson.getString(directoriesKey))) {
+                    directories = JSONArray.parseArray(folderJson.getString(directoriesKey), Folder.class);
+                    if (!CollectionUtils.isEmpty(directories)) {
+                        if ("docker".equalsIgnoreCase(layout) && StringUtils.isNotBlank(path)) {
+                            //docker布局
+                            dockerFiles = directories.stream().filter(f -> (!"blobs".equalsIgnoreCase(f.getName())) && (!"manifest".equalsIgnoreCase(f.getName()))).collect(Collectors.toList());
+                            dockerFiles.forEach(item -> item.setFolder(false));
+                            folders.addAll(dockerFiles);
+                        } else {
+                            directories.forEach(item -> item.setFolder(true));
+                            folders.addAll(directories);
+                        }
+                    }
+                }
+                if (folderJson.containsKey(filesKey) && StringUtils.isNotBlank(folderJson.getString(filesKey))) {
+                    files = JSONArray.parseArray(folderJson.getString(filesKey), Folder.class);
+                    files.forEach(item -> item.setFolder(false));
+                    folders.addAll(files);
+                }
+                return folders;
+            } else {
+                return Collections.emptyList();
+            }
+        }
+    }
+
+    /**
+     * 获取制品信息
+     *
+     * @param storageId    存储空间名称
+     * @param repositoryId 仓库名称
+     * @param path         路径
+     * @return 制品信息
+     */
+    public ArtifactInfo getArtifactInfo(String storageId, String repositoryId, String path) {
+        String url = getContextBaseUrl() + "/api/browse/getArtifact/%s/%s/%s";
+        url = String.format(url, storageId, repositoryId, path);
+        WebTarget resource = getClientInstance().target(url);
+        setupAuthentication(resource);
+        Response response = resource.request(MediaType.APPLICATION_JSON).get();
+        if (response.getStatus() != HttpStatus.SC_OK) {
+            displayResponseError(response);
+            throw new ServerErrorException(response.getStatus() + " | Unable to greet()",
+                    Response.Status.INTERNAL_SERVER_ERROR);
+        } else {
+            return response.readEntity(ArtifactInfo.class);
+        }
+    }
+
+    /**
+     * 搜索制品
+     *
+     * @param searchArtifact 搜索参数
+     * @return 搜索结果
+     */
+    public SearchArtifactPage searchArtifactPage(SearchArtifact searchArtifact) {
+        String url = getContextBaseUrl() + "/api/fql";
+        if (Boolean.TRUE.equals(searchArtifact.getRegex()) && StringUtils.isNotBlank(searchArtifact.getArtifactName())) {
+            //开启正则
+            String regex = ".*%s((.(?!blobs/sha256|manifest/sha256))*.)";
+            regex = String.format(regex, searchArtifact.getArtifactName());
+            searchArtifact.setArtifactName(regex);
+        }
+        Map<String, String> paramsMap = JSON.parseObject(JSON.toJSONString(searchArtifact), new TypeReference<Map<String, String>>() {
+        });
+        String params = createLinkStringByGet(paramsMap);
+        url = url + params;
+        WebTarget resource = getClientInstance().target(url);
+        setupAuthentication(resource);
+        Response response = resource.request(MediaType.APPLICATION_JSON).get();
+        if (response.getStatus() != HttpStatus.SC_OK) {
+            displayResponseError(response);
+            throw new ServerErrorException(response.getStatus() + " | Unable to greet()",
+                    Response.Status.INTERNAL_SERVER_ERROR);
+        } else {
+            SearchArtifactPage searchArtifactPage = SearchArtifactPage.builder().total(0L).build();
+            String res = response.readEntity(String.class);
+            if (StringUtils.isNotBlank(res)) {
+                JSONObject searchJson = JSONObject.parseObject(res);
+                String artifactKey = "artifact";
+                if (searchJson.containsKey(artifactKey) && StringUtils.isNotBlank(searchJson.getString(artifactKey))) {
+                    List<SearchArtifactInfo> searchArtifactInfoList = JSONArray.parseArray(searchJson.getString(artifactKey), SearchArtifactInfo.class);
+                    searchArtifactPage.setArtifactInfoList(searchArtifactInfoList);
+                }
+                searchArtifactPage.setTotal(searchJson.getLongValue("total"));
+                return searchArtifactPage;
+            }
+            return searchArtifactPage;
+        }
+    }
+
+    /**
+     * 获取制品漏洞报告信息
+     *
+     * @param storageId    存储空间名称
+     * @param repositoryId 仓库名称
+     * @param path         路径
+     * @return 制品漏洞报告信息
+     */
+    public VulnerabilityReport vulnerabilityReport(String storageId, String repositoryId, String path) {
+        String artifactPath = storageId + "/" + repositoryId + "/" + path;
+        String url = getContextBaseUrl() + "/api/folibScanner/severity?fuzzy=1&id=" + artifactPath;
+        WebTarget resource = getClientInstance().target(url);
+        setupAuthentication(resource);
+        Response response = resource.request(MediaType.APPLICATION_JSON).get();
+        if (response.getStatus() != HttpStatus.SC_OK) {
+            displayResponseError(response);
+            throw new ServerErrorException(response.getStatus() + " | Unable to greet()",
+                    Response.Status.INTERNAL_SERVER_ERROR);
+        } else {
+            String data = response.readEntity(String.class);
+            if (StringUtils.isNotBlank(data)) {
+                JSONObject dataJson = JSONObject.parseObject(data).getJSONObject("data");
+                VulnerabilityReport vulnerabilityReport = JSONObject.toJavaObject(dataJson, VulnerabilityReport.class);
+                String report = dataJson.getString("report");
+                if (StringUtils.isNotBlank(report)) {
+                    vulnerabilityReport.setDependencies(JSONObject.parseArray(report));
+                }
+                Boolean scanComplete = dataJson.getBoolean("show");
+                Integer vulnerabilitiesCount = dataJson.getInteger("vulnerabilitesCount");
+                vulnerabilityReport.setVulnerabilitiesCount(vulnerabilitiesCount);
+                vulnerabilityReport.setScanComplete(scanComplete);
+                return vulnerabilityReport;
+            }
+            return null;
+        }
+    }
+
+    /**
+     * 制品复制操作
+     *
+     * @param artifactPromotion 制品复制参数
+     * @return ResponseEntity 响应实体
+     */
+    public ResponseEntity copy(ArtifactPromotion artifactPromotion) {
+        String url = getContextBaseUrl() + "/api/artifact/folib/promotion/copy";
+        WebTarget resource = getClientInstance().target(url);
+        setupAuthentication(resource);
+        Response response = resource.request(MediaType.APPLICATION_JSON).
+                post(Entity.entity(artifactPromotion, MediaType.APPLICATION_JSON));
+        if (response.getStatus() != HttpStatus.SC_OK) {
+            displayResponseError(response);
+            throw new ServerErrorException(response.getStatus() + " | Unable to greet()",
+                    Response.Status.INTERNAL_SERVER_ERROR);
+        } else {
+            return ResponseEntity.ok("Artifact copying");
+        }
+    }
+
+    /**
+     * 制品移动操作
+     *
+     * @param artifactPromotion 制品移动参数
+     * @return ResponseEntity 响应实体
+     */
+    public ResponseEntity move(ArtifactPromotion artifactPromotion) {
+        String url = getContextBaseUrl() + "/api/artifact/folib/promotion/move";
+        WebTarget resource = getClientInstance().target(url);
+        setupAuthentication(resource);
+        Response response = resource.request(MediaType.APPLICATION_JSON).
+                post(Entity.entity(artifactPromotion, MediaType.APPLICATION_JSON));
+        if (response.getStatus() != HttpStatus.SC_OK) {
+            displayResponseError(response);
+            throw new ServerErrorException(response.getStatus() + " | Unable to greet()",
+                    Response.Status.INTERNAL_SERVER_ERROR);
+        } else {
+            return ResponseEntity.ok("Artifact moving");
+        }
+    }
+
+    /**
+     * 上传制品
+     *
+     * @param uploadArtifactFrom 上传参数
+     * @return ResponseEntity 响应实体
+     */
+    public ResponseEntity upload(UploadArtifactFrom uploadArtifactFrom) {
+        String url = getContextBaseUrl() + "/api/artifact/folib/promotion/upload-files";
+        FormDataMultiPart part = new FormDataMultiPart();
+        part.field("storageId", uploadArtifactFrom.getStorageId());
+        part.field("repostoryId", uploadArtifactFrom.getRepostoryId());
+        part.field("filePathMap", uploadArtifactFrom.getFilePathMap());
+        try (InputStream is = uploadArtifactFrom.getFiles()[0].getInputStream()) {
+            part.bodyPart(new StreamDataBodyPart("files", is,
+                    uploadArtifactFrom.getFiles()[0].getOriginalFilename()));
+            WebTarget resource = getClientInstance().register(MultiPartWriter.class).target(url);
+            setupAuthentication(resource);
+            Response response = resource.request(MediaType.APPLICATION_JSON).header("Mime-Version", "1.0").
+                    post(Entity.entity(part, Boundary.addBoundary(MediaType.MULTIPART_FORM_DATA_TYPE)));
+            if (response.getStatus() != HttpStatus.SC_OK) {
+                displayResponseError(response);
+                throw new ServerErrorException(response.getStatus() + " | Unable to greet()",
+                        Response.Status.INTERNAL_SERVER_ERROR);
+            } else {
+                return ResponseEntity.ok("上传成功");
+            }
+        } catch (IOException e) {
+            logger.error("Artifact upload error {}", e.getMessage());
+            return ResponseEntity.status(org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(e.getMessage());
+        }
+    }
+
+
     public WebTarget prepareTarget(String arg) {
         return setupAuthentication(prepareUnauthenticatedTarget(arg));
     }
@@ -402,6 +673,34 @@ public class RestClient extends ArtifactClient {
         this.username = username;
         this.password = password;
         return prepareTarget(arg);
+    }
+
+    /**
+     * 把数组所有元素排序，并按照“参数=参数值”的模式用“&”字符拼接成字符串
+     *
+     * @param params 需要排序并参与字符拼接的参数组
+     * @return 拼接后字符串
+     */
+    public static String createLinkStringByGet(Map<String, String> params) {
+        String preStr = "?";
+        try {
+            List<String> keys = new ArrayList<String>(params.keySet());
+            Collections.sort(keys);
+            for (int i = 0; i < keys.size(); i++) {
+                String key = keys.get(i);
+                String value = params.get(key);
+                value = URLEncoder.encode(value, "UTF-8");
+                if (i == keys.size() - 1) {
+                    //拼接时，不包括最后一个&字符
+                    preStr = preStr + key + "=" + value;
+                } else {
+                    preStr = preStr + key + "=" + value + "&";
+                }
+            }
+        } catch (Exception ex) {
+            logger.error("字符拼接错误：{}", ExceptionUtils.getStackTrace(ex));
+        }
+        return preStr;
     }
 
 }

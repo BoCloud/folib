@@ -32,21 +32,23 @@ import java.text.SimpleDateFormat;
 import java.time.ZoneId;
 import java.util.Date;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 
 @Component
 @Transactional
-public class FqlSearchService extends GremlinVertexRepository<Artifact> implements AqlSearchService{
+public class FqlSearchService extends GremlinVertexRepository<Artifact> implements AqlSearchService {
     @Inject
     ArtifactAdapter artifactAdapter;
 
     @Inject
-    ArtifactRepository  artifactRepository;
+    ArtifactRepository artifactRepository;
 
     @Inject
     private RepositoryPathResolver repositoryPathResolver;
     @Inject
     private SnippetGenerator snippetGenerator;
+
     @Override
     public SearchResults search(Selector<ArtifactEntity> selector) throws IOException {
 
@@ -59,24 +61,34 @@ public class FqlSearchService extends GremlinVertexRepository<Artifact> implemen
     }
 
 
-    public SearchResults artfactQuery(String artifactName,
+    public SearchResults artifactQuery(Boolean regex, String artifactName,
                                        String storageId,
                                        String repositoryId,
-                                       int limit,int page) throws IOException {
+                                       String beginDate,
+                                       String endDate,
+                                       String sortField,
+                                       String sortOrder,
+                                       Integer limit, Integer page) throws IOException {
 
         Pageable pageable = null;
-        if(page==1) {
+        if (Objects.isNull(page)) {
+            page = 1;
+        }
+        if (Objects.isNull(limit)) {
+            limit = 5;
+        }
+        if (page == 1) {
             pageable = PageRequest.of(page, limit).first();
-        }else{
+        } else {
             pageable = PageRequest.of(page, limit).previous();
         }
-        Page<Artifact> artifacts = artifactRepository.findMatchingByIndex(pageable, artifactName, storageId, repositoryId);
+        Page<Artifact> artifacts = artifactRepository.findMatchingByIndex(pageable, regex, artifactName, storageId, repositoryId, beginDate, endDate, sortField, sortOrder);
         List<Artifact> artifactEntityList = artifacts.getContent();
 
         SearchResults result = new SearchResults();
         result.setTotal(artifacts.getTotalElements());
         SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-        for (Artifact artifact:artifactEntityList){
+        for (Artifact artifact : artifactEntityList) {
             SearchResult r = new SearchResult();
             result.getResults().add(r);
 
@@ -105,14 +117,23 @@ public class FqlSearchService extends GremlinVertexRepository<Artifact> implemen
             Repository repository = repositoryPath.getRepository();
             URL artifactResource = RepositoryFiles.readResourceUrl(repositoryPath);
             r.setUrl(artifactResource.toString());
-
+            r.setLayout(repository.getLayout());
+            String path = artifact.getArtifactCoordinates().buildPath();
+            if ("Docker".equalsIgnoreCase(r.getLayout())) {
+                //docker
+                r.setArtifactName(path.substring(path.indexOf("/") + 1, path.indexOf("/sha256")));
+                r.setArtifactPath(path.substring(0, path.indexOf("/sha256")));
+            } else {
+                r.setArtifactName(path.substring(path.lastIndexOf("/") + 1));
+                r.setArtifactPath(path);
+            }
             List<CodeSnippet> snippets = snippetGenerator.generateSnippets(repository.getLayout(),
                     artifact.getArtifactCoordinates());
             r.setSnippets(snippets);
 
             TreeUtil treeUtil = new TreeUtil();
             Set<String> fileNames = artifact.getArtifactArchiveListing().getFilenames();
-            if(fileNames!=null&&fileNames.size()>0){
+            if (fileNames != null && fileNames.size() > 0) {
                 List listTree = treeUtil.toTree(fileNames);
                 r.setTreeNode(listTree);
             }

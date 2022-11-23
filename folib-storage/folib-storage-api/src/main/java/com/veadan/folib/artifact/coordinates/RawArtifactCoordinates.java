@@ -4,10 +4,17 @@ import com.veadan.folib.db.schema.Vertices;
 import com.veadan.folib.domain.LayoutArtifactCoordinatesEntity;
 import org.neo4j.ogm.annotation.NodeEntity;
 
+import javax.xml.bind.annotation.XmlAccessType;
+import javax.xml.bind.annotation.XmlAccessorType;
+import javax.xml.bind.annotation.XmlAttribute;
+import javax.xml.bind.annotation.XmlRootElement;
+
 /**
  * @author Veadan
  */
 @NodeEntity(Vertices.RAW_ARTIFACT_COORDINATES)
+@XmlRootElement(name = "RawArtifactCoordinates")
+@XmlAccessorType(XmlAccessType.NONE)
 @ArtifactCoordinatesLayout(name = RawArtifactCoordinates.LAYOUT_NAME, alias = RawArtifactCoordinates.LAYOUT_ALIAS)
 public class RawArtifactCoordinates
         extends LayoutArtifactCoordinatesEntity<RawArtifactCoordinates, RawArtifactCoordinates>
@@ -38,7 +45,9 @@ public class RawArtifactCoordinates
         setCoordinate(PATH, id);
     }
 
+    @Override
     @ArtifactLayoutCoordinate
+    @XmlAttribute(name = "path")
     public String getPath() 
     {
         return getId();

@@ -49,6 +49,12 @@
                       </div>
                     </a-col>
                     <a-col :span="24" :md="12" style="display: flex; align-items: center; justify-content: flex-end">
+                      <a v-if="folibRepository.layout === 'Raw'">
+                        <small style="padding-right: 20px" @click="handleUpload">
+                          上传
+                          <a-icon type="cloud-upload" />
+                        </small>
+                      </a>
                       <a>
                         <small style="padding-right: 20px" @click="UsedHelperVisible">
                           使用帮助
@@ -155,7 +161,7 @@
                 }}</a>
 
 
-              <a-popconfirm placement="topRight" ok-text="删除" cancel-text="取消" okType="danger"
+              <!-- <a-popconfirm placement="topRight" ok-text="删除" cancel-text="取消" okType="danger"
                 @confirm="deletePackageHandle">
                 <template slot="title">
                   <p>确定删除么？</p>
@@ -166,7 +172,23 @@
                   删除
                   <a-icon :size="24" shape="square" type="delete"></a-icon>
                 </a-button>
-              </a-popconfirm>
+              </a-popconfirm> -->
+              <a-dropdown v-if="currentTreeNode.url">
+                <a-menu slot="overlay" @click="handleMenuClick">
+                  <a-menu-item key="1" v-if="folibRepository.type === 'hosted'">
+                    <a-icon type="copy" />复制
+                  </a-menu-item>
+                  <a-menu-item key="2" v-if="folibRepository.type === 'hosted'">
+                    <a-icon type="swap" />移动
+                  </a-menu-item>
+                  <a-menu-item key="3">
+                    <a-icon type="delete" />删除
+                  </a-menu-item>
+                </a-menu>
+                <a-button style="margin-left: 8px">操作
+                  <a-icon type="down" />
+                </a-button>
+              </a-dropdown>
               <hr class="my-25" />
               <a-descriptions v-if="folibRepository.layout !== 'Docker'" title="基本信息" :column="1">
                 <a-descriptions-item label="所属空间">
@@ -238,7 +260,8 @@
               </a-descriptions>
               <hr class="my-25" />
 
-              <a-col :span="24" v-if="currentFileDetial && currentFileDetial.snippets">
+              <a-col :span="24"
+                v-if="currentFileDetial && currentFileDetial.snippets && currentFileDetial.snippets.length > 0">
                 <a-card :bordered="false" class="card-billing-info">
                   <div class="col-info">
                     <a-descriptions :title="'使用示例(' + codeParam.type + ')'" :column="1">
@@ -261,20 +284,25 @@
         </a-row>
         <a-row v-if="isNotSearch === true" type="flex" :gutter="24">
           <!-- Platform Settings Column -->
-          <a-col :span="24" :md="10" class="mb-24">
+          <a-col :span="24" :md="24" class="mb-24">
             <a-card :bordered="false" style="max-height:1024px;min-height:454px;overflow-y: auto" class="header-solid"
               :bodyStyle="{ paddingTop: 0, paddingBottom: 0 }">
               <div class="mx-25">
                 <a-row type="flex" :gutter="24">
                   <a-col :span="24" md="12">
-                    <a-select v-model="artifactQuery.limit" @change="onPageSizeChange" style="width: 70px">
+                    <label for="" class="ml-10">显示数量</label>
+                    <a-select class="ml-10 mt-10" v-model="artifactQuery.limit" @change="onPageSizeChange"
+                      style="width: 70px">
                       <a-select-option :value="5">5</a-select-option>
                       <a-select-option :value="10">10</a-select-option>
                       <a-select-option :value="15">15</a-select-option>
                       <a-select-option :value="20">20</a-select-option>
                       <a-select-option :value="25">25</a-select-option>
                     </a-select>
-                    <label for="" class="ml-10">显示数量</label>
+                    <a-config-provider class="ml-10 mt-10" :locale="locale" style="width: 290px">
+                      <a-range-picker :show-time="{ placeholder: '选择时间', format: 'HH:mm' }" format="YYYY-MM-DD HH:mm"
+                        :placeholder="['开始日期', '结束日期']" @change="dateChange" @ok="dateConfirm" />
+                    </a-config-provider>
                   </a-col>
                   <a-col :span="24" md="12">
                   </a-col>
@@ -286,133 +314,20 @@
 
               <a-table class="mt-20" :columns="columns" :data-source="searchData" @change="handleTableChange"
                 :pagination="{ pageSize: artifactQuery.limit, current: artifactQuery.page, total: artifactQuery.total, showLessItems: true }">
-
                 <template slot="path" slot-scope="text, record">
                   <a>
                     <div class="table-avatar-info" @click="searchDataHandle(record)">
                       <a-avatar shape="circle" :size="24" :src="'images/folib/' + getFileType(record.path) + '.svg'" />
-                      <div class="avatar-info">
-                        <p class="mb-0 text-dark">{{ record.path }}</p>
+                      <div class="avatar-info search-column-path">
+                        <p class="mb-0 text-dark">
+                          {{ record.artifactPath }}
+                        </p>
                       </div>
                     </div>
                   </a>
                 </template>
                 <template slot="sizeInBytes" slot-scope="sizeInBytes">{{ fileSizeConver(sizeInBytes) }}</template>
-
               </a-table>
-            </a-card>
-          </a-col>
-
-          <a-col :span="24" :md="14" class="mb-24">
-            <a-card :bordered="false" class="header-solid h-full card-profile-information"
-              :bodyStyle="{ paddingTop: 0, paddingBottom: '16px' }" :headStyle="{ paddingRight: 0 }">
-              <template #title>
-                <h6 class="font-semibold m-0">
-                  <a-avatar :size="24" shape="square" :src="
-                    'images/folib/' + getFileType(searchDataCurrentSelect ? searchDataCurrentSelect.path : '') + '.svg'
-                  " />
-                  {{ searchDataCurrentSelect ? searchDataCurrentSelect.path : '' }}
-                  <div class="table-severity-info" v-if="severity.show" @click="detialVisible = true">
-                    <template v-if="severity.vulnerabilitesCount > 0">
-                      <a-tooltip>
-                        <template slot="title">严重</template>
-                        <div class="severity-info">
-                          <a-avatar :size="24" :src="'images/folib/critical.svg'" />
-                          <span class="mb-0 text-dark">{{ severity.critical }}</span>
-                        </div>
-                      </a-tooltip>
-
-                      <a-tooltip>
-                        <template slot="title">高危</template>
-                        <div class="severity-info">
-                          <a-avatar :size="24" :src="'images/folib/high.svg'" />
-                          <span class="mb-0 text-dark">{{ severity.high }}</span>
-                        </div>
-                      </a-tooltip>
-
-                      <a-tooltip>
-                        <template slot="title">中危</template>
-                        <div class="severity-info">
-                          <a-avatar :size="24" :src="'images/folib/medium.svg'" />
-                          <span class="mb-0 text-dark">{{ severity.medium }}</span>
-                        </div>
-                      </a-tooltip>
-
-                      <a-tooltip>
-                        <template slot="title">低危</template>
-                        <div class="severity-info">
-                          <a-avatar :size="24" :src="'images/folib/low.svg'" />
-                          <span class="mb-0 text-dark">{{ severity.low }}</span>
-                        </div>
-                      </a-tooltip>
-                    </template>
-                    <template v-else>
-                      <a-tooltip>
-                        <template slot="title">健康</template>
-                        <a-avatar :size="24" :src="'images/folib/healthy.svg'" />
-                      </a-tooltip>
-                    </template>
-                  </div>
-                </h6>
-              </template>
-              <a-button type="link" slot="extra" @click="searchViewCodeHandle()">
-                预览
-                <a-icon :size="24" shape="square" type="eye"></a-icon>
-              </a-button>
-              <a class="text-dark" :href="searchDataCurrentSelect ? searchDataCurrentSelect.url : ''" target="_blank">{{
-                  searchDataCurrentSelect ? searchDataCurrentSelect.url : ''
-              }}</a>
-              <hr class="my-25" />
-              <a-descriptions title="基本信息" :column="1" v-if="searchDataCurrentSelect">
-                <a-descriptions-item label="所属空间">
-                  {{ searchDataCurrentSelect.storageId }}
-                </a-descriptions-item>
-                <a-descriptions-item label="所属仓库">
-                  {{ searchDataCurrentSelect.repositoryId }}
-                </a-descriptions-item>
-                <a-descriptions-item label="名称">
-                  {{ searchDataCurrentSelect.path }}
-                </a-descriptions-item>
-                <a-descriptions-item label="文件大小">
-                  {{ fileSizeConver(searchDataCurrentSelect.sizeInBytes) }}
-                </a-descriptions-item>
-                <a-descriptions-item label="修改时间">
-                  {{ searchDataCurrentSelect.lastUpdated }}
-                </a-descriptions-item>
-                <a-descriptions-item label="最近使用时间">
-                  {{ searchDataCurrentSelect.lastUsed }}
-                </a-descriptions-item>
-                <a-descriptions-item v-if="currentFileDetial" label="下载次数">
-                  {{ searchDataCurrentSelect.downloadCount }}
-                </a-descriptions-item>
-                <a-descriptions-item label="MD5">
-                  {{ searchDataCurrentSelect.md5 }}
-                </a-descriptions-item>
-                <a-descriptions-item label="SHA-1">
-                  {{ searchDataCurrentSelect.sha }}
-                </a-descriptions-item>
-              </a-descriptions>
-              <hr class="my-25" />
-
-              <a-col :span="24" v-if="searchDataCurrentSelect && searchDataCurrentSelect.snippets">
-                <a-card :bordered="false" class="card-billing-info">
-                  <div class="col-info">
-                    <a-descriptions :title="'使用示例(' + codeParam.type + ')'" :column="1">
-                      <a-descriptions-item v-if="searchDataCurrentSelect">
-                        <prism-editor class="my-editor height-300" v-if="searchDataCurrentSelect"
-                          v-model="codeParam.code" :highlight="highlighterHandle" :line-numbers="false"
-                          :readonly="true"></prism-editor>
-                      </a-descriptions-item>
-                    </a-descriptions>
-                  </div>
-                  <div class="col-action">
-                    <a-button v-for="(item, index) in this.searchDataCurrentSelect.snippets" :key="index" type="link"
-                      size="small" @click="changeCodeTye(item)">
-                      <a-avatar :size="20" shape="square" :src="'images/folib/' + getCodeImg(item) + '.svg'" />
-                    </a-button>
-                  </div>
-                </a-card>
-              </a-col>
             </a-card>
           </a-col>
         </a-row>
@@ -514,6 +429,119 @@
     <!-- / Header Background Image -->
 
     <!-- User Profile Card -->
+
+    <a-drawer placement="right" width="65%" title="制品详情" :visible="artifactVisible" @close="artifactVisible = false">
+      <a-card :bordered="false" class="header-solid h-full card-profile-information"
+        :bodyStyle="{ paddingTop: 0, paddingBottom: '16px' }" :headStyle="{ paddingRight: 0 }">
+        <template #title>
+          <h6 class="font-semibold m-0">
+            <a-avatar :size="24" shape="square" :src="
+              'images/folib/' + getFileType(searchDataCurrentSelect ? searchDataCurrentSelect.path : '') + '.svg'
+            " />
+            {{ searchDataCurrentSelect ? searchDataCurrentSelect.path : '' }}
+            <div class="table-severity-info" v-if="severity.show" @click="detialVisible = true">
+              <template v-if="severity.vulnerabilitesCount > 0">
+                <a-tooltip>
+                  <template slot="title">严重</template>
+                  <div class="severity-info">
+                    <a-avatar :size="24" :src="'images/folib/critical.svg'" />
+                    <span class="mb-0 text-dark">{{ severity.critical }}</span>
+                  </div>
+                </a-tooltip>
+
+                <a-tooltip>
+                  <template slot="title">高危</template>
+                  <div class="severity-info">
+                    <a-avatar :size="24" :src="'images/folib/high.svg'" />
+                    <span class="mb-0 text-dark">{{ severity.high }}</span>
+                  </div>
+                </a-tooltip>
+
+                <a-tooltip>
+                  <template slot="title">中危</template>
+                  <div class="severity-info">
+                    <a-avatar :size="24" :src="'images/folib/medium.svg'" />
+                    <span class="mb-0 text-dark">{{ severity.medium }}</span>
+                  </div>
+                </a-tooltip>
+
+                <a-tooltip>
+                  <template slot="title">低危</template>
+                  <div class="severity-info">
+                    <a-avatar :size="24" :src="'images/folib/low.svg'" />
+                    <span class="mb-0 text-dark">{{ severity.low }}</span>
+                  </div>
+                </a-tooltip>
+              </template>
+              <template v-else>
+                <a-tooltip>
+                  <template slot="title">健康</template>
+                  <a-avatar :size="24" :src="'images/folib/healthy.svg'" />
+                </a-tooltip>
+              </template>
+            </div>
+          </h6>
+        </template>
+        <a-button type="link" slot="extra" @click="searchViewCodeHandle()">
+          预览
+          <a-icon :size="24" shape="square" type="eye"></a-icon>
+        </a-button>
+        <a class="text-dark" :href="searchDataCurrentSelect ? searchDataCurrentSelect.url : ''" target="_blank">{{
+            searchDataCurrentSelect ? searchDataCurrentSelect.url : ''
+        }}</a>
+        <hr class="my-25" />
+        <a-descriptions title="基本信息" :column="1" v-if="searchDataCurrentSelect">
+          <a-descriptions-item label="所属空间">
+            {{ searchDataCurrentSelect.storageId }}
+          </a-descriptions-item>
+          <a-descriptions-item label="所属仓库">
+            {{ searchDataCurrentSelect.repositoryId }}
+          </a-descriptions-item>
+          <a-descriptions-item label="名称">
+            {{ searchDataCurrentSelect.path }}
+          </a-descriptions-item>
+          <a-descriptions-item label="文件大小">
+            {{ fileSizeConver(searchDataCurrentSelect.sizeInBytes) }}
+          </a-descriptions-item>
+          <a-descriptions-item label="修改时间">
+            {{ searchDataCurrentSelect.lastUpdated }}
+          </a-descriptions-item>
+          <a-descriptions-item label="最近使用时间">
+            {{ searchDataCurrentSelect.lastUsed }}
+          </a-descriptions-item>
+          <a-descriptions-item v-if="currentFileDetial" label="下载次数">
+            {{ searchDataCurrentSelect.downloadCount }}
+          </a-descriptions-item>
+          <a-descriptions-item label="MD5">
+            {{ searchDataCurrentSelect.md5 }}
+          </a-descriptions-item>
+          <a-descriptions-item label="SHA-1">
+            {{ searchDataCurrentSelect.sha }}
+          </a-descriptions-item>
+        </a-descriptions>
+        <hr class="my-25" />
+
+        <a-col :span="24"
+          v-if="searchDataCurrentSelect && searchDataCurrentSelect.snippets && currentFileDetial.snippets.length > 0">
+          <a-card :bordered="false" class="card-billing-info">
+            <div class="col-info">
+              <a-descriptions :title="'使用示例(' + codeParam.type + ')'" :column="1">
+                <a-descriptions-item v-if="searchDataCurrentSelect">
+                  <prism-editor class="my-editor height-300" v-if="searchDataCurrentSelect" v-model="codeParam.code"
+                    :highlight="highlighterHandle" :line-numbers="false" :readonly="true"></prism-editor>
+                </a-descriptions-item>
+              </a-descriptions>
+            </div>
+            <div class="col-action">
+              <a-button v-for="(item, index) in this.searchDataCurrentSelect.snippets" :key="index" type="link"
+                size="small" @click="changeCodeTye(item)">
+                <a-avatar :size="20" shape="square" :src="'images/folib/' + getCodeImg(item) + '.svg'" />
+              </a-button>
+            </div>
+          </a-card>
+        </a-col>
+      </a-card>
+    </a-drawer>
 
     <a-drawer placement="right" width="45%" :title="currentTreeNode.name" :visible="viewCodeVisible"
       @close="closeViewCodeDialog">
@@ -1096,6 +1124,126 @@
       </a-list>
       <!-- </a-card> -->
     </a-drawer>
+
+    <a-modal v-model="showOperationFormModal" :footer="null" :forceRender="true" :centered="true"
+      :title="operationTitle" on-ok="showCopyFormModal = false">
+      <a-form :form="operationForm" ref="operationForm" layout="vertical" @submit.prevent="handleOperationSubmit">
+        <a-row :gutter="[24]">
+          <a-col :span="24">
+            <a-form-item class="tags-field mb-10" label="目标仓库" :colon="false" ref="targetRepositories"
+              prop="targetRepositories">
+              <gb-ant-select-two-cascader allowClear placeholder="请选择目标仓库" v-decorator="[
+                'targetRepositories',
+                {
+                  initialValue: [],
+                  rules: [{ required: true, message: '请选择目标仓库', type: 'array' }]
+                }
+              ]" :selectOptionsConfig="{ key: 'key', value: 'key', text: 'name', children: 'children' }"
+                dropdownClassName="customer-multiple-cascader" :treeData="repositories" />
+            </a-form-item>
+            <!-- <a-form-item class="tags-field mb-10" :colon="false" :label="customTitle" valuePropName="checked">
+              <a-switch v-decorator="['custom',
+                {
+                  valuePropName: 'checked',
+                  rules: [
+                    { required: false, message: '' },
+                  ],
+                },
+              ]" style="width:10%;" @change="customChange">
+              </a-switch>
+            </a-form-item> -->
+            <a-form-item class="tags-field mb-10" v-if="!custom" label="目标目录" prop="path" :colon="false">
+              <a-input v-decorator="['path',
+                {
+                  rules: [
+                    { required: true, message: '请输入目标目录' },
+                  ],
+                },
+              ]" :disabled="true" placeholder="请输入目标目录">
+              </a-input>
+            </a-form-item>
+            <a-form-item class="tags-field mb-10" v-if="custom" label="目标目录" prop="path" :colon="false">
+              <a-input v-decorator="['path',
+                {
+                  rules: [
+                    { required: true, message: '请输入目标目录' },
+                  ],
+                },
+              ]" :disabled="false" placeholder="请输入目标目录">
+              </a-input>
+            </a-form-item>
+          </a-col>
+          <a-col :span="24" class="text-center">
+            <a-button key="submit" class="px-30" size="small" type="primary" htmlType="submit">提交</a-button>
+            <a-button key="back" @click="operationFormModalClose()" class="px-30 ml-10" size="small">取消</a-button>
+          </a-col>
+        </a-row>
+      </a-form>
+    </a-modal>
+
+    <a-modal v-model="showUploadFormModal" :footer="null" :forceRender="true" :centered="true" title="上传"
+      on-ok="showUploadFormModal = false">
+      <a-form :form="uploadForm" ref="uploadForm" layout="horizontal" @submit.prevent="handleUploadSubmit">
+        <a-row :gutter="[24]">
+          <a-col :span="24">
+            <a-form-item class="tags-field mb-10" label="目标仓库" prop="repostoryId" :colon="false">
+              <a-input v-decorator="['repostoryId',
+                {
+                  rules: [
+                    { required: true, message: '请输入目标仓库' },
+                  ],
+                },
+              ]" :disabled="true" placeholder="请输入目标仓库">
+              </a-input>
+            </a-form-item>
+            <a-form-item label="选择文件">
+              <a-upload v-decorator="[
+                'files',
+                {
+                  rules: [
+                    { required: true, message: '请选择文件' },
+                  ],
+                  valuePropName: 'fileList',
+                  getValueFromEvent: normFile,
+                },
+              ]" name="files" :multiple="true" :beforeUpload="beforeUpload" list-type="text">
+                <a-button>
+                  <a-icon type="upload" />选择文件
+                </a-button>
+              </a-upload>
+            </a-form-item>
+            <a-form-item class="tags-field mb-10" label="目标目录" prop="targetPath" :colon="false">
+              <a-input v-decorator="['targetPath',
+                {
+                  rules: [
+                    { required: false, message: '请输入目标目录' },
+                    // { pattern: /^[a-zA-Z_]([a-zA-Z0-9_\-.\\/]+)?$/, message: '目标目录为大小写字母、数字、下划线开头，包含字母、数字、下划线、中划线、点、斜杠'}
+                  ],
+                },
+              ]" placeholder="请输入目标目录">
+              </a-input>
+            </a-form-item>
+          </a-col>
+          <a-col :span="24" class="text-center">
+            <a-button key="submit" class="px-30" size="small" type="primary" htmlType="submit">上传</a-button>
+            <a-button key="back" @click="uploadFormModalClose()" class="px-30 ml-10" size="small">取消</a-button>
+          </a-col>
+        </a-row>
+      </a-form>
+    </a-modal>
+
+    <a-modal v-model="showDeleteModal" :footer="null" :forceRender="true" :centered="true" title="确定删除吗？"
+      on-ok="showDeleteModal = false" class="delete-modal">
+      <a-row :gutter="[24]">
+        <a-col :span="24">
+          <p>不要冲动，再好好想想</p>
+        </a-col>
+        <a-col :span="24" class="text-right">
+          <a-button @click="deletePackageHandle" class="mr-10" type="danger">删除</a-button>
+          <a-button @click="showDeleteModal = false" type="default">取消</a-button>
+        </a-col>
+      </a-row>
+    </a-modal>
   </div>
 </template>
 
@@ -1103,14 +1251,15 @@
 import storage from 'store'
 import CardPackageTree from '@/components/Cards/CardPackageTree'
 import CardProfileInformation from '../../components/Cards/CardProfileInformation'
-import Vulnerability from '@/components/Vulnerabilities/Vulnerability';
+import Vulnerability from '@/components/Vulnerabilities/Vulnerability'
 import {
   getLayoutType,
   getFileType,
   fileSizeConver,
   formateDate
 } from '@/utils/layoutUtil'
-import { browse, getArtifact, viewArtifactFile, fql, scannerRules, insertOrUpdateRules, getDockerArtifact, deleteArtifact, getSeverity, repositoryVulnerabilityStatistics } from '@/api/folib'
+import { browse, getArtifact, viewArtifactFile, fql, scannerRules, insertOrUpdateRules, getDockerArtifact, deleteArtifact, getSeverity, repositoryVulnerabilityStatistics, getStoragesAndRepositories, } from '@/api/folib'
+import { artifactCopy, artifactMove, artifactUpload } from '@/api/artifact'
 import { PrismEditor } from 'vue-prism-editor'
 import 'vue-prism-editor/dist/prismeditor.min.css' // import the styles somewhere
 // import highlighting library (you can use any library you want just return html string)
@@ -1119,6 +1268,8 @@ import 'prismjs/components/prism-clike'
 import 'prismjs/components/prism-javascript'
 import 'prismjs/themes/prism-tomorrow.css'
 import SearchBox from '@/components/Tools/SearchBox'
+import zhCN from 'ant-design-vue/es/locale/zh_CN'
+import { JSONLoader } from '../../plugins/three/threejs'
 export default {
   inject: ["reload"],
   components: {
@@ -1168,7 +1319,11 @@ export default {
         repositoryId: null,
         limit: 5,
         page: 1,
-        total: 0
+        total: 0,
+        sortField: null,
+        sortOrder: null,
+        beginDate: null,
+        endDate: null,
       },
       searchData: [],
       searchDataCurrentSelect: {},
@@ -1177,24 +1332,39 @@ export default {
       // Table columns
       columns: [
         {
-          title: 'ARTFACT',
+          title: '制品路径',
           dataIndex: 'path',
-          sorter(a, b, attr) {
-            if (a.path < b.path)
-              return -1;
-            if (a.path > b.path)
-              return 1;
-            return 0;
-          },
-          sortDirections: ['descend', 'ascend'],
           scopedSlots: { customRender: 'path' },
+          width: 550,
         },
         {
-          title: 'SIZE',
-          dataIndex: 'sizeInBytes',
-          sorter: (a, b) => parseFloat(a.sizeInBytes) - parseFloat(b.sizeInBytes),
+          title: '创建时间',
+          dataIndex: 'created',
+          sorter: true,
           sortDirections: ['descend', 'ascend'],
+          scopedSlots: { customRender: 'created' },
+          width: 200,
+        },
+        {
+          title: '最近使用时间',
+          dataIndex: 'lastUsed',
+          sorter: true,
+          scopedSlots: { customRender: 'lastUsed' },
+          width: 200,
+        },
+        {
+          title: '下载次数',
+          dataIndex: 'downloadCount',
+          sorter: true,
+          scopedSlots: { customRender: 'created' },
+          width: 200,
+        },
+        {
+          title: '制品大小',
+          dataIndex: 'sizeInBytes',
+          sorter: true,
           scopedSlots: { customRender: 'sizeInBytes' },
+          width: 200,
         },
       ],
       severity: { show: false },
@@ -1295,6 +1465,18 @@ export default {
       vulnerabilityDrawerVisible: false,
       vulnerabilityDrawerTitle: '',
       vulnerabilityDrawerData: [],
+      artifactVisible: false,
+      locale: zhCN,
+      showOperationFormModal: false,
+      showUploadFormModal: false,
+      operationTitle: '',
+      customTitle: '',
+      operationForm: this.$form.createForm(this, { name: 'operation_form' }),
+      uploadForm: this.$form.createForm(this, { name: 'upload_form' }),
+      repositories: [],
+      storages: [],
+      custom: false,
+      showDeleteModal: false,
     }
   },
   created() {
@@ -1325,7 +1507,20 @@ export default {
       })
     },
     handleTableChange(pagination, filters, sorter) {
-      this.artifactQuery.page = pagination.current
+      this.artifactQuery.sortField = null
+      this.artifactQuery.sortOrder = null
+      if (pagination) {
+        this.artifactQuery.page = pagination.current
+      }
+      if (sorter) {
+        this.artifactQuery.sortField = sorter.field
+        if (sorter.order) {
+          this.artifactQuery.sortOrder = 'asc'
+          if (sorter.order.indexOf("desc") !== -1) {
+            this.artifactQuery.sortOrder = 'desc'
+          }
+        }
+      }
       this.search(this.artifactQuery.artifactName)
     },
     onPageSizeChange() {
@@ -1338,16 +1533,31 @@ export default {
       if (page) {
         this.artifactQuery.page = page
       }
+      if (value) {
+        this.artifactQuery.artifactName = value
+      }
       this.tabActiveKey = 1
-      this.artifactQuery.artifactName = value
       this.artifactQuery.storageId = this.folibRepository.storageId
       this.artifactQuery.repositoryId = this.folibRepository.id
-      fql(this.artifactQuery).then(res => {
+      let params = {
+        artifactName: this.artifactQuery.artifactName,
+        storageId: this.artifactQuery.storageId,
+        repositoryId: this.artifactQuery.repositoryId,
+        limit: this.artifactQuery.limit,
+        page: this.artifactQuery.page,
+        sortField: this.artifactQuery.sortField,
+        sortOrder: this.artifactQuery.sortOrder,
+        beginDate: this.artifactQuery.beginDate,
+        endDate: this.artifactQuery.endDate,
+        regex: false,
+      }
+      if (this.folibRepository.layout === 'Docker') {
+        params.regex = true
+        params.artifactName = ".*" + this.artifactQuery.artifactName + "((.(?!blobs/sha256|manifest/sha256))*.)";
+      }
+      fql(params).then(res => {
         this.searchData = res.artifact
         this.artifactQuery.total = res.total
-        if (this.searchData) {
-          this.searchDataHandle(this.searchData[0])
-        }
       })
       this.isNotSearch = true
     },
@@ -1358,14 +1568,16 @@ export default {
       }
       var id = "storages/" + this.searchDataCurrentSelect.storageId + "/" + this.searchDataCurrentSelect.repositoryId + "/" + this.searchDataCurrentSelect.path
       this.handlerSeverity(id)
-      // console.log(item)
+      this.artifactVisible = true
     },
     closeSearchviewCodeDialog() {
       this.searchViewCodeVisible = false
       this.searchViewCodes = null
     },
     changeCodeTye(item) {
-      this.codeParam = { type: item.name === 'Maven 2' ? 'maven' : item.name.toLowerCase(), code: item.code }
+      if (item) {
+        this.codeParam = { type: item.name === 'Maven 2' ? 'maven' : item.name.toLowerCase(), code: item.code }
+      }
     },
     copy(url) {
       var input = document.createElement('input') // 创建input对象
@@ -1400,7 +1612,12 @@ export default {
           d.forEach((item, index, d) => {
             item.type = 'dir'
           })
-          this.treeData = d
+          const f = res.files
+          f.forEach((item, index) => {
+            item.isLeaf = true
+            item.type = 'file'
+          })
+          this.treeData = d.concat(f)
         }
       )
     },
@@ -1589,6 +1806,12 @@ export default {
           })
           this.reload()
         }, 100)
+      }).catch((err) => {
+        this.$notification["error"]({
+          message: "删除失败",
+          description: ""
+        })
+      }).finally(() => {
       })
     },
     handlerSeverity(id) {
@@ -1652,6 +1875,161 @@ export default {
       this.$notification["success"]({
         message: message,
         description: ""
+      })
+    },
+    dateChange(value, dateString) {
+      if (dateString) {
+        this.artifactQuery.beginDate = dateString[0]
+        this.artifactQuery.endDate = dateString[1]
+        if (this.artifactQuery.beginDate === '' && this.artifactQuery.endDate === '') {
+          this.dateConfirm()
+        }
+      }
+    },
+    dateConfirm() {
+      this.search(this.artifactQuery.artifactName, 1)
+    },
+    handleUpload() {
+      this.uploadForm.resetFields()
+      this.$nextTick(() => {
+        if (this.$refs.uploadForm) {
+          this.uploadForm.setFieldsValue({
+            repostoryId: this.folibRepository.id,
+          })
+        }
+      })
+      this.showUploadFormModal = true
+    },
+    uploadFormModalClose() {
+      this.showUploadFormModal = false
+    },
+    handleMenuClick(active) {
+      this.operationForm.resetFields()
+      this.$nextTick(() => {
+        if (this.$refs.operationForm) {
+          this.operationForm.setFieldsValue({
+            path: this.currentTreeNode.artifactPath,
+          })
+        }
+      })
+      if (active.key === '1' || active.key === '2') {
+        //复制 或 移动
+        this.showOperationFormModal = true
+        this.getStoragesAndRepositories(this.folibRepository.type, this.folibRepository.layout, this.folibRepository.id, this.folibRepository.policy)
+        this.operationTitle = active.key === '1' ? '复制 ' + this.currentTreeNode.artifactPath : '移动  ' + this.currentTreeNode.artifactPath
+        this.customTitle = active.key === '1' ? '复制到自定义目录' : '移动到自定义目录'
+      } else if (active.key === '3') {
+        //删除
+        this.showDeleteModal = true
+      }
+    },
+    getStoragesAndRepositories(type, layout, excludeRepositoryId, policy) {
+      getStoragesAndRepositories({ type: type, layout: layout, excludeRepositoryId: excludeRepositoryId, policy: policy }).then(res => {
+        this.repositories = []
+        res.forEach(item => {
+          if (item.children && item.children.length > 0) {
+            this.repositories.push(item)
+          }
+        })
+      })
+    },
+    customChange(value) {
+      this.custom = value
+      if (!value) {
+        this.$nextTick(() => {
+          if (this.$refs.operationForm) {
+            this.operationForm.setFieldsValue({
+              path: this.currentTreeNode.artifactPath,
+            })
+          }
+        })
+      }
+    },
+    operationFormModalClose() {
+      this.showOperationFormModal = false
+    },
+    handleOperationSubmit(e) {
+      e.preventDefault()
+      this.operationForm.validateFields((err, values) => {
+        if (!err) {
+          let targetRepositoyList = []
+          values.targetRepositories.forEach(item => {
+            let split = item.split(",")
+            targetRepositoyList.push({ targetStorageId: split[0], targetRepositoryId: split[1] })
+          })
+          let data = {
+            path: values.path,
+            srcStorageId: this.folibRepository.storageId,
+            srcRepositoryId: this.folibRepository.id,
+            targetRepositoyList: targetRepositoyList
+          }
+          if (this.operationTitle.indexOf('复制') !== -1) {
+            artifactCopy(data).then(res => {
+              this.successMsg('复制中，请稍候查看')
+              this.operationFormModalClose()
+              this.reload()
+            }).catch((err) => {
+              this.$notification["error"]({
+                message: err.response.data.error,
+                description: ""
+              })
+            }).finally(() => {
+            })
+          } else if (this.operationTitle.indexOf('移动') !== -1) {
+            artifactMove(data).then(res => {
+              this.successMsg("移动中，请稍候查看")
+              this.operationFormModalClose()
+              this.reload()
+            }).catch((err) => {
+              this.$notification["error"]({
+                message: err.response.data.error,
+                description: ""
+              })
+            }).finally(() => {
+            })
+          }
+        }
+      });
+    },
+    beforeUpload(file, fileList) {
+      return false
+    },
+    normFile(e) {
+      if (Array.isArray(e)) {
+        return e;
+      }
+      return e && e.fileList;
+    },
+    handleUploadSubmit(e) {
+      e.preventDefault()
+      this.uploadForm.validateFields((err, values) => {
+        if (!err) {
+          let filePathMap = {};
+          let fileList = [];
+          values.files.forEach(item => {
+            filePathMap[item.name] = values.targetPath ? values.targetPath + '/' + item.name : item.name
+            fileList.push(item.originFileObj)
+          })
+          values.filePathMap = filePathMap
+          const formData = new FormData();
+          formData.append("storageId", this.folibRepository.storageId);
+          formData.append("repostoryId", this.folibRepository.id);
+          formData.append("filePathMap", JSON.stringify(filePathMap));
+          fileList.forEach((file) => {
+            formData.append('files', file)
+          })
+          artifactUpload(formData).then(res => {
+            this.successMsg("上传成功")
+            this.uploadFormModalClose()
+            this.reload()
+          }).catch((err) => {
+            this.$notification["error"]({
+              message: err.response.data.error,
+              description: ""
+            })
+          }).finally(() => {
+          })
+        }
       })
     },
   }
@@ -1770,6 +2148,19 @@ $md: 768px;
   .vulnerability-count {
     cursor: pointer;
   }
+
+  .delete-modal>.ant-modal {
+    min-width: 200px;
+  }
+
+  .search-column-path {
+    white-space: pre-line;
+    width: calc(100% - 24px);
+  }
+}
+
+.delete-modal>.ant-modal {
+  min-width: 200px;
 }
 
 .d-popconfirm {

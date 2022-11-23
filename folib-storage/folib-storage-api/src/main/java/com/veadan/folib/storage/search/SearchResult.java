@@ -3,18 +3,20 @@ package com.veadan.folib.storage.search;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.veadan.folib.artifact.coordinates.ArtifactCoordinates;
 import com.veadan.folib.dependency.snippet.CodeSnippet;
-import com.veadan.folib.gremlin.adapters.DateConverter;
-import org.neo4j.ogm.annotation.typeconversion.Convert;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
 
-import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
 /**
  * @author mtodorov
  */
-public class SearchResult
-{
+@Data
+@Builder
+@AllArgsConstructor
+public class SearchResult {
 
     @JsonProperty
     private ArtifactCoordinates artifactCoordinates;
@@ -47,9 +49,28 @@ public class SearchResult
     private String created;
 
     private String sha;
+
     private String md5;
 
     private List treeNode;
+
+    /**
+     * 制品名称
+     */
+    private String artifactName;
+    /**
+     * 制品path
+     */
+    private String artifactPath;
+    /**
+     * 仓库布局
+     */
+    private String layout;
+
+    /**
+     * 制品path
+     */
+    private String path;
 
     public List getTreeNode() {
         return treeNode;
@@ -117,15 +138,13 @@ public class SearchResult
         this.sizeInBytes = sizeInBytes;
     }
 
-    public Map<String, String> getChecksums()
-    {
+    public Map<String, String> getChecksums() {
         return checksums.stream().filter(e -> !e.trim().isEmpty())
                 .collect(Collectors.toMap(e -> e.substring(1, e.indexOf("}")),
                         e -> e.substring(e.indexOf("}") + 1)));
     }
 
-    public void setChecksums(Map<String, String> checksums)
-    {
+    public void setChecksums(Map<String, String> checksums) {
         this.checksums.clear();
         this.checksums.addAll(checksums.entrySet()
                 .stream()
@@ -133,79 +152,65 @@ public class SearchResult
                 .collect(Collectors.toSet()));
     }
 
-    public SearchResult()
-    {
+    public SearchResult() {
     }
 
     public SearchResult(String storageId,
                         String repositoryId,
                         ArtifactCoordinates artifactCoordinates,
-                        String url)
-    {
+                        String url) {
         this.storageId = storageId;
         this.repositoryId = repositoryId;
         this.artifactCoordinates = artifactCoordinates;
         this.url = url;
     }
 
-    public String getStorageId()
-    {
+    public String getStorageId() {
         return storageId;
     }
 
-    public void setStorageId(String storageId)
-    {
+    public void setStorageId(String storageId) {
         this.storageId = storageId;
     }
 
-    public String getRepositoryId()
-    {
+    public String getRepositoryId() {
         return repositoryId;
     }
 
-    public void setRepositoryId(String repositoryId)
-    {
+    public void setRepositoryId(String repositoryId) {
         this.repositoryId = repositoryId;
     }
 
-    public ArtifactCoordinates getArtifactCoordinates()
-    {
+    public ArtifactCoordinates getArtifactCoordinates() {
         return artifactCoordinates;
     }
 
-    public void setArtifactCoordinates(ArtifactCoordinates artifactCoordinates)
-    {
+    public void setArtifactCoordinates(ArtifactCoordinates artifactCoordinates) {
         this.artifactCoordinates = artifactCoordinates;
     }
 
-    public String getPath()
-    {
-        return getArtifactCoordinates().buildPath();
+    public String getPath() {
+        return Objects.nonNull(artifactCoordinates) ? artifactCoordinates.buildPath() : "";
     }
 
-    public String getUrl()
-    {
+    public String getUrl() {
         return url;
     }
 
-    public void setUrl(String url)
-    {
+    public void setUrl(String url) {
         this.url = url;
     }
 
-    public List<CodeSnippet> getSnippets()
-    {
+    public List<CodeSnippet> getSnippets() {
         return snippets;
     }
 
-    public void setSnippets(List<CodeSnippet> snippets)
-    {
+    public void setSnippets(List<CodeSnippet> snippets) {
         this.snippets = snippets;
     }
 
     @Override
-    public String toString()
-    {
+    public String toString() {
         return getPath();
     }
 

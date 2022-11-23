@@ -146,13 +146,23 @@ public class FolibScannerBiz extends BusinessBiz<FolibScannerMapper, FolibScanne
     /**
      * 获取制品的漏洞严重程度信息
      *
-     * @param id 制品id
+     * @param id    制品id
+     * @param fuzzy 模糊匹配 0 否 1 是
      * @return 制品的漏洞严重程度信息
      */
-    public SeverityVO severity(String id) {
+    public SeverityVO severity(String id, Integer fuzzy) {
         Long zero = 0L;
         SeverityVO severityVO = SeverityVO.builder().critical(zero).high(zero).low(zero).medium(zero).show(false).build();
-        FolibScanner folibScanner = this.mapper.selectByPrimaryKey(id);
+        FolibScanner folibScanner = null;
+        if (Objects.nonNull(fuzzy) && fuzzy.equals(1)) {
+            //模糊匹配
+            Example folibScannerExample = new Example(FolibScanner.class);
+            id = "%" + id;
+            folibScannerExample.createCriteria().andLike("path", id);
+            folibScanner = this.mapper.selectOneByExample(folibScannerExample);
+        } else {
+            folibScanner = this.mapper.selectByPrimaryKey(id);
+        }
         if (Objects.nonNull(folibScanner)) {
             BeanUtils.copyProperties(folibScanner, severityVO);
             if (ScanConstans.SCANED.equals(folibScanner.getScanStatus())) {

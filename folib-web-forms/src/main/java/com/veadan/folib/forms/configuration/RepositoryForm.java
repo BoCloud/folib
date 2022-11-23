@@ -39,6 +39,8 @@ public class RepositoryForm {
     @LayoutProviderValue(message = "The layout value is invalid.")
     private String layout;
 
+    private String subLayout;
+
     @NotEmpty(message = "A type must be specified.")
     @DescribableEnumValue(message = "The type value is invalid.", type = RepositoryTypeEnum.class)
     private String type;
@@ -48,6 +50,8 @@ public class RepositoryForm {
     @NotEmpty(message = "A status must be specified.")
     @DescribableEnumValue(message = "The status value is invalid.", type = RepositoryStatusEnum.class)
     private String status;
+
+    private String storageId;
 
     private long artifactMaxSize;
 
@@ -283,6 +287,22 @@ public class RepositoryForm {
 
     public void setVulnerabilityBlacks(Set<String> vulnerabilityBlacks) {
         this.vulnerabilityBlacks = vulnerabilityBlacks;
+    }
+
+    public String getStorageId() {
+        return storageId;
+    }
+
+    public void setStorageId(String storageId) {
+        this.storageId = storageId;
+    }
+
+    public String getSubLayout() {
+        return subLayout;
+    }
+
+    public void setSubLayout(String subLayout) {
+        this.subLayout = subLayout;
     }
 
     public interface WhiteGroup

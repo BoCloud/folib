@@ -5,26 +5,16 @@
 
     <modelVersion>4.0.0</modelVersion>
 
- <parent>
-        <groupId>com.veadan.folib</groupId>
-        <artifactId>folib-parent</artifactId>
-        <version>1.0-SNAPSHOT</version>
-        <relativePath/>
-    </parent>
-
+    <groupId>com.veadan.folib</groupId>
     <artifactId>folib-rest-client</artifactId>
     <version>1.0-SNAPSHOT</version>
     <packaging>jar</packaging>
 
     <name>Folib: REST Client</name>
 
-
-
-
-
     <inceptionYear>2019</inceptionYear>
 
-     <scm>
+    <scm>
         <url>http://git.folib.com/folib/folib-server</url>
         <connection>scm:git:git://git.folib.com/folib/folib-server.git</connection>
         <developerConnection>scm:git:git://git.folib.com/folib/folib-server.git</developerConnection>
@@ -35,18 +25,12 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-source-plugin</artifactId>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-surefire-plugin</artifactId>
+                <version>3.3</version>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-jar-plugin</artifactId>
+                <version>3.2.0</version>
                 <executions>
                     <execution>
                         <goals>
@@ -60,14 +44,29 @@
 
     <dependencies>
         <dependency>
-            <groupId>${project.groupId}</groupId>
+            <groupId>com.veadan.folib</groupId>
             <artifactId>folib-client</artifactId>
             <version>1.0-SNAPSHOT</version>
         </dependency>
-
+        <dependency>
+            <groupId>com.google.guava</groupId>
+            <artifactId>guava</artifactId>
+            <version>29.0-jre</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-lang3</artifactId>
+            <version>3.7</version>
+        </dependency>
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <version>1.18.24</version>
+        </dependency>
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-databind</artifactId>
+            <version>2.10.0</version>
         </dependency>
         <dependency>
             <groupId>com.alibaba</groupId>
@@ -77,21 +76,49 @@
         <dependency>
             <groupId>org.glassfish.jersey.media</groupId>
             <artifactId>jersey-media-json-jackson</artifactId>
+            <version>2.32</version>
+            <exclusions>
+                <exclusion>
+                    <artifactId>jakarta.ws.rs-api</artifactId>
+                    <groupId>jakarta.ws.rs</groupId>
+                </exclusion>
+            </exclusions>
         </dependency>
-
         <dependency>
             <groupId>javax.servlet</groupId>
             <artifactId>javax.servlet-api</artifactId>
+            <version>3.1.0</version>
         </dependency>
         <dependency>
             <groupId>io.rest-assured</groupId>
             <artifactId>spring-mock-mvc</artifactId>
+            <version>4.2.0</version>
         </dependency>
 
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter</artifactId>
+            <version>5.7.0</version>
+        </dependency>
+        <dependency>
+            <groupId>org.glassfish.jersey.media</groupId>
+            <artifactId>jersey-media-multipart</artifactId>
+            <version>2.32</version>
         </dependency>
     </dependencies>
+
+    <repositories>
+        <repository>
+            <id>dongwu-local-maven</id>
+            <url>http://58.210.154.140:2477/storages/dongwu/dongwu-local-maven</url>
+        </repository>
+    </repositories>
+
+    <distributionManagement>
+        <repository>
+            <id>dongwu-local-maven</id>
+            <url>http://58.210.154.140:2477/storages/dongwu/dongwu-local-maven</url>
+        </repository>
+    </distributionManagement>
 
 </project>

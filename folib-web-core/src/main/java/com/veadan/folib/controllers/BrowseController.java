@@ -1,24 +1,20 @@
 package com.veadan.folib.controllers;
 
+import cn.hutool.core.collection.CollectionUtil;
 import cn.hutool.core.date.DateUtil;
 import cn.hutool.core.io.FileUtil;
-import cn.hutool.core.util.XmlUtil;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import com.beust.jcommander.internal.Lists;
-import com.veadan.folib.artifact.coordinates.ArtifactCoordinates;
-import com.veadan.folib.artifact.coordinates.MavenArtifactCoordinates;
-import com.veadan.folib.artifact.coordinates.NpmArtifactCoordinates;
 import com.veadan.folib.booters.PropertiesBooter;
 import com.veadan.folib.dependency.snippet.CodeSnippet;
 import com.veadan.folib.dependency.snippet.SnippetGenerator;
 import com.veadan.folib.domain.Artifact;
+import com.veadan.folib.domain.DirectoryListing;
 import com.veadan.folib.domain.FileContent;
-import com.veadan.folib.io.StorageFileSystem;
 import com.veadan.folib.providers.io.RepositoryFiles;
 import com.veadan.folib.providers.io.RepositoryPath;
-import com.veadan.folib.domain.DirectoryListing;
 import com.veadan.folib.schema2.ImageManifest;
 import com.veadan.folib.schema2.LayerManifest;
 import com.veadan.folib.services.ArtifactManagementService;
@@ -28,23 +24,6 @@ import com.veadan.folib.storage.Storage;
 import com.veadan.folib.storage.repository.Repository;
 import com.veadan.folib.utils.TreeUtil;
 import com.veadan.folib.web.RepositoryMapping;
-
-import javax.inject.Inject;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import java.io.IOException;
-import java.net.URL;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
-import java.time.LocalDateTime;
-import java.time.LocalTime;
-import java.time.ZoneId;
-import java.time.ZoneOffset;
-import java.util.*;
-import java.util.stream.Collectors;
-
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
 import io.swagger.annotations.ApiResponse;
@@ -53,7 +32,6 @@ import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -62,7 +40,16 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.ui.ModelMap;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.ModelAndView;
-import org.w3c.dom.Document;
+
+import javax.inject.Inject;
+import javax.servlet.http.HttpServletRequest;
+import java.io.IOException;
+import java.net.URL;
+import java.nio.file.Files;
+import java.text.SimpleDateFormat;
+import java.time.ZoneId;
+import java.util.*;
+import java.util.stream.Collectors;
 
 import static org.springframework.http.HttpStatus.NOT_FOUND;
 import static org.springframework.http.HttpStatus.OK;
@@ -100,9 +87,12 @@ public class BrowseController
     public ResponseEntity getArtifact(@PathVariable String artifactPath,
                                       @PathVariable String storageId,
                                       @PathVariable String repositoryId,
-                                      @RequestParam("type") String type) {
+                                      @RequestParam(value = "type", required = false) String type, @RepositoryMapping Repository repositoryParam) {
         JSONObject jsonObject = new JSONObject();
-        if (!type.equals("docker")) {
+        if (StringUtils.isBlank(type)) {
+            type = repositoryParam.getLayout();
+        }
+        if (!type.equalsIgnoreCase("docker")) {
             Artifact artifact = repositoryPathResolver.findOneArtifact(storageId, repositoryId, artifactPath);
             RepositoryPath repositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, artifactPath);
             Repository repository = repositoryPath.getRepository();
@@ -125,6 +115,11 @@ public class BrowseController
                     jsonObject.put("lastUsedTime", lastUsedTime);
                 }
 
+                if (artifact.getLastUsed() != null) {
+                    String lastModified = DateUtil.format(Date.from(artifact.getLastUpdated().atZone(ZoneId.of("Asia/Shanghai")).toOffsetDateTime().toInstant()), df);
+                    jsonObject.put("lastModified", lastModified);
+                }
+
                 Set<String> fileNames = artifact.getArtifactArchiveListing().getFilenames();
 
                 if (fileNames != null && fileNames.size() > 0) {
@@ -142,7 +137,7 @@ public class BrowseController
             String aName = a[0];
             String aVersion = a[1];
             RepositoryPath repositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, artifactPath);
-            String blobsPath=aName+"/blobs";
+            String blobsPath = aName + "/blobs";
             RepositoryPath repositoryPathBlobs = repositoryPathResolver.resolve(storageId, repositoryId, blobsPath);
             try {
                 DirectoryListing directoryListing = directoryListingService.fromRepositoryPath(repositoryPath);
@@ -151,11 +146,10 @@ public class BrowseController
                 DirectoryListing blobsListing = directoryListingService.fromRepositoryPath(repositoryPathBlobs);
 
 
-
                 List<FileContent> fileContents = directoryListing.getFiles().stream().filter(file -> !(file.getName().endsWith(".sha256"))).collect(Collectors.toList());  //+propertiesBooter.getStorageBooterBasedir()+"/"+propertiesBooter.getVaultDirectory() + "/storages/"
                 FileContent fileContent = fileContents.get(0);
 
-                String menifestString = FileUtil.readString(repositoryPath.toFile().getPath()+"/"+fileContent.getName(), "UTF-8");
+                String menifestString = FileUtil.readString(repositoryPath.toFile().getPath() + "/" + fileContent.getName(), "UTF-8");
 
                 String iamgeName = configurationManagementService.getConfiguration().getBaseUrl().replace("http://", "") + storageId + "/" + repositoryId + "/" + aName + ":" + aVersion;
                 String code = "docker  pull  " + iamgeName;
@@ -165,25 +159,25 @@ public class BrowseController
                 ImageManifest menifest = JSON.parseObject(menifestString, ImageManifest.class);
 
                 List<String> digestList = menifest.getLayers().stream().map(LayerManifest::getDigest).collect(Collectors.toList());
-                List<FileContent> fileblobs= Optional.ofNullable(blobsListing.getFiles()).orElse(Lists.newArrayList()).stream().filter(file ->digestList.contains(file.getName())).collect(Collectors.toList());
-                String configDigest= menifest.getConfig().getDigest();
-                String imagePath=repositoryPath.toFile().getPath().substring(0,repositoryPath.toFile().getPath().lastIndexOf("/"));
-                String manifestConfigString=FileUtil.readString(imagePath+"/blobs/"+configDigest,"UTF-8");
+                List<FileContent> fileblobs = Optional.ofNullable(blobsListing.getFiles()).orElse(Lists.newArrayList()).stream().filter(file -> digestList.contains(file.getName())).collect(Collectors.toList());
+                String configDigest = menifest.getConfig().getDigest();
+                String imagePath = repositoryPath.toFile().getPath().substring(0, repositoryPath.toFile().getPath().lastIndexOf("/"));
+                String manifestConfigString = FileUtil.readString(imagePath + "/blobs/" + configDigest, "UTF-8");
 
-                Long size =fileblobs.stream().mapToLong(FileContent::getSize).sum();
+                Long size = fileblobs.stream().mapToLong(FileContent::getSize).sum();
 
                 jsonObject.put("sha256", menifest.getConfig().getDigest());
                 jsonObject.put("snippets", snippets);
                 jsonObject.put("manifest", menifest);
                 JSONObject object = JSON.parseObject(manifestConfigString);
-                jsonObject.put("manifestConfig",object);
+                jsonObject.put("manifestConfig", object);
 
                 SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
                 dateFormat.setTimeZone(TimeZone.getTimeZone("Asia/Shanghai"));
                 String format = dateFormat.format(fileContent.getLastModified());
-                jsonObject.put("lastModified",format);
-                jsonObject.put("size",size);
-                jsonObject.put("imageName",iamgeName);
+                jsonObject.put("lastModified", format);
+                jsonObject.put("size", size);
+                jsonObject.put("imageName", iamgeName);
 
             } catch (IOException e) {
                 throw new RuntimeException(e);
@@ -301,9 +295,9 @@ public class BrowseController
     }
 
     @ApiOperation(value = "Deletes a path from a repository.")
-    @ApiResponses(value = { @ApiResponse(code = 200, message = "The artifact was deleted."),
+    @ApiResponses(value = {@ApiResponse(code = 200, message = "The artifact was deleted."),
             @ApiResponse(code = 400, message = "Bad request."),
-            @ApiResponse(code = 404, message = "The specified storageId/repositoryId/path does not exist!") })
+            @ApiResponse(code = 404, message = "The specified storageId/repositoryId/path does not exist!")})
     @PreAuthorize("hasAuthority('ARTIFACTS_DELETE')")
     @DeleteMapping(value = "/{storageId}/{repositoryId}/{artifactPath:.+}")
     public ResponseEntity delete(@RepositoryMapping Repository repository,
@@ -312,25 +306,20 @@ public class BrowseController
                                          name = "force",
                                          required = false) boolean force,
                                  @PathVariable String artifactPath)
-            throws IOException
-    {
+            throws IOException {
         final String storageId = repository.getStorage().getId();
         final String repositoryId = repository.getId();
         logger.info("Deleting {}:{}/{}...", storageId, repositoryId, artifactPath);
 
-        try
-        {
+        try {
             final RepositoryPath repositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, artifactPath);
-            if (!Files.exists(repositoryPath))
-            {
+            if (!Files.exists(repositoryPath)) {
                 return ResponseEntity.status(NOT_FOUND)
                         .body("The specified path does not exist!");
             }
 
             artifactManagementService.delete(repositoryPath, force);
-        }
-        catch (ArtifactStorageException e)
-        {
+        } catch (ArtifactStorageException e) {
             logger.error(e.getMessage(), e);
 
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
