@@ -1,14 +1,18 @@
 package com.veadan.folib.client;
 
+import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
+import com.alibaba.fastjson.TypeReference;
 import com.google.common.collect.Lists;
 import com.veadan.folib.dto.ArtifactPromotion;
 import com.veadan.folib.forms.RepositoryForm;
+import com.veadan.folib.forms.SearchArtifact;
 import com.veadan.folib.forms.StorageForm;
-import com.veadan.folib.vo.*;
 import com.veadan.folib.forms.UploadArtifactFrom;
+import com.veadan.folib.vo.*;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.http.HttpStatus;
 import org.glassfish.jersey.media.multipart.Boundary;
 import org.glassfish.jersey.media.multipart.FormDataMultiPart;
@@ -28,8 +32,10 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
@@ -449,7 +455,6 @@ public class RestClient extends ArtifactClient {
                 List<Folder> folders = Lists.newArrayList(), directories, files, dockerFiles;
                 JSONObject folderJson = JSONObject.parseObject(res);
                 String directoriesKey = "directories", filesKey = "files";
-                boolean addFiles = true;
                 if (folderJson.containsKey(directoriesKey) && StringUtils.isNotBlank(folderJson.getString(directoriesKey))) {
                     directories = JSONArray.parseArray(folderJson.getString(directoriesKey), Folder.class);
                     if (!CollectionUtils.isEmpty(directories)) {
@@ -462,10 +467,9 @@ public class RestClient extends ArtifactClient {
                             directories.forEach(item -> item.setFolder(true));
                             folders.addAll(directories);
                         }
-                        addFiles = false;
                     }
                 }
-                if (addFiles && folderJson.containsKey(filesKey) && StringUtils.isNotBlank(folderJson.getString(filesKey))) {
+                if (folderJson.containsKey(filesKey) && StringUtils.isNotBlank(folderJson.getString(filesKey))) {
                     files = JSONArray.parseArray(folderJson.getString(filesKey), Folder.class);
                     files.forEach(item -> item.setFolder(false));
                     folders.addAll(files);
@@ -497,6 +501,48 @@ public class RestClient extends ArtifactClient {
                     Response.Status.INTERNAL_SERVER_ERROR);
         } else {
             return response.readEntity(ArtifactInfo.class);
+        }
+    }
+
+    /**
+     * 搜索制品
+     *
+     * @param searchArtifact 搜索参数
+     * @return 搜索结果
+     */
+    public SearchArtifactPage searchArtifactPage(SearchArtifact searchArtifact) {
+        String url = getContextBaseUrl() + "/api/fql";
+        if (Boolean.TRUE.equals(searchArtifact.getRegex()) && StringUtils.isNotBlank(searchArtifact.getArtifactName())) {
+            //开启正则
+            String regex = ".*%s((.(?!blobs/sha256|manifest/sha256))*.)";
+            regex = String.format(regex, searchArtifact.getArtifactName());
+            searchArtifact.setArtifactName(regex);
+        }
+        Map<String, String> paramsMap = JSON.parseObject(JSON.toJSONString(searchArtifact), new TypeReference<Map<String, String>>() {
+        });
+        String params = createLinkStringByGet(paramsMap);
+        url = url + params;
+        WebTarget resource = getClientInstance().target(url);
+        setupAuthentication(resource);
+        Response response = resource.request(MediaType.APPLICATION_JSON).get();
+        if (response.getStatus() != HttpStatus.SC_OK) {
+            displayResponseError(response);
+            throw new ServerErrorException(response.getStatus() + " | Unable to greet()",
+                    Response.Status.INTERNAL_SERVER_ERROR);
+        } else {
+            SearchArtifactPage searchArtifactPage = SearchArtifactPage.builder().total(0L).build();
+            String res = response.readEntity(String.class);
+            if (StringUtils.isNotBlank(res)) {
+                JSONObject searchJson = JSONObject.parseObject(res);
+                String artifactKey = "artifact";
+                if (searchJson.containsKey(artifactKey) && StringUtils.isNotBlank(searchJson.getString(artifactKey))) {
+                    List<SearchArtifactInfo> searchArtifactInfoList = JSONArray.parseArray(searchJson.getString(artifactKey), SearchArtifactInfo.class);
+                    searchArtifactPage.setArtifactInfoList(searchArtifactInfoList);
+                }
+                searchArtifactPage.setTotal(searchJson.getLongValue("total"));
+                return searchArtifactPage;
+            }
+            return searchArtifactPage;
         }
     }
 
@@ -554,7 +600,7 @@ public class RestClient extends ArtifactClient {
             throw new ServerErrorException(response.getStatus() + " | Unable to greet()",
                     Response.Status.INTERNAL_SERVER_ERROR);
         } else {
-            return  ResponseEntity.ok("Artifact copying");
+            return ResponseEntity.ok("Artifact copying");
         }
     }
 
@@ -575,7 +621,7 @@ public class RestClient extends ArtifactClient {
             throw new ServerErrorException(response.getStatus() + " | Unable to greet()",
                     Response.Status.INTERNAL_SERVER_ERROR);
         } else {
-            return  ResponseEntity.ok("Artifact moving");
+            return ResponseEntity.ok("Artifact moving");
         }
     }
 
@@ -596,7 +642,7 @@ public class RestClient extends ArtifactClient {
                     uploadArtifactFrom.getFiles()[0].getOriginalFilename()));
             WebTarget resource = getClientInstance().register(MultiPartWriter.class).target(url);
             setupAuthentication(resource);
-            Response response = resource.request(new String[]{"application/json"}).header("Mime-Version", "1.0").
+            Response response = resource.request(MediaType.APPLICATION_JSON).header("Mime-Version", "1.0").
                     post(Entity.entity(part, Boundary.addBoundary(MediaType.MULTIPART_FORM_DATA_TYPE)));
             if (response.getStatus() != HttpStatus.SC_OK) {
                 displayResponseError(response);
@@ -627,6 +673,34 @@ public class RestClient extends ArtifactClient {
         this.username = username;
         this.password = password;
         return prepareTarget(arg);
+    }
+
+    /**
+     * 把数组所有元素排序，并按照“参数=参数值”的模式用“&”字符拼接成字符串
+     *
+     * @param params 需要排序并参与字符拼接的参数组
+     * @return 拼接后字符串
+     */
+    public static String createLinkStringByGet(Map<String, String> params) {
+        String preStr = "?";
+        try {
+            List<String> keys = new ArrayList<String>(params.keySet());
+            Collections.sort(keys);
+            for (int i = 0; i < keys.size(); i++) {
+                String key = keys.get(i);
+                String value = params.get(key);
+                value = URLEncoder.encode(value, "UTF-8");
+                if (i == keys.size() - 1) {
+                    //拼接时，不包括最后一个&字符
+                    preStr = preStr + key + "=" + value;
+                } else {
+                    preStr = preStr + key + "=" + value + "&";
+                }
+            }
+        } catch (Exception ex) {
+            logger.error("字符拼接错误：{}", ExceptionUtils.getStackTrace(ex));
+        }
+        return preStr;
     }
 
 }

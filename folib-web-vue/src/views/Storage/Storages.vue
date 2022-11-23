@@ -1265,8 +1265,7 @@ export default {
       this.currentStorage.id = params.item.storageId
     }
 
-
-    if (!this.currentStorage.id) {
+    if (!this.currentStorage.id && this.storageData && this.storageData.length > 0) {
       this.currentStorage.id = this.storageData[0].id
       this.currentStorage.basedir=this.storageData[0].basedir
     }

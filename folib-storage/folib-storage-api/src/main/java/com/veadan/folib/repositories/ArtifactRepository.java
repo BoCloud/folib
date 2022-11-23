@@ -32,7 +32,6 @@ import org.springframework.stereotype.Repository;
 
 import javax.inject.Inject;
 import javax.transaction.Transactional;
-import java.text.DateFormat;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
@@ -100,21 +99,24 @@ public class ArtifactRepository extends GremlinVertexRepository<Artifact> {
         return Optional.ofNullable(queries.artifactEntityExists(storageId, repositoryId, path)).orElse(Boolean.FALSE);
     }
 
-    public Page<Artifact> findMatchingByIndex(Pageable pagination, String artifactName,
+    public Page<Artifact> findMatchingByIndex(Pageable pagination, Boolean regex, String artifactName,
                                               String storageId,
                                               String repositoryId,
                                               String beginDate,
                                               String endDate,
                                               String sortField,
                                               String sortOrder) {
-        Long count = buildEntityTraversal(artifactName, storageId, repositoryId, beginDate, endDate, sortField, sortOrder).count().tryNext().orElse(0L);
-        long low = pagination.getPageNumber() * pagination.getPageSize();
-        long high = (pagination.getPageNumber() + 1) * pagination.getPageSize();
+        //docker布局
         com.veadan.folib.storage.repository.Repository repository = null;
         if (StringUtils.isNotBlank(storageId) && StringUtils.isNotBlank(repositoryId)) {
             repository = configurationManager.getRepository(storageId, repositoryId);
         }
-        List<Artifact> artifactList = buildEntityTraversal(artifactName, storageId, repositoryId, beginDate, endDate, sortField, sortOrder)
+        Long count = buildEntityTraversal(regex, artifactName, storageId, repositoryId, beginDate, endDate, sortField, sortOrder).count().tryNext().orElse(0L);
+        long low = pagination.getPageNumber() * pagination.getPageSize();
+        long high = (pagination.getPageNumber() + 1) * pagination.getPageSize();
+
+
+        List<Artifact> artifactList = buildEntityTraversal(regex, artifactName, storageId, repositoryId, beginDate, endDate, sortField, sortOrder)
                 .range(low, high)
                 .map(artifactAdapter.fold(Optional.ofNullable(repository)
                         .map(com.veadan.folib.storage.repository.Repository::getLayout)
@@ -162,15 +164,19 @@ public class ArtifactRepository extends GremlinVertexRepository<Artifact> {
         return artifactList;
     }
 
-    private EntityTraversal<Vertex, Vertex> buildEntityTraversal(String artifactName,
+    private EntityTraversal<Vertex, Vertex> buildEntityTraversal(Boolean regex, String artifactName,
                                                                  String storageId,
                                                                  String repositoryId,
                                                                  String beginDate,
                                                                  String endDate,
                                                                  String sortField,
                                                                  String sortOrder) {
-        EntityTraversal<Vertex, Vertex> entityTraversal = g().V().hasLabel(Vertices.ARTIFACT)
-                .has(Properties.UUID, Text.textContains(artifactName));
+        EntityTraversal<Vertex, Vertex> entityTraversal = g().V().hasLabel(Vertices.ARTIFACT);
+        if (Boolean.TRUE.equals(regex)) {
+            entityTraversal = entityTraversal.has(Properties.UUID, Text.textRegex(artifactName));
+        } else {
+            entityTraversal = entityTraversal.has(Properties.UUID, Text.textContains(artifactName));
+        }
         if (StringUtils.isNotBlank(storageId)) {
             entityTraversal = entityTraversal.has(Properties.STORAGE_ID, storageId);
         }

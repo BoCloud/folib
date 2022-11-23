@@ -13,7 +13,7 @@ spring:
     driver-class-name: com.mysql.cj.jdbc.Driver
     url: jdbc:mysql://${folib.mysql.host:127.0.0.1}:${folib.mysql.port:3306}/${folib.mysql.db:folib_scanner}?createDatabaseIfNotExist=true&useSSL=false&tinyInt1isBit=false&allowPublicKeyRetrieval=true&useUnicode=true&characterEncoding=UTF8
     username: ${folib.mysql.user:root}
-    password: ${folib.mysql.password:123456}
+    password: ${folib.mysql.password:folib}
     schema: classpath:db/sql/database-init.sql
   liquibase:
       change-log: classpath:db/changelog-master.xml
@@ -142,8 +142,8 @@ cacheManagerConfiguration:
 s3fs:
   protocol: http
   region: bo-nj-cn
-  uri: s3://192.168.2.8:9000/
+  uri: s3://localhost:9000/
   access:
-    key: ERevhJMgrz0JUKD8
+    key: SjggJIJqnHzm2mb1
   secret:
-    key: UGo8B5wcjFasU3xKxanxxYKEyVNGxyfH
+    key: M9kbw3DImRzS9Y5Hmol6EriatsmVj3bn

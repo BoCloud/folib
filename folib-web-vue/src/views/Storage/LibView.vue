@@ -49,6 +49,12 @@
                       </div>
                     </a-col>
                     <a-col :span="24" :md="12" style="display: flex; align-items: center; justify-content: flex-end">
+                      <a v-if="folibRepository.layout === 'Raw'">
+                        <small style="padding-right: 20px" @click="handleUpload">
+                          上传
+                          <a-icon type="cloud-upload" />
+                        </small>
+                      </a>
                       <a>
                         <small style="padding-right: 20px" @click="UsedHelperVisible">
                           使用帮助
@@ -169,10 +175,10 @@
               </a-popconfirm> -->
               <a-dropdown v-if="currentTreeNode.url">
                 <a-menu slot="overlay" @click="handleMenuClick">
-                  <a-menu-item key="1">
+                  <a-menu-item key="1" v-if="folibRepository.type === 'hosted'">
                     <a-icon type="copy" />复制
                   </a-menu-item>
-                  <a-menu-item key="2">
+                  <a-menu-item key="2" v-if="folibRepository.type === 'hosted'">
                     <a-icon type="swap" />移动
                   </a-menu-item>
                   <a-menu-item key="3">
@@ -254,7 +260,8 @@
               </a-descriptions>
               <hr class="my-25" />
 
-              <a-col :span="24" v-if="currentFileDetial && currentFileDetial.snippets">
+              <a-col :span="24"
+                v-if="currentFileDetial && currentFileDetial.snippets && currentFileDetial.snippets.length > 0">
                 <a-card :bordered="false" class="card-billing-info">
                   <div class="col-info">
                     <a-descriptions :title="'使用示例(' + codeParam.type + ')'" :column="1">
@@ -283,16 +290,16 @@
               <div class="mx-25">
                 <a-row type="flex" :gutter="24">
                   <a-col :span="24" md="12">
-                    <label for="" class="mr-10">显示数量</label>
-                    <a-select v-model="artifactQuery.limit" @change="onPageSizeChange" style="width: 70px">
+                    <label for="" class="ml-10">显示数量</label>
+                    <a-select class="ml-10 mt-10" v-model="artifactQuery.limit" @change="onPageSizeChange"
+                      style="width: 70px">
                       <a-select-option :value="5">5</a-select-option>
                       <a-select-option :value="10">10</a-select-option>
                       <a-select-option :value="15">15</a-select-option>
                       <a-select-option :value="20">20</a-select-option>
                       <a-select-option :value="25">25</a-select-option>
                     </a-select>
-                    <label for="" class="ml-10 mr-10">日期搜索</label>
-                    <a-config-provider :locale="locale">
+                    <a-config-provider class="ml-10 mt-10" :locale="locale" style="width: 290px">
                       <a-range-picker :show-time="{ placeholder: '选择时间', format: 'HH:mm' }" format="YYYY-MM-DD HH:mm"
                         :placeholder="['开始日期', '结束日期']" @change="dateChange" @ok="dateConfirm" />
                     </a-config-provider>
@@ -307,19 +314,19 @@
 
               <a-table class="mt-20" :columns="columns" :data-source="searchData" @change="handleTableChange"
                 :pagination="{ pageSize: artifactQuery.limit, current: artifactQuery.page, total: artifactQuery.total, showLessItems: true }">
-
                 <template slot="path" slot-scope="text, record">
                   <a>
                     <div class="table-avatar-info" @click="searchDataHandle(record)">
                       <a-avatar shape="circle" :size="24" :src="'images/folib/' + getFileType(record.path) + '.svg'" />
-                      <div class="avatar-info">
-                        <p class="mb-0 text-dark">{{ record.path }}</p>
+                      <div class="avatar-info search-column-path">
+                        <p class="mb-0 text-dark">
+                          {{ record.artifactPath }}
+                        </p>
                       </div>
                     </div>
                   </a>
                 </template>
                 <template slot="sizeInBytes" slot-scope="sizeInBytes">{{ fileSizeConver(sizeInBytes) }}</template>
-
               </a-table>
             </a-card>
           </a-col>
@@ -514,7 +521,8 @@
         </a-descriptions>
         <hr class="my-25" />
 
-        <a-col :span="24" v-if="searchDataCurrentSelect && searchDataCurrentSelect.snippets">
+        <a-col :span="24"
+          v-if="searchDataCurrentSelect && searchDataCurrentSelect.snippets && currentFileDetial.snippets.length > 0">
           <a-card :bordered="false" class="card-billing-info">
             <div class="col-info">
               <a-descriptions :title="'使用示例(' + codeParam.type + ')'" :column="1">
@@ -1133,7 +1141,7 @@
               ]" :selectOptionsConfig="{ key: 'key', value: 'key', text: 'name', children: 'children' }"
                 dropdownClassName="customer-multiple-cascader" :treeData="repositories" />
             </a-form-item>
-            <a-form-item class="tags-field mb-10" :colon="false" :label="customTitle" valuePropName="checked">
+            <!-- <a-form-item class="tags-field mb-10" :colon="false" :label="customTitle" valuePropName="checked">
               <a-switch v-decorator="['custom',
                 {
                   valuePropName: 'checked',
@@ -1143,7 +1151,7 @@
                 },
               ]" style="width:10%;" @change="customChange">
               </a-switch>
-            </a-form-item>
+            </a-form-item> -->
             <a-form-item class="tags-field mb-10" v-if="!custom" label="目标目录" prop="path" :colon="false">
               <a-input v-decorator="['path',
                 {
@@ -1165,23 +1173,74 @@
               </a-input>
             </a-form-item>
           </a-col>
-          <a-col :span="12" class="text-right">
-            <a-button key="submit" class="px-30" size="small" type="primary" htmlType="submit">创建</a-button>
+          <a-col :span="24" class="text-center">
+            <a-button key="submit" class="px-30" size="small" type="primary" htmlType="submit">提交</a-button>
             <a-button key="back" @click="operationFormModalClose()" class="px-30 ml-10" size="small">取消</a-button>
           </a-col>
         </a-row>
       </a-form>
     </a-modal>
 
+    <a-modal v-model="showUploadFormModal" :footer="null" :forceRender="true" :centered="true" title="上传"
+      on-ok="showUploadFormModal = false">
+      <a-form :form="uploadForm" ref="uploadForm" layout="horizontal" @submit.prevent="handleUploadSubmit">
+        <a-row :gutter="[24]">
+          <a-col :span="24">
+            <a-form-item class="tags-field mb-10" label="目标仓库" prop="repostoryId" :colon="false">
+              <a-input v-decorator="['repostoryId',
+                {
+                  rules: [
+                    { required: true, message: '请输入目标仓库' },
+                  ],
+                },
+              ]" :disabled="true" placeholder="请输入目标仓库">
+              </a-input>
+            </a-form-item>
+            <a-form-item label="选择文件">
+              <a-upload v-decorator="[
+                'files',
+                {
+                  rules: [
+                    { required: true, message: '请选择文件' },
+                  ],
+                  valuePropName: 'fileList',
+                  getValueFromEvent: normFile,
+                },
+              ]" name="files" :multiple="true" :beforeUpload="beforeUpload" list-type="text">
+                <a-button>
+                  <a-icon type="upload" />选择文件
+                </a-button>
+              </a-upload>
+            </a-form-item>
+            <a-form-item class="tags-field mb-10" label="目标目录" prop="targetPath" :colon="false">
+              <a-input v-decorator="['targetPath',
+                {
+                  rules: [
+                    { required: false, message: '请输入目标目录' },
+                    // { pattern: /^[a-zA-Z_]([a-zA-Z0-9_\-.\\/]+)?$/, message: '目标目录为大小写字母、数字、下划线开头，包含字母、数字、下划线、中划线、点、斜杠'}
+                  ],
+                },
+              ]" placeholder="请输入目标目录">
+              </a-input>
+            </a-form-item>
+          </a-col>
+          <a-col :span="24" class="text-center">
+            <a-button key="submit" class="px-30" size="small" type="primary" htmlType="submit">上传</a-button>
+            <a-button key="back" @click="uploadFormModalClose()" class="px-30 ml-10" size="small">取消</a-button>
+          </a-col>
+        </a-row>
+      </a-form>
+    </a-modal>
+
     <a-modal v-model="showDeleteModal" :footer="null" :forceRender="true" :centered="true" title="确定删除吗？"
-      on-ok="showDeleteModal = false"  class="delete-modal">
+      on-ok="showDeleteModal = false" class="delete-modal">
       <a-row :gutter="[24]">
         <a-col :span="24">
           <p>不要冲动，再好好想想</p>
         </a-col>
         <a-col :span="24" class="text-right">
+          <a-button @click="deletePackageHandle" class="mr-10" type="danger">删除</a-button>
           <a-button @click="showDeleteModal = false" type="default">取消</a-button>
-          <a-button @click="deletePackageHandle" class="ml-10" type="danger">删除</a-button>
         </a-col>
       </a-row>
     </a-modal>
@@ -1200,6 +1259,7 @@ import {
   formateDate
 } from '@/utils/layoutUtil'
 import { browse, getArtifact, viewArtifactFile, fql, scannerRules, insertOrUpdateRules, getDockerArtifact, deleteArtifact, getSeverity, repositoryVulnerabilityStatistics, getStoragesAndRepositories, } from '@/api/folib'
+import { artifactCopy, artifactMove, artifactUpload } from '@/api/artifact'
 import { PrismEditor } from 'vue-prism-editor'
 import 'vue-prism-editor/dist/prismeditor.min.css' // import the styles somewhere
 // import highlighting library (you can use any library you want just return html string)
@@ -1275,6 +1335,7 @@ export default {
           title: '制品路径',
           dataIndex: 'path',
           scopedSlots: { customRender: 'path' },
+          width: 550,
         },
         {
           title: '创建时间',
@@ -1282,24 +1343,28 @@ export default {
           sorter: true,
           sortDirections: ['descend', 'ascend'],
           scopedSlots: { customRender: 'created' },
+          width: 200,
         },
         {
           title: '最近使用时间',
           dataIndex: 'lastUsed',
           sorter: true,
           scopedSlots: { customRender: 'lastUsed' },
+          width: 200,
         },
         {
           title: '下载次数',
           dataIndex: 'downloadCount',
           sorter: true,
           scopedSlots: { customRender: 'created' },
+          width: 200,
         },
         {
           title: '制品大小',
           dataIndex: 'sizeInBytes',
           sorter: true,
           scopedSlots: { customRender: 'sizeInBytes' },
+          width: 200,
         },
       ],
       severity: { show: false },
@@ -1403,9 +1468,11 @@ export default {
       artifactVisible: false,
       locale: zhCN,
       showOperationFormModal: false,
+      showUploadFormModal: false,
       operationTitle: '',
       customTitle: '',
       operationForm: this.$form.createForm(this, { name: 'operation_form' }),
+      uploadForm: this.$form.createForm(this, { name: 'upload_form' }),
       repositories: [],
       storages: [],
       custom: false,
@@ -1472,7 +1539,23 @@ export default {
       this.tabActiveKey = 1
       this.artifactQuery.storageId = this.folibRepository.storageId
       this.artifactQuery.repositoryId = this.folibRepository.id
-      fql(this.artifactQuery).then(res => {
+      let params = {
+        artifactName: this.artifactQuery.artifactName,
+        storageId: this.artifactQuery.storageId,
+        repositoryId: this.artifactQuery.repositoryId,
+        limit: this.artifactQuery.limit,
+        page: this.artifactQuery.page,
+        sortField: this.artifactQuery.sortField,
+        sortOrder: this.artifactQuery.sortOrder,
+        beginDate: this.artifactQuery.beginDate,
+        endDate: this.artifactQuery.endDate,
+        regex: false,
+      }
+      if (this.folibRepository.layout === 'Docker') {
+        params.regex = true
+        params.artifactName = ".*" + this.artifactQuery.artifactName + "((.(?!blobs/sha256|manifest/sha256))*.)";
+      }
+      fql(params).then(res => {
         this.searchData = res.artifact
         this.artifactQuery.total = res.total
       })
@@ -1492,7 +1575,9 @@ export default {
       this.searchViewCodes = null
     },
     changeCodeTye(item) {
-      this.codeParam = { type: item.name === 'Maven 2' ? 'maven' : item.name.toLowerCase(), code: item.code }
+      if (item) {
+        this.codeParam = { type: item.name === 'Maven 2' ? 'maven' : item.name.toLowerCase(), code: item.code }
+      }
     },
     copy(url) {
       var input = document.createElement('input') // 创建input对象
@@ -1527,7 +1612,12 @@ export default {
           d.forEach((item, index, d) => {
             item.type = 'dir'
           })
-          this.treeData = d
+          const f = res.files
+          f.forEach((item, index) => {
+            item.isLeaf = true
+            item.type = 'file'
+          })
+          this.treeData = d.concat(f)
         }
       )
     },
@@ -1716,6 +1806,12 @@ export default {
           })
           this.reload()
         }, 100)
+      }).catch((err) => {
+        this.$notification["error"]({
+          message: "删除失败",
+          description: ""
+        })
+      }).finally(() => {
       })
     },
     handlerSeverity(id) {
@@ -1793,6 +1889,20 @@ export default {
     dateConfirm() {
       this.search(this.artifactQuery.artifactName, 1)
     },
+    handleUpload() {
+      this.uploadForm.resetFields()
+      this.$nextTick(() => {
+        if (this.$refs.uploadForm) {
+          this.uploadForm.setFieldsValue({
+            repostoryId: this.folibRepository.id,
+          })
+        }
+      })
+      this.showUploadFormModal = true
+    },
+    uploadFormModalClose() {
+      this.showUploadFormModal = false
+    },
     handleMenuClick(active) {
       this.operationForm.resetFields()
       this.$nextTick(() => {
@@ -1805,7 +1915,7 @@ export default {
       if (active.key === '1' || active.key === '2') {
         //复制 或 移动
         this.showOperationFormModal = true
-        this.getStoragesAndRepositories(this.folibRepository.type, this.folibRepository.layout)
+        this.getStoragesAndRepositories(this.folibRepository.type, this.folibRepository.layout, this.folibRepository.id, this.folibRepository.policy)
         this.operationTitle = active.key === '1' ? '复制 ' + this.currentTreeNode.artifactPath : '移动  ' + this.currentTreeNode.artifactPath
         this.customTitle = active.key === '1' ? '复制到自定义目录' : '移动到自定义目录'
       } else if (active.key === '3') {
@@ -1813,9 +1923,14 @@ export default {
         this.showDeleteModal = true
       }
     },
-    getStoragesAndRepositories(type, layout) {
-      getStoragesAndRepositories({ type: type, layout: layout }).then(res => {
-        this.repositories = res
+    getStoragesAndRepositories(type, layout, excludeRepositoryId, policy) {
+      getStoragesAndRepositories({ type: type, layout: layout, excludeRepositoryId: excludeRepositoryId, policy: policy }).then(res => {
+        this.repositories = []
+        res.forEach(item => {
+          if (item.children && item.children.length > 0) {
+            this.repositories.push(item)
+          }
+        })
       })
     },
     customChange(value) {
@@ -1837,18 +1952,86 @@ export default {
       e.preventDefault()
       this.operationForm.validateFields((err, values) => {
         if (!err) {
-          values.srcStorageId = this.folibRepository.storageId
-          values.srcRepositoryId = this.folibRepository.id
           let targetRepositoyList = []
           values.targetRepositories.forEach(item => {
             let split = item.split(",")
             targetRepositoyList.push({ targetStorageId: split[0], targetRepositoryId: split[1] })
           })
-          values.targetRepositoyList = targetRepositoyList
-          console.log("operationForm：", JSON.stringify(values))
+          let data = {
+            path: values.path,
+            srcStorageId: this.folibRepository.storageId,
+            srcRepositoryId: this.folibRepository.id,
+            targetRepositoyList: targetRepositoyList
+          }
+          if (this.operationTitle.indexOf('复制') !== -1) {
+            artifactCopy(data).then(res => {
+              this.successMsg('复制中，请稍候查看')
+              this.operationFormModalClose()
+              this.reload()
+            }).catch((err) => {
+              this.$notification["error"]({
+                message: err.response.data.error,
+                description: ""
+              })
+            }).finally(() => {
+            })
+          } else if (this.operationTitle.indexOf('移动') !== -1) {
+            artifactMove(data).then(res => {
+              this.successMsg("移动中，请稍候查看")
+              this.operationFormModalClose()
+              this.reload()
+            }).catch((err) => {
+              this.$notification["error"]({
+                message: err.response.data.error,
+                description: ""
+              })
+            }).finally(() => {
+            })
+          }
         }
       });
-    }
+    },
+    beforeUpload(file, fileList) {
+      return false
+    },
+    normFile(e) {
+      if (Array.isArray(e)) {
+        return e;
+      }
+      return e && e.fileList;
+    },
+    handleUploadSubmit(e) {
+      e.preventDefault()
+      this.uploadForm.validateFields((err, values) => {
+        if (!err) {
+          let filePathMap = {};
+          let fileList = [];
+          values.files.forEach(item => {
+            filePathMap[item.name] = values.targetPath ? values.targetPath + '/' + item.name : item.name
+            fileList.push(item.originFileObj)
+          })
+          values.filePathMap = filePathMap
+          const formData = new FormData();
+          formData.append("storageId", this.folibRepository.storageId);
+          formData.append("repostoryId", this.folibRepository.id);
+          formData.append("filePathMap", JSON.stringify(filePathMap));
+          fileList.forEach((file) => {
+            formData.append('files', file)
+          })
+          artifactUpload(formData).then(res => {
+            this.successMsg("上传成功")
+            this.uploadFormModalClose()
+            this.reload()
+          }).catch((err) => {
+            this.$notification["error"]({
+              message: err.response.data.error,
+              description: ""
+            })
+          }).finally(() => {
+          })
+        }
+      })
+    },
   }
 }
 </script>
@@ -1968,6 +2151,11 @@ $md: 768px;
 
   .delete-modal>.ant-modal {
     min-width: 200px;
+  }
+
+  .search-column-path {
+    white-space: pre-line;
+    width: calc(100% - 24px);
   }
 }
 

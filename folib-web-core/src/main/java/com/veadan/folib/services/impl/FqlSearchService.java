@@ -32,6 +32,7 @@ import java.text.SimpleDateFormat;
 import java.time.ZoneId;
 import java.util.Date;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 
 @Component
@@ -60,22 +61,28 @@ public class FqlSearchService extends GremlinVertexRepository<Artifact> implemen
     }
 
 
-    public SearchResults artfactQuery(String artifactName,
-                                      String storageId,
-                                      String repositoryId,
-                                      String beginDate,
-                                      String endDate,
-                                      String sortField,
-                                      String sortOrder,
-                                      int limit, int page) throws IOException {
+    public SearchResults artifactQuery(Boolean regex, String artifactName,
+                                       String storageId,
+                                       String repositoryId,
+                                       String beginDate,
+                                       String endDate,
+                                       String sortField,
+                                       String sortOrder,
+                                       Integer limit, Integer page) throws IOException {
 
         Pageable pageable = null;
+        if (Objects.isNull(page)) {
+            page = 1;
+        }
+        if (Objects.isNull(limit)) {
+            limit = 5;
+        }
         if (page == 1) {
             pageable = PageRequest.of(page, limit).first();
         } else {
             pageable = PageRequest.of(page, limit).previous();
         }
-        Page<Artifact> artifacts = artifactRepository.findMatchingByIndex(pageable, artifactName, storageId, repositoryId, beginDate, endDate, sortField, sortOrder);
+        Page<Artifact> artifacts = artifactRepository.findMatchingByIndex(pageable, regex, artifactName, storageId, repositoryId, beginDate, endDate, sortField, sortOrder);
         List<Artifact> artifactEntityList = artifacts.getContent();
 
         SearchResults result = new SearchResults();
@@ -110,7 +117,16 @@ public class FqlSearchService extends GremlinVertexRepository<Artifact> implemen
             Repository repository = repositoryPath.getRepository();
             URL artifactResource = RepositoryFiles.readResourceUrl(repositoryPath);
             r.setUrl(artifactResource.toString());
-
+            r.setLayout(repository.getLayout());
+            String path = artifact.getArtifactCoordinates().buildPath();
+            if ("Docker".equalsIgnoreCase(r.getLayout())) {
+                //docker
+                r.setArtifactName(path.substring(path.indexOf("/") + 1, path.indexOf("/sha256")));
+                r.setArtifactPath(path.substring(0, path.indexOf("/sha256")));
+            } else {
+                r.setArtifactName(path.substring(path.lastIndexOf("/") + 1));
+                r.setArtifactPath(path);
+            }
             List<CodeSnippet> snippets = snippetGenerator.generateSnippets(repository.getLayout(),
                     artifact.getArtifactCoordinates());
             r.setSnippets(snippets);
