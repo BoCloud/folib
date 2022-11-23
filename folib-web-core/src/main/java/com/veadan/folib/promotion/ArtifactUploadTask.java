@@ -43,9 +43,9 @@ public class ArtifactUploadTask implements Callable<String> {
         String rs = "";
         try (InputStream is = file.getInputStream()) {
             RepositoryPath destPath = repositoryPathResolver.resolve(storageId, repostoryId, fileRelativePath);
-            String layout = destPath.getRepository().getLayout();
-            String type = destPath.getRepository().getType();
-//            if (!"Raw".equals(layout) && !"hosted".equals(type)) { // 暂时只支持Raw 布局的上传
+//            String layout = destPath.getRepository().getLayout();
+//            String type = destPath.getRepository().getType();
+//            if (!"Raw".equalsIgnoreCase(layout) && !"hosted".equals(type)) { // 暂时只支持Raw 布局的上传
 //                throw new IOException(fileRelativePath + "非Raw布局的本地仓库制品不可上传!");
 //            }
             artifactManagementService.store(destPath, is);

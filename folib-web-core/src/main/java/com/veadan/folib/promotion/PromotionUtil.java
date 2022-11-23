@@ -304,46 +304,19 @@ public class PromotionUtil {
 
 
     public void handleCopy(String path, Repository destRepository, Repository srcRepository) throws Exception {
-        int fileNum = 0, folderNum = 0;
-        File file = new File(path);
-        LinkedList<File> list = new LinkedList<>();
-
-        if (file.exists()) {
-            if (null == file.listFiles()) {
-                return;
+        List<File> list = getNFSFiles(path);
+        for (File file : list) {
+            try (InputStream is = Files.newInputStream(file.toPath());) {
+                String fPath = file.getAbsolutePath().toString();
+                int fPathIndex = fPath.lastIndexOf(srcRepository.getId() + File.separator);
+                String temp = fPath.substring(fPathIndex, fPath.length()).replace(srcRepository.getId() + File.separator, "");
+                RepositoryPath destPath = repositoryPathResolver.resolve(destRepository.getStorage().getId(), destRepository.getId(), temp);
+                artifactManagementService.store(destPath, is);
+            } catch (IOException e) {
+                e.printStackTrace();
+                throw new Exception(e.getMessage());
             }
-            list.addAll(Arrays.asList(file.listFiles()));
-            while (!list.isEmpty()) {
-                File[] files = list.removeFirst().listFiles();
-                if (null == files) {
-                    continue;
-                }
-                for (File f : files) {
-                    if (f.isDirectory()) {
-                        log.info("文件夹:{}", f.getAbsolutePath());
-                        list.add(f);
-                        folderNum++;
-                    } else {
-                        log.info("文件:{}", f.getAbsolutePath());
-                        String fPath = f.getAbsolutePath().toString();
-                        int fPathIndex = fPath.lastIndexOf(srcRepository.getId() + File.separator);
-                        String temp = fPath.substring(fPathIndex, fPath.length()).replace(srcRepository.getId() + File.separator, "");
-                        RepositoryPath destPath = repositoryPathResolver.resolve(destRepository.getStorage().getId(), destRepository.getId(), temp);
-
-                        try (InputStream is = Files.newInputStream(f.toPath());) {
-                            artifactManagementService.store(destPath, is);
-                        } catch (IOException e) {
-                            e.printStackTrace();
-                            throw new Exception(e.getMessage());
-                        }
-                        fileNum++;
-                    }
-                }
-            }
-        } else {
-            log.info("文件不存在!");
         }
-        log.info("文件夹数量:{} ,文件数量:{}", folderNum, fileNum);
     }
 
     public void handleS3ArtifactCopy(String path, Repository destRepository, Repository srcRepository) throws Exception {
