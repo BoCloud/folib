@@ -26,12 +26,22 @@ const errorHandler = (error) => {
       })
     }
     if (error.response.status === 401) {
-      setTimeout(() => {
-        notification.error({
-          message: '权限信息',
-          description: '登录信息已过期将为你转跳至登录页面'
-        })
-      }, 100)
+      let message = error.response.data.error
+      if (message === 'invalid.credentials') {
+        setTimeout(() => {
+          notification.error({
+            message: '提示',
+            description: '账号或密码错误，请检查'
+          })
+        }, 100)
+      } else {
+        setTimeout(() => {
+          notification.error({
+            message: '权限信息',
+            description: '登录信息已过期将为你转跳至登录页面'
+          })
+        }, 100)
+      }
       store.dispatch('Logout').then(() => {
         window.location.reload()
       })
