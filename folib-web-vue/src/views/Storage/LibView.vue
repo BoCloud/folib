@@ -5,7 +5,7 @@
       <div :class="[mouseEnter ? 'mouse-enter nested' : 'nested']"
         style="background:url(images/bg-profile.jpg) center/cover;transition:all .3s" />
       <a-row type="flex" :md="8" :xs="4">
-          <search-box @mouse="searchBoxMouseStatus" @search="search" />
+        <search-box @mouse="searchBoxMouseStatus" @search="search" />
       </a-row>
     </div>
     <a-tabs class="tabs-sliding" :default-active-key="1" :activeKey="tabActiveKey" @change="tabChange($event)">
@@ -260,7 +260,8 @@
               </a-descriptions>
               <hr class="my-25" />
 
-              <a-col :span="24" v-if="currentFileDetial && currentFileDetial.snippets">
+              <a-col :span="24"
+                v-if="currentFileDetial && currentFileDetial.snippets && currentFileDetial.snippets.length > 0">
                 <a-card :bordered="false" class="card-billing-info">
                   <div class="col-info">
                     <a-descriptions :title="'使用示例(' + codeParam.type + ')'" :column="1">
@@ -290,7 +291,8 @@
                 <a-row type="flex" :gutter="24">
                   <a-col :span="24" md="12">
                     <label for="" class="ml-10">显示数量</label>
-                    <a-select class="ml-10 mt-10" v-model="artifactQuery.limit" @change="onPageSizeChange" style="width: 70px">
+                    <a-select class="ml-10 mt-10" v-model="artifactQuery.limit" @change="onPageSizeChange"
+                      style="width: 70px">
                       <a-select-option :value="5">5</a-select-option>
                       <a-select-option :value="10">10</a-select-option>
                       <a-select-option :value="15">15</a-select-option>
@@ -519,7 +521,8 @@
         </a-descriptions>
         <hr class="my-25" />
 
-        <a-col :span="24" v-if="searchDataCurrentSelect && searchDataCurrentSelect.snippets">
+        <a-col :span="24"
+          v-if="searchDataCurrentSelect && searchDataCurrentSelect.snippets && currentFileDetial.snippets.length > 0">
           <a-card :bordered="false" class="card-billing-info">
             <div class="col-info">
               <a-descriptions :title="'使用示例(' + codeParam.type + ')'" :column="1">
@@ -1536,8 +1539,23 @@ export default {
       this.tabActiveKey = 1
       this.artifactQuery.storageId = this.folibRepository.storageId
       this.artifactQuery.repositoryId = this.folibRepository.id
-      this.artifactQuery.regex = true
-      fql(this.artifactQuery).then(res => {
+      let params = {
+        artifactName: this.artifactQuery.artifactName,
+        storageId: this.artifactQuery.storageId,
+        repositoryId: this.artifactQuery.repositoryId,
+        limit: this.artifactQuery.limit,
+        page: this.artifactQuery.page,
+        sortField: this.artifactQuery.sortField,
+        sortOrder: this.artifactQuery.sortOrder,
+        beginDate: this.artifactQuery.beginDate,
+        endDate: this.artifactQuery.endDate,
+        regex: false,
+      }
+      if (this.folibRepository.layout === 'Docker') {
+        params.regex = true
+        params.artifactName = ".*" + this.artifactQuery.artifactName + "((.(?!blobs/sha256|manifest/sha256))*.)";
+      }
+      fql(params).then(res => {
         this.searchData = res.artifact
         this.artifactQuery.total = res.total
       })
@@ -1557,7 +1575,9 @@ export default {
       this.searchViewCodes = null
     },
     changeCodeTye(item) {
-      this.codeParam = { type: item.name === 'Maven 2' ? 'maven' : item.name.toLowerCase(), code: item.code }
+      if (item) {
+        this.codeParam = { type: item.name === 'Maven 2' ? 'maven' : item.name.toLowerCase(), code: item.code }
+      }
     },
     copy(url) {
       var input = document.createElement('input') // 创建input对象
@@ -1786,6 +1806,12 @@ export default {
           })
           this.reload()
         }, 100)
+      }).catch((err) => {
+        this.$notification["error"]({
+          message: "删除失败",
+          description: ""
+        })
+      }).finally(() => {
       })
     },
     handlerSeverity(id) {
