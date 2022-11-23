@@ -149,7 +149,7 @@
                 </h6>
               </template>
 
-              <a-button v-if="currentFileDetial" type="link" slot="extra" @click="viewCodeHandle()">
+              <a-button v-if="currentFileDetial && folibRepository.layout !== 'Raw'" type="link" slot="extra" @click="viewCodeHandle()">
                 {{ currentFileDetial.listTree ? '包' : viewCodes ? '文件' : folibRepository.layout === 'Docker' ? '详情' : ''
                 }}预览
                 <a-icon :size="24" shape="square" type="eye"></a-icon>
