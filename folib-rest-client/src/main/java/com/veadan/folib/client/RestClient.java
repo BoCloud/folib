@@ -6,10 +6,7 @@ import com.alibaba.fastjson.JSONObject;
 import com.alibaba.fastjson.TypeReference;
 import com.google.common.collect.Lists;
 import com.veadan.folib.dto.ArtifactPromotion;
-import com.veadan.folib.forms.RepositoryForm;
-import com.veadan.folib.forms.SearchArtifact;
-import com.veadan.folib.forms.StorageForm;
-import com.veadan.folib.forms.UploadArtifactFrom;
+import com.veadan.folib.forms.*;
 import com.veadan.folib.vo.*;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
@@ -658,6 +655,26 @@ public class RestClient extends ArtifactClient {
         }
     }
 
+    /**
+     * 制品节点晋级
+     *
+     * @param promotionNodeOption 晋级参数
+     * @return ResponseEntity  响应实体
+     */
+    public ResponseEntity artifactPromotion(PromotionNodeOption promotionNodeOption) {
+        String url = getContextBaseUrl() + "/api/artifact/folib/promotion/nodeOption";
+        WebTarget resource = getClientInstance().target(url);
+        setupAuthentication(resource);
+        Response response = resource.request().
+                post(Entity.entity(promotionNodeOption, MediaType.APPLICATION_JSON));
+        if (response.getStatus() != HttpStatus.SC_OK) {
+            displayResponseError(response);
+            throw new ServerErrorException(response.getStatus() + " | Unable to greet()",
+                    Response.Status.INTERNAL_SERVER_ERROR);
+        } else {
+            return ResponseEntity.ok("晋级成功");
+        }
+    }
 
     public WebTarget prepareTarget(String arg) {
         return setupAuthentication(prepareUnauthenticatedTarget(arg));
