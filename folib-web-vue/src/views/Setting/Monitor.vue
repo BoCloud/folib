@@ -77,7 +77,7 @@
                     <img src="images/folib/gc.svg" alt="">
                   </div>
                   <h6>GC耗时</h6>
-                  <p>执行时间:{{ monitorData.gcpause.total }}s</p>
+                  <p>执行时间:{{ monitorData.gcpause.total.toFixed(2) }}s</p>
                 </template>
               </a-statistic>
             </a-card>
