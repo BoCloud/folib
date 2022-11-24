@@ -180,7 +180,15 @@ public class PromotionUtil {
                 resultList.add(file);
                 return resultList;
             }
-            list.addAll(Arrays.asList(file.listFiles()));
+            for (File f : file.listFiles()) {
+                if (f.isDirectory()) {
+                    list.add(f);
+                    folderNum++;
+                } else {
+                    resultList.add(f);
+                    fileNum++;
+                }
+            }
             while (!list.isEmpty()) {
                 File[] files = list.removeFirst().listFiles();
                 if (null == files) {
