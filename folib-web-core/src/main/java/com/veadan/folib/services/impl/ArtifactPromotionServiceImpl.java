@@ -1,11 +1,13 @@
 package com.veadan.folib.services.impl;
 
 import com.alibaba.fastjson.JSON;
+import com.veadan.folib.domain.AnalysisHtmlGetDirAndFilePath;
 import com.veadan.folib.domain.ArtifactPromotion;
 import com.veadan.folib.domain.PromotionNodeOption;
 import com.veadan.folib.dto.*;
 import com.veadan.folib.promotion.ArtifactUploadTask;
 import com.veadan.folib.promotion.PromotionUtil;
+import com.veadan.folib.promotion.PullArtifactTask;
 import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.providers.io.RepositoryPathResolver;
 import com.veadan.folib.service.ProxyRepositoryConnectionPoolConfigurationService;
@@ -14,6 +16,10 @@ import com.veadan.folib.storage.Storage;
 import com.veadan.folib.storage.repository.Repository;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
@@ -47,6 +53,7 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
 
     private final String upLoadURI = "/api/artifact/folib/promotion/upload-files";
     private final String pullURI = "/api/artifact/folib/promotion/pull-files";
+    private final String getFileRelativePaths = "/api/artifact/folib/promotion/getFileRelativePaths";
 
     @Inject
     private RepositoryManagementService repositoryManagementService;
@@ -199,17 +206,42 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
                 promotionUtil.upload(targetUrl + upLoadURI, uploadDto);
 
             } else if (targetPath.contains(requestURL)) {
-                // 从源仓路径 pull 到目标仓路径
+                // 从源仓路径 pull 到目标仓路径 获取目标主机的path 路径下的文件与目录 然后依次提交到任务队列里面后将文件存入仓库
+                String url = srcUrl+getFileRelativePaths;
                 Client client = clientPool.getRestClient();
-                WebTarget target = client.target(srcUrl + pullURI);
-                PromotionArtifactDto promotionArtifactDto = new PromotionArtifactDto(srcStorageId, srcRepostoryId,
-                        targetStorageId, targetRepostoryId, targetUri, targetUrl + upLoadURI);
-                Response response = target.request().post(Entity.entity(promotionArtifactDto, MediaType.APPLICATION_JSON));
-                if (response.getStatus() > 210) {
-                    log.error("Push artifact error {}", srcUrl);
-                    throw new RuntimeException("Failed with HTTP error code : " + response.getStatus());
+                WebTarget target = client.target(url);
+                ArtifactDto artifactDto = ArtifactDto.builder().storageId(srcStorageId).
+                        repostoryId(srcRepostoryId).path(srcUri).build();
+                Response response = target.request().
+                        post(Entity.entity(artifactDto, MediaType.APPLICATION_JSON));
+                if (response.getStatus() != 200) {
+                    throw new Exception("{} get error" + url);
                 }
-                // 向目标仓库拉取后存入本地 存入 targetStorageId  targetRepostoryId
+                List<String> getFileRelativePaths = response.readEntity(List.class);
+//                // 添加task
+                List<FutureTask<String>> listTask = new ArrayList<>();
+                for (String path : getFileRelativePaths) {
+                    String fileUlr = srcUrl + "/storages/" + srcStorageId + "/" + srcRepostoryId + "/" + path;
+                    PullArtifactTask pullArtifactTask = new PullArtifactTask(path, fileUlr, targetStorageId,
+                            targetRepostoryId, repositoryPathResolver, artifactManagementService, clientPool);
+                    FutureTask<String> futureTask = new FutureTask<String>(pullArtifactTask);
+                    listTask.add(futureTask);
+                    asyncRepositoryThreadPoolExecutor.submit(futureTask);
+                }
+                int success = 0;
+                int fail = 0;
+                for (FutureTask<String> task : listTask) {
+                    try {
+                        task.get();
+                        success++;
+
+                    } catch (Exception e) {
+                        fail++;
+                        log.error("pull fail {}", e.getMessage());
+                    }
+                }
+                log.info("Handle pulled! Task size {} success {} fail {}", listTask.size(), success, fail);
+                listTask.clear();
             }
         } catch (Exception e) {
             log.error("制品晋级错误 {}", e.getMessage());
@@ -217,6 +249,38 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
                     .body(e.getMessage());
         }
         return ResponseEntity.ok("ok");
+    }
+
+    private AnalysisHtmlGetDirAndFilePath getArtifactPath(String url) throws Exception {
+        Client client = clientPool.getRestClient();
+        WebTarget target = client.target(url);
+        Response response = target.request().get();
+        if (response.getStatus() != 200) {
+            throw new Exception("{} get error" + url);
+        }
+        Document doc = Jsoup.parse(response.readEntity(String.class));
+        Elements tr = doc.body().children().get(1).getElementsByTag("tr");
+        List<String> listDirPath = new ArrayList<>();
+        List<String> listFilePath = new ArrayList<>();
+        for (int i = 0; i < tr.size(); i++) {
+            Element e1 = tr.get(i);
+            Elements td = e1.getElementsByTag("td");
+            if (td.size() == 0) {
+                continue;
+            }
+            String value = td.get(0).text();
+            if (!"-".equals(value) && !"..".equals(value)) {
+                if (value.endsWith("/")) {
+                    String temp = url + "/" + value;
+                    temp = temp.substring(0, temp.length() - 1);
+                    listDirPath.add(temp);
+                } else {
+                    listFilePath.add(url + "/" + value);
+                    log.info("Waiting for processing pull file {}", url + "/" + value);
+                }
+            }
+        }
+        return AnalysisHtmlGetDirAndFilePath.builder().listFilePath(listFilePath).listDirPath(listDirPath).build();
     }
 
     @Override
@@ -295,5 +359,20 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
                     .body(e.getMessage());
         }
         return ResponseEntity.ok("ok");
+    }
+
+    @Override
+    public ResponseEntity getFileRelativePaths(ArtifactDto artifactDto) {
+        try {
+            // 获取路径下的所有文件
+            RepositoryPath repositoryPath = repositoryPathResolver.resolve(artifactDto.getStorageId(),
+                    artifactDto.getRepostoryId(), artifactDto.getPath());
+            List<String> fileRelativePaths = promotionUtil.getFileRelativePaths(repositoryPath);
+            return ResponseEntity.ok(fileRelativePaths);
+        } catch (Exception e) {
+            log.error("Get files relative paths exception {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(e.getMessage());
+        }
     }
 }
