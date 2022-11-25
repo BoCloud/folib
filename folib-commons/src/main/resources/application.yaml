@@ -50,6 +50,7 @@ folib:
     openflag: ${folib.openflag:false}
     hostnode: ${folib.hostnode:10.50.8.55:38080} # 多个节点逗号隔开
     protocol: http
+  whiteList: ${folib.white.list:}  # 配置多个白名单逗号隔开
   distributed:
     lockip: ${folib.scheduled.lockip:10.50.8.55} # 实例 host ip
   config:
