@@ -5,7 +5,6 @@ import com.veadan.folib.controllers.BaseArtifactController;
 import com.veadan.folib.domain.ArtifactPromotion;
 import com.veadan.folib.domain.PromotionNodeOption;
 import com.veadan.folib.dto.ArtifactDto;
-import com.veadan.folib.dto.PromotionArtifactDto;
 import com.veadan.folib.services.ArtifactPromotionService;
 import com.veadan.folib.validation.RequestBodyValidationException;
 import io.swagger.annotations.Api;
@@ -13,7 +12,6 @@ import io.swagger.annotations.ApiOperation;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
@@ -79,7 +77,7 @@ public class ArtifactPromotionController extends BaseArtifactController {
     }
 
     // 下载接口
-    @GetMapping(value = "/download")
+    @PostMapping(value = "/download")
     @PermissionCheck(resourceKey = "CONFIGURATION_ADD_UPDATE_STORAGE")
     public ResponseEntity download(@RequestBody @Validated ArtifactDto artifactDto,
                                    HttpServletResponse response, BindingResult bindingResult) {
@@ -87,16 +85,6 @@ public class ArtifactPromotionController extends BaseArtifactController {
             throw new RequestBodyValidationException("请求参数错误", bindingResult);
         }
         return artifactPromotionService.download(artifactDto, response);
-    }
-
-    @PostMapping(value = "/pull-files")
-    @PermissionCheck(resourceKey = "CONFIGURATION_ADD_UPDATE_STORAGE")
-    public ResponseEntity pull(@RequestBody @Validated PromotionArtifactDto promotionArtifactDto,
-                               BindingResult bindingResult) {
-        if (bindingResult.hasErrors()) {
-            throw new RequestBodyValidationException("请求参数错误", bindingResult);
-        }
-        return artifactPromotionService.pull(promotionArtifactDto);
     }
 
     @PostMapping(value = "/getFileRelativePaths")

@@ -27,7 +27,5 @@ public interface ArtifactPromotionService {
 
     ResponseEntity download(ArtifactDto artifactDto, HttpServletResponse response);
 
-    ResponseEntity pull(PromotionArtifactDto promotionArtifactDto);
-
     ResponseEntity getFileRelativePaths(ArtifactDto artifactDto);
 }

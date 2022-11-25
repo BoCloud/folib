@@ -207,7 +207,7 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
 
             } else if (targetPath.contains(requestURL)) {
                 // 从源仓路径 pull 到目标仓路径 获取目标主机的path 路径下的文件与目录 然后依次提交到任务队列里面后将文件存入仓库
-                String url = srcUrl+getFileRelativePaths;
+                String url = srcUrl + getFileRelativePaths;
                 Client client = clientPool.getRestClient();
                 WebTarget target = client.target(url);
                 ArtifactDto artifactDto = ArtifactDto.builder().storageId(srcStorageId).
@@ -218,12 +218,14 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
                     throw new Exception("{} get error" + url);
                 }
                 List<String> getFileRelativePaths = response.readEntity(List.class);
-//                // 添加task
+                // 添加task
                 List<FutureTask<String>> listTask = new ArrayList<>();
                 for (String path : getFileRelativePaths) {
-                    String fileUlr = srcUrl + "/storages/" + srcStorageId + "/" + srcRepostoryId + "/" + path;
+                    ArtifactDto artifac = ArtifactDto.builder().storageId(srcStorageId)
+                            .repostoryId(srcRepostoryId).path(path).build();
+                    String fileUlr = srcUrl + "/api/artifact/folib/promotion/download";
                     PullArtifactTask pullArtifactTask = new PullArtifactTask(path, fileUlr, targetStorageId,
-                            targetRepostoryId, repositoryPathResolver, artifactManagementService, clientPool);
+                            targetRepostoryId, repositoryPathResolver, artifactManagementService, clientPool, artifac);
                     FutureTask<String> futureTask = new FutureTask<String>(pullArtifactTask);
                     listTask.add(futureTask);
                     asyncRepositoryThreadPoolExecutor.submit(futureTask);
@@ -328,7 +330,7 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
             // 设置文件头：设置下载文件名
             response.setHeader("Content-Disposition", "attachment;" + " filename=" + repositoryPath.getFileName().toString());
             int byteRead = 0;
-            byte[] buffer = new byte[512];
+            byte[] buffer = new byte[1024];
             while ((byteRead = in.read(buffer)) != -1) {
                 out.write(buffer, 0, byteRead);
             }
@@ -338,27 +340,7 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(e.getMessage());
         }
-        return ResponseEntity.ok("ok");
-    }
-
-    @Override
-    public ResponseEntity pull(PromotionArtifactDto promotionArtifactDto) {
-        try {
-            String storageId = promotionArtifactDto.getSrcStorageId();
-            String repostoryId = promotionArtifactDto.getSrcRepostoryId();
-            String path = promotionArtifactDto.getPath();
-            RepositoryPath targetRepositoryPath = repositoryPathResolver.resolve(storageId, repostoryId, path);
-            promotionArtifactDto.setPath(targetRepositoryPath.getTarget().toString());
-            PromotionNodeOptionDto promotionNodeOptionDto = promotionUtil.getPromotionPullDto(promotionArtifactDto);
-
-            // 向目标仓库传
-            promotionUtil.upload(promotionArtifactDto.getUploadHost(), promotionNodeOptionDto);
-        } catch (Exception e) {
-            log.error("pull exception {}", e.getMessage());
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(e.getMessage());
-        }
-        return ResponseEntity.ok("ok");
+        return ResponseEntity.ok("");
     }
 
     @Override
