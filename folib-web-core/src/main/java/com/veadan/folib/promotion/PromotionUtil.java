@@ -45,6 +45,7 @@ import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
 import org.apache.http.util.EntityUtils;
+import org.glassfish.jersey.media.multipart.Boundary;
 import org.glassfish.jersey.media.multipart.FormDataMultiPart;
 import org.glassfish.jersey.media.multipart.file.FileDataBodyPart;
 import org.glassfish.jersey.media.multipart.file.StreamDataBodyPart;
@@ -213,93 +214,21 @@ public class PromotionUtil {
         return resultList;
     }
 
-    public PromotionNodeOptionDto getPromotionPullDto(PromotionArtifactDto promotionArtifactDto) {
+    public PromotionNodeOptionDto getPromotionUploadDto(PromotionArtifactDto promotionArtifactDto) throws IOException {
         PromotionNodeOptionDto promotionNodeOptionDto = new PromotionNodeOptionDto();
         promotionNodeOptionDto.setStorageId(promotionArtifactDto.getTargetStorageId());
         promotionNodeOptionDto.setRepostoryId(promotionArtifactDto.getTargetRepostoryId());
-        Map<String, File> filePathMap = new HashMap<>();
+        Map<String, Map<String, InputStream>> filePathMap = new HashMap<>();
 
-        int fileNum = 0, folderNum = 0;
-        File file = new File(promotionArtifactDto.getPath());
-        LinkedList<File> list = new LinkedList<>();
-        if (file.exists()) {
-            if (null == file.listFiles()) {
-                filePathMap.put(
-                        getRelativePath(file.getAbsolutePath(),
-                                promotionArtifactDto.getSrcStorageId(),
-                                promotionArtifactDto.getSrcRepostoryId()), file);
-                promotionNodeOptionDto.setPathMap(filePathMap);
-                return promotionNodeOptionDto;
-            }
-            list.addAll(Arrays.asList(file.listFiles()));
-            while (!list.isEmpty()) {
-                File[] files = list.removeFirst().listFiles();
-                if (null == files) {
-                    continue;
-                }
-                for (File f : files) {
-                    if (f.isDirectory()) {
-                        log.info("文件夹:{}", f.getAbsolutePath());
-                        list.add(f);
-                        folderNum++;
-                    } else {
-                        log.info("文件:{}", f.getAbsolutePath());
-                        filePathMap.put(getRelativePath(f.getAbsolutePath(),
-                                promotionArtifactDto.getSrcStorageId(), promotionArtifactDto.getSrcRepostoryId()), f);
-                        fileNum++;
-                    }
-                }
-            }
-        } else {
-            log.info("文件不存在!");
+        List<File> list = getNFSFiles(promotionArtifactDto.getPath());
+        for (File file : list) {
+            Map<String, InputStream> inputStreamMap = new HashMap<>();
+            inputStreamMap.put(file.getAbsolutePath(), Files.newInputStream(file.toPath()));
+            filePathMap.put(
+                    getRelativePath(file.getAbsolutePath(),
+                            promotionArtifactDto.getSrcStorageId(),
+                            promotionArtifactDto.getSrcRepostoryId()), inputStreamMap);
         }
-        log.info("文件夹数量:{} ,文件数量:{}", folderNum, fileNum);
-        promotionNodeOptionDto.setPathMap(filePathMap);
-        return promotionNodeOptionDto;
-    }
-
-    public PromotionNodeOptionDto getPromotionUploadDto(PromotionArtifactDto promotionArtifactDto) {
-        PromotionNodeOptionDto promotionNodeOptionDto = new PromotionNodeOptionDto();
-        promotionNodeOptionDto.setStorageId(promotionArtifactDto.getTargetStorageId());
-        promotionNodeOptionDto.setRepostoryId(promotionArtifactDto.getTargetRepostoryId());
-        Map<String, File> filePathMap = new HashMap<>();
-
-        int fileNum = 0, folderNum = 0;
-        File file = new File(promotionArtifactDto.getPath());
-        LinkedList<File> list = new LinkedList<>();
-
-        if (file.exists()) {
-            if (null == file.listFiles()) {
-                filePathMap.put(
-                        getRelativePath(file.getAbsolutePath(),
-                                promotionArtifactDto.getSrcStorageId(),
-                                promotionArtifactDto.getSrcRepostoryId()), file);
-                promotionNodeOptionDto.setPathMap(filePathMap);
-                return promotionNodeOptionDto;
-            }
-            list.addAll(Arrays.asList(file.listFiles()));
-            while (!list.isEmpty()) {
-                File[] files = list.removeFirst().listFiles();
-                if (null == files) {
-                    continue;
-                }
-                for (File f : files) {
-                    if (f.isDirectory()) {
-                        log.info("文件夹:{}", f.getAbsolutePath());
-                        list.add(f);
-                        folderNum++;
-                    } else {
-                        log.info("文件:{}", f.getAbsolutePath());
-                        filePathMap.put(getRelativePath(f.getAbsolutePath(),
-                                promotionArtifactDto.getSrcStorageId(), promotionArtifactDto.getSrcRepostoryId()), f);
-                        fileNum++;
-                    }
-                }
-            }
-        } else {
-            log.info("文件不存在!");
-        }
-        log.info("文件夹数量:{} ,文件数量:{}", folderNum, fileNum);
         promotionNodeOptionDto.setPathMap(filePathMap);
         return promotionNodeOptionDto;
     }
@@ -436,65 +365,6 @@ public class PromotionUtil {
 
 
     /**
-     * 以流的形式文件上传
-     *
-     * @param host
-     * @param restPath
-     * @param fileName
-     * @param inputStream
-     * @return java.lang.String
-     */
-    public static String uploadFileByInputStream(String host, String restPath,
-                                                 String fileName, InputStream inputStream) throws Exception {
-        String result = "";
-        try {
-            //构建HttpClient对象,此处主要是为了支持https请求，如若只是请求http，可通过HttpClients.createDefault();获取httpClient对象
-            HttpClient client = wrapClient(host, restPath);
-            //CloseableHttpClient client = HttpClients.createDefault();
-            //构建POST请求
-            HttpPost httpPost = new HttpPost(host + restPath);
-            httpPost.setHeader("X-Atlassian-Token", "nocheck");
-            //此处设置的是confluence的账号密码，也可根据需求修改为设置cookies
-            httpPost.setHeader("Authorization", "");
-
-            httpPost.setConfig(setTimeOutConfig(httpPost.getConfig()));
-            //处理文件后面的setMode是用来解决文件名称乱码的问题:以浏览器兼容模式运行，防止文件名乱码。
-            MultipartEntityBuilder builder = MultipartEntityBuilder.create()
-                    .setMode(HttpMultipartMode.BROWSER_COMPATIBLE);
-
-            builder.setCharset(Charset.forName("UTF-8"));
-            //如果以inputStream形式上传文件，接收文件上传的接口可能会限制content-type为二进制：ContentType.DEFAULT_BINARY，否则为ContentType.MULTIPART_FORM_DATA
-            builder.addBinaryBody("file", inputStream, ContentType.DEFAULT_BINARY, fileName);
-
-            HttpEntity httpEntity = builder.build();
-            httpPost.setEntity(httpEntity);
-            HttpResponse httpResponse = client.execute(httpPost);
-            HttpEntity responseEntity = httpResponse.getEntity();
-            //判断响应结果
-            if (responseEntity != null && httpResponse.getStatusLine().getStatusCode() != 200) {
-                throw new Exception("客户端请求失败！");
-            } else {
-                log.info("文件上传响应结果" + JSON.toJSONString(httpResponse.getEntity()));
-                ;
-//                result = HttpUtils.parseString(httpResponse);
-                System.out.println("文件上传响应结果：" + result);
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        } finally {
-            if (inputStream != null) {
-                try {
-                    inputStream.close();
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-            }
-        }
-
-        return result;
-    }
-
-    /**
      * 获取 HttpClient
      *
      * @param host
@@ -576,57 +446,44 @@ public class PromotionUtil {
      * @return string
      */
     public String upload(String url, PromotionNodeOptionDto uploadDto) throws Exception {
-
-        // 创建Http实例
-        CloseableHttpClient httpClient = HttpClients.createDefault();
-        // 创建HttpPost实例
-        HttpPost httpPost = new HttpPost(url);
-
-        // 请求参数配置
-        RequestConfig requestConfig = RequestConfig.custom().setSocketTimeout(60000).setConnectTimeout(60000)
-                .setConnectionRequestTimeout(10000).build();
-        httpPost.setConfig(requestConfig);
-
         try {
-            MultipartEntityBuilder builder = MultipartEntityBuilder.create();
-            builder.setCharset(java.nio.charset.Charset.forName("UTF-8"));
-            builder.setMode(HttpMultipartMode.BROWSER_COMPATIBLE);
+            FormDataMultiPart part = new FormDataMultiPart();
+            part.field("storageId", uploadDto.getStorageId());
+            part.field("repostoryId", uploadDto.getRepostoryId());
+
             HashMap<String, String> filePathMap = new HashMap<String, String>();
             uploadDto.getPathMap().forEach((x, y) -> {
-                String fileName = y.getAbsolutePath();
-                builder.addBinaryBody("files", y, ContentType.MULTIPART_FORM_DATA, fileName);
-                filePathMap.put(fileName, x);
+                y.forEach((j, z) -> {
+                    part.bodyPart(new StreamDataBodyPart("files", z, j));
+                    filePathMap.put(j, x);
+                });
             });
-            //表单中其他参数
-            builder.addPart("storageId", new StringBody(uploadDto.getStorageId(), ContentType.create("text/plain", Consts.UTF_8)));
-            builder.addPart("repostoryId", new StringBody(uploadDto.getRepostoryId(), ContentType.create("text/plain", Consts.UTF_8)));
-            builder.addPart("filePathMap", new StringBody(JSON.toJSONString(filePathMap), ContentType.create("text/plain", Consts.UTF_8)));
-
-            HttpEntity entity = builder.build();
-            httpPost.setEntity(entity);// todo HttpAuthenticationFeature
-            HttpResponse response = httpClient.execute(httpPost);// 执行提交
-
-
-            if (response.getStatusLine().getStatusCode() == HttpStatus.SC_OK) {
-                // 返回
-                String res = EntityUtils.toString(response.getEntity(), java.nio.charset.Charset.forName("UTF-8"));
-                return res;
+            part.field("filePathMap", JSON.toJSONString(filePathMap));
+            Client client = clientPool.getRestClient();
+            WebTarget resource = client.register(MultiPartWriter.class).target(url);
+            Response response = resource.request(MediaType.APPLICATION_JSON).header("Mime-Version", "1.0").
+                    post(Entity.entity(part, Boundary.addBoundary(MediaType.MULTIPART_FORM_DATA_TYPE)));
+            ResponseEntity responseEntity = response.readEntity(ResponseEntity.class);
+            if (responseEntity.getStatusCodeValue() != 200) {
+                throw new Exception(responseEntity.getBody().toString());
             }
-
         } catch (Exception e) {
-            e.printStackTrace();
-            log.error("晋级上传失败 {}", e.getMessage());
-            throw new Exception("upload fail");
+            throw new Exception(e.getMessage());
         } finally {
-            if (httpClient != null) {
-                try {
-                    httpClient.close();
-                } catch (IOException e) {
-                    log.error("关闭HttpPost连接失败！");
-                }
-            }
+            uploadDto.getPathMap().forEach((x, y) -> {
+                y.forEach((j, z) -> {
+                    if (null != z) {
+                        try {
+                            z.close();
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        }
+
+                    }
+                });
+            });
         }
-        return "error";
+        return "上传成功";
     }
 
 }
