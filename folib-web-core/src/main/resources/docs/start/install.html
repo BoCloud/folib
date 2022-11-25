@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>单节点安装配置 | Fo Library</title>
+    <meta name="generator" content="VuePress 1.9.7">
+    <link rel="icon" href="/docs/favicon.ico">
+    <meta name="description" content="Fo Library">
+    
+    <link rel="preload" href="/docs/assets/css/0.styles.dd1dceb1.css" as="style"><link rel="preload" href="/docs/assets/js/app.9d70d249.js" as="script"><link rel="preload" href="/docs/assets/js/2.366cd330.js" as="script"><link rel="preload" href="/docs/assets/js/18.baed531b.js" as="script"><link rel="prefetch" href="/docs/assets/js/10.17af1564.js"><link rel="prefetch" href="/docs/assets/js/11.f607053f.js"><link rel="prefetch" href="/docs/assets/js/12.77840a4f.js"><link rel="prefetch" href="/docs/assets/js/13.9e8c7d9b.js"><link rel="prefetch" href="/docs/assets/js/14.cdfdaa76.js"><link rel="prefetch" href="/docs/assets/js/15.d3ea8041.js"><link rel="prefetch" href="/docs/assets/js/16.f6da126a.js"><link rel="prefetch" href="/docs/assets/js/17.6ffa4185.js"><link rel="prefetch" href="/docs/assets/js/19.377e12b9.js"><link rel="prefetch" href="/docs/assets/js/3.9c292403.js"><link rel="prefetch" href="/docs/assets/js/4.94621ad2.js"><link rel="prefetch" href="/docs/assets/js/5.cda1e283.js"><link rel="prefetch" href="/docs/assets/js/6.3ac7d543.js"><link rel="prefetch" href="/docs/assets/js/7.0edb52cd.js"><link rel="prefetch" href="/docs/assets/js/8.c6e9d764.js"><link rel="prefetch" href="/docs/assets/js/9.ba5a5ba1.js">
+    <link rel="stylesheet" href="/docs/assets/css/0.styles.dd1dceb1.css">
+  </head>
+  <body>
+    <div id="app" data-server-rendered="true"><div class="theme-container"><header class="navbar"><div class="sidebar-button"><svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true" role="img" viewBox="0 0 448 512" class="icon"><path fill="currentColor" d="M436 124H12c-6.627 0-12-5.373-12-12V80c0-6.627 5.373-12 12-12h424c6.627 0 12 5.373 12 12v32c0 6.627-5.373 12-12 12zm0 160H12c-6.627 0-12-5.373-12-12v-32c0-6.627 5.373-12 12-12h424c6.627 0 12 5.373 12 12v32c0 6.627-5.373 12-12 12zm0 160H12c-6.627 0-12-5.373-12-12v-32c0-6.627 5.373-12 12-12h424c6.627 0 12 5.373 12 12v32c0 6.627-5.373 12-12 12z"></path></svg></div> <a href="/docs/" class="home-link router-link-active"><img src="/docs/logo.png" alt="Fo Library" class="logo"> <span class="site-name can-hide">Fo Library</span></a> <div class="links"><div class="search-box"><input aria-label="Search" autocomplete="off" spellcheck="false" value=""> <!----></div> <nav class="nav-links can-hide"><div class="nav-item"><a href="/docs/core/use.html" class="nav-link">
+  使用操作
+</a></div><div class="nav-item"><a href="/docs/start/install.html" aria-current="page" class="nav-link router-link-exact-active router-link-active">
+  安装维护
+</a></div> <!----></nav></div></header> <div class="sidebar-mask"></div> <aside class="sidebar"><nav class="nav-links"><div class="nav-item"><a href="/docs/core/use.html" class="nav-link">
+  使用操作
+</a></div><div class="nav-item"><a href="/docs/start/install.html" aria-current="page" class="nav-link router-link-exact-active router-link-active">
+  安装维护
+</a></div> <!----></nav>  <ul class="sidebar-links"><li><section class="sidebar-group depth-0"><p class="sidebar-heading"><span>制品仓库管理</span> <!----></p> <ul class="sidebar-links sidebar-group-items"><li><a href="/docs/core/use.html" class="sidebar-link">制品库管理</a></li><li><a href="/docs/core/use-repo.html" class="sidebar-link">全局设置</a></li><li><a href="/docs/core/use-util.html" class="sidebar-link">工具集成示例</a></li></ul></section></li><li><section class="sidebar-group depth-0"><p class="sidebar-heading"><span>安全扫描管理</span> <!----></p> <ul class="sidebar-links sidebar-group-items"><li><a href="/docs/scanner/use.html" class="sidebar-link">全局漏洞扫描管理</a></li></ul></section></li><li><section class="sidebar-group depth-0"><p class="sidebar-heading open"><span>安装维护</span> <!----></p> <ul class="sidebar-links sidebar-group-items"><li><a href="/docs/start/install.html" aria-current="page" class="active sidebar-link">单节点安装配置</a><ul class="sidebar-sub-headers"><li class="sidebar-sub-header"><a href="/docs/start/install.html#vm环境部署" class="sidebar-link">VM环境部署</a></li><li class="sidebar-sub-header"><a href="/docs/start/install.html#配置参数详解" class="sidebar-link">配置参数详解</a></li><li class="sidebar-sub-header"><a href="/docs/start/install.html#vm启动命令详解" class="sidebar-link">VM启动命令详解</a></li><li class="sidebar-sub-header"><a href="/docs/start/install.html#docker-run-部署" class="sidebar-link">Docker run 部署</a></li><li class="sidebar-sub-header"><a href="/docs/start/install.html#docker-compose-部署" class="sidebar-link">Docker Compose 部署</a></li></ul></li><li><a href="/docs/start/install-cluster.html" class="sidebar-link">多节点集群配置</a></li><li><a href="/docs/start/install-fix.html" class="sidebar-link">集群故障修复</a></li></ul></section></li><li><section class="sidebar-group depth-0"><p class="sidebar-heading"><span>其它</span> <!----></p> <!----></section></li></ul> </aside> <main class="page"> <div class="theme-default-content content__default"><h2 id="vm环境部署"><a href="#vm环境部署" class="header-anchor">#</a> VM环境部署</h2> <h3 id="机器准备"><a href="#机器准备" class="header-anchor">#</a> 机器准备</h3> <p>你需要准备一个至少1台机器配置如下：</p> <p><em><strong>CPU内存：</strong></em> 最小8C16G(X86或者ARM架构)。</p> <p><em><strong>操作系统：</strong></em> CentOS,银河麒麟,统信UOS等操作系统</p> <p><em><strong>磁盘空间：</strong></em> 最小50GB，通常情况下，1年 1TB的规模左右的增量速率。</p> <h3 id="数据库准备"><a href="#数据库准备" class="header-anchor">#</a> 数据库准备</h3> <ul><li>第一步 你需要自己准备一个Mysql、MariaDB类型的数据库(版本5.7+)，并创建好数据库和用户名密码。</li> <li>第二步 你需要自己准备一个elasticsearch(版本7.0+)，主要用来给图数据库提供元数据全文搜索使用；<div class="custom-block tip"><p class="custom-block-title">特别说明</p> <p>无需初始化SQL，我们在应用第一次启动的时候会创建数据库和初始化数据。
+folib <em><strong>支持信创国产化服务器</strong></em> ，数据库如有同类型的替代产品也可支持，例如：TiDB,OceanDB,达梦等</p></div></li></ul> <h3 id="后端linux安装"><a href="#后端linux安装" class="header-anchor">#</a> 后端Linux安装</h3> <p>下载安装包（zip包）到具体目录</p> <div class="language-bash line-numbers-mode"><pre class="language-bash"><code>$ <span class="token function">unzip</span> folib.zip
+</code></pre> <div class="line-numbers-wrapper"><span class="line-number">1</span><br></div></div><h3 id="解压后的目录结构说明"><a href="#解压后的目录结构说明" class="header-anchor">#</a> 解压后的目录结构说明</h3> <p>安装完成后的目录结构如下</p> <div class="language-bash line-numbers-mode"><pre class="language-bash"><code>├── folib-1.0                                    
+│   ├── bin                                  
+│   │   └── folib                                <span class="token comment">#进程启动命令工具</span>
+│   ├── etc                                      <span class="token comment">#配置主目录</span>
+│   │   ├── conf                                
+│   │   │   ├── cassandra.yaml
+<span class="token operator">|</span>   <span class="token operator">|</span>   <span class="token operator">|</span>   ├── db_EMBEDDED.yaml
+<span class="token operator">|</span>   <span class="token operator">|</span>   <span class="token operator">|</span>   ├── db_MEMORY.yaml
+<span class="token operator">|</span>   <span class="token operator">|</span>   <span class="token operator">|</span>   ├── db_REMOTE.yaml
+<span class="token operator">|</span>   <span class="token operator">|</span>   <span class="token operator">|</span>   ├── folib-authentication-providers.yaml
+<span class="token operator">|</span>   <span class="token operator">|</span>   <span class="token operator">|</span>   ├── folib-authorization.yaml
+<span class="token operator">|</span>   <span class="token operator">|</span>   <span class="token operator">|</span>   ├── folib-cron-tasks.yaml
+<span class="token operator">|</span>   <span class="token operator">|</span>   <span class="token operator">|</span>   ├── folib-security-users.yaml
+<span class="token operator">|</span>   <span class="token operator">|</span>   <span class="token operator">|</span>   ├── folib.yaml
+<span class="token operator">|</span>   <span class="token operator">|</span>   <span class="token operator">|</span>   ├── janusgraph-cassandra.properties
+<span class="token operator">|</span>   <span class="token operator">|</span>   <span class="token operator">|</span>   └── janusgraph-inmemory.properties
+│   ├── lib                                      
+│   │   ├── folib-core-1.0-spring-boot.jar       <span class="token comment">#folib主进程启动包                                   </span>
+│   └── tmp                                      <span class="token comment">#临时文件路径</span>
+└── folib-vault                                  <span class="token comment">#数据与日志路径</span>
+</code></pre> <div class="line-numbers-wrapper"><span class="line-number">1</span><br><span class="line-number">2</span><br><span class="line-number">3</span><br><span class="line-number">4</span><br><span class="line-number">5</span><br><span class="line-number">6</span><br><span class="line-number">7</span><br><span class="line-number">8</span><br><span class="line-number">9</span><br><span class="line-number">10</span><br><span class="line-number">11</span><br><span class="line-number">12</span><br><span class="line-number">13</span><br><span class="line-number">14</span><br><span class="line-number">15</span><br><span class="line-number">16</span><br><span class="line-number">17</span><br><span class="line-number">18</span><br><span class="line-number">19</span><br><span class="line-number">20</span><br></div></div><div class="custom-block tip"><p class="custom-block-title">TIP</p> <p>只有应用启动之后才会自动创建folib-vault数据文件路径</p></div> <h2 id="配置参数详解"><a href="#配置参数详解" class="header-anchor">#</a> 配置参数详解</h2> <ul><li><em><strong>环境变量配置</strong></em> 如下表：</li></ul> <table><thead><tr><th>变量名称</th> <th>含义</th> <th>默认值</th> <th>是否必填</th> <th>使用场景</th></tr></thead> <tbody><tr><td>FOLIB_PORT</td> <td>主程序端口号</td> <td>38080</td> <td>是</td> <td></td></tr> <tr><td>FOLIB_JVM_XMX</td> <td>最大JVM内存</td> <td>512</td> <td>是</td> <td></td></tr> <tr><td>FOLIB_DB_PROFILE</td> <td>db模式</td> <td>db_EMBEDDED</td> <td>是</td> <td></td></tr> <tr><td>FOLIB_GREMLIN_SERVER_ENABLED</td> <td>GREMLIN图数据服务是否对外开启</td> <td>false</td> <td>是</td> <td></td></tr> <tr><td>FOLIB_LOG_FILE_ENABLED</td> <td>日志文件开启</td> <td>true</td> <td>是</td> <td></td></tr> <tr><td>FOLIB_LOG_FILE_SIZE_SINGLE</td> <td>日志单个大小</td> <td>128MB</td> <td>是</td> <td></td></tr> <tr><td>FOLIB_LOG_FILE_SIZE_TOTAL</td> <td>日志文件总大小</td> <td>1GB</td> <td>是</td> <td></td></tr> <tr><td>FOLIB_LOG_FILE_HISTORY</td> <td>历史存储数量</td> <td>31</td> <td>是</td> <td></td></tr> <tr><td>FOLIB_ES_HOST</td> <td>索引ES存储地址</td> <td>127.0.0.1</td> <td>是</td> <td></td></tr> <tr><td>FOLIB_MYSQL_HOST</td> <td>MySQL地址</td> <td>127.0.0.1</td> <td>是</td> <td></td></tr> <tr><td>FOLIB_MYSQL_PORT</td> <td>MySQL端口</td> <td>3306</td> <td>是</td> <td></td></tr> <tr><td>FOLIB_MYSQL_DB</td> <td>MySQL数据库名称</td> <td>folib_scanner</td> <td>是</td> <td></td></tr> <tr><td>FOLIB_MYSQL_USER</td> <td>MySQL数据库账号</td> <td></td> <td>是</td> <td></td></tr> <tr><td>FOLIB_MYSQL_PASSWORD</td> <td>MySQL数据库密码</td> <td></td> <td>是</td> <td></td></tr> <tr><td>FOLIB_NVD</td> <td>安全策略镜像地址</td> <td>nvd.folib.com</td> <td>否</td> <td></td></tr> <tr><td>FOLIB_JMX_PORT</td> <td>JMX监控端口</td> <td>7199</td> <td>是</td> <td></td></tr> <tr><td>FOLIB_DISTRIBUTED_LOCKIP</td> <td>集群模式下对外其他节点暴露自身的IP</td> <td>无</td> <td></td> <td></td></tr> <tr><td>FOLIB_CLUSTER_OPENFLAG</td> <td>是否开启集群模式</td> <td>false</td> <td>是</td> <td></td></tr> <tr><td>FOLIB_CLUSTER_HOSTNODE</td> <td>其他集群节点地址逗号隔开</td> <td>无</td> <td></td> <td></td></tr> <tr><td>FOLIB_REMOTE_DB_HOST</td> <td>外置图数据库持久化地址</td> <td>127.0.0.1</td> <td>否</td> <td>db_REMOTE模式下有效</td></tr> <tr><td>FOLIB_REMOTE_DB_PORT</td> <td>外置图数据库持久化端口</td> <td>49142</td> <td>否</td> <td>db_REMOTE模式下有效</td></tr> <tr><td>FOLIB_REMOTE_DB_USER</td> <td>外置图数据库用户名</td> <td>cassandra</td> <td>否</td> <td>db_REMOTE模式下有效</td></tr> <tr><td>FOLIB_REMOTE_DB_PASS</td> <td>外置图数据持久化密码</td> <td>cassandra</td> <td>否</td> <td>db_REMOTE模式下有效</td></tr> <tr><td>FOLIB_S3_REGION</td> <td>S3存储区域</td> <td>folib</td> <td>否</td> <td>使用S3存储时需配置</td></tr> <tr><td>FOLIB_S3_URI</td> <td>S3存储服务地址</td> <td>s3://localhost:9000/</td> <td>否</td> <td>使用S3存储时需配置</td></tr> <tr><td>FOLIB_S3_ACCESS_KEY</td> <td>S3存储授权用户名</td> <td>folib</td> <td>否</td> <td>使用S3存储时需配置</td></tr> <tr><td>FOLIB_S3_SECRET_KEY</td> <td>S3存储授权密码</td> <td>folib</td> <td>否</td> <td>使用S3存储时需配置</td></tr></tbody></table> <ul><li><em><strong>VM环境变量</strong></em> 配置参数修改方式：</li></ul> <p><em><strong>SETP1</strong></em> :你需要通过编辑工具例如：vi或vim 编辑folib-1.0/bin/folib</p> <div class="language-shell line-numbers-mode"><pre class="language-shell"><code><span class="token function">vim</span> folib-1.0/bin/folib
+</code></pre> <div class="line-numbers-wrapper"><span class="line-number">1</span><br></div></div><p><em><strong>SETP2</strong></em> :你将可以进行类似下图，进行编辑folib中配配置参数。</p> <div class="language-shell line-numbers-mode"><pre class="language-shell"><code><span class="token shebang important">#!/usr/bin/env bash</span>
+<span class="token comment">##-----以上省略-----</span>
+<span class="token comment">#REMOT cassandra相关只有db_REMOTE时才生效</span>
+<span class="token assign-left variable">FOLIB_REMOTE_DB_HOST</span><span class="token operator">=</span><span class="token string">&quot;<span class="token variable">${FOLIB_REMOTE_DB_HOST<span class="token operator">:-</span>127.0.0.1}</span>&quot;</span>
+<span class="token assign-left variable">FOLIB_REMOTE_DB_PORT</span><span class="token operator">=</span><span class="token string">&quot;<span class="token variable">${FOLIB_REMOTE_DB_PORT<span class="token operator">:-</span>49142}</span>&quot;</span>
+<span class="token assign-left variable">FOLIB_REMOTE_DB_USER</span><span class="token operator">=</span><span class="token string">&quot;<span class="token variable">${FOLIB_REMOTE_DB_USER<span class="token operator">:-</span>root}</span>&quot;</span>
+<span class="token assign-left variable">FOLIB_REMOTE_DB_PASS</span><span class="token operator">=</span><span class="token string">&quot;<span class="token variable">${FOLIB_REMOTE_DB_PASS<span class="token operator">:-</span>folib-cassandra}</span>&quot;</span>
+
+<span class="token comment">#jmx相关</span>
+<span class="token assign-left variable">FOLIB_JMX_PORT</span><span class="token operator">=</span><span class="token string">&quot;<span class="token variable">${FOLIB_JMX_PORT<span class="token operator">:-</span>7199}</span>&quot;</span>
+
+<span class="token comment">#如果采用S3协议的存储，可以配置S3，默认是采用本地NFS</span>
+<span class="token assign-left variable">FOLIB_S3_REGION</span><span class="token operator">=</span><span class="token string">&quot;<span class="token variable">${FOLIB_S3_REGION<span class="token operator">:-</span>folib}</span>&quot;</span>
+<span class="token assign-left variable">FOLIB_S3_URI</span><span class="token operator">=</span><span class="token string">&quot;<span class="token variable">${FOLIB_S3_URI<span class="token operator">:-</span>s3<span class="token operator">:</span><span class="token operator">/</span><span class="token operator">/</span>localhost<span class="token operator">:</span>9000<span class="token operator">/</span>}</span>&quot;</span>
+<span class="token assign-left variable">FOLIB_S3_ACCESS_KEY</span><span class="token operator">=</span><span class="token string">&quot;<span class="token variable">${FOLIB_S3_ACCESS_KEY<span class="token operator">:-</span>folib}</span>&quot;</span>
+<span class="token assign-left variable">FOLIB_S3_SECRET_KEY</span><span class="token operator">=</span><span class="token string">&quot;<span class="token variable">${FOLIB_S3_SECRET_KEY<span class="token operator">:-</span>folib}</span>&quot;</span>
+
+<span class="token comment">##图数据库索引ES节点配置</span>
+<span class="token assign-left variable">FOLIB_ES_HOST</span><span class="token operator">=</span><span class="token string">&quot;<span class="token variable">${FOLIB_ES_HOST<span class="token operator">:-</span>10.50.8.55}</span>&quot;</span>
+
+<span class="token comment">##scanner相关配置</span>
+<span class="token assign-left variable">FOLIB_MYSQL_HOST</span><span class="token operator">=</span><span class="token string">&quot;<span class="token variable">${FOLIB_MYSQL_HOST<span class="token operator">:-</span>10.10.0.1}</span>&quot;</span>  <span class="token comment">#数据库地址</span>
+<span class="token assign-left variable">FOLIB_MYSQL_PORT</span><span class="token operator">=</span><span class="token string">&quot;<span class="token variable">${FOLIB_MYSQL_PORT<span class="token operator">:-</span>3306}</span>&quot;</span>    <span class="token comment">#数据库端口</span>
+<span class="token assign-left variable">FOLIB_MYSQL_DB</span><span class="token operator">=</span><span class="token string">&quot;<span class="token variable">${FOLIB_MYSQL_DB<span class="token operator">:-</span>folib}</span>&quot;</span>     <span class="token comment">#数据库名称</span>
+<span class="token assign-left variable">FOLIB_MYSQL_USER</span><span class="token operator">=</span><span class="token string">&quot;<span class="token variable">${FOLIB_MYSQL_USER<span class="token operator">:-</span>root}</span>&quot;</span>   <span class="token comment">#用户名</span>
+<span class="token assign-left variable">FOLIB_MYSQL_PASSWORD</span><span class="token operator">=</span><span class="token string">&quot;<span class="token variable">${FOLIB_MYSQL_PASSWORD<span class="token operator">:-</span>password}</span>&quot;</span>  <span class="token comment">#密码</span>
+<span class="token assign-left variable">FOLIB_NVD</span><span class="token operator">=</span><span class="token string">&quot;<span class="token variable">${FOLIB_NVD<span class="token operator">:-</span>nvd.folib.com}</span>&quot;</span>    <span class="token comment">#如果内部部署漏洞镜像则修改</span>
+
+<span class="token comment">##-----以下省略------</span>
+</code></pre> <div class="line-numbers-wrapper"><span class="line-number">1</span><br><span class="line-number">2</span><br><span class="line-number">3</span><br><span class="line-number">4</span><br><span class="line-number">5</span><br><span class="line-number">6</span><br><span class="line-number">7</span><br><span class="line-number">8</span><br><span class="line-number">9</span><br><span class="line-number">10</span><br><span class="line-number">11</span><br><span class="line-number">12</span><br><span class="line-number">13</span><br><span class="line-number">14</span><br><span class="line-number">15</span><br><span class="line-number">16</span><br><span class="line-number">17</span><br><span class="line-number">18</span><br><span class="line-number">19</span><br><span class="line-number">20</span><br><span class="line-number">21</span><br><span class="line-number">22</span><br><span class="line-number">23</span><br><span class="line-number">24</span><br><span class="line-number">25</span><br><span class="line-number">26</span><br><span class="line-number">27</span><br><span class="line-number">28</span><br><span class="line-number">29</span><br></div></div><h2 id="vm启动命令详解"><a href="#vm启动命令详解" class="header-anchor">#</a> VM启动命令详解</h2> <p>启动模式与命令详解（你可以选择下面的任意模式）</p> <div class="language-bash line-numbers-mode"><pre class="language-bash"><code>$ <span class="token function">sh</span> ./folib-1.0/bin/folib  start        <span class="token comment">#后台启动方式</span>
+$ <span class="token function">sh</span> ./folib-1.0/bin/folib  console      <span class="token comment">#启动并打开日志控制台，通常用于查看运行是否正常</span>
+$ <span class="token function">sh</span> ./folib-1.0/bin/folib  debug        <span class="token comment">#debug模式启动，通常用于远程debug来排查问题使用</span>
+$ <span class="token function">sh</span> ./folib-1.0/bin/folib  stop         <span class="token comment">#停止folib进程</span>
+$ <span class="token function">sh</span> ./folib-1.0/bin/folib  restart      <span class="token comment">#重启folib进程</span>
+$ <span class="token function">sh</span> ./folib-1.0/bin/folib  status       <span class="token comment">#查看进程状态</span>
+$ <span class="token function">sh</span> ./folib-1.0/bin/folib repair_start  <span class="token comment"># 只有集群模式下，且该节点发生宕机后进行使用。</span>
+</code></pre> <div class="line-numbers-wrapper"><span class="line-number">1</span><br><span class="line-number">2</span><br><span class="line-number">3</span><br><span class="line-number">4</span><br><span class="line-number">5</span><br><span class="line-number">6</span><br><span class="line-number">7</span><br></div></div><div class="custom-block tip"><p class="custom-block-title">TIP</p> <p>在启动之前，请确保数据库连接是正确的。</p></div> <div class="custom-block warning"><p class="custom-block-title">注意事项</p> <p>在启动前请使用，netstat -tunlp 命令查看，38080，如果修改可以在folib中进行修改</p></div> <h2 id="docker-run-部署"><a href="#docker-run-部署" class="header-anchor">#</a> Docker run 部署</h2> <h3 id="安装脚本"><a href="#安装脚本" class="header-anchor">#</a> 安装脚本</h3> <ul><li><em><strong>MySQL安装</strong></em></li></ul> <p>(该镜像基于开源镜像，开启了group——by等配置操作)</p> <div class="language-shell line-numbers-mode"><pre class="language-shell"><code><span class="token function">docker</span> run -d  -p <span class="token number">3306</span>:3306 --name mysql <span class="token punctuation">\</span>
+-v /home/folib/mysql/logs:/var/log/mysql <span class="token punctuation">\</span>
+-v /home/folib/mysql/data:/var/lib/mysql <span class="token punctuation">\</span>
+--restart<span class="token operator">=</span>always --privileged<span class="token operator">=</span>true <span class="token punctuation">\</span>
+-e <span class="token assign-left variable">MYSQL_ROOT_PASSWORD</span><span class="token operator">=</span>folib@v587 <span class="token punctuation">\</span>
+-d docker.folib.com/folib-common/folib-docker/mysql5.7:latest --lower_case_table_names<span class="token operator">=</span><span class="token number">1</span>
+
+</code></pre> <div class="line-numbers-wrapper"><span class="line-number">1</span><br><span class="line-number">2</span><br><span class="line-number">3</span><br><span class="line-number">4</span><br><span class="line-number">5</span><br><span class="line-number">6</span><br><span class="line-number">7</span><br></div></div><ul><li><em><strong>ES安装</strong></em></li></ul> <div class="language-shell line-numbers-mode"><pre class="language-shell"><code><span class="token function">mkdir</span> -p /home/folib/es/
+<span class="token function">chmod</span> <span class="token number">777</span> /home/folib/es/
+<span class="token function">docker</span> run -itd -p <span class="token number">9200</span>:9200 -p <span class="token number">9300</span>:9300 --restart<span class="token operator">=</span>always --privileged<span class="token operator">=</span>true --name elasticsearch-server <span class="token punctuation">\</span>
+-v /home/folib/es/data:/usr/share/elasticsearch/data <span class="token punctuation">\</span>
+-v /home/folib/es/plugins:/usr/share/elasticsearch/plugins <span class="token punctuation">\</span>
+-e <span class="token string">&quot;discovery.type=single-node&quot;</span> <span class="token punctuation">\</span>
+-e <span class="token assign-left variable">ES_JAVA_OPTS</span><span class="token operator">=</span><span class="token string">&quot;-Xms512m -Xmx512m&quot;</span> <span class="token punctuation">\</span>
+docker.folib.com/folib-common/folib-docker/elasticsearch:7.3.1
+</code></pre> <div class="line-numbers-wrapper"><span class="line-number">1</span><br><span class="line-number">2</span><br><span class="line-number">3</span><br><span class="line-number">4</span><br><span class="line-number">5</span><br><span class="line-number">6</span><br><span class="line-number">7</span><br><span class="line-number">8</span><br></div></div><ul><li><em><strong>漏洞服务mirror安装</strong></em></li></ul> <div class="language-shell line-numbers-mode"><pre class="language-shell"><code><span class="token function">mkdir</span>  /home/folib/mirror/
+<span class="token function">chmod</span> <span class="token number">777</span> /home/folib/mirror/
+<span class="token function">docker</span> run -d   --name folib-mirror   -p <span class="token number">9998</span>:80  <span class="token punctuation">\</span>
+ --mount <span class="token assign-left variable">type</span><span class="token operator">=</span>bind,source<span class="token operator">=</span>/home/folib/mirror,target<span class="token operator">=</span>/usr/local/apache2/htdocs <span class="token punctuation">\</span>
+  docker.folib.com/folib-common/folib-docker/folib-mirror:1.0
+</code></pre> <div class="line-numbers-wrapper"><span class="line-number">1</span><br><span class="line-number">2</span><br><span class="line-number">3</span><br><span class="line-number">4</span><br><span class="line-number">5</span><br></div></div><ul><li><em><strong>folib-server安装</strong></em></li></ul> <div class="language-shell line-numbers-mode"><pre class="language-shell"><code><span class="token function">docker</span> run -itd  --restart always --name folib -p <span class="token number">38080</span>:38080 <span class="token punctuation">\</span>
+-p <span class="token number">7010</span>:7010 -p <span class="token number">7011</span>:7011 -p <span class="token number">7199</span>:7199 -p <span class="token number">49142</span>:49142 -p <span class="token number">8182</span>:8182 <span class="token punctuation">\</span>
+-e <span class="token assign-left variable">FOLIB_MYSQL_HOST</span><span class="token operator">=</span>mysql <span class="token punctuation">\</span>
+-e <span class="token assign-left variable">FOLIB_MYSQL_PORT</span><span class="token operator">=</span><span class="token number">3306</span> <span class="token punctuation">\</span>
+-e <span class="token assign-left variable">FOLIB_MYSQL_DB</span><span class="token operator">=</span>folib_scanner <span class="token punctuation">\</span>
+-e <span class="token assign-left variable">FOLIB_MYSQL_USER</span><span class="token operator">=</span>root <span class="token punctuation">\</span>
+-e <span class="token assign-left variable">FOLIB_MYSQL_PASSWORD</span><span class="token operator">=</span>folib@v587 <span class="token punctuation">\</span>
+-e <span class="token assign-left variable">FOLIB_ES_HOST</span><span class="token operator">=</span>elasticsearch-server:9200 <span class="token punctuation">\</span>
+-e <span class="token assign-left variable">FOLIB_PORT</span><span class="token operator">=</span><span class="token number">38080</span> <span class="token punctuation">\</span>
+-e <span class="token assign-left variable">FOLIB_NVD</span><span class="token operator">=</span>folib-mirror <span class="token punctuation">\</span>
+-v /home/folib/folib-conf:/opt/folib/folib-1.0-SNAPSHOT/etc/conf <span class="token punctuation">\</span>
+-v /home/folib/folib-vault:/opt/folib/folib-vault  <span class="token punctuation">\</span>
+--link elasticsearch-server:elasticsearch-server <span class="token punctuation">\</span>
+--link mysql:mysql <span class="token punctuation">\</span>
+--link folib-mirror:folib-mirror <span class="token punctuation">\</span>
+docker.folib.com/folib-common/folib-docker/folib-server:1.0
+</code></pre> <div class="line-numbers-wrapper"><span class="line-number">1</span><br><span class="line-number">2</span><br><span class="line-number">3</span><br><span class="line-number">4</span><br><span class="line-number">5</span><br><span class="line-number">6</span><br><span class="line-number">7</span><br><span class="line-number">8</span><br><span class="line-number">9</span><br><span class="line-number">10</span><br><span class="line-number">11</span><br><span class="line-number">12</span><br><span class="line-number">13</span><br><span class="line-number">14</span><br><span class="line-number">15</span><br><span class="line-number">16</span><br></div></div><div class="custom-block warning"><p class="custom-block-title">注意事项</p> <p>环境变量可以参考上方<a href="#%E9%85%8D%E7%BD%AE%E5%8F%82%E6%95%B0%E8%AF%A6%E8%A7%A3"><em><strong>环境变量表</strong></em></a>  进行参考配置</p></div> <h2 id="docker-compose-部署"><a href="#docker-compose-部署" class="header-anchor">#</a> Docker Compose 部署</h2> <ul><li>创建docker-compose.yaml文件</li></ul> <div class="language-shell line-numbers-mode"><pre class="language-shell"><code><span class="token function">vim</span> docker-compose.yaml
+</code></pre> <div class="line-numbers-wrapper"><span class="line-number">1</span><br></div></div><ul><li>复制以下脚本进行粘贴</li></ul> <div class="language-shell line-numbers-mode"><pre class="language-shell"><code>
+version: <span class="token string">&quot;3.8&quot;</span>  <span class="token comment">#指定本yaml依从的compose哪个版本制定的</span>
+services:
+  mysql:  <span class="token comment">#服务名称</span>
+    container_name: mysql <span class="token comment">#容器名称，可与服务报名保持一致</span>
+    image: docker.folib.com/folib-common/folib-docker/mysql5.7:latest
+    environment:
+      - <span class="token assign-left variable">MYSQL_ROOT_PASSWORD</span><span class="token operator">=</span>folib@v587
+      - <span class="token assign-left variable">lower_case_table_names</span><span class="token operator">=</span><span class="token number">1</span>
+    volumes:
+      - ~/folib/mysql/logs:/var/log/mysql
+      - ~/folib/mysql/data:/var/lib/mysql
+<span class="token comment">#      - ~/folib/etc/localtime:/etc/localtime:ro</span>
+    restart: always
+    privileged: <span class="token boolean">true</span>
+    ports:
+      - <span class="token number">3306</span>:3306
+  elasticsearch:  <span class="token comment">#服务名称</span>
+    container_name: elasticsearch <span class="token comment">#容器名称，可与服务报名保持一致</span>
+    image: docker.folib.com/folib-common/folib-docker/elasticsearch:7.3.1
+    environment:
+      - node.name<span class="token operator">=</span>node-1 <span class="token comment">#节点名称，与另外一个节点区分开</span>
+      - cluster.initial_master_nodes<span class="token operator">=</span>node-1 <span class="token comment">#初始主节点</span>
+      - discovery.seed_hosts<span class="token operator">=</span>elasticsearch:9300 <span class="token comment">#配置集群的主机地址</span>
+      - cluster.name<span class="token operator">=</span>docker-elasticsearch-cluster <span class="token comment">#集群名称，两个节点需要保持一致</span>
+      - bootstrap.memory_lock<span class="token operator">=</span>true  <span class="token comment">#禁用交换内存，提升效率</span>
+      - <span class="token string">&quot;ES_JAVA_OPTS=-Xms512m -Xmx512m&quot;</span>
+    volumes:
+      - ~/folib/es/conf:/usr/share/elasticsearch/conf
+      - ~/folib/es/data:/usr/share/elasticsearch/data
+      - ~/folib/es/plugins:/usr/share/elasticsearch/plugins
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+      nofile:
+        soft: <span class="token number">65536</span>
+        hard: <span class="token number">65536</span>
+    restart: always
+    privileged: <span class="token boolean">true</span>
+    ports:
+      - <span class="token number">9200</span>:9200 <span class="token comment">#重要：该集群对外出去的http端口号</span>
+      - <span class="token number">9300</span>:9300 <span class="token comment">#重要：该集群对外映射出去的transport端口号</span>
+  folib-mirror:  <span class="token comment">#服务名称</span>
+    container_name: folib-mirror <span class="token comment">#容器名称，可与服务报名保持一致</span>
+    image: docker.folib.com/folib-common/folib-docker/folib-mirror:1.0
+    volumes:
+      - ~/folib/mirror:/usr/local/apache2/htdocs
+    restart: always
+    privileged: <span class="token boolean">true</span>
+    ports:
+      - <span class="token number">8919</span>:80
+  folib-server:  <span class="token comment">#服务名称</span>
+    container_name: folib-server <span class="token comment">#容器名称，可与服务报名保持一致</span>
+    image: docker.folib.com/folib-common/folib-docker/folib-server:1.0
+    environment:
+      - <span class="token assign-left variable">RUN_WORKDIR</span><span class="token operator">=</span>/opt/folib
+      - <span class="token assign-left variable">FOLIB_PORT</span><span class="token operator">=</span><span class="token number">38080</span>
+      - <span class="token assign-left variable">FOLIB_JVM_XMX</span><span class="token operator">=</span><span class="token number">512</span>
+      - <span class="token assign-left variable">FOLIB_DB_PROFILE</span><span class="token operator">=</span>db_EMBEDDED
+      - <span class="token assign-left variable">FOLIB_GREMLIN_SERVER_ENABLED</span><span class="token operator">=</span>false
+      - <span class="token assign-left variable">FOLIB_LOG_CONSOLE_ENABLED</span><span class="token operator">=</span>false
+      - <span class="token assign-left variable">FOLIB_LOG_FILE_ENABLED</span><span class="token operator">=</span>true
+      - <span class="token assign-left variable">FOLIB_LOG_FILE_SIZE_SINGLE</span><span class="token operator">=</span>128MB
+      - <span class="token assign-left variable">FOLIB_LOG_FILE_SIZE_TOTAL</span><span class="token operator">=</span>1GB
+      - <span class="token assign-left variable">FOLIB_LOG_FILE_HISTORY</span><span class="token operator">=</span><span class="token number">31</span>
+      - <span class="token assign-left variable">FOLIB_DEBUG</span><span class="token operator">=</span>false
+      - <span class="token assign-left variable">FOLIB_NPM_REMOTE_CHANGES_ENABLED</span><span class="token operator">=</span>false
+      - <span class="token assign-left variable">FOLIB_NUGET_DOWNLOAD_FEED</span><span class="token operator">=</span>false
+      - <span class="token assign-left variable">FOLIB_DOWNLOAD_INDEXES</span><span class="token operator">=</span>false
+      - <span class="token assign-left variable">FOLIB_ES_HOST</span><span class="token operator">=</span>elasticsearch:9200
+      - <span class="token assign-left variable">FOLIB_MYSQL_HOST</span><span class="token operator">=</span>mysql
+      - <span class="token assign-left variable">FOLIB_MYSQL_PORT</span><span class="token operator">=</span><span class="token number">3306</span>
+      - <span class="token assign-left variable">FOLIB_MYSQL_DB</span><span class="token operator">=</span>folib_scanner
+      - <span class="token assign-left variable">FOLIB_MYSQL_USER</span><span class="token operator">=</span>root
+      - <span class="token assign-left variable">FOLIB_MYSQL_PASSWORD</span><span class="token operator">=</span>folib@v587
+      - <span class="token assign-left variable">FOLIB_NVD</span><span class="token operator">=</span>folib-mirror
+      - <span class="token assign-left variable">FOLIB_JMX_PORT</span><span class="token operator">=</span><span class="token number">7199</span>
+      - <span class="token assign-left variable">FOLIB_DISTRIBUTED_LOCKIP</span><span class="token operator">=</span><span class="token number">127.0</span>.0.1
+      - <span class="token assign-left variable">FOLIB_CLUSTER_OPENFLAG</span><span class="token operator">=</span>false
+      - <span class="token assign-left variable">FOLIB_CLUSTER_HOSTNODE</span><span class="token operator">=</span>http://127.0.0.1:38080
+      - <span class="token assign-left variable">FOLIB_REMOTE_DB_HOST</span><span class="token operator">=</span><span class="token number">127.0</span>.0.1
+      - <span class="token assign-left variable">FOLIB_REMOTE_DB_PORT</span><span class="token operator">=</span><span class="token number">49142</span>
+      - <span class="token assign-left variable">FOLIB_REMOTE_DB_USER</span><span class="token operator">=</span>root
+      - <span class="token assign-left variable">FOLIB_REMOTE_DB_PASS</span><span class="token operator">=</span>folib-cassandra
+      - <span class="token assign-left variable">FOLIB_S3_REGION</span><span class="token operator">=</span>folib
+      - <span class="token assign-left variable">FOLIB_S3_URI</span><span class="token operator">=</span>s3://localhost:9000/
+      - <span class="token assign-left variable">FOLIB_S3_ACCESS_KEY</span><span class="token operator">=</span>folib
+      - <span class="token assign-left variable">FOLIB_S3_SECRET_KEY</span><span class="token operator">=</span>folib
+    volumes:
+      - ~/folib/folib-conf:/opt/folib/folib-1.0-SNAPSHOT/etc/conf
+      - ~/folib/folib-vault:/opt/folib/folib-vault
+    restart: always
+    privileged: <span class="token boolean">true</span>
+    ports:
+      - <span class="token number">38080</span>:38080
+      - <span class="token number">7010</span>:7010
+      - <span class="token number">7011</span>:7011
+      - <span class="token number">7199</span>:7199
+      - <span class="token number">49142</span>:49142
+      - <span class="token number">8182</span>:8182
+    links:
+      - mysql:mysql
+      - elasticsearch:elasticsearch
+      - folib-mirror:folib-mirror
+    depends_on:
+      - mysql
+      - elasticsearch
+      - folib-mirror
+
+</code></pre> <div class="line-numbers-wrapper"><span class="line-number">1</span><br><span class="line-number">2</span><br><span class="line-number">3</span><br><span class="line-number">4</span><br><span class="line-number">5</span><br><span class="line-number">6</span><br><span class="line-number">7</span><br><span class="line-number">8</span><br><span class="line-number">9</span><br><span class="line-number">10</span><br><span class="line-number">11</span><br><span class="line-number">12</span><br><span class="line-number">13</span><br><span class="line-number">14</span><br><span class="line-number">15</span><br><span class="line-number">16</span><br><span class="line-number">17</span><br><span class="line-number">18</span><br><span class="line-number">19</span><br><span class="line-number">20</span><br><span class="line-number">21</span><br><span class="line-number">22</span><br><span class="line-number">23</span><br><span class="line-number">24</span><br><span class="line-number">25</span><br><span class="line-number">26</span><br><span class="line-number">27</span><br><span class="line-number">28</span><br><span class="line-number">29</span><br><span class="line-number">30</span><br><span class="line-number">31</span><br><span class="line-number">32</span><br><span class="line-number">33</span><br><span class="line-number">34</span><br><span class="line-number">35</span><br><span class="line-number">36</span><br><span class="line-number">37</span><br><span class="line-number">38</span><br><span class="line-number">39</span><br><span class="line-number">40</span><br><span class="line-number">41</span><br><span class="line-number">42</span><br><span class="line-number">43</span><br><span class="line-number">44</span><br><span class="line-number">45</span><br><span class="line-number">46</span><br><span class="line-number">47</span><br><span class="line-number">48</span><br><span class="line-number">49</span><br><span class="line-number">50</span><br><span class="line-number">51</span><br><span class="line-number">52</span><br><span class="line-number">53</span><br><span class="line-number">54</span><br><span class="line-number">55</span><br><span class="line-number">56</span><br><span class="line-number">57</span><br><span class="line-number">58</span><br><span class="line-number">59</span><br><span class="line-number">60</span><br><span class="line-number">61</span><br><span class="line-number">62</span><br><span class="line-number">63</span><br><span class="line-number">64</span><br><span class="line-number">65</span><br><span class="line-number">66</span><br><span class="line-number">67</span><br><span class="line-number">68</span><br><span class="line-number">69</span><br><span class="line-number">70</span><br><span class="line-number">71</span><br><span class="line-number">72</span><br><span class="line-number">73</span><br><span class="line-number">74</span><br><span class="line-number">75</span><br><span class="line-number">76</span><br><span class="line-number">77</span><br><span class="line-number">78</span><br><span class="line-number">79</span><br><span class="line-number">80</span><br><span class="line-number">81</span><br><span class="line-number">82</span><br><span class="line-number">83</span><br><span class="line-number">84</span><br><span class="line-number">85</span><br><span class="line-number">86</span><br><span class="line-number">87</span><br><span class="line-number">88</span><br><span class="line-number">89</span><br><span class="line-number">90</span><br><span class="line-number">91</span><br><span class="line-number">92</span><br><span class="line-number">93</span><br><span class="line-number">94</span><br><span class="line-number">95</span><br><span class="line-number">96</span><br><span class="line-number">97</span><br><span class="line-number">98</span><br><span class="line-number">99</span><br><span class="line-number">100</span><br><span class="line-number">101</span><br><span class="line-number">102</span><br><span class="line-number">103</span><br><span class="line-number">104</span><br><span class="line-number">105</span><br><span class="line-number">106</span><br><span class="line-number">107</span><br><span class="line-number">108</span><br><span class="line-number">109</span><br><span class="line-number">110</span><br></div></div><div class="custom-block warning"><p class="custom-block-title">注意事项</p> <p>环境变量可以参考上方<a href="#%E9%85%8D%E7%BD%AE%E5%8F%82%E6%95%B0%E8%AF%A6%E8%A7%A3"><em><strong>环境变量表</strong></em></a>  进行参考配置</p></div> <ul><li>执行启动命令</li></ul> <div class="language-shell line-numbers-mode"><pre class="language-shell"><code><span class="token function">docker-compose</span> up -d
+</code></pre> <div class="line-numbers-wrapper"><span class="line-number">1</span><br></div></div><div class="custom-block warning"><p class="custom-block-title">注意事项</p> <p>执行前请确保：您的服务器上安装了docker与docker-compose工具</p></div></div> <footer class="page-edit"><!----> <!----></footer> <div class="page-nav"><p class="inner"><span class="prev">
+      ←
+      <a href="/docs/scanner/use.html" class="prev">
+        全局漏洞扫描管理
+      </a></span> <span class="next"><a href="/docs/start/install-cluster.html">
+        多节点集群配置
+      </a>
+      →
+    </span></p></div> </main></div><div class="global-ui"></div></div>
+    <script src="/docs/assets/js/app.9d70d249.js" defer></script><script src="/docs/assets/js/2.366cd330.js" defer></script><script src="/docs/assets/js/18.baed531b.js" defer></script>
+  </body>
+</html>

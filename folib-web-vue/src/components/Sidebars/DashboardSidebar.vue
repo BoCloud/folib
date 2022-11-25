@@ -81,7 +81,7 @@
 					</span>
 					<h6>不知道怎么用?</h6>
 					<p>请查阅帮助文档</p>
-					<a-button block size="small" href="http://folib.com/start/use.html" target="_blank">
+					<a-button block size="small" href="/docs/core/use.html" target="_blank">
 						FOLIB使用文档
 					</a-button>
 				</div>

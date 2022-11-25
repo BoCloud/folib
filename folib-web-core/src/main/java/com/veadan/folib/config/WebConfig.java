@@ -259,6 +259,12 @@ public class WebConfig
                 .resourceChain(true)
                 .addResolver(new GzipResourceResolver())
                 .addResolver(new PathResourceResolver());
+        registry.addResourceHandler("/docs/**")
+                .addResourceLocations("classpath:/docs/")
+                .setCachePeriod(3600)
+                .resourceChain(true)
+                .addResolver(new GzipResourceResolver())
+                .addResolver(new PathResourceResolver());
 
         registry.addResourceHandler("/webjars/**")
                 .addResourceLocations("classpath:/META-INF/resources/webjars/");
