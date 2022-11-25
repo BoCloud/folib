@@ -4,5 +4,5 @@ mkdir -p ~/folib/es/data && mkdir -p ~/folib/es/plugins && mkdir -p ~/folib/es/c
 chmod 777 ~/folib/es/*
 
 echo "=====>>>>> 创建并授权 ~/folib/mirror";
-mkdir -p ~/folib/mirror;
+mkdir -p ~/folib/mirror
 chmod 777 ~/folib/mirror

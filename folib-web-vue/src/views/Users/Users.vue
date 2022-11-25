@@ -213,7 +213,7 @@ export default ({
   components: {
   },
   data() {
-    const checkFinanceCode = (rule, value, callback) => {
+    const checkPassword = (rule, value, callback) => {
       if (value) {
         var reg = /(?!^(\d+|[a-zA-Z]+|[~!@#$%^&*()_.]+)$)^[\w~!@#$%^&*()_.]{8,16}$/
         if (reg.test(value) === false) {
@@ -240,7 +240,7 @@ export default ({
           // 限制字符串长度
           { min: 8, max: 16, message: '长度在 8 到 16 个字符', trigger: 'blur' },
           // 自定义正则
-          { required: true, trigger: 'blur', validator: checkFinanceCode }
+          { required: true, trigger: 'blur', validator: checkPassword }
         ]
       },
       passwordRequired: true,
@@ -301,7 +301,7 @@ export default ({
             this.getUsers()
           })
         } else {
-          return false;
+          return false
         }
       })
     },

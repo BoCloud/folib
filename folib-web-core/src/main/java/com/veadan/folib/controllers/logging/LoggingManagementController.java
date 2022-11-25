@@ -1,5 +1,7 @@
 package com.veadan.folib.controllers.logging;
 
+import cn.hutool.core.io.FileUtil;
+import cn.hutool.core.io.file.FileMode;
 import com.veadan.folib.booters.PropertiesBooter;
 import com.veadan.folib.controllers.BaseController;
 import com.veadan.folib.domain.DirectoryListing;
@@ -8,16 +10,17 @@ import com.veadan.folib.services.DirectoryListingServiceImpl;
 
 import javax.inject.Inject;
 import javax.servlet.http.HttpServletRequest;
-import java.io.BufferedInputStream;
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.*;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.nio.file.OpenOption;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Optional;
 import java.util.concurrent.ForkJoinPool;
 import java.util.function.Function;
 
+import com.veadan.folib.util.CommonUtils;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiResponse;
@@ -236,7 +239,10 @@ public class LoggingManagementController
     private InputStream logFileInputStream(Path logFilePath)
             throws IOException
     {
-        return new BufferedInputStream(Files.newInputStream(logFilePath));
+        InputStream stream = new ByteArrayInputStream(CommonUtils.readLastLines(logFilePath, 500).getBytes(StandardCharsets.UTF_8));
+        return new BufferedInputStream(stream);
     }
+
+
 
 }

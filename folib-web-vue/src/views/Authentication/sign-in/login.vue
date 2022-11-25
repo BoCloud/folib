@@ -26,15 +26,16 @@
 					<a-form-item class="mb-5" label="密码" :colon="false">
 						<a-input v-decorator="[
 							'password',
-							{ rules: [{ required: true, message: '请输入密码!' }] },
+							{ rules: [{ required: true, message: '请输入密码!'}] },
 						]" type="password" placeholder="Password" />
 					</a-form-item>
 					<a-form-item class="mb-10">
 						<a-checkbox v-decorator="[
 							'remember',
-							{
+							{ 	
+								rules: [{ required: true, message: '请勾选同意本协议'},{validator: checkRemember }],
 								valuePropName: 'checked',
-								initialValue: true,
+								initialValue: true, 
 							},
 						]">
 							保存密码 <a href="#" class="font-bold text-dark">同意本协议</a>
@@ -105,6 +106,13 @@ export default ({
 				}
 			});
 		},
+		checkRemember (rule, value, callback) {
+			if (value === false) {
+				callback(new Error('请勾选同意本协议'))
+			} else {
+				callback()
+			}
+		}
 	},
 })
 

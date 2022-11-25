@@ -15,8 +15,7 @@ import java.util.List;
  */
 @Component("s3filesystemStorageProvider")
 public class S3FileSystemStorageProvider
-        extends AbstractStorageProvider
-{
+        extends AbstractStorageProvider {
 
     private static final Logger logger = LoggerFactory.getLogger(S3FileSystemStorageProvider.class);
 
@@ -24,45 +23,37 @@ public class S3FileSystemStorageProvider
 
     @Inject
     private FileSystem s3FileSystem;
+
     @Override
-    public String getAlias()
-    {
+    public String getAlias() {
         return ALIAS;
     }
 
     @PostConstruct
     @Override
-    public void register()
-    {
+    public void register() {
         logger.info("Registered storage provider '{}' with alias '{}'.",
-                    getClass().getCanonicalName(), ALIAS);
+                getClass().getCanonicalName(), ALIAS);
     }
 
     @Override
-    public FileSystem getFileSystem()
-    {
+    public FileSystem getFileSystem() {
 
         return s3FileSystem;
 
     }
 
     @Override
-    public FileSystemProvider getFileSystemProvider()
-    {
+    public FileSystemProvider getFileSystemProvider() {
         List<FileSystemProvider> installedProviders = FileSystemProvider.installedProviders();
-        for (FileSystemProvider fileSystemProvider : installedProviders)
-        {
-            boolean a=fileSystemProvider.getClass().getSimpleName().equals("S3FileSystemProvider");
-//            if (!"file".equals(fileSystemProvider.getScheme()))
-//            {
-//                continue;
-//            }
-            if(a){
+        for (FileSystemProvider fileSystemProvider : installedProviders) {
+            logger.info("=====>>>>> fileSystemProvider：{}", fileSystemProvider.getClass().getSimpleName());
+            boolean a = "S3FileSystemProvider".equalsIgnoreCase(fileSystemProvider.getClass().getSimpleName());
+            if (a) {
                 return fileSystemProvider;
             }
 
         }
-
         return null;
     }
 

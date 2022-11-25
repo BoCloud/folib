@@ -139,15 +139,16 @@
     </a-row>
     <a-modal v-model="showsTorageFormModal" :footer="null" :forceRender="true" title="新建存储空间"
       on-ok="showsTorageFormModal = false">
-      <a-form :form="storageCreateData" :hideRequiredMark="true" @submit.prevent="handleCreateSubmit">
+      <a-form-model :model="storageCreateData" ref="storageCreate" :rules="storageRules" :hideRequiredMark="true"
+        @submit.prevent="handleCreateSubmit">
         <a-row :gutter="[24]">
           <a-col :span="24">
-            <a-form-item class="tags-field mb-10" label="存储空间名称" :colon="false">
+            <a-form-model-item class="tags-field mb-10" label="存储空间名称" :colon="false" prop="id">
               <a-input v-model="storageCreateData.id" placeholder="存储空间名称">
                 <a-icon slot="prefix" type="appstore" />
               </a-input>
-            </a-form-item>
-            <a-form-item class="tags-field mb-10" label="存储类型" :colon="false">
+            </a-form-model-item>
+            <a-form-model-item class="tags-field mb-10" label="存储类型" :colon="false">
               <a-radio-group name="radioGroup" default-value="local" @change="changeStorageType()"
                 v-model="storageCreateData.type">
                 <a-radio value="local">
@@ -157,14 +158,15 @@
                   S3存储
                 </a-radio>
               </a-radio-group>
-            </a-form-item>
+            </a-form-model-item>
             <p>说明:</p>
             <ul class="pl-15 text-muted">
               <li>默认为本地存储即:NFS本地目录存储</li>
               <li>S3存储：默认以存储空间名称作为桶名,您也可以自定义桶名称</li>
               <li><strong>注意：存储空间名称、存储类型、S3存储桶路径，一旦创建不可修改</strong></li>
             </ul>
-            <a-form-item v-if="storageCreateData.type === 'S3'" class="tags-field mb-10" label="S3路径" :colon="false">
+            <a-form-model-item v-if="storageCreateData.type === 'S3'" class="tags-field mb-10" label="S3路径"
+              :colon="false">
               <a-card :bordered="false" class="bg-gray-3 shadow-0 mb-24" :bodyStyle="{ padding: '8px' }">
                 <a-row type="flex" align="middle">
                   <a-col>
@@ -188,8 +190,8 @@
                   </a-col>
                 </a-row>
               </a-card>
-            </a-form-item>
-            <a-form-item class="tags-field mb-10" v-if="userInfo.roles.indexOf('ADMIN') > -1" label="管理员选择"
+            </a-form-model-item>
+            <a-form-model-item class="tags-field mb-10" v-if="userInfo.roles.indexOf('ADMIN') > -1" label="管理员选择"
               :colon="false">
               <a-select v-model="storageCreateData.admin" style="width: 100%" model="default" show-search
                 placeholder="请选择管理员">
@@ -197,20 +199,20 @@
                   {{ tag.username }}
                 </a-select-option>
               </a-select>
-            </a-form-item>
-            <a-form-item class="tags-field mb-10"
+            </a-form-model-item>
+            <a-form-model-item class="tags-field mb-10"
               v-if="userInfo.roles.indexOf('ADMIN') > -1 || userInfo.name === currentStorage.admin" label="用户成员选择"
-              :colon="false">
-              <a-select v-model="storageCreateData.users" mode="tags" :defaultValue="storageCreateData.users"
-                style="width: 100%" placeholder="例如：*">
+              show-search :colon="false">
+              <a-select v-model="storageCreateData.users" mode="multiple" :defaultValue="storageCreateData.users"
+                style="width: 100%" placeholder="请选择用户">
                 <a-select-option v-for="(tag, index) in userList" :key="index" :value="tag.username">
                   {{ tag.username }}
                 </a-select-option>
               </a-select>
-            </a-form-item>
-            <a-form-item class="mb-10" :colon="false">
+            </a-form-model-item>
+            <a-form-model-item class="mb-10" :colon="false">
 
-            </a-form-item>
+            </a-form-model-item>
           </a-col>
           <a-col :span="12">
             <!--            <a-button key="back" @click="deleteCurrentTask" class="px-30" size="small" type="danger">Delete</a-button>-->
@@ -220,7 +222,7 @@
             <a-button key="back" @click="showsTorageFormModal = false" class="px-30 ml-10" size="small">取消</a-button>
           </a-col>
         </a-row>
-      </a-form>
+      </a-form-model>
     </a-modal>
 
     <a-modal v-model="showStorageUpdate" :footer="null" :forceRender="true" title="修改或删除存储空间"
@@ -286,8 +288,8 @@
             <a-form-item class="tags-field mb-10"
               v-if="userInfo.roles.indexOf('ADMIN') > -1 || userInfo.name === currentStorage.admin" label="用户成员选择"
               :colon="false">
-              <a-select v-model="currentStorage.users" mode="tags" :defaultValue="currentStorage.users"
-                style="width: 100%" placeholder="例如：*">
+              <a-select v-model="currentStorage.users" mode="multiple" :defaultValue="currentStorage.users"
+                style="width: 100%" placeholder="请选择用户">
                 <a-select-option v-for="(tag, index) in userList" :key="index" :value="tag.username">
                   {{ tag.username }}
                 </a-select-option>
@@ -355,7 +357,8 @@
         </a-row>
       </a-form>
     </a-modal>
-    <a-drawer placement="right" width="65%" title="新建制品库" :visible="folibVisible" @close="closeUserDialog">
+    <a-drawer placement="right" width="65%" :title="(folibRepositoryEditDisabled ? '修改' : '新建') + '制品库'"
+      :visible="folibVisible" @close="closeUserDialog">
       <div class="mx-auto m-50" style="max-width: 1000px;">
 
         <!-- Header -->
@@ -607,7 +610,7 @@
                 </a-col>
                 <a-col :span="6">
                   <a-form-item class="mb-10" label="制品大小限制(MB)" :colon="false">
-                    <a-input v-model:value="artifactMaxSize" addon-after="MB">
+                    <a-input v-model="artifactMaxSize" addon-after="MB">
                     </a-input>
                   </a-form-item>
                 </a-col>
@@ -674,11 +677,11 @@
                 </a-col>
                 <a-col :span="12" class="text-right">
                   <a-button v-if="folibRepository.type === 'hosted'" type="primary"
-                    @click="addOrUpdateRepositoryHandel(false)" class="px-25">
+                    @click="addOrUpdateRepositorySecond(false)" class="px-25">
                     完成{{ folibRepositoryEditDisabled ? '修改' : '创建' }}
                   </a-button>
                   <a-button v-if="folibRepository.type === 'hosted'" style="margin-left: 20px"
-                    @click="addOrUpdateRepositoryHandel(true)" class="px-25">
+                    @click="addOrUpdateRepositorySecond(true)" class="px-25">
                     {{ folibRepositoryEditDisabled ? '修改' : '创建' }}并设置定时策略</a-button>
 
                   <a-button v-else-if="folibRepository.type !== 'hosted'" type="primary" @click="moveStep(1)"
@@ -786,7 +789,7 @@
                 </a-col>
                 <a-col :span="4">
                   <a-form-item class="mb-10" label="端口号" :colon="false">
-                    <a-input v-model:value="folibRepository.proxyConfiguration.port" placeholder="端口号" />
+                    <a-input v-model="folibRepository.proxyConfiguration.port" placeholder="端口号" />
                   </a-form-item>
                 </a-col>
                 <a-col :span="4">
@@ -909,17 +912,19 @@
                     <a-col v-if="i.fields.length > 2" style="margin-right: 15px">
                       <p class="font-semibold mb-0 ml-10">其他参数:</p>
                     </a-col>
-                    <div v-if="i.fields.length > 2" v-for="(f, index) in i.fields">
-                      <a-col v-if="f.name !== 'storageId' && f.name !== 'repositoryId'" class="ml-auto">
-                        <span style="margin-left: 15px" class="mr-15">{{ f.name }}</span>
-                        <a-input v-if="f.type === 'string'" v-model="f.value" size="small"
-                          class="font-regular text-sm text-dark" style="width: 250px;" />
-                        <a-input-number v-if="f.type === 'int' && f.name === 'numberToKeep'" v-model="f.value"
-                          size="small" class="font-regular text-sm text-dark" style="width: 120px;" />
-                        <a-date-picker v-if="f.type === 'int' && f.name === 'keepPeriod'" v-model="f.value" size="small"
-                          class="font-regular text-sm text-dark" style="width: 120px;" />
-                        <a-switch v-if="f.type === 'boolean'" v-model="f.value" @change="() => { $forceUpdate() }" />
-                      </a-col>
+                    <div v-if="i.fields.length > 2">
+                      <div v-for="(f, index) in i.fields" :key="index">
+                        <a-col v-if="f.name !== 'storageId' && f.name !== 'repositoryId'" class="ml-auto">
+                          <span style="margin-left: 15px" class="mr-15">{{ f.name }}</span>
+                          <a-input v-if="f.type === 'string'" v-model="f.value" size="small"
+                            class="font-regular text-sm text-dark" style="width: 250px;" />
+                          <a-input-number v-if="f.type === 'int' && f.name === 'numberToKeep'" v-model="f.value"
+                            size="small" class="font-regular text-sm text-dark" style="width: 120px;" />
+                          <a-date-picker v-if="f.type === 'int' && f.name === 'keepPeriod'" v-model="f.value"
+                            size="small" class="font-regular text-sm text-dark" style="width: 120px;" />
+                          <a-switch v-if="f.type === 'boolean'" v-model="f.value" @change="() => { $forceUpdate() }" />
+                        </a-col>
+                      </div>
                     </div>
                   </a-row>
                   <a-row :gutter="[24]">
@@ -989,6 +994,18 @@ export default {
   },
   props: ['navbarFixed'],
   data() {
+    const checkStorageId = (rule, value, callback) => {
+      if (value) {
+        var reg = /^[a-zA-Z0-9_.\\-]+$/
+        if (reg.test(value) === false) {
+          callback(new Error('存储空间名称应为大小写字母，数字，特殊符号(-_.)'))
+        } else {
+          callback()
+        }
+      } else {
+        callback()
+      }
+    }
     return {
       userInfo: {},
       showStorageUpdate: false,
@@ -1036,7 +1053,6 @@ export default {
         bucket: null,
         users: []
       },
-      storageForm: this.$form.createForm(this, { name: "storage" }),
       visibility: true,
       slack: true,
       spotify: true,
@@ -1156,7 +1172,16 @@ export default {
           tasks: []
         }
       ],
-
+      storageRules: {
+        id: [
+          // 限制必填
+          { required: true, message: '请输入存储空间名称', trigger: 'blur' },
+          // 限制字符串长度
+          { min: 1, max: 30, message: '长度在 1 到 30 个字符', trigger: 'blur' },
+          // 自定义正则
+          { required: true, trigger: 'blur', validator: checkStorageId }
+        ]
+      },
     };
   },
   created() {
@@ -1172,12 +1197,10 @@ export default {
 
     if (!this.currentStorage.id && this.storageData && this.storageData.length > 0) {
       this.currentStorage.id = this.storageData[0].id
-      this.currentStorage.basedir = this.storageData[0].basedir
     }
 
-    this.getLibrary(this.currentStorage)
-
-
+    this.getStorage(this.currentStorage.id)
+    this.getLibrary(this.currentStorage.id)
   },
   computed: {},
   methods: {
@@ -1196,12 +1219,19 @@ export default {
       }
     },
     createHandleView() {
-
       this.showsTorageFormModal = true
+      if (this.$refs.storageCreate) {
+        debugger
+        this.$refs.storageCreate.resetFields()
+      }
       this.getUsersList()
     },
     updateHandleView() {
-
+      if (this.currentStorage.basedir !== null) {
+        this.currentStorage.type = 'S3'
+      } else {
+        this.currentStorage.type = 'local'
+      }
       this.showStorageUpdate = true
       this.getUsersList()
     },
@@ -1289,38 +1319,42 @@ export default {
       }
     },
     handleCreateSubmit(e) {
-      if (this.storageCreateData.id != null) {
-        if (this.storageCreateData.type === 'S3') {
-          this.storageCreateData.basedir = this.storageCreateData.bucket ? '/' + this.storageCreateData.bucket + '/' + this.storageCreateData.id : '/' + this.storageCreateData.id
-        } else {
-          this.storageCreateData.basedir = null
-        }
-        delete this.storageCreateData.bucket
-        delete this.storageCreateData.isNotCustom
-        delete this.storageCreateData.type
+      this.$refs.storageCreate.validate(valid => {
+        if (valid) {
+          if (this.storageCreateData.id != null) {
+            if (this.storageCreateData.type === 'S3') {
+              this.storageCreateData.basedir = this.storageCreateData.bucket ? '/' + this.storageCreateData.bucket + '/' + this.storageCreateData.id : '/' + this.storageCreateData.id
+            } else {
+              this.storageCreateData.basedir = null
+            }
+            delete this.storageCreateData.bucket
+            delete this.storageCreateData.isNotCustom
+            delete this.storageCreateData.type
 
-        createStorages(this.storageCreateData).then(response => {
-          setTimeout(() => {
-            this.$notification.success({
-              message: response.message,
+            createStorages(this.storageCreateData).then(response => {
+              setTimeout(() => {
+                this.$notification.success({
+                  message: response.message,
+                })
+              }, 100)
+              this.showsTorageFormModal = false;
+              this.storageCreateData = this.storageCreateDefultData
+              this.getStorages();
+            }).catch((err) => {
+              let error = JSON.stringify(err.response.data)
+              this.$notification["error"]({
+                message: error.indexOf('The storage id already exists') !== -1 ? '存储空间名称已存在' : "创建失败",
+              })
             })
-          }, 100)
-          this.showsTorageFormModal = false;
-          this.storageCreateData = this.storageCreateDefultData
-          this.getStorages();
-        }).catch((err) => {
-          let error = JSON.stringify(err.response.data)
-          this.$notification["error"]({
-            message: error.indexOf('The storage id already exists') !== -1 ? '存储空间名称已存在' : "创建失败",
-          })
-        })
-      }
-
+          }
+        } else {
+          return false
+        }
+      })
     },
     handleUpdateSubmit(e) {
       if (this.currentStorage.id != null) {
         this.deleteStoragesKeyBuff()
-
         updateStorages(this.currentStorage).then(response => {
           setTimeout(() => {
             this.$notification.success({
@@ -1330,10 +1364,7 @@ export default {
           this.showStorageUpdate = false;
           this.getStorages();
         })
-        this.currentStorage = this.currentDefultStorage
-
       }
-
     },
     getUsersList() {
       getUsers().then(res => {
@@ -1368,10 +1399,18 @@ export default {
         this.currentStorage.isNotCustom = false
         this.currentStorage.bucket = null
       }
-      this.getLibrary(item);
+      this.getLibrary(this.currentStorage.id)
     },
-    getLibrary(item) {
-      getLibrary(item.id).then(response => {
+    getStorage(id) {
+      getLibrary(id).then(response => {
+        this.currentStorage.id = response.id
+        this.currentStorage.basedir = response.basedir
+        this.currentStorage.admin = response.admin
+        this.currentStorage.users = response.users
+      })
+    },
+    getLibrary(id) {
+      getLibrary(id).then(response => {
         this.repositories = response.repositories
       })
     },
@@ -1555,6 +1594,39 @@ export default {
       }
       this.crontasksListHandle()
     },
+    repositoryNameCheck(repositoryName) {
+      if (!repositoryName) {
+        this.$notification.open({
+          class: 'ant-notification-warning',
+          message: '填写错误',
+          description: '请输入仓库名称',
+        });
+        return false
+      }
+      if (repositoryName.length < 1 || repositoryName.length > 30) {
+        this.$notification.open({
+          class: 'ant-notification-warning',
+          message: '填写错误',
+          description: '仓库名称长度在 1 到 30 个字符',
+        })
+        return false
+      }
+      var reg = /^[a-zA-Z0-9_.\\-]+$/
+      if (reg.test(repositoryName) === false) {
+        this.$notification.open({
+          class: 'ant-notification-warning',
+          message: '填写错误',
+          description: '仓库名称应为大小写字母，数字，特殊符号(-_.)',
+        })
+        return false
+      }
+      return true
+    },
+    addOrUpdateRepositorySecond(isNotSetCron) {
+      if (this.repositoryNameCheck(this.folibRepositoryIds)) {
+        this.addOrUpdateRepositoryHandel(isNotSetCron)
+      }
+    },
     addOrUpdateRepositoryHandel(isNotSetCron) {
       this.folibRepository.id = this.folibRepositoryIds
       //构建basedir
@@ -1600,7 +1672,7 @@ export default {
         }
 
 
-        this.getLibrary(this.currentStorage)
+        this.getLibrary(this.currentStorage.id)
 
         if (!isNotSetCron) {
           this.step = 0
@@ -1703,7 +1775,7 @@ export default {
             })
 
             this.deleteFormVisible = false;
-            this.getLibrary(this.currentStorage)
+            this.getLibrary(this.currentStorage.id)
           } else {
             setTimeout(() => {
               this.$notification.open({
@@ -1734,7 +1806,7 @@ export default {
             })
 
             this.deleteFormVisible = false;
-            this.getLibrary(this.currentStorage)
+            this.getLibrary(this.currentStorage.id)
           } else {
             setTimeout(() => {
               this.$notification.open({
