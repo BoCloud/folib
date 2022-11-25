@@ -2,6 +2,7 @@ package com.veadan.folib.web;
 
 import com.veadan.folib.configuration.StoragesConfigurationManager;
 import com.veadan.folib.interceptors.ArtifactRequestInterceptor;
+import com.veadan.folib.interceptors.PermissionCheckInterceptor;
 import com.veadan.folib.interceptors.RepositoryRequestInterceptor;
 
 import javax.inject.Inject;
@@ -32,6 +33,7 @@ public class CustomRequestMappingHandlerMapping
     protected void detectMappedInterceptors(List<HandlerInterceptor> mappedInterceptors)
     {
         mappedInterceptors.add(new RepositoryRequestInterceptor());
+        mappedInterceptors.add(new PermissionCheckInterceptor());
         mappedInterceptors.addAll(BeanFactoryUtils.beansOfTypeIncludingAncestors(obtainApplicationContext(),
                                                                                  ArtifactRequestInterceptor.class, true,
                                                                                  false)
