@@ -13,6 +13,7 @@ import com.veadan.folib.converters.users.AccessModelFormToUserAccessModelDtoConv
 import com.veadan.folib.converters.users.UserFormToUserDtoConverter;
 import com.veadan.folib.cron.config.CronTasksConfig;
 import com.veadan.folib.interceptors.MavenArtifactRequestInterceptor;
+import com.veadan.folib.interceptors.PermissionCheckInterceptor;
 import com.veadan.folib.mapper.WebObjectMapperSubtypes;
 import com.veadan.folib.providers.io.RepositoryPathResolver;
 import com.veadan.folib.services.DirectoryListingService;
@@ -312,6 +313,11 @@ public class WebConfig
     MavenArtifactRequestInterceptor mavenArtifactRequestInterceptor(RepositoryPathResolver repositoryPathResolver)
     {
         return new MavenArtifactRequestInterceptor(repositoryPathResolver);
+    }
+
+    @Bean
+    PermissionCheckInterceptor permissionCheckInterceptor(){
+        return new PermissionCheckInterceptor();
     }
 
     @Override

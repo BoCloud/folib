@@ -1,5 +1,6 @@
 package com.veadan.folib.controllers.promotion;
 
+import com.veadan.folib.config.PermissionCheck;
 import com.veadan.folib.controllers.BaseArtifactController;
 import com.veadan.folib.domain.ArtifactPromotion;
 import com.veadan.folib.domain.PromotionNodeOption;
@@ -36,7 +37,7 @@ public class ArtifactPromotionController extends BaseArtifactController {
     private ArtifactPromotionService artifactPromotionService;
 
     @PostMapping("/copy")
-    @PreAuthorize("hasAuthority('CONFIGURATION_ADD_UPDATE_STORAGE')")
+    @PermissionCheck(resourceKey = "CONFIGURATION_ADD_UPDATE_STORAGE")
     public ResponseEntity copy(@RequestBody @Validated ArtifactPromotion artifactPromotion,
                                BindingResult bindingResult) {
         if (bindingResult.hasErrors()) {
@@ -46,7 +47,7 @@ public class ArtifactPromotionController extends BaseArtifactController {
     }
 
     @PostMapping("/move")
-    @PreAuthorize("hasAuthority('CONFIGURATION_ADD_UPDATE_STORAGE')")
+    @PermissionCheck(resourceKey = "CONFIGURATION_ADD_UPDATE_STORAGE")
     public ResponseEntity move(@RequestBody @Validated ArtifactPromotion artifactPromotion, BindingResult bindingResult) {
         if (bindingResult.hasErrors()) {
             throw new RequestBodyValidationException("请求参数错误", bindingResult);
@@ -56,7 +57,7 @@ public class ArtifactPromotionController extends BaseArtifactController {
 
     // 节点晋级
     @PostMapping("/nodeOption")
-//    @PreAuthorize("hasAuthority('CONFIGURATION_ADD_UPDATE_STORAGE')")
+    @PermissionCheck(resourceKey = "CONFIGURATION_ADD_UPDATE_STORAGE")
     public ResponseEntity nodeOption(@RequestBody @Validated PromotionNodeOption promotionNodeOption,
                                      HttpServletRequest request,
                                      BindingResult bindingResult) {
@@ -69,7 +70,7 @@ public class ArtifactPromotionController extends BaseArtifactController {
     // 上传接口
     @PostMapping(value = "/upload-files")
     @ApiOperation(value = "文件上传(支持批量)", notes = "文件上传(支持批量)")
-//    @PreAuthorize("hasAuthority('CONFIGURATION_ADD_UPDATE_STORAGE')")
+    @PermissionCheck(resourceKey = "CONFIGURATION_ADD_UPDATE_STORAGE")
     public ResponseEntity upload(@RequestParam("files") MultipartFile[] files,
                                  @RequestParam("storageId") String storageId,
                                  @RequestParam("repostoryId") String repostoryId,
@@ -79,7 +80,7 @@ public class ArtifactPromotionController extends BaseArtifactController {
 
     // 下载接口
     @GetMapping(value = "/download")
-//    @PreAuthorize("hasAuthority('CONFIGURATION_ADD_UPDATE_STORAGE')")
+    @PermissionCheck(resourceKey = "CONFIGURATION_ADD_UPDATE_STORAGE")
     public ResponseEntity download(@RequestBody @Validated ArtifactDto artifactDto,
                                    HttpServletResponse response, BindingResult bindingResult) {
         if (bindingResult.hasErrors()) {
@@ -89,7 +90,7 @@ public class ArtifactPromotionController extends BaseArtifactController {
     }
 
     @PostMapping(value = "/pull-files")
-//    @PreAuthorize("hasAuthority('CONFIGURATION_ADD_UPDATE_STORAGE')")
+    @PermissionCheck(resourceKey = "CONFIGURATION_ADD_UPDATE_STORAGE")
     public ResponseEntity pull(@RequestBody @Validated PromotionArtifactDto promotionArtifactDto,
                                BindingResult bindingResult) {
         if (bindingResult.hasErrors()) {
@@ -99,9 +100,9 @@ public class ArtifactPromotionController extends BaseArtifactController {
     }
 
     @PostMapping(value = "/getFileRelativePaths")
-//    @PreAuthorize("hasAuthority('CONFIGURATION_ADD_UPDATE_STORAGE')")
+    @PermissionCheck(resourceKey = "CONFIGURATION_ADD_UPDATE_STORAGE")
     public ResponseEntity getFiles(@RequestBody @Validated ArtifactDto artifactDto,
-                               BindingResult bindingResult) {
+                                   BindingResult bindingResult) {
         if (bindingResult.hasErrors()) {
             throw new RequestBodyValidationException("请求参数错误", bindingResult);
         }
