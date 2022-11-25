@@ -21,10 +21,10 @@ import java.security.spec.X509EncodedKeySpec;
 @Component
 public class RSAUtils {
 
-    @Value("${ras.publicKey}")
+    @Value("${rsa.publicKey}")
     private String publicKey;
 
-    @Value("${ras.privateKey}")
+    @Value("${rsa.privateKey}")
     private String privateKey;
 
     /**
