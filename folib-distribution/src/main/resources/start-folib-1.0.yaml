@@ -51,7 +51,7 @@ services:
       - 8919:80
   folib-server:  #服务名称
     container_name: folib-server #容器名称，可与服务报名保持一致
-    image: 58.210.154.140:2477/folib-common/folib-docker/folib-server:1.0
+    image: 58.210.154.140:2477/folib-common/folib-docker/folib-server:1.1
     environment:
       - RUN_WORKDIR=/opt/folib
       - FOLIB_PORT=38080
