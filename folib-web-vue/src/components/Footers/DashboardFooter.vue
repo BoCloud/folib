@@ -21,8 +21,8 @@
 				<!-- Footer Navigation Menu -->
 				<a-menu mode="horizontal">
 					<a-menu-item><a href="https://bocloud.com.cn/" target="_blank">BoCloud</a></a-menu-item>
-					<a-menu-item><a href="https://folib.com" target="_blank">关于我们</a></a-menu-item>
-					<a-menu-item><a href="https://folib.com" target="_blank">博客</a></a-menu-item>
+					<a-menu-item><a href="http://folib.com" target="_blank">关于我们</a></a-menu-item>
+					<a-menu-item><a href="http://folib.com" target="_blank">博客</a></a-menu-item>
 				</a-menu>
 				<!-- / Footer Navigation Menu -->
 

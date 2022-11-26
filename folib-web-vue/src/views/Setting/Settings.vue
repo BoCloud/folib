@@ -94,7 +94,7 @@
                   </a-col>
                   <a-col :span="24" :lg="12">
                     <a-form-item class="mb-10" label="密码" :colon="false">
-                      <a-input placeholder="SMTP密码" v-model="serverSettings.smtpConfigurationForm.password" />
+                      <a-input-password placeholder="SMTP密码" autocomplete="new-password" v-model="serverSettings.smtpConfigurationForm.password" />
                     </a-form-item>
                   </a-col>
                   <a-col :span="24" :lg="12">
@@ -147,7 +147,7 @@
                   </a-col>
                   <a-col :span="24" :lg="12">
                     <a-form-item class="mb-10" label="密码" :colon="false">
-                      <a-input placeholder="代理密码" v-model="serverSettings.proxyConfigurationForm.password" />
+                      <a-input-password placeholder="代理密码" autocomplete="new-password" v-model="serverSettings.proxyConfigurationForm.password" />
                     </a-form-item>
                   </a-col>
                   <a-col :span="24" :lg="12">
@@ -1046,7 +1046,7 @@ export default {
       if (key === '3') {
         this.getVulnerabilityConfig()
         this.getUsersList()
-      } else if(key === '4'){
+      } else if (key === '4') {
         this.getVulnerabilityConfig()
       } else {
         this.getVulnerabilities()
@@ -1101,7 +1101,7 @@ export default {
           filterWhites: false,
         })
       }
-    }
+    },
   },
 };
 </script>

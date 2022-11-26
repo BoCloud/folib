@@ -55,7 +55,7 @@
                           <a-icon type="cloud-upload" />
                         </small>
                       </a>
-                      <a>
+                      <a v-if="folibRepository.layout !== 'Raw'">
                         <small style="padding-right: 20px" @click="UsedHelperVisible">
                           使用帮助
                           <a-icon type="question-circle" theme="filled" />

@@ -26,19 +26,36 @@ const errorHandler = (error) => {
       })
     }
     if (error.response.status === 401) {
-      setTimeout(() => {
-        notification.error({
-          message: '权限信息',
-          description: '登录信息已过期将为你转跳至登录页面'
-        })
-      }, 100)
+      let message = error.response.data.error
+      if (message.indexOf('invalid.credentials') !== -1) {
+        setTimeout(() => {
+          notification.error({
+            message: '提示',
+            description: '账号或密码错误'
+          })
+        }, 100)
+      } else if (message.indexOf('User account is locked') !== -1) {
+        setTimeout(() => {
+          notification.error({
+            message: '提示',
+            description: '登录失败，用户未激活'
+          })
+        }, 100)
+      } else {
+        setTimeout(() => {
+          notification.error({
+            message: '权限信息',
+            description: '登录信息已过期将为你转跳至登录页面'
+          })
+        }, 100)
+      }
       store.dispatch('Logout').then(() => {
         window.location.reload()
       })
 
       if (token) {
 
-      }else {
+      } else {
 
 
       }
@@ -49,17 +66,17 @@ const errorHandler = (error) => {
 
 // request interceptor
 request.interceptors.request.use(config => {
-    if(Cookies.get("access_token")){
-      Cookies.remove("access_token")
-    }
+  if (Cookies.get("access_token")) {
+    Cookies.remove("access_token")
+  }
 
 
-  const token = storage.get(ACCESS_TOKEN)?storage.get(ACCESS_TOKEN):Cookies.get("access_token")
- // console.log(config)
+  const token = storage.get(ACCESS_TOKEN) ? storage.get(ACCESS_TOKEN) : Cookies.get("access_token")
+  // console.log(config)
   // 如果 token 存在
   // 让每个请求携带自定义 token 请根据实际情况自行修改
   if (token) {
-    config.headers[ACCESS_TOKEN] = "Bearer "+token
+    config.headers[ACCESS_TOKEN] = "Bearer " + token
   }
   return config
 }, errorHandler)
@@ -71,7 +88,7 @@ request.interceptors.response.use((response) => {
 
 const installer = {
   vm: {},
-  install (Vue) {
+  install(Vue) {
     Vue.use(VueAxios, request)
   }
 }

@@ -49,9 +49,25 @@ services:
     privileged: true
     ports:
       - 8919:80
+  minio:  #服务名称
+    container_name: minio #容器名称，可与服务报名保持一致
+    image: 58.210.154.140:2477/folib-common/folib-docker/minio:1.0
+    environment:
+      - MINIO_ROOT_USER=admin
+      - MINIO_ROOT_PASSWORD=admin123
+      - MINIO_PROMETHEUS_AUTH_TYPE=public
+    volumes:
+      - ~/folib/minio/data:/data
+      - ~/folib/minio/config:/root/.minio
+    restart: always
+    privileged: true
+    ports:
+      - 9000:9000
+      - 9090:9090
+    command: server --console-address ':9090' /data
   folib-server:  #服务名称
     container_name: folib-server #容器名称，可与服务报名保持一致
-    image: 58.210.154.140:2477/folib-common/folib-docker/folib-server:1.1
+    image: 58.210.154.140:2477/folib-common/folib-docker/folib-server:1.0
     environment:
       - RUN_WORKDIR=/opt/folib
       - FOLIB_PORT=38080
@@ -83,9 +99,9 @@ services:
       - FOLIB_REMOTE_DB_USER=root
       - FOLIB_REMOTE_DB_PASS=folib-cassandra
       - FOLIB_S3_REGION=folib
-      - FOLIB_S3_URI=s3://localhost:9000/
+      - FOLIB_S3_URI=s3://minio:9000/
       - FOLIB_S3_ACCESS_KEY=folib
-      - FOLIB_S3_SECRET_KEY=folib
+      - FOLIB_S3_SECRET_KEY=UGo8B5wcjFasU3xKxanxxYKEyVNGxyfH
     volumes:
       - ~/folib/folib-conf:/opt/folib/folib-1.0-SNAPSHOT/etc/conf
       - ~/folib/folib-vault:/opt/folib/folib-vault
@@ -102,6 +118,7 @@ services:
       - mysql:mysql
       - elasticsearch:elasticsearch
       - folib-mirror:folib-mirror
+      - minio:minio
     depends_on:
       - mysql
       - elasticsearch
