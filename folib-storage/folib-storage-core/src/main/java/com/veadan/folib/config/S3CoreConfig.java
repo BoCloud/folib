@@ -1,5 +1,6 @@
 package com.veadan.folib.config;
 
+import com.veadan.folib.cloud.storage.s3fs.S3FileSystemProvider;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -29,15 +30,17 @@ public class S3CoreConfig {
     private String region;
 
     @Bean
-    public FileSystem s3FileSystem()
-            throws IOException
-    {
+    public S3FileSystemProvider s3FileSystemProvider() {
+        return new S3FileSystemProvider();
+    }
 
+    @Bean
+    public FileSystem s3FileSystem()
+            throws IOException {
         Map<String, String> env = new HashMap<>();
         env.put(ACCESS_KEY, accessKey);
         env.put(SECRET_KEY, secretKey);
         env.put(REGION, region);
-
         return FileSystems.newFileSystem(URI.create(s3Uri),
                 env,
                 Thread.currentThread().getContextClassLoader());

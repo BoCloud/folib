@@ -49,7 +49,7 @@
                       </div>
                     </a-col>
                     <a-col :span="24" :md="12" style="display: flex; align-items: center; justify-content: flex-end">
-                      <a v-if="folibRepository.layout === 'Raw'">
+                      <a v-if="folibRepository.layout === 'Raw' && enabled">
                         <small style="padding-right: 20px" @click="handleUpload">
                           上传
                           <a-icon type="cloud-upload" />
@@ -149,7 +149,8 @@
                 </h6>
               </template>
 
-              <a-button v-if="currentFileDetial && folibRepository.layout !== 'Raw'" type="link" slot="extra" @click="viewCodeHandle()">
+              <a-button v-if="currentFileDetial && folibRepository.layout !== 'Raw'" type="link" slot="extra"
+                @click="viewCodeHandle()">
                 {{ currentFileDetial.listTree ? '包' : viewCodes ? '文件' : folibRepository.layout === 'Docker' ? '详情' : ''
                 }}预览
                 <a-icon :size="24" shape="square" type="eye"></a-icon>
@@ -521,8 +522,7 @@
         </a-descriptions>
         <hr class="my-25" />
 
-        <a-col :span="24"
-          v-if="searchDataCurrentSelect">
+        <a-col :span="24" v-if="searchDataCurrentSelect">
           <a-card :bordered="false" class="card-billing-info">
             <div class="col-info">
               <a-descriptions :title="'使用示例(' + codeParam.type + ')'" :column="1">
@@ -1477,6 +1477,7 @@ export default {
       storages: [],
       custom: false,
       showDeleteModal: false,
+      enabled: true,
     }
   },
   created() {
@@ -1619,7 +1620,11 @@ export default {
           })
           this.treeData = d.concat(f)
         }
-      )
+      ).catch((err) => {
+        if (err.response.data.message.indexOf("is out of service") !== -1) {
+          this.enabled = false
+        }
+      })
     },
     onLoadData(treeNode) {
       this.currentFileDetial = null

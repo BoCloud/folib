@@ -986,6 +986,7 @@ import store from '@/store';
 import { checkMachineCode } from "@/api/settings";
 
 export default {
+  inject: ["reload"],
   components: {
     CardProjectFolib,
     draggable,
@@ -1221,7 +1222,6 @@ export default {
     createHandleView() {
       this.showsTorageFormModal = true
       if (this.$refs.storageCreate) {
-        debugger
         this.$refs.storageCreate.resetFields()
       }
       this.getUsersList()
@@ -1289,6 +1289,7 @@ export default {
           this.getStorages();
         })
         this.currentStorage = this.currentDefultStorage
+        this.reload()
       }
     },
     deleteStoragesKeyBuff() {
@@ -1316,6 +1317,7 @@ export default {
           this.getStorages();
         })
         this.currentStorage = this.currentDefultStorage
+        this.reload()
       }
     },
     handleCreateSubmit(e) {

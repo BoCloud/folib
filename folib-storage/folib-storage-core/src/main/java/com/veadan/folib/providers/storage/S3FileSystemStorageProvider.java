@@ -1,5 +1,7 @@
 package com.veadan.folib.providers.storage;
 
+import com.veadan.folib.cloud.storage.s3fs.S3FileSystemProvider;
+import lombok.extern.slf4j.Slf4j;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
@@ -13,6 +15,7 @@ import java.util.List;
 /**
  * @author Veadan
  */
+@Slf4j
 @Component("s3filesystemStorageProvider")
 public class S3FileSystemStorageProvider
         extends AbstractStorageProvider {
@@ -23,6 +26,9 @@ public class S3FileSystemStorageProvider
 
     @Inject
     private FileSystem s3FileSystem;
+
+    @Inject
+    private S3FileSystemProvider s3FileSystemProvider;
 
     @Override
     public String getAlias() {
@@ -38,23 +44,20 @@ public class S3FileSystemStorageProvider
 
     @Override
     public FileSystem getFileSystem() {
-
         return s3FileSystem;
-
     }
 
     @Override
     public FileSystemProvider getFileSystemProvider() {
         List<FileSystemProvider> installedProviders = FileSystemProvider.installedProviders();
         for (FileSystemProvider fileSystemProvider : installedProviders) {
-            logger.info("=====>>>>> fileSystemProvider：{}", fileSystemProvider.getClass().getSimpleName());
             boolean a = "S3FileSystemProvider".equalsIgnoreCase(fileSystemProvider.getClass().getSimpleName());
             if (a) {
                 return fileSystemProvider;
             }
 
         }
-        return null;
+        return s3FileSystemProvider;
     }
 
 }

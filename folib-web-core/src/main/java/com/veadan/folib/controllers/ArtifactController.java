@@ -1,6 +1,5 @@
 package com.veadan.folib.controllers;
 
-import com.veadan.folib.controllers.BaseController;
 import com.veadan.folib.services.ArtifactWebService;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;

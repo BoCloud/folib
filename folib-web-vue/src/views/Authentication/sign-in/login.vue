@@ -49,9 +49,9 @@
 				</a-form>
 				<!-- / Sign Up Form -->
 
-				<p class="font-semibold text-muted text-center">没有账号? <router-link to="/sign-in"
+				<!-- <p class="font-semibold text-muted text-center">没有账号? <router-link to="/sign-in"
 						class="font-bold text-dark">注册</router-link>
-				</p>
+				</p> -->
 			</a-col>
 			<!-- / Sign Up Form Column -->
 
