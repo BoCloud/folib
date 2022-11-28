@@ -20,7 +20,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
 import org.springframework.util.CollectionUtils;
 
-import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.ServerErrorException;
 import javax.ws.rs.client.Entity;
 import javax.ws.rs.client.WebTarget;
@@ -509,8 +508,12 @@ public class RestClient extends ArtifactClient {
         String url = getContextBaseUrl() + "/api/fql";
         if (Boolean.TRUE.equals(searchArtifact.getRegex()) && StringUtils.isNotBlank(searchArtifact.getArtifactName())) {
             //开启正则
-            String regex = ".*%s((.(?!blobs/sha256|manifest/sha256))*.)";
-            regex = String.format(regex, searchArtifact.getArtifactName());
+            String regex = "(%s)(.*%s((.(?!blobs/sha256|manifest/sha256))*.))";
+            String prefix = searchArtifact.getStorageId();
+            if (StringUtils.isNotBlank(searchArtifact.getRepositoryId())) {
+                prefix = prefix + "-" + searchArtifact.getRepositoryId();
+            }
+            regex = String.format(regex, prefix, searchArtifact.getArtifactName());
             searchArtifact.setArtifactName(regex);
         }
         Map<String, String> paramsMap = JSON.parseObject(JSON.toJSONString(searchArtifact), new TypeReference<Map<String, String>>() {
