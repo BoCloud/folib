@@ -508,7 +508,7 @@ public class RestClient extends ArtifactClient {
         String url = getContextBaseUrl() + "/api/fql";
         if (Boolean.TRUE.equals(searchArtifact.getRegex()) && StringUtils.isNotBlank(searchArtifact.getArtifactName())) {
             //开启正则
-            String regex = "(%s)(.*%s((.(?!blobs/sha256|manifest/sha256))*.))";
+            String regex = "(%s)(.*%s((.(?!blobs/sha256|manifest/sha256))*.)?)";
             String prefix = searchArtifact.getStorageId();
             if (StringUtils.isNotBlank(searchArtifact.getRepositoryId())) {
                 prefix = prefix + "-" + searchArtifact.getRepositoryId();
