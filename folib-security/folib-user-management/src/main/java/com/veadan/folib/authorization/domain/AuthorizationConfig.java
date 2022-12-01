@@ -5,6 +5,7 @@ import com.veadan.folib.authorization.dto.RoleDto;
 
 import javax.annotation.concurrent.Immutable;
 import java.util.Collections;
+import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -27,7 +28,7 @@ public class AuthorizationConfig
     private Set<RoleData> immuteRoles(final Set<RoleDto> source)
     {
         return source != null ? ImmutableSet.copyOf(source.stream().map(RoleData::new).collect(
-                Collectors.toSet())) : Collections.emptySet();
+                Collectors.toList())) : Collections.emptySet();
     }
 
     public Set<RoleData> getRoles()

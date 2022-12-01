@@ -5,17 +5,27 @@ import com.alibaba.excel.EasyExcel;
 import com.alibaba.excel.ExcelWriter;
 import com.alibaba.excel.write.metadata.WriteSheet;
 import com.alibaba.excel.write.metadata.fill.FillConfig;
+import com.alibaba.fastjson.JSONObject;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
+import com.veadan.folib.configuration.MutableMetadataConfiguration;
+import com.veadan.folib.controllers.ResponseMessage;
 import com.veadan.folib.domain.Artifact;
+import com.veadan.folib.domain.ArtifactMetadata;
+import com.veadan.folib.forms.artifact.ArtifactMetadataForm;
 import com.veadan.folib.gremlin.entity.vo.ArtifactVo;
+import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.repositories.ArtifactRepository;
+import com.veadan.folib.services.ArtifactResolutionService;
+import com.veadan.folib.services.ArtifactService;
 import com.veadan.folib.services.ArtifactWebService;
 import com.veadan.folib.services.ConfigurationManagementService;
 import com.veadan.folib.storage.repository.Repository;
 import com.veadan.folib.util.FileSizeConvertUtils;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
 
@@ -27,18 +37,22 @@ import java.io.InputStream;
 import java.net.URLEncoder;
 import java.text.SimpleDateFormat;
 import java.time.ZoneId;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 @Transactional
 public class ArtifactWebServiceImpl implements ArtifactWebService {
 
     @Inject
     private ArtifactRepository artifactRepository;
+
+    @Inject
+    private ArtifactService artifactService;
+
+    @Inject
+    private ArtifactResolutionService artifactResolutionService;
 
     @Inject
     private ConfigurationManagementService configurationManagementService;
@@ -96,7 +110,115 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
     }
 
     @Override
-    public void exportPdf(String vulnerabilityUuid, String storageId, String repositoryId) {
+    public void globalSettingAddOrUpdateMetadata(ArtifactMetadataForm artifactMetadataForm) throws IOException {
+        MutableMetadataConfiguration mutableMetadataConfiguration = MutableMetadataConfiguration.builder().build();
+        BeanUtils.copyProperties(artifactMetadataForm, mutableMetadataConfiguration);
+        configurationManagementService.addOrUpdateMetadataConfiguration(mutableMetadataConfiguration);
+    }
 
+    @Override
+    public void globalSettingDeleteMetadata(ArtifactMetadataForm artifactMetadataForm) throws IOException {
+        configurationManagementService.deleteMetadataConfig(artifactMetadataForm.getKey());
+    }
+
+    @Override
+    public List<ArtifactMetadataForm> getMetadataConfiguration() {
+        return Optional.of(configurationManagementService.getConfiguration().getMetadataConfiguration().values().stream().collect(Collectors.toCollection(LinkedList::new))).orElse(Lists.newLinkedList()).stream().map(item -> {
+            ArtifactMetadataForm artifactMetadata = ArtifactMetadataForm.builder().build();
+            BeanUtils.copyProperties(item, artifactMetadata);
+            return artifactMetadata;
+        }).collect(Collectors.toList());
+    }
+
+    @Override
+    public String saveArtifactMetadata(ArtifactMetadataForm artifactMetadataForm) {
+        try {
+            RepositoryPath resolvePath = resolvePath(artifactMetadataForm.getStorageId(), artifactMetadataForm.getRepositoryId(), artifactMetadataForm.getArtifactPath());
+            Artifact artifact = resolvePath.getArtifactEntry();
+            JSONObject metadataJson = getMetadata(artifact);
+            if (Objects.isNull(metadataJson)) {
+                metadataJson = new JSONObject();
+            }
+            String key = artifactMetadataForm.getKey();
+            if (metadataJson.containsKey(key)) {
+                //已存在
+                return "repeat";
+            }
+            ArtifactMetadata artifactMetadata = ArtifactMetadata.builder().build();
+            BeanUtils.copyProperties(artifactMetadataForm, artifactMetadata);
+            metadataJson.put(key, artifactMetadata);
+            artifact.setMetadata(metadataJson.toJSONString());
+            artifactService.saveOrUpdateArtifact(artifact);
+        } catch (Exception ex) {
+            log.error("=====>>>>>保存制品元数据错误：{}", ExceptionUtils.getStackTrace(ex));
+            throw new RuntimeException("保存制品元数据错误，请稍后重试");
+        }
+        return ResponseMessage.ok().getMessage();
+    }
+
+    @Override
+    public String updateArtifactMetadata(ArtifactMetadataForm artifactMetadataForm) {
+        try {
+            RepositoryPath resolvePath = resolvePath(artifactMetadataForm.getStorageId(), artifactMetadataForm.getRepositoryId(), artifactMetadataForm.getArtifactPath());
+            Artifact artifact = resolvePath.getArtifactEntry();
+            JSONObject metadataJson = getMetadata(artifact);
+            String key = artifactMetadataForm.getKey();
+            if (Objects.nonNull(metadataJson) && metadataJson.containsKey(key)) {
+                ArtifactMetadata artifactMetadata = ArtifactMetadata.builder().build();
+                BeanUtils.copyProperties(artifactMetadataForm, artifactMetadata);
+                metadataJson.put(key, artifactMetadata);
+                artifact.setMetadata(metadataJson.toJSONString());
+                artifactService.saveOrUpdateArtifact(artifact);
+            }
+        } catch (Exception ex) {
+            log.error("=====>>>>>修改制品元数据错误：{}", ExceptionUtils.getStackTrace(ex));
+            throw new RuntimeException("修改制品元数据错误，请稍后重试");
+        }
+        return ResponseMessage.ok().getMessage();
+    }
+
+    @Override
+    public void deleteArtifactMetadata(ArtifactMetadataForm artifactMetadataForm) {
+        try {
+            RepositoryPath resolvePath = resolvePath(artifactMetadataForm.getStorageId(), artifactMetadataForm.getRepositoryId(), artifactMetadataForm.getArtifactPath());
+            Artifact artifact = resolvePath.getArtifactEntry();
+            JSONObject metadataJson = getMetadata(artifact);
+            if (Objects.nonNull(metadataJson) && metadataJson.containsKey(artifactMetadataForm.getKey())) {
+                metadataJson.remove(artifactMetadataForm.getKey());
+                artifact.setMetadata(metadataJson.toJSONString());
+                artifactService.saveOrUpdateArtifact(artifact);
+            }
+        } catch (Exception ex) {
+            log.error("=====>>>>>删除制品元数据错误：{}", ExceptionUtils.getStackTrace(ex));
+            throw new RuntimeException("删除制品元数据错误，请稍后重试");
+        }
+    }
+
+    /**
+     * 获取制品元数据
+     *
+     * @param artifact artifact
+     * @return 制品元数据
+     * @throws IOException 异常
+     */
+    private JSONObject getMetadata(Artifact artifact) throws IOException {
+        String metadata = artifact.getMetadata();
+        JSONObject metadataJson = null;
+        if (StringUtils.isNotBlank(metadata)) {
+            metadataJson = JSONObject.parseObject(metadata);
+        }
+        return metadataJson;
+    }
+
+    /***
+     * 获取制品RepositoryPath
+     * @param storageId 存储空间名称
+     * @param repositoryId 仓库名称
+     * @param artifactPath 制品路径
+     * @return RepositoryPath
+     * @throws Exception 异常
+     */
+    private RepositoryPath resolvePath(String storageId, String repositoryId, String artifactPath) throws Exception {
+        return artifactResolutionService.resolvePath(storageId, repositoryId, artifactPath);
     }
 }

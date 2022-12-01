@@ -94,171 +94,251 @@
             <a-card :bordered="false" class="header-solid h-full card-profile-information"
               :bodyStyle="{ paddingTop: 0, paddingBottom: '16px' }" :headStyle="{ paddingRight: 0 }">
               <template #title>
-                <h6 v-if="folibRepository.layout !== 'Docker'" class="font-semibold m-0">
-                  <a-avatar v-if="!currentTreeNode.isLeaf" :size="24" shape="square"
-                    :src="'images/folib/package.svg'" />
-                  <a-avatar v-if="currentTreeNode.isLeaf" :size="24" shape="square" :src="
-                    'images/folib/' + getFileType(currentTreeNode.name) + '.svg'
-                  " />
-                  {{ currentTreeNode.name }}
-                  <div class="table-severity-info" v-if="severity.show" @click="detialVisible = true">
-                    <template v-if="severity.vulnerabilitesCount > 0">
-                      <a-tooltip>
-                        <template slot="title">严重</template>
-                        <div class="severity-info">
-                          <a-avatar :size="24" :src="'images/folib/critical.svg'" />
-                          <span class="mb-0 text-dark">{{ severity.critical }}</span>
-                        </div>
-                      </a-tooltip>
+                <a-row type="flex" align="middle" v-if="folibRepository.layout !== 'Docker'">
+                  <a-col :span="16" class="font-semibold m-0">
+                    <a-row type="flex" align="middle">
+                      <a-col :span="8" :xs="24" :xl="16">
+                        <a-avatar v-if="!currentTreeNode.isLeaf" :size="24" shape="square"
+                          :src="'images/folib/package.svg'" />
+                        <a-avatar v-if="currentTreeNode.isLeaf" :size="24" shape="square" :src="
+                          'images/folib/' + getFileType(currentTreeNode.name) + '.svg'
+                        " />
+                        {{ currentTreeNode.name }}
+                      </a-col>
+                      <a-col :span="8" :xs="24" :xl="8">
+                        <span class="ml-auto" v-if="severity.show" @click="detialVisible = true">
+                          <a-space :size="1" class="avatar-chips">
+                            <template v-if="severity.vulnerabilitesCount > 0">
+                              <a-tooltip>
+                                <template slot="title">严重</template>
+                                <div class="">
+                                  <a-avatar :size="24" :src="'images/folib/critical.svg'" />
+                                  <span class="mb-0 text-dark">{{ severity.critical }}</span>
+                                </div>
+                              </a-tooltip>
 
-                      <a-tooltip>
-                        <template slot="title">高危</template>
-                        <div class="severity-info">
-                          <a-avatar :size="24" :src="'images/folib/high.svg'" />
-                          <span class="mb-0 text-dark">{{ severity.high }}</span>
-                        </div>
-                      </a-tooltip>
+                              <a-tooltip>
+                                <template slot="title">高危</template>
+                                <div class="">
+                                  <a-avatar :size="24" :src="'images/folib/high.svg'" />
+                                  <span class="mb-0 text-dark">{{ severity.high }}</span>
+                                </div>
+                              </a-tooltip>
 
-                      <a-tooltip>
-                        <template slot="title">中危</template>
-                        <div class="severity-info">
-                          <a-avatar :size="24" :src="'images/folib/medium.svg'" />
-                          <span class="mb-0 text-dark">{{ severity.medium }}</span>
-                        </div>
-                      </a-tooltip>
+                              <a-tooltip>
+                                <template slot="title">中危</template>
+                                <div class="">
+                                  <a-avatar :size="24" :src="'images/folib/medium.svg'" />
+                                  <span class="mb-0 text-dark">{{ severity.medium }}</span>
+                                </div>
+                              </a-tooltip>
 
-                      <a-tooltip>
-                        <template slot="title">低危</template>
-                        <div class="severity-info">
-                          <a-avatar :size="24" :src="'images/folib/low.svg'" />
-                          <span class="mb-0 text-dark">{{ severity.low }}</span>
-                        </div>
-                      </a-tooltip>
-                    </template>
-                    <template v-else>
-                      <a-tooltip>
-                        <template slot="title">健康</template>
-                        <a-avatar :size="24" :src="'images/folib/healthy.svg'" />
-                      </a-tooltip>
-                    </template>
-                  </div>
-                </h6>
-                <h6 v-if="folibRepository.layout === 'Docker'" class="font-semibold m-0">
-                  <a-avatar :size="24" shape="square" :src="'images/folib/docker-s.svg'" />
-                  {{ currentTreeNode.name }}
-                </h6>
+                              <a-tooltip>
+                                <template slot="title">低危</template>
+                                <div class="">
+                                  <a-avatar :size="24" :src="'images/folib/low.svg'" />
+                                  <span class="mb-0 text-dark">{{ severity.low }}</span>
+                                </div>
+                              </a-tooltip>
+                            </template>
+                            <template v-else>
+                              <a-tooltip>
+                                <template slot="title">健康</template>
+                                <a-avatar :size="24" :src="'images/folib/healthy.svg'" />
+                              </a-tooltip>
+                            </template>
+                          </a-space>
+                        </span>
+                      </a-col>
+                    </a-row>
+                  </a-col>
+                  <a-col :span="8" class="text-right">
+                    <a-button v-if="currentFileDetial && folibRepository.layout !== 'Raw'" type="link"
+                      @click="viewCodeHandle()">
+                      {{ currentFileDetial.listTree ? '包' : viewCodes ? '文件' : folibRepository.layout === 'Docker' ?
+                          '详情' : ''
+                      }}预览
+                      <a-icon :size="24" shape="square" type="eye"></a-icon>
+                    </a-button>
+                    <a-dropdown v-if="currentTreeNode.url">
+                      <a>
+                        <a-icon type="more" class="text-muted" style="font-size: 18px;" />
+                      </a>
+                      <template #overlay>
+                        <a-menu slot="overlay" @click="handleMenuClick">
+                          <a-menu-item key="1" v-if="folibRepository.type === 'hosted'">
+                            <a-icon type="copy" />复制
+                          </a-menu-item>
+                          <a-menu-item key="2" v-if="folibRepository.type === 'hosted'">
+                            <a-icon type="swap" />移动
+                          </a-menu-item>
+                          <a-menu-item key="3">
+                            <a-icon type="delete" />删除
+                          </a-menu-item>
+                          <!-- <a-menu-item key="4" v-if="currentFileDetial && currentFileDetial.artifact && currentFileDetial.artifact.artifactFileExists">
+                            <a-icon type="database" />元数据
+                          </a-menu-item> -->
+                        </a-menu>
+                      </template>
+                    </a-dropdown>
+                  </a-col>
+                </a-row>
+                <a-row type="flex" align="middle" v-if="folibRepository.layout === 'Docker'">
+                  <a-col :span="16" class="font-semibold m-0">
+                    <a-avatar :size="24" shape="square" :src="'images/folib/docker-s.svg'" />
+                    {{ currentTreeNode.name }}
+                  </a-col>
+                  <a-col :span="8" class="text-right">
+                    <a-button v-if="currentFileDetial" type="link" @click="viewCodeHandle()">
+                      {{ currentFileDetial.listTree ? '包' : viewCodes ? '文件' : folibRepository.layout === 'Docker' ?
+                          '详情' : ''
+                      }}预览
+                      <a-icon :size="24" shape="square" type="eye"></a-icon>
+                    </a-button>
+                    <a-dropdown v-if="currentTreeNode.url">
+                      <a>
+                        <a-icon type="more" class="text-muted" style="font-size: 18px;" />
+                      </a>
+                      <template #overlay>
+                        <a-menu slot="overlay" @click="handleMenuClick">
+                          <a-menu-item key="1" v-if="folibRepository.type === 'hosted'">
+                            <a-icon type="copy" />复制
+                          </a-menu-item>
+                          <a-menu-item key="2" v-if="folibRepository.type === 'hosted'">
+                            <a-icon type="swap" />移动
+                          </a-menu-item>
+                          <a-menu-item key="3">
+                            <a-icon type="delete" />删除
+                          </a-menu-item>
+                          <!-- <a-menu-item key="4" v-if="currentFileDetial && currentFileDetial.artifact && currentFileDetial.artifact.artifactFileExists">
+                            <a-icon type="database" />元数据
+                          </a-menu-item> -->
+                        </a-menu>
+                      </template>
+                    </a-dropdown>
+                  </a-col>
+                </a-row>
               </template>
 
-              <a-button v-if="currentFileDetial && folibRepository.layout !== 'Raw'" type="link" slot="extra"
-                @click="viewCodeHandle()">
-                {{ currentFileDetial.listTree ? '包' : viewCodes ? '文件' : folibRepository.layout === 'Docker' ? '详情' : ''
-                }}预览
-                <a-icon :size="24" shape="square" type="eye"></a-icon>
-              </a-button>
               <a v-if="currentTreeNode.url && folibRepository.layout !== 'Docker'" class="text-dark"
                 :href="currentTreeNode.url.search('http://localhost:38080/') !== -1 ? currentTreeNode.url.replace('http://localhost:38080/', baseUrl) : currentTreeNode.url"
                 target="_blank">{{ currentTreeNode.url.search('http://localhost:38080/') !==
                     -1 ? currentTreeNode.url.replace('http://localhost:38080/', baseUrl) : currentTreeNode.url
                 }}</a>
 
-
-              <!-- <a-popconfirm placement="topRight" ok-text="删除" cancel-text="取消" okType="danger"
-                @confirm="deletePackageHandle">
-                <template slot="title">
-                  <p>确定删除么？</p>
-                  <p>不要冲动，再好好想想</p>
-                </template>
-                <a-icon slot="icon" type="question-circle-o" style="color: red" />
-                <a-button v-if="currentTreeNode.name" type="link">
-                  删除
-                  <a-icon :size="24" shape="square" type="delete"></a-icon>
-                </a-button>
-              </a-popconfirm> -->
-              <a-dropdown v-if="currentTreeNode.url">
-                <a-menu slot="overlay" @click="handleMenuClick">
-                  <a-menu-item key="1" v-if="folibRepository.type === 'hosted'">
-                    <a-icon type="copy" />复制
-                  </a-menu-item>
-                  <a-menu-item key="2" v-if="folibRepository.type === 'hosted'">
-                    <a-icon type="swap" />移动
-                  </a-menu-item>
-                  <a-menu-item key="3">
-                    <a-icon type="delete" />删除
-                  </a-menu-item>
-                </a-menu>
-                <a-button style="margin-left: 8px">操作
-                  <a-icon type="down" />
-                </a-button>
-              </a-dropdown>
               <hr class="my-25" />
-              <a-descriptions v-if="folibRepository.layout !== 'Docker'" title="基本信息" :column="1">
-                <a-descriptions-item label="所属空间">
-                  {{ currentTreeNode.storageId }}
-                </a-descriptions-item>
-                <a-descriptions-item label="所属仓库">
-                  {{ currentTreeNode.repositoryId }}
-                </a-descriptions-item>
-                <a-descriptions-item label="名称">
-                  {{ currentTreeNode.name }}
-                </a-descriptions-item>
-                <a-descriptions-item label="路径">
-                  {{ currentTreeNode.artifactPath }}
-                </a-descriptions-item>
-                <a-descriptions-item label="文件大小">
-                  {{ fileSizeConver(currentTreeNode.size) }}
-                </a-descriptions-item>
-                <a-descriptions-item label="修改时间">
-                  {{ formateDate(currentTreeNode.lastModified) }}
-                </a-descriptions-item>
-                <a-descriptions-item v-if="currentFileDetial" label="最近使用时间">
-                  {{ currentFileDetial.lastUsedTime }}
-                </a-descriptions-item>
-                <a-descriptions-item v-if="currentFileDetial" label="下载次数">
-                  {{ currentFileDetial.downloadCount }}
-                </a-descriptions-item>
-                <a-descriptions-item v-if="currentFileDetial" label="MD5">
-                  {{ currentFileDetial.md5 }}
-                </a-descriptions-item>
-                <a-descriptions-item v-if="currentFileDetial" label="SHA-1">
-                  {{ currentFileDetial.sha }}
-                </a-descriptions-item>
-              </a-descriptions>
-              <a-descriptions v-if="folibRepository.layout === 'Docker'" title="基本信息" :column="1">
-                <a-descriptions-item label="所属空间">
-                  {{ currentTreeNode.storageId }}
-                </a-descriptions-item>
-                <a-descriptions-item label="所属仓库">
-                  {{ currentTreeNode.repositoryId }}
-                </a-descriptions-item>
-                <a-descriptions-item v-if="currentFileDetial" label="镜像名称">
-                  {{ currentFileDetial.imageName }}
-                </a-descriptions-item>
-                <a-descriptions-item :label="currentFileDetial ? '版本号' : '名称'">
-                  {{ currentTreeNode.name }}
-                </a-descriptions-item>
-                <a-descriptions-item v-if="currentFileDetial" label="文件大小">
-                  {{ fileSizeConver(currentFileDetial.size) }}
-                </a-descriptions-item>
-                <a-descriptions-item v-if="currentFileDetial" label="SHA-256">
-                  {{ currentFileDetial.sha256 }}
-                </a-descriptions-item>
-                <a-descriptions-item v-if="currentFileDetial" label="修改时间">
-                  {{ currentFileDetial.lastModified }}
-                </a-descriptions-item>
-                <a-descriptions-item v-if="currentFileDetial" label="层数">
-                  {{ currentFileDetial.manifest.layers.length }}
-                </a-descriptions-item>
-                <a-descriptions-item v-if="currentFileDetial" label="制作Docker版本">
-                  {{ currentFileDetial.manifestConfig.docker_version }}
-                </a-descriptions-item>
-                <a-descriptions-item v-if="currentFileDetial" label="镜像OS">
-                  <a-tag> {{ currentFileDetial.manifestConfig.os }}</a-tag>
+              <a-tabs default-active-key="1" @change="artifactTabChange">
+                <a-tab-pane key="1" tab="基本信息">
+                  <a-descriptions v-if="folibRepository.layout !== 'Docker'" title="" :column="1">
+                    <a-descriptions-item label="所属空间">
+                      {{ currentTreeNode.storageId }}
+                    </a-descriptions-item>
+                    <a-descriptions-item label="所属仓库">
+                      {{ currentTreeNode.repositoryId }}
+                    </a-descriptions-item>
+                    <a-descriptions-item label="名称">
+                      {{ currentTreeNode.name }}
+                    </a-descriptions-item>
+                    <a-descriptions-item label="路径">
+                      {{ currentTreeNode.artifactPath }}
+                    </a-descriptions-item>
+                    <a-descriptions-item label="文件大小">
+                      {{ fileSizeConver(currentTreeNode.size) }}
+                    </a-descriptions-item>
+                    <a-descriptions-item label="修改时间">
+                      {{ formateDate(currentTreeNode.lastModified) }}
+                    </a-descriptions-item>
+                    <a-descriptions-item v-if="currentFileDetial" label="最近使用时间">
+                      {{ currentFileDetial.lastUsedTime }}
+                    </a-descriptions-item>
+                    <a-descriptions-item v-if="currentFileDetial" label="下载次数">
+                      {{ currentFileDetial.downloadCount }}
+                    </a-descriptions-item>
+                    <a-descriptions-item v-if="currentFileDetial" label="MD5">
+                      {{ currentFileDetial.md5 }}
+                    </a-descriptions-item>
+                    <a-descriptions-item v-if="currentFileDetial" label="SHA-1">
+                      {{ currentFileDetial.sha }}
+                    </a-descriptions-item>
+                  </a-descriptions>
+                  <a-descriptions v-if="folibRepository.layout === 'Docker'" title="" :column="1">
+                    <a-descriptions-item label="所属空间">
+                      {{ currentTreeNode.storageId }}
+                    </a-descriptions-item>
+                    <a-descriptions-item label="所属仓库">
+                      {{ currentTreeNode.repositoryId }}
+                    </a-descriptions-item>
+                    <a-descriptions-item v-if="currentFileDetial" label="镜像名称">
+                      {{ currentFileDetial.imageName }}
+                    </a-descriptions-item>
+                    <a-descriptions-item :label="currentFileDetial ? '版本号' : '名称'">
+                      {{ currentTreeNode.name }}
+                    </a-descriptions-item>
+                    <a-descriptions-item v-if="currentFileDetial" label="文件大小">
+                      {{ fileSizeConver(currentFileDetial.size) }}
+                    </a-descriptions-item>
+                    <a-descriptions-item v-if="currentFileDetial" label="SHA-256">
+                      {{ currentFileDetial.sha256 }}
+                    </a-descriptions-item>
+                    <a-descriptions-item v-if="currentFileDetial" label="修改时间">
+                      {{ currentFileDetial.lastModified }}
+                    </a-descriptions-item>
+                    <a-descriptions-item v-if="currentFileDetial" label="层数">
+                      {{ currentFileDetial.manifest.layers.length }}
+                    </a-descriptions-item>
+                    <a-descriptions-item v-if="currentFileDetial" label="制作Docker版本">
+                      {{ currentFileDetial.manifestConfig.docker_version }}
+                    </a-descriptions-item>
+                    <a-descriptions-item v-if="currentFileDetial" label="镜像OS">
+                      <a-tag> {{ currentFileDetial.manifestConfig.os }}</a-tag>
 
-                </a-descriptions-item>
-                <a-descriptions-item v-if="currentFileDetial" label="基础架构">
-                  {{ currentFileDetial.manifestConfig.architecture }}
-                </a-descriptions-item>
-              </a-descriptions>
+                    </a-descriptions-item>
+                    <a-descriptions-item v-if="currentFileDetial" label="基础架构">
+                      {{ currentFileDetial.manifestConfig.architecture }}
+                    </a-descriptions-item>
+                  </a-descriptions>
+                </a-tab-pane>
+                <a-tab-pane key="2" tab="元数据">
+                  <a-descriptions
+                    v-if="currentFileDetial && currentFileDetial.artifact && currentFileDetial.artifact.metadata"
+                    title="" :column="1">
+                    <template v-for="(metadata, metadataKey) in currentFileDetial.artifact.metadata">
+                      <a-descriptions-item v-if="metadata.viewShow === 1" :label="metadataKey" :key="metadataKey">
+                        {{ metadata.value }}
+                        <a-tag color="#87d068">
+                          <span v-for="(item, index) in metadataTypes" :key="index">
+                            <span v-if="metadata.type === item.value">{{ item.label }}</span>
+                          </span>
+                        </a-tag>
+                        <a-popconfirm title="确定要删除吗？" okType="danger" ok-text="确定" cancel-text="取消"
+                          @confirm="deleteArtifactMetadata(metadataKey)">
+                          <a-button type="link" size="small">
+                            <svg width="16" height="16" viewBox="0 0 20 20" fill="none"
+                              xmlns="http://www.w3.org/2000/svg">
+                              <path class="fill-danger" fill-rule="evenodd" clip-rule="evenodd"
+                                d="M9 2C8.62123 2 8.27497 2.214 8.10557 2.55279L7.38197 4H4C3.44772 4 3 4.44772 3 5C3 5.55228 3.44772 6 4 6L4 16C4 17.1046 4.89543 18 6 18H14C15.1046 18 16 17.1046 16 16V6C16.5523 6 17 5.55228 17 5C17 4.44772 16.5523 4 16 4H12.618L11.8944 2.55279C11.725 2.214 11.3788 2 11 2H9ZM7 8C7 7.44772 7.44772 7 8 7C8.55228 7 9 7.44772 9 8V14C9 14.5523 8.55228 15 8 15C7.44772 15 7 14.5523 7 14V8ZM12 7C11.4477 7 11 7.44772 11 8V14C11 14.5523 11.4477 15 12 15C12.5523 15 13 14.5523 13 14V8C13 7.44772 12.5523 7 12 7Z"
+                                fill="#111827" />
+                            </svg>
+                            <span class="text-danger">DELETE</span>
+                          </a-button>
+                        </a-popconfirm>
+                        <a-button type="link" size="small" @click="metadataEditHandler(metadataKey, metadata)">
+                          <svg width="16" height="16" viewBox="0 0 20 20" fill="none"
+                            xmlns="http://www.w3.org/2000/svg">
+                            <path class="fill-muted"
+                              d="M13.5858 3.58579C14.3668 2.80474 15.6332 2.80474 16.4142 3.58579C17.1953 4.36683 17.1953 5.63316 16.4142 6.41421L15.6213 7.20711L12.7929 4.37868L13.5858 3.58579Z"
+                              fill="#111827" />
+                            <path class="fill-muted"
+                              d="M11.3787 5.79289L3 14.1716V17H5.82842L14.2071 8.62132L11.3787 5.79289Z"
+                              fill="#111827" />
+                          </svg>
+                          <span class="text-dark">EDIT</span>
+                        </a-button>
+                      </a-descriptions-item>
+                    </template>
+                  </a-descriptions>
+                </a-tab-pane>
+              </a-tabs>
               <hr class="my-25" />
 
               <a-col :span="24"
@@ -318,7 +398,8 @@
                 <template slot="path" slot-scope="text, record">
                   <a>
                     <div class="table-avatar-info" @click="searchDataHandle(record)">
-                      <a-avatar shape="circle" :size="24" :src="'images/folib/' + getFileType(record.path) + '.svg'" />
+                      <a-avatar shape="circle" :size="24"
+                        :src="folibRepository.layout === 'Docker' ? 'images/folib/docker-s.svg' : 'images/folib/' + getFileType(record.path) + '.svg'" />
                       <div class="avatar-info search-column-path">
                         <p class="mb-0 text-dark">
                           {{ record.artifactPath }}
@@ -335,9 +416,6 @@
       </a-tab-pane>
       <a-tab-pane :key="2" tab="安全">
         <a-row v-if="tabActiveKey == 2" type="flex" :gutter="24">
-          <!-- <div class="profile-nav-bg statistics-bg">
-        <div class="nested" style="background:url(images/bg-profile.jpg) center/cover;transition:all .3s" />
-      </div> -->
           <a-col :span="24" :xl="4" class="mb-24 statistics">
             <a-card :bordered="false" class="widget-2">
               <a-statistic :value="vulnerabilityStatistics.artifactCount">
@@ -431,56 +509,58 @@
 
     <!-- User Profile Card -->
 
-    <a-drawer placement="right" width="65%" title="制品详情" :visible="artifactVisible" @close="artifactVisible = false">
+    <a-drawer placement="right" width="65%" title="制品详情" :visible="artifactVisible" @close="artifactVisible = false"
+      :zIndex="100">
       <a-card :bordered="false" class="header-solid h-full card-profile-information"
         :bodyStyle="{ paddingTop: 0, paddingBottom: '16px' }" :headStyle="{ paddingRight: 0 }">
         <template #title>
           <h6 class="font-semibold m-0">
-            <a-avatar :size="24" shape="square" :src="
-              'images/folib/' + getFileType(searchDataCurrentSelect ? searchDataCurrentSelect.path : '') + '.svg'
-            " />
+            <a-avatar :size="24" shape="square"
+              :src="folibRepository.layout === 'Docker' ? 'images/folib/docker-s.svg' : 'images/folib/' + getFileType(searchDataCurrentSelect ? searchDataCurrentSelect.path : '') + '.svg'" />
             {{ searchDataCurrentSelect ? searchDataCurrentSelect.path : '' }}
-            <div class="table-severity-info" v-if="severity.show" @click="detialVisible = true">
-              <template v-if="severity.vulnerabilitesCount > 0">
-                <a-tooltip>
-                  <template slot="title">严重</template>
-                  <div class="severity-info">
-                    <a-avatar :size="24" :src="'images/folib/critical.svg'" />
-                    <span class="mb-0 text-dark">{{ severity.critical }}</span>
-                  </div>
-                </a-tooltip>
+            <span class="ml-auto" v-if="severity.show" @click="detialVisible = true">
+              <a-space :size="1" class="avatar-chips">
+                <template v-if="severity.vulnerabilitesCount > 0">
+                  <a-tooltip>
+                    <template slot="title">严重</template>
+                    <div class="">
+                      <a-avatar :size="24" :src="'images/folib/critical.svg'" />
+                      <span class="mb-0 text-dark">{{ severity.critical }}</span>
+                    </div>
+                  </a-tooltip>
 
-                <a-tooltip>
-                  <template slot="title">高危</template>
-                  <div class="severity-info">
-                    <a-avatar :size="24" :src="'images/folib/high.svg'" />
-                    <span class="mb-0 text-dark">{{ severity.high }}</span>
-                  </div>
-                </a-tooltip>
+                  <a-tooltip>
+                    <template slot="title">高危</template>
+                    <div class="">
+                      <a-avatar :size="24" :src="'images/folib/high.svg'" />
+                      <span class="mb-0 text-dark">{{ severity.high }}</span>
+                    </div>
+                  </a-tooltip>
 
-                <a-tooltip>
-                  <template slot="title">中危</template>
-                  <div class="severity-info">
-                    <a-avatar :size="24" :src="'images/folib/medium.svg'" />
-                    <span class="mb-0 text-dark">{{ severity.medium }}</span>
-                  </div>
-                </a-tooltip>
+                  <a-tooltip>
+                    <template slot="title">中危</template>
+                    <div class="">
+                      <a-avatar :size="24" :src="'images/folib/medium.svg'" />
+                      <span class="mb-0 text-dark">{{ severity.medium }}</span>
+                    </div>
+                  </a-tooltip>
 
-                <a-tooltip>
-                  <template slot="title">低危</template>
-                  <div class="severity-info">
-                    <a-avatar :size="24" :src="'images/folib/low.svg'" />
-                    <span class="mb-0 text-dark">{{ severity.low }}</span>
-                  </div>
-                </a-tooltip>
-              </template>
-              <template v-else>
-                <a-tooltip>
-                  <template slot="title">健康</template>
-                  <a-avatar :size="24" :src="'images/folib/healthy.svg'" />
-                </a-tooltip>
-              </template>
-            </div>
+                  <a-tooltip>
+                    <template slot="title">低危</template>
+                    <div class="">
+                      <a-avatar :size="24" :src="'images/folib/low.svg'" />
+                      <span class="mb-0 text-dark">{{ severity.low }}</span>
+                    </div>
+                  </a-tooltip>
+                </template>
+                <template v-else>
+                  <a-tooltip>
+                    <template slot="title">健康</template>
+                    <a-avatar :size="24" :src="'images/folib/healthy.svg'" />
+                  </a-tooltip>
+                </template>
+              </a-space>
+            </span>
           </h6>
         </template>
         <a-button type="link" slot="extra" @click="searchViewCodeHandle()">
@@ -1244,6 +1324,58 @@
         </a-col>
       </a-row>
     </a-modal>
+
+    <a-modal v-model="showMetadataHandler" :title="handlerMetadataType === 1 ? '新增元数据' : '修改元数据'" :maskClosable="false"
+      cancelText="取消" okText="确定" @cancel="metadataHandlerCancel()" @ok="metadataHandlerConfirm()" centered>
+      <a-form-model layout="horizontal" ref="metadataForm" :model="metadataForm" :rules="metadataRules"
+        :hideRequiredMark="true">
+        <a-row :gutter="[24]">
+          <a-col :span="24">
+            <a-form-model-item class="mb-10" label="自定义KEY" :colon="false" prop="custom">
+              <a-switch :disabled="handlerMetadataType !== 1" v-model="metadataForm.custom" @change="metadataCustom" />
+            </a-form-model-item>
+          </a-col>
+          <a-col :span="24" v-if="!metadataForm.custom">
+            <a-form-model-item class="mb-10" label="元数据KEY" :colon="false" prop="key">
+              <a-select :disabled="handlerMetadataType !== 1" v-model="metadataForm.key" @change="metadataKeyChange"
+                placeholder="请选择元数据KEY" show-search optionFilterProp="value">
+                <a-select-option v-for="(item, index) in metadataConfigList" :key="index" :value="item.key">
+                  {{ item.key }}
+                </a-select-option>
+              </a-select>
+            </a-form-model-item>
+          </a-col>
+          <a-col :span="24" v-if="metadataForm.custom">
+            <a-form-model-item class="mb-10" label="元数据KEY" :colon="false" prop="customKey">
+              <a-input :disabled="handlerMetadataType !== 1" placeholder="请输入元数据KEY" v-model="metadataForm.customKey" />
+            </a-form-model-item>
+          </a-col>
+          <a-col :span="24" v-if="metadataForm.custom">
+            <a-form-model-item class="mb-10" label="元数据类型" :colon="false" prop="type">
+              <a-select v-model="metadataForm.type" @change="metadataTypeChange" placeholder="请选择元数据类型" show-search
+                optionFilterProp="label">
+                <a-select-option v-for="(item, index) in metadataTypes" :label="item.label" :key="index"
+                  :value="item.value">
+                  {{ item.label }}
+                </a-select-option>
+              </a-select>
+            </a-form-model-item>
+          </a-col>
+          <a-col :span="24">
+            <a-form-model-item class="mb-10" label="元数据值" :colon="false" prop="value">
+              <a-input v-if="metadataInput" placeholder="请输入元数据值" v-model="metadataForm.value" />
+              <a-textarea v-if="metadataTextarea" v-model="metadataForm.value" placeholder="请输入元数据值"
+                :auto-size="{ minRows: 8, maxRows: 16 }" />
+            </a-form-model-item>
+          </a-col>
+          <!-- <a-col :span="24" v-if="metadataForm.custom">
+            <a-form-model-item class="mb-10" label="是否展示" :colon="false" prop="viewShow">
+              <a-switch v-model="metadataForm.viewShow" />
+            </a-form-model-item>
+          </a-col> -->
+        </a-row>
+      </a-form-model>
+    </a-modal>
   </div>
 </template>
 
@@ -1258,8 +1390,9 @@ import {
   fileSizeConver,
   formateDate
 } from '@/utils/layoutUtil'
+import { getMetadataConfiguration } from "@/api/settings"
 import { browse, getArtifact, viewArtifactFile, fql, scannerRules, insertOrUpdateRules, getDockerArtifact, deleteArtifact, getSeverity, repositoryVulnerabilityStatistics, getStoragesAndRepositories, } from '@/api/folib'
-import { artifactCopy, artifactMove, artifactUpload } from '@/api/artifact'
+import { artifactCopy, artifactMove, artifactUpload, saveArtifactMetadata, updateArtifactMetadata, deleteArtifactMetadata } from '@/api/artifact'
 import { PrismEditor } from 'vue-prism-editor'
 import 'vue-prism-editor/dist/prismeditor.min.css' // import the styles somewhere
 // import highlighting library (you can use any library you want just return html string)
@@ -1478,6 +1611,57 @@ export default {
       custom: false,
       showDeleteModal: false,
       enabled: true,
+      showMetadataHandler: false,
+      handlerMetadataType: 1,
+      metadataForm: {
+        key: undefined,
+        customKey: undefined,
+        custom: false,
+        type: undefined,
+        viewShow: true,
+        value: undefined,
+      },
+      metadataInput: true,
+      metadataTextarea: false,
+      metadataRules: {
+        key: [
+          { required: true, message: '请选择元数据KEY', trigger: 'blur' },
+        ],
+        customKey: [
+          { required: true, message: '请输入元数据KEY', trigger: 'blur' },
+          { min: 1, max: 30, message: '长度在 1 到 30 个字符', trigger: 'blur' },
+        ],
+        type: [
+          { required: true, message: '请选择元数据类型', trigger: 'blur' },
+        ],
+        value: [
+          { required: true, message: '请输入元数据值', trigger: 'blur' },
+        ],
+      },
+      metadataTypes: [
+        {
+          label: "数字",
+          value: "NUMERICAL",
+        },
+        {
+          label: "字符串",
+          value: "STRING",
+        },
+        {
+          label: "文本",
+          value: "TEXT",
+        },
+        {
+          label: "Markdown",
+          value: "MD",
+        },
+        {
+          label: "JSON",
+          value: "JSON",
+        },
+      ],
+      metadataConfigList: [],
+      metadataHtml: undefined,
     }
   },
   created() {
@@ -1485,6 +1669,7 @@ export default {
     this.getBrowse()
     this.scannerRules()
     this.repositoryVulnerabilityStatistics()
+    this.getMetadataConfiguration()
   },
   methods: {
     scannerRules() {
@@ -1926,6 +2111,10 @@ export default {
       } else if (active.key === '3') {
         //删除
         this.showDeleteModal = true
+      } else if (active.key === '4') {
+        //元数据
+        this.getMetadataConfiguration()
+        this.metadataHandler(1)
       }
     },
     getStoragesAndRepositories(type, layout, excludeRepositoryId, policy) {
@@ -1948,6 +2137,27 @@ export default {
             })
           }
         })
+      }
+    },
+    metadataKeyChange(value) {
+      let type = null
+      this.metadataConfigList.forEach(config => {
+        if (config.key === value) {
+          type = config.type
+        }
+      })
+      this.metadataTypeChange(type)
+    },
+    metadataTypeChange(value) {
+      let textareaList = ["TEXT", "MD", "JSON"]
+      let flag = textareaList.some(item => item === value)
+      if (flag) {
+        //textarea
+        this.metadataTextarea = true
+        this.metadataInput = false
+      } else {
+        this.metadataTextarea = false
+        this.metadataInput = true
       }
     },
     operationFormModalClose() {
@@ -2037,6 +2247,163 @@ export default {
         }
       })
     },
+    getMetadataConfiguration() {
+      getMetadataConfiguration().then(res => {
+        this.metadataConfigList = res;
+      }).finally(() => {
+      })
+    },
+    metadataFormReset() {
+      if (this.$refs.metadataForm) {
+        this.$refs.metadataForm.resetFields()
+      }
+      this.metadataForm = {
+        key: undefined,
+        customKey: undefined,
+        custom: false,
+        type: undefined,
+        viewShow: true,
+        value: undefined,
+      }
+      this.metadataInput = true
+      this.metadataTextarea = false
+    },
+    metadataHandler(type, metadata) {
+      this.metadataFormReset()
+      if (metadata) {
+        this.metadataForm = metadata
+      }
+      this.handlerMetadataType = type
+      this.showMetadataHandler = true
+    },
+    metadataCustom(value) {
+      if (value) {
+        //开启自定义
+        this.metadataForm.key = undefined
+      } else {
+        //使用全局配置KEY
+        this.metadataForm.customKey = undefined
+        this.metadataForm.type = undefined
+      }
+    },
+    handleTinymceChange(value) {
+      this.metadataForm.value = value
+    },
+    metadataHandlerCancel() {
+      this.metadataFormReset()
+      this.showMetadataHandler = false
+    },
+    getMetadata() {
+      getArtifact(
+        this.repositoryType,
+        this.currentTreeNode.storageId,
+        this.currentTreeNode.repositoryId,
+        this.currentTreeNode.artifactPath
+      ).then(res => {
+        if (res.artifact && res.artifact.metadata && res.artifact.metadata.length > 0) {
+          this.currentFileDetial.artifact.metadata = JSON.parse(res.artifact.metadata)
+          for (let key in this.currentFileDetial.artifact.metadata ) {
+            let flag = this.metadataConfigList.some(metadataConfig => !metadataConfig.viewShow && metadataConfig.key === key)
+            if (flag) {
+              this.currentFileDetial.artifact.metadata[key].viewShow = false
+            }
+          }
+          this.$forceUpdate()
+        }
+      })
+    },
+    metadataHandlerConfirm() {
+      this.$refs.metadataForm.validate(valid => {
+        if (valid) {
+          let data = Object.assign({}, this.metadataForm)
+          if (data.viewShow) {
+            data.viewShow = 1
+          } else {
+            data.viewShow = 0
+          }
+          if (!data.custom) {
+            this.metadataConfigList.forEach(config => {
+              if (config.key === data.key) {
+                data.type = config.type
+                data.viewShow = config.viewShow
+              }
+            })
+          } else {
+            data.key = data.customKey
+          }
+          data.storageId = this.currentTreeNode.storageId
+          data.repositoryId = this.currentTreeNode.repositoryId
+          data.artifactPath = this.currentTreeNode.artifactPath
+          delete data.custom
+          delete data.customKey
+          if (this.handlerMetadataType === 1) {
+            saveArtifactMetadata(data).then(res => {
+              if (res === 'repeat') {
+                this.$notification["warning"]({
+                  message: "元数据KEY已存在",
+                  description: ""
+                })
+                return false
+              }
+              this.successMsg("新增制品元数据成功")
+              this.metadataFormReset()
+              this.getMetadata()
+              this.showMetadataHandler = false
+            }).finally(() => {
+            })
+          } else {
+            updateArtifactMetadata(data).then(res => {
+              this.successMsg("修改制品元数据成功")
+              this.metadataFormReset()
+              this.getMetadata()
+              this.showMetadataHandler = false
+            }).finally(() => {
+            })
+          }
+        } else {
+          return false
+        }
+      })
+    },
+    artifactTabChange(activeKey) {
+      if (activeKey === '2') {
+        this.getMetadata()
+        this.getMetadataConfiguration()
+      }
+    },
+    deleteArtifactMetadata(metadataKey) {
+      let data = {
+        key: metadataKey,
+        storageId: this.currentTreeNode.storageId,
+        repositoryId: this.currentTreeNode.repositoryId,
+        artifactPath: this.currentTreeNode.artifactPath
+      }
+      deleteArtifactMetadata(data).then(res => {
+        this.successMsg("删除制品元数据成功")
+        this.getMetadata()
+      }).finally(() => {
+      })
+    },
+    metadataEditHandler(key, metadata) {
+      let data = {
+        key: undefined,
+        customKey: undefined,
+        custom: false,
+        type: metadata.type,
+        viewShow: metadata.viewShow === 1,
+        value: metadata.value,
+      }
+      let flag = this.metadataConfigList.some(item => item.key === key)
+      if (!flag) {
+        data.custom = true
+        data.customKey = key
+      } else {
+        data.key = key
+        data.custom = false
+      }
+      this.metadataHandler(2, data)
+      this.metadataTypeChange(data.type)
+    },
   }
 }
 </script>
@@ -2101,18 +2468,6 @@ $md: 768px;
 
   .table-avatar-info .ant-avatar {
     margin-right: 8px;
-  }
-
-  .table-severity-info {
-    display: inline-block;
-    height: 30px;
-    margin-left: 30px;
-  }
-
-  .severity-info {
-    display: inline-block;
-    width: 40px;
-    margin-right: 20px;
   }
 
   // Using vuejs "Deep Selectors"

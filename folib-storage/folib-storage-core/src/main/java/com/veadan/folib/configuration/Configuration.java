@@ -1,5 +1,6 @@
 package com.veadan.folib.configuration;
 
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSortedMap;
 import com.veadan.folib.storage.Storage;
 import com.veadan.folib.storage.StorageData;
@@ -55,6 +56,11 @@ public class Configuration {
      */
     private SecurityPolicyConfiguration securityPolicyConfiguration;
 
+    /**
+     * 元数据配置
+     */
+    private Map<String, MetadataConfiguration> metadataConfiguration;
+
     public Configuration(final MutableConfiguration delegate) {
 
         id = delegate.getId();
@@ -72,6 +78,7 @@ public class Configuration {
         corsConfiguration = immuteCorsConfiguration(delegate.getCorsConfiguration());
         smtpConfiguration = immuteSmtpConfiguration(delegate.getSmtpConfiguration());
         securityPolicyConfiguration = immuteSecurityPolicyConfiguration(delegate.getSecurityPolicyConfiguration());
+        metadataConfiguration = immuteMetadataConfiguration(delegate.getMetadataConfiguration());
     }
 
     private ProxyConfiguration immuteProxyConfiguration(final MutableProxyConfiguration source) {
@@ -105,6 +112,11 @@ public class Configuration {
 
     private SecurityPolicyConfiguration immuteSecurityPolicyConfiguration(final MutableSecurityPolicyConfiguration source) {
         return source != null ? new SecurityPolicyConfiguration(source) : null;
+    }
+
+    private Map<String, MetadataConfiguration> immuteMetadataConfiguration(final Map<String, MutableMetadataConfiguration> source) {
+        return source != null ? ImmutableSortedMap.copyOf(source.entrySet().stream().collect(
+                toMap(Map.Entry::getKey, e -> new MetadataConfiguration(e.getValue())))) : Collections.emptyMap();
     }
 
     public String getId() {
@@ -259,5 +271,9 @@ public class Configuration {
 
     public SecurityPolicyConfiguration getSecurityPolicyConfiguration() {
         return securityPolicyConfiguration;
+    }
+
+    public Map<String, MetadataConfiguration> getMetadataConfiguration() {
+        return metadataConfiguration;
     }
 }

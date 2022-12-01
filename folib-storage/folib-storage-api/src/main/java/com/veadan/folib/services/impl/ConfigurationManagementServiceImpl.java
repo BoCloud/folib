@@ -668,6 +668,16 @@ public class ConfigurationManagementServiceImpl
         return getConfiguration().getRepositoriesWithType(storageId, repositoryType);
     }
 
+    @Override
+    public void addOrUpdateMetadataConfiguration(MutableMetadataConfiguration mutableMetadataConfiguration) throws IOException {
+        modifyInLock(configuration -> configuration.addOrUpdateMetadataConfiguration(mutableMetadataConfiguration));
+    }
+
+    @Override
+    public void deleteMetadataConfig(String key) throws IOException {
+        modifyInLock(configuration -> configuration.getMetadataConfiguration().remove(key));
+    }
+
     private void setProxyRepositoryConnectionPoolConfigurations() throws IOException {
         modifyInLock(configuration ->
         {

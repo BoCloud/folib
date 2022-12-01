@@ -900,11 +900,13 @@
                     </a-col>
                     <a-col class="ml-auto">
                       <span class="mr-15">{{ i.isSetted.oneTimeExecution ? '执行一次' : '循环执行' }}</span>
-                      <a-switch v-model="i.isSetted.oneTimeExecution" @change="() => { $forceUpdate() }" />
+                      <a-switch v-model="i.isSetted.oneTimeExecution"
+                        @change="oneTimeExecutionChange($event, i.isSetted)" />
                     </a-col>
                     <a-col class="ml-auto">
                       <span class="mr-15">{{ i.isSetted.immediateExecution ? '立即执行' : '不立即执行' }}</span>
-                      <a-switch v-model="i.isSetted.immediateExecution" @change="() => { $forceUpdate() }" />
+                      <a-switch v-model="i.isSetted.immediateExecution"
+                        @change="immediateExecutionChange($event, i.isSetted)" />
                     </a-col>
                   </a-row>
                   <hr v-if="i.fields.length > 2" class="gradient-line my-10">
@@ -1414,6 +1416,7 @@ export default {
     getLibrary(id) {
       getLibrary(id).then(response => {
         this.repositories = response.repositories
+        this.$forceUpdate()
       })
     },
     cacheStorage() {
@@ -1541,6 +1544,14 @@ export default {
     },
     saveCronOneSetHandle(i) {
       if (i.fields && i.isSetted) {
+        if (!i.isSetted.cronExpression) {
+          this.$notification.open({
+            class: 'ant-notification-warning',
+            message: '操作不正确',
+            description: '请填写cron表达式',
+          })
+          return false
+        }
         let fiedsNew = []
         i.fields.forEach(f => {
           if (f.value !== null && f.value !== undefined) {
@@ -1774,10 +1785,10 @@ export default {
                   description: values.id + '已删除',
                 });
               }, 100)
+            }).finally(() => {
+              this.deleteFormVisible = false;
+              this.getLibrary(this.currentStorage.id)
             })
-
-            this.deleteFormVisible = false;
-            this.getLibrary(this.currentStorage.id)
           } else {
             setTimeout(() => {
               this.$notification.open({
@@ -1805,10 +1816,10 @@ export default {
                   description: values.id + '已删除',
                 });
               }, 100)
+            }).finally(() => {
+              this.deleteFormVisible = false;
+              this.getLibrary(this.currentStorage.id)
             })
-
-            this.deleteFormVisible = false;
-            this.getLibrary(this.currentStorage.id)
           } else {
             setTimeout(() => {
               this.$notification.open({
@@ -1841,6 +1852,18 @@ export default {
       this.$router.push({
         name: 'libDetial'
       })
+    },
+    oneTimeExecutionChange(value, item) {
+      if (value && item.immediateExecution) {
+        item.immediateExecution = false
+      }
+      this.$forceUpdate()
+    },
+    immediateExecutionChange(value, item) {
+      if (value && item.oneTimeExecution) {
+        item.oneTimeExecution = false
+      }
+      this.$forceUpdate()
     }
   },
 };

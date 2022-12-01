@@ -143,7 +143,7 @@ cacheManagerConfiguration:
 s3fs:
   protocol: http
   region: bo-nj-cn
-  uri: s3://192.168.2.8:9000/
+  uri: s3://192.168.2.100:9000/
   access:
     key: ERevhJMgrz0JUKD8
   secret:

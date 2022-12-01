@@ -100,6 +100,7 @@ public class ArtifactRepository extends GremlinVertexRepository<Artifact> {
     }
 
     public Page<Artifact> findMatchingByIndex(Pageable pagination, Boolean regex, String artifactName,
+                                              String metadataSearch,
                                               String storageId,
                                               String repositoryId,
                                               String beginDate,
@@ -111,12 +112,12 @@ public class ArtifactRepository extends GremlinVertexRepository<Artifact> {
         if (StringUtils.isNotBlank(storageId) && StringUtils.isNotBlank(repositoryId)) {
             repository = configurationManager.getRepository(storageId, repositoryId);
         }
-        Long count = buildEntityTraversal(regex, artifactName, storageId, repositoryId, beginDate, endDate, sortField, sortOrder).count().tryNext().orElse(0L);
+        Long count = buildEntityTraversal(regex, artifactName, metadataSearch, storageId, repositoryId, beginDate, endDate, sortField, sortOrder).count().tryNext().orElse(0L);
         long low = pagination.getPageNumber() * pagination.getPageSize();
         long high = (pagination.getPageNumber() + 1) * pagination.getPageSize();
 
 
-        List<Artifact> artifactList = buildEntityTraversal(regex, artifactName, storageId, repositoryId, beginDate, endDate, sortField, sortOrder)
+        List<Artifact> artifactList = buildEntityTraversal(regex, artifactName, metadataSearch, storageId, repositoryId, beginDate, endDate, sortField, sortOrder)
                 .range(low, high)
                 .map(artifactAdapter.fold(Optional.ofNullable(repository)
                         .map(com.veadan.folib.storage.repository.Repository::getLayout)
@@ -165,6 +166,7 @@ public class ArtifactRepository extends GremlinVertexRepository<Artifact> {
     }
 
     private EntityTraversal<Vertex, Vertex> buildEntityTraversal(Boolean regex, String artifactName,
+                                                                 String metadataSearch,
                                                                  String storageId,
                                                                  String repositoryId,
                                                                  String beginDate,
@@ -176,6 +178,9 @@ public class ArtifactRepository extends GremlinVertexRepository<Artifact> {
             entityTraversal = entityTraversal.has(Properties.UUID, Text.textRegex(artifactName));
         } else {
             entityTraversal = entityTraversal.has(Properties.UUID, Text.textContains(artifactName));
+        }
+        if (StringUtils.isNotBlank(metadataSearch)) {
+            entityTraversal = entityTraversal.has(Properties.METADATA, Text.textContains(metadataSearch));
         }
         if (StringUtils.isNotBlank(storageId)) {
             entityTraversal = entityTraversal.has(Properties.STORAGE_ID, storageId);

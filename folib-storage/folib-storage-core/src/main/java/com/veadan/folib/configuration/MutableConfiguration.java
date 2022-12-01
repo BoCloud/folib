@@ -58,6 +58,10 @@ public class MutableConfiguration
     private MutableCorsConfiguration corsConfiguration = new MutableCorsConfiguration();
 
     private MutableSmtpConfiguration smtpConfiguration = new MutableSmtpConfiguration();
+    /**
+     * 全局元数据配置
+     */
+    private Map<String, MutableMetadataConfiguration> metadataConfiguration = new LinkedHashMap<>();
 
     public String getId() {
         return id;
@@ -138,6 +142,22 @@ public class MutableConfiguration
         }
 
         storages.put(key, storage);
+    }
+
+    public Map<String, MutableMetadataConfiguration> getMetadataConfiguration() {
+        return metadataConfiguration;
+    }
+
+    public void setMetadataConfiguration(Map<String, MutableMetadataConfiguration> metadataConfiguration) {
+        this.metadataConfiguration = metadataConfiguration;
+    }
+
+    public void addOrUpdateMetadataConfiguration(MutableMetadataConfiguration mutableMetadataConfiguration) {
+        String key = mutableMetadataConfiguration.getKey();
+        if (key == null || key.isEmpty()) {
+            throw new IllegalArgumentException("Null keys are not supported!");
+        }
+        this.metadataConfiguration.put(key, mutableMetadataConfiguration);
     }
 
     public void upDateStorage(StorageDto storage) {
@@ -294,13 +314,14 @@ public class MutableConfiguration
                 Objects.equal(remoteRepositoriesConfiguration, that.remoteRepositoriesConfiguration) &&
                 Objects.equal(corsConfiguration, that.corsConfiguration) &&
                 Objects.equal(smtpConfiguration, that.smtpConfiguration) &&
-                Objects.equal(securityPolicyConfiguration, that.securityPolicyConfiguration);
+                Objects.equal(securityPolicyConfiguration, that.securityPolicyConfiguration) &&
+                Objects.equal(metadataConfiguration, that.metadataConfiguration);
     }
 
     @Override
     public int hashCode() {
         return Objects.hashCode(version, baseUrl, port, proxyConfiguration, sessionConfiguration, storages,
-                routingRules, securityPolicyConfiguration, remoteRepositoriesConfiguration, corsConfiguration, smtpConfiguration);
+                routingRules, securityPolicyConfiguration, remoteRepositoriesConfiguration, corsConfiguration, smtpConfiguration, metadataConfiguration);
     }
 
     @Override
@@ -318,6 +339,7 @@ public class MutableConfiguration
                 .add("\n\tremoteRepositoriesConfiguration", remoteRepositoriesConfiguration)
                 .add("\n\tcorsConfiguration", corsConfiguration)
                 .add("\n\tsmtpConfiguration", smtpConfiguration)
+                .add("\n\tmetadataConfiguration", metadataConfiguration)
                 .toString();
     }
 
