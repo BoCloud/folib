@@ -749,7 +749,7 @@
 
         </a-row>
       </a-tab-pane>
-      <!-- <a-tab-pane key="5" tab="元数据配置">
+      <a-tab-pane key="5" tab="元数据配置">
         <a-card class="header-solid block">
           <div class="mx-25 mb-50">
             <a-col :span="24" class="text-right">
@@ -796,7 +796,7 @@
             </div>
           </a-table>
         </a-card>
-      </a-tab-pane> -->
+      </a-tab-pane>
     </a-tabs>
     <a-modal v-model="showMetadataHandler" :title="handlerMetadataType === 1 ? '新增元数据' : '修改元数据'" :maskClosable="false"
       cancelText="取消" okText="确定" @cancel="metadataHandlerCancel()" @ok="metadataHandlerConfirm()" centered>

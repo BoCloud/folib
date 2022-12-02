@@ -2,6 +2,7 @@ package com.veadan.folib.repositories;
 
 import cn.hutool.core.date.DatePattern;
 import cn.hutool.core.date.DateUtil;
+import com.alibaba.fastjson.JSONObject;
 import com.google.common.collect.Maps;
 import com.veadan.folib.artifact.coordinates.ArtifactLayoutDescription;
 import com.veadan.folib.artifact.coordinates.ArtifactLayoutLocator;
@@ -17,6 +18,7 @@ import com.veadan.folib.gremlin.dsl.EntityTraversal;
 import com.veadan.folib.gremlin.dsl.EntityTraversalUtils;
 import com.veadan.folib.gremlin.dsl.__;
 import com.veadan.folib.gremlin.repositories.GremlinVertexRepository;
+import com.veadan.folib.util.LocalCacheUtils;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.tinkerpop.gremlin.process.traversal.Order;
@@ -146,10 +148,18 @@ public class ArtifactRepository extends GremlinVertexRepository<Artifact> {
     }
 
     public Map<Object, Object> countArtifactByStorageIdAndRepositoryId(String storageId, String repositoryId) {
+        String key = "countArtifactByStorageIdAndRepositoryId-%s-%s";
+        key = String.format(key, storageId, repositoryId);
+        String cacheValue = LocalCacheUtils.get(key);
+        if (StringUtils.isNotBlank(cacheValue)) {
+            return Maps.newHashMap(JSONObject.parseObject(cacheValue));
+        }
         EntityTraversal<Vertex, Map<Object, Object>> entityTraversal = g().V().hasLabel(Vertices.ARTIFACT).has(Properties.STORAGE_ID, storageId).has(Properties.REPOSITORY_ID, repositoryId)
                 .properties(Properties.DOWNLOAD_COUNT, Properties.DEPENDENCY_COUNT).
                         group().by(__.key()).by(__.value().sum());
-        return entityTraversal.tryNext().orElse(Maps.newHashMap());
+        Map<Object, Object> map = entityTraversal.tryNext().orElse(Maps.newHashMap());
+        LocalCacheUtils.put(key, JSONObject.toJSONString(map), 3600);
+        return map;
     }
 
     public List<VulnerabilityArtifactDomain> findMatchingHasVulnerabilityByStorageIdsAndLevels(List<String> storageIdList, Set<String> levels) {
@@ -174,10 +184,12 @@ public class ArtifactRepository extends GremlinVertexRepository<Artifact> {
                                                                  String sortField,
                                                                  String sortOrder) {
         EntityTraversal<Vertex, Vertex> entityTraversal = g().V().hasLabel(Vertices.ARTIFACT);
-        if (Boolean.TRUE.equals(regex)) {
-            entityTraversal = entityTraversal.has(Properties.UUID, Text.textRegex(artifactName));
-        } else {
-            entityTraversal = entityTraversal.has(Properties.UUID, Text.textContains(artifactName));
+        if (StringUtils.isNotBlank(artifactName)) {
+            if (Boolean.TRUE.equals(regex)) {
+                entityTraversal = entityTraversal.has(Properties.UUID, Text.textRegex(artifactName));
+            } else {
+                entityTraversal = entityTraversal.has(Properties.UUID, Text.textContains(artifactName));
+            }
         }
         if (StringUtils.isNotBlank(metadataSearch)) {
             entityTraversal = entityTraversal.has(Properties.METADATA, Text.textContains(metadataSearch));

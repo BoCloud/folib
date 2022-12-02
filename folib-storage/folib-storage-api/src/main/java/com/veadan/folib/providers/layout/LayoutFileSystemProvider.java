@@ -12,9 +12,12 @@ import java.util.Collections;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 
+import com.veadan.folib.domain.Vulnerability;
+import com.veadan.folib.repositories.VulnerabilityRepository;
 import org.carlspring.commons.io.reloading.FSReloadableInputStreamHandler;
 import com.veadan.folib.artifact.ArtifactNotFoundException;
 import com.veadan.folib.domain.Artifact;
@@ -59,6 +62,9 @@ public abstract class LayoutFileSystemProvider extends StorageFileSystemProvider
     
     @Inject
     private ArtifactRepository artifactEntityRepository;
+
+    @Inject
+    private VulnerabilityRepository vulnerabilityRepository;
 
 
     public LayoutFileSystemProvider(FileSystemProvider storageFileSystemProvider)
@@ -283,7 +289,9 @@ public abstract class LayoutFileSystemProvider extends StorageFileSystemProvider
                                          .orElseGet(() -> fetchArtifactEntry(repositoryPath));
         if (artifactEntry != null)
         {
+            Set<String> vulnerabilities = Optional.ofNullable(artifactEntry.getVulnerabilitySet()).orElse(Collections.emptySet()).stream().map(Vulnerability::getUuid).collect(Collectors.toSet());
             artifactEntityRepository.delete(artifactEntry);
+            vulnerabilityRepository.handlerVulnerabilityForArtifactDelete(vulnerabilities);
         }
         
         super.doDeletePath(repositoryPath, force);

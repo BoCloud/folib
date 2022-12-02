@@ -153,31 +153,36 @@
                     </a-row>
                   </a-col>
                   <a-col :span="8" class="text-right">
-                    <a-button v-if="currentFileDetial && folibRepository.layout !== 'Raw'" type="link"
-                      @click="viewCodeHandle()">
-                      {{ currentFileDetial.listTree ? '包' : viewCodes ? '文件' : folibRepository.layout === 'Docker' ?
-                          '详情' : ''
-                      }}预览
-                      <a-icon :size="24" shape="square" type="eye"></a-icon>
-                    </a-button>
-                    <a-dropdown v-if="currentTreeNode.url">
-                      <a>
-                        <a-icon type="more" class="text-muted" style="font-size: 18px;" />
-                      </a>
+                    <a-dropdown v-if="currentTreeNode.url" class="mr-30" placement="bottomCenter">
+                      <span style="font-size: 16px;cursor: pointer;">
+                        更多
+                        <a-icon type="more" class="text-muted" style="font-size: 16px;" />
+                      </span>
                       <template #overlay>
                         <a-menu slot="overlay" @click="handleMenuClick">
-                          <a-menu-item key="1" v-if="folibRepository.type === 'hosted'">
-                            <a-icon type="copy" />复制
+                          <a-menu-item key="1" v-if="currentFileDetial && folibRepository.layout !== 'Raw'">
+                            <a-icon type="eye" />
+                            {{ currentFileDetial.listTree ? '包' : viewCodes ? '文件' : folibRepository.layout === 'Docker'
+                                ?
+                                '详情' : ''
+                            }}预览
                           </a-menu-item>
                           <a-menu-item key="2" v-if="folibRepository.type === 'hosted'">
+                            <a-icon type="copy" />复制
+                          </a-menu-item>
+                          <a-menu-item key="3" v-if="folibRepository.type === 'hosted'">
                             <a-icon type="swap" />移动
                           </a-menu-item>
-                          <a-menu-item key="3">
-                            <a-icon type="delete" />删除
+                          <a-menu-item key="4">
+                            <a-popconfirm title="确定要删除吗？" placement="topLeft" okType="danger" ok-text="确定" cancel-text="取消"
+                              @confirm="deletePackageHandle">
+                              <a-icon type="delete" />删除
+                            </a-popconfirm>
                           </a-menu-item>
-                          <!-- <a-menu-item key="4" v-if="currentFileDetial && currentFileDetial.artifact && currentFileDetial.artifact.artifactFileExists">
+                          <a-menu-item key="5"
+                            v-if="currentFileDetial && currentFileDetial.artifact && currentFileDetial.artifact.artifactFileExists">
                             <a-icon type="database" />元数据
-                          </a-menu-item> -->
+                          </a-menu-item>
                         </a-menu>
                       </template>
                     </a-dropdown>
@@ -189,30 +194,33 @@
                     {{ currentTreeNode.name }}
                   </a-col>
                   <a-col :span="8" class="text-right">
-                    <a-button v-if="currentFileDetial" type="link" @click="viewCodeHandle()">
-                      {{ currentFileDetial.listTree ? '包' : viewCodes ? '文件' : folibRepository.layout === 'Docker' ?
-                          '详情' : ''
-                      }}预览
-                      <a-icon :size="24" shape="square" type="eye"></a-icon>
-                    </a-button>
-                    <a-dropdown v-if="currentTreeNode.url">
-                      <a>
-                        <a-icon type="more" class="text-muted" style="font-size: 18px;" />
-                      </a>
+                    <a-dropdown v-if="currentTreeNode.url" class="mr-45">
+                      <span style="font-size: 16px;cursor: pointer;">
+                        更多
+                        <a-icon type="more" class="text-muted" style="font-size: 16px;" />
+                      </span>
                       <template #overlay>
                         <a-menu slot="overlay" @click="handleMenuClick">
-                          <a-menu-item key="1" v-if="folibRepository.type === 'hosted'">
-                            <a-icon type="copy" />复制
+                          <a-menu-item key="1" v-if="currentFileDetial && folibRepository.layout !== 'Raw'">
+                            <a-icon type="eye" />
+                            {{ currentFileDetial.listTree ? '包' : viewCodes ? '文件' : folibRepository.layout === 'Docker'
+                                ?
+                                '详情' : ''
+                            }}预览
                           </a-menu-item>
                           <a-menu-item key="2" v-if="folibRepository.type === 'hosted'">
+                            <a-icon type="copy" />复制
+                          </a-menu-item>
+                          <a-menu-item key="3" v-if="folibRepository.type === 'hosted'">
                             <a-icon type="swap" />移动
                           </a-menu-item>
-                          <a-menu-item key="3">
+                          <a-menu-item key="4">
                             <a-icon type="delete" />删除
                           </a-menu-item>
-                          <!-- <a-menu-item key="4" v-if="currentFileDetial && currentFileDetial.artifact && currentFileDetial.artifact.artifactFileExists">
+                          <a-menu-item key="5"
+                            v-if="currentFileDetial && currentFileDetial.artifact && currentFileDetial.artifact.artifactFileExists">
                             <a-icon type="database" />元数据
-                          </a-menu-item> -->
+                          </a-menu-item>
                         </a-menu>
                       </template>
                     </a-dropdown>
@@ -299,19 +307,31 @@
                   </a-descriptions>
                 </a-tab-pane>
                 <a-tab-pane key="2" tab="元数据">
-                  <a-descriptions
-                    v-if="currentFileDetial && currentFileDetial.artifact && currentFileDetial.artifact.metadata"
-                    title="" :column="1">
-                    <template v-for="(metadata, metadataKey) in currentFileDetial.artifact.metadata">
-                      <a-descriptions-item v-if="metadata.viewShow === 1" :label="metadataKey" :key="metadataKey">
-                        {{ metadata.value }}
-                        <a-tag color="#87d068">
-                          <span v-for="(item, index) in metadataTypes" :key="index">
-                            <span v-if="metadata.type === item.value">{{ item.label }}</span>
-                          </span>
-                        </a-tag>
+                  <a-table :columns="metadataColumns" :data-source="metadataList">
+                    <div slot="type" slot-scope="type">
+                      <span v-for="(item, index) in metadataTypes" :key="index">
+                        <span v-if="type === item.value">
+                          <a-tag color="#87d068"> {{ item.label }} </a-tag>
+                        </span>
+                      </span>
+                    </div>
+                    <div slot="value" slot-scope="text, record">
+                      <span v-if="record.type !== 'TEXT' && record.type !== 'MD' && record.type !== 'JSON'">
+                        {{ record.value }}
+                      </span>
+                      <a-button type="link" size="small" v-if="record.type === 'TEXT' || record.type === 'MD'"
+                        @click="metadataEditorDrawerShow(record)">
+                        查看
+                      </a-button>
+                      <a-button type="link" size="small" v-if="record.type === 'JSON'"
+                        @click="metadataPrismEditorDrawerShow(record)">
+                        查看
+                      </a-button>
+                    </div>
+                    <div slot="operation" slot-scope="text, record">
+                      <div class="col-action">
                         <a-popconfirm title="确定要删除吗？" okType="danger" ok-text="确定" cancel-text="取消"
-                          @confirm="deleteArtifactMetadata(metadataKey)">
+                          @confirm="deleteArtifactMetadata(record.key)">
                           <a-button type="link" size="small">
                             <svg width="16" height="16" viewBox="0 0 20 20" fill="none"
                               xmlns="http://www.w3.org/2000/svg">
@@ -322,7 +342,7 @@
                             <span class="text-danger">DELETE</span>
                           </a-button>
                         </a-popconfirm>
-                        <a-button type="link" size="small" @click="metadataEditHandler(metadataKey, metadata)">
+                        <a-button type="link" size="small" @click="metadataEditHandler(record)">
                           <svg width="16" height="16" viewBox="0 0 20 20" fill="none"
                             xmlns="http://www.w3.org/2000/svg">
                             <path class="fill-muted"
@@ -334,9 +354,9 @@
                           </svg>
                           <span class="text-dark">EDIT</span>
                         </a-button>
-                      </a-descriptions-item>
-                    </template>
-                  </a-descriptions>
+                      </div>
+                    </div>
+                  </a-table>
                 </a-tab-pane>
               </a-tabs>
               <hr class="my-25" />
@@ -1205,6 +1225,19 @@
       <!-- </a-card> -->
     </a-drawer>
 
+    <a-drawer placement="right" width="40%" :title="metadataEditorDrawerTitle" :visible="metadataEditorDrawerVisible"
+      @close="metadataEditorDrawerClose()">
+      <quill-editor class="" :disabled="true" v-model="metadataEditorDrawerValue" :options="quillOptions"
+        style="height: 85vh;" />
+    </a-drawer>
+
+    <a-drawer placement="right" width="40%" :title="metadataPrismEditorDrawerTitle"
+      :visible="metadataPrismEditorDrawerVisible" @close="metadataPrismEditorDrawerClose()">
+      <prism-editor class="metadata-prism-editor" style="height: 90vh;" v-model="metadataPrismEditorDrawerValue"
+        :highlight="highlighterHandle" :line-numbers="true" :readonly="true">
+      </prism-editor>
+    </a-drawer>
+
     <a-modal v-model="showOperationFormModal" :footer="null" :forceRender="true" :centered="true"
       :title="operationTitle" on-ok="showCopyFormModal = false">
       <a-form :form="operationForm" ref="operationForm" layout="vertical" @submit.prevent="handleOperationSubmit">
@@ -1312,19 +1345,6 @@
       </a-form>
     </a-modal>
 
-    <a-modal v-model="showDeleteModal" :footer="null" :forceRender="true" :centered="true" title="确定删除吗？"
-      on-ok="showDeleteModal = false" class="delete-modal">
-      <a-row :gutter="[24]">
-        <a-col :span="24">
-          <p>不要冲动，再好好想想</p>
-        </a-col>
-        <a-col :span="24" class="text-right">
-          <a-button @click="deletePackageHandle" class="mr-10" type="danger">删除</a-button>
-          <a-button @click="showDeleteModal = false" type="default">取消</a-button>
-        </a-col>
-      </a-row>
-    </a-modal>
-
     <a-modal v-model="showMetadataHandler" :title="handlerMetadataType === 1 ? '新增元数据' : '修改元数据'" :maskClosable="false"
       cancelText="取消" okText="确定" @cancel="metadataHandlerCancel()" @ok="metadataHandlerConfirm()" centered>
       <a-form-model layout="horizontal" ref="metadataForm" :model="metadataForm" :rules="metadataRules"
@@ -1350,10 +1370,10 @@
               <a-input :disabled="handlerMetadataType !== 1" placeholder="请输入元数据KEY" v-model="metadataForm.customKey" />
             </a-form-model-item>
           </a-col>
-          <a-col :span="24" v-if="metadataForm.custom">
+          <a-col :span="24">
             <a-form-model-item class="mb-10" label="元数据类型" :colon="false" prop="type">
-              <a-select v-model="metadataForm.type" @change="metadataTypeChange" placeholder="请选择元数据类型" show-search
-                optionFilterProp="label">
+              <a-select :disabled="!metadataForm.custom" v-model="metadataForm.type" @change="metadataTypeChange"
+                placeholder="请选择元数据类型" show-search optionFilterProp="label">
                 <a-select-option v-for="(item, index) in metadataTypes" :label="item.label" :key="index"
                   :value="item.value">
                   {{ item.label }}
@@ -1362,10 +1382,13 @@
             </a-form-model-item>
           </a-col>
           <a-col :span="24">
-            <a-form-model-item class="mb-10" label="元数据值" :colon="false" prop="value">
+            <a-form-model-item class="mb-30" label="元数据值" :colon="false" prop="value">
               <a-input v-if="metadataInput" placeholder="请输入元数据值" v-model="metadataForm.value" />
-              <a-textarea v-if="metadataTextarea" v-model="metadataForm.value" placeholder="请输入元数据值"
-                :auto-size="{ minRows: 8, maxRows: 16 }" />
+              <quill-editor v-if="metadataEditor" v-model="metadataForm.value" :options="quillOptions"
+                style="height: 300px;" />
+              <prism-editor class="metadata-prism-editor" v-if="prismEditor" v-model="metadataForm.value"
+                :highlight="highlighterHandle" :line-numbers="true" placeholder="在此处输入内容" :readonly="false">
+              </prism-editor>
             </a-form-model-item>
           </a-col>
           <!-- <a-col :span="24" v-if="metadataForm.custom">
@@ -1403,6 +1426,9 @@ import 'prismjs/themes/prism-tomorrow.css'
 import SearchBox from '@/components/Tools/SearchBox'
 import zhCN from 'ant-design-vue/es/locale/zh_CN'
 import { JSONLoader } from '../../plugins/three/threejs'
+import 'quill/dist/quill.core.css'
+import 'quill/dist/quill.snow.css'
+import { quillEditor } from 'vue-quill-editor'
 export default {
   inject: ["reload"],
   components: {
@@ -1411,6 +1437,7 @@ export default {
     PrismEditor,
     SearchBox,
     Vulnerability,
+    quillEditor,
   },
   data() {
     return {
@@ -1448,6 +1475,7 @@ export default {
       snippets: [],
       artifactQuery: {
         artifactName: null,
+        metadataSearch: null,
         storageId: null,
         repositoryId: null,
         limit: 5,
@@ -1609,8 +1637,8 @@ export default {
       repositories: [],
       storages: [],
       custom: false,
-      showDeleteModal: false,
       enabled: true,
+      searchType: 1,
       showMetadataHandler: false,
       handlerMetadataType: 1,
       metadataForm: {
@@ -1622,7 +1650,37 @@ export default {
         value: undefined,
       },
       metadataInput: true,
-      metadataTextarea: false,
+      metadataEditor: false,
+      prismEditor: false,
+      metadataList: [],
+      metadataColumns: [
+        {
+          title: '元数据KEY',
+          dataIndex: 'key',
+          key: 'key',
+          width: 150,
+        },
+        {
+          title: '元数据类型',
+          dataIndex: 'type',
+          key: 'type',
+          width: 150,
+          scopedSlots: { customRender: 'type' },
+        },
+        {
+          title: '元数据值',
+          dataIndex: 'value',
+          key: 'value',
+          width: 300,
+          scopedSlots: { customRender: 'value' },
+        },
+        {
+          title: '操作',
+          dataIndex: 'operation',
+          width: 250,
+          scopedSlots: { customRender: 'operation' },
+        },
+      ],
       metadataRules: {
         key: [
           { required: true, message: '请选择元数据KEY', trigger: 'blur' },
@@ -1662,6 +1720,22 @@ export default {
       ],
       metadataConfigList: [],
       metadataHtml: undefined,
+      quillOptions: {
+        modules: {
+          toolbar: [
+            [{ 'header': [1, 2, 3, false] }],
+            ['bold', 'italic', 'underline'],
+            [{ 'list': 'ordered' }, { 'list': 'bullet' }, 'link'],
+            ['clean'],
+          ]
+        },
+      },
+      metadataEditorDrawerTitle: undefined,
+      metadataEditorDrawerVisible: false,
+      metadataEditorDrawerValue: undefined,
+      metadataPrismEditorDrawerTitle: undefined,
+      metadataPrismEditorDrawerValue: false,
+      metadataPrismEditorDrawerVisible: undefined,
     }
   },
   created() {
@@ -1715,18 +1789,29 @@ export default {
     searchBoxMouseStatus(bool) {
       this.mouseEnter = bool
     },
+    handlerSearchType(searchType) {
+      this.searchType = searchType
+      this.$forceUpdate()
+    },
     search(value, page) {
       if (page) {
         this.artifactQuery.page = page
       }
       if (value) {
-        this.artifactQuery.artifactName = value
+        if (this.searchType === 1) {
+          this.artifactQuery.artifactName = value
+          this.artifactQuery.metadataSearch = null
+        } else if (this.searchType === 2) {
+          this.artifactQuery.metadataSearch = value
+          this.artifactQuery.artifactName = null
+        }
       }
       this.tabActiveKey = 1
       this.artifactQuery.storageId = this.folibRepository.storageId
       this.artifactQuery.repositoryId = this.folibRepository.id
       let params = {
         artifactName: this.artifactQuery.artifactName,
+        metadataSearch: this.artifactQuery.metadataSearch,
         storageId: this.artifactQuery.storageId,
         repositoryId: this.artifactQuery.repositoryId,
         limit: this.artifactQuery.limit,
@@ -2102,16 +2187,17 @@ export default {
           })
         }
       })
-      if (active.key === '1' || active.key === '2') {
+      if (active.key === '1') {
+        this.viewCodeHandle()
+      } else if (active.key === '2' || active.key === '3') {
         //复制 或 移动
         this.showOperationFormModal = true
         this.getStoragesAndRepositories(this.folibRepository.type, this.folibRepository.layout, this.folibRepository.id, this.folibRepository.policy)
-        this.operationTitle = active.key === '1' ? '复制 ' + this.currentTreeNode.artifactPath : '移动  ' + this.currentTreeNode.artifactPath
-        this.customTitle = active.key === '1' ? '复制到自定义目录' : '移动到自定义目录'
-      } else if (active.key === '3') {
-        //删除
-        this.showDeleteModal = true
+        this.operationTitle = active.key === '2' ? '复制 ' + this.currentTreeNode.artifactPath : '移动  ' + this.currentTreeNode.artifactPath
+        this.customTitle = active.key === '2' ? '复制到自定义目录' : '移动到自定义目录'
       } else if (active.key === '4') {
+        //删除
+      } else if (active.key === '5') {
         //元数据
         this.getMetadataConfiguration()
         this.metadataHandler(1)
@@ -2146,18 +2232,24 @@ export default {
           type = config.type
         }
       })
+      this.metadataForm.type = type
       this.metadataTypeChange(type)
     },
     metadataTypeChange(value) {
-      let textareaList = ["TEXT", "MD", "JSON"]
-      let flag = textareaList.some(item => item === value)
-      if (flag) {
-        //textarea
-        this.metadataTextarea = true
+      let editorList = ["TEXT", "MD"]
+      let prismEditorList = ["JSON"]
+      if (editorList.indexOf(value) !== -1) {
+        this.metadataEditor = true
         this.metadataInput = false
+        this.prismEditor = false
+      } else if (prismEditorList.indexOf(value) !== -1) {
+        this.prismEditor = true
+        this.metadataInput = false
+        this.metadataEditor = false
       } else {
-        this.metadataTextarea = false
         this.metadataInput = true
+        this.metadataEditor = false
+        this.prismEditor = false
       }
     },
     operationFormModalClose() {
@@ -2266,7 +2358,8 @@ export default {
         value: undefined,
       }
       this.metadataInput = true
-      this.metadataTextarea = false
+      this.metadataEditor = false
+      this.prismEditor = false
     },
     metadataHandler(type, metadata) {
       this.metadataFormReset()
@@ -2280,6 +2373,7 @@ export default {
       if (value) {
         //开启自定义
         this.metadataForm.key = undefined
+        this.metadataForm.type = undefined
       } else {
         //使用全局配置KEY
         this.metadataForm.customKey = undefined
@@ -2301,13 +2395,18 @@ export default {
         this.currentTreeNode.artifactPath
       ).then(res => {
         if (res.artifact && res.artifact.metadata && res.artifact.metadata.length > 0) {
-          this.currentFileDetial.artifact.metadata = JSON.parse(res.artifact.metadata)
-          for (let key in this.currentFileDetial.artifact.metadata ) {
+          let metadataJson = JSON.parse(res.artifact.metadata)
+          let metadataList = []
+          for (let key in metadataJson) {
             let flag = this.metadataConfigList.some(metadataConfig => !metadataConfig.viewShow && metadataConfig.key === key)
             if (flag) {
-              this.currentFileDetial.artifact.metadata[key].viewShow = false
+              metadataJson[key].viewShow = false
             }
+            let metadata = Object.assign({}, metadataJson[key])
+            metadata.key = key
+            metadataList.push(metadata)
           }
+          this.metadataList = metadataList
           this.$forceUpdate()
         }
       })
@@ -2384,7 +2483,8 @@ export default {
       }).finally(() => {
       })
     },
-    metadataEditHandler(key, metadata) {
+    metadataEditHandler(metadata) {
+      let key = metadata.key
       let data = {
         key: undefined,
         customKey: undefined,
@@ -2404,6 +2504,22 @@ export default {
       this.metadataHandler(2, data)
       this.metadataTypeChange(data.type)
     },
+    metadataEditorDrawerShow(metadata) {
+      this.metadataEditorDrawerTitle = metadata.key
+      this.metadataEditorDrawerValue = metadata.value
+      this.metadataEditorDrawerVisible = true
+    },
+    metadataEditorDrawerClose() {
+      this.metadataEditorDrawerVisible = false
+    },
+    metadataPrismEditorDrawerShow(metadata) {
+      this.metadataPrismEditorDrawerTitle = metadata.key
+      this.metadataPrismEditorDrawerValue = metadata.value
+      this.metadataPrismEditorDrawerVisible = true
+    },
+    metadataPrismEditorDrawerClose() {
+      this.metadataPrismEditorDrawerVisible = false
+    }
   }
 }
 </script>
@@ -2446,6 +2562,7 @@ $md: 768px;
   .height-80 {
     height: 80px;
   }
+
 
   .mouse-enter {
     transform: scale(1.3);
@@ -2509,18 +2626,15 @@ $md: 768px;
     cursor: pointer;
   }
 
-  .delete-modal>.ant-modal {
-    min-width: 200px;
-  }
-
   .search-column-path {
     white-space: pre-line;
     width: calc(100% - 24px);
   }
-}
 
-.delete-modal>.ant-modal {
-  min-width: 200px;
+  .metadata-descriptions .ant-descriptions-item-content {
+    width: 100%;
+    background-color: green;
+  }
 }
 
 .d-popconfirm {
@@ -2540,5 +2654,16 @@ $md: 768px;
 .d-popconfirm svg {
   vertical-align: middle;
   margin-right: 5px;
+}
+
+.metadata-prism-editor {
+  background: rgb(22, 66, 138);
+  border-radius: 4px;
+  color: #e8e8e8;
+  height: 300px;
+  font-family: Fira code, Fira Mono, Consolas, Menlo, Courier, monospace;
+  font-size: 12px;
+  line-height: 1.5;
+  padding: 5px;
 }
 </style>

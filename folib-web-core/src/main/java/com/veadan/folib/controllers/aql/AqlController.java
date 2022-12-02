@@ -7,6 +7,7 @@ import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -36,7 +37,7 @@ public class AqlController extends BaseController {
     @ApiResponses(value = {@ApiResponse(code = 200, message = "OK")})
     @PreAuthorize("hasAuthority('SEARCH_ARTIFACTS')")
     @GetMapping(produces = {MediaType.APPLICATION_JSON_VALUE})
-    public ResponseEntity search(@RequestParam(name = "artifactName", required = true) String artifactName,
+    public ResponseEntity search(@RequestParam(name = "artifactName", required = false) String artifactName,
                                  @RequestParam(name = "metadataSearch", required = false) String metadataSearch,
                                  @RequestParam(name = "regex", required = false) Boolean regex,
                                  @RequestParam(name = "storageId", required = false) String storageId,
@@ -47,6 +48,9 @@ public class AqlController extends BaseController {
                                  @RequestParam(name = "sortOrder", required = false) String sortOrder,
                                  @RequestParam(name = "limit", required = false) Integer limit,
                                  @RequestParam(name = "page", required = false) Integer page) throws IOException {
+        if (StringUtils.isBlank(artifactName) && StringUtils.isBlank(metadataSearch)) {
+            throw new RuntimeException("请输入查询参数");
+        }
         SearchResults result = fqlSearchService.artifactQuery(regex, artifactName, metadataSearch, storageId, repositoryId, beginDate, endDate, sortField, sortOrder, limit, page);
         return ResponseEntity.ok(result);
     }
