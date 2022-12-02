@@ -13,6 +13,8 @@ import java.util.Optional;
 import java.util.Set;
 
 import com.veadan.folib.booters.PropertiesBooter;
+import com.veadan.folib.cloud.storage.s3fs.S3FileSystem;
+import com.veadan.folib.cloud.storage.s3fs.S3Path;
 import com.veadan.folib.providers.storage.StorageProvider;
 import com.veadan.folib.storage.Storage;
 
@@ -79,6 +81,10 @@ public abstract class StorageFileSystem
     }
 
     public Path getRootDirectory() {
+        if (target instanceof S3FileSystem) {
+            return new S3Path((S3FileSystem) target, storage.getBasedir());
+        }
+
         Path storagesRoot = Optional.ofNullable(propertiesBooter.getStorageBooterBasedir())
                                     .filter(p -> !p.trim().isEmpty())
                                     .map(p -> getTarget().getPath(p))

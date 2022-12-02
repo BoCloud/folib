@@ -87,7 +87,6 @@ public class Maven2FileSystemProvider extends LayoutFileSystemProvider
                         }
                     } catch (Throwable e) {
                         logger.error("S3Iterator delete error :{} ", e.getMessage());
-                        throw new IOException("S3Iterator delete error");
                     }
                 }
                 cleanupDirectory(repositoryPath, force);
@@ -206,6 +205,10 @@ public class Maven2FileSystemProvider extends LayoutFileSystemProvider
             else
             {
                 artifactBasePath = artifactBasePath.getParent();
+                if (artifactBasePath.getTarget().toString().startsWith("s3://")) {
+                    Files.delete(artifactBasePath.getTarget());
+                    return;
+                }
                 artifactIdLevelPath = artifactIdLevelPath.getParent();
             }
 
