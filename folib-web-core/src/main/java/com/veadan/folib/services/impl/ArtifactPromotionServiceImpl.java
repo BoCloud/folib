@@ -187,6 +187,13 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
             String targetRepostoryId = targetPath.split(":")[2].split("/")[2];
             String targetUrl = targetPath.split("/" + targetStorageId + "/" + targetRepostoryId + "/")[0];
             String targetUri = targetPath.split("/" + targetStorageId + "/" + targetRepostoryId + "/")[1];
+            if (srcUrl.equals(targetUrl)) {
+                Repository destRepository = repositoryManagementService.getStorage(targetStorageId).getRepository(targetRepostoryId);
+                Repository srcRepository = repositoryManagementService.getStorage(srcStorageId).getRepository(srcRepostoryId);
+                RepositoryPath srcPath = repositoryPathResolver.resolve(srcStorageId, srcRepostoryId, srcUri);
+                promotionUtil.executeHanleCopy(srcPath.getTarget().toString(), destRepository, srcRepository);
+                return ResponseEntity.ok("ok");
+            }
 
             // 判断节点参数是 做推 push  或者 拉取 pull
             String requestURL = request.getRequestURL().toString().replace(request.getRequestURI(), "");
@@ -287,33 +294,38 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
 
     @Override
     public ResponseEntity upload(MultipartFile[] files, String storageId, String repostoryId, String filePathMap) {
-        List<FutureTask<String>> listTask = new ArrayList<>();
-        Map<String, String> mapType = JSON.parseObject(filePathMap, Map.class);
-        for (MultipartFile file : files) {
-            String fileRelativePath = mapType.get(file.getOriginalFilename());
-            ArtifactUploadTask artifactUploadTask = new ArtifactUploadTask(storageId, repostoryId, file,
-                    repositoryManagementService, repositoryPathResolver, artifactManagementService, fileRelativePath);
-            FutureTask<String> task = new FutureTask<String>(artifactUploadTask);
-            listTask.add(task);
-            asyncRepositoryThreadPoolExecutor.submit(task);
-        }
-        StringBuilder temp = new StringBuilder();
-        for (FutureTask<String> task : listTask) {
-            try {
-                String resultMsg = task.get();
-                if (StringUtils.isNotBlank(resultMsg)) {
-                    temp.append(resultMsg).append(System.lineSeparator());
-                    log.error(resultMsg);
-                }
-
-            } catch (Exception e) {
-                temp.append(e.getMessage()).append(System.lineSeparator());
-                log.error("upload exception {}", e.getMessage());
+        try {
+            List<FutureTask<String>> listTask = new ArrayList<>();
+            Map<String, String> mapType = JSON.parseObject(filePathMap, Map.class);
+            for (MultipartFile file : files) {
+                String fileRelativePath = mapType.get(file.getOriginalFilename());
+                ArtifactUploadTask artifactUploadTask = new ArtifactUploadTask(storageId, repostoryId, file,
+                        repositoryManagementService, repositoryPathResolver, artifactManagementService, fileRelativePath);
+                FutureTask<String> task = new FutureTask<String>(artifactUploadTask);
+                listTask.add(task);
+                asyncRepositoryThreadPoolExecutor.submit(task);
             }
-        }
-        if (StringUtils.isNotBlank(temp.toString())) {
+            StringBuilder temp = new StringBuilder();
+            for (FutureTask<String> task : listTask) {
+                try {
+                    String resultMsg = task.get();
+                    if (StringUtils.isNotBlank(resultMsg)) {
+                        temp.append(resultMsg).append(System.lineSeparator());
+                        log.error(resultMsg);
+                    }
+
+                } catch (Exception e) {
+                    temp.append(e.getMessage()).append(System.lineSeparator());
+                    log.error("upload exception {}", e.getMessage());
+                }
+            }
+            if (StringUtils.isNotBlank(temp.toString())) {
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                        .body(temp.toString());
+            }
+        } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(temp.toString());
+                    .body(e.getMessage());
         }
         return ResponseEntity.ok("ok");
     }

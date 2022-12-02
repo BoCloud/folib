@@ -62,6 +62,7 @@ public class PermissionCheckInterceptor implements HandlerInterceptor {
 
         //是否在白名单中
         String ipAddr = IPUtil.getIpAddr(request);
+        log.info("当前调用ip {} ", ipAddr);
         if (getWhiteList().contains(ipAddr)) {
             log.info("{} 白名单调用 {}", ipAddr, handlerMethod.toString());
             return true;
