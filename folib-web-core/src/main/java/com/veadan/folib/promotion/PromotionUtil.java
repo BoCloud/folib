@@ -463,9 +463,8 @@ public class PromotionUtil {
             WebTarget resource = client.register(MultiPartWriter.class).target(url);
             Response response = resource.request(MediaType.APPLICATION_JSON).header("Mime-Version", "1.0").
                     post(Entity.entity(part, Boundary.addBoundary(MediaType.MULTIPART_FORM_DATA_TYPE)));
-            ResponseEntity responseEntity = response.readEntity(ResponseEntity.class);
-            if (responseEntity.getStatusCodeValue() != 200) {
-                throw new Exception(responseEntity.getBody().toString());
+            if (response.getStatus() != 200) {
+                throw new Exception("upload failed ");
             }
         } catch (Exception e) {
             throw new Exception(e.getMessage());
