@@ -11,7 +11,7 @@
           元数据
         </a-menu-item>
       </a-menu>
-      <a-button> 纬度 <a-icon type="down" /> </a-button>
+      <a-button> 维度 <a-icon type="down" /> </a-button>
     </a-dropdown>
   </form>
 </template>

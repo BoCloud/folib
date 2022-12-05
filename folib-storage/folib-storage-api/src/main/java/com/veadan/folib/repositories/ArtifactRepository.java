@@ -109,7 +109,6 @@ public class ArtifactRepository extends GremlinVertexRepository<Artifact> {
                                               String endDate,
                                               String sortField,
                                               String sortOrder) {
-        //docker布局
         com.veadan.folib.storage.repository.Repository repository = null;
         if (StringUtils.isNotBlank(storageId) && StringUtils.isNotBlank(repositoryId)) {
             repository = configurationManager.getRepository(storageId, repositoryId);
