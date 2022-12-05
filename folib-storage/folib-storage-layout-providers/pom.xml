@@ -39,6 +39,7 @@
         <module>folib-storage-rpm-layout-provider</module>
         <module>folib-storage-maven-layout</module>
         <module>folib-storage-docker-layout-provider</module>
+        <module>folib-storage-helm-layout-provider</module>
     </modules>
 
     <dependencies>
