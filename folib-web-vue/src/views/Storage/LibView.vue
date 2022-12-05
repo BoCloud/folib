@@ -49,6 +49,13 @@
                       </div>
                     </a-col>
                     <a-col :span="24" :md="12" style="display: flex; align-items: center; justify-content: flex-end">
+                      <a v-if="folibRepository.layout === 'rpm'">
+                        <small style="padding-right: 20px" @click="handleRpmUpload">
+                          上传
+                          <a-icon type="cloud-upload" />
+                        </small>
+                      </a>
+
                       <a v-if="folibRepository.layout === 'Raw'">
                         <small style="padding-right: 20px" @click="handleUpload">
                           上传
@@ -1181,6 +1188,48 @@
       </a-form>
     </a-modal>
 
+    <!--    rpm 上传表单 start-->
+    <a-modal v-model="showRpmUploadFormModal" :footer="null" :forceRender="true" :centered="true" title="上传"
+             on-ok="showRpmUploadFormModal = false">
+      <a-form :form="rpmUploadForm" ref="rpmUploadForm" layout="horizontal" @submit.prevent="handleRpmUploadSubmit">
+        <a-row :gutter="[24]">
+          <a-col :span="24">
+            <a-form-item class="tags-field mb-10" label="目标仓库" prop="repostoryId" :colon="false">
+              <a-input v-decorator="['repostoryId',
+                {
+                  rules: [
+                    { required: true, message: '请输入目标仓库' },
+                  ],
+                },
+              ]" :disabled="true" placeholder="请输入目标仓库">
+              </a-input>
+            </a-form-item>
+            <a-form-item label="选择文件">
+              <a-upload v-decorator="[
+                'files',
+                {
+                  rules: [
+                    { required: true, message: '请选择文件' },
+                  ],
+                  valuePropName: 'fileList',
+                  getValueFromEvent: normFile,
+                },
+              ]" name="files" :multiple="true" :beforeUpload="beforeUpload" list-type="text">
+                <a-button>
+                  <a-icon type="upload" />选择文件
+                </a-button>
+              </a-upload>
+            </a-form-item>
+          </a-col>
+          <a-col :span="24" class="text-center">
+            <a-button key="submit" class="px-30" size="small" type="primary" htmlType="submit">上传</a-button>
+            <a-button key="back" @click="uploadRpmFormModalClose()" class="px-30 ml-10" size="small">取消</a-button>
+          </a-col>
+        </a-row>
+      </a-form>
+    </a-modal>
+    <!--   rpm 上传表单 end -->
+
     <a-modal v-model="showUploadFormModal" :footer="null" :forceRender="true" :centered="true" title="上传"
       on-ok="showUploadFormModal = false">
       <a-form :form="uploadForm" ref="uploadForm" layout="horizontal" @submit.prevent="handleUploadSubmit">
@@ -1259,7 +1308,7 @@ import {
   formateDate
 } from '@/utils/layoutUtil'
 import { browse, getArtifact, viewArtifactFile, fql, scannerRules, insertOrUpdateRules, getDockerArtifact, deleteArtifact, getSeverity, repositoryVulnerabilityStatistics, getStoragesAndRepositories, } from '@/api/folib'
-import { artifactCopy, artifactMove, artifactUpload } from '@/api/artifact'
+import { artifactCopy, artifactMove, artifactUpload,rpmArtifactUpload } from '@/api/artifact'
 import { PrismEditor } from 'vue-prism-editor'
 import 'vue-prism-editor/dist/prismeditor.min.css' // import the styles somewhere
 // import highlighting library (you can use any library you want just return html string)
@@ -1469,10 +1518,12 @@ export default {
       locale: zhCN,
       showOperationFormModal: false,
       showUploadFormModal: false,
+      showRpmUploadFormModal: false,
       operationTitle: '',
       customTitle: '',
       operationForm: this.$form.createForm(this, { name: 'operation_form' }),
       uploadForm: this.$form.createForm(this, { name: 'upload_form' }),
+      rpmUploadForm: this.$form.createForm(this, { name: 'rpmUpload_form' }),
       repositories: [],
       storages: [],
       custom: false,
@@ -1889,6 +1940,17 @@ export default {
     dateConfirm() {
       this.search(this.artifactQuery.artifactName, 1)
     },
+    handleRpmUpload(){
+      this.rpmUploadForm.resetFields()
+      this.$nextTick(() => {
+        if (this.$refs.rpmUploadForm) {
+          this.rpmUploadForm.setFieldsValue({
+            repostoryId: this.folibRepository.id,
+          })
+        }
+      })
+      this.showRpmUploadFormModal = true
+    },
     handleUpload() {
       this.uploadForm.resetFields()
       this.$nextTick(() => {
@@ -1902,6 +1964,9 @@ export default {
     },
     uploadFormModalClose() {
       this.showUploadFormModal = false
+    },
+    uploadRpmFormModalClose() {
+      this.showRpmUploadFormModal = false
     },
     handleMenuClick(active) {
       this.operationForm.resetFields()
@@ -2000,6 +2065,34 @@ export default {
       }
       return e && e.fileList;
     },
+    handleRpmUploadSubmit(e){
+      e.preventDefault()
+      this.rpmUploadForm.validateFields((err, values) => {
+        if (!err) {
+          const rpmFormData = new FormData();
+          values.files.forEach(item => {
+            rpmFormData.append('files', item.originFileObj)
+          })
+          rpmArtifactUpload(
+              this.folibRepository.storageId,
+              this.folibRepository.id,
+              rpmFormData
+          ).then(res => {
+            this.successMsg("上传成功")
+            this.uploadRpmFormModalClose()
+            this.reload()
+          }).catch((err) => {
+            this.$notification["error"]({
+              message: err.response.data.error,
+              description: ""
+            })
+          }).finally(() => {
+          })
+        }
+      })
+      debugger
+    },
+
     handleUploadSubmit(e) {
       e.preventDefault()
       this.uploadForm.validateFields((err, values) => {

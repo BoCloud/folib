@@ -33,7 +33,9 @@ import java.util.Set;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
+import cn.hutool.extra.spring.SpringUtil;
 import com.veadan.folib.cloud.storage.s3fs.S3Path;
+import com.veadan.folib.services.ArtifactManagementService;
 import org.apache.commons.io.output.ProxyOutputStream;
 import com.veadan.folib.storage.repository.Repository;
 import org.slf4j.Logger;
@@ -317,9 +319,17 @@ public abstract class StorageFileSystemProvider
 
         RepositoryPath trashPath = getTrashPath(repositoryPath);
 
-        Files.move(repositoryPath.getTarget(),
-                   trashPath.getTarget(),
-                   StandardCopyOption.REPLACE_EXISTING);
+        try{
+            Files.move(repositoryPath.getTarget(),
+                    trashPath.getTarget(),
+                    StandardCopyOption.REPLACE_EXISTING);
+        }catch (Exception e){
+            ArtifactManagementService artifactManagementService= SpringUtil.getBean(ArtifactManagementService.class);
+            artifactManagementService.store( trashPath, Files.newInputStream(repositoryPath));
+            Files.move(repositoryPath.getTarget(),
+                    trashPath.getTarget(),
+                    StandardCopyOption.REPLACE_EXISTING);
+        }
 
         if (force && repository.allowsForceDeletion())
         {
