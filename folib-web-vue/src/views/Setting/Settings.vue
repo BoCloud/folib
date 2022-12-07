@@ -805,7 +805,7 @@
         <a-row :gutter="[24]">
           <a-col :span="24">
             <a-form-model-item class="mb-10" label="元数据KEY" :colon="false" prop="key">
-              <a-input placeholder="请输入元数据KEY" v-model="metadataForm.key" />
+              <a-input :disabled="handlerMetadataType!==1" placeholder="请输入元数据KEY" v-model="metadataForm.key" />
             </a-form-model-item>
           </a-col>
           <a-col :span="24">
