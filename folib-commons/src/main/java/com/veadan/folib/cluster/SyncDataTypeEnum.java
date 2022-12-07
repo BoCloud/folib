@@ -4,7 +4,8 @@ public enum SyncDataTypeEnum {
 
     STORAGE(1),
     REPOSITORY(2),
-    SECURITY_POLICY(3);
+    SECURITY_POLICY(3),
+    METADATA(4);
 
     private Integer value;
 

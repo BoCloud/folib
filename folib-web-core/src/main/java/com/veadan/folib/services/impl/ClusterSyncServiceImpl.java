@@ -247,7 +247,7 @@ public class ClusterSyncServiceImpl implements ClusterSyncService {
                         new ClusterDataSyncTaskPo(UUID.randomUUID().toString(),
                                 ipProperties.getFolibLockIp(),
                                 JSON.toJSONString(syncMetadataDto),
-                                SyncDataTypeEnum.SECURITY_POLICY.getValue(),
+                                SyncDataTypeEnum.METADATA.getValue(),
                                 SyncDataStatusEnum.WILL_EXECUTE_STATUS.getStatus()
                                 , nodeUrl, BigInteger.valueOf(System.currentTimeMillis())
                         ));
