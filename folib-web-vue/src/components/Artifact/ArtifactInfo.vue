@@ -151,7 +151,6 @@ export default ({
 		},
 	},
 	created() {
-		debugger
 		this.artifactInfo
 		this.handlerArtifactInfo()
 	},

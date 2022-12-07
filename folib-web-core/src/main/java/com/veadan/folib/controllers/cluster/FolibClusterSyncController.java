@@ -1,8 +1,10 @@
 package com.veadan.folib.controllers.cluster;
 
 
+import com.veadan.folib.cluster.SyncMetadataEnum;
 import com.veadan.folib.configuration.MutableSecurityPolicyConfiguration;
 import com.veadan.folib.controllers.BaseController;
+import com.veadan.folib.controllers.cluster.dto.SyncMetadataDto;
 import com.veadan.folib.controllers.cluster.dto.SyncRepositoryDto;
 import com.veadan.folib.controllers.cluster.dto.SyncStorageDto;
 import com.veadan.folib.services.StorageManagementService;
@@ -57,6 +59,22 @@ public class FolibClusterSyncController extends BaseController {
             return getBadRequestResponseEntity(e.getMessage(), "");
         }
         return ResponseEntity.ok("sync securityPolicyConfiguration ok");
+    }
+
+    @PostMapping("syncMetadataConfiguration")
+    public ResponseEntity syncMetadataConfiguration(@RequestBody SyncMetadataDto syncMetadataDto) {
+        try {
+            if (SyncMetadataEnum.ADD_OR_UPDATE.getType().equals(syncMetadataDto.getSyncMetadataEnum().getType())) {
+                configurationManagementService.addOrUpdateMetadataConfiguration(syncMetadataDto.getMutableMetadataConfiguration());
+            } else if (SyncMetadataEnum.DELETE.getType().equals(syncMetadataDto.getSyncMetadataEnum().getType())) {
+                configurationManagementService.deleteMetadataConfig(syncMetadataDto.getMutableMetadataConfiguration().getKey());
+            }
+            logger.info("sycn syncMetadataConfiguration success");
+        } catch (Exception e) {
+            logger.error("sync syncMetadataConfiguration error {}", e.getMessage());
+            return getBadRequestResponseEntity(e.getMessage(), "");
+        }
+        return ResponseEntity.ok("sync syncMetadataConfiguration ok");
     }
 
     @PostMapping("syncRepository")

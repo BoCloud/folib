@@ -29,7 +29,7 @@
             <template #overlay>
               <a-menu slot="overlay" @click="handleMenuClick">
                 <a-menu-item key="edit"> <a-icon type="edit" />编辑 </a-menu-item>
-                <a-menu-item key="delete"> <a-icon type="delete" />删除</a-menu-item>
+                <a-menu-item key="delete" v-if="(repository.allowsDelete || repository.allowsForceDeletion)"> <a-icon type="delete" />删除</a-menu-item>
               </a-menu>
             </template>
           </a-dropdown>
@@ -79,6 +79,10 @@
 			due: {
 				type: String,
 				default: "",
+			},
+			repository: {
+				type: Object,
+				default: () => {},
 			},
 		},
 		data() {

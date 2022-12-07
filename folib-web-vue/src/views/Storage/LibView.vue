@@ -174,8 +174,8 @@
                             <a-icon type="swap" />移动
                           </a-menu-item>
                           <a-menu-item key="4">
-                            <a-popconfirm title="确定要删除吗？" placement="topLeft" okType="danger" ok-text="确定" cancel-text="取消"
-                              @confirm="deletePackageHandle">
+                            <a-popconfirm title="确定要删除吗？" placement="topLeft" okType="danger" ok-text="确定"
+                              cancel-text="取消" @confirm="deletePackageHandle">
                               <a-icon type="delete" />删除
                             </a-popconfirm>
                           </a-menu-item>
@@ -215,10 +215,12 @@
                             <a-icon type="swap" />移动
                           </a-menu-item>
                           <a-menu-item key="4">
-                            <a-icon type="delete" />删除
+                            <a-popconfirm title="确定要删除吗？" placement="topLeft" okType="danger" ok-text="确定"
+                              cancel-text="取消" @confirm="deletePackageHandle">
+                              <a-icon type="delete" />删除
+                            </a-popconfirm>
                           </a-menu-item>
-                          <a-menu-item key="5"
-                            v-if="currentFileDetial && currentFileDetial.artifact && currentFileDetial.artifact.artifactFileExists">
+                          <a-menu-item key="5" v-if="(currentTreeNode && currentTreeNode.type === 'file')">
                             <a-icon type="database" />元数据
                           </a-menu-item>
                         </a-menu>
@@ -316,7 +318,10 @@
                       </span>
                     </div>
                     <div slot="value" slot-scope="text, record">
-                      <span v-if="record.type !== 'TEXT' && record.type !== 'MD' && record.type !== 'JSON'">
+                      <span v-if="record.type === 'NUMERICAL'">
+                        {{ fixedNumber(record.value) }}
+                      </span>
+                      <span v-if="record.type !== 'TEXT' && record.type !== 'MD' && record.type !== 'JSON' && record.type !== 'NUMERICAL'">
                         {{ record.value }}
                       </span>
                       <a-button type="link" size="small" v-if="record.type === 'TEXT' || record.type === 'MD'"
@@ -984,9 +989,8 @@
             如下命令：
           </p>
 
-          <prism-editor class="my-editor height-300" :value="'python3 -m twine upload --username admin --password password --repository-url ' + baseUrl + 'storages/' + folibRepository.storageId + '/' + folibRepository.id + '\n' +
-          '\n' +
-          'pypi-releases  dist/* --verbose'" :highlight="highlighterHandle" :line-numbers="false" :readonly="true">
+          <prism-editor class="my-editor height-300" :value="'python3 -m twine upload --username admin --password folib@v587 --repository-url ' + baseUrl + 'storages/' + folibRepository.storageId + '/' + folibRepository.id +
+          ' dist/* --verbose'" :highlight="highlighterHandle" :line-numbers="false" :readonly="true">
           </prism-editor>
         </a-timeline-item>
         <a-timeline-item color="primary">
@@ -1384,6 +1388,7 @@
           <a-col :span="24">
             <a-form-model-item class="mb-30" label="元数据值" :colon="false" prop="value">
               <a-input v-if="metadataInput" placeholder="请输入元数据值" v-model="metadataForm.value" />
+              <a-input-number v-if="metadataNumber" style="width: 100%;" placeholder="请输入元数据值" v-model="metadataForm.value" />
               <quill-editor v-if="metadataEditor" v-model="metadataForm.value" :options="quillOptions"
                 style="height: 300px;" />
               <prism-editor class="metadata-prism-editor" v-if="prismEditor" v-model="metadataForm.value"
@@ -1650,6 +1655,7 @@ export default {
         value: undefined,
       },
       metadataInput: true,
+      metadataNumber: false,
       metadataEditor: false,
       prismEditor: false,
       metadataList: [],
@@ -1822,9 +1828,9 @@ export default {
         endDate: this.artifactQuery.endDate,
         regex: false,
       }
-      if (this.folibRepository.layout === 'Docker') {
+      if (this.artifactQuery.artifactName && this.folibRepository.layout === 'Docker') {
         params.regex = true
-        params.artifactName = ".*" + this.artifactQuery.artifactName + "((.(?!blobs/sha256|manifest/sha256))*.)";
+        // params.artifactName = ".*" + this.artifactQuery.artifactName + "((.(?!blobs/sha256|manifest/sha256)).*)"
       }
       fql(params).then(res => {
         this.searchData = res.artifact
@@ -1876,7 +1882,6 @@ export default {
       return getLayoutType(this.folibRepository)
     },
     getBrowse() {
-
       browse(this.folibRepository.storageId, this.folibRepository.id, '').then(
         res => {
           const d = res.directories
@@ -1899,7 +1904,6 @@ export default {
     onLoadData(treeNode) {
       this.currentFileDetial = null
       if (this.folibRepository.layout === 'Docker') {
-
         return new Promise(resolve => {
           if (treeNode.dataRef.children) {
             resolve()
@@ -1929,43 +1933,41 @@ export default {
             resolve()
           })
         })
-      } else {
-        return new Promise(resolve => {
-          if (treeNode.dataRef.children) {
-            resolve()
-            return
-          }
-          browse(
-            this.folibRepository.storageId,
-            this.folibRepository.id,
-            treeNode.dataRef.artifactPath
-          ).then(res => {
-            if (res.directories.length > 0) {
-              const d = res.directories
-              d.forEach((item, index, d) => {
-                item.type = 'dir'
-              })
-              treeNode.dataRef.children = d
-            } else if (res.files.length > 0) {
-              const a = res.files
-              a.forEach((item, index, a) => {
-                item.isLeaf = true
-                item.type = 'file'
-              })
-              treeNode.dataRef.children = a
-            }
-
-            this.treeData = [...this.treeData]
-            resolve()
-          })
-        })
-
       }
+
+      return new Promise(resolve => {
+        if (treeNode.dataRef.children) {
+          resolve()
+          return
+        }
+        browse(
+          this.folibRepository.storageId,
+          this.folibRepository.id,
+          treeNode.dataRef.artifactPath
+        ).then(res => {
+          if (res.directories.length > 0) {
+            const d = res.directories
+            d.forEach((item, index, d) => {
+              item.type = 'dir'
+            })
+            treeNode.dataRef.children = d
+          } else if (res.files.length > 0) {
+            const a = res.files
+            a.forEach((item, index, a) => {
+              item.isLeaf = true
+              item.type = 'file'
+            })
+            treeNode.dataRef.children = a
+          }
+
+          this.treeData = [...this.treeData]
+          resolve()
+        })
+      })
 
     },
     treeSelect(key, e) {
       this.currentTreeNode = e.node.dataRef
-
       if (this.currentTreeNode.type === 'file') {
         getArtifact(
           this.repositoryType,
@@ -1978,6 +1980,7 @@ export default {
             this.changeCodeTye(this.currentFileDetial.snippets[0])
           }
           this.currentManifest = res.manifestConfig
+          this.handlerRespMetadata(res)
         })
         this.handlerSeverity()
       } else if (this.currentTreeNode.type === 'dir') {
@@ -2238,17 +2241,29 @@ export default {
     metadataTypeChange(value) {
       let editorList = ["TEXT", "MD"]
       let prismEditorList = ["JSON"]
+      let numberList = ["NUMERICAL"]
       if (editorList.indexOf(value) !== -1) {
         this.metadataEditor = true
         this.metadataInput = false
+        this.metadataNumber = false
         this.prismEditor = false
       } else if (prismEditorList.indexOf(value) !== -1) {
         this.prismEditor = true
         this.metadataInput = false
+        this.metadataNumber = false
+        this.metadataEditor = false
+      } else if (numberList.indexOf(value) !== -1) {
+        if (this.handlerMetadataType === 1) {
+          this.metadataForm.value = undefined
+        }
+        this.metadataNumber = true
+        this.metadataInput = false
+        this.prismEditor = false
         this.metadataEditor = false
       } else {
         this.metadataInput = true
         this.metadataEditor = false
+        this.metadataNumber = false
         this.prismEditor = false
       }
     },
@@ -2359,6 +2374,7 @@ export default {
       }
       this.metadataInput = true
       this.metadataEditor = false
+      this.metadataNumber = false
       this.prismEditor = false
     },
     metadataHandler(type, metadata) {
@@ -2387,6 +2403,22 @@ export default {
       this.metadataFormReset()
       this.showMetadataHandler = false
     },
+    handlerRespMetadata(res) {
+      let metadataList = []
+      if (res.artifact && res.artifact.metadata && res.artifact.metadata.length > 0) {
+        let metadataJson = JSON.parse(res.artifact.metadata)
+        for (let key in metadataJson) {
+          let flag = this.metadataConfigList.some(metadataConfig => !metadataConfig.viewShow && metadataConfig.key === key)
+          if (flag) {
+            metadataJson[key].viewShow = false
+          }
+          let metadata = Object.assign({}, metadataJson[key])
+          metadata.key = key
+          metadataList.push(metadata)
+        }
+      }
+      this.metadataList = metadataList
+    },
     getMetadata() {
       getArtifact(
         this.repositoryType,
@@ -2394,21 +2426,8 @@ export default {
         this.currentTreeNode.repositoryId,
         this.currentTreeNode.artifactPath
       ).then(res => {
-        if (res.artifact && res.artifact.metadata && res.artifact.metadata.length > 0) {
-          let metadataJson = JSON.parse(res.artifact.metadata)
-          let metadataList = []
-          for (let key in metadataJson) {
-            let flag = this.metadataConfigList.some(metadataConfig => !metadataConfig.viewShow && metadataConfig.key === key)
-            if (flag) {
-              metadataJson[key].viewShow = false
-            }
-            let metadata = Object.assign({}, metadataJson[key])
-            metadata.key = key
-            metadataList.push(metadata)
-          }
-          this.metadataList = metadataList
-          this.$forceUpdate()
-        }
+        this.handlerRespMetadata(res)
+        this.$forceUpdate()
       })
     },
     metadataHandlerConfirm() {
@@ -2519,6 +2538,13 @@ export default {
     },
     metadataPrismEditorDrawerClose() {
       this.metadataPrismEditorDrawerVisible = false
+    },
+    fixedNumber(val) {      
+      if (val) {
+        let newVal = new Number(val)
+        return newVal
+      }
+      return 0
     }
   }
 }
@@ -2657,7 +2683,7 @@ $md: 768px;
 }
 
 .metadata-prism-editor {
-  background: rgb(22, 66, 138);
+  background: black;
   border-radius: 4px;
   color: #e8e8e8;
   height: 300px;

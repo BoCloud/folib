@@ -109,7 +109,7 @@
           <a-col :span="8" class="mb-24" v-for="(item, index) in repositories" :key="index">
             <!-- Project Card -->
             <CardProjectFolib :title=item.id :logo="'images/folib/' + getLayoutType(item) + '.svg'"
-              :team="['images/folib/' + item.type + '.svg']" :participants="item.type" :due="item.policy"
+              :team="['images/folib/' + item.type + '.svg']" :participants="item.type" :due="item.policy" :repository="item"
               @handleMenuClick="handleMenuClick" @goToDetial="goToDetial(item)">
               <a-tooltip>
                 <template slot="title">
@@ -350,8 +350,8 @@
             <a-button key="back" @click="deleteFormVisible = false" class="px-30 ml-10" size="small">取消</a-button>
           </a-col>
           <a-col :span="12" class="text-right">
-            <a-button @click="delRepositoryResponseEntity" class="px-30 ml-10" type="danger" size="small">删除</a-button>
-            <a-button @click="delRepositoryResponseEntityForce" class="px-30 ml-10" type="dashed" size="small">强制删除
+            <a-button v-if="deleteBtnVisible" @click="delRepositoryResponseEntity" class="px-30 ml-10" type="danger" size="small">删除</a-button>
+            <a-button v-if="forceDeleteBtnVisible" @click="delRepositoryResponseEntityForce" class="px-30 ml-10" type="dashed" size="small">强制删除
             </a-button>
           </a-col>
         </a-row>
@@ -1080,6 +1080,8 @@ export default {
       checkboxOptions: ['Design', 'Code', 'Develop'],
       willDelId: null,
       deleteFormVisible: false,
+      deleteBtnVisible: false,
+      forceDeleteBtnVisible: false,
       // Step's form object
       form: this.$form.createForm(this, { name: 'steps' }),
       folibRepositoryIds: "",
@@ -1837,15 +1839,26 @@ export default {
       if (e === "edit" && title !== null) {
         this.getRepositoryResponseEntity(title)
       } else if (e === "delete" && title !== null) {
-        this.willDelId = title
-        this.deleteFormVisible = true
-        if (this.$refs.delForm) {
-          this.delForm.setFieldsValue({
-            id: ''
-          })
-        }
+        getRepositoryResponseEntity(this.currentStorage.id, title).then(res => {
+          if (res.id === title) {
+            this.willDelId = title
+            this.deleteBtnVisible = false
+            if (res.allowsDelete) {
+              this.deleteBtnVisible = true
+            }
+            this.forceDeleteBtnVisible = false
+            if (res.allowsForceDeletion) {
+              this.forceDeleteBtnVisible = true
+            }
+            this.deleteFormVisible = true
+            if (this.$refs.delForm) {
+              this.delForm.setFieldsValue({
+                id: ''
+              })
+            }
+          }
+        })
       }
-
     },
     goToDetial(item) {
       storage.set("libView_repository", { item, baseUrl: this.baseUrl })

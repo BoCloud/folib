@@ -35,10 +35,7 @@ import org.springframework.stereotype.Repository;
 import javax.inject.Inject;
 import javax.transaction.Transactional;
 import java.time.LocalDateTime;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 
 
 @Repository
@@ -113,7 +110,11 @@ public class ArtifactRepository extends GremlinVertexRepository<Artifact> {
         if (StringUtils.isNotBlank(storageId) && StringUtils.isNotBlank(repositoryId)) {
             repository = configurationManager.getRepository(storageId, repositoryId);
         }
-        Long count = buildEntityTraversal(regex, artifactName, metadataSearch, storageId, repositoryId, beginDate, endDate, sortField, sortOrder).count().tryNext().orElse(0L);
+        Long zero = 0L;
+        Long count = buildEntityTraversal(regex, artifactName, metadataSearch, storageId, repositoryId, beginDate, endDate, sortField, sortOrder).count().tryNext().orElse(zero);
+        if (zero.equals(count)) {
+            return new PageImpl<>(Collections.emptyList(), pagination, count);
+        }
         long low = pagination.getPageNumber() * pagination.getPageSize();
         long high = (pagination.getPageNumber() + 1) * pagination.getPageSize();
 
@@ -147,6 +148,7 @@ public class ArtifactRepository extends GremlinVertexRepository<Artifact> {
     }
 
     public Map<Object, Object> countArtifactByStorageIdAndRepositoryId(String storageId, String repositoryId) {
+        //TODO 分布式下有问题
         String key = "countArtifactByStorageIdAndRepositoryId-%s-%s";
         key = String.format(key, storageId, repositoryId);
         String cacheValue = LocalCacheUtils.get(key);
@@ -183,21 +185,23 @@ public class ArtifactRepository extends GremlinVertexRepository<Artifact> {
                                                                  String sortField,
                                                                  String sortOrder) {
         EntityTraversal<Vertex, Vertex> entityTraversal = g().V().hasLabel(Vertices.ARTIFACT);
+        if (StringUtils.isNotBlank(storageId)) {
+            entityTraversal = entityTraversal.has(Properties.STORAGE_ID, storageId);
+        }
+        if (StringUtils.isNotBlank(repositoryId)) {
+            entityTraversal = entityTraversal.has(Properties.REPOSITORY_ID, repositoryId);
+        }
         if (StringUtils.isNotBlank(artifactName)) {
             if (Boolean.TRUE.equals(regex)) {
-                entityTraversal = entityTraversal.has(Properties.UUID, Text.textRegex(artifactName));
+                entityTraversal = entityTraversal.has(Properties.UUID, Text.textContains(artifactName));
+                entityTraversal = entityTraversal.not(__.has(Properties.UUID, Text.textContains("blobs/sha256")));
+                entityTraversal = entityTraversal.not(__.has(Properties.UUID, Text.textContains("manifest/sha256")));
             } else {
                 entityTraversal = entityTraversal.has(Properties.UUID, Text.textContains(artifactName));
             }
         }
         if (StringUtils.isNotBlank(metadataSearch)) {
             entityTraversal = entityTraversal.has(Properties.METADATA, Text.textContains(metadataSearch));
-        }
-        if (StringUtils.isNotBlank(storageId)) {
-            entityTraversal = entityTraversal.has(Properties.STORAGE_ID, storageId);
-        }
-        if (StringUtils.isNotBlank(repositoryId)) {
-            entityTraversal = entityTraversal.has(Properties.REPOSITORY_ID, repositoryId);
         }
         if (StringUtils.isNotBlank(sortField) && StringUtils.isNotBlank(sortOrder)) {
             entityTraversal = entityTraversal.order().by(sortField, Order.valueOf(sortOrder));

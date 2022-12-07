@@ -8,18 +8,22 @@ import com.alibaba.excel.write.metadata.fill.FillConfig;
 import com.alibaba.fastjson.JSONObject;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
+import com.veadan.folib.cloud.storage.s3fs.S3Iterator;
+import com.veadan.folib.cloud.storage.s3fs.S3Path;
+import com.veadan.folib.cluster.SyncMetadataEnum;
 import com.veadan.folib.configuration.MutableMetadataConfiguration;
 import com.veadan.folib.controllers.ResponseMessage;
+import com.veadan.folib.controllers.cluster.dto.SyncMetadataDto;
 import com.veadan.folib.domain.Artifact;
 import com.veadan.folib.domain.ArtifactMetadata;
+import com.veadan.folib.domain.DirectoryListing;
+import com.veadan.folib.domain.FileContent;
 import com.veadan.folib.forms.artifact.ArtifactMetadataForm;
 import com.veadan.folib.gremlin.entity.vo.ArtifactVo;
 import com.veadan.folib.providers.io.RepositoryPath;
+import com.veadan.folib.providers.layout.DockerLayoutProvider;
 import com.veadan.folib.repositories.ArtifactRepository;
-import com.veadan.folib.services.ArtifactResolutionService;
-import com.veadan.folib.services.ArtifactService;
-import com.veadan.folib.services.ArtifactWebService;
-import com.veadan.folib.services.ConfigurationManagementService;
+import com.veadan.folib.services.*;
 import com.veadan.folib.storage.repository.Repository;
 import com.veadan.folib.util.FileSizeConvertUtils;
 import lombok.extern.slf4j.Slf4j;
@@ -27,6 +31,7 @@ import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.springframework.beans.BeanUtils;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 
 import javax.inject.Inject;
@@ -35,6 +40,7 @@ import javax.transaction.Transactional;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URLEncoder;
+import java.nio.file.Path;
 import java.text.SimpleDateFormat;
 import java.time.ZoneId;
 import java.util.*;
@@ -56,6 +62,13 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
 
     @Inject
     private ConfigurationManagementService configurationManagementService;
+
+    @Inject
+    private ClusterSyncService clusterSyncService;
+
+    @Inject
+    @Qualifier("browseRepositoryDirectoryListingService")
+    private DirectoryListingService directoryListingService;
 
     @Override
     public void exportExcel(String vulnerabilityUuid, String storageId, String repositoryId, HttpServletResponse response) throws IOException {
@@ -114,11 +127,15 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
         MutableMetadataConfiguration mutableMetadataConfiguration = MutableMetadataConfiguration.builder().build();
         BeanUtils.copyProperties(artifactMetadataForm, mutableMetadataConfiguration);
         configurationManagementService.addOrUpdateMetadataConfiguration(mutableMetadataConfiguration);
+        //向其他节点同步
+        syncDataMetadataConfiguration(mutableMetadataConfiguration, SyncMetadataEnum.ADD_OR_UPDATE);
     }
 
     @Override
     public void globalSettingDeleteMetadata(ArtifactMetadataForm artifactMetadataForm) throws IOException {
         configurationManagementService.deleteMetadataConfig(artifactMetadataForm.getKey());
+        //向其他节点同步
+        syncDataMetadataConfiguration(MutableMetadataConfiguration.builder().key(artifactMetadataForm.getKey()).build(), SyncMetadataEnum.ADD_OR_UPDATE);
     }
 
     @Override
@@ -133,8 +150,7 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
     @Override
     public String saveArtifactMetadata(ArtifactMetadataForm artifactMetadataForm) {
         try {
-            RepositoryPath resolvePath = resolvePath(artifactMetadataForm.getStorageId(), artifactMetadataForm.getRepositoryId(), artifactMetadataForm.getArtifactPath());
-            Artifact artifact = resolvePath.getArtifactEntry();
+            Artifact artifact = resolvePath(artifactMetadataForm.getStorageId(), artifactMetadataForm.getRepositoryId(), artifactMetadataForm.getArtifactPath());
             JSONObject metadataJson = getMetadata(artifact);
             if (Objects.isNull(metadataJson)) {
                 metadataJson = new JSONObject();
@@ -159,8 +175,7 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
     @Override
     public String updateArtifactMetadata(ArtifactMetadataForm artifactMetadataForm) {
         try {
-            RepositoryPath resolvePath = resolvePath(artifactMetadataForm.getStorageId(), artifactMetadataForm.getRepositoryId(), artifactMetadataForm.getArtifactPath());
-            Artifact artifact = resolvePath.getArtifactEntry();
+            Artifact artifact = resolvePath(artifactMetadataForm.getStorageId(), artifactMetadataForm.getRepositoryId(), artifactMetadataForm.getArtifactPath());
             JSONObject metadataJson = getMetadata(artifact);
             String key = artifactMetadataForm.getKey();
             if (Objects.nonNull(metadataJson) && metadataJson.containsKey(key)) {
@@ -180,8 +195,7 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
     @Override
     public void deleteArtifactMetadata(ArtifactMetadataForm artifactMetadataForm) {
         try {
-            RepositoryPath resolvePath = resolvePath(artifactMetadataForm.getStorageId(), artifactMetadataForm.getRepositoryId(), artifactMetadataForm.getArtifactPath());
-            Artifact artifact = resolvePath.getArtifactEntry();
+            Artifact artifact = resolvePath(artifactMetadataForm.getStorageId(), artifactMetadataForm.getRepositoryId(), artifactMetadataForm.getArtifactPath());
             JSONObject metadataJson = getMetadata(artifact);
             if (Objects.nonNull(metadataJson) && metadataJson.containsKey(artifactMetadataForm.getKey())) {
                 metadataJson.remove(artifactMetadataForm.getKey());
@@ -202,12 +216,52 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
      * @throws IOException 异常
      */
     private JSONObject getMetadata(Artifact artifact) throws IOException {
+        if (Objects.isNull(artifact)) {
+            return null;
+        }
         String metadata = artifact.getMetadata();
         JSONObject metadataJson = null;
         if (StringUtils.isNotBlank(metadata)) {
             metadataJson = JSONObject.parseObject(metadata);
         }
         return metadataJson;
+    }
+
+    /**
+     * 获取docker Artifact 非镜像版本Artifact信息
+     *
+     * @param artifactName 制品名称
+     * @param storageId    存储空间名称
+     * @param repositoryId 仓库名称
+     * @return docker Artifact 非镜像版本Artifact信息
+     * @throws IOException 异常
+     */
+    private Artifact getDockerArtifact(String artifactName, String storageId, String repositoryId) throws IOException {
+        RepositoryPath repositoryPath = artifactResolutionService.resolvePath(storageId, repositoryId, artifactName);
+        Path path = repositoryPath.getTarget();
+        String artifactPath = "";
+        if (path instanceof S3Path) {
+            //S3存储
+            S3Path s3Path = (S3Path) path;
+            S3Iterator iterators = new S3Iterator(s3Path);
+            S3Path imagePath = null;
+            while (iterators.hasNext()) {
+                S3Path itemS3Path = iterators.next();
+                if (!itemS3Path.endsWith(".sha256")) {
+                    imagePath = itemS3Path;
+                    break;
+                }
+            }
+            if (Objects.nonNull(imagePath)) {
+                artifactPath = imagePath.getKey().replace(String.format("%s/%s/", repositoryPath.getStorageId(), repositoryPath.getRepositoryId()), "");
+            }
+        } else {
+            DirectoryListing directoryListing = directoryListingService.fromRepositoryPath(repositoryPath);
+            List<FileContent> fileContents = directoryListing.getFiles().stream().filter(file -> !(file.getName().endsWith(".sha256"))).collect(Collectors.toList());
+            FileContent fileContent = fileContents.get(0);
+            artifactPath = fileContent.getArtifactPath();
+        }
+        return artifactRepository.findOneArtifact(storageId, repositoryId, artifactPath);
     }
 
     /***
@@ -218,7 +272,30 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
      * @return RepositoryPath
      * @throws Exception 异常
      */
-    private RepositoryPath resolvePath(String storageId, String repositoryId, String artifactPath) throws Exception {
-        return artifactResolutionService.resolvePath(storageId, repositoryId, artifactPath);
+    private Artifact resolvePath(String storageId, String repositoryId, String artifactPath) throws Exception {
+        RepositoryPath repositoryPath = artifactResolutionService.resolvePath(storageId, repositoryId, artifactPath);
+        Artifact artifact = Objects.nonNull(repositoryPath) ? repositoryPath.getArtifactEntry() : null;
+        if (Objects.isNull(artifact)) {
+            //兼容已存在数据的docker布局仓库
+            Repository repository = configurationManagementService.getConfiguration().getRepository(storageId, repositoryId);
+            if (DockerLayoutProvider.ALIAS.equalsIgnoreCase(repository.getLayout())) {
+                //docker
+                artifact = getDockerArtifact(artifactPath, storageId, repositoryId);
+                return artifact;
+            }
+        }
+        return artifact;
+    }
+
+    /**
+     * 向其他集群节点同步元数据配置
+     *
+     * @param mutableMetadataConfiguration 元数据
+     * @param syncMetadataEnum             枚举类型
+     */
+    private void syncDataMetadataConfiguration(MutableMetadataConfiguration mutableMetadataConfiguration, SyncMetadataEnum syncMetadataEnum) {
+        SyncMetadataDto syncMetadataDto = SyncMetadataDto.builder().syncMetadataEnum(syncMetadataEnum).
+                mutableMetadataConfiguration(mutableMetadataConfiguration).build();
+        clusterSyncService.syncMetadataConfiguration(syncMetadataDto);
     }
 }
