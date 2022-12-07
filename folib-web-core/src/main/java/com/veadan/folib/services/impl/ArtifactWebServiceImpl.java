@@ -135,7 +135,7 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
     public void globalSettingDeleteMetadata(ArtifactMetadataForm artifactMetadataForm) throws IOException {
         configurationManagementService.deleteMetadataConfig(artifactMetadataForm.getKey());
         //向其他节点同步
-        syncDataMetadataConfiguration(MutableMetadataConfiguration.builder().key(artifactMetadataForm.getKey()).build(), SyncMetadataEnum.ADD_OR_UPDATE);
+        syncDataMetadataConfiguration(MutableMetadataConfiguration.builder().key(artifactMetadataForm.getKey()).build(), SyncMetadataEnum.DELETE);
     }
 
     @Override
