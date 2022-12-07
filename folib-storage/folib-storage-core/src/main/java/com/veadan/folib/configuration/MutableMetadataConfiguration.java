@@ -1,0 +1,36 @@
+package com.veadan.folib.configuration;
+
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+import javax.annotation.concurrent.Immutable;
+import java.io.Serializable;
+
+/**
+ * @author leipenghui
+ */
+@Data
+@AllArgsConstructor
+@NoArgsConstructor
+@Builder
+public class MutableMetadataConfiguration
+        implements Serializable {
+
+    /**
+     * 元数据类型
+     *
+     * @see com.veadan.folib.enums.ArtifactMetadataEnum
+     */
+    private String type;
+    /**
+     * 前端是否展示
+     */
+    private Integer viewShow;
+    /**
+     * 元数据key
+     */
+    private String key;
+
+}

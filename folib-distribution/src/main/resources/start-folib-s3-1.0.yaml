@@ -1,7 +1,7 @@
 version: "3.8"  #指定本yaml依从的compose哪个版本制定的
 services:
   mysql:  #服务名称
-    container_name: mysql #容器名称，可与服务报名保持一致
+    container_name: mysql #容器名称，可与服务名保持一致
     image: 58.210.154.140:2477/folib-common/folib-docker/mysql5.7:latest
     environment:
       - MYSQL_ROOT_PASSWORD=folib@v587
@@ -15,7 +15,7 @@ services:
     ports:
       - 3306:3306
   elasticsearch:  #服务名称
-    container_name: elasticsearch #容器名称，可与服务报名保持一致
+    container_name: elasticsearch #容器名称，可与服务名保持一致
     image: 58.210.154.140:2477/folib-common/folib-docker/elasticsearch:7.3.1
     environment:
       - node.name=node-1 #节点名称，与另外一个节点区分开
@@ -41,7 +41,7 @@ services:
       - 9200:9200 #重要：该集群对外出去的http端口号
       - 9300:9300 #重要：该集群对外映射出去的transport端口号
   folib-mirror:  #服务名称
-    container_name: folib-mirror #容器名称，可与服务报名保持一致
+    container_name: folib-mirror #容器名称，可与服务名保持一致
     image: 58.210.154.140:2477/folib-common/folib-docker/folib-mirror:1.1
     volumes:
       - ~/folib/mirror:/usr/local/apache2/htdocs
@@ -50,7 +50,7 @@ services:
     ports:
       - 8919:80
   minio:  #服务名称
-    container_name: minio #容器名称，可与服务报名保持一致
+    container_name: minio #容器名称，可与服务名保持一致
     image: 58.210.154.140:2477/folib-common/folib-docker/minio:1.0
     environment:
       - MINIO_ROOT_USER=admin
@@ -66,7 +66,7 @@ services:
       - 9090:9090
     command: server --console-address ':9090' /data
   folib-server:  #服务名称
-    container_name: folib-server #容器名称，可与服务报名保持一致
+    container_name: folib-server #容器名称，可与服务名保持一致
     image: 58.210.154.140:2477/folib-common/folib-docker/folib-server:1.0
     environment:
       - RUN_WORKDIR=/opt/folib

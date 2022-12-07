@@ -29,10 +29,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -511,8 +508,12 @@ public class RestClient extends ArtifactClient {
         String url = getContextBaseUrl() + "/api/fql";
         if (Boolean.TRUE.equals(searchArtifact.getRegex()) && StringUtils.isNotBlank(searchArtifact.getArtifactName())) {
             //开启正则
-            String regex = ".*%s((.(?!blobs/sha256|manifest/sha256))*.)";
-            regex = String.format(regex, searchArtifact.getArtifactName());
+            String regex = "(%s)(.*%s((.(?!blobs/sha256|manifest/sha256))*.)?)";
+            String prefix = searchArtifact.getStorageId();
+            if (StringUtils.isNotBlank(searchArtifact.getRepositoryId())) {
+                prefix = prefix + "-" + searchArtifact.getRepositoryId();
+            }
+            regex = String.format(regex, prefix, searchArtifact.getArtifactName());
             searchArtifact.setArtifactName(regex);
         }
         Map<String, String> paramsMap = JSON.parseObject(JSON.toJSONString(searchArtifact), new TypeReference<Map<String, String>>() {
@@ -693,12 +694,116 @@ public class RestClient extends ArtifactClient {
     }
 
     /**
+     * 仓库漏洞信息统计
+     *
+     * @param storageId    存储空间名称
+     * @param repositoryId 仓库名称
+     * @return 仓库漏洞信息统计
+     */
+    public RepositoryVulnerabilityStatistics vulnerabilityStatistics(String storageId, String repositoryId) {
+        String params = "?storageId=%s&repositoryId=%s";
+        params = String.format(params, storageId, repositoryId);
+        String url = getContextBaseUrl() + "/api/vulnerability/repositoryVulnerabilityStatistics" + params;
+        WebTarget resource = getClientInstance().target(url);
+        setupAuthentication(resource);
+        Response response = resource.request(MediaType.APPLICATION_JSON).get();
+        if (response.getStatus() != HttpStatus.SC_OK) {
+            displayResponseError(response);
+            throw new ServerErrorException(response.getStatus() + " | Unable to greet()",
+                    Response.Status.INTERNAL_SERVER_ERROR);
+        } else {
+            String data = response.readEntity(String.class);
+            if (StringUtils.isNotBlank(data)) {
+                JSONObject dataJson = JSONObject.parseObject(data);
+                return JSONObject.toJavaObject(dataJson, RepositoryVulnerabilityStatistics.class);
+            }
+            return null;
+        }
+    }
+
+    /**
+     * 漏洞分页查询
+     *
+     * @param vulnerabilityPage 漏洞查询参数
+     * @return 漏洞分页结果
+     */
+    public Page<Vulnerability> vulnerabilityPage(VulnerabilityPage vulnerabilityPage) {
+        String url = getContextBaseUrl() + "/api/vulnerability/page";
+        Map<String, String> paramsMap = JSON.parseObject(JSON.toJSONString(vulnerabilityPage), new TypeReference<Map<String, String>>() {
+        });
+        if (Objects.isNull(vulnerabilityPage.getSource())) {
+            vulnerabilityPage.setSource(2);
+        }
+        String params = createLinkStringByGet(paramsMap);
+        url = url + params;
+        WebTarget resource = getClientInstance().target(url);
+        setupAuthentication(resource);
+        Response response = resource.request(MediaType.APPLICATION_JSON).get();
+        if (response.getStatus() != HttpStatus.SC_OK) {
+            displayResponseError(response);
+            throw new ServerErrorException(response.getStatus() + " | Unable to greet()",
+                    Response.Status.INTERNAL_SERVER_ERROR);
+        } else {
+            Long total = 0L;
+            String res = response.readEntity(String.class);
+            List<Vulnerability> list = null;
+            if (StringUtils.isNotBlank(res)) {
+                JSONObject pageJson = JSONObject.parseObject(res);
+                String dataKey = "data", rowsKey = "rows";
+                if (pageJson.containsKey(dataKey) && StringUtils.isNotBlank(pageJson.getString(dataKey))) {
+                    JSONObject dataJson = pageJson.getJSONObject(dataKey);
+                    if (dataJson.containsKey(rowsKey) && StringUtils.isNotBlank(dataJson.getString(rowsKey))) {
+                        list = JSONArray.parseArray(dataJson.getString(rowsKey), Vulnerability.class);
+                    }
+                    total = dataJson.getLongValue("total");
+                }
+                return new Page<Vulnerability>(list, total);
+            }
+            return new Page<Vulnerability>(null, total);
+        }
+    }
+
+    /**
+     * 漏洞图谱数据
+     *
+     * @param uuid         漏洞id
+     * @param storageId    存储空间名称
+     * @param repositoryId 仓库名称
+     * @return 漏洞分页结果
+     */
+    public VulnerabilityGraph vulnerabilityGraph(String uuid, String storageId, String repositoryId) {
+        String params = "?uuid=%s&storageId=%s&repositoryId=%s";
+        params = String.format(params, uuid, storageId, repositoryId);
+        String url = getContextBaseUrl() + "/api/vulnerability/graph";
+        url = url + params;
+        WebTarget resource = getClientInstance().target(url);
+        setupAuthentication(resource);
+        Response response = resource.request(MediaType.APPLICATION_JSON).get();
+        if (response.getStatus() != HttpStatus.SC_OK) {
+            displayResponseError(response);
+            throw new ServerErrorException(response.getStatus() + " | Unable to greet()",
+                    Response.Status.INTERNAL_SERVER_ERROR);
+        } else {
+            String res = response.readEntity(String.class);
+            if (StringUtils.isNotBlank(res)) {
+                res = res.replaceAll("\"name\"", "\"categoryName\"");
+                res = res.replaceAll("\"count\"", "\"downloadCount\"");
+                res = res.replaceAll("\"currency\"", "\"highestSeverityText\"");
+                res = res.replaceAll("\"variableName\"", "\"versionEndExcluding\"");
+                res = res.replaceAll("\"label\"", "\"name\"");
+                return JSONObject.parseObject(res, VulnerabilityGraph.class);
+            }
+            return null;
+        }
+    }
+
+    /**
      * 把数组所有元素排序，并按照“参数=参数值”的模式用“&”字符拼接成字符串
      *
      * @param params 需要排序并参与字符拼接的参数组
      * @return 拼接后字符串
      */
-    public static String createLinkStringByGet(Map<String, String> params) {
+    private static String createLinkStringByGet(Map<String, String> params) {
         String preStr = "?";
         try {
             List<String> keys = new ArrayList<String>(params.keySet());

@@ -1,29 +1,38 @@
 <template>
-  <form
-    onsubmit="event.preventDefault();"
-    role="search"
-    @mouseover="mouse(true)"
-    @mouseleave="mouse(false)"
-  >
+  <form onsubmit="event.preventDefault();" role="search" @mouseover="mouse(true)" @mouseleave="mouse(false)">
     <label for="search">Search for stuff</label>
-    <input id="search" type="search" placeholder="搜索制品..." required  v-model="value"/>
-    <button type="submit" @click="search">搜索</button>
+    <input id="search" type="search" placeholder="搜索制品..." required v-model="value" />
+    <a-dropdown>
+      <a-menu slot="overlay" @click="handleSearchMenuClick">
+        <a-menu-item :key="1">
+          普通
+        </a-menu-item>
+        <a-menu-item :key="2">
+          元数据
+        </a-menu-item>
+      </a-menu>
+      <a-button> 维度 <a-icon type="down" /> </a-button>
+    </a-dropdown>
   </form>
 </template>
 
 <script>
 export default {
-  data () {
+  data() {
     return {
       value: '',
       hover: false
     }
   },
   methods: {
-    search () {
+    search() {
       this.$emit('search', this.value, 1)
     },
-    mouse (bool) {
+    handleSearchMenuClick(active) {
+      this.$parent.$parent.handlerSearchType(active.key)
+      this.search()
+    },
+    mouse(bool) {
       this.$emit('mouse', bool)
     }
   }
@@ -48,11 +57,13 @@ body {
   align-items: center;
   justify-content: center;
 }
+
 html {
   box-sizing: border-box;
   height: 100%;
   font-size: 10px;
 }
+
 *,
 *::before,
 *::after {
@@ -67,10 +78,12 @@ form {
   border-radius: $rad;
   opacity: 0.3;
   transition: all 1s;
+
   &:hover {
     opacity: 1;
   }
 }
+
 input,
 button {
   height: $h;
@@ -79,6 +92,7 @@ button {
   color: $colorDark;
   font-size: $fs;
 }
+
 input[type='search'] {
   outline: 0; // <-- shold probably remove this for better accessibility, adding for demo aesthetics for now.
   width: 100%;
@@ -92,6 +106,7 @@ input[type='search'] {
   position: relative;
   box-shadow: 0 0 15px #908585;
 }
+
 button {
   display: none; // prevent being able to tab to it
   position: absolute;
@@ -102,15 +117,18 @@ button {
   background: $colorBrand;
   border-radius: 0 $rad $rad 0;
 }
+
 input:not(:placeholder-shown) {
   border-radius: $rad 0 0 $rad;
   width: calc(100% - 90px);
-  + button {
+
+  +button {
     display: block;
     color: $colorLight;
     cursor: pointer;
   }
 }
+
 label {
   position: absolute;
   clip: rect(1px, 1px, 1px, 1px);

@@ -1,19 +1,25 @@
 package com.veadan.folib.controllers;
 
-import com.veadan.folib.controllers.BaseController;
+import com.veadan.folib.configuration.MetadataConfiguration;
+import com.veadan.folib.constant.GlobalConstants;
+import com.veadan.folib.forms.artifact.ArtifactMetadataForm;
 import com.veadan.folib.services.ArtifactWebService;
+import com.veadan.folib.validation.RequestBodyValidationException;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.validation.BindingResult;
+import org.springframework.validation.annotation.Validated;
+import org.springframework.web.bind.annotation.*;
 
 import javax.inject.Inject;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.util.List;
 
 /**
  * @author leipenghui
@@ -35,4 +41,70 @@ public class ArtifactController extends BaseController {
         artifactWebService.exportExcel(vulnerabilityUuid, storageId, repositoryId, response);
     }
 
+
+    @ApiOperation(value = "全局设置添加或者更新元数据")
+    @ApiResponses(value = {@ApiResponse(code = 200, message = "OK")})
+    @PreAuthorize("hasAuthority('CONFIGURATION_ADD_UPDATE_METADATA')")
+    @PutMapping(value = "/globalSettingAddOrUpdateMetadata")
+    public ResponseEntity<ResponseMessage> globalSettingAddOrUpdateMetadata(@RequestBody @Validated({ArtifactMetadataForm.ConfigurationAddOrUpdateGroup.class}) ArtifactMetadataForm artifactMetadataForm, BindingResult bindingResult) throws IOException {
+        if (bindingResult.hasErrors()) {
+            throw new RequestBodyValidationException(GlobalConstants.REQUEST_PARAMS_ERROR, bindingResult);
+        }
+        artifactWebService.globalSettingAddOrUpdateMetadata(artifactMetadataForm);
+        return ResponseEntity.ok(ResponseMessage.ok());
+    }
+
+    @ApiOperation(value = "全局设置删除元数据")
+    @ApiResponses(value = {@ApiResponse(code = 200, message = "OK")})
+    @PreAuthorize("hasAuthority('CONFIGURATION_DELETE_METADATA_CONFIGURATION')")
+    @DeleteMapping(value = "/globalSettingDeleteMetadata")
+    public ResponseEntity<ResponseMessage> globalSettingDeleteMetadata(@RequestBody @Validated({ArtifactMetadataForm.ConfigurationDeleteGroup.class}) ArtifactMetadataForm artifactMetadataForm, BindingResult bindingResult) throws IOException {
+        if (bindingResult.hasErrors()) {
+            throw new RequestBodyValidationException(GlobalConstants.REQUEST_PARAMS_ERROR, bindingResult);
+        }
+        artifactWebService.globalSettingDeleteMetadata(artifactMetadataForm);
+        return ResponseEntity.ok(ResponseMessage.ok());
+    }
+
+    @ApiOperation(value = "获取全局设置的元数据")
+    @ApiResponses(value = {@ApiResponse(code = 200, message = "OK", response = MetadataConfiguration.class)})
+    @PreAuthorize("hasAuthority('CONFIGURATION_VIEW_METADATA_CONFIGURATION')")
+    @GetMapping(value = "/getMetadataConfiguration", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<List<ArtifactMetadataForm>> getMetadataConfiguration() {
+        return ResponseEntity.ok(artifactWebService.getMetadataConfiguration());
+    }
+
+    @ApiOperation(value = "新增制品元数据")
+    @ApiResponses(value = {@ApiResponse(code = 200, message = "OK")})
+    @PreAuthorize("hasAuthority('CONFIGURATION_ADD_UPDATE_METADATA')")
+    @PutMapping(value = "/artifactMetadata")
+    public ResponseEntity<String> saveArtifactMetadata(@RequestBody @Validated({ArtifactMetadataForm.AddOrUpdateGroup.class}) ArtifactMetadataForm artifactMetadataForm, BindingResult bindingResult) {
+        if (bindingResult.hasErrors()) {
+            throw new RequestBodyValidationException(GlobalConstants.REQUEST_PARAMS_ERROR, bindingResult);
+        }
+        return ResponseEntity.ok(artifactWebService.saveArtifactMetadata(artifactMetadataForm));
+    }
+
+    @ApiOperation(value = "修改制品元数据")
+    @ApiResponses(value = {@ApiResponse(code = 200, message = "OK")})
+    @PreAuthorize("hasAuthority('CONFIGURATION_ADD_UPDATE_METADATA')")
+    @PostMapping(value = "/artifactMetadata")
+    public ResponseEntity<String> updateArtifactMetadata(@RequestBody @Validated({ArtifactMetadataForm.AddOrUpdateGroup.class}) ArtifactMetadataForm artifactMetadataForm, BindingResult bindingResult) {
+        if (bindingResult.hasErrors()) {
+            throw new RequestBodyValidationException(GlobalConstants.REQUEST_PARAMS_ERROR, bindingResult);
+        }
+        return ResponseEntity.ok(artifactWebService.updateArtifactMetadata(artifactMetadataForm));
+    }
+
+    @ApiOperation(value = "删除制品元数据")
+    @ApiResponses(value = {@ApiResponse(code = 200, message = "OK")})
+    @PreAuthorize("hasAuthority('CONFIGURATION_ADD_UPDATE_METADATA')")
+    @DeleteMapping(value = "/artifactMetadata")
+    public ResponseEntity<ResponseMessage> deleteArtifactMetadata(@RequestBody @Validated({ArtifactMetadataForm.DeleteGroup.class}) ArtifactMetadataForm artifactMetadataForm, BindingResult bindingResult) {
+        if (bindingResult.hasErrors()) {
+            throw new RequestBodyValidationException(GlobalConstants.REQUEST_PARAMS_ERROR, bindingResult);
+        }
+        artifactWebService.deleteArtifactMetadata(artifactMetadataForm);
+        return ResponseEntity.ok(ResponseMessage.ok());
+    }
 }

@@ -293,6 +293,7 @@ public class ScanService {
     private void handlerVulnerability(FolibScanner folibScanner, Set<Vulnerability> vulnerabilitySet) {
         if (CollectionUtils.isNotEmpty(vulnerabilitySet)) {
             List<com.veadan.folib.domain.Vulnerability> vulnerabilityList = Lists.newArrayList();
+            Set<String> storages = Sets.newLinkedHashSet(), repositories = Sets.newLinkedHashSet();
             for (Vulnerability vulnerability : vulnerabilitySet) {
                 VulnerabilityEntity vulnerabilityEntity = new VulnerabilityEntity();
                 vulnerabilityEntity.setUuid(vulnerability.getName());
@@ -313,6 +314,10 @@ public class ScanService {
                 if (Objects.nonNull(vulnerableSoftware)) {
                     vulnerabilityEntity.setVersionEndExcluding(vulnerableSoftware.getVersionEndExcluding());
                 }
+                storages.add(folibScanner.getStorage());
+                vulnerabilityEntity.setStorages(storages);
+                repositories.add(folibScanner.getRepository());
+                vulnerabilityEntity.setRepositories(repositories);
                 vulnerabilityList.add(vulnerabilityEntity);
             }
             vulnerabilityService.saveOrUpdateVulnerabilityBatch(vulnerabilityList);

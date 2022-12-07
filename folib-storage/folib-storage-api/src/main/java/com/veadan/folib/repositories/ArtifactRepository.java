@@ -2,6 +2,7 @@ package com.veadan.folib.repositories;
 
 import cn.hutool.core.date.DatePattern;
 import cn.hutool.core.date.DateUtil;
+import com.alibaba.fastjson.JSONObject;
 import com.google.common.collect.Maps;
 import com.veadan.folib.artifact.coordinates.ArtifactLayoutDescription;
 import com.veadan.folib.artifact.coordinates.ArtifactLayoutLocator;
@@ -17,6 +18,7 @@ import com.veadan.folib.gremlin.dsl.EntityTraversal;
 import com.veadan.folib.gremlin.dsl.EntityTraversalUtils;
 import com.veadan.folib.gremlin.dsl.__;
 import com.veadan.folib.gremlin.repositories.GremlinVertexRepository;
+import com.veadan.folib.util.LocalCacheUtils;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.tinkerpop.gremlin.process.traversal.Order;
@@ -33,10 +35,7 @@ import org.springframework.stereotype.Repository;
 import javax.inject.Inject;
 import javax.transaction.Transactional;
 import java.time.LocalDateTime;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 
 
 @Repository
@@ -100,23 +99,27 @@ public class ArtifactRepository extends GremlinVertexRepository<Artifact> {
     }
 
     public Page<Artifact> findMatchingByIndex(Pageable pagination, Boolean regex, String artifactName,
+                                              String metadataSearch,
                                               String storageId,
                                               String repositoryId,
                                               String beginDate,
                                               String endDate,
                                               String sortField,
                                               String sortOrder) {
-        //docker布局
         com.veadan.folib.storage.repository.Repository repository = null;
         if (StringUtils.isNotBlank(storageId) && StringUtils.isNotBlank(repositoryId)) {
             repository = configurationManager.getRepository(storageId, repositoryId);
         }
-        Long count = buildEntityTraversal(regex, artifactName, storageId, repositoryId, beginDate, endDate, sortField, sortOrder).count().tryNext().orElse(0L);
+        Long zero = 0L;
+        Long count = buildEntityTraversal(regex, artifactName, metadataSearch, storageId, repositoryId, beginDate, endDate, sortField, sortOrder).count().tryNext().orElse(zero);
+        if (zero.equals(count)) {
+            return new PageImpl<>(Collections.emptyList(), pagination, count);
+        }
         long low = pagination.getPageNumber() * pagination.getPageSize();
         long high = (pagination.getPageNumber() + 1) * pagination.getPageSize();
 
 
-        List<Artifact> artifactList = buildEntityTraversal(regex, artifactName, storageId, repositoryId, beginDate, endDate, sortField, sortOrder)
+        List<Artifact> artifactList = buildEntityTraversal(regex, artifactName, metadataSearch, storageId, repositoryId, beginDate, endDate, sortField, sortOrder)
                 .range(low, high)
                 .map(artifactAdapter.fold(Optional.ofNullable(repository)
                         .map(com.veadan.folib.storage.repository.Repository::getLayout)
@@ -145,10 +148,19 @@ public class ArtifactRepository extends GremlinVertexRepository<Artifact> {
     }
 
     public Map<Object, Object> countArtifactByStorageIdAndRepositoryId(String storageId, String repositoryId) {
+        //TODO 分布式下有问题
+        String key = "countArtifactByStorageIdAndRepositoryId-%s-%s";
+        key = String.format(key, storageId, repositoryId);
+        String cacheValue = LocalCacheUtils.get(key);
+        if (StringUtils.isNotBlank(cacheValue)) {
+            return Maps.newHashMap(JSONObject.parseObject(cacheValue));
+        }
         EntityTraversal<Vertex, Map<Object, Object>> entityTraversal = g().V().hasLabel(Vertices.ARTIFACT).has(Properties.STORAGE_ID, storageId).has(Properties.REPOSITORY_ID, repositoryId)
                 .properties(Properties.DOWNLOAD_COUNT, Properties.DEPENDENCY_COUNT).
                         group().by(__.key()).by(__.value().sum());
-        return entityTraversal.tryNext().orElse(Maps.newHashMap());
+        Map<Object, Object> map = entityTraversal.tryNext().orElse(Maps.newHashMap());
+        LocalCacheUtils.put(key, JSONObject.toJSONString(map), 3600);
+        return map;
     }
 
     public List<VulnerabilityArtifactDomain> findMatchingHasVulnerabilityByStorageIdsAndLevels(List<String> storageIdList, Set<String> levels) {
@@ -165,6 +177,7 @@ public class ArtifactRepository extends GremlinVertexRepository<Artifact> {
     }
 
     private EntityTraversal<Vertex, Vertex> buildEntityTraversal(Boolean regex, String artifactName,
+                                                                 String metadataSearch,
                                                                  String storageId,
                                                                  String repositoryId,
                                                                  String beginDate,
@@ -172,16 +185,23 @@ public class ArtifactRepository extends GremlinVertexRepository<Artifact> {
                                                                  String sortField,
                                                                  String sortOrder) {
         EntityTraversal<Vertex, Vertex> entityTraversal = g().V().hasLabel(Vertices.ARTIFACT);
-        if (Boolean.TRUE.equals(regex)) {
-            entityTraversal = entityTraversal.has(Properties.UUID, Text.textRegex(artifactName));
-        } else {
-            entityTraversal = entityTraversal.has(Properties.UUID, Text.textContains(artifactName));
-        }
         if (StringUtils.isNotBlank(storageId)) {
             entityTraversal = entityTraversal.has(Properties.STORAGE_ID, storageId);
         }
         if (StringUtils.isNotBlank(repositoryId)) {
             entityTraversal = entityTraversal.has(Properties.REPOSITORY_ID, repositoryId);
+        }
+        if (StringUtils.isNotBlank(artifactName)) {
+            if (Boolean.TRUE.equals(regex)) {
+                entityTraversal = entityTraversal.has(Properties.UUID, Text.textContains(artifactName));
+                entityTraversal = entityTraversal.not(__.has(Properties.UUID, Text.textContains("blobs/sha256")));
+                entityTraversal = entityTraversal.not(__.has(Properties.UUID, Text.textContains("manifest/sha256")));
+            } else {
+                entityTraversal = entityTraversal.has(Properties.UUID, Text.textContains(artifactName));
+            }
+        }
+        if (StringUtils.isNotBlank(metadataSearch)) {
+            entityTraversal = entityTraversal.has(Properties.METADATA, Text.textContains(metadataSearch));
         }
         if (StringUtils.isNotBlank(sortField) && StringUtils.isNotBlank(sortOrder)) {
             entityTraversal = entityTraversal.order().by(sortField, Order.valueOf(sortOrder));

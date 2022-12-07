@@ -11,6 +11,7 @@ import com.veadan.folib.gremlin.dsl.EntityTraversal;
 import com.veadan.folib.gremlin.dsl.EntityTraversalUtils;
 import com.veadan.folib.gremlin.dsl.__;
 import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.tinkerpop.gremlin.process.traversal.P;
 import org.apache.tinkerpop.gremlin.process.traversal.Traversal;
 import org.apache.tinkerpop.gremlin.process.traversal.Traverser;
@@ -70,6 +71,7 @@ public class ArtifactAdapter implements VertexEntityTraversalAdapter<Artifact> {
                 "mediumVulnerabilitiesCount",
                 "lowVulnerabilitiesCount",
                 "suppressedVulnerabilitiesCount",
+                "metadata",
                 "filenames",
                 "checksums",
                 "artifactCoordinates",
@@ -96,6 +98,7 @@ public class ArtifactAdapter implements VertexEntityTraversalAdapter<Artifact> {
                 .by(__.enrichPropertyValue("mediumVulnerabilitiesCount"))
                 .by(__.enrichPropertyValue("lowVulnerabilitiesCount"))
                 .by(__.enrichPropertyValue("suppressedVulnerabilitiesCount"))
+                .by(__.enrichPropertyValue("metadata"))
                 .by(__.enrichPropertyValues("filenames"))
                 .by(__.enrichPropertyValues("checksums"))
                 .by(__.outE(Edges.ARTIFACT_HAS_ARTIFACT_COORDINATES)
@@ -117,7 +120,7 @@ public class ArtifactAdapter implements VertexEntityTraversalAdapter<Artifact> {
     }
 
     public EntityTraversal<Vertex, VulnerabilityArtifactDomain> vulnerabilityFold() {
-        return __.<Vertex, Object>project("id","vulnerabilityID",
+        return __.<Vertex, Object>project("id", "vulnerabilityID",
                 "uuid",
                 "storageId",
                 "repositoryId",
@@ -290,7 +293,7 @@ public class ArtifactAdapter implements VertexEntityTraversalAdapter<Artifact> {
         }
 
         result.setArtifactFileExists(extractObject(Boolean.class, t.get().get("artifactFileExists")));
-
+        result.setMetadata(extractObject(String.class, t.get().get("metadata")));
         return result;
     }
 
@@ -399,7 +402,9 @@ public class ArtifactAdapter implements VertexEntityTraversalAdapter<Artifact> {
             t = t.sideEffect(__.properties("vulnerabilities").drop());
             t = t.property("vulnerabilities", entity.getVulnerabilities());
         }
-
+        if (StringUtils.isNotBlank(entity.getMetadata())) {
+            t = t.property(single, "metadata", entity.getMetadata());
+        }
         ArtifactArchiveListing artifactArchiveListing = entity.getArtifactArchiveListing();
 
         Set<String> filenames = artifactArchiveListing.getFilenames();
