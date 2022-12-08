@@ -193,7 +193,7 @@ public class ArtifactRepository extends GremlinVertexRepository<Artifact> {
         }
         if (StringUtils.isNotBlank(artifactName)) {
             if (Boolean.TRUE.equals(regex)) {
-                entityTraversal = entityTraversal.has(Properties.UUID, Text.textContains(artifactName));
+                entityTraversal = entityTraversal.has(Properties.UUID, Text.textRegex(artifactName));
                 entityTraversal = entityTraversal.not(__.has(Properties.UUID, Text.textContains("blobs/sha256")));
                 entityTraversal = entityTraversal.not(__.has(Properties.UUID, Text.textContains("manifest/sha256")));
             } else {

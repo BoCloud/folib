@@ -1828,9 +1828,9 @@ export default {
         endDate: this.artifactQuery.endDate,
         regex: false,
       }
-      if (this.artifactQuery.artifactName && this.folibRepository.layout === 'Docker') {
+      if(params.artifactName){
         params.regex = true
-        // params.artifactName = ".*" + this.artifactQuery.artifactName + "((.(?!blobs/sha256|manifest/sha256)).*)"
+        params.artifactName = "(" + params.storageId + "-" + params.repositoryId + ")(.*" + params.artifactName + ".*)"
       }
       fql(params).then(res => {
         this.searchData = res.artifact

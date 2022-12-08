@@ -506,6 +506,16 @@ public class RestClient extends ArtifactClient {
      */
     public SearchArtifactPage searchArtifactPage(SearchArtifact searchArtifact) {
         String url = getContextBaseUrl() + "/api/fql";
+        if (Boolean.TRUE.equals(searchArtifact.getRegex()) && StringUtils.isNotBlank(searchArtifact.getArtifactName())) {
+            //开启正则
+            String regex = "(%s)(.*%s.*))";
+            String prefix = searchArtifact.getStorageId();
+            if (StringUtils.isNotBlank(searchArtifact.getRepositoryId())) {
+                prefix = prefix + "-" + searchArtifact.getRepositoryId();
+            }
+            regex = String.format(regex, prefix, searchArtifact.getArtifactName());
+            searchArtifact.setArtifactName(regex);
+        }
         Map<String, String> paramsMap = JSON.parseObject(JSON.toJSONString(searchArtifact), new TypeReference<Map<String, String>>() {
         });
         String params = createLinkStringByGet(paramsMap);
