@@ -1828,7 +1828,7 @@ export default {
         endDate: this.artifactQuery.endDate,
         regex: false,
       }
-      if(params.artifactName){
+      if (params.artifactName && this.folibRepository.layout === 'Docker') {
         params.regex = true
         params.artifactName = "(" + params.storageId + "-" + params.repositoryId + ")(.*" + params.artifactName + ".*)"
       }
