@@ -2330,7 +2330,7 @@ export default {
       e.preventDefault()
       this.uploadForm.validateFields((err, values) => {
         if (!err) {
-          if (values.targetPath.startsWith("/")) {
+          if (values.targetPath && values.targetPath.startsWith("/")) {
             this.$notification["warning"]({
               message: "目标路径不能以/开头",
               description: ""
