@@ -2326,6 +2326,13 @@ export default {
       e.preventDefault()
       this.uploadForm.validateFields((err, values) => {
         if (!err) {
+          if (values.targetPath.startsWith("/")) {
+            this.$notification["warning"]({
+              message: "目标路径不能以/开头",
+              description: ""
+            })
+            return false
+          }
           let filePathMap = {};
           let fileList = [];
           values.files.forEach(item => {
