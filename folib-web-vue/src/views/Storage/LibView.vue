@@ -1945,19 +1945,23 @@ export default {
           this.folibRepository.id,
           treeNode.dataRef.artifactPath
         ).then(res => {
+          if (!treeNode.dataRef.children) {
+            treeNode.dataRef.children = []
+          }
           if (res.directories.length > 0) {
             const d = res.directories
             d.forEach((item, index, d) => {
               item.type = 'dir'
             })
             treeNode.dataRef.children = d
-          } else if (res.files.length > 0) {
+          }
+          if (res.files.length > 0) {
             const a = res.files
             a.forEach((item, index, a) => {
               item.isLeaf = true
               item.type = 'file'
             })
-            treeNode.dataRef.children = a
+            treeNode.dataRef.children = treeNode.dataRef.children.concat(a)
           }
 
           this.treeData = [...this.treeData]
