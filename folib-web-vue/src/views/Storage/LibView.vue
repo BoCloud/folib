@@ -803,7 +803,7 @@
           '[local_test]' + '\n' +
           'name=CentOS-$releasever - Base - mirrors.aliyun.com' + '\n' +
           'enabled=1' + '\n' +
-          'baseurl=' + baseUrl + 'storages/' + folibRepository.storageId + '/' + folibRepository.id + '/' + ' #folib仓地址' + '\n' +
+          'baseurl=' + baseUrl + 'storages/' + folibRepository.storageId + '/' + folibRepository.id + '/'  + '\n' +
           'gpgcheck=0'" :highlight="highlighterHandle" :line-numbers="false" :readonly="true"></prism-editor>
         </a-timeline-item>
         <a-timeline-item color="primary">
@@ -818,6 +818,56 @@
           'yum repolist #显示所有仓库' + '\n' +
           'yum install --downloadonly --downloaddir=/folib_test/mysql mysql #拉mysql 相关rpm包到/folib_test/mysql 目录下'"
             :highlight="highlighterHandle" :line-numbers="false" :readonly="true"></prism-editor>
+        </a-timeline-item>
+      </a-timeline>
+      <a-timeline v-if="repositoryType === 'helm'">
+        <a-timeline-item color="primary">
+          Helm配置
+          <p>
+            将folib helm仓添加到本地操作步骤
+          </p>
+
+          <prism-editor class="my-editor height-300" :value="
+          'helm  registry  login  '+ baseUrl +folibRepository.storageId + '/' + folibRepository.id+
+          '\n' +
+          '\n' +
+          'helm  repo  add   '+ folibRepository.id +'   ' + baseUrl + folibRepository.storageId + '/' + folibRepository.id+
+          '\n'
+          " :highlight="highlighterHandle" :line-numbers="false" :readonly="true"></prism-editor>
+        </a-timeline-item>
+        <a-timeline-item color="primary">
+          上传Chart包到Helm仓库
+          <p>
+            安装 helm-cm-push插件
+          </p>
+          <prism-editor class="my-editor height-300" :value="
+          '1.   https://github.com/chartmuseum/helm-push/releases 下载各个系统下的 helm-cm-push 安装包'+ '\n' +
+          '2.   把安装包复制到 helm 的plugins目录下解压     ' + '\n' + '\n' +
+           '\n' +
+          '\n' +
+           'helm-cm-push 命令上传'    +'\n' + '\n' +
+          '1. 进入 helm-cm-push plugins 插件bin目录       #helm env 查看plugins目录位置'+ '\n' +
+          '\n' +
+          '2.   执行上传'+'\n' +
+          '例如 ：上传/app/fluentd-4.5.2.tgz 的chart包 到'+ folibRepository.id+'\n' +'\n' +
+          './helm-cm-push  /app/fluentd-4.5.2.tgz  '+ folibRepository.id+'\n'+
+           '\n' +
+          '参数说明：第一个参数是cahrt 包全路径   第二个参数是加入到本地的helm 仓库名. --username  --password 可选鉴权使用' + '\n'"
+                        :highlight="highlighterHandle" :line-numbers="false" :readonly="true"></prism-editor>
+        </a-timeline-item>
+
+        <a-timeline-item color="primary">
+          helm 使用常用命令
+          <p>
+            详细使用参考官网 https://helm.sh/zh/docs/intro/using_helm/
+          </p>
+          <prism-editor class="my-editor height-300" :value="
+          'helm reop update  #更新本地仓库'+ '\n' +
+           '\n' +
+          'helm search repo mysql     #搜索本地的mysql charts' + '\n' +
+           '\n' +
+          'helm pull  '+ folibRepository.id+'/mysql   ./    #将最新的mysql 下载到本地  --version 可指定版本' + '\n' "
+                        :highlight="highlighterHandle" :line-numbers="false" :readonly="true"></prism-editor>
         </a-timeline-item>
       </a-timeline>
       <a-timeline v-if="repositoryType === 'yarn'">
