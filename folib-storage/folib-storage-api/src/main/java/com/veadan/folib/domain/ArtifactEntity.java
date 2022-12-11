@@ -106,6 +106,11 @@ public class ArtifactEntity
     @Relationship(type = Edges.ARTIFACT_HAS_VULNERABILITIES, direction = Relationship.OUTGOING)
     private Set<Vulnerability> vulnerabilitySet;
 
+    /**
+     * 元数据
+     */
+    private String metadata;
+
     public ArtifactEntity() {
     }
 
@@ -394,5 +399,15 @@ public class ArtifactEntity
     @Override
     public void setVulnerabilitySet(Set<Vulnerability> vulnerabilitySet) {
         this.vulnerabilitySet = vulnerabilitySet;
+    }
+
+    @Override
+    public String getMetadata() {
+        return metadata;
+    }
+
+    @Override
+    public void setMetadata(String metadata) {
+        this.metadata = metadata;
     }
 }

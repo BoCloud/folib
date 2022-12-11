@@ -109,7 +109,7 @@
           <a-col :span="8" class="mb-24" v-for="(item, index) in repositories" :key="index">
             <!-- Project Card -->
             <CardProjectFolib :title=item.id :logo="'images/folib/' + getLayoutType(item) + '.svg'"
-              :team="['images/folib/' + item.type + '.svg']" :participants="item.type" :due="item.policy"
+              :team="['images/folib/' + item.type + '.svg']" :participants="item.type" :due="item.policy" :repository="item"
               @handleMenuClick="handleMenuClick" @goToDetial="goToDetial(item)">
               <a-tooltip>
                 <template slot="title">
@@ -350,8 +350,8 @@
             <a-button key="back" @click="deleteFormVisible = false" class="px-30 ml-10" size="small">取消</a-button>
           </a-col>
           <a-col :span="12" class="text-right">
-            <a-button @click="delRepositoryResponseEntity" class="px-30 ml-10" type="danger" size="small">删除</a-button>
-            <a-button @click="delRepositoryResponseEntityForce" class="px-30 ml-10" type="dashed" size="small">强制删除
+            <a-button v-if="deleteBtnVisible" @click="delRepositoryResponseEntity" class="px-30 ml-10" type="danger" size="small">删除</a-button>
+            <a-button v-if="forceDeleteBtnVisible" @click="delRepositoryResponseEntityForce" class="px-30 ml-10" type="dashed" size="small">强制删除
             </a-button>
           </a-col>
         </a-row>
@@ -900,11 +900,13 @@
                     </a-col>
                     <a-col class="ml-auto">
                       <span class="mr-15">{{ i.isSetted.oneTimeExecution ? '执行一次' : '循环执行' }}</span>
-                      <a-switch v-model="i.isSetted.oneTimeExecution" @change="() => { $forceUpdate() }" />
+                      <a-switch v-model="i.isSetted.oneTimeExecution"
+                        @change="oneTimeExecutionChange($event, i.isSetted)" />
                     </a-col>
                     <a-col class="ml-auto">
                       <span class="mr-15">{{ i.isSetted.immediateExecution ? '立即执行' : '不立即执行' }}</span>
-                      <a-switch v-model="i.isSetted.immediateExecution" @change="() => { $forceUpdate() }" />
+                      <a-switch v-model="i.isSetted.immediateExecution"
+                        @change="immediateExecutionChange($event, i.isSetted)" />
                     </a-col>
                   </a-row>
                   <hr v-if="i.fields.length > 2" class="gradient-line my-10">
@@ -986,6 +988,7 @@ import store from '@/store';
 import { checkMachineCode } from "@/api/settings";
 
 export default {
+  inject: ["reload"],
   components: {
     CardProjectFolib,
     draggable,
@@ -1077,6 +1080,8 @@ export default {
       checkboxOptions: ['Design', 'Code', 'Develop'],
       willDelId: null,
       deleteFormVisible: false,
+      deleteBtnVisible: false,
+      forceDeleteBtnVisible: false,
       // Step's form object
       form: this.$form.createForm(this, { name: 'steps' }),
       folibRepositoryIds: "",
@@ -1221,7 +1226,6 @@ export default {
     createHandleView() {
       this.showsTorageFormModal = true
       if (this.$refs.storageCreate) {
-        debugger
         this.$refs.storageCreate.resetFields()
       }
       this.getUsersList()
@@ -1289,6 +1293,7 @@ export default {
           this.getStorages();
         })
         this.currentStorage = this.currentDefultStorage
+        this.reload()
       }
     },
     deleteStoragesKeyBuff() {
@@ -1316,6 +1321,7 @@ export default {
           this.getStorages();
         })
         this.currentStorage = this.currentDefultStorage
+        this.reload()
       }
     },
     handleCreateSubmit(e) {
@@ -1412,6 +1418,7 @@ export default {
     getLibrary(id) {
       getLibrary(id).then(response => {
         this.repositories = response.repositories
+        this.$forceUpdate()
       })
     },
     cacheStorage() {
@@ -1539,6 +1546,14 @@ export default {
     },
     saveCronOneSetHandle(i) {
       if (i.fields && i.isSetted) {
+        if (!i.isSetted.cronExpression) {
+          this.$notification.open({
+            class: 'ant-notification-warning',
+            message: '操作不正确',
+            description: '请填写cron表达式',
+          })
+          return false
+        }
         let fiedsNew = []
         i.fields.forEach(f => {
           if (f.value !== null && f.value !== undefined) {
@@ -1772,10 +1787,10 @@ export default {
                   description: values.id + '已删除',
                 });
               }, 100)
+            }).finally(() => {
+              this.deleteFormVisible = false;
+              this.getLibrary(this.currentStorage.id)
             })
-
-            this.deleteFormVisible = false;
-            this.getLibrary(this.currentStorage.id)
           } else {
             setTimeout(() => {
               this.$notification.open({
@@ -1803,10 +1818,10 @@ export default {
                   description: values.id + '已删除',
                 });
               }, 100)
+            }).finally(() => {
+              this.deleteFormVisible = false;
+              this.getLibrary(this.currentStorage.id)
             })
-
-            this.deleteFormVisible = false;
-            this.getLibrary(this.currentStorage.id)
           } else {
             setTimeout(() => {
               this.$notification.open({
@@ -1824,21 +1839,44 @@ export default {
       if (e === "edit" && title !== null) {
         this.getRepositoryResponseEntity(title)
       } else if (e === "delete" && title !== null) {
-        this.willDelId = title
-        this.deleteFormVisible = true
-        if (this.$refs.delForm) {
-          this.delForm.setFieldsValue({
-            id: ''
-          })
-        }
+        getRepositoryResponseEntity(this.currentStorage.id, title).then(res => {
+          if (res.id === title) {
+            this.willDelId = title
+            this.deleteBtnVisible = false
+            if (res.allowsDelete) {
+              this.deleteBtnVisible = true
+            }
+            this.forceDeleteBtnVisible = false
+            if (res.allowsForceDeletion) {
+              this.forceDeleteBtnVisible = true
+            }
+            this.deleteFormVisible = true
+            if (this.$refs.delForm) {
+              this.delForm.setFieldsValue({
+                id: ''
+              })
+            }
+          }
+        })
       }
-
     },
     goToDetial(item) {
       storage.set("libView_repository", { item, baseUrl: this.baseUrl })
       this.$router.push({
         name: 'libDetial'
       })
+    },
+    oneTimeExecutionChange(value, item) {
+      if (value && item.immediateExecution) {
+        item.immediateExecution = false
+      }
+      this.$forceUpdate()
+    },
+    immediateExecutionChange(value, item) {
+      if (value && item.oneTimeExecution) {
+        item.oneTimeExecution = false
+      }
+      this.$forceUpdate()
     }
   },
 };

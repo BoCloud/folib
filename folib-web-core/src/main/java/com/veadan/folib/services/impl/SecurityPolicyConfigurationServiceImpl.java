@@ -1,6 +1,5 @@
 package com.veadan.folib.services.impl;
 
-import com.veadan.folib.cluster.SyncStorageEnum;
 import com.veadan.folib.configuration.MutableSecurityPolicyConfiguration;
 import com.veadan.folib.domain.Vulnerability;
 import com.veadan.folib.forms.configuration.SecurityPolicyConfigurationForm;

@@ -62,6 +62,7 @@ public class FqlSearchService extends GremlinVertexRepository<Artifact> implemen
 
 
     public SearchResults artifactQuery(Boolean regex, String artifactName,
+                                       String metadataSearch,
                                        String storageId,
                                        String repositoryId,
                                        String beginDate,
@@ -82,7 +83,7 @@ public class FqlSearchService extends GremlinVertexRepository<Artifact> implemen
         } else {
             pageable = PageRequest.of(page, limit).previous();
         }
-        Page<Artifact> artifacts = artifactRepository.findMatchingByIndex(pageable, regex, artifactName, storageId, repositoryId, beginDate, endDate, sortField, sortOrder);
+        Page<Artifact> artifacts = artifactRepository.findMatchingByIndex(pageable, regex, artifactName, metadataSearch, storageId, repositoryId, beginDate, endDate, sortField, sortOrder);
         List<Artifact> artifactEntityList = artifacts.getContent();
 
         SearchResults result = new SearchResults();

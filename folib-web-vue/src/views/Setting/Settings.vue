@@ -94,7 +94,8 @@
                   </a-col>
                   <a-col :span="24" :lg="12">
                     <a-form-item class="mb-10" label="密码" :colon="false">
-                      <a-input-password placeholder="SMTP密码" autocomplete="new-password" v-model="serverSettings.smtpConfigurationForm.password" />
+                      <a-input-password placeholder="SMTP密码" autocomplete="new-password"
+                        v-model="serverSettings.smtpConfigurationForm.password" />
                     </a-form-item>
                   </a-col>
                   <a-col :span="24" :lg="12">
@@ -147,7 +148,8 @@
                   </a-col>
                   <a-col :span="24" :lg="12">
                     <a-form-item class="mb-10" label="密码" :colon="false">
-                      <a-input-password placeholder="代理密码" autocomplete="new-password" v-model="serverSettings.proxyConfigurationForm.password" />
+                      <a-input-password placeholder="代理密码" autocomplete="new-password"
+                        v-model="serverSettings.proxyConfigurationForm.password" />
                     </a-form-item>
                   </a-col>
                   <a-col :span="24" :lg="12">
@@ -747,7 +749,83 @@
 
         </a-row>
       </a-tab-pane>
+      <a-tab-pane key="5" tab="元数据配置">
+        <a-card class="header-solid block">
+          <div class="mx-25 mb-50">
+            <a-col :span="24" class="text-right">
+              <a-tooltip @click="metadataHandler(1)">
+                <template slot="title">新增</template>
+                <a-icon type="plus-circle" theme="filled" class="add-metadata"
+                  :style="{ fontSize: '28px', color: '#1890FF' }" />
+              </a-tooltip>
+            </a-col>
+          </div>
+          <a-table :columns="metadataColumns" :data-source="metadataList">
+            <div slot="type" slot-scope="type">
+              <span v-for="(item, index) in metadataTypes" :key="index">
+                <span v-if="type === item.value">{{ item.label }}</span>
+              </span>
+            </div>
+            <div slot="viewShow" slot-scope="viewShow">
+              {{ viewShow === 1 ? '展示' : '不展示' }}
+            </div>
+            <div slot="operation" slot-scope="text, record">
+              <div class="col-action">
+                <a-popconfirm title="确定要删除吗？" okType="danger" ok-text="确定" cancel-text="取消"
+                  @confirm="metadataHandlerDelete(record)">
+                  <a-button type="link" size="small">
+                    <svg width="16" height="16" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <path class="fill-danger" fill-rule="evenodd" clip-rule="evenodd"
+                        d="M9 2C8.62123 2 8.27497 2.214 8.10557 2.55279L7.38197 4H4C3.44772 4 3 4.44772 3 5C3 5.55228 3.44772 6 4 6L4 16C4 17.1046 4.89543 18 6 18H14C15.1046 18 16 17.1046 16 16V6C16.5523 6 17 5.55228 17 5C17 4.44772 16.5523 4 16 4H12.618L11.8944 2.55279C11.725 2.214 11.3788 2 11 2H9ZM7 8C7 7.44772 7.44772 7 8 7C8.55228 7 9 7.44772 9 8V14C9 14.5523 8.55228 15 8 15C7.44772 15 7 14.5523 7 14V8ZM12 7C11.4477 7 11 7.44772 11 8V14C11 14.5523 11.4477 15 12 15C12.5523 15 13 14.5523 13 14V8C13 7.44772 12.5523 7 12 7Z"
+                        fill="#111827" />
+                    </svg>
+                    <span class="text-danger">DELETE</span>
+                  </a-button>
+                </a-popconfirm>
+                <a-button type="link" size="small" @click="metadataHandler(2, record)">
+                  <svg width="16" height="16" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path class="fill-muted"
+                      d="M13.5858 3.58579C14.3668 2.80474 15.6332 2.80474 16.4142 3.58579C17.1953 4.36683 17.1953 5.63316 16.4142 6.41421L15.6213 7.20711L12.7929 4.37868L13.5858 3.58579Z"
+                      fill="#111827" />
+                    <path class="fill-muted" d="M11.3787 5.79289L3 14.1716V17H5.82842L14.2071 8.62132L11.3787 5.79289Z"
+                      fill="#111827" />
+                  </svg>
+                  <span class="text-dark">EDIT</span>
+                </a-button>
+              </div>
+            </div>
+          </a-table>
+        </a-card>
+      </a-tab-pane>
     </a-tabs>
+    <a-modal v-model="showMetadataHandler" :title="handlerMetadataType === 1 ? '新增元数据' : '修改元数据'" :maskClosable="false"
+      cancelText="取消" okText="确定" @cancel="metadataHandlerCancel()" @ok="metadataHandlerConfirm()" centered>
+      <a-form-model layout="horizontal" ref="metadataForm" :model="metadataForm" :rules="metadataRules"
+        :hideRequiredMark="true">
+        <a-row :gutter="[24]">
+          <a-col :span="24">
+            <a-form-model-item class="mb-10" label="元数据KEY" :colon="false" prop="key">
+              <a-input :disabled="handlerMetadataType!==1" placeholder="请输入元数据KEY" v-model="metadataForm.key" />
+            </a-form-model-item>
+          </a-col>
+          <a-col :span="24">
+            <a-form-model-item class="mb-10" label="元数据类型" :colon="false" prop="type">
+              <a-select v-model="metadataForm.type" placeholder="请选择元数据类型" show-search optionFilterProp="label">
+                <a-select-option v-for="(item, index) in metadataTypes" :label="item.label" :key="index"
+                  :value="item.value">
+                  {{ item.label }}
+                </a-select-option>
+              </a-select>
+            </a-form-model-item>
+          </a-col>
+          <a-col :span="24">
+            <a-form-model-item class="mb-10" label="是否展示" :colon="false" prop="viewShow">
+              <a-switch v-model="metadataForm.viewShow" />
+            </a-form-model-item>
+          </a-col>
+        </a-row>
+      </a-form-model>
+    </a-modal>
     <a-modal v-model="showVulnerabilitiesModal" :title="vulnerabilitiesType === 1 ? '添加白名单' : '添加黑名单'"
       :maskClosable="false" cancelText="取消" okText="确定" @cancel="vulnerabilitiesModalCancel()"
       @ok="addVulnerabilities()" centered>
@@ -759,7 +837,7 @@
 
 <script>
 
-import { getServerSettings, postServerSettings, getLdap, putLdap, getMachineCode, postActivate, checkMachineCode } from "@/api/settings";
+import { getServerSettings, postServerSettings, getLdap, putLdap, getMachineCode, postActivate, checkMachineCode, getMetadataConfiguration, globalSettingAddOrUpdateMetadata, globalSettingDeleteMetadata } from "@/api/settings";
 import { getUsersCreateFields, getUsers } from "@/api/users";
 import { addVulnerabilitiesWhite, addVulnerabilitiesBlack, removeVulnerabilitiesWhite, removeVulnerabilitiesBlack, saveOrUpdateVulnerabilityNotify, vulnerabilityConfig, securityPolicyBlock } from "@/api/folib";
 
@@ -817,6 +895,73 @@ export default {
       ruleForm: this.$form.createForm(this, { name: 'rule_form' }),
       blockForm: this.$form.createForm(this, { name: 'block_form' }),
       userList: [],
+      metadataColumns: [
+        {
+          title: '元数据KEY',
+          dataIndex: 'key',
+          key: 'key',
+          width: 200,
+        },
+        {
+          title: '元数据类型',
+          dataIndex: 'type',
+          key: 'type',
+          width: 200,
+          scopedSlots: { customRender: 'type' },
+        },
+        {
+          title: '是否展示',
+          dataIndex: 'viewShow',
+          key: 'viewShow',
+          width: 200,
+          scopedSlots: { customRender: 'viewShow' },
+        },
+        {
+          title: '操作',
+          dataIndex: 'operation',
+          width: 80,
+          scopedSlots: { customRender: 'operation' },
+        },
+      ],
+      metadataList: [],
+      showMetadataHandler: false,
+      handlerMetadataType: 1,
+      metadataForm: {
+        key: undefined,
+        type: undefined,
+        viewShow: false,
+      },
+      metadataRules: {
+        key: [
+          { required: true, message: '请输入元数据KEY', trigger: 'blur' },
+          { min: 1, max: 30, message: '长度在 1 到 30 个字符', trigger: 'blur' },
+        ],
+        type: [
+          { required: true, message: '请选择元数据类型', trigger: 'blur' },
+        ],
+      },
+      metadataTypes: [
+        {
+          label: "数字",
+          value: "NUMERICAL",
+        },
+        {
+          label: "字符串",
+          value: "STRING",
+        },
+        {
+          label: "文本",
+          value: "TEXT",
+        },
+        {
+          label: "Markdown",
+          value: "MD",
+        },
+        {
+          label: "JSON",
+          value: "JSON",
+        },
+      ]
     };
   },
   computed: {},
@@ -838,6 +983,8 @@ export default {
     tabChange(key) {
       if (key === '2') {
         this.getVulnerabilities()
+      } else if (key === '5') {
+        this.getMetadataConfiguration()
       }
     },
     moveStep(distance) {
@@ -1057,7 +1204,7 @@ export default {
       this.ruleForm.validateFieldsAndScroll((err, values) => {
         if (!err) {
           saveOrUpdateVulnerabilityNotify(values).then(res => {
-            this.successMsg("漏洞等级保存成功")
+            this.successMsg("通知设置保存成功")
             this.getVulnerabilityConfig()
           }).finally(() => {
           })
@@ -1083,7 +1230,7 @@ export default {
       this.blockForm.validateFieldsAndScroll((err, values) => {
         if (!err) {
           securityPolicyBlock(values).then(res => {
-            this.successMsg("阻断配置保存成功")
+            this.successMsg("阻断设置保存成功")
             this.getVulnerabilityConfig()
           }).finally(() => {
           })
@@ -1101,6 +1248,82 @@ export default {
           filterWhites: false,
         })
       }
+    },
+    getMetadataConfiguration() {
+      getMetadataConfiguration().then(res => {
+        this.metadataList = res;
+      }).finally(() => {
+      })
+    },
+    metadataFormReset() {
+      if (this.$refs.metadataForm) {
+        this.$refs.metadataForm.resetFields()
+      }
+      this.metadataForm = {
+        key: undefined,
+        type: undefined,
+        viewShow: false,
+      }
+    },
+    metadataHandler(type, item) {
+      this.metadataFormReset()
+      if (item) {
+        let data = Object.assign({}, item)
+        if (data.viewShow === 1) {
+          data.viewShow = true
+        } else {
+          data.viewShow = false
+        }
+        this.metadataForm = data
+      }
+      this.handlerMetadataType = type
+      this.showMetadataHandler = true
+    },
+    metadataHandlerConfirm() {
+      this.$refs.metadataForm.validate(valid => {
+        if (valid) {
+          let data = Object.assign({}, this.metadataForm)
+          if (this.handlerMetadataType === 1) {
+             let flag = this.metadataList.some(metadata => metadata.key === data.key)
+             if (flag) {
+              this.$notification["warning"]({
+                message: '元数据KEY已存在',
+                description: ""
+              })
+              return false
+             }
+          }
+          if (data.viewShow) {
+            data.viewShow = 1
+          } else {
+            data.viewShow = 0
+          }
+          globalSettingAddOrUpdateMetadata(data).then(res => {
+            let prefix = "新增"
+            if (this.handlerMetadataType === 2) {
+              prefix = "修改"
+            }
+            this.successMsg(prefix + "元数据配置成功")
+            this.metadataFormReset()
+            this.showMetadataHandler = false
+            this.getMetadataConfiguration()
+          }).finally(() => {
+          })
+        } else {
+          return false
+        }
+      })
+    },
+    metadataHandlerDelete(data) {
+      globalSettingDeleteMetadata(data).then(res => {
+        this.successMsg("删除元数据成功")
+      }).finally(() => {
+        this.getMetadataConfiguration()
+      })
+    },
+    metadataHandlerCancel() {
+      this.metadataFormReset()
+      this.showMetadataHandler = false
     },
   },
 };
@@ -1326,6 +1549,10 @@ export default {
     color: grey;
     font-size: 12px;
     opacity: 0.7;
+  }
+
+  .add-metadata {
+    cursor: pointer;
   }
 }
 </style>

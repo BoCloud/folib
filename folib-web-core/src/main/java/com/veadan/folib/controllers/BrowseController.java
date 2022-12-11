@@ -1,6 +1,5 @@
 package com.veadan.folib.controllers;
 
-import cn.hutool.core.collection.CollectionUtil;
 import cn.hutool.core.date.DateUtil;
 import cn.hutool.core.io.FileUtil;
 import com.alibaba.fastjson.JSON;
@@ -163,9 +162,10 @@ public class BrowseController
                 String configDigest = menifest.getConfig().getDigest();
                 String imagePath = repositoryPath.toFile().getPath().substring(0, repositoryPath.toFile().getPath().lastIndexOf("/"));
                 String manifestConfigString = FileUtil.readString(imagePath + "/blobs/" + configDigest, "UTF-8");
+                Artifact artifact = repositoryPathResolver.findOneArtifact(storageId, repositoryId, fileContent.getArtifactPath());
+                jsonObject.put("artifact", artifact);
 
                 Long size = fileblobs.stream().mapToLong(FileContent::getSize).sum();
-
                 jsonObject.put("sha256", menifest.getConfig().getDigest());
                 jsonObject.put("snippets", snippets);
                 jsonObject.put("manifest", menifest);
@@ -361,7 +361,6 @@ public class BrowseController
             }
 
             DirectoryListing directoryListing = directoryListingService.fromRepositoryPath(repositoryPath);
-
             if (acceptHeader != null && acceptHeader.contains(MediaType.APPLICATION_JSON_VALUE)) {
                 return ResponseEntity.ok(objectMapper.writer().writeValueAsString(directoryListing));
             }

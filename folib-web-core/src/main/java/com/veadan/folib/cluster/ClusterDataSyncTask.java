@@ -2,6 +2,7 @@ package com.veadan.folib.cluster;
 
 import com.alibaba.fastjson.JSONObject;
 import com.veadan.folib.configuration.MutableSecurityPolicyConfiguration;
+import com.veadan.folib.controllers.cluster.dto.SyncMetadataDto;
 import com.veadan.folib.controllers.cluster.dto.SyncRepositoryDto;
 import com.veadan.folib.controllers.cluster.dto.SyncStorageDto;
 import com.veadan.folib.entity.ClusterDataSyncTaskPo;
@@ -96,7 +97,18 @@ public class ClusterDataSyncTask {
                     isSuccess(syncResult, task);
                     logger.info("sync securityPolicyConfiguration data end [{} ]", url);
                 }
+                //同步METADATA
+                if (Objects.equals(SyncDataTypeEnum.METADATA.getValue(), task.getTaskType())) {
 
+                    SyncMetadataDto syncMetadataDto = JSONObject.parseObject(task.getDataJson(),
+                            SyncMetadataDto.class);
+
+                    logger.info("start sync metadataConfiguration data [{}]", url);
+
+                    ClusterSyncResultEnum syncResult = clusterSyncService.handleSyncMetadataConfiguration(syncMetadataDto, url, true);
+                    isSuccess(syncResult, task);
+                    logger.info("sync metadataConfiguration data end [{} ]", url);
+                }
             } catch (Exception e) {
                 logger.error("error {}", e.getMessage());
             }

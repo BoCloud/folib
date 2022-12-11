@@ -179,9 +179,9 @@ public class StoragesConfigurationController
                 .values());
         final UserDetails loggedUser = (UserDetails) authentication.getPrincipal();
         StoragesOutput storagesOutput = new StoragesOutput(storages);
-        if (!loggedUser.getUsername().equals("admin")) {
+        if (!"admin".equals(loggedUser.getUsername())) {
             List<Storage> list = storagesOutput.getStorages();
-            List<Storage> collect = list.stream().filter(s -> s.getUsers() != null && s.getUsers().contains(loggedUser.getUsername())).collect(Collectors.toList());
+            List<Storage> collect = list.stream().filter(s -> CollectionUtil.isEmpty(s.getUsers()) || (CollectionUtil.isNotEmpty(s.getUsers()) && s.getUsers().contains(loggedUser.getUsername()))).collect(Collectors.toList());
             storagesOutput.setStorages(collect);
         }
         return ResponseEntity.ok(storagesOutput);
@@ -204,8 +204,8 @@ public class StoragesConfigurationController
                                                      @RequestParam(value = "layout", required = false)
                                                              String layout,
                                                      @ApiParam(value = "Filter repository names by repository policy")
-                                                         @RequestParam(value = "policy", required = false)
-                                                                 String policy,Authentication authentication) {
+                                                     @RequestParam(value = "policy", required = false)
+                                                             String policy, Authentication authentication) {
         List<Storage> storages = new ArrayList<>(configurationManagementService.getConfiguration()
                 .getStorages()
                 .values());

@@ -217,4 +217,20 @@ public interface ConfigurationManagementService {
      * @return 仓库列表
      */
     List<Repository> getRepositoriesWithType(String storageId, String repositoryType);
+
+    /**
+     * 新增元数据设置
+     *
+     * @param mutableMetadataConfiguration 元数据配置参数
+     * @throws IOException io异常
+     */
+    void addOrUpdateMetadataConfiguration(MutableMetadataConfiguration mutableMetadataConfiguration) throws IOException;
+
+    /**
+     * 删除元数据设置
+     *
+     * @param key 元数据key
+     * @throws IOException io异常
+     */
+    void deleteMetadataConfig(String key) throws IOException;
 }

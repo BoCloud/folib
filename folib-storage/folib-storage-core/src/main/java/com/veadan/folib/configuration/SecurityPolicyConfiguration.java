@@ -16,7 +16,6 @@ import java.util.Set;
  * @author leipenghui
  */
 @Immutable
-@JsonRootName("vulnerability")
 @Data
 @AllArgsConstructor
 @NoArgsConstructor

@@ -104,7 +104,6 @@ public abstract class AsyncArtifactEntryHandler
                 
                 return;
             }
-
             artifactEntityRepository.merge(() -> g.traversal(EntityTraversalSource.class), result);
             g.tx().commit();
         }

@@ -62,6 +62,28 @@ export function checkMachineCode () {
   })
 }
 
+export function getMetadataConfiguration () {
+  return axios({
+    url: '/api/artifact/getMetadataConfiguration',
+    method: 'get'
+  })
+}
+
+export function globalSettingAddOrUpdateMetadata (data) {
+  return axios({
+    url: '/api/artifact/globalSettingAddOrUpdateMetadata',
+    method: 'put',
+    data: data
+  })
+}
+
+export function globalSettingDeleteMetadata (data) {
+  return axios({
+    url: '/api/artifact/globalSettingDeleteMetadata',
+    method: 'delete',
+    data: data
+  })
+}
 
 
 

@@ -103,4 +103,8 @@ public interface Artifact extends DomainObject {
     Set<Vulnerability> getVulnerabilitySet();
 
     void setVulnerabilitySet(Set<Vulnerability> vulnerabilitySet);
+
+    String getMetadata();
+
+    void setMetadata(String metadata);
 }

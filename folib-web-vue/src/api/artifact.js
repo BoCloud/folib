@@ -25,6 +25,31 @@ export function artifactUpload (data) {
   })
 }
 
+export function saveArtifactMetadata (data) {
+  return axios({
+    url: '/api/artifact/artifactMetadata',
+    method: 'put',
+    data: data
+  })
+}
+
+export function updateArtifactMetadata (data) {
+  return axios({
+    url: '/api/artifact/artifactMetadata',
+    method: 'post',
+    data: data
+  })
+}
+
+export function deleteArtifactMetadata (data) {
+  return axios({
+    url: '/api/artifact/artifactMetadata',
+    method: 'delete',
+    data: data
+  })
+}
+
+
 export function rpmArtifactUpload (storageId,repositoryId,obj) {
   return axios({
     url: '/storages/'+storageId+'/'+repositoryId+'/Packages',
