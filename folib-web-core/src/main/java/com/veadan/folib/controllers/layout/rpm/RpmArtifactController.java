@@ -10,6 +10,7 @@ import com.veadan.folib.storage.repository.Repository;
 import com.veadan.folib.web.LayoutRequestMapping;
 import com.veadan.folib.web.RepositoryMapping;
 import io.swagger.annotations.ApiOperation;
+import io.swagger.annotations.ApiParam;
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
 import lombok.extern.slf4j.Slf4j;
@@ -19,10 +20,15 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import javax.inject.Inject;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
+import java.nio.file.Files;
+
+import static org.springframework.http.HttpStatus.NOT_FOUND;
 
 @RestController
 @LayoutRequestMapping(RpmLayoutProvider.ALIAS)
@@ -35,6 +41,47 @@ public class RpmArtifactController extends BaseArtifactController {
     @Inject
     private RepositoryManagementService repositoryManagementService;
 
+    private final Object lock = new Object();
+
+    @ApiOperation(value = "Deletes a path from a repository.")
+    @ApiResponses(value = {@ApiResponse(code = 200, message = "The artifact was deleted."),
+            @ApiResponse(code = 400, message = "Bad request."),
+            @ApiResponse(code = 404, message = "The specified storageId/repositoryId/path does not exist!")})
+    @PreAuthorize("hasAuthority('ARTIFACTS_DELETE')")
+    @DeleteMapping(value = "/{storageId}/{repositoryId}/{artifactPath:.+}")
+    public ResponseEntity delete(@RepositoryMapping Repository repository,
+                                 @ApiParam(value = "Whether to use force delete")
+                                 @RequestParam(defaultValue = "false",
+                                         name = "force",
+                                         required = false) boolean force,
+                                 @PathVariable String artifactPath) {
+        final String storageId = repository.getStorage().getId();
+        final String repositoryId = repository.getId();
+        logger.info("Deleting {}:{}/{}...", storageId, repositoryId, artifactPath);
+        try {
+            final RepositoryPath repositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, artifactPath);
+            if (!Files.exists(repositoryPath)) {
+                return ResponseEntity.status(NOT_FOUND)
+                        .body("The specified path does not exist!");
+            }
+            RepositoryPath trashPath = repositoryPathResolver.resolve(storageId, repositoryId, ".trash");
+
+            if (!Files.exists(trashPath)) {
+                Files.createDirectories(trashPath);
+            }
+            artifactManagementService.delete(repositoryPath, force);
+            // 刷新索引
+            RepositoryPath repoPath = repositoryPathResolver.resolve(repository, "");
+            String absolutePath = repoPath.toAbsolutePath().toString();
+            repodataUtil.updateIndex(absolutePath);
+        } catch (IOException | InterruptedException e) {
+            logger.error(e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(e.getMessage());
+        }
+        return ResponseEntity.ok("The artifact was deleted.");
+    }
+
     @ApiOperation(value = "Used to deploy an artifact")
     @ApiResponses(value = {@ApiResponse(code = 200, message = "The artifact was deployed successfully."),
             @ApiResponse(code = 400, message = "An error occurred.")})
@@ -42,12 +89,34 @@ public class RpmArtifactController extends BaseArtifactController {
     @PutMapping(value = "{storageId}/{repositoryId}/{path:.+}")
     public ResponseEntity upload(@RepositoryMapping Repository repository,
                                  @PathVariable String path,
-                                 HttpServletRequest request) {
+                                 HttpServletRequest request,
+                                 @RequestParam("files") MultipartFile[] files) {
         final String storageId = repository.getStorage().getId();
         final String repositoryId = repository.getId();
         try {
-            RepositoryPath repositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, path);
-            artifactManagementService.validateAndStore(repositoryPath, request.getInputStream());
+            for (MultipartFile multipartFile : files) {
+                if (multipartFile.isEmpty()) {
+                    continue;
+                }
+                String filename = multipartFile.getOriginalFilename();
+                String rpmPath = "Packages/" + filename;
+                RepositoryPath repositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, rpmPath);
+                artifactManagementService.store(repositoryPath, multipartFile.getInputStream());
+            }
+
+            RepositoryPath repoPath = repositoryPathResolver.resolve(repository, "repodata");
+            if (!Files.exists(repoPath)) {
+                synchronized (lock) {
+                    RepositoryPath reposPath = repositoryPathResolver.resolve(repository, "");
+                    String absolutePath = reposPath.toAbsolutePath().toString();
+                    repodataUtil.createRepo(absolutePath);
+                }
+            } else {
+                // 刷新索引
+                RepositoryPath repositoryPath = repositoryPathResolver.resolve(repository, "");
+                String absolutePath = repositoryPath.toAbsolutePath().toString();
+                repodataUtil.updateIndex(absolutePath);
+            }
             return ResponseEntity.ok("The artifact was deployed successfully.");
         } catch (Exception e) {
             logger.error(e.getMessage(), e);

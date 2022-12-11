@@ -66,6 +66,7 @@ public class BootProgressBeanPostProcessor
             { "nugetLayoutProvider", "Loading Nuget layout provider.." },
             { "npmLayoutProvider", "Loading NPM layout provider.." },
             { "rpmLayoutProvider", "Loading Rpm layout provider.." },
+            { "helmLayoutProvider", "Loading Helm layout provider.." },
             { "rawLayoutProvider", "Loading Raw layout provider.." },
             { "transactionManager", "Loading transaction manager..." },
             { WebSecurityConfig.class.getName(), "Loading security configuration..." },

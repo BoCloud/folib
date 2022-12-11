@@ -237,6 +237,11 @@
         </dependency>
         <dependency>
             <groupId>${project.groupId}</groupId>
+            <artifactId>folib-storage-helm-layout-provider</artifactId>
+            <version>1.0-SNAPSHOT</version>
+        </dependency>
+        <dependency>
+            <groupId>${project.groupId}</groupId>
             <artifactId>folib-storage-docker-layout-provider</artifactId>
             <version>${project.version}</version>
         </dependency>

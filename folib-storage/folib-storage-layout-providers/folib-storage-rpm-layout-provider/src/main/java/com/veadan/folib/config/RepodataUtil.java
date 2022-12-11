@@ -29,6 +29,24 @@ public class RepodataUtil {
     }
 
     /**
+     * 更新Rpm 仓库的索引
+     *
+     * @param fileAbsolutePath 生成 repo元数据的全路径
+     * @throws IOException io 异常
+     * @throws InterruptedException 中断的异常
+     */
+    public void updateIndex(String fileAbsolutePath) throws IOException, InterruptedException {
+        Runtime runtime = Runtime.getRuntime();
+        String command = "createrepo --update " + fileAbsolutePath;
+        Process pro = runtime.exec(command);
+        int status = pro.waitFor();
+        if (status != 0) {
+            log.error("Failed to call shell's command ");
+        }
+        log.info("Rpm index updated");
+    }
+
+    /**
      * 删除本地rpm 仓的元数据文件夹
      *
      * @param repodataPath 生成 repo元数据的全路径

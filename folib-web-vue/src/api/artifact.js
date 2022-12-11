@@ -50,3 +50,13 @@ export function deleteArtifactMetadata (data) {
 }
 
 
+export function rpmArtifactUpload (storageId,repositoryId,obj) {
+  return axios({
+    url: '/storages/'+storageId+'/'+repositoryId+'/Packages',
+    method: 'put',
+    headers: {
+      'Content-Type': "multipart/form-data",
+    },
+    data: obj
+  })
+}

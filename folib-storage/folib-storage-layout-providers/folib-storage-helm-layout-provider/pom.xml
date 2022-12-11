@@ -2,45 +2,44 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-
     <modelVersion>4.0.0</modelVersion>
 
- <parent>
+    <parent>
         <groupId>com.veadan.folib</groupId>
         <artifactId>folib-parent</artifactId>
         <version>1.0-SNAPSHOT</version>
         <relativePath/>
     </parent>
 
-    <artifactId>folib-storage-layout-providers</artifactId>
+    <artifactId>folib-storage-helm-layout-provider</artifactId>
     <version>1.0-SNAPSHOT</version>
-    <packaging>pom</packaging>
+    <packaging>jar</packaging>
 
-    <name>Folib: Storage Layout Providers</name>
+    <name>Folib: Storage [Helm Layout Provider]</name>
 
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-source-plugin</artifactId>
+            </plugin>
 
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+            </plugin>
 
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-dependency-plugin</artifactId>
+            </plugin>
 
-
-    <inceptionYear>2019</inceptionYear>
-
-     <scm>
-        <url>http://git.folib.com/folib/folib-server</url>
-        <connection>scm:git:git://git.folib.com/folib/folib-server.git</connection>
-        <developerConnection>scm:git:git://git.folib.com/folib/folib-server.git</developerConnection>
-    </scm>
-
-    <modules>
-        <module>folib-storage-nuget-layout-provider</module>
-        <module>folib-storage-p2-layout-provider</module>
-        <module>folib-storage-npm-layout-provider</module>
-        <module>folib-storage-pypi-layout-provider</module>
-        <module>folib-storage-raw-layout-provider</module>
-        <module>folib-storage-rpm-layout-provider</module>
-        <module>folib-storage-maven-layout</module>
-        <module>folib-storage-docker-layout-provider</module>
-        <module>folib-storage-helm-layout-provider</module>
-    </modules>
+        </plugins>
+    </build>
 
     <dependencies>
         <dependency>
@@ -64,12 +63,6 @@
             <version>1.0-SNAPSHOT</version>
             <scope>test</scope>
         </dependency>
-        <!--        <dependency>-->
-        <!--            <groupId>${project.groupId}</groupId>-->
-        <!--            <artifactId>folib-testing-core</artifactId>-->
-        <!--            <version>1.0-SNAPSHOT</version>-->
-        <!--            <scope>test</scope>-->
-        <!--        </dependency>-->
         <dependency>
             <groupId>${project.groupId}</groupId>
             <artifactId>folib-storage-api</artifactId>

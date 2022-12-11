@@ -49,6 +49,12 @@
                       </div>
                     </a-col>
                     <a-col :span="24" :md="12" style="display: flex; align-items: center; justify-content: flex-end">
+                      <a v-if="folibRepository.layout === 'rpm'">
+                        <small style="padding-right: 20px" @click="handleRpmUpload">
+                          上传
+                          <a-icon type="cloud-upload" />
+                        </small>
+                      </a>
                       <a v-if="folibRepository.layout === 'Raw' && enabled">
                         <small style="padding-right: 20px" @click="handleUpload">
                           上传
@@ -901,7 +907,7 @@
           '[local_test]' + '\n' +
           'name=CentOS-$releasever - Base - mirrors.aliyun.com' + '\n' +
           'enabled=1' + '\n' +
-          'baseurl=' + baseUrl + 'storages/' + folibRepository.storageId + '/' + folibRepository.id + '/' + ' #folib仓地址' + '\n' +
+          'baseurl=' + baseUrl + 'storages/' + folibRepository.storageId + '/' + folibRepository.id + '/'  + '\n' +
           'gpgcheck=0'" :highlight="highlighterHandle" :line-numbers="false" :readonly="true"></prism-editor>
         </a-timeline-item>
         <a-timeline-item color="primary">
@@ -916,6 +922,56 @@
           'yum repolist #显示所有仓库' + '\n' +
           'yum install --downloadonly --downloaddir=/folib_test/mysql mysql #拉mysql 相关rpm包到/folib_test/mysql 目录下'"
             :highlight="highlighterHandle" :line-numbers="false" :readonly="true"></prism-editor>
+        </a-timeline-item>
+      </a-timeline>
+      <a-timeline v-if="repositoryType === 'helm'">
+        <a-timeline-item color="primary">
+          Helm配置
+          <p>
+            将folib helm仓添加到本地操作步骤
+          </p>
+
+          <prism-editor class="my-editor height-300" :value="
+          'helm  registry  login  '+ baseUrl +folibRepository.storageId + '/' + folibRepository.id+
+          '\n' +
+          '\n' +
+          'helm  repo  add   '+ folibRepository.id +'   ' + baseUrl + folibRepository.storageId + '/' + folibRepository.id+
+          '\n'
+          " :highlight="highlighterHandle" :line-numbers="false" :readonly="true"></prism-editor>
+        </a-timeline-item>
+        <a-timeline-item color="primary">
+          上传Chart包到Helm仓库
+          <p>
+            安装 helm-cm-push插件
+          </p>
+          <prism-editor class="my-editor height-300" :value="
+          '1.   https://github.com/chartmuseum/helm-push/releases 下载各个系统下的 helm-cm-push 安装包'+ '\n' +
+          '2.   把安装包复制到 helm 的plugins目录下解压     ' + '\n' + '\n' +
+           '\n' +
+          '\n' +
+           'helm-cm-push 命令上传'    +'\n' + '\n' +
+          '1. 进入 helm-cm-push plugins 插件bin目录       #helm env 查看plugins目录位置'+ '\n' +
+          '\n' +
+          '2.   执行上传'+'\n' +
+          '例如 ：上传/app/fluentd-4.5.2.tgz 的chart包 到'+ folibRepository.id+'\n' +'\n' +
+          './helm-cm-push  /app/fluentd-4.5.2.tgz  '+ folibRepository.id+'\n'+
+           '\n' +
+          '参数说明：第一个参数是cahrt 包全路径   第二个参数是加入到本地的helm 仓库名. --username  --password 可选鉴权使用' + '\n'"
+                        :highlight="highlighterHandle" :line-numbers="false" :readonly="true"></prism-editor>
+        </a-timeline-item>
+
+        <a-timeline-item color="primary">
+          helm 使用常用命令
+          <p>
+            详细使用参考官网 https://helm.sh/zh/docs/intro/using_helm/
+          </p>
+          <prism-editor class="my-editor height-300" :value="
+          'helm reop update  #更新本地仓库'+ '\n' +
+           '\n' +
+          'helm search repo mysql     #搜索本地的mysql charts' + '\n' +
+           '\n' +
+          'helm pull  '+ folibRepository.id+'/mysql   ./    #将最新的mysql 下载到本地  --version 可指定版本' + '\n' "
+                        :highlight="highlighterHandle" :line-numbers="false" :readonly="true"></prism-editor>
         </a-timeline-item>
       </a-timeline>
       <a-timeline v-if="repositoryType === 'yarn'">
@@ -1298,6 +1354,48 @@
       </a-form>
     </a-modal>
 
+    <!--    rpm 上传表单 start-->
+    <a-modal v-model="showRpmUploadFormModal" :footer="null" :forceRender="true" :centered="true" title="上传"
+             on-ok="showRpmUploadFormModal = false">
+      <a-form :form="rpmUploadForm" ref="rpmUploadForm" layout="horizontal" @submit.prevent="handleRpmUploadSubmit">
+        <a-row :gutter="[24]">
+          <a-col :span="24">
+            <a-form-item class="tags-field mb-10" label="目标仓库" prop="repostoryId" :colon="false">
+              <a-input v-decorator="['repostoryId',
+                {
+                  rules: [
+                    { required: true, message: '请输入目标仓库' },
+                  ],
+                },
+              ]" :disabled="true" placeholder="请输入目标仓库">
+              </a-input>
+            </a-form-item>
+            <a-form-item label="选择文件">
+              <a-upload v-decorator="[
+                'files',
+                {
+                  rules: [
+                    { required: true, message: '请选择文件' },
+                  ],
+                  valuePropName: 'fileList',
+                  getValueFromEvent: normFile,
+                },
+              ]" name="files" :multiple="true" :beforeUpload="beforeUpload" list-type="text">
+                <a-button>
+                  <a-icon type="upload" />选择文件
+                </a-button>
+              </a-upload>
+            </a-form-item>
+          </a-col>
+          <a-col :span="24" class="text-center">
+            <a-button key="submit" class="px-30" size="small" type="primary" htmlType="submit">上传</a-button>
+            <a-button key="back" @click="uploadRpmFormModalClose()" class="px-30 ml-10" size="small">取消</a-button>
+          </a-col>
+        </a-row>
+      </a-form>
+    </a-modal>
+    <!--   rpm 上传表单 end -->
+
     <a-modal v-model="showUploadFormModal" :footer="null" :forceRender="true" :centered="true" title="上传"
       on-ok="showUploadFormModal = false">
       <a-form :form="uploadForm" ref="uploadForm" layout="horizontal" @submit.prevent="handleUploadSubmit">
@@ -1420,7 +1518,7 @@ import {
 } from '@/utils/layoutUtil'
 import { getMetadataConfiguration } from "@/api/settings"
 import { browse, getArtifact, viewArtifactFile, fql, scannerRules, insertOrUpdateRules, getDockerArtifact, deleteArtifact, getSeverity, repositoryVulnerabilityStatistics, getStoragesAndRepositories, } from '@/api/folib'
-import { artifactCopy, artifactMove, artifactUpload, saveArtifactMetadata, updateArtifactMetadata, deleteArtifactMetadata } from '@/api/artifact'
+import { artifactCopy, artifactMove, artifactUpload,rpmArtifactUpload , saveArtifactMetadata, updateArtifactMetadata, deleteArtifactMetadata } from '@/api/artifact'
 import { PrismEditor } from 'vue-prism-editor'
 import 'vue-prism-editor/dist/prismeditor.min.css' // import the styles somewhere
 // import highlighting library (you can use any library you want just return html string)
@@ -1635,10 +1733,12 @@ export default {
       locale: zhCN,
       showOperationFormModal: false,
       showUploadFormModal: false,
+      showRpmUploadFormModal: false,
       operationTitle: '',
       customTitle: '',
       operationForm: this.$form.createForm(this, { name: 'operation_form' }),
       uploadForm: this.$form.createForm(this, { name: 'upload_form' }),
+      rpmUploadForm: this.$form.createForm(this, { name: 'rpmUpload_form' }),
       repositories: [],
       storages: [],
       custom: false,
@@ -2171,6 +2271,17 @@ export default {
     dateConfirm() {
       this.search(this.artifactQuery.artifactName, 1)
     },
+    handleRpmUpload(){
+      this.rpmUploadForm.resetFields()
+      this.$nextTick(() => {
+        if (this.$refs.rpmUploadForm) {
+          this.rpmUploadForm.setFieldsValue({
+            repostoryId: this.folibRepository.id,
+          })
+        }
+      })
+      this.showRpmUploadFormModal = true
+    },
     handleUpload() {
       this.uploadForm.resetFields()
       this.$nextTick(() => {
@@ -2184,6 +2295,9 @@ export default {
     },
     uploadFormModalClose() {
       this.showUploadFormModal = false
+    },
+    uploadRpmFormModalClose() {
+      this.showRpmUploadFormModal = false
     },
     handleMenuClick(active) {
       this.operationForm.resetFields()
@@ -2326,6 +2440,34 @@ export default {
       }
       return e && e.fileList;
     },
+    handleRpmUploadSubmit(e){
+      e.preventDefault()
+      this.rpmUploadForm.validateFields((err, values) => {
+        if (!err) {
+          const rpmFormData = new FormData();
+          values.files.forEach(item => {
+            rpmFormData.append('files', item.originFileObj)
+          })
+          rpmArtifactUpload(
+              this.folibRepository.storageId,
+              this.folibRepository.id,
+              rpmFormData
+          ).then(res => {
+            this.successMsg("上传成功")
+            this.uploadRpmFormModalClose()
+            this.reload()
+          }).catch((err) => {
+            this.$notification["error"]({
+              message: err.response.data.error,
+              description: ""
+            })
+          }).finally(() => {
+          })
+        }
+      })
+      debugger
+    },
+
     handleUploadSubmit(e) {
       e.preventDefault()
       this.uploadForm.validateFields((err, values) => {
@@ -2550,7 +2692,7 @@ export default {
     metadataPrismEditorDrawerClose() {
       this.metadataPrismEditorDrawerVisible = false
     },
-    fixedNumber(val) {      
+    fixedNumber(val) {
       if (val) {
         let newVal = new Number(val)
         return newVal
