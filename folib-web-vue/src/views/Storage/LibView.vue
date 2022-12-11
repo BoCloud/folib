@@ -49,15 +49,13 @@
                       </div>
                     </a-col>
                     <a-col :span="24" :md="12" style="display: flex; align-items: center; justify-content: flex-end">
-                      <a v-if="folibRepository.layout === 'Raw' && enabled">
                       <a v-if="folibRepository.layout === 'rpm'">
                         <small style="padding-right: 20px" @click="handleRpmUpload">
                           上传
                           <a-icon type="cloud-upload" />
                         </small>
                       </a>
-
-                      <a v-if="folibRepository.layout === 'Raw'">
+                      <a v-if="folibRepository.layout === 'Raw' && enabled">
                         <small style="padding-right: 20px" @click="handleUpload">
                           上传
                           <a-icon type="cloud-upload" />
@@ -1520,8 +1518,7 @@ import {
 } from '@/utils/layoutUtil'
 import { getMetadataConfiguration } from "@/api/settings"
 import { browse, getArtifact, viewArtifactFile, fql, scannerRules, insertOrUpdateRules, getDockerArtifact, deleteArtifact, getSeverity, repositoryVulnerabilityStatistics, getStoragesAndRepositories, } from '@/api/folib'
-import { artifactCopy, artifactMove, artifactUpload,rpmArtifactUpload } from '@/api/artifact'
-import { artifactCopy, artifactMove, artifactUpload, saveArtifactMetadata, updateArtifactMetadata, deleteArtifactMetadata } from '@/api/artifact'
+import { artifactCopy, artifactMove, artifactUpload,rpmArtifactUpload , saveArtifactMetadata, updateArtifactMetadata, deleteArtifactMetadata } from '@/api/artifact'
 import { PrismEditor } from 'vue-prism-editor'
 import 'vue-prism-editor/dist/prismeditor.min.css' // import the styles somewhere
 // import highlighting library (you can use any library you want just return html string)
