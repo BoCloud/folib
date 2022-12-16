@@ -264,7 +264,6 @@ public class DockerArtifactController extends BaseArtifactController {
 
 
     ) throws Exception {
-
         response.setCharacterEncoding("utf8");
         byte[] bytes = inputStream;
         FileUtils utils = new FileUtils();

@@ -1,11 +1,6 @@
 package com.veadan.folib.config;
 
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.veadan.folib.booters.PropertiesBooter;
-import com.veadan.folib.npm.metadata.*;
-import com.veadan.folib.npm.metadata.jackson.*;
 import com.veadan.folib.providers.io.LayoutFileSystemFactory;
 import com.veadan.folib.providers.io.LayoutFileSystemProviderFactory;
 import com.veadan.folib.providers.layout.LayoutFileSystemProvider;
@@ -20,15 +15,8 @@ import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Scope;
 
-import javax.inject.Qualifier;
-import java.lang.annotation.Documented;
-import java.lang.annotation.Retention;
 import java.nio.file.FileSystem;
 import java.nio.file.spi.FileSystemProvider;
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
-
-import static java.lang.annotation.RetentionPolicy.RUNTIME;
 
 /**
  * @author leipenghui
