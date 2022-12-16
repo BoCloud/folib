@@ -12,6 +12,7 @@ import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.service.ProxyRepositoryConnectionPoolConfigurationService;
 import com.veadan.folib.storage.repository.remote.RemoteRepository;
 import com.veadan.folib.storage.repository.remote.heartbeat.RemoteRepositoryAlivenessService;
+import org.apache.commons.lang3.StringUtils;
 import org.glassfish.jersey.client.authentication.HttpAuthenticationFeature;
 import org.springframework.stereotype.Component;
 
@@ -24,10 +25,10 @@ public class RestArtifactResolverFactory
 
     @Inject
     private ProxyRepositoryConnectionPoolConfigurationService proxyRepositoryConnectionPoolConfigurationService;
-    
+
     @Inject
     private ConfigurationManager configurationManager;
-    
+
     @Inject
     private RemoteRepositoryAlivenessService remoteRepositoryAlivenessCacheManager;
 
@@ -35,7 +36,6 @@ public class RestArtifactResolverFactory
     {
         Objects.requireNonNull(repository);
 
-        
         RemoteRepositoryRetryArtifactDownloadConfiguration configuration = configurationManager.getConfiguration()
                                                                                                .getRemoteRepositoriesConfiguration()
                                                                                                .getRemoteRepositoryRetryArtifactDownloadConfiguration();
@@ -43,22 +43,21 @@ public class RestArtifactResolverFactory
         String username = repository.getUsername();
         String password = repository.getPassword();
         String url = repository.getUrl();
-        
+
         final HttpAuthenticationFeature authenticationFeature = (username != null && password != null) ? HttpAuthenticationFeature.basic(username, password) : null;
 
         Client client  = proxyRepositoryConnectionPoolConfigurationService.getRestClient(repositoryPath.getStorageId(),repositoryPath.getRepositoryId());
-
-        return new RestArtifactResolver(client , url,
+        return new RestArtifactResolver(client , url, repositoryPath.getTargetUrl(),
                                         configuration,
                                         authenticationFeature)
                                 {
-                        
+
                                     @Override
                                     public boolean isAlive()
                                     {
                                         return remoteRepositoryAlivenessCacheManager.isAlive(repository);
                                     }
-                        
+
                                 };
     }
 

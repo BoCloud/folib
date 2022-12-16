@@ -49,7 +49,7 @@
                       </div>
                     </a-col>
                     <a-col :span="24" :md="12" style="display: flex; align-items: center; justify-content: flex-end">
-                      <a v-if="folibRepository.layout === 'Raw' && enabled">
+                      <a v-if="(folibRepository.layout === 'Raw' || folibRepository.layout === 'php') && enabled">
                         <small style="padding-right: 20px" @click="handleUpload">
                           上传
                           <a-icon type="cloud-upload" />
@@ -160,7 +160,7 @@
                       </span>
                       <template #overlay>
                         <a-menu slot="overlay" @click="handleMenuClick">
-                          <a-menu-item key="1" v-if="currentFileDetial && folibRepository.layout !== 'Raw'">
+                          <a-menu-item key="1" v-if="currentFileDetial">
                             <a-icon type="eye" />
                             {{ currentFileDetial.listTree ? '包' : viewCodes ? '文件' : folibRepository.layout === 'Docker'
                                 ?
@@ -201,7 +201,7 @@
                       </span>
                       <template #overlay>
                         <a-menu slot="overlay" @click="handleMenuClick">
-                          <a-menu-item key="1" v-if="currentFileDetial && folibRepository.layout !== 'Raw'">
+                          <a-menu-item key="1" v-if="currentFileDetial">
                             <a-icon type="eye" />
                             {{ currentFileDetial.listTree ? '包' : viewCodes ? '文件' : folibRepository.layout === 'Docker'
                                 ?
@@ -627,7 +627,7 @@
         </a-descriptions>
         <hr class="my-25" />
 
-        <a-col :span="24" v-if="searchDataCurrentSelect">
+        <a-col :span="24" v-if="searchDataCurrentSelect && searchDataCurrentSelect.snippets && searchDataCurrentSelect.snippets.length > 0">
           <a-card :bordered="false" class="card-billing-info">
             <div class="col-info">
               <a-descriptions :title="'使用示例(' + codeParam.type + ')'" :column="1">
@@ -1081,6 +1081,71 @@
           </p>
         </a-timeline-item>
       </a-timeline>
+      <a-timeline v-if="repositoryType === 'php'">
+        <a-timeline-item color="primary">
+          Composer认证
+          <p>
+            http-basic
+          </p>
+          <p>
+            打开命令行窗口（windows用户）或控制台（Linux、Mac 用户）并执行如下命令：
+          </p>
+          <prism-editor class="my-editor height-300" :value="'composer config -g http-basic.' + baseUrl + ' admin folib@v587'" 
+          :highlight="highlighterHandle" :line-numbers="false" :readonly="true"></prism-editor>
+        </a-timeline-item>
+        <a-timeline-item color="primary">
+          Composer配置
+          <p>
+            方法一： 修改 composer 的全局配置文件（推荐方式）
+          </p>
+          <p>
+            打开命令行窗口（windows用户）或控制台（Linux、Mac 用户）并执行如下命令：
+          </p>
+          <prism-editor class="my-editor height-300" :value="'composer config -g repo.packagist composer ' + baseUrl + 'storages/' + folibRepository.storageId + '/' + folibRepository.id" 
+          :highlight="highlighterHandle" :line-numbers="false" :readonly="true"></prism-editor>
+          <p>
+          方法二： 修改当前项目的 composer.json 配置文件
+          </p>
+          <p>
+            打开命令行窗口（windows用户）或控制台（Linux、Mac 用户），进入你的项目的根目录（也就是 composer.json 文件所在目录），执行如下命令：
+          </p>
+          <prism-editor class="my-editor height-300" :value="'composer config repo.packagist composer ' + baseUrl + 'storages/' + folibRepository.storageId + '/' + folibRepository.id" 
+          :highlight="highlighterHandle" :line-numbers="false" :readonly="true"></prism-editor>
+        </a-timeline-item>
+        <a-timeline-item color="primary">
+          取消配置
+          <p>#全局取消</p>
+          <p>
+            composer config -g --unset repos.packagist
+          </p>
+          <p>#项目取消</p>
+          <p>
+            composer config --unset repos.packagist
+          </p>
+          <p>
+            注意：本仓库类型为:<strong>{{ folibRepository.type === 'proxy' ? '代理库' : folibRepository.type === 'group' ? '组合库' :
+                '本地库'
+            }}</strong>{{ folibRepository.type === 'proxy' ? '不支持上传' : folibRepository.type === 'group' ?
+    '不支持上传' : '可以上传'
+}}
+          </p>
+          <p v-if="folibRepository.type === 'hosted'">
+            使用API或页面上传按钮进行上传
+          </p>
+        </a-timeline-item>
+        <a-timeline-item color="primary">
+          命令操作
+          <small>composer 通常使用命令</small>
+          <p>
+            和通常composer一样使用，具体参阅：<a target="_blank" href="https://getcomposer.org/doc/03-cli.md">https://getcomposer.org/doc/03-cli.md</a>
+          </p>
+
+          <prism-editor class="my-editor height-300" :value="'composer init\n' +
+          'composer install\n' + 
+          'composer -vvv require\n' + 
+          'composer clear-cache'" :highlight="highlighterHandle" :line-numbers="false" :readonly="true"></prism-editor>
+        </a-timeline-item>
+      </a-timeline>
     </a-drawer>
 
     <a-drawer placement="right" width="65%" title="报告详情" :visible="detialVisible" @close="closeDialog">
@@ -1089,7 +1154,7 @@
           <a-icon type="caret-right" :rotate="props.isActive ? 90 : 0" />
         </template>
         <a-collapse-panel v-for="(item, index) in currentReport" :key="index"
-          style='background: #f7f7f7;border-radius: 4px;margin-bottom: 24px;border: 0;overflow: hidden'>
+          style='background: #f7f7f7;border-radius: 4px; margin-bottom: 24px; border: 0; overflow: hidden'>
           <template slot="header">
             <div class="collapse-panel-header-info">
               <span class="file-name">{{ item.fileName }}</span>
@@ -1874,6 +1939,9 @@ export default {
       //上个页面通过缓存传参，目的防止页面刷新，路由数据消失
       const params = storage.get('libView_repository')
       this.folibRepository = params.item
+      if (!this.folibRepository || this.folibRepository.type !== 'hosted') {
+        this.enabled = false
+      }
       this.baseUrl = params.baseUrl
       this.repositoryType = this.getLayoutTypeHandle()
       this.isNotSearch = false
@@ -1945,19 +2013,23 @@ export default {
           this.folibRepository.id,
           treeNode.dataRef.artifactPath
         ).then(res => {
+          if (!treeNode.dataRef.children) {
+            treeNode.dataRef.children = []
+          }
           if (res.directories.length > 0) {
             const d = res.directories
             d.forEach((item, index, d) => {
               item.type = 'dir'
             })
             treeNode.dataRef.children = d
-          } else if (res.files.length > 0) {
+          } 
+          if (res.files.length > 0) {
             const a = res.files
             a.forEach((item, index, a) => {
               item.isLeaf = true
               item.type = 'file'
             })
-            treeNode.dataRef.children = a
+            treeNode.dataRef.children = treeNode.dataRef.children.concat(a)
           }
 
           this.treeData = [...this.treeData]
@@ -2021,7 +2093,13 @@ export default {
       if (this.folibRepository.layout !== 'Docker') {
         if (this.currentFileDetial && !this.currentFileDetial.listTree) {
           viewArtifactFile(this.currentTreeNode.url).then(res => {
-            this.viewCodes = res
+            if ("string" === typeof(res) && res.startsWith("PK")) {
+              this.viewCodes = undefined
+            } else if ("object" === typeof(res)) {
+              this.viewCodes = JSON.stringify(res)
+            } else {
+              this.viewCodes = res
+            }
           })
         }
       } else {
@@ -2033,7 +2111,13 @@ export default {
     searchViewCodeHandle() {
       if (this.searchDataCurrentSelect && !this.searchDataCurrentSelect.treeNode) {
         viewArtifactFile(this.searchDataCurrentSelect.url).then(res => {
-          this.searchViewCodes = res
+            if ("string" === typeof(res) && res.startsWith("PK")) {
+              this.searchViewCodes = undefined
+            } else if ("object" === typeof(res)) {
+              this.searchViewCodes = JSON.stringify(res)
+            } else {
+              this.searchViewCodes = res
+            }
         })
       }
       this.searchViewCodeVisible = true
@@ -2326,10 +2410,19 @@ export default {
       e.preventDefault()
       this.uploadForm.validateFields((err, values) => {
         if (!err) {
+          if (values.targetPath && values.targetPath.startsWith("/")) {
+            this.$notification["warning"]({
+              message: "目标目录不能以/开头",
+              description: ""
+            })
+            return false
+          }
           let filePathMap = {};
           let fileList = [];
           values.files.forEach(item => {
-            filePathMap[item.name] = values.targetPath ? values.targetPath + '/' + item.name : item.name
+            let fileName = item.name;
+            fileName = fileName.replace(":", "/")
+            filePathMap[fileName] = values.targetPath ? values.targetPath + '/' + fileName : fileName
             fileList.push(item.originFileObj)
           })
           values.filePathMap = filePathMap
@@ -2338,6 +2431,7 @@ export default {
           formData.append("repostoryId", this.folibRepository.id);
           formData.append("filePathMap", JSON.stringify(filePathMap));
           fileList.forEach((file) => {
+            file = new File([file], file.name.replace(":","/"))
             formData.append('files', file)
           })
           artifactUpload(formData).then(res => {

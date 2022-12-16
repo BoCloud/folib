@@ -21,6 +21,7 @@ import com.veadan.folib.domain.FileContent;
 import com.veadan.folib.forms.artifact.ArtifactMetadataForm;
 import com.veadan.folib.gremlin.entity.vo.ArtifactVo;
 import com.veadan.folib.providers.io.RepositoryPath;
+import com.veadan.folib.providers.io.RepositoryPathResolver;
 import com.veadan.folib.providers.layout.DockerLayoutProvider;
 import com.veadan.folib.repositories.ArtifactRepository;
 import com.veadan.folib.services.*;
@@ -58,7 +59,7 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
     private ArtifactService artifactService;
 
     @Inject
-    private ArtifactResolutionService artifactResolutionService;
+    private RepositoryPathResolver repositoryPathResolver;
 
     @Inject
     private ConfigurationManagementService configurationManagementService;
@@ -237,7 +238,7 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
      * @throws IOException 异常
      */
     private Artifact getDockerArtifact(String artifactName, String storageId, String repositoryId) throws IOException {
-        RepositoryPath repositoryPath = artifactResolutionService.resolvePath(storageId, repositoryId, artifactName);
+        RepositoryPath repositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, artifactName);
         Path path = repositoryPath.getTarget();
         String artifactPath = "";
         if (path instanceof S3Path) {
@@ -273,7 +274,7 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
      * @throws Exception 异常
      */
     private Artifact resolvePath(String storageId, String repositoryId, String artifactPath) throws Exception {
-        RepositoryPath repositoryPath = artifactResolutionService.resolvePath(storageId, repositoryId, artifactPath);
+        RepositoryPath repositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, artifactPath);
         Artifact artifact = Objects.nonNull(repositoryPath) ? repositoryPath.getArtifactEntry() : null;
         if (Objects.isNull(artifact)) {
             //兼容已存在数据的docker布局仓库

@@ -857,7 +857,7 @@
               </a-col>
               <a-col :span="12" class="text-right">
                 <a-button type="primary" @click="addOrUpdateRepositoryHandel(false)" class="px-25">
-                  >完成{{ folibRepositoryEditDisabled ? '修改' : '创建' }}</a-button>
+                  完成{{ folibRepositoryEditDisabled ? '修改' : '创建' }}</a-button>
                 <a-button style="margin-left:20px" @click="addOrUpdateRepositoryHandel(true)" class="px-25">
                   {{ folibRepositoryEditDisabled ? '修改' : '创建' }}并设置定时策略</a-button>
               </a-col>

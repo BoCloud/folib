@@ -191,7 +191,7 @@ public class ArtifactClient extends BaseArtifactClient implements Closeable {
         String url = getContextBaseUrl() + "/api/browse/" + storageId + "/" + repositoryId + "/" + path +
                 (force ? "?force=" + force : "");
 
-        logger.info("Getting {}...", url);
+        logger.debug("Getting {}...", url);
 
         WebTarget resource = getClientInstance().target(url);
         setupAuthentication(resource);

@@ -12,6 +12,7 @@ import com.veadan.folib.domain.VulnerabilityEntity;
 import com.veadan.folib.enums.SafeLevelEnum;
 import com.veadan.folib.enums.VulnerabilityPlatformEnum;
 import com.veadan.folib.providers.io.RepositoryPath;
+import com.veadan.folib.providers.io.RepositoryPathResolver;
 import com.veadan.folib.providers.layout.DockerFileSystem;
 import com.veadan.folib.scanner.biz.FolibScannerBiz;
 import com.veadan.folib.scanner.biz.ScanRulesBiz;
@@ -71,7 +72,7 @@ public class ScanService {
     private FolibScannerBiz folibScannerBiz;
 
     @Inject
-    protected ArtifactResolutionService artifactResolutionService;
+    protected RepositoryPathResolver repositoryPathResolver;
 
     @Inject
     private VulnerabilityService vulnerabilityService;
@@ -230,9 +231,9 @@ public class ScanService {
         if (artifactPath.startsWith("/")) {
             artifactPath = artifactPath.replaceFirst("/", "");
         }
-        RepositoryPath repositoryPath = artifactResolutionService.resolvePath(storageId, repositoryId, artifactPath);
+        RepositoryPath repositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, artifactPath);
         if (Objects.isNull(repositoryPath) && StringUtils.isNotBlank(folibScanner.getArtifactPath())) {
-            repositoryPath = artifactResolutionService.resolvePath(storageId, repositoryId, folibScanner.getArtifactPath());
+            repositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, folibScanner.getArtifactPath());
         }
         return repositoryPath;
     }

@@ -94,5 +94,22 @@ public class ArtifactResolutionServiceImpl
             return null;
         }
     }
-    
+
+    @Override
+    public RepositoryPath resolvePath(String storageId, String repositoryId, String targetUrl, String artifactPath) throws IOException {
+        RepositoryPath repositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, artifactPath);
+        repositoryPath.setTargetUrl(targetUrl);
+        Repository repository = repositoryPath.getRepository();
+        RepositoryProvider repositoryProvider = repositoryProviderRegistry.getProvider(repository.getType());
+
+        try
+        {
+            return (RepositoryPath)repositoryProvider.fetchPath(repositoryPath);
+        }
+        catch (ArtifactNotFoundException e)
+        {
+            return null;
+        }
+    }
+
 }

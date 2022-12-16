@@ -52,41 +52,51 @@ public class ArtifactUtils {
                 String blobs = "blobs";
                 String manifest = "manifest";
                 String path = repositoryPath.toAbsolutePath().toString();
-                //docker布局
                 if (!path.contains(blobs) && !path.contains(manifest) && !path.endsWith(".sha256")) {
                     return true;
                 }
             } else if (repositoryPath.getFileSystem() instanceof MavenFileSystem) {
                 log.debug("=====>>>>> maven布局");
-                //maven布局
                 flag = JarArchiveListingFunction.INSTANCE.supports(repositoryPath);
             } else if (repositoryPath.getFileSystem() instanceof NpmFileSystem) {
                 log.debug("=====>>>>> npm布局");
-                //npm布局
                 List<String> suffixList = Arrays.asList(".json", ".tgz");
                 flag = endsWith(repositoryPath.getFileName().toString(), suffixList);
             } else if (repositoryPath.getFileSystem() instanceof NugetFileSystem) {
                 log.debug("=====>>>>> nuget布局");
-                //nuget布局
                 List<String> suffixList = Arrays.asList(".nupkg", ".nuspec", ".config");
                 flag = endsWith(repositoryPath.getFileName().toString(), suffixList);
             } else if (repositoryPath.getFileSystem() instanceof PypiFileSystem) {
                 log.debug("=====>>>>> pypi布局");
-                //pypi布局
                 List<String> suffixList = Arrays.asList(".whl", ".egg", ".zip", ".gz");
                 flag = endsWith(repositoryPath.getFileName().toString(), suffixList);
             } else if (repositoryPath.getFileSystem() instanceof RawFileSystem) {
                 log.debug("=====>>>>> raw布局");
-                //raw布局
                 return true;
             } else if (repositoryPath.getFileSystem() instanceof RpmFileSystem) {
                 log.debug("=====>>>>> rpm布局");
-                //rpm布局
                 List<String> suffixList = Arrays.asList(".rpm");
+                flag = endsWith(repositoryPath.getFileName().toString(), suffixList);
+            } else if (repositoryPath.getFileSystem() instanceof PhpFileSystem) {
+                log.debug("=====>>>>> php布局");
+                List<String> suffixList = Arrays.asList("tar", "tar.gz", "tar.bz2", "zip", "json");
                 flag = endsWith(repositoryPath.getFileName().toString(), suffixList);
             }
         }
         log.debug("=====>>>>> 是否是该布局支持的类型：{}", flag);
         return flag;
+    }
+
+    /**
+     * 拼接url
+     *
+     * @param repositoryBaseUrl url前缀
+     * @param path              url路径
+     * @return 拼接后的url
+     */
+    public static String escapeUrl(String repositoryBaseUrl, String path) {
+        String baseUrl = repositoryBaseUrl + (repositoryBaseUrl.endsWith("/") ? "" : "/");
+        String p = (path.startsWith("/") ? path.substring(1, path.length()) : path);
+        return baseUrl + p;
     }
 }

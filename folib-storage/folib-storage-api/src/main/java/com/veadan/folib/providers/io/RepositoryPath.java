@@ -45,6 +45,8 @@ public class RepositoryPath
 
     protected URI uri;
 
+    private String targetUrl;
+
     protected String path;
 
     public RepositoryPath(Path target,
@@ -374,4 +376,11 @@ public class RepositoryPath
         }
     }
 
+    public String getTargetUrl() {
+        return targetUrl;
+    }
+
+    public void setTargetUrl(String targetUrl) {
+        this.targetUrl = targetUrl;
+    }
 }

@@ -11,6 +11,7 @@ import org.apache.http.client.config.RequestConfig;
 import org.glassfish.jersey.apache.connector.ApacheClientProperties;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.util.StringUtils;
 
 /**
  */
@@ -21,25 +22,29 @@ public class RestArtifactResolver
     private static final Logger logger = LoggerFactory.getLogger(RestArtifactResolver.class);
 
     private final String repositoryBaseUrl;
+    private final String targetUrl;
     private final Client client;
     private Feature authentication;
     private RemoteRepositoryRetryArtifactDownloadConfiguration configuration;
 
     public RestArtifactResolver(Client client,
                                 String repositoryBaseUrl,
+                                String targetUrl,
                                 RemoteRepositoryRetryArtifactDownloadConfiguration configuration)
     {
         this.client = client;
+        this.targetUrl = targetUrl;
         this.repositoryBaseUrl = normalize(repositoryBaseUrl);
         this.configuration = configuration;
     }
 
     public RestArtifactResolver(Client client,
                                 String repositoryBaseUrl,
+                                String targetUrl,
                                 RemoteRepositoryRetryArtifactDownloadConfiguration configuration,
                                 Feature authentication)
     {
-        this(client, repositoryBaseUrl, configuration);
+        this(client, repositoryBaseUrl, targetUrl, configuration);
         this.authentication = authentication;
     }
     
@@ -71,7 +76,9 @@ public class RestArtifactResolver
                                      long offset)
     {
         String url = escapeUrl(path);
-
+        if(StringUtils.hasText(targetUrl)){
+            url = targetUrl;
+        }
         logger.debug("Getting {}...", url);
 
         WebTarget resource = new WebTargetBuilder(url).withAuthentication()

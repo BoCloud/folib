@@ -9,6 +9,7 @@ import com.veadan.folib.event.AsyncEventListener;
 import com.veadan.folib.event.artifact.ArtifactEvent;
 import com.veadan.folib.event.artifact.ArtifactEventTypeEnum;
 import com.veadan.folib.providers.io.RepositoryPath;
+import com.veadan.folib.providers.io.RepositoryPathResolver;
 import com.veadan.folib.providers.layout.DockerFileSystem;
 import com.veadan.folib.scanner.common.constant.ScanConstans;
 import com.veadan.folib.schema2.ImageManifest;
@@ -52,7 +53,7 @@ public class ArtifactEventListenerScannerHandler {
     private ScanService scanService;
 
     @Inject
-    protected ArtifactResolutionService artifactResolutionService;
+    protected RepositoryPathResolver repositoryPathResolver;
 
     @Value("${folib.temp}")
     private String tempPath;
@@ -116,7 +117,7 @@ public class ArtifactEventListenerScannerHandler {
                 for (String digest : digestList) {
                     blobsPath = prefix + File.separator + "blobs" + File.separator + digest;
                     String blobsItemPath = blobsPath.replace(String.format("%s/%s/", repositoryPath.getStorageId(), repositoryPath.getRepositoryId()), "");
-                    RepositoryPath blobsRepositoryPath = artifactResolutionService.resolvePath(repositoryPath.getStorageId(), repositoryPath.getRepositoryId(), blobsItemPath);
+                    RepositoryPath blobsRepositoryPath = repositoryPathResolver.resolve(repositoryPath.getStorageId(), repositoryPath.getRepositoryId(), blobsItemPath);
                     filePath = parentPath + File.separator + digest;
                     tempFile = new File(filePath);
                     inputStream = Files.newInputStream(blobsRepositoryPath);
@@ -244,8 +245,8 @@ public class ArtifactEventListenerScannerHandler {
         boolean flag = false;
         int source = (int) event.getSource();
         RepositoryPath repositoryPath = event.getPath();
-        log.debug("=====>>>>> 监听到制品事件：{}，path路径：{}", ArtifactEventTypeEnum.queryArtifactEventTypeEnumByType(source), repositoryPath);
         ArtifactEventTypeEnum artifactEventTypeEnum = ArtifactEventTypeEnum.queryArtifactEventTypeEnumByType(source);
+        log.debug("=====>>>>> 监听到制品事件：{}，path路径：{}", artifactEventTypeEnum, repositoryPath);
         if (Objects.isNull(artifactEventTypeEnum)) {
             return false;
         }

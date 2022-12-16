@@ -104,6 +104,7 @@ services:
       - FOLIB_S3_SECRET_KEY=UGo8B5wcjFasU3xKxanxxYKEyVNGxyfH
     volumes:
       - ~/folib/folib-conf:/opt/folib/folib-1.0-SNAPSHOT/etc/conf
+      - ~/folib/lic:/opt/folib/folib-1.0-SNAPSHOT/etc/lic
       - ~/folib/folib-vault:/opt/folib/folib-vault
     restart: always
     privileged: true
