@@ -6,16 +6,13 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Iterator;
-import java.util.LinkedHashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 
+import cn.hutool.core.collection.CollectionUtil;
+import com.beust.jcommander.internal.Maps;
 import com.veadan.folib.providers.repository.event.GroupRepositoryPathFetchEvent;
 import com.veadan.folib.providers.repository.group.GroupRepositorySetCollector;
 import com.veadan.folib.artifact.coordinates.ArtifactCoordinates;
@@ -26,12 +23,15 @@ import com.veadan.folib.providers.io.RepositoryFiles;
 import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.providers.io.RepositoryPathResolver;
 import com.veadan.folib.repositories.ArtifactIdGroupRepository;
+import com.veadan.folib.services.ArtifactResolutionService;
 import com.veadan.folib.services.support.ArtifactRoutingRulesChecker;
 import com.veadan.folib.storage.Storage;
 import com.veadan.folib.storage.repository.Repository;
 import com.veadan.folib.util.ThrowingFunction;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 
 /**
@@ -60,6 +60,9 @@ public class GroupRepositoryProvider
 
     @Inject
     private RepositoryPathResolver repositoryPathResolver;
+
+    @Inject
+    private ArtifactResolutionService artifactResolutionService;
 
     @Override
     public String getAlias()
@@ -294,6 +297,64 @@ public class GroupRepositoryProvider
 
         return artifactIdGroupRepository.countArtifacts(groupRepositoryIdSet, predicate.getArtifactId(),
                                                         predicate.getCoordinateValues());
+    }
+
+    @Override
+    public Map<String, Object> searchConanPackage(Repository repository, String query) {
+        Set<Repository> groupRepositorySet = groupRepositorySetCollector.collect(repository);
+        for (Repository x : groupRepositorySet) {
+            try {
+                RepositoryProvider repositoryProvider = repositoryProviderRegistry.getProvider(x.getType());
+                Map<String, Object> rsMap = repositoryProvider.searchConanPackage(x, query);
+                if (rsMap.get("results") instanceof List) {
+                    List pacakges = (List) rsMap.get("results");
+                    if (CollectionUtil.isNotEmpty(pacakges)) {
+                        return rsMap;
+                    }
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+        return Maps.newHashMap();
+    }
+
+    @Override
+    public Map<String, Object> searchConanDownLoadUrl(Repository repository, String packageName, String version) {
+        Set<Repository> groupRepositorySet = groupRepositorySetCollector.collect(repository);
+        String path = "_/" + packageName + "/" + version + "/_/0/export/conanmanifest.txt";
+        for (Repository x : groupRepositorySet) {
+            try {
+                RepositoryProvider repositoryProvider = repositoryProviderRegistry.getProvider(x.getType());
+                Map<String, Object> rsMap = repositoryProvider.searchConanDownLoadUrl(x, packageName, version);
+                RepositoryPath repositoryPath = artifactResolutionService.resolvePath(x.getStorage().getId(),
+                        x.getId(), path);
+                if (null != repositoryPath && Files.exists(repositoryPath)) {
+                    return rsMap;
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+        return Maps.newHashMap();
+    }
+
+    @Override
+    public Map<String, Object> searchConanPackageInfo(Repository repository, String packageName, String version) {
+
+        Set<Repository> groupRepositorySet = groupRepositorySetCollector.collect(repository);
+        for (Repository x : groupRepositorySet) {
+            try {
+                RepositoryProvider repositoryProvider = repositoryProviderRegistry.getProvider(x.getType());
+                Map<String, Object> rsMap = repositoryProvider.searchConanPackageInfo(x, packageName, version);
+                if (CollectionUtil.isNotEmpty(rsMap)) {
+                    return rsMap;
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+        return Maps.newHashMap();
     }
 
 }

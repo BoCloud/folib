@@ -6,13 +6,13 @@ import com.veadan.folib.gremlin.component.ClusterCache;
 import com.veadan.folib.gremlin.entity.*;
 import com.veadan.folib.gremlin.entity.vo.PropertyVo;
 import com.veadan.folib.gremlin.service.QueryService;
-import lombok.extern.slf4j.Slf4j;
 import org.apache.tinkerpop.gremlin.driver.Client;
 import org.apache.tinkerpop.gremlin.driver.Result;
 import org.apache.tinkerpop.gremlin.driver.ResultSet;
 import org.apache.tinkerpop.gremlin.process.traversal.Path;
 import org.apache.tinkerpop.gremlin.structure.Edge;
 import org.apache.tinkerpop.gremlin.structure.Vertex;
+import org.janusgraph.core.JanusGraph;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -27,6 +27,9 @@ public class QueryServiceImpl implements QueryService {
 
     @Autowired
     private ClusterCache clusterCache;
+
+    @Autowired
+    private JanusGraph janusGraph;
 
     private Client getClient(String host, int port) {
         Client client = clusterCache.get(host, port);
