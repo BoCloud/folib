@@ -974,6 +974,48 @@
                         :highlight="highlighterHandle" :line-numbers="false" :readonly="true"></prism-editor>
         </a-timeline-item>
       </a-timeline>
+      <a-timeline v-if="repositoryType === 'conan'">
+        <a-timeline-item color="primary">
+            Conan配置
+          <p>
+            将folib conan仓添加到本地操作步骤
+          </p>
+
+          <prism-editor class="my-editor height-300" :value="
+          'conan remote add   '+ folibRepository.id +'   ' + baseUrl + folibRepository.storageId + '/' + folibRepository.id+
+          '   false\n'+'\n' +
+          'conan user -p [password] -r a_local_conan [username]   #添加访问用户名密码'
+          " :highlight="highlighterHandle" :line-numbers="false" :readonly="true"></prism-editor>
+        </a-timeline-item>
+        <a-timeline-item color="primary">
+          Conan包 相关操作
+          <p>
+
+          </p>
+          <prism-editor class="my-editor height-300" :value="
+          '1.   搜索本地已有的Conan'+ '\n' +
+          '\n' +
+          'conan  search '+'\n' +
+          '2.   上传本地包到   ' + folibRepository.id + '\n' +'\n' +
+           '例如上传 zulu-openjdk/11.0.15 ' + '\n' +
+            'conan  upload  zulu-openjdk/11.0.15@ -r ' + folibRepository.id +  '  --all' + '\n' +'\n' +
+           '3.   下载与搜索   ' + folibRepository.id + '\n' +'\n' +
+           '例如下载 ' + folibRepository.id + '  zulu-openjdk/11.0.15 ' + '\n' +'\n' +
+            'conan   search    zulu-openjdk -r   ' + folibRepository.id + '\n' +
+            'conan   download   zulu-openjdk/11.0.15@    -r   ' + folibRepository.id + '\n' "
+                        :highlight="highlighterHandle" :line-numbers="false" :readonly="true"></prism-editor>
+        </a-timeline-item>
+
+        <a-timeline-item color="primary">
+          Conan 使用常用命令
+          <p>
+            详细使用参考官网 https://docs.conan.io/en/latest/reference/commands.html
+          </p>
+          <prism-editor class="my-editor height-300" :value="
+          'conan  remote list  #查询已加入的仓库'+ '\n'  "
+                        :highlight="highlighterHandle" :line-numbers="false" :readonly="true"></prism-editor>
+        </a-timeline-item>
+      </a-timeline>
       <a-timeline v-if="repositoryType === 'yarn'">
         <a-timeline-item color="primary">
           Yarn配置
