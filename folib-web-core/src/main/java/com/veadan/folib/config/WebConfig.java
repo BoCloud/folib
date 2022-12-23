@@ -245,8 +245,8 @@ public class WebConfig
     {
         registry.setOrder(-1);
 
-        registry.addResourceHandler("/docs/**")
-                .addResourceLocations("classpath:/META-INF/resources/docs/")
+        registry.addResourceHandler("/rest/**")
+                .addResourceLocations("classpath:/META-INF/resources/docs/rest/")
                 .setCachePeriod(3600);
 
         registry.addResourceHandler("*.html")
