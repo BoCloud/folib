@@ -13,7 +13,7 @@
             <a-card :bordered="false" class="widget-1">
               <a-statistic
                   title="扫描包总数"
-                  :value="countData.totalCount.onScanCount"
+                  :value="countData.scanCount"
                   :suffix="onScanProportion.toFixed(2)+'%'"
                   class="text-success"
               >
@@ -29,7 +29,7 @@
             <a-card :bordered="false" class="widget-1">
               <a-statistic
                   title="无需扫描包总数"
-                  :value="countData.totalCount.notScanCount"
+                  :value="countData.notScanCount"
                   class="text-success"
               >
               </a-statistic>
@@ -44,7 +44,7 @@
             <a-card :bordered="false" class="widget-1">
               <a-statistic
                   title="扫描成功的包数量"
-                  :value="countData.totalCount.onScanAndScaned"
+                  :value="countData.scanSuccessCount"
                   :suffix="onScanAndScanedProportion.toFixed(2)+'%'"
                   class="text-success"
               >
@@ -60,7 +60,7 @@
             <a-card :bordered="false" class="widget-1">
               <a-statistic
                   title="扫描失败的包数量"
-                  :value="countData.totalCount.onScanAndScanFailed"
+                  :value="countData.scanFailCount"
                   class="text-success"
               >
               </a-statistic>
@@ -77,7 +77,7 @@
             <a-card :bordered="false" class="widget-1">
               <a-statistic
                   title="扫描依赖数量"
-                  :value="countData.denpendencyCount.denpendencySum"
+                  :value="countData.dependencyCount"
                   class="text-success"
               >
               </a-statistic>
@@ -92,7 +92,7 @@
             <a-card :bordered="false" class="widget-1">
               <a-statistic
                   title="具有漏洞的包数量"
-                  :value="countData.denpendencyCount.vulnerableSum"
+                  :value="countData.dependencyVulnerabilitiesCount"
                   :suffix="vulnerableSumProportion.toFixed(2)+'%'"
                   class="text-danger"
               >
@@ -108,7 +108,7 @@
             <a-card :bordered="false" class="widget-1">
               <a-statistic
                   title="漏洞总数"
-                  :value="countData.denpendencyCount.vulnerabilitesSum"
+                  :value="countData.vulnerabilitiesCount"
                   :suffix="vulnerabilitesSumProportion.toFixed(2)+'%'"
                   class="text-danger"
               >
@@ -124,7 +124,7 @@
             <a-card :bordered="false" class="widget-1">
               <a-statistic
                   title="封存漏洞数量"
-                  :value="countData.denpendencyCount.suppressedSum"
+                  :value="countData.suppressedVulnerabilitiesCount"
                   class="text-success"
               >
               </a-statistic>
@@ -183,26 +183,26 @@
           <chart-bar ref="volFolib" :height="220" :data="barChartData"></chart-bar>
           <div class="card-title">
             <h6>近7天漏洞分布视图</h6>
-            <p>较上周包数量 <span class="text-success">{{weekCompare.countFolib>0?'+'+weekCompare.countFolib:weekCompare.countFolib===0?'不变':'未知'}}</span></p>
+            <p>较上周包数量 <span class="text-success">{{weekCompare.scanCount>0?'+'+weekCompare.scanCount:weekCompare.scanCount===0?'不变':'未知'}}</span></p>
           </div>
           <div class="card-content">
             <p>以下为本周与上周(14天)的数据进行比较的结果</p>
           </div>
           <a-row class="card-footer" type="flex" justify="center" align="top">
             <a-col :span="6">
-              <h6>{{weekCompare.vulnerableSum}}</h6>
+              <h6>{{weekCompare.dependencyVulnerabilitiesCount}}</h6>
               <span>漏洞包新增</span>
             </a-col>
             <a-col :span="6">
-              <h6>{{weekCompare.denpendencySum}}</h6>
+              <h6>{{weekCompare.dependencyCount}}</h6>
               <span>扫描依赖新增</span>
             </a-col>
             <a-col :span="6">
-              <h6>{{weekCompare.vulnerabilitesSum}}</h6>
+              <h6>{{weekCompare.vulnerabilitiesCount}}</h6>
               <span>漏洞依赖新增</span>
             </a-col>
             <a-col :span="6">
-              <h6>{{weekCompare.suppressedSum}}</h6>
+              <h6>{{weekCompare.suppressedVulnerabilitiesCount}}</h6>
               <span>封存漏洞数新增</span>
             </a-col>
           </a-row>
@@ -292,8 +292,15 @@ export default ({
         }, ],
       },
       countData: {
-        denpendencyCount: {denpendencySum: 0, vulnerableSum: 0, vulnerabilitesSum: 0, suppressedSum: 0},
-        totalCount: {onScanCount: 0, onScanAndUnScan: 0, onScanAndScanFailed: 0, notScanCount: 0,onScanAndScaned:0}
+        scanCount: 0, 
+        notScanCount: 0, 
+        scanSuccessCount: 0, 
+        unScanCount: 0,
+        scanFailCount: 0, 
+        dependencyCount: 0, 
+        dependencyVulnerabilitiesCount: 0, 
+        vulnerabilitiesCount: 0,
+        suppressedVulnerabilitiesCount: 0,
       },
       activeKey: "1",
       columns: [
@@ -309,22 +316,22 @@ export default ({
         },
         {
           title: '包总数',
-          dataIndex: 'countFolib',
+          dataIndex: 'scanCount',
           width: 100,
         },
         {
           title: '问题包数',
-          dataIndex: 'vulnerableSum',
+          dataIndex: 'dependencyVulnerabilitiesCount',
           width: 100,
         },
         {
           title: '漏洞数量',
-          dataIndex: 'vulnerabilitesSum',
+          dataIndex: 'vulnerabilitiesCount',
           width: 100,
         },
         {
           title: '封存漏洞数量',
-          dataIndex: 'suppressedSum',
+          dataIndex: 'suppressedVulnerabilitiesCount',
         },
         {
           title: '安全评分',
@@ -396,38 +403,38 @@ export default ({
   methods: {
     getCountData() {
       getCount().then(res => {
-        this.countData = res.data
-        if(this.countData.totalCount.onScanCount+this.countData.totalCount.notScanCount > 0){
-           this.onScanProportion = ((this.countData.totalCount.onScanCount/(this.countData.totalCount.onScanCount+this.countData.totalCount.notScanCount))*100)
+        this.countData = res
+        if(this.countData.scanCount+this.countData.notScanCount > 0){
+           this.onScanProportion = ((this.countData.scanCount/(this.countData.scanCount+this.countData.notScanCount))*100)
         }
-        if(this.countData.totalCount.onScanAndScaned+this.countData.totalCount.onScanAndUnScan+this.countData.totalCount.onScanAndScanFailed > 0){
-           this.onScanAndScanedProportion = ((this.countData.totalCount.onScanAndScaned/(this.countData.totalCount.onScanAndScaned+this.countData.totalCount.onScanAndUnScan+this.countData.totalCount.onScanAndScanFailed))*100)
+        if(this.countData.scanSuccessCount+this.countData.unScanCount+this.countData.scanFailCount > 0){
+           this.onScanAndScanedProportion = ((this.countData.scanSuccessCount/(this.countData.scanSuccessCount+this.countData.unScanCount+this.countData.scanFailCount))*100)
         }
-        if(this.countData.totalCount.onScanCount > 0){
-           this.vulnerableSumProportion = ((this.countData.denpendencyCount.vulnerableSum/(this.countData.totalCount.onScanCount))*100)
+        if(this.countData.scanCount > 0){
+           this.vulnerableSumProportion = ((this.countData.dependencyVulnerabilitiesCount/(this.countData.scanCount))*100)
         }
-        if(this.countData.denpendencyCount.denpendencySum > 0){
-           this.vulnerabilitesSumProportion = ((this.countData.denpendencyCount.vulnerabilitesSum/(this.countData.denpendencyCount.denpendencySum))*100)
+        if(this.countData.dependencyCount > 0){
+           this.vulnerabilitesSumProportion = ((this.countData.vulnerabilitiesCount/(this.countData.dependencyCount))*100)
         }
       })
       getScannerSumDifVoList().then(res =>{
-        this.folibScanData=res.data
+        this.folibScanData=res
       })
       weekDayCount().then(res=>{
-        res.data.weekCount.forEach((item) => {
+        res.dayCountList.forEach((item) => {
           this.barChartData.labels.push(item.date)
-          this.barChartData.datasets[0].data.push(item.vulnerabilitesSum)
+          this.barChartData.datasets[0].data.push(item.vulnerabilitiesCount)
         })
         if(this.$refs.volFolib){
           this.$refs.volFolib.buildData()
         }
-        this.weekCompare=res.data.compare
+        this.weekCompare=res.compareCount
       })
       mounthDayCount().then(res=>{
-        res.data.forEach((item) => {
+        res.forEach((item) => {
           this.lineChartData.labels.push(item.date)
-          this.lineChartData.datasets[0].data.push(item.denpendencySum)
-          this.lineChartData.datasets[1].data.push(item.vulnerabilitesSum)
+          this.lineChartData.datasets[0].data.push(item.dependencyCount)
+          this.lineChartData.datasets[1].data.push(item.vulnerabilitiesCount)
         })
         if(this.$refs.d30map){
           this.$refs.d30map.buildData()

@@ -107,4 +107,16 @@ public interface Artifact extends DomainObject {
     String getMetadata();
 
     void setMetadata(String metadata);
+
+    Set<String> getFilePaths();
+
+    void setFilePaths(Set<String> filePaths);
+
+    LocalDateTime getScanTime();
+
+    void setScanTime(LocalDateTime scanTime);
+
+    String getReport();
+
+    void setReport(String report);
 }

@@ -4,7 +4,7 @@ import java.util.Iterator;
 import java.util.Optional;
 
 import com.veadan.folib.repositories.TransactionalIdBlockQueueSuppiler;
-import org.apache.commons.configuration.Configuration;
+import org.apache.commons.configuration2.Configuration;
 import org.apache.tinkerpop.gremlin.process.computer.GraphComputer;
 import org.apache.tinkerpop.gremlin.process.traversal.TraversalSource;
 import org.apache.tinkerpop.gremlin.process.traversal.dsl.graph.GraphTraversalSource;

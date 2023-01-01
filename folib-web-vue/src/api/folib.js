@@ -141,14 +141,14 @@ export function insertOrUpdateRules (data) {
 
 export function getCount () {
   return axios({
-    url: '/api/folibScanner/getCount',
+    url: '/api/scanner/getCount',
     method: 'get'
   })
 }
 
 export function getScannerSumDifVoList () {
   return axios({
-    url: '/api/folibScanner/getScannerSumDifVoList',
+    url: '/api/scanner/repositories',
     method: 'get'
   })
 }
@@ -172,42 +172,23 @@ export function vulnerabilityExportExcel (query) {
 
 export function weekDayCount () {
   return axios({
-    url: '/api/folibScanner/weekDayCount',
+    url: '/api/scanner/weekCount',
     method: 'get'
   })
 }
 
 export function mounthDayCount () {
   return axios({
-    url: '/api/folibScanner/mounthDayCount',
+    url: '/api/scanner/monthCount',
     method: 'get'
   })
 }
 
-export function folibScannerPage (query) {
+export function scannerRepositoryPage (query) {
   return axios({
-    url: '/api/folibScanner/page',
+    url: '/api/scanner/repository',
     method: 'get',
     params: query
-  })
-}
-export function folibScannerDockerPage (query) {
-  return axios({
-    url: '/api/folibScanner/dockerPage',
-    method: 'get',
-    params: query
-  })
-}
-export function folibScannerGetOne (id) {
-  return axios({
-    url: '/api/folibScanner/folibScannerGetOne?id='+id,
-    method: 'get',
-  })
-}
-export function getSeverity(id) {
-  return axios({
-    url: '/api/folibScanner/severity?id='+id,
-    method: 'get'
   })
 }
 

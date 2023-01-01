@@ -30,14 +30,14 @@
                 </div>
                 <div class="mr-30">
                   <p>包总数</p>
-                  <h6>{{ scanCurrentData.countFolib }}</h6>
+                  <h6>{{ scanCurrentData.scanCount }}</h6>
                 </div>
               </div>
             </a-card>
           </a-col>
           <a-col :span="12" :xl="4" class="mb-24">
             <a-card :bordered="false" class="widget-2 h-full">
-              <a-statistic :value="scanCurrentData.denpendencySum">
+              <a-statistic :value="scanCurrentData.dependencyCount">
                 <template #title>
                   <div class="icon">
                     <img src="images/folib/denpendencySum.svg" alt="">
@@ -50,7 +50,7 @@
           </a-col>
           <a-col :span="12" :xl="4" class="mb-24">
             <a-card :bordered="false" class="widget-2 h-full">
-              <a-statistic :value="scanCurrentData.vulnerabilitesSum">
+              <a-statistic :value="scanCurrentData.vulnerabilitiesCount">
                 <template #title>
                   <div class="icon">
                     <img src="images/folib/vulnerabilitesSum.svg" alt="">
@@ -63,7 +63,7 @@
           </a-col>
           <a-col :span="12" :xl="4" class="mb-24">
             <a-card :bordered="false" class="widget-2 h-full">
-              <a-statistic :value="scanCurrentData.vulnerableSum">
+              <a-statistic :value="scanCurrentData.dependencyVulnerabilitiesCount">
                 <template #title>
                   <div class="icon">
                     <img src="images/folib/vulnerableSum.svg" alt="">
@@ -76,7 +76,7 @@
           </a-col>
           <a-col :span="12" :xl="4" class="mb-24">
             <a-card :bordered="false" class="widget-2 h-full">
-              <a-statistic :value="scanCurrentData.suppressedSum">
+              <a-statistic :value="scanCurrentData.suppressedVulnerabilitiesCount">
                 <template #title>
                   <div class="icon">
                     <img src="images/folib/suppressedSum.svg" alt="">
@@ -111,11 +111,11 @@
               </div>
               <a-table v-if="scanCurrentData.layout.toUpperCase() != 'docker'.toUpperCase()" :columns="columns"
                 :data-source="rowData" :pagination="false">
-                <template slot="path" slot-scope="text, record">
-                  <div @click="folibScannerGetOne(record)">
+                <template slot="filePath" slot-scope="text, record">
+                  <div @click="getScanReport(record)">
                     <a>
                       <h6 class="m-0">
-                        {{ record.path }}
+                        {{ record.filePath }}
                       </h6>
                     </a>
                   </div>
@@ -131,12 +131,12 @@
               <a-table v-if="scanCurrentData.layout.toUpperCase() == 'docker'.toUpperCase()" :columns="dockerColumns"
                 :data-source="rowData" :pagination="false">
                 <a-table rowKey="id" :columns="innerColumns" slot="expandedRowRender" slot-scope="record"
-                  :data-source="record.childList" :pagination="false">
-                  <template slot="path" slot-scope="text, record">
-                    <div @click="folibScannerGetOne(record)">
+                  :data-source="record.filePaths" :pagination="false">
+                  <template slot="filePath" slot-scope="text, record">
+                    <div @click="getScanReport(record)">
                       <a>
                         <h6 class="m-0">
-                          {{ record.path }}
+                          {{ record.filePath }}
                         </h6>
                       </a>
                     </div>
@@ -162,7 +162,7 @@
         <template #expandIcon="props">
           <a-icon type="caret-right" :rotate="props.isActive ? 90 : 0" />
         </template>
-        <a-collapse-panel v-for="(item, index) in currentReport" :key="index"
+        <a-collapse-panel v-for="(item, index) in scanReport" :key="index"
           style='background: #f7f7f7;border-radius: 4px;margin-bottom: 24px;border: 0;overflow: hidden'>
           <template slot="header">
             <div class="collapse-panel-header-info">
@@ -293,7 +293,7 @@
 
 <script>
 
-import { folibScannerGetOne, folibScannerPage, folibScannerDockerPage } from "@/api/folib";
+import { scannerRepositoryPage, getArtifact } from "@/api/folib";
 import { getLayoutType2 } from "@/utils/layoutUtil";
 import ChartBar from '@/components/Charts/ChartBar';
 import ChartLine from '@/components/Charts/ChartLine'
@@ -342,26 +342,26 @@ export default ({
       ],
       detialVisible: false,
       scanCurrentData: {
-        denpendencySum: 531,
-        vulnerableSum: 34,
-        vulnerabilitesSum: 46,
-        suppressedSum: 0,
-        storage: "folib-common",
-        repository: "aliyun-maven",
-        layout: "Maven 2",
-        countFolib: 479,
-        star: 4
+        storage:"",
+        repository:"",
+        layout:"",
+        star:1,
+        scanCount:0,
+        dependencyCount: 0,
+        dependencyVulnerabilitiesCount:0,
+        vulnerabilitiesCount:0,
+        suppressedVulnerabilitiesCount:0
       },
       columns: [
         {
           title: '包路径',
-          dataIndex: 'path',
-          scopedSlots: { customRender: 'path' },
+          dataIndex: 'filePath',
+          scopedSlots: { customRender: 'filePath' },
         },
         {
           title: '漏洞数',
-          dataIndex: 'vulnerabilitesCount',
-          scopedSlots: { customRender: 'vulnerabilitesCount' },
+          dataIndex: 'vulnerabilitiesCount',
+          scopedSlots: { customRender: 'vulnerabilitiesCount' },
           width: 100,
         },
         {
@@ -371,14 +371,14 @@ export default ({
         },
         {
           title: '封存漏洞',
-          dataIndex: 'suppressedCount',
+          dataIndex: 'suppressedVulnerabilitiesCount',
           width: 100,
         },
 
         {
           title: '问题依赖数',
-          dataIndex: 'vulnerableCount',
-          scopedSlots: { customRender: 'vulnerableCount' },
+          dataIndex: 'dependencyVulnerabilitiesCount',
+          scopedSlots: { customRender: 'dependencyVulnerabilitiesCount' },
         },
         {
           title: '扫描时间',
@@ -388,8 +388,8 @@ export default ({
       dockerColumns: [
         {
           title: '镜像名称',
-          dataIndex: 'path',
-          scopedSlots: { customRender: 'path' },
+          dataIndex: 'imageName',
+          scopedSlots: { customRender: 'imageName' },
         },
         {
           title: '版本号',
@@ -398,8 +398,8 @@ export default ({
         },
         {
           title: '漏洞数',
-          dataIndex: 'vulnerabilitesCount',
-          scopedSlots: { customRender: 'vulnerabilitesCount' },
+          dataIndex: 'vulnerabilitiesCount',
+          scopedSlots: { customRender: 'vulnerabilitiesCount' },
           width: 100,
         },
         {
@@ -409,25 +409,25 @@ export default ({
         },
         {
           title: '封存漏洞',
-          dataIndex: 'suppressedCount',
+          dataIndex: 'suppressedVulnerabilitiesCount',
           width: 100,
         },
         {
           title: '问题依赖数',
-          dataIndex: 'vulnerableCount',
-          scopedSlots: { customRender: 'vulnerableCount' },
+          dataIndex: 'dependencyVulnerabilitiesCount',
+          scopedSlots: { customRender: 'dependencyVulnerabilitiesCount' },
         }
       ],
       innerColumns: [
         {
           title: '包路径',
-          dataIndex: 'path',
-          scopedSlots: { customRender: 'path' },
+          dataIndex: 'filePath',
+          scopedSlots: { customRender: 'filePath' },
         },
         {
           title: '漏洞数',
-          dataIndex: 'vulnerabilitesCount',
-          scopedSlots: { customRender: 'vulnerabilitesCount' },
+          dataIndex: 'vulnerabilitiesCount',
+          scopedSlots: { customRender: 'vulnerabilitiesCount' },
           width: 100,
         },
         {
@@ -437,14 +437,14 @@ export default ({
         },
         {
           title: '封存漏洞',
-          dataIndex: 'suppressedCount',
+          dataIndex: 'suppressedVulnerabilitiesCount',
           width: 100,
         },
 
         {
           title: '问题依赖数',
-          dataIndex: 'vulnerableCount',
-          scopedSlots: { customRender: 'vulnerableCount' },
+          dataIndex: 'dependencyVulnerabilitiesCount',
+          scopedSlots: { customRender: 'dependencyVulnerabilitiesCount' },
         },
         {
           title: '扫描时间',
@@ -460,8 +460,7 @@ export default ({
       },
       total: 50,
       rowData: [],
-      currentRow: {},
-      currentReport: []
+      scanReport: []
     }
   },
   methods: {
@@ -470,30 +469,27 @@ export default ({
       this.scanCurrentData = params.item
       this.query.repository = this.scanCurrentData.repository
       this.query.storage = this.scanCurrentData.storage
-      // this.query.vulnerableCount=1
-      if (this.scanCurrentData.layout.toUpperCase() === 'docker'.toUpperCase()) {
-        this.getDockerList()
-      } else {
-        this.getList()
-      }
-    },
-    getDockerList() {
-      folibScannerDockerPage(this.query).then(res => {
-        this.rowData = res.data.rows
-        this.total = res.data.total
-      })
+      this.getList()
     },
     getList() {
-      folibScannerPage(this.query).then(res => {
-        this.rowData = res.data.rows
-        this.total = res.data.total
+      scannerRepositoryPage(this.query).then(res => {
+        this.rowData = res.list
+        this.total = res.total
       })
     },
-    folibScannerGetOne(row) {
-      folibScannerGetOne(row.path).then(res => {
-        this.currentRow = row
-        this.currentReport = res.data
-        this.detialVisible = true
+    getScanReport(row) {
+      getArtifact(
+        null,
+        row.storageId,
+        row.repositoryId,
+        row.artifactPath
+      ).then(res => {
+        let artifact = res.artifact
+        this.scanReport = []
+        if (artifact && artifact.safeLevel === "scanComplete") {
+          this.scanReport = JSON.parse(artifact.report)
+          this.detialVisible = true
+        }
       })
     },
     onShowSizeChange(current, pageSize) {

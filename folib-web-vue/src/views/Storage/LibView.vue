@@ -106,14 +106,14 @@
                         {{ currentTreeNode.name }}
                       </a-col>
                       <a-col :span="8" :xs="24" :xl="8">
-                        <span class="ml-auto" v-if="severity.show" @click="detialVisible = true">
+                        <span class="ml-auto" v-if="scanReport.show" @click="detialVisible = true">
                           <a-space :size="1" class="avatar-chips">
-                            <template v-if="severity.vulnerabilitesCount > 0">
+                            <template v-if="scanReport.vulnerabilitesCount > 0">
                               <a-tooltip>
                                 <template slot="title">严重</template>
                                 <div class="">
                                   <a-avatar :size="24" :src="'images/folib/critical.svg'" />
-                                  <span class="mb-0 text-dark">{{ severity.critical }}</span>
+                                  <span class="mb-0 text-dark">{{ scanReport.critical }}</span>
                                 </div>
                               </a-tooltip>
 
@@ -121,7 +121,7 @@
                                 <template slot="title">高危</template>
                                 <div class="">
                                   <a-avatar :size="24" :src="'images/folib/high.svg'" />
-                                  <span class="mb-0 text-dark">{{ severity.high }}</span>
+                                  <span class="mb-0 text-dark">{{ scanReport.high }}</span>
                                 </div>
                               </a-tooltip>
 
@@ -129,7 +129,7 @@
                                 <template slot="title">中危</template>
                                 <div class="">
                                   <a-avatar :size="24" :src="'images/folib/medium.svg'" />
-                                  <span class="mb-0 text-dark">{{ severity.medium }}</span>
+                                  <span class="mb-0 text-dark">{{ scanReport.medium }}</span>
                                 </div>
                               </a-tooltip>
 
@@ -137,7 +137,7 @@
                                 <template slot="title">低危</template>
                                 <div class="">
                                   <a-avatar :size="24" :src="'images/folib/low.svg'" />
-                                  <span class="mb-0 text-dark">{{ severity.low }}</span>
+                                  <span class="mb-0 text-dark">{{ scanReport.low }}</span>
                                 </div>
                               </a-tooltip>
                             </template>
@@ -543,14 +543,14 @@
             <a-avatar :size="24" shape="square"
               :src="folibRepository.layout === 'Docker' ? 'images/folib/docker-s.svg' : 'images/folib/' + getFileType(searchDataCurrentSelect ? searchDataCurrentSelect.path : '') + '.svg'" />
             {{ searchDataCurrentSelect ? searchDataCurrentSelect.path : '' }}
-            <span class="ml-auto" v-if="severity.show" @click="detialVisible = true">
+            <span class="ml-auto" v-if="scanReport.show" @click="detialVisible = true">
               <a-space :size="1" class="avatar-chips">
-                <template v-if="severity.vulnerabilitesCount > 0">
+                <template v-if="scanReport.vulnerabilitesCount > 0">
                   <a-tooltip>
                     <template slot="title">严重</template>
                     <div class="">
                       <a-avatar :size="24" :src="'images/folib/critical.svg'" />
-                      <span class="mb-0 text-dark">{{ severity.critical }}</span>
+                      <span class="mb-0 text-dark">{{ scanReport.critical }}</span>
                     </div>
                   </a-tooltip>
 
@@ -558,7 +558,7 @@
                     <template slot="title">高危</template>
                     <div class="">
                       <a-avatar :size="24" :src="'images/folib/high.svg'" />
-                      <span class="mb-0 text-dark">{{ severity.high }}</span>
+                      <span class="mb-0 text-dark">{{ scanReport.high }}</span>
                     </div>
                   </a-tooltip>
 
@@ -566,7 +566,7 @@
                     <template slot="title">中危</template>
                     <div class="">
                       <a-avatar :size="24" :src="'images/folib/medium.svg'" />
-                      <span class="mb-0 text-dark">{{ severity.medium }}</span>
+                      <span class="mb-0 text-dark">{{ scanReport.medium }}</span>
                     </div>
                   </a-tooltip>
 
@@ -574,7 +574,7 @@
                     <template slot="title">低危</template>
                     <div class="">
                       <a-avatar :size="24" :src="'images/folib/low.svg'" />
-                      <span class="mb-0 text-dark">{{ severity.low }}</span>
+                      <span class="mb-0 text-dark">{{ scanReport.low }}</span>
                     </div>
                   </a-tooltip>
                 </template>
@@ -1153,7 +1153,7 @@
         <template #expandIcon="props">
           <a-icon type="caret-right" :rotate="props.isActive ? 90 : 0" />
         </template>
-        <a-collapse-panel v-for="(item, index) in currentReport" :key="index"
+        <a-collapse-panel v-for="(item, index) in scanReport.report" :key="index"
           style='background: #f7f7f7;border-radius: 4px; margin-bottom: 24px; border: 0; overflow: hidden'>
           <template slot="header">
             <div class="collapse-panel-header-info">
@@ -1484,7 +1484,7 @@ import {
   formateDate
 } from '@/utils/layoutUtil'
 import { getMetadataConfiguration } from "@/api/settings"
-import { browse, getArtifact, viewArtifactFile, fql, scannerRules, insertOrUpdateRules, getDockerArtifact, deleteArtifact, getSeverity, repositoryVulnerabilityStatistics, getStoragesAndRepositories, } from '@/api/folib'
+import { browse, getArtifact, viewArtifactFile, fql, scannerRules, insertOrUpdateRules, getDockerArtifact, deleteArtifact, repositoryVulnerabilityStatistics, getStoragesAndRepositories, } from '@/api/folib'
 import { artifactCopy, artifactMove, artifactUpload, saveArtifactMetadata, updateArtifactMetadata, deleteArtifactMetadata } from '@/api/artifact'
 import { PrismEditor } from 'vue-prism-editor'
 import 'vue-prism-editor/dist/prismeditor.min.css' // import the styles somewhere
@@ -1598,9 +1598,16 @@ export default {
           width: 200,
         },
       ],
-      severity: { show: false },
+      scanReport: { 
+        show: false,
+        report: [],
+        vulnerabilitesCount: 0,
+        critical: 0,
+        high: 0,
+        medium: 0,
+        low: 0,
+      },
       detialVisible: false,
-      currentReport: [],
       vulnerColumns: [
         {
           title: 'CVE编号',
@@ -1908,8 +1915,32 @@ export default {
       if (this.searchDataCurrentSelect && this.searchDataCurrentSelect.snippets) {
         this.changeCodeTye(this.searchDataCurrentSelect.snippets[0])
       }
-      var id = "storages/" + this.searchDataCurrentSelect.storageId + "/" + this.searchDataCurrentSelect.repositoryId + "/" + this.searchDataCurrentSelect.path
-      this.handlerSeverity(id)
+      this.scanReport = { 
+        show: false,
+        report: [],
+        vulnerabilitesCount: 0,
+        critical: 0,
+        high: 0,
+        medium: 0,
+        low: 0,
+      }
+      getArtifact(
+        this.repositoryType,
+        item.storageId,
+        item.repositoryId,
+        item.artifactPath
+      ).then(res => {
+        let artifact = res.artifact
+        if (artifact && artifact.safeLevel === "scanComplete") {
+          this.scanReport.show = true
+          this.scanReport.vulnerabilitesCount = artifact.vulnerabilitiesCount
+          this.scanReport.critical = artifact.criticalVulnerabilitiesCount
+          this.scanReport.high = artifact.highVulnerabilitiesCount
+          this.scanReport.medium = artifact.mediumVulnerabilitiesCount
+          this.scanReport.low = artifact.lowVulnerabilitiesCount
+          this.scanReport.report = JSON.parse(artifact.report)
+        }
+      })
       this.artifactVisible = true
     },
     closeSearchviewCodeDialog() {
@@ -2051,13 +2082,31 @@ export default {
           if (this.currentFileDetial.snippets) {
             this.changeCodeTye(this.currentFileDetial.snippets[0])
           }
+          if (this.currentFileDetial.artifact) {
+            if (this.currentFileDetial.artifact.safeLevel === "scanComplete") {
+              this.scanReport.show = true
+              this.scanReport.vulnerabilitesCount = this.currentFileDetial.artifact.vulnerabilitiesCount
+              this.scanReport.critical = this.currentFileDetial.artifact.criticalVulnerabilitiesCount
+              this.scanReport.high = this.currentFileDetial.artifact.highVulnerabilitiesCount
+              this.scanReport.medium = this.currentFileDetial.artifact.mediumVulnerabilitiesCount
+              this.scanReport.low = this.currentFileDetial.artifact.lowVulnerabilitiesCount
+              this.scanReport.report = JSON.parse(this.currentFileDetial.artifact.report)
+            }
+          }
           this.currentManifest = res.manifestConfig
           this.handlerRespMetadata(res)
         })
-        this.handlerSeverity()
       } else if (this.currentTreeNode.type === 'dir') {
         this.currentFileDetial = null
-        this.severity = { show: false }
+        this.scanReport = { 
+          show: false,
+          report: [],
+          vulnerabilitesCount: 0,
+          critical: 0,
+          high: 0,
+          medium: 0,
+          low: 0,
+        }
       }
     },
     getFileType(name) {
@@ -2174,24 +2223,6 @@ export default {
           description: ""
         })
       }).finally(() => {
-      })
-    },
-    handlerSeverity(id) {
-      this.severity = { show: false }
-      if (!id) {
-        id = "storages/" + this.currentTreeNode.storageId + "/" + this.currentTreeNode.repositoryId + "/" + this.currentTreeNode.artifactPath
-      }
-      var flag = id.endsWith('.sha') || id.endsWith('.sha1') || id.endsWith('.sha256') || id.endsWith('.sha512') || id.endsWith('.md5')
-      if (flag) {
-        return
-      }
-      getSeverity(id).then(res => {
-        if (res.rel) {
-          this.severity = res.data
-          if (this.severity.report) {
-            this.currentReport = JSON.parse(this.severity.report)
-          }
-        }
       })
     },
     closeDialog() {

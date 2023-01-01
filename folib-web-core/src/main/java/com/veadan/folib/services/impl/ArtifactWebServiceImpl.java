@@ -19,13 +19,18 @@ import com.veadan.folib.domain.ArtifactMetadata;
 import com.veadan.folib.domain.DirectoryListing;
 import com.veadan.folib.domain.FileContent;
 import com.veadan.folib.forms.artifact.ArtifactMetadataForm;
+import com.veadan.folib.forms.scanner.*;
 import com.veadan.folib.gremlin.entity.vo.ArtifactVo;
 import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.providers.io.RepositoryPathResolver;
 import com.veadan.folib.providers.layout.DockerLayoutProvider;
 import com.veadan.folib.repositories.ArtifactRepository;
+import com.veadan.folib.scanner.entity.ScanRules;
+import com.veadan.folib.scanner.mapper.ScanRulesMapper;
 import com.veadan.folib.services.*;
+import com.veadan.folib.storage.StorageDto;
 import com.veadan.folib.storage.repository.Repository;
+import com.veadan.folib.util.CustomDateUtils;
 import com.veadan.folib.util.FileSizeConvertUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
@@ -33,7 +38,11 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import tk.mybatis.mapper.entity.Example;
 
 import javax.inject.Inject;
 import javax.servlet.http.HttpServletResponse;
@@ -42,6 +51,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URLEncoder;
 import java.nio.file.Path;
+import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
 import java.time.ZoneId;
 import java.util.*;
@@ -66,6 +76,9 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
 
     @Inject
     private ClusterSyncService clusterSyncService;
+
+    @Inject
+    private ScanRulesMapper scanRulesMapper;
 
     @Inject
     @Qualifier("browseRepositoryDirectoryListingService")
@@ -209,6 +222,146 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
         }
     }
 
+    @Override
+    public CountForm getCount(String username) {
+        Long zero = 0L;
+        CountForm countForm = CountForm.builder().scanCount(zero).notScanCount(zero).scanSuccessCount(zero).scanFailCount(zero)
+                .dependencyCount(zero).dependencyVulnerabilitiesCount(zero).vulnerabilitiesCount(zero).suppressedVulnerabilitiesCount(zero).build();
+        List<String> storageIds = havePermissionStorageIdList(username);
+        List<String> scanEnableRepositories = getRepositoriesByOnScanAndStorageIds(1, storageIds);
+        List<String> scanDisableRepositories = getRepositoriesByOnScanAndStorageIds(0, storageIds);
+        Map<String, Long> map = artifactRepository.countArtifactByStorageIdsAndRepositories(storageIds, scanEnableRepositories, scanDisableRepositories);
+        countForm.setScanCount(map.getOrDefault("scanCount", zero));
+        countForm.setNotScanCount(map.getOrDefault("notScanCount", zero));
+        countForm.setScanSuccessCount(map.getOrDefault("scanSuccessCount", zero));
+        countForm.setUnScanCount(map.getOrDefault("unScanCount", zero));
+        countForm.setScanFailCount(map.getOrDefault("scanFailCount", zero));
+        countForm.setDependencyCount(map.getOrDefault("dependencyCount", zero));
+        countForm.setDependencyVulnerabilitiesCount(map.getOrDefault("dependencyVulnerabilitiesCount", zero));
+        countForm.setVulnerabilitiesCount(map.getOrDefault("vulnerabilitiesCount", zero));
+        countForm.setSuppressedVulnerabilitiesCount(map.getOrDefault("suppressedVulnerabilitiesCount", zero));
+        return countForm;
+    }
+
+    @Override
+    public List<DayCountForm> monthCount(String username) {
+        List<String> storageIds = havePermissionStorageIdList(username);
+        List<String> dayList = CustomDateUtils.getDaysBetween(30);
+        Map<String, Long> map = null;
+        List<DayCountForm> list = Lists.newArrayList();
+        Long zero = 0L, dependencyCount, vulnerabilitiesCount;
+        List<String> scanEnableRepositories = getRepositoriesByOnScanAndStorageIds(1, storageIds);
+        for (String date : dayList) {
+            map = artifactRepository.countArtifactByStorageIdsAndRepositoryIdsAndDate(storageIds, scanEnableRepositories, date, date);
+            dependencyCount = map.getOrDefault("dependencyCount", zero);
+            vulnerabilitiesCount = map.getOrDefault("vulnerabilitiesCount", zero);
+            if (dependencyCount > zero || vulnerabilitiesCount > zero) {
+                list.add(DayCountForm.builder().date(date).dependencyCount(dependencyCount).vulnerabilitiesCount(vulnerabilitiesCount).build());
+            }
+        }
+        return list;
+    }
+
+    @Override
+    public WeekCountForm weekCount(String username) {
+        List<String> storageIds = havePermissionStorageIdList(username);
+        List<String> currentWeekList = CustomDateUtils.getDaysBetween(7);
+        List<String> lastWeekList = CustomDateUtils.getDaysBetween(14);
+        lastWeekList.removeAll(currentWeekList);
+        Map<String, Long> map = null;
+        WeekCountForm weekCountForm = WeekCountForm.builder().build();
+        List<WeekDayCountForm> list = Lists.newArrayList();
+        Long zero = 0L, vulnerabilitiesCount;
+        List<String> scanEnableRepositories = getRepositoriesByOnScanAndStorageIds(1, storageIds);
+        for (String date : currentWeekList) {
+            map = artifactRepository.countArtifactByStorageIdsAndRepositoryIdsAndDate(storageIds, scanEnableRepositories, date, date);
+            vulnerabilitiesCount = map.getOrDefault("vulnerabilitiesCount", zero);
+            list.add(WeekDayCountForm.builder().date(date.substring(5)).vulnerabilitiesCount(vulnerabilitiesCount).build());
+        }
+        weekCountForm.setDayCountList(list);
+
+        Map<String, Long> currentWeekMap = artifactRepository.countFullArtifactByStorageIdsAndRepositoryIdsAndDate(storageIds, scanEnableRepositories, currentWeekList.get(0), currentWeekList.get(currentWeekList.size() - 1));
+        Map<String, Long> lastWeekMap = artifactRepository.countFullArtifactByStorageIdsAndRepositoryIdsAndDate(storageIds, scanEnableRepositories, lastWeekList.get(0), lastWeekList.get(lastWeekList.size() - 1));
+        CompareCountForm compareCountForm = CompareCountForm.builder().build();
+        compareCountForm.setScanCount(currentWeekMap.getOrDefault("scanCount", zero) - lastWeekMap.getOrDefault("scanCount", zero));
+        compareCountForm.setDependencyCount(currentWeekMap.getOrDefault("dependencyCount", zero) - lastWeekMap.getOrDefault("dependencyCount", zero));
+        compareCountForm.setDependencyVulnerabilitiesCount(currentWeekMap.getOrDefault("dependencyVulnerabilitiesCount", zero) - lastWeekMap.getOrDefault("dependencyVulnerabilitiesCount", zero));
+        compareCountForm.setVulnerabilitiesCount(currentWeekMap.getOrDefault("vulnerabilitiesCount", zero) - lastWeekMap.getOrDefault("vulnerabilitiesCount", zero));
+        compareCountForm.setSuppressedVulnerabilitiesCount(currentWeekMap.getOrDefault("suppressedVulnerabilitiesCount", zero) - lastWeekMap.getOrDefault("suppressedVulnerabilitiesCount", zero));
+        weekCountForm.setCompareCount(compareCountForm);
+        return weekCountForm;
+    }
+
+    @Override
+    public List<RepositoryCountForm> repositories(String username) {
+        List<String> storageIds = havePermissionStorageIdList(username);
+        Example example = new Example(ScanRules.class);
+        example.createCriteria().andEqualTo("onScan", 1).andIn("storage", storageIds);
+        List<ScanRules> scanRulesList = scanRulesMapper.selectByExample(example);
+        Long zero = 0L;
+        DecimalFormat decimalFormat = new DecimalFormat(".00");
+        return Optional.ofNullable(scanRulesList).orElse(Collections.emptyList()).stream().map(scanRules -> {
+            RepositoryCountForm repositoryCountForm = RepositoryCountForm.builder().storage(scanRules.getStorage()).repository(scanRules.getRepository())
+                    .layout(scanRules.getLayout()).build();
+            Map<String, Long> map = artifactRepository.countRepositoryArtifactByStorageIdAndRepositoryId(scanRules.getStorage(), scanRules.getRepository());
+            repositoryCountForm.setScanCount(map.getOrDefault("scanCount", zero));
+            repositoryCountForm.setDependencyCount(map.getOrDefault("dependencyCount", zero));
+            repositoryCountForm.setDependencyVulnerabilitiesCount(map.getOrDefault("dependencyVulnerabilitiesCount", zero));
+            repositoryCountForm.setVulnerabilitiesCount(map.getOrDefault("vulnerabilitiesCount", zero));
+            repositoryCountForm.setSuppressedVulnerabilitiesCount(map.getOrDefault("suppressedVulnerabilitiesCount", zero));
+            String r;
+            if (repositoryCountForm.getScanCount() == 0) {
+                r = "100";
+            } else {
+                r = decimalFormat.format((float) repositoryCountForm.getDependencyVulnerabilitiesCount() / (float) repositoryCountForm.getScanCount() * 100);
+            }
+            double s = Double.parseDouble(r);
+            int star = s == 100.0 ? 5 : s > 0 && s < 20 ? 4 : s > 20 && s < 40 ? 3 : s > 40 && s < 60 ? 2 : 1;
+            repositoryCountForm.setStar(star);
+            return repositoryCountForm;
+        }).collect(Collectors.toList());
+    }
+
+    @Override
+    public RepositoryScannerForm repository(String storageId, String repositoryId, String artifactName, Integer page, Integer limit) {
+        Pageable pageable = null;
+        if (Objects.isNull(page)) {
+            page = 1;
+        }
+        if (Objects.isNull(limit)) {
+            limit = 5;
+        }
+        if (page == 1) {
+            pageable = PageRequest.of(page, limit).first();
+        } else {
+            pageable = PageRequest.of(page, limit).previous();
+        }
+        String prefix = "%s-%s-";
+        prefix = String.format(prefix, storageId, repositoryId);
+        Repository repository = configurationManagementService.getConfiguration().getRepository(storageId, repositoryId);
+        Page<Artifact> artifactPage = artifactRepository.scannerListByParams(pageable, artifactName, storageId, repositoryId);
+        RepositoryScannerForm repositoryScannerForm = RepositoryScannerForm.builder().total(artifactPage.getTotalElements()).build();
+        SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        String finalPrefix = prefix;
+        repositoryScannerForm.setList(artifactPage.getContent().stream().map(artifact -> {
+            String scanTime = DateUtil.format(Date.from(artifact.getScanTime().atZone(ZoneId.of("Asia/Shanghai")).toOffsetDateTime().toInstant()), df);
+            RepositoryForm repositoryForm = RepositoryForm.builder().dependencyCount(artifact.getDependencyCount()).dependencyVulnerabilitiesCount(artifact.getDependencyVulnerabilitiesCount())
+                    .uuid(artifact.getUuid()).scanTime(scanTime).suppressedVulnerabilitiesCount(artifact.getSuppressedVulnerabilitiesCount())
+                    .vulnerabilitiesCount(artifact.getVulnerabilitiesCount()).storageId(artifact.getStorageId()).repositoryId(artifact.getRepositoryId()).artifactPath(artifact.getArtifactPath()).build();
+            repositoryForm.setFilePaths(Optional.ofNullable(artifact.getFilePaths()).orElse(Collections.emptySet()).stream().map(item -> JSONObject.parseObject(item, ScannerReportForm.class)).collect(Collectors.toList()));
+            if (DockerLayoutProvider.ALIAS.equals(repository.getLayout())) {
+                //docker
+                String uuid = artifact.getUuid();
+                repositoryForm.setImageName(uuid.substring(finalPrefix.length(), uuid.indexOf("/")));
+                repositoryForm.setVersion(uuid.substring(uuid.indexOf("/") + 1, uuid.indexOf("/sha256")));
+            } else {
+                repositoryForm.setFilePath(repositoryForm.getFilePaths().get(0).getFilePath());
+            }
+            return repositoryForm;
+        }).collect(Collectors.toList()));
+        return repositoryScannerForm;
+    }
+
     /**
      * 获取制品元数据
      *
@@ -299,4 +452,42 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
                 mutableMetadataConfiguration(mutableMetadataConfiguration).build();
         clusterSyncService.syncMetadataConfiguration(syncMetadataDto);
     }
+
+    /**
+     * 获取有权限访问的存储空间id列表
+     *
+     * @return 有权限访问的存储空间id列表
+     */
+    public List<String> havePermissionStorageIdList(String username) {
+        List<String> storageIdList = Lists.newArrayList();
+        String admin = "admin";
+        if (admin.equals(username)) {
+            storageIdList = new ArrayList<>(configurationManagementService.getMutableConfigurationClone().getStorages().keySet());
+            return storageIdList;
+        }
+        for (Map.Entry<String, StorageDto> entry : configurationManagementService.getMutableConfigurationClone().getStorages().entrySet()) {
+            Set<String> userSet = entry.getValue().getUsers();
+            if (CollectionUtils.isNotEmpty(userSet)) {
+                if (userSet.contains(username)) {
+                    storageIdList.add(entry.getKey());
+                }
+            }
+        }
+        return storageIdList;
+    }
+
+    /**
+     * 获取仓库名称集合
+     *
+     * @param onScan     扫描状态  1 扫描开启 0 扫描关闭
+     * @param storageIds 存储空间集合
+     * @return 仓库名称集合
+     */
+    private List<String> getRepositoriesByOnScanAndStorageIds(Integer onScan, List<String> storageIds) {
+        Example example = new Example(ScanRules.class);
+        example.createCriteria().andEqualTo("onScan", onScan).andIn("storage", storageIds);
+        List<ScanRules> scanRulesList = scanRulesMapper.selectByExample(example);
+        return Optional.ofNullable(scanRulesList).orElse(Collections.emptyList()).stream().map(ScanRules::getRepository).collect(Collectors.toList());
+    }
+
 }

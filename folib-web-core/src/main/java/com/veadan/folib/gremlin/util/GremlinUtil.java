@@ -4,9 +4,10 @@ import org.apache.tinkerpop.gremlin.driver.Client;
 import org.apache.tinkerpop.gremlin.driver.Cluster;
 import org.apache.tinkerpop.gremlin.driver.MessageSerializer;
 import org.apache.tinkerpop.gremlin.driver.remote.DriverRemoteConnection;
-import org.apache.tinkerpop.gremlin.driver.ser.GryoMessageSerializerV3d0;
+import org.apache.tinkerpop.gremlin.driver.ser.GraphSONMessageSerializerV3d0;
 import org.apache.tinkerpop.gremlin.process.traversal.dsl.graph.GraphTraversalSource;
 import org.apache.tinkerpop.gremlin.structure.io.IoRegistry;
+import org.apache.tinkerpop.gremlin.structure.io.graphson.GraphSONMapper;
 import org.apache.tinkerpop.gremlin.structure.io.gryo.GryoMapper;
 
 import static org.apache.tinkerpop.gremlin.process.traversal.AnonymousTraversalSource.traversal;
@@ -19,8 +20,8 @@ public class GremlinUtil {
 
     public static Cluster cluster(String host, int port, IoRegistry registry) {
         // GryoMapper.Builder builder = GryoMapper.build().addRegistry(JanusGraphIoRegistry.getInstance());
-        GryoMapper.Builder builder = GryoMapper.build().addRegistry(registry);
-        MessageSerializer serializer = new GryoMessageSerializerV3d0(builder);
+        GraphSONMapper.Builder builder = GraphSONMapper.build().addRegistry(registry);
+        MessageSerializer serializer = new GraphSONMessageSerializerV3d0(builder);
         return Cluster.build().maxContentLength(65536*10).
                 addContactPoint(host).
                 port(port).

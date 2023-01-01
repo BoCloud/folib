@@ -111,6 +111,20 @@ public class ArtifactEntity
      */
     private String metadata;
 
+    /**
+     * 制品路径
+     */
+    private Set<String> filePaths = new LinkedHashSet<>();
+    /**
+     * 扫描时间
+     */
+    @Convert(DateConverter.class)
+    private LocalDateTime scanTime;
+    /**
+     * 扫描报告
+     */
+    private String report;
+
     public ArtifactEntity() {
     }
 
@@ -409,5 +423,35 @@ public class ArtifactEntity
     @Override
     public void setMetadata(String metadata) {
         this.metadata = metadata;
+    }
+
+    @Override
+    public Set<String> getFilePaths() {
+        return filePaths;
+    }
+
+    @Override
+    public void setFilePaths(Set<String> filePaths) {
+        this.filePaths = filePaths;
+    }
+
+    @Override
+    public LocalDateTime getScanTime() {
+        return scanTime;
+    }
+
+    @Override
+    public void setScanTime(LocalDateTime scanTime) {
+        this.scanTime = scanTime;
+    }
+
+    @Override
+    public String getReport() {
+        return report;
+    }
+
+    @Override
+    public void setReport(String report) {
+        this.report = report;
     }
 }

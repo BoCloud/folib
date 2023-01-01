@@ -1,7 +1,7 @@
 package com.veadan.folib.services;
 
-import com.veadan.folib.configuration.MetadataConfiguration;
 import com.veadan.folib.forms.artifact.ArtifactMetadataForm;
+import com.veadan.folib.forms.scanner.*;
 
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
@@ -51,6 +51,7 @@ public interface ArtifactWebService {
 
     /**
      * 新增制品元数据
+     *
      * @param artifactMetadataForm 参数
      * @return 结果
      */
@@ -58,6 +59,7 @@ public interface ArtifactWebService {
 
     /**
      * 修改制品元数据
+     *
      * @param artifactMetadataForm 参数
      * @return 结果
      */
@@ -65,7 +67,52 @@ public interface ArtifactWebService {
 
     /**
      * 删除制品元数据
+     *
      * @param artifactMetadataForm 参数
      */
     void deleteArtifactMetadata(ArtifactMetadataForm artifactMetadataForm);
+
+    /**
+     * 扫描信息统计
+     *
+     * @param username 登录用户
+     * @return 扫描信息统计
+     */
+    CountForm getCount(String username);
+
+    /**
+     * 近一个月内统计信息
+     *
+     * @param username 登录用户
+     * @return 近一个月内统计信息
+     */
+    List<DayCountForm> monthCount(String username);
+
+    /**
+     * 近一周内数据
+     *
+     * @param username 登录用户
+     * @return 近一周内数据
+     */
+    WeekCountForm weekCount(String username);
+
+    /**
+     * 仓库扫描情况
+     *
+     * @param username 登录用户
+     * @return 仓库扫描情况
+     */
+    List<RepositoryCountForm> repositories(String username);
+
+    /**
+     * 仓库扫描情况
+     *
+     * @param storageId    存储空间id
+     * @param repositoryId 仓库id
+     * @param artifactName 搜索词
+     * @param page         页码
+     * @param limit        每页数量
+     * @return 仓库扫描情况
+     */
+    RepositoryScannerForm repository(String storageId, String repositoryId, String artifactName, Integer page, Integer limit);
 }

@@ -72,6 +72,9 @@ public class ArtifactAdapter implements VertexEntityTraversalAdapter<Artifact> {
                 "lowVulnerabilitiesCount",
                 "suppressedVulnerabilitiesCount",
                 "metadata",
+                "report",
+                "scanTime",
+                "filePaths",
                 "filenames",
                 "checksums",
                 "artifactCoordinates",
@@ -99,6 +102,9 @@ public class ArtifactAdapter implements VertexEntityTraversalAdapter<Artifact> {
                 .by(__.enrichPropertyValue("lowVulnerabilitiesCount"))
                 .by(__.enrichPropertyValue("suppressedVulnerabilitiesCount"))
                 .by(__.enrichPropertyValue("metadata"))
+                .by(__.enrichPropertyValue("report"))
+                .by(__.enrichPropertyValue("scanTime"))
+                .by(__.enrichPropertyValues("filePaths"))
                 .by(__.enrichPropertyValues("filenames"))
                 .by(__.enrichPropertyValues("checksums"))
                 .by(__.outE(Edges.ARTIFACT_HAS_ARTIFACT_COORDINATES)
@@ -294,6 +300,11 @@ public class ArtifactAdapter implements VertexEntityTraversalAdapter<Artifact> {
 
         result.setArtifactFileExists(extractObject(Boolean.class, t.get().get("artifactFileExists")));
         result.setMetadata(extractObject(String.class, t.get().get("metadata")));
+        result.setFilePaths(extractPropertyList(String.class, t.get().get("filePaths")).stream()
+                .filter(e -> !e.trim().isBlank())
+                .collect(Collectors.toSet()));
+        result.setReport(extractObject(String.class, t.get().get("report")));
+        result.setScanTime(toLocalDateTime(extractObject(Long.class, t.get().get("scanTime"))));
         return result;
     }
 
@@ -404,6 +415,16 @@ public class ArtifactAdapter implements VertexEntityTraversalAdapter<Artifact> {
         }
         if (StringUtils.isNotBlank(entity.getMetadata())) {
             t = t.property(single, "metadata", entity.getMetadata());
+        }
+        if (entity.getFilePaths() != null) {
+            t = t.sideEffect(__.properties("filePaths").drop());
+            t = t.property("filePaths", entity.getFilePaths());
+        }
+        if (StringUtils.isNotBlank(entity.getReport())) {
+            t = t.property(single, "report", entity.getReport());
+        }
+        if (entity.getScanTime() != null) {
+            t = t.property(single, "scanTime", toLong(entity.getScanTime()));
         }
         ArtifactArchiveListing artifactArchiveListing = entity.getArtifactArchiveListing();
 

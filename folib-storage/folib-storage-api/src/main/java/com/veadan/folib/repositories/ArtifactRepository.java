@@ -2,7 +2,6 @@ package com.veadan.folib.repositories;
 
 import cn.hutool.core.date.DatePattern;
 import cn.hutool.core.date.DateUtil;
-import com.alibaba.fastjson.JSONObject;
 import com.google.common.collect.Maps;
 import com.veadan.folib.artifact.coordinates.ArtifactLayoutDescription;
 import com.veadan.folib.artifact.coordinates.ArtifactLayoutLocator;
@@ -12,13 +11,13 @@ import com.veadan.folib.db.schema.Properties;
 import com.veadan.folib.db.schema.Vertices;
 import com.veadan.folib.domain.Artifact;
 import com.veadan.folib.domain.VulnerabilityArtifactDomain;
+import com.veadan.folib.enums.SafeLevelEnum;
 import com.veadan.folib.enums.VulnerabilityPlatformEnum;
 import com.veadan.folib.gremlin.adapters.ArtifactAdapter;
 import com.veadan.folib.gremlin.dsl.EntityTraversal;
 import com.veadan.folib.gremlin.dsl.EntityTraversalUtils;
 import com.veadan.folib.gremlin.dsl.__;
 import com.veadan.folib.gremlin.repositories.GremlinVertexRepository;
-import com.veadan.folib.util.LocalCacheUtils;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.tinkerpop.gremlin.process.traversal.Order;
@@ -128,6 +127,39 @@ public class ArtifactRepository extends GremlinVertexRepository<Artifact> {
         return new PageImpl<>(artifactList, pagination, count);
     }
 
+    public Page<Artifact> scannerListByParams(Pageable pagination, String artifactName,
+                                              String storageId,
+                                              String repositoryId) {
+        com.veadan.folib.storage.repository.Repository repository = null;
+        if (StringUtils.isNotBlank(storageId) && StringUtils.isNotBlank(repositoryId)) {
+            repository = configurationManager.getRepository(storageId, repositoryId);
+        }
+        Long zero = 0L;
+        Long count = scannerListEntityTraversal(artifactName, storageId, repositoryId).count().tryNext().orElse(zero);
+        if (zero.equals(count)) {
+            return new PageImpl<>(Collections.emptyList(), pagination, count);
+        }
+        long low = pagination.getPageNumber() * pagination.getPageSize();
+        long high = (pagination.getPageNumber() + 1) * pagination.getPageSize();
+        List<Artifact> artifactList = scannerListEntityTraversal(artifactName, storageId, repositoryId)
+                .range(low, high)
+                .map(artifactAdapter.fold(Optional.ofNullable(repository)
+                        .map(com.veadan.folib.storage.repository.Repository::getLayout)
+                        .map(ArtifactLayoutLocator.getLayoutByNameEntityMap()::get)
+                        .map(ArtifactLayoutDescription::getArtifactCoordinatesClass))).toList();
+        return new PageImpl<>(artifactList, pagination, count);
+    }
+
+    private EntityTraversal<Vertex, Vertex> scannerListEntityTraversal(String artifactName,
+                                                                       String storageId,
+                                                                       String repositoryId) {
+        EntityTraversal<Vertex, Vertex> entityTraversal = g().V().hasLabel(Vertices.ARTIFACT).has(Properties.STORAGE_ID, storageId).has(Properties.REPOSITORY_ID, repositoryId).has(Properties.SAFE_LEVEL, SafeLevelEnum.SCAN_COMPLETE.getLevel()).has(Properties.CREATED, P.gt(0));
+        if (StringUtils.isNotBlank(artifactName)) {
+            entityTraversal = entityTraversal.has(Properties.UUID, Text.textContains(artifactName));
+        }
+        return entityTraversal;
+    }
+
     public List<Artifact> findMatchingByVulnerabilityUuid(String vulnerabilityUuid,
                                                           String storageId,
                                                           String repositoryId) {
@@ -143,23 +175,158 @@ public class ArtifactRepository extends GremlinVertexRepository<Artifact> {
         return EntityTraversalUtils.reduceHierarchy(artifactList);
     }
 
-    public Long countByStorageIdAndRepositoryId(String storageId, String repositoryId) {
-        return g().V().hasLabel(Vertices.ARTIFACT).has(Properties.STORAGE_ID, storageId).has(Properties.REPOSITORY_ID, repositoryId).count().tryNext().orElse(0L);
+    public List<Artifact> findMatchingBySafeLevels(List<String> safeLevels) {
+        List<Artifact> artifactList = g().V().hasLabel(Vertices.ARTIFACT).has(Properties.SAFE_LEVEL, P.within(safeLevels)).has(Properties.CREATED, P.gt(0)).map(artifactAdapter.fold()).toList();
+        return EntityTraversalUtils.reduceHierarchy(artifactList);
     }
 
-    public Map<Object, Object> countArtifactByStorageIdAndRepositoryId(String storageId, String repositoryId) {
-        //TODO 分布式下有问题
-        String key = "countArtifactByStorageIdAndRepositoryId-%s-%s";
-        key = String.format(key, storageId, repositoryId);
-        String cacheValue = LocalCacheUtils.get(key);
-        if (StringUtils.isNotBlank(cacheValue)) {
-            return Maps.newHashMap(JSONObject.parseObject(cacheValue));
+    public Long countByStorageIdAndRepositoryId(String storageId, String repositoryId) {
+        return g().V().hasLabel(Vertices.ARTIFACT).has(Properties.STORAGE_ID, storageId).has(Properties.REPOSITORY_ID, repositoryId).has(Properties.CREATED, P.gt(0)).count().tryNext().orElse(0L);
+    }
+
+    public Map<String, Long> countArtifactByStorageIdAndRepositoryId(String storageId, String repositoryId) {
+        Long downloadCount = sumDownloadCountByStorageIdAndRepositoryId(storageId, repositoryId);
+        Long dependencyCount = sumDependencyCountByStorageIdsAndRepositoryIds(Collections.singletonList(storageId), Collections.singletonList(repositoryId), null, null);
+        Map<String, Long> map = Maps.newHashMap();
+        map.put("downloadCount", downloadCount);
+        map.put("dependencyCount", dependencyCount);
+        return map;
+    }
+
+    private Long sumDownloadCountByStorageIdAndRepositoryId(String storageId, String repositoryId) {
+        return g().V().hasLabel(Vertices.ARTIFACT).has(Properties.STORAGE_ID, storageId).has(Properties.REPOSITORY_ID, repositoryId).has(Properties.SAFE_LEVEL, SafeLevelEnum.SCAN_COMPLETE.getLevel()).has(Properties.DOWNLOAD_COUNT, P.gt(0)).values(Properties.DOWNLOAD_COUNT).sum().tryNext().orElse(0L).longValue();
+    }
+
+    private EntityTraversal<Vertex, Vertex> commonBuildEntityTraversal(List<String> storageIds, List<String> repositoryIds) {
+        return g().V().hasLabel(Vertices.ARTIFACT).has(Properties.STORAGE_ID, P.within(storageIds)).has(Properties.REPOSITORY_ID, P.within(repositoryIds)).has(Properties.SAFE_LEVEL, SafeLevelEnum.SCAN_COMPLETE.getLevel());
+    }
+
+    private Long sumDependencyCountByStorageIdsAndRepositoryIds(List<String> storageIds, List<String> repositoryIds, Long begin, Long end) {
+        EntityTraversal<Vertex, Vertex> entityTraversal = commonBuildEntityTraversal(storageIds, repositoryIds);
+        if (Objects.nonNull(begin) && Objects.nonNull(end)) {
+            entityTraversal = entityTraversal.has(Properties.SCAN_TIME, P.between(begin, end));
         }
-        EntityTraversal<Vertex, Map<Object, Object>> entityTraversal = g().V().hasLabel(Vertices.ARTIFACT).has(Properties.STORAGE_ID, storageId).has(Properties.REPOSITORY_ID, repositoryId)
-                .properties(Properties.DOWNLOAD_COUNT, Properties.DEPENDENCY_COUNT).
-                        group().by(__.key()).by(__.value().sum());
-        Map<Object, Object> map = entityTraversal.tryNext().orElse(Maps.newHashMap());
-        LocalCacheUtils.put(key, JSONObject.toJSONString(map), 3600);
+        return entityTraversal.has(Properties.DEPENDENCY_COUNT, P.gt(0)).values(Properties.DEPENDENCY_COUNT).sum().tryNext().orElse(0L).longValue();
+    }
+
+    private Long sumDependencyVulnerabilitiesCountByStorageIdsAndRepositoryIds(List<String> storageIds, List<String> repositoryIds, Long begin, Long end) {
+        EntityTraversal<Vertex, Vertex> entityTraversal = commonBuildEntityTraversal(storageIds, repositoryIds);
+        if (Objects.nonNull(begin) && Objects.nonNull(end)) {
+            entityTraversal = entityTraversal.has(Properties.SCAN_TIME, P.between(begin, end));
+        }
+        return entityTraversal.has(Properties.DEPENDENCY_VULNERABILITIES_COUNT, P.gt(0)).values(Properties.DEPENDENCY_VULNERABILITIES_COUNT).sum().tryNext().orElse(0L).longValue();
+    }
+
+    private Long sumVulnerabilitiesCountByStorageIdsAndRepositoryIds(List<String> storageIds, List<String> repositoryIds, Long begin, Long end) {
+        EntityTraversal<Vertex, Vertex> entityTraversal = commonBuildEntityTraversal(storageIds, repositoryIds);
+        if (Objects.nonNull(begin) && Objects.nonNull(end)) {
+            entityTraversal = entityTraversal.has(Properties.SCAN_TIME, P.between(begin, end));
+        }
+        return entityTraversal.has(Properties.VULNERABILITIES_COUNT, P.gt(0)).values(Properties.VULNERABILITIES_COUNT).sum().tryNext().orElse(0L).longValue();
+    }
+
+    private Long sumSuppressedVulnerabilitiesCountByStorageIdsAndRepositoryIds(List<String> storageIds, List<String> repositoryIds, Long begin, Long end) {
+        EntityTraversal<Vertex, Vertex> entityTraversal = commonBuildEntityTraversal(storageIds, repositoryIds);
+        if (Objects.nonNull(begin) && Objects.nonNull(end)) {
+            entityTraversal = entityTraversal.has(Properties.SCAN_TIME, P.between(begin, end));
+        }
+        return entityTraversal.has(Properties.SUPPRESSED_VULNERABILITIES_COUNT, P.gt(0)).values(Properties.SUPPRESSED_VULNERABILITIES_COUNT).sum().tryNext().orElse(0L).longValue();
+    }
+
+    private Long scanCountByStorageIdsAndRepositoryIds(List<String> storageIds, List<String> repositoryIds, Long begin, Long end) {
+        EntityTraversal<Vertex, Vertex> entityTraversal = commonBuildEntityTraversal(storageIds, repositoryIds).has(Properties.CREATED, P.gt(0));
+        if (Objects.nonNull(begin) && Objects.nonNull(end)) {
+            entityTraversal = entityTraversal.has(Properties.SCAN_TIME, P.between(begin, end));
+        }
+        return entityTraversal.count().tryNext().orElse(0L);
+    }
+
+    private Long unScanCountByStorageIdsAndRepositoryIds(List<String> storageIds, List<String> repositoryIds) {
+        return g().V().hasLabel(Vertices.ARTIFACT).has(Properties.STORAGE_ID, P.within(storageIds)).has(Properties.REPOSITORY_ID, P.within(repositoryIds)).has(Properties.SAFE_LEVEL, SafeLevelEnum.UN_SCAN.getLevel()).has(Properties.CREATED, P.gt(0)).count().tryNext().orElse(0L);
+    }
+
+    private Long notScanCountByStorageIdsAndRepositoryIds(List<String> storageIds, List<String> repositoryIds) {
+        return g().V().hasLabel(Vertices.ARTIFACT).has(Properties.STORAGE_ID, P.within(storageIds)).has(Properties.REPOSITORY_ID, P.within(repositoryIds)).has(Properties.SAFE_LEVEL, SafeLevelEnum.INIT.getLevel()).has(Properties.CREATED, P.gt(0)).count().tryNext().orElse(0L);
+    }
+
+    private Long scanSuccessCountByStorageIdsAndRepositoryIds(List<String> storageIds, List<String> repositoryIds) {
+        return g().V().hasLabel(Vertices.ARTIFACT).has(Properties.STORAGE_ID, P.within(storageIds)).has(Properties.REPOSITORY_ID, P.within(repositoryIds)).has(Properties.SAFE_LEVEL, SafeLevelEnum.SCAN_COMPLETE.getLevel()).has(Properties.CREATED, P.gt(0)).count().tryNext().orElse(0L);
+    }
+
+    private Long scanFailCountByStorageIdsAndRepositoryIds(List<String> storageIds, List<String> repositoryIds) {
+        return g().V().hasLabel(Vertices.ARTIFACT).has(Properties.STORAGE_ID, P.within(storageIds)).has(Properties.REPOSITORY_ID, P.within(repositoryIds)).has(Properties.SAFE_LEVEL, SafeLevelEnum.SCAN_FAIL.getLevel()).has(Properties.CREATED, P.gt(0)).count().tryNext().orElse(0L);
+    }
+
+    public Map<String, Long> countArtifactByStorageIdsAndRepositories(List<String> storageIds, List<String> scanEnableRepositories, List<String> scanDisableRepositories) {
+        Long scanCount = scanCountByStorageIdsAndRepositoryIds(storageIds, scanEnableRepositories, null, null);
+        Long notScanCount = notScanCountByStorageIdsAndRepositoryIds(storageIds, scanDisableRepositories);
+        Long scanSuccessCount = scanSuccessCountByStorageIdsAndRepositoryIds(storageIds, scanEnableRepositories);
+        Long unScanCount = unScanCountByStorageIdsAndRepositoryIds(storageIds, scanEnableRepositories);
+        Long scanFailCount = scanFailCountByStorageIdsAndRepositoryIds(storageIds, scanEnableRepositories);
+        Long dependencyCount = sumDependencyCountByStorageIdsAndRepositoryIds(storageIds, scanEnableRepositories, null, null);
+        Long dependencyVulnerabilitiesCount = sumDependencyVulnerabilitiesCountByStorageIdsAndRepositoryIds(storageIds, scanEnableRepositories, null, null);
+        Long vulnerabilitiesCount = sumVulnerabilitiesCountByStorageIdsAndRepositoryIds(storageIds, scanEnableRepositories, null, null);
+        Long suppressedVulnerabilitiesCount = sumSuppressedVulnerabilitiesCountByStorageIdsAndRepositoryIds(storageIds, scanEnableRepositories, null, null);
+        Map<String, Long> map = Maps.newHashMap();
+        map.put("scanCount", scanCount);
+        map.put("notScanCount", notScanCount);
+        map.put("scanSuccessCount", scanSuccessCount);
+        map.put("unScanCount", unScanCount);
+        map.put("scanFailCount", scanFailCount);
+        map.put("dependencyCount", dependencyCount);
+        map.put("dependencyVulnerabilitiesCount", dependencyVulnerabilitiesCount);
+        map.put("vulnerabilitiesCount", vulnerabilitiesCount);
+        map.put("suppressedVulnerabilitiesCount", suppressedVulnerabilitiesCount);
+        return map;
+    }
+
+    public Map<String, Long> countRepositoryArtifactByStorageIdAndRepositoryId(String storageId, String repositoryId) {
+        List<String> storageIds = Collections.singletonList(storageId);
+        List<String> repositoryIds = Collections.singletonList(repositoryId);
+        Long scanCount = scanCountByStorageIdsAndRepositoryIds(storageIds, repositoryIds, null, null);
+        Long dependencyVulnerabilitiesCount = sumDependencyVulnerabilitiesCountByStorageIdsAndRepositoryIds(storageIds, repositoryIds, null, null);
+        Long vulnerabilitiesCount = sumVulnerabilitiesCountByStorageIdsAndRepositoryIds(storageIds, repositoryIds, null, null);
+        Long suppressedVulnerabilitiesCount = sumSuppressedVulnerabilitiesCountByStorageIdsAndRepositoryIds(storageIds, repositoryIds, null, null);
+        Long dependencyCount = sumDependencyCountByStorageIdsAndRepositoryIds(storageIds, repositoryIds, null, null);
+        Map<String, Long> map = Maps.newHashMap();
+        map.put("scanCount", scanCount);
+        map.put("dependencyCount", dependencyCount);
+        map.put("dependencyVulnerabilitiesCount", dependencyVulnerabilitiesCount);
+        map.put("vulnerabilitiesCount", vulnerabilitiesCount);
+        map.put("suppressedVulnerabilitiesCount", suppressedVulnerabilitiesCount);
+        return map;
+    }
+
+    public Map<String, Long> countArtifactByStorageIdsAndRepositoryIdsAndDate(List<String> storageIds, List<String> repositoryIds, String beginDate, String endDate) {
+        LocalDateTime beginLocalDateTime = DateUtil.parseLocalDateTime(beginDate + " 00:00:00", DatePattern.NORM_DATETIME_PATTERN);
+        LocalDateTime endLocalDateTime = DateUtil.parseLocalDateTime(endDate + " 23:59:59", DatePattern.NORM_DATETIME_PATTERN);
+        Long begin = EntityTraversalUtils.toLong(beginLocalDateTime);
+        Long end = EntityTraversalUtils.toLong(endLocalDateTime);
+        Long zero = 0L;
+        Number dependencyCount = sumDependencyCountByStorageIdsAndRepositoryIds(storageIds, repositoryIds, begin, end);
+        Number vulnerabilitiesCount = sumVulnerabilitiesCountByStorageIdsAndRepositoryIds(storageIds, repositoryIds, begin, end);
+        Map<String, Long> map = Maps.newHashMap();
+        map.put("dependencyCount", dependencyCount.longValue());
+        map.put("vulnerabilitiesCount", vulnerabilitiesCount.longValue());
+        return map;
+    }
+
+    public Map<String, Long> countFullArtifactByStorageIdsAndRepositoryIdsAndDate(List<String> storageIds, List<String> repositoryIds, String beginDate, String endDate) {
+        LocalDateTime beginLocalDateTime = DateUtil.parseLocalDateTime(beginDate + " 00:00:00", DatePattern.NORM_DATETIME_PATTERN);
+        LocalDateTime endLocalDateTime = DateUtil.parseLocalDateTime(endDate + " 23:59:59", DatePattern.NORM_DATETIME_PATTERN);
+        Long begin = EntityTraversalUtils.toLong(beginLocalDateTime);
+        Long end = EntityTraversalUtils.toLong(endLocalDateTime);
+        Long scanCount = scanCountByStorageIdsAndRepositoryIds(storageIds, repositoryIds, begin, end);
+        Long dependencyCount = sumDependencyCountByStorageIdsAndRepositoryIds(storageIds, repositoryIds, begin, end);
+        Long dependencyVulnerabilitiesCount = sumDependencyVulnerabilitiesCountByStorageIdsAndRepositoryIds(storageIds, repositoryIds, begin, end);
+        Long vulnerabilitiesCount = sumVulnerabilitiesCountByStorageIdsAndRepositoryIds(storageIds, repositoryIds, begin, end);
+        Long suppressedVulnerabilitiesCount = sumSuppressedVulnerabilitiesCountByStorageIdsAndRepositoryIds(storageIds, repositoryIds, begin, end);
+        Map<String, Long> map = Maps.newHashMap();
+        map.put("scanCount", scanCount);
+        map.put("dependencyCount", dependencyCount);
+        map.put("dependencyVulnerabilitiesCount", dependencyVulnerabilitiesCount);
+        map.put("vulnerabilitiesCount", vulnerabilitiesCount);
+        map.put("suppressedVulnerabilitiesCount", suppressedVulnerabilitiesCount);
         return map;
     }
 
@@ -203,15 +370,17 @@ public class ArtifactRepository extends GremlinVertexRepository<Artifact> {
         if (StringUtils.isNotBlank(metadataSearch)) {
             entityTraversal = entityTraversal.has(Properties.METADATA, Text.textContains(metadataSearch));
         }
-        if (StringUtils.isNotBlank(sortField) && StringUtils.isNotBlank(sortOrder)) {
-            entityTraversal = entityTraversal.order().by(sortField, Order.valueOf(sortOrder));
-        }
         if (StringUtils.isNotBlank(beginDate) && StringUtils.isNotBlank(endDate)) {
             LocalDateTime beginLocalDateTime = DateUtil.parseLocalDateTime(beginDate, DatePattern.NORM_DATETIME_MINUTE_PATTERN);
             LocalDateTime endLocalDateTime = DateUtil.parseLocalDateTime(endDate, DatePattern.NORM_DATETIME_MINUTE_PATTERN);
             Long begin = EntityTraversalUtils.toLong(beginLocalDateTime);
             Long end = EntityTraversalUtils.toLong(endLocalDateTime);
             entityTraversal = entityTraversal.has(Properties.CREATED, P.between(begin, end));
+        } else {
+            entityTraversal = entityTraversal.has(Properties.CREATED, P.gte(0));
+        }
+        if (StringUtils.isNotBlank(sortField) && StringUtils.isNotBlank(sortOrder)) {
+            entityTraversal = entityTraversal.order().by(sortField, Order.valueOf(sortOrder));
         }
         return entityTraversal;
     }
