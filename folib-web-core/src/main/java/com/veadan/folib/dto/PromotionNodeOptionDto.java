@@ -15,4 +15,5 @@ public class PromotionNodeOptionDto {
     private String storageId;
     private String repostoryId;
     private Map<String, Map<String,InputStream>> pathMap;
+    private Map<String, Object> fileMetaDataMap;
 }

@@ -99,12 +99,24 @@ public class ArtifactController extends BaseController {
     @ApiOperation(value = "删除制品元数据")
     @ApiResponses(value = {@ApiResponse(code = 200, message = "OK")})
     @PreAuthorize("hasAuthority('CONFIGURATION_ADD_UPDATE_METADATA')")
-    @DeleteMapping(value = "/artifactMetadata")
+    @PostMapping(value = "/deleteArtifactMetadata")
     public ResponseEntity<ResponseMessage> deleteArtifactMetadata(@RequestBody @Validated({ArtifactMetadataForm.DeleteGroup.class}) ArtifactMetadataForm artifactMetadataForm, BindingResult bindingResult) {
         if (bindingResult.hasErrors()) {
             throw new RequestBodyValidationException(GlobalConstants.REQUEST_PARAMS_ERROR, bindingResult);
         }
         artifactWebService.deleteArtifactMetadata(artifactMetadataForm);
         return ResponseEntity.ok(ResponseMessage.ok());
+    }
+
+    @ApiOperation(value = "批量新增制品元数据")
+    @ApiResponses(value = {@ApiResponse(code = 200, message = "OK")})
+    @PreAuthorize("hasAuthority('CONFIGURATION_ADD_UPDATE_METADATA')")
+    @PostMapping(value = "/batchArtifactMetadata")
+    public ResponseEntity<String> batchArtifactMetadata(@RequestBody @Validated({ArtifactMetadataForm.DeleteGroup.class}) List<ArtifactMetadataForm> list, BindingResult bindingResult) {
+        if (bindingResult.hasErrors()) {
+            throw new RequestBodyValidationException(GlobalConstants.REQUEST_PARAMS_ERROR, bindingResult);
+        }
+        artifactWebService.batchArtifactMetadata(list);
+        return ResponseEntity.ok("");
     }
 }

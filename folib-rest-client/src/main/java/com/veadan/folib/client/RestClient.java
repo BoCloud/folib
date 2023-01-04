@@ -677,6 +677,90 @@ public class RestClient extends ArtifactClient {
         }
     }
 
+    /**
+     * 添加制品元数据
+     *
+     * @param artifactMetadataForm 制品元数据实体对象
+     * @return ResponseEntity 响应实体
+     */
+    public ResponseEntity createArtifactMetadata(ArtifactMetadataForm artifactMetadataForm) {
+        String url = getContextBaseUrl() + "/api/artifact/artifactMetadata";
+        WebTarget resource = getClientInstance().target(url);
+        setupAuthentication(resource);
+        Response response = resource.request().
+                put(Entity.entity(artifactMetadataForm, MediaType.APPLICATION_JSON));
+        if (response.getStatus() != HttpStatus.SC_OK) {
+            displayResponseError(response);
+            throw new ServerErrorException(response.getStatus() + " | Unable to greet()",
+                    Response.Status.INTERNAL_SERVER_ERROR);
+        } else {
+            return ResponseEntity.ok("制品元数据创建成功");
+        }
+
+    }
+
+    /**
+     * 更新制品元数据
+     *
+     * @param artifactMetadataForm 制品元数据实体对象
+     * @return ResponseEntity 响应实体
+     */
+    public ResponseEntity updateArtifactMetadata(ArtifactMetadataForm artifactMetadataForm) {
+        String url = getContextBaseUrl() + "/api/artifact/artifactMetadata";
+        WebTarget resource = getClientInstance().target(url);
+        setupAuthentication(resource);
+        Response response = resource.request().
+                post(Entity.entity(artifactMetadataForm, MediaType.APPLICATION_JSON));
+        if (response.getStatus() != HttpStatus.SC_OK) {
+            displayResponseError(response);
+            throw new ServerErrorException(response.getStatus() + " | Unable to greet()",
+                    Response.Status.INTERNAL_SERVER_ERROR);
+        } else {
+            return ResponseEntity.ok("制品元数据更新成功");
+        }
+    }
+
+    /**
+     * 删除制品元数据
+     *
+     * @param artifactMetadataForm 制品元数据实体对象
+     * @return ResponseEntity 响应实体
+     */
+    public ResponseEntity deleteArtifactMetadata(ArtifactMetadataForm artifactMetadataForm) {
+        String url = getContextBaseUrl() + "/api/artifact/deleteArtifactMetadata";
+        WebTarget resource = getClientInstance().target(url);
+        setupAuthentication(resource);
+        Response response = resource.request().post(Entity.entity(artifactMetadataForm, MediaType.APPLICATION_JSON));
+        if (response.getStatus() != HttpStatus.SC_OK) {
+            displayResponseError(response);
+            throw new ServerErrorException(response.getStatus() + " | Unable to greet()",
+                    Response.Status.INTERNAL_SERVER_ERROR);
+        } else {
+            return ResponseEntity.ok("制品元数据删除成功");
+        }
+    }
+
+    /**
+     * 批量新增制品元数据
+     *
+     * @param artifactMetadataBatchForm 制品元数据实体对象
+     * @return ResponseEntity 响应实体
+     */
+    public ResponseEntity addBatchArtifactMetadata(ArtifactMetadataBatchForm artifactMetadataBatchForm) {
+        String url = getContextBaseUrl() + "/api/artifact/batchArtifactMetadata";
+        WebTarget resource = getClientInstance().target(url);
+        setupAuthentication(resource);
+        Response response = resource.request().
+                post(Entity.entity(artifactMetadataBatchForm.getList(), MediaType.APPLICATION_JSON));
+        if (response.getStatus() != HttpStatus.SC_OK) {
+            displayResponseError(response);
+            throw new ServerErrorException(response.getStatus() + " | Unable to greet()",
+                    Response.Status.INTERNAL_SERVER_ERROR);
+        } else {
+            return ResponseEntity.ok("批量新增制品元数据成功");
+        }
+    }
+
     public WebTarget prepareTarget(String arg) {
         return setupAuthentication(prepareUnauthenticatedTarget(arg));
     }

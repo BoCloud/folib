@@ -19,6 +19,8 @@ public class ArtifactUploadTask implements Callable<String> {
     private RepositoryPathResolver repositoryPathResolver;
     private ArtifactManagementService artifactManagementService;
     private String fileRelativePath;
+    private String metaData;
+    private PromotionUtil promotionUtil;
 
     public ArtifactUploadTask() {
     }
@@ -28,14 +30,18 @@ public class ArtifactUploadTask implements Callable<String> {
                               MultipartFile file,
                               RepositoryManagementService repositoryManagementService,
                               RepositoryPathResolver repositoryPathResolver,
-                              ArtifactManagementService artifactManagementService, String fileRelativePath) {
+                              ArtifactManagementService artifactManagementService,
+                              PromotionUtil promotionUtil,
+                              String fileRelativePath,String metaData ) {
         this.storageId = storageId;
         this.repostoryId = repostoryId;
         this.file = file;
         this.repositoryManagementService = repositoryManagementService;
         this.repositoryPathResolver = repositoryPathResolver;
         this.artifactManagementService = artifactManagementService;
+        this.promotionUtil = promotionUtil;
         this.fileRelativePath = fileRelativePath;
+        this.metaData = metaData;
     }
 
     @Override
@@ -49,6 +55,7 @@ public class ArtifactUploadTask implements Callable<String> {
 //                throw new IOException(fileRelativePath + "非Raw布局的本地仓库制品不可上传!");
 //            }
             artifactManagementService.store(destPath, is);
+            promotionUtil.setMetaData(destPath,metaData);
         } catch (IOException e) {
             e.printStackTrace();
             rs = e.getMessage();

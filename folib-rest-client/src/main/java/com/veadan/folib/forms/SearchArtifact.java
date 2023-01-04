@@ -19,6 +19,12 @@ public class SearchArtifact {
      * 制品名称 必填
      */
     private String artifactName;
+
+    /**
+     * 元数据搜索（二者默认其中一个必填）
+     */
+    private String metadataSearch;
+
     /**
      * 存储空间id
      */

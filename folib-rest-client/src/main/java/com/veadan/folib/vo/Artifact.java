@@ -23,6 +23,12 @@ public class Artifact {
      * 制品路径
      */
     private String uuid;
+
+    /**
+     * 元数据
+     */
+    private String metadata;
+
     /**
      * 存储空间名称
      */

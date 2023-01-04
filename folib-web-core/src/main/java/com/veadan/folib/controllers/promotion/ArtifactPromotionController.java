@@ -72,8 +72,9 @@ public class ArtifactPromotionController extends BaseArtifactController {
     public ResponseEntity upload(@RequestParam("files") MultipartFile[] files,
                                  @RequestParam("storageId") String storageId,
                                  @RequestParam("repostoryId") String repostoryId,
-                                 @RequestParam("filePathMap") String filePathMap) {
-        return artifactPromotionService.upload(files, storageId, repostoryId, filePathMap);
+                                 @RequestParam("filePathMap") String filePathMap,
+                                 @RequestParam(name = "fileMetaDataMap", required = false) String fileMetaDataMap) {
+        return artifactPromotionService.upload(files, storageId, repostoryId, filePathMap,fileMetaDataMap);
     }
 
     // 下载接口
