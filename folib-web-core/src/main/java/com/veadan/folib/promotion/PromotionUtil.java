@@ -7,17 +7,17 @@ import com.veadan.folib.cloud.storage.s3fs.S3FileSystem;
 import com.veadan.folib.cloud.storage.s3fs.S3Iterator;
 import com.veadan.folib.cloud.storage.s3fs.S3Path;
 import com.veadan.folib.configuration.ConfigurationManager;
+import com.veadan.folib.domain.Artifact;
 import com.veadan.folib.domain.ArtifactPromotion;
+import com.veadan.folib.domain.PromotionFileRelativePath;
 import com.veadan.folib.dto.PromotionArtifactDto;
 import com.veadan.folib.dto.PromotionNodeOptionDto;
 import com.veadan.folib.dto.TargetRepositoyDto;
 import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.providers.io.RepositoryPathResolver;
+import com.veadan.folib.providers.layout.DockerLayoutProvider;
 import com.veadan.folib.service.ProxyRepositoryConnectionPoolConfigurationService;
-import com.veadan.folib.services.ArtifactManagementService;
-import com.veadan.folib.services.ArtifactResolutionService;
-import com.veadan.folib.services.ConfigurationManagementService;
-import com.veadan.folib.services.RepositoryManagementService;
+import com.veadan.folib.services.*;
 import com.veadan.folib.storage.repository.Repository;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -106,6 +106,12 @@ public class PromotionUtil {
 
     @Autowired
     private ProxyRepositoryConnectionPoolConfigurationService clientPool;
+
+    @Autowired
+    private ArtifactService artifactService;
+
+    @Autowired
+    private ArtifactWebService artifactWebService;
 
     @Async("asyncStorageThreadPoolExecutor")
     public void executeHanleCopy(String path, Repository destRepository, Repository srcRepository) {
@@ -219,17 +225,23 @@ public class PromotionUtil {
         promotionNodeOptionDto.setStorageId(promotionArtifactDto.getTargetStorageId());
         promotionNodeOptionDto.setRepostoryId(promotionArtifactDto.getTargetRepostoryId());
         Map<String, Map<String, InputStream>> filePathMap = new HashMap<>();
+        Map<String, Object> fileMetaDataMap = new HashMap<>();
 
         List<File> list = getNFSFiles(promotionArtifactDto.getPath());
         for (File file : list) {
             Map<String, InputStream> inputStreamMap = new HashMap<>();
             inputStreamMap.put(file.getAbsolutePath(), Files.newInputStream(file.toPath()));
-            filePathMap.put(
-                    getRelativePath(file.getAbsolutePath(),
-                            promotionArtifactDto.getSrcStorageId(),
-                            promotionArtifactDto.getSrcRepostoryId()), inputStreamMap);
+            String relativePath = getRelativePath(file.getAbsolutePath(),
+                    promotionArtifactDto.getSrcStorageId(),
+                    promotionArtifactDto.getSrcRepostoryId());
+            filePathMap.put(relativePath, inputStreamMap);
+
+            // 添加跨节点的元数据同步
+            RepositoryPath srcRepositoryPath = repositoryPathResolver.resolve(promotionArtifactDto.getSrcStorageId(),promotionArtifactDto.getSrcRepostoryId(), relativePath);
+            fileMetaDataMap.put(relativePath, getMetaData(srcRepositoryPath));
         }
         promotionNodeOptionDto.setPathMap(filePathMap);
+        promotionNodeOptionDto.setFileMetaDataMap(fileMetaDataMap);
         return promotionNodeOptionDto;
     }
 
@@ -249,6 +261,9 @@ public class PromotionUtil {
                 String temp = fPath.substring(fPathIndex, fPath.length()).replace(srcRepository.getId() + File.separator, "");
                 RepositoryPath destPath = repositoryPathResolver.resolve(destRepository.getStorage().getId(), destRepository.getId(), temp);
                 artifactManagementService.store(destPath, is);
+                // 同步metadata
+                RepositoryPath srcPath = repositoryPathResolver.resolve(srcRepository.getStorage().getId(), srcRepository.getId(), temp);
+                setMetaData(destPath, getMetaData(srcPath));
             } catch (IOException e) {
                 e.printStackTrace();
                 throw new Exception(e.getMessage());
@@ -267,6 +282,9 @@ public class PromotionUtil {
             RepositoryPath uploadPath = repositoryPathResolver.resolve(destRepository.getStorage().getId(), destRepository.getId(), temp);
             try (InputStream is = Files.newInputStream(s3FilePath);) {
                 artifactManagementService.store(uploadPath, is);
+                // 同步metadata
+                RepositoryPath srcPath = repositoryPathResolver.resolve(srcRepository.getStorage().getId(), srcRepository.getId(), temp);
+                setMetaData(uploadPath, getMetaData(srcPath));
             } catch (IOException e) {
                 e.printStackTrace();
                 throw new Exception(e.getMessage());
@@ -275,11 +293,12 @@ public class PromotionUtil {
         s3FilesPaths.clear();
     }
 
-    public List<String> getFileRelativePaths(RepositoryPath repositoryPath) throws Exception {
+    public PromotionFileRelativePath getFileRelativePaths(RepositoryPath repositoryPath) throws Exception {
         String repositoryId = repositoryPath.getRepository().getId();
         String storageId = repositoryPath.getRepository().getStorage().getId();
         String absolutePath = repositoryPath.toAbsolutePath().toString();
         List<String> list = new ArrayList<String>();
+        Map<String, Object> metaData = new HashMap<>();
         if (absolutePath.contains("s3://")) {
             S3Path s3Path = new S3Path(SpringUtil.getBean(S3FileSystem.class), repositoryPath.getTarget().toString());
             List<S3Path> s3FilesPaths = getS3FiePaths(s3Path);
@@ -292,6 +311,9 @@ public class PromotionUtil {
                     temp = temp.substring(1, temp.length());
                 }
                 list.add(temp);
+                // 添加跨节点元数据
+                RepositoryPath srcRepositoryPath = repositoryPathResolver.resolve(repositoryPath.getRepository(), temp);
+                metaData.put(temp,getMetaData(srcRepositoryPath));
             }
         } else {
             List<File> files = getNFSFiles(absolutePath);
@@ -304,9 +326,12 @@ public class PromotionUtil {
                     temp = temp.substring(1, temp.length());
                 }
                 list.add(temp);
+                // 添加跨节点元数据
+                RepositoryPath srcRepositoryPath = repositoryPathResolver.resolve(repositoryPath.getRepository(), temp);
+                metaData.put(temp,getMetaData(srcRepositoryPath));
             }
         }
-        return list;
+        return new PromotionFileRelativePath(list,metaData);
     }
 
 
@@ -459,6 +484,7 @@ public class PromotionUtil {
                 });
             });
             part.field("filePathMap", JSON.toJSONString(filePathMap));
+            part.field("fileMetaDataMap", JSON.toJSONString(uploadDto.getFileMetaDataMap()));
             Client client = clientPool.getRestClient();
             WebTarget resource = client.register(MultiPartWriter.class).target(url);
             Response response = resource.request(MediaType.APPLICATION_JSON).header("Mime-Version", "1.0").
@@ -483,6 +509,35 @@ public class PromotionUtil {
             });
         }
         return "上传成功";
+    }
+
+    public String getMetaData(RepositoryPath srcPath) {
+        String rs = "";
+        try {
+            Artifact artifact = artifactWebService.getArtifact(srcPath);
+            if (Objects.isNull(artifact)) {
+                return rs;
+            }
+            rs = artifact.getMetadata();
+        } catch (Exception e) {
+            log.error("Exception {}", e.getMessage());
+        }
+        return rs;
+    }
+
+    public void setMetaData(RepositoryPath repositoryPath, String metadata) {
+        try {
+//            Artifact artifact = repositoryPath.getArtifactEntry();
+            Artifact artifact = artifactWebService.getArtifact(repositoryPath);
+            if (Objects.isNull(artifact)) {
+                throw new RuntimeException("artifact is null");
+            }
+            artifact.setMetadata(metadata);
+            artifactService.saveOrUpdateArtifact(artifact);
+        } catch (Exception e) {
+            log.error("Exception {} {}", e.getMessage(), repositoryPath.toString());
+        }
+
     }
 
 }

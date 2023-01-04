@@ -43,8 +43,8 @@ export function updateArtifactMetadata (data) {
 
 export function deleteArtifactMetadata (data) {
   return axios({
-    url: '/api/artifact/artifactMetadata',
-    method: 'delete',
+    url: '/api/artifact/deleteArtifactMetadata',
+    method: 'post',
     data: data
   })
 }

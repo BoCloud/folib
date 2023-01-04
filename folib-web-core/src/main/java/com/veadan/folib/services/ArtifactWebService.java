@@ -1,7 +1,9 @@
 package com.veadan.folib.services;
 
 import com.veadan.folib.configuration.MetadataConfiguration;
+import com.veadan.folib.domain.Artifact;
 import com.veadan.folib.forms.artifact.ArtifactMetadataForm;
+import com.veadan.folib.providers.io.RepositoryPath;
 
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
@@ -68,4 +70,14 @@ public interface ArtifactWebService {
      * @param artifactMetadataForm 参数
      */
     void deleteArtifactMetadata(ArtifactMetadataForm artifactMetadataForm);
+
+    /**
+     * 批量存储或更新元数据
+     *
+     * @param artifactMetadataFormList artifactMetadataFormList
+     */
+    void batchArtifactMetadata(List<ArtifactMetadataForm> artifactMetadataFormList);
+
+
+    Artifact getArtifact(RepositoryPath repositoryPath) throws Exception ;
 }
