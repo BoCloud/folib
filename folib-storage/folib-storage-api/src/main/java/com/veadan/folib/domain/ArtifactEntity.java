@@ -29,6 +29,8 @@ public class ArtifactEntity
 
     private String repositoryId;
 
+    private String storageIdAndRepositoryId;
+
     @Relationship(type = Edges.ARTIFACT_HAS_ARTIFACT_COORDINATES, direction = Relationship.OUTGOING)
     private GenericArtifactCoordinates artifactCoordinates;
 
@@ -116,10 +118,14 @@ public class ArtifactEntity
      */
     private Set<String> filePaths = new LinkedHashSet<>();
     /**
+     * 扫描日期
+     */
+    private String scanDate;
+    /**
      * 扫描时间
      */
     @Convert(DateConverter.class)
-    private LocalDateTime scanTime;
+    private LocalDateTime scanDateTime;
     /**
      * 扫描报告
      */
@@ -135,6 +141,7 @@ public class ArtifactEntity
 
         this.storageId = storageId;
         this.repositoryId = repositoryId;
+        this.storageIdAndRepositoryId = String.format("%s-%s", storageId, repositoryId);
         this.artifactCoordinates = artifactCoordinates;
         setUuid(String.format("%s-%s-%s", getStorageId(), getRepositoryId(), getArtifactCoordinates().buildPath()));
     }
@@ -157,6 +164,16 @@ public class ArtifactEntity
     @Override
     public void setRepositoryId(String repositoryId) {
         this.repositoryId = repositoryId;
+    }
+
+    @Override
+    public String getStorageIdAndRepositoryId() {
+        return storageIdAndRepositoryId;
+    }
+
+    @Override
+    public void setStorageIdAndRepositoryId(String storageIdAndRepositoryId) {
+        this.storageIdAndRepositoryId = storageIdAndRepositoryId;
     }
 
     @Override
@@ -436,13 +453,23 @@ public class ArtifactEntity
     }
 
     @Override
-    public LocalDateTime getScanTime() {
-        return scanTime;
+    public String getScanDate() {
+        return scanDate;
     }
 
     @Override
-    public void setScanTime(LocalDateTime scanTime) {
-        this.scanTime = scanTime;
+    public void setScanDate(String scanDate) {
+        this.scanDate = scanDate;
+    }
+
+    @Override
+    public LocalDateTime getScanDateTime() {
+        return scanDateTime;
+    }
+
+    @Override
+    public void setScanDateTime(LocalDateTime scanDateTime) {
+        this.scanDateTime = scanDateTime;
     }
 
     @Override

@@ -162,7 +162,9 @@ public class ScanService {
         scannerReport.setVulnerabilitiesCount(vulnerabilitiesCount);
         scannerReport.setDependencyVulnerabilitiesCount(dependencyVulnerabilitiesCount);
         scannerReport.setSuppressedVulnerabilitiesCount(suppressedVulnerabilitiesCount);
-        scannerReport.setScanTime(DateUtils.formatTime(new Date()));
+        Date now = new Date();
+        scannerReport.setScanDate(DateUtils.getTodayDate());
+        scannerReport.setScanDateTime(DateUtils.formatTime(now));
         return scannerReport;
     }
 
@@ -200,7 +202,8 @@ public class ScanService {
             }
             evidenceQuantity = evidenceQuantity + dependency.getEvidence().size();
         }
-        artifact.setScanTime(LocalDateTimeInstance.now());
+        artifact.setScanDate(DateUtils.getTodayDate());
+        artifact.setScanDateTime(LocalDateTimeInstance.now());
         handlerVulnerability(artifact, vulnerabilitySet);
         handlerArtifact(artifact, dependencyList.size(), vulnDepCount, vulnCount, vulnSuppressedCount, evidenceQuantity, vulnerabilitySet, SafeLevelEnum.SCAN_COMPLETE);
     }

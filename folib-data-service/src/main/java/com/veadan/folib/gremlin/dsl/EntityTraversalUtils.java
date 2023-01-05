@@ -81,7 +81,7 @@ public class EntityTraversalUtils
 
     public static <T extends DomainObject> List<T> reduceHierarchy(List<T> entityList)
     {
-        Map<String, List<T>> resultMapByUuid = entityList.stream()
+        Map<String, List<T>> resultMapByUuid = Optional.ofNullable(entityList).orElse(Collections.emptyList()).stream()
                                                          .collect(Collectors.groupingBy(DomainObject::getUuid,
                                                                                         Collectors.toCollection(LinkedList::new)));
 

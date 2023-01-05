@@ -1,5 +1,6 @@
 package com.veadan.folib.services.impl;
 
+import cn.hutool.core.date.DatePattern;
 import cn.hutool.core.date.DateUtil;
 import com.alibaba.excel.EasyExcel;
 import com.alibaba.excel.ExcelWriter;
@@ -20,6 +21,7 @@ import com.veadan.folib.domain.DirectoryListing;
 import com.veadan.folib.domain.FileContent;
 import com.veadan.folib.forms.artifact.ArtifactMetadataForm;
 import com.veadan.folib.forms.scanner.*;
+import com.veadan.folib.gremlin.dsl.EntityTraversalUtils;
 import com.veadan.folib.gremlin.entity.vo.ArtifactVo;
 import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.providers.io.RepositoryPathResolver;
@@ -53,6 +55,7 @@ import java.net.URLEncoder;
 import java.nio.file.Path;
 import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
+import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -228,9 +231,9 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
         CountForm countForm = CountForm.builder().scanCount(zero).notScanCount(zero).scanSuccessCount(zero).scanFailCount(zero)
                 .dependencyCount(zero).dependencyVulnerabilitiesCount(zero).vulnerabilitiesCount(zero).suppressedVulnerabilitiesCount(zero).build();
         List<String> storageIds = havePermissionStorageIdList(username);
-        List<String> scanEnableRepositories = getRepositoriesByOnScanAndStorageIds(1, storageIds);
-        List<String> scanDisableRepositories = getRepositoriesByOnScanAndStorageIds(0, storageIds);
-        Map<String, Long> map = artifactRepository.countArtifactByStorageIdsAndRepositories(storageIds, scanEnableRepositories, scanDisableRepositories);
+        List<String> storageIdAndRepositoryIdList = getStorageIdsRepositoryIdsByOnScanAndStorageIds(1, storageIds);
+        List<String> disableStorageIdAndRepositoryIdList = getStorageIdsRepositoryIdsByOnScanAndStorageIds(0, storageIds);
+        Map<String, Long> map = artifactRepository.countArtifactByStorageIdsAndRepositories(storageIdAndRepositoryIdList, disableStorageIdAndRepositoryIdList);
         countForm.setScanCount(map.getOrDefault("scanCount", zero));
         countForm.setNotScanCount(map.getOrDefault("notScanCount", zero));
         countForm.setScanSuccessCount(map.getOrDefault("scanSuccessCount", zero));
@@ -250,9 +253,9 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
         Map<String, Long> map = null;
         List<DayCountForm> list = Lists.newArrayList();
         Long zero = 0L, dependencyCount, vulnerabilitiesCount;
-        List<String> scanEnableRepositories = getRepositoriesByOnScanAndStorageIds(1, storageIds);
+        List<String> storageIdAndRepositoryIdList = getStorageIdsRepositoryIdsByOnScanAndStorageIds(1, storageIds);
         for (String date : dayList) {
-            map = artifactRepository.countArtifactByStorageIdsAndRepositoryIdsAndDate(storageIds, scanEnableRepositories, date, date);
+            map = artifactRepository.countArtifactByStorageIdsAndRepositoryIdsAndDate(storageIdAndRepositoryIdList, date, null, null);
             dependencyCount = map.getOrDefault("dependencyCount", zero);
             vulnerabilitiesCount = map.getOrDefault("vulnerabilitiesCount", zero);
             if (dependencyCount > zero || vulnerabilitiesCount > zero) {
@@ -272,16 +275,16 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
         WeekCountForm weekCountForm = WeekCountForm.builder().build();
         List<WeekDayCountForm> list = Lists.newArrayList();
         Long zero = 0L, vulnerabilitiesCount;
-        List<String> scanEnableRepositories = getRepositoriesByOnScanAndStorageIds(1, storageIds);
+        List<String> storageIdAndRepositoryIdList = getStorageIdsRepositoryIdsByOnScanAndStorageIds(1, storageIds);
         for (String date : currentWeekList) {
-            map = artifactRepository.countArtifactByStorageIdsAndRepositoryIdsAndDate(storageIds, scanEnableRepositories, date, date);
+            map = artifactRepository.countArtifactByStorageIdsAndRepositoryIdsAndDate(storageIdAndRepositoryIdList, date, null, null);
             vulnerabilitiesCount = map.getOrDefault("vulnerabilitiesCount", zero);
             list.add(WeekDayCountForm.builder().date(date.substring(5)).vulnerabilitiesCount(vulnerabilitiesCount).build());
         }
         weekCountForm.setDayCountList(list);
 
-        Map<String, Long> currentWeekMap = artifactRepository.countFullArtifactByStorageIdsAndRepositoryIdsAndDate(storageIds, scanEnableRepositories, currentWeekList.get(0), currentWeekList.get(currentWeekList.size() - 1));
-        Map<String, Long> lastWeekMap = artifactRepository.countFullArtifactByStorageIdsAndRepositoryIdsAndDate(storageIds, scanEnableRepositories, lastWeekList.get(0), lastWeekList.get(lastWeekList.size() - 1));
+        Map<String, Long> currentWeekMap = artifactRepository.countFullArtifactByStorageIdsAndRepositoryIdsAndDate(storageIdAndRepositoryIdList, getStartLong(currentWeekList.get(0)), getEndLong(currentWeekList.get(currentWeekList.size() - 1)));
+        Map<String, Long> lastWeekMap = artifactRepository.countFullArtifactByStorageIdsAndRepositoryIdsAndDate(storageIdAndRepositoryIdList, getStartLong(lastWeekList.get(0)), getEndLong(lastWeekList.get(lastWeekList.size() - 1)));
         CompareCountForm compareCountForm = CompareCountForm.builder().build();
         compareCountForm.setScanCount(currentWeekMap.getOrDefault("scanCount", zero) - lastWeekMap.getOrDefault("scanCount", zero));
         compareCountForm.setDependencyCount(currentWeekMap.getOrDefault("dependencyCount", zero) - lastWeekMap.getOrDefault("dependencyCount", zero));
@@ -344,7 +347,7 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
         SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
         String finalPrefix = prefix;
         repositoryScannerForm.setList(artifactPage.getContent().stream().map(artifact -> {
-            String scanTime = DateUtil.format(Date.from(artifact.getScanTime().atZone(ZoneId.of("Asia/Shanghai")).toOffsetDateTime().toInstant()), df);
+            String scanTime = DateUtil.format(Date.from(artifact.getScanDateTime().atZone(ZoneId.of("Asia/Shanghai")).toOffsetDateTime().toInstant()), df);
             RepositoryForm repositoryForm = RepositoryForm.builder().dependencyCount(artifact.getDependencyCount()).dependencyVulnerabilitiesCount(artifact.getDependencyVulnerabilitiesCount())
                     .uuid(artifact.getUuid()).scanTime(scanTime).suppressedVulnerabilitiesCount(artifact.getSuppressedVulnerabilitiesCount())
                     .vulnerabilitiesCount(artifact.getVulnerabilitiesCount()).storageId(artifact.getStorageId()).repositoryId(artifact.getRepositoryId()).artifactPath(artifact.getArtifactPath()).build();
@@ -483,11 +486,20 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
      * @param storageIds 存储空间集合
      * @return 仓库名称集合
      */
-    private List<String> getRepositoriesByOnScanAndStorageIds(Integer onScan, List<String> storageIds) {
+    private List<String> getStorageIdsRepositoryIdsByOnScanAndStorageIds(Integer onScan, List<String> storageIds) {
         Example example = new Example(ScanRules.class);
         example.createCriteria().andEqualTo("onScan", onScan).andIn("storage", storageIds);
         List<ScanRules> scanRulesList = scanRulesMapper.selectByExample(example);
-        return Optional.ofNullable(scanRulesList).orElse(Collections.emptyList()).stream().map(ScanRules::getRepository).collect(Collectors.toList());
+        return Optional.ofNullable(scanRulesList).orElse(Collections.emptyList()).stream().map(item -> String.format("%s-%s", item.getStorage(), item.getRepository())).collect(Collectors.toList());
     }
 
+    private Long getStartLong(String date) {
+        LocalDateTime startLocalDateTime = DateUtil.parseLocalDateTime(date + " 00:00:00", DatePattern.NORM_DATETIME_PATTERN);
+        return EntityTraversalUtils.toLong(startLocalDateTime);
+    }
+
+    private Long getEndLong(String date) {
+        LocalDateTime endLocalDateTime = DateUtil.parseLocalDateTime(date + " 23:59:59", DatePattern.NORM_DATETIME_PATTERN);
+        return EntityTraversalUtils.toLong(endLocalDateTime);
+    }
 }

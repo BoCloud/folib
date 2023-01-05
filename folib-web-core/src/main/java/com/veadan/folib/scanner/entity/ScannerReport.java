@@ -39,9 +39,12 @@ public class ScannerReport {
      * 被封存的漏洞数量
      */
     private Integer suppressedVulnerabilitiesCount;
-
+    /**
+     * 扫描日期
+     */
+    private String scanDate;
     /**
      * 扫描时间
      */
-    private String scanTime;
+    private String scanDateTime;
 }
