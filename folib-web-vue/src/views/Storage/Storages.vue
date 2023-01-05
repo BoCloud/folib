@@ -1189,10 +1189,10 @@ export default {
       },
     };
   },
-  created() {
+  async created() {
     this.userInfo = store.state.user
-    this.getStorages();
-    this.getBaseUrl();
+  await  this.getStorages();
+  await  this.getBaseUrl();
 
     const params = storage.get('libView_repository')
 
@@ -1270,8 +1270,8 @@ export default {
       }, 100)
     },
     // 初始化获取集成url
-    getBaseUrl() {
-      getBaseUrl().then(res => {
+  async  getBaseUrl() {
+    await  getBaseUrl().then(res => {
         this.baseUrl = res
       })
     },
@@ -1377,8 +1377,8 @@ export default {
         this.userList = res.users
       })
     },
-    getStorages() {
-      getStorages().then(response => {
+  async  getStorages() {
+  await    getStorages().then(response => {
         this.storageData = response.storages;
         this.cacheStorage()
       })
