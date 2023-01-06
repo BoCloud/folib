@@ -236,7 +236,8 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
                     ArtifactDto artifac = ArtifactDto.builder().storageId(srcStorageId)
                             .repostoryId(srcRepostoryId).path(path).build();
                     String fileUlr = srcUrl + "/api/artifact/folib/promotion/download";
-                    String metaData = metaDataMap.getOrDefault(path,"").toString();
+                    String metaData = metaDataMap.getOrDefault(path, "") == null ?
+                            "" : metaDataMap.getOrDefault(path, "").toString();
                     PullArtifactTask pullArtifactTask = new PullArtifactTask(path, fileUlr, targetStorageId,
                             targetRepostoryId, repositoryPathResolver, artifactManagementService, clientPool,
                             promotionUtil, artifac, metaData);
