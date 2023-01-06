@@ -1,7 +1,7 @@
 version: "3.8"  #指定本yaml依从的compose哪个版本制定的
 services:
   mysql:  #服务名称
-    container_name: mysql #容器名称，可与服务名保持一致
+    container_name: mysql #容器名称，可与服务报名保持一致
     image: 58.210.154.140:2477/folib-common/folib-docker/mysql5.7:latest
     environment:
       - MYSQL_ROOT_PASSWORD=folib@v587
@@ -9,21 +9,21 @@ services:
     volumes:
       - ~/folib/mysql/logs:/var/log/mysql
       - ~/folib/mysql/data:/var/lib/mysql
-#      - ~/folib/etc/localtime:/etc/localtime:ro
     restart: always
     privileged: true
     ports:
       - 3306:3306
+    network_mode: host
   elasticsearch:  #服务名称
-    container_name: elasticsearch #容器名称，可与服务名保持一致
+    container_name: elasticsearch #容器名称，可与服务报名保持一致
     image: 58.210.154.140:2477/folib-common/folib-docker/elasticsearch:7.3.1
     environment:
       - node.name=node-1 #节点名称，与另外一个节点区分开
       - cluster.initial_master_nodes=node-1 #初始主节点
-      - discovery.seed_hosts=elasticsearch:9300 #配置集群的主机地址
+      - discovery.seed_hosts=[192.168.2.102:9300,192.168.2.103:9300,192.168.2.104:9300] #配置集群的主机地址
       - cluster.name=docker-elasticsearch-cluster #集群名称，两个节点需要保持一致
       - bootstrap.memory_lock=true  #禁用交换内存，提升效率
-      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+      - "ES_JAVA_OPTS=-Xms8g -Xmx8g"
     volumes:
       - ~/folib/es/conf:/usr/share/elasticsearch/conf
       - ~/folib/es/data:/usr/share/elasticsearch/data
@@ -40,8 +40,9 @@ services:
     ports:
       - 9200:9200 #重要：该集群对外出去的http端口号
       - 9300:9300 #重要：该集群对外映射出去的transport端口号
+    network_mode: host
   folib-mirror:  #服务名称
-    container_name: folib-mirror #容器名称，可与服务名保持一致
+    container_name: folib-mirror #容器名称，可与服务报名保持一致
     image: 58.210.154.140:2477/folib-common/folib-docker/folib-mirror:1.1
     volumes:
       - ~/folib/mirror:/usr/local/apache2/htdocs
@@ -49,29 +50,14 @@ services:
     privileged: true
     ports:
       - 8919:80
-  minio:  #服务名称
-    container_name: minio #容器名称，可与服务名保持一致
-    image: 58.210.154.140:2477/folib-common/folib-docker/minio:1.0
-    environment:
-      - MINIO_ROOT_USER=admin
-      - MINIO_ROOT_PASSWORD=admin123
-      - MINIO_PROMETHEUS_AUTH_TYPE=public
-    volumes:
-      - ~/folib/minio/data:/data
-      - ~/folib/minio/config:/root/.minio
-    restart: always
-    privileged: true
-    ports:
-      - 9000:9000
-      - 9090:9090
-    command: server --console-address ':9090' /data
+    network_mode: host
   folib-server:  #服务名称
-    container_name: folib-server #容器名称，可与服务名保持一致
-    image: 58.210.154.140:2477/folib-common/folib-docker/folib-server:1.2
+    container_name: folib-server #容器名称，可与服务报名保持一致
+    image: 58.210.154.140:2477/folib-common/folib-docker/folib-server:latest
     environment:
       - RUN_WORKDIR=/opt/folib
       - FOLIB_PORT=38080
-      - FOLIB_JVM_XMX=512
+      - FOLIB_JVM_XMX=8192
       - FOLIB_DB_PROFILE=db_EMBEDDED
       - FOLIB_GREMLIN_SERVER_ENABLED=false
       - FOLIB_LOG_CONSOLE_ENABLED=false
@@ -83,25 +69,25 @@ services:
       - FOLIB_NPM_REMOTE_CHANGES_ENABLED=false
       - FOLIB_NUGET_DOWNLOAD_FEED=false
       - FOLIB_DOWNLOAD_INDEXES=false
-      - FOLIB_ES_HOST=elasticsearch:9200
-      - FOLIB_MYSQL_HOST=mysql
+      - FOLIB_ES_HOST=192.168.2.102:9200
+      - FOLIB_MYSQL_HOST=192.168.2.102
       - FOLIB_MYSQL_PORT=3306
       - FOLIB_MYSQL_DB=folib_scanner
       - FOLIB_MYSQL_USER=root
       - FOLIB_MYSQL_PASSWORD=folib@v587
-      - FOLIB_NVD=folib-mirror
+      - FOLIB_NVD=192.168.2.102
       - FOLIB_JMX_PORT=7199
-      - FOLIB_DISTRIBUTED_LOCKIP=127.0.0.1
-      - FOLIB_CLUSTER_OPENFLAG=false
-      - FOLIB_CLUSTER_HOSTNODE=http://127.0.0.1:38080
+      - FOLIB_DISTRIBUTED_LOCKIP=192.168.2.102
+      - FOLIB_CLUSTER_OPENFLAG=true
+      - FOLIB_CLUSTER_HOSTNODE=192.168.2.102:38080,192.168.2.103:38080,192.168.2.104:38080
       - FOLIB_REMOTE_DB_HOST=127.0.0.1
       - FOLIB_REMOTE_DB_PORT=49142
       - FOLIB_REMOTE_DB_USER=root
       - FOLIB_REMOTE_DB_PASS=folib-cassandra
       - FOLIB_S3_REGION=folib
-      - FOLIB_S3_URI=s3://minio:9000/
+      - FOLIB_S3_URI=s3://localhost:9000/
       - FOLIB_S3_ACCESS_KEY=folib
-      - FOLIB_S3_SECRET_KEY=UGo8B5wcjFasU3xKxanxxYKEyVNGxyfH
+      - FOLIB_S3_SECRET_KEY=folib
     volumes:
       - ~/folib/folib-conf:/opt/folib/folib-1.0-SNAPSHOT/etc/conf
       - ~/folib/lic:/opt/folib/folib-1.0-SNAPSHOT/etc/lic
@@ -115,11 +101,7 @@ services:
       - 7199:7199
       - 49142:49142
       - 8182:8182
-    links:
-      - mysql:mysql
-      - elasticsearch:elasticsearch
-      - folib-mirror:folib-mirror
-      - minio:minio
+    network_mode: host
     depends_on:
       - mysql
       - elasticsearch

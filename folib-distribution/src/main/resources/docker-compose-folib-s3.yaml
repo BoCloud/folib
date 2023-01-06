@@ -1,7 +1,7 @@
 version: "3.8"  #指定本yaml依从的compose哪个版本制定的
 services:
   mysql:  #服务名称
-    container_name: mysql #容器名称，可与服务报名保持一致
+    container_name: mysql #容器名称，可与服务名保持一致
     image: 58.210.154.140:2477/folib-common/folib-docker/mysql5.7:latest
     environment:
       - MYSQL_ROOT_PASSWORD=folib@v587
@@ -9,13 +9,12 @@ services:
     volumes:
       - ~/folib/mysql/logs:/var/log/mysql
       - ~/folib/mysql/data:/var/lib/mysql
-#      - ~/folib/etc/localtime:/etc/localtime:ro
     restart: always
     privileged: true
     ports:
       - 3306:3306
   elasticsearch:  #服务名称
-    container_name: elasticsearch #容器名称，可与服务报名保持一致
+    container_name: elasticsearch #容器名称，可与服务名保持一致
     image: 58.210.154.140:2477/folib-common/folib-docker/elasticsearch:7.3.1
     environment:
       - node.name=node-1 #节点名称，与另外一个节点区分开
@@ -41,7 +40,7 @@ services:
       - 9200:9200 #重要：该集群对外出去的http端口号
       - 9300:9300 #重要：该集群对外映射出去的transport端口号
   folib-mirror:  #服务名称
-    container_name: folib-mirror #容器名称，可与服务报名保持一致
+    container_name: folib-mirror #容器名称，可与服务名保持一致
     image: 58.210.154.140:2477/folib-common/folib-docker/folib-mirror:1.1
     volumes:
       - ~/folib/mirror:/usr/local/apache2/htdocs
@@ -49,13 +48,29 @@ services:
     privileged: true
     ports:
       - 8919:80
+  minio:  #服务名称
+    container_name: minio #容器名称，可与服务名保持一致
+    image: 58.210.154.140:2477/folib-common/folib-docker/minio:1.0
+    environment:
+      - MINIO_ROOT_USER=admin
+      - MINIO_ROOT_PASSWORD=admin123
+      - MINIO_PROMETHEUS_AUTH_TYPE=public
+    volumes:
+      - ~/folib/minio/data:/data
+      - ~/folib/minio/config:/root/.minio
+    restart: always
+    privileged: true
+    ports:
+      - 9000:9000
+      - 9090:9090
+    command: server --console-address ':9090' /data
   folib-server:  #服务名称
-    container_name: folib-server #容器名称，可与服务报名保持一致
+    container_name: folib-server #容器名称，可与服务名保持一致
     image: 58.210.154.140:2477/folib-common/folib-docker/folib-server:1.2
     environment:
       - RUN_WORKDIR=/opt/folib
       - FOLIB_PORT=38080
-      - FOLIB_JVM_XMX=512
+      - FOLIB_JVM_XMX=1024
       - FOLIB_DB_PROFILE=db_EMBEDDED
       - FOLIB_GREMLIN_SERVER_ENABLED=false
       - FOLIB_LOG_CONSOLE_ENABLED=false
@@ -77,15 +92,15 @@ services:
       - FOLIB_JMX_PORT=7199
       - FOLIB_DISTRIBUTED_LOCKIP=127.0.0.1
       - FOLIB_CLUSTER_OPENFLAG=false
-      - FOLIB_CLUSTER_HOSTNODE=http://127.0.0.1:38080
+      - FOLIB_CLUSTER_HOSTNODE=127.0.0.1:38080
       - FOLIB_REMOTE_DB_HOST=127.0.0.1
       - FOLIB_REMOTE_DB_PORT=49142
       - FOLIB_REMOTE_DB_USER=root
       - FOLIB_REMOTE_DB_PASS=folib-cassandra
       - FOLIB_S3_REGION=folib
-      - FOLIB_S3_URI=s3://localhost:9000/
+      - FOLIB_S3_URI=s3://minio:9000/
       - FOLIB_S3_ACCESS_KEY=folib
-      - FOLIB_S3_SECRET_KEY=folib
+      - FOLIB_S3_SECRET_KEY=UGo8B5wcjFasU3xKxanxxYKEyVNGxyfH
     volumes:
       - ~/folib/folib-conf:/opt/folib/folib-1.0-SNAPSHOT/etc/conf
       - ~/folib/lic:/opt/folib/folib-1.0-SNAPSHOT/etc/lic
@@ -103,6 +118,7 @@ services:
       - mysql:mysql
       - elasticsearch:elasticsearch
       - folib-mirror:folib-mirror
+      - minio:minio
     depends_on:
       - mysql
       - elasticsearch
