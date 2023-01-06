@@ -966,7 +966,7 @@
             详细使用参考官网 https://helm.sh/zh/docs/intro/using_helm/
           </p>
           <prism-editor class="my-editor height-300" :value="
-          'helm reop update  #更新本地仓库'+ '\n' +
+          'helm repo update  #更新本地仓库'+ '\n' +
            '\n' +
           'helm search repo mysql     #搜索本地的mysql charts' + '\n' +
            '\n' +
