@@ -117,6 +117,6 @@ public class ArtifactController extends BaseController {
             throw new RequestBodyValidationException(GlobalConstants.REQUEST_PARAMS_ERROR, bindingResult);
         }
         artifactWebService.batchArtifactMetadata(list);
-        return ResponseEntity.ok("");
+        return ResponseEntity.ok("ok");
     }
 }

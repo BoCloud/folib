@@ -34,10 +34,10 @@ public class DomainEntity implements DomainObject
 
     public void setUuid(String uuid)
     {
-//        if (this.uuid != null && !this.uuid.equals(uuid))
-//        {
-//            throw new IllegalStateException(String.format("Can't change the uuid, [%s]->[%s].", this.uuid, uuid));
-//        }todo
+        if (this.uuid != null && !this.uuid.equals(uuid))
+        {
+            throw new IllegalStateException(String.format("Can't change the uuid, [%s]->[%s].", this.uuid, uuid));
+        }
 
         this.uuid = uuid;
     }

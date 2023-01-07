@@ -39,7 +39,7 @@ public class HelmArtifactController extends BaseArtifactController {
     @ApiResponses(value = {@ApiResponse(code = 200, message = ""),
             @ApiResponse(code = 400, message = "An error occurred.")})
     @PreAuthorize("hasAuthority('ARTIFACTS_RESOLVE')")
-    @GetMapping(value = {"storages/{storageId}/{repositoryId}/{path:.+}"})
+    @GetMapping(value = {"storages/{storageId}/{repositoryId}/{path}"})
     public void downloadArtifact(@RepositoryMapping Repository repository,
                                  @RequestHeader HttpHeaders httpHeaders,
                                  @PathVariable String path,

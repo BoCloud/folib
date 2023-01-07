@@ -178,7 +178,8 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
             Artifact artifact = resolvePath(artifactMetadataForm.getStorageId(), artifactMetadataForm.getRepositoryId(), artifactMetadataForm.getArtifactPath());
             JSONObject metadataJson = getMetadata(artifact);
             String key = artifactMetadataForm.getKey();
-            if (Objects.nonNull(metadataJson) && metadataJson.containsKey(key)) {
+            metadataJson = metadataJson == null ? new JSONObject() : metadataJson;
+            if (metadataJson.containsKey(key)) {
                 ArtifactMetadata artifactMetadata = ArtifactMetadata.builder().build();
                 BeanUtils.copyProperties(artifactMetadataForm, artifactMetadata);
                 metadataJson.put(key, artifactMetadata);
@@ -217,6 +218,7 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
             try {
                 artifact = resolvePath(artifactMetaData.getStorageId(), artifactMetaData.getRepositoryId(), artifactMetaData.getArtifactPath());
                 JSONObject metadataJson = getMetadata(artifact);
+                metadataJson = metadataJson == null ? new JSONObject() : metadataJson;
                 for (ArtifactMetadataForm artifactMetadataForm : artifactMetadataFormList) {
                     String key = artifactMetadataForm.getKey();
                     ArtifactMetadata artifactMetadata = ArtifactMetadata.builder().build();
