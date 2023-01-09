@@ -83,6 +83,14 @@
   </div>
 </template>
 <script>
+const Colors = {
+  MavenArtifactCoordinates: { back: "#f2e394", text: "#588c73" },
+  Artifact: { back: "#d96459", text: "#fff" },
+  ArtifactIdGroup: { back: "#A7C2FF", text: "#fff" },
+  NpmArtifactCoordinates: { back: "#d96459", text: "#fff" },
+  GenericArtifactCoordinates: { back: "#588c73", text: "#fff" },
+  ArtifactTag: { back: "#D5FF86", text: "#fff" },
+};
 import {
   gremlinQuery,
   gremlinVertex,
@@ -240,7 +248,26 @@ export default {
       gremlinQuery(this.gremlin, "g")
         .then((res) => {
           this.gremlinResult = res.result;
-          this.graphData.nodes = res.vertices;
+          const globalFontSize = 8;
+
+          this.graphData.nodes = res.vertices.map((p) => {
+            p.data=JSON.parse(JSON.stringify(p));
+            p.color = Colors[p.label].back;
+            p.style = {
+              fill: Colors[p.label].back,
+              lineWidth: 0,
+            };
+            p.labelCfg = {
+              style: {
+                fontSize: 8,
+                fill: Colors[p.label].text,
+                fontWeight: 300,
+              },
+              position: "center",
+            };
+            p.label = this.fittingString(p.label, 45, globalFontSize);
+            return p;
+          });
           this.graphData.edges = res.edges.map((p) => {
             return { source: p.source.id, target: p.target.id };
           });
@@ -258,36 +285,6 @@ export default {
     async initGraph() {
       // 初始化图
       // 假数据
-      const G6data = {
-        nodes: [
-          {
-            id: "0",
-            label: "0",
-          },
-          {
-            id: "1",
-            label: "1",
-          },
-          {
-            id: "2",
-            label: "2",
-          },
-        ],
-        edges: [
-          {
-            source: "0",
-            target: "1",
-          },
-          {
-            source: "1",
-            target: "2",
-          },
-          {
-            source: "1",
-            target: "0",
-          },
-        ],
-      };
       // 点击节点展示提示框
       const tooltip = new G6.Tooltip({
         offsetX: 10,
@@ -316,16 +313,20 @@ export default {
       const height = containerG6.offsetHeight; // Number，必须，图的宽度
 
       //智能布局
-      const { predictLayout, confidence } = await GraphLayoutPredict.predict(
-        this.graphData
-      );
+      // const { predictLayout, confidence } = await GraphLayoutPredict.predict(
+      //   this.graphData
+      // );
 
       this.graph = new G6.Graph({
         container: "containerG6", // String | HTMLElement，必须，在 Step 1 中创建的容器 id 或容器本身
         height,
         width,
         layout: {
-          type: predictLayout,
+          // type: predictLayout,
+          type: "force",
+          linkDistance: 60,
+          nodeSize: 45,
+          preventOverlap: true,
         },
         plugins: [tooltip], // 提示框
         modes: {
@@ -341,6 +342,23 @@ export default {
             },
           ], // 拖拽画布
         },
+
+        defaultNode: {
+          size: 45,
+          // labelCfg: {
+          //   style: {
+          //     fontSize: 8,
+          //     // fill: "#656464",
+          //   },
+          //   position: "center",
+          // },
+        },
+        nodeStateStyles: {
+          active: {
+            // keyShape 的状态样式
+            fill: "#fff",
+          },
+        },
         defaultEdge: {
           type: "quadratic", // 指定边的形状为二阶贝塞尔曲线
           style: {
@@ -348,27 +366,33 @@ export default {
             endArrow: true,
             startArrow: true,
           },
-          labelCfg: {
-            style: {
-              fontSize: 3,
-            },
-            position: "center",
-          },
         },
       });
       // 鼠标事件
       this.graph.on("node:mouseenter", (e) => {
+        // debugger;
         this.graph.setItemState(e.item, "active", true);
+        this.graph.updateItem(e.item, {
+          labelCfg: {
+            style: {
+              fill: "#000",
+            },
+          },
+        });
       });
       this.graph.on("node:mouseleave", (e) => {
         this.graph.setItemState(e.item, "active", false);
+       
+        const color=Colors[e.item._cfg.model.data.label]  
+        this.graph.updateItem(e.item, {
+          labelCfg: {
+            style: {
+              fill: color.text,
+            },
+          },
+        });
       });
-      this.graph.on("edge:mouseenter", (e) => {
-        this.graph.setItemState(e.item, "active", true);
-      });
-      this.graph.on("edge:mouseleave", (e) => {
-        this.graph.setItemState(e.item, "active", false);
-      });
+
       // 【步骤5】 匹配数据源并渲染
       // this.graph.read(this.graphData) // 读取 Step 2 中的数据源到图上
       // 读取数据
@@ -376,6 +400,25 @@ export default {
       // 渲染图
       this.graph.render();
       // this.graph.data(this.graphData)
+    },
+    fittingString(str, maxWidth, fontSize) {
+      let currentWidth = 0;
+      let res = str;
+      const pattern = new RegExp("[\u4E00-\u9FA5]+"); // distinguish the Chinese charactors and letters
+      str.split("").forEach((letter, i) => {
+        if (currentWidth > maxWidth) return;
+        if (pattern.test(letter)) {
+          // Chinese charactors
+          currentWidth += fontSize;
+        } else {
+          // get the width of single letter according to the fontSize
+          currentWidth += G6.Util.getLetterWidth(letter, fontSize);
+        }
+        if (currentWidth > maxWidth) {
+          res = `${str.substr(0, i)}\n${str.substr(i)}`;
+        }
+      });
+      return res;
     },
   },
 };

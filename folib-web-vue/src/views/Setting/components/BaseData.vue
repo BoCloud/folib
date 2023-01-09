@@ -171,8 +171,8 @@ export default {
   filters:{
     filterTwoNum(val){
       let realVal=''
-      if(!inNaN(val)&&val!==''){
-        realVal=parFloat(val).toFixed(2)
+      if(!isNaN(val)&&val!==''){
+        realVal=parseFloat(val).toFixed(2)
       }else{
         realVal='--'
       }
