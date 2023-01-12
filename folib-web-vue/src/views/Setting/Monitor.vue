@@ -3,7 +3,7 @@
     <a-tabs class="tabs-sliding" v-model="activeTab" default-active-key="1" >
 
       <a-tab-pane key="1" tab="基础监控">
-                <base-data v-if="activeTab==='1'" />
+      <base-data  :activeTab="activeTab"/>
       </a-tab-pane>
       <a-tab-pane key="2" tab="系统日志">
     <system-log />
