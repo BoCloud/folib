@@ -13,6 +13,7 @@
   },
   "dependencies": {
     "@antv/g6": "^4.6.15",
+    "@antv/vis-predict-engine": "^0.1.1",
     "@fullcalendar/core": "5.9.0",
     "@fullcalendar/daygrid": "5.9.0",
     "@fullcalendar/interaction": "5.9.0",
