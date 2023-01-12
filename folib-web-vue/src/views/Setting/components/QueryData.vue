@@ -84,11 +84,11 @@
 </template>
 <script>
 const Colors = {
-  MavenArtifactCoordinates: { back: "#f2e394", text: "#588c73" },
+  MavenArtifactCoordinates: { back: "#40A9FF", text: "#588c73" },
   Artifact: { back: "#d96459", text: "#fff" },
-  ArtifactIdGroup: { back: "#A7C2FF", text: "#fff" },
-  NpmArtifactCoordinates: { back: "#d96459", text: "#fff" },
-  GenericArtifactCoordinates: { back: "#588c73", text: "#fff" },
+  ArtifactIdGroup: { back: "#FADB14", text: "#fff" },
+  NpmArtifactCoordinates: { back: "#52C41A", text: "#fff" },
+  GenericArtifactCoordinates: { back: "#B37FEB", text: "#fff" },
   ArtifactTag: { back: "#D5FF86", text: "#fff" },
 };
 import {
@@ -248,10 +248,9 @@ export default {
       gremlinQuery(this.gremlin, "g")
         .then((res) => {
           this.gremlinResult = res.result;
-          const globalFontSize = 8;
 
           this.graphData.nodes = res.vertices.map((p) => {
-            p.data=JSON.parse(JSON.stringify(p));
+            p.data = JSON.parse(JSON.stringify(p));
             p.color = Colors[p.label].back;
             p.style = {
               fill: Colors[p.label].back,
@@ -259,13 +258,13 @@ export default {
             };
             p.labelCfg = {
               style: {
-                fontSize: 8,
+                fontSize: 6,
                 fill: Colors[p.label].text,
                 fontWeight: 300,
               },
               position: "center",
             };
-            p.label = this.fittingString(p.label, 45, globalFontSize);
+            p.label = "";
             return p;
           });
           this.graphData.edges = res.edges.map((p) => {
@@ -319,14 +318,24 @@ export default {
 
       this.graph = new G6.Graph({
         container: "containerG6", // String | HTMLElement，必须，在 Step 1 中创建的容器 id 或容器本身
+        center: [250, 250],
         height,
         width,
+        fitView: true,
+        // fitViewPadding: 20,
+        fitCenter: true,
         layout: {
           // type: predictLayout,
           type: "force",
-          linkDistance: 60,
-          nodeSize: 45,
+          linkDistance: 40,
+          nodeSize: 20,
+          // nodeSpacing: 2,
+          collideStrength: 0.8,
+          // clusterNodeSize	:6,
+          // nodeStrength:-20,
           preventOverlap: true,
+          clusterNodeStrength: 0.2,
+          clusterFociStrength: 1,
         },
         plugins: [tooltip], // 提示框
         modes: {
@@ -334,7 +343,7 @@ export default {
             {
               type: "zoom-canvas",
               enableOptimize: true,
-              optimizeZoom: 0.9,
+              optimizeZoom: 0.5,
             },
             {
               type: "drag-canvas",
@@ -344,7 +353,7 @@ export default {
         },
 
         defaultNode: {
-          size: 45,
+          size: 20,
           // labelCfg: {
           //   style: {
           //     fontSize: 8,
@@ -358,47 +367,124 @@ export default {
             // keyShape 的状态样式
             fill: "#fff",
           },
+          highlight: {
+            opacity: 1,
+          },
+          dark: {
+            opacity: 0.2,
+          },
+        },
+        edgeStateStyles: {
+          highlight: {
+            stroke: "#999",
+          },
         },
         defaultEdge: {
           type: "quadratic", // 指定边的形状为二阶贝塞尔曲线
           style: {
             // 箭头
-            endArrow: true,
-            startArrow: true,
+            // endArrow: true,
+            // startArrow: true,
           },
         },
       });
       // 鼠标事件
       this.graph.on("node:mouseenter", (e) => {
         // debugger;
-        this.graph.setItemState(e.item, "active", true);
-        this.graph.updateItem(e.item, {
+        const globalFontSize = 8;
+
+        const item = e.item;
+        this.graph.setAutoPaint(false);
+        this.graph.getNodes().forEach((node) => {
+          this.graph.clearItemStates(node);
+        });
+        this.graph.getEdges().forEach((edge) => {
+          if (edge.getSource() === item) {
+            this.graph.updateItem(edge.getTarget(), {
+              size: 40,
+              label: this.fittingString(
+                edge.getSource()._cfg.model.data.label,
+                40,
+                globalFontSize
+              ),
+            });
+            this.graph.setItemState(edge, "highlight", true);
+            edge.toFront();
+          } else if (edge.getTarget() === item) {
+            this.graph.updateItem(edge.getSource(), {
+              size: 40,
+              label: this.fittingString(
+                edge.getSource()._cfg.model.data.label,
+                40,
+                globalFontSize
+              ),
+            });
+            this.graph.setItemState(edge, "highlight", true);
+            edge.toFront();
+          } else {
+            this.graph.setItemState(edge, "highlight", false);
+          }
+        });
+        this.graph.setItemState(item, "active", true);
+        // p.;
+        this.graph.updateItem(item, {
+          size: 40,
+          label: this.fittingString(
+            item._cfg.model.data.label,
+            40,
+            globalFontSize
+          ),
           labelCfg: {
             style: {
+              size:8,
               fill: "#000",
             },
           },
         });
+        this.graph.paint();
+        this.graph.setAutoPaint(true);
       });
       this.graph.on("node:mouseleave", (e) => {
+        this.graph.getNodes().forEach((node) => {
+          this.graph.clearItemStates(node);
+          this.graph.updateItem(node, {
+            size: 20,
+            label: "",
+            labelCfg: {
+              style: {
+                fontSize: 6,
+              },
+            },
+          });
+        });
+        this.graph.getEdges().forEach((edge) => {
+          this.graph.clearItemStates(edge);
+        });
+
         this.graph.setItemState(e.item, "active", false);
-       
-        const color=Colors[e.item._cfg.model.data.label]  
+        const color = Colors[e.item._cfg.model.data.label];
         this.graph.updateItem(e.item, {
+          size: 20,
+          label: "",
           labelCfg: {
             style: {
+              fontSize: 6,
               fill: color.text,
             },
           },
         });
+        this.graph.paint();
+        this.graph.setAutoPaint(true);
       });
 
       // 【步骤5】 匹配数据源并渲染
       // this.graph.read(this.graphData) // 读取 Step 2 中的数据源到图上
       // 读取数据
-      this.graph.data(this.graphData);
+      this.graph.read(this.graphData);
+
       // 渲染图
-      this.graph.render();
+      // this.graph.render();
+      //  this.graph.graph.fitView(20);
       // this.graph.data(this.graphData)
     },
     fittingString(str, maxWidth, fontSize) {
