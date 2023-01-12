@@ -402,25 +402,16 @@ public class ArtifactRepository extends GremlinVertexRepository<Artifact> {
     public Artifact findOneArtifact(String storageId,
                                     String repositoryId,
                                     String path) {
-
         com.veadan.folib.storage.repository.Repository repository = configurationManager.getRepository(storageId, repositoryId);
-
         EntityTraversal<Vertex, Artifact> t = g().V()
-                .hasLabel(Vertices.GENERIC_ARTIFACT_COORDINATES)
-                .has(Properties.UUID, path)
-                .inE(Edges.ARTIFACT_HAS_ARTIFACT_COORDINATES)
-                .otherV()
                 .hasLabel(Vertices.ARTIFACT)
-                .has(Properties.STORAGE_ID, storageId)
-                .has(Properties.REPOSITORY_ID, repositoryId)
+                .has(Properties.UUID, String.format("%s-%s-%s", storageId, repositoryId, path))
                 .map(artifactAdapter.fold(Optional.ofNullable(repository)
                         .map(com.veadan.folib.storage.repository.Repository::getLayout)
                         .map(ArtifactLayoutLocator.getLayoutByNameEntityMap()::get)
-                        .map(ArtifactLayoutDescription::getArtifactCoordinatesClass))).range(0, 1);
-        if (!t.hasNext()) {
-            return null;
-        }
-        return t.next();
+                        .map(ArtifactLayoutDescription::getArtifactCoordinatesClass)));
+        Artifact artifact = t.tryNext().orElse(null);
+        return artifact;
     }
 
 }
@@ -429,7 +420,7 @@ public class ArtifactRepository extends GremlinVertexRepository<Artifact> {
 interface ArtifactEntityQueries extends org.springframework.data.repository.Repository<Artifact, String> {
 
     @Query("MATCH (genericCoordinates:GenericArtifactCoordinates)<-[r1]-(artifact:Artifact) " +
-            "WHERE genericCoordinates.uuid STARTS WITH $path AND artifact.storageId=$storageId AND artifact.repositoryId=$repositoryId " +
+            "WHERE genericCoordinates.uuid=$path AND artifact.storageId=$storageId AND artifact.repositoryId=$repositoryId " +
             "WITH artifact, r1, genericCoordinates " +
             "OPTIONAL MATCH (artifact)-[r4]->(tag:ArtifactTag) " +
             "WITH artifact, r1, genericCoordinates, r4, tag " +

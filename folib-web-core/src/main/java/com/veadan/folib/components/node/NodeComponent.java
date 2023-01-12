@@ -139,7 +139,7 @@ public class NodeComponent {
         try {
             log.info("=====>>>>>开始尝试修复cassandra集群信息");
             Map<String, String> options = Maps.newLinkedHashMap();
-            options.put(RepairOption.PARALLELISM_KEY, RepairParallelism.PARALLEL.getName());
+            options.put(RepairOption.PARALLELISM_KEY, RepairParallelism.DATACENTER_AWARE.getName());
             nodeProbe.repairAsync(System.out, keyspace, options);
         } catch (IOException ex) {
             log.error("=====>>>>>修复cassandra集群错误：{}", ExceptionUtils.getStackTrace(ex));
