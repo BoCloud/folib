@@ -2,6 +2,7 @@ package com.veadan.folib.repositories;
 
 import cn.hutool.core.date.DatePattern;
 import cn.hutool.core.date.DateUtil;
+import com.alibaba.fastjson.JSONObject;
 import com.google.common.collect.Maps;
 import com.veadan.folib.artifact.coordinates.ArtifactLayoutDescription;
 import com.veadan.folib.artifact.coordinates.ArtifactLayoutLocator;
@@ -17,6 +18,7 @@ import com.veadan.folib.gremlin.adapters.ArtifactAdapter;
 import com.veadan.folib.gremlin.dsl.EntityTraversal;
 import com.veadan.folib.gremlin.dsl.EntityTraversalUtils;
 import com.veadan.folib.gremlin.repositories.GremlinVertexRepository;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.tinkerpop.gremlin.process.traversal.Order;
@@ -35,7 +37,7 @@ import javax.transaction.Transactional;
 import java.time.LocalDateTime;
 import java.util.*;
 
-
+@Slf4j
 @Repository
 @Transactional
 public class ArtifactRepository extends GremlinVertexRepository<Artifact> {
@@ -388,13 +390,8 @@ public class ArtifactRepository extends GremlinVertexRepository<Artifact> {
                                   String repositoryId,
                                   String path) {
         EntityTraversal<Vertex, Vertex> t = g().V()
-                .hasLabel(Vertices.GENERIC_ARTIFACT_COORDINATES)
-                .has(Properties.UUID, path)
-                .inE(Edges.ARTIFACT_HAS_ARTIFACT_COORDINATES)
-                .otherV()
                 .hasLabel(Vertices.ARTIFACT)
-                .has(Properties.STORAGE_ID, storageId)
-                .has(Properties.REPOSITORY_ID, repositoryId)
+                .has(Properties.UUID, String.format("%s-%s-%s", storageId, repositoryId, path))
                 .has(Properties.ARTIFACT_FILE_EXISTS, true);
         return t.hasNext();
     }
@@ -403,6 +400,7 @@ public class ArtifactRepository extends GremlinVertexRepository<Artifact> {
                                     String repositoryId,
                                     String path) {
         com.veadan.folib.storage.repository.Repository repository = configurationManager.getRepository(storageId, repositoryId);
+        Long startTime = System.currentTimeMillis();
         EntityTraversal<Vertex, Artifact> t = g().V()
                 .hasLabel(Vertices.ARTIFACT)
                 .has(Properties.UUID, String.format("%s-%s-%s", storageId, repositoryId, path))
@@ -411,6 +409,7 @@ public class ArtifactRepository extends GremlinVertexRepository<Artifact> {
                         .map(ArtifactLayoutLocator.getLayoutByNameEntityMap()::get)
                         .map(ArtifactLayoutDescription::getArtifactCoordinatesClass)));
         Artifact artifact = t.tryNext().orElse(null);
+        log.debug("=====>>>>>findOneArtifact耗时：{} 毫秒", System.currentTimeMillis() - startTime);
         return artifact;
     }
 
