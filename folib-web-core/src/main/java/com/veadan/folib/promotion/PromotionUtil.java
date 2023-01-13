@@ -1,6 +1,6 @@
 package com.veadan.folib.promotion;
 
-import cn.hutool.core.collection.CollectionUtil;
+import cn.hutool.core.io.FileUtil;
 import cn.hutool.extra.spring.SpringUtil;
 import com.alibaba.fastjson.JSON;
 import com.veadan.folib.cloud.storage.s3fs.S3FileSystem;
@@ -15,43 +15,32 @@ import com.veadan.folib.dto.PromotionNodeOptionDto;
 import com.veadan.folib.dto.TargetRepositoyDto;
 import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.providers.io.RepositoryPathResolver;
-import com.veadan.folib.providers.layout.DockerLayoutProvider;
+import com.veadan.folib.schema2.ImageManifest;
+import com.veadan.folib.schema2.LayerManifest;
 import com.veadan.folib.service.ProxyRepositoryConnectionPoolConfigurationService;
 import com.veadan.folib.services.*;
 import com.veadan.folib.storage.repository.Repository;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.http.Consts;
-import org.apache.http.HttpEntity;
-import org.apache.http.HttpResponse;
-import org.apache.http.HttpStatus;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.config.AuthSchemes;
 import org.apache.http.client.config.CookieSpecs;
 import org.apache.http.client.config.RequestConfig;
-import org.apache.http.client.methods.HttpPost;
 import org.apache.http.config.Registry;
 import org.apache.http.config.RegistryBuilder;
 import org.apache.http.conn.socket.ConnectionSocketFactory;
 import org.apache.http.conn.socket.PlainConnectionSocketFactory;
 import org.apache.http.conn.ssl.NoopHostnameVerifier;
 import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
-import org.apache.http.entity.ContentType;
-import org.apache.http.entity.mime.HttpMultipartMode;
-import org.apache.http.entity.mime.MultipartEntityBuilder;
-import org.apache.http.entity.mime.content.StringBody;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
-import org.apache.http.util.EntityUtils;
 import org.glassfish.jersey.media.multipart.Boundary;
 import org.glassfish.jersey.media.multipart.FormDataMultiPart;
-import org.glassfish.jersey.media.multipart.file.FileDataBodyPart;
 import org.glassfish.jersey.media.multipart.file.StreamDataBodyPart;
 import org.glassfish.jersey.media.multipart.internal.MultiPartWriter;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.ResponseEntity;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.stereotype.Component;
@@ -68,13 +57,13 @@ import javax.ws.rs.core.Response;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.security.cert.X509Certificate;
 import java.util.*;
 import java.util.concurrent.FutureTask;
+import java.util.stream.Collectors;
 
 /**
  * @author qijianping
@@ -220,13 +209,81 @@ public class PromotionUtil {
         return resultList;
     }
 
-    public PromotionNodeOptionDto getPromotionUploadDto(PromotionArtifactDto promotionArtifactDto) throws IOException {
+    public PromotionNodeOptionDto getPromotionUploadDto(PromotionArtifactDto promotionArtifactDto) throws Exception {
         PromotionNodeOptionDto promotionNodeOptionDto = new PromotionNodeOptionDto();
         promotionNodeOptionDto.setStorageId(promotionArtifactDto.getTargetStorageId());
         promotionNodeOptionDto.setRepostoryId(promotionArtifactDto.getTargetRepostoryId());
         Map<String, Map<String, InputStream>> filePathMap = new HashMap<>();
         Map<String, Object> fileMetaDataMap = new HashMap<>();
+        if (promotionArtifactDto.getPath().startsWith("s3://")) {
+            s3PromotionUpload(promotionArtifactDto, filePathMap, fileMetaDataMap);
+        } else {
+            nfsPromotionUpload(promotionArtifactDto, filePathMap, fileMetaDataMap);
+        }
+        promotionNodeOptionDto.setPathMap(filePathMap);
+        promotionNodeOptionDto.setFileMetaDataMap(fileMetaDataMap);
+        return promotionNodeOptionDto;
+    }
 
+    private void s3PromotionUpload(PromotionArtifactDto promotionArtifactDto, Map<String, Map<String, InputStream>> filePathMap, Map<String, Object> fileMetaDataMap) throws Exception {
+        S3Path s3Path = new S3Path(SpringUtil.getBean(S3FileSystem.class), promotionArtifactDto.getPath());
+        List<S3Path> s3FilesPaths = getS3FiePaths(s3Path);
+        for (S3Path s3FilePath : s3FilesPaths) {
+            Map<String, InputStream> inputStreamMap = new HashMap<>();
+            inputStreamMap.put(s3FilePath.toAbsolutePath().toString(), Files.newInputStream(s3FilePath));
+            String relativePath = getRelativePath(s3FilePath.toAbsolutePath().toString(),
+                    promotionArtifactDto.getSrcStorageId(),
+                    promotionArtifactDto.getSrcRepostoryId());
+            filePathMap.put(relativePath, inputStreamMap);
+
+            // 添加跨节点的元数据同步
+            RepositoryPath srcRepositoryPath = repositoryPathResolver.resolve(promotionArtifactDto.getSrcStorageId(), promotionArtifactDto.getSrcRepostoryId(), relativePath);
+            fileMetaDataMap.put(relativePath, getMetaData(srcRepositoryPath));
+        }
+        // 判断是否是docker 版本路径的复制
+        String absolutePath = promotionArtifactDto.getPath();
+        String tempStr = promotionArtifactDto.getSrcStorageId() + File.separator + promotionArtifactDto.getSrcRepostoryId() + File.separator;
+        int fPathIndex = absolutePath.lastIndexOf(tempStr);
+        String relativizePath = absolutePath.substring(fPathIndex, absolutePath.length()).replace(tempStr, "");
+        RepositoryPath srcRepositoryPath = repositoryPathResolver.resolve(promotionArtifactDto.getSrcStorageId(), promotionArtifactDto.getSrcRepostoryId(), relativizePath);
+        boolean isDockerVersion = srcRepositoryPath.getRepository().getLayout().equalsIgnoreCase("docker") && s3FilesPaths.size() == 2;
+        if (isDockerVersion) {
+            //  blobs
+            String[] arrayPath = relativizePath.split(File.separator);
+            List<S3Path> fileContents = s3FilesPaths.stream().filter(file -> !(file.toString().endsWith(".sha256"))).collect(Collectors.toList());  //+propertiesBooter.getStorageBooterBasedir()+"/"+propertiesBooter.getVaultDirectory() + "/storages/"
+            S3Path file = fileContents.get(0);
+            String manifestString = Files.readString(file);
+            ImageManifest manifest = JSON.parseObject(manifestString, ImageManifest.class);
+            List<String> layerList = manifest.getLayers().stream().map(LayerManifest::getDigest).collect(Collectors.toList());
+            String manifestConfig = manifest.getConfig().getDigest();
+            layerList.add(manifestConfig);
+            for (String layer : layerList) {
+                String blob = arrayPath[0] + File.separator + "blobs" + File.separator + layer;
+                String blobSha256 = blob + ".sha256";
+                RepositoryPath vSrcBlobPath = repositoryPathResolver.resolve(promotionArtifactDto.getSrcStorageId(), promotionArtifactDto.getSrcRepostoryId(), blob);
+                RepositoryPath vSrcBlobSha256Path = repositoryPathResolver.resolve(promotionArtifactDto.getSrcStorageId(), promotionArtifactDto.getSrcRepostoryId(), blobSha256);
+                Map<String, InputStream> inputStreamMapBlobPath = new HashMap<>();
+                Map<String, InputStream> inputStreamMapSha256Path = new HashMap<>();
+                inputStreamMapBlobPath.put(vSrcBlobPath.getTarget().toAbsolutePath().toString(), Files.newInputStream(vSrcBlobPath));
+                inputStreamMapSha256Path.put(vSrcBlobSha256Path.getTarget().toAbsolutePath().toString(), Files.newInputStream(vSrcBlobSha256Path));
+                filePathMap.put(blob, inputStreamMapBlobPath);
+                filePathMap.put(blobSha256, inputStreamMapSha256Path);
+            }
+            //  manifest
+            String[] array = file.getKey().split(File.separator);
+            String mainfestFile = arrayPath[0] + File.separator + "manifest" + File.separator + array[array.length - 1];
+            String mainfestFileSha256 = mainfestFile + ".sha256";
+            String[] mainfestFileAarry = new String[]{mainfestFile, mainfestFileSha256};
+            for (String mainfestFileStr : mainfestFileAarry) {
+                RepositoryPath srcMainfestPath = repositoryPathResolver.resolve(promotionArtifactDto.getSrcStorageId(), promotionArtifactDto.getSrcRepostoryId(), mainfestFileStr);
+                Map<String, InputStream> inputStreamMapMainfestPath = new HashMap<>();
+                inputStreamMapMainfestPath.put(srcMainfestPath.getTarget().toAbsolutePath().toString(), Files.newInputStream(srcMainfestPath));
+                filePathMap.put(mainfestFileStr, inputStreamMapMainfestPath);
+            }
+        }
+    }
+
+    private void nfsPromotionUpload(PromotionArtifactDto promotionArtifactDto, Map<String, Map<String, InputStream>> filePathMap, Map<String, Object> fileMetaDataMap) throws IOException {
         List<File> list = getNFSFiles(promotionArtifactDto.getPath());
         for (File file : list) {
             Map<String, InputStream> inputStreamMap = new HashMap<>();
@@ -235,14 +292,50 @@ public class PromotionUtil {
                     promotionArtifactDto.getSrcStorageId(),
                     promotionArtifactDto.getSrcRepostoryId());
             filePathMap.put(relativePath, inputStreamMap);
-
             // 添加跨节点的元数据同步
-            RepositoryPath srcRepositoryPath = repositoryPathResolver.resolve(promotionArtifactDto.getSrcStorageId(),promotionArtifactDto.getSrcRepostoryId(), relativePath);
+            RepositoryPath srcRepositoryPath = repositoryPathResolver.resolve(promotionArtifactDto.getSrcStorageId(), promotionArtifactDto.getSrcRepostoryId(), relativePath);
             fileMetaDataMap.put(relativePath, getMetaData(srcRepositoryPath));
         }
-        promotionNodeOptionDto.setPathMap(filePathMap);
-        promotionNodeOptionDto.setFileMetaDataMap(fileMetaDataMap);
-        return promotionNodeOptionDto;
+        // 判断是否是docker 版本路径的复制
+        String absolutePath = promotionArtifactDto.getPath();
+        String tempStr = promotionArtifactDto.getSrcStorageId() + File.separator + promotionArtifactDto.getSrcRepostoryId() + File.separator;
+        int fPathIndex = absolutePath.lastIndexOf(tempStr);
+        String relativizePath = absolutePath.substring(fPathIndex, absolutePath.length()).replace(tempStr, "");
+        RepositoryPath srcRepositoryPath = repositoryPathResolver.resolve(promotionArtifactDto.getSrcStorageId(), promotionArtifactDto.getSrcRepostoryId(), relativizePath);
+        boolean isDockerVersion = srcRepositoryPath.getRepository().getLayout().equalsIgnoreCase("docker") && list.size() == 2;
+        if (isDockerVersion) {
+            //  blobs
+            String[] arrayPath = relativizePath.split(File.separator);
+            List<File> fileContents = list.stream().filter(file -> !(file.getName().endsWith(".sha256"))).collect(Collectors.toList());
+            File file = fileContents.get(0);
+            String manifestString = FileUtil.readString(srcRepositoryPath.toAbsolutePath() + File.separator + file.getName(), "UTF-8");
+            ImageManifest manifest = JSON.parseObject(manifestString, ImageManifest.class);
+            List<String> layerList = manifest.getLayers().stream().map(LayerManifest::getDigest).collect(Collectors.toList());
+            String manifestConfig = manifest.getConfig().getDigest();
+            layerList.add(manifestConfig);
+            for (String layer : layerList) {
+                String blob = arrayPath[0] + File.separator + "blobs" + File.separator + layer;
+                String blobSha256 = blob + ".sha256";
+                RepositoryPath vSrcBlobPath = repositoryPathResolver.resolve(promotionArtifactDto.getSrcStorageId(), promotionArtifactDto.getSrcRepostoryId(), blob);
+                RepositoryPath vSrcBlobSha256Path = repositoryPathResolver.resolve(promotionArtifactDto.getSrcStorageId(), promotionArtifactDto.getSrcRepostoryId(), blobSha256);
+                Map<String, InputStream> inputStreamMapBlobPath = new HashMap<>();
+                Map<String, InputStream> inputStreamMapSha256Path = new HashMap<>();
+                inputStreamMapBlobPath.put(vSrcBlobPath.getTarget().toAbsolutePath().toString(), Files.newInputStream(vSrcBlobPath));
+                inputStreamMapSha256Path.put(vSrcBlobSha256Path.getTarget().toAbsolutePath().toString(), Files.newInputStream(vSrcBlobSha256Path));
+                filePathMap.put(blob, inputStreamMapBlobPath);
+                filePathMap.put(blobSha256, inputStreamMapSha256Path);
+            }
+            //  manifest
+            String mainfestFile = arrayPath[0] + File.separator + "manifest" + File.separator + file.getName();
+            String mainfestFileSha256 = arrayPath[0] + File.separator + "manifest" + File.separator + file.getName() + ".sha256";
+            String[] mainfestFileAarry = new String[]{mainfestFile, mainfestFileSha256};
+            for (String mainfestFileStr : mainfestFileAarry) {
+                RepositoryPath srcMainfestPath = repositoryPathResolver.resolve(promotionArtifactDto.getSrcStorageId(), promotionArtifactDto.getSrcRepostoryId(), mainfestFileStr);
+                Map<String, InputStream> inputStreamMapMainfestPath = new HashMap<>();
+                inputStreamMapMainfestPath.put(srcMainfestPath.getTarget().toAbsolutePath().toString(), Files.newInputStream(srcMainfestPath));
+                filePathMap.put(mainfestFileStr, inputStreamMapMainfestPath);
+            }
+        }
     }
 
     private String getRelativePath(String absolutePath, String storageId, String repostoryId) {
@@ -257,8 +350,9 @@ public class PromotionUtil {
         for (File file : list) {
             try (InputStream is = Files.newInputStream(file.toPath());) {
                 String fPath = file.getAbsolutePath().toString();
-                int fPathIndex = fPath.lastIndexOf(srcRepository.getId() + File.separator);
-                String temp = fPath.substring(fPathIndex, fPath.length()).replace(srcRepository.getId() + File.separator, "");
+                String tempStr = srcRepository.getStorage().getId() + File.separator + srcRepository.getId() + File.separator;
+                int fPathIndex = fPath.lastIndexOf(tempStr);
+                String temp = fPath.substring(fPathIndex, fPath.length()).replace(tempStr, "");
                 RepositoryPath destPath = repositoryPathResolver.resolve(destRepository.getStorage().getId(), destRepository.getId(), temp);
                 artifactManagementService.store(destPath, is);
                 // 同步metadata
@@ -269,16 +363,70 @@ public class PromotionUtil {
                 throw new Exception(e.getMessage());
             }
         }
+        // 判断是否是docker 版本路径的复制
+        boolean isDockerVersion = srcRepository.getLayout().equalsIgnoreCase("docker") && list.size() == 2;
+        if (isDockerVersion) {
+            // copy blobs manifest
+            String tempStr = srcRepository.getStorage().getId() + File.separator + srcRepository.getId() + File.separator;
+            int fPathIndex = path.lastIndexOf(tempStr);
+            String relativizePath = path.substring(fPathIndex, path.length()).replace(tempStr, "");
+            String[] arrayPath = relativizePath.split(File.separator);
+            if (arrayPath.length != 2) {
+                return;
+            }
+//            RepositoryPath repositoryPath = repositoryPathResolver.resolve(srcRepository.getStorage().getId(), srcRepository.getId(), relativizePath);
+            List<File> fileContents = list.stream().filter(file -> !(file.getName().endsWith(".sha256"))).collect(Collectors.toList());
+            File file = fileContents.get(0);
+            String manifestString = Files.readString(file.toPath());
+//            String manifestString = FileUtil.readString(repositoryPath.toAbsolutePath() + File.separator + file.getName(), "UTF-8");
+            ImageManifest manifest = JSON.parseObject(manifestString, ImageManifest.class);
+            List<String> layerList = manifest.getLayers().stream().map(LayerManifest::getDigest).collect(Collectors.toList());
+            String manifestConfig = manifest.getConfig().getDigest();
+            // copy blobs
+            layerList.add(manifestConfig);
+            for (String layer : layerList) {
+                String blob = arrayPath[0] + File.separator + "blobs" + File.separator + layer;
+                String blobSha256 = blob + ".sha256";
+                RepositoryPath vSrcBlobPath = repositoryPathResolver.resolve(srcRepository.getStorage().getId(), srcRepository.getId(), blob);
+                RepositoryPath vSrcBlobSha256Path = repositoryPathResolver.resolve(srcRepository.getStorage().getId(), srcRepository.getId(), blobSha256);
+                try (InputStream blobIs = Files.newInputStream(vSrcBlobPath);
+                     InputStream blobSha256Is = Files.newInputStream(vSrcBlobSha256Path);
+                ) {
+                    RepositoryPath destBlobPath = repositoryPathResolver.resolve(destRepository.getStorage().getId(), destRepository.getId(), blob);
+                    RepositoryPath destBlobSha256Path = repositoryPathResolver.resolve(destRepository.getStorage().getId(), destRepository.getId(), blobSha256);
+                    artifactManagementService.store(destBlobPath, blobIs);
+                    artifactManagementService.store(destBlobSha256Path, blobSha256Is);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    log.error("{} blob copy error {}", relativizePath, e.getMessage());
+                }
+            }
+            //  copy manifest
+            String mainfestFile = arrayPath[0] + File.separator + "manifest" + File.separator + file.getName();
+            String mainfestFileSha256 = mainfestFile + ".sha256";
+            String[] mainfestFileAarry = new String[]{mainfestFile, mainfestFileSha256};
+            for (String mainfestFileStr : mainfestFileAarry) {
+                RepositoryPath srcMainfestPath = repositoryPathResolver.resolve(srcRepository.getStorage().getId(), srcRepository.getId(), mainfestFileStr);
+                try (InputStream mainfestIs = Files.newInputStream(srcMainfestPath)) {
+                    RepositoryPath destBlobPath = repositoryPathResolver.resolve(destRepository.getStorage().getId(), destRepository.getId(), mainfestFileStr);
+                    artifactManagementService.store(destBlobPath, mainfestIs);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    log.error("{} manifest copy error {}", relativizePath, e.getMessage());
+                }
+            }
+        }
     }
 
     public void handleS3ArtifactCopy(String path, Repository destRepository, Repository srcRepository) throws Exception {
         S3Path s3Path = new S3Path(SpringUtil.getBean(S3FileSystem.class), path);
         List<S3Path> s3FilesPaths = getS3FiePaths(s3Path);
         for (S3Path s3FilePath : s3FilesPaths) {
-            log.info("s3FilePath {} upload start", s3FilePath);
+            log.info("s3FilePath {} copy start", s3FilePath);
             String fPath = s3FilePath.toString();
-            int fPathIndex = fPath.lastIndexOf(srcRepository.getId() + File.separator);
-            String temp = fPath.substring(fPathIndex, fPath.length()).replace(srcRepository.getId() + File.separator, "");
+            String tempStr = srcRepository.getStorage().getId() + File.separator + srcRepository.getId() + File.separator;
+            int fPathIndex = fPath.lastIndexOf(tempStr);
+            String temp = fPath.substring(fPathIndex, fPath.length()).replace(tempStr, "");
             RepositoryPath uploadPath = repositoryPathResolver.resolve(destRepository.getStorage().getId(), destRepository.getId(), temp);
             try (InputStream is = Files.newInputStream(s3FilePath);) {
                 artifactManagementService.store(uploadPath, is);
@@ -290,10 +438,64 @@ public class PromotionUtil {
                 throw new Exception(e.getMessage());
             }
         }
+        // 判断是否是docker 版本路径的复制
+        boolean isDockerVersion = srcRepository.getLayout().equalsIgnoreCase("docker") && s3FilesPaths.size() == 2;
+        if (isDockerVersion) {
+            // copy blobs manifest
+            String tempStr = srcRepository.getStorage().getId() + File.separator + srcRepository.getId() + File.separator;
+            int fPathIndex = path.lastIndexOf(tempStr);
+            String relativizePath = path.substring(fPathIndex, path.length()).replace(tempStr, "");
+            String[] arrayPath = relativizePath.split(File.separator);
+            if (arrayPath.length != 2) {
+                return;
+            }
+//            RepositoryPath repositoryPath = repositoryPathResolver.resolve(srcRepository.getStorage().getId(), srcRepository.getId(), relativizePath);
+            List<S3Path> fileContents = s3FilesPaths.stream().filter(file -> !(file.toAbsolutePath().endsWith(".sha256"))).collect(Collectors.toList());  //+propertiesBooter.getStorageBooterBasedir()+"/"+propertiesBooter.getVaultDirectory() + "/storages/"
+            S3Path filePath = fileContents.get(0);
+            String manifestString = Files.readString(filePath);
+            ImageManifest manifest = JSON.parseObject(manifestString, ImageManifest.class);
+            List<String> layerList = manifest.getLayers().stream().map(LayerManifest::getDigest).collect(Collectors.toList());
+            String manifestConfig = manifest.getConfig().getDigest();
+            // copy blobs
+            layerList.add(manifestConfig);
+            for (String layer : layerList) {
+                String blob = arrayPath[0] + File.separator + "blobs" + File.separator + layer;
+                String blobSha256 = blob + ".sha256";
+                RepositoryPath vSrcBlobPath = repositoryPathResolver.resolve(srcRepository.getStorage().getId(), srcRepository.getId(), blob);
+                RepositoryPath vSrcBlobSha256Path = repositoryPathResolver.resolve(srcRepository.getStorage().getId(), srcRepository.getId(), blobSha256);
+                try (InputStream blobIs = Files.newInputStream(vSrcBlobPath);
+                     InputStream blobSha256Is = Files.newInputStream(vSrcBlobSha256Path);
+                ) {
+                    RepositoryPath destBlobPath = repositoryPathResolver.resolve(destRepository.getStorage().getId(), destRepository.getId(), blob);
+                    RepositoryPath destBlobSha256Path = repositoryPathResolver.resolve(destRepository.getStorage().getId(), destRepository.getId(), blobSha256);
+                    artifactManagementService.store(destBlobPath, blobIs);
+                    artifactManagementService.store(destBlobSha256Path, blobSha256Is);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    log.error("{} blob copy error {}", relativizePath, e.getMessage());
+                }
+            }
+            // copy manifest
+            String[] array = filePath.getKey().split(File.separator);
+            String mainfestFile = arrayPath[0] + File.separator + "manifest" + File.separator + array[array.length - 1];
+            String mainfestFileSha256 = mainfestFile + ".sha256";
+            String[] mainfestFileAarry = new String[]{mainfestFile, mainfestFileSha256};
+            for (String mainfestFileStr : mainfestFileAarry) {
+                RepositoryPath srcMainfestPath = repositoryPathResolver.resolve(srcRepository.getStorage().getId(), srcRepository.getId(), mainfestFileStr);
+                try (InputStream mainfestIs = Files.newInputStream(srcMainfestPath)) {
+                    RepositoryPath destBlobPath = repositoryPathResolver.resolve(destRepository.getStorage().getId(), destRepository.getId(), mainfestFileStr);
+                    artifactManagementService.store(destBlobPath, mainfestIs);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    log.error("{} manifest copy error {}", relativizePath, e.getMessage());
+                }
+            }
+        }
+
         s3FilesPaths.clear();
     }
 
-    public PromotionFileRelativePath getFileRelativePaths(RepositoryPath repositoryPath) throws Exception {
+    public PromotionFileRelativePath getFileRelativePaths(RepositoryPath repositoryPath, boolean isDockerVersionPath) throws Exception {
         String repositoryId = repositoryPath.getRepository().getId();
         String storageId = repositoryPath.getRepository().getStorage().getId();
         String absolutePath = repositoryPath.toAbsolutePath().toString();
@@ -313,8 +515,35 @@ public class PromotionUtil {
                 list.add(temp);
                 // 添加跨节点元数据
                 RepositoryPath srcRepositoryPath = repositoryPathResolver.resolve(repositoryPath.getRepository(), temp);
-                metaData.put(temp,getMetaData(srcRepositoryPath));
+                metaData.put(temp, getMetaData(srcRepositoryPath));
             }
+            // 获取docker version file path
+            if (isDockerVersionPath) {
+                // copy blobs manifest
+                String tempStr = storageId + File.separator + repositoryId + File.separator;
+                int fPathIndex = absolutePath.lastIndexOf(tempStr);
+                String relativizePath = absolutePath.substring(fPathIndex, absolutePath.length()).replace(tempStr, "");
+                String[] arrayPath = relativizePath.split(File.separator);
+                List<S3Path> fileContents = s3FilesPaths.stream().filter(file -> !(file.toAbsolutePath().endsWith(".sha256"))).collect(Collectors.toList());  //+propertiesBooter.getStorageBooterBasedir()+"/"+propertiesBooter.getVaultDirectory() + "/storages/"
+                S3Path filePath = fileContents.get(0);
+                String manifestString = Files.readString(filePath);
+                ImageManifest manifest = JSON.parseObject(manifestString, ImageManifest.class);
+                List<String> layerList = manifest.getLayers().stream().map(LayerManifest::getDigest).collect(Collectors.toList());
+                String manifestConfig = manifest.getConfig().getDigest();
+                layerList.add(manifestConfig);
+                for (String layer : layerList) {
+                    String blob = arrayPath[0] + File.separator + "blobs" + File.separator + layer;
+                    String blobSha256 = blob + ".sha256";
+                    list.add(blob);
+                    list.add(blobSha256);
+                }
+                String[] array = filePath.getKey().split(File.separator);
+                String mainfestFile = arrayPath[0] + File.separator + "manifest" + File.separator + array[array.length - 1];
+                String mainfestFileSha256 = mainfestFile + ".sha256";
+                list.add(mainfestFile);
+                list.add(mainfestFileSha256);
+            }
+
         } else {
             List<File> files = getNFSFiles(absolutePath);
             for (File file : files) {
@@ -328,10 +557,36 @@ public class PromotionUtil {
                 list.add(temp);
                 // 添加跨节点元数据
                 RepositoryPath srcRepositoryPath = repositoryPathResolver.resolve(repositoryPath.getRepository(), temp);
-                metaData.put(temp,getMetaData(srcRepositoryPath));
+                metaData.put(temp, getMetaData(srcRepositoryPath));
+            }
+            // 获取docker version file path
+            if (isDockerVersionPath) {
+                // 添加 blobs maninfest file path
+                String tempStr = storageId + File.separator + repositoryId + File.separator;
+                int fPathIndex = absolutePath.lastIndexOf(tempStr);
+                String relativizePath = absolutePath.substring(fPathIndex, absolutePath.length()).replace(tempStr, "");
+                String[] arrayPath = relativizePath.split(File.separator);
+                List<File> fileContents = files.stream().filter(f -> !(f.getName().endsWith(".sha256"))).collect(Collectors.toList());
+                File fileBolb = fileContents.get(0);
+                String manifestString = Files.readString(fileBolb.toPath());
+//                String manifestString = FileUtil.readString(repositoryPath.toAbsolutePath() + File.separator + fileBolb.getName(), "UTF-8");
+                ImageManifest manifest = JSON.parseObject(manifestString, ImageManifest.class);
+                List<String> layerList = manifest.getLayers().stream().map(LayerManifest::getDigest).collect(Collectors.toList());
+                String manifestConfig = manifest.getConfig().getDigest();
+                layerList.add(manifestConfig);
+                for (String layer : layerList) {
+                    String blob = arrayPath[0] + File.separator + "blobs" + File.separator + layer;
+                    String blobSha256 = blob + ".sha256";
+                    list.add(blob);
+                    list.add(blobSha256);
+                }
+                String mainfestFile = arrayPath[0] + File.separator + "manifest" + File.separator + fileBolb.getName();
+                String mainfestFileSha256 = mainfestFile + ".sha256";
+                list.add(mainfestFile);
+                list.add(mainfestFileSha256);
             }
         }
-        return new PromotionFileRelativePath(list,metaData);
+        return new PromotionFileRelativePath(list, metaData);
     }
 
 
@@ -527,7 +782,6 @@ public class PromotionUtil {
 
     public void setMetaData(RepositoryPath repositoryPath, String metadata) {
         try {
-//            Artifact artifact = repositoryPath.getArtifactEntry();
             Artifact artifact = artifactWebService.getArtifact(repositoryPath);
             if (Objects.isNull(artifact)) {
                 throw new RuntimeException("artifact is null");

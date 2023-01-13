@@ -105,6 +105,8 @@ public enum ArtifactEventTypeEnum {
      * Occurs when an artifact directory has been deleted.
      */
     EVENT_ARTIFACT_DIRECTORY_PATH_DELETED(23),
+
+    EVENT_ARTIFACT_METADATA_UPDATE(24)
     ;
 
 

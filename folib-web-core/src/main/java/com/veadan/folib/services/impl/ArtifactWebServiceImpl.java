@@ -18,6 +18,7 @@ import com.veadan.folib.domain.Artifact;
 import com.veadan.folib.domain.ArtifactMetadata;
 import com.veadan.folib.domain.DirectoryListing;
 import com.veadan.folib.domain.FileContent;
+import com.veadan.folib.event.artifact.ArtifactEventListenerRegistry;
 import com.veadan.folib.forms.artifact.ArtifactMetadataForm;
 import com.veadan.folib.gremlin.entity.vo.ArtifactVo;
 import com.veadan.folib.providers.io.RepositoryPath;
@@ -31,6 +32,7 @@ import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.springframework.beans.BeanUtils;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 
@@ -40,6 +42,7 @@ import javax.transaction.Transactional;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URLEncoder;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.text.SimpleDateFormat;
 import java.time.ZoneId;
@@ -69,6 +72,9 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
     @Inject
     @Qualifier("browseRepositoryDirectoryListingService")
     private DirectoryListingService directoryListingService;
+
+    @Autowired
+    private ArtifactEventListenerRegistry artifactEvent;
 
     @Override
     public void exportExcel(String vulnerabilityUuid, String storageId, String repositoryId, HttpServletResponse response) throws IOException {
@@ -214,8 +220,10 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
         // 批量的新增或更新 path Artifact 是一致的
         if (artifactMetadataFormList.size() > 0) {
             ArtifactMetadataForm artifactMetaData = artifactMetadataFormList.get(0);
+            // 查询是否存在 path 的更新事件 todo
             Artifact artifact = null;
             try {
+
                 artifact = resolvePath(artifactMetaData.getStorageId(), artifactMetaData.getRepositoryId(), artifactMetaData.getArtifactPath());
                 JSONObject metadataJson = getMetadata(artifact);
                 metadataJson = metadataJson == null ? new JSONObject() : metadataJson;
@@ -227,6 +235,9 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
                 }
                 artifact.setMetadata(metadataJson.toJSONString());
                 artifactService.saveOrUpdateArtifact(artifact);
+                RepositoryPath repositoryPath = artifactResolutionService.resolvePath(artifactMetaData.getStorageId(), artifactMetaData.getRepositoryId(), artifactMetaData.getArtifactPath());
+                repositoryPath.setArtifact(artifact);
+                artifactEvent.dispatchArtifactMetaDataEvent(repositoryPath);
             } catch (Exception e) {
                 log.error("=====>>>>>批量新增制品元数据错误：{}", ExceptionUtils.getStackTrace(e));
                 throw new RuntimeException("批量新增制品元数据错误，请稍后重试");
@@ -283,6 +294,9 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
                 artifactPath = imagePath.getKey().replace(String.format("%s/%s/", repositoryPath.getStorageId(), repositoryPath.getRepositoryId()), "");
             }
         } else {
+            if(!Files.isDirectory(repositoryPath)){
+                return null;
+            }
             DirectoryListing directoryListing = directoryListingService.fromRepositoryPath(repositoryPath);
             List<FileContent> fileContents = directoryListing.getFiles().stream().filter(file -> !(file.getName().endsWith(".sha256"))).collect(Collectors.toList());
             FileContent fileContent = fileContents.get(0);
@@ -315,20 +329,10 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
     }
 
     public Artifact getArtifact(RepositoryPath repositoryPath) throws Exception {
-//        Artifact artifact = Objects.nonNull(repositoryPath) ? repositoryPath.getArtifactEntry() : null;
         String repositoryId = repositoryPath.getRepository().getId();
         String storageId = repositoryPath.getStorageId();
         String artifactPath = repositoryPath.relativize().toString();
-//        if (Objects.isNull(artifact)) {
-//            //兼容已存在数据的docker布局仓库
-//            Repository repository = configurationManagementService.getConfiguration().getRepository(storageId, repositoryId);
-//            if (DockerLayoutProvider.ALIAS.equalsIgnoreCase(repository.getLayout())) {
-//                //docker
-//                artifact = getDockerArtifact(repositoryPath.relativize().toString(), storageId, repositoryId);
-//                return artifact;
-//            }
-//        }
-        return resolvePath(storageId,repositoryId,artifactPath);
+        return resolvePath(storageId, repositoryId, artifactPath);
     }
 
     /**
