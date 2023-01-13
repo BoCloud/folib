@@ -80,6 +80,10 @@ public class RepositoryPath
         return artifact;
     }
 
+    public void setArtifact(Artifact artifact) {
+        this.artifact = artifact;
+    }
+
     public LayoutFileSystem getFileSystem()
     {
         return fileSystem;

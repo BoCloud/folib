@@ -1,7 +1,6 @@
 package com.veadan.folib.controllers;
 
 import cn.hutool.core.date.DateUtil;
-import cn.hutool.core.io.FileUtil;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
@@ -42,6 +41,7 @@ import org.springframework.web.servlet.ModelAndView;
 
 import javax.inject.Inject;
 import javax.servlet.http.HttpServletRequest;
+import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 import java.nio.file.Files;
@@ -147,9 +147,8 @@ public class BrowseController
 
                 List<FileContent> fileContents = directoryListing.getFiles().stream().filter(file -> !(file.getName().endsWith(".sha256"))).collect(Collectors.toList());  //+propertiesBooter.getStorageBooterBasedir()+"/"+propertiesBooter.getVaultDirectory() + "/storages/"
                 FileContent fileContent = fileContents.get(0);
-
-                String menifestString = FileUtil.readString(repositoryPath.toFile().getPath() + "/" + fileContent.getName(), "UTF-8");
-
+                RepositoryPath versionPath = repositoryPathResolver.resolve(storageId, repositoryId, artifactPath + File.separator + fileContent.getName());
+                String menifestString = Files.readString(versionPath);
                 String iamgeName = configurationManagementService.getConfiguration().getBaseUrl().replace("http://", "") + storageId + "/" + repositoryId + "/" + aName + ":" + aVersion;
                 String code = "docker  pull  " + iamgeName;
                 CodeSnippet codeSnippet = new CodeSnippet("Docker", code);
@@ -160,8 +159,8 @@ public class BrowseController
                 List<String> digestList = menifest.getLayers().stream().map(LayerManifest::getDigest).collect(Collectors.toList());
                 List<FileContent> fileblobs = Optional.ofNullable(blobsListing.getFiles()).orElse(Lists.newArrayList()).stream().filter(file -> digestList.contains(file.getName())).collect(Collectors.toList());
                 String configDigest = menifest.getConfig().getDigest();
-                String imagePath = repositoryPath.toFile().getPath().substring(0, repositoryPath.toFile().getPath().lastIndexOf("/"));
-                String manifestConfigString = FileUtil.readString(imagePath + "/blobs/" + configDigest, "UTF-8");
+                RepositoryPath manifestConfigPath = repositoryPathResolver.resolve(storageId, repositoryId, aName + "/blobs/" + configDigest);
+                String manifestConfigString = Files.readString(manifestConfigPath);
                 Artifact artifact = repositoryPathResolver.findOneArtifact(storageId, repositoryId, fileContent.getArtifactPath());
                 jsonObject.put("artifact", artifact);
 

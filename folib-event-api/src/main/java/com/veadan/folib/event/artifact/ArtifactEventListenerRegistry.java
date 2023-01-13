@@ -215,4 +215,11 @@ public class ArtifactEventListenerRegistry extends AbstractEventListenerRegistry
         dispatchEvent(event);
     }
 
+    public void dispatchArtifactMetaDataEvent(Path path) {
+        ArtifactEvent event = new ArtifactEvent(path,
+                ArtifactEventTypeEnum.EVENT_ARTIFACT_METADATA_UPDATE.getType());
+        logger.info("制品元数据更新 {}...", path);
+        dispatchEvent(event);
+    }
+
 }

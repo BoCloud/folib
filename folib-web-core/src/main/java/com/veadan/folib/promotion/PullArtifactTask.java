@@ -51,15 +51,47 @@ public class PullArtifactTask implements Callable<String> {
 
     @Override
     public String call() throws Exception {
-        Client client = clientPool.getRestClient();
-        WebTarget target = client.target(srcUrl);
-        Response response = target.request().post(Entity.entity(artifac, MediaType.APPLICATION_JSON));
-        RepositoryPath destPath = repositoryPathResolver.resolve(targetStorageId, targetRepostoryId, path);
-        try (InputStream is = response.readEntity(InputStream.class);) {
-            artifactManagementService.store(destPath, is);
-            promotionUtil.setMetaData(destPath, metaData);
+        try {
+            Client client = clientPool.getRestClient();
+            WebTarget target = client.target(srcUrl);
+            Response response = target.request().post(Entity.entity(artifac, MediaType.APPLICATION_JSON));
+            RepositoryPath destPath = repositoryPathResolver.resolve(targetStorageId, targetRepostoryId, path);
+            try (InputStream is = response.readEntity(InputStream.class);) {
+                artifactManagementService.store(destPath, is);
+                promotionUtil.setMetaData(destPath, metaData);
+            }
+        } catch (Exception e) {
+            // 添加重试机制
+            log.error("{} pull error {}", JSON.toJSONString(artifac), e.getMessage());
+            boolean rePullResultFlag = false;
+            for (int i = 0; i < 5; i++) {
+                rePullResultFlag = reTryPull();
+                if (rePullResultFlag) {
+                    break;
+                }
+                Thread.sleep(1000L);
+            }
+            if (!rePullResultFlag) {
+                throw new Exception(e.getMessage());
+            }
         }
         log.info("File {} pulled", JSON.toJSONString(artifac));
         return "ok";
+    }
+
+    private boolean reTryPull() {
+        try {
+            Client client = clientPool.getRestClient();
+            WebTarget target = client.target(srcUrl);
+            Response response = target.request().post(Entity.entity(artifac, MediaType.APPLICATION_JSON));
+            RepositoryPath destPath = repositoryPathResolver.resolve(targetStorageId, targetRepostoryId, path);
+            try (InputStream is = response.readEntity(InputStream.class);) {
+                artifactManagementService.store(destPath, is);
+                promotionUtil.setMetaData(destPath, metaData);
+            }
+            return true;
+        } catch (Exception e) {
+            return false;
+        }
     }
 }
