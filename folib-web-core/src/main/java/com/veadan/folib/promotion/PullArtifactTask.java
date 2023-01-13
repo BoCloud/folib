@@ -27,11 +27,16 @@ public class PullArtifactTask implements Callable<String> {
     private ArtifactManagementService artifactManagementService;
     private ProxyRepositoryConnectionPoolConfigurationService clientPool;
     private ArtifactDto artifac;
+    private String metaData;
+    private PromotionUtil promotionUtil;
 
     public PullArtifactTask(String path, String srcUrl, String targetStorageId, String targetRepostoryId,
                             RepositoryPathResolver repositoryPathResolver,
                             ArtifactManagementService artifactManagementService,
-                            ProxyRepositoryConnectionPoolConfigurationService clientPool, ArtifactDto artifac) {
+                            ProxyRepositoryConnectionPoolConfigurationService clientPool,
+                            PromotionUtil promotionUtil,
+                            ArtifactDto artifac,
+                            String metaData) {
         this.path = path;
         this.srcUrl = srcUrl;
         this.targetStorageId = targetStorageId;
@@ -40,6 +45,8 @@ public class PullArtifactTask implements Callable<String> {
         this.artifactManagementService = artifactManagementService;
         this.clientPool = clientPool;
         this.artifac = artifac;
+        this.metaData = metaData;
+        this.promotionUtil = promotionUtil;
     }
 
     @Override
@@ -50,6 +57,7 @@ public class PullArtifactTask implements Callable<String> {
         RepositoryPath destPath = repositoryPathResolver.resolve(targetStorageId, targetRepostoryId, path);
         try (InputStream is = response.readEntity(InputStream.class);) {
             artifactManagementService.store(destPath, is);
+            promotionUtil.setMetaData(destPath, metaData);
         }
         log.info("File {} pulled", JSON.toJSONString(artifac));
         return "ok";

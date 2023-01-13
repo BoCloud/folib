@@ -3,6 +3,7 @@ package com.veadan.folib.services.impl;
 import com.alibaba.fastjson.JSON;
 import com.veadan.folib.domain.AnalysisHtmlGetDirAndFilePath;
 import com.veadan.folib.domain.ArtifactPromotion;
+import com.veadan.folib.domain.PromotionFileRelativePath;
 import com.veadan.folib.domain.PromotionNodeOption;
 import com.veadan.folib.dto.*;
 import com.veadan.folib.promotion.ArtifactUploadTask;
@@ -40,6 +41,7 @@ import javax.ws.rs.core.Response;
 import java.io.*;
 import java.nio.file.Files;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.FutureTask;
@@ -224,15 +226,21 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
                 if (response.getStatus() != 200) {
                     throw new Exception("{} get error" + url);
                 }
-                List<String> getFileRelativePaths = response.readEntity(List.class);
+                PromotionFileRelativePath promotionFileRelativePath = response.readEntity(PromotionFileRelativePath.class);
+                List<String> getFileRelativePaths = promotionFileRelativePath.getList();
+                Map<String, Object> metaDataMap = promotionFileRelativePath.getMetaData();
+
                 // 添加task
                 List<FutureTask<String>> listTask = new ArrayList<>();
                 for (String path : getFileRelativePaths) {
                     ArtifactDto artifac = ArtifactDto.builder().storageId(srcStorageId)
                             .repostoryId(srcRepostoryId).path(path).build();
                     String fileUlr = srcUrl + "/api/artifact/folib/promotion/download";
+                    String metaData = metaDataMap.getOrDefault(path, "") == null ?
+                            "" : metaDataMap.getOrDefault(path, "").toString();
                     PullArtifactTask pullArtifactTask = new PullArtifactTask(path, fileUlr, targetStorageId,
-                            targetRepostoryId, repositoryPathResolver, artifactManagementService, clientPool, artifac);
+                            targetRepostoryId, repositoryPathResolver, artifactManagementService, clientPool,
+                            promotionUtil, artifac, metaData);
                     FutureTask<String> futureTask = new FutureTask<String>(pullArtifactTask);
                     listTask.add(futureTask);
                     asyncRepositoryThreadPoolExecutor.submit(futureTask);
@@ -293,14 +301,17 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
     }
 
     @Override
-    public ResponseEntity upload(MultipartFile[] files, String storageId, String repostoryId, String filePathMap) {
+    public ResponseEntity upload(MultipartFile[] files, String storageId, String repostoryId, String filePathMap, String fileMetaDataMap) {
         try {
             List<FutureTask<String>> listTask = new ArrayList<>();
             Map<String, String> mapType = JSON.parseObject(filePathMap, Map.class);
+            Map<String, Object> metaDataMap = StringUtils.isBlank(fileMetaDataMap) ?
+                    new HashMap<>() : JSON.parseObject(fileMetaDataMap, Map.class);
             for (MultipartFile file : files) {
                 String fileRelativePath = mapType.get(file.getOriginalFilename());
+                String metaData = metaDataMap.getOrDefault(fileRelativePath,"").toString();
                 ArtifactUploadTask artifactUploadTask = new ArtifactUploadTask(storageId, repostoryId, file,
-                        repositoryManagementService, repositoryPathResolver, artifactManagementService, fileRelativePath);
+                        repositoryManagementService, repositoryPathResolver, artifactManagementService,promotionUtil, fileRelativePath,metaData);
                 FutureTask<String> task = new FutureTask<String>(artifactUploadTask);
                 listTask.add(task);
                 asyncRepositoryThreadPoolExecutor.submit(task);
@@ -361,8 +372,8 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
             // 获取路径下的所有文件
             RepositoryPath repositoryPath = repositoryPathResolver.resolve(artifactDto.getStorageId(),
                     artifactDto.getRepostoryId(), artifactDto.getPath());
-            List<String> fileRelativePaths = promotionUtil.getFileRelativePaths(repositoryPath);
-            return ResponseEntity.ok(fileRelativePaths);
+            PromotionFileRelativePath promotionFileRelativePath = promotionUtil.getFileRelativePaths(repositoryPath);
+            return ResponseEntity.ok(promotionFileRelativePath);
         } catch (Exception e) {
             log.error("Get files relative paths exception {}", e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)

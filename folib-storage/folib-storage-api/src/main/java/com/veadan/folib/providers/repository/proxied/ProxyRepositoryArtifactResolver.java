@@ -3,16 +3,19 @@ package com.veadan.folib.providers.repository.proxied;
 import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.Files;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 
 import javax.inject.Inject;
 
 import com.veadan.folib.client.RestArtifactResolver;
+import com.veadan.folib.config.HelmRepoUtil;
 import com.veadan.folib.event.artifact.ArtifactEventListenerRegistry;
 import com.veadan.folib.providers.io.RepositoryFiles;
 import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.providers.io.RepositoryPathLock;
+import com.veadan.folib.providers.io.RepositoryPathResolver;
 import com.veadan.folib.services.ArtifactManagementService;
 import com.veadan.folib.storage.repository.Repository;
 import com.veadan.folib.storage.repository.remote.RemoteRepository;
@@ -43,6 +46,12 @@ public class ProxyRepositoryArtifactResolver
 
     @Inject
     private ArtifactManagementService artifactManagementService;
+
+    @Inject
+    protected RepositoryPathResolver repositoryPathResolver;
+
+    @Inject
+    private HelmRepoUtil helmRepoUtil;
 
     /**
      * This method has been developed to force fetch resource from remote.
@@ -92,16 +101,20 @@ public class ProxyRepositoryArtifactResolver
         {
             artifactEventListenerRegistry.dispatchArtifactFetchedFromRemoteEvent(result);
         }
-        
         return result;
     }
 
     protected RepositoryPath onSuccessfulProxyRepositoryResponse(InputStream is,
                                                                  RepositoryPath repositoryPath)
-            throws IOException
-    {
-         artifactManagementService.store(repositoryPath, is);
-         
+            throws IOException {
+        boolean indexFlage = repositoryPath.getRepository().getLayout().equalsIgnoreCase("helm")
+                && repositoryPath.toString().endsWith("index.yaml");
+        artifactManagementService.store(repositoryPath, is);
+        // helm 代理修改索引
+        if (indexFlage) {
+            helmRepoUtil.reloadIndex(repositoryPath);
+            logger.info("重新加载 heml indx");
+        }
         // TODO: Add a policy for validating the checksums of downloaded artifacts
         // TODO: Validate the local checksum against the remote's checksums    徐新平
         // Serve the downloaded artifact

@@ -1,7 +1,10 @@
 package com.veadan.folib.services;
 
-import com.veadan.folib.forms.artifact.ArtifactMetadataForm;
 import com.veadan.folib.forms.scanner.*;
+import com.veadan.folib.configuration.MetadataConfiguration;
+import com.veadan.folib.domain.Artifact;
+import com.veadan.folib.forms.artifact.ArtifactMetadataForm;
+import com.veadan.folib.providers.io.RepositoryPath;
 
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
@@ -115,4 +118,14 @@ public interface ArtifactWebService {
      * @return 仓库扫描情况
      */
     RepositoryScannerForm repository(String storageId, String repositoryId, String artifactName, Integer page, Integer limit);
+
+ 	/**
+     * 批量存储或更新元数据
+     *
+     * @param artifactMetadataFormList artifactMetadataFormList
+     */
+    void batchArtifactMetadata(List<ArtifactMetadataForm> artifactMetadataFormList);
+
+
+    Artifact getArtifact(RepositoryPath repositoryPath) throws Exception ;
 }

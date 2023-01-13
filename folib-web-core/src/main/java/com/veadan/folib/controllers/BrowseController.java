@@ -382,7 +382,7 @@ public class BrowseController
     protected boolean probeForDirectoryListing(final RepositoryPath repositoryPath)
             throws IOException {
         return Files.exists(repositoryPath) &&
-                Files.isDirectory(repositoryPath) &&
+                repositoryPath.getRepository().getLayout().equals("helm") && repositoryPath.getTarget().toString().endsWith("index.yaml") || Files.isDirectory(repositoryPath) &&
                 isPermittedForDirectoryListing(repositoryPath);
     }
 

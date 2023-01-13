@@ -1,6 +1,7 @@
 package com.veadan.folib.providers.repository;
 
 import com.veadan.folib.data.criteria.Paginator;
+import com.veadan.folib.storage.repository.Repository;
 import com.veadan.folib.storage.repository.RepositoryDto;
 
 import java.io.IOException;
@@ -9,6 +10,7 @@ import java.io.OutputStream;
 import java.nio.file.Path;
 import java.security.NoSuchAlgorithmException;
 import java.util.List;
+import java.util.Map;
 
 import org.springframework.transaction.annotation.Transactional;
 
@@ -96,4 +98,33 @@ public interface RepositoryProvider
     Path fetchPath(Path repositoryPath)
         throws IOException;
 
+
+    /**
+     * 查询conan 包
+     *
+     * @param repository 仓库
+     * @param query 查询值
+     * @return map  results
+     */
+    Map<String,Object>  searchConanPackage(Repository repository, String query) throws Exception;
+
+    /**
+     * 查询下载urls
+     *
+     * @param repository conan 仓库
+     * @param packageName conan 包
+     * @param version conan 包版本
+     * @return map  下载的conan 包文件
+     */
+    Map<String, Object> searchConanDownLoadUrl(Repository repository, String packageName, String version);
+
+    /**
+     * 查询Conan 制品版本下的package id 详情
+     *
+     * @param repository caonan 仓库
+     * @param packageName conan 包
+     * @param version conan 包版本
+     * @return map
+     */
+    Map<String, Object> searchConanPackageInfo(Repository repository, String packageName, String version) throws IOException;
 }

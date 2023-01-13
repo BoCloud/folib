@@ -220,8 +220,8 @@ public class WebConfig
     public void addResourceHandlers(ResourceHandlerRegistry registry) {
         registry.setOrder(-1);
 
-        registry.addResourceHandler("/apiDocs/**")
-                .addResourceLocations("classpath:/META-INF/resources/docs/")
+        registry.addResourceHandler("/rest/**")
+                .addResourceLocations("classpath:/META-INF/resources/docs/rest/")
                 .setCachePeriod(3600);
 
         registry.addResourceHandler("*.html")

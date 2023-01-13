@@ -40,6 +40,8 @@
         <module>folib-storage-maven-layout</module>
         <module>folib-storage-docker-layout-provider</module>
         <module>folib-storage-php-layout-provider</module>
+        <module>folib-storage-helm-layout-provider</module>
+        <module>folib-storage-conan-layout-provider</module>
     </modules>
 
     <dependencies>

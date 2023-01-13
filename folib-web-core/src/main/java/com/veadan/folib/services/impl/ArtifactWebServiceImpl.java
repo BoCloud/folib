@@ -195,7 +195,8 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
             Artifact artifact = resolvePath(artifactMetadataForm.getStorageId(), artifactMetadataForm.getRepositoryId(), artifactMetadataForm.getArtifactPath());
             JSONObject metadataJson = getMetadata(artifact);
             String key = artifactMetadataForm.getKey();
-            if (Objects.nonNull(metadataJson) && metadataJson.containsKey(key)) {
+            metadataJson = metadataJson == null ? new JSONObject() : metadataJson;
+            if (metadataJson.containsKey(key)) {
                 ArtifactMetadata artifactMetadata = ArtifactMetadata.builder().build();
                 BeanUtils.copyProperties(artifactMetadataForm, artifactMetadata);
                 metadataJson.put(key, artifactMetadata);
@@ -365,6 +366,32 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
         return repositoryScannerForm;
     }
 
+    @Override
+    public void batchArtifactMetadata(List<ArtifactMetadataForm> artifactMetadataFormList) {
+        // 批量的新增或更新 path Artifact 是一致的
+        if (artifactMetadataFormList.size() > 0) {
+            ArtifactMetadataForm artifactMetaData = artifactMetadataFormList.get(0);
+            Artifact artifact = null;
+            try {
+                artifact = resolvePath(artifactMetaData.getStorageId(), artifactMetaData.getRepositoryId(), artifactMetaData.getArtifactPath());
+                JSONObject metadataJson = getMetadata(artifact);
+                metadataJson = metadataJson == null ? new JSONObject() : metadataJson;
+                for (ArtifactMetadataForm artifactMetadataForm : artifactMetadataFormList) {
+                    String key = artifactMetadataForm.getKey();
+                    ArtifactMetadata artifactMetadata = ArtifactMetadata.builder().build();
+                    BeanUtils.copyProperties(artifactMetadataForm, artifactMetadata);
+                    metadataJson.put(key, artifactMetadata);
+                }
+                artifact.setMetadata(metadataJson.toJSONString());
+                artifactService.saveOrUpdateArtifact(artifact);
+            } catch (Exception e) {
+                log.error("=====>>>>>批量新增制品元数据错误：{}", ExceptionUtils.getStackTrace(e));
+                throw new RuntimeException("批量新增制品元数据错误，请稍后重试");
+            }
+
+        }
+    }
+
     /**
      * 获取制品元数据
      *
@@ -442,6 +469,23 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
             }
         }
         return artifact;
+    }
+
+    public Artifact getArtifact(RepositoryPath repositoryPath) throws Exception {
+//        Artifact artifact = Objects.nonNull(repositoryPath) ? repositoryPath.getArtifactEntry() : null;
+        String repositoryId = repositoryPath.getRepository().getId();
+        String storageId = repositoryPath.getStorageId();
+        String artifactPath = repositoryPath.relativize().toString();
+//        if (Objects.isNull(artifact)) {
+//            //兼容已存在数据的docker布局仓库
+//            Repository repository = configurationManagementService.getConfiguration().getRepository(storageId, repositoryId);
+//            if (DockerLayoutProvider.ALIAS.equalsIgnoreCase(repository.getLayout())) {
+//                //docker
+//                artifact = getDockerArtifact(repositoryPath.relativize().toString(), storageId, repositoryId);
+//                return artifact;
+//            }
+//        }
+        return resolvePath(storageId,repositoryId,artifactPath);
     }
 
     /**
