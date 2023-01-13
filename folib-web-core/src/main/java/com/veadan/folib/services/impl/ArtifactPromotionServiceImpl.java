@@ -190,6 +190,8 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
             String targetUrl = targetPath.split("/" + targetStorageId + "/" + targetRepostoryId + "/")[0];
             String targetUri = targetPath.split("/" + targetStorageId + "/" + targetRepostoryId + "/")[1];
             if (srcUrl.equals(targetUrl)) {
+                validateStorageAndRepository(srcStorageId, srcRepostoryId);
+                validateStorageAndRepository(targetStorageId, targetRepostoryId);
                 Repository destRepository = repositoryManagementService.getStorage(targetStorageId).getRepository(targetRepostoryId);
                 Repository srcRepository = repositoryManagementService.getStorage(srcStorageId).getRepository(srcRepostoryId);
                 RepositoryPath srcPath = repositoryPathResolver.resolve(srcStorageId, srcRepostoryId, srcUri);
@@ -200,6 +202,7 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
             // 判断节点参数是 做推 push  或者 拉取 pull
             String requestURL = request.getRequestURL().toString().replace(request.getRequestURI(), "");
             if (sourcePath.contains(requestURL)) {
+                validateStorageAndRepository(srcStorageId, srcRepostoryId);
                 // 本地源 制品路径 推向 目标路径
                 Storage srcStorage = repositoryManagementService.getStorage(srcStorageId);// todo validate
                 Repository srcRepository = repositoryManagementService.getStorage(srcStorageId).getRepository(srcRepostoryId);
@@ -215,6 +218,7 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
                 promotionUtil.upload(targetUrl + upLoadURI, uploadDto);
 
             } else if (targetPath.contains(requestURL)) {
+                validateStorageAndRepository(targetStorageId, targetRepostoryId);
                 // 从源仓路径 pull 到目标仓路径 获取目标主机的path 路径下的文件与目录 然后依次提交到任务队列里面后将文件存入仓库
                 String url = srcUrl + getFileRelativePaths;
                 Client client = clientPool.getRestClient();
@@ -303,6 +307,7 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
     @Override
     public ResponseEntity upload(MultipartFile[] files, String storageId, String repostoryId, String filePathMap, String fileMetaDataMap) {
         try {
+            validateStorageAndRepository(storageId, repostoryId);
             List<FutureTask<String>> listTask = new ArrayList<>();
             Map<String, String> mapType = JSON.parseObject(filePathMap, Map.class);
             Map<String, Object> metaDataMap = StringUtils.isBlank(fileMetaDataMap) ?
@@ -370,14 +375,28 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
     public ResponseEntity getFileRelativePaths(ArtifactDto artifactDto) {
         try {
             // 获取路径下的所有文件
+            validateStorageAndRepository(artifactDto.getStorageId(), artifactDto.getRepostoryId());
             RepositoryPath repositoryPath = repositoryPathResolver.resolve(artifactDto.getStorageId(),
                     artifactDto.getRepostoryId(), artifactDto.getPath());
-            PromotionFileRelativePath promotionFileRelativePath = promotionUtil.getFileRelativePaths(repositoryPath);
+            // 添加 docker version 请求处理
+            boolean isDockerVersionPath = repositoryPath.getRepository().getLayout().
+                    equalsIgnoreCase("docker") && artifactDto.getPath().split(File.separator).length == 2;
+            PromotionFileRelativePath promotionFileRelativePath = promotionUtil.getFileRelativePaths(repositoryPath, isDockerVersionPath);
             return ResponseEntity.ok(promotionFileRelativePath);
         } catch (Exception e) {
             log.error("Get files relative paths exception {}", e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(e.getMessage());
+        }
+    }
+
+    public void validateStorageAndRepository(String storageId, String repositoryId) throws Exception {
+        if (null == repositoryManagementService.getStorage(storageId)) {
+            throw new Exception("Storage [" + storageId + "] not exist!");
+        }
+        Repository repository = repositoryManagementService.getStorage(storageId).getRepository(repositoryId);
+        if (null == repository) {
+            throw new Exception("Repository [" + repositoryId + "]  not exist!");
         }
     }
 }

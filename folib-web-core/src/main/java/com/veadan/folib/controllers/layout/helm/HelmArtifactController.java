@@ -35,38 +35,6 @@ public class HelmArtifactController extends BaseArtifactController {
     @Autowired
     private ProxyRepositoryArtifactResolver proxyRepositoryArtifactResolver;
 
-    @ApiOperation(value = "Used to retrieve an artifact")
-    @ApiResponses(value = {@ApiResponse(code = 200, message = ""),
-            @ApiResponse(code = 400, message = "An error occurred.")})
-    @PreAuthorize("hasAuthority('ARTIFACTS_RESOLVE')")
-    @GetMapping(value = {"storages/{storageId}/{repositoryId}/{path}"})
-    public void downloadArtifact(@RepositoryMapping Repository repository,
-                                 @RequestHeader HttpHeaders httpHeaders,
-                                 @PathVariable String path,
-                                 HttpServletRequest request,
-                                 HttpServletResponse response) throws IOException {
-        final String storageId = repository.getStorage().getId();
-        final String repositoryId = repository.getId();
-        logger.debug("Requested /{}/{}/{}.", storageId, repositoryId, path);
-        RepositoryPath repositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, path);
-        vulnerabilityBlock(repositoryPath);
-        try (InputStream in = Files.newInputStream(repositoryPath);) {
-            OutputStream out = response.getOutputStream();
-            response.setCharacterEncoding("UTF-8");
-            // 设置文件头：设置下载文件名
-            response.setHeader("Content-Disposition", "attachment;" + repositoryPath.getFileName().toString());
-            int byteRead = 0;
-            byte[] buffer = new byte[1024];
-            while ((byteRead = in.read(buffer)) != -1) {
-                out.write(buffer, 0, byteRead);
-            }
-            out.flush();
-        } catch (Exception e) {
-            logger.error("download helm artifact error {}", e.getMessage());
-        }
-
-    }
-
 
     @ApiOperation(value = "Used to retrieve an artifact")
     @ApiResponses(value = {@ApiResponse(code = 200, message = ""),

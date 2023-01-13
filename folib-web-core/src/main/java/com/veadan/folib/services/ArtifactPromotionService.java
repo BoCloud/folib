@@ -28,4 +28,6 @@ public interface ArtifactPromotionService {
     ResponseEntity download(ArtifactDto artifactDto, HttpServletResponse response);
 
     ResponseEntity getFileRelativePaths(ArtifactDto artifactDto);
+
+    void validateStorageAndRepository(String storageId, String repositoryId) throws Exception;
 }
