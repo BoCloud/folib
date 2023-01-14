@@ -103,7 +103,7 @@ public class NodeComponent {
             String gossipInfo = nodeProbe.getGossipInfo(true);
             cassandraClusterForm.setGossipInfo(gossipInfo);
             //数据信息
-            StatsHolder statsHolder = new TableStatsHolder(nodeProbe, true, false, new ArrayList<>(), "", 0);
+            StatsHolder statsHolder = new TableStatsHolder(nodeProbe, true, false, new ArrayList<>(), "", 0, false);
             Map<String, Object> statsHolderMap = statsHolder.convert2Map();
             cassandraClusterForm.setStatsHolderMap(statsHolderMap);
             //dcsMap
@@ -139,7 +139,7 @@ public class NodeComponent {
         try {
             log.info("=====>>>>>开始尝试修复cassandra集群信息");
             Map<String, String> options = Maps.newLinkedHashMap();
-            options.put(RepairOption.PARALLELISM_KEY, RepairParallelism.PARALLEL.getName());
+            options.put(RepairOption.PARALLELISM_KEY, RepairParallelism.DATACENTER_AWARE.getName());
             nodeProbe.repairAsync(System.out, keyspace, options);
         } catch (IOException ex) {
             log.error("=====>>>>>修复cassandra集群错误：{}", ExceptionUtils.getStackTrace(ex));

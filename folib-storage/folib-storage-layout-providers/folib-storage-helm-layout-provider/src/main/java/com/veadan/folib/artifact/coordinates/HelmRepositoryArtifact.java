@@ -10,7 +10,8 @@ import org.apache.maven.artifact.resolver.filter.ArtifactFilter;
 import org.apache.maven.artifact.versioning.ArtifactVersion;
 import org.apache.maven.artifact.versioning.OverConstrainedVersionException;
 import org.apache.maven.artifact.versioning.VersionRange;
-import org.jetbrains.annotations.NotNull;
+
+import javax.validation.constraints.NotNull;
 import java.io.File;
 import java.util.Collection;
 import java.util.List;

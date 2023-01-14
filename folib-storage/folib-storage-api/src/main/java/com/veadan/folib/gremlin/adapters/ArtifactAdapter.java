@@ -55,6 +55,7 @@ public class ArtifactAdapter implements VertexEntityTraversalAdapter<Artifact> {
                 "uuid",
                 "storageId",
                 "repositoryId",
+                "storageIdAndRepositoryId",
                 "lastUpdated",
                 "lastUsed",
                 "created",
@@ -72,6 +73,10 @@ public class ArtifactAdapter implements VertexEntityTraversalAdapter<Artifact> {
                 "lowVulnerabilitiesCount",
                 "suppressedVulnerabilitiesCount",
                 "metadata",
+                "report",
+                "scanDate",
+                "scanDateTime",
+                "filePaths",
                 "filenames",
                 "checksums",
                 "artifactCoordinates",
@@ -82,6 +87,7 @@ public class ArtifactAdapter implements VertexEntityTraversalAdapter<Artifact> {
                 .by(__.enrichPropertyValue("uuid"))
                 .by(__.enrichPropertyValue("storageId"))
                 .by(__.enrichPropertyValue("repositoryId"))
+                .by(__.enrichPropertyValue("storageIdAndRepositoryId"))
                 .by(__.enrichPropertyValue("lastUpdated"))
                 .by(__.enrichPropertyValue("lastUsed"))
                 .by(__.enrichPropertyValue("created"))
@@ -99,6 +105,10 @@ public class ArtifactAdapter implements VertexEntityTraversalAdapter<Artifact> {
                 .by(__.enrichPropertyValue("lowVulnerabilitiesCount"))
                 .by(__.enrichPropertyValue("suppressedVulnerabilitiesCount"))
                 .by(__.enrichPropertyValue("metadata"))
+                .by(__.enrichPropertyValue("report"))
+                .by(__.enrichPropertyValue("scanDate"))
+                .by(__.enrichPropertyValue("scanDateTime"))
+                .by(__.enrichPropertyValues("filePaths"))
                 .by(__.enrichPropertyValues("filenames"))
                 .by(__.enrichPropertyValues("checksums"))
                 .by(__.outE(Edges.ARTIFACT_HAS_ARTIFACT_COORDINATES)
@@ -294,6 +304,12 @@ public class ArtifactAdapter implements VertexEntityTraversalAdapter<Artifact> {
 
         result.setArtifactFileExists(extractObject(Boolean.class, t.get().get("artifactFileExists")));
         result.setMetadata(extractObject(String.class, t.get().get("metadata")));
+        result.setFilePaths(extractPropertyList(String.class, t.get().get("filePaths")).stream()
+                .filter(e -> !e.trim().isBlank())
+                .collect(Collectors.toSet()));
+        result.setReport(extractObject(String.class, t.get().get("report")));
+        result.setScanDate(extractObject(String.class, t.get().get("scanDate")));
+        result.setScanDateTime(toLocalDateTime(extractObject(Long.class, t.get().get("scanDateTime"))));
         return result;
     }
 
@@ -353,6 +369,9 @@ public class ArtifactAdapter implements VertexEntityTraversalAdapter<Artifact> {
         if (entity.getRepositoryId() != null) {
             t = t.property(single, "repositoryId", entity.getRepositoryId());
         }
+        if (entity.getStorageIdAndRepositoryId() != null) {
+            t = t.property(single, "storageIdAndRepositoryId", entity.getStorageIdAndRepositoryId());
+        }
         if (entity.getCreated() != null) {
             t = t.property(single, "created", toLong(entity.getCreated()));
         }
@@ -404,6 +423,19 @@ public class ArtifactAdapter implements VertexEntityTraversalAdapter<Artifact> {
         }
         if (StringUtils.isNotBlank(entity.getMetadata())) {
             t = t.property(single, "metadata", entity.getMetadata());
+        }
+        if (entity.getFilePaths() != null) {
+            t = t.sideEffect(__.properties("filePaths").drop());
+            t = t.property("filePaths", entity.getFilePaths());
+        }
+        if (StringUtils.isNotBlank(entity.getReport())) {
+            t = t.property(single, "report", entity.getReport());
+        }
+        if (entity.getScanDate() != null) {
+            t = t.property(single, "scanDate", entity.getScanDate());
+        }
+        if (entity.getScanDateTime() != null) {
+            t = t.property(single, "scanDateTime", toLong(entity.getScanDateTime()));
         }
         ArtifactArchiveListing artifactArchiveListing = entity.getArtifactArchiveListing();
 

@@ -109,8 +109,8 @@
           <a-col :span="8" class="mb-24" v-for="(item, index) in repositories" :key="index">
             <!-- Project Card -->
             <CardProjectFolib :title=item.id :logo="'images/folib/' + getLayoutType(item) + '.svg'"
-              :team="['images/folib/' + item.type + '.svg']" :participants="item.type" :due="item.policy" :repository="item"
-              @handleMenuClick="handleMenuClick" @goToDetial="goToDetial(item)">
+              :team="['images/folib/' + item.type + '.svg']" :participants="item.type" :due="item.policy"
+              :repository="item" @handleMenuClick="handleMenuClick" @goToDetial="goToDetial(item)">
               <a-tooltip>
                 <template slot="title">
                   {{ baseUrl }}api/browse/{{ currentStorage.id }}/{{ item.id }}
@@ -171,7 +171,7 @@
                 <a-row type="flex" align="middle">
                   <a-col>
                     <strong class="font-semibold">{{
-                        storageCreateData.bucket ? '/' + storageCreateData.bucket : null
+                      storageCreateData.bucket ? '/' + storageCreateData.bucket : null
                     }}/{{ storageCreateData.id }}</strong>
                   </a-col>
                   <a-col class="ml-auto">
@@ -256,7 +256,7 @@
                 <a-row type="flex" align="middle">
                   <a-col>
                     <strong class="font-semibold">{{
-                        currentStorage.bucket ? '/' + currentStorage.bucket : null
+                      currentStorage.bucket ? '/' + currentStorage.bucket : null
                     }}/{{ currentStorage.id }}</strong>
                   </a-col>
                   <a-col class="ml-auto">
@@ -350,8 +350,10 @@
             <a-button key="back" @click="deleteFormVisible = false" class="px-30 ml-10" size="small">取消</a-button>
           </a-col>
           <a-col :span="12" class="text-right">
-            <a-button v-if="deleteBtnVisible" @click="delRepositoryResponseEntity" class="px-30 ml-10" type="danger" size="small">删除</a-button>
-            <a-button v-if="forceDeleteBtnVisible" @click="delRepositoryResponseEntityForce" class="px-30 ml-10" type="dashed" size="small">强制删除
+            <a-button v-if="deleteBtnVisible" @click="delRepositoryResponseEntity" class="px-30 ml-10" type="danger"
+              size="small">删除</a-button>
+            <a-button v-if="forceDeleteBtnVisible" @click="delRepositoryResponseEntityForce" class="px-30 ml-10"
+              type="dashed" size="small">强制删除
             </a-button>
           </a-col>
         </a-row>
@@ -362,9 +364,10 @@
       <div class="mx-auto m-50" style="max-width: 1000px;">
 
         <!-- Header -->
-        <h3 class="mt-25 mb-5 text-center">开始{{ folibRepositoryEditDisabled ? '修改' : '新建' }}你的制品库</h3>
-        <h5 class="text-center font-regular">将会在<a>{{ currentStorage.id
-        }}</a>存储空间下{{ folibRepositoryEditDisabled ? '修改' : '新建' }}制品仓库</h5>
+        <h3 class="mt-25 mb-5 text-center">开始{{ folibRepositoryEditDisabled? '修改': '新建' }}你的制品库</h3>
+        <h5 class="text-center font-regular">将会在<a>{{
+          currentStorage.id
+        }}</a>存储空间下{{ folibRepositoryEditDisabled? '修改': '新建' }}制品仓库</h5>
         <div class="my-50" style="max-width: 1000px;">
 
           <!-- Steps -->
@@ -391,8 +394,9 @@
             v-if="step === 0 && (folibRepository.type === 'hosted' || folibRepository.type === 'proxy' || folibRepository.type === 'group')"
             :bordered="false" class="header-solid">
 
-            <h5 class="font-regular text-center">{{ folibRepositoryEditDisabled ? '不可修改，请点击下一步' : '不知道怎么选择?' }} </h5>
-            <p class="text-center">{{ folibRepositoryEditDisabled ? '修改模式下不可以更换仓库类型！' :
+            <h5 class="font-regular text-center">{{ folibRepositoryEditDisabled? '不可修改，请点击下一步': '不知道怎么选择?' }} </h5>
+            <p class="text-center">{{
+              folibRepositoryEditDisabled? '修改模式下不可以更换仓库类型！':
                 '根据图标以及下发的类型名称进行识别，找到你要选择的仓库类型吧！'
             }}
             </p>
@@ -678,11 +682,11 @@
                 <a-col :span="12" class="text-right">
                   <a-button v-if="folibRepository.type === 'hosted'" type="primary"
                     @click="addOrUpdateRepositorySecond(false)" class="px-25">
-                    完成{{ folibRepositoryEditDisabled ? '修改' : '创建' }}
+                    完成{{ folibRepositoryEditDisabled? '修改': '创建' }}
                   </a-button>
                   <a-button v-if="folibRepository.type === 'hosted'" style="margin-left: 20px"
                     @click="addOrUpdateRepositorySecond(true)" class="px-25">
-                    {{ folibRepositoryEditDisabled ? '修改' : '创建' }}并设置定时策略</a-button>
+                    {{ folibRepositoryEditDisabled? '修改': '创建' }}并设置定时策略</a-button>
 
                   <a-button v-else-if="folibRepository.type !== 'hosted'" type="primary" @click="moveStep(1)"
                     class="px-25">下一步
@@ -743,7 +747,7 @@
                 <a-col :span="4">
                   <a-form-item class="mb-10" label="本地代理" :colon="false">
                     <a-checkbox v-model="enableHostProxy" @change="proxyConfigurationHandle">
-                      {{ enableHostProxy ? '开启' : '不开启' }}
+                      {{ enableHostProxy? '开启': '不开启' }}
                     </a-checkbox>
                   </a-form-item>
                 </a-col>
@@ -822,9 +826,9 @@
                 </a-col>
                 <a-col :span="12" class="text-right">
                   <a-button type="primary" @click="addOrUpdateRepositoryHandel(false)" class="px-25">
-                    完成{{ folibRepositoryEditDisabled ? '修改' : '创建' }}</a-button>
+                    完成{{ folibRepositoryEditDisabled? '修改': '创建' }}</a-button>
                   <a-button style="margin-left: 20px" @click="addOrUpdateRepositoryHandel(true)" class="px-25">
-                    {{ folibRepositoryEditDisabled ? '修改' : '创建' }}并设置定时策略</a-button>
+                    {{ folibRepositoryEditDisabled? '修改': '创建' }}并设置定时策略</a-button>
                 </a-col>
               </a-row>
             </a-form>
@@ -857,9 +861,9 @@
               </a-col>
               <a-col :span="12" class="text-right">
                 <a-button type="primary" @click="addOrUpdateRepositoryHandel(false)" class="px-25">
-                  >完成{{ folibRepositoryEditDisabled ? '修改' : '创建' }}</a-button>
+                  完成{{ folibRepositoryEditDisabled? '修改': '创建' }}</a-button>
                 <a-button style="margin-left:20px" @click="addOrUpdateRepositoryHandel(true)" class="px-25">
-                  {{ folibRepositoryEditDisabled ? '修改' : '创建' }}并设置定时策略</a-button>
+                  {{ folibRepositoryEditDisabled? '修改': '创建' }}并设置定时策略</a-button>
               </a-col>
             </a-row>
           </a-card>
@@ -975,7 +979,8 @@ import {
   crontasksByRepository,
   creatCronOne,
   updateCronOne,
-  delCronOne
+  delCronOne,
+  getStoragesAndRepositories
 } from "@/api/folib"
 import { getUsers } from "@/api/users";
 import CardProjectFolib from "@/components/Cards/CardProjectFolib"
@@ -1457,8 +1462,27 @@ export default {
     repositoryList() {
       this.queryData.storageId = this.currentStorage.id
       this.queryData.layout = this.genLayoutType(this.layoutChecked)
-      getLibraryByQuery(this.queryData).then(res => {
-        const tasksObj = objectToGroupRepositories(this.folibRepository.groupRepositories, res, this.folibRepository.id)
+      //getLibraryByQuery(this.queryData).then(res => {
+        // const tasksObj = objectToGroupRepositories(this.folibRepository.groupRepositories, res, this.folibRepository.id)
+        // this.boards[0].tasks = tasksObj.enableSelect
+        // this.boards[1].tasks = tasksObj.isSelect
+      //})
+      this.getStoragesAndRepositories(this.folibRepository.layout, this.folibRepository.id)
+    },
+    getStoragesAndRepositories(layout, excludeRepositoryId) {
+      getStoragesAndRepositories({ layout: layout, excludeRepositoryId: excludeRepositoryId }).then(res => {
+        let repositories = []
+        let id,arr
+        res.forEach(item => {
+          if (item.children && item.children.length > 0) {
+            item.children.forEach(children => {
+              id = children.key.replace(",", ":")
+              arr = id.split(":")
+              repositories.push({id: id, storageId: arr[0], repositoryId: arr[1], layout: this.folibRepository.layout})
+            })
+          }
+        })
+        const tasksObj = objectToGroupRepositories(this.folibRepository.groupRepositories, repositories, this.folibRepository.storageId + ":" + this.folibRepository.id)
         this.boards[0].tasks = tasksObj.enableSelect
         this.boards[1].tasks = tasksObj.isSelect
       })

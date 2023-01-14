@@ -29,6 +29,8 @@ public class ArtifactEntity
 
     private String repositoryId;
 
+    private String storageIdAndRepositoryId;
+
     @Relationship(type = Edges.ARTIFACT_HAS_ARTIFACT_COORDINATES, direction = Relationship.OUTGOING)
     private GenericArtifactCoordinates artifactCoordinates;
 
@@ -111,6 +113,24 @@ public class ArtifactEntity
      */
     private String metadata;
 
+    /**
+     * 制品路径
+     */
+    private Set<String> filePaths = new LinkedHashSet<>();
+    /**
+     * 扫描日期
+     */
+    private String scanDate;
+    /**
+     * 扫描时间
+     */
+    @Convert(DateConverter.class)
+    private LocalDateTime scanDateTime;
+    /**
+     * 扫描报告
+     */
+    private String report;
+
     public ArtifactEntity() {
     }
 
@@ -121,6 +141,7 @@ public class ArtifactEntity
 
         this.storageId = storageId;
         this.repositoryId = repositoryId;
+        this.storageIdAndRepositoryId = String.format("%s-%s", storageId, repositoryId);
         this.artifactCoordinates = artifactCoordinates;
         setUuid(String.format("%s-%s-%s", getStorageId(), getRepositoryId(), getArtifactCoordinates().buildPath()));
     }
@@ -143,6 +164,16 @@ public class ArtifactEntity
     @Override
     public void setRepositoryId(String repositoryId) {
         this.repositoryId = repositoryId;
+    }
+
+    @Override
+    public String getStorageIdAndRepositoryId() {
+        return storageIdAndRepositoryId;
+    }
+
+    @Override
+    public void setStorageIdAndRepositoryId(String storageIdAndRepositoryId) {
+        this.storageIdAndRepositoryId = storageIdAndRepositoryId;
     }
 
     @Override
@@ -409,5 +440,45 @@ public class ArtifactEntity
     @Override
     public void setMetadata(String metadata) {
         this.metadata = metadata;
+    }
+
+    @Override
+    public Set<String> getFilePaths() {
+        return filePaths;
+    }
+
+    @Override
+    public void setFilePaths(Set<String> filePaths) {
+        this.filePaths = filePaths;
+    }
+
+    @Override
+    public String getScanDate() {
+        return scanDate;
+    }
+
+    @Override
+    public void setScanDate(String scanDate) {
+        this.scanDate = scanDate;
+    }
+
+    @Override
+    public LocalDateTime getScanDateTime() {
+        return scanDateTime;
+    }
+
+    @Override
+    public void setScanDateTime(LocalDateTime scanDateTime) {
+        this.scanDateTime = scanDateTime;
+    }
+
+    @Override
+    public String getReport() {
+        return report;
+    }
+
+    @Override
+    public void setReport(String report) {
+        this.report = report;
     }
 }

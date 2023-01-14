@@ -67,6 +67,7 @@ public abstract class AbstractLayoutProvider<T extends LayoutArtifactCoordinates
     @Inject
     protected StorageProviderRegistry storageProviderRegistry;
 
+    @Override
     public abstract Set<String> getDefaultArtifactCoordinateValidators();
 
     protected abstract boolean isArtifactMetadata(RepositoryPath repositoryPath);
@@ -231,6 +232,23 @@ public abstract class AbstractLayoutProvider<T extends LayoutArtifactCoordinates
             }
         }
         return Collections.emptySet();
+    }
+
+    @Override
+    public String getContentByFileName(RepositoryPath repositoryPath, String fileName) {
+        if (ARCHIVE_LISTING_FUNCTION.supports(repositoryPath))
+        {
+            try
+            {
+                return ARCHIVE_LISTING_FUNCTION.getContentByFileName(repositoryPath, fileName);
+            }
+            catch (IOException e)
+            {
+                logger.warn("Unable to file content in archive path {} using {}",
+                        repositoryPath, ARCHIVE_LISTING_FUNCTION, e);
+            }
+        }
+        return "";
     }
 
     @Override

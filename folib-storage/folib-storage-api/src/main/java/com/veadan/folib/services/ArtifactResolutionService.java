@@ -23,4 +23,10 @@ public interface ArtifactResolutionService
                                String repositoryId,
                                String path) 
             throws IOException;
+
+    RepositoryPath resolvePath(String storageId,
+                               String repositoryId,
+                               String targetUrl,
+                               String path)
+            throws IOException;
 }

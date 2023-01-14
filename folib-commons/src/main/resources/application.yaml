@@ -4,9 +4,7 @@ server:
   session:
       timeout: 50000
   jetty:
-    acceptor: 32 # Number of acceptor threads to use.
-    max-http-post-size: 524288000 # Maximum size in bytes of the HTTP post or put content.
-    selectors: 64 # Number of selector threads to use.
+    max-http-form-post-size: 524288000 # Maximum size in bytes of the HTTP post or put content.
 spring:
   datasource:
     type: com.alibaba.druid.pool.DruidDataSource

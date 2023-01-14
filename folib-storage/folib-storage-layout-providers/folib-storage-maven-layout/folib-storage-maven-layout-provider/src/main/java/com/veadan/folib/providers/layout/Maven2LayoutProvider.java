@@ -166,6 +166,23 @@ public class Maven2LayoutProvider
         return Collections.emptySet();
     }
 
+    @Override
+    public String getContentByFileName(RepositoryPath repositoryPath, String fileName) {
+        if (JarArchiveListingFunction.INSTANCE.supports(repositoryPath))
+        {
+            try
+            {
+                return JarArchiveListingFunction.INSTANCE.getContentByFileName(repositoryPath, fileName);
+            }
+            catch (IOException e)
+            {
+                logger.warn("Unable to file content in archive path {} using {}",
+                        repositoryPath, JarArchiveListingFunction.INSTANCE, e);
+            }
+        }
+        return "";
+    }
+
     public boolean requiresGroupAggregation(final RepositoryPath repositoryPath)
     {
         return isMavenMetadata(repositoryPath) &&

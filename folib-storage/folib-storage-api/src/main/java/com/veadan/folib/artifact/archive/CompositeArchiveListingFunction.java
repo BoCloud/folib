@@ -11,26 +11,21 @@ import java.util.Set;
  * @author veadan
  */
 public class CompositeArchiveListingFunction
-        implements ArchiveListingFunction
-{
+        implements ArchiveListingFunction {
 
     private final Set<ArchiveListingFunction> leafs;
 
-    public CompositeArchiveListingFunction(final Set<ArchiveListingFunction> leafs)
-    {
+    public CompositeArchiveListingFunction(final Set<ArchiveListingFunction> leafs) {
         Objects.requireNonNull(leafs, "Set of archive listing functions should not be null");
         this.leafs = leafs;
     }
 
     @Override
     public Set<String> listFilenames(final RepositoryPath path)
-            throws IOException
-    {
+            throws IOException {
         final Set<String> result = new HashSet<>();
-        for (final ArchiveListingFunction leaf : leafs)
-        {
-            if (leaf.supports(path))
-            {
+        for (final ArchiveListingFunction leaf : leafs) {
+            if (leaf.supports(path)) {
                 result.addAll(leaf.listFilenames(path));
             }
         }
@@ -38,14 +33,23 @@ public class CompositeArchiveListingFunction
     }
 
     @Override
-    public boolean supports(final RepositoryPath path)
-    {
+    public String getContentByFileName(RepositoryPath path, String fileName) throws IOException {
+        String content = "";
+        for (final ArchiveListingFunction leaf : leafs) {
+            if (leaf.supports(path)) {
+                return leaf.getContentByFileName(path, fileName);
+            }
+        }
+        return content;
+    }
+
+    @Override
+    public boolean supports(final RepositoryPath path) {
         return leafs.stream().filter(leaf -> leaf.supports(path)).findFirst().isPresent();
     }
 
     @Override
-    public String toString()
-    {
+    public String toString() {
         return "[" + getClass().getName() + "] leafs {" + Objects.toString(leafs) + "}";
     }
 }

@@ -35,6 +35,7 @@ public class ArtifactController extends BaseController {
 
     @ApiOperation(value = "导出漏洞的影响范围")
     @ApiResponses(value = {@ApiResponse(code = 200, message = "OK")})
+    @PreAuthorize("hasAuthority('ARTIFACTS_VIEW')")
     @GetMapping(value = "/exportExcel")
     public void exportExcel(@RequestParam(name = "vulnerabilityUuid") String vulnerabilityUuid,
                             @RequestParam(name = "storageId", required = false) String storageId,

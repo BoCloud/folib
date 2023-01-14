@@ -109,4 +109,8 @@ public class Artifact {
      * 漏洞列表
      */
     private Set<String> vulnerabilities;
+    /**
+     * 漏洞报告
+     */
+    private String report;
 }

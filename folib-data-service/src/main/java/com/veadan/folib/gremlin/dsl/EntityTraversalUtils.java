@@ -29,7 +29,7 @@ public class EntityTraversalUtils
     public static <E> E extractObject(Class<E> target,
                                       Object value)
     {
-        return Optional.of(value)
+        return Optional.ofNullable(value)
                        .filter(v -> !EntityTraversalDsl.NULL.equals(v))
                        .map(target::cast)
                        .orElse(null);
@@ -37,7 +37,7 @@ public class EntityTraversalUtils
 
     public static Date extractDate(Object value)
     {
-        return Optional.of(value)
+        return Optional.ofNullable(value)
                        .filter(v -> !EntityTraversalDsl.NULL.equals(v))
                        .map(String.class::cast)
                        .map(EntityTraversalUtils::format)
@@ -59,7 +59,7 @@ public class EntityTraversalUtils
     public static <E> List<E> extractPropertyList(Class<E> target,
                                                   Object value)
     {
-        return Optional.of(value)
+        return Optional.ofNullable(value)
                        .filter(v -> !EntityTraversalDsl.NULL.equals(v))
                        .map(v -> (List<Property<Object>>) v)
                        .<List<E>>map(c -> c.stream().map(p -> p.value()).map(target::cast).collect(Collectors.toList()))
@@ -81,7 +81,7 @@ public class EntityTraversalUtils
 
     public static <T extends DomainObject> List<T> reduceHierarchy(List<T> entityList)
     {
-        Map<String, List<T>> resultMapByUuid = entityList.stream()
+        Map<String, List<T>> resultMapByUuid = Optional.ofNullable(entityList).orElse(Collections.emptyList()).stream()
                                                          .collect(Collectors.groupingBy(DomainObject::getUuid,
                                                                                         Collectors.toCollection(LinkedList::new)));
 

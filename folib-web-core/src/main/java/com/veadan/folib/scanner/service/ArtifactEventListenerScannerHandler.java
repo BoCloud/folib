@@ -4,16 +4,19 @@ import cn.hutool.core.io.FileTypeUtil;
 import cn.hutool.core.io.FileUtil;
 import cn.hutool.core.io.IoUtil;
 import com.alibaba.fastjson.JSON;
+import com.google.common.collect.Sets;
 import com.veadan.folib.cloud.storage.s3fs.S3Path;
+import com.veadan.folib.domain.Artifact;
+import com.veadan.folib.enums.SafeLevelEnum;
 import com.veadan.folib.event.AsyncEventListener;
 import com.veadan.folib.event.artifact.ArtifactEvent;
 import com.veadan.folib.event.artifact.ArtifactEventTypeEnum;
 import com.veadan.folib.providers.io.RepositoryPath;
+import com.veadan.folib.providers.io.RepositoryPathResolver;
 import com.veadan.folib.providers.layout.DockerFileSystem;
-import com.veadan.folib.scanner.common.constant.ScanConstans;
 import com.veadan.folib.schema2.ImageManifest;
 import com.veadan.folib.schema2.LayerManifest;
-import com.veadan.folib.services.ArtifactResolutionService;
+import com.veadan.folib.services.ArtifactService;
 import com.veadan.folib.utils.ArtifactUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
@@ -24,7 +27,6 @@ import org.apache.commons.compress.utils.IOUtils;
 import org.apache.commons.compress.utils.Lists;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
@@ -34,10 +36,7 @@ import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Objects;
-import java.util.UUID;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -48,11 +47,11 @@ import java.util.stream.Collectors;
 @Component
 public class ArtifactEventListenerScannerHandler {
 
-    @Autowired
-    private ScanService scanService;
+    @Inject
+    private ArtifactService artifactService;
 
     @Inject
-    protected ArtifactResolutionService artifactResolutionService;
+    protected RepositoryPathResolver repositoryPathResolver;
 
     @Value("${folib.temp}")
     private String tempPath;
@@ -78,11 +77,11 @@ public class ArtifactEventListenerScannerHandler {
                     handlerDockerFilePath(repositoryPath, source);
                 }
             } else {
-                handlerScan(repositoryPath, source, "", "");
+                handlerScan(repositoryPath, source);
             }
         } else {
             //非docker布局
-            handlerScan(repositoryPath, source, "", "");
+            handlerScan(repositoryPath, source);
         }
     }
 
@@ -113,17 +112,19 @@ public class ArtifactEventListenerScannerHandler {
                 String prefix = versionKey;
                 prefix = prefix.substring(0, prefix.lastIndexOf("/"));
                 String blobsPath = "", tempPath = "";
+                Set<String> filePaths = Sets.newLinkedHashSet();
                 for (String digest : digestList) {
                     blobsPath = prefix + File.separator + "blobs" + File.separator + digest;
                     String blobsItemPath = blobsPath.replace(String.format("%s/%s/", repositoryPath.getStorageId(), repositoryPath.getRepositoryId()), "");
-                    RepositoryPath blobsRepositoryPath = artifactResolutionService.resolvePath(repositoryPath.getStorageId(), repositoryPath.getRepositoryId(), blobsItemPath);
+                    RepositoryPath blobsRepositoryPath = repositoryPathResolver.resolve(repositoryPath.getStorageId(), repositoryPath.getRepositoryId(), blobsItemPath);
                     filePath = parentPath + File.separator + digest;
                     tempFile = new File(filePath);
                     inputStream = Files.newInputStream(blobsRepositoryPath);
                     FileUtil.writeFromStream(inputStream, tempFile, true);
                     tempPath = parentPath + File.separator + "temp";
-                    handlerDockerBlobFile(repositoryPath, source, tempFile.getPath(), tempPath);
+                    handlerDockerBlobFile(repositoryPath, filePaths, tempFile.getPath(), tempPath);
                 }
+                handlerScan(repositoryPath, source, filePaths);
             }
         } catch (Exception ex) {
             log.error("=====>>>>>处理S3存储docker布局制品事件错误：{}", ExceptionUtils.getStackTrace(ex));
@@ -155,10 +156,12 @@ public class ArtifactEventListenerScannerHandler {
         String tempPath = parentFile.getPath() + File.separator + "temp";
         if (CollectionUtils.isNotEmpty(digestList)) {
             String blobsPath = "";
+            Set<String> filePaths = Sets.newLinkedHashSet();
             for (String digest : digestList) {
                 blobsPath = parentFile.getParent() + File.separator + "blobs" + File.separator + digest;
-                handlerDockerBlobFile(repositoryPath, source, blobsPath, tempPath);
+                handlerDockerBlobFile(repositoryPath, filePaths, blobsPath, tempPath);
             }
+            handlerScan(repositoryPath, source, filePaths);
         }
     }
 
@@ -167,11 +170,11 @@ public class ArtifactEventListenerScannerHandler {
      * 处理docker文件
      *
      * @param repositoryPath 制品信息
-     * @param source         事件类型
+     * @param filePaths      路径集合
      * @param blobsPath      文件路径
      * @param tempPath       存放解压文件的目录路径
      */
-    private void handlerDockerBlobFile(RepositoryPath repositoryPath, int source, String blobsPath, String tempPath) {
+    private void handlerDockerBlobFile(RepositoryPath repositoryPath, Set<String> filePaths, String blobsPath, String tempPath) {
         File file = new File(blobsPath);
         //增加魔数类型
         FileTypeUtil.putFileType("1f8b08000000000000ff", "gz");
@@ -205,9 +208,9 @@ public class ArtifactEventListenerScannerHandler {
                         S3Path s3PathObject = new S3Path(finalS3Path.getFileSystem(), finalVersionKey + File.separator + "temp" + File.separator + FileUtil.getName(filePath));
                         //将docker镜像中解压出来的文件上传到S3
                         finalS3Path.getFileSystem().getClient().putObject(PutObjectRequest.builder().bucket(finalS3Path.getBucketName()).key(s3PathObject.getKey()).build(), Path.of(filePath));
-                        handlerScan(repositoryPath, source, finalS3Path.toString().substring(0, finalS3Path.toString().indexOf(finalS3Path.getKey())) + s3PathObject.toString(), finalPrefix + File.separator + "blobs" + File.separator + file.getName());
+                        filePaths.add(finalS3Path.toString().substring(0, finalS3Path.toString().indexOf(finalS3Path.getKey())) + s3PathObject.toString());
                     } else {
-                        handlerScan(repositoryPath, source, filePath, blobsPath);
+                        filePaths.add(filePath);
                     }
                 });
             }
@@ -219,18 +222,39 @@ public class ArtifactEventListenerScannerHandler {
      *
      * @param repositoryPath 制品信息
      * @param source         事件类型
-     * @param filePath       文件路径
-     * @param artifactPath   制品路径
      */
-    private void handlerScan(RepositoryPath repositoryPath, int source, String filePath, String artifactPath) {
-        if (ArtifactEventTypeEnum.EVENT_ARTIFACT_PATH_DELETED.getType() == source) {
-            scanService.checkScan(repositoryPath, ScanConstans.DEL, filePath, artifactPath);
-        } else if (ArtifactEventTypeEnum.EVENT_ARTIFACT_FILE_STORED.getType() == source) {
-            scanService.checkScan(repositoryPath, ScanConstans.ADD, filePath, artifactPath);
-        } else if (ArtifactEventTypeEnum.EVENT_ARTIFACT_DIRECTORY_PATH_DELETED.getType() == source) {
-            scanService.checkScan(repositoryPath, ScanConstans.DEL_DIRECTORY, filePath, artifactPath);
-        } else {
-            scanService.checkScan(repositoryPath, null, filePath, artifactPath);
+    private void handlerScan(RepositoryPath repositoryPath, int source) {
+        if (ArtifactEventTypeEnum.EVENT_ARTIFACT_PATH_DELETED.getType() != source && ArtifactEventTypeEnum.EVENT_ARTIFACT_DIRECTORY_PATH_DELETED.getType() != source) {
+            try {
+                Artifact artifact = repositoryPath.getArtifactEntry();
+                artifact.setSafeLevel(SafeLevelEnum.UN_SCAN.getLevel());
+                Set<String> filePaths = Sets.newLinkedHashSet();
+                filePaths.add(repositoryPath.toAbsolutePath().toString());
+                artifact.setFilePaths(filePaths);
+                artifactService.saveOrUpdateArtifact(artifact);
+            } catch (IOException ex) {
+                log.error("=====>>>>>获取Artifact错误：{}", ExceptionUtils.getStackTrace(ex));
+            }
+        }
+    }
+
+    /**
+     * 处理扫描逻辑
+     *
+     * @param repositoryPath 制品信息
+     * @param source         事件类型
+     * @param filePaths      文件路径集合
+     */
+    private void handlerScan(RepositoryPath repositoryPath, int source, Set<String> filePaths) {
+        if (ArtifactEventTypeEnum.EVENT_ARTIFACT_PATH_DELETED.getType() != source && ArtifactEventTypeEnum.EVENT_ARTIFACT_DIRECTORY_PATH_DELETED.getType() != source) {
+            try {
+                Artifact artifact = repositoryPath.getArtifactEntry();
+                artifact.setSafeLevel(SafeLevelEnum.UN_SCAN.getLevel());
+                artifact.setFilePaths(filePaths);
+                artifactService.saveOrUpdateArtifact(artifact);
+            } catch (IOException ex) {
+                log.error("=====>>>>>获取Artifact错误：{}", ExceptionUtils.getStackTrace(ex));
+            }
         }
     }
 
@@ -244,8 +268,8 @@ public class ArtifactEventListenerScannerHandler {
         boolean flag = false;
         int source = (int) event.getSource();
         RepositoryPath repositoryPath = event.getPath();
-        log.debug("=====>>>>> 监听到制品事件：{}，path路径：{}", ArtifactEventTypeEnum.queryArtifactEventTypeEnumByType(source), repositoryPath);
         ArtifactEventTypeEnum artifactEventTypeEnum = ArtifactEventTypeEnum.queryArtifactEventTypeEnumByType(source);
+        log.debug("=====>>>>> 监听到制品事件：{}，path路径：{}", artifactEventTypeEnum, repositoryPath);
         if (Objects.isNull(artifactEventTypeEnum)) {
             return false;
         }

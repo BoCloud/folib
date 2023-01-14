@@ -35,7 +35,7 @@ public class ClusterCache {
         String key = key(host, port);
         Cache cache = cacheMap.get(key);
         if (cache == null) {
-            Cluster cluster = GremlinUtil.cluster(host, port, JanusGraphIoRegistry.getInstance());
+            Cluster cluster = GremlinUtil.cluster(host, port, JanusGraphIoRegistry.instance());
             Client client = cluster.connect().init();
             Date create = new Date();
             cacheMap.put(key, new Cache(cluster, client, create.getTime()));

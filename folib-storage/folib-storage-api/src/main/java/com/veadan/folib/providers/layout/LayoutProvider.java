@@ -20,6 +20,8 @@ public interface LayoutProvider<T extends ArtifactCoordinates>
     @Nonnull
     Set<String> listArchiveFilenames(RepositoryPath repositoryPath);
 
+    String getContentByFileName(RepositoryPath repositoryPath, String fileName);
+
     Set<String> getDefaultArtifactCoordinateValidators();
 
     String getAlias();

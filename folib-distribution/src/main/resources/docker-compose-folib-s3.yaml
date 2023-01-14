@@ -9,7 +9,6 @@ services:
     volumes:
       - ~/folib/mysql/logs:/var/log/mysql
       - ~/folib/mysql/data:/var/lib/mysql
-#      - ~/folib/etc/localtime:/etc/localtime:ro
     restart: always
     privileged: true
     ports:
@@ -71,7 +70,7 @@ services:
     environment:
       - RUN_WORKDIR=/opt/folib
       - FOLIB_PORT=38080
-      - FOLIB_JVM_XMX=512
+      - FOLIB_JVM_XMX=1024
       - FOLIB_DB_PROFILE=db_EMBEDDED
       - FOLIB_GREMLIN_SERVER_ENABLED=false
       - FOLIB_LOG_CONSOLE_ENABLED=false
@@ -93,7 +92,7 @@ services:
       - FOLIB_JMX_PORT=7199
       - FOLIB_DISTRIBUTED_LOCKIP=127.0.0.1
       - FOLIB_CLUSTER_OPENFLAG=false
-      - FOLIB_CLUSTER_HOSTNODE=http://127.0.0.1:38080
+      - FOLIB_CLUSTER_HOSTNODE=127.0.0.1:38080
       - FOLIB_REMOTE_DB_HOST=127.0.0.1
       - FOLIB_REMOTE_DB_PORT=49142
       - FOLIB_REMOTE_DB_USER=root
@@ -104,6 +103,7 @@ services:
       - FOLIB_S3_SECRET_KEY=UGo8B5wcjFasU3xKxanxxYKEyVNGxyfH
     volumes:
       - ~/folib/folib-conf:/opt/folib/folib-1.0-SNAPSHOT/etc/conf
+      - ~/folib/lic:/opt/folib/folib-1.0-SNAPSHOT/etc/lic
       - ~/folib/folib-vault:/opt/folib/folib-vault
     restart: always
     privileged: true

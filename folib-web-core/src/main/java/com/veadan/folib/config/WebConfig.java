@@ -1,6 +1,8 @@
 package com.veadan.folib.config;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.veadan.folib.configuration.ConfigurationManager;
+import com.veadan.folib.configuration.FolibSecurityConfig;
 import com.veadan.folib.converters.RoleFormToRoleConverter;
 import com.veadan.folib.converters.RoleListFormToRoleListConverter;
 import com.veadan.folib.converters.configuration.ProxyConfigurationFormConverter;
@@ -14,27 +16,17 @@ import com.veadan.folib.converters.users.UserFormToUserDtoConverter;
 import com.veadan.folib.cron.config.CronTasksConfig;
 import com.veadan.folib.interceptors.MavenArtifactRequestInterceptor;
 import com.veadan.folib.interceptors.PermissionCheckInterceptor;
+import com.veadan.folib.jtwig.extensions.ByteSizeConversionExtension;
 import com.veadan.folib.mapper.WebObjectMapperSubtypes;
 import com.veadan.folib.providers.io.RepositoryPathResolver;
 import com.veadan.folib.services.DirectoryListingService;
 import com.veadan.folib.services.DirectoryListingServiceImpl;
-import com.veadan.folib.yaml.YAMLMapperFactory;
-import org.apache.commons.lang.StringUtils;
-import com.veadan.folib.configuration.FolibSecurityConfig;
-import com.veadan.folib.jtwig.extensions.ByteSizeConversionExtension;
 import com.veadan.folib.utils.CustomAntPathMatcher;
 import com.veadan.folib.web.CustomRequestMappingHandlerMapping;
 import com.veadan.folib.web.DirectoryTraversalFilter;
 import com.veadan.folib.web.RepositoryMethodArgumentResolver;
-
-import javax.inject.Inject;
-import javax.inject.Named;
-import javax.servlet.http.HttpServletRequest;
-import java.util.Arrays;
-import java.util.List;
-
-import com.fasterxml.jackson.databind.ObjectMapper;
-
+import com.veadan.folib.yaml.YAMLMapperFactory;
+import org.apache.commons.lang.StringUtils;
 import org.jtwig.environment.EnvironmentConfigurationBuilder;
 import org.jtwig.spring.boot.config.JtwigViewResolverConfigurer;
 import org.jtwig.web.servlet.JtwigRenderer;
@@ -42,16 +34,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration;
-import org.springframework.boot.web.server.ConfigurableWebServerFactory;
-import org.springframework.boot.web.server.ErrorPage;
-import org.springframework.boot.web.server.WebServerFactoryCustomizer;
 import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 import org.springframework.format.FormatterRegistry;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.converter.*;
 import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
@@ -61,43 +49,49 @@ import org.springframework.web.context.request.RequestContextListener;
 import org.springframework.web.filter.CommonsRequestLoggingFilter;
 import org.springframework.web.filter.RequestContextFilter;
 import org.springframework.web.method.support.HandlerMethodArgumentResolver;
-import org.springframework.web.servlet.config.annotation.*;
+import org.springframework.web.servlet.config.annotation.ContentNegotiationConfigurer;
+import org.springframework.web.servlet.config.annotation.PathMatchConfigurer;
+import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
+import org.springframework.web.servlet.config.annotation.WebMvcConfigurationSupport;
 import org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerMapping;
 import org.springframework.web.servlet.resource.GzipResourceResolver;
 import org.springframework.web.servlet.resource.PathResourceResolver;
 import org.springframework.web.servlet.view.InternalResourceView;
 import org.springframework.web.servlet.view.InternalResourceViewResolver;
 import tk.mybatis.mapper.autoconfigure.MapperAutoConfiguration;
-import tk.mybatis.mapper.autoconfigure.MapperProperties;
-import tk.mybatis.mapper.autoconfigure.MybatisProperties;
+
+import javax.inject.Inject;
+import javax.inject.Named;
+import javax.servlet.http.HttpServletRequest;
+import java.util.Arrays;
+import java.util.List;
 
 @Configuration
-@ComponentScan({ "com.veadan.folib.controllers",
-                 "com.veadan.folib.controllers",
-                 "com.veadan.folib.validation",
-                 "com.veadan.folib.web",
-                 "com.veadan.folib.mapper",
-                 "com.veadan.folib.utils",
-                 "com.veadan.folib.scanner",
-                 "com.veadan.folib.gremlin",
-                 "com.veadan.folib.actuator",
-                 "com.veadan.folib.components"})
-@Import({ CommonConfig.class,
-          FolibSecurityConfig.class,
-          StorageApiConfig.class,
-          EventsConfig.class,
-          StorageCoreConfig.class,
-          UsersConfig.class,
-          WebSecurityConfig.class,
-          ClientConfig.class,
-          CronTasksConfig.class,
-          DataSourceAutoConfiguration.class,
-          MapperAutoConfiguration.class,
-          SwaggerConfig.class })
+@ComponentScan({"com.veadan.folib.controllers",
+        "com.veadan.folib.controllers",
+        "com.veadan.folib.validation",
+        "com.veadan.folib.web",
+        "com.veadan.folib.mapper",
+        "com.veadan.folib.utils",
+        "com.veadan.folib.scanner",
+        "com.veadan.folib.gremlin",
+        "com.veadan.folib.actuator",
+        "com.veadan.folib.components"})
+@Import({CommonConfig.class,
+        FolibSecurityConfig.class,
+        StorageApiConfig.class,
+        EventsConfig.class,
+        StorageCoreConfig.class,
+        UsersConfig.class,
+        WebSecurityConfig.class,
+        ClientConfig.class,
+        CronTasksConfig.class,
+        DataSourceAutoConfiguration.class,
+        MapperAutoConfiguration.class,
+        SwaggerConfig.class})
 @EnableCaching(order = 105)
 public class WebConfig
-        extends WebMvcConfigurationSupport
-{
+        extends WebMvcConfigurationSupport {
 
     private static final Logger logger = LoggerFactory.getLogger(WebConfig.class);
 
@@ -110,38 +104,32 @@ public class WebConfig
 
     @Inject
     private YAMLMapperFactory yamlMapperFactory;
-    
+
     @Inject
     private ConfigurationManager configurationManager;
 
-    WebConfig()
-    {
+    WebConfig() {
         logger.debug("Initialized web configuration.");
     }
 
     @Bean
-    RequestContextListener requestContextListener()
-    {
+    RequestContextListener requestContextListener() {
         return new RequestContextListener();
     }
 
     @Bean
-    RequestContextFilter requestContextFilter()
-    {
+    RequestContextFilter requestContextFilter() {
         return new RequestContextFilter();
     }
 
     @Bean
-    CommonsRequestLoggingFilter commonsRequestLoggingFilter()
-    {
-        CommonsRequestLoggingFilter result = new CommonsRequestLoggingFilter()
-        {
+    CommonsRequestLoggingFilter commonsRequestLoggingFilter() {
+        CommonsRequestLoggingFilter result = new CommonsRequestLoggingFilter() {
 
             @Override
             protected String createMessage(HttpServletRequest request,
                                            String prefix,
-                                           String suffix)
-            {
+                                           String suffix) {
                 return super.createMessage(request, String.format("%smethod=%s;", prefix, request.getMethod()), suffix);
             }
 
@@ -153,20 +141,17 @@ public class WebConfig
     }
 
     @Override
-    protected RequestMappingHandlerMapping createRequestMappingHandlerMapping()
-    {
+    protected RequestMappingHandlerMapping createRequestMappingHandlerMapping() {
         return new CustomRequestMappingHandlerMapping();
     }
 
     @Bean
-    DirectoryTraversalFilter directoryTraversalFilter()
-    {
+    DirectoryTraversalFilter directoryTraversalFilter() {
         return new DirectoryTraversalFilter();
     }
 
     @Override
-    public void configureMessageConverters(List<HttpMessageConverter<?>> converters)
-    {
+    public void configureMessageConverters(List<HttpMessageConverter<?>> converters) {
         StringHttpMessageConverter stringConverter = new StringHttpMessageConverter();
         stringConverter.setWriteAcceptCharset(false);
 
@@ -179,17 +164,14 @@ public class WebConfig
     }
 
 
-
     @Override
-    public void configureContentNegotiation(ContentNegotiationConfigurer configurer)
-    {
+    public void configureContentNegotiation(ContentNegotiationConfigurer configurer) {
         configurer.favorPathExtension(false);
     }
 
     // TODO consider using the same MappingJackson2HttpMessageConverter for yaml and json !
     @Bean
-    public MappingJackson2HttpMessageConverter yamlConverter()
-    {
+    public MappingJackson2HttpMessageConverter yamlConverter() {
         MappingJackson2HttpMessageConverter yamlConverter = new MappingJackson2HttpMessageConverter(
                 yamlMapperFactory.create(WebObjectMapperSubtypes.INSTANCE.subtypes()));
         yamlConverter.setSupportedMediaTypes(
@@ -198,26 +180,22 @@ public class WebConfig
     }
 
     @Bean
-    public MappingJackson2HttpMessageConverter jackson2Converter()
-    {
+    public MappingJackson2HttpMessageConverter jackson2Converter() {
         return new MappingJackson2HttpMessageConverter(objectMapper);
     }
 
     @Bean
-    public Validator localValidatorFactoryBean()
-    {
+    public Validator localValidatorFactoryBean() {
         return new LocalValidatorFactoryBean();
     }
-    
+
     @Bean
     @Qualifier("loggingManagementDirectoryListingService")
-    public DirectoryListingService getLoggingManagementDirectoryListingService()
-    {
+    public DirectoryListingService getLoggingManagementDirectoryListingService() {
         return createDirectoryListingServiceForTemplate("%s/api/logging");
     }
 
-    private DirectoryListingService createDirectoryListingServiceForTemplate(String template)
-    {
+    private DirectoryListingService createDirectoryListingServiceForTemplate(String template) {
         String baseUrl = StringUtils.chomp(configurationManager.getConfiguration().getBaseUrl(), "/");
         String finalUrl = String.format(template, baseUrl);
         return new DirectoryListingServiceImpl(finalUrl);
@@ -226,23 +204,20 @@ public class WebConfig
 
     @Bean
     @Qualifier("browseRepositoryDirectoryListingService")
-    public DirectoryListingService getBrowseRepositoryDirectoryListingService()
-    {
+    public DirectoryListingService getBrowseRepositoryDirectoryListingService() {
         return createDirectoryListingServiceForTemplate("%s/api/browse");
     }
 
     @Override
-    public void configurePathMatch(PathMatchConfigurer configurer)
-    {
+    public void configurePathMatch(PathMatchConfigurer configurer) {
         configurer.setUseRegisteredSuffixPatternMatch(false)
-                  .setUseSuffixPatternMatch(false)
-                  .setUseTrailingSlashMatch(true)
-                  .setPathMatcher(antPathMatcher);
+                .setUseSuffixPatternMatch(false)
+                .setUseTrailingSlashMatch(true)
+                .setPathMatcher(antPathMatcher);
     }
 
     @Override
-    public void addResourceHandlers(ResourceHandlerRegistry registry)
-    {
+    public void addResourceHandlers(ResourceHandlerRegistry registry) {
         registry.setOrder(-1);
 
         registry.addResourceHandler("/rest/**")
@@ -272,8 +247,7 @@ public class WebConfig
     }
 
     @Override
-    public void addFormatters(FormatterRegistry registry)
-    {
+    public void addFormatters(FormatterRegistry registry) {
         registry.addConverter(new RoleFormToRoleConverter());
         registry.addConverter(new RoleListFormToRoleListConverter());
         registry.addConverter(UserFormToUserDtoConverter.INSTANCE);
@@ -287,15 +261,14 @@ public class WebConfig
     }
 
     @Bean
-    JtwigViewResolverConfigurer jtwigViewResolverConfigurer()
-    {
+    JtwigViewResolverConfigurer jtwigViewResolverConfigurer() {
         return jtwigViewResolver -> {
             JtwigRenderer renderer = new JtwigRenderer(
                     EnvironmentConfigurationBuilder.configuration()
-                                                   .extensions()
-                                                   .add(new ByteSizeConversionExtension())
-                                                   .and()
-                                                   .build());
+                            .extensions()
+                            .add(new ByteSizeConversionExtension())
+                            .and()
+                            .build());
             jtwigViewResolver.setRenderer(renderer);
             jtwigViewResolver.setPrefix("classpath:/views/");
             jtwigViewResolver.setSuffix(".twig.html");
@@ -305,8 +278,7 @@ public class WebConfig
     }
 
     @Bean
-    InternalResourceViewResolver internalResourceViewResolver()
-    {
+    InternalResourceViewResolver internalResourceViewResolver() {
         InternalResourceViewResolver viewResolver = new InternalResourceViewResolver();
         viewResolver.setViewClass(InternalResourceView.class);
         viewResolver.setViewNames("*.html");
@@ -316,25 +288,22 @@ public class WebConfig
     }
 
     @Bean
-    MavenArtifactRequestInterceptor mavenArtifactRequestInterceptor(RepositoryPathResolver repositoryPathResolver)
-    {
+    MavenArtifactRequestInterceptor mavenArtifactRequestInterceptor(RepositoryPathResolver repositoryPathResolver) {
         return new MavenArtifactRequestInterceptor(repositoryPathResolver);
     }
 
     @Bean
-    PermissionCheckInterceptor permissionCheckInterceptor(){
+    PermissionCheckInterceptor permissionCheckInterceptor() {
         return new PermissionCheckInterceptor();
     }
 
     @Override
-    public void addArgumentResolvers(List<HandlerMethodArgumentResolver> argumentResolvers)
-    {
+    public void addArgumentResolvers(List<HandlerMethodArgumentResolver> argumentResolvers) {
         argumentResolvers.add(repositoryMethodArgumentResolver());
     }
 
     @Bean
-    public RepositoryMethodArgumentResolver repositoryMethodArgumentResolver()
-    {
+    public RepositoryMethodArgumentResolver repositoryMethodArgumentResolver() {
         return new RepositoryMethodArgumentResolver();
     }
 }

@@ -18,6 +18,10 @@ public interface Artifact extends DomainObject {
 
     void setRepositoryId(String repositoryId);
 
+    String getStorageIdAndRepositoryId();
+
+    void setStorageIdAndRepositoryId(String storageIdAndRepositoryId);
+
     ArtifactCoordinates getArtifactCoordinates();
 
     void setArtifactCoordinates(ArtifactCoordinates artifactCoordinates);
@@ -107,4 +111,20 @@ public interface Artifact extends DomainObject {
     String getMetadata();
 
     void setMetadata(String metadata);
+
+    Set<String> getFilePaths();
+
+    void setFilePaths(Set<String> filePaths);
+
+    String getScanDate();
+
+    void setScanDate(String scanDate);
+
+    LocalDateTime getScanDateTime();
+
+    void setScanDateTime(LocalDateTime scanDateTime);
+
+    String getReport();
+
+    void setReport(String report);
 }

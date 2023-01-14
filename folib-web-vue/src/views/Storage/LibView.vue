@@ -55,7 +55,7 @@
                           <a-icon type="cloud-upload" />
                         </small>
                       </a>
-                      <a v-if="folibRepository.layout === 'Raw' && enabled">
+                      <a v-if="(folibRepository.layout === 'Raw' || folibRepository.layout === 'php') && enabled">
                         <small style="padding-right: 20px" @click="handleUpload">
                           上传
                           <a-icon type="cloud-upload" />
@@ -112,14 +112,14 @@
                         {{ currentTreeNode.name }}
                       </a-col>
                       <a-col :span="8" :xs="24" :xl="8">
-                        <span class="ml-auto" v-if="severity.show" @click="detialVisible = true">
+                        <span class="ml-auto" v-if="scanReport.show" @click="detialVisible = true">
                           <a-space :size="1" class="avatar-chips">
-                            <template v-if="severity.vulnerabilitesCount > 0">
+                            <template v-if="scanReport.vulnerabilitesCount > 0">
                               <a-tooltip>
                                 <template slot="title">严重</template>
                                 <div class="">
                                   <a-avatar :size="24" :src="'images/folib/critical.svg'" />
-                                  <span class="mb-0 text-dark">{{ severity.critical }}</span>
+                                  <span class="mb-0 text-dark">{{ scanReport.critical }}</span>
                                 </div>
                               </a-tooltip>
 
@@ -127,7 +127,7 @@
                                 <template slot="title">高危</template>
                                 <div class="">
                                   <a-avatar :size="24" :src="'images/folib/high.svg'" />
-                                  <span class="mb-0 text-dark">{{ severity.high }}</span>
+                                  <span class="mb-0 text-dark">{{ scanReport.high }}</span>
                                 </div>
                               </a-tooltip>
 
@@ -135,7 +135,7 @@
                                 <template slot="title">中危</template>
                                 <div class="">
                                   <a-avatar :size="24" :src="'images/folib/medium.svg'" />
-                                  <span class="mb-0 text-dark">{{ severity.medium }}</span>
+                                  <span class="mb-0 text-dark">{{ scanReport.medium }}</span>
                                 </div>
                               </a-tooltip>
 
@@ -143,7 +143,7 @@
                                 <template slot="title">低危</template>
                                 <div class="">
                                   <a-avatar :size="24" :src="'images/folib/low.svg'" />
-                                  <span class="mb-0 text-dark">{{ severity.low }}</span>
+                                  <span class="mb-0 text-dark">{{ scanReport.low }}</span>
                                 </div>
                               </a-tooltip>
                             </template>
@@ -166,7 +166,7 @@
                       </span>
                       <template #overlay>
                         <a-menu slot="overlay" @click="handleMenuClick">
-                          <a-menu-item key="1" v-if="currentFileDetial && folibRepository.layout !== 'Raw'">
+                          <a-menu-item key="1" v-if="currentFileDetial">
                             <a-icon type="eye" />
                             {{ currentFileDetial.listTree ? '包' : viewCodes ? '文件' : folibRepository.layout === 'Docker'
                                 ?
@@ -207,7 +207,7 @@
                       </span>
                       <template #overlay>
                         <a-menu slot="overlay" @click="handleMenuClick">
-                          <a-menu-item key="1" v-if="currentFileDetial && folibRepository.layout !== 'Raw'">
+                          <a-menu-item key="1" v-if="currentFileDetial">
                             <a-icon type="eye" />
                             {{ currentFileDetial.listTree ? '包' : viewCodes ? '文件' : folibRepository.layout === 'Docker'
                                 ?
@@ -549,14 +549,14 @@
             <a-avatar :size="24" shape="square"
               :src="folibRepository.layout === 'Docker' ? 'images/folib/docker-s.svg' : 'images/folib/' + getFileType(searchDataCurrentSelect ? searchDataCurrentSelect.path : '') + '.svg'" />
             {{ searchDataCurrentSelect ? searchDataCurrentSelect.path : '' }}
-            <span class="ml-auto" v-if="severity.show" @click="detialVisible = true">
+            <span class="ml-auto" v-if="scanReport.show" @click="detialVisible = true">
               <a-space :size="1" class="avatar-chips">
-                <template v-if="severity.vulnerabilitesCount > 0">
+                <template v-if="scanReport.vulnerabilitesCount > 0">
                   <a-tooltip>
                     <template slot="title">严重</template>
                     <div class="">
                       <a-avatar :size="24" :src="'images/folib/critical.svg'" />
-                      <span class="mb-0 text-dark">{{ severity.critical }}</span>
+                      <span class="mb-0 text-dark">{{ scanReport.critical }}</span>
                     </div>
                   </a-tooltip>
 
@@ -564,7 +564,7 @@
                     <template slot="title">高危</template>
                     <div class="">
                       <a-avatar :size="24" :src="'images/folib/high.svg'" />
-                      <span class="mb-0 text-dark">{{ severity.high }}</span>
+                      <span class="mb-0 text-dark">{{ scanReport.high }}</span>
                     </div>
                   </a-tooltip>
 
@@ -572,7 +572,7 @@
                     <template slot="title">中危</template>
                     <div class="">
                       <a-avatar :size="24" :src="'images/folib/medium.svg'" />
-                      <span class="mb-0 text-dark">{{ severity.medium }}</span>
+                      <span class="mb-0 text-dark">{{ scanReport.medium }}</span>
                     </div>
                   </a-tooltip>
 
@@ -580,7 +580,7 @@
                     <template slot="title">低危</template>
                     <div class="">
                       <a-avatar :size="24" :src="'images/folib/low.svg'" />
-                      <span class="mb-0 text-dark">{{ severity.low }}</span>
+                      <span class="mb-0 text-dark">{{ scanReport.low }}</span>
                     </div>
                   </a-tooltip>
                 </template>
@@ -633,7 +633,7 @@
         </a-descriptions>
         <hr class="my-25" />
 
-        <a-col :span="24" v-if="searchDataCurrentSelect">
+        <a-col :span="24" v-if="searchDataCurrentSelect && searchDataCurrentSelect.snippets && searchDataCurrentSelect.snippets.length > 0">
           <a-card :bordered="false" class="card-billing-info">
             <div class="col-info">
               <a-descriptions :title="'使用示例(' + codeParam.type + ')'" :column="1">
@@ -1179,6 +1179,71 @@
           </p>
         </a-timeline-item>
       </a-timeline>
+      <a-timeline v-if="repositoryType === 'php'">
+        <a-timeline-item color="primary">
+          Composer认证
+          <p>
+            http-basic
+          </p>
+          <p>
+            打开命令行窗口（windows用户）或控制台（Linux、Mac 用户）并执行如下命令：
+          </p>
+          <prism-editor class="my-editor height-300" :value="'composer config -g http-basic.' + baseUrl + ' admin folib@v587'" 
+          :highlight="highlighterHandle" :line-numbers="false" :readonly="true"></prism-editor>
+        </a-timeline-item>
+        <a-timeline-item color="primary">
+          Composer配置
+          <p>
+            方法一： 修改 composer 的全局配置文件（推荐方式）
+          </p>
+          <p>
+            打开命令行窗口（windows用户）或控制台（Linux、Mac 用户）并执行如下命令：
+          </p>
+          <prism-editor class="my-editor height-300" :value="'composer config -g repo.packagist composer ' + baseUrl + 'storages/' + folibRepository.storageId + '/' + folibRepository.id" 
+          :highlight="highlighterHandle" :line-numbers="false" :readonly="true"></prism-editor>
+          <p>
+          方法二： 修改当前项目的 composer.json 配置文件
+          </p>
+          <p>
+            打开命令行窗口（windows用户）或控制台（Linux、Mac 用户），进入你的项目的根目录（也就是 composer.json 文件所在目录），执行如下命令：
+          </p>
+          <prism-editor class="my-editor height-300" :value="'composer config repo.packagist composer ' + baseUrl + 'storages/' + folibRepository.storageId + '/' + folibRepository.id" 
+          :highlight="highlighterHandle" :line-numbers="false" :readonly="true"></prism-editor>
+        </a-timeline-item>
+        <a-timeline-item color="primary">
+          取消配置
+          <p>#全局取消</p>
+          <p>
+            composer config -g --unset repos.packagist
+          </p>
+          <p>#项目取消</p>
+          <p>
+            composer config --unset repos.packagist
+          </p>
+          <p>
+            注意：本仓库类型为:<strong>{{ folibRepository.type === 'proxy' ? '代理库' : folibRepository.type === 'group' ? '组合库' :
+                '本地库'
+            }}</strong>{{ folibRepository.type === 'proxy' ? '不支持上传' : folibRepository.type === 'group' ?
+    '不支持上传' : '可以上传'
+}}
+          </p>
+          <p v-if="folibRepository.type === 'hosted'">
+            使用API或页面上传按钮进行上传
+          </p>
+        </a-timeline-item>
+        <a-timeline-item color="primary">
+          命令操作
+          <small>composer 通常使用命令</small>
+          <p>
+            和通常composer一样使用，具体参阅：<a target="_blank" href="https://getcomposer.org/doc/03-cli.md">https://getcomposer.org/doc/03-cli.md</a>
+          </p>
+
+          <prism-editor class="my-editor height-300" :value="'composer init\n' +
+          'composer install\n' + 
+          'composer -vvv require\n' + 
+          'composer clear-cache'" :highlight="highlighterHandle" :line-numbers="false" :readonly="true"></prism-editor>
+        </a-timeline-item>
+      </a-timeline>
     </a-drawer>
 
     <a-drawer placement="right" width="65%" title="报告详情" :visible="detialVisible" @close="closeDialog">
@@ -1186,8 +1251,8 @@
         <template #expandIcon="props">
           <a-icon type="caret-right" :rotate="props.isActive ? 90 : 0" />
         </template>
-        <a-collapse-panel v-for="(item, index) in currentReport" :key="index"
-          style='background: #f7f7f7;border-radius: 4px;margin-bottom: 24px;border: 0;overflow: hidden'>
+        <a-collapse-panel v-for="(item, index) in scanReport.report" :key="index"
+          style='background: #f7f7f7;border-radius: 4px; margin-bottom: 24px; border: 0; overflow: hidden'>
           <template slot="header">
             <div class="collapse-panel-header-info">
               <span class="file-name">{{ item.fileName }}</span>
@@ -1559,8 +1624,8 @@ import {
   formateDate
 } from '@/utils/layoutUtil'
 import { getMetadataConfiguration } from "@/api/settings"
-import { browse, getArtifact, viewArtifactFile, fql, scannerRules, insertOrUpdateRules, getDockerArtifact, deleteArtifact, getSeverity, repositoryVulnerabilityStatistics, getStoragesAndRepositories, } from '@/api/folib'
-import { artifactCopy, artifactMove, artifactUpload,rpmArtifactUpload , saveArtifactMetadata, updateArtifactMetadata, deleteArtifactMetadata } from '@/api/artifact'
+import { browse, getArtifact, viewArtifactFile, fql, scannerRules, insertOrUpdateRules, getDockerArtifact, deleteArtifact, repositoryVulnerabilityStatistics, getStoragesAndRepositories, } from '@/api/folib'
+import { artifactCopy, artifactMove, artifactUpload,rpmArtifactUpload, saveArtifactMetadata, updateArtifactMetadata, deleteArtifactMetadata } from '@/api/artifact'
 import { PrismEditor } from 'vue-prism-editor'
 import 'vue-prism-editor/dist/prismeditor.min.css' // import the styles somewhere
 // import highlighting library (you can use any library you want just return html string)
@@ -1673,9 +1738,16 @@ export default {
           width: 200,
         },
       ],
-      severity: { show: false },
+      scanReport: { 
+        show: false,
+        report: [],
+        vulnerabilitesCount: 0,
+        critical: 0,
+        high: 0,
+        medium: 0,
+        low: 0,
+      },
       detialVisible: false,
-      currentReport: [],
       vulnerColumns: [
         {
           title: 'CVE编号',
@@ -1985,8 +2057,32 @@ export default {
       if (this.searchDataCurrentSelect && this.searchDataCurrentSelect.snippets) {
         this.changeCodeTye(this.searchDataCurrentSelect.snippets[0])
       }
-      var id = "storages/" + this.searchDataCurrentSelect.storageId + "/" + this.searchDataCurrentSelect.repositoryId + "/" + this.searchDataCurrentSelect.path
-      this.handlerSeverity(id)
+      this.scanReport = { 
+        show: false,
+        report: [],
+        vulnerabilitesCount: 0,
+        critical: 0,
+        high: 0,
+        medium: 0,
+        low: 0,
+      }
+      getArtifact(
+        this.repositoryType,
+        item.storageId,
+        item.repositoryId,
+        item.artifactPath
+      ).then(res => {
+        let artifact = res.artifact
+        if (artifact && artifact.safeLevel === "scanComplete") {
+          this.scanReport.show = true
+          this.scanReport.vulnerabilitesCount = artifact.vulnerabilitiesCount
+          this.scanReport.critical = artifact.criticalVulnerabilitiesCount
+          this.scanReport.high = artifact.highVulnerabilitiesCount
+          this.scanReport.medium = artifact.mediumVulnerabilitiesCount
+          this.scanReport.low = artifact.lowVulnerabilitiesCount
+          this.scanReport.report = JSON.parse(artifact.report)
+        }
+      })
       this.artifactVisible = true
     },
     closeSearchviewCodeDialog() {
@@ -2016,6 +2112,9 @@ export default {
       //上个页面通过缓存传参，目的防止页面刷新，路由数据消失
       const params = storage.get('libView_repository')
       this.folibRepository = params.item
+      if (!this.folibRepository || this.folibRepository.type !== 'hosted') {
+        this.enabled = false
+      }
       this.baseUrl = params.baseUrl
       this.repositoryType = this.getLayoutTypeHandle()
       this.isNotSearch = false
@@ -2096,7 +2195,7 @@ export default {
               item.type = 'dir'
             })
             treeNode.dataRef.children = d
-          }
+          } 
           if (res.files.length > 0) {
             const a = res.files
             a.forEach((item, index, a) => {
@@ -2125,13 +2224,31 @@ export default {
           if (this.currentFileDetial.snippets) {
             this.changeCodeTye(this.currentFileDetial.snippets[0])
           }
+          if (this.currentFileDetial.artifact) {
+            if (this.currentFileDetial.artifact.safeLevel === "scanComplete") {
+              this.scanReport.show = true
+              this.scanReport.vulnerabilitesCount = this.currentFileDetial.artifact.vulnerabilitiesCount
+              this.scanReport.critical = this.currentFileDetial.artifact.criticalVulnerabilitiesCount
+              this.scanReport.high = this.currentFileDetial.artifact.highVulnerabilitiesCount
+              this.scanReport.medium = this.currentFileDetial.artifact.mediumVulnerabilitiesCount
+              this.scanReport.low = this.currentFileDetial.artifact.lowVulnerabilitiesCount
+              this.scanReport.report = JSON.parse(this.currentFileDetial.artifact.report)
+            }
+          }
           this.currentManifest = res.manifestConfig
           this.handlerRespMetadata(res)
         })
-        this.handlerSeverity()
       } else if (this.currentTreeNode.type === 'dir') {
         this.currentFileDetial = null
-        this.severity = { show: false }
+        this.scanReport = { 
+          show: false,
+          report: [],
+          vulnerabilitesCount: 0,
+          critical: 0,
+          high: 0,
+          medium: 0,
+          low: 0,
+        }
       }
     },
     getFileType(name) {
@@ -2167,7 +2284,13 @@ export default {
       if (this.folibRepository.layout !== 'Docker') {
         if (this.currentFileDetial && !this.currentFileDetial.listTree) {
           viewArtifactFile(this.currentTreeNode.url).then(res => {
-            this.viewCodes = res
+            if ("string" === typeof(res) && res.startsWith("PK")) {
+              this.viewCodes = undefined
+            } else if ("object" === typeof(res)) {
+              this.viewCodes = JSON.stringify(res)
+            } else {
+              this.viewCodes = res
+            }
           })
         }
       } else {
@@ -2179,7 +2302,13 @@ export default {
     searchViewCodeHandle() {
       if (this.searchDataCurrentSelect && !this.searchDataCurrentSelect.treeNode) {
         viewArtifactFile(this.searchDataCurrentSelect.url).then(res => {
-          this.searchViewCodes = res
+            if ("string" === typeof(res) && res.startsWith("PK")) {
+              this.searchViewCodes = undefined
+            } else if ("object" === typeof(res)) {
+              this.searchViewCodes = JSON.stringify(res)
+            } else {
+              this.searchViewCodes = res
+            }
         })
       }
       this.searchViewCodeVisible = true
@@ -2236,24 +2365,6 @@ export default {
           description: ""
         })
       }).finally(() => {
-      })
-    },
-    handlerSeverity(id) {
-      this.severity = { show: false }
-      if (!id) {
-        id = "storages/" + this.currentTreeNode.storageId + "/" + this.currentTreeNode.repositoryId + "/" + this.currentTreeNode.artifactPath
-      }
-      var flag = id.endsWith('.sha') || id.endsWith('.sha1') || id.endsWith('.sha256') || id.endsWith('.sha512') || id.endsWith('.md5')
-      if (flag) {
-        return
-      }
-      getSeverity(id).then(res => {
-        if (res.rel) {
-          this.severity = res.data
-          if (this.severity.report) {
-            this.currentReport = JSON.parse(this.severity.report)
-          }
-        }
       })
     },
     closeDialog() {
@@ -2516,7 +2627,7 @@ export default {
         if (!err) {
           if (values.targetPath && values.targetPath.startsWith("/")) {
             this.$notification["warning"]({
-              message: "目标路径不能以/开头",
+              message: "目标目录不能以/开头",
               description: ""
             })
             return false
@@ -2524,7 +2635,9 @@ export default {
           let filePathMap = {};
           let fileList = [];
           values.files.forEach(item => {
-            filePathMap[item.name] = values.targetPath ? values.targetPath + '/' + item.name : item.name
+            let fileName = item.name;
+            fileName = fileName.replace(":", "/")
+            filePathMap[fileName] = values.targetPath ? values.targetPath + '/' + fileName : fileName
             fileList.push(item.originFileObj)
           })
           values.filePathMap = filePathMap
@@ -2533,6 +2646,7 @@ export default {
           formData.append("repostoryId", this.folibRepository.id);
           formData.append("filePathMap", JSON.stringify(filePathMap));
           fileList.forEach((file) => {
+            file = new File([file], file.name.replace(":","/"))
             formData.append('files', file)
           })
           artifactUpload(formData).then(res => {
