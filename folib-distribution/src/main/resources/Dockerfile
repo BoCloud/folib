@@ -35,6 +35,7 @@ ENV FOLIB_S3_REGION="${FOLIB_S3_REGION:-folib}"
 ENV FOLIB_S3_URI="${FOLIB_S3_URI:-s3://localhost:9000/}"
 ENV FOLIB_S3_ACCESS_KEY="${FOLIB_S3_ACCESS_KEY:-folib}"
 ENV FOLIB_S3_SECRET_KEY="${FOLIB_S3_SECRET_KEY:-folib}"
+ENV FOLIB_PROMOTE_HOSTS="${FOLIB_PROMOTE_HOSTS:-}"
 
 RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
 RUN mkdir ${RUN_WORKDIR}
