@@ -392,7 +392,7 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
                 }
                 artifact.setMetadata(metadataJson.toJSONString());
                 artifactService.saveOrUpdateArtifact(artifact);
-                RepositoryPath repositoryPath = artifactResolutionService.resolvePath(artifactMetaData.getStorageId(), artifactMetaData.getRepositoryId(), artifactMetaData.getArtifactPath());
+                RepositoryPath repositoryPath = repositoryPathResolver.resolve(artifactMetaData.getStorageId(), artifactMetaData.getRepositoryId(), artifactMetaData.getArtifactPath());
                 repositoryPath.setArtifact(artifact);
                 artifactEvent.dispatchArtifactMetaDataEvent(repositoryPath);
             } catch (Exception e) {
@@ -485,6 +485,7 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
         return artifact;
     }
 
+    @Override
     public Artifact getArtifact(RepositoryPath repositoryPath) throws Exception {
         String repositoryId = repositoryPath.getRepository().getId();
         String storageId = repositoryPath.getStorageId();
