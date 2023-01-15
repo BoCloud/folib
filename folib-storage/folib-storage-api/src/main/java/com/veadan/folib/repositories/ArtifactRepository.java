@@ -182,7 +182,7 @@ public class ArtifactRepository extends GremlinVertexRepository<Artifact> {
     }
 
     public Long countByStorageIdAndRepositoryId(String storageId, String repositoryId) {
-        return g().V().hasLabel(Vertices.ARTIFACT).has(Properties.STORAGE_ID, storageId).has(Properties.REPOSITORY_ID, repositoryId).count().tryNext().orElse(0L);
+        return g().V().hasLabel(Vertices.ARTIFACT).has(Properties.STORAGE_ID, storageId).has(Properties.REPOSITORY_ID, repositoryId).has(Properties.ARTIFACT_FILE_EXISTS, true).count().tryNext().orElse(0L);
     }
 
     public Map<String, Long> countArtifactByStorageIdAndRepositoryId(String storageId, String repositoryId) {

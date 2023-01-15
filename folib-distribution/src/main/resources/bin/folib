@@ -119,6 +119,7 @@ pre_check()
 run()
 {
     JAVA_OPTS="${JAVA_OPTS} -XX:+ExitOnOutOfMemoryError -XX:+CrashOnOutOfMemoryError"
+    JAVA_OPTS+=" -Xmx1024m -Xms1024m -Xss256k"
     JAVA_OPTS+=" -Dappserver.home=. -Dappserver.base=${FOLIB_HOME} -Djetty.logs=${FOLIB_HOME}/logs"
     JAVA_OPTS+=" -Djava.io.tmpdir=${FOLIB_HOME}/tmp"
     JAVA_OPTS+=" -Dserver.port=${FOLIB_PORT}"

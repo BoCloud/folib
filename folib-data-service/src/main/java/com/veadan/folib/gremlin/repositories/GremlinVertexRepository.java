@@ -9,6 +9,8 @@ import com.veadan.folib.gremlin.dsl.EntityTraversal;
 import com.veadan.folib.gremlin.dsl.EntityTraversalSource;
 import org.apache.tinkerpop.gremlin.structure.Vertex;
 import com.veadan.folib.gremlin.adapters.UnfoldEntityTraversal;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Gremlin repository for Vertex based entities.
@@ -20,6 +22,8 @@ import com.veadan.folib.gremlin.adapters.UnfoldEntityTraversal;
 @Transactional
 public abstract class GremlinVertexRepository<E extends DomainObject> extends GremlinRepository<Vertex, E>
 {
+    private static final Logger logger = LoggerFactory.getLogger(GremlinVertexRepository.class);
+
 
     public String merge(E entity)
     {
