@@ -25,6 +25,21 @@ public class AsyncPoolConfig {
     }
 
     @Bean
+    public ThreadPoolTaskExecutor asyncEventListenerExecutor() {
+        ThreadPoolTaskExecutor taskExecutor = new ThreadPoolTaskExecutor();
+        taskExecutor.setCorePoolSize(20);
+        taskExecutor.setMaxPoolSize(500);
+        taskExecutor.setQueueCapacity(25);
+        taskExecutor.setKeepAliveSeconds(200);
+        taskExecutor.setThreadNamePrefix("asyncEventListenerThread");
+        taskExecutor.setWaitForTasksToCompleteOnShutdown(true);
+        taskExecutor.setAwaitTerminationSeconds(60);
+        taskExecutor.setRejectedExecutionHandler(new ThreadPoolExecutor.CallerRunsPolicy());
+        taskExecutor.initialize();
+        return taskExecutor;
+    }
+
+    @Bean
     public ThreadPoolTaskExecutor asyncStorageThreadPoolExecutor(){
         ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
         executor.setCorePoolSize(10);
