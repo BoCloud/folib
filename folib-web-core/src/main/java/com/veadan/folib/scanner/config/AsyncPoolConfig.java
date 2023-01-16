@@ -28,8 +28,8 @@ public class AsyncPoolConfig {
     public ThreadPoolTaskExecutor asyncEventListenerExecutor() {
         ThreadPoolTaskExecutor taskExecutor = new ThreadPoolTaskExecutor();
         taskExecutor.setCorePoolSize(20);
-        taskExecutor.setMaxPoolSize(500);
-        taskExecutor.setQueueCapacity(25);
+        taskExecutor.setMaxPoolSize(200);
+        taskExecutor.setQueueCapacity(1000);
         taskExecutor.setKeepAliveSeconds(200);
         taskExecutor.setThreadNamePrefix("asyncEventListenerThread");
         taskExecutor.setWaitForTasksToCompleteOnShutdown(true);

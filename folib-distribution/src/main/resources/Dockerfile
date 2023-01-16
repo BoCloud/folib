@@ -1,4 +1,4 @@
-FROM openjdk:11-jre
+FROM openjdk:11-jdk
 MAINTAINER folib.com
 ENV TZ=Asia/Shanghai
 # 项目构建文件结构 环境变量
