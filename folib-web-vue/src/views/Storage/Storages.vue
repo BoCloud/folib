@@ -1726,6 +1726,11 @@ export default {
           this.crontasksListHandle()
         }
 
+      }).catch((err) => {
+        let error = JSON.stringify(err.response.data)
+        this.$notification["error"]({
+          message: error.indexOf('The repository id already exists') !== -1 ? '仓库名称已存在' : "创建失败",
+        })
       })
 
     },

@@ -360,9 +360,9 @@ public class DockerArtifactController extends BaseArtifactController {
             response.addHeader("Accept-Ranges", "bytes");
             response.addHeader(DockerApiHeader.DOCKER_CONTENT_DIGEST.key(), digest);
             String artifactName = String.format("%s/blobs/%s", name, digest);
-            boolean isNotExist = artifactRepository.artifactExists(storageId, repositoryId, artifactName);
+            boolean exist = artifactRepository.artifactExists(storageId, repositoryId, artifactName);
             //200已经存在 404不存在
-            if (isNotExist) {
+            if (exist) {
                 return new ResponseEntity<>("OK", HttpStatus.ACCEPTED);
             } else {
                 return new ResponseEntity<>(null, HttpStatus.NOT_FOUND);
