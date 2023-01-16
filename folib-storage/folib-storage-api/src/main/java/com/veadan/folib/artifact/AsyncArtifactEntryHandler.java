@@ -76,7 +76,6 @@ public abstract class AsyncArtifactEntryHandler {
     }
 
     private void handleTransactional(RepositoryPath repositoryPath) {
-        Long startTime = System.currentTimeMillis();
         Graph g = janusGraph.tx().createThreadedTx();
         try {
             Artifact result = handleEvent(repositoryPath);
