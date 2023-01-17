@@ -44,10 +44,7 @@ import org.springframework.web.bind.annotation.*;
 import javax.validation.groups.Default;
 import java.io.IOException;
 import java.nio.file.Files;
-import java.util.ArrayList;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -333,14 +330,19 @@ public class StoragesConfigurationController
                                                         RepositoryForm repositoryForm,
                                                 BindingResult bindingResult,
                                                 @RequestHeader(HttpHeaders.ACCEPT) String accept) {
-        if (configurationManagementService.getConfiguration().getStorage(storageId) != null) {
+        Storage storage = configurationManagementService.getConfiguration().getStorage(storageId);
+        if (storage != null) {
             if (bindingResult.hasErrors()) {
                 throw new RequestBodyValidationException(FAILED_SAVE_REPOSITORY, bindingResult);
             }
-
+            RepositoryDto repository = conversionService.convert(repositoryForm, RepositoryDto.class);
+            Repository existRepository = storage.getRepository(repositoryId);
+            boolean result = Objects.nonNull(existRepository) && Objects.nonNull(repository) && (!repository.getLayout().equals(existRepository.getLayout()) || (Objects.nonNull(existRepository.getSubLayout()) && !existRepository.getSubLayout().equals(repository.getSubLayout())));
+            if (result) {
+                //判断重复
+                return getFailedResponseEntity(HttpStatus.BAD_REQUEST, "The repository id already exists", accept);
+            }
             try {
-                RepositoryDto repository = conversionService.convert(repositoryForm, RepositoryDto.class);
-
                 logger.debug("Creating repository {}:{}...", storageId, repositoryId);
 
                 configurationManagementService.saveRepository(storageId, repository);

@@ -73,6 +73,49 @@ folib:
     gremlin:
         server:
             enabled: true
+  threadPool:
+    async:
+      corePoolSize: 20
+      maxPoolSize: 200
+      queueCapacity: 25
+      keepAliveSeconds: 200
+      threadNamePrefix: asyncThread_
+      awaitTerminationSeconds: 60
+    asyncEventListener:
+      corePoolSize: 20
+      maxPoolSize: 200
+      queueCapacity: 1000
+      keepAliveSeconds: 200
+      threadNamePrefix: asyncEventListenerThread_
+      awaitTerminationSeconds: 60
+    asyncStorage:
+      corePoolSize: 10
+      maxPoolSize: 200
+      queueCapacity: 25
+      keepAliveSeconds: 200
+      threadNamePrefix: asyncStorageThread_
+      awaitTerminationSeconds: 60
+    asyncRepository:
+      corePoolSize: 10
+      maxPoolSize: 200
+      queueCapacity: 25
+      keepAliveSeconds: 200
+      threadNamePrefix: asyncRepositoryThread_
+      awaitTerminationSeconds: 60
+    asyncSecurityPolicy:
+      corePoolSize: 10
+      maxPoolSize: 200
+      queueCapacity: 25
+      keepAliveSeconds: 200
+      threadNamePrefix: asyncSecurityPolicyConfigurationThread_
+      awaitTerminationSeconds: 60
+    asyncMetadata:
+      corePoolSize: 10
+      maxPoolSize: 200
+      queueCapacity: 25
+      keepAliveSeconds: 200
+      threadNamePrefix: asyncMetadataConfigurationThread_
+      awaitTerminationSeconds: 60
 # Changes to these properties must also be applied to [folib/folib-web-integration-tests] and possibly the pipeline.
 # Please ping us on our chat channel (https://chat.carlspring.org/) to confirm.
 logging:

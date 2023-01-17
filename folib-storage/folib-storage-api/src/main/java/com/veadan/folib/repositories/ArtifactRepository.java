@@ -2,7 +2,6 @@ package com.veadan.folib.repositories;
 
 import cn.hutool.core.date.DatePattern;
 import cn.hutool.core.date.DateUtil;
-import com.alibaba.fastjson.JSONObject;
 import com.google.common.collect.Maps;
 import com.veadan.folib.artifact.coordinates.ArtifactLayoutDescription;
 import com.veadan.folib.artifact.coordinates.ArtifactLayoutLocator;
@@ -390,10 +389,16 @@ public class ArtifactRepository extends GremlinVertexRepository<Artifact> {
                                   String repositoryId,
                                   String path) {
         EntityTraversal<Vertex, Vertex> t = g().V()
+                .hasLabel(Vertices.GENERIC_ARTIFACT_COORDINATES)
+                .has(Properties.UUID, path)
+                .inE(Edges.ARTIFACT_HAS_ARTIFACT_COORDINATES)
+                .otherV()
                 .hasLabel(Vertices.ARTIFACT)
-                .has(Properties.UUID, String.format("%s-%s-%s", storageId, repositoryId, path))
+                .has(Properties.STORAGE_ID, storageId)
+                .has(Properties.REPOSITORY_ID, repositoryId)
                 .has(Properties.ARTIFACT_FILE_EXISTS, true);
-        return t.hasNext();
+        boolean result = t.hasNext();
+        return result;
     }
 
     public Artifact findOneArtifact(String storageId,

@@ -70,7 +70,6 @@ services:
     environment:
       - RUN_WORKDIR=/opt/folib
       - FOLIB_PORT=38080
-      - FOLIB_JVM_XMX=1024
       - FOLIB_DB_PROFILE=db_EMBEDDED
       - FOLIB_GREMLIN_SERVER_ENABLED=false
       - FOLIB_LOG_CONSOLE_ENABLED=false
