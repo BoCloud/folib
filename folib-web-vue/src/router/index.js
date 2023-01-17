@@ -74,7 +74,7 @@ let routes = [
 		// this generates a separate chunk (about.[hash].js) for this route
 		// which is lazy-loaded when the route is visited.
 		meta: {
-			title: '安全扫描',
+			title: '扫描首页',
 			sidebarMap: ['安全扫描'],
 			breadcrumbs: ['安全扫描', '扫描首页'],
 		},
@@ -88,7 +88,7 @@ let routes = [
 		// this generates a separate chunk (about.[hash].js) for this route
 		// which is lazy-loaded when the route is visited.
 		meta: {
-			title: '安全扫描',
+			title: '扫描详情',
 			sidebarMap: ['安全扫描','扫描详情'],
 			breadcrumbs: ['安全扫描', '扫描首页','扫描详情'],
 		},
