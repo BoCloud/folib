@@ -5,7 +5,7 @@
       :bordered="false" class="kanban-card mb-24"
 	>
     <a-row :gutter="[24]">
-      <a-col :span="8">
+      <a-col :span="6">
         <a-avatar
             :size="32"
             shape="square"
@@ -14,8 +14,15 @@
           <img :src="'images/folib/'+getLayoutType(task)+'.svg'" style="width: 100%;" alt="">
         </a-avatar>
       </a-col >
-      <a-col :span="16">
-        <h6 class="font-regular text-md mb-0">{{ task.id }}</h6>
+      <a-col :span="18">
+        <div>
+          <a-tag class="mb-5 bg-warning">存储空间</a-tag>
+          <span>{{ task.storageId }}</span>
+        </div>
+        <div>
+          <a-tag class="mb-0 bg-success">仓库名称</a-tag>
+          <span>{{ task.repositoryId }}</span>
+        </div>
       </a-col>
     </a-row>
 

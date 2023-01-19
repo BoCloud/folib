@@ -9,6 +9,7 @@ import java.util.Optional;
 
 import javax.inject.Inject;
 
+import com.google.common.collect.Sets;
 import com.veadan.folib.configuration.ConfigurationManager;
 import com.veadan.folib.io.*;
 import com.veadan.folib.providers.layout.LayoutProviderRegistry;
@@ -256,6 +257,7 @@ public abstract class AbstractRepositoryProvider implements RepositoryProvider, 
                                                                  .orElseGet(() -> new ArtifactIdGroupEntity(storage.getId(),
                                                                                                             repository.getId(),
                                                                                                             coordinates.getId()));
+        artifactGroup.setArtifacts(Sets.newHashSet());
         ArtifactCoordinates lastVersion = artifactIdGroupService.addArtifactToGroup(artifactGroup, artifact);
         logger.debug("Last version for group [{}] is [{}] with [{}]",
                      artifactGroup.getName(),

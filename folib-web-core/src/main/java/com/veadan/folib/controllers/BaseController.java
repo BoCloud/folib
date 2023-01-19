@@ -1,26 +1,20 @@
 package com.veadan.folib.controllers;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.veadan.folib.authorization.dto.Role;
+import com.veadan.folib.configuration.Configuration;
 import com.veadan.folib.configuration.ConfigurationManager;
+import com.veadan.folib.configuration.MutableConfiguration;
 import com.veadan.folib.controllers.support.ErrorResponseEntityBody;
 import com.veadan.folib.controllers.support.ListEntityBody;
 import com.veadan.folib.controllers.support.ResponseEntityBody;
+import com.veadan.folib.exception.ExceptionHandlingOutputStream;
 import com.veadan.folib.providers.io.RepositoryPathResolver;
 import com.veadan.folib.services.ArtifactResolutionService;
-import com.veadan.folib.configuration.Configuration;
-import com.veadan.folib.configuration.MutableConfiguration;
-import com.veadan.folib.exception.ExceptionHandlingOutputStream;
 import com.veadan.folib.services.ConfigurationManagementService;
 import com.veadan.folib.storage.Storage;
 import com.veadan.folib.storage.repository.Repository;
-
-import javax.inject.Inject;
-import javax.servlet.http.HttpServletResponse;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.util.List;
-
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.veadan.folib.users.userdetails.SpringSecurityUser;
 import org.apache.commons.collections4.IteratorUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -29,16 +23,27 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+
+import javax.inject.Inject;
+import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.util.Collections;
+import java.util.List;
+import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * Provides common subroutines that will be useful for any backend controllers.
  *
- * @author 
+ * @author
  * @author Veadan
  * @author veadan
  */
-public abstract class BaseController
-{
+public abstract class BaseController {
 
     protected final Logger logger = LoggerFactory.getLogger(getClass());
 
@@ -57,24 +62,20 @@ public abstract class BaseController
     @Inject
     protected ArtifactResolutionService artifactResolutionService;
 
-    protected Configuration getConfiguration()
-    {
+    protected Configuration getConfiguration() {
         return configurationManagementService.getConfiguration();
     }
 
-    protected Storage getStorage(String storageId)
-    {
+    protected Storage getStorage(String storageId) {
         return configurationManager.getConfiguration().getStorage(storageId);
     }
 
     protected Repository getRepository(String storageId,
-                                       String repositoryId)
-    {
+                                       String repositoryId) {
         return getStorage(storageId).getRepository(repositoryId);
     }
 
-    protected MutableConfiguration getMutableConfigurationClone()
-    {
+    protected MutableConfiguration getMutableConfigurationClone() {
         return configurationManagementService.getMutableConfigurationClone();
     }
 
@@ -87,14 +88,11 @@ public abstract class BaseController
      * @return Object
      */
     protected Object getResponseEntityBody(String message,
-                                           String acceptHeader)
-    {
-        if (acceptHeader != null && !acceptHeader.isEmpty())
-        {
+                                           String acceptHeader) {
+        if (acceptHeader != null && !acceptHeader.isEmpty()) {
             acceptHeader = acceptHeader.toLowerCase();
             if ((acceptHeader.contains(MediaType.TEXT_PLAIN_VALUE.toLowerCase()) ||
-                 acceptHeader.contains(MediaType.TEXT_HTML_VALUE.toLowerCase())))
-            {
+                    acceptHeader.contains(MediaType.TEXT_HTML_VALUE.toLowerCase()))) {
                 return message;
             }
         }
@@ -108,8 +106,7 @@ public abstract class BaseController
      * @return
      */
     protected ResponseEntity getJSONListResponseEntityBody(String fieldName,
-                                                           List<?> list)
-    {
+                                                           List<?> list) {
         return ResponseEntity.ok(new ListEntityBody(fieldName, list));
     }
 
@@ -119,8 +116,7 @@ public abstract class BaseController
      * @return ResponseEntity
      */
     protected ResponseEntity getJSONListResponseEntityBody(String fieldName,
-                                                           final Iterable<?> iterable)
-    {
+                                                           final Iterable<?> iterable) {
         List<?> list = IteratorUtils.toList(iterable.iterator());
         return getJSONListResponseEntityBody(fieldName, list);
     }
@@ -128,13 +124,12 @@ public abstract class BaseController
     /**
      * Used for operations which have been successfully performed.
      *
-     * @param message       Success to be returned to the client.
-     * @param headers       response headers
-     * @param acceptHeader  The Accept header, so that we can return the proper json/plain text response.
+     * @param message      Success to be returned to the client.
+     * @param headers      response headers
+     * @param acceptHeader The Accept header, so that we can return the proper json/plain text response.
      * @return ResponseEntity
      */
-    protected ResponseEntity getSuccessfulResponseEntity(String message, HttpHeaders headers, String acceptHeader)
-    {
+    protected ResponseEntity getSuccessfulResponseEntity(String message, HttpHeaders headers, String acceptHeader) {
         return ResponseEntity.ok().headers(headers).body(getResponseEntityBody(message, acceptHeader));
     }
 
@@ -146,8 +141,7 @@ public abstract class BaseController
      * @return ResponseEntity
      */
     protected ResponseEntity getSuccessfulResponseEntity(String message,
-                                                         String acceptHeader)
-    {
+                                                         String acceptHeader) {
         return getSuccessfulResponseEntity(message, null, acceptHeader);
     }
 
@@ -161,10 +155,9 @@ public abstract class BaseController
      */
     protected ResponseEntity getFailedResponseEntity(HttpStatus status,
                                                      String message,
-                                                     String acceptHeader)
-    {
+                                                     String acceptHeader) {
         return ResponseEntity.status(status)
-                             .body(getResponseEntityBody(message, acceptHeader));
+                .body(getResponseEntityBody(message, acceptHeader));
     }
 
     /**
@@ -173,8 +166,7 @@ public abstract class BaseController
      * @return ResponseEntity
      */
     protected ResponseEntity getBadRequestResponseEntity(String message,
-                                                         String acceptHeader)
-    {
+                                                         String acceptHeader) {
         return getFailedResponseEntity(HttpStatus.BAD_REQUEST, message, acceptHeader);
     }
 
@@ -186,10 +178,9 @@ public abstract class BaseController
      * @return ResponseEntity
      */
     protected ResponseEntity getNotFoundResponseEntity(String message,
-                                                       String acceptHeader)
-    {
+                                                       String acceptHeader) {
         return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                             .body(getResponseEntityBody(message, acceptHeader));
+                .body(getResponseEntityBody(message, acceptHeader));
 
     }
 
@@ -201,10 +192,9 @@ public abstract class BaseController
      * @return ResponseEntity
      */
     protected ResponseEntity getServiceUnavailableResponseEntity(String message,
-                                                                 String acceptHeader)
-    {
+                                                                 String acceptHeader) {
         return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
-                             .body(getResponseEntityBody(message, acceptHeader));
+                .body(getResponseEntityBody(message, acceptHeader));
     }
 
     /**
@@ -213,11 +203,10 @@ public abstract class BaseController
      * @return ResponseEntity
      */
     protected ResponseEntity getRuntimeExceptionResponseEntity(String message,
-                                                               String acceptHeader)
-    {
+                                                               String acceptHeader) {
         return getExceptionResponseEntity(HttpStatus.INTERNAL_SERVER_ERROR,
-                                          new RuntimeException(message),
-                                          acceptHeader);
+                new RuntimeException(message),
+                acceptHeader);
     }
 
     /**
@@ -228,8 +217,7 @@ public abstract class BaseController
      */
     protected ResponseEntity getExceptionResponseEntity(HttpStatus httpStatus,
                                                         Throwable cause,
-                                                        String acceptHeader)
-    {
+                                                        String acceptHeader) {
         return getExceptionResponseEntity(httpStatus, cause.getMessage(), cause, acceptHeader);
     }
 
@@ -243,13 +231,12 @@ public abstract class BaseController
     protected ResponseEntity getExceptionResponseEntity(HttpStatus httpStatus,
                                                         String message,
                                                         Throwable cause,
-                                                        String acceptHeader)
-    {
+                                                        String acceptHeader) {
         logger.error(message, cause);
 
         Object responseEntityBody = getResponseEntityBody(message, acceptHeader);
         return ResponseEntity.status(httpStatus)
-                             .body(responseEntityBody);
+                .body(responseEntityBody);
     }
 
     /**
@@ -262,8 +249,7 @@ public abstract class BaseController
      */
     protected ResponseEntity<InputStreamResource> getStreamToResponseEntity(InputStream is,
                                                                             String filename)
-            throws IllegalStateException
-    {
+            throws IllegalStateException {
         InputStreamResource inputStreamResource = new InputStreamResource(is);
 
         HttpHeaders httpHeaders = new HttpHeaders();
@@ -274,29 +260,24 @@ public abstract class BaseController
 
     // TODO: The methods below are obsolete and should be gradually removed from usage. We'll maybe only keep copyToResponse.
     protected ResponseEntity toResponseEntityError(String message,
-                                                   HttpStatus httpStatus)
-    {
+                                                   HttpStatus httpStatus) {
         return ResponseEntity.status(httpStatus)
-                             .body(new ErrorResponseEntityBody(message));
+                .body(new ErrorResponseEntityBody(message));
     }
 
-    protected ResponseEntity toResponseEntityError(String message)
-    {
+    protected ResponseEntity toResponseEntityError(String message) {
         return toResponseEntityError(message, HttpStatus.INTERNAL_SERVER_ERROR);
     }
 
     public static void copyToResponse(InputStream is,
                                       HttpServletResponse response)
-            throws IOException
-    {
-        try (OutputStream os = new ExceptionHandlingOutputStream(response.getOutputStream()))
-        {
+            throws IOException {
+        try (OutputStream os = new ExceptionHandlingOutputStream(response.getOutputStream())) {
             long totalBytes = 0L;
 
             int readLength;
             byte[] bytes = new byte[4096];
-            while ((readLength = is.read(bytes)) != -1)
-            {
+            while ((readLength = is.read(bytes)) != -1) {
                 // Write the artifact
                 os.write(bytes, 0, readLength);
                 os.flush();
@@ -307,5 +288,10 @@ public abstract class BaseController
             response.setHeader(HttpHeaders.CONTENT_LENGTH, Long.toString(totalBytes));
             response.flushBuffer();
         }
+    }
+
+    public Set<String> roleNames(Authentication authentication) {
+        SpringSecurityUser userDetails = (SpringSecurityUser) authentication.getPrincipal();
+        return Optional.ofNullable(userDetails.getRoles()).orElse(Collections.emptySet()).stream().map(Role::getName).collect(Collectors.toSet());
     }
 }
