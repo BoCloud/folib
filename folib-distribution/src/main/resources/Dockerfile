@@ -1,4 +1,4 @@
-FROM openjdk:11-jdk
+FROM 58.210.154.140:2477/folib-common/folib-docker/folib-base:latest
 MAINTAINER folib.com
 ENV TZ=Asia/Shanghai
 # 项目构建文件结构 环境变量
