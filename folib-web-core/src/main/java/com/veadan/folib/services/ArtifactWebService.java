@@ -5,6 +5,7 @@ import com.veadan.folib.configuration.MetadataConfiguration;
 import com.veadan.folib.domain.Artifact;
 import com.veadan.folib.forms.artifact.ArtifactMetadataForm;
 import com.veadan.folib.providers.io.RepositoryPath;
+import org.springframework.security.core.Authentication;
 
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
@@ -78,34 +79,34 @@ public interface ArtifactWebService {
     /**
      * 扫描信息统计
      *
-     * @param username 登录用户
+     * @param authentication 登录用户
      * @return 扫描信息统计
      */
-    CountForm getCount(String username);
+    CountForm getCount(Authentication authentication);
 
     /**
      * 近一个月内统计信息
      *
-     * @param username 登录用户
+     * @param authentication 登录用户
      * @return 近一个月内统计信息
      */
-    List<DayCountForm> monthCount(String username);
+    List<DayCountForm> monthCount(Authentication authentication);
 
     /**
      * 近一周内数据
      *
-     * @param username 登录用户
+     * @param authentication 登录用户
      * @return 近一周内数据
      */
-    WeekCountForm weekCount(String username);
+    WeekCountForm weekCount(Authentication authentication);
 
     /**
      * 仓库扫描情况
      *
-     * @param username 登录用户
+     * @param authentication 登录用户
      * @return 仓库扫描情况
      */
-    List<RepositoryCountForm> repositories(String username);
+    List<RepositoryCountForm> repositories(Authentication authentication);
 
     /**
      * 仓库扫描情况

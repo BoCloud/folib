@@ -9,6 +9,7 @@ import com.alibaba.excel.write.metadata.fill.FillConfig;
 import com.alibaba.fastjson.JSONObject;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
+import com.veadan.folib.authorization.dto.Role;
 import com.veadan.folib.cloud.storage.s3fs.S3Iterator;
 import com.veadan.folib.cloud.storage.s3fs.S3Path;
 import com.veadan.folib.cluster.SyncMetadataEnum;
@@ -33,6 +34,8 @@ import com.veadan.folib.scanner.mapper.ScanRulesMapper;
 import com.veadan.folib.services.*;
 import com.veadan.folib.storage.StorageDto;
 import com.veadan.folib.storage.repository.Repository;
+import com.veadan.folib.users.domain.SystemRole;
+import com.veadan.folib.users.userdetails.SpringSecurityUser;
 import com.veadan.folib.util.CustomDateUtils;
 import com.veadan.folib.util.FileSizeConvertUtils;
 import lombok.extern.slf4j.Slf4j;
@@ -45,6 +48,8 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 import tk.mybatis.mapper.entity.Example;
 
@@ -233,12 +238,15 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
     }
 
     @Override
-    public CountForm getCount(String username) {
+    public CountForm getCount(Authentication authentication) {
         Long zero = 0L;
         CountForm countForm = CountForm.builder().scanCount(zero).notScanCount(zero).scanSuccessCount(zero).scanFailCount(zero)
                 .dependencyCount(zero).dependencyVulnerabilitiesCount(zero).vulnerabilitiesCount(zero).suppressedVulnerabilitiesCount(zero).build();
-        List<String> storageIds = havePermissionStorageIdList(username);
+        List<String> storageIds = havePermissionStorageIdList(authentication);
         List<String> storageIdAndRepositoryIdList = getStorageIdsRepositoryIdsByOnScanAndStorageIds(1, storageIds);
+        if (CollectionUtils.isEmpty(storageIdAndRepositoryIdList)) {
+            return null;
+        }
         List<String> disableStorageIdAndRepositoryIdList = getStorageIdsRepositoryIdsByOnScanAndStorageIds(0, storageIds);
         Map<String, Long> map = artifactRepository.countArtifactByStorageIdsAndRepositories(storageIdAndRepositoryIdList, disableStorageIdAndRepositoryIdList);
         countForm.setScanCount(map.getOrDefault("scanCount", zero));
@@ -254,13 +262,16 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
     }
 
     @Override
-    public List<DayCountForm> monthCount(String username) {
-        List<String> storageIds = havePermissionStorageIdList(username);
+    public List<DayCountForm> monthCount(Authentication authentication) {
+        List<String> storageIds = havePermissionStorageIdList(authentication);
         List<String> dayList = CustomDateUtils.getDaysBetween(30);
         Map<String, Long> map = null;
         List<DayCountForm> list = Lists.newArrayList();
         Long zero = 0L, dependencyCount, vulnerabilitiesCount;
         List<String> storageIdAndRepositoryIdList = getStorageIdsRepositoryIdsByOnScanAndStorageIds(1, storageIds);
+        if (CollectionUtils.isEmpty(storageIdAndRepositoryIdList)) {
+            return null;
+        }
         for (String date : dayList) {
             map = artifactRepository.countArtifactByStorageIdsAndRepositoryIdsAndDate(storageIdAndRepositoryIdList, date, null, null);
             dependencyCount = map.getOrDefault("dependencyCount", zero);
@@ -273,8 +284,8 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
     }
 
     @Override
-    public WeekCountForm weekCount(String username) {
-        List<String> storageIds = havePermissionStorageIdList(username);
+    public WeekCountForm weekCount(Authentication authentication) {
+        List<String> storageIds = havePermissionStorageIdList(authentication);
         List<String> currentWeekList = CustomDateUtils.getDaysBetween(7);
         List<String> lastWeekList = CustomDateUtils.getDaysBetween(14);
         lastWeekList.removeAll(currentWeekList);
@@ -283,6 +294,9 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
         List<WeekDayCountForm> list = Lists.newArrayList();
         Long zero = 0L, vulnerabilitiesCount;
         List<String> storageIdAndRepositoryIdList = getStorageIdsRepositoryIdsByOnScanAndStorageIds(1, storageIds);
+        if (CollectionUtils.isEmpty(storageIdAndRepositoryIdList)) {
+            return null;
+        }
         for (String date : currentWeekList) {
             map = artifactRepository.countArtifactByStorageIdsAndRepositoryIdsAndDate(storageIdAndRepositoryIdList, date, null, null);
             vulnerabilitiesCount = map.getOrDefault("vulnerabilitiesCount", zero);
@@ -303,8 +317,11 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
     }
 
     @Override
-    public List<RepositoryCountForm> repositories(String username) {
-        List<String> storageIds = havePermissionStorageIdList(username);
+    public List<RepositoryCountForm> repositories(Authentication authentication) {
+        List<String> storageIds = havePermissionStorageIdList(authentication);
+        if (CollectionUtils.isEmpty(storageIds)) {
+            return Collections.emptyList();
+        }
         Example example = new Example(ScanRules.class);
         example.createCriteria().andEqualTo("onScan", 1).andIn("storage", storageIds);
         List<ScanRules> scanRulesList = scanRulesMapper.selectByExample(example);
@@ -451,7 +468,7 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
                 artifactPath = imagePath.getKey().replace(String.format("%s/%s/", repositoryPath.getStorageId(), repositoryPath.getRepositoryId()), "");
             }
         } else {
-            if(!Files.isDirectory(repositoryPath)){
+            if (!Files.isDirectory(repositoryPath)) {
                 return null;
             }
             DirectoryListing directoryListing = directoryListingService.fromRepositoryPath(repositoryPath);
@@ -505,15 +522,22 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
         clusterSyncService.syncMetadataConfiguration(syncMetadataDto);
     }
 
+    public Set<String> roleNames(Authentication authentication) {
+        SpringSecurityUser userDetails = (SpringSecurityUser) authentication.getPrincipal();
+        return Optional.ofNullable(userDetails.getRoles()).orElse(Collections.emptySet()).stream().map(Role::getName).collect(Collectors.toSet());
+    }
+
     /**
      * 获取有权限访问的存储空间id列表
      *
      * @return 有权限访问的存储空间id列表
      */
-    public List<String> havePermissionStorageIdList(String username) {
+    public List<String> havePermissionStorageIdList(Authentication authentication) {
         List<String> storageIdList = Lists.newArrayList();
-        String admin = "admin";
-        if (admin.equals(username)) {
+        Set<String> roleNames = roleNames(authentication);
+        final UserDetails loggedUser = (UserDetails) authentication.getPrincipal();
+        String username = loggedUser.getUsername();
+        if (roleNames.contains(SystemRole.ADMIN.name())) {
             storageIdList = new ArrayList<>(configurationManagementService.getMutableConfigurationClone().getStorages().keySet());
             return storageIdList;
         }
@@ -536,6 +560,9 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
      * @return 仓库名称集合
      */
     private List<String> getStorageIdsRepositoryIdsByOnScanAndStorageIds(Integer onScan, List<String> storageIds) {
+        if (CollectionUtils.isEmpty(storageIds)) {
+            return Collections.emptyList();
+        }
         Example example = new Example(ScanRules.class);
         example.createCriteria().andEqualTo("onScan", onScan).andIn("storage", storageIds);
         List<ScanRules> scanRulesList = scanRulesMapper.selectByExample(example);

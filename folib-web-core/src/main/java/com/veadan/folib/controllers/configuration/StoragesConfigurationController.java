@@ -22,6 +22,7 @@ import com.veadan.folib.storage.Views;
 import com.veadan.folib.storage.repository.Repository;
 import com.veadan.folib.storage.repository.RepositoryData;
 import com.veadan.folib.storage.repository.RepositoryDto;
+import com.veadan.folib.users.domain.SystemRole;
 import com.veadan.folib.validation.RequestBodyValidationException;
 import com.veadan.folib.web.RepositoryMapping;
 import io.swagger.annotations.*;
@@ -174,9 +175,10 @@ public class StoragesConfigurationController
         final List<Storage> storages = new ArrayList<>(configurationManagementService.getConfiguration()
                 .getStorages()
                 .values());
+        Set<String> roleNames = roleNames(authentication);
         final UserDetails loggedUser = (UserDetails) authentication.getPrincipal();
         StoragesOutput storagesOutput = new StoragesOutput(storages);
-        if (!"admin".equals(loggedUser.getUsername())) {
+        if (!roleNames.contains(SystemRole.ADMIN.name())) {
             List<Storage> list = storagesOutput.getStorages();
             List<Storage> collect = list.stream().filter(s -> CollectionUtil.isEmpty(s.getUsers()) || (CollectionUtil.isNotEmpty(s.getUsers()) && s.getUsers().contains(loggedUser.getUsername()))).collect(Collectors.toList());
             storagesOutput.setStorages(collect);
@@ -209,7 +211,8 @@ public class StoragesConfigurationController
         final UserDetails loggedUser = (UserDetails) authentication.getPrincipal();
         List<StorageTreeForm> storageTreeForms = Lists.newArrayList();
         if (CollectionUtil.isNotEmpty(storages)) {
-            boolean filterByUser = !loggedUser.getUsername().equals("admin");
+            Set<String> roleNames = roleNames(authentication);
+            boolean filterByUser = !roleNames.contains(SystemRole.ADMIN.name());
             boolean filterByStorageId = StringUtils.isNotBlank(storageId);
             boolean filterByType = StringUtils.isNotBlank(type);
             boolean filterByLayout = StringUtils.isNotBlank(layout);
