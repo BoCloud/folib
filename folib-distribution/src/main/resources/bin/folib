@@ -232,7 +232,7 @@ run()
     set -eo pipefail;
 
     if [[ $1 != "console" ]]; then
-        $CMD >/dev/null 2>&1 & echo $! > $FOLIB_PID_FILE
+        exec $CMD >/dev/null 2>&1 & echo $! > $FOLIB_PID_FILE
         printf "  PID: $(get_pid) \n"
         printf "  CMD: $CMD\n\n"
     else
