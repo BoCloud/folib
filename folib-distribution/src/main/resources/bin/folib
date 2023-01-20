@@ -37,6 +37,11 @@ FOLIB_REMOTE_DB_PORT="${FOLIB_REMOTE_DB_PORT:-49142}"
 FOLIB_REMOTE_DB_USER="${FOLIB_REMOTE_DB_USER:-root}"
 FOLIB_REMOTE_DB_PASS="${FOLIB_REMOTE_DB_PASS:-folib-cassandra}"
 
+#EMBEDDED
+FOLIB_EMBEDDED_DB_HOST="${FOLIB_EMBEDDED_DB_HOST:-127.0.0.1}"
+FOLIB_CASSANDRA_LISTEN_ADDRESS="${FOLIB_CASSANDRA_LISTEN_ADDRESS:-127.0.0.1}"
+FOLIB_CASSANDRA_SEEDS="${FOLIB_CASSANDRA_SEEDS:-127.0.0.1}"
+
 #jmx相关
 FOLIB_JMX_PORT="${FOLIB_JMX_PORT:-7199}"
 
@@ -178,6 +183,12 @@ run()
     JAVA_OPTS+=" -DREMOTE_DB_PASS=${FOLIB_REMOTE_DB_PASS}"
     fi
 
+    if [[ "$FOLIB_DB_PROFILE" == db_EMBEDDED ]]; then
+        JAVA_OPTS+=" -DEMBEDDED_DB_HOST=${FOLIB_EMBEDDED_DB_HOST}"
+        JAVA_OPTS+=" -DCASSANDRA_LISTEN_ADDRESS=${FOLIB_CASSANDRA_LISTEN_ADDRESS}"
+        JAVA_OPTS+=" -DCASSANDRA_SEEDS=${FOLIB_CASSANDRA_SEEDS}"
+    fi
+
     JAVA_OPTS+=" -Dcom.sun.jndi.rmiURLParsing=legacy
                  -Dcassandra.jmx.remote.port=${FOLIB_JMX_PORT}
                  -Dcom.sun.management.jmxremote.rmi.port=${FOLIB_JMX_PORT}
@@ -221,7 +232,7 @@ run()
     set -eo pipefail;
 
     if [[ $1 != "console" ]]; then
-        $CMD >/dev/null 2>&1 & echo $! > $FOLIB_PID_FILE
+        exec $CMD >/dev/null 2>&1 & echo $! > $FOLIB_PID_FILE
         printf "  PID: $(get_pid) \n"
         printf "  CMD: $CMD\n\n"
     else
