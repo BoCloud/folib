@@ -193,6 +193,9 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
             metadataJson.put(key, artifactMetadata);
             artifact.setMetadata(metadataJson.toJSONString());
             artifactService.saveOrUpdateArtifact(artifact);
+            RepositoryPath repositoryPath = repositoryPathResolver.resolve(artifactMetadataForm.getStorageId(), artifactMetadataForm.getRepositoryId(), artifactMetadataForm.getArtifactPath());
+            repositoryPath.setArtifact(artifact);
+            artifactEvent.dispatchArtifactMetaDataEvent(repositoryPath);
         } catch (Exception ex) {
             log.error("=====>>>>>保存制品元数据错误：{}", ExceptionUtils.getStackTrace(ex));
             throw new RuntimeException("保存制品元数据错误，请稍后重试");
@@ -213,6 +216,9 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
                 metadataJson.put(key, artifactMetadata);
                 artifact.setMetadata(metadataJson.toJSONString());
                 artifactService.saveOrUpdateArtifact(artifact);
+                RepositoryPath repositoryPath = repositoryPathResolver.resolve(artifactMetadataForm.getStorageId(), artifactMetadataForm.getRepositoryId(), artifactMetadataForm.getArtifactPath());
+                repositoryPath.setArtifact(artifact);
+                artifactEvent.dispatchArtifactMetaDataEvent(repositoryPath);
             }
         } catch (Exception ex) {
             log.error("=====>>>>>修改制品元数据错误：{}", ExceptionUtils.getStackTrace(ex));

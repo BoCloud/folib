@@ -81,6 +81,14 @@ public class ArtifactUtils {
                 log.debug("=====>>>>> php布局");
                 List<String> suffixList = Arrays.asList("tar", "tar.gz", "tar.bz2", "zip", "json");
                 flag = endsWith(repositoryPath.getFileName().toString(), suffixList);
+            } else if (repositoryPath.getFileSystem() instanceof ConanFileSystem) {
+                log.debug("=====>>>>> Conan布局");
+                List<String> suffixList = Arrays.asList(".tgz", ".py");
+                flag = endsWith(repositoryPath.getFileName().toString(), suffixList);
+            } else if (repositoryPath.getFileSystem() instanceof HelmFileSystem) {
+                List<String> suffixList = Arrays.asList(".tgz");
+                flag = endsWith(repositoryPath.getFileName().toString(), suffixList);
+                log.debug("=====>>>>> Helm布局");
             }
         }
         log.debug("=====>>>>> 是否是该布局支持的类型：{}", flag);

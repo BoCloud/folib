@@ -1,4 +1,4 @@
-FROM openjdk:11-jdk
+FROM 58.210.154.140:2477/folib-common/folib-docker/folib-base:latest
 MAINTAINER folib.com
 ENV TZ=Asia/Shanghai
 # 项目构建文件结构 环境变量
@@ -40,6 +40,7 @@ ENV FOLIB_S3_REGION="${FOLIB_S3_REGION:-folib}"
 ENV FOLIB_S3_URI="${FOLIB_S3_URI:-s3://localhost:9000/}"
 ENV FOLIB_S3_ACCESS_KEY="${FOLIB_S3_ACCESS_KEY:-folib}"
 ENV FOLIB_S3_SECRET_KEY="${FOLIB_S3_SECRET_KEY:-folib}"
+ENV FOLIB_PROMOTE_HOSTS="${FOLIB_PROMOTE_HOSTS:-}"
 
 RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
 RUN mkdir ${RUN_WORKDIR}
