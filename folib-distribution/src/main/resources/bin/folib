@@ -190,6 +190,7 @@ run()
     fi
 
     JAVA_OPTS+=" -Dcom.sun.jndi.rmiURLParsing=legacy
+                 -Djava.rmi.server.hostname=${FOLIB_DISTRIBUTED_LOCKIP}
                  -Dcassandra.jmx.remote.port=${FOLIB_JMX_PORT}
                  -Dcom.sun.management.jmxremote.rmi.port=${FOLIB_JMX_PORT}
                  -Dcom.sun.management.jmxremote.authenticate=false"
