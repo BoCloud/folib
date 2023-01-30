@@ -1460,14 +1460,15 @@ export default {
 
     },
     repositoryList() {
+      let layout = this.genLayoutType(this.layoutChecked)
       this.queryData.storageId = this.currentStorage.id
-      this.queryData.layout = this.genLayoutType(this.layoutChecked)
+      this.queryData.layout = layout
       //getLibraryByQuery(this.queryData).then(res => {
         // const tasksObj = objectToGroupRepositories(this.folibRepository.groupRepositories, res, this.folibRepository.id)
         // this.boards[0].tasks = tasksObj.enableSelect
         // this.boards[1].tasks = tasksObj.isSelect
       //})
-      this.getStoragesAndRepositories(this.folibRepository.layout, this.folibRepository.id)
+      this.getStoragesAndRepositories(layout, this.folibRepository.id)
     },
     getStoragesAndRepositories(layout, excludeRepositoryId) {
       getStoragesAndRepositories({ layout: layout, excludeRepositoryId: excludeRepositoryId }).then(res => {
@@ -1478,7 +1479,7 @@ export default {
             item.children.forEach(children => {
               id = children.key.replace(",", ":")
               arr = id.split(":")
-              repositories.push({id: id, storageId: arr[0], repositoryId: arr[1], layout: this.folibRepository.layout})
+              repositories.push({id: id, storageId: arr[0], repositoryId: arr[1], layout: children.layout})
             })
           }
         })
