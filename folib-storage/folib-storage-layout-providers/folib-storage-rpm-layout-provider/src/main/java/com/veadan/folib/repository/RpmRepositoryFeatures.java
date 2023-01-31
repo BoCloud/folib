@@ -374,8 +374,8 @@ public class RpmRepositoryFeatures implements RepositoryFeatures
     }
 
     @Component
-    @Scope(scopeName = "request", proxyMode = ScopedProxyMode.TARGET_CLASS)
-    public class SearchPackagesEventListener
+    @Scope(scopeName = "singleton", proxyMode = ScopedProxyMode.TARGET_CLASS)
+    public class RpmSearchPackagesEventListener
     {
 
         private RpmSearchRequest rpmSearchRequest;
@@ -432,8 +432,8 @@ public class RpmRepositoryFeatures implements RepositoryFeatures
     }
 
     @Component
-    @Scope(scopeName = "request", proxyMode = ScopedProxyMode.TARGET_CLASS)
-    public class ViewPackageEventListener
+    @Scope(scopeName = "singleton", proxyMode = ScopedProxyMode.TARGET_CLASS)
+    public class RpmViewPackageEventListener
     {
 
         private RpmViewRequest rpmSearchRequest;

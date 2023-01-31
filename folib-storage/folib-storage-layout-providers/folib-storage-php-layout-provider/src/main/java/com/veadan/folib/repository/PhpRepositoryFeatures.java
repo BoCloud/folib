@@ -62,8 +62,8 @@ public class PhpRepositoryFeatures
     }
 
     @Component
-    @Scope(scopeName = "request", proxyMode = ScopedProxyMode.TARGET_CLASS)
-    public class SearchPackagesEventListener {
+    @Scope(scopeName = "singleton", proxyMode = ScopedProxyMode.TARGET_CLASS)
+    public class PhpSearchPackagesEventListener {
 
         private PhpSearchRequest phpSearchRequest;
 

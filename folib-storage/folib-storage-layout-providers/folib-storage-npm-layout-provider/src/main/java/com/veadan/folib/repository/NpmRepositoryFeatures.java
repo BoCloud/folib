@@ -383,7 +383,7 @@ public class NpmRepositoryFeatures implements RepositoryFeatures
     }
 
     @Component
-    @Scope(scopeName = "request", proxyMode = ScopedProxyMode.TARGET_CLASS)
+    @Scope(scopeName = "singleton", proxyMode = ScopedProxyMode.TARGET_CLASS)
     public class SearchPackagesEventListener
     {
 
@@ -441,7 +441,7 @@ public class NpmRepositoryFeatures implements RepositoryFeatures
     }
 
     @Component
-    @Scope(scopeName = "request", proxyMode = ScopedProxyMode.TARGET_CLASS)
+    @Scope(scopeName = "singleton", proxyMode = ScopedProxyMode.TARGET_CLASS)
     public class ViewPackageEventListener
     {
 

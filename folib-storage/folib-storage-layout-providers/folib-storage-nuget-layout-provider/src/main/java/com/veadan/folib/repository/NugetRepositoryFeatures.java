@@ -226,7 +226,7 @@ public class NugetRepositoryFeatures
     }
 
     @Component
-    @Scope(scopeName = "request", proxyMode = ScopedProxyMode.TARGET_CLASS)
+    @Scope(scopeName = "singleton", proxyMode = ScopedProxyMode.TARGET_CLASS)
     public class RepositorySearchEventListener
     {
 
