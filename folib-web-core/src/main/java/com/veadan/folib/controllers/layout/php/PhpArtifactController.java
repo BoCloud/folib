@@ -61,7 +61,7 @@ public class PhpArtifactController extends BaseArtifactController {
     private PhpSearchResultSupplier phpSearchResultSupplier;
 
     @Inject
-    private PhpRepositoryFeatures.SearchPackagesEventListener searcPackagesEventListener;
+    private PhpRepositoryFeatures.PhpSearchPackagesEventListener phpSearchPackagesEventListener;
 
     @Inject
     private RepositoryPathResolver repositoryPathResolver;
@@ -90,7 +90,7 @@ public class PhpArtifactController extends BaseArtifactController {
         }
         phpSearchRequest.setSize(size);
 
-        searcPackagesEventListener.setPhpSearchRequest(phpSearchRequest);
+        phpSearchPackagesEventListener.setPhpSearchRequest(phpSearchRequest);
 
         RepositoryProvider provider = repositoryProviderRegistry.getProvider(repository.getType());
 

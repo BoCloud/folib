@@ -180,7 +180,7 @@ public class StoragesConfigurationController
         StoragesOutput storagesOutput = new StoragesOutput(storages);
         if (!roleNames.contains(SystemRole.ADMIN.name())) {
             List<Storage> list = storagesOutput.getStorages();
-            List<Storage> collect = list.stream().filter(s -> CollectionUtil.isEmpty(s.getUsers()) || (CollectionUtil.isNotEmpty(s.getUsers()) && s.getUsers().contains(loggedUser.getUsername()))).collect(Collectors.toList());
+            List<Storage> collect = list.stream().filter(s -> (CollectionUtil.isNotEmpty(s.getUsers()) && s.getUsers().contains(loggedUser.getUsername()))).collect(Collectors.toList());
             storagesOutput.setStorages(collect);
         }
         return ResponseEntity.ok(storagesOutput);
