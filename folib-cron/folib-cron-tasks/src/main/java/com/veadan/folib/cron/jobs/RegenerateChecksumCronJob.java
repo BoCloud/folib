@@ -16,7 +16,7 @@ import java.util.Set;
 import com.google.common.collect.ImmutableSet;
 
 /**
- * @author Kate Novik.
+ * @author veadan
  */
 public class RegenerateChecksumCronJob
         extends JavaCronJob

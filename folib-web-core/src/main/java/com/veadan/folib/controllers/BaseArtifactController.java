@@ -116,6 +116,12 @@ public abstract class BaseArtifactController
                     //黑名单阻断
                     flag = artifact.getVulnerabilities().stream().anyMatch(item -> repositoryBlacks.contains(item) ||
                             (!repositoryWhites.contains(item) && platformBlacks.contains(item)));
+                } else if (BlockTypeEnum.PACKAGE_NAME.getType().equals(mutableSecurityPolicyConfiguration.getBlockType())) {
+                    //包名阻断
+                    Set<String> packageNames = mutableSecurityPolicyConfiguration.getPackageNames();
+                    if (CollectionUtils.isNotEmpty(packageNames)) {
+                        flag = packageNames.stream().anyMatch(packageName -> artifact.getArtifactPath().contains(packageName));
+                    }
                 }
                 if (flag) {
                     throw new RuntimeException(artifact.getUuid() + "制品存在漏洞，禁止下载！！！");

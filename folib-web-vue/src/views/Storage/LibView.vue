@@ -2213,6 +2213,15 @@ export default {
     },
     treeSelect(key, e) {
       this.currentTreeNode = e.node.dataRef
+      this.scanReport = { 
+        show: false,
+        report: [],
+        vulnerabilitesCount: 0,
+        critical: 0,
+        high: 0,
+        medium: 0,
+        low: 0,
+      }
       if (this.currentTreeNode.type === 'file') {
         getArtifact(
           this.repositoryType,
@@ -2240,15 +2249,6 @@ export default {
         })
       } else if (this.currentTreeNode.type === 'dir') {
         this.currentFileDetial = null
-        this.scanReport = { 
-          show: false,
-          report: [],
-          vulnerabilitesCount: 0,
-          critical: 0,
-          high: 0,
-          medium: 0,
-          low: 0,
-        }
       }
     },
     getFileType(name) {

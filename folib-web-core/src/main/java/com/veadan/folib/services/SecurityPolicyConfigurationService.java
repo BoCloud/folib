@@ -75,6 +75,22 @@ public interface SecurityPolicyConfigurationService {
     void saveOrUpdateBlock(SecurityPolicyConfigurationForm securityPolicyConfigurationForm) throws IOException;
 
     /**
+     * 新增包名阻断配置
+     *
+     * @param securityPolicyConfigurationForm 参数
+     * @throws IOException io异常
+     */
+    void addPackageName(SecurityPolicyConfigurationForm securityPolicyConfigurationForm) throws IOException;
+
+    /**
+     * 删除包名阻断配置
+     *
+     * @param securityPolicyConfigurationForm 参数
+     * @throws IOException io异常
+     */
+    void deletePackageName(SecurityPolicyConfigurationForm securityPolicyConfigurationForm) throws IOException;
+
+    /**
      * 查询安全策略配置
      *
      * @return 安全策略配置

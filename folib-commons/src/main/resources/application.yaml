@@ -77,7 +77,7 @@ folib:
     async:
       corePoolSize: 20
       maxPoolSize: 200
-      queueCapacity: 25
+      queueCapacity: 200
       keepAliveSeconds: 200
       threadNamePrefix: asyncThread_
       awaitTerminationSeconds: 60

@@ -15,6 +15,7 @@ import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.Response;
 
 import com.veadan.folib.config.FolibPublicUtils;
+import com.veadan.folib.io.RepositoryStreamReadContext;
 import com.veadan.folib.providers.io.*;
 import com.veadan.folib.providers.repository.event.ProxyRepositoryPathExpiredEvent;
 import com.veadan.folib.providers.repository.event.RemoteRepositorySearchEvent;
@@ -255,5 +256,19 @@ public class ProxyRepositoryProvider
     {
         super.commit(ctx);
     }
-    
+
+    @Override
+    public void commitStoreIndex(RepositoryStreamReadContext ctx)
+            throws IOException
+    {
+        super.commitStoreIndex(ctx);
+    }
+
+    @Override
+    public void onStoreIndexAfter(RepositoryStreamReadContext ctx)
+            throws IOException
+    {
+        super.onStoreIndexAfter(ctx);
+    }
+
 }

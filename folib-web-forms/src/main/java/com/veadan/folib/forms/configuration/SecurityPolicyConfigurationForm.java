@@ -61,7 +61,7 @@ public class SecurityPolicyConfigurationForm
      */
     private Set<String> blacks;
     /**
-     * 阻断类型 1 全量阻断 2 黑名单阻断
+     * 阻断类型 1 全量阻断 2 黑名单阻断 3 包名阻断
      */
     @NotNull(message = "请选择阻断方式", groups = {BlockGroup.class})
     private Integer blockType;
@@ -73,6 +73,10 @@ public class SecurityPolicyConfigurationForm
      * 过滤白名单
      */
     private Boolean filterWhites;
+    /**
+     * 包名
+     */
+    private Set<String> packageNames;
 
     public SecurityPolicyConfigurationForm(SecurityPolicyConfiguration securityPolicyConfiguration) {
         this.levels = securityPolicyConfiguration.getLevels();
@@ -84,6 +88,7 @@ public class SecurityPolicyConfigurationForm
         this.blockType = securityPolicyConfiguration.getBlockType();
         this.blockLevels = securityPolicyConfiguration.getBlockLevels();
         this.filterWhites = securityPolicyConfiguration.getFilterWhites();
+        this.packageNames = securityPolicyConfiguration.getPackageNames();
     }
 
     @JsonIgnore()

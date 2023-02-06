@@ -2,14 +2,18 @@ package com.veadan.folib.services.impl;
 
 import cn.hutool.core.date.DatePattern;
 import cn.hutool.core.date.DateUtil;
+import cn.hutool.extra.spring.SpringUtil;
 import com.alibaba.excel.EasyExcel;
 import com.alibaba.excel.ExcelWriter;
 import com.alibaba.excel.write.metadata.WriteSheet;
 import com.alibaba.excel.write.metadata.fill.FillConfig;
+import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.veadan.folib.authorization.dto.Role;
+import com.veadan.folib.cloud.storage.s3fs.S3FileSystem;
 import com.veadan.folib.cloud.storage.s3fs.S3Iterator;
 import com.veadan.folib.cloud.storage.s3fs.S3Path;
 import com.veadan.folib.cluster.SyncMetadataEnum;
@@ -25,8 +29,10 @@ import com.veadan.folib.forms.artifact.ArtifactMetadataForm;
 import com.veadan.folib.forms.scanner.*;
 import com.veadan.folib.gremlin.dsl.EntityTraversalUtils;
 import com.veadan.folib.gremlin.entity.vo.ArtifactVo;
+import com.veadan.folib.providers.io.RepositoryFiles;
 import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.providers.io.RepositoryPathResolver;
+import com.veadan.folib.providers.io.RootRepositoryPath;
 import com.veadan.folib.providers.layout.DockerLayoutProvider;
 import com.veadan.folib.repositories.ArtifactRepository;
 import com.veadan.folib.scanner.entity.ScanRules;
@@ -48,6 +54,7 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
@@ -56,6 +63,7 @@ import tk.mybatis.mapper.entity.Example;
 import javax.inject.Inject;
 import javax.servlet.http.HttpServletResponse;
 import javax.transaction.Transactional;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URLEncoder;
@@ -97,6 +105,12 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
 
     @Autowired
     private ArtifactEventListenerRegistry artifactEvent;
+
+    @Inject
+    private ArtifactManagementService artifactManagementService;
+
+    @Inject
+    private ThreadPoolTaskExecutor asyncThreadPoolTaskExecutor;
 
     @Override
     public void exportExcel(String vulnerabilityUuid, String storageId, String repositoryId, HttpServletResponse response) throws IOException {
@@ -516,6 +530,15 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
         return resolvePath(storageId, repositoryId, artifactPath);
     }
 
+    @Override
+    public void buildGraphIndex(String storageId, String repositoryId, String path, Integer batch) throws Exception {
+        RootRepositoryPath rootRepositoryPath = repositoryPathResolver.resolve(storageId, repositoryId);
+        if (StringUtils.isBlank(path)) {
+            path = rootRepositoryPath.toAbsolutePath().toString();
+        }
+        handlerArtifacts(path, rootRepositoryPath.getRepository(), batch);
+    }
+
     /**
      * 向其他集群节点同步元数据配置
      *
@@ -583,5 +606,238 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
     private Long getEndLong(String date) {
         LocalDateTime endLocalDateTime = DateUtil.parseLocalDateTime(date + " 23:59:59", DatePattern.NORM_DATETIME_PATTERN);
         return EntityTraversalUtils.toLong(endLocalDateTime);
+    }
+
+    private void handlerArtifacts(String path, Repository repository, Integer batch) throws Exception {
+        if (Objects.isNull(batch)) {
+            batch = 500;
+        }
+        String s3 = "s3://";
+        if (path.startsWith(s3)) {
+            S3Path s3Path = new S3Path(SpringUtil.getBean(S3FileSystem.class), path);
+            handlerS3Paths(s3Path, repository, batch);
+        } else {
+            handlerNFSFiles(path, repository, batch);
+        }
+    }
+
+    /**
+     * 处理NFS存储制品
+     *
+     * @param path       NFS目录
+     * @param repository 仓库信息
+     * @param batch      每批数量
+     * @return NFS目录下的所有文件
+     */
+    private List<File> handlerNFSFiles(String path, Repository repository, Integer batch) throws Exception {
+        int fileNum = 0, folderNum = 0;
+        File rootFile = new File(path);
+        LinkedList<File> list = new LinkedList<>();
+        List<File> resultList = new ArrayList<>();
+        if (rootFile.exists()) {
+            if (null == rootFile.listFiles()) {
+                resultList.add(rootFile);
+                return resultList;
+            }
+            for (File f : Objects.requireNonNull(rootFile.listFiles())) {
+                if (f.isDirectory()) {
+                    if (f.isHidden()) {
+                        log.info("directory：{} is a hidden directory", f.getName());
+                        continue;
+                    }
+                    list.add(f);
+                    folderNum++;
+                } else {
+                    if (f.isHidden()) {
+                        log.info("file：{} is a hidden file", f.getName());
+                        continue;
+                    }
+                    resultList.add(f);
+                    fileNum++;
+                }
+            }
+            while (!list.isEmpty()) {
+                File[] files = list.removeFirst().listFiles();
+                if (null == files) {
+                    continue;
+                }
+                for (File f : files) {
+                    if (f.isDirectory()) {
+                        if (f.isHidden()) {
+                            log.info("directory：{} is a hidden directory", f.getName());
+                            continue;
+                        }
+                        log.debug("directory:{}", f.getAbsolutePath());
+                        list.add(f);
+                        folderNum++;
+                    } else {
+                        if (f.isHidden()) {
+                            log.info("file：{} is a hidden file", f.getName());
+                            continue;
+                        }
+                        log.debug("file:{}", f.getAbsolutePath());
+                        resultList.add(f);
+                        fileNum++;
+                    }
+                }
+            }
+        } else {
+            log.info("file {} not exists!", path);
+        }
+        log.info("Path：{} directory size:{} ,file size:{}", path, folderNum, fileNum);
+        List<List<File>> fileLists = Lists.partition(resultList, batch);
+        for (List<File> fileList : fileLists) {
+            asyncThreadPoolTaskExecutor.execute(() -> {
+                for (File file : fileList) {
+                    try (InputStream is = Files.newInputStream(file.toPath())) {
+                        String fPath = file.getAbsolutePath();
+                        String tempStr = repository.getStorage().getId() + File.separator + repository.getId() + File.separator;
+                        int fPathIndex = fPath.lastIndexOf(tempStr);
+                        String artifactPath = fPath.substring(fPathIndex).replace(tempStr, "");
+                        RepositoryPath repositoryPath = repositoryPathResolver.resolve(repository.getStorage().getId(), repository.getId(), artifactPath);
+                        if (!RepositoryFiles.isArtifact(repositoryPath)) {
+                            log.info("handlerArtifact path：{} not is a artifact", file);
+                            continue;
+                        }
+                        artifactManagementService.validateAndStoreIndex(repositoryPath, is);
+                    } catch (Exception e) {
+                        log.error("handlerArtifact path：{} error {}", file, ExceptionUtils.getStackTrace(e));
+                    }
+                }
+            });
+        }
+        return resultList;
+    }
+
+    /**
+     * 处理S3存储制品
+     *
+     * @param s3Path     S3目录
+     * @param repository 仓库信息
+     * @param batch      每批数量
+     * @return S3存储目录下的所有文件
+     */
+    private List<S3Path> handlerS3Paths(S3Path s3Path, Repository repository, Integer batch) throws Exception {
+        List<S3Path> listFile = new ArrayList<>();
+        List<S3Path> listDir = new ArrayList<>();
+        S3Iterator s3Iterator = new S3Iterator(s3Path);
+        while (s3Iterator.hasNext()) {
+            S3Path s3PathTemp = s3Iterator.next();
+            if (s3PathTemp.getFileAttributes() == null || s3PathTemp.getFileAttributes().isDirectory()) {
+                listDir.add(s3PathTemp);
+            } else {
+                listFile.add(s3PathTemp);
+            }
+        }
+        while (listDir.size() != 0) {
+            S3Path currentPath = listDir.get(0);
+            listDir.remove(currentPath);
+            s3Iterator = new S3Iterator(currentPath);
+            while (s3Iterator.hasNext()) {
+                S3Path s3PathTemp = s3Iterator.next();
+                if (s3PathTemp.getFileAttributes() == null || s3PathTemp.getFileAttributes().isDirectory()) {
+                    listDir.add(s3PathTemp);
+                } else {
+                    log.info("s3 file {}", s3PathTemp);
+                    listFile.add(s3PathTemp);
+                }
+            }
+        }
+        log.info("s3Path [{}]  file size：{}", s3Path.toUri().toString(), listFile.size());
+        List<List<S3Path>> s3PathLists = Lists.partition(listFile, batch);
+        for (List<S3Path> s3PathList : s3PathLists) {
+            asyncThreadPoolTaskExecutor.execute(() -> {
+                for (S3Path s3FilePath : s3PathList) {
+                    try (InputStream is = Files.newInputStream(s3FilePath)) {
+                        String fPath = s3FilePath.toString();
+                        String tempStr = repository.getStorage().getId() + File.separator + repository.getId() + File.separator;
+                        int fPathIndex = fPath.lastIndexOf(tempStr);
+                        String artifactPath = fPath.substring(fPathIndex).replace(tempStr, "");
+                        RepositoryPath repositoryPath = repositoryPathResolver.resolve(repository.getStorage().getId(), repository.getId(), artifactPath);
+                        if (!RepositoryFiles.isArtifact(repositoryPath)) {
+                            log.info("handlerArtifact path：{} not is a artifact", s3FilePath.toAbsolutePath());
+                            continue;
+                        }
+                        artifactManagementService.validateAndStoreIndex(repositoryPath, is);
+                    } catch (Exception e) {
+                        log.error("handlerArtifact path：{} error {}", s3FilePath.toAbsolutePath(), ExceptionUtils.getStackTrace(e));
+                    }
+                }
+            });
+        }
+        return listFile;
+    }
+
+    private String s3Manifest(List<S3Path> s3FilesPaths, StringBuilder manifestBuilder) throws IOException {
+        if (CollectionUtils.isEmpty(s3FilesPaths)) {
+            return "";
+        }
+        List<S3Path> fileContents = s3FilesPaths.stream().filter(file -> !(file.toAbsolutePath().endsWith(".sha256"))).collect(Collectors.toList());
+        S3Path filePath = fileContents.get(0);
+        String[] array = filePath.getKey().split(File.separator);
+        manifestBuilder.append(array[array.length - 1]);
+        return Files.readString(filePath);
+    }
+
+    private String nfsManifest(List<File> fileList, StringBuilder manifestBuilder) throws IOException {
+        if (CollectionUtils.isEmpty(fileList)) {
+            return "";
+        }
+        List<File> fileContents = fileList.stream().filter(file -> !(file.getName().endsWith(".sha256"))).collect(Collectors.toList());
+        File file = fileContents.get(0);
+        manifestBuilder.append(file.getName());
+        return Files.readString(file.toPath());
+    }
+
+    private void handlerDockerBlobAndManifest(String path, Repository repository, List<File> fileList, List<S3Path> s3FilesPaths) throws Exception {
+        //判断是否是docker布局
+        boolean dockerLayout = "docker".equalsIgnoreCase(repository.getLayout());
+        String s3 = "s3://";
+        if (dockerLayout) {
+            // blobs manifest
+            String tempStr = repository.getStorage().getId() + File.separator + repository.getId() + File.separator;
+            int fPathIndex = path.lastIndexOf(tempStr);
+            String relativizePath = path.substring(fPathIndex).replace(tempStr, "");
+            String[] arrayPath = relativizePath.split(File.separator);
+            if (arrayPath.length != 2) {
+                return;
+            }
+            String manifestContent = "";
+            StringBuilder manifestBuilder = new StringBuilder();
+            if (path.startsWith(s3)) {
+                manifestContent = s3Manifest(s3FilesPaths, manifestBuilder);
+            } else {
+                manifestContent = nfsManifest(fileList, manifestBuilder);
+            }
+            JSONObject manifest = JSON.parseObject(manifestContent);
+            JSONArray layers = manifest.getJSONArray("layers");
+            List<String> layerList = new ArrayList<>();
+            for (int i = 0; i < layers.size(); i++) {
+                layerList.add(layers.getJSONObject(i).getString("digest"));
+            }
+            String manifestConfig = manifest.getJSONObject("config").getString("digest");
+            // blobs
+            layerList.add(manifestConfig);
+            for (String layer : layerList) {
+                String blob = arrayPath[0] + File.separator + "blobs" + File.separator + layer;
+                RepositoryPath vSrcBlobPath = repositoryPathResolver.resolve(repository.getStorage().getId(), repository.getId(), blob);
+                try (InputStream blobIs = Files.newInputStream(vSrcBlobPath)) {
+                    artifactManagementService.validateAndStoreIndex(vSrcBlobPath, blobIs);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    log.error("handler blob {}  error {}", relativizePath, e.getMessage());
+                }
+            }
+            // manifest
+            String manifestFile = arrayPath[0] + File.separator + "manifest" + File.separator + manifestBuilder;
+            RepositoryPath manifestPath = repositoryPathResolver.resolve(repository.getStorage().getId(), repository.getId(), manifestFile);
+            try (InputStream manifestIs = Files.newInputStream(manifestPath)) {
+                RepositoryPath destBlobPath = repositoryPathResolver.resolve(repository.getStorage().getId(), repository.getId(), manifestFile);
+                artifactManagementService.validateAndStoreIndex(destBlobPath, manifestIs);
+            } catch (Exception e) {
+                e.printStackTrace();
+                log.error("handler manifest {} error {}", relativizePath, e.getMessage());
+            }
+        }
     }
 }

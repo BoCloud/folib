@@ -240,7 +240,7 @@ export function saveOrUpdateVulnerabilityNotify (data) {
   })
 }
 
-export function vulnerabilityConfig () {
+export function securityPolicyConfig () {
   return axios({
     url: '/api/configuration/folib/securityPolicy/config',
     method: 'get',
@@ -307,6 +307,22 @@ export function securityPolicyBlock (data) {
   return axios({
     url: '/api/configuration/folib/securityPolicy/block',
     method: 'put',
+    data: data
+  })
+}
+
+export function securityPolicyAddPackageName (data) {
+  return axios({
+    url: '/api/configuration/folib/securityPolicy/packageName',
+    method: 'put',
+    data: data
+  })
+}
+
+export function securityPolicyDeletePackageName (data) {
+  return axios({
+    url: '/api/configuration/folib/securityPolicy/packageName',
+    method: 'delete',
     data: data
   })
 }

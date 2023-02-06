@@ -133,6 +133,11 @@ public class RepositoryStreamSupport
         callback.commit((RepositoryStreamWriteContext) getContext());
     }
 
+    protected void commitStoreIndex() throws IOException
+    {
+        callback.commitStoreIndex((RepositoryStreamReadContext) getContext());
+    }
+
     public class RepositoryOutputStream extends ProxyOutputStream
     {
         protected RepositoryOutputStream(Path path,
@@ -170,6 +175,7 @@ public class RepositoryStreamSupport
         }
 
 
+        @Override
         public void flush()
             throws IOException
         {
@@ -238,10 +244,10 @@ public class RepositoryStreamSupport
                 open();
                 
                 //Check that artifact exists.
-                if (!ctx.getArtifactExists()) 
+                if (!ctx.getArtifactExists())
                 {
                     logger.debug("The path [{}] does not exist!", path);
-                    
+
                     throw new ArtifactNotFoundException(path.toUri());
                 }
                 
@@ -277,6 +283,73 @@ public class RepositoryStreamSupport
                     callback.onAfterRead((RepositoryStreamReadContext) ctx);
                 }
             } 
+            finally
+            {
+                RepositoryStreamSupport.this.close();
+            }
+        }
+
+    }
+
+    public class RepositoryStoreIndexInputStream
+            extends ProxyInputStream
+    {
+
+        protected RepositoryStoreIndexInputStream(Path path,
+                                        InputStream in) throws IOException
+        {
+            super(new CountingInputStream(in));
+
+            RepositoryStreamReadContext ctx = new RepositoryStreamReadContext();
+            ctx.setPath(path);
+            ctx.setStream(this);
+            initContext(ctx);
+            TransactionStatus transaction = transactionManager.getTransaction(new DefaultTransactionDefinition(
+                    Propagation.REQUIRED.value()));
+            ctx.setTransaction(transaction);
+            try
+            {
+                open();
+                // Force init LazyInputStream
+                StreamUtils.findSource(LazyInputStream.class, in).init();
+            }
+            catch (Exception e)
+            {
+                close();
+                throw new IOException(e);
+            }
+        }
+
+        public void commitStoreIndex()
+                throws IOException
+        {
+            logger.debug("close [{}]", getContext().getPath());
+            super.close();
+            logger.debug("close [{}]", getContext().getPath());
+
+            TransactionStatus transaction = ctx.getTransaction();
+            if (transaction != null && !transaction.isRollbackOnly())
+            {
+                logger.debug("Commit [{}]", getContext().getPath());
+                RepositoryStreamSupport.this.commitStoreIndex();
+                transactionManager.commit(transaction);
+                logger.debug("Commited [{}]", getContext().getPath());
+                callback.onStoreIndexAfter((RepositoryStreamReadContext) ctx);
+            }
+            else
+            {
+                logger.debug("Skip commit [{}]", getContext().getPath());
+            }
+        }
+
+        @Override
+        public void close()
+                throws IOException
+        {
+            try
+            {
+                super.close();
+            }
             finally
             {
                 RepositoryStreamSupport.this.close();

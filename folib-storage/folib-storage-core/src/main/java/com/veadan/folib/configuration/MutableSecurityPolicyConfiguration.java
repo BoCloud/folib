@@ -44,7 +44,7 @@ public class MutableSecurityPolicyConfiguration
      */
     private Set<String> receiverEmails = Sets.newLinkedHashSet();
     /**
-     * 阻断类型 1 全量阻断 2 黑名单阻断
+     * 阻断类型 1 全量阻断 2 黑名单阻断 3 包名阻断
      */
     private Integer blockType;
     /**
@@ -55,6 +55,10 @@ public class MutableSecurityPolicyConfiguration
      * 过滤白名单
      */
     private Boolean filterWhites = false;
+    /**
+     * 包名
+     */
+    private Set<String> packageNames = Sets.newLinkedHashSet();
 
     public void addWhite(String white) {
         this.whites.add(white);

@@ -118,10 +118,12 @@ public class FqlSearchService extends GremlinVertexRepository<Artifact> implemen
 
             String createdTime = DateUtil.format(Date.from(artifact.getCreated().atZone(ZoneId.of("Asia/Shanghai")).toOffsetDateTime().toInstant()), df);
             r.setCreated(createdTime);
-            String lastUpdatedTime = DateUtil.format(Date.from(artifact.getLastUsed().atZone(ZoneId.of("Asia/Shanghai")).toOffsetDateTime().toInstant()), df);
-            String lastUsedTime = DateUtil.format(Date.from(artifact.getLastUsed().atZone(ZoneId.of("Asia/Shanghai")).toOffsetDateTime().toInstant()), df);
-            r.setLastUpdated(lastUpdatedTime);
-            r.setLastUsed(lastUsedTime);
+            if(Objects.nonNull(artifact.getLastUsed())){
+                String lastUpdatedTime = DateUtil.format(Date.from(artifact.getLastUsed().atZone(ZoneId.of("Asia/Shanghai")).toOffsetDateTime().toInstant()), df);
+                String lastUsedTime = DateUtil.format(Date.from(artifact.getLastUsed().atZone(ZoneId.of("Asia/Shanghai")).toOffsetDateTime().toInstant()), df);
+                r.setLastUpdated(lastUpdatedTime);
+                r.setLastUsed(lastUsedTime);
+            }
             r.setSha(artifact.getChecksums().get("SHA-1"));
             r.setMd5(artifact.getChecksums().get("MD5"));
 

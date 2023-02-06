@@ -114,7 +114,7 @@ public class BrowseController
                     jsonObject.put("lastUsedTime", lastUsedTime);
                 }
 
-                if (artifact.getLastUsed() != null) {
+                if (artifact.getLastUpdated() != null) {
                     String lastModified = DateUtil.format(Date.from(artifact.getLastUpdated().atZone(ZoneId.of("Asia/Shanghai")).toOffsetDateTime().toInstant()), df);
                     jsonObject.put("lastModified", lastModified);
                 }

@@ -15,6 +15,7 @@ import java.util.stream.Collectors;
 import javax.inject.Inject;
 
 import com.veadan.folib.configuration.ConfigurationManager;
+import com.veadan.folib.io.LayoutInputStream;
 import com.veadan.folib.providers.io.RepositoryFiles;
 import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.providers.io.RepositoryPathResolver;
@@ -91,9 +92,25 @@ public class ArtifactManagementService
         return doStore(repositoryPath, is);
     }
 
+    public void validateAndStoreIndex(RepositoryPath repositoryPath, InputStream is)
+            throws IOException,
+            ProviderImplementationException,
+            ArtifactCoordinatesValidationException
+    {
+        performRepositoryAcceptanceValidation(repositoryPath);
+        doStoreIndex(repositoryPath);
+    }
+
     public long store(RepositoryPath repositoryPath,
                       InputStream is)
         throws IOException
+    {
+        return doStore(repositoryPath, is);
+    }
+
+    public long storeIndex(RepositoryPath repositoryPath,
+                      InputStream is)
+            throws IOException
     {
         return doStore(repositoryPath, is);
     }
@@ -119,6 +136,25 @@ public class ArtifactManagementService
         }
 
         return result;
+    }
+
+    private void doStoreIndex(RepositoryPath repositoryPath)
+            throws IOException
+    {
+        try (final RepositoryStreamSupport.RepositoryStoreIndexInputStream ins = artifactResolutionService.getStoreIndexInputStream(repositoryPath))
+        {
+            writeArtifactIndex(repositoryPath, ins);
+            logger.debug("Stored index for [{}].", repositoryPath);
+            ins.commitStoreIndex();
+        }
+        catch (IOException e)
+        {
+            throw e;
+        }
+        catch (Exception e)
+        {
+            throw new ArtifactStorageException(e);
+        }
     }
 
     private long writeArtifact(RepositoryPath repositoryPath,
@@ -166,6 +202,31 @@ public class ArtifactManagementService
         }
 
         return totalAmountOfBytes;
+    }
+
+    private void writeArtifactIndex(RepositoryPath repositoryPath,
+                               InputStream is)
+            throws IOException
+    {
+        LayoutInputStream ins = StreamUtils.findSource(LayoutInputStream.class, is);
+
+        Repository repository = repositoryPath.getRepository();
+
+        Boolean checksumAttribute = RepositoryFiles.isChecksum(repositoryPath);
+
+        if (repository.isHostedRepository())
+        {
+            artifactEventListenerRegistry.dispatchArtifactUploadingEvent(repositoryPath);
+        }
+
+        URI repositoryPathId = repositoryPath.toUri();
+        Map<String, String> digestMap = ins.getDigestMap();
+        if (Boolean.FALSE.equals(checksumAttribute) && !digestMap.isEmpty())
+        {
+            // Store artifact digests in cache if we have them.
+            addChecksumsToCacheManager(digestMap, repositoryPathId);
+            writeChecksums(repositoryPath, digestMap);
+        }
     }
 
     private void writeChecksums(RepositoryPath repositoryPath,

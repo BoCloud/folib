@@ -15,6 +15,12 @@ public interface RepositoryStreamCallback
         throws IOException;
 
     void onAfterRead(RepositoryStreamReadContext ctx);
+
+    void commitStoreIndex(RepositoryStreamReadContext ctx)
+            throws IOException;
+
+    void onStoreIndexAfter(RepositoryStreamReadContext ctx)
+            throws IOException;
     
     void commit(RepositoryStreamWriteContext ctx)
             throws IOException;

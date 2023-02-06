@@ -20,7 +20,11 @@ public enum BlockTypeEnum {
     /**
      * 黑名单阻断
      */
-    BLACK(0),
+    BLACK(2),
+    /**
+     * 包名阻断
+     */
+    PACKAGE_NAME(3),
     ;
 
     private Integer type;

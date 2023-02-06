@@ -1,9 +1,8 @@
 package com.veadan.folib.services;
 
-import com.veadan.folib.forms.scanner.*;
-import com.veadan.folib.configuration.MetadataConfiguration;
 import com.veadan.folib.domain.Artifact;
 import com.veadan.folib.forms.artifact.ArtifactMetadataForm;
+import com.veadan.folib.forms.scanner.*;
 import com.veadan.folib.providers.io.RepositoryPath;
 import org.springframework.security.core.Authentication;
 
@@ -120,13 +119,29 @@ public interface ArtifactWebService {
      */
     RepositoryScannerForm repository(String storageId, String repositoryId, String artifactName, Integer page, Integer limit);
 
- 	/**
+    /**
      * 批量存储或更新元数据
      *
      * @param artifactMetadataFormList artifactMetadataFormList
      */
     void batchArtifactMetadata(List<ArtifactMetadataForm> artifactMetadataFormList);
 
+    /***
+     * 获取制品信息
+     * @param repositoryPath 路径
+     * @return 制品信息
+     * @throws Exception 异常
+     */
+    Artifact getArtifact(RepositoryPath repositoryPath) throws Exception;
 
-    Artifact getArtifact(RepositoryPath repositoryPath) throws Exception ;
+    /**
+     * 生成图数据库信息
+     *
+     * @param storageId    存储空间
+     * @param repositoryId 仓库id
+     * @param path         path
+     * @param batch        每批数量
+     * @throws Exception 异常
+     */
+    void buildGraphIndex(String storageId, String repositoryId, String path, Integer batch) throws Exception;
 }

@@ -41,6 +41,15 @@ public interface RepositoryProvider
      * @throws IOException
      */
     InputStream getInputStream(Path path) throws IOException;
+
+    /**
+     * Return {@link InputStream} to read Artifact content.
+     *
+     * @param path
+     * @return
+     * @throws IOException
+     */
+    InputStream getStoreIndexInputStream(Path path) throws IOException;
     
     /**
      * Return {@link OutputStream} to write Artifact content.

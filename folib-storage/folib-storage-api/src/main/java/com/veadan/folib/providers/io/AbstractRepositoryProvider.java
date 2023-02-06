@@ -13,6 +13,7 @@ import com.google.common.collect.Sets;
 import com.veadan.folib.configuration.ConfigurationManager;
 import com.veadan.folib.io.*;
 import com.veadan.folib.providers.layout.LayoutProviderRegistry;
+import org.apache.commons.io.input.CountingInputStream;
 import org.apache.commons.io.output.CountingOutputStream;
 import com.veadan.folib.artifact.ArtifactTag;
 import com.veadan.folib.artifact.coordinates.ArtifactCoordinates;
@@ -105,6 +106,22 @@ public abstract class AbstractRepositoryProvider implements RepositoryProvider, 
 
     }
 
+    @Override
+    public RepositoryStreamSupport.RepositoryStoreIndexInputStream getStoreIndexInputStream(Path path)
+            throws IOException
+    {
+        if (path == null)
+        {
+            return null;
+        }
+        Assert.isInstanceOf(RepositoryPath.class, path);
+        RepositoryPath repositoryPath = (RepositoryPath) path;
+
+        return decorateIndex((RepositoryPath) path,
+                getInputStreamInternal(repositoryPath));
+
+    }
+
     protected abstract InputStream getInputStreamInternal(RepositoryPath repositoryPath)
         throws IOException;
 
@@ -118,6 +135,18 @@ public abstract class AbstractRepositoryProvider implements RepositoryProvider, 
 
         return new RepositoryStreamSupport(repositoryPathLock.lock(repositoryPath), this, transactionManager).
                new RepositoryInputStream(repositoryPath, is);
+    }
+
+    protected RepositoryStreamSupport.RepositoryStoreIndexInputStream decorateIndex(RepositoryPath repositoryPath,
+                                                                     InputStream is) throws IOException
+    {
+        if (is instanceof RepositoryStreamSupport.RepositoryStoreIndexInputStream)
+        {
+            return (RepositoryStreamSupport.RepositoryStoreIndexInputStream) is;
+        }
+
+        return new RepositoryStreamSupport(repositoryPathLock.lock(repositoryPath), this, transactionManager).
+                new RepositoryStoreIndexInputStream(repositoryPath, is);
     }
 
     @Override
@@ -265,6 +294,79 @@ public abstract class AbstractRepositoryProvider implements RepositoryProvider, 
                      lastVersion.getPath());
         
         artifactIdGroupRepository.merge(artifactGroup);
+    }
+
+    @Override
+    public void commitStoreIndex(RepositoryStreamReadContext ctx) throws IOException
+    {
+        RepositoryPath repositoryPath = (RepositoryPath) ctx.getPath();
+        Artifact artifact = repositoryPath.getArtifactEntry();
+        if (artifact == null) {
+            artifact = provideArtifact(repositoryPath);
+            if (artifact == null)
+            {
+                return;
+            }
+        }
+        if (!shouldStoreArtifact(artifact))
+        {
+            return;
+        }
+        LocalDateTime now = LocalDateTimeInstance.now();
+        artifact.setCreated(now);
+        artifact.setLastUpdated(now);
+        artifact.setLastUsed(now);
+        Repository repository = repositoryPath.getRepository();
+        Storage storage = repository.getStorage();
+        ArtifactCoordinates coordinates = RepositoryFiles.readCoordinates(repositoryPath);
+
+        CountingInputStream cis = StreamUtils.findSource(CountingInputStream.class, ctx.getStream());
+        artifact.setSizeInBytes(cis.getByteCount());
+
+        LayoutInputStream lis = StreamUtils.findSource(LayoutInputStream.class, ctx.getStream());
+        artifact.setChecksums(lis.getDigestMap());
+
+        ArtifactTag lastVersionTag = artifactTagService.findOneOrCreate(ArtifactTagEntity.LAST_VERSION);
+
+        ArtifactIdGroup artifactGroup = artifactIdGroupRepository.findArtifactsGroupWithTag(storage.getId(),
+                repository.getId(),
+                coordinates.getId(),
+                Optional.of(lastVersionTag))
+                .orElseGet(() -> new ArtifactIdGroupEntity(storage.getId(),
+                        repository.getId(),
+                        coordinates.getId()));
+        artifactGroup.setArtifacts(Sets.newHashSet());
+        ArtifactCoordinates lastVersion = artifactIdGroupService.addArtifactToGroup(artifactGroup, artifact);
+        logger.debug("Last version for group [{}] is [{}] with [{}]",
+                artifactGroup.getName(),
+                lastVersion.getVersion(),
+                lastVersion.getPath());
+
+        artifactIdGroupRepository.merge(artifactGroup);
+
+        repositoryPath.artifact = artifact;
+    }
+
+    @Override
+    public void onStoreIndexAfter(RepositoryStreamReadContext ctx) throws IOException {
+        RepositoryPath repositoryPath = (RepositoryPath) ctx.getPath();
+        logger.debug("Complete build index [{}]", repositoryPath);
+
+        if (RepositoryFiles.isArtifact(repositoryPath))
+        {
+            if (ctx.getArtifactExists())
+            {
+                artifactEventListenerRegistry.dispatchArtifactUpdatedEvent(repositoryPath);
+            }
+            else
+            {
+                artifactEventListenerRegistry.dispatchArtifactStoredEvent(repositoryPath);
+            }
+        }
+        else if (RepositoryFiles.isMetadata(repositoryPath))
+        {
+            artifactEventListenerRegistry.dispatchArtifactMetadataStoredEvent(repositoryPath);
+        }
     }
 
     protected Artifact provideArtifact(RepositoryPath repositoryPath) throws IOException
