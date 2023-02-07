@@ -3,8 +3,8 @@ package com.veadan.folib.services;
 import com.veadan.folib.cluster.ClusterSyncResultEnum;
 import com.veadan.folib.cluster.SyncRepositoryEnum;
 import com.veadan.folib.cluster.SyncStorageEnum;
-import com.veadan.folib.configuration.MutableMetadataConfiguration;
 import com.veadan.folib.configuration.MutableSecurityPolicyConfiguration;
+import com.veadan.folib.controllers.cluster.dto.SyncCronJobDto;
 import com.veadan.folib.controllers.cluster.dto.SyncMetadataDto;
 import com.veadan.folib.controllers.cluster.dto.SyncRepositoryDto;
 import com.veadan.folib.controllers.cluster.dto.SyncStorageDto;
@@ -24,6 +24,8 @@ public interface ClusterSyncService {
 
     void syncRepository(String storageId, String repositoryId, RepositoryDto repository, SyncRepositoryEnum syncRepositoryEnum);
 
+    void syncCronJob(SyncCronJobDto syncCronJobDto);
+
     Boolean isNeedClusterSync();
 
     Boolean clusterOpenFlag();
@@ -35,6 +37,8 @@ public interface ClusterSyncService {
     ClusterSyncResultEnum handleSyncSecurityPolicyConfiguration(MutableSecurityPolicyConfiguration mutableSecurityPolicyConfiguration, String nodeUrl, Boolean isScheduled);
 
     ClusterSyncResultEnum handleSyncMetadataConfiguration(SyncMetadataDto syncMetadataDto, String nodeUrl, Boolean isScheduled);
+
+    ClusterSyncResultEnum handleSyncCronJob(SyncCronJobDto syncCronJobDto, String nodeUrl, Boolean isScheduled);
 
     void addduledScheTask(ClusterDataSyncTaskPo clusterDataSyncTaskPo);
 

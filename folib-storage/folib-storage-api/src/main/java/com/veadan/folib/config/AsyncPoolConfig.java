@@ -136,6 +136,24 @@ public class AsyncPoolConfig {
     @Value("${folib.threadPool.asyncMetadata.awaitTerminationSeconds}")
     private Integer asyncMetadataAwaitTerminationSeconds;
 
+    @Value("${folib.threadPool.asyncCronJob.corePoolSize}")
+    private Integer asyncCronJobCorePoolSize;
+
+    @Value("${folib.threadPool.asyncCronJob.maxPoolSize}")
+    private Integer asyncCronJobMaxPoolSize;
+
+    @Value("${folib.threadPool.asyncCronJob.queueCapacity}")
+    private Integer asyncCronJobQueueCapacity;
+
+    @Value("${folib.threadPool.asyncCronJob.keepAliveSeconds}")
+    private Integer asyncCronJobKeepAliveSeconds;
+
+    @Value("${folib.threadPool.asyncCronJob.threadNamePrefix}")
+    private String asyncCronJobThreadNamePrefix;
+
+    @Value("${folib.threadPool.asyncCronJob.awaitTerminationSeconds}")
+    private Integer asyncCronJobAwaitTerminationSeconds;
+
     @Bean
     public ThreadPoolTaskExecutor asyncThreadPoolTaskExecutor() {
         return buildThreadPoolTaskExecutor(asyncCorePoolSize, asyncMaxPoolSize, asyncQueueCapacity, asyncKeepAliveSeconds, asyncThreadNamePrefix, asyncAwaitTerminationSeconds);
@@ -149,6 +167,11 @@ public class AsyncPoolConfig {
     @Bean
     public ThreadPoolTaskExecutor asyncStorageThreadPoolExecutor() {
         return buildThreadPoolTaskExecutor(asyncStorageCorePoolSize, asyncStorageMaxPoolSize, asyncStorageQueueCapacity, asyncStorageKeepAliveSeconds, asyncStorageThreadNamePrefix, asyncStorageAwaitTerminationSeconds);
+    }
+
+    @Bean
+    public ThreadPoolTaskExecutor asyncCronJobThreadPoolExecutor() {
+        return buildThreadPoolTaskExecutor(asyncCronJobCorePoolSize, asyncCronJobMaxPoolSize, asyncCronJobQueueCapacity, asyncCronJobKeepAliveSeconds, asyncCronJobThreadNamePrefix, asyncCronJobAwaitTerminationSeconds);
     }
 
     @Bean

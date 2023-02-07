@@ -175,4 +175,8 @@ public class CronTaskConfigurationDto
     {
         return getUuid() != null ? getUuid().hashCode() : 0;
     }
+
+    public boolean isImmediateExecution() {
+        return immediateExecution;
+    }
 }

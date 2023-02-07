@@ -119,9 +119,16 @@ folib:
     asyncRepositoryCleanup:
       corePoolSize: 10
       maxPoolSize: 200
-      queueCapacity: 10000
+      queueCapacity: 100000000
       keepAliveSeconds: 200
       threadNamePrefix: asyncRepositoryCleanupThread_
+      awaitTerminationSeconds: 120
+    asyncCronJob:
+      corePoolSize: 10
+      maxPoolSize: 200
+      queueCapacity: 10000
+      keepAliveSeconds: 200
+      threadNamePrefix: asyncCronJobThread_
       awaitTerminationSeconds: 120
 # Changes to these properties must also be applied to [folib/folib-web-integration-tests] and possibly the pipeline.
 # Please ping us on our chat channel (https://chat.carlspring.org/) to confirm.
