@@ -632,6 +632,10 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
     private List<File> handlerNFSFiles(String path, Repository repository, Integer batch) throws Exception {
         int fileNum = 0, folderNum = 0;
         File rootFile = new File(path);
+        if (rootFile.isHidden()) {
+            log.info("root file：{} is a hidden file", rootFile.getName());
+            return Collections.emptyList();
+        }
         LinkedList<File> list = new LinkedList<>();
         List<File> resultList = new ArrayList<>();
         if (rootFile.exists()) {

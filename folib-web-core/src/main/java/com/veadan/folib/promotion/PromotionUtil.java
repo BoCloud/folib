@@ -354,7 +354,7 @@ public class PromotionUtil {
                 int fPathIndex = fPath.lastIndexOf(tempStr);
                 String temp = fPath.substring(fPathIndex, fPath.length()).replace(tempStr, "");
                 RepositoryPath destPath = repositoryPathResolver.resolve(destRepository.getStorage().getId(), destRepository.getId(), temp);
-                artifactManagementService.validateAndStore(destPath, is);
+                artifactManagementService.store(destPath, is);
                 // 同步metadata
                 RepositoryPath srcPath = repositoryPathResolver.resolve(srcRepository.getStorage().getId(), srcRepository.getId(), temp);
                 setMetaData(destPath, getMetaData(srcPath));

@@ -3,6 +3,7 @@ package com.veadan.folib.providers.io;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.LocalDateTime;
 import java.util.Optional;
@@ -320,8 +321,7 @@ public abstract class AbstractRepositoryProvider implements RepositoryProvider, 
         Storage storage = repository.getStorage();
         ArtifactCoordinates coordinates = RepositoryFiles.readCoordinates(repositoryPath);
 
-        CountingInputStream cis = StreamUtils.findSource(CountingInputStream.class, ctx.getStream());
-        artifact.setSizeInBytes(cis.getByteCount());
+        artifact.setSizeInBytes(Files.size(repositoryPath));
 
         LayoutInputStream lis = StreamUtils.findSource(LayoutInputStream.class, ctx.getStream());
         artifact.setChecksums(lis.getDigestMap());

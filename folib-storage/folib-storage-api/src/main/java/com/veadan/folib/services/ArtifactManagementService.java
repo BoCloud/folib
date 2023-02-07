@@ -22,6 +22,7 @@ import com.veadan.folib.providers.io.RepositoryPathResolver;
 import com.veadan.folib.providers.io.RepositoryStreamSupport;
 import com.veadan.folib.providers.layout.LayoutFileSystemProvider;
 import com.veadan.folib.providers.layout.LayoutProviderRegistry;
+import com.veadan.folib.storage.validation.deployment.RedeploymentValidator;
 import org.apache.commons.io.IOUtils;
 import com.veadan.folib.artifact.coordinates.ArtifactCoordinates;
 import com.veadan.folib.configuration.Configuration;
@@ -97,20 +98,13 @@ public class ArtifactManagementService
             ProviderImplementationException,
             ArtifactCoordinatesValidationException
     {
-        performRepositoryAcceptanceValidation(repositoryPath);
+        performStoreIndexRepositoryAcceptanceValidation(repositoryPath);
         doStoreIndex(repositoryPath);
     }
 
     public long store(RepositoryPath repositoryPath,
                       InputStream is)
         throws IOException
-    {
-        return doStore(repositoryPath, is);
-    }
-
-    public long storeIndex(RepositoryPath repositoryPath,
-                      InputStream is)
-            throws IOException
     {
         return doStore(repositoryPath, is);
     }
@@ -348,6 +342,45 @@ public class ArtifactManagementService
         artifactOperationsValidator.checkAllowsRedeployment(repository, coordinates);
         artifactOperationsValidator.checkAllowsDeployment(repository);
 
+        return true;
+    }
+
+    private boolean performStoreIndexRepositoryAcceptanceValidation(RepositoryPath path)
+            throws IOException, ProviderImplementationException, ArtifactCoordinatesValidationException
+    {
+        logger.info("Validate artifact with path [{}]", path);
+
+        Repository repository = path.getFileSystem().getRepository();
+
+        artifactOperationsValidator.validate(path);
+
+        if (!RepositoryFiles.isArtifact(path))
+        {
+            return true;
+        }
+
+        ArtifactCoordinates coordinates = RepositoryFiles.readCoordinates(path);
+        logger.info("Validate artifact with coordinates [{}]", coordinates);
+
+        try
+        {
+            for (String validatorKey : repository.getArtifactCoordinateValidators())
+            {
+                if (RedeploymentValidator.ALIAS.equals(validatorKey)) {
+                    continue;
+                }
+                ArtifactCoordinatesValidator validator = artifactCoordinatesValidatorRegistry.getProvider(
+                        validatorKey);
+                if (validator.supports(repository))
+                {
+                    validator.validate(repository, coordinates);
+                }
+            }
+        }
+        catch (VersionValidationException e)
+        {
+            throw new ArtifactStorageException(e);
+        }
         return true;
     }
 
