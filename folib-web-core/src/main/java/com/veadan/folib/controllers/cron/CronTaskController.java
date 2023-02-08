@@ -1,6 +1,8 @@
 package com.veadan.folib.controllers.cron;
 
 import com.veadan.folib.booters.PropertiesBooter;
+import com.veadan.folib.cluster.SyncCornJobEnum;
+import com.veadan.folib.controllers.cluster.dto.SyncCronJobDto;
 import com.veadan.folib.cron.domain.CronTaskConfigurationDto;
 import com.veadan.folib.cron.domain.CronTasksConfigurationDto;
 import com.veadan.folib.cron.domain.GroovyScriptNamesDto;
@@ -11,6 +13,7 @@ import com.veadan.folib.cron.services.CronJobSchedulerService;
 import com.veadan.folib.cron.services.CronTaskConfigurationService;
 import com.veadan.folib.forms.cron.CronTaskConfigurationForm;
 import com.veadan.folib.controllers.BaseController;
+import com.veadan.folib.services.ClusterSyncService;
 import com.veadan.folib.validation.RequestBodyValidationException;
 
 import javax.inject.Inject;
@@ -29,6 +32,7 @@ import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.convert.ConversionService;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -93,6 +97,9 @@ public class CronTaskController
     @Inject
     private PropertiesBooter propertiesBooter;
 
+    @Autowired
+    private ClusterSyncService clusterSyncService;
+
 
     @ApiOperation(value = "Used to save a new cron task job")
     @ApiResponses(value = { @ApiResponse(code = 200, message = SUCCESSFUL_SAVE_CONFIGURATION),
@@ -114,6 +121,8 @@ public class CronTaskController
             CronTaskConfigurationDto cronTaskConfiguration = conversionService.convert(cronTaskConfigurationForm,
                                                                                        CronTaskConfigurationDto.class);
             UUID uuid = cronTaskConfigurationService.saveConfiguration(cronTaskConfiguration);
+            SyncCronJobDto syncCronJobDto = new SyncCronJobDto(cronTaskConfiguration, SyncCornJobEnum.ADD_OR_UPDATE);
+            clusterSyncService.syncCronJob(syncCronJobDto);
 
             HttpHeaders httpHeaders = new HttpHeaders();
             httpHeaders.add(HEADER_NAME_CRON_TASK_ID, uuid.toString());
@@ -161,6 +170,8 @@ public class CronTaskController
             cronTaskConfiguration.setUuid(uuid);
             cronTaskConfigurationService.saveConfiguration(cronTaskConfiguration);
 
+            clusterSyncService.syncCronJob(new SyncCronJobDto(cronTaskConfiguration, SyncCornJobEnum.ADD_OR_UPDATE));
+
             return getSuccessfulResponseEntity(SUCCESSFUL_SAVE_CONFIGURATION, acceptHeader);
         }
         catch (Exception e)
@@ -190,6 +201,7 @@ public class CronTaskController
         try
         {
             cronTaskConfigurationService.deleteConfiguration(config.getUuid());
+            clusterSyncService.syncCronJob(new SyncCronJobDto(config, SyncCornJobEnum.DELETE));
             if (config.getJobClass().equals(GroovyCronJob.class.getName()) &&
                 config.getProperty(CRON_CONFIG_SCRIPT_PATH_KEY) != null)
             {

@@ -4,6 +4,7 @@ import cn.hutool.core.collection.CollectionUtil;
 import com.fasterxml.jackson.annotation.JsonView;
 import com.veadan.folib.cluster.SyncRepositoryEnum;
 import com.veadan.folib.cluster.SyncStorageEnum;
+import com.veadan.folib.event.repository.RepositoryEventListenerRegistry;
 import com.veadan.folib.forms.common.StorageTreeForm;
 import com.veadan.folib.forms.configuration.ProxyConfigurationForm;
 import com.veadan.folib.forms.configuration.RepositoryForm;
@@ -92,6 +93,9 @@ public class StoragesConfigurationController
 
     @Autowired
     private ClusterSyncService clusterSyncService;
+
+    @Autowired
+    private RepositoryEventListenerRegistry repositoryEventListenerRegistry;
 
     public StoragesConfigurationController(ConfigurationManagementService configurationManagementService,
                                            StorageManagementService storageManagementService,
@@ -275,8 +279,8 @@ public class StoragesConfigurationController
             try {
                 if (force) {
                     storageManagementService.removeStorage(storageId);
+                    repositoryEventListenerRegistry.dispatchRepoDelteAllToCronJobDeleteEvent(storageId, "");
                 }
-
                 configurationManagementService.removeStorage(storageId);
 
                 logger.debug("Removed storage {}.", storageId);
@@ -622,6 +626,7 @@ public class StoragesConfigurationController
             final RepositoryPath repositoryPath = repositoryPathResolver.resolve(repository);
             if (Files.exists(repositoryPath) && force) {
                 repositoryManagementService.removeRepository(storageId, repository.getId());
+                repositoryEventListenerRegistry.dispatchRepoDelteToCronJobDeleteEvent(storageId, repositoryId);
             }
 
             configurationManagementService.removeRepository(storageId, repositoryId);

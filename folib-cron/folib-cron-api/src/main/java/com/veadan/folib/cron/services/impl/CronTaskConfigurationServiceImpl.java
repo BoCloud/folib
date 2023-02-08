@@ -23,8 +23,7 @@ import org.springframework.stereotype.Service;
  */
 @Service
 class CronTaskConfigurationServiceImpl
-        implements CronTaskConfigurationService, ApplicationListener<ContextStartedEvent>
-{
+        implements CronTaskConfigurationService, ApplicationListener<ContextStartedEvent> {
 
     private final Logger logger = LoggerFactory.getLogger(CronTaskConfigurationServiceImpl.class);
 
@@ -38,23 +37,20 @@ class CronTaskConfigurationServiceImpl
     private CronJobSchedulerService cronJobSchedulerService;
 
     @Override
-    public void onApplicationEvent(ContextStartedEvent event)
-    {
+    public void onApplicationEvent(ContextStartedEvent event) {
+        logger.info("---定时任务事件监听---");
         CronTasksConfigurationDto cronTasksConfiguration = getTasksConfigurationDto();
 
-        for (CronTaskConfigurationDto dto : cronTasksConfiguration.getCronTaskConfigurations())
-        {
-            if (dto.isOneTimeExecution())
-            {
+        for (CronTaskConfigurationDto dto : cronTasksConfiguration.getCronTaskConfigurations()) {
+            if (dto.isOneTimeExecution()) {
                 continue;
             }
-
             cronJobSchedulerService.scheduleJob(dto);
         }
+        logger.info("---定时任务已全部启动---");
     }
 
-    public UUID saveConfiguration(CronTaskConfigurationDto configuration) throws IOException
-    {
+    public UUID saveConfiguration(CronTaskConfigurationDto configuration) throws IOException {
         logger.debug("CronTaskConfigurationService.saveConfiguration()");
 
         UUID configurationId = cronTaskDataService.save(configuration);
@@ -65,8 +61,7 @@ class CronTaskConfigurationServiceImpl
         return configurationId;
     }
 
-    public void deleteConfiguration(UUID cronTaskConfigurationUuid) throws IOException
-    {
+    public void deleteConfiguration(UUID cronTaskConfigurationUuid) throws IOException {
         logger.debug("Deleting cron task configuration {}", cronTaskConfigurationUuid);
 
         cronTaskDataService.delete(cronTaskConfigurationUuid);
@@ -76,14 +71,13 @@ class CronTaskConfigurationServiceImpl
     }
 
     @Override
-    public CronTaskConfigurationDto getTaskConfigurationDto(UUID uuid)
-    {
+    public CronTaskConfigurationDto getTaskConfigurationDto(UUID uuid) {
         return cronTaskDataService.getTaskConfigurationDto(uuid);
     }
 
-    public CronTasksConfigurationDto getTasksConfigurationDto()
-    {
+    public CronTasksConfigurationDto getTasksConfigurationDto() {
         return cronTaskDataService.getTasksConfigurationDto();
     }
+
 
 }

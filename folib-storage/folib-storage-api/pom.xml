@@ -190,6 +190,12 @@
             <artifactId>lombok</artifactId>
             <version>1.18.24</version>
         </dependency>
+        <dependency>
+            <groupId>com.veadan.folib</groupId>
+            <artifactId>folib-cron-api</artifactId>
+            <version>1.0-SNAPSHOT</version>
+            <scope>compile</scope>
+        </dependency>
         <!--        <dependency>-->
 <!--            <groupId>com.github.ThoughtWire</groupId>-->
 <!--            <artifactId>hazelcast-locks</artifactId>-->

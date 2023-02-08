@@ -4,7 +4,6 @@ import cn.hutool.core.io.FileUtil;
 import cn.hutool.extra.spring.SpringUtil;
 import com.alibaba.fastjson.JSON;
 import com.veadan.folib.cloud.storage.s3fs.S3FileSystem;
-import com.veadan.folib.cloud.storage.s3fs.S3Iterator;
 import com.veadan.folib.cloud.storage.s3fs.S3Path;
 import com.veadan.folib.configuration.ConfigurationManager;
 import com.veadan.folib.domain.Artifact;
@@ -20,6 +19,7 @@ import com.veadan.folib.schema2.LayerManifest;
 import com.veadan.folib.service.ProxyRepositoryConnectionPoolConfigurationService;
 import com.veadan.folib.services.*;
 import com.veadan.folib.storage.repository.Repository;
+import com.veadan.folib.util.RepositoryPathUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.client.HttpClient;
@@ -160,55 +160,6 @@ public class PromotionUtil {
         log.info("Artifact moved [{}]", artifactPromotion.getPath());
     }
 
-    /**
-     * 获取绝对路径下的所有文件
-     *
-     * @param path path
-     */
-    public List<File> getNFSFiles(String path) {
-        int fileNum = 0, folderNum = 0;
-        File file = new File(path);
-        LinkedList<File> list = new LinkedList<>();
-        List<File> resultList = new ArrayList<>();
-
-        if (file.exists()) {
-            if (null == file.listFiles()) {
-                resultList.add(file);
-                return resultList;
-            }
-            for (File f : file.listFiles()) {
-                if (f.isDirectory()) {
-                    list.add(f);
-                    folderNum++;
-                } else {
-                    resultList.add(f);
-                    fileNum++;
-                }
-            }
-            while (!list.isEmpty()) {
-                File[] files = list.removeFirst().listFiles();
-                if (null == files) {
-                    continue;
-                }
-                for (File f : files) {
-                    if (f.isDirectory()) {
-                        log.info("文件夹:{}", f.getAbsolutePath());
-                        list.add(f);
-                        folderNum++;
-                    } else {
-                        log.info("文件:{}", f.getAbsolutePath());
-                        resultList.add(f);
-                        fileNum++;
-                    }
-                }
-            }
-        } else {
-            log.info("文件不存在!");
-        }
-        log.info("文件夹数量:{} ,文件数量:{}", folderNum, fileNum);
-        return resultList;
-    }
-
     public PromotionNodeOptionDto getPromotionUploadDto(PromotionArtifactDto promotionArtifactDto) throws Exception {
         PromotionNodeOptionDto promotionNodeOptionDto = new PromotionNodeOptionDto();
         promotionNodeOptionDto.setStorageId(promotionArtifactDto.getTargetStorageId());
@@ -227,7 +178,7 @@ public class PromotionUtil {
 
     private void s3PromotionUpload(PromotionArtifactDto promotionArtifactDto, Map<String, Map<String, InputStream>> filePathMap, Map<String, Object> fileMetaDataMap) throws Exception {
         S3Path s3Path = new S3Path(SpringUtil.getBean(S3FileSystem.class), promotionArtifactDto.getPath());
-        List<S3Path> s3FilesPaths = getS3FiePaths(s3Path);
+        List<S3Path> s3FilesPaths = RepositoryPathUtil.getS3FiePaths(s3Path);
         for (S3Path s3FilePath : s3FilesPaths) {
             Map<String, InputStream> inputStreamMap = new HashMap<>();
             inputStreamMap.put(s3FilePath.toAbsolutePath().toString(), Files.newInputStream(s3FilePath));
@@ -284,7 +235,7 @@ public class PromotionUtil {
     }
 
     private void nfsPromotionUpload(PromotionArtifactDto promotionArtifactDto, Map<String, Map<String, InputStream>> filePathMap, Map<String, Object> fileMetaDataMap) throws IOException {
-        List<File> list = getNFSFiles(promotionArtifactDto.getPath());
+        List<File> list = RepositoryPathUtil.getNFSFiles(promotionArtifactDto.getPath());
         for (File file : list) {
             Map<String, InputStream> inputStreamMap = new HashMap<>();
             inputStreamMap.put(file.getAbsolutePath(), Files.newInputStream(file.toPath()));
@@ -346,7 +297,7 @@ public class PromotionUtil {
 
 
     public void handleCopy(String path, Repository destRepository, Repository srcRepository) throws Exception {
-        List<File> list = getNFSFiles(path);
+        List<File> list = RepositoryPathUtil.getNFSFiles(path);
         for (File file : list) {
             try (InputStream is = Files.newInputStream(file.toPath());) {
                 String fPath = file.getAbsolutePath().toString();
@@ -420,7 +371,7 @@ public class PromotionUtil {
 
     public void handleS3ArtifactCopy(String path, Repository destRepository, Repository srcRepository) throws Exception {
         S3Path s3Path = new S3Path(SpringUtil.getBean(S3FileSystem.class), path);
-        List<S3Path> s3FilesPaths = getS3FiePaths(s3Path);
+        List<S3Path> s3FilesPaths = RepositoryPathUtil.getS3FiePaths(s3Path);
         for (S3Path s3FilePath : s3FilesPaths) {
             log.info("s3FilePath {} copy start", s3FilePath);
             String fPath = s3FilePath.toString();
@@ -503,7 +454,7 @@ public class PromotionUtil {
         Map<String, Object> metaData = new HashMap<>();
         if (absolutePath.contains("s3://")) {
             S3Path s3Path = new S3Path(SpringUtil.getBean(S3FileSystem.class), repositoryPath.getTarget().toString());
-            List<S3Path> s3FilesPaths = getS3FiePaths(s3Path);
+            List<S3Path> s3FilesPaths = RepositoryPathUtil.getS3FiePaths(s3Path);
             for (S3Path file : s3FilesPaths) {
                 String filePathStr = file.toAbsolutePath().toString();
                 int indexTemp = filePathStr.indexOf(storageId + "/" + repositoryId);
@@ -545,7 +496,7 @@ public class PromotionUtil {
             }
 
         } else {
-            List<File> files = getNFSFiles(absolutePath);
+            List<File> files = RepositoryPathUtil.getNFSFiles(absolutePath);
             for (File file : files) {
                 String fileAbsolutePath = file.getAbsolutePath();
                 int indexTemp = fileAbsolutePath.indexOf(storageId + "/" + repositoryId);
@@ -610,37 +561,6 @@ public class PromotionUtil {
 
         }
         return stringBuilder.toString();
-    }
-
-    public List<S3Path> getS3FiePaths(S3Path s3Path) throws Exception {
-        List<S3Path> listFile = new ArrayList<S3Path>();
-        List<S3Path> listDir = new ArrayList<S3Path>();
-
-        S3Iterator s3Iterator = new S3Iterator(s3Path);
-        while (s3Iterator.hasNext()) {
-            S3Path s3PathTemp = s3Iterator.next();
-            if (s3PathTemp.getFileAttributes() == null || s3PathTemp.getFileAttributes().isDirectory()) {
-                listDir.add(s3PathTemp);
-            } else {
-                listFile.add(s3PathTemp);
-            }
-        }
-        while (listDir.size() != 0) {
-            S3Path currentPath = listDir.get(0);
-            listDir.remove(currentPath);
-            s3Iterator = new S3Iterator(currentPath);
-            while (s3Iterator.hasNext()) {
-                S3Path s3PathTemp = s3Iterator.next();
-                if (s3PathTemp.getFileAttributes() == null || s3PathTemp.getFileAttributes().isDirectory()) {
-                    listDir.add(s3PathTemp);
-                } else {
-                    log.info("s3 file {}", s3PathTemp);
-                    listFile.add(s3PathTemp);
-                }
-            }
-        }
-        log.info("s3Path [{}]  文件数量：{}", s3Path.toUri().toString(), listFile.size());
-        return listFile;
     }
 
 

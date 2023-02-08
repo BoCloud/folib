@@ -2,6 +2,7 @@ package com.veadan.folib.cluster;
 
 import com.alibaba.fastjson.JSONObject;
 import com.veadan.folib.configuration.MutableSecurityPolicyConfiguration;
+import com.veadan.folib.controllers.cluster.dto.SyncCronJobDto;
 import com.veadan.folib.controllers.cluster.dto.SyncMetadataDto;
 import com.veadan.folib.controllers.cluster.dto.SyncRepositoryDto;
 import com.veadan.folib.controllers.cluster.dto.SyncStorageDto;
@@ -108,6 +109,16 @@ public class ClusterDataSyncTask {
                     ClusterSyncResultEnum syncResult = clusterSyncService.handleSyncMetadataConfiguration(syncMetadataDto, url, true);
                     isSuccess(syncResult, task);
                     logger.info("sync metadataConfiguration data end [{} ]", url);
+                }
+                // 同步仓库定时任务
+                if (Objects.equals(SyncDataTypeEnum.REPOSITORY_JOB.getValue(), task.getTaskType())) {
+                    SyncCronJobDto syncCronJobDto = JSONObject.parseObject(task.getDataJson(),
+                            SyncCronJobDto.class);
+
+                    logger.info("start sync cronJob data [{}]", url);
+                    ClusterSyncResultEnum syncResult = clusterSyncService.handleSyncCronJob(syncCronJobDto, url, true);
+                    isSuccess(syncResult, task);
+                    logger.info("sync cronJob data end [{} ]", url);
                 }
             } catch (Exception e) {
                 logger.error("error {}", e.getMessage());
