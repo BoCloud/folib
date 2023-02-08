@@ -201,13 +201,12 @@ public class CronTaskController
         try
         {
             cronTaskConfigurationService.deleteConfiguration(config.getUuid());
+            clusterSyncService.syncCronJob(new SyncCronJobDto(config, SyncCornJobEnum.DELETE));
             if (config.getJobClass().equals(GroovyCronJob.class.getName()) &&
                 config.getProperty(CRON_CONFIG_SCRIPT_PATH_KEY) != null)
             {
                 Path path = Paths.get(config.getProperty(CRON_CONFIG_SCRIPT_PATH_KEY));
                 Files.deleteIfExists(path);
-                clusterSyncService.syncCronJob(new SyncCronJobDto(config, SyncCornJobEnum.DELETE));
-
             }
         }
         catch (Exception e)
