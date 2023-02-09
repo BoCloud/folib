@@ -1,20 +1,18 @@
 package com.veadan.folib.io;
 
-import com.google.common.collect.Maps;
-import org.carlspring.commons.util.MessageDigestUtils;
-
 import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.Path;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import com.veadan.folib.util.MessageDigestUtils;
 import org.apache.commons.codec.digest.MessageDigestAlgorithms;
 import org.apache.commons.io.input.ProxyInputStream;
 
@@ -34,8 +32,6 @@ import org.apache.commons.io.input.ProxyInputStream;
 public class LayoutInputStream
         extends ProxyInputStream
 {
-
-    private Function<byte[], String> digestStringifier = com.veadan.folib.util.MessageDigestUtils::convertToHexadecimalString;
 
     private static final Set<String> DEFAULT_ALGORITHM_SET = Stream.of(MessageDigestAlgorithms.MD5,
                                                                        MessageDigestAlgorithms.SHA_1)
@@ -115,24 +111,7 @@ public class LayoutInputStream
 
     public Map<String, String> getDigestMap()
     {
-        Map<String, String> digestMap = Maps.newHashMap();
-        if (digests != null)
-        {
-            digestMap = getDigests().entrySet()
-                    .stream()
-                    .collect(Collectors.toMap(Map.Entry::getKey,
-                            e -> stringifyDigest(digestStringifier,
-                                    e.getValue()
-                                            .digest())));
-        }
-
-        return digestMap;
-    }
-
-    protected String stringifyDigest(Function<byte[], String> digestStringifier,
-                                     byte[] d)
-    {
-        return digestStringifier.apply(d);
+        return hexDigests;
     }
 
     @Override
@@ -180,7 +159,9 @@ public class LayoutInputStream
         for (Map.Entry entry : digests.entrySet())
         {
             MessageDigest digest = (MessageDigest) entry.getValue();
-            digest.update(bytes);
+            if (len != -1) {
+                digest.update(bytes, 0, len);
+            }
         }
 
         return len;

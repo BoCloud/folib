@@ -7,6 +7,7 @@ import java.nio.file.Path;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 
+import com.veadan.folib.cloud.storage.s3fs.S3Path;
 import org.apache.commons.io.input.CountingInputStream;
 import org.apache.commons.io.input.ProxyInputStream;
 import org.apache.commons.io.output.CountingOutputStream;
@@ -323,10 +324,6 @@ public class RepositoryStreamSupport
         public void commitStoreIndex()
                 throws IOException
         {
-            logger.debug("close [{}]", getContext().getPath());
-            super.close();
-            logger.debug("close [{}]", getContext().getPath());
-
             TransactionStatus transaction = ctx.getTransaction();
             if (transaction != null && !transaction.isRollbackOnly())
             {
@@ -348,11 +345,17 @@ public class RepositoryStreamSupport
         {
             try
             {
+                Path path = getContext().getPath();
+                logger.debug("{} start close", path);
                 super.close();
+                logger.debug("{} end close", path);
             }
             finally
             {
+                Path path = getContext().getPath();
+                logger.debug("{} finally start close", path);
                 RepositoryStreamSupport.this.close();
+                logger.debug("{} finally end close", path);
             }
         }
 

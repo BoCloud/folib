@@ -1,7 +1,9 @@
 package com.veadan.folib.util;
 
 import com.google.common.collect.Lists;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.exception.ExceptionUtils;
 
 import java.io.IOException;
 import java.io.RandomAccessFile;
@@ -15,6 +17,7 @@ import java.util.List;
  * @author leipenghui
  * @date 2022/11/25
  **/
+@Slf4j
 public class CommonUtils {
 
     /**
@@ -73,18 +76,19 @@ public class CommonUtils {
                     list.add(rafFile.readLine());
                 }
             }
+            Collections.reverse(list);
+            return String.join("\n", list);
         } catch (IOException e) {
-            e.printStackTrace();
+            log.error("path ：{} readLastLines ：{} error：{}", path, num, ExceptionUtils.getStackTrace(e));
+            return "";
         } finally {
             if (rafFile != null) {
                 try {
                     rafFile.close();
                 } catch (IOException e) {
-                    e.printStackTrace();
+                    log.error("path ：{} readLastLines ：{} error：{}", path, num, ExceptionUtils.getStackTrace(e));
                 }
             }
         }
-        Collections.reverse(list);
-        return String.join("\n", list);
     }
 }

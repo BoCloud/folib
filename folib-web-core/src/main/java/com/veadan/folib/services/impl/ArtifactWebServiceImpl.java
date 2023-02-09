@@ -728,8 +728,17 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
         while (s3Iterator.hasNext()) {
             S3Path s3PathTemp = s3Iterator.next();
             if (s3PathTemp.getFileAttributes() == null || s3PathTemp.getFileAttributes().isDirectory()) {
+                if (s3PathTemp.getFileName().toString().startsWith(".")) {
+                    log.info("s3 directory {} is a hidden directory", s3PathTemp);
+                    continue;
+                }
                 listDir.add(s3PathTemp);
             } else {
+                if (s3PathTemp.getFileName().toString().startsWith(".")) {
+                    log.info("s3 file {} is a hidden file", s3PathTemp);
+                    continue;
+                }
+                log.debug("s3 file {}", s3PathTemp);
                 listFile.add(s3PathTemp);
             }
         }
@@ -740,9 +749,17 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
             while (s3Iterator.hasNext()) {
                 S3Path s3PathTemp = s3Iterator.next();
                 if (s3PathTemp.getFileAttributes() == null || s3PathTemp.getFileAttributes().isDirectory()) {
+                    if (s3PathTemp.getFileName().toString().startsWith(".")) {
+                        log.info("s3 directory {} is a hidden directory", s3PathTemp);
+                        continue;
+                    }
                     listDir.add(s3PathTemp);
                 } else {
-                    log.info("s3 file {}", s3PathTemp);
+                    if (s3PathTemp.getFileName().toString().startsWith(".")) {
+                        log.info("s3 file {} is a hidden file", s3PathTemp);
+                        continue;
+                    }
+                    log.debug("s3 file {}", s3PathTemp);
                     listFile.add(s3PathTemp);
                 }
             }

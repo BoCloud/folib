@@ -21,6 +21,8 @@ public class FileContent
 
     private URL url;
 
+    private String path;
+
     public FileContent()
     {
 
@@ -107,5 +109,13 @@ public class FileContent
 
     public void setLayout(String layout) {
         this.layout = layout;
+    }
+
+    public String getPath() {
+        return path;
+    }
+
+    public void setPath(String path) {
+        this.path = path;
     }
 }

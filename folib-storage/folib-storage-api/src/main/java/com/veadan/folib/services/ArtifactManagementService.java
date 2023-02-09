@@ -8,6 +8,7 @@ import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -203,7 +204,13 @@ public class ArtifactManagementService
             throws IOException
     {
         LayoutInputStream ins = StreamUtils.findSource(LayoutInputStream.class, is);
+        if (Objects.isNull(ins)) {
+            throw new IOException("repositoryPath LayoutInputStream not exists");
+        }
+        byte [] bytes = new byte[8192];
+        while (ins.read(bytes) != -1) {
 
+        }
         Repository repository = repositoryPath.getRepository();
 
         Boolean checksumAttribute = RepositoryFiles.isChecksum(repositoryPath);
@@ -214,6 +221,8 @@ public class ArtifactManagementService
         }
 
         URI repositoryPathId = repositoryPath.toUri();
+        Set<String> digestAlgorithmSet = repositoryPath.getFileSystem().getDigestAlgorithmSet();
+        digestAlgorithmSet.forEach(ins::getMessageDigestAsHexadecimalString);
         Map<String, String> digestMap = ins.getDigestMap();
         if (Boolean.FALSE.equals(checksumAttribute) && !digestMap.isEmpty())
         {

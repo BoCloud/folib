@@ -15,15 +15,26 @@ export function getMetricsHealth () {
   })
 }
 
-
-export function viewLogs () {
+export function browseLogs (path) {
+  if (!path) {
+    path = ''
+  }
   return axios({
-    url: '/api/logging/download/folib.log',
+    url: 'api/logging/browse/' + path,
+    method: 'get',
+    headers:{
+      Accept:'application/json, text/plain, */*'
+    }
+  })
+}
+
+export function viewLogs (path) {
+  return axios({
+    url: '/api/logging/download/' + path,
     method: 'get',
     headers:{
       Accept:'*/*'
     }
-
   })
 }
 
