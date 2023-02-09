@@ -164,7 +164,8 @@ export default {
     "metadataConfigList",
     "currentTreeNode",
     "metadataTypes",
-    "successMsg"
+    "successMsg",
+    "quillOptions"
   ],
   components: {
     PrismEditor,
