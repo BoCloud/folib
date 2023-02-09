@@ -422,10 +422,14 @@
 
           <hr class="my-25" />
           <BaseData
+            ref="BaseData"
             :currentTreeNode="currentTreeNode"
             :repositoryType="repositoryType"
             :currentFileDetial="currentFileDetial"
+            :successMsg="successMsg"
             :folibRepository="folibRepository"
+                  @metadataEditHandler="metadataEditHandler"
+
           />
         </a-card>
       </a-col>
@@ -602,6 +606,7 @@
     <add-metadata
       v-if="showMetadataHandler"
       :showMetadataHandler="showMetadataHandler"
+      :quillOptions="quillOptions"
       :handlerMetadataType="handlerMetadataType"
       :propMetadataForm="metadataForm"
       :metadataConfigList="metadataConfigList"
@@ -930,7 +935,6 @@ import {
   artifactMove,
   artifactUpload,
   rpmArtifactUpload,
-  deleteArtifactMetadata,
 } from "@/api/artifact";
 import { getMetadataConfiguration } from "@/api/settings";
 
@@ -1237,7 +1241,6 @@ export default {
             .finally(() => {});
         }
       });
-      debugger;
     },
     handleUploadSubmit(e) {
       e.preventDefault();
@@ -1551,7 +1554,7 @@ export default {
         }
       });
     },
-        operationFormModalClose() {
+    operationFormModalClose() {
       this.showOperationFormModal = false;
     },
     getStoragesAndRepositories(type, layout, excludeRepositoryId, policy) {
@@ -1645,30 +1648,67 @@ export default {
         }
       }
       this.metadataList = metadataList;
+      this.$forceUpdate();
     },
     metadataEditorDrawerShow(metadata) {
       this.metadataEditorDrawerTitle = metadata.key;
       this.metadataEditorDrawerValue = metadata.value;
       this.metadataEditorDrawerVisible = true;
     },
+    metadataEditHandler(metadata) {
+      let key = metadata.key;
+      let data = {
+        key: undefined,
+        customKey: undefined,
+        custom: false,
+        type: metadata.type,
+        viewShow: metadata.viewShow === 1,
+        value: metadata.value,
+      };
+      let flag = this.metadataConfigList.some((item) => item.key === key);
+      if (!flag) {
+        data.custom = true;
+        data.customKey = key;
+      } else {
+        data.key = key;
+        data.custom = false;
+      }
+      this.metadataHandler(2, data);
+      this.metadataTypeChange(data.type);
+    },
+        metadataTypeChange(value) {
+      let editorList = ["TEXT", "MD"];
+      let prismEditorList = ["JSON"];
+      let numberList = ["NUMERICAL"];
+      if (editorList.indexOf(value) !== -1) {
+        this.metadataEditor = true;
+        this.metadataInput = false;
+        this.metadataNumber = false;
+        this.prismEditor = false;
+      } else if (prismEditorList.indexOf(value) !== -1) {
+        this.prismEditor = true;
+        this.metadataInput = false;
+        this.metadataNumber = false;
+        this.metadataEditor = false;
+      } else if (numberList.indexOf(value) !== -1) {
+        if (this.handlerMetadataType === 1) {
+          this.metadataForm.value = undefined;
+        }
+        this.metadataNumber = true;
+        this.metadataInput = false;
+        this.prismEditor = false;
+        this.metadataEditor = false;
+      } else {
+        this.metadataInput = true;
+        this.metadataEditor = false;
+        this.metadataNumber = false;
+        this.prismEditor = false;
+      }
+    },
     metadataPrismEditorDrawerShow(metadata) {
       this.metadataPrismEditorDrawerTitle = metadata.key;
       this.metadataPrismEditorDrawerValue = metadata.value;
       this.metadataPrismEditorDrawerVisible = true;
-    },
-    deleteArtifactMetadata(metadataKey) {
-      let data = {
-        key: metadataKey,
-        storageId: this.currentTreeNode.storageId,
-        repositoryId: this.currentTreeNode.repositoryId,
-        artifactPath: this.currentTreeNode.artifactPath,
-      };
-      deleteArtifactMetadata(data)
-        .then((res) => {
-          this.successMsg("删除制品元数据成功");
-          this.getMetadata();
-        })
-        .finally(() => {});
     },
     changeCodeTye(item) {
       if (item) {
@@ -1709,8 +1749,8 @@ export default {
     },
     metadataReflesh() {
       this.metadataFormReset();
+      this.$refs.BaseData.getMetadata();
       this.showMetadataHandler = false;
-      this.getMetadata();
     },
     search(value, page) {
       if (page) {
