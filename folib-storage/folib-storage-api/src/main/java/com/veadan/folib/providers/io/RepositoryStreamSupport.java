@@ -7,6 +7,7 @@ import java.nio.file.Path;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 
+import com.veadan.folib.cloud.storage.s3fs.S3Path;
 import org.apache.commons.io.input.CountingInputStream;
 import org.apache.commons.io.input.ProxyInputStream;
 import org.apache.commons.io.output.CountingOutputStream;
@@ -133,6 +134,11 @@ public class RepositoryStreamSupport
         callback.commit((RepositoryStreamWriteContext) getContext());
     }
 
+    protected void commitStoreIndex() throws IOException
+    {
+        callback.commitStoreIndex((RepositoryStreamReadContext) getContext());
+    }
+
     public class RepositoryOutputStream extends ProxyOutputStream
     {
         protected RepositoryOutputStream(Path path,
@@ -170,6 +176,7 @@ public class RepositoryStreamSupport
         }
 
 
+        @Override
         public void flush()
             throws IOException
         {
@@ -238,10 +245,10 @@ public class RepositoryStreamSupport
                 open();
                 
                 //Check that artifact exists.
-                if (!ctx.getArtifactExists()) 
+                if (!ctx.getArtifactExists())
                 {
                     logger.debug("The path [{}] does not exist!", path);
-                    
+
                     throw new ArtifactNotFoundException(path.toUri());
                 }
                 
@@ -280,6 +287,75 @@ public class RepositoryStreamSupport
             finally
             {
                 RepositoryStreamSupport.this.close();
+            }
+        }
+
+    }
+
+    public class RepositoryStoreIndexInputStream
+            extends ProxyInputStream
+    {
+
+        protected RepositoryStoreIndexInputStream(Path path,
+                                        InputStream in) throws IOException
+        {
+            super(new CountingInputStream(in));
+
+            RepositoryStreamReadContext ctx = new RepositoryStreamReadContext();
+            ctx.setPath(path);
+            ctx.setStream(this);
+            initContext(ctx);
+            TransactionStatus transaction = transactionManager.getTransaction(new DefaultTransactionDefinition(
+                    Propagation.REQUIRED.value()));
+            ctx.setTransaction(transaction);
+            try
+            {
+                open();
+                // Force init LazyInputStream
+                StreamUtils.findSource(LazyInputStream.class, in).init();
+            }
+            catch (Exception e)
+            {
+                close();
+                throw new IOException(e);
+            }
+        }
+
+        public void commitStoreIndex()
+                throws IOException
+        {
+            TransactionStatus transaction = ctx.getTransaction();
+            if (transaction != null && !transaction.isRollbackOnly())
+            {
+                logger.debug("Commit [{}]", getContext().getPath());
+                RepositoryStreamSupport.this.commitStoreIndex();
+                transactionManager.commit(transaction);
+                logger.debug("Commited [{}]", getContext().getPath());
+                callback.onStoreIndexAfter((RepositoryStreamReadContext) ctx);
+            }
+            else
+            {
+                logger.debug("Skip commit [{}]", getContext().getPath());
+            }
+        }
+
+        @Override
+        public void close()
+                throws IOException
+        {
+            try
+            {
+                Path path = getContext().getPath();
+                logger.debug("{} start close", path);
+                super.close();
+                logger.debug("{} end close", path);
+            }
+            finally
+            {
+                Path path = getContext().getPath();
+                logger.debug("{} finally start close", path);
+                RepositoryStreamSupport.this.close();
+                logger.debug("{} finally end close", path);
             }
         }
 

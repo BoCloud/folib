@@ -1,18 +1,22 @@
 package com.veadan.folib.services.impl;
 
+import com.google.common.collect.Sets;
 import com.veadan.folib.configuration.MutableSecurityPolicyConfiguration;
 import com.veadan.folib.domain.Vulnerability;
+import com.veadan.folib.enums.BlockTypeEnum;
 import com.veadan.folib.forms.configuration.SecurityPolicyConfigurationForm;
 import com.veadan.folib.repositories.VulnerabilityRepository;
 import com.veadan.folib.services.ClusterSyncService;
 import com.veadan.folib.services.ConfigurationManagementService;
 import com.veadan.folib.services.SecurityPolicyConfigurationService;
+import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.stereotype.Service;
 
 import javax.inject.Inject;
 import javax.transaction.Transactional;
 import java.io.IOException;
 import java.util.Optional;
+import java.util.Set;
 
 /**
  * @author leipenghui
@@ -82,12 +86,42 @@ public class SecurityPolicyConfigurationServiceImpl implements SecurityPolicyCon
 
     @Override
     public void saveOrUpdateBlock(SecurityPolicyConfigurationForm securityPolicyConfigurationForm) throws IOException {
+        MutableSecurityPolicyConfiguration oldMutableSecurityPolicyConfiguration = configurationManagementService.getMutableConfigurationClone().getSecurityPolicyConfiguration();
         MutableSecurityPolicyConfiguration mutableSecurityPolicyConfiguration = MutableSecurityPolicyConfiguration.builder().blockType(securityPolicyConfigurationForm.getBlockType())
-                .blockLevels(securityPolicyConfigurationForm.getBlockLevels()).filterWhites(securityPolicyConfigurationForm.getFilterWhites()).build();
+                .blockLevels(securityPolicyConfigurationForm.getBlockLevels()).filterWhites(securityPolicyConfigurationForm.getFilterWhites()).packageNames(oldMutableSecurityPolicyConfiguration.getPackageNames()).build();
         configurationManagementService.saveOrUpdateBlock(mutableSecurityPolicyConfiguration);
         syncDataSecurityPolicyConfiguration();
     }
 
+    @Override
+    public void addPackageName(SecurityPolicyConfigurationForm securityPolicyConfigurationForm) throws IOException {
+        if (CollectionUtils.isNotEmpty(securityPolicyConfigurationForm.getPackageNames())) {
+            MutableSecurityPolicyConfiguration mutableSecurityPolicyConfiguration = configurationManagementService.getMutableConfigurationClone().getSecurityPolicyConfiguration();
+            Set<String> packageNames = mutableSecurityPolicyConfiguration.getPackageNames();
+            if (CollectionUtils.isEmpty(packageNames)) {
+                packageNames = Sets.newLinkedHashSet();
+            }
+            packageNames.addAll(securityPolicyConfigurationForm.getPackageNames());
+            mutableSecurityPolicyConfiguration.setPackageNames(packageNames);
+            mutableSecurityPolicyConfiguration.setBlockType(BlockTypeEnum.PACKAGE_NAME.getType());
+            configurationManagementService.saveOrUpdateBlock(mutableSecurityPolicyConfiguration);
+            syncDataSecurityPolicyConfiguration();
+        }
+    }
+
+    @Override
+    public void deletePackageName(SecurityPolicyConfigurationForm securityPolicyConfigurationForm) throws IOException {
+        if (CollectionUtils.isNotEmpty(securityPolicyConfigurationForm.getPackageNames())) {
+            MutableSecurityPolicyConfiguration mutableSecurityPolicyConfiguration = configurationManagementService.getMutableConfigurationClone().getSecurityPolicyConfiguration();
+            Set<String> packageNames = mutableSecurityPolicyConfiguration.getPackageNames();
+            if (CollectionUtils.isNotEmpty(packageNames)) {
+                packageNames.removeAll(securityPolicyConfigurationForm.getPackageNames());
+                mutableSecurityPolicyConfiguration.setBlockType(BlockTypeEnum.PACKAGE_NAME.getType());
+                configurationManagementService.saveOrUpdateBlock(mutableSecurityPolicyConfiguration);
+                syncDataSecurityPolicyConfiguration();
+            }
+        }
+    }
 
     @Override
     public SecurityPolicyConfigurationForm config() {

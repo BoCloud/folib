@@ -227,6 +227,13 @@ public class ArtifactEventListenerScannerHandler {
         if (ArtifactEventTypeEnum.EVENT_ARTIFACT_PATH_DELETED.getType() != source && ArtifactEventTypeEnum.EVENT_ARTIFACT_DIRECTORY_PATH_DELETED.getType() != source) {
             try {
                 Artifact artifact = repositoryPath.getArtifactEntry();
+                if (artifact == null) {
+                    log.warn("No [{}] for [{}].",
+                            Artifact.class.getSimpleName(),
+                            repositoryPath);
+
+                    return;
+                }
                 artifact.setSafeLevel(SafeLevelEnum.UN_SCAN.getLevel());
                 Set<String> filePaths = Sets.newLinkedHashSet();
                 filePaths.add(repositoryPath.toAbsolutePath().toString());
@@ -249,6 +256,13 @@ public class ArtifactEventListenerScannerHandler {
         if (ArtifactEventTypeEnum.EVENT_ARTIFACT_PATH_DELETED.getType() != source && ArtifactEventTypeEnum.EVENT_ARTIFACT_DIRECTORY_PATH_DELETED.getType() != source) {
             try {
                 Artifact artifact = repositoryPath.getArtifactEntry();
+                if (artifact == null) {
+                    log.warn("No [{}] for [{}].",
+                            Artifact.class.getSimpleName(),
+                            repositoryPath);
+
+                    return;
+                }
                 artifact.setSafeLevel(SafeLevelEnum.UN_SCAN.getLevel());
                 artifact.setFilePaths(filePaths);
                 artifactService.saveOrUpdateArtifact(artifact);

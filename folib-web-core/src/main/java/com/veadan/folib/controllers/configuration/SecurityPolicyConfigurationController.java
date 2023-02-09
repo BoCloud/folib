@@ -106,4 +106,22 @@ public class SecurityPolicyConfigurationController extends BaseController {
         securityPolicyConfigurationService.saveOrUpdateBlock(securityPolicyConfigurationForm);
         return ResponseEntity.ok(ResponseMessage.ok());
     }
+
+    @ApiOperation(value = "新增包名阻断配置")
+    @ApiResponses(value = {@ApiResponse(code = 200, message = "OK")})
+    @PreAuthorize("hasAuthority('CONFIGURATION_ADD_UPDATE_SECURITY_POLICY')")
+    @PutMapping(value = "/packageName")
+    public ResponseEntity<ResponseMessage> addPackageName(@RequestBody @Validated(SecurityPolicyConfigurationForm.BlockGroup.class) SecurityPolicyConfigurationForm securityPolicyConfigurationForm) throws IOException {
+        securityPolicyConfigurationService.addPackageName(securityPolicyConfigurationForm);
+        return ResponseEntity.ok(ResponseMessage.ok());
+    }
+
+    @ApiOperation(value = "删除包名阻断配置")
+    @ApiResponses(value = {@ApiResponse(code = 200, message = "OK")})
+    @PreAuthorize("hasAuthority('CONFIGURATION_ADD_UPDATE_SECURITY_POLICY')")
+    @DeleteMapping(value = "/packageName")
+    public ResponseEntity<ResponseMessage> deletePackageName(@RequestBody @Validated(SecurityPolicyConfigurationForm.BlockGroup.class) SecurityPolicyConfigurationForm securityPolicyConfigurationForm) throws IOException {
+        securityPolicyConfigurationService.deletePackageName(securityPolicyConfigurationForm);
+        return ResponseEntity.ok(ResponseMessage.ok());
+    }
 }

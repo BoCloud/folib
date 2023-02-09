@@ -125,7 +125,7 @@ public class DirectoryListingServiceImpl implements DirectoryListingService
         for (Path contentPath : contentPaths)
         {
             FileContent file = new FileContent(contentPath.getFileName().toString());
-
+            file.setPath(contentPath.toString().replace("folib-vault/logs/", ""));
             Map<String, Object> fileAttributes = Files.readAttributes(contentPath, "*");
 
             file.setStorageId((String) fileAttributes.get(RepositoryFileAttributeType.STORAGE_ID.getName()));

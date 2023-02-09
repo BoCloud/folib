@@ -48,7 +48,7 @@ public class SecurityPolicyConfiguration
      */
     private Set<String> receiverEmails;
     /**
-     * 阻断类型 1 全量阻断 2 黑名单阻断
+     * 阻断类型 1 全量阻断 2 黑名单阻断 3 包名阻断
      */
     private Integer blockType;
     /**
@@ -59,6 +59,10 @@ public class SecurityPolicyConfiguration
      * 过滤白名单
      */
     private Boolean filterWhites;
+    /**
+     * 包名
+     */
+    private Set<String> packageNames;
 
     public SecurityPolicyConfiguration(MutableSecurityPolicyConfiguration mutableSecurityPolicyConfiguration) {
         this.levels = mutableSecurityPolicyConfiguration.getLevels();
@@ -70,6 +74,7 @@ public class SecurityPolicyConfiguration
         this.blockType = mutableSecurityPolicyConfiguration.getBlockType();
         this.blockLevels = mutableSecurityPolicyConfiguration.getBlockLevels();
         this.filterWhites = mutableSecurityPolicyConfiguration.getFilterWhites();
+        this.packageNames = mutableSecurityPolicyConfiguration.getPackageNames();
     }
 
     public Set<String> getLevels() {

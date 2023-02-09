@@ -234,6 +234,7 @@ public class MutableConfiguration
         this.securityPolicyConfiguration.setBlockType(mutableSecurityPolicyConfiguration.getBlockType());
         this.securityPolicyConfiguration.setBlockLevels(mutableSecurityPolicyConfiguration.getBlockLevels());
         this.securityPolicyConfiguration.setFilterWhites(mutableSecurityPolicyConfiguration.getFilterWhites());
+        this.securityPolicyConfiguration.setPackageNames(mutableSecurityPolicyConfiguration.getPackageNames());
     }
 
     public void setVulnerabilityBlacks(Set<String> blacks) {

@@ -389,92 +389,138 @@
             </a-card>
           </a-tab-pane>
           <a-tab-pane key="4" tab="阻断设置">
-            <a-card class="header-solid block">
-              <a-form class="block-form" ref="blockForm" :form="blockForm" layout="horizontal"
-                :wrapper-col="{ span: 8 }" @submit.prevent="blockFormSubmit">
-                <a-row :gutter="[24]">
-                  <a-col :span="24" class="text-left">
-                    <a-form-item class="mb-10" label="" :wrapper-col="{ span: 12 }">
-                      <a-radio-group v-decorator="['blockType',
-                        {
-                          rules: [
-                            { required: true, message: '请选择阻断方式' },
-                          ],
-                        },
-                      ]" style="width: 100%;" @change="blockTypeChange($event.target.value)">
-                        <a-row>
-                          <a-col :span="6">
-                            <a-radio :value="1">
-                              全量阻断 <span class="tips">（tips：此种阻断方式会自动过滤黑名单）</span>
-                            </a-radio>
-                          </a-col>
-                          <a-row class="block-full">
-                            <a-col :span="24">
-                              <a-form-item class="" label="漏洞等级" :label-col="{ span: 4 }" :wrapper-col="{ span: 14 }">
-                                <a-checkbox-group v-decorator="['blockLevels',
-                                  {
-                                    rules: [
-                                      { required: false, message: '请选择漏洞等级', type: 'array' },
-                                    ],
-                                  },
-                                ]" style="width: 100%;">
-                                  <a-row>
-                                    <a-col :span="6">
-                                      <a-checkbox value="CRITICAL">
-                                        严重
-                                      </a-checkbox>
-                                    </a-col>
-                                    <a-col :span="6">
-                                      <a-checkbox value="HIGH">
-                                        高危
-                                      </a-checkbox>
-                                    </a-col>
-                                    <a-col :span="6">
-                                      <a-checkbox value="MEDIUM">
-                                        中危
-                                      </a-checkbox>
-                                    </a-col>
-                                    <a-col :span="6">
-                                      <a-checkbox value="LOW">
-                                        低危
-                                      </a-checkbox>
-                                    </a-col>
-                                  </a-row>
-                                </a-checkbox-group>
-                              </a-form-item>
-                            </a-col>
-                            <a-col :span="24">
-                              <a-form-item class="" label="过滤白名单" :label-col="{ span: 4 }" :wrapper-col="{ span: 1 }">
-                                <a-switch v-decorator="['filterWhites',
-                                  {
-                                    valuePropName: 'checked',
-                                    rules: [
-                                      { required: false },
-                                    ],
-                                  },
-                                ]" style="width: 100%;">
+            <a-card>
+              <a-row :gutter="16">
+                <a-col :span="14">
+                  <a-card class="header-solid block block-settings">
+                    <a-form class="block-form" ref="blockForm" :form="blockForm" layout="horizontal"
+                      :wrapper-col="{ span: 24 }" @submit.prevent="blockFormSubmit">
+                      <a-row :gutter="[24]">
+                        <a-col :span="24" class="text-left">
+                          <a-form-item class="mb-10" label="" :wrapper-col="{ span: 24 }">
+                            <a-radio-group v-decorator="['blockType',
+                              {
+                                rules: [
+                                  { required: true, message: '请选择阻断方式' },
+                                ],
+                              },
+                            ]" style="width: 100%;" @change="blockTypeChange($event.target.value)">
+                              <a-row>
+                                <a-col :span="6">
+                                  <a-radio :value="1">
+                                    全量阻断 <span class="tips">（tips：此种阻断方式会自动过滤黑名单）</span>
+                                  </a-radio>
+                                </a-col>
+                                <a-row class="block-full mt-30">
+                                  <a-col :span="24">
+                                    <a-form-item class="" label="漏洞等级" :label-col="{ span: 4 }"
+                                      :wrapper-col="{ span: 12 }">
+                                      <a-checkbox-group v-decorator="['blockLevels',
+                                        {
+                                          rules: [
+                                            { required: false, message: '请选择漏洞等级', type: 'array' },
+                                          ],
+                                        },
+                                      ]" style="width: 100%;">
+                                        <a-row>
+                                          <a-col :span="6">
+                                            <a-checkbox value="CRITICAL">
+                                              严重
+                                            </a-checkbox>
+                                          </a-col>
+                                          <a-col :span="6">
+                                            <a-checkbox value="HIGH">
+                                              高危
+                                            </a-checkbox>
+                                          </a-col>
+                                          <a-col :span="6">
+                                            <a-checkbox value="MEDIUM">
+                                              中危
+                                            </a-checkbox>
+                                          </a-col>
+                                          <a-col :span="6">
+                                            <a-checkbox value="LOW">
+                                              低危
+                                            </a-checkbox>
+                                          </a-col>
+                                        </a-row>
+                                      </a-checkbox-group>
+                                    </a-form-item>
+                                  </a-col>
+                                  <a-col :span="24">
+                                    <a-form-item class="" label="过滤白名单" :label-col="{ span: 4 }"
+                                      :wrapper-col="{ span: 1 }">
+                                      <a-switch v-decorator="['filterWhites',
+                                        {
+                                          valuePropName: 'checked',
+                                          rules: [
+                                            { required: false },
+                                          ],
+                                        },
+                                      ]" style="width: 100%;">
 
-                                </a-switch>
-                              </a-form-item>
-                            </a-col>
-                          </a-row>
-                          <a-col :span="6">
-                            <a-radio :value="0">
-                              黑名单阻断 <span class="tips">（tips：此种阻断方式会自动过滤白名单）</span>
-                            </a-radio>
-                          </a-col>
-                        </a-row>
-                      </a-radio-group>
-                    </a-form-item>
-                  </a-col>
-                  <a-col :span="12" class="text-right">
-                    <a-button key="submit" class="px-30" size="small" type="primary" htmlType="submit">保存</a-button>
-                  </a-col>
-                  <a-col :span="12" class="text-left">
-                    <a-button key="back" class="px-30 ml-10" size="small" @click="blockFormCancel()">取消</a-button>
-                  </a-col>
-                </a-row>
-              </a-form>
+                                      </a-switch>
+                                    </a-form-item>
+                                  </a-col>
+                                </a-row>
+                                <a-col class="mt-30" :span="24">
+                                  <a-radio :value="2">
+                                    黑名单阻断 <span class="tips">（tips：此种阻断方式会自动过滤白名单）</span>
+                                  </a-radio>
+                                </a-col>
+                                <a-col class="mt-30" :span="24">
+                                  <a-radio :value="3">
+                                    包名阻断 <span class="tips">（tips：此种阻断方式会按照包名拦截）</span>
+                                  </a-radio>
+                                  <a-tooltip v-if="packageNameShow" @click="packageNameModalShow">
+                                    <template slot="title">新增</template>
+                                    <a-icon type="plus-circle" theme="filled" class="cursor-pointer package-name-add"
+                                      :style="{ fontSize: '28px', color: '#1890FF' }" />
+                                  </a-tooltip>
+                                </a-col>
+                              </a-row>
+                            </a-radio-group>
+                          </a-form-item>
+                        </a-col>
+                        <a-col :span="12" class="text-right mt-50" v-if="!packageNameShow">
+                          <a-button key="submit" class="px-30" size="small" type="primary"
+                            htmlType="submit">保存</a-button>
+                        </a-col>
+                        <a-col :span="12" class="text-left mt-50" v-if="!packageNameShow">
+                          <a-button key="back" class="px-30 ml-10" size="small" @click="blockFormCancel()">取消</a-button>
+                        </a-col>
+                      </a-row>
+                    </a-form>
+                  </a-card>
+                </a-col>
+                <a-col :span="10">
+                  <a-card class="header-solid package-name-list" v-if="packageNameShow">
+                    <a-row>
+                      <a-col :span="24">
+                        <a-list v-if="packageNameData && packageNameData.length > 0" item-layout="vertical" size="large"
+                          :data-source="packageNameData"
+                          :pagination="packageNameData.length === 0 ? false : { pageSize: 5, total: packageNameData.length, showLessItems: true }">
+                          <a-list-item slot="renderItem" :key="index" slot-scope="item, index">
+                            <label>{{ item }}</label>
+                            <template #extra>
+                              <a-popconfirm title="确定要删除吗？" ok-text="确定" cancel-text="取消" class="d-popconfirm"
+                                @confirm="deletePackageName(item)">
+                                <svg width="16" height="16" viewBox="0 0 20 20" fill="none"
+                                  xmlns="http://www.w3.org/2000/svg">
+                                  <path class="fill-danger" fill-rule="evenodd" clip-rule="evenodd"
+                                    d="M9 2C8.62123 2 8.27497 2.214 8.10557 2.55279L7.38197 4H4C3.44772 4 3 4.44772 3 5C3 5.55228 3.44772 6 4 6L4 16C4 17.1046 4.89543 18 6 18H14C15.1046 18 16 17.1046 16 16V6C16.5523 6 17 5.55228 17 5C17 4.44772 16.5523 4 16 4H12.618L11.8944 2.55279C11.725 2.214 11.3788 2 11 2H9ZM7 8C7 7.44772 7.44772 7 8 7C8.55228 7 9 7.44772 9 8V14C9 14.5523 8.55228 15 8 15C7.44772 15 7 14.5523 7 14V8ZM12 7C11.4477 7 11 7.44772 11 8V14C11 14.5523 11.4477 15 12 15C12.5523 15 13 14.5523 13 14V8C13 7.44772 12.5523 7 12 7Z"
+                                    fill="#111827" />
+                                </svg>
+                                <span class="text-danger">DELETE</span>
+                              </a-popconfirm>
+                            </template>
+                          </a-list-item>
+                        </a-list>
+                      </a-col>
+                    </a-row>
+                  </a-card>
+                </a-col>
+              </a-row>
             </a-card>
           </a-tab-pane>
         </a-tabs>
@@ -755,7 +801,7 @@
             <a-col :span="24" class="text-right">
               <a-tooltip @click="metadataHandler(1)">
                 <template slot="title">新增</template>
-                <a-icon type="plus-circle" theme="filled" class="add-metadata"
+                <a-icon type="plus-circle" theme="filled" class="cursor-pointer"
                   :style="{ fontSize: '28px', color: '#1890FF' }" />
               </a-tooltip>
             </a-col>
@@ -805,7 +851,7 @@
         <a-row :gutter="[24]">
           <a-col :span="24">
             <a-form-model-item class="mb-10" label="元数据KEY" :colon="false" prop="key">
-              <a-input :disabled="handlerMetadataType!==1" placeholder="请输入元数据KEY" v-model="metadataForm.key" />
+              <a-input :disabled="handlerMetadataType !== 1" placeholder="请输入元数据KEY" v-model="metadataForm.key" />
             </a-form-model-item>
           </a-col>
           <a-col :span="24">
@@ -831,6 +877,11 @@
       @ok="addVulnerabilities()" centered>
       <a-input v-model="uuid" placeholder="请输入漏洞编号" />
     </a-modal>
+
+    <a-modal v-model="showPackageNameModal" title="添加包名" :maskClosable="false" cancelText="取消" okText="确定"
+      @cancel="packageNameModalCancel()" @ok="addPackageName()" centered>
+      <a-input v-model="packageName" placeholder="请输入包名" />
+    </a-modal>
   </div>
 
 </template>
@@ -839,7 +890,7 @@
 
 import { getServerSettings, postServerSettings, getLdap, putLdap, getMachineCode, postActivate, checkMachineCode, getMetadataConfiguration, globalSettingAddOrUpdateMetadata, globalSettingDeleteMetadata } from "@/api/settings";
 import { getUsersCreateFields, getUsers } from "@/api/users";
-import { addVulnerabilitiesWhite, addVulnerabilitiesBlack, removeVulnerabilitiesWhite, removeVulnerabilitiesBlack, saveOrUpdateVulnerabilityNotify, vulnerabilityConfig, securityPolicyBlock } from "@/api/folib";
+import { addVulnerabilitiesWhite, addVulnerabilitiesBlack, removeVulnerabilitiesWhite, removeVulnerabilitiesBlack, saveOrUpdateVulnerabilityNotify, securityPolicyConfig, securityPolicyBlock, securityPolicyAddPackageName, securityPolicyDeletePackageName } from "@/api/folib";
 
 
 
@@ -961,8 +1012,12 @@ export default {
           label: "JSON",
           value: "JSON",
         },
-      ]
-    };
+      ],
+      packageNameData: [],
+      packageNameShow: false,
+      packageName: '',
+      showPackageNameModal: false,
+    }
   },
   computed: {},
   created() {
@@ -1089,7 +1144,7 @@ export default {
       }
     },
     getVulnerabilities(type) {
-      vulnerabilityConfig().then(res => {
+      securityPolicyConfig().then(res => {
         if (type !== 2) {
           this.vulnerabilities.whiteList = res.whites
         }
@@ -1167,8 +1222,8 @@ export default {
         description: ""
       })
     },
-    getVulnerabilityConfig() {
-      vulnerabilityConfig().then(res => {
+    getSecurityPolicy() {
+      securityPolicyConfig().then(res => {
         this.$nextTick(() => {
           if (this.$refs.ruleForm) {
             this.ruleForm.setFieldsValue({
@@ -1184,6 +1239,12 @@ export default {
               blockLevels: res.blockLevels,
               filterWhites: res.filterWhites,
             })
+            this.packageNameData = res.packageNames
+            if (res.blockType === 3) {
+              this.packageNameShow = true
+            } else {
+              this.packageNameShow = false
+            }
           }
         })
       }).finally(() => {
@@ -1191,10 +1252,10 @@ export default {
     },
     vulnerabilityTabChange(key) {
       if (key === '3') {
-        this.getVulnerabilityConfig()
+        this.getSecurityPolicy()
         this.getUsersList()
       } else if (key === '4') {
-        this.getVulnerabilityConfig()
+        this.getSecurityPolicy()
       } else {
         this.getVulnerabilities()
       }
@@ -1205,7 +1266,7 @@ export default {
         if (!err) {
           saveOrUpdateVulnerabilityNotify(values).then(res => {
             this.successMsg("通知设置保存成功")
-            this.getVulnerabilityConfig()
+            this.getSecurityPolicy()
           }).finally(() => {
           })
         }
@@ -1213,7 +1274,7 @@ export default {
     },
     ruleFormCancel() {
       this.ruleForm.resetFields()
-      this.getVulnerabilityConfig()
+      this.getSecurityPolicy()
     },
     getUsersList() {
       getUsers().then(res => {
@@ -1231,7 +1292,7 @@ export default {
         if (!err) {
           securityPolicyBlock(values).then(res => {
             this.successMsg("阻断设置保存成功")
-            this.getVulnerabilityConfig()
+            this.getSecurityPolicy()
           }).finally(() => {
           })
         }
@@ -1239,14 +1300,18 @@ export default {
     },
     blockFormCancel() {
       this.blockForm.resetFields()
-      this.getVulnerabilityConfig()
+      this.getSecurityPolicy()
     },
     blockTypeChange(blockType) {
-      if (blockType === 0) {
+      if (blockType !== 1) {
         this.blockForm.setFieldsValue({
           blockLevels: [],
           filterWhites: false,
         })
+      }
+      this.packageNameShow = false
+      if (blockType === 3) {
+        this.packageNameShow = true
       }
     },
     getMetadataConfiguration() {
@@ -1284,14 +1349,14 @@ export default {
         if (valid) {
           let data = Object.assign({}, this.metadataForm)
           if (this.handlerMetadataType === 1) {
-             let flag = this.metadataList.some(metadata => metadata.key === data.key)
-             if (flag) {
+            let flag = this.metadataList.some(metadata => metadata.key === data.key)
+            if (flag) {
               this.$notification["warning"]({
                 message: '元数据KEY已存在',
                 description: ""
               })
               return false
-             }
+            }
           }
           if (data.viewShow) {
             data.viewShow = 1
@@ -1324,6 +1389,56 @@ export default {
     metadataHandlerCancel() {
       this.metadataFormReset()
       this.showMetadataHandler = false
+    },
+    packageNameModalCancel() {
+      this.packageName = ''
+      this.showPackageNameModal = false
+    },
+    packageNameModalShow() {
+      this.packageName = ''
+      this.showPackageNameModal = true
+    },
+    addPackageName() {
+      this.packageName = this.packageName.trim()
+      if (!this.packageName || this.packageName.length < 1) {
+        this.$notification["warning"]({
+          message: "请输入包名",
+          description: ""
+        })
+        return false
+      }
+      securityPolicyAddPackageName({ blockType: 3, packageNames: [this.packageName] }).then(res => {
+        this.successMsg("添加包名 " + this.packageName + " 成功")
+      }).catch((err) => {
+        this.$notification["error"]({
+          message: err.response.data.error,
+          description: ""
+        })
+      }).finally(() => {
+        this.packageName = ''
+        this.showPackageNameModal = false
+        this.getSecurityPolicy()
+      })
+    },
+    deletePackageName(packageName) {
+      packageName = packageName.trim()
+      if (!packageName || packageName.length < 1) {
+        this.$notification["warning"]({
+          message: "请选择包名",
+          description: ""
+        })
+        return false
+      }
+      securityPolicyDeletePackageName({ blockType: 3, packageNames: [packageName] }).then(res => {
+        this.successMsg("删除包名 " + packageName + " 成功")
+      }).catch((err) => {
+        this.$notification["error"]({
+          message: err.response.data.error,
+          description: ""
+        })
+      }).finally(() => {
+        this.getSecurityPolicy()
+      })
     },
   },
 };
@@ -1531,8 +1646,6 @@ export default {
 
   .block-full {
     padding: 0 0 0 25px;
-    margin-top: 20px;
-    margin-bottom: 15px;
   }
 
   .block-form .block-full .ant-form-item-label,
@@ -1551,8 +1664,19 @@ export default {
     opacity: 0.7;
   }
 
-  .add-metadata {
+  .cursor-pointer {
     cursor: pointer;
+  }
+
+  .package-name-add {
+    vertical-align: middle;
+  }
+
+  .block-settings,.package-name-list.ant-card{
+    box-shadow: unset;
+  }
+  .block-settings,.package-name-list.ant-card-bordered{
+    border: unset;
   }
 }
 </style>

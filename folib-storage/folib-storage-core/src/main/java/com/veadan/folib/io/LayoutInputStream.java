@@ -1,10 +1,9 @@
 package com.veadan.folib.io;
 
-import org.carlspring.commons.util.MessageDigestUtils;
-
 import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.Path;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.LinkedHashMap;
@@ -13,6 +12,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import com.veadan.folib.util.MessageDigestUtils;
 import org.apache.commons.codec.digest.MessageDigestAlgorithms;
 import org.apache.commons.io.input.ProxyInputStream;
 
@@ -109,6 +109,11 @@ public class LayoutInputStream
         this.digests = digests;
     }
 
+    public Map<String, String> getDigestMap()
+    {
+        return hexDigests;
+    }
+
     @Override
     public int read()
             throws IOException
@@ -154,7 +159,9 @@ public class LayoutInputStream
         for (Map.Entry entry : digests.entrySet())
         {
             MessageDigest digest = (MessageDigest) entry.getValue();
-            digest.update(bytes);
+            if (len != -1) {
+                digest.update(bytes, 0, len);
+            }
         }
 
         return len;

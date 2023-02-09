@@ -15,6 +15,10 @@ public interface ArtifactResolutionService
     RepositoryStreamSupport.RepositoryInputStream getInputStream(RepositoryPath path)
             throws IOException;
 
+
+    RepositoryStreamSupport.RepositoryStoreIndexInputStream getStoreIndexInputStream(RepositoryPath path)
+            throws IOException;
+
     RepositoryStreamSupport.RepositoryOutputStream getOutputStream(RepositoryPath repositoryPath)
             throws IOException,
                    NoSuchAlgorithmException;

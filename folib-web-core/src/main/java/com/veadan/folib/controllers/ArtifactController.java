@@ -122,4 +122,16 @@ public class ArtifactController extends BaseController {
         artifactWebService.batchArtifactMetadata(list);
         return ResponseEntity.ok("ok");
     }
+
+    @ApiOperation(value = "构建图数据库索引")
+    @ApiResponses(value = {@ApiResponse(code = 200, message = "OK")})
+    @PreAuthorize("hasAuthority('ADMIN')")
+    @PostMapping(value = "/buildGraphIndex")
+    public ResponseEntity<String> buildGraphIndex(@RequestParam(name = "storageId") String storageId,
+                                                @RequestParam(name = "repositoryId") String repositoryId,
+                                                @RequestParam(name = "path", required = false) String path,
+                                                @RequestParam(name = "batch", required = false) Integer batch) throws Exception {
+        artifactWebService.buildGraphIndex(storageId, repositoryId, path, batch);
+        return ResponseEntity.ok("ok");
+    }
 }

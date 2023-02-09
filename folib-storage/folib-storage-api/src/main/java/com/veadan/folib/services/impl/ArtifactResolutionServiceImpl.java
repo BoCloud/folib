@@ -51,6 +51,15 @@ public class ArtifactResolutionServiceImpl
     }
 
     @Override
+    public RepositoryStreamSupport.RepositoryStoreIndexInputStream getStoreIndexInputStream(RepositoryPath path) throws IOException {
+        Repository repository = path.getFileSystem().getRepository();
+        artifactOperationsValidator.validate(path);
+
+        RepositoryProvider repositoryProvider = repositoryProviderRegistry.getProvider(repository.getType());
+        return (RepositoryStreamSupport.RepositoryStoreIndexInputStream) repositoryProvider.getStoreIndexInputStream(path);
+    }
+
+    @Override
     public RepositoryStreamSupport.RepositoryOutputStream getOutputStream(RepositoryPath repositoryPath)
         throws IOException,
         NoSuchAlgorithmException

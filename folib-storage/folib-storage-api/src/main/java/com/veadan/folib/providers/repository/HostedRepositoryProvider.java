@@ -52,6 +52,7 @@ public class HostedRepositoryProvider extends AbstractRepositoryProvider
         return ALIAS;
     }
 
+    @Override
     protected InputStream getInputStreamInternal(RepositoryPath repositoryPath) throws IOException
     {
         try

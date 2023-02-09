@@ -19,6 +19,7 @@ import java.nio.file.Paths;
 import java.util.Optional;
 import java.util.concurrent.ForkJoinPool;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import com.veadan.folib.util.CommonUtils;
 import io.swagger.annotations.Api;
@@ -42,10 +43,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.ModelMap;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestHeader;
-import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 import static com.veadan.folib.controllers.logging.LoggingManagementController.ROOT_CONTEXT;
@@ -104,10 +102,14 @@ public class LoggingManagementController
                              MediaType.TEXT_PLAIN_VALUE,               // plain text / json upon errors
                              MediaType.APPLICATION_JSON_VALUE })
     public ResponseEntity downloadLog(@PathVariable("path") String path,
+                                      @RequestParam(name = "directory", required = false) String directory,
                                       @RequestHeader(HttpHeaders.ACCEPT) String accept)
     {
         try
         {
+            if (StringUtils.isNotBlank(directory)) {
+                path = directory + File.separator + path;
+            }
             Path logsBaseDir = Paths.get(propertiesBooter.getLogsDirectory());
             Path requestedLogPath = Paths.get(logsBaseDir.toString(), path);
 
@@ -166,7 +168,7 @@ public class LoggingManagementController
             }
 
             DirectoryListing directoryListing = getDirectoryListingService().fromPath(logsBaseDir, requestedLogPath);
-
+            directoryListing.setFiles(directoryListing.getFiles().stream().filter(file -> file.getName().endsWith(".log")).collect(Collectors.toList()));
             if (acceptHeader != null && acceptHeader.contains(MediaType.APPLICATION_JSON_VALUE))
             {
                 return ResponseEntity.ok(objectMapper.writer().writeValueAsString(directoryListing));
@@ -175,7 +177,6 @@ public class LoggingManagementController
             String currentUrl = StringUtils.chomp(request.getRequestURI(), "/");
             String downloadUrl = currentUrl.replaceFirst("/browse", "/download");
             boolean showBack = path.isPresent() && !StringUtils.isBlank(path.get());
-
             model.addAttribute("showBack", showBack);
             model.addAttribute("currentUrl", currentUrl);
             model.addAttribute("downloadBaseUrl", downloadUrl);
