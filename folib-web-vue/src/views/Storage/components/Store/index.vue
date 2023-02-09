@@ -1709,8 +1709,8 @@ export default {
     },
     metadataReflesh() {
       this.metadataFormReset();
-      this.getMetadata();
       this.showMetadataHandler = false;
+      this.getMetadata();
     },
     search(value, page) {
       if (page) {
