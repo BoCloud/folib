@@ -30,7 +30,9 @@ export default {
     },
     handleSearchMenuClick(active) {
       this.$parent.$parent.handlerSearchType(active.key)
-      this.search()
+     setTimeout(() => {
+        this.search()
+     }, 500);
     },
     mouse(bool) {
       this.$emit('mouse', bool)

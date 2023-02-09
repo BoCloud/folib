@@ -50,4 +50,22 @@ public class RepositoryEventListenerRegistry
         dispatchEvent(event);
     }
 
+    public void dispatchRepoDelteToCronJobDeleteEvent(String storageId,
+                                                      String repositoryId) {
+        RepositoryEvent event = new RepositoryEvent(storageId,
+                repositoryId,
+                RepositoryEventTypeEnum.EVENT_REPOSITORY_DELETE_TO_CRON_JOB_DELETED.getType());
+
+        dispatchEvent(event);
+    }
+
+    public void dispatchRepoDelteAllToCronJobDeleteEvent(String storageId,
+                                                         String repositoryId) {
+        RepositoryEvent event = new RepositoryEvent(storageId,
+                null,
+                RepositoryEventTypeEnum.EVENT_REPOSITORY_DELETE_ALL_TO_CRON_JOB_DELETED.getType());
+
+        dispatchEvent(event);
+    }
+
 }

@@ -58,7 +58,13 @@ public enum RepositoryEventTypeEnum
     /**
      * Occurs when all the trash for repositories has been undeleted.
      */
-    EVENT_REPOSITORY_UNDELETE_TRASH_FOR_ALL_REPOSITORIES(10);
+    EVENT_REPOSITORY_UNDELETE_TRASH_FOR_ALL_REPOSITORIES(10),
+
+    EVENT_REPOSITORY_DELETE_TO_CRON_JOB_DELETED(11),
+
+    EVENT_REPOSITORY_DELETE_ALL_TO_CRON_JOB_DELETED(12);
+
+
 
     private int type;
 

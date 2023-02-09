@@ -4,9 +4,11 @@ package com.veadan.folib.controllers.cluster;
 import com.veadan.folib.cluster.SyncMetadataEnum;
 import com.veadan.folib.configuration.MutableSecurityPolicyConfiguration;
 import com.veadan.folib.controllers.BaseController;
+import com.veadan.folib.controllers.cluster.dto.SyncCronJobDto;
 import com.veadan.folib.controllers.cluster.dto.SyncMetadataDto;
 import com.veadan.folib.controllers.cluster.dto.SyncRepositoryDto;
 import com.veadan.folib.controllers.cluster.dto.SyncStorageDto;
+import com.veadan.folib.cron.services.CronTaskConfigurationService;
 import com.veadan.folib.services.StorageManagementService;
 import io.swagger.annotations.Api;
 import org.slf4j.Logger;
@@ -28,6 +30,9 @@ public class FolibClusterSyncController extends BaseController {
 
     @Autowired
     private StorageManagementService storageManagementService;
+
+    @Autowired
+    private CronTaskConfigurationService cronTaskConfigurationService;
 
     @PostMapping("syncStorage")
     public ResponseEntity syncStorage(@RequestBody SyncStorageDto syncStorageDto) {
@@ -93,6 +98,28 @@ public class FolibClusterSyncController extends BaseController {
             return getBadRequestResponseEntity(e.getMessage(), "");
         }
         return ResponseEntity.ok("sync repository ok");
+    }
+
+    /**
+     * 同步定时任务
+     *
+     * @param syncCronJobDto 定时任务dto
+     * @return 返回结果
+     */
+    @PostMapping("syncRepositoryJob")
+    public ResponseEntity syncCronJob(@RequestBody SyncCronJobDto syncCronJobDto) {
+        try {
+            if (syncCronJobDto.getSyncCornJobEnum().getType() == 1) {
+                cronTaskConfigurationService.saveConfiguration(syncCronJobDto.getConfigurationDto());
+                logger.info("sycn  save cron job success");
+            } else if (syncCronJobDto.getSyncCornJobEnum().getType() == 2) {
+                cronTaskConfigurationService.deleteConfiguration(syncCronJobDto.getConfigurationDto().getUuid());
+                logger.info("sycn delete cron job success");
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return ResponseEntity.ok("sync syncCronJob ok");
     }
 
 }

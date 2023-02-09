@@ -45,7 +45,7 @@ public class FolibSpringBootApplication {
         SpringApplication application = new SpringApplication(FolibSpringBootApplication.class);
         application.setApplicationStartup(new BufferingApplicationStartup(1500));
         applicationContext = application.run(args);
-        //applicationContext.start();
+        applicationContext.start();
     }
 
     public static void restart() {

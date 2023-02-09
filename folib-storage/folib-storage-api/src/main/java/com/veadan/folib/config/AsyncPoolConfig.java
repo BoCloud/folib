@@ -1,4 +1,4 @@
-package com.veadan.folib.scanner.config;
+package com.veadan.folib.config;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -100,6 +100,24 @@ public class AsyncPoolConfig {
     @Value("${folib.threadPool.asyncSecurityPolicy.awaitTerminationSeconds}")
     private Integer asyncSecurityPolicyAwaitTerminationSeconds;
 
+    @Value("${folib.threadPool.asyncRepositoryCleanup.corePoolSize}")
+    private Integer asyncRepositoryCleanupCorePoolSize;
+
+    @Value("${folib.threadPool.asyncRepositoryCleanup.maxPoolSize}")
+    private Integer asyncRepositoryCleanupMaxPoolSize;
+
+    @Value("${folib.threadPool.asyncRepositoryCleanup.queueCapacity}")
+    private Integer asyncRepositoryCleanupQueueCapacity;
+
+    @Value("${folib.threadPool.asyncRepositoryCleanup.keepAliveSeconds}")
+    private Integer asyncRepositoryCleanupKeepAliveSeconds;
+
+    @Value("${folib.threadPool.asyncRepositoryCleanup.threadNamePrefix}")
+    private String asyncRepositoryCleanupThreadNamePrefix;
+
+    @Value("${folib.threadPool.asyncRepositoryCleanup.awaitTerminationSeconds}")
+    private Integer asyncRepositoryCleanupAwaitTerminationSeconds;
+
     @Value("${folib.threadPool.asyncMetadata.corePoolSize}")
     private Integer asyncMetadataCorePoolSize;
 
@@ -118,6 +136,24 @@ public class AsyncPoolConfig {
     @Value("${folib.threadPool.asyncMetadata.awaitTerminationSeconds}")
     private Integer asyncMetadataAwaitTerminationSeconds;
 
+    @Value("${folib.threadPool.asyncCronJob.corePoolSize}")
+    private Integer asyncCronJobCorePoolSize;
+
+    @Value("${folib.threadPool.asyncCronJob.maxPoolSize}")
+    private Integer asyncCronJobMaxPoolSize;
+
+    @Value("${folib.threadPool.asyncCronJob.queueCapacity}")
+    private Integer asyncCronJobQueueCapacity;
+
+    @Value("${folib.threadPool.asyncCronJob.keepAliveSeconds}")
+    private Integer asyncCronJobKeepAliveSeconds;
+
+    @Value("${folib.threadPool.asyncCronJob.threadNamePrefix}")
+    private String asyncCronJobThreadNamePrefix;
+
+    @Value("${folib.threadPool.asyncCronJob.awaitTerminationSeconds}")
+    private Integer asyncCronJobAwaitTerminationSeconds;
+
     @Bean
     public ThreadPoolTaskExecutor asyncThreadPoolTaskExecutor() {
         return buildThreadPoolTaskExecutor(asyncCorePoolSize, asyncMaxPoolSize, asyncQueueCapacity, asyncKeepAliveSeconds, asyncThreadNamePrefix, asyncAwaitTerminationSeconds);
@@ -134,6 +170,11 @@ public class AsyncPoolConfig {
     }
 
     @Bean
+    public ThreadPoolTaskExecutor asyncCronJobThreadPoolExecutor() {
+        return buildThreadPoolTaskExecutor(asyncCronJobCorePoolSize, asyncCronJobMaxPoolSize, asyncCronJobQueueCapacity, asyncCronJobKeepAliveSeconds, asyncCronJobThreadNamePrefix, asyncCronJobAwaitTerminationSeconds);
+    }
+
+    @Bean
     public ThreadPoolTaskExecutor asyncRepositoryThreadPoolExecutor() {
         return buildThreadPoolTaskExecutor(asyncRepositoryCorePoolSize, asyncRepositoryMaxPoolSize, asyncRepositoryQueueCapacity, asyncRepositoryKeepAliveSeconds, asyncRepositoryThreadNamePrefix, asyncRepositoryAwaitTerminationSeconds);
     }
@@ -146,6 +187,18 @@ public class AsyncPoolConfig {
     @Bean
     public ThreadPoolTaskExecutor asyncMetadataConfigurationThreadPoolExecutor() {
         return buildThreadPoolTaskExecutor(asyncMetadataCorePoolSize, asyncMetadataMaxPoolSize, asyncMetadataQueueCapacity, asyncMetadataKeepAliveSeconds, asyncMetadataThreadNamePrefix, asyncMetadataAwaitTerminationSeconds);
+    }
+
+    @Bean
+    public ThreadPoolTaskExecutor asyncRepositoryCleanupThreadPoolExecutor(){
+        return buildThreadPoolTaskExecutor(
+                asyncRepositoryCleanupCorePoolSize,
+                asyncRepositoryCleanupMaxPoolSize,
+                asyncRepositoryCleanupQueueCapacity,
+                asyncRepositoryCleanupKeepAliveSeconds,
+                asyncRepositoryCleanupThreadNamePrefix,
+                asyncRepositoryCleanupAwaitTerminationSeconds);
+
     }
 
     /**
