@@ -54,6 +54,7 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -74,6 +75,7 @@ import java.text.SimpleDateFormat;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.*;
+import java.util.concurrent.FutureTask;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -531,12 +533,53 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
     }
 
     @Override
+    @Async("asyncThreadPoolTaskExecutor")
     public void buildGraphIndex(String storageId, String repositoryId, String path, Integer batch) throws Exception {
+        log.info("=====>>>>> buildGraphIndex is started");
+        if (StringUtils.isNotBlank(storageId) && StringUtils.isNotBlank(repositoryId)) {
+            handlerRepository(storageId, repositoryId, path, batch);
+        } else if (StringUtils.isNotBlank(storageId)) {
+            path = "";
+            Map<String, ? extends Repository> repositoryMaps = configurationManagementService.getMutableConfigurationClone().getStorage(storageId).getRepositories();
+            if (!repositoryMaps.isEmpty()) {
+                for (String repository : repositoryMaps.keySet()) {
+                    handlerRepository(storageId, repository, path, batch);
+                }
+            }
+        } else if (StringUtils.isBlank(storageId) && StringUtils.isBlank(repositoryId)) {
+            path = "";
+            Map<String, StorageDto> storageMap = configurationManagementService.getMutableConfigurationClone().getStorages();
+            if (!storageMap.isEmpty()) {
+                for (Map.Entry<String, StorageDto> storageEntry : storageMap.entrySet()) {
+                    Map<String, ? extends Repository> repositoryMaps = configurationManagementService.getMutableConfigurationClone().getStorage(storageEntry.getKey()).getRepositories();
+                    if (!repositoryMaps.isEmpty()) {
+                        for (String repository : repositoryMaps.keySet()) {
+                            handlerRepository(storageEntry.getKey(), repository, path, batch);
+                        }
+                    }
+                }
+            }
+        }
+        log.info("=====>>>>> buildGraphIndex is finished");
+    }
+
+    /**
+     * 单仓库
+     *
+     * @param storageId    存储空间
+     * @param repositoryId 仓库id
+     * @param path         path
+     * @param batch        每批数量
+     * @throws Exception 异常
+     */
+    private void handlerRepository(String storageId, String repositoryId, String path, Integer batch) throws Exception {
+        log.info("handlerRepository storageId：{}，repositoryId：{} start", storageId, repositoryId);
         RootRepositoryPath rootRepositoryPath = repositoryPathResolver.resolve(storageId, repositoryId);
         if (StringUtils.isBlank(path)) {
             path = rootRepositoryPath.toAbsolutePath().toString();
         }
         handlerArtifacts(path, rootRepositoryPath.getRepository(), batch);
+        log.info("handlerRepository storageId：{}，repositoryId：{} finished", storageId, repositoryId);
     }
 
     /**
@@ -639,25 +682,26 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
         LinkedList<File> list = new LinkedList<>();
         List<File> resultList = new ArrayList<>();
         if (rootFile.exists()) {
-            if (null == rootFile.listFiles()) {
+            if (null == rootFile.listFiles() && rootFile.isFile()) {
                 resultList.add(rootFile);
-                return resultList;
-            }
-            for (File f : Objects.requireNonNull(rootFile.listFiles())) {
-                if (f.isDirectory()) {
-                    if (f.isHidden()) {
-                        log.info("directory：{} is a hidden directory", f.getName());
-                        continue;
+                fileNum++;
+            } else if (Objects.nonNull(rootFile.listFiles())) {
+                for (File f : rootFile.listFiles()) {
+                    if (f.isDirectory()) {
+                        if (f.isHidden()) {
+                            log.info("directory：{} is a hidden directory", f.getName());
+                            continue;
+                        }
+                        list.add(f);
+                        folderNum++;
+                    } else {
+                        if (f.isHidden()) {
+                            log.info("file：{} is a hidden file", f.getName());
+                            continue;
+                        }
+                        resultList.add(f);
+                        fileNum++;
                     }
-                    list.add(f);
-                    folderNum++;
-                } else {
-                    if (f.isHidden()) {
-                        log.info("file：{} is a hidden file", f.getName());
-                        continue;
-                    }
-                    resultList.add(f);
-                    fileNum++;
                 }
             }
             while (!list.isEmpty()) {
@@ -690,26 +734,31 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
         }
         log.info("Path：{} directory size:{} ,file size:{}", path, folderNum, fileNum);
         List<List<File>> fileLists = Lists.partition(resultList, batch);
+        List<FutureTask<String>> futureTaskList = Lists.newArrayList();
+        FutureTask<String> futureTask = null;
         for (List<File> fileList : fileLists) {
-            asyncThreadPoolTaskExecutor.execute(() -> {
+            futureTask = new FutureTask<String>(() -> {
                 for (File file : fileList) {
-                    try (InputStream is = Files.newInputStream(file.toPath())) {
-                        String fPath = file.getAbsolutePath();
-                        String tempStr = repository.getStorage().getId() + File.separator + repository.getId() + File.separator;
-                        int fPathIndex = fPath.lastIndexOf(tempStr);
-                        String artifactPath = fPath.substring(fPathIndex).replace(tempStr, "");
-                        RepositoryPath repositoryPath = repositoryPathResolver.resolve(repository.getStorage().getId(), repository.getId(), artifactPath);
-                        if (!RepositoryFiles.isArtifact(repositoryPath)) {
-                            log.info("handlerArtifact path：{} not is a artifact", file);
-                            continue;
-                        }
-                        artifactManagementService.validateAndStoreIndex(repositoryPath, is);
-                    } catch (Exception e) {
-                        log.error("handlerArtifact path：{} error {}", file, ExceptionUtils.getStackTrace(e));
+                    String fPath = file.getAbsolutePath();
+                    String tempStr = repository.getStorage().getId() + File.separator + repository.getId() + File.separator;
+                    int fPathIndex = fPath.lastIndexOf(tempStr);
+                    String artifactPath = fPath.substring(fPathIndex).replace(tempStr, "");
+                    RepositoryPath repositoryPath = repositoryPathResolver.resolve(repository.getStorage().getId(), repository.getId(), artifactPath);
+                    if (!RepositoryFiles.isArtifact(repositoryPath)) {
+                        log.info("handlerArtifact path：{} not is a artifact", file);
+                        continue;
                     }
+                    artifactManagementService.validateAndStoreIndex(repositoryPath);
                 }
+                return "success";
             });
+            futureTaskList.add(futureTask);
+            asyncThreadPoolTaskExecutor.submit(futureTask);
         }
+        for (FutureTask<String> task : futureTaskList) {
+            task.get();
+        }
+        log.info("=====>>>>> handlerNFSFiles is finished");
         return resultList;
     }
 
@@ -725,6 +774,9 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
         List<S3Path> listFile = new ArrayList<>();
         List<S3Path> listDir = new ArrayList<>();
         S3Iterator s3Iterator = new S3Iterator(s3Path);
+        if (!s3Iterator.hasNext()) {
+            listFile.add(s3Path);
+        }
         while (s3Iterator.hasNext()) {
             S3Path s3PathTemp = s3Iterator.next();
             if (s3PathTemp.getFileAttributes() == null || s3PathTemp.getFileAttributes().isDirectory()) {
@@ -766,26 +818,31 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
         }
         log.info("s3Path [{}]  file size：{}", s3Path.toUri().toString(), listFile.size());
         List<List<S3Path>> s3PathLists = Lists.partition(listFile, batch);
+        List<FutureTask<String>> futureTaskList = Lists.newArrayList();
+        FutureTask<String> futureTask = null;
         for (List<S3Path> s3PathList : s3PathLists) {
-            asyncThreadPoolTaskExecutor.execute(() -> {
+            futureTask = new FutureTask<String>(() -> {
                 for (S3Path s3FilePath : s3PathList) {
-                    try (InputStream is = Files.newInputStream(s3FilePath)) {
-                        String fPath = s3FilePath.toString();
-                        String tempStr = repository.getStorage().getId() + File.separator + repository.getId() + File.separator;
-                        int fPathIndex = fPath.lastIndexOf(tempStr);
-                        String artifactPath = fPath.substring(fPathIndex).replace(tempStr, "");
-                        RepositoryPath repositoryPath = repositoryPathResolver.resolve(repository.getStorage().getId(), repository.getId(), artifactPath);
-                        if (!RepositoryFiles.isArtifact(repositoryPath)) {
-                            log.info("handlerArtifact path：{} not is a artifact", s3FilePath.toAbsolutePath());
-                            continue;
-                        }
-                        artifactManagementService.validateAndStoreIndex(repositoryPath, is);
-                    } catch (Exception e) {
-                        log.error("handlerArtifact path：{} error {}", s3FilePath.toAbsolutePath(), ExceptionUtils.getStackTrace(e));
+                    String fPath = s3FilePath.toString();
+                    String tempStr = repository.getStorage().getId() + File.separator + repository.getId() + File.separator;
+                    int fPathIndex = fPath.lastIndexOf(tempStr);
+                    String artifactPath = fPath.substring(fPathIndex).replace(tempStr, "");
+                    RepositoryPath repositoryPath = repositoryPathResolver.resolve(repository.getStorage().getId(), repository.getId(), artifactPath);
+                    if (!RepositoryFiles.isArtifact(repositoryPath)) {
+                        log.info("handlerArtifact path：{} not is a artifact", s3FilePath.toAbsolutePath());
+                        continue;
                     }
+                    artifactManagementService.validateAndStoreIndex(repositoryPath);
                 }
+                return "success";
             });
+            futureTaskList.add(futureTask);
+            asyncThreadPoolTaskExecutor.submit(futureTask);
         }
+        for (FutureTask<String> task : futureTaskList) {
+            task.get();
+        }
+        log.info("=====>>>>> handlerS3Paths is finished");
         return listFile;
     }
 
@@ -841,24 +898,13 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
             layerList.add(manifestConfig);
             for (String layer : layerList) {
                 String blob = arrayPath[0] + File.separator + "blobs" + File.separator + layer;
-                RepositoryPath vSrcBlobPath = repositoryPathResolver.resolve(repository.getStorage().getId(), repository.getId(), blob);
-                try (InputStream blobIs = Files.newInputStream(vSrcBlobPath)) {
-                    artifactManagementService.validateAndStoreIndex(vSrcBlobPath, blobIs);
-                } catch (Exception e) {
-                    e.printStackTrace();
-                    log.error("handler blob {}  error {}", relativizePath, e.getMessage());
-                }
+                RepositoryPath blobPath = repositoryPathResolver.resolve(repository.getStorage().getId(), repository.getId(), blob);
+                artifactManagementService.validateAndStoreIndex(blobPath);
             }
             // manifest
             String manifestFile = arrayPath[0] + File.separator + "manifest" + File.separator + manifestBuilder;
             RepositoryPath manifestPath = repositoryPathResolver.resolve(repository.getStorage().getId(), repository.getId(), manifestFile);
-            try (InputStream manifestIs = Files.newInputStream(manifestPath)) {
-                RepositoryPath destBlobPath = repositoryPathResolver.resolve(repository.getStorage().getId(), repository.getId(), manifestFile);
-                artifactManagementService.validateAndStoreIndex(destBlobPath, manifestIs);
-            } catch (Exception e) {
-                e.printStackTrace();
-                log.error("handler manifest {} error {}", relativizePath, e.getMessage());
-            }
+            artifactManagementService.validateAndStoreIndex(manifestPath);
         }
     }
 }
