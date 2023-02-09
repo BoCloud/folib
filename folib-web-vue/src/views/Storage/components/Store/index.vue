@@ -31,15 +31,8 @@
                       @click="createData"
                       :size="54"
                       shape="square"
+                      style="border-radius: 8px; background-image: linear-gradient( 310deg, #020202, #5c6391 );"
                       :src="'images/folib/' + getLayoutTypeHandle() + '.svg'"
-                      style="
-                        border-radius: 8px;
-                        background-image: linear-gradient(
-                          310deg,
-                          #020202,
-                          #5c6391
-                        );
-                      "
                     />
                   </a>
                   <div class="avatar-info">
@@ -523,7 +516,7 @@
         </a-card>
       </a-col>
     </a-row>
-    <user-doc
+    <use-doc
       :usedVisible="usedVisible"
       :repositoryType="repositoryType"
       :folibRepository="folibRepository"
@@ -942,7 +935,7 @@ import SearchBox from "@/components/Tools/SearchBox";
 import zhCN from "ant-design-vue/es/locale/zh_CN";
 
 import BaseData from "./Data.vue";
-import UserDoc from "./UserDoc.vue";
+import UseDoc from "./UseDoc.vue";
 import AddMetadata from "./AddMetadata.vue";
 
 import { PrismEditor } from "vue-prism-editor";
@@ -966,7 +959,7 @@ export default {
     PrismEditor,
     SearchBox,
     BaseData,
-    UserDoc,
+    UseDoc,
     AddMetadata,
   },
   data() {
@@ -1193,6 +1186,10 @@ export default {
         }
       });
       this.showRpmUploadFormModal = true;
+    },
+    uploadRpmFormModalClose() {
+      this.rpmUploadForm.resetFields();
+      this.showRpmUploadFormModal = false
     },
     beforeUpload(file, fileList) {
       return false;
@@ -1676,7 +1673,7 @@ export default {
       this.metadataHandler(2, data);
       this.metadataTypeChange(data.type);
     },
-        metadataTypeChange(value) {
+    metadataTypeChange(value) {
       let editorList = ["TEXT", "MD"];
       let prismEditorList = ["JSON"];
       let numberList = ["NUMERICAL"];

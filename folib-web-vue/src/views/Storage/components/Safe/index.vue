@@ -120,6 +120,7 @@
         :queryRepositoryId="false"
         :storageId="folibRepository.storageId"
         :repositoryId="folibRepository.id"
+        @repositoryVulnerabilityStatistics="repositoryVulnerabilityStatistics"
         ref="vulnerability"
       >
       </Vulnerability>
@@ -159,7 +160,7 @@
 </template>
 <script>
 import Vulnerability from "@/components/Vulnerabilities/Vulnerability";
-import { repositoryVulnerabilityStatistics} from '@/api/folib'
+import { repositoryVulnerabilityStatistics,  getRepositoryResponseEntity} from '@/api/folib'
 
 export default {
   props: ["folibRepository","vulnerabilityColumns"],
@@ -173,7 +174,7 @@ export default {
         whiteCount: 0,
         blackCount: 0,
       },
-         vulnerabilityDrawerVisible: false,
+      vulnerabilityDrawerVisible: false,
       vulnerabilityDrawerTitle: "",
       vulnerabilityDrawerData: [],
     };
@@ -194,16 +195,20 @@ export default {
         this.vulnerabilityStatistics = res;
       });
     },
-       vulnerabilityDrawerShow(type) {
-      this.vulnerabilityDrawerVisible = true;
-      if (type === 1) {
-        this.vulnerabilityDrawerTitle = "白名单";
-        this.vulnerabilityDrawerData = this.folibRepository.vulnerabilityWhites;
-      }
-      if (type === 2) {
-        this.vulnerabilityDrawerTitle = "黑名单";
-        this.vulnerabilityDrawerData = this.folibRepository.vulnerabilityBlacks;
-      }
+    vulnerabilityDrawerShow(type) {
+      getRepositoryResponseEntity(this.folibRepository.storageId, this.folibRepository.id).then(res => {
+        if (res.id === this.folibRepository.id) {
+          if (type === 1) {
+            this.vulnerabilityDrawerTitle = "白名单";
+            this.vulnerabilityDrawerData = res.vulnerabilityWhites
+          }
+          if (type === 2) {
+            this.vulnerabilityDrawerTitle = "黑名单";
+            this.vulnerabilityDrawerData = res.vulnerabilityBlacks
+          }
+          this.vulnerabilityDrawerVisible = true;
+        }
+      })
     },
     vulnerabilityDrawerClose() {
       this.vulnerabilityDrawerVisible = false;

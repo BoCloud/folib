@@ -94,7 +94,7 @@ public class ArtifactManagementService
         return doStore(repositoryPath, is);
     }
 
-    public void validateAndStoreIndex(RepositoryPath repositoryPath, InputStream is)
+    public void validateAndStoreIndex(RepositoryPath repositoryPath)
             throws IOException,
             ProviderImplementationException,
             ArtifactCoordinatesValidationException

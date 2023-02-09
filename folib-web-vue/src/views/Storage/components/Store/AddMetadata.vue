@@ -1,7 +1,7 @@
 <template>
   <div>
     <a-modal
-      v-model="showMetadataHandler"
+      v-model="showMetadata"
       :title="handlerMetadataType === 1 ? '新增元数据' : '修改元数据'"
       :maskClosable="false"
       cancelText="取消"
@@ -201,11 +201,16 @@ export default {
       prismEditor: false,
       metadataInput: false,
       metadataNumber: false,
+      showMetadata: false,
     };
   },
   created() {
     if (this.propMetadataForm) {
       this.metadataForm = Object.assign({},this.propMetadataForm)
+      this.metadataTypeChange(this.metadataForm.type);
+    }
+    if (this.showMetadataHandler) {
+      this.showMetadata = this.showMetadataHandler
     }
   },
   mounted() {},

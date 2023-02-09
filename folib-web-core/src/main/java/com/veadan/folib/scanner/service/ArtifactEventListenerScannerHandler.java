@@ -115,7 +115,7 @@ public class ArtifactEventListenerScannerHandler {
                 Set<String> filePaths = Sets.newLinkedHashSet();
                 for (String digest : digestList) {
                     blobsPath = prefix + File.separator + "blobs" + File.separator + digest;
-                    String blobsItemPath = blobsPath.replace(String.format("%s/%s/", repositoryPath.getStorageId(), repositoryPath.getRepositoryId()), "");
+                    String blobsItemPath = blobsPath.replace(String.format("%s/", repositoryPath.getRepositoryId()), "");
                     RepositoryPath blobsRepositoryPath = repositoryPathResolver.resolve(repositoryPath.getStorageId(), repositoryPath.getRepositoryId(), blobsItemPath);
                     filePath = parentPath + File.separator + digest;
                     tempFile = new File(filePath);
