@@ -822,6 +822,84 @@
           <p>Visual Studio中的详细配置请看平台帮助文档</p>
         </a-timeline-item>
       </a-timeline>
+      <a-timeline v-if="repositoryType === 'php'">
+        <a-timeline-item color="primary">
+          Composer认证
+          <p>
+            http-basic
+          </p>
+          <p>
+            打开命令行窗口（windows用户）或控制台（Linux、Mac 用户）并执行如下命令：
+          </p>
+          <prism-editor class="my-editor height-300" :value="'composer config -g http-basic.' + baseUrl + ' admin folib@v587'" 
+          :highlight="highlighterHandle" :line-numbers="false" :readonly="true"></prism-editor>
+        </a-timeline-item>
+        <a-timeline-item color="primary">
+          Composer配置
+          <p>
+            方法一： 修改 composer 的全局配置文件（推荐方式）
+          </p>
+          <p>
+            打开命令行窗口（windows用户）或控制台（Linux、Mac 用户）并执行如下命令：
+          </p>
+          <prism-editor class="my-editor height-300" :value="'composer config -g repo.packagist composer ' + baseUrl + 'storages/' + folibRepository.storageId + '/' + folibRepository.id" 
+          :highlight="highlighterHandle" :line-numbers="false" :readonly="true"></prism-editor>
+          <p>
+          方法二： 修改当前项目的 composer.json 配置文件
+          </p>
+          <p>
+            打开命令行窗口（windows用户）或控制台（Linux、Mac 用户），进入你的项目的根目录（也就是 composer.json 文件所在目录），执行如下命令：
+          </p>
+          <prism-editor class="my-editor height-300" :value="'composer config repo.packagist composer ' + baseUrl + 'storages/' + folibRepository.storageId + '/' + folibRepository.id" 
+          :highlight="highlighterHandle" :line-numbers="false" :readonly="true"></prism-editor>
+        </a-timeline-item>
+        <a-timeline-item color="primary">
+          取消配置
+          <p>#全局取消</p>
+          <p>
+            composer config -g --unset repos.packagist
+          </p>
+          <p>#项目取消</p>
+          <p>
+            composer config --unset repos.packagist
+          </p>
+          <p>
+            注意：本仓库类型为:<strong>{{ folibRepository.type === 'proxy' ? '代理库' : folibRepository.type === 'group' ? '组合库' :
+                '本地库'
+            }}</strong>{{ folibRepository.type === 'proxy' ? '不支持上传' : folibRepository.type === 'group' ?
+    '不支持上传' : '可以上传'
+}}
+          </p>
+          <p v-if="folibRepository.type === 'hosted'">
+            使用API或页面上传按钮进行上传
+          </p>
+        </a-timeline-item>
+        <a-timeline-item color="primary">
+          命令操作
+          <small>composer 通常使用命令</small>
+          <p>
+            和通常composer一样使用，具体参阅：<a target="_blank" href="https://getcomposer.org/doc/03-cli.md">https://getcomposer.org/doc/03-cli.md</a>
+          </p>
+
+          <prism-editor class="my-editor height-300" :value="'composer init\n' +
+          'composer install\n' + 
+          'composer -vvv require\n' + 
+          'composer clear-cache'" :highlight="highlighterHandle" :line-numbers="false" :readonly="true"></prism-editor>
+        </a-timeline-item>
+      </a-timeline>
+      <a-timeline>
+        <a-timeline-item color="primary">
+          仓库地址
+          <small>仓库使用地址</small>
+          <p>
+            {{ repositoryUrl }}
+            <a-button type="link" slot="extra"
+                @click="copy(repositoryUrl)">
+                <a-icon type="copy" theme="twoTone" />
+            </a-button>
+          </p>
+        </a-timeline-item>
+      </a-timeline>
     </a-drawer>
   </div>
 </template>
@@ -847,9 +925,19 @@ export default {
     // quillEditor,
   },
   data() {
-    return {};
+    return {
+      repositoryUrl: ''
+    };
   },
-  created() {},
+  created() {
+    if (this.baseUrl) {
+      this.repositoryUrl = this.baseUrl + 'storages/' + this.folibRepository.storageId + '/' + this.folibRepository.id
+      if (this.repositoryType && this.repositoryType === 'docker') {
+        let baseUrlArr = this.baseUrl.split('://');
+        this.repositoryUrl = baseUrlArr[1] + 'storages/' + this.folibRepository.storageId + '/' + this.folibRepository.id
+      }
+    }
+  },
   mounted() {},
   methods: {
     highlighterHandle(code) {
@@ -857,6 +945,20 @@ export default {
     },
     closeUsedVisibleDialog(code) {
       this.$emit("close");
+    },
+    copy(code) {
+      var input = document.createElement("input"); // 创建input对象
+      input.value = code; // 设置复制内容
+      document.body.appendChild(input); // 添加临时实例
+      input.select(); // 选择实例内容
+      document.execCommand("Copy"); // 执行复制
+      document.body.removeChild(input); // 删除临时实例
+      // console.log(url)
+      setTimeout(() => {
+        this.$notification.success({
+          message: '复制成功'
+        })
+      }, 100)
     },
   },
 };

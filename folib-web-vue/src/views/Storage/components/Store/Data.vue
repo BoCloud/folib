@@ -380,11 +380,18 @@ export default {
   created() {
     this.getMetadataConfiguration();
   },
-  mounted() {},
+  mounted() {
+  },
   watch: {
     currentFileDetial: function (val) {
       if (val && val.snippets) {
         this.changeCodeTye(val.snippets[0]);
+      }
+    },
+    'currentTreeNode.artifactPath': function (newval, oldVal) {
+      this.metadataList = []
+      if (this.currentTreeNode.type === 'file') {
+        this.getMetadata();
       }
     },
   },
@@ -396,6 +403,7 @@ export default {
       }
     },
     getMetadataConfiguration() {
+      this.metadataConfigList = []
       getMetadataConfiguration()
         .then((res) => {
           this.metadataConfigList = res;
