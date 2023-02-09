@@ -222,9 +222,8 @@
       </a-card>
     </a-col>
 
-
-      <!-- 编辑 -->
-        <a-drawer
+    <!-- 编辑 -->
+    <a-drawer
       placement="right"
       width="40%"
       :title="metadataPrismEditorDrawerTitle"
@@ -264,7 +263,7 @@
 import { fileSizeConver, formateDate } from "@/utils/layoutUtil";
 import { getArtifact } from "@/api/folib";
 import { getMetadataConfiguration } from "@/api/settings";
-
+import {  deleteArtifactMetadata } from "@/api/artifact";
 import { PrismEditor } from "vue-prism-editor";
 import "vue-prism-editor/dist/prismeditor.min.css"; // import the styles somewhere
 // import highlighting library (you can use any library you want just return html string)
@@ -282,6 +281,7 @@ export default {
     "repositoryType",
     "currentFileDetial",
     "folibRepository",
+    "successMsg",
   ],
   components: {
     PrismEditor,
@@ -383,7 +383,7 @@ export default {
   mounted() {},
   watch: {
     currentFileDetial: function (val) {
-      if (val&&val.snippets) {
+      if (val && val.snippets) {
         this.changeCodeTye(val.snippets[0]);
       }
     },
@@ -449,7 +449,7 @@ export default {
       this.metadataPrismEditorDrawerValue = metadata.value;
       this.metadataPrismEditorDrawerVisible = true;
     },
-        metadataPrismEditorDrawerClose() {
+    metadataPrismEditorDrawerClose() {
       this.metadataPrismEditorDrawerVisible = false;
     },
     deleteArtifactMetadata(metadataKey) {
@@ -467,80 +467,7 @@ export default {
         .finally(() => {});
     },
     metadataEditHandler(metadata) {
-      let key = metadata.key;
-      let data = {
-        key: undefined,
-        customKey: undefined,
-        custom: false,
-        type: metadata.type,
-        viewShow: metadata.viewShow === 1,
-        value: metadata.value,
-      };
-      let flag = this.metadataConfigList.some((item) => item.key === key);
-      if (!flag) {
-        data.custom = true;
-        data.customKey = key;
-      } else {
-        data.key = key;
-        data.custom = false;
-      }
-      this.metadataHandler(2, data);
-      this.metadataTypeChange(data.type);
-    },
-    metadataTypeChange(value) {
-      let editorList = ["TEXT", "MD"];
-      let prismEditorList = ["JSON"];
-      let numberList = ["NUMERICAL"];
-      if (editorList.indexOf(value) !== -1) {
-        this.metadataEditor = true;
-        this.metadataInput = false;
-        this.metadataNumber = false;
-        this.prismEditor = false;
-      } else if (prismEditorList.indexOf(value) !== -1) {
-        this.prismEditor = true;
-        this.metadataInput = false;
-        this.metadataNumber = false;
-        this.metadataEditor = false;
-      } else if (numberList.indexOf(value) !== -1) {
-        if (this.handlerMetadataType === 1) {
-          this.metadataForm.value = undefined;
-        }
-        this.metadataNumber = true;
-        this.metadataInput = false;
-        this.prismEditor = false;
-        this.metadataEditor = false;
-      } else {
-        this.metadataInput = true;
-        this.metadataEditor = false;
-        this.metadataNumber = false;
-        this.prismEditor = false;
-      }
-    },
-    metadataHandler(type, metadata) {
-      this.metadataFormReset();
-      if (metadata) {
-        this.metadataForm = metadata;
-      }
-      this.handlerMetadataType = type;
-      this.showMetadataHandler = true;
-    },
-    
-    metadataFormReset() {
-      if (this.$refs.metadataForm) {
-        this.$refs.metadataForm.resetFields();
-      }
-      this.metadataForm = {
-        key: undefined,
-        customKey: undefined,
-        custom: false,
-        type: undefined,
-        viewShow: true,
-        value: undefined,
-      };
-      this.metadataInput = true;
-      this.metadataEditor = false;
-      this.metadataNumber = false;
-      this.prismEditor = false;
+      this.$emit("metadataEditHandler", metadata);
     },
     highlighterHandle(code) {
       return highlight(code, languages.js); //returns html
