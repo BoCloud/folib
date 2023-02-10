@@ -215,7 +215,7 @@ public abstract class AbstractRepositoryProvider implements RepositoryProvider, 
     {
         RepositoryPath repositoryPath = (RepositoryPath) ctx.getPath();
         logger.debug("Complete writing [{}]", repositoryPath);
-        
+
         if (RepositoryFiles.isArtifact(repositoryPath))
         {
             if (ctx.getArtifactExists())
@@ -225,7 +225,7 @@ public abstract class AbstractRepositoryProvider implements RepositoryProvider, 
             else
             {
                 artifactEventListenerRegistry.dispatchArtifactStoredEvent(repositoryPath);
-            }            
+            }
         }
         else if (RepositoryFiles.isMetadata(repositoryPath))
         {
