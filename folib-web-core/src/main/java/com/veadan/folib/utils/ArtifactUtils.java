@@ -52,7 +52,7 @@ public class ArtifactUtils {
                 String blobs = "blobs";
                 String manifest = "manifest";
                 String path = repositoryPath.toAbsolutePath().toString();
-                if (!path.contains(blobs) && !path.contains(manifest) && !path.endsWith(".sha256")) {
+                if (path.contains("sha256") && !path.contains(blobs) && !path.contains(manifest) && !path.endsWith(".sha256")) {
                     return true;
                 }
             } else if (repositoryPath.getFileSystem() instanceof MavenFileSystem) {

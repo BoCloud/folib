@@ -677,6 +677,7 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
      * @return NFS目录下的所有文件
      */
     private List<File> handlerNFSFiles(String path, Repository repository, Integer batch) throws Exception {
+        boolean dockerLayout = DockerLayoutProvider.ALIAS.equalsIgnoreCase(repository.getLayout());
         int fileNum = 0, folderNum = 0;
         File rootFile = new File(path);
         if (rootFile.isHidden()) {
@@ -687,6 +688,10 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
         List<File> resultList = new ArrayList<>();
         if (rootFile.exists()) {
             if (null == rootFile.listFiles() && rootFile.isFile()) {
+                if (dockerLayout && !rootFile.getName().contains("sha256")) {
+                    log.info("file：{} is a docker layout file", rootFile.getName());
+                    return Collections.emptyList();
+                }
                 resultList.add(rootFile);
                 fileNum++;
             } else if (Objects.nonNull(rootFile.listFiles())) {
@@ -701,6 +706,10 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
                     } else {
                         if (f.isHidden()) {
                             log.info("file：{} is a hidden file", f.getName());
+                            continue;
+                        }
+                        if (dockerLayout && !f.getName().contains("sha256")) {
+                            log.info("file：{} is a docker layout file", f.getName());
                             continue;
                         }
                         resultList.add(f);
@@ -727,6 +736,10 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
                             log.info("file：{} is a hidden file", f.getName());
                             continue;
                         }
+                        if (dockerLayout && !f.getName().contains("sha256")) {
+                            log.info("file：{} is a docker layout file", f.getName());
+                            continue;
+                        }
                         log.debug("file:{}", f.getAbsolutePath());
                         resultList.add(f);
                         fileNum++;
@@ -743,19 +756,19 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
         for (List<File> fileList : fileLists) {
             futureTask = new FutureTask<String>(() -> {
                 for (File file : fileList) {
+                    String fPath = file.getAbsolutePath();
                     try {
-                        String fPath = file.getAbsolutePath();
                         String tempStr = repository.getStorage().getId() + File.separator + repository.getId() + File.separator;
                         int fPathIndex = fPath.lastIndexOf(tempStr);
                         String artifactPath = fPath.substring(fPathIndex).replace(tempStr, "");
                         RepositoryPath repositoryPath = repositoryPathResolver.resolve(repository.getStorage().getId(), repository.getId(), artifactPath);
                         if (!RepositoryFiles.isArtifact(repositoryPath)) {
-                            log.info("handlerArtifact path：{} not is a artifact", file);
+                            log.info("handlerArtifact path：{} not is a artifact", fPath);
                             continue;
                         }
                         artifactManagementService.validateAndStoreIndex(repositoryPath);
                     } catch (Exception ex) {
-                        log.error("handlerArtifact path：{} error：{}", file, ExceptionUtils.getStackTrace(ex));
+                        log.error("handlerArtifact path：{} error：{}", fPath, ExceptionUtils.getStackTrace(ex));
                     }
                 }
                 return "success";
@@ -781,8 +794,13 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
     private List<S3Path> handlerS3Paths(S3Path s3Path, Repository repository, Integer batch) throws Exception {
         List<S3Path> listFile = new ArrayList<>();
         List<S3Path> listDir = new ArrayList<>();
+        boolean dockerLayout = DockerLayoutProvider.ALIAS.equalsIgnoreCase(repository.getLayout());
         S3Iterator s3Iterator = new S3Iterator(s3Path);
         if (!s3Iterator.hasNext()) {
+            if (dockerLayout && !s3Path.getFileName().toString().contains("sha256")) {
+                log.info("s3 file：{} is a docker layout file", s3Path);
+                return listFile;
+            }
             listFile.add(s3Path);
         }
         while (s3Iterator.hasNext()) {
@@ -796,6 +814,10 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
             } else {
                 if (s3PathTemp.getFileName().toString().startsWith(".")) {
                     log.info("s3 file {} is a hidden file", s3PathTemp);
+                    continue;
+                }
+                if (dockerLayout && !s3PathTemp.getFileName().toString().contains("sha256")) {
+                    log.info("s3 file：{} is a docker layout file", s3PathTemp);
                     continue;
                 }
                 log.debug("s3 file {}", s3PathTemp);
@@ -817,6 +839,10 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
                 } else {
                     if (s3PathTemp.getFileName().toString().startsWith(".")) {
                         log.info("s3 file {} is a hidden file", s3PathTemp);
+                        continue;
+                    }
+                    if (dockerLayout && !s3PathTemp.getFileName().toString().contains("sha256")) {
+                        log.info("s3 file：{} is a docker layout file", s3PathTemp);
                         continue;
                     }
                     log.debug("s3 file {}", s3PathTemp);

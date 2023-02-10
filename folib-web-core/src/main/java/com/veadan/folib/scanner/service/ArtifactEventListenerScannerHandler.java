@@ -167,7 +167,7 @@ public class ArtifactEventListenerScannerHandler {
             ImageManifest manifest = JSON.parseObject(manifestString, ImageManifest.class);
             return manifest.getLayers().stream().map(LayerManifest::getDigest).collect(Collectors.toList());
         } catch (Exception ex) {
-            log.error("getImageManifest error manifestString：{}，error：{}", manifestString, ExceptionUtils.getStackTrace(ex));
+            log.error("getImageManifest error file：{}，error：{}", file.getAbsolutePath(), ExceptionUtils.getStackTrace(ex));
             throw new RuntimeException(file.getAbsolutePath() + " get image manifest error");
         }
     }
