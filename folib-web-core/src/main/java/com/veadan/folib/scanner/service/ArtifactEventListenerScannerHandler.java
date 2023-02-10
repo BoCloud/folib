@@ -105,9 +105,7 @@ public class ArtifactEventListenerScannerHandler {
             File tempFile = new File(filePath);
             FileUtil.writeFromStream(inputStream, tempFile, true);
             //获取图层中的digest列表
-            String manifestString = FileUtil.readString(tempFile.getAbsolutePath(), StandardCharsets.UTF_8);
-            ImageManifest manifest = JSON.parseObject(manifestString, ImageManifest.class);
-            List<String> digestList = manifest.getLayers().stream().map(LayerManifest::getDigest).collect(Collectors.toList());
+            List<String> digestList = getImageManifest(tempFile);
             if (CollectionUtils.isNotEmpty(digestList)) {
                 String prefix = versionKey;
                 prefix = prefix.substring(0, prefix.lastIndexOf("/"));
@@ -149,9 +147,7 @@ public class ArtifactEventListenerScannerHandler {
         //版本目录
         File parentFile = file.getParentFile();
         //获取图层中的digest列表
-        String manifestString = FileUtil.readString(filePath, StandardCharsets.UTF_8);
-        ImageManifest manifest = JSON.parseObject(manifestString, ImageManifest.class);
-        List<String> digestList = manifest.getLayers().stream().map(LayerManifest::getDigest).collect(Collectors.toList());
+        List<String> digestList = getImageManifest(file);
         //存放解压文件的目录路径
         String tempPath = parentFile.getPath() + File.separator + "temp";
         if (CollectionUtils.isNotEmpty(digestList)) {
@@ -165,6 +161,16 @@ public class ArtifactEventListenerScannerHandler {
         }
     }
 
+    private List<String> getImageManifest(File file) {
+        String manifestString = FileUtil.readString(file.getAbsolutePath(), StandardCharsets.UTF_8);
+        try {
+            ImageManifest manifest = JSON.parseObject(manifestString, ImageManifest.class);
+            return manifest.getLayers().stream().map(LayerManifest::getDigest).collect(Collectors.toList());
+        } catch (Exception ex) {
+            log.error("getImageManifest error manifestString：{}，error：{}", manifestString, ExceptionUtils.getStackTrace(ex));
+            throw new RuntimeException(file.getAbsolutePath() + " get image manifest error");
+        }
+    }
 
     /**
      * 处理docker文件
