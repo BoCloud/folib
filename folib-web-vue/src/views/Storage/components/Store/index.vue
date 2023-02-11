@@ -288,7 +288,8 @@
                       >
                         <a-icon type="swap" />移动
                       </a-menu-item>
-                      <a-menu-item key="4">
+                      <a-menu-item key="4"
+                      v-if="folibRepository.type !== 'group'">
                         <a-popconfirm
                           title="确定要删除吗？"
                           placement="topLeft"
@@ -302,7 +303,7 @@
                       </a-menu-item>
                       <a-menu-item
                         key="5"
-                        v-if="
+                        v-if="folibRepository.type !== 'group' &&
                           currentFileDetial &&
                           currentFileDetial.artifact &&
                           currentFileDetial.artifact.artifactFileExists
@@ -364,7 +365,8 @@
                       >
                         <a-icon type="swap" />移动
                       </a-menu-item>
-                      <a-menu-item key="4">
+                      <a-menu-item key="4"
+                      v-if="folibRepository.type !== 'group'">
                         <a-popconfirm
                           title="确定要删除吗？"
                           placement="topLeft"
@@ -379,6 +381,7 @@
                       <a-menu-item
                         key="5"
                         v-if="
+                          folibRepository.type !== 'group' &&
                           currentTreeNode && currentTreeNode.type === 'file'
                         "
                       >
@@ -1039,6 +1042,12 @@ export default {
       searchViewCodeVisible: false,
       searchViewCodes: null,
       columns: [
+        {
+          title: "所属仓库",
+          dataIndex: "repositoryId",
+          scopedSlots: { customRender: "repositoryId" },
+          width: 150,
+        },
         {
           title: "制品路径",
           dataIndex: "path",

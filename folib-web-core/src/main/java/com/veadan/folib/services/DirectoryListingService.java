@@ -18,6 +18,9 @@ public interface DirectoryListingService
 
     DirectoryListing fromRepositoryPath(RepositoryPath path)
         throws IOException;
+
+    DirectoryListing fromGroupRepositoryPath(Repository repository, RepositoryPath path)
+            throws IOException;
     
     DirectoryListing fromPath(Path root, Path path)
             throws IOException;

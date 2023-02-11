@@ -6,16 +6,21 @@ import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.attribute.FileTime;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import com.google.common.collect.Sets;
+import com.veadan.folib.configuration.ConfigurationUtils;
 import com.veadan.folib.providers.io.RepositoryFileAttributeType;
+import com.veadan.folib.providers.io.RepositoryFiles;
 import com.veadan.folib.providers.io.RepositoryPath;
+import com.veadan.folib.providers.io.RepositoryPathResolver;
+import com.veadan.folib.providers.repository.RepositoryProvider;
+import com.veadan.folib.scanner.common.util.SpringContextUtil;
+import com.veadan.folib.services.support.ArtifactRoutingRulesChecker;
+import com.veadan.folib.storage.repository.RepositoryTypeEnum;
+import org.apache.commons.compress.utils.Lists;
 import org.apache.commons.lang.StringUtils;
 import com.veadan.folib.domain.DirectoryListing;
 import com.veadan.folib.domain.FileContent;
@@ -23,6 +28,8 @@ import com.veadan.folib.storage.Storage;
 import com.veadan.folib.storage.repository.Repository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import javax.inject.Inject;
 
 public class DirectoryListingServiceImpl implements DirectoryListingService
 {
@@ -80,6 +87,58 @@ public class DirectoryListingServiceImpl implements DirectoryListingService
         throws IOException
     {
         return fromPath(path);
+    }
+
+    @Override
+    public DirectoryListing fromGroupRepositoryPath(Repository repository, RepositoryPath path) throws IOException {
+        ConfigurationManagementService configurationManagementService = SpringContextUtil.getBean(ConfigurationManagementService.class);
+        RepositoryPathResolver repositoryPathResolver = SpringContextUtil.getBean(RepositoryPathResolver.class);
+        ArtifactRoutingRulesChecker artifactRoutingRulesChecker = SpringContextUtil.getBean(ArtifactRoutingRulesChecker.class);
+        List<RepositoryPath> hostedRepositoryPathList = Lists.newArrayList();
+        List<RepositoryPath> proxyRepositoryPathList = Lists.newArrayList();
+        for (String storageAndRepositoryId : repository.getGroupRepositories()) {
+            String sId = ConfigurationUtils.getStorageId(repository.getStorage().getId(), storageAndRepositoryId);
+            String rId = ConfigurationUtils.getRepositoryId(storageAndRepositoryId);
+            Repository subRepository = configurationManagementService.getConfiguration().getRepository(sId, rId);
+            if (!subRepository.isInService()) {
+                continue;
+            }
+            RepositoryPath resolvedPath = repositoryPathResolver.resolve(subRepository, path);
+            if (resolvedPath == null || !Files.exists(resolvedPath)) {
+                continue;
+            }
+            if (artifactRoutingRulesChecker.isDenied(repository, resolvedPath)) {
+                continue;
+            }
+            if (!repository.allowsDirectoryBrowsing() || !probeForDirectoryListing(resolvedPath)) {
+                continue;
+            }
+            if (RepositoryTypeEnum.PROXY.getType().equals(subRepository.getType())) {
+                proxyRepositoryPathList.add(resolvedPath);
+            } else if (RepositoryTypeEnum.HOSTED.getType().equals(subRepository.getType())){
+                hostedRepositoryPathList.add(resolvedPath);
+            }
+        }
+        List<DirectoryListing> directoryListingList = Lists.newArrayList();
+        DirectoryListing directoryListing = null;
+        for (RepositoryPath hostedRepositoryPath : hostedRepositoryPathList) {
+            directoryListing = fromPath(hostedRepositoryPath);
+            directoryListingList.add(directoryListing);
+        }
+        for (RepositoryPath proxyRepositoryPath : proxyRepositoryPathList) {
+            directoryListing = fromPath(proxyRepositoryPath);
+            directoryListingList.add(directoryListing);
+        }
+        Set<FileContent> directoryContentSet = Sets.newLinkedHashSet();
+        Set<FileContent> fileContentSet = Sets.newLinkedHashSet();
+        for (DirectoryListing itemDirectoryListing : directoryListingList) {
+            directoryContentSet.addAll(itemDirectoryListing.getDirectories());
+            fileContentSet.addAll(itemDirectoryListing.getFiles());
+        }
+        directoryListing = new DirectoryListing();
+        directoryListing.setDirectories(new ArrayList(directoryContentSet));
+        directoryListing.setFiles(new ArrayList(fileContentSet));
+        return directoryListing;
     }
 
     private DirectoryListing fromPath(Path path)
@@ -168,6 +227,7 @@ public class DirectoryListingServiceImpl implements DirectoryListingService
      * @throws RuntimeException
      *             when path is not within rootPath.
      */
+    @Override
     public DirectoryListing fromPath(Path rootPath,
                                      Path path)
         throws IOException
@@ -206,6 +266,20 @@ public class DirectoryListingServiceImpl implements DirectoryListingService
 
         return new URL(String.format("%s/%s/%s/%s", baseUrl, file.getStorageId(),
                                      file.getRepositoryId(), file.getArtifactPath()));
+    }
+
+    protected boolean probeForDirectoryListing(final RepositoryPath repositoryPath)
+            throws IOException {
+        return Files.exists(repositoryPath) &&
+                repositoryPath.getRepository().getLayout().equals("helm") && repositoryPath.getTarget().toString().endsWith("index.yaml") || Files.isDirectory(repositoryPath) &&
+                isPermittedForDirectoryListing(repositoryPath);
+    }
+
+    protected boolean isPermittedForDirectoryListing(final RepositoryPath repositoryPath)
+            throws IOException {
+        //TODO: RepositoryFiles.isIndex(repositoryPath) || (
+        return !Files.isHidden(repositoryPath) && !RepositoryFiles.isTrash(repositoryPath)
+                && !RepositoryFiles.isTemp(repositoryPath);
     }
 
 }
