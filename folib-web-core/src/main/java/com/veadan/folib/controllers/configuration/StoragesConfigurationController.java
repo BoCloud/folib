@@ -4,6 +4,8 @@ import cn.hutool.core.collection.CollectionUtil;
 import com.fasterxml.jackson.annotation.JsonView;
 import com.veadan.folib.cluster.SyncRepositoryEnum;
 import com.veadan.folib.cluster.SyncStorageEnum;
+import com.veadan.folib.controllers.cluster.dto.SyncRepositoryDto;
+import com.veadan.folib.controllers.cluster.dto.SyncStorageDto;
 import com.veadan.folib.event.repository.RepositoryEventListenerRegistry;
 import com.veadan.folib.forms.common.StorageTreeForm;
 import com.veadan.folib.forms.configuration.ProxyConfigurationForm;
@@ -129,7 +131,8 @@ public class StoragesConfigurationController
             StorageDto storage = conversionService.convert(storageForm, StorageDto.class);
             storageManagementService.createStorage(storage);
             // 向其他集群节点同步storage
-            clusterSyncService.syncStorage(storage, null, SyncStorageEnum.CREATE);
+            SyncStorageDto syncStorageDto = new SyncStorageDto(storage, storageForm.getId(), SyncStorageEnum.CREATE);
+            clusterSyncService.syncStorage(syncStorageDto);
 
             return getSuccessfulResponseEntity(SUCCESSFUL_SAVE_STORAGE, accept);
         } catch (ConfigurationException | IOException e) {
@@ -163,7 +166,8 @@ public class StoragesConfigurationController
         try {
             StorageDto storage = conversionService.convert(storageFormToUpdate, StorageDto.class);
             storageManagementService.updateStorage(storage);
-            clusterSyncService.syncStorage(storage, storageId, SyncStorageEnum.UPDATE);
+            SyncStorageDto syncStorageDto = new SyncStorageDto(storage, storageId, SyncStorageEnum.UPDATE);
+            clusterSyncService.syncStorage(syncStorageDto);
             return getSuccessfulResponseEntity(SUCCESSFUL_UPDATE_STORAGE, accept);
         } catch (ConfigurationException | IOException e) {
             return getExceptionResponseEntity(HttpStatus.INTERNAL_SERVER_ERROR, FAILED_UPDATE_STORAGE_ERROR, e, accept);
@@ -277,6 +281,7 @@ public class StoragesConfigurationController
                                         @RequestHeader(HttpHeaders.ACCEPT) String accept) {
         if (configurationManagementService.getConfiguration().getStorage(storageId) != null) {
             try {
+                StorageDto storageDto = getMutableConfigurationClone().getStorage(storageId);
                 if (force) {
                     storageManagementService.removeStorage(storageId);
                     repositoryEventListenerRegistry.dispatchRepoDelteAllToCronJobDeleteEvent(storageId, "");
@@ -284,7 +289,8 @@ public class StoragesConfigurationController
                 configurationManagementService.removeStorage(storageId);
 
                 logger.debug("Removed storage {}.", storageId);
-                clusterSyncService.syncStorage(null, storageId, SyncStorageEnum.DELETE);
+                SyncStorageDto syncStorageDto = new SyncStorageDto(storageDto, SyncStorageEnum.DELETE, storageId, force);
+                clusterSyncService.syncStorage(syncStorageDto);
 
                 return getSuccessfulResponseEntity(SUCCESSFUL_STORAGE_REMOVAL, accept);
             } catch (ConfigurationException | IOException e) {
@@ -353,12 +359,15 @@ public class StoragesConfigurationController
                 logger.debug("Creating repository {}:{}...", storageId, repositoryId);
 
                 configurationManagementService.saveRepository(storageId, repository);
+                RepositoryDto repositoryDto = getMutableConfigurationClone().getStorage(storageId)
+                        .getRepository(repositoryId);
 
                 final RepositoryPath repositoryPath = repositoryPathResolver.resolve(new RepositoryData(repository));
                 if (!Files.exists(repositoryPath)) {
                     repositoryManagementService.createRepository(storageId, repository.getId());
                 }
-                clusterSyncService.syncRepository(storageId, repositoryId, repository, SyncRepositoryEnum.ADD_OR_UPDATE);
+                SyncRepositoryDto syncRepositoryDto = new SyncRepositoryDto(repositoryDto, storageId, repositoryId, SyncRepositoryEnum.DELETE);
+                clusterSyncService.syncRepository(syncRepositoryDto);
 
                 return getSuccessfulResponseEntity(SUCCESSFUL_REPOSITORY_SAVE, accept);
             } catch (IOException | ConfigurationException | RepositoryManagementStrategyException e) {
@@ -398,7 +407,8 @@ public class StoragesConfigurationController
                 repository.setVulnerabilityWhites(repositoryForm.getVulnerabilityWhites());
                 logger.debug("新增仓库级别白名单 {}:{}...", storageId, repositoryId);
                 configurationManagementService.addRepositoryVulnerabilityWhites(storageId, repositoryId, repository.getVulnerabilityWhites());
-                clusterSyncService.syncRepository(storageId, repositoryId, repository, SyncRepositoryEnum.ADD_OR_UPDATE);
+                SyncRepositoryDto syncRepositoryDto = new SyncRepositoryDto(repository, storageId, repositoryId, SyncRepositoryEnum.DELETE);
+                clusterSyncService.syncRepository(syncRepositoryDto);
                 return getSuccessfulResponseEntity(SUCCESSFUL_REPOSITORY_SAVE, accept);
             } catch (IOException | ConfigurationException e) {
                 return getExceptionResponseEntity(HttpStatus.INTERNAL_SERVER_ERROR, FAILED_REPOSITORY_SAVE, e, accept);
@@ -437,7 +447,8 @@ public class StoragesConfigurationController
                 repository.setVulnerabilityWhites(repositoryForm.getVulnerabilityWhites());
                 logger.debug("删除仓库级别白名单 {}:{}...", storageId, repositoryId);
                 configurationManagementService.removeRepositoryVulnerabilityWhites(storageId, repositoryId, repository.getVulnerabilityWhites());
-                clusterSyncService.syncRepository(storageId, repositoryId, repository, SyncRepositoryEnum.ADD_OR_UPDATE);
+                SyncRepositoryDto syncRepositoryDto = new SyncRepositoryDto(repository, storageId, repositoryId, SyncRepositoryEnum.DELETE);
+                clusterSyncService.syncRepository(syncRepositoryDto);
                 return getSuccessfulResponseEntity(SUCCESSFUL_REPOSITORY_SAVE, accept);
             } catch (IOException | ConfigurationException e) {
                 return getExceptionResponseEntity(HttpStatus.INTERNAL_SERVER_ERROR, FAILED_REPOSITORY_SAVE, e, accept);
@@ -476,7 +487,8 @@ public class StoragesConfigurationController
                 repository.setVulnerabilityBlacks(repositoryForm.getVulnerabilityBlacks());
                 logger.debug("新增仓库级别黑名单 {}:{}...", storageId, repositoryId);
                 configurationManagementService.addRepositoryVulnerabilityBlacks(storageId, repositoryId, repository.getVulnerabilityBlacks());
-                clusterSyncService.syncRepository(storageId, repositoryId, repository, SyncRepositoryEnum.ADD_OR_UPDATE);
+                SyncRepositoryDto syncRepositoryDto = new SyncRepositoryDto(repository, storageId, repositoryId, SyncRepositoryEnum.DELETE);
+                clusterSyncService.syncRepository(syncRepositoryDto);
                 return getSuccessfulResponseEntity(SUCCESSFUL_REPOSITORY_SAVE, accept);
             } catch (IOException | ConfigurationException e) {
                 return getExceptionResponseEntity(HttpStatus.INTERNAL_SERVER_ERROR, FAILED_REPOSITORY_SAVE, e, accept);
@@ -515,7 +527,8 @@ public class StoragesConfigurationController
                 repository.setVulnerabilityBlacks(repositoryForm.getVulnerabilityBlacks());
                 logger.debug("删除仓库级别黑名单 {}:{}...", storageId, repositoryId);
                 configurationManagementService.removeRepositoryVulnerabilityBlacks(storageId, repositoryId, repository.getVulnerabilityBlacks());
-                clusterSyncService.syncRepository(storageId, repositoryId, repository, SyncRepositoryEnum.ADD_OR_UPDATE);
+                SyncRepositoryDto syncRepositoryDto = new SyncRepositoryDto(repository, storageId, repositoryId, SyncRepositoryEnum.DELETE);
+                clusterSyncService.syncRepository(syncRepositoryDto);
                 return getSuccessfulResponseEntity(SUCCESSFUL_REPOSITORY_SAVE, accept);
             } catch (IOException | ConfigurationException e) {
                 return getExceptionResponseEntity(HttpStatus.INTERNAL_SERVER_ERROR, FAILED_REPOSITORY_SAVE, e, accept);
@@ -552,7 +565,8 @@ public class StoragesConfigurationController
                 repository.setVulnerabilityWhites(repositoryForm.getVulnerabilityWhites());
                 logger.debug("设置仓库级别白名单 {}:{}...", storageId, repositoryId);
                 configurationManagementService.setRepositoryVulnerabilityWhites(storageId, repositoryId, repository.getVulnerabilityWhites());
-                clusterSyncService.syncRepository(storageId, repositoryId, repository, SyncRepositoryEnum.ADD_OR_UPDATE);
+                SyncRepositoryDto syncRepositoryDto = new SyncRepositoryDto(repository, storageId, repositoryId, SyncRepositoryEnum.DELETE);
+                clusterSyncService.syncRepository(syncRepositoryDto);
                 return getSuccessfulResponseEntity(SUCCESSFUL_REPOSITORY_SAVE, accept);
             } catch (IOException | ConfigurationException e) {
                 return getExceptionResponseEntity(HttpStatus.INTERNAL_SERVER_ERROR, FAILED_REPOSITORY_SAVE, e, accept);
@@ -589,7 +603,8 @@ public class StoragesConfigurationController
                 repository.setVulnerabilityBlacks(repositoryForm.getVulnerabilityBlacks());
                 logger.debug("设置仓库级别黑名单 {}:{}...", storageId, repositoryId);
                 configurationManagementService.setRepositoryVulnerabilityBlacks(storageId, repositoryId, repository.getVulnerabilityBlacks());
-                clusterSyncService.syncRepository(storageId, repositoryId, repository, SyncRepositoryEnum.ADD_OR_UPDATE);
+                SyncRepositoryDto syncRepositoryDto = new SyncRepositoryDto(repository, storageId, repositoryId, SyncRepositoryEnum.DELETE);
+                clusterSyncService.syncRepository(syncRepositoryDto);
                 return getSuccessfulResponseEntity(SUCCESSFUL_REPOSITORY_SAVE, accept);
             } catch (IOException | ConfigurationException e) {
                 return getExceptionResponseEntity(HttpStatus.INTERNAL_SERVER_ERROR, FAILED_REPOSITORY_SAVE, e, accept);
@@ -624,14 +639,16 @@ public class StoragesConfigurationController
         final String repositoryId = repository.getId();
         try {
             final RepositoryPath repositoryPath = repositoryPathResolver.resolve(repository);
+            RepositoryDto repositoryDto = getMutableConfigurationClone().getStorage(storageId)
+                    .getRepository(repositoryId);
             if (Files.exists(repositoryPath) && force) {
                 repositoryManagementService.removeRepository(storageId, repository.getId());
                 repositoryEventListenerRegistry.dispatchRepoDelteToCronJobDeleteEvent(storageId, repositoryId);
             }
 
             configurationManagementService.removeRepository(storageId, repositoryId);
-
-            clusterSyncService.syncRepository(storageId, repositoryId, null, SyncRepositoryEnum.DELETE);
+            SyncRepositoryDto syncRepositoryDto = new SyncRepositoryDto(repositoryDto, storageId, repositoryId, SyncRepositoryEnum.DELETE,force);
+            clusterSyncService.syncRepository(syncRepositoryDto);
 
             logger.debug("Removed repository {}:{}.", storageId, repositoryId);
 

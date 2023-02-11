@@ -10,6 +10,8 @@ public class SyncStorageDto {
 
     private String storageId;
 
+    private Boolean deleteForceFlag;
+
     public SyncStorageDto() {
     }
 
@@ -17,6 +19,13 @@ public class SyncStorageDto {
         this.storageDto = storageDto;
         this.storageId = storageId;
         this.syncStorageEnum = syncStorageEnum;
+    }
+
+    public SyncStorageDto(StorageDto storageDto, SyncStorageEnum syncStorageEnum, String storageId, Boolean deleteForceFlag) {
+        this.storageDto = storageDto;
+        this.syncStorageEnum = syncStorageEnum;
+        this.storageId = storageId;
+        this.deleteForceFlag = deleteForceFlag;
     }
 
     public StorageDto getStorageDto() {
@@ -41,5 +50,21 @@ public class SyncStorageDto {
 
     public void setStorageId(String storageId) {
         this.storageId = storageId;
+    }
+
+    public SyncStorageEnum getSyncStorageEnum() {
+        return syncStorageEnum;
+    }
+
+    public void setSyncStorageEnum(SyncStorageEnum syncStorageEnum) {
+        this.syncStorageEnum = syncStorageEnum;
+    }
+
+    public Boolean getDeleteForceFlag() {
+        return deleteForceFlag;
+    }
+
+    public void setDeleteForceFlag(Boolean deleteForceFlag) {
+        this.deleteForceFlag = deleteForceFlag;
     }
 }

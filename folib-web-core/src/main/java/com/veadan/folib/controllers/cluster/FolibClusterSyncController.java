@@ -9,6 +9,8 @@ import com.veadan.folib.controllers.cluster.dto.SyncMetadataDto;
 import com.veadan.folib.controllers.cluster.dto.SyncRepositoryDto;
 import com.veadan.folib.controllers.cluster.dto.SyncStorageDto;
 import com.veadan.folib.cron.services.CronTaskConfigurationService;
+import com.veadan.folib.event.repository.RepositoryEventListenerRegistry;
+import com.veadan.folib.services.RepositoryManagementService;
 import com.veadan.folib.services.StorageManagementService;
 import io.swagger.annotations.Api;
 import org.slf4j.Logger;
@@ -29,10 +31,16 @@ public class FolibClusterSyncController extends BaseController {
     private static final Logger logger = LoggerFactory.getLogger(FolibClusterSyncController.class);
 
     @Autowired
+    private RepositoryManagementService repositoryManagementService;
+
+    @Autowired
     private StorageManagementService storageManagementService;
 
     @Autowired
     private CronTaskConfigurationService cronTaskConfigurationService;
+
+    @Autowired
+    private RepositoryEventListenerRegistry repositoryEventListenerRegistry;
 
     @PostMapping("syncStorage")
     public ResponseEntity syncStorage(@RequestBody SyncStorageDto syncStorageDto) {
@@ -45,6 +53,11 @@ public class FolibClusterSyncController extends BaseController {
                 logger.info("sycn update storage [{}] success", syncStorageDto.getStorageId());
             } else if (syncStorageDto.getSycnStorageEnum().getType() == 3) {
                 configurationManagementService.removeStorage(syncStorageDto.getStorageId());
+                if (syncStorageDto.getDeleteForceFlag()) {
+                    storageManagementService.removeStorage(syncStorageDto.getStorageId());
+                    repositoryEventListenerRegistry.dispatchRepoDelteAllToCronJobDeleteEvent(syncStorageDto.getStorageId(), "");
+                }
+
                 logger.info("sycn remove storage [{}] success", syncStorageDto.getStorageId());
             }
         } catch (Exception e) {
@@ -91,6 +104,11 @@ public class FolibClusterSyncController extends BaseController {
             } else if (syncRepositoryDto.getSycnRepositoryEnum().getType() == 2) {
                 configurationManagementService.removeRepository(syncRepositoryDto.getStorageId(),
                         syncRepositoryDto.getRepositoryId());
+                if (syncRepositoryDto.getDeleteForceFlag()) {
+                    repositoryManagementService.removeRepository(syncRepositoryDto.getStorageId(), syncRepositoryDto.getRepositoryId());
+                    repositoryEventListenerRegistry.
+                            dispatchRepoDelteToCronJobDeleteEvent(syncRepositoryDto.getStorageId(), syncRepositoryDto.getRepositoryId());
+                }
                 logger.info("sycn remove repository success");
             }
         } catch (Exception e) {

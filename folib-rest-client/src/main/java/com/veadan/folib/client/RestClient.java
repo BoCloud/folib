@@ -647,6 +647,42 @@ public class RestClient extends ArtifactClient {
     }
 
     /**
+     * 普通制品离线上传
+     *
+     * @param storageId   存储空间名
+     * @param repostoryId 仓库名
+     * @param is          文件流
+     * @param fileName    文件名
+     * @return 返回值
+     */
+    public ResponseEntity offlineArtifactUpload(String storageId, String repostoryId, InputStream is, String fileName) {
+        try {
+            String url = getContextBaseUrl() + "/api/artifact/folib/offline/upload";
+            FormDataMultiPart part = new FormDataMultiPart();
+            part.field("storageId", storageId);
+            part.field("repostoryId", repostoryId);
+            part.bodyPart(new StreamDataBodyPart("file", is, fileName));
+            WebTarget resource = getClientInstance().register(MultiPartWriter.class).target(url);
+            setupAuthentication(resource);
+            Response response = resource.request(MediaType.APPLICATION_JSON).header("Mime-Version", "1.0").
+                    post(Entity.entity(part, Boundary.addBoundary(MediaType.MULTIPART_FORM_DATA_TYPE)));
+            if (response.getStatus() != HttpStatus.SC_OK) {
+                displayResponseError(response);
+                throw new ServerErrorException(response.getStatus() + " | Unable to greet()",
+                        Response.Status.INTERNAL_SERVER_ERROR);
+            } else {
+                return ResponseEntity.ok("离线制品上传成功");
+            }
+        } catch (Exception e) {
+            logger.error("Artifact upload error {}", e.getMessage());
+            return ResponseEntity.status(org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(e.getMessage());
+        }
+
+    }
+
+
+    /**
      * 制品节点晋级
      *
      * @param promotionNodeOption 晋级参数
