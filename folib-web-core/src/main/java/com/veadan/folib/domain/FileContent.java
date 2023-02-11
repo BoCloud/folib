@@ -2,6 +2,7 @@ package com.veadan.folib.domain;
 
 import java.net.URL;
 import java.util.Date;
+import java.util.Objects;
 
 public class FileContent
 {
@@ -117,5 +118,22 @@ public class FileContent
 
     public void setPath(String path) {
         this.path = path;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (!(o instanceof FileContent)){
+            return false;
+        }
+        FileContent that = (FileContent) o;
+        return artifactPath.equals(that.artifactPath);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(artifactPath);
     }
 }

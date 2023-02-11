@@ -6,6 +6,7 @@ import com.google.common.collect.Maps;
 import com.veadan.folib.artifact.coordinates.ArtifactLayoutDescription;
 import com.veadan.folib.artifact.coordinates.ArtifactLayoutLocator;
 import com.veadan.folib.configuration.ConfigurationManager;
+import com.veadan.folib.configuration.ConfigurationUtils;
 import com.veadan.folib.db.schema.Edges;
 import com.veadan.folib.db.schema.Properties;
 import com.veadan.folib.db.schema.Vertices;
@@ -17,8 +18,13 @@ import com.veadan.folib.gremlin.adapters.ArtifactAdapter;
 import com.veadan.folib.gremlin.dsl.EntityTraversal;
 import com.veadan.folib.gremlin.dsl.EntityTraversalUtils;
 import com.veadan.folib.gremlin.repositories.GremlinVertexRepository;
+import com.veadan.folib.providers.io.RepositoryPathResolver;
+import com.veadan.folib.services.ConfigurationManagementService;
+import com.veadan.folib.services.support.ArtifactRoutingRulesChecker;
+import com.veadan.folib.storage.repository.RepositoryTypeEnum;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.compress.utils.Lists;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.tinkerpop.gremlin.process.traversal.Order;
 import org.apache.tinkerpop.gremlin.process.traversal.P;
@@ -47,6 +53,12 @@ public class ArtifactRepository extends GremlinVertexRepository<Artifact> {
     ArtifactEntityQueries queries;
     @Inject
     ConfigurationManager configurationManager;
+    @Inject
+    ConfigurationManagementService configurationManagementService;
+    @Inject
+    RepositoryPathResolver repositoryPathResolver;
+    @Inject
+    ArtifactRoutingRulesChecker artifactRoutingRulesChecker;
 
     @Override
     protected ArtifactAdapter adapter() {
@@ -106,11 +118,19 @@ public class ArtifactRepository extends GremlinVertexRepository<Artifact> {
                                               String sortField,
                                               String sortOrder) {
         com.veadan.folib.storage.repository.Repository repository = null;
+        List<String> storageIdAndRepositoryIdList = null;
+        boolean isGroupRepository = false;
         if (StringUtils.isNotBlank(storageId) && StringUtils.isNotBlank(repositoryId)) {
             repository = configurationManager.getRepository(storageId, repositoryId);
+            isGroupRepository = RepositoryTypeEnum.GROUP.getType().equals(repository.getType());
+            if (isGroupRepository) {
+                storageIdAndRepositoryIdList = getGroupStorageIdAndRepositoryId(repository);
+                storageId = "";
+                repositoryId = "";
+            }
         }
         Long zero = 0L;
-        Long count = buildEntityTraversal(regex, artifactName, metadataSearch, storageId, repositoryId, beginDate, endDate, sortField, sortOrder).count().tryNext().orElse(zero);
+        Long count = buildEntityTraversal(regex, artifactName, metadataSearch, storageIdAndRepositoryIdList, storageId, repositoryId, beginDate, endDate, sortField, sortOrder).count().tryNext().orElse(zero);
         if (zero.equals(count)) {
             return new PageImpl<>(Collections.emptyList(), pagination, count);
         }
@@ -118,13 +138,30 @@ public class ArtifactRepository extends GremlinVertexRepository<Artifact> {
         long high = (pagination.getPageNumber() + 1) * pagination.getPageSize();
 
 
-        List<Artifact> artifactList = buildEntityTraversal(regex, artifactName, metadataSearch, storageId, repositoryId, beginDate, endDate, sortField, sortOrder)
+        List<Artifact> artifactList = buildEntityTraversal(regex, artifactName, metadataSearch, storageIdAndRepositoryIdList, storageId, repositoryId, beginDate, endDate, sortField, sortOrder)
                 .range(low, high)
                 .map(artifactAdapter.fold(Optional.ofNullable(repository)
                         .map(com.veadan.folib.storage.repository.Repository::getLayout)
                         .map(ArtifactLayoutLocator.getLayoutByNameEntityMap()::get)
                         .map(ArtifactLayoutDescription::getArtifactCoordinatesClass))).toList();
         return new PageImpl<>(artifactList, pagination, count);
+    }
+
+    private List<String> getGroupStorageIdAndRepositoryId(com.veadan.folib.storage.repository.Repository repository) {
+        List<String> storageIdAndRepositoryIdList = Lists.newArrayList();
+        for (String storageAndRepositoryId : repository.getGroupRepositories()) {
+            String sId = ConfigurationUtils.getStorageId(repository.getStorage().getId(), storageAndRepositoryId);
+            String rId = ConfigurationUtils.getRepositoryId(storageAndRepositoryId);
+            com.veadan.folib.storage.repository.Repository subRepository = configurationManagementService.getConfiguration().getRepository(sId, rId);
+            if (!subRepository.isInService()) {
+                continue;
+            }
+            if (!repository.allowsDirectoryBrowsing()) {
+                continue;
+            }
+            storageIdAndRepositoryIdList.add(subRepository.getStorage().getId() + "-" + subRepository.getId());
+        }
+        return storageIdAndRepositoryIdList;
     }
 
     public Page<Artifact> scannerListByParams(Pageable pagination, String artifactName,
@@ -331,6 +368,7 @@ public class ArtifactRepository extends GremlinVertexRepository<Artifact> {
 
     private EntityTraversal<Vertex, Vertex> buildEntityTraversal(Boolean regex, String artifactName,
                                                                  String metadataSearch,
+                                                                 List<String> storageIdAndRepositoryIdList,
                                                                  String storageId,
                                                                  String repositoryId,
                                                                  String beginDate,
@@ -343,6 +381,9 @@ public class ArtifactRepository extends GremlinVertexRepository<Artifact> {
         }
         if (StringUtils.isNotBlank(repositoryId)) {
             entityTraversal = entityTraversal.has(Properties.REPOSITORY_ID, repositoryId);
+        }
+        if (CollectionUtils.isNotEmpty(storageIdAndRepositoryIdList)) {
+            entityTraversal = entityTraversal.has(Properties.STORAGE_ID_AND_REPOSITORY_ID, P.within(storageIdAndRepositoryIdList));
         }
         if (StringUtils.isNotBlank(artifactName)) {
             if (Boolean.TRUE.equals(regex)) {

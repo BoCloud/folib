@@ -20,6 +20,7 @@ import com.veadan.folib.services.DirectoryListingService;
 import com.veadan.folib.storage.ArtifactStorageException;
 import com.veadan.folib.storage.Storage;
 import com.veadan.folib.storage.repository.Repository;
+import com.veadan.folib.storage.repository.RepositoryTypeEnum;
 import com.veadan.folib.utils.TreeUtil;
 import com.veadan.folib.web.RepositoryMapping;
 import io.swagger.annotations.ApiOperation;
@@ -347,19 +348,23 @@ public class BrowseController
         logger.debug("Requested browsing repository content at {}/{}/{} ", storageId, repositoryId, rawPath);
         try {
             final RepositoryPath repositoryPath = repositoryPathResolver.resolve(repository, rawPath);
-            if (repositoryPath == null || !Files.exists(repositoryPath)) {
-                return getNotFoundResponseEntity("The requested repository path was not found.", acceptHeader);
-            }
+            DirectoryListing directoryListing = null;
+            if (RepositoryTypeEnum.GROUP.getType().equals(repository.getType())) {
+                directoryListing = directoryListingService.fromGroupRepositoryPath(repository, repositoryPath);
+            } else {
+                if (repositoryPath == null || !Files.exists(repositoryPath)) {
+                    return getNotFoundResponseEntity("The requested repository path was not found.", acceptHeader);
+                }
 
-            if (!repository.isInService()) {
-                return getServiceUnavailableResponseEntity("Repository is not in service...", acceptHeader);
-            }
+                if (!repository.isInService()) {
+                    return getServiceUnavailableResponseEntity("Repository is not in service...", acceptHeader);
+                }
 
-            if (!repository.allowsDirectoryBrowsing() || !probeForDirectoryListing(repositoryPath)) {
-                return getNotFoundResponseEntity("Requested repository doesn't allow browsing.", acceptHeader);
+                if (!repository.allowsDirectoryBrowsing() || !probeForDirectoryListing(repositoryPath)) {
+                    return getNotFoundResponseEntity("Requested repository doesn't allow browsing.", acceptHeader);
+                }
+                directoryListing = directoryListingService.fromRepositoryPath(repositoryPath);
             }
-
-            DirectoryListing directoryListing = directoryListingService.fromRepositoryPath(repositoryPath);
             if (acceptHeader != null && acceptHeader.contains(MediaType.APPLICATION_JSON_VALUE)) {
                 return ResponseEntity.ok(objectMapper.writer().writeValueAsString(directoryListing));
             }
