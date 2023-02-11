@@ -366,7 +366,7 @@ public class StoragesConfigurationController
                 if (!Files.exists(repositoryPath)) {
                     repositoryManagementService.createRepository(storageId, repository.getId());
                 }
-                SyncRepositoryDto syncRepositoryDto = new SyncRepositoryDto(repositoryDto, storageId, repositoryId, SyncRepositoryEnum.DELETE);
+                SyncRepositoryDto syncRepositoryDto = new SyncRepositoryDto(repositoryDto, storageId, repositoryId, SyncRepositoryEnum.ADD_OR_UPDATE);
                 clusterSyncService.syncRepository(syncRepositoryDto);
 
                 return getSuccessfulResponseEntity(SUCCESSFUL_REPOSITORY_SAVE, accept);
@@ -407,7 +407,7 @@ public class StoragesConfigurationController
                 repository.setVulnerabilityWhites(repositoryForm.getVulnerabilityWhites());
                 logger.debug("新增仓库级别白名单 {}:{}...", storageId, repositoryId);
                 configurationManagementService.addRepositoryVulnerabilityWhites(storageId, repositoryId, repository.getVulnerabilityWhites());
-                SyncRepositoryDto syncRepositoryDto = new SyncRepositoryDto(repository, storageId, repositoryId, SyncRepositoryEnum.DELETE);
+                SyncRepositoryDto syncRepositoryDto = new SyncRepositoryDto(repository, storageId, repositoryId, SyncRepositoryEnum.ADD_OR_UPDATE);
                 clusterSyncService.syncRepository(syncRepositoryDto);
                 return getSuccessfulResponseEntity(SUCCESSFUL_REPOSITORY_SAVE, accept);
             } catch (IOException | ConfigurationException e) {
@@ -487,7 +487,7 @@ public class StoragesConfigurationController
                 repository.setVulnerabilityBlacks(repositoryForm.getVulnerabilityBlacks());
                 logger.debug("新增仓库级别黑名单 {}:{}...", storageId, repositoryId);
                 configurationManagementService.addRepositoryVulnerabilityBlacks(storageId, repositoryId, repository.getVulnerabilityBlacks());
-                SyncRepositoryDto syncRepositoryDto = new SyncRepositoryDto(repository, storageId, repositoryId, SyncRepositoryEnum.DELETE);
+                SyncRepositoryDto syncRepositoryDto = new SyncRepositoryDto(repository, storageId, repositoryId, SyncRepositoryEnum.ADD_OR_UPDATE);
                 clusterSyncService.syncRepository(syncRepositoryDto);
                 return getSuccessfulResponseEntity(SUCCESSFUL_REPOSITORY_SAVE, accept);
             } catch (IOException | ConfigurationException e) {
@@ -565,7 +565,7 @@ public class StoragesConfigurationController
                 repository.setVulnerabilityWhites(repositoryForm.getVulnerabilityWhites());
                 logger.debug("设置仓库级别白名单 {}:{}...", storageId, repositoryId);
                 configurationManagementService.setRepositoryVulnerabilityWhites(storageId, repositoryId, repository.getVulnerabilityWhites());
-                SyncRepositoryDto syncRepositoryDto = new SyncRepositoryDto(repository, storageId, repositoryId, SyncRepositoryEnum.DELETE);
+                SyncRepositoryDto syncRepositoryDto = new SyncRepositoryDto(repository, storageId, repositoryId, SyncRepositoryEnum.ADD_OR_UPDATE);
                 clusterSyncService.syncRepository(syncRepositoryDto);
                 return getSuccessfulResponseEntity(SUCCESSFUL_REPOSITORY_SAVE, accept);
             } catch (IOException | ConfigurationException e) {
@@ -603,7 +603,7 @@ public class StoragesConfigurationController
                 repository.setVulnerabilityBlacks(repositoryForm.getVulnerabilityBlacks());
                 logger.debug("设置仓库级别黑名单 {}:{}...", storageId, repositoryId);
                 configurationManagementService.setRepositoryVulnerabilityBlacks(storageId, repositoryId, repository.getVulnerabilityBlacks());
-                SyncRepositoryDto syncRepositoryDto = new SyncRepositoryDto(repository, storageId, repositoryId, SyncRepositoryEnum.DELETE);
+                SyncRepositoryDto syncRepositoryDto = new SyncRepositoryDto(repository, storageId, repositoryId, SyncRepositoryEnum.ADD_OR_UPDATE);
                 clusterSyncService.syncRepository(syncRepositoryDto);
                 return getSuccessfulResponseEntity(SUCCESSFUL_REPOSITORY_SAVE, accept);
             } catch (IOException | ConfigurationException e) {
