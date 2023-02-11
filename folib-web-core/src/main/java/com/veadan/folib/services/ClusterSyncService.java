@@ -16,13 +16,13 @@ public interface ClusterSyncService {
 
     void syncConfiguration();
 
-    void syncStorage(StorageDto storageDto, String storageId, SyncStorageEnum syncStorageEnum);
+    void syncStorage(SyncStorageDto syncStorageDto);
 
     void syncSecurityPolicyConfiguration(MutableSecurityPolicyConfiguration mutableSecurityPolicyConfiguration);
 
     void syncMetadataConfiguration(SyncMetadataDto syncMetadataDto);
 
-    void syncRepository(String storageId, String repositoryId, RepositoryDto repository, SyncRepositoryEnum syncRepositoryEnum);
+    void syncRepository(SyncRepositoryDto syncRepositoryDto);
 
     void syncCronJob(SyncCronJobDto syncCronJobDto);
 

@@ -57,16 +57,15 @@ public class ClusterSyncServiceImpl implements ClusterSyncService {
 
     @Override
     @Async("asyncStorageThreadPoolExecutor")
-    public void syncStorage(StorageDto storageDto, String storageId, SyncStorageEnum syncStorageEnum) {
+    public void syncStorage(SyncStorageDto syncStorageDto) {
         // 向各个节点发送请求  判断全局配置的代理 判断是否是集群
         if (!isNeedClusterSync()) {
             logger.info("cluster mode not opened");
             return;
         }
         logger.info("folib sync storage");
-        SyncStorageDto syncStorageDto = new SyncStorageDto(storageDto, storageId, syncStorageEnum);
         clusterProperties.getHostNodeList().forEach(nodeUrl -> {
-            handleSyncStorage(storageId, syncStorageDto, nodeUrl, false);
+            handleSyncStorage(syncStorageDto.getStorageId(), syncStorageDto, nodeUrl, false);
         });
 
     }
@@ -141,17 +140,16 @@ public class ClusterSyncServiceImpl implements ClusterSyncService {
 
     @Override
     @Async("asyncRepositoryThreadPoolExecutor")
-    public void syncRepository(String storageId, String repositoryId, RepositoryDto repository, SyncRepositoryEnum syncRepositoryEnum) {
+    public void syncRepository(SyncRepositoryDto syncRepositoryDto) {
         if (!isNeedClusterSync()) {
             logger.info("cluster mode not opened");
             return;
         }
 
         logger.info("folib  sync repository");
-        SyncRepositoryDto syncRepositoryDto = new SyncRepositoryDto(repository, storageId, repositoryId, syncRepositoryEnum);
-
         clusterProperties.getHostNodeList().forEach(nodeUrl -> {
-            handleSyncRepository(storageId, repositoryId, syncRepositoryDto, nodeUrl, false);
+            handleSyncRepository(syncRepositoryDto.getStorageId(), syncRepositoryDto.getRepositoryId(),
+                    syncRepositoryDto, nodeUrl, false);
         });
     }
 
