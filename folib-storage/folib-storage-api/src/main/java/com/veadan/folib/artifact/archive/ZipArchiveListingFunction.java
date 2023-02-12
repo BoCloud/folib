@@ -42,6 +42,15 @@ public enum ZipArchiveListingFunction
     }
 
     @Override
+    public String getContentByFileName(RepositoryPath repositoryPath, Path path, String fileName) throws IOException {
+        try (InputStream is = Files.newInputStream(path);
+             BufferedInputStream bis = new BufferedInputStream(is);
+             ArchiveInputStream ais = new ZipArchiveInputStream(bis)) {
+            return getContentByFileName(ais, fileName);
+        }
+    }
+
+    @Override
     public boolean supports(final RepositoryPath path) {
         final Path fileName = path.getFileName();
         return fileName != null && fileName.toString().endsWith("zip");

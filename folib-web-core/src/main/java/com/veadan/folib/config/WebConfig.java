@@ -49,6 +49,7 @@ import org.springframework.web.context.request.RequestContextListener;
 import org.springframework.web.filter.CommonsRequestLoggingFilter;
 import org.springframework.web.filter.RequestContextFilter;
 import org.springframework.web.method.support.HandlerMethodArgumentResolver;
+import org.springframework.web.multipart.MultipartResolver;
 import org.springframework.web.servlet.config.annotation.ContentNegotiationConfigurer;
 import org.springframework.web.servlet.config.annotation.PathMatchConfigurer;
 import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
@@ -76,7 +77,8 @@ import java.util.List;
         "com.veadan.folib.scanner",
         "com.veadan.folib.gremlin",
         "com.veadan.folib.actuator",
-        "com.veadan.folib.components"})
+        "com.veadan.folib.components",
+        "com.veadan.folib.listener"})
 @Import({CommonConfig.class,
         FolibSecurityConfig.class,
         StorageApiConfig.class,
@@ -306,4 +308,10 @@ public class WebConfig
     public RepositoryMethodArgumentResolver repositoryMethodArgumentResolver() {
         return new RepositoryMethodArgumentResolver();
     }
+
+    @Bean(name = "multipartResolver")
+    public MultipartResolver multipartResolver() {
+        return new CustomMultipartResolver();
+    }
+
 }
