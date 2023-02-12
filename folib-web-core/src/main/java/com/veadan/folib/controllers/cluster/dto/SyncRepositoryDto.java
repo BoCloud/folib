@@ -12,6 +12,8 @@ public class SyncRepositoryDto {
 
     private SyncRepositoryEnum syncRepositoryEnum;
 
+    private Boolean deleteForceFlag;
+
     public SyncRepositoryDto() {
     }
 
@@ -20,6 +22,14 @@ public class SyncRepositoryDto {
         this.storageId = storageId;
         this.repositoryId = repositoryId;
         this.syncRepositoryEnum = syncRepositoryEnum;
+    }
+
+    public SyncRepositoryDto(RepositoryDto repositoryDto, String storageId, String repositoryId, SyncRepositoryEnum syncRepositoryEnum, Boolean deleteForceFlag) {
+        this.repositoryDto = repositoryDto;
+        this.storageId = storageId;
+        this.repositoryId = repositoryId;
+        this.syncRepositoryEnum = syncRepositoryEnum;
+        this.deleteForceFlag = deleteForceFlag;
     }
 
     public RepositoryDto getRepositoryDto() {
@@ -52,5 +62,21 @@ public class SyncRepositoryDto {
 
     public void setRepositoryId(String repositoryId) {
         this.repositoryId = repositoryId;
+    }
+
+    public SyncRepositoryEnum getSyncRepositoryEnum() {
+        return syncRepositoryEnum;
+    }
+
+    public void setSyncRepositoryEnum(SyncRepositoryEnum syncRepositoryEnum) {
+        this.syncRepositoryEnum = syncRepositoryEnum;
+    }
+
+    public Boolean getDeleteForceFlag() {
+        return deleteForceFlag;
+    }
+
+    public void setDeleteForceFlag(Boolean deleteForceFlag) {
+        this.deleteForceFlag = deleteForceFlag;
     }
 }

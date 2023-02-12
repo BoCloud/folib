@@ -16,10 +16,10 @@ import com.veadan.folib.providers.io.RepositoryFileAttributeType;
 import com.veadan.folib.providers.io.RepositoryFiles;
 import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.providers.io.RepositoryPathResolver;
-import com.veadan.folib.providers.repository.RepositoryProvider;
 import com.veadan.folib.scanner.common.util.SpringContextUtil;
 import com.veadan.folib.services.support.ArtifactRoutingRulesChecker;
 import com.veadan.folib.storage.repository.RepositoryTypeEnum;
+import com.veadan.folib.utils.compatator.DirectoryNameCompatator;
 import org.apache.commons.compress.utils.Lists;
 import org.apache.commons.lang.StringUtils;
 import com.veadan.folib.domain.DirectoryListing;
@@ -29,7 +29,6 @@ import com.veadan.folib.storage.repository.Repository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.inject.Inject;
 
 public class DirectoryListingServiceImpl implements DirectoryListingService
 {
@@ -136,7 +135,9 @@ public class DirectoryListingServiceImpl implements DirectoryListingService
             fileContentSet.addAll(itemDirectoryListing.getFiles());
         }
         directoryListing = new DirectoryListing();
-        directoryListing.setDirectories(new ArrayList(directoryContentSet));
+        List<FileContent> directoryContents = new ArrayList(directoryContentSet);
+        Collections.sort(directoryContents, new DirectoryNameCompatator());
+        directoryListing.setDirectories(directoryContents);
         directoryListing.setFiles(new ArrayList(fileContentSet));
         return directoryListing;
     }
