@@ -1,5 +1,6 @@
 package com.veadan.folib.storage.metadata;
 
+import com.alibaba.fastjson.JSONObject;
 import com.veadan.folib.artifact.MavenArtifact;
 import com.veadan.folib.artifact.MavenArtifactUtils;
 import com.veadan.folib.providers.io.RepositoryFiles;
@@ -176,6 +177,7 @@ public class MavenMetadataManager
                    ProviderImplementationException,
                    UnknownRepositoryTypeException
     {
+        logger.info("VersionCollectionRequest：{}", JSONObject.toJSONString(request));
         Repository repository = artifactGroupDirectoryPath.getRepository();
         LayoutProvider layoutProvider = LayoutProviderRegistry.getLayoutProvider(repository, layoutProviderRegistry);
         if (!RepositoryFiles.artifactExists(artifactGroupDirectoryPath))
@@ -199,6 +201,11 @@ public class MavenMetadataManager
         List<MetadataVersion> baseVersioning = request.getMetadataVersions();
         Versioning versioning = request.getVersioning();
 
+        String latestVersion = null;
+        if (!versioning.getVersions().isEmpty()) {
+            latestVersion = versioning.getVersions().get(versioning.getVersions().size() - 1);
+        }
+
         // Set lastUpdated tag for main maven-metadata
         MetadataHelper.setLastUpdated(versioning);
 
@@ -206,12 +213,12 @@ public class MavenMetadataManager
          * In a release repository we only need to generate maven-metadata.xml in the artifactBasePath
          * (i.e. org/foo/bar/maven-metadata.xml)
          */
-        if (repository.getPolicy().equals(RepositoryPolicyEnum.RELEASE.getPolicy()))
+        if (repository.getPolicy().equals(RepositoryPolicyEnum.RELEASE.getPolicy()) || !ArtifactUtils.isSnapshot(latestVersion))
         {
             // Don't write empty <versioning/> tags when no versions are available.
             if (!versioning.getVersions().isEmpty())
             {
-                String latestVersion = baseVersioning.get(baseVersioning.size() - 1).getVersion();
+                latestVersion = baseVersioning.get(baseVersioning.size() - 1).getVersion();
 
                 metadata.setVersioning(request.getVersioning());
                 versioning.setRelease(latestVersion);
@@ -234,13 +241,13 @@ public class MavenMetadataManager
          * generate additional maven-metadata.xml files for each snapshot directory containing information about
          * all available artifacts.
          */
-        else if (repository.getPolicy().equals(RepositoryPolicyEnum.SNAPSHOT.getPolicy()))
+        else if (repository.getPolicy().equals(RepositoryPolicyEnum.SNAPSHOT.getPolicy()) || (ArtifactUtils.isSnapshot(latestVersion)))
         {
             // Don't write empty <versioning/> tags when no versions are available.
             if (!versioning.getVersions().isEmpty())
             {
                 // Set <latest>
-                String latestVersion = versioning.getVersions().get(versioning.getVersions().size() - 1);
+                latestVersion = versioning.getVersions().get(versioning.getVersions().size() - 1);
                 versioning.setLatest(latestVersion);
 
                 metadata.setVersioning(versioning);

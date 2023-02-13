@@ -98,7 +98,7 @@
                       <a-icon type="question-circle" theme="filled" />
                     </small>
                   </a>
-                  <div>
+                  <div v-if="folibRepository.type !== 'group'">
                     <span class="mr-15">{{
                       scan.onScan ? "扫描开启" : "扫描关闭"
                     }}</span>

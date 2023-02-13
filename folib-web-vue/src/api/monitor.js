@@ -16,7 +16,7 @@ export function getMetricsHealth () {
 }
 
 export function browseLogs (path) {
-  let apiUrl =  'api/logging/browse'
+  let apiUrl =  '/api/logging/browse'
   if (path) {
     apiUrl = apiUrl + '/' + path
   }
