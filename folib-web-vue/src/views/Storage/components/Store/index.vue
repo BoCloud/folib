@@ -80,7 +80,8 @@
                   <a
                     v-if="
                       (folibRepository.layout === 'Raw' ||
-                        folibRepository.layout === 'php') &&
+                        folibRepository.layout === 'php' ||
+                        folibRepository.layout === 'Maven 2') && folibRepository.type === 'hosted' &&
                       enabled
                     "
                     ><small style="padding-right: 20px" @click="handleUpload">
@@ -97,7 +98,7 @@
                       <a-icon type="question-circle" theme="filled" />
                     </small>
                   </a>
-                  <div>
+                  <div v-if="folibRepository.type !== 'group'">
                     <span class="mr-15">{{
                       scan.onScan ? "扫描开启" : "扫描关闭"
                     }}</span>
@@ -844,61 +845,48 @@
               >
               </a-input>
             </a-form-item>
-            <a-form-item label="选择文件">
-              <a-upload
-                v-decorator="[
-                  'files',
-                  {
-                    rules: [{ required: true, message: '请选择文件' }],
-                    valuePropName: 'fileList',
-                    getValueFromEvent: normFile,
-                  },
-                ]"
-                name="files"
-                :multiple="true"
-                :beforeUpload="beforeUpload"
-                list-type="text"
-              >
+            <a-form-item label="选择文件" v-if="folibRepository.layout !== 'Maven 2'">
+              <a-upload v-decorator="[
+                'files',
+                {
+                  rules: [{ required: true, message: '请选择文件' }],
+                  valuePropName: 'fileList',
+                  getValueFromEvent: normFile,
+                },
+              ]" name="files" :multiple="true" list-type="text">
                 <a-button> <a-icon type="upload" />选择文件 </a-button>
               </a-upload>
             </a-form-item>
-            <a-form-item
-              class="tags-field mb-10"
-              label="目标目录"
-              prop="targetPath"
-              :colon="false"
-            >
-              <a-input
-                v-decorator="[
-                  'targetPath',
-                  {
-                    rules: [
-                      { required: false, message: '请输入目标目录' },
-                      // { pattern: /^[a-zA-Z_]([a-zA-Z0-9_\-.\\/]+)?$/, message: '目标目录为大小写字母、数字、下划线开头，包含字母、数字、下划线、中划线、点、斜杠'}
-                    ],
-                  },
-                ]"
-                placeholder="请输入目标目录"
-              >
+            <a-form-item label="选择文件" v-if="folibRepository.layout === 'Maven 2'">
+              <a-upload v-decorator="[
+                'files',
+                {
+                  rules: [{ required: false, message: '请选择文件' }],
+                  valuePropName: 'fileList',
+                  getValueFromEvent: normFile,
+                },
+              ]" name="files" :multiple="true" :customRequest="uploadMavenFiles" list-type="text">
+                <a-button> <a-icon type="upload" />选择文件 </a-button>
+              </a-upload>
+            </a-form-item>
+            <a-form-item class="tags-field mb-10" label="目标目录" prop="targetPath" :colon="false"
+              v-if="folibRepository.layout !== 'Maven 2'">
+              <a-input v-decorator="[
+                'targetPath',
+                {
+                  rules: [
+                    { required: false, message: '请输入目标目录' },
+                    // { pattern: /^[a-zA-Z_]([a-zA-Z0-9_\-.\\/]+)?$/, message: '目标目录为大小写字母、数字、下划线开头，包含字母、数字、下划线、中划线、点、斜杠'}
+                  ],
+                },
+              ]" placeholder="请输入目标目录">
               </a-input>
             </a-form-item>
           </a-col>
           <a-col :span="24" class="text-center">
-            <a-button
-              key="submit"
-              class="px-30"
-              size="small"
-              type="primary"
-              htmlType="submit"
-              >上传</a-button
-            >
-            <a-button
-              key="back"
-              @click="uploadFormModalClose()"
-              class="px-30 ml-10"
-              size="small"
-              >取消</a-button
-            >
+            <a-button key="submit" class="px-30" size="small" type="primary" htmlType="submit"
+              v-if="folibRepository.layout !== 'Maven 2'">上传</a-button>
+            <a-button key="back" @click="uploadFormModalClose()" class="px-30 ml-10" size="small">取消</a-button>
           </a-col>
         </a-row>
       </a-form>
@@ -930,6 +918,7 @@ import {
   artifactCopy,
   artifactMove,
   artifactUpload,
+  artifactUploadStatus,
   rpmArtifactUpload,
 } from "@/api/artifact";
 import { getMetadataConfiguration } from "@/api/settings";
@@ -1244,7 +1233,7 @@ export default {
                 description: "",
               });
             })
-            .finally(() => {});
+            .finally(() => { });
         }
       });
     },
@@ -1290,9 +1279,68 @@ export default {
                 description: "",
               });
             })
-            .finally(() => {});
+            .finally(() => { });
         }
       });
+    },
+    uploadMavenFiles(options) {
+      this.uploadForm.validateFields((err, values) => {
+        if (!err) {
+          if (values.targetPath && values.targetPath.startsWith("/")) {
+            this.$notification["warning"]({
+              message: "目标目录不能以/开头",
+              description: "",
+            });
+            return false;
+          }
+          let filePathMap = {};
+          let fileList = [];
+          let file = options.file;
+          let fileName = file.name;
+          fileName = fileName.replace(":", "/");
+          filePathMap[fileName] = values.targetPath
+            ? values.targetPath + "/" + fileName
+            : fileName;
+          fileList.push(file);
+          let progress = { percent: 1 };
+          const intervalId = setInterval(() => {
+            if (progress.percent < 100) {
+              this.getProgressRate(progress)
+              options.onProgress(progress);
+            } else {
+              clearInterval(intervalId);
+            }
+          }, 100);
+          values.filePathMap = filePathMap;
+          const formData = new FormData();
+          formData.append("storageId", this.folibRepository.storageId);
+          formData.append("repostoryId", this.folibRepository.id);
+          formData.append("filePathMap", JSON.stringify(filePathMap));
+          fileList.forEach((file) => {
+            file = new File([file], file.name.replace(":", "/"));
+            formData.append("files", file);
+          });
+          artifactUpload(formData)
+            .then((res) => {
+              this.successMsg("上传成功");
+              this.uploadFormModalClose();
+              this.reload();
+            })
+            .catch((err) => {
+              this.$notification["error"]({
+                message: err.response.data,
+                description: "",
+              });
+            })
+            .finally(() => { });
+        }
+      });
+    },
+    //获取进度
+    getProgressRate(progress) {
+      artifactUploadStatus().then((res) => {
+        progress.percent = res
+      })
     },
     uploadFormModalClose() {
       this.showUploadFormModal = false;
@@ -1541,7 +1589,7 @@ export default {
                   description: "",
                 });
               })
-              .finally(() => {});
+              .finally(() => { });
           } else if (this.operationTitle.indexOf("移动") !== -1) {
             artifactMove(data)
               .then((res) => {
@@ -1555,7 +1603,7 @@ export default {
                   description: "",
                 });
               })
-              .finally(() => {});
+              .finally(() => { });
           }
         }
       });
@@ -1583,7 +1631,7 @@ export default {
         .then((res) => {
           this.metadataConfigList = res;
         })
-        .finally(() => {});
+        .finally(() => { });
     },
     metadataHandler(type, metadata) {
       this.metadataFormReset();
@@ -1630,7 +1678,7 @@ export default {
             description: "",
           });
         })
-        .finally(() => {});
+        .finally(() => { });
     },
     handlerRespMetadata(res) {
       let metadataList = [];

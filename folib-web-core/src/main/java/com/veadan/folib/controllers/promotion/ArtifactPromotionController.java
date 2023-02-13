@@ -19,6 +19,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
 
 /**
  * 制品晋级控制层
@@ -96,6 +97,17 @@ public class ArtifactPromotionController extends BaseArtifactController {
             throw new RequestBodyValidationException("请求参数错误", bindingResult);
         }
         return artifactPromotionService.getFileRelativePaths(artifactDto);
+    }
+
+    /**
+     * 文件上传进度
+     */
+    @GetMapping(value = "/uploadStatus")
+    public ResponseEntity uploadStatus(HttpServletRequest request){
+        HttpSession session = request.getSession();
+        Object uploadPercent = session.getAttribute("upload_percent");
+        Integer percent = null != uploadPercent ? (Integer) uploadPercent : 0;
+        return ResponseEntity.ok(percent);
     }
 
 }

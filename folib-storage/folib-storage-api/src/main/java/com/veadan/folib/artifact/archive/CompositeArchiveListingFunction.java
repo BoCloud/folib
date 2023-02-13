@@ -3,6 +3,8 @@ package com.veadan.folib.artifact.archive;
 import com.veadan.folib.providers.io.RepositoryPath;
 
 import java.io.IOException;
+import java.io.InputStream;
+import java.nio.file.Path;
 import java.util.HashSet;
 import java.util.Objects;
 import java.util.Set;
@@ -38,6 +40,17 @@ public class CompositeArchiveListingFunction
         for (final ArchiveListingFunction leaf : leafs) {
             if (leaf.supports(path)) {
                 return leaf.getContentByFileName(path, fileName);
+            }
+        }
+        return content;
+    }
+
+    @Override
+    public String getContentByFileName(RepositoryPath repositoryPath, Path path, String fileName) throws IOException {
+        String content = "";
+        for (final ArchiveListingFunction leaf : leafs) {
+            if (leaf.supports(repositoryPath)) {
+                return leaf.getContentByFileName(repositoryPath, path, fileName);
             }
         }
         return content;

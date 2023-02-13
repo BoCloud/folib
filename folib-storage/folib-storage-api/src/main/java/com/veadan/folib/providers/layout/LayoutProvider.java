@@ -1,6 +1,8 @@
 package com.veadan.folib.providers.layout;
 
 import java.io.IOException;
+import java.io.InputStream;
+import java.nio.file.Path;
 import java.util.Set;
 
 import javax.annotation.Nonnull;
@@ -21,6 +23,8 @@ public interface LayoutProvider<T extends ArtifactCoordinates>
     Set<String> listArchiveFilenames(RepositoryPath repositoryPath);
 
     String getContentByFileName(RepositoryPath repositoryPath, String fileName);
+
+    String getContentByFileName(RepositoryPath repositoryPath, Path path, String fileName);
 
     Set<String> getDefaultArtifactCoordinateValidators();
 
