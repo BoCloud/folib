@@ -16,11 +16,12 @@ export function getMetricsHealth () {
 }
 
 export function browseLogs (path) {
-  if (!path) {
-    path = ''
+  let apiUrl =  'api/logging/browse'
+  if (path) {
+    apiUrl = apiUrl + '/' + path
   }
   return axios({
-    url: 'api/logging/browse/' + path,
+    url: apiUrl,
     method: 'get',
     headers:{
       Accept:'application/json, text/plain, */*'
