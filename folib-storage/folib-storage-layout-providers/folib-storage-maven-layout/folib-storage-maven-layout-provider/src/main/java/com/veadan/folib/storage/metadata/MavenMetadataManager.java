@@ -213,7 +213,7 @@ public class MavenMetadataManager
          * In a release repository we only need to generate maven-metadata.xml in the artifactBasePath
          * (i.e. org/foo/bar/maven-metadata.xml)
          */
-        if (repository.getPolicy().equals(RepositoryPolicyEnum.RELEASE.getPolicy()) || !ArtifactUtils.isSnapshot(latestVersion))
+        if (!ArtifactUtils.isSnapshot(latestVersion))
         {
             // Don't write empty <versioning/> tags when no versions are available.
             if (!versioning.getVersions().isEmpty())
@@ -241,7 +241,7 @@ public class MavenMetadataManager
          * generate additional maven-metadata.xml files for each snapshot directory containing information about
          * all available artifacts.
          */
-        else if (repository.getPolicy().equals(RepositoryPolicyEnum.SNAPSHOT.getPolicy()) || (ArtifactUtils.isSnapshot(latestVersion)))
+        else if (ArtifactUtils.isSnapshot(latestVersion))
         {
             // Don't write empty <versioning/> tags when no versions are available.
             if (!versioning.getVersions().isEmpty())

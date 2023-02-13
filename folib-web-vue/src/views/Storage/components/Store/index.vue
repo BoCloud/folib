@@ -1328,7 +1328,7 @@ export default {
             })
             .catch((err) => {
               this.$notification["error"]({
-                message: err.response.data.error,
+                message: err.response.data,
                 description: "",
               });
             })

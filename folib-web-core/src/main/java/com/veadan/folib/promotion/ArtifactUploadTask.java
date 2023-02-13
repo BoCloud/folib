@@ -128,9 +128,10 @@ public class ArtifactUploadTask implements Callable<String> {
                 log.info("maven2 layout artifact path ：{}，properties：{}，groupId：{}，artifactId：{}, version：{} artifactPath：{}", path, properties, groupId, artifactId, version, artifactPath);
                 RepositoryPath artifactRepositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, artifactPath);
                 try (InputStream artifactInputStream = FileUtil.getInputStream(artifactTempFile)) {
-                    artifactManagementService.store(artifactRepositoryPath, artifactInputStream);
+                    artifactManagementService.validateAndStore(artifactRepositoryPath, artifactInputStream);
                 } catch (Exception ex) {
                     log.error("store artifact：{}，error：{}", artifactRepositoryPath.toAbsolutePath(), ExceptionUtils.getStackTrace(ex));
+                    throw new RuntimeException(ex.getMessage());
                 }
                 promotionUtil.setMetaData(artifactRepositoryPath, metaData);
 
@@ -144,9 +145,10 @@ public class ArtifactUploadTask implements Callable<String> {
                 log.info("maven2 layout xml path ：{}，properties：{}，groupId：{}，artifactId：{}, version：{} artifactPath：{}", pomTempFile.getAbsolutePath(), properties, groupId, artifactId, version, pomPath);
                 RepositoryPath pomRepositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, pomPath);
                 try (InputStream pomInputStream = FileUtil.getInputStream(pomTempFile)) {
-                    artifactManagementService.store(pomRepositoryPath, pomInputStream);
+                    artifactManagementService.validateAndStore(pomRepositoryPath, pomInputStream);
                 } catch (Exception ex) {
                     log.error("store pom：{}，error：{}", pomRepositoryPath.toAbsolutePath(), ExceptionUtils.getStackTrace(ex));
+                    throw new RuntimeException(ex.getMessage());
                 }
                 try {
                     String artifactIdPath = String.format("%s/%s", groupId, artifactId);
@@ -160,7 +162,7 @@ public class ArtifactUploadTask implements Callable<String> {
             }
         } catch (Exception ex) {
             log.error("handlerMavenLayoutUpload path：{}，error：{}", repositoryPath.toAbsolutePath(), ExceptionUtils.getStackTrace(ex));
-            throw new RuntimeException("handlerMavenLayoutUpload error：" + ex.getMessage());
+            throw new RuntimeException(ex.getMessage());
         } finally {
             if (Objects.nonNull(parentTempFile)) {
                 FileUtil.del(parentTempFile);
