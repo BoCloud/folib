@@ -28,6 +28,7 @@ import com.veadan.folib.services.support.ArtifactRoutingRulesChecker;
 import com.veadan.folib.storage.Storage;
 import com.veadan.folib.storage.repository.Repository;
 import com.veadan.folib.util.ThrowingFunction;
+import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
@@ -99,28 +100,33 @@ public class GroupRepositoryProvider
         Storage storage = groupRepository.getStorage();
 
         // Iterate over the `repositories` collection.
+        RepositoryPath subRepositoryPath = null;
         for (String storageAndRepositoryId : groupRepository.getGroupRepositories())
         {
-            String sId = ConfigurationUtils.getStorageId(storage.getId(), storageAndRepositoryId);
-            String rId = ConfigurationUtils.getRepositoryId(storageAndRepositoryId);
+            try {
+                String sId = ConfigurationUtils.getStorageId(storage.getId(), storageAndRepositoryId);
+                String rId = ConfigurationUtils.getRepositoryId(storageAndRepositoryId);
 
-            Repository subRepository = getConfiguration().getStorage(sId).getRepository(rId);
-            RepositoryPath subRepositoryPath = repositoryPathResolver.resolve(subRepository, repositoryPath);
+                Repository subRepository = getConfiguration().getStorage(sId).getRepository(rId);
 
-            if (!isRepositoryResolvable(groupRepository, subRepository, subRepositoryPath))
-            {
-                continue;
+                subRepositoryPath = repositoryPathResolver.resolve(subRepository, repositoryPath);
+                if (!isRepositoryResolvable(groupRepository, subRepository, subRepositoryPath))
+                {
+                    continue;
+                }
+
+                subRepositoryPath = resolvePathFromGroupMemberOrTraverse(subRepositoryPath);
+                if (subRepositoryPath == null)
+                {
+                    continue;
+                }
+                logger.debug("Located artifact: [{}]", subRepositoryPath);
+            } catch (Exception ex){
+                logger.error("group repository resolvePathTraversal artifact: [{}] error：[{}]", subRepositoryPath, ExceptionUtils.getStackTrace(ex));
             }
-
-            subRepositoryPath = resolvePathFromGroupMemberOrTraverse(subRepositoryPath);
-            if (subRepositoryPath == null)
-            {
-                continue;
+            if (Objects.nonNull(subRepositoryPath) && Objects.nonNull(resolvePathDirectlyFromGroupPathIfPossible(subRepositoryPath))) {
+                return subRepositoryPath;
             }
-
-            logger.debug("Located artifact: [{}]", subRepositoryPath);
-
-            return subRepositoryPath;
         }
 
         return null;
