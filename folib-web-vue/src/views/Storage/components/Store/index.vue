@@ -853,7 +853,7 @@
                   valuePropName: 'fileList',
                   getValueFromEvent: normFile,
                 },
-              ]" name="files" :multiple="true" list-type="text">
+              ]" name="files" :multiple="true" :beforeUpload="beforeUpload" list-type="text">
                 <a-button> <a-icon type="upload" />选择文件 </a-button>
               </a-upload>
             </a-form-item>
