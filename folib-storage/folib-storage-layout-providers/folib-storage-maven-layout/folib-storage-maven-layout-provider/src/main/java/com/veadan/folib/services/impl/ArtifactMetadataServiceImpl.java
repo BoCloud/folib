@@ -203,17 +203,32 @@ public class ArtifactMetadataServiceImpl
         String artifactGroupId = artifactGroup.getValue0();
         String artifactId = artifactGroup.getValue1();
 
-        Metadata snapshotMetadata = mavenMetadataManager.generateSnapshotVersioningMetadata(artifactGroupId, artifactId,
+        Metadata snapshotMetadata = mavenMetadataManager.generateLastSnapshotVersioningMetadata(artifactGroupId, artifactId,
                                                                                             artifactBasePath,
                                                                                             snapshot,
                                                                                             false);
 
         addTimestampedSnapshotVersion(snapshotMetadata, version, classifier, extension);
 
-        mavenMetadataManager.storeMetadata(artifactBasePath,
+        mavenMetadataManager.storeMetadata(artifactBasePath.getParent(),
                                            snapshot,
                                            snapshotMetadata,
                                            MetadataType.SNAPSHOT_VERSION_LEVEL);
+    }
+
+    @Override
+    public void generateLastTimestampedSnapshotVersion(String storageId, String repositoryId, String artifactPath, String version) throws IOException {
+        Storage storage = getConfiguration().getStorage(storageId);
+        Repository repository = storage.getRepository(repositoryId);
+        String snapshot = ArtifactUtils.toSnapshotVersion(version);
+        RepositoryPath artifactBasePath = repositoryPathResolver.resolve(repository, artifactPath);
+        Pair<String, String> artifactGroup = MavenArtifactUtils.getDirectoryGA(artifactBasePath);
+        String artifactGroupId = artifactGroup.getValue0();
+        String artifactId = artifactGroup.getValue1();
+        mavenMetadataManager.generateLastSnapshotVersioningMetadata(artifactGroupId, artifactId,
+                artifactBasePath,
+                snapshot,
+                true);
     }
 
     @Override
@@ -264,7 +279,7 @@ public class ArtifactMetadataServiceImpl
             String artifactGroupId = artifactGroup.getValue0();
             String artifactId = artifactGroup.getValue1();
 
-            mavenMetadataManager.generateSnapshotVersioningMetadata(artifactGroupId, artifactId, snapshotRepositoryPath,
+            mavenMetadataManager.generateLastSnapshotVersioningMetadata(artifactGroupId, artifactId, snapshotRepositoryPath,
                                                                     version, true);
         }
 
@@ -300,7 +315,7 @@ public class ArtifactMetadataServiceImpl
         String artifactGroupId = artifactGroup.getValue0();
         String artifactId = artifactGroup.getValue1();
 
-        Metadata snapshotMetadata = mavenMetadataManager.generateSnapshotVersioningMetadata(artifactGroupId, artifactId,
+        Metadata snapshotMetadata = mavenMetadataManager.generateLastSnapshotVersioningMetadata(artifactGroupId, artifactId,
                                                                                             artifactBasePath,
                                                                                             snapshot,
                                                                                             false);

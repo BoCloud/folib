@@ -80,7 +80,7 @@ public class MavenSnapshotManager
 
             logger.debug("Generate snapshot versioning metadata for {}.", versionDirectoryPath);
 
-            mavenMetadataManager.generateSnapshotVersioningMetadata(artifactGroupId,
+            mavenMetadataManager.generateLastSnapshotVersioningMetadata(artifactGroupId,
                                                                     artifactId,
                                                                     versionDirectoryPath,
                                                                     version,

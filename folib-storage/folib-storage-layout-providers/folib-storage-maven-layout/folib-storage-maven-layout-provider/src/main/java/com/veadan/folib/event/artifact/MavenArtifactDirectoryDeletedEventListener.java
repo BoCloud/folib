@@ -13,7 +13,7 @@ import java.lang.reflect.UndeclaredThrowableException;
  * @author veadan
  */
 @Component
-public class MavenArtifactDeletedEventListener
+public class MavenArtifactDirectoryDeletedEventListener
         extends BaseMavenArtifactEventListener {
 
     @EventListener
@@ -24,12 +24,11 @@ public class MavenArtifactDeletedEventListener
             return;
         }
 
-        if (event.getType() != ArtifactEventTypeEnum.EVENT_ARTIFACT_PATH_DELETED.getType()) {
+        if (event.getType() != ArtifactEventTypeEnum.EVENT_ARTIFACT_DIRECTORY_PATH_DELETED.getType()) {
             return;
         }
 
         try {
-            mavenMetadataGroupRepositoryComponent.cleanupGroupsContaining(event.getPath());
             String storageId = repository.getStorage().getId();
             String repositoryId = repository.getId();
             String path = event.getPath().toUri().getPath();

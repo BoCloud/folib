@@ -151,10 +151,6 @@ public class ArtifactUploadTask implements Callable<String> {
                     throw new RuntimeException(ex.getMessage());
                 }
                 try {
-                    String artifactIdPath = String.format("%s/%s", groupId, artifactId);
-                    if (ArtifactUtils.isSnapshot(version)) {
-                        artifactMetadataService.addTimestampedSnapshotVersion(storageId, repositoryId, artifactIdPath, version, null, extension);
-                    }
                     artifactMetadataService.rebuildMetadata(storageId, repositoryId, artifactPath);
                 } catch (Exception ex) {
                     log.error("rebuildMetadata path：{}，error：{}", artifactRepositoryPath.toAbsolutePath(), ExceptionUtils.getStackTrace(ex));
