@@ -11,6 +11,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import com.google.common.collect.Sets;
+import com.veadan.folib.booters.PropertiesBooter;
 import com.veadan.folib.configuration.ConfigurationUtils;
 import com.veadan.folib.providers.io.RepositoryFileAttributeType;
 import com.veadan.folib.providers.io.RepositoryFiles;
@@ -28,6 +29,8 @@ import com.veadan.folib.storage.Storage;
 import com.veadan.folib.storage.repository.Repository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import javax.inject.Inject;
 
 
 public class DirectoryListingServiceImpl implements DirectoryListingService
@@ -182,10 +185,11 @@ public class DirectoryListingServiceImpl implements DirectoryListingService
                     .collect(Collectors.toList());
         }
 
+        PropertiesBooter  propertiesBooter = SpringContextUtil.getBean(PropertiesBooter.class);
         for (Path contentPath : contentPaths)
         {
             FileContent file = new FileContent(contentPath.getFileName().toString());
-            file.setPath(contentPath.toString().replace("folib-vault/logs/", ""));
+            file.setPath(contentPath.toString().replace(propertiesBooter.getLogsDirectory().replace("./", ""), ""));
             Map<String, Object> fileAttributes = Files.readAttributes(contentPath, "*");
 
             file.setStorageId((String) fileAttributes.get(RepositoryFileAttributeType.STORAGE_ID.getName()));
