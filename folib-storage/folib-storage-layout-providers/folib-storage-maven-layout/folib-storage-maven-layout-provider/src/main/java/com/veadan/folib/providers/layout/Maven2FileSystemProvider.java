@@ -1,5 +1,6 @@
 package com.veadan.folib.providers.layout;
 
+import com.veadan.folib.artifact.MavenArtifact;
 import com.veadan.folib.cloud.storage.s3fs.S3Iterator;
 import com.veadan.folib.cloud.storage.s3fs.S3Path;
 import com.veadan.folib.providers.io.*;
@@ -21,6 +22,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.spi.FileSystemProvider;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
@@ -191,12 +193,13 @@ public class Maven2FileSystemProvider extends LayoutFileSystemProvider
 
                         if (pomPath != null)
                         {
-                            String version = MavenArtifactUtils
-                                                     .convertPathToArtifact(RepositoryFiles.relativizePath(artifactPath))
-                                                     .getVersion();
-                            version = version == null ? pomPath.getParent().getFileName().toString() : version;
-
-                            deleteMetadataAtVersionLevel(artifactBasePath, version);
+                            MavenArtifact mavenArtifact = MavenArtifactUtils
+                                    .convertPathToArtifact(RepositoryFiles.relativizePath(artifactPath));
+                            if (Objects.nonNull(mavenArtifact)) {
+                                String version = mavenArtifact.getVersion();
+                                version = version == null ? pomPath.getParent().getFileName().toString() : version;
+                                deleteMetadataAtVersionLevel(artifactBasePath, version);
+                            }
                         }
                     }
 
@@ -282,6 +285,11 @@ public class Maven2FileSystemProvider extends LayoutFileSystemProvider
             if (version.equals(metadataVersionLevel.getVersioning().getRelease()))
             {
                 MetadataHelper.setRelease(metadataVersionLevel);
+            }
+
+            if (version.equals(metadataVersionLevel.getVersion()))
+            {
+                metadataVersionLevel.setVersion(metadataVersionLevel.getVersioning().getLatest());
             }
 
             MetadataHelper.setLastUpdated(metadataVersionLevel.getVersioning());

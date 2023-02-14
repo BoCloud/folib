@@ -148,6 +148,21 @@ public interface ArtifactMetadataService
                                        String extension);
 
     /**
+     * generate a timestamped SNAPSHOT version to a SNAPSHOT metadata and stores it to a file.
+     *
+     * @param storageId
+     * @param repositoryId
+     * @param artifactPath
+     * @param version
+     * @throws IOException
+     */
+    void generateLastTimestampedSnapshotVersion(String storageId,
+                                                String repositoryId,
+                                                String artifactPath,
+                                                String version)
+            throws IOException;
+
+    /**
      * Removes an existing version from the metadata file.
      *
      * @param storageId

@@ -8,6 +8,7 @@ import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.providers.io.RepositoryPathLock;
 import com.veadan.folib.providers.layout.LayoutProvider;
 import com.veadan.folib.providers.layout.LayoutProviderRegistry;
+import org.apache.commons.collections4.CollectionUtils;
 import org.carlspring.commons.io.MultipleDigestOutputStream;
 import com.veadan.folib.providers.ProviderImplementationException;
 import com.veadan.folib.storage.metadata.maven.comparators.SnapshotVersionComparator;
@@ -25,8 +26,11 @@ import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.concurrent.locks.Lock;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
 import org.apache.maven.artifact.ArtifactUtils;
@@ -188,7 +192,7 @@ public class MavenMetadataManager
         }
 
         logger.debug("Artifact metadata generation triggered for {} in '{}:{}' [policy: {}].",
-                     artifactGroupDirectoryPath, repository.getStorage().getId(), repository.getId(), repository.getPolicy());
+                artifactGroupDirectoryPath, repository.getStorage().getId(), repository.getId(), repository.getPolicy());
 
         Pair<String, String> artifactGroup = MavenArtifactUtils.getDirectoryGA(artifactGroupDirectoryPath);
         String artifactGroupId = artifactGroup.getValue0();
@@ -201,9 +205,10 @@ public class MavenMetadataManager
         List<MetadataVersion> baseVersioning = request.getMetadataVersions();
         Versioning versioning = request.getVersioning();
 
-        String latestVersion = null;
+        boolean hasSnapshot = false, hasRelease = false;
         if (!versioning.getVersions().isEmpty()) {
-            latestVersion = versioning.getVersions().get(versioning.getVersions().size() - 1);
+            hasSnapshot = versioning.getVersions().stream().anyMatch(ArtifactUtils::isSnapshot);
+            hasRelease = versioning.getVersions().stream().anyMatch(version -> !ArtifactUtils.isSnapshot(version));
         }
 
         // Set lastUpdated tag for main maven-metadata
@@ -213,12 +218,12 @@ public class MavenMetadataManager
          * In a release repository we only need to generate maven-metadata.xml in the artifactBasePath
          * (i.e. org/foo/bar/maven-metadata.xml)
          */
-        if (!ArtifactUtils.isSnapshot(latestVersion))
+        if (repository.getPolicy().equals(RepositoryPolicyEnum.RELEASE.getPolicy()))
         {
             // Don't write empty <versioning/> tags when no versions are available.
             if (!versioning.getVersions().isEmpty())
             {
-                latestVersion = baseVersioning.get(baseVersioning.size() - 1).getVersion();
+                String latestVersion = baseVersioning.get(baseVersioning.size() - 1).getVersion();
 
                 metadata.setVersioning(request.getVersioning());
                 versioning.setRelease(latestVersion);
@@ -226,6 +231,7 @@ public class MavenMetadataManager
                 // Set <latest> by figuring out the most recent upload
                 Collections.sort(baseVersioning);
                 versioning.setLatest(latestVersion);
+                metadata.setVersion(latestVersion);
             }
 
             // Touch the lastUpdated field
@@ -241,25 +247,25 @@ public class MavenMetadataManager
          * generate additional maven-metadata.xml files for each snapshot directory containing information about
          * all available artifacts.
          */
-        else if (ArtifactUtils.isSnapshot(latestVersion))
+        else if (repository.getPolicy().equals(RepositoryPolicyEnum.SNAPSHOT.getPolicy()))
         {
             // Don't write empty <versioning/> tags when no versions are available.
             if (!versioning.getVersions().isEmpty())
             {
                 // Set <latest>
-                latestVersion = versioning.getVersions().get(versioning.getVersions().size() - 1);
+                String latestVersion = versioning.getVersions().get(versioning.getVersions().size() - 1);
                 versioning.setLatest(latestVersion);
-
+                metadata.setVersion(latestVersion);
                 metadata.setVersioning(versioning);
 
                 // Generate and write additional snapshot metadata.
                 for (String version : metadata.getVersioning().getVersions())
                 {
                     RepositoryPath snapshotBasePath = artifactGroupDirectoryPath.toAbsolutePath()
-                                                                                .resolve(ArtifactUtils.toSnapshotVersion(version));
+                            .resolve(ArtifactUtils.toSnapshotVersion(version));
 
-                    generateSnapshotVersioningMetadata(artifactGroupId, artifactId, snapshotBasePath,
-                                                       version, true);
+                    generateLastSnapshotVersioningMetadata(artifactGroupId, artifactId, snapshotBasePath,
+                            version, true);
                 }
             }
 
@@ -270,7 +276,67 @@ public class MavenMetadataManager
         }
         else if (repository.getPolicy().equals(RepositoryPolicyEnum.MIXED.getPolicy()))
         {
-            // TODO: Implement merging.
+            //Implement merging.
+            Metadata releaseMetadata = null;
+            if (hasRelease) {
+                releaseMetadata = new Metadata();
+                releaseMetadata.setGroupId(artifactGroupId);
+                releaseMetadata.setArtifactId(artifactId);
+                // Don't write empty <versioning/> tags when no versions are available.
+                if (!versioning.getVersions().isEmpty())
+                {
+                    String latestVersion = baseVersioning.get(baseVersioning.size() - 1).getVersion();
+
+                    releaseMetadata.setVersioning(request.getVersioning());
+                    versioning.setRelease(latestVersion);
+
+                    // Set <latest> by figuring out the most recent upload
+                    Collections.sort(baseVersioning);
+                    versioning.setLatest(latestVersion);
+                    releaseMetadata.setVersion(latestVersion);
+
+                }
+
+                // Touch the lastUpdated field
+                MetadataHelper.setLastUpdated(versioning);
+                logger.debug("Generated Maven metadata for {}:{}.", artifactGroupId, artifactId);
+            }
+
+            Metadata snapshotMetadata = null;
+            if (hasSnapshot) {
+                snapshotMetadata = new Metadata();
+                snapshotMetadata.setGroupId(artifactGroupId);
+                snapshotMetadata.setArtifactId(artifactId);
+                // Don't write empty <versioning/> tags when no versions are available.
+                if (!versioning.getVersions().isEmpty())
+                {
+                    // Set <latest>
+                    String latestVersion = versioning.getVersions().get(versioning.getVersions().size() - 1);
+                    versioning.setLatest(latestVersion);
+                    snapshotMetadata.setVersion(latestVersion);
+                    snapshotMetadata.setVersioning(versioning);
+
+                    // Generate and write additional snapshot metadata.
+                    for (String version : snapshotMetadata.getVersioning().getVersions())
+                    {
+                        if (ArtifactUtils.isSnapshot(version)) {
+                            RepositoryPath snapshotBasePath = artifactGroupDirectoryPath.toAbsolutePath()
+                                    .resolve(ArtifactUtils.toSnapshotVersion(version));
+
+                            generateLastSnapshotVersioningMetadata(artifactGroupId, artifactId, snapshotBasePath,
+                                    version, true);
+                        }
+                    }
+                }
+                logger.debug("Generated Maven metadata for {}:{}.", artifactGroupId, artifactId);
+            }
+            if (Objects.nonNull(releaseMetadata) && Objects.nonNull(snapshotMetadata)) {
+                mergeAndStore(artifactGroupDirectoryPath, releaseMetadata, snapshotMetadata);
+            } else if (Objects.nonNull(releaseMetadata)) {
+                storeMetadata(artifactGroupDirectoryPath, null, releaseMetadata, MetadataType.ARTIFACT_ROOT_LEVEL);
+            } else if (Objects.nonNull(snapshotMetadata)) {
+                storeMetadata(artifactGroupDirectoryPath, null, snapshotMetadata, MetadataType.ARTIFACT_ROOT_LEVEL);
+            }
         }
         else
         {
@@ -281,7 +347,7 @@ public class MavenMetadataManager
         if (!request.getPlugins().isEmpty())
         {
             generateMavenPluginMetadata(artifactGroupId, artifactId, artifactGroupDirectoryPath.getParent(),
-                                        request.getPlugins());
+                    request.getPlugins());
         }
     }
 
@@ -296,7 +362,7 @@ public class MavenMetadataManager
     }
 
     public Metadata generateSnapshotVersioningMetadata(String groupId,
-                                                       String aritfactId,
+                                                       String artifactId,
                                                        RepositoryPath snapshotBasePath,
                                                        String version,
                                                        boolean store)
@@ -304,6 +370,47 @@ public class MavenMetadataManager
     {
         VersionCollector versionCollector = new VersionCollector();
         List<SnapshotVersion> snapshotVersions = versionCollector.collectTimestampedSnapshotVersions(snapshotBasePath);
+        Versioning snapshotVersioning = versionCollector.generateSnapshotVersions(snapshotVersions);
+
+        MetadataHelper.setupSnapshotVersioning(snapshotVersioning);
+
+        // Last updated should be present in both cases.
+        MetadataHelper.setLastUpdated(snapshotVersioning);
+
+        // Write snapshot metadata version information for each snapshot.
+        Metadata snapshotMetadata = new Metadata();
+        snapshotMetadata.setGroupId(groupId);
+        snapshotMetadata.setArtifactId(artifactId);
+        snapshotMetadata.setVersioning(snapshotVersioning);
+
+        // Set the version that this metadata represents, if any. This is used for artifact snapshots only.
+        // http://maven.apache.org/ref/3.3.3/maven-repository-metadata/repository-metadata.html
+        snapshotMetadata.setVersion(version);
+
+        if (store)
+        {
+            storeMetadata(snapshotBasePath.getParent(), version, snapshotMetadata, MetadataType.SNAPSHOT_VERSION_LEVEL);
+        }
+
+        return snapshotMetadata;
+    }
+
+    public Metadata generateLastSnapshotVersioningMetadata(String groupId,
+                                                       String artifactId,
+                                                       RepositoryPath snapshotBasePath,
+                                                       String version,
+                                                       boolean store)
+            throws IOException
+    {
+        VersionCollector versionCollector = new VersionCollector();
+        List<SnapshotVersion> snapshotVersions = versionCollector.collectTimestampedSnapshotVersions(snapshotBasePath);
+        //获取最新的快照版本，maven-metadata.xml中只保存最新的快照版本号
+        String versionPrefix = version.replace(RepositoryPolicyEnum.SNAPSHOT.name(), "");
+        snapshotVersions = snapshotVersions.stream().filter(snapshotVersion -> snapshotVersion.getVersion().startsWith(versionPrefix)).collect(Collectors.toList());
+        if (CollectionUtils.isNotEmpty(snapshotVersions)) {
+            String lastVersion = snapshotVersions.get(snapshotVersions.size() - 1).getVersion();
+            snapshotVersions = snapshotVersions.stream().filter(snapshotVersion ->  snapshotVersion.getVersion().equals(lastVersion)).collect(Collectors.toList());
+        }
 
         Versioning snapshotVersioning = versionCollector.generateSnapshotVersions(snapshotVersions);
 
@@ -315,8 +422,7 @@ public class MavenMetadataManager
         // Write snapshot metadata version information for each snapshot.
         Metadata snapshotMetadata = new Metadata();
         snapshotMetadata.setGroupId(groupId);
-        snapshotMetadata.setArtifactId(aritfactId);
-        snapshotMetadata.setVersion(version);
+        snapshotMetadata.setArtifactId(artifactId);
         snapshotMetadata.setVersioning(snapshotVersioning);
 
         // Set the version that this metadata represents, if any. This is used for artifact snapshots only.
