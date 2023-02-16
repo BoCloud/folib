@@ -1,5 +1,6 @@
 package com.veadan.folib.config;
 
+import cn.hutool.extra.spring.SpringUtil;
 import com.veadan.folib.storage.repository.Repository;
 
 public class FolibPublicUtils {
@@ -28,12 +29,13 @@ public class FolibPublicUtils {
     }
 
     public static String getFileUrl(Repository repository, String path) {
+        String host = SpringUtil.getApplicationContext().getEnvironment().getProperty("folib.distributed.lockip", "localhost");
+        int port = Integer.valueOf(SpringUtil.getApplicationContext().getEnvironment().getProperty("server.port", "38080"));
         StringBuilder urlBuilder = new StringBuilder();
         urlBuilder.append("http://")
-                .append(System.getProperty("folib.host") != null ? System.getProperty("folib.host") : "localhost")
+                .append(host)
                 .append(":")
-                .append(System.getProperty("folib.port") != null ?
-                        Integer.parseInt(System.getProperty("folib.port")) : 38080).append("/storages/")
+                .append(port).append("/storages/")
                 .append(repository.getStorage().getId())
                 .append("/")
                 .append(repository.getId())
