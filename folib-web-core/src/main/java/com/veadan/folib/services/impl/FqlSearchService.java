@@ -3,6 +3,7 @@ package com.veadan.folib.services.impl;
 import cn.hutool.core.date.DateUtil;
 import com.alibaba.fastjson.JSON;
 import com.google.common.collect.Lists;
+import com.veadan.folib.config.FolibPublicUtils;
 import com.veadan.folib.data.criteria.Selector;
 import com.veadan.folib.dependency.snippet.CodeSnippet;
 import com.veadan.folib.dependency.snippet.SnippetGenerator;
@@ -24,6 +25,7 @@ import com.veadan.folib.services.DirectoryListingService;
 import com.veadan.folib.storage.repository.Repository;
 import com.veadan.folib.storage.search.SearchResult;
 import com.veadan.folib.storage.search.SearchResults;
+import com.veadan.folib.util.RepositoryPathUtil;
 import com.veadan.folib.utils.TreeUtil;
 import org.apache.tinkerpop.gremlin.structure.Vertex;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -138,6 +140,8 @@ public class FqlSearchService extends GremlinVertexRepository<Artifact> implemen
                 r.setArtifactName(path.substring(path.indexOf("/") + 1, path.indexOf("/sha256")));
                 r.setArtifactPath(path.substring(0, path.indexOf("/sha256")));
                 r.setSizeInBytes(getSearchDockerSize(storageId, repositoryId, repositoryPath, path));
+                r.setDownloadFilesUrl(getDockerDownLoadAppPackageUrls(storageId, repositoryId, repositoryPath,
+                        path.substring(0, path.indexOf("/sha256")) + "/temp"));
             } else {
                 r.setArtifactName(path.substring(path.lastIndexOf("/") + 1));
                 r.setArtifactPath(path);
@@ -154,6 +158,20 @@ public class FqlSearchService extends GremlinVertexRepository<Artifact> implemen
             }
         }
         return result;
+    }
+
+    private List<String> getDockerDownLoadAppPackageUrls(String storageId, String repositoryId, RepositoryPath repositoryPath, String path) {
+        List<String> downloadUrls = Lists.newArrayList();
+        try {
+            RepositoryPath appPackagePath = repositoryPathResolver.resolve(storageId, repositoryId, path);
+            List<String> relativePaths = RepositoryPathUtil.getFileRelativePaths(appPackagePath);
+            for (String filePath : relativePaths) {
+                downloadUrls.add(FolibPublicUtils.getFileUrl(repositoryPath.getRepository(), filePath));
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return downloadUrls;
     }
 
     private Long getSearchDockerSize(String storageId, String repositoryId, RepositoryPath repositoryPath, String path) throws IOException {

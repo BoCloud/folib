@@ -49,6 +49,8 @@ folib:
     hostnode: ${folib.hostnode:10.50.8.55:38080} # 多个节点逗号隔开
     protocol: http
   whiteList: ${folib.white.list:}  # 配置多个白名单逗号隔开
+  docker:
+    getAppPackagePathConfig: usr/local/app # docker 扫描提供获取指定路径下的应用包 多个路径逗号隔开
   distributed:
     lockip: ${folib.scheduled.lockip:10.50.8.55} # 实例 host ip
   config:
@@ -58,6 +60,7 @@ folib:
       basedir: ${folib.vault}/storages
   host: localhost
   port: 38080
+  dependentLibraryPrefix: anhui
   nuget:
     download:
       feed: false

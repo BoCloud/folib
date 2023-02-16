@@ -24,6 +24,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.inject.Inject;
+import java.io.File;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.util.List;
@@ -57,12 +58,12 @@ public class OfflineArtifactUploadController extends BaseArtifactController {
             // 获取版本号
             validateRepo(storageId, repostoryId);
 
-            RepositoryPath artifactPath = repositoryPathResolver.resolve(storageId, repostoryId, repostoryId);
+            RepositoryPath artifactPath = repositoryPathResolver.resolve(storageId, repostoryId, "");
 
             Integer version = getIncrementalVersion(artifactPath);
 
             RepositoryPath versionPath = repositoryPathResolver.
-                    resolve(storageId, repostoryId, repostoryId + "/" + version);
+                    resolve(storageId, repostoryId, version + "/" + file.getOriginalFilename());
 
             artifactManagementService.store(versionPath, is);
         } catch (Exception e) {
@@ -103,10 +104,22 @@ public class OfflineArtifactUploadController extends BaseArtifactController {
         fileRelativePaths = fileRelativePaths.stream().filter(s ->
                         !s.endsWith(".md5") && !s.startsWith(".trash") && !s.endsWith(".sha1") && !s.endsWith(".sha256"))
                 .collect(Collectors.toList());
+        Integer version = 0;
         if (CollectionUtils.isEmpty(fileRelativePaths)) {
             return 1;
         }
-        return fileRelativePaths.size() + 1;
+        for (String filePath : fileRelativePaths) {
+            String[] array = filePath.split(String.valueOf(File.separatorChar));
+            if (array.length != 2) {
+                continue;
+            }
+            Integer temp = Integer.parseInt(array[0]);
+            if(temp>version){
+                version=temp;
+            }
+
+        }
+        return version + 1;
     }
 
 

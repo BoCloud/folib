@@ -6,6 +6,7 @@ import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import com.beust.jcommander.internal.Lists;
 import com.veadan.folib.booters.PropertiesBooter;
+import com.veadan.folib.config.FolibPublicUtils;
 import com.veadan.folib.dependency.snippet.CodeSnippet;
 import com.veadan.folib.dependency.snippet.SnippetGenerator;
 import com.veadan.folib.domain.Artifact;
@@ -21,6 +22,7 @@ import com.veadan.folib.storage.ArtifactStorageException;
 import com.veadan.folib.storage.Storage;
 import com.veadan.folib.storage.repository.Repository;
 import com.veadan.folib.storage.repository.RepositoryTypeEnum;
+import com.veadan.folib.util.RepositoryPathUtil;
 import com.veadan.folib.utils.TreeUtil;
 import com.veadan.folib.web.RepositoryMapping;
 import io.swagger.annotations.ApiOperation;
@@ -179,7 +181,15 @@ public class BrowseController
                 jsonObject.put("size", size);
                 jsonObject.put("imageName", iamgeName);
 
-            } catch (IOException e) {
+                RepositoryPath appPackagePath = repositoryPathResolver.resolve(storageId, repositoryId, aName + "/" + aVersion + "/temp");
+                List<String> relativePaths = RepositoryPathUtil.getFileRelativePaths(appPackagePath);
+                List<String> downloadUrls = Lists.newArrayList();
+                for (String filePath : relativePaths) {
+                    downloadUrls.add(FolibPublicUtils.getFileUrl(repositoryParam, filePath));
+                }
+                jsonObject.put("downloadFilesUrl", downloadUrls);
+
+            } catch (Exception e) {
                 throw new RuntimeException(e);
             }
         }
