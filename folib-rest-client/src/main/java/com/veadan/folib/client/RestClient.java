@@ -17,6 +17,7 @@ import org.glassfish.jersey.media.multipart.file.StreamDataBodyPart;
 import org.glassfish.jersey.media.multipart.internal.MultiPartWriter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.BeanUtils;
 import org.springframework.http.ResponseEntity;
 import org.springframework.util.CollectionUtils;
 
@@ -30,6 +31,7 @@ import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.util.*;
+import java.util.concurrent.*;
 import java.util.stream.Collectors;
 
 /**
@@ -496,6 +498,158 @@ public class RestClient extends ArtifactClient {
         } else {
             return response.readEntity(ArtifactInfo.class);
         }
+    }
+
+    private ThreadPoolExecutor ahzwThreadPool =
+            new ThreadPoolExecutor(10, 20, 360L, TimeUnit.SECONDS,
+                    new LinkedBlockingDeque<>(Integer.MAX_VALUE));
+
+    class AhzwRepoArtifactSearchTask implements Callable<SearchArtifactPage> {
+        private SearchArtifact searchArtifact;
+
+        public AhzwRepoArtifactSearchTask(SearchArtifact searchArtifact) {
+            this.searchArtifact = searchArtifact;
+        }
+
+        @Override
+        public SearchArtifactPage call() throws Exception {
+            String url = getContextBaseUrl() + "/api/fql";
+            if (Boolean.TRUE.equals(searchArtifact.getRegex()) && StringUtils.isNotBlank(searchArtifact.getArtifactName())) {
+                //开启正则
+                String regex = "(%s)(.*%s.*)";
+                String prefix = searchArtifact.getStorageId();
+                if (StringUtils.isNotBlank(searchArtifact.getRepositoryId())) {
+                    prefix = prefix + "-" + searchArtifact.getRepositoryId();
+                }
+                regex = String.format(regex, prefix, searchArtifact.getArtifactName());
+                searchArtifact.setArtifactName(regex);
+            }
+            Map<String, String> paramsMap = JSON.parseObject(JSON.toJSONString(searchArtifact), new TypeReference<Map<String, String>>() {
+            });
+            String params = createLinkStringByGet(paramsMap);
+            url = url + params;
+            WebTarget resource = getClientInstance().target(url);
+            setupAuthentication(resource);
+            Response response = resource.request(MediaType.APPLICATION_JSON).get();
+            if (response.getStatus() != HttpStatus.SC_OK) {
+                displayResponseError(response);
+                throw new ServerErrorException(response.getStatus() + " | Unable to greet()",
+                        Response.Status.INTERNAL_SERVER_ERROR);
+            } else {
+                SearchArtifactPage searchArtifactPage = SearchArtifactPage.builder().total(0L).build();
+                String res = response.readEntity(String.class);
+                if (StringUtils.isNotBlank(res)) {
+                    JSONObject searchJson = JSONObject.parseObject(res);
+                    String artifactKey = "artifact";
+                    if (searchJson.containsKey(artifactKey) && StringUtils.isNotBlank(searchJson.getString(artifactKey))) {
+                        List<SearchArtifactInfo> searchArtifactInfoList = JSONArray.parseArray(searchJson.getString(artifactKey), SearchArtifactInfo.class);
+                        searchArtifactPage.setArtifactInfoList(searchArtifactInfoList);
+                    }
+                    searchArtifactPage.setTotal(searchJson.getLongValue("total"));
+                    return searchArtifactPage;
+                }
+                return searchArtifactPage;
+            }
+        }
+    }
+
+    /**
+     * 搜索制品 安徽政务 离线docker 制品上传与 普通制品上传 上层显示为同一个库做适配
+     *
+     * @param searchArtifact 搜索参数
+     * @return 搜索结果
+     */
+    public SearchArtifactPage searchArtifactPageByAhzw(SearchArtifact searchArtifact) {
+        String tempRepo = searchArtifact.getRepositoryId();
+        boolean flag = null != tempRepo && !"".equals(tempRepo) && tempRepo.split(",").length == 2;
+        List<SearchArtifactInfo> rsInfo = new ArrayList<SearchArtifactInfo>();
+        Long total = 0L;
+        if (flag) {
+            String storageId = searchArtifact.getStorageId();
+            String[] array = tempRepo.split(",");
+            List<FutureTask<SearchArtifactPage>> listTask = new ArrayList<FutureTask<SearchArtifactPage>>();
+            SearchArtifact rawRepoSearch = new SearchArtifact();
+            SearchArtifact dockerRepoSearch = new SearchArtifact();
+            BeanUtils.copyProperties(searchArtifact, rawRepoSearch);
+            BeanUtils.copyProperties(searchArtifact, dockerRepoSearch);
+            for (int i = 0; i < array.length; i++) {
+                String currentRepo = array[i];
+                if (currentRepo.trim().endsWith("-raw")) {
+                    rawRepoSearch.setArtifactName(storageId + "-" + currentRepo);
+                    rawRepoSearch.setRegex(false);
+                    rawRepoSearch.setRepositoryId(currentRepo);
+                    FutureTask<SearchArtifactPage> task =
+                            new FutureTask<SearchArtifactPage>(new AhzwRepoArtifactSearchTask(rawRepoSearch));
+                    listTask.add(task);
+                    ahzwThreadPool.submit(task);
+                } else {
+                    // 对应docekr 仓库
+                    dockerRepoSearch.setArtifactName("-");
+                    dockerRepoSearch.setRegex(true);
+                    dockerRepoSearch.setRepositoryId(currentRepo);
+                    FutureTask<SearchArtifactPage> task =
+                            new FutureTask<SearchArtifactPage>(new AhzwRepoArtifactSearchTask(dockerRepoSearch));
+                    listTask.add(task);
+                    ahzwThreadPool.submit(task);
+                }
+            }
+
+            List<SearchArtifactPage> searchArtifactPages = new ArrayList<SearchArtifactPage>();
+            for (FutureTask<SearchArtifactPage> task : listTask) {
+                try {
+                    searchArtifactPages.add(task.get());
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                } catch (ExecutionException e) {
+                    e.printStackTrace();
+                }
+            }
+            for (SearchArtifactPage searchArtifactPage : searchArtifactPages) {
+                rsInfo.addAll(searchArtifactPage.getArtifactInfoList());
+                total = total + searchArtifactPage.getTotal();
+            }
+        }
+        rsInfo.forEach(x -> {
+            if (x.getLayout().equalsIgnoreCase("raw")) {
+                String version = x.getArtifactPath().split("/")[1];
+                x.setArtifactName(version);
+            }
+        });
+        Collections.sort(rsInfo, new ArtifactVersionCompatator());
+        return new SearchArtifactPage(rsInfo, total);
+    }
+
+    /**
+     * 依赖库创建
+     *
+     * @param projectCode 项目编码
+     * @param systemCode  系统编码
+     * @return ResponseEntity
+     */
+    public ResponseEntity dependLibCreate(String projectCode, String systemCode) {
+        String url = getContextBaseUrl() + "/api/artifact/folib/dependentLibrary/create";
+        WebTarget resource = getClientInstance().target(url);
+        setupAuthentication(resource);
+        Map<String, Object> reqMap = new HashMap<>();
+        reqMap.put("storageId", projectCode);
+        reqMap.put("repositoryId", systemCode);
+        reqMap.put("layout", "npm");
+        Response npmResponse = resource.request().
+                post(Entity.entity(reqMap, MediaType.APPLICATION_JSON));
+        if (npmResponse.getStatus() != HttpStatus.SC_OK) {
+            displayResponseError(npmResponse);
+            throw new ServerErrorException(npmResponse.getStatus() + " | Unable to greet()",
+                    Response.Status.INTERNAL_SERVER_ERROR);
+        }
+        reqMap.put("layout", "maven");
+        Response mavenResponse = resource.request().
+                post(Entity.entity(reqMap, MediaType.APPLICATION_JSON));
+        if (mavenResponse.getStatus() != HttpStatus.SC_OK) {
+            displayResponseError(mavenResponse);
+            throw new ServerErrorException(mavenResponse.getStatus() + " | Unable to greet()",
+                    Response.Status.INTERNAL_SERVER_ERROR);
+        }
+        return ResponseEntity.ok("依赖库创建成功");
     }
 
     /**
