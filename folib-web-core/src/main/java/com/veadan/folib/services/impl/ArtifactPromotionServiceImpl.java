@@ -11,6 +11,7 @@ import com.veadan.folib.promotion.PromotionUtil;
 import com.veadan.folib.promotion.PullArtifactTask;
 import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.providers.io.RepositoryPathResolver;
+import com.veadan.folib.providers.layout.LayoutProviderRegistry;
 import com.veadan.folib.service.ProxyRepositoryConnectionPoolConfigurationService;
 import com.veadan.folib.services.*;
 import com.veadan.folib.storage.Storage;
@@ -77,6 +78,15 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
 
     @Inject
     protected ArtifactResolutionService artifactResolutionService;
+
+    @Inject
+    private ArtifactMetadataService artifactMetadataService;
+
+    @Inject
+    private LayoutProviderRegistry layoutProviderRegistry;
+
+    @Value("${folib.temp}")
+    private String tempPath;
 
     @Value("${folib.host:localhost}")
     private String host;
@@ -316,7 +326,7 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
                 String fileRelativePath = mapType.get(file.getOriginalFilename());
                 String metaData = metaDataMap.getOrDefault(fileRelativePath,"").toString();
                 ArtifactUploadTask artifactUploadTask = new ArtifactUploadTask(storageId, repostoryId, file,
-                        repositoryManagementService, repositoryPathResolver, artifactManagementService,promotionUtil, fileRelativePath,metaData);
+                        repositoryManagementService, repositoryPathResolver, artifactManagementService,promotionUtil, layoutProviderRegistry, artifactMetadataService, tempPath, fileRelativePath,metaData);
                 FutureTask<String> task = new FutureTask<String>(artifactUploadTask);
                 listTask.add(task);
                 asyncRepositoryThreadPoolExecutor.submit(task);
@@ -390,6 +400,7 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
         }
     }
 
+    @Override
     public void validateStorageAndRepository(String storageId, String repositoryId) throws Exception {
         if (null == repositoryManagementService.getStorage(storageId)) {
             throw new Exception("Storage [" + storageId + "] not exist!");

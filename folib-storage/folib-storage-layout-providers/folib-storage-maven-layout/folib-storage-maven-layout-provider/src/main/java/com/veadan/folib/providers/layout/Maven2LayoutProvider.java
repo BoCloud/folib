@@ -15,6 +15,8 @@ import com.veadan.folib.storage.metadata.MetadataHelper;
 import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 import java.io.IOException;
+import java.io.InputStream;
+import java.nio.file.Path;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Collections;
@@ -173,6 +175,23 @@ public class Maven2LayoutProvider
             try
             {
                 return JarArchiveListingFunction.INSTANCE.getContentByFileName(repositoryPath, fileName);
+            }
+            catch (IOException e)
+            {
+                logger.warn("Unable to file content in archive path {} using {}",
+                        repositoryPath, JarArchiveListingFunction.INSTANCE, e);
+            }
+        }
+        return "";
+    }
+
+    @Override
+    public String getContentByFileName(RepositoryPath repositoryPath, Path path, String fileName) {
+        if (JarArchiveListingFunction.INSTANCE.supports(repositoryPath))
+        {
+            try
+            {
+                return JarArchiveListingFunction.INSTANCE.getContentByFileName(repositoryPath, path, fileName);
             }
             catch (IOException e)
             {

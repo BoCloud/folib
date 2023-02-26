@@ -164,6 +164,7 @@ run()
     JAVA_OPTS+=" -Dfolib.whiteList=${FOLIB_PROMOTE_HOSTS}"
     JAVA_OPTS+=" -Dscan.storage-base=${FOLIB_STORAGE_BASE_DIR}/"
     JAVA_OPTS+=" -DES_HOST=${FOLIB_ES_HOST}"
+    JAVA_OPTS+=" -DGLOBAL_REINDEX=false"
     JAVA_OPTS+=" -Dfolib.dependentPushUrl=${FOLIB_DEPENDENT_PUSHURL}"
 
     JAVA_OPTS+=" -Ds3fs.uri=${FOLIB_S3_URI}"

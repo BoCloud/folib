@@ -16,11 +16,12 @@ export function getMetricsHealth () {
 }
 
 export function browseLogs (path) {
-  if (!path) {
-    path = ''
+  let apiUrl =  '/api/logging/browse'
+  if (path) {
+    apiUrl = apiUrl + '/' + path
   }
   return axios({
-    url: 'api/logging/browse/' + path,
+    url: apiUrl,
     method: 'get',
     headers:{
       Accept:'application/json, text/plain, */*'
@@ -29,6 +30,10 @@ export function browseLogs (path) {
 }
 
 export function viewLogs (path) {
+  if (path.indexOf("/") !== -1) {
+    debugger
+    path = path.replace("/", "")
+  }
   return axios({
     url: '/api/logging/download/' + path,
     method: 'get',

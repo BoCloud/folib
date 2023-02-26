@@ -7,7 +7,9 @@ import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.maven.artifact.Artifact;
 import org.apache.maven.artifact.DefaultArtifact;
 import org.apache.maven.artifact.handler.DefaultArtifactHandler;
@@ -49,7 +51,12 @@ public class MetadataHelper
     {
         if (versioning != null)
         {
-            versioning.setLastUpdated(getDateFormatInstance().format(Calendar.getInstance().getTime()));
+            String lastUpdatedTimestamp = getDateFormatInstance().format(Calendar.getInstance().getTime());
+            String timestamp = getLatestSnapshotVersionTimestamp(versioning);
+            if (StringUtils.isNotBlank(timestamp)) {
+                lastUpdatedTimestamp = timestamp;
+            }
+            versioning.setLastUpdated(lastUpdatedTimestamp);
         }
     }
 
@@ -174,7 +181,12 @@ public class MetadataHelper
         SnapshotVersion snapshotVersion = new SnapshotVersion();
         snapshotVersion.setVersion(artifact.getVersion());
         snapshotVersion.setExtension(extension);
-        snapshotVersion.setUpdated(getDateFormatInstance().format(Calendar.getInstance().getTime()));
+        String updatedTimestamp = getDateFormatInstance().format(Calendar.getInstance().getTime());
+        String timestamp = getLatestSnapshotVersionTimestamp(artifact.getVersion());
+        if (StringUtils.isNotBlank(timestamp)) {
+            updatedTimestamp = timestamp;
+        }
+        snapshotVersion.setUpdated(updatedTimestamp);
 
         if (artifact.getClassifier() != null)
         {
@@ -286,6 +298,36 @@ public class MetadataHelper
             default:
                 return artifactBasePath.resolve(MAVEN_METADATA_XML);
         }
+    }
+
+    public static String getLatestSnapshotVersionTimestamp(String latestSnapshotVersion)
+    {
+        if (StringUtils.isBlank(latestSnapshotVersion)){
+            return "";
+        }
+        SnapshotVersionDecomposition snapshotVersionDecomposition = SnapshotVersionDecomposition.of(latestSnapshotVersion);
+        if (!SnapshotVersionDecomposition.INVALID.equals(snapshotVersionDecomposition))
+        {
+            return snapshotVersionDecomposition.getTimestamp();
+        }
+        return "";
+    }
+
+    public static String getLatestSnapshotVersionTimestamp(Versioning snapshotVersioning)
+    {
+        if (Objects.isNull(snapshotVersioning)){
+            return "";
+        }
+        if (!snapshotVersioning.getSnapshotVersions().isEmpty()) {
+            SnapshotVersion latestSnapshot = snapshotVersioning.getSnapshotVersions().get(
+                    snapshotVersioning.getSnapshotVersions().size() - 1);
+            SnapshotVersionDecomposition snapshotVersionDecomposition = SnapshotVersionDecomposition.of(
+                    latestSnapshot.getVersion());
+            if (!SnapshotVersionDecomposition.INVALID.equals(snapshotVersionDecomposition)) {
+                return snapshotVersionDecomposition.getTimestamp();
+            }
+        }
+        return "";
     }
 
 }

@@ -7,7 +7,9 @@ import org.apache.commons.io.IOUtils;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Path;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -22,10 +24,12 @@ public interface ArchiveListingFunction {
 
     String getContentByFileName(RepositoryPath path, String fileName) throws IOException;
 
+    String getContentByFileName(RepositoryPath repositoryPath, Path path, String fileName) throws IOException;
+
     default String getContentByFileName(final ArchiveInputStream archiveInputStream, String fileName) throws IOException {
         ArchiveEntry entry;
         while ((entry = archiveInputStream.getNextEntry()) != null) {
-            if (entry.getName().equals(fileName)) {
+            if (entry.getName().endsWith(fileName)) {
                 ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
                 try (byteArrayOutputStream) {
                     IOUtils.copy(archiveInputStream, byteArrayOutputStream);
