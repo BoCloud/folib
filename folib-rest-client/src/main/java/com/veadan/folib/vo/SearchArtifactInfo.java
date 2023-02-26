@@ -66,4 +66,9 @@ public class SearchArtifactInfo {
      * app 应用包下载地址
      */
     private List<String> downloadFilesUrl;
+
+    /**
+     * 元数据
+     */
+    private String metadata;
 }

@@ -1,6 +1,7 @@
 package com.veadan.folib.controllers.ahzw;
 
 
+import com.alibaba.fastjson.JSON;
 import com.veadan.folib.cluster.SyncRepositoryEnum;
 import com.veadan.folib.cluster.SyncStorageEnum;
 import com.veadan.folib.controllers.BaseController;
@@ -8,6 +9,7 @@ import com.veadan.folib.controllers.cluster.dto.SyncRepositoryDto;
 import com.veadan.folib.controllers.cluster.dto.SyncStorageDto;
 import com.veadan.folib.enums.ProductTypeEnum;
 import com.veadan.folib.providers.io.RepositoryPath;
+import com.veadan.folib.service.ProxyRepositoryConnectionPoolConfigurationService;
 import com.veadan.folib.services.ClusterSyncService;
 import com.veadan.folib.services.ConfigurationManagementService;
 import com.veadan.folib.services.RepositoryManagementService;
@@ -27,7 +29,13 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import javax.ws.rs.client.Client;
+import javax.ws.rs.client.Entity;
+import javax.ws.rs.client.WebTarget;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
 import java.nio.file.Files;
+import java.util.Map;
 import java.util.Set;
 
 @RestController
@@ -48,23 +56,29 @@ public class DependentLibraryController extends BaseController {
     @Autowired
     private RepositoryManagementService repositoryManagementService;
 
+    @Autowired
+    private ProxyRepositoryConnectionPoolConfigurationService clientPool;
+
     @Value("${folib.dependentLibraryPrefix:anhui}")
     private String dependentLibraryPrefix;
+
+    @Value("${folib.dependentPushUrl}")
+    private String pushUrl;
 
 
     @PostMapping("/create")
     @ApiOperation(value = "供应商视角创建本地库与组合库", notes = "供应商视角创建本地库与组合库")
-    public ResponseEntity createRepo(@RequestParam("storageId") String storageId,
-                                     @RequestParam("repositoryId") String repositoryId,
-                                     @RequestParam("layoutName") String layout,
-                                     @RequestHeader(HttpHeaders.ACCEPT) String accept) {
+    public ResponseEntity createRepo(@RequestBody Map<String,Object> map) {
+        String storageId = map.get("storageId").toString();
+        String repositoryId = map.get("repositoryId").toString();
+        String layout = map.get("layout").toString();
         // api接⼝：参数是project_id,system_id, layout=maven|npm type
         // 创建本地库   创建 组合库
-        String localRepoName = repositoryId + "-local";
-        String groupRepoName = repositoryId + "-group";
+        String localRepoName = repositoryId + "-" + layout + "-local";
+        String groupRepoName = repositoryId + "-" + layout + "-group";
         String folibLibraryName = ProductTypeEnum.queryFolibLibraryByName(layout);
         if (StringUtils.isBlank(folibLibraryName)) {
-            return getBadRequestResponseEntity("layout :" + layout + "不支持", accept);
+            return ResponseEntity.badRequest().body("layout :" + layout + "不支持");
         }
 
         try {
@@ -127,21 +141,27 @@ public class DependentLibraryController extends BaseController {
 
         } catch (Exception e) {
             logger.error("依赖库创建失败 [{} {}] {}", storageId, repositoryId, e.getStackTrace());
-            return getExceptionResponseEntity(HttpStatus.INTERNAL_SERVER_ERROR, "依赖库创建失败", e, accept);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("依赖库创建失败");
         }
-        return getSuccessfulResponseEntity("ok", accept);
+        return ResponseEntity.ok("ok");
     }
 
-    public ResponseEntity queryRepoArtifacte(@RequestParam("storageId") String storageId,
-                                     @RequestParam("repositoryId") String repositoryId,
-                                     @RequestParam("layoutName") String layout,
-                                     @RequestHeader(HttpHeaders.ACCEPT) String accept) {
-
-        // 返回仓库制品列表页
-
-
-
-        return null;
+    @PostMapping("/bugCount")
+    @ApiOperation(value = "查询阻断列表", notes = "查询阻断列表")
+    public ResponseEntity queryRepoArtifacte(@RequestBody Map<String, Object> map) {
+        String storageId = map.get("storagesId").toString();
+        String repositoryId = map.get("repositoryId").toString();
+        logger.info("{} {} 查询漏洞阻断", storageId, repositoryId);
+        Client client = clientPool.getRestClient();
+        String url = pushUrl + "/devopsplatform/apis/v1/depend/bugCount";
+        WebTarget target = client.target(url);
+        Response response = target.request().post(Entity.entity(map, MediaType.APPLICATION_JSON));
+        if (response.getStatus() != 200) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("查询阻断列表失败");
+        }
+        Map rsMap  = response.readEntity(Map.class);
+        logger.info("{} {} 查询漏洞阻断结果成功{}", storageId, repositoryId, JSON.toJSONString(rsMap));
+        return ResponseEntity.ok(rsMap.get("data"));
     }
 
 

@@ -106,6 +106,7 @@ public class FqlSearchService extends GremlinVertexRepository<Artifact> implemen
             SearchResult r = new SearchResult();
             result.getResults().add(r);
 
+            r.setMetadata(artifact.getMetadata());
             r.setStorageId(artifact.getStorageId());
             r.setRepositoryId(artifact.getRepositoryId());
             r.setArtifactCoordinates(artifact.getArtifactCoordinates());

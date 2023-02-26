@@ -4,31 +4,31 @@ package com.veadan.folib.controllers.ahzw;
 import com.veadan.folib.cluster.SyncRepositoryEnum;
 import com.veadan.folib.controllers.BaseArtifactController;
 import com.veadan.folib.controllers.cluster.dto.SyncRepositoryDto;
+import com.veadan.folib.forms.artifact.ArtifactMetadataForm;
 import com.veadan.folib.providers.io.RepositoryPath;
+import com.veadan.folib.services.ArtifactWebService;
 import com.veadan.folib.services.ClusterSyncService;
 import com.veadan.folib.services.RepositoryManagementService;
+import com.veadan.folib.services.impl.FqlSearchService;
 import com.veadan.folib.storage.repository.Repository;
 import com.veadan.folib.storage.repository.RepositoryData;
 import com.veadan.folib.storage.repository.RepositoryDto;
-import com.veadan.folib.util.RepositoryPathUtil;
+import com.veadan.folib.storage.search.SearchResults;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.convert.ConversionService;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.util.CollectionUtils;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.inject.Inject;
-import java.io.File;
 import java.io.InputStream;
 import java.nio.file.Files;
-import java.util.List;
-import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/artifact/folib/offline")
@@ -40,10 +40,13 @@ public class OfflineArtifactUploadController extends BaseArtifactController {
     private RepositoryManagementService repositoryManagementService;
 
     @Autowired
-    private ConversionService conversionService;
-
-    @Autowired
     private ClusterSyncService clusterSyncService;
+
+    @Inject
+    private ArtifactWebService artifactWebService;
+
+    @Inject
+    private FqlSearchService fqlSearchService;
 
 
     // 普通制品离线制品上传
@@ -53,19 +56,26 @@ public class OfflineArtifactUploadController extends BaseArtifactController {
                                         @RequestParam("storageId") String storageId,
                                         @RequestParam("repostoryId") String repostoryId,
                                         @RequestHeader(HttpHeaders.ACCEPT) String accept) {
-        // 离线普通制品folib 生成存储路径自动生成版本号 eg: /1/file
+        // 离线普通制品folib 生成存储路径自动生成版本号 eg: repoName/1/file
         try (InputStream is = file.getInputStream()) {
             // 获取版本号
             validateRepo(storageId, repostoryId);
 
-            RepositoryPath artifactPath = repositoryPathResolver.resolve(storageId, repostoryId, "");
+            RepositoryPath artifactPath = repositoryPathResolver.resolve(storageId, repostoryId, repostoryId);
 
-            Integer version = getIncrementalVersion(artifactPath);
+            Long version = getIncrementalVersion(artifactPath);
 
             RepositoryPath versionPath = repositoryPathResolver.
-                    resolve(storageId, repostoryId, version + "/" + file.getOriginalFilename());
+                    resolve(storageId, repostoryId, repostoryId + "/" + version + "/" + file.getOriginalFilename());
 
             artifactManagementService.store(versionPath, is);
+
+            // 添加入库方式的元数据信息
+            ArtifactMetadataForm artifactMetadataForm = ArtifactMetadataForm.builder()
+                    .viewShow(1).key("srcType").value("manual")
+                    .repositoryId(repostoryId).type("STRING").storageId(storageId)
+                    .artifactPath(repostoryId + "/" + version + "/" + file.getOriginalFilename()).build();
+            artifactWebService.saveArtifactMetadata(artifactMetadataForm);
         } catch (Exception e) {
             e.printStackTrace();
             return getExceptionResponseEntity(HttpStatus.INTERNAL_SERVER_ERROR, "离线普通制品上传失败", e, accept);
@@ -85,6 +95,7 @@ public class OfflineArtifactUploadController extends BaseArtifactController {
             repositoryDto.setLayout("Raw");
             repositoryDto.setType("hosted");
             repositoryDto.setStatus("In Service");
+            repositoryDto.setArtifactMaxSize(214748364800L);
             configurationManagementService.saveRepository(storageId, repositoryDto);
             RepositoryDto repoDto = getMutableConfigurationClone().getStorage(storageId)
                     .getRepository(repostoryId);
@@ -99,27 +110,53 @@ public class OfflineArtifactUploadController extends BaseArtifactController {
         }
     }
 
-    private Integer getIncrementalVersion(RepositoryPath artifactPath) throws Exception {
-        List<String> fileRelativePaths = RepositoryPathUtil.getFileRelativePaths(artifactPath);
-        fileRelativePaths = fileRelativePaths.stream().filter(s ->
-                        !s.endsWith(".md5") && !s.startsWith(".trash") && !s.endsWith(".sha1") && !s.endsWith(".sha256"))
-                .collect(Collectors.toList());
-        Integer version = 0;
-        if (CollectionUtils.isEmpty(fileRelativePaths)) {
-            return 1;
-        }
-        for (String filePath : fileRelativePaths) {
-            String[] array = filePath.split(String.valueOf(File.separatorChar));
-            if (array.length != 2) {
-                continue;
-            }
-            Integer temp = Integer.parseInt(array[0]);
-            if(temp>version){
-                version=temp;
-            }
+    private Long getIncrementalVersion(RepositoryPath artifactPath) throws Exception {
+        // docker 布局的版本总数+ raw 版本总数
+        String rawRepo = artifactPath.getRepositoryId();
+        String dockerRepo = rawRepo.replace("-raw", "");
+        String storageId = artifactPath.getStorageId();
 
+        // 搜索 docker  raw 仓总的制品数
+        String regex = "(%s)(.*%s.*)";
+        String prefix = storageId;
+        if (StringUtils.isNotBlank(dockerRepo)) {
+            prefix = prefix + "-" + dockerRepo;
         }
-        return version + 1;
+        regex = String.format(regex, prefix, "-");
+        SearchResults dockerResult = fqlSearchService.artifactQuery(true,
+                regex, null, storageId,
+                dockerRepo, null, null, null, null, Integer.MAX_VALUE, 1);
+        SearchResults rawResult = fqlSearchService.artifactQuery(false,
+                storageId + "-" + dockerRepo, null, storageId,
+                rawRepo, null, null, null, null, Integer.MAX_VALUE, 1);
+        return dockerResult.getTotal() + rawResult.getTotal() + 1;
+
+
+//        List<String> fileRelativePaths = RepositoryPathUtil.getFileRelativePaths(artifactPath);
+//        fileRelativePaths = fileRelativePaths.stream().filter(s ->
+//                        !s.endsWith(".md5") && !s.startsWith(".trash") && !s.endsWith(".sha1") && !s.endsWith(".sha256"))
+//                .collect(Collectors.toList());
+//        Integer version = 0;
+//
+//        if(null== dockerRepoImagePath&&CollectionUtils.isEmpty(fileRelativePaths)){
+//            return 1;
+//        }
+//
+//        if (CollectionUtils.isEmpty(fileRelativePaths)) {
+//            return 1;
+//        }
+//        for (String filePath : fileRelativePaths) {
+//            String[] array = filePath.split(String.valueOf(File.separatorChar));
+//            if (array.length != 3) {
+//                continue;
+//            }
+//            Integer temp = Integer.parseInt(array[1]);
+//            if(temp>version){
+//                version=temp;
+//            }
+//
+//        }
+//        return version + 1;
     }
 
 

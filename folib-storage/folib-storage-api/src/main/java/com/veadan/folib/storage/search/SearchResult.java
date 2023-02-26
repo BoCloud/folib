@@ -77,6 +77,8 @@ public class SearchResult {
      */
     private List<String> downloadFilesUrl;
 
+    private String metadata;
+
     public List getTreeNode() {
         return treeNode;
     }
@@ -220,6 +222,14 @@ public class SearchResult {
 
     public void setDownloadFilesUrl(List<String> downloadFilesUrl) {
         this.downloadFilesUrl = downloadFilesUrl;
+    }
+
+    public String getMetadata() {
+        return metadata;
+    }
+
+    public void setMetadata(String metadata) {
+        this.metadata = metadata;
     }
 
     @Override

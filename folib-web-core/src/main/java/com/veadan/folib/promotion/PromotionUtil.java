@@ -58,6 +58,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.security.cert.X509Certificate;
@@ -299,12 +300,20 @@ public class PromotionUtil {
     public void handleCopy(String path, Repository destRepository, Repository srcRepository) throws Exception {
         List<File> list = RepositoryPathUtil.getNFSFiles(path);
         for (File file : list) {
+            String fPath = file.getAbsolutePath().toString();
+            String tempStr = srcRepository.getStorage().getId() + File.separator + srcRepository.getId() + File.separator;
+            int fPathIndex = fPath.lastIndexOf(tempStr);
+            String temp = fPath.substring(fPathIndex, fPath.length()).replace(tempStr, "");
+            RepositoryPath destPath = repositoryPathResolver.resolve(destRepository.getStorage().getId(), destRepository.getId(), temp);
+            log.debug("temp {}   destPath {}", temp, destPath.toString());
+            boolean isDocker = srcRepository.getLayout().equalsIgnoreCase("docker");
+            if (isDocker) {
+                if (!file.getName().contains("sha256") && !file.getName().endsWith(".sha256")) {
+                    Files.copy(Paths.get(file.getAbsolutePath()), destPath);
+                    continue;
+                }
+            }
             try (InputStream is = Files.newInputStream(file.toPath());) {
-                String fPath = file.getAbsolutePath().toString();
-                String tempStr = srcRepository.getStorage().getId() + File.separator + srcRepository.getId() + File.separator;
-                int fPathIndex = fPath.lastIndexOf(tempStr);
-                String temp = fPath.substring(fPathIndex, fPath.length()).replace(tempStr, "");
-                RepositoryPath destPath = repositoryPathResolver.resolve(destRepository.getStorage().getId(), destRepository.getId(), temp);
                 artifactManagementService.store(destPath, is);
                 // 同步metadata
                 RepositoryPath srcPath = repositoryPathResolver.resolve(srcRepository.getStorage().getId(), srcRepository.getId(), temp);
@@ -345,6 +354,7 @@ public class PromotionUtil {
                 ) {
                     RepositoryPath destBlobPath = repositoryPathResolver.resolve(destRepository.getStorage().getId(), destRepository.getId(), blob);
                     RepositoryPath destBlobSha256Path = repositoryPathResolver.resolve(destRepository.getStorage().getId(), destRepository.getId(), blobSha256);
+                    log.info("destBlobPath {}  destBlobSha256Path {}",destBlobPath.toString(),destBlobSha256Path.toString());
                     artifactManagementService.store(destBlobPath, blobIs);
                     artifactManagementService.store(destBlobSha256Path, blobSha256Is);
                 } catch (Exception e) {
