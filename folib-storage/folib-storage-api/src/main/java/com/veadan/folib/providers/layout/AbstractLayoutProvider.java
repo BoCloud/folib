@@ -1,9 +1,11 @@
 package com.veadan.folib.providers.layout;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.URI;
 import java.net.URL;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -241,6 +243,23 @@ public abstract class AbstractLayoutProvider<T extends LayoutArtifactCoordinates
             try
             {
                 return ARCHIVE_LISTING_FUNCTION.getContentByFileName(repositoryPath, fileName);
+            }
+            catch (IOException e)
+            {
+                logger.warn("Unable to file content in archive path {} using {}",
+                        repositoryPath, ARCHIVE_LISTING_FUNCTION, e);
+            }
+        }
+        return "";
+    }
+
+    @Override
+    public String getContentByFileName(RepositoryPath repositoryPath, Path path, String fileName) {
+        if (ARCHIVE_LISTING_FUNCTION.supports(repositoryPath))
+        {
+            try
+            {
+                return ARCHIVE_LISTING_FUNCTION.getContentByFileName(repositoryPath, path, fileName);
             }
             catch (IOException e)
             {

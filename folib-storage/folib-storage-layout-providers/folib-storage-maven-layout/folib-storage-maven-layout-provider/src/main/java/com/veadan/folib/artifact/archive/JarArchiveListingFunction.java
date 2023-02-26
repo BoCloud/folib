@@ -45,6 +45,15 @@ public enum JarArchiveListingFunction
     }
 
     @Override
+    public String getContentByFileName(RepositoryPath repositoryPath, Path path, String fileName) throws IOException {
+        try (InputStream is = Files.newInputStream(path);
+             BufferedInputStream bis = new BufferedInputStream(is);
+             ArchiveInputStream ais = new JarArchiveInputStream(bis)) {
+            return getContentByFileName(ais, fileName);
+        }
+    }
+
+    @Override
     public boolean supports(final RepositoryPath path) {
         final Path fileName = path.getFileName();
         if (fileName == null) {

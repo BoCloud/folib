@@ -25,6 +25,13 @@ export function artifactUpload (data) {
   })
 }
 
+export function artifactUploadStatus () {
+  return axios({
+    url: '/api/artifact/folib/promotion/uploadStatus',
+    method: 'get'
+  })
+}
+
 export function saveArtifactMetadata (data) {
   return axios({
     url: '/api/artifact/artifactMetadata',
