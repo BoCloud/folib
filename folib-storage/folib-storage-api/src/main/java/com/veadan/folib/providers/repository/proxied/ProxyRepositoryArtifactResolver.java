@@ -73,7 +73,6 @@ public class ProxyRepositoryArtifactResolver
         }
 
         RestArtifactResolver client = restArtifactResolverFactory.newInstance(remoteRepository,repositoryPath);// todo client 修复
-
         ReadWriteLock lockSource = repositoryPathLock.lock(repositoryPath, "remote-fetch");
         Lock lock = lockSource.writeLock();
         lock.lock();

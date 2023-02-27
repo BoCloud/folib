@@ -1,17 +1,22 @@
 package com.veadan.folib.services.impl;
 
+import cn.hutool.core.io.FileUtil;
 import com.alibaba.fastjson.JSON;
 import com.veadan.folib.domain.AnalysisHtmlGetDirAndFilePath;
 import com.veadan.folib.domain.ArtifactPromotion;
 import com.veadan.folib.domain.PromotionFileRelativePath;
 import com.veadan.folib.domain.PromotionNodeOption;
-import com.veadan.folib.dto.*;
+import com.veadan.folib.dto.ArtifactDto;
+import com.veadan.folib.dto.PromotionArtifactDto;
+import com.veadan.folib.dto.PromotionNodeOptionDto;
+import com.veadan.folib.dto.TargetRepositoyDto;
 import com.veadan.folib.promotion.ArtifactUploadTask;
 import com.veadan.folib.promotion.PromotionUtil;
 import com.veadan.folib.promotion.PullArtifactTask;
 import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.providers.io.RepositoryPathResolver;
 import com.veadan.folib.providers.layout.LayoutProviderRegistry;
+import com.veadan.folib.repositories.ArtifactRepository;
 import com.veadan.folib.service.ProxyRepositoryConnectionPoolConfigurationService;
 import com.veadan.folib.services.*;
 import com.veadan.folib.storage.Storage;
@@ -84,6 +89,9 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
 
     @Inject
     private LayoutProviderRegistry layoutProviderRegistry;
+
+    @Inject
+    private ArtifactRepository artifactRepository;
 
     @Value("${folib.temp}")
     private String tempPath;
@@ -315,18 +323,18 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
     }
 
     @Override
-    public ResponseEntity upload(MultipartFile[] files, String storageId, String repostoryId, String filePathMap, String fileMetaDataMap) {
+    public ResponseEntity upload(MultipartFile[] files, String storageId, String repositoryId, String filePathMap, String fileMetaDataMap) {
         try {
-            validateStorageAndRepository(storageId, repostoryId);
+            validateStorageAndRepository(storageId, repositoryId);
             List<FutureTask<String>> listTask = new ArrayList<>();
             Map<String, String> mapType = JSON.parseObject(filePathMap, Map.class);
             Map<String, Object> metaDataMap = StringUtils.isBlank(fileMetaDataMap) ?
                     new HashMap<>() : JSON.parseObject(fileMetaDataMap, Map.class);
             for (MultipartFile file : files) {
                 String fileRelativePath = mapType.get(file.getOriginalFilename());
-                String metaData = metaDataMap.getOrDefault(fileRelativePath,"").toString();
-                ArtifactUploadTask artifactUploadTask = new ArtifactUploadTask(storageId, repostoryId, file,
-                        repositoryManagementService, repositoryPathResolver, artifactManagementService,promotionUtil, layoutProviderRegistry, artifactMetadataService, tempPath, fileRelativePath,metaData);
+                String metaData = metaDataMap.getOrDefault(fileRelativePath, "").toString();
+                ArtifactUploadTask artifactUploadTask = new ArtifactUploadTask(storageId, repositoryId, file,
+                        repositoryManagementService, repositoryPathResolver, artifactManagementService, promotionUtil, layoutProviderRegistry, artifactMetadataService, artifactRepository, tempPath, fileRelativePath, metaData);
                 FutureTask<String> task = new FutureTask<String>(artifactUploadTask);
                 listTask.add(task);
                 asyncRepositoryThreadPoolExecutor.submit(task);

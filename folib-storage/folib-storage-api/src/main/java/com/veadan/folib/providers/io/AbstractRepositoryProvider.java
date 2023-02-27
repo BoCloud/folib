@@ -271,13 +271,13 @@ public abstract class AbstractRepositoryProvider implements RepositoryProvider, 
         Repository repository = repositoryPath.getRepository();
         Storage storage = repository.getStorage();
         ArtifactCoordinates coordinates = RepositoryFiles.readCoordinates(repositoryPath);
-        
+
         CountingOutputStream cos = StreamUtils.findSource(CountingOutputStream.class, ctx.getStream());
         artifact.setSizeInBytes(cos.getByteCount());
 
         LayoutOutputStream los = StreamUtils.findSource(LayoutOutputStream.class, ctx.getStream());
         artifact.setChecksums(los.getDigestMap());
-        
+
         ArtifactTag lastVersionTag = artifactTagService.findOneOrCreate(ArtifactTagEntity.LAST_VERSION);
 
         ArtifactIdGroup artifactGroup = artifactIdGroupRepository.findArtifactsGroupWithTag(storage.getId(),
@@ -293,7 +293,6 @@ public abstract class AbstractRepositoryProvider implements RepositoryProvider, 
                      artifactGroup.getName(),
                      lastVersion.getVersion(),
                      lastVersion.getPath());
-        
         artifactIdGroupRepository.merge(artifactGroup);
     }
 

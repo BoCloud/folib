@@ -8,6 +8,8 @@ import com.veadan.folib.domain.VulnerabilitiesInfo;
 import com.veadan.folib.domain.Vulnerability;
 import com.veadan.folib.enums.BlockTypeEnum;
 import com.veadan.folib.providers.io.RepositoryPath;
+import com.veadan.folib.providers.layout.DockerLayoutProvider;
+import com.veadan.folib.repositories.ArtifactRepository;
 import com.veadan.folib.service.ProxyRepositoryConnectionPoolConfigurationService;
 import com.veadan.folib.services.ArtifactManagementService;
 import com.veadan.folib.storage.repository.RepositoryDto;
@@ -45,11 +47,15 @@ public abstract class BaseArtifactController
     @Inject
     protected ArtifactManagementService artifactManagementService;
 
+    @Inject
+    private ArtifactRepository artifactRepository;
+
     @Value("${folib.dependentPushUrl}")
     private String pushUrl;
 
     @Autowired
     private ProxyRepositoryConnectionPoolConfigurationService clientPool;
+
 
     protected boolean provideArtifactDownloadResponse(HttpServletRequest request,
                                                       HttpServletResponse response,
@@ -89,12 +95,23 @@ public abstract class BaseArtifactController
      * @throws IOException io异常
      */
     public void vulnerabilityBlock(RepositoryPath repositoryPath) throws IOException {
-        boolean supportLayout = ArtifactUtils.layoutSupports(repositoryPath);
+        boolean supportLayout = ArtifactUtils.layoutSupports(repositoryPath, true);
         if (!supportLayout) {
             return;
         }
         Artifact artifact = repositoryPath.getArtifactEntry();
         if (Objects.nonNull(artifact)) {
+            boolean isDockerLayout = DockerLayoutProvider.ALIAS.equals(repositoryPath.getRepository().getLayout());
+            Set<Vulnerability> vulnerabilitySet = artifact.getVulnerabilitySet();
+            if (isDockerLayout) {
+                String manifest = "manifest";
+                String path = repositoryPath.toAbsolutePath().toString();
+                if (path.contains("sha256") && !path.endsWith(".sha256") && path.contains(manifest)) {
+                    String keywords = path.substring(path.lastIndexOf("manifest/") + "manifest/".length());
+                    vulnerabilitySet = artifactRepository.fetchVulnerabilitiesByKeywords(repositoryPath.getStorageId(), repositoryPath.getRepositoryId(), keywords);
+                }
+            }
+            Set<String> vulnerabilities = vulnerabilitySet.stream().map(Vulnerability::getUuid).collect(Collectors.toSet());
             MutableSecurityPolicyConfiguration mutableSecurityPolicyConfiguration = configurationManagementService.getMutableConfigurationClone().getSecurityPolicyConfiguration();
             if (Objects.nonNull(mutableSecurityPolicyConfiguration)) {
                 RepositoryDto repositoryDto = configurationManagementService.getMutableConfigurationClone().getStorage(repositoryPath.getStorageId()).getRepository(repositoryPath.getRepositoryId());
@@ -105,13 +122,13 @@ public abstract class BaseArtifactController
                 boolean flag = false;
                 if (BlockTypeEnum.ALL.getType().equals(mutableSecurityPolicyConfiguration.getBlockType())) {
                     //过滤仓库级别黑名单
-                    flag = artifact.getVulnerabilities().stream().anyMatch(repositoryBlacks::contains);
+                    flag = vulnerabilities.stream().anyMatch(repositoryBlacks::contains);
                     if (!flag) {
                         Set<String> allSet = Sets.newLinkedHashSet(), blackSet;
                         //不在阻断漏洞等级内的漏洞集合，需要过滤黑名单
                         Set<Vulnerability> unIncludeVulnerabilitySet = Sets.newLinkedHashSet();
                         if (CollectionUtils.isNotEmpty(mutableSecurityPolicyConfiguration.getBlockLevels())) {
-                            for (Vulnerability vulnerability : artifact.getVulnerabilitySet()) {
+                            for (Vulnerability vulnerability : vulnerabilitySet) {
                                 //开启白名单过滤
                                 if (Boolean.TRUE.equals(mutableSecurityPolicyConfiguration.getFilterWhites())) {
                                     //过滤仓库级别白名单、平台级别白名单
@@ -133,7 +150,7 @@ public abstract class BaseArtifactController
                     }
                 } else if (BlockTypeEnum.BLACK.getType().equals(mutableSecurityPolicyConfiguration.getBlockType())) {
                     //黑名单阻断
-                    flag = artifact.getVulnerabilities().stream().anyMatch(item -> repositoryBlacks.contains(item) ||
+                    flag = vulnerabilities.stream().anyMatch(item -> repositoryBlacks.contains(item) ||
                             (!repositoryWhites.contains(item) && platformBlacks.contains(item)));
                 } else if (BlockTypeEnum.PACKAGE_NAME.getType().equals(mutableSecurityPolicyConfiguration.getBlockType())) {
                     //包名阻断

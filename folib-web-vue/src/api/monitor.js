@@ -31,7 +31,6 @@ export function browseLogs (path) {
 
 export function viewLogs (path) {
   if (path.indexOf("/") !== -1) {
-    debugger
     path = path.replace("/", "")
   }
   return axios({

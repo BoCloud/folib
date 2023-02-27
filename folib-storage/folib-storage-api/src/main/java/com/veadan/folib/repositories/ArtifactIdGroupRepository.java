@@ -1,10 +1,6 @@
 package com.veadan.folib.repositories;
 
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import javax.inject.Inject;
@@ -13,7 +9,14 @@ import javax.transaction.Transactional;
 import com.veadan.folib.artifact.coordinates.ArtifactLayoutDescription;
 import com.veadan.folib.artifact.coordinates.ArtifactLayoutLocator;
 import com.veadan.folib.configuration.ConfigurationManager;
+import com.veadan.folib.db.schema.Edges;
+import com.veadan.folib.db.schema.Properties;
+import com.veadan.folib.gremlin.adapters.ArtifactAdapter;
 import com.veadan.folib.gremlin.dsl.EntityTraversal;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.collections4.CollectionUtils;
+import org.apache.tinkerpop.gremlin.process.traversal.P;
+import org.janusgraph.core.attribute.Text;
 import org.apache.tinkerpop.gremlin.structure.Vertex;
 import com.veadan.folib.artifact.ArtifactTag;
 import com.veadan.folib.db.schema.Vertices;
@@ -22,6 +25,7 @@ import com.veadan.folib.domain.ArtifactIdGroup;
 import com.veadan.folib.domain.ArtifactIdGroupEntity;
 import com.veadan.folib.gremlin.adapters.ArtifactIdGroupAdapter;
 import com.veadan.folib.gremlin.repositories.GremlinVertexRepository;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.neo4j.annotation.Query;
@@ -30,6 +34,7 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 @Transactional
+@Slf4j
 public class ArtifactIdGroupRepository extends GremlinVertexRepository<ArtifactIdGroup>
 {
 
@@ -39,6 +44,9 @@ public class ArtifactIdGroupRepository extends GremlinVertexRepository<ArtifactI
     ArtifactIdGroupQueries queries;
     @Inject
     ConfigurationManager configurationManager;
+    @Inject
+    @Lazy
+    ArtifactAdapter artifactAdapter;
 
     @Override
     protected ArtifactIdGroupAdapter adapter()
@@ -158,6 +166,65 @@ public class ArtifactIdGroupRepository extends GremlinVertexRepository<ArtifactI
                                      coordinateValues,
                                      skip,
                                      limit);
+    }
+
+    public List<Artifact> findArtifactsGremlin(String storageId,
+                                        String repositoryId,
+                                        String artifactId,
+                                        Collection<String> coordinateValues,
+                                        Long skip,
+                                        Integer limit,
+                                        Boolean useLimit)
+    {
+        if (Boolean.FALSE.equals(useLimit)) {
+            skip = 0L;
+            ArtifactIdGroup artifactIdGroup = new ArtifactIdGroupEntity(storageId, repositoryId, artifactId);
+            Long count = commonCountArtifacts(storageId, repositoryId, artifactId, coordinateValues);
+            log.debug("artifactIdGroup 【{}】count 【{}】", artifactIdGroup.getUuid(), count);
+            limit = count.intValue();
+        }
+        com.veadan.folib.storage.repository.Repository repository = configurationManager.getRepository(storageId, repositoryId);
+        EntityTraversal<Vertex, Artifact> artifactEntityTraversal = commonFindArtifacts(storageId, repositoryId, artifactId, coordinateValues).map(artifactAdapter.fold(Optional.ofNullable(repository)
+                .map(com.veadan.folib.storage.repository.Repository::getLayout)
+                .map(ArtifactLayoutLocator.getLayoutByNameEntityMap()::get)
+                .map(ArtifactLayoutDescription::getArtifactCoordinatesClass))).range(skip, limit);
+        if (!artifactEntityTraversal.hasNext())
+        {
+            return Collections.emptyList();
+        }
+        return artifactEntityTraversal.toList();
+    }
+
+    public long commonCountArtifacts(String storageId,
+                                 String repositoryId,
+                                 String artifactId,
+                                 Collection<String> coordinateValues) {
+        return commonFindArtifacts(storageId, repositoryId, artifactId, coordinateValues).count().tryNext().orElse(0L);
+    }
+
+    public Boolean commonArtifactsExists(String storageId,
+                                         String repositoryId,
+                                         String artifactId,
+                                         Collection<String> coordinateValues)
+    {
+        return commonCountArtifacts(storageId, repositoryId, artifactId, coordinateValues) > 0L;
+    }
+
+    private EntityTraversal<Vertex, Vertex> commonFindArtifacts(String storageId,
+                                     String repositoryId,
+                                     String artifactId,
+                                     Collection<String> coordinateValues) {
+        String storageIdAndRepositoryId = String.format("%s-%s", storageId, repositoryId);
+        ArtifactIdGroup artifactIdGroup = new ArtifactIdGroupEntity(storageId, repositoryId, artifactId);
+        EntityTraversal<Vertex, Vertex> t = g().V()
+                .hasLabel(Vertices.ARTIFACT_ID_GROUP).has(Properties.UUID, artifactIdGroup.getUuid()).outE(Edges.ARTIFACT_GROUP_HAS_ARTIFACTS).inV()
+                .hasLabel(Vertices.ARTIFACT).has(Properties.STORAGE_ID_AND_REPOSITORY_ID, storageIdAndRepositoryId).has(Properties.UUID, Text.textPrefix(artifactIdGroup.getUuid()));
+        if (CollectionUtils.isNotEmpty(coordinateValues)) {
+            for (String coordinateValue: coordinateValues) {
+                t = t.has(Properties.UUID, Text.textContains("." + coordinateValue));
+            }
+        }
+        return t;
     }
     
 }

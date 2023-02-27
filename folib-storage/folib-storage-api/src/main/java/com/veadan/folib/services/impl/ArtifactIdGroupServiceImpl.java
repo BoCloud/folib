@@ -1,5 +1,25 @@
 package com.veadan.folib.services.impl;
 
+import com.google.common.collect.Iterables;
+import com.veadan.folib.artifact.ArtifactTag;
+import com.veadan.folib.artifact.coordinates.ArtifactCoordinates;
+import com.veadan.folib.domain.Artifact;
+import com.veadan.folib.domain.ArtifactIdGroup;
+import com.veadan.folib.domain.ArtifactIdGroupEntity;
+import com.veadan.folib.domain.ArtifactTagEntity;
+import com.veadan.folib.providers.io.RepositoryPathLock;
+import com.veadan.folib.repositories.ArtifactIdGroupRepository;
+import com.veadan.folib.services.ArtifactIdGroupService;
+import com.veadan.folib.services.ArtifactTagService;
+import com.veadan.folib.storage.repository.Repository;
+import org.apache.commons.lang3.exception.ExceptionUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.Assert;
+
+import javax.inject.Inject;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -7,27 +27,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.locks.Lock;
 import java.util.stream.Collectors;
-
-import javax.inject.Inject;
-
-import com.veadan.folib.artifact.coordinates.ArtifactCoordinates;
-import com.veadan.folib.providers.io.RepositoryPathLock;
-import com.veadan.folib.services.ArtifactIdGroupService;
-import com.veadan.folib.services.ArtifactTagService;
-import com.veadan.folib.artifact.ArtifactTag;
-import com.veadan.folib.domain.Artifact;
-import com.veadan.folib.domain.ArtifactIdGroup;
-import com.veadan.folib.domain.ArtifactIdGroupEntity;
-import com.veadan.folib.domain.ArtifactTagEntity;
-import com.veadan.folib.repositories.ArtifactIdGroupRepository;
-import com.veadan.folib.storage.repository.Repository;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-import org.springframework.util.Assert;
-
-import com.google.common.collect.Iterables;
 
 /**
  * @author veadan
@@ -37,8 +36,7 @@ import com.google.common.collect.Iterables;
 @Transactional
 public class ArtifactIdGroupServiceImpl
         extends AbstractArtifactGroupService<ArtifactIdGroup>
-        implements ArtifactIdGroupService
-{
+        implements ArtifactIdGroupService {
 
     private static final Logger logger = LoggerFactory.getLogger(ArtifactIdGroupEntity.class);
 
@@ -53,53 +51,56 @@ public class ArtifactIdGroupServiceImpl
 
     @Override
     public void saveArtifacts(Repository repository,
-                              Set<Artifact> artifactToSaveSet)
-    {
-        Map<String, List<Artifact>> artifactByGroupIdMap = artifactToSaveSet.stream()
-                                                                            .collect(Collectors.groupingBy(a -> a.getArtifactCoordinates()
-                                                                                                                 .getId()));
-        for (Entry<String, List<Artifact>> artifactIdGroupEntry : artifactByGroupIdMap.entrySet())
-        {
-            List<Artifact> artifacts = artifactIdGroupEntry.getValue();
-            String artifactGroupId = artifactIdGroupEntry.getKey();
+                              Set<Artifact> artifactToSaveSet) {
+        try {
+            Map<String, List<Artifact>> artifactByGroupIdMap = artifactToSaveSet.stream()
+                    .collect(Collectors.groupingBy(a -> a.getArtifactCoordinates()
+                            .getId()));
             ArtifactTag lastVersionTag = artifactTagService.findOneOrCreate(ArtifactTagEntity.LAST_VERSION);
-            for (List<Artifact> artifacstBatch : Iterables.partition(artifacts, 50))
-            {
-                Lock lock = repositoryPathLock.lock(artifactGroupId).writeLock();
-                lock.lock();
-                try
-                {
-                    ArtifactIdGroup artifactGroup = artifactIdGroupRepository.findArtifactsGroupWithTag(repository.getStorage()
-                                                                                                                  .getId(),
-                                                                                                        repository.getId(),
-                                                                                                        artifactGroupId,
-                                                                                                        Optional.of(lastVersionTag))
-                                                                             .orElseGet(() -> create(repository.getStorage().getId(),
-                                                                                                     repository.getId(),
-                                                                                                     artifactGroupId));
-
-                    ArtifactCoordinates lastVersion = addArtifactsToGroup(artifacstBatch, artifactGroup);
-                    logger.debug("Last version for group [{}] is [{}] with [{}]",
-                                 artifactGroup.getName(),
-                                 lastVersion.getVersion(),
-                                 lastVersion.getPath());
-
-                    artifactIdGroupRepository.merge(artifactGroup);
-                }
-                finally
-                {
-                    lock.unlock();
+            List<Artifact> artifacts = null;
+            String artifactGroupId = "";
+            for (Entry<String, List<Artifact>> artifactIdGroupEntry : artifactByGroupIdMap.entrySet()) {
+                artifacts = artifactIdGroupEntry.getValue();
+                artifactGroupId = artifactIdGroupEntry.getKey();
+                for (List<Artifact> artifactsBatch : Iterables.partition(artifacts, 20)) {
+                    mergeArtifactIdGroup(repository, artifactGroupId, lastVersionTag, artifactsBatch);
                 }
             }
+        } catch (Exception e) {
+            logger.error("saveArtifacts error：{}", ExceptionUtils.getStackTrace(e));
+            throw new RuntimeException(e);
+        }
+    }
+
+    private void mergeArtifactIdGroup(Repository repository, String artifactGroupId, ArtifactTag lastVersionTag, List<Artifact> artifactsBatch) {
+        Lock lock = repositoryPathLock.lock(artifactGroupId).writeLock();
+        lock.lock();
+        try {
+            ArtifactIdGroup artifactGroup = artifactIdGroupRepository.findArtifactsGroupWithTag(repository.getStorage()
+                            .getId(),
+                    repository.getId(),
+                    artifactGroupId,
+                    Optional.of(lastVersionTag))
+                    .orElseGet(() -> create(repository.getStorage().getId(),
+                            repository.getId(),
+                            artifactGroupId));
+
+            ArtifactCoordinates lastVersion = addArtifactsToGroup(artifactsBatch, artifactGroup);
+            logger.debug("Last version for group [{}] is [{}] with [{}]",
+                    artifactGroup.getName(),
+                    lastVersion.getVersion(),
+                    lastVersion.getPath());
+
+            artifactIdGroupRepository.merge(artifactGroup);
+        } finally {
+            lock.unlock();
         }
     }
 
     private ArtifactCoordinates addArtifactsToGroup(List<Artifact> artifacts,
-                                                    ArtifactIdGroup artifactGroup)
-    {
+                                                    ArtifactIdGroup artifactGroup) {
         ArtifactCoordinates lastVersion = null;
-        for (Artifact artifact : artifacts)
-        {
+        for (Artifact artifact : artifacts) {
             lastVersion = addArtifactToGroup(artifactGroup, artifact);
         }
         return lastVersion;
@@ -107,8 +108,7 @@ public class ArtifactIdGroupServiceImpl
 
     @Override
     public ArtifactCoordinates addArtifactToGroup(ArtifactIdGroup artifactGroup,
-                                                  Artifact artifact)
-    {
+                                                  Artifact artifact) {
         ArtifactCoordinates coordinates = artifact.getArtifactCoordinates();
         Assert.notNull(coordinates, "coordinates should not be null");
 
@@ -116,30 +116,26 @@ public class ArtifactIdGroupServiceImpl
 
         artifact.getTagSet().add(lastVersionTag);
         artifactGroup.addArtifact(artifact);
-        
+
         Artifact lastVersionArtifact = artifactGroup.getArtifacts()
-                                                    .stream()
-                                                    .filter(e -> e.getTagSet().contains(lastVersionTag))
-                                                    .reduce((a1,
-                                                             a2) -> reduceByLastVersionTag(a1, a2, lastVersionTag))
-                                                    .get();
+                .stream()
+                .filter(e -> e.getTagSet().contains(lastVersionTag))
+                .reduce((a1,
+                         a2) -> reduceByLastVersionTag(a1, a2, lastVersionTag))
+                .get();
 
         return lastVersionArtifact.getArtifactCoordinates();
     }
 
     private Artifact reduceByLastVersionTag(Artifact a1,
                                             Artifact a2,
-                                            ArtifactTag lastVersionTag)
-    {
+                                            ArtifactTag lastVersionTag) {
         int artifactCoordinatesComparison = a1.getArtifactCoordinates()
-                                              .compareTo(a2.getArtifactCoordinates());
-        if (artifactCoordinatesComparison > 0)
-        {
+                .compareTo(a2.getArtifactCoordinates());
+        if (artifactCoordinatesComparison > 0) {
             a2.getTagSet().remove(lastVersionTag);
             return a1;
-        }
-        else if (artifactCoordinatesComparison < 0)
-        {
+        } else if (artifactCoordinatesComparison < 0) {
             a1.getTagSet().remove(lastVersionTag);
             return a2;
         }
@@ -149,8 +145,7 @@ public class ArtifactIdGroupServiceImpl
 
     protected ArtifactIdGroup create(String storageId,
                                      String repositoryId,
-                                     String artifactId)
-    {
+                                     String artifactId) {
         return new ArtifactIdGroupEntity(storageId, repositoryId, artifactId);
     }
 

@@ -11,6 +11,7 @@ import javax.xml.bind.annotation.XmlRootElement;
 import com.veadan.folib.artifact.coordinates.versioning.SemanticVersion;
 import com.veadan.folib.db.schema.Vertices;
 import com.veadan.folib.domain.LayoutArtifactCoordinatesEntity;
+import com.veadan.folib.providers.layout.NpmLayoutProvider;
 import org.neo4j.ogm.annotation.NodeEntity;
 import org.springframework.util.Assert;
 import org.springframework.util.StringUtils;
@@ -153,6 +154,10 @@ public class NpmArtifactCoordinates extends LayoutArtifactCoordinatesEntity<NpmA
     @Override
     public URI convertToResource(NpmArtifactCoordinates c)
     {
+        String path = convertToPath(c);
+        if (path.endsWith(NpmLayoutProvider.PACKAGE_JSON)) {
+            return URI.create(String.format("%s/-/%s-%s.%s", c.getId(), "package", c.getVersion(), "json"));
+        }
         return URI.create(String.format("%s/-/%s", c.getId(), c.getArtifactFileName()));
     }
 

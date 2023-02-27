@@ -62,7 +62,7 @@ public class PhpRepositoryFeatures
     }
 
     @Component
-    @Scope(scopeName = "singleton", proxyMode = ScopedProxyMode.TARGET_CLASS)
+    @Scope(scopeName = "request", proxyMode = ScopedProxyMode.TARGET_CLASS)
     public class PhpSearchPackagesEventListener {
 
         private PhpSearchRequest phpSearchRequest;
@@ -146,7 +146,7 @@ public class PhpRepositoryFeatures
     private Boolean packagesExists(String storageId,
                                    String repositoryId,
                                    RepositorySearchRequest predicate) {
-        return artifactIdGroupRepository.artifactsExists(Collections.singleton(storageId + ":" + repositoryId),
+        return artifactIdGroupRepository.commonArtifactsExists(storageId, repositoryId,
                 predicate.getArtifactId(),
                 predicate.getCoordinateValues());
     }

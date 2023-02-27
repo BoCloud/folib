@@ -55,6 +55,7 @@ public class Maven2LayoutProvider
                     getClass().getCanonicalName(), ALIAS);
     }
 
+    @Override
     protected MavenArtifactCoordinates getArtifactCoordinates(RepositoryPath repositoryPath)
             throws IOException
     {
@@ -63,6 +64,7 @@ public class Maven2LayoutProvider
         return new MavenArtifactCoordinates(artifact);
     }
 
+    @Override
     public boolean isArtifactMetadata(RepositoryPath path)
     {
         return path.getFileName().toString().endsWith(".pom");
@@ -169,7 +171,7 @@ public class Maven2LayoutProvider
     }
 
     @Override
-    public String getContentByFileName(RepositoryPath repositoryPath, String fileName) {
+    public byte[] getContentByFileName(RepositoryPath repositoryPath, String fileName) {
         if (JarArchiveListingFunction.INSTANCE.supports(repositoryPath))
         {
             try
@@ -182,11 +184,11 @@ public class Maven2LayoutProvider
                         repositoryPath, JarArchiveListingFunction.INSTANCE, e);
             }
         }
-        return "";
+        return null;
     }
 
     @Override
-    public String getContentByFileName(RepositoryPath repositoryPath, Path path, String fileName) {
+    public byte[] getContentByFileName(RepositoryPath repositoryPath, Path path, String fileName) {
         if (JarArchiveListingFunction.INSTANCE.supports(repositoryPath))
         {
             try
@@ -199,7 +201,7 @@ public class Maven2LayoutProvider
                         repositoryPath, JarArchiveListingFunction.INSTANCE, e);
             }
         }
-        return "";
+        return null;
     }
 
     public boolean requiresGroupAggregation(final RepositoryPath repositoryPath)

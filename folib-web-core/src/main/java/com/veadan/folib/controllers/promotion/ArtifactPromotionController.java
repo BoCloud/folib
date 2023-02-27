@@ -72,10 +72,10 @@ public class ArtifactPromotionController extends BaseArtifactController {
     @PermissionCheck(resourceKey = "CONFIGURATION_ADD_UPDATE_STORAGE")
     public ResponseEntity upload(@RequestParam("files") MultipartFile[] files,
                                  @RequestParam("storageId") String storageId,
-                                 @RequestParam("repostoryId") String repostoryId,
+                                 @RequestParam("repostoryId") String repositoryId,
                                  @RequestParam("filePathMap") String filePathMap,
                                  @RequestParam(name = "fileMetaDataMap", required = false) String fileMetaDataMap) {
-        return artifactPromotionService.upload(files, storageId, repostoryId, filePathMap,fileMetaDataMap);
+        return artifactPromotionService.upload(files, storageId, repositoryId, filePathMap,fileMetaDataMap);
     }
 
     // 下载接口

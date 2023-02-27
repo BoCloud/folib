@@ -79,9 +79,7 @@
                   </a>
                   <a
                     v-if="
-                      (folibRepository.layout === 'Raw' ||
-                        folibRepository.layout === 'php' ||
-                        folibRepository.layout === 'Maven 2') && folibRepository.type === 'hosted' &&
+                      enablUploadedLayout.includes(folibRepository.layout) && folibRepository.type === 'hosted' &&
                       enabled
                     "
                     ><small style="padding-right: 20px" @click="handleUpload">
@@ -323,12 +321,88 @@
               v-if="folibRepository.layout === 'Docker'"
             >
               <a-col :span="16" class="font-semibold m-0">
-                <a-avatar
-                  :size="24"
-                  shape="square"
-                  :src="'images/folib/docker-s.svg'"
-                />
-                {{ currentTreeNode.name }}
+                <a-row type="flex" align="middle">
+                  <a-col :span="8" :xs="24" :xl="16">
+                    <a-avatar
+                      :size="24"
+                      shape="square"
+                      :src="'images/folib/docker-s.svg'"
+                    />
+                    {{ currentTreeNode.name }}
+                  </a-col>
+                  <a-col :span="8" :xs="24" :xl="8">
+                    <span
+                      class="ml-auto"
+                      v-if="scanReport.show"
+                      @click="openDetial"
+                    >
+                      <a-space :size="1" class="avatar-chips">
+                        <template v-if="scanReport.vulnerabilitesCount > 0">
+                          <a-tooltip>
+                            <template slot="title">严重</template>
+                            <div class="">
+                              <a-avatar
+                                :size="24"
+                                :src="'images/folib/critical.svg'"
+                              />
+                              <span class="mb-0 text-dark">{{
+                                scanReport.critical
+                              }}</span>
+                            </div>
+                          </a-tooltip>
+
+                          <a-tooltip>
+                            <template slot="title">高危</template>
+                            <div class="">
+                              <a-avatar
+                                :size="24"
+                                :src="'images/folib/high.svg'"
+                              />
+                              <span class="mb-0 text-dark">{{
+                                scanReport.high
+                              }}</span>
+                            </div>
+                          </a-tooltip>
+
+                          <a-tooltip>
+                            <template slot="title">中危</template>
+                            <div class="">
+                              <a-avatar
+                                :size="24"
+                                :src="'images/folib/medium.svg'"
+                              />
+                              <span class="mb-0 text-dark">{{
+                                scanReport.medium
+                              }}</span>
+                            </div>
+                          </a-tooltip>
+
+                          <a-tooltip>
+                            <template slot="title">低危</template>
+                            <div class="">
+                              <a-avatar
+                                :size="24"
+                                :src="'images/folib/low.svg'"
+                              />
+                              <span class="mb-0 text-dark">{{
+                                scanReport.low
+                              }}</span>
+                            </div>
+                          </a-tooltip>
+                        </template>
+                        <template v-else>
+                          <a-tooltip>
+                            <template slot="title">健康</template>
+                            <a-avatar
+                              :size="24"
+                              :src="'images/folib/healthy.svg'"
+                            />
+                          </a-tooltip>
+                        </template>
+                      </a-space>
+                    </span>
+                  </a-col>
+                </a-row>
               </a-col>
               <a-col :span="8" class="text-right">
                 <a-dropdown v-if="currentTreeNode.url" class="mr-45">
@@ -870,7 +944,7 @@
               </a-upload>
             </a-form-item>
             <a-form-item class="tags-field mb-10" label="目标目录" prop="targetPath" :colon="false"
-              v-if="folibRepository.layout !== 'Maven 2'">
+              v-if="folibRepository.layout !== 'Maven 2' && folibRepository.layout !== 'npm'">
               <a-input v-decorator="[
                 'targetPath',
                 {
@@ -1086,6 +1160,7 @@ export default {
       showOperationFormModal: false,
       repositories: [],
       custom: false,
+      enablUploadedLayout: ['Raw', 'php', 'Maven 2', 'npm']
     };
   },
   created() {
@@ -1501,7 +1576,7 @@ export default {
           }
           if (this.currentFileDetial.artifact) {
             if (this.currentFileDetial.artifact.safeLevel === "scanComplete") {
-              this.scanReport.show = true;
+              this.scanReport.show = true
               this.scanReport.vulnerabilitesCount =
                 this.currentFileDetial.artifact.vulnerabilitiesCount;
               this.scanReport.critical =
@@ -1514,7 +1589,7 @@ export default {
                 this.currentFileDetial.artifact.lowVulnerabilitiesCount;
               this.scanReport.report = JSON.parse(
                 this.currentFileDetial.artifact.report
-              );
+              )
             }
           }
           this.currentManifest = res.manifestConfig;
@@ -1835,15 +1910,15 @@ export default {
         regex: false,
       };
       if (params.artifactName && this.folibRepository.layout === "Docker") {
-        params.regex = true;
-        params.artifactName =
-          "(" +
-          params.storageId +
-          "-" +
-          params.repositoryId +
-          ")(.*" +
-          params.artifactName +
-          ".*)";
+        // params.regex = true;
+        // params.artifactName =
+        //   "(" +
+        //   params.storageId +
+        //   "-" +
+        //   params.repositoryId +
+        //   ")(.*" +
+        //   params.artifactName +
+        //   ".*)";
       }
       fql(params).then((res) => {
         this.searchData = res.artifact;

@@ -19,6 +19,7 @@ import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.SerializationUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.mutable.MutableBoolean;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
@@ -50,6 +51,7 @@ public class ConfigurationManagementServiceImpl
     private RepositoryEventListenerRegistry repositoryEventListenerRegistry;
 
     @Inject
+    @Lazy
     private LayoutProviderRegistry layoutProviderRegistry;
 
     @Inject

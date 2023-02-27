@@ -18,6 +18,7 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import javax.inject.Inject;
@@ -25,9 +26,16 @@ import javax.servlet.ServletInputStream;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import cn.hutool.core.date.StopWatch;
+import com.alibaba.fastjson.JSONObject;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.veadan.folib.components.artifact.ArtifactComponent;
 import com.veadan.folib.npm.metadata.SearchResults;
 import com.veadan.folib.data.criteria.Paginator;
 import com.veadan.folib.providers.io.RepositoryPath;
+import com.veadan.folib.providers.layout.*;
+import com.veadan.folib.providers.repository.event.RemoteRepositorySearchEvent;
 import com.veadan.folib.storage.validation.artifact.ArtifactCoordinatesValidationException;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
@@ -46,10 +54,6 @@ import com.veadan.folib.npm.metadata.SearchResults;
 import com.veadan.folib.npm.metadata.Time;
 import com.veadan.folib.npm.metadata.Versions;
 import com.veadan.folib.providers.ProviderImplementationException;
-import com.veadan.folib.providers.layout.NpmPackageDesc;
-import com.veadan.folib.providers.layout.NpmPackageSupplier;
-import com.veadan.folib.providers.layout.NpmSearchResultSupplier;
-import com.veadan.folib.providers.layout.NpmUnpublishService;
 import com.veadan.folib.providers.repository.RepositoryProvider;
 import com.veadan.folib.providers.repository.RepositoryProviderRegistry;
 import com.veadan.folib.providers.repository.RepositorySearchRequest;
@@ -60,6 +64,7 @@ import com.veadan.folib.users.userdetails.SpringSecurityUser;
 import com.veadan.folib.web.LayoutRequestMapping;
 import com.veadan.folib.web.RepositoryMapping;
 import org.javatuples.Pair;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -126,8 +131,14 @@ public class NpmArtifactController
     @Inject
     private NpmUnpublishService npmUnpublishService;
 
+    @Inject
+    private ArtifactComponent artifactComponent;
+
+    @Inject
+    protected ApplicationEventPublisher eventPublisher;
+
     @GetMapping(path = "{storageId}/{repositoryId}/-/v1/search")
-    @PreAuthorize("hasAuthority('ARTIFACTS_VIEW')")
+    @PreAuthorize("hasAuthority('ARTIFACTS_RESOLVE')")
     public void search(@RepositoryMapping Repository repository,
                        @RequestParam(name = "text") String text,
                        @RequestParam(name = "size", defaultValue = "20") Integer size,
@@ -168,7 +179,7 @@ public class NpmArtifactController
 
 
     @GetMapping(path = "{storageId}/{repositoryId}/{packageScope}/{packageName:[^-].+}/{packageVersion}")
-    @PreAuthorize("hasAuthority('ARTIFACTS_VIEW')")
+    @PreAuthorize("hasAuthority('ARTIFACTS_RESOLVE')")
     public void viewPackageWithScope(@RepositoryMapping Repository repository,
                                      @PathVariable(name = "packageScope") String packageScope,
                                      @PathVariable(name = "packageName") String packageName,
@@ -203,18 +214,20 @@ public class NpmArtifactController
     }
 
     @GetMapping(path = "{storageId}/{repositoryId}/{packageScope}/{packageName}")
-    @PreAuthorize("hasAuthority('ARTIFACTS_VIEW')")
+    @PreAuthorize("hasAuthority('ARTIFACTS_RESOLVE')")
     public void viewPackageFeedWithScope(@RepositoryMapping Repository repository,
                                          @PathVariable(name = "packageScope") String packageScope,
                                          @PathVariable(name = "packageName") String packageName,
-                                         HttpServletResponse response)
+                                         HttpServletRequest request,
+                                         HttpServletResponse response,
+                                         @RequestHeader HttpHeaders httpHeaders)
             throws Exception
     {
         final String storageId = repository.getStorage().getId();
         final String repositoryId = repository.getId();
 
         String packageId = NpmArtifactCoordinates.calculatePackageId(packageScope, packageName);
-
+//
         NpmViewRequest npmSearchRequest = new NpmViewRequest();
         npmSearchRequest.setPackageId(packageId);
         viewPackageEventListener.setNpmSearchRequest(npmSearchRequest);
@@ -225,13 +238,12 @@ public class NpmArtifactController
         packageFeed.setAdditionalProperty("_id", packageId);
 
         RepositorySearchRequest predicate = createSearchPredicate(packageScope, packageName);
-
+//
         RepositoryProvider provider = repositoryProviderRegistry.getProvider(repository.getType());
         Paginator paginator = new Paginator();
         paginator.setProperty("version");
-
+        paginator.setUseLimit(Boolean.FALSE);
         List<Path> searchResult = provider.search(storageId, repositoryId, predicate, paginator);
-
         Versions versions = new Versions();
         packageFeed.setVersions(versions);
 
@@ -277,13 +289,15 @@ public class NpmArtifactController
     }
 
     @GetMapping(path = "{storageId}/{repositoryId}/{packageName}")
-    @PreAuthorize("hasAuthority('ARTIFACTS_VIEW')")
+    @PreAuthorize("hasAuthority('ARTIFACTS_RESOLVE')")
     public void viewPackageFeed(@RepositoryMapping Repository repository,
                                 @PathVariable(name = "packageName") String packageName,
-                                HttpServletResponse response)
+                                HttpServletRequest request,
+                                HttpServletResponse response,
+                                @RequestHeader HttpHeaders httpHeaders)
             throws Exception
     {
-        viewPackageFeedWithScope(repository, null, packageName, response);
+        viewPackageFeedWithScope(repository, null, packageName, request, response, httpHeaders);
     }
 
     private RepositorySearchRequest createSearchPredicate(String packageScope,
@@ -299,7 +313,7 @@ public class NpmArtifactController
     @RequestMapping(path = "{storageId}/{repositoryId}/{packageScope}/{packageName}/-/{packageNameWithVersion}.{packageExtension}",
             method = { RequestMethod.GET,
                        RequestMethod.HEAD })
-    public void downloadPackageWithScope(@RepositoryMapping Repository repository,
+    public ResponseEntity<Object> downloadPackageWithScope(@RepositoryMapping Repository repository,
                                          @PathVariable(name = "packageScope") String packageScope,
                                          @PathVariable(name = "packageName") String packageName,
                                          @PathVariable(name = "packageNameWithVersion") String packageNameWithVersion,
@@ -312,38 +326,51 @@ public class NpmArtifactController
 
         final String storageId = repository.getStorage().getId();
         final String repositoryId = repository.getId();
-
-        if (!packageNameWithVersion.startsWith(packageName + "-"))
-        {
-            response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
-            return;
-        }
-
+        String packageVersion = "";
         //Example of packageNameWithVersion  core-9.0.1-next.8.tgz
-        final String packageVersion = getPackageVersion(packageNameWithVersion, packageName);
-
-        NpmArtifactCoordinates coordinates;
-        try
-        {
-            coordinates = NpmArtifactCoordinates.of(String.format("%s/%s", packageScope, packageName), packageVersion);
+        boolean isPackage = packageNameWithVersion.startsWith("package-") && packageExtension.endsWith("json");
+        String artifactPath = "";
+        if (!isPackage) {
+            if (!packageNameWithVersion.startsWith(packageName + "-"))
+            {
+                response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+                return null;
+            }
+            packageVersion = getPackageVersion(packageNameWithVersion, packageName);
+            NpmArtifactCoordinates coordinates;
+            try
+            {
+                coordinates = NpmArtifactCoordinates.of(String.format("%s/%s", packageScope, packageName), packageVersion);
+                artifactPath = coordinates.buildPath();
+            }
+            catch (IllegalArgumentException e)
+            {
+                response.setStatus(HttpStatus.BAD_REQUEST.value());
+                response.getWriter().write(e.getMessage());
+                return null;
+            }
+            RepositoryPath repositoryPath = artifactResolutionService.resolvePath(storageId, repositoryId, artifactPath);
+            vulnerabilityBlock(repositoryPath);
+            provideArtifactDownloadResponse(request, response, httpHeaders, repositoryPath);
+        } else {
+            packageVersion = getPackageJsonVersion(packageNameWithVersion);
+            artifactPath = String.format("%s/%s/%s/%s", packageScope, packageName, packageVersion, NpmLayoutProvider.PACKAGE_JSON);
+            RepositoryPath repositoryPath = artifactResolutionService.resolvePath(storageId, repositoryId, artifactPath);
+            vulnerabilityBlock(repositoryPath);
+            String packages = artifactComponent.readRepositoryPathContent(repositoryPath);
+            GsonBuilder gsonBuilder = new GsonBuilder();
+            gsonBuilder.setPrettyPrinting();
+            Gson gson = gsonBuilder.create();
+            return ResponseEntity.ok(gson.toJson(packages));
         }
-        catch (IllegalArgumentException e)
-        {
-            response.setStatus(HttpStatus.BAD_REQUEST.value());
-            response.getWriter().write(e.getMessage());
-            return;
-        }
-
-        RepositoryPath path = artifactResolutionService.resolvePath(storageId, repositoryId, coordinates.buildPath());
-        vulnerabilityBlock(path);
-        provideArtifactDownloadResponse(request, response, httpHeaders, path);
+        return null;
     }
 
     @PreAuthorize("hasAuthority('ARTIFACTS_RESOLVE')")
     @RequestMapping(path = "{storageId}/{repositoryId}/{packageName}/-/{packageNameWithVersion}.{packageExtension}",
             method = { RequestMethod.GET,
                        RequestMethod.HEAD })
-    public void downloadPackage(@RepositoryMapping Repository repository,
+    public ResponseEntity<Object> downloadPackage(@RepositoryMapping Repository repository,
                                 @PathVariable(name = "packageName") String packageName,
                                 @PathVariable(name = "packageNameWithVersion") String packageNameWithVersion,
                                 @PathVariable(name = "packageExtension") String packageExtension,
@@ -354,31 +381,45 @@ public class NpmArtifactController
     {
         final String storageId = repository.getStorage().getId();
         final String repositoryId = repository.getId();
-
-        if (!packageNameWithVersion.startsWith(packageName + "-"))
-        {
-            response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
-            return;
-        }
-
+        String packageVersion = "";
         //Example of packageNameWithVersion core-9.0.1-next.8.tgz
-        final String packageVersion = getPackageVersion(packageNameWithVersion, packageName);
+        boolean isPackage = packageNameWithVersion.startsWith("package-") && packageExtension.endsWith("json");
+        String artifactPath = "";
+        if (!isPackage) {
+            if (!packageNameWithVersion.startsWith(packageName + "-"))
+            {
+                response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+                return null;
+            }
+            packageVersion = getPackageVersion(packageNameWithVersion, packageName);
 
-        NpmArtifactCoordinates coordinates;
-        try
-        {
-            coordinates = NpmArtifactCoordinates.of(packageName, packageVersion);
-        }
-        catch (IllegalArgumentException e)
-        {
-            response.setStatus(HttpStatus.BAD_REQUEST.value());
-            response.getWriter().write(e.getMessage());
-            return;
-        }
+            NpmArtifactCoordinates coordinates;
+            try
+            {
+                coordinates = NpmArtifactCoordinates.of(packageName, packageVersion);
+            }
+            catch (IllegalArgumentException e)
+            {
+                response.setStatus(HttpStatus.BAD_REQUEST.value());
+                response.getWriter().write(e.getMessage());
+                return null;
+            }
 
-        RepositoryPath path = artifactResolutionService.resolvePath(storageId, repositoryId, coordinates.buildPath());
-        vulnerabilityBlock(path);
-        provideArtifactDownloadResponse(request, response, httpHeaders, path);
+            RepositoryPath path = artifactResolutionService.resolvePath(storageId, repositoryId, coordinates.buildPath());
+            vulnerabilityBlock(path);
+            provideArtifactDownloadResponse(request, response, httpHeaders, path);
+        } else {
+            packageVersion = getPackageJsonVersion(packageNameWithVersion);
+            artifactPath = String.format("%s/%s/%s/%s", packageName, packageName, packageVersion, NpmLayoutProvider.PACKAGE_JSON);
+            RepositoryPath repositoryPath = artifactResolutionService.resolvePath(storageId, repositoryId, artifactPath);
+            vulnerabilityBlock(repositoryPath);
+            String packages = artifactComponent.readRepositoryPathContent(repositoryPath);
+            GsonBuilder gsonBuilder = new GsonBuilder();
+            gsonBuilder.setPrettyPrinting();
+            Gson gson = gsonBuilder.create();
+            return ResponseEntity.ok(gson.toJson(packages));
+        }
+        return null;
     }
 
     @PreAuthorize("hasAuthority('ARTIFACTS_DEPLOY')")
@@ -803,6 +844,11 @@ public class NpmArtifactController
                                      String packageName)
     {
         return packageNameWithVersion.substring(packageName.length() + 1);
+    }
+
+    private String getPackageJsonVersion(String packageJsonNameWithVersion)
+    {
+        return packageJsonNameWithVersion.substring("package".length() + 1);
     }
 
     private ResponseEntity processUnpublishResult(NpmUnpublishService.Result result)

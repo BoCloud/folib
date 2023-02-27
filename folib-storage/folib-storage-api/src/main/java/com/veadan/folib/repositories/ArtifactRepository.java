@@ -3,6 +3,7 @@ package com.veadan.folib.repositories;
 import cn.hutool.core.date.DatePattern;
 import cn.hutool.core.date.DateUtil;
 import com.google.common.collect.Maps;
+import com.google.common.collect.Sets;
 import com.veadan.folib.artifact.coordinates.ArtifactLayoutDescription;
 import com.veadan.folib.artifact.coordinates.ArtifactLayoutLocator;
 import com.veadan.folib.configuration.ConfigurationManager;
@@ -11,6 +12,7 @@ import com.veadan.folib.db.schema.Edges;
 import com.veadan.folib.db.schema.Properties;
 import com.veadan.folib.db.schema.Vertices;
 import com.veadan.folib.domain.Artifact;
+import com.veadan.folib.domain.Vulnerability;
 import com.veadan.folib.domain.VulnerabilityArtifactDomain;
 import com.veadan.folib.enums.SafeLevelEnum;
 import com.veadan.folib.enums.VulnerabilityPlatformEnum;
@@ -218,6 +220,13 @@ public class ArtifactRepository extends GremlinVertexRepository<Artifact> {
     }
 
     public Long countByStorageIdAndRepositoryId(String storageId, String repositoryId) {
+        com.veadan.folib.storage.repository.Repository repository = null;
+        if (StringUtils.isNotBlank(storageId) && StringUtils.isNotBlank(repositoryId)) {
+            repository = configurationManager.getRepository(storageId, repositoryId);
+            if ("Docker".equals(repository.getLayout())) {
+                return g().V().hasLabel(Vertices.ARTIFACT).has(Properties.STORAGE_ID, storageId).has(Properties.REPOSITORY_ID, repositoryId).has(Properties.UUID, Text.textNotContains("blobs/sha256")).has(Properties.UUID, Text.textNotContains("manifest/sha256")).has(Properties.ARTIFACT_FILE_EXISTS, true).count().tryNext().orElse(0L);
+            }
+        }
         return g().V().hasLabel(Vertices.ARTIFACT).has(Properties.STORAGE_ID, storageId).has(Properties.REPOSITORY_ID, repositoryId).has(Properties.ARTIFACT_FILE_EXISTS, true).count().tryNext().orElse(0L);
     }
 
@@ -288,6 +297,25 @@ public class ArtifactRepository extends GremlinVertexRepository<Artifact> {
 
     private Long scanFailCountByStorageIdsAndRepositoryIds(List<String> storageIdAndRepositoryIdList) {
         return commonBuildEntityTraversalStorageAndRepository(storageIdAndRepositoryIdList).has(Properties.SAFE_LEVEL, SafeLevelEnum.SCAN_FAIL.getLevel()).count().tryNext().orElse(0L);
+    }
+
+    public Set<Vulnerability> fetchVulnerabilitiesByKeywords(String storageId, String repositoryId, String keywords) {
+        Set<Vulnerability> vulnerabilitySet = Sets.newHashSet();
+        String storageIdAndRepositoryId = String.format("%s-%s", storageId, repositoryId);
+        EntityTraversal<Vertex, Vertex> entityTraversal = g().V().hasLabel(Vertices.ARTIFACT).has(Properties.STORAGE_ID_AND_REPOSITORY_ID, storageIdAndRepositoryId).has(Properties.UUID, Text.textContains(keywords));
+        com.veadan.folib.storage.repository.Repository repository = configurationManager.getRepository(storageId, repositoryId);
+        List<Artifact> artifactList = entityTraversal.map(artifactAdapter.fold(Optional.ofNullable(repository)
+                    .map(com.veadan.folib.storage.repository.Repository::getLayout)
+                    .map(ArtifactLayoutLocator.getLayoutByNameEntityMap()::get)
+                    .map(ArtifactLayoutDescription::getArtifactCoordinatesClass))).toList();
+        if (CollectionUtils.isNotEmpty(artifactList)) {
+            for(Artifact artifact : artifactList){
+                if (CollectionUtils.isNotEmpty(artifact.getVulnerabilitySet())) {
+                    vulnerabilitySet.addAll(artifact.getVulnerabilitySet());
+                }
+            }
+        }
+        return vulnerabilitySet;
     }
 
     public Map<String, Long> countArtifactByStorageIdsAndRepositories(List<String> storageIdAndRepositoryIdList, List<String> disableStorageIdAndRepositoryIdList) {
@@ -392,6 +420,8 @@ public class ArtifactRepository extends GremlinVertexRepository<Artifact> {
                 entityTraversal = entityTraversal.has(Properties.UUID, Text.textNotContains("manifest/sha256"));
             } else {
                 entityTraversal = entityTraversal.has(Properties.UUID, Text.textContains(artifactName));
+                entityTraversal = entityTraversal.has(Properties.UUID, Text.textNotContains("blobs/sha256"));
+                entityTraversal = entityTraversal.has(Properties.UUID, Text.textNotContains("manifest/sha256"));
             }
         }
         if (StringUtils.isNotBlank(metadataSearch)) {
