@@ -14,6 +14,7 @@ import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import java.io.InputStream;
+import java.nio.file.Files;
 import java.util.concurrent.Callable;
 
 @Slf4j
@@ -56,6 +57,15 @@ public class PullArtifactTask implements Callable<String> {
             WebTarget target = client.target(srcUrl);
             Response response = target.request().post(Entity.entity(artifac, MediaType.APPLICATION_JSON));
             RepositoryPath destPath = repositoryPathResolver.resolve(targetStorageId, targetRepostoryId, path);
+            boolean isDocker = destPath.getRepository().getLayout().equalsIgnoreCase("docker");
+            if (isDocker) {
+                if (!path.contains("sha256") && !path.endsWith(".sha256")) {
+                    try (InputStream is = response.readEntity(InputStream.class);) {
+                        Files.copy(is, destPath);
+                    }
+                    return "ok";
+                }
+            }
             try (InputStream is = response.readEntity(InputStream.class);) {
                 artifactManagementService.store(destPath, is);
                 promotionUtil.setMetaData(destPath, metaData);
@@ -85,6 +95,16 @@ public class PullArtifactTask implements Callable<String> {
             WebTarget target = client.target(srcUrl);
             Response response = target.request().post(Entity.entity(artifac, MediaType.APPLICATION_JSON));
             RepositoryPath destPath = repositoryPathResolver.resolve(targetStorageId, targetRepostoryId, path);
+            boolean isDocker = destPath.getRepository().getLayout().equalsIgnoreCase("docker");
+            if (isDocker) {
+                if (!path.contains("sha256") && !path.endsWith(".sha256")) {
+                    try (InputStream is = response.readEntity(InputStream.class);) {
+                        Files.copy(is, destPath);
+                    }
+                    return true;
+                }
+            }
+
             try (InputStream is = response.readEntity(InputStream.class);) {
                 artifactManagementService.store(destPath, is);
                 promotionUtil.setMetaData(destPath, metaData);

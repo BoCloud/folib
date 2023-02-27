@@ -56,6 +56,11 @@ public class ArtifactEventListenerScannerHandler {
     @Value("${folib.temp}")
     private String tempPath;
 
+    /**
+     * 对接devops 平台查询docker 包详情返回下载地址。配置的路径下相关应用包路径
+     */
+    private static List<String> extract = Arrays.asList(System.getProperty("folib.docker.getAppPackagePathConfig", "usr/local/app").split(","));
+
     @AsyncEventListener
     protected void handle(final ArtifactEvent<RepositoryPath> event) throws IOException {
         RepositoryPath repositoryPath = event.getPath();
@@ -336,8 +341,21 @@ public class ArtifactEventListenerScannerHandler {
             TarArchiveEntry entry = null;
             List<String> list = Arrays.asList("jar", "war", "ear", "zip", "json", "tgz", "nupkg", "nuspec", "config", "whl", "egg", "zip", "gz", "rpm");
             File extractFolder = new File(tempPath);
+            int foreachSize = 0;
             while ((entry = tarArchiveInputStream.getNextTarEntry()) != null) {
                 if (entry.isDirectory()) {
+                    log.debug(entry.getName());
+                    for(String load:extract){
+                        String [] loadArray = load.split("/");
+                        if(entry.getName().split("/")[foreachSize].startsWith(loadArray[foreachSize])){
+                            foreachSize++;
+                            break;
+
+                        }
+                    }
+                    if(foreachSize>0){
+                        continue;
+                    }
                     break;
                 }
                 if (entry.getSize() > 0) {

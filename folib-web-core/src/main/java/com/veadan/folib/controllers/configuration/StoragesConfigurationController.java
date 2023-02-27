@@ -349,6 +349,10 @@ public class StoragesConfigurationController
                 throw new RequestBodyValidationException(FAILED_SAVE_REPOSITORY, bindingResult);
             }
             RepositoryDto repository = conversionService.convert(repositoryForm, RepositoryDto.class);
+            if (repositoryForm.getArtifactMaxSize() == 0) {
+                assert repository != null;
+                repository.setArtifactMaxSize(214748364800L);
+            }
             Repository existRepository = storage.getRepository(repositoryId);
             boolean result = Objects.nonNull(existRepository) && Objects.nonNull(repository) && (!repository.getLayout().equals(existRepository.getLayout()) || (Objects.nonNull(existRepository.getSubLayout()) && !existRepository.getSubLayout().equals(repository.getSubLayout())));
             if (result) {

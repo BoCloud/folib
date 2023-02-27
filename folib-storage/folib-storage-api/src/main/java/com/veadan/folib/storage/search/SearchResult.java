@@ -72,6 +72,13 @@ public class SearchResult {
      */
     private String path;
 
+    /**
+     * 获取docker 应用包下载地址
+     */
+    private List<String> downloadFilesUrl;
+
+    private String metadata;
+
     public List getTreeNode() {
         return treeNode;
     }
@@ -207,6 +214,22 @@ public class SearchResult {
 
     public void setSnippets(List<CodeSnippet> snippets) {
         this.snippets = snippets;
+    }
+
+    public List<String> getDownloadFilesUrl() {
+        return downloadFilesUrl;
+    }
+
+    public void setDownloadFilesUrl(List<String> downloadFilesUrl) {
+        this.downloadFilesUrl = downloadFilesUrl;
+    }
+
+    public String getMetadata() {
+        return metadata;
+    }
+
+    public void setMetadata(String metadata) {
+        this.metadata = metadata;
     }
 
     @Override
