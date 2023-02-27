@@ -8,6 +8,7 @@ import java.nio.file.Path;
 import java.time.ZoneId;
 import java.util.Date;
 import java.util.Map;
+import java.util.Objects;
 import java.util.function.Function;
 
 import javax.inject.Inject;
@@ -61,7 +62,11 @@ public class NpmPackageSupplier implements Function<Path, NpmPackageDesc>
         }
 
         NpmPackageDesc npmPackageDesc = new NpmPackageDesc();
-        npmPackageDesc.setReleaseDate(Date.from(artifactEntry.getLastUpdated().atZone(ZoneId.systemDefault()).toInstant()));
+        Date releaseDate = Date.from(artifactEntry.getCreated().atZone(ZoneId.systemDefault()).toInstant());
+        if (Objects.nonNull(artifactEntry.getLastUpdated())) {
+            releaseDate = Date.from(artifactEntry.getLastUpdated().atZone(ZoneId.systemDefault()).toInstant());
+        }
+        npmPackageDesc.setReleaseDate(releaseDate);
 
         PackageVersion npmPackage = new PackageVersion();
         npmPackageDesc.setNpmPackage(npmPackage);
@@ -70,7 +75,6 @@ public class NpmPackageSupplier implements Function<Path, NpmPackageDesc>
         
         npmPackage.setName(c.getId());
         npmPackage.setVersion(c.getVersion());
-        
         Dist dist = new Dist();
         npmPackage.setDist(dist);
 
@@ -100,7 +104,7 @@ public class NpmPackageSupplier implements Function<Path, NpmPackageDesc>
                              Map<String, RepositoryPath> checksumMap)
     {
         RepositoryPath shasumPath = checksumMap.get(MessageDigestAlgorithms.SHA_1);
-        if (shasumPath == null)
+        if (shasumPath == null || !Files.exists(shasumPath))
         {
             return;
         }
@@ -111,7 +115,7 @@ public class NpmPackageSupplier implements Function<Path, NpmPackageDesc>
         } 
         catch (NoSuchFileException e) 
         {
-            logger.warn("Checksum file not found [{}].", shasumPath);
+            logger.debug("Checksum file not found [{}].", shasumPath);
         }
         catch (IOException e)
         {

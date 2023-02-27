@@ -35,25 +35,25 @@ public class CompositeArchiveListingFunction
     }
 
     @Override
-    public String getContentByFileName(RepositoryPath path, String fileName) throws IOException {
+    public byte[] getContentByFileName(RepositoryPath path, String fileName) throws IOException {
         String content = "";
         for (final ArchiveListingFunction leaf : leafs) {
             if (leaf.supports(path)) {
                 return leaf.getContentByFileName(path, fileName);
             }
         }
-        return content;
+        return null;
     }
 
     @Override
-    public String getContentByFileName(RepositoryPath repositoryPath, Path path, String fileName) throws IOException {
+    public byte[] getContentByFileName(RepositoryPath repositoryPath, Path path, String fileName) throws IOException {
         String content = "";
         for (final ArchiveListingFunction leaf : leafs) {
             if (leaf.supports(repositoryPath)) {
                 return leaf.getContentByFileName(repositoryPath, path, fileName);
             }
         }
-        return content;
+        return null;
     }
 
     @Override

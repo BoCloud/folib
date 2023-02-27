@@ -237,7 +237,7 @@ public abstract class AbstractLayoutProvider<T extends LayoutArtifactCoordinates
     }
 
     @Override
-    public String getContentByFileName(RepositoryPath repositoryPath, String fileName) {
+    public byte[] getContentByFileName(RepositoryPath repositoryPath, String fileName) {
         if (ARCHIVE_LISTING_FUNCTION.supports(repositoryPath))
         {
             try
@@ -250,11 +250,11 @@ public abstract class AbstractLayoutProvider<T extends LayoutArtifactCoordinates
                         repositoryPath, ARCHIVE_LISTING_FUNCTION, e);
             }
         }
-        return "";
+        return null;
     }
 
     @Override
-    public String getContentByFileName(RepositoryPath repositoryPath, Path path, String fileName) {
+    public byte[] getContentByFileName(RepositoryPath repositoryPath, Path path, String fileName) {
         if (ARCHIVE_LISTING_FUNCTION.supports(repositoryPath))
         {
             try
@@ -267,7 +267,7 @@ public abstract class AbstractLayoutProvider<T extends LayoutArtifactCoordinates
                         repositoryPath, ARCHIVE_LISTING_FUNCTION, e);
             }
         }
-        return "";
+        return null;
     }
 
     @Override

@@ -23,7 +23,7 @@ public interface ArtifactPromotionService {
 
     ResponseEntity nodeOption(PromotionNodeOption promotionNodeOption, HttpServletRequest request);
 
-    ResponseEntity upload(MultipartFile[] files, String storageId, String repostoryId, String filePathMap, String fileMetaDataMap);
+    ResponseEntity upload(MultipartFile[] files, String storageId, String repositoryId, String filePathMap, String fileMetaDataMap);
 
     ResponseEntity download(ArtifactDto artifactDto, HttpServletResponse response);
 

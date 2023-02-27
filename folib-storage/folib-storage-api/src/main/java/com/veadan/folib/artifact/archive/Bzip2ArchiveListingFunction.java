@@ -35,7 +35,7 @@ public enum Bzip2ArchiveListingFunction
     }
 
     @Override
-    public String getContentByFileName(RepositoryPath path, String fileName) throws IOException {
+    public byte[] getContentByFileName(RepositoryPath path, String fileName) throws IOException {
         try (InputStream is = Files.newInputStream(path);
              BufferedInputStream bis = new BufferedInputStream(is);
              BZip2CompressorInputStream bzIs = new BZip2CompressorInputStream(bis);
@@ -45,7 +45,7 @@ public enum Bzip2ArchiveListingFunction
     }
 
     @Override
-    public String getContentByFileName(RepositoryPath repositoryPath, Path path, String fileName) throws IOException {
+    public byte[] getContentByFileName(RepositoryPath repositoryPath, Path path, String fileName) throws IOException {
         try (InputStream is = Files.newInputStream(path);
              BufferedInputStream bis = new BufferedInputStream(is);
              BZip2CompressorInputStream bzIs = new BZip2CompressorInputStream(bis);

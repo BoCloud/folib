@@ -114,6 +114,7 @@ public class ArtifactManagementService
                          InputStream is)
             throws IOException
     {
+        long  startTime = System.currentTimeMillis();
         long result;
         try (final RepositoryStreamSupport.RepositoryOutputStream aos = artifactResolutionService.getOutputStream(repositoryPath))
         {
@@ -129,6 +130,7 @@ public class ArtifactManagementService
         {
             throw new ArtifactStorageException(e);
         }
+        logger.debug("doStore take time：{} ms" , System.currentTimeMillis() - startTime);
 
         return result;
     }
@@ -174,7 +176,9 @@ public class ArtifactManagementService
             artifactEventListenerRegistry.dispatchArtifactUploadingEvent(repositoryPath);
         }
 
+        long startTime = System.currentTimeMillis();
         long totalAmountOfBytes = IOUtils.copy(is, os);
+        logger.debug("IOUtils copy {} ,take time：{} ms" , repositoryPath.toString(), System.currentTimeMillis() - startTime);
 
         URI repositoryPathId = repositoryPath.toUri();
         Map<String, String> digestMap = aos.getDigestMap();

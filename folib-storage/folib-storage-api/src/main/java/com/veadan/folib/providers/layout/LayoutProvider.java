@@ -22,9 +22,9 @@ public interface LayoutProvider<T extends ArtifactCoordinates>
     @Nonnull
     Set<String> listArchiveFilenames(RepositoryPath repositoryPath);
 
-    String getContentByFileName(RepositoryPath repositoryPath, String fileName);
+    byte[] getContentByFileName(RepositoryPath repositoryPath, String fileName);
 
-    String getContentByFileName(RepositoryPath repositoryPath, Path path, String fileName);
+    byte[] getContentByFileName(RepositoryPath repositoryPath, Path path, String fileName);
 
     Set<String> getDefaultArtifactCoordinateValidators();
 

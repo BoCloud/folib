@@ -104,6 +104,8 @@ public class RepositoryStreamSupport
     protected void close()
         throws IOException
     {
+        long startTime = System.currentTimeMillis();
+
         RepositoryStreamContext ctx = getContext();
         if (!ctx.isOpened())
         {
@@ -127,6 +129,8 @@ public class RepositoryStreamSupport
         }
         
         clearContext();
+        logger.debug("close take time：{} ms" , System.currentTimeMillis() - startTime);
+
     }
 
     protected void commit() throws IOException

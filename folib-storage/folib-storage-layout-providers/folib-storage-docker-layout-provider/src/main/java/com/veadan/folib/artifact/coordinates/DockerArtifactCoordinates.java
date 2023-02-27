@@ -107,7 +107,7 @@ public class DockerArtifactCoordinates
         String tag = null;
         String [] strings =null;
         strings = path.split("/");
-        if(path.indexOf("/blobs/")<=-1){
+        if(!path.contains("/blobs/")){
             tag = strings[strings.length-2];
         }else {
             tag = "v2";
@@ -116,13 +116,13 @@ public class DockerArtifactCoordinates
         String repository  =  strings[0];
         String artifactPath = ARTIFACT_PATH;
         String layers = LAYERS;
-        if(strings[strings.length-1].indexOf("sha256:")>-1){
+        if(strings[strings.length - 1].contains("sha256:")){
             layers = strings[strings.length-1];
             String finalLayers = layers;
             artifactPath = Arrays.stream(strings).filter(data->!Objects.equals(finalLayers,data) || !Objects.equals(repository,data))
                     .collect(Collectors.joining("/"));
 
-        }else if(strings[strings.length-1].indexOf("manifest.json")>-1){
+        }else if(strings[strings.length - 1].contains("manifest.json")){
             layers = strings[strings.length-1];
             String finalLayers = layers;
             artifactPath = Arrays.stream(strings).filter(data->!Objects.equals(finalLayers,data) || !Objects.equals(repository,data))

@@ -296,12 +296,7 @@ public class GroupRepositoryProvider
 
         Storage storage = getConfiguration().getStorage(storageId);
         Repository groupRepository = storage.getRepository(repositoryId);
-        Set<String> groupRepositoryIdSet = groupRepositorySetCollector.collect(groupRepository)
-                                                                      .stream()
-                                                                      .map(r -> r.getStorage().getId() + ":" + r.getId())
-                                                                      .collect(Collectors.toSet());
-
-        return artifactIdGroupRepository.countArtifacts(groupRepositoryIdSet, predicate.getArtifactId(),
+        return artifactIdGroupRepository.commonCountArtifacts(storageId, repositoryId, predicate.getArtifactId(),
                                                         predicate.getCoordinateValues());
     }
 

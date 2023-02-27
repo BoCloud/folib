@@ -38,7 +38,7 @@ public enum TarGzArchiveListingFunction
     }
 
     @Override
-    public String getContentByFileName(RepositoryPath path, String fileName) throws IOException {
+    public byte[] getContentByFileName(RepositoryPath path, String fileName) throws IOException {
         try (InputStream is = Files.newInputStream(path);
              BufferedInputStream bis = new BufferedInputStream(is);
              GzipCompressorInputStream gzi = new GzipCompressorInputStream(bis);
@@ -48,7 +48,7 @@ public enum TarGzArchiveListingFunction
     }
 
     @Override
-    public String getContentByFileName(RepositoryPath repositoryPath, Path path, String fileName) throws IOException {
+    public byte[] getContentByFileName(RepositoryPath repositoryPath, Path path, String fileName) throws IOException {
         try (InputStream is = Files.newInputStream(path);
              BufferedInputStream bis = new BufferedInputStream(is);
              GzipCompressorInputStream gzi = new GzipCompressorInputStream(bis);

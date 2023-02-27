@@ -359,10 +359,10 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
             repositoryCountForm.setVulnerabilitiesCount(map.getOrDefault("vulnerabilitiesCount", zero));
             repositoryCountForm.setSuppressedVulnerabilitiesCount(map.getOrDefault("suppressedVulnerabilitiesCount", zero));
             String r;
-            if (repositoryCountForm.getScanCount() == 0) {
+            if (repositoryCountForm.getVulnerabilitiesCount() == 0) {
                 r = "100";
             } else {
-                r = decimalFormat.format((float) repositoryCountForm.getDependencyVulnerabilitiesCount() / (float) repositoryCountForm.getScanCount() * 100);
+                r = decimalFormat.format((float) repositoryCountForm.getVulnerabilitiesCount() / (float) repositoryCountForm.getScanCount() * 100);
             }
             double s = Double.parseDouble(r);
             int star = s == 100.0 ? 5 : s > 0 && s < 20 ? 4 : s > 20 && s < 40 ? 3 : s > 40 && s < 60 ? 2 : 1;
@@ -404,7 +404,9 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
                 repositoryForm.setImageName(uuid.substring(finalPrefix.length(), uuid.indexOf("/")));
                 repositoryForm.setVersion(uuid.substring(uuid.indexOf("/") + 1, uuid.indexOf("/sha256")));
             } else {
-                repositoryForm.setFilePath(repositoryForm.getFilePaths().get(0).getFilePath());
+                if (CollectionUtils.isNotEmpty(repositoryForm.getFilePaths())) {
+                    repositoryForm.setFilePath(repositoryForm.getFilePaths().get(0).getFilePath());
+                }
             }
             return repositoryForm;
         }).collect(Collectors.toList()));

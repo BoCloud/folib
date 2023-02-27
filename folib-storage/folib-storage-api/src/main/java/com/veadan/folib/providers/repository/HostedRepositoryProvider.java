@@ -11,11 +11,14 @@ import java.util.stream.Collectors;
 import javax.inject.Inject;
 
 import cn.hutool.core.collection.CollectionUtil;
+import com.alibaba.fastjson.JSONObject;
 import com.google.common.collect.Maps;
 import com.veadan.folib.artifact.ArtifactNotFoundException;
 import com.veadan.folib.config.FolibPublicUtils;
 import com.veadan.folib.data.criteria.Paginator;
 import com.veadan.folib.domain.Artifact;
+import com.veadan.folib.domain.ArtifactIdGroup;
+import com.veadan.folib.domain.ArtifactIdGroupEntity;
 import com.veadan.folib.providers.io.AbstractRepositoryProvider;
 import com.veadan.folib.providers.io.RepositoryFiles;
 import com.veadan.folib.providers.io.RepositoryPath;
@@ -92,9 +95,10 @@ public class HostedRepositoryProvider extends AbstractRepositoryProvider
         Repository repository = storage.getRepository(repositoryId);
         
         RootRepositoryPath rootRepositoryPath = repositoryPathResolver.resolve(repository);
-        List<Artifact> searchResult = artifactIdGroupRepository.findArtifacts(storageId, repositoryId, predicate.getArtifactId(),
-                                                                              predicate.getCoordinateValues(),
-                                                                              paginator.getSkip(), paginator.getLimit());
+        long startTime = System.currentTimeMillis();
+        List<Artifact> searchResult = artifactIdGroupRepository.findArtifactsGremlin(storageId, repositoryId, predicate.getArtifactId(),
+                                                                              predicate.getCoordinateValues(), paginator.getSkip(), paginator.getLimit(), paginator.getUseLimit());
+        logger.info("findArtifacts take time {} ms" ,System.currentTimeMillis() - startTime);
         for (Artifact artifactEntry : searchResult)
         {
             
@@ -109,7 +113,6 @@ public class HostedRepositoryProvider extends AbstractRepositoryProvider
                 continue;
             }
         }
-        
         return result;
     }
 
@@ -118,7 +121,7 @@ public class HostedRepositoryProvider extends AbstractRepositoryProvider
                       String repositoryId,
                       RepositorySearchRequest predicate)
     {
-        return artifactIdGroupRepository.countArtifacts(storageId, repositoryId, predicate.getArtifactId(),
+        return artifactIdGroupRepository.commonCountArtifacts(storageId, repositoryId, predicate.getArtifactId(),
                                                         predicate.getCoordinateValues());
     }
 

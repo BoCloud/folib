@@ -38,6 +38,8 @@ public class NpmLayoutProvider
 
     public static final String NPM_USER_PATH = "-/user/org.couchdb.user:";
 
+    public static final String  PACKAGE_JSON = "package.json";
+
     public static final Pattern NPM_URL_USERNAME_PATTERN = Pattern.compile(
             "(?:" + NpmLayoutProvider.NPM_USER_PATH + ")(.*)");
 
@@ -62,7 +64,7 @@ public class NpmLayoutProvider
 
     public boolean isArtifactMetadata(RepositoryPath path)
     {
-        return path.getFileName().toString().endsWith("package.json");
+        return path.getFileName().toString().endsWith(PACKAGE_JSON);
     }
 
     public boolean isNpmMetadata(RepositoryPath path)

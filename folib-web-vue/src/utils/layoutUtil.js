@@ -52,6 +52,9 @@ export function groupRepositoriesBuild (repositories) {
 }
 
 export function objectToGroupRepositories (groupRepositoriesNameList,allRepositories,currentRepositoryId) {
+    if (!groupRepositoriesNameList) {
+        groupRepositoriesNameList = []
+    }
     const aaa= allRepositories.filter(item => item.id!==currentRepositoryId)
     // console.log(aaa)
     let bordObjcet={

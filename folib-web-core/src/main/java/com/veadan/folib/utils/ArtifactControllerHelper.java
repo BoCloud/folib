@@ -235,9 +235,9 @@ public class ArtifactControllerHelper
         {
             return com.google.common.net.MediaType.GZIP.toString();
             // todo docker repository v2
-        } else if (path.toString().indexOf("/manifest/") > -1 && path.getFileName().toString().startsWith("sha256:")) {
+        } else if (path.toString().contains("/manifest/") && path.getFileName().toString().startsWith("sha256:")) {
             return "application/vnd.docker.distribution.manifest.v2+json";
-        } else if (path.toString().indexOf("/blobs/") > -1 && path.getFileName().toString().startsWith("sha256:")) {
+        } else if (path.toString().contains("/blobs/") && path.getFileName().toString().startsWith("sha256:")) {
             return "application/vnd.docker.image.rootfs.diff.tar.gzip";
         }
 

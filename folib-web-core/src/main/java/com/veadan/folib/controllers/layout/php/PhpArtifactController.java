@@ -69,7 +69,7 @@ public class PhpArtifactController extends BaseArtifactController {
     private ArtifactComponent artifactComponent;
 
     @GetMapping(path = "{storageId}/{repositoryId}/search")
-    @PreAuthorize("hasAuthority('ARTIFACTS_VIEW')")
+    @PreAuthorize("hasAuthority('ARTIFACTS_RESOLVE')")
     public void search(@RepositoryMapping Repository repository,
                        @RequestParam(name = "q") String q,
                        @RequestParam(name = "type") String type,

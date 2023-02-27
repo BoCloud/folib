@@ -702,6 +702,9 @@ public class PromotionUtil {
 
     public void setMetaData(RepositoryPath repositoryPath, String metadata) {
         try {
+            if (StringUtils.isBlank(metadata)) {
+                return;
+            }
             Artifact artifact = artifactWebService.getArtifact(repositoryPath);
             if (Objects.isNull(artifact)) {
                 throw new RuntimeException("artifact is null");

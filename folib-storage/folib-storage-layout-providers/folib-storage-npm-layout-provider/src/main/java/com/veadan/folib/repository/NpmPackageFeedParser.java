@@ -17,9 +17,10 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
-import org.springframework.transaction.annotation.Transactional;
 
+@Slf4j
 @Component
 public class NpmPackageFeedParser
 {
@@ -30,8 +31,6 @@ public class NpmPackageFeedParser
     @Inject
     private ArtifactIdGroupService repositoryArtifactIdGroupService;
 
-
-    @Transactional
     public void parseSearchResult(Repository repository,
                                   SearchResults searchResults)
     {
@@ -57,9 +56,9 @@ public class NpmPackageFeedParser
         }
 
         repositoryArtifactIdGroupService.saveArtifacts(repository, artifactToSaveSet);
+
     }
 
-    @Transactional
     public void parseFeed(Repository repository,
                           PackageFeed packageFeed)
     {
@@ -101,7 +100,6 @@ public class NpmPackageFeedParser
 
             artifactToSaveSet.add(remoteArtifactEntry);
         }
-
         repositoryArtifactIdGroupService.saveArtifacts(repository, artifactToSaveSet);
     }
 
@@ -117,6 +115,7 @@ public class NpmPackageFeedParser
         remoteArtifactEntry.setStorageId(storageId);
         remoteArtifactEntry.setRepositoryId(repositoryId);
         remoteArtifactEntry.setArtifactCoordinates(c);
+        remoteArtifactEntry.setCreated(now);
         remoteArtifactEntry.setLastUsed(now);
         remoteArtifactEntry.setLastUpdated(now);
         remoteArtifactEntry.setDownloadCount(0);
@@ -144,6 +143,7 @@ public class NpmPackageFeedParser
         remoteArtifactEntry.setStorageId(storageId);
         remoteArtifactEntry.setRepositoryId(repositoryId);
         remoteArtifactEntry.setArtifactCoordinates(c);
+        remoteArtifactEntry.setCreated(now);
         remoteArtifactEntry.setLastUsed(now);
         remoteArtifactEntry.setLastUpdated(now);
         remoteArtifactEntry.setDownloadCount(0);

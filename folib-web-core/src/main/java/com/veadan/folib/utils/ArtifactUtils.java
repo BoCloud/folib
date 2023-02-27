@@ -45,6 +45,17 @@ public class ArtifactUtils {
      * @return true 支持 false 不支持
      */
     public static boolean layoutSupports(RepositoryPath repositoryPath) {
+       return layoutSupports(repositoryPath, false);
+    }
+
+    /**
+     * 校验制品类型是否是该布局支持的类型
+     *
+     * @param repositoryPath 仓库地址
+     * @param block 阻断 true
+     * @return true 支持 false 不支持
+     */
+    public static boolean layoutSupports(RepositoryPath repositoryPath, Boolean block) {
         boolean flag = false;
         if (Objects.nonNull(repositoryPath)) {
             if (repositoryPath.getFileSystem() instanceof DockerFileSystem) {
@@ -52,7 +63,11 @@ public class ArtifactUtils {
                 String blobs = "blobs";
                 String manifest = "manifest";
                 String path = repositoryPath.toAbsolutePath().toString();
-                if (path.contains("sha256") && !path.contains(blobs) && !path.contains(manifest) && !path.endsWith(".sha256")) {
+                if (Boolean.TRUE.equals(block)) {
+                    if (path.contains("sha256") && !path.endsWith(".sha256")) {
+                        return true;
+                    }
+                } else if (path.contains("sha256") && !path.contains(blobs) && !path.contains(manifest) && !path.endsWith(".sha256")) {
                     return true;
                 }
             } else if (repositoryPath.getFileSystem() instanceof MavenFileSystem) {

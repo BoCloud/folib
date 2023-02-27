@@ -79,56 +79,56 @@ folib:
       maxPoolSize: 200
       queueCapacity: 200
       keepAliveSeconds: 200
-      threadNamePrefix: asyncThread_
+      threadNamePrefix: async_
       awaitTerminationSeconds: 60
     asyncEventListener:
       corePoolSize: 20
       maxPoolSize: 200
       queueCapacity: 1000
       keepAliveSeconds: 200
-      threadNamePrefix: asyncEventListenerThread_
+      threadNamePrefix: asyncEventListener_
       awaitTerminationSeconds: 60
     asyncStorage:
       corePoolSize: 10
       maxPoolSize: 200
       queueCapacity: 25
       keepAliveSeconds: 200
-      threadNamePrefix: asyncStorageThread_
+      threadNamePrefix: asyncStorage_
       awaitTerminationSeconds: 60
     asyncRepository:
       corePoolSize: 10
       maxPoolSize: 200
       queueCapacity: 25
       keepAliveSeconds: 200
-      threadNamePrefix: asyncRepositoryThread_
+      threadNamePrefix: asyncRepository_
       awaitTerminationSeconds: 60
     asyncSecurityPolicy:
       corePoolSize: 10
       maxPoolSize: 200
       queueCapacity: 25
       keepAliveSeconds: 200
-      threadNamePrefix: asyncSecurityPolicyConfigurationThread_
+      threadNamePrefix: asyncSecurityPolicyConfig_
       awaitTerminationSeconds: 60
     asyncMetadata:
       corePoolSize: 10
       maxPoolSize: 200
       queueCapacity: 25
       keepAliveSeconds: 200
-      threadNamePrefix: asyncMetadataConfigurationThread_
+      threadNamePrefix: asyncMetadataConfig_
       awaitTerminationSeconds: 60
     asyncRepositoryCleanup:
       corePoolSize: 10
       maxPoolSize: 200
       queueCapacity: 100000000
       keepAliveSeconds: 200
-      threadNamePrefix: asyncRepositoryCleanupThread_
+      threadNamePrefix: asyncRepositoryCleanup_
       awaitTerminationSeconds: 120
     asyncCronJob:
       corePoolSize: 10
       maxPoolSize: 200
       queueCapacity: 10000
       keepAliveSeconds: 200
-      threadNamePrefix: asyncCronJobThread_
+      threadNamePrefix: asyncCronJob_
       awaitTerminationSeconds: 120
 # Changes to these properties must also be applied to [folib/folib-web-integration-tests] and possibly the pipeline.
 # Please ping us on our chat channel (https://chat.carlspring.org/) to confirm.

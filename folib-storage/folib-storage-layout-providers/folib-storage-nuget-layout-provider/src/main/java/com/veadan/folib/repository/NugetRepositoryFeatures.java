@@ -226,7 +226,7 @@ public class NugetRepositoryFeatures
     }
 
     @Component
-    @Scope(scopeName = "singleton", proxyMode = ScopedProxyMode.TARGET_CLASS)
+    @Scope(scopeName = "request", proxyMode = ScopedProxyMode.TARGET_CLASS)
     public class RepositorySearchEventListener
     {
 
@@ -261,7 +261,7 @@ public class NugetRepositoryFeatures
             RepositorySearchRequest predicate = event.getPredicate();
             String repositoryId = event.getRepositoryId();
             String storageId = event.getStorageId();
-            Long packageCount = artifactIdGroupRepository.countArtifacts(Collections.singleton(storageId + ":" + repositoryId),
+            Long packageCount = artifactIdGroupRepository.commonCountArtifacts(storageId, repositoryId,
                                                                          predicate.getArtifactId(),
                                                                          predicate.getCoordinateValues());
 

@@ -11,6 +11,8 @@ public class Paginator
     private String property;
     private Order order = Order.ASC;
 
+    private Boolean useLimit;
+
     public Long getSkip()
     {
         return skip == null ? Integer.valueOf(0) : skip;
@@ -54,5 +56,13 @@ public class Paginator
     public static enum Order
     {
         ASC, DESC;
+    }
+
+    public Boolean getUseLimit() {
+        return useLimit;
+    }
+
+    public void setUseLimit(Boolean useLimit) {
+        this.useLimit = useLimit;
     }
 }

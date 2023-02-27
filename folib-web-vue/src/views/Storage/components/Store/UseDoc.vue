@@ -934,7 +934,7 @@ export default {
       this.repositoryUrl = this.baseUrl + 'storages/' + this.folibRepository.storageId + '/' + this.folibRepository.id
       if (this.repositoryType && this.repositoryType === 'docker') {
         let baseUrlArr = this.baseUrl.split('://');
-        this.repositoryUrl = baseUrlArr[1] + 'storages/' + this.folibRepository.storageId + '/' + this.folibRepository.id
+        this.repositoryUrl = baseUrlArr[1] + this.folibRepository.storageId + '/' + this.folibRepository.id
       }
     }
   },

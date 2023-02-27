@@ -374,7 +374,7 @@ public class RpmRepositoryFeatures implements RepositoryFeatures
     }
 
     @Component
-    @Scope(scopeName = "singleton", proxyMode = ScopedProxyMode.TARGET_CLASS)
+    @Scope(scopeName = "request", proxyMode = ScopedProxyMode.TARGET_CLASS)
     public class RpmSearchPackagesEventListener
     {
 
@@ -432,7 +432,7 @@ public class RpmRepositoryFeatures implements RepositoryFeatures
     }
 
     @Component
-    @Scope(scopeName = "singleton", proxyMode = ScopedProxyMode.TARGET_CLASS)
+    @Scope(scopeName = "request", proxyMode = ScopedProxyMode.TARGET_CLASS)
     public class RpmViewPackageEventListener
     {
 
@@ -492,7 +492,7 @@ public class RpmRepositoryFeatures implements RepositoryFeatures
                                    String repositoryId,
                                    RepositorySearchRequest predicate)
     {
-        return artifactIdGroupRepository.artifactsExists(Collections.singleton(storageId + ":" + repositoryId),
+        return artifactIdGroupRepository.commonArtifactsExists(storageId, repositoryId,
                 predicate.getArtifactId(),
                 predicate.getCoordinateValues());
     }
