@@ -944,7 +944,7 @@
               </a-upload>
             </a-form-item>
             <a-form-item class="tags-field mb-10" label="目标目录" prop="targetPath" :colon="false"
-              v-if="folibRepository.layout !== 'Maven 2'">
+              v-if="folibRepository.layout !== 'Maven 2' && folibRepository.layout !== 'npm'">
               <a-input v-decorator="[
                 'targetPath',
                 {

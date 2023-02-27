@@ -506,7 +506,7 @@ public class NpmRepositoryFeatures implements RepositoryFeatures {
             RepositorySearchRequest predicate = event.getPredicate();
             Boolean packagesExists = packagesExists(storageId, repositoryId, predicate);
             ArtifactIdGroup artifactIdGroup = new ArtifactIdGroupEntity(storageId, repositoryId, predicate.getArtifactId());
-            logger.info("NPM remote repository [{}] cached package existence is [{}]",
+            logger.debug("NPM remote repository [{}] cached package existence is [{}]",
                     artifactIdGroup.getUuid(), packagesExists);
             Runnable job = () -> fetchRemotePackageFeed(storage.getId(), repository.getId(),
                     npmSearchRequest.getPackageId());

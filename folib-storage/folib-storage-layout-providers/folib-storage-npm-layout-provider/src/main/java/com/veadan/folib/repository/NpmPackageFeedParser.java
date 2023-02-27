@@ -115,9 +115,9 @@ public class NpmPackageFeedParser
         remoteArtifactEntry.setStorageId(storageId);
         remoteArtifactEntry.setRepositoryId(repositoryId);
         remoteArtifactEntry.setArtifactCoordinates(c);
-        remoteArtifactEntry.setCreated(now);
-        remoteArtifactEntry.setLastUsed(now);
-        remoteArtifactEntry.setLastUpdated(now);
+//        remoteArtifactEntry.setCreated(now);
+//        remoteArtifactEntry.setLastUsed(now);
+//        remoteArtifactEntry.setLastUpdated(now);
         remoteArtifactEntry.setDownloadCount(0);
         remoteArtifactEntry.setArtifactFileExists(Boolean.FALSE);
 
@@ -143,9 +143,9 @@ public class NpmPackageFeedParser
         remoteArtifactEntry.setStorageId(storageId);
         remoteArtifactEntry.setRepositoryId(repositoryId);
         remoteArtifactEntry.setArtifactCoordinates(c);
-        remoteArtifactEntry.setCreated(now);
-        remoteArtifactEntry.setLastUsed(now);
-        remoteArtifactEntry.setLastUpdated(now);
+//        remoteArtifactEntry.setCreated(now);
+//        remoteArtifactEntry.setLastUsed(now);
+//        remoteArtifactEntry.setLastUpdated(now);
         remoteArtifactEntry.setDownloadCount(0);
         remoteArtifactEntry.setArtifactFileExists(Boolean.FALSE);
 

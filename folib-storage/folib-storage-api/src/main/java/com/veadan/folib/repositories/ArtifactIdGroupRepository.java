@@ -180,7 +180,7 @@ public class ArtifactIdGroupRepository extends GremlinVertexRepository<ArtifactI
             skip = 0L;
             ArtifactIdGroup artifactIdGroup = new ArtifactIdGroupEntity(storageId, repositoryId, artifactId);
             Long count = commonCountArtifacts(storageId, repositoryId, artifactId, coordinateValues);
-            log.info("artifactIdGroup 【{}】count 【{}】", artifactIdGroup.getUuid(), count);
+            log.debug("artifactIdGroup 【{}】count 【{}】", artifactIdGroup.getUuid(), count);
             limit = count.intValue();
         }
         com.veadan.folib.storage.repository.Repository repository = configurationManager.getRepository(storageId, repositoryId);

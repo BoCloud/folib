@@ -69,7 +69,7 @@ public class ArtifactEventListenerScannerHandler {
         if (!validate) {
             return;
         }
-        log.info("=====>>>>> 开始处理制品事件：{}，path路径：{}", ArtifactEventTypeEnum.queryArtifactEventTypeEnumByType(source), repositoryPath);
+        log.info("=====>>>>> start handler artifact event：{}，path：{}", ArtifactEventTypeEnum.queryArtifactEventTypeEnumByType(source), repositoryPath);
         if (repositoryPath.getFileSystem() instanceof DockerFileSystem) {
             //docker布局
             boolean isStoredEvent = ArtifactEventTypeEnum.EVENT_ARTIFACT_PATH_DELETED.getType() != source && ArtifactEventTypeEnum.EVENT_ARTIFACT_DIRECTORY_PATH_DELETED.getType() != source;
