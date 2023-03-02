@@ -807,14 +807,19 @@ public class RestClient extends ArtifactClient {
      * @param repostoryId 仓库名
      * @param is          文件流
      * @param fileName    文件名
+     * @param packageVersionDesc  包版本描述
      * @return 返回值
      */
-    public ResponseEntity offlineArtifactUpload(String storageId, String repostoryId, InputStream is, String fileName) {
+    public ResponseEntity offlineArtifactUpload(String storageId, String repostoryId, InputStream is, String fileName,
+                                                String packageVersionDesc) {
         try {
             String url = getContextBaseUrl() + "/api/artifact/folib/offline/upload";
             FormDataMultiPart part = new FormDataMultiPart();
             part.field("storageId", storageId);
             part.field("repostoryId", repostoryId);
+            if (StringUtils.isNotBlank(packageVersionDesc)) {
+                part.field("packageVersionDesc", packageVersionDesc);
+            }
             part.bodyPart(new StreamDataBodyPart("file", is, fileName));
             WebTarget resource = getClientInstance().register(MultiPartWriter.class).target(url);
             setupAuthentication(resource);
@@ -928,6 +933,27 @@ public class RestClient extends ArtifactClient {
      */
     public ResponseEntity addBatchArtifactMetadata(ArtifactMetadataBatchForm artifactMetadataBatchForm) {
         String url = getContextBaseUrl() + "/api/artifact/batchArtifactMetadata";
+        WebTarget resource = getClientInstance().target(url);
+        setupAuthentication(resource);
+        Response response = resource.request().
+                post(Entity.entity(artifactMetadataBatchForm.getList(), MediaType.APPLICATION_JSON));
+        if (response.getStatus() != HttpStatus.SC_OK) {
+            displayResponseError(response);
+            throw new ServerErrorException(response.getStatus() + " | Unable to greet()",
+                    Response.Status.INTERNAL_SERVER_ERROR);
+        } else {
+            return ResponseEntity.ok("批量新增制品元数据成功");
+        }
+    }
+
+    /**
+     * 批量新增制品元数据
+     *
+     * @param artifactMetadataBatchForm 制品元数据实体对象
+     * @return ResponseEntity 响应实体
+     */
+    public ResponseEntity addBatchArtifactMetaDataByahzw(ArtifactMetadataBatchForm artifactMetadataBatchForm) {
+        String url = getContextBaseUrl() + "/api/artifact/batchArtifactMetaDataByahzw";
         WebTarget resource = getClientInstance().target(url);
         setupAuthentication(resource);
         Response response = resource.request().

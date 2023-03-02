@@ -31,7 +31,7 @@ mapper:
   identity: MYSQL
 
 scan:
-  base-proxy: ${folib.nvd:110.40.184.113:9998/}    #扫描网络代理地址
+  base-proxy: ${folib.nvd:nvd.folib.com}    #扫描网络代理地址
   storage-base: ${folib.vault}/
   thread-pool: 200
 

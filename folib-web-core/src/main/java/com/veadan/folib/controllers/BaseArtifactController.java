@@ -35,10 +35,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.LinkedHashSet;
-import java.util.Objects;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
 import java.util.stream.Collectors;
 
 public abstract class BaseArtifactController
@@ -170,20 +167,26 @@ public abstract class BaseArtifactController
 
     private void pushVulnerabilities(Artifact artifact) {
         try {
-            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyyMMdd-HH:mm:ss.SSS");
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyyMMdd-HH:mm:ss");
             String id = LocalDateTime.now().format(formatter) + "-" + UUID.randomUUID().toString();
             String bugName = JSON.toJSONString(artifact.getVulnerabilitySet().stream().
-                    map(Vulnerability::getVulnerabilitySource).collect(Collectors.toList()));
+                    map(Vulnerability::getUuid).distinct().collect(Collectors.toList())
+                    .get(0)).replace("\"", "");
             String repairVersion = JSON.toJSONString(artifact.getVulnerabilitySet().stream().
-                    map(Vulnerability::getVersionEndExcluding).collect(Collectors.toList()));
+                    map(Vulnerability::getVersionEndExcluding).collect(Collectors.toList())
+                    .get(0)).replace("\"", "");
+            String packagePath = artifact.getArtifactPath();
+            String[] array = packagePath.split("/");
+            String packageName = array[array.length - 1];
             VulnerabilitiesInfo vulnerabilitiesInfo =
                     VulnerabilitiesInfo.builder()
                             .id(id)
                             .appId(artifact.getStorageId())
+                            .storageId(artifact.getStorageId())
+                            .repositoryId(artifact.getRepositoryId())
                             .bugName(bugName)
-                            .insertTime(LocalDateTime.now())
-                            .packageName(artifact.getRepositoryId())
-                            .packagePath(artifact.getArtifactPath())
+                            .packageName(packageName)
+                            .packagePath(packagePath)
                             .repairVersion(repairVersion)
                             .report(artifact.getReport()).build();
             Client client = clientPool.getRestClient();

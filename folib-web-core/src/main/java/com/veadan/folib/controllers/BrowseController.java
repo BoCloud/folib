@@ -185,6 +185,9 @@ public class BrowseController
                 List<String> relativePaths = RepositoryPathUtil.getFileRelativePaths(appPackagePath);
                 List<String> downloadUrls = Lists.newArrayList();
                 for (String filePath : relativePaths) {
+                    if (filePath.endsWith(".config")) {
+                        continue;
+                    }
                     downloadUrls.add(FolibPublicUtils.getFileUrl(repositoryParam, filePath));
                 }
                 jsonObject.put("downloadFilesUrl", downloadUrls);
