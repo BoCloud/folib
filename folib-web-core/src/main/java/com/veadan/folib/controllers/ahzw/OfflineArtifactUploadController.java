@@ -55,6 +55,7 @@ public class OfflineArtifactUploadController extends BaseArtifactController {
     public ResponseEntity offlineUpload(@RequestParam("file") MultipartFile file,
                                         @RequestParam("storageId") String storageId,
                                         @RequestParam("repostoryId") String repostoryId,
+                                        @RequestParam(value = "packageVersionDesc",required = false) String packageVersionDesc,
                                         @RequestHeader(HttpHeaders.ACCEPT) String accept) {
         // 离线普通制品folib 生成存储路径自动生成版本号 eg: repoName/1/file
         try (InputStream is = file.getInputStream()) {
@@ -71,11 +72,20 @@ public class OfflineArtifactUploadController extends BaseArtifactController {
             artifactManagementService.store(versionPath, is);
 
             // 添加入库方式的元数据信息
-            ArtifactMetadataForm artifactMetadataForm = ArtifactMetadataForm.builder()
+            ArtifactMetadataForm srcTypeMetadataForm = ArtifactMetadataForm.builder()
                     .viewShow(1).key("srcType").value("manual")
                     .repositoryId(repostoryId).type("STRING").storageId(storageId)
                     .artifactPath(repostoryId + "/" + version + "/" + file.getOriginalFilename()).build();
-            artifactWebService.saveArtifactMetadata(artifactMetadataForm);
+            artifactWebService.saveArtifactMetadata(srcTypeMetadataForm);
+
+            // 添加制品版本描述
+            if (StringUtils.isNotBlank(packageVersionDesc)) {
+                ArtifactMetadataForm descMetadataForm = ArtifactMetadataForm.builder()
+                        .viewShow(1).key("packageVersionDesc").value(packageVersionDesc)
+                        .repositoryId(repostoryId).type("STRING").storageId(storageId)
+                        .artifactPath(repostoryId + "/" + version + "/" + file.getOriginalFilename()).build();
+                artifactWebService.saveArtifactMetadata(descMetadataForm);
+            }
         } catch (Exception e) {
             e.printStackTrace();
             return getExceptionResponseEntity(HttpStatus.INTERNAL_SERVER_ERROR, "离线普通制品上传失败", e, accept);

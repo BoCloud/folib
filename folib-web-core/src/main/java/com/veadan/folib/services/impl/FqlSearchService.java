@@ -172,6 +172,9 @@ public class FqlSearchService extends GremlinVertexRepository<Artifact> implemen
             RepositoryPath appPackagePath = repositoryPathResolver.resolve(storageId, repositoryId, path);
             List<String> relativePaths = RepositoryPathUtil.getFileRelativePaths(appPackagePath);
             for (String filePath : relativePaths) {
+                if (filePath.endsWith(".config")) {
+                    continue;
+                }
                 downloadUrls.add(FolibPublicUtils.getFileUrl(repositoryPath.getRepository(), filePath));
             }
         } catch (Exception e) {
