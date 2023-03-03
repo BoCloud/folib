@@ -190,8 +190,12 @@ public class ConfigurationManagementServiceImpl
         {
             final StorageDto storage = configuration.getStorage(storageId);
             repository.setStorage(storage);
+            LayoutProvider layoutProvider = layoutProviderRegistry.getProvider(
+                    repository.getLayout());
+            if (Objects.nonNull(layoutProvider) && CollectionUtils.isEmpty(repository.getArtifactCoordinateValidators())) {
+                repository.setArtifactCoordinateValidators(layoutProvider.getDefaultArtifactCoordinateValidators());
+            }
             storage.addRepository(repository);
-
             if (repository.isEligibleForCustomConnectionPool()) {
                 proxyRepositoryConnectionPoolConfigurationService.setMaxPerRepository(
                         repository.getRemoteRepository().getUrl(),

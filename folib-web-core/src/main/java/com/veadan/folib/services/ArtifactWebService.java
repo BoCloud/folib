@@ -144,4 +144,11 @@ public interface ArtifactWebService {
      * @throws Exception 异常
      */
     void buildGraphIndex(String storageId, String repositoryId, String path, Integer batch) throws Exception;
+
+    /**
+     * 批量存储或更新元数据 适配安徽政务
+     *
+     * @param artifactMetadataFormList artifactMetadataFormList
+     */
+    void batchArtifactMetaDataByahzw(List<ArtifactMetadataForm> artifactMetadataFormList);
 }

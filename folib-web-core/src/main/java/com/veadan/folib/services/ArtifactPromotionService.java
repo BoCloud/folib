@@ -3,12 +3,13 @@ package com.veadan.folib.services;
 import com.veadan.folib.domain.ArtifactPromotion;
 import com.veadan.folib.domain.PromotionNodeOption;
 import com.veadan.folib.dto.ArtifactDto;
-import com.veadan.folib.dto.PromotionArtifactDto;
+import com.veadan.folib.entity.Dict;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import java.util.List;
 
 /**
  * 制品晋级service
@@ -23,11 +24,28 @@ public interface ArtifactPromotionService {
 
     ResponseEntity nodeOption(PromotionNodeOption promotionNodeOption, HttpServletRequest request);
 
-    ResponseEntity upload(MultipartFile[] files, String storageId, String repositoryId, String filePathMap, String fileMetaDataMap);
+    ResponseEntity upload(MultipartFile[] files, String storageId, String repositoryId, String filePathMap, String fileMetaDataMap, String uuid);
 
     ResponseEntity download(ArtifactDto artifactDto, HttpServletResponse response);
 
     ResponseEntity getFileRelativePaths(ArtifactDto artifactDto);
 
     void validateStorageAndRepository(String storageId, String repositoryId) throws Exception;
+
+    /**
+     * 查询上传进度
+     *
+     * @param dictType dictType
+     * @param uuid     uuid
+     * @return 上传进度
+     */
+    List<Dict> queryUploadProcess(String dictType, String uuid);
+
+    /**
+     * 删除上传进度
+     *
+     * @param dictType dictType
+     * @param uuid     uuid
+     */
+    void deleteUploadProcess(String dictType, String uuid);
 }

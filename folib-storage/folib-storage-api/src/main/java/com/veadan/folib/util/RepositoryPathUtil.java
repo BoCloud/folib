@@ -90,7 +90,7 @@ public class RepositoryPathUtil {
         } else {
             log.info("文件不存在!");
         }
-        log.info("文件夹数量:{} ,文件数量:{}", folderNum, fileNum);
+        log.info("path:{}，文件夹数量:{} ,文件数量:{}", path, folderNum, fileNum);
         return resultList;
     }
 

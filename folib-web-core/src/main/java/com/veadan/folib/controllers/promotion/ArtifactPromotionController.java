@@ -5,6 +5,7 @@ import com.veadan.folib.controllers.BaseArtifactController;
 import com.veadan.folib.domain.ArtifactPromotion;
 import com.veadan.folib.domain.PromotionNodeOption;
 import com.veadan.folib.dto.ArtifactDto;
+import com.veadan.folib.entity.Dict;
 import com.veadan.folib.services.ArtifactPromotionService;
 import com.veadan.folib.validation.RequestBodyValidationException;
 import io.swagger.annotations.Api;
@@ -19,7 +20,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpSession;
+import java.util.List;
 
 /**
  * 制品晋级控制层
@@ -74,8 +75,9 @@ public class ArtifactPromotionController extends BaseArtifactController {
                                  @RequestParam("storageId") String storageId,
                                  @RequestParam("repostoryId") String repositoryId,
                                  @RequestParam("filePathMap") String filePathMap,
-                                 @RequestParam(name = "fileMetaDataMap", required = false) String fileMetaDataMap) {
-        return artifactPromotionService.upload(files, storageId, repositoryId, filePathMap,fileMetaDataMap);
+                                 @RequestParam(name = "fileMetaDataMap", required = false) String fileMetaDataMap,
+                                 @RequestParam(name = "uuid", required = false) String uuid) {
+        return artifactPromotionService.upload(files, storageId, repositoryId, filePathMap, fileMetaDataMap, uuid);
     }
 
     // 下载接口
@@ -101,13 +103,24 @@ public class ArtifactPromotionController extends BaseArtifactController {
 
     /**
      * 文件上传进度
+     *
+     * @param dictType dictType
+     * @param uuid     uuid
      */
-    @GetMapping(value = "/uploadStatus")
-    public ResponseEntity uploadStatus(HttpServletRequest request){
-        HttpSession session = request.getSession();
-        Object uploadPercent = session.getAttribute("upload_percent");
-        Integer percent = null != uploadPercent ? (Integer) uploadPercent : 0;
-        return ResponseEntity.ok(percent);
+    @GetMapping(value = "/uploadProcess")
+    public ResponseEntity<List<Dict>> queryUploadProcess(@RequestParam("dictType") String dictType, @RequestParam(name = "uuid", required = false) String uuid) {
+        return ResponseEntity.ok(artifactPromotionService.queryUploadProcess(dictType, uuid));
     }
 
+    /**
+     * 删除文件上传进度
+     *
+     * @param dictType dictType
+     * @param uuid     uuid
+     */
+    @DeleteMapping(value = "/uploadProcess")
+    public ResponseEntity<String> deleteUploadProcess(@RequestParam("dictType") String dictType, @RequestParam(name = "uuid", required = false) String uuid) {
+        artifactPromotionService.deleteUploadProcess(dictType, uuid);
+        return ResponseEntity.ok("");
+    }
 }

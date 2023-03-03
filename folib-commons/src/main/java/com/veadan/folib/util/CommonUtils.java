@@ -91,4 +91,28 @@ public class CommonUtils {
             }
         }
     }
+
+    /**
+     * 获取实际异常信息
+     *
+     * @param e Throwable
+     * @return 异常信息
+     */
+    public static String getRealMessage(Throwable e) {
+        // 如果e不为空，则去掉外层的异常包装
+        String s = "";
+        String ex = "Exception:";
+        while (e != null) {
+            Throwable cause = e.getCause();
+            if (cause == null) {
+                s = e.getMessage();
+                if (s.contains(ex)) {
+                    s = s.substring(s.indexOf(ex) + ex.length());
+                }
+                return s;
+            }
+            e = cause;
+        }
+        return "";
+    }
 }

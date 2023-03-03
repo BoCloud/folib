@@ -21,7 +21,9 @@ module.exports = {
 				// target: 'http://10.10.33.145:38080',
 				pathRewrite: {
 					'^/': '/'
-				}
+				},
+				timeout: 15 * 60 * 1000,
+				proxyTimeout: 15 * 60 * 1000,
 			}
 		}
 	},

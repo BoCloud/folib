@@ -341,22 +341,9 @@ public class ArtifactEventListenerScannerHandler {
             TarArchiveEntry entry = null;
             List<String> list = Arrays.asList("jar", "war", "ear", "zip", "json", "tgz", "nupkg", "nuspec", "config", "whl", "egg", "zip", "gz", "rpm");
             File extractFolder = new File(tempPath);
-            int foreachSize = 0;
             while ((entry = tarArchiveInputStream.getNextTarEntry()) != null) {
                 if (entry.isDirectory()) {
-                    log.debug(entry.getName());
-                    for(String load:extract){
-                        String [] loadArray = load.split("/");
-                        if(entry.getName().split("/")[foreachSize].startsWith(loadArray[foreachSize])){
-                            foreachSize++;
-                            break;
-
-                        }
-                    }
-                    if(foreachSize>0){
-                        continue;
-                    }
-                    break;
+                    continue;
                 }
                 if (entry.getSize() > 0) {
                     String type = FileUtil.getSuffix(entry.getName());

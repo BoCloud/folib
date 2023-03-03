@@ -72,6 +72,7 @@ public class DependentLibraryController extends BaseController {
         String storageId = map.get("storageId").toString();
         String repositoryId = map.get("repositoryId").toString();
         String layout = map.get("layout").toString();
+        logger.info("依赖库创建 {}", JSON.toJSONString(map));
         // api接⼝：参数是project_id,system_id, layout=maven|npm type
         // 创建本地库   创建 组合库
         String localRepoName = repositoryId + "-" + layout + "-local";

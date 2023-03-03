@@ -1,6 +1,5 @@
 package com.veadan.folib.services.impl;
 
-import cn.hutool.core.io.FileUtil;
 import com.alibaba.fastjson.JSON;
 import com.veadan.folib.domain.AnalysisHtmlGetDirAndFilePath;
 import com.veadan.folib.domain.ArtifactPromotion;
@@ -10,6 +9,7 @@ import com.veadan.folib.dto.ArtifactDto;
 import com.veadan.folib.dto.PromotionArtifactDto;
 import com.veadan.folib.dto.PromotionNodeOptionDto;
 import com.veadan.folib.dto.TargetRepositoyDto;
+import com.veadan.folib.entity.Dict;
 import com.veadan.folib.promotion.ArtifactUploadTask;
 import com.veadan.folib.promotion.PromotionUtil;
 import com.veadan.folib.promotion.PullArtifactTask;
@@ -44,7 +44,10 @@ import javax.ws.rs.client.Entity;
 import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-import java.io.*;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -101,6 +104,9 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
 
     @Value("${folib.port}")
     private int port;
+
+    @Inject
+    private DictService dictService;
 
 
     @Override
@@ -323,7 +329,7 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
     }
 
     @Override
-    public ResponseEntity upload(MultipartFile[] files, String storageId, String repositoryId, String filePathMap, String fileMetaDataMap) {
+    public ResponseEntity upload(MultipartFile[] files, String storageId, String repositoryId, String filePathMap, String fileMetaDataMap, String uuid) {
         try {
             validateStorageAndRepository(storageId, repositoryId);
             List<FutureTask<String>> listTask = new ArrayList<>();
@@ -334,7 +340,7 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
                 String fileRelativePath = mapType.get(file.getOriginalFilename());
                 String metaData = metaDataMap.getOrDefault(fileRelativePath, "").toString();
                 ArtifactUploadTask artifactUploadTask = new ArtifactUploadTask(storageId, repositoryId, file,
-                        repositoryManagementService, repositoryPathResolver, artifactManagementService, promotionUtil, layoutProviderRegistry, artifactMetadataService, artifactRepository, tempPath, fileRelativePath, metaData);
+                        repositoryManagementService, repositoryPathResolver, artifactManagementService, promotionUtil, layoutProviderRegistry, artifactMetadataService, artifactRepository, tempPath, fileRelativePath, metaData, uuid);
                 FutureTask<String> task = new FutureTask<String>(artifactUploadTask);
                 listTask.add(task);
                 asyncRepositoryThreadPoolExecutor.submit(task);
@@ -417,5 +423,15 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
         if (null == repository) {
             throw new Exception("Repository [" + repositoryId + "]  not exist!");
         }
+    }
+
+    @Override
+    public List<Dict> queryUploadProcess(String dictType, String uuid) {
+        return dictService.selectDict(Dict.builder().dictType(dictType).dictKey(uuid).build());
+    }
+
+    @Override
+    public void deleteUploadProcess(String dictType, String uuid) {
+        dictService.deleteDict(Dict.builder().dictType(dictType).dictKey(uuid).build());
     }
 }
