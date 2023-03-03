@@ -22,6 +22,7 @@ import com.veadan.folib.services.*;
 import com.veadan.folib.storage.Storage;
 import com.veadan.folib.storage.repository.Repository;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.compress.utils.Lists;
 import org.apache.commons.lang3.StringUtils;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -403,8 +404,9 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
             RepositoryPath repositoryPath = repositoryPathResolver.resolve(artifactDto.getStorageId(),
                     artifactDto.getRepostoryId(), artifactDto.getPath());
             // 添加 docker version 请求处理
-            boolean isDockerVersionPath = repositoryPath.getRepository().getLayout().
-                    equalsIgnoreCase("docker") && artifactDto.getPath().split(File.separator).length == 2;
+            List<String> fileNameList = Lists.newArrayList();
+            fileNameList.add(artifactDto.getPath());
+            boolean isDockerVersionPath = promotionUtil.isDockerVersion(repositoryPath.getRepository().getLayout(), fileNameList);
             PromotionFileRelativePath promotionFileRelativePath = promotionUtil.getFileRelativePaths(repositoryPath, isDockerVersionPath);
             return ResponseEntity.ok(promotionFileRelativePath);
         } catch (Exception e) {

@@ -17,6 +17,7 @@ import com.veadan.folib.providers.layout.DockerFileSystem;
 import com.veadan.folib.schema2.ImageManifest;
 import com.veadan.folib.schema2.LayerManifest;
 import com.veadan.folib.services.ArtifactService;
+import com.veadan.folib.services.DictService;
 import com.veadan.folib.utils.ArtifactUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
@@ -53,13 +54,11 @@ public class ArtifactEventListenerScannerHandler {
     @Inject
     protected RepositoryPathResolver repositoryPathResolver;
 
+    @Inject
+    private DictService dictService;
+
     @Value("${folib.temp}")
     private String tempPath;
-
-    /**
-     * 对接devops 平台查询docker 包详情返回下载地址。配置的路径下相关应用包路径
-     */
-    private static List<String> extract = Arrays.asList(System.getProperty("folib.docker.getAppPackagePathConfig", "usr/local/app").split(","));
 
     @AsyncEventListener
     protected void handle(final ArtifactEvent<RepositoryPath> event) throws IOException {
@@ -187,6 +186,10 @@ public class ArtifactEventListenerScannerHandler {
      */
     private void handlerDockerBlobFile(RepositoryPath repositoryPath, Set<String> filePaths, String blobsPath, String tempPath) {
         File file = new File(blobsPath);
+        if (file.isDirectory() || !file.exists()) {
+            log.warn("=====>>>>>blobsPath：{} not exists", blobsPath);
+            return;
+        }
         //增加魔数类型
         FileTypeUtil.putFileType("1f8b08000000000000ff", "gz");
         try {
