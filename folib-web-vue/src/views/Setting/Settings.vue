@@ -721,10 +721,10 @@
                 IT数字化转型道路长远,FO Library与您随行！
               </p>
               <p class="text-dark" v-if="machineInfo.haveError && machineInfo.dalyOut">
-                尊敬的用户,很荣幸您选择试用FO Library!如果觉得符合您企业信创发展战略,可选择购买正式版本。我们的销售热线：400888888888
+                尊敬的用户,很荣幸您选择试用FO Library!如果觉得符合您企业信创发展战略,可选择购买正式版本。我们的服务热线：400-991-5355
               </p>
               <p class="text-dark" v-if="(!machineInfo.haveError) && machineInfo.dalyOut">
-                尊敬的用户,很荣幸您选择试用FO Library!您的序列号已经过期，为了更好的为您提供服务请尽快续期。我们的销售热线：400888888888
+                尊敬的用户,很荣幸您选择试用FO Library!您的序列号已经过期，为了更好的为您提供服务请尽快续期。我们的服务热线：400-991-5355
               </p>
               <hr class="my-25">
               <a-descriptions
@@ -781,7 +781,7 @@
                 试用
               </a-button>
               <p class="$color-muted">
-                你可以复制左侧机器码来获取FOLIB的序列号，并将序列号填入下方。正式激活请确保激活过程可以联网，如果需要开通网络策略，请将"license.folib.com"设置为白名单
+                你可以复制左侧机器码来获取FOLIB的序列号，并将序列号填入下方。正式激活请确保激活过程可以联网，如果需要开通网络策略，请将"license.folib.com"设置为白名单,如果想通过离线方式激活请联系我司技术服务
               </p>
               <hr class="my-25">
               <a-form-item class="mb-10" label="序列号" :colon="false">
