@@ -19,12 +19,12 @@
 
 			<!-- Layout Content -->
 			<a-layout>
-
 				<!-- Layout Header's Conditionally Fixed Wrapper -->
 				<DashboardHeader
 					:sidebarCollapsed="sidebarCollapsed"
 					:navbarFixed="navbarFixed"
 					@toggleSettingsDrawer="toggleSettingsDrawer"
+					@uploadProcessDrawer="uploadProcessDrawer"
 					@toggleSidebar="toggleSidebar"
 					@minimizeSidebar="minimizeSidebar"
 				></DashboardHeader>
@@ -68,6 +68,18 @@
 			></DashboardSettingsDrawer>
 			<!-- / Settings Drawer -->
 
+			<!-- Settings Drawer -->
+			<DashboardUploadProcessDrawer
+				:showUploadProcessDrawer="showUploadProcessDrawer"
+				:navbarFixed="navbarFixed"
+				:sidebarTheme="sidebarTheme"
+				@uploadProcessDrawer="uploadProcessDrawer"
+				@toggleNavbarPosition="toggleNavbarPosition"
+				@updateSidebarTheme="updateSidebarTheme"
+				@updateSidebarColor="updateSidebarColor"
+			></DashboardUploadProcessDrawer>
+			<!-- / Settings Drawer -->
+
 		</a-layout>
 		<!-- / Dashboard Layout -->
 
@@ -80,6 +92,7 @@
 	import DashboardHeader from '../components/Headers/DashboardHeader' ;
 	import DashboardFooter from '../components/Footers/DashboardFooter' ;
 	import DashboardSettingsDrawer from '../components/Sidebars/DashboardSettingsDrawer' ;
+	import DashboardUploadProcessDrawer from '../components/Sidebars/DashboardUploadProcessDrawer' ;
 
   import {USER_INFO} from '@/store/mutation-types'
   import storage from 'store'
@@ -89,6 +102,7 @@
 			DashboardHeader,
 			DashboardFooter,
 			DashboardSettingsDrawer,
+			DashboardUploadProcessDrawer,
 		},
 		data() {
 			return {
@@ -117,7 +131,9 @@
 
 				// Settings drawer visiblility status.
 				showSettingsDrawer: false,
-				
+
+				// upload process status
+				showUploadProcessDrawer: false,
 			}
 		},
 		methods: {
@@ -132,9 +148,14 @@
 				this.sidebarMinimized = ! this.sidebarMinimized ;
 			},
 			
-			// Toggle ettings drawer's visiblility status.
+			// Toggle settings drawer's visiblility status.
 			toggleSettingsDrawer( value ) {
 				this.showSettingsDrawer = value ;
+			},
+
+			// upload process status.
+			uploadProcessDrawer(value ) {
+				this.showUploadProcessDrawer = value 
 			},
 			
 			// Toggle navbar's fixed status.

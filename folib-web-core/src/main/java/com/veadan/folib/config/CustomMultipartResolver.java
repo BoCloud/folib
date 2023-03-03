@@ -2,6 +2,7 @@ package com.veadan.folib.config;
 
 
 import com.veadan.folib.listener.FileUploadProgressListener;
+import com.veadan.folib.util.CommonUtils;
 import org.apache.commons.fileupload.FileItem;
 import org.apache.commons.fileupload.FileUpload;
 import org.apache.commons.fileupload.FileUploadException;
@@ -27,11 +28,11 @@ public class CustomMultipartResolver extends CommonsMultipartResolver {
         String encoding = determineEncoding(request);
         FileUpload fileUpload = prepareFileUpload(encoding);
         fileUpload.setProgressListener(listener);
-        listener.setSession(request.getSession());
         try {
             List<FileItem> fileItems = ((ServletFileUpload) fileUpload).parseRequest(request);
             return parseFileItems(fileItems, encoding);
         } catch (FileUploadException ex) {
+            listener.fail(CommonUtils.getRealMessage(ex));
             throw new MultipartException("Failed to parse multipart servlet request", ex);
         }
     }

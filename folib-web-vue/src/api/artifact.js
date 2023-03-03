@@ -25,10 +25,27 @@ export function artifactUpload (data) {
   })
 }
 
-export function artifactUploadStatus () {
+export function artifactUploadProgress (data, uuid, fileName) {
   return axios({
-    url: '/api/artifact/folib/promotion/uploadStatus',
+    url: '/api/artifact/folib/promotion/upload-files?uuid=' + uuid + '&fileName=' + fileName,
+    method: 'post',
+    timeout: 15 * 60 * 1000,
+    headers: {"Content-type": "multipart/form-data",},
+    data: data
+  })
+}
+
+export function queryArtifactUploadProcess (uuid) {
+  return axios({
+    url: '/api/artifact/folib/promotion/uploadProcess?dictType=upload_process&uuid=' + uuid,
     method: 'get'
+  })
+}
+
+export function deleteArtifactUploadProcess (uuid) {
+  return axios({
+    url: '/api/artifact/folib/promotion/uploadProcess?dictType=upload_process&uuid=' + uuid,
+    method: 'delete'
   })
 }
 
@@ -57,10 +74,11 @@ export function deleteArtifactMetadata (data) {
 }
 
 
-export function rpmArtifactUpload (storageId,repositoryId,obj) {
+export function rpmArtifactUpload (storageId,repositoryId,obj,uuid,fileName) {
   return axios({
-    url: '/storages/'+storageId+'/'+repositoryId+'/Packages',
-    method: 'put',
+    url: '/storages/'+storageId+'/'+repositoryId+'/Packages?uuid=' + uuid + '&fileName=' + fileName,
+    method: 'post',
+    timeout: 15 * 60 * 1000,
     headers: {
       'Content-Type': "multipart/form-data",
     },

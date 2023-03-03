@@ -93,9 +93,6 @@ export default {
           this.treeData = d.concat(f)
         }
       ).catch((err) => {
-        if (err.response.data.message.indexOf("is out of service") !== -1) {
-          this.enabled = false
-        }
       })
     },
     onLoadData(treeNode) {

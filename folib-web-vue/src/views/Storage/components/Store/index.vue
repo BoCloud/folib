@@ -123,7 +123,7 @@
           :bodyStyle="{ paddingTop: 0, paddingBottom: 0 }"
         >
           <template #title>
-            <h6 class="font-semibold m-0">包列表</h6>
+            <h6 class="font-semibold m-0">包列表 <a class="ml-10" @click="reload()"><a-icon type="reload" /></a></h6>
           </template>
           <a-directory-tree
             :replaceFields="{
@@ -857,6 +857,7 @@
                 :multiple="true"
                 :beforeUpload="beforeUpload"
                 list-type="text"
+                accept=".rpm"
               >
                 <a-button> <a-icon type="upload" />选择文件 </a-button>
               </a-upload>
@@ -883,8 +884,7 @@
       </a-form>
     </a-modal>
     <!--   rpm 上传表单 end -->
-    <!-- raw上传 -->
-
+    <!-- raw 、maven、npm 上传 -->
     <a-modal
       v-model="showUploadFormModal"
       :footer="null"
@@ -919,7 +919,7 @@
               >
               </a-input>
             </a-form-item>
-            <a-form-item label="选择文件" v-if="folibRepository.layout !== 'Maven 2'">
+            <a-form-item label="选择文件">
               <a-upload v-decorator="[
                 'files',
                 {
@@ -927,19 +927,8 @@
                   valuePropName: 'fileList',
                   getValueFromEvent: normFile,
                 },
-              ]" name="files" :multiple="true" :beforeUpload="beforeUpload" list-type="text">
-                <a-button> <a-icon type="upload" />选择文件 </a-button>
-              </a-upload>
-            </a-form-item>
-            <a-form-item label="选择文件" v-if="folibRepository.layout === 'Maven 2'">
-              <a-upload v-decorator="[
-                'files',
-                {
-                  rules: [{ required: false, message: '请选择文件' }],
-                  valuePropName: 'fileList',
-                  getValueFromEvent: normFile,
-                },
-              ]" name="files" :multiple="true" :customRequest="uploadMavenFiles" list-type="text">
+              ]" name="files" :multiple="true" :beforeUpload="beforeUpload" list-type="text"
+              :accept="folibRepository.layout === 'Raw'?'*':folibRepository.layout === 'npm'?'.tgz':'.jar,.war,.pom'">
                 <a-button> <a-icon type="upload" />选择文件 </a-button>
               </a-upload>
             </a-form-item>
@@ -949,8 +938,7 @@
                 'targetPath',
                 {
                   rules: [
-                    { required: false, message: '请输入目标目录' },
-                    // { pattern: /^[a-zA-Z_]([a-zA-Z0-9_\-.\\/]+)?$/, message: '目标目录为大小写字母、数字、下划线开头，包含字母、数字、下划线、中划线、点、斜杠'}
+                    { required: false, message: '请输入目标目录' }
                   ],
                 },
               ]" placeholder="请输入目标目录">
@@ -958,8 +946,7 @@
             </a-form-item>
           </a-col>
           <a-col :span="24" class="text-center">
-            <a-button key="submit" class="px-30" size="small" type="primary" htmlType="submit"
-              v-if="folibRepository.layout !== 'Maven 2'">上传</a-button>
+            <a-button key="submit" class="px-30" size="small" type="primary" htmlType="submit">上传</a-button>
             <a-button key="back" @click="uploadFormModalClose()" class="px-30 ml-10" size="small">取消</a-button>
           </a-col>
         </a-row>
@@ -970,6 +957,7 @@
 
 <script>
 import storage from "store";
+import uuidv4 from "uuid/v4"
 import {
   getLayoutType,
   getFileType,
@@ -992,7 +980,7 @@ import {
   artifactCopy,
   artifactMove,
   artifactUpload,
-  artifactUploadStatus,
+  artifactUploadProgress,
   rpmArtifactUpload,
 } from "@/api/artifact";
 import { getMetadataConfiguration } from "@/api/settings";
@@ -1160,7 +1148,7 @@ export default {
       showOperationFormModal: false,
       repositories: [],
       custom: false,
-      enablUploadedLayout: ['Raw', 'php', 'Maven 2', 'npm']
+      enablUploadedLayout: ['Raw', 'php', 'Maven 2', 'npm'],
     };
   },
   created() {
@@ -1223,7 +1211,8 @@ export default {
           this.treeData = d.concat(f);
         })
         .catch((err) => {
-          if (err.response.data.message.indexOf("is out of service") !== -1) {
+          let msg = err.response.data.message?err.response.data.message:''
+          if (msg.indexOf("is out of service") !== -1) {
             this.enabled = false;
           }
         });
@@ -1265,7 +1254,7 @@ export default {
       this.showRpmUploadFormModal = false
     },
     beforeUpload(file, fileList) {
-      return false;
+      return false
     },
     normFile(e) {
       if (Array.isArray(e)) {
@@ -1285,136 +1274,145 @@ export default {
       this.showUploadFormModal = true;
     },
     handleRpmUploadSubmit(e) {
-      e.preventDefault();
+      e.preventDefault()
       this.rpmUploadForm.validateFields((err, values) => {
         if (!err) {
-          const rpmFormData = new FormData();
-          values.files.forEach((item) => {
-            rpmFormData.append("files", item.originFileObj);
-          });
-          rpmArtifactUpload(
-            this.folibRepository.storageId,
-            this.folibRepository.id,
-            rpmFormData
-          )
-            .then((res) => {
-              this.successMsg("上传成功");
-              this.uploadRpmFormModalClose();
-              this.reload();
-            })
-            .catch((err) => {
-              this.$notification["error"]({
-                message: err.response.data.error,
-                description: "",
-              });
-            })
-            .finally(() => { });
+          if (values.files.length > 10) {
+            this.$notification["warning"]({
+              message: "一次上传不能超过10个文件",
+              description: "",
+            });
+            return false
+          }
+          let fileList = []
+          for(let item of values.files){
+            let fileName = item.name.replace(":", "/")
+            if (!this.check(fileName, item.size)) {
+              return false
+            }
+            item.name = fileName
+            fileList.push(item)
+          }
+          fileList.forEach(item => {
+            this.handlerRpmUploadFile(values.targetPath, item.name.replace(":", "/"), item.originFileObj)
+          })
+          this.successMsg("请至页面右上角上传进度中查看")
+          this.uploadRpmFormModalClose()
         }
       });
+    },
+    handlerRpmUploadFile(targetPath, fileName, file) {
+      file = new File([file], fileName)
+      let filePathMap = {}
+      filePathMap[fileName] = targetPath ? targetPath + "/" + fileName : fileName
+      let uuid = uuidv4()
+      const formData = new FormData()
+      formData.append("storageId", this.folibRepository.storageId)
+      formData.append("repostoryId", this.folibRepository.id)
+      formData.append("filePathMap", JSON.stringify(filePathMap))
+      formData.append("files", file)
+      rpmArtifactUpload( this.folibRepository.storageId, this.folibRepository.id, formData, uuid, fileName).then((res) => {
+      }).catch((err) => {
+        let msg = err.response.data.error?err.response.data.error:err.response.data
+        console.log('rpm upload error：', msg)
+        let errStatusArr = [200, 500]
+        if(!errStatusArr.includes(err.response.status)) {
+            this.$notification["error"]({
+              message: '错误编码：' + err.response.status,
+              description: "",
+            });
+        }
+      }).finally(() => { 
+      })
     },
     handleUploadSubmit(e) {
-      e.preventDefault();
+      e.preventDefault()
       this.uploadForm.validateFields((err, values) => {
         if (!err) {
+          if (values.files.length > 10) {
+            this.$notification["warning"]({
+              message: "一次上传不能超过10个文件",
+              description: "",
+            });
+            return false
+          }
           if (values.targetPath && values.targetPath.startsWith("/")) {
             this.$notification["warning"]({
               message: "目标目录不能以/开头",
               description: "",
             });
-            return false;
+            return false
           }
-          let filePathMap = {};
-          let fileList = [];
-          values.files.forEach((item) => {
-            let fileName = item.name;
-            fileName = fileName.replace(":", "/");
-            filePathMap[fileName] = values.targetPath
-              ? values.targetPath + "/" + fileName
-              : fileName;
-            fileList.push(item.originFileObj);
-          });
-          values.filePathMap = filePathMap;
-          const formData = new FormData();
-          formData.append("storageId", this.folibRepository.storageId);
-          formData.append("repostoryId", this.folibRepository.id);
-          formData.append("filePathMap", JSON.stringify(filePathMap));
-          fileList.forEach((file) => {
-            file = new File([file], file.name.replace(":", "/"));
-            formData.append("files", file);
-          });
-          artifactUpload(formData)
-            .then((res) => {
-              this.successMsg("上传成功");
-              this.uploadFormModalClose();
-              this.reload();
-            })
-            .catch((err) => {
-              this.$notification["error"]({
-                message: err.response.data.error,
-                description: "",
-              });
-            })
-            .finally(() => { });
-        }
-      });
-    },
-    uploadMavenFiles(options) {
-      this.uploadForm.validateFields((err, values) => {
-        if (!err) {
-          if (values.targetPath && values.targetPath.startsWith("/")) {
-            this.$notification["warning"]({
-              message: "目标目录不能以/开头",
-              description: "",
-            });
-            return false;
-          }
-          let filePathMap = {};
-          let fileList = [];
-          let file = options.file;
-          let fileName = file.name;
-          fileName = fileName.replace(":", "/");
-          filePathMap[fileName] = values.targetPath
-            ? values.targetPath + "/" + fileName
-            : fileName;
-          fileList.push(file);
-          let progress = { percent: 1 };
-          const intervalId = setInterval(() => {
-            if (progress.percent < 100) {
-              this.getProgressRate(progress)
-              options.onProgress(progress);
-            } else {
-              clearInterval(intervalId);
+          let fileList = []
+          for(let item of values.files){
+            let fileName = item.name.replace(":", "/")
+            if (!this.check(fileName, item.size)) {
+              return false
             }
-          }, 100);
-          values.filePathMap = filePathMap;
-          const formData = new FormData();
-          formData.append("storageId", this.folibRepository.storageId);
-          formData.append("repostoryId", this.folibRepository.id);
-          formData.append("filePathMap", JSON.stringify(filePathMap));
-          fileList.forEach((file) => {
-            file = new File([file], file.name.replace(":", "/"));
-            formData.append("files", file);
-          });
-          artifactUpload(formData)
-            .then((res) => {
-              this.successMsg("上传成功");
-              this.uploadFormModalClose();
-              this.reload();
-            })
-            .catch((err) => {
-              this.$notification["error"]({
-                message: err.response.data,
-                description: "",
-              });
-            })
-            .finally(() => { });
+            item.name = fileName
+            fileList.push(item)
+          }
+          fileList.forEach(item => {
+            this.handlerUploadFile(values.targetPath, item.name, item.originFileObj)
+          })
+          this.successMsg("请至页面右上角上传进度中查看")
+          this.uploadFormModalClose()
         }
-      });
+      })
     },
-    //获取进度
-    getProgressRate(progress) {
-      artifactUploadStatus().then((res) => {
-        progress.percent = res
+    check(fileName, fileSize) {
+      let layout = this.folibRepository.layout
+      if (layout === 'Maven 2') {
+        let policy = this.folibRepository.policy
+        let regex = /^(.*)-([0-9]{8}.[0-9]{6})-([0-9]+)(.*)$/
+        let isSnapshot = fileName.indexOf('SNAPSHOT') !== -1 || regex.test(fileName)
+        let msg = null
+        if (policy === 'release' && isSnapshot) {
+          msg = fileName + '为snapshot版本，仓库版本策略为release，禁止上传'
+        }
+        if (policy === 'snapshot' && !isSnapshot) {
+          msg = fileName + '为snapshot版本，仓库版本策略为release，禁止上传'
+        }
+        if (msg) {
+          this.$notification["warning"]({
+            message: msg,
+            description: ""
+          })
+          return false
+        }
+      }
+      let fileSizeLimit = 2 * 1024 * 1024 * 1024
+      if (fileSize > fileSizeLimit) {
+        this.$notification["warning"]({
+          message: fileName + "超过2G，禁止上传",
+          description: ''
+        })
+        return false
+      }
+      return true
+    },
+    handlerUploadFile(targetPath, fileName, file) {
+      file = new File([file], fileName)
+      let filePathMap = {}
+      filePathMap[fileName] = targetPath ? targetPath + "/" + fileName : fileName
+      let uuid = uuidv4()
+      const formData = new FormData()
+      formData.append("storageId", this.folibRepository.storageId)
+      formData.append("repostoryId", this.folibRepository.id)
+      formData.append("filePathMap", JSON.stringify(filePathMap))
+      formData.append("files", file)
+      artifactUploadProgress(formData, uuid, fileName).then((res) => {
+      }).catch((err) => {
+        let msg = err.response.data.error?err.response.data.error:err.response.data
+        console.log('upload error：', msg)
+        let errStatusArr = [200,500]
+        if(!errStatusArr.includes(err.response.status)) {
+            this.$notification["error"]({
+              message: '错误编码：' + err.response.status,
+              description: "",
+            });
+        }
+      }).finally(() => { 
       })
     },
     uploadFormModalClose() {

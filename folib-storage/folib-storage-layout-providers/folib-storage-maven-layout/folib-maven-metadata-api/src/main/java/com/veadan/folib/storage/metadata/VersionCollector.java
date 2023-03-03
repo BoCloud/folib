@@ -14,13 +14,11 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.attribute.BasicFileAttributes;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 
 import com.google.common.collect.Lists;
 import org.apache.commons.io.FilenameUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.maven.artifact.Artifact;
 import org.apache.maven.artifact.ArtifactUtils;
 import org.apache.maven.artifact.DefaultArtifact;
@@ -81,7 +79,7 @@ public class VersionCollector
                     // TODO: If pom.getVersion() == null, walk the parents until a parent with
                     // TODO: a non-null version is found and use that as the version.
                     String version = pom.getVersion() != null ? pom.getVersion() :
-                                     (pom.getParent() != null ? pom.getVersion() : null);
+                                     (pom.getParent() != null ? pom.getParent().getVersion() : null);
 
                     if (version == null)
                     {

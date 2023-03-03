@@ -3,8 +3,10 @@ package com.veadan.folib.controllers.layout.rpm;
 
 import com.veadan.folib.config.RepodataUtil;
 import com.veadan.folib.controllers.BaseArtifactController;
+import com.veadan.folib.entity.Dict;
 import com.veadan.folib.providers.io.RepositoryPath;
-import com.veadan.folib.providers.layout.*;
+import com.veadan.folib.providers.layout.RpmLayoutProvider;
+import com.veadan.folib.services.DictService;
 import com.veadan.folib.services.RepositoryManagementService;
 import com.veadan.folib.storage.repository.Repository;
 import com.veadan.folib.web.LayoutRequestMapping;
@@ -14,6 +16,7 @@ import io.swagger.annotations.ApiParam;
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -37,6 +40,9 @@ public class RpmArtifactController extends BaseArtifactController {
 
     @Autowired
     private RepodataUtil repodataUtil;
+
+    @Autowired
+    private DictService dictService;
 
     @Inject
     private RepositoryManagementService repositoryManagementService;
@@ -86,11 +92,12 @@ public class RpmArtifactController extends BaseArtifactController {
     @ApiResponses(value = {@ApiResponse(code = 200, message = "The artifact was deployed successfully."),
             @ApiResponse(code = 400, message = "An error occurred.")})
     @PreAuthorize("hasAuthority('ARTIFACTS_DEPLOY')")
-    @PutMapping(value = "{storageId}/{repositoryId}/{path:.+}")
+    @RequestMapping(value = "{storageId}/{repositoryId}/{path:.+}", method = {RequestMethod.PUT, RequestMethod.POST})
     public ResponseEntity upload(@RepositoryMapping Repository repository,
                                  @PathVariable String path,
                                  HttpServletRequest request,
-                                 @RequestParam("files") MultipartFile[] files) {
+                                 @RequestParam("files") MultipartFile[] files,
+                                 @RequestParam(name = "uuid", required = false) String uuid) {
         final String storageId = repository.getStorage().getId();
         final String repositoryId = repository.getId();
         try {
@@ -120,6 +127,13 @@ public class RpmArtifactController extends BaseArtifactController {
             return ResponseEntity.ok("The artifact was deployed successfully.");
         } catch (Exception e) {
             logger.error(e.getMessage(), e);
+            if (StringUtils.isNotBlank(uuid)) {
+                String message = e.getMessage();
+                if (StringUtils.isBlank(message)) {
+                    message = "未知异常";
+                }
+                dictService.saveOrUpdateDict(Dict.builder().dictKey(uuid).comment(message).build(), null);
+            }
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
         }
     }
