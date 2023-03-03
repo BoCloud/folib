@@ -14,6 +14,7 @@ import com.veadan.folib.dto.PromotionNodeOptionDto;
 import com.veadan.folib.dto.TargetRepositoyDto;
 import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.providers.io.RepositoryPathResolver;
+import com.veadan.folib.providers.layout.DockerLayoutProvider;
 import com.veadan.folib.schema2.ImageManifest;
 import com.veadan.folib.schema2.LayerManifest;
 import com.veadan.folib.service.ProxyRepositoryConnectionPoolConfigurationService;
@@ -22,6 +23,7 @@ import com.veadan.folib.storage.repository.Repository;
 import com.veadan.folib.util.RepositoryPathUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.config.AuthSchemes;
 import org.apache.http.client.config.CookieSpecs;
@@ -57,8 +59,10 @@ import javax.ws.rs.core.Response;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.CopyOption;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.security.cert.X509Certificate;
@@ -113,7 +117,7 @@ public class PromotionUtil {
             }
             log.info("Artifact copyed [{}]", path);
         } catch (Exception e) {
-            log.error("async handle copy artifact fail [{}]", e.getMessage());
+            log.error("async handle copy artifact fail [{}]", ExceptionUtils.getStackTrace(e));
         }
 
     }
@@ -148,14 +152,14 @@ public class PromotionUtil {
                     log.error("Artitfact copy err {}", rs);
                 }
             } catch (Exception e) {
-                log.error("Exception {}", e.getMessage());
+                log.error("Exception {}", ExceptionUtils.getStackTrace(e));
             }
         }
         if (delFlag) {
             try {
                 artifactManagementService.delete(srcRepositoryPath, false);
             } catch (IOException e) {
-                log.error("async handle move artifact fail [{}]", e.getMessage());
+                log.error("async handle move artifact fail [{}]", ExceptionUtils.getStackTrace(e));
             }
         }
         log.info("Artifact moved [{}]", artifactPromotion.getPath());
@@ -198,7 +202,7 @@ public class PromotionUtil {
         int fPathIndex = absolutePath.lastIndexOf(tempStr);
         String relativizePath = absolutePath.substring(fPathIndex, absolutePath.length()).replace(tempStr, "");
         RepositoryPath srcRepositoryPath = repositoryPathResolver.resolve(promotionArtifactDto.getSrcStorageId(), promotionArtifactDto.getSrcRepostoryId(), relativizePath);
-        boolean isDockerVersion = srcRepositoryPath.getRepository().getLayout().equalsIgnoreCase("docker") && s3FilesPaths.size() == 2;
+        boolean isDockerVersion = isDockerVersion(srcRepositoryPath.getRepository().getLayout(), s3FilesPaths.stream().map(S3Path::toString).collect(Collectors.toList()));
         if (isDockerVersion) {
             //  blobs
             String[] arrayPath = relativizePath.split(File.separator);
@@ -254,7 +258,7 @@ public class PromotionUtil {
         int fPathIndex = absolutePath.lastIndexOf(tempStr);
         String relativizePath = absolutePath.substring(fPathIndex, absolutePath.length()).replace(tempStr, "");
         RepositoryPath srcRepositoryPath = repositoryPathResolver.resolve(promotionArtifactDto.getSrcStorageId(), promotionArtifactDto.getSrcRepostoryId(), relativizePath);
-        boolean isDockerVersion = srcRepositoryPath.getRepository().getLayout().equalsIgnoreCase("docker") && list.size() == 2;
+        boolean isDockerVersion = isDockerVersion(srcRepositoryPath.getRepository().getLayout(), list.stream().map(File::getAbsolutePath).collect(Collectors.toList()));
         if (isDockerVersion) {
             //  blobs
             String[] arrayPath = relativizePath.split(File.separator);
@@ -309,7 +313,7 @@ public class PromotionUtil {
             boolean isDocker = srcRepository.getLayout().equalsIgnoreCase("docker");
             if (isDocker) {
                 if (!file.getName().contains("sha256") && !file.getName().endsWith(".sha256")) {
-                    Files.copy(Paths.get(file.getAbsolutePath()), destPath);
+                    Files.copy(Paths.get(file.getAbsolutePath()), destPath, StandardCopyOption.REPLACE_EXISTING);
                     continue;
                 }
             }
@@ -319,12 +323,12 @@ public class PromotionUtil {
                 RepositoryPath srcPath = repositoryPathResolver.resolve(srcRepository.getStorage().getId(), srcRepository.getId(), temp);
                 setMetaData(destPath, getMetaData(srcPath));
             } catch (IOException e) {
-                e.printStackTrace();
+                log.error("sync metaData error：{}", ExceptionUtils.getStackTrace(e));
                 throw new Exception(e.getMessage());
             }
         }
         // 判断是否是docker 版本路径的复制
-        boolean isDockerVersion = srcRepository.getLayout().equalsIgnoreCase("docker") && list.size() == 2;
+        boolean isDockerVersion = isDockerVersion(srcRepository.getLayout(), list.stream().map(File::getAbsolutePath).collect(Collectors.toList()));
         if (isDockerVersion) {
             // copy blobs manifest
             String tempStr = srcRepository.getStorage().getId() + File.separator + srcRepository.getId() + File.separator;
@@ -354,12 +358,11 @@ public class PromotionUtil {
                 ) {
                     RepositoryPath destBlobPath = repositoryPathResolver.resolve(destRepository.getStorage().getId(), destRepository.getId(), blob);
                     RepositoryPath destBlobSha256Path = repositoryPathResolver.resolve(destRepository.getStorage().getId(), destRepository.getId(), blobSha256);
-                    log.info("destBlobPath {}  destBlobSha256Path {}",destBlobPath.toString(),destBlobSha256Path.toString());
+                    log.info("destBlobPath {}  destBlobSha256Path {}", destBlobPath.toString(), destBlobSha256Path.toString());
                     artifactManagementService.store(destBlobPath, blobIs);
                     artifactManagementService.store(destBlobSha256Path, blobSha256Is);
                 } catch (Exception e) {
-                    e.printStackTrace();
-                    log.error("{} blob copy error {}", relativizePath, e.getMessage());
+                    log.error("{} blob copy error {}", relativizePath, ExceptionUtils.getStackTrace(e));
                 }
             }
             //  copy manifest
@@ -372,8 +375,7 @@ public class PromotionUtil {
                     RepositoryPath destBlobPath = repositoryPathResolver.resolve(destRepository.getStorage().getId(), destRepository.getId(), mainfestFileStr);
                     artifactManagementService.store(destBlobPath, mainfestIs);
                 } catch (Exception e) {
-                    e.printStackTrace();
-                    log.error("{} manifest copy error {}", relativizePath, e.getMessage());
+                    log.error("{} manifest copy error {}", relativizePath, ExceptionUtils.getStackTrace(e));
                 }
             }
         }
@@ -395,12 +397,12 @@ public class PromotionUtil {
                 RepositoryPath srcPath = repositoryPathResolver.resolve(srcRepository.getStorage().getId(), srcRepository.getId(), temp);
                 setMetaData(uploadPath, getMetaData(srcPath));
             } catch (IOException e) {
-                e.printStackTrace();
+                log.error("s3FilePath {} copy fail {}", s3FilePath, ExceptionUtils.getStackTrace(e));
                 throw new Exception(e.getMessage());
             }
         }
         // 判断是否是docker 版本路径的复制
-        boolean isDockerVersion = srcRepository.getLayout().equalsIgnoreCase("docker") && s3FilesPaths.size() == 2;
+        boolean isDockerVersion = isDockerVersion(srcRepository.getLayout(), s3FilesPaths.stream().map(S3Path::toString).collect(Collectors.toList()));
         if (isDockerVersion) {
             // copy blobs manifest
             String tempStr = srcRepository.getStorage().getId() + File.separator + srcRepository.getId() + File.separator;
@@ -432,8 +434,7 @@ public class PromotionUtil {
                     artifactManagementService.store(destBlobPath, blobIs);
                     artifactManagementService.store(destBlobSha256Path, blobSha256Is);
                 } catch (Exception e) {
-                    e.printStackTrace();
-                    log.error("{} blob copy error {}", relativizePath, e.getMessage());
+                    log.error("{} blob copy error {}", relativizePath, ExceptionUtils.getStackTrace(e));
                 }
             }
             // copy manifest
@@ -447,8 +448,7 @@ public class PromotionUtil {
                     RepositoryPath destBlobPath = repositoryPathResolver.resolve(destRepository.getStorage().getId(), destRepository.getId(), mainfestFileStr);
                     artifactManagementService.store(destBlobPath, mainfestIs);
                 } catch (Exception e) {
-                    e.printStackTrace();
-                    log.error("{} manifest copy error {}", relativizePath, e.getMessage());
+                    log.error("{} manifest copy error {}", relativizePath, ExceptionUtils.getStackTrace(e));
                 }
             }
         }
@@ -705,7 +705,7 @@ public class PromotionUtil {
             }
             rs = artifact.getMetadata();
         } catch (Exception e) {
-            log.error("Exception {}", e.getMessage());
+            log.error("Exception {}", ExceptionUtils.getStackTrace(e));
         }
         return rs;
     }
@@ -722,9 +722,20 @@ public class PromotionUtil {
             artifact.setMetadata(metadata);
             artifactService.saveOrUpdateArtifact(artifact);
         } catch (Exception e) {
-            log.error("Exception {} {}", e.getMessage(), repositoryPath.toString());
+            log.error("Exception {} {}", ExceptionUtils.getStackTrace(e), repositoryPath.toString());
         }
-
     }
+
+    /**
+     * 校验是否是对docker版本的操作
+     *
+     * @param layout    布局类型
+     * @param fileNames 文件名
+     * @return true 是 false 不是
+     */
+    public boolean isDockerVersion(String layout, List<String> fileNames) {
+        return DockerLayoutProvider.ALIAS.equalsIgnoreCase(layout) && fileNames.stream().allMatch(item -> !item.contains("blobs/sha256") && !item.contains("manifest/sha256"));
+    }
+
 
 }
