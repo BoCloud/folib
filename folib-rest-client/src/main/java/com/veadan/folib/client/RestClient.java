@@ -598,9 +598,7 @@ public class RestClient extends ArtifactClient {
             for (FutureTask<SearchArtifactPage> task : listTask) {
                 try {
                     searchArtifactPages.add(task.get());
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                } catch (ExecutionException e) {
+                } catch (Exception e) {
                     e.printStackTrace();
                 }
             }
