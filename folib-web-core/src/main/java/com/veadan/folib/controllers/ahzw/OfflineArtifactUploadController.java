@@ -135,10 +135,10 @@ public class OfflineArtifactUploadController extends BaseArtifactController {
         regex = String.format(regex, prefix, "-");
         SearchResults dockerResult = fqlSearchService.artifactQuery(true,
                 regex, null, storageId,
-                dockerRepo, null, null, null, null, Integer.MAX_VALUE, 1);
+                dockerRepo, null,null, null, null, null, Integer.MAX_VALUE, 1);
         SearchResults rawResult = fqlSearchService.artifactQuery(false,
                 storageId + "-" + dockerRepo, null, storageId,
-                rawRepo, null, null, null, null, Integer.MAX_VALUE, 1);
+                rawRepo, null,null, null, null, null, Integer.MAX_VALUE, 1);
         return dockerResult.getTotal() + rawResult.getTotal() + 1;
 
 

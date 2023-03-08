@@ -465,11 +465,11 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
 
                 SearchResults dockerResult = fqlSearchService.artifactQuery(false,
                         artifactMetaData.getArtifactPath(), null, storageId,
-                        dockerRepo, null, null, null, null, 1, 1);
+                        dockerRepo, null, null, null, null, null, 1, 1);
                 if (dockerResult.getTotal() == 0) {
                     SearchResults rawResult = fqlSearchService.artifactQuery(false,
                             artifactMetaData.getArtifactPath(), null, storageId,
-                            rawRepo, null, null, null, null, 1, 1);
+                            rawRepo, null, null, null, null, null, 1, 1);
                     if (rawResult.getTotal() == 1) {
                         artifactPathTemp = Lists.newArrayList(rawResult.getResults()).get(0).getArtifactPath();
                         repoTemp = rawRepo;
