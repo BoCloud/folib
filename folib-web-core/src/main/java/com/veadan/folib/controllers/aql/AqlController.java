@@ -18,6 +18,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 
 import javax.inject.Inject;
 import java.io.IOException;
+import java.util.List;
 
 /**
  * @author xuxinping
@@ -46,12 +47,13 @@ public class AqlController extends BaseController {
                                  @RequestParam(name = "endDate", required = false) String endDate,
                                  @RequestParam(name = "sortField", required = false) String sortField,
                                  @RequestParam(name = "sortOrder", required = false) String sortOrder,
+                                 @RequestParam(name = "repositoryIds", required = false) List<String> repositoryIds,
                                  @RequestParam(name = "limit", required = false) Integer limit,
                                  @RequestParam(name = "page", required = false) Integer page) throws IOException {
         if (StringUtils.isBlank(artifactName) && StringUtils.isBlank(metadataSearch)) {
             throw new RuntimeException("请输入查询参数");
         }
-        SearchResults result = fqlSearchService.artifactQuery(regex, artifactName, metadataSearch, storageId, repositoryId, beginDate, endDate, sortField, sortOrder, limit, page);
+        SearchResults result = fqlSearchService.artifactQuery(regex, artifactName, metadataSearch, storageId, repositoryId, beginDate, endDate, sortField, sortOrder, repositoryIds, limit, page);
         return ResponseEntity.ok(result);
     }
 

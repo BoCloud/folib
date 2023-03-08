@@ -115,6 +115,7 @@ public class ArtifactRepository extends GremlinVertexRepository<Artifact> {
                                               String metadataSearch,
                                               String storageId,
                                               String repositoryId,
+                                              List<String> repositoryIds,
                                               String beginDate,
                                               String endDate,
                                               String sortField,
@@ -132,7 +133,7 @@ public class ArtifactRepository extends GremlinVertexRepository<Artifact> {
             }
         }
         Long zero = 0L;
-        Long count = buildEntityTraversal(regex, artifactName, metadataSearch, storageIdAndRepositoryIdList, storageId, repositoryId, beginDate, endDate, sortField, sortOrder).count().tryNext().orElse(zero);
+        Long count = buildEntityTraversal(regex, artifactName, metadataSearch, storageIdAndRepositoryIdList, storageId, repositoryId, repositoryIds, beginDate, endDate, sortField, sortOrder).count().tryNext().orElse(zero);
         if (zero.equals(count)) {
             return new PageImpl<>(Collections.emptyList(), pagination, count);
         }
@@ -140,7 +141,7 @@ public class ArtifactRepository extends GremlinVertexRepository<Artifact> {
         long high = (pagination.getPageNumber() + 1) * pagination.getPageSize();
 
 
-        List<Artifact> artifactList = buildEntityTraversal(regex, artifactName, metadataSearch, storageIdAndRepositoryIdList, storageId, repositoryId, beginDate, endDate, sortField, sortOrder)
+        List<Artifact> artifactList = buildEntityTraversal(regex, artifactName, metadataSearch, storageIdAndRepositoryIdList, storageId, repositoryId, repositoryIds, beginDate, endDate, sortField, sortOrder)
                 .range(low, high)
                 .map(artifactAdapter.fold(Optional.ofNullable(repository)
                         .map(com.veadan.folib.storage.repository.Repository::getLayout)
@@ -399,6 +400,7 @@ public class ArtifactRepository extends GremlinVertexRepository<Artifact> {
                                                                  List<String> storageIdAndRepositoryIdList,
                                                                  String storageId,
                                                                  String repositoryId,
+                                                                 List<String> repositoryIds,
                                                                  String beginDate,
                                                                  String endDate,
                                                                  String sortField,
@@ -409,6 +411,9 @@ public class ArtifactRepository extends GremlinVertexRepository<Artifact> {
         }
         if (StringUtils.isNotBlank(repositoryId)) {
             entityTraversal = entityTraversal.has(Properties.REPOSITORY_ID, repositoryId);
+        }
+        if (CollectionUtils.isNotEmpty(repositoryIds)) {
+            entityTraversal = entityTraversal.has(Properties.REPOSITORY_ID, P.within(repositoryIds));
         }
         if (CollectionUtils.isNotEmpty(storageIdAndRepositoryIdList)) {
             entityTraversal = entityTraversal.has(Properties.STORAGE_ID_AND_REPOSITORY_ID, P.within(storageIdAndRepositoryIdList));
