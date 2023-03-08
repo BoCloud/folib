@@ -145,9 +145,9 @@ public class FqlSearchService extends GremlinVertexRepository<Artifact> implemen
                 String manifest = "manifest";
                 String artifactPath = repositoryPath.toAbsolutePath().toString();
                 if (artifactPath.contains("sha256") && !artifactPath.contains(blobs) && !artifactPath.contains(manifest) && !artifactPath.endsWith(".sha256")) {
-                    r.setSizeInBytes(getSearchDockerSize(storageId, repositoryId, repositoryPath, path));
+                    r.setSizeInBytes(getSearchDockerSize(storageId, repository.getId(), repositoryPath, path));
                 }
-                r.setDownloadFilesUrl(getDockerDownLoadAppPackageUrls(storageId, repositoryId, repositoryPath,
+                r.setDownloadFilesUrl(getDockerDownLoadAppPackageUrls(storageId, repository.getId(), repositoryPath,
                         path.substring(0, path.indexOf("/sha256")) + "/temp"));
             } else {
                 r.setArtifactName(path.substring(path.lastIndexOf("/") + 1));
