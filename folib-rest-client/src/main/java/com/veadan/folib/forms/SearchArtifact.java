@@ -44,6 +44,14 @@ public class SearchArtifact {
      */
     private Boolean regex;
     /**
+     * 排序字段
+     */
+    private String sortField;
+    /**
+     * 顺序
+     */
+    private String sortOrder;
+    /**
      * 每页数据
      */
     private Integer limit;
