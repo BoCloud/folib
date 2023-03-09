@@ -166,13 +166,13 @@ public class FqlSearchService extends GremlinVertexRepository<Artifact> implemen
         return result;
     }
 
-    private List<String> getDockerDownLoadAppPackageUrls(String storageId, String repositoryId, RepositoryPath repositoryPath, String path) {
-        List<String> downloadUrls = Lists.newArrayList();
+    private Set<String> getDockerDownLoadAppPackageUrls(String storageId, String repositoryId, RepositoryPath repositoryPath, String path) {
+        Set<String> downloadUrls = new HashSet<String>();
         try {
             RepositoryPath appPackagePath = repositoryPathResolver.resolve(storageId, repositoryId, path);
             List<String> relativePaths = RepositoryPathUtil.getFileRelativePaths(appPackagePath);
             for (String filePath : relativePaths) {
-                if (filePath.endsWith(".config")) {
+                if (filePath.endsWith(".config") || filePath.endsWith(".sha256")) {
                     continue;
                 }
                 downloadUrls.add(FolibPublicUtils.getFileUrl(repositoryPath.getRepository(), filePath));
