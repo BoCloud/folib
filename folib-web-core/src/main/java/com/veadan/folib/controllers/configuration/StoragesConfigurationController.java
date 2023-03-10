@@ -33,12 +33,8 @@ import com.veadan.folib.storage.Storage;
 import com.veadan.folib.storage.StorageData;
 import com.veadan.folib.storage.StorageDto;
 import com.veadan.folib.storage.Views;
-import com.veadan.folib.storage.repository.Repository;
-import com.veadan.folib.storage.repository.RepositoryData;
-import com.veadan.folib.storage.repository.RepositoryDto;
-import com.veadan.folib.storage.repository.RepositoryPermissionDto;
+import com.veadan.folib.storage.repository.*;
 import com.veadan.folib.users.domain.Privileges;
-import com.veadan.folib.users.domain.SystemRole;
 import com.veadan.folib.users.domain.Users;
 import com.veadan.folib.users.service.UserService;
 import com.veadan.folib.users.service.impl.DatabaseUserService;
@@ -57,7 +53,6 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.annotation.Validated;
@@ -93,6 +88,8 @@ public class StoragesConfigurationController
     static final String FAILED_SAVE_REPOSITORY = "The repository cannot be saved because the submitted form contains errors!";
 
     static final String FAILED_SAVE_REPOSITORY_PERMISSION = "The repository permission cannot be saved because the submitted form contains errors!";
+
+    static final String FAILED_SAVE_REPOSITORY_PERMISSION_USER = "仓库可见范围改为存储空间内，用户【%s】不属于该存储空间，需要先从授权列表中移除";
 
     static final String SUCCESSFUL_REPOSITORY_SAVE = "The repository was updated successfully.";
 
@@ -222,7 +219,7 @@ public class StoragesConfigurationController
             List<Storage> list = storagesOutput.getStorages();
             List<Storage> collect = list.stream().filter(s ->
                     (CollectionUtil.isNotEmpty(s.getUsers()) && s.getUsers().contains(loggedUser.getUsername())) ||
-                    (CollectionUtils.isNotEmpty(s.getRepositories().values()) && s.getRepositories().values().stream().anyMatch(repository -> RepositoryScopeEnum.OPEN.getType().equals(repository.getScope())))
+                            (CollectionUtils.isNotEmpty(s.getRepositories().values()) && s.getRepositories().values().stream().anyMatch(repository -> RepositoryScopeEnum.OPEN.getType().equals(repository.getScope())))
             ).collect(Collectors.toList());
             storagesOutput.setStorages(collect);
         }
@@ -298,7 +295,7 @@ public class StoragesConfigurationController
     public ResponseEntity getStorageResponseEntity(@ApiParam(value = "The storageId", required = true)
                                                    @PathVariable final String storageId,
                                                    @ApiParam(value = "The filter")
-                                                   @RequestParam(value = "filter",required = false) Boolean filter) {
+                                                   @RequestParam(value = "filter", required = false) Boolean filter) {
         StorageDto storage = configurationManagementService.getMutableConfigurationClone().getStorage(storageId);
         if (storage != null) {
             String username = loginUsername();
@@ -306,7 +303,7 @@ public class StoragesConfigurationController
             if (flag) {
                 Map<String, ? extends Repository> repositoryMap = storage.getRepositories();
                 if (Objects.nonNull(repositoryMap) && CollectionUtils.isNotEmpty(repositoryMap.values())) {
-                    repositoryMap =  repositoryMap.values().stream().filter(item -> RepositoryScopeEnum.OPEN.getType().equals(item.getScope())).collect(Collectors.toMap(Repository::getId, Function.identity()));
+                    repositoryMap = repositoryMap.values().stream().filter(item -> RepositoryScopeEnum.OPEN.getType().equals(item.getScope())).collect(Collectors.toMap(Repository::getId, Function.identity()));
                     storage.setRepositories((Map<String, RepositoryDto>) repositoryMap);
                 }
             }
@@ -704,7 +701,7 @@ public class StoragesConfigurationController
             }
 
             configurationManagementService.removeRepository(storageId, repositoryId);
-            SyncRepositoryDto syncRepositoryDto = new SyncRepositoryDto(repositoryDto, storageId, repositoryId, SyncRepositoryEnum.DELETE,force);
+            SyncRepositoryDto syncRepositoryDto = new SyncRepositoryDto(repositoryDto, storageId, repositoryId, SyncRepositoryEnum.DELETE, force);
             clusterSyncService.syncRepository(syncRepositoryDto);
 
             logger.debug("Removed repository {}:{}.", storageId, repositoryId);
@@ -723,15 +720,15 @@ public class StoragesConfigurationController
             consumes = MediaType.APPLICATION_JSON_VALUE,
             produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity repositoryPermission(@ApiParam(value = "The storageId", required = true)
-                                                @PathVariable String storageId,
-                                                @ApiParam(value = "The repositoryId", required = true)
-                                                @PathVariable
-                                                        String repositoryId,
-                                                @ApiParam(value = "The repository object", required = true)
-                                                @RequestBody
-                                                @Validated RepositoryPermissionForm repositoryPermissionForm,
-                                                BindingResult bindingResult,
-                                                @RequestHeader(HttpHeaders.ACCEPT) String accept) throws IOException {
+                                               @PathVariable String storageId,
+                                               @ApiParam(value = "The repositoryId", required = true)
+                                               @PathVariable
+                                                       String repositoryId,
+                                               @ApiParam(value = "The repository object", required = true)
+                                               @RequestBody
+                                               @Validated RepositoryPermissionForm repositoryPermissionForm,
+                                               BindingResult bindingResult,
+                                               @RequestHeader(HttpHeaders.ACCEPT) String accept) throws IOException {
         final Storage storage = configurationManagementService.getConfiguration().getStorage(storageId);
         if (storage != null) {
             if (bindingResult.hasErrors()) {
@@ -740,6 +737,19 @@ public class StoragesConfigurationController
             RepositoryPermissionDto repositoryPermissionDto = conversionService.convert(repositoryPermissionForm, RepositoryPermissionDto.class);
             if (Objects.isNull(repositoryPermissionDto)) {
                 return getFailedResponseEntity(HttpStatus.BAD_REQUEST, FAILED_SAVE_REPOSITORY_PERMISSION, accept);
+            }
+            if (RepositoryScopeEnum.STORAGE.getType().equals(repositoryPermissionDto.getScope())) {
+                if (CollectionUtils.isNotEmpty(storage.getUsers())) {
+                    //存储空间内，但是参数中包含了其他成员
+                    List<RepositoryPermissionUserDto> userList = Optional.ofNullable(repositoryPermissionDto.getUserList()).orElse(Collections.emptyList()).stream().filter(item -> !storage.getUsers().contains(item.getUsername())).collect(Collectors.toList());
+                    if (CollectionUtils.isNotEmpty(userList)) {
+                        String uses = userList.stream().map(RepositoryPermissionUserDto::getUsername).collect(Collectors.joining(","));
+                        return getFailedResponseEntity(HttpStatus.BAD_REQUEST, String.format(FAILED_SAVE_REPOSITORY_PERMISSION_USER, uses), accept);
+                    }
+                } else if (CollectionUtils.isNotEmpty(repositoryPermissionDto.getUserList())){
+                    String uses = repositoryPermissionDto.getUserList().stream().map(RepositoryPermissionUserDto::getUsername).collect(Collectors.joining(","));
+                    return getFailedResponseEntity(HttpStatus.BAD_REQUEST, String.format(FAILED_SAVE_REPOSITORY_PERMISSION_USER, uses), accept);
+                }
             }
             RepositoryDto repository = configurationManagementService.getMutableConfigurationClone().getStorage(storageId).getRepository(repositoryId);
             repository.setScope(repositoryPermissionDto.getScope());
@@ -762,16 +772,15 @@ public class StoragesConfigurationController
     @PreAuthorize("hasAuthority('ARTIFACTS_VIEW')")
     @GetMapping(value = "/repositoryEnableUsers")
     public ResponseEntity repositoryEnableUsers(@ApiParam(value = "The storageId", required = true)
-                                               @RequestParam String storageId,
-                                               @ApiParam(value = "The repositoryId", required = true)
-                                               @RequestParam
-                                                       String repositoryId,
-                                               @RequestHeader(HttpHeaders.ACCEPT) String accept) {
+                                                @RequestParam String storageId,
+                                                @ApiParam(value = "The repositoryId", required = true)
+                                                @RequestParam String repositoryId, @ApiParam(value = "The scope") @RequestParam(name = "scope", required = false) Integer scope,
+                                                @RequestHeader(HttpHeaders.ACCEPT) String accept) {
         final Storage storage = configurationManagementService.getConfiguration().getStorage(storageId);
         if (storage != null) {
             List<String> usernameList = null;
             Repository repository = storage.getRepository(repositoryId);
-            if (RepositoryScopeEnum.OPEN.getType().equals(repository.getScope())) {
+            if ((RepositoryScopeEnum.OPEN.getType().equals(repository.getScope()) && !RepositoryScopeEnum.STORAGE.getType().equals(scope)) || RepositoryScopeEnum.OPEN.getType().equals(scope)) {
                 //公开仓库，除了ADMIN角色和存储空间管理员的其他所有人
                 Users users = userService.getUsers();
                 if (Objects.nonNull(users) && CollectionUtils.isNotEmpty(users.getUsers())) {
@@ -815,11 +824,11 @@ public class StoragesConfigurationController
     @PreAuthorize("hasAuthority('ARTIFACTS_VIEW')")
     @GetMapping(value = "/repositoryPermission")
     public ResponseEntity repositoryPermission(@ApiParam(value = "The storageId", required = true)
-                                                @RequestParam String storageId,
-                                                @ApiParam(value = "The repositoryId", required = true)
-                                                @RequestParam
-                                                        String repositoryId,
-                                                @RequestHeader(HttpHeaders.ACCEPT) String accept) {
+                                               @RequestParam String storageId,
+                                               @ApiParam(value = "The repositoryId", required = true)
+                                               @RequestParam
+                                                       String repositoryId,
+                                               @RequestHeader(HttpHeaders.ACCEPT) String accept) {
         final Storage storage = configurationManagementService.getConfiguration().getStorage(storageId);
         if (storage != null) {
             Repository repository = storage.getRepository(repositoryId);

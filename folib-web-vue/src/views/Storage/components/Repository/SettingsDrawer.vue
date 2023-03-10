@@ -20,7 +20,7 @@
         @change="settingTabChange($event)"
       >
       <a-tab-pane :key="1" tab="权限设置">
-        <Permission :folibRepository="this.folibRepository" :permissionForm="this.permissionForm" :userList="this.userList" :sourceUserList="this.sourceUserList" :settingVisible="settingVisible" @settingDrawerClose="settingDrawerClose"></Permission>
+        <Permission :folibRepository="this.folibRepository" :settingVisible="settingVisible" @settingDrawerClose="settingDrawerClose"></Permission>
       </a-tab-pane>
       <a-tab-pane :key="2" tab="定时策略">
         <CronTask :folibRepository="this.folibRepository" @settingDrawerClose="settingDrawerClose"></CronTask>
@@ -31,8 +31,6 @@
 </template>
 <script>
 import {
-  repositoryEnableUsers,
-  getRepositoryPermission,
 } from "@/api/folib"
 import Permission from '../Permission/index.vue'
 import CronTask from "../Cron/index.vue"
@@ -51,12 +49,6 @@ export default {
   data() {
     return {
       settingTabActiveKey: 1,
-      permissionForm: {
-        scope: 1,
-        userList: []
-		  },
-      userList: [],
-      sourceUserList: []
     }
   },
   components: {
@@ -64,43 +56,18 @@ export default {
     Permission,
   },
   created() {
-    this.initData()
   },
   mounted() {},
   watch: {
     settingVisible: function (val) {
-      if (val) {
-        this.initData()
-      }
     },
   },
   methods: {
-    initData() {
-      this.getUsersList()
-      this.queryRepositoryPermission()
-    },
     settingTabChange(activeKey) {
-      if (activeKey === 1) {
-        this.initData()
-      }
       this.settingTabActiveKey = activeKey
     },
     settingDrawerClose() {
       this.$emit('settingDrawerClose')
-    },
-    getUsersList() {
-      repositoryEnableUsers({storageId: this.folibRepository.storageId, repositoryId: this.folibRepository.id}).then(res => {
-        this.userList = res
-      })
-    },
-    queryRepositoryPermission() {
-      getRepositoryPermission({storageId: this.folibRepository.storageId, repositoryId: this.folibRepository.id}).then(res => {
-        this.permissionForm.scope = res.scope
-        if (res.userList && res.userList.length > 0) {
-          this.permissionForm.userList = res.userList
-          this.sourceUserList = res.userList
-        }
-      })
     },
   },
 };

@@ -1714,7 +1714,7 @@ export default {
           setTimeout(() => {
             this.$notification.open({
               class: 'ant-notification-success',
-              message: this.folibRepositoryEditDisabled ? '仓库已修改完成，如需求配置定时策略请继续设置' : '仓库已新增完成，如需求配置定时策略请继续设置',
+              message: this.folibRepositoryEditDisabled ? '仓库已修改完成' : '仓库已新增完成',
               description: res.message,
             });
           }, 1000);

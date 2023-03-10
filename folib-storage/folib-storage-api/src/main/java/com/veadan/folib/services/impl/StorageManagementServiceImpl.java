@@ -60,15 +60,16 @@ public class StorageManagementServiceImpl implements StorageManagementService {
     @Override
     public void updateStorage(StorageDto storage)
             throws IOException {
+        handlerOriginalStorageAdminRole(storage.getAdmin(), storage.getId());
         configurationManagementService.updateStorage(storage);
-        handlerStorageAdminRole(storage.getAdmin(), storage.getId());
+        handlerStorageAdminRole(storage.getAdmin(), storage.getId(), null);
     }
 
     @Override
     public void createStorage(StorageDto storage)
             throws IOException {
         configurationManagementService.createStorage(storage);
-        handlerStorageAdminRole(storage.getAdmin(), storage.getId());
+        handlerStorageAdminRole(storage.getAdmin(), storage.getId(), null);
     }
 
     @Override
@@ -78,7 +79,25 @@ public class StorageManagementServiceImpl implements StorageManagementService {
         for (Repository repository : storage.getRepositories().values()) {
             repositoryManagementService.removeRepository(storageId, repository.getId());
         }
-        handlerStorageAdminRole(storage.getAdmin(), storageId);
+        handlerStorageAdminRole(storage.getAdmin(), "", null);
+    }
+
+    /**
+     * 处理原有的管理员角色
+     *
+     * @param username  用户名
+     * @param storageId 存储空间名称
+     */
+    private void handlerOriginalStorageAdminRole(String username, String storageId) {
+        StorageDto originalStorage = configurationManagementService.getMutableConfigurationClone().getStorage(storageId);
+        String originalUsername = originalStorage.getAdmin();
+        if (StringUtils.isNotBlank(originalUsername) && !originalUsername.equals(username)) {
+            logger.info("storageId {} manager change {} to {}", storageId, originalStorage.getAdmin(), username);
+            //管理员变更
+            Set<String> storageIdSet = getManagerStorageIdList(originalUsername);
+            storageIdSet.remove(storageId);
+            handlerStorageAdminRole(originalUsername, null, storageIdSet);
+        }
     }
 
     /**
@@ -86,13 +105,17 @@ public class StorageManagementServiceImpl implements StorageManagementService {
      *
      * @param username         用户名
      * @param currentStorageId 存储空间名称
+     * @param storageIdSet     指定存储空间
      */
-    private void handlerStorageAdminRole(String username, String currentStorageId) {
+    private void handlerStorageAdminRole(String username, String currentStorageId, Set<String> storageIdSet) {
         if (StringUtils.isNotBlank(username) && !isAdmin(username)) {
-
-            Set<String> storageIdSet = getManagerStorageIdList(username);
-            storageIdSet.add(currentStorageId);
-            logger.info("manager storage：{}", storageIdSet);
+            if (Objects.isNull(storageIdSet)) {
+                storageIdSet = getManagerStorageIdList(username);
+            }
+            if (StringUtils.isNotBlank(currentStorageId)) {
+                storageIdSet.add(currentStorageId);
+            }
+            logger.info("{} manager storage：{}", username, storageIdSet);
             RepositoryAccessModel repositoryAccessModelForm;
             String storageRoleName = String.format("%s-%s", "STORAGE", username.toUpperCase());
             AuthorizationConfigDto authorizationConfigDto = authorizationConfigService.getDto();
@@ -101,6 +124,14 @@ public class StorageManagementServiceImpl implements StorageManagementService {
                 if (CollectionUtils.isNotEmpty(roles)) {
                     //存储空间角色已存在，先删除
                     authorizationConfigService.deleteRole(storageRoleName);
+                    User user = userInfo(username);
+                    SecurityRoleEntity securityRole = new SecurityRoleEntity();
+                    securityRole.setUuid(storageRoleName);
+                    user.getRoles().remove(securityRole);
+                    userService.saveOverrideRole(user);
+                }
+                if (CollectionUtils.isEmpty(storageIdSet)) {
+                    return;
                 }
                 //普通用户，对于其管理的存储空间赋予权限
                 RoleModel roleModel = new RoleModel();
@@ -123,7 +154,7 @@ public class StorageManagementServiceImpl implements StorageManagementService {
                 user.getRoles().add(securityRole);
                 userService.saveOverrideRole(user);
             } catch (Exception ex) {
-                logger.error("handler storage {} admin role error：{}", currentStorageId, ExceptionUtils.getStackTrace(ex));
+                logger.error("handler user {} storage {} admin role error：{}", username, currentStorageId, ExceptionUtils.getStackTrace(ex));
                 throw new RuntimeException(ex.getMessage());
             }
         }
@@ -184,7 +215,7 @@ public class StorageManagementServiceImpl implements StorageManagementService {
                 privileges.addAll(roleData.getAccessModel().getApiAuthorities().stream().map(Privileges::getAuthority).collect(Collectors.toSet()));
             }
         }
-        logger.info("storage admin privileges：{}", privileges);
+        logger.debug("storage admin privileges：{}", privileges);
         return privileges;
     }
 

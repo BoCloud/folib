@@ -1023,7 +1023,7 @@ export default {
       uploadForm: this.$form.createForm(this, { name: "upload_form" }),
       showUploadFormModal: false,
       showRpmUploadFormModal: false,
-      enabled: true,
+      enabled: false,
       scan: {
         id: "",
         repository: "",
@@ -1197,6 +1197,18 @@ export default {
       return getLayoutType(this.folibRepository);
     },
     getBrowse() {
+      if (this.folibRepository.status.indexOf('Out of Service') !== -1) {
+        this.$notification.warning({
+          message: "该仓库已关闭服务",
+        })
+        return false
+      }
+      if (!this.folibRepository.allowsDirectoryBrowsing) {
+        this.$notification.warning({
+          message: "该仓库目录浏览未开启",
+        })
+        return false
+      }
       browse(this.folibRepository.storageId, this.folibRepository.id, "")
         .then((res) => {
           const d = res.directories;
@@ -1211,10 +1223,6 @@ export default {
           this.treeData = d.concat(f);
         })
         .catch((err) => {
-          let msg = err.response.data.message?err.response.data.message:''
-          if (msg.indexOf("is out of service") !== -1) {
-            this.enabled = false;
-          }
         });
     },
     createData() {
@@ -1977,8 +1985,7 @@ export default {
       this.permissions = []
       getStorageAndRepositoryPermission(this.folibRepository.storageId, this.folibRepository.id).then((res) => {
         this.permissions = res
-        debugger
-        this.enabled = this.enabled && this.enablUploadedLayout.includes(this.folibRepository.layout) && this.folibRepository.type === 'hosted' && this.permissions.includes('ARTIFACTS_DEPLOY')
+        this.enabled = this.folibRepository.status.indexOf('Out of Service') === -1 && this.enablUploadedLayout.includes(this.folibRepository.layout) && this.folibRepository.type === 'hosted' && this.permissions.includes('ARTIFACTS_DEPLOY')
       })
     }
   },

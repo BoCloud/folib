@@ -16,7 +16,7 @@
               <p v-else>所有成员可见，可拉取</p>
             </template>
   
-            <a-radio-group v-model="permissionForm.scope">
+            <a-radio-group v-model="permissionForm.scope" @change="scopeChange">
               <a-radio :value="1">
                 存储空间
               </a-radio>
@@ -98,8 +98,11 @@
 </template>
 <script>
 import {
+  repositoryEnableUsers,
   repositoryPermission,
   deleteRepositoryPermission,
+  getLibraryFilter,
+  getRepositoryPermission
 } from "@/api/folib"
 
 export default {
@@ -107,22 +110,7 @@ export default {
 		folibRepository: {
 			type: Object,
 			default: {},
-		},
-    permissionForm: {
-			type: Object,
-			default: {
-        scope: 1,
-        userList: []
-      },
-		},
-    userList: {
-			type: Array,
-			default: () => [],
-		},
-    sourceUserList: {
-			type: Array,
-			default: () => [],
-		},
+    },
     settingVisible: {
 			type: Boolean,
 			default: false,
@@ -131,6 +119,12 @@ export default {
   data() {
     return {
       permissionUserShow: false,
+      permissionForm: {
+        scope: 1,
+        userList: []
+		  },
+      userList: [],
+      sourceUserList: [],
       permissionRules: {
         scope: [
           { required: true, message: '请选择仓库可见范围', trigger: 'blur' },
@@ -174,22 +168,29 @@ export default {
           value: "ARTIFACTS_DELETE",
         },
       ],
-      userRadioDefault: 0
+      userRadioDefault: 0,
+      storageUsers: [],
     }
   },
   components: {
     
   },
   created() {
-
+    this.initData()
   },
 	watch: {
     settingVisible: function (newval) {
-      this.userRadioDefault = 0
+      this.initData()
     },
   },
   mounted() {},
   methods: {
+    initData () {
+      this.queryRepositoryPermission()
+      this.getUsersList()
+      this.getStorage()
+      this.userRadioDefault = 0
+    },
     successMsg(message) {
       if (!message) {
         message = "操作成功";
@@ -199,7 +200,33 @@ export default {
         description: "",
       });
     },
+    getUsersList() {
+      this.userList = []
+      let query = {storageId: this.folibRepository.storageId, repositoryId: this.folibRepository.id, scope: this.permissionForm.scope}
+      repositoryEnableUsers(query).then(res => {
+        this.userList = res
+      })
+    },
+    queryRepositoryPermission() {
+      getRepositoryPermission({storageId: this.folibRepository.storageId, repositoryId: this.folibRepository.id}).then(res => {
+        this.permissionForm.scope = res.scope
+        this.permissionForm.userList = []
+        this.sourceUserList = []
+        if (res.userList && res.userList.length > 0) {
+          this.permissionForm.userList = res.userList
+          this.sourceUserList = Object.assign([], res.userList)
+        }
+      })
+    },
+    userReset() {
+      this.permissionForm.userList = Object.assign([], this.sourceUserList)
+    },
+    scopeChange (e) {
+      this.userReset()
+      this.getUsersList()
+    },
     userChange(e) {
+      this.userReset()
       let val = e.target.value
       if (val === 1) {
         this.permissionUserShow = true
@@ -234,19 +261,34 @@ export default {
         }
       }
     },
+    getStorage() {
+      getLibraryFilter(this.folibRepository.storageId).then(response => {
+        this.storageUsers = []
+        if (response.users) {
+          this.storageUsers = response.users
+        }
+      })
+    },
     permissionFormSubmit() {
       this.$refs.permissionForm.validate(valid => {
         if (valid) {
           if (this.permissionForm.scope === null) {
-            this.$notification["warning"]({
+            this.$notification.warning({
               message: "请选择仓库可见范围",
               description: ""
             })
             return false
           }
           for (let item of this.permissionForm.userList) {
+            if (this.permissionForm.scope === 1 && !this.storageUsers.includes(item.username)) {
+              this.$notification.warning({
+                message: "仓库可见范围改为存储空间内，用户" + item.username + "不属于该存储空间，需要先从授权列表中移除",
+                description: ""
+              })
+              return false
+            }
             if (!item.permissions || item.permissions.length < 1) {
-              this.$notification["warning"]({
+              this.$notification.warning({
                 message: "至少给" + item.username + '赋予一项权限',
                 description: ""
               })
@@ -262,10 +304,13 @@ export default {
             this.permissionUserShow = false
             this.$emit('settingDrawerClose')
           }).catch((err) => {
-            this.$notification["error"]({
-              message: err.response.data.message,
-              description: ""
-            })
+            let msg = err.response.data.message?err.response.data.message:err.response.data
+            if (msg && msg.length > 0) {
+              this.$notification.error({
+                message: msg,
+                description: ""
+              })
+            }
           })
         }
       })
@@ -290,7 +335,7 @@ export default {
     },
     permissionStorageUser() {
       if (!this.userList || this.userList.length === 0) {
-        this.$notification["warning"]({
+        this.$notification.warning({
           message: "没有满足条件的成员，请先给存储空间分配合适的成员",
           description: "",
         })
@@ -321,6 +366,7 @@ export default {
         if (sourceIndex >= 0) {
           deleteRepositoryPermission({storageId: this.folibRepository.storageId, repositoryId: this.folibRepository.id, username: user.username, permissions: user.permissions.join(",")}).then(res => {
             this.permissionForm.userList.splice(index, 1)
+            this.sourceUserList.splice(index, 1)
           })
         } else {
           this.permissionForm.userList.splice(index, 1)
