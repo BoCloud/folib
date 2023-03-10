@@ -52,7 +52,7 @@ import org.springframework.web.bind.annotation.*;
  */
 @Controller
 @RequestMapping("/api/configuration/crontasks")
-@PreAuthorize("hasAuthority('ADMIN')")
+@PreAuthorize("hasAuthority('AUTHENTICATED_USER')")
 public class CronTaskController
         extends BaseController
 {

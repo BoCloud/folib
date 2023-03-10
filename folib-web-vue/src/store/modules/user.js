@@ -12,6 +12,7 @@ const user = {
     securityTokenKey: '',
     enabled: '',
     roles: [],
+    authorities: [],
     email: ''
   },
 
@@ -24,6 +25,9 @@ const user = {
     },
     SET_ROLES: (state, roles) => {
       state.roles = roles
+    },
+    SET_AUTHORITIES: (state, authorities) => {
+      state.authorities = authorities
     },
     SET_ENABLED: (state, enabled) => {
       state.enabled = enabled
@@ -57,6 +61,7 @@ const user = {
         getInfo().then(response => {
           const result = response
             commit('SET_ROLES', result.roles)
+            commit('SET_AUTHORITIES', result.authorities)
             commit('SET_ENABLED', result.enabled)
             commit('SET_EMAIL', result.email)
             commit('SET_NAME', result.username)
@@ -79,6 +84,7 @@ const user = {
       return new Promise((resolve) => {
         commit('SET_TOKEN', '')
         commit('SET_ROLES', [])
+        commit('SET_AUTHORITIES', [])
         storage.remove(ACCESS_TOKEN)
         storage.remove(USER_INFO)
         storage.remove("libView_repository")

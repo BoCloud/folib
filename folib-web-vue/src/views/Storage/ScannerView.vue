@@ -132,11 +132,11 @@
                 :data-source="rowData" :pagination="false">
                 <a-table rowKey="id" :columns="innerColumns" slot="expandedRowRender" slot-scope="record"
                   :data-source="record.filePaths" :pagination="false">
-                  <template slot="filePath" slot-scope="text, record">
+                  <template slot="filePath" slot-scope="text, item">
                     <div @click="getScanReport(record)">
                       <a>
                         <h6 class="m-0">
-                          {{ record.filePath }}
+                          {{ item.filePath }}
                         </h6>
                       </a>
                     </div>

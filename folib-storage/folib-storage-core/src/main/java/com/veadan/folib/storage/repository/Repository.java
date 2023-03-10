@@ -76,4 +76,6 @@ public interface Repository
 
     Set<String> getVulnerabilityBlacks();
 
+    Integer getScope();
+
 }

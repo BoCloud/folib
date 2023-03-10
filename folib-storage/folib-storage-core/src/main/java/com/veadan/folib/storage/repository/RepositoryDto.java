@@ -1,9 +1,6 @@
 package com.veadan.folib.storage.repository;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.*;
 import com.veadan.folib.configuration.MutableProxyConfiguration;
 import com.veadan.folib.configuration.ProxyConfiguration;
 import com.veadan.folib.providers.storage.FileSystemStorageProvider;
@@ -83,6 +80,11 @@ public class RepositoryDto
      */
     private Set<String> vulnerabilityBlacks = new LinkedHashSet<>();
 
+    /**
+     * 仓库可见范围 1 存储空间内 2 公开
+     */
+    private Integer scope = 1;
+
     @JsonIgnore
     private StorageDto storage;
 
@@ -95,6 +97,7 @@ public class RepositoryDto
         this.id = id;
     }
 
+    @Override
     public String getId() {
         return id;
     }
@@ -103,6 +106,7 @@ public class RepositoryDto
         this.id = id;
     }
 
+    @Override
     public String getBasedir() {
         return basedir;
     }
@@ -111,6 +115,7 @@ public class RepositoryDto
         this.basedir = basedir;
     }
 
+    @Override
     public String getPolicy() {
         return policy;
     }
@@ -119,6 +124,7 @@ public class RepositoryDto
         this.policy = policy;
     }
 
+    @Override
     public String getStorageProvider() {
         return storageProvider;
     }
@@ -127,6 +133,7 @@ public class RepositoryDto
         this.storageProvider = storageProvider;
     }
 
+    @Override
     public String getLayout() {
         return layout;
     }
@@ -135,6 +142,7 @@ public class RepositoryDto
         this.layout = layout;
     }
 
+    @Override
     public String getType() {
         return type;
     }
@@ -143,6 +151,7 @@ public class RepositoryDto
         this.type = type;
     }
 
+    @Override
     public boolean isSecured() {
         return secured;
     }
@@ -151,6 +160,7 @@ public class RepositoryDto
         this.secured = secured;
     }
 
+    @Override
     public String getStatus() {
         return status;
     }
@@ -159,6 +169,7 @@ public class RepositoryDto
         this.status = status;
     }
 
+    @Override
     public boolean isInService() {
         return RepositoryStatusEnum.IN_SERVICE.getStatus().equalsIgnoreCase(getStatus());
     }
@@ -171,6 +182,7 @@ public class RepositoryDto
         status = RepositoryStatusEnum.OUT_OF_SERVICE.getStatus();
     }
 
+    @Override
     public boolean isTrashEnabled() {
         return trashEnabled;
     }
@@ -179,26 +191,32 @@ public class RepositoryDto
         this.trashEnabled = trashEnabled;
     }
 
+    @Override
     public boolean allowsDeletion() {
         return allowsDelete;
     }
 
+    @Override
     public boolean allowsForceDeletion() {
         return allowsForceDeletion;
     }
 
+    @Override
     public boolean allowsDeployment() {
         return allowsDeployment;
     }
 
+    @Override
     public boolean allowsRedeployment() {
         return allowsRedeployment;
     }
 
+    @Override
     public boolean allowsDirectoryBrowsing() {
         return allowsDirectoryBrowsing;
     }
 
+    @Override
     public boolean isChecksumHeadersEnabled() {
         return checksumHeadersEnabled;
     }
@@ -215,6 +233,7 @@ public class RepositoryDto
         this.proxyConfiguration = proxyConfiguration;
     }
 
+    @Override
     public RemoteRepositoryDto getRemoteRepository() {
         return remoteRepository;
     }
@@ -228,6 +247,7 @@ public class RepositoryDto
         this.remoteRepository = remoteRepository;
     }
 
+    @Override
     public Set<String> getGroupRepositories() {
         return groupRepositories;
     }
@@ -244,14 +264,17 @@ public class RepositoryDto
         groupRepositories.remove(repositoryId);
     }
 
+    @Override
     public boolean acceptsSnapshots() {
         return RepositoryPolicyEnum.ofPolicy(getPolicy()).acceptsSnapshots();
     }
 
+    @Override
     public boolean acceptsReleases() {
         return RepositoryPolicyEnum.ofPolicy(getPolicy()).acceptsReleases();
     }
 
+    @Override
     public Storage getStorage() {
         return storage;
     }
@@ -281,6 +304,7 @@ public class RepositoryDto
         this.customConfigurations = customConfigurations;
     }
 
+    @Override
     public CustomRepositoryConfigurationDto getRepositoryConfiguration() {
         return repositoryConfiguration;
     }
@@ -339,14 +363,17 @@ public class RepositoryDto
         this.allowsDirectoryBrowsing = allowsDirectoryBrowsing;
     }
 
+    @Override
     public boolean isHostedRepository() {
         return RepositoryTypeEnum.HOSTED.getType().equals(getType());
     }
 
+    @Override
     public boolean isProxyRepository() {
         return RepositoryTypeEnum.PROXY.getType().equals(getType());
     }
 
+    @Override
     public boolean isGroupRepository() {
         return RepositoryTypeEnum.GROUP.getType().equals(getType());
     }
@@ -355,6 +382,7 @@ public class RepositoryDto
         return RepositoryTypeEnum.VIRTUAL.getType().equals(getType());
     }
 
+    @Override
     public long getArtifactMaxSize() {
         return artifactMaxSize;
     }
@@ -363,6 +391,7 @@ public class RepositoryDto
         this.artifactMaxSize = artifactMaxSize;
     }
 
+    @Override
     public Set<String> getArtifactCoordinateValidators() {
         return artifactCoordinateValidators;
     }
@@ -409,5 +438,14 @@ public class RepositoryDto
 
     public void removeVulnerabilityBlacks(Set<String> blacks) {
         this.vulnerabilityBlacks.removeAll(blacks);
+    }
+
+    @Override
+    public Integer getScope() {
+        return scope;
+    }
+
+    public void setScope(Integer scope) {
+        this.scope = scope;
     }
 }

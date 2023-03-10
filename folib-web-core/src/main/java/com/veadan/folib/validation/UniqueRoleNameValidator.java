@@ -28,7 +28,7 @@ public class UniqueRoleNameValidator
                            ConstraintValidatorContext context)
     {
         return StringUtils.isEmpty(roleName)
-                || !authorizationConfigService.get().getRoles().stream().anyMatch(r -> r.getName().equals(roleName));
+                || authorizationConfigService.get().getRoles().stream().noneMatch(r -> r.getName().equalsIgnoreCase(roleName));
     }
 
 }

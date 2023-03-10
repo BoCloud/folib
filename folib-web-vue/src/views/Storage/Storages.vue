@@ -75,7 +75,7 @@
                   <template slot="title">
                     <span>修改存储空间</span>
                   </template>
-                  <div v-if="$store.state.user.roles.indexOf('ADMIN') > -1" @click="updateHandleView">
+                  <div v-if="hasStoragePermission()" @click="updateHandleView">
                     <svg width="20px" height="20px" viewBox="0 0 40 40" version="1.1" xmlns="http://www.w3.org/2000/svg"
                       xmlns:xlink="http://www.w3.org/1999/xlink">
                       <title>settings</title>
@@ -123,7 +123,7 @@
             <!-- / Project Card -->
           </a-col>
 
-          <a-col :span="8" class="mb-24">
+          <a-col :span="8" class="mb-24" v-if="hasStoragePermission()">
             <a-card @click="folibVisibleShow()" class="crm-bar-line header-solid h-full xinjian"
               :bodyStyle="{ padding: 0, height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }">
               <a class="text-center text-muted font-bold">
@@ -201,7 +201,7 @@
               </a-select>
             </a-form-model-item>
             <a-form-model-item class="tags-field mb-10"
-              v-if="userInfo.roles.indexOf('ADMIN') > -1 || userInfo.name === currentStorage.admin" label="用户成员选择"
+              v-if="hasStoragePermission()" label="用户成员选择"
               show-search :colon="false">
               <a-select v-model="storageCreateData.users" mode="multiple" :defaultValue="storageCreateData.users"
                 style="width: 100%" placeholder="请选择用户">
@@ -286,7 +286,7 @@
               </a-select>
             </a-form-item>
             <a-form-item class="tags-field mb-10"
-              v-if="userInfo.roles.indexOf('ADMIN') > -1 || userInfo.name === currentStorage.admin" label="用户成员选择"
+              v-if="hasStoragePermission()" label="用户成员选择"
               :colon="false">
               <a-select v-model="currentStorage.users" mode="multiple" :defaultValue="currentStorage.users"
                 style="width: 100%" placeholder="请选择用户">
@@ -380,7 +380,7 @@
               title="基础信息" />
             <a-step v-if="folibRepository.type === 'proxy'" title="远程配置" />
             <a-step v-if="folibRepository.type === 'group'" title="组合配置" />
-            <a-step title="定时策略" />
+            <!-- <a-step title="定时策略" /> -->
           </a-steps>
           <!-- / Steps -->
 
@@ -684,9 +684,9 @@
                     @click="addOrUpdateRepositorySecond(false)" class="px-25">
                     完成{{ folibRepositoryEditDisabled? '修改': '创建' }}
                   </a-button>
-                  <a-button v-if="folibRepository.type === 'hosted'" style="margin-left: 20px"
+                  <!-- <a-button v-if="folibRepository.type === 'hosted'" style="margin-left: 20px"
                     @click="addOrUpdateRepositorySecond(true)" class="px-25">
-                    {{ folibRepositoryEditDisabled? '修改': '创建' }}并设置定时策略</a-button>
+                    {{ folibRepositoryEditDisabled? '修改': '创建' }}并设置定时策略</a-button> -->
 
                   <a-button v-else-if="folibRepository.type !== 'hosted'" type="primary" @click="moveStep(1)"
                     class="px-25">下一步
@@ -827,8 +827,8 @@
                 <a-col :span="12" class="text-right">
                   <a-button type="primary" @click="addOrUpdateRepositoryHandel(false)" class="px-25">
                     完成{{ folibRepositoryEditDisabled? '修改': '创建' }}</a-button>
-                  <a-button style="margin-left: 20px" @click="addOrUpdateRepositoryHandel(true)" class="px-25">
-                    {{ folibRepositoryEditDisabled? '修改': '创建' }}并设置定时策略</a-button>
+                  <!-- <a-button style="margin-left: 20px" @click="addOrUpdateRepositoryHandel(true)" class="px-25">
+                    {{ folibRepositoryEditDisabled? '修改': '创建' }}并设置定时策略</a-button> -->
                 </a-col>
               </a-row>
             </a-form>
@@ -862,8 +862,8 @@
               <a-col :span="12" class="text-right">
                 <a-button type="primary" @click="addOrUpdateRepositoryHandel(false)" class="px-25">
                   完成{{ folibRepositoryEditDisabled? '修改': '创建' }}</a-button>
-                <a-button style="margin-left:20px" @click="addOrUpdateRepositoryHandel(true)" class="px-25">
-                  {{ folibRepositoryEditDisabled? '修改': '创建' }}并设置定时策略</a-button>
+                <!-- <a-button style="margin-left:20px" @click="addOrUpdateRepositoryHandel(true)" class="px-25">
+                  {{ folibRepositoryEditDisabled? '修改': '创建' }}并设置定时策略</a-button> -->
               </a-col>
             </a-row>
           </a-card>
@@ -970,6 +970,7 @@ import {
   getStorages,
   updateStorages,
   getLibrary,
+  getLibraryFilter,
   getLibraryByQuery,
   addOrUpdateRepository,
   getRepositoryResponseEntity,
@@ -984,15 +985,16 @@ import {
   delCronOne,
   getStoragesAndRepositories
 } from "@/api/folib"
-import { getUsers } from "@/api/users";
+import { getUsers } from "@/api/users"
 import CardProjectFolib from "@/components/Cards/CardProjectFolib"
 import { getLayoutType, genLayoutType, groupRepositoriesBuild, objectToGroupRepositories } from "@/utils/layoutUtil"
-import draggable from "vuedraggable";
-import FolibKanbanBoard from "@/components/Kanban/FolibKanbanBoard";
-import FolibKanbanTask from "@/components/Kanban/FolibKanbanTask";
-import storage from 'store';
-import store from '@/store';
-import { checkMachineCode } from "@/api/settings";
+import draggable from "vuedraggable"
+import FolibKanbanBoard from "@/components/Kanban/FolibKanbanBoard"
+import FolibKanbanTask from "@/components/Kanban/FolibKanbanTask"
+import storage from 'store'
+import store from '@/store'
+import { checkMachineCode } from "@/api/settings"
+import { hasRole, isAdmin, hasPermission } from "@/utils/permission"
 
 export default {
   inject: ["reload"],
@@ -1212,7 +1214,7 @@ export default {
     }
 
     this.getStorage(this.currentStorage.id)
-    this.getLibrary(this.currentStorage.id)
+    this.libraryFilter(this.currentStorage.id)
   },
   computed: {},
   methods: {
@@ -1412,18 +1414,18 @@ export default {
         this.currentStorage.isNotCustom = false
         this.currentStorage.bucket = null
       }
-      this.getLibrary(this.currentStorage.id)
+      this.libraryFilter(this.currentStorage.id)
     },
     getStorage(id) {
-      getLibrary(id).then(response => {
+      getLibraryFilter(id).then(response => {
         this.currentStorage.id = response.id
         this.currentStorage.basedir = response.basedir
         this.currentStorage.admin = response.admin
         this.currentStorage.users = response.users
       })
     },
-    getLibrary(id) {
-      getLibrary(id).then(response => {
+    libraryFilter(id) {
+      getLibraryFilter(id).then(response => {
         this.repositories = response.repositories
         this.$forceUpdate()
       })
@@ -1653,12 +1655,17 @@ export default {
         })
         return false
       }
-      var reg = /^[a-zA-Z0-9_.\\-]+$/
+      let reg = /^(?![_.])[a-zA-Z0-9_.\\-]+$/
+      let description = '仓库名称应为大小写字母，数字，特殊符号(-_.)，不能以_.开头'
+      if (this.layoutChecked === 'docker') {
+        reg = /^(?![_.])[a-z0-9_.\\-]+$/
+        description = 'docker仓库名称应为小写字母，数字，特殊符号(-_.)，不能以_.开头'
+      }
       if (reg.test(repositoryName) === false) {
         this.$notification.open({
           class: 'ant-notification-warning',
           message: '填写错误',
-          description: '仓库名称应为大小写字母，数字，特殊符号(-_.)',
+          description: description,
         })
         return false
       }
@@ -1714,7 +1721,7 @@ export default {
         }
 
 
-        this.getLibrary(this.currentStorage.id)
+        this.libraryFilter(this.currentStorage.id)
 
         if (!isNotSetCron) {
           this.step = 0
@@ -1821,7 +1828,7 @@ export default {
               }, 100)
             }).finally(() => {
               this.deleteFormVisible = false;
-              this.getLibrary(this.currentStorage.id)
+              this.libraryFilter(this.currentStorage.id)
             })
           } else {
             setTimeout(() => {
@@ -1852,7 +1859,7 @@ export default {
               }, 100)
             }).finally(() => {
               this.deleteFormVisible = false;
-              this.getLibrary(this.currentStorage.id)
+              this.libraryFilter(this.currentStorage.id)
             })
           } else {
             setTimeout(() => {
@@ -1909,6 +1916,9 @@ export default {
         item.oneTimeExecution = false
       }
       this.$forceUpdate()
+    },
+    hasStoragePermission() {
+      return isAdmin() || this.currentStorage.admin === this.$store.state.user.name
     }
   },
 };

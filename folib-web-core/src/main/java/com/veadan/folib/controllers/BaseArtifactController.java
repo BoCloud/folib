@@ -3,6 +3,7 @@ package com.veadan.folib.controllers;
 import com.alibaba.fastjson.JSON;
 import com.google.common.collect.Sets;
 import com.veadan.folib.configuration.MutableSecurityPolicyConfiguration;
+import com.veadan.folib.controllers.support.ErrorResponseEntityBody;
 import com.veadan.folib.domain.Artifact;
 import com.veadan.folib.domain.VulnerabilitiesInfo;
 import com.veadan.folib.domain.Vulnerability;
@@ -35,7 +36,10 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.*;
+import java.util.LinkedHashSet;
+import java.util.Objects;
+import java.util.Set;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 public abstract class BaseArtifactController
@@ -53,6 +57,9 @@ public abstract class BaseArtifactController
     @Autowired
     private ProxyRepositoryConnectionPoolConfigurationService clientPool;
 
+    @Autowired
+    private HttpServletResponse httpServletResponse;
+
 
     protected boolean provideArtifactDownloadResponse(HttpServletRequest request,
                                                       HttpServletResponse response,
@@ -60,6 +67,10 @@ public abstract class BaseArtifactController
                                                       RepositoryPath repositoryPath)
             throws Exception {
         logger.debug("Resolved path: {}", repositoryPath);
+        boolean isCommitted  = response.isCommitted();
+        if (isCommitted) {
+            return false;
+        }
         ArtifactControllerHelper.provideArtifactHeaders(response, repositoryPath);
         if (response.getStatus() == HttpStatus.NOT_FOUND.value()) {
             return false;
@@ -157,9 +168,13 @@ public abstract class BaseArtifactController
                     }
                 }
                 if (flag) {
-                    // todo 推数据给platform
+                    httpServletResponse.setContentType(org.springframework.http.MediaType.APPLICATION_JSON_VALUE);
+                    httpServletResponse.setStatus(HttpServletResponse.SC_FORBIDDEN);
+                    String msg = "The artifact " + artifact.getUuid() + " has a vulnerability, and downloading is prohibited";
+                    httpServletResponse.getWriter().println(objectMapper.writeValueAsString(new ErrorResponseEntityBody(msg)));
+                    httpServletResponse.flushBuffer();
+                    //推数据给platform
                     pushVulnerabilities(artifact);
-                    throw new RuntimeException(artifact.getUuid() + "制品存在漏洞，禁止下载！！！");
                 }
             }
         }

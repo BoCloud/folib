@@ -1,11 +1,10 @@
 package com.veadan.folib.security.vote;
 
-import static com.veadan.folib.web.Constants.ARTIFACT_ROOT_PATH;
-
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
+import com.veadan.folib.controllers.BrowseController;
 import org.aopalliance.intercept.MethodInvocation;
 import com.veadan.folib.users.domain.Privileges;
 import com.veadan.folib.users.userdetails.SpringSecurityUser;
@@ -20,6 +19,8 @@ import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.stereotype.Component;
+
+import static com.veadan.folib.web.Constants.*;
 
 /**
  * @author xuxinping
@@ -80,7 +81,7 @@ public class ExtendedAuthoritiesVoter extends PreInvocationAuthorizationAdviceVo
             }
 
             String requestUri = UrlUtils.getRequestUri();
-            if (!requestUri.startsWith(ARTIFACT_ROOT_PATH))
+            if (!requestUri.startsWith(ARTIFACT_ROOT_PATH) && !requestUri.startsWith(DOCKER_ROOT_PATH) && !requestUri.startsWith(BrowseController.ROOT_CONTEXT) && !requestUri.startsWith(STORAGE_ROOT_PATH))
             {
                 return apiAuthorities;
             }
@@ -107,36 +108,43 @@ public class ExtendedAuthoritiesVoter extends PreInvocationAuthorizationAdviceVo
             return extendedAuthorities;
         }
 
+        @Override
         public String getName()
         {
             return getSourceAuthentication().getName();
         }
 
+        @Override
         public Collection<? extends GrantedAuthority> getAuthorities()
         {
             return calculateExtendedAuthorities(getSourceAuthentication());
         }
 
+        @Override
         public Object getCredentials()
         {
             return getSourceAuthentication().getCredentials();
         }
 
+        @Override
         public Object getDetails()
         {
             return getSourceAuthentication().getDetails();
         }
 
+        @Override
         public Object getPrincipal()
         {
             return getSourceAuthentication().getPrincipal();
         }
 
+        @Override
         public boolean isAuthenticated()
         {
             return getSourceAuthentication().isAuthenticated();
         }
 
+        @Override
         public void setAuthenticated(boolean isAuthenticated)
             throws IllegalArgumentException
         {

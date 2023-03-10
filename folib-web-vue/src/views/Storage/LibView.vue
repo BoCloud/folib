@@ -39,8 +39,11 @@
           :vulnerabilityColumns="vulnerabilityColumns"
         />
       </a-tab-pane>
+      <a-button slot="tabBarExtraContent" icon="setting" class="repository-setting" size="small" @click="settingDrawerShow()" />
     </a-tabs>
     <!-- / Header Background Image -->
+
+    <SettingsDrawer :folibRepository="this.folibRepository" :settingVisible="settingVisible" @settingDrawerClose="settingDrawerClose"></SettingsDrawer>
 
     <!-- User Profile Card -->
 
@@ -578,6 +581,7 @@ import "quill/dist/quill.snow.css";
 import { quillEditor } from "vue-quill-editor";
 import Store from "./components/Store/index.vue";
 import Safe from "./components/Safe/index.vue";
+import SettingsDrawer from "./components/Repository/SettingsDrawer.vue";
 
 export default {
   inject: ["reload"],
@@ -590,6 +594,7 @@ export default {
     quillEditor,
     Store,
     Safe,
+    SettingsDrawer,
   },
   data() {
     return {
@@ -803,7 +808,8 @@ export default {
           ],
         },
       },
-    };
+      settingVisible: false,
+    }
   },
   created() {
     this.createData();
@@ -1029,8 +1035,6 @@ export default {
         })
         .finally(() => {});
     },
-
-
     handlerRespMetadata(res) {
       let metadataList = [];
       if (
@@ -1070,6 +1074,12 @@ export default {
         this.handlerRespMetadata(res);
         this.$forceUpdate();
       });
+    },
+    settingDrawerShow() {
+      this.settingVisible = true
+    },
+    settingDrawerClose() {
+      this.settingVisible = false
     },
   },
 };
@@ -1214,5 +1224,9 @@ $md: 768px;
   font-size: 12px;
   line-height: 1.5;
   padding: 5px;
+}
+.repository-setting {
+  margin: 0 5px;
+  margin-top: 12px;
 }
 </style>

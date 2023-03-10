@@ -14,7 +14,9 @@ import com.veadan.folib.services.ArtifactResolutionService;
 import com.veadan.folib.services.ConfigurationManagementService;
 import com.veadan.folib.storage.Storage;
 import com.veadan.folib.storage.repository.Repository;
+import com.veadan.folib.users.domain.SystemRole;
 import com.veadan.folib.users.userdetails.SpringSecurityUser;
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.IteratorUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -24,16 +26,14 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 
 import javax.inject.Inject;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.util.Collections;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -293,5 +293,34 @@ public abstract class BaseController {
     public Set<String> roleNames(Authentication authentication) {
         SpringSecurityUser userDetails = (SpringSecurityUser) authentication.getPrincipal();
         return Optional.ofNullable(userDetails.getRoles()).orElse(Collections.emptySet()).stream().map(Role::getName).collect(Collectors.toSet());
+    }
+
+    public boolean hasAdmin() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (Objects.isNull(authentication)) {
+            return false;
+        }
+        SpringSecurityUser userDetails = (SpringSecurityUser) authentication.getPrincipal();
+        if (CollectionUtils.isEmpty(userDetails.getRoles())) {
+            return false;
+        }
+        return userDetails.getRoles().stream().anyMatch(item -> SystemRole.ADMIN.name().equals(item.getName()));
+    }
+
+    public SpringSecurityUser loginUser() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (Objects.isNull(authentication)) {
+            return null;
+        }
+        return (SpringSecurityUser) authentication.getPrincipal();
+    }
+
+    public String loginUsername() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (Objects.isNull(authentication)) {
+            return "";
+        }
+        SpringSecurityUser springSecurityUser = (SpringSecurityUser) authentication.getPrincipal();
+        return springSecurityUser.getUsername();
     }
 }

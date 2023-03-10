@@ -7,10 +7,7 @@ import java.lang.annotation.Retention;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
@@ -18,7 +15,12 @@ import javax.inject.Inject;
 import javax.inject.Qualifier;
 import javax.transaction.Transactional;
 
+import com.google.common.collect.Lists;
+import com.google.common.collect.Sets;
 import com.veadan.folib.data.CacheName;
+import com.veadan.folib.domain.SecurityRole;
+import com.veadan.folib.users.domain.Privileges;
+import com.veadan.folib.users.domain.SystemRole;
 import com.veadan.folib.users.domain.UserData;
 import com.veadan.folib.users.domain.Users;
 import com.veadan.folib.users.security.SecurityTokenProvider;
@@ -56,6 +58,11 @@ public class DatabaseUserService implements UserService
     public void deleteByUsername(String username)
     {
         userRepository.deleteById(username);
+    }
+
+    @Override
+    public List<User> findUserByRoles(List<String> rolesList) {
+        return userRepository.findUsersWithRoles(rolesList);
     }
 
     @Override
@@ -135,7 +142,10 @@ public class DatabaseUserService implements UserService
             userEntity.setPassword(user.getPassword());
         }
         userEntity.setEnabled(user.isEnabled());
-        userEntity.setRoles(user.getRoles());
+        List<String> showRoleNameList = Lists.newArrayList(SystemRole.ADMIN.name(), SystemRole.GENERAL.name());
+        Set<SecurityRole> roles = Optional.ofNullable(userEntity.getRoles()).orElse(Sets.newLinkedHashSet()).stream().filter(item -> !showRoleNameList.contains(item.getRoleName())).collect(Collectors.toSet());
+        roles.addAll(user.getRoles());
+        userEntity.setRoles(roles);
         userEntity.setSecurityTokenKey(user.getSecurityTokenKey());
         userEntity.setEmail(user.getEmail());
         userEntity.setLastUpdated(now);
@@ -146,6 +156,25 @@ public class DatabaseUserService implements UserService
 //            throw new IllegalStateException("Can't modify external users.");
 //        }
         
+        return userRepository.save(userEntity);
+    }
+
+    @Override
+    public User saveOverrideRole(User user) {
+        LocalDateTime now = LocalDateTimeInstance.now();
+
+        UserEntity userEntity = Optional.ofNullable(findByUsername(user.getUsername())).orElseGet(() -> new UserEntity(user.getUsername()));
+
+        if (!StringUtils.isBlank(user.getPassword()))
+        {
+            userEntity.setPassword(user.getPassword());
+        }
+        userEntity.setEnabled(user.isEnabled());
+        userEntity.setRoles(user.getRoles());
+        userEntity.setSecurityTokenKey(user.getSecurityTokenKey());
+        userEntity.setEmail(user.getEmail());
+        userEntity.setLastUpdated(now);
+        userEntity.setUserType("general");
         return userRepository.save(userEntity);
     }
 

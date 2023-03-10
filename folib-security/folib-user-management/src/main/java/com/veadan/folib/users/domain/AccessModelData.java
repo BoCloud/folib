@@ -62,7 +62,40 @@ public class AccessModelData
     {
         return getPathAuthorities(url, getStorageAuthorities());
     }
-    
+
+    @Override
+    public Set<Privileges> getPathAuthorities(String storageId, String repositoryId) {
+        return getPathAuthorities(storageId, repositoryId, getStorageAuthorities());
+    }
+
+    public static Set<Privileges> getPathAuthorities(String storageId, String repositoryId, Set<? extends StoragePrivileges> storages)
+    {
+        if (StringUtils.isBlank(storageId)) {
+            return Collections.emptySet();
+        }
+        Set<Privileges> privileges = new HashSet<>();
+        for (final StoragePrivileges storage : storages)
+        {
+            if (!storage.getStorageId().equals(storageId))
+            {
+                continue;
+            }
+            privileges.addAll(storage.getStoragePrivileges());
+            if (StringUtils.isBlank(repositoryId)) {
+                continue;
+            }
+            for (RepositoryPrivileges repository : storage.getRepositoryPrivileges())
+            {
+                if (!repository.getRepositoryId().equals(repositoryId))
+                {
+                    continue;
+                }
+                privileges.addAll(repository.getRepositoryPrivileges());
+            }
+        }
+        return privileges;
+    }
+
     public static Set<Privileges> getPathAuthorities(String url, Set<? extends StoragePrivileges> storages)
     {
         String normalizedUrl = StringUtils.chomp(url, "/");
@@ -70,15 +103,22 @@ public class AccessModelData
         Set<Privileges> privileges = new HashSet<>();
         for (final StoragePrivileges storage : storages)
         {
-            String storageKey = "/folib/" + storage.getStorageId();
-            if (!normalizedUrl.startsWith(storageKey))
+            String storageKey = "/storages/" + storage.getStorageId();
+            String dockerKey = "/v2/" + storage.getStorageId();
+            String storageBrowseKey = "/api/browse/" + storage.getStorageId();
+            String storageConfigKey = "/api/configuration/folib/storages/" + storage.getStorageId();
+            if (!normalizedUrl.startsWith(storageKey) && !normalizedUrl.startsWith(dockerKey) && !normalizedUrl.startsWith(storageBrowseKey) && !normalizedUrl.startsWith(storageConfigKey))
             {
                 continue;
             }
+            privileges.addAll(storage.getStoragePrivileges());
             for (RepositoryPrivileges repository : storage.getRepositoryPrivileges())
             {
                 String repositoryKey = storageKey + "/" + repository.getRepositoryId();
-                if (!normalizedUrl.startsWith(repositoryKey))
+                String repositoryDockerKey = dockerKey + "/" + storage.getStorageId();
+                String repositoryBrowseKey = storageBrowseKey + "/" + repository.getRepositoryId();
+                String repositoryConfigKey = storageConfigKey + "/" + repository.getRepositoryId();
+                if (!normalizedUrl.startsWith(repositoryKey) && !normalizedUrl.startsWith(repositoryDockerKey) && !normalizedUrl.startsWith(repositoryBrowseKey) && !normalizedUrl.startsWith(repositoryConfigKey))
                 {
                     continue;
                 }

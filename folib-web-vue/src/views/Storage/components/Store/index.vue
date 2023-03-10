@@ -78,10 +78,7 @@
                     </small>
                   </a>
                   <a
-                    v-if="
-                      enablUploadedLayout.includes(folibRepository.layout) && folibRepository.type === 'hosted' &&
-                      enabled
-                    "
+                    v-if="enabled"
                     ><small style="padding-right: 20px" @click="handleUpload">
                       上传
                       <a-icon type="cloud-upload" />
@@ -975,6 +972,7 @@ import {
   deleteArtifact,
   repositoryVulnerabilityStatistics,
   getStoragesAndRepositories,
+  getStorageAndRepositoryPermission,
 } from "@/api/folib";
 import {
   artifactCopy,
@@ -1149,6 +1147,7 @@ export default {
       repositories: [],
       custom: false,
       enablUploadedLayout: ['Raw', 'php', 'Maven 2', 'npm'],
+      permissions: []
     };
   },
   created() {
@@ -1157,6 +1156,7 @@ export default {
     this.scannerRules();
     this.repositoryVulnerabilityStatistics();
     this.scanReport = Object.assign({}, this.propScanReport);
+    this.queryStorageAndRepositoryPermission();
   },
   methods: {
     scannerRules() {
@@ -1973,6 +1973,14 @@ export default {
         return fileSizeConver(size);
       }
     },
+    queryStorageAndRepositoryPermission() {
+      this.permissions = []
+      getStorageAndRepositoryPermission(this.folibRepository.storageId, this.folibRepository.id).then((res) => {
+        this.permissions = res
+        debugger
+        this.enabled = this.enabled && this.enablUploadedLayout.includes(this.folibRepository.layout) && this.folibRepository.type === 'hosted' && this.permissions.includes('ARTIFACTS_DEPLOY')
+      })
+    }
   },
 };
 </script>

@@ -1,20 +1,21 @@
 package com.veadan.folib.users.service.impl;
 
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 
+import com.google.common.collect.Lists;
+import com.google.common.collect.Sets;
 import com.veadan.folib.data.CacheName;
+import com.veadan.folib.domain.SecurityRole;
+import com.veadan.folib.users.domain.SystemRole;
 import com.veadan.folib.users.security.SecurityTokenProvider;
 import com.veadan.folib.users.service.UserService;
 import org.apache.commons.lang3.StringUtils;
@@ -119,6 +120,31 @@ public class InMemoryUserService implements UserService
 
             userDto.setUsername(user.getUsername());
             userDto.setEnabled(user.isEnabled());
+            List<String> showRoleNameList = Lists.newArrayList(SystemRole.ADMIN.name(), SystemRole.GENERAL.name());
+            Set<SecurityRole> roles = Optional.ofNullable(userDto.getRoles()).orElse(Sets.newLinkedHashSet()).stream().filter(item -> !showRoleNameList.contains(item.getRoleName())).collect(Collectors.toSet());
+            roles.addAll(user.getRoles());
+            userDto.setRoles(roles);
+            userDto.setSecurityTokenKey(user.getSecurityTokenKey());
+            userDto.setLastUpdate(LocalDateTimeInstance.now());
+
+            users.putIfAbsent(user.getUsername(), userDto);
+
+            return userDto;
+        });
+    }
+
+    @Override
+    public User saveOverrideRole(User user) {
+        return modifyInLock(users -> {
+            UserDto userDto = Optional.ofNullable(users.get(user.getUsername())).orElseGet(() -> new UserDto());
+
+            if (!StringUtils.isBlank(user.getPassword()))
+            {
+                userDto.setPassword(user.getPassword());
+            }
+
+            userDto.setUsername(user.getUsername());
+            userDto.setEnabled(user.isEnabled());
             userDto.setRoles(user.getRoles());
             userDto.setSecurityTokenKey(user.getSecurityTokenKey());
             userDto.setLastUpdate(LocalDateTimeInstance.now());
@@ -135,6 +161,28 @@ public class InMemoryUserService implements UserService
         modifyInLock(users -> {
             users.remove(username);
         });
+    }
+
+    @Override
+    public List<User> findUserByRoles(List<String> rolesList) {
+        if (rolesList == null)
+        {
+            return null;
+        }
+
+        final Lock readLock = usersLock.readLock();
+        readLock.lock();
+
+        try
+        {
+            List<UserDto> users = userMap.values().stream().filter(user -> user.getRoles().stream().anyMatch(role -> rolesList.contains(role.getRoleName()))).collect(Collectors.toList());
+            return Optional.ofNullable(users).orElse(Collections.emptyList()).stream()
+                    .map(UserData::new).collect(Collectors.toList());
+        }
+        finally
+        {
+            readLock.unlock();
+        }
     }
 
     @Override

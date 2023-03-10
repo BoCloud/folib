@@ -6,11 +6,14 @@ import com.veadan.folib.controllers.users.UserController;
 import com.veadan.folib.controllers.users.support.UserOutput;
 import com.veadan.folib.forms.users.UserForm;
 import com.veadan.folib.domain.User;
+import com.veadan.folib.users.domain.Privileges;
 import com.veadan.folib.users.dto.UserDto;
 import com.veadan.folib.users.service.UserService;
 import com.veadan.folib.users.service.impl.EncodedPasswordUser;
 import com.veadan.folib.users.service.impl.DatabaseUserService.Database;
+import com.veadan.folib.users.userdetails.SpringSecurityUser;
 import com.veadan.folib.validation.RequestBodyValidationException;
+import io.swagger.annotations.*;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -21,16 +24,11 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Controller;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.annotation.Validated;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.bind.annotation.*;
 
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
-import io.swagger.annotations.ApiResponse;
-import io.swagger.annotations.ApiResponses;
+import java.util.Collection;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * @author Steve Todorov
@@ -116,4 +114,15 @@ public class AccountController
                                            MediaType.APPLICATION_JSON_VALUE);
     }
 
+    @ApiOperation(value = "获取当前用户对指定存储空间和仓库的权限信息")
+    @ApiResponses(value = { @ApiResponse(code = 200, message = "Returns permissions details")})
+    @PreAuthorize("hasAuthority('AUTHENTICATED_USER')")
+    @GetMapping(value = "/permission/{storageId}/{repositoryId}",
+            produces = { MediaType.APPLICATION_JSON_VALUE })
+    @ResponseBody
+    public ResponseEntity<Set<String>> getStorageAndRepositoryPermission(Authentication authentication, @ApiParam(value = "The storageId", required = true) @PathVariable String storageId, @ApiParam(value = "The repositoryId", required = true) @PathVariable String repositoryId) {
+        SpringSecurityUser userDetails = (SpringSecurityUser)authentication.getPrincipal();
+        Collection<Privileges> storageAuthorities = userDetails.getStorageAuthorities(storageId, repositoryId);
+        return ResponseEntity.ok(storageAuthorities.stream().map(Privileges::getAuthority).collect(Collectors.toSet()));
+    }
 }

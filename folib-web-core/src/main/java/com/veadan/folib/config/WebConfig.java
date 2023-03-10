@@ -5,10 +5,7 @@ import com.veadan.folib.configuration.ConfigurationManager;
 import com.veadan.folib.configuration.FolibSecurityConfig;
 import com.veadan.folib.converters.RoleFormToRoleConverter;
 import com.veadan.folib.converters.RoleListFormToRoleListConverter;
-import com.veadan.folib.converters.configuration.ProxyConfigurationFormConverter;
-import com.veadan.folib.converters.configuration.RemoteRepositoryFormConverter;
-import com.veadan.folib.converters.configuration.RepositoryFormConverter;
-import com.veadan.folib.converters.configuration.StorageFormConverter;
+import com.veadan.folib.converters.configuration.*;
 import com.veadan.folib.converters.cron.CronTaskConfigurationFormToCronTaskConfigurationDtoConverter;
 import com.veadan.folib.converters.storage.routing.RoutingRuleFormToMutableConverter;
 import com.veadan.folib.converters.users.AccessModelFormToUserAccessModelDtoConverter;
@@ -260,6 +257,7 @@ public class WebConfig
         registry.addConverter(RepositoryFormConverter.INSTANCE);
         registry.addConverter(RemoteRepositoryFormConverter.INSTANCE);
         registry.addConverter(CronTaskConfigurationFormToCronTaskConfigurationDtoConverter.INSTANCE);
+        registry.addConverter(RepositoryPermissionFormConverter.INSTANCE);
     }
 
     @Bean

@@ -55,7 +55,45 @@
 
         <!-- Header Control Column -->
         <a-col :span="24" :md="17" class="header-control">
-          <!-- Header Control Buttons -->  
+          <!-- Header Control Buttons -->
+					<a-dropdown :trigger="['click']" v-model="visible" overlayClassName="header-notifications-dropdown" :getPopupContainer="() => wrapper">
+						<a-badge :count="uploadProcessList?uploadProcessList.length:0">
+							<a class="ant-dropdown-link" @click="e => e.preventDefault()">
+								<svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+									<path d="M10 2C6.68632 2 4.00003 4.68629 4.00003 8V11.5858L3.29292 12.2929C3.00692 12.5789 2.92137 13.009 3.07615 13.3827C3.23093 13.7564 3.59557 14 4.00003 14H16C16.4045 14 16.7691 13.7564 16.9239 13.3827C17.0787 13.009 16.9931 12.5789 16.7071 12.2929L16 11.5858V8C16 4.68629 13.3137 2 10 2Z" fill="#111827"/>
+									<path d="M10 18C8.34315 18 7 16.6569 7 15H13C13 16.6569 11.6569 18 10 18Z" fill="#111827"/>
+								</svg>
+							</a>
+						</a-badge>
+						<a-list item-layout="horizontal" class="header-notifications-list" :data-source="uploadProcessList" slot="overlay">
+              <div v-if="uploadProcessList && uploadProcessList.length > 0" slot="header" class="upload-process-header">
+                <span @click="uploadProcessRemove('')">
+                  <svg t="1678379444252" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="6076" width="20" height="20"><path d="M433.664 250.88L773.12 590.336 599.466667 837.162667a42.666667 42.666667 0 0 1-65.066667 5.632l-61.333333-61.333334v-130.88h-130.858667L181.205333 489.6a42.666667 42.666667 0 0 1 5.632-65.066667l246.826667-173.632z m38.378667-26.986667l66.133333-46.528a42.666667 42.666667 0 0 1 54.72 4.714667l89.130667 89.152 93.781333-93.781333a21.333333 21.333333 0 0 1 30.165333 0l35.2 35.2a21.333333 21.333333 0 0 1 0 30.186666l-93.76 93.76 94.506667 94.506667a42.666667 42.666667 0 0 1 4.714667 54.72l-46.506667 66.133333-328.106667-328.064z" fill="#2A2A37" p-id="6077"></path></svg>
+                </span>
+              </div>
+							<a-list-item slot="renderItem" slot-scope="item">
+								<a-list-item-meta>
+									<template #description>
+										<span>
+                      <a-progress class="upload-process" :percent="item.dictValue" :showInfo="true" :status="(item.comment && item.comment.length > 0)?'exception':item.dictValue<100?'active':'success'" />
+                    </span>
+									</template>
+									<a slot="title" href="#">
+                    <a-tooltip placement="top">
+                      <template slot="title">
+                        <span v-if="item.comment && item.comment.length >0">{{'错误：' + item.comment}}</span>
+                      </template>
+                      {{ item.alias }}
+                    </a-tooltip>
+                  </a>
+									<a-avatar
+                    @click="uploadProcessRemove(item.dictKey)"
+										shape="square"
+										slot="avatar"  v-html="delSvg"/>
+								</a-list-item-meta>
+							</a-list-item>
+						</a-list>
+					</a-dropdown>
           <a-button
             type="link"
             ref="secondarySidebarTriggerBtn"
@@ -95,13 +133,6 @@
             </svg>
           </a-button>
 
-          <a-button
-            type="link"
-            @click="showUploadProcessDrawer"
-           >
-            <a-icon type="sync" :style="{ fontSize: '18px' }" spin />
-          </a-button>
-
           <a-dropdown
             :trigger="['click']"
             overlayClassName="header-notifications-dropdown"
@@ -122,7 +153,7 @@
               :data-source="notificationsData"
               slot="overlay"
             >
-              <a-list-item slot="renderItem" slot-scope="item">
+              <a-list-item class="user-title" slot="renderItem" slot-scope="item">
                 <a-list-item-meta @click="item.event">
                   <span slot="title">{{ item.title }}</span>
                   <a-avatar
@@ -156,6 +187,10 @@
 import store from "@/store";
 import {USER_INFO} from '@/store/mutation-types'
 import routers from "../../router";
+import {
+  queryArtifactUploadProcess,
+  deleteArtifactUploadProcess,
+} from "@/api/artifact"
 
 export default {
   props: {
@@ -171,7 +206,8 @@ export default {
       default: false,
     },
   },
-  data() {
+  
+  data() { 
     return {
       // Fixed header/sidebar-footer ( Affix component ) top offset.
       top: 0,
@@ -204,6 +240,11 @@ export default {
           event: this.logout,
         },
       ],
+      uploadProcessList: [],
+      notFinishUploadList: [],
+      visible: false,
+      delSvg: `<svg t="1678377092023" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="4541" width="36" height="36"><path d="M0 0m136.533333 0l750.933334 0q136.533333 0 136.533333 136.533333l0 750.933334q0 136.533333-136.533333 136.533333l-750.933334 0q-136.533333 0-136.533333-136.533333l0-750.933334q0-136.533333 136.533333-136.533333Z" fill="#d81e06" opacity=".08" p-id="4542"></path><path d="M592.145067 690.8928l22.186666-276.1728H391.509333l22.186667 276.1728c0.273067 3.3792 2.833067 5.905067 5.973333 5.905067h166.468267c3.140267 0 5.7344-2.525867 6.007467-5.905067z m-130.286934-322.218667c0 1.092267-0.4096 2.048-0.6144 3.140267h83.319467c-0.170667-1.058133-0.580267-2.048-0.580267-3.140267 0-24.337067-18.432-44.1344-41.0624-44.1344s-41.0624 19.797333-41.0624 44.1344z m216.814934 3.140267c11.025067 0 19.968 9.591467 19.968 21.435733 0 11.8784-8.942933 21.469867-19.968 21.469867h-24.2688l-22.493867 279.893333c-2.048 25.7024-21.742933 45.090133-45.7728 45.090134h-166.468267c-23.995733 0-43.690667-19.387733-45.738666-45.124267l-22.528-279.893333h-24.234667c-11.025067 0-19.968-9.557333-19.968-21.435734 0-11.844267 8.942933-21.435733 19.968-21.435733H427.861333c-0.2048-1.058133-0.6144-2.048-0.6144-3.140267 0-44.8512 33.928533-81.3056 75.6736-81.3056 41.710933 0 75.6736 36.4544 75.6736 81.3056 0 1.092267-0.443733 2.048-0.6144 3.140267H678.673067z m-206.9504 276.343467c-9.557333 0-17.3056-8.328533-17.3056-18.602667v-127.5904c0-10.24 7.748267-18.602667 17.3056-18.602667s17.3056 8.362667 17.3056 18.602667v127.5904c0 10.24-7.748267 18.602667-17.3056 18.602667z m65.4336 3.242666c-9.557333 0-17.3056-8.328533-17.3056-18.602666V498.688c0-10.24 7.748267-18.602667 17.3056-18.602667s17.3056 8.328533 17.3056 18.602667v134.075733c0 10.24-7.748267 18.602667-17.3056 18.602667z" fill="#d81e06" p-id="4543"></path></svg>`,
+      clearSvg: `<svg t="1678379444252" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="6076" width="16" height="16"><path d="M433.664 250.88L773.12 590.336 599.466667 837.162667a42.666667 42.666667 0 0 1-65.066667 5.632l-61.333333-61.333334v-130.88h-130.858667L181.205333 489.6a42.666667 42.666667 0 0 1 5.632-65.066667l246.826667-173.632z m38.378667-26.986667l66.133333-46.528a42.666667 42.666667 0 0 1 54.72 4.714667l89.130667 89.152 93.781333-93.781333a21.333333 21.333333 0 0 1 30.165333 0l35.2 35.2a21.333333 21.333333 0 0 1 0 30.186666l-93.76 93.76 94.506667 94.506667a42.666667 42.666667 0 0 1 4.714667 54.72l-46.506667 66.133333-328.106667-328.064z" fill="#2A2A37" p-id="6077"></path></svg>`
     };
   },
   methods: {
@@ -214,9 +255,47 @@ export default {
     logout() {
       store.dispatch("Logout");
     },
-    showUploadProcessDrawer () {
-      this.$emit('uploadProcessDrawer', true)
+    interval() {
+      const intervalId = setInterval(() => {
+        if (this.incompleted()) {
+          this.notFinishUploadList.forEach(element => {
+            this.getProgressRate(element)
+          })
+        } else {
+          clearInterval(intervalId)
+        }
+      }, 300);
     },
+    incompleted (){
+      this.notFinishUploadList = this.uploadProcessList.filter(item => item.dictValue < 100 && (!item.comment || item.comment.length <1))
+      return this.notFinishUploadList.length > 0
+    },
+    //获取进度
+    getProgressRate(element) {
+      queryArtifactUploadProcess(element.dictKey).then((res) => {
+        if (res && res.length > 0) {
+          let data = res[0];
+          element.dictValue = new Number(data.dictValue)
+          element.comment = data.comment
+        }
+      })
+    },
+    queryAllProcess () {
+      queryArtifactUploadProcess('').then((res) => {
+        this.uploadProcessList = res
+        if (this.uploadProcessList) {
+          this.uploadProcessList.forEach(item => {
+            item.dictValue = new Number(item.dictValue)
+          })
+          this.interval()
+        }
+      })
+    },
+    uploadProcessRemove(uuid) {
+      deleteArtifactUploadProcess(uuid).then(() => {
+        this.queryAllProcess()
+      })
+    }
   },
   mounted: function () {
     // Set the wrapper to the proper element, layout wrapper.
@@ -240,19 +319,36 @@ export default {
     // console.log(store.state)
     this.userInfo = store.state.user;
     window.addEventListener("resize", this.resizeEventHandler);
+    this.queryAllProcess()
   },
   destroyed() {
     // Removing window resize event listener.
     window.removeEventListener("resize", this.resizeEventHandler);
   },
+  watch: {
+    visible: {
+      handler(val) {
+        this.queryAllProcess()
+      },
+      immediate:true
+    }  
+  },
 };
 </script>
-<style type="scoped">
-.ant-list-item-meta-content {
+<style lang="scss" scoped>
+.user-title::v-deep .ant-list-item-meta-content {
   margin-top: 10px;
 }
 
-.ant-list-item {
+.ant-list-item,.upload-process-header span {
   cursor: pointer;
+}
+
+.upload-process-header {
+  text-align: -webkit-right;
+}
+
+.upload-process::v-deep .ant-progress-text {
+  vertical-align: text-top !important;
 }
 </style>

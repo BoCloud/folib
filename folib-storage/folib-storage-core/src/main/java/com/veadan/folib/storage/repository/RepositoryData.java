@@ -99,6 +99,11 @@ public class RepositoryData
      */
     private Set<String> vulnerabilityBlacks;
 
+    /**
+     * 仓库可见范围 1 存储空间内 2 公开
+     */
+    private Integer scope = 1;
+
     @JsonIgnore
     private Storage storage;
 
@@ -145,6 +150,7 @@ public class RepositoryData
         this.storage = storage != null ? storage : immuteStorage(delegate.getStorage());
         this.basedir = delegate.getBasedir();
         this.subLayout = delegate.getSubLayout();
+        this.scope = delegate.getScope();
     }
 
     private ProxyConfiguration immuteProxyConfiguration(final MutableProxyConfiguration source) {
@@ -294,6 +300,7 @@ public class RepositoryData
         return customConfigurations;
     }
 
+    @Override
     public RepositoryConfiguration getRepositoryConfiguration() {
         return repositoryConfiguration;
     }
@@ -377,17 +384,9 @@ public class RepositoryData
         return vulnerabilityWhites;
     }
 
-    public void setVulnerabilityWhites(Set<String> vulnerabilityWhites) {
-        this.vulnerabilityWhites = vulnerabilityWhites;
-    }
-
     @Override
     public Set<String> getVulnerabilityBlacks() {
         return vulnerabilityBlacks;
-    }
-
-    public void setVulnerabilityBlacks(Set<String> vulnerabilityBlacks) {
-        this.vulnerabilityBlacks = vulnerabilityBlacks;
     }
 
     @Override
@@ -395,7 +394,8 @@ public class RepositoryData
         return subLayout;
     }
 
-    public void setSubLayout(String subLayout) {
-        this.subLayout = subLayout;
+    @Override
+    public Integer getScope() {
+        return this.scope;
     }
 }

@@ -24,12 +24,15 @@ public class StoragePrivilegesData
 
     private final Set<RepositoryPrivilegesData> repositories;
 
+    private final Set<Privileges> storagePrivileges;
+
     private final String storageId;
 
     public StoragePrivilegesData(final StoragePrivilegesDto delegate)
     {
         this.repositories = immuteRepositories(delegate.getRepositoryPrivileges());
         this.storageId = delegate.getStorageId();
+        this.storagePrivileges = immuteStorage(delegate.getStoragePrivileges());
     }
 
     private Set<RepositoryPrivilegesData> immuteRepositories(final Set<RepositoryPrivilegesDto> source)
@@ -39,11 +42,24 @@ public class StoragePrivilegesData
                Collections.emptySet();
     }
 
+    private Set<Privileges> immuteStorage(final Set<Privileges> set)
+    {
+        return set != null ? ImmutableSet.copyOf(set)
+                : Collections.emptySet();
+    }
+
+    @Override
     public Set<RepositoryPrivilegesData> getRepositoryPrivileges()
     {
         return repositories;
     }
 
+    @Override
+    public Set<Privileges> getStoragePrivileges() {
+        return storagePrivileges;
+    }
+
+    @Override
     public String getStorageId()
     {
         return storageId;
