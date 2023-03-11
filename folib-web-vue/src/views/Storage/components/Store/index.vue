@@ -78,7 +78,7 @@
                     </small>
                   </a>
                   <a
-                    v-if="enabled"
+                    v-if="uploadEnabled"
                     ><small style="padding-right: 20px" @click="handleUpload">
                       上传
                       <a-icon type="cloud-upload" />
@@ -274,18 +274,18 @@
                       </a-menu-item>
                       <a-menu-item
                         key="2"
-                        v-if="folibRepository.type === 'hosted'"
+                        v-if="copyEnabled"
                       >
                         <a-icon type="copy" />复制
                       </a-menu-item>
                       <a-menu-item
                         key="3"
-                        v-if="folibRepository.type === 'hosted'"
+                        v-if="moveEnabled"
                       >
                         <a-icon type="swap" />移动
                       </a-menu-item>
                       <a-menu-item key="4"
-                      v-if="folibRepository.type !== 'group'">
+                      v-if="deleteEnabled">
                         <a-popconfirm
                           title="确定要删除吗？"
                           placement="topLeft"
@@ -427,18 +427,18 @@
                       </a-menu-item>
                       <a-menu-item
                         key="2"
-                        v-if="folibRepository.type === 'hosted'"
+                        v-if="copyEnabled"
                       >
                         <a-icon type="copy" />复制
                       </a-menu-item>
                       <a-menu-item
                         key="3"
-                        v-if="folibRepository.type === 'hosted'"
+                        v-if="moveEnabled"
                       >
                         <a-icon type="swap" />移动
                       </a-menu-item>
                       <a-menu-item key="4"
-                      v-if="folibRepository.type !== 'group'">
+                      v-if="deleteEnabled">
                         <a-popconfirm
                           title="确定要删除吗？"
                           placement="topLeft"
@@ -971,7 +971,7 @@ import {
   getDockerArtifact,
   deleteArtifact,
   repositoryVulnerabilityStatistics,
-  getStoragesAndRepositories,
+  getPermissionStoragesAndRepositories,
   getStorageAndRepositoryPermission,
 } from "@/api/folib";
 import {
@@ -982,6 +982,8 @@ import {
   rpmArtifactUpload,
 } from "@/api/artifact";
 import { getMetadataConfiguration } from "@/api/settings";
+import { hasRole, isAdmin, hasPermission } from "@/utils/permission";
+
 
 import SearchBox from "@/components/Tools/SearchBox";
 import zhCN from "ant-design-vue/es/locale/zh_CN";
@@ -1023,7 +1025,10 @@ export default {
       uploadForm: this.$form.createForm(this, { name: "upload_form" }),
       showUploadFormModal: false,
       showRpmUploadFormModal: false,
-      enabled: false,
+      uploadEnabled: false,
+      copyEnabled: false,
+      moveEnabled: false,
+      deleteEnabled: false,
       scan: {
         id: "",
         repository: "",
@@ -1619,7 +1624,7 @@ export default {
       } else if (active.key === "2" || active.key === "3") {
         //复制 或 移动
         this.showOperationFormModal = true;
-        this.getStoragesAndRepositories(
+        this.queryPermissionStoragesAndRepositories(
           this.folibRepository.type,
           this.folibRepository.layout,
           this.folibRepository.id,
@@ -1692,8 +1697,8 @@ export default {
     operationFormModalClose() {
       this.showOperationFormModal = false;
     },
-    getStoragesAndRepositories(type, layout, excludeRepositoryId, policy) {
-      getStoragesAndRepositories({
+    queryPermissionStoragesAndRepositories(type, layout, excludeRepositoryId, policy) {
+      getPermissionStoragesAndRepositories({
         type: type,
         layout: layout,
         excludeRepositoryId: excludeRepositoryId,
@@ -1985,7 +1990,10 @@ export default {
       this.permissions = []
       getStorageAndRepositoryPermission(this.folibRepository.storageId, this.folibRepository.id).then((res) => {
         this.permissions = res
-        this.enabled = this.folibRepository.status.indexOf('Out of Service') === -1 && this.enablUploadedLayout.includes(this.folibRepository.layout) && this.folibRepository.type === 'hosted' && this.permissions.includes('ARTIFACTS_DEPLOY')
+        this.uploadEnabled = this.folibRepository.status.indexOf('Out of Service') === -1 && this.enablUploadedLayout.includes(this.folibRepository.layout) && this.folibRepository.type === 'hosted' && (hasRole('ARTIFACTS_MANAGER') || this.permissions.includes('ARTIFACTS_DEPLOY'))
+        this.copyEnabled = this.folibRepository.type === 'hosted' && (hasRole('ARTIFACTS_MANAGER') || this.permissions.includes('ARTIFACTS_COPY'))
+        this.moveEnabled = this.folibRepository.type === 'hosted' && (hasRole('ARTIFACTS_MANAGER') || this.permissions.includes('ARTIFACTS_MOVE'))
+        this.deleteEnabled = this.folibRepository.type !== 'group' && (hasRole('ARTIFACTS_MANAGER') || this.permissions.includes('ARTIFACTS_DELETE'))
       })
     }
   },

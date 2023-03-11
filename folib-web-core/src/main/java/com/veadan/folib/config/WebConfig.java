@@ -11,6 +11,7 @@ import com.veadan.folib.converters.storage.routing.RoutingRuleFormToMutableConve
 import com.veadan.folib.converters.users.AccessModelFormToUserAccessModelDtoConverter;
 import com.veadan.folib.converters.users.UserFormToUserDtoConverter;
 import com.veadan.folib.cron.config.CronTasksConfig;
+import com.veadan.folib.filter.WrapperRequestFilter;
 import com.veadan.folib.interceptors.MavenArtifactRequestInterceptor;
 import com.veadan.folib.interceptors.PermissionCheckInterceptor;
 import com.veadan.folib.jtwig.extensions.ByteSizeConversionExtension;
@@ -147,6 +148,11 @@ public class WebConfig
     @Bean
     DirectoryTraversalFilter directoryTraversalFilter() {
         return new DirectoryTraversalFilter();
+    }
+
+    @Bean
+    WrapperRequestFilter wrapperRequestFilter() {
+        return new WrapperRequestFilter();
     }
 
     @Override

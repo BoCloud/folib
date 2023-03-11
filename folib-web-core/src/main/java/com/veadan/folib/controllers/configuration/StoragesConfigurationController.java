@@ -35,9 +35,11 @@ import com.veadan.folib.storage.StorageDto;
 import com.veadan.folib.storage.Views;
 import com.veadan.folib.storage.repository.*;
 import com.veadan.folib.users.domain.Privileges;
+import com.veadan.folib.users.domain.SystemRole;
 import com.veadan.folib.users.domain.Users;
 import com.veadan.folib.users.service.UserService;
 import com.veadan.folib.users.service.impl.DatabaseUserService;
+import com.veadan.folib.users.userdetails.SpringSecurityUser;
 import com.veadan.folib.validation.RequestBodyValidationException;
 import com.veadan.folib.web.RepositoryMapping;
 import io.swagger.annotations.*;
@@ -263,6 +265,62 @@ public class StoragesConfigurationController
                     .filter(s -> !filterByUser || (CollectionUtil.isNotEmpty(s.getUsers()) && s.getUsers().contains(loggedUser.getUsername())) ||
                             (CollectionUtils.isNotEmpty(s.getRepositories().values()) && s.getRepositories().values().stream().anyMatch(repository -> RepositoryScopeEnum.OPEN.getType().equals(repository.getScope()))))
                     .filter(s -> !filterByStorageId || s.getId().equalsIgnoreCase(storageId))
+                    .collect(Collectors.toCollection(LinkedList::new));
+            StorageTreeForm storageTreeForm;
+            List<Repository> repositories;
+            for (Storage storage : storages) {
+                boolean flag = !hasAdmin() && !username.equals(storage.getAdmin()) && (CollectionUtils.isNotEmpty(storage.getUsers()) && !storage.getUsers().contains(username));
+                storageTreeForm = StorageTreeForm.builder().id(storage.getId()).key(storage.getId()).name(storage.getId()).build();
+                repositories = new LinkedList<Repository>(storage.getRepositories().values());
+                repositories = repositories.stream().distinct()
+                        .filter(r -> !filterByType || r.getType().equalsIgnoreCase(type))
+                        .filter(r -> !filterByLayout || r.getLayout().equalsIgnoreCase(layout))
+                        .filter(r -> !filterByPolicy || r.getPolicy().equalsIgnoreCase(policy))
+                        .filter(r -> !filterByExcludeRepositoryId || !r.getId().equalsIgnoreCase(excludeRepositoryId))
+                        .collect(Collectors.toCollection(LinkedList::new));
+                if (flag) {
+                    repositories = repositories.stream().filter((item -> RepositoryScopeEnum.OPEN.getType().equals(item.getScope()))).collect(Collectors.toList());
+                }
+                storageTreeForm.setChildren(repositories.stream().map(repository -> StorageTreeForm.builder().id(repository.getId()).key(storage.getId() + "," + repository.getId()).name(repository.getId()).type(repository.getType()).layout(repository.getLayout())
+                        .scope(repository.getScope()).build()).collect(Collectors.toList()));
+                storageTreeForms.add(storageTreeForm);
+            }
+        }
+        return ResponseEntity.ok(storageTreeForms);
+    }
+
+    @ApiOperation(value = "Retrieve the basic info about storages and repositories.")
+    @ApiResponses(value = {@ApiResponse(code = 200, message = "")})
+    @PreAuthorize("hasAuthority('ARTIFACTS_VIEW')")
+    @GetMapping(value = "/getPermissionStoragesAndRepositories", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity getPermissionStoragesAndRepositories(
+                                                     @ApiParam(value = "Filter repository names by type (i.e. hosted, group, proxy)")
+                                                     @RequestParam(value = "type", required = false)
+                                                             String type,
+                                                     @ApiParam(value = "Search for exclude repository names")
+                                                     @RequestParam(value = "excludeRepositoryId", required = false)
+                                                             String excludeRepositoryId,
+                                                     @ApiParam(value = "Filter repository names by repository layout")
+                                                     @RequestParam(value = "layout", required = false)
+                                                             String layout,
+                                                     @ApiParam(value = "Filter repository names by repository policy")
+                                                     @RequestParam(value = "policy", required = false)
+                                                             String policy, Authentication authentication) {
+        List<Storage> storages = new ArrayList<>(configurationManagementService.getConfiguration()
+                .getStorages()
+                .values());
+        final SpringSecurityUser loggedUser = (SpringSecurityUser) authentication.getPrincipal();
+        String username = loggedUser.getUsername();
+        List<StorageTreeForm> storageTreeForms = Lists.newArrayList();
+        if (CollectionUtil.isNotEmpty(storages)) {
+            boolean filterByUser = !hasAdmin() && loggedUser.getRoles().stream().noneMatch(role -> SystemRole.ARTIFACTS_MANAGER.name().equals(role.getName()));
+            boolean filterByType = StringUtils.isNotBlank(type);
+            boolean filterByLayout = StringUtils.isNotBlank(layout);
+            boolean filterByExcludeRepositoryId = StringUtils.isNotBlank(excludeRepositoryId);
+            boolean filterByPolicy = StringUtils.isNotBlank(policy);
+            storages = storages.stream()
+                    .distinct()
+                    .filter(s -> !filterByUser || username.equals(s.getAdmin()))
                     .collect(Collectors.toCollection(LinkedList::new));
             StorageTreeForm storageTreeForm;
             List<Repository> repositories;

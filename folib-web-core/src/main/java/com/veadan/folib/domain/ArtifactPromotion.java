@@ -5,6 +5,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotEmpty;
 import java.util.List;
 
@@ -20,13 +21,13 @@ public class ArtifactPromotion {
     /**
      * 源存储id
      */
-    @NotEmpty
+    @NotBlank
     private String srcStorageId;
 
     /**
      * 源仓库id
      */
-    @NotEmpty
+    @NotBlank
     private String srcRepositoryId;
 
     /**
@@ -37,7 +38,7 @@ public class ArtifactPromotion {
     /**
      * 制品uri
      */
-    @NotEmpty
+    @NotBlank
     private String path;
 
 }

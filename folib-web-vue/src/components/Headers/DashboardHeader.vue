@@ -319,7 +319,6 @@ export default {
     // console.log(store.state)
     this.userInfo = store.state.user;
     window.addEventListener("resize", this.resizeEventHandler);
-    this.queryAllProcess()
   },
   destroyed() {
     // Removing window resize event listener.

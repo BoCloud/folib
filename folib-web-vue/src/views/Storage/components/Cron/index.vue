@@ -147,6 +147,7 @@ export default {
           })
           this.$forceUpdate()
         })
+        this.$forceUpdate()
       })
     },
     cronShowHandle(i, index) {

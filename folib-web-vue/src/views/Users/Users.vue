@@ -265,7 +265,7 @@ export default ({
 
         const roles = res.user.roles
 
-        let roleNameList = ['ADMIN', 'GENERAL']
+        let roleNameList = ['ADMIN', 'GENERAL', 'ARTIFACTS_MANAGER']
         res.assignableRoles = res.assignableRoles.filter(item => roleNameList.includes(item.name))
 
         res.assignableRoles.forEach((item) => {
@@ -294,6 +294,13 @@ export default ({
               roles.push(item.name)
             }
           })
+          if (!roles || roles.length === 0) {
+            this.$notification.warning({
+              message: "请选择角色",
+              description: ""
+            })
+            return false
+          }
           this.currentUser.user.roles = roles
           let user = JSON.parse(JSON.stringify(this.currentUser.user))
           if (user.password) {
@@ -312,7 +319,7 @@ export default ({
       getUsersCreateFields().then(res => {
         let roles = res.formDataValues[0].values
         if (roles) {
-          let roleNameList = ['ADMIN', 'GENERAL']
+          let roleNameList = ['ADMIN', 'GENERAL', 'ARTIFACTS_MANAGER']
           roles = roles.filter(item => roleNameList.includes(item.name))
           roles.forEach((item) => { item.enabled = false })
         }

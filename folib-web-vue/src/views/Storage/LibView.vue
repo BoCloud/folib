@@ -39,7 +39,7 @@
           :vulnerabilityColumns="vulnerabilityColumns"
         />
       </a-tab-pane>
-      <a-button slot="tabBarExtraContent" icon="setting" class="repository-setting" size="small" @click="settingDrawerShow()" />
+      <a-button v-if="settingsEnabled" slot="tabBarExtraContent" icon="setting" class="repository-setting" size="small" @click="settingDrawerShow()" />
     </a-tabs>
     <!-- / Header Background Image -->
 
@@ -565,7 +565,7 @@ import {
   getArtifact,
   viewArtifactFile,
   repositoryVulnerabilityStatistics,
-  getStoragesAndRepositories,
+  getLibraryFilter
 } from "@/api/folib";
 import { PrismEditor } from "vue-prism-editor";
 import "vue-prism-editor/dist/prismeditor.min.css"; // import the styles somewhere
@@ -582,6 +582,7 @@ import { quillEditor } from "vue-quill-editor";
 import Store from "./components/Store/index.vue";
 import Safe from "./components/Safe/index.vue";
 import SettingsDrawer from "./components/Repository/SettingsDrawer.vue";
+import { hasRole, isAdmin, hasPermission } from "@/utils/permission";
 
 export default {
   inject: ["reload"],
@@ -808,13 +809,15 @@ export default {
           ],
         },
       },
+      settingsEnabled: false,
       settingVisible: false,
     }
   },
   created() {
-    this.createData();
-    this.repositoryVulnerabilityStatistics();
-    this.getMetadataConfiguration();
+    this.createData()
+    this.repositoryVulnerabilityStatistics()
+    this.getMetadataConfiguration()
+    this.getStorage(this.folibRepository.storageId)
   },
   methods: {
     searchBoxMouseStatus(bool) {
@@ -1001,21 +1004,6 @@ export default {
         description: "",
       });
     },
-    getStoragesAndRepositories(type, layout, excludeRepositoryId, policy) {
-      getStoragesAndRepositories({
-        type: type,
-        layout: layout,
-        excludeRepositoryId: excludeRepositoryId,
-        policy: policy,
-      }).then((res) => {
-        this.repositories = [];
-        res.forEach((item) => {
-          if (item.children && item.children.length > 0) {
-            this.repositories.push(item);
-          }
-        });
-      });
-    },
     customChange(value) {
       this.custom = value;
       if (!value) {
@@ -1080,6 +1068,11 @@ export default {
     },
     settingDrawerClose() {
       this.settingVisible = false
+    },
+    getStorage(id) {
+      getLibraryFilter(id).then(response => {
+        this.settingsEnabled = isAdmin() || response.admin === this.$store.state.user.name
+      })
     },
   },
 };

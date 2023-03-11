@@ -44,6 +44,10 @@ public class StorageTreeForm implements Serializable {
      */
     private String layout;
     /**
+     * 仓库可见范围
+     */
+    private Integer scope;
+    /**
      * 子集
      */
     private List<StorageTreeForm> children;

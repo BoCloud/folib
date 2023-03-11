@@ -7,12 +7,15 @@ import com.veadan.folib.domain.PromotionNodeOption;
 import com.veadan.folib.dto.ArtifactDto;
 import com.veadan.folib.entity.Dict;
 import com.veadan.folib.services.ArtifactPromotionService;
+import com.veadan.folib.users.domain.Privileges;
+import com.veadan.folib.users.domain.SystemRole;
 import com.veadan.folib.validation.RequestBodyValidationException;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
@@ -37,7 +40,7 @@ public class ArtifactPromotionController extends BaseArtifactController {
     private ArtifactPromotionService artifactPromotionService;
 
     @PostMapping("/copy")
-    @PermissionCheck(resourceKey = "CONFIGURATION_ADD_UPDATE_STORAGE")
+    @PermissionCheck(resourceKey = "ARTIFACTS_COPY", storageKey = "srcStorageId", repositoryKey = "srcRepositoryId")
     public ResponseEntity copy(@RequestBody @Validated ArtifactPromotion artifactPromotion,
                                BindingResult bindingResult) {
         if (bindingResult.hasErrors()) {
@@ -47,7 +50,7 @@ public class ArtifactPromotionController extends BaseArtifactController {
     }
 
     @PostMapping("/move")
-    @PermissionCheck(resourceKey = "CONFIGURATION_ADD_UPDATE_STORAGE")
+    @PermissionCheck(resourceKey = "ARTIFACTS_MOVE", storageKey = "srcStorageId", repositoryKey = "srcRepositoryId")
     public ResponseEntity move(@RequestBody @Validated ArtifactPromotion artifactPromotion, BindingResult bindingResult) {
         if (bindingResult.hasErrors()) {
             throw new RequestBodyValidationException("请求参数错误", bindingResult);
@@ -55,9 +58,9 @@ public class ArtifactPromotionController extends BaseArtifactController {
         return artifactPromotionService.move(artifactPromotion);
     }
 
-    // 节点晋级
+
     @PostMapping("/nodeOption")
-    @PermissionCheck(resourceKey = "CONFIGURATION_ADD_UPDATE_STORAGE")
+    @PermissionCheck(resourceKey = "ARTIFACTS_PROMOTION")
     public ResponseEntity nodeOption(@RequestBody @Validated PromotionNodeOption promotionNodeOption,
                                      HttpServletRequest request,
                                      BindingResult bindingResult) {
@@ -67,10 +70,10 @@ public class ArtifactPromotionController extends BaseArtifactController {
         return artifactPromotionService.nodeOption(promotionNodeOption, request);
     }
 
-    // 上传接口
+
     @PostMapping(value = "/upload-files")
     @ApiOperation(value = "文件上传(支持批量)", notes = "文件上传(支持批量)")
-    @PermissionCheck(resourceKey = "CONFIGURATION_ADD_UPDATE_STORAGE")
+    @PermissionCheck(resourceKey = "ARTIFACTS_DEPLOY", storageKey = "storageId", repositoryKey = "repostoryId")
     public ResponseEntity upload(@RequestParam("files") MultipartFile[] files,
                                  @RequestParam("storageId") String storageId,
                                  @RequestParam("repostoryId") String repositoryId,
@@ -80,9 +83,9 @@ public class ArtifactPromotionController extends BaseArtifactController {
         return artifactPromotionService.upload(files, storageId, repositoryId, filePathMap, fileMetaDataMap, uuid);
     }
 
-    // 下载接口
+
     @PostMapping(value = "/download")
-    @PermissionCheck(resourceKey = "CONFIGURATION_ADD_UPDATE_STORAGE")
+    @PermissionCheck(resourceKey = "ARTIFACTS_RESOLVE")
     public ResponseEntity download(@RequestBody @Validated ArtifactDto artifactDto,
                                    HttpServletResponse response, BindingResult bindingResult) {
         if (bindingResult.hasErrors()) {
@@ -92,7 +95,7 @@ public class ArtifactPromotionController extends BaseArtifactController {
     }
 
     @PostMapping(value = "/getFileRelativePaths")
-    @PermissionCheck(resourceKey = "CONFIGURATION_ADD_UPDATE_STORAGE")
+    @PermissionCheck(resourceKey = "ARTIFACTS_RESOLVE")
     public ResponseEntity getFiles(@RequestBody @Validated ArtifactDto artifactDto,
                                    BindingResult bindingResult) {
         if (bindingResult.hasErrors()) {
@@ -108,6 +111,7 @@ public class ArtifactPromotionController extends BaseArtifactController {
      * @param uuid     uuid
      */
     @GetMapping(value = "/uploadProcess")
+    @PreAuthorize("hasAuthority('AUTHENTICATED_USER')")
     public ResponseEntity<List<Dict>> queryUploadProcess(@RequestParam("dictType") String dictType, @RequestParam(name = "uuid", required = false) String uuid) {
         return ResponseEntity.ok(artifactPromotionService.queryUploadProcess(dictType, uuid));
     }
@@ -119,6 +123,7 @@ public class ArtifactPromotionController extends BaseArtifactController {
      * @param uuid     uuid
      */
     @DeleteMapping(value = "/uploadProcess")
+    @PreAuthorize("hasAuthority('AUTHENTICATED_USER')")
     public ResponseEntity<String> deleteUploadProcess(@RequestParam("dictType") String dictType, @RequestParam(name = "uuid", required = false) String uuid) {
         artifactPromotionService.deleteUploadProcess(dictType, uuid);
         return ResponseEntity.ok("");

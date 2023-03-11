@@ -110,7 +110,7 @@
             <!-- Project Card -->
             <CardProjectFolib :title=item.id :logo="'images/folib/' + getLayoutType(item) + '.svg'"
               :team="['images/folib/' + item.type + '.svg']" :participants="item.type" :due="item.policy"
-              :repository="item" @handleMenuClick="handleMenuClick" @goToDetial="goToDetial(item)">
+              :repository="item" :storageAdmin="currentStorage.admin" @handleMenuClick="handleMenuClick" @goToDetial="goToDetial(item)">
               <a-tooltip>
                 <template slot="title">
                   {{ baseUrl }}api/browse/{{ currentStorage.id }}/{{ item.id }}
@@ -1214,7 +1214,6 @@ export default {
     }
 
     this.getStorage(this.currentStorage.id)
-    this.libraryFilter(this.currentStorage.id)
   },
   computed: {},
   methods: {
@@ -1414,7 +1413,7 @@ export default {
         this.currentStorage.isNotCustom = false
         this.currentStorage.bucket = null
       }
-      this.libraryFilter(this.currentStorage.id)
+      this.getStorage(this.currentStorage.id)
     },
     getStorage(id) {
       getLibraryFilter(id).then(response => {
@@ -1422,12 +1421,7 @@ export default {
         this.currentStorage.basedir = response.basedir
         this.currentStorage.admin = response.admin
         this.currentStorage.users = response.users
-      })
-    },
-    libraryFilter(id) {
-      getLibraryFilter(id).then(response => {
         this.repositories = response.repositories
-        this.$forceUpdate()
       })
     },
     cacheStorage() {
@@ -1483,7 +1477,7 @@ export default {
             item.children.forEach(children => {
               id = children.key.replace(",", ":")
               arr = id.split(":")
-              repositories.push({id: id, storageId: arr[0], repositoryId: arr[1], layout: children.layout})
+              repositories.push({id: id, storageId: arr[0], repositoryId: arr[1], layout: children.layout, scope: children.scope})
             })
           }
         })
@@ -1721,7 +1715,7 @@ export default {
         }
 
 
-        this.libraryFilter(this.currentStorage.id)
+        this.getStorage(this.currentStorage.id)
 
         if (!isNotSetCron) {
           this.step = 0
@@ -1828,7 +1822,7 @@ export default {
               }, 100)
             }).finally(() => {
               this.deleteFormVisible = false;
-              this.libraryFilter(this.currentStorage.id)
+              this.getStorage(this.currentStorage.id)
             })
           } else {
             setTimeout(() => {
@@ -1859,7 +1853,7 @@ export default {
               }, 100)
             }).finally(() => {
               this.deleteFormVisible = false;
-              this.libraryFilter(this.currentStorage.id)
+              this.getStorage(this.currentStorage.id)
             })
           } else {
             setTimeout(() => {
