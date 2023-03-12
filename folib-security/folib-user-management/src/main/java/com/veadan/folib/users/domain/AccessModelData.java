@@ -5,6 +5,7 @@ import com.veadan.folib.users.dto.*;
 import org.apache.commons.lang.StringUtils;
 
 import javax.annotation.concurrent.Immutable;
+import java.io.File;
 import java.io.Serializable;
 import java.util.Collections;
 import java.util.HashSet;
@@ -80,13 +81,19 @@ public class AccessModelData
 
     public static Set<Privileges> getPathAuthorities(String url, Set<? extends StoragePrivileges> storages) {
         String normalizedUrl = StringUtils.chomp(url, "/");
-
+        boolean isEnd = false;
+        String separator = "";
         Set<Privileges> privileges = new HashSet<>();
         for (final StoragePrivileges storage : storages) {
-            String storageKey = "/storages/" + storage.getStorageId() + "/";
-            String dockerKey = "/v2/" + storage.getStorageId() + "/";
-            String storageBrowseKey = "/api/browse/" + storage.getStorageId() + "/";
-            String storageConfigKey = "/api/configuration/folib/storages/" + storage.getStorageId() + "/";
+            isEnd = normalizedUrl.endsWith(storage.getStorageId());
+            separator = "";
+            if (!isEnd) {
+                separator = "/";
+            }
+            String storageKey = "/storages/" + storage.getStorageId() + separator;
+            String dockerKey = "/v2/" + storage.getStorageId() + separator;
+            String storageBrowseKey = "/api/browse/" + storage.getStorageId() + separator;
+            String storageConfigKey = "/api/configuration/folib/storages/" + storage.getStorageId() + separator;
             if (!normalizedUrl.startsWith(storageKey) && !normalizedUrl.startsWith(dockerKey) && !normalizedUrl.startsWith(storageBrowseKey) && !normalizedUrl.startsWith(storageConfigKey)) {
                 continue;
             }
