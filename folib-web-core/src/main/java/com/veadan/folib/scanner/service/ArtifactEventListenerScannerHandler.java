@@ -342,7 +342,7 @@ public class ArtifactEventListenerScannerHandler {
             gzipCompressorInputStream = new GzipCompressorInputStream(fileInputStream);
             tarArchiveInputStream = new TarArchiveInputStream(gzipCompressorInputStream);
             TarArchiveEntry entry = null;
-            List<String> list = Arrays.asList("jar", "war", "ear", "zip", "json", "tgz", "nupkg", "nuspec", "config", "whl", "egg", "zip", "gz", "rpm");
+            List<String> list = Arrays.asList("jar", "war", "ear", "zip", "json", "tgz", "nupkg", "nuspec", "packages.config", "whl", "egg", "zip", "rpm");
             File extractFolder = new File(tempPath);
             while ((entry = tarArchiveInputStream.getNextTarEntry()) != null) {
                 if (entry.isDirectory()) {
