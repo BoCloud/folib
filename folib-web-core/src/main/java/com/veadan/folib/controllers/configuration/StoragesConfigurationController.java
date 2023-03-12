@@ -14,6 +14,7 @@ import com.veadan.folib.controllers.cluster.dto.SyncStorageDto;
 import com.veadan.folib.domain.RepositoryPermission;
 import com.veadan.folib.domain.RepositoryUser;
 import com.veadan.folib.domain.User;
+import com.veadan.folib.enums.NotifyScopesTypeEnum;
 import com.veadan.folib.enums.RepositoryScopeEnum;
 import com.veadan.folib.event.repository.RepositoryEventListenerRegistry;
 import com.veadan.folib.forms.common.StorageTreeForm;
@@ -156,6 +157,9 @@ public class StoragesConfigurationController
         }
         try {
             StorageDto storage = conversionService.convert(storageForm, StorageDto.class);
+            if (StringUtils.isBlank(storage.getAdmin())) {
+                storage.setAdmin(NotifyScopesTypeEnum.ADMIN.getScope());
+            }
             storageManagementService.createStorage(storage);
             // 向其他集群节点同步storage
             SyncStorageDto syncStorageDto = new SyncStorageDto(storage, storageForm.getId(), SyncStorageEnum.CREATE);
@@ -194,6 +198,9 @@ public class StoragesConfigurationController
 
         try {
             StorageDto storage = conversionService.convert(storageFormToUpdate, StorageDto.class);
+            if (StringUtils.isBlank(storage.getAdmin())) {
+                storage.setAdmin(NotifyScopesTypeEnum.ADMIN.getScope());
+            }
             storageManagementService.updateStorage(storage);
             SyncStorageDto syncStorageDto = new SyncStorageDto(storage, storageId, SyncStorageEnum.UPDATE);
             clusterSyncService.syncStorage(syncStorageDto);
@@ -357,7 +364,7 @@ public class StoragesConfigurationController
         StorageDto storage = configurationManagementService.getMutableConfigurationClone().getStorage(storageId);
         if (storage != null) {
             String username = loginUsername();
-            boolean flag = Boolean.TRUE.equals(filter) && !hasAdmin() && !username.equals(storage.getAdmin()) && (CollectionUtils.isNotEmpty(storage.getUsers()) && !storage.getUsers().contains(username));
+            boolean flag = Boolean.TRUE.equals(filter) && !hasAdmin() && !username.equals(storage.getAdmin()) && (CollectionUtils.isEmpty(storage.getUsers()) || (CollectionUtils.isNotEmpty(storage.getUsers()) && !storage.getUsers().contains(username)));
             if (flag) {
                 Map<String, ? extends Repository> repositoryMap = storage.getRepositories();
                 if (Objects.nonNull(repositoryMap) && CollectionUtils.isNotEmpty(repositoryMap.values())) {
