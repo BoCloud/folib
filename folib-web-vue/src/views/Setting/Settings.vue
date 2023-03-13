@@ -1085,6 +1085,8 @@ export default {
     getUsersCreateFields() {
       getUsersCreateFields().then(res => {
         let roles = res.formDataValues[0].values
+        let roleNameList = ['ADMIN', 'GENERAL', 'ARTIFACTS_MANAGER']
+        roles = roles.filter(item => roleNameList.includes(item.name))
         this.assignableRoles = roles
       })
     },

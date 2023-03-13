@@ -5,15 +5,13 @@ import com.veadan.folib.configuration.ConfigurationManager;
 import com.veadan.folib.configuration.FolibSecurityConfig;
 import com.veadan.folib.converters.RoleFormToRoleConverter;
 import com.veadan.folib.converters.RoleListFormToRoleListConverter;
-import com.veadan.folib.converters.configuration.ProxyConfigurationFormConverter;
-import com.veadan.folib.converters.configuration.RemoteRepositoryFormConverter;
-import com.veadan.folib.converters.configuration.RepositoryFormConverter;
-import com.veadan.folib.converters.configuration.StorageFormConverter;
+import com.veadan.folib.converters.configuration.*;
 import com.veadan.folib.converters.cron.CronTaskConfigurationFormToCronTaskConfigurationDtoConverter;
 import com.veadan.folib.converters.storage.routing.RoutingRuleFormToMutableConverter;
 import com.veadan.folib.converters.users.AccessModelFormToUserAccessModelDtoConverter;
 import com.veadan.folib.converters.users.UserFormToUserDtoConverter;
 import com.veadan.folib.cron.config.CronTasksConfig;
+import com.veadan.folib.filter.WrapperRequestFilter;
 import com.veadan.folib.interceptors.MavenArtifactRequestInterceptor;
 import com.veadan.folib.interceptors.PermissionCheckInterceptor;
 import com.veadan.folib.jtwig.extensions.ByteSizeConversionExtension;
@@ -152,6 +150,11 @@ public class WebConfig
         return new DirectoryTraversalFilter();
     }
 
+    @Bean
+    WrapperRequestFilter wrapperRequestFilter() {
+        return new WrapperRequestFilter();
+    }
+
     @Override
     public void configureMessageConverters(List<HttpMessageConverter<?>> converters) {
         StringHttpMessageConverter stringConverter = new StringHttpMessageConverter();
@@ -260,6 +263,7 @@ public class WebConfig
         registry.addConverter(RepositoryFormConverter.INSTANCE);
         registry.addConverter(RemoteRepositoryFormConverter.INSTANCE);
         registry.addConverter(CronTaskConfigurationFormToCronTaskConfigurationDtoConverter.INSTANCE);
+        registry.addConverter(RepositoryPermissionFormConverter.INSTANCE);
     }
 
     @Bean

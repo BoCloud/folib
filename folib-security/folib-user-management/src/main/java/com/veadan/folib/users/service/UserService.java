@@ -4,6 +4,8 @@ import com.veadan.folib.domain.User;
 import com.veadan.folib.users.domain.Users;
 import org.jose4j.lang.JoseException;
 
+import java.util.List;
+
 /**
  * @author 
  * @author veadan
@@ -38,6 +40,15 @@ public interface UserService
 
     User save(User user);
 
+    User saveOverrideRole(User  user);
+
     void deleteByUsername(String username);
+
+    /**
+     * 按角色查找用户
+     * @param rolesList 角色列表
+     * @return 用户列表
+     */
+    List<User> findUserByRoles(List<String> rolesList);
 
 }

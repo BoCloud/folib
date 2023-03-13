@@ -32,15 +32,15 @@ public interface Repository
 
     boolean isTrashEnabled();
 
-    boolean allowsForceDeletion();
+    boolean isAllowsForceDeletion();
 
-    boolean allowsDeployment();
+    boolean isAllowsDeployment();
 
-    boolean allowsRedeployment();
+    boolean isAllowsRedeployment();
 
-    boolean allowsDeletion();
+    boolean isAllowsDeletion();
 
-    boolean allowsDirectoryBrowsing();
+    boolean isAllowsDirectoryBrowsing();
 
     boolean isChecksumHeadersEnabled();
 
@@ -58,9 +58,9 @@ public interface Repository
 
     boolean isInService();
 
-    boolean acceptsSnapshots();
+    boolean isAcceptsSnapshots();
 
-    boolean acceptsReleases();
+    boolean isAcceptsReleases();
     
     RepositoryConfiguration getRepositoryConfiguration();
 
@@ -75,5 +75,9 @@ public interface Repository
     Set<String> getVulnerabilityWhites();
 
     Set<String> getVulnerabilityBlacks();
+
+    Integer getScope();
+
+    boolean isAllowAnonymous();
 
 }

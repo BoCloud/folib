@@ -7,9 +7,17 @@ export function getStorages () {
     method: 'get'
   })
 }
+
 export function getLibrary (libId) {
   return axios({
     url: '/api/configuration/folib/storages/'+libId,
+    method: 'get'
+  })
+}
+
+export function getLibraryFilter (libId) {
+  return axios({
+    url: '/api/configuration/folib/storages/'+libId + '?filter=true',
     method: 'get'
   })
 }
@@ -39,6 +47,14 @@ export function getLibraryByQuery (dataQuery) {
 export function getStoragesAndRepositories (dataQuery) {
   return axios({
     url: '/api/configuration/folib/storages/getStoragesAndRepositories',
+    method: 'get',
+    params: dataQuery
+  })
+}
+
+export function getPermissionStoragesAndRepositories (dataQuery) {
+  return axios({
+    url: '/api/configuration/folib/storages/getPermissionStoragesAndRepositories',
     method: 'get',
     params: dataQuery
   })
@@ -364,8 +380,44 @@ export function delCronOne (uuid) {
   })
 }
 
+export function repositoryPermission (storageId, repositoryId, data) {
+  return axios({
+    url: '/api/configuration/folib/storages/'+storageId+'/'+repositoryId + '/permission',
+    method: 'post',
+    data: data
+  })
+}
 
+export function repositoryEnableUsers (query) {
+  return axios({
+    url: '/api/configuration/folib/storages/repositoryEnableUsers',
+    method: 'get',
+    params: query
+  })
+}
 
+export function getRepositoryPermission (query) {
+  return axios({
+    url: '/api/configuration/folib/storages/repositoryPermission',
+    method: 'get',
+    params: query
+  })
+}
+
+export function deleteRepositoryPermission (query) {
+  return axios({
+    url: '/api/configuration/folib/storages/repositoryPermission',
+    method: 'delete',
+    params: query
+  })
+}
+
+export function getStorageAndRepositoryPermission (storageId,repositoryId) {
+  return axios({
+    url: '/api/account/permission/'+storageId+'/'+repositoryId,
+    method: 'get'
+  })
+}
 
 
 

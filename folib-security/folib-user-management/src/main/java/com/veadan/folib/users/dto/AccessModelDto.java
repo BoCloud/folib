@@ -22,6 +22,7 @@ public class AccessModelDto
     private Set<StoragePrivilegesDto> storageAuthorities = new LinkedHashSet<>();
 
 
+    @Override
     public Set<Privileges> getApiAuthorities()
     {
         return apiAuthorities;
@@ -42,5 +43,10 @@ public class AccessModelDto
     {
         return AccessModelData.getPathAuthorities(url, storageAuthorities);
     }
-    
+
+    @Override
+    public Set<Privileges> getPathAuthorities(String storageId, String repositoryId) {
+        return AccessModelData.getPathAuthorities(storageId, repositoryId, storageAuthorities);
+    }
+
 }

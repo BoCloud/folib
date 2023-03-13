@@ -6,6 +6,8 @@ import com.veadan.folib.storage.repository.RepositoryDto;
 
 import org.springframework.core.convert.converter.Converter;
 
+import java.util.Objects;
+
 /**
  * @author veadan
  */
@@ -64,6 +66,10 @@ public enum RepositoryFormConverter
             result.setArtifactCoordinateValidators(source.getArtifactCoordinateValidators());
         }
         result.setBasedir(source.getBasedir());
+        if (Objects.nonNull(source.getScope())) {
+            result.setScope(source.getScope());
+        }
+        result.setAllowAnonymous(source.isAllowAnonymous());
         return result;
     }
 }

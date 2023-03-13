@@ -21,6 +21,7 @@ public class AuthenticatedAccessModel implements AccessModel
         this.target = target;
     }
 
+    @Override
     public Set<Privileges> getApiAuthorities()
     {
         Set<Privileges> authorities = new HashSet<Privileges>(target.getApiAuthorities());
@@ -33,6 +34,11 @@ public class AuthenticatedAccessModel implements AccessModel
     public Set<Privileges> getPathAuthorities(String url)
     {
         return target.getPathAuthorities(url);
+    }
+
+    @Override
+    public Set<Privileges> getPathAuthorities(String storageId, String repositoryId) {
+        return target.getPathAuthorities(storageId, repositoryId);
     }
 
 }

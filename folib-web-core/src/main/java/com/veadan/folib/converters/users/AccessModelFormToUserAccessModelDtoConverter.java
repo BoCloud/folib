@@ -46,10 +46,16 @@ public enum AccessModelFormToUserAccessModelDtoConverter
                                                                    StoragePrivilegesDto userStorageDto = new StoragePrivilegesDto();
                                                                    userStorageDto.setStorageId(
                                                                            repositoryAccess.getStorageId());
+                                                                   if (StringUtils.isBlank(repositoryAccess.getRepositoryId())) {
+                                                                       userStorageDto.getStoragePrivileges().addAll(pullPrivileges(repositoryAccess));
+                                                                   }
                                                                    userAccessModelDto.getStorageAuthorities().add(userStorageDto);
                                                                    return userStorageDto;
                                                                });
 
+            if (StringUtils.isBlank(repositoryAccess.getRepositoryId())) {
+                continue;
+            }
             RepositoryPrivilegesDto repository = storage.getRepositoryPrivileges(repositoryAccess.getRepositoryId())
                                                   .orElseGet(
                                                           () ->

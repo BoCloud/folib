@@ -22,6 +22,7 @@
         <div>
           <a-tag class="mb-0 bg-success">仓库名称</a-tag>
           <span>{{ task.repositoryId }}</span>
+          <a-icon v-if="task.scope===2" class="ml-10" :style="{color:'#52C41A'}" type="unlock" />
         </div>
       </a-col>
     </a-row>

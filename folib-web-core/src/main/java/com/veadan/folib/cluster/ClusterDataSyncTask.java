@@ -2,10 +2,7 @@ package com.veadan.folib.cluster;
 
 import com.alibaba.fastjson.JSONObject;
 import com.veadan.folib.configuration.MutableSecurityPolicyConfiguration;
-import com.veadan.folib.controllers.cluster.dto.SyncCronJobDto;
-import com.veadan.folib.controllers.cluster.dto.SyncMetadataDto;
-import com.veadan.folib.controllers.cluster.dto.SyncRepositoryDto;
-import com.veadan.folib.controllers.cluster.dto.SyncStorageDto;
+import com.veadan.folib.controllers.cluster.dto.*;
 import com.veadan.folib.entity.ClusterDataSyncTaskPo;
 import com.veadan.folib.mapper.ClusterDataSyncTaskMapper;
 import com.veadan.folib.services.ClusterSyncService;
@@ -119,6 +116,16 @@ public class ClusterDataSyncTask {
                     ClusterSyncResultEnum syncResult = clusterSyncService.handleSyncCronJob(syncCronJobDto, url, true);
                     isSuccess(syncResult, task);
                     logger.info("sync cronJob data end [{} ]", url);
+                }
+                // 同步授权配置信息
+                if (Objects.equals(SyncDataTypeEnum.AUTHORIZATION.getValue(), task.getTaskType())) {
+                    SyncAuthorizationDto syncAuthorizationDto = JSONObject.parseObject(task.getDataJson(),
+                            SyncAuthorizationDto.class);
+
+                    logger.info("start sync authorization data [{}]", url);
+                    ClusterSyncResultEnum syncResult = clusterSyncService.handleSyncAuthorization(syncAuthorizationDto, url, true);
+                    isSuccess(syncResult, task);
+                    logger.info("sync authorization data end [{} ]", url);
                 }
             } catch (Exception e) {
                 logger.error("error {}", e.getMessage());

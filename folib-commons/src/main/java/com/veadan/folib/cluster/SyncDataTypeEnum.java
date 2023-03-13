@@ -6,7 +6,8 @@ public enum SyncDataTypeEnum {
     REPOSITORY(2),
     SECURITY_POLICY(3),
     METADATA(4),
-    REPOSITORY_JOB(5);
+    REPOSITORY_JOB(5),
+    AUTHORIZATION(6);
 
     private Integer value;
 

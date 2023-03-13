@@ -1,12 +1,10 @@
 package com.veadan.folib.services.impl;
 
 import com.alibaba.fastjson.JSON;
+import com.veadan.folib.authorization.dto.AuthorizationConfigDto;
 import com.veadan.folib.cluster.*;
 import com.veadan.folib.configuration.MutableSecurityPolicyConfiguration;
-import com.veadan.folib.controllers.cluster.dto.SyncCronJobDto;
-import com.veadan.folib.controllers.cluster.dto.SyncMetadataDto;
-import com.veadan.folib.controllers.cluster.dto.SyncRepositoryDto;
-import com.veadan.folib.controllers.cluster.dto.SyncStorageDto;
+import com.veadan.folib.controllers.cluster.dto.*;
 import com.veadan.folib.entity.ClusterDataSyncTaskPo;
 import com.veadan.folib.mapper.ClusterDataSyncTaskMapper;
 import com.veadan.folib.service.ProxyRepositoryConnectionPoolConfigurationService;
@@ -14,6 +12,7 @@ import com.veadan.folib.services.ClusterSyncService;
 import com.veadan.folib.storage.StorageDto;
 import com.veadan.folib.storage.repository.RepositoryDto;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -32,11 +31,12 @@ import java.util.UUID;
 public class ClusterSyncServiceImpl implements ClusterSyncService {
     private static final Logger logger = LoggerFactory.getLogger(ClusterSyncServiceImpl.class);
 
-    private final String SYCN_STORAGE_URI = "/api/configuration/cluster/syncStorage";
-    private final String SYCN_REPOSITORY_URI = "/api/configuration/cluster/syncRepository";
-    private final String SYCN_SECURITY_POLICY_URI = "/api/configuration/cluster/syncSecurityPolicyConfiguration";
-    private final String SYCN_METADATA_URI = "/api/configuration/cluster/syncMetadataConfiguration";
-    private final String SYCN_REPOSITORY_JOB = "/api/configuration/cluster/syncRepositoryJob";
+    private final String SYNC_STORAGE_URI = "/api/configuration/cluster/syncStorage";
+    private final String SYNC_REPOSITORY_URI = "/api/configuration/cluster/syncRepository";
+    private final String SYNC_SECURITY_POLICY_URI = "/api/configuration/cluster/syncSecurityPolicyConfiguration";
+    private final String SYNC_METADATA_URI = "/api/configuration/cluster/syncMetadataConfiguration";
+    private final String SYNC_REPOSITORY_JOB = "/api/configuration/cluster/syncRepositoryJob";
+    private final String SYNC_AUTHORIZATION = "/api/configuration/cluster/syncAuthorization";
 
     @Autowired
     private ProxyRepositoryConnectionPoolConfigurationService clientPool;
@@ -52,7 +52,7 @@ public class ClusterSyncServiceImpl implements ClusterSyncService {
 
     @Override
     public void syncConfiguration() {
-        logger.info("pjzy test sycnConfiguration");
+        logger.info("pjzy test syncConfiguration");
     }
 
     @Override
@@ -102,14 +102,14 @@ public class ClusterSyncServiceImpl implements ClusterSyncService {
         Client client = null;
         try {
             client = clientPool.getRestClient();
-            WebTarget target = client.target(nodeUrl + SYCN_STORAGE_URI);
+            WebTarget target = client.target(nodeUrl + SYNC_STORAGE_URI);
             response = target.request().post(Entity.entity(syncStorageDto, MediaType.APPLICATION_JSON));
             if (response.getStatus() > 210) {
                 logger.error("sync storage error {}", nodeUrl);
                 throw new RuntimeException("Failed with HTTP error code : " + response.getStatus());
             }
         } catch (Exception e) {
-            logger.error("sync storage error [{} ] {}", storageId, e.getMessage());
+            logger.error("sync storage error [{} ] {}", storageId, ExceptionUtils.getStackTrace(e));
             if (!isScheduled) {
                 addduledScheTask(
                         new ClusterDataSyncTaskPo(UUID.randomUUID().toString(),
@@ -157,7 +157,7 @@ public class ClusterSyncServiceImpl implements ClusterSyncService {
     @Async("asyncCronJobThreadPoolExecutor")
     public void syncCronJob(SyncCronJobDto syncCronJobDto) {
         if (!isNeedClusterSync()) {
-            logger.debug("cluster mode not opened");
+            logger.info("cluster mode not opened");
             return;
         }
         logger.info("folib  sync cron job");
@@ -166,6 +166,19 @@ public class ClusterSyncServiceImpl implements ClusterSyncService {
         });
     }
 
+    @Override
+    public void syncAuthorization(SyncAuthorizationDto syncAuthorizationDtoo) {
+        if (!isNeedClusterSync()) {
+            logger.info("cluster mode not opened");
+            return;
+        }
+        logger.info("folib  sync authorization");
+        clusterProperties.getHostNodeList().forEach(nodeUrl -> {
+            handleSyncAuthorization(syncAuthorizationDtoo, nodeUrl, false);
+        });
+    }
+
+    @Override
     public ClusterSyncResultEnum handleSyncCronJob(SyncCronJobDto syncCronJobDto, String nodeUrl, Boolean isScheduled) {
         Response response = null;
         Client client = null;
@@ -174,14 +187,14 @@ public class ClusterSyncServiceImpl implements ClusterSyncService {
         logger.info("start handleSyncCronJob {}", JSON.toJSONString(syncCronJobDto));
         try {
             client = clientPool.getRestClient();
-            WebTarget target = client.target(nodeUrl + SYCN_REPOSITORY_JOB);
+            WebTarget target = client.target(nodeUrl + SYNC_REPOSITORY_JOB);
             response = target.request().post(Entity.entity(syncCronJobDto, MediaType.APPLICATION_JSON));
             if (response.getStatus() > 210) {
                 logger.error("sync CronJob error {}", nodeUrl);
                 throw new RuntimeException("Failed with HTTP error code : " + response.getStatus());
             }
         } catch (Exception e) {
-            logger.error("sync CronJob [{} {}] error {} ",storageId , repositoryId, e.getMessage());
+            logger.error("sync CronJob [{} {}] error {} ",storageId , repositoryId, ExceptionUtils.getStackTrace(e));
             if (!isScheduled) {
                 addduledScheTask(
                         new ClusterDataSyncTaskPo(UUID.randomUUID().toString(),
@@ -212,7 +225,7 @@ public class ClusterSyncServiceImpl implements ClusterSyncService {
         Client client = null;
         try {
             client = clientPool.getRestClient();
-            WebTarget target = client.target(nodeUrl + SYCN_REPOSITORY_URI);
+            WebTarget target = client.target(nodeUrl + SYNC_REPOSITORY_URI);
             response = target.request().post(Entity.entity(syncRepositoryDto, MediaType.APPLICATION_JSON));
 
             if (response.getStatus() > 210) {
@@ -220,7 +233,7 @@ public class ClusterSyncServiceImpl implements ClusterSyncService {
                 throw new RuntimeException("Failed with HTTP error code : " + response.getStatus());
             }
         } catch (Exception e) {
-            logger.error("sync respository [{} {}] error {} ", storageId, repositoryId, e.getMessage());
+            logger.error("sync respository [{} {}] error {} ", storageId, repositoryId, ExceptionUtils.getStackTrace(e));
             if (!isScheduled) {
                 addduledScheTask(
                         new ClusterDataSyncTaskPo(UUID.randomUUID().toString(),
@@ -250,14 +263,14 @@ public class ClusterSyncServiceImpl implements ClusterSyncService {
         Client client = null;
         try {
             client = clientPool.getRestClient();
-            WebTarget target = client.target(nodeUrl + SYCN_SECURITY_POLICY_URI);
+            WebTarget target = client.target(nodeUrl + SYNC_SECURITY_POLICY_URI);
             response = target.request().post(Entity.entity(mutableSecurityPolicyConfiguration, MediaType.APPLICATION_JSON));
             if (response.getStatus() > 210) {
                 logger.error("sync securityPolicyConfiguration error {}", nodeUrl);
                 throw new RuntimeException("Failed with HTTP error code : " + response.getStatus());
             }
         } catch (Exception e) {
-            logger.error("sync securityPolicyConfiguration error {} ", e.getMessage());
+            logger.error("sync securityPolicyConfiguration error {} ", ExceptionUtils.getStackTrace(e));
             if (!isScheduled) {
                 addduledScheTask(
                         new ClusterDataSyncTaskPo(UUID.randomUUID().toString(),
@@ -286,20 +299,56 @@ public class ClusterSyncServiceImpl implements ClusterSyncService {
         Client client = null;
         try {
             client = clientPool.getRestClient();
-            WebTarget target = client.target(nodeUrl + SYCN_METADATA_URI);
+            WebTarget target = client.target(nodeUrl + SYNC_METADATA_URI);
             response = target.request().post(Entity.entity(syncMetadataDto, MediaType.APPLICATION_JSON));
             if (response.getStatus() > 210) {
                 logger.error("sync handleSyncMetadataConfiguration error {}", nodeUrl);
                 throw new RuntimeException("Failed with HTTP error code : " + response.getStatus());
             }
         } catch (Exception e) {
-            logger.error("sync handleSyncMetadataConfiguration error {} ", e.getMessage());
+            logger.error("sync handleSyncMetadataConfiguration error {} ", ExceptionUtils.getStackTrace(e));
             if (!isScheduled) {
                 addduledScheTask(
                         new ClusterDataSyncTaskPo(UUID.randomUUID().toString(),
                                 ipProperties.getFolibLockIp(),
                                 JSON.toJSONString(syncMetadataDto),
                                 SyncDataTypeEnum.METADATA.getValue(),
+                                SyncDataStatusEnum.WILL_EXECUTE_STATUS.getStatus()
+                                , nodeUrl, BigInteger.valueOf(System.currentTimeMillis())
+                        ));
+            }
+            return ClusterSyncResultEnum.FAIL;
+        } finally {
+            if (null != response) {
+                response.close();
+            }
+            if (null != client) {
+                client.close();
+            }
+        }
+        return ClusterSyncResultEnum.SUCCESS;
+    }
+
+    @Override
+    public ClusterSyncResultEnum handleSyncAuthorization(SyncAuthorizationDto syncAuthorizationDto, String nodeUrl, Boolean isScheduled) {
+        Response response = null;
+        Client client = null;
+        try {
+            client = clientPool.getRestClient();
+            WebTarget target = client.target(nodeUrl + SYNC_AUTHORIZATION);
+            response = target.request().post(Entity.entity(syncAuthorizationDto, MediaType.APPLICATION_JSON));
+            if (response.getStatus() > 210) {
+                logger.error("sync handleSyncAuthorization error {}", nodeUrl);
+                throw new RuntimeException("Failed with HTTP error code : " + response.getStatus());
+            }
+        } catch (Exception e) {
+            logger.error("sync handleSyncAuthorization error {} ", ExceptionUtils.getStackTrace(e));
+            if (!isScheduled) {
+                addduledScheTask(
+                        new ClusterDataSyncTaskPo(UUID.randomUUID().toString(),
+                                ipProperties.getFolibLockIp(),
+                                JSON.toJSONString(syncAuthorizationDto),
+                                SyncDataTypeEnum.AUTHORIZATION.getValue(),
                                 SyncDataStatusEnum.WILL_EXECUTE_STATUS.getStatus()
                                 , nodeUrl, BigInteger.valueOf(System.currentTimeMillis())
                         ));

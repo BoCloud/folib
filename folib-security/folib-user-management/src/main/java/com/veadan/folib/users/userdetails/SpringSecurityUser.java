@@ -114,6 +114,14 @@ public class SpringSecurityUser
                 .collect(Collectors.toSet());
     }
 
+    public Collection<Privileges> getStorageAuthorities(String storageId, String repositoryId) {
+        return getRoles().stream()
+                .flatMap(r -> r.getAccessModel()
+                        .getPathAuthorities(storageId, repositoryId)
+                        .stream())
+                .collect(Collectors.toSet());
+    }
+
     public String getUrl() {
         return url;
     }

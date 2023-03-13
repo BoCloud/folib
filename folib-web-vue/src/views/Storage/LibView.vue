@@ -39,8 +39,11 @@
           :vulnerabilityColumns="vulnerabilityColumns"
         />
       </a-tab-pane>
+      <a-button v-if="settingsEnabled" slot="tabBarExtraContent" icon="setting" class="repository-setting" size="small" @click="settingDrawerShow()" />
     </a-tabs>
     <!-- / Header Background Image -->
+
+    <SettingsDrawer :folibRepository="this.folibRepository" :settingVisible="settingVisible" @settingDrawerClose="settingDrawerClose"></SettingsDrawer>
 
     <!-- User Profile Card -->
 
@@ -562,7 +565,7 @@ import {
   getArtifact,
   viewArtifactFile,
   repositoryVulnerabilityStatistics,
-  getStoragesAndRepositories,
+  getLibraryFilter
 } from "@/api/folib";
 import { PrismEditor } from "vue-prism-editor";
 import "vue-prism-editor/dist/prismeditor.min.css"; // import the styles somewhere
@@ -578,6 +581,8 @@ import "quill/dist/quill.snow.css";
 import { quillEditor } from "vue-quill-editor";
 import Store from "./components/Store/index.vue";
 import Safe from "./components/Safe/index.vue";
+import SettingsDrawer from "./components/Repository/SettingsDrawer.vue";
+import { hasRole, isAdmin, hasPermission } from "@/utils/permission";
 
 export default {
   inject: ["reload"],
@@ -590,6 +595,7 @@ export default {
     quillEditor,
     Store,
     Safe,
+    SettingsDrawer,
   },
   data() {
     return {
@@ -803,12 +809,15 @@ export default {
           ],
         },
       },
-    };
+      settingsEnabled: false,
+      settingVisible: false,
+    }
   },
   created() {
-    this.createData();
-    this.repositoryVulnerabilityStatistics();
-    this.getMetadataConfiguration();
+    this.createData()
+    this.repositoryVulnerabilityStatistics()
+    this.getMetadataConfiguration()
+    this.getStorage(this.folibRepository.storageId)
   },
   methods: {
     searchBoxMouseStatus(bool) {
@@ -995,21 +1004,6 @@ export default {
         description: "",
       });
     },
-    getStoragesAndRepositories(type, layout, excludeRepositoryId, policy) {
-      getStoragesAndRepositories({
-        type: type,
-        layout: layout,
-        excludeRepositoryId: excludeRepositoryId,
-        policy: policy,
-      }).then((res) => {
-        this.repositories = [];
-        res.forEach((item) => {
-          if (item.children && item.children.length > 0) {
-            this.repositories.push(item);
-          }
-        });
-      });
-    },
     customChange(value) {
       this.custom = value;
       if (!value) {
@@ -1029,8 +1023,6 @@ export default {
         })
         .finally(() => {});
     },
-
-
     handlerRespMetadata(res) {
       let metadataList = [];
       if (
@@ -1070,6 +1062,17 @@ export default {
         this.handlerRespMetadata(res);
         this.$forceUpdate();
       });
+    },
+    settingDrawerShow() {
+      this.settingVisible = true
+    },
+    settingDrawerClose() {
+      this.settingVisible = false
+    },
+    getStorage(id) {
+      getLibraryFilter(id).then(response => {
+        this.settingsEnabled = isAdmin() || response.admin === this.$store.state.user.name
+      })
     },
   },
 };
@@ -1214,5 +1217,9 @@ $md: 768px;
   font-size: 12px;
   line-height: 1.5;
   padding: 5px;
+}
+.repository-setting {
+  margin: 0 5px;
+  margin-top: 12px;
 }
 </style>
