@@ -101,6 +101,8 @@ public class RepositoryForm {
      */
     private Integer scope = 1;
 
+    private boolean allowAnonymous = true;
+
     public String getId() {
         return id;
     }
@@ -316,6 +318,14 @@ public class RepositoryForm {
 
     public void setScope(Integer scope) {
         this.scope = scope;
+    }
+
+    public boolean isAllowAnonymous() {
+        return allowAnonymous;
+    }
+
+    public void setAllowAnonymous(boolean allowAnonymous) {
+        this.allowAnonymous = allowAnonymous;
     }
 
     public interface WhiteGroup

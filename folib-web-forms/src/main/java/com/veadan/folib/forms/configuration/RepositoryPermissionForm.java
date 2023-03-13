@@ -26,6 +26,12 @@ public class RepositoryPermissionForm {
     private Integer scope;
 
     /**
+     * 是否允许匿名访问
+     */
+    @NotNull(message = "A allowAnonymous must be specified.")
+    private boolean allowAnonymous;
+
+    /**
      * 仓库权限定义
      */
     @Valid

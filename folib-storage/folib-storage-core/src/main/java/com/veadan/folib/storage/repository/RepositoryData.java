@@ -104,6 +104,11 @@ public class RepositoryData
      */
     private Integer scope = 1;
 
+    /**
+     * 是否允许匿名访问
+     */
+    private boolean allowAnonymous = true;
+
     @JsonIgnore
     private Storage storage;
 
@@ -126,11 +131,11 @@ public class RepositoryData
         this.status = delegate.getStatus();
         this.artifactMaxSize = delegate.getArtifactMaxSize();
         this.trashEnabled = delegate.isTrashEnabled();
-        this.allowsForceDeletion = delegate.allowsForceDeletion();
-        this.allowsDeployment = delegate.allowsDeployment();
-        this.allowsRedeployment = delegate.allowsRedeployment();
-        this.allowsDelete = delegate.allowsDeletion();
-        this.allowsDirectoryBrowsing = delegate.allowsDirectoryBrowsing();
+        this.allowsForceDeletion = delegate.isAllowsForceDeletion();
+        this.allowsDeployment = delegate.isAllowsDeployment();
+        this.allowsRedeployment = delegate.isAllowsRedeployment();
+        this.allowsDelete = delegate.isAllowsDeletion();
+        this.allowsDirectoryBrowsing = delegate.isAllowsDirectoryBrowsing();
         this.checksumHeadersEnabled = delegate.isChecksumHeadersEnabled();
 
         RepositoryDto mutableRepository = (RepositoryDto) delegate;
@@ -151,6 +156,7 @@ public class RepositoryData
         this.basedir = delegate.getBasedir();
         this.subLayout = delegate.getSubLayout();
         this.scope = delegate.getScope();
+        this.allowAnonymous = delegate.isAllowAnonymous();
     }
 
     private ProxyConfiguration immuteProxyConfiguration(final MutableProxyConfiguration source) {
@@ -249,27 +255,27 @@ public class RepositoryData
     }
 
     @Override
-    public boolean allowsForceDeletion() {
+    public boolean isAllowsForceDeletion() {
         return allowsForceDeletion;
     }
 
     @Override
-    public boolean allowsDeployment() {
+    public boolean isAllowsDeployment() {
         return allowsDeployment;
     }
 
     @Override
-    public boolean allowsRedeployment() {
+    public boolean isAllowsRedeployment() {
         return allowsRedeployment;
     }
 
     @Override
-    public boolean allowsDeletion() {
+    public boolean isAllowsDeletion() {
         return allowsDelete;
     }
 
     @Override
-    public boolean allowsDirectoryBrowsing() {
+    public boolean isAllowsDirectoryBrowsing() {
         return allowsDirectoryBrowsing;
     }
 
@@ -370,12 +376,12 @@ public class RepositoryData
     }
 
     @Override
-    public boolean acceptsSnapshots() {
+    public boolean isAcceptsSnapshots() {
         return RepositoryPolicyEnum.ofPolicy(getPolicy()).acceptsSnapshots();
     }
 
     @Override
-    public boolean acceptsReleases() {
+    public boolean isAcceptsReleases() {
         return RepositoryPolicyEnum.ofPolicy(getPolicy()).acceptsReleases();
     }
 
@@ -397,5 +403,10 @@ public class RepositoryData
     @Override
     public Integer getScope() {
         return this.scope;
+    }
+
+    @Override
+    public boolean isAllowAnonymous() {
+        return allowAnonymous;
     }
 }

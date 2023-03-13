@@ -22,6 +22,10 @@ public class RepositoryPermission {
      */
     private Integer scope;
     /**
+     * 是否允许匿名访问
+     */
+    private boolean allowAnonymous;
+    /**
      * 权限
      */
     private List<RepositoryUser> userList;

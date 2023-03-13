@@ -68,11 +68,13 @@ public abstract class StorageFileSystemProvider
         this.target = target;
     }
 
+    @Override
     public String getScheme()
     {
         return FOLIB_SCHEME;
     }
 
+    @Override
     public FileSystem newFileSystem(URI uri,
                                     Map<String, ?> env)
         throws IOException
@@ -80,16 +82,19 @@ public abstract class StorageFileSystemProvider
         throw new UnsupportedOperationException();
     }
 
+    @Override
     public FileSystem getFileSystem(URI uri)
     {
         throw new UnsupportedOperationException();
     }
 
+    @Override
     public Path getPath(URI uri)
     {
         throw new UnsupportedOperationException();
     }
 
+    @Override
     public SeekableByteChannel newByteChannel(Path path,
                                               Set<? extends OpenOption> options,
                                               FileAttribute<?>... attrs)
@@ -107,6 +112,7 @@ public abstract class StorageFileSystemProvider
         return getTarget().newFileChannel(unwrap(path), options, attrs);
     }
 
+    @Override
     public DirectoryStream<Path> newDirectoryStream(Path dir,
                                                     Filter<? super Path> filter)
         throws IOException
@@ -168,6 +174,7 @@ public abstract class StorageFileSystemProvider
         };
     }
 
+    @Override
     public void createDirectory(Path dir,
                                 FileAttribute<?>... attrs)
         throws IOException
@@ -175,6 +182,7 @@ public abstract class StorageFileSystemProvider
         getTarget().createDirectory(unwrap(dir), attrs);
     }
 
+    @Override
     public void delete(Path path)
         throws IOException
     {
@@ -331,7 +339,7 @@ public abstract class StorageFileSystemProvider
                     StandardCopyOption.REPLACE_EXISTING);
         }
 
-        if (force && repository.allowsForceDeletion())
+        if (force && repository.isAllowsForceDeletion())
         {
             deleteTrash(repositoryPath);
         }
@@ -467,6 +475,7 @@ public abstract class StorageFileSystemProvider
         return new TempOutputStream(temp, options);
     }
 
+    @Override
     public void copy(Path source,
                      Path target,
                      CopyOption... options)
@@ -475,6 +484,7 @@ public abstract class StorageFileSystemProvider
         getTarget().copy(unwrap(source), unwrap(target), options);
     }
 
+    @Override
     public void move(Path source,
                      Path target,
                      CopyOption... options)
@@ -483,6 +493,7 @@ public abstract class StorageFileSystemProvider
         getTarget().move(unwrap(source), unwrap(target), options);
     }
 
+    @Override
     public boolean isSameFile(Path path,
                               Path path2)
         throws IOException
@@ -490,18 +501,21 @@ public abstract class StorageFileSystemProvider
         return getTarget().isSameFile(unwrap(path), unwrap(path2));
     }
 
+    @Override
     public boolean isHidden(Path path)
         throws IOException
     {
         return getTarget().isHidden(unwrap(path));
     }
 
+    @Override
     public FileStore getFileStore(Path path)
         throws IOException
     {
         return getTarget().getFileStore(unwrap(path));
     }
 
+    @Override
     public void checkAccess(Path path,
                             AccessMode... modes)
         throws IOException
@@ -509,6 +523,7 @@ public abstract class StorageFileSystemProvider
         getTarget().checkAccess(unwrap(path), modes);
     }
 
+    @Override
     public <V extends FileAttributeView> V getFileAttributeView(Path path,
                                                                 Class<V> type,
                                                                 LinkOption... options)
@@ -516,6 +531,7 @@ public abstract class StorageFileSystemProvider
         return getTarget().getFileAttributeView(unwrap(path), type, options);
     }
 
+    @Override
     public <A extends BasicFileAttributes> A readAttributes(Path path,
                                                             Class<A> type,
                                                             LinkOption... options)
@@ -542,6 +558,7 @@ public abstract class StorageFileSystemProvider
         return (A) repositoryFileAttributes;
     }
 
+    @Override
     public Map<String, Object> readAttributes(Path path,
                                               String attributes,
                                               LinkOption... options)
@@ -605,6 +622,7 @@ public abstract class StorageFileSystemProvider
                                                                                             RepositoryFileAttributeType... attributeTypes)
         throws IOException;
 
+    @Override
     public void setAttribute(Path path,
                              String attribute,
                              Object value,

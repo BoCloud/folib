@@ -159,7 +159,7 @@ public class ArtifactRepository extends GremlinVertexRepository<Artifact> {
             if (!subRepository.isInService()) {
                 continue;
             }
-            if (!repository.allowsDirectoryBrowsing()) {
+            if (!repository.isAllowsDirectoryBrowsing()) {
                 continue;
             }
             storageIdAndRepositoryIdList.add(subRepository.getStorage().getId() + "-" + subRepository.getId());

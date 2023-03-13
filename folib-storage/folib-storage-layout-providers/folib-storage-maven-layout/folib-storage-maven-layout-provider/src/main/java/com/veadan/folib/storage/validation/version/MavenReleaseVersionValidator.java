@@ -72,11 +72,11 @@ public class MavenReleaseVersionValidator
             throws VersionValidationException
     {
         String version = coordinates.getVersion();
-        if (isRelease(version) && !repository.acceptsReleases())
+        if (isRelease(version) && !repository.isAcceptsReleases())
         {
             throw new VersionValidationException("Cannot deploy a release artifact to a repository with a SNAPSHOT policy!");
         }
-        if (!isRelease(version) && repository.acceptsReleases() && !repository.acceptsSnapshots())
+        if (!isRelease(version) && repository.isAcceptsReleases() && !repository.isAcceptsSnapshots())
         {
             throw new VersionValidationException("Cannot deploy a SNAPSHOT artifact to a repository with a release policy!");
         }

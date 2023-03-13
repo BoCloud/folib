@@ -21,6 +21,7 @@ public enum RepositoryPermissionFormConverter
     public RepositoryPermissionDto convert(final RepositoryPermissionForm source) {
         RepositoryPermissionDto result = new RepositoryPermissionDto();
         result.setScope(source.getScope());
+        result.setAllowAnonymous(source.isAllowAnonymous());
         if (CollectionUtils.isNotEmpty(source.getUserList())) {
             List<RepositoryPermissionUserDto> repositoryPermissionUserList = source.getUserList().stream().map(item -> {
                 RepositoryPermissionUserDto repositoryPermissionUserDto = new RepositoryPermissionUserDto();

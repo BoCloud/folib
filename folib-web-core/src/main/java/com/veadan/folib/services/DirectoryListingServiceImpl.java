@@ -112,7 +112,7 @@ public class DirectoryListingServiceImpl implements DirectoryListingService
             if (artifactRoutingRulesChecker.isDenied(repository, resolvedPath)) {
                 continue;
             }
-            if (!repository.allowsDirectoryBrowsing() || !probeForDirectoryListing(resolvedPath)) {
+            if (!repository.isAllowsDirectoryBrowsing() || !probeForDirectoryListing(resolvedPath)) {
                 continue;
             }
             if (RepositoryTypeEnum.PROXY.getType().equals(subRepository.getType())) {

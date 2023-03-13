@@ -72,12 +72,12 @@ public class GenericSnapshotVersionValidator
             throws VersionValidationException
     {
         String version = coordinates.getVersion();
-        if (isSnapshot(version) && !repository.acceptsSnapshots())
+        if (isSnapshot(version) && !repository.isAcceptsSnapshots())
         {
             throw new VersionValidationException("Cannot deploy a SNAPSHOT artifact to a repository which " +
                                                  "doesn't accept SNAPSHOT policy!");
         }
-        if (!isSnapshot(version) && repository.acceptsSnapshots() && !repository.acceptsReleases())
+        if (!isSnapshot(version) && repository.isAcceptsSnapshots() && !repository.isAcceptsReleases())
         {
             throw new VersionValidationException("Cannot deploy a release artifact to a repository with " +
                                                  "a SNAPSHOT policy!");

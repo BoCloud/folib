@@ -69,6 +69,7 @@ public enum RepositoryFormConverter
         if (Objects.nonNull(source.getScope())) {
             result.setScope(source.getScope());
         }
+        result.setAllowAnonymous(source.isAllowAnonymous());
         return result;
     }
 }

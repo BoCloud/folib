@@ -818,6 +818,7 @@ public class StoragesConfigurationController
             }
             RepositoryDto repository = configurationManagementService.getMutableConfigurationClone().getStorage(storageId).getRepository(repositoryId);
             repository.setScope(repositoryPermissionDto.getScope());
+            repository.setAllowAnonymous(repositoryPermissionDto.isAllowAnonymous());
             configurationManagementService.saveRepository(storageId, repository);
             SyncRepositoryDto syncRepositoryDto = new SyncRepositoryDto(repository, storageId, repositoryId, SyncRepositoryEnum.ADD_OR_UPDATE);
             clusterSyncService.syncRepository(syncRepositoryDto);
@@ -915,6 +916,7 @@ public class StoragesConfigurationController
                 return repositoryUser;
             }).collect(Collectors.toList());
             repositoryPermission.setScope(repository.getScope());
+            repositoryPermission.setAllowAnonymous(repository.isAllowAnonymous());
             repositoryPermission.setUserList(repositoryUserList);
             return ResponseEntity.ok(repositoryPermission);
         } else {

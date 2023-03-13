@@ -9,6 +9,22 @@
     >
       <a-row :gutter="[24]">
         <a-col :span="24">
+          <a-card v-if="this.folibRepository.layout !== 'Docker'" :bordered="false" class="header-solid">
+            <template #title>
+              <h6>允许匿名访问</h6>
+              <p v-if="permissionForm.allowAnonymous === true">匿名用户可拉取制品</p>
+              <p v-else>匿名用户不可拉取制品</p>
+            </template>
+  
+            <a-radio-group v-model="permissionForm.allowAnonymous">
+              <a-radio :value="true">
+                开启&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+              </a-radio>
+              <a-radio :value="false">
+                关闭
+              </a-radio>
+            </a-radio-group>
+          </a-card>
           <a-card :bordered="false" class="header-solid">
             <template #title>
               <h6>仓库可见范围</h6>
@@ -120,6 +136,7 @@ export default {
     return {
       permissionUserShow: false,
       permissionForm: {
+        allowAnonymous: true,
         scope: 1,
         userList: []
 		  },
@@ -210,6 +227,7 @@ export default {
     queryRepositoryPermission() {
       getRepositoryPermission({storageId: this.folibRepository.storageId, repositoryId: this.folibRepository.id}).then(res => {
         this.permissionForm.scope = res.scope
+        this.permissionForm.allowAnonymous = res.allowAnonymous
         this.permissionForm.userList = []
         this.sourceUserList = []
         if (res.userList && res.userList.length > 0) {
@@ -297,6 +315,7 @@ export default {
           }
           let data = {
             scope: this.permissionForm.scope,
+            allowAnonymous: this.permissionForm.allowAnonymous,
             userList: this.permissionForm.userList
           }
           repositoryPermission(this.folibRepository.storageId, this.folibRepository.id, data).then(res => {

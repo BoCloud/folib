@@ -85,6 +85,11 @@ public class RepositoryDto
      */
     private Integer scope = 1;
 
+    /**
+     * 是否允许匿名访问
+     */
+    private boolean allowAnonymous = true;
+
     @JsonIgnore
     private StorageDto storage;
 
@@ -192,27 +197,27 @@ public class RepositoryDto
     }
 
     @Override
-    public boolean allowsDeletion() {
+    public boolean isAllowsDeletion() {
         return allowsDelete;
     }
 
     @Override
-    public boolean allowsForceDeletion() {
+    public boolean isAllowsForceDeletion() {
         return allowsForceDeletion;
     }
 
     @Override
-    public boolean allowsDeployment() {
+    public boolean isAllowsDeployment() {
         return allowsDeployment;
     }
 
     @Override
-    public boolean allowsRedeployment() {
+    public boolean isAllowsRedeployment() {
         return allowsRedeployment;
     }
 
     @Override
-    public boolean allowsDirectoryBrowsing() {
+    public boolean isAllowsDirectoryBrowsing() {
         return allowsDirectoryBrowsing;
     }
 
@@ -265,12 +270,12 @@ public class RepositoryDto
     }
 
     @Override
-    public boolean acceptsSnapshots() {
+    public boolean isAcceptsSnapshots() {
         return RepositoryPolicyEnum.ofPolicy(getPolicy()).acceptsSnapshots();
     }
 
     @Override
-    public boolean acceptsReleases() {
+    public boolean isAcceptsReleases() {
         return RepositoryPolicyEnum.ofPolicy(getPolicy()).acceptsReleases();
     }
 
@@ -447,5 +452,14 @@ public class RepositoryDto
 
     public void setScope(Integer scope) {
         this.scope = scope;
+    }
+
+    @Override
+    public boolean isAllowAnonymous() {
+        return allowAnonymous;
+    }
+
+    public void setAllowAnonymous(boolean allowAnonymous) {
+        this.allowAnonymous = allowAnonymous;
     }
 }
