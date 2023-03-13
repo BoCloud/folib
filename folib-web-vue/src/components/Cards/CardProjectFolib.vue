@@ -45,6 +45,7 @@
 				<p class="font-semibold text-muted mb-0">仓库类型</p>
 			</a-col>
 			<a-col class="ml-auto">
+				<a-icon v-if="repository.scope===2" :style="{fontSize: '18px', color:'#52C41A'}" type="unlock" />
 <!--        <a-tag v-if="due==='snapshot'" class="text-md bg-warning">{{ due }}</a-tag>-->
 <!--        <a-tag v-if="due==='release'" class="text-md bg-secondary text-white">{{ due }}</a-tag>-->
 <!--        <a-tag v-if="due==='mixed'" class="text-md bg-primary text-white">{{ due }}</a-tag>-->
