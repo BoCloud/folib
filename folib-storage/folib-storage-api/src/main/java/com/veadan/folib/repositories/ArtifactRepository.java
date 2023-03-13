@@ -125,6 +125,9 @@ public class ArtifactRepository extends GremlinVertexRepository<Artifact> {
         boolean isGroupRepository = false;
         if (StringUtils.isNotBlank(storageId) && StringUtils.isNotBlank(repositoryId)) {
             repository = configurationManager.getRepository(storageId, repositoryId);
+            if (repository == null) {
+                return new PageImpl<>(Collections.emptyList(), pagination, 0);
+            }
             isGroupRepository = RepositoryTypeEnum.GROUP.getType().equals(repository.getType());
             if (isGroupRepository) {
                 storageIdAndRepositoryIdList = getGroupStorageIdAndRepositoryId(repository);
