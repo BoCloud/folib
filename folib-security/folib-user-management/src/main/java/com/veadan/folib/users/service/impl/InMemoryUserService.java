@@ -120,7 +120,7 @@ public class InMemoryUserService implements UserService
 
             userDto.setUsername(user.getUsername());
             userDto.setEnabled(user.isEnabled());
-            List<String> showRoleNameList = Lists.newArrayList(SystemRole.ADMIN.name(), SystemRole.GENERAL.name());
+            List<String> showRoleNameList = Lists.newArrayList(SystemRole.ADMIN.name(), SystemRole.ARTIFACTS_MANAGER.name(), SystemRole.GENERAL.name());
             Set<SecurityRole> roles = Optional.ofNullable(userDto.getRoles()).orElse(Sets.newLinkedHashSet()).stream().filter(item -> !showRoleNameList.contains(item.getRoleName())).collect(Collectors.toSet());
             roles.addAll(user.getRoles());
             userDto.setRoles(roles);
