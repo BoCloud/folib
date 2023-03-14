@@ -104,7 +104,7 @@ export default ({
 		storageAdmin: function (newval, oldVal) {
 			this.init()
 		},
-  },
+  	},
     methods:{
       handleMenuClick(e){
         this.$emit("handleMenuClick",e.key,this.title)
