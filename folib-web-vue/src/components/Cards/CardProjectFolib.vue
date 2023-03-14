@@ -100,6 +100,11 @@ export default ({
 	created() {
 		this.init()
 	},
+	watch: {
+		storageAdmin: function (newval, oldVal) {
+			this.init()
+		},
+  },
     methods:{
       handleMenuClick(e){
         this.$emit("handleMenuClick",e.key,this.title)
@@ -110,6 +115,8 @@ export default ({
 	  init() {
 		this.editEnabled = (isAdmin() || this.storageAdmin === this.$store.state.user.name)
 		this.deleteEnabled = (isAdmin() || this.storageAdmin === this.$store.state.user.name) && (this.repository.allowsDeletion || this.repository.allowsForceDeletion)
+		console.log(this.repository.storageId, this.repository.id, this.storageAdmin ,  this.$store.state.user.name, this.editEnabled, this.deleteEnabled)
+
 		this.operatorEnabled = this.editEnabled || this.deleteEnabled
 	  },
     }
