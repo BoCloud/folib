@@ -33,7 +33,7 @@ public enum RepositoryFormConverter
         result.setAllowsForceDeletion(source.isAllowsForceDeletion());
         result.setAllowsDeployment(source.isAllowsDeployment());
         result.setAllowsRedeployment(source.isAllowsRedeployment());
-        result.setAllowsDelete(source.isAllowsDelete());
+        result.setAllowsDeletion(source.isAllowsDeletion());
         result.setAllowsDirectoryBrowsing(source.isAllowsDirectoryBrowsing());
         result.setChecksumHeadersEnabled(source.isChecksumHeadersEnabled());
         if (source.getRepositoryConfiguration() != null)

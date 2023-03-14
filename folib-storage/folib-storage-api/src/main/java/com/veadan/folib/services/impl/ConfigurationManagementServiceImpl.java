@@ -398,7 +398,7 @@ public class ConfigurationManagementServiceImpl
                         for (Repository repository : storage.getRepositories().values()) {
                             RepositoryDto mutableRepository = (RepositoryDto) repository;
                             if (repository.getType().equals(RepositoryTypeEnum.GROUP.getType())) {
-                                mutableRepository.setAllowsDelete(false);
+                                mutableRepository.setAllowsDeletion(false);
                                 mutableRepository.setAllowsDeployment(false);
                                 mutableRepository.setAllowsRedeployment(false);
                             }
