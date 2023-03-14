@@ -66,7 +66,7 @@ public class RepositoryData
 
     private boolean allowsRedeployment;
 
-    private boolean allowsDelete;
+    private boolean allowsDeletion;
 
     private boolean allowsDirectoryBrowsing;
 
@@ -102,12 +102,12 @@ public class RepositoryData
     /**
      * 仓库可见范围 1 存储空间内 2 公开
      */
-    private Integer scope = 1;
+    private Integer scope;
 
     /**
      * 是否允许匿名访问
      */
-    private boolean allowAnonymous = true;
+    private boolean allowAnonymous;
 
     @JsonIgnore
     private Storage storage;
@@ -134,7 +134,7 @@ public class RepositoryData
         this.allowsForceDeletion = delegate.isAllowsForceDeletion();
         this.allowsDeployment = delegate.isAllowsDeployment();
         this.allowsRedeployment = delegate.isAllowsRedeployment();
-        this.allowsDelete = delegate.isAllowsDeletion();
+        this.allowsDeletion = delegate.isAllowsDeletion();
         this.allowsDirectoryBrowsing = delegate.isAllowsDirectoryBrowsing();
         this.checksumHeadersEnabled = delegate.isChecksumHeadersEnabled();
 
@@ -271,7 +271,7 @@ public class RepositoryData
 
     @Override
     public boolean isAllowsDeletion() {
-        return allowsDelete;
+        return allowsDeletion;
     }
 
     @Override

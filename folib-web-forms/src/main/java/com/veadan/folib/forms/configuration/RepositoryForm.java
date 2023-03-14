@@ -63,7 +63,7 @@ public class RepositoryForm {
 
     private boolean allowsRedeployment;
 
-    private boolean allowsDelete = true;
+    private boolean allowsDeletion = true;
 
     private boolean allowsDirectoryBrowsing = true;
 
@@ -207,12 +207,12 @@ public class RepositoryForm {
         this.allowsRedeployment = allowsRedeployment;
     }
 
-    public boolean isAllowsDelete() {
-        return allowsDelete;
+    public boolean isAllowsDeletion() {
+        return allowsDeletion;
     }
 
-    public void setAllowsDelete(final boolean allowsDelete) {
-        this.allowsDelete = allowsDelete;
+    public void setAllowsDeletion(final boolean allowsDeletion) {
+        this.allowsDeletion = allowsDeletion;
     }
 
     public boolean isAllowsDirectoryBrowsing() {

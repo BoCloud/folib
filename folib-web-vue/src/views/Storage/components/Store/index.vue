@@ -1759,8 +1759,9 @@ export default {
           }, 100);
         })
         .catch((err) => {
+          let msg = err.response.data?err.response.data:'删除失败'
           this.$notification["error"]({
-            message: "删除失败",
+            message: msg,
             description: "",
           });
         })

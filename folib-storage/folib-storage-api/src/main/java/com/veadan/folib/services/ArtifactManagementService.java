@@ -407,7 +407,7 @@ public class ArtifactManagementService
         return configurationManager.getConfiguration();
     }
 
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public void delete(RepositoryPath repositoryPath,
                        boolean force)
             throws IOException
@@ -419,10 +419,10 @@ public class ArtifactManagementService
         artifactOperationsValidator.checkAllowsDeletion(repository);
 
         Optional<Artifact> artifactEntry = Optional.ofNullable(repositoryPath.getArtifactEntry());
-        if (!Files.isDirectory(repositoryPath) && RepositoryFiles.isArtifact(repositoryPath) && !artifactEntry.isPresent())
+        if (!Files.isDirectory(repositoryPath) && RepositoryFiles.isArtifact(repositoryPath) && artifactEntry.isEmpty())
         {
-            throw new IOException(String.format("Corresponding [%s] record not found for path [%s]",
-                                                Artifact.class.getSimpleName(), repositoryPath));
+            logger.warn(String.format("Corresponding [%s] record not found for path [%s]",
+                    Artifact.class.getSimpleName(), repositoryPath));
         }
 
         try

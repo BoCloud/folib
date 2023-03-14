@@ -641,8 +641,8 @@
                 </a-col>
                 <a-col :span="4">
                   <a-form-item class="mb-10" label="删除" :colon="false">
-                    <a-checkbox v-model="folibRepository.allowsDelete">
-                      {{ folibRepository.allowsDelete ? '允许' : '不允许' }}
+                    <a-checkbox v-model="folibRepository.allowsDeletion">
+                      {{ folibRepository.allowsDeletion ? '允许' : '不允许' }}
                     </a-checkbox>
                   </a-form-item>
                 </a-col>
@@ -1097,7 +1097,7 @@ export default {
       artifactMaxSize: 100,
       folibRepositoryEditDisabled: false,
       folibRepository: {
-        allowsDelete: true,
+        allowsDeletion: true,
         allowsDeployment: true,
         allowsDirectoryBrowsing: false,
         allowsForceDeletion: false,
@@ -1140,7 +1140,7 @@ export default {
         type: "hosted",
       },
       folibRepositoryBack: {
-        allowsDelete: true,
+        allowsDeletion: true,
         allowsDeployment: true,
         allowsDirectoryBrowsing: false,
         allowsForceDeletion: false,
@@ -1876,7 +1876,7 @@ export default {
           if (res.id === title) {
             this.willDelId = title
             this.deleteBtnVisible = false
-            if (res.allowsDelete) {
+            if (res.allowsDeletion) {
               this.deleteBtnVisible = true
             }
             this.forceDeleteBtnVisible = false

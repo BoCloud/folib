@@ -48,7 +48,7 @@ public class RepositoryDto
 
     private boolean allowsRedeployment = true;
 
-    private boolean allowsDelete = true;
+    private boolean allowsDeletion = true;
 
     private boolean allowsDirectoryBrowsing = true;
 
@@ -198,7 +198,7 @@ public class RepositoryDto
 
     @Override
     public boolean isAllowsDeletion() {
-        return allowsDelete;
+        return allowsDeletion;
     }
 
     @Override
@@ -360,8 +360,8 @@ public class RepositoryDto
         this.allowsRedeployment = allowsRedeployment;
     }
 
-    public void setAllowsDelete(boolean allowsDelete) {
-        this.allowsDelete = allowsDelete;
+    public void setAllowsDeletion(boolean allowsDeletion) {
+        this.allowsDeletion = allowsDeletion;
     }
 
     public void setAllowsDirectoryBrowsing(boolean allowsDirectoryBrowsing) {
