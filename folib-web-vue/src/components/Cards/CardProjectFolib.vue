@@ -109,7 +109,7 @@ export default ({
       },
 	  init() {
 		this.editEnabled = (isAdmin() || this.storageAdmin === this.$store.state.user.name)
-		this.deleteEnabled = (isAdmin() || this.storageAdmin === this.$store.state.user.name) && (this.repository.allowsDelete || this.repository.allowsForceDeletion)
+		this.deleteEnabled = (isAdmin() || this.storageAdmin === this.$store.state.user.name) && (this.repository.allowsDeletion || this.repository.allowsForceDeletion)
 		this.operatorEnabled = this.editEnabled || this.deleteEnabled
 	  },
     }
