@@ -265,7 +265,7 @@ export function securityPolicyConfig () {
 
 export function addRepositoryWhites (storageId,repositoryId,obj) {
   return axios({
-    url: '/api/configuration/folib/storages/whites/'+storageId+'/'+repositoryId,
+    url: '/api/configuration/folib/storages/'+ storageId + '/'+ repositoryId + '/whites',
     method: 'put',
     data: obj
   })
@@ -273,7 +273,7 @@ export function addRepositoryWhites (storageId,repositoryId,obj) {
 
 export function removeRepositoryWhites (storageId,repositoryId,obj) {
   return axios({
-    url: '/api/configuration/folib/storages/whites/'+storageId+'/'+repositoryId,
+    url: '/api/configuration/folib/storages/'+ storageId + '/'+ repositoryId + '/whites',
     method: 'delete',
     data: obj
   })
@@ -281,7 +281,7 @@ export function removeRepositoryWhites (storageId,repositoryId,obj) {
 
 export function addRepositoryBlacks (storageId,repositoryId,obj) {
   return axios({
-    url: '/api/configuration/folib/storages/blacks/'+storageId+'/'+repositoryId,
+    url: '/api/configuration/folib/storages/' + storageId + '/' + repositoryId + '/blacks',
     method: 'put',
     data: obj
   })
@@ -289,7 +289,7 @@ export function addRepositoryBlacks (storageId,repositoryId,obj) {
 
 export function removeRepositoryBlacks (storageId,repositoryId,obj) {
   return axios({
-    url: '/api/configuration/folib/storages/blacks/'+storageId+'/'+repositoryId,
+    url: '/api/configuration/folib/storages/' + storageId + '/' + repositoryId + '/blacks',
     method: 'delete',
     data: obj
   })
@@ -297,7 +297,7 @@ export function removeRepositoryBlacks (storageId,repositoryId,obj) {
 
 export function setRepositoryWhites (storageId,repositoryId,obj) {
   return axios({
-    url: '/api/configuration/folib/storages/setWhites/'+storageId+'/'+repositoryId,
+    url: '/api/configuration/folib/storages/' + storageId + '/' + repositoryId + '/setWhites',
     method: 'put',
     data: obj
   })
@@ -305,7 +305,7 @@ export function setRepositoryWhites (storageId,repositoryId,obj) {
 
 export function setRepositoryBlacks (storageId,repositoryId,obj) {
   return axios({
-    url: '/api/configuration/folib/storages/setBlacks/'+storageId+'/'+repositoryId,
+    url: '/api/configuration/folib/storages/' + storageId + '/' + repositoryId + '/setBlacks',
     method: 'put',
     data: obj
   })

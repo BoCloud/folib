@@ -501,7 +501,7 @@ public class StoragesConfigurationController
     @ApiResponses(value = {@ApiResponse(code = 200, message = "The repository was updated successfully."),
             @ApiResponse(code = 404, message = "The repository ${repositoryId} was not found!")})
     @PreAuthorize("hasAuthority('CONFIGURATION_ADD_UPDATE_REPOSITORY')")
-    @PutMapping(value = "/whites/{storageId}/{repositoryId}",
+    @PutMapping(value = "/{storageId}/{repositoryId}/whites",
             consumes = MediaType.APPLICATION_JSON_VALUE,
             produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity addRepositoryWhites(@ApiParam(value = "The storageId", required = true)
@@ -541,7 +541,7 @@ public class StoragesConfigurationController
     @ApiResponses(value = {@ApiResponse(code = 200, message = "The repository was updated successfully."),
             @ApiResponse(code = 404, message = "The repository ${repositoryId} was not found!")})
     @PreAuthorize("hasAuthority('CONFIGURATION_ADD_UPDATE_REPOSITORY')")
-    @DeleteMapping(value = "/whites/{storageId}/{repositoryId}",
+    @DeleteMapping(value = "/{storageId}/{repositoryId}/whites",
             consumes = MediaType.APPLICATION_JSON_VALUE,
             produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity removeRepositoryWhites(@ApiParam(value = "The storageId", required = true)
@@ -581,7 +581,7 @@ public class StoragesConfigurationController
     @ApiResponses(value = {@ApiResponse(code = 200, message = "The repository was updated successfully."),
             @ApiResponse(code = 404, message = "The repository ${repositoryId} was not found!")})
     @PreAuthorize("hasAuthority('CONFIGURATION_ADD_UPDATE_REPOSITORY')")
-    @PutMapping(value = "/blacks/{storageId}/{repositoryId}",
+    @PutMapping(value = "/{storageId}/{repositoryId}/blacks",
             consumes = MediaType.APPLICATION_JSON_VALUE,
             produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity addRepositoryBlacks(@ApiParam(value = "The storageId", required = true)
@@ -621,7 +621,7 @@ public class StoragesConfigurationController
     @ApiResponses(value = {@ApiResponse(code = 200, message = "The repository was updated successfully."),
             @ApiResponse(code = 404, message = "The repository ${repositoryId} was not found!")})
     @PreAuthorize("hasAuthority('CONFIGURATION_ADD_UPDATE_REPOSITORY')")
-    @DeleteMapping(value = "/blacks/{storageId}/{repositoryId}",
+    @DeleteMapping(value = "/{storageId}/{repositoryId}/blacks",
             consumes = MediaType.APPLICATION_JSON_VALUE,
             produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity removeRepositoryBlacks(@ApiParam(value = "The storageId", required = true)
@@ -661,7 +661,7 @@ public class StoragesConfigurationController
     @ApiResponses(value = {@ApiResponse(code = 200, message = "The repository was updated successfully."),
             @ApiResponse(code = 404, message = "The repository ${repositoryId} was not found!")})
     @PreAuthorize("hasAuthority('CONFIGURATION_ADD_UPDATE_REPOSITORY')")
-    @PutMapping(value = "/setWhites/{storageId}/{repositoryId}",
+    @PutMapping(value = "/{storageId}/{repositoryId}/setWhites",
             consumes = MediaType.APPLICATION_JSON_VALUE,
             produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity setRepositoryWhites(@ApiParam(value = "The storageId", required = true)
@@ -699,7 +699,7 @@ public class StoragesConfigurationController
     @ApiResponses(value = {@ApiResponse(code = 200, message = "The repository was updated successfully."),
             @ApiResponse(code = 404, message = "The repository ${repositoryId} was not found!")})
     @PreAuthorize("hasAuthority('CONFIGURATION_ADD_UPDATE_REPOSITORY')")
-    @PutMapping(value = "/setBlacks/{storageId}/{repositoryId}",
+    @PutMapping(value = "/{storageId}/{repositoryId}/setBlacks",
             consumes = MediaType.APPLICATION_JSON_VALUE,
             produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity setRepositoryBlacks(@ApiParam(value = "The storageId", required = true)
