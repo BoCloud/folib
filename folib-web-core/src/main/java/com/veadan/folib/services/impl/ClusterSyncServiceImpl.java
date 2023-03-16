@@ -1,18 +1,17 @@
 package com.veadan.folib.services.impl;
 
+import cn.hutool.core.collection.CollectionUtil;
+import cn.hutool.extra.spring.SpringUtil;
 import com.alibaba.fastjson.JSON;
 import com.veadan.folib.cluster.*;
 import com.veadan.folib.configuration.MutableSecurityPolicyConfiguration;
-import com.veadan.folib.controllers.cluster.dto.SyncCronJobDto;
-import com.veadan.folib.controllers.cluster.dto.SyncMetadataDto;
-import com.veadan.folib.controllers.cluster.dto.SyncRepositoryDto;
-import com.veadan.folib.controllers.cluster.dto.SyncStorageDto;
+import com.veadan.folib.controllers.cluster.dto.*;
+import com.veadan.folib.dispatch.ClusterDispatchNodeDto;
 import com.veadan.folib.entity.ClusterDataSyncTaskPo;
 import com.veadan.folib.mapper.ClusterDataSyncTaskMapper;
 import com.veadan.folib.service.ProxyRepositoryConnectionPoolConfigurationService;
 import com.veadan.folib.services.ClusterSyncService;
-import com.veadan.folib.storage.StorageDto;
-import com.veadan.folib.storage.repository.RepositoryDto;
+import com.veadan.folib.services.ConfigurationManagementService;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -26,7 +25,8 @@ import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import java.math.BigInteger;
-import java.util.UUID;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 public class ClusterSyncServiceImpl implements ClusterSyncService {
@@ -37,6 +37,7 @@ public class ClusterSyncServiceImpl implements ClusterSyncService {
     private final String SYCN_SECURITY_POLICY_URI = "/api/configuration/cluster/syncSecurityPolicyConfiguration";
     private final String SYCN_METADATA_URI = "/api/configuration/cluster/syncMetadataConfiguration";
     private final String SYCN_REPOSITORY_JOB = "/api/configuration/cluster/syncRepositoryJob";
+    private final String SYCN_CLUSTER_DISPATCH_URI = "/api/configuration/cluster/syncClusterDispatch";
 
     @Autowired
     private ProxyRepositoryConnectionPoolConfigurationService clientPool;
@@ -49,6 +50,8 @@ public class ClusterSyncServiceImpl implements ClusterSyncService {
 
     @Autowired
     private ClusterDataSyncTaskMapper clusterDataSyncTaskMapper;
+
+    private final Set<String> NODE_HOST_SET = new HashSet<>();
 
     @Override
     public void syncConfiguration() {
@@ -64,7 +67,7 @@ public class ClusterSyncServiceImpl implements ClusterSyncService {
             return;
         }
         logger.info("folib sync storage");
-        clusterProperties.getHostNodeList().forEach(nodeUrl -> {
+        getHostNodeList().forEach(nodeUrl -> {
             handleSyncStorage(syncStorageDto.getStorageId(), syncStorageDto, nodeUrl, false);
         });
 
@@ -78,9 +81,35 @@ public class ClusterSyncServiceImpl implements ClusterSyncService {
             return;
         }
         logger.info("folib sync securityPolicyConfiguration");
-        clusterProperties.getHostNodeList().forEach(nodeUrl -> {
+        getHostNodeList().forEach(nodeUrl -> {
             handleSyncSecurityPolicyConfiguration(mutableSecurityPolicyConfiguration, nodeUrl, false);
         });
+    }
+
+    private Set<String> getHostNodeList() {
+        try {
+            ConfigurationManagementService configurationManagementService =
+                    SpringUtil.getBean(ConfigurationManagementService.class);
+            Map<String, ClusterDispatchNodeDto> map = configurationManagementService.
+                    getMutableConfigurationClone().getClusterDispatchNode();
+            List<ClusterDispatchNodeDto> listDispatch =
+                    map.values().stream().filter(ClusterDispatchNodeDto::getIsThisCluster).collect(Collectors.toList());
+            if (CollectionUtil.isEmpty(listDispatch)) {
+                return Collections.emptySet();
+            }
+            for (ClusterDispatchNodeDto clusterDispatchNodeDto : listDispatch) {
+                String host = clusterDispatchNodeDto.getClusterNodeHost();
+                if (StringUtils.isBlank(host) || !host.trim().startsWith("http")) {
+                    continue;
+                }
+                String url = host.endsWith("/") ? host.trim().substring(0, host.length() - 1) : host.trim();
+                NODE_HOST_SET.add(url);
+            }
+            return NODE_HOST_SET;
+        } catch (Exception e) {
+            logger.error("get host node list error {}", e.getMessage());
+        }
+        return Collections.emptySet();
     }
 
     @Override
@@ -91,7 +120,7 @@ public class ClusterSyncServiceImpl implements ClusterSyncService {
             return;
         }
         logger.info("folib sync metadataConfiguration");
-        clusterProperties.getHostNodeList().forEach(nodeUrl -> {
+        getHostNodeList().forEach(nodeUrl -> {
             handleSyncMetadataConfiguration(syncMetadataDto, nodeUrl, false);
         });
     }
@@ -147,7 +176,7 @@ public class ClusterSyncServiceImpl implements ClusterSyncService {
         }
 
         logger.info("folib  sync repository");
-        clusterProperties.getHostNodeList().forEach(nodeUrl -> {
+        getHostNodeList().forEach(nodeUrl -> {
             handleSyncRepository(syncRepositoryDto.getStorageId(), syncRepositoryDto.getRepositoryId(),
                     syncRepositoryDto, nodeUrl, false);
         });
@@ -161,9 +190,61 @@ public class ClusterSyncServiceImpl implements ClusterSyncService {
             return;
         }
         logger.info("folib  sync cron job");
-        clusterProperties.getHostNodeList().forEach(nodeUrl -> {
+        getHostNodeList().forEach(nodeUrl -> {
             handleSyncCronJob(syncCronJobDto, nodeUrl, false);
         });
+    }
+
+    @Override
+    @Async("asyncClusterDispatchThreadPoolExecutor")
+    public void syncClusterDispatch(SyncClusterDispatchDto syncClusterDispatchDto) {
+        if (!isNeedClusterSync()) {
+            logger.debug("cluster mode not opened");
+            return;
+        }
+        logger.info("folib sync cluster dispatch job");
+        getHostNodeList().forEach(nodeUrl -> {
+            handleSyncClusterDispatch(syncClusterDispatchDto, nodeUrl, false);
+        });
+    }
+
+    @Override
+    public ClusterSyncResultEnum handleSyncClusterDispatch(SyncClusterDispatchDto syncClusterDispatchDto,
+                                                           String nodeUrl, Boolean isScheduled) {
+        Response response = null;
+        Client client = null;
+        String clusterEnName = syncClusterDispatchDto.getNodeDto().getClusterEnName();
+        try {
+            client = clientPool.getRestClient();
+            WebTarget target = client.target(nodeUrl + SYCN_CLUSTER_DISPATCH_URI);
+            response = target.request().post(Entity.entity(syncClusterDispatchDto, MediaType.APPLICATION_JSON));
+            if (response.getStatus() > 210) {
+                logger.error("sync cluster dispatch error {}", nodeUrl);
+                throw new RuntimeException("Failed with HTTP error code : " + response.getStatus());
+            }
+        } catch (Exception e) {
+            logger.error("sync cluster dispatch [{}] error {} ", clusterEnName, e.getMessage());
+            if (!isScheduled) {
+                addduledScheTask(
+                        new ClusterDataSyncTaskPo(UUID.randomUUID().toString(),
+                                ipProperties.getFolibLockIp(),
+                                JSON.toJSONString(syncClusterDispatchDto),
+                                SyncDataTypeEnum.CLUSTER_DISPATCH.getValue(),
+                                SyncDataStatusEnum.WILL_EXECUTE_STATUS.getStatus()
+                                , nodeUrl, BigInteger.valueOf(System.currentTimeMillis())
+                        ));
+            }
+            return ClusterSyncResultEnum.FAIL;
+        } finally {
+            if (null != response) {
+                response.close();
+            }
+
+            if (null != client) {
+                client.close();
+            }
+        }
+        return ClusterSyncResultEnum.SUCCESS;
     }
 
     public ClusterSyncResultEnum handleSyncCronJob(SyncCronJobDto syncCronJobDto, String nodeUrl, Boolean isScheduled) {
@@ -181,7 +262,7 @@ public class ClusterSyncServiceImpl implements ClusterSyncService {
                 throw new RuntimeException("Failed with HTTP error code : " + response.getStatus());
             }
         } catch (Exception e) {
-            logger.error("sync CronJob [{} {}] error {} ",storageId , repositoryId, e.getMessage());
+            logger.error("sync CronJob [{} {}] error {} ", storageId, repositoryId, e.getMessage());
             if (!isScheduled) {
                 addduledScheTask(
                         new ClusterDataSyncTaskPo(UUID.randomUUID().toString(),
@@ -323,7 +404,7 @@ public class ClusterSyncServiceImpl implements ClusterSyncService {
             logger.debug("cluster mode closed");
             return false;
         }
-        if (StringUtils.isBlank(clusterProperties.getHostNode()) || clusterProperties.getHostNodeList().size() == 0) {
+        if (getHostNodeList().size() == 0) {
             logger.debug("cluster mode host node parameter error");
             return false;
         }

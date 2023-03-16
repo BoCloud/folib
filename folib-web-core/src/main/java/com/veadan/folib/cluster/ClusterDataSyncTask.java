@@ -2,10 +2,7 @@ package com.veadan.folib.cluster;
 
 import com.alibaba.fastjson.JSONObject;
 import com.veadan.folib.configuration.MutableSecurityPolicyConfiguration;
-import com.veadan.folib.controllers.cluster.dto.SyncCronJobDto;
-import com.veadan.folib.controllers.cluster.dto.SyncMetadataDto;
-import com.veadan.folib.controllers.cluster.dto.SyncRepositoryDto;
-import com.veadan.folib.controllers.cluster.dto.SyncStorageDto;
+import com.veadan.folib.controllers.cluster.dto.*;
 import com.veadan.folib.entity.ClusterDataSyncTaskPo;
 import com.veadan.folib.mapper.ClusterDataSyncTaskMapper;
 import com.veadan.folib.services.ClusterSyncService;
@@ -120,6 +117,15 @@ public class ClusterDataSyncTask {
                     isSuccess(syncResult, task);
                     logger.info("sync cronJob data end [{} ]", url);
                 }
+                // 同步分发配置
+                if (Objects.equals(SyncDataTypeEnum.CLUSTER_DISPATCH.getValue(), task.getTaskType())) {
+                    SyncClusterDispatchDto syncClusterDispatchDto = JSONObject.parseObject(task.getDataJson(), SyncClusterDispatchDto.class);
+                    logger.info("start sync dispatch data [{}]", url);
+                    ClusterSyncResultEnum syncResult = clusterSyncService.handleSyncClusterDispatch(syncClusterDispatchDto, url, true);
+                    isSuccess(syncResult, task);
+                    logger.info("sync dispatch data end [{} ]", url);
+                }
+
             } catch (Exception e) {
                 logger.error("error {}", e.getMessage());
             }

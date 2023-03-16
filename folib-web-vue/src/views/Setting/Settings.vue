@@ -843,6 +843,50 @@
           </a-table>
         </a-card>
       </a-tab-pane>
+      <a-tab-pane key="6" tab="节点分发配置">
+        <a-card class="header-solid block">
+          <div class="mx-25 mb-50">
+            <a-col :span="24" class="text-right">
+              <a-tooltip @click="artifactDispatchHandler(1)">
+                <template slot="title">新增</template>
+                <a-icon type="plus-circle" theme="filled" class="cursor-pointer"
+                        :style="{ fontSize: '28px', color: '#1890FF' }" />
+              </a-tooltip>
+            </a-col>
+          </div>
+        <a-table :columns="artifactDispatchColumns" :data-source="artifactDispatchList">
+          <div slot="isThisCluster" slot-scope="text, record">
+            {{ record.isThisCluster === true ? '是' : '否' }}
+          </div>
+
+          <div slot="operation" slot-scope="text, record">
+            <div class="col-action">
+              <a-popconfirm title="确定要删除吗？" okType="danger" ok-text="确定" cancel-text="取消"
+                            @confirm="artifactDispatchHandlerDelete(record)">
+                <a-button type="link" size="small">
+                  <svg width="16" height="16" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path class="fill-danger" fill-rule="evenodd" clip-rule="evenodd"
+                          d="M9 2C8.62123 2 8.27497 2.214 8.10557 2.55279L7.38197 4H4C3.44772 4 3 4.44772 3 5C3 5.55228 3.44772 6 4 6L4 16C4 17.1046 4.89543 18 6 18H14C15.1046 18 16 17.1046 16 16V6C16.5523 6 17 5.55228 17 5C17 4.44772 16.5523 4 16 4H12.618L11.8944 2.55279C11.725 2.214 11.3788 2 11 2H9ZM7 8C7 7.44772 7.44772 7 8 7C8.55228 7 9 7.44772 9 8V14C9 14.5523 8.55228 15 8 15C7.44772 15 7 14.5523 7 14V8ZM12 7C11.4477 7 11 7.44772 11 8V14C11 14.5523 11.4477 15 12 15C12.5523 15 13 14.5523 13 14V8C13 7.44772 12.5523 7 12 7Z"
+                          fill="#111827" />
+                  </svg>
+                  <span class="text-danger">DELETE</span>
+                </a-button>
+              </a-popconfirm>
+              <a-button type="link" size="small" @click="artifactDispatchHandler(2, record)">
+                <svg width="16" height="16" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path class="fill-muted"
+                        d="M13.5858 3.58579C14.3668 2.80474 15.6332 2.80474 16.4142 3.58579C17.1953 4.36683 17.1953 5.63316 16.4142 6.41421L15.6213 7.20711L12.7929 4.37868L13.5858 3.58579Z"
+                        fill="#111827" />
+                  <path class="fill-muted" d="M11.3787 5.79289L3 14.1716V17H5.82842L14.2071 8.62132L11.3787 5.79289Z"
+                        fill="#111827" />
+                </svg>
+                <span class="text-dark">EDIT</span>
+              </a-button>
+            </div>
+          </div>
+        </a-table>
+        </a-card>
+      </a-tab-pane>
     </a-tabs>
     <a-modal v-model="showMetadataHandler" :title="handlerMetadataType === 1 ? '新增元数据' : '修改元数据'" :maskClosable="false"
       cancelText="取消" okText="确定" @cancel="metadataHandlerCancel()" @ok="metadataHandlerConfirm()" centered>
@@ -882,13 +926,57 @@
       @cancel="packageNameModalCancel()" @ok="addPackageName()" centered>
       <a-input v-model="packageName" placeholder="请输入包名" />
     </a-modal>
+    <a-modal v-model="showArtifactDispatchHandler" :title="handlerArtifactDispatchType === 1 ? '新增分发配置' : '修改分发配置'" :maskClosable="false"
+             cancelText="取消" okText="确定" @cancel="artifactDispatchHandlerCancel()" @ok="artifactDispatchHandlerConfirm()" centered>
+      <a-form-model layout="horizontal" ref="artifactDispatchForm" :model="artifactDispatchForm" :rules="artifactDispatchRules"
+                    :hideRequiredMark="true">
+        <a-row :gutter="[24]">
+          <a-col :span="24">
+            <a-form-model-item class="mb-10" label="集群英文名" :colon="false" prop="key">
+              <a-input :disabled="handlerArtifactDispatchType !== 1" placeholder="请输入集群英文名" v-model="artifactDispatchForm.clusterEnName" />
+            </a-form-model-item>
+          </a-col>
+          <a-col :span="24">
+            <a-form-model-item class="mb-10" label="集群中文名" :colon="false" prop="key">
+              <a-input placeholder="请输入集群中文名" v-model="artifactDispatchForm.clusterCnName" />
+            </a-form-model-item>
+          </a-col>
+          <a-col :span="24">
+            <a-form-model-item class="mb-10" label="集群节点地址" :colon="false" prop="key">
+              <a-input placeholder="请输入集群节点地址" v-model="artifactDispatchForm.clusterNodeHost" />
+            </a-form-model-item>
+          </a-col>
+          <a-col :span="24">
+            <a-form-model-item class="mb-10" label="集群描述" :colon="false" prop="key">
+              <a-input placeholder="请输入描述" v-model="artifactDispatchForm.clusterNodeDesc" />
+            </a-form-model-item>
+          </a-col>
+          <a-col :span="24">
+            <a-form-model-item class="mb-10" label="分发类型" :colon="false" prop="key">
+                <a-select v-model="artifactDispatchForm.dispatchType" placeholder="请选择分发类型" show-search optionFilterProp="label">
+                  <a-select-option v-for="(item, index) in artifactDispatchTypes" :label="item.label" :key="index"
+                                   :value="item.value">
+                    {{ item.label }}
+                  </a-select-option>
+                </a-select>
+            </a-form-model-item>
+          </a-col>
+          <a-col :span="24">
+            <a-form-model-item class="mb-10" label="本集群" :colon="false" prop="key">
+              <a-switch v-model="artifactDispatchForm.isThisCluster" />
+            </a-form-model-item>
+          </a-col>
+        </a-row>
+      </a-form-model>
+    </a-modal>
+
   </div>
 
 </template>
 
 <script>
 
-import { getServerSettings, postServerSettings, getLdap, putLdap, getMachineCode, postActivate, checkMachineCode, getMetadataConfiguration, globalSettingAddOrUpdateMetadata, globalSettingDeleteMetadata } from "@/api/settings";
+import { getServerSettings, postServerSettings, getLdap, putLdap, getMachineCode, postActivate, checkMachineCode, getMetadataConfiguration, globalSettingAddOrUpdateMetadata, globalSettingDeleteMetadata ,getArtifactDispatchConfig,globalSettingArtifactDispatchConfig,globalSettingDelArtifactDispatchConfig} from "@/api/settings";
 import { getUsersCreateFields, getUsers } from "@/api/users";
 import { addVulnerabilitiesWhite, addVulnerabilitiesBlack, removeVulnerabilitiesWhite, removeVulnerabilitiesBlack, saveOrUpdateVulnerabilityNotify, securityPolicyConfig, securityPolicyBlock, securityPolicyAddPackageName, securityPolicyDeletePackageName } from "@/api/folib";
 
@@ -946,6 +1034,51 @@ export default {
       ruleForm: this.$form.createForm(this, { name: 'rule_form' }),
       blockForm: this.$form.createForm(this, { name: 'block_form' }),
       userList: [],
+      artifactDispatchColumns:[
+        {
+          title: '集群英文名',
+          dataIndex: 'clusterEnName',
+          key: 'clusterEnName',
+          width: 100,
+        },
+        {
+          title: '集群中文名',
+          dataIndex: 'clusterCnName',
+          key: 'clusterCnName',
+          width: 100,
+        },
+        {
+          title: '节点',
+          dataIndex: 'clusterNodeHost',
+          key: 'clusterNodeHost',
+          width: 200,
+        },
+        {
+          title: '描述',
+          dataIndex: 'clusterNodeDesc',
+          key: 'clusterNodeDesc',
+          width: 100,
+        },
+        {
+          title: '分发方式',
+          dataIndex: 'dispatchType',
+          key: 'dispatchType',
+          width: 80,
+        },
+        {
+          title: '本集群',
+          dataIndex: 'isThisCluster',
+          key: 'isThisCluster',
+          width: 80,
+          scopedSlots: { customRender: 'isThisCluster' },
+        },
+        {
+          title: '操作',
+          dataIndex: 'operation',
+          width: 80,
+          scopedSlots: { customRender: 'operation' },
+        },
+      ],
       metadataColumns: [
         {
           title: '元数据KEY',
@@ -975,12 +1108,25 @@ export default {
         },
       ],
       metadataList: [],
+      artifactDispatchList: [],
       showMetadataHandler: false,
       handlerMetadataType: 1,
+      handlerArtifactDispatchType:1,
+      artifactDispatchForm: {
+        clusterEnName: undefined,
+        clusterCnName: undefined,
+        clusterNodeDesc: undefined,
+        clusterNodeHost: undefined,
+        dispatchType: undefined,
+        isThisCluster: undefined
+      },
       metadataForm: {
         key: undefined,
         type: undefined,
         viewShow: false,
+      },
+      artifactDispatchRules:{
+
       },
       metadataRules: {
         key: [
@@ -991,6 +1137,16 @@ export default {
           { required: true, message: '请选择元数据类型', trigger: 'blur' },
         ],
       },
+      artifactDispatchTypes: [
+        {
+          label: "push",
+          value: "push",
+        },
+        {
+          label: "pull",
+          value: "pull",
+        }
+      ],
       metadataTypes: [
         {
           label: "数字",
@@ -1017,6 +1173,7 @@ export default {
       packageNameShow: false,
       packageName: '',
       showPackageNameModal: false,
+      showArtifactDispatchHandler: false,
     }
   },
   computed: {},
@@ -1026,6 +1183,7 @@ export default {
     this.getUsersCreateFields()
     this.getMachineCode()
     this.getVulnerabilities()
+    this.getArtifactDispatchConfig()
   },
   methods: {
     handleSubmit(e) {
@@ -1320,6 +1478,19 @@ export default {
       }).finally(() => {
       })
     },
+    artifactDispatchFormRest(){
+      if (this.$refs.artifactDispatchForm) {
+        this.$refs.artifactDispatchForm.resetFields()
+      }
+      this.artifactDispatchForm = {
+        clusterEnName: undefined,
+        clusterCnName: undefined,
+        clusterNodeDesc: undefined,
+        clusterNodeHost: undefined,
+        dispatchType: undefined,
+        isThisCluster: undefined,
+      }
+    },
     metadataFormReset() {
       if (this.$refs.metadataForm) {
         this.$refs.metadataForm.resetFields()
@@ -1343,6 +1514,36 @@ export default {
       }
       this.handlerMetadataType = type
       this.showMetadataHandler = true
+    },
+    artifactDispatchHandlerConfirm(){
+      this.$refs.artifactDispatchForm.validate(valid => {
+        if (valid) {
+          let data = Object.assign({}, this.artifactDispatchForm)
+          if (this.handlerArtifactDispatchType === 1) {
+            let flag = this.artifactDispatchList.some(x => x.clusterEnName === data.clusterEnName)
+            if (flag) {
+              this.$notification["warning"]({
+                message: '集群分发配置已存在',
+                description: ""
+              })
+              return false
+            }
+          }
+          globalSettingArtifactDispatchConfig(data).then(res=>{
+            let prefix = "新增"
+            if (this.handlerArtifactDispatchType === 2) {
+              prefix = "修改"
+            }
+            this.successMsg(prefix + "分发配置成功")
+            this.artifactDispatchFormRest()
+            this.showArtifactDispatchHandler = false;
+            this.getArtifactDispatchConfig()
+          }).finally(() => {
+          })
+        } else {
+          return false
+        }
+      })
     },
     metadataHandlerConfirm() {
       this.$refs.metadataForm.validate(valid => {
@@ -1379,6 +1580,13 @@ export default {
         }
       })
     },
+    artifactDispatchHandlerDelete(data){
+      globalSettingDelArtifactDispatchConfig(data.clusterEnName).then(res => {
+        this.successMsg("删除分发配置成功")
+      }).finally(() => {
+        this.getArtifactDispatchConfig()
+      })
+    },
     metadataHandlerDelete(data) {
       globalSettingDeleteMetadata(data).then(res => {
         this.successMsg("删除元数据成功")
@@ -1386,9 +1594,28 @@ export default {
         this.getMetadataConfiguration()
       })
     },
+    getArtifactDispatchConfig(){
+       getArtifactDispatchConfig().then(res => {
+         this.artifactDispatchList = res
+       })
+    },
+    artifactDispatchHandler(type, item) {
+      this.artifactDispatchFormRest()
+      if (item) {
+        let data = Object.assign({}, item)
+        this.artifactDispatchForm = data
+      }
+      this.handlerArtifactDispatchType = type
+      this.showArtifactDispatchHandler = true
+    },
+
     metadataHandlerCancel() {
       this.metadataFormReset()
       this.showMetadataHandler = false
+    },
+    artifactDispatchHandlerCancel(){
+      this.artifactDispatchFormRest()
+      this.showArtifactDispatchHandler = false
     },
     packageNameModalCancel() {
       this.packageName = ''
