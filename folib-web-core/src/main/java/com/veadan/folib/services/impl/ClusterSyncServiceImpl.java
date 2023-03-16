@@ -256,7 +256,7 @@ public class ClusterSyncServiceImpl implements ClusterSyncService {
             return;
         }
         logger.info("folib  sync authorization");
-        clusterProperties.getHostNodeList().forEach(nodeUrl -> {
+        getHostNodeList().forEach(nodeUrl -> {
             handleSyncAuthorization(syncAuthorizationDtoo, nodeUrl, false);
         });
     }
