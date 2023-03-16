@@ -135,8 +135,6 @@ public class ArtifactController extends BaseController {
         return ResponseEntity.ok("ok");
     }
 
-
-
     @ApiOperation(value = "构建图数据库索引")
     @ApiResponses(value = {@ApiResponse(code = 200, message = "OK")})
     @PreAuthorize("hasAuthority('ADMIN')")

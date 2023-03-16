@@ -58,6 +58,8 @@ public enum Privileges
     ARTIFACTS_VIEW,
     ARTIFACTS_RESOLVE,
     ARTIFACTS_COPY,
+    ARTIFACTS_MOVE,
+    ARTIFACTS_PROMOTION,
     SEARCH_ARTIFACTS,
     MANAGEMENT_DELETE_ALL_TRASHES,
     MANAGEMENT_DELETE_TRASH,
@@ -125,6 +127,13 @@ public enum Privileges
         return privileges;
     }
 
+    public static Set<String> anonymous() {
+        Set<String> set = new HashSet<>();
+        set.add(ARTIFACTS_RESOLVE.name());
+        set.add(SEARCH_ARTIFACTS.name());
+        return set;
+    }
+
     public static Set<String> r() {
         Set<String> set = new HashSet<>();
         set.add(ARTIFACTS_VIEW.name());
@@ -138,7 +147,6 @@ public enum Privileges
         set.add(ARTIFACTS_DEPLOY.name());
         set.add(ARTIFACTS_DELETE.name());
         set.add(ARTIFACTS_COPY.name());
-
         return set;
     }
 

@@ -373,7 +373,7 @@ public class BrowseController
                     return getServiceUnavailableResponseEntity("Repository is not in service...", acceptHeader);
                 }
 
-                if (!repository.allowsDirectoryBrowsing() || !probeForDirectoryListing(repositoryPath)) {
+                if (!repository.isAllowsDirectoryBrowsing() || !probeForDirectoryListing(repositoryPath)) {
                     return getNotFoundResponseEntity("Requested repository doesn't allow browsing.", acceptHeader);
                 }
                 directoryListing = directoryListingService.fromRepositoryPath(repositoryPath);

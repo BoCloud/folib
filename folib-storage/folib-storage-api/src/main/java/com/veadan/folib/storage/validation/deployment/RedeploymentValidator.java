@@ -73,8 +73,8 @@ public class RedeploymentValidator
 
         RepositoryPath repositoryPath = repositoryPathResolver.resolve(repository, coordinates);
         
-        if (repository.acceptsReleases() &&
-            (!repository.allowsDeployment() && RepositoryFiles.artifactExists(repositoryPath)))
+        if (repository.isAcceptsReleases() &&
+            (!repository.isAllowsDeployment() && RepositoryFiles.artifactExists(repositoryPath)))
         {
             throw new VersionValidationException("The " + repository.getStorage().getId() + ":" +
                                                  repository.toString() +

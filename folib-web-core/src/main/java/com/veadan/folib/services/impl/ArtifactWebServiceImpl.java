@@ -24,6 +24,7 @@ import com.veadan.folib.domain.Artifact;
 import com.veadan.folib.domain.ArtifactMetadata;
 import com.veadan.folib.domain.DirectoryListing;
 import com.veadan.folib.domain.FileContent;
+import com.veadan.folib.enums.RepositoryScopeEnum;
 import com.veadan.folib.event.artifact.ArtifactEventListenerRegistry;
 import com.veadan.folib.forms.artifact.ArtifactMetadataForm;
 import com.veadan.folib.forms.scanner.*;
@@ -38,6 +39,7 @@ import com.veadan.folib.repositories.ArtifactRepository;
 import com.veadan.folib.scanner.entity.ScanRules;
 import com.veadan.folib.scanner.mapper.ScanRulesMapper;
 import com.veadan.folib.services.*;
+import com.veadan.folib.storage.Storage;
 import com.veadan.folib.storage.StorageDto;
 import com.veadan.folib.storage.repository.Repository;
 import com.veadan.folib.storage.search.SearchResults;
@@ -58,6 +60,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 import tk.mybatis.mapper.entity.Example;
@@ -348,8 +351,12 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
         if (CollectionUtils.isEmpty(storageIds)) {
             return Collections.emptyList();
         }
+        List<String> storageIdAndRepositoryIdList = getStorageIdAndRepositoryIdList(storageIds);
+        if (CollectionUtils.isEmpty(storageIdAndRepositoryIdList)) {
+            return Collections.emptyList();
+        }
         Example example = new Example(ScanRules.class);
-        example.createCriteria().andEqualTo("onScan", 1).andIn("storage", storageIds);
+        example.createCriteria().andEqualTo("onScan", 1).andIn("id", storageIdAndRepositoryIdList);
         List<ScanRules> scanRulesList = scanRulesMapper.selectByExample(example);
         Long zero = 0L;
         DecimalFormat decimalFormat = new DecimalFormat(".00");
@@ -465,11 +472,11 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
 
                 SearchResults dockerResult = fqlSearchService.artifactQuery(false,
                         artifactMetaData.getArtifactPath(), null, storageId,
-                        dockerRepo, null, null, null, null, 1, 1);
+                        dockerRepo, null, null, null, null, null, 1, 1);
                 if (dockerResult.getTotal() == 0) {
                     SearchResults rawResult = fqlSearchService.artifactQuery(false,
                             artifactMetaData.getArtifactPath(), null, storageId,
-                            rawRepo, null, null, null, null, 1, 1);
+                            rawRepo, null, null, null, null, null, 1, 1);
                     if (rawResult.getTotal() == 1) {
                         artifactPathTemp = Lists.newArrayList(rawResult.getResults()).get(0).getArtifactPath();
                         repoTemp = rawRepo;
@@ -642,7 +649,6 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
     }
 
 
-
     /**
      * 单仓库
      *
@@ -702,6 +708,8 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
             if (CollectionUtils.isNotEmpty(userSet)) {
                 if (userSet.contains(username)) {
                     storageIdList.add(entry.getKey());
+                } else if (Objects.nonNull(entry.getValue().getRepositories()) && entry.getValue().getRepositories().values().stream().anyMatch(item -> RepositoryScopeEnum.OPEN.getType().equals(item.getScope()))) {
+                    storageIdList.add(entry.getKey());
                 }
             }
         }
@@ -719,8 +727,12 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
         if (CollectionUtils.isEmpty(storageIds)) {
             return Collections.emptyList();
         }
+        List<String> storageIdAndRepositoryIdList = getStorageIdAndRepositoryIdList(storageIds);
+        if (CollectionUtils.isEmpty(storageIdAndRepositoryIdList)) {
+            return Collections.emptyList();
+        }
         Example example = new Example(ScanRules.class);
-        example.createCriteria().andEqualTo("onScan", onScan).andIn("storage", storageIds);
+        example.createCriteria().andEqualTo("onScan", onScan).andIn("id", storageIdAndRepositoryIdList);
         List<ScanRules> scanRulesList = scanRulesMapper.selectByExample(example);
         return Optional.ofNullable(scanRulesList).orElse(Collections.emptyList()).stream().map(item -> String.format("%s-%s", item.getStorage(), item.getRepository())).collect(Collectors.toList());
     }
@@ -1024,5 +1036,47 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
             RepositoryPath manifestPath = repositoryPathResolver.resolve(repository.getStorage().getId(), repository.getId(), manifestFile);
             artifactManagementService.validateAndStoreIndex(manifestPath);
         }
+    }
+
+    public boolean hasAdmin() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (Objects.isNull(authentication)) {
+            return false;
+        }
+        SpringSecurityUser userDetails = (SpringSecurityUser) authentication.getPrincipal();
+        if (CollectionUtils.isEmpty(userDetails.getRoles())) {
+            return false;
+        }
+        return userDetails.getRoles().stream().anyMatch(item -> SystemRole.ADMIN.name().equals(item.getName()));
+    }
+
+    public String loginUsername() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (Objects.isNull(authentication)) {
+            return "";
+        }
+        SpringSecurityUser userDetails = (SpringSecurityUser) authentication.getPrincipal();
+        return userDetails.getUsername();
+    }
+
+    public List<String> getStorageIdAndRepositoryIdList(List<String> storageIdList) {
+        List<String> storageIdAndRepositoryIdList = Lists.newArrayList();
+        if (hasAdmin()) {
+            List<Storage> storageList = new ArrayList<>(configurationManagementService.getMutableConfigurationClone().getStorages().values());
+            for (Storage storage : storageList) {
+                storageIdAndRepositoryIdList.addAll(storage.getRepositories().values().stream().map(item -> String.format("%s-%s", storage.getId(), item.getId())).collect(Collectors.toList()));
+            }
+            return storageIdAndRepositoryIdList;
+        }
+        List<Storage> storageList = configurationManagementService.getMutableConfigurationClone().getStorages().values().stream().filter(item -> storageIdList.contains(item.getId())).collect(Collectors.toList());
+        for (Storage storage : storageList) {
+            Set<String> userSet = storage.getUsers();
+            if (CollectionUtils.isNotEmpty(userSet) && userSet.contains(loginUsername())) {
+                storageIdAndRepositoryIdList.addAll(storage.getRepositories().values().stream().map(item -> String.format("%s-%s", storage.getId(), item.getId())).collect(Collectors.toList()));
+            } else if (Objects.nonNull(storage.getRepositories())) {
+                storageIdAndRepositoryIdList.addAll(storage.getRepositories().values().stream().filter(item -> RepositoryScopeEnum.OPEN.getType().equals(item.getScope())).map(item -> String.format("%s-%s", storage.getId(), item.getId())).collect(Collectors.toList()));
+            }
+        }
+        return storageIdAndRepositoryIdList;
     }
 }

@@ -66,14 +66,16 @@ authorizationConfiguration:
           - ADMIN_DELETE_REPO
           - ADMIN_LIST_REPO
     - name: ARTIFACTS_MANAGER
-      description: 具有所有制品相关特权的角色
+      description: 具有制品上传、删除、移动、复制、晋级权限
       accessModel:
         apiAuthorities:
           - ARTIFACTS_DEPLOY
           - ARTIFACTS_DELETE
           - ARTIFACTS_VIEW
           - ARTIFACTS_RESOLVE
+          - ARTIFACTS_MOVE
           - ARTIFACTS_COPY
+          - ARTIFACTS_PROMOTION
     - name: USER_MANAGER
       description: 具有所有用户相关权限的角色
       accessModel:
@@ -108,3 +110,17 @@ authorizationConfiguration:
         apiAuthorities:
           - ARTIFACTS_RESOLVE
           - SEARCH_ARTIFACTS
+    - name: GENERAL
+      description: 普通用户角色
+      accessModel:
+        apiAuthorities:
+          - SEARCH_ARTIFACTS
+          - ARTIFACTS_VIEW
+          - ARTIFACTS_RESOLVE
+          - VIEW_USER
+          - CONFIGURATION_VIEW_STORAGE_CONFIGURATION
+          - CONFIGURATION_VIEW_REPOSITORY
+          - CONFIGURATION_VIEW_BASE_URL
+          - CONFIGURATION_VIEW_METADATA_CONFIGURATION
+          - CONFIGURATION_ADD_UPDATE_METADATA
+          - CONFIGURATION_DELETE_METADATA_CONFIGURATION

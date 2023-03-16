@@ -11,4 +11,5 @@ public interface AccessModel extends Serializable
 
     Set<Privileges> getPathAuthorities(String path);
 
+    Set<Privileges> getPathAuthorities(String storageId, String repositoryId);
 }

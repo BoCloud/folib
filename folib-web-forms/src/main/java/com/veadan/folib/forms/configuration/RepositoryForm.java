@@ -63,7 +63,7 @@ public class RepositoryForm {
 
     private boolean allowsRedeployment;
 
-    private boolean allowsDelete = true;
+    private boolean allowsDeletion = true;
 
     private boolean allowsDirectoryBrowsing = true;
 
@@ -95,6 +95,13 @@ public class RepositoryForm {
      */
     @NotEmpty(message = "请填写黑名单", groups = {RepositoryForm.BlackGroup.class})
     private Set<String> vulnerabilityBlacks;
+
+    /**
+     * 仓库可见范围 1 存储空间内 2 公开
+     */
+    private Integer scope = 1;
+
+    private boolean allowAnonymous = true;
 
     public String getId() {
         return id;
@@ -200,12 +207,12 @@ public class RepositoryForm {
         this.allowsRedeployment = allowsRedeployment;
     }
 
-    public boolean isAllowsDelete() {
-        return allowsDelete;
+    public boolean isAllowsDeletion() {
+        return allowsDeletion;
     }
 
-    public void setAllowsDelete(final boolean allowsDelete) {
-        this.allowsDelete = allowsDelete;
+    public void setAllowsDeletion(final boolean allowsDeletion) {
+        this.allowsDeletion = allowsDeletion;
     }
 
     public boolean isAllowsDirectoryBrowsing() {
@@ -303,6 +310,22 @@ public class RepositoryForm {
 
     public void setSubLayout(String subLayout) {
         this.subLayout = subLayout;
+    }
+
+    public Integer getScope() {
+        return scope;
+    }
+
+    public void setScope(Integer scope) {
+        this.scope = scope;
+    }
+
+    public boolean isAllowAnonymous() {
+        return allowAnonymous;
+    }
+
+    public void setAllowAnonymous(boolean allowAnonymous) {
+        this.allowAnonymous = allowAnonymous;
     }
 
     public interface WhiteGroup

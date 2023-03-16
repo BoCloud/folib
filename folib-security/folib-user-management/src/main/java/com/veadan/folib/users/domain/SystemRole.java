@@ -12,6 +12,7 @@ public enum SystemRole
     UI_MANAGER,
     REPOSITORY_MANAGER,
     ARTIFACTS_MANAGER,
-    ANONYMOUS;
+    ANONYMOUS,
+    GENERAL;
 
 }

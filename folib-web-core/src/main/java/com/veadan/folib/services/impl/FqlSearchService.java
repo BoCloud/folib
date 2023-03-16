@@ -82,6 +82,7 @@ public class FqlSearchService extends GremlinVertexRepository<Artifact> implemen
                                        String endDate,
                                        String sortField,
                                        String sortOrder,
+                                       List<String> repositoryIds,
                                        Integer limit, Integer page) throws IOException {
 
         Pageable pageable = null;
@@ -96,7 +97,7 @@ public class FqlSearchService extends GremlinVertexRepository<Artifact> implemen
         } else {
             pageable = PageRequest.of(page, limit).previous();
         }
-        Page<Artifact> artifacts = artifactRepository.findMatchingByIndex(pageable, regex, artifactName, metadataSearch, storageId, repositoryId, beginDate, endDate, sortField, sortOrder);
+        Page<Artifact> artifacts = artifactRepository.findMatchingByIndex(pageable, regex, artifactName, metadataSearch, storageId, repositoryId, repositoryIds, beginDate, endDate, sortField, sortOrder);
         List<Artifact> artifactEntityList = artifacts.getContent();
 
         SearchResults result = new SearchResults();
@@ -144,9 +145,9 @@ public class FqlSearchService extends GremlinVertexRepository<Artifact> implemen
                 String manifest = "manifest";
                 String artifactPath = repositoryPath.toAbsolutePath().toString();
                 if (artifactPath.contains("sha256") && !artifactPath.contains(blobs) && !artifactPath.contains(manifest) && !artifactPath.endsWith(".sha256")) {
-                    r.setSizeInBytes(getSearchDockerSize(storageId, repositoryId, repositoryPath, path));
+                    r.setSizeInBytes(getSearchDockerSize(storageId, repository.getId(), repositoryPath, path));
                 }
-                r.setDownloadFilesUrl(getDockerDownLoadAppPackageUrls(storageId, repositoryId, repositoryPath,
+                r.setDownloadFilesUrl(getDockerDownLoadAppPackageUrls(storageId, repository.getId(), repositoryPath,
                         path.substring(0, path.indexOf("/sha256")) + "/temp"));
             } else {
                 r.setArtifactName(path.substring(path.lastIndexOf("/") + 1));

@@ -12,6 +12,7 @@ import com.veadan.folib.users.dto.AccessModel;
 public class AdminAccessModel implements AccessModel
 {
     
+    @Override
     public Set<Privileges> getApiAuthorities()
     {
         return Privileges.all();
@@ -20,6 +21,11 @@ public class AdminAccessModel implements AccessModel
     @Override
     public Set<Privileges> getPathAuthorities(String url)
     {
+        return Privileges.all();
+    }
+
+    @Override
+    public Set<Privileges> getPathAuthorities(String storageId, String repositoryId) {
         return Privileges.all();
     }
 

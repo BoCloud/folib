@@ -65,7 +65,7 @@ public class Repository {
     /**
      * 删除
      */
-    private boolean allowsDelete;
+    private boolean allowsDeletion;
 
     /**
      * 强制删除

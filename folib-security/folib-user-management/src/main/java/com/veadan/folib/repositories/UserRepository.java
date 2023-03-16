@@ -7,6 +7,7 @@ import com.veadan.folib.domain.User;
 import com.veadan.folib.gremlin.adapters.EntityTraversalAdapter;
 import com.veadan.folib.gremlin.adapters.UserAdapter;
 import com.veadan.folib.gremlin.repositories.GremlinVertexRepository;
+import org.apache.tinkerpop.gremlin.process.traversal.P;
 import org.apache.tinkerpop.gremlin.structure.Vertex;
 import org.springframework.data.neo4j.annotation.Query;
 import org.springframework.data.repository.query.Param;
@@ -39,6 +40,10 @@ public class UserRepository extends GremlinVertexRepository<User>
                 .has(Properties.USER_TYPE, "general").has(Properties.ENABLED, true).map(adapter.fold()).dedup().toList();
     }
 
+    public List<User> findUsersWithRoles(List<String> roleList) {
+        return g().V().hasLabel(Vertices.SECURITY_ROLE).has(Properties.UUID, P.within(roleList)).inE(Edges.USER_HAS_SECURITY_ROLES).outV()
+                .has(Properties.USER_TYPE, "general").has(Properties.ENABLED, true).map(adapter.fold()).dedup().toList();
+    }
 
     @Override
     public Iterable<User> findAll() {

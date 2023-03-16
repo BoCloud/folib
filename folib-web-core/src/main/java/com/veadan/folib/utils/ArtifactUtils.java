@@ -79,11 +79,11 @@ public class ArtifactUtils {
                 flag = endsWith(repositoryPath.getFileName().toString(), suffixList);
             } else if (repositoryPath.getFileSystem() instanceof NugetFileSystem) {
                 log.debug("=====>>>>> nuget布局");
-                List<String> suffixList = Arrays.asList(".nupkg", ".nuspec", ".config");
+                List<String> suffixList = Arrays.asList(".nupkg", ".nuspec", "packages.config");
                 flag = endsWith(repositoryPath.getFileName().toString(), suffixList);
             } else if (repositoryPath.getFileSystem() instanceof PypiFileSystem) {
                 log.debug("=====>>>>> pypi布局");
-                List<String> suffixList = Arrays.asList(".whl", ".egg", ".zip", ".gz");
+                List<String> suffixList = Arrays.asList(".whl", ".egg", ".zip");
                 flag = endsWith(repositoryPath.getFileName().toString(), suffixList);
             } else if (repositoryPath.getFileSystem() instanceof RawFileSystem) {
                 log.debug("=====>>>>> raw布局");

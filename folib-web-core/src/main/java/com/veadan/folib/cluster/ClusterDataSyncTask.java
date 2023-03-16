@@ -117,6 +117,16 @@ public class ClusterDataSyncTask {
                     isSuccess(syncResult, task);
                     logger.info("sync cronJob data end [{} ]", url);
                 }
+                // 同步授权配置信息
+                if (Objects.equals(SyncDataTypeEnum.AUTHORIZATION.getValue(), task.getTaskType())) {
+                    SyncAuthorizationDto syncAuthorizationDto = JSONObject.parseObject(task.getDataJson(),
+                            SyncAuthorizationDto.class);
+
+                    logger.info("start sync authorization data [{}]", url);
+                    ClusterSyncResultEnum syncResult = clusterSyncService.handleSyncAuthorization(syncAuthorizationDto, url, true);
+                    isSuccess(syncResult, task);
+                    logger.info("sync authorization data end [{} ]", url);
+                }
                 // 同步分发配置
                 if (Objects.equals(SyncDataTypeEnum.CLUSTER_DISPATCH.getValue(), task.getTaskType())) {
                     SyncClusterDispatchDto syncClusterDispatchDto = JSONObject.parseObject(task.getDataJson(), SyncClusterDispatchDto.class);

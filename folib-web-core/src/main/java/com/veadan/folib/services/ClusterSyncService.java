@@ -1,5 +1,6 @@
 package com.veadan.folib.services;
 
+import com.veadan.folib.authorization.dto.AuthorizationConfigDto;
 import com.veadan.folib.cluster.ClusterSyncResultEnum;
 import com.veadan.folib.configuration.MutableSecurityPolicyConfiguration;
 import com.veadan.folib.controllers.cluster.dto.*;
@@ -21,6 +22,12 @@ public interface ClusterSyncService {
 
     void syncClusterDispatch(SyncClusterDispatchDto syncClusterDispatchDto);
 
+    /**
+     * 同步授权配置信息
+     * @param syncAuthorizationDtoo 授权配置信息
+     */
+    void syncAuthorization(SyncAuthorizationDto syncAuthorizationDtoo);
+
     Boolean isNeedClusterSync();
 
     Boolean clusterOpenFlag();
@@ -34,6 +41,8 @@ public interface ClusterSyncService {
     ClusterSyncResultEnum handleSyncMetadataConfiguration(SyncMetadataDto syncMetadataDto, String nodeUrl, Boolean isScheduled);
 
     ClusterSyncResultEnum handleSyncCronJob(SyncCronJobDto syncCronJobDto, String nodeUrl, Boolean isScheduled);
+
+    ClusterSyncResultEnum handleSyncAuthorization(SyncAuthorizationDto syncAuthorizationDto, String nodeUrl, Boolean isScheduled);
 
     ClusterSyncResultEnum handleSyncClusterDispatch(SyncClusterDispatchDto syncClusterDispatchDto, String nodeUrl, Boolean isScheduled);
 

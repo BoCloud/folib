@@ -66,7 +66,7 @@ public class RepositoryData
 
     private boolean allowsRedeployment;
 
-    private boolean allowsDelete;
+    private boolean allowsDeletion;
 
     private boolean allowsDirectoryBrowsing;
 
@@ -99,6 +99,16 @@ public class RepositoryData
      */
     private Set<String> vulnerabilityBlacks;
 
+    /**
+     * 仓库可见范围 1 存储空间内 2 公开
+     */
+    private Integer scope;
+
+    /**
+     * 是否允许匿名访问
+     */
+    private boolean allowAnonymous;
+
     @JsonIgnore
     private Storage storage;
 
@@ -121,11 +131,11 @@ public class RepositoryData
         this.status = delegate.getStatus();
         this.artifactMaxSize = delegate.getArtifactMaxSize();
         this.trashEnabled = delegate.isTrashEnabled();
-        this.allowsForceDeletion = delegate.allowsForceDeletion();
-        this.allowsDeployment = delegate.allowsDeployment();
-        this.allowsRedeployment = delegate.allowsRedeployment();
-        this.allowsDelete = delegate.allowsDeletion();
-        this.allowsDirectoryBrowsing = delegate.allowsDirectoryBrowsing();
+        this.allowsForceDeletion = delegate.isAllowsForceDeletion();
+        this.allowsDeployment = delegate.isAllowsDeployment();
+        this.allowsRedeployment = delegate.isAllowsRedeployment();
+        this.allowsDeletion = delegate.isAllowsDeletion();
+        this.allowsDirectoryBrowsing = delegate.isAllowsDirectoryBrowsing();
         this.checksumHeadersEnabled = delegate.isChecksumHeadersEnabled();
 
         RepositoryDto mutableRepository = (RepositoryDto) delegate;
@@ -145,6 +155,8 @@ public class RepositoryData
         this.storage = storage != null ? storage : immuteStorage(delegate.getStorage());
         this.basedir = delegate.getBasedir();
         this.subLayout = delegate.getSubLayout();
+        this.scope = delegate.getScope();
+        this.allowAnonymous = delegate.isAllowAnonymous();
     }
 
     private ProxyConfiguration immuteProxyConfiguration(final MutableProxyConfiguration source) {
@@ -243,27 +255,27 @@ public class RepositoryData
     }
 
     @Override
-    public boolean allowsForceDeletion() {
+    public boolean isAllowsForceDeletion() {
         return allowsForceDeletion;
     }
 
     @Override
-    public boolean allowsDeployment() {
+    public boolean isAllowsDeployment() {
         return allowsDeployment;
     }
 
     @Override
-    public boolean allowsRedeployment() {
+    public boolean isAllowsRedeployment() {
         return allowsRedeployment;
     }
 
     @Override
-    public boolean allowsDeletion() {
-        return allowsDelete;
+    public boolean isAllowsDeletion() {
+        return allowsDeletion;
     }
 
     @Override
-    public boolean allowsDirectoryBrowsing() {
+    public boolean isAllowsDirectoryBrowsing() {
         return allowsDirectoryBrowsing;
     }
 
@@ -294,6 +306,7 @@ public class RepositoryData
         return customConfigurations;
     }
 
+    @Override
     public RepositoryConfiguration getRepositoryConfiguration() {
         return repositoryConfiguration;
     }
@@ -363,12 +376,12 @@ public class RepositoryData
     }
 
     @Override
-    public boolean acceptsSnapshots() {
+    public boolean isAcceptsSnapshots() {
         return RepositoryPolicyEnum.ofPolicy(getPolicy()).acceptsSnapshots();
     }
 
     @Override
-    public boolean acceptsReleases() {
+    public boolean isAcceptsReleases() {
         return RepositoryPolicyEnum.ofPolicy(getPolicy()).acceptsReleases();
     }
 
@@ -377,17 +390,9 @@ public class RepositoryData
         return vulnerabilityWhites;
     }
 
-    public void setVulnerabilityWhites(Set<String> vulnerabilityWhites) {
-        this.vulnerabilityWhites = vulnerabilityWhites;
-    }
-
     @Override
     public Set<String> getVulnerabilityBlacks() {
         return vulnerabilityBlacks;
-    }
-
-    public void setVulnerabilityBlacks(Set<String> vulnerabilityBlacks) {
-        this.vulnerabilityBlacks = vulnerabilityBlacks;
     }
 
     @Override
@@ -395,7 +400,13 @@ public class RepositoryData
         return subLayout;
     }
 
-    public void setSubLayout(String subLayout) {
-        this.subLayout = subLayout;
+    @Override
+    public Integer getScope() {
+        return this.scope;
+    }
+
+    @Override
+    public boolean isAllowAnonymous() {
+        return allowAnonymous;
     }
 }

@@ -2,6 +2,8 @@ package com.veadan.folib.controllers.users.support;
 
 import java.io.Serializable;
 import java.util.Collections;
+import java.util.LinkedHashSet;
+import java.util.Objects;
 import java.util.Set;
 
 import java.util.stream.Collectors;
@@ -10,6 +12,9 @@ import com.veadan.folib.domain.SecurityRole;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.google.common.collect.ImmutableSet;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.context.SecurityContextHolder;
 
 /**
  * @author veadan
@@ -30,6 +35,8 @@ public class UserOutput
     private Set<String> roles;
 
     private String securityTokenKey;
+
+    private LinkedHashSet<String> authorities;
 
     public String getEmail() {
         return email;
@@ -90,7 +97,22 @@ public class UserOutput
         output.setUsername(user.getUsername());
         output.setEmail(user.getEmail());
         output.setSecurityTokenKey(user.getSecurityTokenKey());
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (Objects.nonNull(authentication)) {
+            output.setAuthorities(authentication.getAuthorities().stream()
+                    .map(GrantedAuthority::getAuthority)
+                    .sorted()
+                    .collect(Collectors.toCollection(LinkedHashSet::new)));
+        }
         return output;
+    }
+
+    public LinkedHashSet<String> getAuthorities() {
+        return authorities;
+    }
+
+    public void setAuthorities(LinkedHashSet<String> authorities) {
+        this.authorities = authorities;
     }
 
     @Override
@@ -100,6 +122,7 @@ public class UserOutput
         sb.append("username='").append(username).append('\'');
         sb.append(", enabled=").append(enabled);
         sb.append(", roles=").append(roles);
+        sb.append(", authorities=").append(authorities);
         sb.append(", securityTokenKey='").append(securityTokenKey).append('\'');
         sb.append('}');
         return sb.toString();

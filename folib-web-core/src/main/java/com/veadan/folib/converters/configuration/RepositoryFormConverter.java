@@ -6,6 +6,8 @@ import com.veadan.folib.storage.repository.RepositoryDto;
 
 import org.springframework.core.convert.converter.Converter;
 
+import java.util.Objects;
+
 /**
  * @author veadan
  */
@@ -31,7 +33,7 @@ public enum RepositoryFormConverter
         result.setAllowsForceDeletion(source.isAllowsForceDeletion());
         result.setAllowsDeployment(source.isAllowsDeployment());
         result.setAllowsRedeployment(source.isAllowsRedeployment());
-        result.setAllowsDelete(source.isAllowsDelete());
+        result.setAllowsDeletion(source.isAllowsDeletion());
         result.setAllowsDirectoryBrowsing(source.isAllowsDirectoryBrowsing());
         result.setChecksumHeadersEnabled(source.isChecksumHeadersEnabled());
         if (source.getRepositoryConfiguration() != null)
@@ -64,6 +66,10 @@ public enum RepositoryFormConverter
             result.setArtifactCoordinateValidators(source.getArtifactCoordinateValidators());
         }
         result.setBasedir(source.getBasedir());
+        if (Objects.nonNull(source.getScope())) {
+            result.setScope(source.getScope());
+        }
+        result.setAllowAnonymous(source.isAllowAnonymous());
         return result;
     }
 }

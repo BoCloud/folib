@@ -19,4 +19,8 @@ public final class Constants
     public static final String REPOSITORY_NOT_FOUND_REQUEST_ATTRIBUTE =
             Constants.class.getName() + ".repositoryNotFound";
 
+    public static final String DOCKER_ROOT_PATH = "/v2";
+
+    public static final String STORAGE_ROOT_PATH = "/api/configuration/folib/storages";
+
 }

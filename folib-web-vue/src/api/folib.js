@@ -7,9 +7,17 @@ export function getStorages () {
     method: 'get'
   })
 }
+
 export function getLibrary (libId) {
   return axios({
     url: '/api/configuration/folib/storages/'+libId,
+    method: 'get'
+  })
+}
+
+export function getLibraryFilter (libId) {
+  return axios({
+    url: '/api/configuration/folib/storages/'+libId + '?filter=true',
     method: 'get'
   })
 }
@@ -39,6 +47,14 @@ export function getLibraryByQuery (dataQuery) {
 export function getStoragesAndRepositories (dataQuery) {
   return axios({
     url: '/api/configuration/folib/storages/getStoragesAndRepositories',
+    method: 'get',
+    params: dataQuery
+  })
+}
+
+export function getPermissionStoragesAndRepositories (dataQuery) {
+  return axios({
+    url: '/api/configuration/folib/storages/getPermissionStoragesAndRepositories',
     method: 'get',
     params: dataQuery
   })
@@ -249,7 +265,7 @@ export function securityPolicyConfig () {
 
 export function addRepositoryWhites (storageId,repositoryId,obj) {
   return axios({
-    url: '/api/configuration/folib/storages/whites/'+storageId+'/'+repositoryId,
+    url: '/api/configuration/folib/storages/'+ storageId + '/'+ repositoryId + '/whites',
     method: 'put',
     data: obj
   })
@@ -257,7 +273,7 @@ export function addRepositoryWhites (storageId,repositoryId,obj) {
 
 export function removeRepositoryWhites (storageId,repositoryId,obj) {
   return axios({
-    url: '/api/configuration/folib/storages/whites/'+storageId+'/'+repositoryId,
+    url: '/api/configuration/folib/storages/'+ storageId + '/'+ repositoryId + '/whites',
     method: 'delete',
     data: obj
   })
@@ -265,7 +281,7 @@ export function removeRepositoryWhites (storageId,repositoryId,obj) {
 
 export function addRepositoryBlacks (storageId,repositoryId,obj) {
   return axios({
-    url: '/api/configuration/folib/storages/blacks/'+storageId+'/'+repositoryId,
+    url: '/api/configuration/folib/storages/' + storageId + '/' + repositoryId + '/blacks',
     method: 'put',
     data: obj
   })
@@ -273,7 +289,7 @@ export function addRepositoryBlacks (storageId,repositoryId,obj) {
 
 export function removeRepositoryBlacks (storageId,repositoryId,obj) {
   return axios({
-    url: '/api/configuration/folib/storages/blacks/'+storageId+'/'+repositoryId,
+    url: '/api/configuration/folib/storages/' + storageId + '/' + repositoryId + '/blacks',
     method: 'delete',
     data: obj
   })
@@ -281,7 +297,7 @@ export function removeRepositoryBlacks (storageId,repositoryId,obj) {
 
 export function setRepositoryWhites (storageId,repositoryId,obj) {
   return axios({
-    url: '/api/configuration/folib/storages/setWhites/'+storageId+'/'+repositoryId,
+    url: '/api/configuration/folib/storages/' + storageId + '/' + repositoryId + '/setWhites',
     method: 'put',
     data: obj
   })
@@ -289,7 +305,7 @@ export function setRepositoryWhites (storageId,repositoryId,obj) {
 
 export function setRepositoryBlacks (storageId,repositoryId,obj) {
   return axios({
-    url: '/api/configuration/folib/storages/setBlacks/'+storageId+'/'+repositoryId,
+    url: '/api/configuration/folib/storages/' + storageId + '/' + repositoryId + '/setBlacks',
     method: 'put',
     data: obj
   })
@@ -371,7 +387,44 @@ export function getArtifactDispatchStoragesAndRepositories (dataQuery) {
   })
 }
 
+export function repositoryPermission (storageId, repositoryId, data) {
+  return axios({
+    url: '/api/configuration/folib/storages/'+storageId+'/'+repositoryId + '/permission',
+    method: 'post',
+    data: data
+  })
+}
 
+export function repositoryEnableUsers (query) {
+  return axios({
+    url: '/api/configuration/folib/storages/repositoryEnableUsers',
+    method: 'get',
+    params: query
+  })
+}
+
+export function getRepositoryPermission (query) {
+  return axios({
+    url: '/api/configuration/folib/storages/repositoryPermission',
+    method: 'get',
+    params: query
+  })
+}
+
+export function deleteRepositoryPermission (query) {
+  return axios({
+    url: '/api/configuration/folib/storages/repositoryPermission',
+    method: 'delete',
+    params: query
+  })
+}
+
+export function getStorageAndRepositoryPermission (storageId,repositoryId) {
+  return axios({
+    url: '/api/account/permission/'+storageId+'/'+repositoryId,
+    method: 'get'
+  })
+}
 
 
 
