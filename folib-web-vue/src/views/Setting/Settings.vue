@@ -929,30 +929,30 @@
     <a-modal v-model="showArtifactDispatchHandler" :title="handlerArtifactDispatchType === 1 ? '新增分发配置' : '修改分发配置'" :maskClosable="false"
              cancelText="取消" okText="确定" @cancel="artifactDispatchHandlerCancel()" @ok="artifactDispatchHandlerConfirm()" centered>
       <a-form-model layout="horizontal" ref="artifactDispatchForm" :model="artifactDispatchForm" :rules="artifactDispatchRules"
-                    :hideRequiredMark="true">
+                    :hideRequiredMark="false">
         <a-row :gutter="[24]">
           <a-col :span="24">
-            <a-form-model-item class="mb-10" label="集群英文名" :colon="false" prop="key">
+            <a-form-model-item class="mb-10" label="集群英文名" :colon="false" prop="clusterEnName">
               <a-input :disabled="handlerArtifactDispatchType !== 1" placeholder="请输入集群英文名" v-model="artifactDispatchForm.clusterEnName" />
             </a-form-model-item>
           </a-col>
           <a-col :span="24">
-            <a-form-model-item class="mb-10" label="集群中文名" :colon="false" prop="key">
+            <a-form-model-item class="mb-10" label="集群中文名" :colon="false" prop="clusterCnName">
               <a-input placeholder="请输入集群中文名" v-model="artifactDispatchForm.clusterCnName" />
             </a-form-model-item>
           </a-col>
           <a-col :span="24">
-            <a-form-model-item class="mb-10" label="集群节点地址" :colon="false" prop="key">
+            <a-form-model-item class="mb-10" label="集群节点地址" :colon="false" prop="clusterNodeHost">
               <a-input placeholder="请输入集群节点地址" v-model="artifactDispatchForm.clusterNodeHost" />
             </a-form-model-item>
           </a-col>
           <a-col :span="24">
-            <a-form-model-item class="mb-10" label="集群描述" :colon="false" prop="key">
+            <a-form-model-item class="mb-10" label="集群描述" :colon="false" prop="clusterNodeDesc">
               <a-input placeholder="请输入描述" v-model="artifactDispatchForm.clusterNodeDesc" />
             </a-form-model-item>
           </a-col>
           <a-col :span="24">
-            <a-form-model-item class="mb-10" label="分发类型" :colon="false" prop="key">
+            <a-form-model-item class="mb-10" label="分发类型" :colon="false" prop="dispatchType">
                 <a-select v-model="artifactDispatchForm.dispatchType" placeholder="请选择分发类型" show-search optionFilterProp="label">
                   <a-select-option v-for="(item, index) in artifactDispatchTypes" :label="item.label" :key="index"
                                    :value="item.value">
@@ -962,7 +962,7 @@
             </a-form-model-item>
           </a-col>
           <a-col :span="24">
-            <a-form-model-item class="mb-10" label="本集群" :colon="false" prop="key">
+            <a-form-model-item class="mb-10" label="本集群" :colon="false" prop="isThisCluster">
               <a-switch v-model="artifactDispatchForm.isThisCluster" />
             </a-form-model-item>
           </a-col>
@@ -1126,7 +1126,16 @@ export default {
         viewShow: false,
       },
       artifactDispatchRules:{
-
+        clusterEnName: [
+          {required: true, message: '请输入集群英文名', trigger: 'blur'},
+          {min: 1, max: 60, message: '长度在 1 到 60 个字符', trigger: 'blur'},
+        ],
+        clusterNodeHost: [
+          {required: true, message: '请输入节点url', trigger: 'blur'},
+        ],
+        dispatchType: [
+          {required: true, message: '请选择分发方式', trigger: 'blur'},
+        ],
       },
       metadataRules: {
         key: [

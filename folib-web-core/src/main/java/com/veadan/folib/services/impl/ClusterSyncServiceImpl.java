@@ -39,7 +39,7 @@ public class ClusterSyncServiceImpl implements ClusterSyncService {
     private final String SYNC_METADATA_URI = "/api/configuration/cluster/syncMetadataConfiguration";
     private final String SYNC_REPOSITORY_JOB = "/api/configuration/cluster/syncRepositoryJob";
     private final String SYNC_AUTHORIZATION = "/api/configuration/cluster/syncAuthorization";
-    private final String SYCN_CLUSTER_DISPATCH_URI = "/api/configuration/cluster/syncClusterDispatch";
+    private final String SYNC_CLUSTER_DISPATCH_URI = "/api/configuration/cluster/syncClusterDispatch";
 
     @Autowired
     private ProxyRepositoryConnectionPoolConfigurationService clientPool;
@@ -218,7 +218,7 @@ public class ClusterSyncServiceImpl implements ClusterSyncService {
         String clusterEnName = syncClusterDispatchDto.getNodeDto().getClusterEnName();
         try {
             client = clientPool.getRestClient();
-            WebTarget target = client.target(nodeUrl + SYCN_CLUSTER_DISPATCH_URI);
+            WebTarget target = client.target(nodeUrl + SYNC_CLUSTER_DISPATCH_URI);
             response = target.request().post(Entity.entity(syncClusterDispatchDto, MediaType.APPLICATION_JSON));
             if (response.getStatus() > 210) {
                 logger.error("sync cluster dispatch error {}", nodeUrl);

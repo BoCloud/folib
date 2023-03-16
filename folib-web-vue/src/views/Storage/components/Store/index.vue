@@ -309,9 +309,9 @@
                       </a-menu-item>
                       <a-menu-item
                           key="6"
-                          v-if="folibRepository.type !== 'group'"
+                          v-if="dispatchEnabled"
                       >
-                        <a-icon type="database" />分发
+                        <a-icon type="retweet" />分发
                       </a-menu-item>
                     </a-menu>
                   </template>
@@ -465,8 +465,8 @@
                       >
                         <a-icon type="database" />元数据
                       </a-menu-item>
-                      <a-menu-item key="6"  v-if="folibRepository.type === 'hosted'">
-                        <a-icon type="copy" /> 分发
+                      <a-menu-item key="6"  v-if="dispatchEnabled">
+                        <a-icon type="retweet" /> 分发
                       </a-menu-item>
                     </a-menu>
                   </template>
@@ -1155,6 +1155,7 @@ export default {
       showRpmUploadFormModal: false,
       uploadEnabled: false,
       copyEnabled: false,
+      dispatchEnabled:false,
       moveEnabled: false,
       deleteEnabled: false,
       scan: {
@@ -2193,6 +2194,7 @@ export default {
         this.permissions = res
         this.uploadEnabled = this.folibRepository.status.indexOf('Out of Service') === -1 && this.enablUploadedLayout.includes(this.folibRepository.layout) && this.folibRepository.type === 'hosted' && (hasRole('ARTIFACTS_MANAGER') || this.permissions.includes('ARTIFACTS_DEPLOY'))
         this.copyEnabled = this.folibRepository.type === 'hosted' && (hasRole('ARTIFACTS_MANAGER') || this.permissions.includes('ARTIFACTS_COPY'))
+        this.dispatchEnabled = this.folibRepository.type === 'hosted' && isAdmin()
         this.moveEnabled = this.folibRepository.type === 'hosted' && (hasRole('ARTIFACTS_MANAGER') || this.permissions.includes('ARTIFACTS_MOVE'))
         this.deleteEnabled = this.folibRepository.type !== 'group' && (hasRole('ARTIFACTS_MANAGER') || this.permissions.includes('ARTIFACTS_DELETE'))
       })
