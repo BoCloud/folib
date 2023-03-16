@@ -9,6 +9,8 @@ import com.veadan.folib.controllers.BaseController;
 import com.veadan.folib.controllers.cluster.dto.*;
 import com.veadan.folib.cron.services.CronTaskConfigurationService;
 import com.veadan.folib.event.repository.RepositoryEventListenerRegistry;
+import com.veadan.folib.services.ClusterDispatchManagementService;
+import com.veadan.folib.services.ClusterSyncService;
 import com.veadan.folib.services.RepositoryManagementService;
 import com.veadan.folib.services.StorageManagementService;
 import io.swagger.annotations.Api;
@@ -43,9 +45,12 @@ public class FolibClusterSyncController extends BaseController {
 
     @Autowired
     private RepositoryEventListenerRegistry repositoryEventListenerRegistry;
-    
+
     @Autowired
     private AuthorizationConfigService authorizationConfigService;
+
+    @Autowired
+    private ClusterDispatchManagementService clusterDispatchManagementService;
 
     @PostMapping("syncStorage")
     public ResponseEntity syncStorage(@RequestBody SyncStorageDto syncStorageDto) {
@@ -141,6 +146,23 @@ public class FolibClusterSyncController extends BaseController {
             }
         } catch (Exception e) {
             logger.error("sync cronJob error {}", ExceptionUtils.getStackTrace(e));
+            return getBadRequestResponseEntity(e.getMessage(), "");
+        }
+        return ResponseEntity.ok("sync syncCronJob ok");
+    }
+
+    @PostMapping("syncClusterDispatch")
+    public ResponseEntity syncClusterDispatch(@RequestBody SyncClusterDispatchDto syncClusterDispatchDto) {
+        try {
+            if (syncClusterDispatchDto.getSyncClusterDispatchEnum().getType() == 1) {
+                clusterDispatchManagementService.createClusterNode(syncClusterDispatchDto.getNodeDto());
+                logger.info("sycn  save or update dispatch config success");
+            } else if (syncClusterDispatchDto.getSyncClusterDispatchEnum().getType() == 2) {
+                clusterDispatchManagementService.deleteClusterNode(syncClusterDispatchDto.getNodeDto());
+                logger.info("sycn  delete dispatch config success");
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
             return getBadRequestResponseEntity(e.getMessage(), "");
         }
         return ResponseEntity.ok("sync syncCronJob ok");

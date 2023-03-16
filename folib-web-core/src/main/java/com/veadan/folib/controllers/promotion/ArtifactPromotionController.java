@@ -2,6 +2,7 @@ package com.veadan.folib.controllers.promotion;
 
 import com.veadan.folib.config.PermissionCheck;
 import com.veadan.folib.controllers.BaseArtifactController;
+import com.veadan.folib.domain.ArtifactDispatch;
 import com.veadan.folib.domain.ArtifactPromotion;
 import com.veadan.folib.domain.PromotionNodeOption;
 import com.veadan.folib.dto.ArtifactDto;
@@ -102,6 +103,15 @@ public class ArtifactPromotionController extends BaseArtifactController {
             throw new RequestBodyValidationException("请求参数错误", bindingResult);
         }
         return artifactPromotionService.getFileRelativePaths(artifactDto);
+    }
+
+    @PostMapping(value = "/artifactDispatch")
+    @PermissionCheck(resourceKey = "CONFIGURATION_ADD_UPDATE_STORAGE")
+    public ResponseEntity artifactDispatch(@RequestBody @Validated ArtifactDispatch artifactDispatch, BindingResult bindingResult) {
+        if (bindingResult.hasErrors()) {
+            throw new RequestBodyValidationException("请求参数错误", bindingResult);
+        }
+        return artifactPromotionService.artifactDispatch(artifactDispatch);
     }
 
     /**

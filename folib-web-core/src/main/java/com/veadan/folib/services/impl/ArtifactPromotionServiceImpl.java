@@ -1,10 +1,7 @@
 package com.veadan.folib.services.impl;
 
 import com.alibaba.fastjson.JSON;
-import com.veadan.folib.domain.AnalysisHtmlGetDirAndFilePath;
-import com.veadan.folib.domain.ArtifactPromotion;
-import com.veadan.folib.domain.PromotionFileRelativePath;
-import com.veadan.folib.domain.PromotionNodeOption;
+import com.veadan.folib.domain.*;
 import com.veadan.folib.dto.ArtifactDto;
 import com.veadan.folib.dto.PromotionArtifactDto;
 import com.veadan.folib.dto.PromotionNodeOptionDto;
@@ -23,6 +20,7 @@ import com.veadan.folib.storage.Storage;
 import com.veadan.folib.storage.repository.Repository;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.compress.utils.Lists;
+import org.apache.commons.fileupload.disk.DiskFileItem;
 import org.apache.commons.lang3.StringUtils;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -36,6 +34,7 @@ import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.multipart.commons.CommonsMultipartFile;
 
 import javax.inject.Inject;
 import javax.servlet.http.HttpServletRequest;
@@ -338,7 +337,9 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
             Map<String, Object> metaDataMap = StringUtils.isBlank(fileMetaDataMap) ?
                     new HashMap<>() : JSON.parseObject(fileMetaDataMap, Map.class);
             for (MultipartFile file : files) {
-                String fileRelativePath = mapType.get(file.getOriginalFilename());
+                //file.getOriginalFilename() 有问题修改用下面api
+                String fileOriginalName = ((DiskFileItem) ((CommonsMultipartFile) file).getFileItem()).getName();
+                String fileRelativePath = mapType.get(fileOriginalName);
                 String metaData = metaDataMap.getOrDefault(fileRelativePath, "").toString();
                 ArtifactUploadTask artifactUploadTask = new ArtifactUploadTask(storageId, repositoryId, file,
                         repositoryManagementService, repositoryPathResolver, artifactManagementService, promotionUtil, layoutProviderRegistry, artifactMetadataService, artifactRepository, tempPath, fileRelativePath, metaData, uuid);
@@ -414,6 +415,13 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(e.getMessage());
         }
+    }
+
+    @Override
+    public ResponseEntity artifactDispatch(ArtifactDispatch artifactDispatch) {
+        log.info("start artifact dispatch");
+        promotionUtil.executeHandleDispatch(artifactDispatch);
+        return ResponseEntity.ok("ok");
     }
 
     @Override

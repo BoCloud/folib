@@ -85,3 +85,11 @@ export function rpmArtifactUpload (storageId,repositoryId,obj,uuid,fileName) {
     data: obj
   })
 }
+
+export function artifactDispatch (data) {
+  return axios({
+    url: '/api/artifact/folib/promotion/artifactDispatch',
+    method: 'post',
+    data: data
+  })
+}

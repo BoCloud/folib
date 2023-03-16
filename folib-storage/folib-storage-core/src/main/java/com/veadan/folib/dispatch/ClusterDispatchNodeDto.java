@@ -1,0 +1,54 @@
+package com.veadan.folib.dispatch;
+
+import com.fasterxml.jackson.annotation.JsonRootName;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+import java.io.Serializable;
+
+/**
+ * 制品节点分发实体
+ *
+ * @author qijianping
+ */
+@Data
+@AllArgsConstructor
+@NoArgsConstructor
+@JsonRootName("clusterDispatchNode")
+public class ClusterDispatchNodeDto implements Serializable {
+    /**
+     * 集群英文名
+     */
+    private String clusterEnName;
+
+    /**
+     * 集群中文名
+     */
+    private String clusterCnName;
+
+    /**
+     * 节点描述
+     */
+    private String clusterNodeDesc;
+
+    /**
+     * 节点访问url地址
+     */
+    private String clusterNodeHost;
+
+    /**
+     * pull push 分发类型
+     */
+    private String dispatchType;
+
+    /**
+     * 是否本节点
+     */
+    private Boolean isThisCluster;
+
+    /**
+     * 创建时间
+     */
+    private String createTime;
+}
