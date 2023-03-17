@@ -6,6 +6,7 @@ import com.veadan.folib.cluster.SyncAuthorizationEnum;
 import com.veadan.folib.cluster.SyncMetadataEnum;
 import com.veadan.folib.cluster.SyncWebhookEnum;
 import com.veadan.folib.configuration.MutableSecurityPolicyConfiguration;
+import com.veadan.folib.configuration.MutableWebhookConfiguration;
 import com.veadan.folib.controllers.BaseController;
 import com.veadan.folib.controllers.cluster.dto.*;
 import com.veadan.folib.cron.services.CronTaskConfigurationService;
@@ -19,6 +20,7 @@ import io.swagger.annotations.Api;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.http.ResponseEntity;
@@ -49,10 +51,6 @@ public class FolibClusterSyncController extends BaseController {
 
     @Autowired
     private AuthorizationConfigService authorizationConfigService;
-
-    @Autowired
-    @Lazy
-    private WebhookService webhookService;
 
     private ClusterDispatchManagementService clusterDispatchManagementService;
 
@@ -201,14 +199,16 @@ public class FolibClusterSyncController extends BaseController {
     @PostMapping("syncWebhook")
     public ResponseEntity syncWebhook(@RequestBody SyncWebhookDto syncWebhookDto) {
         try {
+            MutableWebhookConfiguration mutableWebhookConfiguration = MutableWebhookConfiguration.builder().build();
+            BeanUtils.copyProperties(syncWebhookDto.getWebhookConfigurationForm(), mutableWebhookConfiguration);
             if (SyncWebhookEnum.ADD.getType().equals(syncWebhookDto.getSyncWebhookEnum().getType())) {
-                webhookService.addWebhookConfiguration(syncWebhookDto.getWebhookConfigurationForm());
+                configurationManagementService.addWebhookConfiguration(mutableWebhookConfiguration);
                 logger.info("sync add webhook success");
             } else if (SyncWebhookEnum.UPDATE.getType().equals(syncWebhookDto.getSyncWebhookEnum().getType())) {
-                webhookService.updateWebhookConfiguration(syncWebhookDto.getWebhookConfigurationForm());
+                configurationManagementService.updateWebhookConfiguration(mutableWebhookConfiguration);
                 logger.info("sync update webhook success");
             } else if (SyncWebhookEnum.DELETE.getType().equals(syncWebhookDto.getSyncWebhookEnum().getType())) {
-                webhookService.deleteWebhookConfiguration(syncWebhookDto.getWebhookConfigurationForm().getUuid());
+                configurationManagementService.deleteWebhookConfiguration(syncWebhookDto.getWebhookConfigurationForm().getUuid());
                 logger.info("sync delete webhook success");
             }
         } catch (Exception e) {

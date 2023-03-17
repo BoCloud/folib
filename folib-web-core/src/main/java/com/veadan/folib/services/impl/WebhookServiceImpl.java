@@ -71,6 +71,7 @@ public class WebhookServiceImpl implements WebhookService {
         BeanUtils.copyProperties(webhookConfigurationForm, mutableWebhookConfiguration);
         if (StringUtils.isBlank(webhookConfigurationForm.getUuid())) {
             mutableWebhookConfiguration.setUuid(generatorUuid());
+            webhookConfigurationForm.setUuid(mutableWebhookConfiguration.getUuid());
         }
         configurationManagementService.addWebhookConfiguration(mutableWebhookConfiguration);
         syncWebhookConfiguration(webhookConfigurationForm, SyncWebhookEnum.ADD);

@@ -580,7 +580,7 @@ export default {
       }
     },
     deleteWebhook(item) {
-      deleteWebhook(item).then(res => {
+      deleteWebhook({uuid: item.uuid}).then(res => {
         this.successMsg("删除webhook成功")
         this.queryWebhooks()
       }).catch((err) => {

@@ -123,10 +123,11 @@ public class ArtifactUploadTask implements Callable<String> {
     private void handlerMavenLayoutUpload(InputStream is, String layout, RepositoryPath repositoryPath) {
         File parentTempFile = null;
         try {
+            fileRelativePath = convertArtifactUploadFileName(fileRelativePath);
             String point = ".";
             //maven布局
             parentTempFile = new File(tempPath + File.separator + UUID.randomUUID() + File.separator);
-            File artifactTempFile = new File(parentTempFile.getAbsolutePath() + File.separator + convertArtifactUploadFileName(fileRelativePath));
+            File artifactTempFile = new File(parentTempFile.getAbsolutePath() + File.separator + fileRelativePath);
             Path path = Path.of(artifactTempFile.getAbsolutePath());
             FileUtil.writeFromStream(is, artifactTempFile);
             boolean isPom = path.toString().endsWith(".pom");
@@ -249,7 +250,7 @@ public class ArtifactUploadTask implements Callable<String> {
 //                artifactId = artifactId.replace(point, File.separator);
 //            }
             String version = parseProperties(properties, "version");
-            fileRelativePath = calcLatestSnapshotVersion(storageId, repositoryId, groupId, artifactId, version, convertArtifactUploadFileName(fileRelativePath));
+            fileRelativePath = calcLatestSnapshotVersion(storageId, repositoryId, groupId, artifactId, version, fileRelativePath);
 
             String artifactPath = String.format("%s/%s/%s/%s", groupId, artifactId, version, fileRelativePath);
             log.info("maven2 layout artifact path ：{}，properties：{}，groupId：{}，artifactId：{}, version：{} artifactPath：{}", path, properties, groupId, artifactId, version, artifactPath);

@@ -271,7 +271,7 @@ public class ClusterSyncServiceImpl implements ClusterSyncService {
             return;
         }
         logger.info("folib  sync Webhook");
-        clusterProperties.getHostNodeList().forEach(nodeUrl -> {
+        getHostNodeList().forEach(nodeUrl -> {
             handleSyncWebhookConfiguration(syncWebhookDto, nodeUrl, false);
         });
     }
