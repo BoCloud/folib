@@ -183,9 +183,9 @@ public class BrowseController
 
                 RepositoryPath appPackagePath = repositoryPathResolver.resolve(storageId, repositoryId, aName + "/" + aVersion + "/temp");
                 List<String> relativePaths = RepositoryPathUtil.getFileRelativePaths(appPackagePath);
-                List<String> downloadUrls = Lists.newArrayList();
+                Set<String> downloadUrls = new HashSet<String>();
                 for (String filePath : relativePaths) {
-                    if (filePath.endsWith(".config")) {
+                    if (filePath.endsWith(".config") || filePath.endsWith(".sha256")) {
                         continue;
                     }
                     downloadUrls.add(FolibPublicUtils.getFileUrl(repositoryParam, filePath));

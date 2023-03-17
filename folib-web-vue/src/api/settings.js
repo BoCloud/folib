@@ -85,5 +85,24 @@ export function globalSettingDeleteMetadata (data) {
   })
 }
 
+export function getArtifactDispatchConfig(){
+  return axios({
+    url: '/api/configuration/folib/dispatch',
+    method: 'get'
+  })
+}
 
+export function globalSettingArtifactDispatchConfig (data) {
+  return axios({
+    url: '/api/configuration/folib/dispatch',
+    method: 'put',
+    data: data
+  })
+}
 
+export function globalSettingDelArtifactDispatchConfig(clusterEnName) {
+  return axios({
+    url: '/api/configuration/folib/dispatch/' + clusterEnName,
+    method: 'delete'
+  })
+}

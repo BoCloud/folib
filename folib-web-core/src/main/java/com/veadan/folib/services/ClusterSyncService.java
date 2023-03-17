@@ -2,13 +2,9 @@ package com.veadan.folib.services;
 
 import com.veadan.folib.authorization.dto.AuthorizationConfigDto;
 import com.veadan.folib.cluster.ClusterSyncResultEnum;
-import com.veadan.folib.cluster.SyncRepositoryEnum;
-import com.veadan.folib.cluster.SyncStorageEnum;
 import com.veadan.folib.configuration.MutableSecurityPolicyConfiguration;
 import com.veadan.folib.controllers.cluster.dto.*;
 import com.veadan.folib.entity.ClusterDataSyncTaskPo;
-import com.veadan.folib.storage.StorageDto;
-import com.veadan.folib.storage.repository.RepositoryDto;
 
 public interface ClusterSyncService {
 
@@ -23,6 +19,8 @@ public interface ClusterSyncService {
     void syncRepository(SyncRepositoryDto syncRepositoryDto);
 
     void syncCronJob(SyncCronJobDto syncCronJobDto);
+
+    void syncClusterDispatch(SyncClusterDispatchDto syncClusterDispatchDto);
 
     /**
      * 同步授权配置信息
@@ -53,6 +51,8 @@ public interface ClusterSyncService {
     ClusterSyncResultEnum handleSyncAuthorization(SyncAuthorizationDto syncAuthorizationDto, String nodeUrl, Boolean isScheduled);
 
     ClusterSyncResultEnum handleSyncWebhookConfiguration(SyncWebhookDto syncWebhookDto, String nodeUrl, Boolean isScheduled);
+
+    ClusterSyncResultEnum handleSyncClusterDispatch(SyncClusterDispatchDto syncClusterDispatchDto, String nodeUrl, Boolean isScheduled);
 
     void addduledScheTask(ClusterDataSyncTaskPo clusterDataSyncTaskPo);
 

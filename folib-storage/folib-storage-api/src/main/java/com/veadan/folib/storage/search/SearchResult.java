@@ -75,7 +75,7 @@ public class SearchResult {
     /**
      * 获取docker 应用包下载地址
      */
-    private List<String> downloadFilesUrl;
+    private Set<String> downloadFilesUrl;
 
     private String metadata;
 
@@ -216,11 +216,11 @@ public class SearchResult {
         this.snippets = snippets;
     }
 
-    public List<String> getDownloadFilesUrl() {
+    public Set<String> getDownloadFilesUrl() {
         return downloadFilesUrl;
     }
 
-    public void setDownloadFilesUrl(List<String> downloadFilesUrl) {
+    public void setDownloadFilesUrl(Set<String> downloadFilesUrl) {
         this.downloadFilesUrl = downloadFilesUrl;
     }
 

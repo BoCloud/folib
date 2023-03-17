@@ -154,6 +154,24 @@ public class AsyncPoolConfig {
     @Value("${folib.threadPool.asyncCronJob.awaitTerminationSeconds}")
     private Integer asyncCronJobAwaitTerminationSeconds;
 
+    @Value("${folib.threadPool.asyncClusterDispatch.corePoolSize}")
+    private Integer asyncClusterDispatchCorePoolSize;
+
+    @Value("${folib.threadPool.asyncClusterDispatch.maxPoolSize}")
+    private Integer asyncClusterDispatchMaxPoolSize;
+
+    @Value("${folib.threadPool.asyncClusterDispatch.queueCapacity}")
+    private Integer asyncClusterDispatchQueueCapacity;
+
+    @Value("${folib.threadPool.asyncClusterDispatch.keepAliveSeconds}")
+    private Integer asyncClusterDispatchKeepAliveSeconds;
+
+    @Value("${folib.threadPool.asyncClusterDispatch.threadNamePrefix}")
+    private String asyncClusterDispatchThreadNamePrefix;
+
+    @Value("${folib.threadPool.asyncClusterDispatch.awaitTerminationSeconds}")
+    private Integer asyncClusterDispatchAwaitTerminationSeconds;
+
     @Bean
     public ThreadPoolTaskExecutor asyncThreadPoolTaskExecutor() {
         return buildThreadPoolTaskExecutor(asyncCorePoolSize, asyncMaxPoolSize, asyncQueueCapacity, asyncKeepAliveSeconds, asyncThreadNamePrefix, asyncAwaitTerminationSeconds);
@@ -177,6 +195,11 @@ public class AsyncPoolConfig {
     @Bean
     public ThreadPoolTaskExecutor asyncRepositoryThreadPoolExecutor() {
         return buildThreadPoolTaskExecutor(asyncRepositoryCorePoolSize, asyncRepositoryMaxPoolSize, asyncRepositoryQueueCapacity, asyncRepositoryKeepAliveSeconds, asyncRepositoryThreadNamePrefix, asyncRepositoryAwaitTerminationSeconds);
+    }
+
+    @Bean
+    public ThreadPoolTaskExecutor asyncClusterDispatchThreadPoolExecutor(){
+        return buildThreadPoolTaskExecutor(asyncClusterDispatchCorePoolSize,asyncClusterDispatchMaxPoolSize,asyncClusterDispatchQueueCapacity,asyncClusterDispatchKeepAliveSeconds,asyncClusterDispatchThreadNamePrefix,asyncClusterDispatchAwaitTerminationSeconds);
     }
 
     @Bean

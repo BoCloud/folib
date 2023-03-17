@@ -1,5 +1,6 @@
 package com.veadan.folib.services;
 
+import com.veadan.folib.domain.ArtifactDispatch;
 import com.veadan.folib.domain.ArtifactPromotion;
 import com.veadan.folib.domain.PromotionNodeOption;
 import com.veadan.folib.dto.ArtifactDto;
@@ -30,6 +31,8 @@ public interface ArtifactPromotionService {
 
     ResponseEntity getFileRelativePaths(ArtifactDto artifactDto);
 
+    ResponseEntity artifactDispatch(ArtifactDispatch artifactDispatch);
+
     void validateStorageAndRepository(String storageId, String repositoryId) throws Exception;
 
     /**
@@ -48,4 +51,5 @@ public interface ArtifactPromotionService {
      * @param uuid     uuid
      */
     void deleteUploadProcess(String dictType, String uuid);
+
 }

@@ -45,14 +45,11 @@ folib:
     maxFileSize: 2048             # 单个上传文件大小 （MB）
     maxRequestSize: 2048        # 单次个上传文件总大小 （MB）
   cluster:
-    openflag: ${folib.openflag:false}
-    hostnode: ${folib.hostnode:10.50.8.55:38080} # 多个节点逗号隔开
-    protocol: http
-  whiteList: ${folib.white.list:10.50.8.55}  # 配置多个白名单逗号隔开
+    openflag: ${folib.openflag:true}
   docker:
     getAppPackagePathConfig: usr/local/app # docker 扫描提供获取指定路径下的应用包 多个路径逗号隔开
   distributed:
-    lockip: ${folib.scheduled.lockip:10.50.8.55} # 实例 host ip
+    lockip: ${folib.scheduled.lockip:10.8.10.166} # 实例 host ip
   config:
     file: ${folib.home}/etc/conf/folib.yaml
   storage:
@@ -133,6 +130,13 @@ folib:
       queueCapacity: 10000
       keepAliveSeconds: 200
       threadNamePrefix: asyncCronJob_
+      awaitTerminationSeconds: 120
+    asyncClusterDispatch:
+      corePoolSize: 10
+      maxPoolSize: 200
+      queueCapacity: 10000
+      keepAliveSeconds: 200
+      threadNamePrefix: asyncClusterDispatch_
       awaitTerminationSeconds: 120
 # Changes to these properties must also be applied to [folib/folib-web-integration-tests] and possibly the pipeline.
 # Please ping us on our chat channel (https://chat.carlspring.org/) to confirm.

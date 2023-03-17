@@ -379,6 +379,13 @@ export function delCronOne (uuid) {
     method: 'delete'
   })
 }
+export function getArtifactDispatchStoragesAndRepositories (dataQuery) {
+  return axios({
+    url: '/api/configuration/folib/storages/getDispatchStoragesAndRepositories',
+    method: 'get',
+    params: dataQuery
+  })
+}
 
 export function repositoryPermission (storageId, repositoryId, data) {
   return axios({

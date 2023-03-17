@@ -3,6 +3,7 @@ package com.veadan.folib.services.impl;
 import com.beust.jcommander.internal.Sets;
 import com.veadan.folib.client.MutableRemoteRepositoryRetryArtifactDownloadConfiguration;
 import com.veadan.folib.configuration.*;
+import com.veadan.folib.dispatch.ClusterDispatchNodeDto;
 import com.veadan.folib.event.repository.RepositoryEvent;
 import com.veadan.folib.event.repository.RepositoryEventListenerRegistry;
 import com.veadan.folib.event.repository.RepositoryEventTypeEnum;
@@ -174,6 +175,11 @@ public class ConfigurationManagementServiceImpl
     }
 
     @Override
+    public void createClusterDispatchConfig(ClusterDispatchNodeDto clusterDispatchNodeDto) throws IOException {
+        modifyInLock(configuration -> configuration.addClusterDispatchNode(clusterDispatchNodeDto));
+    }
+
+    @Override
     public void addStorageIfNotExists(StorageDto storage) throws IOException {
         modifyInLock(configuration -> configuration.addStorageIfNotExist(storage));
     }
@@ -181,6 +187,11 @@ public class ConfigurationManagementServiceImpl
     @Override
     public void removeStorage(String storageId) throws IOException {
         modifyInLock(configuration -> configuration.getStorages().remove(storageId));
+    }
+
+    @Override
+    public void removeClusterDispatchConfig(ClusterDispatchNodeDto clusterDispatchNodeDto) throws IOException {
+        modifyInLock(configuration -> configuration.getClusterDispatchNode().remove(clusterDispatchNodeDto.getClusterEnName()));
     }
 
     @Override

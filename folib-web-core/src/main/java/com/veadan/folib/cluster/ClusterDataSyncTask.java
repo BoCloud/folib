@@ -137,6 +137,14 @@ public class ClusterDataSyncTask {
                     isSuccess(syncResult, task);
                     logger.info("sync webhook data end [{} ]", url);
                 }
+                // 同步分发配置
+                if (Objects.equals(SyncDataTypeEnum.CLUSTER_DISPATCH.getValue(), task.getTaskType())) {
+                    SyncClusterDispatchDto syncClusterDispatchDto = JSONObject.parseObject(task.getDataJson(), SyncClusterDispatchDto.class);
+                    logger.info("start sync dispatch data [{}]", url);
+                    ClusterSyncResultEnum syncResult = clusterSyncService.handleSyncClusterDispatch(syncClusterDispatchDto, url, true);
+                    isSuccess(syncResult, task);
+                    logger.info("sync dispatch data end [{} ]", url);
+                }
             } catch (Exception e) {
                 logger.error("error {}", e.getMessage());
             }

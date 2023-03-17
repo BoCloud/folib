@@ -307,6 +307,12 @@
                       >
                         <a-icon type="database" />元数据
                       </a-menu-item>
+                      <a-menu-item
+                          key="6"
+                          v-if="dispatchEnabled"
+                      >
+                        <a-icon type="retweet" />分发
+                      </a-menu-item>
                     </a-menu>
                   </template>
                 </a-dropdown>
@@ -458,6 +464,9 @@
                         "
                       >
                         <a-icon type="database" />元数据
+                      </a-menu-item>
+                      <a-menu-item key="6"  v-if="dispatchEnabled">
+                        <a-icon type="retweet" /> 分发
                       </a-menu-item>
                     </a-menu>
                   </template>
@@ -949,6 +958,122 @@
         </a-row>
       </a-form>
     </a-modal>
+    <!-- 分发 -->
+    <a-modal
+        v-model="showOperationDispatchFormModal"
+        width="50%"
+        :footer="null"
+        :forceRender="true"
+        :centered="true"
+        :title="operationTitle"
+        on-ok="showCopyFormModal = false"
+    >
+      <a-form
+          :form="operationForm"
+          ref="operationForm"
+          layout="vertical"
+          @submit.prevent="handleOperationSubmit"
+      >
+        <a-row :gutter="[24]">
+          <a-col :span="24">
+            <a-form-item
+                class="tags-field mb-10"
+                label="目标仓库"
+                :colon="false"
+                ref="targetRepositories"
+                prop="targetRepositories"
+            >
+              <div class="selectdrop">
+              <gb-ant-select-multiple-cascader
+                  allowClear
+                  style="width:100%;"
+                  placeholder="请选择目标仓库"
+                  v-decorator="[
+                  'targetRepositories',
+                  {
+                    initialValue: [],
+                    rules: [
+                      {
+                        required: true,
+                        message: '请选择目标仓库',
+                        type: 'array',
+                      },
+                    ],
+                  },
+                ]"
+                  :selectOptionsConfig="{
+                  key: 'key',
+                  value: 'key',
+                  text: 'key',
+                  children: 'children'
+                }"
+                  allText="全选"
+                  noDataText="暂无数据"
+                  dropdownClassName="customer-multiple-cascader"
+                  :treeData="repositories"
+                  @handleCheckboxChange="handleCheckboxChange"
+              />
+              </div>
+            </a-form-item>
+            <a-form-item
+                class="tags-field mb-10"
+                v-if="!custom"
+                label="目标目录"
+                prop="path"
+                :colon="false"
+            >
+              <a-input
+                  v-decorator="[
+                  'path',
+                  {
+                    rules: [{ required: true, message: '请输入目标目录' }],
+                  },
+                ]"
+                  :disabled="true"
+                  placeholder="请输入目标目录"
+              >
+              </a-input>
+            </a-form-item>
+            <a-form-item
+                class="tags-field mb-10"
+                v-if="custom"
+                label="目标目录"
+                prop="path"
+                :colon="false"
+            >
+              <a-input
+                  v-decorator="[
+                  'path',
+                  {
+                    rules: [{ required: true, message: '请输入目标目录' }],
+                  },
+                ]"
+                  :disabled="false"
+                  placeholder="请输入目标目录"
+              >
+              </a-input>
+            </a-form-item>
+          </a-col>
+          <a-col :span="24" class="text-center">
+            <a-button
+                key="submit"
+                class="px-30"
+                size="small"
+                type="primary"
+                htmlType="submit"
+            >提交</a-button
+            >
+            <a-button
+                key="back"
+                @click="operationFormModalClose()"
+                class="px-30 ml-10"
+                size="small"
+            >取消</a-button
+            >
+          </a-col>
+        </a-row>
+      </a-form>
+    </a-modal>
   </div>
 </template>
 
@@ -973,6 +1098,8 @@ import {
   repositoryVulnerabilityStatistics,
   getPermissionStoragesAndRepositories,
   getStorageAndRepositoryPermission,
+  getStoragesAndRepositories,
+  getArtifactDispatchStoragesAndRepositories,
 } from "@/api/folib";
 import {
   artifactCopy,
@@ -980,6 +1107,7 @@ import {
   artifactUpload,
   artifactUploadProgress,
   rpmArtifactUpload,
+  artifactDispatch,
 } from "@/api/artifact";
 import { getMetadataConfiguration } from "@/api/settings";
 import { hasRole, isAdmin, hasPermission } from "@/utils/permission";
@@ -1027,6 +1155,7 @@ export default {
       showRpmUploadFormModal: false,
       uploadEnabled: false,
       copyEnabled: false,
+      dispatchEnabled:false,
       moveEnabled: false,
       deleteEnabled: false,
       scan: {
@@ -1149,6 +1278,7 @@ export default {
       },
       operationTitle: "",
       showOperationFormModal: false,
+      showOperationDispatchFormModal: false,
       repositories: [],
       custom: false,
       enablUploadedLayout: ['Raw', 'php', 'Maven 2', 'npm'],
@@ -1172,6 +1302,8 @@ export default {
           this.scan = res.data;
         }
       });
+    },
+    handleCheckboxChange(selectedData) {
     },
     scannerChange() {
       this.scan.id =
@@ -1642,6 +1774,15 @@ export default {
         //元数据
         this.getMetadataConfiguration();
         this.metadataHandler(1);
+      }else if(active.key === "6"){
+        this.showOperationDispatchFormModal = true;
+        this.getArtifactDispatchStoragesAndRepositories(
+            this.folibRepository.type,
+            this.folibRepository.layout,
+            this.folibRepository.id,
+            this.folibRepository.policy);
+        this.operationTitle = "分发";
+        this.customTitle = "分发到指定目录";
       }
     },
     handleOperationSubmit(e) {
@@ -1649,18 +1790,44 @@ export default {
       this.operationForm.validateFields((err, values) => {
         if (!err) {
           let targetRepositoyList = [];
+          let targetDispatchRepositoryList = [];
           values.targetRepositories.forEach((item) => {
             let split = item.split(",");
-            targetRepositoyList.push({
-              targetStorageId: split[0],
-              targetRepositoryId: split[1],
-            });
+            let arrayLength = split.length;
+            if(this.operationTitle.indexOf("分发")!==-1){
+              let dispatchClusterEnName = split[0];
+              let dispatchTargetStorageId = split[1];
+              let dispatchTargetReopsitoryId = '';
+              if(arrayLength===3){
+                dispatchTargetReopsitoryId = split[2];
+              }
+              console.log(dispatchTargetStorageId+" , "+dispatchTargetReopsitoryId);
+              targetDispatchRepositoryList.push({
+                dispatchClusterEnName:dispatchClusterEnName,
+                targetStorageId: dispatchTargetStorageId,
+                targetRepositoryId: dispatchTargetReopsitoryId,
+              });
+            }else {
+              targetRepositoyList.push({
+                targetStorageId: split[0],
+                targetRepositoryId: split[1],
+              });
+            }
           });
           let data = {
             path: values.path,
             srcStorageId: this.folibRepository.storageId,
             srcRepositoryId: this.folibRepository.id,
             targetRepositoyList: targetRepositoyList,
+          };
+          let dispatchData = {
+            path: values.path,
+            srcStorageId: this.folibRepository.storageId,
+            srcRepositoryId: this.folibRepository.id,
+            targetDispatchRepositoryList: targetDispatchRepositoryList,
+            type: this.folibRepository.type,
+            layout: this.folibRepository.layout,
+            policy: this.folibRepository.policy,
           };
           if (this.operationTitle.indexOf("复制") !== -1) {
             artifactCopy(data)
@@ -1690,12 +1857,43 @@ export default {
                 });
               })
               .finally(() => { });
+          }else if(this.operationTitle.indexOf("分发")!==-1){
+            artifactDispatch(dispatchData) .then((res) => {
+              this.successMsg("分发中，请稍候查看");
+              this.operationFormModalClose();
+              this.reload();
+            })
+                .catch((err) => {
+                  this.$notification["error"]({
+                    message: err.response.data.error,
+                    description: "",
+                  });
+                })
+                .finally(() => { });
+
           }
         }
       });
     },
     operationFormModalClose() {
       this.showOperationFormModal = false;
+      this.showOperationDispatchFormModal = false;
+    },
+    getArtifactDispatchStoragesAndRepositories(type, layout, excludeRepositoryId, policy){
+      getArtifactDispatchStoragesAndRepositories({
+        type: type,
+        layout: layout,
+        excludeRepositoryId: excludeRepositoryId,
+        policy: policy,
+      }).then((res) => {
+        this.repositories = [];
+        res.forEach((item) => {
+          if (item.children && item.children.length > 0) {
+            this.repositories.push(item);
+          }
+        });
+        this.repositories = [this.repositories]
+      });
     },
     queryPermissionStoragesAndRepositories(type, layout, excludeRepositoryId, policy) {
       getPermissionStoragesAndRepositories({
@@ -1743,6 +1941,9 @@ export default {
       this.metadataEditor = false;
       this.metadataNumber = false;
       this.prismEditor = false;
+    },
+    dispatchPackageHandle(){
+      console.log("分发处理 todo")
     },
     deletePackageHandle() {
       deleteArtifact(
@@ -1996,6 +2197,7 @@ export default {
         this.permissions = res
         this.uploadEnabled = this.folibRepository.status.indexOf('Out of Service') === -1 && this.enablUploadedLayout.includes(this.folibRepository.layout) && this.folibRepository.type === 'hosted' && (hasRole('ARTIFACTS_MANAGER') || this.permissions.includes('ARTIFACTS_DEPLOY'))
         this.copyEnabled = this.folibRepository.type === 'hosted' && (hasRole('ARTIFACTS_MANAGER') || this.permissions.includes('ARTIFACTS_COPY'))
+        this.dispatchEnabled = this.folibRepository.type === 'hosted' && isAdmin()
         this.moveEnabled = this.folibRepository.type === 'hosted' && (hasRole('ARTIFACTS_MANAGER') || this.permissions.includes('ARTIFACTS_MOVE'))
         this.deleteEnabled = this.folibRepository.type !== 'group' && (hasRole('ARTIFACTS_MANAGER') || this.permissions.includes('ARTIFACTS_DELETE'))
       })
@@ -2003,3 +2205,8 @@ export default {
   },
 };
 </script>
+<style lang="scss" scoped>
+ .selectdrop::v-deep .gb-ant-select-multiple-cascader .cascader-content-wrap .cascader-content-container .cascader-content-list {
+  min-width: 280px;
+ }
+</style>

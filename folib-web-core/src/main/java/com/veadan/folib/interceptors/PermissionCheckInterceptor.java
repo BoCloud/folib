@@ -1,15 +1,17 @@
 package com.veadan.folib.interceptors;
 
+import cn.hutool.core.collection.CollectionUtil;
 import cn.hutool.extra.spring.SpringUtil;
 import com.alibaba.fastjson.JSONObject;
 import com.veadan.folib.config.PermissionCheck;
+import com.veadan.folib.dispatch.ClusterDispatchNodeDto;
 import com.veadan.folib.scanner.common.util.IPUtil;
 import com.veadan.folib.users.domain.Privileges;
 import com.veadan.folib.users.userdetails.SpringSecurityUser;
 import com.veadan.folib.wrapper.RequestWrapper;
+import com.veadan.folib.services.ConfigurationManagementService;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
-import org.springframework.core.env.Environment;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.method.HandlerMethod;
@@ -17,10 +19,8 @@ import org.springframework.web.servlet.HandlerInterceptor;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import java.util.ArrayList;
+import java.util.*;
 import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
 
 /**
  * 自定义权限拦截器 校验节点间请求的白名单
@@ -29,27 +29,32 @@ import java.util.List;
  */
 @Slf4j
 public class PermissionCheckInterceptor implements HandlerInterceptor {
-    private final String FOLIB_WHITE_LIST = "folib.whiteList";
+    private final Set<String> currentWhiteList = new HashSet<>();
 
-    private List<String> currentWhiteList;
-
-    public List<String> getWhiteList() {
-        if (null != currentWhiteList) {
+    public Set<String> getWhiteList(String ipAddr) {
+        if (currentWhiteList.contains(ipAddr)) {
             return currentWhiteList;
         }
-        Environment environment = SpringUtil.getBean(Environment.class);
-        String whiteList = environment.getProperty(FOLIB_WHITE_LIST);
-
-        if (StringUtils.isBlank(whiteList)) {
-            return Collections.emptyList();
+        ConfigurationManagementService configurationManagementService =
+                SpringUtil.getBean(ConfigurationManagementService.class);
+        Map<String, ClusterDispatchNodeDto> map = configurationManagementService.
+                getMutableConfigurationClone().getClusterDispatchNode();
+        if (CollectionUtil.isEmpty(map)) {
+            return currentWhiteList;
         }
-        String[] array = whiteList.split(",");
-        List<String> list = new ArrayList<>();
-        for (String ip : array) {
-            list.add(ip.trim());
-        }
-        currentWhiteList = list;
-        return list;
+        map.values().forEach(clusterDispatchNodeDto -> {
+            try {
+                String host = clusterDispatchNodeDto.getClusterNodeHost();
+                host = host.replaceAll("http|https|//|/", "");
+                String[] arry = host.split(":");
+                if (arry.length >= 2) {
+                    currentWhiteList.add(arry[arry.length - 2].trim());
+                }
+            } catch (Exception e) {
+                log.error("Exception {}", e.getMessage());
+            }
+        });
+        return currentWhiteList;
     }
 
     @Override
