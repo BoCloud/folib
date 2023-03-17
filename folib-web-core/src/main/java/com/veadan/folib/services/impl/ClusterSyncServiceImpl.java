@@ -37,6 +37,7 @@ public class ClusterSyncServiceImpl implements ClusterSyncService {
     private final String SYNC_METADATA_URI = "/api/configuration/cluster/syncMetadataConfiguration";
     private final String SYNC_REPOSITORY_JOB = "/api/configuration/cluster/syncRepositoryJob";
     private final String SYNC_AUTHORIZATION = "/api/configuration/cluster/syncAuthorization";
+    private final String SYNC_WEBHOOK = "/api/configuration/cluster/syncWebhook";
 
     @Autowired
     private ProxyRepositoryConnectionPoolConfigurationService clientPool;
@@ -84,7 +85,7 @@ public class ClusterSyncServiceImpl implements ClusterSyncService {
     }
 
     @Override
-    @Async("asyncMetadataConfigurationThreadPoolExecutor")
+    @Async("asyncConfigThreadPoolExecutor")
     public void syncMetadataConfiguration(SyncMetadataDto syncMetadataDto) {
         if (!isNeedClusterSync()) {
             logger.info("cluster mode not opened");
@@ -167,6 +168,7 @@ public class ClusterSyncServiceImpl implements ClusterSyncService {
     }
 
     @Override
+    @Async("asyncConfigThreadPoolExecutor")
     public void syncAuthorization(SyncAuthorizationDto syncAuthorizationDtoo) {
         if (!isNeedClusterSync()) {
             logger.info("cluster mode not opened");
@@ -175,6 +177,19 @@ public class ClusterSyncServiceImpl implements ClusterSyncService {
         logger.info("folib  sync authorization");
         clusterProperties.getHostNodeList().forEach(nodeUrl -> {
             handleSyncAuthorization(syncAuthorizationDtoo, nodeUrl, false);
+        });
+    }
+
+    @Override
+    @Async("asyncConfigThreadPoolExecutor")
+    public void syncWebhookConfiguration(SyncWebhookDto syncWebhookDto) {
+        if (!isNeedClusterSync()) {
+            logger.info("cluster mode not opened");
+            return;
+        }
+        logger.info("folib  sync Webhook");
+        clusterProperties.getHostNodeList().forEach(nodeUrl -> {
+            handleSyncWebhookConfiguration(syncWebhookDto, nodeUrl, false);
         });
     }
 
@@ -349,6 +364,42 @@ public class ClusterSyncServiceImpl implements ClusterSyncService {
                                 ipProperties.getFolibLockIp(),
                                 JSON.toJSONString(syncAuthorizationDto),
                                 SyncDataTypeEnum.AUTHORIZATION.getValue(),
+                                SyncDataStatusEnum.WILL_EXECUTE_STATUS.getStatus()
+                                , nodeUrl, BigInteger.valueOf(System.currentTimeMillis())
+                        ));
+            }
+            return ClusterSyncResultEnum.FAIL;
+        } finally {
+            if (null != response) {
+                response.close();
+            }
+            if (null != client) {
+                client.close();
+            }
+        }
+        return ClusterSyncResultEnum.SUCCESS;
+    }
+
+    @Override
+    public ClusterSyncResultEnum handleSyncWebhookConfiguration(SyncWebhookDto syncWebhookDto, String nodeUrl, Boolean isScheduled) {
+        Response response = null;
+        Client client = null;
+        try {
+            client = clientPool.getRestClient();
+            WebTarget target = client.target(nodeUrl + SYNC_WEBHOOK);
+            response = target.request().post(Entity.entity(syncWebhookDto, MediaType.APPLICATION_JSON));
+            if (response.getStatus() > 210) {
+                logger.error("sync handleSyncWebhookConfiguration error {}", nodeUrl);
+                throw new RuntimeException("Failed with HTTP error code : " + response.getStatus());
+            }
+        } catch (Exception e) {
+            logger.error("sync handleSyncWebhookConfiguration error {} ", ExceptionUtils.getStackTrace(e));
+            if (!isScheduled) {
+                addduledScheTask(
+                        new ClusterDataSyncTaskPo(UUID.randomUUID().toString(),
+                                ipProperties.getFolibLockIp(),
+                                JSON.toJSONString(syncWebhookDto),
+                                SyncDataTypeEnum.WEBHOOK.getValue(),
                                 SyncDataStatusEnum.WILL_EXECUTE_STATUS.getStatus()
                                 , nodeUrl, BigInteger.valueOf(System.currentTimeMillis())
                         ));

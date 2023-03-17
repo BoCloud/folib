@@ -1,6 +1,5 @@
 package com.veadan.folib.configuration;
 
-import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSortedMap;
 import com.veadan.folib.storage.Storage;
 import com.veadan.folib.storage.StorageData;
@@ -61,6 +60,11 @@ public class Configuration {
      */
     private Map<String, MetadataConfiguration> metadataConfiguration;
 
+    /**
+     * webhook配置
+     */
+    private Map<String, WebhookConfiguration> webhookConfiguration;
+
     public Configuration(final MutableConfiguration delegate) {
 
         id = delegate.getId();
@@ -79,6 +83,7 @@ public class Configuration {
         smtpConfiguration = immuteSmtpConfiguration(delegate.getSmtpConfiguration());
         securityPolicyConfiguration = immuteSecurityPolicyConfiguration(delegate.getSecurityPolicyConfiguration());
         metadataConfiguration = immuteMetadataConfiguration(delegate.getMetadataConfiguration());
+        webhookConfiguration = immuteWebhookConfiguration(delegate.getWebhookConfiguration());
     }
 
     private ProxyConfiguration immuteProxyConfiguration(final MutableProxyConfiguration source) {
@@ -112,6 +117,11 @@ public class Configuration {
 
     private SecurityPolicyConfiguration immuteSecurityPolicyConfiguration(final MutableSecurityPolicyConfiguration source) {
         return source != null ? new SecurityPolicyConfiguration(source) : null;
+    }
+
+    private Map<String, WebhookConfiguration> immuteWebhookConfiguration(final Map<String, MutableWebhookConfiguration> source) {
+        return source != null ? ImmutableSortedMap.copyOf(source.entrySet().stream().collect(
+                toMap(Map.Entry::getKey, e -> new WebhookConfiguration(e.getValue())))) : Collections.emptyMap();
     }
 
     private Map<String, MetadataConfiguration> immuteMetadataConfiguration(final Map<String, MutableMetadataConfiguration> source) {
@@ -275,5 +285,9 @@ public class Configuration {
 
     public Map<String, MetadataConfiguration> getMetadataConfiguration() {
         return metadataConfiguration;
+    }
+
+    public Map<String, WebhookConfiguration> getWebhookConfiguration() {
+        return webhookConfiguration;
     }
 }

@@ -30,6 +30,12 @@ public interface ClusterSyncService {
      */
     void syncAuthorization(SyncAuthorizationDto syncAuthorizationDtoo);
 
+    /**
+     * 同步webhook配置
+     * @param syncWebhookDto webhook配置
+     */
+    void syncWebhookConfiguration(SyncWebhookDto syncWebhookDto);
+
     Boolean isNeedClusterSync();
 
     Boolean clusterOpenFlag();
@@ -45,6 +51,8 @@ public interface ClusterSyncService {
     ClusterSyncResultEnum handleSyncCronJob(SyncCronJobDto syncCronJobDto, String nodeUrl, Boolean isScheduled);
 
     ClusterSyncResultEnum handleSyncAuthorization(SyncAuthorizationDto syncAuthorizationDto, String nodeUrl, Boolean isScheduled);
+
+    ClusterSyncResultEnum handleSyncWebhookConfiguration(SyncWebhookDto syncWebhookDto, String nodeUrl, Boolean isScheduled);
 
     void addduledScheTask(ClusterDataSyncTaskPo clusterDataSyncTaskPo);
 

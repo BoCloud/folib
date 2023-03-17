@@ -113,12 +113,12 @@ folib:
       keepAliveSeconds: 200
       threadNamePrefix: asyncSecurityPolicyConfig_
       awaitTerminationSeconds: 60
-    asyncMetadata:
+    asyncConfig:
       corePoolSize: 10
       maxPoolSize: 200
-      queueCapacity: 25
+      queueCapacity: 200
       keepAliveSeconds: 200
-      threadNamePrefix: asyncMetadataConfig_
+      threadNamePrefix: asyncConfig_
       awaitTerminationSeconds: 60
     asyncRepositoryCleanup:
       corePoolSize: 10

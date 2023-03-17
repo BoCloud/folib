@@ -10,6 +10,7 @@ import com.veadan.folib.storage.routing.MutableRoutingRules;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
@@ -233,4 +234,36 @@ public interface ConfigurationManagementService {
      * @throws IOException io异常
      */
     void deleteMetadataConfig(String key) throws IOException;
+
+    /**
+     * 设置webhook配置信息
+     *
+     * @param webhookConfiguration 参数
+     * @throws IOException io异常
+     */
+    void setWebhookConfiguration(Map<String, MutableWebhookConfiguration> webhookConfiguration) throws IOException;
+
+    /**
+     * 新增webhook配置信息
+     *
+     * @param mutableWebhookConfiguration 参数
+     * @throws IOException io异常
+     */
+    void addWebhookConfiguration(MutableWebhookConfiguration mutableWebhookConfiguration) throws IOException;
+
+    /**
+     * 更新webhook配置信息
+     *
+     * @param mutableWebhookConfiguration 参数
+     * @throws IOException io异常
+     */
+    void updateWebhookConfiguration(MutableWebhookConfiguration mutableWebhookConfiguration) throws IOException;
+
+    /**
+     * 删除webhook配置信息
+     *
+     * @param uuid 参数
+     * @throws IOException io异常
+     */
+    void deleteWebhookConfiguration(String uuid) throws IOException;
 }

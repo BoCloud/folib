@@ -1759,11 +1759,14 @@ export default {
           }, 100);
         })
         .catch((err) => {
-          let msg = err.response.data?err.response.data:'删除失败'
-          this.$notification["error"]({
+          let msg = err.response.data.message?err.response.data.message:err.response.data.error?err.response.data.error:err.response.data
+          if (!msg || msg.length === 0 || typeof(msg) === "object") {
+            msg = "删除失败"
+          }
+          this.$notification.error({
             message: msg,
-            description: "",
-          });
+            description: ""
+          })
         })
         .finally(() => { });
     },

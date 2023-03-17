@@ -684,6 +684,51 @@ public class ConfigurationManagementServiceImpl
         modifyInLock(configuration -> configuration.getMetadataConfiguration().remove(key));
     }
 
+    @Override
+    public void setWebhookConfiguration(Map<String, MutableWebhookConfiguration> webhookConfiguration) throws IOException {
+        modifyInLock(configuration ->
+        {
+            configuration.setWebhookConfiguration(webhookConfiguration);
+        });
+    }
+
+    @Override
+    public void addWebhookConfiguration(MutableWebhookConfiguration mutableWebhookConfiguration) throws IOException {
+        modifyInLock(configuration ->
+        {
+            MutableWebhookConfiguration sourceMutableWebhookConfiguration = configuration.getWebhookConfiguration().get(mutableWebhookConfiguration.getUuid());
+            if (Objects.nonNull(sourceMutableWebhookConfiguration)) {
+                throw new IllegalArgumentException(String.format("add webhook configuration %s existent", mutableWebhookConfiguration.getUuid()));
+            }
+            boolean flag = CollectionUtils.isNotEmpty(configuration.getWebhookConfiguration().values()) && configuration.getWebhookConfiguration().values().stream().anyMatch(item -> item.getUrl().equals(mutableWebhookConfiguration.getUrl()));
+            if (flag) {
+                throw new IllegalArgumentException(String.format("url %s existent", mutableWebhookConfiguration.getUrl()));
+            }
+            configuration.addOrUpdateWebhookConfiguration(mutableWebhookConfiguration);
+        });
+    }
+
+    @Override
+    public void updateWebhookConfiguration(MutableWebhookConfiguration mutableWebhookConfiguration) throws IOException {
+        modifyInLock(configuration ->
+        {
+            MutableWebhookConfiguration sourceMutableWebhookConfiguration = configuration.getWebhookConfiguration().get(mutableWebhookConfiguration.getUuid());
+            if (Objects.isNull(sourceMutableWebhookConfiguration)) {
+                throw new IllegalArgumentException(String.format("update webhook configuration %s non existent", mutableWebhookConfiguration.getUuid()));
+            }
+            configuration.addOrUpdateWebhookConfiguration(mutableWebhookConfiguration);
+        });
+    }
+
+    @Override
+    public void deleteWebhookConfiguration(String uuid) throws IOException {
+        MutableWebhookConfiguration sourceMutableWebhookConfiguration = configuration.getWebhookConfiguration().get(uuid);
+        if (Objects.isNull(sourceMutableWebhookConfiguration)) {
+            throw new IllegalArgumentException(String.format("delete webhook configuration %s non existent", uuid));
+        }
+        modifyInLock(configuration -> configuration.getWebhookConfiguration().remove(uuid));
+    }
+
     private void setProxyRepositoryConnectionPoolConfigurations() throws IOException {
         modifyInLock(configuration ->
         {

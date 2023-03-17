@@ -4,6 +4,7 @@ package com.veadan.folib.controllers.cluster;
 import com.veadan.folib.authorization.service.AuthorizationConfigService;
 import com.veadan.folib.cluster.SyncAuthorizationEnum;
 import com.veadan.folib.cluster.SyncMetadataEnum;
+import com.veadan.folib.cluster.SyncWebhookEnum;
 import com.veadan.folib.configuration.MutableSecurityPolicyConfiguration;
 import com.veadan.folib.controllers.BaseController;
 import com.veadan.folib.controllers.cluster.dto.*;
@@ -11,18 +12,18 @@ import com.veadan.folib.cron.services.CronTaskConfigurationService;
 import com.veadan.folib.event.repository.RepositoryEventListenerRegistry;
 import com.veadan.folib.services.RepositoryManagementService;
 import com.veadan.folib.services.StorageManagementService;
+import com.veadan.folib.services.WebhookService;
 import io.swagger.annotations.Api;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-
-import javax.inject.Inject;
 
 
 @RestController
@@ -43,9 +44,13 @@ public class FolibClusterSyncController extends BaseController {
 
     @Autowired
     private RepositoryEventListenerRegistry repositoryEventListenerRegistry;
-    
+
     @Autowired
     private AuthorizationConfigService authorizationConfigService;
+
+    @Autowired
+    @Lazy
+    private WebhookService webhookService;
 
     @PostMapping("syncStorage")
     public ResponseEntity syncStorage(@RequestBody SyncStorageDto syncStorageDto) {
@@ -166,4 +171,29 @@ public class FolibClusterSyncController extends BaseController {
         return ResponseEntity.ok("sync authorization ok");
     }
 
+    /**
+     * 同步webhook配置
+     *
+     * @param syncWebhookDto webhook配置
+     * @return 返回结果
+     */
+    @PostMapping("syncWebhook")
+    public ResponseEntity syncWebhook(@RequestBody SyncWebhookDto syncWebhookDto) {
+        try {
+            if (SyncWebhookEnum.ADD.getType().equals(syncWebhookDto.getSyncWebhookEnum().getType())) {
+                webhookService.addWebhookConfiguration(syncWebhookDto.getWebhookConfigurationForm());
+                logger.info("sync add webhook success");
+            } else if (SyncWebhookEnum.UPDATE.getType().equals(syncWebhookDto.getSyncWebhookEnum().getType())) {
+                webhookService.updateWebhookConfiguration(syncWebhookDto.getWebhookConfigurationForm());
+                logger.info("sync update webhook success");
+            } else if (SyncWebhookEnum.DELETE.getType().equals(syncWebhookDto.getSyncWebhookEnum().getType())) {
+                webhookService.deleteWebhookConfiguration(syncWebhookDto.getWebhookConfigurationForm().getUuid());
+                logger.info("sync delete webhook success");
+            }
+        } catch (Exception e) {
+            logger.error("sync webhook error {}", ExceptionUtils.getStackTrace(e));
+            return getBadRequestResponseEntity(e.getMessage(), "");
+        }
+        return ResponseEntity.ok("sync webhook ok");
+    }
 }

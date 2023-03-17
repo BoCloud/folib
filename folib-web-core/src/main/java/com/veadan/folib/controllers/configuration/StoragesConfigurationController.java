@@ -847,11 +847,11 @@ public class StoragesConfigurationController
             List<String> usernameList = null;
             Repository repository = storage.getRepository(repositoryId);
             if ((RepositoryScopeEnum.OPEN.getType().equals(repository.getScope()) && !RepositoryScopeEnum.STORAGE.getType().equals(scope)) || RepositoryScopeEnum.OPEN.getType().equals(scope)) {
-                //公开仓库，除了ADMIN角色和存储空间管理员的其他所有人
+                //公开仓库，除了ADMIN、ARTIFACTS_MANAGER角色和存储空间管理员的其他所有人
                 Users users = userService.getUsers();
                 if (Objects.nonNull(users) && CollectionUtils.isNotEmpty(users.getUsers())) {
-                    //排除有管理员角色的用户
-                    List<User> usersList = users.getUsers().stream().filter(item -> CollectionUtils.isNotEmpty(item.getRoles()) && item.getRoles().stream().noneMatch(role -> Privileges.ADMIN.getAuthority().equals(role.getRoleName()))).collect(Collectors.toList());
+                    //排除有管理员、ARTIFACTS_MANAGER角色的用户
+                    List<User> usersList = users.getUsers().stream().filter(item -> CollectionUtils.isNotEmpty(item.getRoles()) && item.getRoles().stream().noneMatch(role -> SystemRole.ADMIN.name().equals(role.getRoleName()) || SystemRole.ARTIFACTS_MANAGER.name().equals(role.getRoleName()))).collect(Collectors.toList());
                     if (CollectionUtils.isNotEmpty(usersList)) {
                         //排除存储空间管理员
                         usernameList = usersList.stream().filter(item -> !item.getUsername().equals(storage.getAdmin())).map(User::getUsername).collect(Collectors.toList());
@@ -869,8 +869,8 @@ public class StoragesConfigurationController
                             continue;
                         }
                         user = userService.findByUsername(username);
-                        //过滤管理员角色的用户
-                        flag = Objects.nonNull(user) && CollectionUtils.isNotEmpty(user.getRoles()) && user.getRoles().stream().noneMatch(role -> Privileges.ADMIN.getAuthority().equals(role.getRoleName()));
+                        //过滤管理员、ARTIFACTS_MANAGER角色的用户
+                        flag = Objects.nonNull(user) && CollectionUtils.isNotEmpty(user.getRoles()) && user.getRoles().stream().noneMatch(role -> SystemRole.ADMIN.name().equals(role.getRoleName()) || SystemRole.ARTIFACTS_MANAGER.name().equals(role.getRoleName()));
                         if (!flag) {
                             continue;
                         }

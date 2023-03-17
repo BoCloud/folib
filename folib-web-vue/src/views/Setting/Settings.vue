@@ -843,6 +843,9 @@
           </a-table>
         </a-card>
       </a-tab-pane>
+      <a-tab-pane key="7" tab="Webhook">
+        <Webhook :activeKey="activeKey"></Webhook>
+      </a-tab-pane>
     </a-tabs>
     <a-modal v-model="showMetadataHandler" :title="handlerMetadataType === 1 ? '新增元数据' : '修改元数据'" :maskClosable="false"
       cancelText="取消" okText="确定" @cancel="metadataHandlerCancel()" @ok="metadataHandlerConfirm()" centered>
@@ -891,11 +894,14 @@
 import { getServerSettings, postServerSettings, getLdap, putLdap, getMachineCode, postActivate, checkMachineCode, getMetadataConfiguration, globalSettingAddOrUpdateMetadata, globalSettingDeleteMetadata } from "@/api/settings";
 import { getUsersCreateFields, getUsers } from "@/api/users";
 import { addVulnerabilitiesWhite, addVulnerabilitiesBlack, removeVulnerabilitiesWhite, removeVulnerabilitiesBlack, saveOrUpdateVulnerabilityNotify, securityPolicyConfig, securityPolicyBlock, securityPolicyAddPackageName, securityPolicyDeletePackageName } from "@/api/folib";
-
+import Webhook from "./components/Webhook/index.vue";
 
 
 export default {
   props: ['navbarFixed'],
+  components: {
+    Webhook,
+  },
   data() {
     return {
       step: 0,
@@ -1017,6 +1023,7 @@ export default {
       packageNameShow: false,
       packageName: '',
       showPackageNameModal: false,
+      activeKey: '1'
     }
   },
   computed: {},
@@ -1036,6 +1043,7 @@ export default {
       });
     },
     tabChange(key) {
+      this.activeKey = key
       if (key === '2') {
         this.getVulnerabilities()
       } else if (key === '5') {

@@ -76,7 +76,8 @@ import java.util.List;
         "com.veadan.folib.gremlin",
         "com.veadan.folib.actuator",
         "com.veadan.folib.components",
-        "com.veadan.folib.listener"})
+        "com.veadan.folib.listener",
+        "com.veadan.folib.eventlistener"})
 @Import({CommonConfig.class,
         FolibSecurityConfig.class,
         StorageApiConfig.class,
