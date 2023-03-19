@@ -3,7 +3,7 @@
           xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
           xsi:schemaLocation="http://maven.apache.org/SETTINGS/1.0.0 http://maven.apache.org/xsd/settings-1.0.0.xsd">
     <!--本地依赖位置按照实际情况进行修改-->
-    <localRepository>/Users/leipenghui/apps/m2/repository</localRepository>
+    <localRepository>~/maven/repository</localRepository>
 
     <mirrors>
         <mirror>
@@ -24,80 +24,15 @@
     <servers>
         <server>
             <id>folib-group-maven</id>
-            <username>admin</username>
-            <password>password</password>
         </server>
-
-
         <server>
             <id>folib-local-maven</id>
             <username>admin</username>
-            <password>password</password>
+            <password>folib@v587</password>
         </server>
 
     </servers>
     <profiles>
-        <profile>
-            <id>nexus</id>
-            <repositories>
-                <repository>
-                    <id>central</id>
-                    <url>https://maven.aliyun.com/nexus/content/groups/public</url>
-                    <releases>
-                        <enabled>true</enabled>
-                    </releases>
-                    <snapshots>
-                        <enabled>false</enabled>
-                    </snapshots>
-                </repository>
-                <repository>
-                    <id>snapshots</id>
-                    <url>https://maven.aliyun.com/nexus/content/groups/public</url>
-                    <releases>
-                        <enabled>false</enabled>
-                    </releases>
-                    <snapshots>
-                        <enabled>true</enabled>
-                    </snapshots>
-                </repository>
-            </repositories>
-            <pluginRepositories>
-                <pluginRepository>
-                    <id>central</id>
-                    <url>https://maven.aliyun.com/nexus/content/groups/public</url>
-                    <releases>
-                        <enabled>true</enabled>
-                    </releases>
-                    <snapshots>
-                        <enabled>false</enabled>
-                    </snapshots>
-                </pluginRepository>
-                <pluginRepository>
-                    <id>snapshots</id>
-                    <url>https://maven.aliyun.com/nexus/content/groups/public</url>
-                    <releases>
-                        <enabled>false</enabled>
-                    </releases>
-                    <snapshots>
-                        <enabled>true</enabled>
-                    </snapshots>
-                </pluginRepository>
-            </pluginRepositories>
-        </profile>
-
-<!--        <profile>-->
-<!--            <id>jdk-1.8</id>-->
-<!--            <activation>-->
-<!--                <activeByDefault>true</activeByDefault>-->
-<!--                <jdk>1.8</jdk>-->
-<!--            </activation>-->
-<!--            <properties>-->
-<!--                <maven.compiler.source>1.8</maven.compiler.source>-->
-<!--                <maven.compiler.target>1.8</maven.compiler.target>-->
-<!--                <maven.compiler.compilerVersion>1.8</maven.compiler.compilerVersion>-->
-<!--            </properties>-->
-<!--        </profile>-->
-
         <profile>
             <id>folib-local-maven</id>
             <repositories>
@@ -110,16 +45,11 @@
                 </repository>
             </repositories>
         </profile>
-
     </profiles>
 
     <activeProfiles>
-        <activeProfile>nexus</activeProfile>
-        <activeProfile>devops-snapshot</activeProfile>
-        <activeProfile>devops-release</activeProfile>
         <activeProfile>folib-local-maven</activeProfile>
         <activeProfile>jdk-1.8</activeProfile>
-
     </activeProfiles>
 
 

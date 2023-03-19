@@ -6,6 +6,8 @@ import Antd from 'ant-design-vue';
 import 'ant-design-vue/dist/antd.css';
 import { VueAxios } from './utils/request'
 import store from './store/'
+import './assets/font_user/iconfont.css'
+import './assets/font_user/iconfont.js'
 
 Vue.use(Antd)
 
