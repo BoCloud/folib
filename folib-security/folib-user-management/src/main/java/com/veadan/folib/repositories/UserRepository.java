@@ -6,9 +6,12 @@ import com.veadan.folib.db.schema.Vertices;
 import com.veadan.folib.domain.User;
 import com.veadan.folib.gremlin.adapters.EntityTraversalAdapter;
 import com.veadan.folib.gremlin.adapters.UserAdapter;
+import com.veadan.folib.gremlin.dsl.EntityTraversal;
 import com.veadan.folib.gremlin.repositories.GremlinVertexRepository;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.tinkerpop.gremlin.process.traversal.P;
 import org.apache.tinkerpop.gremlin.structure.Vertex;
+import org.janusgraph.core.attribute.Text;
 import org.springframework.data.neo4j.annotation.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -53,6 +56,25 @@ public class UserRepository extends GremlinVertexRepository<User>
     @Override
     public List<User> findAllUsers() {
         return g().V().hasLabel(Vertices.USER).has(Properties.USER_TYPE, "general").has(Properties.ENABLED, true).map(adapter.fold()).toList();
+    }
+
+    public List<User> findUsersPage(User user, int start, int end) {
+        return commonUserPage(user).range(start, end).map(adapter.fold()).dedup().toList();
+    }
+
+    public Long countUsers(User user) {
+        return commonUserPage(user).count().tryNext().orElse(0L);
+    }
+
+    private EntityTraversal<Vertex, Vertex> commonUserPage(User user) {
+        EntityTraversal<Vertex, Vertex>  entityTraversal = g().V().hasLabel(Vertices.USER).has(Properties.USER_TYPE, "general");
+        if (StringUtils.isNotBlank(user.getUsername())) {
+            entityTraversal = entityTraversal.has(Properties.UUID, Text.textContains(user.getUsername()));
+        }
+        if (StringUtils.isNotBlank(user.getEmail())) {
+            entityTraversal = entityTraversal.has(Properties.EMAIL, Text.textContains(user.getEmail()));
+        }
+        return entityTraversal;
     }
 
 }

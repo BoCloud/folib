@@ -27,6 +27,7 @@ public class UserDto
 
     private String email;
 
+    private String avatar;
 
     private String userType="general";
 
@@ -66,6 +67,7 @@ public class UserDto
         this.username = username;
     }
 
+    @Override
     public String getUserType() {
         return userType;
     }
@@ -196,5 +198,14 @@ public class UserDto
                 .append(email);
         sb.append('}');
         return sb.toString();
+    }
+
+    @Override
+    public String getAvatar() {
+        return avatar;
+    }
+
+    public void setAvatar(String avatar) {
+        this.avatar = avatar;
     }
 }

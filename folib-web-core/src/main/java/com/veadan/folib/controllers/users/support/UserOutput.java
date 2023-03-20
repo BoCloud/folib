@@ -32,6 +32,8 @@ public class UserOutput
 
     private String email;
 
+    private String avatar;
+
     private Set<String> roles;
 
     private String securityTokenKey;
@@ -126,5 +128,13 @@ public class UserOutput
         sb.append(", securityTokenKey='").append(securityTokenKey).append('\'');
         sb.append('}');
         return sb.toString();
+    }
+
+    public String getAvatar() {
+        return avatar;
+    }
+
+    public void setAvatar(String avatar) {
+        this.avatar = avatar;
     }
 }

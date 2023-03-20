@@ -25,7 +25,7 @@
               </a-radio>
             </a-radio-group>
           </a-card>
-          <a-card :bordered="false" class="header-solid">
+          <a-card :bordered="false" class="header-solid" v-if="this.folibRepository.type !== 'group'">
             <template #title>
               <h6>仓库可见范围</h6>
               <p v-if="permissionForm.scope === 1">存储空间成员可见，可拉取</p>
@@ -41,7 +41,7 @@
               </a-radio>
             </a-radio-group>
           </a-card>
-          <a-card :bordered="false" class="header-solid">
+          <a-card :bordered="false" class="header-solid" v-if="this.folibRepository.type !== 'group'">
             <template #title>
               <h6>仓库权限定义</h6>
               <p>在此定义用户对于该仓库的制品上传、制品删除权限</p>

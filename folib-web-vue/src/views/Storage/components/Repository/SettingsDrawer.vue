@@ -19,7 +19,7 @@
         :activeKey="settingTabActiveKey"
         @change="settingTabChange($event)"
       >
-      <a-tab-pane :key="1" tab="权限设置" v-if="this.folibRepository.type !== 'group'">
+      <a-tab-pane :key="1" tab="权限设置">
         <Permission :folibRepository="this.folibRepository" :settingVisible="settingVisible" @settingDrawerClose="settingDrawerClose"></Permission>
       </a-tab-pane>
       <a-tab-pane :key="2" tab="定时策略">
@@ -56,9 +56,7 @@ export default {
     Permission,
   },
   created() {
-    if (this.folibRepository.type === 'group') {
-      this.settingTabActiveKey = 2
-    }
+
   },
   mounted() {},
   watch: {

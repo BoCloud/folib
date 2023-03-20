@@ -223,28 +223,36 @@ public class ArtifactRepository extends GremlinVertexRepository<Artifact> {
         return EntityTraversalUtils.reduceHierarchy(artifactList);
     }
 
-    public Long countByStorageIdAndRepositoryId(String storageId, String repositoryId) {
-        com.veadan.folib.storage.repository.Repository repository = null;
-        if (StringUtils.isNotBlank(storageId) && StringUtils.isNotBlank(repositoryId)) {
-            repository = configurationManager.getRepository(storageId, repositoryId);
-            if ("Docker".equals(repository.getLayout())) {
-                return g().V().hasLabel(Vertices.ARTIFACT).has(Properties.STORAGE_ID, storageId).has(Properties.REPOSITORY_ID, repositoryId).has(Properties.UUID, Text.textNotContains("blobs/sha256")).has(Properties.UUID, Text.textNotContains("manifest/sha256")).has(Properties.ARTIFACT_FILE_EXISTS, true).count().tryNext().orElse(0L);
+    public Long countByStorageIdAndRepositoryId( List<String> storageIdAndRepositoryIdList, String layout) {
+        if ("Docker".equals(layout)) {
+            EntityTraversal<Vertex, Vertex> entityTraversal = g().V().hasLabel(Vertices.ARTIFACT).has(Properties.UUID, Text.textNotContains("blobs/sha256")).has(Properties.UUID, Text.textNotContains("manifest/sha256")).has(Properties.ARTIFACT_FILE_EXISTS, true);
+            if (CollectionUtils.isNotEmpty(storageIdAndRepositoryIdList)) {
+                entityTraversal = entityTraversal.has(Properties.STORAGE_ID_AND_REPOSITORY_ID, P.within(storageIdAndRepositoryIdList));
             }
+            return entityTraversal.count().tryNext().orElse(0L);
         }
-        return g().V().hasLabel(Vertices.ARTIFACT).has(Properties.STORAGE_ID, storageId).has(Properties.REPOSITORY_ID, repositoryId).has(Properties.ARTIFACT_FILE_EXISTS, true).count().tryNext().orElse(0L);
+        EntityTraversal<Vertex, Vertex> entityTraversal = g().V().hasLabel(Vertices.ARTIFACT).has(Properties.ARTIFACT_FILE_EXISTS, true);
+        if (CollectionUtils.isNotEmpty(storageIdAndRepositoryIdList)) {
+            entityTraversal = entityTraversal.has(Properties.STORAGE_ID_AND_REPOSITORY_ID, P.within(storageIdAndRepositoryIdList));
+        }
+        return entityTraversal.count().tryNext().orElse(0L);
     }
 
-    public Map<String, Long> countArtifactByStorageIdAndRepositoryId(String storageId, String repositoryId) {
-        Long downloadCount = sumDownloadCountByStorageIdAndRepositoryId(storageId, repositoryId);
-        Long dependencyCount = sumDependencyCountByStorageIdsAndRepositoryIds(Collections.singletonList(String.format("%s-%s", storageId, repositoryId)), null, null, null);
+    public Map<String, Long> countArtifactByStorageIdAndRepositoryId(List<String> storageIdAndRepositoryIdList, String storageId, String repositoryId) {
+        Long downloadCount = sumDownloadCountByStorageIdAndRepositoryId(storageIdAndRepositoryIdList);
+        Long dependencyCount = sumDependencyCountByStorageIdsAndRepositoryIds(storageIdAndRepositoryIdList, null, null, null);
         Map<String, Long> map = Maps.newHashMap();
         map.put("downloadCount", downloadCount);
         map.put("dependencyCount", dependencyCount);
         return map;
     }
 
-    private Long sumDownloadCountByStorageIdAndRepositoryId(String storageId, String repositoryId) {
-        return g().V().hasLabel(Vertices.ARTIFACT).has(Properties.STORAGE_ID, storageId).has(Properties.REPOSITORY_ID, repositoryId).has(Properties.DOWNLOAD_COUNT, P.gt(0)).values(Properties.DOWNLOAD_COUNT).sum().tryNext().orElse(0L).longValue();
+    private Long sumDownloadCountByStorageIdAndRepositoryId(List<String> storageIdAndRepositoryIdList) {
+        EntityTraversal<Vertex, Vertex> entityTraversal = g().V().hasLabel(Vertices.ARTIFACT).has(Properties.DOWNLOAD_COUNT, P.gt(0));
+        if (CollectionUtils.isNotEmpty(storageIdAndRepositoryIdList)) {
+            entityTraversal = entityTraversal.has(Properties.STORAGE_ID_AND_REPOSITORY_ID, P.within(storageIdAndRepositoryIdList));
+        }
+        return entityTraversal.values(Properties.DOWNLOAD_COUNT).sum().tryNext().orElse(0L).longValue();
     }
 
     private EntityTraversal<Vertex, Vertex> commonBuildEntityTraversal(List<String> storageIdAndRepositoryIdList, String date, Long startDate, Long endDate) {
