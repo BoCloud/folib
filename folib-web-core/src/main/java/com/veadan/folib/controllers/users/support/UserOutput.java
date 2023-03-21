@@ -99,6 +99,7 @@ public class UserOutput
         output.setUsername(user.getUsername());
         output.setEmail(user.getEmail());
         output.setSecurityTokenKey(user.getSecurityTokenKey());
+        output.setAvatar(user.getAvatar());
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (Objects.nonNull(authentication)) {
             output.setAuthorities(authentication.getAuthorities().stream()

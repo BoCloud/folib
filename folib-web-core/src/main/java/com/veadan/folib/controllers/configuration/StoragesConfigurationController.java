@@ -2,6 +2,7 @@ package com.veadan.folib.controllers.configuration;
 
 import cn.hutool.core.collection.CollectionUtil;
 import cn.hutool.json.JSONUtil;
+import com.beust.jcommander.internal.Sets;
 import com.fasterxml.jackson.annotation.JsonView;
 import com.google.common.collect.Lists;
 import com.veadan.folib.authorization.dto.AuthorizationConfigDto;
@@ -9,6 +10,7 @@ import com.veadan.folib.authorization.service.AuthorizationConfigService;
 import com.veadan.folib.cluster.SyncAuthorizationEnum;
 import com.veadan.folib.cluster.SyncRepositoryEnum;
 import com.veadan.folib.cluster.SyncStorageEnum;
+import com.veadan.folib.configuration.ConfigurationUtils;
 import com.veadan.folib.controllers.cluster.dto.SyncAuthorizationDto;
 import com.veadan.folib.config.PermissionCheck;
 import com.veadan.folib.controllers.cluster.dto.SyncRepositoryDto;
@@ -866,6 +868,17 @@ public class StoragesConfigurationController
     @GetMapping(value = "/{storageId}/{repositoryId}",
             produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity getRepositoryResponseEntity(@RepositoryMapping(allowOutOfServiceRepository = true) Repository repository) {
+        if (repository.isGroupRepository()) {
+            repository = configurationManagementService.getMutableConfigurationClone().getStorage(repository.getStorage().getId()).getRepository(repository.getId());
+            Set<String> vulnerabilityWhites = repository.getVulnerabilityWhites(), vulnerabilityBlacks = repository.getVulnerabilityBlacks();
+            for (String storageAndRepositoryId : repository.getGroupRepositories()) {
+                String sId = ConfigurationUtils.getStorageId(repository.getStorage().getId(), storageAndRepositoryId);
+                String rId = ConfigurationUtils.getRepositoryId(storageAndRepositoryId);
+                Repository subRepository = configurationManagementService.getMutableConfigurationClone().getStorage(sId).getRepository(rId);
+                vulnerabilityWhites.addAll(subRepository.getVulnerabilityWhites());
+                vulnerabilityBlacks.addAll(subRepository.getVulnerabilityBlacks());
+            }
+        }
         return ResponseEntity.ok(repository);
     }
 

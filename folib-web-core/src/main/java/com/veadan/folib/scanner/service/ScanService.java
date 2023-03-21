@@ -271,7 +271,7 @@ public class ScanService {
     private void handlerVulnerability(Artifact artifact, Set<Vulnerability> vulnerabilitySet) {
         if (CollectionUtils.isNotEmpty(vulnerabilitySet)) {
             List<com.veadan.folib.domain.Vulnerability> vulnerabilityList = Lists.newArrayList();
-            Set<String> storages = Sets.newLinkedHashSet(), repositories = Sets.newLinkedHashSet();
+            Set<String> storages = Sets.newLinkedHashSet(), storagesAndRepositories = Sets.newLinkedHashSet();
             for (Vulnerability vulnerability : vulnerabilitySet) {
                 VulnerabilityEntity vulnerabilityEntity = new VulnerabilityEntity();
                 vulnerabilityEntity.setUuid(vulnerability.getName());
@@ -294,8 +294,8 @@ public class ScanService {
                 }
                 storages.add(artifact.getStorageId());
                 vulnerabilityEntity.setStorages(storages);
-                repositories.add(artifact.getRepositoryId());
-                vulnerabilityEntity.setRepositories(repositories);
+                storagesAndRepositories.add(String.format("%s-%s", artifact.getStorageId(), artifact.getRepositoryId()));
+                vulnerabilityEntity.setStoragesAndRepositories(storagesAndRepositories);
                 vulnerabilityList.add(vulnerabilityEntity);
             }
             vulnerabilityService.saveOrUpdateVulnerabilityBatch(vulnerabilityList);

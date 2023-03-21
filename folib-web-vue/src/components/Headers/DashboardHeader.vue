@@ -1,6 +1,6 @@
 <template>
   <!-- Main Sidebar -->
-  <component :is="navbarFixed ? 'a-affix' : 'div'" :offset-top="top">
+  <component :is="navbarFixed ? 'a-affix' : 'div'" :offset-top="top" class="header">
     <!-- Layout Header -->
     <a-layout-header>
       <a-row type="flex">
@@ -97,7 +97,7 @@
           <a-button
             type="link"
             ref="secondarySidebarTriggerBtn"
-            @click="$emit('toggleSettingsDrawer', true)"
+            @click="toPersonl()"
           >
             <svg
               width="20"
@@ -140,7 +140,10 @@
           >
             <a class="btn-sign-in">
               <div class="table-avatar-info">
-                <a-avatar shape="circle" :size="24">{{
+                <svg class="icon folib-avatar" :style="{ fontSize: '32px' }" aria-hidden="true" v-if="userInfo.avatar">
+                  <use :xlink:href="'#'+ userInfo.avatar"></use>
+                </svg>
+                <a-avatar shape="circle" :size="24" v-else>{{
                   userInfo.name.slice(0, 1).toUpperCase()
                 }}</a-avatar>
                 <span>{{ userInfo.name }}</span>
@@ -217,6 +220,7 @@ export default {
         enabled: "",
         roles: [],
         email: "",
+        avatar: "",
       },
       // Search input loading status.
       searchLoading: false,
@@ -295,7 +299,10 @@ export default {
       deleteArtifactUploadProcess(uuid).then(() => {
         this.queryAllProcess()
       })
-    }
+    },
+    toPersonl(){
+      this.$router.push('/personal')
+    },
   },
   mounted: function () {
     // Set the wrapper to the proper element, layout wrapper.
@@ -349,5 +356,11 @@ export default {
 
 .upload-process::v-deep .ant-progress-text {
   vertical-align: text-top !important;
+}
+
+.header .folib-avatar {
+  display: inline-block;
+  width: 24px;
+  height: 24px;
 }
 </style>

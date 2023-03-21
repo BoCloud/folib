@@ -1,7 +1,7 @@
 export default [
   {
     title: '普通',
-    icons: ['folib-','folib-2', 'folib-3', 'folib-4','folib-5','folib-6','folib-7','folib-8','folib-9','folib-10','folib-11','folib-12', 'folib-13', 'folib-14','folib-15','folib-16','folib-17', 'folib-18', 'folib-19', 'folib-20', 'folib-21', 'folib-22', 'folib-23', 'folib-24', 'folib-25', 'folib-26', 'folib-27', 'folib-28']
+    icons: ['folib-1','folib-2', 'folib-3', 'folib-4','folib-5','folib-6','folib-7','folib-8','folib-9','folib-10','folib-11','folib-12', 'folib-13', 'folib-14','folib-15','folib-16','folib-17', 'folib-18', 'folib-19', 'folib-20', 'folib-21', 'folib-22', 'folib-23', 'folib-24', 'folib-25', 'folib-26', 'folib-27', 'folib-28']
   },
   {
     title: '卡通',

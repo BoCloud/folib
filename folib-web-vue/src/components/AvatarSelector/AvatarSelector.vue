@@ -4,7 +4,7 @@
       <a-tab-pane v-for="(v, i) in icons" :tab="v.title" :key="i">
         <ul>
           <li v-for="(icon, key) in v.icons" :key="`${v.title}-${key}`" :class="{ 'active': selectedIcon==icon }">
-            <svg class="icon" :style="{ fontSize: '46px' }" aria-hidden="true" @click="handleSelectedIcon(icon)">
+            <svg class="icon" :style="{ fontSize: '32px' }" aria-hidden="true" @click="handleSelectedIcon(icon)">
               <use :xlink:href="'#'+icon"></use>
             </svg>
           </li>
@@ -28,18 +28,18 @@ export default {
   methods: {
     handleSelectedIcon (icon) {
       this.selectedIcon = icon
-      this.$emit('change', icon)
+      this.$emit('avatarChange', icon)
     }
   }
 }
 </script>
 
-<style lang="less" scoped>
+<style lang="scss" scoped>
   ul{
     list-style: none;
     padding: 0;
     overflow-y: scroll;
-    height: 250px;
+    height: 350px;
     li{
       display: inline-block;
       padding:5px;

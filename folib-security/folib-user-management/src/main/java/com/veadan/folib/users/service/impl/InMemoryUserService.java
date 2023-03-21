@@ -228,7 +228,14 @@ public class InMemoryUserService implements UserService
                         {
                             user.setPassword(userToUpdate.getPassword());
                         }
-
+                        if (!StringUtils.isBlank(userToUpdate.getAvatar()))
+                        {
+                            user.setAvatar(userToUpdate.getAvatar());
+                        }
+                        if (!StringUtils.isBlank(userToUpdate.getEmail()))
+                        {
+                            user.setEmail(userToUpdate.getEmail());
+                        }
                         updateSecurityToken(user, userToUpdate.getSecurityTokenKey());
                     });
         });

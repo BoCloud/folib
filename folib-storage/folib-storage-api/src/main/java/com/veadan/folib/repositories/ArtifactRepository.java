@@ -205,16 +205,13 @@ public class ArtifactRepository extends GremlinVertexRepository<Artifact> {
 
     public List<Artifact> findMatchingByVulnerabilityUuid(String vulnerabilityUuid,
                                                           String storageId,
-                                                          String repositoryId) {
-        com.veadan.folib.storage.repository.Repository repository = null;
-        if (StringUtils.isNotBlank(storageId) && StringUtils.isNotBlank(repositoryId)) {
-            repository = configurationManager.getRepository(storageId, repositoryId);
-        }
-        List<Artifact> artifactList = buildEntityTraversalByVulnerabilityUuid(vulnerabilityUuid, storageId, repositoryId)
-                .map(artifactAdapter.fold(Optional.ofNullable(repository)
-                        .map(com.veadan.folib.storage.repository.Repository::getLayout)
-                        .map(ArtifactLayoutLocator.getLayoutByNameEntityMap()::get)
-                        .map(ArtifactLayoutDescription::getArtifactCoordinatesClass))).toList();
+                                                          List<String> storageIdAndRepositoryIdList) {
+//        com.veadan.folib.storage.repository.Repository repository = null;
+//        if (StringUtils.isNotBlank(storageId) && StringUtils.isNotBlank(repositoryId)) {
+//            repository = configurationManager.getRepository(storageId, repositoryId);
+//        }
+        List<Artifact> artifactList = buildEntityTraversalByVulnerabilityUuid(vulnerabilityUuid, storageId, storageIdAndRepositoryIdList)
+                .map(artifactAdapter.fold()).toList();
         return EntityTraversalUtils.reduceHierarchy(artifactList);
     }
 
@@ -223,7 +220,7 @@ public class ArtifactRepository extends GremlinVertexRepository<Artifact> {
         return EntityTraversalUtils.reduceHierarchy(artifactList);
     }
 
-    public Long countByStorageIdAndRepositoryId( List<String> storageIdAndRepositoryIdList, String layout) {
+    public Long countByStorageIdAndRepositoryId(List<String> storageIdAndRepositoryIdList, String layout) {
         if ("Docker".equals(layout)) {
             EntityTraversal<Vertex, Vertex> entityTraversal = g().V().hasLabel(Vertices.ARTIFACT).has(Properties.UUID, Text.textNotContains("blobs/sha256")).has(Properties.UUID, Text.textNotContains("manifest/sha256")).has(Properties.ARTIFACT_FILE_EXISTS, true);
             if (CollectionUtils.isNotEmpty(storageIdAndRepositoryIdList)) {
@@ -238,7 +235,7 @@ public class ArtifactRepository extends GremlinVertexRepository<Artifact> {
         return entityTraversal.count().tryNext().orElse(0L);
     }
 
-    public Map<String, Long> countArtifactByStorageIdAndRepositoryId(List<String> storageIdAndRepositoryIdList, String storageId, String repositoryId) {
+    public Map<String, Long> countArtifactByStorageIdAndRepositoryId(List<String> storageIdAndRepositoryIdList) {
         Long downloadCount = sumDownloadCountByStorageIdAndRepositoryId(storageIdAndRepositoryIdList);
         Long dependencyCount = sumDependencyCountByStorageIdsAndRepositoryIds(storageIdAndRepositoryIdList, null, null, null);
         Map<String, Long> map = Maps.newHashMap();
@@ -317,11 +314,11 @@ public class ArtifactRepository extends GremlinVertexRepository<Artifact> {
         EntityTraversal<Vertex, Vertex> entityTraversal = g().V().hasLabel(Vertices.ARTIFACT).has(Properties.STORAGE_ID_AND_REPOSITORY_ID, storageIdAndRepositoryId).has(Properties.UUID, Text.textContains(keywords));
         com.veadan.folib.storage.repository.Repository repository = configurationManager.getRepository(storageId, repositoryId);
         List<Artifact> artifactList = entityTraversal.map(artifactAdapter.fold(Optional.ofNullable(repository)
-                    .map(com.veadan.folib.storage.repository.Repository::getLayout)
-                    .map(ArtifactLayoutLocator.getLayoutByNameEntityMap()::get)
-                    .map(ArtifactLayoutDescription::getArtifactCoordinatesClass))).toList();
+                .map(com.veadan.folib.storage.repository.Repository::getLayout)
+                .map(ArtifactLayoutLocator.getLayoutByNameEntityMap()::get)
+                .map(ArtifactLayoutDescription::getArtifactCoordinatesClass))).toList();
         if (CollectionUtils.isNotEmpty(artifactList)) {
-            for(Artifact artifact : artifactList){
+            for (Artifact artifact : artifactList) {
                 if (CollectionUtils.isNotEmpty(artifact.getVulnerabilitySet())) {
                     vulnerabilitySet.addAll(artifact.getVulnerabilitySet());
                 }
@@ -460,14 +457,14 @@ public class ArtifactRepository extends GremlinVertexRepository<Artifact> {
 
     private EntityTraversal<Vertex, Vertex> buildEntityTraversalByVulnerabilityUuid(String vulnerabilityUuid,
                                                                                     String storageId,
-                                                                                    String repositoryId) {
+                                                                                    List<String> storageIdAndRepositoryIdList) {
         EntityTraversal<Vertex, Vertex> entityTraversal = g().V().hasLabel(Vertices.VULNERABILITY)
                 .has(Properties.UUID, vulnerabilityUuid).inE(Edges.ARTIFACT_HAS_VULNERABILITIES).outV();
         if (StringUtils.isNotBlank(storageId)) {
             entityTraversal = entityTraversal.has(Properties.STORAGE_ID, storageId);
         }
-        if (StringUtils.isNotBlank(repositoryId)) {
-            entityTraversal = entityTraversal.has(Properties.REPOSITORY_ID, repositoryId);
+        if (CollectionUtils.isNotEmpty(storageIdAndRepositoryIdList)) {
+            entityTraversal = entityTraversal.has(Properties.STORAGE_ID_AND_REPOSITORY_ID, P.within(storageIdAndRepositoryIdList));
         }
         return entityTraversal;
     }

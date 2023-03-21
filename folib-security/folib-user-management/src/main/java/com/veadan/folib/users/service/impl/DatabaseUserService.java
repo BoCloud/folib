@@ -109,6 +109,15 @@ public class DatabaseUserService implements UserService
             user.setSecurityTokenKey(userToUpdate.getSecurityTokenKey());
         }
 
+        if (!StringUtils.isBlank(userToUpdate.getAvatar()))
+        {
+            user.setAvatar(userToUpdate.getAvatar());
+        }
+
+        if (!StringUtils.isBlank(userToUpdate.getEmail()))
+        {
+            user.setEmail(userToUpdate.getEmail());
+        }
         save(user);
     }
 
@@ -169,6 +178,7 @@ public class DatabaseUserService implements UserService
         userEntity.setEmail(user.getEmail());
         userEntity.setLastUpdated(now);
         userEntity.setUserType("general");
+        userEntity.setAvatar(user.getAvatar());
 
 //        if (StringUtils.isNotBlank(user.getSourceId()) || StringUtils.isNotBlank(userEntity.getSourceId()))
 //        {

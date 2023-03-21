@@ -12,8 +12,10 @@ import com.veadan.folib.users.service.UserService;
 import com.veadan.folib.users.service.impl.EncodedPasswordUser;
 import com.veadan.folib.users.service.impl.DatabaseUserService.Database;
 import com.veadan.folib.users.userdetails.SpringSecurityUser;
+import com.veadan.folib.util.RSAUtils;
 import com.veadan.folib.validation.RequestBodyValidationException;
 import io.swagger.annotations.*;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -46,6 +48,9 @@ public class AccountController
 
     @Inject
     private PasswordEncoder passwordEncoder;
+
+    @Inject
+    private RSAUtils rsaUtils;
     
     @ApiOperation(value = "获取当前登录用户的帐户详细信息")
     @ApiResponses(value = { @ApiResponse(code = 200, message = "Returns account details"),
@@ -104,10 +109,13 @@ public class AccountController
         // we are creating a new UserDto which contains only password & securityToken field changes.
         UserDto user = new UserDto();
         user.setUsername(loggedUser.getUsername());
-        user.setPassword(userToUpdate.getPassword());
+        if (StringUtils.isNotBlank(userToUpdate.getPassword())) {
+            String password = rsaUtils.decrypt(userToUpdate.getPassword());
+            user.setPassword(password);
+        }
         user.setEmail(userToUpdate.getEmail());
         user.setSecurityTokenKey(userToUpdate.getSecurityTokenKey());
-
+        user.setAvatar(userToUpdate.getAvatar());
         userService.updateAccountDetailsByUsername(new EncodedPasswordUser(user, passwordEncoder));
 
         return getSuccessfulResponseEntity("Account details have been successfully updated",
