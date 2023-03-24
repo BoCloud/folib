@@ -806,7 +806,7 @@
               </a-tooltip>
             </a-col>
           </div>
-          <a-table :columns="metadataColumns" :data-source="metadataList">
+          <a-table :columns="metadataColumns" :data-source="metadataList" :row-key="(r, i) => i.toString()">
             <div slot="type" slot-scope="type">
               <span v-for="(item, index) in metadataTypes" :key="index">
                 <span v-if="type === item.value">{{ item.label }}</span>
@@ -854,7 +854,7 @@
               </a-tooltip>
             </a-col>
           </div>
-        <a-table :columns="artifactDispatchColumns" :data-source="artifactDispatchList">
+        <a-table :columns="artifactDispatchColumns" :data-source="artifactDispatchList" :row-key="(r, i) => i.toString()">
           <div slot="isThisCluster" slot-scope="text, record">
             {{ record.isThisCluster === true ? '是' : '否' }}
           </div>
@@ -935,8 +935,8 @@
                     :hideRequiredMark="false">
         <a-row :gutter="[24]">
           <a-col :span="24">
-            <a-form-model-item class="mb-10" label="集群英文名" :colon="false" prop="clusterEnName">
-              <a-input :disabled="handlerArtifactDispatchType !== 1" placeholder="请输入集群英文名" v-model="artifactDispatchForm.clusterEnName" />
+            <a-form-model-item class="mb-10" label="集群节点英文名" :colon="false" prop="clusterEnName">
+              <a-input :disabled="handlerArtifactDispatchType !== 1" placeholder="请输入集群节点英文名" v-model="artifactDispatchForm.clusterEnName" />
             </a-form-model-item>
           </a-col>
           <a-col :span="24">
@@ -1042,7 +1042,7 @@ export default {
       userList: [],
       artifactDispatchColumns:[
         {
-          title: '集群英文名',
+          title: '集群节点英文名',
           dataIndex: 'clusterEnName',
           key: 'clusterEnName',
           width: 100,
@@ -1133,7 +1133,7 @@ export default {
       },
       artifactDispatchRules:{
         clusterEnName: [
-          {required: true, message: '请输入集群英文名', trigger: 'blur'},
+          {required: true, message: '请输入集群节点英文名', trigger: 'blur'},
           {min: 1, max: 60, message: '长度在 1 到 60 个字符', trigger: 'blur'},
         ],
         clusterNodeHost: [

@@ -79,7 +79,14 @@
         </a-descriptions>
       </a-tab-pane>
       <a-tab-pane key="2" tab="元数据">
-        <a-table :columns="metadataColumns" :data-source="metadataList">
+        <a v-if="metadataEnabled" @click="metadataHandler()">
+          <a-tooltip>
+            <template slot="title">新增</template>
+            <a-icon type="plus-circle" theme="filled" class="ml-30"
+              :style="{ fontSize: '28px', color: '#1890FF' }" />
+          </a-tooltip>
+        </a>
+        <a-table :columns="metadataColumns" :data-source="metadataList" rowKey="key">
           <div slot="type" slot-scope="type">
             <span v-for="(item, index) in metadataTypes" :key="index">
               <span v-if="type === item.value">
@@ -375,31 +382,47 @@ export default {
           ],
         },
       },
+      metadataEnabled: false,
     };
   },
   created() {
-    this.getMetadataConfiguration();
+    this.getMetadataConfiguration()
+    this.metadataShow()
   },
   mounted() {
   },
   watch: {
     currentFileDetial: function (val) {
       if (val && val.snippets) {
-        this.changeCodeTye(val.snippets[0]);
+        this.changeCodeTye(val.snippets[0])
       }
+      this.metadataShow()
     },
     'currentTreeNode.artifactPath': function (newval, oldVal) {
       this.metadataList = []
       if (this.currentTreeNode.type === 'file') {
-        this.getMetadata();
+        this.getMetadata()
       }
     },
   },
   methods: {
+    metadataShow() {
+      this.metadataEnabled = this.folibRepository.type !== 'group' &&
+                          this.currentFileDetial &&
+                          this.currentFileDetial.artifact &&
+                          this.currentFileDetial.artifact.artifactFileExists   
+      if (!(typeof(this.metadataEnabled) == 'boolean')) {
+        this.metadataEnabled = false
+      }
+    },
+    metadataHandler() {
+      this.$emit("metadataHandler", 1)
+    },
     artifactTabChange(activeKey) {
+      this.metadataShow()
       if (activeKey === "2") {
-        this.getMetadata();
-        this.getMetadataConfiguration();
+        this.getMetadata()
+        this.getMetadataConfiguration()
       }
     },
     getMetadataConfiguration() {

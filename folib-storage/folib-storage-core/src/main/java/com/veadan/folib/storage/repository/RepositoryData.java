@@ -7,8 +7,7 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
-import com.veadan.folib.configuration.MutableProxyConfiguration;
-import com.veadan.folib.configuration.ProxyConfiguration;
+import com.veadan.folib.configuration.*;
 import com.veadan.folib.json.MapValuesJsonSerializer;
 import com.veadan.folib.json.StringArrayToMapJsonDeserializer;
 import com.veadan.folib.storage.Storage;
@@ -109,6 +108,11 @@ public class RepositoryData
      */
     private boolean allowAnonymous;
 
+    /**
+     * 联邦仓库配置
+     */
+    private UnionRepositoryConfiguration unionRepositoryConfiguration;
+
     @JsonIgnore
     private Storage storage;
 
@@ -157,6 +161,7 @@ public class RepositoryData
         this.subLayout = delegate.getSubLayout();
         this.scope = delegate.getScope();
         this.allowAnonymous = delegate.isAllowAnonymous();
+        this.unionRepositoryConfiguration = immuteUnionRepositoryConfiguration(mutableRepository.getUnionRepositoryConfiguration());
     }
 
     private ProxyConfiguration immuteProxyConfiguration(final MutableProxyConfiguration source) {
@@ -202,6 +207,10 @@ public class RepositoryData
 
     private Set<String> immuteVulnerabilityBlacks(final Set<String> source) {
         return source != null ? source: Collections.emptySet();
+    }
+
+    private UnionRepositoryConfiguration immuteUnionRepositoryConfiguration(final MutableUnionRepositoryConfiguration source) {
+        return source != null ? new UnionRepositoryConfiguration(source) : null;
     }
 
     @Override
@@ -408,5 +417,10 @@ public class RepositoryData
     @Override
     public boolean isAllowAnonymous() {
         return allowAnonymous;
+    }
+
+    @Override
+    public UnionRepositoryConfiguration getUnionRepositoryConfig() {
+        return unionRepositoryConfiguration;
     }
 }

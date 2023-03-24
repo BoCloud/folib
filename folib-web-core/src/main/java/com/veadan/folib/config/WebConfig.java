@@ -1,5 +1,6 @@
 package com.veadan.folib.config;
 
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.veadan.folib.configuration.ConfigurationManager;
 import com.veadan.folib.configuration.FolibSecurityConfig;
@@ -77,7 +78,8 @@ import java.util.List;
         "com.veadan.folib.actuator",
         "com.veadan.folib.components",
         "com.veadan.folib.listener",
-        "com.veadan.folib.eventlistener"})
+        "com.veadan.folib.eventlistener",
+        "com.veadan.folib.promotion"})
 @Import({CommonConfig.class,
         FolibSecurityConfig.class,
         StorageApiConfig.class,
@@ -187,6 +189,7 @@ public class WebConfig
 
     @Bean
     public MappingJackson2HttpMessageConverter jackson2Converter() {
+        objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
         return new MappingJackson2HttpMessageConverter(objectMapper);
     }
 

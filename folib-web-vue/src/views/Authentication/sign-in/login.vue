@@ -29,7 +29,7 @@
 							{ rules: [{ required: true, message: '请输入密码!'}] },
 						]" type="password" placeholder="Password" />
 					</a-form-item>
-					<a-form-item class="mb-10">
+					<!-- <a-form-item class="mb-10">
 						<a-checkbox v-decorator="[
 							'remember',
 							{ 	
@@ -40,7 +40,7 @@
 						]">
 							保存密码 <a href="#" class="font-bold text-dark">同意本协议</a>
 						</a-checkbox>
-					</a-form-item>
+					</a-form-item> -->
 					<a-form-item>
 						<a-button type="primary" block html-type="submit" class="login-form-button">
 							登录

@@ -102,8 +102,8 @@ public class ArtifactUploadTask implements Callable<String> {
             } else if (NpmLayoutProvider.ALIAS.equals(layout)) {
                 handlerNpmLayoutUpload(is, layout, repositoryPath);
             } else {
-                artifactManagementService.store(repositoryPath, is);
                 promotionUtil.setMetaData(repositoryPath, metaData);
+                artifactManagementService.store(repositoryPath, is);
             }
         } catch (Exception e) {
             log.info("store file：{}，error：{}", fileRelativePath, ExceptionUtils.getStackTrace(e));
@@ -212,6 +212,7 @@ public class ArtifactUploadTask implements Callable<String> {
         log.info("maven2 layout groupId：{}，artifactId：{}, version：{} artifactPath：{}", groupId, artifactId, version, pomPath);
         pomRepositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, pomPath);
         try (InputStream pomInputStream = new BufferedInputStream(FileUtil.getInputStream(artifactTempFile))) {
+            promotionUtil.setMetaData(pomRepositoryPath, metaData);
             artifactManagementService.validateAndStore(pomRepositoryPath, pomInputStream);
         } catch (Exception ex) {
             log.error("store pom：{}，error：{}", pomRepositoryPath.toAbsolutePath(), ExceptionUtils.getStackTrace(ex));
@@ -256,12 +257,12 @@ public class ArtifactUploadTask implements Callable<String> {
             log.info("maven2 layout artifact path ：{}，properties：{}，groupId：{}，artifactId：{}, version：{} artifactPath：{}", path, properties, groupId, artifactId, version, artifactPath);
             RepositoryPath artifactRepositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, artifactPath);
             try (InputStream artifactInputStream = new BufferedInputStream(FileUtil.getInputStream(artifactTempFile))) {
+                promotionUtil.setMetaData(artifactRepositoryPath, metaData);
                 artifactManagementService.validateAndStore(artifactRepositoryPath, artifactInputStream);
             } catch (Exception ex) {
                 log.error("store artifact：{}，error：{}", artifactRepositoryPath.toAbsolutePath(), ExceptionUtils.getStackTrace(ex));
                 throw new RuntimeException(ex.getMessage());
             }
-            promotionUtil.setMetaData(artifactRepositoryPath, metaData);
 
             byte[] pomBytes = layoutProvider.getContentByFileName(repositoryPath, path, "pom.xml");
             String pom = new String(pomBytes, StandardCharsets.UTF_8);
@@ -411,6 +412,7 @@ public class ArtifactUploadTask implements Callable<String> {
                         log.info("The fileRelativePath：{} artifactPath：{}", fileRelativePath, artifactPath);
                         repositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, artifactPath);
                         try (InputStream inputStream = new BufferedInputStream(Files.newInputStream(path))) {
+                            promotionUtil.setMetaData(repositoryPath, metaData);
                             artifactManagementService.validateAndStore(repositoryPath, inputStream);
                         }
                         try (InputStream inputStream = new ByteArrayInputStream(packageJsonBytes)) {
@@ -531,5 +533,4 @@ public class ArtifactUploadTask implements Callable<String> {
             dictService.saveOrUpdateDict(Dict.builder().dictKey(uuid).comment(comment).build(), null);
         }
     }
-
 }

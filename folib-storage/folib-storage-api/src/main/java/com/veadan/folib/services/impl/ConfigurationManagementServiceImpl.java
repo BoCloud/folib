@@ -740,6 +740,17 @@ public class ConfigurationManagementServiceImpl
         modifyInLock(configuration -> configuration.getWebhookConfiguration().remove(uuid));
     }
 
+    @Override
+    public void setUnionRepositoryConfiguration(String storageId, String repositoryId, MutableUnionRepositoryConfiguration mutableUnionRepositoryConfiguration) throws IOException {
+        modifyInLock(configuration -> {
+            if (storageId != null && repositoryId != null) {
+                configuration.getStorage(storageId)
+                        .getRepository(repositoryId)
+                        .setUnionRepositoryConfiguration(mutableUnionRepositoryConfiguration);
+            }
+        });
+    }
+
     private void setProxyRepositoryConnectionPoolConfigurations() throws IOException {
         modifyInLock(configuration ->
         {

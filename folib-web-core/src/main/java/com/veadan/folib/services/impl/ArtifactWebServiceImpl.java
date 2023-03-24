@@ -262,6 +262,9 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
                 metadataJson.remove(artifactMetadataForm.getKey());
                 artifact.setMetadata(metadataJson.toJSONString());
                 artifactService.saveOrUpdateArtifact(artifact);
+                RepositoryPath repositoryPath = repositoryPathResolver.resolve(artifactMetadataForm.getStorageId(), artifactMetadataForm.getRepositoryId(), artifactMetadataForm.getArtifactPath());
+                repositoryPath.setArtifact(artifact);
+                artifactEvent.dispatchArtifactMetaDataEvent(repositoryPath);
             }
         } catch (Exception ex) {
             log.error("=====>>>>>删除制品元数据错误：{}", ExceptionUtils.getStackTrace(ex));
@@ -1083,10 +1086,10 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
         return storageIdAndRepositoryIdList;
     }
 
-    private List<String> getStorageIdAndRepositoryId(String storageId, String repositoryId){
+    private List<String> getStorageIdAndRepositoryId(String storageId, String repositoryId) {
         List<String> storageIdAndRepositoryIdList = null;
         if (StringUtils.isNotBlank(storageId) && StringUtils.isNotBlank(repositoryId)) {
-            storageIdAndRepositoryIdList =Collections.singletonList(String.format("%s-%s", storageId, repositoryId));
+            storageIdAndRepositoryIdList = Collections.singletonList(String.format("%s-%s", storageId, repositoryId));
             Repository repository = configurationManagementService.getMutableConfigurationClone().getStorage(storageId).getRepository(repositoryId);
             boolean isGroupRepository = RepositoryTypeEnum.GROUP.getType().equals(repository.getType());
             if (isGroupRepository) {

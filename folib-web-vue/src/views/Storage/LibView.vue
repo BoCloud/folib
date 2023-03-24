@@ -439,7 +439,7 @@
                   :columns="vulnerColumns"
                   :data-source="item.vulnerabilities"
                   :pagination="false"
-                >
+                  :row-key="(r, i) => i.toString()">
                   <a-row
                     slot="expandedRowRender"
                     :gutter="[24, 24]"

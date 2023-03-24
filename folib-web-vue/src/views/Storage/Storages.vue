@@ -111,12 +111,12 @@
             <CardProjectFolib :title=item.id :logo="'images/folib/' + getLayoutType(item) + '.svg'"
               :team="['images/folib/' + item.type + '.svg']" :participants="item.type" :due="item.policy"
               :repository="item" :storageAdmin="currentStorage.admin" @handleMenuClick="handleMenuClick" @goToDetial="goToDetial(item)">
-              <a-tooltip>
+              <a-tooltip placement="topLeft">
                 <template slot="title">
-                  {{ baseUrl }}api/browse/{{ currentStorage.id }}/{{ item.id }}
+                  {{ getRepositoryUrl(item) }}
                 </template>
                 <p>http://..../{{ item.id }} <a>
-                    <a-icon type="copy" @click="copy(baseUrl + 'api/browse/' + currentStorage.id + '/' + item.id)" />
+                    <a-icon type="copy" @click="copy(getRepositoryUrl(item))" />
                   </a></p>
               </a-tooltip>
             </CardProjectFolib>
@@ -1297,11 +1297,16 @@ export default {
               message: response.message,
             })
           }, 100)
-          this.showStorageUpdate = false;
-          this.getStorages();
+          this.showStorageUpdate = false
+          this.getStorages()
+          this.currentStorage = this.currentDefultStorage
+          this.reload()
+        }).catch(err => {
+          let error = err.response.data?err.response.data:"未知错误"
+          this.$notification["error"]({
+            message: error,
+          })
         })
-        this.currentStorage = this.currentDefultStorage
-        this.reload()
       }
     },
     deleteStoragesKeyBuff() {
@@ -1326,10 +1331,15 @@ export default {
             })
           }, 100)
           this.showStorageUpdate = false;
-          this.getStorages();
+          this.getStorages()
+          this.currentStorage = this.currentDefultStorage
+          this.reload()
+        }).catch(err => {
+          let error = err.response.data?err.response.data:"未知错误"
+          this.$notification["error"]({
+            message: error,
+          })
         })
-        this.currentStorage = this.currentDefultStorage
-        this.reload()
       }
     },
     handleCreateSubmit(e) {
@@ -1795,6 +1805,7 @@ export default {
     getRepositoryResponseEntity(repositoryId) {
       getRepositoryResponseEntity(this.currentStorage.id, repositoryId).then(res => {
         if (res.id === repositoryId) {
+          delete res.unionRepositoryConfiguration
           this.folibRepository = res
           this.layoutChecked = getLayoutType(res)
           this.artifactMaxSize = this.folibRepository.artifactMaxSize / (1024 * 1024)
@@ -1820,6 +1831,11 @@ export default {
                   description: values.id + '已删除',
                 });
               }, 100)
+            }).catch((err) => {
+              let error = err.response.data?err.response.data:"未知错误"
+              this.$notification["error"]({
+                message: error,
+              })
             }).finally(() => {
               this.deleteFormVisible = false;
               this.getStorage(this.currentStorage.id)
@@ -1851,6 +1867,11 @@ export default {
                   description: values.id + '已删除',
                 });
               }, 100)
+            }).catch((err) => {
+              let error = err.response.data?err.response.data:"未知错误"
+              this.$notification["error"]({
+                message: error,
+              })
             }).finally(() => {
               this.deleteFormVisible = false;
               this.getStorage(this.currentStorage.id)
@@ -1913,7 +1934,19 @@ export default {
     },
     hasStoragePermission() {
       return isAdmin() || this.currentStorage.admin === this.$store.state.user.name
-    }
+    },
+    getRepositoryUrl(repository) {
+      let repositoryUrl = ""
+      if (this.baseUrl) {
+        repositoryUrl = this.baseUrl + 'storages/' + repository.storageId + '/' + repository.id
+        let layout = repository.layout.toLowerCase()
+        if (layout === 'docker') {
+          let baseUrlArr = this.baseUrl.split('://')
+          repositoryUrl = baseUrlArr[1] + repository.storageId + '/' + repository.id
+        }
+      }
+      return repositoryUrl
+    },
   },
 };
 </script>

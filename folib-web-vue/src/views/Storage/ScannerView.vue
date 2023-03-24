@@ -110,7 +110,7 @@
                 </a-col>
               </div>
               <a-table v-if="scanCurrentData.layout.toUpperCase() != 'docker'.toUpperCase()" :columns="columns"
-                :data-source="rowData" :pagination="false">
+                :data-source="rowData" :pagination="false" :row-key="(r, i) => i.toString()">
                 <template slot="filePath" slot-scope="text, record">
                   <div @click="getScanReport(record)">
                     <a>
@@ -129,7 +129,7 @@
                 </template>
               </a-table>
               <a-table v-if="scanCurrentData.layout.toUpperCase() == 'docker'.toUpperCase()" :columns="dockerColumns"
-                :data-source="rowData" :pagination="false">
+                :data-source="rowData" :pagination="false" :row-key="(r, i) => i.toString()">
                 <a-table rowKey="id" :columns="innerColumns" slot="expandedRowRender" slot-scope="record"
                   :data-source="record.filePaths" :pagination="false">
                   <template slot="filePath" slot-scope="text, item">
@@ -228,7 +228,7 @@
 
             <a-row :gutter="[24]" type="flex">
               <a-col :span="24" :md="24" :lg="24">
-                <a-table :columns="vulnerColumns" :data-source="item.vulnerabilities" :pagination="false">
+                <a-table :columns="vulnerColumns" :data-source="item.vulnerabilities" :pagination="false" :row-key="(r, i) => i.toString()">
 
                   <a-row slot="expandedRowRender" :gutter="[24, 24]" slot-scope="record">
                     <a-col :span="24">

@@ -53,17 +53,17 @@ public class Configuration {
     /**
      * 安全策略配置
      */
-    private SecurityPolicyConfiguration securityPolicyConfiguration;
+    private final SecurityPolicyConfiguration securityPolicyConfiguration;
 
     /**
      * 元数据配置
      */
-    private Map<String, MetadataConfiguration> metadataConfiguration;
+    private final Map<String, MetadataConfiguration> metadataConfiguration;
 
     /**
      * webhook配置
      */
-    private Map<String, WebhookConfiguration> webhookConfiguration;
+    private final Map<String, WebhookConfiguration> webhookConfiguration;
 
     public Configuration(final MutableConfiguration delegate) {
 

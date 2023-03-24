@@ -63,4 +63,29 @@ public class NodeController extends BaseController {
         return ResponseEntity.ok("");
     }
 
+    /**
+     * 修改复制因子
+     *
+     * @return 结果
+     */
+    @ApiOperation(value = "修改复制因子")
+    @ApiResponses(value = {@ApiResponse(code = 200, message = "OK")})
+    @PostMapping(value = "/replicationFactor/{replicationFactor}")
+    public ResponseEntity<String> modifyReplicationFactor(@PathVariable("replicationFactor") int replicationFactor) {
+        nodeService.modifyReplicationFactor(replicationFactor);
+        return ResponseEntity.ok("");
+    }
+
+    /**
+     * 查询复制因子
+     *
+     * @return 结果
+     */
+    @ApiOperation(value = "查询复制因子")
+    @ApiResponses(value = {@ApiResponse(code = 200, message = "OK")})
+    @GetMapping(value = "/replicationFactor/{keySpace}")
+    public ResponseEntity<String> queryReplicationFactor(@PathVariable("keySpace") String keySpace) {
+        return ResponseEntity.ok(nodeService.queryReplicationFactor(keySpace));
+    }
+
 }

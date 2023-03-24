@@ -36,30 +36,42 @@
                     />
                   </a>
                   <div class="avatar-info">
-                    <a>
-                      <h4 class="font-semibold m-0" @click="createData">
-                        {{ folibRepository.id }}
-                      </h4>
-                    </a>
-                    <p>
-                      {{ baseUrl }}api/browse/{{ folibRepository.storageId }}/{{
-                        folibRepository.id
-                      }}
-                      <a>
-                        <a-icon
-                          type="copy"
-                          @click="
-                            copy(
-                              baseUrl +
-                                'api/browse/' +
-                                folibRepository.storageId +
-                                '/' +
-                                folibRepository.id
-                            )
-                          "
-                        />
+                    <a-tooltip placement="topLeft">
+                      <template slot="title">
+                       点击可进入浏览页面
+                      </template>
+                      <a :href="baseUrl +
+                                      'api/browse/' +
+                                      folibRepository.storageId +
+                                      '/' +
+                                      folibRepository.id" target="_blank">
+                        <h4 class="font-semibold m-0" @click="createData">
+                          {{ folibRepository.id }}
+                        </h4>
                       </a>
-                    </p>
+                    </a-tooltip>
+                    <a-tooltip>
+                      <template slot="title">
+                       仓库使用地址，具体使用方法，请看页面右侧使用帮助
+                      </template>
+                      <a>
+                        <p class="copy-p">
+                          {{
+                            getRepositoryUrl()
+                          }}
+                        </p>
+                      </a>
+                    </a-tooltip>
+                    <a class="ml-10">
+                      <a-icon
+                        type="copy"
+                        @click="
+                          copy(
+                            getRepositoryUrl()
+                          )
+                        "
+                      />
+                    </a>
                   </div>
                 </a-col>
                 <a-col
@@ -298,17 +310,7 @@
                         </a-popconfirm>
                       </a-menu-item>
                       <a-menu-item
-                        key="5"
-                        v-if="folibRepository.type !== 'group' &&
-                          currentFileDetial &&
-                          currentFileDetial.artifact &&
-                          currentFileDetial.artifact.artifactFileExists
-                        "
-                      >
-                        <a-icon type="database" />元数据
-                      </a-menu-item>
-                      <a-menu-item
-                          key="6"
+                          key="5"
                           v-if="dispatchEnabled"
                       >
                         <a-icon type="retweet" />分发
@@ -456,16 +458,7 @@
                           <a-icon type="delete" />删除
                         </a-popconfirm>
                       </a-menu-item>
-                      <a-menu-item
-                        key="5"
-                        v-if="
-                          folibRepository.type !== 'group' &&
-                          currentTreeNode && currentTreeNode.type === 'file'
-                        "
-                      >
-                        <a-icon type="database" />元数据
-                      </a-menu-item>
-                      <a-menu-item key="6"  v-if="dispatchEnabled">
+                      <a-menu-item key="5"  v-if="dispatchEnabled">
                         <a-icon type="retweet" /> 分发
                       </a-menu-item>
                     </a-menu>
@@ -505,8 +498,8 @@
             :currentFileDetial="currentFileDetial"
             :successMsg="successMsg"
             :folibRepository="folibRepository"
-                  @metadataEditHandler="metadataEditHandler"
-
+            @metadataEditHandler="metadataEditHandler"
+            @metadataHandler="metadataHandler"
           />
         </a-card>
       </a-col>
@@ -966,7 +959,6 @@
         :forceRender="true"
         :centered="true"
         :title="operationTitle"
-        on-ok="showCopyFormModal = false"
     >
       <a-form
           :form="operationForm"
@@ -1603,13 +1595,13 @@ export default {
           "EOF\n" +
           "sudo systemctl daemon-reload\n" +
           "sudo systemctl restart docker";
-        this.dockerCode.macos = this.baseUrl;
         this.dockerCode.windows =
           "{\n" +
           '  "insecure-registries": ["' +
           this.baseUrl.replace("http://", "").replace("/", "") +
           '"]\n' +
           "}";
+        this.dockerCode.macos = this.dockerCode.windows
       }
       this.usedVisible = true;
     },
@@ -1770,11 +1762,7 @@ export default {
           active.key === "2" ? "复制到自定义目录" : "移动到自定义目录";
       } else if (active.key === "4") {
         //删除
-      } else if (active.key === "5") {
-        //元数据
-        this.getMetadataConfiguration();
-        this.metadataHandler(1);
-      }else if(active.key === "6"){
+      } else if(active.key === "5"){
         this.showOperationDispatchFormModal = true;
         this.getArtifactDispatchStoragesAndRepositories(
             this.folibRepository.type,
@@ -2201,12 +2189,27 @@ export default {
         this.moveEnabled = this.folibRepository.type === 'hosted' && (hasRole('ARTIFACTS_MANAGER') || this.permissions.includes('ARTIFACTS_MOVE'))
         this.deleteEnabled = this.folibRepository.type !== 'group' && (hasRole('ARTIFACTS_MANAGER') || this.permissions.includes('ARTIFACTS_DELETE'))
       })
-    }
+    },
+    getRepositoryUrl() {
+      let repositoryUrl = ""
+      if (this.baseUrl) {
+        repositoryUrl = this.baseUrl + 'storages/' + this.folibRepository.storageId + '/' + this.folibRepository.id
+        let layout = this.folibRepository.layout.toLowerCase()
+        if (layout === 'docker') {
+          let baseUrlArr = this.baseUrl.split('://')
+          repositoryUrl = baseUrlArr[1] + this.folibRepository.storageId + '/' + this.folibRepository.id
+        }
+      }
+      return repositoryUrl
+    },
   },
 };
 </script>
 <style lang="scss" scoped>
  .selectdrop::v-deep .gb-ant-select-multiple-cascader .cascader-content-wrap .cascader-content-container .cascader-content-list {
   min-width: 280px;
+ }
+ .copy-p {
+  display: inline-block;
  }
 </style>

@@ -13,6 +13,7 @@ import com.veadan.folib.dispatch.ClusterDispatchNodeDto;
 import com.veadan.folib.domain.*;
 import com.veadan.folib.dto.*;
 import com.veadan.folib.forms.common.StorageTreeForm;
+import com.veadan.folib.providers.io.RepositoryFiles;
 import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.providers.io.RepositoryPathResolver;
 import com.veadan.folib.providers.layout.DockerLayoutProvider;
@@ -39,6 +40,7 @@ import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
+import org.glassfish.jersey.client.ClientProperties;
 import org.glassfish.jersey.media.multipart.Boundary;
 import org.glassfish.jersey.media.multipart.FormDataMultiPart;
 import org.glassfish.jersey.media.multipart.file.StreamDataBodyPart;
@@ -496,10 +498,10 @@ public class PromotionUtil {
                 }
             }
             try (InputStream is = Files.newInputStream(file.toPath());) {
-                artifactManagementService.store(destPath, is);
                 // 同步metadata
                 RepositoryPath srcPath = repositoryPathResolver.resolve(srcRepository.getStorage().getId(), srcRepository.getId(), temp);
                 setMetaData(destPath, getMetaData(srcPath));
+                artifactManagementService.store(destPath, is);
             } catch (IOException e) {
                 log.error("sync metaData error：{}", ExceptionUtils.getStackTrace(e));
                 throw new Exception(e.getMessage());
@@ -570,10 +572,10 @@ public class PromotionUtil {
             String temp = fPath.substring(fPathIndex, fPath.length()).replace(tempStr, "");
             RepositoryPath uploadPath = repositoryPathResolver.resolve(destRepository.getStorage().getId(), destRepository.getId(), temp);
             try (InputStream is = Files.newInputStream(s3FilePath);) {
-                artifactManagementService.store(uploadPath, is);
                 // 同步metadata
                 RepositoryPath srcPath = repositoryPathResolver.resolve(srcRepository.getStorage().getId(), srcRepository.getId(), temp);
                 setMetaData(uploadPath, getMetaData(srcPath));
+                artifactManagementService.store(uploadPath, is);
             } catch (IOException e) {
                 log.error("s3FilePath {} copy fail {}", s3FilePath, ExceptionUtils.getStackTrace(e));
                 throw new Exception(e.getMessage());
@@ -888,19 +890,23 @@ public class PromotionUtil {
         return rs;
     }
 
+    /**
+     * 处理metadata
+     *
+     * @param repositoryPath repositoryPath
+     * @param metadata       metadata
+     */
     public void setMetaData(RepositoryPath repositoryPath, String metadata) {
-        try {
-            if (StringUtils.isBlank(metadata)) {
-                return;
+        if (Objects.nonNull(repositoryPath) && StringUtils.isNotBlank(metadata)) {
+            try {
+                Artifact artifact = Optional.ofNullable(repositoryPath.getArtifactEntry())
+                        .orElse(new ArtifactEntity(repositoryPath.getStorageId(), repositoryPath.getRepositoryId(),
+                                RepositoryFiles.readCoordinates(repositoryPath)));
+                artifact.setMetadata(metadata);
+                repositoryPath.setArtifact(artifact);
+            } catch (Exception ex) {
+                log.error("setMetaData Exception {} repositoryPath {} metadata {}", ExceptionUtils.getStackTrace(ex), repositoryPath.toString(), metadata);
             }
-            Artifact artifact = artifactWebService.getArtifact(repositoryPath);
-            if (Objects.isNull(artifact)) {
-                throw new RuntimeException("artifact is null");
-            }
-            artifact.setMetadata(metadata);
-            artifactService.saveOrUpdateArtifact(artifact);
-        } catch (Exception e) {
-            log.error("Exception {} {}", ExceptionUtils.getStackTrace(e), repositoryPath.toString());
         }
     }
 

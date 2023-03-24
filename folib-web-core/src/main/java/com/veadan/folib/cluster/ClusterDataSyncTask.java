@@ -145,6 +145,14 @@ public class ClusterDataSyncTask {
                     isSuccess(syncResult, task);
                     logger.info("sync dispatch data end [{} ]", url);
                 }
+                // 同步联邦仓库配置
+                if (Objects.equals(SyncDataTypeEnum.UNION_REPOSITORY.getValue(), task.getTaskType())) {
+                    SyncUnionRepositoryDto syncUnionRepositoryDto = JSONObject.parseObject(task.getDataJson(), SyncUnionRepositoryDto.class);
+                    logger.info("start sync unionRepository data [{}]", url);
+                    ClusterSyncResultEnum syncResult = clusterSyncService.handleSyncUnionRepositoryConfiguration(syncUnionRepositoryDto, url, true);
+                    isSuccess(syncResult, task);
+                    logger.info("sync unionRepository data end [{} ]", url);
+                }
             } catch (Exception e) {
                 logger.error("error {}", e.getMessage());
             }

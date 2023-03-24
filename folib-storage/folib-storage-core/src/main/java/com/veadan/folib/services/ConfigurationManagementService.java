@@ -271,4 +271,16 @@ public interface ConfigurationManagementService {
      * @throws IOException io异常
      */
     void deleteWebhookConfiguration(String uuid) throws IOException;
+
+    /**
+     * 设置联邦仓库
+     *
+     * @param storageId                           存储空间
+     * @param repositoryId                        仓库MC
+     * @param mutableUnionRepositoryConfiguration 联邦仓库信息
+     * @throws IOException io异常
+     */
+    void setUnionRepositoryConfiguration(String storageId,
+                                         String repositoryId,
+                                         MutableUnionRepositoryConfiguration mutableUnionRepositoryConfiguration) throws IOException;
 }

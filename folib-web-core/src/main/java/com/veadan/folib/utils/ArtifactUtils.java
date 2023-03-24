@@ -1,6 +1,8 @@
 package com.veadan.folib.utils;
 
+import com.alibaba.fastjson.JSONObject;
 import com.veadan.folib.artifact.archive.JarArchiveListingFunction;
+import com.veadan.folib.domain.Artifact;
 import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.providers.layout.*;
 import lombok.extern.slf4j.Slf4j;
@@ -8,6 +10,7 @@ import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 
@@ -39,23 +42,44 @@ public class ArtifactUtils {
     }
 
     /**
-     * 校验制品类型是否是该布局支持的类型
+     * 安全扫描 校验制品类型是否是该布局支持的类型
      *
      * @param repositoryPath 仓库地址
      * @return true 支持 false 不支持
      */
+    public static boolean layoutSupportsForScan(RepositoryPath repositoryPath) {
+        return layoutSupports(repositoryPath, false, true);
+    }
+
+    /**
+     * 漏洞阻断 校验制品类型是否是该布局支持的类型
+     *
+     * @param repositoryPath 仓库地址
+     * @return true 支持 false 不支持
+     */
+    public static boolean layoutSupportsForBlock(RepositoryPath repositoryPath) {
+        return layoutSupports(repositoryPath, true, false);
+    }
+
+    /**
+     * 通用 docker 支持镜像版本 maven 支持pom
+     * 校验制品类型是否是该布局支持的类型
+     * @param repositoryPath 仓库地址
+     * @return true 支持 false 不支持
+     */
     public static boolean layoutSupports(RepositoryPath repositoryPath) {
-       return layoutSupports(repositoryPath, false);
+        return layoutSupports(repositoryPath, false, false);
     }
 
     /**
      * 校验制品类型是否是该布局支持的类型
      *
      * @param repositoryPath 仓库地址
-     * @param block 阻断 true
+     * @param block          阻断 true
+     * @param scan           安全扫描 true
      * @return true 支持 false 不支持
      */
-    public static boolean layoutSupports(RepositoryPath repositoryPath, Boolean block) {
+    public static boolean layoutSupports(RepositoryPath repositoryPath, Boolean block, Boolean scan) {
         boolean flag = false;
         if (Objects.nonNull(repositoryPath)) {
             if (repositoryPath.getFileSystem() instanceof DockerFileSystem) {
@@ -72,7 +96,11 @@ public class ArtifactUtils {
                 }
             } else if (repositoryPath.getFileSystem() instanceof MavenFileSystem) {
                 log.debug("=====>>>>> maven布局");
-                flag = JarArchiveListingFunction.INSTANCE.supports(repositoryPath);
+                if (Boolean.TRUE.equals(scan)) {
+                    flag = JarArchiveListingFunction.INSTANCE.supports(repositoryPath);
+                } else {
+                    flag = JarArchiveListingFunction.INSTANCE.supports(repositoryPath) || endsWith(repositoryPath.getFileName().toString(), Collections.singletonList(".pom"));
+                }
             } else if (repositoryPath.getFileSystem() instanceof NpmFileSystem) {
                 log.debug("=====>>>>> npm布局");
                 List<String> suffixList = Arrays.asList(".json", ".tgz");
@@ -121,5 +149,23 @@ public class ArtifactUtils {
         String baseUrl = repositoryBaseUrl + (repositoryBaseUrl.endsWith("/") ? "" : "/");
         String p = (path.startsWith("/") ? path.substring(1, path.length()) : path);
         return baseUrl + p;
+    }
+
+    /**
+     * 获取制品元数据
+     *
+     * @param artifact artifact
+     * @return 制品元数据
+     */
+    public static JSONObject getMetadata(Artifact artifact) {
+        if (Objects.isNull(artifact)) {
+            return null;
+        }
+        String metadata = artifact.getMetadata();
+        JSONObject metadataJson = null;
+        if (StringUtils.isNotBlank(metadata)) {
+            metadataJson = JSONObject.parseObject(metadata);
+        }
+        return metadataJson;
     }
 }

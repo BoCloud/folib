@@ -5,14 +5,15 @@ import com.alibaba.fastjson.JSONObject;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.veadan.folib.domain.Artifact;
-import com.veadan.folib.entity.WebhookLog;
 import com.veadan.folib.event.AsyncEventListener;
 import com.veadan.folib.event.artifact.ArtifactEvent;
 import com.veadan.folib.event.artifact.ArtifactEventTypeEnum;
 import com.veadan.folib.forms.configuration.WebhookConfigurationForm;
 import com.veadan.folib.providers.io.RepositoryPath;
+import com.veadan.folib.providers.layout.DockerFileSystem;
 import com.veadan.folib.service.ProxyRepositoryConnectionPoolConfigurationService;
 import com.veadan.folib.services.WebhookService;
+import com.veadan.folib.utils.ArtifactUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -38,26 +39,22 @@ import java.util.Objects;
  **/
 @Slf4j
 @Component
-public class ArtifactEventListener {
+public class ArtifactEventWebhookListener {
 
     @Autowired
     @Lazy
     private WebhookService webhookService;
 
-    @Autowired
-    @Lazy
-    private ProxyRepositoryConnectionPoolConfigurationService clientPool;
-
     @AsyncEventListener
-    protected void handle(final ArtifactEvent<RepositoryPath> event) {
+    public void handle(final ArtifactEvent<RepositoryPath> event) {
         int source = (int) event.getSource();
         RepositoryPath repositoryPath = event.getPath();
         ArtifactEventTypeEnum artifactEventTypeEnum = ArtifactEventTypeEnum.queryArtifactEventTypeEnumByType(source);
-        log.debug("=====>>>>> {} 监听到制品事件：{}，path路径：{}", ArtifactEventListener.class.getSimpleName(), artifactEventTypeEnum, repositoryPath);
+        log.debug("=====>>>>> {} 监听到制品事件：{}，path路径：{}", ArtifactEventWebhookListener.class.getSimpleName(), artifactEventTypeEnum, repositoryPath);
         if (Objects.isNull(artifactEventTypeEnum)) {
             return;
         }
-        if (validateArtifactEvent(artifactEventTypeEnum)) {
+        if (validateArtifactEvent(artifactEventTypeEnum) && ArtifactUtils.layoutSupports(repositoryPath)) {
             try {
                 List<WebhookConfigurationForm> webhookConfigurationList = webhookService.getWebhookConfiguration();
                 if (CollectionUtils.isEmpty(webhookConfigurationList)) {
@@ -83,7 +80,7 @@ public class ArtifactEventListener {
                     JSONObject bodyJson = JSONObject.parseObject(body);
                     removeKeyList.forEach(bodyJson::remove);
                     body = bodyJson.toJSONString();
-                    artifactPath = artifact.getArtifactPath();
+                    artifactPath = getArtifactPath(repositoryPath, artifact);
                 }
                 String instance = NetUtil.getLocalhost().getHostAddress();
                 for (WebhookConfigurationForm webhookConfiguration : webhookConfigurationList) {
@@ -122,21 +119,18 @@ public class ArtifactEventListener {
     }
 
     /**
-     * 发送post请求
+     * 获取制品路径
      *
-     * @param url       url
-     * @param body      body
-     * @param headerMap headerMap
-     * @return 响应
+     * @param repositoryPath repositoryPath
+     * @param artifact       artifact
+     * @return 制品路径
      */
-    private Response doPost(String url, String body, Map<String, String> headerMap) {
-        Client client = clientPool.getRestClient();
-        WebTarget target = client.target(url);
-        Invocation.Builder builder = target.request();
-        for (Map.Entry<String, String> entry : headerMap.entrySet()) {
-            builder = builder.header(entry.getKey(), entry.getKey());
+    private String getArtifactPath(RepositoryPath repositoryPath, Artifact artifact) {
+        String artifactPath = artifact.getArtifactPath();
+        if (repositoryPath.getFileSystem() instanceof DockerFileSystem) {
+            String path = artifact.getArtifactPath();
+            artifactPath = path.substring(0, path.indexOf("/sha256"));
         }
-        Response response = builder.post(Entity.entity(body, MediaType.APPLICATION_JSON));
-        return response;
+        return artifactPath;
     }
 }

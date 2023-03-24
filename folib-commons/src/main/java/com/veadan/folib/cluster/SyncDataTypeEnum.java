@@ -10,6 +10,7 @@ public enum SyncDataTypeEnum {
     CLUSTER_DISPATCH(6),
     AUTHORIZATION(7),
     WEBHOOK(8),
+    UNION_REPOSITORY(9),
     ;
 
     private Integer value;

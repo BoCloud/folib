@@ -1,14 +1,14 @@
 package com.veadan.folib.storage.repository;
 
-import java.util.Set;
-
 import com.veadan.folib.configuration.ProxyConfiguration;
+import com.veadan.folib.configuration.UnionRepositoryConfiguration;
+import com.veadan.folib.storage.Storage;
 import com.veadan.folib.storage.repository.remote.RemoteRepository;
 import com.veadan.folib.yaml.repository.RepositoryConfiguration;
-import com.veadan.folib.storage.Storage;
 
-public interface Repository
-{
+import java.util.Set;
+
+public interface Repository {
 
     String getId();
 
@@ -61,7 +61,7 @@ public interface Repository
     boolean isAcceptsSnapshots();
 
     boolean isAcceptsReleases();
-    
+
     RepositoryConfiguration getRepositoryConfiguration();
 
     String getStorageIdAndRepositoryId();
@@ -79,5 +79,7 @@ public interface Repository
     Integer getScope();
 
     boolean isAllowAnonymous();
+
+    UnionRepositoryConfiguration getUnionRepositoryConfig();
 
 }

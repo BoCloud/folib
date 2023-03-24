@@ -25,6 +25,9 @@
       <a-tab-pane :key="2" tab="定时策略">
         <CronTask :folibRepository="this.folibRepository" @settingDrawerClose="settingDrawerClose"></CronTask>
       </a-tab-pane>
+      <a-tab-pane :key="3" tab="联邦仓库" v-if="this.folibRepository.type === 'hosted'">
+        <UnionRepository :folibRepository="this.folibRepository" :settingVisible="settingVisible" @settingDrawerClose="settingDrawerClose"></UnionRepository>
+      </a-tab-pane>
       </a-tabs>
     </a-card>
   </a-drawer>
@@ -34,6 +37,7 @@ import {
 } from "@/api/folib"
 import Permission from '../Permission/index.vue'
 import CronTask from "../Cron/index.vue"
+import UnionRepository from "../UnionRepository/index.vue"
 
 export default {
   props: { 
@@ -54,6 +58,7 @@ export default {
   components: {
     CronTask,
     Permission,
+    UnionRepository,
   },
   created() {
 
@@ -61,6 +66,7 @@ export default {
   mounted() {},
   watch: {
     settingVisible: function (val) {
+      this.settingTabActiveKey = 1
     },
   },
   methods: {

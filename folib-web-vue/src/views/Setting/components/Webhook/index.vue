@@ -178,7 +178,7 @@
         :bodyStyle="{ paddingTop: 0, paddingBottom: '16px' }"
         :headStyle="{ paddingRight: 0 }"
       >
-        <a-table :columns="webhookLogColumns" :data-source="webhookLogList">
+        <a-table :columns="webhookLogColumns" :data-source="webhookLogList" :row-key="(r, i) => i.toString()">
           <div slot="responseStatus" slot-scope="responseStatus">
             <a-tag color="#f50" v-if="responseStatus != 200">
               错误
@@ -241,11 +241,11 @@
         <a-button type="link" slot="extra">
         
         </a-button>
-        <p class="text-dark ml-5">
+        <p class="text-dark ml-5" v-if="webhookLogInfo.remark" >
           <a-tag color="red">
             <a-icon type="exclamation-circle"/>
             <span class="ml-10">发送此 webhook 时发生内部错误。</span>
-            <div v-if="webhookLogInfo.remark" class="ml-20"> 
+            <div class="ml-20"> 
               错误：{{ webhookLogInfo.remark }}
             </div>
           </a-tag>
@@ -613,7 +613,13 @@ export default {
         this.webhookLogInfo.requestHeaders = {}
       }
       if (this.webhookLogInfo.response) {
-        this.webhookLogInfo.response = JSON.stringify(JSON.parse(this.webhookLogInfo.response), null, '\t')
+        let response = this.webhookLogInfo.response
+        try {
+          response = JSON.stringify(JSON.parse(this.webhookLogInfo.response), null, '\t')
+        } catch (e){
+          console.log('不是JSON格式'); 
+        }
+        this.webhookLogInfo.response = response
       }
       if (this.webhookLogInfo.responseHeaders) {
         this.webhookLogInfo.responseHeaders = JSON.parse(this.webhookLogInfo.responseHeaders)

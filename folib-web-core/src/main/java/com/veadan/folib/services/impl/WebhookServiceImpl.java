@@ -22,6 +22,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
+import org.glassfish.jersey.client.ClientProperties;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
@@ -219,7 +220,7 @@ public class WebhookServiceImpl implements WebhookService {
         WebTarget target = client.target(url);
         Invocation.Builder builder = target.request();
         for (Map.Entry<String, String> entry : headerMap.entrySet()) {
-            builder = builder.header(entry.getKey(), entry.getKey());
+            builder = builder.header(entry.getKey(), entry.getValue());
         }
         Response response = builder.post(Entity.entity(body, MediaType.APPLICATION_JSON));
         return response;

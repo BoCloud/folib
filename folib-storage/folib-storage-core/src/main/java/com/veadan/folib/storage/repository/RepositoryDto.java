@@ -1,8 +1,10 @@
 package com.veadan.folib.storage.repository;
 
-import com.fasterxml.jackson.annotation.*;
-import com.veadan.folib.configuration.MutableProxyConfiguration;
-import com.veadan.folib.configuration.ProxyConfiguration;
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.veadan.folib.configuration.*;
 import com.veadan.folib.providers.storage.FileSystemStorageProvider;
 import com.veadan.folib.storage.Storage;
 import com.veadan.folib.storage.StorageDto;
@@ -89,6 +91,11 @@ public class RepositoryDto
      * 是否允许匿名访问
      */
     private boolean allowAnonymous = true;
+
+    /**
+     * 联邦仓库配置
+     */
+    private MutableUnionRepositoryConfiguration unionRepositoryConfiguration;
 
     @JsonIgnore
     private StorageDto storage;
@@ -457,6 +464,19 @@ public class RepositoryDto
     @Override
     public boolean isAllowAnonymous() {
         return allowAnonymous;
+    }
+
+    @Override
+    public UnionRepositoryConfiguration getUnionRepositoryConfig() {
+        return null;
+    }
+
+    public MutableUnionRepositoryConfiguration getUnionRepositoryConfiguration() {
+        return unionRepositoryConfiguration;
+    }
+
+    public void setUnionRepositoryConfiguration(MutableUnionRepositoryConfiguration unionRepositoryConfiguration) {
+        this.unionRepositoryConfiguration = unionRepositoryConfiguration;
     }
 
     public void setAllowAnonymous(boolean allowAnonymous) {

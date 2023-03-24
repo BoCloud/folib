@@ -19,6 +19,7 @@ import com.veadan.folib.scanner.common.util.DateUtils;
 import com.veadan.folib.scanner.config.ScanConfig;
 import com.veadan.folib.scanner.entity.ScannerReport;
 import com.veadan.folib.scanner.enums.SeverityTypeEnum;
+import com.veadan.folib.scanner.mapper.ScanRulesMapper;
 import com.veadan.folib.services.ArtifactService;
 import com.veadan.folib.services.VulnerabilityService;
 import com.veadan.folib.util.LocalDateTimeInstance;
@@ -59,6 +60,9 @@ public class ScanService {
 
     @Inject
     private ArtifactService artifactService;
+
+    @Inject
+    private ScanRulesMapper scanRulesMapper;
 
     @Value("${folib.temp}")
     private String tempPath;
@@ -313,5 +317,14 @@ public class ScanService {
         } catch (UpdateException e) {
             throw new BusinessException("更新出错");
         }
+    }
+
+    /**
+     * 统计properties表数据量，若小于等于1，初始化漏洞数据
+     *
+     * @return 数据量
+     */
+    public int countProperties() {
+        return scanRulesMapper.countProperties();
     }
 }

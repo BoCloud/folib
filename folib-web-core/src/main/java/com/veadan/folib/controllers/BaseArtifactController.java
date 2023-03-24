@@ -107,7 +107,7 @@ public abstract class BaseArtifactController
      * @throws IOException io异常
      */
     public void vulnerabilityBlock(RepositoryPath repositoryPath) throws IOException {
-        boolean supportLayout = ArtifactUtils.layoutSupports(repositoryPath, true);
+        boolean supportLayout = ArtifactUtils.layoutSupportsForBlock(repositoryPath);
         if (!supportLayout) {
             return;
         }
