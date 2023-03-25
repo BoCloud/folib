@@ -7,6 +7,7 @@ import com.veadan.folib.storage.repository.Repository;
 import javax.inject.Inject;
 import java.net.URI;
 
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 
 /**
@@ -17,6 +18,7 @@ public class ConfigurationManager implements StoragesConfigurationManager
 {
 
     @Inject
+    @Lazy
     private ConfigurationManagementService configurationService;
 
     public Repository getRepository(String storageAndRepositoryId)
