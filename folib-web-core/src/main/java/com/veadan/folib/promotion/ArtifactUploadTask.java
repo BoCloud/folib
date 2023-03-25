@@ -6,6 +6,7 @@ import cn.hutool.extra.compress.CompressUtil;
 import cn.hutool.extra.compress.extractor.Extractor;
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
+import com.veadan.folib.artifact.MavenArtifactUtils;
 import com.veadan.folib.artifact.coordinates.NpmArtifactCoordinates;
 import com.veadan.folib.domain.DockerManifest;
 import com.veadan.folib.entity.Dict;
@@ -211,6 +212,10 @@ public class ArtifactUploadTask implements Callable<String> {
         String pomPath = String.format("%s/%s/%s/%s", groupId, artifactId, version, fileRelativePath);
         log.info("maven2 layout groupId：{}，artifactId：{}, version：{} artifactPath：{}", groupId, artifactId, version, pomPath);
         pomRepositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, pomPath);
+        boolean isValidGavPath = MavenArtifactUtils.isGAV(pomRepositoryPath);
+        if (!isValidGavPath) {
+            throw new RuntimeException("The artifact is invalid");
+        }
         try (InputStream pomInputStream = new BufferedInputStream(FileUtil.getInputStream(artifactTempFile))) {
             promotionUtil.setMetaData(pomRepositoryPath, metaData);
             artifactManagementService.validateAndStore(pomRepositoryPath, pomInputStream);
@@ -256,6 +261,10 @@ public class ArtifactUploadTask implements Callable<String> {
             String artifactPath = String.format("%s/%s/%s/%s", groupId, artifactId, version, fileRelativePath);
             log.info("maven2 layout artifact path ：{}，properties：{}，groupId：{}，artifactId：{}, version：{} artifactPath：{}", path, properties, groupId, artifactId, version, artifactPath);
             RepositoryPath artifactRepositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, artifactPath);
+            boolean isValidGavPath = MavenArtifactUtils.isGAV(artifactRepositoryPath);
+            if (!isValidGavPath) {
+                throw new RuntimeException("The artifact is invalid");
+            }
             try (InputStream artifactInputStream = new BufferedInputStream(FileUtil.getInputStream(artifactTempFile))) {
                 promotionUtil.setMetaData(artifactRepositoryPath, metaData);
                 artifactManagementService.validateAndStore(artifactRepositoryPath, artifactInputStream);
@@ -274,6 +283,10 @@ public class ArtifactUploadTask implements Callable<String> {
             String pomPath = String.format("%s/%s/%s/%s", groupId, artifactId, version, pomName);
             log.info("maven2 layout xml path ：{}，properties：{}，groupId：{}，artifactId：{}, version：{} artifactPath：{}", pomTempFile.getAbsolutePath(), properties, groupId, artifactId, version, pomPath);
             RepositoryPath pomRepositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, pomPath);
+            isValidGavPath = MavenArtifactUtils.isGAV(pomRepositoryPath);
+            if (!isValidGavPath) {
+                throw new RuntimeException("The artifact is invalid");
+            }
             try (InputStream pomInputStream = new BufferedInputStream(FileUtil.getInputStream(pomTempFile))) {
                 artifactManagementService.validateAndStore(pomRepositoryPath, pomInputStream);
             } catch (Exception ex) {
