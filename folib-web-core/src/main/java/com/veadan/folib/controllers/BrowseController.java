@@ -184,12 +184,18 @@ public class BrowseController
                 RepositoryPath appPackagePath = repositoryPathResolver.resolve(storageId, repositoryId, aName + "/" + aVersion + "/temp");
                 List<String> relativePaths = RepositoryPathUtil.getFileRelativePaths(appPackagePath);
                 Set<String> downloadUrls = new HashSet<String>();
+                Map<String, String> downloadUrlMap = new HashMap<String, String>();
                 for (String filePath : relativePaths) {
                     if (filePath.endsWith(".config") || filePath.endsWith(".sha256")) {
                         continue;
                     }
-                    downloadUrls.add(FolibPublicUtils.getFileUrl(repositoryParam, filePath));
+                    String[] filePathArray = filePath.split("/");
+                    String fileName = filePathArray[filePathArray.length - 1];
+                    downloadUrlMap.put(fileName, FolibPublicUtils.getFileUrl(repositoryParam, filePath));
                 }
+                downloadUrlMap.forEach((x, y) -> {
+                    downloadUrls.add(y);
+                });
                 jsonObject.put("downloadFilesUrl", downloadUrls);
 
             } catch (Exception e) {
