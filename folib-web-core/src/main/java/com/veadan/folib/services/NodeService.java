@@ -17,6 +17,7 @@ public interface NodeService {
 
     /**
      * 移除节点
+     *
      * @param token token
      */
     void removeNode(String token);
@@ -25,4 +26,19 @@ public interface NodeService {
      * 修复节点
      */
     void repair();
+
+    /**
+     * 修改复制因子
+     *
+     * @param replicationFactor 复制因子
+     */
+    void modifyReplicationFactor(int replicationFactor);
+
+    /**
+     * 查询复制因子
+     *
+     * @param keySpace keySpace
+     * @return 复制因子信息
+     */
+    String queryReplicationFactor(String keySpace);
 }

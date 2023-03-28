@@ -24,7 +24,7 @@ public class ArtifactMetaDataEventHandler extends AsyncArtifactEntryHandler {
         long size = Files.size(repositoryPath);
 
         Artifact artifactEntry = repositoryPath.getArtifactEntry();
-        log.info("<<<< 当前元数据 {}", artifactEntry.getMetadata());
+        log.debug("=====>> 当前元数据 {}", artifactEntry.getMetadata());
         artifactEntry.setLastUpdated(LocalDateTimeInstance.now());
         artifactEntry.setSizeInBytes(size);
 

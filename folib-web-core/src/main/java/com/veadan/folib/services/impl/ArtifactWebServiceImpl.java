@@ -17,6 +17,7 @@ import com.veadan.folib.cloud.storage.s3fs.S3FileSystem;
 import com.veadan.folib.cloud.storage.s3fs.S3Iterator;
 import com.veadan.folib.cloud.storage.s3fs.S3Path;
 import com.veadan.folib.cluster.SyncMetadataEnum;
+import com.veadan.folib.configuration.ConfigurationUtils;
 import com.veadan.folib.configuration.MutableMetadataConfiguration;
 import com.veadan.folib.controllers.ResponseMessage;
 import com.veadan.folib.controllers.cluster.dto.SyncMetadataDto;
@@ -42,11 +43,13 @@ import com.veadan.folib.services.*;
 import com.veadan.folib.storage.Storage;
 import com.veadan.folib.storage.StorageDto;
 import com.veadan.folib.storage.repository.Repository;
+import com.veadan.folib.storage.repository.RepositoryTypeEnum;
 import com.veadan.folib.storage.search.SearchResults;
 import com.veadan.folib.users.domain.SystemRole;
 import com.veadan.folib.users.userdetails.SpringSecurityUser;
 import com.veadan.folib.util.CustomDateUtils;
 import com.veadan.folib.util.FileSizeConvertUtils;
+import com.veadan.folib.utils.ArtifactUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -123,7 +126,8 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
 
     @Override
     public void exportExcel(String vulnerabilityUuid, String storageId, String repositoryId, HttpServletResponse response) throws IOException {
-        List<Artifact> artifactList = artifactRepository.findMatchingByVulnerabilityUuid(vulnerabilityUuid, storageId, repositoryId);
+        List<String> storageIdAndRepositoryIdList = getStorageIdAndRepositoryId(storageId, repositoryId);
+        List<Artifact> artifactList = artifactRepository.findMatchingByVulnerabilityUuid(vulnerabilityUuid, null, storageIdAndRepositoryIdList);
         InputStream template = this.getClass().getResourceAsStream("/template/vulnerabilityTemplate.xlsx");
         try (ExcelWriter excelWriter = EasyExcel.write(response.getOutputStream()).withTemplate(template).build()) {
             WriteSheet writeSheet = EasyExcel.writerSheet().build();
@@ -154,9 +158,8 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
                         if (StringUtils.isNotBlank(artifact.getStorageId()) && StringUtils.isNotBlank(artifact.getRepositoryId())) {
                             Repository repository = configurationManagementService.getConfiguration().getRepository(artifact.getStorageId(), artifact.getRepositoryId());
                             if (Objects.nonNull(repository) && "Docker".equalsIgnoreCase(repository.getLayout())) {
-                                String path = artifact.getArtifactPath();
                                 //docker
-                                artifactVo.setName(path.substring(0, path.indexOf("/blobs/sha256")));
+                                artifactVo.setName(ArtifactUtils.getDockerImage(artifact.getArtifactPath()));
                             }
                         }
                         return artifactVo;
@@ -259,6 +262,9 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
                 metadataJson.remove(artifactMetadataForm.getKey());
                 artifact.setMetadata(metadataJson.toJSONString());
                 artifactService.saveOrUpdateArtifact(artifact);
+                RepositoryPath repositoryPath = repositoryPathResolver.resolve(artifactMetadataForm.getStorageId(), artifactMetadataForm.getRepositoryId(), artifactMetadataForm.getArtifactPath());
+                repositoryPath.setArtifact(artifact);
+                artifactEvent.dispatchArtifactMetaDataEvent(repositoryPath);
             }
         } catch (Exception ex) {
             log.error("=====>>>>>删除制品元数据错误：{}", ExceptionUtils.getStackTrace(ex));
@@ -1076,6 +1082,36 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
             } else if (Objects.nonNull(storage.getRepositories())) {
                 storageIdAndRepositoryIdList.addAll(storage.getRepositories().values().stream().filter(item -> RepositoryScopeEnum.OPEN.getType().equals(item.getScope())).map(item -> String.format("%s-%s", storage.getId(), item.getId())).collect(Collectors.toList()));
             }
+        }
+        return storageIdAndRepositoryIdList;
+    }
+
+    private List<String> getStorageIdAndRepositoryId(String storageId, String repositoryId) {
+        List<String> storageIdAndRepositoryIdList = null;
+        if (StringUtils.isNotBlank(storageId) && StringUtils.isNotBlank(repositoryId)) {
+            storageIdAndRepositoryIdList = Collections.singletonList(String.format("%s-%s", storageId, repositoryId));
+            Repository repository = configurationManagementService.getMutableConfigurationClone().getStorage(storageId).getRepository(repositoryId);
+            boolean isGroupRepository = RepositoryTypeEnum.GROUP.getType().equals(repository.getType());
+            if (isGroupRepository) {
+                storageIdAndRepositoryIdList = getGroupStorageIdAndRepositoryId(repository);
+            }
+        }
+        return storageIdAndRepositoryIdList;
+    }
+
+    private List<String> getGroupStorageIdAndRepositoryId(com.veadan.folib.storage.repository.Repository repository) {
+        List<String> storageIdAndRepositoryIdList = Lists.newArrayList();
+        for (String storageAndRepositoryId : repository.getGroupRepositories()) {
+            String sId = ConfigurationUtils.getStorageId(repository.getStorage().getId(), storageAndRepositoryId);
+            String rId = ConfigurationUtils.getRepositoryId(storageAndRepositoryId);
+            com.veadan.folib.storage.repository.Repository subRepository = configurationManagementService.getConfiguration().getRepository(sId, rId);
+            if (!subRepository.isInService()) {
+                continue;
+            }
+            if (!repository.isAllowsDirectoryBrowsing()) {
+                continue;
+            }
+            storageIdAndRepositoryIdList.add(subRepository.getStorage().getId() + "-" + subRepository.getId());
         }
         return storageIdAndRepositoryIdList;
     }

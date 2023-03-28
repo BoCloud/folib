@@ -218,8 +218,20 @@ public class ArtifactEventListenerRegistry extends AbstractEventListenerRegistry
     public void dispatchArtifactMetaDataEvent(Path path) {
         ArtifactEvent event = new ArtifactEvent(path,
                 ArtifactEventTypeEnum.EVENT_ARTIFACT_METADATA_UPDATE.getType());
-        logger.info("制品元数据更新 {}...", path);
+        logger.debug("Dispatching ArtifactEventTypeEnum.EVENT_ARTIFACT_METADATA_UPDATE event for {}...", path);
         dispatchEvent(event);
     }
+
+
+    public void dispatchArtifactDownloadBlockedEvent(Path path) {
+        ArtifactEvent event = new ArtifactEvent(path,
+                ArtifactEventTypeEnum.EVENT_ARTIFACT_FILE_DOWNLOAD_BLOCKED.getType());
+
+        logger.debug("Dispatching ArtifactEventTypeEnum.EVENT_ARTIFACT_FILE_DOWNLOAD_BLOCKED event for {}...", path);
+
+        dispatchEvent(event);
+    }
+
+
 
 }

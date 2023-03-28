@@ -14,6 +14,7 @@ import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.providers.io.RepositoryPathResolver;
 import com.veadan.folib.providers.layout.LayoutProviderRegistry;
 import com.veadan.folib.repositories.ArtifactRepository;
+import com.veadan.folib.repository.MavenRepositoryFeatures;
 import com.veadan.folib.service.ProxyRepositoryConnectionPoolConfigurationService;
 import com.veadan.folib.services.*;
 import com.veadan.folib.storage.Storage;
@@ -28,6 +29,7 @@ import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
@@ -108,6 +110,9 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
     @Inject
     private DictService dictService;
 
+    @Inject
+    @Lazy
+    private MavenRepositoryFeatures mavenRepositoryFeatures;
 
     @Override
     public ResponseEntity copy(ArtifactPromotion artifactPromotion) {
@@ -342,7 +347,7 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
                 String fileRelativePath = mapType.get(fileOriginalName);
                 String metaData = metaDataMap.getOrDefault(fileRelativePath, "").toString();
                 ArtifactUploadTask artifactUploadTask = new ArtifactUploadTask(storageId, repositoryId, file,
-                        repositoryManagementService, repositoryPathResolver, artifactManagementService, promotionUtil, layoutProviderRegistry, artifactMetadataService, artifactRepository, tempPath, fileRelativePath, metaData, uuid);
+                        repositoryManagementService, repositoryPathResolver, artifactManagementService, promotionUtil, layoutProviderRegistry, artifactMetadataService, artifactRepository, mavenRepositoryFeatures, tempPath, fileRelativePath, metaData, uuid);
                 FutureTask<String> task = new FutureTask<String>(artifactUploadTask);
                 listTask.add(task);
                 asyncRepositoryThreadPoolExecutor.submit(task);

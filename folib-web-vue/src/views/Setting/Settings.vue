@@ -806,7 +806,7 @@
               </a-tooltip>
             </a-col>
           </div>
-          <a-table :columns="metadataColumns" :data-source="metadataList">
+          <a-table :columns="metadataColumns" :data-source="metadataList" :row-key="(r, i) => i.toString()">
             <div slot="type" slot-scope="type">
               <span v-for="(item, index) in metadataTypes" :key="index">
                 <span v-if="type === item.value">{{ item.label }}</span>
@@ -854,7 +854,7 @@
               </a-tooltip>
             </a-col>
           </div>
-        <a-table :columns="artifactDispatchColumns" :data-source="artifactDispatchList">
+        <a-table :columns="artifactDispatchColumns" :data-source="artifactDispatchList" :row-key="(r, i) => i.toString()">
           <div slot="isThisCluster" slot-scope="text, record">
             {{ record.isThisCluster === true ? '是' : '否' }}
           </div>
@@ -886,6 +886,9 @@
           </div>
         </a-table>
         </a-card>
+      </a-tab-pane>
+      <a-tab-pane key="7" tab="Webhook">
+        <Webhook :activeKey="activeKey"></Webhook>
       </a-tab-pane>
     </a-tabs>
     <a-modal v-model="showMetadataHandler" :title="handlerMetadataType === 1 ? '新增元数据' : '修改元数据'" :maskClosable="false"
@@ -932,8 +935,8 @@
                     :hideRequiredMark="false">
         <a-row :gutter="[24]">
           <a-col :span="24">
-            <a-form-model-item class="mb-10" label="集群英文名" :colon="false" prop="clusterEnName">
-              <a-input :disabled="handlerArtifactDispatchType !== 1" placeholder="请输入集群英文名" v-model="artifactDispatchForm.clusterEnName" />
+            <a-form-model-item class="mb-10" label="集群节点英文名" :colon="false" prop="clusterEnName">
+              <a-input :disabled="handlerArtifactDispatchType !== 1" placeholder="请输入集群节点英文名" v-model="artifactDispatchForm.clusterEnName" />
             </a-form-model-item>
           </a-col>
           <a-col :span="24">
@@ -979,11 +982,14 @@
 import { getServerSettings, postServerSettings, getLdap, putLdap, getMachineCode, postActivate, checkMachineCode, getMetadataConfiguration, globalSettingAddOrUpdateMetadata, globalSettingDeleteMetadata ,getArtifactDispatchConfig,globalSettingArtifactDispatchConfig,globalSettingDelArtifactDispatchConfig} from "@/api/settings";
 import { getUsersCreateFields, getUsers } from "@/api/users";
 import { addVulnerabilitiesWhite, addVulnerabilitiesBlack, removeVulnerabilitiesWhite, removeVulnerabilitiesBlack, saveOrUpdateVulnerabilityNotify, securityPolicyConfig, securityPolicyBlock, securityPolicyAddPackageName, securityPolicyDeletePackageName } from "@/api/folib";
-
+import Webhook from "./components/Webhook/index.vue";
 
 
 export default {
   props: ['navbarFixed'],
+  components: {
+    Webhook,
+  },
   data() {
     return {
       step: 0,
@@ -1036,7 +1042,7 @@ export default {
       userList: [],
       artifactDispatchColumns:[
         {
-          title: '集群英文名',
+          title: '集群节点英文名',
           dataIndex: 'clusterEnName',
           key: 'clusterEnName',
           width: 100,
@@ -1127,7 +1133,7 @@ export default {
       },
       artifactDispatchRules:{
         clusterEnName: [
-          {required: true, message: '请输入集群英文名', trigger: 'blur'},
+          {required: true, message: '请输入集群节点英文名', trigger: 'blur'},
           {min: 1, max: 60, message: '长度在 1 到 60 个字符', trigger: 'blur'},
         ],
         clusterNodeHost: [
@@ -1182,6 +1188,7 @@ export default {
       packageNameShow: false,
       packageName: '',
       showPackageNameModal: false,
+      activeKey: '1',
       showArtifactDispatchHandler: false,
     }
   },
@@ -1203,6 +1210,7 @@ export default {
       });
     },
     tabChange(key) {
+      this.activeKey = key
       if (key === '2') {
         this.getVulnerabilities()
       } else if (key === '5') {

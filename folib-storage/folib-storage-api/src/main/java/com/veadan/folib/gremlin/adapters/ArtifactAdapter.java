@@ -10,7 +10,9 @@ import com.veadan.folib.domain.*;
 import com.veadan.folib.gremlin.dsl.EntityTraversal;
 import com.veadan.folib.gremlin.dsl.EntityTraversalUtils;
 import com.veadan.folib.gremlin.dsl.__;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.tinkerpop.gremlin.process.traversal.P;
 import org.apache.tinkerpop.gremlin.process.traversal.Traversal;
@@ -30,6 +32,7 @@ import static org.apache.tinkerpop.gremlin.structure.VertexProperty.Cardinality.
 /**
  * @author xuxinping
  */
+@Slf4j
 @Component
 public class ArtifactAdapter implements VertexEntityTraversalAdapter<Artifact> {
 
@@ -438,23 +441,25 @@ public class ArtifactAdapter implements VertexEntityTraversalAdapter<Artifact> {
             t = t.property(single, "scanDateTime", toLong(entity.getScanDateTime()));
         }
         ArtifactArchiveListing artifactArchiveListing = entity.getArtifactArchiveListing();
-
-        Set<String> filenames = artifactArchiveListing.getFilenames();
-        t = t.sideEffect(__.properties("filenames").drop());
-        t = t.property("filenames", filenames);
-
-        Map<String, String> checksums = entity.getChecksums();
-        Set<String> checkSumAlgo = new HashSet<>();
-        for (String alg : checksums.keySet()) {
-            checkSumAlgo.add("{" + alg + "}" + checksums.get(alg));
+        if (Objects.nonNull(artifactArchiveListing)) {
+            Set<String> filenames = artifactArchiveListing.getFilenames();
+            if (CollectionUtils.isNotEmpty(filenames)) {
+                t = t.sideEffect(__.properties("filenames").drop());
+                t = t.property("filenames", filenames);
+            }
         }
-        t = t.sideEffect(__.properties("checksums").drop());
-        t = t.property("checksums", checkSumAlgo);
-
+        Map<String, String> checksums = entity.getChecksums();
+        if (MapUtils.isNotEmpty(checksums)) {
+            Set<String> checkSumAlgo = new HashSet<>();
+            for (String alg : checksums.keySet()) {
+                checkSumAlgo.add("{" + alg + "}" + checksums.get(alg));
+            }
+            t = t.sideEffect(__.properties("checksums").drop());
+            t = t.property("checksums", checkSumAlgo);
+        }
         if (entity.getArtifactFileExists() != null) {
             t = t.property(single, "artifactFileExists", entity.getArtifactFileExists());
         }
-
         return t;
     }
 

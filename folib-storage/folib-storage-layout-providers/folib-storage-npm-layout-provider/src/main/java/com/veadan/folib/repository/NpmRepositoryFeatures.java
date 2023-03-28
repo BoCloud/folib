@@ -96,9 +96,6 @@ public class NpmRepositoryFeatures implements RepositoryFeatures {
     private Executor eventTaskExecutor;
 
     @Inject
-    private ThreadPoolTaskExecutor asyncThreadPoolTaskExecutor;
-
-    @Inject
     @NpmObjectMapper
     private ObjectMapper npmJacksonMapper;
 
@@ -514,7 +511,7 @@ public class NpmRepositoryFeatures implements RepositoryFeatures {
                 // Synchronously fetch remote package feed if there is no cached packages
                 job.run();
             } else {
-                asyncThreadPoolTaskExecutor.execute(job);
+                eventTaskExecutor.execute(job);
             }
         }
 

@@ -74,3 +74,11 @@ export function get2step (parameter) {
     data: parameter
   })
 }
+
+export function updateUser (data) {
+  return request({
+    url: userApi.UserInfo,
+    method: 'put',
+    data: data,
+  })
+}

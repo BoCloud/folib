@@ -118,23 +118,23 @@ public class AsyncPoolConfig {
     @Value("${folib.threadPool.asyncRepositoryCleanup.awaitTerminationSeconds}")
     private Integer asyncRepositoryCleanupAwaitTerminationSeconds;
 
-    @Value("${folib.threadPool.asyncMetadata.corePoolSize}")
-    private Integer asyncMetadataCorePoolSize;
+    @Value("${folib.threadPool.asyncConfig.corePoolSize}")
+    private Integer asyncConfigCorePoolSize;
 
-    @Value("${folib.threadPool.asyncMetadata.maxPoolSize}")
-    private Integer asyncMetadataMaxPoolSize;
+    @Value("${folib.threadPool.asyncConfig.maxPoolSize}")
+    private Integer asyncConfigMaxPoolSize;
 
-    @Value("${folib.threadPool.asyncMetadata.queueCapacity}")
-    private Integer asyncMetadataQueueCapacity;
+    @Value("${folib.threadPool.asyncConfig.queueCapacity}")
+    private Integer asyncConfigQueueCapacity;
 
-    @Value("${folib.threadPool.asyncMetadata.keepAliveSeconds}")
-    private Integer asyncMetadataKeepAliveSeconds;
+    @Value("${folib.threadPool.asyncConfig.keepAliveSeconds}")
+    private Integer asyncConfigKeepAliveSeconds;
 
-    @Value("${folib.threadPool.asyncMetadata.threadNamePrefix}")
-    private String asyncMetadataThreadNamePrefix;
+    @Value("${folib.threadPool.asyncConfig.threadNamePrefix}")
+    private String asyncConfigThreadNamePrefix;
 
-    @Value("${folib.threadPool.asyncMetadata.awaitTerminationSeconds}")
-    private Integer asyncMetadataAwaitTerminationSeconds;
+    @Value("${folib.threadPool.asyncConfig.awaitTerminationSeconds}")
+    private Integer asyncConfigAwaitTerminationSeconds;
 
     @Value("${folib.threadPool.asyncCronJob.corePoolSize}")
     private Integer asyncCronJobCorePoolSize;
@@ -208,8 +208,8 @@ public class AsyncPoolConfig {
     }
 
     @Bean
-    public ThreadPoolTaskExecutor asyncMetadataConfigurationThreadPoolExecutor() {
-        return buildThreadPoolTaskExecutor(asyncMetadataCorePoolSize, asyncMetadataMaxPoolSize, asyncMetadataQueueCapacity, asyncMetadataKeepAliveSeconds, asyncMetadataThreadNamePrefix, asyncMetadataAwaitTerminationSeconds);
+    public ThreadPoolTaskExecutor asyncConfigThreadPoolExecutor() {
+        return buildThreadPoolTaskExecutor(asyncConfigCorePoolSize, asyncConfigMaxPoolSize, asyncConfigQueueCapacity, asyncConfigKeepAliveSeconds, asyncConfigThreadNamePrefix, asyncConfigAwaitTerminationSeconds);
     }
 
     @Bean

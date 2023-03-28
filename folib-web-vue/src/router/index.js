@@ -146,6 +146,18 @@ let routes = [
 		layout: "dashboard",
 		component: () => import('../views/Layout.vue'),
 	},
+	{
+		path: '/personal',
+		name: 'personal',
+		layout: "dashboard",
+		meta: {
+			title: '个人中心',
+			sidebarMap: ['个人中心'],
+			breadcrumbs: ['个人中心'],
+			nofooter: true,
+		},
+		component: () => import('../views/Users/Personal.vue'),
+	},
 ]
 
 // Adding layout property from each route to the meta

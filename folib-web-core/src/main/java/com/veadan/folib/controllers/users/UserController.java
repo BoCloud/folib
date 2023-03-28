@@ -4,8 +4,10 @@ import com.veadan.folib.controllers.BaseController;
 import com.veadan.folib.controllers.users.support.TokenEntityBody;
 import com.veadan.folib.controllers.users.support.UserOutput;
 import com.veadan.folib.controllers.users.support.UserResponseEntity;
+import com.veadan.folib.domain.PageResultResponse;
 import com.veadan.folib.domain.User;
 import com.veadan.folib.forms.users.UserForm;
+import com.veadan.folib.scanner.common.msg.TableResultResponse;
 import com.veadan.folib.users.dto.UserDto;
 import com.veadan.folib.users.security.AuthoritiesProvider;
 import com.veadan.folib.users.service.UserService;
@@ -31,8 +33,7 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import javax.inject.Inject;
-import java.util.Comparator;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -104,6 +105,21 @@ public class UserController
                 .collect(Collectors.toList());
 
         return getJSONListResponseEntityBody("users", users);
+    }
+
+    @ApiOperation(value = "Used to retrieve users")
+    @ApiResponses(value = {@ApiResponse(code = 200, message = SUCCESSFUL_GET_USERS)})
+    @PreAuthorize("hasAuthority('VIEW_USER')")
+    @PostMapping(value = "/queryUser", produces = {MediaType.APPLICATION_JSON_VALUE})
+    @ResponseBody
+    public TableResultResponse<UserOutput> queryUser(@RequestBody UserDto user, Integer page, Integer limit) {
+        PageResultResponse<User> pageResultResponse =  userService.queryUser(user, page, limit);
+        if (Objects.isNull(pageResultResponse)) {
+            return new TableResultResponse<UserOutput>(0, Collections.emptyList());
+        }
+        List<User> userList = pageResultResponse.getData().getRows();
+        List<UserOutput> userOutputList = Optional.ofNullable(userList).orElse(Collections.emptyList()).stream().map(UserOutput::fromUser).collect(Collectors.toList());
+        return new TableResultResponse<UserOutput>(pageResultResponse.getData().getTotal(), userOutputList);
     }
 
     @ApiOperation(value = "Used to retrieve a user")

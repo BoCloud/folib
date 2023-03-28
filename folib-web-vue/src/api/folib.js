@@ -426,6 +426,14 @@ export function getStorageAndRepositoryPermission (storageId,repositoryId) {
   })
 }
 
+export function unionRepositoryConfig (storageId,repositoryId,data) {
+  return axios({
+    url: '/api/configuration/folib/storages/'+storageId+'/'+repositoryId+'/unionRepository',
+    method: 'put',
+    data: data
+  })
+}
+
 
 
 

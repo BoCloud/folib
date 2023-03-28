@@ -25,6 +25,11 @@ public class WebhookConfigurationForm
         implements Serializable {
 
     /**
+     * uuid
+     */
+    @NotBlank(message = "uuid不能为空", groups = {UpdateGroup.class, DeleteGroup.class, TestGroup.class})
+    private String uuid;
+    /**
      * url
      */
     @NotBlank(message = "请填写url", groups = {AddGroup.class})
@@ -38,7 +43,7 @@ public class WebhookConfigurationForm
     /**
      * 触发事件
      */
-    @NotEmpty(message = "请选择触发事件", groups = {AddGroup.class})
+    @NotEmpty(message = "请选择触发事件", groups = {AddGroup.class, TestGroup.class})
     private Set<String> events;
     /**
      * 启用ssl true 启用 false 不启用
@@ -46,6 +51,7 @@ public class WebhookConfigurationForm
     private Boolean ssl;
 
     public WebhookConfigurationForm(WebhookConfiguration webhookConfiguration) {
+        this.uuid = webhookConfiguration.getUuid();
         this.url = webhookConfiguration.getUrl();
         this.accessToken = webhookConfiguration.getAccessToken();
         this.events = webhookConfiguration.getEvents();
@@ -65,6 +71,14 @@ public class WebhookConfigurationForm
     }
 
     public interface UpdateGroup
+            extends Serializable {
+    }
+
+    public interface DeleteGroup
+            extends Serializable {
+    }
+
+    public interface TestGroup
             extends Serializable {
     }
 }

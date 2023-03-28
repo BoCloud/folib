@@ -4,27 +4,28 @@ package com.veadan.folib.controllers.cluster;
 import com.veadan.folib.authorization.service.AuthorizationConfigService;
 import com.veadan.folib.cluster.SyncAuthorizationEnum;
 import com.veadan.folib.cluster.SyncMetadataEnum;
+import com.veadan.folib.cluster.SyncUnionRepositoryEnum;
+import com.veadan.folib.cluster.SyncWebhookEnum;
 import com.veadan.folib.configuration.MutableSecurityPolicyConfiguration;
+import com.veadan.folib.configuration.MutableWebhookConfiguration;
 import com.veadan.folib.controllers.BaseController;
 import com.veadan.folib.controllers.cluster.dto.*;
 import com.veadan.folib.cron.services.CronTaskConfigurationService;
 import com.veadan.folib.event.repository.RepositoryEventListenerRegistry;
 import com.veadan.folib.services.ClusterDispatchManagementService;
-import com.veadan.folib.services.ClusterSyncService;
 import com.veadan.folib.services.RepositoryManagementService;
 import com.veadan.folib.services.StorageManagementService;
 import io.swagger.annotations.Api;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-
-import javax.inject.Inject;
 
 
 @RestController
@@ -188,4 +189,52 @@ public class FolibClusterSyncController extends BaseController {
         return ResponseEntity.ok("sync authorization ok");
     }
 
+    /**
+     * 同步webhook配置
+     *
+     * @param syncWebhookDto webhook配置
+     * @return 返回结果
+     */
+    @PostMapping("syncWebhook")
+    public ResponseEntity syncWebhook(@RequestBody SyncWebhookDto syncWebhookDto) {
+        try {
+            MutableWebhookConfiguration mutableWebhookConfiguration = MutableWebhookConfiguration.builder().build();
+            BeanUtils.copyProperties(syncWebhookDto.getWebhookConfigurationForm(), mutableWebhookConfiguration);
+            if (SyncWebhookEnum.ADD.getType().equals(syncWebhookDto.getSyncWebhookEnum().getType())) {
+                configurationManagementService.addWebhookConfiguration(mutableWebhookConfiguration);
+                logger.info("sync add webhook success");
+            } else if (SyncWebhookEnum.UPDATE.getType().equals(syncWebhookDto.getSyncWebhookEnum().getType())) {
+                configurationManagementService.updateWebhookConfiguration(mutableWebhookConfiguration);
+                logger.info("sync update webhook success");
+            } else if (SyncWebhookEnum.DELETE.getType().equals(syncWebhookDto.getSyncWebhookEnum().getType())) {
+                configurationManagementService.deleteWebhookConfiguration(syncWebhookDto.getWebhookConfigurationForm().getUuid());
+                logger.info("sync delete webhook success");
+            }
+        } catch (Exception e) {
+            logger.error("sync webhook error {}", ExceptionUtils.getStackTrace(e));
+            return getBadRequestResponseEntity(e.getMessage(), "");
+        }
+        return ResponseEntity.ok("sync webhook ok");
+    }
+
+    /**
+     * 同步联邦仓库配置
+     *
+     * @param syncUnionRepositoryDto 联邦仓库配置
+     * @return 返回结果
+     */
+    @PostMapping("syncUnionRepository")
+    public ResponseEntity syncUnionRepository(@RequestBody SyncUnionRepositoryDto syncUnionRepositoryDto) {
+        try {
+
+            if (SyncUnionRepositoryEnum.ADD_OR_UPDATE.getType().equals(syncUnionRepositoryDto.getSyncUnionRepositoryEnum().getType())) {
+                configurationManagementService.setUnionRepositoryConfiguration(syncUnionRepositoryDto.getStorageId(), syncUnionRepositoryDto.getRepositoryId(), syncUnionRepositoryDto.getUnionRepositoryConfigurationForm().getMutableUnionRepositoryConfiguration());
+                logger.info("sync add or update unionRepository success");
+            }
+        } catch (Exception e) {
+            logger.error("sync unionRepository error {}", ExceptionUtils.getStackTrace(e));
+            return getBadRequestResponseEntity(e.getMessage(), "");
+        }
+        return ResponseEntity.ok("sync unionRepository ok");
+    }
 }

@@ -19,6 +19,7 @@ import com.veadan.folib.scanner.common.util.DateUtils;
 import com.veadan.folib.scanner.config.ScanConfig;
 import com.veadan.folib.scanner.entity.ScannerReport;
 import com.veadan.folib.scanner.enums.SeverityTypeEnum;
+import com.veadan.folib.scanner.mapper.ScanRulesMapper;
 import com.veadan.folib.services.ArtifactService;
 import com.veadan.folib.services.VulnerabilityService;
 import com.veadan.folib.util.LocalDateTimeInstance;
@@ -59,6 +60,9 @@ public class ScanService {
 
     @Inject
     private ArtifactService artifactService;
+
+    @Inject
+    private ScanRulesMapper scanRulesMapper;
 
     @Value("${folib.temp}")
     private String tempPath;
@@ -271,7 +275,7 @@ public class ScanService {
     private void handlerVulnerability(Artifact artifact, Set<Vulnerability> vulnerabilitySet) {
         if (CollectionUtils.isNotEmpty(vulnerabilitySet)) {
             List<com.veadan.folib.domain.Vulnerability> vulnerabilityList = Lists.newArrayList();
-            Set<String> storages = Sets.newLinkedHashSet(), repositories = Sets.newLinkedHashSet();
+            Set<String> storages = Sets.newLinkedHashSet(), storagesAndRepositories = Sets.newLinkedHashSet();
             for (Vulnerability vulnerability : vulnerabilitySet) {
                 VulnerabilityEntity vulnerabilityEntity = new VulnerabilityEntity();
                 vulnerabilityEntity.setUuid(vulnerability.getName());
@@ -294,8 +298,8 @@ public class ScanService {
                 }
                 storages.add(artifact.getStorageId());
                 vulnerabilityEntity.setStorages(storages);
-                repositories.add(artifact.getRepositoryId());
-                vulnerabilityEntity.setRepositories(repositories);
+                storagesAndRepositories.add(String.format("%s-%s", artifact.getStorageId(), artifact.getRepositoryId()));
+                vulnerabilityEntity.setStoragesAndRepositories(storagesAndRepositories);
                 vulnerabilityList.add(vulnerabilityEntity);
             }
             vulnerabilityService.saveOrUpdateVulnerabilityBatch(vulnerabilityList);
@@ -313,5 +317,26 @@ public class ScanService {
         } catch (UpdateException e) {
             throw new BusinessException("更新出错");
         }
+    }
+
+    public void updateMirror() {
+        Settings settings = getSettings();
+        settings.setBoolean(Settings.KEYS.ENABLE_BATCH_UPDATES, true);
+        settings.setBoolean(Settings.KEYS.AUTO_UPDATE, true);
+        XpEngine engine = new XpEngine(settings);
+        try {
+            engine.doUpdates();
+        } catch (UpdateException e) {
+            throw new BusinessException("更新出错");
+        }
+    }
+
+    /**
+     * 统计properties表数据量，若小于等于1，初始化漏洞数据
+     *
+     * @return 数据量
+     */
+    public int countProperties() {
+        return scanRulesMapper.countProperties();
     }
 }

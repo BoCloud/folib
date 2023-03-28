@@ -25,7 +25,7 @@
               </a-radio>
             </a-radio-group>
           </a-card>
-          <a-card :bordered="false" class="header-solid">
+          <a-card :bordered="false" class="header-solid" v-if="this.folibRepository.type !== 'group'">
             <template #title>
               <h6>仓库可见范围</h6>
               <p v-if="permissionForm.scope === 1">存储空间成员可见，可拉取</p>
@@ -41,7 +41,7 @@
               </a-radio>
             </a-radio-group>
           </a-card>
-          <a-card :bordered="false" class="header-solid">
+          <a-card :bordered="false" class="header-solid" v-if="this.folibRepository.type !== 'group'">
             <template #title>
               <h6>仓库权限定义</h6>
               <p>在此定义用户对于该仓库的制品上传、制品删除权限</p>
@@ -73,7 +73,7 @@
                 </a-select-option>
               </a-select>
             </div>
-            <a-table v-if="permissionForm.userList && permissionForm.userList.length >0" :columns="permissionColumns" :data-source="permissionForm.userList" :pagination="false">
+            <a-table v-if="permissionForm.userList && permissionForm.userList.length >0" :columns="permissionColumns" :data-source="permissionForm.userList" :pagination="false" rowKwy="username">
               <template slot="username" slot-scope="text, record">
                 <p class="username">{{record.username}}</p>
                 <small v-if="record.permissions && record.permissions.length>0">{{'拥有该仓库的' + (record.permissions.length === 2?'上传、删除权限':(record.permissions.includes('ARTIFACTS_DEPLOY')?'上传权限':'删除权限'))}}</small>
@@ -148,7 +148,7 @@ export default {
         ],
       },
       permissionColumns: [
-      {
+        {
           title: "用户名",
           dataIndex: "username",
           scopedSlots: { customRender: "username" },
@@ -197,7 +197,9 @@ export default {
   },
 	watch: {
     settingVisible: function (newval) {
-      this.initData()
+      if (newval) {
+        this.initData()
+      }
     },
   },
   mounted() {},

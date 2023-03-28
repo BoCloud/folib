@@ -8,7 +8,10 @@ public enum SyncDataTypeEnum {
     METADATA(4),
     REPOSITORY_JOB(5),
     CLUSTER_DISPATCH(6),
-    AUTHORIZATION(7);
+    AUTHORIZATION(7),
+    WEBHOOK(8),
+    UNION_REPOSITORY(9),
+    ;
 
     private Integer value;
 

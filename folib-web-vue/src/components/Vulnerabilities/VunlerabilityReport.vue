@@ -72,7 +72,7 @@
                         <a-row :gutter="[24]" type="flex">
                             <a-col :span="24" :md="24" :lg="24">
                                 <a-table :columns="vulnerColumns" :data-source="item.vulnerabilities"
-                                    :pagination="false">
+                                    :pagination="false" :row-key="(r, i) => i.toString()">
 
                                     <a-row slot="expandedRowRender" :gutter="[24, 24]" slot-scope="record">
                                         <a-col :span="24">
