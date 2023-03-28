@@ -55,6 +55,7 @@ public class OfflineArtifactUploadController extends BaseArtifactController {
     public ResponseEntity offlineUpload(@RequestParam("file") MultipartFile file,
                                         @RequestParam("storageId") String storageId,
                                         @RequestParam("repostoryId") String repostoryId,
+                                        @RequestParam("deployType") String deployType,
                                         @RequestParam(value = "packageVersionDesc",required = false) String packageVersionDesc,
                                         @RequestHeader(HttpHeaders.ACCEPT) String accept) {
         // 离线普通制品folib 生成存储路径自动生成版本号 eg: repoName/1/file
@@ -70,6 +71,15 @@ public class OfflineArtifactUploadController extends BaseArtifactController {
                     resolve(storageId, repostoryId, repostoryId + "/" + version + "/" + file.getOriginalFilename());
 
             artifactManagementService.store(versionPath, is);
+
+            // 添加部署类型
+            ArtifactMetadataForm deployTypeMetadataForm = ArtifactMetadataForm.builder()
+                    .viewShow(1).key("deployType").value(deployType)
+                    .repositoryId(repostoryId).type("STRING").storageId(storageId)
+                    .artifactPath(repostoryId + "/" + version + "/" + file.getOriginalFilename()).build();
+
+            artifactWebService.saveArtifactMetadata(deployTypeMetadataForm);
+
 
             // 添加入库方式的元数据信息
             ArtifactMetadataForm srcTypeMetadataForm = ArtifactMetadataForm.builder()
