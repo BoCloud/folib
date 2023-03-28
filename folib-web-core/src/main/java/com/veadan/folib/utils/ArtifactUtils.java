@@ -64,6 +64,7 @@ public class ArtifactUtils {
     /**
      * 通用 docker 支持镜像版本 maven 支持pom
      * 校验制品类型是否是该布局支持的类型
+     *
      * @param repositoryPath 仓库地址
      * @return true 支持 false 不支持
      */
@@ -167,5 +168,26 @@ public class ArtifactUtils {
             metadataJson = JSONObject.parseObject(metadata);
         }
         return metadataJson;
+    }
+
+    /**
+     * 获取docker制品镜像名称
+     *
+     * @param artifactPath 制品路径
+     * @return docker制品镜像名称
+     */
+    public static String getDockerImage(String artifactPath) {
+        if (StringUtils.isBlank(artifactPath)) {
+            return "";
+        }
+        String artifactName = artifactPath.substring(0, artifactPath.indexOf("/sha256"));
+        String separator = "/";
+        boolean isDockerLayout;
+        String[] dockerArr;
+        if (artifactName.contains(separator)) {
+            dockerArr = artifactName.split(separator);
+            artifactName = dockerArr[0] + ":" + dockerArr[1];
+        }
+        return artifactName;
     }
 }

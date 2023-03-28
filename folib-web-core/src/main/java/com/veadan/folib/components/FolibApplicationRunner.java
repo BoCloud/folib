@@ -1,5 +1,6 @@
 package com.veadan.folib.components;
 
+import com.veadan.folib.app.FolibSpringBootApplication;
 import com.veadan.folib.config.janusgraph.JanusGraphDbProfile;
 import com.veadan.folib.entity.Dict;
 import com.veadan.folib.enums.UpgradeTaskStatusEnum;
@@ -47,8 +48,9 @@ public class FolibApplicationRunner implements ApplicationRunner {
      */
     private void initData() {
         int total = scanService.countProperties();
+        boolean isFirst = total <= 1;
         log.info("=====>>>>> Table properties data total is {} <<<<<=====", total);
-        if (total <= 1) {
+        if (isFirst) {
             if (JanusGraphDbProfile.PROFILE_EMBEDDED.equals(System.getProperty(JanusGraphDbProfile.PROPERTY_PROFILE))) {
                 String clusterNodeTotal = System.getProperty("CLUSTER_NODE_TOTAL");
                 if (StringUtils.isNotBlank(clusterNodeTotal)) {
@@ -57,7 +59,7 @@ public class FolibApplicationRunner implements ApplicationRunner {
                 }
             }
             log.info("=====>>>>> The initialization of vulnerability data begins <<<<<=====");
-            scanService.updateDB();
+            scanService.updateMirror();
         }
         handlerUnExecutedTask();
     }

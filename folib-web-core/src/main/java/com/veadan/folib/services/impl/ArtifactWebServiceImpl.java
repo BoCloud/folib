@@ -49,6 +49,7 @@ import com.veadan.folib.users.domain.SystemRole;
 import com.veadan.folib.users.userdetails.SpringSecurityUser;
 import com.veadan.folib.util.CustomDateUtils;
 import com.veadan.folib.util.FileSizeConvertUtils;
+import com.veadan.folib.utils.ArtifactUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -157,9 +158,8 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
                         if (StringUtils.isNotBlank(artifact.getStorageId()) && StringUtils.isNotBlank(artifact.getRepositoryId())) {
                             Repository repository = configurationManagementService.getConfiguration().getRepository(artifact.getStorageId(), artifact.getRepositoryId());
                             if (Objects.nonNull(repository) && "Docker".equalsIgnoreCase(repository.getLayout())) {
-                                String path = artifact.getArtifactPath();
                                 //docker
-                                artifactVo.setName(path.substring(0, path.indexOf("/blobs/sha256")));
+                                artifactVo.setName(ArtifactUtils.getDockerImage(artifact.getArtifactPath()));
                             }
                         }
                         return artifactVo;

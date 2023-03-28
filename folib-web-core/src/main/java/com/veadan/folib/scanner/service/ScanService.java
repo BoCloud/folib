@@ -319,6 +319,18 @@ public class ScanService {
         }
     }
 
+    public void updateMirror() {
+        Settings settings = getSettings();
+        settings.setBoolean(Settings.KEYS.ENABLE_BATCH_UPDATES, true);
+        settings.setBoolean(Settings.KEYS.AUTO_UPDATE, true);
+        XpEngine engine = new XpEngine(settings);
+        try {
+            engine.doUpdates();
+        } catch (UpdateException e) {
+            throw new BusinessException("更新出错");
+        }
+    }
+
     /**
      * 统计properties表数据量，若小于等于1，初始化漏洞数据
      *

@@ -59,6 +59,7 @@ public class ConfigurationManagementServiceImpl
     private ProxyRepositoryConnectionPoolConfigurationService proxyRepositoryConnectionPoolConfigurationService;
 
     @Inject
+    @Lazy
     private PlatformTransactionManager transactionManager;
 
     /**
@@ -205,6 +206,10 @@ public class ConfigurationManagementServiceImpl
                     repository.getLayout());
             if (Objects.nonNull(layoutProvider) && CollectionUtils.isEmpty(repository.getArtifactCoordinateValidators())) {
                 repository.setArtifactCoordinateValidators(layoutProvider.getDefaultArtifactCoordinateValidators());
+            }
+            RepositoryDto repositoryDto = storage.getRepository(repository.getId());
+            if (Objects.nonNull(repositoryDto) && Objects.isNull(repository.getUnionRepositoryConfig())) {
+                repository.setUnionRepositoryConfiguration(repositoryDto.getUnionRepositoryConfiguration());
             }
             storage.addRepository(repository);
             if (repository.isEligibleForCustomConnectionPool()) {
