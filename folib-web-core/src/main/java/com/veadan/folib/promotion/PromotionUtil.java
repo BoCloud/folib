@@ -148,7 +148,6 @@ public class PromotionUtil {
     //    @Async("asyncClusterDispatchThreadPoolExecutor")
     public void handlerDispatch(Map<String, ClusterDispatchNodeDto> map, ArtifactDispatch artifactDispatch,
                                 TargetDispatchRepositoryDto targetDispatchRepositoryDto) {
-        Client client = null;
         try {
             String artifactPath = artifactDispatch.getPath();
             String srcRepositoryId = artifactDispatch.getSrcRepositoryId();
@@ -172,7 +171,7 @@ public class PromotionUtil {
             }
             Map<String, ClusterDispatchNodeDto> dispatchMap = configurationManagementService.
                     getMutableConfigurationClone().getClusterDispatchNode();
-            client = clientPool.getRestClient();
+            Client client = clientPool.getRestClient();
             ClusterDispatchNodeDto clusterDispatchNodeDto = dispatchMap.get(dispatchClusterName);
             ArtifactDispatchRepositoryDto dispatchRepositoryDto = ArtifactDispatchRepositoryDto.builder()
                     .type(type)
@@ -206,7 +205,7 @@ public class PromotionUtil {
                         }
                         for (StorageTreeForm repo : repos) {
                             String tempRepoId = repo.getName();
-                            executeDispatch(client, artifactPath, srcRepositoryId, srcStorageId, targetStorageId, tempRepoId, dispatchNodeDto);
+                            executeDispatch(artifactPath, srcRepositoryId, srcStorageId, targetStorageId, tempRepoId, dispatchNodeDto);
                         }
                     }
                 }
@@ -229,24 +228,20 @@ public class PromotionUtil {
                         }
                         for (StorageTreeForm repo : repos) {
                             String tempRepoId = repo.getName();
-                            executeDispatch(client, artifactPath, srcRepositoryId, srcStorageId, targetStorageId, tempRepoId, dispatchNodeDto);
+                            executeDispatch(artifactPath, srcRepositoryId, srcStorageId, targetStorageId, tempRepoId, dispatchNodeDto);
                         }
                         break;
                     }
                 }
             } else {
-                executeDispatch(client, artifactPath, srcRepositoryId, srcStorageId, targetStorageId, targetRepositoryId, dispatchNodeDto);
+                executeDispatch(artifactPath, srcRepositoryId, srcStorageId, targetStorageId, targetRepositoryId, dispatchNodeDto);
             }
         } catch (Exception e) {
             log.error("分发错误{}", e.getMessage());
-        } finally {
-            if (null != client) {
-                client.close();
-            }
         }
     }
 
-    private void executeDispatch(Client client, String artifactPath, String srcRepositoryId, String srcStorageId, String targetStorageId, String targetRepositoryId, ClusterDispatchNodeDto dispatchNodeDto) {
+    private void executeDispatch( String artifactPath, String srcRepositoryId, String srcStorageId, String targetStorageId, String targetRepositoryId, ClusterDispatchNodeDto dispatchNodeDto) {
         try {
             StringBuilder strBuilder = new StringBuilder();
             String dispatchNodeHost = dispatchNodeDto.getClusterNodeHost();
@@ -263,7 +258,7 @@ public class PromotionUtil {
             String sourcePath = baseUrl.endsWith("/") ? baseUrl + srcStorageId + "/" + srcRepositoryId + "/" + artifactPath :
                     baseUrl + "/" + srcStorageId + "/" + srcRepositoryId + "/" + artifactPath;
             String dispatchType = dispatchNodeDto.getDispatchType();
-//            client = clientPool.getRestClient();
+            Client client = clientPool.getRestClient();
             Response response = null;
             PromotionNodeOption promotionNodeOption = null;
             log.info("分发 [{}] 开始", dispatchType);
@@ -278,6 +273,7 @@ public class PromotionUtil {
                     log.error("分发 [{}] 失败 {}", dispatchType, JSONUtil.toJsonStr(promotionNodeOption));
                     throw new Exception("分发失败 ! http status " + response.getStatus());
                 }
+                response.readEntity(java.lang.String.class);
             } else {
                 Repository srcRepository = repositoryManagementService.getStorage(srcStorageId).getRepository(srcRepositoryId);
                 RepositoryPath srcPath = repositoryPathResolver.resolve(srcRepository, artifactPath);

@@ -49,4 +49,52 @@ public class RepositoryForm {
      * 服务类型 In Service（开放） Out of Service（关闭）
      */
     private String status;
+
+    /**
+     * 单个制品最大值
+     */
+    @Builder.Default
+    private long artifactMaxSize = 214748364800L;
+
+    /**
+     * 回收站
+     */
+    @Builder.Default
+    private boolean trashEnabled = true;
+
+    /**
+     * 允许强制删除
+     */
+    @Builder.Default
+    private boolean allowsForceDeletion = true;
+
+    /**
+     * 允许上传
+     */
+    @Builder.Default
+    private boolean allowsDeployment = true;
+
+    /**
+     * 允许上传覆盖
+     */
+    @Builder.Default
+    private boolean allowsRedeployment = true;
+
+    /**
+     * 允许删除
+     */
+    @Builder.Default
+    private boolean allowsDeletion = true;
+
+    /**
+     * 允许目录浏览
+     */
+    @Builder.Default
+    private boolean allowsDirectoryBrowsing = true;
+
+    /**
+     * 开启checksum
+     */
+    private boolean checksumHeadersEnabled;
+
 }
