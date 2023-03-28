@@ -89,7 +89,7 @@ public class StorageManagementServiceImpl implements StorageManagementService {
      * @param storageId 存储空间名称
      */
     private void handlerOriginalStorageAdminRole(String username, String storageId) {
-        StorageDto originalStorage = configurationManagementService.getMutableConfigurationClone().getStorage(storageId);
+        Storage originalStorage = configurationManagementService.getConfiguration().getStorage(storageId);
         String originalUsername = originalStorage.getAdmin();
         if (StringUtils.isNotBlank(originalUsername) && !originalUsername.equals(username)) {
             logger.info("storageId {} manager change {} to {}", storageId, originalStorage.getAdmin(), username);
@@ -187,8 +187,8 @@ public class StorageManagementServiceImpl implements StorageManagementService {
      * @return 存储空间列表
      */
     private Set<String> getManagerStorageIdList(String username) {
-        return Optional.of(configurationManagementService.getMutableConfigurationClone().getStorages().values()).orElse(Lists.newArrayList()).stream()
-                .filter(item -> username.equals(item.getAdmin())).map(StorageDto::getId).collect(Collectors.toSet());
+        return Optional.of(configurationManagementService.getConfiguration().getStorages().values()).orElse(Lists.newArrayList()).stream()
+                .filter(item -> username.equals(item.getAdmin())).map(Storage::getId).collect(Collectors.toSet());
     }
 
     /**
@@ -198,7 +198,7 @@ public class StorageManagementServiceImpl implements StorageManagementService {
      * @return 仓库名称列表
      */
     private Set<String> getRepositoryIdList(String storageId) {
-        return configurationManagementService.getMutableConfigurationClone().getStorage(storageId).getRepositories().keySet();
+        return configurationManagementService.getConfiguration().getStorage(storageId).getRepositories().keySet();
     }
 
     /**

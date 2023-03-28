@@ -30,7 +30,7 @@ public class UniqueStorageValidator
     public boolean isValid(String storageId,
                            ConstraintValidatorContext context)
     {
-        Map<String, StorageDto> storageMap = configurationManagementService.getMutableConfigurationClone().getStorages();
+        Map<String, Storage> storageMap = configurationManagementService.getConfiguration().getStorages();
         CaseInsensitiveMap<String, Storage> insensitiveMap = new CaseInsensitiveMap<>(storageMap);
         Storage storage = insensitiveMap.get(storageId);
         return storage == null;
