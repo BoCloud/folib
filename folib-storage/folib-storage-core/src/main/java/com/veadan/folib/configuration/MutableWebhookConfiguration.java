@@ -6,6 +6,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.io.Serializable;
+import java.util.Objects;
 import java.util.Set;
 
 /**
@@ -18,6 +19,10 @@ import java.util.Set;
 public class MutableWebhookConfiguration
         implements Serializable {
 
+    /**
+     * uuid
+     */
+    private String uuid;
     /**
      * url
      */
@@ -37,4 +42,20 @@ public class MutableWebhookConfiguration
      */
     private Boolean ssl;
 
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (!(o instanceof MutableWebhookConfiguration)) {
+            return false;
+        }
+        MutableWebhookConfiguration that = (MutableWebhookConfiguration) o;
+        return uuid.equals(that.uuid);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(uuid);
+    }
 }

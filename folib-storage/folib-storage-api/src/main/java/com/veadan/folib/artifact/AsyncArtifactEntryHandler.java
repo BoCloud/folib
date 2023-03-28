@@ -10,6 +10,7 @@ import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.providers.io.RepositoryPathLock;
 import com.veadan.folib.providers.io.RepositoryPathResolver;
 import com.veadan.folib.repositories.ArtifactRepository;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.tinkerpop.gremlin.structure.Graph;
 import org.janusgraph.core.JanusGraph;
 import org.slf4j.Logger;
@@ -21,6 +22,7 @@ import java.lang.reflect.UndeclaredThrowableException;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 
+@Slf4j
 public abstract class AsyncArtifactEntryHandler {
 
     private static final Logger logger = LoggerFactory.getLogger(AsyncArtifactEntryHandler.class);
@@ -46,12 +48,10 @@ public abstract class AsyncArtifactEntryHandler {
         if (eventType.getType() != event.getType()) {
             return;
         }
-
         RepositoryPath repositoryPath = (RepositoryPath) event.getPath();
         if (!RepositoryFiles.isArtifact(repositoryPath)) {
             return;
         }
-
         try {
             handleLocked(repositoryPath);
         } catch (Throwable e) {

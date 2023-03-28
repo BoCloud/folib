@@ -120,6 +120,7 @@
         :queryRepositoryId="false"
         :storageId="folibRepository.storageId"
         :repositoryId="folibRepository.id"
+        :repositoryType="folibRepository.type"
         @repositoryVulnerabilityStatistics="repositoryVulnerabilityStatistics"
         ref="vulnerability"
       >

@@ -33,6 +33,7 @@ public class EncodedPasswordUser implements User
         return getUsername();
     }
     
+    @Override
     public String getUsername()
     {
         return user.getUsername();
@@ -48,6 +49,7 @@ public class EncodedPasswordUser implements User
         return user.getUserType();
     }
 
+    @Override
     public String getPassword()
     {
         String password = user.getPassword();
@@ -60,29 +62,39 @@ public class EncodedPasswordUser implements User
 
 
 
+    @Override
     public Set<SecurityRole> getRoles()
     {
         return user.getRoles();
     }
 
+    @Override
     public String getSecurityTokenKey()
     {
         return user.getSecurityTokenKey();
     }
 
+    @Override
     public Boolean isEnabled()
     {
         return user.isEnabled();
     }
 
+    @Override
     public LocalDateTime getLastUpdated()
     {
         return user.getLastUpdated();
     }
 
+    @Override
     public String getSourceId()
     {
         return user.getSourceId();
     }
-    
+
+    @Override
+    public String getAvatar() {
+        return user.getAvatar();
+    }
+
 }

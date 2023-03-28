@@ -23,6 +23,11 @@ public class WebhookConfiguration
         implements Serializable {
 
     /**
+     * uuid
+     */
+    private String uuid;
+
+    /**
      * url
      */
     private String url;
@@ -42,6 +47,7 @@ public class WebhookConfiguration
     private Boolean ssl;
 
     public WebhookConfiguration(MutableWebhookConfiguration mutableWebhookConfiguration) {
+        this.uuid = mutableWebhookConfiguration.getUuid();
         this.url = mutableWebhookConfiguration.getUrl();
         this.accessToken = mutableWebhookConfiguration.getAccessToken();
         this.events = mutableWebhookConfiguration.getEvents();

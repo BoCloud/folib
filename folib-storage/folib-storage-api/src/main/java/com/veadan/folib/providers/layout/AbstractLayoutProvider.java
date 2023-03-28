@@ -16,15 +16,10 @@ import java.util.stream.Stream;
 
 import javax.inject.Inject;
 
+import com.veadan.folib.artifact.archive.*;
 import com.veadan.folib.configuration.ConfigurationManager;
 import com.veadan.folib.providers.io.RepositoryFileAttributeType;
 import org.apache.commons.codec.digest.MessageDigestAlgorithms;
-import com.veadan.folib.artifact.archive.ArchiveListingFunction;
-import com.veadan.folib.artifact.archive.Bzip2ArchiveListingFunction;
-import com.veadan.folib.artifact.archive.CompositeArchiveListingFunction;
-import com.veadan.folib.artifact.archive.TarArchiveListingFunction;
-import com.veadan.folib.artifact.archive.TarGzArchiveListingFunction;
-import com.veadan.folib.artifact.archive.ZipArchiveListingFunction;
 import com.veadan.folib.artifact.coordinates.ArtifactCoordinates;
 import com.veadan.folib.domain.ArtifactGroup;
 import com.veadan.folib.domain.ArtifactIdGroup;
@@ -56,7 +51,8 @@ public abstract class AbstractLayoutProvider<T extends LayoutArtifactCoordinates
                 ZipArchiveListingFunction.INSTANCE,
                 TarGzArchiveListingFunction.INSTANCE,
                 TarArchiveListingFunction.INSTANCE,
-                Bzip2ArchiveListingFunction.INSTANCE
+                Bzip2ArchiveListingFunction.INSTANCE,
+                JarArchiveListingFunction.INSTANCE
             )
     );
 

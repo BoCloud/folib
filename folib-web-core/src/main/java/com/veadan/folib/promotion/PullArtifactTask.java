@@ -67,8 +67,8 @@ public class PullArtifactTask implements Callable<String> {
                 }
             }
             try (InputStream is = response.readEntity(InputStream.class);) {
-                artifactManagementService.store(destPath, is);
                 promotionUtil.setMetaData(destPath, metaData);
+                artifactManagementService.store(destPath, is);
             }
         } catch (Exception e) {
             // 添加重试机制
@@ -106,8 +106,8 @@ public class PullArtifactTask implements Callable<String> {
             }
 
             try (InputStream is = response.readEntity(InputStream.class);) {
-                artifactManagementService.store(destPath, is);
                 promotionUtil.setMetaData(destPath, metaData);
+                artifactManagementService.store(destPath, is);
             }
             return true;
         } catch (Exception e) {

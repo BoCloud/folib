@@ -1,5 +1,6 @@
 package com.veadan.folib.users.service;
 
+import com.veadan.folib.domain.PageResultResponse;
 import com.veadan.folib.domain.User;
 import com.veadan.folib.users.domain.Users;
 import org.jose4j.lang.JoseException;
@@ -35,6 +36,8 @@ public interface UserService
     void updateAccountDetailsByUsername(User userToUpdate);
 
     Users getUsers();
+
+    PageResultResponse<User> queryUser(User user, Integer page, Integer limit);
 
     void revokeEveryone(String roleToRevoke);
 

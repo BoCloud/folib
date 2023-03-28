@@ -59,6 +59,7 @@ public class ConfigurationManagementServiceImpl
     private ProxyRepositoryConnectionPoolConfigurationService proxyRepositoryConnectionPoolConfigurationService;
 
     @Inject
+    @Lazy
     private PlatformTransactionManager transactionManager;
 
     /**
@@ -205,6 +206,10 @@ public class ConfigurationManagementServiceImpl
                     repository.getLayout());
             if (Objects.nonNull(layoutProvider) && CollectionUtils.isEmpty(repository.getArtifactCoordinateValidators())) {
                 repository.setArtifactCoordinateValidators(layoutProvider.getDefaultArtifactCoordinateValidators());
+            }
+            RepositoryDto repositoryDto = storage.getRepository(repository.getId());
+            if (Objects.nonNull(repositoryDto) && Objects.isNull(repository.getUnionRepositoryConfig())) {
+                repository.setUnionRepositoryConfiguration(repositoryDto.getUnionRepositoryConfiguration());
             }
             storage.addRepository(repository);
             if (repository.isEligibleForCustomConnectionPool()) {
@@ -693,6 +698,62 @@ public class ConfigurationManagementServiceImpl
     @Override
     public void deleteMetadataConfig(String key) throws IOException {
         modifyInLock(configuration -> configuration.getMetadataConfiguration().remove(key));
+    }
+
+    @Override
+    public void setWebhookConfiguration(Map<String, MutableWebhookConfiguration> webhookConfiguration) throws IOException {
+        modifyInLock(configuration ->
+        {
+            configuration.setWebhookConfiguration(webhookConfiguration);
+        });
+    }
+
+    @Override
+    public void addWebhookConfiguration(MutableWebhookConfiguration mutableWebhookConfiguration) throws IOException {
+        modifyInLock(configuration ->
+        {
+            MutableWebhookConfiguration sourceMutableWebhookConfiguration = configuration.getWebhookConfiguration().get(mutableWebhookConfiguration.getUuid());
+            if (Objects.nonNull(sourceMutableWebhookConfiguration)) {
+                throw new IllegalArgumentException(String.format("add webhook configuration %s existent", mutableWebhookConfiguration.getUuid()));
+            }
+            boolean flag = CollectionUtils.isNotEmpty(configuration.getWebhookConfiguration().values()) && configuration.getWebhookConfiguration().values().stream().anyMatch(item -> item.getUrl().equals(mutableWebhookConfiguration.getUrl()));
+            if (flag) {
+                throw new IllegalArgumentException(String.format("url %s existent", mutableWebhookConfiguration.getUrl()));
+            }
+            configuration.addOrUpdateWebhookConfiguration(mutableWebhookConfiguration);
+        });
+    }
+
+    @Override
+    public void updateWebhookConfiguration(MutableWebhookConfiguration mutableWebhookConfiguration) throws IOException {
+        modifyInLock(configuration ->
+        {
+            MutableWebhookConfiguration sourceMutableWebhookConfiguration = configuration.getWebhookConfiguration().get(mutableWebhookConfiguration.getUuid());
+            if (Objects.isNull(sourceMutableWebhookConfiguration)) {
+                throw new IllegalArgumentException(String.format("update webhook configuration %s non existent", mutableWebhookConfiguration.getUuid()));
+            }
+            configuration.addOrUpdateWebhookConfiguration(mutableWebhookConfiguration);
+        });
+    }
+
+    @Override
+    public void deleteWebhookConfiguration(String uuid) throws IOException {
+        MutableWebhookConfiguration sourceMutableWebhookConfiguration = configuration.getWebhookConfiguration().get(uuid);
+        if (Objects.isNull(sourceMutableWebhookConfiguration)) {
+            throw new IllegalArgumentException(String.format("delete webhook configuration %s non existent", uuid));
+        }
+        modifyInLock(configuration -> configuration.getWebhookConfiguration().remove(uuid));
+    }
+
+    @Override
+    public void setUnionRepositoryConfiguration(String storageId, String repositoryId, MutableUnionRepositoryConfiguration mutableUnionRepositoryConfiguration) throws IOException {
+        modifyInLock(configuration -> {
+            if (storageId != null && repositoryId != null) {
+                configuration.getStorage(storageId)
+                        .getRepository(repositoryId)
+                        .setUnionRepositoryConfiguration(mutableUnionRepositoryConfiguration);
+            }
+        });
     }
 
     private void setProxyRepositoryConnectionPoolConfigurations() throws IOException {

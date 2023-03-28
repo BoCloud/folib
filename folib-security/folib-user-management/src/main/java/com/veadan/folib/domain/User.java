@@ -12,6 +12,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 public interface User extends DomainObject
 {
 
+    @Override
     @JsonIgnore
     String getUuid();
 
@@ -43,4 +44,5 @@ public interface User extends DomainObject
 
     String getSourceId();
 
+    String getAvatar();
 }

@@ -61,7 +61,7 @@ public class ArtifactEventListenerScannerHandler {
     private String tempPath;
 
     @AsyncEventListener
-    protected void handle(final ArtifactEvent<RepositoryPath> event) throws IOException {
+    public void handle(final ArtifactEvent<RepositoryPath> event) throws IOException {
         RepositoryPath repositoryPath = event.getPath();
         int source = (int) event.getSource();
         boolean validate = validateEventTypeAndLayoutSupports(event);
@@ -308,7 +308,7 @@ public class ArtifactEventListenerScannerHandler {
             return true;
         }
         if (flag) {
-            flag = ArtifactUtils.layoutSupports(repositoryPath);
+            flag = ArtifactUtils.layoutSupportsForScan(repositoryPath);
         }
         return flag;
     }

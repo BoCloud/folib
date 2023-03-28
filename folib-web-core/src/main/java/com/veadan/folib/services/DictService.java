@@ -54,4 +54,16 @@ public interface DictService {
      * @return 字典
      */
     Dict selectOneDict(Dict dict);
+
+    /**
+     * 查询未执行的升级任务
+     * @return 未执行的升级任务
+     */
+    List<Dict> selectUnExecutedTask();
+
+    /**
+     * 更新未执行的升级任务的状态
+     * @param dict 参数
+     */
+    void updateUnExecutedTask(Dict dict);
 }

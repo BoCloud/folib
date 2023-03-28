@@ -14,10 +14,12 @@ import javax.inject.Inject;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import com.veadan.folib.data.CacheName;
+import com.veadan.folib.domain.PageResultResponse;
 import com.veadan.folib.domain.SecurityRole;
 import com.veadan.folib.users.domain.SystemRole;
 import com.veadan.folib.users.security.SecurityTokenProvider;
 import com.veadan.folib.users.service.UserService;
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import com.veadan.folib.domain.User;
 import com.veadan.folib.users.domain.UserData;
@@ -51,6 +53,37 @@ public class InMemoryUserService implements UserService
             Set<UserDto> userSet = new HashSet<>(userMap.values());
 
             return new Users(new UsersDto(userSet));
+        }
+        finally
+        {
+            readLock.unlock();
+        }
+    }
+
+    @Override
+    public PageResultResponse<User> queryUser(User user, Integer page, Integer limit) {
+        if (Objects.isNull(page)) {
+            page = 1;
+        }
+        if (Objects.isNull(limit)) {
+            limit = 5;
+        }
+        int index = (page - 1);
+        final Lock readLock = usersLock.readLock();
+        readLock.lock();
+        try
+        {
+            Set<UserDto> userSet = new HashSet<>(userMap.values());
+            if (CollectionUtils.isNotEmpty(userSet)) {
+                List<UserDto> userList = Lists.newLinkedList(userSet);
+                List<List<UserDto>> userLists = Lists.partition(userList, limit);
+                if (userLists.size() >= page) {
+                    return new PageResultResponse<User>(userSet.size(), userLists.get(index).stream().map(UserData::new).collect(Collectors.toList()));
+                } else {
+                    return null;
+                }
+            }
+            return null;
         }
         finally
         {
@@ -195,7 +228,14 @@ public class InMemoryUserService implements UserService
                         {
                             user.setPassword(userToUpdate.getPassword());
                         }
-
+                        if (!StringUtils.isBlank(userToUpdate.getAvatar()))
+                        {
+                            user.setAvatar(userToUpdate.getAvatar());
+                        }
+                        if (!StringUtils.isBlank(userToUpdate.getEmail()))
+                        {
+                            user.setEmail(userToUpdate.getEmail());
+                        }
                         updateSecurityToken(user, userToUpdate.getSecurityTokenKey());
                     });
         });
@@ -224,7 +264,7 @@ public class InMemoryUserService implements UserService
             writeLock.unlock();
         }
     }
-    
+
     protected <T> T modifyInLock(final Function<Map<String, UserDto>, T> operation)
     {
         final Lock writeLock = usersLock.writeLock();

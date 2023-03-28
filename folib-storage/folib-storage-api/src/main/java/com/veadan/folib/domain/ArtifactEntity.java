@@ -11,6 +11,7 @@ import com.veadan.folib.gremlin.adapters.DateConverter;
 import org.neo4j.ogm.annotation.NodeEntity;
 import org.neo4j.ogm.annotation.Relationship;
 import org.neo4j.ogm.annotation.typeconversion.Convert;
+import org.springframework.util.Assert;
 
 import javax.persistence.Transient;
 import java.time.LocalDateTime;
@@ -137,7 +138,7 @@ public class ArtifactEntity
     public ArtifactEntity(String storageId,
                           String repositoryId,
                           ArtifactCoordinates artifactCoordinates) {
-        Objects.nonNull(artifactCoordinates);
+        Assert.notNull(artifactCoordinates, "artifactCoordinates cannot be empty");
 
         this.storageId = storageId;
         this.repositoryId = repositoryId;

@@ -5,6 +5,7 @@ import java.util.concurrent.Executor;
 
 import javax.servlet.ServletContext;
 
+import cn.hutool.extra.spring.SpringUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.FactoryBean;
@@ -41,14 +42,14 @@ public class EventExecutorFactoryBean implements FactoryBean<Executor>
         Executor result;
         if ((result = lookupJettyExecutor()) != null)
         {
-            return new DelayedExecutor(result);
+            return result;
         }
         return null;
     }
 
     private Executor lookupJettyExecutor()
     {
-        Executor executor = (Executor) servletContext.getAttribute("org.eclipse.jetty.server.Executor");
+        Executor executor = (Executor) SpringUtil.getBean("asyncEventListenerExecutor");
         if (executor == null)
         {
             return null;

@@ -1,10 +1,15 @@
 package com.veadan.folib.repository;
 
+import com.veadan.folib.artifact.coordinates.ArtifactCoordinates;
 import com.veadan.folib.artifact.locator.ArtifactDirectoryLocator;
 import com.veadan.folib.configuration.ConfigurationManager;
+import com.veadan.folib.providers.io.RepositoryFiles;
 import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.providers.io.RepositoryPathResolver;
 import com.veadan.folib.storage.ArtifactStorageException;
+import com.veadan.folib.storage.validation.ArtifactCoordinatesValidator;
+import com.veadan.folib.storage.validation.artifact.ArtifactCoordinatesValidatorRegistry;
+import com.veadan.folib.storage.validation.artifact.version.VersionValidationException;
 import com.veadan.folib.storage.validation.deployment.RedeploymentValidator;
 import com.veadan.folib.configuration.Configuration;
 import com.veadan.folib.locator.handlers.RemoveTimestampedSnapshotOperation;
@@ -26,6 +31,7 @@ import java.util.*;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 
 /**
@@ -57,6 +63,10 @@ public class MavenRepositoryFeatures
 
     @Inject
     private RepositoryPathResolver repositoryPathResolver;
+
+    @Inject
+    @Lazy
+    protected ArtifactCoordinatesValidatorRegistry artifactCoordinatesValidatorRegistry;
 
     private Set<String> defaultArtifactCoordinateValidators;
 
@@ -135,4 +145,33 @@ public class MavenRepositoryFeatures
         MavenRepositoryConfiguration repositoryConfiguration = (MavenRepositoryConfiguration) repository.getRepositoryConfiguration();
         return repositoryConfiguration != null && repositoryConfiguration.isIndexingEnabled();
     }
+
+    public void versionValidator(RepositoryPath repositoryPath) throws Exception {
+        try
+        {
+            Repository repository = repositoryPath.getFileSystem().getRepository();
+            if (!RepositoryFiles.isArtifact(repositoryPath))
+            {
+                return;
+            }
+            ArtifactCoordinates coordinates = RepositoryFiles.readCoordinates(repositoryPath);
+            Set<String> versionValidatorSets = new LinkedHashSet<>(Arrays.asList(
+                    mavenReleaseVersionValidator.getAlias(),
+                    mavenSnapshotVersionValidator.getAlias()));
+            for (String validatorKey : versionValidatorSets)
+            {
+                ArtifactCoordinatesValidator validator = artifactCoordinatesValidatorRegistry.getProvider(
+                        validatorKey);
+                if (validator.supports(repository))
+                {
+                    validator.validate(repository, coordinates);
+                }
+            }
+        } catch (IOException io) {
+            throw new RuntimeException(io);
+        } catch (VersionValidationException e) {
+            throw new ArtifactStorageException(e);
+        }
+    }
+
 }

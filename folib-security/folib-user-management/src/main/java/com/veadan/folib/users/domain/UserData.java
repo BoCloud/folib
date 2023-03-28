@@ -30,6 +30,8 @@ public class UserData implements Serializable, User
 
     private final String email;
 
+    private String avatar;
+
     private final String userType;
 
     private final Boolean enabled;
@@ -55,6 +57,7 @@ public class UserData implements Serializable, User
         this.lastUpdate = null;
         this.email=null;
         this.userType=null;
+        this.avatar = null;
     }
 
     public UserData(final UserDto source)
@@ -68,6 +71,7 @@ public class UserData implements Serializable, User
         this.sourceId = source.getSourceId();
         this.email=source.getEmail();
         this.userType=source.getUserType();
+        this.avatar = source.getAvatar();
     }
 
     private Set<SecurityRole> immuteRoles(final Set<SecurityRole> source)
@@ -131,6 +135,11 @@ public class UserData implements Serializable, User
     public String getSourceId()
     {
         return sourceId;
+    }
+
+    @Override
+    public String getAvatar() {
+        return avatar;
     }
 
     @Override

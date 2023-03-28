@@ -105,8 +105,14 @@ public enum ArtifactEventTypeEnum {
      * Occurs when an artifact directory has been deleted.
      */
     EVENT_ARTIFACT_DIRECTORY_PATH_DELETED(23),
-
-    EVENT_ARTIFACT_METADATA_UPDATE(24)
+    /**
+     * Occurs when an metadata operation has update.
+     */
+    EVENT_ARTIFACT_METADATA_UPDATE(24),
+    /**
+     * Occurs when an artifact download operation has blocked.
+     */
+    EVENT_ARTIFACT_FILE_DOWNLOAD_BLOCKED(25),
     ;
 
 

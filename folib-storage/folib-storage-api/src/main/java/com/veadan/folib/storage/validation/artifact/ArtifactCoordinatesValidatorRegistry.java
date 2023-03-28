@@ -26,9 +26,6 @@ public class ArtifactCoordinatesValidatorRegistry
 
     private static final Logger logger = LoggerFactory.getLogger(ArtifactCoordinatesValidatorRegistry.class);
 
-    @Inject
-    private ConfigurationManagementService configurationManagementService;
-
     private Map<String, Set<ArtifactCoordinatesValidator>> validatorsByLayoutProvider = new LinkedHashMap<>();
 
 

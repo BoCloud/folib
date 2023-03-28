@@ -13,4 +13,8 @@
         <result property="scanRule" column="scan_rule"/>
     </resultMap>
 
+    <select id="countProperties" resultType="int">
+        select count(*) total from properties
+    </select>
+
 </mapper>

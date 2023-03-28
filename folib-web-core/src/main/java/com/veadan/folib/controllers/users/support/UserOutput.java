@@ -32,6 +32,8 @@ public class UserOutput
 
     private String email;
 
+    private String avatar;
+
     private Set<String> roles;
 
     private String securityTokenKey;
@@ -97,6 +99,7 @@ public class UserOutput
         output.setUsername(user.getUsername());
         output.setEmail(user.getEmail());
         output.setSecurityTokenKey(user.getSecurityTokenKey());
+        output.setAvatar(user.getAvatar());
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (Objects.nonNull(authentication)) {
             output.setAuthorities(authentication.getAuthorities().stream()
@@ -126,5 +129,13 @@ public class UserOutput
         sb.append(", securityTokenKey='").append(securityTokenKey).append('\'');
         sb.append('}');
         return sb.toString();
+    }
+
+    public String getAvatar() {
+        return avatar;
+    }
+
+    public void setAvatar(String avatar) {
+        this.avatar = avatar;
     }
 }

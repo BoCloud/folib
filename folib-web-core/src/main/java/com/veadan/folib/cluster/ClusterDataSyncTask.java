@@ -127,6 +127,16 @@ public class ClusterDataSyncTask {
                     isSuccess(syncResult, task);
                     logger.info("sync authorization data end [{} ]", url);
                 }
+                // 同步webhook配置信息
+                if (Objects.equals(SyncDataTypeEnum.WEBHOOK.getValue(), task.getTaskType())) {
+                    SyncWebhookDto syncWebhookDto = JSONObject.parseObject(task.getDataJson(),
+                            SyncWebhookDto.class);
+
+                    logger.info("start sync webhook data [{}]", url);
+                    ClusterSyncResultEnum syncResult = clusterSyncService.handleSyncWebhookConfiguration(syncWebhookDto, url, true);
+                    isSuccess(syncResult, task);
+                    logger.info("sync webhook data end [{} ]", url);
+                }
                 // 同步分发配置
                 if (Objects.equals(SyncDataTypeEnum.CLUSTER_DISPATCH.getValue(), task.getTaskType())) {
                     SyncClusterDispatchDto syncClusterDispatchDto = JSONObject.parseObject(task.getDataJson(), SyncClusterDispatchDto.class);
@@ -135,7 +145,14 @@ public class ClusterDataSyncTask {
                     isSuccess(syncResult, task);
                     logger.info("sync dispatch data end [{} ]", url);
                 }
-
+                // 同步联邦仓库配置
+                if (Objects.equals(SyncDataTypeEnum.UNION_REPOSITORY.getValue(), task.getTaskType())) {
+                    SyncUnionRepositoryDto syncUnionRepositoryDto = JSONObject.parseObject(task.getDataJson(), SyncUnionRepositoryDto.class);
+                    logger.info("start sync unionRepository data [{}]", url);
+                    ClusterSyncResultEnum syncResult = clusterSyncService.handleSyncUnionRepositoryConfiguration(syncUnionRepositoryDto, url, true);
+                    isSuccess(syncResult, task);
+                    logger.info("sync unionRepository data end [{} ]", url);
+                }
             } catch (Exception e) {
                 logger.error("error {}", e.getMessage());
             }

@@ -71,6 +71,11 @@ public class MutableConfiguration
      */
     private Map<String, MutableMetadataConfiguration> metadataConfiguration = new LinkedHashMap<>();
 
+    /**
+     * webhook配置
+     */
+    private Map<String, MutableWebhookConfiguration> webhookConfiguration = new LinkedHashMap<>();
+
     public String getId() {
         return id;
     }
@@ -319,6 +324,22 @@ public class MutableConfiguration
         }
     }
 
+    public Map<String, MutableWebhookConfiguration> getWebhookConfiguration() {
+        return webhookConfiguration;
+    }
+
+    public void setWebhookConfiguration(Map<String, MutableWebhookConfiguration> webhookConfiguration) {
+        this.webhookConfiguration = webhookConfiguration;
+    }
+
+    public void addOrUpdateWebhookConfiguration(MutableWebhookConfiguration mutableWebhookConfiguration) {
+        String uuid = mutableWebhookConfiguration.getUuid();
+        if (StringUtils.isBlank(uuid)) {
+            throw new IllegalArgumentException("Null keys are not supported!");
+        }
+        this.webhookConfiguration.put(uuid, mutableWebhookConfiguration);
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) {
@@ -340,13 +361,14 @@ public class MutableConfiguration
                 Objects.equal(corsConfiguration, that.corsConfiguration) &&
                 Objects.equal(smtpConfiguration, that.smtpConfiguration) &&
                 Objects.equal(securityPolicyConfiguration, that.securityPolicyConfiguration) &&
-                Objects.equal(metadataConfiguration, that.metadataConfiguration);
+                Objects.equal(metadataConfiguration, that.metadataConfiguration) &&
+                Objects.equal(webhookConfiguration, that.webhookConfiguration);
     }
 
     @Override
     public int hashCode() {
         return Objects.hashCode(version, baseUrl, port, proxyConfiguration, sessionConfiguration, storages,
-                routingRules, securityPolicyConfiguration, remoteRepositoriesConfiguration, corsConfiguration, smtpConfiguration, metadataConfiguration);
+                routingRules, securityPolicyConfiguration, remoteRepositoriesConfiguration, corsConfiguration, smtpConfiguration, metadataConfiguration, webhookConfiguration);
     }
 
     @Override
@@ -365,6 +387,7 @@ public class MutableConfiguration
                 .add("\n\tcorsConfiguration", corsConfiguration)
                 .add("\n\tsmtpConfiguration", smtpConfiguration)
                 .add("\n\tmetadataConfiguration", metadataConfiguration)
+                .add("\n\twebhookConfiguration", webhookConfiguration)
                 .toString();
     }
 

@@ -181,7 +181,7 @@ public class MavenMetadataManager
                    ProviderImplementationException,
                    UnknownRepositoryTypeException
     {
-        logger.info("VersionCollectionRequest：{}", JSONObject.toJSONString(request));
+        logger.debug("VersionCollectionRequest：{}", JSONObject.toJSONString(request));
         Repository repository = artifactGroupDirectoryPath.getRepository();
         LayoutProvider layoutProvider = LayoutProviderRegistry.getLayoutProvider(repository, layoutProviderRegistry);
         if (!RepositoryFiles.artifactExists(artifactGroupDirectoryPath))

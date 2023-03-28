@@ -13,7 +13,8 @@ const user = {
     enabled: '',
     roles: [],
     authorities: [],
-    email: ''
+    email: '',
+    avatar: ''
   },
 
   mutations: {
@@ -37,7 +38,10 @@ const user = {
     },
     SET_TOKEN_KEY: (state, securityTokenKey) => {
       state.securityTokenKey = securityTokenKey
-    }
+    },
+    SET_AVATAR: (state, avatar) => {
+      state.avatar = avatar
+    },
   },
 
   actions: {
@@ -66,7 +70,7 @@ const user = {
             commit('SET_EMAIL', result.email)
             commit('SET_NAME', result.username)
             commit('SET_TOKEN_KEY', result.securityTokenKey)
-
+            commit('SET_AVATAR', result.avatar)
 
 
             // console.log(store.state)

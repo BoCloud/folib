@@ -18,6 +18,7 @@ import javax.transaction.Transactional;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import com.veadan.folib.data.CacheName;
+import com.veadan.folib.domain.PageResultResponse;
 import com.veadan.folib.domain.SecurityRole;
 import com.veadan.folib.users.domain.Privileges;
 import com.veadan.folib.users.domain.SystemRole;
@@ -108,6 +109,15 @@ public class DatabaseUserService implements UserService
             user.setSecurityTokenKey(userToUpdate.getSecurityTokenKey());
         }
 
+        if (!StringUtils.isBlank(userToUpdate.getAvatar()))
+        {
+            user.setAvatar(userToUpdate.getAvatar());
+        }
+
+        if (!StringUtils.isBlank(userToUpdate.getEmail()))
+        {
+            user.setEmail(userToUpdate.getEmail());
+        }
         save(user);
     }
 
@@ -116,6 +126,24 @@ public class DatabaseUserService implements UserService
     {
         Iterable<User> users = userRepository.findAll();
         return new Users(StreamSupport.stream(users.spliterator(), false).collect(Collectors.toSet()));
+    }
+
+    @Override
+    public PageResultResponse<User> queryUser(User user, Integer page, Integer limit) {
+        if (Objects.isNull(page)) {
+            page = 1;
+        }
+        if (Objects.isNull(limit)) {
+            limit = 5;
+        }
+        int start = (page - 1) * limit;
+        limit = page * limit;
+        long count = userRepository.countUsers(user);
+        if (count == 0L) {
+            return null;
+        }
+        List<User> userList = userRepository.findUsersPage(user, start, limit);
+        return new PageResultResponse<User>(count, userList);
     }
 
     @Override
@@ -150,6 +178,7 @@ public class DatabaseUserService implements UserService
         userEntity.setEmail(user.getEmail());
         userEntity.setLastUpdated(now);
         userEntity.setUserType("general");
+        userEntity.setAvatar(user.getAvatar());
 
 //        if (StringUtils.isNotBlank(user.getSourceId()) || StringUtils.isNotBlank(userEntity.getSourceId()))
 //        {

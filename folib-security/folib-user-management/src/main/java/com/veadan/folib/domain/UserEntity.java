@@ -29,6 +29,8 @@ public class UserEntity extends DomainEntity implements User
 
     private String email;
 
+    private String avatar;
+
     @Relationship(type = USER_HAS_SECURITY_ROLES, direction = OUTGOING)
     private Set<SecurityRole> roles = new HashSet<>();
 
@@ -42,6 +44,7 @@ public class UserEntity extends DomainEntity implements User
     private String userType="general";
 
 
+    @Override
     public String getUserType() {
         return userType;
     }
@@ -143,6 +146,7 @@ public class UserEntity extends DomainEntity implements User
         this.lastUpdated = lastUpdated;
     }
 
+    @Override
     public String getSourceId()
     {
         return sourceId;
@@ -153,4 +157,12 @@ public class UserEntity extends DomainEntity implements User
         this.sourceId = source;
     }
 
+    @Override
+    public String getAvatar() {
+        return avatar;
+    }
+
+    public void setAvatar(String avatar) {
+        this.avatar = avatar;
+    }
 }

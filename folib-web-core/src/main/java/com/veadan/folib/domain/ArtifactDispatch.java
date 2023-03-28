@@ -2,6 +2,7 @@ package com.veadan.folib.domain;
 
 import com.veadan.folib.dto.TargetDispatchRepositoryDto;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
@@ -16,6 +17,7 @@ import java.util.List;
 @AllArgsConstructor
 @NoArgsConstructor
 @Data
+@Builder
 public class ArtifactDispatch {
     /**
      * 源存储id

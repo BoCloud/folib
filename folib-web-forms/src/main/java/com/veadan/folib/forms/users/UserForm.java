@@ -28,6 +28,9 @@ public class UserForm
     private String password;
 
     private String email;
+
+    private String avatar;
+
     private boolean enabled;
 
     private Set<String> roles;
@@ -111,5 +114,12 @@ public class UserForm
         // validation group marker interface for existing users.
     }
 
+    public String getAvatar() {
+        return avatar;
+    }
+
+    public void setAvatar(String avatar) {
+        this.avatar = avatar;
+    }
 }
 

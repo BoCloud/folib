@@ -7,6 +7,16 @@ export function getUsers () {
     method: 'get'
   })
 }
+
+export function queryUser (data, query) {
+  return axios({
+    url: '/api/users/queryUser',
+    method: 'post',
+    data: data,
+    params: query
+  })
+}
+
 export function getUserDetial (username) {
   return axios({
     url: '/api/users/'+username+'?formFields=true',

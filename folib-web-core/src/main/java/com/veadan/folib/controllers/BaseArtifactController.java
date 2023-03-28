@@ -8,6 +8,7 @@ import com.veadan.folib.domain.Artifact;
 import com.veadan.folib.domain.VulnerabilitiesInfo;
 import com.veadan.folib.domain.Vulnerability;
 import com.veadan.folib.enums.BlockTypeEnum;
+import com.veadan.folib.event.artifact.ArtifactEventListenerRegistry;
 import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.providers.layout.DockerLayoutProvider;
 import com.veadan.folib.repositories.ArtifactRepository;
@@ -60,6 +61,9 @@ public abstract class BaseArtifactController
     @Autowired
     private HttpServletResponse httpServletResponse;
 
+    @Autowired
+    private ArtifactEventListenerRegistry artifactEventListenerRegistry;
+
 
     protected boolean provideArtifactDownloadResponse(HttpServletRequest request,
                                                       HttpServletResponse response,
@@ -103,7 +107,7 @@ public abstract class BaseArtifactController
      * @throws IOException io异常
      */
     public void vulnerabilityBlock(RepositoryPath repositoryPath) throws IOException {
-        boolean supportLayout = ArtifactUtils.layoutSupports(repositoryPath, true);
+        boolean supportLayout = ArtifactUtils.layoutSupportsForBlock(repositoryPath);
         if (!supportLayout) {
             return;
         }
@@ -173,6 +177,7 @@ public abstract class BaseArtifactController
                     String msg = "The artifact " + artifact.getUuid() + " has a vulnerability, and downloading is prohibited";
                     httpServletResponse.getWriter().println(objectMapper.writeValueAsString(new ErrorResponseEntityBody(msg)));
                     httpServletResponse.flushBuffer();
+                    artifactEventListenerRegistry.dispatchArtifactDownloadBlockedEvent(repositoryPath);
                     //推数据给platform
                     pushVulnerabilities(artifact);
                 }
