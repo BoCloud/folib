@@ -809,12 +809,13 @@ public class RestClient extends ArtifactClient {
      * @return 返回值
      */
     public ResponseEntity offlineArtifactUpload(String storageId, String repostoryId, InputStream is, String fileName,
-                                                String packageVersionDesc) {
+                                                String packageVersionDesc, String deployType) {
         try {
             String url = getContextBaseUrl() + "/api/artifact/folib/offline/upload";
             FormDataMultiPart part = new FormDataMultiPart();
             part.field("storageId", storageId);
             part.field("repostoryId", repostoryId);
+            part.field("deployType", deployType);
             if (StringUtils.isNotBlank(packageVersionDesc)) {
                 part.field("packageVersionDesc", packageVersionDesc);
             }
