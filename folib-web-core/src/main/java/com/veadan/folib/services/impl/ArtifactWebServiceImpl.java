@@ -25,6 +25,8 @@ import com.veadan.folib.domain.Artifact;
 import com.veadan.folib.domain.ArtifactMetadata;
 import com.veadan.folib.domain.DirectoryListing;
 import com.veadan.folib.domain.FileContent;
+import com.veadan.folib.entity.Dict;
+import com.veadan.folib.enums.DictTypeEnum;
 import com.veadan.folib.enums.RepositoryScopeEnum;
 import com.veadan.folib.event.artifact.ArtifactEventListenerRegistry;
 import com.veadan.folib.forms.artifact.ArtifactMetadataForm;
@@ -57,6 +59,7 @@ import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -123,6 +126,10 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
 
     @Inject
     private FqlSearchService fqlSearchService;
+
+    @Inject
+    @Lazy
+    private DictService dictService;
 
     @Override
     public void exportExcel(String vulnerabilityUuid, String storageId, String repositoryId, HttpServletResponse response) throws IOException {
@@ -624,8 +631,26 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
     }
 
     @Override
+    public Long buildGraphIndex(String storageId, String repositoryId, String path, Integer batch) throws Exception {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        SpringSecurityUser userDetails = (SpringSecurityUser) authentication.getPrincipal();
+        JSONObject data = new JSONObject();
+        data.put("storageId", storageId);
+        data.put("repositoryId", repositoryId);
+        data.put("path", path);
+        data.put("batch", batch);
+        Dict dict = Dict.builder().dictType(DictTypeEnum.BUILD_GRAPH_INDEX.getType()).dictKey(userDetails.getUsername()).dictValue(data.toJSONString()).createTime(new Date()).comment("构建中").build();
+        Dict existsDict = dictService.selectLatestOneDict(Dict.builder().dictType(DictTypeEnum.BUILD_GRAPH_INDEX.getType()).comment("构建中").build());
+        if (Objects.nonNull(existsDict)) {
+            return existsDict.getId();
+        }
+        dictService.saveDict(dict);
+        handlerBuildGraphIndex(dict.getId(), storageId, repositoryId, path, batch);
+        return null;
+    }
+
     @Async("asyncThreadPoolTaskExecutor")
-    public void buildGraphIndex(String storageId, String repositoryId, String path, Integer batch) throws Exception {
+    public void handlerBuildGraphIndex(Long dictId, String storageId, String repositoryId, String path, Integer batch) {
         log.info("=====>>>>> buildGraphIndex is started");
         if (StringUtils.isNotBlank(storageId) && StringUtils.isNotBlank(repositoryId)) {
             handlerRepository(storageId, repositoryId, path, batch);
@@ -651,9 +676,9 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
                 }
             }
         }
+        dictService.updateDict(Dict.builder().id(dictId).comment("构建完成").build());
         log.info("=====>>>>> buildGraphIndex is finished");
     }
-
 
     /**
      * 单仓库

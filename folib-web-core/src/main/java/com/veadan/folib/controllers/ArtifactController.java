@@ -139,11 +139,10 @@ public class ArtifactController extends BaseController {
     @ApiResponses(value = {@ApiResponse(code = 200, message = "OK")})
     @PreAuthorize("hasAuthority('ADMIN')")
     @PostMapping(value = "/buildGraphIndex")
-    public ResponseEntity<String> buildGraphIndex(@RequestParam(name = "storageId", required = false) String storageId,
+    public ResponseEntity<Long> buildGraphIndex(@RequestParam(name = "storageId", required = false) String storageId,
                                                   @RequestParam(name = "repositoryId", required = false) String repositoryId,
                                                   @RequestParam(name = "path", required = false) String path,
                                                   @RequestParam(name = "batch", required = false) Integer batch) throws Exception {
-        artifactWebService.buildGraphIndex(storageId, repositoryId, path, batch);
-        return ResponseEntity.ok("ok");
+        return ResponseEntity.ok(artifactWebService.buildGraphIndex(storageId, repositoryId, path, batch));
     }
 }

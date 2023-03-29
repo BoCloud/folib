@@ -263,6 +263,9 @@ public class StoragesConfigurationController
                                                      @ApiParam(value = "Filter repository names by type (i.e. hosted, group, proxy)")
                                                      @RequestParam(value = "type", required = false)
                                                              String type,
+                                                     @ApiParam(value = "Filter exclude repository names by type (i.e. hosted, group, proxy)")
+                                                         @RequestParam(value = "excludeType", required = false)
+                                                                 String excludeType,
                                                      @ApiParam(value = "Search for exclude repository names")
                                                      @RequestParam(value = "excludeRepositoryId", required = false)
                                                              String excludeRepositoryId,
@@ -284,6 +287,7 @@ public class StoragesConfigurationController
             boolean filterByType = StringUtils.isNotBlank(type);
             boolean filterByLayout = StringUtils.isNotBlank(layout);
             boolean filterByExcludeRepositoryId = StringUtils.isNotBlank(excludeRepositoryId);
+            boolean filterByExcludeType = StringUtils.isNotBlank(excludeType);
             boolean filterByPolicy = StringUtils.isNotBlank(policy);
             storages = storages.stream()
                     .distinct()
@@ -302,6 +306,7 @@ public class StoragesConfigurationController
                         .filter(r -> !filterByLayout || r.getLayout().equalsIgnoreCase(layout))
                         .filter(r -> !filterByPolicy || r.getPolicy().equalsIgnoreCase(policy))
                         .filter(r -> !filterByExcludeRepositoryId || !r.getId().equalsIgnoreCase(excludeRepositoryId))
+                        .filter(r -> !filterByExcludeType || !r.getType().equalsIgnoreCase(excludeType))
                         .collect(Collectors.toCollection(LinkedList::new));
                 if (flag) {
                     repositories = repositories.stream().filter((item -> RepositoryScopeEnum.OPEN.getType().equals(item.getScope()))).collect(Collectors.toList());

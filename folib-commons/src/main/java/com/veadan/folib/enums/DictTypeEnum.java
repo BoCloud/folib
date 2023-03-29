@@ -17,6 +17,14 @@ public enum DictTypeEnum {
      * 上传进度
      */
     UPLOAD_PROCESS("upload_process"),
+    /**
+     * FOLIB升级任务
+     */
+    FOLIB_UPGRADE_TASK("folib_upgrade_task"),
+    /**
+     * 构建索引
+     */
+    BUILD_GRAPH_INDEX("build_graph_index"),
     ;
 
     private String type;

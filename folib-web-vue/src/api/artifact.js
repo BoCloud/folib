@@ -93,3 +93,11 @@ export function artifactDispatch (data) {
     data: data
   })
 }
+
+export function buildGraphIndex (data) {
+  return axios({
+    url: '/api/artifact/buildGraphIndex',
+    method: 'post',
+    params: data
+  })
+}

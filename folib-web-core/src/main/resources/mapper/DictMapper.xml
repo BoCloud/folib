@@ -20,7 +20,8 @@
             dict
         WHERE
             dict_key = #{dictKey}
-            LIMIT 1 FOR UPDATE
+        ORDER BY create_time DESC
+        LIMIT 1 FOR UPDATE
     </select>
 
     <delete id="deleteHistoryDataForUploadProcessBySeconds">

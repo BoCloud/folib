@@ -2,6 +2,7 @@ package com.veadan.folib.services.impl;
 
 import com.google.common.collect.Lists;
 import com.veadan.folib.entity.Dict;
+import com.veadan.folib.enums.DictTypeEnum;
 import com.veadan.folib.enums.UpgradeTaskStatusEnum;
 import com.veadan.folib.mapper.DictMapper;
 import com.veadan.folib.services.DictService;
@@ -41,7 +42,12 @@ public class DictServiceImpl implements DictService {
         dict.setComment(handlerComment(dict));
         Example example = Example.builder(Dict.class).build();
         Example.Criteria criteria = example.createCriteria();
-        criteria.andEqualTo("dictKey", dict.getDictKey());
+        if (Objects.nonNull(dict.getId())) {
+            criteria.andEqualTo("id", dict.getId());
+        }
+        if (StringUtils.isNotBlank(dict.getDictKey())) {
+            criteria.andEqualTo("dictKey", dict.getDictKey());
+        }
         dictMapper.updateByExampleSelective(dict, example);
     }
 
@@ -99,10 +105,25 @@ public class DictServiceImpl implements DictService {
     }
 
     @Override
+    public Dict selectLatestOneDict(Dict dict) {
+        Example example = Example.builder(Dict.class).build();
+        Example.Criteria criteria = example.createCriteria();
+        criteria.andEqualTo("dictType", dict.getDictType());
+        if (StringUtils.isNotBlank(dict.getDictKey())) {
+            criteria.andEqualTo("dictKey", dict.getDictKey());
+        }
+        if (StringUtils.isNotBlank(dict.getComment())) {
+            criteria.andEqualTo("comment", dict.getComment());
+        }
+        example.setOrderByClause("create_time desc");
+        return dictMapper.selectOneByExample(example);
+    }
+
+    @Override
     public List<Dict> selectUnExecutedTask() {
         Example example = Example.builder(Dict.class).build();
         Example.Criteria criteria = example.createCriteria();
-        criteria.andEqualTo("dictType", "folib_upgrade_task");
+        criteria.andEqualTo("dictType", DictTypeEnum.FOLIB_UPGRADE_TASK.getType());
         criteria.andIn("comment", Lists.newArrayList(UpgradeTaskStatusEnum.UN_EXECUTED.getStatus(), UpgradeTaskStatusEnum.EXECUTED_FAIL.getStatus()));
         example.setOrderByClause("create_time asc");
         return dictMapper.selectByExample(example);
