@@ -8,6 +8,7 @@ import com.veadan.folib.providers.layout.*;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.exception.ExceptionUtils;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -87,7 +88,16 @@ public class ArtifactUtils {
                 log.debug("=====>>>>> docker布局");
                 String blobs = "blobs";
                 String manifest = "manifest";
-                String path = repositoryPath.toAbsolutePath().toString();
+                String path = "";
+                try {
+                    path = repositoryPath.toAbsolutePath().toString();
+                    if (Objects.nonNull(repositoryPath.getArtifactEntry())) {
+                        path = repositoryPath.getArtifactEntry().getArtifactPath();
+                    }
+                } catch (Exception ex) {
+                    log.error("check docker layoutSupports error：{}", ExceptionUtils.getStackTrace(ex));
+                    path = repositoryPath.toAbsolutePath().toString();
+                }
                 if (Boolean.TRUE.equals(block)) {
                     if (path.contains("sha256") && !path.endsWith(".sha256")) {
                         return true;
