@@ -23,6 +23,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.compress.utils.Lists;
 import org.apache.commons.fileupload.disk.DiskFileItem;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -294,7 +295,7 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
                 listTask.clear();
             }
         } catch (Exception e) {
-            log.error("制品晋级错误 {}", e.getMessage());
+            log.error("制品晋级错误 {}", ExceptionUtils.getStackTrace(e));
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(e.getMessage());
         }

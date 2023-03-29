@@ -575,6 +575,13 @@ export default {
       })
     },
     webhookResetForm() {
+      this.webhookForm  = {
+        uuid: '',
+        url: '',
+        accessToken: '',
+        events: [],
+        ssl: false,
+      }
       if (this.$refs.webhookForm) {
         this.$refs.webhookForm.resetFields()
       }

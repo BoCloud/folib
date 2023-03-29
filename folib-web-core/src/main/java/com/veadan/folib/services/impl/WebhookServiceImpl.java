@@ -222,8 +222,7 @@ public class WebhookServiceImpl implements WebhookService {
         for (Map.Entry<String, String> entry : headerMap.entrySet()) {
             builder = builder.header(entry.getKey(), entry.getValue());
         }
-        Response response = builder.post(Entity.entity(body, MediaType.APPLICATION_JSON));
-        return response;
+        return builder.post(Entity.entity(body, MediaType.APPLICATION_JSON));
     }
 
     @Override
@@ -238,8 +237,9 @@ public class WebhookServiceImpl implements WebhookService {
         if (StringUtils.isBlank(artifactPath)) {
             artifactPath = "commons-io/commons-io/2.8.0/commons-io-2.8.0.jar";
         }
+        Response response = null;
         try {
-            Response response = doPost(webhookConfiguration.getUrl(), body, headerMap);
+            response = doPost(webhookConfiguration.getUrl(), body, headerMap);
             endTime = BigDecimal.valueOf(System.currentTimeMillis());
             endTime = endTime.subtract(startTime);
             completionTime = endTime.divide(BigDecimal.valueOf(1000), 2, RoundingMode.HALF_UP);
@@ -258,10 +258,14 @@ public class WebhookServiceImpl implements WebhookService {
             }
             log.error("事件监听，处理webhook，事件类型：{} repositoryPath：{} 错误：{}", eventType, artifactPath, ExceptionUtils.getStackTrace(ex));
             WebhookLog webhookLog = WebhookLog.builder().createTime(new Date()).eventType(eventType).storageId(storageId).repositoryId(repositoryId)
-                    .artifactPath(artifactPath).url(webhookConfiguration.getUrl()).accessToken(webhookConfiguration.getAccessToken()).method("POST").url(webhookConfiguration.getUrl()).accessToken(webhookConfiguration.getAccessToken()).method("POST")
+                    .artifactPath(artifactPath).url(webhookConfiguration.getUrl()).accessToken(webhookConfiguration.getAccessToken()).method("POST").url(webhookConfiguration.getUrl())
                     .requestHeaders(JSONObject.toJSONString(Objects.nonNull(headerMap) ? headerMap : "")).completionTime(completionTime.toString()).request(body).responseStatus("").responseHeaders("")
                     .response("").remark(message).build();
             saveWebhookLog(webhookLog);
+        } finally {
+            if (Objects.nonNull(response)) {
+                response.close();
+            }
         }
     }
 

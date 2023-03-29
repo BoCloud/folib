@@ -186,6 +186,7 @@ public abstract class BaseArtifactController
     }
 
     private void pushVulnerabilities(Artifact artifact) {
+        Response response = null;
         try {
             DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyyMMdd-HH:mm:ss");
             String id = LocalDateTime.now().format(formatter) + "-" + UUID.randomUUID().toString();
@@ -212,7 +213,7 @@ public abstract class BaseArtifactController
             Client client = clientPool.getRestClient();
             String url = pushUrl + "/devopsplatform/apis/v1/folib/pushVulnerabilities";
             WebTarget target = client.target(url);
-            Response response = target.request().post(Entity.entity(vulnerabilitiesInfo, MediaType.APPLICATION_JSON));
+            response = target.request().post(Entity.entity(vulnerabilitiesInfo, MediaType.APPLICATION_JSON));
             if (response.getStatus() != 200) {
                 throw new Exception("{} get error" + url);
             }
@@ -220,6 +221,10 @@ public abstract class BaseArtifactController
         } catch (Exception e) {
             logger.error("依赖库漏洞阻断推数据失败");
             e.printStackTrace();
+        } finally {
+            if (Objects.nonNull(response)) {
+                response.close();
+            }
         }
     }
 
