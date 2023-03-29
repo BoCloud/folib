@@ -25,6 +25,7 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import java.util.Collections;
 import java.util.LinkedHashSet;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.Executor;
 
@@ -122,19 +123,25 @@ public class PhpRepositoryFeatures
         String targetUrl = phpSearchRequest.getTargetUrl();
         PhpSearchResult phpSearchResult;
         Client restClient = null;
+        Response response = null;
         try {
             restClient = proxyRepositoryConnectionPoolConfigurationService.getRestClient(storageId, repositoryId);
             log.debug("Search PHP packages for [{}].", targetUrl);
             WebTarget service = restClient.target(phpSearchRequest.getTargetUrl());
             service = service.queryParam("q", phpSearchRequest.getQ()).queryParam("type", phpSearchRequest.getType());
-            final Response response = service.request(MediaType.APPLICATION_JSON).get();
+            response = service.request(MediaType.APPLICATION_JSON).get();
             phpSearchResult = response.readEntity(PhpSearchResult.class);
             log.debug("Searched PHP packages for [{}].", targetUrl);
         } catch (Exception e) {
             log.error("Failed to search PHP packages [{}]", targetUrl, e);
             return;
         } finally {
-            restClient.close();
+            if (Objects.nonNull(response)) {
+                response.close();
+            }
+            if (Objects.nonNull(restClient)) {
+                restClient.close();
+            }
         }
         try {
             phpPackageFeedParser.parseSearchResult(repository, phpSearchResult);

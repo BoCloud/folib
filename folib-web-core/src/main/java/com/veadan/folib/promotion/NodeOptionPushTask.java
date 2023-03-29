@@ -60,6 +60,7 @@ public class NodeOptionPushTask implements Callable<String> {
         String rs = "";
 
         Client client = null;
+        Response response = null;
         try (InputStream inputStream = Files.newInputStream(file.toPath())) {
             client = clientPool.getRestClient();
             WebTarget target = client.target(getURl());
@@ -71,7 +72,7 @@ public class NodeOptionPushTask implements Callable<String> {
             //如果以inputStream形式上传文件，接收文件上传的接口可能会限制content-type为二进制：ContentType.DEFAULT_BINARY，否则为ContentType.MULTIPART_FORM_DATA
             builder.addBinaryBody("file", inputStream, ContentType.DEFAULT_BINARY, file.getName());
             HttpEntity httpEntity = builder.build();
-            Response response = target.request().put(Entity.entity(httpEntity, MediaType.APPLICATION_JSON));
+            response = target.request().put(Entity.entity(httpEntity, MediaType.APPLICATION_JSON));
             if (response.getStatus() > 210) {
                 log.error("Push artifact error {}", getURl());
                 throw new RuntimeException("Failed with HTTP error code : " + response.getStatus());
@@ -81,6 +82,9 @@ public class NodeOptionPushTask implements Callable<String> {
             log.error("NodeOptionPushTask error {}: ", e.getMessage());
             rs = e.getMessage();
         } finally {
+            if (null != response) {
+                response.close();
+            }
             if (null != client) {
                 client.close();
             }

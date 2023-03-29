@@ -40,7 +40,6 @@ import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
-import org.glassfish.jersey.client.ClientProperties;
 import org.glassfish.jersey.media.multipart.Boundary;
 import org.glassfish.jersey.media.multipart.FormDataMultiPart;
 import org.glassfish.jersey.media.multipart.file.StreamDataBodyPart;
@@ -150,6 +149,7 @@ public class PromotionUtil {
     //    @Async("asyncClusterDispatchThreadPoolExecutor")
     public void handlerDispatch(Map<String, ClusterDispatchNodeDto> map, ArtifactDispatch artifactDispatch,
                                 TargetDispatchRepositoryDto targetDispatchRepositoryDto) {
+        Response response = null;
         try {
             String artifactPath = artifactDispatch.getPath();
             String srcRepositoryId = artifactDispatch.getSrcRepositoryId();
@@ -171,68 +171,70 @@ public class PromotionUtil {
                 log.error("{} 分发配置不存在", dispatchClusterName);
                 return;
             }
-            Map<String, ClusterDispatchNodeDto> dispatchMap = configurationManagementService.
-                    getMutableConfigurationClone().getClusterDispatchNode();
-            Client client = clientPool.getRestClient();
-            ClusterDispatchNodeDto clusterDispatchNodeDto = dispatchMap.get(dispatchClusterName);
-            ArtifactDispatchRepositoryDto dispatchRepositoryDto = ArtifactDispatchRepositoryDto.builder()
-                    .type(type)
-                    .layout(layout)
-                    .dispatchEnName(dispatchClusterName)
-                    .policy(policy).build();
+            if (StringUtils.isBlank(targetStorageId) || StringUtils.isBlank(targetRepositoryId)) {
+                Map<String, ClusterDispatchNodeDto> dispatchMap = configurationManagementService.
+                        getMutableConfigurationClone().getClusterDispatchNode();
+                Client client = clientPool.getRestClient();
+                ClusterDispatchNodeDto clusterDispatchNodeDto = dispatchMap.get(dispatchClusterName);
+                ArtifactDispatchRepositoryDto dispatchRepositoryDto = ArtifactDispatchRepositoryDto.builder()
+                        .type(type)
+                        .layout(layout)
+                        .dispatchEnName(dispatchClusterName)
+                        .policy(policy).build();
 
-            String host = clusterDispatchNodeDto.getClusterNodeHost();
-            String url = host.endsWith("/") ? host + "api/configuration/folib/storages/getDispatchRepositories" :
-                    host + "/api/configuration/folib/storages/getDispatchRepositories";
-            WebTarget target = client.target(url);
-            log.info(" 请求分发获取仓库信息 {}", JSONUtil.toJsonStr(dispatchRepositoryDto));
-            Response response = target.request().post(Entity.entity(dispatchRepositoryDto, javax.ws.rs.core.MediaType.APPLICATION_JSON));
-            if (response.getStatus() != 200) {
-                log.error("dispatch cluster {} get repositroy fail", dispatchClusterName);
-            }
-            DispatchStorageTree dispatchStorageTree = response.readEntity(DispatchStorageTree.class);
-            List<StorageTreeForm> storageTreeForms = dispatchStorageTree.getList();
-            if (StringUtils.isBlank(targetStorageId)) {
-                // 查询集群下全部的仓库（同类型 同策略 同布局）
-                for (StorageTreeForm storageTreeForm : storageTreeForms) {
-                    List<StorageTreeForm> storages = storageTreeForm.getChildren();
-                    if (CollectionUtil.isEmpty(storages)) {
-                        continue;
-                    }
-                    for (StorageTreeForm storage : storages) {
-                        targetStorageId = storage.getName();
-                        List<StorageTreeForm> repos = storage.getChildren();
-                        if (CollectionUtil.isEmpty(repos)) {
+                String host = clusterDispatchNodeDto.getClusterNodeHost();
+                String url = host.endsWith("/") ? host + "api/configuration/folib/storages/getDispatchRepositories" :
+                        host + "/api/configuration/folib/storages/getDispatchRepositories";
+                WebTarget target = client.target(url);
+                log.info(" 请求分发获取仓库信息 {}", JSONUtil.toJsonStr(dispatchRepositoryDto));
+                response = target.request().post(Entity.entity(dispatchRepositoryDto, javax.ws.rs.core.MediaType.APPLICATION_JSON));
+                if (response.getStatus() != 200) {
+                    log.error("dispatch cluster {} get repositroy fail", dispatchClusterName);
+                }
+                DispatchStorageTree dispatchStorageTree = response.readEntity(DispatchStorageTree.class);
+                List<StorageTreeForm> storageTreeForms = dispatchStorageTree.getList();
+                if (StringUtils.isBlank(targetStorageId)) {
+                    // 查询集群下全部的仓库（同类型 同策略 同布局）
+                    for (StorageTreeForm storageTreeForm : storageTreeForms) {
+                        List<StorageTreeForm> storages = storageTreeForm.getChildren();
+                        if (CollectionUtil.isEmpty(storages)) {
                             continue;
                         }
-                        for (StorageTreeForm repo : repos) {
-                            String tempRepoId = repo.getName();
-                            executeDispatch(artifactPath, srcRepositoryId, srcStorageId, targetStorageId, tempRepoId, dispatchNodeDto);
+                        for (StorageTreeForm storage : storages) {
+                            targetStorageId = storage.getName();
+                            List<StorageTreeForm> repos = storage.getChildren();
+                            if (CollectionUtil.isEmpty(repos)) {
+                                continue;
+                            }
+                            for (StorageTreeForm repo : repos) {
+                                String tempRepoId = repo.getName();
+                                executeDispatch(artifactPath, srcRepositoryId, srcStorageId, targetStorageId, tempRepoId, dispatchNodeDto);
+                            }
                         }
                     }
                 }
-            }
-            if (StringUtils.isBlank(targetRepositoryId)) {
-                // 选存储空间下的全部仓库（同类型 同策略 同布局）
-                for (StorageTreeForm storageTreeForm : storageTreeForms) {
-                    List<StorageTreeForm> storages = storageTreeForm.getChildren();
-                    if (CollectionUtil.isEmpty(storages)) {
-                        continue;
-                    }
-                    for (StorageTreeForm storage : storages) {
-                        String tempStorage = storage.getName();
-                        if (!tempStorage.equals(targetStorageId)) {
+                if (StringUtils.isBlank(targetRepositoryId)) {
+                    // 选存储空间下的全部仓库（同类型 同策略 同布局）
+                    for (StorageTreeForm storageTreeForm : storageTreeForms) {
+                        List<StorageTreeForm> storages = storageTreeForm.getChildren();
+                        if (CollectionUtil.isEmpty(storages)) {
                             continue;
                         }
-                        List<StorageTreeForm> repos = storage.getChildren();
-                        if (CollectionUtil.isEmpty(repos)) {
-                            continue;
+                        for (StorageTreeForm storage : storages) {
+                            String tempStorage = storage.getName();
+                            if (!tempStorage.equals(targetStorageId)) {
+                                continue;
+                            }
+                            List<StorageTreeForm> repos = storage.getChildren();
+                            if (CollectionUtil.isEmpty(repos)) {
+                                continue;
+                            }
+                            for (StorageTreeForm repo : repos) {
+                                String tempRepoId = repo.getName();
+                                executeDispatch(artifactPath, srcRepositoryId, srcStorageId, targetStorageId, tempRepoId, dispatchNodeDto);
+                            }
+                            break;
                         }
-                        for (StorageTreeForm repo : repos) {
-                            String tempRepoId = repo.getName();
-                            executeDispatch(artifactPath, srcRepositoryId, srcStorageId, targetStorageId, tempRepoId, dispatchNodeDto);
-                        }
-                        break;
                     }
                 }
             } else {
@@ -240,10 +242,15 @@ public class PromotionUtil {
             }
         } catch (Exception e) {
             log.error("分发错误{}", e.getMessage());
+        } finally {
+            if (Objects.nonNull(response)) {
+                response.close();
+            }
         }
     }
 
-    private void executeDispatch( String artifactPath, String srcRepositoryId, String srcStorageId, String targetStorageId, String targetRepositoryId, ClusterDispatchNodeDto dispatchNodeDto) {
+    private void executeDispatch(String artifactPath, String srcRepositoryId, String srcStorageId, String targetStorageId, String targetRepositoryId, ClusterDispatchNodeDto dispatchNodeDto) {
+        Response response = null;
         try {
             StringBuilder strBuilder = new StringBuilder();
             String dispatchNodeHost = dispatchNodeDto.getClusterNodeHost();
@@ -260,8 +267,6 @@ public class PromotionUtil {
             String sourcePath = baseUrl.endsWith("/") ? baseUrl + srcStorageId + "/" + srcRepositoryId + "/" + artifactPath :
                     baseUrl + "/" + srcStorageId + "/" + srcRepositoryId + "/" + artifactPath;
             String dispatchType = dispatchNodeDto.getDispatchType();
-            Client client = clientPool.getRestClient();
-            Response response = null;
             PromotionNodeOption promotionNodeOption = null;
             log.info("分发 [{}] 开始", dispatchType);
             if (dispatchType.equals("pull")) {
@@ -269,6 +274,7 @@ public class PromotionUtil {
                 String url = dispatchNodeHost.endsWith("/") ?
                         dispatchNodeHost + "api/artifact/folib/promotion/nodeOption" :
                         dispatchNodeHost + "/api/artifact/folib/promotion/nodeOption";
+                Client client = clientPool.getRestClient();
                 WebTarget target = client.target(url);
                 response = target.request().post(Entity.entity(promotionNodeOption, MediaType.APPLICATION_JSON));
                 if (response.getStatus() != 200) {
@@ -295,6 +301,10 @@ public class PromotionUtil {
             log.info("分发 [{} {} {} {} {}] 失败 {} ",
                     dispatchNodeDto.getDispatchType(), dispatchNodeDto.getClusterEnName(),
                     targetStorageId, targetRepositoryId, artifactPath, e.getMessage());
+        } finally {
+            if (Objects.nonNull(response)) {
+                response.close();
+            }
         }
     }
 
@@ -832,6 +842,7 @@ public class PromotionUtil {
      * @return string
      */
     public String upload(String url, PromotionNodeOptionDto uploadDto) throws Exception {
+        Response response = null;
         try {
             FormDataMultiPart part = new FormDataMultiPart();
             part.field("storageId", uploadDto.getStorageId());
@@ -848,14 +859,18 @@ public class PromotionUtil {
             part.field("fileMetaDataMap", JSON.toJSONString(uploadDto.getFileMetaDataMap()));
             Client client = clientPool.getRestClient();
             WebTarget resource = client.register(MultiPartWriter.class).target(url);
-            Response response = resource.request(MediaType.APPLICATION_JSON).header("Mime-Version", "1.0").
+            response = resource.request(MediaType.APPLICATION_JSON).header("Mime-Version", "1.0").
                     post(Entity.entity(part, Boundary.addBoundary(MediaType.MULTIPART_FORM_DATA_TYPE)));
             if (response.getStatus() != 200) {
                 throw new Exception("upload failed ");
             }
+            response.readEntity(String.class);
         } catch (Exception e) {
             throw new Exception(e.getMessage());
         } finally {
+            if (Objects.nonNull(response)) {
+                response.close();
+            }
             uploadDto.getPathMap().forEach((x, y) -> {
                 y.forEach((j, z) -> {
                     if (null != z) {

@@ -142,8 +142,9 @@ public interface ArtifactWebService {
      * @param path         path
      * @param batch        每批数量
      * @throws Exception 异常
+     * @return 字典表id
      */
-    void buildGraphIndex(String storageId, String repositoryId, String path, Integer batch) throws Exception;
+    Long buildGraphIndex(String storageId, String repositoryId, String path, Integer batch) throws Exception;
 
     /**
      * 批量存储或更新元数据 适配安徽政务

@@ -158,6 +158,17 @@ let routes = [
 		},
 		component: () => import('../views/Users/Personal.vue'),
 	},
+	{
+		path: '/advanced',
+		name: 'advanced',
+		layout: "dashboard",
+		meta: {
+			title: '高级配置',
+			sidebarMap: ['设置管理', '高级配置'],
+			breadcrumbs: ['设置管理', '高级配置'],
+		},
+		component: () => import('../views/Setting/Advanced.vue'),
+	},
 ]
 
 // Adding layout property from each route to the meta

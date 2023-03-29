@@ -106,3 +106,10 @@ export function globalSettingDelArtifactDispatchConfig(clusterEnName) {
     method: 'delete'
   })
 }
+
+export function vulnerabilitiesDataUpdate() {
+  return axios({
+    url: '/api/folibScanner/update',
+    method: 'get'
+  })
+}
