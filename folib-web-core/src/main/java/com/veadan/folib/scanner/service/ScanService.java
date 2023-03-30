@@ -322,12 +322,12 @@ public class ScanService {
             return;
         }
         Dict dict = Dict.builder().dictType(DictTypeEnum.VULNERABILITY_DATA_UPDATE.getType()).dictKey(username).createTime(new Date()).comment(comment).build();
-        Settings settings = getSettings();
-        settings.setBoolean(Settings.KEYS.UPDATE_NVDCVE_ENABLED, true);
-        settings.setBoolean(Settings.KEYS.AUTO_UPDATE, true);
-        XpEngine engine = new XpEngine(settings);
+        dictService.saveDict(dict);
         try {
-            dictService.saveDict(dict);
+            Settings settings = getSettings();
+            settings.setBoolean(Settings.KEYS.UPDATE_NVDCVE_ENABLED, true);
+            settings.setBoolean(Settings.KEYS.AUTO_UPDATE, true);
+            XpEngine engine = new XpEngine(settings);
             engine.doUpdates();
             dictService.updateDict(Dict.builder().id(dict.getId()).comment("更新完成").build());
         } catch (UpdateException e) {

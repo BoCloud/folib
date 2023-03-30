@@ -350,7 +350,7 @@ export default {
             if (res) {
               setTimeout(() => {
                 this.getSingleDict('build_graph_index')
-              }, 500)
+              }, 100)
               this.message("success", "请稍等，构建数据任务已启动，正在异步执行")
             }
           }).catch((err) => {
@@ -371,7 +371,7 @@ export default {
           vulnerabilitiesDataUpdate().then(res => {
             setTimeout(() => {
               this.getSingleDict('vulnerability_data_update')
-            }, 500)
+            }, 100)
             this.message("success", "请稍等，漏洞数据更新任务已启动，正在异步执行")
           }).catch((err) => {
             this.message("error", "执行漏洞更新失败")
