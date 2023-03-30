@@ -163,9 +163,9 @@ let routes = [
 		name: 'advanced',
 		layout: "dashboard",
 		meta: {
-			title: '高级配置',
-			sidebarMap: ['设置管理', '高级配置'],
-			breadcrumbs: ['设置管理', '高级配置'],
+			title: '高级运维',
+			sidebarMap: ['设置管理', '高级运维'],
+			breadcrumbs: ['设置管理', '高级运维'],
 		},
 		component: () => import('../views/Setting/Advanced.vue'),
 	},

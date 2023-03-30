@@ -3,6 +3,7 @@ package com.veadan.folib.controllers;
 import com.alibaba.fastjson.JSONObject;
 import com.veadan.folib.db.schema.util.SchemaUtils;
 import com.veadan.folib.domain.JanusGraphIndex;
+import com.veadan.folib.util.CommonUtils;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiResponse;
@@ -78,20 +79,20 @@ public class JanusGraphController extends BaseController {
             SchemaUtils.reVertexIndexes(janusGraph, janusGraphIndex.getIndexNames());
         } catch (Exception ex) {
             log.error("=====>>>>> 重建索引异常：", ex);
-            throw new RuntimeException(ex);
+            throw new RuntimeException(CommonUtils.getRealMessage(ex));
         }
     }
 
-    @ApiOperation(value = "重新注册索引")
+    @ApiOperation(value = "注册索引")
     @ApiResponses(value = {@ApiResponse(code = 200, message = "OK")})
     @PostMapping(value = "/registerIndex")
     public void registerIndex(@RequestBody JanusGraphIndex janusGraphIndex) {
         try {
-            log.info("=====>>>>> 重新注册索引：{}", janusGraphIndex);
+            log.info("=====>>>>> 注册索引：{}", janusGraphIndex);
             SchemaUtils.registerVertexIndexes(janusGraph, janusGraphIndex.getIndexNames());
         } catch (Exception ex) {
-            log.error("=====>>>>> 重新注册索引异常：", ex);
-            throw new RuntimeException(ex);
+            log.error("=====>>>>> 注册索引异常：", ex);
+            throw new RuntimeException(CommonUtils.getRealMessage(ex));
         }
     }
 }

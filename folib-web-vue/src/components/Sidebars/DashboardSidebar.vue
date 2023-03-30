@@ -60,7 +60,7 @@
 					<span class="icon">
 						<a-icon type="control" theme="filled" class="m-0" />
 					</span>
-					<span class="label">高级设置</span>
+					<span class="label">高级运维</span>
 				</router-link>
 			</a-menu-item>
 		</a-menu>
