@@ -7,8 +7,31 @@
             <a-card :bordered="false" class="header-solid">
               <template #title>
                 <h6>构建制品索引</h6>
-                <p>该功能用于构建制品索引数据，请谨慎使用</p>
+                <p>该功能用于构建制品索引数据，请谨慎使用
+                </p>
               </template>
+              <a-descriptions title="最近一次构建" :column="1" class="mb-20">
+                <a-descriptions-item label="用户">
+                  {{ singleDict.dictKey }}
+                </a-descriptions-item>
+                <a-descriptions-item label="时间">
+                  {{ singleDict.createTime }}
+                </a-descriptions-item>
+                <a-descriptions-item label="参数">
+                  {{ singleDict.dictValue }}
+                </a-descriptions-item>
+                <a-descriptions-item label="状态">
+                  <a-tag v-if="singleDict.comment"
+                    :color="singleDict.comment.indexOf('完成') !== -1 ? 'green' : singleDict.comment.indexOf('错误') !== -1 ? 'red' : 'orange'">
+                    {{ singleDict.comment }}
+                    <a-popconfirm title="确定要更改状态吗？" okType="danger" ok-text="确定" cancel-text="取消"
+                      @confirm="updateSingleDict(1, singleDict.id, '手动结束')">
+                      <a-icon type="unlock" theme="filled" v-if="singleDict.comment.indexOf('中') !== -1" />
+                    </a-popconfirm>
+                  </a-tag>
+                  <span v-else>--</span>
+                </a-descriptions-item>
+              </a-descriptions>
               <a-form-model layout="horizontal" ref="buildGraphIndexForm" :model="buildGraphIndexForm"
                 :hideRequiredMark="true">
                 <a-row :gutter="[24]">
@@ -56,8 +79,8 @@
                       <a-col :span="12">
                         <a-form-model-item :wrapper-col="{ span: 14, offset: 6 }">
                           <a-popconfirm title="确定要构建数据吗？" okType="danger" ok-text="确定" cancel-text="取消"
-                            @confirm="buildGraphIndexFormSubmit">
-                            <a-button type="danger">
+                            @confirm="buildGraphIndexFormSubmit" :disabled="singleDict.comment.indexOf('中') > -1">
+                            <a-button type="danger" :disabled="singleDict.comment.indexOf('中') > -1">
                               保存
                             </a-button>
                           </a-popconfirm>
@@ -76,8 +99,28 @@
             <a-card :bordered="false" class="header-solid">
               <template #title>
                 <h6>更新漏洞数据</h6>
-                <p>该功能用于更新漏洞数据至本地漏洞库</p>
+                <p>该功能用于更新漏洞数据至本地漏洞库
+                </p>
               </template>
+              <a-descriptions title="最近一次更新" :column="1" class="mb-20">
+                <a-descriptions-item label="用户">
+                  {{ singleDict.dictKey }}
+                </a-descriptions-item>
+                <a-descriptions-item label="时间">
+                  {{ singleDict.createTime }}
+                </a-descriptions-item>
+                <a-descriptions-item label="状态">
+                  <a-tag v-if="singleDict.comment"
+                    :color="singleDict.comment.indexOf('完成') !== -1 ? 'green' : singleDict.comment.indexOf('错误') !== -1 ? 'red' : 'orange'">
+                    {{ singleDict.comment }}
+                    <a-popconfirm title="确定要更改状态吗？" okType="danger" ok-text="确定" cancel-text="取消"
+                      @confirm="updateSingleDict(2, singleDict.id, '手动结束')">
+                      <a-icon type="unlock" theme="filled" v-if="singleDict.comment.indexOf('中') !== -1" />
+                    </a-popconfirm>
+                  </a-tag>
+                  <span v-else>--</span>
+                </a-descriptions-item>
+              </a-descriptions>
               <a-form-model layout="horizontal" ref="vulnerabilitiesForm" :model="vulnerabilitiesForm"
                 :hideRequiredMark="true">
                 <a-row :gutter="[24]">
@@ -86,8 +129,8 @@
                       <a-col :span="12">
                         <a-form-model-item>
                           <a-popconfirm title="确定要更新漏洞数据吗？" okType="danger" ok-text="确定" cancel-text="取消"
-                            @confirm="vulnerabilitiesFormSubmit">
-                            <a-button type="danger">
+                            @confirm="vulnerabilitiesFormSubmit" :disabled="singleDict.comment.indexOf('中') > -1">
+                            <a-button type="danger" :disabled="singleDict.comment.indexOf('中') > -1">
                               更新
                             </a-button>
                           </a-popconfirm>
@@ -207,6 +250,8 @@ import {
   deleteInstance,
   reindex,
   registerIndex,
+  getSingleDict,
+  updateSingleDict,
 } from "@/api/advanced"
 
 export default {
@@ -234,7 +279,13 @@ export default {
         indexName: [
           { required: true, message: '请输入索引名称', trigger: 'blur' },
         ],
-      }
+      },
+      singleDict: {
+        createTime: '--',
+        dictKey: '--',
+        dictValue: '--',
+        comment: ''
+      },
     }
   },
   components: {
@@ -265,6 +316,7 @@ export default {
     },
     initData() {
       this.queryStoragesAndRepositories()
+      this.getSingleDict('build_graph_index')
     },
     queryStoragesAndRepositories() {
       getStoragesAndRepositories({ excludeType: 'group' }).then(res => {
@@ -296,8 +348,9 @@ export default {
         if (valid) {
           buildGraphIndex(this.buildGraphIndexForm).then(res => {
             if (res) {
-              this.message("warning", "有构建数据任务正在执行，请稍后重试")
-            } else {
+              setTimeout(() => {
+                this.getSingleDict('build_graph_index')
+              }, 500)
               this.message("success", "请稍等，构建数据任务已启动，正在异步执行")
             }
           }).catch((err) => {
@@ -316,6 +369,9 @@ export default {
       this.$refs.vulnerabilitiesForm.validate(valid => {
         if (valid) {
           vulnerabilitiesDataUpdate().then(res => {
+            setTimeout(() => {
+              this.getSingleDict('vulnerability_data_update')
+            }, 500)
             this.message("success", "请稍等，漏洞数据更新任务已启动，正在异步执行")
           }).catch((err) => {
             this.message("error", "执行漏洞更新失败")
@@ -375,7 +431,11 @@ export default {
       })
     },
     tabChange(activeTab) {
-      if (activeTab === 3) {
+      if (activeTab === 1) {
+        this.buildGraphIndexResetForm()
+      } else if (activeTab === 2) {
+        this.getSingleDict('vulnerability_data_update')
+      } else if (activeTab === 3) {
         this.getJanusGraphInfo()
       }
     },
@@ -388,6 +448,25 @@ export default {
         }
       }
     },
+    getSingleDict(dictType) {
+      this.singleDict = {
+        createTime: '--',
+        dictKey: '--',
+        dictValue: '--',
+        comment: ''
+      }
+      getSingleDict({ dictType: dictType }).then(res => {
+        if (res) {
+          this.singleDict = res
+        }
+      })
+    },
+    updateSingleDict(type, id, comment) {
+      updateSingleDict({ id: id, comment: comment }).then(res => {
+        this.tabChange(type)
+        this.message("success", "状态更新成功")
+      })
+    }
   }
 }
 </script>

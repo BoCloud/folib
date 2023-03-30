@@ -29,3 +29,19 @@ export function registerIndex (data) {
     data: data
   })
 }
+
+export function getSingleDict(data) {
+  return axios({
+    url: '/api/dict/single',
+    method: 'get',
+    params: data
+  })
+}
+
+export function updateSingleDict(data) {
+  return axios({
+    url: '/api/dict/single',
+    method: 'post',
+    data: data
+  })
+}

@@ -5,6 +5,7 @@ import com.veadan.folib.configuration.MetadataConfiguration;
 import com.veadan.folib.constant.GlobalConstants;
 import com.veadan.folib.forms.artifact.ArtifactMetadataForm;
 import com.veadan.folib.services.ArtifactWebService;
+import com.veadan.folib.users.userdetails.SpringSecurityUser;
 import com.veadan.folib.validation.RequestBodyValidationException;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
@@ -13,6 +14,8 @@ import io.swagger.annotations.ApiResponses;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
@@ -139,10 +142,13 @@ public class ArtifactController extends BaseController {
     @ApiResponses(value = {@ApiResponse(code = 200, message = "OK")})
     @PreAuthorize("hasAuthority('ADMIN')")
     @PostMapping(value = "/buildGraphIndex")
-    public ResponseEntity<Long> buildGraphIndex(@RequestParam(name = "storageId", required = false) String storageId,
+    public ResponseEntity<String> buildGraphIndex(@RequestParam(name = "storageId", required = false) String storageId,
                                                   @RequestParam(name = "repositoryId", required = false) String repositoryId,
                                                   @RequestParam(name = "path", required = false) String path,
                                                   @RequestParam(name = "batch", required = false) Integer batch) throws Exception {
-        return ResponseEntity.ok(artifactWebService.buildGraphIndex(storageId, repositoryId, path, batch));
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        SpringSecurityUser userDetails = (SpringSecurityUser) authentication.getPrincipal();
+        artifactWebService.buildGraphIndex(userDetails.getUsername(), storageId, repositoryId, path, batch);
+        return ResponseEntity.ok("ok");
     }
 }

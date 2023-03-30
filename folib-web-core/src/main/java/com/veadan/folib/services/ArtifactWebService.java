@@ -137,14 +137,14 @@ public interface ArtifactWebService {
     /**
      * 生成图数据库信息
      *
+     * @param username     用户名
      * @param storageId    存储空间
      * @param repositoryId 仓库id
      * @param path         path
      * @param batch        每批数量
      * @throws Exception 异常
-     * @return 字典表id
      */
-    Long buildGraphIndex(String storageId, String repositoryId, String path, Integer batch) throws Exception;
+    void buildGraphIndex(String username, String storageId, String repositoryId, String path, Integer batch) throws Exception;
 
     /**
      * 批量存储或更新元数据 适配安徽政务

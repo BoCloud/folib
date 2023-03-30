@@ -631,52 +631,53 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
     }
 
     @Override
-    public Long buildGraphIndex(String storageId, String repositoryId, String path, Integer batch) throws Exception {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        SpringSecurityUser userDetails = (SpringSecurityUser) authentication.getPrincipal();
-        JSONObject data = new JSONObject();
-        data.put("storageId", storageId);
-        data.put("repositoryId", repositoryId);
-        data.put("path", path);
-        data.put("batch", batch);
-        Dict dict = Dict.builder().dictType(DictTypeEnum.BUILD_GRAPH_INDEX.getType()).dictKey(userDetails.getUsername()).dictValue(data.toJSONString()).createTime(new Date()).comment("构建中").build();
-        Dict existsDict = dictService.selectLatestOneDict(Dict.builder().dictType(DictTypeEnum.BUILD_GRAPH_INDEX.getType()).comment("构建中").build());
-        if (Objects.nonNull(existsDict)) {
-            return existsDict.getId();
-        }
-        dictService.saveDict(dict);
-        handlerBuildGraphIndex(dict.getId(), storageId, repositoryId, path, batch);
-        return null;
-    }
-
     @Async("asyncThreadPoolTaskExecutor")
-    public void handlerBuildGraphIndex(Long dictId, String storageId, String repositoryId, String path, Integer batch) {
+    public void buildGraphIndex(String username, String storageId, String repositoryId, String path, Integer batch) throws Exception {
         log.info("=====>>>>> buildGraphIndex is started");
-        if (StringUtils.isNotBlank(storageId) && StringUtils.isNotBlank(repositoryId)) {
-            handlerRepository(storageId, repositoryId, path, batch);
-        } else if (StringUtils.isNotBlank(storageId)) {
-            path = "";
-            Map<String, ? extends Repository> repositoryMaps = configurationManagementService.getMutableConfigurationClone().getStorage(storageId).getRepositories();
-            if (!repositoryMaps.isEmpty()) {
-                for (String repository : repositoryMaps.keySet()) {
-                    handlerRepository(storageId, repository, path, batch);
-                }
+        Long dictId = 0L;
+        try {
+            Dict existsDict = dictService.selectLatestOneDict(Dict.builder().dictType(DictTypeEnum.BUILD_GRAPH_INDEX.getType()).build());
+            String comment = "构建中";
+            if (Objects.nonNull(existsDict) && comment.equals(existsDict.getComment())) {
+                return;
             }
-        } else if (StringUtils.isBlank(storageId) && StringUtils.isBlank(repositoryId)) {
-            path = "";
-            Map<String, StorageDto> storageMap = configurationManagementService.getMutableConfigurationClone().getStorages();
-            if (!storageMap.isEmpty()) {
-                for (Map.Entry<String, StorageDto> storageEntry : storageMap.entrySet()) {
-                    Map<String, ? extends Repository> repositoryMaps = configurationManagementService.getMutableConfigurationClone().getStorage(storageEntry.getKey()).getRepositories();
-                    if (!repositoryMaps.isEmpty()) {
-                        for (String repository : repositoryMaps.keySet()) {
-                            handlerRepository(storageEntry.getKey(), repository, path, batch);
+            JSONObject data = new JSONObject();
+            data.put("storageId", storageId);
+            data.put("repositoryId", repositoryId);
+            data.put("path", path);
+            data.put("batch", batch);
+            Dict dict = Dict.builder().dictType(DictTypeEnum.BUILD_GRAPH_INDEX.getType()).dictKey(username).dictValue(data.toJSONString()).createTime(new Date()).comment(comment).build();
+            dictService.saveDict(dict);
+            dictId = dict.getId();
+            if (StringUtils.isNotBlank(storageId) && StringUtils.isNotBlank(repositoryId)) {
+                handlerRepository(storageId, repositoryId, path, batch);
+            } else if (StringUtils.isNotBlank(storageId)) {
+                path = "";
+                Map<String, ? extends Repository> repositoryMaps = configurationManagementService.getMutableConfigurationClone().getStorage(storageId).getRepositories();
+                if (!repositoryMaps.isEmpty()) {
+                    for (String repository : repositoryMaps.keySet()) {
+                        handlerRepository(storageId, repository, path, batch);
+                    }
+                }
+            } else if (StringUtils.isBlank(storageId) && StringUtils.isBlank(repositoryId)) {
+                path = "";
+                Map<String, StorageDto> storageMap = configurationManagementService.getMutableConfigurationClone().getStorages();
+                if (!storageMap.isEmpty()) {
+                    for (Map.Entry<String, StorageDto> storageEntry : storageMap.entrySet()) {
+                        Map<String, ? extends Repository> repositoryMaps = configurationManagementService.getMutableConfigurationClone().getStorage(storageEntry.getKey()).getRepositories();
+                        if (!repositoryMaps.isEmpty()) {
+                            for (String repository : repositoryMaps.keySet()) {
+                                handlerRepository(storageEntry.getKey(), repository, path, batch);
+                            }
                         }
                     }
                 }
             }
+            dictService.updateDict(Dict.builder().id(dictId).comment("构建完成").build());
+        } catch (Exception ex) {
+            log.error("=====>>>>> buildGraphIndex is error：{}", ExceptionUtils.getStackTrace(ex));
+            dictService.updateDict(Dict.builder().id(dictId).comment("构建错误").build());
         }
-        dictService.updateDict(Dict.builder().id(dictId).comment("构建完成").build());
         log.info("=====>>>>> buildGraphIndex is finished");
     }
 
@@ -687,7 +688,6 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
      * @param repositoryId 仓库id
      * @param path         path
      * @param batch        每批数量
-     * @throws Exception 异常
      */
     private void handlerRepository(String storageId, String repositoryId, String path, Integer batch) {
         try {
