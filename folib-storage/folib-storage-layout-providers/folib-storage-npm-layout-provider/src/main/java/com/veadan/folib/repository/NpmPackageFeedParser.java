@@ -1,6 +1,6 @@
 package com.veadan.folib.repository;
 
-import com.veadan.folib.services.ArtifactTagService;
+import com.alibaba.fastjson.JSONObject;
 import com.veadan.folib.artifact.ArtifactTag;
 import com.veadan.folib.artifact.coordinates.NpmArtifactCoordinates;
 import com.veadan.folib.domain.Artifact;
@@ -8,22 +8,23 @@ import com.veadan.folib.domain.ArtifactEntity;
 import com.veadan.folib.domain.ArtifactTagEntity;
 import com.veadan.folib.npm.metadata.*;
 import com.veadan.folib.services.ArtifactIdGroupService;
+import com.veadan.folib.services.ArtifactTagService;
 import com.veadan.folib.storage.repository.Repository;
 import com.veadan.folib.util.LocalDateTimeInstance;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.collections4.MapUtils;
+import org.springframework.stereotype.Component;
 
 import javax.inject.Inject;
 import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
-
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.stereotype.Component;
 
 @Slf4j
 @Component
-public class NpmPackageFeedParser
-{
+public class NpmPackageFeedParser {
 
     @Inject
     private ArtifactTagService artifactTagService;
@@ -32,21 +33,18 @@ public class NpmPackageFeedParser
     private ArtifactIdGroupService repositoryArtifactIdGroupService;
 
     public void parseSearchResult(Repository repository,
-                                  SearchResults searchResults)
-    {
+                                  SearchResults searchResults) {
         ArtifactTag lastVersionTag = artifactTagService.findOneOrCreate(ArtifactTagEntity.LAST_VERSION);
 
         String repositoryId = repository.getId();
         String storageId = repository.getStorage().getId();
 
         Set<Artifact> artifactToSaveSet = new HashSet<>();
-        for (SearchResult searchResult : searchResults.getObjects())
-        {
+        for (SearchResult searchResult : searchResults.getObjects()) {
             PackageEntry packageEntry = searchResult.getPackage();
 
             ArtifactEntity remoteArtifactEntry = parseVersion(storageId, repositoryId, packageEntry);
-            if (remoteArtifactEntry == null)
-            {
+            if (remoteArtifactEntry == null) {
                 continue;
             }
 
@@ -60,10 +58,8 @@ public class NpmPackageFeedParser
     }
 
     public void parseFeed(Repository repository,
-                          PackageFeed packageFeed)
-    {
-        if (packageFeed == null)
-        {
+                          PackageFeed packageFeed) {
+        if (packageFeed == null) {
             return;
         }
 
@@ -73,28 +69,23 @@ public class NpmPackageFeedParser
         ArtifactTag lastVersionTag = artifactTagService.findOneOrCreate(ArtifactTagEntity.LAST_VERSION);
 
         Versions versions = packageFeed.getVersions();
-        if (versions == null)
-        {
+        if (versions == null) {
             return;
         }
 
         Map<String, PackageVersion> versionMap = versions.getAdditionalProperties();
-        if (versionMap == null || versionMap.isEmpty())
-        {
+        if (versionMap == null || versionMap.isEmpty()) {
             return;
         }
 
         Set<Artifact> artifactToSaveSet = new HashSet<>();
-        for (PackageVersion packageVersion : versionMap.values())
-        {
+        for (PackageVersion packageVersion : versionMap.values()) {
             ArtifactEntity remoteArtifactEntry = parseVersion(storageId, repositoryId, packageVersion);
-            if (remoteArtifactEntry == null)
-            {
+            if (remoteArtifactEntry == null) {
                 continue;
             }
 
-            if (packageVersion.getVersion().equals(packageFeed.getDistTags().getLatest()))
-            {
+            if (packageVersion.getVersion().equals(packageFeed.getDistTags().getLatest())) {
                 remoteArtifactEntry.getTagSet().add(lastVersionTag);
             }
 
@@ -104,9 +95,8 @@ public class NpmPackageFeedParser
     }
 
     private ArtifactEntity parseVersion(String storageId,
-                                              String repositoryId,
-                                              PackageVersion packageVersion)
-    {
+                                        String repositoryId,
+                                        PackageVersion packageVersion) {
         NpmArtifactCoordinates c = NpmArtifactCoordinates.of(packageVersion.getName(), packageVersion.getVersion());
 
         LocalDateTime now = LocalDateTimeInstance.now();
@@ -120,7 +110,10 @@ public class NpmPackageFeedParser
 //        remoteArtifactEntry.setLastUpdated(now);
         remoteArtifactEntry.setDownloadCount(0);
         remoteArtifactEntry.setArtifactFileExists(Boolean.FALSE);
-
+        Dependency dependency = packageVersion.getDependencies();
+        if (Objects.nonNull(dependency) && MapUtils.isNotEmpty(dependency.getAdditionalProperties())) {
+            remoteArtifactEntry.setDependencies(JSONObject.toJSONString(packageVersion.getDependencies().getAdditionalProperties()));
+        }
         // TODO make HEAD request for `tarball` URL ???
         // remoteArtifactEntry.setSizeInBytes(packageVersion.getProperties().getPackageSize());
 
@@ -129,11 +122,10 @@ public class NpmPackageFeedParser
 
     private ArtifactEntity parseVersion(String storageId,
                                         String repositoryId,
-                                        PackageEntry packageEntry)
-    {
+                                        PackageEntry packageEntry) {
         String scope = packageEntry.getScope();
         String packageId = NpmArtifactCoordinates.calculatePackageId("unscoped".equals(scope) ? null : scope,
-                                                                     packageEntry.getName());
+                packageEntry.getName());
 
         NpmArtifactCoordinates c = NpmArtifactCoordinates.of(packageId, packageEntry.getVersion());
 

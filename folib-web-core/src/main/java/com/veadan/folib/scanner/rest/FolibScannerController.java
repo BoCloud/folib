@@ -11,8 +11,12 @@ import com.veadan.folib.scanner.entity.FolibScanner;
 import com.veadan.folib.scanner.entity.FolibScannerDockerTableVO;
 import com.veadan.folib.scanner.entity.SeverityVO;
 import com.veadan.folib.scanner.service.ScanService;
+import com.veadan.folib.users.userdetails.SpringSecurityUser;
 import io.swagger.annotations.Api;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -29,9 +33,11 @@ public class FolibScannerController extends BaseController<FolibScannerBiz, Foli
     private ScanService scanService;
 
     @GetMapping("/update")
+    @PreAuthorize("authenticated")
     public ObjectRestResponse updateDb() {
-
-        scanService.updateDB();
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        SpringSecurityUser userDetails = (SpringSecurityUser) authentication.getPrincipal();
+        scanService.updateDB(userDetails.getUsername());
         return new ObjectRestResponse(true, "更新中");
     }
 
@@ -41,28 +47,21 @@ public class FolibScannerController extends BaseController<FolibScannerBiz, Foli
         object.put("denpendencyCount", this.baseBiz.getScanSum());
         object.put("totalCount", this.baseBiz.getTotalSum());
         return new ObjectRestResponse(true, object, "获取数据成功");
-
     }
 
     @GetMapping("/getScannerSumDifVoList")
     public ObjectRestResponse getScannerSumDifVoList() {
-
         return new ObjectRestResponse(true, this.baseBiz.getScannerSumDifVoList(), "获取数据成功");
-
     }
 
     @GetMapping("/weekDayCount")
     public ObjectRestResponse weekDayCount() {
-
         return new ObjectRestResponse(true, this.baseBiz.weekDayCount(), "获取数据成功");
-
     }
 
     @GetMapping("/mounthDayCount")
     public ObjectRestResponse mounthDayCount() {
-
         return new ObjectRestResponse(true, this.baseBiz.mounthDayCount(), "获取数据成功");
-
     }
 
     @GetMapping("/folibScannerGetOne")
@@ -70,7 +69,6 @@ public class FolibScannerController extends BaseController<FolibScannerBiz, Foli
         FolibScanner folibScanner = this.baseBiz.selectById(id);
         JSONArray jsonArray = JSON.parseArray(folibScanner.getReport());
         return new ObjectRestResponse<>(true, jsonArray, "成功");
-
     }
 
     /**

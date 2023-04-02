@@ -9,6 +9,8 @@ import com.beust.jcommander.internal.Sets;
 import com.veadan.folib.cloud.storage.s3fs.S3Path;
 import com.veadan.folib.domain.Artifact;
 import com.veadan.folib.domain.VulnerabilityEntity;
+import com.veadan.folib.entity.Dict;
+import com.veadan.folib.enums.DictTypeEnum;
 import com.veadan.folib.enums.SafeLevelEnum;
 import com.veadan.folib.enums.VulnerabilityPlatformEnum;
 import com.veadan.folib.providers.io.RepositoryPath;
@@ -21,6 +23,7 @@ import com.veadan.folib.scanner.entity.ScannerReport;
 import com.veadan.folib.scanner.enums.SeverityTypeEnum;
 import com.veadan.folib.scanner.mapper.ScanRulesMapper;
 import com.veadan.folib.services.ArtifactService;
+import com.veadan.folib.services.DictService;
 import com.veadan.folib.services.VulnerabilityService;
 import com.veadan.folib.util.LocalDateTimeInstance;
 import lombok.extern.slf4j.Slf4j;
@@ -32,6 +35,7 @@ import org.owasp.dependencycheck.dependency.*;
 import org.owasp.dependencycheck.utils.Settings;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import software.amazon.awssdk.services.s3.model.GetObjectRequest;
@@ -63,6 +67,10 @@ public class ScanService {
 
     @Inject
     private ScanRulesMapper scanRulesMapper;
+
+    @Inject
+    @Lazy
+    private DictService dictService;
 
     @Value("${folib.temp}")
     private String tempPath;
@@ -307,14 +315,23 @@ public class ScanService {
     }
 
     @Async("asyncThreadPoolTaskExecutor")
-    public void updateDB() {
-        Settings settings = getSettings();
-        settings.setBoolean(Settings.KEYS.UPDATE_NVDCVE_ENABLED, true);
-        settings.setBoolean(Settings.KEYS.AUTO_UPDATE, true);
-        XpEngine engine = new XpEngine(settings);
+    public void updateDB(String username) {
+        Dict existsDict = dictService.selectLatestOneDict(Dict.builder().dictType(DictTypeEnum.VULNERABILITY_DATA_UPDATE.getType()).build());
+        String comment = "更新中";
+        if (Objects.nonNull(existsDict) && comment.equals(existsDict.getComment())) {
+            return;
+        }
+        Dict dict = Dict.builder().dictType(DictTypeEnum.VULNERABILITY_DATA_UPDATE.getType()).dictKey(username).createTime(new Date()).comment(comment).build();
+        dictService.saveDict(dict);
         try {
+            Settings settings = getSettings();
+            settings.setBoolean(Settings.KEYS.UPDATE_NVDCVE_ENABLED, true);
+            settings.setBoolean(Settings.KEYS.AUTO_UPDATE, true);
+            XpEngine engine = new XpEngine(settings);
             engine.doUpdates();
+            dictService.updateDict(Dict.builder().id(dict.getId()).comment("更新完成").build());
         } catch (UpdateException e) {
+            dictService.updateDict(Dict.builder().id(dict.getId()).comment("更新错误").build());
             throw new BusinessException("更新出错");
         }
     }

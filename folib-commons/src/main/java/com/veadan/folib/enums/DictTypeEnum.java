@@ -25,6 +25,10 @@ public enum DictTypeEnum {
      * 构建索引
      */
     BUILD_GRAPH_INDEX("build_graph_index"),
+    /**
+     * 漏洞数据更新
+     */
+    VULNERABILITY_DATA_UPDATE("vulnerability_data_update"),
     ;
 
     private String type;
