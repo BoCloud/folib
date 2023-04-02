@@ -128,6 +128,10 @@ public class ArtifactEntity
     @Convert(DateConverter.class)
     private LocalDateTime scanDateTime;
     /**
+     * 依赖
+     */
+    private String dependencies;
+    /**
      * 扫描报告
      */
     private String report;
@@ -481,5 +485,15 @@ public class ArtifactEntity
     @Override
     public void setReport(String report) {
         this.report = report;
+    }
+
+    @Override
+    public String getDependencies() {
+        return dependencies;
+    }
+
+    @Override
+    public void setDependencies(String dependencies) {
+        this.dependencies = dependencies;
     }
 }

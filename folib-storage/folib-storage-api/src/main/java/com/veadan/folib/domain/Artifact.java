@@ -127,4 +127,8 @@ public interface Artifact extends DomainObject {
     String getReport();
 
     void setReport(String report);
+
+    String getDependencies();
+
+    void setDependencies(String dependencies);
 }

@@ -79,6 +79,7 @@ public class ArtifactAdapter implements VertexEntityTraversalAdapter<Artifact> {
                 "report",
                 "scanDate",
                 "scanDateTime",
+                "dependencies",
                 "filePaths",
                 "filenames",
                 "checksums",
@@ -111,6 +112,7 @@ public class ArtifactAdapter implements VertexEntityTraversalAdapter<Artifact> {
                 .by(__.enrichPropertyValue("report"))
                 .by(__.enrichPropertyValue("scanDate"))
                 .by(__.enrichPropertyValue("scanDateTime"))
+                .by(__.enrichPropertyValue("dependencies"))
                 .by(__.enrichPropertyValues("filePaths"))
                 .by(__.enrichPropertyValues("filenames"))
                 .by(__.enrichPropertyValues("checksums"))
@@ -153,6 +155,7 @@ public class ArtifactAdapter implements VertexEntityTraversalAdapter<Artifact> {
                 "mediumVulnerabilitiesCount",
                 "lowVulnerabilitiesCount",
                 "suppressedVulnerabilitiesCount",
+                "dependencies",
                 "filenames",
                 "checksums",
                 "artifactCoordinates",
@@ -180,6 +183,7 @@ public class ArtifactAdapter implements VertexEntityTraversalAdapter<Artifact> {
                 .by(__.enrichPropertyValue("mediumVulnerabilitiesCount"))
                 .by(__.enrichPropertyValue("lowVulnerabilitiesCount"))
                 .by(__.enrichPropertyValue("suppressedVulnerabilitiesCount"))
+                .by(__.enrichPropertyValue("dependencies"))
                 .by(__.enrichPropertyValues("filenames"))
                 .by(__.enrichPropertyValues("checksums"))
                 .by(__.outE(Edges.ARTIFACT_HAS_ARTIFACT_COORDINATES)
@@ -285,7 +289,7 @@ public class ArtifactAdapter implements VertexEntityTraversalAdapter<Artifact> {
         result.setMediumVulnerabilitiesCount(extractObject(Integer.class, t.get().get("mediumVulnerabilitiesCount")));
         result.setLowVulnerabilitiesCount(extractObject(Integer.class, t.get().get("lowVulnerabilitiesCount")));
         result.setSuppressedVulnerabilitiesCount(extractObject(Integer.class, t.get().get("suppressedVulnerabilitiesCount")));
-
+        result.setDependencies(extractObject(String.class, t.get().get("dependencies")));
 
         result.getArtifactArchiveListing()
                 .setFilenames(extractPropertyList(String.class, t.get().get("filenames")).stream()
@@ -439,6 +443,9 @@ public class ArtifactAdapter implements VertexEntityTraversalAdapter<Artifact> {
         }
         if (entity.getScanDateTime() != null) {
             t = t.property(single, "scanDateTime", toLong(entity.getScanDateTime()));
+        }
+        if (StringUtils.isNotBlank(entity.getDependencies())) {
+            t = t.property(single, "dependencies", entity.getDependencies());
         }
         ArtifactArchiveListing artifactArchiveListing = entity.getArtifactArchiveListing();
         if (Objects.nonNull(artifactArchiveListing)) {
