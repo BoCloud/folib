@@ -97,7 +97,7 @@ public class NodeComponent {
             Map<String, Float> effectiveOwnershipMap = nodeProbe.effectiveOwnershipWithPort(keyspace);
             cassandraClusterForm.setEffectiveOwnershipMap(effectiveOwnershipMap);
             //种子节点信息
-            List<String> seedList = nodeProbe.reloadSeeds();
+            List<String> seedList = nodeProbe.getSeeds();
             cassandraClusterForm.setSeedList(seedList);
             //拓扑信息
             String gossipInfo = nodeProbe.getGossipInfo(true);

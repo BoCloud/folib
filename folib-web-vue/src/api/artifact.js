@@ -20,6 +20,26 @@ export function artifactUpload (data) {
   return axios({
     url: '/api/artifact/folib/promotion/upload-files',
     method: 'post',
+    timeout: 15 * 60 * 1000,
+    headers: {"Content-type": "multipart/form-data",},
+    data: data
+  })
+}
+
+export function singleArtifactUpload (data) {
+  return axios({
+    url: '/api/artifact/folib/promotion/upload',
+    method: 'post',
+    headers: {"Content-type": "multipart/form-data",},
+    data: data
+  })
+}
+
+export function parseArtifact (data) {
+  return axios({
+    url: '/api/artifact/folib/promotion/parseArtifact',
+    method: 'post',
+    timeout: 15 * 60 * 1000,
     headers: {"Content-type": "multipart/form-data",},
     data: data
   })

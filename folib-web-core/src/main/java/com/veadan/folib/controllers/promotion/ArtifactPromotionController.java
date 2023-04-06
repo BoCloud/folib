@@ -3,13 +3,12 @@ package com.veadan.folib.controllers.promotion;
 import com.veadan.folib.config.PermissionCheck;
 import com.veadan.folib.controllers.BaseArtifactController;
 import com.veadan.folib.domain.ArtifactDispatch;
+import com.veadan.folib.domain.ArtifactParse;
 import com.veadan.folib.domain.ArtifactPromotion;
 import com.veadan.folib.domain.PromotionNodeOption;
 import com.veadan.folib.dto.ArtifactDto;
 import com.veadan.folib.entity.Dict;
 import com.veadan.folib.services.ArtifactPromotionService;
-import com.veadan.folib.users.domain.Privileges;
-import com.veadan.folib.users.domain.SystemRole;
 import com.veadan.folib.validation.RequestBodyValidationException;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
@@ -84,6 +83,15 @@ public class ArtifactPromotionController extends BaseArtifactController {
         return artifactPromotionService.upload(files, storageId, repositoryId, filePathMap, fileMetaDataMap, uuid);
     }
 
+    @PostMapping(value = "/upload")
+    @ApiOperation(value = "文件上传", notes = "文件上传")
+    @PermissionCheck(resourceKey = "ARTIFACTS_DEPLOY", storageKey = "storageId", repositoryKey = "repositoryId")
+    public ResponseEntity upload(
+            @RequestParam("storageId") String storageId,
+            @RequestParam("repositoryId") String repositoryId,
+            @RequestParam(name = "parseArtifact") String parseArtifact) {
+        return artifactPromotionService.upload(parseArtifact, storageId, repositoryId);
+    }
 
     @PostMapping(value = "/download")
     @PermissionCheck(resourceKey = "ARTIFACTS_RESOLVE")
@@ -112,6 +120,13 @@ public class ArtifactPromotionController extends BaseArtifactController {
             throw new RequestBodyValidationException("请求参数错误", bindingResult);
         }
         return artifactPromotionService.artifactDispatch(artifactDispatch);
+    }
+
+    @PostMapping("/parseArtifact")
+    @PermissionCheck(resourceKey = "ARTIFACTS_DEPLOY", storageKey = "storageId", repositoryKey = "repositoryId")
+    public ResponseEntity<ArtifactParse> parseArtifact(@RequestParam("storageId") String storageId,
+                                                       @RequestParam("repositoryId") String repositoryId, @RequestParam("file") MultipartFile file) {
+        return ResponseEntity.ok(artifactPromotionService.parseArtifact(storageId, repositoryId, file));
     }
 
     /**

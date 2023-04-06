@@ -9,7 +9,10 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
+import org.apache.maven.model.Model;
+import org.apache.maven.model.io.xpp3.MavenXpp3Writer;
 
+import java.io.FileWriter;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -199,5 +202,33 @@ public class ArtifactUtils {
             artifactName = dockerArr[0] + ":" + dockerArr[1];
         }
         return artifactName;
+    }
+
+    /**
+     * 生成pom文件
+     *
+     * @param groupId    groupId
+     * @param artifactId artifactId
+     * @param version    version
+     * @param pomPath    pomPath
+     */
+    public static void pomGenerator(String groupId, String artifactId, String version, String pomPath) {
+        FileWriter fileWriter = null;
+        try {
+            // 创建Maven项目模型
+            Model model = new Model();
+            model.setModelVersion("4.0.0");
+            model.setGroupId(groupId);
+            model.setArtifactId(artifactId);
+            model.setVersion(version);
+            // 保存POM文件
+            MavenXpp3Writer writer = new MavenXpp3Writer();
+            fileWriter = new FileWriter(pomPath);
+            writer.write(fileWriter, model);
+            fileWriter.close();
+        } catch (Exception ex) {
+            log.error(String.format("groupId：%s, artifactId：%s，version：%s，pomPath：%s，保存pom.xml错误：%s", groupId, artifactId, version, pomPath, ExceptionUtils.getStackTrace(ex)));
+            throw new RuntimeException(ex);
+        }
     }
 }

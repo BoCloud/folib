@@ -260,7 +260,7 @@ export default {
             username: this.personalForm.username,
             email: this.personalForm.email,
             avatar: this.personalForm.avatar,
-            password: this.personalForm.password,
+            password: encrypt(this.personalForm.password)
           }
           updateUser(user).then(res => {
             if (user.password) {

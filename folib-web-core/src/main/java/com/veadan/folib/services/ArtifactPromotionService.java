@@ -1,6 +1,7 @@
 package com.veadan.folib.services;
 
 import com.veadan.folib.domain.ArtifactDispatch;
+import com.veadan.folib.domain.ArtifactParse;
 import com.veadan.folib.domain.ArtifactPromotion;
 import com.veadan.folib.domain.PromotionNodeOption;
 import com.veadan.folib.dto.ArtifactDto;
@@ -27,6 +28,8 @@ public interface ArtifactPromotionService {
 
     ResponseEntity upload(MultipartFile[] files, String storageId, String repositoryId, String filePathMap, String fileMetaDataMap, String uuid);
 
+    ResponseEntity upload(String parseArtifact, String storageId, String repositoryId);
+
     ResponseEntity download(ArtifactDto artifactDto, HttpServletResponse response);
 
     ResponseEntity getFileRelativePaths(ArtifactDto artifactDto);
@@ -51,5 +54,15 @@ public interface ArtifactPromotionService {
      * @param uuid     uuid
      */
     void deleteUploadProcess(String dictType, String uuid);
+
+    /**
+     * 解析制品
+     *
+     * @param storageId    存储空间
+     * @param repositoryId 仓库名称
+     * @param file         制品文件
+     * @return 制品结果
+     */
+    ArtifactParse parseArtifact(String storageId, String repositoryId, MultipartFile file);
 
 }
