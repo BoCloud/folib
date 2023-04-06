@@ -1,6 +1,9 @@
 package com.veadan.folib.services.impl;
 
+import cn.hutool.core.io.FileUtil;
+import cn.hutool.core.lang.UUID;
 import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.JSONObject;
 import com.veadan.folib.domain.*;
 import com.veadan.folib.dto.ArtifactDto;
 import com.veadan.folib.dto.PromotionArtifactDto;
@@ -19,6 +22,7 @@ import com.veadan.folib.service.ProxyRepositoryConnectionPoolConfigurationServic
 import com.veadan.folib.services.*;
 import com.veadan.folib.storage.Storage;
 import com.veadan.folib.storage.repository.Repository;
+import com.veadan.folib.utils.PropertiesUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.compress.utils.Lists;
 import org.apache.commons.fileupload.disk.DiskFileItem;
@@ -51,11 +55,10 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.nio.file.Path;
+import java.util.*;
 import java.util.concurrent.FutureTask;
 
 /**
@@ -302,6 +305,36 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
         return ResponseEntity.ok("ok");
     }
 
+    @Override
+    public ArtifactParse parseArtifact(String storageId, String repositoryId, MultipartFile file) {
+        String uuid = UUID.fastUUID().toString();
+        String fileOriginalName = ((CommonsMultipartFile) file).getFileItem().getName();
+        String parentPath = "";
+        ArtifactParse artifactParse = null;
+        try (InputStream inputStream = file.getInputStream()) {
+            parentPath = tempPath + File.separator + "parseArtifact" + File.separator + uuid;
+            String artifactPath = parentPath + File.separator + fileOriginalName;
+            File artifactFile = new File(artifactPath);
+            FileUtil.writeFromStream(inputStream, artifactFile);
+            Path path = Path.of(artifactFile.getAbsolutePath());
+            byte[] propertiesBytes = PropertiesUtils.getFileFromJar(path, "pom.properties");
+            if (Objects.isNull(propertiesBytes)) {
+                artifactParse = ArtifactParse.builder().type(2).filePath(artifactPath).build();
+                return artifactParse;
+            }
+            String properties = new String(propertiesBytes, StandardCharsets.UTF_8);
+            String groupId = PropertiesUtils.parseProperties(properties, "groupId");
+            String artifactId = PropertiesUtils.parseProperties(properties, "artifactId");
+            String version = PropertiesUtils.parseProperties(properties, "version");
+            artifactParse = ArtifactParse.builder().type(1).groupId(groupId).artifactId(artifactId).version(version).filePath(artifactPath).build();
+            return artifactParse;
+        } catch (Exception ex) {
+            log.error("解析制品错误：{}", ExceptionUtils.getStackTrace(ex));
+            artifactParse = ArtifactParse.builder().type(2).build();
+            return artifactParse;
+        }
+    }
+
     private AnalysisHtmlGetDirAndFilePath getArtifactPath(String url) throws Exception {
         Client client = clientPool.getRestClient();
         WebTarget target = client.target(url);
@@ -348,11 +381,47 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
                 String fileRelativePath = mapType.get(fileOriginalName);
                 String metaData = metaDataMap.getOrDefault(fileRelativePath, "").toString();
                 ArtifactUploadTask artifactUploadTask = new ArtifactUploadTask(storageId, repositoryId, file,
-                        repositoryManagementService, repositoryPathResolver, artifactManagementService, promotionUtil, layoutProviderRegistry, artifactMetadataService, artifactRepository, mavenRepositoryFeatures, tempPath, fileRelativePath, metaData, uuid);
+                        repositoryManagementService, repositoryPathResolver, artifactManagementService, promotionUtil, layoutProviderRegistry, artifactMetadataService, artifactRepository, mavenRepositoryFeatures, tempPath, fileRelativePath, metaData, uuid, null);
                 FutureTask<String> task = new FutureTask<String>(artifactUploadTask);
                 listTask.add(task);
                 asyncRepositoryThreadPoolExecutor.submit(task);
             }
+            StringBuilder temp = new StringBuilder();
+            for (FutureTask<String> task : listTask) {
+                try {
+                    String resultMsg = task.get();
+                    if (StringUtils.isNotBlank(resultMsg)) {
+                        temp.append(resultMsg).append(System.lineSeparator());
+                        log.error(resultMsg);
+                    }
+
+                } catch (Exception e) {
+                    temp.append(e.getMessage()).append(System.lineSeparator());
+                    log.error("upload exception {}", e.getMessage());
+                }
+            }
+            if (StringUtils.isNotBlank(temp.toString())) {
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                        .body(temp.toString());
+            }
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(e.getMessage());
+        }
+        return ResponseEntity.ok("ok");
+    }
+
+    @Override
+    public ResponseEntity upload(String parseArtifact, String storageId, String repositoryId) {
+        try {
+            validateStorageAndRepository(storageId, repositoryId);
+            ArtifactParse artifactParse = JSONObject.parseObject(parseArtifact, ArtifactParse.class);
+            List<FutureTask<String>> listTask = new ArrayList<>();
+            ArtifactUploadTask artifactUploadTask = new ArtifactUploadTask(storageId, repositoryId, null,
+                    repositoryManagementService, repositoryPathResolver, artifactManagementService, promotionUtil, layoutProviderRegistry, artifactMetadataService, artifactRepository, mavenRepositoryFeatures, tempPath, FileUtil.getName(artifactParse.getFilePath()), null, null, parseArtifact);
+            FutureTask<String> futureTask = new FutureTask<String>(artifactUploadTask);
+            listTask.add(futureTask);
+            asyncRepositoryThreadPoolExecutor.submit(futureTask);
             StringBuilder temp = new StringBuilder();
             for (FutureTask<String> task : listTask) {
                 try {

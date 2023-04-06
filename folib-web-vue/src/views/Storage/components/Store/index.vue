@@ -90,9 +90,16 @@
                     </small>
                   </a>
                   <a
+                    v-if="uploadEnabled && folibRepository.layout === 'Maven 2'"
+                    ><small style="padding-right: 20px" @click="handleMavenUpload">
+                      上传
+                      <a-icon type="cloud-upload" />
+                    </small>
+                  </a>
+                  <a
                     v-if="uploadEnabled"
                     ><small style="padding-right: 20px" @click="handleUpload">
-                      上传
+                      批量上传
                       <a-icon type="cloud-upload" />
                     </small>
                   </a>
@@ -1066,6 +1073,8 @@
         </a-row>
       </a-form>
     </a-modal>
+
+    <MavenUpload v-if="mavenUploadVisible" :modelVisible="mavenUploadVisible" :folibRepository="this.folibRepository" @mavenUploadClose="mavenUploadClose"/>
   </div>
 </template>
 
@@ -1111,7 +1120,7 @@ import zhCN from "ant-design-vue/es/locale/zh_CN";
 import BaseData from "./Data.vue";
 import UseDoc from "./UseDoc.vue";
 import AddMetadata from "./AddMetadata.vue";
-
+import MavenUpload from "../MavenUpload/index.vue"
 import { PrismEditor } from "vue-prism-editor";
 import "vue-prism-editor/dist/prismeditor.min.css"; // import the styles somewhere
 // import highlighting library (you can use any library you want just return html string)
@@ -1135,6 +1144,7 @@ export default {
     BaseData,
     UseDoc,
     AddMetadata,
+    MavenUpload,
   },
   data() {
     return {
@@ -1274,7 +1284,8 @@ export default {
       repositories: [],
       custom: false,
       enablUploadedLayout: ['Raw', 'php', 'Maven 2', 'npm'],
-      permissions: []
+      permissions: [],
+      mavenUploadVisible: false
     };
   },
   created() {
@@ -2202,6 +2213,12 @@ export default {
       }
       return repositoryUrl
     },
+    handleMavenUpload() {
+      this.mavenUploadVisible = true
+    },
+    mavenUploadClose() {
+      this.mavenUploadVisible = false
+    }
   },
 };
 </script>
