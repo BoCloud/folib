@@ -285,7 +285,7 @@ public class ArtifactUploadTask implements Callable<String> {
      */
     private void handlerJar(LayoutProvider layoutProvider, RepositoryPath repositoryPath, Path path, String point, File artifactTempFile, File parentTempFile, ArtifactParse artifactParse) {
         try {
-            String groupId, artifactId, version, properties = "";
+            String groupId, sourceGroupId, artifactId, version, properties = "";
             if (Objects.nonNull(artifactParse)) {
                 //优先级最高，非空直接使用
                 groupId = artifactParse.getGroupId();
@@ -302,6 +302,7 @@ public class ArtifactUploadTask implements Callable<String> {
                 artifactId = parseProperties(properties, "artifactId");
                 version = parseProperties(properties, "version");
             }
+            sourceGroupId = groupId;
             if (groupId.contains(point)) {
                 groupId = groupId.replace(point, File.separator);
             }
@@ -333,8 +334,9 @@ public class ArtifactUploadTask implements Callable<String> {
                 FileUtil.writeBytes(pom.getBytes(), pomTempFile);
             } else {
                 //包内不存在pom.xml，需生成pom.xml
+                pomName = String.format("%s-%s", artifactId, version) + ".pom";
                 pomTempFile = new File(parentTempFile.getAbsolutePath() + File.separator + pomName);
-                com.veadan.folib.utils.ArtifactUtils.pomGenerator(groupId, artifactId, version, pomTempFile.getAbsolutePath());
+                com.veadan.folib.utils.ArtifactUtils.pomGenerator(sourceGroupId, artifactId, version, pomTempFile.getAbsolutePath());
             }
             String pomPath = String.format("%s/%s/%s/%s", groupId, artifactId, version, pomName);
             log.info("maven2 layout xml path ：{}，properties：{}，artifactParse: {}, groupId：{}，artifactId：{}, version：{} artifactPath：{}", pomTempFile.getAbsolutePath(), properties, artifactParse, groupId, artifactId, version, pomPath);
