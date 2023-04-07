@@ -6,6 +6,7 @@
           v-if="folibRepository.layout !== 'Docker'"
           title=""
           :column="1"
+          style="word-break: break-all;word-wrap: break-word;"
         >
           <a-descriptions-item label="所属空间">
             {{ currentTreeNode.storageId }}
@@ -31,12 +32,11 @@
           <a-descriptions-item v-if="currentFileDetial" label="下载次数">
             {{ currentFileDetial.downloadCount }}
           </a-descriptions-item>
-          <a-descriptions-item v-if="currentFileDetial" label="MD5">
-            {{ currentFileDetial.md5 }}
-          </a-descriptions-item>
-          <a-descriptions-item v-if="currentFileDetial" label="SHA-1">
-            {{ currentFileDetial.sha }}
-          </a-descriptions-item>
+          <template v-if="currentFileDetial && currentFileDetial.artifact && currentFileDetial.artifact.checksums" >
+            <a-descriptions-item :label="key" v-for="(value, key, index) in currentFileDetial.artifact.checksums" :key="index" span="2">
+              {{ value }}
+            </a-descriptions-item>
+          </template>
         </a-descriptions>
         <a-descriptions
           v-if="folibRepository.layout === 'Docker'"

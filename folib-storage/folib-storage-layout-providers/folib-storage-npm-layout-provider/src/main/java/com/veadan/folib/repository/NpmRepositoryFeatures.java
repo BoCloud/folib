@@ -92,8 +92,8 @@ public class NpmRepositoryFeatures implements RepositoryFeatures {
     @Inject
     private ArtifactIdGroupRepository artifactIdGroupRepository;
 
-    @Inject
-    private Executor eventTaskExecutor;
+//    @Inject
+//    private Executor eventTaskExecutor;
 
     @Inject
     @NpmObjectMapper
@@ -457,13 +457,14 @@ public class NpmRepositoryFeatures implements RepositoryFeatures {
 
             Runnable job = () -> fetchRemoteSearchResult(storageId, repositoryId, npmSearchRequest.getText(),
                     npmSearchRequest.getSize());
-            if (Boolean.FALSE.equals(packageExists)) {
-                // Syncronously fetch remote package feed if ve have no cached
-                // packages
-                job.run();
-            } else {
-                eventTaskExecutor.execute(job);
-            }
+            job.run();
+//            if (Boolean.FALSE.equals(packageExists)) {
+//                // Syncronously fetch remote package feed if ve have no cached
+//                // packages
+//                job.run();
+//            } else {
+//                eventTaskExecutor.execute(job);
+//            }
 
         }
     }
@@ -507,12 +508,13 @@ public class NpmRepositoryFeatures implements RepositoryFeatures {
                     artifactIdGroup.getUuid(), packagesExists);
             Runnable job = () -> fetchRemotePackageFeed(storage.getId(), repository.getId(),
                     npmSearchRequest.getPackageId());
-            if (!Boolean.TRUE.equals(packagesExists)) {
-                // Synchronously fetch remote package feed if there is no cached packages
-                job.run();
-            } else {
-                eventTaskExecutor.execute(job);
-            }
+            job.run();
+//            if (!Boolean.TRUE.equals(packagesExists)) {
+//                // Synchronously fetch remote package feed if there is no cached packages
+//                job.run();
+//            } else {
+//                eventTaskExecutor.execute(job);
+//            }
         }
 
     }
