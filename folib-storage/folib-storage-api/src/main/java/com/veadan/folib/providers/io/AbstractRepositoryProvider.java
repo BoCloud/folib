@@ -276,7 +276,7 @@ public abstract class AbstractRepositoryProvider implements RepositoryProvider, 
         artifact.setSizeInBytes(cos.getByteCount());
 
         LayoutOutputStream los = StreamUtils.findSource(LayoutOutputStream.class, ctx.getStream());
-        artifact.setChecksums(los.getDigestMap());
+        artifact.setChecksums(los.getDigestMap(repository.getLayout()));
 
         ArtifactTag lastVersionTag = artifactTagService.findOneOrCreate(ArtifactTagEntity.LAST_VERSION);
 
