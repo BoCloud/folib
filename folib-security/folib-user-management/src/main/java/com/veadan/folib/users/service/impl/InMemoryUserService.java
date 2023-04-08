@@ -228,6 +228,10 @@ public class InMemoryUserService implements UserService
                         {
                             user.setPassword(userToUpdate.getPassword());
                         }
+                        if (!StringUtils.isBlank(userToUpdate.getOriginalPassword()))
+                        {
+                            user.setOriginalPassword(userToUpdate.getOriginalPassword());
+                        }
                         if (!StringUtils.isBlank(userToUpdate.getAvatar()))
                         {
                             user.setAvatar(userToUpdate.getAvatar());

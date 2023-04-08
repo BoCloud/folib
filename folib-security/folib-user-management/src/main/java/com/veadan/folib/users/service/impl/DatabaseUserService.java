@@ -104,6 +104,11 @@ public class DatabaseUserService implements UserService
             user.setPassword(userToUpdate.getPassword());
         }
 
+        if (StringUtils.isNotBlank(userToUpdate.getOriginalPassword()))
+        {
+            user.setOriginalPassword(userToUpdate.getOriginalPassword());
+        }
+
         if (StringUtils.isNotBlank(userToUpdate.getSecurityTokenKey()))
         {
             user.setSecurityTokenKey(userToUpdate.getSecurityTokenKey());
@@ -168,6 +173,10 @@ public class DatabaseUserService implements UserService
         if (!StringUtils.isBlank(user.getPassword()))
         {
             userEntity.setPassword(user.getPassword());
+        }
+        if (StringUtils.isNotBlank(user.getOriginalPassword()))
+        {
+            userEntity.setOriginalPassword(user.getOriginalPassword());
         }
         userEntity.setEnabled(user.isEnabled());
         List<String> showRoleNameList = Lists.newArrayList(SystemRole.ADMIN.name(), SystemRole.ARTIFACTS_MANAGER.name(), SystemRole.GENERAL.name());

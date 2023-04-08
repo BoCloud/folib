@@ -25,6 +25,8 @@ public class UserDto
 
     private String password;
 
+    private String originalPassword;
+
     private String email;
 
     private String avatar;
@@ -207,5 +209,14 @@ public class UserDto
 
     public void setAvatar(String avatar) {
         this.avatar = avatar;
+    }
+
+    @Override
+    public String getOriginalPassword() {
+        return originalPassword;
+    }
+
+    public void setOriginalPassword(String originalPassword) {
+        this.originalPassword = originalPassword;
     }
 }

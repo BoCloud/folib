@@ -167,8 +167,11 @@ public class UserController
         }
 
         UserDto user = conversionService.convert(userForm, UserDto.class);
-        String password = rsaUtils.decrypt(user.getPassword());
-        user.setPassword(password);
+        if (Objects.nonNull(user)) {
+            user.setOriginalPassword(user.getPassword());
+            String password = rsaUtils.decrypt(user.getPassword());
+            user.setPassword(password);
+        }
         userService.save(new EncodedPasswordUser(user, passwordEncoder));
 
         return getSuccessfulResponseEntity(SUCCESSFUL_CREATE_USER, accept);
@@ -206,7 +209,8 @@ public class UserController
 //        }
 
         UserDto user = conversionService.convert(userToUpdate, UserDto.class);
-        if (StringUtils.isNotBlank(user.getPassword())) {
+        if (Objects.nonNull(user) && StringUtils.isNotBlank(user.getPassword())) {
+            user.setOriginalPassword(user.getPassword());
             String password = rsaUtils.decrypt(user.getPassword());
             user.setPassword(password);
         }
@@ -279,6 +283,21 @@ public class UserController
         Object body = getTokenEntityBody(securityToken, accept);
 
         return ResponseEntity.ok(body);
+    }
+
+    @ApiOperation(value = "Obtain the encrypted original password.")
+    @ApiResponses(value = {@ApiResponse(code = 200, message = ""),
+            @ApiResponse(code = 404, message = NOT_FOUND_USER)})
+    @GetMapping(value = "{username}/encoded",
+            produces = {MediaType.TEXT_PLAIN_VALUE,
+                    MediaType.APPLICATION_JSON_VALUE})
+    public ResponseEntity get(@ApiParam(value = "The name of the user") @PathVariable String username,
+                                                @RequestHeader(HttpHeaders.ACCEPT) String accept) {
+        User user = userService.findByUsername(username);
+        if (user == null) {
+            return getNotFoundResponseEntity(NOT_FOUND_USER, accept);
+        }
+        return ResponseEntity.ok(user.getOriginalPassword());
     }
 
     private Object getTokenEntityBody(String token,

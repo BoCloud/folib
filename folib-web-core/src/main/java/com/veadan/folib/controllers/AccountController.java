@@ -110,6 +110,7 @@ public class AccountController
         UserDto user = new UserDto();
         user.setUsername(loggedUser.getUsername());
         if (StringUtils.isNotBlank(userToUpdate.getPassword())) {
+            user.setOriginalPassword(userToUpdate.getPassword());
             String password = rsaUtils.decrypt(userToUpdate.getPassword());
             user.setPassword(password);
         }

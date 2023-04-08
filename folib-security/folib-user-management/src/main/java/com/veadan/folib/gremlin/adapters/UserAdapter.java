@@ -42,6 +42,7 @@ public class UserAdapter implements VertexEntityTraversalAdapter<User> {
         return __.<Vertex, Object>project("id",
                 "uuid",
                 "password",
+                "originalPassword",
                 "enabled",
                 "email",
                 "userType",
@@ -53,6 +54,7 @@ public class UserAdapter implements VertexEntityTraversalAdapter<User> {
                 .by(__.id())
                 .by(__.enrichPropertyValue("uuid"))
                 .by(__.enrichPropertyValue("password"))
+                .by(__.enrichPropertyValue("originalPassword"))
                 .by(__.enrichPropertyValue("enabled"))
                 .by(__.enrichPropertyValue("email"))
                 .by(__.enrichPropertyValue("userType"))
@@ -72,6 +74,7 @@ public class UserAdapter implements VertexEntityTraversalAdapter<User> {
         UserEntity result = new UserEntity(extractObject(String.class, t.get().get("uuid")));
         result.setNativeId(extractObject(Long.class, t.get().get("id")));
         result.setPassword(extractObject(String.class, t.get().get("password")));
+        result.setOriginalPassword(extractObject(String.class, t.get().get("originalPassword")));
         result.setEnabled(extractObject(Boolean.class, t.get().get("enabled")));
         result.setEmail(extractObject(String.class, t.get().get("email")));
         result.setUserType(extractObject(String.class, t.get().get("userType")));
@@ -114,6 +117,9 @@ public class UserAdapter implements VertexEntityTraversalAdapter<User> {
 
         if (entity.getPassword() != null) {
             t = t.property(single, "password", entity.getPassword());
+        }
+        if (StringUtils.isNotBlank(entity.getOriginalPassword())) {
+            t = t.property(single, "originalPassword", entity.getOriginalPassword());
         }
         if (entity.getUserType() != null) {
             t = t.property(single, "userType", entity.getUserType());
