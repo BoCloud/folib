@@ -18,6 +18,7 @@ import com.veadan.folib.db.schema.FolibSchema;
 import org.janusgraph.core.JanusGraph;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Condition;
 import org.springframework.context.annotation.ConditionContext;
@@ -41,6 +42,9 @@ import org.folib.db.server.JanusGraphWithEmbeddedCassandra;
 public class EmbeddedDbServerConfiguration implements Condition
 {
 
+    @Value("${folib.etc}")
+    private String folibEtc;
+
     private static final Logger logger = LoggerFactory.getLogger(EmbeddedDbServerConfiguration.class);
 
     public static final String PATH_FOLIB_DB = "META-INF/com/veadan/folib/db";
@@ -57,7 +61,7 @@ public class EmbeddedDbServerConfiguration implements Condition
 //            initStorage(cassandraConfiguration);
 //            logger.info(String.format("Storage extracted to [%s].", cassandraConfiguration.getStorageRoot()));
 //        }
-
+        System.setProperty("folibEtc", folibEtc);
         return new JanusGraphWithEmbeddedCassandra(cassandraConfiguration, janusGraphConfiguration, idBlockQueueSupplier);
     }
 
