@@ -19,7 +19,7 @@
 					<span class="label">制品仓库</span>
 				</router-link>
 			</a-menu-item>
-			<a-menu-item>
+			<a-menu-item v-if="userInfo.token">
 				<router-link to="/storage/scanner">
 					<span class="icon">
 						<a-icon type="read" theme="filled" class="m-0" />

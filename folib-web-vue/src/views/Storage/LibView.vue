@@ -2,13 +2,13 @@
   <div class="lib-view">
     <!-- Header Background Image -->
     <div class="profile-nav-bg">
-      <div
-        :class="[mouseEnter ? 'mouse-enter nested' : 'nested']"
-        style="
-          background: url(images/bg-profile.jpg) center/cover;
-          transition: all 0.3s;
-        "
-      />
+        <div
+          :class="[mouseEnter ? 'mouse-enter nested' : 'nested']"
+          style="
+            background: url(images/bg-profile.jpg) center/cover;
+            transition: all 0.3s;
+          "
+        ></div>
       <a-row type="flex" :md="8" :xs="4">
         <search-box @mouse="searchBoxMouseStatus" @search="search" />
       </a-row>
@@ -32,7 +32,7 @@
           @openDetial="openDetial"
         />
       </a-tab-pane>
-      <a-tab-pane :key="2" tab="安全">
+      <a-tab-pane :key="2" tab="安全" v-if="$store.state.user.token">
         <safe
           v-if="tabActiveKey == 2"
           :folibRepository="folibRepository"
@@ -559,11 +559,9 @@ import {
   fileSizeConver,
   formateDate,
 } from "@/utils/layoutUtil";
-import { getMetadataConfiguration } from "@/api/settings";
 import {
   getArtifact,
   viewArtifactFile,
-  repositoryVulnerabilityStatistics,
   getLibraryFilter
 } from "@/api/folib";
 import { PrismEditor } from "vue-prism-editor";
@@ -581,7 +579,7 @@ import { quillEditor } from "vue-quill-editor";
 import Store from "./components/Store/index.vue";
 import Safe from "./components/Safe/index.vue";
 import SettingsDrawer from "./components/Repository/SettingsDrawer.vue";
-import { hasRole, isAdmin, hasPermission } from "@/utils/permission";
+import { hasRole, isAdmin, hasPermission, isLogin } from "@/utils/permission";
 
 export default {
   inject: ["reload"],
@@ -756,14 +754,6 @@ export default {
           scopedSlots: { customRender: "operation" },
         },
       ],
-      vulnerabilityStatistics: {
-        artifactCount: 0,
-        downloadCount: 0,
-        dependencyCount: 0,
-        vulnerabilityCount: 0,
-        whiteCount: 0,
-        blackCount: 0,
-      },
       tabActiveKey: 1,
       artifactVisible: false,
       locale: zhCN,
@@ -774,7 +764,6 @@ export default {
       enabled: true,
       searchType: 1,
       prismEditor: false,
-      metadataList: [],
       metadataTypes: [
         {
           label: "数字",
@@ -797,7 +786,6 @@ export default {
           value: "JSON",
         },
       ],
-      metadataConfigList: [],
       quillOptions: {
         modules: {
           toolbar: [
@@ -814,8 +802,6 @@ export default {
   },
   created() {
     this.createData()
-    this.repositoryVulnerabilityStatistics()
-    this.getMetadataConfiguration()
     this.getStorage(this.folibRepository.storageId)
   },
   methods: {
@@ -854,7 +840,7 @@ export default {
         item.artifactPath
       ).then((res) => {
         let artifact = res.artifact;
-        if (artifact && artifact.safeLevel === "scanComplete") {
+        if (isLogin() && artifact && artifact.safeLevel === "scanComplete") {
           this.scanReport.show = true;
           this.scanReport.vulnerabilitesCount = artifact.vulnerabilitiesCount;
           this.scanReport.critical = artifact.criticalVulnerabilitiesCount;
@@ -978,14 +964,6 @@ export default {
     getImage(ecosystem) {
       return ecosystem ? ecosystem : this.getLayoutTypeHandle();
     },
-    repositoryVulnerabilityStatistics() {
-      repositoryVulnerabilityStatistics({
-        storageId: this.folibRepository.storageId,
-        repositoryId: this.folibRepository.id,
-      }).then((res) => {
-        this.vulnerabilityStatistics = res;
-      });
-    },
     tabChange(activeKey) {
       this.tabActiveKey = activeKey;
       if (activeKey == 2) {
@@ -1015,52 +993,11 @@ export default {
         });
       }
     },
-    getMetadataConfiguration() {
-      getMetadataConfiguration()
-        .then((res) => {
-          this.metadataConfigList = res;
-        })
-        .finally(() => {});
-    },
-    handlerRespMetadata(res) {
-      let metadataList = [];
-      if (
-        res.artifact &&
-        res.artifact.metadata &&
-        res.artifact.metadata.length > 0
-      ) {
-        let metadataJson = JSON.parse(res.artifact.metadata);
-        for (let key in metadataJson) {
-          let flag = this.metadataConfigList.some(
-            (metadataConfig) =>
-              !metadataConfig.viewShow && metadataConfig.key === key
-          );
-          if (flag) {
-            metadataJson[key].viewShow = false;
-          }
-          let metadata = Object.assign({}, metadataJson[key]);
-          metadata.key = key;
-          metadataList.push(metadata);
-        }
-      }
-      this.metadataList = metadataList;
-    },
     openDetial(data){
       if(JSON.stringify(data)!==JSON.stringify(this.scanReport)){
         Object.assign(this.scanReport,data)
       }
       this.detialVisible = true
-    },
-    getMetadata() {
-      getArtifact(
-        this.repositoryType,
-        this.currentTreeNode.storageId,
-        this.currentTreeNode.repositoryId,
-        this.currentTreeNode.artifactPath
-      ).then((res) => {
-        this.handlerRespMetadata(res);
-        this.$forceUpdate();
-      });
     },
     settingDrawerShow() {
       this.settingVisible = true

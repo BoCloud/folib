@@ -53,6 +53,17 @@ let routes = [
 		},
 		component: () => import('../views/Storage/Storages.vue'),
 	},
+	{
+		path: '/anonymous/storages',
+		name: 'anonymousStorages',
+		layout: "dashboard",
+		meta: {
+			title: '仓库列表',
+			sidebarMap: ['仓库列表'],
+			breadcrumbs: ['制品仓库', '仓库列表'],
+		},
+		component: () => import('../views/Storage/AnonymousStorages.vue'),
+	},
 
 	{
 		path: '/storage/libDetial',

@@ -112,7 +112,7 @@
                       <a-icon type="question-circle" theme="filled" />
                     </small>
                   </a>
-                  <div v-if="folibRepository.type !== 'group'">
+                  <div v-if="$store.state.user.token && folibRepository.type !== 'group'">
                     <span class="mr-15">{{
                       scan.onScan ? "扫描开启" : "扫描关闭"
                     }}</span>
@@ -265,7 +265,7 @@
               </a-col>
               <a-col :span="8" class="text-right">
                 <a-dropdown
-                  v-if="currentTreeNode.url"
+                  v-if="$store.state.user.token && currentTreeNode.url"
                   class="mr-30"
                   placement="bottomCenter"
                 >
@@ -417,7 +417,7 @@
                 </a-row>
               </a-col>
               <a-col :span="8" class="text-right">
-                <a-dropdown v-if="currentTreeNode.url" class="mr-45">
+                <a-dropdown v-if="$store.state.user.token && currentTreeNode.url" class="mr-45">
                   <span style="font-size: 16px; cursor: pointer">
                     更多
                     <a-icon
@@ -1079,7 +1079,7 @@
 </template>
 
 <script>
-import storage from "store";
+import store from "store";
 import uuidv4 from "uuid/v4"
 import {
   getLayoutType,
@@ -1096,7 +1096,7 @@ import {
   insertOrUpdateRules,
   getDockerArtifact,
   deleteArtifact,
-  repositoryVulnerabilityStatistics,
+  // repositoryVulnerabilityStatistics,
   getPermissionStoragesAndRepositories,
   getStorageAndRepositoryPermission,
   getStoragesAndRepositories,
@@ -1111,7 +1111,7 @@ import {
   artifactDispatch,
 } from "@/api/artifact";
 import { getMetadataConfiguration } from "@/api/settings";
-import { hasRole, isAdmin, hasPermission } from "@/utils/permission";
+import { hasRole, isAdmin, isAnonymous, isLogin } from "@/utils/permission";
 
 
 import SearchBox from "@/components/Tools/SearchBox";
@@ -1289,14 +1289,19 @@ export default {
     };
   },
   created() {
-    this.createData();
-    this.getBrowse();
-    this.scannerRules();
-    this.repositoryVulnerabilityStatistics();
-    this.scanReport = Object.assign({}, this.propScanReport);
-    this.queryStorageAndRepositoryPermission();
+    this.initData()
   },
   methods: {
+    initData() {
+      this.createData()
+      this.getBrowse()
+      if (isLogin()) {
+        this.scannerRules()
+        // this.repositoryVulnerabilityStatistics()
+        this.scanReport = Object.assign({}, this.propScanReport)
+        this.queryStorageAndRepositoryPermission()
+      }
+    },
     scannerRules() {
       scannerRules(
         this.folibRepository.storageId + "-" + this.folibRepository.id
@@ -1310,7 +1315,7 @@ export default {
     },
     scannerChange() {
       this.scan.id =
-        this.folibRepository.storageId + "-" + this.folibRepository.id;
+      this.folibRepository.storageId + "-" + this.folibRepository.id;
       this.scan.repository = this.folibRepository.id;
       this.scan.storage = this.folibRepository.storageId;
       this.scan.layout = this.folibRepository.layout;
@@ -1322,14 +1327,14 @@ export default {
         }, 100);
       });
     },
-    repositoryVulnerabilityStatistics() {
-      repositoryVulnerabilityStatistics({
-        storageId: this.folibRepository.storageId,
-        repositoryId: this.folibRepository.id,
-      }).then((res) => {
-        this.vulnerabilityStatistics = res;
-      });
-    },
+    // repositoryVulnerabilityStatistics() {
+    //   repositoryVulnerabilityStatistics({
+    //     storageId: this.folibRepository.storageId,
+    //     repositoryId: this.folibRepository.id,
+    //   }).then((res) => {
+    //     this.vulnerabilityStatistics = res;
+    //   });
+    // },
     goBack() {
       this.$router.push({ name: "storages" });
     },
@@ -1367,7 +1372,7 @@ export default {
     },
     createData() {
       //上个页面通过缓存传参，目的防止页面刷新，路由数据消失
-      const params = storage.get("libView_repository");
+      const params = store.get("libView_repository");
       this.folibRepository = params.item;
       this.baseUrl = params.baseUrl;
       this.repositoryType = this.getLayoutTypeHandle();
@@ -1720,7 +1725,7 @@ export default {
           if (this.currentFileDetial.snippets) {
             this.changeCodeTye(this.currentFileDetial.snippets[0]);
           }
-          if (this.currentFileDetial.artifact) {
+          if (isLogin() && this.currentFileDetial.artifact) {
             if (this.currentFileDetial.artifact.safeLevel === "scanComplete") {
               this.scanReport.show = true
               this.scanReport.vulnerabilitesCount =

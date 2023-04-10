@@ -136,7 +136,7 @@ public class ArtifactPromotionController extends BaseArtifactController {
      * @param uuid     uuid
      */
     @GetMapping(value = "/uploadProcess")
-    @PreAuthorize("hasAuthority('AUTHENTICATED_USER')")
+    @PreAuthorize("hasAuthority('ARTIFACTS_VIEW')")
     public ResponseEntity<List<Dict>> queryUploadProcess(@RequestParam("dictType") String dictType, @RequestParam(name = "uuid", required = false) String uuid) {
         return ResponseEntity.ok(artifactPromotionService.queryUploadProcess(dictType, uuid));
     }

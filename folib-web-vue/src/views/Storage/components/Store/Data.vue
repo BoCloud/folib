@@ -126,7 +126,7 @@
             </a-button>
           </div>
           <div slot="operation" slot-scope="text, record">
-            <div class="col-action">
+            <div class="col-action" v-if="$store.state.user.token">
               <a-popconfirm
                 title="确定要删除吗？"
                 okType="danger"
@@ -267,6 +267,7 @@
   </div>
 </template>
 <script>
+import store from "store";
 import { fileSizeConver, formateDate } from "@/utils/layoutUtil";
 import { getArtifact } from "@/api/folib";
 import { getMetadataConfiguration } from "@/api/settings";
@@ -281,6 +282,8 @@ import "prismjs/themes/prism-tomorrow.css";
 import "quill/dist/quill.core.css";
 import "quill/dist/quill.snow.css";
 import { quillEditor } from "vue-quill-editor";
+import { hasRole, isAdmin, isAnonymous, isLogin } from "@/utils/permission";
+
 export default {
   name: "BaseData",
   props: [
@@ -386,8 +389,10 @@ export default {
     };
   },
   created() {
-    this.getMetadataConfiguration()
-    this.metadataShow()
+    if (isLogin()){
+      this.getMetadataConfiguration()
+      this.metadataShow()
+    }
   },
   mounted() {
   },
@@ -407,7 +412,7 @@ export default {
   },
   methods: {
     metadataShow() {
-      this.metadataEnabled = this.folibRepository.type !== 'group' &&
+      this.metadataEnabled = isLogin() && this.folibRepository.type !== 'group' &&
                           this.currentFileDetial &&
                           this.currentFileDetial.artifact &&
                           this.currentFileDetial.artifact.artifactFileExists   

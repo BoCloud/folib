@@ -240,12 +240,17 @@ public class StoragesConfigurationController
         final List<Storage> storages = new ArrayList<>(configurationManagementService.getConfiguration()
                 .getStorages()
                 .values());
-        final UserDetails loggedUser = (UserDetails) authentication.getPrincipal();
+        String username = "";
+        if (Objects.nonNull(authentication)) {
+            final UserDetails loggedUser = (UserDetails) authentication.getPrincipal();
+            username = loggedUser.getUsername();
+        }
         StoragesOutput storagesOutput = new StoragesOutput(storages);
         if (!hasAdmin()) {
             List<Storage> list = storagesOutput.getStorages();
+            String finalUsername = username;
             List<Storage> collect = list.stream().filter(s ->
-                    (CollectionUtil.isNotEmpty(s.getUsers()) && s.getUsers().contains(loggedUser.getUsername())) ||
+                    (CollectionUtil.isNotEmpty(s.getUsers()) && s.getUsers().contains(finalUsername)) ||
                             (CollectionUtils.isNotEmpty(s.getRepositories().values()) && s.getRepositories().values().stream().anyMatch(repository -> RepositoryScopeEnum.OPEN.getType().equals(repository.getScope())))
             ).collect(Collectors.toList());
             storagesOutput.setStorages(collect);
@@ -490,7 +495,7 @@ public class StoragesConfigurationController
     @ApiOperation(value = "Retrieve the configuration of a storage.")
     @ApiResponses(value = {@ApiResponse(code = 200, message = ""),
             @ApiResponse(code = 404, message = "The storage ${storageId} was not found.")})
-    @PreAuthorize("hasAuthority('CONFIGURATION_VIEW_STORAGE_CONFIGURATION')")
+    @PreAuthorize("hasAnyAuthority('CONFIGURATION_VIEW_STORAGE_CONFIGURATION', 'ARTIFACTS_VIEW')")
     @GetMapping(value = "/{storageId}", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity getStorageResponseEntity(@ApiParam(value = "The storageId", required = true)
                                                    @PathVariable final String storageId,
