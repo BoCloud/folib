@@ -1,12 +1,14 @@
 package com.veadan.folib.io;
 
 import com.veadan.folib.util.MessageDigestUtils;
+import org.apache.commons.codec.digest.MessageDigestAlgorithms;
 import org.carlspring.commons.io.MultipleDigestOutputStream;
 
 import java.io.BufferedOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.security.NoSuchAlgorithmException;
+import java.util.Base64;
 import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -14,16 +16,18 @@ import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.xml.bind.DatatypeConverter;
+
 /**
  * This class decorates storage {@link OutputStream} with common layout specific logic.
- * 
+ *
  * Note that you don't need to instantiate it directly, see example below:
- * 
+ *
  * <pre>
  *     RepositoryPath repositoryPath = repositoryPathResolver.resolve("path/to/your/artifact/file.ext");
- *     ArtifactOutputStream aos = (ArtifactOutputStream) Files.newOutputStream(repositoryPath); 
+ *     ArtifactOutputStream aos = (ArtifactOutputStream) Files.newOutputStream(repositoryPath);
  * </pre>
- * 
+ *
  * @author @author veadan
  */
 public class LayoutOutputStream extends MultipleDigestOutputStream
@@ -39,7 +43,7 @@ public class LayoutOutputStream extends MultipleDigestOutputStream
     private OutputStream cacheOutputStream;
     private Function<OutputStreamFunction, ?> cacheOutputStreamTemplate = this::doWithOutputStream;
     private Map<String, String> digestMap;
-    
+
     public LayoutOutputStream(OutputStream source)
             throws NoSuchAlgorithmException
     {
@@ -71,18 +75,21 @@ public class LayoutOutputStream extends MultipleDigestOutputStream
         this.digestStringifier = digestStringifier;
     }
 
-    public Map<String, String> getDigestMap()
+    public Map<String, String> getDigestMap(String layout)
     {
         if (digestMap == null)
         {
             digestMap = getDigests().entrySet()
                                     .stream()
                                     .collect(Collectors.toMap(Map.Entry::getKey,
-                                                              e -> stringifyDigest(digestStringifier,
-                                                                                   e.getValue()
-                                                                                    .digest())));
+                                                              e -> "npm".equals(layout) && MessageDigestAlgorithms.SHA_512.equals(e.getKey()) ?  printBase64Binary( e.getValue()
+                                                                      .digest()) : stringifyDigest(digestStringifier,
+                                                                      e.getValue()
+                                                                              .digest())));
+
+
         }
-        
+
         return digestMap;
     }
 
@@ -90,6 +97,12 @@ public class LayoutOutputStream extends MultipleDigestOutputStream
                                      byte[] d)
     {
         return digestStringifier.apply(d);
+    }
+
+    protected String printBase64Binary(
+                                     byte[] digest)
+    {
+        return String.format("%s-%s", "sha512", Base64.getEncoder().encodeToString(digest));
     }
 
     @Override

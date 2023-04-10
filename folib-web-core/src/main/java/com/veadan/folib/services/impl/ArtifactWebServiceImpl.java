@@ -1133,7 +1133,7 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
             if (!subRepository.isInService()) {
                 continue;
             }
-            if (!repository.isAllowsDirectoryBrowsing()) {
+            if (!subRepository.isAllowsDirectoryBrowsing()) {
                 continue;
             }
             storageIdAndRepositoryIdList.add(subRepository.getStorage().getId() + "-" + subRepository.getId());

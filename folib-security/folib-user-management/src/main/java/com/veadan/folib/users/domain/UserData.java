@@ -28,6 +28,8 @@ public class UserData implements Serializable, User
 
     private final String password;
 
+    private final String originalPassword;
+
     private final String email;
 
     private String avatar;
@@ -48,6 +50,7 @@ public class UserData implements Serializable, User
     {
         this.username = source.getUsername();
         this.password = source.getPassword();
+        this.originalPassword = null;
         this.enabled = source.isEnabled();
         this.roles = source.getAuthorities()
                            .stream()
@@ -64,6 +67,7 @@ public class UserData implements Serializable, User
     {
         this.username = source.getUsername();
         this.password = source.getPassword();
+        this.originalPassword = source.getOriginalPassword();
         this.enabled = source.isEnabled();
         this.roles = immuteRoles(source.getRoles());
         this.securityTokenKey = source.getSecurityTokenKey();
@@ -105,6 +109,12 @@ public class UserData implements Serializable, User
     public String getPassword()
     {
         return password;
+    }
+
+    @Override
+    public String getOriginalPassword()
+    {
+        return originalPassword;
     }
 
     @Override

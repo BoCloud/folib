@@ -34,6 +34,8 @@ public interface User extends DomainObject
 
     String getPassword();
 
+    String getOriginalPassword();
+
     Set<SecurityRole> getRoles();
 
     String getSecurityTokenKey();

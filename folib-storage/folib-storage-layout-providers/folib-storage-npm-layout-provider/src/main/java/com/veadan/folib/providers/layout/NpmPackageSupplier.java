@@ -19,6 +19,7 @@ import org.springframework.stereotype.Component;
 import javax.inject.Inject;
 import java.io.IOException;
 import java.lang.reflect.UndeclaredThrowableException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
@@ -107,12 +108,14 @@ public class NpmPackageSupplier implements Function<Path, NpmPackageDesc> {
     private void fetchShasum(Dist dist,
                              Map<String, RepositoryPath> checksumMap) {
         RepositoryPath shasumPath = checksumMap.get(MessageDigestAlgorithms.SHA_1);
-        if (shasumPath == null || !Files.exists(shasumPath)) {
-            return;
-        }
-
+        RepositoryPath integrityPath = checksumMap.get(MessageDigestAlgorithms.SHA_512);
         try {
-            dist.setShasum(new String(Files.readAllBytes(shasumPath), "UTF-8").trim());
+            if (Objects.nonNull(shasumPath) && Files.exists(shasumPath)) {
+                dist.setShasum(new String(Files.readAllBytes(shasumPath), StandardCharsets.UTF_8).trim());
+            }
+            if (Objects.nonNull(integrityPath) && Files.exists(integrityPath)) {
+                dist.setIntegrity(new String(Files.readAllBytes(integrityPath), StandardCharsets.UTF_8).trim());
+            }
         } catch (NoSuchFileException e) {
             logger.debug("Checksum file not found [{}].", shasumPath);
         } catch (IOException e) {

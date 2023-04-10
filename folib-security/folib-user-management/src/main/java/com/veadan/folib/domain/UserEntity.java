@@ -25,6 +25,8 @@ public class UserEntity extends DomainEntity implements User
 
     private String password;
 
+    private String originalPassword;
+
     private Boolean enabled = true;
 
     private String email;
@@ -164,5 +166,14 @@ public class UserEntity extends DomainEntity implements User
 
     public void setAvatar(String avatar) {
         this.avatar = avatar;
+    }
+
+    @Override
+    public String getOriginalPassword() {
+        return originalPassword;
+    }
+
+    public void setOriginalPassword(String originalPassword) {
+        this.originalPassword = originalPassword;
     }
 }

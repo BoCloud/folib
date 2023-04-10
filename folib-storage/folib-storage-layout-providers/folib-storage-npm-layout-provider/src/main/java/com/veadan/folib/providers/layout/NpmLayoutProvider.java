@@ -134,7 +134,7 @@ public class NpmLayoutProvider
     @Override
     public Set<String> getDigestAlgorithmSet()
     {
-        return Stream.of(MessageDigestAlgorithms.SHA_1)
+        return Stream.of(MessageDigestAlgorithms.SHA_1, MessageDigestAlgorithms.SHA_512)
                      .collect(Collectors.toSet());
     }
 

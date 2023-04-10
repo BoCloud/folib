@@ -166,15 +166,14 @@
           <a-descriptions-item label="最近使用时间">
             {{ searchDataCurrentSelect.lastUsed }}
           </a-descriptions-item>
-          <a-descriptions-item v-if="currentFileDetial" label="下载次数">
+          <a-descriptions-item v-if="searchDataCurrentSelect" label="下载次数">
             {{ searchDataCurrentSelect.downloadCount }}
           </a-descriptions-item>
-          <a-descriptions-item label="MD5">
-            {{ searchDataCurrentSelect.md5 }}
-          </a-descriptions-item>
-          <a-descriptions-item label="SHA-1">
-            {{ searchDataCurrentSelect.sha }}
-          </a-descriptions-item>
+          <template v-if="searchDataCurrentSelect && searchDataCurrentSelect.checksums" >
+            <a-descriptions-item :label="key" v-for="(value, key, index) in searchDataCurrentSelect.checksums" :key="index">
+              {{ value}}
+            </a-descriptions-item>
+          </template>
         </a-descriptions>
         <hr class="my-25" />
 

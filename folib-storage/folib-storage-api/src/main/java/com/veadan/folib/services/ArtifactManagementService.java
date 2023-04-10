@@ -181,7 +181,7 @@ public class ArtifactManagementService
         logger.debug("IOUtils copy {} ,take time：{} ms" , repositoryPath.toString(), System.currentTimeMillis() - startTime);
 
         URI repositoryPathId = repositoryPath.toUri();
-        Map<String, String> digestMap = aos.getDigestMap();
+        Map<String, String> digestMap = aos.getDigestMap(repository.getLayout());
         if (Boolean.FALSE.equals(checksumAttribute) && !digestMap.isEmpty())
         {
             // Store artifact digests in cache if we have them.

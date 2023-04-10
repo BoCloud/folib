@@ -2,6 +2,7 @@ package com.veadan.folib.artifact.coordinates;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.veadan.folib.io.LayoutOutputStream;
+import com.veadan.folib.providers.layout.DockerLayoutProvider;
 import com.veadan.folib.schema2.ContainerConfigurationManifest;
 import com.veadan.folib.schema2.ImageManifest;
 import com.veadan.folib.schema2.LayerManifest;
@@ -65,7 +66,7 @@ public class DockerArtifactGenerator
 
             configOutput.write(mapper.writeValueAsBytes(new HashMap<String, String>()));
 
-            String sha256 = configOutput.getDigestMap().get(MessageDigestAlgorithms.SHA_256);
+            String sha256 = configOutput.getDigestMap(DockerLayoutProvider.ALIAS).get(MessageDigestAlgorithms.SHA_256);
             String digest = getDigest(sha256);
             config.setDigest(digest);
         }
@@ -88,7 +89,7 @@ public class DockerArtifactGenerator
                 
                 writeLayer(tarOut);
                 
-                String sha256 = layerOutput.getDigestMap().get(MessageDigestAlgorithms.SHA_256);
+                String sha256 = layerOutput.getDigestMap(DockerLayoutProvider.ALIAS).get(MessageDigestAlgorithms.SHA_256);
                 layerDigest = getDigest(sha256);
                 
                 LayerManifest layer = new LayerManifest();
@@ -114,7 +115,7 @@ public class DockerArtifactGenerator
 
             manifestOutput.write(mapper.writeValueAsBytes(imageManifest));
 
-            String sha256 = manifestOutput.getDigestMap().get(MessageDigestAlgorithms.SHA_256);
+            String sha256 = manifestOutput.getDigestMap(DockerLayoutProvider.ALIAS).get(MessageDigestAlgorithms.SHA_256);
             imageManifestDigest = getDigest(sha256); 
         }
         // TODO: set media types and schema versions to v2 / schema 2
