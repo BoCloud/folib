@@ -8,10 +8,13 @@ import cn.hutool.json.JSONUtil;
 import com.alibaba.fastjson.JSON;
 import com.veadan.folib.cloud.storage.s3fs.S3FileSystem;
 import com.veadan.folib.cloud.storage.s3fs.S3Path;
+import com.veadan.folib.components.artifact.ArtifactComponent;
+import com.veadan.folib.components.security.SecurityComponent;
 import com.veadan.folib.configuration.ConfigurationManager;
 import com.veadan.folib.dispatch.ClusterDispatchNodeDto;
 import com.veadan.folib.domain.*;
 import com.veadan.folib.dto.*;
+import com.veadan.folib.enums.PromotionStatusEnum;
 import com.veadan.folib.forms.common.StorageTreeForm;
 import com.veadan.folib.providers.io.RepositoryFiles;
 import com.veadan.folib.providers.io.RepositoryPath;
@@ -45,6 +48,7 @@ import org.glassfish.jersey.media.multipart.FormDataMultiPart;
 import org.glassfish.jersey.media.multipart.file.StreamDataBodyPart;
 import org.glassfish.jersey.media.multipart.internal.MultiPartWriter;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.stereotype.Component;
@@ -55,6 +59,7 @@ import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
 import javax.ws.rs.client.Client;
 import javax.ws.rs.client.Entity;
+import javax.ws.rs.client.Invocation;
 import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
@@ -110,6 +115,13 @@ public class PromotionUtil {
     @Autowired
     private ArtifactWebService artifactWebService;
 
+    @Autowired
+    private SecurityComponent securityComponent;
+
+    @Autowired
+    @Lazy
+    private ArtifactComponent artifactComponent;
+
     @Async("asyncStorageThreadPoolExecutor")
     public void executeHanleCopy(String path, Repository destRepository, Repository srcRepository) {
         try {
@@ -160,6 +172,7 @@ public class PromotionUtil {
             String type = artifactDispatch.getType();
             String layout = artifactDispatch.getLayout();
             String policy = artifactDispatch.getPolicy();
+            Boolean recordStatus = artifactDispatch.getRecordStatus();
 
             // 因三级联动插件原因 全选一级 或者二级 会得到 存储空间或者仓库为空的情况 ，如果仓库为空则需要再查一遍分发集群仓库信息。
             if (StringUtils.isBlank(dispatchClusterName)) {
@@ -187,7 +200,9 @@ public class PromotionUtil {
                         host + "/api/configuration/folib/storages/getDispatchRepositories";
                 WebTarget target = client.target(url);
                 log.info(" 请求分发获取仓库信息 {}", JSONUtil.toJsonStr(dispatchRepositoryDto));
-                response = target.request().post(Entity.entity(dispatchRepositoryDto, javax.ws.rs.core.MediaType.APPLICATION_JSON));
+                Invocation.Builder builder = target.request();
+                securityComponent.securityTokenHeader(builder);
+                response = builder.post(Entity.entity(dispatchRepositoryDto, javax.ws.rs.core.MediaType.APPLICATION_JSON));
                 if (response.getStatus() != 200) {
                     log.error("dispatch cluster {} get repositroy fail", dispatchClusterName);
                 }
@@ -208,7 +223,7 @@ public class PromotionUtil {
                             }
                             for (StorageTreeForm repo : repos) {
                                 String tempRepoId = repo.getName();
-                                executeDispatch(artifactPath, srcRepositoryId, srcStorageId, targetStorageId, tempRepoId, dispatchNodeDto);
+                                executeDispatch(artifactPath, srcRepositoryId, srcStorageId, targetStorageId, tempRepoId, dispatchNodeDto, recordStatus);
                             }
                         }
                     }
@@ -231,17 +246,17 @@ public class PromotionUtil {
                             }
                             for (StorageTreeForm repo : repos) {
                                 String tempRepoId = repo.getName();
-                                executeDispatch(artifactPath, srcRepositoryId, srcStorageId, targetStorageId, tempRepoId, dispatchNodeDto);
+                                executeDispatch(artifactPath, srcRepositoryId, srcStorageId, targetStorageId, tempRepoId, dispatchNodeDto, recordStatus);
                             }
                             break;
                         }
                     }
                 }
             } else {
-                executeDispatch(artifactPath, srcRepositoryId, srcStorageId, targetStorageId, targetRepositoryId, dispatchNodeDto);
+                executeDispatch(artifactPath, srcRepositoryId, srcStorageId, targetStorageId, targetRepositoryId, dispatchNodeDto, recordStatus);
             }
         } catch (Exception e) {
-            log.error("分发错误{}", e.getMessage());
+            log.error("分发错误： {}", ExceptionUtils.getStackTrace(e));
         } finally {
             if (Objects.nonNull(response)) {
                 response.close();
@@ -249,7 +264,7 @@ public class PromotionUtil {
         }
     }
 
-    private void executeDispatch(String artifactPath, String srcRepositoryId, String srcStorageId, String targetStorageId, String targetRepositoryId, ClusterDispatchNodeDto dispatchNodeDto) {
+    private void executeDispatch(String artifactPath, String srcRepositoryId, String srcStorageId, String targetStorageId, String targetRepositoryId, ClusterDispatchNodeDto dispatchNodeDto, Boolean recordStatus) {
         Response response = null;
         try {
             StringBuilder strBuilder = new StringBuilder();
@@ -276,12 +291,17 @@ public class PromotionUtil {
                         dispatchNodeHost + "/api/artifact/folib/promotion/nodeOption";
                 Client client = clientPool.getRestClient();
                 WebTarget target = client.target(url);
-                response = target.request().post(Entity.entity(promotionNodeOption, MediaType.APPLICATION_JSON));
+                Invocation.Builder builder = target.request();
+                securityComponent.securityTokenHeader(builder);
+                response = builder.post(Entity.entity(promotionNodeOption, MediaType.APPLICATION_JSON));
                 if (response.getStatus() != 200) {
                     log.error("分发 [{}] 失败 {}", dispatchType, JSONUtil.toJsonStr(promotionNodeOption));
                     throw new Exception("分发失败 ! http status " + response.getStatus());
                 }
                 response.readEntity(java.lang.String.class);
+                if (Boolean.TRUE.equals(recordStatus)) {
+                    artifactComponent.handlerArtifactPromotion(dispatchNodeDto.getClusterEnName(), srcStorageId, srcRepositoryId, artifactPath, PromotionStatusEnum.SUCCESS.getStatus());
+                }
             } else {
                 Repository srcRepository = repositoryManagementService.getStorage(srcStorageId).getRepository(srcRepositoryId);
                 RepositoryPath srcPath = repositoryPathResolver.resolve(srcRepository, artifactPath);
@@ -294,13 +314,19 @@ public class PromotionUtil {
                         targetStorageId, targetRepositoryId, srcAbsolutePath, targetUploadUrl);
                 PromotionNodeOptionDto uploadDto = getPromotionUploadDto(promotionArtifactDto);
                 upload(targetUploadUrl, uploadDto);
+                if (Boolean.TRUE.equals(recordStatus)) {
+                    artifactComponent.handlerArtifactPromotion(dispatchNodeDto.getClusterEnName(), srcStorageId, srcRepositoryId, artifactPath, PromotionStatusEnum.SUCCESS.getStatus());
+                }
             }
             log.info("分发 [{} {} {} {} {}] 成功 ", dispatchType, dispatchNodeDto.getClusterEnName(),
                     targetStorageId, targetRepositoryId, artifactPath);
         } catch (Exception e) {
-            log.info("分发 [{} {} {} {} {}] 失败 {} ",
+            if (Boolean.TRUE.equals(recordStatus)) {
+                artifactComponent.handlerArtifactPromotion(dispatchNodeDto.getClusterEnName(), srcStorageId, srcRepositoryId, artifactPath, PromotionStatusEnum.FAIL.getStatus());
+            }
+            log.error("分发 [{} {} {} {} {}] 失败 {} ",
                     dispatchNodeDto.getDispatchType(), dispatchNodeDto.getClusterEnName(),
-                    targetStorageId, targetRepositoryId, artifactPath, e.getMessage());
+                    targetStorageId, targetRepositoryId, artifactPath, ExceptionUtils.getStackTrace(e));
         } finally {
             if (Objects.nonNull(response)) {
                 response.close();
@@ -857,15 +883,19 @@ public class PromotionUtil {
             });
             part.field("filePathMap", JSON.toJSONString(filePathMap));
             part.field("fileMetaDataMap", JSON.toJSONString(uploadDto.getFileMetaDataMap()));
+            part.field("promotion", "true");
             Client client = clientPool.getRestClient();
             WebTarget resource = client.register(MultiPartWriter.class).target(url);
-            response = resource.request(MediaType.APPLICATION_JSON).header("Mime-Version", "1.0").
+            Invocation.Builder builder = resource.request(MediaType.APPLICATION_JSON);
+            securityComponent.securityTokenHeader(builder);
+            response = builder.header("Mime-Version", "1.0").
                     post(Entity.entity(part, Boundary.addBoundary(MediaType.MULTIPART_FORM_DATA_TYPE)));
             if (response.getStatus() != 200) {
                 throw new Exception("upload failed ");
             }
             response.readEntity(String.class);
         } catch (Exception e) {
+            log.error("推送制品失败：{}", ExceptionUtils.getStackTrace(e));
             throw new Exception(e.getMessage());
         } finally {
             if (Objects.nonNull(response)) {

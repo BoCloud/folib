@@ -96,5 +96,9 @@ public class RepositoryForm {
      * 开启checksum
      */
     private boolean checksumHeadersEnabled;
+    /**
+     * 是否允许匿名访问
+     */
+    private boolean allowAnonymous;
 
 }

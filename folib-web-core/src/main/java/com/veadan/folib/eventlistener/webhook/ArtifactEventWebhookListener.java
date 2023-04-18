@@ -4,6 +4,7 @@ import cn.hutool.core.net.NetUtil;
 import com.alibaba.fastjson.JSONObject;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
+import com.veadan.folib.components.artifact.ArtifactComponent;
 import com.veadan.folib.domain.Artifact;
 import com.veadan.folib.event.AsyncEventListener;
 import com.veadan.folib.event.artifact.ArtifactEvent;
@@ -11,9 +12,7 @@ import com.veadan.folib.event.artifact.ArtifactEventTypeEnum;
 import com.veadan.folib.forms.configuration.WebhookConfigurationForm;
 import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.providers.layout.DockerFileSystem;
-import com.veadan.folib.service.ProxyRepositoryConnectionPoolConfigurationService;
 import com.veadan.folib.services.WebhookService;
-import com.veadan.folib.utils.ArtifactUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -22,12 +21,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 
-import javax.ws.rs.client.Client;
-import javax.ws.rs.client.Entity;
-import javax.ws.rs.client.Invocation;
-import javax.ws.rs.client.WebTarget;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
+import javax.inject.Inject;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -45,6 +39,9 @@ public class ArtifactEventWebhookListener {
     @Lazy
     private WebhookService webhookService;
 
+    @Inject
+    private ArtifactComponent artifactComponent;
+
     @AsyncEventListener
     public void handle(final ArtifactEvent<RepositoryPath> event) {
         int source = (int) event.getSource();
@@ -54,7 +51,7 @@ public class ArtifactEventWebhookListener {
         if (Objects.isNull(artifactEventTypeEnum)) {
             return;
         }
-        if (validateArtifactEvent(artifactEventTypeEnum) && ArtifactUtils.layoutSupports(repositoryPath)) {
+        if (validateArtifactEvent(artifactEventTypeEnum) && artifactComponent.layoutSupports(repositoryPath)) {
             try {
                 List<WebhookConfigurationForm> webhookConfigurationList = webhookService.getWebhookConfiguration();
                 if (CollectionUtils.isEmpty(webhookConfigurationList)) {

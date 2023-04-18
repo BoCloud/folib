@@ -270,7 +270,6 @@
 import store from "store";
 import { fileSizeConver, formateDate } from "@/utils/layoutUtil";
 import { getArtifact } from "@/api/folib";
-import { getMetadataConfiguration } from "@/api/settings";
 import {  deleteArtifactMetadata } from "@/api/artifact";
 import { PrismEditor } from "vue-prism-editor";
 import "vue-prism-editor/dist/prismeditor.min.css"; // import the styles somewhere
@@ -390,7 +389,6 @@ export default {
   },
   created() {
     if (isLogin()){
-      this.getMetadataConfiguration()
       this.metadataShow()
     }
   },
@@ -427,16 +425,7 @@ export default {
       this.metadataShow()
       if (activeKey === "2") {
         this.getMetadata()
-        this.getMetadataConfiguration()
       }
-    },
-    getMetadataConfiguration() {
-      this.metadataConfigList = []
-      getMetadataConfiguration()
-        .then((res) => {
-          this.metadataConfigList = res;
-        })
-        .finally(() => {});
     },
     getMetadata() {
       getArtifact(

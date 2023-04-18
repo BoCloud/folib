@@ -8,6 +8,7 @@ import com.veadan.folib.db.schema.Edges;
 import com.veadan.folib.db.schema.Vertices;
 import com.veadan.folib.enums.SafeLevelEnum;
 import com.veadan.folib.gremlin.adapters.DateConverter;
+import org.apache.commons.lang3.StringUtils;
 import org.neo4j.ogm.annotation.NodeEntity;
 import org.neo4j.ogm.annotation.Relationship;
 import org.neo4j.ogm.annotation.typeconversion.Convert;
@@ -53,52 +54,52 @@ public class ArtifactEntity
     @Convert(DateConverter.class)
     private LocalDateTime created;
 
-    private Integer downloadCount = 0;
+    private Integer downloadCount;
 
     private final ArtifactArchiveListing artifactArchiveListing = new ArtifactEntityArchiveListing();
 
-    private Boolean artifactFileExists = Boolean.TRUE;
+    private Boolean artifactFileExists;
 
     /**
      * 安全级别
      */
-    private String safeLevel = SafeLevelEnum.INIT.getLevel();
+    private String safeLevel;
     /**
      * 风险凭证个数
      */
-    private Integer evidenceQuantity = 0;
+    private Integer evidenceQuantity;
     /**
      * 依赖数量
      */
-    private Integer dependencyCount = 0;
+    private Integer dependencyCount;
     /**
      * 有漏洞的依赖数量
      */
-    private Integer dependencyVulnerabilitiesCount = 0;
+    private Integer dependencyVulnerabilitiesCount;
     /**
      * 漏洞数量
      */
-    private Integer vulnerabilitiesCount = 0;
+    private Integer vulnerabilitiesCount;
     /**
      * 严重的漏洞数量
      */
-    private Integer criticalVulnerabilitiesCount = 0;
+    private Integer criticalVulnerabilitiesCount;
     /**
      * 高危的漏洞数量
      */
-    private Integer highVulnerabilitiesCount = 0;
+    private Integer highVulnerabilitiesCount;
     /**
      * 中危的漏洞数量
      */
-    private Integer mediumVulnerabilitiesCount = 0;
+    private Integer mediumVulnerabilitiesCount;
     /**
      * 低危的漏洞数量
      */
-    private Integer lowVulnerabilitiesCount = 0;
+    private Integer lowVulnerabilitiesCount;
     /**
      * 被封存的漏洞数量
      */
-    private Integer suppressedVulnerabilitiesCount = 0;
+    private Integer suppressedVulnerabilitiesCount;
     /**
      * 漏洞列表
      */
@@ -135,8 +136,27 @@ public class ArtifactEntity
      * 扫描报告
      */
     private String report;
+    /**
+     * 晋级状态
+     */
+    private String promotion;
+    /**
+     * 晋级节点
+     */
+    private Set<String> promotionNodes;
 
     public ArtifactEntity() {
+    }
+
+    public ArtifactEntity(Long nativeId, String storageId,
+                          String repositoryId, String uuid, ArtifactCoordinates artifactCoordinates) {
+        if (Objects.nonNull(nativeId)) {
+            setNativeId(nativeId);
+        }
+        this.storageId = storageId;
+        this.repositoryId = repositoryId;
+        this.artifactCoordinates = artifactCoordinates;
+        setUuid(uuid);
     }
 
     public ArtifactEntity(String storageId,
@@ -149,6 +169,42 @@ public class ArtifactEntity
         this.storageIdAndRepositoryId = String.format("%s-%s", storageId, repositoryId);
         this.artifactCoordinates = artifactCoordinates;
         setUuid(String.format("%s-%s-%s", getStorageId(), getRepositoryId(), getArtifactCoordinates().buildPath()));
+        if (Objects.isNull(this.downloadCount)) {
+            this.downloadCount = 0;
+        }
+        if (Objects.isNull(this.artifactFileExists)) {
+            this.artifactFileExists = true;
+        }
+        if (StringUtils.isBlank(this.safeLevel)) {
+            this.safeLevel = SafeLevelEnum.INIT.getLevel();
+        }
+        if (Objects.isNull(this.evidenceQuantity)) {
+            this.evidenceQuantity = 0;
+        }
+        if (Objects.isNull(this.dependencyCount)) {
+            this.dependencyCount = 0;
+        }
+        if (Objects.isNull(this.dependencyVulnerabilitiesCount)) {
+            this.dependencyVulnerabilitiesCount = 0;
+        }
+        if (Objects.isNull(this.vulnerabilitiesCount)) {
+            this.vulnerabilitiesCount = 0;
+        }
+        if (Objects.isNull(this.criticalVulnerabilitiesCount)) {
+            this.criticalVulnerabilitiesCount = 0;
+        }
+        if (Objects.isNull(this.highVulnerabilitiesCount)) {
+            this.highVulnerabilitiesCount = 0;
+        }
+        if (Objects.isNull(this.mediumVulnerabilitiesCount)) {
+            this.mediumVulnerabilitiesCount = 0;
+        }
+        if (Objects.isNull(this.lowVulnerabilitiesCount)) {
+            this.lowVulnerabilitiesCount = 0;
+        }
+        if (Objects.isNull(this.suppressedVulnerabilitiesCount)) {
+            this.suppressedVulnerabilitiesCount = 0;
+        }
     }
 
     @Override
@@ -495,5 +551,25 @@ public class ArtifactEntity
     @Override
     public void setDependencies(String dependencies) {
         this.dependencies = dependencies;
+    }
+
+    @Override
+    public String getPromotion() {
+        return promotion;
+    }
+
+    @Override
+    public void setPromotion(String promotion) {
+        this.promotion = promotion;
+    }
+
+    @Override
+    public Set<String> getPromotionNodes() {
+        return promotionNodes;
+    }
+
+    @Override
+    public void setPromotionNodes(Set<String> promotionNodes) {
+        this.promotionNodes = promotionNodes;
     }
 }

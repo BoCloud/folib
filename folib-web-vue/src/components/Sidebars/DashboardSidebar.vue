@@ -12,7 +12,7 @@
 				功能管理
 			</a-menu-item>
 			<a-menu-item>
-				<router-link to="/storage/list">
+				<router-link :to="userInfo.token?'/storage/list':'/anonymous/storages'">
 					<span class="icon">
 						<a-icon type="appstore" theme="filled" class="m-0" />
 					</span>

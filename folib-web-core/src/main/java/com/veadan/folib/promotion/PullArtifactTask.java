@@ -1,6 +1,8 @@
 package com.veadan.folib.promotion;
 
+import cn.hutool.extra.spring.SpringUtil;
 import com.alibaba.fastjson.JSON;
+import com.veadan.folib.components.security.SecurityComponent;
 import com.veadan.folib.dto.ArtifactDto;
 import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.providers.io.RepositoryPathResolver;
@@ -10,6 +12,7 @@ import lombok.extern.slf4j.Slf4j;
 
 import javax.ws.rs.client.Client;
 import javax.ws.rs.client.Entity;
+import javax.ws.rs.client.Invocation;
 import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
@@ -30,6 +33,7 @@ public class PullArtifactTask implements Callable<String> {
     private ArtifactDto artifac;
     private String metaData;
     private PromotionUtil promotionUtil;
+    private SecurityComponent securityComponent;
 
     public PullArtifactTask(String path, String srcUrl, String targetStorageId, String targetRepostoryId,
                             RepositoryPathResolver repositoryPathResolver,
@@ -48,6 +52,7 @@ public class PullArtifactTask implements Callable<String> {
         this.artifac = artifac;
         this.metaData = metaData;
         this.promotionUtil = promotionUtil;
+        this.securityComponent = SpringUtil.getBean(SecurityComponent.class);
     }
 
     @Override
@@ -55,7 +60,9 @@ public class PullArtifactTask implements Callable<String> {
         try {
             Client client = clientPool.getRestClient();
             WebTarget target = client.target(srcUrl);
-            Response response = target.request().post(Entity.entity(artifac, MediaType.APPLICATION_JSON));
+            Invocation.Builder builder = target.request();
+            securityComponent.securityTokenHeader(builder);
+            Response response = builder.post(Entity.entity(artifac, MediaType.APPLICATION_JSON));
             RepositoryPath destPath = repositoryPathResolver.resolve(targetStorageId, targetRepostoryId, path);
             boolean isDocker = destPath.getRepository().getLayout().equalsIgnoreCase("docker");
             if (isDocker) {
@@ -93,7 +100,9 @@ public class PullArtifactTask implements Callable<String> {
         try {
             Client client = clientPool.getRestClient();
             WebTarget target = client.target(srcUrl);
-            Response response = target.request().post(Entity.entity(artifac, MediaType.APPLICATION_JSON));
+            Invocation.Builder builder = target.request();
+            securityComponent.securityTokenHeader(builder);
+            Response response = builder.post(Entity.entity(artifac, MediaType.APPLICATION_JSON));
             RepositoryPath destPath = repositoryPathResolver.resolve(targetStorageId, targetRepostoryId, path);
             boolean isDocker = destPath.getRepository().getLayout().equalsIgnoreCase("docker");
             if (isDocker) {

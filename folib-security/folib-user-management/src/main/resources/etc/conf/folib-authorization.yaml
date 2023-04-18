@@ -110,6 +110,7 @@ authorizationConfiguration:
         apiAuthorities:
           - ARTIFACTS_RESOLVE
           - SEARCH_ARTIFACTS
+          - ARTIFACTS_VIEW
     - name: GENERAL
       description: 普通用户角色
       accessModel:

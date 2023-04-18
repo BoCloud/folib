@@ -1,4 +1,4 @@
-package com.veadan.folib.scanner.service;
+package com.veadan.folib.eventlistener.scanner;
 
 import cn.hutool.core.io.FileTypeUtil;
 import cn.hutool.core.io.FileUtil;
@@ -6,6 +6,7 @@ import cn.hutool.core.io.IoUtil;
 import com.alibaba.fastjson.JSON;
 import com.google.common.collect.Sets;
 import com.veadan.folib.cloud.storage.s3fs.S3Path;
+import com.veadan.folib.components.artifact.ArtifactComponent;
 import com.veadan.folib.domain.Artifact;
 import com.veadan.folib.enums.SafeLevelEnum;
 import com.veadan.folib.event.AsyncEventListener;
@@ -18,7 +19,6 @@ import com.veadan.folib.schema2.ImageManifest;
 import com.veadan.folib.schema2.LayerManifest;
 import com.veadan.folib.services.ArtifactService;
 import com.veadan.folib.services.DictService;
-import com.veadan.folib.utils.ArtifactUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
@@ -42,11 +42,11 @@ import java.util.stream.Collectors;
 
 /**
  * @author leipenghui
- * 制品事件监听处理
+ * 事件监听，处理漏洞扫描
  */
 @Slf4j
 @Component
-public class ArtifactEventListenerScannerHandler {
+public class ArtifactEventScannerListener {
 
     @Inject
     private ArtifactService artifactService;
@@ -56,6 +56,9 @@ public class ArtifactEventListenerScannerHandler {
 
     @Inject
     private DictService dictService;
+
+    @Inject
+    private ArtifactComponent artifactComponent;
 
     @Value("${folib.temp}")
     private String tempPath;
@@ -308,7 +311,10 @@ public class ArtifactEventListenerScannerHandler {
             return true;
         }
         if (flag) {
-            flag = ArtifactUtils.layoutSupportsForScan(repositoryPath);
+            flag = artifactComponent.layoutSupportsForScan(repositoryPath);
+            if (!flag) {
+                handlerUnwantedScan(repositoryPath, source);
+            }
         }
         return flag;
     }
@@ -342,7 +348,7 @@ public class ArtifactEventListenerScannerHandler {
             gzipCompressorInputStream = new GzipCompressorInputStream(fileInputStream);
             tarArchiveInputStream = new TarArchiveInputStream(gzipCompressorInputStream);
             TarArchiveEntry entry = null;
-            List<String> list = Arrays.asList("jar", "war", "ear", "zip", "json", "tgz", "nupkg", "nuspec", "packages.config", "whl", "egg", "zip", "rpm");
+            List<String> list = Arrays.asList("jar", "war", "ear", "zip", "json", "tgz", "nupkg", "nuspec", "packages.config", "whl", "egg", "rpm");
             File extractFolder = new File(tempPath);
             while ((entry = tarArchiveInputStream.getNextTarEntry()) != null) {
                 if (entry.isDirectory()) {
@@ -384,4 +390,28 @@ public class ArtifactEventListenerScannerHandler {
         return pathList;
     }
 
+    /**
+     * 处理无需扫描逻辑
+     *
+     * @param repositoryPath 制品信息
+     * @param source         事件类型
+     */
+    private void handlerUnwantedScan(RepositoryPath repositoryPath, int source) {
+        if (ArtifactEventTypeEnum.EVENT_ARTIFACT_PATH_DELETED.getType() != source && ArtifactEventTypeEnum.EVENT_ARTIFACT_DIRECTORY_PATH_DELETED.getType() != source) {
+            try {
+                Artifact artifact = repositoryPath.getArtifactEntry();
+                if (artifact == null) {
+                    log.warn("No [{}] for [{}].",
+                            Artifact.class.getSimpleName(),
+                            repositoryPath);
+
+                    return;
+                }
+                artifact.setSafeLevel(SafeLevelEnum.UNWANTED_SCAN.getLevel());
+                artifactService.saveOrUpdateArtifact(artifact);
+            } catch (IOException ex) {
+                log.error("=====>>>>>获取Artifact错误：{}", ExceptionUtils.getStackTrace(ex));
+            }
+        }
+    }
 }

@@ -131,4 +131,13 @@ public interface Artifact extends DomainObject {
     String getDependencies();
 
     void setDependencies(String dependencies);
+
+    String getPromotion();
+
+    void setPromotion(String promotion);
+
+    Set<String> getPromotionNodes();
+
+    void setPromotionNodes(Set<String> promotionNodes);
+
 }

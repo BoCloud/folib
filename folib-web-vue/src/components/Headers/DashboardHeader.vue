@@ -186,6 +186,7 @@
             @click="toLogin()"
           >
             <a-icon type="login" :style="{fontSize: '20px'}"/>
+            <span class="ml-5 login-span">登录</span>
           </a-button>
           <!-- / Header Control Buttons -->
         </a-col>
@@ -383,5 +384,11 @@ export default {
   display: inline-block;
   width: 24px;
   height: 24px;
+}
+
+.login-span {
+  color: white;
+  font-size: 14px;
+  vertical-align: middle;
 }
 </style>

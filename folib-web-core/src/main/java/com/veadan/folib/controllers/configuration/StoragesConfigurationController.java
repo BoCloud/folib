@@ -10,6 +10,7 @@ import com.veadan.folib.cluster.SyncAuthorizationEnum;
 import com.veadan.folib.cluster.SyncRepositoryEnum;
 import com.veadan.folib.cluster.SyncStorageEnum;
 import com.veadan.folib.cluster.SyncUnionRepositoryEnum;
+import com.veadan.folib.components.security.SecurityComponent;
 import com.veadan.folib.config.PermissionCheck;
 import com.veadan.folib.configuration.ConfigurationUtils;
 import com.veadan.folib.controllers.cluster.dto.SyncAuthorizationDto;
@@ -53,6 +54,7 @@ import io.swagger.annotations.*;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
@@ -71,6 +73,7 @@ import org.springframework.web.bind.annotation.*;
 import javax.validation.groups.Default;
 import javax.ws.rs.client.Client;
 import javax.ws.rs.client.Entity;
+import javax.ws.rs.client.Invocation;
 import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.Response;
 import java.io.IOException;
@@ -145,6 +148,9 @@ public class StoragesConfigurationController
 
     @Autowired
     private AuthorizationConfigService authorizationConfigService;
+
+    @Autowired
+    private SecurityComponent securityComponent;
 
     public StoragesConfigurationController(ConfigurationManagementService configurationManagementService,
                                            StorageManagementService storageManagementService,
@@ -474,16 +480,20 @@ public class StoragesConfigurationController
                         host + "/api/configuration/folib/storages/getDispatchRepositories";
                 dispatchRepositoryDto.setDispatchEnName(dispatchEnName);
                 WebTarget target = client.target(url);
-                logger.info(" 请求分发获取仓库信息 {}", JSONUtil.toJsonStr(dispatchRepositoryDto));
-                Response response = target.request().post(Entity.entity(dispatchRepositoryDto, javax.ws.rs.core.MediaType.APPLICATION_JSON));
+                logger.info("请求 {} 获取分发仓库信息 {}", url, JSONUtil.toJsonStr(dispatchRepositoryDto));
+                Invocation.Builder builder = target.request();
+                securityComponent.securityTokenHeader(builder);
+                Response response = builder.post(Entity.entity(dispatchRepositoryDto, javax.ws.rs.core.MediaType.APPLICATION_JSON));
                 if (response.getStatus() != 200) {
                     logger.error("dispatch cluster {} get repositroy fail", dispatchEnName);
                     continue;
                 }
                 DispatchStorageTree dispatchStorageTree = response.readEntity(DispatchStorageTree.class);
-                repoList.addAll(dispatchStorageTree.getList());
+                if (Objects.nonNull(dispatchStorageTree)) {
+                    repoList.addAll(dispatchStorageTree.getList());
+                }
             } catch (Exception e) {
-                logger.error("分发获取 {} 仓库信息失败! {}", dispatchEnName, e.getMessage());
+                logger.error("分发获取 {} 仓库信息失败! {}", dispatchEnName, ExceptionUtils.getStackTrace(e));
             }
         }
         // 发送获取仓库信息Task

@@ -19,7 +19,7 @@
                       type="backward"
                       :style="{
                         fontSize: '32px',
-                        marginRight: '20px',
+                        marginRight: '5px',
                         opacity: '0.8',
                         color: '#BFBFBFFF',
                       }"
@@ -129,7 +129,7 @@
         </a-col>
       </a-row>
     </a-affix>
-    <a-row v-if="isNotSearch === false" type="flex" :gutter="24">
+    <a-row v-if="isSearch === false" type="flex" :gutter="24">
       <!-- Platform Settings Column -->
       <a-col :span="24" :md="10" class="mb-24">
         <a-card
@@ -511,94 +511,9 @@
         </a-card>
       </a-col>
     </a-row>
-    <a-row v-if="isNotSearch === true" type="flex" :gutter="24">
+    <a-row v-if="isSearch === true" type="flex" :gutter="24">
       <!-- Platform Settings Column -->
-      <a-col :span="24" :md="24" class="mb-24">
-        <a-card
-          :bordered="false"
-          style="max-height: 1024px; min-height: 454px; overflow-y: auto"
-          class="header-solid"
-          :bodyStyle="{ paddingTop: 0, paddingBottom: 0 }"
-        >
-          <div class="mx-25">
-            <a-row type="flex" :gutter="24">
-              <a-col :span="24" md="12">
-                <label for="" class="ml-10">显示数量</label>
-                <a-select
-                  class="ml-10 mt-10"
-                  v-model="artifactQuery.limit"
-                  @change="onPageSizeChange"
-                  style="width: 70px"
-                >
-                  <a-select-option :value="5">5</a-select-option>
-                  <a-select-option :value="10">10</a-select-option>
-                  <a-select-option :value="15">15</a-select-option>
-                  <a-select-option :value="20">20</a-select-option>
-                  <a-select-option :value="25">25</a-select-option>
-                </a-select>
-                <a-config-provider
-                  class="ml-10 mt-10"
-                  :locale="locale"
-                  style="width: 290px"
-                >
-                  <a-range-picker
-                    :show-time="{ placeholder: '选择时间', format: 'HH:mm' }"
-                    format="YYYY-MM-DD HH:mm"
-                    :placeholder="['开始日期', '结束日期']"
-                    @change="dateChange"
-                    @ok="dateConfirm"
-                  />
-                </a-config-provider>
-              </a-col>
-              <a-col :span="24" md="12"> </a-col>
-            </a-row>
-          </div>
-          <template #title>
-            <h6 class="font-semibold m-0">搜索列表</h6>
-          </template>
-
-          <a-table
-            class="mt-20"
-            :columns="columns"
-            rowKey="url"
-            :data-source="searchData"
-            @change="handleTableChange"
-            :pagination="{
-              pageSize: artifactQuery.limit,
-              current: artifactQuery.page,
-              total: artifactQuery.total,
-              showLessItems: true,
-            }"
-          >
-            <template slot="path" slot-scope="text, record">
-              <a>
-                <div
-                  class="table-avatar-info"
-                  @click="searchDataHandle(record)"
-                >
-                  <a-avatar
-                    shape="circle"
-                    :size="24"
-                    :src="
-                      folibRepository.layout === 'Docker'
-                        ? 'images/folib/docker-s.svg'
-                        : 'images/folib/' + getFileType(record.path) + '.svg'
-                    "
-                  />
-                  <div class="avatar-info search-column-path">
-                    <p class="mb-0 text-dark">
-                      {{ record.artifactPath }}
-                    </p>
-                  </div>
-                </div>
-              </a>
-            </template>
-            <template slot="sizeInBytes" slot-scope="sizeInBytes">{{
-              fileSizeConver(sizeInBytes)
-            }}</template>
-          </a-table>
-        </a-card>
-      </a-col>
+      <Search ref="search" :columns="columns" :folibRepository="this.folibRepository"/>
     </a-row>
     <use-doc
       :usedVisible="usedVisible"
@@ -1096,7 +1011,6 @@ import {
   insertOrUpdateRules,
   getDockerArtifact,
   deleteArtifact,
-  // repositoryVulnerabilityStatistics,
   getPermissionStoragesAndRepositories,
   getStorageAndRepositoryPermission,
   getStoragesAndRepositories,
@@ -1121,6 +1035,7 @@ import BaseData from "./Data.vue";
 import UseDoc from "./UseDoc.vue";
 import AddMetadata from "./AddMetadata.vue";
 import MavenUpload from "../MavenUpload/index.vue"
+import Search from "../Search/index.vue"
 import { PrismEditor } from "vue-prism-editor";
 import "vue-prism-editor/dist/prismeditor.min.css"; // import the styles somewhere
 // import highlighting library (you can use any library you want just return html string)
@@ -1145,6 +1060,7 @@ export default {
     UseDoc,
     AddMetadata,
     MavenUpload,
+    Search,
   },
   data() {
     return {
@@ -1221,7 +1137,7 @@ export default {
       viewCodeVisible: false,
       viewCodes: null,
       locale: zhCN,
-      isNotSearch: false,
+      isSearch: false,
       searchData: [],
       searchDataCurrentSelect: {},
       searchViewCodeVisible: false,
@@ -1297,7 +1213,6 @@ export default {
       this.getBrowse()
       if (isLogin()) {
         this.scannerRules()
-        // this.repositoryVulnerabilityStatistics()
         this.scanReport = Object.assign({}, this.propScanReport)
         this.queryStorageAndRepositoryPermission()
       }
@@ -1327,16 +1242,12 @@ export default {
         }, 100);
       });
     },
-    // repositoryVulnerabilityStatistics() {
-    //   repositoryVulnerabilityStatistics({
-    //     storageId: this.folibRepository.storageId,
-    //     repositoryId: this.folibRepository.id,
-    //   }).then((res) => {
-    //     this.vulnerabilityStatistics = res;
-    //   });
-    // },
     goBack() {
-      this.$router.push({ name: "storages" });
+      if (isLogin()) {
+        this.$router.push({ name: "storages" })
+      } else {
+        this.$router.push({ name: "anonymousStorages" })
+      }
     },
     getLayoutTypeHandle() {
       return getLayoutType(this.folibRepository);
@@ -1928,6 +1839,7 @@ export default {
       }
       this.handlerMetadataType = type;
       this.showMetadataHandler = true;
+      this.getMetadataConfiguration()
     },
     metadataFormReset() {
       if (this.$refs.metadataForm) {
@@ -2101,50 +2013,11 @@ export default {
       this.$refs.BaseData.getMetadata();
       this.showMetadataHandler = false;
     },
-    search(value, page) {
-      if (page) {
-        this.artifactQuery.page = page;
-      }
-      if (value) {
-        if (this.searchType === 1) {
-          this.artifactQuery.artifactName = value;
-          this.artifactQuery.metadataSearch = null;
-        } else if (this.searchType === 2) {
-          this.artifactQuery.metadataSearch = value;
-          this.artifactQuery.artifactName = null;
-        }
-      }
-      this.artifactQuery.storageId = this.folibRepository.storageId;
-      this.artifactQuery.repositoryId = this.folibRepository.id;
-      let params = {
-        artifactName: this.artifactQuery.artifactName,
-        metadataSearch: this.artifactQuery.metadataSearch,
-        storageId: this.artifactQuery.storageId,
-        repositoryId: this.artifactQuery.repositoryId,
-        limit: this.artifactQuery.limit,
-        page: this.artifactQuery.page,
-        sortField: this.artifactQuery.sortField,
-        sortOrder: this.artifactQuery.sortOrder,
-        beginDate: this.artifactQuery.beginDate,
-        endDate: this.artifactQuery.endDate,
-        regex: false,
-      };
-      if (params.artifactName && this.folibRepository.layout === "Docker") {
-        // params.regex = true;
-        // params.artifactName =
-        //   "(" +
-        //   params.storageId +
-        //   "-" +
-        //   params.repositoryId +
-        //   ")(.*" +
-        //   params.artifactName +
-        //   ".*)";
-      }
-      fql(params).then((res) => {
-        this.searchData = res.artifact;
-        this.artifactQuery.total = res.total;
-      });
-      this.isNotSearch = true;
+    search(value, searchType, type) {
+      this.isSearch = true
+      this.$nextTick(() => {
+        this.$refs.search.search(value, searchType, type)
+      })
     },
     onPageSizeChange() {
       this.search(this.artifactQuery.artifactName, 1);
@@ -2180,9 +2053,6 @@ export default {
     },
     dateConfirm() {
       this.search(this.artifactQuery.artifactName, 1);
-    },
-    searchDataHandle(item) {
-      this.$emit("searchDataHandle", item);
     },
     openDetial() {
       this.$emit("openDetial", this.scanReport);

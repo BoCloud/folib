@@ -12,7 +12,7 @@ let routes = [
 	{
 		path: '/',
 		name: 'Home',
-		redirect: '/login',
+		redirect: '/anonymous/storages',
 	},
 	{
 		path: '/dashboards/',
@@ -59,6 +59,7 @@ let routes = [
 		layout: "dashboard",
 		meta: {
 			title: '仓库列表',
+			layoutClass: 'layout-profile',
 			sidebarMap: ['仓库列表'],
 			breadcrumbs: ['制品仓库', '仓库列表'],
 		},

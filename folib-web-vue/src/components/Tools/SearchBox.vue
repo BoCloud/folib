@@ -21,18 +21,17 @@ export default {
   data() {
     return {
       value: '',
+      searchType: 1,
       hover: false
     }
   },
   methods: {
     search() {
-      this.$emit('search', this.value, 1)
+      this.$emit('search', this.value, this.searchType, 1)
     },
     handleSearchMenuClick(active) {
-      this.$parent.$parent.handlerSearchType(active.key)
-     setTimeout(() => {
-        this.search()
-     }, 500);
+      this.searchType = active.key
+      this.search()
     },
     mouse(bool) {
       this.$emit('mouse', bool)

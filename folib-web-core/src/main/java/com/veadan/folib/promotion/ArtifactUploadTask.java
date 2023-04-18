@@ -5,13 +5,16 @@ import cn.hutool.core.io.IORuntimeException;
 import cn.hutool.core.util.CharsetUtil;
 import cn.hutool.extra.compress.CompressUtil;
 import cn.hutool.extra.compress.extractor.Extractor;
+import cn.hutool.extra.spring.SpringUtil;
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import com.veadan.folib.artifact.MavenArtifactUtils;
 import com.veadan.folib.artifact.coordinates.NpmArtifactCoordinates;
+import com.veadan.folib.components.artifact.ArtifactComponent;
 import com.veadan.folib.domain.ArtifactParse;
 import com.veadan.folib.domain.DockerManifest;
 import com.veadan.folib.entity.Dict;
+import com.veadan.folib.providers.io.RepositoryFiles;
 import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.providers.io.RepositoryPathResolver;
 import com.veadan.folib.providers.layout.*;
@@ -34,6 +37,7 @@ import org.apache.maven.artifact.ArtifactUtils;
 import org.apache.maven.artifact.repository.metadata.Metadata;
 import org.apache.maven.artifact.repository.metadata.Snapshot;
 import org.apache.maven.artifact.repository.metadata.Versioning;
+import org.apache.maven.index.artifact.Gav;
 import org.apache.maven.model.Model;
 import org.apache.maven.model.io.xpp3.MavenXpp3Reader;
 import org.codehaus.plexus.util.xml.pull.XmlPullParserException;
@@ -65,6 +69,7 @@ public class ArtifactUploadTask implements Callable<String> {
     private String uuid;
     private MavenRepositoryFeatures mavenRepositoryFeatures;
     private String parseArtifact;
+    private ArtifactComponent artifactComponent;
 
     public ArtifactUploadTask() {
     }
@@ -98,6 +103,7 @@ public class ArtifactUploadTask implements Callable<String> {
         this.metaData = metaData;
         this.uuid = uuid;
         this.parseArtifact = parseArtifact;
+        this.artifactComponent = SpringUtil.getBean(ArtifactComponent.class);
     }
 
     @Override
@@ -118,8 +124,18 @@ public class ArtifactUploadTask implements Callable<String> {
                 is = Files.newInputStream(Path.of(artifactParse.getFilePath()));
             }
             RepositoryPath repositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, fileRelativePath);
+            if (RepositoryFiles.isChecksum(repositoryPath) || RepositoryFiles.isTrash(repositoryPath)) {
+                rs = String.format("RepositoryPath：%s is checksum or trash file skip", repositoryPath.toString());
+                log.warn(rs);
+                return rs;
+            }
             String layout = repositoryPath.getRepository().getLayout();
             if (Maven2LayoutProvider.ALIAS.equals(layout)) {
+                if (repositoryPath.toString().endsWith("maven-metadata.xml")) {
+                    rs = String.format("RepositoryPath：%s is metadata file skip", repositoryPath.toString());
+                    log.warn(rs);
+                    return rs;
+                }
                 handlerMavenLayoutUpload(is, layout, repositoryPath, artifactParse);
             } else if (NpmLayoutProvider.ALIAS.equals(layout)) {
                 handlerNpmLayoutUpload(is, layout, repositoryPath);
@@ -163,7 +179,6 @@ public class ArtifactUploadTask implements Callable<String> {
     private void handlerMavenLayoutUpload(InputStream is, String layout, RepositoryPath repositoryPath, ArtifactParse artifactParse) {
         File parentTempFile = null;
         try {
-            fileRelativePath = convertArtifactUploadFileName(fileRelativePath);
             String point = ".";
             //maven布局
             parentTempFile = new File(tempPath + File.separator + UUID.randomUUID() + File.separator);
@@ -199,21 +214,6 @@ public class ArtifactUploadTask implements Callable<String> {
         return name;
     }
 
-    /**
-     * 读取pom.xml
-     *
-     * @param filePath filePath
-     * @return Model
-     * @throws IOException            IOException
-     * @throws XmlPullParserException XmlPullParserException
-     */
-    private Model getPom(Path filePath)
-            throws IOException, XmlPullParserException {
-        try (Reader rr = new FileReader(filePath.toFile())) {
-            MavenXpp3Reader reader = new MavenXpp3Reader();
-            return reader.read(rr);
-        }
-    }
 
     /**
      * 处理pom
@@ -224,7 +224,7 @@ public class ArtifactUploadTask implements Callable<String> {
      */
     private void handlerPom(File artifactTempFile, String point) throws Exception {
         RepositoryPath pomRepositoryPath = null;
-        Model model = getPom(Path.of(artifactTempFile.getAbsolutePath()));
+        Model model = artifactComponent.getPom(Path.of(artifactTempFile.getAbsolutePath()));
         String groupId = model.getGroupId();
         if (StringUtils.isBlank(groupId) && Objects.nonNull(model.getParent())) {
             groupId = model.getParent().getGroupId();
@@ -249,6 +249,8 @@ public class ArtifactUploadTask implements Callable<String> {
 //        if (artifactId.contains(point)) {
 //            artifactId = artifactId.replace(point, File.separator);
 //        }
+        fileRelativePath = convertArtifactUploadFileName(fileRelativePath);
+
         fileRelativePath = calcLatestSnapshotVersion(storageId, repositoryId, groupId, artifactId, version, fileRelativePath);
 
         String pomPath = String.format("%s/%s/%s/%s", groupId, artifactId, version, fileRelativePath);
@@ -285,12 +287,23 @@ public class ArtifactUploadTask implements Callable<String> {
      */
     private void handlerJar(LayoutProvider layoutProvider, RepositoryPath repositoryPath, Path path, String point, File artifactTempFile, File parentTempFile, ArtifactParse artifactParse) {
         try {
+            Gav gav = MavenArtifactUtils.convertPathToGav(fileRelativePath);
+            fileRelativePath = convertArtifactUploadFileName(fileRelativePath);
             String groupId, sourceGroupId, artifactId, version, properties = "";
             if (Objects.nonNull(artifactParse)) {
                 //优先级最高，非空直接使用
                 groupId = artifactParse.getGroupId();
                 artifactId = artifactParse.getArtifactId();
                 version = artifactParse.getVersion();
+            } else if (Objects.nonNull(gav)) {
+                groupId = gav.getGroupId();
+                artifactId = gav.getArtifactId();
+                if (gav.isSnapshot()) {
+                    //快照版本
+                    version = gav.getBaseVersion();
+                } else {
+                    version = StringUtils.isNotBlank(gav.getVersion()) ? gav.getVersion() : gav.getBaseVersion();
+                }
             } else {
                 //路径不包含坐标信息，解析jar中的pom.properties
                 byte[] propertiesBytes = layoutProvider.getContentByFileName(repositoryPath, path, "pom.properties");
@@ -307,7 +320,6 @@ public class ArtifactUploadTask implements Callable<String> {
                 groupId = groupId.replace(point, File.separator);
             }
             fileRelativePath = calcLatestSnapshotVersion(storageId, repositoryId, groupId, artifactId, version, fileRelativePath);
-
             String artifactPath = String.format("%s/%s/%s/%s", groupId, artifactId, version, fileRelativePath);
             log.info("maven2 layout artifact path ：{}，properties：{}，artifactParse: {}, groupId：{}，artifactId：{}, version：{} artifactPath：{}", path, properties, artifactParse, groupId, artifactId, version, artifactPath);
             RepositoryPath artifactRepositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, artifactPath);
@@ -322,21 +334,21 @@ public class ArtifactUploadTask implements Callable<String> {
                 log.error("store artifact：{}，error：{}", artifactRepositoryPath.toAbsolutePath(), ExceptionUtils.getStackTrace(ex));
                 throw new RuntimeException(ex.getMessage());
             }
-
+            Gav artifactGav = MavenArtifactUtils.convertPathToGav(artifactRepositoryPath);
             byte[] pomBytes = layoutProvider.getContentByFileName(repositoryPath, path, "pom.xml");
             String artifactName = fileRelativePath;
             String pomName = FilenameUtils.getBaseName(artifactName) + ".pom";
             File pomTempFile = null;
             if (Objects.nonNull(pomBytes)) {
-                //包内存在pom.xml，直接使用
+                //包内存在pom，直接使用
                 String pom = new String(pomBytes, StandardCharsets.UTF_8);
                 pomTempFile = new File(parentTempFile.getAbsolutePath() + File.separator + pomName);
                 FileUtil.writeBytes(pom.getBytes(), pomTempFile);
             } else {
-                //包内不存在pom.xml，需生成pom.xml
-                pomName = String.format("%s-%s", artifactId, version) + ".pom";
+                //包内不存在pom，需生成pom
+                pomName = String.format("%s-%s", artifactId, artifactGav.getVersion()) + ".pom";
                 pomTempFile = new File(parentTempFile.getAbsolutePath() + File.separator + pomName);
-                com.veadan.folib.utils.ArtifactUtils.pomGenerator(sourceGroupId, artifactId, version, pomTempFile.getAbsolutePath());
+                artifactComponent.pomGenerator(sourceGroupId, artifactId, version, pomTempFile.getAbsolutePath());
             }
             String pomPath = String.format("%s/%s/%s/%s", groupId, artifactId, version, pomName);
             log.info("maven2 layout xml path ：{}，properties：{}，artifactParse: {}, groupId：{}，artifactId：{}, version：{} artifactPath：{}", pomTempFile.getAbsolutePath(), properties, artifactParse, groupId, artifactId, version, pomPath);

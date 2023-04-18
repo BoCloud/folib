@@ -19,7 +19,6 @@ import com.veadan.folib.providers.repository.RepositoryProviderRegistry;
 import com.veadan.folib.providers.repository.RepositorySearchRequest;
 import com.veadan.folib.repository.PhpRepositoryFeatures;
 import com.veadan.folib.storage.repository.Repository;
-import com.veadan.folib.utils.ArtifactUtils;
 import com.veadan.folib.web.Constants;
 import com.veadan.folib.web.LayoutRequestMapping;
 import com.veadan.folib.web.RepositoryMapping;
@@ -65,6 +64,7 @@ public class PhpArtifactController extends BaseArtifactController {
 
     @Inject
     private RepositoryPathResolver repositoryPathResolver;
+
     @Inject
     private ArtifactComponent artifactComponent;
 
@@ -213,14 +213,14 @@ public class PhpArtifactController extends BaseArtifactController {
         pathUrl = String.format(pathUrl, Constants.ARTIFACT_ROOT_PATH, storageId, repositoryId, distKey);
         String mirrors = "[" +
                 "        {" +
-                "            \"dist-url\": \"" + ArtifactUtils.escapeUrl(baseUrl, pathUrl + "/%package%/%reference%.%type%") + "\"," +
+                "            \"dist-url\": \"" + artifactComponent.escapeUrl(baseUrl, pathUrl + "/%package%/%reference%.%type%") + "\"," +
                 "            \"preferred\": true" +
                 "        }" +
                 "    ]";
         packagesJson.put(mirrorsKey, JSONObject.parseArray(mirrors));
 
         String searchUrl = phpBaseUrl + "/search?q=%query%&type=%type%";
-        searchUrl = ArtifactUtils.escapeUrl(baseUrl, searchUrl);
+        searchUrl = artifactComponent.escapeUrl(baseUrl, searchUrl);
         packagesJson.put(searchKey, searchUrl);
         return packagesJson;
     }
