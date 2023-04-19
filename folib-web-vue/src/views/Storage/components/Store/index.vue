@@ -19,7 +19,7 @@
                       type="backward"
                       :style="{
                         fontSize: '32px',
-                        marginRight: '20px',
+                        marginRight: '5px',
                         opacity: '0.8',
                         color: '#BFBFBFFF',
                       }"
@@ -112,7 +112,7 @@
                       <a-icon type="question-circle" theme="filled" />
                     </small>
                   </a>
-                  <div v-if="folibRepository.type !== 'group'">
+                  <div v-if="$store.state.user.token && folibRepository.type !== 'group'">
                     <span class="mr-15">{{
                       scan.onScan ? "扫描开启" : "扫描关闭"
                     }}</span>
@@ -129,7 +129,7 @@
         </a-col>
       </a-row>
     </a-affix>
-    <a-row v-if="isNotSearch === false" type="flex" :gutter="24">
+    <a-row v-if="isSearch === false" type="flex" :gutter="24">
       <!-- Platform Settings Column -->
       <a-col :span="24" :md="10" class="mb-24">
         <a-card
@@ -265,7 +265,7 @@
               </a-col>
               <a-col :span="8" class="text-right">
                 <a-dropdown
-                  v-if="currentTreeNode.url"
+                  v-if="$store.state.user.token && currentTreeNode.url"
                   class="mr-30"
                   placement="bottomCenter"
                 >
@@ -417,7 +417,7 @@
                 </a-row>
               </a-col>
               <a-col :span="8" class="text-right">
-                <a-dropdown v-if="currentTreeNode.url" class="mr-45">
+                <a-dropdown v-if="$store.state.user.token && currentTreeNode.url" class="mr-45">
                   <span style="font-size: 16px; cursor: pointer">
                     更多
                     <a-icon
@@ -511,94 +511,9 @@
         </a-card>
       </a-col>
     </a-row>
-    <a-row v-if="isNotSearch === true" type="flex" :gutter="24">
+    <a-row v-if="isSearch === true" type="flex" :gutter="24">
       <!-- Platform Settings Column -->
-      <a-col :span="24" :md="24" class="mb-24">
-        <a-card
-          :bordered="false"
-          style="max-height: 1024px; min-height: 454px; overflow-y: auto"
-          class="header-solid"
-          :bodyStyle="{ paddingTop: 0, paddingBottom: 0 }"
-        >
-          <div class="mx-25">
-            <a-row type="flex" :gutter="24">
-              <a-col :span="24" md="12">
-                <label for="" class="ml-10">显示数量</label>
-                <a-select
-                  class="ml-10 mt-10"
-                  v-model="artifactQuery.limit"
-                  @change="onPageSizeChange"
-                  style="width: 70px"
-                >
-                  <a-select-option :value="5">5</a-select-option>
-                  <a-select-option :value="10">10</a-select-option>
-                  <a-select-option :value="15">15</a-select-option>
-                  <a-select-option :value="20">20</a-select-option>
-                  <a-select-option :value="25">25</a-select-option>
-                </a-select>
-                <a-config-provider
-                  class="ml-10 mt-10"
-                  :locale="locale"
-                  style="width: 290px"
-                >
-                  <a-range-picker
-                    :show-time="{ placeholder: '选择时间', format: 'HH:mm' }"
-                    format="YYYY-MM-DD HH:mm"
-                    :placeholder="['开始日期', '结束日期']"
-                    @change="dateChange"
-                    @ok="dateConfirm"
-                  />
-                </a-config-provider>
-              </a-col>
-              <a-col :span="24" md="12"> </a-col>
-            </a-row>
-          </div>
-          <template #title>
-            <h6 class="font-semibold m-0">搜索列表</h6>
-          </template>
-
-          <a-table
-            class="mt-20"
-            :columns="columns"
-            rowKey="url"
-            :data-source="searchData"
-            @change="handleTableChange"
-            :pagination="{
-              pageSize: artifactQuery.limit,
-              current: artifactQuery.page,
-              total: artifactQuery.total,
-              showLessItems: true,
-            }"
-          >
-            <template slot="path" slot-scope="text, record">
-              <a>
-                <div
-                  class="table-avatar-info"
-                  @click="searchDataHandle(record)"
-                >
-                  <a-avatar
-                    shape="circle"
-                    :size="24"
-                    :src="
-                      folibRepository.layout === 'Docker'
-                        ? 'images/folib/docker-s.svg'
-                        : 'images/folib/' + getFileType(record.path) + '.svg'
-                    "
-                  />
-                  <div class="avatar-info search-column-path">
-                    <p class="mb-0 text-dark">
-                      {{ record.artifactPath }}
-                    </p>
-                  </div>
-                </div>
-              </a>
-            </template>
-            <template slot="sizeInBytes" slot-scope="sizeInBytes">{{
-              fileSizeConver(sizeInBytes)
-            }}</template>
-          </a-table>
-        </a-card>
-      </a-col>
+      <Search ref="search" :columns="columns" :folibRepository="this.folibRepository"/>
     </a-row>
     <use-doc
       :usedVisible="usedVisible"
@@ -1079,7 +994,7 @@
 </template>
 
 <script>
-import storage from "store";
+import store from "store";
 import uuidv4 from "uuid/v4"
 import {
   getLayoutType,
@@ -1096,7 +1011,6 @@ import {
   insertOrUpdateRules,
   getDockerArtifact,
   deleteArtifact,
-  repositoryVulnerabilityStatistics,
   getPermissionStoragesAndRepositories,
   getStorageAndRepositoryPermission,
   getStoragesAndRepositories,
@@ -1111,7 +1025,7 @@ import {
   artifactDispatch,
 } from "@/api/artifact";
 import { getMetadataConfiguration } from "@/api/settings";
-import { hasRole, isAdmin, hasPermission } from "@/utils/permission";
+import { hasRole, isAdmin, isAnonymous, isLogin } from "@/utils/permission";
 
 
 import SearchBox from "@/components/Tools/SearchBox";
@@ -1121,6 +1035,7 @@ import BaseData from "./Data.vue";
 import UseDoc from "./UseDoc.vue";
 import AddMetadata from "./AddMetadata.vue";
 import MavenUpload from "../MavenUpload/index.vue"
+import Search from "../Search/index.vue"
 import { PrismEditor } from "vue-prism-editor";
 import "vue-prism-editor/dist/prismeditor.min.css"; // import the styles somewhere
 // import highlighting library (you can use any library you want just return html string)
@@ -1145,6 +1060,7 @@ export default {
     UseDoc,
     AddMetadata,
     MavenUpload,
+    Search,
   },
   data() {
     return {
@@ -1221,7 +1137,7 @@ export default {
       viewCodeVisible: false,
       viewCodes: null,
       locale: zhCN,
-      isNotSearch: false,
+      isSearch: false,
       searchData: [],
       searchDataCurrentSelect: {},
       searchViewCodeVisible: false,
@@ -1289,14 +1205,18 @@ export default {
     };
   },
   created() {
-    this.createData();
-    this.getBrowse();
-    this.scannerRules();
-    this.repositoryVulnerabilityStatistics();
-    this.scanReport = Object.assign({}, this.propScanReport);
-    this.queryStorageAndRepositoryPermission();
+    this.initData()
   },
   methods: {
+    initData() {
+      this.createData()
+      this.getBrowse()
+      if (isLogin()) {
+        this.scannerRules()
+        this.scanReport = Object.assign({}, this.propScanReport)
+        this.queryStorageAndRepositoryPermission()
+      }
+    },
     scannerRules() {
       scannerRules(
         this.folibRepository.storageId + "-" + this.folibRepository.id
@@ -1310,7 +1230,7 @@ export default {
     },
     scannerChange() {
       this.scan.id =
-        this.folibRepository.storageId + "-" + this.folibRepository.id;
+      this.folibRepository.storageId + "-" + this.folibRepository.id;
       this.scan.repository = this.folibRepository.id;
       this.scan.storage = this.folibRepository.storageId;
       this.scan.layout = this.folibRepository.layout;
@@ -1322,16 +1242,12 @@ export default {
         }, 100);
       });
     },
-    repositoryVulnerabilityStatistics() {
-      repositoryVulnerabilityStatistics({
-        storageId: this.folibRepository.storageId,
-        repositoryId: this.folibRepository.id,
-      }).then((res) => {
-        this.vulnerabilityStatistics = res;
-      });
-    },
     goBack() {
-      this.$router.push({ name: "storages" });
+      if (isLogin()) {
+        this.$router.push({ name: "storages" })
+      } else {
+        this.$router.push({ name: "anonymousStorages" })
+      }
     },
     getLayoutTypeHandle() {
       return getLayoutType(this.folibRepository);
@@ -1367,7 +1283,7 @@ export default {
     },
     createData() {
       //上个页面通过缓存传参，目的防止页面刷新，路由数据消失
-      const params = storage.get("libView_repository");
+      const params = store.get("libView_repository");
       this.folibRepository = params.item;
       this.baseUrl = params.baseUrl;
       this.repositoryType = this.getLayoutTypeHandle();
@@ -1720,7 +1636,7 @@ export default {
           if (this.currentFileDetial.snippets) {
             this.changeCodeTye(this.currentFileDetial.snippets[0]);
           }
-          if (this.currentFileDetial.artifact) {
+          if (isLogin() && this.currentFileDetial.artifact) {
             if (this.currentFileDetial.artifact.safeLevel === "scanComplete") {
               this.scanReport.show = true
               this.scanReport.vulnerabilitesCount =
@@ -1923,6 +1839,7 @@ export default {
       }
       this.handlerMetadataType = type;
       this.showMetadataHandler = true;
+      this.getMetadataConfiguration()
     },
     metadataFormReset() {
       if (this.$refs.metadataForm) {
@@ -2096,50 +2013,11 @@ export default {
       this.$refs.BaseData.getMetadata();
       this.showMetadataHandler = false;
     },
-    search(value, page) {
-      if (page) {
-        this.artifactQuery.page = page;
-      }
-      if (value) {
-        if (this.searchType === 1) {
-          this.artifactQuery.artifactName = value;
-          this.artifactQuery.metadataSearch = null;
-        } else if (this.searchType === 2) {
-          this.artifactQuery.metadataSearch = value;
-          this.artifactQuery.artifactName = null;
-        }
-      }
-      this.artifactQuery.storageId = this.folibRepository.storageId;
-      this.artifactQuery.repositoryId = this.folibRepository.id;
-      let params = {
-        artifactName: this.artifactQuery.artifactName,
-        metadataSearch: this.artifactQuery.metadataSearch,
-        storageId: this.artifactQuery.storageId,
-        repositoryId: this.artifactQuery.repositoryId,
-        limit: this.artifactQuery.limit,
-        page: this.artifactQuery.page,
-        sortField: this.artifactQuery.sortField,
-        sortOrder: this.artifactQuery.sortOrder,
-        beginDate: this.artifactQuery.beginDate,
-        endDate: this.artifactQuery.endDate,
-        regex: false,
-      };
-      if (params.artifactName && this.folibRepository.layout === "Docker") {
-        // params.regex = true;
-        // params.artifactName =
-        //   "(" +
-        //   params.storageId +
-        //   "-" +
-        //   params.repositoryId +
-        //   ")(.*" +
-        //   params.artifactName +
-        //   ".*)";
-      }
-      fql(params).then((res) => {
-        this.searchData = res.artifact;
-        this.artifactQuery.total = res.total;
-      });
-      this.isNotSearch = true;
+    search(value, searchType, type) {
+      this.isSearch = true
+      this.$nextTick(() => {
+        this.$refs.search.search(value, searchType, type)
+      })
     },
     onPageSizeChange() {
       this.search(this.artifactQuery.artifactName, 1);
@@ -2175,9 +2053,6 @@ export default {
     },
     dateConfirm() {
       this.search(this.artifactQuery.artifactName, 1);
-    },
-    searchDataHandle(item) {
-      this.$emit("searchDataHandle", item);
     },
     openDetial() {
       this.$emit("openDetial", this.scanReport);

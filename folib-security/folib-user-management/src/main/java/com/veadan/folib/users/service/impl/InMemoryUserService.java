@@ -17,8 +17,12 @@ import com.veadan.folib.data.CacheName;
 import com.veadan.folib.domain.PageResultResponse;
 import com.veadan.folib.domain.SecurityRole;
 import com.veadan.folib.users.domain.SystemRole;
+import com.veadan.folib.users.security.JwtAuthenticationClaimsProvider;
+import com.veadan.folib.users.security.JwtClaimsProvider;
 import com.veadan.folib.users.security.SecurityTokenProvider;
 import com.veadan.folib.users.service.UserService;
+import com.veadan.folib.users.userdetails.SpringSecurityUser;
+import com.veadan.folib.users.userdetails.UserDetailsMapper;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import com.veadan.folib.domain.User;
@@ -41,6 +45,13 @@ public class InMemoryUserService implements UserService
 
     @Inject
     private SecurityTokenProvider tokenProvider;
+
+    @Inject
+    private UserDetailsMapper userDetailsMapper;
+
+    @Inject
+    @JwtAuthenticationClaimsProvider.JwtAuthentication
+    private JwtClaimsProvider jwtClaimsProvider;
 
     @Override
     public Users getUsers()
@@ -125,9 +136,8 @@ public class InMemoryUserService implements UserService
             return null;
         }
 
-        final Map<String, String> claimMap = new HashMap<>();
-        claimMap.put(UserData.SECURITY_TOKEN_KEY, user.getSecurityTokenKey());
-
+        SpringSecurityUser springSecurityUser = userDetailsMapper.apply(user);
+        Map<String, String> claimMap = jwtClaimsProvider.getClaims(springSecurityUser);
         return tokenProvider.getToken(username, claimMap, null, null);
     }
 

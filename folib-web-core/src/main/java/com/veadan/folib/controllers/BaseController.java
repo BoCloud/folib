@@ -300,7 +300,11 @@ public abstract class BaseController {
         if (Objects.isNull(authentication)) {
             return false;
         }
-        SpringSecurityUser userDetails = (SpringSecurityUser) authentication.getPrincipal();
+        Object o = authentication.getPrincipal();
+        if (!(o instanceof SpringSecurityUser)) {
+            return false;
+        }
+        SpringSecurityUser userDetails = (SpringSecurityUser) o;
         if (CollectionUtils.isEmpty(userDetails.getRoles())) {
             return false;
         }
@@ -320,7 +324,14 @@ public abstract class BaseController {
         if (Objects.isNull(authentication)) {
             return "";
         }
+        Object o = authentication.getPrincipal();
+        if (!(o instanceof SpringSecurityUser)) {
+            return "";
+        }
         SpringSecurityUser springSecurityUser = (SpringSecurityUser) authentication.getPrincipal();
+        if (Objects.isNull(springSecurityUser)) {
+            return "";
+        }
         return springSecurityUser.getUsername();
     }
 }

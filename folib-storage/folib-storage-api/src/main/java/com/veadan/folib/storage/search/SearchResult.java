@@ -66,7 +66,10 @@ public class SearchResult {
      * 仓库布局
      */
     private String layout;
-
+    /**
+     * 仓库子布局
+     */
+    private String subLayout;
     /**
      * 制品path
      */

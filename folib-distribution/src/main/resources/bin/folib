@@ -54,6 +54,9 @@ FOLIB_S3_SECRET_KEY="${FOLIB_S3_SECRET_KEY:-folib}"
 ##图数据库索引ES节点配置
 FOLIB_ES_HOST="${FOLIB_ES_HOST:-10.50.8.55}"
 
+#自动晋级阻断
+FOLIB_PROMOTION_BLOCK="${FOLIB_PROMOTION_BLOCK:-false}"
+
 ##scanner相关配置
 FOLIB_MYSQL_HOST="${FOLIB_MYSQL_HOST:-10.50.8.55}"
 FOLIB_MYSQL_PORT="${FOLIB_MYSQL_PORT:-3306}"
@@ -169,6 +172,8 @@ run()
     JAVA_OPTS+=" -Ds3fs.access.key=${FOLIB_S3_ACCESS_KEY}"
     JAVA_OPTS+=" -Ds3fs.secret.key=${FOLIB_S3_SECRET_KEY}"
     JAVA_OPTS+=" -Dfolib.docker.getAppPackagePathConfig=${FOLIB_DOCKER_GET_APP_PACAKGEPATH}"
+    JAVA_OPTS+=" -DPROMOTION_BLOCK=${FOLIB_PROMOTION_BLOCK}"
+
     #s3fs:
     #  protocol: http
     #  region: bo-nj-cn

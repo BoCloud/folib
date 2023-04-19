@@ -13,6 +13,9 @@ import com.veadan.folib.users.security.AuthoritiesProvider;
 import com.veadan.folib.users.service.UserService;
 import com.veadan.folib.users.service.impl.DatabaseUserService.Database;
 import com.veadan.folib.users.service.impl.EncodedPasswordUser;
+import com.veadan.folib.users.userdetails.FolibUserToUserDetails;
+import com.veadan.folib.users.userdetails.SpringSecurityUser;
+import com.veadan.folib.users.userdetails.UserDetailsMapper;
 import com.veadan.folib.util.RSAUtils;
 import com.veadan.folib.validation.RequestBodyValidationException;
 import io.swagger.annotations.*;
@@ -271,7 +274,6 @@ public class UserController
         if (user == null) {
             return getNotFoundResponseEntity(NOT_FOUND_USER, accept);
         }
-
         String securityToken = userService.generateSecurityToken(username);
         if (securityToken == null) {
             String message = String.format("Failed to generate SecurityToken, probably you should first set " +

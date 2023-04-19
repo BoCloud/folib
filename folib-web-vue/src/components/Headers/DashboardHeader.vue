@@ -54,7 +54,7 @@
         <!-- / Header Breadcrumbs & Title Column -->
 
         <!-- Header Control Column -->
-        <a-col :span="24" :md="17" class="header-control">
+        <a-col :span="24" :md="17" class="header-control" v-if="userInfo.token">
           <!-- Header Control Buttons -->
 					<a-dropdown :trigger="['click']" v-model="visible" overlayClassName="header-notifications-dropdown" :getPopupContainer="() => wrapper">
 						<a-badge :count="uploadProcessList?uploadProcessList.length:0">
@@ -178,6 +178,18 @@
 
           <!-- / Header Control Buttons -->
         </a-col>
+        <a-col :span="24" :md="17" class="header-control" v-else>
+          <!-- Header Control Buttons -->
+          <a-button
+            type="link"
+            ref="secondarySidebarTriggerBtn"
+            @click="toLogin()"
+          >
+            <a-icon type="login" :style="{fontSize: '20px'}"/>
+            <span class="ml-5 login-span">登录</span>
+          </a-button>
+          <!-- / Header Control Buttons -->
+        </a-col>
         <!-- / Header Control Column -->
       </a-row>
     </a-layout-header>
@@ -194,6 +206,7 @@ import {
   queryArtifactUploadProcess,
   deleteArtifactUploadProcess,
 } from "@/api/artifact"
+import { hasRole, isAdmin, isAnonymous, isLogin } from "@/utils/permission"
 
 export default {
   props: {
@@ -303,6 +316,9 @@ export default {
     toPersonl(){
       this.$router.push('/personal')
     },
+    toLogin() {
+      this.$router.push('/login')
+    }
   },
   mounted: function () {
     // Set the wrapper to the proper element, layout wrapper.
@@ -326,6 +342,10 @@ export default {
     // console.log(store.state)
     this.userInfo = store.state.user;
     window.addEventListener("resize", this.resizeEventHandler);
+    if (isAnonymous()) {
+      this.$emit('minimizeSidebar')
+      this.resizeEventHandler()
+    }
   },
   destroyed() {
     // Removing window resize event listener.
@@ -334,7 +354,9 @@ export default {
   watch: {
     visible: {
       handler(val) {
-        this.queryAllProcess()
+        if (isLogin()) {
+          this.queryAllProcess()
+        }
       },
       immediate:true
     }  
@@ -362,5 +384,11 @@ export default {
   display: inline-block;
   width: 24px;
   height: 24px;
+}
+
+.login-span {
+  color: white;
+  font-size: 14px;
+  vertical-align: middle;
 }
 </style>

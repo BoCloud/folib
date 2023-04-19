@@ -36,6 +36,10 @@ public enum SafeLevelEnum {
      * 扫描失败
      */
     SCAN_FAIL("scanFail"),
+    /**
+     * 无需扫描
+     */
+    UNWANTED_SCAN("unwantedScan"),
     ;
 
     private String level;

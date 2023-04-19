@@ -1,6 +1,17 @@
 import store from '@/store'
 
-export function hasRole (role) {
+export function isAnonymous() {
+    if (store.state.user.token) {
+        return false
+    }
+    return true
+}
+
+export function isLogin() {
+    return !isAnonymous()
+}
+
+export function hasRole(role) {
     let roles = store.state.user.roles
     if (roles && roles.includes(role)) {
         return true
@@ -8,7 +19,7 @@ export function hasRole (role) {
     return false
 }
 
-export function isAdmin () {
+export function isAdmin() {
     let roles = store.state.user.roles
     if (roles && roles.includes("ADMIN")) {
         return true
@@ -16,7 +27,7 @@ export function isAdmin () {
     return false
 }
 
-export function hasPermission (permission) {
+export function hasPermission(permission) {
     let authorities = store.state.user.authorities
     if (authorities && authorities.includes(permission)) {
         return true

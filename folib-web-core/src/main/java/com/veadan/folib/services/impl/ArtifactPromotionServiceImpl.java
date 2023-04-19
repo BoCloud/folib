@@ -4,6 +4,8 @@ import cn.hutool.core.io.FileUtil;
 import cn.hutool.core.lang.UUID;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
+import com.veadan.folib.components.artifact.ArtifactComponent;
+import com.veadan.folib.components.security.SecurityComponent;
 import com.veadan.folib.domain.*;
 import com.veadan.folib.dto.ArtifactDto;
 import com.veadan.folib.dto.PromotionArtifactDto;
@@ -28,6 +30,7 @@ import org.apache.commons.compress.utils.Lists;
 import org.apache.commons.fileupload.disk.DiskFileItem;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
+import org.apache.maven.model.Model;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -48,6 +51,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.client.Client;
 import javax.ws.rs.client.Entity;
+import javax.ws.rs.client.Invocation;
 import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
@@ -117,6 +121,13 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
     @Inject
     @Lazy
     private MavenRepositoryFeatures mavenRepositoryFeatures;
+
+    @Inject
+    private SecurityComponent securityComponent;
+
+    @Inject
+    @Lazy
+    private ArtifactComponent artifactComponent;
 
     @Override
     public ResponseEntity copy(ArtifactPromotion artifactPromotion) {
@@ -258,7 +269,9 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
                 WebTarget target = client.target(url);
                 ArtifactDto artifactDto = ArtifactDto.builder().storageId(srcStorageId).
                         repostoryId(srcRepostoryId).path(srcUri).build();
-                Response response = target.request().
+                Invocation.Builder builder = target.request();
+                securityComponent.securityTokenHeader(builder);
+                Response response = builder.
                         post(Entity.entity(artifactDto, MediaType.APPLICATION_JSON));
                 if (response.getStatus() != 200) {
                     throw new Exception("{} get error" + url);
@@ -317,6 +330,20 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
             File artifactFile = new File(artifactPath);
             FileUtil.writeFromStream(inputStream, artifactFile);
             Path path = Path.of(artifactFile.getAbsolutePath());
+            if (artifactPath.endsWith(".pom")) {
+                Model model = artifactComponent.getPom(path);
+                String groupId = model.getGroupId();
+                if (StringUtils.isBlank(groupId) && Objects.nonNull(model.getParent())) {
+                    groupId = model.getParent().getGroupId();
+                }
+                String artifactId = model.getArtifactId();
+                String version = model.getVersion();
+                if (StringUtils.isBlank(version) && Objects.nonNull(model.getParent())) {
+                    version = model.getParent().getVersion();
+                }
+                artifactParse = ArtifactParse.builder().type(1).groupId(groupId).artifactId(artifactId).version(version).filePath(artifactPath).build();
+                return artifactParse;
+            }
             byte[] propertiesBytes = PropertiesUtils.getFileFromJar(path, "pom.properties");
             if (Objects.isNull(propertiesBytes)) {
                 artifactParse = ArtifactParse.builder().type(2).filePath(artifactPath).build();
@@ -338,7 +365,9 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
     private AnalysisHtmlGetDirAndFilePath getArtifactPath(String url) throws Exception {
         Client client = clientPool.getRestClient();
         WebTarget target = client.target(url);
-        Response response = target.request().get();
+        Invocation.Builder builder = target.request();
+        securityComponent.securityTokenHeader(builder);
+        Response response = builder.get();
         if (response.getStatus() != 200) {
             throw new Exception("{} get error" + url);
         }

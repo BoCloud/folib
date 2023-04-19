@@ -86,7 +86,10 @@ public class ArtifactAdapter implements VertexEntityTraversalAdapter<Artifact> {
                 "artifactCoordinates",
                 "tags",
                 "vulnerabilitySet",
-                "artifactFileExists")
+                "artifactFileExists",
+                "promotion",
+                "promotionNodes",
+                "enabled")
                 .by(__.id())
                 .by(__.enrichPropertyValue("uuid"))
                 .by(__.enrichPropertyValue("storageId"))
@@ -131,6 +134,9 @@ public class ArtifactAdapter implements VertexEntityTraversalAdapter<Artifact> {
                         .map(EntityTraversalUtils::castToObject)
                         .fold())
                 .by(__.enrichPropertyValue("artifactFileExists"))
+                .by(__.enrichPropertyValue("promotion"))
+                .by(__.enrichPropertyValues("promotionNodes"))
+                .by(__.enrichPropertyValue("enabled"))
                 .map(this::map);
     }
 
@@ -317,6 +323,11 @@ public class ArtifactAdapter implements VertexEntityTraversalAdapter<Artifact> {
         result.setReport(extractObject(String.class, t.get().get("report")));
         result.setScanDate(extractObject(String.class, t.get().get("scanDate")));
         result.setScanDateTime(toLocalDateTime(extractObject(Long.class, t.get().get("scanDateTime"))));
+        result.setPromotion(extractObject(String.class, t.get().get("promotion")));
+        result.setPromotionNodes(extractPropertyList(String.class, t.get().get("promotionNodes")).stream()
+                .filter(e -> !e.trim().isBlank())
+                .collect(Collectors.toSet()));
+        result.setEnabled(extractObject(Boolean.class, t.get().get("enabled")));
         return result;
     }
 
@@ -370,78 +381,78 @@ public class ArtifactAdapter implements VertexEntityTraversalAdapter<Artifact> {
     private EntityTraversal<Vertex, Vertex> unfoldArtifact(Artifact entity) {
         EntityTraversal<Vertex, Vertex> t = __.<Vertex>identity();
 
-        if (entity.getStorageId() != null) {
+        if (StringUtils.isNotBlank(entity.getStorageId())) {
             t = t.property(single, "storageId", entity.getStorageId());
         }
-        if (entity.getRepositoryId() != null) {
+        if (StringUtils.isNotBlank(entity.getRepositoryId())) {
             t = t.property(single, "repositoryId", entity.getRepositoryId());
         }
-        if (entity.getStorageIdAndRepositoryId() != null) {
+        if (StringUtils.isNotBlank(entity.getStorageIdAndRepositoryId())) {
             t = t.property(single, "storageIdAndRepositoryId", entity.getStorageIdAndRepositoryId());
         }
-        if (entity.getCreated() != null) {
+        if (Objects.nonNull(entity.getCreated())) {
             t = t.property(single, "created", toLong(entity.getCreated()));
         }
-        if (entity.getLastUpdated() != null) {
+        if (Objects.nonNull(entity.getLastUpdated())) {
             t = t.property(single, "lastUpdated", toLong(entity.getLastUpdated()));
         }
-        if (entity.getLastUsed() != null) {
+        if (Objects.nonNull(entity.getLastUsed())) {
             t = t.property(single, "lastUsed", toLong(entity.getLastUsed()));
         }
-        if (entity.getSizeInBytes() != null) {
+        if (Objects.nonNull(entity.getSizeInBytes())) {
             t = t.property(single, "sizeInBytes", entity.getSizeInBytes());
         }
-        if (entity.getDownloadCount() != null) {
+        if (Objects.nonNull(entity.getDownloadCount())) {
             t = t.property(single, "downloadCount", entity.getDownloadCount());
         }
-        if (entity.getSafeLevel() != null) {
+        if (StringUtils.isNotBlank(entity.getSafeLevel())) {
             t = t.property(single, "safeLevel", entity.getSafeLevel());
         }
-        if (entity.getDependencyCount() != null) {
+        if (Objects.nonNull(entity.getDependencyCount())) {
             t = t.property(single, "dependencyCount", entity.getDependencyCount());
         }
-        if (entity.getDependencyVulnerabilitiesCount() != null) {
+        if (Objects.nonNull(entity.getDependencyVulnerabilitiesCount())) {
             t = t.property(single, "dependencyVulnerabilitiesCount", entity.getDependencyVulnerabilitiesCount());
         }
-        if (entity.getVulnerabilitiesCount() != null) {
+        if (Objects.nonNull(entity.getVulnerabilitiesCount())) {
             t = t.property(single, "vulnerabilitiesCount", entity.getVulnerabilitiesCount());
         }
-        if (entity.getCriticalVulnerabilitiesCount() != null) {
+        if (Objects.nonNull(entity.getCriticalVulnerabilitiesCount())) {
             t = t.property(single, "criticalVulnerabilitiesCount", entity.getCriticalVulnerabilitiesCount());
         }
-        if (entity.getHighVulnerabilitiesCount() != null) {
+        if (Objects.nonNull(entity.getHighVulnerabilitiesCount())) {
             t = t.property(single, "highVulnerabilitiesCount", entity.getHighVulnerabilitiesCount());
         }
-        if (entity.getMediumVulnerabilitiesCount() != null) {
+        if (Objects.nonNull(entity.getMediumVulnerabilitiesCount())) {
             t = t.property(single, "mediumVulnerabilitiesCount", entity.getMediumVulnerabilitiesCount());
         }
-        if (entity.getLowVulnerabilitiesCount() != null) {
+        if (Objects.nonNull(entity.getLowVulnerabilitiesCount())) {
             t = t.property(single, "lowVulnerabilitiesCount", entity.getLowVulnerabilitiesCount());
         }
-        if (entity.getSuppressedVulnerabilitiesCount() != null) {
+        if (Objects.nonNull(entity.getSuppressedVulnerabilitiesCount())) {
             t = t.property(single, "suppressedVulnerabilitiesCount", entity.getSuppressedVulnerabilitiesCount());
         }
-        if (entity.getEvidenceQuantity() != null) {
+        if (Objects.nonNull(entity.getEvidenceQuantity())) {
             t = t.property(single, "evidenceQuantity", entity.getEvidenceQuantity());
         }
-        if (entity.getVulnerabilities() != null) {
+        if (CollectionUtils.isNotEmpty(entity.getVulnerabilities())) {
             t = t.sideEffect(__.properties("vulnerabilities").drop());
             t = t.property("vulnerabilities", entity.getVulnerabilities());
         }
         if (StringUtils.isNotBlank(entity.getMetadata())) {
             t = t.property(single, "metadata", entity.getMetadata());
         }
-        if (entity.getFilePaths() != null) {
+        if (CollectionUtils.isNotEmpty(entity.getFilePaths())) {
             t = t.sideEffect(__.properties("filePaths").drop());
             t = t.property("filePaths", entity.getFilePaths());
         }
         if (StringUtils.isNotBlank(entity.getReport())) {
             t = t.property(single, "report", entity.getReport());
         }
-        if (entity.getScanDate() != null) {
+        if (StringUtils.isNotBlank(entity.getScanDate())) {
             t = t.property(single, "scanDate", entity.getScanDate());
         }
-        if (entity.getScanDateTime() != null) {
+        if (Objects.nonNull(entity.getScanDateTime())) {
             t = t.property(single, "scanDateTime", toLong(entity.getScanDateTime()));
         }
         if (StringUtils.isNotBlank(entity.getDependencies())) {
@@ -464,8 +475,18 @@ public class ArtifactAdapter implements VertexEntityTraversalAdapter<Artifact> {
             t = t.sideEffect(__.properties("checksums").drop());
             t = t.property("checksums", checkSumAlgo);
         }
-        if (entity.getArtifactFileExists() != null) {
+        if (Objects.nonNull(entity.getArtifactFileExists())) {
             t = t.property(single, "artifactFileExists", entity.getArtifactFileExists());
+        }
+        if (StringUtils.isNotBlank(entity.getPromotion())) {
+            t = t.property(single, "promotion", entity.getPromotion());
+        }
+        if (CollectionUtils.isNotEmpty(entity.getPromotionNodes())) {
+            t = t.sideEffect(__.properties("promotionNodes").drop());
+            t = t.property("promotionNodes", entity.getPromotionNodes());
+        }
+        if (Objects.nonNull(entity.getEnabled())) {
+            t = t.property(single, "enabled", entity.getEnabled());
         }
         return t;
     }

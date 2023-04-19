@@ -24,8 +24,12 @@ import com.veadan.folib.users.domain.Privileges;
 import com.veadan.folib.users.domain.SystemRole;
 import com.veadan.folib.users.domain.UserData;
 import com.veadan.folib.users.domain.Users;
+import com.veadan.folib.users.security.JwtAuthenticationClaimsProvider;
+import com.veadan.folib.users.security.JwtClaimsProvider;
 import com.veadan.folib.users.security.SecurityTokenProvider;
 import com.veadan.folib.users.service.UserService;
+import com.veadan.folib.users.userdetails.SpringSecurityUser;
+import com.veadan.folib.users.userdetails.UserDetailsMapper;
 import org.apache.commons.lang3.StringUtils;
 import com.veadan.folib.domain.User;
 import com.veadan.folib.domain.UserEntity;
@@ -53,6 +57,12 @@ public class DatabaseUserService implements UserService
     @Inject
     protected UserRepository userRepository;
 
+    @Inject
+    private UserDetailsMapper userDetailsMapper;
+
+    @Inject
+    @JwtAuthenticationClaimsProvider.JwtAuthentication
+    private JwtClaimsProvider jwtClaimsProvider;
 
     @Override
     @CacheEvict(cacheNames = CacheName.User.AUTHENTICATIONS, key = "#p0")
@@ -77,15 +87,12 @@ public class DatabaseUserService implements UserService
         throws JoseException
     {
         final User user = findByUsername(username);
-
         if (StringUtils.isEmpty(user.getSecurityTokenKey()))
         {
             return null;
         }
-
-        final Map<String, String> claimMap = new HashMap<>();
-        claimMap.put(UserData.SECURITY_TOKEN_KEY, user.getSecurityTokenKey());
-
+        SpringSecurityUser springSecurityUser = userDetailsMapper.apply(user);
+        Map<String, String> claimMap = jwtClaimsProvider.getClaims(springSecurityUser);
         return tokenProvider.getToken(username, claimMap, null, null);
     }
 

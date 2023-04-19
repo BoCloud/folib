@@ -28,7 +28,11 @@ public enum DictTypeEnum {
     /**
      * 漏洞数据更新
      */
-    VULNERABILITY_DATA_UPDATE("vulnerability_data_update"),
+    VULNERABILITY_UPDATE("vulnerability_update"),
+    /**
+     * 自动晋级阻断
+     */
+    PROMOTION_BLOCK("promotion_block"),
     ;
 
     private String type;

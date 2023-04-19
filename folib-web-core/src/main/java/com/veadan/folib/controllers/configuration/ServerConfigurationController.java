@@ -146,7 +146,7 @@ public class ServerConfigurationController
     @ApiOperation(value = "Returns the base URL of the service.")
     @ApiResponses(value = { @ApiResponse(code = 200, message = "", response = String.class),
                             @ApiResponse(code = 404, message = "No value for baseUrl has been defined yet.") })
-    @PreAuthorize("hasAnyAuthority('CONFIGURATION_VIEW_BASE_URL', 'GLOBAL_CONFIGURATION_MANAGE')")
+    @PreAuthorize("hasAnyAuthority('CONFIGURATION_VIEW_BASE_URL', 'GLOBAL_CONFIGURATION_MANAGE', 'ARTIFACTS_VIEW')")
     @GetMapping(value = "/baseUrl",
                 produces = { MediaType.TEXT_PLAIN_VALUE,
                              MediaType.APPLICATION_JSON_VALUE })

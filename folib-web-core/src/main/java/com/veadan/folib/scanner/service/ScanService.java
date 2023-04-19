@@ -122,8 +122,9 @@ public class ScanService {
 
     public Dependency[] scanWorker(Artifact artifact, String filePath) {
         String parentPath = null;
+        XpEngine engine = null;
         try {
-            XpEngine engine = new XpEngine(getSettings());
+            engine = new XpEngine(getSettings());
             RepositoryPath repositoryPath = resolvePath(artifact);
             if (repositoryPath.getTarget() instanceof S3Path) {
                 S3Path s3RepositoryPath = (S3Path) repositoryPath.getTarget();
@@ -154,6 +155,9 @@ public class ScanService {
             //删除临时文件
             if (Objects.nonNull(parentPath)) {
                 FileUtil.del(new File(parentPath));
+            }
+            if (Objects.nonNull(engine)) {
+                engine.close();
             }
         }
     }
@@ -316,12 +320,12 @@ public class ScanService {
 
     @Async("asyncThreadPoolTaskExecutor")
     public void updateDB(String username) {
-        Dict existsDict = dictService.selectLatestOneDict(Dict.builder().dictType(DictTypeEnum.VULNERABILITY_DATA_UPDATE.getType()).build());
+        Dict existsDict = dictService.selectLatestOneDict(Dict.builder().dictType(DictTypeEnum.VULNERABILITY_UPDATE.getType()).build());
         String comment = "更新中";
         if (Objects.nonNull(existsDict) && comment.equals(existsDict.getComment())) {
             return;
         }
-        Dict dict = Dict.builder().dictType(DictTypeEnum.VULNERABILITY_DATA_UPDATE.getType()).dictKey(username).createTime(new Date()).comment(comment).build();
+        Dict dict = Dict.builder().dictType(DictTypeEnum.VULNERABILITY_UPDATE.getType()).dictKey(username).createTime(new Date()).comment(comment).build();
         dictService.saveDict(dict);
         try {
             Settings settings = getSettings();

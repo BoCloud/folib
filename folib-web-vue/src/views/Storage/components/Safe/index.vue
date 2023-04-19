@@ -72,7 +72,7 @@
           @click="vulnerabilityDrawerShow(1)"
         >
           <a-statistic
-            :value="vulnerabilityStatistics.whiteCount"
+            :value="vulnerabilityStatistics.whites.length"
             :value-style="{
               color: 'green',
               'text-decoration': 'underline',
@@ -95,7 +95,7 @@
           @click="vulnerabilityDrawerShow(2)"
         >
           <a-statistic
-            :value="vulnerabilityStatistics.blackCount"
+            :value="vulnerabilityStatistics.blacks.length"
             :value-style="{
               color: '#cf1322',
               'text-decoration': 'underline',
@@ -172,8 +172,8 @@ export default {
         downloadCount: 0,
         dependencyCount: 0,
         vulnerabilityCount: 0,
-        whiteCount: 0,
-        blackCount: 0,
+        whites: [],
+        blacks: [],
       },
       vulnerabilityDrawerVisible: false,
       vulnerabilityDrawerTitle: "",
@@ -193,26 +193,22 @@ export default {
         storageId: this.folibRepository.storageId,
         repositoryId: this.folibRepository.id,
       }).then((res) => {
-        this.vulnerabilityStatistics = res;
+        this.vulnerabilityStatistics = res
       });
     },
     vulnerabilityDrawerShow(type) {
-      getRepositoryResponseEntity(this.folibRepository.storageId, this.folibRepository.id).then(res => {
-        if (res.id === this.folibRepository.id) {
-          if (type === 1) {
-            this.vulnerabilityDrawerTitle = "白名单";
-            this.vulnerabilityDrawerData = res.vulnerabilityWhites
-          }
-          if (type === 2) {
-            this.vulnerabilityDrawerTitle = "黑名单";
-            this.vulnerabilityDrawerData = res.vulnerabilityBlacks
-          }
-          this.vulnerabilityDrawerVisible = true;
-        }
-      })
+      if (type === 1) {
+        this.vulnerabilityDrawerTitle = "白名单"
+        this.vulnerabilityDrawerData = this.vulnerabilityStatistics.whites
+      }
+      if (type === 2) {
+        this.vulnerabilityDrawerTitle = "黑名单"
+        this.vulnerabilityDrawerData = this.vulnerabilityStatistics.blacks
+      }
+      this.vulnerabilityDrawerVisible = true
     },
     vulnerabilityDrawerClose() {
-      this.vulnerabilityDrawerVisible = false;
+      this.vulnerabilityDrawerVisible = false
     },
   },
 };

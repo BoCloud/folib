@@ -11,6 +11,7 @@ import com.veadan.folib.domain.Artifact;
 import com.veadan.folib.domain.ArtifactEntity;
 import com.veadan.folib.domain.DirectoryListing;
 import com.veadan.folib.domain.FileContent;
+import com.veadan.folib.enums.RepositoryScopeEnum;
 import com.veadan.folib.gremlin.adapters.ArtifactAdapter;
 import com.veadan.folib.gremlin.adapters.EntityTraversalAdapter;
 import com.veadan.folib.gremlin.repositories.GremlinVertexRepository;
@@ -21,14 +22,19 @@ import com.veadan.folib.repositories.ArtifactRepository;
 import com.veadan.folib.schema2.ImageManifest;
 import com.veadan.folib.schema2.LayerManifest;
 import com.veadan.folib.services.AqlSearchService;
+import com.veadan.folib.services.ConfigurationManagementService;
 import com.veadan.folib.services.DirectoryListingService;
+import com.veadan.folib.storage.Storage;
 import com.veadan.folib.storage.repository.Repository;
 import com.veadan.folib.storage.search.SearchResult;
 import com.veadan.folib.storage.search.SearchResults;
 import com.veadan.folib.util.RepositoryPathUtil;
 import com.veadan.folib.utils.TreeUtil;
+import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.collections4.MapUtils;
 import org.apache.tinkerpop.gremlin.structure.Vertex;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -62,6 +68,10 @@ public class FqlSearchService extends GremlinVertexRepository<Artifact> implemen
     @Qualifier("browseRepositoryDirectoryListingService")
     private volatile DirectoryListingService directoryListingService;
 
+    @Inject
+    @Lazy
+    private ConfigurationManagementService configurationManagementService;
+
     @Override
     public SearchResults search(Selector<ArtifactEntity> selector) throws IOException {
 
@@ -83,6 +93,7 @@ public class FqlSearchService extends GremlinVertexRepository<Artifact> implemen
                                        String sortField,
                                        String sortOrder,
                                        List<String> repositoryIds,
+                                       Boolean openRepository,
                                        Integer limit, Integer page) throws IOException {
 
         Pageable pageable = null;
@@ -97,7 +108,31 @@ public class FqlSearchService extends GremlinVertexRepository<Artifact> implemen
         } else {
             pageable = PageRequest.of(page, limit).previous();
         }
-        Page<Artifact> artifacts = artifactRepository.findMatchingByIndex(pageable, regex, artifactName, metadataSearch, storageId, repositoryId, repositoryIds, beginDate, endDate, sortField, sortOrder);
+        List<String> storageIdAndRepositoryIdList = null;
+        if (Boolean.TRUE.equals(openRepository)) {
+            final List<Storage> storageList = new ArrayList<>(configurationManagementService.getConfiguration()
+                    .getStorages()
+                    .values());
+            storageIdAndRepositoryIdList = Lists.newArrayList();
+            if (CollectionUtils.isNotEmpty(storageList)) {
+                for (Storage storage : storageList) {
+                    if (MapUtils.isNotEmpty(storage.getRepositories())) {
+                        for (Repository repository : storage.getRepositories().values()) {
+                            if (RepositoryScopeEnum.OPEN.getType().equals(repository.getScope())) {
+                                storageIdAndRepositoryIdList.add(String.format("%s-%s", storage.getId(), repository.getId()));
+                            }
+                        }
+                    }
+                }
+            }
+            if (CollectionUtils.isEmpty(storageIdAndRepositoryIdList)) {
+                SearchResults result = new SearchResults();
+                result.setTotal(0);
+                result.setResults(Collections.emptySet());
+                return result;
+            }
+        }
+        Page<Artifact> artifacts = artifactRepository.findMatchingByIndex(pageable, regex, artifactName, metadataSearch, storageId, repositoryId, repositoryIds, storageIdAndRepositoryIdList, beginDate, endDate, sortField, sortOrder);
         List<Artifact> artifactEntityList = artifacts.getContent();
 
         SearchResults result = new SearchResults();
@@ -122,7 +157,7 @@ public class FqlSearchService extends GremlinVertexRepository<Artifact> implemen
 
             String createdTime = DateUtil.format(Date.from(artifact.getCreated().atZone(ZoneId.of("Asia/Shanghai")).toOffsetDateTime().toInstant()), df);
             r.setCreated(createdTime);
-            if(Objects.nonNull(artifact.getLastUsed())){
+            if (Objects.nonNull(artifact.getLastUsed())) {
                 String lastUpdatedTime = DateUtil.format(Date.from(artifact.getLastUsed().atZone(ZoneId.of("Asia/Shanghai")).toOffsetDateTime().toInstant()), df);
                 String lastUsedTime = DateUtil.format(Date.from(artifact.getLastUsed().atZone(ZoneId.of("Asia/Shanghai")).toOffsetDateTime().toInstant()), df);
                 r.setLastUpdated(lastUpdatedTime);
@@ -136,6 +171,7 @@ public class FqlSearchService extends GremlinVertexRepository<Artifact> implemen
             URL artifactResource = RepositoryFiles.readResourceUrl(repositoryPath);
             r.setUrl(artifactResource.toString());
             r.setLayout(repository.getLayout());
+            r.setSubLayout(repository.getSubLayout());
             String path = artifact.getArtifactCoordinates().buildPath();
             if ("Docker".equalsIgnoreCase(r.getLayout())) {
                 //docker
@@ -145,9 +181,9 @@ public class FqlSearchService extends GremlinVertexRepository<Artifact> implemen
                 String manifest = "manifest";
                 String artifactPath = repositoryPath.toAbsolutePath().toString();
                 if (artifactPath.contains("sha256") && !artifactPath.contains(blobs) && !artifactPath.contains(manifest) && !artifactPath.endsWith(".sha256")) {
-                    r.setSizeInBytes(getSearchDockerSize(storageId, repository.getId(), repositoryPath, path));
+                    r.setSizeInBytes(getSearchDockerSize(repository.getStorage().getId(), repository.getId(), repositoryPath, path));
                 }
-                r.setDownloadFilesUrl(getDockerDownLoadAppPackageUrls(storageId, repository.getId(), repositoryPath,
+                r.setDownloadFilesUrl(getDockerDownLoadAppPackageUrls(repository.getStorage().getId(), repository.getId(), repositoryPath,
                         path.substring(0, path.indexOf("/sha256")) + "/temp"));
             } else {
                 r.setArtifactName(path.substring(path.lastIndexOf("/") + 1));

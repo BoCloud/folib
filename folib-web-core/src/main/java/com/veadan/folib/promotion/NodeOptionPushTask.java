@@ -1,6 +1,7 @@
 package com.veadan.folib.promotion;
 
 import cn.hutool.extra.spring.SpringUtil;
+import com.veadan.folib.components.security.SecurityComponent;
 import com.veadan.folib.service.ProxyRepositoryConnectionPoolConfigurationService;
 import com.veadan.folib.storage.repository.Repository;
 import lombok.Data;
@@ -12,6 +13,7 @@ import org.apache.http.entity.mime.MultipartEntityBuilder;
 
 import javax.ws.rs.client.Client;
 import javax.ws.rs.client.Entity;
+import javax.ws.rs.client.Invocation;
 import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
@@ -44,6 +46,8 @@ public class NodeOptionPushTask implements Callable<String> {
 
     private PromotionUtil promotionUtil;
 
+    private SecurityComponent securityComponent;
+
     public NodeOptionPushTask() {
     }
 
@@ -53,6 +57,7 @@ public class NodeOptionPushTask implements Callable<String> {
         this.file = file;
         this.clientPool = SpringUtil.getBean(ProxyRepositoryConnectionPoolConfigurationService.class);
         this.promotionUtil = SpringUtil.getBean(PromotionUtil.class);
+        this.securityComponent = SpringUtil.getBean(SecurityComponent.class);
     }
 
     @Override
@@ -64,15 +69,17 @@ public class NodeOptionPushTask implements Callable<String> {
         try (InputStream inputStream = Files.newInputStream(file.toPath())) {
             client = clientPool.getRestClient();
             WebTarget target = client.target(getURl());
-            MultipartEntityBuilder builder = MultipartEntityBuilder.create()
+            MultipartEntityBuilder multipartEntityBuilder = MultipartEntityBuilder.create()
                     .setMode(HttpMultipartMode.BROWSER_COMPATIBLE);
 
-            builder.setCharset(Charset.forName("UTF-8"));
-            builder.addTextBody("repository", "[]");
+            multipartEntityBuilder.setCharset(Charset.forName("UTF-8"));
+            multipartEntityBuilder.addTextBody("repository", "[]");
             //如果以inputStream形式上传文件，接收文件上传的接口可能会限制content-type为二进制：ContentType.DEFAULT_BINARY，否则为ContentType.MULTIPART_FORM_DATA
-            builder.addBinaryBody("file", inputStream, ContentType.DEFAULT_BINARY, file.getName());
-            HttpEntity httpEntity = builder.build();
-            response = target.request().put(Entity.entity(httpEntity, MediaType.APPLICATION_JSON));
+            multipartEntityBuilder.addBinaryBody("file", inputStream, ContentType.DEFAULT_BINARY, file.getName());
+            HttpEntity httpEntity = multipartEntityBuilder.build();
+            Invocation.Builder builder = target.request();
+            securityComponent.securityTokenHeader(builder);
+            response = builder.put(Entity.entity(httpEntity, MediaType.APPLICATION_JSON));
             if (response.getStatus() > 210) {
                 log.error("Push artifact error {}", getURl());
                 throw new RuntimeException("Failed with HTTP error code : " + response.getStatus());

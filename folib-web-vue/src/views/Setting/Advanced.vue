@@ -7,7 +7,7 @@
             <a-card :bordered="false" class="header-solid">
               <template #title>
                 <h6>构建制品索引</h6>
-                <p>该功能用于构建制品索引数据，请谨慎使用
+                <p>该功能用于从 JFrog Artifactory、Sonatype Nexus 迁移制品数据
                 </p>
               </template>
               <a-descriptions title="最近一次构建" :column="1" class="mb-20">
@@ -370,7 +370,7 @@ export default {
         if (valid) {
           vulnerabilitiesDataUpdate().then(res => {
             setTimeout(() => {
-              this.getSingleDict('vulnerability_data_update')
+              this.getSingleDict('vulnerability_update')
             }, 100)
             this.message("success", "请稍等，漏洞数据更新任务已启动，正在异步执行")
           }).catch((err) => {
@@ -434,7 +434,7 @@ export default {
       if (activeTab === 1) {
         this.buildGraphIndexResetForm()
       } else if (activeTab === 2) {
-        this.getSingleDict('vulnerability_data_update')
+        this.getSingleDict('vulnerability_update')
       } else if (activeTab === 3) {
         this.getJanusGraphInfo()
       }

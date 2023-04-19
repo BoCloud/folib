@@ -12,14 +12,14 @@
 				功能管理
 			</a-menu-item>
 			<a-menu-item>
-				<router-link to="/storage/list">
+				<router-link :to="userInfo.token?'/storage/list':'/anonymous/storages'">
 					<span class="icon">
 						<a-icon type="appstore" theme="filled" class="m-0" />
 					</span>
 					<span class="label">制品仓库</span>
 				</router-link>
 			</a-menu-item>
-			<a-menu-item>
+			<a-menu-item v-if="userInfo.token">
 				<router-link to="/storage/scanner">
 					<span class="icon">
 						<a-icon type="read" theme="filled" class="m-0" />

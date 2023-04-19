@@ -1004,7 +1004,16 @@ export default {
     FolibKanbanBoard,
     FolibKanbanTask,
   },
-  props: ['navbarFixed'],
+  props: {
+    navbarFixed: {
+			type: Boolean,
+			default: true,
+		},
+    anonymous: {
+			type: Boolean,
+			default: false,
+		},
+  },
   data() {
     const checkStorageId = (rule, value, callback) => {
       if (value) {
@@ -1426,13 +1435,15 @@ export default {
       this.getStorage(this.currentStorage.id)
     },
     getStorage(id) {
-      getLibraryFilter(id).then(response => {
-        this.currentStorage.id = response.id
-        this.currentStorage.basedir = response.basedir
-        this.currentStorage.admin = response.admin
-        this.currentStorage.users = response.users
-        this.repositories = response.repositories
-      })
+      if (id) {
+        getLibraryFilter(id).then(response => {
+          this.currentStorage.id = response.id
+          this.currentStorage.basedir = response.basedir
+          this.currentStorage.admin = response.admin
+          this.currentStorage.users = response.users
+          this.repositories = response.repositories
+        })
+      }
     },
     cacheStorage() {
       let cache = storage.get("libView_repository");

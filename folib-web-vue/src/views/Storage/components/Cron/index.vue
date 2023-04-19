@@ -235,6 +235,12 @@ export default {
       }
       this.crontasksListHandle()
     },
+    oneTimeExecutionChange(value, item) {
+      if (value && item.immediateExecution) {
+        item.immediateExecution = false
+      }
+      this.$forceUpdate()
+    },
     immediateExecutionChange(value, item) {
       if (value && item.oneTimeExecution) {
         item.oneTimeExecution = false

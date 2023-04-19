@@ -17,6 +17,7 @@ import com.veadan.folib.cloud.storage.s3fs.S3FileSystem;
 import com.veadan.folib.cloud.storage.s3fs.S3Iterator;
 import com.veadan.folib.cloud.storage.s3fs.S3Path;
 import com.veadan.folib.cluster.SyncMetadataEnum;
+import com.veadan.folib.components.artifact.ArtifactComponent;
 import com.veadan.folib.configuration.ConfigurationUtils;
 import com.veadan.folib.configuration.MutableMetadataConfiguration;
 import com.veadan.folib.controllers.ResponseMessage;
@@ -51,7 +52,6 @@ import com.veadan.folib.users.domain.SystemRole;
 import com.veadan.folib.users.userdetails.SpringSecurityUser;
 import com.veadan.folib.util.CustomDateUtils;
 import com.veadan.folib.util.FileSizeConvertUtils;
-import com.veadan.folib.utils.ArtifactUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -131,6 +131,9 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
     @Lazy
     private DictService dictService;
 
+    @Inject
+    private ArtifactComponent artifactComponent;
+
     @Override
     public void exportExcel(String vulnerabilityUuid, String storageId, String repositoryId, HttpServletResponse response) throws IOException {
         List<String> storageIdAndRepositoryIdList = getStorageIdAndRepositoryId(storageId, repositoryId);
@@ -166,7 +169,7 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
                             Repository repository = configurationManagementService.getConfiguration().getRepository(artifact.getStorageId(), artifact.getRepositoryId());
                             if (Objects.nonNull(repository) && "Docker".equalsIgnoreCase(repository.getLayout())) {
                                 //docker
-                                artifactVo.setName(ArtifactUtils.getDockerImage(artifact.getArtifactPath()));
+                                artifactVo.setName(artifactComponent.getDockerImage(artifact.getArtifactPath()));
                             }
                         }
                         return artifactVo;
@@ -485,11 +488,11 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
 
                 SearchResults dockerResult = fqlSearchService.artifactQuery(false,
                         artifactMetaData.getArtifactPath(), null, storageId,
-                        dockerRepo, null, null, null, null, null, 1, 1);
+                        dockerRepo, null, null, null, null, null, null, 1, 1);
                 if (dockerResult.getTotal() == 0) {
                     SearchResults rawResult = fqlSearchService.artifactQuery(false,
                             artifactMetaData.getArtifactPath(), null, storageId,
-                            rawRepo, null, null, null, null, null, 1, 1);
+                            rawRepo, null, null, null, null, null,  null,1, 1);
                     if (rawResult.getTotal() == 1) {
                         artifactPathTemp = Lists.newArrayList(rawResult.getResults()).get(0).getArtifactPath();
                         repoTemp = rawRepo;

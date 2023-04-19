@@ -116,14 +116,14 @@ public class ArtifactRepository extends GremlinVertexRepository<Artifact> {
                                               String storageId,
                                               String repositoryId,
                                               List<String> repositoryIds,
+                                              List<String> storageIdAndRepositoryIdList,
                                               String beginDate,
                                               String endDate,
                                               String sortField,
                                               String sortOrder) {
         com.veadan.folib.storage.repository.Repository repository = null;
-        List<String> storageIdAndRepositoryIdList = null;
         boolean isGroupRepository = false;
-        if (StringUtils.isNotBlank(storageId) && StringUtils.isNotBlank(repositoryId)) {
+        if (StringUtils.isNotBlank(storageId) && StringUtils.isNotBlank(repositoryId) && CollectionUtils.isEmpty(storageIdAndRepositoryIdList)) {
             repository = configurationManager.getRepository(storageId, repositoryId);
             if (repository == null) {
                 return new PageImpl<>(Collections.emptyList(), pagination, 0);
@@ -500,6 +500,10 @@ public class ArtifactRepository extends GremlinVertexRepository<Artifact> {
         Artifact artifact = t.tryNext().orElse(null);
         log.debug("=====>>>>>findOneArtifact耗时：{} 毫秒", System.currentTimeMillis() - startTime);
         return artifact;
+    }
+
+    public List<Artifact> findPromotionMatchingByIndex(List<String> safeLevelList, List<String> promotionStatusList) {
+        return g().V().hasLabel(Vertices.ARTIFACT).has(Properties.ARTIFACT_FILE_EXISTS, true).has(Properties.SAFE_LEVEL, P.within(safeLevelList)).has(Properties.PROMOTION, P.within(promotionStatusList)).map(artifactAdapter.fold()).toList();
     }
 
 }

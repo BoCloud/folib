@@ -12,7 +12,7 @@ import java.util.concurrent.locks.Lock;
 @Slf4j
 public class StripedLockUtils {
 
-    private static Striped<Lock> locks = Striped.lazyWeakLock(1024);
+    private static Striped<Lock> locks = Striped.lock(1024);
 
     public static Lock lock(String lockKey) {
         return locks.get(lockKey);

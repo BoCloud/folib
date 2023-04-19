@@ -56,4 +56,10 @@ public class ArtifactDispatch {
      * 策略
      */
     private String policy;
+
+    /**
+     * 记录晋级状态
+     */
+    private Boolean recordStatus;
+
 }
