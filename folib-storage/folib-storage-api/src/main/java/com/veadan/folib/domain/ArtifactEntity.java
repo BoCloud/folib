@@ -144,6 +144,10 @@ public class ArtifactEntity
      * 晋级节点
      */
     private Set<String> promotionNodes;
+    /**
+     * 状态 true 可用 false 禁用
+     */
+    private Boolean enabled;
 
     public ArtifactEntity() {
     }
@@ -204,6 +208,9 @@ public class ArtifactEntity
         }
         if (Objects.isNull(this.suppressedVulnerabilitiesCount)) {
             this.suppressedVulnerabilitiesCount = 0;
+        }
+        if (Objects.isNull(this.enabled)) {
+            this.enabled = true;
         }
     }
 
@@ -571,5 +578,15 @@ public class ArtifactEntity
     @Override
     public void setPromotionNodes(Set<String> promotionNodes) {
         this.promotionNodes = promotionNodes;
+    }
+
+    @Override
+    public Boolean getEnabled() {
+        return enabled;
+    }
+
+    @Override
+    public void setEnabled(Boolean enabled) {
+        this.enabled = enabled;
     }
 }

@@ -88,7 +88,8 @@ public class ArtifactAdapter implements VertexEntityTraversalAdapter<Artifact> {
                 "vulnerabilitySet",
                 "artifactFileExists",
                 "promotion",
-                "promotionNodes")
+                "promotionNodes",
+                "enabled")
                 .by(__.id())
                 .by(__.enrichPropertyValue("uuid"))
                 .by(__.enrichPropertyValue("storageId"))
@@ -135,6 +136,7 @@ public class ArtifactAdapter implements VertexEntityTraversalAdapter<Artifact> {
                 .by(__.enrichPropertyValue("artifactFileExists"))
                 .by(__.enrichPropertyValue("promotion"))
                 .by(__.enrichPropertyValues("promotionNodes"))
+                .by(__.enrichPropertyValue("enabled"))
                 .map(this::map);
     }
 
@@ -325,6 +327,7 @@ public class ArtifactAdapter implements VertexEntityTraversalAdapter<Artifact> {
         result.setPromotionNodes(extractPropertyList(String.class, t.get().get("promotionNodes")).stream()
                 .filter(e -> !e.trim().isBlank())
                 .collect(Collectors.toSet()));
+        result.setEnabled(extractObject(Boolean.class, t.get().get("enabled")));
         return result;
     }
 
@@ -481,6 +484,9 @@ public class ArtifactAdapter implements VertexEntityTraversalAdapter<Artifact> {
         if (CollectionUtils.isNotEmpty(entity.getPromotionNodes())) {
             t = t.sideEffect(__.properties("promotionNodes").drop());
             t = t.property("promotionNodes", entity.getPromotionNodes());
+        }
+        if (Objects.nonNull(entity.getEnabled())) {
+            t = t.property(single, "enabled", entity.getEnabled());
         }
         return t;
     }

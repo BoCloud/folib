@@ -140,4 +140,7 @@ public interface Artifact extends DomainObject {
 
     void setPromotionNodes(Set<String> promotionNodes);
 
+    Boolean getEnabled();
+
+    void setEnabled(Boolean enabled);
 }
