@@ -157,6 +157,7 @@ public class ScanService {
                 FileUtil.del(new File(parentPath));
             }
             if (Objects.nonNull(engine)) {
+                engine.getSettings().cleanup(true);
                 engine.close();
             }
         }
