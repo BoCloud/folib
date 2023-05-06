@@ -119,7 +119,7 @@ public class ArtifactManagementService
         try (final RepositoryStreamSupport.RepositoryOutputStream aos = artifactResolutionService.getOutputStream(repositoryPath))
         {
             result = writeArtifact(repositoryPath, is, aos);
-            logger.debug("Stored [{}] bytes for [{}].", result, repositoryPath);
+            logger.info("Stored [{}] bytes for [{}].", result, repositoryPath);
             aos.flush();
         }
         catch (IOException e)
@@ -130,7 +130,7 @@ public class ArtifactManagementService
         {
             throw new ArtifactStorageException(e);
         }
-        logger.debug("doStore take time：{} ms" , System.currentTimeMillis() - startTime);
+        logger.info("DoStore {} take time：{} ms" , repositoryPath.toString(), System.currentTimeMillis() - startTime);
 
         return result;
     }
@@ -141,7 +141,7 @@ public class ArtifactManagementService
         try (final RepositoryStreamSupport.RepositoryStoreIndexInputStream ins = artifactResolutionService.getStoreIndexInputStream(repositoryPath))
         {
             writeArtifactIndex(repositoryPath, ins);
-            logger.debug("Stored index for [{}].", repositoryPath);
+            logger.info("Stored index for [{}].", repositoryPath);
             ins.commitStoreIndex();
         }
         catch (IOException e)
@@ -178,7 +178,7 @@ public class ArtifactManagementService
 
         long startTime = System.currentTimeMillis();
         long totalAmountOfBytes = IOUtils.copy(is, os);
-        logger.debug("IOUtils copy {} ,take time：{} ms" , repositoryPath.toString(), System.currentTimeMillis() - startTime);
+        logger.info("IOUtils copy {} ,take time：{} ms" , repositoryPath.toString(), System.currentTimeMillis() - startTime);
 
         URI repositoryPathId = repositoryPath.toUri();
         Map<String, String> digestMap = aos.getDigestMap(repository.getLayout());
@@ -259,7 +259,7 @@ public class ArtifactManagementService
     private void validateUploadedChecksumAgainstCache(byte[] checksum,
                                                       URI artifactPathId)
     {
-        logger.debug("Received checksum: {}", new String(checksum, StandardCharsets.UTF_8));
+        logger.info("Received checksum: {}", new String(checksum, StandardCharsets.UTF_8));
 
         String artifactPath = artifactPathId.toString();
         String artifactBasePath = artifactPath.substring(0, artifactPath.lastIndexOf('.'));
@@ -299,7 +299,7 @@ public class ArtifactManagementService
         Set<String> matched = matchingMap.get(Boolean.TRUE);
         Set<String> unmatched = matchingMap.get(Boolean.FALSE);
 
-        logger.debug("Artifact checksum matchings: artifact-[{}]; ext-[{}]; matched-[{}];" +
+        logger.info("Artifact checksum matchings: artifact-[{}]; ext-[{}]; matched-[{}];" +
                      " unmatched-[{}]; checksum-[{}]",
                      artifactBasePath,
                      checksumExtension,

@@ -1,6 +1,7 @@
 package com.veadan.folib.controllers;
 
 import com.veadan.folib.entity.Dict;
+import com.veadan.folib.forms.dict.DictForm;
 import com.veadan.folib.scanner.common.exception.BusinessException;
 import com.veadan.folib.services.DictService;
 import io.swagger.annotations.Api;
@@ -40,7 +41,7 @@ public class DictController extends BaseController {
     @ApiOperation(value = "更新单个字典信息")
     @ApiResponses(value = {@ApiResponse(code = 200, message = "OK")})
     @PostMapping(value = "/single")
-    public ResponseEntity<String> updateDict(@RequestBody Dict dict) {
+    public ResponseEntity<String> updateDict(@RequestBody DictForm dict) {
         if (Objects.isNull(dict.getId()) && StringUtils.isBlank(dict.getDictKey())) {
             throw new BusinessException("参数错误");
         }

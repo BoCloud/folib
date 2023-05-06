@@ -70,12 +70,12 @@ public class ArtifactControllerHelper
             {
                 if (ranges.size() == 1)
                 {
-                    logger.debug("Received request for a partial download with a single range.");
+                    logger.info("Received request for a partial download with a single range.");
                     handlePartialDownloadWithSingleRange(is, ranges.get(0), response);
                 }
                 else
                 {
-                    logger.debug("Received request for a partial download with multiple ranges.");
+                    logger.info("Received request for a partial download with multiple ranges.");
                     handlePartialDownloadWithMultipleRanges(is, ranges, response);
                 }
             }

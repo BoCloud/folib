@@ -49,7 +49,7 @@ public class DownloadRemoteMavenIndexCronJob
         String storageId = config.getProperty(PROPERTY_STORAGE_ID);
         String repositoryId = config.getProperty(PROPERTY_REPOSITORY_ID);
 
-        logger.debug("Executing DownloadRemoteMavenIndexCronJob for storageId = [{}], repositoryId = [{}]",
+        logger.info("Executing DownloadRemoteMavenIndexCronJob for storageId = [{}], repositoryId = [{}]",
                      storageId, repositoryId);
 
         Repository repository = configurationManager.getRepository(storageId, repositoryId);

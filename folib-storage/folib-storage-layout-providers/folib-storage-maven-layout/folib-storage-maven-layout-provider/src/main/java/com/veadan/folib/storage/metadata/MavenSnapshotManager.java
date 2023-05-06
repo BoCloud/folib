@@ -57,7 +57,7 @@ public class MavenSnapshotManager
             return;
         }
         
-        logger.debug("Removal of timestamped Maven snapshot artifact {} in '{}:{}'.",
+        logger.info("Removal of timestamped Maven snapshot artifact {} in '{}:{}'.",
                      basePath, repository.getStorage().getId(), repository.getId());
 
         Pair<String, String> artifactGroup = MavenArtifactUtils.getDirectoryGA(basePath);
@@ -78,7 +78,7 @@ public class MavenSnapshotManager
                 continue;
             }
 
-            logger.debug("Generate snapshot versioning metadata for {}.", versionDirectoryPath);
+            logger.info("Generate snapshot versioning metadata for {}.", versionDirectoryPath);
 
             mavenMetadataManager.generateLastSnapshotVersioningMetadata(artifactGroupId,
                                                                     artifactId,

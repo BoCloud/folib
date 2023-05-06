@@ -47,7 +47,7 @@ public class EnvironmentInfoController
     @GetMapping(produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity getEnvironmentInfo()
     {
-        logger.debug("Listing of all environment variables, system properties and JVM arguments");
+        logger.info("Listing of all environment variables, system properties and JVM arguments");
 
         Map<String, List<?>> propertiesMap = new LinkedHashMap<>();
         propertiesMap.put("environment", getEnvironmentVariables());

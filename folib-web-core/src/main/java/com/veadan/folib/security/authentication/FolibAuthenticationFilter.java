@@ -45,10 +45,10 @@ public class FolibAuthenticationFilter
         Authentication authentication = authenticationSuppliers.supply(request);
         if (authentication == null) {
             authentication = SecurityContextHolder.getContext().getAuthentication();
-            logger.debug("Authentication not supplied by any authentication supplier, using [{}] context authentication.",
+            logger.info("Authentication not supplied by any authentication supplier, using [{}] context authentication.",
                     Optional.ofNullable(authentication).map(a -> a.getClass().getSimpleName()).orElse("empty"));
         } else {
-            logger.debug("Supplied [{}] authentication.", authentication.getClass().getSimpleName());
+            logger.info("Supplied [{}] authentication.", authentication.getClass().getSimpleName());
         }
 
         authentication = provideAuthentication(authentication);
@@ -62,13 +62,13 @@ public class FolibAuthenticationFilter
                 .map(a -> a.getClass().getSimpleName())
                 .orElse("empty");
         if (authentication == null || authentication.isAuthenticated()) {
-            logger.debug("Authentication {} already authenticated or empty, skip providers.", authenticationName);
+            logger.info("Authentication {} already authenticated or empty, skip providers.", authenticationName);
 
             return authentication;
         }
 
         Authentication authResult = authenticationManager.authenticate(authentication);
-        logger.debug("Authenticated with {}", authenticationName);
+        logger.info("Authenticated with {}", authenticationName);
 
         return authResult;
     }

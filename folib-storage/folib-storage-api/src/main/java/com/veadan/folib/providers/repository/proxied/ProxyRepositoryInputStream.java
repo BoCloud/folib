@@ -162,7 +162,7 @@ public class ProxyRepositoryInputStream extends FilterInputStream
         ArtifactCopyContext ctx = artifactCopyContext.get();
         ctx.setAttempts(ctx.getAttempts() + 1);
 
-        logger.debug("Retrying remote stream reading because of [{}]... Attempt number = [{}], Current Offset = [{}] Duration Time = [{}]",
+        logger.info("Retrying remote stream reading because of [{}]... Attempt number = [{}], Current Offset = [{}] Duration Time = [{}]",
                      lastException, ctx.getAttempts(), ctx.getCurrentOffset(),
                      ctx.getStopWatch());
 

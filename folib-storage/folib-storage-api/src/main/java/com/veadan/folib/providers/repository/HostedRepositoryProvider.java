@@ -64,7 +64,7 @@ public class HostedRepositoryProvider extends AbstractRepositoryProvider
         }
         catch (ArtifactNotFoundException e) 
         {
-            logger.debug("The path [{}] does not exist!\n*\t[{}]", repositoryPath, e.getMessage());
+            logger.info("The path [{}] does not exist!\n*\t[{}]", repositoryPath, e.getMessage());
 
             return null;
         }
@@ -98,7 +98,7 @@ public class HostedRepositoryProvider extends AbstractRepositoryProvider
         long startTime = System.currentTimeMillis();
         List<Artifact> searchResult = artifactIdGroupRepository.findArtifactsGremlin(storageId, repositoryId, predicate.getArtifactId(),
                                                                               predicate.getCoordinateValues(), paginator.getSkip(), paginator.getLimit(), paginator.getUseLimit());
-        logger.info("findArtifacts take time {} ms" ,System.currentTimeMillis() - startTime);
+        logger.info("FindArtifacts {} take time {} ms" , predicate.getArtifactId(), System.currentTimeMillis() - startTime);
         for (Artifact artifactEntry : searchResult)
         {
             
@@ -261,15 +261,15 @@ public class HostedRepositoryProvider extends AbstractRepositoryProvider
     protected RepositoryPath fetchPath(RepositoryPath repositoryPath) 
            throws IOException
     {
-        logger.debug(" -> Checking local cache for {} ...", repositoryPath);
+        logger.info(" -> Checking local cache for {} ...", repositoryPath);
         if (artifactNotExists(repositoryPath))
         {
-            logger.debug("The artifact {} was not found in the local cache", repositoryPath);
+            logger.info("The artifact {} was not found in the local cache", repositoryPath);
 
             return null;
         }
         
-        logger.debug("The artifact {} was found in the local cache", repositoryPath);
+        logger.info("The artifact {} was found in the local cache", repositoryPath);
         return repositoryPath;
     }
 

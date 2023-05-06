@@ -250,6 +250,11 @@
             <artifactId>hutool-all</artifactId>
             <version>5.7.20</version>
         </dependency>
+        <dependency>
+            <groupId>org.redisson</groupId>
+            <artifactId>redisson</artifactId>
+            <version>3.11.5</version>
+        </dependency>
     </dependencies>
 
 </project>

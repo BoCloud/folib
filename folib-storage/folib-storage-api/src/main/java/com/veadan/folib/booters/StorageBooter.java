@@ -88,7 +88,7 @@ public class StorageBooter
         }
         else
         {
-            logger.debug("Failed to initialize the repositories. Another JVM may have already done this.");
+            logger.info("Failed to initialize the repositories. Another JVM may have already done this.");
         }
     }
 

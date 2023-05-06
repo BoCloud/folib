@@ -44,7 +44,7 @@ public class ArtifactLocationGenerateChecksumOperation
             });
             if (!containsMetadata)
             {
-                logger.debug("Target path [{}] does not contains any metadata, so we don't need to execute any operations.",
+                logger.info("Target path [{}] does not contains any metadata, so we don't need to execute any operations.",
                              path);
                 return;
             }

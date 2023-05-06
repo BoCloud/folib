@@ -203,7 +203,7 @@ public class ClusterSyncServiceImpl implements ClusterSyncService {
     @Async("asyncClusterDispatchThreadPoolExecutor")
     public void syncClusterDispatch(SyncClusterDispatchDto syncClusterDispatchDto) {
         if (!isNeedClusterSync()) {
-            logger.debug("cluster mode not opened");
+            logger.info("cluster mode not opened");
             return;
         }
         logger.info("folib sync cluster dispatch job");
@@ -317,7 +317,7 @@ public class ClusterSyncServiceImpl implements ClusterSyncService {
     @Async("asyncConfigThreadPoolExecutor")
     public void syncUnionRepositoryConfiguration(SyncUnionRepositoryDto syncUnionRepositoryDto) {
         if (!isNeedClusterSync()) {
-            logger.debug("cluster mode not opened");
+            logger.info("cluster mode not opened");
             return;
         }
         logger.info("folib sync unionRepository job");
@@ -553,11 +553,11 @@ public class ClusterSyncServiceImpl implements ClusterSyncService {
     public Boolean isNeedClusterSync() {
 
         if (!clusterProperties.getOpenFlag()) {
-            logger.debug("cluster mode closed");
+            logger.info("cluster mode closed");
             return false;
         }
         if (getHostNodeList().size() == 0) {
-            logger.debug("cluster mode host node parameter error");
+            logger.info("cluster mode host node parameter error");
             return false;
         }
         return true;

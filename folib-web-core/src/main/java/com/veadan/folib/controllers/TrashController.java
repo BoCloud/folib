@@ -59,7 +59,7 @@ public class TrashController
         {
             repositoryManagementService.deleteTrash(storageId, repositoryId);
 
-            logger.debug("Deleted trash for repository {}.", repositoryId);
+            logger.info("Deleted trash for repository {}.", repositoryId);
         }
         catch (ArtifactStorageException e)
         {
@@ -89,7 +89,7 @@ public class TrashController
         {
             repositoryManagementService.deleteTrash();
 
-            logger.debug("Deleted trash for all repositories.");
+            logger.info("Deleted trash for all repositories.");
         }
         catch (ArtifactStorageException e)
         {
@@ -133,7 +133,7 @@ public class TrashController
         {
             repositoryManagementService.undelete(repositoryPath);
 
-            logger.debug("Undeleted trash for path {} under repository {}:{}.", path, storageId, repositoryId);
+            logger.info("Undeleted trash for path {} under repository {}:{}.", path, storageId, repositoryId);
         }
         catch (ArtifactStorageException e)
         {
@@ -171,7 +171,7 @@ public class TrashController
         {
             repositoryManagementService.undeleteTrash(storageId, repositoryId);
 
-            logger.debug("Undeleted trash for repository {}.", repositoryId);
+            logger.info("Undeleted trash for repository {}.", repositoryId);
         }
         catch (ArtifactStorageException e)
         {
@@ -198,7 +198,7 @@ public class TrashController
         {
             repositoryManagementService.undeleteTrash();
 
-            logger.debug("Undeleted trash for all repositories.");
+            logger.info("Undeleted trash for all repositories.");
         }
         catch (ArtifactStorageException e)
         {

@@ -31,7 +31,7 @@ public class FileUploadProgressListener implements ProgressListener {
         int i = percent % 5;
         String uuid = request.getParameter("uuid");
         String fileName = request.getParameter("fileName");
-        log.debug("uuid：{}，fileName：{}，percent：{}", uuid, fileName, percent);
+        log.info("uuid：{}，fileName：{}，percent：{}", uuid, fileName, percent);
         if (StringUtils.isNotBlank(uuid) && StringUtils.isNotBlank(fileName) && i == 0) {
             updateProcess(percent, uuid, fileName);
         }

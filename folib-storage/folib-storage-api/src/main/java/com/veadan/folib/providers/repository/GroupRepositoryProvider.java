@@ -120,7 +120,7 @@ public class GroupRepositoryProvider
                 {
                     continue;
                 }
-                logger.debug("Located artifact: [{}]", subRepositoryPath);
+                logger.info("Located artifact: [{}]", subRepositoryPath);
             } catch (Exception ex){
                 logger.error("group repository resolvePathTraversal artifact: [{}] error：[{}]", subRepositoryPath, ExceptionUtils.getStackTrace(ex));
             }
@@ -141,7 +141,7 @@ public class GroupRepositoryProvider
 
         if (!isInService)
         {
-            logger.debug("- Repository [{}] is not in service, skipping...",
+            logger.info("- Repository [{}] is not in service, skipping...",
                          subRepository.getStorageIdAndRepositoryId());
 
             // early break to avoid wasting time on looping through the routing rules.
@@ -152,7 +152,7 @@ public class GroupRepositoryProvider
 
         if (!isRoutable)
         {
-            logger.debug("- Repository [{}] is denied by a routing rule, skipping...",
+            logger.info("- Repository [{}] is denied by a routing rule, skipping...",
                          subRepository.getStorageIdAndRepositoryId());
         }
 
@@ -205,7 +205,7 @@ public class GroupRepositoryProvider
                              RepositorySearchRequest predicate,
                              Paginator paginator)
     {
-        logger.debug("Search in [{}]:[{}] ...", storageId, repositoryId);
+        logger.info("Search in [{}]:[{}] ...", storageId, repositoryId);
 
         Map<ArtifactCoordinates, Path> resultMap = new LinkedHashMap<>();
 
@@ -292,7 +292,7 @@ public class GroupRepositoryProvider
                       String repositoryId,
                       RepositorySearchRequest predicate)
     {
-        logger.debug("Count in [{}]:[{}] ...", storageId, repositoryId);
+        logger.info("Count in [{}]:[{}] ...", storageId, repositoryId);
 
         Storage storage = getConfiguration().getStorage(storageId);
         Repository groupRepository = storage.getRepository(repositoryId);

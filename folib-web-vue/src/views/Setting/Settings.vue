@@ -193,19 +193,15 @@
                 <a-row :gutter="[24]">
                   <a-col :span="24" :lg="16">
                     <a-form-item class="tags-field mb-10" label="Origins" :colon="false">
-                      <a-select mode="tags" :defaultValue="serverSettings.corsConfigurationForm.allowedOrigins[0]"
+                      <a-select mode="tags" v-model="serverSettings.corsConfigurationForm.allowedOrigins" @change="allowedOriginsChange"
                         style="width: 100%" placeholder="例如：*">
-                        <a-select-option v-for="(tag, index) in serverSettings.corsConfigurationForm.allowedOrigins"
-                          :key="index" :value="tag">
-                          {{ tag }}
-                        </a-select-option>
                       </a-select>
                     </a-form-item>
                   </a-col>
                   <a-col :span="24" :lg="8">
                     <a-form-item class="mb-10" label="开启所有" :colon="false">
                       <span class="mr-15">开启</span>
-                      <a-switch v-model="serverSettings.corsConfigurationForm.corsAllowAll" />
+                      <a-switch v-model="serverSettings.corsConfigurationForm.corsAllowAll" @change="corsAllowAllChange" />
                     </a-form-item>
                   </a-col>
                 </a-row>
@@ -1223,6 +1219,12 @@ export default {
     getServerSettings() {
       getServerSettings().then(res => {
         this.serverSettings = res
+        let allowedOrigins = this.serverSettings.corsConfigurationForm.allowedOrigins
+        if (allowedOrigins && allowedOrigins.length === 1 && allowedOrigins[0] === "*") {
+          this.serverSettings.corsConfigurationForm.corsAllowAll = true
+        } else {
+          this.serverSettings.corsConfigurationForm.corsAllowAll = false
+        }
       })
     },
     saveServerSettings() {
@@ -1686,6 +1688,19 @@ export default {
         this.getSecurityPolicy()
       })
     },
+    allowedOriginsChange() {
+      let allowedOrigins = this.serverSettings.corsConfigurationForm.allowedOrigins
+      if (allowedOrigins && allowedOrigins.length === 1 && allowedOrigins[0] === "*") {
+        this.serverSettings.corsConfigurationForm.corsAllowAll = true
+      } else {
+        this.serverSettings.corsConfigurationForm.corsAllowAll = false
+      }
+    },
+    corsAllowAllChange(val) {
+      if (val) {
+        this.serverSettings.corsConfigurationForm.allowedOrigins = ['*']
+      }
+    }
   },
 };
 </script>

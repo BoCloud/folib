@@ -150,14 +150,16 @@ public class SpringSecurityUser
 
     @Override
     public boolean equals(Object o) {
-        if (this == o)
+        if (this == o) {
             return true;
-        if (o == null || getClass() != o.getClass())
+        }
+        if (o == null || getClass() != o.getClass()) {
             return false;
+        }
         SpringSecurityUser user = (SpringSecurityUser) o;
         return enabled.equals(user.enabled) &&
                 Objects.equal(username, user.username) &&
-                Objects.equal(password, user.password) &&
+//                Objects.equal(password, user.password) &&
                 Objects.equal(roles, user.roles) &&
                 Objects.equal(url, user.url) &&
                 Objects.equal(securityKey, user.securityKey) &&
@@ -166,13 +168,13 @@ public class SpringSecurityUser
 
     @Override
     public int hashCode() {
-        String[] hashCodeTargets = new String[roles.size() + 6];
+        String[] hashCodeTargets = new String[roles.size() + 5];
         int i = 0;
         for (Role role : roles) {
             hashCodeTargets[i++] = role.getName();
         }
         hashCodeTargets[i++] = String.valueOf(username);
-        hashCodeTargets[i++] = String.valueOf(password);
+//        hashCodeTargets[i++] = String.valueOf(password);
         hashCodeTargets[i++] = String.valueOf(enabled);
         hashCodeTargets[i++] = String.valueOf(securityKey);
         hashCodeTargets[i++] = String.valueOf(url);

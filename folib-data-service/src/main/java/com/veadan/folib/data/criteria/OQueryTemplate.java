@@ -44,7 +44,7 @@ public class OQueryTemplate<R, T extends DomainObject> implements QueryTemplate<
 
         Map<String, Object> parameterMap = exposeParameterMap(s.getPredicate());
 
-        logger.debug("Executing SQL query:\n" +
+        logger.info("Executing SQL query:\n" +
                      "\t[{}]\n" +
                      "With parameters:\n" +
                      "\t[{}]",

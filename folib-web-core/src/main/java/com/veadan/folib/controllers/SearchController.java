@@ -63,7 +63,7 @@ public class SearchController
         String accept = request.getHeader("accept");
         String q = URLDecoder.decode(query, "UTF-8");
 
-        logger.debug("[search] {}\n\taccept {}\n\tstorageId = {}\n\trepositoryId = {}",
+        logger.info("[search] {}\n\taccept {}\n\tstorageId = {}\n\trepositoryId = {}",
                      q, accept, storageId, repositoryId);
 
         if (accept.equalsIgnoreCase(MediaType.TEXT_PLAIN_VALUE))

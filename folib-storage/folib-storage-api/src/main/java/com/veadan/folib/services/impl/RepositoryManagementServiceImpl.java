@@ -163,7 +163,7 @@ public class RepositoryManagementServiceImpl
                 final Map<String, ? extends Repository> repositories = storage.getRepositories();
                 for (Repository repository : repositories.values()) {
                     if (repository.isAllowsDeletion()) {
-                        logger.debug("Emptying trash for repository {}...", repository.getId());
+                        logger.info("Emptying trash for repository {}...", repository.getId());
 
                         deleteTrash(repository.getStorage().getId(), repository.getId());
                     } else {

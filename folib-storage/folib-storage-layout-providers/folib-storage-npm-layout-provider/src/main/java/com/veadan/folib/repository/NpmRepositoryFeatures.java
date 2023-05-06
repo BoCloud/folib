@@ -157,7 +157,7 @@ public class NpmRepositoryFeatures implements RepositoryFeatures {
         SearchResults searchResults;
         Client restClient = proxyRepositoryConnectionPoolConfigurationService.getRestClient(storageId, repositoryId);
         try {
-            logger.debug("Search NPM packages for [{}].", remoteRepositoryUrl);
+            logger.info("Search NPM packages for [{}].", remoteRepositoryUrl);
 
             WebTarget service = restClient.target(remoteRepository.getUrl());
             service = service.path("-/v1/search").queryParam("text", text).queryParam("size", size);
@@ -165,7 +165,7 @@ public class NpmRepositoryFeatures implements RepositoryFeatures {
             InputStream inputStream = service.request().buildGet().invoke(InputStream.class);
             searchResults = npmJacksonMapper.readValue(inputStream, SearchResults.class);
 
-            logger.debug("Searched NPM packages for [{}].", remoteRepository.getUrl());
+            logger.info("Searched NPM packages for [{}].", remoteRepository.getUrl());
 
         } catch (Exception e) {
             logger.error("Failed to search NPM packages [{}]", remoteRepositoryUrl, e);
@@ -226,7 +226,7 @@ public class NpmRepositoryFeatures implements RepositoryFeatures {
         Client restClient = proxyRepositoryConnectionPoolConfigurationService.
                 getRestClient(repository.getStorage().getId(), repository.getId());//todo 修复
         try {
-            logger.debug("Fetching remote changes for [{}] since [{}].", replicateUrl, since);
+            logger.info("Fetching remote changes for [{}] since [{}].", replicateUrl, since);
 
             WebTarget service = restClient.target(replicateUrl);
             service = service.path("_changes");
@@ -305,7 +305,7 @@ public class NpmRepositoryFeatures implements RepositoryFeatures {
 
         }
 
-        logger.debug("Fetched remote changes for  [{}] since [{}].",
+        logger.info("Fetched remote changes for  [{}] since [{}].",
                 repositoryConfiguration.getReplicateUrl(),
                 repositoryConfiguration.getLastChangeId());
 
@@ -330,7 +330,7 @@ public class NpmRepositoryFeatures implements RepositoryFeatures {
             WebTarget service = restClient.target(remoteRepository.getUrl());
             service = service.path(packageId);
             url = service.getUri().toString();
-            logger.debug("Downloading NPM changes feed for [{}].", url);
+            logger.info("Downloading NPM changes feed for [{}].", url);
             Response response = service.request(MediaType.APPLICATION_JSON).get();
             if (response.getStatus() == HttpStatus.SC_OK) {
                 String readString = response.readEntity(String.class);
@@ -341,7 +341,7 @@ public class NpmRepositoryFeatures implements RepositoryFeatures {
                 displayResponseError(url, response);
                 return;
             }
-            logger.debug("Downloaded NPM changes feed for [{}].", url);
+            logger.info("Downloaded NPM changes feed for [{}].", url);
         } catch (Exception e) {
             logger.error("Failed to fetch NPM changes feed [{}]", url, e);
             return;
@@ -391,7 +391,7 @@ public class NpmRepositoryFeatures implements RepositoryFeatures {
             WebTarget service = restClient.target(remoteRepository.getUrl());
             service = service.path(packageId);
             url = service.getUri().toString();
-            logger.debug("Downloading NPM changes feed for [{}].", url);
+            logger.info("Downloading NPM changes feed for [{}].", url);
             InputStream inputStream = service.request().buildGet().invoke(InputStream.class);
             PackageFeed packageFeed = npmJacksonMapper.readValue(inputStream, PackageFeed.class);
             URI baseUri = configurationManager.getBaseUri();
@@ -452,7 +452,7 @@ public class NpmRepositoryFeatures implements RepositoryFeatures {
             RepositorySearchRequest predicate = event.getPredicate();
             Boolean packageExists = packagesExists(storageId, repositoryId, predicate);
 
-            logger.debug("NPM remote repository [{}] cached package existance is [{}]",
+            logger.info("NPM remote repository [{}] cached package existance is [{}]",
                     repository.getId(), packageExists);
 
             Runnable job = () -> fetchRemoteSearchResult(storageId, repositoryId, npmSearchRequest.getText(),
@@ -504,7 +504,7 @@ public class NpmRepositoryFeatures implements RepositoryFeatures {
             RepositorySearchRequest predicate = event.getPredicate();
             Boolean packagesExists = packagesExists(storageId, repositoryId, predicate);
             ArtifactIdGroup artifactIdGroup = new ArtifactIdGroupEntity(storageId, repositoryId, predicate.getArtifactId());
-            logger.debug("NPM remote repository [{}] cached package existence is [{}]",
+            logger.info("NPM remote repository [{}] cached package existence is [{}]",
                     artifactIdGroup.getUuid(), packagesExists);
             Runnable job = () -> fetchRemotePackageFeed(storage.getId(), repository.getId(),
                     npmSearchRequest.getPackageId());

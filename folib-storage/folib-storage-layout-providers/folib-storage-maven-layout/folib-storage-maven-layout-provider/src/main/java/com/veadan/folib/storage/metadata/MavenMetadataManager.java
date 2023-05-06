@@ -88,7 +88,7 @@ public class MavenMetadataManager
             artifactBasePath = repositoryPath.getParent().getParent();
         }
 
-        logger.debug("Getting metadata for {}", artifactBasePath);
+        logger.info("Getting metadata for {}", artifactBasePath);
 
         return readMetadata(artifactBasePath);
     }
@@ -181,7 +181,7 @@ public class MavenMetadataManager
                    ProviderImplementationException,
                    UnknownRepositoryTypeException
     {
-        logger.debug("VersionCollectionRequest：{}", JSONObject.toJSONString(request));
+        logger.info("VersionCollectionRequest：{}", JSONObject.toJSONString(request));
         Repository repository = artifactGroupDirectoryPath.getRepository();
         LayoutProvider layoutProvider = LayoutProviderRegistry.getLayoutProvider(repository, layoutProviderRegistry);
         if (!RepositoryFiles.artifactExists(artifactGroupDirectoryPath))
@@ -191,7 +191,7 @@ public class MavenMetadataManager
             return;
         }
 
-        logger.debug("Artifact metadata generation triggered for {} in '{}:{}' [policy: {}].",
+        logger.info("Artifact metadata generation triggered for {} in '{}:{}' [policy: {}].",
                 artifactGroupDirectoryPath, repository.getStorage().getId(), repository.getId(), repository.getPolicy());
 
         Pair<String, String> artifactGroup = MavenArtifactUtils.getDirectoryGA(artifactGroupDirectoryPath);
@@ -240,7 +240,7 @@ public class MavenMetadataManager
             // Write basic metadata
             storeMetadata(artifactGroupDirectoryPath, null, metadata, MetadataType.ARTIFACT_ROOT_LEVEL);
 
-            logger.debug("Generated Maven metadata for {}:{}.", artifactGroupId, artifactId);
+            logger.info("Generated Maven metadata for {}:{}.", artifactGroupId, artifactId);
         }
         /**
          * In a snapshot repository we need to generate maven-metadata.xml in the artifactBasePath and
@@ -272,7 +272,7 @@ public class MavenMetadataManager
             // Write artifact metadata
             storeMetadata(artifactGroupDirectoryPath, null, metadata, MetadataType.ARTIFACT_ROOT_LEVEL);
 
-            logger.debug("Generated Maven metadata for {}:{}.", artifactGroupId, artifactId);
+            logger.info("Generated Maven metadata for {}:{}.", artifactGroupId, artifactId);
         }
         else if (repository.getPolicy().equals(RepositoryPolicyEnum.MIXED.getPolicy()))
         {
@@ -299,7 +299,7 @@ public class MavenMetadataManager
 
                 // Touch the lastUpdated field
                 MetadataHelper.setLastUpdated(versioning);
-                logger.debug("Generated Maven metadata for {}:{}.", artifactGroupId, artifactId);
+                logger.info("Generated Maven metadata for {}:{}.", artifactGroupId, artifactId);
             }
 
             Metadata snapshotMetadata = null;
@@ -328,7 +328,7 @@ public class MavenMetadataManager
                         }
                     }
                 }
-                logger.debug("Generated Maven metadata for {}:{}.", artifactGroupId, artifactId);
+                logger.info("Generated Maven metadata for {}:{}.", artifactGroupId, artifactId);
             }
             if (Objects.nonNull(releaseMetadata) && Objects.nonNull(snapshotMetadata)) {
                 mergeAndStore(artifactGroupDirectoryPath, releaseMetadata, snapshotMetadata);
@@ -358,7 +358,7 @@ public class MavenMetadataManager
 
         storeMetadata(pluginMetadataPath, null, pluginMetadata, MetadataType.PLUGIN_GROUP_LEVEL);
 
-        logger.debug("Generated Maven plugin metadata for {}:{}.", groupId, aritfactId);
+        logger.info("Generated Maven plugin metadata for {}:{}.", groupId, aritfactId);
     }
 
     public Metadata generateSnapshotVersioningMetadata(String groupId,
@@ -453,7 +453,7 @@ public class MavenMetadataManager
                 catch (Exception e)
                 {
                     // Exception not propagated, intentionally
-                    logger.debug("Unable to merge the metadata to {} by source metadata {}. " +
+                    logger.info("Unable to merge the metadata to {} by source metadata {}. " +
                                  "Exception message was: {}. Continuing with storing new metadata ...",
                                  metadataBasePath,
                                  ReflectionToStringBuilder.toString(mergeMetadata),
@@ -492,7 +492,7 @@ public class MavenMetadataManager
         }
 
         RepositoryPath artifactBasePath = repositoryPath.getParent().getParent();
-        logger.debug("Artifact merge metadata triggered for {}({}). {}",
+        logger.info("Artifact merge metadata triggered for {}({}). {}",
                      artifact, artifactBasePath, repository.getType());
 
         try

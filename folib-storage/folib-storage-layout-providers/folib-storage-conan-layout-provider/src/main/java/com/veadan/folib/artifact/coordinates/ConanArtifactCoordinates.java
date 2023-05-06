@@ -34,7 +34,7 @@ public class ConanArtifactCoordinates extends LayoutArtifactCoordinatesEntity<Co
     }
 
     public static ConanArtifactCoordinates parse(String relativizePath) {
-        log.debug("parse conan relativizePath {}", relativizePath);
+        log.info("parse conan relativizePath {}", relativizePath);
         return new ConanArtifactCoordinates(relativizePath);
     }
 

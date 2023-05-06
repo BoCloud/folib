@@ -34,7 +34,7 @@ public class IvyDependencyFormatter
     {
         compatibleDependencyFormatRegistry.addProviderImplementation(getLayout(), getFormatAlias(), this);
 
-        logger.debug("Initialized the Ivy dependency formatter.");
+        logger.info("Initialized the Ivy dependency formatter.");
     }
 
     @Override

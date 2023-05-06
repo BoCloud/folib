@@ -31,6 +31,7 @@ import com.veadan.folib.enums.DictTypeEnum;
 import com.veadan.folib.enums.RepositoryScopeEnum;
 import com.veadan.folib.event.artifact.ArtifactEventListenerRegistry;
 import com.veadan.folib.forms.artifact.ArtifactMetadataForm;
+import com.veadan.folib.forms.dict.DictForm;
 import com.veadan.folib.forms.scanner.*;
 import com.veadan.folib.gremlin.dsl.EntityTraversalUtils;
 import com.veadan.folib.gremlin.entity.vo.ArtifactVo;
@@ -676,10 +677,10 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
                     }
                 }
             }
-            dictService.updateDict(Dict.builder().id(dictId).comment("构建完成").build());
+            dictService.updateDict(DictForm.builder().id(dictId).comment("构建完成").build());
         } catch (Exception ex) {
             log.error("=====>>>>> buildGraphIndex is error：{}", ExceptionUtils.getStackTrace(ex));
-            dictService.updateDict(Dict.builder().id(dictId).comment("构建错误").build());
+            dictService.updateDict(DictForm.builder().id(dictId).comment("构建错误").build());
         }
         log.info("=====>>>>> buildGraphIndex is finished");
     }
@@ -854,7 +855,7 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
                             log.info("directory：{} is a hidden directory", f.getName());
                             continue;
                         }
-                        log.debug("directory:{}", f.getAbsolutePath());
+                        log.info("directory:{}", f.getAbsolutePath());
                         list.add(f);
                         folderNum++;
                     } else {
@@ -866,7 +867,7 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
                             log.info("file：{} is a docker layout file", f.getName());
                             continue;
                         }
-                        log.debug("file:{}", f.getAbsolutePath());
+                        log.info("file:{}", f.getAbsolutePath());
                         resultList.add(f);
                         fileNum++;
                     }
@@ -946,7 +947,7 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
                     log.info("s3 file：{} is a docker layout file", s3PathTemp);
                     continue;
                 }
-                log.debug("s3 file {}", s3PathTemp);
+                log.info("s3 file {}", s3PathTemp);
                 listFile.add(s3PathTemp);
             }
         }
@@ -971,7 +972,7 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
                         log.info("s3 file：{} is a docker layout file", s3PathTemp);
                         continue;
                     }
-                    log.debug("s3 file {}", s3PathTemp);
+                    log.info("s3 file {}", s3PathTemp);
                     listFile.add(s3PathTemp);
                 }
             }

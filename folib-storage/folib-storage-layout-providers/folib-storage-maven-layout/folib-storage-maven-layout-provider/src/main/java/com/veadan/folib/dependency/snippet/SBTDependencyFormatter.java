@@ -34,7 +34,7 @@ public class SBTDependencyFormatter
     {
         compatibleDependencyFormatRegistry.addProviderImplementation(getLayout(), getFormatAlias(), this);
 
-        logger.debug("Initialized the SBT dependency formatter.");
+        logger.info("Initialized the SBT dependency formatter.");
     }
 
     @Override

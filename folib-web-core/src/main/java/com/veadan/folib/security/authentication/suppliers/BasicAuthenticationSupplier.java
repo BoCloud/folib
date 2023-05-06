@@ -57,7 +57,7 @@ class BasicAuthenticationSupplier implements AuthenticationSupplier
 
         String username = tokens[0];
 
-        logger.debug("Basic Authentication Authorization header found for user '{}'", username);
+        logger.info("Basic Authentication Authorization header found for user '{}'", username);
 
         return new PasswordAuthentication(username, tokens[1]);
     }

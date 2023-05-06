@@ -253,7 +253,7 @@ public class BrowseController
     public Object storages(ModelMap model,
                            HttpServletRequest request,
                            @RequestHeader(value = HttpHeaders.ACCEPT, required = false) String acceptHeader) {
-        logger.debug("Requested browsing for storages");
+        logger.info("Requested browsing for storages");
 
         try {
             Map<String, Storage> storages = configurationManager.getConfiguration().getStorages();
@@ -288,7 +288,7 @@ public class BrowseController
                                HttpServletRequest request,
                                ModelMap model,
                                @RequestHeader(value = HttpHeaders.ACCEPT, required = false) String acceptHeader) {
-        logger.debug("Requested browsing for repositories in storage : {}", storageId);
+        logger.info("Requested browsing for repositories in storage : {}", storageId);
 
         try {
             Storage storage = configurationManager.getConfiguration().getStorage(storageId);
@@ -364,7 +364,7 @@ public class BrowseController
                                     @RequestHeader(value = HttpHeaders.ACCEPT, required = false) String acceptHeader) {
         final String storageId = repository.getStorage().getId();
         final String repositoryId = repository.getId();
-        logger.debug("Requested browsing repository content at {}/{}/{} ", storageId, repositoryId, rawPath);
+        logger.info("Requested browsing repository content at {}/{}/{} ", storageId, repositoryId, rawPath);
         try {
             final RepositoryPath repositoryPath = repositoryPathResolver.resolve(repository, rawPath);
             DirectoryListing directoryListing = null;

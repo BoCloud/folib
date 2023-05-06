@@ -63,7 +63,7 @@ public class LocalStorageProxyRepositoryExpiredArtifactsCleaner
             return;
         }
 
-        logger.debug("Cleaning artifacts {}", artifactsToDelete);
+        logger.info("Cleaning artifacts {}", artifactsToDelete);
         deleteFromStorage(artifactsToDelete);
     }
 

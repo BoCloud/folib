@@ -521,7 +521,7 @@ public class PromotionUtil {
             int fPathIndex = fPath.lastIndexOf(tempStr);
             String temp = fPath.substring(fPathIndex, fPath.length()).replace(tempStr, "");
             RepositoryPath destPath = repositoryPathResolver.resolve(destRepository.getStorage().getId(), destRepository.getId(), temp);
-            log.debug("temp {}   destPath {}", temp, destPath.toString());
+            log.info("temp {}   destPath {}", temp, destPath.toString());
             boolean isDocker = srcRepository.getLayout().equalsIgnoreCase("docker");
             if (isDocker) {
                 if (!file.getName().contains("sha256") && !file.getName().endsWith(".sha256")) {

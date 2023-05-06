@@ -231,7 +231,7 @@ public class RestClient extends ArtifactClient {
         try {
             String url = getContextBaseUrl() + "/api/configuration/folib/storages/" +
                     storageId + "/" + repositoryForm.getId();
-            logger.debug("Sending request to create repository " + url);
+            logger.info("Sending request to create repository " + url);
             resource = getClientInstance().target(url);
         } catch (RuntimeException e) {
             logger.error("Unable to create web resource.", e);
@@ -972,7 +972,7 @@ public class RestClient extends ArtifactClient {
 
     public WebTarget prepareUnauthenticatedTarget(String arg) {
         String url = getContextBaseUrl() + arg;
-        logger.debug("Prepare target URL {}", url);
+        logger.info("Prepare target URL {}", url);
         return getClientInstance().target(url);
     }
 

@@ -59,7 +59,7 @@ class PropertiesPathResolverConfig
             {
                 final String resolved = customPathPropertyValue.startsWith("classpath:") || customPathPropertyValue.startsWith("file:") ?
                                         customPathPropertyValue : "file://" + ensureParentOrCurrentDirAbsolute(customPathPropertyValue);
-                logger.debug("Resolved to path '{}' using custom property '{}'.", resolved, customPathPropertyName);
+                logger.info("Resolved to path '{}' using custom property '{}'.", resolved, customPathPropertyName);
                 return resolved;
             }
 
@@ -74,10 +74,10 @@ class PropertiesPathResolverConfig
             {
                 pathPrefix = defaultPathPrefixOverride;
             }
-            logger.debug("Using pathPrefix '{}'.", pathPrefix);
+            logger.info("Using pathPrefix '{}'.", pathPrefix);
 
             final String resolved = pathPrefix + defaultPath;
-            logger.debug("Resolved to path '{}' using default '{}' - no custom path set in '{}'.", resolved, defaultPath, customPathPropertyName);
+            logger.info("Resolved to path '{}' using default '{}' - no custom path set in '{}'.", resolved, defaultPath, customPathPropertyName);
             return resolved;
         }
 
@@ -90,13 +90,13 @@ class PropertiesPathResolverConfig
 
             if (path.startsWith("..") ) {
                 final String currentDirAbs = Paths.get(".").toAbsolutePath().normalize().toString();
-                logger.debug("Path started with relative parent dir '..'  - converted to absolute path '{}/..'.", currentDirAbs);
+                logger.info("Path started with relative parent dir '..'  - converted to absolute path '{}/..'.", currentDirAbs);
                 return currentDirAbs + "/.." + (path.length() > 2 ? path.substring(2) : "");
             }
 
             if (path.startsWith(".")) {
                 final String currentDirAbs = Paths.get(".").toAbsolutePath().normalize().toString();
-                logger.debug("Path started with relative current dir '.'  - converted to absolute path '{}'.", currentDirAbs);
+                logger.info("Path started with relative current dir '.'  - converted to absolute path '{}'.", currentDirAbs);
                 return currentDirAbs + (path.length() > 1 ? path.substring(1) : "");
             }
 

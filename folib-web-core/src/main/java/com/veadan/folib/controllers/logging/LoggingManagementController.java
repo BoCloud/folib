@@ -113,7 +113,7 @@ public class LoggingManagementController
             Path logsBaseDir = Paths.get(propertiesBooter.getLogsDirectory());
             Path requestedLogPath = Paths.get(logsBaseDir.toString(), path);
 
-            logger.debug(String.format("Requested downloading log from path: [%s] resolved to [%s]",
+            logger.info(String.format("Requested downloading log from path: [%s] resolved to [%s]",
                                        path,
                                        requestedLogPath));
 
@@ -149,14 +149,14 @@ public class LoggingManagementController
                                       @RequestHeader(value = HttpHeaders.ACCEPT,
                                                      required = false) String acceptHeader)
     {
-        logger.debug("Requested directory listing of logs {}/logs/{}", ROOT_CONTEXT, path.orElse(""));
+        logger.info("Requested directory listing of logs {}/logs/{}", ROOT_CONTEXT, path.orElse(""));
 
         try
         {
             Path logsBaseDir = Paths.get(propertiesBooter.getLogsDirectory());
             Path requestedLogPath = Paths.get(logsBaseDir.toString(), path.orElse(""));
 
-            logger.debug("Requested directory listing of path: [{}] resolved to [{}]", path, requestedLogPath);
+            logger.info("Requested directory listing of path: [{}] resolved to [{}]", path, requestedLogPath);
 
             if (!Files.exists(requestedLogPath))
             {
@@ -230,7 +230,7 @@ public class LoggingManagementController
 
         if (logFile == null)
         {
-            logger.debug("Missing '" +LogFile.FILE_NAME_PROPERTY+ "' or '" + LogFile.FILE_PATH_PROPERTY + "' properties");
+            logger.info("Missing '" +LogFile.FILE_NAME_PROPERTY+ "' or '" + LogFile.FILE_PATH_PROPERTY + "' properties");
             return null;
         }
 

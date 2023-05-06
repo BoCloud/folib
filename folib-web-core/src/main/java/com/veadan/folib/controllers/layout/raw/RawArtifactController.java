@@ -69,7 +69,7 @@ public class RawArtifactController
     {
         final String storageId = repository.getStorage().getId();
         final String repositoryId = repository.getId();
-        logger.debug("Requested /{}/{}/{}.", storageId, repositoryId, path);
+        logger.info("Requested /{}/{}/{}.", storageId, repositoryId, path);
 
         RepositoryPath repositoryPath = artifactResolutionService.resolvePath(storageId, repositoryId, path);
         vulnerabilityBlock(repositoryPath);

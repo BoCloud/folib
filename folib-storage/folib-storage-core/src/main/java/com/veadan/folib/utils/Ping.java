@@ -29,7 +29,7 @@ public class Ping
         }
         catch (IOException ex)
         {
-            logger.debug("Ping failed.", ex);
+            logger.info("Ping failed.", ex);
             return false;
         }
     }

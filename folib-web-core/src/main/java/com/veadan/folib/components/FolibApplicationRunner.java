@@ -1,8 +1,9 @@
 package com.veadan.folib.components;
 
-import com.veadan.folib.app.FolibSpringBootApplication;
 import com.veadan.folib.config.janusgraph.JanusGraphDbProfile;
 import com.veadan.folib.entity.Dict;
+import com.veadan.folib.enums.DictTypeEnum;
+import com.veadan.folib.enums.LockTypeEnum;
 import com.veadan.folib.enums.UpgradeTaskStatusEnum;
 import com.veadan.folib.scanner.common.util.SpringContextUtil;
 import com.veadan.folib.scanner.service.ScanService;
@@ -17,9 +18,12 @@ import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.stereotype.Component;
 
+import javax.inject.Inject;
 import java.lang.reflect.Method;
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 
 /**
  * @author leipenghui
@@ -47,6 +51,7 @@ public class FolibApplicationRunner implements ApplicationRunner {
      * 初始化数据
      */
     private void initData() {
+        initSystemPropertiesData();
         int total = scanService.countProperties();
         boolean isFirst = total <= 1;
         log.info("=====>>>>> Table properties data total is {} <<<<<=====", total);
@@ -116,6 +121,19 @@ public class FolibApplicationRunner implements ApplicationRunner {
             }
         }
         return null;
+    }
+
+    /**
+     * 初始化环境参数数据
+     */
+    private void initSystemPropertiesData() {
+        List<Dict> dictList = dictService.selectDict(Dict.builder().dictType(DictTypeEnum.SYSTEM_PROPERTY.getType()).build());
+        Optional.ofNullable(dictList).orElse(Collections.emptyList()).forEach(dict -> {
+            if (StringUtils.isNotBlank(dict.getDictKey())) {
+                System.setProperty(dict.getDictKey(), dict.getDictValue());
+                log.info("Init System Properties Data key：{}, value：{}", dict.getDictKey(), dict.getDictValue());
+            }
+        });
     }
 
 }

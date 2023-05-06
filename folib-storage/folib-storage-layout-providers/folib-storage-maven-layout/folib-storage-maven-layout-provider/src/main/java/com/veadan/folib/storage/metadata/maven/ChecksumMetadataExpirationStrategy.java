@@ -57,7 +57,7 @@ public class ChecksumMetadataExpirationStrategy
         String currentChecksum = readChecksum(checksumRepositoryPath);
         if (currentChecksum == null)
         {
-            logger.debug("Unable to read local {} checksum for {}, returning " + Decision.UNDECIDED.name(),
+            logger.info("Unable to read local {} checksum for {}, returning " + Decision.UNDECIDED.name(),
                          checksumAlgorithm,
                          repositoryPath.normalize());
             return Decision.UNDECIDED;
@@ -68,7 +68,7 @@ public class ChecksumMetadataExpirationStrategy
 
         if (newRemoteChecksum == null)
         {
-            logger.debug("Unable to fetch remote {} checksum for {}, returning " + Decision.UNDECIDED.name(),
+            logger.info("Unable to fetch remote {} checksum for {}, returning " + Decision.UNDECIDED.name(),
                          checksumAlgorithm,
                          repositoryPath.normalize());
             return Decision.UNDECIDED;
@@ -76,14 +76,14 @@ public class ChecksumMetadataExpirationStrategy
 
         if (currentChecksum.equals(newRemoteChecksum))
         {
-            logger.debug("Local and remote {} checksums match for {}, no need to refetch metadata",
+            logger.info("Local and remote {} checksums match for {}, no need to refetch metadata",
                          checksumAlgorithm,
                          repositoryPath.normalize());
             return Decision.USABLE;
         }
         else
         {
-            logger.debug("Local and remote {} checksums differ for {}, will refetch metadata",
+            logger.info("Local and remote {} checksums differ for {}, will refetch metadata",
                          checksumAlgorithm,
                          repositoryPath.normalize());
             return Decision.EXPIRED;

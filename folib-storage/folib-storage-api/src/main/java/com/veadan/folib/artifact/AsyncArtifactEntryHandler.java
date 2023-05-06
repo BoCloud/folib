@@ -10,6 +10,7 @@ import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.providers.io.RepositoryPathLock;
 import com.veadan.folib.providers.io.RepositoryPathResolver;
 import com.veadan.folib.repositories.ArtifactRepository;
+import com.veadan.folib.util.CommonUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.tinkerpop.gremlin.structure.Graph;
 import org.janusgraph.core.JanusGraph;
@@ -80,7 +81,7 @@ public abstract class AsyncArtifactEntryHandler {
         try {
             Artifact result = handleEvent(repositoryPath);
             if (result == null) {
-                logger.debug("No [{}] result for event [{}] and path [{}].",
+                logger.info("No [{}] result for event [{}] and path [{}].",
                         Artifact.class.getSimpleName(),
                         AsyncArtifactEntryHandler.this.getClass().getSimpleName(),
                         repositoryPath);
@@ -88,10 +89,22 @@ public abstract class AsyncArtifactEntryHandler {
                 return;
             }
             artifactEntityRepository.merge(() -> g.traversal(EntityTraversalSource.class), result);
-            g.tx().commit();
-        } catch (Throwable e) {
-            g.tx().rollback();
-            throw new UndeclaredThrowableException(e);
+            if (g.tx().isOpen()) {
+                g.tx().commit();
+            }
+        } catch (Throwable ex) {
+            if (g.tx().isOpen()) {
+                g.tx().rollback();
+            }
+            String realMessage = CommonUtils.getRealMessage(ex);
+            logger.warn("[{}] [{}] handleTransactional error [{}]",
+                    this.getClass().getSimpleName(), repositoryPath, realMessage);
+            if (CommonUtils.catchException(realMessage)) {
+                logger.warn("[{}] [{}] handleTransactional catch error",
+                        this.getClass().getSimpleName(), repositoryPath);
+                return;
+            }
+            throw new UndeclaredThrowableException(ex);
         } finally {
             g.tx().close();
         }

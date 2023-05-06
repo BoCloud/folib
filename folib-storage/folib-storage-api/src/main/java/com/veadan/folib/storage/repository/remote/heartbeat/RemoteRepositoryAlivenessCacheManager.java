@@ -57,7 +57,7 @@ public class RemoteRepositoryAlivenessCacheManager
     public void destroy()
             throws Exception
     {
-        logger.debug("Destroy remote repository aliveness cache.");
+        logger.info("Destroy remote repository aliveness cache.");
         
         cache.clear();
     }

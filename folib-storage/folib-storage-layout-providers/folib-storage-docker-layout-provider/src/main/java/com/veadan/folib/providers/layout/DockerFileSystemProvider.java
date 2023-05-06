@@ -62,7 +62,7 @@ public class DockerFileSystemProvider
             throws IOException {
         RepositoryPath repositoryPath = (RepositoryPath) path;
 
-        logger.debug("Removing {}...", repositoryPath);
+        logger.info("Removing {}...", repositoryPath);
         handlerManifestAndBlob(repositoryPath, force);
         super.delete(repositoryPath, force);
     }
@@ -87,10 +87,10 @@ public class DockerFileSystemProvider
         if (Objects.nonNull(currentManifestPath)) {
             RepositoryPath parent = repositoryPath.getParent();
             String manifest = "manifest";
-            logger.debug("=====>>>>>当前版本下的manifest路径：{}", currentManifestPath.toAbsolutePath().toString());
+            logger.info("=====>>>>>当前版本下的manifest路径：{}", currentManifestPath.toAbsolutePath().toString());
             //manifest目录下的当前版本的文件信息
             RepositoryPath manifestRepositoryPath = repositoryPathResolver.resolve(repositoryPath.getStorageId(), repositoryPath.getRepositoryId(), parent.getFileName() + File.separator + manifest + File.separator + currentManifestPath.getFileName().toString());
-            logger.debug("=====>>>>>manifest目录下的当前版本的文件路径：{}", manifestRepositoryPath.toAbsolutePath());
+            logger.info("=====>>>>>manifest目录下的当前版本的文件路径：{}", manifestRepositoryPath.toAbsolutePath());
             boolean isS3 = repositoryPath.getTarget() instanceof S3Path;
             boolean flag;
             if (isS3) {
@@ -127,7 +127,7 @@ public class DockerFileSystemProvider
         Path finalCurrentManifestPath = currentManifestPath;
         List<String> manifestConfigList = Lists.newArrayList();
         Files.list(path).filter(f -> !Files.isDirectory(f) && f.getFileName().toString().startsWith("sha256") && !f.getFileName().toString().endsWith(".sha256") && !f.getFileName().toString().equals(finalCurrentManifestPath.getFileName().toString())).forEach(f -> {
-            logger.debug("=====>>>>>其他版本的manifest文件名：{}", f.getFileName().toString());
+            logger.info("=====>>>>>其他版本的manifest文件名：{}", f.getFileName().toString());
             String manifestStringItem = FileUtil.readString(manifestPath + File.separator + f.getFileName().toString(), StandardCharsets.UTF_8);
             ImageManifest manifestItem = JSON.parseObject(manifestStringItem, ImageManifest.class);
             manifestConfigList.add(manifestItem.getConfig().getDigest());
@@ -150,7 +150,7 @@ public class DockerFileSystemProvider
         if (!manifestConfigList.contains(currentConfigDigest)) {
             //删除blobs目录下的配置信息
             RepositoryPath configRepositoryPath = repositoryPathResolver.resolve(repositoryPath.getStorageId(), repositoryPath.getRepositoryId(), parent.getFileName() + File.separator + blobs + File.separator + configDigest);
-            logger.debug("=====>>>>>configRepositoryPath：{}", configRepositoryPath.toAbsolutePath());
+            logger.info("=====>>>>>configRepositoryPath：{}", configRepositoryPath.toAbsolutePath());
             this.delete(configRepositoryPath, force);
         }
         //删除blobs目录下的层级文件
@@ -158,7 +158,7 @@ public class DockerFileSystemProvider
             for (LayerManifest item : currentLayerManifestList) {
                 String blobRepositoryPath = blobs + File.separator + item.getDigest();
                 RepositoryPath itemRepositoryPath = repositoryPathResolver.resolve(repositoryPath.getStorageId(), repositoryPath.getRepositoryId(), parent.getFileName() + File.separator + blobRepositoryPath);
-                logger.debug("=====>>>>>blobRepositoryPath：{}", itemRepositoryPath.toAbsolutePath());
+                logger.info("=====>>>>>blobRepositoryPath：{}", itemRepositoryPath.toAbsolutePath());
                 this.delete(itemRepositoryPath, force);
             }
         }
@@ -195,7 +195,7 @@ public class DockerFileSystemProvider
                     while (manifestS3Iterator.hasNext()) {
                         S3Path itemManifestPath = manifestS3Iterator.next();
                         if (itemManifestPath.getFileName().toString().startsWith("sha256") && !itemManifestPath.getFileName().toString().endsWith(".sha256") && !itemManifestPath.getFileName().toString().equals(currentManifestPath.getFileName().toString())) {
-                            logger.debug("=====>>>>>其他版本的manifest文件名：{}", itemManifestPath.getFileName().toString());
+                            logger.info("=====>>>>>其他版本的manifest文件名：{}", itemManifestPath.getFileName().toString());
                             inputStream = Files.newInputStream(itemManifestPath);
                             filePath = parentPath + File.separator + itemManifestPath.getFileName();
                             tempFile = new File(filePath);
@@ -229,7 +229,7 @@ public class DockerFileSystemProvider
             if (!manifestConfigList.contains(currentConfigDigest)) {
                 //删除blobs目录下的配置信息
                 RepositoryPath configRepositoryPath = repositoryPathResolver.resolve(repositoryPath.getStorageId(), repositoryPath.getRepositoryId(), parent.getFileName() + File.separator + blobs + File.separator + configDigest);
-                logger.debug("=====>>>>>configRepositoryPath：{}", configRepositoryPath.toAbsolutePath());
+                logger.info("=====>>>>>configRepositoryPath：{}", configRepositoryPath.toAbsolutePath());
                 this.delete(configRepositoryPath, force);
             }
             //删除blobs目录下的层级文件
@@ -237,7 +237,7 @@ public class DockerFileSystemProvider
                 for (LayerManifest item : currentLayerManifestList) {
                     String blobRepositoryPath = blobs + File.separator + item.getDigest();
                     RepositoryPath itemRepositoryPath = repositoryPathResolver.resolve(repositoryPath.getStorageId(), repositoryPath.getRepositoryId(), parent.getFileName() + File.separator + blobRepositoryPath);
-                    logger.debug("=====>>>>>blobRepositoryPath：{}", itemRepositoryPath.toAbsolutePath());
+                    logger.info("=====>>>>>blobRepositoryPath：{}", itemRepositoryPath.toAbsolutePath());
                     this.delete(itemRepositoryPath, force);
                 }
             }
@@ -270,7 +270,7 @@ public class DockerFileSystemProvider
                 try {
                     boolean b = Files.list(item).anyMatch(fc -> !Files.isDirectory(fc) && fc.getFileName().toString().equals(fileName));
                     if (b) {
-                        logger.debug("=====>>>>>存在关联，版本目录名称：{}", item.getFileName().toString());
+                        logger.info("=====>>>>>存在关联，版本目录名称：{}", item.getFileName().toString());
                         flag.set(true);
                     }
                 } catch (IOException ex) {
@@ -308,7 +308,7 @@ public class DockerFileSystemProvider
                 while (sonS3Iterator.hasNext()) {
                     S3Path grandsonS3Path = sonS3Iterator.next();
                     if (fileName.equals(grandsonS3Path.getFileName().toString())) {
-                        logger.debug("=====>>>>>存在关联，版本目录名称：{}", grandsonS3Path.getFileName().toString());
+                        logger.info("=====>>>>>存在关联，版本目录名称：{}", grandsonS3Path.getFileName().toString());
                         flag.set(true);
                         break;
                     }

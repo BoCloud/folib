@@ -70,7 +70,7 @@ public class CronTaskDataServiceImpl
         {
             CronTaskConfigurationDto c = iterator.next();
 
-            logger.debug("Saving cron configuration {}", c);
+            logger.info("Saving cron configuration {}", c);
 
             String jobClass = c.getJobClass();
             if (jobClass != null && !jobClass.trim().isEmpty())

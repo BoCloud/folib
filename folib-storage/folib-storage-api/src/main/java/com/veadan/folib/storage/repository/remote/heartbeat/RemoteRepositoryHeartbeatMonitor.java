@@ -50,7 +50,7 @@ class RemoteRepositoryHeartbeatMonitor
             logger.error("Problem determining remote repository [{}] aliveness", remoteRepository.getUrl(), ex);
         }
 
-        logger.debug("Thread name is [{}]. Remote repository [{}] is alive ? [{}]", Thread.currentThread().getName(),
+        logger.info("Thread name is [{}]. Remote repository [{}] is alive ? [{}]", Thread.currentThread().getName(),
                      remoteRepository.getUrl(),
                      isAlive);
         remoteRepositoryCacheManager.put(remoteRepository, isAlive);

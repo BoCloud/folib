@@ -122,7 +122,7 @@ public class PhpArtifactController extends BaseArtifactController {
             throws Exception {
         final String storageId = repository.getStorage().getId();
         final String repositoryId = repository.getId();
-        logger.debug("Requested /{}/{}/{}.", storageId, repositoryId, path);
+        logger.info("Requested /{}/{}/{}.", storageId, repositoryId, path);
         RepositoryPath repositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, PhpArtifactCoordinates.DEFAULT_PACKAGES);
         JSONObject packageJson = getSourcePackagesJson(repositoryPath);
         String mirrorsKey = "mirrors";
@@ -162,7 +162,7 @@ public class PhpArtifactController extends BaseArtifactController {
             throws Exception {
         final String storageId = repository.getStorage().getId();
         final String repositoryId = repository.getId();
-        logger.debug("Requested /{}/{}/{}.", storageId, repositoryId, path);
+        logger.info("Requested /{}/{}/{}.", storageId, repositoryId, path);
 
         RepositoryPath repositoryPath = artifactResolutionService.resolvePath(storageId, repositoryId, path);
         vulnerabilityBlock(repositoryPath);

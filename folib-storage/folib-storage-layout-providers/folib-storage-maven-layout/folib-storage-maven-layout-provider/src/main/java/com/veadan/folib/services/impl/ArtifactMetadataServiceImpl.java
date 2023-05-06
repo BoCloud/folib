@@ -329,7 +329,7 @@ public class ArtifactMetadataServiceImpl
             {
                 iterator.remove();
 
-                logger.debug("Removed timestamped SNAPSHOT ({}{}) from metadata.",
+                logger.info("Removed timestamped SNAPSHOT ({}{}) from metadata.",
                              version,
                              (classifier != null ? ":" + classifier :
                               (snapshotVersion.getClassifier() != null && !snapshotVersion.getClassifier().equals("") ?

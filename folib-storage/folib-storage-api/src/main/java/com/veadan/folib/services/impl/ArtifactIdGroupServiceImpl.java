@@ -7,11 +7,11 @@ import com.veadan.folib.domain.Artifact;
 import com.veadan.folib.domain.ArtifactIdGroup;
 import com.veadan.folib.domain.ArtifactIdGroupEntity;
 import com.veadan.folib.domain.ArtifactTagEntity;
-import com.veadan.folib.providers.io.RepositoryPathLock;
 import com.veadan.folib.repositories.ArtifactIdGroupRepository;
 import com.veadan.folib.services.ArtifactIdGroupService;
 import com.veadan.folib.services.ArtifactTagService;
 import com.veadan.folib.storage.repository.Repository;
+import com.veadan.folib.util.CommonUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -25,7 +25,6 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.Set;
-import java.util.concurrent.locks.Lock;
 import java.util.stream.Collectors;
 
 /**
@@ -45,9 +44,6 @@ public class ArtifactIdGroupServiceImpl
 
     @Inject
     private ArtifactIdGroupRepository artifactIdGroupRepository;
-
-    @Inject
-    private RepositoryPathLock repositoryPathLock;
 
     @Override
     public void saveArtifacts(Repository repository,
@@ -73,27 +69,34 @@ public class ArtifactIdGroupServiceImpl
     }
 
     private void mergeArtifactIdGroup(Repository repository, String artifactGroupId, ArtifactTag lastVersionTag, List<Artifact> artifactsBatch) {
-        Lock lock = repositoryPathLock.lock(artifactGroupId).writeLock();
-        lock.lock();
+        ArtifactIdGroup artifactGroup = artifactIdGroupRepository.findArtifactsGroupWithTag(repository.getStorage()
+                        .getId(),
+                repository.getId(),
+                artifactGroupId,
+                Optional.of(lastVersionTag))
+                .orElseGet(() -> create(repository.getStorage().getId(),
+                        repository.getId(),
+                        artifactGroupId));
+
+        ArtifactCoordinates lastVersion = addArtifactsToGroup(artifactsBatch, artifactGroup);
+        logger.info("Last version for group [{}] is [{}] with [{}]",
+                artifactGroup.getName(),
+                lastVersion.getVersion(),
+                lastVersion.getPath());
+
         try {
-            ArtifactIdGroup artifactGroup = artifactIdGroupRepository.findArtifactsGroupWithTag(repository.getStorage()
-                            .getId(),
-                    repository.getId(),
-                    artifactGroupId,
-                    Optional.of(lastVersionTag))
-                    .orElseGet(() -> create(repository.getStorage().getId(),
-                            repository.getId(),
-                            artifactGroupId));
-
-            ArtifactCoordinates lastVersion = addArtifactsToGroup(artifactsBatch, artifactGroup);
-            logger.debug("Last version for group [{}] is [{}] with [{}]",
-                    artifactGroup.getName(),
-                    lastVersion.getVersion(),
-                    lastVersion.getPath());
-
             artifactIdGroupRepository.merge(artifactGroup);
-        } finally {
-            lock.unlock();
+        } catch (Exception ex) {
+            String realMessage = CommonUtils.getRealMessage(ex);
+            if (CommonUtils.catchException(realMessage)) {
+                logger.warn("Merge group [{}] is [{}] with [{}] error [{}]",
+                        artifactGroup.getName(),
+                        lastVersion.getVersion(),
+                        lastVersion.getPath(),
+                        realMessage);
+            } else {
+                throw new RuntimeException(ex.getMessage());
+            }
         }
     }
 

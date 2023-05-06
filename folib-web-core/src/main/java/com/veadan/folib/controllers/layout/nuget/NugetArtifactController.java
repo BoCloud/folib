@@ -221,7 +221,7 @@ public class NugetArtifactController
                 logger.error("Failed to parse package {}", nupkg, e);
             }
         }
-        logger.debug("Got {} packages", new Object[] { packageEntrys.size() });
+        logger.info("Got {} packages", new Object[] { packageEntrys.size() });
         feed.setEntries(packageEntrys);
         return feed;
     }
@@ -500,7 +500,7 @@ public class NugetArtifactController
     {
         final String storageId = repository.getStorage().getId();
         final String repositoryId = repository.getId();
-        logger.debug("Requested Nuget Package {},{}, {}, {}.", storageId, repositoryId, packageId, packageVersion);
+        logger.info("Requested Nuget Package {},{}, {}, {}.", storageId, repositoryId, packageId, packageVersion);
 
         String fileName = String.format("%s.%s.nupkg", packageId, packageVersion);
         String path = String.format("%s/%s/%s", packageId, packageVersion, fileName);

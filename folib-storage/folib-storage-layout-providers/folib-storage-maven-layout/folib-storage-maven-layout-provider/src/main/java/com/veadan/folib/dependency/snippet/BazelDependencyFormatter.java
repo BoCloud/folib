@@ -34,7 +34,7 @@ public class BazelDependencyFormatter
     {
         compatibleDependencyFormatRegistry.addProviderImplementation(getLayout(), getFormatAlias(), this);
         
-        logger.debug("Initialized the Bazel dependency formatter.");
+        logger.info("Initialized the Bazel dependency formatter.");
     }
     @Override
     public String getLayout()

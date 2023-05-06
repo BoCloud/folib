@@ -112,7 +112,7 @@ public class ArtifactEntryJarFileContentsIndexCreator
 
         final String fieldValue = sb.toString().trim();
 
-        logger.debug("Updating ArtifactInfo using artifactEntry [{}] by classNames [{}]",
+        logger.info("Updating ArtifactInfo using artifactEntry [{}] by classNames [{}]",
                      artifactEntry,
                      fieldValue);
 

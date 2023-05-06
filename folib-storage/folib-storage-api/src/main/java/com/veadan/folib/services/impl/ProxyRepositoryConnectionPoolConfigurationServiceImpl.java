@@ -96,7 +96,7 @@ public class ProxyRepositoryConnectionPoolConfigurationServiceImpl
     @Override
     public Client getRestClient(String storageId,String repositoryId)
     {
-        logger.debug("get rest client storageId [{}] repositoryId [{}]",storageId,repositoryId);
+        logger.info("get rest client storageId [{}] repositoryId [{}]",storageId,repositoryId);
         ClientConfig config = new ClientConfig();
 
         //全局代理

@@ -146,14 +146,14 @@ public class NugetRepositoryFeatures
         Client restClient = proxyRepositoryConnectionPoolConfigurationService.getRestClient(storageId,repositoryId);
         try
         {
-            logger.debug("Downloading remote feed for [{}].", remoteRepositoryUrl);
+            logger.info("Downloading remote feed for [{}].", remoteRepositoryUrl);
 
             WebTarget service = restClient.target(remoteRepository.getUrl());
             packageFeed = queryParams(service.path("Search()"), nugetSearchRequest, paginator).request()
                                                                                               .buildGet()
                                                                                               .invoke(PackageFeed.class);
 
-            logger.debug("Downloaded remote feed for [{}], size [{}].",
+            logger.info("Downloaded remote feed for [{}], size [{}].",
                          remoteRepository.getUrl(),
                          Optional.of(packageFeed).map(f -> f.getEntries().size()).orElse(0));
 
@@ -265,7 +265,7 @@ public class NugetRepositoryFeatures
                                                                          predicate.getArtifactId(),
                                                                          predicate.getCoordinateValues());
 
-            logger.debug("Remote repository [{}] cached package count is [{}]", repository.getId(), packageCount);
+            logger.info("Remote repository [{}] cached package count is [{}]", repository.getId(), packageCount);
 
             Client restClient = proxyRepositoryConnectionPoolConfigurationService.getRestClient(storageId, repositoryId);
             PackageFeed feed;
@@ -277,22 +277,22 @@ public class NugetRepositoryFeatures
                                                                    nugetSearchRequest, new Paginator()).request()
                                                                                                        .buildGet()
                                                                                                        .invoke(String.class));
-                logger.debug("Remote repository [{}] remote package count is [{}]", repository.getId(), remotePackageCount);
+                logger.info("Remote repository [{}] remote package count is [{}]", repository.getId(), remotePackageCount);
 
                 if (Long.valueOf(remotePackageCount).compareTo(packageCount) == 0)
                 {
-                    logger.debug("No need to download remote feed, there was no changes in remote repository [{}] against local cache.",
+                    logger.info("No need to download remote feed, there was no changes in remote repository [{}] against local cache.",
                                  remoteRepository.getUrl());
                     return;
                 }
 
-                logger.debug("Downloading remote feed for [{}].", remoteRepository.getUrl());
+                logger.info("Downloading remote feed for [{}].", remoteRepository.getUrl());
 
                 feed = queryParams(service.path("Search()"), nugetSearchRequest, event.getPaginator()).request()
                                                                                                       .buildGet()
                                                                                                       .invoke(PackageFeed.class);
 
-                logger.debug("Downloaded remote feed for [{}], size [{}].",
+                logger.info("Downloaded remote feed for [{}], size [{}].",
                              remoteRepository.getUrl(),
                              Optional.of(feed).map(f -> f.getEntries().size()).orElse(0));
 

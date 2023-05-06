@@ -72,7 +72,7 @@ public class RepositoryProxyIndexCreator
         final Date contextCurrentTimestamp = indexingContext.getTimestamp();
         if (Objects.equals(updateResult.getTimestamp(), contextCurrentTimestamp))
         {
-            logger.debug("No update required for remote index {}:{}, as the index is up to date!",
+            logger.info("No update required for remote index {}:{}, as the index is up to date!",
                          storageId, repositoryId);
             if (!IndexPacker.packageExists(repositoryIndexDirectoryPath))
             {
@@ -82,12 +82,12 @@ public class RepositoryProxyIndexCreator
         }
         if (updateResult.isFullUpdate())
         {
-            logger.debug("Performed a full index update for {}:{}.", storageId, repositoryId);
+            logger.info("Performed a full index update for {}:{}.", storageId, repositoryId);
 
         }
         else
         {
-            logger.debug("Performed an incremental update, with changes covering the period between {} - {}.",
+            logger.info("Performed an incremental update, with changes covering the period between {} - {}.",
                          contextCurrentTimestamp, updateResult.getTimestamp());
         }
         IndexPacker.pack(repositoryIndexDirectoryPath, indexingContext);
@@ -99,7 +99,7 @@ public class RepositoryProxyIndexCreator
                                          final String repositoryId)
             throws IOException
     {
-        logger.debug("Downloading remote index for {}:{} ...", storageId, repositoryId);
+        logger.info("Downloading remote index for {}:{} ...", storageId, repositoryId);
 
         final IndexUpdateRequest updateRequest = new IndexUpdateRequest(indexingContext,
                                                                         resourceFetcherFactory.createIndexResourceFetcher(

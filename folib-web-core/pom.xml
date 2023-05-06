@@ -336,7 +336,7 @@
             <artifactId>javax.servlet-api</artifactId>
         </dependency>
 
-<!--安全扫描相关依赖-->
+        <!--安全扫描相关依赖-->
         <dependency>
             <groupId>org.owasp</groupId>
             <artifactId>dependency-check-core</artifactId>
