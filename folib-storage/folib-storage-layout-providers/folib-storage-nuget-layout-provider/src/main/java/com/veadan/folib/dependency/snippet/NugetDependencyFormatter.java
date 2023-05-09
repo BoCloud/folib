@@ -34,7 +34,7 @@ public class NugetDependencyFormatter
     {
         compatibleDependencyFormatRegistry.addProviderImplementation(getLayout(), getFormatAlias(), this);
 
-        logger.debug("Initialized the NuGet dependency formatter.");
+        logger.info("Initialized the NuGet dependency formatter.");
     }
 
     @Override

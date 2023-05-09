@@ -1,5 +1,9 @@
 package com.veadan.folib.storage.metadata;
 
+import cn.hutool.core.io.FileUtil;
+import cn.hutool.extra.spring.SpringUtil;
+import com.veadan.folib.cloud.storage.s3fs.S3FileSystem;
+import com.veadan.folib.cloud.storage.s3fs.S3Path;
 import com.veadan.folib.storage.metadata.maven.comparators.MetadataVersionComparator;
 import com.veadan.folib.storage.metadata.maven.comparators.SnapshotVersionComparator;
 import com.veadan.folib.storage.metadata.maven.io.filters.ArtifactVersionDirectoryFilter;
@@ -8,6 +12,7 @@ import com.veadan.folib.storage.metadata.maven.visitors.ArtifactVersionDirectory
 
 import java.io.FileReader;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.Reader;
 import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
@@ -15,10 +20,12 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.*;
+import java.util.stream.Collectors;
 
 import com.google.common.collect.Lists;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.maven.artifact.Artifact;
 import org.apache.maven.artifact.ArtifactUtils;
 import org.apache.maven.artifact.DefaultArtifact;
@@ -58,6 +65,7 @@ public class VersionCollector
                                                                  new ArtifactVersionDirectoryFilter()))
         {
             versionPaths = Lists.newArrayList(ds);
+            versionPaths = versionPaths.stream().filter(dir -> Files.isDirectory(dir)).collect(Collectors.toList());
         }
 
         // Add all versions
@@ -70,6 +78,7 @@ public class VersionCollector
                 // No pom, no metadata.
                 if (pomArtifactPath != null)
                 {
+                    logger.info("pomArtifactPath [{}]", pomArtifactPath.toString());
                     Model pom = getPom(pomArtifactPath);
 
                     BasicFileAttributes fileAttributes = Files.readAttributes(versionDirectoryPath,
@@ -147,14 +156,27 @@ public class VersionCollector
         else
         {
             // Attempt to get the latest available POM
-            List<String> filePaths = Arrays.asList(versionDirectoryPath.toFile()
-                                                                       .list((dir, name) -> name.endsWith(".pom")));
+//            List<String> filePaths = Arrays.asList(versionDirectoryPath.toFile()
+//                    .list((dir, name) -> name.endsWith(".pom")));
 
-            if (filePaths != null && !filePaths.isEmpty())
+            List<String> filePaths = null;
+
+            try {
+                filePaths =  Files.list(versionDirectoryPath).filter(f -> !Files.isDirectory(f) && f.getFileName().toString().endsWith(".pom")).map(p -> p.toAbsolutePath().toString()).collect(Collectors.toList());
+            } catch (IOException ex) {
+                logger.error("[{}] getPomPath error [{}]", this.getClass().getSimpleName(), ExceptionUtils.getStackTrace(ex));
+                return null;
+            }
+
+            if (!filePaths.isEmpty())
             {
                 Collections.sort(filePaths);
-                return Paths.get(versionDirectoryPath.toAbsolutePath().toString(),
-                                 filePaths.get(filePaths.size() - 1));
+                if (versionDirectoryPath.toString().startsWith("s3://")) {
+                    logger.info("filePaths [{}]", filePaths);
+                    return new S3Path(SpringUtil.getBean(S3FileSystem.class), filePaths.get(filePaths.size() - 1));
+                } else {
+                    return Paths.get(filePaths.get(filePaths.size() - 1));
+                }
             }
             else
             {
@@ -190,8 +212,14 @@ public class VersionCollector
                                                     gav.getExtension(),
                                                     gav.getClassifier(),
                                                     new DefaultArtifactHandler(gav.getExtension()));
-
-            String name = filePath.toFile().getName();
+            String name = filePath.getFileName().toString();
+//            String name = FileUtil.getName(filePath.toString());
+//            if (filePath instanceof S3Path) {
+//                S3Path s3Path = (S3Path) filePath;
+//                name = s3Path.getFileName().toString();
+//            } else {
+//                name = filePath.toFile().getName();
+//            }
 
             SnapshotVersion snapshotVersion = MetadataHelper.createSnapshotVersion(artifact,
                                                                                    FilenameUtils.getExtension(name));
@@ -249,10 +277,12 @@ public class VersionCollector
     private Model getPom(Path filePath)
             throws IOException, XmlPullParserException
     {
-        try (Reader rr = new FileReader(filePath.toFile()))
+
+        logger.info("filePath [{}]", filePath.toString());
+        try (InputStream inputStream = Files.newInputStream(filePath))
         {
             MavenXpp3Reader reader = new MavenXpp3Reader();
-            return reader.read(rr);
+            return reader.read(inputStream);
         }
 
     }

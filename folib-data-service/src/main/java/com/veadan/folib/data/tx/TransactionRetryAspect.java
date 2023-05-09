@@ -72,7 +72,7 @@ public class TransactionRetryAspect
         }
 
         cflowbelow.set(Boolean.TRUE);
-        logger.debug("Transactional method execution start.");
+        logger.info("Transactional method execution start.");
 
         try
         {
@@ -93,7 +93,7 @@ public class TransactionRetryAspect
             try
             {
                 Object result = jp.proceed();
-                logger.debug("Transactional method execution end.");
+                logger.info("Transactional method execution end.");
                 return result;
             }
             catch (RuntimeException e)
@@ -110,11 +110,11 @@ public class TransactionRetryAspect
                     continue;
                 }
 
-                logger.debug("Transactional method execution end.");
+                logger.info("Transactional method execution end.");
                 throw e;
             }
         }
-        logger.debug("Transactional method execution end.");
+        logger.info("Transactional method execution end.");
         throw lastException;
     }
 

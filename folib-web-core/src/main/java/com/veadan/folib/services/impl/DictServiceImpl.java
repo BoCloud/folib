@@ -4,11 +4,13 @@ import com.google.common.collect.Lists;
 import com.veadan.folib.entity.Dict;
 import com.veadan.folib.enums.DictTypeEnum;
 import com.veadan.folib.enums.UpgradeTaskStatusEnum;
+import com.veadan.folib.forms.dict.DictForm;
 import com.veadan.folib.mapper.DictMapper;
 import com.veadan.folib.services.DictService;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -39,7 +41,9 @@ public class DictServiceImpl implements DictService {
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public void updateDict(Dict dict) {
+    public void updateDict(DictForm dictForm) {
+        Dict dict = Dict.builder().build();
+        BeanUtils.copyProperties(dictForm, dict);
         dict.setComment(handlerComment(dict));
         Example example = Example.builder(Dict.class).build();
         Example.Criteria criteria = example.createCriteria();
@@ -50,6 +54,10 @@ public class DictServiceImpl implements DictService {
             criteria.andEqualTo("dictKey", dict.getDictKey());
         }
         dictMapper.updateByExampleSelective(dict, example);
+        if (Boolean.TRUE.equals(dictForm.getOverrideSystemProperty())) {
+            System.setProperty(dict.getDictKey(), dict.getDictValue());
+            log.info("更新系统属性：key {}，value：{}", dict.getDictKey(), dict.getDictValue());
+        }
     }
 
     @Override
@@ -63,7 +71,9 @@ public class DictServiceImpl implements DictService {
             if (flag) {
                 return;
             }
-            updateDict(dict);
+            DictForm dictForm = DictForm.builder().build();
+            BeanUtils.copyProperties(dict, dictForm);
+            updateDict(dictForm);
         } else {
             saveDict(dict);
         }

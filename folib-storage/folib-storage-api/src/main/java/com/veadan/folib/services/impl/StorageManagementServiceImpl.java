@@ -215,7 +215,7 @@ public class StorageManagementServiceImpl implements StorageManagementService {
                 privileges.addAll(roleData.getAccessModel().getApiAuthorities().stream().map(Privileges::getAuthority).collect(Collectors.toSet()));
             }
         }
-        logger.debug("storage admin privileges：{}", privileges);
+        logger.info("storage admin privileges：{}", privileges);
         return privileges;
     }
 

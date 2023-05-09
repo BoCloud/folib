@@ -55,9 +55,9 @@ public class JanusGraphDbProfile
                                                               .map(p -> p.resolve(name + ".yaml"))
                                                               .map(FileSystemResource::new)
                                                               .map(Resource.class::cast);
-        dbConfigResourceOptional.ifPresent(path -> logger.debug("Checking JanusGraph DB config from [{}].", path));
+        dbConfigResourceOptional.ifPresent(path -> logger.info("Checking JanusGraph DB config from [{}].", path));
         dbConfigResourceOptional = dbConfigResourceOptional.filter(Resource::exists);
-        dbConfigResourceOptional.ifPresent(path -> logger.debug("Using JanusGraph DB config from [{}].", path));
+        dbConfigResourceOptional.ifPresent(path -> logger.info("Using JanusGraph DB config from [{}].", path));
         Resource dbConfigResource = dbConfigResourceOptional.orElseGet(() -> {
             logger.info("Using JanusGraph DB config from [{}].", classPathResourceName);
             return resourceResolver.getResource(classPathResourceName);

@@ -117,7 +117,7 @@ public class NpmPackageSupplier implements Function<Path, NpmPackageDesc> {
                 dist.setIntegrity(new String(Files.readAllBytes(integrityPath), StandardCharsets.UTF_8).trim());
             }
         } catch (NoSuchFileException e) {
-            logger.debug("Checksum file not found [{}].", shasumPath);
+            logger.info("Checksum file not found [{}].", shasumPath);
         } catch (IOException e) {
             throw new UndeclaredThrowableException(e);
         }

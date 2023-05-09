@@ -34,10 +34,10 @@ public class RepositoryProviderRegistry extends AbstractMappedProviderRegistry<R
 
     public void dump()
     {
-        logger.debug("Listing repository providers:");
+        logger.info("Listing repository providers:");
         for (String providerName : getProviders().keySet())
         {
-            logger.debug(" provider: {}", providerName);
+            logger.info(" provider: {}", providerName);
         }
     }
 

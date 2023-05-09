@@ -78,7 +78,7 @@ public class PasswordAuthenticationProvider extends DaoAuthenticationProvider
                     .isPresent())
 
         {
-            logger.debug("Found cached authentication for [{}]", userDetails.getUsername());
+            logger.info("Found cached authentication for [{}]", userDetails.getUsername());
             return;
         }
 

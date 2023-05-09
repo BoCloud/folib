@@ -51,7 +51,7 @@ class CronTaskConfigurationServiceImpl
     }
 
     public UUID saveConfiguration(CronTaskConfigurationDto configuration) throws IOException {
-        logger.debug("CronTaskConfigurationService.saveConfiguration()");
+        logger.info("CronTaskConfigurationService.saveConfiguration()");
 
         UUID configurationId = cronTaskDataService.save(configuration);
         cronJobSchedulerService.scheduleJob(configuration);
@@ -62,7 +62,7 @@ class CronTaskConfigurationServiceImpl
     }
 
     public void deleteConfiguration(UUID cronTaskConfigurationUuid) throws IOException {
-        logger.debug("Deleting cron task configuration {}", cronTaskConfigurationUuid);
+        logger.info("Deleting cron task configuration {}", cronTaskConfigurationUuid);
 
         cronTaskDataService.delete(cronTaskConfigurationUuid);
         cronJobSchedulerService.deleteJob(cronTaskConfigurationUuid);

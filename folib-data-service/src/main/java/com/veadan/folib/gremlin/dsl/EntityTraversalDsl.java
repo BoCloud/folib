@@ -127,7 +127,7 @@ public interface EntityTraversalDsl<S, E> extends GraphTraversal.Admin<S, E>
         Long nativeId = entity.getNativeId();
         if (nativeId != null)
         {
-            return ((EntityTraversal<S, Vertex>) V(nativeId)).debug("Attached");
+            return ((EntityTraversal<S, Vertex>) V(nativeId)).info("Attached");
         }
 
         return V();

@@ -76,7 +76,7 @@ public class MavenArtifactController
             throws Exception {
         final String storageId = repository.getStorage().getId();
         final String repositoryId = repository.getId();
-        logger.debug("Requested /{}/{}/{}.", storageId, repositoryId, artifactPath);
+        logger.info("Requested /{}/{}/{}.", storageId, repositoryId, artifactPath);
 
         artifactPath = correctIndexPathIfNecessary(repository, artifactPath);
         RepositoryPath repositoryPath = artifactResolutionService.resolvePath(storageId, repositoryId, artifactPath);
@@ -124,7 +124,7 @@ public class MavenArtifactController
         final String destStorageId = destRepository.getStorage().getId();
         final String destRepositoryId = destRepository.getId();
 
-        logger.debug("Copying {} from {}:{} to {}:{}...", path, srcStorageId, srcRepositoryId, destStorageId,
+        logger.info("Copying {} from {}:{} to {}:{}...", path, srcStorageId, srcRepositoryId, destStorageId,
                 destRepositoryId);
 
         try {

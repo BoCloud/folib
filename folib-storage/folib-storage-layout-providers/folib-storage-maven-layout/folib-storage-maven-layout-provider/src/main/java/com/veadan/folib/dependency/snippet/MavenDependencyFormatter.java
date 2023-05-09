@@ -32,7 +32,7 @@ public class MavenDependencyFormatter
     {
         compatibleDependencyFormatRegistry.addProviderImplementation(getLayout(), getFormatAlias(), this);
 
-        logger.debug("Initialized the Maven dependency formatter.");
+        logger.info("Initialized the Maven dependency formatter.");
     }
 
     @Override

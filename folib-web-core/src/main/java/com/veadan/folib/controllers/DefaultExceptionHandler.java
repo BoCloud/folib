@@ -95,7 +95,7 @@ public class DefaultExceptionHandler extends ResponseEntityExceptionHandler
     @ExceptionHandler(Http202PropogateException.class)
     protected void handleHttp202PropogateException(Exception ex, HttpServletResponse httpResponse)
     {
-        logger.debug(ex.getMessage());
+        logger.info(ex.getMessage());
         httpResponse.setStatus(202);
     }
 

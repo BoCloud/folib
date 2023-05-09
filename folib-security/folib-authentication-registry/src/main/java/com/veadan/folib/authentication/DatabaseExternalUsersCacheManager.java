@@ -34,13 +34,13 @@ public class DatabaseExternalUsersCacheManager extends DatabaseUserService imple
     public UserEntity findByUsername(String username) {
         UserEntity result = super.findByUsername(username);
         if (result != null) {
-            logger.debug("User found in DB: username=[{}], sourceId=[{}], id=[{}], uuid=[{}]",
+            logger.info("User found in DB: username=[{}], sourceId=[{}], id=[{}], uuid=[{}]",
                     result.getUsername(),
                     result.getSourceId(),
                     result.getNativeId(),
                     result.getUuid());
         } else {
-            logger.debug("User not found in DB: username=[{}]", username);
+            logger.info("User not found in DB: username=[{}]", username);
         }
 
         return result;
@@ -62,7 +62,7 @@ public class DatabaseExternalUsersCacheManager extends DatabaseUserService imple
             // If found user was from another source then remove before save
             Optional<String> oldSource = oldUser.map(User::getSourceId);
             if (oldSource.map(sourceId::equals).filter(Boolean.FALSE::equals).isPresent()) {
-                logger.debug("Invalidate user from another source: username=[{}], oldSource=[{}], newSource=[{}]",
+                logger.info("Invalidate user from another source: username=[{}], oldSource=[{}], newSource=[{}]",
                         username,
                         oldSource.get(),
                         sourceId);

@@ -46,7 +46,7 @@ public class ArtifactDirectoryLocator
 
         long endTime = System.currentTimeMillis();
 
-        logger.debug("Executed (cache: {}) visits in {} ms.",
+        logger.info("Executed (cache: {}) visits in {} ms.",
                      -operation.getVisitedRootPaths().size(), (endTime - startTime));
 
         getOperation().getVisitedRootPaths().clear();
@@ -63,7 +63,7 @@ public class ArtifactDirectoryLocator
         }
         rootPath = rootPath.normalize();
 
-        logger.debug("ArtifactDirectoryLocator started in: path-[{}]", rootPath);
+        logger.info("ArtifactDirectoryLocator started in: path-[{}]", rootPath);
 
         return Files.isDirectory(rootPath) ? rootPath : rootPath.getParent();
     }

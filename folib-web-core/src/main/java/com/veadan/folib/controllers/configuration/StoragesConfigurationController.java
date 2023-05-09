@@ -554,7 +554,7 @@ public class StoragesConfigurationController
                 }
                 configurationManagementService.removeStorage(storageId);
 
-                logger.debug("Removed storage {}.", storageId);
+                logger.info("Removed storage {}.", storageId);
                 SyncStorageDto syncStorageDto = new SyncStorageDto(storageDto, SyncStorageEnum.DELETE, storageId, force);
                 clusterSyncService.syncStorage(syncStorageDto);
                 AuthorizationConfigDto authorizationConfigDto = authorizationConfigService.getDto();
@@ -628,7 +628,7 @@ public class StoragesConfigurationController
                 return getFailedResponseEntity(HttpStatus.BAD_REQUEST, "The repository id already exists", accept);
             }
             try {
-                logger.debug("Creating repository {}:{}...", storageId, repositoryId);
+                logger.info("Creating repository {}:{}...", storageId, repositoryId);
 
                 configurationManagementService.saveRepository(storageId, repository);
                 RepositoryDto repositoryDto = getMutableConfigurationClone().getStorage(storageId)
@@ -677,7 +677,7 @@ public class StoragesConfigurationController
                 RepositoryDto repository = getMutableConfigurationClone().getStorage(storageId)
                         .getRepository(repositoryId);
                 repository.setVulnerabilityWhites(repositoryForm.getVulnerabilityWhites());
-                logger.debug("新增仓库级别白名单 {}:{}...", storageId, repositoryId);
+                logger.info("新增仓库级别白名单 {}:{}...", storageId, repositoryId);
                 configurationManagementService.addRepositoryVulnerabilityWhites(storageId, repositoryId, repository.getVulnerabilityWhites());
                 repository = getMutableConfigurationClone().getStorage(storageId)
                         .getRepository(repositoryId);
@@ -719,7 +719,7 @@ public class StoragesConfigurationController
                 RepositoryDto repository = getMutableConfigurationClone().getStorage(storageId)
                         .getRepository(repositoryId);
                 repository.setVulnerabilityWhites(repositoryForm.getVulnerabilityWhites());
-                logger.debug("删除仓库级别白名单 {}:{}...", storageId, repositoryId);
+                logger.info("删除仓库级别白名单 {}:{}...", storageId, repositoryId);
                 configurationManagementService.removeRepositoryVulnerabilityWhites(storageId, repositoryId, repository.getVulnerabilityWhites());
                 repository = getMutableConfigurationClone().getStorage(storageId)
                         .getRepository(repositoryId);
@@ -761,7 +761,7 @@ public class StoragesConfigurationController
                 RepositoryDto repository = getMutableConfigurationClone().getStorage(storageId)
                         .getRepository(repositoryId);
                 repository.setVulnerabilityBlacks(repositoryForm.getVulnerabilityBlacks());
-                logger.debug("新增仓库级别黑名单 {}:{}...", storageId, repositoryId);
+                logger.info("新增仓库级别黑名单 {}:{}...", storageId, repositoryId);
                 configurationManagementService.addRepositoryVulnerabilityBlacks(storageId, repositoryId, repository.getVulnerabilityBlacks());
                 repository = getMutableConfigurationClone().getStorage(storageId)
                         .getRepository(repositoryId);
@@ -803,7 +803,7 @@ public class StoragesConfigurationController
                 RepositoryDto repository = getMutableConfigurationClone().getStorage(storageId)
                         .getRepository(repositoryId);
                 repository.setVulnerabilityBlacks(repositoryForm.getVulnerabilityBlacks());
-                logger.debug("删除仓库级别黑名单 {}:{}...", storageId, repositoryId);
+                logger.info("删除仓库级别黑名单 {}:{}...", storageId, repositoryId);
                 configurationManagementService.removeRepositoryVulnerabilityBlacks(storageId, repositoryId, repository.getVulnerabilityBlacks());
                 repository = getMutableConfigurationClone().getStorage(storageId)
                         .getRepository(repositoryId);
@@ -843,7 +843,7 @@ public class StoragesConfigurationController
                 RepositoryDto repository = getMutableConfigurationClone().getStorage(storageId)
                         .getRepository(repositoryId);
                 repository.setVulnerabilityWhites(repositoryForm.getVulnerabilityWhites());
-                logger.debug("设置仓库级别白名单 {}:{}...", storageId, repositoryId);
+                logger.info("设置仓库级别白名单 {}:{}...", storageId, repositoryId);
                 configurationManagementService.setRepositoryVulnerabilityWhites(storageId, repositoryId, repository.getVulnerabilityWhites());
                 repository = getMutableConfigurationClone().getStorage(storageId)
                         .getRepository(repositoryId);
@@ -883,7 +883,7 @@ public class StoragesConfigurationController
                 RepositoryDto repository = getMutableConfigurationClone().getStorage(storageId)
                         .getRepository(repositoryId);
                 repository.setVulnerabilityBlacks(repositoryForm.getVulnerabilityBlacks());
-                logger.debug("设置仓库级别黑名单 {}:{}...", storageId, repositoryId);
+                logger.info("设置仓库级别黑名单 {}:{}...", storageId, repositoryId);
                 configurationManagementService.setRepositoryVulnerabilityBlacks(storageId, repositoryId, repository.getVulnerabilityBlacks());
                 repository = getMutableConfigurationClone().getStorage(storageId)
                         .getRepository(repositoryId);
@@ -953,7 +953,7 @@ public class StoragesConfigurationController
             SyncRepositoryDto syncRepositoryDto = new SyncRepositoryDto(repositoryDto, storageId, repositoryId, SyncRepositoryEnum.DELETE, force);
             clusterSyncService.syncRepository(syncRepositoryDto);
 
-            logger.debug("Removed repository {}:{}.", storageId, repositoryId);
+            logger.info("Removed repository {}:{}.", storageId, repositoryId);
 
             return getSuccessfulResponseEntity(SUCCESSFUL_REPOSITORY_REMOVAL, accept);
         } catch (IOException | ConfigurationException e) {
@@ -1158,7 +1158,7 @@ public class StoragesConfigurationController
                 if (Objects.isNull(repository)) {
                     return getFailedResponseEntity(HttpStatus.NOT_FOUND, STORAGE_NOT_FOUND, accept);
                 }
-                logger.debug("设置仓库的联邦仓库 {}:{}...", storageId, repositoryId);
+                logger.info("设置仓库的联邦仓库 {}:{}...", storageId, repositoryId);
                 configurationManagementService.setUnionRepositoryConfiguration(storageId, repositoryId, unionRepositoryConfigurationForm.getMutableUnionRepositoryConfiguration());
                 //同步联邦仓库
                 SyncUnionRepositoryDto syncUnionRepositoryDto = SyncUnionRepositoryDto.builder().storageId(storageId).repositoryId(repositoryId)

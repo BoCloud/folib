@@ -34,7 +34,7 @@ public class GradleDependencyFormatter
     {
         compatibleDependencyFormatRegistry.addProviderImplementation(getLayout(), getFormatAlias(), this);
 
-        logger.debug("Initialized the Gradle dependency formatter.");
+        logger.info("Initialized the Gradle dependency formatter.");
     }
 
     @Override

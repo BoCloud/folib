@@ -33,7 +33,7 @@ public class BuildrDependencyFormatter
     {
         compatibleDependencyFormatRegistry.addProviderImplementation(getLayout(), getFormatAlias(), this);
 
-        logger.debug("Initialized the Buildr dependency formatter.");
+        logger.info("Initialized the Buildr dependency formatter.");
     }
 
     @Override

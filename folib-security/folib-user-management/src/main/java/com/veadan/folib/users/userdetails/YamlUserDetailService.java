@@ -25,7 +25,7 @@ public class YamlUserDetailService
     public UserDetails loadUserByUsername(String name)
             throws UsernameNotFoundException
     {
-        logger.debug("Loading user details for {}...", name);
+        logger.info("Loading user details for {}...", name);
 
         if (name == null)
         {

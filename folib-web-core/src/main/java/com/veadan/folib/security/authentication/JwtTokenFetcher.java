@@ -38,7 +38,7 @@ public interface JwtTokenFetcher
             if (headerMatcher.matches())
             {
                 String token = headerMatcher.group(1);
-                logger.debug("Bearer Authorization header found with token {}", token);
+                logger.info("Bearer Authorization header found with token {}", token);
                 return Optional.of(token);
             }
         }
@@ -50,7 +50,7 @@ public interface JwtTokenFetcher
         if (tokenCookie.isPresent())
         {
             String token = tokenCookie.get().getValue();
-            logger.debug("Bearer Authorization found in cookie with token {}", token);
+            logger.info("Bearer Authorization found in cookie with token {}", token);
             return Optional.of(token);
         }
 

@@ -177,7 +177,7 @@ public class DirectoryListingServiceImpl implements DirectoryListingService
                         }
                         catch (IOException e)
                         {
-                            logger.debug("Error accessing path {}", p);
+                            logger.info("Error accessing path {}", p);
                             return false;
                         }
                     })

@@ -106,6 +106,9 @@ public class CommonUtils {
             Throwable cause = e.getCause();
             if (cause == null) {
                 s = e.getMessage();
+                if (StringUtils.isBlank(s)) {
+                    s = "";
+                }
                 if (s.contains(ex)) {
                     s = s.substring(s.indexOf(ex) + ex.length());
                 }
@@ -114,5 +117,20 @@ public class CommonUtils {
             e = cause;
         }
         return "";
+    }
+
+    /**
+     * 是否是需要捕获的异常信息
+     *
+     * @param err 异常信息
+     * @return true 是 false 不是
+     */
+    public static boolean catchException(String err) {
+        String expectedErr = "Expected value mismatch for KeyColumn";
+        String lockErr = "Local lock contention";
+        String uniquenessErr = "violates a uniqueness constraint";
+        String lockNoTimestamp = "no lock column contained our timestamp";
+        List<String> errList = Lists.newArrayList(expectedErr, lockErr, uniquenessErr, lockNoTimestamp);
+        return errList.stream().anyMatch(err::contains);
     }
 }

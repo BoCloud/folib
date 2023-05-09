@@ -141,7 +141,7 @@ public class RpmRepositoryFeatures implements RepositoryFeatures
         Client restClient = proxyRepositoryConnectionPoolConfigurationService.getRestClient(storageId,repositoryId);
         try
         {
-            logger.debug("Search NPM packages for [{}].", remoteRepositoryUrl);
+            logger.info("Search NPM packages for [{}].", remoteRepositoryUrl);
 
             WebTarget service = restClient.target(remoteRepository.getUrl());
             service = service.path("-/v1/search").queryParam("text", text).queryParam("size", size);
@@ -149,7 +149,7 @@ public class RpmRepositoryFeatures implements RepositoryFeatures
             InputStream inputStream = service.request().buildGet().invoke(InputStream.class);
             searchResults = rpmJacksonMapper.readValue(inputStream, SearchResults.class);
 
-            logger.debug("Searched NPM packages for [{}].", remoteRepository.getUrl());
+            logger.info("Searched NPM packages for [{}].", remoteRepository.getUrl());
 
         }
         catch (Exception e)
@@ -222,7 +222,7 @@ public class RpmRepositoryFeatures implements RepositoryFeatures
         Client restClient = proxyRepositoryConnectionPoolConfigurationService.getRestClient(repository.getStorage().getId(),repository.getId());
         try
         {
-            logger.debug("Fetching remote changes for [{}] since [{}].", replicateUrl, since);
+            logger.info("Fetching remote changes for [{}] since [{}].", replicateUrl, since);
 
             WebTarget service = restClient.target(replicateUrl);
             service = service.path("_changes");
@@ -313,7 +313,7 @@ public class RpmRepositoryFeatures implements RepositoryFeatures
 
         }
 
-        logger.debug("Fetched remote changes for  [{}] since [{}].",
+        logger.info("Fetched remote changes for  [{}] since [{}].",
                 repositoryConfiguration.getReplicateUrl(),
                 repositoryConfiguration.getLastChangeId());
 
@@ -339,7 +339,7 @@ public class RpmRepositoryFeatures implements RepositoryFeatures
         Client restClient = proxyRepositoryConnectionPoolConfigurationService.getRestClient(storageId, repositoryId);
         try
         {
-            logger.debug("Downloading NPM changes feed for [{}].", remoteRepositoryUrl);
+            logger.info("Downloading NPM changes feed for [{}].", remoteRepositoryUrl);
 
             WebTarget service = restClient.target(remoteRepository.getUrl());
             service = service.path(packageId);
@@ -347,7 +347,7 @@ public class RpmRepositoryFeatures implements RepositoryFeatures
             InputStream inputStream = service.request().buildGet().invoke(InputStream.class);
             packageFeed = rpmJacksonMapper.readValue(inputStream, PackageFeed.class);
 
-            logger.debug("Downloaded NPM changes feed for [{}].", remoteRepository.getUrl());
+            logger.info("Downloaded NPM changes feed for [{}].", remoteRepository.getUrl());
 
         }
         catch (Exception e)
@@ -412,7 +412,7 @@ public class RpmRepositoryFeatures implements RepositoryFeatures
             RepositorySearchRequest predicate = event.getPredicate();
             Boolean packageExists = packagesExists(storageId, repositoryId, predicate);
 
-            logger.debug("RPM remote repository [{}] cached package existance is [{}]",
+            logger.info("RPM remote repository [{}] cached package existance is [{}]",
                     repository.getId(), packageExists);
 
             Runnable job = () -> fetchRemoteSearchResult(storageId, repositoryId, rpmSearchRequest.getText(),
@@ -470,7 +470,7 @@ public class RpmRepositoryFeatures implements RepositoryFeatures
             RepositorySearchRequest predicate = event.getPredicate();
             Boolean packagesExists = packagesExists(storageId, repositoryId, predicate);
 
-            logger.debug("NPM remote repository [{}] cached package ixistance is [{}]",
+            logger.info("NPM remote repository [{}] cached package ixistance is [{}]",
                     repository.getId(), packagesExists);
 
             Runnable job = () -> fetchRemotePackageFeed(storage.getId(), repository.getId(),

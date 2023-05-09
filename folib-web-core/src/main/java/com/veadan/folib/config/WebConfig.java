@@ -113,7 +113,7 @@ public class WebConfig
     private ConfigurationManager configurationManager;
 
     WebConfig() {
-        logger.debug("Initialized web configuration.");
+        logger.info("Initialized web configuration.");
     }
 
     @Bean

@@ -67,7 +67,7 @@ public class ProxyRepositoryArtifactResolver
         final RemoteRepository remoteRepository = repository.getRemoteRepository();
         if (!remoteRepositoryAlivenessCacheManager.isAlive(remoteRepository))
         {
-            logger.debug("Remote repository '{}' is down.", remoteRepository.getUrl());
+            logger.info("Remote repository '{}' is down.", remoteRepository.getUrl());
 
             return null;
         }
@@ -93,7 +93,7 @@ public class ProxyRepositoryArtifactResolver
     {
         //We need this to force initialize lazy connection to remote repository.
         int available = is.available();
-        logger.debug("Got [{}] available bytes for [{}].", available, repositoryPath);
+        logger.info("Got [{}] available bytes for [{}].", available, repositoryPath);
         
         RepositoryPath result = onSuccessfulProxyRepositoryResponse(is, repositoryPath);
         if (RepositoryFiles.isArtifact(repositoryPath))

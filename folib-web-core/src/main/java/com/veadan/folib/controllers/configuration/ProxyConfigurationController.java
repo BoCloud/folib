@@ -73,7 +73,7 @@ public class ProxyConfigurationController
 
         MutableProxyConfiguration proxyConfiguration = conversionService.convert(proxyConfigurationForm,
                                                                                  MutableProxyConfiguration.class);
-        logger.debug("收到代理配置\n: {}", proxyConfiguration);
+        logger.info("收到代理配置\n: {}", proxyConfiguration);
 
         try
         {

@@ -129,7 +129,7 @@ public class ArtifactController extends BaseController {
     @ApiOperation(value = "批量新增制品元数据适配安徽政务 docker 仓与 raw 仓 合并成一个仓的场景")
     @ApiResponses(value = {@ApiResponse(code = 200, message = "OK")})
     @PostMapping(value = "/batchArtifactMetaDataByahzw")
-    public ResponseEntity<String> batchArtifactMetaDataByahzw(@RequestBody @Validated({ArtifactMetadataForm.DeleteGroup.class}) List<ArtifactMetadataForm> list, BindingResult bindingResult){
+    public ResponseEntity<String> batchArtifactMetaDataByahzw(@RequestBody @Validated({ArtifactMetadataForm.DeleteGroup.class}) List<ArtifactMetadataForm> list, BindingResult bindingResult) {
         if (bindingResult.hasErrors()) {
             throw new RequestBodyValidationException(GlobalConstants.REQUEST_PARAMS_ERROR, bindingResult);
         }

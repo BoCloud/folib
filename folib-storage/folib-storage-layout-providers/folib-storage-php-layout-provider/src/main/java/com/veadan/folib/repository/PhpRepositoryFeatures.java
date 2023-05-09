@@ -95,7 +95,7 @@ public class PhpRepositoryFeatures
             RepositorySearchRequest predicate = event.getPredicate();
             Boolean packageExists = packagesExists(storageId, repositoryId, predicate);
 
-            log.debug("PHP remote repository [{}] cached package existance is [{}]",
+            log.info("PHP remote repository [{}] cached package existance is [{}]",
                     repository.getId(), packageExists);
 
             Runnable job = () -> fetchRemoteSearchResult(storageId, repositoryId, phpSearchRequest);
@@ -126,12 +126,12 @@ public class PhpRepositoryFeatures
         Response response = null;
         try {
             restClient = proxyRepositoryConnectionPoolConfigurationService.getRestClient(storageId, repositoryId);
-            log.debug("Search PHP packages for [{}].", targetUrl);
+            log.info("Search PHP packages for [{}].", targetUrl);
             WebTarget service = restClient.target(phpSearchRequest.getTargetUrl());
             service = service.queryParam("q", phpSearchRequest.getQ()).queryParam("type", phpSearchRequest.getType());
             response = service.request(MediaType.APPLICATION_JSON).get();
             phpSearchResult = response.readEntity(PhpSearchResult.class);
-            log.debug("Searched PHP packages for [{}].", targetUrl);
+            log.info("Searched PHP packages for [{}].", targetUrl);
         } catch (Exception e) {
             log.error("Failed to search PHP packages [{}]", targetUrl, e);
             return;

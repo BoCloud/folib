@@ -98,7 +98,7 @@ public abstract class AbstractRepositoryManagementStrategy
         {
             Files.delete(repositoryPath);
 
-            logger.debug("Removed directory structure for repository '{}'.", repositoryPath);
+            logger.info("Removed directory structure for repository '{}'.", repositoryPath);
         }
         else
         {

@@ -75,13 +75,16 @@
 								<a-list-item-meta>
 									<template #description>
 										<span>
-                      <a-progress class="upload-process" :percent="item.dictValue" :showInfo="true" :status="(item.comment && item.comment.length > 0)?'exception':item.dictValue<100?'active':'success'" />
+                      <a-progress class="upload-process" :percent="item.dictValue" :showInfo="true" :status="(item.comment && item.comment.length > 0 && !item.dictKey.includes('zip_'))?'exception':item.dictValue<100?'active':'success'" />
                     </span>
 									</template>
 									<a slot="title" href="#">
                     <a-tooltip placement="top">
                       <template slot="title">
-                        <span v-if="item.comment && item.comment.length >0">{{'错误：' + item.comment}}</span>
+                        <span v-if="item.comment && item.comment.length >0">
+                          <span v-if="!item.dictKey.includes('zip_')">错误：</span>
+                          {{item.comment}}
+                        </span>
                       </template>
                       {{ item.alias }}
                     </a-tooltip>

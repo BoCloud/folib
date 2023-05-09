@@ -30,7 +30,7 @@ public class PypiDependencyFormatter
     public void register()
     {
         compatibleDependencyFormatRegistry.addProviderImplementation(getLayout(), getFormatAlias(), this);
-        logger.debug("Initialized the Pypi dependency formatter.");
+        logger.info("Initialized the Pypi dependency formatter.");
     }
 
     @Override

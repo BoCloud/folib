@@ -34,7 +34,7 @@ public class LeiningenDependencyFormatter
     {
         compatibleDependencyFormatRegistry.addProviderImplementation(getLayout(), getFormatAlias(), this);
 
-        logger.debug("Initialized the Leiningen dependency formatter.");
+        logger.info("Initialized the Leiningen dependency formatter.");
     }
 
     @Override

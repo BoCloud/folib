@@ -142,7 +142,7 @@ public class ConfigurableProviderManager extends ProviderManager implements User
             }
             catch (UserAlreadyExistsException e)
             {
-                logger.debug(String.format("Retry to load user [%s] from [%s] by reason [%s]",
+                logger.info(String.format("Retry to load user [%s] from [%s] by reason [%s]",
                                            username, sourceId, e.getMessage()));
 
                 return loadUserDetails(username);

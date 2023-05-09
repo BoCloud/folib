@@ -52,7 +52,7 @@ public class ExternalAuthenticatorsHelper
         }
         catch (FileNotFoundException e)
         {
-            logger.debug(e.getMessage());
+            logger.info(e.getMessage());
             return parent;
         }
         catch (IOException e)
@@ -61,7 +61,7 @@ public class ExternalAuthenticatorsHelper
         }
         if (!Files.exists(authenticatorsDirectory))
         {
-            logger.debug("{} does not exist.", authenticatorsDirectory);
+            logger.info("{} does not exist.", authenticatorsDirectory);
             return parent;
         }
         if (!Files.isDirectory(authenticatorsDirectory))
@@ -74,7 +74,7 @@ public class ExternalAuthenticatorsHelper
 
         if (CollectionUtils.isEmpty(authenticatorsJarPaths))
         {
-            logger.debug("{} does not contain any authenticator jar files.", authenticatorsDirectory);
+            logger.info("{} does not contain any authenticator jar files.", authenticatorsDirectory);
             return parent;
         }
 

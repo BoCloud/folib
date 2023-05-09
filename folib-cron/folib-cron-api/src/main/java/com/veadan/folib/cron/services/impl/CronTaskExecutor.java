@@ -91,7 +91,7 @@ public class CronTaskExecutor extends ThreadPoolExecutor implements DisposableBe
     {
         Class<? extends Job> jobClass = jd.getJobClass();
         String jobClassName = jobClass.getSimpleName();
-        logger.debug("Bootstrap Cron Job [{}]", jobClassName);
+        logger.info("Bootstrap Cron Job [{}]", jobClassName);
         MDC.put(CronTaskContextAcceptFilter.FOLIB_CRON_CONTEXT_NAME, LoggingUtils.caclucateCronContextName(jobClass));
     }
 

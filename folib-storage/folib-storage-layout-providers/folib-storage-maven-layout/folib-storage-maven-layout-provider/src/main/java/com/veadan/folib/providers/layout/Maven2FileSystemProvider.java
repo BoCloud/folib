@@ -74,7 +74,7 @@ public class Maven2FileSystemProvider extends LayoutFileSystemProvider
     {
         RepositoryPath repositoryPath = (RepositoryPath) path;
         
-        logger.debug("Removing {}...", repositoryPath);
+        logger.info("Removing {}...", repositoryPath);
 
         if (Files.isDirectory(repositoryPath)) {
             if (path.toString().startsWith("s3://")) {

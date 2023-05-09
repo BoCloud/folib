@@ -47,7 +47,7 @@ public class ArtifactEventWebhookListener {
         int source = (int) event.getSource();
         RepositoryPath repositoryPath = event.getPath();
         ArtifactEventTypeEnum artifactEventTypeEnum = ArtifactEventTypeEnum.queryArtifactEventTypeEnumByType(source);
-        log.debug("=====>>>>> {} 监听到制品事件：{}，path路径：{}", ArtifactEventWebhookListener.class.getSimpleName(), artifactEventTypeEnum, repositoryPath);
+        log.info("=====>>>>> {} 监听到制品事件：{}，path路径：{}", ArtifactEventWebhookListener.class.getSimpleName(), artifactEventTypeEnum, repositoryPath);
         if (Objects.isNull(artifactEventTypeEnum)) {
             return;
         }
@@ -55,12 +55,12 @@ public class ArtifactEventWebhookListener {
             try {
                 List<WebhookConfigurationForm> webhookConfigurationList = webhookService.getWebhookConfiguration();
                 if (CollectionUtils.isEmpty(webhookConfigurationList)) {
-                    log.debug("webhook尚未配置，无后续操作");
+                    log.info("webhook尚未配置，无后续操作");
                     return;
                 }
                 Artifact artifact = repositoryPath.getArtifactEntry();
                 if (Objects.isNull(artifact) && ArtifactEventTypeEnum.EVENT_ARTIFACT_DIRECTORY_PATH_DELETED.getType() != source) {
-                    log.debug("repositoryPath：{} artifact未从图库中找到，无后续操作", repositoryPath);
+                    log.info("repositoryPath：{} artifact未从图库中找到，无后续操作", repositoryPath);
                     return;
                 }
                 Map<String, String> headerMap = null;

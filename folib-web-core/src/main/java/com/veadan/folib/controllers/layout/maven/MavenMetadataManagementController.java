@@ -93,7 +93,7 @@ public class MavenMetadataManagementController
     {
         final String storageId = repository.getStorage().getId();
         final String repositoryId = repository.getId();
-        logger.debug("Deleting metadata for {}:{}:{}:{}...",  storageId, repositoryId, path, version);
+        logger.info("Deleting metadata for {}:{}:{}:{}...",  storageId, repositoryId, path, version);
 
         try
         {

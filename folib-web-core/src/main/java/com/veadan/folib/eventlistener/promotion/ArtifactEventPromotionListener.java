@@ -53,7 +53,7 @@ public class ArtifactEventPromotionListener {
         int source = (int) event.getSource();
         RepositoryPath repositoryPath = event.getPath();
         ArtifactEventTypeEnum artifactEventTypeEnum = ArtifactEventTypeEnum.queryArtifactEventTypeEnumByType(source);
-        log.debug("=====>>>>> {} 监听到制品事件：{}，path路径：{}", ArtifactEventPromotionListener.class.getSimpleName(), artifactEventTypeEnum, repositoryPath);
+        log.info("=====>>>>> {} 监听到制品事件：{}，path路径：{}", ArtifactEventPromotionListener.class.getSimpleName(), artifactEventTypeEnum, repositoryPath);
         if (Objects.isNull(artifactEventTypeEnum)) {
             return;
         }
@@ -61,28 +61,28 @@ public class ArtifactEventPromotionListener {
             try {
                 Repository repository = repositoryPath.getRepository();
                 if (Objects.isNull(repository)) {
-                    log.debug("仓库不存在，无后续操作");
+                    log.info("仓库不存在，无后续操作");
                     return;
                 }
                 Artifact artifact = repositoryPath.getArtifactEntry();
                 if (Objects.isNull(artifact)) {
-                    log.debug("制品不存在，无后续操作");
+                    log.info("制品不存在，无后续操作");
                     return;
                 }
                 String storageId = repository.getStorage().getId();
                 String repositoryId = repository.getId();
                 UnionRepositoryConfiguration unionRepositoryConfiguration = repository.getUnionRepositoryConfig();
                 if (Objects.isNull(unionRepositoryConfiguration)) {
-                    log.debug("存储空间：{} 仓库：{} 未设置联邦仓库，无后续操作", storageId, repositoryId);
+                    log.info("存储空间：{} 仓库：{} 未设置联邦仓库，无后续操作", storageId, repositoryId);
                     return;
                 }
                 if (Boolean.FALSE.equals(unionRepositoryConfiguration.getEnable())) {
-                    log.debug("存储空间：{} 仓库：{} 晋级未启用，无后续操作", storageId, repositoryId);
+                    log.info("存储空间：{} 仓库：{} 晋级未启用，无后续操作", storageId, repositoryId);
                     return;
                 }
                 Set<UnionTargetRepositoryConfiguration> unionTargetRepositoryConfigurations = unionRepositoryConfiguration.getUnionTargetRepositories();
                 if (CollectionUtils.isEmpty(unionTargetRepositoryConfigurations)) {
-                    log.debug("存储空间：{} 仓库：{} 未设置联邦目标仓库，无后续操作", storageId, repositoryId);
+                    log.info("存储空间：{} 仓库：{} 未设置联邦目标仓库，无后续操作", storageId, repositoryId);
                     return;
                 }
                 String artifactPath = getArtifactPath(repositoryPath, artifact);
@@ -101,7 +101,7 @@ public class ArtifactEventPromotionListener {
                     //元数据
                     JSONObject metadataJson = artifactComponent.getMetadata(artifact);
                     if (Objects.isNull(metadataJson)) {
-                        log.debug("存储空间：{} 仓库：{} 制品：{} 未找到元数据，无后续操作", storageId, repositoryId, artifactPath);
+                        log.info("存储空间：{} 仓库：{} 制品：{} 未找到元数据，无后续操作", storageId, repositoryId, artifactPath);
                         return;
                     }
                     String metadataKey = unionRepositoryConfiguration.getMetadataKey();

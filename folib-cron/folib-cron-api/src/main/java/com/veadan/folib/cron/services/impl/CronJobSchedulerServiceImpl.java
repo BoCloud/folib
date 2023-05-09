@@ -61,7 +61,7 @@ public class CronJobSchedulerServiceImpl
         try
         {
             scheduler.addJob(jobDetail, true);
-            logger.debug("Job '{}' added to the Scheduler.", cronTaskConfiguration.getUuid());
+            logger.info("Job '{}' added to the Scheduler.", cronTaskConfiguration.getUuid());
         }
         catch (SchedulerException e)
         {
@@ -76,7 +76,7 @@ public class CronJobSchedulerServiceImpl
             try
             {
                 scheduler.triggerJob(jobKey);
-                logger.debug("Job '{}' triggered by the Scheduler.", cronTaskConfiguration.getUuid());
+                logger.info("Job '{}' triggered by the Scheduler.", cronTaskConfiguration.getUuid());
             }
             catch (SchedulerException e)
             {
@@ -89,7 +89,7 @@ public class CronJobSchedulerServiceImpl
 
         if (!scheduleJob)
         {
-            logger.debug("Job '{}' won't be scheduled based on the cron expression.", cronTaskConfiguration.getUuid());
+            logger.info("Job '{}' won't be scheduled based on the cron expression.", cronTaskConfiguration.getUuid());
             return;
         }
 
@@ -105,7 +105,7 @@ public class CronJobSchedulerServiceImpl
         try
         {
             scheduler.scheduleJob(trigger);
-            logger.debug("Job '{}' scheduled.", cronTaskConfiguration.getUuid());
+            logger.info("Job '{}' scheduled.", cronTaskConfiguration.getUuid());
         }
         catch (SchedulerException e)
         {
@@ -123,7 +123,7 @@ public class CronJobSchedulerServiceImpl
         try
         {
             scheduler.deleteJob(jobKey);
-            logger.debug("Job '{}' deleted and un-scheduled.", cronTaskConfigurationUuid);
+            logger.info("Job '{}' deleted and un-scheduled.", cronTaskConfigurationUuid);
         }
         catch (SchedulerException e)
         {

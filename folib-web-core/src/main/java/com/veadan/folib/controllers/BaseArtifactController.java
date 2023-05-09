@@ -65,7 +65,7 @@ public abstract class BaseArtifactController
                                                       HttpHeaders httpHeaders,
                                                       RepositoryPath repositoryPath)
             throws Exception {
-        logger.debug("Resolved path: {}", repositoryPath);
+        logger.info("Resolved path: {}", repositoryPath);
         boolean isCommitted = response.isCommitted();
         if (isCommitted) {
             return false;
@@ -80,7 +80,7 @@ public abstract class BaseArtifactController
 
         try (InputStream is = artifactResolutionService.getInputStream(repositoryPath)) {
             if (ArtifactControllerHelper.isRangedRequest(httpHeaders)) {
-                logger.debug("Detected ranged request.");
+                logger.info("Detected ranged request.");
 
                 ArtifactControllerHelper.handlePartialDownload(is, httpHeaders, response);
             } else {

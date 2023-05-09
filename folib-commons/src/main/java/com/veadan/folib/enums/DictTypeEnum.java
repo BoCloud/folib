@@ -33,6 +33,10 @@ public enum DictTypeEnum {
      * 自动晋级阻断
      */
     PROMOTION_BLOCK("promotion_block"),
+    /**
+     * 系统参数
+     */
+    SYSTEM_PROPERTY("system_property"),
     ;
 
     private String type;

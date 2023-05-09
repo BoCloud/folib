@@ -172,20 +172,20 @@ public class Base64Utils {
     static {
         for (int i = 0; i < 256; i++) {
             codes[i] = -1;
-            // LoggerUtil.debug(i + "&" + codes[i] + " ");
+            // LoggerUtil.info(i + "&" + codes[i] + " ");
         }
         for (int i = 'A'; i <= 'Z'; i++) {
             codes[i] = (byte) (i - 'A');
-            // LoggerUtil.debug(i + "&" + codes[i] + " ");
+            // LoggerUtil.info(i + "&" + codes[i] + " ");
         }
 
         for (int i = 'a'; i <= 'z'; i++) {
             codes[i] = (byte) (26 + i - 'a');
-            // LoggerUtil.debug(i + "&" + codes[i] + " ");
+            // LoggerUtil.info(i + "&" + codes[i] + " ");
         }
         for (int i = '0'; i <= '9'; i++) {
             codes[i] = (byte) (52 + i - '0');
-            // LoggerUtil.debug(i + "&" + codes[i] + " ");
+            // LoggerUtil.info(i + "&" + codes[i] + " ");
         }
         codes['+'] = 62;
         codes['/'] = 63;

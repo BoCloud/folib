@@ -498,7 +498,7 @@ public class ArtifactRepository extends GremlinVertexRepository<Artifact> {
                         .map(ArtifactLayoutLocator.getLayoutByNameEntityMap()::get)
                         .map(ArtifactLayoutDescription::getArtifactCoordinatesClass)));
         Artifact artifact = t.tryNext().orElse(null);
-        log.debug("=====>>>>>findOneArtifact耗时：{} 毫秒", System.currentTimeMillis() - startTime);
+        log.info("=====>>>>>FindOneArtifact耗时：{} 毫秒", System.currentTimeMillis() - startTime);
         return artifact;
     }
 

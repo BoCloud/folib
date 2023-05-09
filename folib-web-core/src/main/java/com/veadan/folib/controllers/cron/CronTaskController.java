@@ -219,7 +219,7 @@ public class CronTaskController
 
 
         final String message = String.format("Configuration %s removed", uuid);
-        logger.debug(message);
+        logger.info(message);
 
         return getSuccessfulResponseEntity(SUCCESSFUL_DELETE_CONFIGURATION, acceptHeader);
     }

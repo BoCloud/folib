@@ -197,14 +197,14 @@ public class ArtifactEventScannerListener {
         FileTypeUtil.putFileType("1f8b08000000000000ff", "gz");
         try {
             String hex = IoUtil.readHex28Lower(new FileInputStream(file));
-            log.debug("=====>>>>> 路径：{}，hex：{}", file.getAbsolutePath(), hex);
+            log.info("=====>>>>> 路径：{}，hex：{}", file.getAbsolutePath(), hex);
         } catch (Exception ex) {
             log.error("=====>>>>>读取魔数类型失败：{}", ExceptionUtils.getStackTrace(ex));
         }
         String type = FileTypeUtil.getType(file);
         String gz = "gz";
         if (gz.equals(type)) {
-            log.debug("=====>>>>> 路径：{}，类型：{}", file.getAbsolutePath(), type);
+            log.info("=====>>>>> 路径：{}，类型：{}", file.getAbsolutePath(), type);
             List<String> filePathList = readTarFile(file, tempPath);
             if (CollectionUtils.isNotEmpty(filePathList)) {
                 Path path = repositoryPath.getTarget();
@@ -256,7 +256,7 @@ public class ArtifactEventScannerListener {
                 filePaths.add(repositoryPath.toAbsolutePath().toString());
                 artifact.setFilePaths(filePaths);
                 artifactService.saveOrUpdateArtifact(artifact);
-            } catch (IOException ex) {
+            } catch (Exception ex) {
                 log.error("=====>>>>>获取Artifact错误：{}", ExceptionUtils.getStackTrace(ex));
             }
         }
@@ -300,12 +300,12 @@ public class ArtifactEventScannerListener {
         int source = (int) event.getSource();
         RepositoryPath repositoryPath = event.getPath();
         ArtifactEventTypeEnum artifactEventTypeEnum = ArtifactEventTypeEnum.queryArtifactEventTypeEnumByType(source);
-        log.debug("=====>>>>> 监听到制品事件：{}，path路径：{}", artifactEventTypeEnum, repositoryPath);
+        log.info("=====>>>>> 监听到制品事件：{}，path路径：{}", artifactEventTypeEnum, repositoryPath);
         if (Objects.isNull(artifactEventTypeEnum)) {
             return false;
         }
         flag = validateArtifactEvent(artifactEventTypeEnum);
-        log.debug("=====>>>>> 制品事件类型是否为需要处理的类型：{}", flag);
+        log.info("=====>>>>> 制品事件类型是否为需要处理的类型：{}", flag);
         if (ArtifactEventTypeEnum.EVENT_ARTIFACT_DIRECTORY_PATH_DELETED.getType() == source) {
             //删除制品目录后续不需要校验文件类型是否支持
             return true;
@@ -366,7 +366,7 @@ public class ArtifactEventScannerListener {
                         IOUtils.copy(tarArchiveInputStream, fileOutputStream);
                         IOUtils.closeQuietly(fileOutputStream);
                         pathList.add(curFile.getPath());
-                        log.debug("=====>>>>> 文件名称：{}，文件类型：{}，生成文件路径：{}", entry.getName(), type, curFile.getPath());
+                        log.info("=====>>>>> 文件名称：{}，文件类型：{}，生成文件路径：{}", entry.getName(), type, curFile.getPath());
                     }
                 }
             }

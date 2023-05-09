@@ -2,6 +2,9 @@ package com.veadan.folib.services.impl;
 
 import cn.hutool.core.date.DatePattern;
 import cn.hutool.core.date.DateUtil;
+import cn.hutool.core.io.FileUtil;
+import cn.hutool.core.io.IORuntimeException;
+import cn.hutool.core.lang.UUID;
 import cn.hutool.extra.spring.SpringUtil;
 import com.alibaba.excel.EasyExcel;
 import com.alibaba.excel.ExcelWriter;
@@ -22,15 +25,13 @@ import com.veadan.folib.configuration.ConfigurationUtils;
 import com.veadan.folib.configuration.MutableMetadataConfiguration;
 import com.veadan.folib.controllers.ResponseMessage;
 import com.veadan.folib.controllers.cluster.dto.SyncMetadataDto;
-import com.veadan.folib.domain.Artifact;
-import com.veadan.folib.domain.ArtifactMetadata;
-import com.veadan.folib.domain.DirectoryListing;
-import com.veadan.folib.domain.FileContent;
+import com.veadan.folib.domain.*;
 import com.veadan.folib.entity.Dict;
 import com.veadan.folib.enums.DictTypeEnum;
 import com.veadan.folib.enums.RepositoryScopeEnum;
 import com.veadan.folib.event.artifact.ArtifactEventListenerRegistry;
 import com.veadan.folib.forms.artifact.ArtifactMetadataForm;
+import com.veadan.folib.forms.dict.DictForm;
 import com.veadan.folib.forms.scanner.*;
 import com.veadan.folib.gremlin.dsl.EntityTraversalUtils;
 import com.veadan.folib.gremlin.entity.vo.ArtifactVo;
@@ -39,6 +40,7 @@ import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.providers.io.RepositoryPathResolver;
 import com.veadan.folib.providers.io.RootRepositoryPath;
 import com.veadan.folib.providers.layout.DockerLayoutProvider;
+import com.veadan.folib.providers.layout.Maven2LayoutProvider;
 import com.veadan.folib.repositories.ArtifactRepository;
 import com.veadan.folib.scanner.entity.ScanRules;
 import com.veadan.folib.scanner.mapper.ScanRulesMapper;
@@ -50,6 +52,7 @@ import com.veadan.folib.storage.repository.RepositoryTypeEnum;
 import com.veadan.folib.storage.search.SearchResults;
 import com.veadan.folib.users.domain.SystemRole;
 import com.veadan.folib.users.userdetails.SpringSecurityUser;
+import com.veadan.folib.util.CompressUtils;
 import com.veadan.folib.util.CustomDateUtils;
 import com.veadan.folib.util.FileSizeConvertUtils;
 import lombok.extern.slf4j.Slf4j;
@@ -59,6 +62,7 @@ import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -69,12 +73,15 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.multipart.commons.CommonsMultipartFile;
 import tk.mybatis.mapper.entity.Example;
 
 import javax.inject.Inject;
 import javax.servlet.http.HttpServletResponse;
 import javax.transaction.Transactional;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URLEncoder;
@@ -133,6 +140,12 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
 
     @Inject
     private ArtifactComponent artifactComponent;
+
+    @Inject
+    private ArtifactMetadataService artifactMetadataService;
+
+    @Value("${folib.temp}")
+    private String tempPath;
 
     @Override
     public void exportExcel(String vulnerabilityUuid, String storageId, String repositoryId, HttpServletResponse response) throws IOException {
@@ -492,7 +505,7 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
                 if (dockerResult.getTotal() == 0) {
                     SearchResults rawResult = fqlSearchService.artifactQuery(false,
                             artifactMetaData.getArtifactPath(), null, storageId,
-                            rawRepo, null, null, null, null, null,  null,1, 1);
+                            rawRepo, null, null, null, null, null, null, 1, 1);
                     if (rawResult.getTotal() == 1) {
                         artifactPathTemp = Lists.newArrayList(rawResult.getResults()).get(0).getArtifactPath();
                         repoTemp = rawRepo;
@@ -635,7 +648,7 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
 
     @Override
     @Async("asyncThreadPoolTaskExecutor")
-    public void buildGraphIndex(String username, String storageId, String repositoryId, String path, Integer batch) throws Exception {
+    public void buildGraphIndex(String username, String storageId, String repositoryId, String path, Integer batch) {
         log.info("=====>>>>> buildGraphIndex is started");
         Long dictId = 0L;
         try {
@@ -676,12 +689,119 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
                     }
                 }
             }
-            dictService.updateDict(Dict.builder().id(dictId).comment("构建完成").build());
+            dictService.updateDict(DictForm.builder().id(dictId).comment("构建完成").build());
         } catch (Exception ex) {
             log.error("=====>>>>> buildGraphIndex is error：{}", ExceptionUtils.getStackTrace(ex));
-            dictService.updateDict(Dict.builder().id(dictId).comment("构建错误").build());
+            dictService.updateDict(DictForm.builder().id(dictId).comment("构建错误").build());
         }
         log.info("=====>>>>> buildGraphIndex is finished");
+    }
+
+    @Override
+    public StatusInfo store(String username, String storageId, String repositoryId, String path, String uuid, MultipartFile file) {
+        String parentPath = tempPath + File.separator + UUID.fastUUID().toString();
+        File parentFile = new File(parentPath);
+        StatusInfo statusInfo = StatusInfo.builder().total(0).success(0).fail(0).build();
+        try (InputStream inputStream = file.getInputStream()) {
+            String fileOriginalName = ((CommonsMultipartFile) file).getFileItem().getName();
+            String tempPath = parentPath + File.separator + fileOriginalName;
+            File tempFile = new File(tempPath);
+            FileUtil.writeFromStream(inputStream, tempFile);
+            CompressUtils.unzip(tempFile.getAbsolutePath(), parentPath);
+            RootRepositoryPath rootRepositoryPath = repositoryPathResolver.resolve(storageId, repositoryId);
+            List<String> dirList = Lists.newArrayList();
+            for (File f : Objects.requireNonNull(parentFile.listFiles())) {
+                if (f.isDirectory()) {
+                    dirList.add(f.getAbsolutePath());
+                }
+            }
+            log.info("压缩包内扫描到的目录 [{}]", dirList);
+            List<File> itemList, fileList = Lists.newArrayList();
+            for (String dir : dirList) {
+                itemList = getNFSFiles(dir, rootRepositoryPath.getRepository());
+                if (CollectionUtils.isNotEmpty(itemList)) {
+                    itemList = itemList.stream().filter(item -> artifactComponent.layoutSupports(rootRepositoryPath.getRepository().getLayout(), item.getAbsolutePath())).collect(Collectors.toList());
+                    log.info("目录 [{}] 按照布局过滤后还有 [{}] 个文件", dir, itemList.size());
+                    fileList.addAll(itemList);
+                }
+            }
+            if (CollectionUtils.isNotEmpty(fileList)) {
+                String filePath = "";
+                int successTotal = 0;
+                boolean flag = false;
+                statusInfo.setTotal(fileList.size());
+                for (File artifactFile : fileList) {
+                    try {
+                        filePath = artifactFile.getPath().substring(parentFile.getAbsolutePath().length());
+                        if (StringUtils.isNotBlank(path)) {
+                            filePath = path + File.separator + filePath;
+                        }
+                        RepositoryPath repositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, filePath);
+                        if (!RepositoryFiles.isArtifact(repositoryPath)) {
+                            log.warn("制品路径 [{}] 不是一个制品制品文件,跳过", repositoryPath.toString());
+                            continue;
+                        }
+                        try (FileInputStream fileInputStream = new FileInputStream(artifactFile)) {
+                            flag = storeArtifact(repositoryPath, fileInputStream);
+                            if (flag) {
+                                successTotal = successTotal + 1;
+                            }
+                        }
+                    } catch (Exception ex) {
+                        log.error("路径 [{}] 错误 [{}] ", artifactFile.getAbsolutePath(), ExceptionUtils.getStackTrace(ex));
+                    }
+                    statusInfo.setSuccess(successTotal);
+                    statusInfo.setFail(statusInfo.getTotal() - statusInfo.getSuccess());
+                }
+            }
+            String status = JSONObject.toJSONString(statusInfo);
+            log.info("操作账号 [{}] 本次状态 [{}]", username, status);
+            handlerStatus(uuid, String.format("本次共扫描到%s个制品，保存成功%s个，失败%s个", statusInfo.getTotal(), statusInfo.getSuccess(), statusInfo.getFail()));
+        } catch (Exception ex) {
+            log.error("错误 [{}]", ExceptionUtils.getStackTrace(ex));
+            handlerStatus(uuid, "发生错误，请稍候重试");
+            throw new RuntimeException("发生错误，请稍候重试");
+        } finally {
+            try {
+                FileUtil.del(parentFile);
+                log.info("删除临时文件 [{}]", parentPath);
+            } catch (IORuntimeException ex) {
+                log.error("删除临时文件 [{}] 失败 [{}]", parentPath, ExceptionUtils.getStackTrace(ex));
+            }
+        }
+        return statusInfo;
+    }
+
+    /**
+     * 处理上传状态信息
+     *
+     * @param uuid    uuid
+     * @param comment 异常信息
+     */
+    private void handlerStatus(String uuid, String comment) {
+        if (StringUtils.isNotBlank(uuid)) {
+            dictService.saveOrUpdateDict(Dict.builder().dictKey(uuid).comment(comment).build(), null);
+        }
+    }
+
+    /**
+     * 存储制品
+     *
+     * @param repositoryPath 制品路径
+     */
+    private boolean storeArtifact(RepositoryPath repositoryPath, InputStream inputStream) {
+        try {
+            artifactManagementService.validateAndStore(repositoryPath, inputStream);
+            try {
+                artifactMetadataService.rebuildMetadata(repositoryPath.getStorageId(), repositoryPath.getRepositoryId(), repositoryPath.getArtifactEntry().getArtifactPath());
+            } catch (Exception ex) {
+                log.error("StoreArtifact rebuildMetadata repositoryPath：{}，error：{}", repositoryPath.toString(), ExceptionUtils.getStackTrace(ex));
+            }
+        } catch (Exception ex) {
+            log.error("StoreArtifact repositoryPath：{} error：{}", repositoryPath.toString(), ExceptionUtils.getStackTrace(ex));
+            return false;
+        }
+        return true;
     }
 
     /**
@@ -794,15 +914,7 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
         }
     }
 
-    /**
-     * 处理NFS存储制品
-     *
-     * @param path       NFS目录
-     * @param repository 仓库信息
-     * @param batch      每批数量
-     * @return NFS目录下的所有文件
-     */
-    private List<File> handlerNFSFiles(String path, Repository repository, Integer batch) throws Exception {
+    private List<File> getNFSFiles(String path, Repository repository) {
         boolean dockerLayout = DockerLayoutProvider.ALIAS.equalsIgnoreCase(repository.getLayout());
         int fileNum = 0, folderNum = 0;
         File rootFile = new File(path);
@@ -854,7 +966,7 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
                             log.info("directory：{} is a hidden directory", f.getName());
                             continue;
                         }
-                        log.debug("directory:{}", f.getAbsolutePath());
+                        log.info("directory:{}", f.getAbsolutePath());
                         list.add(f);
                         folderNum++;
                     } else {
@@ -866,7 +978,7 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
                             log.info("file：{} is a docker layout file", f.getName());
                             continue;
                         }
-                        log.debug("file:{}", f.getAbsolutePath());
+                        log.info("file:{}", f.getAbsolutePath());
                         resultList.add(f);
                         fileNum++;
                     }
@@ -876,6 +988,19 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
             log.info("file {} not exists!", path);
         }
         log.info("Path：{} directory size:{} ,file size:{}", path, folderNum, fileNum);
+        return resultList;
+    }
+
+    /**
+     * 处理NFS存储制品
+     *
+     * @param path       NFS目录
+     * @param repository 仓库信息
+     * @param batch      每批数量
+     * @return NFS目录下的所有文件
+     */
+    private List<File> handlerNFSFiles(String path, Repository repository, Integer batch) throws Exception {
+        List<File> resultList = getNFSFiles(path, repository);
         List<List<File>> fileLists = Lists.partition(resultList, batch);
         List<FutureTask<String>> futureTaskList = Lists.newArrayList();
         FutureTask<String> futureTask = null;
@@ -893,6 +1018,13 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
                             continue;
                         }
                         artifactManagementService.validateAndStoreIndex(repositoryPath);
+                        if (Maven2LayoutProvider.ALIAS.equals(repository.getLayout())) {
+                            try {
+                                artifactMetadataService.rebuildMetadata(repositoryPath.getStorageId(), repositoryPath.getRepositoryId(), repositoryPath.getArtifactEntry().getArtifactPath());
+                            } catch (Exception ex) {
+                                log.error("handlerArtifact rebuildMetadata path：{}，error：{}", repositoryPath.toString(), ExceptionUtils.getStackTrace(ex));
+                            }
+                        }
                     } catch (Exception ex) {
                         log.error("handlerArtifact path：{} error：{}", fPath, ExceptionUtils.getStackTrace(ex));
                     }
@@ -909,15 +1041,7 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
         return resultList;
     }
 
-    /**
-     * 处理S3存储制品
-     *
-     * @param s3Path     S3目录
-     * @param repository 仓库信息
-     * @param batch      每批数量
-     * @return S3存储目录下的所有文件
-     */
-    private List<S3Path> handlerS3Paths(S3Path s3Path, Repository repository, Integer batch) throws Exception {
+    private List<S3Path> getS3Paths(S3Path s3Path, Repository repository) {
         List<S3Path> listFile = new ArrayList<>();
         List<S3Path> listDir = new ArrayList<>();
         boolean dockerLayout = DockerLayoutProvider.ALIAS.equalsIgnoreCase(repository.getLayout());
@@ -946,7 +1070,7 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
                     log.info("s3 file：{} is a docker layout file", s3PathTemp);
                     continue;
                 }
-                log.debug("s3 file {}", s3PathTemp);
+                log.info("s3 file {}", s3PathTemp);
                 listFile.add(s3PathTemp);
             }
         }
@@ -971,12 +1095,26 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
                         log.info("s3 file：{} is a docker layout file", s3PathTemp);
                         continue;
                     }
-                    log.debug("s3 file {}", s3PathTemp);
+                    log.info("s3 file {}", s3PathTemp);
                     listFile.add(s3PathTemp);
                 }
             }
         }
         log.info("s3Path [{}]  file size：{}", s3Path.toUri().toString(), listFile.size());
+        return listFile;
+    }
+
+
+    /**
+     * 处理S3存储制品
+     *
+     * @param s3Path     S3目录
+     * @param repository 仓库信息
+     * @param batch      每批数量
+     * @return S3存储目录下的所有文件
+     */
+    private List<S3Path> handlerS3Paths(S3Path s3Path, Repository repository, Integer batch) throws Exception {
+        List<S3Path> listFile = getS3Paths(s3Path, repository);
         List<List<S3Path>> s3PathLists = Lists.partition(listFile, batch);
         List<FutureTask<String>> futureTaskList = Lists.newArrayList();
         FutureTask<String> futureTask = null;
@@ -994,6 +1132,13 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
                             continue;
                         }
                         artifactManagementService.validateAndStoreIndex(repositoryPath);
+                        if (Maven2LayoutProvider.ALIAS.equals(repository.getLayout())) {
+                            try {
+                                artifactMetadataService.rebuildMetadata(repositoryPath.getStorageId(), repositoryPath.getRepositoryId(), repositoryPath.getArtifactEntry().getArtifactPath());
+                            } catch (Exception ex) {
+                                log.error("handlerArtifact rebuildMetadata path：{}，error：{}", repositoryPath.toString(), ExceptionUtils.getStackTrace(ex));
+                            }
+                        }
                     } catch (Exception ex) {
                         log.error("handlerArtifact path：{} error：{}", s3FilePath.toAbsolutePath(), ExceptionUtils.getStackTrace(ex));
                     }

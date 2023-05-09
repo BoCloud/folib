@@ -53,7 +53,7 @@ public class ResourcesBooter implements ApplicationContextInitializer<Configurab
 
         for (Resource resource : resources)
         {
-            logger.debug(resource.getURL().toString());
+            logger.info(resource.getURL().toString());
             diff.add(resource);
         }
 

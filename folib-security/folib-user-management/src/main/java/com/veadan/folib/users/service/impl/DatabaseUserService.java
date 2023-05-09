@@ -87,10 +87,6 @@ public class DatabaseUserService implements UserService
         throws JoseException
     {
         final User user = findByUsername(username);
-        if (StringUtils.isEmpty(user.getSecurityTokenKey()))
-        {
-            return null;
-        }
         SpringSecurityUser springSecurityUser = userDetailsMapper.apply(user);
         Map<String, String> claimMap = jwtClaimsProvider.getClaims(springSecurityUser);
         return tokenProvider.getToken(username, claimMap, null, null);

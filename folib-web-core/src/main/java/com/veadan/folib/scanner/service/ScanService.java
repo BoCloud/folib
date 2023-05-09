@@ -13,6 +13,7 @@ import com.veadan.folib.entity.Dict;
 import com.veadan.folib.enums.DictTypeEnum;
 import com.veadan.folib.enums.SafeLevelEnum;
 import com.veadan.folib.enums.VulnerabilityPlatformEnum;
+import com.veadan.folib.forms.dict.DictForm;
 import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.providers.io.RepositoryPathResolver;
 import com.veadan.folib.providers.layout.DockerFileSystem;
@@ -334,9 +335,9 @@ public class ScanService {
             settings.setBoolean(Settings.KEYS.AUTO_UPDATE, true);
             XpEngine engine = new XpEngine(settings);
             engine.doUpdates();
-            dictService.updateDict(Dict.builder().id(dict.getId()).comment("更新完成").build());
+            dictService.updateDict(DictForm.builder().id(dict.getId()).comment("更新完成").build());
         } catch (UpdateException e) {
-            dictService.updateDict(Dict.builder().id(dict.getId()).comment("更新错误").build());
+            dictService.updateDict(DictForm.builder().id(dict.getId()).comment("更新错误").build());
             throw new BusinessException("更新出错");
         }
     }

@@ -61,7 +61,7 @@ public class FolibConfigurationController
                              MediaType.APPLICATION_JSON_VALUE })
     public ResponseEntity<MutableConfiguration> getFolibConfiguration()
     {
-        logger.debug("Retrieved folib.yaml configuration file.");
+        logger.info("Retrieved folib.yaml configuration file.");
 
         return new ResponseEntity<>(getMutableConfigurationClone(), HttpStatus.OK);
     }

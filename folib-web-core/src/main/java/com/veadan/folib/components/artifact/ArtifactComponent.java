@@ -18,7 +18,9 @@ import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.providers.io.RepositoryPathResolver;
 import com.veadan.folib.providers.io.RootRepositoryPath;
 import com.veadan.folib.providers.layout.*;
+import com.veadan.folib.repositories.ArtifactIdGroupRepository;
 import com.veadan.folib.repositories.ArtifactRepository;
+import com.veadan.folib.repository.NpmRepositoryFeatures;
 import com.veadan.folib.services.ArtifactService;
 import com.veadan.folib.services.ConfigurationManagementService;
 import com.veadan.folib.services.DictService;
@@ -74,6 +76,14 @@ public class ArtifactComponent {
     @Inject
     @Lazy
     private DictService dictService;
+
+    @Inject
+    @Lazy
+    private ArtifactIdGroupRepository artifactIdGroupRepository;
+
+    @Inject
+    @Lazy
+    private NpmRepositoryFeatures npmRepositoryFeatures;
 
     /**
      * 读取文件内容
@@ -185,7 +195,7 @@ public class ArtifactComponent {
         boolean flag = false;
         if (Objects.nonNull(repositoryPath)) {
             if (repositoryPath.getFileSystem() instanceof DockerFileSystem) {
-                log.debug("=====>>>>> docker布局");
+                log.info("=====>>>>> docker布局");
                 String blobs = "blobs";
                 String manifest = "manifest";
                 String path = "";
@@ -200,57 +210,113 @@ public class ArtifactComponent {
                 }
                 if (Boolean.TRUE.equals(block)) {
                     if (path.contains("sha256") && !path.endsWith(".sha256")) {
-                        return true;
+                        flag = true;
                     }
                 } else if (path.contains("sha256") && !path.contains(blobs) && !path.contains(manifest) && !path.endsWith(".sha256")) {
-                    return true;
+                    flag = true;
                 }
             } else if (repositoryPath.getFileSystem() instanceof MavenFileSystem) {
-                log.debug("=====>>>>> maven布局");
+                log.info("=====>>>>> maven布局");
                 if (Boolean.TRUE.equals(scan)) {
                     flag = JarArchiveListingFunction.INSTANCE.supports(repositoryPath);
                 } else {
                     flag = JarArchiveListingFunction.INSTANCE.supports(repositoryPath) || endsWith(repositoryPath.getFileName().toString(), Collections.singletonList(".pom"));
                 }
             } else if (repositoryPath.getFileSystem() instanceof NpmFileSystem) {
-                log.debug("=====>>>>> npm布局");
+                log.info("=====>>>>> npm布局");
                 List<String> suffixList = Arrays.asList(".json", ".tgz");
                 flag = endsWith(repositoryPath.getFileName().toString(), suffixList);
             } else if (repositoryPath.getFileSystem() instanceof NugetFileSystem) {
-                log.debug("=====>>>>> nuget布局");
+                log.info("=====>>>>> nuget布局");
                 List<String> suffixList = Arrays.asList(".nupkg", ".nuspec", "packages.config");
                 flag = endsWith(repositoryPath.getFileName().toString(), suffixList);
             } else if (repositoryPath.getFileSystem() instanceof PypiFileSystem) {
-                log.debug("=====>>>>> pypi布局");
+                log.info("=====>>>>> pypi布局");
                 List<String> suffixList = Arrays.asList(".whl", ".egg", ".zip");
                 flag = endsWith(repositoryPath.getFileName().toString(), suffixList);
             } else if (repositoryPath.getFileSystem() instanceof RpmFileSystem) {
-                log.debug("=====>>>>> rpm布局");
-                List<String> suffixList = Arrays.asList(".rpm");
+                log.info("=====>>>>> rpm布局");
+                List<String> suffixList = Collections.singletonList(".rpm");
                 flag = endsWith(repositoryPath.getFileName().toString(), suffixList);
             } else if (repositoryPath.getFileSystem() instanceof PhpFileSystem) {
-                log.debug("=====>>>>> php布局");
+                log.info("=====>>>>> php布局");
                 List<String> suffixList = Arrays.asList("tar", "tar.gz", "tar.bz2", "zip", "json");
                 flag = endsWith(repositoryPath.getFileName().toString(), suffixList);
             } else if (repositoryPath.getFileSystem() instanceof ConanFileSystem) {
-                log.debug("=====>>>>> Conan布局");
+                log.info("=====>>>>> Conan布局");
                 List<String> suffixList = Arrays.asList(".tgz", ".py");
                 flag = endsWith(repositoryPath.getFileName().toString(), suffixList);
             } else if (repositoryPath.getFileSystem() instanceof HelmFileSystem) {
-                List<String> suffixList = Arrays.asList(".tgz");
+                List<String> suffixList = Collections.singletonList(".tgz");
                 flag = endsWith(repositoryPath.getFileName().toString(), suffixList);
-                log.debug("=====>>>>> Helm布局");
+                log.info("=====>>>>> Helm布局");
             } else if (repositoryPath.getFileSystem() instanceof RawFileSystem) {
-                log.debug("=====>>>>> raw布局");
+                log.info("=====>>>>> raw布局");
                 if (Boolean.TRUE.equals(scan)) {
                     List<String> allSuffixList = Lists.newArrayList(".jar", ".war", ".ear", ".zip", ".json", ".tgz", ".nupkg", ".nuspec", "packages.config", ".whl", ".egg", ".zip", ".rpm", "tar", "tar.gz", "tar.bz2", "zip", "json", ".tgz", ".py", ".tgz");
                     flag = endsWith(repositoryPath.getFileName().toString(), allSuffixList);
                 } else {
-                    return true;
+                    flag = true;
                 }
             }
+            log.info("=====>>>>>制品路径 [{}] 布局 [{}] 是否是该布局支持的制品类型 [{}]", repositoryPath.toString(), repositoryPath.getRepository().getLayout(), flag);
         }
-        log.debug("=====>>>>> 是否是该布局支持的类型：{}", flag);
+        return flag;
+    }
+
+    /**
+     * 校验文件是否是该布局支持的类型
+     *
+     * @param layout   布局
+     * @param filePath 文件路径
+     */
+    public boolean layoutSupports(String layout, String filePath) {
+        boolean flag = false;
+        if (Objects.nonNull(filePath)) {
+            if (DockerLayoutProvider.ALIAS.equals(layout)) {
+                log.info("=====>>>>> docker布局");
+                String blobs = "blobs";
+                String manifest = "manifest";
+                if (filePath.contains("sha256") && !filePath.contains(blobs) && !filePath.contains(manifest) && !filePath.endsWith(".sha256")) {
+                    flag = true;
+                }
+            } else if (Maven2LayoutProvider.ALIAS.equals(layout)) {
+                log.info("=====>>>>> maven布局");
+                flag = endsWith(filePath, Lists.newArrayList(".pom", ".jar", ".war", ".ear"));
+            } else if (NpmLayoutProvider.ALIAS.equals(layout)) {
+                log.info("=====>>>>> npm布局");
+                List<String> suffixList = Arrays.asList(".json", ".tgz");
+                flag = endsWith(filePath, suffixList);
+            } else if (NugetLayoutProvider.ALIAS.equals(layout)) {
+                log.info("=====>>>>> nuget布局");
+                List<String> suffixList = Arrays.asList(".nupkg", ".nuspec", "packages.config");
+                flag = endsWith(filePath, suffixList);
+            } else if (PypiLayoutProvider.ALIAS.equals(layout)) {
+                log.info("=====>>>>> pypi布局");
+                List<String> suffixList = Arrays.asList(".whl", ".egg", ".zip");
+                flag = endsWith(filePath, suffixList);
+            } else if (RpmLayoutProvider.ALIAS.equals(layout)) {
+                log.info("=====>>>>> rpm布局");
+                List<String> suffixList = Collections.singletonList(".rpm");
+                flag = endsWith(filePath, suffixList);
+            } else if (PhpLayoutProvider.ALIAS.equals(layout)) {
+                log.info("=====>>>>> php布局");
+                List<String> suffixList = Arrays.asList("tar", "tar.gz", "tar.bz2", "zip", "json");
+                flag = endsWith(filePath, suffixList);
+            } else if (ConanLayoutProvider.ALIAS.equals(layout)) {
+                log.info("=====>>>>> Conan布局");
+                List<String> suffixList = Arrays.asList(".tgz", ".py");
+                flag = endsWith(filePath, suffixList);
+            } else if (HelmLayoutProvider.ALIAS.equals(layout)) {
+                List<String> suffixList = Collections.singletonList(".tgz");
+                flag = endsWith(filePath, suffixList);
+                log.info("=====>>>>> Helm布局");
+            } else if (RawLayoutProvider.ALIAS.equals(layout)) {
+                log.info("=====>>>>> raw布局");
+                flag = true;
+            }
+            log.info("=====>>>>>制品路径 [{}] 布局 [{}] 是否是该布局支持的制品类型 [{}]", filePath, layout, flag);
+        }
         return flag;
     }
 

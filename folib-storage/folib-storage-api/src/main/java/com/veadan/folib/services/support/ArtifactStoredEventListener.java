@@ -3,6 +3,7 @@ package com.veadan.folib.services.support;
 import com.veadan.folib.artifact.AsyncArtifactEntryHandler;
 import com.veadan.folib.domain.Artifact;
 import com.veadan.folib.domain.ArtifactArchiveListing;
+import com.veadan.folib.domain.ArtifactEntity;
 import com.veadan.folib.event.artifact.ArtifactEventTypeEnum;
 import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.providers.layout.LayoutProvider;
@@ -46,6 +47,7 @@ public class ArtifactStoredEventListener
 
             return null;
         }
+        Artifact updateArtifactEntry = new ArtifactEntity(artifactEntry.getNativeId(), artifactEntry.getStorageId(), artifactEntry.getRepositoryId(), artifactEntry.getUuid(), artifactEntry.getArtifactCoordinates());
         Repository repository = repositoryPath.getRepository();
         LayoutProvider layoutProvider = layoutProviderRegistry.getProvider(repository.getLayout());
         Set<String> archiveFilenames = layoutProvider.listArchiveFilenames(repositoryPath);
@@ -54,10 +56,10 @@ public class ArtifactStoredEventListener
                 //TODO: issues/1752
                 archiveFilenames = archiveFilenames.stream().limit(100).collect(Collectors.toSet());
             }
-            ArtifactArchiveListing artifactArchiveListing = artifactEntry.getArtifactArchiveListing();
+            ArtifactArchiveListing artifactArchiveListing = updateArtifactEntry.getArtifactArchiveListing();
             artifactArchiveListing.setFilenames(archiveFilenames);
         }
-        return artifactEntry;
+        return updateArtifactEntry;
     }
 
 }

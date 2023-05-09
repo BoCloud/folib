@@ -16,7 +16,9 @@ public class RepositoryStreamContext
 
     private TransactionStatus transaction;
 
-    private Boolean artifactExists;
+    private boolean artifactExists;
+
+    private String lockKey;
 
     public Path getPath()
     {
@@ -58,14 +60,21 @@ public class RepositoryStreamContext
         this.transaction = transaction;
     }
 
-    public Boolean getArtifactExists()
+    public boolean getArtifactExists()
     {
         return artifactExists;
     }
 
-    public void setArtifactExists(Boolean artifactExists)
+    public void setArtifactExists(boolean artifactExists)
     {
         this.artifactExists = artifactExists;
     }
 
+    public String getLockKey() {
+        return lockKey;
+    }
+
+    public void setLockKey(String lockKey) {
+        this.lockKey = lockKey;
+    }
 }

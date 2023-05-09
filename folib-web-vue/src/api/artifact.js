@@ -121,3 +121,13 @@ export function buildGraphIndex (data) {
     params: data
   })
 }
+
+export function artifactUploadZip (data, uuid, fileName) {
+  return axios({
+    url: '/api/artifact/store?uuid=' + uuid + '&fileName=' + fileName,
+    method: 'post',
+    timeout: 15 * 60 * 1000,
+    headers: {"Content-type": "multipart/form-data",},
+    data: data
+  })
+}
