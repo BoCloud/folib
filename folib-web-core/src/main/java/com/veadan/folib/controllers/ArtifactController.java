@@ -3,6 +3,7 @@ package com.veadan.folib.controllers;
 import com.alibaba.fastjson.JSON;
 import com.veadan.folib.configuration.MetadataConfiguration;
 import com.veadan.folib.constant.GlobalConstants;
+import com.veadan.folib.domain.StatusInfo;
 import com.veadan.folib.forms.artifact.ArtifactMetadataForm;
 import com.veadan.folib.services.ArtifactWebService;
 import com.veadan.folib.users.userdetails.SpringSecurityUser;
@@ -19,6 +20,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import javax.inject.Inject;
 import javax.servlet.http.HttpServletResponse;
@@ -145,10 +147,23 @@ public class ArtifactController extends BaseController {
     public ResponseEntity<String> buildGraphIndex(@RequestParam(name = "storageId", required = false) String storageId,
                                                   @RequestParam(name = "repositoryId", required = false) String repositoryId,
                                                   @RequestParam(name = "path", required = false) String path,
-                                                  @RequestParam(name = "batch", required = false) Integer batch) throws Exception {
+                                                  @RequestParam(name = "batch", required = false) Integer batch) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         SpringSecurityUser userDetails = (SpringSecurityUser) authentication.getPrincipal();
         artifactWebService.buildGraphIndex(userDetails.getUsername(), storageId, repositoryId, path, batch);
         return ResponseEntity.ok("ok");
+    }
+
+    @ApiOperation(value = "根据压缩包生成制品信息")
+    @ApiResponses(value = {@ApiResponse(code = 200, message = "OK")})
+    @PreAuthorize("hasAuthority('ADMIN')")
+    @PostMapping(value = "/store")
+    public ResponseEntity<StatusInfo> store(@RequestParam(name = "storageId") String storageId,
+                                            @RequestParam(name = "repositoryId") String repositoryId,
+                                            @RequestParam(name = "path", required = false) String path,
+                                            @RequestParam(name = "uuid", required = false) String uuid, @RequestParam(name = "file") MultipartFile file) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        SpringSecurityUser userDetails = (SpringSecurityUser) authentication.getPrincipal();
+        return ResponseEntity.ok(artifactWebService.store(userDetails.getUsername(), storageId, repositoryId, path, uuid, file));
     }
 }
