@@ -255,6 +255,10 @@
             <artifactId>redisson</artifactId>
             <version>3.11.5</version>
         </dependency>
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-compress</artifactId>
+        </dependency>
     </dependencies>
 
 </project>

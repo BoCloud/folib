@@ -18,7 +18,9 @@ import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.providers.io.RepositoryPathResolver;
 import com.veadan.folib.providers.io.RootRepositoryPath;
 import com.veadan.folib.providers.layout.*;
+import com.veadan.folib.repositories.ArtifactIdGroupRepository;
 import com.veadan.folib.repositories.ArtifactRepository;
+import com.veadan.folib.repository.NpmRepositoryFeatures;
 import com.veadan.folib.services.ArtifactService;
 import com.veadan.folib.services.ConfigurationManagementService;
 import com.veadan.folib.services.DictService;
@@ -74,6 +76,14 @@ public class ArtifactComponent {
     @Inject
     @Lazy
     private DictService dictService;
+
+    @Inject
+    @Lazy
+    private ArtifactIdGroupRepository artifactIdGroupRepository;
+
+    @Inject
+    @Lazy
+    private NpmRepositoryFeatures npmRepositoryFeatures;
 
     /**
      * 读取文件内容
@@ -250,6 +260,62 @@ public class ArtifactComponent {
                 }
             }
             log.info("=====>>>>>制品路径 [{}] 布局 [{}] 是否是该布局支持的制品类型 [{}]", repositoryPath.toString(), repositoryPath.getRepository().getLayout(), flag);
+        }
+        return flag;
+    }
+
+    /**
+     * 校验文件是否是该布局支持的类型
+     *
+     * @param layout   布局
+     * @param filePath 文件路径
+     */
+    public boolean layoutSupports(String layout, String filePath) {
+        boolean flag = false;
+        if (Objects.nonNull(filePath)) {
+            if (DockerLayoutProvider.ALIAS.equals(layout)) {
+                log.info("=====>>>>> docker布局");
+                String blobs = "blobs";
+                String manifest = "manifest";
+                if (filePath.contains("sha256") && !filePath.contains(blobs) && !filePath.contains(manifest) && !filePath.endsWith(".sha256")) {
+                    flag = true;
+                }
+            } else if (Maven2LayoutProvider.ALIAS.equals(layout)) {
+                log.info("=====>>>>> maven布局");
+                flag = endsWith(filePath, Lists.newArrayList(".pom", ".jar", ".war", ".ear"));
+            } else if (NpmLayoutProvider.ALIAS.equals(layout)) {
+                log.info("=====>>>>> npm布局");
+                List<String> suffixList = Arrays.asList(".json", ".tgz");
+                flag = endsWith(filePath, suffixList);
+            } else if (NugetLayoutProvider.ALIAS.equals(layout)) {
+                log.info("=====>>>>> nuget布局");
+                List<String> suffixList = Arrays.asList(".nupkg", ".nuspec", "packages.config");
+                flag = endsWith(filePath, suffixList);
+            } else if (PypiLayoutProvider.ALIAS.equals(layout)) {
+                log.info("=====>>>>> pypi布局");
+                List<String> suffixList = Arrays.asList(".whl", ".egg", ".zip");
+                flag = endsWith(filePath, suffixList);
+            } else if (RpmLayoutProvider.ALIAS.equals(layout)) {
+                log.info("=====>>>>> rpm布局");
+                List<String> suffixList = Collections.singletonList(".rpm");
+                flag = endsWith(filePath, suffixList);
+            } else if (PhpLayoutProvider.ALIAS.equals(layout)) {
+                log.info("=====>>>>> php布局");
+                List<String> suffixList = Arrays.asList("tar", "tar.gz", "tar.bz2", "zip", "json");
+                flag = endsWith(filePath, suffixList);
+            } else if (ConanLayoutProvider.ALIAS.equals(layout)) {
+                log.info("=====>>>>> Conan布局");
+                List<String> suffixList = Arrays.asList(".tgz", ".py");
+                flag = endsWith(filePath, suffixList);
+            } else if (HelmLayoutProvider.ALIAS.equals(layout)) {
+                List<String> suffixList = Collections.singletonList(".tgz");
+                flag = endsWith(filePath, suffixList);
+                log.info("=====>>>>> Helm布局");
+            } else if (RawLayoutProvider.ALIAS.equals(layout)) {
+                log.info("=====>>>>> raw布局");
+                flag = true;
+            }
+            log.info("=====>>>>>制品路径 [{}] 布局 [{}] 是否是该布局支持的制品类型 [{}]", filePath, layout, flag);
         }
         return flag;
     }

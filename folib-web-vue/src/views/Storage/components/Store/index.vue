@@ -840,6 +840,26 @@
               >
               </a-input>
             </a-form-item>
+            <a-form-item label="上传方式" v-if="folibRepository.layout === 'Maven 2'">
+              <a-radio-group v-decorator="[
+                'type',
+                {
+                  rules: [{ required: true, message: '请选择上传方式' }],
+                },
+              ]"
+              @change="uploadTypeChange">
+                <a-radio :value="1">
+                  制品
+                </a-radio>
+                <a-radio :value="2">
+                  压缩包
+                </a-radio>
+              </a-radio-group>
+              <div>
+                <span v-if="uploadType === 1">此方式支持多个制品包批量上传，一次不能超过10个文件</span>
+                <span v-if="uploadType === 2">此方式支持上传一个ZIP文件格式的压缩包，大小不能超过100M</span>
+              </div>
+            </a-form-item>
             <a-form-item label="选择文件">
               <a-upload v-decorator="[
                 'files',
@@ -848,13 +868,22 @@
                   valuePropName: 'fileList',
                   getValueFromEvent: normFile,
                 },
-              ]" name="files" :multiple="true" :beforeUpload="beforeUpload" list-type="text"
-              :accept="folibRepository.layout === 'Raw'?'*':folibRepository.layout === 'npm'?'.tgz':'.jar,.war,.pom'">
-                <a-button> <a-icon type="upload" />选择文件 </a-button>
+              ]" name="files" :multiple="uploadType === 1?true:false" :beforeUpload="beforeUpload" list-type="text"
+              :accept="uploadType === 1?(folibRepository.layout === 'Raw'?'*':folibRepository.layout === 'npm'?'.tgz':'.jar,.war,.pom'):('.zip')">
+                <a-button> <a-icon type="upload" />选择文件</a-button>
               </a-upload>
             </a-form-item>
-            <a-form-item class="tags-field mb-10" label="目标目录" prop="targetPath" :colon="false"
-              v-if="folibRepository.layout !== 'Maven 2' && folibRepository.layout !== 'npm'">
+            <a-form-item class="tags-field mb-10" prop="targetPath" :colon="false"
+              v-if="(folibRepository.layout !== 'Maven 2' && folibRepository.layout !== 'npm' ) || uploadType === 2">
+              <template slot="label">
+                目标目录
+                <a-popover placement="topLeft" v-if="uploadType === 2">
+                  <template slot="content">
+                    <p class="mb-0">压缩包将会解压到仓库内的此目录下</p>
+                  </template>
+                  <a class="ml-5"><a-icon type="question-circle" theme="filled" /></a>
+                </a-popover>
+              </template>
               <a-input v-decorator="[
                 'targetPath',
                 {
@@ -1023,6 +1052,7 @@ import {
   artifactUploadProgress,
   rpmArtifactUpload,
   artifactDispatch,
+  artifactUploadZip
 } from "@/api/artifact";
 import { getMetadataConfiguration } from "@/api/settings";
 import { hasRole, isAdmin, isAnonymous, isLogin } from "@/utils/permission";
@@ -1201,7 +1231,8 @@ export default {
       custom: false,
       enablUploadedLayout: ['Raw', 'php', 'Maven 2', 'npm'],
       permissions: [],
-      mavenUploadVisible: false
+      mavenUploadVisible: false,
+      uploadType: 1
     };
   },
   created() {
@@ -1332,10 +1363,11 @@ export default {
         if (this.$refs.uploadForm) {
           this.uploadForm.setFieldsValue({
             repostoryId: this.folibRepository.id,
-          });
+            type: 1
+          })
         }
       });
-      this.showUploadFormModal = true;
+      this.showUploadFormModal = true
     },
     handleRpmUploadSubmit(e) {
       e.preventDefault()
@@ -1393,32 +1425,58 @@ export default {
       e.preventDefault()
       this.uploadForm.validateFields((err, values) => {
         if (!err) {
-          if (values.files.length > 10) {
-            this.$notification["warning"]({
-              message: "一次上传不能超过10个文件",
-              description: "",
-            });
-            return false
-          }
-          if (values.targetPath && values.targetPath.startsWith("/")) {
-            this.$notification["warning"]({
-              message: "目标目录不能以/开头",
-              description: "",
-            });
-            return false
-          }
-          let fileList = []
-          for(let item of values.files){
-            let fileName = item.name.replace(":", "/")
-            if (!this.check(fileName, item.size)) {
+          if (this.uploadType === 2) {
+            if (values.files.length > 1) {
+              this.$notification["warning"]({
+                message: "只能上传一个压缩包",
+                description: "",
+              });
               return false
             }
-            item.name = fileName
-            fileList.push(item)
+            const file = values.files[0]
+            const sizeLimit = file.size / 1024 / 1024 > 100
+            if (sizeLimit) {
+              this.$notification.warning({
+                message: "文件大小不能超过100M",
+              })
+              return false
+            }
+            const fileFamart = file.name.split('.')[file.name.split('.').length - 1];
+            if (fileFamart !== 'zip') {
+              this.$notification.warning({
+                message: "必须上传zip格式的文件!",
+              })
+              return false
+            }
+            this.handlerUploadZipFile(values.targetPath, file.name, file.originFileObj)
+          } else {
+            if (values.files.length > 10) {
+              this.$notification["warning"]({
+                message: "一次上传不能超过10个文件",
+                description: "",
+              });
+              return false
+            }
+            if (values.targetPath && values.targetPath.startsWith("/")) {
+              this.$notification["warning"]({
+                message: "目标目录不能以/开头",
+                description: "",
+              });
+              return false
+            }
+            let fileList = []
+            for(let item of values.files){
+              let fileName = item.name.replace(":", "/")
+              if (!this.check(fileName, item.size)) {
+                return false
+              }
+              item.name = fileName
+              fileList.push(item)
+            }
+            fileList.forEach(item => {
+              this.handlerUploadFile(values.targetPath, item.name, item.originFileObj)
+            })
           }
-          fileList.forEach(item => {
-            this.handlerUploadFile(values.targetPath, item.name, item.originFileObj)
-          })
           this.successMsg("请至页面右上角上传进度中查看")
           this.uploadFormModalClose()
         }
@@ -1466,6 +1524,28 @@ export default {
       formData.append("filePathMap", JSON.stringify(filePathMap))
       formData.append("files", file)
       artifactUploadProgress(formData, uuid, fileName).then((res) => {
+      }).catch((err) => {
+        let msg = err.response.data.error?err.response.data.error:err.response.data
+        console.log('upload error：', msg)
+        let errStatusArr = [200,500]
+        if(!errStatusArr.includes(err.response.status)) {
+            this.$notification["error"]({
+              message: '错误编码：' + err.response.status,
+              description: "",
+            });
+        }
+      }).finally(() => { 
+      })
+    },
+    handlerUploadZipFile(path, fileName, file) {
+      file = new File([file], fileName)
+      let uuid = "zip_" + uuidv4()
+      const formData = new FormData()
+      formData.append("storageId", this.folibRepository.storageId)
+      formData.append("repositoryId", this.folibRepository.id)
+      formData.append("path", path)
+      formData.append("file", file)
+      artifactUploadZip(formData, uuid, fileName).then((res) => {
       }).catch((err) => {
         let msg = err.response.data.error?err.response.data.error:err.response.data
         console.log('upload error：', msg)
@@ -2093,6 +2173,13 @@ export default {
     },
     mavenUploadClose() {
       this.mavenUploadVisible = false
+    },
+    uploadTypeChange(element) {
+      if (element.target.value === 1) {
+        this.uploadType = 1
+      } else if (element.target.value === 2) {
+        this.uploadType = 2
+      }
     }
   },
 };

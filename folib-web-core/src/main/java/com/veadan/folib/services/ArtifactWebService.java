@@ -1,10 +1,12 @@
 package com.veadan.folib.services;
 
 import com.veadan.folib.domain.Artifact;
+import com.veadan.folib.domain.StatusInfo;
 import com.veadan.folib.forms.artifact.ArtifactMetadataForm;
 import com.veadan.folib.forms.scanner.*;
 import com.veadan.folib.providers.io.RepositoryPath;
 import org.springframework.security.core.Authentication;
+import org.springframework.web.multipart.MultipartFile;
 
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
@@ -142,9 +144,21 @@ public interface ArtifactWebService {
      * @param repositoryId 仓库id
      * @param path         path
      * @param batch        每批数量
-     * @throws Exception 异常
      */
-    void buildGraphIndex(String username, String storageId, String repositoryId, String path, Integer batch) throws Exception;
+    void buildGraphIndex(String username, String storageId, String repositoryId, String path, Integer batch);
+
+    /**
+     * 根据压缩包生成制品信息
+     *
+     * @param username     用户名
+     * @param storageId    存储空间
+     * @param repositoryId 仓库id
+     * @param path         path
+     * @param uuid         uuid
+     * @param file         制品压缩文件
+     * @return statusInfo 状态
+     */
+    StatusInfo store(String username, String storageId, String repositoryId, String path, String uuid, MultipartFile file);
 
     /**
      * 批量存储或更新元数据 适配安徽政务

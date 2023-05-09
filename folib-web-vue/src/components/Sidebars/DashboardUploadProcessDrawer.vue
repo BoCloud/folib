@@ -50,8 +50,8 @@
 							:title="item.alias"
 						>
 							<span slot="description" class="text-sm">
-								<p v-if="item.comment && item.comment.length > 0">失败原因： {{ item.comment }}</p>
-								<a-progress :percent="item.dictValue" :status="(item.comment && item.comment.length > 0)?'exception':item.dictValue<100?'active':'success'" />
+								<p v-if="item.comment && item.comment.length > 0"><span v-if="!item.dictKey.includes('zip_')">失败原因：</span> {{ item.comment }}</p>
+								<a-progress :percent="item.dictValue" :status="(item.comment && item.comment.length > 0 && !item.dictKey.includes('zip_'))?'exception':item.dictValue<100?'active':'success'" />
 
 								<div class="process-action">
 									<a-button type="link" size="small" @click="uploadProcessRemove(item.dictKey)">
