@@ -1,33 +1,37 @@
 package com.veadan.folib.components.artifact;
 
 import cn.hutool.core.io.FileUtil;
+import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import com.veadan.folib.artifact.archive.JarArchiveListingFunction;
 import com.veadan.folib.cloud.storage.s3fs.S3Path;
-import com.veadan.folib.configuration.MutableSecurityPolicyConfiguration;
-import com.veadan.folib.configuration.UnionRepositoryConfiguration;
-import com.veadan.folib.configuration.UnionTargetRepositoryConfiguration;
-import com.veadan.folib.domain.Artifact;
-import com.veadan.folib.domain.ArtifactEntity;
-import com.veadan.folib.domain.Vulnerability;
+import com.veadan.folib.configuration.*;
+import com.veadan.folib.domain.*;
 import com.veadan.folib.enums.BlockTypeEnum;
 import com.veadan.folib.enums.PromotionStatusEnum;
+import com.veadan.folib.npm.metadata.PackageFeed;
+import com.veadan.folib.npm.metadata.Versions;
 import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.providers.io.RepositoryPathResolver;
 import com.veadan.folib.providers.io.RootRepositoryPath;
 import com.veadan.folib.providers.layout.*;
+import com.veadan.folib.providers.repository.RepositorySearchRequest;
 import com.veadan.folib.repositories.ArtifactIdGroupRepository;
 import com.veadan.folib.repositories.ArtifactRepository;
 import com.veadan.folib.repository.NpmRepositoryFeatures;
+import com.veadan.folib.service.ProxyRepositoryConnectionPoolConfigurationService;
 import com.veadan.folib.services.ArtifactService;
 import com.veadan.folib.services.ConfigurationManagementService;
 import com.veadan.folib.services.DictService;
 import com.veadan.folib.storage.repository.Repository;
 import com.veadan.folib.storage.repository.RepositoryDto;
+import com.veadan.folib.storage.repository.RepositoryTypeEnum;
+import com.veadan.folib.util.CommonUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.maven.model.Model;
@@ -84,6 +88,13 @@ public class ArtifactComponent {
     @Inject
     @Lazy
     private NpmRepositoryFeatures npmRepositoryFeatures;
+
+    @Inject
+    @Lazy
+    private ConfigurationManager configurationManager;
+
+    @Inject
+    private ProxyRepositoryConnectionPoolConfigurationService proxyRepositoryConnectionPoolConfigurationService;
 
     /**
      * 读取文件内容
@@ -672,4 +683,162 @@ public class ArtifactComponent {
             return reader.read(rr);
         }
     }
+
+    /**
+     * 查询ArtifactIdGroup
+     *
+     * @param uuid uuid
+     */
+    public ArtifactIdGroup getArtifactIdGroup(String uuid) {
+        long startTime = System.currentTimeMillis();
+        ArtifactIdGroup artifactIdGroup = artifactIdGroupRepository.findByArtifactIdGroup(uuid);
+        log.info("[{}] getArtifactIdGroup [{}] take time [{}] ms", this.getClass().getSimpleName(), uuid, System.currentTimeMillis() - startTime);
+        return artifactIdGroup;
+    }
+
+    /**
+     * 查询ArtifactIdGroup
+     *
+     * @param repository       repository
+     * @param artifactId       artifactId
+     * @param coordinateValues coordinateValues
+     * @return artifactIdGroupMetadata
+     */
+    public ArtifactIdGroup getArtifactIdGroup(Repository repository, String artifactId, Collection<String> coordinateValues) {
+        ArtifactIdGroup artifactIdGroup = null;
+        if (repository.isGroupRepository()) {
+            for (String storageAndRepositoryId : repository.getGroupRepositories()) {
+                String sId = ConfigurationUtils.getStorageId(repository.getStorage().getId(), storageAndRepositoryId);
+                String rId = ConfigurationUtils.getRepositoryId(storageAndRepositoryId);
+                artifactIdGroup = commonArtifactIdGroupMetadata(sId, rId, artifactId, coordinateValues);
+                if (Objects.nonNull(artifactIdGroup)) {
+                    log.info("ArtifactIdGroup metadata find in [{}]", artifactIdGroup.getUuid());
+                    return artifactIdGroup;
+                }
+            }
+        } else {
+            artifactIdGroup = commonArtifactIdGroupMetadata(repository.getStorage().getId(), repository.getId(), artifactId, coordinateValues);
+        }
+        return artifactIdGroup;
+    }
+
+    private ArtifactIdGroup commonArtifactIdGroupMetadata(String storageId, String repositoryId, String artifactId,
+                                                          Collection<String> coordinateValues) {
+        Repository repository = configurationManager.getRepository(storageId, repositoryId);
+        ArtifactIdGroup artifactIdGroup = new ArtifactIdGroupEntity(repository.getStorage().getId(), repository.getId(), artifactId);
+        artifactIdGroup = getArtifactIdGroup(artifactIdGroup.getUuid());
+        ArtifactIdGroup resultArtifactIdGroup = null;
+        if (Objects.nonNull(artifactIdGroup) && StringUtils.isNotBlank(artifactIdGroup.getMetadata())) {
+            String artifactIdGroupMetadata = artifactIdGroup.getMetadata();
+            String finalJsonString = JSON.parse(artifactIdGroupMetadata).toString();
+            JSONObject jsonObject = JSONObject.parseObject(finalJsonString);
+            String key = "versions";
+            if (jsonObject.containsKey(key)) {
+                int cacheCount = jsonObject.getJSONObject(key).keySet().size();
+                if (cacheCount > 0) {
+                    String propertyKey = "cacheVerify";
+                    String value = System.getProperty(propertyKey);
+                    if (StringUtils.isNotBlank(value) && Boolean.FALSE.equals(Boolean.valueOf(value))) {
+                        resultArtifactIdGroup = artifactIdGroup;
+                        log.info("ArtifactIdGroup [{}] cacheVerify [{}] cache package count is [{}] use cache metadata", artifactIdGroup.getUuid(), value, cacheCount);
+                    } else {
+                        int realCount = getArtifactIdGroupCount(repository, artifactId, coordinateValues);
+                        log.info("ArtifactIdGroup [{}] package count is [{}] metadata cache package count is [{}]", artifactIdGroup.getUuid(), realCount, cacheCount);
+                        if (cacheCount == realCount) {
+                            resultArtifactIdGroup = artifactIdGroup;
+                            log.info("ArtifactIdGroup [{}] use cache metadata", artifactIdGroup.getUuid());
+                        }
+                    }
+                }
+            }
+        }
+        return resultArtifactIdGroup;
+    }
+
+    /**
+     * 更新ArtifactIdGroup
+     *
+     * @param uuid     uuid
+     * @param metadata metadata
+     */
+    public void updateArtifactIdGroup(String uuid, String metadata) {
+        try {
+            long startTime = System.currentTimeMillis();
+            ArtifactIdGroup artifactIdGroup = getArtifactIdGroup(uuid);
+            if (Objects.nonNull(artifactIdGroup)) {
+                artifactIdGroup.setMetadata(metadata);
+                artifactIdGroupRepository.merge(artifactIdGroup);
+                log.info("[{}] updateArtifactIdGroup [{}] take time [{}] ms", this.getClass().getSimpleName(), uuid, System.currentTimeMillis() - startTime);
+            }
+        } catch (Exception ex) {
+            String realMessage = CommonUtils.getRealMessage(ex);
+            log.warn("[{}] [{}] updateArtifactIdGroup error [{}]",
+                    this.getClass().getSimpleName(), uuid, realMessage);
+            if (CommonUtils.catchException(realMessage)) {
+                log.warn("[{}] [{}] updateArtifactIdGroup catch error",
+                        this.getClass().getSimpleName(), uuid);
+                return;
+            }
+            throw ex;
+        }
+    }
+
+    /**
+     * 查询ArtifactIdGroup下的制品数量
+     *
+     * @param repository       repository
+     * @param artifactId       artifactId
+     * @param coordinateValues coordinateValues
+     * @return ArtifactIdGroup
+     */
+    public int getArtifactIdGroupCount(Repository repository,
+                                       String artifactId,
+                                       Collection<String> coordinateValues) {
+        int count = 0;
+        long startTime = 0;
+        if (RepositoryTypeEnum.PROXY.getType().equals(repository.getType())) {
+            startTime = System.currentTimeMillis();
+            count = fetchRemotePackageFeedCount(repository.getStorage().getId(), repository.getId(), artifactId);
+        } else if (RepositoryTypeEnum.HOSTED.getType().equals(repository.getType())) {
+            startTime = System.currentTimeMillis();
+            count = artifactIdGroupRepository.commonSearchCountArtifacts(repository.getStorage().getId(), repository.getId(), artifactId, coordinateValues).intValue();
+        }
+        log.info("[{}] getArtifactIdGroupCount storageId [{}] repositoryId [{}] artifactId [{}] coordinateValues [{}] count [{}] take time [{}] ms", this.getClass().getSimpleName(), repository.getStorage().getId(), repository.getId(), artifactId, coordinateValues, count, System.currentTimeMillis() - startTime);
+        return count;
+    }
+
+    /**
+     * 查询远程仓库NPM某个制品总数
+     *
+     * @param storageId    storageId
+     * @param repositoryId repositoryId
+     * @param artifactId   artifactId
+     * @return ArtifactIdGroup
+     */
+    public int fetchRemotePackageFeedCount(String storageId,
+                                           String repositoryId,
+                                           String artifactId) {
+        long startTime = System.currentTimeMillis();
+        int count = 0;
+        PackageFeed packageFeed = npmRepositoryFeatures.fetchRemotePackageFeed(storageId, repositoryId, artifactId);
+        if (Objects.nonNull(packageFeed)) {
+            Versions versions = packageFeed.getVersions();
+            if (Objects.nonNull(versions) && MapUtils.isNotEmpty(versions.getAdditionalProperties())) {
+                count = versions.getAdditionalProperties().size();
+            }
+        }
+        log.info("[{}] fetchRemotePackageFeedCount storageId [{}] repositoryId [{}] artifactId [{}] count [{}] take time [{}] ms", this.getClass().getSimpleName(), storageId, repositoryId, artifactId, count, System.currentTimeMillis() - startTime);
+        return count;
+    }
+
+    /**
+     * npm从远程代理仓库拉取数据更新本地缓存
+     *
+     * @param repository repository
+     * @param predicate  predicate
+     */
+    public void handleViewPackage(Repository repository, RepositorySearchRequest predicate) {
+        npmRepositoryFeatures.handleViewPackage(repository.getStorage().getId(), repository.getId(), predicate.getArtifactId(), predicate, false);
+    }
+
 }

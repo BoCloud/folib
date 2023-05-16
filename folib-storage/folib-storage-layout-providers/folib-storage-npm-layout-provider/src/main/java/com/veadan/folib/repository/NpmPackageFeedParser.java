@@ -7,6 +7,7 @@ import com.veadan.folib.domain.Artifact;
 import com.veadan.folib.domain.ArtifactEntity;
 import com.veadan.folib.domain.ArtifactTagEntity;
 import com.veadan.folib.npm.metadata.*;
+import com.veadan.folib.repositories.ArtifactRepository;
 import com.veadan.folib.services.ArtifactIdGroupService;
 import com.veadan.folib.services.ArtifactTagService;
 import com.veadan.folib.storage.repository.Repository;
@@ -31,6 +32,9 @@ public class NpmPackageFeedParser {
 
     @Inject
     private ArtifactIdGroupService repositoryArtifactIdGroupService;
+
+    @Inject
+    private ArtifactRepository artifactRepository;
 
     public void parseSearchResult(Repository repository,
                                   SearchResults searchResults) {
@@ -100,23 +104,26 @@ public class NpmPackageFeedParser {
         NpmArtifactCoordinates c = NpmArtifactCoordinates.of(packageVersion.getName(), packageVersion.getVersion());
 
         LocalDateTime now = LocalDateTimeInstance.now();
-
-        ArtifactEntity remoteArtifactEntry = new ArtifactEntity(storageId, repositoryId, c);
-        remoteArtifactEntry.setStorageId(storageId);
-        remoteArtifactEntry.setRepositoryId(repositoryId);
-        remoteArtifactEntry.setArtifactCoordinates(c);
-//        remoteArtifactEntry.setCreated(now);
-//        remoteArtifactEntry.setLastUsed(now);
-//        remoteArtifactEntry.setLastUpdated(now);
-        remoteArtifactEntry.setDownloadCount(0);
-        remoteArtifactEntry.setArtifactFileExists(Boolean.FALSE);
+        Artifact artifact = artifactRepository.findOneArtifact(storageId, repositoryId, c.buildPath());
+        ArtifactEntity remoteArtifactEntry = null;
+        if (Objects.nonNull(artifact)) {
+            //已存在
+            remoteArtifactEntry = new ArtifactEntity(artifact.getNativeId(), storageId, repositoryId, artifact.getUuid(), c);
+        } else {
+            //不存在
+            remoteArtifactEntry = new ArtifactEntity(storageId, repositoryId, c);
+            remoteArtifactEntry.setStorageId(storageId);
+            remoteArtifactEntry.setRepositoryId(repositoryId);
+            remoteArtifactEntry.setArtifactCoordinates(c);
+            remoteArtifactEntry.setDownloadCount(0);
+            remoteArtifactEntry.setArtifactFileExists(Boolean.FALSE);
+        }
         Dependency dependency = packageVersion.getDependencies();
         if (Objects.nonNull(dependency) && MapUtils.isNotEmpty(dependency.getAdditionalProperties())) {
             remoteArtifactEntry.setDependencies(JSONObject.toJSONString(packageVersion.getDependencies().getAdditionalProperties()));
         }
-        // TODO make HEAD request for `tarball` URL ???
+        //make HEAD request for `tarball` URL ???
         // remoteArtifactEntry.setSizeInBytes(packageVersion.getProperties().getPackageSize());
-
         return remoteArtifactEntry;
     }
 
@@ -130,17 +137,19 @@ public class NpmPackageFeedParser {
         NpmArtifactCoordinates c = NpmArtifactCoordinates.of(packageId, packageEntry.getVersion());
 
         LocalDateTime now = LocalDateTimeInstance.now();
-
-        ArtifactEntity remoteArtifactEntry = new ArtifactEntity(storageId, repositoryId, c);
-        remoteArtifactEntry.setStorageId(storageId);
-        remoteArtifactEntry.setRepositoryId(repositoryId);
-        remoteArtifactEntry.setArtifactCoordinates(c);
-//        remoteArtifactEntry.setCreated(now);
-//        remoteArtifactEntry.setLastUsed(now);
-//        remoteArtifactEntry.setLastUpdated(now);
-        remoteArtifactEntry.setDownloadCount(0);
-        remoteArtifactEntry.setArtifactFileExists(Boolean.FALSE);
-
+        Artifact artifact = artifactRepository.findOneArtifact(storageId, repositoryId, c.buildPath());
+        ArtifactEntity remoteArtifactEntry = null;
+        if (Objects.nonNull(artifact)) {
+            //已存在
+            remoteArtifactEntry = new ArtifactEntity(artifact.getNativeId(), storageId, repositoryId, artifact.getUuid(), c);
+        } else {
+            //不存在
+            remoteArtifactEntry.setStorageId(storageId);
+            remoteArtifactEntry.setRepositoryId(repositoryId);
+            remoteArtifactEntry.setArtifactCoordinates(c);
+            remoteArtifactEntry.setDownloadCount(0);
+            remoteArtifactEntry.setArtifactFileExists(Boolean.FALSE);
+        }
         return remoteArtifactEntry;
     }
 

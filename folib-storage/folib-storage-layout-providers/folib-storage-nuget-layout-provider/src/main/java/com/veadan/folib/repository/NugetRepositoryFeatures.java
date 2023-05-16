@@ -3,6 +3,7 @@ package com.veadan.folib.repository;
 import com.veadan.folib.configuration.ConfigurationManager;
 import com.veadan.folib.data.criteria.Paginator;
 import com.veadan.folib.providers.repository.event.RemoteRepositorySearchEvent;
+import com.veadan.folib.repositories.ArtifactRepository;
 import com.veadan.folib.service.ProxyRepositoryConnectionPoolConfigurationService;
 import com.veadan.folib.services.ArtifactTagService;
 import com.veadan.folib.storage.validation.artifact.version.GenericReleaseVersionValidator;
@@ -81,6 +82,8 @@ public class NugetRepositoryFeatures
     
     private Set<String> defaultMavenArtifactCoordinateValidators;
 
+    @Inject
+    private ArtifactRepository artifactRepository;
 
     @PostConstruct
     public void init()
@@ -197,14 +200,22 @@ public class NugetRepositoryFeatures
 
             LocalDateTime now = LocalDateTimeInstance.now();
 
-            ArtifactEntity remoteArtifactEntry = new ArtifactEntity(storageId, repositoryId, c);
-            remoteArtifactEntry.setStorageId(storageId);
-            remoteArtifactEntry.setRepositoryId(repositoryId);
-            remoteArtifactEntry.setArtifactCoordinates(c);
-            remoteArtifactEntry.setLastUsed(now);
-            remoteArtifactEntry.setLastUpdated(now);
-            remoteArtifactEntry.setDownloadCount(0);
-            remoteArtifactEntry.setArtifactFileExists(Boolean.FALSE);
+            Artifact artifact = artifactRepository.findOneArtifact(storageId, repositoryId, c.buildPath());
+            ArtifactEntity remoteArtifactEntry = null;
+            if (Objects.nonNull(artifact)) {
+                //已存在
+                remoteArtifactEntry = new ArtifactEntity(artifact.getNativeId(), storageId, repositoryId, artifact.getUuid(), c);
+            } else {
+                //不存在
+                remoteArtifactEntry = new ArtifactEntity(storageId, repositoryId, c);
+                remoteArtifactEntry.setStorageId(storageId);
+                remoteArtifactEntry.setRepositoryId(repositoryId);
+                remoteArtifactEntry.setArtifactCoordinates(c);
+                remoteArtifactEntry.setLastUsed(now);
+                remoteArtifactEntry.setLastUpdated(now);
+                remoteArtifactEntry.setDownloadCount(0);
+                remoteArtifactEntry.setArtifactFileExists(Boolean.FALSE);
+            }
 
             remoteArtifactEntry.setSizeInBytes(packageEntry.getProperties().getPackageSize());
 

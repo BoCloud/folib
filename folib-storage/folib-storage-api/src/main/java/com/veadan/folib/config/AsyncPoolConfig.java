@@ -5,6 +5,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 
+import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadPoolExecutor;
 
 @Configuration
@@ -172,6 +173,24 @@ public class AsyncPoolConfig {
     @Value("${folib.threadPool.asyncClusterDispatch.awaitTerminationSeconds}")
     private Integer asyncClusterDispatchAwaitTerminationSeconds;
 
+    @Value("${folib.threadPool.asyncFetchRemotePackage.corePoolSize}")
+    private Integer asyncFetchRemotePackageCorePoolSize;
+
+    @Value("${folib.threadPool.asyncFetchRemotePackage.maxPoolSize}")
+    private Integer asyncFetchRemotePackageMaxPoolSize;
+
+    @Value("${folib.threadPool.asyncFetchRemotePackage.queueCapacity}")
+    private Integer asyncFetchRemotePackageQueueCapacity;
+
+    @Value("${folib.threadPool.asyncFetchRemotePackage.keepAliveSeconds}")
+    private Integer asyncFetchRemotePackageKeepAliveSeconds;
+
+    @Value("${folib.threadPool.asyncFetchRemotePackage.threadNamePrefix}")
+    private String asyncFetchRemotePackageThreadNamePrefix;
+
+    @Value("${folib.threadPool.asyncFetchRemotePackage.awaitTerminationSeconds}")
+    private Integer asyncFetchRemotePackageAwaitTerminationSeconds;
+
     @Bean
     public ThreadPoolTaskExecutor asyncThreadPoolTaskExecutor() {
         return buildThreadPoolTaskExecutor(asyncCorePoolSize, asyncMaxPoolSize, asyncQueueCapacity, asyncKeepAliveSeconds, asyncThreadNamePrefix, asyncAwaitTerminationSeconds);
@@ -222,6 +241,17 @@ public class AsyncPoolConfig {
                 asyncRepositoryCleanupThreadNamePrefix,
                 asyncRepositoryCleanupAwaitTerminationSeconds);
 
+    }
+
+    @Bean
+    public ThreadPoolTaskExecutor asyncFetchRemotePackageThreadPoolTaskExecutor(){
+        return buildThreadPoolTaskExecutor(
+                asyncFetchRemotePackageCorePoolSize,
+                asyncFetchRemotePackageMaxPoolSize,
+                asyncFetchRemotePackageQueueCapacity,
+                asyncFetchRemotePackageKeepAliveSeconds,
+                asyncFetchRemotePackageThreadNamePrefix,
+                asyncFetchRemotePackageAwaitTerminationSeconds);
     }
 
     /**

@@ -24,6 +24,8 @@ public class ArtifactIdGroupEntity extends DomainEntity implements ArtifactIdGro
 
     private String name;
 
+    private String metadata;
+
     @Relationship(type = Edges.ARTIFACT_GROUP_HAS_ARTIFACTS, direction = Relationship.OUTGOING)
     private Set<Artifact> artifacts = new HashSet<>();
 
@@ -96,4 +98,13 @@ public class ArtifactIdGroupEntity extends DomainEntity implements ArtifactIdGro
         artifacts.remove(artifact);
     }
 
+    @Override
+    public String getMetadata() {
+        return metadata;
+    }
+
+    @Override
+    public void setMetadata(String metadata) {
+        this.metadata = metadata;
+    }
 }

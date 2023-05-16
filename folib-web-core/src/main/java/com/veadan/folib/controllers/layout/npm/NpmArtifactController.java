@@ -1,12 +1,66 @@
 package com.veadan.folib.controllers.layout.npm;
 
-import java.io.BufferedInputStream;
-import java.io.BufferedOutputStream;
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.io.StringWriter;
+import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.JSONObject;
+import com.fasterxml.jackson.core.JsonFactory;
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.JsonToken;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.veadan.folib.artifact.coordinates.NpmArtifactCoordinates;
+import com.veadan.folib.components.artifact.ArtifactComponent;
+import com.veadan.folib.config.NpmLayoutProviderConfig.NpmObjectMapper;
+import com.veadan.folib.controllers.BaseArtifactController;
+import com.veadan.folib.data.criteria.Paginator;
+import com.veadan.folib.domain.ArtifactIdGroup;
+import com.veadan.folib.domain.ArtifactIdGroupEntity;
+import com.veadan.folib.npm.NpmSearchRequest;
+import com.veadan.folib.npm.NpmViewRequest;
+import com.veadan.folib.npm.metadata.*;
+import com.veadan.folib.providers.ProviderImplementationException;
+import com.veadan.folib.providers.io.RepositoryPath;
+import com.veadan.folib.providers.layout.*;
+import com.veadan.folib.providers.repository.RepositoryProvider;
+import com.veadan.folib.providers.repository.RepositoryProviderRegistry;
+import com.veadan.folib.providers.repository.RepositorySearchRequest;
+import com.veadan.folib.repository.NpmRepositoryFeatures.SearchPackagesEventListener;
+import com.veadan.folib.repository.NpmRepositoryFeatures.ViewPackageEventListener;
+import com.veadan.folib.storage.repository.Repository;
+import com.veadan.folib.storage.validation.artifact.ArtifactCoordinatesValidationException;
+import com.veadan.folib.users.userdetails.SpringSecurityUser;
+import com.veadan.folib.web.LayoutRequestMapping;
+import com.veadan.folib.web.RepositoryMapping;
+import org.apache.commons.codec.digest.DigestUtils;
+import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
+import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
+import org.apache.commons.compress.compressors.gzip.GzipCompressorInputStream;
+import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang3.exception.ExceptionUtils;
+import org.javatuples.Pair;
+import org.junit.platform.commons.util.StringUtils;
+import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
+import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.authentication.InsufficientAuthenticationException;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.util.Assert;
+import org.springframework.web.bind.annotation.*;
+
+import javax.inject.Inject;
+import javax.servlet.ServletInputStream;
+import javax.servlet.ServletOutputStream;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -14,82 +68,8 @@ import java.nio.file.StandardCopyOption;
 import java.nio.file.StandardOpenOption;
 import java.security.NoSuchAlgorithmException;
 import java.text.SimpleDateFormat;
-import java.util.Collections;
-import java.util.Date;
-import java.util.List;
-import java.util.Optional;
-import java.util.concurrent.TimeUnit;
+import java.util.*;
 import java.util.stream.Collectors;
-
-import javax.inject.Inject;
-import javax.servlet.ServletInputStream;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-
-import cn.hutool.core.date.StopWatch;
-import com.alibaba.fastjson.JSONObject;
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import com.veadan.folib.components.artifact.ArtifactComponent;
-import com.veadan.folib.npm.metadata.SearchResults;
-import com.veadan.folib.data.criteria.Paginator;
-import com.veadan.folib.providers.io.RepositoryPath;
-import com.veadan.folib.providers.layout.*;
-import com.veadan.folib.providers.repository.event.RemoteRepositorySearchEvent;
-import com.veadan.folib.storage.validation.artifact.ArtifactCoordinatesValidationException;
-import org.apache.commons.codec.digest.DigestUtils;
-import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
-import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
-import org.apache.commons.compress.compressors.gzip.GzipCompressorInputStream;
-import org.apache.commons.io.IOUtils;
-import com.veadan.folib.artifact.coordinates.NpmArtifactCoordinates;
-import com.veadan.folib.config.NpmLayoutProviderConfig.NpmObjectMapper;
-import com.veadan.folib.controllers.BaseArtifactController;
-import com.veadan.folib.npm.NpmSearchRequest;
-import com.veadan.folib.npm.NpmViewRequest;
-import com.veadan.folib.npm.metadata.DistTags;
-import com.veadan.folib.npm.metadata.PackageFeed;
-import com.veadan.folib.npm.metadata.PackageVersion;
-import com.veadan.folib.npm.metadata.SearchResults;
-import com.veadan.folib.npm.metadata.Time;
-import com.veadan.folib.npm.metadata.Versions;
-import com.veadan.folib.providers.ProviderImplementationException;
-import com.veadan.folib.providers.repository.RepositoryProvider;
-import com.veadan.folib.providers.repository.RepositoryProviderRegistry;
-import com.veadan.folib.providers.repository.RepositorySearchRequest;
-import com.veadan.folib.repository.NpmRepositoryFeatures.SearchPackagesEventListener;
-import com.veadan.folib.repository.NpmRepositoryFeatures.ViewPackageEventListener;
-import com.veadan.folib.storage.repository.Repository;
-import com.veadan.folib.users.userdetails.SpringSecurityUser;
-import com.veadan.folib.web.LayoutRequestMapping;
-import com.veadan.folib.web.RepositoryMapping;
-import org.javatuples.Pair;
-import org.springframework.context.ApplicationEventPublisher;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.authentication.InsufficientAuthenticationException;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.Authentication;
-import org.springframework.util.Assert;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestHeader;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
-
-import com.fasterxml.jackson.core.JsonFactory;
-import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.JsonToken;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 
 
 /**
@@ -100,8 +80,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 @RestController
 @LayoutRequestMapping(NpmArtifactCoordinates.LAYOUT_NAME)
 public class NpmArtifactController
-        extends BaseArtifactController
-{
+        extends BaseArtifactController {
 
     private static final String FIELD_NAME_LENGTH = "length";
 
@@ -137,14 +116,16 @@ public class NpmArtifactController
     @Inject
     protected ApplicationEventPublisher eventPublisher;
 
+    @Inject
+    private ThreadPoolTaskExecutor asyncFetchRemotePackageThreadPoolTaskExecutor;
+
     @GetMapping(path = "{storageId}/{repositoryId}/-/v1/search")
     @PreAuthorize("hasAuthority('ARTIFACTS_RESOLVE')")
     public void search(@RepositoryMapping Repository repository,
                        @RequestParam(name = "text") String text,
                        @RequestParam(name = "size", defaultValue = "20") Integer size,
                        HttpServletResponse response)
-            throws IOException
-    {
+            throws IOException {
         final String storageId = repository.getStorage().getId();
         final String repositoryId = repository.getId();
 
@@ -185,8 +166,7 @@ public class NpmArtifactController
                                      @PathVariable(name = "packageName") String packageName,
                                      @PathVariable(name = "packageVersion") String packageVersion,
                                      HttpServletResponse response)
-            throws Exception
-    {
+            throws Exception {
         final String storageId = repository.getStorage().getId();
         final String repositoryId = repository.getId();
 
@@ -199,8 +179,7 @@ public class NpmArtifactController
         viewPackageEventListener.setNpmSearchRequest(npmSearchRequest);
 
         RepositoryPath repositoryPath = artifactResolutionService.resolvePath(storageId, repositoryId, c.buildPath());
-        if (repositoryPath == null)
-        {
+        if (repositoryPath == null) {
             response.setStatus(HttpStatus.NOT_FOUND.value());
 
             return;
@@ -221,29 +200,83 @@ public class NpmArtifactController
                                          HttpServletRequest request,
                                          HttpServletResponse response,
                                          @RequestHeader HttpHeaders httpHeaders)
-            throws Exception
-    {
+            throws Exception {
+        long globalStartTime = System.currentTimeMillis();
+        String packageId = NpmArtifactCoordinates.calculatePackageId(packageScope, packageName);
+        RepositorySearchRequest predicate = createSearchPredicate(packageScope, packageName);
+        ArtifactIdGroup artifactIdGroup = artifactComponent.getArtifactIdGroup(repository, predicate.getArtifactId(), Collections.singletonList("tgz"));
+        boolean isResponse = false;
+        if (Objects.nonNull(artifactIdGroup) && StringUtils.isNotBlank(artifactIdGroup.getMetadata())) {
+            logger.info("NPM [{}] use cache metadata", artifactIdGroup.getUuid());
+            String artifactIdGroupMetadata = artifactIdGroup.getMetadata();
+            String finalJsonString = JSON.parse(artifactIdGroupMetadata).toString();
+            JSONObject jsonObject = JSONObject.parseObject(finalJsonString);
+
+            long startTime = System.currentTimeMillis();
+            String versionsKey = "versions", distKey = "dist", tarballKey = "tarball", tarball;
+            JSONObject versionsJson = jsonObject.getJSONObject(versionsKey);
+            JSONObject versionJson, distJson;
+            int i = 0;
+            for (String key : versionsJson.keySet()) {
+                versionJson = versionsJson.getJSONObject(key);
+                distJson = versionJson.getJSONObject(distKey);
+                tarball = distJson.getString(tarballKey);
+                String baseUri = configurationManager.getBaseUri().toString();
+                if (baseUri.endsWith("/")) {
+                    baseUri = baseUri.substring(0, baseUri.length() - 1);
+                }
+                if (i == 0 && tarball.startsWith(baseUri)) {
+                    break;
+                }
+                if (!tarball.startsWith(baseUri)) {
+                    tarball = baseUri + tarball.substring(tarball.lastIndexOf("/storages/"));
+                    distJson.put(tarballKey, tarball);
+                }
+                i++;
+            }
+            logger.info("[{}] viewPackageFeedWithScope storageId [{}] repositoryId [{}] packageId [{}] handler tarball task time [{}] ms", this.getClass().getSimpleName(), repository.getStorage().getId(), repository.getId(), packageId, System.currentTimeMillis() - startTime);
+
+            response.setContentType(MediaType.APPLICATION_JSON_VALUE);
+            ServletOutputStream outputStream = response.getOutputStream();
+            outputStream.write(npmJacksonMapper.writeValueAsBytes(jsonObject));
+            outputStream.flush();
+            outputStream.close();
+            response.flushBuffer();
+            isResponse = true;
+        }
+        if (isResponse) {
+            Runnable runnable = () -> {
+                Repository targetRepository = getRepository(artifactIdGroup.getStorageId(), artifactIdGroup.getRepositoryId());
+                artifactComponent.handleViewPackage(targetRepository, predicate);
+                predicate.setNotPublishEvent(true);
+                handlePackageFeed(targetRepository, packageId, predicate, artifactIdGroup);
+            };
+            asyncFetchRemotePackageThreadPoolTaskExecutor.execute(runnable);
+        } else {
+            NpmViewRequest npmSearchRequest = new NpmViewRequest();
+            npmSearchRequest.setPackageId(packageId);
+            viewPackageEventListener.setNpmSearchRequest(npmSearchRequest);
+            PackageFeed packageFeed = handlePackageFeed(repository, packageId, predicate, artifactIdGroup);
+            response.setContentType(MediaType.APPLICATION_JSON_VALUE);
+            try {
+                response.getOutputStream().write(npmJacksonMapper.writeValueAsBytes(packageFeed));
+            } catch (IOException ex) {
+                logger.error("[{}] outputStream write [{}] error [{}]", this.getClass().getSimpleName(), JSONObject.toJSONString(packageFeed), ExceptionUtils.getStackTrace(ex));
+            }
+        }
+        logger.info("[{}] viewPackageFeedWithScope storageId [{}] repositoryId [{}] packageId [{}] task time [{}] ms", this.getClass().getSimpleName(), repository.getStorage().getId(), repository.getId(), packageId, System.currentTimeMillis() - globalStartTime);
+    }
+
+    private PackageFeed handlePackageFeed(Repository repository, String packageId, RepositorySearchRequest predicate, ArtifactIdGroup artifactIdGroup) {
         final String storageId = repository.getStorage().getId();
         final String repositoryId = repository.getId();
-
-        String packageId = NpmArtifactCoordinates.calculatePackageId(packageScope, packageName);
-//
-        NpmViewRequest npmSearchRequest = new NpmViewRequest();
-        npmSearchRequest.setPackageId(packageId);
-        viewPackageEventListener.setNpmSearchRequest(npmSearchRequest);
-
-        PackageFeed packageFeed = new PackageFeed();
-
-        packageFeed.setName(packageId);
-        packageFeed.setAdditionalProperty("_id", packageId);
-
-        RepositorySearchRequest predicate = createSearchPredicate(packageScope, packageName);
-//
         RepositoryProvider provider = repositoryProviderRegistry.getProvider(repository.getType());
         Paginator paginator = new Paginator();
         paginator.setProperty("version");
         paginator.setUseLimit(Boolean.FALSE);
-        List<Path> searchResult = provider.search(storageId, repositoryId, predicate, paginator);
+        PackageFeed packageFeed = new PackageFeed();
+        packageFeed.setName(packageId);
+        packageFeed.setAdditionalProperty("_id", packageId);
         Versions versions = new Versions();
         packageFeed.setVersions(versions);
 
@@ -252,7 +285,7 @@ public class NpmArtifactController
 
         DistTags distTags = new DistTags();
         packageFeed.setDistTags(distTags);
-
+        List<Path> searchResult = provider.search(storageId, repositoryId, predicate, paginator);
         searchResult.stream().map(npmPackageSupplier).forEach(p -> {
             PackageVersion npmPackage = p.getNpmPackage();
             versions.setAdditionalProperty(npmPackage.getVersion(), npmPackage);
@@ -264,28 +297,40 @@ public class NpmArtifactController
 
             Date modified = npmTime.getModified();
             npmTime.setModified(modified == null || modified.before(p.getReleaseDate()) ? p.getReleaseDate()
-                                                                                        : modified);
+                    : modified);
 
-            if (p.isLastVersion())
-            {
+            if (p.isLastVersion()) {
                 distTags.setLatest(npmPackage.getVersion());
             }
 
         });
+        ArtifactIdGroup updateArtifactIdGroup = artifactIdGroup;
         packageFeed.setAdditionalProperty("_rev", generateRevisionHashcode(packageFeed));
-        response.setContentType(MediaType.APPLICATION_JSON_VALUE);
-        response.getOutputStream().write(npmJacksonMapper.writeValueAsBytes(packageFeed));
+        if (Objects.isNull(updateArtifactIdGroup) && CollectionUtils.isNotEmpty(searchResult)) {
+            Path path = searchResult.get(0);
+            if (path instanceof RepositoryPath) {
+                RepositoryPath repositoryPath = (RepositoryPath) path;
+                updateArtifactIdGroup = new ArtifactIdGroupEntity(repositoryPath.getStorageId(), repositoryPath.getRepositoryId(), packageId);
+            }
+        }
+        if (Objects.nonNull(updateArtifactIdGroup)) {
+            try {
+                artifactComponent.updateArtifactIdGroup(updateArtifactIdGroup.getUuid(), npmJacksonMapper.writeValueAsString(packageFeed));
+            } catch (JsonProcessingException ex) {
+                logger.error("[{}] packageFeed 转换异常 [{}] error [{}]", this.getClass().getSimpleName(), JSONObject.toJSONString(packageFeed), ExceptionUtils.getStackTrace(ex));
+            }
+        }
+        return packageFeed;
     }
 
-    private String generateRevisionHashcode(PackageFeed packageFeed)
-    {
+    private String generateRevisionHashcode(PackageFeed packageFeed) {
         String versionsShasum = packageFeed.getVersions().getAdditionalProperties()
-                                           .values()
-                                           .stream()
-                                           .map(x -> x.getDist().getShasum())
-                                           .collect(Collectors.joining());
+                .values()
+                .stream()
+                .map(x -> x.getDist().getShasum())
+                .collect(Collectors.joining());
         return packageFeed.getVersions().getAdditionalProperties().size() + "-" +
-               DigestUtils.sha1Hex(versionsShasum).substring(0, 16);
+                DigestUtils.sha1Hex(versionsShasum).substring(0, 16);
     }
 
     @GetMapping(path = "{storageId}/{repositoryId}/{packageName}")
@@ -295,14 +340,12 @@ public class NpmArtifactController
                                 HttpServletRequest request,
                                 HttpServletResponse response,
                                 @RequestHeader HttpHeaders httpHeaders)
-            throws Exception
-    {
+            throws Exception {
         viewPackageFeedWithScope(repository, null, packageName, request, response, httpHeaders);
     }
 
     private RepositorySearchRequest createSearchPredicate(String packageScope,
-                                                          String packageName)
-    {
+                                                          String packageName) {
         RepositorySearchRequest rootPredicate = new RepositorySearchRequest(
                 NpmArtifactCoordinates.calculatePackageId(packageScope, packageName), Collections.singleton("tgz"));
 
@@ -311,19 +354,18 @@ public class NpmArtifactController
 
     @PreAuthorize("hasAuthority('ARTIFACTS_RESOLVE')")
     @RequestMapping(path = "{storageId}/{repositoryId}/{packageScope}/{packageName}/-/{packageNameWithVersion}.{packageExtension}",
-            method = { RequestMethod.GET,
-                       RequestMethod.HEAD })
+            method = {RequestMethod.GET,
+                    RequestMethod.HEAD})
     public ResponseEntity<Object> downloadPackageWithScope(@RepositoryMapping Repository repository,
-                                         @PathVariable(name = "packageScope") String packageScope,
-                                         @PathVariable(name = "packageName") String packageName,
-                                         @PathVariable(name = "packageNameWithVersion") String packageNameWithVersion,
-                                         @PathVariable(name = "packageExtension") String packageExtension,
-                                         @RequestHeader HttpHeaders httpHeaders,
-                                         HttpServletRequest request,
-                                         HttpServletResponse response)
-            throws Exception
-    {
-
+                                                           @PathVariable(name = "packageScope") String packageScope,
+                                                           @PathVariable(name = "packageName") String packageName,
+                                                           @PathVariable(name = "packageNameWithVersion") String packageNameWithVersion,
+                                                           @PathVariable(name = "packageExtension") String packageExtension,
+                                                           @RequestHeader HttpHeaders httpHeaders,
+                                                           HttpServletRequest request,
+                                                           HttpServletResponse response)
+            throws Exception {
+        long startTime = System.currentTimeMillis();
         final String storageId = repository.getStorage().getId();
         final String repositoryId = repository.getId();
         String packageVersion = "";
@@ -331,20 +373,16 @@ public class NpmArtifactController
         boolean isPackage = packageNameWithVersion.startsWith("package-") && packageExtension.endsWith("json");
         String artifactPath = "";
         if (!isPackage) {
-            if (!packageNameWithVersion.startsWith(packageName + "-"))
-            {
+            if (!packageNameWithVersion.startsWith(packageName + "-")) {
                 response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
                 return null;
             }
             packageVersion = getPackageVersion(packageNameWithVersion, packageName);
             NpmArtifactCoordinates coordinates;
-            try
-            {
+            try {
                 coordinates = NpmArtifactCoordinates.of(String.format("%s/%s", packageScope, packageName), packageVersion);
                 artifactPath = coordinates.buildPath();
-            }
-            catch (IllegalArgumentException e)
-            {
+            } catch (IllegalArgumentException e) {
                 response.setStatus(HttpStatus.BAD_REQUEST.value());
                 response.getWriter().write(e.getMessage());
                 return null;
@@ -352,6 +390,7 @@ public class NpmArtifactController
             RepositoryPath repositoryPath = artifactResolutionService.resolvePath(storageId, repositoryId, artifactPath);
             vulnerabilityBlock(repositoryPath);
             provideArtifactDownloadResponse(request, response, httpHeaders, repositoryPath);
+            logger.info("[{}] downloadPackageWithScope [{}] task time [{}] ms", this.getClass().getSimpleName(), repositoryPath.toString(), System.currentTimeMillis() - startTime);
         } else {
             packageVersion = getPackageJsonVersion(packageNameWithVersion);
             artifactPath = String.format("%s/%s/%s/%s", packageScope, packageName, packageVersion, NpmLayoutProvider.PACKAGE_JSON);
@@ -368,17 +407,17 @@ public class NpmArtifactController
 
     @PreAuthorize("hasAuthority('ARTIFACTS_RESOLVE')")
     @RequestMapping(path = "{storageId}/{repositoryId}/{packageName}/-/{packageNameWithVersion}.{packageExtension}",
-            method = { RequestMethod.GET,
-                       RequestMethod.HEAD })
+            method = {RequestMethod.GET,
+                    RequestMethod.HEAD})
     public ResponseEntity<Object> downloadPackage(@RepositoryMapping Repository repository,
-                                @PathVariable(name = "packageName") String packageName,
-                                @PathVariable(name = "packageNameWithVersion") String packageNameWithVersion,
-                                @PathVariable(name = "packageExtension") String packageExtension,
-                                @RequestHeader HttpHeaders httpHeaders,
-                                HttpServletRequest request,
-                                HttpServletResponse response)
-            throws Exception
-    {
+                                                  @PathVariable(name = "packageName") String packageName,
+                                                  @PathVariable(name = "packageNameWithVersion") String packageNameWithVersion,
+                                                  @PathVariable(name = "packageExtension") String packageExtension,
+                                                  @RequestHeader HttpHeaders httpHeaders,
+                                                  HttpServletRequest request,
+                                                  HttpServletResponse response)
+            throws Exception {
+        long startTime = System.currentTimeMillis();
         final String storageId = repository.getStorage().getId();
         final String repositoryId = repository.getId();
         String packageVersion = "";
@@ -386,20 +425,16 @@ public class NpmArtifactController
         boolean isPackage = packageNameWithVersion.startsWith("package-") && packageExtension.endsWith("json");
         String artifactPath = "";
         if (!isPackage) {
-            if (!packageNameWithVersion.startsWith(packageName + "-"))
-            {
+            if (!packageNameWithVersion.startsWith(packageName + "-")) {
                 response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
                 return null;
             }
             packageVersion = getPackageVersion(packageNameWithVersion, packageName);
 
             NpmArtifactCoordinates coordinates;
-            try
-            {
+            try {
                 coordinates = NpmArtifactCoordinates.of(packageName, packageVersion);
-            }
-            catch (IllegalArgumentException e)
-            {
+            } catch (IllegalArgumentException e) {
                 response.setStatus(HttpStatus.BAD_REQUEST.value());
                 response.getWriter().write(e.getMessage());
                 return null;
@@ -408,6 +443,7 @@ public class NpmArtifactController
             RepositoryPath path = artifactResolutionService.resolvePath(storageId, repositoryId, coordinates.buildPath());
             vulnerabilityBlock(path);
             provideArtifactDownloadResponse(request, response, httpHeaders, path);
+            logger.info("[{}] downloadPackage [{}] task time [{}] ms", this.getClass().getSimpleName(), path.toString(), System.currentTimeMillis() - startTime);
         } else {
             packageVersion = getPackageJsonVersion(packageNameWithVersion);
             artifactPath = String.format("%s/%s/%s/%s", packageName, packageName, packageVersion, NpmLayoutProvider.PACKAGE_JSON);
@@ -427,10 +463,8 @@ public class NpmArtifactController
     public ResponseEntity publish(@RepositoryMapping Repository repository,
                                   @PathVariable(name = "name") String name,
                                   HttpServletRequest request)
-            throws Exception
-    {
-        if (nameContainsRevision(name))
-        {
+            throws Exception {
+        if (nameContainsRevision(name)) {
             return ResponseEntity.status(HttpStatus.OK).build();
         }
         final String storageId = repository.getStorage().getId();
@@ -439,12 +473,9 @@ public class NpmArtifactController
 
         logger.info("npm publish request for {}/{}/{}", storageId, repositoryId, name);
         Pair<PackageVersion, Path> packageEntry;
-        try
-        {
+        try {
             packageEntry = extractPackage(name, request.getInputStream());
-        }
-        catch (IllegalArgumentException e)
-        {
+        } catch (IllegalArgumentException e) {
             logger.error("Failed to extract npm package data", e);
             return ResponseEntity.badRequest().build();
         }
@@ -470,10 +501,8 @@ public class NpmArtifactController
      * @param name name from path "{storageId}/{repositoryId}/{name:.+}"
      * @return true if contains, false if not. If true PUT stage of 'unpublish' will be skipped.
      */
-    private boolean nameContainsRevision(String name)
-    {
-        if (name.contains("/-rev/"))
-        {
+    private boolean nameContainsRevision(String name) {
+        if (name.contains("/-rev/")) {
             logger.warn("Url comprises '/-rev/' sub path");
 
             return true;
@@ -485,28 +514,24 @@ public class NpmArtifactController
     @PutMapping(path = "{storageId}/{repositoryId}/-/user/org.couchdb.user:{username}",
             consumes = MediaType.APPLICATION_JSON_VALUE,
             produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity addUser(Authentication authentication)
-    {
-        if (authentication == null || !authentication.isAuthenticated())
-        {
+    public ResponseEntity addUser(Authentication authentication) {
+        if (authentication == null || !authentication.isAuthenticated()) {
             throw new InsufficientAuthenticationException("unauthorized");
         }
 
-        if (!(authentication instanceof UsernamePasswordAuthenticationToken))
-        {
+        if (!(authentication instanceof UsernamePasswordAuthenticationToken)) {
             return toResponseEntityError("Unsupported authentication class " + authentication.getClass().getName());
         }
 
         Object principal = authentication.getPrincipal();
-        if (!(principal instanceof SpringSecurityUser))
-        {
+        if (!(principal instanceof SpringSecurityUser)) {
             return toResponseEntityError(
                     "Unsupported authentication principal " + Optional.ofNullable(principal).orElse(null));
         }
 
         return ResponseEntity
-                       .status(HttpStatus.CREATED)
-                       .body("{\"ok\":\"user '" + authentication.getName() + "' created\"}");
+                .status(HttpStatus.CREATED)
+                .body("{\"ok\":\"user '" + authentication.getName() + "' created\"}");
     }
 
     @DeleteMapping(path = "{storageId}/{repositoryId}/{packageScope}/{packageName}/-rev/{rev}")
@@ -514,14 +539,13 @@ public class NpmArtifactController
     public ResponseEntity unpublishPackageWithScope(@RepositoryMapping Repository repository,
                                                     @PathVariable(name = "packageScope") String packageScope,
                                                     @PathVariable(name = "packageName") String packageName,
-                                                    @PathVariable(name = "rev") String rev)
-    {
+                                                    @PathVariable(name = "rev") String rev) {
 
         logger.info("Npm unpublish a package request: storageId-[{}]; repositoryId-[{}]; packageName-[{}]; revision-[{}];",
-                    repository.getStorage().getId(),
-                    repository.getId(),
-                    packageName,
-                    rev);
+                repository.getStorage().getId(),
+                repository.getId(),
+                packageName,
+                rev);
 
         NpmUnpublishService.Result result = npmUnpublishService.unpublishPackage(repository, packageScope, packageName);
 
@@ -545,23 +569,22 @@ public class NpmArtifactController
                                                     @PathVariable(name = "packageScope") String packageScope,
                                                     @PathVariable(name = "packageName") String packageName,
                                                     @PathVariable(name = "tarball") String tarball,
-                                                    @PathVariable(name = "rev") String rev)
-    {
+                                                    @PathVariable(name = "rev") String rev) {
 
         final String version = getPackageVersion(tarball, packageName).replace(".tgz", "");
 
         logger.info("Npm unpublish a single version request: storageId-[{}]; repositoryId-[{}]; packageName-[{}]; tarball-[{}]; revision-[{}];",
-                    repository.getStorage().getId(),
-                    repository.getId(),
-                    packageName,
-                    tarball,
-                    rev);
+                repository.getStorage().getId(),
+                repository.getId(),
+                packageName,
+                tarball,
+                rev);
 
         NpmUnpublishService.Result result = npmUnpublishService.unpublishSingleVersion(repository,
-                                                                                       packageScope,
-                                                                                       packageName,
-                                                                                       tarball,
-                                                                                       version);
+                packageScope,
+                packageName,
+                tarball,
+                version);
         return processUnpublishResult(result);
     }
 
@@ -582,23 +605,22 @@ public class NpmArtifactController
                                                       @PathVariable(name = "packageScope") String packageScope,
                                                       @PathVariable(name = "packageName") String packageName,
                                                       @PathVariable(name = "tarball") String tarball,
-                                                      @PathVariable(name = "rev") String rev)
-    {
+                                                      @PathVariable(name = "rev") String rev) {
 
         final String version = getPackageVersion(tarball, packageName).replace(".tgz", "");
 
         logger.info("Npm unpublish a single version request: storageId-[{}]; repositoryId-[{}]; packageName-[{}]; tarball-[{}]; revision-[{}];",
-                    repository.getStorage().getId(),
-                    repository.getId(),
-                    packageName,
-                    tarball,
-                    rev);
+                repository.getStorage().getId(),
+                repository.getId(),
+                packageName,
+                tarball,
+                rev);
 
         NpmUnpublishService.Result result = npmUnpublishService.unpublishSingleVersion(repository,
-                                                                                       packageScope,
-                                                                                       packageName,
-                                                                                       tarball,
-                                                                                       version);
+                packageScope,
+                packageName,
+                tarball,
+                version);
         return processUnpublishResult(result);
     }
 
@@ -606,8 +628,7 @@ public class NpmArtifactController
     @PreAuthorize("hasAuthority('ARTIFACTS_DELETE')")
     public ResponseEntity unpublishPackage(@RepositoryMapping Repository repository,
                                            @PathVariable(name = "packageName") String packageName,
-                                           @PathVariable(name = "rev") String rev)
-    {
+                                           @PathVariable(name = "rev") String rev) {
         return unpublishPackageWithScope(repository, null, packageName, rev);
     }
 
@@ -616,8 +637,7 @@ public class NpmArtifactController
     public ResponseEntity unpublishVersion(@RepositoryMapping Repository repository,
                                            @PathVariable(name = "packageName") String packageName,
                                            @PathVariable(name = "tarball") String tarball,
-                                           @PathVariable(name = "rev") String rev)
-    {
+                                           @PathVariable(name = "rev") String rev) {
         return unpublishVersionWithScope(repository, null, packageName, tarball, rev);
     }
 
@@ -626,8 +646,7 @@ public class NpmArtifactController
     public ResponseEntity unpublishVersionV5(@RepositoryMapping Repository repository,
                                              @PathVariable(name = "packageName") String packageName,
                                              @PathVariable(name = "tarball") String tarball,
-                                             @PathVariable(name = "rev") String rev)
-    {
+                                             @PathVariable(name = "rev") String rev) {
         return unpublishVersionWithScopeV5(repository, null, packageName, tarball, rev);
     }
 
@@ -636,27 +655,23 @@ public class NpmArtifactController
                                  PackageVersion packageDef,
                                  Path packageTgzTmp)
             throws IOException,
-                   ProviderImplementationException,
-                   NoSuchAlgorithmException,
-            ArtifactCoordinatesValidationException
-    {
+            ProviderImplementationException,
+            NoSuchAlgorithmException,
+            ArtifactCoordinatesValidationException {
         RepositoryPath repositoryPath = repositoryPathResolver.resolve(repository, coordinates);
-        try (InputStream is = new BufferedInputStream(Files.newInputStream(packageTgzTmp)))
-        {
+        try (InputStream is = new BufferedInputStream(Files.newInputStream(packageTgzTmp))) {
             artifactManagementService.validateAndStore(repositoryPath, is);
         }
 
         Path packageJsonTmp = extractPackageJson(packageTgzTmp);
         RepositoryPath packageJsonPath = repositoryPathResolver.resolve(repository,
-                                                                        repositoryPath.resolveSibling("package.json"));
-        try (InputStream is = new BufferedInputStream(Files.newInputStream(packageJsonTmp)))
-        {
+                repositoryPath.resolveSibling("package.json"));
+        try (InputStream is = new BufferedInputStream(Files.newInputStream(packageJsonTmp))) {
             artifactManagementService.validateAndStore(packageJsonPath, is);
         }
 
         String shasum = Optional.ofNullable(packageDef.getDist()).map(p -> p.getShasum()).orElse(null);
-        if (shasum == null)
-        {
+        if (shasum == null) {
             logger.warn("No checksum provided for package [{}]", packageDef.getName());
             return;
         }
@@ -664,7 +679,7 @@ public class NpmArtifactController
         String packageFileName = repositoryPath.getFileName().toString();
         RepositoryPath checksumPath = repositoryPath.resolveSibling(packageFileName + ".sha1");
         artifactManagementService.validateAndStore(checksumPath,
-                                                   new ByteArrayInputStream(shasum.getBytes(StandardCharsets.UTF_8)));
+                new ByteArrayInputStream(shasum.getBytes(StandardCharsets.UTF_8)));
 
         Files.delete(packageTgzTmp);
         Files.delete(packageJsonTmp);
@@ -672,8 +687,7 @@ public class NpmArtifactController
 
     private Pair<PackageVersion, Path> extractPackage(String packageName,
                                                       ServletInputStream in)
-            throws IOException
-    {
+            throws IOException {
         Path packageSourceTmp = Files.createTempFile("package", "source");
         Files.copy(in, packageSourceTmp, StandardCopyOption.REPLACE_EXISTING);
 
@@ -682,22 +696,18 @@ public class NpmArtifactController
 
         JsonFactory jfactory = new JsonFactory();
         try (InputStream tmpIn = new BufferedInputStream(Files.newInputStream(packageSourceTmp));
-             JsonParser jp = jfactory.createParser(tmpIn);)
-        {
+             JsonParser jp = jfactory.createParser(tmpIn);) {
             jp.setCodec(npmJacksonMapper);
 
             Assert.isTrue(jp.nextToken() == JsonToken.START_OBJECT, "npm package source should be JSON object.");
 
-            while (jp.nextToken() != null)
-            {
+            while (jp.nextToken() != null) {
                 String fieldName = jp.getCurrentName();
                 // read value
-                if (fieldName == null)
-                {
+                if (fieldName == null) {
                     continue;
                 }
-                switch (fieldName)
-                {
+                switch (fieldName) {
                     case FIELD_NAME_VERSION:
                         jp.nextValue();
                         JsonNode node = jp.readValueAsTree();
@@ -709,9 +719,9 @@ public class NpmArtifactController
                         break;
                     case FIELD_NAME_ATTACHMENTS:
                         Assert.isTrue(jp.nextToken() == JsonToken.START_OBJECT,
-                                      String.format(
-                                              "Failed to parse npm package source for illegal type [%s] of attachment.",
-                                              jp.currentToken().name()));
+                                String.format(
+                                        "Failed to parse npm package source for illegal type [%s] of attachment.",
+                                        jp.currentToken().name()));
 
                         String packageAttachmentName = jp.nextFieldName();
                         logger.info(String.format("Found npm package attachment [%s]", packageAttachmentName));
@@ -729,8 +739,7 @@ public class NpmArtifactController
 
         Files.delete(packageSourceTmp);
 
-        if (packageVersion == null || packageTgzPath == null)
-        {
+        if (packageVersion == null || packageTgzPath == null) {
             throw new IllegalArgumentException(
                     String.format("Failed to parse npm package source for [%s], attachment not found", packageName));
         }
@@ -739,12 +748,10 @@ public class NpmArtifactController
     }
 
     private Path extractPackage(JsonParser jp)
-            throws IOException
-    {
+            throws IOException {
         Path packageTgzTmp = Files.createTempFile("package", "tgz");
         try (OutputStream packageTgzOut = new BufferedOutputStream(Files.newOutputStream(packageTgzTmp,
-                                                                                         StandardOpenOption.TRUNCATE_EXISTING)))
-        {
+                StandardOpenOption.TRUNCATE_EXISTING))) {
             jp.readBinaryValue(packageTgzOut);
         }
 
@@ -760,75 +767,64 @@ public class NpmArtifactController
     }
 
     private Path extractPackageJson(Path packageTgzTmp)
-            throws IOException
-    {
+            throws IOException {
         String packageJsonSource;
-        try (InputStream packageTgzIn = new BufferedInputStream(Files.newInputStream(packageTgzTmp)))
-        {
+        try (InputStream packageTgzIn = new BufferedInputStream(Files.newInputStream(packageTgzTmp))) {
             packageJsonSource = extrectPackageJson(packageTgzIn);
         }
         Path packageJsonTmp = Files.createTempFile("package", "json");
         Files.write(packageJsonTmp, packageJsonSource.getBytes(StandardCharsets.UTF_8),
-                    StandardOpenOption.TRUNCATE_EXISTING);
+                StandardOpenOption.TRUNCATE_EXISTING);
 
         return packageJsonTmp;
     }
 
     private void moveToAttachment(JsonParser jp,
                                   String packageAttachmentName)
-            throws IOException
-    {
+            throws IOException {
         Assert.isTrue(jp.nextToken() == JsonToken.START_OBJECT,
-                      String.format(
-                              "Failed to parse npm package source for [%s], illegal attachment content type [%s].",
-                              packageAttachmentName, jp.currentToken().name()));
+                String.format(
+                        "Failed to parse npm package source for [%s], illegal attachment content type [%s].",
+                        packageAttachmentName, jp.currentToken().name()));
 
         jp.nextToken();
         String contentType = jp.nextTextValue();
         Assert.isTrue(MediaType.APPLICATION_OCTET_STREAM_VALUE.equals(contentType),
-                      String.format("Failed to parse npm package source for [%s], unknown content type [%s]",
-                                    packageAttachmentName, contentType));
+                String.format("Failed to parse npm package source for [%s], unknown content type [%s]",
+                        packageAttachmentName, contentType));
 
         String dataFieldName = jp.nextFieldName();
         Assert.isTrue("data".equals(dataFieldName),
-                      String.format("Failed to parse npm package source for [%s], data not found",
-                                    packageAttachmentName));
+                String.format("Failed to parse npm package source for [%s], data not found",
+                        packageAttachmentName));
 
         jp.nextToken();
     }
 
     private PackageVersion extractPackageVersion(String packageName,
                                                  String packageJsonSource)
-            throws IOException
-    {
+            throws IOException {
         PackageVersion packageVersion;
-        try
-        {
+        try {
             packageVersion = npmJacksonMapper.readValue(packageJsonSource, PackageVersion.class);
-        }
-        catch (JsonProcessingException e)
-        {
+        } catch (JsonProcessingException e) {
             throw new IllegalArgumentException(String.format("Failed to parse package.json info for [%s]", packageName),
-                                               e);
+                    e);
         }
         Assert.isTrue(packageName.equals(packageVersion.getName()),
-                      String.format("Package name [%s] don't match with [%s].", packageVersion.getName(), packageName));
+                String.format("Package name [%s] don't match with [%s].", packageVersion.getName(), packageName));
 
         return packageVersion;
     }
 
     private String extrectPackageJson(InputStream in)
-            throws IOException
-    {
+            throws IOException {
         GzipCompressorInputStream gzipIn = new GzipCompressorInputStream(in);
-        try (TarArchiveInputStream tarIn = new TarArchiveInputStream(gzipIn))
-        {
+        try (TarArchiveInputStream tarIn = new TarArchiveInputStream(gzipIn)) {
             TarArchiveEntry entry;
 
-            while ((entry = (TarArchiveEntry) tarIn.getNextEntry()) != null)
-            {
-                if (!entry.getName().endsWith("package.json"))
-                {
+            while ((entry = (TarArchiveEntry) tarIn.getNextEntry()) != null) {
+                if (!entry.getName().endsWith("package.json")) {
                     continue;
                 }
                 StringWriter writer = new StringWriter();
@@ -841,20 +837,16 @@ public class NpmArtifactController
     }
 
     private String getPackageVersion(String packageNameWithVersion,
-                                     String packageName)
-    {
+                                     String packageName) {
         return packageNameWithVersion.substring(packageName.length() + 1);
     }
 
-    private String getPackageJsonVersion(String packageJsonNameWithVersion)
-    {
+    private String getPackageJsonVersion(String packageJsonNameWithVersion) {
         return packageJsonNameWithVersion.substring("package".length() + 1);
     }
 
-    private ResponseEntity processUnpublishResult(NpmUnpublishService.Result result)
-    {
-        switch (result)
-        {
+    private ResponseEntity processUnpublishResult(NpmUnpublishService.Result result) {
+        switch (result) {
             case INTERNAL_SERVER_ERROR:
                 return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
             case ARTIFACT_DOES_NOT_EXIST:
@@ -862,7 +854,7 @@ public class NpmArtifactController
                 return ResponseEntity.status(HttpStatus.OK).build();
             case UNPUBLISH_DISABLED:
                 ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                              .body("Enable 'unpublish' at first");
+                        .body("Enable 'unpublish' at first");
             default:
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
         }

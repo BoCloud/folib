@@ -7,6 +7,7 @@ import com.veadan.folib.domain.ArtifactEntity;
 import com.veadan.folib.domain.ArtifactTagEntity;
 import com.veadan.folib.php.PhpSearchPackage;
 import com.veadan.folib.php.PhpSearchResult;
+import com.veadan.folib.repositories.ArtifactRepository;
 import com.veadan.folib.services.ArtifactIdGroupService;
 import com.veadan.folib.services.ArtifactTagService;
 import com.veadan.folib.storage.repository.Repository;
@@ -17,6 +18,7 @@ import org.springframework.transaction.annotation.Transactional;
 import javax.inject.Inject;
 import java.time.LocalDateTime;
 import java.util.HashSet;
+import java.util.Objects;
 import java.util.Set;
 
 @Component
@@ -28,6 +30,8 @@ public class PhpPackageFeedParser {
     @Inject
     private ArtifactIdGroupService repositoryArtifactIdGroupService;
 
+    @Inject
+    private ArtifactRepository artifactRepository;
 
     @Transactional(rollbackFor = Exception.class)
     public void parseSearchResult(Repository repository,
@@ -54,14 +58,22 @@ public class PhpPackageFeedParser {
         c.setExtension(PhpArtifactCoordinates.JSON);
         LocalDateTime now = LocalDateTimeInstance.now();
 
-        ArtifactEntity remoteArtifactEntry = new ArtifactEntity(storageId, repositoryId, c);
-        remoteArtifactEntry.setStorageId(storageId);
-        remoteArtifactEntry.setRepositoryId(repositoryId);
-        remoteArtifactEntry.setArtifactCoordinates(c);
-        remoteArtifactEntry.setLastUsed(now);
-        remoteArtifactEntry.setLastUpdated(now);
-        remoteArtifactEntry.setDownloadCount(0);
-        remoteArtifactEntry.setArtifactFileExists(Boolean.FALSE);
+        Artifact artifact = artifactRepository.findOneArtifact(storageId, repositoryId, c.buildPath());
+        ArtifactEntity remoteArtifactEntry = null;
+        if (Objects.nonNull(artifact)) {
+            //已存在
+            remoteArtifactEntry = new ArtifactEntity(artifact.getNativeId(), storageId, repositoryId, artifact.getUuid(), c);
+        } else {
+            //不存在
+            remoteArtifactEntry = new ArtifactEntity(storageId, repositoryId, c);
+            remoteArtifactEntry.setStorageId(storageId);
+            remoteArtifactEntry.setRepositoryId(repositoryId);
+            remoteArtifactEntry.setArtifactCoordinates(c);
+            remoteArtifactEntry.setLastUsed(now);
+            remoteArtifactEntry.setLastUpdated(now);
+            remoteArtifactEntry.setDownloadCount(0);
+            remoteArtifactEntry.setArtifactFileExists(Boolean.FALSE);
+        }
         return remoteArtifactEntry;
     }
 

@@ -235,7 +235,7 @@ public class GroupRepositoryProvider
             paginatorLocal.setSkip(groupSkip);
             paginatorLocal.setProperty(paginator.getProperty());
             paginatorLocal.setOrder(paginator.getOrder());
-
+            paginatorLocal.setUseLimit(paginator.getUseLimit());
             groupLimit = 0;
 
             for (Iterator<Repository> i = groupRepositorySet.iterator(); i.hasNext(); )
@@ -296,8 +296,18 @@ public class GroupRepositoryProvider
 
         Storage storage = getConfiguration().getStorage(storageId);
         Repository groupRepository = storage.getRepository(repositoryId);
-        return artifactIdGroupRepository.commonCountArtifacts(storageId, repositoryId, predicate.getArtifactId(),
-                                                        predicate.getCoordinateValues());
+        Set<Repository> groupRepositorySet = groupRepositorySetCollector.collect(groupRepository);
+        Long count = 0L;
+        if (groupRepositorySet.isEmpty())
+        {
+            return count;
+        }
+        for (Iterator<Repository> i = groupRepositorySet.iterator(); i.hasNext(); ) {
+            Repository r = i.next();
+            RepositoryProvider repositoryProvider = repositoryProviderRegistry.getProvider(r.getType());
+            count = count + repositoryProvider.count(r.getStorage().getId(), r.getId(), predicate);
+        }
+        return count;
     }
 
     @Override

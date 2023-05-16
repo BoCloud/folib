@@ -3,15 +3,15 @@ package com.veadan.folib.gremlin.adapters;
 import static org.apache.tinkerpop.gremlin.structure.VertexProperty.Cardinality.single;
 import static com.veadan.folib.gremlin.dsl.EntityTraversalUtils.extractObject;
 
-import java.util.Collection;
-import java.util.Map;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
 
 import javax.inject.Inject;
 
+import com.veadan.folib.enums.VulnerabilityPlatformEnum;
 import com.veadan.folib.gremlin.dsl.EntityTraversal;
 import com.veadan.folib.gremlin.dsl.__;
+import org.apache.commons.collections4.CollectionUtils;
+import org.apache.tinkerpop.gremlin.process.traversal.P;
 import org.apache.tinkerpop.gremlin.process.traversal.Traverser;
 import org.apache.tinkerpop.gremlin.structure.Element;
 import org.apache.tinkerpop.gremlin.structure.Vertex;
@@ -65,6 +65,18 @@ public class ArtifactIdGroupAdapter implements VertexEntityTraversalAdapter<Arti
                  .map(this::map);
     }
 
+    public EntityTraversal<Vertex, ArtifactIdGroup> artifactIdGroupFold()
+    {
+        return __.<Vertex, Object>project("id", "uuid", "storageId", "repositoryId", "name", "metadata")
+                .by(__.id())
+                .by(__.enrichPropertyValue("uuid"))
+                .by(__.enrichPropertyValue("storageId"))
+                .by(__.enrichPropertyValue("repositoryId"))
+                .by(__.enrichPropertyValue("name"))
+                .by(__.enrichPropertyValue("metadata"))
+                .map(this::map);
+    }
+
     @Override
     public EntityTraversal<Vertex, ArtifactIdGroup> fold()
     {
@@ -78,9 +90,12 @@ public class ArtifactIdGroupAdapter implements VertexEntityTraversalAdapter<Arti
                                                                  extractObject(String.class, t.get().get("name")));
         result.setNativeId(extractObject(Long.class, t.get().get("id")));
         result.setUuid(extractObject(String.class, t.get().get("uuid")));
-        Collection<Artifact> artifacts = (Collection<Artifact>) t.get().get("artifacts");
-        artifacts.stream().forEach(result::addArtifact);
-
+        result.setMetadata(extractObject(String.class, t.get().get("metadata")));
+        Object artifact = t.get().get("artifacts");
+        if (Objects.nonNull(artifact)) {
+            Collection<Artifact> artifactCollection = (Collection<Artifact>) t.get().get("artifacts");
+            artifactCollection.stream().forEach(result::addArtifact);
+        }
         return result;
     }
 
@@ -89,31 +104,31 @@ public class ArtifactIdGroupAdapter implements VertexEntityTraversalAdapter<Arti
     {
         String storedArtifactIdGroup = Vertices.ARTIFACT_ID_GROUP + ":" + UUID.randomUUID();
         EntityTraversal<Vertex, Vertex> connectArtifacstTraversal = __.identity();
-        for (Artifact artifact : entity.getArtifacts())
-        {
-            connectArtifacstTraversal = connectArtifacstTraversal.V(artifact)
-                                                                 .saveV(artifact.getUuid(),
-                                                                        artifactAdapter.unfold(artifact));
-            
-            connectArtifacstTraversal.choose(__.inE(Edges.ARTIFACT_GROUP_HAS_ARTIFACTS),
-                                             __.identity(),
-                                             __.addE(Edges.ARTIFACT_GROUP_HAS_ARTIFACTS)
-                                             .from(__.<Vertex, Vertex>select(storedArtifactIdGroup).unfold())
-                                             .inV());
-            
-            connectArtifacstTraversal = connectArtifacstTraversal.sideEffect(__.inE(Edges.ARTIFACT_GROUP_HAS_TAGGED_ARTIFACTS).drop());
-            for (ArtifactTag artifactTag : artifact.getTagSet())
+        if (CollectionUtils.isNotEmpty(entity.getArtifacts())) {
+            for (Artifact artifact : entity.getArtifacts())
             {
-                connectArtifacstTraversal = connectArtifacstTraversal.addE(Edges.ARTIFACT_GROUP_HAS_TAGGED_ARTIFACTS)
-                                                                     .from(__.<Vertex, Vertex>select(storedArtifactIdGroup).unfold())
-                                                                     .property(Properties.TAG_NAME, artifactTag.getName())
-                                                                     .inV();
+                connectArtifacstTraversal = connectArtifacstTraversal.V(artifact)
+                        .saveV(artifact.getUuid(),
+                                artifactAdapter.unfold(artifact));
 
+                connectArtifacstTraversal.choose(__.inE(Edges.ARTIFACT_GROUP_HAS_ARTIFACTS),
+                        __.identity(),
+                        __.addE(Edges.ARTIFACT_GROUP_HAS_ARTIFACTS)
+                                .from(__.<Vertex, Vertex>select(storedArtifactIdGroup).unfold())
+                                .inV());
+
+                connectArtifacstTraversal = connectArtifacstTraversal.sideEffect(__.inE(Edges.ARTIFACT_GROUP_HAS_TAGGED_ARTIFACTS).drop());
+                for (ArtifactTag artifactTag : artifact.getTagSet())
+                {
+                    connectArtifacstTraversal = connectArtifacstTraversal.addE(Edges.ARTIFACT_GROUP_HAS_TAGGED_ARTIFACTS)
+                            .from(__.<Vertex, Vertex>select(storedArtifactIdGroup).unfold())
+                            .property(Properties.TAG_NAME, artifactTag.getName())
+                            .inV();
+
+                }
+                connectArtifacstTraversal = connectArtifacstTraversal.inE(Edges.ARTIFACT_GROUP_HAS_ARTIFACTS).outV();
             }
-            connectArtifacstTraversal = connectArtifacstTraversal.inE(Edges.ARTIFACT_GROUP_HAS_ARTIFACTS).outV();
         }
-
-        
         EntityTraversal<Vertex, Vertex> unfoldTraversal = __.<Vertex, Vertex>map(unfoldArtifactGroup(entity))
                                                             .store(storedArtifactIdGroup)
                                                             .flatMap(connectArtifacstTraversal)
@@ -128,6 +143,10 @@ public class ArtifactIdGroupAdapter implements VertexEntityTraversalAdapter<Arti
         // Skip update as ArtifactIdGroup assumed to be immutable
         if (entity.getNativeId() != null)
         {
+            if (entity.getMetadata() != null)
+            {
+                t = t.property(single, "metadata", entity.getMetadata());
+            }
             return t;
         }
 
@@ -142,6 +161,10 @@ public class ArtifactIdGroupAdapter implements VertexEntityTraversalAdapter<Arti
         if (entity.getName() != null)
         {
             t = t.property(single, "name", entity.getName());
+        }
+        if (entity.getMetadata() != null)
+        {
+            t = t.property(single, "metadata", entity.getMetadata());
         }
 
         return t;
