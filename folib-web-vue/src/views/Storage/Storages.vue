@@ -798,12 +798,12 @@
                 </a-col>
                 <a-col :span="4">
                   <a-form-item class="mb-10" label="协议" :colon="false">
-                    <a-select default-value="None" v-model="folibRepository.proxyConfiguration.type">
-                      <a-select-option value="">
-                        None
-                      </a-select-option>
+                    <a-select default-value="None" :allowClear="true" v-model="folibRepository.proxyConfiguration.type" placeholder="协议">
                       <a-select-option value="HTTP">
                         HTTP
+                      </a-select-option>
+                      <a-select-option value="HTTPS">
+                        HTTPS
                       </a-select-option>
                     </a-select>
                   </a-form-item>
@@ -1108,11 +1108,11 @@ export default {
       folibRepository: {
         allowsDeletion: true,
         allowsDeployment: true,
-        allowsDirectoryBrowsing: false,
+        allowsDirectoryBrowsing: true,
         allowsForceDeletion: false,
         allowsRedeployment: false,
         artifactCoordinateValidators: null,
-        artifactMaxSize: 0,
+        artifactMaxSize: 100,
         basedir: null,
         checksumHeadersEnabled: true,
         groupRepositories: [],
@@ -1122,48 +1122,13 @@ export default {
         subLayout: "",
         policy: "release",
         proxyConfiguration: {
-          host: "",
+          host: null,
           nonProxyHosts: [],
           password: null,
           port: null,
           type: null,
           username: null
         },
-        remoteRepository: {
-          allowsDirectoryBrowsing: true,
-          autoBlocking: true,
-          autoImportRemoteSSLCertificate: false,
-          checkIntervalSeconds: 60,
-          checksumPolicy: 'None',
-          checksumValidation: true,
-          downloadRemoteIndexes: true,
-          password: "",
-          url: "",
-          username: ""
-        },
-        repositoryConfiguration: null,
-        secured: false,
-        status: "In Service",
-        storageProvider: "local",
-        trashEnabled: true,
-        type: "hosted",
-      },
-      folibRepositoryBack: {
-        allowsDeletion: true,
-        allowsDeployment: true,
-        allowsDirectoryBrowsing: false,
-        allowsForceDeletion: false,
-        allowsRedeployment: false,
-        artifactCoordinateValidators: null,
-        artifactMaxSize: 0,
-        basedir: null,
-        checksumHeadersEnabled: true,
-        groupRepositories: [],
-        httpConnectionPool: null,
-        id: "",
-        layout: "",
-        policy: "release",
-        proxyConfiguration: null,
         remoteRepository: {
           allowsDirectoryBrowsing: true,
           autoBlocking: true,
@@ -1226,6 +1191,51 @@ export default {
   },
   computed: {},
   methods: {
+    resetFolibRepository() {
+      this.folibRepository = {
+        allowsDeletion: true,
+        allowsDeployment: true,
+        allowsDirectoryBrowsing: true,
+        allowsForceDeletion: false,
+        allowsRedeployment: false,
+        artifactCoordinateValidators: null,
+        artifactMaxSize: 100,
+        basedir: null,
+        checksumHeadersEnabled: true,
+        groupRepositories: [],
+        httpConnectionPool: null,
+        id: "",
+        layout: "",
+        subLayout: "",
+        policy: "release",
+        proxyConfiguration: {
+          host: null,
+          nonProxyHosts: [],
+          password: null,
+          port: null,
+          type: null,
+          username: null
+        },
+        remoteRepository: {
+          allowsDirectoryBrowsing: true,
+          autoBlocking: true,
+          autoImportRemoteSSLCertificate: false,
+          checkIntervalSeconds: 60,
+          checksumPolicy: 'None',
+          checksumValidation: true,
+          downloadRemoteIndexes: true,
+          password: "",
+          url: "",
+          username: ""
+        },
+        repositoryConfiguration: null,
+        secured: false,
+        status: "In Service",
+        storageProvider: "local",
+        trashEnabled: true,
+        type: "hosted",
+      }
+    },
     changeStorageType() {
       if (this.storageCreateData.type === 'S3') {
         this.storageCreateData.isNotCustom = false
@@ -1260,7 +1270,7 @@ export default {
       if (this.enableHostProxy) {
         if (!this.folibRepository.proxyConfiguration) {
           this.folibRepository.proxyConfiguration = {
-            host: "",
+            host: null,
             nonProxyHosts: [],
             password: null,
             port: null,
@@ -1279,7 +1289,6 @@ export default {
       input.select(); // 选择实例内容
       document.execCommand("Copy"); // 执行复制
       document.body.removeChild(input); // 删除临时实例
-      // console.log(url)
       setTimeout(() => {
         this.$notification.success({
           message: '复制成功'
@@ -1466,7 +1475,6 @@ export default {
 
     },
     getLayoutType(item) {
-      // console.log(getLayoutType(item))
       return getLayoutType(item)
     },
     genLayoutType(layout) {
@@ -1474,9 +1482,8 @@ export default {
     },
     closeUserDialog() {
       this.folibVisible = false
-      this.folibRepository = this.folibRepositoryBack
+      this.resetFolibRepository()
       this.step = 0
-
     },
     repositoryList() {
       let layout = this.genLayoutType(this.layoutChecked)
@@ -1531,10 +1538,11 @@ export default {
 
 
             if (this.currentStorage.id) {
+              this.resetFolibRepository()
               this.folibRepositoryEditDisabled = false
               this.layoutChecked = null
               this.step = 0
-
+              this.enableHostProxy = false
               this.folibRepositoryIds = ""
               this.folibVisible = true
             } else {
@@ -1737,11 +1745,10 @@ export default {
 
 
         this.getStorage(this.currentStorage.id)
-
         if (!isNotSetCron) {
           this.step = 0
           this.folibVisible = false
-          this.folibRepository = this.folibRepositoryBack
+          this.resetFolibRepository()
         } else if (isNotSetCron) {
           if (this.folibRepository.type === 'hosted') {
             this.moveStep(2)
@@ -1762,7 +1769,7 @@ export default {
     andCronSetHandle() {
       this.step = 0
       this.folibVisible = false
-      this.folibRepository = this.folibRepositoryBack
+      this.resetFolibRepository()
       this.cronCanSetList = []
       this.cronSettedList = []
     },
@@ -1818,21 +1825,23 @@ export default {
         if (res.id === repositoryId) {
           delete res.unionRepositoryConfiguration
           this.folibRepository = res
+          if (this.folibRepository.proxyConfiguration && this.folibRepository.proxyConfiguration.host) {
+            this.enableHostProxy = true
+          } else {
+            this.enableHostProxy = false
+          }
           this.layoutChecked = getLayoutType(res)
           this.artifactMaxSize = this.folibRepository.artifactMaxSize / (1024 * 1024)
           this.folibRepositoryIds = this.folibRepository.id
           this.folibRepositoryEditDisabled = true
           this.folibVisible = true
-
         }
       })
 
     },
     delRepositoryResponseEntity() {
       this.delForm.validateFields((err, values) => {
-        // console.log(values,this.willDelId)
         if (!err) {
-          // console.log(values,this.willDelId)
           if (this.willDelId === values.id) {
             delRepositoryResponseEntity(this.currentStorage.id, values.id, false).then(response => {
               setTimeout(() => {
@@ -1866,9 +1875,7 @@ export default {
     },
     delRepositoryResponseEntityForce() {
       this.delForm.validateFields((err, values) => {
-        // console.log(values,this.willDelId)
         if (!err) {
-          // console.log(values,this.willDelId)
           if (this.willDelId === values.id) {
             delRepositoryResponseEntity(this.currentStorage.id, values.id, true).then(response => {
               setTimeout(() => {

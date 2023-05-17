@@ -3,9 +3,16 @@ package com.veadan.folib.services.impl;
 import com.veadan.folib.configuration.ProxyConfiguration;
 import com.veadan.folib.service.ProxyRepositoryConnectionPoolConfigurationService;
 import com.veadan.folib.services.ConfigurationManagementService;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpHost;
+import org.apache.http.config.Registry;
+import org.apache.http.config.RegistryBuilder;
 import org.apache.http.conn.routing.HttpRoute;
+import org.apache.http.conn.socket.ConnectionSocketFactory;
+import org.apache.http.conn.socket.PlainConnectionSocketFactory;
+import org.apache.http.conn.ssl.NoopHostnameVerifier;
+import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
@@ -24,19 +31,23 @@ import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.X509TrustManager;
 import javax.ws.rs.client.Client;
 import javax.ws.rs.client.ClientBuilder;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.security.cert.X509Certificate;
 import java.util.concurrent.TimeUnit;
 
 /**
  * @author veadan
  */
+@Slf4j
 @Component
 public class ProxyRepositoryConnectionPoolConfigurationServiceImpl
-        implements ProxyRepositoryConnectionPoolConfigurationService
-{
+        implements ProxyRepositoryConnectionPoolConfigurationService {
 
     private static final Logger logger = LoggerFactory.getLogger(
             ProxyRepositoryConnectionPoolConfigurationServiceImpl.class);
@@ -55,10 +66,10 @@ public class ProxyRepositoryConnectionPoolConfigurationServiceImpl
     private int idleConnectionsTimeoutInSeconds;
 
     @PostConstruct
-    public void init()
-    {
-        poolingHttpClientConnectionManager = new PoolingHttpClientConnectionManager();
-        poolingHttpClientConnectionManager.setMaxTotal(maxTotal); //TODO value that depends on number of threads?
+    public void init() {
+        poolingHttpClientConnectionManager = new PoolingHttpClientConnectionManager(getConnectionSocketFactory());
+        //TODO value that depends on number of threads?
+        poolingHttpClientConnectionManager.setMaxTotal(maxTotal);
         poolingHttpClientConnectionManager.setDefaultMaxPerRoute(defaultMaxPerRoute);
 
         // thread for monitoring unused connections
@@ -69,9 +80,41 @@ public class ProxyRepositoryConnectionPoolConfigurationServiceImpl
     }
 
     @PreDestroy
-    public void destroy()
-    {
+    public void destroy() {
         shutdown();
+    }
+
+
+    private SSLContext getSslContext() {
+        try {
+            SSLContext sslcontext = SSLContext.getInstance("TLS");
+            sslcontext.init(null, new TrustManager[]{new X509TrustManager() {
+                @Override
+                public void checkClientTrusted(X509Certificate[] arg0, String arg1) {
+                }
+
+                @Override
+                public void checkServerTrusted(X509Certificate[] arg0, String arg1) {
+                }
+
+                @Override
+                public X509Certificate[] getAcceptedIssuers() {
+                    return new X509Certificate[0];
+                }
+            }}, new java.security.SecureRandom());
+            return sslcontext;
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to create SSL context", e);
+        }
+    }
+
+    private Registry<ConnectionSocketFactory> getConnectionSocketFactory() {
+        SSLConnectionSocketFactory socketFactory = new SSLConnectionSocketFactory(getSslContext(), NoopHostnameVerifier.INSTANCE);
+        Registry<ConnectionSocketFactory> socketFactoryRegistry = RegistryBuilder.<ConnectionSocketFactory>create()
+                .register("http", PlainConnectionSocketFactory.getSocketFactory())
+                .register("https", socketFactory)
+                .build();
+        return socketFactoryRegistry;
     }
 
     @Override
@@ -83,20 +126,18 @@ public class ProxyRepositoryConnectionPoolConfigurationServiceImpl
         ProxyConfiguration globalProxyConfig = configurationManagementService.getConfiguration().
                 getProxyConfiguration();
         isExistProxy(globalProxyConfig, null, config);
-
         config.property(ApacheClientProperties.CONNECTION_MANAGER, poolingHttpClientConnectionManager);
         config.property(ApacheClientProperties.CONNECTION_MANAGER_SHARED, true);
-        java.util.logging.Logger logger = java.util.logging.Logger.getLogger("com.veadan.folib.RestClient");
-        return ClientBuilder.newBuilder()
-                .register(new LoggingFeature(logger, Verbosity.PAYLOAD_TEXT))
-                .withConfig(config)
-                .build();
+        java.util.logging.Logger log = java.util.logging.Logger.getLogger("com.veadan.folib.RestClient");
+        ClientBuilder clientBuilder = ClientBuilder.newBuilder()
+                .register(new LoggingFeature(log, Verbosity.PAYLOAD_TEXT))
+                .withConfig(config);
+        return clientBuilder.build();
     }
 
     @Override
-    public Client getRestClient(String storageId,String repositoryId)
-    {
-        logger.info("get rest client storageId [{}] repositoryId [{}]",storageId,repositoryId);
+    public Client getRestClient(String storageId, String repositoryId) {
+        logger.info("get rest client storageId [{}] repositoryId [{}]", storageId, repositoryId);
         ClientConfig config = new ClientConfig();
 
         //全局代理
@@ -107,23 +148,23 @@ public class ProxyRepositoryConnectionPoolConfigurationServiceImpl
         ProxyConfiguration repositoryProxyConfig = configurationManagementService.
                 getConfiguration().getRepository(storageId, repositoryId).getProxyConfig();
         config.connectorProvider(new ApacheConnectorProvider());
-        isExistProxy(globalProxyConfig,repositoryProxyConfig,config);
+        isExistProxy(globalProxyConfig, repositoryProxyConfig, config);
         config.property(ApacheClientProperties.CONNECTION_MANAGER, poolingHttpClientConnectionManager);
 
         // property to prevent closing connection manager when client is closed
         config.property(ApacheClientProperties.CONNECTION_MANAGER_SHARED, true);
 
-        java.util.logging.Logger logger = java.util.logging.Logger.getLogger("com.veadan.folib.RestClient");
+        java.util.logging.Logger log = java.util.logging.Logger.getLogger("com.veadan.folib.RestClient");
 
         // TODO set basic authentication here instead of setting it always in client?
         /* CredentialsProvider credentialsProvider = new BasicCredentialsProvider();
         credentialsProvider.setCredentials(AuthScope.ANY, new UsernamePasswordCredentials(username, password));
         config.property(ApacheClientProperties.CREDENTIALS_PROVIDER, credentialsProvider); */
 
-        return ClientBuilder.newBuilder()
-                            .register(new LoggingFeature(logger, Verbosity.PAYLOAD_TEXT))
-                            .withConfig(config)
-                            .build();
+        ClientBuilder clientBuilder = ClientBuilder.newBuilder()
+                .register(new LoggingFeature(log, Verbosity.PAYLOAD_TEXT))
+                .withConfig(config);
+        return clientBuilder.build();
     }
 
     private void isExistProxy(ProxyConfiguration globalProxyConfig, ProxyConfiguration repositoryProxyConfig, ClientConfig config) {
@@ -134,126 +175,115 @@ public class ProxyRepositoryConnectionPoolConfigurationServiceImpl
         }
     }
 
+    private static String getProxyType(String type) {
+        if (StringUtils.isBlank(type)) {
+            type = "http";
+        }
+        return type.toLowerCase() + "://";
+    }
+
     private static void handleRepositoryProxy(ProxyConfiguration globalProxyConfig,
                                               ProxyConfiguration repositoryProxyConfig, ClientConfig config) {
+        String proxyType = "";
         if (StringUtils.isNotBlank(repositoryProxyConfig.getHost()) && null != repositoryProxyConfig.getPort()) {
+            proxyType = getProxyType(repositoryProxyConfig.getType());
             config.property(ClientProperties.PROXY_URI,
-                    "http://" + repositoryProxyConfig.getHost() + ":" + repositoryProxyConfig.getPort());
+                    proxyType + repositoryProxyConfig.getHost() + ":" + repositoryProxyConfig.getPort());
             config.property(ClientProperties.PROXY_USERNAME, repositoryProxyConfig.getUsername());
             config.property(ClientProperties.PROXY_PASSWORD, repositoryProxyConfig.getPassword());
-            logger.info("get repository proxy config:host [{}] port [{}] username [{}]",
-                    repositoryProxyConfig.getHost(), repositoryProxyConfig.getPort(), repositoryProxyConfig.getUsername());
+            logger.info("get repository proxy config type [{}] host [{}] port [{}] username [{}]",
+                    proxyType, repositoryProxyConfig.getHost(), repositoryProxyConfig.getPort(), repositoryProxyConfig.getUsername());
         } else {
             handleGlobalProxy(globalProxyConfig, config);
         }
     }
 
     private static void handleGlobalProxy(ProxyConfiguration globalProxyConfig, ClientConfig config) {
+        String proxyType = "";
         if (null != globalProxyConfig) {
             if (StringUtils.isNotBlank(globalProxyConfig.getHost()) && null != globalProxyConfig.getPort()) {
+                proxyType = getProxyType(globalProxyConfig.getType());
                 config.property(ClientProperties.PROXY_URI,
-                        "http://" + globalProxyConfig.getHost() + ":" + globalProxyConfig.getPort());
+                        proxyType + globalProxyConfig.getHost() + ":" + globalProxyConfig.getPort());
                 config.property(ClientProperties.PROXY_USERNAME, globalProxyConfig.getUsername());
                 config.property(ClientProperties.PROXY_PASSWORD, globalProxyConfig.getPassword());
-                logger.info("get global proxy config:host [{}] port [{}] username [{}]",
-                        globalProxyConfig.getHost(), globalProxyConfig.getPort(), globalProxyConfig.getUsername());
+                logger.info("get global proxy config type [{}] host [{}] port [{}] username [{}]",
+                        proxyType, globalProxyConfig.getHost(), globalProxyConfig.getPort(), globalProxyConfig.getUsername());
             }
         }
     }
 
     @Override
-    public CloseableHttpClient getHttpClient()
-    {
+    public CloseableHttpClient getHttpClient() {
         return HttpClients.custom()
-                          .setConnectionManagerShared(true)
-                          .setConnectionManager(poolingHttpClientConnectionManager)
-                          .build();
+                .setConnectionManagerShared(true)
+                .setConnectionManager(poolingHttpClientConnectionManager)
+                .build();
     }
 
     @Override
-    public void setMaxTotal(int max)
-    {
+    public void setMaxTotal(int max) {
         poolingHttpClientConnectionManager.setMaxTotal(max);
     }
 
     @Override
-    public int getDefaultMaxPerRepository()
-    {
+    public int getDefaultMaxPerRepository() {
         return poolingHttpClientConnectionManager.getDefaultMaxPerRoute();
     }
 
     @Override
-    public void setDefaultMaxPerRepository(int defaultMax)
-    {
+    public void setDefaultMaxPerRepository(int defaultMax) {
         poolingHttpClientConnectionManager.setDefaultMaxPerRoute(defaultMax);
     }
 
     @Override
     public void setMaxPerRepository(String repository,
-                                    int max)
-    {
-        if (max > 0)
-        {
+                                    int max) {
+        if (max > 0) {
             HttpRoute httpRoute = getHttpRouteFromRepository(repository);
             poolingHttpClientConnectionManager.setMaxPerRoute(httpRoute, max);
-        }
-        else
-        {
+        } else {
             logger.warn("Not setting max repository connections to {} as it is no positive value", max);
         }
     }
 
     @Override
-    public PoolStats getTotalStats()
-    {
+    public PoolStats getTotalStats() {
         return poolingHttpClientConnectionManager.getTotalStats();
     }
 
     @Override
-    public PoolStats getPoolStats(String repository)
-    {
+    public PoolStats getPoolStats(String repository) {
         HttpRoute httpRoute = getHttpRouteFromRepository(repository);
         return poolingHttpClientConnectionManager.getStats(httpRoute);
     }
 
     @Override
-    public void shutdown()
-    {
+    public void shutdown() {
         idleConnectionMonitorThread.shutdown();
         poolingHttpClientConnectionManager.shutdown();
     }
 
     // code to create HttpRoute the same as in apache library
-    private HttpRoute getHttpRouteFromRepository(String repository)
-    {
-        try
-        {
+    private HttpRoute getHttpRouteFromRepository(String repository) {
+        try {
             URI uri = new URI(repository);
             boolean secure = uri.getScheme().equalsIgnoreCase("https");
             int port = uri.getPort();
-            if (uri.getPort() > 0)
-            {
+            if (uri.getPort() > 0) {
                 port = uri.getPort();
-            }
-            else if (uri.getScheme().equalsIgnoreCase("https"))
-            {
+            } else if (uri.getScheme().equalsIgnoreCase("https")) {
                 port = 443;
-            }
-            else if (uri.getScheme().equalsIgnoreCase("http"))
-            {
+            } else if (uri.getScheme().equalsIgnoreCase("http")) {
                 port = 80;
-            }
-            else
-            {
+            } else {
                 logger.warn("Unknown port of uri {}", repository);
             }
 
             HttpHost httpHost = new HttpHost(uri.getHost(), port, uri.getScheme());
             // TODO check whether we need second param InetAddress
             return new HttpRoute(httpHost, null, secure);
-        }
-        catch (URISyntaxException e)
-        {
+        } catch (URISyntaxException e) {
             logger.error(e.getMessage(), e);
         }
 
@@ -262,8 +292,7 @@ public class ProxyRepositoryConnectionPoolConfigurationServiceImpl
     }
 
     private static final class IdleConnectionMonitorThread
-            extends Thread
-    {
+            extends Thread {
 
         private PoolingHttpClientConnectionManager poolingHttpClientConnectionManager;
 
@@ -272,40 +301,31 @@ public class ProxyRepositoryConnectionPoolConfigurationServiceImpl
         private int idleConnectionsTimeout;
 
         IdleConnectionMonitorThread(PoolingHttpClientConnectionManager poolingHttpClientConnectionManager,
-                                    int idleConnectionsTimeout)
-        {
+                                    int idleConnectionsTimeout) {
             super();
             this.poolingHttpClientConnectionManager = poolingHttpClientConnectionManager;
             this.idleConnectionsTimeout = idleConnectionsTimeout;
         }
 
         @Override
-        public void run()
-        {
-            try
-            {
-                while (!shutdown)
-                {
-                    synchronized (this)
-                    {
+        public void run() {
+            try {
+                while (!shutdown) {
+                    synchronized (this) {
                         wait(5000);
                         poolingHttpClientConnectionManager.closeExpiredConnections();
                         poolingHttpClientConnectionManager.closeIdleConnections(idleConnectionsTimeout,
-                                                                                TimeUnit.SECONDS);
+                                TimeUnit.SECONDS);
                     }
                 }
-            }
-            catch (InterruptedException e)
-            {
+            } catch (InterruptedException e) {
                 shutdown();
             }
         }
 
-        public void shutdown()
-        {
+        public void shutdown() {
             shutdown = true;
-            synchronized (this)
-            {
+            synchronized (this) {
                 notifyAll();
             }
         }
