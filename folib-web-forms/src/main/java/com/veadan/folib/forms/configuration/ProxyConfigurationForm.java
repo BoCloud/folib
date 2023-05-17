@@ -25,9 +25,9 @@ public class ProxyConfigurationForm
     @Max(value = 65535, message = "The port number must be an integer between 1 and 65535.", groups = ProxyConfigurationFormChecks.class)
     private Integer port;
 
-    @Pattern(regexp = "HTTP|",
+    @Pattern(regexp = "HTTP|HTTPS",
             flags = Pattern.Flag.CASE_INSENSITIVE,
-            message = "The proxy type must contain one the following strings as value: HTTP",
+            message = "The proxy type must contain one the following strings as value: HTTP|HTTPS",
             groups = ProxyConfigurationFormChecks.class)
     private String type;
 

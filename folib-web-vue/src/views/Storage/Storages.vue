@@ -798,12 +798,12 @@
                 </a-col>
                 <a-col :span="4">
                   <a-form-item class="mb-10" label="协议" :colon="false">
-                    <a-select default-value="None" v-model="folibRepository.proxyConfiguration.type">
-                      <a-select-option value="">
-                        None
-                      </a-select-option>
+                    <a-select default-value="None" :allowClear="true" v-model="folibRepository.proxyConfiguration.type" placeholder="协议">
                       <a-select-option value="HTTP">
                         HTTP
+                      </a-select-option>
+                      <a-select-option value="HTTPS">
+                        HTTPS
                       </a-select-option>
                     </a-select>
                   </a-form-item>
@@ -1818,6 +1818,11 @@ export default {
         if (res.id === repositoryId) {
           delete res.unionRepositoryConfiguration
           this.folibRepository = res
+          if (this.folibRepository.proxyConfiguration && this.folibRepository.proxyConfiguration.host) {
+            this.enableHostProxy = true
+          } else {
+            this.enableHostProxy = false
+          }
           this.layoutChecked = getLayoutType(res)
           this.artifactMaxSize = this.folibRepository.artifactMaxSize / (1024 * 1024)
           this.folibRepositoryIds = this.folibRepository.id

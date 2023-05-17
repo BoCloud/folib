@@ -74,7 +74,7 @@
                 <ul class="pl-15 text-muted">
                   <li>应用名称修改会自动修改到配置文件</li>
                   <li>baseurl,如果你使用了反向代理公网等情况下可以使用它</li>
-                  <li>foli-server服务的后端通信端口</li>
+                  <li>folib-server服务的后端通信端口</li>
                 </ul>
               </a-form>
             </a-card>
@@ -110,7 +110,7 @@
                   </a-col>
                   <a-col :span="24" :lg="6">
                     <a-form-item class="mb-10" label="协议类型" :colon="false">
-                      <a-select v-model="serverSettings.smtpConfigurationForm.connection" show-search placeholder="协议选择"
+                      <a-select v-model="serverSettings.smtpConfigurationForm.connection" show-search :allowClear="true" placeholder="协议类型"
                         option-filter-prop="children" :filter-option="filterOption">
                         <a-select-option value="plain">
                           Plain
@@ -164,13 +164,13 @@
                   </a-col>
                   <a-col :span="24" :lg="6">
                     <a-form-item class="mb-10" label="类型" :colon="false">
-                      <a-select v-model="serverSettings.proxyConfigurationForm.type" show-search placeholder="选择"
+                      <a-select v-model="serverSettings.proxyConfigurationForm.type" show-search placeholder="类型" :allowClear="true"
                         option-filter-prop="children" :filter-option="filterOption">
-                        <a-select-option value="">
-                          None
-                        </a-select-option>
                         <a-select-option value="HTTP">
                           HTTP
+                        </a-select-option>
+                        <a-select-option value="HTTPS">
+                          HTTPS
                         </a-select-option>
                       </a-select>
                     </a-form-item>
