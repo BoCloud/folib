@@ -26,6 +26,7 @@ import com.veadan.folib.scanner.mapper.ScanRulesMapper;
 import com.veadan.folib.services.ArtifactService;
 import com.veadan.folib.services.DictService;
 import com.veadan.folib.services.VulnerabilityService;
+import com.veadan.folib.services.VulnerabilityWebService;
 import com.veadan.folib.util.LocalDateTimeInstance;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
@@ -72,6 +73,10 @@ public class ScanService {
     @Inject
     @Lazy
     private DictService dictService;
+
+    @Inject
+    @Lazy
+    private VulnerabilityWebService vulnerabilityWebService;
 
     @Value("${folib.temp}")
     private String tempPath;
@@ -266,13 +271,18 @@ public class ScanService {
                     long low = vulnerabilitySet.stream().filter(item -> SeverityTypeEnum.LOW.getType().equals(item.getHighestSeverityText())).count();
                     artifact.setLowVulnerabilitiesCount((int) low);
                 } else {
-                    artifact.setVulnerabilities(Collections.emptySet());
+                    artifact.setVulnerabilities(Collections.singleton("drop"));
                     artifact.setCriticalVulnerabilitiesCount(0);
                     artifact.setHighVulnerabilitiesCount(0);
                     artifact.setMediumVulnerabilitiesCount(0);
                     artifact.setLowVulnerabilitiesCount(0);
                 }
                 artifactService.saveOrUpdateArtifact(artifact);
+                if (CollectionUtils.isNotEmpty(artifact.getVulnerabilitySet())) {
+                    List<com.veadan.folib.domain.Vulnerability> vulnerabilityList = Lists.newArrayList();
+                    vulnerabilityList.addAll(artifact.getVulnerabilitySet());
+                    vulnerabilityWebService.handlerStoragesAndRepositoriesByVulnerabilityList(vulnerabilityList);
+                }
             }
         } catch (Exception ex) {
             log.error("=====>>>>>更新制品扫描数据到图数据库失败：{}", ExceptionUtils.getStackTrace(ex));
