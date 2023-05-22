@@ -815,7 +815,7 @@
                 </a-col>
                 <a-col :span="4">
                   <a-form-item class="mb-10" label="密码" :colon="false">
-                    <a-input-password v-model="folibRepository.proxyConfiguration.password" placeholder="远程仓库访问密码" />
+                    <a-input-password v-model="folibRepository.proxyConfiguration.password" placeholder="proxy的用户密码，没有可以不填写" />
                   </a-form-item>
                 </a-col>
 
