@@ -44,6 +44,10 @@ public class SearchArtifact {
      */
     private Boolean regex;
     /**
+     * 自定义的正则表达式
+     */
+    private String pattern;
+    /**
      * 排序字段
      */
     private String sortField;
