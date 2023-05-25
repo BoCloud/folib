@@ -131,11 +131,13 @@ public class ProxyRepositoryProvider
                              RepositorySearchRequest predicate,
                              Paginator paginator)
     {
-        RemoteRepositorySearchEvent event = new RemoteRepositorySearchEvent(storageId,
-                                                                            repositoryId,
-                                                                            predicate,
-                                                                            paginator);
-        eventPublisher.publishEvent(event);
+        if (Objects.isNull(predicate.getNotPublishEvent()) || Boolean.FALSE.equals(predicate.getNotPublishEvent())) {
+            RemoteRepositorySearchEvent event = new RemoteRepositorySearchEvent(storageId,
+                    repositoryId,
+                    predicate,
+                    paginator);
+            eventPublisher.publishEvent(event);
+        }
 
         return hostedRepositoryProvider.search(storageId, repositoryId, predicate, paginator);
     }

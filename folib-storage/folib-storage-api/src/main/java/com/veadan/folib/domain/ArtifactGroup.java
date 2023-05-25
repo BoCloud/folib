@@ -17,4 +17,7 @@ public interface ArtifactGroup extends DomainObject
 
     void removeArtifact(Artifact artifact);
 
+    String getMetadata();
+
+    void setMetadata(String metadata);
 }

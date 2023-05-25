@@ -98,7 +98,7 @@ public class HostedRepositoryProvider extends AbstractRepositoryProvider
         long startTime = System.currentTimeMillis();
         List<Artifact> searchResult = artifactIdGroupRepository.findArtifactsGremlin(storageId, repositoryId, predicate.getArtifactId(),
                                                                               predicate.getCoordinateValues(), paginator.getSkip(), paginator.getLimit(), paginator.getUseLimit());
-        logger.info("FindArtifacts {} take time {} ms" , predicate.getArtifactId(), System.currentTimeMillis() - startTime);
+        logger.info("FindArtifacts storageId [{}] repositoryId [{}] artifactId [{}] coordinateValues [{}] skip [{}] limit [{}] useLimit [{}] artifactListSize [{}] take time [{}] ms", storageId, repositoryId, predicate.getArtifactId(), predicate.getCoordinateValues(), paginator.getSkip(), paginator.getLimit(), paginator.getUseLimit(), searchResult.size(), System.currentTimeMillis() - startTime);
         for (Artifact artifactEntry : searchResult)
         {
             

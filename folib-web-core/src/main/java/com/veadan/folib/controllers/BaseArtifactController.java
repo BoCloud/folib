@@ -44,9 +44,6 @@ public abstract class BaseArtifactController
     @Inject
     private ArtifactRepository artifactRepository;
 
-    @Value("${folib.dependentPushUrl}")
-    private String pushUrl;
-
     @Autowired
     private ProxyRepositoryConnectionPoolConfigurationService clientPool;
 
@@ -116,51 +113,6 @@ public abstract class BaseArtifactController
                 httpServletResponse.getWriter().println(objectMapper.writeValueAsString(new ErrorResponseEntityBody(msg)));
                 httpServletResponse.flushBuffer();
                 artifactEventListenerRegistry.dispatchArtifactDownloadBlockedEvent(repositoryPath);
-                //推数据给platform
-                pushVulnerabilities(artifact);
-            }
-        }
-    }
-
-    private void pushVulnerabilities(Artifact artifact) {
-        Response response = null;
-        try {
-            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyyMMdd-HH:mm:ss");
-            String id = LocalDateTime.now().format(formatter) + "-" + UUID.randomUUID().toString();
-            String bugName = JSON.toJSONString(artifact.getVulnerabilitySet().stream().
-                    map(Vulnerability::getUuid).distinct().collect(Collectors.toList())
-                    .get(0)).replace("\"", "");
-            String repairVersion = JSON.toJSONString(artifact.getVulnerabilitySet().stream().
-                    map(Vulnerability::getVersionEndExcluding).collect(Collectors.toList())
-                    .get(0)).replace("\"", "");
-            String packagePath = artifact.getArtifactPath();
-            String[] array = packagePath.split("/");
-            String packageName = array[array.length - 1];
-            VulnerabilitiesInfo vulnerabilitiesInfo =
-                    VulnerabilitiesInfo.builder()
-                            .id(id)
-                            .appId(artifact.getStorageId())
-                            .storageId(artifact.getStorageId())
-                            .repositoryId(artifact.getRepositoryId())
-                            .bugName(bugName)
-                            .packageName(packageName)
-                            .packagePath(packagePath)
-                            .repairVersion(repairVersion)
-                            .report(artifact.getReport()).build();
-            Client client = clientPool.getRestClient();
-            String url = pushUrl + "/devopsplatform/apis/v1/folib/pushVulnerabilities";
-            WebTarget target = client.target(url);
-            response = target.request().post(Entity.entity(vulnerabilitiesInfo, MediaType.APPLICATION_JSON));
-            if (response.getStatus() != 200) {
-                throw new Exception("{} get error" + url);
-            }
-            logger.info("已成功推送漏洞阻断数据");
-        } catch (Exception e) {
-            logger.error("依赖库漏洞阻断推数据失败");
-            e.printStackTrace();
-        } finally {
-            if (Objects.nonNull(response)) {
-                response.close();
             }
         }
     }
