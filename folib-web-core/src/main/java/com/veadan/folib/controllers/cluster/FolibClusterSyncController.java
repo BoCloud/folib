@@ -113,13 +113,13 @@ public class FolibClusterSyncController extends BaseController {
                 configurationManagementService.saveRepository(syncRepositoryDto.getStorageId(), syncRepositoryDto.getRepositoryDto());
                 logger.info("sync save repository success");
             } else if (syncRepositoryDto.getSycnRepositoryEnum().getType() == 2) {
-                configurationManagementService.removeRepository(syncRepositoryDto.getStorageId(),
-                        syncRepositoryDto.getRepositoryId());
                 if (syncRepositoryDto.getDeleteForceFlag()) {
                     repositoryManagementService.removeRepository(syncRepositoryDto.getStorageId(), syncRepositoryDto.getRepositoryId());
                     repositoryEventListenerRegistry.
                             dispatchRepoDelteToCronJobDeleteEvent(syncRepositoryDto.getStorageId(), syncRepositoryDto.getRepositoryId());
                 }
+                configurationManagementService.removeRepository(syncRepositoryDto.getStorageId(),
+                        syncRepositoryDto.getRepositoryId());
                 logger.info("sync remove repository success");
             }
         } catch (Exception e) {
