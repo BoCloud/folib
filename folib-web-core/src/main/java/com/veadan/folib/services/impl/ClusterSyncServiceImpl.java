@@ -101,12 +101,17 @@ public class ClusterSyncServiceImpl implements ClusterSyncService {
             if (CollectionUtil.isEmpty(listDispatch)) {
                 return Collections.emptySet();
             }
+            String baseUrl = configurationManagementService.getConfiguration().getBaseUrl().trim();
+            baseUrl = baseUrl.endsWith("/") ? baseUrl.substring(0, baseUrl.length() - 1) : baseUrl;
             for (ClusterDispatchNodeDto clusterDispatchNodeDto : listDispatch) {
                 String host = clusterDispatchNodeDto.getClusterNodeHost();
                 if (StringUtils.isBlank(host) || !host.trim().startsWith("http")) {
                     continue;
                 }
-                String url = host.endsWith("/") ? host.trim().substring(0, host.length() - 1) : host.trim();
+                String url = host.trim().endsWith("/") ? host.trim().substring(0, host.length() - 1) : host.trim();
+                if (baseUrl.equals(url)) {
+                    continue;
+                }
                 nodeSet.add(url);
             }
             return nodeSet;
