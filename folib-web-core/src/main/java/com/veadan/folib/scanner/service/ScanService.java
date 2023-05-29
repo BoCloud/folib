@@ -360,7 +360,7 @@ public class ScanService {
         try {
             engine.doUpdates();
         } catch (UpdateException e) {
-            throw new BusinessException("更新出错");
+            log.error("Update mirror error [{}]", ExceptionUtils.getStackTrace(e));
         }
     }
 

@@ -65,6 +65,7 @@ public class FolibApplicationRunner implements ApplicationRunner {
             }
             log.info("=====>>>>> The initialization of vulnerability data begins <<<<<=====");
             scanService.updateMirror();
+            log.info("=====>>>>> The initialization of vulnerability data ends <<<<<=====");
         }
         handlerUnExecutedTask();
     }
