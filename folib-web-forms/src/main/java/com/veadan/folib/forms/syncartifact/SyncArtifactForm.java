@@ -1,0 +1,46 @@
+package com.veadan.folib.forms.syncartifact;
+
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+import javax.validation.constraints.NotBlank;
+
+/**
+ * @author leipenghui
+ **/
+@Data
+@Builder
+@AllArgsConstructor
+@NoArgsConstructor
+public class SyncArtifactForm {
+
+    /**
+     * 存储空间
+     */
+    @NotBlank(message = "存储空间不能为空")
+    private String storageId;
+
+    /**
+     * 仓库名称
+     */
+    @NotBlank(message = "仓库名称不能为空")
+    private String repositoryId;
+
+    /**
+     * 浏览地址
+     */
+    private String browseUrl;
+
+    /**
+     * 休眠毫秒数
+     */
+    private Integer sleepMillis;
+
+    /**
+     * dom
+     */
+    @NotBlank(message = "dom不能为空")
+    private String dom;
+}

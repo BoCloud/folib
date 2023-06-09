@@ -57,7 +57,7 @@ public class ArtifactEventPromotionListener {
         if (Objects.isNull(artifactEventTypeEnum)) {
             return;
         }
-        if (validateArtifactEvent(artifactEventTypeEnum) && artifactComponent.layoutSupportsForBlock(repositoryPath)) {
+        if (validateArtifactEvent(artifactEventTypeEnum) && artifactComponent.layoutSupports(repositoryPath)) {
             try {
                 Repository repository = repositoryPath.getRepository();
                 if (Objects.isNull(repository)) {
@@ -133,6 +133,7 @@ public class ArtifactEventPromotionListener {
                                 targetDispatchRepository = TargetDispatchRepositoryDto.builder().dispatchClusterEnName(unionTargetRepository.getNode()).targetStorageId(unionTargetRepository.getStorageId()).targetRepositoryId(unionTargetRepository.getRepositoryId()).build();
                                 artifactDispatch = ArtifactDispatch.builder().srcStorageId(storageId).srcRepositoryId(repositoryId).path(artifactPath)
                                         .targetDispatchRepositoryList(Collections.singletonList(targetDispatchRepository)).recordStatus(true).build();
+                                log.info("存储空间：{} 仓库：{} 制品：{} 目标节点：{} 目标存储空间：{} 目标仓库：{} 满足晋级条件，开始晋级", storageId, repositoryId, artifactPath, unionTargetRepository.getNode(), unionTargetRepository.getStorageId(), unionTargetRepository.getRepositoryId());
                                 promotionUtil.executeHandleDispatch(artifactDispatch);
                             } catch (Exception ex) {
                                 log.error("存储空间：{} 仓库：{} 处理自动晋级，repositoryPath：{} 联邦仓库：{} 错误：{}", storageId, repositoryId, repositoryPath, JSONObject.toJSONString(unionTargetRepository), ExceptionUtils.getStackTrace(ex));

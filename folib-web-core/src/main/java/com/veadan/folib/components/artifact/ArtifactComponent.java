@@ -13,6 +13,7 @@ import com.veadan.folib.enums.BlockTypeEnum;
 import com.veadan.folib.enums.PromotionStatusEnum;
 import com.veadan.folib.npm.metadata.PackageFeed;
 import com.veadan.folib.npm.metadata.Versions;
+import com.veadan.folib.providers.io.RepositoryFiles;
 import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.providers.io.RepositoryPathResolver;
 import com.veadan.folib.providers.io.RootRepositoryPath;
@@ -204,6 +205,15 @@ public class ArtifactComponent {
      */
     public boolean layoutSupports(RepositoryPath repositoryPath, Boolean block, Boolean scan) {
         boolean flag = false;
+        try {
+            if (RepositoryFiles.isChecksum(repositoryPath)) {
+                log.error("LayoutSupports [{}] isChecksum", repositoryPath);
+                return false;
+            }
+        } catch (Exception ex) {
+            log.error("LayoutSupports get [{}] isChecksum error [{}]", repositoryPath, ExceptionUtils.getStackTrace(ex));
+            return false;
+        }
         if (Objects.nonNull(repositoryPath)) {
             if (repositoryPath.getFileSystem() instanceof DockerFileSystem) {
                 log.info("=====>>>>> docker布局");
@@ -216,7 +226,7 @@ public class ArtifactComponent {
                         path = repositoryPath.getArtifactEntry().getArtifactPath();
                     }
                 } catch (Exception ex) {
-                    log.error("check docker layoutSupports error：{}", ExceptionUtils.getStackTrace(ex));
+                    log.error("Check docker layoutSupports error：{}", ExceptionUtils.getStackTrace(ex));
                     path = repositoryPath.toAbsolutePath().toString();
                 }
                 if (Boolean.TRUE.equals(block)) {

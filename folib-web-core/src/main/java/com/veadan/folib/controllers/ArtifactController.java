@@ -1,11 +1,16 @@
 package com.veadan.folib.controllers;
 
 import com.alibaba.fastjson.JSON;
+import com.veadan.folib.components.syncartifact.SyncArtifactProvider;
+import com.veadan.folib.components.syncartifact.SyncArtifactProviderRegistry;
+import com.veadan.folib.configuration.ConfigurationManager;
 import com.veadan.folib.configuration.MetadataConfiguration;
 import com.veadan.folib.constant.GlobalConstants;
 import com.veadan.folib.domain.StatusInfo;
 import com.veadan.folib.forms.artifact.ArtifactMetadataForm;
+import com.veadan.folib.forms.syncartifact.SyncArtifactForm;
 import com.veadan.folib.services.ArtifactWebService;
+import com.veadan.folib.storage.repository.Repository;
 import com.veadan.folib.users.userdetails.SpringSecurityUser;
 import com.veadan.folib.validation.RequestBodyValidationException;
 import io.swagger.annotations.Api;
@@ -24,6 +29,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import javax.inject.Inject;
 import javax.servlet.http.HttpServletResponse;
+import javax.validation.Valid;
 import java.io.IOException;
 import java.util.List;
 
@@ -37,6 +43,12 @@ public class ArtifactController extends BaseController {
 
     @Inject
     private ArtifactWebService artifactWebService;
+
+    @Inject
+    private SyncArtifactProviderRegistry syncArtifactProviderRegistry;
+
+    @Inject
+    private ConfigurationManager configurationManager;
 
     @ApiOperation(value = "导出漏洞的影响范围")
     @ApiResponses(value = {@ApiResponse(code = 200, message = "OK")})
@@ -165,5 +177,15 @@ public class ArtifactController extends BaseController {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         SpringSecurityUser userDetails = (SpringSecurityUser) authentication.getPrincipal();
         return ResponseEntity.ok(artifactWebService.store(userDetails.getUsername(), storageId, repositoryId, path, uuid, file));
+    }
+
+    @PostMapping(value = "/syncArtifactProvider")
+    @PreAuthorize("hasAuthority('ADMIN')")
+    @ResponseBody
+    public ResponseEntity<String> syncArtifactProvider(@Valid @RequestBody SyncArtifactForm syncArtifactForm) {
+        Repository repository = configurationManager.getRepository(syncArtifactForm.getStorageId(), syncArtifactForm.getRepositoryId());
+        SyncArtifactProvider syncArtifactProvider = syncArtifactProviderRegistry.getProvider(repository.getLayout());
+        syncArtifactProvider.fullSync(syncArtifactForm);
+        return ResponseEntity.ok("success");
     }
 }
