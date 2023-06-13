@@ -3,6 +3,7 @@ package com.veadan.folib.utils;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.util.ObjectUtils;
+import org.springframework.util.StringUtils;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -35,11 +36,14 @@ public class TreeUtil {
                 str2List(str.replaceFirst(current + "/", ""), fileObj.getChildren());
             }
         } else {
-            list.add(new FileObj() {{
-                setName(str);
-                setType("FILE");
-                setIsLeaf(true);
-            }});
+            if(!StringUtils.isEmpty(str)){
+                list.add(new FileObj() {{
+                    setName(str);
+                    setType("FILE");
+                    setIsLeaf(true);
+                }});
+            }
+
         }
     }
 
