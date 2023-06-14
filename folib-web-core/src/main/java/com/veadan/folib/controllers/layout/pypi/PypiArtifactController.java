@@ -1,34 +1,28 @@
 package com.veadan.folib.controllers.layout.pypi;
 
-import java.io.IOException;
-import java.net.HttpURLConnection;
-import java.net.URI;
-import java.nio.file.Path;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
-import javax.inject.Inject;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.ws.rs.core.MediaType;
-
-import com.veadan.folib.data.criteria.Paginator;
-import com.veadan.folib.providers.io.RepositoryPath;
-import com.veadan.folib.storage.validation.artifact.ArtifactCoordinatesValidationException;
+import com.google.common.collect.Sets;
+import com.veadan.folib.artifact.coordinates.GenericArtifactCoordinates;
 import com.veadan.folib.artifact.coordinates.PypiArtifactCoordinates;
 import com.veadan.folib.controllers.BaseArtifactController;
+import com.veadan.folib.data.criteria.Paginator;
 import com.veadan.folib.providers.ProviderImplementationException;
+import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.providers.repository.RepositoryProvider;
 import com.veadan.folib.providers.repository.RepositoryProviderRegistry;
 import com.veadan.folib.providers.repository.RepositorySearchRequest;
+import com.veadan.folib.pypi.PypiSearchRequest;
+import com.veadan.folib.repository.PypiRepositoryFeatures;
+import com.veadan.folib.services.ArtifactCoordinatesService;
 import com.veadan.folib.storage.metadata.pypi.PypiArtifactMetadata;
 import com.veadan.folib.storage.repository.Repository;
+import com.veadan.folib.storage.repository.remote.RemoteRepository;
+import com.veadan.folib.storage.validation.artifact.ArtifactCoordinatesValidationException;
 import com.veadan.folib.utils.PypiPackageNameConverter;
 import com.veadan.folib.web.LayoutRequestMapping;
 import com.veadan.folib.web.RepositoryMapping;
+import io.swagger.annotations.ApiOperation;
+import io.swagger.annotations.ApiResponse;
+import io.swagger.annotations.ApiResponses;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -38,18 +32,22 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
-import com.google.common.collect.Sets;
-
-import io.swagger.annotations.ApiOperation;
-import io.swagger.annotations.ApiResponse;
-import io.swagger.annotations.ApiResponses;
+import javax.inject.Inject;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.ws.rs.core.MediaType;
+import java.io.IOException;
+import java.net.HttpURLConnection;
+import java.net.URI;
+import java.nio.file.Path;
+import java.util.*;
 
 /**
  * Rest End Points for Pypi Artifacts requests.
  * This controller will be Entry point for various pip commands.
- * 
+ *
  * @author ankit.tomar
- * 
+ *
  */
 @RestController
 @LayoutRequestMapping(PypiArtifactCoordinates.LAYOUT_NAME)
@@ -65,6 +63,12 @@ public class PypiArtifactController extends BaseArtifactController
 
     @Inject
     private PypiBrowsePackageHtmlResponseBuilder htmlResponseBuilder;
+
+    @Inject
+    private PypiRepositoryFeatures.PypiSearchPackagesEventListener pypiSearchPackagesEventListener;
+
+    @Inject
+    private ArtifactCoordinatesService artifactCoordinatesService;
 
     @ApiOperation(value = "This end point will be used to upload/deploy python package.")
     @ApiResponses(value = { @ApiResponse(code = HttpURLConnection.HTTP_OK, message = "python package was deployed successfully."),
@@ -206,9 +210,21 @@ public class PypiArtifactController extends BaseArtifactController
             return;
         }
 
+        String remoteRepositoryUrl;
+        RemoteRepository remoteRepository;
+        String targetUrl = null;
+        if (Objects.nonNull(remoteRepository = repository.getRemoteRepository())
+                && Objects.nonNull(remoteRepositoryUrl = remoteRepository.getUrl())) {
+            GenericArtifactCoordinates artifactCoordinates = artifactCoordinatesService.findById(coordinates.buildPath());
+            String path;
+            if (Objects.nonNull(artifactCoordinates) && StringUtils.hasText(path = artifactCoordinates.getPath())) {
+                targetUrl = String.format("%s%s", remoteRepositoryUrl, path);
+            }
+        }
         RepositoryPath repositoryPath = artifactResolutionService.resolvePath(
                                                                               repository.getStorage().getId(),
                                                                               repository.getId(),
+                                                                              targetUrl,
                                                                               coordinates.buildPath());
         vulnerabilityBlock(repositoryPath);
         provideArtifactDownloadResponse(request, response, headers, repositoryPath);
@@ -234,6 +250,8 @@ public class PypiArtifactController extends BaseArtifactController
         logger.info("Get package path request for storageId -> [{}] , repositoryId -> [{}], packageName -> [{}]",
                     repository.getStorage().getId(),
                     repository.getId(), packageNameToDownload);
+
+        pypiSearchPackagesEventListener.setPypiSearchRequest(new PypiSearchRequest(packageName));
 
         RepositoryProvider repositoryProvider = repositoryProviderRegistry.getProvider(repository.getType());
 

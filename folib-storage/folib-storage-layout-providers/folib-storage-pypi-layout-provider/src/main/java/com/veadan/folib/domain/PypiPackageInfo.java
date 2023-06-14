@@ -16,7 +16,9 @@ public class PypiPackageInfo
                                                 "((a|b|c|rc)\\d+)?" +      // pre releases
                                                 "(\\.post\\d+)?" +         // post releases
                                                 "(\\.dev\\d+)?" +          // developmental releases
-                                                "(\\+[.A-Z0-9]+)?)$";      // local version identifiers
+                                                "(\\+[.A-Z0-9]+)?)$";
+    // local version identifiers
+    public static final String NAME_FORMAT = "<a href=\"(.+?)\".*>(.+?\\.(:?tar.gz|whl))</a>";
 
     @NotNull
     @PypiMetadataKey(name = "Metadata-Version")

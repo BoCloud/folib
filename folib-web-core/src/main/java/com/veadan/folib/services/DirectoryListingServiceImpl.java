@@ -1,5 +1,26 @@
 package com.veadan.folib.services;
 
+import com.google.common.collect.Sets;
+import com.veadan.folib.artifact.coordinates.PypiArtifactCoordinates;
+import com.veadan.folib.booters.PropertiesBooter;
+import com.veadan.folib.configuration.ConfigurationUtils;
+import com.veadan.folib.domain.DirectoryListing;
+import com.veadan.folib.domain.FileContent;
+import com.veadan.folib.providers.io.RepositoryFileAttributeType;
+import com.veadan.folib.providers.io.RepositoryFiles;
+import com.veadan.folib.providers.io.RepositoryPath;
+import com.veadan.folib.providers.io.RepositoryPathResolver;
+import com.veadan.folib.scanner.common.util.SpringContextUtil;
+import com.veadan.folib.services.support.ArtifactRoutingRulesChecker;
+import com.veadan.folib.storage.Storage;
+import com.veadan.folib.storage.repository.Repository;
+import com.veadan.folib.storage.repository.RepositoryTypeEnum;
+import com.veadan.folib.utils.compatator.DirectoryNameCompatator;
+import org.apache.commons.compress.utils.Lists;
+import org.apache.commons.lang.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -9,28 +30,6 @@ import java.nio.file.attribute.FileTime;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-
-import com.google.common.collect.Sets;
-import com.veadan.folib.booters.PropertiesBooter;
-import com.veadan.folib.configuration.ConfigurationUtils;
-import com.veadan.folib.providers.io.RepositoryFileAttributeType;
-import com.veadan.folib.providers.io.RepositoryFiles;
-import com.veadan.folib.providers.io.RepositoryPath;
-import com.veadan.folib.providers.io.RepositoryPathResolver;
-import com.veadan.folib.scanner.common.util.SpringContextUtil;
-import com.veadan.folib.services.support.ArtifactRoutingRulesChecker;
-import com.veadan.folib.storage.repository.RepositoryTypeEnum;
-import com.veadan.folib.utils.compatator.DirectoryNameCompatator;
-import org.apache.commons.compress.utils.Lists;
-import org.apache.commons.lang.StringUtils;
-import com.veadan.folib.domain.DirectoryListing;
-import com.veadan.folib.domain.FileContent;
-import com.veadan.folib.storage.Storage;
-import com.veadan.folib.storage.repository.Repository;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import javax.inject.Inject;
 
 
 public class DirectoryListingServiceImpl implements DirectoryListingService
@@ -205,8 +204,16 @@ public class DirectoryListingServiceImpl implements DirectoryListingService
 
                 continue;
             }
-
-            file.setUrl((URL) fileAttributes.get(RepositoryFileAttributeType.RESOURCE_URL.getName()));
+            URL url = (URL) fileAttributes.get(RepositoryFileAttributeType.RESOURCE_URL.getName());
+            if (fileAttributes.get(RepositoryFileAttributeType.COORDINATES.getName()) instanceof PypiArtifactCoordinates) {
+                url = new URL(String.format("%s://%s/storages/%s/%s/packages/%s",
+                        url.getProtocol(),
+                        url.getAuthority(),
+                        fileAttributes.get(RepositoryFileAttributeType.STORAGE_ID.getName()),
+                        fileAttributes.get(RepositoryFileAttributeType.REPOSITORY_ID.getName()),
+                        contentPath.getFileName().toString()));
+            }
+            file.setUrl(url);
 
             file.setLastModified(new Date(((FileTime) fileAttributes.get("lastModifiedTime")).toMillis()));
             file.setSize((Long) fileAttributes.get("size"));
