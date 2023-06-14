@@ -51,6 +51,8 @@ public class PypiArtifactCoordinates
 
     public static final String WHEEL_EXTENSION = "whl";
 
+    public static final String PATH = "path";
+
     public PypiArtifactCoordinates()
     {
         resetCoordinates(DISTRIBUTION,
@@ -249,6 +251,18 @@ public class PypiArtifactCoordinates
     public void setPlatform(String platform)
     {
         setCoordinate(PLATFORM, platform);
+    }
+
+    @ArtifactLayoutCoordinate
+    public String getPath() {
+        return getCoordinate(PATH);
+    }
+
+    /**
+     * @param path PLATFORM coordinate takes this value
+     */
+    public void setPath(String path) {
+        setCoordinate(PATH, path);
     }
 
     /**
