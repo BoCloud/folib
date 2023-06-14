@@ -1,7 +1,6 @@
 package com.veadan.folib.services;
 
 import com.google.common.collect.Sets;
-import com.veadan.folib.artifact.coordinates.PypiArtifactCoordinates;
 import com.veadan.folib.booters.PropertiesBooter;
 import com.veadan.folib.configuration.ConfigurationUtils;
 import com.veadan.folib.domain.DirectoryListing;
@@ -204,16 +203,7 @@ public class DirectoryListingServiceImpl implements DirectoryListingService
 
                 continue;
             }
-            URL url = (URL) fileAttributes.get(RepositoryFileAttributeType.RESOURCE_URL.getName());
-            if (fileAttributes.get(RepositoryFileAttributeType.COORDINATES.getName()) instanceof PypiArtifactCoordinates) {
-                url = new URL(String.format("%s://%s/storages/%s/%s/packages/%s",
-                        url.getProtocol(),
-                        url.getAuthority(),
-                        fileAttributes.get(RepositoryFileAttributeType.STORAGE_ID.getName()),
-                        fileAttributes.get(RepositoryFileAttributeType.REPOSITORY_ID.getName()),
-                        contentPath.getFileName().toString()));
-            }
-            file.setUrl(url);
+            file.setUrl((URL) fileAttributes.get(RepositoryFileAttributeType.RESOURCE_URL.getName()));
 
             file.setLastModified(new Date(((FileTime) fileAttributes.get("lastModifiedTime")).toMillis()));
             file.setSize((Long) fileAttributes.get("size"));
