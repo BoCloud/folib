@@ -8,7 +8,7 @@ public interface ConanArtifactServer {
     //查询conan 仓制品包
     ResponseEntity searchConanPackage(Repository repository, String query);
 
-    ResponseEntity downloadUrls(Repository repository, String packageName, String version);
+    ResponseEntity downloadUrls(Repository repository, String name, String version, String username, String channel);
 
     ResponseEntity searchConanPackageInfo(Repository repository, String packageName, String version);
 }

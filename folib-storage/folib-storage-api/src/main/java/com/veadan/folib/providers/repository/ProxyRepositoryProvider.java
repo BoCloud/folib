@@ -1,29 +1,19 @@
 package com.veadan.folib.providers.repository;
 
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.util.*;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReadWriteLock;
-import javax.inject.Inject;
-import javax.ws.rs.client.Client;
-import javax.ws.rs.client.WebTarget;
-import javax.ws.rs.core.Response;
-
+import com.alibaba.fastjson.JSONObject;
+import com.google.common.collect.ImmutableMap;
+import com.veadan.folib.artifact.archive.TarGzArchiveListingFunction;
 import com.veadan.folib.config.FolibPublicUtils;
+import com.veadan.folib.data.criteria.Paginator;
+import com.veadan.folib.domain.Artifact;
+import com.veadan.folib.domain.ArtifactEntity;
 import com.veadan.folib.io.RepositoryStreamReadContext;
+import com.veadan.folib.io.RepositoryStreamWriteContext;
 import com.veadan.folib.providers.io.*;
 import com.veadan.folib.providers.repository.event.ProxyRepositoryPathExpiredEvent;
 import com.veadan.folib.providers.repository.event.RemoteRepositorySearchEvent;
 import com.veadan.folib.providers.repository.proxied.ProxyRepositoryArtifactResolver;
-import com.veadan.folib.data.criteria.Paginator;
-import com.veadan.folib.domain.Artifact;
-import com.veadan.folib.domain.ArtifactEntity;
-import com.veadan.folib.io.RepositoryStreamWriteContext;
 import com.veadan.folib.service.ProxyRepositoryConnectionPoolConfigurationService;
 import com.veadan.folib.services.ArtifactManagementService;
 import com.veadan.folib.storage.repository.Repository;
@@ -32,6 +22,27 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
+import org.yaml.snakeyaml.Yaml;
+
+import javax.inject.Inject;
+import javax.ws.rs.client.Client;
+import javax.ws.rs.client.WebTarget;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReadWriteLock;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * @author Veadan
@@ -171,48 +182,69 @@ public class ProxyRepositoryProvider
     }
 
     @Override
-    public Map<String, Object> searchConanDownLoadUrl(Repository repository, String packageName, String version) {
+    public Map<String, Object> searchConanDownLoadUrl(Repository repository, String name, String version, String username, String channel) {
         String storageId = repository.getStorage().getId();
         String repositoryId = repository.getId();
-        String url = repository.getRemoteRepository().getUrl();
-        Map<String, Object> map = new HashMap<String, Object>();
-        String conanExportTgz = url + "/v1/files/_/" + packageName + "/" + version + "/_/0/export/conan_export.tgz";
-        String conanManifestTxt = url + "/v1/files/_/" + packageName + "/" + version + "/_/0/export/conanmanifest.txt";
-        String conanFilePy = url + "/v1/files/_/" + packageName + "/" + version + "/_/0/export/conanfile.py";
+        String remoteRepositoryUrl = repository.getRemoteRepository().getUrl();
 
-        String localUrl = FolibPublicUtils.getRepositoryWebServerUrl(repository);
-        String localConanExportTgz = localUrl + "/v1/files/_/" + packageName + "/" + version + "/_/0/export/conan_export.tgz";
-        String localConanManifestTxt = localUrl + "/v1/files/_/" + packageName + "/" + version + "/_/0/export/conanmanifest.txt";
-        String localConanFilePy = localUrl + "/v1/files/_/" + packageName + "/" + version + "/_/0/export/conanfile.py";
-        map.put("conan_export.tgz", conanExportTgz);
-        map.put("conanmanifest.txt", conanManifestTxt);
-        map.put("conanfile.py", conanFilePy);
-        // 拉取文件到本地
         Client client = clientPool.getRestClient();
+        WebTarget target = client.target(String.format("%s/v1/conans/%s/%s/%s/%s/download_urls", remoteRepositoryUrl, name, version, username, channel));
+        Response response = target.request(MediaType.APPLICATION_JSON_TYPE).get();
+        String jsonResult = response.readEntity(String.class);
+        JSONObject jsonObj = JSONObject.parseObject(jsonResult);
         List<String> list = Arrays.asList("conan_export.tgz", "conanmanifest.txt", "conanfile.py");
-        for (String file : list) {
+
+        String filePathTemplate = String.format("%s/%s/%s/%s/export", name, version, username, channel);
+
+        for (String filename : list) {
             try {
-                WebTarget target = client.target(map.get(file).toString());
-                Response response = target.request().get();
-                if (response.getStatus() != 200) {
-                    logger.error("{} get error", map.get(file).toString());
+                String remoteUrl = jsonObj.getString(filename);
+                Response res = client.target(remoteUrl).request().get();
+                if (res.getStatus() != 200) {
+                    logger.error("{} get error", remoteUrl);
                     continue;
                 }
-                InputStream is = response.readEntity(InputStream.class);
-                String filePath = "_/" + packageName + "/" + version + "/_/0/export/" + file;
-
-                RepositoryPath repositoryPath = repositoryPathResolver.resolve(storageId,
-                        repositoryId, filePath);
+                InputStream is = res.readEntity(InputStream.class);
+                String filePath = filePathTemplate + "/" + filename;
+                RepositoryPath repositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, filePath);
                 logger.info("conan {} {} upload path {}", storageId, repositoryId, filePath);
                 artifactManagementService.store(repositoryPath, is);
-            } catch (Exception e) {
-                e.printStackTrace();
+
+                if ("conan_export.tgz".equals(filename)) {
+                    byte[] contentByFileName = TarGzArchiveListingFunction.INSTANCE.getContentByFileName(repositoryPath, "conandata.yml");
+                    Map<String, Map<String, Map<String, Object>>> properties;
+                    Yaml yaml = new Yaml();
+                    properties = yaml.load(new ByteArrayInputStream(contentByFileName));
+                    Object o = properties.get("sources").get(version).get("url");
+                    String targetSourceUrl;
+                    if (o instanceof String) {
+                        targetSourceUrl = (String) o;
+                    } else {
+                        targetSourceUrl = (String) ((List<?>) o).get(0);
+                    }
+                    String targetSourceFilename = targetSourceUrl.substring(targetSourceUrl.lastIndexOf("/") + 1);
+                    logger.info("conan download target url src package: {}", targetSourceUrl);
+                    Response targetSourceRes = client.target(targetSourceUrl).request().get();
+                    InputStream targetSourceIs = targetSourceRes.readEntity(InputStream.class);
+                    String targetSourcePath = String.format("%s/%s/%s/%s/package/%s", name, version, username, channel, targetSourceFilename);
+                    RepositoryPath targetSourceRepositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, targetSourcePath);
+                    logger.info("conan {} {} upload path {}", storageId, repositoryId, filePath);
+                    artifactManagementService.store(targetSourceRepositoryPath, targetSourceIs);
+                }
+            } catch (IOException e) {
+                logger.error("conan {} {} download or store target file error.", storageId, repositoryId, e);
             }
         }
-        map.put("conan_export.tgz", localConanExportTgz);
-        map.put("conanmanifest.txt", localConanManifestTxt);
-        map.put("conanfile.py", localConanFilePy);
-        return map;
+
+        String localUrl = FolibPublicUtils.getRepositoryWebServerUrl(repository);
+        String localConanExportTgz = String.format("%s/v1/files/%s/conan_export.tgz", localUrl, filePathTemplate);
+        String localConanManifestTxt = String.format("%s/v1/files/%s/conanmanifest.txt", localUrl, filePathTemplate);
+        String localConanFilePy = String.format("%s/v1/files/%s/conanfile.py", localUrl, filePathTemplate);
+        return ImmutableMap.<String, Object>builder()
+                .put("conan_export.tgz", localConanExportTgz)
+                .put("conanmanifest.txt", localConanManifestTxt)
+                .put("conanfile.py", localConanFilePy)
+                .build();
     }
 
     @Override
