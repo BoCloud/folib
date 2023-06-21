@@ -2,6 +2,7 @@ package com.veadan.folib.components.syncartifact;
 
 import cn.hutool.core.io.FileUtil;
 import cn.hutool.http.HttpUtil;
+import com.veadan.folib.components.artifact.ArtifactComponent;
 import com.veadan.folib.configuration.ConfigurationManager;
 import com.veadan.folib.forms.syncartifact.SyncArtifactForm;
 import com.veadan.folib.providers.layout.Maven2LayoutProvider;
@@ -49,6 +50,9 @@ public class MavenSyncArtifactProvider implements SyncArtifactProvider {
 
     @Inject
     private SyncArtifactProviderRegistry syncArtifactProviderRegistry;
+
+    @Inject
+    private ArtifactComponent artifactComponent;
 
     @PostConstruct
     @Override
@@ -122,7 +126,7 @@ public class MavenSyncArtifactProvider implements SyncArtifactProvider {
                             }
                             fileEmpty = false;
                             String url = rootUrl + line;
-                            findSubUrl(rootUrl, url, remoteUrl, sleepMillis, syncArtifactForm.getDom(), writer, repositoryBaseUri);
+                            findSubUrl(repository, rootUrl, url, remoteUrl, sleepMillis, syncArtifactForm.getDom(), writer, repositoryBaseUri);
                         }
                     }
                 } catch (IOException e) {
@@ -156,6 +160,7 @@ public class MavenSyncArtifactProvider implements SyncArtifactProvider {
     /**
      * 查询子url
      *
+     * @param repository        repository
      * @param rootUrl           rootUrl
      * @param url               当前url
      * @param remoteUrl         remoteUrl
@@ -164,7 +169,7 @@ public class MavenSyncArtifactProvider implements SyncArtifactProvider {
      * @param writer            writer
      * @param repositoryBaseUri repositoryBaseUri
      */
-    private void findSubUrl(String rootUrl, String url, String remoteUrl, Integer sleepMillis, String dom, FileWriter writer, String repositoryBaseUri) {
+    private void findSubUrl(Repository repository, String rootUrl, String url, String remoteUrl, Integer sleepMillis, String dom, FileWriter writer, String repositoryBaseUri) {
         try {
             log.info("[{}] maven全量同步 findSubUrl url [{}]", this.getClass().getSimpleName(), url);
             if (isSuffix(url)) {
@@ -173,7 +178,7 @@ public class MavenSyncArtifactProvider implements SyncArtifactProvider {
             if (Objects.nonNull(sleepMillis)) {
                 Thread.sleep(sleepMillis);
             }
-            Document doc = Jsoup.connect(url).get();
+            Document doc = artifactComponent.getDocument(repository, url);
             Elements links = doc.select(dom);
             log.info("[{}] maven全量同步 findSubUrl links [{}]", this.getClass().getSimpleName(), links.toString());
             for (Element link : links) {
@@ -183,14 +188,15 @@ public class MavenSyncArtifactProvider implements SyncArtifactProvider {
                     log.info("[{}] maven全量同步 findSubUrl absUrl [{}]", this.getClass().getSimpleName(), absUrl);
                     HttpUtil.get(absUrl);
                     THREAD_LOCAL.set(THREAD_LOCAL.get() + 1);
+                } else {
+                    // 非子目录
+                    if (!absUrl.contains(url) || url.equals(absUrl)) {
+                        continue;
+                    }
+                    String path = absUrl.substring(rootUrl.length());
+                    writer.write(path + "\n");
+                    writer.flush();
                 }
-                // 非子目录
-                if (!absUrl.contains(url) || url.equals(absUrl)) {
-                    continue;
-                }
-                String path = absUrl.substring(rootUrl.length());
-                writer.write(path + "\n");
-                writer.flush();
             }
         } catch (Exception e) {
             log.error("[{}] maven全量同步制品，findSubUrl错误 [{}]", this.getClass().getSimpleName(), ExceptionUtils.getStackTrace(e));

@@ -1,7 +1,6 @@
+// =========================================================
 
-  // =========================================================
-
-  // * The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+// * The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
 
 // app.scss
 //
@@ -9,54 +8,53 @@
 //
 
 // Base
-@import "./base/_variables" ;
-@import "./base/_utilities" ;
-@import "./base/_override" ;
-@import "./base/_typography" ;
+@import "./base/_variables";
+@import "./base/_utilities";
+@import "./base/_override";
+@import "./base/_typography";
 // / Base
 
 // Layouts
-@import "./layouts/default" ;
-@import "./layouts/dashboard" ;
-@import "./layouts/dashboard-rtl" ;
+@import "./layouts/_default";
+@import "./layouts/_dashboard";
+@import "./layouts/_dashboard-rtl";
 // Layouts
 
 // Components
-@import "./components/_alerts" ;
-@import "./components/_avatar" ;
-@import "./components/_badge" ;
-@import "./components/_button" ;
-@import "./components/_dropdown" ;
-@import "./components/_card" ;
-@import "./components/_chart" ;
-@import "./components/_kanban" ;
-@import "./components/_list" ;
-@import "./components/_photoswipe" ;
-@import "./components/_progress" ;
-@import "./components/_settings-drawer" ;
-@import "./components/_space" ;
-@import "./components/_notifications" ;
-@import "./components/_table" ;
-@import "./components/_tabs" ;
-@import "./components/_tag" ;
-@import "./components/_timeline" ;
-@import "./components/_widget" ;
-@import "./components/_fullcalendar" ;
+@import "./components/_alerts";
+@import "./components/_avatar";
+@import "./components/_badge";
+@import "./components/_button";
+@import "./components/_dropdown";
+@import "./components/_card";
+@import "./components/_chart";
+@import "./components/_kanban";
+@import "./components/_list";
+@import "./components/_photoswipe";
+@import "./components/_progress";
+@import "./components/_settings-drawer";
+@import "./components/_space";
+@import "./components/_notifications";
+@import "./components/_table";
+@import "./components/_tabs";
+@import "./components/_tag";
+@import "./components/_timeline";
+@import "./components/_widget";
+@import "./components/_fullcalendar";
 // / Components
 
 // Form
-@import "./form/_input" ;
-@import "./form/_checkbox" ;
-@import "./form/_tags" ;
-@import "./form/_quill" ;
+@import "./form/_input";
+@import "./form/_checkbox";
+@import "./form/_tags";
+@import "./form/_quill";
 // / Form
 
 // Pages
-@import "./pages/_pricing" ; 
-@import "./pages/_invoice" ;
-@import "./pages/_profile" ;
-@import "./pages/_sign-in" ;
-@import "./pages/_sign-up" ;
+@import "./pages/_pricing";
+@import "./pages/_invoice";
+@import "./pages/_profile";
+@import "./pages/_sign-in";
+@import "./pages/_sign-up";
 // Pages
-
-// / Template's main stylesheet.
+@import "./components/_color"; // / Template's main stylesheet.

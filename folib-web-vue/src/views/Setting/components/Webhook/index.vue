@@ -178,7 +178,7 @@
         :bodyStyle="{ paddingTop: 0, paddingBottom: '16px' }"
         :headStyle="{ paddingRight: 0 }"
       >
-        <a-table :columns="webhookLogColumns" :data-source="webhookLogList" :row-key="(r, i) => i.toString()">
+        <a-table :columns="webhookLogColumns" :data-source="webhookLogList" :scroll="{ x: true }" :row-key="(r, i) => i.toString()">
           <div slot="responseStatus" slot-scope="responseStatus">
             <a-tag color="#f50" v-if="responseStatus != 200">
               错误

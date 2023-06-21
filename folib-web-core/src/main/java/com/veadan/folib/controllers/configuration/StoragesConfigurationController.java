@@ -2,6 +2,7 @@ package com.veadan.folib.controllers.configuration;
 
 import cn.hutool.core.collection.CollectionUtil;
 import cn.hutool.json.JSONUtil;
+import com.alibaba.fastjson.JSONObject;
 import com.fasterxml.jackson.annotation.JsonView;
 import com.google.common.collect.Lists;
 import com.veadan.folib.authorization.dto.AuthorizationConfigDto;
@@ -10,6 +11,7 @@ import com.veadan.folib.cluster.SyncAuthorizationEnum;
 import com.veadan.folib.cluster.SyncRepositoryEnum;
 import com.veadan.folib.cluster.SyncStorageEnum;
 import com.veadan.folib.cluster.SyncUnionRepositoryEnum;
+import com.veadan.folib.components.common.CommonComponent;
 import com.veadan.folib.components.security.SecurityComponent;
 import com.veadan.folib.config.PermissionCheck;
 import com.veadan.folib.configuration.ConfigurationUtils;
@@ -55,6 +57,7 @@ import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
+import org.glassfish.jersey.client.ClientProperties;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
@@ -126,6 +129,8 @@ public class StoragesConfigurationController
 
     private static final String FAILED_REPOSITORY_REMOVAL_EXISTS_GROUP_REPOSITORY = "删除仓库失败，存在关联组合库，请先从组合库[%s]中移除 !";
 
+    private static final String PARAMS_ERROR = "参数错误，请检查参数！";
+
     private final StorageManagementService storageManagementService;
 
     private final RepositoryManagementService repositoryManagementService;
@@ -151,6 +156,9 @@ public class StoragesConfigurationController
 
     @Autowired
     private SecurityComponent securityComponent;
+
+    @Autowired
+    private CommonComponent commonComponent;
 
     public StoragesConfigurationController(ConfigurationManagementService configurationManagementService,
                                            StorageManagementService storageManagementService,
@@ -275,8 +283,8 @@ public class StoragesConfigurationController
                                                      @RequestParam(value = "type", required = false)
                                                              String type,
                                                      @ApiParam(value = "Filter exclude repository names by type (i.e. hosted, group, proxy)")
-                                                         @RequestParam(value = "excludeType", required = false)
-                                                                 String excludeType,
+                                                     @RequestParam(value = "excludeType", required = false)
+                                                             String excludeType,
                                                      @ApiParam(value = "Search for exclude repository names")
                                                      @RequestParam(value = "excludeRepositoryId", required = false)
                                                              String excludeRepositoryId,
@@ -644,6 +652,65 @@ public class StoragesConfigurationController
                 return getSuccessfulResponseEntity(SUCCESSFUL_REPOSITORY_SAVE, accept);
             } catch (IOException | ConfigurationException | RepositoryManagementStrategyException e) {
                 return getExceptionResponseEntity(HttpStatus.INTERNAL_SERVER_ERROR, FAILED_REPOSITORY_SAVE, e, accept);
+            }
+        } else {
+            return getFailedResponseEntity(HttpStatus.NOT_FOUND, STORAGE_NOT_FOUND, accept);
+        }
+    }
+
+    @ApiOperation(value = "Verify if the repository is alive.")
+    @PreAuthorize("hasAuthority('CONFIGURATION_ADD_UPDATE_REPOSITORY')")
+    @PostMapping(value = "/{storageId}/{repositoryId}/alive",
+            consumes = MediaType.APPLICATION_JSON_VALUE,
+            produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<RepositoryAliveForm> aliveRepository(@ApiParam(value = "The storageId", required = true)
+                                                               @PathVariable String storageId,
+                                                               @ApiParam(value = "The repositoryId", required = true)
+                                                               @PathVariable
+                                                                       String repositoryId,
+                                                               @ApiParam(value = "The repository object", required = true)
+                                                               @RequestBody
+                                                               @Validated({Default.class,
+                                                                       ProxyConfigurationForm.ProxyConfigurationFormChecks.class})
+                                                                       RepositoryForm repositoryForm,
+                                                               BindingResult bindingResult,
+                                                               @RequestHeader(HttpHeaders.ACCEPT) String accept) {
+        Storage storage = configurationManagementService.getConfiguration().getStorage(storageId);
+        if (storage != null) {
+            if (bindingResult.hasErrors()) {
+                throw new RequestBodyValidationException(PARAMS_ERROR, bindingResult);
+            }
+            RepositoryDto repository = conversionService.convert(repositoryForm, RepositoryDto.class);
+            boolean isAlive = false;
+            Response response = null;
+            int statusCode = 0;
+            try {
+                if (Objects.nonNull(repository) && Objects.nonNull(repository.getRemoteRepository())) {
+                    String repositoryProxyConfigParam = "";
+                    if (Objects.nonNull(repository.getProxyConfiguration())) {
+                        repositoryProxyConfigParam = JSONObject.toJSONString(repository.getProxyConfiguration());
+                    }
+                    Client client = clientPool.getRestClient(repositoryProxyConfigParam);
+                    //连接建立超时时间
+                    client.property(ClientProperties.CONNECT_TIMEOUT, 10000);
+                    //读取内容超时时间
+                    client.property(ClientProperties.READ_TIMEOUT, 10000);
+                    WebTarget target = client.target(repository.getRemoteRepository().getUrl());
+                    commonComponent.authentication(target, repository.getRemoteRepository().getUsername(), repository.getRemoteRepository().getPassword());
+                    response = target.request().get();
+                    statusCode = response.getStatus();
+                    isAlive = HttpStatus.OK.value() == statusCode || HttpStatus.MOVED_PERMANENTLY.value() == statusCode ||
+                            HttpStatus.FOUND.value() == statusCode;
+                    logger.info("Verify if the storage [{}] repository [{}] remoteUrl [{}] is alive responseStatus [{}] response [{}]", storageId, repositoryId, repository.getRemoteRepository().getUrl(), statusCode, response.readEntity(String.class));
+                }
+                return ResponseEntity.ok(RepositoryAliveForm.builder().alive(isAlive).statusCode(statusCode).build());
+            } catch (Exception e) {
+                logger.info("Verify if the storage [{}] repository [{}] is alive error [{}]", storageId, repositoryId, ExceptionUtils.getStackTrace(e));
+                return ResponseEntity.ok(RepositoryAliveForm.builder().alive(false).build());
+            } finally {
+                if (Objects.nonNull(response)) {
+                    response.close();
+                }
             }
         } else {
             return getFailedResponseEntity(HttpStatus.NOT_FOUND, STORAGE_NOT_FOUND, accept);

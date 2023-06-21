@@ -86,7 +86,7 @@
               :style="{ fontSize: '28px', color: '#1890FF' }" />
           </a-tooltip>
         </a>
-        <a-table :columns="metadataColumns" :data-source="metadataList" rowKey="key">
+        <a-table :columns="metadataColumns" :data-source="metadataList" rowKey="key" :scroll="{ x: true }">
           <div slot="type" slot-scope="type">
             <span v-for="(item, index) in metadataTypes" :key="index">
               <span v-if="type === item.value">

@@ -80,7 +80,35 @@ public class SearchResult {
      */
     private Set<String> downloadFilesUrl;
 
+    /**
+     * metadata
+     */
     private String metadata;
+
+    /**
+     * 漏洞数量
+     */
+    private Integer vulnerabilitiesCount;
+    /**
+     * 严重的漏洞数量
+     */
+    private Integer criticalVulnerabilitiesCount;
+    /**
+     * 高危的漏洞数量
+     */
+    private Integer highVulnerabilitiesCount;
+    /**
+     * 中危的漏洞数量
+     */
+    private Integer mediumVulnerabilitiesCount;
+    /**
+     * 低危的漏洞数量
+     */
+    private Integer lowVulnerabilitiesCount;
+    /**
+     * 被封存的漏洞数量
+     */
+    private Integer suppressedVulnerabilitiesCount;
 
     public List getTreeNode() {
         return treeNode;
@@ -138,7 +166,7 @@ public class SearchResult {
         this.downloadCount = downloadCount;
     }
 
-    private Integer downloadCount = Integer.valueOf(0);
+    private Integer downloadCount = 0;
 
     public Long getSizeInBytes() {
         return sizeInBytes;
@@ -217,14 +245,6 @@ public class SearchResult {
 
     public void setSnippets(List<CodeSnippet> snippets) {
         this.snippets = snippets;
-    }
-
-    public Set<String> getDownloadFilesUrl() {
-        return downloadFilesUrl;
-    }
-
-    public void setDownloadFilesUrl(Set<String> downloadFilesUrl) {
-        this.downloadFilesUrl = downloadFilesUrl;
     }
 
     public String getMetadata() {

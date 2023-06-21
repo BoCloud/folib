@@ -31,7 +31,7 @@
 				</a-row>
 			</div>
 			
-			<a-table class="mt-20" :columns="columns" :data-source="data" :pagination="{pageSize: pageSize,}" />
+			<a-table class="mt-20" :columns="columns" :data-source="data" :pagination="{pageSize: pageSize,}" :scroll="{ x: true }"/>
 		</a-card>
 		<!-- / Simple Datatable card -->
 
@@ -59,7 +59,7 @@
 				</a-row>
 			</div>
 			
-			<a-table class="mt-20" :columns="columns2" :data-source="data2" :pagination="{pageSize: pageSize2,}" />
+			<a-table class="mt-20" :columns="columns2" :data-source="data2" :pagination="{pageSize: pageSize2,}" :scroll="{ x: true }"/>
 		</a-card>
 		<!-- / Searchable Datatable card -->
 		

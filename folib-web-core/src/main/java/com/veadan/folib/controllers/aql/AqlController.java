@@ -49,12 +49,13 @@ public class AqlController extends BaseController {
                                  @RequestParam(name = "sortOrder", required = false) String sortOrder,
                                  @RequestParam(name = "repositoryIds", required = false) List<String> repositoryIds,
                                  @RequestParam(name = "openRepository", required = false) Boolean openRepository,
+                                 @RequestParam(name = "safeLevel", required = false) String safeLevel,
                                  @RequestParam(name = "limit", required = false) Integer limit,
                                  @RequestParam(name = "page", required = false) Integer page) throws IOException {
-        if (StringUtils.isBlank(artifactName) && StringUtils.isBlank(metadataSearch)) {
-            throw new RuntimeException("请输入查询参数");
-        }
-        SearchResults result = fqlSearchService.artifactQuery(regex, artifactName, metadataSearch, storageId, repositoryId, beginDate, endDate, sortField, sortOrder, repositoryIds, openRepository, limit, page);
+//        if (StringUtils.isBlank(artifactName) && StringUtils.isBlank(metadataSearch)) {
+//            throw new RuntimeException("请输入查询参数");
+//        }
+        SearchResults result = fqlSearchService.artifactQuery(regex, artifactName, metadataSearch, storageId, repositoryId, beginDate, endDate, sortField, sortOrder, repositoryIds, openRepository, safeLevel, limit, page);
         return ResponseEntity.ok(result);
     }
 

@@ -141,7 +141,7 @@
               <template #title>
                 <a-tabs class="tabs-sliding" default-active-key="1" @change="tabChange($event)">
                   <a-tab-pane key="1" tab="仓库扫描情况">
-                    <a-table rowKey="id" :columns="columns" :data-source="folibScanData" :pagination="false">
+                    <a-table rowKey="id" :columns="columns" :scroll="{ x: true }" :data-source="folibScanData" :pagination="false">
                       <template slot="repository" slot-scope="text, record" >
                         <div @click="goToDetial(record)">
                           <a>

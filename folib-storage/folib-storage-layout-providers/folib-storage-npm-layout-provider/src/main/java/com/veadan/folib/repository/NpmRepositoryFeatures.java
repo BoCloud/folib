@@ -34,7 +34,11 @@ import com.veadan.folib.yaml.configuration.repository.NpmRepositoryConfiguration
 import com.veadan.folib.yaml.configuration.repository.remote.NpmRemoteRepositoryConfiguration;
 import com.veadan.folib.yaml.configuration.repository.remote.NpmRemoteRepositoryConfigurationDto;
 import org.apache.commons.collections4.MapUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpStatus;
+import org.apache.http.client.config.RequestConfig;
+import org.glassfish.jersey.apache.connector.ApacheClientProperties;
+import org.glassfish.jersey.client.authentication.HttpAuthenticationFeature;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Lazy;
@@ -157,6 +161,7 @@ public class NpmRepositoryFeatures implements RepositoryFeatures {
             logger.info("Search NPM packages for [{}].", remoteRepositoryUrl);
 
             WebTarget service = restClient.target(remoteRepository.getUrl());
+            authentication(service, remoteRepository.getUsername(), remoteRepository.getPassword());
             service = service.path("-/v1/search").queryParam("text", text).queryParam("size", size);
 
             InputStream inputStream = service.request().buildGet().invoke(InputStream.class);
@@ -226,6 +231,7 @@ public class NpmRepositoryFeatures implements RepositoryFeatures {
             logger.info("Fetching remote changes for [{}] since [{}].", replicateUrl, since);
 
             WebTarget service = restClient.target(replicateUrl);
+            authentication(service, repository.getRemoteRepository().getUsername(), repository.getRemoteRepository().getPassword());
             service = service.path("_changes");
             service = service.queryParam("since", since);
             service = service.queryParam("include_docs", true);
@@ -326,6 +332,7 @@ public class NpmRepositoryFeatures implements RepositoryFeatures {
         Response response = null;
         try {
             WebTarget service = restClient.target(remoteRepository.getUrl());
+            authentication(service, remoteRepository.getUsername(), remoteRepository.getPassword());
             service = service.path(packageId);
             url = service.getUri().toString();
             logger.info("Downloading NPM changes feed for [{}].", url);
@@ -501,5 +508,21 @@ public class NpmRepositoryFeatures implements RepositoryFeatures {
 
     protected Configuration getConfiguration() {
         return configurationManager.getConfiguration();
+    }
+
+    /**
+     * Client WebTarget 构建认证信息
+     *
+     * @param webTarget webTarget
+     * @param username  username
+     * @param password  password
+     */
+    public void authentication(WebTarget webTarget, String username, String password) {
+        final HttpAuthenticationFeature authenticationFeature = (StringUtils.isNotBlank(username) && StringUtils.isNotBlank(password)) ? HttpAuthenticationFeature.basic(username, password) : null;
+        if (authenticationFeature != null) {
+            webTarget.register(authenticationFeature);
+            webTarget.property(ApacheClientProperties.REQUEST_CONFIG,
+                    RequestConfig.custom().setCircularRedirectsAllowed(true).build());
+        }
     }
 }

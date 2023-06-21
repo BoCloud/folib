@@ -74,7 +74,7 @@ public abstract class AbstractLayoutProvider<T extends LayoutArtifactCoordinates
 
     protected Set<String> getDigestAlgorithmSet()
     {
-        return Stream.of(MessageDigestAlgorithms.MD5, MessageDigestAlgorithms.SHA_1)
+        return Stream.of(MessageDigestAlgorithms.MD5, MessageDigestAlgorithms.SHA_1, MessageDigestAlgorithms.SHA_256)
                      .collect(Collectors.toSet());
     }
 

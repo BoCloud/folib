@@ -143,4 +143,8 @@ public interface Artifact extends DomainObject {
     Boolean getEnabled();
 
     void setEnabled(Boolean enabled);
+
+    Set<Component> getComponentSet();
+
+    void setComponentSet(Set<Component> componentSet);
 }

@@ -18,6 +18,7 @@ import com.veadan.folib.gremlin.repositories.GremlinVertexRepository;
 import com.veadan.folib.providers.io.RepositoryFiles;
 import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.providers.io.RepositoryPathResolver;
+import com.veadan.folib.providers.layout.DockerLayoutProvider;
 import com.veadan.folib.repositories.ArtifactRepository;
 import com.veadan.folib.schema2.ImageManifest;
 import com.veadan.folib.schema2.LayerManifest;
@@ -94,6 +95,7 @@ public class FqlSearchService extends GremlinVertexRepository<Artifact> implemen
                                        String sortOrder,
                                        List<String> repositoryIds,
                                        Boolean openRepository,
+                                       String safeLevel,
                                        Integer limit, Integer page) throws IOException {
 
         Pageable pageable = null;
@@ -132,7 +134,7 @@ public class FqlSearchService extends GremlinVertexRepository<Artifact> implemen
                 return result;
             }
         }
-        Page<Artifact> artifacts = artifactRepository.findMatchingByIndex(pageable, regex, artifactName, metadataSearch, storageId, repositoryId, repositoryIds, storageIdAndRepositoryIdList, beginDate, endDate, sortField, sortOrder);
+        Page<Artifact> artifacts = artifactRepository.findMatchingByIndex(pageable, regex, artifactName, metadataSearch, storageId, repositoryId, repositoryIds, storageIdAndRepositoryIdList, beginDate, endDate, safeLevel, sortField, sortOrder);
         List<Artifact> artifactEntityList = artifacts.getContent();
 
         SearchResults result = new SearchResults();
@@ -154,7 +156,12 @@ public class FqlSearchService extends GremlinVertexRepository<Artifact> implemen
             r.setChecksums(artifact.getChecksums());
             r.setSizeInBytes(artifact.getSizeInBytes());
             r.setDownloadCount(artifact.getDownloadCount());
-
+            r.setVulnerabilitiesCount(artifact.getVulnerabilitiesCount());
+            r.setCriticalVulnerabilitiesCount(artifact.getCriticalVulnerabilitiesCount());
+            r.setHighVulnerabilitiesCount(artifact.getHighVulnerabilitiesCount());
+            r.setMediumVulnerabilitiesCount(artifact.getMediumVulnerabilitiesCount());
+            r.setLowVulnerabilitiesCount(artifact.getLowVulnerabilitiesCount());
+            r.setSuppressedVulnerabilitiesCount(artifact.getSuppressedVulnerabilitiesCount());
             String createdTime = DateUtil.format(Date.from(artifact.getCreated().atZone(ZoneId.of("Asia/Shanghai")).toOffsetDateTime().toInstant()), df);
             r.setCreated(createdTime);
             if (Objects.nonNull(artifact.getLastUsed())) {
@@ -173,7 +180,7 @@ public class FqlSearchService extends GremlinVertexRepository<Artifact> implemen
             r.setLayout(repository.getLayout());
             r.setSubLayout(repository.getSubLayout());
             String path = artifact.getArtifactCoordinates().buildPath();
-            if ("Docker".equalsIgnoreCase(r.getLayout())) {
+            if (DockerLayoutProvider.ALIAS.equalsIgnoreCase(r.getLayout())) {
                 //docker
                 r.setArtifactName(path.substring(path.indexOf("/") + 1, path.indexOf("/sha256")));
                 r.setArtifactPath(path.substring(0, path.indexOf("/sha256")));
@@ -183,8 +190,6 @@ public class FqlSearchService extends GremlinVertexRepository<Artifact> implemen
                 if (artifactPath.contains("sha256") && !artifactPath.contains(blobs) && !artifactPath.contains(manifest) && !artifactPath.endsWith(".sha256")) {
                     r.setSizeInBytes(getSearchDockerSize(repository.getStorage().getId(), repository.getId(), repositoryPath, path));
                 }
-                r.setDownloadFilesUrl(getDockerDownLoadAppPackageUrls(repository.getStorage().getId(), repository.getId(), repositoryPath,
-                        path.substring(0, path.indexOf("/sha256")) + "/temp"));
             } else {
                 r.setArtifactName(path.substring(path.lastIndexOf("/") + 1));
                 r.setArtifactPath(path);

@@ -708,13 +708,18 @@
                     <a-input placeholder="http://xxxx或者https://xxxx" v-model="folibRepository.remoteRepository.url" />
                   </a-form-item>
                 </a-col>
-                <a-col :span="6">
+                <a-col :span="2">
+                  <a-form-item class="mb-10" label=" "  :colon="false">
+                    <a-button @click="verifyAlive()">测试</a-button>
+                  </a-form-item>
+                </a-col>
+                <a-col :span="5">
                   <a-form-item class="mb-10" label="用户名" :colon="false">
                     <a-input v-model="folibRepository.remoteRepository.username" autocomplete="new-text"
                       placeholder="远程仓库访问用户名" />
                   </a-form-item>
                 </a-col>
-                <a-col :span="6">
+                <a-col :span="5">
                   <a-form-item class="mb-10" label="密码" :colon="false">
                     <a-input-password v-model="folibRepository.remoteRepository.password" autocomplete="new-password"
                       placeholder="远程仓库访问密码" />
@@ -842,8 +847,7 @@
                 <draggable :list="boards" :animation="200" class="kanban-boards" ghost-class="ghost-card"
                   group="boards">
                   <FolibKanbanBoard v-for="(board) in boards" :key="board.id" :board="board">
-                    <draggable :list="board.tasks" :animation="200" ghost-class="ghost-card" group="tasks">
-
+                    <draggable :list="board.tasks" :animation="200" ghost-class="ghost-card" group="tasks" ref="draggable" :style="{minHeight: draggableHeight}">
                       <FolibKanbanTask v-for="(task) in board.tasks" :key="task.id" :task="task" :boardId="board.id">
                       </FolibKanbanTask>
 
@@ -983,7 +987,8 @@ import {
   creatCronOne,
   updateCronOne,
   delCronOne,
-  getStoragesAndRepositories
+  getStoragesAndRepositories,
+  aliveRepository
 } from "@/api/folib"
 import { getUsers } from "@/api/users"
 import CardProjectFolib from "@/components/Cards/CardProjectFolib"
@@ -1170,6 +1175,7 @@ export default {
           { required: true, trigger: 'blur', validator: checkStorageId }
         ]
       },
+      draggableHeight: '100vh'
     };
   },
   async created() {
@@ -1566,6 +1572,7 @@ export default {
       this.step += distance;
       if (this.step === 2 && this.folibRepository.type === "group") {
         this.repositoryList()
+        this.calcHeight()
       }
     },
 
@@ -1965,6 +1972,46 @@ export default {
       }
       return repositoryUrl
     },
+    calcHeight() {
+      this.$nextTick(() => {
+        let draggables = this.$refs['draggable']
+        if (draggables) {
+          let height1 = draggables[0].$el.offsetHeight
+          let height2 = draggables[1].$el.offsetHeight
+          let height = '100vh'
+          if (height1 || height2) {
+            height = (height1 > height2 ? height1 : height2) + 'px'
+          }
+          alert(height)
+          this.draggableHeight = height
+        }
+      });
+    },
+    verifyAlive() {
+      aliveRepository(this.currentStorage.id, this.folibRepository.id, this.folibRepository).then(res => {
+        if (res.alive) {
+          this.$notification["success"]({
+            message: "远程仓库连接正常",
+          })
+        } else {
+          let msg = "远程仓库连接失败"
+          if (res.statusCode) {
+            msg = msg + "，响应状态码 " + res.statusCode
+          }
+          if (res.statusCode === 404) {
+            msg = msg + "（tips: 某些仓库不支持浏览也会返回404，但不影响构建使用，请检查该远程仓库是否为此类仓库）"
+          }
+          this.$notification["warning"]({
+            message: msg,
+          })
+        }
+      }).catch((err) => {
+        let error = err.response.data?err.response.data:"未知错误"
+        this.$notification.error({
+          message: error,
+        })
+      })
+    }
   },
 };
 </script>
@@ -2123,5 +2170,9 @@ export default {
       padding: 8px 10px;
     }
   }
+}
+
+.repository-draggable {
+  min-height: 100vh;
 }
 </style>

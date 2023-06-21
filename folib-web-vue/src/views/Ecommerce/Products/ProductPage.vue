@@ -119,7 +119,7 @@
 					<h6>Other Products</h6>
 					
 					<!-- Other Products table -->
-					<a-table :columns="columns" :data-source="data" :pagination="false">
+					<a-table :columns="columns" :data-source="data" :pagination="false" :scroll="{ x: true }">
 
 						<template slot="product" slot-scope="product">
 							<h6 class="m-0">

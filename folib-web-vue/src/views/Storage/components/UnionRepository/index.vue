@@ -82,7 +82,7 @@
               </a-col>
             </a-row>
             <a-table v-if="unionRepositoryForm.unionTargetRepositories && unionRepositoryForm.unionTargetRepositories.length > 0"
-              :columns="targetRepositoriesColumns" :data-source="unionRepositoryForm.unionTargetRepositories" :pagination="false"
+              :columns="targetRepositoriesColumns" :data-source="unionRepositoryForm.unionTargetRepositories" :pagination="false" :scroll="{ x: true }"
               :row-key="(r, i) => i.toString()">
               <template slot="operation" slot-scope="text, record, index">
                 <a-popconfirm title="确定要删除吗？" okType="danger" ok-text="确定" cancel-text="取消"

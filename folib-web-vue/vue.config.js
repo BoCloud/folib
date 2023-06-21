@@ -16,7 +16,7 @@ module.exports = {
 		port: 9527,
 		proxy: {
 			'/api': {
-				target: 'http://localhost:38080',
+				target: 'http://127.0.0.1:38080',
 				// target: 'http://xpboot.cn:38080',
 				// target: 'http://10.10.33.145:38080',
 				pathRewrite: {
@@ -24,6 +24,15 @@ module.exports = {
 				},
 				timeout: 15 * 60 * 1000,
 				proxyTimeout: 15 * 60 * 1000,
+			},
+			'/dependency': {
+				target: 'http://192.168.5.101:8081',
+				// target: 'http://192.168.5.101:8081',
+				// target: 'http://xpboot.cn:38080',
+				// target: 'http://10.10.33.145:38080',
+				pathRewrite: {
+					'^/dependency': '/api'
+				},
 			}
 		}
 	},

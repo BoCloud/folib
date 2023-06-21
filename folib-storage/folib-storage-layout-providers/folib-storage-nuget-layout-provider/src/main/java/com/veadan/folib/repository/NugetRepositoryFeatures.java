@@ -35,6 +35,10 @@ import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.*;
 
+import org.apache.commons.lang3.StringUtils;
+import org.apache.http.client.config.RequestConfig;
+import org.glassfish.jersey.apache.connector.ApacheClientProperties;
+import org.glassfish.jersey.client.authentication.HttpAuthenticationFeature;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Scope;
@@ -152,6 +156,7 @@ public class NugetRepositoryFeatures
             logger.info("Downloading remote feed for [{}].", remoteRepositoryUrl);
 
             WebTarget service = restClient.target(remoteRepository.getUrl());
+            authentication(service, remoteRepository.getUsername(), remoteRepository.getPassword());
             packageFeed = queryParams(service.path("Search()"), nugetSearchRequest, paginator).request()
                                                                                               .buildGet()
                                                                                               .invoke(PackageFeed.class);
@@ -283,7 +288,7 @@ public class NugetRepositoryFeatures
             try
             {
                 WebTarget service = restClient.target(remoteRepository.getUrl());
-
+                authentication(service, remoteRepository.getUsername(), remoteRepository.getPassword());
                 Long remotePackageCount = Long.valueOf(queryParams(service.path("Search()/$count"),
                                                                    nugetSearchRequest, new Paginator()).request()
                                                                                                        .buildGet()
@@ -361,6 +366,22 @@ public class NugetRepositoryFeatures
     public Set<String> getDefaultArtifactCoordinateValidators()
     {
         return defaultMavenArtifactCoordinateValidators;
+    }
+
+    /**
+     * Client WebTarget 构建认证信息
+     *
+     * @param webTarget webTarget
+     * @param username  username
+     * @param password  password
+     */
+    public void authentication(WebTarget webTarget, String username, String password) {
+        final HttpAuthenticationFeature authenticationFeature = (StringUtils.isNotBlank(username) && StringUtils.isNotBlank(password)) ? HttpAuthenticationFeature.basic(username, password) : null;
+        if (authenticationFeature != null) {
+            webTarget.register(authenticationFeature);
+            webTarget.property(ApacheClientProperties.REQUEST_CONFIG,
+                    RequestConfig.custom().setCircularRedirectsAllowed(true).build());
+        }
     }
 
 }

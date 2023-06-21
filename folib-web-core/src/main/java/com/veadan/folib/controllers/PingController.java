@@ -1,6 +1,5 @@
 package com.veadan.folib.controllers;
 
-import com.alibaba.fastjson.JSONObject;
 import com.veadan.folib.licence.ActivateVo;
 import com.veadan.folib.licence.MacUtil;
 import com.veadan.folib.services.CodeActivateService;

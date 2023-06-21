@@ -13,6 +13,7 @@ public enum SystemRole
     REPOSITORY_MANAGER,
     ARTIFACTS_MANAGER,
     ANONYMOUS,
-    GENERAL;
+    GENERAL,
+    OPEN_SOURCE_MANAGE;
 
 }

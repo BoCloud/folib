@@ -2,6 +2,7 @@ package com.veadan.folib.components.syncartifact;
 
 import cn.hutool.core.io.FileUtil;
 import cn.hutool.http.HttpUtil;
+import com.veadan.folib.components.artifact.ArtifactComponent;
 import com.veadan.folib.configuration.ConfigurationManager;
 import com.veadan.folib.forms.syncartifact.SyncArtifactForm;
 import com.veadan.folib.providers.layout.NpmLayoutProvider;
@@ -10,7 +11,6 @@ import com.veadan.folib.storage.repository.RepositoryTypeEnum;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
-import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
@@ -49,6 +49,9 @@ public class NpmSyncArtifactProvider implements SyncArtifactProvider {
 
     @Inject
     private SyncArtifactProviderRegistry syncArtifactProviderRegistry;
+
+    @Inject
+    private ArtifactComponent artifactComponent;
 
     @PostConstruct
     @Override
@@ -122,7 +125,7 @@ public class NpmSyncArtifactProvider implements SyncArtifactProvider {
                             }
                             fileEmpty = false;
                             String url = rootUrl + line;
-                            findSubUrl(rootUrl, url, remoteUrl, sleepMillis, syncArtifactForm.getDom(), writer, repositoryBaseUri);
+                            findSubUrl(repository, rootUrl, url, remoteUrl, sleepMillis, syncArtifactForm.getDom(), writer, repositoryBaseUri);
                         }
                     }
                 } catch (IOException e) {
@@ -164,7 +167,7 @@ public class NpmSyncArtifactProvider implements SyncArtifactProvider {
      * @param writer            writer
      * @param repositoryBaseUri repositoryBaseUri
      */
-    private void findSubUrl(String rootUrl, String url, String remoteUrl, Integer sleepMillis, String dom, FileWriter writer, String repositoryBaseUri) {
+    private void findSubUrl(Repository repository, String rootUrl, String url, String remoteUrl, Integer sleepMillis, String dom, FileWriter writer, String repositoryBaseUri) {
         try {
             log.info("[{}] npm全量同步 findSubUrl url [{}]", this.getClass().getSimpleName(), url);
             if (isSuffix(url)) {
@@ -174,7 +177,7 @@ public class NpmSyncArtifactProvider implements SyncArtifactProvider {
                 Thread.sleep(sleepMillis);
             }
             String separator = "/";
-            Document doc = Jsoup.connect(url).get();
+            Document doc = artifactComponent.getDocument(repository, url);
             Elements links = doc.select(dom);
             log.info("[{}] npm全量同步 findSubUrl links [{}]", this.getClass().getSimpleName(), links.toString());
             for (Element link : links) {
@@ -191,7 +194,7 @@ public class NpmSyncArtifactProvider implements SyncArtifactProvider {
                     }
                     writer.write(absUrl + "\n");
                     writer.flush();
-                    if (absUrl.endsWith(separator)) {
+                    if (absUrl.startsWith(separator) || absUrl.endsWith(separator)) {
                         absUrl = absUrl.replace(separator, "");
                         absUrl = repositoryBaseUri + File.separator + absUrl;
                         log.info("[{}] npm全量同步 findSubUrl versions absUrl [{}]", this.getClass().getSimpleName(), absUrl);

@@ -104,5 +104,32 @@ export function fileSizeConver(limit) {
     return sizestr;
 }
 
-
+export function artifactCheck(repository, fileName, fileSize) {
+    let layout = repository.layout
+    let result = {check: true, msg: ''}
+    if (layout === 'Maven 2') {
+        let policy = repository.policy
+        let regex = /^(.*)-([0-9]{8}.[0-9]{6})-([0-9]+)(.*)$/
+        let isSnapshot = fileName.indexOf('SNAPSHOT') !== -1 || regex.test(fileName)
+        let msg = null
+        if (policy === 'release' && isSnapshot) {
+            msg = fileName + '为snapshot版本，仓库版本策略为release，禁止上传'
+        }
+        if (policy === 'snapshot' && !isSnapshot) {
+        msg = fileName + '为snapshot版本，仓库版本策略为release，禁止上传'
+        }
+        if (msg) {
+            result.check = false
+            result.msg = msg
+            return result
+        }
+    }
+    let fileSizeLimit = 2 * 1024 * 1024 * 1024
+    if (fileSize > fileSizeLimit) {
+        result.check = false
+        result.msg = msg
+        return result
+    }
+    return result
+}
 

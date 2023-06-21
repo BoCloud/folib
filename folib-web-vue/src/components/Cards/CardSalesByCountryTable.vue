@@ -11,7 +11,7 @@
 				</a-col>
 			</a-row>
 		</template>
-		<a-table :columns="columns" :showHeader="false" :data-source="data" :pagination="false">
+		<a-table :columns="columns" :showHeader="false" :data-source="data" :pagination="false" :scroll="{ x: true }">
 
 			<a-space slot="members" slot-scope="members" :size="-12" class="avatar-chips">
 				<template v-for="member in members">

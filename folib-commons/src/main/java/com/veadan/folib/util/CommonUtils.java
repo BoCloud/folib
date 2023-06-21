@@ -122,6 +122,16 @@ public class CommonUtils {
     /**
      * 是否是需要捕获的异常信息
      *
+     * @param e Throwable
+     * @return true 是 false 不是
+     */
+    public static boolean catchException(Throwable e) {
+        return catchException(getRealMessage(e));
+    }
+
+    /**
+     * 是否是需要捕获的异常信息
+     *
      * @param err 异常信息
      * @return true 是 false 不是
      */
