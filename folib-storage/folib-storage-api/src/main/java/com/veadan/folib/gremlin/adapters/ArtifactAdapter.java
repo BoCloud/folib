@@ -350,6 +350,7 @@ public class ArtifactAdapter implements VertexEntityTraversalAdapter<Artifact> {
 
         Set<String> tagNames = entity.getTagSet().stream().map(ArtifactTag::getName).collect(Collectors.toSet());
         Set<String> vulnerabilities = entity.getVulnerabilities();
+
         EntityTraversal<Vertex, Vertex> unfoldTraversal = __.<Vertex, Edge>coalesce(__.<Vertex>outE(Edges.ARTIFACT_HAS_ARTIFACT_COORDINATES),
                 //cascading create ArtifactCoordinates only
                 createArtifactCoordinates(artifactCoordinates))

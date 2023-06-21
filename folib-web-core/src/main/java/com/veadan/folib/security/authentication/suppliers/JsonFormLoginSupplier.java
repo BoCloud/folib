@@ -8,6 +8,7 @@ import com.veadan.folib.util.RSAUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.annotation.Order;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.Authentication;
@@ -50,7 +51,7 @@ public class JsonFormLoginSupplier implements AuthenticationSupplier {
 
     @Override
     public boolean supports(@Nonnull HttpServletRequest request) {
-        return "POST".equalsIgnoreCase(request.getMethod()) &&
+        return HttpMethod.POST.toString().equalsIgnoreCase(request.getMethod()) &&
                 request.getContentType() != null &&
                 request.getContentType().contains(MediaType.APPLICATION_JSON_VALUE) &&
                 LoginController.REQUEST_MAPPING.equals(request.getRequestURI());

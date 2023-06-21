@@ -121,11 +121,11 @@ public interface RepositoryProvider
      * 查询下载urls
      *
      * @param repository conan 仓库
-     * @param packageName conan 包
+     * @param name conan 包
      * @param version conan 包版本
      * @return map  下载的conan 包文件
      */
-    Map<String, Object> searchConanDownLoadUrl(Repository repository, String packageName, String version);
+    Map<String, Object> searchConanDownLoadUrl(Repository repository, String name, String version, String username, String channel);
 
     /**
      * 查询Conan 制品版本下的package id 详情

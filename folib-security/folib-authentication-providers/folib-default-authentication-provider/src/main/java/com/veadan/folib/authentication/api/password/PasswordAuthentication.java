@@ -6,7 +6,7 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.GrantedAuthority;
 
 /**
- * @author @author veadan
+ * @author veadan
  *
  */
 public class PasswordAuthentication extends UsernamePasswordAuthenticationToken
@@ -24,5 +24,5 @@ public class PasswordAuthentication extends UsernamePasswordAuthenticationToken
     {
         super(principal, credentials, authorities);
     }
-    
+
 }

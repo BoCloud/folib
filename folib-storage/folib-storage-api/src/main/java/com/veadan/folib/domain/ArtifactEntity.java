@@ -9,6 +9,7 @@ import com.veadan.folib.db.schema.Edges;
 import com.veadan.folib.db.schema.Vertices;
 import com.veadan.folib.enums.SafeLevelEnum;
 import com.veadan.folib.gremlin.adapters.DateConverter;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.neo4j.ogm.annotation.NodeEntity;
 import org.neo4j.ogm.annotation.Relationship;
@@ -24,6 +25,7 @@ import java.util.stream.Collectors;
  * @author Veadan
  * @author xuxinping
  */
+@Slf4j
 @NodeEntity(Vertices.ARTIFACT)
 public class ArtifactEntity
         extends DomainEntity implements Artifact {
@@ -173,6 +175,7 @@ public class ArtifactEntity
     public ArtifactEntity(String storageId,
                           String repositoryId,
                           ArtifactCoordinates artifactCoordinates) {
+        log.info("storageId [{}] repositoryId [{}] npmArtifactCoordinates [{}]", storageId, repositoryId, artifactCoordinates);
         Assert.notNull(artifactCoordinates, "artifactCoordinates cannot be empty");
 
         this.storageId = storageId;

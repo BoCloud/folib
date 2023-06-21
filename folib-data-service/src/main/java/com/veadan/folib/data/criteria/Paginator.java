@@ -3,7 +3,7 @@ package com.veadan.folib.data.criteria;
 public class Paginator
 {
 
-    public static final Integer MAX_LIMIT = 1000;
+    public static final Integer MAX_LIMIT = 9999;
 
     private Long skip;
     private Integer limit;

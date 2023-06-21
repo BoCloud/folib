@@ -39,9 +39,9 @@ public class ConanArtifactServerIpml implements ConanArtifactServer {
     }
 
     @Override
-    public ResponseEntity downloadUrls(Repository repository, String packageName, String version) {
+    public ResponseEntity downloadUrls(Repository repository, String name, String version, String username, String channel) {
         RepositoryProvider repositoryProvider = repositoryProviderRegistry.getProvider(repository.getType());
-        Map<String, Object> map = repositoryProvider.searchConanDownLoadUrl(repository, packageName, version);
+        Map<String, Object> map = repositoryProvider.searchConanDownLoadUrl(repository, name, version, username, channel);
         return new ResponseEntity<>(map, HttpStatus.OK);
     }
 

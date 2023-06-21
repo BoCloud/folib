@@ -1,29 +1,11 @@
 package com.veadan.folib.providers.repository;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.util.*;
-import java.util.stream.Collectors;
-
-import javax.inject.Inject;
-
-import cn.hutool.core.collection.CollectionUtil;
-import com.alibaba.fastjson.JSONObject;
 import com.google.common.collect.Maps;
 import com.veadan.folib.artifact.ArtifactNotFoundException;
 import com.veadan.folib.config.FolibPublicUtils;
 import com.veadan.folib.data.criteria.Paginator;
 import com.veadan.folib.domain.Artifact;
-import com.veadan.folib.domain.ArtifactIdGroup;
-import com.veadan.folib.domain.ArtifactIdGroupEntity;
-import com.veadan.folib.providers.io.AbstractRepositoryProvider;
-import com.veadan.folib.providers.io.RepositoryFiles;
-import com.veadan.folib.providers.io.RepositoryPath;
-import com.veadan.folib.providers.io.RepositoryPathResolver;
-import com.veadan.folib.providers.io.RootRepositoryPath;
+import com.veadan.folib.providers.io.*;
 import com.veadan.folib.repositories.ArtifactIdGroupRepository;
 import com.veadan.folib.storage.Storage;
 import com.veadan.folib.storage.repository.Repository;
@@ -31,6 +13,17 @@ import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
+
+import javax.inject.Inject;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 /**
  * @author Veadan
@@ -128,60 +121,74 @@ public class HostedRepositoryProvider extends AbstractRepositoryProvider
     @Override
     public Map<String, Object> searchConanPackage(Repository repository, String query) throws IOException {
         // 本地仓查询
-        String queryStr = StringUtils.isBlank(query) ? "_/" : "_/" + query.trim();
-        // 查询 repository path 目录
-        RepositoryPath repositoryPath = repositoryPathResolver.resolve(repository.getStorage().getId()
-                , repository.getId(), queryStr);
-        Map<String, Object> result = new HashMap<>();
-        List<String> list = new ArrayList();
-        if (Files.exists(repositoryPath)) {
-            if (StringUtils.isBlank(query)) {
-                List packagePaths = Files.list(repositoryPath).collect(Collectors.toList());
-                if (!CollectionUtil.isEmpty(packagePaths)) {
-                    packagePaths.forEach(x -> {
-                        // package name path
-                        RepositoryPath temp = repositoryPathResolver.resolve(repository.getStorage().getId()
-                                , repository.getId(), ((RepositoryPath) x).relativize().toString());
-                        try {
-                            List packageVersionPaths = Files.list(temp).collect(Collectors.toList());
-                            if (!CollectionUtil.isEmpty(packageVersionPaths)) {
-                                packageVersionPaths.forEach(j -> {
-                                    RepositoryPath path = (RepositoryPath) j;
-                                    String packageName = path.relativize().toString().replace("_/", "") + "@_/_";
-                                    list.add(packageName);
-                                });
-                            }
-
-                        } catch (IOException e) {
-                            e.printStackTrace();
-                        }
-                    });
-                }
-            } else {
-                List packagePaths = Files.list(repositoryPath).collect(Collectors.toList());
-                packagePaths.forEach(x -> {
-                    RepositoryPath packageRepositoryPath = (RepositoryPath) x;
-                    String packageName = packageRepositoryPath.relativize().toString().replace("_/", "") + "@_/_";
-                    list.add(packageName);
-                });
+        query = StringUtils.isBlank(query) ? "" : query.trim();
+        final String name;
+        final String version;
+        if ("".equals(query)) {
+            name = "";
+            version = null;
+        } else {
+            //todo 后期提取到常量
+            Pattern compile = Pattern.compile("^(?<name>[A-Za-z0-9_\\-.]+?)(/(?<version>[0-9.]*?)){0,1}$");
+            Matcher matcher = compile.matcher(query);
+            if (!matcher.matches()) {
+                return new HashMap<>(0);
             }
+            name = matcher.group("name");
+            version = matcher.group("version");
         }
-        result.put("results", list);
-        return result;
+        // 查询 repository path 目录
+        RepositoryPath repositoryPath = repositoryPathResolver.resolve(
+                repository.getStorage().getId(),
+                repository.getId(),
+                name);
+        if (!Files.exists(repositoryPath)) {
+            return Map.of("results", new ArrayList<>());
+        }
+        if (StringUtils.isBlank(name)) {
+            List<String> list = Files.list(repositoryPath)
+                    .flatMap(p -> {
+                        try {
+                            return Files.list(p);
+                        } catch (IOException e) {
+                            return null;
+                        }
+                    })
+                    .map(p -> (RepositoryPath) p)
+                    .map(RepositoryPath::relativize)
+                    .map(Path::toString)
+                    .map(p -> p.replace("\\", "/"))
+                    .collect(Collectors.toList());
+            return Map.of("results", list);
+        } else {
+            List<String> list = Files.list(repositoryPath)
+                    .filter(p -> version == null || p.endsWith(version))
+                    .map(a -> (RepositoryPath) a)
+                    .map(RepositoryPath::relativize)
+                    .map(Path::toString)
+                    .map(p -> p.replace("\\", "/"))
+                    .collect(Collectors.toList());
+            return Map.of("results", list);
+        }
     }
 
     @Override
-    public Map<String, Object> searchConanDownLoadUrl(Repository repository, String packageName, String version) {
-        Map<String, Object> map = new HashMap<String, Object>();
+    public Map<String, Object> searchConanDownLoadUrl(Repository repository, String name, String version, String username, String channel) {
         String url = FolibPublicUtils.getRepositoryWebServerUrl(repository);
-        String conanExportTgz = url + "/v1/files/_/" + packageName + "/" + version + "/_/0/export/conan_export.tgz";
-        String conanManifestTxt = url + "/v1/files/_/" + packageName + "/" + version + "/_/0/export/conanmanifest.txt";
-        String conanFilePy = url + "/v1/files/_/" + packageName + "/" + version + "/_/0/export/conanfile.py";
-        map.put("conan_export.tgz", conanExportTgz);
-        map.put("conanmanifest.txt", conanManifestTxt);
-        map.put("conanfile.py", conanFilePy);
-        return map;
+//        Map<String, Object> map = new HashMap<String, Object>();
+//        String format = String.format("%s/v1/files/%s/%s/%s/%s/export/%s", url, name, version, username, channel);
+//        String conanExportTgz = url + "/v1/files/_/" + name + "/" + version + "/_/0/export/conan_export.tgz";
+//        String conanManifestTxt = url + "/v1/files/_/" + name + "/" + version + "/_/0/export/conanmanifest.txt";
+//        String conanFilePy = url + "/v1/files/_/" + name + "/" + version + "/_/0/export/conanfile.py";
+//        map.put("conan_export.tgz", conanExportTgz);
+//        map.put("conanmanifest.txt", conanManifestTxt);
+//        map.put("conanfile.py", conanFilePy);
+        List<String> list = List.of("conan_export.tgz", "conanmanifest.txt", "conanfile.py");
+        return list.stream().collect(Collectors.toMap(
+                filename -> filename,
+                filename -> String.format("%s/v1/files/%s/%s/%s/%s/export/%s", url, name, version, username, channel, filename)));
     }
+
 
     @Override
     public Map<String, Object> searchConanPackageInfo(Repository repository, String packageName, String version) throws IOException {

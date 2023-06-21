@@ -1,60 +1,53 @@
 package com.veadan.folib.controllers.layout.pypi;
 
-import java.io.IOException;
-import java.net.HttpURLConnection;
-import java.net.URI;
-import java.nio.file.Path;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
-import javax.inject.Inject;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.ws.rs.core.MediaType;
-
-import com.veadan.folib.data.criteria.Paginator;
-import com.veadan.folib.providers.io.RepositoryPath;
-import com.veadan.folib.storage.validation.artifact.ArtifactCoordinatesValidationException;
+import com.google.common.collect.Sets;
+import com.veadan.folib.artifact.coordinates.GenericArtifactCoordinates;
 import com.veadan.folib.artifact.coordinates.PypiArtifactCoordinates;
 import com.veadan.folib.controllers.BaseArtifactController;
+import com.veadan.folib.data.criteria.Paginator;
 import com.veadan.folib.providers.ProviderImplementationException;
+import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.providers.repository.RepositoryProvider;
 import com.veadan.folib.providers.repository.RepositoryProviderRegistry;
 import com.veadan.folib.providers.repository.RepositorySearchRequest;
+import com.veadan.folib.pypi.PypiSearchRequest;
+import com.veadan.folib.repository.PypiRepositoryFeatures;
+import com.veadan.folib.services.ArtifactCoordinatesService;
 import com.veadan.folib.storage.metadata.pypi.PypiArtifactMetadata;
 import com.veadan.folib.storage.repository.Repository;
+import com.veadan.folib.storage.repository.remote.RemoteRepository;
+import com.veadan.folib.storage.validation.artifact.ArtifactCoordinatesValidationException;
 import com.veadan.folib.utils.PypiPackageNameConverter;
 import com.veadan.folib.web.LayoutRequestMapping;
 import com.veadan.folib.web.RepositoryMapping;
+import io.swagger.annotations.ApiOperation;
+import io.swagger.annotations.ApiResponse;
+import io.swagger.annotations.ApiResponses;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.util.StringUtils;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestHeader;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.RequestPart;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
-import com.google.common.collect.Sets;
-
-import io.swagger.annotations.ApiOperation;
-import io.swagger.annotations.ApiResponse;
-import io.swagger.annotations.ApiResponses;
+import javax.inject.Inject;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.ws.rs.core.MediaType;
+import java.io.IOException;
+import java.net.HttpURLConnection;
+import java.net.URI;
+import java.nio.file.Path;
+import java.util.*;
 
 /**
  * Rest End Points for Pypi Artifacts requests.
  * This controller will be Entry point for various pip commands.
- * 
+ *
  * @author ankit.tomar
- * 
+ *
  */
 @RestController
 @LayoutRequestMapping(PypiArtifactCoordinates.LAYOUT_NAME)
@@ -71,6 +64,12 @@ public class PypiArtifactController extends BaseArtifactController
     @Inject
     private PypiBrowsePackageHtmlResponseBuilder htmlResponseBuilder;
 
+    @Inject
+    private PypiRepositoryFeatures.PypiSearchPackagesEventListener pypiSearchPackagesEventListener;
+
+    @Inject
+    private ArtifactCoordinatesService artifactCoordinatesService;
+
     @ApiOperation(value = "This end point will be used to upload/deploy python package.")
     @ApiResponses(value = { @ApiResponse(code = HttpURLConnection.HTTP_OK, message = "python package was deployed successfully."),
                             @ApiResponse(code = HttpURLConnection.HTTP_INTERNAL_ERROR, message = "An error occurred while executing request."),
@@ -79,24 +78,24 @@ public class PypiArtifactController extends BaseArtifactController
     @RequestMapping(path = "/{storageId}/{repositoryId}", method = RequestMethod.POST, consumes = MediaType.MULTIPART_FORM_DATA)
     public ResponseEntity<String> uploadPackage(
                                                 @RepositoryMapping Repository repository,
-                                                @RequestPart(name = "comment", required = false) String comment,
-                                                @RequestPart(name = "metadata_version", required = true) String metadataVersion,
-                                                @RequestPart(name = "filetype", required = true) String filetype,
-                                                @RequestPart(name = "protcol_version", required = false) String protcolVersion,
-                                                @RequestPart(name = "author", required = false) String author,
-                                                @RequestPart(name = "home_page", required = false) String homePage,
-                                                @RequestPart(name = "download_url", required = false) String downloadUrl,
-                                                @RequestPart(name = "platform", required = false) String platform,
-                                                @RequestPart(name = "version", required = false) String version,
-                                                @RequestPart(name = "description", required = false) String description,
-                                                @RequestPart(name = "md5_digest", required = false) String md5Digest,
-                                                @RequestPart(name = ":action", required = true) String action,
-                                                @RequestPart(name = "name", required = true) String name,
-                                                @RequestPart(name = "license", required = false) String license,
-                                                @RequestPart(name = "pyversion", required = false) String pyversion,
-                                                @RequestPart(name = "summary", required = false) String summary,
-                                                @RequestPart(name = "author_email", required = false) String authorEmail,
-                                                @RequestPart(name = "content", required = true) MultipartFile file,
+                                                @RequestParam(name = "comment", required = false) String comment,
+                                                @RequestParam(name = "metadata_version", required = true) String metadataVersion,
+                                                @RequestParam(name = "filetype", required = true) String filetype,
+                                                @RequestParam(name = "protcol_version", required = false) String protcolVersion,
+                                                @RequestParam(name = "author", required = false) String author,
+                                                @RequestParam(name = "home_page", required = false) String homePage,
+                                                @RequestParam(name = "download_url", required = false) String downloadUrl,
+                                                @RequestParam(name = "platform", required = false) String platform,
+                                                @RequestParam(name = "version", required = false) String version,
+                                                @RequestParam(name = "description", required = false) String description,
+                                                @RequestParam(name = "md5_digest", required = false) String md5Digest,
+                                                @RequestParam(name = ":action", required = true) String action,
+                                                @RequestParam(name = "name", required = true) String name,
+                                                @RequestParam(name = "license", required = false) String license,
+                                                @RequestParam(name = "pyversion", required = false) String pyversion,
+                                                @RequestParam(name = "summary", required = false) String summary,
+                                                @RequestParam(name = "author_email", required = false) String authorEmail,
+                                                @RequestParam(name = "content", required = true) MultipartFile file,
                                                 HttpServletRequest request)
     {
 
@@ -211,9 +210,21 @@ public class PypiArtifactController extends BaseArtifactController
             return;
         }
 
+        String remoteRepositoryUrl;
+        RemoteRepository remoteRepository;
+        String targetUrl = null;
+        if (Objects.nonNull(remoteRepository = repository.getRemoteRepository())
+                && Objects.nonNull(remoteRepositoryUrl = remoteRepository.getUrl())) {
+            GenericArtifactCoordinates artifactCoordinates = artifactCoordinatesService.findById(coordinates.buildPath());
+            String path;
+            if (Objects.nonNull(artifactCoordinates) && StringUtils.hasText(path = artifactCoordinates.getPath())) {
+                targetUrl = String.format("%s%s", remoteRepositoryUrl, path);
+            }
+        }
         RepositoryPath repositoryPath = artifactResolutionService.resolvePath(
                                                                               repository.getStorage().getId(),
                                                                               repository.getId(),
+                                                                              targetUrl,
                                                                               coordinates.buildPath());
         vulnerabilityBlock(repositoryPath);
         provideArtifactDownloadResponse(request, response, headers, repositoryPath);
@@ -239,6 +250,8 @@ public class PypiArtifactController extends BaseArtifactController
         logger.info("Get package path request for storageId -> [{}] , repositoryId -> [{}], packageName -> [{}]",
                     repository.getStorage().getId(),
                     repository.getId(), packageNameToDownload);
+
+        pypiSearchPackagesEventListener.setPypiSearchRequest(new PypiSearchRequest(packageName));
 
         RepositoryProvider repositoryProvider = repositoryProviderRegistry.getProvider(repository.getType());
 

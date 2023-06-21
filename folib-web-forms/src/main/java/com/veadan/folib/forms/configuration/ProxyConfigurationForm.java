@@ -64,11 +64,11 @@ public class ProxyConfigurationForm
         );
 
         return new ProxyConfigurationForm(configuration.getHost(),
-                                          configuration.getPort(),
-                                          configuration.getType(),
-                                          configuration.getUsername(),
-                                          null,
-                                          configuration.getNonProxyHosts());
+                configuration.getPort(),
+                configuration.getType(),
+                configuration.getUsername(),
+                null,
+                configuration.getNonProxyHosts());
     }
 
     public String getHost()
@@ -135,7 +135,7 @@ public class ProxyConfigurationForm
     public MutableProxyConfiguration getMutableProxyConfiguration()
     {
         return new MutableProxyConfiguration(this.host, this.port, this.username, this.password, this.type,
-                                             this.nonProxyHosts);
+                this.nonProxyHosts);
     }
 
     public interface ProxyConfigurationFormChecks

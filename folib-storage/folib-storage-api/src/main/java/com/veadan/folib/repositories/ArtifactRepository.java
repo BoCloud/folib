@@ -549,6 +549,7 @@ public class ArtifactRepository extends GremlinVertexRepository<Artifact> {
     public Artifact findOneArtifact(String storageId,
                                     String repositoryId,
                                     String path) {
+        log.info("storageId [{}] repositoryId [{}] path [{}]", storageId, repositoryId, path);
         com.veadan.folib.storage.repository.Repository repository = configurationManager.getRepository(storageId, repositoryId);
         long startTime = System.currentTimeMillis();
         EntityTraversal<Vertex, Artifact> t = g().V()

@@ -191,6 +191,24 @@ public class AsyncPoolConfig {
     @Value("${folib.threadPool.asyncFetchRemotePackage.awaitTerminationSeconds}")
     private Integer asyncFetchRemotePackageAwaitTerminationSeconds;
 
+    @Value("${folib.threadPool.asyncScan.corePoolSize}")
+    private Integer asyncScanCorePoolSize;
+
+    @Value("${folib.threadPool.asyncScan.maxPoolSize}")
+    private Integer asyncScanMaxPoolSize;
+
+    @Value("${folib.threadPool.asyncScan.queueCapacity}")
+    private Integer asyncScanQueueCapacity;
+
+    @Value("${folib.threadPool.asyncScan.keepAliveSeconds}")
+    private Integer asyncScanKeepAliveSeconds;
+
+    @Value("${folib.threadPool.asyncScan.threadNamePrefix}")
+    private String asyncScanThreadNamePrefix;
+
+    @Value("${folib.threadPool.asyncScan.awaitTerminationSeconds}")
+    private Integer asyncScanAwaitTerminationSeconds;
+
     @Bean
     public ThreadPoolTaskExecutor asyncThreadPoolTaskExecutor() {
         return buildThreadPoolTaskExecutor(asyncCorePoolSize, asyncMaxPoolSize, asyncQueueCapacity, asyncKeepAliveSeconds, asyncThreadNamePrefix, asyncAwaitTerminationSeconds);
@@ -252,6 +270,17 @@ public class AsyncPoolConfig {
                 asyncFetchRemotePackageKeepAliveSeconds,
                 asyncFetchRemotePackageThreadNamePrefix,
                 asyncFetchRemotePackageAwaitTerminationSeconds);
+    }
+
+    @Bean
+    public ThreadPoolTaskExecutor asyncScanThreadPoolTaskExecutor(){
+        return buildThreadPoolTaskExecutor(
+                asyncScanCorePoolSize,
+                asyncScanMaxPoolSize,
+                asyncScanQueueCapacity,
+                asyncScanKeepAliveSeconds,
+                asyncScanThreadNamePrefix,
+                asyncScanAwaitTerminationSeconds);
     }
 
     /**

@@ -31,6 +31,7 @@ import com.veadan.folib.repository.NpmRepositoryFeatures.ViewPackageEventListene
 import com.veadan.folib.storage.repository.Repository;
 import com.veadan.folib.storage.validation.artifact.ArtifactCoordinatesValidationException;
 import com.veadan.folib.users.userdetails.SpringSecurityUser;
+import com.veadan.folib.util.CommonUtils;
 import com.veadan.folib.web.LayoutRequestMapping;
 import com.veadan.folib.web.RepositoryMapping;
 import org.apache.commons.codec.digest.DigestUtils;
@@ -234,7 +235,7 @@ public class NpmArtifactController
                 }
                 i++;
             }
-            logger.info("[{}] viewPackageFeedWithScope storageId [{}] repositoryId [{}] packageId [{}] handler tarball task time [{}] ms", this.getClass().getSimpleName(), repository.getStorage().getId(), repository.getId(), packageId, System.currentTimeMillis() - startTime);
+            logger.info("[{}] viewPackageFeedWithScope storageId [{}] repositoryId [{}] packageId [{}] npm packages [{}] handler tarball task time [{}] ms", this.getClass().getSimpleName(), repository.getStorage().getId(), repository.getId(), packageId, versionsJson.keySet().size(), System.currentTimeMillis() - startTime);
 
             response.setContentType(MediaType.APPLICATION_JSON_VALUE);
             ServletOutputStream outputStream = response.getOutputStream();
@@ -259,9 +260,10 @@ public class NpmArtifactController
             PackageFeed packageFeed = handlePackageFeed(repository, packageId, predicate, artifactIdGroup);
             response.setContentType(MediaType.APPLICATION_JSON_VALUE);
             try {
+                logger.info("[{}] storageId [{}] repositoryId [{}] packageId [{}] npm packages [{}]", this.getClass().getSimpleName(), repository.getStorage().getId(), repository.getId(), packageId, packageFeed.getVersions().getAdditionalProperties().keySet().size());
                 response.getOutputStream().write(npmJacksonMapper.writeValueAsBytes(packageFeed));
             } catch (IOException ex) {
-                logger.error("[{}] outputStream write [{}] error [{}]", this.getClass().getSimpleName(), JSONObject.toJSONString(packageFeed), ExceptionUtils.getStackTrace(ex));
+                logger.error("[{}] storageId [{}] repositoryId [{}] packageId [{}] npm packages [{}] outputStream write error [{}]", this.getClass().getSimpleName(), repository.getStorage().getId(), repository.getId(), packageId, packageFeed.getVersions().getAdditionalProperties().keySet().size(), ExceptionUtils.getStackTrace(ex));
             }
         }
         logger.info("[{}] viewPackageFeedWithScope storageId [{}] repositoryId [{}] packageId [{}] task time [{}] ms", this.getClass().getSimpleName(), repository.getStorage().getId(), repository.getId(), packageId, System.currentTimeMillis() - globalStartTime);
@@ -285,7 +287,33 @@ public class NpmArtifactController
 
         DistTags distTags = new DistTags();
         packageFeed.setDistTags(distTags);
-        List<Path> searchResult = provider.search(storageId, repositoryId, predicate, paginator);
+        List<Path> searchResult = Collections.emptyList();
+        try {
+            searchResult = provider.search(storageId, repositoryId, predicate, paginator);
+        } catch (Exception ex) {
+            String realMessage = CommonUtils.getRealMessage(ex);
+            if (CommonUtils.catchException(realMessage)) {
+                logger.warn("Npm search catch error [{}]", realMessage);
+                for (int i = 0; i < 5; i++) {
+                    try {
+                        logger.warn("Npm search retry [{}]-[{}]", i, predicate.getArtifactId());
+                        searchResult = provider.search(storageId, repositoryId, predicate, paginator);
+                        if (CollectionUtils.isNotEmpty(searchResult)) {
+                            break;
+                        }
+                    } catch (Exception e) {
+                        realMessage = CommonUtils.getRealMessage(e);
+                        if (CommonUtils.catchException(realMessage)) {
+                            logger.warn("Npm search catch error [{}]", realMessage);
+                        } else {
+                            throw e;
+                        }
+                    }
+                }
+            } else {
+                throw ex;
+            }
+        }
         searchResult.stream().map(npmPackageSupplier).forEach(p -> {
             PackageVersion npmPackage = p.getNpmPackage();
             versions.setAdditionalProperty(npmPackage.getVersion(), npmPackage);

@@ -40,6 +40,7 @@ public class CustomLdapUserDetailsMapper
 
     private boolean isUserPasswordEncoded;
 
+    @Override
     protected String mapPassword(Object passwordValue)
     {
         String passwordValueString = super.mapPassword(passwordValue);

@@ -31,6 +31,10 @@
         <property name="password" value="${folib.authentication.ldap.managerPassword}"/>
     </bean>
 
+    <bean id="ldapTemplate" class="org.springframework.ldap.core.LdapTemplate">
+        <property name="contextSource" ref="contextSource" />
+    </bean>
+
     <bean id="ldapAuthoritiesPopulator" class="com.veadan.folib.authentication.api.ldap.MappedAuthoritiesPopulator">
         <constructor-arg ref="ldapAuthoritiesExternalToInternalMapper"/>
         <property name="delegate">

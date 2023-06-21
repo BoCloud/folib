@@ -22,16 +22,18 @@ const userApi = {
  *     captcha: '12345'
  * }
  * @param parameter
+ * @param headers
  * @returns {*}
  */
-export function login (parameter) {
+export function login (parameter, headers) {
   return request({
     url: userApi.Login,
     method: 'post',
     data: {
       username: parameter.username,
       password: parameter.password
-    }
+    },
+    headers: headers
   })
 }
 

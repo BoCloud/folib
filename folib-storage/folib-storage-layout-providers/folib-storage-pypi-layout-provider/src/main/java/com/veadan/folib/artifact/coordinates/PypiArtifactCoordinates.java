@@ -1,15 +1,16 @@
 package com.veadan.folib.artifact.coordinates;
 
-import javax.xml.bind.annotation.XmlAccessType;
-import javax.xml.bind.annotation.XmlAccessorType;
-import javax.xml.bind.annotation.XmlRootElement;
-
 import com.veadan.folib.artifact.coordinates.versioning.SemanticVersion;
-import org.apache.commons.lang3.StringUtils;
 import com.veadan.folib.db.schema.Vertices;
 import com.veadan.folib.domain.LayoutArtifactCoordinatesEntity;
 import com.veadan.folib.util.PypiArtifactCoordinatesUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.neo4j.ogm.annotation.NodeEntity;
+
+import javax.xml.bind.annotation.XmlAccessType;
+import javax.xml.bind.annotation.XmlAccessorType;
+import javax.xml.bind.annotation.XmlRootElement;
+import java.net.URI;
 
 /**
  * This class is an {@link ArtifactCoordinates} implementation for pypi artifacts
@@ -50,6 +51,8 @@ public class PypiArtifactCoordinates
     public static final String SOURCE_EXTENSION = "tar.gz";
 
     public static final String WHEEL_EXTENSION = "whl";
+
+    public static final String PATH = "path";
 
     public PypiArtifactCoordinates()
     {
@@ -251,6 +254,18 @@ public class PypiArtifactCoordinates
         setCoordinate(PLATFORM, platform);
     }
 
+    @ArtifactLayoutCoordinate
+    public String getPath() {
+        return getCoordinate(PATH);
+    }
+
+    /**
+     * @param path PLATFORM coordinate takes this value
+     */
+    public void setPath(String path) {
+        setCoordinate(PATH, path);
+    }
+
     /**
      * @return Returns the reconstructed path from the stored coordinate values
      */
@@ -264,6 +279,13 @@ public class PypiArtifactCoordinates
                              c.getId(),
                              c.getVersion(),
                              fileName);
+    }
+
+    @Override
+    public URI convertToResource(PypiArtifactCoordinates artifactCoordinates) {
+        String fileName = SOURCE_EXTENSION.equals(artifactCoordinates.getPackaging()) ? artifactCoordinates.buildSourcePackageFileName()
+                : artifactCoordinates.buildWheelPackageFileName();
+        return URI.create(String.format("packages/%s", fileName));
     }
 
     private String buildSourcePackageFileName()

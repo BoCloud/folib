@@ -331,13 +331,13 @@ public class GroupRepositoryProvider
     }
 
     @Override
-    public Map<String, Object> searchConanDownLoadUrl(Repository repository, String packageName, String version) {
+    public Map<String, Object> searchConanDownLoadUrl(Repository repository, String name, String version, String username, String channel) {
         Set<Repository> groupRepositorySet = groupRepositorySetCollector.collect(repository);
-        String path = "_/" + packageName + "/" + version + "/_/0/export/conanmanifest.txt";
+        String path = "_/" + name + "/" + version + "/_/0/export/conanmanifest.txt";
         for (Repository x : groupRepositorySet) {
             try {
                 RepositoryProvider repositoryProvider = repositoryProviderRegistry.getProvider(x.getType());
-                Map<String, Object> rsMap = repositoryProvider.searchConanDownLoadUrl(x, packageName, version);
+                Map<String, Object> rsMap = repositoryProvider.searchConanDownLoadUrl(x, name, version, username, channel);
                 RepositoryPath repositoryPath = artifactResolutionService.resolvePath(x.getStorage().getId(),
                         x.getId(), path);
                 if (null != repositoryPath && Files.exists(repositoryPath)) {

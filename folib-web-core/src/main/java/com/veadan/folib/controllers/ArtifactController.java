@@ -1,8 +1,6 @@
 package com.veadan.folib.controllers;
 
 import com.alibaba.fastjson.JSON;
-import com.veadan.folib.components.syncartifact.MavenSyncArtifactProvider;
-import com.veadan.folib.components.syncartifact.NpmSyncArtifactProvider;
 import com.veadan.folib.components.syncartifact.SyncArtifactProvider;
 import com.veadan.folib.components.syncartifact.SyncArtifactProviderRegistry;
 import com.veadan.folib.configuration.ConfigurationManager;
@@ -12,7 +10,6 @@ import com.veadan.folib.domain.StatusInfo;
 import com.veadan.folib.forms.artifact.ArtifactMetadataForm;
 import com.veadan.folib.forms.syncartifact.SyncArtifactForm;
 import com.veadan.folib.services.ArtifactWebService;
-import com.veadan.folib.services.LicenseService;
 import com.veadan.folib.storage.repository.Repository;
 import com.veadan.folib.users.userdetails.SpringSecurityUser;
 import com.veadan.folib.validation.RequestBodyValidationException;
@@ -46,9 +43,6 @@ public class ArtifactController extends BaseController {
 
     @Inject
     private ArtifactWebService artifactWebService;
-
-    @Inject
-    private LicenseService licenseService;
 
     @Inject
     private SyncArtifactProviderRegistry syncArtifactProviderRegistry;

@@ -115,7 +115,7 @@ public class ScanService {
         return settings;
     }
 
-    @Async("asyncThreadPoolTaskExecutor")
+    @Async("asyncScanThreadPoolTaskExecutor")
     public void asyncScan(Artifact artifact) {
         try {
             //将数据库中该记录变为扫描中
@@ -500,7 +500,7 @@ public class ScanService {
         try {
             engine.doUpdates();
         } catch (UpdateException e) {
-            throw new BusinessException("更新出错");
+            log.error("Update mirror error [{}]", ExceptionUtils.getStackTrace(e));
         }
     }
 

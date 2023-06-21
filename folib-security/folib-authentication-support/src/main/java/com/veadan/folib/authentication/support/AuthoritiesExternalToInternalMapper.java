@@ -5,6 +5,10 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
+import com.google.common.collect.Sets;
+import com.veadan.folib.users.domain.SystemRole;
+import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.compress.utils.Lists;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.InitializingBean;
@@ -38,6 +42,10 @@ public class AuthoritiesExternalToInternalMapper
                                                                            .map(SimpleGrantedAuthority::new)
                                                                            .collect(Collectors.toSet());
         logger.info("Authorities mapped [{}]", result);
+        if (CollectionUtils.isEmpty(result)) {
+            result = Sets.newHashSet(new SimpleGrantedAuthority(SystemRole.GENERAL.name()));
+            logger.info("Authorities mapped is null set role is {}", result);
+        }
         return result;
     }
 

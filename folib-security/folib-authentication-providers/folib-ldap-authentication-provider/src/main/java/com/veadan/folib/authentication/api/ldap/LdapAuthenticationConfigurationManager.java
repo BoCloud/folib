@@ -13,6 +13,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import org.springframework.ldap.core.LdapTemplate;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -108,7 +109,6 @@ public class LdapAuthenticationConfigurationManager
         authenticationItemConfigurationManager.testCustomAuthenticationItem(configuration, this, (c) -> {
 
             LdapUserDetailsService luds = (LdapUserDetailsService) c.getBean("ldapUserDetailsService");
-
             UserDetails user = luds.loadUserByUsername(username);
             if (!passwordEncoder.matches(password, user.getPassword()))
             {
@@ -209,6 +209,25 @@ public class LdapAuthenticationConfigurationManager
                                                                                          .collect(Collectors.toList()));
 
         return result;
+    }
+
+    /**
+     * 初始化LDAP连接
+     *
+     * @return LdapTemplate
+     */
+    private LdapTemplate ldapTemplateInstance(LdapConfiguration ldap) {
+        LdapTemplate ldapTemplate = LdapTemplateFactory.createLdapInstance(ldap.getUrl(),
+                "", ldap.getManagerDn(), ldap.getManagerPassword());
+        return ldapTemplate;
+    }
+
+    /**
+     * 外部调用获取LdapTemplate
+     * @return LdapTemplate
+     */
+    public LdapTemplate getLdapTemplateInstance() {
+        return ldapTemplateInstance(getConfiguration());
     }
 
 }
