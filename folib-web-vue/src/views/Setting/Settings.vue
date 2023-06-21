@@ -802,7 +802,7 @@
               </a-tooltip>
             </a-col>
           </div>
-          <a-table :columns="metadataColumns" :data-source="metadataList" :row-key="(r, i) => i.toString()">
+          <a-table :columns="metadataColumns" :scroll="{ x: true }" :data-source="metadataList" :row-key="(r, i) => i.toString()">
             <div slot="type" slot-scope="type">
               <span v-for="(item, index) in metadataTypes" :key="index">
                 <span v-if="type === item.value">{{ item.label }}</span>
@@ -850,7 +850,7 @@
               </a-tooltip>
             </a-col>
           </div>
-        <a-table :columns="artifactDispatchColumns" :data-source="artifactDispatchList" :row-key="(r, i) => i.toString()">
+        <a-table :columns="artifactDispatchColumns" :scroll="{ x: true }" :data-source="artifactDispatchList" :row-key="(r, i) => i.toString()">
           <div slot="isThisCluster" slot-scope="text, record">
             {{ record.isThisCluster === true ? '是' : '否' }}
           </div>
@@ -1262,7 +1262,7 @@ export default {
     getUsersCreateFields() {
       getUsersCreateFields().then(res => {
         let roles = res.formDataValues[0].values
-        let roleNameList = ['ADMIN', 'GENERAL', 'ARTIFACTS_MANAGER']
+        let roleNameList = ['ADMIN', 'GENERAL', 'ARTIFACTS_MANAGER', 'OPEN_SOURCE_MANAGE']
         roles = roles.filter(item => roleNameList.includes(item.name))
         this.assignableRoles = roles
       })

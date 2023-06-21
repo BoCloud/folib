@@ -90,7 +90,13 @@ export function addOrUpdateRepository (storageId,repositoryId,obj) {
   })
 }
 
-
+export function aliveRepository (storageId,repositoryId,obj) {
+  return axios({
+    url: '/api/configuration/folib/storages/'+storageId+'/'+repositoryId+'/alive',
+    method: 'post',
+    data: obj
+  })
+}
 
 export function getBaseUrl () {
   return axios({

@@ -42,6 +42,8 @@ public class ArtifactAdapter implements VertexEntityTraversalAdapter<Artifact> {
     ArtifactTagAdapter artifactTagAdapter;
     @Inject
     VulnerabilityAdapter vulnerabilityAdapter;
+    @Inject
+    ComponentAdapter componentAdapter;
 
     @Override
     public String label() {
@@ -89,7 +91,8 @@ public class ArtifactAdapter implements VertexEntityTraversalAdapter<Artifact> {
                 "artifactFileExists",
                 "promotion",
                 "promotionNodes",
-                "enabled")
+                "enabled",
+                "componentSet")
                 .by(__.id())
                 .by(__.enrichPropertyValue("uuid"))
                 .by(__.enrichPropertyValue("storageId"))
@@ -137,6 +140,11 @@ public class ArtifactAdapter implements VertexEntityTraversalAdapter<Artifact> {
                 .by(__.enrichPropertyValue("promotion"))
                 .by(__.enrichPropertyValues("promotionNodes"))
                 .by(__.enrichPropertyValue("enabled"))
+                .by(__.outE(Edges.ARTIFACT_HAS_COMPONENTS)
+                        .inV()
+                        .map(componentAdapter.fold())
+                        .map(EntityTraversalUtils::castToObject)
+                        .fold())
                 .map(this::map);
     }
 
@@ -314,7 +322,11 @@ public class ArtifactAdapter implements VertexEntityTraversalAdapter<Artifact> {
             List<Vulnerability> vulnerabilityList = (List<Vulnerability>) vulnerabilityObject;
             result.setVulnerabilitySet(new LinkedHashSet<>(vulnerabilityList));
         }
-
+        Object componentObject = t.get().get("componentSet");
+        if (Objects.nonNull(componentObject)) {
+            List<com.veadan.folib.domain.Component> componentList = (List<com.veadan.folib.domain.Component>) componentObject;
+            result.setComponentSet(new LinkedHashSet<>(componentList));
+        }
         result.setArtifactFileExists(extractObject(Boolean.class, t.get().get("artifactFileExists")));
         result.setMetadata(extractObject(String.class, t.get().get("metadata")));
         result.setFilePaths(extractPropertyList(String.class, t.get().get("filePaths")).stream()
@@ -342,24 +354,45 @@ public class ArtifactAdapter implements VertexEntityTraversalAdapter<Artifact> {
                 //cascading create ArtifactCoordinates only
                 createArtifactCoordinates(artifactCoordinates))
                 .outV()
-                .sideEffect(__.outE(Edges.ARTIFACT_HAS_TAGS).drop())
                 .map(unfoldArtifact(entity))
-                .store(storedArtifactId)
-                .sideEffect(__.V()
-                        .hasLabel(Vertices.ARTIFACT_TAG)
-                        .has("uuid", P.within(tagNames))
-                        .addE(Edges.ARTIFACT_HAS_TAGS)
-                        .from(__.select(storedArtifactId).unfold()))
-                .sideEffect(__.outE(Edges.ARTIFACT_HAS_VULNERABILITIES).drop());
+                .store(storedArtifactId);
+        if (CollectionUtils.isNotEmpty(tagNames)) {
+            unfoldTraversal = unfoldTraversal.sideEffect(__.outE(Edges.ARTIFACT_HAS_TAGS).drop());
+            unfoldTraversal = unfoldTraversal.sideEffect(__.V()
+                    .hasLabel(Vertices.ARTIFACT_TAG)
+                    .has(Properties.UUID, P.within(tagNames))
+                    .addE(Edges.ARTIFACT_HAS_TAGS)
+                    .from(__.select(storedArtifactId).unfold()));
+        }
+        String drop = "drop";
         if (CollectionUtils.isNotEmpty(vulnerabilities)) {
+            unfoldTraversal = unfoldTraversal.sideEffect(__.outE(Edges.ARTIFACT_HAS_VULNERABILITIES).drop());
             for (String vulnerability : vulnerabilities) {
+                if (drop.equalsIgnoreCase(vulnerability)) {
+                    break;
+                }
                 EntityTraversal<Object, Vertex> vulnerabilityEntityTraversal = __.V()
                         .hasLabel(Vertices.VULNERABILITY)
-                        .has("uuid", vulnerability);
+                        .has(Properties.UUID, vulnerability);
                 vulnerabilityEntityTraversal = vulnerabilityEntityTraversal.addE(Edges.ARTIFACT_HAS_VULNERABILITIES)
                         .from(__.<Vertex, Vertex>select(storedArtifactId).unfold())
                         .property(Properties.VULNERABILITY_ID, vulnerability).inV();
                 unfoldTraversal = unfoldTraversal.sideEffect(vulnerabilityEntityTraversal);
+            }
+        }
+        if (CollectionUtils.isNotEmpty(entity.getComponentSet())) {
+            unfoldTraversal = unfoldTraversal.sideEffect(__.outE(Edges.ARTIFACT_HAS_COMPONENTS).drop());
+            for (com.veadan.folib.domain.Component component : entity.getComponentSet()) {
+                if (drop.equalsIgnoreCase(component.getUuid())) {
+                    break;
+                }
+                EntityTraversal<Object, Vertex> componentEntityTraversal = __.V()
+                        .hasLabel(Vertices.COMPONENT)
+                        .has(Properties.UUID, component.getUuid());
+                componentEntityTraversal = componentEntityTraversal.addE(Edges.ARTIFACT_HAS_COMPONENTS)
+                        .from(__.<Vertex, Vertex>select(storedArtifactId).unfold())
+                        .property(Properties.UUID, entity.getUuid()).inV();
+                unfoldTraversal = unfoldTraversal.sideEffect(componentEntityTraversal);
             }
         }
         return new UnfoldEntityTraversal<>(Vertices.ARTIFACT, entity, unfoldTraversal);
@@ -402,6 +435,7 @@ public class ArtifactAdapter implements VertexEntityTraversalAdapter<Artifact> {
         if (Objects.nonNull(entity.getSizeInBytes())) {
             t = t.property(single, "sizeInBytes", entity.getSizeInBytes());
         }
+        log.info("[{}] downloadCount changed [{}]", entity.getUuid(), entity.getDownloadCount());
         if (Objects.nonNull(entity.getDownloadCount())) {
             t = t.property(single, "downloadCount", entity.getDownloadCount());
         }
@@ -435,9 +469,12 @@ public class ArtifactAdapter implements VertexEntityTraversalAdapter<Artifact> {
         if (Objects.nonNull(entity.getEvidenceQuantity())) {
             t = t.property(single, "evidenceQuantity", entity.getEvidenceQuantity());
         }
+        String drop = "drop";
         if (CollectionUtils.isNotEmpty(entity.getVulnerabilities())) {
             t = t.sideEffect(__.properties("vulnerabilities").drop());
-            t = t.property("vulnerabilities", entity.getVulnerabilities());
+            if (!entity.getVulnerabilities().contains(drop)) {
+                t = t.property("vulnerabilities", entity.getVulnerabilities());
+            }
         }
         if (StringUtils.isNotBlank(entity.getMetadata())) {
             t = t.property(single, "metadata", entity.getMetadata());

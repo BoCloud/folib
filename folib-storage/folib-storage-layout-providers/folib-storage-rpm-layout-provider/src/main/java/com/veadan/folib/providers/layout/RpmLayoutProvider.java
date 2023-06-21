@@ -50,7 +50,6 @@ public class RpmLayoutProvider extends AbstractLayoutProvider<RpmArtifactCoordin
     @Inject
     private HeaderMappingRegistry headerMappingRegistry;
 
-
     @PostConstruct
     public void register()
     {
@@ -133,13 +132,6 @@ public class RpmLayoutProvider extends AbstractLayoutProvider<RpmArtifactCoordin
     public String getAlias()
     {
         return ALIAS;
-    }
-
-    @Override
-    public Set<String> getDigestAlgorithmSet()
-    {
-        return Stream.of(MessageDigestAlgorithms.SHA_1)
-                .collect(Collectors.toSet());
     }
 
 }

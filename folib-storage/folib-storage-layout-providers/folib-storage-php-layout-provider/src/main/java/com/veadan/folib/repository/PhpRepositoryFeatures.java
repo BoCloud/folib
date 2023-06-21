@@ -13,6 +13,10 @@ import com.veadan.folib.storage.Storage;
 import com.veadan.folib.storage.repository.Repository;
 import com.veadan.folib.storage.repository.remote.RemoteRepository;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.http.client.config.RequestConfig;
+import org.glassfish.jersey.apache.connector.ApacheClientProperties;
+import org.glassfish.jersey.client.authentication.HttpAuthenticationFeature;
 import org.springframework.context.annotation.Scope;
 import org.springframework.context.annotation.ScopedProxyMode;
 import org.springframework.context.event.EventListener;
@@ -128,6 +132,7 @@ public class PhpRepositoryFeatures
             restClient = proxyRepositoryConnectionPoolConfigurationService.getRestClient(storageId, repositoryId);
             log.info("Search PHP packages for [{}].", targetUrl);
             WebTarget service = restClient.target(phpSearchRequest.getTargetUrl());
+            authentication(service, remoteRepository.getUsername(), remoteRepository.getPassword());
             service = service.queryParam("q", phpSearchRequest.getQ()).queryParam("type", phpSearchRequest.getType());
             response = service.request(MediaType.APPLICATION_JSON).get();
             phpSearchResult = response.readEntity(PhpSearchResult.class);
@@ -160,6 +165,22 @@ public class PhpRepositoryFeatures
 
     protected Configuration getConfiguration() {
         return configurationManager.getConfiguration();
+    }
+
+    /**
+     * Client WebTarget 构建认证信息
+     *
+     * @param webTarget webTarget
+     * @param username  username
+     * @param password  password
+     */
+    public void authentication(WebTarget webTarget, String username, String password) {
+        final HttpAuthenticationFeature authenticationFeature = (StringUtils.isNotBlank(username) && StringUtils.isNotBlank(password)) ? HttpAuthenticationFeature.basic(username, password) : null;
+        if (authenticationFeature != null) {
+            webTarget.register(authenticationFeature);
+            webTarget.property(ApacheClientProperties.REQUEST_CONFIG,
+                    RequestConfig.custom().setCircularRedirectsAllowed(true).build());
+        }
     }
 
 }

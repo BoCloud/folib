@@ -35,7 +35,7 @@
             <span style="vertical-align: super;">搜索列表</span>
           </h6>
         </template>
-        <a-table class="mt-20" :columns="columns" rowKey="url" :data-source="searchData" @change="handleTableChange"
+        <a-table class="mt-20" :columns="columns" rowKey="url" :data-source="searchData" :scroll="{ x: true }" @change="handleTableChange"
           :loading="loading" :pagination="{
             pageSize: artifactQuery.limit,
             current: artifactQuery.page,

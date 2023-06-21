@@ -12,7 +12,10 @@ public interface ProxyRepositoryConnectionPoolConfigurationService
 {
 
     Client getRestClient();
+
     Client getRestClient(String storageId,String repositoryId);
+
+    Client getRestClient(String repositoryProxyConfigParam);
 
     CloseableHttpClient getHttpClient();
 

@@ -1,5 +1,7 @@
 package com.veadan.folib.services.impl;
 
+import com.alibaba.fastjson.JSONObject;
+import com.veadan.folib.configuration.MutableProxyConfiguration;
 import com.veadan.folib.configuration.ProxyConfiguration;
 import com.veadan.folib.service.ProxyRepositoryConnectionPoolConfigurationService;
 import com.veadan.folib.services.ConfigurationManagementService;
@@ -160,6 +162,32 @@ public class ProxyRepositoryConnectionPoolConfigurationServiceImpl
         /* CredentialsProvider credentialsProvider = new BasicCredentialsProvider();
         credentialsProvider.setCredentials(AuthScope.ANY, new UsernamePasswordCredentials(username, password));
         config.property(ApacheClientProperties.CREDENTIALS_PROVIDER, credentialsProvider); */
+
+        ClientBuilder clientBuilder = ClientBuilder.newBuilder()
+                .register(new LoggingFeature(log, Verbosity.PAYLOAD_TEXT))
+                .withConfig(config);
+        return clientBuilder.build();
+    }
+
+    @Override
+    public Client getRestClient(String repositoryProxyConfigParam) {
+        ClientConfig config = new ClientConfig();
+        //全局代理
+        ProxyConfiguration globalProxyConfig = configurationManagementService.getConfiguration().
+                getProxyConfiguration();
+        ProxyConfiguration repositoryProxyConfig = null;
+        if (StringUtils.isNotBlank(repositoryProxyConfigParam)) {
+            //仓库代理
+            repositoryProxyConfig = new ProxyConfiguration(JSONObject.parseObject(repositoryProxyConfigParam, MutableProxyConfiguration.class));
+        }
+        config.connectorProvider(new ApacheConnectorProvider());
+        isExistProxy(globalProxyConfig, repositoryProxyConfig, config);
+        config.property(ApacheClientProperties.CONNECTION_MANAGER, poolingHttpClientConnectionManager);
+
+        // property to prevent closing connection manager when client is closed
+        config.property(ApacheClientProperties.CONNECTION_MANAGER_SHARED, true);
+
+        java.util.logging.Logger log = java.util.logging.Logger.getLogger("com.veadan.folib.RestClient");
 
         ClientBuilder clientBuilder = ClientBuilder.newBuilder()
                 .register(new LoggingFeature(log, Verbosity.PAYLOAD_TEXT))

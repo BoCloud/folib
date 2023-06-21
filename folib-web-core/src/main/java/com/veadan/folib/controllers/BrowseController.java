@@ -14,6 +14,7 @@ import com.veadan.folib.domain.DirectoryListing;
 import com.veadan.folib.domain.FileContent;
 import com.veadan.folib.providers.io.RepositoryFiles;
 import com.veadan.folib.providers.io.RepositoryPath;
+import com.veadan.folib.providers.layout.DockerLayoutProvider;
 import com.veadan.folib.schema2.ImageManifest;
 import com.veadan.folib.schema2.LayerManifest;
 import com.veadan.folib.services.ArtifactManagementService;
@@ -94,7 +95,7 @@ public class BrowseController
         if (StringUtils.isBlank(type)) {
             type = repositoryParam.getLayout();
         }
-        if (!type.equalsIgnoreCase("docker")) {
+        if (!DockerLayoutProvider.ALIAS.equalsIgnoreCase(type)) {
             Artifact artifact = repositoryPathResolver.findOneArtifact(storageId, repositoryId, artifactPath);
             RepositoryPath repositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, artifactPath);
             Repository repository = repositoryPath.getRepository();

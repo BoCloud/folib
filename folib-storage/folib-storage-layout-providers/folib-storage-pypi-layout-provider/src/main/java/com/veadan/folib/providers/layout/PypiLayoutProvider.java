@@ -121,10 +121,4 @@ public class PypiLayoutProvider
         return ALIAS;
     }
 
-    @Override
-    public Set<String> getDigestAlgorithmSet()
-    {
-        return Stream.of(MessageDigestAlgorithms.SHA_256).collect(Collectors.toSet());
-    }
-
 }

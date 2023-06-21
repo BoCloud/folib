@@ -7,6 +7,7 @@ import org.neo4j.ogm.annotation.NodeEntity;
 
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
+import javax.xml.bind.annotation.XmlAttribute;
 import javax.xml.bind.annotation.XmlRootElement;
 import java.net.URI;
 import java.util.Arrays;
@@ -144,6 +145,7 @@ public class DockerArtifactCoordinates
     }
 
     @Override
+    @XmlAttribute(name = "imageName")
     public String getId()
     {
         return getIMAGE_NAME();
@@ -156,12 +158,14 @@ public class DockerArtifactCoordinates
     }
 
     @Override
+    @XmlAttribute(name = "version")
     public String getVersion()
     {
         return super.getVersion();
     }
 
     @Override
+    @XmlAttribute(name = "path")
     public String getPath() {
         return super.getPath();
     }
@@ -235,6 +239,7 @@ public class DockerArtifactCoordinates
 
 
     @ArtifactLayoutCoordinate
+    @XmlAttribute(name = "tag")
     public String getTAG()
     {
         return getCoordinate(TAG);
@@ -255,6 +260,7 @@ public class DockerArtifactCoordinates
 
 
     @ArtifactLayoutCoordinate
+    @XmlAttribute(name = "artifactPath")
     public  String getArtifactPath() {
         return getCoordinate(ARTIFACT_PATH);
     }

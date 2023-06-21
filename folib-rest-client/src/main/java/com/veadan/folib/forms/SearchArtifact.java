@@ -5,8 +5,6 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.util.List;
-
 /**
  * @author leipenghui
  * @date 2022/11/23
@@ -43,6 +41,10 @@ public class SearchArtifact {
      * 开启正则匹配 true 开启 false 不开启
      */
     private Boolean regex;
+    /**
+     * 自定义的正则表达式
+     */
+    private String pattern;
     /**
      * 排序字段
      */

@@ -3,6 +3,7 @@ package com.veadan.folib.event.artifact;
 import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.providers.layout.Maven2LayoutProvider;
 import com.veadan.folib.storage.repository.Repository;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
 
@@ -37,7 +38,9 @@ public class MavenArtifactDirectoryDeletedEventListener
                 format = "/%s/%s/";
             }
             String artifactPath = path.replace(String.format(format, storageId, repositoryId), "");
-            artifactMetadataService.rebuildMetadata(storageId, repositoryId, artifactPath);
+            if (StringUtils.isNotBlank(artifactPath)) {
+                artifactMetadataService.rebuildMetadata(storageId, repositoryId, artifactPath);
+            }
         } catch (Exception e) {
             throw new UndeclaredThrowableException(e);
         }

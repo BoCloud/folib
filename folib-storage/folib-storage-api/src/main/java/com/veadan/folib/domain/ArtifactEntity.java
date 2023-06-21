@@ -1,5 +1,6 @@
 package com.veadan.folib.domain;
 
+import com.google.common.collect.Sets;
 import com.veadan.folib.artifact.ArtifactTag;
 import com.veadan.folib.artifact.coordinates.ArtifactCoordinates;
 import com.veadan.folib.artifact.coordinates.GenericArtifactCoordinates;
@@ -148,6 +149,12 @@ public class ArtifactEntity
      * 状态 true 可用 false 禁用
      */
     private Boolean enabled;
+
+    /**
+     * 组件列表
+     */
+    @Relationship(type = Edges.ARTIFACT_HAS_COMPONENTS, direction = Relationship.OUTGOING)
+    private Set<Component> componentSet;
 
     public ArtifactEntity() {
     }
@@ -588,5 +595,15 @@ public class ArtifactEntity
     @Override
     public void setEnabled(Boolean enabled) {
         this.enabled = enabled;
+    }
+
+    @Override
+    public Set<Component> getComponentSet() {
+        return componentSet = Optional.ofNullable(componentSet).orElse(Collections.emptySet());
+    }
+
+    @Override
+    public void setComponentSet(Set<Component> componentSet) {
+        this.componentSet = componentSet;
     }
 }

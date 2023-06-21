@@ -7,9 +7,13 @@ import com.alibaba.fastjson.JSONException;
 import com.alibaba.fastjson.JSONObject;
 import com.beust.jcommander.internal.Sets;
 import com.veadan.folib.cloud.storage.s3fs.S3Path;
+import com.veadan.folib.components.license.LicenseComponent;
 import com.veadan.folib.domain.Artifact;
+import com.veadan.folib.domain.Component;
+import com.veadan.folib.domain.ComponentEntity;
 import com.veadan.folib.domain.VulnerabilityEntity;
 import com.veadan.folib.entity.Dict;
+import com.veadan.folib.entity.License;
 import com.veadan.folib.enums.DictTypeEnum;
 import com.veadan.folib.enums.SafeLevelEnum;
 import com.veadan.folib.enums.VulnerabilityPlatformEnum;
@@ -17,6 +21,7 @@ import com.veadan.folib.forms.dict.DictForm;
 import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.providers.io.RepositoryPathResolver;
 import com.veadan.folib.providers.layout.DockerFileSystem;
+import com.veadan.folib.repositories.ComponentRepository;
 import com.veadan.folib.scanner.common.exception.BusinessException;
 import com.veadan.folib.scanner.common.util.DateUtils;
 import com.veadan.folib.scanner.config.ScanConfig;
@@ -26,13 +31,17 @@ import com.veadan.folib.scanner.mapper.ScanRulesMapper;
 import com.veadan.folib.services.ArtifactService;
 import com.veadan.folib.services.DictService;
 import com.veadan.folib.services.VulnerabilityService;
+import com.veadan.folib.services.VulnerabilityWebService;
 import com.veadan.folib.util.LocalDateTimeInstance;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.compress.utils.Lists;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.owasp.dependencycheck.data.update.exception.UpdateException;
 import org.owasp.dependencycheck.dependency.*;
+import org.owasp.dependencycheck.dependency.naming.Identifier;
+import org.owasp.dependencycheck.dependency.naming.PurlIdentifier;
 import org.owasp.dependencycheck.utils.Settings;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -46,6 +55,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
+import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -61,6 +71,7 @@ public class ScanService {
     protected RepositoryPathResolver repositoryPathResolver;
 
     @Inject
+    @Lazy
     private VulnerabilityService vulnerabilityService;
 
     @Inject
@@ -72,6 +83,16 @@ public class ScanService {
     @Inject
     @Lazy
     private DictService dictService;
+
+    @Inject
+    private ComponentRepository componentRepository;
+
+    @Inject
+    @Lazy
+    private VulnerabilityWebService vulnerabilityWebService;
+
+    @Inject
+    private LicenseComponent licenseComponent;
 
     @Value("${folib.temp}")
     private String tempPath;
@@ -191,8 +212,7 @@ public class ScanService {
         int vulnSuppressedCount = 0;
         int cpeSuppressedCount = 0;
         int vulnDepCount = 0;
-        List<Dependency> dependencyLists = dependencyList;
-        dependencyLists.sort((a, b) -> {
+        dependencyList.sort((a, b) -> {
             Integer count1 = 0;
             Integer count2 = 0;
             try {
@@ -203,9 +223,10 @@ public class ScanService {
             }
             return count2.compareTo(count1);
         });
-        artifact.setReport(JSONArray.toJSONString(dependencyLists));
+        artifact.setReport(JSONArray.toJSONString(dependencyList));
         Set<Vulnerability> vulnerabilitySet = Sets.newHashSet();
-        Integer evidenceQuantity = 0;
+        int evidenceQuantity = 0;
+        Set<Component> componentSet = Sets.newLinkedHashSet();
         for (Dependency dependency : dependencyList) {
             if (dependency.getVulnerabilities().size() > 0) {
                 vulnDepCount = vulnDepCount + 1;
@@ -219,11 +240,129 @@ public class ScanService {
                 vulnSuppressedCount = vulnSuppressedCount + dependency.getSuppressedVulnerabilities().size();
             }
             evidenceQuantity = evidenceQuantity + dependency.getEvidence().size();
+            buildComponent(dependency, componentSet);
         }
         artifact.setScanDate(DateUtils.getTodayDate());
         artifact.setScanDateTime(LocalDateTimeInstance.now());
         handlerVulnerability(artifact, vulnerabilitySet);
-        handlerArtifact(artifact, dependencyList.size(), vulnDepCount, vulnCount, vulnSuppressedCount, evidenceQuantity, vulnerabilitySet, SafeLevelEnum.SCAN_COMPLETE);
+        handlerComponent(componentSet);
+        handlerArtifact(artifact, dependencyList.size(), vulnDepCount, vulnCount, vulnSuppressedCount, evidenceQuantity, vulnerabilitySet, SafeLevelEnum.SCAN_COMPLETE, componentSet);
+    }
+
+    /**
+     * 构建组件
+     *
+     * @param dependency   dependency
+     * @param componentSet componentSet
+     */
+    private void buildComponent(Dependency dependency, Set<Component> componentSet) {
+        String nameKey = "name", groupIdKey = "groupId", versionKey = "version", fileName;
+        LocalDateTime now = LocalDateTimeInstance.now();
+        Component component = new ComponentEntity(dependency.getSha1sum());
+        component.setCreated(now);
+        component.setLastUpdated(now);
+        if (StringUtils.isNotBlank(dependency.getFileName())) {
+            fileName = dependency.getFileName();
+            if (fileName.contains(": ")) {
+                fileName = fileName.substring(fileName.indexOf(": ")).replace(": ", "");
+            }
+            component.setFileName(fileName);
+        }
+        List<License> licenses = licenseComponent.getLicenses();
+        component.setDescription(dependency.getDescription());
+        component.setMd5sum(dependency.getMd5sum());
+        component.setSha256sum(dependency.getSha256sum());
+        if (CollectionUtils.isNotEmpty(licenses)) {
+            if (StringUtils.isNotBlank(dependency.getLicense())) {
+                log.info("dependency license [{}]", dependency.getLicense());
+                String[] dependencyLicenses = dependency.getLicense().split(",");
+                Set<String> licenseSet = Sets.newLinkedHashSet();
+                for (String license : dependencyLicenses) {
+                    licenseSet.addAll(licenses.stream().filter(item -> StringUtils.isNotBlank(item.getLicenseUrl())).filter(item -> Arrays.stream(item.getLicenseUrl().split(",")).anyMatch(license::contains)).map(License::getLicenseId).collect(Collectors.toSet()));
+                }
+                log.info("licenseSet {}", licenseSet);
+                component.setLicense(licenseSet);
+            }
+        }
+        if (CollectionUtils.isNotEmpty(dependency.getVulnerabilities())) {
+            Set<Vulnerability> vulnerabilitySet = dependency.getVulnerabilities();
+            component.setVulnerabilitiesCount(vulnerabilitySet.size());
+            component.setVulnerabilities(vulnerabilitySet.stream().map(Vulnerability::getName).collect(Collectors.toSet()));
+            long critical = vulnerabilitySet.stream().filter(item -> SeverityTypeEnum.CRITICAL.getType().equals(item.getHighestSeverityText())).count();
+            component.setCriticalVulnerabilitiesCount((int) critical);
+            long high = vulnerabilitySet.stream().filter(item -> SeverityTypeEnum.HIGH.getType().equals(item.getHighestSeverityText())).count();
+            component.setHighVulnerabilitiesCount((int) high);
+            long medium = vulnerabilitySet.stream().filter(item -> SeverityTypeEnum.MEDIUM.getType().equals(item.getHighestSeverityText())).count();
+            component.setMediumVulnerabilitiesCount((int) medium);
+            long low = vulnerabilitySet.stream().filter(item -> SeverityTypeEnum.LOW.getType().equals(item.getHighestSeverityText())).count();
+            component.setLowVulnerabilitiesCount((int) low);
+        }
+        if (CollectionUtils.isNotEmpty(dependency.getSuppressedVulnerabilities())) {
+            component.setSuppressedVulnerabilitiesCount(dependency.getSuppressedVulnerabilities().size());
+        }
+        if (CollectionUtils.isNotEmpty(dependency.getEvidence())) {
+            List<Evidence> groupIdEvidenceList = dependency.getEvidence().stream().filter(evidence -> groupIdKey.equalsIgnoreCase(evidence.getName())).collect(Collectors.toList());
+            if (CollectionUtils.isNotEmpty(groupIdEvidenceList)) {
+                groupIdEvidenceList.sort(Comparator.comparing(Evidence::getConfidence));
+                component.setGroupId(groupIdEvidenceList.get(0).getValue());
+            }
+            if (StringUtils.isNotBlank(dependency.getName())) {
+                component.setName(dependency.getName());
+            } else {
+                List<Evidence> nameEvidenceList = dependency.getEvidence().stream().filter(evidence -> nameKey.equalsIgnoreCase(evidence.getName())).collect(Collectors.toList());
+                if (CollectionUtils.isNotEmpty(nameEvidenceList)) {
+                    nameEvidenceList.sort(Comparator.comparing(Evidence::getConfidence));
+                    component.setName(nameEvidenceList.get(0).getValue());
+                }
+            }
+            if (StringUtils.isNotBlank(dependency.getVersion())) {
+                component.setVersion(dependency.getVersion());
+            } else {
+                List<Evidence> versionEvidenceList = dependency.getEvidence().stream().filter(evidence -> versionKey.equalsIgnoreCase(evidence.getName())).collect(Collectors.toList());
+                if (CollectionUtils.isNotEmpty(versionEvidenceList)) {
+                    versionEvidenceList.sort(Comparator.comparing(Evidence::getConfidence));
+                    component.setVersion(versionEvidenceList.get(0).getValue());
+                }
+            }
+            if (CollectionUtils.isNotEmpty(dependency.getSoftwareIdentifiers())) {
+                List<Identifier> identifierList = Lists.newArrayList();
+                identifierList.addAll(dependency.getSoftwareIdentifiers());
+                identifierList.sort(Comparator.comparing(Identifier::getConfidence));
+                Identifier identifier = identifierList.get(0);
+                if (identifier instanceof PurlIdentifier) {
+                    PurlIdentifier purlIdentifier = (PurlIdentifier) identifier;
+                    if (StringUtils.isNotBlank(purlIdentifier.getNamespace())) {
+                        component.setGroupId(purlIdentifier.getNamespace());
+                    }
+                    if (StringUtils.isNotBlank(purlIdentifier.getName())) {
+                        component.setName(purlIdentifier.getName());
+                    }
+                    if (StringUtils.isNotBlank(purlIdentifier.getValue())) {
+                        component.setPurl(purlIdentifier.getValue());
+                    }
+                    if (StringUtils.isNotBlank(purlIdentifier.getVersion())) {
+                        component.setVersion(purlIdentifier.getVersion());
+                    }
+                    if (StringUtils.isNotBlank(purlIdentifier.getUrl())) {
+                        component.setUrl(purlIdentifier.getUrl());
+                    }
+                }
+            }
+        }
+        componentSet.add(component);
+    }
+
+    /**
+     * 组件保存到图库
+     *
+     * @param componentSet componentSet
+     */
+    private void handlerComponent(Set<Component> componentSet) {
+        if (CollectionUtils.isNotEmpty(componentSet)) {
+            componentSet.forEach(component -> {
+                componentRepository.saveOrUpdate(component);
+            });
+        }
     }
 
     private RepositoryPath resolvePath(Artifact artifact) throws IOException {
@@ -244,8 +383,9 @@ public class ScanService {
      * @param evidenceQuantity
      * @param vulnerabilitySet
      * @param safeLevelEnum
+     * @param componentSet
      */
-    private void handlerArtifact(Artifact artifact, Integer dependencyCount, Integer dependencyVulnerabilitiesCount, Integer vulnerabilitiesCount, Integer suppressedCount, Integer evidenceQuantity, Set<Vulnerability> vulnerabilitySet, SafeLevelEnum safeLevelEnum) {
+    private void handlerArtifact(Artifact artifact, Integer dependencyCount, Integer dependencyVulnerabilitiesCount, Integer vulnerabilitiesCount, Integer suppressedCount, Integer evidenceQuantity, Set<Vulnerability> vulnerabilitySet, SafeLevelEnum safeLevelEnum, Set<Component> componentSet) {
         try {
             if (Objects.nonNull(artifact)) {
                 artifact.setSafeLevel(safeLevelEnum.getLevel());
@@ -266,13 +406,23 @@ public class ScanService {
                     long low = vulnerabilitySet.stream().filter(item -> SeverityTypeEnum.LOW.getType().equals(item.getHighestSeverityText())).count();
                     artifact.setLowVulnerabilitiesCount((int) low);
                 } else {
-                    artifact.setVulnerabilities(Collections.emptySet());
+                    artifact.setVulnerabilities(Collections.singleton("drop"));
                     artifact.setCriticalVulnerabilitiesCount(0);
                     artifact.setHighVulnerabilitiesCount(0);
                     artifact.setMediumVulnerabilitiesCount(0);
                     artifact.setLowVulnerabilitiesCount(0);
                 }
+                if (CollectionUtils.isNotEmpty(componentSet)) {
+                    artifact.setComponentSet(componentSet);
+                } else {
+                    artifact.setComponentSet(Collections.singleton(new ComponentEntity("drop")));
+                }
                 artifactService.saveOrUpdateArtifact(artifact);
+                if (CollectionUtils.isNotEmpty(artifact.getVulnerabilitySet())) {
+                    List<com.veadan.folib.domain.Vulnerability> vulnerabilityList = Lists.newArrayList();
+                    vulnerabilityList.addAll(artifact.getVulnerabilitySet());
+                    vulnerabilityWebService.handlerStoragesAndRepositoriesByVulnerabilityList(vulnerabilityList);
+                }
             }
         } catch (Exception ex) {
             log.error("=====>>>>>更新制品扫描数据到图数据库失败：{}", ExceptionUtils.getStackTrace(ex));
@@ -362,4 +512,5 @@ public class ScanService {
     public int countProperties() {
         return scanRulesMapper.countProperties();
     }
+
 }

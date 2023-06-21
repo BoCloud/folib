@@ -110,7 +110,7 @@
                 </a-col>
               </div>
               <a-table v-if="scanCurrentData.layout.toUpperCase() != 'docker'.toUpperCase()" :columns="columns"
-                :data-source="rowData" :pagination="false" :row-key="(r, i) => i.toString()">
+                :data-source="rowData" :scroll="{ x: true }" :pagination="false" :row-key="(r, i) => i.toString()">
                 <template slot="filePath" slot-scope="text, record">
                   <div @click="getScanReport(record)">
                     <a>
@@ -129,8 +129,8 @@
                 </template>
               </a-table>
               <a-table v-if="scanCurrentData.layout.toUpperCase() == 'docker'.toUpperCase()" :columns="dockerColumns"
-                :data-source="rowData" :pagination="false" :row-key="(r, i) => i.toString()">
-                <a-table rowKey="id" :columns="innerColumns" slot="expandedRowRender" slot-scope="record"
+                :data-source="rowData" :scroll="{ x: true }" :pagination="false" :row-key="(r, i) => i.toString()">
+                <a-table rowKey="id" :columns="innerColumns" slot="expandedRowRender" slot-scope="record" :scroll="{ x: true }"
                   :data-source="record.filePaths" :pagination="false">
                   <template slot="filePath" slot-scope="text, item">
                     <div @click="getScanReport(record)">

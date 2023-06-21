@@ -9,7 +9,6 @@ import com.alibaba.fastjson.JSONObject;
 import com.veadan.folib.licence.ActivateVo;
 import com.veadan.folib.licence.MacUtil;
 import com.veadan.folib.storage.Storage;
-import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
@@ -42,7 +41,7 @@ public class CodeActivateService {
                 String result = HttpRequest.get(SERVER_URL)
                         .header("Content-Type", "application/json")
                         .form("activate",code)
-                        .form("machineCode",MacUtil.getMachineCode())
+                        .form("machineCode", MacUtil.getMachineCode())
                         .execute().body();
                 JSONObject res = JSON.parseObject(result);
                 if (res.getBoolean("rel")) {

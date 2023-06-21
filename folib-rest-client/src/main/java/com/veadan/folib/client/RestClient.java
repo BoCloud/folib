@@ -554,7 +554,7 @@ public class RestClient extends ArtifactClient {
     }
 
     /**
-     * 搜索制品 安徽政务 离线docker 制品上传与 普通制品上传 上层显示为同一个库做适配
+     * 搜索制品 离线docker 制品上传与 普通制品上传 上层显示为同一个库做适配
      *
      * @param searchArtifact 搜索参数
      * @return 搜索结果
@@ -660,13 +660,17 @@ public class RestClient extends ArtifactClient {
         String url = getContextBaseUrl() + "/api/fql";
         if (Boolean.TRUE.equals(searchArtifact.getRegex()) && StringUtils.isNotBlank(searchArtifact.getArtifactName())) {
             //开启正则
-            String regex = "(%s)(.*%s.*)";
-            String prefix = searchArtifact.getStorageId();
-            if (StringUtils.isNotBlank(searchArtifact.getRepositoryId())) {
-                prefix = prefix + "-" + searchArtifact.getRepositoryId();
+            if (StringUtils.isNotBlank(searchArtifact.getPattern())) {
+                searchArtifact.setArtifactName(searchArtifact.getPattern());
+            } else {
+                String regex = "(%s)(.*%s.*)";
+                String prefix = searchArtifact.getStorageId();
+                if (StringUtils.isNotBlank(searchArtifact.getRepositoryId())) {
+                    prefix = prefix + "-" + searchArtifact.getRepositoryId();
+                }
+                regex = String.format(regex, prefix, searchArtifact.getArtifactName());
+                searchArtifact.setArtifactName(regex);
             }
-            regex = String.format(regex, prefix, searchArtifact.getArtifactName());
-            searchArtifact.setArtifactName(regex);
         }
         Map<String, String> paramsMap = JSON.parseObject(JSON.toJSONString(searchArtifact), new TypeReference<Map<String, String>>() {
         });
@@ -801,11 +805,11 @@ public class RestClient extends ArtifactClient {
     /**
      * 普通制品离线上传
      *
-     * @param storageId   存储空间名
-     * @param repostoryId 仓库名
-     * @param is          文件流
-     * @param fileName    文件名
-     * @param packageVersionDesc  包版本描述
+     * @param storageId          存储空间名
+     * @param repostoryId        仓库名
+     * @param is                 文件流
+     * @param fileName           文件名
+     * @param packageVersionDesc 包版本描述
      * @return 返回值
      */
     public ResponseEntity offlineArtifactUpload(String storageId, String repostoryId, InputStream is, String fileName,

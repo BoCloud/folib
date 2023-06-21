@@ -181,6 +181,108 @@ let routes = [
 		},
 		component: () => import('../views/Setting/Advanced.vue'),
 	},
+	/**
+   * 开源治理相关
+   */
+  {
+    path: "/artifacts",
+    name: "artifacts",
+    layout: "dashboard",
+    meta: {
+      title: "制品分析",
+      sidebarMap: ["开源治理", "制品分析"],
+      breadcrumbs: ["开源治理", "制品分析"],
+    },
+    component: () => import("../views/ComponentAnalysis/Artifacts/index.vue"),
+  },
+  {
+    path: "/artifactsDetail/",
+    name: "artifactsDetail",
+    layout: "dashboard",
+    meta: {
+      title: "制品详情",
+      sidebarMap: ["开源治理", "制品分析", "制品详情"],
+      breadcrumbs: ["开源治理", "制品分析", "制品详情"],
+    },
+    component: () => import("../views/ComponentAnalysis/Artifacts/Detail.vue"),
+  },
+  {
+    path: "/components",
+    name: "components",
+    layout: "dashboard",
+    meta: {
+      title: "开源组件",
+      sidebarMap: ["开源治理", "开源组件"],
+      breadcrumbs: ["开源治理", "开源组件"],
+    },
+    component: () => import("../views/ComponentAnalysis/Module/index.vue"),
+  },
+  {
+    path: "/componentsDetail/:id",
+    name: "componentsDetail",
+    layout: "dashboard",
+    meta: {
+      title: "组件详情",
+      sidebarMap: ["开源治理", "开源组件", "组件详情"],
+      breadcrumbs: ["开源治理", "开源组件", "组件详情"],
+    },
+    component: () => import("../views/ComponentAnalysis/Module/Detail.vue"),
+  },
+  {
+    path: "/vulnerabilities",
+    name: "vulnerabilities",
+    layout: "dashboard",
+    meta: {
+      title: "漏洞库",
+      sidebarMap: ["开源治理", "漏洞库"],
+      breadcrumbs: ["开源治理", "漏洞库"],
+    },
+    component: () => import("../views/ComponentAnalysis/Vulnerabilities/index.vue"),
+  },
+  {
+    path: "/vulnerabilitiesDetail/:id",
+    name: "vulnerabilitiesDetail",
+    layout: "dashboard",
+    meta: {
+      title: "漏洞详情",
+      sidebarMap: ["开源治理", "漏洞库", "漏洞详情"],
+      breadcrumbs: ["开源治理", "漏洞库", "漏洞详情"],
+    },
+    component: () => import("../views/ComponentAnalysis/Vulnerabilities/Detail.vue"),
+  },
+  {
+    path: "/licenses",
+    name: "licenses",
+    layout: "dashboard",
+    meta: {
+      title: "证书库",
+      sidebarMap: ["开源治理", "证书库"],
+      breadcrumbs: ["开源治理", "证书库"],
+    },
+    component: () => import("../views/ComponentAnalysis/Licenses/index.vue"),
+  },
+  {
+    path: "/licensesDetail/:id",
+    name: "licensesDetail",
+    layout: "dashboard",
+    meta: {
+      title: "证书详情",
+      sidebarMap: ["开源治理", "证书库", "证书详情"],
+      breadcrumbs: ["开源治理", "证书库", "证书详情"],
+    },
+    component: () => import("../views/ComponentAnalysis/Licenses/Detail.vue"),
+  },
+  // {
+  //   path: "/policy",
+  //   name: "policy",
+  //   layout: "dashboard",
+  //   meta: {
+  //     title: "策略管理",
+  //     sidebarMap: ["开源治理", "策略管理"],
+  //     breadcrumbs: ["开源治理", "策略管理"],
+  //   },
+  //   component: () => import("../views/ComponentAnalysis/Policy/index.vue"),
+  // },
 ]
 
 // Adding layout property from each route to the meta

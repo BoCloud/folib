@@ -891,6 +891,7 @@ public class PromotionUtil {
             response = builder.header("Mime-Version", "1.0").
                     post(Entity.entity(part, Boundary.addBoundary(MediaType.MULTIPART_FORM_DATA_TYPE)));
             if (response.getStatus() != 200) {
+                log.info("upload failed [{}]", response.readEntity(String.class));
                 throw new Exception("upload failed ");
             }
             response.readEntity(String.class);

@@ -182,7 +182,7 @@ public class DatabaseUserService implements UserService
             userEntity.setOriginalPassword(user.getOriginalPassword());
         }
         userEntity.setEnabled(user.isEnabled());
-        List<String> showRoleNameList = Lists.newArrayList(SystemRole.ADMIN.name(), SystemRole.ARTIFACTS_MANAGER.name(), SystemRole.GENERAL.name());
+        List<String> showRoleNameList = Lists.newArrayList(SystemRole.ADMIN.name(), SystemRole.ARTIFACTS_MANAGER.name(), SystemRole.GENERAL.name(), SystemRole.OPEN_SOURCE_MANAGE.name());
         Set<SecurityRole> roles = Optional.ofNullable(userEntity.getRoles()).orElse(Sets.newLinkedHashSet()).stream().filter(item -> !showRoleNameList.contains(item.getRoleName())).collect(Collectors.toSet());
         roles.addAll(user.getRoles());
         userEntity.setRoles(roles);

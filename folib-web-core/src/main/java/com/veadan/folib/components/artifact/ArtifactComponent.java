@@ -7,12 +7,14 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import com.veadan.folib.artifact.archive.JarArchiveListingFunction;
 import com.veadan.folib.cloud.storage.s3fs.S3Path;
+import com.veadan.folib.components.common.CommonComponent;
 import com.veadan.folib.configuration.*;
 import com.veadan.folib.domain.*;
 import com.veadan.folib.enums.BlockTypeEnum;
 import com.veadan.folib.enums.PromotionStatusEnum;
 import com.veadan.folib.npm.metadata.PackageFeed;
 import com.veadan.folib.npm.metadata.Versions;
+import com.veadan.folib.providers.io.RepositoryFiles;
 import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.providers.io.RepositoryPathResolver;
 import com.veadan.folib.providers.io.RootRepositoryPath;
@@ -38,11 +40,17 @@ import org.apache.maven.model.Model;
 import org.apache.maven.model.io.xpp3.MavenXpp3Reader;
 import org.apache.maven.model.io.xpp3.MavenXpp3Writer;
 import org.codehaus.plexus.util.xml.pull.XmlPullParserException;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Lazy;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 
 import javax.inject.Inject;
+import javax.ws.rs.client.Client;
+import javax.ws.rs.client.WebTarget;
+import javax.ws.rs.core.Response;
 import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -94,7 +102,11 @@ public class ArtifactComponent {
     private ConfigurationManager configurationManager;
 
     @Inject
-    private ProxyRepositoryConnectionPoolConfigurationService proxyRepositoryConnectionPoolConfigurationService;
+    private ProxyRepositoryConnectionPoolConfigurationService clientPool;
+
+    @Inject
+    @Lazy
+    private CommonComponent commonComponent;
 
     /**
      * 读取文件内容
@@ -204,6 +216,15 @@ public class ArtifactComponent {
      */
     public boolean layoutSupports(RepositoryPath repositoryPath, Boolean block, Boolean scan) {
         boolean flag = false;
+        try {
+            if (RepositoryFiles.isChecksum(repositoryPath)) {
+                log.error("LayoutSupports [{}] isChecksum", repositoryPath);
+                return false;
+            }
+        } catch (Exception ex) {
+            log.error("LayoutSupports get [{}] isChecksum error [{}]", repositoryPath, ExceptionUtils.getStackTrace(ex));
+            return false;
+        }
         if (Objects.nonNull(repositoryPath)) {
             if (repositoryPath.getFileSystem() instanceof DockerFileSystem) {
                 log.info("=====>>>>> docker布局");
@@ -216,7 +237,7 @@ public class ArtifactComponent {
                         path = repositoryPath.getArtifactEntry().getArtifactPath();
                     }
                 } catch (Exception ex) {
-                    log.error("check docker layoutSupports error：{}", ExceptionUtils.getStackTrace(ex));
+                    log.error("Check docker layoutSupports error：{}", ExceptionUtils.getStackTrace(ex));
                     path = repositoryPath.toAbsolutePath().toString();
                 }
                 if (Boolean.TRUE.equals(block)) {
@@ -839,6 +860,41 @@ public class ArtifactComponent {
      */
     public void handleViewPackage(Repository repository, RepositorySearchRequest predicate) {
         npmRepositoryFeatures.handleViewPackage(repository.getStorage().getId(), repository.getId(), predicate.getArtifactId(), predicate, false);
+    }
+
+    /**
+     * 获取Document
+     *
+     * @param repository 仓库信息
+     * @param url        url
+     * @return Document
+     */
+    public Document getDocument(Repository repository, String url) {
+        Response response = null;
+        int statusCode = 0;
+        Document document = null;
+        try {
+            Client client = clientPool.getRestClient(repository.getStorage().getId(), repository.getId());
+            WebTarget target = client.target(url);
+            commonComponent.authentication(target, repository.getRemoteRepository().getUsername(), repository.getRemoteRepository().getPassword());
+            response = target.request().get();
+            statusCode = response.getStatus();
+            if (statusCode == HttpStatus.OK.value()) {
+                String data = response.readEntity(String.class);
+                String separator = "/";
+                if (!url.endsWith(separator)) {
+                    url = url + separator;
+                }
+                document = Jsoup.parse(data, url);
+            }
+        } catch (Exception ex) {
+            log.error("[{}] getDoc url [{}] response statusCode [{}] error [{}]", this.getClass().getSimpleName(), url, statusCode, ExceptionUtils.getStackTrace(ex));
+        } finally {
+            if (Objects.nonNull(response)) {
+                response.close();
+            }
+        }
+        return document;
     }
 
 }

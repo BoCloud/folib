@@ -668,6 +668,11 @@
             <artifactId>folib-storage-php-layout-provider</artifactId>
             <version>${project.version}</version>
         </dependency>
+        <dependency>
+            <groupId>com.tencentcloudapi</groupId>
+            <artifactId>tencentcloud-sdk-java-tmt</artifactId>
+            <version>3.1.754</version>
+        </dependency>
     </dependencies>
 
     <profiles>

@@ -325,7 +325,7 @@ export default ({
 
         const roles = res.user.roles
 
-        let roleNameList = ['ADMIN', 'GENERAL', 'ARTIFACTS_MANAGER']
+        let roleNameList = ['ADMIN', 'GENERAL', 'ARTIFACTS_MANAGER', 'OPEN_SOURCE_MANAGE']
         res.assignableRoles = res.assignableRoles.filter(item => roleNameList.includes(item.name))
 
         res.assignableRoles.forEach((item) => {
@@ -378,7 +378,7 @@ export default ({
       getUsersCreateFields().then(res => {
         let roles = res.formDataValues[0].values
         if (roles) {
-          let roleNameList = ['ADMIN', 'GENERAL', 'ARTIFACTS_MANAGER']
+          let roleNameList = ['ADMIN', 'GENERAL', 'ARTIFACTS_MANAGER', 'OPEN_SOURCE_MANAGE']
           roles = roles.filter(item => roleNameList.includes(item.name))
           roles.forEach((item) => { item.enabled = false })
         }

@@ -125,15 +125,13 @@ public class ArtifactUploadTask implements Callable<String> {
             }
             RepositoryPath repositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, fileRelativePath);
             if (RepositoryFiles.isChecksum(repositoryPath) || RepositoryFiles.isTrash(repositoryPath)) {
-                rs = String.format("RepositoryPath：%s is checksum or trash file skip", repositoryPath.toString());
-                log.warn(rs);
+                log.warn(String.format("RepositoryPath：%s is checksum or trash file skip", repositoryPath.toString()));
                 return rs;
             }
             String layout = repositoryPath.getRepository().getLayout();
             if (Maven2LayoutProvider.ALIAS.equals(layout)) {
                 if (repositoryPath.toString().endsWith("maven-metadata.xml")) {
-                    rs = String.format("RepositoryPath：%s is metadata file skip", repositoryPath.toString());
-                    log.warn(rs);
+                    log.warn(String.format("RepositoryPath：%s is metadata file skip", repositoryPath.toString()));
                     return rs;
                 }
                 handlerMavenLayoutUpload(is, layout, repositoryPath, artifactParse);

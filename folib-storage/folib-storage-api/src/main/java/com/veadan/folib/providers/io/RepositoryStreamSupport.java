@@ -81,6 +81,7 @@ public class RepositoryStreamSupport {
         RepositoryPath repositoryPath = (RepositoryPath) ctx.getPath();
         String lockKey = repositoryPath.toString();
         long waitTimeout = 30000L;
+        long leaseTime = 240000L;
         if (LockTypeEnum.LOCAL.getType().equals(lockType)) {
             logger.info("Locking [{}].", repositoryPath);
             //本地锁
@@ -114,7 +115,7 @@ public class RepositoryStreamSupport {
             logger.info("Locking [{}] by distribution lockKey {}.", repositoryPath, lockKey);
             //分布式锁
             try {
-                if (redLockService.tryLockTimeout(lockKey, waitTimeout)) {
+                if (redLockService.tryLockTimeout(lockKey, waitTimeout, leaseTime)) {
                     logger.info("Locked [{}] by distribution lockKey {}.", repositoryPath, lockKey);
                     try {
                         open(repositoryPath);

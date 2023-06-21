@@ -1030,6 +1030,7 @@ import {
   getFileType,
   fileSizeConver,
   formateDate,
+  artifactCheck,
 } from "@/utils/layoutUtil";
 import {
   browse,
@@ -1369,6 +1370,15 @@ export default {
       });
       this.showUploadFormModal = true
     },
+    message(type, message) {
+      if (!message) {
+        message = "操作成功"
+      }
+      this.$notification[type]({
+        message: message,
+        description: "",
+      })
+    },
     handleRpmUploadSubmit(e) {
       e.preventDefault()
       this.rpmUploadForm.validateFields((err, values) => {
@@ -1383,7 +1393,9 @@ export default {
           let fileList = []
           for(let item of values.files){
             let fileName = item.name.replace(":", "/")
-            if (!this.check(fileName, item.size)) {
+            let result = artifactCheck(this.folibRepository, fileName, item.size)
+            if (!result.check) {
+              this.message("warning", result.msg)
               return false
             }
             item.name = fileName
@@ -1467,7 +1479,9 @@ export default {
             let fileList = []
             for(let item of values.files){
               let fileName = item.name.replace(":", "/")
-              if (!this.check(fileName, item.size)) {
+              let result = artifactCheck(this.folibRepository, fileName, item.size)
+              if (!result.check) {
+                this.message("warning", result.msg)
                 return false
               }
               item.name = fileName
@@ -1481,37 +1495,6 @@ export default {
           this.uploadFormModalClose()
         }
       })
-    },
-    check(fileName, fileSize) {
-      let layout = this.folibRepository.layout
-      if (layout === 'Maven 2') {
-        let policy = this.folibRepository.policy
-        let regex = /^(.*)-([0-9]{8}.[0-9]{6})-([0-9]+)(.*)$/
-        let isSnapshot = fileName.indexOf('SNAPSHOT') !== -1 || regex.test(fileName)
-        let msg = null
-        if (policy === 'release' && isSnapshot) {
-          msg = fileName + '为snapshot版本，仓库版本策略为release，禁止上传'
-        }
-        if (policy === 'snapshot' && !isSnapshot) {
-          msg = fileName + '为snapshot版本，仓库版本策略为release，禁止上传'
-        }
-        if (msg) {
-          this.$notification["warning"]({
-            message: msg,
-            description: ""
-          })
-          return false
-        }
-      }
-      let fileSizeLimit = 2 * 1024 * 1024 * 1024
-      if (fileSize > fileSizeLimit) {
-        this.$notification["warning"]({
-          message: fileName + "超过2G，禁止上传",
-          description: ''
-        })
-        return false
-      }
-      return true
     },
     handlerUploadFile(targetPath, fileName, file) {
       file = new File([file], fileName)

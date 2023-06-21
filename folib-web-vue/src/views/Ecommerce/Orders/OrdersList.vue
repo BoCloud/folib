@@ -59,6 +59,7 @@
 				:row-selection="{ selectedRowKeys: selectedRowKeys, onChange: onSelectChange }"
 				:columns="columns"
 				:data-source="data"
+				:scroll="{ x: true }"
 				:pagination="{pageSize: pageSize,}"
 			>
 
