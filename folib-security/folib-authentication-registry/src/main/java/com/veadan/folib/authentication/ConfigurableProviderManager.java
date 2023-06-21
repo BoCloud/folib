@@ -133,6 +133,7 @@ public class ConfigurableProviderManager extends ProviderManager implements User
             }
             catch (UsernameNotFoundException e)
             {
+                logger.info("User [{}] not found from [{}]", username, sourceId);
                 continue;
             }
         

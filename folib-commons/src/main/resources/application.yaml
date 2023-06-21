@@ -102,74 +102,81 @@ folib:
             enabled: true
   threadPool:
     async:
-      corePoolSize: 20
-      maxPoolSize: 200
-      queueCapacity: 200
+      corePoolSize: 12
+      maxPoolSize: 12
+      queueCapacity: 2147483647
       keepAliveSeconds: 200
       threadNamePrefix: async_
       awaitTerminationSeconds: 60
     asyncEventListener:
-      corePoolSize: 20
-      maxPoolSize: 200
-      queueCapacity: 1000
-      keepAliveSeconds: 200
+      corePoolSize: 12
+      maxPoolSize: 12
+      queueCapacity: 2147483647
+      keepAliveSeconds: 0
       threadNamePrefix: asyncEventListener_
-      awaitTerminationSeconds: 60
+      awaitTerminationSeconds: 0
     asyncStorage:
-      corePoolSize: 10
-      maxPoolSize: 200
-      queueCapacity: 25
+      corePoolSize: 12
+      maxPoolSize: 12
+      queueCapacity: 2147483647
       keepAliveSeconds: 200
       threadNamePrefix: asyncStorage_
       awaitTerminationSeconds: 60
     asyncRepository:
-      corePoolSize: 10
-      maxPoolSize: 200
-      queueCapacity: 25
+      corePoolSize: 12
+      maxPoolSize: 12
+      queueCapacity: 2147483647
       keepAliveSeconds: 200
       threadNamePrefix: asyncRepository_
       awaitTerminationSeconds: 60
     asyncSecurityPolicy:
-      corePoolSize: 10
-      maxPoolSize: 200
-      queueCapacity: 25
+      corePoolSize: 12
+      maxPoolSize: 12
+      queueCapacity: 2147483647
       keepAliveSeconds: 200
       threadNamePrefix: asyncSecurityPolicyConfig_
       awaitTerminationSeconds: 60
     asyncConfig:
-      corePoolSize: 10
-      maxPoolSize: 200
-      queueCapacity: 200
+      corePoolSize: 12
+      maxPoolSize: 12
+      queueCapacity: 2147483647
       keepAliveSeconds: 200
       threadNamePrefix: asyncConfig_
       awaitTerminationSeconds: 60
     asyncRepositoryCleanup:
-      corePoolSize: 10
-      maxPoolSize: 200
-      queueCapacity: 100000000
+      corePoolSize: 12
+      maxPoolSize: 12
+      queueCapacity: 2147483647
       keepAliveSeconds: 200
       threadNamePrefix: asyncRepositoryCleanup_
       awaitTerminationSeconds: 120
     asyncCronJob:
-      corePoolSize: 10
-      maxPoolSize: 200
-      queueCapacity: 10000
+      corePoolSize: 12
+      maxPoolSize: 12
+      queueCapacity: 2147483647
       keepAliveSeconds: 200
       threadNamePrefix: asyncCronJob_
       awaitTerminationSeconds: 120
     asyncClusterDispatch:
-      corePoolSize: 10
-      maxPoolSize: 200
-      queueCapacity: 10000
+      corePoolSize: 12
+      maxPoolSize: 12
+      queueCapacity: 2147483647
       keepAliveSeconds: 200
       threadNamePrefix: asyncClusterDispatch_
       awaitTerminationSeconds: 120
     asyncFetchRemotePackage:
-      corePoolSize: 5
-      maxPoolSize: 5
+      corePoolSize: 12
+      maxPoolSize: 12
       queueCapacity: 2147483647
       keepAliveSeconds: 0
       threadNamePrefix: asyncFetchRemotePackage_
+      awaitTerminationSeconds: 0
+    asyncScan:
+      corePoolSize: 30
+      maxPoolSize: 30
+      queueCapacity: 2147483647
+      keepAliveSeconds: 0
+      threadNamePrefix: asyncScan_
       awaitTerminationSeconds: 0
 # Changes to these properties must also be applied to [folib/folib-web-integration-tests] and possibly the pipeline.
 # Please ping us on our chat channel (https://chat.carlspring.org/) to confirm.

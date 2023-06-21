@@ -595,7 +595,7 @@
                   </a-col>
                   <a-col :span="16">
                     <a-form-item class="tags-field mb-10" label="在验证查找用户时将使用以下用户DN列表" :colon="false">
-                      <a-select mode="tags" :defaultValue="ldap.userDnPatternList" style="width: 100%"
+                      <a-select mode="tags" v-model="ldap.userDnPatternList" :defaultValue="ldap.userDnPatternList" style="width: 100%"
                         placeholder="例如：uid={0},uid={0},ou=Admins">
                         <a-select-option v-for="(tag, index) in ldap.userDnPatternList" :key="index" :value="tag">
                           {{ tag }}
@@ -639,7 +639,7 @@
                     </a-form-item>
                   </a-col>
                   <a-col :span="6">
-                    <a-form-item class="mb-10" label="组织单元" :colon="false">
+                    <a-form-item class="mb-10" label="角色属性" :colon="false">
                       <a-input placeholder="例如：cn,ou" v-model="ldap.authorities.groupRoleAttribute" />
                     </a-form-item>
 

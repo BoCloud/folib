@@ -1,10 +1,8 @@
 package com.veadan.folib.utils;
 
-import com.veadan.folib.services.ArtifactManagementService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.system.ApplicationHome;
-import org.springframework.web.multipart.MultipartFile;
 
 import java.io.*;
 import java.nio.MappedByteBuffer;
@@ -12,7 +10,6 @@ import java.nio.channels.FileChannel;
 import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.Objects;
-import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * @ProjectName: folib-server
@@ -109,7 +106,7 @@ public class FileUtils {
             //写入该分片数据
             long offset = 0;
             byte[] fileData = bytes;
-            logger.info("------------------>:fileName:{} file.szie:{}",fileName,bytes.length);
+            logger.info("------------------>:filePath:{} fileName:{} fileSize:{}", tmpFile.getAbsolutePath(), fileName, bytes.length);
             mappedByteBuffer = fileChannel
                     .map(FileChannel.MapMode.READ_WRITE, offset, fileData.length);
             mappedByteBuffer.put(fileData);
@@ -244,7 +241,7 @@ public class FileUtils {
                 .append(fileName).toString();
         FileChannel to = null;
         try {
-             to = new FileOutputStream(filePath).getChannel();
+            to = new FileOutputStream(filePath).getChannel();
 
             offset = to.position();
         } catch (FileNotFoundException e) {

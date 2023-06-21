@@ -71,8 +71,8 @@ public class DatabaseExternalUsersCacheManager extends DatabaseUserService imple
             }
 
             UserEntity userEntry = oldUser.orElseGet(() -> new UserEntity(username));
-
-            if (!StringUtils.isBlank(user.getPassword())) {
+            String ldapUserDetailsServiceSourceId = "ldapUserDetailsService";
+            if(!ldapUserDetailsServiceSourceId.equalsIgnoreCase(sourceId) && !StringUtils.isBlank(user.getPassword())) {
                 userEntry.setPassword(user.getPassword());
             }
             userEntry.setEmail(user.getEmail());

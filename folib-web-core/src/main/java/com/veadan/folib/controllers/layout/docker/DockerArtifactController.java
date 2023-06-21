@@ -1,26 +1,35 @@
 package com.veadan.folib.controllers.layout.docker;
 
 
+import cn.hutool.core.collection.CollectionUtil;
 import cn.hutool.core.lang.UUID;
+import com.alibaba.fastjson.JSONObject;
 import com.veadan.folib.cloud.storage.s3fs.S3Iterator;
 import com.veadan.folib.cloud.storage.s3fs.S3Path;
 import com.veadan.folib.controllers.BaseArtifactController;
-import com.veadan.folib.domain.Artifact;
-import com.veadan.folib.domain.DirectoryListing;
-import com.veadan.folib.domain.FileContent;
+import com.veadan.folib.domain.*;
+import com.veadan.folib.enums.RepositoryScopeEnum;
 import com.veadan.folib.providers.io.RepositoryPath;
+import com.veadan.folib.providers.layout.DockerLayoutProvider;
 import com.veadan.folib.repositories.ArtifactRepository;
 import com.veadan.folib.services.DirectoryListingService;
+import com.veadan.folib.storage.Storage;
+import com.veadan.folib.storage.repository.Repository;
 import com.veadan.folib.utils.DockerApiHeader;
 import com.veadan.folib.utils.FileUtils;
 import io.swagger.annotations.*;
+import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.compress.utils.Lists;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
 import javax.inject.Inject;
@@ -31,8 +40,10 @@ import java.io.ByteArrayInputStream;
 import java.io.DataInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.security.MessageDigest;
+import java.text.MessageFormat;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
@@ -197,27 +208,35 @@ public class DockerArtifactController extends BaseArtifactController {
                                                    @PathVariable String repositoryId,
                                                    @PathVariable String name,
                                                    @PathVariable String uuid,
-                                                   @RequestParam String digest
+                                                   @RequestParam String digest,
+                                                   @RequestBody byte[] blobBytes
 
     ) {
         ResponseEntity result = new ResponseEntity<>("OK", HttpStatus.ACCEPTED);
         try {
             int totalBytes = request.getContentLength();
-            // TODO totalBytes > 0
-            if (totalBytes == 0) {
-                //inputStream = utils.getFile(fileDir,fileName );
-                totalBytes = ranges.get(uuid).intValue();
-                if (data.containsKey(uuid)) {
-                    data.replace(digest, uuid);
+            //totalBytes > 0
+            if (totalBytes > 0) {
+                FileUtils utils = new FileUtils();
+                String fileDir = storageId + "/" + repositoryId + "/" + name;
+                utils.upload(fileDir, uuid, 0, blobBytes);
+                if (ranges.containsKey(uuid)) {
+                    ranges.replace(uuid, ranges.get(uuid) + blobBytes.length);
                 } else {
-                    data.put(digest, uuid);
+                    ranges.put(uuid, (long) blobBytes.length);
                 }
-                InputStream inputStream = storageData(storageId, repositoryId, name, digest);
-                String artifactPath = String.format("%s/blobs/%s", name, digest);
-                RepositoryPath repositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, artifactPath);
-                logger.info("storageId:{},repositoryId:{},name:{},digest:{},uuid:{}", storageId, repositoryId, name, digest, uuid);
-                artifactManagementService.validateAndStore(repositoryPath, inputStream);
             }
+            totalBytes = ranges.get(uuid).intValue();
+            if (data.containsKey(uuid)) {
+                data.replace(digest, uuid);
+            } else {
+                data.put(digest, uuid);
+            }
+            InputStream inputStream = storageData(storageId, repositoryId, name, digest);
+            String artifactPath = String.format("%s/blobs/%s", name, digest);
+            RepositoryPath repositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, artifactPath);
+            logger.info("storageId:{},repositoryId:{},name:{},digest:{},uuid:{}", storageId, repositoryId, name, digest, uuid);
+            artifactManagementService.validateAndStore(repositoryPath, inputStream);
 
             String url = new StringBuffer().append("http://").append(request.getRemoteHost()).append(request.getRequestURI()).toString();
             url = url.replace(uuid, digest);
@@ -764,6 +783,170 @@ public class DockerArtifactController extends BaseArtifactController {
             logger.error(e.getMessage(), e);
         }
         return entity;
+    }
+
+    @ApiOperation(value = "Listing Image Tags 获取镜像tag列表")
+    @ApiImplicitParams({
+            @ApiImplicitParam(name = "storageId", value = "存储id", required = true),
+            @ApiImplicitParam(name = "repositoryId", value = "仓库id", required = true),
+            @ApiImplicitParam(name = "name", value = "镜像名称", required = true),
+            @ApiImplicitParam(name = "n", value = "返回个数"),
+            @ApiImplicitParam(name = "last", value = "last")})
+    @PreAuthorize("hasAuthority('ARTIFACTS_RESOLVE')")
+    @RequestMapping(value = {"/v2/{storageId}/{repositoryId}/{name}/tags/list"}, method = {RequestMethod.GET}, consumes = MediaType.ALL_VALUE)
+    public ResponseEntity<Object> listingImageTags(@RequestHeader HttpHeaders httpHeaders,
+                                                   HttpServletRequest request,
+                                                   HttpServletResponse response,
+                                                   @PathVariable String storageId,
+                                                   @PathVariable String repositoryId,
+                                                   @PathVariable String name,
+                                                   @RequestParam(name = "n", required = false) Integer n,
+                                                   @RequestParam(name = "last", required = false) String last) {
+        try {
+            logger.info("Listing Image Tags [storageId:{}, repositoryId:{}, name:{}, n:{}, last:{}]", storageId, repositoryId, name, n, last);
+            RepositoryPath repositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, name);
+            List<FileContent> imageDirList = null;
+            if (Files.exists(repositoryPath)) {
+                DirectoryListing directoryListing = directoryListingService.fromRepositoryPath(repositoryPath);
+                imageDirList = directoryListing.getDirectories().stream().filter(f -> (!f.getName().equals("blobs")) && (!f.getName().equals("manifest"))).collect(Collectors.toList());
+            }
+            List<String> tagList = Optional.ofNullable(imageDirList).orElse(Collections.emptyList()).stream().map(FileContent::getName).collect(Collectors.toList());
+            List<String> resultList;
+            int size = tagList.size(), startIndex = 0, endIndex = size;
+            if (StringUtils.isNotBlank(last)) {
+                int index = tagList.indexOf(last);
+                if (index != -1) {
+                    startIndex = index + 1;
+                }
+            }
+            if (startIndex > size) {
+                startIndex = size;
+            }
+            if (Objects.nonNull(n)) {
+                if (n < 1) {
+                    n = size;
+                }
+                endIndex = startIndex + n;
+            }
+            if (endIndex > size) {
+                endIndex = size;
+            }
+            String link = "";
+            resultList = tagList.subList(startIndex, endIndex);
+            if (CollectionUtils.isNotEmpty(resultList)) {
+                last = resultList.get(resultList.size() - 1);
+                if (Objects.nonNull(n) && n > 0 & endIndex <= size - 1) {
+                    link = "</v2/{0}/tags/list?last={1}&n={2}>; rel=\"next\"";
+                    link = MessageFormat.format(link, name, last, n);
+                }
+            }
+            logger.info("Listing Image Tags [storageId:{}, repositoryId:{}, name:{}, startIndex:{}, endIndex:{}, link:{}]", storageId, repositoryId, name, startIndex, endIndex, link);
+            DockerTags dockerTags = DockerTags.builder().name(name).tags(resultList).build();
+            response.reset();
+            response.setDateHeader(DockerApiHeader.DATE.key(), System.currentTimeMillis());
+            response.addHeader(DockerApiHeader.DOCKER_DISTRIBUTION_API_VERSION.key(), DockerApiHeader.DOCKER_DISTRIBUTION_API_VERSION.value());
+            if (StringUtils.isNotBlank(link)) {
+                response.addHeader(HttpHeaders.LINK, link);
+            }
+            return ResponseEntity.ok(dockerTags);
+        } catch (Exception ex) {
+            logger.error("Listing Image Tags [storageId:{}, repositoryId:{}, name:{}, n:{}, last:{} error {}]", storageId, repositoryId, name, n, last, ExceptionUtils.getStackTrace(ex));
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(ex.getMessage());
+        }
+    }
+
+    @ApiOperation(value = "Get Catalog 获取仓库列表")
+    @ApiImplicitParams({
+            @ApiImplicitParam(name = "n", value = "返回个数"),
+            @ApiImplicitParam(name = "last", value = "last")})
+    @PreAuthorize("hasAuthority('ARTIFACTS_RESOLVE')")
+    @RequestMapping(value = {"/v2/_catalog"}, method = {RequestMethod.GET}, consumes = MediaType.ALL_VALUE)
+    public ResponseEntity<Object> getCatalog(@RequestHeader HttpHeaders httpHeaders,
+                                             HttpServletRequest request,
+                                             HttpServletResponse response,
+                                             @RequestParam(name = "n", required = false) Integer n,
+                                             @RequestParam(name = "last", required = false) String last,
+                                             Authentication authentication) {
+        try {
+            logger.info("GET Catalog [n:{}, last:{}]", n, last);
+            List<Storage> storageList = new ArrayList<>(configurationManagementService.getConfiguration()
+                    .getStorages()
+                    .values());
+            String username = "";
+            if (Objects.nonNull(authentication)) {
+                final UserDetails loggedUser = (UserDetails) authentication.getPrincipal();
+                username = loggedUser.getUsername();
+            }
+            String link = "", next = "";
+            List<String> resultList = Collections.emptyList();
+            if (CollectionUtil.isNotEmpty(storageList)) {
+                boolean filterByUser = !hasAdmin();
+                String finalUsername = username;
+                storageList = storageList.stream()
+                        .distinct()
+                        .filter(s -> !filterByUser || (CollectionUtil.isNotEmpty(s.getUsers()) && s.getUsers().contains(finalUsername)) ||
+                                (CollectionUtils.isNotEmpty(s.getRepositories().values()) && s.getRepositories().values().stream().anyMatch(repository -> RepositoryScopeEnum.OPEN.getType().equals(repository.getScope()))))
+                        .collect(Collectors.toCollection(LinkedList::new));
+                List<Repository> repositories;
+                List<String> repositoryList = Lists.newArrayList();
+                for (Storage storage : storageList) {
+                    boolean flag = !hasAdmin() && !username.equals(storage.getAdmin()) && (CollectionUtils.isNotEmpty(storage.getUsers()) && !storage.getUsers().contains(username));
+                    repositories = new LinkedList<Repository>(storage.getRepositories().values());
+                    repositories = repositories.stream().distinct()
+                            .filter(r -> DockerLayoutProvider.ALIAS.equalsIgnoreCase(r.getLayout()))
+                            .collect(Collectors.toCollection(LinkedList::new));
+                    if (flag) {
+                        repositories = repositories.stream().filter((item -> RepositoryScopeEnum.OPEN.getType().equals(item.getScope()))).collect(Collectors.toList());
+                    }
+                    if (CollectionUtils.isNotEmpty(repositories)) {
+                        repositoryList.addAll(repositories.stream().map(item -> String.format("%s/%s", item.getStorage().getId(), item.getId())).collect(Collectors.toList()));
+                    }
+                }
+                int size = repositoryList.size(), startIndex = 0, endIndex = size;
+                if (StringUtils.isNotBlank(last)) {
+                    int index = repositoryList.indexOf(last);
+                    if (index != -1) {
+                        startIndex = index + 1;
+                    }
+                }
+                if (startIndex > size) {
+                    startIndex = size;
+                }
+                if (Objects.nonNull(n)) {
+                    if (n < 1) {
+                        n = size;
+                    }
+                    endIndex = startIndex + n;
+                }
+                if (endIndex > size) {
+                    endIndex = size;
+                }
+                resultList = repositoryList.subList(startIndex, endIndex);
+                if (CollectionUtils.isNotEmpty(resultList)) {
+                    last = resultList.get(resultList.size() - 1);
+                    if (Objects.nonNull(n) && n > 0 & endIndex <= size - 1) {
+                        link = "</v2/_catalog?last={0}&n={1}>; rel=\"next\"";
+                        link = MessageFormat.format(link, last, n);
+
+                        next = "/v2/_catalog?last={0}&n={1}";
+                        next = MessageFormat.format(next, last, n);
+                    }
+                }
+                logger.info("GET Catalog [n:{}, last:{} startIndex:{}, endIndex:{}, link:{}]", n, last, startIndex, endIndex, link);
+            }
+            DockerCatalog dockerCatalog = DockerCatalog.builder().next(next).repositories(resultList).build();
+            response.reset();
+            response.setDateHeader(DockerApiHeader.DATE.key(), System.currentTimeMillis());
+            response.addHeader(DockerApiHeader.DOCKER_DISTRIBUTION_API_VERSION.key(), DockerApiHeader.DOCKER_DISTRIBUTION_API_VERSION.value());
+//            response.addHeader(DockerApiHeader.CONTENT_LENGTH.key(), dockerCatalog);
+            if (StringUtils.isNotBlank(link)) {
+                response.addHeader(HttpHeaders.LINK, link);
+            }
+            return ResponseEntity.ok(dockerCatalog);
+        } catch (Exception ex) {
+            logger.error("GET Catalog [n:{}, last:{} error {}]", n, last, ExceptionUtils.getStackTrace(ex));
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(ex.getMessage());
+        }
     }
 
     /**

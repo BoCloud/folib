@@ -99,7 +99,7 @@ public class ScanService {
         return settings;
     }
 
-    @Async("asyncThreadPoolTaskExecutor")
+    @Async("asyncScanThreadPoolTaskExecutor")
     public void asyncScan(Artifact artifact) {
         try {
             //将数据库中该记录变为扫描中

@@ -30,7 +30,7 @@ public class AuthenticationResourceManager
 
     private static final String PROPERTY_AUTHENTICATION_PROVIDERS_CONFIG_LOCATION = "folib.authentication.providers.yaml";
 
-    private static final String DEFAULT_AUTHENTICATION_PROVIDERS_CONFIG_LOCATION = "classpath:/etc/conf/folib-authentication-providers.yaml";
+    private static final String DEFAULT_AUTHENTICATION_PROVIDERS_CONFIG_LOCATION = "/etc/conf/folib-authentication-providers.yaml";
 
     private Resource authenticationConfigurationResource;
 
