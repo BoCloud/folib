@@ -1982,12 +1982,17 @@ export default {
           if (height1 || height2) {
             height = (height1 > height2 ? height1 : height2) + 'px'
           }
-          alert(height)
           this.draggableHeight = height
         }
       });
     },
     verifyAlive() {
+      if (!this.folibRepository.layout) {
+        this.folibRepository.layout = genLayoutType(this.layoutChecked)
+      }
+      if (!this.folibRepository.id) {
+        this.folibRepository.id = this.folibRepositoryIds
+      }
       aliveRepository(this.currentStorage.id, this.folibRepository.id, this.folibRepository).then(res => {
         if (res.alive) {
           this.$notification["success"]({

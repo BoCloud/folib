@@ -329,6 +329,11 @@ public class PypiArtifactCoordinates
         return SOURCE_EXTENSION.equals(getPackaging());
     }
 
+    public String getFileName() {
+        return isSourcePackage() ? buildSourcePackageFileName()
+                : buildWheelPackageFileName();
+    }
+
     /**
      * @return Returns the native version of the package
      */

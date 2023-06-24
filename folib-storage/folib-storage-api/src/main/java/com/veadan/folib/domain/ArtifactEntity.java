@@ -175,7 +175,6 @@ public class ArtifactEntity
     public ArtifactEntity(String storageId,
                           String repositoryId,
                           ArtifactCoordinates artifactCoordinates) {
-        log.info("storageId [{}] repositoryId [{}] npmArtifactCoordinates [{}]", storageId, repositoryId, artifactCoordinates);
         Assert.notNull(artifactCoordinates, "artifactCoordinates cannot be empty");
 
         this.storageId = storageId;

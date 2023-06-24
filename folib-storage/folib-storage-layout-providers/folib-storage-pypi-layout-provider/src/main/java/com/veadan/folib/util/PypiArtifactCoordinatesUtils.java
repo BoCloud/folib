@@ -6,6 +6,7 @@ import com.veadan.folib.domain.PypiPackageInfo;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FilenameUtils;
 
 /**
@@ -13,6 +14,7 @@ import org.apache.commons.io.FilenameUtils;
  *
  * @author alecg956
  */
+@Slf4j
 public class PypiArtifactCoordinatesUtils
 {
 
@@ -36,6 +38,7 @@ public class PypiArtifactCoordinatesUtils
     {
         if (!path.endsWith(".tar.gz") && !path.endsWith(".whl"))
         {
+            log.info("The artifact packaging can be only 'tar.gz' or '.whl' path [{}]", path);
             throw new IllegalArgumentException("The artifact packaging can be only 'tar.gz' or '.whl'");
         }
 
@@ -57,13 +60,13 @@ public class PypiArtifactCoordinatesUtils
             Matcher matcher = PACKAGE_VERSION_PATTERN.matcher(version);
             if (!matcher.matches())
             {
-                throw new IllegalArgumentException("Invalid version for source package.");
+                log.warn(String.format("Invalid version [%s] for source package.", version));
             }
 
             matcher = PACKAGE_DISTRIBUTION_NAME_PATTERN.matcher(distribution);
             if (!matcher.matches())
             {
-                throw new IllegalArgumentException("Invalid name for source package.");
+                throw new IllegalArgumentException(String.format("Invalid name [%s] for source package.", distribution));
             }
 
             return new PypiArtifactCoordinates(distribution, version, PypiArtifactCoordinates.SOURCE_EXTENSION);
@@ -118,5 +121,14 @@ public class PypiArtifactCoordinatesUtils
                                            languageImplementationVersion,
                                            abi,
                                            platform, PypiArtifactCoordinates.WHEEL_EXTENSION);
+    }
+
+    public static void main(String[] args) {
+        String version = "2005e";
+        Matcher matcher = PACKAGE_VERSION_PATTERN.matcher(version);
+        if (!matcher.matches())
+        {
+            throw new IllegalArgumentException(String.format("Invalid version [%s] for source package.", version));
+        }
     }
 }

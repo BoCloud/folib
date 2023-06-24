@@ -14,7 +14,7 @@ import org.springframework.http.HttpStatus;
  */
 public enum DockerApiHeader {
 
-    DOCKER_DISTRIBUTION_API_VERSION("docker-distribution-api-version", "registry/2.0"),
+    DOCKER_DISTRIBUTION_API_VERSION("Docker-Distribution-Api-Version", "registry/2.0"),
     DOCKER_CONTENT_TYPE("content-type","application/vnd.docker.distribution.manifest.list.v2+json"),
     DOCKER_UPLOAD_UUID("docker-upload-uuid"),
     DOCKER_CONTENT_DIGEST("docker-content-digest"),

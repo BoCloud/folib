@@ -1,7 +1,10 @@
 package com.veadan.folib.repository;
 
+import com.alibaba.fastjson.JSONObject;
 import com.veadan.folib.configuration.Configuration;
 import com.veadan.folib.configuration.ConfigurationManager;
+import com.veadan.folib.domain.ArtifactIdGroup;
+import com.veadan.folib.domain.ArtifactIdGroupEntity;
 import com.veadan.folib.domain.PypiPackageInfo;
 import com.veadan.folib.providers.repository.RepositorySearchRequest;
 import com.veadan.folib.providers.repository.event.RemoteRepositorySearchEvent;
@@ -15,6 +18,13 @@ import com.veadan.folib.storage.repository.remote.RemoteRepository;
 import com.veadan.folib.storage.validation.artifact.version.GenericReleaseVersionValidator;
 import com.veadan.folib.storage.validation.artifact.version.GenericSnapshotVersionValidator;
 import com.veadan.folib.storage.validation.deployment.RedeploymentValidator;
+import com.veadan.folib.util.CommonUtils;
+import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.exception.ExceptionUtils;
+import org.apache.http.client.config.RequestConfig;
+import org.glassfish.jersey.apache.connector.ApacheClientProperties;
+import org.glassfish.jersey.client.authentication.HttpAuthenticationFeature;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Scope;
@@ -28,6 +38,9 @@ import javax.ws.rs.client.Client;
 import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.*;
 import java.util.concurrent.Executor;
 import java.util.regex.Matcher;
@@ -39,8 +52,7 @@ import java.util.stream.Collectors;
  */
 @Component
 public class PypiRepositoryFeatures
-        implements RepositoryFeatures
-{
+        implements RepositoryFeatures {
 
     private static final Logger logger = LoggerFactory.getLogger(PypiRepositoryFeatures.class);
     private static final Pattern PACKAGE_NAME_PATTERN = Pattern.compile(PypiPackageInfo.NAME_FORMAT);
@@ -66,16 +78,14 @@ public class PypiRepositoryFeatures
     private Set<String> defaultArtifactCoordinateValidators;
 
     @PostConstruct
-    public void init()
-    {
+    public void init() {
         defaultArtifactCoordinateValidators = new LinkedHashSet<>(Arrays.asList(redeploymentValidator.getAlias(),
-                                                                                genericReleaseVersionValidator.getAlias(),
-                                                                                genericSnapshotVersionValidator.getAlias()));
+                genericReleaseVersionValidator.getAlias(),
+                genericSnapshotVersionValidator.getAlias()));
     }
 
     @Override
-    public Set<String> getDefaultArtifactCoordinateValidators()
-    {
+    public Set<String> getDefaultArtifactCoordinateValidators() {
         return defaultArtifactCoordinateValidators;
     }
 
@@ -142,9 +152,10 @@ public class PypiRepositoryFeatures
             restClient = proxyRepositoryConnectionPoolConfigurationService.getRestClient(storageId, repositoryId);
             logger.info("Search Pypi packages for [{}].", targetUrl);
             WebTarget service = restClient.target(targetUrl);
+            authentication(service, remoteRepository.getUsername(), remoteRepository.getPassword());
             response = service.request(MediaType.TEXT_HTML).get();
             String responseBodyStr = response.readEntity(String.class);
-            pypiSearchResult = extractSearchResult(responseBodyStr);
+            pypiSearchResult = extractSearchResult(repository, responseBodyStr);
             logger.info("Searched Pypi packages for [{}].", targetUrl);
         } catch (Exception e) {
             logger.error("Failed to search Pypi packages [{}]", targetUrl, e);
@@ -164,6 +175,70 @@ public class PypiRepositoryFeatures
         }
     }
 
+    public List<PypiSearchResult> fetchRemotePypiSearchResult(String storageId,
+                                                              String repositoryId,
+                                                              PypiSearchRequest pypiSearchRequest) {
+
+        Storage storage = getConfiguration().getStorage(storageId);
+        Repository repository = storage.getRepository(repositoryId);
+        RemoteRepository remoteRepository = repository.getRemoteRepository();
+        if (remoteRepository == null) {
+            return null;
+        }
+        String targetUrl = String.format("%s/%s", remoteRepository.getUrl(), pypiSearchRequest.getPackageName());
+        Client restClient = null;
+        Response response = null;
+        List<PypiSearchResult> pypiSearchResult;
+        ArtifactIdGroup artifactIdGroup = new ArtifactIdGroupEntity(storageId, repositoryId, pypiSearchRequest.getPackageName());
+        try {
+            restClient = proxyRepositoryConnectionPoolConfigurationService.getRestClient(storageId, repositoryId);
+            logger.info("Search Pypi packages for [{}].", targetUrl);
+            WebTarget service = restClient.target(targetUrl);
+            authentication(service, remoteRepository.getUsername(), remoteRepository.getPassword());
+            response = service.request(MediaType.TEXT_HTML).get();
+            String responseBodyStr = response.readEntity(String.class);
+            pypiSearchResult = extractSearchResult(repository, responseBodyStr);
+            if (CollectionUtils.isNotEmpty(pypiSearchResult)) {
+                try {
+                    long startTime = System.currentTimeMillis();
+                    artifactIdGroup.setMetadata(JSONObject.toJSONString(pypiSearchResult));
+                    artifactIdGroupRepository.merge(artifactIdGroup);
+                    logger.info("[{}] storage [{}] repository [{}] update artifactIdGroup [{}] metadata take time [{}] ms", this.getClass().getSimpleName(), storageId, repositoryId, artifactIdGroup.getUuid(), System.currentTimeMillis() - startTime);
+                } catch (Exception ex) {
+                    String realMessage = CommonUtils.getRealMessage(ex);
+                    logger.warn("[{}] [{}] updateArtifactIdGroup error [{}]",
+                            this.getClass().getSimpleName(), artifactIdGroup.getUuid(), realMessage);
+                    if (CommonUtils.catchException(realMessage)) {
+                        logger.warn("[{}] [{}] updateArtifactIdGroup catch error",
+                                this.getClass().getSimpleName(), artifactIdGroup.getUuid());
+                    }
+                    throw new RuntimeException(ex);
+                }
+            }
+            logger.info("Searched Pypi packages for [{}].", targetUrl);
+        } catch (Exception e) {
+            logger.error("Failed to search Pypi packages [{}]", targetUrl, e);
+            return null;
+        } finally {
+            if (Objects.nonNull(response)) {
+                response.close();
+            }
+            if (Objects.nonNull(restClient)) {
+                restClient.close();
+            }
+        }
+        if (CollectionUtils.isEmpty(pypiSearchResult)) {
+            artifactIdGroup = artifactIdGroupRepository.findByArtifactIdGroup(artifactIdGroup.getUuid());
+            if (Objects.nonNull(artifactIdGroup)) {
+                String metadata = artifactIdGroup.getMetadata();
+                if (StringUtils.isNotBlank(metadata)) {
+                    pypiSearchResult = JSONObject.parseArray(metadata, PypiSearchResult.class);
+                }
+            }
+        }
+        return pypiSearchResult;
+    }
+
     private Boolean packagesExists(String storageId,
                                    String repositoryId,
                                    RepositorySearchRequest predicate) {
@@ -172,19 +247,35 @@ public class PypiRepositoryFeatures
                 predicate.getCoordinateValues());
     }
 
-    private List<PypiSearchResult> extractSearchResult(String pypiSearchResult) {
+    private List<PypiSearchResult> extractSearchResult(Repository repository, String pypiSearchResult) {
         Matcher matcher = PACKAGE_NAME_PATTERN.matcher(pypiSearchResult);
         return matcher.results()
                 .map(matchResult -> {
                     String artifactName = matchResult.group(2);
                     String artifactUrl = matchResult.group(1);
-                    return new PypiSearchResult(artifactName, artifactUrl);
+                    return PypiSearchResult.builder().artifactName(artifactName).artifactUrl(artifactUrl).storageId(repository.getStorage().getId()).repositoryId(repository.getId()).build();
                 })
                 .collect(Collectors.toList());
     }
 
     protected Configuration getConfiguration() {
         return configurationManager.getConfiguration();
+    }
+
+    /**
+     * Client WebTarget 构建认证信息
+     *
+     * @param webTarget webTarget
+     * @param username  username
+     * @param password  password
+     */
+    public void authentication(WebTarget webTarget, String username, String password) {
+        final HttpAuthenticationFeature authenticationFeature = (StringUtils.isNotBlank(username) && StringUtils.isNotBlank(password)) ? HttpAuthenticationFeature.basic(username, password) : null;
+        if (authenticationFeature != null) {
+            webTarget.register(authenticationFeature);
+            webTarget.property(ApacheClientProperties.REQUEST_CONFIG,
+                    RequestConfig.custom().setCircularRedirectsAllowed(true).build());
+        }
     }
 
 }
