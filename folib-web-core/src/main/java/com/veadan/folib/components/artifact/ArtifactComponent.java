@@ -1,28 +1,39 @@
 package com.veadan.folib.components.artifact;
 
 import cn.hutool.core.io.FileUtil;
-import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import com.veadan.folib.artifact.archive.JarArchiveListingFunction;
+import com.veadan.folib.artifact.coordinates.PypiArtifactCoordinates;
 import com.veadan.folib.cloud.storage.s3fs.S3Path;
 import com.veadan.folib.components.common.CommonComponent;
+import com.veadan.folib.config.NpmLayoutProviderConfig;
 import com.veadan.folib.configuration.*;
-import com.veadan.folib.domain.*;
+import com.veadan.folib.controllers.layout.pypi.PypiBrowsePackageHtmlResponseBuilder;
+import com.veadan.folib.data.criteria.Paginator;
+import com.veadan.folib.domain.Artifact;
+import com.veadan.folib.domain.ArtifactEntity;
+import com.veadan.folib.domain.ArtifactIdGroup;
+import com.veadan.folib.domain.Vulnerability;
 import com.veadan.folib.enums.BlockTypeEnum;
 import com.veadan.folib.enums.PromotionStatusEnum;
-import com.veadan.folib.npm.metadata.PackageFeed;
-import com.veadan.folib.npm.metadata.Versions;
+import com.veadan.folib.npm.metadata.*;
 import com.veadan.folib.providers.io.RepositoryFiles;
 import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.providers.io.RepositoryPathResolver;
 import com.veadan.folib.providers.io.RootRepositoryPath;
 import com.veadan.folib.providers.layout.*;
+import com.veadan.folib.providers.repository.RepositoryProvider;
+import com.veadan.folib.providers.repository.RepositoryProviderRegistry;
 import com.veadan.folib.providers.repository.RepositorySearchRequest;
+import com.veadan.folib.pypi.PypiSearchRequest;
+import com.veadan.folib.pypi.PypiSearchResult;
 import com.veadan.folib.repositories.ArtifactIdGroupRepository;
 import com.veadan.folib.repositories.ArtifactRepository;
 import com.veadan.folib.repository.NpmRepositoryFeatures;
+import com.veadan.folib.repository.PypiRepositoryFeatures;
 import com.veadan.folib.service.ProxyRepositoryConnectionPoolConfigurationService;
 import com.veadan.folib.services.ArtifactService;
 import com.veadan.folib.services.ConfigurationManagementService;
@@ -31,9 +42,10 @@ import com.veadan.folib.storage.repository.Repository;
 import com.veadan.folib.storage.repository.RepositoryDto;
 import com.veadan.folib.storage.repository.RepositoryTypeEnum;
 import com.veadan.folib.util.CommonUtils;
+import com.veadan.folib.utils.PypiPackageNameConverter;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.collections4.CollectionUtils;
-import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.maven.model.Model;
@@ -107,6 +119,27 @@ public class ArtifactComponent {
     @Inject
     @Lazy
     private CommonComponent commonComponent;
+
+    @Inject
+    @Lazy
+    private RepositoryProviderRegistry repositoryProviderRegistry;
+
+    @Inject
+    @Lazy
+    private NpmPackageSupplier npmPackageSupplier;
+
+    @Inject
+    @Lazy
+    @NpmLayoutProviderConfig.NpmObjectMapper
+    private ObjectMapper npmJacksonMapper;
+
+    @Inject
+    @Lazy
+    private PypiRepositoryFeatures pypiRepositoryFeatures;
+
+    @Inject
+    @Lazy
+    private PypiBrowsePackageHtmlResponseBuilder pypiBrowsePackageHtmlResponseBuilder;
 
     /**
      * 读取文件内容
@@ -718,62 +751,42 @@ public class ArtifactComponent {
     }
 
     /**
-     * 查询ArtifactIdGroup
+     * 查询NpmArtifactIdGroupCache
      *
      * @param repository       repository
      * @param artifactId       artifactId
      * @param coordinateValues coordinateValues
-     * @return artifactIdGroupMetadata
+     * @return packageFeed
      */
-    public ArtifactIdGroup getArtifactIdGroup(Repository repository, String artifactId, Collection<String> coordinateValues) {
-        ArtifactIdGroup artifactIdGroup = null;
+    public PackageFeed getNpmArtifactIdGroupCache(Repository repository, String artifactId, Collection<String> coordinateValues, RepositorySearchRequest predicate) {
+        PackageFeed packageFeed = null;
         if (repository.isGroupRepository()) {
+            PackageFeed itemPackageFeed = null;
+            List<PackageFeed> packageFeedList = Lists.newArrayList();
             for (String storageAndRepositoryId : repository.getGroupRepositories()) {
                 String sId = ConfigurationUtils.getStorageId(repository.getStorage().getId(), storageAndRepositoryId);
                 String rId = ConfigurationUtils.getRepositoryId(storageAndRepositoryId);
-                artifactIdGroup = commonArtifactIdGroupMetadata(sId, rId, artifactId, coordinateValues);
-                if (Objects.nonNull(artifactIdGroup)) {
-                    log.info("ArtifactIdGroup metadata find in [{}]", artifactIdGroup.getUuid());
-                    return artifactIdGroup;
+                itemPackageFeed = getNpmArtifactPackageFeed(configurationManager.getRepository(sId, rId), artifactId, coordinateValues, predicate);
+                if (Objects.nonNull(itemPackageFeed)) {
+                    packageFeedList.add(itemPackageFeed);
                 }
+            }
+            if (CollectionUtils.isNotEmpty(packageFeedList)) {
+                packageFeed = packageFeedList.stream().max(Comparator.comparing(i -> i.getVersions().getAdditionalProperties().size())).get();
+                PackageFeed finalPackageFeed = packageFeed;
+                packageFeedList.forEach(p -> {
+                    for (Map.Entry<String, PackageVersion> entry : p.getVersions().getAdditionalProperties().entrySet()) {
+                        finalPackageFeed.getVersions().setAdditionalProperty(entry.getKey(), entry.getValue());
+                    }
+                });
+            }
+            if (Objects.nonNull(packageFeed)) {
+                packageFeed.setAdditionalProperty("_rev", generateRevisionHashcode(packageFeed));
             }
         } else {
-            artifactIdGroup = commonArtifactIdGroupMetadata(repository.getStorage().getId(), repository.getId(), artifactId, coordinateValues);
+            packageFeed = getNpmArtifactPackageFeed(repository, artifactId, coordinateValues, predicate);
         }
-        return artifactIdGroup;
-    }
-
-    private ArtifactIdGroup commonArtifactIdGroupMetadata(String storageId, String repositoryId, String artifactId,
-                                                          Collection<String> coordinateValues) {
-        Repository repository = configurationManager.getRepository(storageId, repositoryId);
-        ArtifactIdGroup artifactIdGroup = new ArtifactIdGroupEntity(repository.getStorage().getId(), repository.getId(), artifactId);
-        artifactIdGroup = getArtifactIdGroup(artifactIdGroup.getUuid());
-        ArtifactIdGroup resultArtifactIdGroup = null;
-        if (Objects.nonNull(artifactIdGroup) && StringUtils.isNotBlank(artifactIdGroup.getMetadata())) {
-            String artifactIdGroupMetadata = artifactIdGroup.getMetadata();
-            String finalJsonString = JSON.parse(artifactIdGroupMetadata).toString();
-            JSONObject jsonObject = JSONObject.parseObject(finalJsonString);
-            String key = "versions";
-            if (jsonObject.containsKey(key)) {
-                int cacheCount = jsonObject.getJSONObject(key).keySet().size();
-                if (cacheCount > 0) {
-                    String propertyKey = "cacheVerify";
-                    String value = System.getProperty(propertyKey);
-                    if (StringUtils.isNotBlank(value) && Boolean.FALSE.equals(Boolean.valueOf(value))) {
-                        resultArtifactIdGroup = artifactIdGroup;
-                        log.info("ArtifactIdGroup [{}] cacheVerify [{}] cache package count is [{}] use cache metadata", artifactIdGroup.getUuid(), value, cacheCount);
-                    } else {
-                        int realCount = getArtifactIdGroupCount(repository, artifactId, coordinateValues);
-                        log.info("ArtifactIdGroup [{}] package count is [{}] metadata cache package count is [{}]", artifactIdGroup.getUuid(), realCount, cacheCount);
-                        if (cacheCount == realCount) {
-                            resultArtifactIdGroup = artifactIdGroup;
-                            log.info("ArtifactIdGroup [{}] use cache metadata", artifactIdGroup.getUuid());
-                        }
-                    }
-                }
-            }
-        }
-        return resultArtifactIdGroup;
+        return packageFeed;
     }
 
     /**
@@ -805,61 +818,81 @@ public class ArtifactComponent {
     }
 
     /**
-     * 查询ArtifactIdGroup下的制品数量
+     * 查询NpmArtifactPackageFeed
      *
-     * @param repository       repository
-     * @param artifactId       artifactId
-     * @param coordinateValues coordinateValues
-     * @return ArtifactIdGroup
+     * @param repository              repository
+     * @param artifactId              artifactId
+     * @param coordinateValues        coordinateValues
+     * @param repositorySearchRequest repositorySearchRequest
+     * @return NpmArtifactPackageFeed
      */
-    public int getArtifactIdGroupCount(Repository repository,
-                                       String artifactId,
-                                       Collection<String> coordinateValues) {
-        int count = 0;
-        long startTime = 0;
-        if (RepositoryTypeEnum.PROXY.getType().equals(repository.getType())) {
-            startTime = System.currentTimeMillis();
-            count = fetchRemotePackageFeedCount(repository.getStorage().getId(), repository.getId(), artifactId);
-        } else if (RepositoryTypeEnum.HOSTED.getType().equals(repository.getType())) {
-            startTime = System.currentTimeMillis();
-            count = artifactIdGroupRepository.commonSearchCountArtifacts(repository.getStorage().getId(), repository.getId(), artifactId, coordinateValues).intValue();
-        }
-        log.info("[{}] getArtifactIdGroupCount storageId [{}] repositoryId [{}] artifactId [{}] coordinateValues [{}] count [{}] take time [{}] ms", this.getClass().getSimpleName(), repository.getStorage().getId(), repository.getId(), artifactId, coordinateValues, count, System.currentTimeMillis() - startTime);
-        return count;
-    }
-
-    /**
-     * 查询远程仓库NPM某个制品总数
-     *
-     * @param storageId    storageId
-     * @param repositoryId repositoryId
-     * @param artifactId   artifactId
-     * @return ArtifactIdGroup
-     */
-    public int fetchRemotePackageFeedCount(String storageId,
-                                           String repositoryId,
-                                           String artifactId) {
+    public PackageFeed getNpmArtifactPackageFeed(Repository repository,
+                                                 String artifactId,
+                                                 Collection<String> coordinateValues, RepositorySearchRequest repositorySearchRequest) {
+        PackageFeed packageFeed = null;
         long startTime = System.currentTimeMillis();
-        int count = 0;
-        PackageFeed packageFeed = npmRepositoryFeatures.fetchRemotePackageFeed(storageId, repositoryId, artifactId);
-        if (Objects.nonNull(packageFeed)) {
-            Versions versions = packageFeed.getVersions();
-            if (Objects.nonNull(versions) && MapUtils.isNotEmpty(versions.getAdditionalProperties())) {
-                count = versions.getAdditionalProperties().size();
-            }
+        if (RepositoryTypeEnum.PROXY.getType().equals(repository.getType())) {
+            packageFeed = npmRepositoryFeatures.handleViewPackage(repository.getStorage().getId(), repository.getId(), artifactId);
+        } else if (RepositoryTypeEnum.HOSTED.getType().equals(repository.getType())) {
+            packageFeed = handlePackageFeed(repository, artifactId, repositorySearchRequest);
         }
-        log.info("[{}] fetchRemotePackageFeedCount storageId [{}] repositoryId [{}] artifactId [{}] count [{}] take time [{}] ms", this.getClass().getSimpleName(), storageId, repositoryId, artifactId, count, System.currentTimeMillis() - startTime);
-        return count;
+        log.info("[{}] getNpmArtifactPackageFeed storageId [{}] repositoryId [{}] artifactId [{}] coordinateValues [{}] take time [{}] ms", this.getClass().getSimpleName(), repository.getStorage().getId(), repository.getId(), artifactId, coordinateValues, System.currentTimeMillis() - startTime);
+        return packageFeed;
     }
 
-    /**
-     * npm从远程代理仓库拉取数据更新本地缓存
-     *
-     * @param repository repository
-     * @param predicate  predicate
-     */
-    public void handleViewPackage(Repository repository, RepositorySearchRequest predicate) {
-        npmRepositoryFeatures.handleViewPackage(repository.getStorage().getId(), repository.getId(), predicate.getArtifactId(), predicate, false);
+    private PackageFeed handlePackageFeed(Repository repository, String packageId, RepositorySearchRequest predicate) {
+        final String storageId = repository.getStorage().getId();
+        final String repositoryId = repository.getId();
+        RepositoryProvider provider = repositoryProviderRegistry.getProvider(repository.getType());
+        Paginator paginator = new Paginator();
+        paginator.setProperty("version");
+        paginator.setUseLimit(Boolean.FALSE);
+
+        List<Path> searchResult = provider.search(storageId, repositoryId, predicate, paginator);
+        if (CollectionUtils.isEmpty(searchResult)) {
+            return null;
+        }
+        PackageFeed packageFeed = new PackageFeed();
+        packageFeed.setName(packageId);
+        packageFeed.setAdditionalProperty("_id", packageId);
+        Versions versions = new Versions();
+        packageFeed.setVersions(versions);
+
+        Time npmTime = new Time();
+        packageFeed.setTime(npmTime);
+
+        DistTags distTags = new DistTags();
+        packageFeed.setDistTags(distTags);
+        searchResult.stream().map(npmPackageSupplier).forEach(p -> {
+            PackageVersion npmPackage = p.getNpmPackage();
+            versions.setAdditionalProperty(npmPackage.getVersion(), npmPackage);
+
+            npmTime.setAdditionalProperty(npmPackage.getVersion(), p.getReleaseDate());
+
+            Date created = npmTime.getCreated();
+            npmTime.setCreated(created == null || created.before(p.getReleaseDate()) ? p.getReleaseDate() : created);
+
+            Date modified = npmTime.getModified();
+            npmTime.setModified(modified == null || modified.before(p.getReleaseDate()) ? p.getReleaseDate()
+                    : modified);
+
+            if (p.isLastVersion()) {
+                distTags.setLatest(npmPackage.getVersion());
+            }
+
+        });
+        packageFeed.setAdditionalProperty("_rev", generateRevisionHashcode(packageFeed));
+        return packageFeed;
+    }
+
+    private String generateRevisionHashcode(PackageFeed packageFeed) {
+        String versionsShaSum = packageFeed.getVersions().getAdditionalProperties()
+                .values()
+                .stream()
+                .map(x -> x.getDist().getShasum())
+                .collect(Collectors.joining());
+        return packageFeed.getVersions().getAdditionalProperties().size() + "-" +
+                DigestUtils.sha1Hex(versionsShaSum).substring(0, 16);
     }
 
     /**
@@ -897,4 +930,81 @@ public class ArtifactComponent {
         return document;
     }
 
+    /**
+     * 查询PypiArtifactIdGroupCache
+     *
+     * @param repository        repository
+     * @param pypiSearchRequest pypiSearchRequest
+     * @return PypiSearchResult
+     */
+    public String getPypiArtifactIdGroupCache(Repository repository, PypiSearchRequest pypiSearchRequest) {
+        String html = pypiBrowsePackageHtmlResponseBuilder.nouFound();
+        Object obj = null;
+        if (repository.isGroupRepository()) {
+            Object itemObj = null;
+            Set<PypiSearchResult> packageFeedSet = Sets.newLinkedHashSet();
+            for (String storageAndRepositoryId : repository.getGroupRepositories()) {
+                String sId = ConfigurationUtils.getStorageId(repository.getStorage().getId(), storageAndRepositoryId);
+                String rId = ConfigurationUtils.getRepositoryId(storageAndRepositoryId);
+                itemObj = getPypiArtifactPackageFeed(configurationManager.getRepository(sId, rId), pypiSearchRequest);
+                if (Objects.nonNull(itemObj)) {
+                    packageFeedSet.addAll((List<PypiSearchResult>) itemObj);
+                }
+            }
+            if (CollectionUtils.isNotEmpty(packageFeedSet)) {
+                html = pypiBrowsePackageHtmlResponseBuilder.getProxyHtmlResponse(Lists.newArrayList(packageFeedSet));
+            }
+        } else {
+            obj = getPypiArtifactPackageFeed(repository, pypiSearchRequest);
+            if (Objects.nonNull(obj)) {
+                if (obj instanceof String) {
+                    html = (String) obj;
+                } else {
+                    html = pypiBrowsePackageHtmlResponseBuilder.getProxyHtmlResponse((List<PypiSearchResult>) obj);
+                }
+            }
+        }
+        return html;
+    }
+
+    /**
+     * 查询NpmArtifactPackageFeed
+     *
+     * @param repository        repository
+     * @param pypiSearchRequest pypiSearchRequest
+     * @return PypiSearchResult
+     */
+    public Object getPypiArtifactPackageFeed(Repository repository,
+                                             PypiSearchRequest pypiSearchRequest) {
+        Object obj = null;
+        long startTime = System.currentTimeMillis();
+        if (RepositoryTypeEnum.PROXY.getType().equals(repository.getType())) {
+            List<PypiSearchResult> pypiSearchResultList = pypiRepositoryFeatures.fetchRemotePypiSearchResult(repository.getStorage().getId(), repository.getId(), pypiSearchRequest);
+            if (CollectionUtils.isNotEmpty(pypiSearchResultList)) {
+                obj = pypiSearchResultList;
+            }
+        } else if (RepositoryTypeEnum.HOSTED.getType().equals(repository.getType())) {
+            final String packageNameToDownload = PypiPackageNameConverter.escapeSpecialCharacters(pypiSearchRequest.getPackageName());
+            obj = handlePypiLocalRepository(repository, packageNameToDownload);
+        }
+        log.info("[{}] getPypiArtifactPackageFeed storageId [{}] repositoryId [{}] artifactId [{}] take time [{}] ms", this.getClass().getSimpleName(), repository.getStorage().getId(), repository.getId(), pypiSearchRequest.getPackageName(), System.currentTimeMillis() - startTime);
+        return obj;
+    }
+
+    private String handlePypiLocalRepository(Repository repository, String packageNameToDownload) {
+        String html = "";
+        RepositoryProvider provider = repositoryProviderRegistry.getProvider(repository.getType());
+        RepositorySearchRequest predicate = new RepositorySearchRequest(packageNameToDownload, Collections.singleton(PypiArtifactCoordinates.WHEEL_EXTENSION));
+        Paginator paginator = new Paginator();
+        List<Path> searchResult = provider.search(repository.getStorage().getId(), repository.getId(),
+                predicate, paginator);
+        if (CollectionUtils.isNotEmpty(searchResult)) {
+            try {
+                html = pypiBrowsePackageHtmlResponseBuilder.getHtmlResponse(searchResult);
+            } catch (Exception ex) {
+                log.error(ExceptionUtils.getStackTrace(ex));
+            }
+        }
+        return html;
+    }
 }

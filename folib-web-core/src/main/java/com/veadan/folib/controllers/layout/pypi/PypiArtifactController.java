@@ -1,16 +1,22 @@
 package com.veadan.folib.controllers.layout.pypi;
 
+import com.alibaba.fastjson.JSONObject;
 import com.google.common.collect.Sets;
 import com.veadan.folib.artifact.coordinates.GenericArtifactCoordinates;
 import com.veadan.folib.artifact.coordinates.PypiArtifactCoordinates;
+import com.veadan.folib.components.artifact.ArtifactComponent;
 import com.veadan.folib.controllers.BaseArtifactController;
 import com.veadan.folib.data.criteria.Paginator;
+import com.veadan.folib.domain.ArtifactGroup;
+import com.veadan.folib.domain.ArtifactIdGroup;
+import com.veadan.folib.domain.ArtifactIdGroupEntity;
 import com.veadan.folib.providers.ProviderImplementationException;
 import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.providers.repository.RepositoryProvider;
 import com.veadan.folib.providers.repository.RepositoryProviderRegistry;
 import com.veadan.folib.providers.repository.RepositorySearchRequest;
 import com.veadan.folib.pypi.PypiSearchRequest;
+import com.veadan.folib.pypi.PypiSearchResult;
 import com.veadan.folib.repository.PypiRepositoryFeatures;
 import com.veadan.folib.services.ArtifactCoordinatesService;
 import com.veadan.folib.storage.metadata.pypi.PypiArtifactMetadata;
@@ -23,6 +29,7 @@ import com.veadan.folib.web.RepositoryMapping;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -36,7 +43,9 @@ import javax.inject.Inject;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.core.MediaType;
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URI;
 import java.nio.file.Path;
@@ -69,6 +78,10 @@ public class PypiArtifactController extends BaseArtifactController
 
     @Inject
     private ArtifactCoordinatesService artifactCoordinatesService;
+
+    @Inject
+    @Lazy
+    private ArtifactComponent artifactComponent;
 
     @ApiOperation(value = "This end point will be used to upload/deploy python package.")
     @ApiResponses(value = { @ApiResponse(code = HttpURLConnection.HTTP_OK, message = "python package was deployed successfully."),
@@ -213,12 +226,20 @@ public class PypiArtifactController extends BaseArtifactController
         String remoteRepositoryUrl;
         RemoteRepository remoteRepository;
         String targetUrl = null;
-        if (Objects.nonNull(remoteRepository = repository.getRemoteRepository())
+        if (repository.isProxyRepository() && Objects.nonNull(remoteRepository = repository.getRemoteRepository())
                 && Objects.nonNull(remoteRepositoryUrl = remoteRepository.getUrl())) {
-            GenericArtifactCoordinates artifactCoordinates = artifactCoordinatesService.findById(coordinates.buildPath());
-            String path;
-            if (Objects.nonNull(artifactCoordinates) && StringUtils.hasText(path = artifactCoordinates.getPath())) {
-                targetUrl = String.format("%s%s", remoteRepositoryUrl, path);
+            ArtifactIdGroup artifactIdGroup = new ArtifactIdGroupEntity(repository.getStorage().getId(), repository.getId(), coordinates.getId());
+            artifactIdGroup = artifactComponent.getArtifactIdGroup(artifactIdGroup.getUuid());
+            if (Objects.isNull(artifactIdGroup)) {
+                artifactIdGroup = new ArtifactIdGroupEntity(repository.getStorage().getId(), repository.getId(), coordinates.getId().toLowerCase());
+                artifactIdGroup = artifactComponent.getArtifactIdGroup(artifactIdGroup.getUuid());
+            }
+            if (Objects.nonNull(artifactIdGroup) && StringUtils.hasText(artifactIdGroup.getMetadata())) {
+                List<PypiSearchResult> pypiSearchRequestList = JSONObject.parseArray(artifactIdGroup.getMetadata(), PypiSearchResult.class);
+                Optional<PypiSearchResult> optionalPypiSearchResult = pypiSearchRequestList.stream().filter(item -> item.getArtifactName().equals(artifactName)).findFirst();
+                if (optionalPypiSearchResult.isPresent()) {
+                    targetUrl = String.format("%s%s", remoteRepositoryUrl, optionalPypiSearchResult.get().getArtifactUrl());
+                }
             }
         }
         RepositoryPath repositoryPath = artifactResolutionService.resolvePath(
@@ -250,19 +271,8 @@ public class PypiArtifactController extends BaseArtifactController
         logger.info("Get package path request for storageId -> [{}] , repositoryId -> [{}], packageName -> [{}]",
                     repository.getStorage().getId(),
                     repository.getId(), packageNameToDownload);
-
-        pypiSearchPackagesEventListener.setPypiSearchRequest(new PypiSearchRequest(packageName));
-
-        RepositoryProvider repositoryProvider = repositoryProviderRegistry.getProvider(repository.getType());
-
-        RepositorySearchRequest predicate = new RepositorySearchRequest(packageNameToDownload, Collections.singleton(PypiArtifactCoordinates.WHEEL_EXTENSION));
-
-        Paginator paginator = new Paginator();
-        List<Path> searchResult = repositoryProvider.search(repository.getStorage().getId(), repository.getId(),
-                                                            predicate, paginator);
-
-        String searchPackageHtmlResponse = htmlResponseBuilder.getHtmlResponse(searchResult);
-        return ResponseEntity.status(HttpStatus.OK).body(searchPackageHtmlResponse);
+        String html = artifactComponent.getPypiArtifactIdGroupCache(repository, new PypiSearchRequest(packageName));
+        return ResponseEntity.status(HttpStatus.OK).body(html);
     }
 
     private ResponseEntity<String> validateAndUploadPackage(PypiArtifactMetadata pypiArtifactMetadata,

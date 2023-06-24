@@ -3,7 +3,9 @@ package com.veadan.folib.controllers.layout.docker;
 
 import cn.hutool.core.collection.CollectionUtil;
 import cn.hutool.core.lang.UUID;
+import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
+import com.google.common.collect.Lists;
 import com.veadan.folib.cloud.storage.s3fs.S3Iterator;
 import com.veadan.folib.cloud.storage.s3fs.S3Path;
 import com.veadan.folib.controllers.BaseArtifactController;
@@ -12,14 +14,18 @@ import com.veadan.folib.enums.RepositoryScopeEnum;
 import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.providers.layout.DockerLayoutProvider;
 import com.veadan.folib.repositories.ArtifactRepository;
+import com.veadan.folib.schema2.ImageManifest;
 import com.veadan.folib.services.DirectoryListingService;
 import com.veadan.folib.storage.Storage;
 import com.veadan.folib.storage.repository.Repository;
+import com.veadan.folib.users.security.JwtAuthenticationClaimsProvider;
+import com.veadan.folib.users.security.JwtClaimsProvider;
+import com.veadan.folib.users.security.SecurityTokenProvider;
+import com.veadan.folib.users.userdetails.SpringSecurityUser;
 import com.veadan.folib.utils.DockerApiHeader;
 import com.veadan.folib.utils.FileUtils;
 import io.swagger.annotations.*;
 import org.apache.commons.collections4.CollectionUtils;
-import org.apache.commons.compress.utils.Lists;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -36,10 +42,7 @@ import javax.inject.Inject;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.validation.constraints.NotNull;
-import java.io.ByteArrayInputStream;
-import java.io.DataInputStream;
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.security.MessageDigest;
@@ -67,9 +70,16 @@ public class DockerArtifactController extends BaseArtifactController {
     @Inject
     @Qualifier("browseRepositoryDirectoryListingService")
     private volatile DirectoryListingService directoryListingService;
-    @Inject
-    ArtifactRepository artifactRepository;
 
+    @Inject
+    private ArtifactRepository artifactRepository;
+
+    @Inject
+    private SecurityTokenProvider securityTokenProvider;
+
+    @Inject
+    @JwtAuthenticationClaimsProvider.JwtAuthentication
+    private JwtClaimsProvider jwtClaimsProvider;
 
     /**
      * 文件进度
@@ -81,6 +91,10 @@ public class DockerArtifactController extends BaseArtifactController {
      */
     final ConcurrentHashMap<String, String> data = new ConcurrentHashMap<String, String>();
 
+    /**
+     * allowUserAgentList
+     */
+    final List<String> allowUserAgentList = Lists.newArrayList("Go-http-client/1.1", "harbor-replication-service");
 
     /**
      * 检查终结点是否实现了 Docker 注册表 API V2。
@@ -101,7 +115,7 @@ public class DockerArtifactController extends BaseArtifactController {
         response.reset();
         response.setDateHeader("Date", System.currentTimeMillis());
         response.setHeader(DockerApiHeader.DOCKER_DISTRIBUTION_API_VERSION.key(), DockerApiHeader.DOCKER_DISTRIBUTION_API_VERSION.value());
-        response.addHeader("WWW-Authenticate", "BASIC realm=Folib Repository Manager");
+        response.setHeader("WWW-Authenticate", MessageFormat.format("Bearer realm=\"{0}token\",service=\"{1}\"", request.getRequestURL(), request.getServerName() + ":" + request.getServerPort()));
         if (Objects.isNull(authorization)) {
             Map<String, Object> result = new HashMap<>(1);
             Map<String, Object> data = new HashMap<>(1);
@@ -116,6 +130,33 @@ public class DockerArtifactController extends BaseArtifactController {
         return new ResponseEntity<>("ok", HttpStatus.OK);
     }
 
+    @ApiOperation(value = "v2 token")
+    @ApiResponses(value = {@ApiResponse(code = 200, message = "token."),
+            @ApiResponse(code = 500, message = "An error occurred.")})
+    @PreAuthorize("hasAuthority('ARTIFACTS_RESOLVE')")
+    @RequestMapping(value = {"/v2/token"}, method = {RequestMethod.GET})
+    public ResponseEntity<Object> token(Authentication authentication, HttpServletResponse response) {
+        try {
+            if (Objects.isNull(authentication)) {
+                return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
+            }
+            if (authentication.getPrincipal() instanceof SpringSecurityUser) {
+                SpringSecurityUser springSecurityUser = (SpringSecurityUser) authentication.getPrincipal();
+                response.setHeader(DockerApiHeader.DOCKER_DISTRIBUTION_API_VERSION.key(), DockerApiHeader.DOCKER_DISTRIBUTION_API_VERSION.value());
+                Map<String, String> claimMap = jwtClaimsProvider.getClaims(springSecurityUser);
+                JSONObject data = new JSONObject();
+                int expireSeconds = 7200;
+                String token = securityTokenProvider.getToken(springSecurityUser.getUsername(), claimMap, expireSeconds, null);
+                data.put("token", token);
+                data.put("expires_in", expireSeconds);
+                return ResponseEntity.ok(data);
+            }
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("authentication type error");
+        } catch (Exception e) {
+            logger.error(e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
+        }
+    }
 
     /**
      * Starting An Upload 开始上传
@@ -147,7 +188,6 @@ public class DockerArtifactController extends BaseArtifactController {
         try {
             String uuid = UUID.randomUUID().toString();
             String url = new StringBuffer().append(request.getRequestURI()).append(uuid).toString();
-
             response.reset();
             response.setDateHeader("Date", System.currentTimeMillis());
             response.setHeader(DockerApiHeader.DOCKER_DISTRIBUTION_API_VERSION.key(), DockerApiHeader.DOCKER_DISTRIBUTION_API_VERSION.value());
@@ -209,10 +249,10 @@ public class DockerArtifactController extends BaseArtifactController {
                                                    @PathVariable String name,
                                                    @PathVariable String uuid,
                                                    @RequestParam String digest,
-                                                   @RequestBody byte[] blobBytes
+                                                   @RequestBody(required = false) byte[] blobBytes
 
     ) {
-        ResponseEntity result = new ResponseEntity<>("OK", HttpStatus.ACCEPTED);
+        ResponseEntity result = new ResponseEntity<>("monolithicUpload", HttpStatus.CREATED);
         try {
             int totalBytes = request.getContentLength();
             //totalBytes > 0
@@ -247,9 +287,6 @@ public class DockerArtifactController extends BaseArtifactController {
             response.setHeader(DockerApiHeader.LOCATION.key(), url);
             response.setHeader(DockerApiHeader.DOCKER_CONTENT_DIGEST.key(), digest);
             response.setHeader(DockerApiHeader.CONTENT_RANGE.key(), "0-" + totalBytes);
-            //Content-Range	0-19778034
-            //202 Accepted
-
         } catch (Exception e) {
             logger.error(e.getMessage(), e);
             result = ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
@@ -304,7 +341,7 @@ public class DockerArtifactController extends BaseArtifactController {
         response.setHeader(DockerApiHeader.RANGE.key(), "0-" + ranges.get(uuid).intValue());
         response.setHeader(DockerApiHeader.CONTENT_LENGTH.key(), "0");
         //202 Accepted
-        return new ResponseEntity<>("OK", HttpStatus.ACCEPTED);
+        return new ResponseEntity<>("chunkedUpload", HttpStatus.ACCEPTED);
     }
 
 
@@ -341,7 +378,7 @@ public class DockerArtifactController extends BaseArtifactController {
             RepositoryPath repositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, path);
             artifactManagementService.validateAndStore(repositoryPath, inputStream);
             //202 Accepted
-            return new ResponseEntity<>("OK", HttpStatus.ACCEPTED);
+            return new ResponseEntity<>("uploadingTheLayer", HttpStatus.ACCEPTED);
         } catch (Exception e) {
             logger.error(e.getMessage(), e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
@@ -382,9 +419,9 @@ public class DockerArtifactController extends BaseArtifactController {
             boolean exist = artifactRepository.artifactExists(storageId, repositoryId, artifactName);
             //200已经存在 404不存在
             if (exist) {
-                return new ResponseEntity<>("OK", HttpStatus.ACCEPTED);
+                return new ResponseEntity<>("OK", HttpStatus.OK);
             } else {
-                return new ResponseEntity<>(null, HttpStatus.NOT_FOUND);
+                return new ResponseEntity<>(HttpStatus.NOT_FOUND);
             }
 
         } catch (Exception e) {
@@ -962,6 +999,9 @@ public class DockerArtifactController extends BaseArtifactController {
         String manifest = "";
         try {
             RepositoryPath repositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, artifactName);
+            if (Objects.isNull(repositoryPath) || !Files.exists(repositoryPath)) {
+                return manifest;
+            }
             DirectoryListing directoryListing = directoryListingService.fromRepositoryPath(repositoryPath);
             List<FileContent> fileContents = directoryListing.getFiles().stream().filter(file -> !(file.getName().endsWith(".sha256"))).collect(Collectors.toList());
             FileContent fileContent = fileContents.get(0);

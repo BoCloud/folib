@@ -1,6 +1,6 @@
 package com.veadan.folib.controllers.layout.npm;
 
-import com.alibaba.fastjson.JSON;
+import cn.hutool.core.io.IoUtil;
 import com.alibaba.fastjson.JSONObject;
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonParser;
@@ -42,7 +42,6 @@ import org.apache.commons.compress.compressors.gzip.GzipCompressorInputStream;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.javatuples.Pair;
-import org.junit.platform.commons.util.StringUtils;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -202,71 +201,17 @@ public class NpmArtifactController
                                          HttpServletResponse response,
                                          @RequestHeader HttpHeaders httpHeaders)
             throws Exception {
-        long globalStartTime = System.currentTimeMillis();
-        String packageId = NpmArtifactCoordinates.calculatePackageId(packageScope, packageName);
+        long startTime = System.currentTimeMillis();
         RepositorySearchRequest predicate = createSearchPredicate(packageScope, packageName);
-        ArtifactIdGroup artifactIdGroup = artifactComponent.getArtifactIdGroup(repository, predicate.getArtifactId(), Collections.singletonList("tgz"));
-        boolean isResponse = false;
-        if (Objects.nonNull(artifactIdGroup) && StringUtils.isNotBlank(artifactIdGroup.getMetadata())) {
-            logger.info("NPM [{}] use cache metadata", artifactIdGroup.getUuid());
-            String artifactIdGroupMetadata = artifactIdGroup.getMetadata();
-            String finalJsonString = JSON.parse(artifactIdGroupMetadata).toString();
-            JSONObject jsonObject = JSONObject.parseObject(finalJsonString);
-
-            long startTime = System.currentTimeMillis();
-            String versionsKey = "versions", distKey = "dist", tarballKey = "tarball", tarball;
-            JSONObject versionsJson = jsonObject.getJSONObject(versionsKey);
-            JSONObject versionJson, distJson;
-            int i = 0;
-            for (String key : versionsJson.keySet()) {
-                versionJson = versionsJson.getJSONObject(key);
-                distJson = versionJson.getJSONObject(distKey);
-                tarball = distJson.getString(tarballKey);
-                String baseUri = configurationManager.getBaseUri().toString();
-                if (baseUri.endsWith("/")) {
-                    baseUri = baseUri.substring(0, baseUri.length() - 1);
-                }
-                if (i == 0 && tarball.startsWith(baseUri)) {
-                    break;
-                }
-                if (!tarball.startsWith(baseUri)) {
-                    tarball = baseUri + tarball.substring(tarball.lastIndexOf("/storages/"));
-                    distJson.put(tarballKey, tarball);
-                }
-                i++;
-            }
-            logger.info("[{}] viewPackageFeedWithScope storageId [{}] repositoryId [{}] packageId [{}] npm packages [{}] handler tarball task time [{}] ms", this.getClass().getSimpleName(), repository.getStorage().getId(), repository.getId(), packageId, versionsJson.keySet().size(), System.currentTimeMillis() - startTime);
-
+        String packageId = NpmArtifactCoordinates.calculatePackageId(packageScope, packageName);
+        PackageFeed packageFeed = artifactComponent.getNpmArtifactIdGroupCache(repository, predicate.getArtifactId(), Collections.singletonList("tgz"), predicate);
+        if (Objects.nonNull(packageFeed)) {
             response.setContentType(MediaType.APPLICATION_JSON_VALUE);
-            ServletOutputStream outputStream = response.getOutputStream();
-            outputStream.write(npmJacksonMapper.writeValueAsBytes(jsonObject));
-            outputStream.flush();
-            outputStream.close();
-            response.flushBuffer();
-            isResponse = true;
-        }
-        if (isResponse) {
-            Runnable runnable = () -> {
-                Repository targetRepository = getRepository(artifactIdGroup.getStorageId(), artifactIdGroup.getRepositoryId());
-                artifactComponent.handleViewPackage(targetRepository, predicate);
-                predicate.setNotPublishEvent(true);
-                handlePackageFeed(targetRepository, packageId, predicate, artifactIdGroup);
-            };
-            asyncFetchRemotePackageThreadPoolTaskExecutor.execute(runnable);
-        } else {
-            NpmViewRequest npmSearchRequest = new NpmViewRequest();
-            npmSearchRequest.setPackageId(packageId);
-            viewPackageEventListener.setNpmSearchRequest(npmSearchRequest);
-            PackageFeed packageFeed = handlePackageFeed(repository, packageId, predicate, artifactIdGroup);
-            response.setContentType(MediaType.APPLICATION_JSON_VALUE);
-            try {
-                logger.info("[{}] storageId [{}] repositoryId [{}] packageId [{}] npm packages [{}]", this.getClass().getSimpleName(), repository.getStorage().getId(), repository.getId(), packageId, packageFeed.getVersions().getAdditionalProperties().keySet().size());
-                response.getOutputStream().write(npmJacksonMapper.writeValueAsBytes(packageFeed));
-            } catch (IOException ex) {
-                logger.error("[{}] storageId [{}] repositoryId [{}] packageId [{}] npm packages [{}] outputStream write error [{}]", this.getClass().getSimpleName(), repository.getStorage().getId(), repository.getId(), packageId, packageFeed.getVersions().getAdditionalProperties().keySet().size(), ExceptionUtils.getStackTrace(ex));
+            try (InputStream inputStream = new ByteArrayInputStream(npmJacksonMapper.writeValueAsBytes(packageFeed))) {
+                copyToResponse(inputStream, response);
             }
         }
-        logger.info("[{}] viewPackageFeedWithScope storageId [{}] repositoryId [{}] packageId [{}] task time [{}] ms", this.getClass().getSimpleName(), repository.getStorage().getId(), repository.getId(), packageId, System.currentTimeMillis() - globalStartTime);
+        logger.info("[{}] viewPackageFeedWithScope storageId [{}] repositoryId [{}] packageId [{}] task time [{}] ms", this.getClass().getSimpleName(), repository.getStorage().getId(), repository.getId(), packageId, System.currentTimeMillis() - startTime);
     }
 
     private PackageFeed handlePackageFeed(Repository repository, String packageId, RepositorySearchRequest predicate, ArtifactIdGroup artifactIdGroup) {

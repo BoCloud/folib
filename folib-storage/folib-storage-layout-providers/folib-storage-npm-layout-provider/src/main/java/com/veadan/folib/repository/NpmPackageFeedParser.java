@@ -103,8 +103,6 @@ public class NpmPackageFeedParser {
                                         String repositoryId,
                                         PackageVersion packageVersion) {
         NpmArtifactCoordinates c = NpmArtifactCoordinates.of(packageVersion.getName(), packageVersion.getVersion());
-        log.info("storageId [{}] repositoryId [{}] name [{}] npmArtifactCoordinates [{}]", storageId, repositoryId, packageVersion.getName(), c);
-        LocalDateTime now = LocalDateTimeInstance.now();
         Artifact artifact = artifactRepository.findOneArtifact(storageId, repositoryId, c.buildPath());
         ArtifactEntity remoteArtifactEntry = null;
         if (Objects.nonNull(artifact)) {
@@ -112,7 +110,6 @@ public class NpmPackageFeedParser {
             remoteArtifactEntry = new ArtifactEntity(artifact.getNativeId(), storageId, repositoryId, artifact.getUuid(), c);
         } else {
             //不存在
-            log.info("不存在 storageId [{}] repositoryId [{}] name [{}] npmArtifactCoordinates [{}]", storageId, repositoryId, packageVersion.getName(), c);
             remoteArtifactEntry = new ArtifactEntity(storageId, repositoryId, c);
             remoteArtifactEntry.setStorageId(storageId);
             remoteArtifactEntry.setRepositoryId(repositoryId);

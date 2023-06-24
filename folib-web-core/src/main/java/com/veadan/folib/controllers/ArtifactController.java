@@ -10,6 +10,7 @@ import com.veadan.folib.domain.StatusInfo;
 import com.veadan.folib.forms.artifact.ArtifactMetadataForm;
 import com.veadan.folib.forms.syncartifact.SyncArtifactForm;
 import com.veadan.folib.services.ArtifactWebService;
+import com.veadan.folib.storage.Storage;
 import com.veadan.folib.storage.repository.Repository;
 import com.veadan.folib.users.userdetails.SpringSecurityUser;
 import com.veadan.folib.validation.RequestBodyValidationException;
@@ -17,6 +18,8 @@ import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -32,6 +35,7 @@ import javax.servlet.http.HttpServletResponse;
 import javax.validation.Valid;
 import java.io.IOException;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * @author leipenghui
@@ -49,6 +53,10 @@ public class ArtifactController extends BaseController {
 
     @Inject
     private ConfigurationManager configurationManager;
+
+    private static final String STORAGE_NOT_FOUND = "The storage was not found.";
+
+    private static final String REPOSITORY_NOT_FOUND = "The repository was not found.";
 
     @ApiOperation(value = "导出漏洞的影响范围")
     @ApiResponses(value = {@ApiResponse(code = 200, message = "OK")})
@@ -182,8 +190,15 @@ public class ArtifactController extends BaseController {
     @PostMapping(value = "/syncArtifactProvider")
     @PreAuthorize("hasAuthority('ADMIN')")
     @ResponseBody
-    public ResponseEntity<String> syncArtifactProvider(@Valid @RequestBody SyncArtifactForm syncArtifactForm) {
+    public ResponseEntity<String> syncArtifactProvider(@Valid @RequestBody SyncArtifactForm syncArtifactForm, @RequestHeader(HttpHeaders.ACCEPT) String accept) {
+        Storage storage = configurationManager.getConfiguration().getStorage(syncArtifactForm.getStorageId());
+        if (Objects.isNull(storage)) {
+            return getFailedResponseEntity(HttpStatus.NOT_FOUND, STORAGE_NOT_FOUND, accept);
+        }
         Repository repository = configurationManager.getRepository(syncArtifactForm.getStorageId(), syncArtifactForm.getRepositoryId());
+        if (Objects.isNull(repository)) {
+            return getFailedResponseEntity(HttpStatus.NOT_FOUND, REPOSITORY_NOT_FOUND, accept);
+        }
         SyncArtifactProvider syncArtifactProvider = syncArtifactProviderRegistry.getProvider(repository.getLayout());
         syncArtifactProvider.fullSync(syncArtifactForm);
         return ResponseEntity.ok("success");

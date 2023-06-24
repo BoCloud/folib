@@ -83,7 +83,7 @@ public abstract class AbstractLayoutProvider<T extends LayoutArtifactCoordinates
         return isChecksum(repositoryPath.getFileName().toString());
     }
 
-    protected boolean isChecksum(String fileName)
+    public boolean isChecksum(String fileName)
     {
         for (String e : getDigestAlgorithmSet())
         {

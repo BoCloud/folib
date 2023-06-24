@@ -277,7 +277,7 @@ public class SemanticVersion
         {
             Long result = Long.parseLong(id);
             if ( (result>>32) != 0 && (result>>32) != -1) {
-                log.info("=====>>>>> parseSpecialId 发生int溢出：{}", result);
+                log.debug("=====>>>>> parseSpecialId 发生int溢出：{}", result);
                 return new StringId(id);
             }
             return new IntId(Integer.parseInt(id));
