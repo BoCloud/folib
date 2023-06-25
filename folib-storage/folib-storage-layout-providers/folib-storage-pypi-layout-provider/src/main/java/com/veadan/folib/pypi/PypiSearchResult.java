@@ -15,6 +15,7 @@ public class PypiSearchResult {
     private String artifactUrl;
     private String storageId;
     private String repositoryId;
+    private String groupName;
 
     @Override
     public boolean equals(Object o) {
