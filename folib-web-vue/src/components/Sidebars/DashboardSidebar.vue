@@ -34,11 +34,11 @@
           <span class="label">安全扫描</span>
         </router-link>
       </a-menu-item>
-      <a-menu-item v-if="openSourceManage" class="menu-item-header">
+      <a-menu-item v-if="this.userInfo.roles.indexOf('ADMIN') > -1 || this.userInfo.roles.indexOf('OPEN_SOURCE_MANAGE') > -1" class="menu-item-header">
         <hr class="mt-5" />
         开源治理
       </a-menu-item>
-      <a-menu-item v-if="openSourceManage">
+      <a-menu-item v-if="this.userInfo.roles.indexOf('ADMIN') > -1 || this.userInfo.roles.indexOf('OPEN_SOURCE_MANAGE') > -1">
         <router-link to="/artifacts">
           <span class="icon">
             <a-icon type="profile" theme="filled" class="m-0" />
@@ -46,7 +46,7 @@
           <span class="label">制品分析</span>
         </router-link>
       </a-menu-item>
-      <a-menu-item v-if="openSourceManage">
+      <a-menu-item v-if="this.userInfo.roles.indexOf('ADMIN') > -1 || this.userInfo.roles.indexOf('OPEN_SOURCE_MANAGE') > -1">
         <router-link to="/components">
           <span class="icon">
             <a-icon type="hdd" theme="filled" class="m-0" />
@@ -54,7 +54,7 @@
           <span class="label">开源组件</span>
         </router-link>
       </a-menu-item>
-      <a-menu-item v-if="openSourceManage">
+      <a-menu-item v-if="this.userInfo.roles.indexOf('ADMIN') > -1 || this.userInfo.roles.indexOf('OPEN_SOURCE_MANAGE') > -1">
         <router-link to="/vulnerabilities">
           <span class="icon">
             <a-icon type="alert" theme="filled" class="m-0" />
@@ -62,7 +62,7 @@
           <span class="label">漏洞库</span>
         </router-link>
       </a-menu-item>
-      <a-menu-item v-if="openSourceManage">
+      <a-menu-item v-if="this.userInfo.roles.indexOf('ADMIN') > -1 || this.userInfo.roles.indexOf('OPEN_SOURCE_MANAGE') > -1">
         <router-link to="/licenses">
           <span class="icon">
             <a-icon type="file-text" theme="filled" class="m-0" />
@@ -166,12 +166,10 @@ export default {
       rootSubmenuKeys: ["dashboards", "pages", "applications", "ecommerce", "authentication", "basic", "components", "changelog"],
       openKeys: this.$route.meta.sidebarMap,
       userInfo: {},
-      openSourceManage: false
     };
   },
   created() {
     this.userInfo = store.state.user;
-    this.openSourceManage = hasRole('ADMIN') || hasRole('OPEN_SOURCE_MANAGE')
   },
   methods: {
     onOpenChange(openKeys) {

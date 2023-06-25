@@ -1,6 +1,7 @@
 package com.veadan.folib.repository;
 
 import com.alibaba.fastjson.JSONObject;
+import com.veadan.folib.artifact.coordinates.PypiArtifactCoordinates;
 import com.veadan.folib.configuration.Configuration;
 import com.veadan.folib.configuration.ConfigurationManager;
 import com.veadan.folib.domain.ArtifactIdGroup;
@@ -21,7 +22,6 @@ import com.veadan.folib.storage.validation.deployment.RedeploymentValidator;
 import com.veadan.folib.util.CommonUtils;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.http.client.config.RequestConfig;
 import org.glassfish.jersey.apache.connector.ApacheClientProperties;
 import org.glassfish.jersey.client.authentication.HttpAuthenticationFeature;
@@ -31,6 +31,7 @@ import org.springframework.context.annotation.Scope;
 import org.springframework.context.annotation.ScopedProxyMode;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
 import javax.annotation.PostConstruct;
 import javax.inject.Inject;
@@ -38,9 +39,6 @@ import javax.ws.rs.client.Client;
 import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.io.InputStream;
 import java.util.*;
 import java.util.concurrent.Executor;
 import java.util.regex.Matcher;
@@ -144,7 +142,12 @@ public class PypiRepositoryFeatures
         if (remoteRepository == null) {
             return;
         }
-        String targetUrl = String.format("%s/%s", remoteRepository.getUrl(), pypiSearchRequest.getPackageName());
+        String targetUrl = "";
+        if (remoteRepository.getUrl().endsWith("/")) {
+            targetUrl = String.format("%s%s", remoteRepository.getUrl(), pypiSearchRequest.getPackageName());
+        } else {
+            targetUrl = String.format("%s/%s", remoteRepository.getUrl(), pypiSearchRequest.getPackageName());
+        }
         Client restClient = null;
         Response response = null;
         List<PypiSearchResult> pypiSearchResult;
@@ -155,7 +158,7 @@ public class PypiRepositoryFeatures
             authentication(service, remoteRepository.getUsername(), remoteRepository.getPassword());
             response = service.request(MediaType.TEXT_HTML).get();
             String responseBodyStr = response.readEntity(String.class);
-            pypiSearchResult = extractSearchResult(repository, responseBodyStr);
+            pypiSearchResult = extractSearchResult(repository, targetUrl, responseBodyStr);
             logger.info("Searched Pypi packages for [{}].", targetUrl);
         } catch (Exception e) {
             logger.error("Failed to search Pypi packages [{}]", targetUrl, e);
@@ -175,6 +178,7 @@ public class PypiRepositoryFeatures
         }
     }
 
+    @Transactional
     public List<PypiSearchResult> fetchRemotePypiSearchResult(String storageId,
                                                               String repositoryId,
                                                               PypiSearchRequest pypiSearchRequest) {
@@ -185,7 +189,12 @@ public class PypiRepositoryFeatures
         if (remoteRepository == null) {
             return null;
         }
-        String targetUrl = String.format("%s/%s", remoteRepository.getUrl(), pypiSearchRequest.getPackageName());
+        String targetUrl = "";
+        if (remoteRepository.getUrl().endsWith("/")) {
+            targetUrl = String.format("%s%s", remoteRepository.getUrl(), pypiSearchRequest.getPackageName());
+        } else {
+            targetUrl = String.format("%s/%s", remoteRepository.getUrl(), pypiSearchRequest.getPackageName());
+        }
         Client restClient = null;
         Response response = null;
         List<PypiSearchResult> pypiSearchResult;
@@ -197,8 +206,10 @@ public class PypiRepositoryFeatures
             authentication(service, remoteRepository.getUsername(), remoteRepository.getPassword());
             response = service.request(MediaType.TEXT_HTML).get();
             String responseBodyStr = response.readEntity(String.class);
-            pypiSearchResult = extractSearchResult(repository, responseBodyStr);
+            pypiSearchResult = extractSearchResult(repository, targetUrl, responseBodyStr);
             if (CollectionUtils.isNotEmpty(pypiSearchResult)) {
+                Map<String, List<PypiSearchResult>> groupNameMap = pypiSearchResult.stream().collect(Collectors.groupingBy(PypiSearchResult::getGroupName));
+                ArtifactIdGroup itemArtifactIdGroup = null;
                 try {
                     long startTime = System.currentTimeMillis();
                     artifactIdGroup.setMetadata(JSONObject.toJSONString(pypiSearchResult));
@@ -213,6 +224,26 @@ public class PypiRepositoryFeatures
                                 this.getClass().getSimpleName(), artifactIdGroup.getUuid());
                     }
                     throw new RuntimeException(ex);
+                }
+                for (Map.Entry<String, List<PypiSearchResult>> entry : groupNameMap.entrySet()) {
+                    if (!entry.getKey().equals(pypiSearchRequest.getPackageName())) {
+                        try {
+                            itemArtifactIdGroup = new ArtifactIdGroupEntity(storageId, repositoryId, entry.getKey());
+                            long startTime = System.currentTimeMillis();
+                            itemArtifactIdGroup.setMetadata(JSONObject.toJSONString(entry.getValue()));
+                            artifactIdGroupRepository.merge(itemArtifactIdGroup);
+                            logger.info("[{}] storage [{}] repository [{}] update itemArtifactIdGroup [{}] metadata take time [{}] ms", this.getClass().getSimpleName(), storageId, repositoryId, itemArtifactIdGroup.getUuid(), System.currentTimeMillis() - startTime);
+                        } catch (Exception ex) {
+                            String realMessage = CommonUtils.getRealMessage(ex);
+                            logger.warn("[{}] [{}] itemArtifactIdGroup error [{}]",
+                                    this.getClass().getSimpleName(), artifactIdGroup.getUuid(), realMessage);
+                            if (CommonUtils.catchException(realMessage)) {
+                                logger.warn("[{}] [{}] itemArtifactIdGroup catch error",
+                                        this.getClass().getSimpleName(), artifactIdGroup.getUuid());
+                            }
+                            throw new RuntimeException(ex);
+                        }
+                    }
                 }
             }
             logger.info("Searched Pypi packages for [{}].", targetUrl);
@@ -247,13 +278,14 @@ public class PypiRepositoryFeatures
                 predicate.getCoordinateValues());
     }
 
-    private List<PypiSearchResult> extractSearchResult(Repository repository, String pypiSearchResult) {
+    private List<PypiSearchResult> extractSearchResult(Repository repository, String targetUrl, String pypiSearchResult) {
         Matcher matcher = PACKAGE_NAME_PATTERN.matcher(pypiSearchResult);
         return matcher.results()
                 .map(matchResult -> {
                     String artifactName = matchResult.group(2);
                     String artifactUrl = matchResult.group(1);
-                    return PypiSearchResult.builder().artifactName(artifactName).artifactUrl(artifactUrl).storageId(repository.getStorage().getId()).repositoryId(repository.getId()).build();
+                    artifactUrl = resolveUrl(targetUrl, artifactUrl);
+                    return PypiSearchResult.builder().artifactName(artifactName).artifactUrl(artifactUrl).storageId(repository.getStorage().getId()).repositoryId(repository.getId()).groupName(PypiArtifactCoordinates.parse(artifactName).getId()).build();
                 })
                 .collect(Collectors.toList());
     }
@@ -278,4 +310,22 @@ public class PypiRepositoryFeatures
         }
     }
 
+    private static String resolveUrl(String baseUrl, String href) {
+        if (href.startsWith("http://") || href.startsWith("https://")) {
+            // Absolute URL, no need to resolve
+            return href;
+        }
+        String resolvedUrl = baseUrl + href;
+        while (resolvedUrl.contains("../")) {
+            int index = resolvedUrl.indexOf("../");
+            int slashIndex = resolvedUrl.lastIndexOf('/', index - 2);
+            if (slashIndex != -1) {
+                resolvedUrl = resolvedUrl.substring(0, slashIndex + 1) + resolvedUrl.substring(index + 3);
+            } else {
+                // Invalid URL, cannot resolve further
+                break;
+            }
+        }
+        return resolvedUrl;
+    }
 }

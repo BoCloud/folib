@@ -3,7 +3,6 @@ package com.veadan.folib.controllers.layout.docker;
 
 import cn.hutool.core.collection.CollectionUtil;
 import cn.hutool.core.lang.UUID;
-import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
 import com.google.common.collect.Lists;
 import com.veadan.folib.cloud.storage.s3fs.S3Iterator;
@@ -14,7 +13,6 @@ import com.veadan.folib.enums.RepositoryScopeEnum;
 import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.providers.layout.DockerLayoutProvider;
 import com.veadan.folib.repositories.ArtifactRepository;
-import com.veadan.folib.schema2.ImageManifest;
 import com.veadan.folib.services.DirectoryListingService;
 import com.veadan.folib.storage.Storage;
 import com.veadan.folib.storage.repository.Repository;
@@ -42,7 +40,10 @@ import javax.inject.Inject;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.validation.constraints.NotNull;
-import java.io.*;
+import java.io.ByteArrayInputStream;
+import java.io.DataInputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.security.MessageDigest;
@@ -905,7 +906,8 @@ public class DockerArtifactController extends BaseArtifactController {
                                              @RequestParam(name = "last", required = false) String last,
                                              Authentication authentication) {
         try {
-            logger.info("GET Catalog [n:{}, last:{}]", n, last);
+            boolean harborFlag = allowUserAgentList.stream().anyMatch(item -> item.equalsIgnoreCase(request.getHeader("User-Agent")));
+            logger.info("GET Catalog [n:{}, last:{} from harbor {}]", n, last, harborFlag);
             List<Storage> storageList = new ArrayList<>(configurationManagementService.getConfiguration()
                     .getStorages()
                     .values());
@@ -915,7 +917,7 @@ public class DockerArtifactController extends BaseArtifactController {
                 username = loggedUser.getUsername();
             }
             String link = "", next = "";
-            List<String> resultList = Collections.emptyList();
+            List<String> resultList = Collections.emptyList(), dataList = Lists.newArrayList();
             if (CollectionUtil.isNotEmpty(storageList)) {
                 boolean filterByUser = !hasAdmin();
                 String finalUsername = username;
@@ -925,7 +927,6 @@ public class DockerArtifactController extends BaseArtifactController {
                                 (CollectionUtils.isNotEmpty(s.getRepositories().values()) && s.getRepositories().values().stream().anyMatch(repository -> RepositoryScopeEnum.OPEN.getType().equals(repository.getScope()))))
                         .collect(Collectors.toCollection(LinkedList::new));
                 List<Repository> repositories;
-                List<String> repositoryList = Lists.newArrayList();
                 for (Storage storage : storageList) {
                     boolean flag = !hasAdmin() && !username.equals(storage.getAdmin()) && (CollectionUtils.isNotEmpty(storage.getUsers()) && !storage.getUsers().contains(username));
                     repositories = new LinkedList<Repository>(storage.getRepositories().values());
@@ -936,12 +937,29 @@ public class DockerArtifactController extends BaseArtifactController {
                         repositories = repositories.stream().filter((item -> RepositoryScopeEnum.OPEN.getType().equals(item.getScope()))).collect(Collectors.toList());
                     }
                     if (CollectionUtils.isNotEmpty(repositories)) {
-                        repositoryList.addAll(repositories.stream().map(item -> String.format("%s/%s", item.getStorage().getId(), item.getId())).collect(Collectors.toList()));
+                        if (harborFlag) {
+                            repositories.forEach(repository -> {
+                                RepositoryPath repositoryPath = repositoryPathResolver.resolve(repository.getStorage().getId(), repository.getId());
+                                String prefix = String.format("%s/%s", repository.getStorage().getId(), repository.getId());
+                                if (Objects.nonNull(repositoryPath) && Files.exists(repositoryPath)) {
+                                    try {
+                                        DirectoryListing directoryListing = directoryListingService.fromRepositoryPath(repositoryPath);
+                                        if (Objects.nonNull(directoryListing) && CollectionUtils.isNotEmpty(directoryListing.getDirectories())) {
+                                            dataList.addAll(directoryListing.getDirectories().stream().filter(item -> StringUtils.isNotBlank(item.getName())).map(item -> String.format("%s/%s", prefix, item.getName())).collect(Collectors.toList()));
+                                        }
+                                    } catch (Exception ex) {
+                                        logger.error("GET Catalog directory listing error [{}]", ExceptionUtils.getStackTrace(ex));
+                                    }
+                                }
+                            });
+                        } else {
+                            dataList.addAll(repositories.stream().map(item -> String.format("%s/%s", item.getStorage().getId(), item.getId())).collect(Collectors.toList()));
+                        }
                     }
                 }
-                int size = repositoryList.size(), startIndex = 0, endIndex = size;
+                int size = dataList.size(), startIndex = 0, endIndex = size;
                 if (StringUtils.isNotBlank(last)) {
-                    int index = repositoryList.indexOf(last);
+                    int index = dataList.indexOf(last);
                     if (index != -1) {
                         startIndex = index + 1;
                     }
@@ -958,7 +976,7 @@ public class DockerArtifactController extends BaseArtifactController {
                 if (endIndex > size) {
                     endIndex = size;
                 }
-                resultList = repositoryList.subList(startIndex, endIndex);
+                resultList = dataList.subList(startIndex, endIndex);
                 if (CollectionUtils.isNotEmpty(resultList)) {
                     last = resultList.get(resultList.size() - 1);
                     if (Objects.nonNull(n) && n > 0 & endIndex <= size - 1) {
@@ -975,7 +993,6 @@ public class DockerArtifactController extends BaseArtifactController {
             response.reset();
             response.setDateHeader(DockerApiHeader.DATE.key(), System.currentTimeMillis());
             response.addHeader(DockerApiHeader.DOCKER_DISTRIBUTION_API_VERSION.key(), DockerApiHeader.DOCKER_DISTRIBUTION_API_VERSION.value());
-//            response.addHeader(DockerApiHeader.CONTENT_LENGTH.key(), dockerCatalog);
             if (StringUtils.isNotBlank(link)) {
                 response.addHeader(HttpHeaders.LINK, link);
             }
