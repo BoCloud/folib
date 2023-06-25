@@ -992,7 +992,7 @@ public class ArtifactComponent {
     }
 
     private String handlePypiLocalRepository(Repository repository, String packageNameToDownload) {
-        String html = "";
+        String html = null;
         RepositoryProvider provider = repositoryProviderRegistry.getProvider(repository.getType());
         RepositorySearchRequest predicate = new RepositorySearchRequest(packageNameToDownload, Collections.singleton(PypiArtifactCoordinates.WHEEL_EXTENSION));
         Paginator paginator = new Paginator();
