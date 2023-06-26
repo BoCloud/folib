@@ -199,7 +199,7 @@ public class RepositoryHostedIndexCreator
             // || filename.endsWith( "-sources.jar" )
             || filename.endsWith(".properties")
             // || filename.endsWith( ".xml" ) // NEXUS-3029
-            || filename.endsWith(".asc") || filename.endsWith(".md5") || filename.endsWith(".sha1"))
+            || filename.endsWith(".asc") || filename.endsWith(".md5") || filename.endsWith(".sha1") || filename.endsWith(".sha256"))
         {
             return false;
         }

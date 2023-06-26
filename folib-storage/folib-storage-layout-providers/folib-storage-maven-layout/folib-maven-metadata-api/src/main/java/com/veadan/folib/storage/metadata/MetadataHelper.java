@@ -30,6 +30,8 @@ public class MetadataHelper
 
     public static final String MAVEN_METADATA_XML_CHECKSUM_SHA1 = "maven-metadata.xml.sha1";
 
+    public static final String MAVEN_METADATA_XML_CHECKSUM_SHA256 = "maven-metadata.xml.sha256";
+
     private static SimpleDateFormat LAST_UPDATED_FIELD_FORMATTER;
 
 

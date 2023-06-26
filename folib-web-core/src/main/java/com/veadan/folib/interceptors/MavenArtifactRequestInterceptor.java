@@ -68,6 +68,7 @@ public class MavenArtifactRequestInterceptor
         if (MAVEN_METADATA_XML.equals(filename) ||
             MAVEN_METADATA_XML_CHECKSUM_MD5.equals(filename) ||
             MAVEN_METADATA_XML_CHECKSUM_SHA1.equals(filename) ||
+            MAVEN_METADATA_XML_CHECKSUM_SHA256.equals(filename) ||
             filename.startsWith(IndexingContext.INDEX_FILE_PREFIX))
         {
             return true;
