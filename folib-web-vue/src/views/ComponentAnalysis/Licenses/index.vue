@@ -13,6 +13,7 @@
         :data-source="licenseData"
         @change="handleChangeTable"
         :scroll="{ x: true }"
+        :loading="licenseTableLoading"
         :pagination="{ pageSize: queryParams.limit, current: queryParams.page, total: queryParams.total, showLessItems: true }"
       >
         <template slot="licenseId" slot-scope="licenseId, row">
@@ -44,6 +45,7 @@ export default {
         },
       ],
       licenseData: [],
+      licenseTableLoading: false,
       queryParams: {
         page: 1,
         limit: 10,
@@ -53,37 +55,40 @@ export default {
     };
   },
   created() {
-    this.getData();
+    this.getData()
   },
   methods: {
     formatTimestamp,
     // 获取表格数据
     getData() {
+      this.licenseTableLoading = true
       getLicensesList(this.queryParams).then((res) => {
-        this.queryParams.total = res.data.total;
-        this.licenseData = res.data.rows;
-      });
+        this.queryParams.total = res.data.total
+        this.licenseData = res.data.rows
+      }).finally(() => {
+        this.licenseTableLoading = false
+      })
     },
     handleChangeTable(pagination, filters, sorter) {
       if (pagination) {
-        this.queryParams.page = pagination.current;
+        this.queryParams.page = pagination.current
       }
-      this.queryParams.sortName = sorter.field;
+      this.queryParams.sortName = sorter.field
       if (sorter && sorter.order === "descend") {
-        this.queryParams.sortOrder = "desc";
+        this.queryParams.sortOrder = "desc"
       } else if (sorter && sorter.order === "ascend") {
-        this.queryParams.sortOrder = "asc";
+        this.queryParams.sortOrder = "asc"
       } else {
-        this.queryParams.sortOrder = "";
+        this.queryParams.sortOrder = ""
       }
-      this.getData();
+      this.getData()
     },
     handleGoDetail(row) {
-      this.$router.push(`/licensesDetail/${row.licenseId}`);
+      this.$router.push(`/licensesDetail/${row.licenseId}`)
     },
     handheTableSearch() {
-      this.queryParams.page = 1;
-      this.getData();
+      this.queryParams.page = 1
+      this.getData()
     },
   },
 };

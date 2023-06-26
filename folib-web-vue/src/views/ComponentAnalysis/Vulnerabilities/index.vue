@@ -8,7 +8,7 @@
         </a-col>
       </div>
       <a-table rowKey="uuid" class="mt-20" :columns="columns2" :data-source="vulnerabilityDatabaseData"
-        @change="handleChangeTable" :scroll="{ x: true }"
+        @change="handleChangeTable" :scroll="{ x: true }" :loading="vulnerabilityTableLoading"
         :pagination="{ pageSize: queryParams.limit, current: queryParams.page, total: queryParams.total, showLessItems: true }">
         <template slot="cve" slot-scope="cve, row">
           <a-button type="link" @click="handleGoDetail(row)">
@@ -81,6 +81,7 @@ export default {
         },
       ],
       vulnerabilityDatabaseData: [],
+      vulnerabilityTableLoading: false,
       queryParams: {
         page: 1,
         limit: 10,
@@ -92,37 +93,40 @@ export default {
     };
   },
   created() {
-    this.getData();
+    this.getData()
   },
   methods: {
     formatTimestamp,
     // 获取表格数据
     getData() {
+      this.vulnerabilityTableLoading = true
       getVulnerabilitiesList(this.queryParams).then((res) => {
-        this.queryParams.total = res.data.total;
-        this.vulnerabilityDatabaseData = res.data.rows;
-      });
+        this.queryParams.total = res.data.total
+        this.vulnerabilityDatabaseData = res.data.rows
+      }).finally(() => {
+        this.vulnerabilityTableLoading = false
+      })
     },
     handleChangeTable(pagination, filters, sorter) {
       if (pagination) {
-        this.queryParams.page = pagination.current;
+        this.queryParams.page = pagination.current
       }
-      this.queryParams.sortName = sorter.field;
+      this.queryParams.sortName = sorter.field
       if (sorter && sorter.order === "descend") {
-        this.queryParams.sortOrder = "desc";
+        this.queryParams.sortOrder = "desc"
       } else if (sorter && sorter.order === "ascend") {
-        this.queryParams.sortOrder = "asc";
+        this.queryParams.sortOrder = "asc"
       } else {
-        this.queryParams.sortOrder = "";
+        this.queryParams.sortOrder = ""
       }
-      this.getData();
+      this.getData()
     },
     handleGoDetail(row) {
-      this.$router.push(`/vulnerabilitiesDetail/${row.cve}`);
+      this.$router.push(`/vulnerabilitiesDetail/${row.cve}`)
     },
     handheTableSearch() {
-      this.queryParams.page = 1;
-      this.getData();
+      this.queryParams.page = 1
+      this.getData()
     },
   },
 };

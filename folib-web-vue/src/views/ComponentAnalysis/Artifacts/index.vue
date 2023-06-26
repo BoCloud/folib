@@ -14,6 +14,7 @@
         :data-source="artifactsData"
         @change="handleChangeTable"
         :scroll="{ x: true }"
+        :loading="artifactsTableLoading"
         :pagination="{ pageSize: queryParams.limit, current: queryParams.page, total: queryParams.total, showLessItems: true }"
       >
         <template slot="artifactPath" slot-scope="artifactPath, row">
@@ -177,6 +178,7 @@ export default {
         },
       ],
       artifactsData: [],
+      artifactsTableLoading: false,
       queryParams: {
         // page: 1,
         // limit: 10,
@@ -201,7 +203,7 @@ export default {
     };
   },
   created() {
-    this.getData();
+    this.getData()
   },
   methods: {
     formatTimestamp,
@@ -216,26 +218,27 @@ export default {
       //   this.queryParams.total = +res.headers["x-total-count"];
       //   this.projectsData = res.data;
       // });
+      this.artifactsTableLoading = true
       fql(this.queryParams).then((res) => {
         this.artifactsData = res.artifact
         this.queryParams.total = res.total
       }).finally(() => {
-        this.loading = false
+        this.artifactsTableLoading = false
       })
     },
     handleChangeTable(pagination, filters, sorter) {
       if (pagination) {
-        this.queryParams.page = pagination.current;
+        this.queryParams.page = pagination.current
       }
-      this.queryParams.sortField = sorter.field;
+      this.queryParams.sortField = sorter.field
       if (sorter && sorter.order === "descend") {
-        this.queryParams.sortOrder = "desc";
+        this.queryParams.sortOrder = "desc"
       } else if (sorter && sorter.order === "ascend") {
-        this.queryParams.sortOrder = "asc";
+        this.queryParams.sortOrder = "asc"
       } else {
-        this.queryParams.sortOrder = "";
+        this.queryParams.sortOrder = ""
       }
-      this.getData();
+      this.getData()
     },
     handleGoDetail(row) {
       let data = JSON.stringify({
@@ -249,11 +252,11 @@ export default {
         query: {
           data: data
         }
-      });
+      })
     },
     handheTableSearch() {
-      this.queryParams.page = 1;
-      this.getData();
+      this.queryParams.page = 1
+      this.getData()
     },
   },
 };

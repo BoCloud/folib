@@ -12,9 +12,10 @@
         rowKey="uuid"
         class="mt-20"
         :columns="columns"
-        :data-source="projectsData"
+        :data-source="compentsData"
         @change="handleChangeTable"
         :scroll="{ x: true }"
+        :loading="compentsTableLoading"
         :pagination="{ pageSize: queryParams.limit, current: queryParams.page, total: queryParams.total, showLessItems: true }"
       >
         <template slot="name" slot-scope="name, row">
@@ -82,7 +83,8 @@ export default {
           width: "200px",
         },
       ],
-      projectsData: [],
+      compentsData: [],
+      compentsTableLoading: false,
       queryParams: {
         page: 1,
         limit: 10,
@@ -96,44 +98,46 @@ export default {
     };
   },
   created() {
-    this.getData();
+    this.getData()
   },
   methods: {
     formatTimestamp,
     // 获取表格数据
     getData() {
+      this.compentsTableLoading = true
       getComponentsList(this.queryParams).then((res) => {
-        this.queryParams.total = res.data.total;
-        this.projectsData = res.data.rows;
-      });
+        this.queryParams.total = res.data.total
+        this.compentsData = res.data.rows
+      }).finally(() => {
+        this.compentsTableLoading = false
+      })
     },
     handleChangeTable(pagination, filters, sorter) {
-      console.log(pagination, ".......pagination");
       if (pagination) {
-        this.queryParams.page = pagination.current;
+        this.queryParams.page = pagination.current
       }
-      this.queryParams.sortName = sorter.field;
+      this.queryParams.sortName = sorter.field
       if (sorter && sorter.order === "descend") {
-        this.queryParams.sortOrder = "desc";
+        this.queryParams.sortOrder = "desc"
       } else if (sorter && sorter.order === "ascend") {
-        this.queryParams.sortOrder = "asc";
+        this.queryParams.sortOrder = "asc"
       } else {
-        this.queryParams.sortOrder = "";
+        this.queryParams.sortOrder = ""
       }
-      this.getData();
+      this.getData()
     },
     handleGoDetail(row) {
-      this.$router.push(`/componentsDetail/${row.uuid}`);
+      this.$router.push(`/componentsDetail/${row.uuid}`)
     },
     handleGoProject(row) {
-      this.$router.push(`/artifactsDetail/${row.project.uuid}`);
+      this.$router.push(`/artifactsDetail/${row.project.uuid}`)
     },
     handleGoLicense(item) {
-      this.$router.push(`/licensesDetail/${item}`);
+      this.$router.push(`/licensesDetail/${item}`)
     },
     handheTableSearch() {
-      this.queryParams.page = 1;
-      this.getData();
+      this.queryParams.page = 1
+      this.getData()
     },
   },
 };
