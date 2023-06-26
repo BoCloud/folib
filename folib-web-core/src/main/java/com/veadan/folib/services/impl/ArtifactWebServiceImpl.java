@@ -726,19 +726,22 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
                 }
             }
             if (CollectionUtils.isNotEmpty(fileList)) {
-                String filePath = "";
+                String filePath = "", separator = "/";
                 int successTotal = 0;
                 boolean flag = false;
                 statusInfo.setTotal(fileList.size());
                 for (File artifactFile : fileList) {
                     try {
                         filePath = artifactFile.getPath().substring(parentFile.getAbsolutePath().length());
+                        if (filePath.startsWith(separator)) {
+                            filePath = filePath.substring(1);
+                        }
                         if (StringUtils.isNotBlank(path)) {
                             filePath = path + File.separator + filePath;
                         }
                         RepositoryPath repositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, filePath);
                         if (!RepositoryFiles.isArtifact(repositoryPath)) {
-                            log.warn("制品路径 [{}] 不是一个制品制品文件,跳过", repositoryPath.toString());
+                            log.warn("制品路径 [{}] 不是一个制品文件,跳过", repositoryPath.toString());
                             continue;
                         }
                         try (FileInputStream fileInputStream = new FileInputStream(artifactFile)) {

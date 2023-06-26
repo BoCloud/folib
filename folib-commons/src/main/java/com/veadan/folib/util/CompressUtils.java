@@ -47,6 +47,9 @@ public class CompressUtils {
             while (Objects.nonNull(entry = in.getNextEntry())) {
                 if (in.canReadEntryData(entry)) {
                     File file = Paths.get(destDir, entry.getName()).toFile();
+                    if (!file.getParentFile().exists()) {
+                        file.getParentFile().mkdirs();
+                    }
                     if (entry.isDirectory()) {
                         if (!file.exists()) {
                             file.mkdirs();

@@ -1453,12 +1453,17 @@ export default {
               })
               return false
             }
-            const fileFamart = file.name.split('.')[file.name.split('.').length - 1];
+            const fileFamart = file.name.split('.')[file.name.split('.').length - 1]
             if (fileFamart !== 'zip') {
               this.$notification.warning({
                 message: "必须上传zip格式的文件!",
               })
               return false
+            }
+            if (typeof values.targetPath === 'undefined') {
+              values.targetPath = ''
+            } else {
+              values.targetPath = values.targetPath.trim().replace(/^\/+|\/+$/g, '')
             }
             this.handlerUploadZipFile(values.targetPath, file.name, file.originFileObj)
           } else {
