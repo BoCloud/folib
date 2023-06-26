@@ -13,6 +13,7 @@
         :data-source="vulnerabilityData"
         @change="handleChangeTable"
         :scroll="{ x: true }"
+        :loading="vulnerabilityTableLoading"
         :pagination="{ pageSize: queryParams.limit, current: queryParams.page, total: queryParams.total, showLessItems: true }"
       >
         <template slot="uuid" slot-scope="uuid">
@@ -130,6 +131,7 @@ export default {
         },
       ],
       vulnerabilityData: [],
+      vulnerabilityTableLoading: false,
       queryParams: {
         page: 1,
         limit: 10,
@@ -141,12 +143,12 @@ export default {
   },
   watch: {
     component() {
-      this.getData();
+      this.getData()
     },
     deep: true,
   },
   created() {
-    this.getData();
+    this.getData()
   },
   methods: {
     formatTimestamp,
@@ -156,35 +158,37 @@ export default {
         return
       }
       this.queryParams.componentUuid = this.component.uuid
+      this.vulnerabilityTableLoading = true
       getVulnerability(this.queryParams).then((res) => {
-        this.queryParams.total = res.data.total;
-        this.vulnerabilityData = res.data.rows;
-      });
+        this.queryParams.total = res.data.total
+        this.vulnerabilityData = res.data.rows
+      }).finally(() => {
+        this.vulnerabilityTableLoading = false
+      })
     },
     handleChangeTable(pagination, filters, sorter) {
       if (pagination) {
-        this.queryParams.page = pagination.current;
+        this.queryParams.page = pagination.current
       }
-      this.queryParams.sortName = sorter.field;
+      this.queryParams.sortName = sorter.field
       if (sorter && sorter.order === "descend") {
-        this.queryParams.sortOrder = "desc";
+        this.queryParams.sortOrder = "desc"
       } else if (sorter && sorter.order === "ascend") {
-        this.queryParams.sortOrder = "asc";
+        this.queryParams.sortOrder = "asc"
       } else {
-        this.queryParams.sortOrder = "";
+        this.queryParams.sortOrder = ""
       }
-      this.getData();
+      this.getData()
     },
     handleGoCom(row) {
-      console.log(row);
-      this.$router.push(`/componentsDetail/${row.component.uuid}`);
+      this.$router.push(`/componentsDetail/${row.component.uuid}`)
     },
     handleGoVul(uuid) {
-      this.$router.push(`/vulnerabilitiesDetail/${uuid}`);
+      this.$router.push(`/vulnerabilitiesDetail/${uuid}`)
     },
     handheTableSearch() {
-      this.queryParams.page = 1;
-      this.getData();
+      this.queryParams.page = 1
+      this.getData()
     },
   },
 };

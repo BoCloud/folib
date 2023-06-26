@@ -13,6 +13,7 @@
         :data-source="componentsData"
         @change="handleChangeTable"
         :scroll="{ x: true }"
+        :loading="componentsTableLoading"
         :pagination="{ pageSize: queryParams.limit, current: queryParams.page, total: queryParams.total, showLessItems: true }"
       >
         <template slot="name" slot-scope="name, row">
@@ -80,6 +81,7 @@ export default {
         },
       ],
       componentsData: [],
+      componentsTableLoading: false,
       queryParams: {
         page: 1,
         limit: 10,
@@ -91,12 +93,12 @@ export default {
   },
   watch: {
     artifactData() {
-      this.getData();
+      this.getData()
     },
     deep: true,
   },
   created() {
-    this.getData();
+    this.getData()
   },
   methods: {
     formatTimestamp,
@@ -106,34 +108,37 @@ export default {
         return
       }
       this.queryParams.artifactPath = this.artifactData.artifact.uuid
+      this.componentsTableLoading = true
       getProjectsComponentsByArtifact(this.queryParams).then((res) => {
-        this.queryParams.total = res.data.total;
-        this.componentsData = res.data.rows;
-      });
+        this.queryParams.total = res.data.total
+        this.componentsData = res.data.rows
+      }).finally(() => {
+        this.componentsTableLoading = false
+      })
     },
     handleChangeTable(pagination, filters, sorter) {
       if (pagination) {
-        this.queryParams.page = pagination.current;
+        this.queryParams.page = pagination.current
       }
-      this.queryParams.sortName = sorter.field;
+      this.queryParams.sortName = sorter.field
       if (sorter && sorter.order === "descend") {
-        this.queryParams.sortOrder = "desc";
+        this.queryParams.sortOrder = "desc"
       } else if (sorter && sorter.order === "ascend") {
-        this.queryParams.sortOrder = "asc";
+        this.queryParams.sortOrder = "asc"
       } else {
-        this.queryParams.sortOrder = "";
+        this.queryParams.sortOrder = ""
       }
-      this.getData();
+      this.getData()
     },
     handleGoDetail(row) {
-      this.$router.push(`/componentsDetail/${row.uuid}`);
+      this.$router.push(`/componentsDetail/${row.uuid}`)
     },
     handleGoLicense(licenseId) {
-      this.$router.push(`/licensesDetail/${licenseId}`);
+      this.$router.push(`/licensesDetail/${licenseId}`)
     },
     handheTableSearch() {
-      this.queryParams.page = 1;
-      this.getData();
+      this.queryParams.page = 1
+      this.getData()
     },
   },
 };
