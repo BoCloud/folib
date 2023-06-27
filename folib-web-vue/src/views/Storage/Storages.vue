@@ -545,6 +545,26 @@
                       </div>
                       <h6>Helm</h6>
                     </a-col>
+                    <a-col :span="4">
+                      <div class="checkbox-label" :class="[layoutChecked === 'go' ? 'active' : '']"
+                           @click="toggleCheckbox('go')">
+                        <a-avatar :size="44" shape="square"
+                                  style="border-radius: 8px; background-image: linear-gradient( 310deg, #020202, #5c6391 );">
+                          <img src="images/folib/go.svg" style="width: 100%;" alt="">
+                        </a-avatar>
+                      </div>
+                      <h6>Go</h6>
+                    </a-col>
+                    <a-col :span="4">
+                      <div class="checkbox-label" :class="[layoutChecked === 'cocoapods' ? 'active' : '']"
+                           @click="toggleCheckbox('cocoapods')">
+                        <a-avatar :size="44" shape="square"
+                                  style="border-radius: 8px; background-image: linear-gradient( 310deg, #020202, #5c6391 );">
+                          <img src="images/folib/cocoapods.svg" style="width: 100%;" alt="">
+                        </a-avatar>
+                      </div>
+                      <h6>Swift</h6>
+                    </a-col>
                   </a-row>
                   <a-checkbox-group class="d-none" v-model="checkedList" :options="checkboxOptions" />
                 </a-col>
