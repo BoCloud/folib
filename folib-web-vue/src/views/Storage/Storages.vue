@@ -1277,11 +1277,33 @@ export default {
       }
     },
     createHandleView() {
-      this.showsTorageFormModal = true
-      if (this.$refs.storageCreate) {
-        this.$refs.storageCreate.resetFields()
-      }
-      this.getUsersList()
+      checkMachineCode().then(res => {
+        if (res.haveError) {
+          setTimeout(() => {
+            this.$notification.open({
+              class: 'ant-notification-warning',
+              message: 'License不正确',
+              description: '请检查License是否存在',
+            });
+          }, 1000);
+        } else {
+          if (res.dalyOut) {
+            setTimeout(() => {
+              this.$notification.open({
+                class: 'ant-notification-warning',
+                message: 'License已过期',
+                description: '请续期后再添加制品仓库',
+              });
+            }, 1000);
+          } else {
+            this.showsTorageFormModal = true
+            if (this.$refs.storageCreate) {
+              this.$refs.storageCreate.resetFields()
+            }
+            this.getUsersList()
+          }
+        }
+      })
     },
     updateHandleView() {
       if (this.currentStorage.basedir !== null) {
