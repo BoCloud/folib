@@ -1,8 +1,8 @@
 package com.veadan.folib.utils;
 
+import cn.hutool.extra.spring.SpringUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.boot.system.ApplicationHome;
 
 import java.io.*;
 import java.nio.MappedByteBuffer;
@@ -24,100 +24,55 @@ public class FileUtils {
 
 
     private static final Logger logger = LoggerFactory.getLogger(FileUtils.class);
-    final String TEMP_DIR = "/temp";
 
     /**
-     * jar所在的目录
+     * 临时目录
      *
      * @return
      */
-    public String getJarHomePath() {
-        ApplicationHome h = new ApplicationHome(getClass());
-        File jarF = h.getSource();
-        return jarF.getParentFile().toString();
-    }
-
-
-    /**
-     * 写入文件
-     *
-     * @param target
-     * @param src
-     * @throws IOException
-     */
-    public static void write(String target, InputStream src) throws IOException {
-        OutputStream os = new FileOutputStream(target);
-        byte[] buf = new byte[1024];
-        int len;
-        while (-1 != (len = src.read(buf))) {
-            os.write(buf, 0, len);
-        }
-        os.flush();
-        os.close();
+    public String getTempPath() {
+        return SpringUtil.getProperty("folib.temp");
     }
 
     /**
-     * 分块写入文件
-     *
-     * @param target
-     * @param targetSize
-     * @param src
-     * @param srcSize
-     * @param chunks
-     * @param chunk
-     * @throws IOException
+     * @return basePath
      */
-    public static void writeWithBlok(String target, Long targetSize, InputStream src, Long srcSize, Integer chunks, Integer chunk) throws IOException {
-        RandomAccessFile randomAccessFile = new RandomAccessFile(target, "rw");
-        randomAccessFile.setLength(targetSize);
-        if (chunk == chunks - 1) {
-            randomAccessFile.seek(targetSize - srcSize);
-        } else {
-            randomAccessFile.seek(chunk * srcSize);
-        }
-        byte[] buf = new byte[1024];
-        int len;
-        while (-1 != (len = src.read(buf))) {
-            randomAccessFile.write(buf, 0, len);
-        }
-        randomAccessFile.close();
+    public String getBasePath() {
+        return getTempPath() + "/";
     }
+
 
     /**
      * 上传文件
      *
      * @param fileDir
      * @param fileName
-     * @param chunk
      * @param bytes
      */
-    public void upload(String fileDir, String fileName, Integer chunk, byte[] bytes) {
-
+    public void upload(String fileDir, String fileName, byte[] bytes) {
         RandomAccessFile tempRaf = null;
         FileChannel fileChannel = null;
         MappedByteBuffer mappedByteBuffer = null;
         try {
-            String uploadDirPath = getJarHomePath();
             File tmpFile = createTmpFile(fileDir, fileName);
             tempRaf = new RandomAccessFile(tmpFile, "rw");
             fileChannel = tempRaf.getChannel();
-
-            long chunkSize = 0;
             //写入该分片数据
             long offset = 0;
-            byte[] fileData = bytes;
             logger.info("------------------>:filePath:{} fileName:{} fileSize:{}", tmpFile.getAbsolutePath(), fileName, bytes.length);
             mappedByteBuffer = fileChannel
-                    .map(FileChannel.MapMode.READ_WRITE, offset, fileData.length);
-            mappedByteBuffer.put(fileData);
-        } catch (FileNotFoundException e) {
-            logger.error(e.getMessage(), e);
+                    .map(FileChannel.MapMode.READ_WRITE, offset, bytes.length);
+            mappedByteBuffer.put(bytes);
         } catch (IOException e) {
             logger.error(e.getMessage(), e);
         } finally {
             try {
-                fileChannel.close();
-                tempRaf.close();
+                if (Objects.nonNull(fileChannel)) {
+                    fileChannel.close();
+                }
+                if (Objects.nonNull(tempRaf)) {
+                    tempRaf.close();
+                }
             } catch (IOException e) {
                 e.printStackTrace();
             }
@@ -134,8 +89,8 @@ public class FileUtils {
      */
     protected File createTmpFile(String fileDir, String fileName) {
         String dir = new StringBuffer()
-                .append(getJarHomePath())
-                .append(TEMP_DIR).append("/")
+                .append(getTempPath())
+                .append("/")
                 .append(fileDir).toString();
         File tmpDir = new File(dir);
         File tmpFile = new File(dir, fileName);
@@ -153,33 +108,46 @@ public class FileUtils {
      */
     public void deleteDir(String fileDir, String fileName) {
         String dir = new StringBuffer()
-                .append(getJarHomePath())
-                .append(TEMP_DIR).append("/")
+                .append(getTempPath())
+                .append("/")
                 .append(fileDir).append("/")
                 .append(fileName).toString();
 
         Path path = Paths.get(dir);
         try {
-            Files.walkFileTree(path, new SimpleFileVisitor<Path>() {
-                @Override
-                public FileVisitResult visitFile(Path file, BasicFileAttributes attrs)
-                        throws IOException {
-                    Files.delete(file);
-                    return super.visitFile(file, attrs);
-                }
-
-                @Override
-                public FileVisitResult postVisitDirectory(Path dir, IOException exc)
-                        throws IOException {
-                    Files.delete(dir);
-                    return super.postVisitDirectory(dir, exc);
-                }
-            });
+            deletePath(path);
+            Path parentPath = path.getParent();
+            if (Files.isDirectory(parentPath) && Files.list(parentPath).count() <= 0) {
+                Files.deleteIfExists(parentPath);
+            }
         } catch (IOException ex) {
             logger.error(ex.getMessage(), ex);
         }
     }
 
+    /**
+     * 删除文件或文件夹
+     *
+     * @param path 路径
+     * @throws IOException io异常
+     */
+    public void deletePath(Path path) throws IOException {
+        Files.walkFileTree(path, new SimpleFileVisitor<Path>() {
+            @Override
+            public FileVisitResult visitFile(Path file, BasicFileAttributes attrs)
+                    throws IOException {
+                Files.delete(file);
+                return super.visitFile(file, attrs);
+            }
+
+            @Override
+            public FileVisitResult postVisitDirectory(Path dir, IOException exc)
+                    throws IOException {
+                Files.delete(dir);
+                return super.postVisitDirectory(dir, exc);
+            }
+        });
+    }
 
     /**
      * 读取文件
@@ -192,17 +160,17 @@ public class FileUtils {
         FileInputStream inputStream = null;
         try {
             String filePath = new StringBuffer()
-                    .append(getJarHomePath())
-                    .append(TEMP_DIR).append("/")
+                    .append(getTempPath())
+                    .append("/")
                     .append(fileDir).append("/")
                     .append(fileName).toString();
 
             inputStream = new FileInputStream(filePath);
         } catch (FileNotFoundException e) {
             logger.error(e.getMessage(), e);
-        } finally {
-            return inputStream;
+            return null;
         }
+        return inputStream;
     }
 
     public Long getFileSize(String fileDir, String fileName) {
@@ -210,13 +178,12 @@ public class FileUtils {
         long offset = 0L;
         try {
             String filePath = new StringBuffer()
-                    .append(getJarHomePath())
-                    .append(TEMP_DIR).append("/")
+                    .append(getTempPath())
+                    .append("/")
                     .append(fileDir).append("/")
                     .append(fileName).toString();
 
             to = new FileOutputStream(filePath).getChannel();
-
             offset = to.position();
         } catch (FileNotFoundException e) {
             logger.error(e.getMessage(), e);
@@ -235,8 +202,8 @@ public class FileUtils {
     public Long getOffset(String fileDir, String fileName) {
         long offset = 0L;
         String filePath = new StringBuffer()
-                .append(getJarHomePath())
-                .append(TEMP_DIR).append("/")
+                .append(getTempPath())
+                .append("/")
                 .append(fileDir).append("/")
                 .append(fileName).toString();
         FileChannel to = null;
@@ -244,8 +211,6 @@ public class FileUtils {
             to = new FileOutputStream(filePath).getChannel();
 
             offset = to.position();
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
         } catch (IOException e) {
             e.printStackTrace();
         } finally {
@@ -258,8 +223,6 @@ public class FileUtils {
             }
             return offset;
         }
-
-
     }
 
 }

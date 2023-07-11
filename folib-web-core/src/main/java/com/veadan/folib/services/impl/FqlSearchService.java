@@ -1,6 +1,5 @@
 package com.veadan.folib.services.impl;
 
-import cn.hutool.core.date.DateUtil;
 import com.alibaba.fastjson.JSON;
 import com.google.common.collect.Lists;
 import com.veadan.folib.config.FolibPublicUtils;
@@ -33,6 +32,7 @@ import com.veadan.folib.util.RepositoryPathUtil;
 import com.veadan.folib.utils.TreeUtil;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.MapUtils;
+import org.apache.commons.lang3.time.DateFormatUtils;
 import org.apache.tinkerpop.gremlin.structure.Vertex;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Lazy;
@@ -139,7 +139,7 @@ public class FqlSearchService extends GremlinVertexRepository<Artifact> implemen
 
         SearchResults result = new SearchResults();
         result.setTotal(artifacts.getTotalElements());
-        SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        String df = "yyyy-MM-dd HH:mm:ss";
         for (Artifact artifact : artifactEntityList) {
             SearchResult r = new SearchResult();
             result.getResults().add(r);
@@ -162,11 +162,11 @@ public class FqlSearchService extends GremlinVertexRepository<Artifact> implemen
             r.setMediumVulnerabilitiesCount(artifact.getMediumVulnerabilitiesCount());
             r.setLowVulnerabilitiesCount(artifact.getLowVulnerabilitiesCount());
             r.setSuppressedVulnerabilitiesCount(artifact.getSuppressedVulnerabilitiesCount());
-            String createdTime = DateUtil.format(Date.from(artifact.getCreated().atZone(ZoneId.of("Asia/Shanghai")).toOffsetDateTime().toInstant()), df);
+            String createdTime = DateFormatUtils.format(Date.from(artifact.getCreated().atZone(ZoneId.of("Asia/Shanghai")).toOffsetDateTime().toInstant()), df);
             r.setCreated(createdTime);
             if (Objects.nonNull(artifact.getLastUsed())) {
-                String lastUpdatedTime = DateUtil.format(Date.from(artifact.getLastUsed().atZone(ZoneId.of("Asia/Shanghai")).toOffsetDateTime().toInstant()), df);
-                String lastUsedTime = DateUtil.format(Date.from(artifact.getLastUsed().atZone(ZoneId.of("Asia/Shanghai")).toOffsetDateTime().toInstant()), df);
+                String lastUpdatedTime = DateFormatUtils.format(Date.from(artifact.getLastUsed().atZone(ZoneId.of("Asia/Shanghai")).toOffsetDateTime().toInstant()), df);
+                String lastUsedTime = DateFormatUtils.format(Date.from(artifact.getLastUsed().atZone(ZoneId.of("Asia/Shanghai")).toOffsetDateTime().toInstant()), df);
                 r.setLastUpdated(lastUpdatedTime);
                 r.setLastUsed(lastUsedTime);
             }

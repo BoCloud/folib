@@ -80,6 +80,7 @@ public abstract class LayoutFileSystem
         Files.delete(storageRootPath);
     }
     
+    @Override
     public RootRepositoryPath getRootDirectory()
     {
         return new RootRepositoryPath(resolveRootPath(), this);
@@ -101,11 +102,12 @@ public abstract class LayoutFileSystem
         return getRootDirectory().resolve(TRASH).toAbsolutePath();
     }
 
-    protected RepositoryPath getTempPath()
+    public RepositoryPath getTempPath()
     {
         return getRootDirectory().resolve(TEMP).toAbsolutePath();
     }
 
+    @Override
     public RepositoryPath getPath(String first,
                                   String... more)
     {

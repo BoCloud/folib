@@ -1,19 +1,21 @@
 package com.veadan.folib.services.impl;
 
-import cn.hutool.core.collection.CollectionUtil;
-import cn.hutool.extra.spring.SpringUtil;
 import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.JSONObject;
 import com.beust.jcommander.internal.Sets;
+import com.veadan.folib.booters.PropertiesBooter;
 import com.veadan.folib.cluster.*;
+import com.veadan.folib.components.node.NodeComponent;
+import com.veadan.folib.configuration.ConfigurationManager;
 import com.veadan.folib.configuration.MutableSecurityPolicyConfiguration;
 import com.veadan.folib.controllers.cluster.dto.*;
-import com.veadan.folib.dispatch.ClusterDispatchNodeDto;
 import com.veadan.folib.entity.ClusterDataSyncTaskPo;
+import com.veadan.folib.forms.node.CassandraClusterForm;
 import com.veadan.folib.mapper.ClusterDataSyncTaskMapper;
 import com.veadan.folib.service.ProxyRepositoryConnectionPoolConfigurationService;
 import com.veadan.folib.services.ClusterSyncService;
-import com.veadan.folib.services.ConfigurationManagementService;
-import org.apache.commons.lang3.StringUtils;
+import org.apache.cassandra.tools.nodetool.HostStatWithPort;
+import org.apache.cassandra.tools.nodetool.SetHostStatWithPort;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -21,6 +23,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
+import javax.inject.Inject;
 import javax.ws.rs.client.Client;
 import javax.ws.rs.client.Entity;
 import javax.ws.rs.client.WebTarget;
@@ -28,7 +31,6 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import java.math.BigInteger;
 import java.util.*;
-import java.util.stream.Collectors;
 
 @Service
 public class ClusterSyncServiceImpl implements ClusterSyncService {
@@ -55,6 +57,12 @@ public class ClusterSyncServiceImpl implements ClusterSyncService {
 
     @Autowired
     private ClusterDataSyncTaskMapper clusterDataSyncTaskMapper;
+
+    @Autowired
+    private NodeComponent nodeComponent;
+
+    @Inject
+    private PropertiesBooter propertiesBooter;
 
     @Override
     public void syncConfiguration() {
@@ -92,31 +100,35 @@ public class ClusterSyncServiceImpl implements ClusterSyncService {
     private Set<String> getHostNodeList() {
         Set<String> nodeSet = Sets.newLinkedHashSet();
         try {
-            ConfigurationManagementService configurationManagementService =
-                    SpringUtil.getBean(ConfigurationManagementService.class);
-            Map<String, ClusterDispatchNodeDto> map = configurationManagementService.
-                    getMutableConfigurationClone().getClusterDispatchNode();
-            List<ClusterDispatchNodeDto> listDispatch =
-                    map.values().stream().filter(ClusterDispatchNodeDto::getIsThisCluster).collect(Collectors.toList());
-            if (CollectionUtil.isEmpty(listDispatch)) {
-                return Collections.emptySet();
-            }
-            String baseUrl = configurationManagementService.getConfiguration().getBaseUrl().trim();
-            baseUrl = baseUrl.endsWith("/") ? baseUrl.substring(0, baseUrl.length() - 1) : baseUrl;
-            for (ClusterDispatchNodeDto clusterDispatchNodeDto : listDispatch) {
-                String host = clusterDispatchNodeDto.getClusterNodeHost();
-                if (StringUtils.isBlank(host) || !host.trim().startsWith("http")) {
-                    continue;
+            CassandraClusterForm cassandraClusterForm = nodeComponent.cassandraClusterInfo();
+            SetHostStatWithPort statWithPorts = null;
+            Iterator<HostStatWithPort> hostStatWithPortIterator = null;
+            HostStatWithPort hostStatWithPort = null;
+            String node = "";
+            for (Map.Entry<String, SetHostStatWithPort> entry : cassandraClusterForm.getDcsMap().entrySet()) {
+                statWithPorts = entry.getValue();
+                if (Objects.nonNull(statWithPorts)) {
+                    hostStatWithPortIterator = statWithPorts.iterator();
+                    while (hostStatWithPortIterator.hasNext()) {
+                        hostStatWithPort = hostStatWithPortIterator.next();
+                        if (Objects.isNull(hostStatWithPort)) {
+                            continue;
+                        }
+                        if (cassandraClusterForm.getEndpoint().equals(hostStatWithPort.endpointWithPort.getHostAddressAndPort())) {
+                            //当前节点，跳过
+                            logger.info("Folib 集群节点为 [{}] 当前节点为 [{}]，跳过同步配置", hostStatWithPort.endpointWithPort.getHostAddressAndPort(), cassandraClusterForm.getEndpoint());
+                            continue;
+                        }
+                        node = String.format("%s%s%s%s", "http://", hostStatWithPort.endpoint.getHostAddress(), ":", propertiesBooter.getPort());
+                        nodeSet.add(node);
+                        logger.info("Folib 集群节点为 [{}]，加入到节点列表 [{}]", node, String.join(",", nodeSet));
+                    }
                 }
-                String url = host.trim().endsWith("/") ? host.trim().substring(0, host.length() - 1) : host.trim();
-                if (baseUrl.equals(url)) {
-                    continue;
-                }
-                nodeSet.add(url);
             }
+            logger.info("Folib 集群节点列表为 [{}]", String.join(",", nodeSet));
             return nodeSet;
-        } catch (Exception e) {
-            logger.error("get host node list error {}", e.getMessage());
+        } catch (Exception ex) {
+            logger.error("get host node list error {}", ExceptionUtils.getStackTrace(ex));
         }
         return Collections.emptySet();
     }
@@ -347,7 +359,7 @@ public class ClusterSyncServiceImpl implements ClusterSyncService {
                 throw new RuntimeException("Failed with HTTP error code : " + response.getStatus());
             }
         } catch (Exception e) {
-            logger.error("sync CronJob [{} {}] error {} ",storageId , repositoryId, ExceptionUtils.getStackTrace(e));
+            logger.error("sync CronJob [{} {}] error {} ", storageId, repositoryId, ExceptionUtils.getStackTrace(e));
             if (!isScheduled) {
                 addduledScheTask(
                         new ClusterDataSyncTaskPo(UUID.randomUUID().toString(),

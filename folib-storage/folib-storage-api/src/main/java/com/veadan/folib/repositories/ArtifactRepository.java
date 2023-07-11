@@ -542,8 +542,7 @@ public class ArtifactRepository extends GremlinVertexRepository<Artifact> {
                 .has(Properties.STORAGE_ID, storageId)
                 .has(Properties.REPOSITORY_ID, repositoryId)
                 .has(Properties.ARTIFACT_FILE_EXISTS, true);
-        boolean result = t.hasNext();
-        return result;
+        return t.hasNext();
     }
 
     public Artifact findOneArtifact(String storageId,

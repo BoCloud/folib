@@ -12,10 +12,14 @@ import com.veadan.folib.controllers.BaseController;
 import com.veadan.folib.controllers.cluster.dto.*;
 import com.veadan.folib.cron.services.CronTaskConfigurationService;
 import com.veadan.folib.event.repository.RepositoryEventListenerRegistry;
+import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.services.ClusterDispatchManagementService;
 import com.veadan.folib.services.RepositoryManagementService;
 import com.veadan.folib.services.StorageManagementService;
+import com.veadan.folib.storage.Storage;
+import com.veadan.folib.storage.repository.Repository;
 import io.swagger.annotations.Api;
+import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -26,6 +30,9 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+
+import java.nio.file.Files;
+import java.util.Objects;
 
 
 @RestController
@@ -63,12 +70,14 @@ public class FolibClusterSyncController extends BaseController {
                 storageManagementService.updateStorage(syncStorageDto.getStorageDto());
                 logger.info("sync update storage [{}] success", syncStorageDto.getStorageId());
             } else if (syncStorageDto.getSycnStorageEnum().getType() == 3) {
-                configurationManagementService.removeStorage(syncStorageDto.getStorageId());
                 if (syncStorageDto.getDeleteForceFlag()) {
-                    storageManagementService.removeStorage(syncStorageDto.getStorageId());
+                    final Storage storage = configurationManagementService.getConfiguration().getStorage(syncStorageDto.getStorageId());
+                    if (Objects.nonNull(storage) && MapUtils.isNotEmpty(storage.getRepositories())) {
+                        storageManagementService.removeStorage(syncStorageDto.getStorageId());
+                    }
                     repositoryEventListenerRegistry.dispatchRepoDelteAllToCronJobDeleteEvent(syncStorageDto.getStorageId(), "");
                 }
-
+                configurationManagementService.removeStorage(syncStorageDto.getStorageId());
                 logger.info("sync remove storage [{}] success", syncStorageDto.getStorageId());
             }
         } catch (Exception e) {
@@ -111,16 +120,22 @@ public class FolibClusterSyncController extends BaseController {
         try {
             if (syncRepositoryDto.getSycnRepositoryEnum().getType() == 1) {
                 configurationManagementService.saveRepository(syncRepositoryDto.getStorageId(), syncRepositoryDto.getRepositoryDto());
-                logger.info("sync save repository success");
+                logger.info("sync save repository [{}] [{}] success", syncRepositoryDto.getStorageId(), syncRepositoryDto.getRepositoryId());
             } else if (syncRepositoryDto.getSycnRepositoryEnum().getType() == 2) {
                 if (syncRepositoryDto.getDeleteForceFlag()) {
-                    repositoryManagementService.removeRepository(syncRepositoryDto.getStorageId(), syncRepositoryDto.getRepositoryId());
+                    Repository repository = getRepository(syncRepositoryDto.getStorageId(), syncRepositoryDto.getRepositoryId());
+                    if (Objects.nonNull(repository)) {
+                        RepositoryPath repositoryPath = repositoryPathResolver.resolve(repository);
+                        if (Objects.nonNull(repositoryPath) && Files.exists(repositoryPath)) {
+                            repositoryManagementService.removeRepository(syncRepositoryDto.getStorageId(), syncRepositoryDto.getRepositoryId());
+                        }
+                    }
                     repositoryEventListenerRegistry.
                             dispatchRepoDelteToCronJobDeleteEvent(syncRepositoryDto.getStorageId(), syncRepositoryDto.getRepositoryId());
                 }
                 configurationManagementService.removeRepository(syncRepositoryDto.getStorageId(),
                         syncRepositoryDto.getRepositoryId());
-                logger.info("sync remove repository success");
+                logger.info("sync remove repository [{}] [{}] success", syncRepositoryDto.getStorageId(), syncRepositoryDto.getRepositoryId());
             }
         } catch (Exception e) {
             logger.error("sync repository error {}", ExceptionUtils.getStackTrace(e));

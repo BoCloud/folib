@@ -421,23 +421,27 @@ export default ({
         this.folibScanData=res
       })
       weekDayCount().then(res=>{
-        res.dayCountList.forEach((item) => {
-          this.barChartData.labels.push(item.date)
-          this.barChartData.datasets[0].data.push(item.vulnerabilitiesCount)
-        })
-        if(this.$refs.volFolib){
-          this.$refs.volFolib.buildData()
+        if (res) {
+            res.dayCountList.forEach((item) => {
+              this.barChartData.labels.push(item.date)
+              this.barChartData.datasets[0].data.push(item.vulnerabilitiesCount)
+            })
+            if(this.$refs.volFolib){
+              this.$refs.volFolib.buildData()
+            }
+            this.weekCompare=res.compareCount
         }
-        this.weekCompare=res.compareCount
       })
       mounthDayCount().then(res=>{
-        res.forEach((item) => {
-          this.lineChartData.labels.push(item.date)
-          this.lineChartData.datasets[0].data.push(item.dependencyCount)
-          this.lineChartData.datasets[1].data.push(item.vulnerabilitiesCount)
-        })
-        if(this.$refs.d30map){
-          this.$refs.d30map.buildData()
+        if (res) {
+            res.forEach((item) => {
+              this.lineChartData.labels.push(item.date)
+              this.lineChartData.datasets[0].data.push(item.dependencyCount)
+              this.lineChartData.datasets[1].data.push(item.vulnerabilitiesCount)
+            })
+            if(this.$refs.d30map){
+              this.$refs.d30map.buildData()
+            }
         }
       })
     },

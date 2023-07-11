@@ -37,6 +37,14 @@ public enum DictTypeEnum {
      * 系统参数
      */
     SYSTEM_PROPERTY("system_property"),
+    /**
+     * docker文件进度
+     */
+    DOCKER_RANGES("docker_ranges"),
+    /**
+     * docker数据
+     */
+    DOCKER_DATA("docker_data"),
     ;
 
     private String type;

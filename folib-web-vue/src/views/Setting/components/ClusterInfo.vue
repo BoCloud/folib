@@ -44,6 +44,7 @@
                     </a-descriptions-item>
                     <a-descriptions-item label="数据所有权">
                       <span v-if="item.owns">{{ (item.owns * 100).toFixed(2) + '%' }}</span>
+                      <span v-else>{{ '100.00%' }}</span>
                     </a-descriptions-item>
                     <a-descriptions-item label="预估数据量">
                       {{ cassandraClusterInfo.loadMap[item.endpointWithPort.hostAddressAndPort] }}

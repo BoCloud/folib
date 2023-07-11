@@ -11,5 +11,6 @@
     <include file="classpath:db/changelog/changelog_webhook_log_init.xml"/>
     <include file="classpath:db/changelog/changelog_upgrade_task_init.xml"/>
     <include file="classpath:db/changelog/changelog_license_init.xml"/>
+    <include file="classpath:db/changelog/changelog_dict_update.xml"/>
     <!--后续增加的按照写对应的sql与changelog-->
 </databaseChangeLog>
