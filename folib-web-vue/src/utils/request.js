@@ -78,13 +78,12 @@ request.interceptors.request.use((config) => {
   // 如果 token 存在
   // 让每个请求携带自定义 token 请根据实际情况自行修改
   if (token) {
-    const hasWordApi = config.url.includes("/api");
-    // 有/api
-    if (hasWordApi) {
-      config.headers[ACCESS_TOKEN] = "Bearer " + token;
-    } else {
+    const hasWordDependency = config.url.includes("/dependency");
+    // 有/dependency
+    if (hasWordDependency) {
       config.headers["X-Api-Key"] = "9y8uatB9rJefH6uvVrNKIBQ3vgLlhuxp";
-      // config.headers["X-Api-Key"] = "pheWYMqsYbJOaOQlDI48mIvOPI1d39ks";
+    } else {
+      config.headers[ACCESS_TOKEN] = "Bearer " + token;
     }
   }
   return config;

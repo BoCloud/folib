@@ -5,6 +5,7 @@ import cn.hutool.json.JSONUtil;
 import com.alibaba.fastjson.JSONObject;
 import com.fasterxml.jackson.annotation.JsonView;
 import com.google.common.collect.Lists;
+import com.veadan.folib.annotation.LicenseAnnotation;
 import com.veadan.folib.authorization.dto.AuthorizationConfigDto;
 import com.veadan.folib.authorization.service.AuthorizationConfigService;
 import com.veadan.folib.cluster.SyncAuthorizationEnum;
@@ -170,6 +171,7 @@ public class StoragesConfigurationController
         this.conversionService = conversionService;
     }
 
+//    @LicenseAnnotation
     @ApiOperation(value = "Adds a storage.")
     @ApiResponses(value = {@ApiResponse(code = 200, message = "The storage was created successfully."),
             @ApiResponse(code = 500, message = "An error occurred.")})
@@ -599,6 +601,7 @@ public class StoragesConfigurationController
         return ResponseEntity.ok(repositoryForms);
     }
 
+//    @LicenseAnnotation
     @ApiOperation(value = "Adds or updates a repository.")
     @ApiResponses(value = {@ApiResponse(code = 200, message = "The repository was updated successfully."),
             @ApiResponse(code = 404, message = "The repository ${repositoryId} was not found!"),

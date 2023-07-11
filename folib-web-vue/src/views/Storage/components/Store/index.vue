@@ -2059,7 +2059,21 @@ export default {
       if (this.folibRepository.layout !== "Docker") {
         if (this.currentFileDetial && !this.currentFileDetial.listTree) {
           viewArtifactFile(this.currentTreeNode.url).then((res) => {
-            this.viewCodes = res;
+            if ("string" === typeof res && res.startsWith("PK")) {
+              this.viewCodes = undefined
+            } else if ("object" === typeof res) {
+              if (res.data) {
+                if ("string" === typeof res.data) {
+                  this.viewCodes = res.data
+                } else {
+                  this.viewCodes = JSON.stringify(res.data)
+                }
+              } else {
+                this.viewCodes = JSON.stringify(res)
+              }
+            } else {
+              this.viewCodes = res
+            }
           });
         }
       } else {
