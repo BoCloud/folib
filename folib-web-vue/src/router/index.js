@@ -1,5 +1,18 @@
 import Vue from 'vue'
 import VueRouter from 'vue-router'
+import {
+  getSsoList,
+  addSsoClient,
+  updateSsoClient,
+  deleteClient
+
+} from '@/api/sso'
+
+import storage from 'store'
+import {ACCESS_TOKEN, USER_INFO} from '@/store/mutation-types'
+
+
+
 
 Vue.use(VueRouter)
 
@@ -14,6 +27,7 @@ let routes = [
 		name: 'Home',
 		redirect: '/anonymous/storages',
 	},
+ 
 	{
 		path: '/dashboards/',
 		name: 'Dashboard',
@@ -319,5 +333,52 @@ const router = new VueRouter({
 		}
 	}
 })
+
+
+// 校验登录信息
+router.beforeEach((from,to,next)=>{
+  // 排除自己的登录页面
+  if(from.path==='/'||from.path==='/anonymous/storages'||from.path==='/login'){
+    next(true)
+  }else{
+  // 已登录直接跳转
+  if (isLogin()) {
+    next(true)
+  // 没有跳转直接到登陆页面  
+  } else {
+    checkLoginInfo()
+    next(false)
+  }
+}
+ 
+})
+
+
+// 单点登录的校验
+async function checkLoginInfo(){
+  // 首先要查到后端配置的单点配置信息
+    let list=await getSsoList()
+    // 本系统配置的clientId 否则不知道单点登录的页面地址在哪 后期考虑采用列表的 方式展现登录方式，目前先配死
+    let clientId="single"
+    let clientObject = list.filter(o=>o.clientId===clientId)[0]
+    console.log(clientObject.ssoPath+"?redirectPath="+clientObject.redirectPath+"&clientId="+clientObject.clientId);
+
+    let url =clientObject.ssoPath+"?redirect_uri="+clientObject.redirectPath+"&client_id="+clientObject.clientId+"&response_type=code"
+    // 可以在输入的时候限定格式
+    url= url.startsWith("http")? url:"http://"+url
+
+    // 这可以选择登录的模式
+    url = "https://www.keycloak.org/app/#url=http://localhost:8080&realm=myrealm&client=single"
+    // 跳转到登陆页面
+    window.location.href=url
+
+}
+
+
+  // 判断用户是否已经登录
+  function isLogin() {
+    let token= storage.get(ACCESS_TOKEN)
+    return !!token   
+  }
 
 export default router
