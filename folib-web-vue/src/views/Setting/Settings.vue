@@ -1157,8 +1157,8 @@
                      row-key="clientId">
 
               <template slot="operation"
-                        slot-scope="text, record">
-                <div class="editable-row-operations">
+                        slot-scope="text, record"  >
+                <div class="editable-row-operations"  style="width:100px">
                   <span>
                     <a @click="() => ssoEdit(record)">Edit</a>
                   </span>
@@ -1500,27 +1500,90 @@
       <a-form :form="ssoform"
               layout="vertical">
              
-        <a-form-item label="clientId">
+        <a-form-item >
+          <span slot="label">
+            clientId&nbsp;
+            <a-tooltip title="客户端唯一标识,客户端id" class="info-message">
+              <a-icon type="question-circle-o" />
+            </a-tooltip>
+          </span>
           <a-input v-decorator="['clientId', { rules: [{ required: true, message: '请输入客户端ID!' }] }]"
                    placeholder="请填写客户端id"  :disabled="ssoActionName.includes('编辑')"/>
         </a-form-item>
+        <a-form-item >
+          <span slot="label">
+            客户端名称&nbsp;
+            <a-tooltip title="客户端名称" class="info-message">
+              <a-icon type="question-circle-o" />
+            </a-tooltip>
+          </span>
+          <a-input v-decorator="['clientName', { rules: [{ required: true, message: '请输入客户端名称' }] }]"
+                   placeholder="请填写客户端名称"  />
+        </a-form-item>
 
-        <a-form-item label="登录地址">
+        
+        <a-form-item >
+          <span slot="label">
+            登录地址&nbsp;
+            <a-tooltip title="单点登录页面所对应的url地址,由第三方登录系统提供!" class="info-message">
+              <a-icon type="question-circle-o" />
+            </a-tooltip>
+          </span>
           <a-input v-decorator="['ssoPath', { rules: [{ required: true, message: '请输入登录页面地址!' }] }]"
                    placeholder="请输入登录页面地址!" />
         </a-form-item>
 
-        <a-form-item label="跳转路由">
+        <a-form-item >
+          <span slot="label">
+            退出登录地址&nbsp;
+            <a-tooltip title="单点登录页面退出登录所独调用的url地址,由第三方登录系统提供.用于清除服务端的会话!" class="info-message">
+              <a-icon type="question-circle-o" />
+            </a-tooltip>
+          </span>
+          <a-input v-decorator="['loginOutUrl', { rules: [{ required: true, message: '请输入退出登录页面地址!' }] }]"
+                   placeholder="请输入退出登录页面地址!" />
+        </a-form-item>
+
+        <a-form-item >
+          <span slot="label">
+            退出重定向url&nbsp;
+            <a-tooltip title="退出登录后重定向地址！" class="info-message">
+              <a-icon type="question-circle-o" />
+            </a-tooltip>
+          </span>
+          <a-input v-decorator="['loginOutRedPath', { rules: [{ required: true, message: '退出重定向url!' }] }]"
+                   placeholder="退出重定向url!" />
+        </a-form-item>
+ 
+        <a-form-item >
+          <span slot="label">
+            accessToken的接口地址&nbsp;
+            <a-tooltip title="登录后重定向地址！" class="info-message">
+              <a-icon type="question-circle-o" />
+            </a-tooltip>
+          </span>
           <a-input v-decorator="['redirectPath', { rules: [{ required: true, message: '请输入跳转路由!' }] }]"
                    placeholder="请输入跳转路由!" />
         </a-form-item>
 
-        <a-form-item label="图标" v-show="false">
-          <a-input v-decorator="['picIcoin', { rules: [{ required: false, message: '请输入图标!' }] }]"
-                   placeholder="请输入图标!" />
+        <a-form-item >
+          <span slot="label">
+            获取token接口地址&nbsp;
+            <a-tooltip title="获取accessToken的接口地址！" class="info-message">
+              <a-icon type="question-circle-o" />
+            </a-tooltip>
+          </span>
+          <a-input v-decorator="['access_token_url', { rules: [{ required: true, message: '请输入accessToken的接口地址!' }] }]"
+                   placeholder="请输入accessToken的接口地址!" />
         </a-form-item>
 
-        <a-form-item label="配置说明">
+        <a-form-item >
+          <span slot="label">
+            配置说明&nbsp;
+            <a-tooltip title="描述信息" class="info-message">
+              <a-icon type="question-circle-o" />
+            </a-tooltip>
+          </span>
           <a-input v-decorator="['desc', { rules: [{ required: true, message: '请输入配置说明!' }] }]"
                    placeholder="请输入配置说明!" />
         </a-form-item>
@@ -1787,6 +1850,13 @@ export default {
           dataIndex: 'clientId',
           key: 'clientId'
         },
+
+        {
+          title: '客户端名称',
+          dataIndex: 'clientName',
+          key: 'clientName'
+        },
+        
         {
           title: '重定向地址',
           dataIndex: 'redirectPath',
@@ -1797,11 +1867,17 @@ export default {
           key: 'ssoPath',
           dataIndex: 'ssoPath'
         },
-        // {
-        //   title: '图标类型',
-        //   key: 'picIcoin',
-        //   dataIndex: 'picIcoin'
-        // },
+        {
+          title: '单点退出登陆地址',
+          key: 'loginOutUrl',
+          dataIndex: 'loginOutUrl'
+        },
+
+        {
+          title: '退出登录重定向地址',
+          key: 'loginOutRedPath',
+          dataIndex: 'loginOutRedPath'
+        },     
         {
           title: '描述',
           key: 'desc',
@@ -2431,7 +2507,11 @@ export default {
         redirectPath: '',
         ssoPath: '',
         desc: '',
-        picIcoin: ''   
+        picIcoin: '' ,
+        loginOutRedPath:'',
+        loginOutUrl:'',
+        clientName:'',
+        access_token_url:''
       }
       this.$nextTick(() => {
         this.ssoform.setFieldsValue({...this.ssoObj}) 
@@ -2718,5 +2798,11 @@ export default {
   .package-name-list.ant-card-bordered {
     border: unset;
   }
+}
+.info-message{
+  color:#fff;
+  background:#1890ff ;
+  border-radius: 50%;
+  scale: (1.3);
 }
 </style>

@@ -50,6 +50,22 @@ export function updateSsoClient (obj) {
 }
 
 
+/**
+ * 
+ * @returns 新增客户端
+ */
+export function ssoLogin (obj) {
+  return axios({
+    url: '/api/sso/ssoLogin',
+    method: 'post',
+    data:obj
+  })
+}
+
+
+
+
+
 
 
 
