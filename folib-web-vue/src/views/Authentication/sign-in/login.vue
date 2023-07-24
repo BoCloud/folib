@@ -78,6 +78,7 @@
 						</a-form>
 					</a-tab-pane>
 				</a-tabs>
+        <Clients :clients="clientList"></Clients>
 				<!-- <p class="font-semibold text-muted text-center">没有账号? <router-link to="/sign-in"
 						class="font-bold text-dark">注册</router-link>
 				</p> -->
@@ -97,6 +98,7 @@
 			<!-- / Sign Up Image Column -->
 
 		</a-row>
+   
 
 	</div>
 </template>
@@ -104,14 +106,29 @@
 <script>
 import store from '@/store'
 import { encrypt } from "@/utils/jsencrypt"
-export default ({
+import {
+  getSsoList,
+} from '@/api/sso'
+import  Clients  from "../../../components/loginClients/clients";
+export default {
+  components:{
+    Clients
+  },
 	data() {
 		return {
+      clientList:[],
 			// Sign up form object.
 			form: this.$form.createForm(this, { name: 'signup_illustration' }),
 			loginTypeActiveKey: 1,
 		}
 	},
+  created(){
+    getSsoList().then(res=>{
+      this.clientList=res
+      console.log(this.clientList);
+    })
+  },
+
 	methods: {
 		loginTypeChange(activeKey) {
 			this.form.resetFields()
@@ -134,6 +151,7 @@ export default ({
 						}
 						//
 						this.$router.push({ name: 'storages' })
+            sessionStorage.setItem('loginMethod','systemLocal')
 						// 延迟 1 秒显示欢迎信息
 						setTimeout(() => {
 							this.$notification.success({
@@ -152,7 +170,7 @@ export default ({
 			}
 		}
 	},
-})
+}
 
 </script>
 

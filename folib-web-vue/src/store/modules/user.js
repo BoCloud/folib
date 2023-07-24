@@ -97,7 +97,14 @@ const user = {
         storage.remove(ACCESS_TOKEN)
         storage.remove(USER_INFO)
         storage.remove("libView_repository")
+        sessionStorage.setItem("loginStatus",'off')
+        if(sessionStorage.getItem("loginMethod")==="single"){
+          sessionStorage.setItem('loginMethod','loginOut') 
+          window.location.href=sessionStorage.getItem("loginOutUti")     
+        }
+        sessionStorage.setItem('loginMethod','loginOut')
         router.push({ name: 'login' })
+        // 推出登陆时需要调用单点登录的退出
       })
     }
 

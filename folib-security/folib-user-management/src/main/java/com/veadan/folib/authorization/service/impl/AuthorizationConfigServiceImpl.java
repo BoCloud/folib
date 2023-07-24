@@ -1,6 +1,7 @@
 package com.veadan.folib.authorization.service.impl;
 
 import java.io.IOException;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.locks.Lock;
@@ -10,6 +11,7 @@ import java.util.function.Consumer;
 
 import javax.inject.Inject;
 
+import com.veadan.folib.authorization.domain.Client;
 import org.apache.commons.lang3.SerializationUtils;
 import org.apache.commons.lang3.mutable.MutableBoolean;
 import com.veadan.folib.authorization.AuthorizationConfigFileManager;
@@ -93,6 +95,33 @@ public class AuthorizationConfigServiceImpl
                          config.getRoles().add(role);
                      });
     }
+
+    public void addClient(final Client client) throws IOException
+    {
+        modifyInLock(config ->
+        {
+            config.getClients().add(client);
+        });
+    }
+
+    public boolean deleteClient(final String clientId) throws IOException
+    {
+        MutableBoolean result = new MutableBoolean();
+        modifyInLock(config ->
+        {
+            Set<Client> clients = config.getClients();
+            clients.stream()
+                    .filter(r -> r.getClientId()
+                            .equalsIgnoreCase(clientId))
+                    .findFirst()
+                    .ifPresent(r -> {
+                        result.setValue(clients.remove(r));}
+                            );
+        });
+        return result.isTrue();
+    }
+
+
 
     @Override
     public boolean deleteRole(final String roleName) throws IOException

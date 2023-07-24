@@ -5,6 +5,7 @@ import java.util.LinkedHashSet;
 import java.util.Set;
 
 import com.fasterxml.jackson.annotation.JsonRootName;
+import com.veadan.folib.authorization.domain.Client;
 
 /**
  * Java representation for authorization config that stored in YAML file.
@@ -21,14 +22,26 @@ public class AuthorizationConfigDto
 
     private Set<RoleDto> roles = new LinkedHashSet<>();
 
+    private  Set<Client> clients=new LinkedHashSet<>();
+
     public Set<RoleDto> getRoles()
     {
         return roles;
     }
 
+
+
     public void setRoles(Set<RoleDto> roles)
     {
         this.roles = roles;
+    }
+
+    public Set<Client> getClients() {
+        return clients;
+    }
+
+    public void setClients(Set<Client> clients) {
+        this.clients = clients;
     }
 
     @Override

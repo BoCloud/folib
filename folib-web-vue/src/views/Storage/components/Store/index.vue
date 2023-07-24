@@ -4,47 +4,34 @@
       <a-row>
         <a-col :span="24" :md="24" class="mb-24">
           <!-- User Profile Card -->
-          <a-card
-            :bordered="false"
-            class="card-profile-head"
-            :bodyStyle="{ padding: 0 }"
-            :targetOffset="0"
-            :affix="false"
-          >
+          <a-card :bordered="false" class="card-profile-head" :bodyStyle="{ padding: 0 }" :targetOffset="0"
+            :affix="false">
             <template #title>
               <a-row type="flex" align="middle">
                 <a-col :span="24" :md="12" class="col-info">
                   <a>
-                    <a-icon
-                      type="backward"
-                      :style="{
-                        fontSize: '32px',
-                        marginRight: '5px',
-                        opacity: '0.8',
-                        color: '#BFBFBFFF',
-                      }"
-                      @click="goBack()"
-                    />
+                    <a-icon type="backward" :style="{
+                      fontSize: '32px',
+                      marginRight: '5px',
+                      opacity: '0.8',
+                      color: '#BFBFBFFF',
+                    }" @click="goBack()" />
                   </a>
                   <a>
-                    <a-avatar
-                      @click="createData"
-                      :size="54"
-                      shape="square"
+                    <a-avatar @click="createData" :size="54" shape="square"
                       style="border-radius: 8px; background-image: linear-gradient( 310deg, #020202, #5c6391 );"
-                      :src="'images/folib/' + getLayoutTypeHandle() + '.svg'"
-                    />
+                      :src="'images/folib/' + getLayoutTypeHandle() + '.svg'" />
                   </a>
                   <div class="avatar-info">
                     <a-tooltip placement="topLeft">
                       <template slot="title">
-                       点击可进入浏览页面
+                        点击可进入浏览页面
                       </template>
                       <a :href="baseUrl +
-                                      'api/browse/' +
-                                      folibRepository.storageId +
-                                      '/' +
-                                      folibRepository.id" target="_blank">
+                        'api/browse/' +
+                        folibRepository.storageId +
+                        '/' +
+                        folibRepository.id" target="_blank">
                         <h4 class="font-semibold m-0" @click="createData">
                           {{ folibRepository.id }}
                         </h4>
@@ -52,7 +39,7 @@
                     </a-tooltip>
                     <a-tooltip>
                       <template slot="title">
-                       仓库使用地址，具体使用方法，请看页面右侧使用帮助
+                        仓库使用地址，具体使用方法，请看页面右侧使用帮助
                       </template>
                       <a>
                         <p class="copy-p">
@@ -63,51 +50,38 @@
                       </a>
                     </a-tooltip>
                     <a class="ml-10">
-                      <a-icon
-                        type="copy"
-                        @click="
-                          copy(
-                            getRepositoryUrl()
-                          )
-                        "
-                      />
+                      <a-icon type="copy" @click="
+                      copy(
+                        getRepositoryUrl()
+                      )
+                        " />
                     </a>
                   </div>
                 </a-col>
-                <a-col
-                  :span="24"
-                  :md="12"
-                  style="
+                <a-col :span="24" :md="12" style="
                     display: flex;
                     align-items: center;
                     justify-content: flex-end;
-                  "
-                >
+                  ">
                   <a v-if="folibRepository.layout === 'rpm'">
                     <small style="padding-right: 20px" @click="handleRpmUpload">
                       上传
                       <a-icon type="cloud-upload" />
                     </small>
                   </a>
-                  <a
-                    v-if="uploadEnabled && folibRepository.layout === 'Maven 2'"
-                    ><small style="padding-right: 20px" @click="handleMavenUpload">
+                  <a v-if="uploadEnabled && folibRepository.layout === 'Maven 2'"><small style="padding-right: 20px"
+                      @click="handleMavenUpload">
                       上传
                       <a-icon type="cloud-upload" />
                     </small>
                   </a>
-                  <a
-                    v-if="uploadEnabled"
-                    ><small style="padding-right: 20px" @click="handleUpload">
+                  <a v-if="uploadEnabled"><small style="padding-right: 20px" @click="handleUpload">
                       批量上传
                       <a-icon type="cloud-upload" />
                     </small>
                   </a>
                   <a v-if="folibRepository.layout !== 'Raw'">
-                    <small
-                      style="padding-right: 20px"
-                      @click="UsedHelperVisible"
-                    >
+                    <small style="padding-right: 20px" @click="UsedHelperVisible">
                       使用帮助
                       <a-icon type="question-circle" theme="filled" />
                     </small>
@@ -116,11 +90,7 @@
                     <span class="mr-15">{{
                       scan.onScan ? "扫描开启" : "扫描关闭"
                     }}</span>
-                    <a-switch
-                      default-checked
-                      v-model="scan.onScan"
-                      @change="scannerChange"
-                    />
+                    <a-switch default-checked v-model="scan.onScan" @change="scannerChange" />
                   </div>
                 </a-col>
               </a-row>
@@ -132,78 +102,45 @@
     <a-row v-if="isSearch === false" type="flex" :gutter="24">
       <!-- Platform Settings Column -->
       <a-col :span="24" :md="10" class="mb-24">
-        <a-card
-          :bordered="false"
-          style="max-height: 1024px; min-height: 454px; overflow-y: auto"
-          class="header-solid"
-          :bodyStyle="{ paddingTop: 0, paddingBottom: 0 }"
-        >
+        <a-card :bordered="false" style="max-height: 1024px; min-height: 454px; overflow-y: auto" class="header-solid"
+          :bodyStyle="{ paddingTop: 0, paddingBottom: 0 }">
           <template #title>
-            <h6 class="font-semibold m-0">包列表 <a class="ml-10" @click="reload()"><a-icon type="reload" /></a></h6>
+            <h6 class="font-semibold m-0">包列表 <a class="ml-10" @click="reload()">
+                <a-icon type="reload" /></a></h6>
           </template>
-          <a-directory-tree
-            :replaceFields="{
-              key: 'artifactPath',
-              title: 'name',
-              children: 'children',
-            }"
-            :tree-data="treeData"
-            :load-data="onLoadData"
-            @select="treeSelect"
-          >
+          <a-directory-tree :replaceFields="{
+            key: 'artifactPath',
+            title: 'name',
+            children: 'children',
+          }" :tree-data="treeData" :load-data="onLoadData" @select="treeSelect">
           </a-directory-tree>
         </a-card>
       </a-col>
 
       <a-col :span="24" :md="14" class="mb-24">
-        <a-card
-          :bordered="false"
-          class="header-solid h-full card-profile-information"
-          :bodyStyle="{ paddingTop: 0, paddingBottom: '16px' }"
-          :headStyle="{ paddingRight: 0 }"
-        >
+        <a-card :bordered="false" class="header-solid h-full card-profile-information"
+          :bodyStyle="{ paddingTop: 0, paddingBottom: '16px' }" :headStyle="{ paddingRight: 0 }">
           <template #title>
-            <a-row
-              type="flex"
-              align="middle"
-              v-if="folibRepository.layout !== 'Docker'"
-            >
+            <a-row type="flex" align="middle" v-if="folibRepository.layout !== 'Docker'">
               <a-col :span="16" class="font-semibold m-0">
                 <a-row type="flex" align="middle">
                   <a-col :span="8" :xs="24" :xl="16">
-                    <a-avatar
-                      v-if="!currentTreeNode.isLeaf"
-                      :size="24"
-                      shape="square"
-                      :src="'images/folib/package.svg'"
-                    />
-                    <a-avatar
-                      v-if="currentTreeNode.isLeaf"
-                      :size="24"
-                      shape="square"
-                      :src="
-                        'images/folib/' +
-                        getFileType(currentTreeNode.name) +
-                        '.svg'
-                      "
-                    />
+                    <a-avatar v-if="!currentTreeNode.isLeaf" :size="24" shape="square"
+                      :src="'images/folib/package.svg'" />
+                    <a-avatar v-if="currentTreeNode.isLeaf" :size="24" shape="square" :src="'images/folib/' +
+                      getFileType(currentTreeNode.name) +
+                      '.svg'
+                      " />
                     {{ currentTreeNode.name }}
                   </a-col>
                   <a-col :span="8" :xs="24" :xl="8">
-                    <span
-                      class="ml-auto"
-                      v-if="scanReport.show"
-                      @click="openDetial"
-                    >
+                    <span class="ml-auto" v-if="scanReport.show" @click="openDetial">
                       <a-space :size="1" class="avatar-chips">
                         <template v-if="scanReport.vulnerabilitesCount > 0">
                           <a-tooltip>
                             <template slot="title">严重</template>
                             <div class="">
-                              <a-avatar
-                                :size="24"
-                                :src="'images/folib/critical.svg'"
-                              />
+                              <a-avatar :size="24" :src="'images/folib/critical.svg'" />
                               <span class="mb-0 text-dark">{{
                                 scanReport.critical
                               }}</span>
@@ -213,10 +150,7 @@
                           <a-tooltip>
                             <template slot="title">高危</template>
                             <div class="">
-                              <a-avatar
-                                :size="24"
-                                :src="'images/folib/high.svg'"
-                              />
+                              <a-avatar :size="24" :src="'images/folib/high.svg'" />
                               <span class="mb-0 text-dark">{{
                                 scanReport.high
                               }}</span>
@@ -226,10 +160,7 @@
                           <a-tooltip>
                             <template slot="title">中危</template>
                             <div class="">
-                              <a-avatar
-                                :size="24"
-                                :src="'images/folib/medium.svg'"
-                              />
+                              <a-avatar :size="24" :src="'images/folib/medium.svg'" />
                               <span class="mb-0 text-dark">{{
                                 scanReport.medium
                               }}</span>
@@ -239,10 +170,7 @@
                           <a-tooltip>
                             <template slot="title">低危</template>
                             <div class="">
-                              <a-avatar
-                                :size="24"
-                                :src="'images/folib/low.svg'"
-                              />
+                              <a-avatar :size="24" :src="'images/folib/low.svg'" />
                               <span class="mb-0 text-dark">{{
                                 scanReport.low
                               }}</span>
@@ -252,10 +180,7 @@
                         <template v-else>
                           <a-tooltip>
                             <template slot="title">健康</template>
-                            <a-avatar
-                              :size="24"
-                              :src="'images/folib/healthy.svg'"
-                            />
+                            <a-avatar :size="24" :src="'images/folib/healthy.svg'" />
                           </a-tooltip>
                         </template>
                       </a-space>
@@ -264,18 +189,10 @@
                 </a-row>
               </a-col>
               <a-col :span="8" class="text-right">
-                <a-dropdown
-                  v-if="$store.state.user.token && currentTreeNode.url"
-                  class="mr-30"
-                  placement="bottomCenter"
-                >
+                <a-dropdown v-if="$store.state.user.token && currentTreeNode.url" class="mr-30" placement="bottomCenter">
                   <span style="font-size: 16px; cursor: pointer">
                     更多
-                    <a-icon
-                      type="more"
-                      class="text-muted"
-                      style="font-size: 16px"
-                    />
+                    <a-icon type="more" class="text-muted" style="font-size: 16px" />
                   </span>
                   <template #overlay>
                     <a-menu slot="overlay" @click="handleMenuClick">
@@ -283,80 +200,54 @@
                         <a-icon type="eye" />
                         {{
                           currentFileDetial.listTree
-                            ? "包"
-                            : viewCodes
+                          ? "包"
+                          : viewCodes
                             ? "文件"
                             : folibRepository.layout === "Docker"
-                            ? "详情"
-                            : ""
+                              ? "详情"
+                              : ""
                         }}预览
                       </a-menu-item>
-                      <a-menu-item
-                        key="2"
-                        v-if="copyEnabled"
-                      >
+                      <a-menu-item key="2" v-if="copyEnabled">
                         <a-icon type="copy" />复制
                       </a-menu-item>
-                      <a-menu-item
-                        key="3"
-                        v-if="moveEnabled"
-                      >
+                      <a-menu-item key="3" v-if="moveEnabled">
                         <a-icon type="swap" />移动
                       </a-menu-item>
-                      <a-menu-item key="4"
-                      v-if="deleteEnabled">
-                        <a-popconfirm
-                          title="确定要删除吗？"
-                          placement="topLeft"
-                          okType="danger"
-                          ok-text="确定"
-                          cancel-text="取消"
-                          @confirm="deletePackageHandle"
-                        >
+                      <a-menu-item key="4" v-if="deleteEnabled">
+                        <a-popconfirm title="确定要删除吗？" placement="topLeft" okType="danger" ok-text="确定" cancel-text="取消"
+                          @confirm="deletePackageHandle">
                           <a-icon type="delete" />删除
                         </a-popconfirm>
                       </a-menu-item>
-                      <a-menu-item
-                          key="5"
-                          v-if="dispatchEnabled"
-                      >
+                      <a-menu-item key="5" v-if="dispatchEnabled">
                         <a-icon type="retweet" />分发
+                      </a-menu-item>
+
+                      <a-menu-item key="6"
+                        v-if="currentTreeNode && currentTreeNode.type === 'file' && currentFileDetial && currentFileDetial.artifact">
+                        <a-icon type="download" />下载
                       </a-menu-item>
                     </a-menu>
                   </template>
                 </a-dropdown>
               </a-col>
             </a-row>
-            <a-row
-              type="flex"
-              align="middle"
-              v-if="folibRepository.layout === 'Docker'"
-            >
+            <a-row type="flex" align="middle" v-if="folibRepository.layout === 'Docker'">
               <a-col :span="16" class="font-semibold m-0">
                 <a-row type="flex" align="middle">
                   <a-col :span="8" :xs="24" :xl="16">
-                    <a-avatar
-                      :size="24"
-                      shape="square"
-                      :src="'images/folib/docker-s.svg'"
-                    />
+                    <a-avatar :size="24" shape="square" :src="'images/folib/docker-s.svg'" />
                     {{ currentTreeNode.name }}
                   </a-col>
                   <a-col :span="8" :xs="24" :xl="8">
-                    <span
-                      class="ml-auto"
-                      v-if="scanReport.show"
-                      @click="openDetial"
-                    >
+                    <span class="ml-auto" v-if="scanReport.show" @click="openDetial">
                       <a-space :size="1" class="avatar-chips">
                         <template v-if="scanReport.vulnerabilitesCount > 0">
                           <a-tooltip>
                             <template slot="title">严重</template>
                             <div class="">
-                              <a-avatar
-                                :size="24"
-                                :src="'images/folib/critical.svg'"
-                              />
+                              <a-avatar :size="24" :src="'images/folib/critical.svg'" />
                               <span class="mb-0 text-dark">{{
                                 scanReport.critical
                               }}</span>
@@ -366,10 +257,7 @@
                           <a-tooltip>
                             <template slot="title">高危</template>
                             <div class="">
-                              <a-avatar
-                                :size="24"
-                                :src="'images/folib/high.svg'"
-                              />
+                              <a-avatar :size="24" :src="'images/folib/high.svg'" />
                               <span class="mb-0 text-dark">{{
                                 scanReport.high
                               }}</span>
@@ -379,10 +267,7 @@
                           <a-tooltip>
                             <template slot="title">中危</template>
                             <div class="">
-                              <a-avatar
-                                :size="24"
-                                :src="'images/folib/medium.svg'"
-                              />
+                              <a-avatar :size="24" :src="'images/folib/medium.svg'" />
                               <span class="mb-0 text-dark">{{
                                 scanReport.medium
                               }}</span>
@@ -392,10 +277,7 @@
                           <a-tooltip>
                             <template slot="title">低危</template>
                             <div class="">
-                              <a-avatar
-                                :size="24"
-                                :src="'images/folib/low.svg'"
-                              />
+                              <a-avatar :size="24" :src="'images/folib/low.svg'" />
                               <span class="mb-0 text-dark">{{
                                 scanReport.low
                               }}</span>
@@ -405,10 +287,7 @@
                         <template v-else>
                           <a-tooltip>
                             <template slot="title">健康</template>
-                            <a-avatar
-                              :size="24"
-                              :src="'images/folib/healthy.svg'"
-                            />
+                            <a-avatar :size="24" :src="'images/folib/healthy.svg'" />
                           </a-tooltip>
                         </template>
                       </a-space>
@@ -420,11 +299,7 @@
                 <a-dropdown v-if="$store.state.user.token && currentTreeNode.url" class="mr-45">
                   <span style="font-size: 16px; cursor: pointer">
                     更多
-                    <a-icon
-                      type="more"
-                      class="text-muted"
-                      style="font-size: 16px"
-                    />
+                    <a-icon type="more" class="text-muted" style="font-size: 16px" />
                   </span>
                   <template #overlay>
                     <a-menu slot="overlay" @click="handleMenuClick">
@@ -432,41 +307,33 @@
                         <a-icon type="eye" />
                         {{
                           currentFileDetial.listTree
-                            ? "包"
-                            : viewCodes
+                          ? "包"
+                          : viewCodes
                             ? "文件"
                             : folibRepository.layout === "Docker"
-                            ? "详情"
-                            : ""
+                              ? "详情"
+                              : ""
                         }}预览
                       </a-menu-item>
-                      <a-menu-item
-                        key="2"
-                        v-if="copyEnabled"
-                      >
+                      <a-menu-item key="2" v-if="copyEnabled">
                         <a-icon type="copy" />复制
                       </a-menu-item>
-                      <a-menu-item
-                        key="3"
-                        v-if="moveEnabled"
-                      >
+                      <a-menu-item key="3" v-if="moveEnabled">
                         <a-icon type="swap" />移动
                       </a-menu-item>
-                      <a-menu-item key="4"
-                      v-if="deleteEnabled">
-                        <a-popconfirm
-                          title="确定要删除吗？"
-                          placement="topLeft"
-                          okType="danger"
-                          ok-text="确定"
-                          cancel-text="取消"
-                          @confirm="deletePackageHandle"
-                        >
+                      <a-menu-item key="4" v-if="deleteEnabled">
+                        <a-popconfirm title="确定要删除吗？" placement="topLeft" okType="danger" ok-text="确定" cancel-text="取消"
+                          @confirm="deletePackageHandle">
                           <a-icon type="delete" />删除
                         </a-popconfirm>
                       </a-menu-item>
-                      <a-menu-item key="5"  v-if="dispatchEnabled">
+                      <a-menu-item key="5" v-if="dispatchEnabled">
                         <a-icon type="retweet" /> 分发
+                      </a-menu-item>
+
+                      <a-menu-item key="6"
+                        v-if="currentTreeNode && currentTreeNode.type === 'file' && currentFileDetial && currentFileDetial.artifact">
+                        <a-icon type="download" />下载
                       </a-menu-item>
                     </a-menu>
                   </template>
@@ -475,101 +342,55 @@
             </a-row>
           </template>
 
-          <a
-            v-if="currentTreeNode.url && folibRepository.layout !== 'Docker'"
-            class="text-dark"
-            :href="
-              currentTreeNode.url.search('http://localhost:38080/') !== -1
-                ? currentTreeNode.url.replace(
-                    'http://localhost:38080/',
-                    baseUrl
-                  )
-                : currentTreeNode.url
-            "
-            target="_blank"
-            >{{
-              currentTreeNode.url.search("http://localhost:38080/") !== -1
-                ? currentTreeNode.url.replace(
-                    "http://localhost:38080/",
-                    baseUrl
-                  )
-                : currentTreeNode.url
-            }}</a
-          >
+          <a v-if="currentTreeNode.url && folibRepository.layout !== 'Docker'" class="text-dark" :href="currentTreeNode.url.search('http://localhost:38080/') !== -1
+              ? currentTreeNode.url.replace(
+                'http://localhost:38080/',
+                baseUrl
+              )
+              : currentTreeNode.url
+            " target="_blank">{{
+    currentTreeNode.url.search("http://localhost:38080/") !== -1
+    ? currentTreeNode.url.replace(
+      "http://localhost:38080/",
+      baseUrl
+    )
+    : currentTreeNode.url
+  }}</a>
 
           <hr class="my-25" />
-          <BaseData
-            ref="BaseData"
-            :currentTreeNode="currentTreeNode"
-            :repositoryType="repositoryType"
-            :currentFileDetial="currentFileDetial"
-            :successMsg="successMsg"
-            :folibRepository="folibRepository"
-            @metadataEditHandler="metadataEditHandler"
-            @metadataHandler="metadataHandler"
-          />
+          <BaseData ref="BaseData" :currentTreeNode="currentTreeNode" :repositoryType="repositoryType"
+            :currentFileDetial="currentFileDetial" :successMsg="successMsg" :folibRepository="folibRepository"
+            @metadataEditHandler="metadataEditHandler" @metadataHandler="metadataHandler" />
         </a-card>
       </a-col>
     </a-row>
     <a-row v-if="isSearch === true" type="flex" :gutter="24">
       <!-- Platform Settings Column -->
-      <Search ref="search" :columns="columns" :folibRepository="this.folibRepository"/>
+      <Search ref="search" :columns="columns" :folibRepository="this.folibRepository" />
     </a-row>
-    <use-doc
-      :usedVisible="usedVisible"
-      :repositoryType="repositoryType"
-      :folibRepository="folibRepository"
-      :ivyCode="ivyCode"
-      :baseUrl="baseUrl"
-      :dockerCode="dockerCode"
-      @close="closeUsedVisibleDialog"
-    />
+    <use-doc :usedVisible="usedVisible" :repositoryType="repositoryType" :folibRepository="folibRepository"
+      :ivyCode="ivyCode" :baseUrl="baseUrl" :dockerCode="dockerCode" @close="closeUsedVisibleDialog" />
     <!-- 预览 -->
-    <a-drawer
-      placement="right"
-      width="45%"
-      :title="currentTreeNode.name"
-      :visible="viewCodeVisible"
-      @close="closeViewCodeDialog"
-    >
+    <a-drawer placement="right" width="45%" :title="currentTreeNode.name" :visible="viewCodeVisible"
+      @close="closeViewCodeDialog">
       <div class="mx-auto m-50">
         <div class="mb-50">
           <a-card :bordered="false" class="header-solid">
-            <a-directory-tree
-              v-if="currentFileDetial && currentFileDetial.listTree"
-              :replaceFields="{ title: 'name', children: 'children' }"
-              :tree-data="currentFileDetial.listTree"
-            />
+            <a-directory-tree v-if="currentFileDetial && currentFileDetial.listTree"
+              :replaceFields="{ title: 'name', children: 'children' }" :tree-data="currentFileDetial.listTree" />
           </a-card>
-          <prism-editor
-            class="my-editor height-300"
-            v-if="
-              currentFileDetial &&
-              viewCodes &&
-              folibRepository.layout !== 'Docker'
-            "
-            v-model="viewCodes"
-            :highlight="highlighterHandle"
-            :line-numbers="false"
-            :readonly="true"
-          ></prism-editor>
+          <prism-editor class="my-editor height-300" v-if="currentFileDetial &&
+            viewCodes &&
+            folibRepository.layout !== 'Docker'
+            " v-model="viewCodes" :highlight="highlighterHandle" :line-numbers="false" :readonly="true"></prism-editor>
 
-          <a-tabs
-            v-if="
-              currentFileDetial &&
-              currentManifest &&
-              folibRepository.layout === 'Docker'
-            "
-            class="tabs-sliding"
-            default-active-key="1"
-          >
+          <a-tabs v-if="currentFileDetial &&
+            currentManifest &&
+            folibRepository.layout === 'Docker'
+            " class="tabs-sliding" default-active-key="1">
             <a-tab-pane key="1" tab="Layers">
               <a-timeline>
-                <a-timeline-item
-                  color="primary"
-                  v-for="(key, index) in currentManifest.config"
-                  :key="index"
-                >
+                <a-timeline-item color="primary" v-for="(key, index) in currentManifest.config" :key="index">
                   {{ index }}
                   <p>
                     {{ currentManifest.config[index] }}
@@ -579,11 +400,7 @@
             </a-tab-pane>
             <a-tab-pane key="2" tab="制作历史">
               <a-timeline>
-                <a-timeline-item
-                  color="primary"
-                  v-for="(key, index) in currentManifest.history"
-                  :key="index"
-                >
+                <a-timeline-item color="primary" v-for="(key, index) in currentManifest.history" :key="index">
                   {{ formateDate(key.created) }}
                   <p>
                     {{ key.created_by }}
@@ -595,69 +412,37 @@
         </div>
       </div>
     </a-drawer>
-    <add-metadata
-      v-if="showMetadataHandler"
-      :showMetadataHandler="showMetadataHandler"
-      :quillOptions="quillOptions"
-      :handlerMetadataType="handlerMetadataType"
-      :propMetadataForm="metadataForm"
-      :metadataConfigList="metadataConfigList"
-      :currentTreeNode="currentTreeNode"
-      :metadataTypes="metadataTypes"
-      :successMsg="successMsg"
-      @metadataHandlerCancel="metadataHandlerCancel"
-      @metadataReflesh="metadataReflesh"
-    />
+    <add-metadata v-if="showMetadataHandler" :showMetadataHandler="showMetadataHandler" :quillOptions="quillOptions"
+      :handlerMetadataType="handlerMetadataType" :propMetadataForm="metadataForm" :metadataConfigList="metadataConfigList"
+      :currentTreeNode="currentTreeNode" :metadataTypes="metadataTypes" :successMsg="successMsg"
+      @metadataHandlerCancel="metadataHandlerCancel" @metadataReflesh="metadataReflesh" />
 
     <!-- 复制 -->
-    <a-modal
-      v-model="showOperationFormModal"
-      :footer="null"
-      :forceRender="true"
-      :centered="true"
-      :title="operationTitle"
-      on-ok="showCopyFormModal = false"
-    >
-      <a-form
-        :form="operationForm"
-        ref="operationForm"
-        layout="vertical"
-        @submit.prevent="handleOperationSubmit"
-      >
+    <a-modal v-model="showOperationFormModal" :footer="null" :forceRender="true" :centered="true" :title="operationTitle"
+      on-ok="showCopyFormModal = false">
+      <a-form :form="operationForm" ref="operationForm" layout="vertical" @submit.prevent="handleOperationSubmit">
         <a-row :gutter="[24]">
           <a-col :span="24">
-            <a-form-item
-              class="tags-field mb-10"
-              label="目标仓库"
-              :colon="false"
-              ref="targetRepositories"
-              prop="targetRepositories"
-            >
-              <gb-ant-select-two-cascader
-                allowClear
-                placeholder="请选择目标仓库"
-                v-decorator="[
-                  'targetRepositories',
-                  {
-                    initialValue: [],
-                    rules: [
-                      {
-                        required: true,
-                        message: '请选择目标仓库',
-                        type: 'array',
-                      },
-                    ],
-                  },
-                ]"
-                :selectOptionsConfig="{
-                  key: 'key',
-                  value: 'key',
-                  text: 'name',
-                  children: 'children',
-                }"
-                dropdownClassName="customer-multiple-cascader"
-                :treeData="repositories"
-              />
+            <a-form-item class="tags-field mb-10" label="目标仓库" :colon="false" ref="targetRepositories"
+              prop="targetRepositories">
+              <gb-ant-select-two-cascader allowClear placeholder="请选择目标仓库" v-decorator="[
+                'targetRepositories',
+                {
+                  initialValue: [],
+                  rules: [
+                    {
+                      required: true,
+                      message: '请选择目标仓库',
+                      type: 'array',
+                    },
+                  ],
+                },
+              ]" :selectOptionsConfig="{
+  key: 'key',
+  value: 'key',
+  text: 'name',
+  children: 'children',
+}" dropdownClassName="customer-multiple-cascader" :treeData="repositories" />
             </a-form-item>
             <!-- <a-form-item class="tags-field mb-10" :colon="false" :label="customTitle" valuePropName="checked">
               <a-switch v-decorator="['custom',
@@ -670,174 +455,82 @@
               ]" style="width:10%;" @change="customChange">
               </a-switch>
             </a-form-item> -->
-            <a-form-item
-              class="tags-field mb-10"
-              v-if="!custom"
-              label="目标目录"
-              prop="path"
-              :colon="false"
-            >
-              <a-input
-                v-decorator="[
-                  'path',
-                  {
-                    rules: [{ required: true, message: '请输入目标目录' }],
-                  },
-                ]"
-                :disabled="true"
-                placeholder="请输入目标目录"
-              >
+            <a-form-item class="tags-field mb-10" v-if="!custom" label="目标目录" prop="path" :colon="false">
+              <a-input v-decorator="[
+                'path',
+                {
+                  rules: [{ required: true, message: '请输入目标目录' }],
+                },
+              ]" :disabled="true" placeholder="请输入目标目录">
               </a-input>
             </a-form-item>
-            <a-form-item
-              class="tags-field mb-10"
-              v-if="custom"
-              label="目标目录"
-              prop="path"
-              :colon="false"
-            >
-              <a-input
-                v-decorator="[
-                  'path',
-                  {
-                    rules: [{ required: true, message: '请输入目标目录' }],
-                  },
-                ]"
-                :disabled="false"
-                placeholder="请输入目标目录"
-              >
+            <a-form-item class="tags-field mb-10" v-if="custom" label="目标目录" prop="path" :colon="false">
+              <a-input v-decorator="[
+                'path',
+                {
+                  rules: [{ required: true, message: '请输入目标目录' }],
+                },
+              ]" :disabled="false" placeholder="请输入目标目录">
               </a-input>
             </a-form-item>
           </a-col>
           <a-col :span="24" class="text-center">
-            <a-button
-              key="submit"
-              class="px-30"
-              size="small"
-              type="primary"
-              htmlType="submit"
-              >提交</a-button
-            >
-            <a-button
-              key="back"
-              @click="operationFormModalClose()"
-              class="px-30 ml-10"
-              size="small"
-              >取消</a-button
-            >
+            <a-button key="submit" class="px-30" size="small" type="primary" htmlType="submit">提交</a-button>
+            <a-button key="back" @click="operationFormModalClose()" class="px-30 ml-10" size="small">取消</a-button>
           </a-col>
         </a-row>
       </a-form>
     </a-modal>
     <!--    rpm 上传表单 start-->
-    <a-modal
-      v-model="showRpmUploadFormModal"
-      :footer="null"
-      :forceRender="true"
-      :centered="true"
-      title="上传"
-      on-ok="showRpmUploadFormModal = false"
-    >
-      <a-form
-        :form="rpmUploadForm"
-        ref="rpmUploadForm"
-        layout="horizontal"
-        @submit.prevent="handleRpmUploadSubmit"
-      >
+    <a-modal v-model="showRpmUploadFormModal" :footer="null" :forceRender="true" :centered="true" title="上传"
+      on-ok="showRpmUploadFormModal = false">
+      <a-form :form="rpmUploadForm" ref="rpmUploadForm" layout="horizontal" @submit.prevent="handleRpmUploadSubmit">
         <a-row :gutter="[24]">
           <a-col :span="24">
-            <a-form-item
-              class="tags-field mb-10"
-              label="目标仓库"
-              prop="repostoryId"
-              :colon="false"
-            >
-              <a-input
-                v-decorator="[
-                  'repostoryId',
-                  {
-                    rules: [{ required: true, message: '请输入目标仓库' }],
-                  },
-                ]"
-                :disabled="true"
-                placeholder="请输入目标仓库"
-              >
+            <a-form-item class="tags-field mb-10" label="目标仓库" prop="repostoryId" :colon="false">
+              <a-input v-decorator="[
+                'repostoryId',
+                {
+                  rules: [{ required: true, message: '请输入目标仓库' }],
+                },
+              ]" :disabled="true" placeholder="请输入目标仓库">
               </a-input>
             </a-form-item>
             <a-form-item label="选择文件">
-              <a-upload
-                v-decorator="[
-                  'files',
-                  {
-                    rules: [{ required: true, message: '请选择文件' }],
-                    valuePropName: 'fileList',
-                    getValueFromEvent: normFile,
-                  },
-                ]"
-                name="files"
-                :multiple="true"
-                :beforeUpload="beforeUpload"
-                list-type="text"
-                accept=".rpm"
-              >
-                <a-button> <a-icon type="upload" />选择文件 </a-button>
+              <a-upload v-decorator="[
+                'files',
+                {
+                  rules: [{ required: true, message: '请选择文件' }],
+                  valuePropName: 'fileList',
+                  getValueFromEvent: normFile,
+                },
+              ]" name="files" :multiple="true" :beforeUpload="beforeUpload" list-type="text" accept=".rpm">
+                <a-button>
+                  <a-icon type="upload" />选择文件 </a-button>
               </a-upload>
             </a-form-item>
           </a-col>
           <a-col :span="24" class="text-center">
-            <a-button
-              key="submit"
-              class="px-30"
-              size="small"
-              type="primary"
-              htmlType="submit"
-              >上传</a-button
-            >
-            <a-button
-              key="back"
-              @click="uploadRpmFormModalClose()"
-              class="px-30 ml-10"
-              size="small"
-              >取消</a-button
-            >
+            <a-button key="submit" class="px-30" size="small" type="primary" htmlType="submit">上传</a-button>
+            <a-button key="back" @click="uploadRpmFormModalClose()" class="px-30 ml-10" size="small">取消</a-button>
           </a-col>
         </a-row>
       </a-form>
     </a-modal>
     <!--   rpm 上传表单 end -->
     <!-- raw 、maven、npm 上传 -->
-    <a-modal
-      v-model="showUploadFormModal"
-      :footer="null"
-      :forceRender="true"
-      :centered="true"
-      title="上传"
-      on-ok="showUploadFormModal = false"
-    >
-      <a-form
-        :form="uploadForm"
-        ref="uploadForm"
-        layout="horizontal"
-        @submit.prevent="handleUploadSubmit"
-      >
+    <a-modal v-model="showUploadFormModal" :footer="null" :forceRender="true" :centered="true" title="上传"
+      on-ok="showUploadFormModal = false">
+      <a-form :form="uploadForm" ref="uploadForm" layout="horizontal" @submit.prevent="handleUploadSubmit">
         <a-row :gutter="[24]">
           <a-col :span="24">
-            <a-form-item
-              class="tags-field mb-10"
-              label="目标仓库"
-              prop="repostoryId"
-              :colon="false"
-            >
-              <a-input
-                v-decorator="[
-                  'repostoryId',
-                  {
-                    rules: [{ required: true, message: '请输入目标仓库' }],
-                  },
-                ]"
-                :disabled="true"
-                placeholder="请输入目标仓库"
-              >
+            <a-form-item class="tags-field mb-10" label="目标仓库" prop="repostoryId" :colon="false">
+              <a-input v-decorator="[
+                'repostoryId',
+                {
+                  rules: [{ required: true, message: '请输入目标仓库' }],
+                },
+              ]" :disabled="true" placeholder="请输入目标仓库">
               </a-input>
             </a-form-item>
             <a-form-item label="上传方式" v-if="folibRepository.layout === 'Maven 2'">
@@ -846,8 +539,7 @@
                 {
                   rules: [{ required: true, message: '请选择上传方式' }],
                 },
-              ]"
-              @change="uploadTypeChange">
+              ]" @change="uploadTypeChange">
                 <a-radio :value="1">
                   制品
                 </a-radio>
@@ -868,20 +560,22 @@
                   valuePropName: 'fileList',
                   getValueFromEvent: normFile,
                 },
-              ]" name="files" :multiple="uploadType === 1?true:false" :beforeUpload="beforeUpload" list-type="text"
-              :accept="uploadType === 1?(folibRepository.layout === 'Raw'?'*':folibRepository.layout === 'npm'?'.tgz':'.jar,.war,.pom'):('.zip')">
-                <a-button> <a-icon type="upload" />选择文件</a-button>
+              ]" name="files" :multiple="uploadType === 1 ? true : false" :beforeUpload="beforeUpload" list-type="text"
+                :accept="uploadType === 1 ? (folibRepository.layout === 'Raw' ? '*' : folibRepository.layout === 'npm' ? '.tgz' : '.jar,.war,.pom') : ('.zip')">
+                <a-button>
+                  <a-icon type="upload" />选择文件</a-button>
               </a-upload>
             </a-form-item>
             <a-form-item class="tags-field mb-10" prop="targetPath" :colon="false"
-              v-if="(folibRepository.layout !== 'Maven 2' && folibRepository.layout !== 'npm' ) || uploadType === 2">
+              v-if="(folibRepository.layout !== 'Maven 2' && folibRepository.layout !== 'npm') || uploadType === 2">
               <template slot="label">
                 目标目录
                 <a-popover placement="topLeft" v-if="uploadType === 2">
                   <template slot="content">
                     <p class="mb-0">压缩包将会解压到仓库内的此目录下</p>
                   </template>
-                  <a class="ml-5"><a-icon type="question-circle" theme="filled" /></a>
+                  <a class="ml-5">
+                    <a-icon type="question-circle" theme="filled" /></a>
                 </a-popover>
               </template>
               <a-input v-decorator="[
@@ -903,35 +597,15 @@
       </a-form>
     </a-modal>
     <!-- 分发 -->
-    <a-modal
-        v-model="showOperationDispatchFormModal"
-        width="50%"
-        :footer="null"
-        :forceRender="true"
-        :centered="true"
-        :title="operationTitle"
-    >
-      <a-form
-          :form="operationForm"
-          ref="operationForm"
-          layout="vertical"
-          @submit.prevent="handleOperationSubmit"
-      >
+    <a-modal v-model="showOperationDispatchFormModal" width="50%" :footer="null" :forceRender="true" :centered="true"
+      :title="operationTitle">
+      <a-form :form="operationForm" ref="operationForm" layout="vertical" @submit.prevent="handleOperationSubmit">
         <a-row :gutter="[24]">
           <a-col :span="24">
-            <a-form-item
-                class="tags-field mb-10"
-                label="目标仓库"
-                :colon="false"
-                ref="targetRepositories"
-                prop="targetRepositories"
-            >
+            <a-form-item class="tags-field mb-10" label="目标仓库" :colon="false" ref="targetRepositories"
+              prop="targetRepositories">
               <div class="selectdrop">
-              <gb-ant-select-multiple-cascader
-                  allowClear
-                  style="width:100%;"
-                  placeholder="请选择目标仓库"
-                  v-decorator="[
+                <gb-ant-select-multiple-cascader allowClear style="width:100%;" placeholder="请选择目标仓库" v-decorator="[
                   'targetRepositories',
                   {
                     initialValue: [],
@@ -943,95 +617,57 @@
                       },
                     ],
                   },
-                ]"
-                  :selectOptionsConfig="{
-                  key: 'key',
-                  value: 'key',
-                  text: 'key',
-                  children: 'children'
-                }"
-                  allText="全选"
-                  noDataText="暂无数据"
-                  dropdownClassName="customer-multiple-cascader"
-                  :treeData="repositories"
-                  @handleCheckboxChange="handleCheckboxChange"
-              />
+                ]" :selectOptionsConfig="{
+  key: 'key',
+  value: 'key',
+  text: 'key',
+  children: 'children'
+}" allText="全选" noDataText="暂无数据" dropdownClassName="customer-multiple-cascader"
+                  :treeData="repositories" @handleCheckboxChange="handleCheckboxChange" />
               </div>
             </a-form-item>
-            <a-form-item
-                class="tags-field mb-10"
-                v-if="!custom"
-                label="目标目录"
-                prop="path"
-                :colon="false"
-            >
-              <a-input
-                  v-decorator="[
-                  'path',
-                  {
-                    rules: [{ required: true, message: '请输入目标目录' }],
-                  },
-                ]"
-                  :disabled="true"
-                  placeholder="请输入目标目录"
-              >
+            <a-form-item class="tags-field mb-10" v-if="!custom" label="目标目录" prop="path" :colon="false">
+              <a-input v-decorator="[
+                'path',
+                {
+                  rules: [{ required: true, message: '请输入目标目录' }],
+                },
+              ]" :disabled="true" placeholder="请输入目标目录">
               </a-input>
             </a-form-item>
-            <a-form-item
-                class="tags-field mb-10"
-                v-if="custom"
-                label="目标目录"
-                prop="path"
-                :colon="false"
-            >
-              <a-input
-                  v-decorator="[
-                  'path',
-                  {
-                    rules: [{ required: true, message: '请输入目标目录' }],
-                  },
-                ]"
-                  :disabled="false"
-                  placeholder="请输入目标目录"
-              >
+            <a-form-item class="tags-field mb-10" v-if="custom" label="目标目录" prop="path" :colon="false">
+              <a-input v-decorator="[
+                'path',
+                {
+                  rules: [{ required: true, message: '请输入目标目录' }],
+                },
+              ]" :disabled="false" placeholder="请输入目标目录">
               </a-input>
             </a-form-item>
           </a-col>
           <a-col :span="24" class="text-center">
-            <a-button
-                key="submit"
-                class="px-30"
-                size="small"
-                type="primary"
-                htmlType="submit"
-            >提交</a-button
-            >
-            <a-button
-                key="back"
-                @click="operationFormModalClose()"
-                class="px-30 ml-10"
-                size="small"
-            >取消</a-button
-            >
+            <a-button key="submit" class="px-30" size="small" type="primary" htmlType="submit">提交</a-button>
+            <a-button key="back" @click="operationFormModalClose()" class="px-30 ml-10" size="small">取消</a-button>
           </a-col>
         </a-row>
       </a-form>
     </a-modal>
 
-    <MavenUpload v-if="mavenUploadVisible" :modelVisible="mavenUploadVisible" :folibRepository="this.folibRepository" @mavenUploadClose="mavenUploadClose"/>
+    <MavenUpload v-if="mavenUploadVisible" :modelVisible="mavenUploadVisible" :folibRepository="this.folibRepository"
+      @mavenUploadClose="mavenUploadClose" />
   </div>
 </template>
 
 <script>
-import store from "store";
-import uuidv4 from "uuid/v4"
+import store from 'store'
+import uuidv4 from 'uuid/v4'
 import {
   getLayoutType,
   getFileType,
   fileSizeConver,
   formateDate,
-  artifactCheck,
-} from "@/utils/layoutUtil";
+  artifactCheck
+} from '@/utils/layoutUtil'
 import {
   browse,
   getArtifact,
@@ -1044,8 +680,8 @@ import {
   getPermissionStoragesAndRepositories,
   getStorageAndRepositoryPermission,
   getStoragesAndRepositories,
-  getArtifactDispatchStoragesAndRepositories,
-} from "@/api/folib";
+  getArtifactDispatchStoragesAndRepositories
+} from '@/api/folib'
 import {
   artifactCopy,
   artifactMove,
@@ -1054,35 +690,34 @@ import {
   rpmArtifactUpload,
   artifactDispatch,
   artifactUploadZip
-} from "@/api/artifact";
-import { getMetadataConfiguration } from "@/api/settings";
-import { hasRole, isAdmin, isAnonymous, isLogin } from "@/utils/permission";
+} from '@/api/artifact'
+import { getMetadataConfiguration } from '@/api/settings'
+import { hasRole, isAdmin, isAnonymous, isLogin } from '@/utils/permission'
 
+import SearchBox from '@/components/Tools/SearchBox'
+import zhCN from 'ant-design-vue/es/locale/zh_CN'
 
-import SearchBox from "@/components/Tools/SearchBox";
-import zhCN from "ant-design-vue/es/locale/zh_CN";
-
-import BaseData from "./Data.vue";
-import UseDoc from "./UseDoc.vue";
-import AddMetadata from "./AddMetadata.vue";
-import MavenUpload from "../MavenUpload/index.vue"
-import Search from "../Search/index.vue"
-import { PrismEditor } from "vue-prism-editor";
-import "vue-prism-editor/dist/prismeditor.min.css"; // import the styles somewhere
+import BaseData from './Data.vue'
+import UseDoc from './UseDoc.vue'
+import AddMetadata from './AddMetadata.vue'
+import MavenUpload from '../MavenUpload/index.vue'
+import Search from '../Search/index.vue'
+import { PrismEditor } from 'vue-prism-editor'
+import 'vue-prism-editor/dist/prismeditor.min.css' // import the styles somewhere
 // import highlighting library (you can use any library you want just return html string)
-import { highlight, languages } from "prismjs/components/prism-core";
-import "prismjs/components/prism-clike";
-import "prismjs/components/prism-javascript";
-import "prismjs/themes/prism-tomorrow.css";
+import { highlight, languages } from 'prismjs/components/prism-core'
+import 'prismjs/components/prism-clike'
+import 'prismjs/components/prism-javascript'
+import 'prismjs/themes/prism-tomorrow.css'
 export default {
-  inject: ["reload"],
+  inject: ['reload'],
   props: [
-    "metadataTypes",
-    "quillOptions",
-    "successMsg",
-    "searchType",
-    "propScanReport",
-    "formateDate",
+    'metadataTypes',
+    'quillOptions',
+    'successMsg',
+    'searchType',
+    'propScanReport',
+    'formateDate'
   ],
   components: {
     PrismEditor,
@@ -1091,29 +726,30 @@ export default {
     UseDoc,
     AddMetadata,
     MavenUpload,
-    Search,
+    Search
   },
-  data() {
+  data () {
     return {
-      baseUrl: "",
+      baseUrl: '',
       folibRepository: {},
       repositoryType: null,
-      rpmUploadForm: this.$form.createForm(this, { name: "rpmUpload_form" }),
-      uploadForm: this.$form.createForm(this, { name: "upload_form" }),
+      rpmUploadForm: this.$form.createForm(this, { name: 'rpmUpload_form' }),
+      uploadForm: this.$form.createForm(this, { name: 'upload_form' }),
       showUploadFormModal: false,
       showRpmUploadFormModal: false,
       uploadEnabled: false,
       copyEnabled: false,
-      dispatchEnabled:false,
+      dispatchEnabled: false,
       moveEnabled: false,
       deleteEnabled: false,
+      showFolibDownLoad: false,
       scan: {
-        id: "",
-        repository: "",
-        storage: "",
+        id: '',
+        repository: '',
+        storage: '',
         onScan: false,
         scanRule: null,
-        layout: null,
+        layout: null
       },
       treeData: [],
       currentFileDetial: null,
@@ -1136,15 +772,15 @@ export default {
         custom: false,
         type: undefined,
         viewShow: true,
-        value: undefined,
+        value: undefined
       },
       metadataInput: true,
       metadataNumber: false,
       metadataEditor: false,
       prismEditor: false,
       codeParam: {
-        type: "",
-        code: null,
+        type: '',
+        code: null
       },
       artifactQuery: {
         artifactName: null,
@@ -1157,14 +793,14 @@ export default {
         sortField: null,
         sortOrder: null,
         beginDate: null,
-        endDate: null,
+        endDate: null
       },
       // 用户帮助
       usedVisible: false,
       ivyCode: null,
       dockerCode: { ubuntu: null, centos: null, windows: null, macos: null },
       // 预览
-      operationForm: this.$form.createForm(this, { name: "operation_form" }),
+      operationForm: this.$form.createForm(this, { name: 'operation_form' }),
       viewCodeVisible: false,
       viewCodes: null,
       locale: zhCN,
@@ -1175,46 +811,46 @@ export default {
       searchViewCodes: null,
       columns: [
         {
-          title: "所属仓库",
-          dataIndex: "repositoryId",
-          scopedSlots: { customRender: "repositoryId" },
-          width: 150,
+          title: '所属仓库',
+          dataIndex: 'repositoryId',
+          scopedSlots: { customRender: 'repositoryId' },
+          width: 150
         },
         {
-          title: "制品路径",
-          dataIndex: "path",
-          scopedSlots: { customRender: "path" },
-          width: 550,
+          title: '制品路径',
+          dataIndex: 'path',
+          scopedSlots: { customRender: 'path' },
+          width: 550
         },
         {
-          title: "创建时间",
-          dataIndex: "created",
+          title: '创建时间',
+          dataIndex: 'created',
           sorter: true,
-          sortDirections: ["descend", "ascend"],
-          scopedSlots: { customRender: "created" },
-          width: 200,
+          sortDirections: ['descend', 'ascend'],
+          scopedSlots: { customRender: 'created' },
+          width: 200
         },
         {
-          title: "最近使用时间",
-          dataIndex: "lastUsed",
+          title: '最近使用时间',
+          dataIndex: 'lastUsed',
           sorter: true,
-          scopedSlots: { customRender: "lastUsed" },
-          width: 200,
+          scopedSlots: { customRender: 'lastUsed' },
+          width: 200
         },
         {
-          title: "下载次数",
-          dataIndex: "downloadCount",
+          title: '下载次数',
+          dataIndex: 'downloadCount',
           sorter: true,
-          scopedSlots: { customRender: "created" },
-          width: 200,
+          scopedSlots: { customRender: 'created' },
+          width: 200
         },
         {
-          title: "制品大小",
-          dataIndex: "sizeInBytes",
+          title: '制品大小',
+          dataIndex: 'sizeInBytes',
           sorter: true,
-          scopedSlots: { customRender: "sizeInBytes" },
-          width: 200,
-        },
+          scopedSlots: { customRender: 'sizeInBytes' },
+          width: 200
+        }
       ],
       scanReport: {
         show: false,
@@ -1223,9 +859,9 @@ export default {
         critical: 0,
         high: 0,
         medium: 0,
-        low: 0,
+        low: 0
       },
-      operationTitle: "",
+      operationTitle: '',
       showOperationFormModal: false,
       showOperationDispatchFormModal: false,
       repositories: [],
@@ -1234,456 +870,536 @@ export default {
       permissions: [],
       mavenUploadVisible: false,
       uploadType: 1
-    };
+    }
   },
-  created() {
+  created () {
     this.initData()
   },
   methods: {
-    initData() {
+    initData () {
       this.createData()
       this.getBrowse()
-      if (isLogin()) {
+      if (isLogin())
+      {
         this.scannerRules()
         this.scanReport = Object.assign({}, this.propScanReport)
         this.queryStorageAndRepositoryPermission()
       }
     },
-    scannerRules() {
+    scannerRules () {
       scannerRules(
-        this.folibRepository.storageId + "-" + this.folibRepository.id
-      ).then((res) => {
-        if (res.rel) {
-          this.scan = res.data;
+        this.folibRepository.storageId + '-' + this.folibRepository.id
+      ).then(res => {
+        if (res.rel)
+        {
+          this.scan = res.data
         }
-      });
+      })
     },
-    handleCheckboxChange(selectedData) {
-    },
-    scannerChange() {
+    handleCheckboxChange (selectedData) { },
+    scannerChange () {
       this.scan.id =
-      this.folibRepository.storageId + "-" + this.folibRepository.id;
-      this.scan.repository = this.folibRepository.id;
-      this.scan.storage = this.folibRepository.storageId;
-      this.scan.layout = this.folibRepository.layout;
-      insertOrUpdateRules(this.scan).then((res) => {
+        this.folibRepository.storageId + '-' + this.folibRepository.id
+      this.scan.repository = this.folibRepository.id
+      this.scan.storage = this.folibRepository.storageId
+      this.scan.layout = this.folibRepository.layout
+      insertOrUpdateRules(this.scan).then(res => {
         setTimeout(() => {
           this.$notification.success({
-            message: this.scan.onScan ? "开启扫描" : "关闭扫描",
-          });
-        }, 100);
-      });
+            message: this.scan.onScan ? '开启扫描' : '关闭扫描'
+          })
+        }, 100)
+      })
     },
-    goBack() {
-      if (isLogin()) {
-        this.$router.push({ name: "storages" })
-      } else {
-        this.$router.push({ name: "anonymousStorages" })
+    goBack () {
+      if (isLogin())
+      {
+        this.$router.push({ name: 'storages' })
+      } else
+      {
+        this.$router.push({ name: 'anonymousStorages' })
       }
     },
-    getLayoutTypeHandle() {
-      return getLayoutType(this.folibRepository);
+    getLayoutTypeHandle () {
+      return getLayoutType(this.folibRepository)
     },
-    getBrowse() {
-      if (this.folibRepository.status.indexOf('Out of Service') !== -1) {
+    getBrowse () {
+      if (this.folibRepository.status.indexOf('Out of Service') !== -1)
+      {
         this.$notification.warning({
-          message: "该仓库已关闭服务",
+          message: '该仓库已关闭服务'
         })
         return false
       }
-      if (!this.folibRepository.allowsDirectoryBrowsing) {
+      if (!this.folibRepository.allowsDirectoryBrowsing)
+      {
         this.$notification.warning({
-          message: "该仓库目录浏览未开启",
+          message: '该仓库目录浏览未开启'
         })
         return false
       }
-      browse(this.folibRepository.storageId, this.folibRepository.id, "")
-        .then((res) => {
-          const d = res.directories;
+      browse(this.folibRepository.storageId, this.folibRepository.id, '')
+        .then(res => {
+          const d = res.directories
           d.forEach((item, index, d) => {
-            item.type = "dir";
-          });
-          const f = res.files;
+            item.type = 'dir'
+          })
+          const f = res.files
           f.forEach((item, index) => {
-            item.isLeaf = true;
-            item.type = "file";
-          });
-          this.treeData = d.concat(f);
+            item.isLeaf = true
+            item.type = 'file'
+          })
+          this.treeData = d.concat(f)
         })
-        .catch((err) => {
-        });
+        .catch(err => { })
     },
-    createData() {
+    createData () {
       //上个页面通过缓存传参，目的防止页面刷新，路由数据消失
-      const params = store.get("libView_repository");
-      this.folibRepository = params.item;
-      this.baseUrl = params.baseUrl;
-      this.repositoryType = this.getLayoutTypeHandle();
+      const params = store.get('libView_repository')
+      this.folibRepository = params.item
+      this.baseUrl = params.baseUrl
+      this.repositoryType = this.getLayoutTypeHandle()
     },
-    copy(url) {
-      var input = document.createElement("input"); // 创建input对象
-      input.value = url; // 设置复制内容
-      document.body.appendChild(input); // 添加临时实例
-      input.select(); // 选择实例内容
-      document.execCommand("Copy"); // 执行复制
-      document.body.removeChild(input); // 删除临时实例
+    copy (url) {
+      var input = document.createElement('input') // 创建input对象
+      input.value = url // 设置复制内容
+      document.body.appendChild(input) // 添加临时实例
+      input.select() // 选择实例内容
+      document.execCommand('Copy') // 执行复制
+      document.body.removeChild(input) // 删除临时实例
       // console.log(url)
       setTimeout(() => {
         this.$notification.success({
-          message: "复制成功",
-        });
-      }, 100);
+          message: '复制成功'
+        })
+      }, 100)
     },
-    handleRpmUpload() {
-      this.rpmUploadForm.resetFields();
+    handleRpmUpload () {
+      this.rpmUploadForm.resetFields()
       this.$nextTick(() => {
-        if (this.$refs.rpmUploadForm) {
+        if (this.$refs.rpmUploadForm)
+        {
           this.rpmUploadForm.setFieldsValue({
-            repostoryId: this.folibRepository.id,
-          });
+            repostoryId: this.folibRepository.id
+          })
         }
-      });
-      this.showRpmUploadFormModal = true;
+      })
+      this.showRpmUploadFormModal = true
     },
-    uploadRpmFormModalClose() {
-      this.rpmUploadForm.resetFields();
+    uploadRpmFormModalClose () {
+      this.rpmUploadForm.resetFields()
       this.showRpmUploadFormModal = false
     },
-    beforeUpload(file, fileList) {
+    beforeUpload (file, fileList) {
       return false
     },
-    normFile(e) {
-      if (Array.isArray(e)) {
-        return e;
+    normFile (e) {
+      if (Array.isArray(e))
+      {
+        return e
       }
-      return e && e.fileList;
+      return e && e.fileList
     },
-    handleUpload() {
-      this.uploadForm.resetFields();
+    handleUpload () {
+      this.uploadForm.resetFields()
       this.$nextTick(() => {
-        if (this.$refs.uploadForm) {
+        if (this.$refs.uploadForm)
+        {
           this.uploadForm.setFieldsValue({
             repostoryId: this.folibRepository.id,
             type: 1
           })
         }
-      });
+      })
       this.showUploadFormModal = true
     },
-    message(type, message) {
-      if (!message) {
-        message = "操作成功"
+    message (type, message) {
+      if (!message)
+      {
+        message = '操作成功'
       }
       this.$notification[type]({
         message: message,
-        description: "",
+        description: ''
       })
     },
-    handleRpmUploadSubmit(e) {
+    handleRpmUploadSubmit (e) {
       e.preventDefault()
       this.rpmUploadForm.validateFields((err, values) => {
-        if (!err) {
-          if (values.files.length > 10) {
-            this.$notification["warning"]({
-              message: "一次上传不能超过10个文件",
-              description: "",
-            });
+        if (!err)
+        {
+          if (values.files.length > 10)
+          {
+            this.$notification['warning']({
+              message: '一次上传不能超过10个文件',
+              description: ''
+            })
             return false
           }
           let fileList = []
-          for(let item of values.files){
-            let fileName = item.name.replace(":", "/")
-            let result = artifactCheck(this.folibRepository, fileName, item.size)
-            if (!result.check) {
-              this.message("warning", result.msg)
+          for (let item of values.files)
+          {
+            let fileName = item.name.replace(':', '/')
+            let result = artifactCheck(
+              this.folibRepository,
+              fileName,
+              item.size
+            )
+            if (!result.check)
+            {
+              this.message('warning', result.msg)
               return false
             }
             item.name = fileName
             fileList.push(item)
           }
           fileList.forEach(item => {
-            this.handlerRpmUploadFile(values.targetPath, item.name.replace(":", "/"), item.originFileObj)
+            this.handlerRpmUploadFile(
+              values.targetPath,
+              item.name.replace(':', '/'),
+              item.originFileObj
+            )
           })
-          this.successMsg("请至页面右上角上传进度中查看")
+          this.successMsg('请至页面右上角上传进度中查看')
           this.uploadRpmFormModalClose()
         }
-      });
-    },
-    handlerRpmUploadFile(targetPath, fileName, file) {
-      file = new File([file], fileName)
-      let filePathMap = {}
-      filePathMap[fileName] = targetPath ? targetPath + "/" + fileName : fileName
-      let uuid = uuidv4()
-      const formData = new FormData()
-      formData.append("storageId", this.folibRepository.storageId)
-      formData.append("repostoryId", this.folibRepository.id)
-      formData.append("filePathMap", JSON.stringify(filePathMap))
-      formData.append("files", file)
-      rpmArtifactUpload( this.folibRepository.storageId, this.folibRepository.id, formData, uuid, fileName).then((res) => {
-      }).catch((err) => {
-        let msg = err.response.data.error?err.response.data.error:err.response.data
-        console.log('rpm upload error：', msg)
-        let errStatusArr = [200, 500]
-        if(!errStatusArr.includes(err.response.status)) {
-            this.$notification["error"]({
-              message: '错误编码：' + err.response.status,
-              description: "",
-            });
-        }
-      }).finally(() => { 
       })
     },
-    handleUploadSubmit(e) {
+    handlerRpmUploadFile (targetPath, fileName, file) {
+      file = new File([file], fileName)
+      let filePathMap = {}
+      filePathMap[fileName] = targetPath
+        ? targetPath + '/' + fileName
+        : fileName
+      let uuid = uuidv4()
+      const formData = new FormData()
+      formData.append('storageId', this.folibRepository.storageId)
+      formData.append('repostoryId', this.folibRepository.id)
+      formData.append('filePathMap', JSON.stringify(filePathMap))
+      formData.append('files', file)
+      rpmArtifactUpload(
+        this.folibRepository.storageId,
+        this.folibRepository.id,
+        formData,
+        uuid,
+        fileName
+      )
+        .then(res => { })
+        .catch(err => {
+          let msg = err.response.data.error
+            ? err.response.data.error
+            : err.response.data
+          console.log('rpm upload error：', msg)
+          let errStatusArr = [200, 500]
+          if (!errStatusArr.includes(err.response.status))
+          {
+            this.$notification['error']({
+              message: '错误编码：' + err.response.status,
+              description: ''
+            })
+          }
+        })
+        .finally(() => { })
+    },
+    handleUploadSubmit (e) {
       e.preventDefault()
       this.uploadForm.validateFields((err, values) => {
-        if (!err) {
-          if (this.uploadType === 2) {
-            if (values.files.length > 1) {
-              this.$notification["warning"]({
-                message: "只能上传一个压缩包",
-                description: "",
-              });
+        if (!err)
+        {
+          if (this.uploadType === 2)
+          {
+            if (values.files.length > 1)
+            {
+              this.$notification['warning']({
+                message: '只能上传一个压缩包',
+                description: ''
+              })
               return false
             }
             const file = values.files[0]
             const sizeLimit = file.size / 1024 / 1024 > 100
-            if (sizeLimit) {
+            if (sizeLimit)
+            {
               this.$notification.warning({
-                message: "文件大小不能超过100M",
+                message: '文件大小不能超过100M'
               })
               return false
             }
-            const fileFamart = file.name.split('.')[file.name.split('.').length - 1]
-            if (fileFamart !== 'zip') {
+            const fileFamart = file.name.split('.')[
+              file.name.split('.').length - 1
+            ]
+            if (fileFamart !== 'zip')
+            {
               this.$notification.warning({
-                message: "必须上传zip格式的文件!",
+                message: '必须上传zip格式的文件!'
               })
               return false
             }
-            if (typeof values.targetPath === 'undefined') {
+            if (typeof values.targetPath === 'undefined')
+            {
               values.targetPath = ''
-            } else {
-              values.targetPath = values.targetPath.trim().replace(/^\/+|\/+$/g, '')
+            } else
+            {
+              values.targetPath = values.targetPath
+                .trim()
+                .replace(/^\/+|\/+$/g, '')
             }
-            this.handlerUploadZipFile(values.targetPath, file.name, file.originFileObj)
-          } else {
-            if (values.files.length > 10) {
-              this.$notification["warning"]({
-                message: "一次上传不能超过10个文件",
-                description: "",
-              });
+            this.handlerUploadZipFile(
+              values.targetPath,
+              file.name,
+              file.originFileObj
+            )
+          } else
+          {
+            if (values.files.length > 10)
+            {
+              this.$notification['warning']({
+                message: '一次上传不能超过10个文件',
+                description: ''
+              })
               return false
             }
-            if (values.targetPath && values.targetPath.startsWith("/")) {
-              this.$notification["warning"]({
-                message: "目标目录不能以/开头",
-                description: "",
-              });
+            if (values.targetPath && values.targetPath.startsWith('/'))
+            {
+              this.$notification['warning']({
+                message: '目标目录不能以/开头',
+                description: ''
+              })
               return false
             }
             let fileList = []
-            for(let item of values.files){
-              let fileName = item.name.replace(":", "/")
-              let result = artifactCheck(this.folibRepository, fileName, item.size)
-              if (!result.check) {
-                this.message("warning", result.msg)
+            for (let item of values.files)
+            {
+              let fileName = item.name.replace(':', '/')
+              let result = artifactCheck(
+                this.folibRepository,
+                fileName,
+                item.size
+              )
+              if (!result.check)
+              {
+                this.message('warning', result.msg)
                 return false
               }
               item.name = fileName
               fileList.push(item)
             }
             fileList.forEach(item => {
-              this.handlerUploadFile(values.targetPath, item.name, item.originFileObj)
+              this.handlerUploadFile(
+                values.targetPath,
+                item.name,
+                item.originFileObj
+              )
             })
           }
-          this.successMsg("请至页面右上角上传进度中查看")
+          this.successMsg('请至页面右上角上传进度中查看')
           this.uploadFormModalClose()
         }
       })
     },
-    handlerUploadFile(targetPath, fileName, file) {
+    handlerUploadFile (targetPath, fileName, file) {
       file = new File([file], fileName)
       let filePathMap = {}
-      filePathMap[fileName] = targetPath ? targetPath + "/" + fileName : fileName
+      filePathMap[fileName] = targetPath
+        ? targetPath + '/' + fileName
+        : fileName
       let uuid = uuidv4()
       const formData = new FormData()
-      formData.append("storageId", this.folibRepository.storageId)
-      formData.append("repostoryId", this.folibRepository.id)
-      formData.append("filePathMap", JSON.stringify(filePathMap))
-      formData.append("files", file)
-      artifactUploadProgress(formData, uuid, fileName).then((res) => {
-      }).catch((err) => {
-        let msg = err.response.data.error?err.response.data.error:err.response.data
-        console.log('upload error：', msg)
-        let errStatusArr = [200,500]
-        if(!errStatusArr.includes(err.response.status)) {
-            this.$notification["error"]({
+      formData.append('storageId', this.folibRepository.storageId)
+      formData.append('repostoryId', this.folibRepository.id)
+      formData.append('filePathMap', JSON.stringify(filePathMap))
+      formData.append('files', file)
+      artifactUploadProgress(formData, uuid, fileName)
+        .then(res => { })
+        .catch(err => {
+          let msg = err.response.data.error
+            ? err.response.data.error
+            : err.response.data
+          console.log('upload error：', msg)
+          let errStatusArr = [200, 500]
+          if (!errStatusArr.includes(err.response.status))
+          {
+            this.$notification['error']({
               message: '错误编码：' + err.response.status,
-              description: "",
-            });
-        }
-      }).finally(() => { 
-      })
+              description: ''
+            })
+          }
+        })
+        .finally(() => { })
     },
-    handlerUploadZipFile(path, fileName, file) {
+    handlerUploadZipFile (path, fileName, file) {
       file = new File([file], fileName)
-      let uuid = "zip_" + uuidv4()
+      let uuid = 'zip_' + uuidv4()
       const formData = new FormData()
-      formData.append("storageId", this.folibRepository.storageId)
-      formData.append("repositoryId", this.folibRepository.id)
-      formData.append("path", path)
-      formData.append("file", file)
-      artifactUploadZip(formData, uuid, fileName).then((res) => {
-      }).catch((err) => {
-        let msg = err.response.data.error?err.response.data.error:err.response.data
-        console.log('upload error：', msg)
-        let errStatusArr = [200,500]
-        if(!errStatusArr.includes(err.response.status)) {
-            this.$notification["error"]({
+      formData.append('storageId', this.folibRepository.storageId)
+      formData.append('repositoryId', this.folibRepository.id)
+      formData.append('path', path)
+      formData.append('file', file)
+      artifactUploadZip(formData, uuid, fileName)
+        .then(res => { })
+        .catch(err => {
+          let msg = err.response.data.error
+            ? err.response.data.error
+            : err.response.data
+          console.log('upload error：', msg)
+          let errStatusArr = [200, 500]
+          if (!errStatusArr.includes(err.response.status))
+          {
+            this.$notification['error']({
               message: '错误编码：' + err.response.status,
-              description: "",
-            });
-        }
-      }).finally(() => { 
-      })
+              description: ''
+            })
+          }
+        })
+        .finally(() => { })
     },
-    uploadFormModalClose() {
-      this.showUploadFormModal = false;
+    uploadFormModalClose () {
+      this.showUploadFormModal = false
     },
-    UsedHelperVisible() {
-      if (this.repositoryType === "ivy") {
+    UsedHelperVisible () {
+      if (this.repositoryType === 'ivy')
+      {
         this.ivyCode =
-          "<ivysettings>\n" +
+          '<ivysettings>\n' +
           '   <settings defaultResolver="' +
           this.folibRepository.id +
           '" defaultConflictManager="all" />\n' +
-          "   <resolvers>\n" +
+          '   <resolvers>\n' +
           '        <ibiblio name="releases" root="' +
           this.baseUrl +
-          "storages/" +
+          'storages/' +
           this.folibRepository.storageId +
-          "/" +
+          '/' +
           this.folibRepository.id +
           '" m2compatible="true" usepoms="true"/>\n' +
-          "   </resolvers>\n" +
-          "</ivysettings>";
-      } else if (this.repositoryType === "docker") {
+          '   </resolvers>\n' +
+          '</ivysettings>'
+      } else if (this.repositoryType === 'docker')
+      {
         this.dockerCode.ubuntu =
-          "sudo mkdir -p /etc/docker\n" +
+          'sudo mkdir -p /etc/docker\n' +
           "sudo tee /etc/docker/daemon.json <<-'EOF'\n" +
-          "{\n" +
+          '{\n' +
           '"insecure-registries": ["' +
-          this.baseUrl.replace("http://", "").replace("/", "") +
+          this.baseUrl.replace('http://', '').replace('/', '') +
           '"]\n' +
-          "}\n" +
-          "EOF\n" +
-          "sudo systemctl daemon-reload\n" +
-          "sudo systemctl restart docker";
+          '}\n' +
+          'EOF\n' +
+          'sudo systemctl daemon-reload\n' +
+          'sudo systemctl restart docker'
         this.dockerCode.centos =
-          "sudo mkdir -p /etc/docker\n" +
+          'sudo mkdir -p /etc/docker\n' +
           "sudo tee /etc/docker/daemon.json <<-'EOF'\n" +
-          "{\n" +
+          '{\n' +
           '"insecure-registries": ["' +
-          this.baseUrl.replace("http://", "").replace("/", "") +
+          this.baseUrl.replace('http://', '').replace('/', '') +
           '"]\n' +
-          "}\n" +
-          "EOF\n" +
-          "sudo systemctl daemon-reload\n" +
-          "sudo systemctl restart docker";
+          '}\n' +
+          'EOF\n' +
+          'sudo systemctl daemon-reload\n' +
+          'sudo systemctl restart docker'
         this.dockerCode.windows =
-          "{\n" +
+          '{\n' +
           '  "insecure-registries": ["' +
-          this.baseUrl.replace("http://", "").replace("/", "") +
+          this.baseUrl.replace('http://', '').replace('/', '') +
           '"]\n' +
-          "}";
+          '}'
         this.dockerCode.macos = this.dockerCode.windows
       }
-      this.usedVisible = true;
+      this.usedVisible = true
     },
-    scannerChange() {
+    scannerChange () {
       this.scan.id =
-        this.folibRepository.storageId + "-" + this.folibRepository.id;
-      this.scan.repository = this.folibRepository.id;
-      this.scan.storage = this.folibRepository.storageId;
-      this.scan.layout = this.folibRepository.layout;
-      insertOrUpdateRules(this.scan).then((res) => {
+        this.folibRepository.storageId + '-' + this.folibRepository.id
+      this.scan.repository = this.folibRepository.id
+      this.scan.storage = this.folibRepository.storageId
+      this.scan.layout = this.folibRepository.layout
+      insertOrUpdateRules(this.scan).then(res => {
         setTimeout(() => {
           this.$notification.success({
-            message: this.scan.onScan ? "开启扫描" : "关闭扫描",
-          });
-        }, 100);
-      });
+            message: this.scan.onScan ? '开启扫描' : '关闭扫描'
+          })
+        }, 100)
+      })
     },
-    onLoadData(treeNode) {
-      this.currentFileDetial = null;
-      if (this.folibRepository.layout === "Docker") {
-        return new Promise((resolve) => {
-          if (treeNode.dataRef.children) {
-            resolve();
-            return;
+    onLoadData (treeNode) {
+      this.currentFileDetial = null
+      if (this.folibRepository.layout === 'Docker')
+      {
+        return new Promise(resolve => {
+          if (treeNode.dataRef.children)
+          {
+            resolve()
+            return
           }
           getDockerArtifact(
             this.folibRepository.storageId,
             this.folibRepository.id,
             treeNode.dataRef.artifactPath
-          ).then((res) => {
-            if (res.directories.length > 0) {
-              const d = res.directories;
+          ).then(res => {
+            if (res.directories.length > 0)
+            {
+              const d = res.directories
               d.forEach((item, index, d) => {
-                item.type = "dir";
-              });
-              treeNode.dataRef.children = d;
-            } else if (res.files.length > 0) {
-              const a = res.files;
+                item.type = 'dir'
+              })
+              treeNode.dataRef.children = d
+            } else if (res.files.length > 0)
+            {
+              const a = res.files
               a.forEach((item, index, a) => {
-                item.isLeaf = true;
-                item.type = "file";
-              });
-              treeNode.dataRef.children = a;
+                item.isLeaf = true
+                item.type = 'file'
+              })
+              treeNode.dataRef.children = a
             }
 
-            this.treeData = [...this.treeData];
-            resolve();
-          });
-        });
+            this.treeData = [...this.treeData]
+            resolve()
+          })
+        })
       }
 
-      return new Promise((resolve) => {
-        if (treeNode.dataRef.children) {
-          resolve();
-          return;
+      return new Promise(resolve => {
+        if (treeNode.dataRef.children)
+        {
+          resolve()
+          return
         }
         browse(
           this.folibRepository.storageId,
           this.folibRepository.id,
           treeNode.dataRef.artifactPath
-        ).then((res) => {
-          if (!treeNode.dataRef.children) {
-            treeNode.dataRef.children = [];
+        ).then(res => {
+          if (!treeNode.dataRef.children)
+          {
+            treeNode.dataRef.children = []
           }
-          if (res.directories.length > 0) {
-            const d = res.directories;
+          if (res.directories.length > 0)
+          {
+            const d = res.directories
             d.forEach((item, index, d) => {
-              item.type = "dir";
-            });
-            treeNode.dataRef.children = d;
+              item.type = 'dir'
+            })
+            treeNode.dataRef.children = d
           }
-          if (res.files.length > 0) {
-            const a = res.files;
+          if (res.files.length > 0)
+          {
+            const a = res.files
             a.forEach((item, index, a) => {
-              item.isLeaf = true;
-              item.type = "file";
-            });
-            treeNode.dataRef.children = treeNode.dataRef.children.concat(a);
+              item.isLeaf = true
+              item.type = 'file'
+            })
+            treeNode.dataRef.children = treeNode.dataRef.children.concat(a)
           }
 
-          this.treeData = [...this.treeData];
-          resolve();
-        });
-      });
+          this.treeData = [...this.treeData]
+          resolve()
+        })
+      })
     },
-    treeSelect(key, e) {
-      this.currentTreeNode = e.node.dataRef;
+    treeSelect (key, e) {
+      this.currentTreeNode = e.node.dataRef
       this.scanReport = {
         show: false,
         report: [],
@@ -1691,118 +1407,140 @@ export default {
         critical: 0,
         high: 0,
         medium: 0,
-        low: 0,
-      };
-      if (this.currentTreeNode.type === "file") {
+        low: 0
+      }
+      if (this.currentTreeNode.type === 'file')
+      {
         getArtifact(
           this.repositoryType,
           this.currentTreeNode.storageId,
           this.currentTreeNode.repositoryId,
           this.currentTreeNode.artifactPath
-        ).then((res) => {
-          this.currentFileDetial = res;
-          if (this.currentFileDetial.snippets) {
-            this.changeCodeTye(this.currentFileDetial.snippets[0]);
+        ).then(res => {
+          this.currentFileDetial = res
+          if (this.currentFileDetial.snippets)
+          {
+            this.changeCodeTye(this.currentFileDetial.snippets[0])
           }
-          if (isLogin() && this.currentFileDetial.artifact) {
-            if (this.currentFileDetial.artifact.safeLevel === "scanComplete") {
+          if (isLogin() && this.currentFileDetial.artifact)
+          {
+            if (this.currentFileDetial.artifact.safeLevel === 'scanComplete')
+            {
               this.scanReport.show = true
-              this.scanReport.vulnerabilitesCount =
-                this.currentFileDetial.artifact.vulnerabilitiesCount;
-              this.scanReport.critical =
-                this.currentFileDetial.artifact.criticalVulnerabilitiesCount;
-              this.scanReport.high =
-                this.currentFileDetial.artifact.highVulnerabilitiesCount;
-              this.scanReport.medium =
-                this.currentFileDetial.artifact.mediumVulnerabilitiesCount;
-              this.scanReport.low =
-                this.currentFileDetial.artifact.lowVulnerabilitiesCount;
+              this.scanReport.vulnerabilitesCount = this.currentFileDetial.artifact.vulnerabilitiesCount
+              this.scanReport.critical = this.currentFileDetial.artifact.criticalVulnerabilitiesCount
+              this.scanReport.high = this.currentFileDetial.artifact.highVulnerabilitiesCount
+              this.scanReport.medium = this.currentFileDetial.artifact.mediumVulnerabilitiesCount
+              this.scanReport.low = this.currentFileDetial.artifact.lowVulnerabilitiesCount
               this.scanReport.report = JSON.parse(
                 this.currentFileDetial.artifact.report
               )
             }
           }
-          this.currentManifest = res.manifestConfig;
-          this.handlerRespMetadata(res);
-        });
-      } else if (this.currentTreeNode.type === "dir") {
-        this.currentFileDetial = null;
+          this.currentManifest = res.manifestConfig
+          this.handlerRespMetadata(res)
+        })
+      } else if (this.currentTreeNode.type === 'dir')
+      {
+        this.currentFileDetial = null
       }
+
     },
-    handleMenuClick(active) {
-      this.operationForm.resetFields();
+    handleMenuClick (active) {
+      this.operationForm.resetFields()
       this.$nextTick(() => {
-        if (this.$refs.operationForm) {
+        if (this.$refs.operationForm)
+        {
           this.operationForm.setFieldsValue({
-            path: this.currentTreeNode.artifactPath,
-          });
+            path: this.currentTreeNode.artifactPath
+          })
         }
-      });
-      if (active.key === "1") {
-        this.viewCodeHandle();
-      } else if (active.key === "2" || active.key === "3") {
+      })
+      if (active.key === '1')
+      {
+        this.viewCodeHandle()
+      } else if (active.key === '2' || active.key === '3')
+      {
         //复制 或 移动
-        this.showOperationFormModal = true;
+        this.showOperationFormModal = true
         this.queryPermissionStoragesAndRepositories(
           this.folibRepository.type,
           this.folibRepository.layout,
           this.folibRepository.id,
           this.folibRepository.policy
-        );
+        )
         this.operationTitle =
-          active.key === "2"
-            ? "复制 " + this.currentTreeNode.artifactPath
-            : "移动  " + this.currentTreeNode.artifactPath;
+          active.key === '2'
+            ? '复制 ' + this.currentTreeNode.artifactPath
+            : '移动  ' + this.currentTreeNode.artifactPath
         this.customTitle =
-          active.key === "2" ? "复制到自定义目录" : "移动到自定义目录";
-      } else if (active.key === "4") {
+          active.key === '2' ? '复制到自定义目录' : '移动到自定义目录'
+      } else if (active.key === '4')
+      {
         //删除
-      } else if(active.key === "5"){
-        this.showOperationDispatchFormModal = true;
+      } else if (active.key === '5')
+      {
+        this.showOperationDispatchFormModal = true
         this.getArtifactDispatchStoragesAndRepositories(
-            this.folibRepository.type,
-            this.folibRepository.layout,
-            this.folibRepository.id,
-            this.folibRepository.policy);
-        this.operationTitle = "分发";
-        this.customTitle = "分发到指定目录";
+          this.folibRepository.type,
+          this.folibRepository.layout,
+          this.folibRepository.id,
+          this.folibRepository.policy
+        )
+        this.operationTitle = '分发'
+        this.customTitle = '分发到指定目录'
+        // 下载  
+      } else if (active.key === '6')
+      {
+        let url = this.currentTreeNode.url
+        if (url)
+        {
+          window.open(url)
+        }
+
       }
     },
-    handleOperationSubmit(e) {
-      e.preventDefault();
+    handleOperationSubmit (e) {
+      e.preventDefault()
       this.operationForm.validateFields((err, values) => {
-        if (!err) {
-          let targetRepositoyList = [];
-          let targetDispatchRepositoryList = [];
-          values.targetRepositories.forEach((item) => {
-            let split = item.split(",");
-            let arrayLength = split.length;
-            if(this.operationTitle.indexOf("分发")!==-1){
-              let dispatchClusterEnName = split[0];
-              let dispatchTargetStorageId = split[1];
-              let dispatchTargetReopsitoryId = '';
-              if(arrayLength===3){
-                dispatchTargetReopsitoryId = split[2];
+        if (!err)
+        {
+          let targetRepositoyList = []
+          let targetDispatchRepositoryList = []
+          values.targetRepositories.forEach(item => {
+            let split = item.split(',')
+            let arrayLength = split.length
+            if (this.operationTitle.indexOf('分发') !== -1)
+            {
+              let dispatchClusterEnName = split[0]
+              let dispatchTargetStorageId = split[1]
+              let dispatchTargetReopsitoryId = ''
+              if (arrayLength === 3)
+              {
+                dispatchTargetReopsitoryId = split[2]
               }
-              console.log(dispatchTargetStorageId+" , "+dispatchTargetReopsitoryId);
+              console.log(
+                dispatchTargetStorageId + ' , ' + dispatchTargetReopsitoryId
+              )
               targetDispatchRepositoryList.push({
-                dispatchClusterEnName:dispatchClusterEnName,
+                dispatchClusterEnName: dispatchClusterEnName,
                 targetStorageId: dispatchTargetStorageId,
-                targetRepositoryId: dispatchTargetReopsitoryId,
-              });
-            }else {
+                targetRepositoryId: dispatchTargetReopsitoryId
+              })
+            } else
+            {
               targetRepositoyList.push({
                 targetStorageId: split[0],
-                targetRepositoryId: split[1],
-              });
+                targetRepositoryId: split[1]
+              })
             }
-          });
+          })
           let data = {
             path: values.path,
             srcStorageId: this.folibRepository.storageId,
             srcRepositoryId: this.folibRepository.id,
-            targetRepositoyList: targetRepositoyList,
-          };
+            targetRepositoyList: targetRepositoyList
+          }
           let dispatchData = {
             path: values.path,
             srcStorageId: this.folibRepository.storageId,
@@ -1810,108 +1548,125 @@ export default {
             targetDispatchRepositoryList: targetDispatchRepositoryList,
             type: this.folibRepository.type,
             layout: this.folibRepository.layout,
-            policy: this.folibRepository.policy,
-          };
-          if (this.operationTitle.indexOf("复制") !== -1) {
+            policy: this.folibRepository.policy
+          }
+          if (this.operationTitle.indexOf('复制') !== -1)
+          {
             artifactCopy(data)
-              .then((res) => {
-                this.successMsg("复制中，请稍候查看");
-                this.operationFormModalClose();
-                this.reload();
+              .then(res => {
+                this.successMsg('复制中，请稍候查看')
+                this.operationFormModalClose()
+                this.reload()
               })
-              .catch((err) => {
-                this.$notification["error"]({
+              .catch(err => {
+                this.$notification['error']({
                   message: err.response.data.error,
-                  description: "",
-                });
-              })
-              .finally(() => { });
-          } else if (this.operationTitle.indexOf("移动") !== -1) {
-            artifactMove(data)
-              .then((res) => {
-                this.successMsg("移动中，请稍候查看");
-                this.operationFormModalClose();
-                this.reload();
-              })
-              .catch((err) => {
-                this.$notification["error"]({
-                  message: err.response.data.error,
-                  description: "",
-                });
-              })
-              .finally(() => { });
-          }else if(this.operationTitle.indexOf("分发")!==-1){
-            artifactDispatch(dispatchData) .then((res) => {
-              this.successMsg("分发中，请稍候查看");
-              this.operationFormModalClose();
-              this.reload();
-            })
-                .catch((err) => {
-                  this.$notification["error"]({
-                    message: err.response.data.error,
-                    description: "",
-                  });
+                  description: ''
                 })
-                .finally(() => { });
-
+              })
+              .finally(() => { })
+          } else if (this.operationTitle.indexOf('移动') !== -1)
+          {
+            artifactMove(data)
+              .then(res => {
+                this.successMsg('移动中，请稍候查看')
+                this.operationFormModalClose()
+                this.reload()
+              })
+              .catch(err => {
+                this.$notification['error']({
+                  message: err.response.data.error,
+                  description: ''
+                })
+              })
+              .finally(() => { })
+          } else if (this.operationTitle.indexOf('分发') !== -1)
+          {
+            artifactDispatch(dispatchData)
+              .then(res => {
+                this.successMsg('分发中，请稍候查看')
+                this.operationFormModalClose()
+                this.reload()
+              })
+              .catch(err => {
+                this.$notification['error']({
+                  message: err.response.data.error,
+                  description: ''
+                })
+              })
+              .finally(() => { })
           }
         }
-      });
+      })
     },
-    operationFormModalClose() {
-      this.showOperationFormModal = false;
-      this.showOperationDispatchFormModal = false;
+    operationFormModalClose () {
+      this.showOperationFormModal = false
+      this.showOperationDispatchFormModal = false
     },
-    getArtifactDispatchStoragesAndRepositories(type, layout, excludeRepositoryId, policy){
+    getArtifactDispatchStoragesAndRepositories (
+      type,
+      layout,
+      excludeRepositoryId,
+      policy
+    ) {
       getArtifactDispatchStoragesAndRepositories({
         type: type,
         layout: layout,
         excludeRepositoryId: excludeRepositoryId,
-        policy: policy,
-      }).then((res) => {
-        this.repositories = [];
-        res.forEach((item) => {
-          if (item.children && item.children.length > 0) {
-            this.repositories.push(item);
+        policy: policy
+      }).then(res => {
+        this.repositories = []
+        res.forEach(item => {
+          if (item.children && item.children.length > 0)
+          {
+            this.repositories.push(item)
           }
-        });
+        })
         this.repositories = [this.repositories]
-      });
+      })
     },
-    queryPermissionStoragesAndRepositories(type, layout, excludeRepositoryId, policy) {
+    queryPermissionStoragesAndRepositories (
+      type,
+      layout,
+      excludeRepositoryId,
+      policy
+    ) {
       getPermissionStoragesAndRepositories({
         type: type,
         layout: layout,
         excludeRepositoryId: excludeRepositoryId,
-        policy: policy,
-      }).then((res) => {
-        this.repositories = [];
-        res.forEach((item) => {
-          if (item.children && item.children.length > 0) {
-            this.repositories.push(item);
+        policy: policy
+      }).then(res => {
+        this.repositories = []
+        res.forEach(item => {
+          if (item.children && item.children.length > 0)
+          {
+            this.repositories.push(item)
           }
-        });
-      });
-    },
-    getMetadataConfiguration() {
-      getMetadataConfiguration()
-        .then((res) => {
-          this.metadataConfigList = res;
         })
-        .finally(() => { });
+      })
     },
-    metadataHandler(type, metadata) {
-      this.metadataFormReset();
-      if (metadata) {
-        this.metadataForm = metadata;
+    getMetadataConfiguration () {
+      getMetadataConfiguration()
+        .then(res => {
+          this.metadataConfigList = res
+        })
+        .finally(() => { })
+    },
+    metadataHandler (type, metadata) {
+      this.metadataFormReset()
+      if (metadata)
+      {
+        this.metadataForm = metadata
       }
-      this.handlerMetadataType = type;
-      this.showMetadataHandler = true;
+      this.handlerMetadataType = type
+      this.showMetadataHandler = true
       this.getMetadataConfiguration()
     },
-    metadataFormReset() {
-      if (this.$refs.metadataForm) {
-        this.$refs.metadataForm.resetFields();
+    metadataFormReset () {
+      if (this.$refs.metadataForm)
+      {
+        this.$refs.metadataForm.resetFields()
       }
       this.metadataForm = {
         key: undefined,
@@ -1919,278 +1674,345 @@ export default {
         custom: false,
         type: undefined,
         viewShow: true,
-        value: undefined,
-      };
-      this.metadataInput = true;
-      this.metadataEditor = false;
-      this.metadataNumber = false;
-      this.prismEditor = false;
+        value: undefined
+      }
+      this.metadataInput = true
+      this.metadataEditor = false
+      this.metadataNumber = false
+      this.prismEditor = false
     },
-    dispatchPackageHandle(){
-      console.log("分发处理 todo")
+    dispatchPackageHandle () {
+      console.log('分发处理 todo')
     },
-    deletePackageHandle() {
+    deletePackageHandle () {
       deleteArtifact(
         this.currentTreeNode.storageId,
         this.currentTreeNode.repositoryId,
         this.currentTreeNode.artifactPath
       )
-        .then((res) => {
+        .then(res => {
           setTimeout(() => {
             this.$notification.success({
-              message: "删除成功",
-            });
-            this.reload();
-          }, 100);
+              message: '删除成功'
+            })
+            this.reload()
+          }, 100)
         })
-        .catch((err) => {
-          let msg = err.response.data.message?err.response.data.message:err.response.data.error?err.response.data.error:err.response.data
-          if (!msg || msg.length === 0 || typeof(msg) === "object") {
-            msg = "删除失败"
+        .catch(err => {
+          let msg = err.response.data.message
+            ? err.response.data.message
+            : err.response.data.error
+              ? err.response.data.error
+              : err.response.data
+          if (!msg || msg.length === 0 || typeof msg === 'object')
+          {
+            msg = '删除失败'
           }
           this.$notification.error({
             message: msg,
-            description: ""
+            description: ''
           })
         })
-        .finally(() => { });
+        .finally(() => { })
     },
-    handlerRespMetadata(res) {
-      let metadataList = [];
+    handlerRespMetadata (res) {
+      let metadataList = []
       if (
         res.artifact &&
         res.artifact.metadata &&
         res.artifact.metadata.length > 0
-      ) {
-        let metadataJson = JSON.parse(res.artifact.metadata);
-        for (let key in metadataJson) {
+      )
+      {
+        let metadataJson = JSON.parse(res.artifact.metadata)
+        for (let key in metadataJson)
+        {
           let flag = this.metadataConfigList.some(
-            (metadataConfig) =>
+            metadataConfig =>
               !metadataConfig.viewShow && metadataConfig.key === key
-          );
-          if (flag) {
-            metadataJson[key].viewShow = false;
+          )
+          if (flag)
+          {
+            metadataJson[key].viewShow = false
           }
-          let metadata = Object.assign({}, metadataJson[key]);
-          metadata.key = key;
-          metadataList.push(metadata);
+          let metadata = Object.assign({}, metadataJson[key])
+          metadata.key = key
+          metadataList.push(metadata)
         }
       }
-      this.metadataList = metadataList;
-      this.$forceUpdate();
+      this.metadataList = metadataList
+      this.$forceUpdate()
     },
-    metadataEditorDrawerShow(metadata) {
-      this.metadataEditorDrawerTitle = metadata.key;
-      this.metadataEditorDrawerValue = metadata.value;
-      this.metadataEditorDrawerVisible = true;
+    metadataEditorDrawerShow (metadata) {
+      this.metadataEditorDrawerTitle = metadata.key
+      this.metadataEditorDrawerValue = metadata.value
+      this.metadataEditorDrawerVisible = true
     },
-    metadataEditHandler(metadata) {
-      let key = metadata.key;
+    metadataEditHandler (metadata) {
+      let key = metadata.key
       let data = {
         key: undefined,
         customKey: undefined,
         custom: false,
         type: metadata.type,
         viewShow: metadata.viewShow === 1,
-        value: metadata.value,
-      };
-      let flag = this.metadataConfigList.some((item) => item.key === key);
-      if (!flag) {
-        data.custom = true;
-        data.customKey = key;
-      } else {
-        data.key = key;
-        data.custom = false;
+        value: metadata.value
       }
-      this.metadataHandler(2, data);
-      this.metadataTypeChange(data.type);
+      let flag = this.metadataConfigList.some(item => item.key === key)
+      if (!flag)
+      {
+        data.custom = true
+        data.customKey = key
+      } else
+      {
+        data.key = key
+        data.custom = false
+      }
+      this.metadataHandler(2, data)
+      this.metadataTypeChange(data.type)
     },
-    metadataTypeChange(value) {
-      let editorList = ["TEXT", "MD"];
-      let prismEditorList = ["JSON"];
-      let numberList = ["NUMERICAL"];
-      if (editorList.indexOf(value) !== -1) {
-        this.metadataEditor = true;
-        this.metadataInput = false;
-        this.metadataNumber = false;
-        this.prismEditor = false;
-      } else if (prismEditorList.indexOf(value) !== -1) {
-        this.prismEditor = true;
-        this.metadataInput = false;
-        this.metadataNumber = false;
-        this.metadataEditor = false;
-      } else if (numberList.indexOf(value) !== -1) {
-        if (this.handlerMetadataType === 1) {
-          this.metadataForm.value = undefined;
+    metadataTypeChange (value) {
+      let editorList = ['TEXT', 'MD']
+      let prismEditorList = ['JSON']
+      let numberList = ['NUMERICAL']
+      if (editorList.indexOf(value) !== -1)
+      {
+        this.metadataEditor = true
+        this.metadataInput = false
+        this.metadataNumber = false
+        this.prismEditor = false
+      } else if (prismEditorList.indexOf(value) !== -1)
+      {
+        this.prismEditor = true
+        this.metadataInput = false
+        this.metadataNumber = false
+        this.metadataEditor = false
+      } else if (numberList.indexOf(value) !== -1)
+      {
+        if (this.handlerMetadataType === 1)
+        {
+          this.metadataForm.value = undefined
         }
-        this.metadataNumber = true;
-        this.metadataInput = false;
-        this.prismEditor = false;
-        this.metadataEditor = false;
-      } else {
-        this.metadataInput = true;
-        this.metadataEditor = false;
-        this.metadataNumber = false;
-        this.prismEditor = false;
+        this.metadataNumber = true
+        this.metadataInput = false
+        this.prismEditor = false
+        this.metadataEditor = false
+      } else
+      {
+        this.metadataInput = true
+        this.metadataEditor = false
+        this.metadataNumber = false
+        this.prismEditor = false
       }
     },
-    metadataPrismEditorDrawerShow(metadata) {
-      this.metadataPrismEditorDrawerTitle = metadata.key;
-      this.metadataPrismEditorDrawerValue = metadata.value;
-      this.metadataPrismEditorDrawerVisible = true;
+    metadataPrismEditorDrawerShow (metadata) {
+      this.metadataPrismEditorDrawerTitle = metadata.key
+      this.metadataPrismEditorDrawerValue = metadata.value
+      this.metadataPrismEditorDrawerVisible = true
     },
-    changeCodeTye(item) {
-      if (item) {
+    changeCodeTye (item) {
+      if (item)
+      {
         this.codeParam = {
-          type: item.name === "Maven 2" ? "maven" : item.name.toLowerCase(),
-          code: item.code,
-        };
+          type: item.name === 'Maven 2' ? 'maven' : item.name.toLowerCase(),
+          code: item.code
+        }
       }
     },
-    getFileType(name) {
-      if (name) {
-        return getFileType(name);
+    getFileType (name) {
+      if (name)
+      {
+        return getFileType(name)
       }
     },
-    closeUsedVisibleDialog() {
-      this.usedVisible = false;
+    closeUsedVisibleDialog () {
+      this.usedVisible = false
     },
-    viewCodeHandle() {
-      if (this.folibRepository.layout !== "Docker") {
-        if (this.currentFileDetial && !this.currentFileDetial.listTree) {
-          viewArtifactFile(this.currentTreeNode.url).then((res) => {
-            if ("string" === typeof res && res.startsWith("PK")) {
+    viewCodeHandle () {
+      if (this.folibRepository.layout !== 'Docker')
+      {
+        if (this.currentFileDetial && !this.currentFileDetial.listTree)
+        {
+          viewArtifactFile(this.currentTreeNode.url).then(res => {
+            if ('string' === typeof res && res.startsWith('PK'))
+            {
               this.viewCodes = undefined
-            } else if ("object" === typeof res) {
-              if (res.data) {
-                if ("string" === typeof res.data) {
+            } else if ('object' === typeof res)
+            {
+              if (res.data)
+              {
+                if ('string' === typeof res.data)
+                {
                   this.viewCodes = res.data
-                } else {
+                } else
+                {
                   this.viewCodes = JSON.stringify(res.data)
                 }
-              } else {
+              } else
+              {
                 this.viewCodes = JSON.stringify(res)
               }
-            } else {
+            } else
+            {
               this.viewCodes = res
             }
-          });
+          })
         }
-      } else {
+      } else
+      {
         // this.viewCodes=this.currentManifest.config
       }
 
-      this.viewCodeVisible = true;
+      this.viewCodeVisible = true
     },
-    closeViewCodeDialog() {
-      this.viewCodeVisible = false;
-      this.viewCodes = null;
+    closeViewCodeDialog () {
+      this.viewCodeVisible = false
+      this.viewCodes = null
     },
-    metadataHandlerCancel() {
-      this.metadataFormReset();
-      this.showMetadataHandler = false;
+    metadataHandlerCancel () {
+      this.metadataFormReset()
+      this.showMetadataHandler = false
     },
-    metadataReflesh() {
-      this.metadataFormReset();
-      this.$refs.BaseData.getMetadata();
-      this.showMetadataHandler = false;
+    metadataReflesh () {
+      this.metadataFormReset()
+      this.$refs.BaseData.getMetadata()
+      this.showMetadataHandler = false
     },
-    search(value, searchType, type) {
+    search (value, searchType, type) {
       this.isSearch = true
       this.$nextTick(() => {
         this.$refs.search.search(value, searchType, type)
       })
     },
-    onPageSizeChange() {
-      this.search(this.artifactQuery.artifactName, 1);
+    onPageSizeChange () {
+      this.search(this.artifactQuery.artifactName, 1)
     },
-    handleTableChange(pagination, filters, sorter) {
-      this.artifactQuery.sortField = null;
-      this.artifactQuery.sortOrder = null;
-      if (pagination) {
-        this.artifactQuery.page = pagination.current;
+    handleTableChange (pagination, filters, sorter) {
+      this.artifactQuery.sortField = null
+      this.artifactQuery.sortOrder = null
+      if (pagination)
+      {
+        this.artifactQuery.page = pagination.current
       }
-      if (sorter) {
-        this.artifactQuery.sortField = sorter.field;
-        if (sorter.order) {
-          this.artifactQuery.sortOrder = "asc";
-          if (sorter.order.indexOf("desc") !== -1) {
-            this.artifactQuery.sortOrder = "desc";
+      if (sorter)
+      {
+        this.artifactQuery.sortField = sorter.field
+        if (sorter.order)
+        {
+          this.artifactQuery.sortOrder = 'asc'
+          if (sorter.order.indexOf('desc') !== -1)
+          {
+            this.artifactQuery.sortOrder = 'desc'
           }
         }
       }
-      this.search(this.artifactQuery.artifactName);
+      this.search(this.artifactQuery.artifactName)
     },
-    dateChange(value, dateString) {
-      if (dateString) {
-        this.artifactQuery.beginDate = dateString[0];
-        this.artifactQuery.endDate = dateString[1];
+    dateChange (value, dateString) {
+      if (dateString)
+      {
+        this.artifactQuery.beginDate = dateString[0]
+        this.artifactQuery.endDate = dateString[1]
         if (
-          this.artifactQuery.beginDate === "" &&
-          this.artifactQuery.endDate === ""
-        ) {
-          this.dateConfirm();
+          this.artifactQuery.beginDate === '' &&
+          this.artifactQuery.endDate === ''
+        )
+        {
+          this.dateConfirm()
         }
       }
     },
-    dateConfirm() {
-      this.search(this.artifactQuery.artifactName, 1);
+    dateConfirm () {
+      this.search(this.artifactQuery.artifactName, 1)
     },
-    openDetial() {
-      this.$emit("openDetial", this.scanReport);
+    openDetial () {
+      this.$emit('openDetial', this.scanReport)
     },
-    highlighterHandle(code) {
-      return highlight(code, languages.js); //returns html
+    highlighterHandle (code) {
+      return highlight(code, languages.js) //returns html
     },
-    fileSizeConver(size) {
-      if (size) {
-        return fileSizeConver(size);
+    fileSizeConver (size) {
+      if (size)
+      {
+        return fileSizeConver(size)
       }
     },
-    queryStorageAndRepositoryPermission() {
+    queryStorageAndRepositoryPermission () {
       this.permissions = []
-      getStorageAndRepositoryPermission(this.folibRepository.storageId, this.folibRepository.id).then((res) => {
+      getStorageAndRepositoryPermission(
+        this.folibRepository.storageId,
+        this.folibRepository.id
+      ).then(res => {
         this.permissions = res
-        this.uploadEnabled = this.folibRepository.status.indexOf('Out of Service') === -1 && this.enablUploadedLayout.includes(this.folibRepository.layout) && this.folibRepository.type === 'hosted' && (hasRole('ARTIFACTS_MANAGER') || this.permissions.includes('ARTIFACTS_DEPLOY'))
-        this.copyEnabled = this.folibRepository.type === 'hosted' && (hasRole('ARTIFACTS_MANAGER') || this.permissions.includes('ARTIFACTS_COPY'))
-        this.dispatchEnabled = this.folibRepository.type === 'hosted' && isAdmin()
-        this.moveEnabled = this.folibRepository.type === 'hosted' && (hasRole('ARTIFACTS_MANAGER') || this.permissions.includes('ARTIFACTS_MOVE'))
-        this.deleteEnabled = this.folibRepository.type !== 'group' && (hasRole('ARTIFACTS_MANAGER') || this.permissions.includes('ARTIFACTS_DELETE'))
+        this.uploadEnabled =
+          this.folibRepository.status.indexOf('Out of Service') === -1 &&
+          this.enablUploadedLayout.includes(this.folibRepository.layout) &&
+          this.folibRepository.type === 'hosted' &&
+          (hasRole('ARTIFACTS_MANAGER') ||
+            this.permissions.includes('ARTIFACTS_DEPLOY'))
+        this.copyEnabled =
+          this.folibRepository.type === 'hosted' &&
+          (hasRole('ARTIFACTS_MANAGER') ||
+            this.permissions.includes('ARTIFACTS_COPY'))
+        this.dispatchEnabled =
+          this.folibRepository.type === 'hosted' && isAdmin()
+        this.moveEnabled =
+          this.folibRepository.type === 'hosted' &&
+          (hasRole('ARTIFACTS_MANAGER') ||
+            this.permissions.includes('ARTIFACTS_MOVE'))
+        this.deleteEnabled =
+          this.folibRepository.type !== 'group' &&
+          (hasRole('ARTIFACTS_MANAGER') ||
+            this.permissions.includes('ARTIFACTS_DELETE'))
+
       })
+
     },
-    getRepositoryUrl() {
-      let repositoryUrl = ""
-      if (this.baseUrl) {
-        repositoryUrl = this.baseUrl + 'storages/' + this.folibRepository.storageId + '/' + this.folibRepository.id
+    getRepositoryUrl () {
+      let repositoryUrl = ''
+      if (this.baseUrl)
+      {
+        repositoryUrl =
+          this.baseUrl +
+          'storages/' +
+          this.folibRepository.storageId +
+          '/' +
+          this.folibRepository.id
         let layout = this.folibRepository.layout.toLowerCase()
         if (layout === 'docker' || layout === 'conan') {
           let baseUrlArr = this.baseUrl.split('://')
-          repositoryUrl = baseUrlArr[1] + this.folibRepository.storageId + '/' + this.folibRepository.id
+          repositoryUrl =
+            baseUrlArr[1] +
+            this.folibRepository.storageId +
+            '/' +
+            this.folibRepository.id
         }
       }
       return repositoryUrl
     },
-    handleMavenUpload() {
+    handleMavenUpload () {
       this.mavenUploadVisible = true
     },
-    mavenUploadClose() {
+    mavenUploadClose () {
       this.mavenUploadVisible = false
     },
-    uploadTypeChange(element) {
-      if (element.target.value === 1) {
+    uploadTypeChange (element) {
+      if (element.target.value === 1)
+      {
         this.uploadType = 1
-      } else if (element.target.value === 2) {
+      } else if (element.target.value === 2)
+      {
         this.uploadType = 2
       }
     }
-  },
-};
+  }
+}
 </script>
 <style lang="scss" scoped>
- .selectdrop::v-deep .gb-ant-select-multiple-cascader .cascader-content-wrap .cascader-content-container .cascader-content-list {
+.selectdrop::v-deep .gb-ant-select-multiple-cascader .cascader-content-wrap .cascader-content-container .cascader-content-list {
   min-width: 280px;
- }
- .copy-p {
+}
+
+.copy-p {
   display: inline-block;
- }
+}
 </style>

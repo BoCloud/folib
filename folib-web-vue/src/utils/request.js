@@ -63,6 +63,13 @@ const errorHandler = (error) => {
       } else {
       }
     }
+    if(error.response.status === 500){
+      notification.error({
+        message: "错误",
+        description: error.response.data.error,
+      });
+    }
+   
   }
   return Promise.reject(error);
 };

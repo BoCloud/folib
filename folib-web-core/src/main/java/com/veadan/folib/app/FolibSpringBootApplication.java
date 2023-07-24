@@ -14,8 +14,10 @@ import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration;
 import org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration;
 import org.springframework.boot.context.metrics.buffering.BufferingApplicationStartup;
 import org.springframework.context.ConfigurableApplicationContext;
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
 import org.springframework.scheduling.annotation.EnableAsync;
+import org.springframework.web.client.RestTemplate;
 import tk.mybatis.spring.annotation.MapperScan;
 
 /**
@@ -58,5 +60,10 @@ public class FolibSpringBootApplication {
 
         thread.setDaemon(false);
         thread.start();
+    }
+
+    @Bean
+    public RestTemplate getTemplate(){
+        return new RestTemplate();
     }
 }
