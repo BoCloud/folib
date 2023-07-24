@@ -2163,7 +2163,7 @@ export default {
       if (this.baseUrl) {
         repositoryUrl = this.baseUrl + 'storages/' + this.folibRepository.storageId + '/' + this.folibRepository.id
         let layout = this.folibRepository.layout.toLowerCase()
-        if (layout === 'docker') {
+        if (layout === 'docker' || layout === 'conan') {
           let baseUrlArr = this.baseUrl.split('://')
           repositoryUrl = baseUrlArr[1] + this.folibRepository.storageId + '/' + this.folibRepository.id
         }

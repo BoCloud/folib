@@ -182,6 +182,77 @@
           </div>
         </a-table>
       </a-tab-pane>
+      <a-tab-pane key="3" tab="Conan信息" v-if="conanInfoVisible">
+        <a-descriptions
+          title="配置"
+          :column="1"
+          style="word-break: break-all;word-wrap: break-word;"
+        >
+          <a-descriptions-item label="包名">
+            {{ conanInfo.recipeInfo.name }}
+          </a-descriptions-item>
+          <a-descriptions-item label="版本">
+            {{ conanInfo.recipeInfo.version }}
+          </a-descriptions-item>
+          <a-descriptions-item label="用户">
+            {{ conanInfo.recipeInfo.user }}
+          </a-descriptions-item>
+          <a-descriptions-item label="频道">
+            {{ conanInfo.recipeInfo.channel }}
+          </a-descriptions-item>
+          <a-descriptions-item label="引用">
+            {{ conanInfo.recipeInfo.reference }}
+          </a-descriptions-item>
+          <a-descriptions-item label="作者">
+            {{ conanInfo.recipeInfo.author }}
+          </a-descriptions-item>
+          <a-descriptions-item label="许可">
+            {{ conanInfo.recipeInfo.license }}
+          </a-descriptions-item>
+          <a-descriptions-item label="URL">
+            {{ conanInfo.recipeInfo.url }}
+          </a-descriptions-item>
+        </a-descriptions>
+        <a-descriptions
+          title="包信息"
+          :column="1"
+          style="word-break: break-all;word-wrap: break-word;"
+        >
+          <a-descriptions-item label="包个数">
+            {{ conanInfo.packageCount }}
+          </a-descriptions-item>
+        </a-descriptions>
+      </a-tab-pane>
+      <a-tab-pane key="4" tab="Conan包信息" v-if="conanPackageInfoVisible">
+        <a-descriptions
+          title="Settings"
+          :column="1"
+          style="word-break: break-all;word-wrap: break-word;"
+        >
+          <a-descriptions-item :label="k"  v-for="(v, k, index) in conanPackageInfo.settings" :key="index">
+            {{ v }}
+          </a-descriptions-item>
+        </a-descriptions>
+        <a-descriptions
+          title="Options"
+          :column="1"
+          style="word-break: break-all;word-wrap: break-word;"
+        >
+          <a-descriptions-item :label="k"  v-for="(v, k, index) in conanPackageInfo.options" :key="index">
+            {{ v }}
+          </a-descriptions-item>
+        </a-descriptions>
+        <a-descriptions
+          title="Requires"
+          :column="1"
+          :colon="false"
+          style="word-break: break-all;word-wrap: break-word;"
+        >
+          <a-descriptions-item :label="k"  v-for="(v, k, index) in conanPackageInfo.requires" :key="index">
+            {{ v }}
+          </a-descriptions-item>
+        </a-descriptions>
+      </a-tab-pane>
     </a-tabs>
     <hr class="my-25" />
 
@@ -270,7 +341,7 @@
 import store from "store";
 import { fileSizeConver, formateDate } from "@/utils/layoutUtil";
 import { getArtifact } from "@/api/folib";
-import {  deleteArtifactMetadata } from "@/api/artifact";
+import {  deleteArtifactMetadata, conanInfo, conanPackageInfo } from "@/api/artifact";
 import { PrismEditor } from "vue-prism-editor";
 import "vue-prism-editor/dist/prismeditor.min.css"; // import the styles somewhere
 // import highlighting library (you can use any library you want just return html string)
@@ -385,6 +456,26 @@ export default {
         },
       },
       metadataEnabled: false,
+      conanInfo: {
+          recipeInfo: {
+              name: "",
+              version: "",
+              user: "",
+              channel: "",
+              reference: "",
+              author: "",
+              license: "",
+              url: ""
+          },
+          packageCount: 0
+      },
+      conanInfoVisible: false,
+      conanPackageInfo: {
+        settings: {},
+        options: {},
+        requires: {}
+      },
+      conanPackageInfoVisible: false,
     };
   },
   created() {
@@ -402,9 +493,17 @@ export default {
       this.metadataShow()
     },
     'currentTreeNode.artifactPath': function (newval, oldVal) {
+      this.conanInfoReset()
+      this.conanPackageInfoReset()
       this.metadataList = []
       if (this.currentTreeNode.type === 'file') {
         this.getMetadata()
+      } else if (newval && newval.split('/').length === 5 && this.folibRepository.layout === 'conan'){
+        this.conanInfoVisible = true
+        this.getConanInfo()
+      } else if (newval && newval.split('/').length === 8 && this.folibRepository.layout === 'conan'){
+        this.conanPackageInfoVisible = true
+        this.getConanPackageInfo()
       }
     },
   },
@@ -543,6 +642,54 @@ export default {
         return newVal;
       }
       return 0;
+    },
+    getConanInfo() {
+      let data = {
+        storageId: this.currentTreeNode.storageId, 
+        repositoryId: this.currentTreeNode.repositoryId, 
+        artifactPath: this.currentTreeNode.artifactPath
+      }
+      conanInfo(data).then((res) => {
+          if (res) {
+            this.conanInfo = res
+          }
+        }).finally(() => {});
+    },
+    conanInfoReset() {
+      this.conanInfoVisible = false
+      this.conanInfo =  {
+          recipeInfo: {
+              name: "",
+              version: "",
+              user: "",
+              channel: "",
+              reference: "",
+              author: "",
+              license: "",
+              url: ""
+          },
+          packageCount: 0
+      }      
+    },
+    getConanPackageInfo() {
+      let data = {
+        storageId: this.currentTreeNode.storageId, 
+        repositoryId: this.currentTreeNode.repositoryId, 
+        artifactPath: this.currentTreeNode.artifactPath
+      }
+      conanPackageInfo(data).then((res) => {
+          if (res) {
+            this.conanPackageInfo = res
+          }
+        }).finally(() => {});
+    },
+    conanPackageInfoReset() {
+      this.conanPackageInfoVisible = false
+      this.conanPackageInfo = {
+        settings: {},
+        options: {},
+        requires: {}
+      }
     },
   },
 };

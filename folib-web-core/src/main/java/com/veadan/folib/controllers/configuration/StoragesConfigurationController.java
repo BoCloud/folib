@@ -171,7 +171,7 @@ public class StoragesConfigurationController
         this.conversionService = conversionService;
     }
 
-//    @LicenseAnnotation
+    @LicenseAnnotation
     @ApiOperation(value = "Adds a storage.")
     @ApiResponses(value = {@ApiResponse(code = 200, message = "The storage was created successfully."),
             @ApiResponse(code = 500, message = "An error occurred.")})
@@ -601,7 +601,7 @@ public class StoragesConfigurationController
         return ResponseEntity.ok(repositoryForms);
     }
 
-//    @LicenseAnnotation
+    @LicenseAnnotation
     @ApiOperation(value = "Adds or updates a repository.")
     @ApiResponses(value = {@ApiResponse(code = 200, message = "The repository was updated successfully."),
             @ApiResponse(code = 404, message = "The repository ${repositoryId} was not found!"),

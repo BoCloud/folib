@@ -2,7 +2,6 @@ package com.veadan.folib.providers.repository;
 
 import com.google.common.collect.Maps;
 import com.veadan.folib.artifact.ArtifactNotFoundException;
-import com.veadan.folib.config.FolibPublicUtils;
 import com.veadan.folib.data.criteria.Paginator;
 import com.veadan.folib.domain.Artifact;
 import com.veadan.folib.providers.io.*;
@@ -29,8 +28,7 @@ import java.util.stream.Collectors;
  * @author Veadan
  */
 @Component
-public class HostedRepositoryProvider extends AbstractRepositoryProvider
-{
+public class HostedRepositoryProvider extends AbstractRepositoryProvider {
 
     private static final Logger logger = LoggerFactory.getLogger(HostedRepositoryProvider.class);
 
@@ -38,41 +36,33 @@ public class HostedRepositoryProvider extends AbstractRepositoryProvider
 
     @Inject
     private ArtifactIdGroupRepository artifactIdGroupRepository;
-    
+
     @Inject
     private RepositoryPathResolver repositoryPathResolver;
-    
+
     @Override
-    public String getAlias()
-    {
+    public String getAlias() {
         return ALIAS;
     }
 
     @Override
-    protected InputStream getInputStreamInternal(RepositoryPath repositoryPath) throws IOException
-    {
-        try
-        {
+    protected InputStream getInputStreamInternal(RepositoryPath repositoryPath) throws IOException {
+        try {
             return Files.newInputStream(repositoryPath);
-        }
-        catch (ArtifactNotFoundException e) 
-        {
+        } catch (ArtifactNotFoundException e) {
             logger.info("The path [{}] does not exist!\n*\t[{}]", repositoryPath, e.getMessage());
 
             return null;
-        }
-        catch (IOException ex)
-        {
+        } catch (IOException ex) {
             logger.error("Failed to decorate InputStream for [{}]", repositoryPath, ex);
-            
+
             throw ex;
         }
     }
 
     @Override
     public OutputStream getOutputStreamInternal(RepositoryPath repositoryPath)
-            throws IOException
-    {
+            throws IOException {
         return Files.newOutputStream(repositoryPath);
     }
 
@@ -80,29 +70,24 @@ public class HostedRepositoryProvider extends AbstractRepositoryProvider
     public List<Path> search(String storageId,
                              String repositoryId,
                              RepositorySearchRequest predicate,
-                             Paginator paginator)
-    {
+                             Paginator paginator) {
         List<Path> result = new LinkedList<Path>();
 
         Storage storage = configurationManager.getConfiguration().getStorage(storageId);
         Repository repository = storage.getRepository(repositoryId);
-        
+
         RootRepositoryPath rootRepositoryPath = repositoryPathResolver.resolve(repository);
         long startTime = System.currentTimeMillis();
         List<Artifact> searchResult = artifactIdGroupRepository.findArtifactsGremlin(storageId, repositoryId, predicate.getArtifactId(),
-                                                                              predicate.getCoordinateValues(), paginator.getSkip(), paginator.getLimit(), paginator.getUseLimit());
+                predicate.getCoordinateValues(), paginator.getSkip(), paginator.getLimit(), paginator.getUseLimit());
         logger.info("FindArtifacts storageId [{}] repositoryId [{}] artifactId [{}] coordinateValues [{}] skip [{}] limit [{}] useLimit [{}] artifactListSize [{}] take time [{}] ms", storageId, repositoryId, predicate.getArtifactId(), predicate.getCoordinateValues(), paginator.getSkip(), paginator.getLimit(), paginator.getUseLimit(), searchResult.size(), System.currentTimeMillis() - startTime);
-        for (Artifact artifactEntry : searchResult)
-        {
-            
-            try
-            {
+        for (Artifact artifactEntry : searchResult) {
+
+            try {
                 result.add(rootRepositoryPath.resolve(artifactEntry));
-            }
-            catch (Exception e)
-            {
+            } catch (Exception e) {
                 logger.error("Failed to resolve Artifact [{}]",
-                             artifactEntry.getArtifactCoordinates(), e);
+                        artifactEntry.getArtifactCoordinates(), e);
                 continue;
             }
         }
@@ -112,10 +97,9 @@ public class HostedRepositoryProvider extends AbstractRepositoryProvider
     @Override
     public Long count(String storageId,
                       String repositoryId,
-                      RepositorySearchRequest predicate)
-    {
+                      RepositorySearchRequest predicate) {
         return artifactIdGroupRepository.commonCountArtifacts(storageId, repositoryId, predicate.getArtifactId(),
-                                                        predicate.getCoordinateValues());
+                predicate.getCoordinateValues());
     }
 
     @Override
@@ -173,25 +157,17 @@ public class HostedRepositoryProvider extends AbstractRepositoryProvider
     }
 
     @Override
-    public Map<String, Object> searchConanDownLoadUrl(Repository repository, String name, String version, String username, String channel) {
-        String url = FolibPublicUtils.getRepositoryWebServerUrl(repository);
-//        Map<String, Object> map = new HashMap<String, Object>();
-//        String format = String.format("%s/v1/files/%s/%s/%s/%s/export/%s", url, name, version, username, channel);
-//        String conanExportTgz = url + "/v1/files/_/" + name + "/" + version + "/_/0/export/conan_export.tgz";
-//        String conanManifestTxt = url + "/v1/files/_/" + name + "/" + version + "/_/0/export/conanmanifest.txt";
-//        String conanFilePy = url + "/v1/files/_/" + name + "/" + version + "/_/0/export/conanfile.py";
-//        map.put("conan_export.tgz", conanExportTgz);
-//        map.put("conanmanifest.txt", conanManifestTxt);
-//        map.put("conanfile.py", conanFilePy);
+    public Map<String, String> searchConanDownLoadUrl(Repository repository, String name, String version, String user, String channel) {
+        String url = getBaseUrl(repository);
         List<String> list = List.of("conan_export.tgz", "conanmanifest.txt", "conanfile.py");
         return list.stream().collect(Collectors.toMap(
                 filename -> filename,
-                filename -> String.format("%s/v1/files/%s/%s/%s/%s/export/%s", url, name, version, username, channel, filename)));
+                filename -> String.format("%s/v1/files/%s/%s/%s/%s/0/export/%s", url, user, name, version, channel, filename)));
     }
 
 
     @Override
-    public Map<String, Object> searchConanPackageInfo(Repository repository, String packageName, String version) throws IOException {
+    public Map<String, Object> searchConanPackageInfo(Repository repository, String packageName, String version, String user, String channel) throws IOException {
         // 查询本地仓的package id 及详情  _/zulu-openjdk/11.0.15/_/0/package
         String packagePath = "_/" + packageName + "/" + version + "/_/0/package";
         RepositoryPath repositoryPath = repositoryPathResolver.resolve(repository.getStorage().getId()
@@ -265,23 +241,20 @@ public class HostedRepositoryProvider extends AbstractRepositoryProvider
     }
 
     @Override
-    protected RepositoryPath fetchPath(RepositoryPath repositoryPath) 
-           throws IOException
-    {
+    protected RepositoryPath fetchPath(RepositoryPath repositoryPath)
+            throws IOException {
         logger.info(" -> Checking local cache for {} ...", repositoryPath);
-        if (artifactNotExists(repositoryPath))
-        {
+        if (artifactNotExists(repositoryPath)) {
             logger.info("The artifact {} was not found in the local cache", repositoryPath);
 
             return null;
         }
-        
+
         logger.info("The artifact {} was found in the local cache", repositoryPath);
         return repositoryPath;
     }
 
-    private boolean artifactNotExists(RepositoryPath repositoryPath) throws IOException
-    {
+    private boolean artifactNotExists(RepositoryPath repositoryPath) throws IOException {
         return !RepositoryFiles.artifactExists(repositoryPath);
     }
 

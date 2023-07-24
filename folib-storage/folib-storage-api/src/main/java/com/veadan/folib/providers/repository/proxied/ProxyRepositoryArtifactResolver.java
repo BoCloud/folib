@@ -72,19 +72,19 @@ public class ProxyRepositoryArtifactResolver
             return null;
         }
 
-        RestArtifactResolver client = restArtifactResolverFactory.newInstance(remoteRepository,repositoryPath);// todo client 修复
-        ReadWriteLock lockSource = repositoryPathLock.lock(repositoryPath, "remote-fetch");
-        Lock lock = lockSource.writeLock();
-        lock.lock();
+        RestArtifactResolver client = restArtifactResolverFactory.newInstance(remoteRepository,repositoryPath);
+//        ReadWriteLock lockSource = repositoryPathLock.lock(repositoryPath, "remote-fetch");
+//        Lock lock = lockSource.writeLock();
+//        lock.lock();
 
         try (InputStream is = new BufferedInputStream(new ProxyRepositoryInputStream(client, repositoryPath)))
         {
             return doFetch(repositoryPath, is);
         }
-        finally
-        {
-            lock.unlock();
-        }
+//        finally
+//        {
+//            lock.unlock();
+//        }
     }
 
     private RepositoryPath doFetch(RepositoryPath repositoryPath,

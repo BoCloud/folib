@@ -28,6 +28,7 @@ import com.veadan.folib.services.support.ArtifactRoutingRulesChecker;
 import com.veadan.folib.storage.Storage;
 import com.veadan.folib.storage.repository.Repository;
 import com.veadan.folib.util.ThrowingFunction;
+import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -331,16 +332,13 @@ public class GroupRepositoryProvider
     }
 
     @Override
-    public Map<String, Object> searchConanDownLoadUrl(Repository repository, String name, String version, String username, String channel) {
+    public Map<String, String> searchConanDownLoadUrl(Repository repository, String name, String version, String user, String channel) {
         Set<Repository> groupRepositorySet = groupRepositorySetCollector.collect(repository);
-        String path = "_/" + name + "/" + version + "/_/0/export/conanmanifest.txt";
         for (Repository x : groupRepositorySet) {
             try {
                 RepositoryProvider repositoryProvider = repositoryProviderRegistry.getProvider(x.getType());
-                Map<String, Object> rsMap = repositoryProvider.searchConanDownLoadUrl(x, name, version, username, channel);
-                RepositoryPath repositoryPath = artifactResolutionService.resolvePath(x.getStorage().getId(),
-                        x.getId(), path);
-                if (null != repositoryPath && Files.exists(repositoryPath)) {
+                Map<String, String> rsMap = repositoryProvider.searchConanDownLoadUrl(x, name, version, user, channel);
+                if (MapUtils.isNotEmpty(rsMap)) {
                     return rsMap;
                 }
             } catch (Exception e) {
@@ -351,13 +349,13 @@ public class GroupRepositoryProvider
     }
 
     @Override
-    public Map<String, Object> searchConanPackageInfo(Repository repository, String packageName, String version) {
+    public Map<String, Object> searchConanPackageInfo(Repository repository, String name, String version, String user, String channel) {
 
         Set<Repository> groupRepositorySet = groupRepositorySetCollector.collect(repository);
         for (Repository x : groupRepositorySet) {
             try {
                 RepositoryProvider repositoryProvider = repositoryProviderRegistry.getProvider(x.getType());
-                Map<String, Object> rsMap = repositoryProvider.searchConanPackageInfo(x, packageName, version);
+                Map<String, Object> rsMap = repositoryProvider.searchConanPackageInfo(x, name, version, user, channel);
                 if (CollectionUtil.isNotEmpty(rsMap)) {
                     return rsMap;
                 }

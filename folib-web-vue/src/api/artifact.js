@@ -131,3 +131,19 @@ export function artifactUploadZip (data, uuid, fileName) {
     data: data
   })
 }
+
+export function conanInfo (data) {
+  return axios({
+    url: '/api/conan/info',
+    method: 'post',
+    data: data
+  })
+}
+
+export function conanPackageInfo (data) {
+  return axios({
+    url: '/api/conan/packageInfo',
+    method: 'post',
+    data: data
+  })
+}

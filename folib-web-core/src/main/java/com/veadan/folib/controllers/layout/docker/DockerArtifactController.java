@@ -8,6 +8,7 @@ import com.google.common.collect.Lists;
 import com.veadan.folib.cloud.storage.s3fs.S3Iterator;
 import com.veadan.folib.cloud.storage.s3fs.S3Path;
 import com.veadan.folib.cluster.ClusterProperties;
+import com.veadan.folib.configuration.ConfigurationUtils;
 import com.veadan.folib.controllers.BaseArtifactController;
 import com.veadan.folib.domain.*;
 import com.veadan.folib.entity.Dict;
@@ -192,11 +193,28 @@ public class DockerArtifactController extends BaseArtifactController {
                                                    HttpServletResponse response,
                                                    @PathVariable String storageId,
                                                    @PathVariable String repositoryId,
-                                                   @PathVariable String name
+                                                   @PathVariable String name,
+                                                   @RequestParam(required = false) String from,
+                                                   @RequestParam(required = false) String mount
 
     ) {
-        final String path = name;
         try {
+            if (StringUtils.isNotBlank(from) && StringUtils.isNotBlank(mount)) {
+                String sourceStorageId = ConfigurationUtils.getPathStorageId(from);
+                String sourceRepositoryId = ConfigurationUtils.getPathRepositoryId(from);
+                RepositoryPath repositoryPath = repositoryPathResolver.resolve(sourceStorageId, sourceRepositoryId, String.format("blobs/%s", mount));
+                if (Objects.isNull(repositoryPath) || !Files.exists(repositoryPath)) {
+                    Map<String, Object> result = new HashMap<>(1);
+                    Map<String, Object> resultData = new HashMap<>(1);
+                    resultData.put("code", HttpStatus.NOT_FOUND.getReasonPhrase());
+                    resultData.put("message", String.format("the requested resource [%s] [%s] is not found", from, mount));
+                    resultData.put("detail", null);
+                    List<Map> list = new ArrayList<>();
+                    list.add(resultData);
+                    result.put("errors", list);
+                    return new ResponseEntity(result, HttpStatus.NOT_FOUND);
+                }
+            }
             String uuid = UUID.randomUUID().toString();
             String url = new StringBuffer().append(request.getRequestURI()).append(uuid).toString();
             response.reset();

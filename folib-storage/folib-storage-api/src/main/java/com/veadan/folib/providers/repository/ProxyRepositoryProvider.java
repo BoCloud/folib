@@ -2,7 +2,7 @@ package com.veadan.folib.providers.repository;
 
 
 import com.alibaba.fastjson.JSONObject;
-import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Maps;
 import com.veadan.folib.artifact.archive.TarGzArchiveListingFunction;
 import com.veadan.folib.config.FolibPublicUtils;
 import com.veadan.folib.data.criteria.Paginator;
@@ -41,8 +41,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 /**
  * @author Veadan
@@ -50,8 +48,7 @@ import java.util.regex.Pattern;
  */
 @Component
 public class ProxyRepositoryProvider
-        extends AbstractRepositoryProvider
-{
+        extends AbstractRepositoryProvider {
 
     private static final Logger logger = LoggerFactory.getLogger(ProxyRepositoryProvider.class);
 
@@ -76,29 +73,23 @@ public class ProxyRepositoryProvider
     protected ArtifactManagementService artifactManagementService;
 
     @Override
-    public String getAlias()
-    {
+    public String getAlias() {
         return ALIAS;
     }
 
     @Override
     protected InputStream getInputStreamInternal(RepositoryPath path)
-        throws IOException
-    {
+            throws IOException {
         return hostedRepositoryProvider.getInputStreamInternal(path);
     }
 
     @Override
     protected RepositoryPath fetchPath(RepositoryPath repositoryPath)
-        throws IOException
-    {
+            throws IOException {
         RepositoryPath targetPath = hostedRepositoryProvider.fetchPath(repositoryPath);
-        if (targetPath == null)
-        {
+        if (targetPath == null) {
             targetPath = resolvePathExclusive(repositoryPath);
-        }
-        else if (RepositoryFiles.hasExpired(targetPath))
-        {
+        } else if (RepositoryFiles.hasExpired(targetPath)) {
             eventPublisher.publishEvent(new ProxyRepositoryPathExpiredEvent(targetPath));
         }
 
@@ -106,33 +97,27 @@ public class ProxyRepositoryProvider
     }
 
     private RepositoryPath resolvePathExclusive(RepositoryPath repositoryPath)
-            throws IOException
-    {
+            throws IOException {
 
-        ReadWriteLock lockSource = repositoryPathLock.lock(repositoryPath, "pre-remote-fetch");
-        Lock lock = lockSource.writeLock();
-        lock.lock();
-        try
-        {
+//        ReadWriteLock lockSource = repositoryPathLock.lock(repositoryPath, "pre-remote-fetch");
+//        Lock lock = lockSource.writeLock();
+//        lock.lock();
+        try {
             return proxyRepositoryArtifactResolver.fetchRemoteResource(repositoryPath);
-        }
-        catch (IOException e)
-        {
+        } catch (IOException e) {
             logger.error("Failed to resolve Path for proxied artifact [{}]",
-                         repositoryPath, e);
+                    repositoryPath, e);
 
             throw e;
         }
-        finally
-        {
-            lock.unlock();
-        }
+//        finally {
+//            lock.unlock();
+//        }
     }
 
     @Override
     protected OutputStream getOutputStreamInternal(RepositoryPath repositoryPath)
-            throws IOException
-    {
+            throws IOException {
         return Files.newOutputStream(repositoryPath);
     }
 
@@ -140,8 +125,7 @@ public class ProxyRepositoryProvider
     public List<Path> search(String storageId,
                              String repositoryId,
                              RepositorySearchRequest predicate,
-                             Paginator paginator)
-    {
+                             Paginator paginator) {
         if (Objects.isNull(predicate.getNotPublishEvent()) || Boolean.FALSE.equals(predicate.getNotPublishEvent())) {
             RemoteRepositorySearchEvent event = new RemoteRepositorySearchEvent(storageId,
                     repositoryId,
@@ -156,8 +140,7 @@ public class ProxyRepositoryProvider
     @Override
     public Long count(String storageId,
                       String repositoryId,
-                      RepositorySearchRequest predicate)
-    {
+                      RepositorySearchRequest predicate) {
         return hostedRepositoryProvider.count(storageId, repositoryId, predicate);
     }
 
@@ -182,20 +165,22 @@ public class ProxyRepositoryProvider
     }
 
     @Override
-    public Map<String, Object> searchConanDownLoadUrl(Repository repository, String name, String version, String username, String channel) {
+    public Map<String, String> searchConanDownLoadUrl(Repository repository, String name, String version, String user, String channel) {
         String storageId = repository.getStorage().getId();
         String repositoryId = repository.getId();
         String remoteRepositoryUrl = repository.getRemoteRepository().getUrl();
 
         Client client = clientPool.getRestClient();
-        WebTarget target = client.target(String.format("%s/v1/conans/%s/%s/%s/%s/download_urls", remoteRepositoryUrl, name, version, username, channel));
+        WebTarget target = client.target(String.format("%s/v1/conans/%s/%s/%s/%s/download_urls", remoteRepositoryUrl, name, version, user, channel));
         Response response = target.request(MediaType.APPLICATION_JSON_TYPE).get();
         String jsonResult = response.readEntity(String.class);
         JSONObject jsonObj = JSONObject.parseObject(jsonResult);
-        List<String> list = Arrays.asList("conan_export.tgz", "conanmanifest.txt", "conanfile.py");
+        List<String> list = Arrays.asList("conan_sources.tgz", "conan_export.tgz", "conanmanifest.txt", "conanfile.py");
 
-        String filePathTemplate = String.format("%s/%s/%s/%s/export", name, version, username, channel);
+        String filePathTemplate = String.format("%s/%s/%s/%s", user, name, version, channel);
 
+        Map<String, String> dataMap = Maps.newHashMap();
+        String localUrl = FolibPublicUtils.getRepositoryWebServerUrl(repository);
         for (String filename : list) {
             try {
                 String remoteUrl = jsonObj.getString(filename);
@@ -205,50 +190,43 @@ public class ProxyRepositoryProvider
                     continue;
                 }
                 InputStream is = res.readEntity(InputStream.class);
-                String filePath = filePathTemplate + "/" + filename;
+                String filePath = remoteUrl.substring(remoteUrl.indexOf(filePathTemplate));
                 RepositoryPath repositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, filePath);
                 logger.info("conan {} {} upload path {}", storageId, repositoryId, filePath);
                 artifactManagementService.store(repositoryPath, is);
-
-                if ("conan_export.tgz".equals(filename)) {
-                    byte[] contentByFileName = TarGzArchiveListingFunction.INSTANCE.getContentByFileName(repositoryPath, "conandata.yml");
-                    Map<String, Map<String, Map<String, Object>>> properties;
-                    Yaml yaml = new Yaml();
-                    properties = yaml.load(new ByteArrayInputStream(contentByFileName));
-                    Object o = properties.get("sources").get(version).get("url");
-                    String targetSourceUrl;
-                    if (o instanceof String) {
-                        targetSourceUrl = (String) o;
-                    } else {
-                        targetSourceUrl = (String) ((List<?>) o).get(0);
-                    }
-                    String targetSourceFilename = targetSourceUrl.substring(targetSourceUrl.lastIndexOf("/") + 1);
-                    logger.info("conan download target url src package: {}", targetSourceUrl);
-                    Response targetSourceRes = client.target(targetSourceUrl).request().get();
-                    InputStream targetSourceIs = targetSourceRes.readEntity(InputStream.class);
-                    String targetSourcePath = String.format("%s/%s/%s/%s/package/%s", name, version, username, channel, targetSourceFilename);
-                    RepositoryPath targetSourceRepositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, targetSourcePath);
-                    logger.info("conan {} {} upload path {}", storageId, repositoryId, filePath);
-                    artifactManagementService.store(targetSourceRepositoryPath, targetSourceIs);
-                }
-            } catch (IOException e) {
+                dataMap.put(filename, String.format("%s/v1/files/%s", localUrl, filePath));
+//                if ("conan_export.tgz".equals(filename)) {
+//                    byte[] contentByFileName = TarGzArchiveListingFunction.INSTANCE.getContentByFileName(repositoryPath, "conandata.yml");
+//                    Map<String, Map<String, Map<String, Object>>> properties;
+//                    Yaml yaml = new Yaml();
+//                    properties = yaml.load(new ByteArrayInputStream(contentByFileName));
+//                    Object o = properties.get("sources").get(version).get("url");
+//                    String targetSourceUrl;
+//                    if (o instanceof String) {
+//                        targetSourceUrl = (String) o;
+//                    } else {
+//                        targetSourceUrl = (String) ((List<?>) o).get(0);
+//                    }
+//                    String targetSourceFilename = targetSourceUrl.substring(targetSourceUrl.lastIndexOf("/") + 1);
+//                    logger.info("conan download target url src package: {}", targetSourceUrl);
+//                    Response targetSourceRes = client.target(targetSourceUrl).request().get();
+//                    InputStream targetSourceIs = targetSourceRes.readEntity(InputStream.class);
+//                    String targetSourcePath = String.format("%s/%s/%s/%s/package/%s", name, version, user, channel, targetSourceFilename);
+//                    RepositoryPath targetSourceRepositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, targetSourcePath);
+//                    logger.info("conan {} {} upload path {}", storageId, repositoryId, filePath);
+//                    artifactManagementService.store(targetSourceRepositoryPath, targetSourceIs);
+//                }
+            } catch (Exception e) {
                 logger.error("conan {} {} download or store target file error.", storageId, repositoryId, e);
+            } finally {
+
             }
         }
-
-        String localUrl = FolibPublicUtils.getRepositoryWebServerUrl(repository);
-        String localConanExportTgz = String.format("%s/v1/files/%s/conan_export.tgz", localUrl, filePathTemplate);
-        String localConanManifestTxt = String.format("%s/v1/files/%s/conanmanifest.txt", localUrl, filePathTemplate);
-        String localConanFilePy = String.format("%s/v1/files/%s/conanfile.py", localUrl, filePathTemplate);
-        return ImmutableMap.<String, Object>builder()
-                .put("conan_export.tgz", localConanExportTgz)
-                .put("conanmanifest.txt", localConanManifestTxt)
-                .put("conanfile.py", localConanFilePy)
-                .build();
+        return dataMap;
     }
 
     @Override
-    public Map<String, Object> searchConanPackageInfo(Repository repository, String packageName, String version) {
+    public Map<String, Object> searchConanPackageInfo(Repository repository, String packageName, String version, String username, String channel) {
         String url = repository.getRemoteRepository().getUrl();
         String reqUrl = url.endsWith("/") ? url + "v1/conans/" + packageName + "/" + version + "/_/_/search" :
                 url + "/v1/conans/" + packageName + "/" + version + "/_/_/search";
@@ -263,45 +241,40 @@ public class ProxyRepositoryProvider
     }
 
     @Override
-    protected Artifact provideArtifact(RepositoryPath repositoryPath) throws IOException
-    {
+    protected Artifact provideArtifact(RepositoryPath repositoryPath) throws IOException {
         Artifact artifactEntry = super.provideArtifact(repositoryPath);
         if (artifactEntry.getNativeId() == null) {
             artifactEntry = new ArtifactEntity(repositoryPath.getStorageId(), repositoryPath.getRepositoryId(),
-                                      RepositoryFiles.readCoordinates(repositoryPath));
+                    RepositoryFiles.readCoordinates(repositoryPath));
             artifactEntry.setArtifactFileExists(Boolean.FALSE);
         }
-        
+
         return artifactEntry;
     }
 
     @Override
-    protected boolean shouldStoreArtifact(Artifact artifactEntry)
-    {
+    protected boolean shouldStoreArtifact(Artifact artifactEntry) {
         boolean result = super.shouldStoreArtifact(artifactEntry) || !artifactEntry.getArtifactFileExists();
         artifactEntry.setArtifactFileExists(true);
-        
+
         return result;
     }
 
     @Override
     public void commit(RepositoryStreamWriteContext ctx)
-        throws IOException
-    {
+            throws IOException {
         super.commit(ctx);
     }
 
     @Override
     public void commitStoreIndex(RepositoryStreamReadContext ctx)
-            throws IOException
-    {
+            throws IOException {
         super.commitStoreIndex(ctx);
     }
 
     @Override
     public void onStoreIndexAfter(RepositoryStreamReadContext ctx)
-            throws IOException
-    {
+            throws IOException {
         super.onStoreIndexAfter(ctx);
     }
 

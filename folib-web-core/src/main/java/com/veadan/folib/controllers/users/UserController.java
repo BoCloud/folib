@@ -268,13 +268,14 @@ public class UserController
             produces = {MediaType.TEXT_PLAIN_VALUE,
                     MediaType.APPLICATION_JSON_VALUE})
     public ResponseEntity generateSecurityToken(@ApiParam(value = "The name of the user") @PathVariable String username,
+                                                @ApiParam(value = "Token effective seconds") @RequestParam(required = false) Integer expireSeconds,
                                                 @RequestHeader(HttpHeaders.ACCEPT) String accept)
             throws JoseException {
         User user = userService.findByUsername(username);
         if (user == null) {
             return getNotFoundResponseEntity(NOT_FOUND_USER, accept);
         }
-        String securityToken = userService.generateSecurityToken(username);
+        String securityToken = userService.generateSecurityToken(username, expireSeconds);
         if (securityToken == null) {
             String message = String.format("Failed to generate SecurityToken, probably you should first set " +
                     "SecurityTokenKey for the user: %s", username);

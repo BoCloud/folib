@@ -83,6 +83,7 @@ public class PasswordAuthenticationProvider extends DaoAuthenticationProvider {
                 LdapConfiguration ldapConfiguration = ldapAuthenticationConfigurationManager.getConfiguration();
                 String ldapUserSearchFilter = MessageFormat.format(ldapConfiguration.getUserSearch().getUserSearchFilter(), userDetails.getUsername());
                 logger.info("The ldap user search base [{}] search filter [{}]", ldapConfiguration.getUserSearch().getUserSearchBase(), ldapUserSearchFilter);
+                ldapTemplate.setIgnorePartialResultException(true);
                 boolean authenticate = ldapTemplate.authenticate(ldapConfiguration.getUserSearch().getUserSearchBase(), ldapUserSearchFilter, authentication.getCredentials().toString());
                 logger.info("The ldap account [{}] password authenticate [{}]", userDetails.getUsername(), authenticate);
                 if (authenticate) {

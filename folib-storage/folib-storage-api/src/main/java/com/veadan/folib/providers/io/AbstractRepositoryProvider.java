@@ -23,6 +23,7 @@ import com.veadan.folib.storage.repository.Repository;
 import com.veadan.folib.util.CommonUtils;
 import com.veadan.folib.util.LocalDateTimeInstance;
 import org.apache.commons.io.output.CountingOutputStream;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.ApplicationEventPublisher;
@@ -373,6 +374,10 @@ public abstract class AbstractRepositoryProvider implements RepositoryProvider, 
         selector.where(createPredicate(storageId, repositoryId, p));
 
         return selector;
+    }
+
+    protected String getBaseUrl(Repository repository) {
+        return String.format("%s/%s/%s", StringUtils.chomp(configurationManager.getConfiguration().getBaseUrl(), "/"), repository.getStorage().getId(), repository.getId());
     }
 
 }
