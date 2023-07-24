@@ -1133,7 +1133,7 @@
 
       <!--单点登录配置-->
       <a-tab-pane key="8"
-                  tab="sso配置">
+                  tab="SSO配置">
         <a-card class="header-solid block">
           <a-col :span="24"
                  :md="24"
@@ -1864,12 +1864,12 @@ export default {
           key: 'redirectPath'
         },
         {
-          title: '单点登陆地址',
+          title: '单点登录地址',
           key: 'ssoPath',
           dataIndex: 'ssoPath'
         },
         {
-          title: '单点退出登陆地址',
+          title: '单点退出登录地址',
           key: 'loginOutUrl',
           dataIndex: 'loginOutUrl'
         },

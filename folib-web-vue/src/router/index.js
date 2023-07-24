@@ -403,7 +403,7 @@ router.beforeEach((from,to,next)=>{
   // 已登录直接跳转
   if (isLogin()) {
     next(true)
-  // 没有跳转直接到登陆页面  
+  // 没有跳转直接到登录页面  
   } else {
     checkLoginInfo()
     next(false)
@@ -431,7 +431,7 @@ async function checkLoginInfo(){
     sessionStorage.setItem('clientInfo',JSON.stringify(clientObject) )
 
 
-    // 跳转到登陆页面
+    // 跳转到登录页面
     window.location.href=url
 
 }
