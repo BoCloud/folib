@@ -1496,7 +1496,8 @@
              ok-text="保存"
              cancel-text="取消"
              @ok="handleOk"
-             @cancel="handleCancel">
+             @cancel="handleCancel"
+             width="60%">
       <a-form :form="ssoform"
               layout="vertical">
              
@@ -1557,7 +1558,7 @@
  
         <a-form-item >
           <span slot="label">
-            accessToken的接口地址&nbsp;
+            登录重定向地址&nbsp;
             <a-tooltip title="登录后重定向地址！" class="info-message">
               <a-icon type="question-circle-o" />
             </a-tooltip>

@@ -4,10 +4,16 @@
     <div class="item-con-p">
     <div v-for="(item,index) in clients"
          :key="index" style="margin-top:20px">
+         <a-tooltip>
+          <template slot="title">
+            {{ item.clientName }}
+          </template>
       <div @click="toSingleLogin(item)" class="item-con">
-        <div class="text-icon">{{ item.clientId.substring(0,1) }} </div>
-        <div class="text-content"> {{ item.clientName }}</div>
+       
+          <div class="text-icon" :class="textBg(index)">{{ item.clientId.substring(0,1) }} </div>
+        
       </div>   
+    </a-tooltip>
     </div>
     </div>
   </div>
@@ -23,9 +29,20 @@ export default {
     }
   },
   data() {
-    return {}
+    return {
+      textColor:[
+        "text-secondary",
+        "text-success",
+        "text-gray-6",
+        "text-warning"
+
+      ]
+    }
   },
   methods: {
+    textBg(index){
+     return this.textColor[index%4]
+    },
     toSingleLogin(clientObject){ 
     let url =clientObject.ssoPath+"?redirect_uri="+clientObject.redirectPath+"&client_id="+clientObject.clientId+"&response_type=code"
     // 可以在输入的时候限定格式
@@ -43,6 +60,7 @@ export default {
 </script>
 
 <style lang="scss" scoped>
+
 .other-text{
     font-size: 14px;
     font-weight: 700;
@@ -53,10 +71,9 @@ export default {
 .text-icon{
   font-size: 20px;
   color: #fff;
-  background: #1890FF;
-  line-height: 30px;
-  width: 30px;
-  height: 30px;
+  line-height: 25px;
+  width: 25px;
+  height: 25px;
   text-align: center;
   border-radius: 15px;;
 }
@@ -64,7 +81,7 @@ export default {
 .text-content{
   height: 30px;
   line-height: 30px;
-  margin-left: 5px;
+  margin-left: 10px;
   font-weight: 500;
   color: #000;
 
@@ -75,16 +92,36 @@ export default {
 }
 .item-con{
   display: flex;
-   min-width: 100px;
    margin-left: 5px;
-   padding: 5px;
-   border: 1px solid #fff;
+   padding: 10px 30px;
+   border: 1px solid #bfbfbf;
+   border-radius: 5px;
+   text-align: center;
+   .text-secondary{
+    background: #1890FF;
+    color: #fff !important;
+  
+  }
+  .text-success{
+    background: #52c418;
+    color: #fff !important;
+  
+  }
+  .text-gray-6{
+    background: #f8f8f8;
+    color: #fff!important;
+  
+  }
+  .text-warning{
+    background: #fadb14;
+    color: #fff!important;
+  
+  }
 }
 
 .item-con:hover{
-  border: 1px solid #fff;
   cursor: pointer;
-  border-bottom: 1px solid #1890FF;
+  border-color: #1890ff;
   
 }
 </style>

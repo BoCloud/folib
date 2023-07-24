@@ -38,7 +38,7 @@ import java.util.Set;
 
 @Controller
 @RequestMapping("/api/sso")
-@Api(value = "/api/sso")
+@Api(value = "keycloak 单点的登录",tags = "keycloak 单点的登录客户端管理")
 public class SSOcontroller {
     @Inject
     private AuthorizationConfigServiceImpl authorizationConfigService;
@@ -93,7 +93,6 @@ public class SSOcontroller {
          // 直接返回login的结果
             return ResponseEntity.status(200).body(user );
         }
-
 
         }else {
             throw new Exception("非法用户！");

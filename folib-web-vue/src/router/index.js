@@ -357,10 +357,16 @@ router.beforeEach((from,to,next)=>{
           redirect_uri:clientInfo.redirectPath,
           access_token_url:clientInfo.access_token_url
     }
+   
     param.forEach(e=>{
       let temp = e.split("=")
       sessionParam[temp[0]]=temp[1]||""
     })
+
+    if(!param.code){
+      next(true)
+      return
+    }
      
      //  这是从单点登录的页面跳转过来的
        ssoLogin(sessionParam).then(res=>{
