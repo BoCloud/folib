@@ -18,5 +18,18 @@ public class ConfigurationUtils
         return storageAndRepositoryIdTokens[storageAndRepositoryIdTokens.length < 2 ? 0 : 1];
     }
 
+    public static String getPathStorageId(String storageAndRepositoryId)
+    {
+        String[] storageAndRepositoryIdTokens = storageAndRepositoryId.split("/");
+
+        return storageAndRepositoryIdTokens[storageAndRepositoryIdTokens.length < 2 ? 0 : 1];
+    }
+
+    public static String getPathRepositoryId(String storageAndRepositoryId)
+    {
+        String[] storageAndRepositoryIdTokens = storageAndRepositoryId.split("/");
+
+        return storageAndRepositoryIdTokens[storageAndRepositoryIdTokens.length < 2 ? 0 : 1];
+    }
     
 }

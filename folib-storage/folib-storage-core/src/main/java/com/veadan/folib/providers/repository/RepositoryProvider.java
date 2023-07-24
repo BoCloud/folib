@@ -125,15 +125,15 @@ public interface RepositoryProvider
      * @param version conan 包版本
      * @return map  下载的conan 包文件
      */
-    Map<String, Object> searchConanDownLoadUrl(Repository repository, String name, String version, String username, String channel);
+    Map<String, String> searchConanDownLoadUrl(Repository repository, String name, String version, String user, String channel);
 
     /**
      * 查询Conan 制品版本下的package id 详情
      *
      * @param repository caonan 仓库
-     * @param packageName conan 包
+     * @param user conan 包
      * @param version conan 包版本
      * @return map
      */
-    Map<String, Object> searchConanPackageInfo(Repository repository, String packageName, String version) throws IOException;
+    Map<String, Object> searchConanPackageInfo(Repository repository, String name, String version, String user, String channel) throws IOException;
 }

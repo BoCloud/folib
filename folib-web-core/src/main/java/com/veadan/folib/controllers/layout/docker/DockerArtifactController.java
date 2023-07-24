@@ -7,12 +7,17 @@ import com.alibaba.fastjson.JSONObject;
 import com.google.common.collect.Lists;
 import com.veadan.folib.cloud.storage.s3fs.S3Iterator;
 import com.veadan.folib.cloud.storage.s3fs.S3Path;
+import com.veadan.folib.cluster.ClusterProperties;
+import com.veadan.folib.configuration.ConfigurationUtils;
 import com.veadan.folib.controllers.BaseArtifactController;
 import com.veadan.folib.domain.*;
+import com.veadan.folib.entity.Dict;
+import com.veadan.folib.enums.DictTypeEnum;
 import com.veadan.folib.enums.RepositoryScopeEnum;
 import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.providers.layout.DockerLayoutProvider;
 import com.veadan.folib.repositories.ArtifactRepository;
+import com.veadan.folib.services.DictService;
 import com.veadan.folib.services.DirectoryListingService;
 import com.veadan.folib.storage.Storage;
 import com.veadan.folib.storage.repository.Repository;
@@ -82,6 +87,12 @@ public class DockerArtifactController extends BaseArtifactController {
     @JwtAuthenticationClaimsProvider.JwtAuthentication
     private JwtClaimsProvider jwtClaimsProvider;
 
+    @Inject
+    private ClusterProperties clusterProperties;
+
+    @Inject
+    private DictService dictService;
+
     /**
      * 文件进度
      */
@@ -119,12 +130,12 @@ public class DockerArtifactController extends BaseArtifactController {
         response.setHeader("WWW-Authenticate", MessageFormat.format("Bearer realm=\"{0}token\",service=\"{1}\"", request.getRequestURL(), request.getServerName() + ":" + request.getServerPort()));
         if (Objects.isNull(authorization)) {
             Map<String, Object> result = new HashMap<>(1);
-            Map<String, Object> data = new HashMap<>(1);
-            data.put("code", "UNAUTHORIZED");
-            data.put("message", "access to the requested resource is not authorized");
-            data.put("detail", null);
+            Map<String, Object> resultData = new HashMap<>(1);
+            resultData.put("code", "UNAUTHORIZED");
+            resultData.put("message", "access to the requested resource is not authorized");
+            resultData.put("detail", null);
             List<Map> list = new ArrayList<>();
-            list.add(data);
+            list.add(resultData);
             result.put("errors", list);
             return new ResponseEntity<>(result, HttpStatus.UNAUTHORIZED);
         }
@@ -145,12 +156,12 @@ public class DockerArtifactController extends BaseArtifactController {
                 SpringSecurityUser springSecurityUser = (SpringSecurityUser) authentication.getPrincipal();
                 response.setHeader(DockerApiHeader.DOCKER_DISTRIBUTION_API_VERSION.key(), DockerApiHeader.DOCKER_DISTRIBUTION_API_VERSION.value());
                 Map<String, String> claimMap = jwtClaimsProvider.getClaims(springSecurityUser);
-                JSONObject data = new JSONObject();
+                JSONObject resultData = new JSONObject();
                 int expireSeconds = 7200;
                 String token = securityTokenProvider.getToken(springSecurityUser.getUsername(), claimMap, expireSeconds, null);
-                data.put("token", token);
-                data.put("expires_in", expireSeconds);
-                return ResponseEntity.ok(data);
+                resultData.put("token", token);
+                resultData.put("expires_in", expireSeconds);
+                return ResponseEntity.ok(resultData);
             }
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("authentication type error");
         } catch (Exception e) {
@@ -182,11 +193,28 @@ public class DockerArtifactController extends BaseArtifactController {
                                                    HttpServletResponse response,
                                                    @PathVariable String storageId,
                                                    @PathVariable String repositoryId,
-                                                   @PathVariable String name
+                                                   @PathVariable String name,
+                                                   @RequestParam(required = false) String from,
+                                                   @RequestParam(required = false) String mount
 
     ) {
-        final String path = name;
         try {
+            if (StringUtils.isNotBlank(from) && StringUtils.isNotBlank(mount)) {
+                String sourceStorageId = ConfigurationUtils.getPathStorageId(from);
+                String sourceRepositoryId = ConfigurationUtils.getPathRepositoryId(from);
+                RepositoryPath repositoryPath = repositoryPathResolver.resolve(sourceStorageId, sourceRepositoryId, String.format("blobs/%s", mount));
+                if (Objects.isNull(repositoryPath) || !Files.exists(repositoryPath)) {
+                    Map<String, Object> result = new HashMap<>(1);
+                    Map<String, Object> resultData = new HashMap<>(1);
+                    resultData.put("code", HttpStatus.NOT_FOUND.getReasonPhrase());
+                    resultData.put("message", String.format("the requested resource [%s] [%s] is not found", from, mount));
+                    resultData.put("detail", null);
+                    List<Map> list = new ArrayList<>();
+                    list.add(resultData);
+                    result.put("errors", list);
+                    return new ResponseEntity(result, HttpStatus.NOT_FOUND);
+                }
+            }
             String uuid = UUID.randomUUID().toString();
             String url = new StringBuffer().append(request.getRequestURI()).append(uuid).toString();
             response.reset();
@@ -227,7 +255,7 @@ public class DockerArtifactController extends BaseArtifactController {
 
     ) {
 
-        response.addHeader("Range", ranges.get(uuid).toString());
+        response.addHeader("Range", getRanges().get(uuid).toString());
         return new ResponseEntity<>("OK", HttpStatus.NO_CONTENT);
     }
 
@@ -260,19 +288,11 @@ public class DockerArtifactController extends BaseArtifactController {
             if (totalBytes > 0) {
                 FileUtils utils = new FileUtils();
                 String fileDir = storageId + "/" + repositoryId + "/" + name;
-                utils.upload(fileDir, uuid, 0, blobBytes);
-                if (ranges.containsKey(uuid)) {
-                    ranges.replace(uuid, ranges.get(uuid) + blobBytes.length);
-                } else {
-                    ranges.put(uuid, (long) blobBytes.length);
-                }
+                utils.upload(fileDir, uuid, blobBytes);
+                updateRanges(uuid, blobBytes.length);
             }
-            totalBytes = ranges.get(uuid).intValue();
-            if (data.containsKey(uuid)) {
-                data.replace(digest, uuid);
-            } else {
-                data.put(digest, uuid);
-            }
+            totalBytes = getRanges().get(uuid).intValue();
+            updateData(digest, uuid);
             InputStream inputStream = storageData(storageId, repositoryId, name, digest);
             String artifactPath = String.format("%s/blobs/%s", name, digest);
             RepositoryPath repositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, artifactPath);
@@ -292,7 +312,7 @@ public class DockerArtifactController extends BaseArtifactController {
             logger.error(e.getMessage(), e);
             result = ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
         } finally {
-            deleteLayers(storageId, repositoryId, name, digest);
+            deleteLayers(storageId, repositoryId, name, digest, uuid);
             return result;
         }
 
@@ -326,20 +346,16 @@ public class DockerArtifactController extends BaseArtifactController {
         FileUtils utils = new FileUtils();
         String fileDir = new StringBuffer().append(storageId).append("/").append(repositoryId).append("/").append(name).toString();
         String fileName = uuid;
-        utils.upload(fileDir, fileName, 0, bytes);
+        utils.upload(fileDir, fileName, bytes);
 
-        if (ranges.containsKey(uuid)) {
-            ranges.replace(uuid, ranges.get(uuid) + bytes.length);
-        } else {
-            ranges.put(uuid, (long) bytes.length);
-        }
+        updateRanges(uuid, bytes.length);
         String url = request.getRequestURI();
         response.reset();
         response.setDateHeader(DockerApiHeader.DATE.key(), System.currentTimeMillis());
         response.setHeader(DockerApiHeader.DOCKER_DISTRIBUTION_API_VERSION.key(), DockerApiHeader.DOCKER_DISTRIBUTION_API_VERSION.value());
         response.setHeader(DockerApiHeader.DOCKER_UPLOAD_UUID.key(), uuid);
         response.setHeader(DockerApiHeader.LOCATION.key(), url);
-        response.setHeader(DockerApiHeader.RANGE.key(), "0-" + ranges.get(uuid).intValue());
+        response.setHeader(DockerApiHeader.RANGE.key(), "0-" + getRanges().get(uuid).intValue());
         response.setHeader(DockerApiHeader.CONTENT_LENGTH.key(), "0");
         //202 Accepted
         return new ResponseEntity<>("chunkedUpload", HttpStatus.ACCEPTED);
@@ -613,19 +629,20 @@ public class DockerArtifactController extends BaseArtifactController {
      * @param repositoryId
      * @param name
      * @param digests
+     * @param uuid
      */
     public void deleteLayers(String storageId,
                              String repositoryId,
                              String name,
-                             String digests) {
+                             String digests,
+                             String uuid) {
         FileUtils utils = new FileUtils();
-
-        if (data.containsKey(digests) && Objects.nonNull(data.get(digests))) {
+        if (getData().containsKey(digests) && Objects.nonNull(getData().get(digests))) {
             String fileDir = String.format("%s/%s/%s", storageId, repositoryId, name);
-            utils.deleteDir(fileDir, data.get(digests));
-            data.remove(digests);
+            utils.deleteDir(fileDir, getData().get(digests));
+            removeData(digests);
+            removeRanges(uuid);
         }
-
     }
 
     /**
@@ -640,11 +657,9 @@ public class DockerArtifactController extends BaseArtifactController {
     public InputStream storageData(String storageId, String repositoryId, String name, String digest) {
         FileUtils utils = new FileUtils();
         String fileDir = String.format("%s/%s/%s", storageId, repositoryId, name);
-        String fileName = data.get(digest);
+        String fileName = getData().get(digest);
         return utils.getFile(fileDir, fileName);
     }
-
-    ;
 
 
     @ApiOperation(value = "Existing Manifests 现有清单")
@@ -662,7 +677,7 @@ public class DockerArtifactController extends BaseArtifactController {
                                             @PathVariable String storageId,
                                             @PathVariable String repositoryId,
                                             @PathVariable String name,
-                                            @PathVariable String tag) {
+                                            @PathVariable String tag) throws Exception {
 
         String artifactName = String.format("%s/%s/", name, tag);
         //镜像不存在 404 Not Found
@@ -1036,5 +1051,109 @@ public class DockerArtifactController extends BaseArtifactController {
         return manifest;
     }
 
+    private boolean clusterOpen() {
+        return Boolean.TRUE.equals(clusterProperties.getOpenFlag());
+    }
+
+    private ConcurrentHashMap<String, Long> getRanges() {
+        if (!clusterOpen()) {
+            return ranges;
+        }
+        ConcurrentHashMap<String, Long> dictRanges = new ConcurrentHashMap<String, Long>();
+        List<Dict> dictList = dictService.selectLatestListDict(Dict.builder().dictType(DictTypeEnum.DOCKER_RANGES.getType()).build());
+        if (CollectionUtils.isNotEmpty(dictList)) {
+            for (Dict dict : dictList) {
+                if (StringUtils.isNotBlank(dict.getDictKey()) && StringUtils.isNotBlank(dict.getDictValue())) {
+                    dictRanges.put(dict.getDictKey(), Long.parseLong(dict.getDictValue()));
+                }
+            }
+        }
+        return dictRanges;
+    }
+
+    private void updateRanges(String uuid, long value) {
+        if (!clusterOpen()) {
+            if (ranges.containsKey(uuid)) {
+                ranges.replace(uuid, ranges.get(uuid) + value);
+            } else {
+                ranges.put(uuid, value);
+            }
+            return;
+        }
+        List<Dict> dictList = dictService.selectLatestListDict(Dict.builder().dictType(DictTypeEnum.DOCKER_RANGES.getType()).build());
+        if (CollectionUtils.isNotEmpty(dictList)) {
+            for (Dict dict : dictList) {
+                if (StringUtils.isNotBlank(dict.getDictKey()) && StringUtils.isNotBlank(dict.getDictValue())) {
+                    if (uuid.equals(dict.getDictKey())) {
+                        //已存在
+                        value = Long.parseLong(dict.getDictValue()) + value;
+                        dict.setDictValue(value + "");
+                        dictService.saveOrUpdateDict(Dict.builder().dictType(DictTypeEnum.DOCKER_RANGES.getType()).dictKey(uuid).dictValue(dict.getDictValue()).build(), null);
+                        return;
+                    }
+                }
+            }
+        }
+        //不存在
+        dictService.saveOrUpdateDict(Dict.builder().dictType(DictTypeEnum.DOCKER_RANGES.getType()).dictKey(uuid).dictValue(value + "").build(), null);
+    }
+
+    private ConcurrentHashMap<String, String> getData() {
+        if (!clusterOpen()) {
+            return data;
+        }
+        ConcurrentHashMap<String, String> dictData = new ConcurrentHashMap<String, String>();
+        List<Dict> dictList = dictService.selectLatestListDict(Dict.builder().dictType(DictTypeEnum.DOCKER_DATA.getType()).build());
+        if (CollectionUtils.isNotEmpty(dictList)) {
+            for (Dict dict : dictList) {
+                if (StringUtils.isNotBlank(dict.getDictKey()) && StringUtils.isNotBlank(dict.getDictValue())) {
+                    dictData.put(dict.getDictKey(), dict.getDictValue());
+                }
+            }
+        }
+        return dictData;
+    }
+
+    private void updateData(String digest, String uuid) {
+        if (!clusterOpen()) {
+            if (data.containsKey(uuid)) {
+                data.replace(digest, uuid);
+            } else {
+                data.put(digest, uuid);
+            }
+            return;
+        }
+        List<Dict> dictList = dictService.selectLatestListDict(Dict.builder().dictType(DictTypeEnum.DOCKER_DATA.getType()).build());
+        if (CollectionUtils.isNotEmpty(dictList)) {
+            for (Dict dict : dictList) {
+                if (StringUtils.isNotBlank(dict.getDictKey()) && StringUtils.isNotBlank(dict.getDictValue())) {
+                    if (uuid.equals(dict.getDictKey())) {
+                        //已存在
+                        dict.setDictValue(uuid);
+                        dictService.saveOrUpdateDict(Dict.builder().dictType(DictTypeEnum.DOCKER_DATA.getType()).dictKey(digest).dictValue(dict.getDictValue()).build(), null);
+                        return;
+                    }
+                }
+            }
+        }
+        //不存在
+        dictService.saveOrUpdateDict(Dict.builder().dictType(DictTypeEnum.DOCKER_DATA.getType()).dictKey(digest).dictValue(uuid).build(), null);
+    }
+
+    private void removeData(String digest) {
+        if (!clusterOpen()) {
+            data.remove(digest);
+            return;
+        }
+        dictService.deleteDict(Dict.builder().dictType(DictTypeEnum.DOCKER_DATA.getType()).dictKey(digest).build());
+    }
+
+    private void removeRanges(String uuid) {
+        if (!clusterOpen()) {
+            ranges.remove(uuid);
+            return;
+        }
+        dictService.deleteDict(Dict.builder().dictType(DictTypeEnum.DOCKER_RANGES.getType()).dictKey(uuid).build());
+    }
 }
 

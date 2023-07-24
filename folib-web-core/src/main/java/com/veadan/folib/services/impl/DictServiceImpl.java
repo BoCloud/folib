@@ -53,6 +53,9 @@ public class DictServiceImpl implements DictService {
         if (StringUtils.isNotBlank(dict.getDictKey())) {
             criteria.andEqualTo("dictKey", dict.getDictKey());
         }
+        if (StringUtils.isNotBlank(dict.getDictType())) {
+            criteria.andEqualTo("dictType", dict.getDictType());
+        }
         dictMapper.updateByExampleSelective(dict, example);
         if (Boolean.TRUE.equals(dictForm.getOverrideSystemProperty())) {
             System.setProperty(dict.getDictKey(), dict.getDictValue());
@@ -133,6 +136,21 @@ public class DictServiceImpl implements DictService {
             dict = dictList.get(0);
         }
         return dict;
+    }
+
+    @Override
+    public List<Dict> selectLatestListDict(Dict dict) {
+        Example example = Example.builder(Dict.class).build();
+        Example.Criteria criteria = example.createCriteria();
+        criteria.andEqualTo("dictType", dict.getDictType());
+        if (StringUtils.isNotBlank(dict.getDictKey())) {
+            criteria.andEqualTo("dictKey", dict.getDictKey());
+        }
+        if (StringUtils.isNotBlank(dict.getComment())) {
+            criteria.andEqualTo("comment", dict.getComment());
+        }
+        example.setOrderByClause("create_time desc");
+        return dictMapper.selectByExample(example);
     }
 
     @Override

@@ -249,6 +249,10 @@ public class ArtifactComponent {
      */
     public boolean layoutSupports(RepositoryPath repositoryPath, Boolean block, Boolean scan) {
         boolean flag = false;
+        if (Objects.isNull(repositoryPath) || !Files.exists(repositoryPath)) {
+            log.error("RepositoryPath [{}] does not exist", repositoryPath);
+            return false;
+        }
         try {
             if (RepositoryFiles.isChecksum(repositoryPath)) {
                 log.error("LayoutSupports [{}] isChecksum", repositoryPath);
@@ -258,74 +262,72 @@ public class ArtifactComponent {
             log.error("LayoutSupports get [{}] isChecksum error [{}]", repositoryPath, ExceptionUtils.getStackTrace(ex));
             return false;
         }
-        if (Objects.nonNull(repositoryPath)) {
-            if (repositoryPath.getFileSystem() instanceof DockerFileSystem) {
-                log.info("=====>>>>> docker布局");
-                String blobs = "blobs";
-                String manifest = "manifest";
-                String path = "";
-                try {
-                    path = repositoryPath.toAbsolutePath().toString();
-                    if (Objects.nonNull(repositoryPath.getArtifactEntry())) {
-                        path = repositoryPath.getArtifactEntry().getArtifactPath();
-                    }
-                } catch (Exception ex) {
-                    log.error("Check docker layoutSupports error：{}", ExceptionUtils.getStackTrace(ex));
-                    path = repositoryPath.toAbsolutePath().toString();
+        if (repositoryPath.getFileSystem() instanceof DockerFileSystem) {
+            log.info("=====>>>>> docker布局");
+            String blobs = "blobs";
+            String manifest = "manifest";
+            String path = "";
+            try {
+                path = repositoryPath.toAbsolutePath().toString();
+                if (Objects.nonNull(repositoryPath.getArtifactEntry())) {
+                    path = repositoryPath.getArtifactEntry().getArtifactPath();
                 }
-                if (Boolean.TRUE.equals(block)) {
-                    if (path.contains("sha256") && !path.endsWith(".sha256")) {
-                        flag = true;
-                    }
-                } else if (path.contains("sha256") && !path.contains(blobs) && !path.contains(manifest) && !path.endsWith(".sha256")) {
-                    flag = true;
-                }
-            } else if (repositoryPath.getFileSystem() instanceof MavenFileSystem) {
-                log.info("=====>>>>> maven布局");
-                if (Boolean.TRUE.equals(scan)) {
-                    flag = JarArchiveListingFunction.INSTANCE.supports(repositoryPath);
-                } else {
-                    flag = JarArchiveListingFunction.INSTANCE.supports(repositoryPath) || endsWith(repositoryPath.getFileName().toString(), Collections.singletonList(".pom"));
-                }
-            } else if (repositoryPath.getFileSystem() instanceof NpmFileSystem) {
-                log.info("=====>>>>> npm布局");
-                List<String> suffixList = Arrays.asList(".json", ".tgz");
-                flag = endsWith(repositoryPath.getFileName().toString(), suffixList);
-            } else if (repositoryPath.getFileSystem() instanceof NugetFileSystem) {
-                log.info("=====>>>>> nuget布局");
-                List<String> suffixList = Arrays.asList(".nupkg", ".nuspec", "packages.config");
-                flag = endsWith(repositoryPath.getFileName().toString(), suffixList);
-            } else if (repositoryPath.getFileSystem() instanceof PypiFileSystem) {
-                log.info("=====>>>>> pypi布局");
-                List<String> suffixList = Arrays.asList(".whl", ".egg", ".zip");
-                flag = endsWith(repositoryPath.getFileName().toString(), suffixList);
-            } else if (repositoryPath.getFileSystem() instanceof RpmFileSystem) {
-                log.info("=====>>>>> rpm布局");
-                List<String> suffixList = Collections.singletonList(".rpm");
-                flag = endsWith(repositoryPath.getFileName().toString(), suffixList);
-            } else if (repositoryPath.getFileSystem() instanceof PhpFileSystem) {
-                log.info("=====>>>>> php布局");
-                List<String> suffixList = Arrays.asList("tar", "tar.gz", "tar.bz2", "zip", "json");
-                flag = endsWith(repositoryPath.getFileName().toString(), suffixList);
-            } else if (repositoryPath.getFileSystem() instanceof ConanFileSystem) {
-                log.info("=====>>>>> Conan布局");
-                List<String> suffixList = Arrays.asList(".tgz", ".py");
-                flag = endsWith(repositoryPath.getFileName().toString(), suffixList);
-            } else if (repositoryPath.getFileSystem() instanceof HelmFileSystem) {
-                List<String> suffixList = Collections.singletonList(".tgz");
-                flag = endsWith(repositoryPath.getFileName().toString(), suffixList);
-                log.info("=====>>>>> Helm布局");
-            } else if (repositoryPath.getFileSystem() instanceof RawFileSystem) {
-                log.info("=====>>>>> raw布局");
-                if (Boolean.TRUE.equals(scan)) {
-                    List<String> allSuffixList = Lists.newArrayList(".jar", ".war", ".ear", ".zip", ".json", ".tgz", ".nupkg", ".nuspec", "packages.config", ".whl", ".egg", ".zip", ".rpm", "tar", "tar.gz", "tar.bz2", "zip", "json", ".tgz", ".py", ".tgz");
-                    flag = endsWith(repositoryPath.getFileName().toString(), allSuffixList);
-                } else {
-                    flag = true;
-                }
+            } catch (Exception ex) {
+                log.error("Check docker layoutSupports error：{}", ExceptionUtils.getStackTrace(ex));
+                path = repositoryPath.toAbsolutePath().toString();
             }
-            log.info("=====>>>>>制品路径 [{}] 布局 [{}] 是否是该布局支持的制品类型 [{}]", repositoryPath.toString(), repositoryPath.getRepository().getLayout(), flag);
+            if (Boolean.TRUE.equals(block)) {
+                if (path.contains("sha256") && !path.endsWith(".sha256")) {
+                    flag = true;
+                }
+            } else if (path.contains("sha256") && !path.contains(blobs) && !path.contains(manifest) && !path.endsWith(".sha256")) {
+                flag = true;
+            }
+        } else if (repositoryPath.getFileSystem() instanceof MavenFileSystem) {
+            log.info("=====>>>>> maven布局");
+            if (Boolean.TRUE.equals(scan)) {
+                flag = JarArchiveListingFunction.INSTANCE.supports(repositoryPath);
+            } else {
+                flag = JarArchiveListingFunction.INSTANCE.supports(repositoryPath) || endsWith(repositoryPath.getFileName().toString(), Collections.singletonList(".pom"));
+            }
+        } else if (repositoryPath.getFileSystem() instanceof NpmFileSystem) {
+            log.info("=====>>>>> npm布局");
+            List<String> suffixList = Arrays.asList(".json", ".tgz");
+            flag = endsWith(repositoryPath.getFileName().toString(), suffixList);
+        } else if (repositoryPath.getFileSystem() instanceof NugetFileSystem) {
+            log.info("=====>>>>> nuget布局");
+            List<String> suffixList = Arrays.asList(".nupkg", ".nuspec", "packages.config");
+            flag = endsWith(repositoryPath.getFileName().toString(), suffixList);
+        } else if (repositoryPath.getFileSystem() instanceof PypiFileSystem) {
+            log.info("=====>>>>> pypi布局");
+            List<String> suffixList = Arrays.asList(".whl", ".egg", ".zip");
+            flag = endsWith(repositoryPath.getFileName().toString(), suffixList);
+        } else if (repositoryPath.getFileSystem() instanceof RpmFileSystem) {
+            log.info("=====>>>>> rpm布局");
+            List<String> suffixList = Collections.singletonList(".rpm");
+            flag = endsWith(repositoryPath.getFileName().toString(), suffixList);
+        } else if (repositoryPath.getFileSystem() instanceof PhpFileSystem) {
+            log.info("=====>>>>> php布局");
+            List<String> suffixList = Arrays.asList("tar", "tar.gz", "tar.bz2", "zip", "json");
+            flag = endsWith(repositoryPath.getFileName().toString(), suffixList);
+        } else if (repositoryPath.getFileSystem() instanceof ConanFileSystem) {
+            log.info("=====>>>>> Conan布局");
+            List<String> suffixList = Arrays.asList(".tgz", ".py");
+            flag = endsWith(repositoryPath.getFileName().toString(), suffixList);
+        } else if (repositoryPath.getFileSystem() instanceof HelmFileSystem) {
+            List<String> suffixList = Collections.singletonList(".tgz");
+            flag = endsWith(repositoryPath.getFileName().toString(), suffixList);
+            log.info("=====>>>>> Helm布局");
+        } else if (repositoryPath.getFileSystem() instanceof RawFileSystem) {
+            log.info("=====>>>>> raw布局");
+            if (Boolean.TRUE.equals(scan)) {
+                List<String> allSuffixList = Lists.newArrayList(".jar", ".war", ".ear", ".zip", ".json", ".tgz", ".nupkg", ".nuspec", "packages.config", ".whl", ".egg", ".zip", ".rpm", "tar", "tar.gz", "tar.bz2", "zip", "json", ".tgz", ".py", ".tgz", ".exe");
+                flag = endsWith(repositoryPath.getFileName().toString(), allSuffixList);
+            } else {
+                flag = true;
+            }
         }
+        log.info("=====>>>>>制品路径 [{}] 布局 [{}] 是否是该布局支持的制品类型 [{}]", repositoryPath.toString(), repositoryPath.getRepository().getLayout(), flag);
         return flag;
     }
 

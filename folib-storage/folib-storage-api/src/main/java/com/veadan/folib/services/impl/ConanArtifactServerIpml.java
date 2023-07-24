@@ -39,18 +39,18 @@ public class ConanArtifactServerIpml implements ConanArtifactServer {
     }
 
     @Override
-    public ResponseEntity downloadUrls(Repository repository, String name, String version, String username, String channel) {
+    public ResponseEntity downloadUrls(Repository repository, String name, String version, String user, String channel) {
         RepositoryProvider repositoryProvider = repositoryProviderRegistry.getProvider(repository.getType());
-        Map<String, Object> map = repositoryProvider.searchConanDownLoadUrl(repository, name, version, username, channel);
+        Map<String, String> map = repositoryProvider.searchConanDownLoadUrl(repository, name, version, user, channel);
         return new ResponseEntity<>(map, HttpStatus.OK);
     }
 
     @Override
-    public ResponseEntity searchConanPackageInfo(Repository repository, String packageName, String version) {
+    public ResponseEntity searchConanPackageInfo(Repository repository, String name, String version, String user, String channel) {
         RepositoryProvider repositoryProvider = repositoryProviderRegistry.getProvider(repository.getType());
         Map<String, Object> map = null;
         try {
-            map = repositoryProvider.searchConanPackageInfo(repository, packageName, version);
+            map = repositoryProvider.searchConanPackageInfo(repository, name, version, user, channel);
         } catch (IOException e) {
             e.printStackTrace();
             new ResponseEntity<>("{}", HttpStatus.INTERNAL_SERVER_ERROR);

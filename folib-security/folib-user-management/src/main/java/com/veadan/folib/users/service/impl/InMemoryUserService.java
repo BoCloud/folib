@@ -129,6 +129,11 @@ public class InMemoryUserService implements UserService
     public String generateSecurityToken(final String username)
             throws JoseException
     {
+        return generateSecurityToken(username, null);
+    }
+
+    @Override
+    public String generateSecurityToken(String username, Integer expireSeconds) throws JoseException {
         final User user = findByUsername(username);
 
         if (StringUtils.isEmpty(user.getSecurityTokenKey()))
@@ -138,7 +143,7 @@ public class InMemoryUserService implements UserService
 
         SpringSecurityUser springSecurityUser = userDetailsMapper.apply(user);
         Map<String, String> claimMap = jwtClaimsProvider.getClaims(springSecurityUser);
-        return tokenProvider.getToken(username, claimMap, null, null);
+        return tokenProvider.getToken(username, claimMap, expireSeconds, null);
     }
 
     @Override

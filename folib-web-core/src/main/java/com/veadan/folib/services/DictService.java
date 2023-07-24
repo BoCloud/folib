@@ -65,6 +65,14 @@ public interface DictService {
     Dict selectLatestOneDict(Dict dict);
 
     /**
+     * 查询字典
+     *
+     * @param dict 字典
+     * @return 字典
+     */
+    List<Dict> selectLatestListDict(Dict dict);
+
+    /**
      * 查询未执行的升级任务
      * @return 未执行的升级任务
      */

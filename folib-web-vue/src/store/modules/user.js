@@ -104,7 +104,7 @@ const user = {
         }
         sessionStorage.setItem('loginMethod','loginOut')
         router.push({ name: 'login' })
-        // 推出登陆时需要调用单点登录的退出
+        // 推出登录时需要调用单点登录的退出
       })
     }
 

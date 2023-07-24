@@ -86,10 +86,15 @@ public class DatabaseUserService implements UserService
     public String generateSecurityToken(String username)
         throws JoseException
     {
+        return generateSecurityToken(username, null);
+    }
+
+    @Override
+    public String generateSecurityToken(String username, Integer expireSeconds) throws JoseException {
         final User user = findByUsername(username);
         SpringSecurityUser springSecurityUser = userDetailsMapper.apply(user);
         Map<String, String> claimMap = jwtClaimsProvider.getClaims(springSecurityUser);
-        return tokenProvider.getToken(username, claimMap, null, null);
+        return tokenProvider.getToken(username, claimMap, expireSeconds, null);
     }
 
     @Override

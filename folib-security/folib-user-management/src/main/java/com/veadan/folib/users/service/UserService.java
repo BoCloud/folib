@@ -8,11 +8,10 @@ import org.jose4j.lang.JoseException;
 import java.util.List;
 
 /**
- * @author 
+ * @author
  * @author veadan
  */
-public interface UserService
-{
+public interface UserService {
 
     User findByUsername(String username);
 
@@ -25,6 +24,18 @@ public interface UserService
      * @throws JoseException
      */
     String generateSecurityToken(String username)
+            throws JoseException;
+
+    /**
+     * Generates another one 'Security Token' for specific user.<br>
+     * Token will be based on 'username' with 'securityTokenKey' used as clam.
+     *
+     * @param username      user ID
+     * @param expireSeconds expire Seconds
+     * @return encrypted token
+     * @throws JoseException
+     */
+    String generateSecurityToken(String username, Integer expireSeconds)
             throws JoseException;
 
     /**
@@ -43,12 +54,13 @@ public interface UserService
 
     User save(User user);
 
-    User saveOverrideRole(User  user);
+    User saveOverrideRole(User user);
 
     void deleteByUsername(String username);
 
     /**
      * 按角色查找用户
+     *
      * @param rolesList 角色列表
      * @return 用户列表
      */

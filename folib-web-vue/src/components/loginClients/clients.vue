@@ -52,7 +52,7 @@ export default {
     // 这里要给退出url的地址
     sessionStorage.setItem('loginOutUti',clientObject.loginOutUrl+"?client_id="+clientObject.clientId+"&post_logout_redirect_uri="+clientObject.loginOutRedPath)
     sessionStorage.setItem('clientInfo',JSON.stringify(clientObject) )
-    // 跳转到登陆页面
+    // 跳转到登录页面
     window.location.href=url
     }
   }

@@ -1,19 +1,18 @@
 package com.veadan.folib.controllers;
 
-import com.alibaba.fastjson.JSON;
 import com.veadan.folib.components.artifact.ArtifactComponent;
 import com.veadan.folib.controllers.support.ErrorResponseEntityBody;
 import com.veadan.folib.domain.Artifact;
-import com.veadan.folib.domain.VulnerabilitiesInfo;
-import com.veadan.folib.domain.Vulnerability;
 import com.veadan.folib.event.artifact.ArtifactEventListenerRegistry;
 import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.repositories.ArtifactRepository;
 import com.veadan.folib.service.ProxyRepositoryConnectionPoolConfigurationService;
 import com.veadan.folib.services.ArtifactManagementService;
+import com.veadan.folib.storage.repository.Repository;
 import com.veadan.folib.utils.ArtifactControllerHelper;
+import com.veadan.folib.web.Constants;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -22,18 +21,9 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import javax.inject.Inject;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import javax.ws.rs.client.Client;
-import javax.ws.rs.client.Entity;
-import javax.ws.rs.client.WebTarget;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
 import java.io.IOException;
 import java.io.InputStream;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.Objects;
-import java.util.UUID;
-import java.util.stream.Collectors;
 
 public abstract class BaseArtifactController
         extends BaseController {
@@ -117,4 +107,11 @@ public abstract class BaseArtifactController
         }
     }
 
+    protected String getBaseUrl() {
+        return StringUtils.chomp(configurationManager.getConfiguration().getBaseUrl(), "/");
+    }
+
+    protected String getBaseUrl(Repository repository) {
+        return String.format("%s/%s/%s", StringUtils.chomp(configurationManager.getConfiguration().getBaseUrl(), "/"), repository.getStorage().getId(), repository.getId());
+    }
 }

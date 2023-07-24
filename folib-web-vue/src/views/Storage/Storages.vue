@@ -1612,6 +1612,10 @@ export default {
 
     moveStep(distance) {
       this.step += distance;
+      if (this.step === 2 && !this.repositoryNameCheck(this.folibRepositoryIds)) {
+        this.step -= distance;
+        return false
+      }
       if (this.step === 2 && this.folibRepository.type === "group") {
         this.repositoryList()
         this.calcHeight()
@@ -2007,7 +2011,7 @@ export default {
       if (this.baseUrl) {
         repositoryUrl = this.baseUrl + 'storages/' + repository.storageId + '/' + repository.id
         let layout = repository.layout.toLowerCase()
-        if (layout === 'docker') {
+        if (layout === 'docker' || layout === 'conan') {
           let baseUrlArr = this.baseUrl.split('://')
           repositoryUrl = baseUrlArr[1] + repository.storageId + '/' + repository.id
         }

@@ -62,12 +62,14 @@ public class DatabaseExternalUsersCacheManager extends DatabaseUserService imple
             // If found user was from another source then remove before save
             Optional<String> oldSource = oldUser.map(User::getSourceId);
             if (oldSource.map(sourceId::equals).filter(Boolean.FALSE::equals).isPresent()) {
-                logger.info("Invalidate user from another source: username=[{}], oldSource=[{}], newSource=[{}]",
-                        username,
-                        oldSource.get(),
-                        sourceId);
-                deleteByUsername(oldUser.map(u -> user.getUuid()).get());
-                oldUser = Optional.empty();
+//                logger.info("Invalidate user from another source: username=[{}], oldSource=[{}], newSource=[{}]",
+//                        username,
+//                        oldSource.get(),
+//                        sourceId);
+//                deleteByUsername(oldUser.map(u -> user.getUuid()).get());
+//                oldUser = Optional.empty();
+                logger.info("user was from another source");
+                throw new RuntimeException("invalid.credentials");
             }
 
             UserEntity userEntry = oldUser.orElseGet(() -> new UserEntity(username));

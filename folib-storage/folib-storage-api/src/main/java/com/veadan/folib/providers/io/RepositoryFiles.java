@@ -186,7 +186,7 @@ public abstract class RepositoryFiles
         }
 
         Artifact artifactEntry = repositoryPath.getArtifactEntry();
-        return artifactEntry != null && Boolean.TRUE.equals(artifactEntry.getArtifactFileExists()); 
+        return artifactEntry != null && Boolean.TRUE.equals(artifactEntry.getArtifactFileExists());
     }
 
     public static void deleteTrash(RepositoryPath repositoryPath)

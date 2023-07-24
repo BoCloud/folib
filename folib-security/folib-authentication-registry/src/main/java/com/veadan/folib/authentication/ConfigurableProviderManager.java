@@ -8,12 +8,15 @@ import com.veadan.folib.authentication.api.CustomAuthenticationItemMapper;
 import com.veadan.folib.authentication.support.AuthenticationConfigurationContext;
 import com.veadan.folib.configuration.ConfigurationManager;
 import com.veadan.folib.domain.User;
+import com.veadan.folib.enums.LoginTypeEnum;
 import com.veadan.folib.users.service.UserAlreadyExistsException;
 import com.veadan.folib.users.userdetails.FolibExternalUsersCacheManager;
+import com.veadan.folib.users.userdetails.SpringSecurityUser;
 import com.veadan.folib.users.userdetails.UserDetailsMapper;
 import com.veadan.folib.util.LocalDateTimeInstance;
 
 import javax.inject.Inject;
+import javax.servlet.http.HttpServletRequest;
 import javax.transaction.Transactional;
 import java.io.IOException;
 import java.time.LocalDateTime;
@@ -42,6 +45,8 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Component;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
 
 /**
  * @author xuxinping
@@ -121,9 +126,15 @@ public class ConfigurableProviderManager extends ProviderManager implements User
 
     protected Optional<User> loadExternalUserDetails(String username)
     {
+        HttpServletRequest httpServletRequest = ((ServletRequestAttributes) (RequestContextHolder.currentRequestAttributes())).getRequest();
+        String loginType = httpServletRequest.getHeader("X-Folibrary-Login-Type");
+        String ldapUserDetailsServiceSourceId = "ldapUserDetailsService";
         for (Entry<String, UserDetailsService> userDetailsServiceEntry : userProviderMap.entrySet())
         {
             String sourceId = userDetailsServiceEntry.getKey();
+            if (ldapUserDetailsServiceSourceId.equals(sourceId) && !LoginTypeEnum.LDAP.getType().equalsIgnoreCase(loginType)) {
+                continue;
+            }
             UserDetailsService userDetailsService = userDetailsServiceEntry.getValue();
             
             UserDetails externalUser;
