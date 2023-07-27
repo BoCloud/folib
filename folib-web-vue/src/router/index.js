@@ -388,20 +388,7 @@ router.beforeEach((from,to,next)=>{
 
 
 }
-  // 排除自己的登录页面
-  if(from.path==='/'||from.path==='/anonymous/storages'||from.path==='/login'){
-    next(true)
-  }else{
-  // 已登录直接跳转
-  if (isLogin()) {
-    next(true)
-  // 没有跳转直接到登录页面  
-  } else {
-    checkLoginInfo()
-    next(false)
-  }
-}
- 
+  next(true)
 })
 
 
