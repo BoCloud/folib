@@ -341,7 +341,6 @@ router.beforeEach((from,to,next)=>{
 
   // todo 校验合法性 keyClock确定登录的合法性，方式仿冒登录
   let flag = sessionStorage.getItem("loginMethod")
-
   if(flag==="single"){
    // 判断单点是否已经登录
    if(sessionStorage.getItem("loginStatus")==="on"){
@@ -363,7 +362,7 @@ router.beforeEach((from,to,next)=>{
       sessionParam[temp[0]]=temp[1]||""
     })
 
-    if(!param.code){
+    if(!sessionParam.code){
       next(true)
       return
     }
@@ -387,13 +386,6 @@ router.beforeEach((from,to,next)=>{
       })
    }
 
-  
-
- // 单点登录页面跳来的
- 
-    
-
-  
 
 }
   // 排除自己的登录页面

@@ -1,10 +1,10 @@
 package com.veadan.folib.controllers;
 
 import cn.hutool.jwt.JWTUtil;
-import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
 import com.veadan.folib.authorization.domain.Client;
 import com.veadan.folib.authorization.service.impl.AuthorizationConfigServiceImpl;
+import com.veadan.folib.client.ArtifactClient;
 import com.veadan.folib.domain.User;
 import com.veadan.folib.dto.SSOsessionDto;
 
@@ -17,6 +17,9 @@ import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
 
+import org.apache.http.HttpStatus;
+import org.glassfish.jersey.media.multipart.Boundary;
+import org.glassfish.jersey.media.multipart.FormDataMultiPart;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -30,6 +33,11 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.client.RestTemplate;
 
 import javax.inject.Inject;
+import javax.ws.rs.ServerErrorException;
+import javax.ws.rs.client.Entity;
+import javax.ws.rs.client.WebTarget;
+import javax.ws.rs.core.MultivaluedHashMap;
+import javax.ws.rs.core.Response;
 import java.io.IOException;
 
 import java.util.HashSet;
@@ -39,7 +47,7 @@ import java.util.Set;
 @Controller
 @RequestMapping("/api/sso")
 @Api(value = "keycloak 单点的登录",tags = "keycloak 单点的登录客户端管理")
-public class SSOcontroller {
+public class SSOcontroller extends ArtifactClient {
     @Inject
     private AuthorizationConfigServiceImpl authorizationConfigService;
 
@@ -56,46 +64,50 @@ public class SSOcontroller {
     private PasswordEncoder passwordEncoder;
 
 
-
-
     // 单点登录返回的token
     @ApiOperation(value = "ssoLogin.")
     @ApiResponses(value = { @ApiResponse(code = 200, message = "") })
     @PostMapping(value = "/ssoLogin", produces = { MediaType.APPLICATION_JSON_VALUE })
     @ResponseBody
     public ResponseEntity ssoLogin( @RequestBody SSOsessionDto ssOsessionDto)throws Exception{
-            MultiValueMap<String,String> map=new LinkedMultiValueMap();
-            map.add("client_id",ssOsessionDto.getClient_id());
-            map.add("code",ssOsessionDto.getCode());
-            map.add("grant_type",ssOsessionDto.getGrant_type());
-            map.add("redirect_uri",ssOsessionDto.getRedirect_uri());
-            HttpHeaders headers = new HttpHeaders();
-            headers.add("Content-Type", "application/x-www-form-urlencoded");
-        HttpEntity<MultiValueMap<String, Object>> request = new HttpEntity(map,headers);
-        String json = restTemplate.postForObject(ssOsessionDto.getAccess_token_url(), request, String.class);
-        JSONObject jsonObject=JSONObject.parseObject(json);
-        String accessToken = jsonObject.getString("access_token");
-        if(!StringUtils.isEmpty(accessToken)){
-            cn.hutool.jwt.JWT jwt= JWTUtil.parseToken(accessToken);
-            String username=jwt.getPayload().getClaim("preferred_username").toString();
-            User user = userService.findByUsername(username);
-            Set<String> set=new HashSet<>();
-            set.add("GENERAL");
-        if(user==null){
-        UserDto userDto=new UserDto();
-        userDto.setUsername(username);
-        userDto.setPassword("guest");
-        userDto.setRoleNames(set);
-        userService.save(new EncodedPasswordUser(userDto, passwordEncoder));
-        // 直接调用login的逻辑返回
-            return ResponseEntity.status(200).body(userDto );
-        }else {
-         // 直接返回login的结果
-            return ResponseEntity.status(200).body(user );
-        }
 
-        }else {
-            throw new Exception("非法用户！");
+          WebTarget resource = getClientInstance().target(ssOsessionDto.getAccess_token_url());
+          MultivaluedHashMap<String,String> map=new MultivaluedHashMap();
+          map.add("client_id",ssOsessionDto.getClient_id());
+          map.add("code",ssOsessionDto.getCode());
+          map.add("grant_type",ssOsessionDto.getGrant_type());
+          map.add("redirect_uri",ssOsessionDto.getRedirect_uri());
+        Response response = resource.request().header("Content-Type","application/x-www-form-urlencoded").post(Entity.form(map));
+
+        if (response.getStatus() != HttpStatus.SC_OK) {
+            throw new ServerErrorException(response.getStatus() + " | Unable to greet()",
+                    Response.Status.INTERNAL_SERVER_ERROR);
+        } else {
+            String json = response.readEntity(String.class);
+            JSONObject jsonObject = JSONObject.parseObject(json);
+            String accessToken = jsonObject.getString("access_token");
+            if (!StringUtils.isEmpty(accessToken)) {
+                cn.hutool.jwt.JWT jwt = JWTUtil.parseToken(accessToken);
+                String username = jwt.getPayload().getClaim("preferred_username").toString();
+                User user = userService.findByUsername(username);
+                Set<String> set = new HashSet<>();
+                set.add("GENERAL");
+                if (user == null) {
+                    UserDto userDto = new UserDto();
+                    userDto.setUsername(username);
+                    userDto.setPassword("guest");
+                    userDto.setRoleNames(set);
+                    userService.save(new EncodedPasswordUser(userDto, passwordEncoder));
+                    // 直接调用login的逻辑返回
+                    return ResponseEntity.status(200).body(userDto);
+                } else {
+                    // 直接返回login的结果
+                    return ResponseEntity.status(200).body(user);
+                }
+
+            } else {
+                throw new Exception("非法用户！");
+            }
         }
 
 
