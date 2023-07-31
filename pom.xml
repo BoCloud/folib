@@ -28,7 +28,6 @@
         <developerConnection>scm:git:git://git.folib.com/folib/folib-server.git</developerConnection>
     </scm>
 
-
     <modules>
         <module>folib-commons</module>
         <module>folib-configuration</module>

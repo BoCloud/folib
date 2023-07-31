@@ -33,7 +33,10 @@ public class ArtifactDirectoryLocator
         long startTime = System.currentTimeMillis();
 
         RepositoryPath startingPath = getStartingPath();
-
+        if (!Files.exists(startingPath)) {
+            logger.info("RepositoryPath [{}] not exist", startingPath.toString());
+            return;
+        }
         try (Stream<Path> pathStream = Files.walk(startingPath))
         {
             pathStream.filter(Files::isDirectory)

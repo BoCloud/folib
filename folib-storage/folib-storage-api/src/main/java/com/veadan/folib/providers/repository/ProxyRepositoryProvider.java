@@ -21,6 +21,8 @@ import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 import org.yaml.snakeyaml.Yaml;
 
@@ -165,7 +167,8 @@ public class ProxyRepositoryProvider
     }
 
     @Override
-    public Map<String, String> searchConanDownLoadUrl(Repository repository, String name, String version, String user, String channel) {
+    public ResponseEntity searchConanDownLoadUrl(Repository repository, String name, String version, String user, String channel) {
+        ResponseEntity responseEntity = ResponseEntity.status(HttpStatus.NOT_FOUND).build();
         String storageId = repository.getStorage().getId();
         String repositoryId = repository.getId();
         String remoteRepositoryUrl = repository.getRemoteRepository().getUrl();
@@ -187,7 +190,8 @@ public class ProxyRepositoryProvider
                 Response res = client.target(remoteUrl).request().get();
                 if (res.getStatus() != 200) {
                     logger.error("{} get error", remoteUrl);
-                    continue;
+//                    continue;
+                    return responseEntity;
                 }
                 InputStream is = res.readEntity(InputStream.class);
                 String filePath = remoteUrl.substring(remoteUrl.indexOf(filePathTemplate));
@@ -222,7 +226,7 @@ public class ProxyRepositoryProvider
 
             }
         }
-        return dataMap;
+        return ResponseEntity.ok(dataMap);
     }
 
     @Override

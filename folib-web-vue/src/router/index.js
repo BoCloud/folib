@@ -341,7 +341,6 @@ router.beforeEach((from,to,next)=>{
 
   // todo 校验合法性 keyClock确定登录的合法性，方式仿冒登录
   let flag = sessionStorage.getItem("loginMethod")
-
   if(flag==="single"){
    // 判断单点是否已经登录
    if(sessionStorage.getItem("loginStatus")==="on"){
@@ -363,11 +362,10 @@ router.beforeEach((from,to,next)=>{
       sessionParam[temp[0]]=temp[1]||""
     })
 
-    if(!param.code){
+    if(!sessionParam.code){
       next(true)
       return
-    }
-     
+    }    
      //  这是从单点登录的页面跳转过来的
        ssoLogin(sessionParam).then(res=>{
         //在这里获取accessToken
@@ -386,61 +384,10 @@ router.beforeEach((from,to,next)=>{
        })    
       })
    }
-
-  
-
- // 单点登录页面跳来的
- 
-    
-
-  
-
 }
-  // 排除自己的登录页面
-  if(from.path==='/'||from.path==='/anonymous/storages'||from.path==='/login'){
-    next(true)
-  }else{
-  // 已登录直接跳转
-  if (isLogin()) {
-    next(true)
-  // 没有跳转直接到登录页面  
-  } else {
-    checkLoginInfo()
-    next(false)
-  }
-}
- 
+  next(true)
 })
 
 
-// 单点登录的校验
-async function checkLoginInfo(){
-  // 首先要查到后端配置的单点配置信息
-    let list=await getSsoList()
-    // 本系统配置的clientId 否则不知道单点登录的页面地址在哪 后期考虑采用列表的 方式展现登录方式，目前先配死
-    let clientId="single"
-    let clientObject = list.filter(o=>o.clientId===clientId)[0]
-
-    let url =clientObject.ssoPath+"?redirect_uri="+clientObject.redirectPath+"&client_id="+clientObject.clientId+"&response_type=code"
-    // 可以在输入的时候限定格式
-    url= url.startsWith("http")? url:"http://"+url
-
-    sessionStorage.setItem('loginMethod','single')
-    // 这里要给退出url的地址
-    sessionStorage.setItem('loginOutUti',clientObject.loginOutUrl+"?client_id="+clientObject.clientId+"&post_logout_redirect_uri="+clientObject.loginOutRedPath)
-    sessionStorage.setItem('clientInfo',JSON.stringify(clientObject) )
-
-
-    // 跳转到登录页面
-    window.location.href=url
-
-}
-
-
-  // 判断用户是否已经登录
-  function isLogin() {
-    let token= storage.get(ACCESS_TOKEN)
-    return !!token   
-  }
 
 export default router

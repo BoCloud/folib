@@ -6,11 +6,14 @@ import com.veadan.folib.data.criteria.Paginator;
 import com.veadan.folib.domain.Artifact;
 import com.veadan.folib.providers.io.*;
 import com.veadan.folib.repositories.ArtifactIdGroupRepository;
+import com.veadan.folib.services.ArtifactManagementService;
 import com.veadan.folib.storage.Storage;
 import com.veadan.folib.storage.repository.Repository;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 
 import javax.inject.Inject;
@@ -39,6 +42,9 @@ public class HostedRepositoryProvider extends AbstractRepositoryProvider {
 
     @Inject
     private RepositoryPathResolver repositoryPathResolver;
+
+    @Inject
+    protected ArtifactManagementService artifactManagementService;
 
     @Override
     public String getAlias() {
@@ -157,12 +163,40 @@ public class HostedRepositoryProvider extends AbstractRepositoryProvider {
     }
 
     @Override
-    public Map<String, String> searchConanDownLoadUrl(Repository repository, String name, String version, String user, String channel) {
+    public ResponseEntity searchConanDownLoadUrl(Repository repository, String name, String version, String user, String channel) {
+        ResponseEntity responseEntity = ResponseEntity.status(HttpStatus.NOT_FOUND).build();
         String url = getBaseUrl(repository);
-        List<String> list = List.of("conan_export.tgz", "conanmanifest.txt", "conanfile.py");
-        return list.stream().collect(Collectors.toMap(
+        boolean exist = false;
+        RepositoryPath conanFileRepositoryPath = null, conanExportRepositoryPath = null, conanSourcesRepositoryPath = null;
+        String conanFileArtifactPath = "", conanFile = "conanfile.py", conanExportArtifactPath = "", conanExport = "conan_export.tgz", conanSourcesArtifactPath = "", conanSources = "conan_sources.tgz";
+        List<String> list = List.of("conanmanifest.txt", conanFile);
+        Map<String, String> resultMap = list.stream().collect(Collectors.toMap(
                 filename -> filename,
                 filename -> String.format("%s/v1/files/%s/%s/%s/%s/0/export/%s", url, user, name, version, channel, filename)));
+
+        conanFileArtifactPath = String.format("%s/%s/%s/%s/0/export/%s", user, name, version, channel, conanFile);
+        conanFileRepositoryPath = repositoryPathResolver.resolve(repository.getStorage().getId(), repository.getId(), conanFileArtifactPath);
+        if (Objects.isNull(conanFileRepositoryPath) || !Files.exists(conanFileRepositoryPath)) {
+            return responseEntity;
+        }
+
+        conanExportArtifactPath = String.format("%s/%s/%s/%s/0/export/%s", user, name, version, channel, conanExport);
+        conanExportRepositoryPath = repositoryPathResolver.resolve(repository.getStorage().getId(), repository.getId(), conanExportArtifactPath);
+        if (Objects.nonNull(conanExportRepositoryPath) && Files.exists(conanExportRepositoryPath)) {
+            exist = true;
+        }
+        if (!exist) {
+            conanSourcesArtifactPath = String.format("%s/%s/%s/%s/0/export/%s", user, name, version, channel, conanSources);
+            conanSourcesRepositoryPath = repositoryPathResolver.resolve(repository.getStorage().getId(), repository.getId(), conanSourcesArtifactPath);
+            if (Objects.nonNull(conanSourcesRepositoryPath) && Files.exists(conanSourcesRepositoryPath)) {
+                exist = true;
+            }
+        }
+        if (exist) {
+            resultMap.put(conanExport, String.format("%s/v1/files/%s/%s/%s/%s/0/export/%s", url, user, name, version, channel, conanExport));
+        }
+        responseEntity = ResponseEntity.ok(resultMap);
+        return responseEntity;
     }
 
 
@@ -249,7 +283,12 @@ public class HostedRepositoryProvider extends AbstractRepositoryProvider {
 
             return null;
         }
-
+        boolean flag = RepositoryFiles.isArtifact(repositoryPath) && Objects.nonNull(repositoryPath.getArtifactEntry()) && Boolean.TRUE.equals(repositoryPath.getArtifactEntry().getArtifactFileExists()) && !Files.exists(repositoryPath);
+        if (flag) {
+            logger.warn("The artifact {} was found in the local cache but artifact file not exist delete local db cache", repositoryPath);
+            artifactManagementService.delete(repositoryPath, true);
+            return null;
+        }
         logger.info("The artifact {} was found in the local cache", repositoryPath);
         return repositoryPath;
     }
