@@ -521,6 +521,10 @@ public class PromotionUtil {
             int fPathIndex = fPath.lastIndexOf(tempStr);
             String temp = fPath.substring(fPathIndex, fPath.length()).replace(tempStr, "");
             RepositoryPath destPath = repositoryPathResolver.resolve(destRepository.getStorage().getId(), destRepository.getId(), temp);
+            if (RepositoryFiles.isChecksum(destPath)) {
+                log.warn(String.format("RepositoryPath：%s is checksum file skip", destPath));
+                continue;
+            }
             log.info("temp {}   destPath {}", temp, destPath.toString());
             boolean isDocker = srcRepository.getLayout().equalsIgnoreCase("docker");
             if (isDocker) {
@@ -603,6 +607,10 @@ public class PromotionUtil {
             int fPathIndex = fPath.lastIndexOf(tempStr);
             String temp = fPath.substring(fPathIndex, fPath.length()).replace(tempStr, "");
             RepositoryPath uploadPath = repositoryPathResolver.resolve(destRepository.getStorage().getId(), destRepository.getId(), temp);
+            if (RepositoryFiles.isChecksum(uploadPath)) {
+                log.warn(String.format("RepositoryPath：%s is checksum file skip", uploadPath));
+                continue;
+            }
             try (InputStream is = Files.newInputStream(s3FilePath);) {
                 // 同步metadata
                 RepositoryPath srcPath = repositoryPathResolver.resolve(srcRepository.getStorage().getId(), srcRepository.getId(), temp);

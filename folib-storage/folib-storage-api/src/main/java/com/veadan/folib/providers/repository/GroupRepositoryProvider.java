@@ -332,20 +332,20 @@ public class GroupRepositoryProvider
     }
 
     @Override
-    public Map<String, String> searchConanDownLoadUrl(Repository repository, String name, String version, String user, String channel) {
+    public ResponseEntity searchConanDownLoadUrl(Repository repository, String name, String version, String user, String channel) {
         Set<Repository> groupRepositorySet = groupRepositorySetCollector.collect(repository);
         for (Repository x : groupRepositorySet) {
             try {
                 RepositoryProvider repositoryProvider = repositoryProviderRegistry.getProvider(x.getType());
-                Map<String, String> rsMap = repositoryProvider.searchConanDownLoadUrl(x, name, version, user, channel);
-                if (MapUtils.isNotEmpty(rsMap)) {
-                    return rsMap;
+                ResponseEntity responseEntity = repositoryProvider.searchConanDownLoadUrl(x, name, version, user, channel);
+                if (HttpStatus.NOT_FOUND.value() != responseEntity.getStatusCode().value()) {
+                    return responseEntity;
                 }
             } catch (Exception e) {
                 e.printStackTrace();
             }
         }
-        return Maps.newHashMap();
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
     }
 
     @Override

@@ -932,7 +932,7 @@ export default {
   created() {
     if (this.baseUrl) {
       this.repositoryUrl = this.baseUrl + 'storages/' + this.folibRepository.storageId + '/' + this.folibRepository.id
-      if (this.repositoryType && this.repositoryType === 'docker') {
+      if (this.repositoryType && (this.repositoryType === 'docker' || this.repositoryType === 'conan')) {
         let baseUrlArr = this.baseUrl.split('://')
         this.repositoryUrl = baseUrlArr[1] + this.folibRepository.storageId + '/' + this.folibRepository.id
       }

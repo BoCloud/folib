@@ -12,6 +12,7 @@ import java.security.NoSuchAlgorithmException;
 import java.util.List;
 import java.util.Map;
 
+import org.springframework.http.ResponseEntity;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
@@ -125,7 +126,7 @@ public interface RepositoryProvider
      * @param version conan 包版本
      * @return map  下载的conan 包文件
      */
-    Map<String, String> searchConanDownLoadUrl(Repository repository, String name, String version, String user, String channel);
+    ResponseEntity searchConanDownLoadUrl(Repository repository, String name, String version, String user, String channel);
 
     /**
      * 查询Conan 制品版本下的package id 详情
