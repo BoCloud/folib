@@ -38,7 +38,7 @@ import java.util.Objects;
 @RestController
 //@PreAuthorize("hasAuthority('ADMIN')")
 @RequestMapping("/api/configuration/cluster/")
-@Api(value = "/api/configuration/cluster/")
+@Api(description = "集群配置管理",tags = "集群配置管理")
 public class FolibClusterSyncController extends BaseController {
     private static final Logger logger = LoggerFactory.getLogger(FolibClusterSyncController.class);
 

@@ -24,7 +24,7 @@ import javax.inject.Inject;
  */
 @RestController
 @RequestMapping("/api/component")
-@Api(value = "/api/component")
+@Api(description = "组件管理",tags = "分页组件管理")
 public class ComponentController extends BaseController {
 
     @Inject

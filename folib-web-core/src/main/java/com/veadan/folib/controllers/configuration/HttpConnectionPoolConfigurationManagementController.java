@@ -31,7 +31,7 @@ import org.springframework.web.bind.annotation.*;
 @Controller
 @PreAuthorize("hasAuthority('ADMIN')")
 @RequestMapping("/api/configuration/proxy/connection-pool")
-@Api(value = "/api/configuration/proxy/connection-pool")
+@Api(description = "代理连接控制器",tags ="代理连接控制器" )
 public class HttpConnectionPoolConfigurationManagementController
         extends BaseConfigurationController
 {

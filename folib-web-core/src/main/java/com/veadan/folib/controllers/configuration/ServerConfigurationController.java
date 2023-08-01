@@ -38,7 +38,7 @@ import org.springframework.web.bind.annotation.*;
  */
 @Controller
 @RequestMapping("/api/configuration/folib")
-@Api(value = "/api/configuration/folib")
+@Api(description = "服务器设置",tags = "服务器设置")
 public class ServerConfigurationController
         extends BaseConfigurationController
 {

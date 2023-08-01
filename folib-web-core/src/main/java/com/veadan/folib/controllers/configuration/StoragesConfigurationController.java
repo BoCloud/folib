@@ -91,7 +91,7 @@ import java.util.stream.Collectors;
  */
 @RestController
 @RequestMapping("/api/configuration/folib/storages")
-@Api(value = "/api/configuration/folib/storages")
+@Api(description = "存储控件设置",tags = "存储控件设置")
 public class StoragesConfigurationController
         extends BaseConfigurationController {
     static final String SUCCESSFUL_SAVE_STORAGE = "The storage was created successfully.";

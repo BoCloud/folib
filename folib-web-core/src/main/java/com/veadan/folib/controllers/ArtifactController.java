@@ -42,7 +42,7 @@ import java.util.Objects;
  */
 @RestController
 @RequestMapping("/api/artifact")
-@Api(value = "/api/artifact")
+@Api(description = "制品管理",tags = "制品管理")
 public class ArtifactController extends BaseController {
 
     @Inject

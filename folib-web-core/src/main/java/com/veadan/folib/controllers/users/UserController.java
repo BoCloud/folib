@@ -44,7 +44,7 @@ import java.util.stream.Collectors;
  */
 @Controller
 @RequestMapping("/api/users")
-@Api(value = "/api/users")
+@Api(description = "用户管理",tags = "用户管理")
 public class UserController
         extends BaseController {
 

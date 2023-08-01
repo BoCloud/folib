@@ -26,7 +26,7 @@ import org.springframework.web.bind.annotation.*;
  */
 @Controller
 @RequestMapping("/api/maven/metadata")
-@Api(value = "/api/maven/metadata")
+@Api(description = "metadata管理控制器",tags = "metadata管理控制器")
 @PreAuthorize("hasAuthority('ROOT')")
 public class MavenMetadataManagementController
         extends BaseController

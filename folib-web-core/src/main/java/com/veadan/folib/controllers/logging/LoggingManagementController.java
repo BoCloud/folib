@@ -58,7 +58,7 @@ import static org.springframework.http.HttpStatus.BAD_REQUEST;
  * @author veadan
  */
 @Controller
-@Api(value = ROOT_CONTEXT)
+@Api(description = "日志管理控制器",tags = "日志管理控制器")
 @RequestMapping(ROOT_CONTEXT)
 @PreAuthorize("hasAnyAuthority('ADMIN')")
 public class LoggingManagementController

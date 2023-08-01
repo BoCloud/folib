@@ -40,7 +40,7 @@ import java.util.Set;
 
 @RestController
 @RequestMapping("/api/artifact/folib/dependentLibrary")
-@Api(value = "/api/artifact/folib/dependentLibrary")
+@Api(value = "制品库依赖",tags = "制品库依赖")
 public class DependentLibraryController extends BaseController {
 
 

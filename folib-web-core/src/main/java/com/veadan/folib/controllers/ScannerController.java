@@ -19,7 +19,7 @@ import java.util.List;
  */
 @RestController
 @RequestMapping("/api/scanner")
-@Api(tags = "")
+@Api(description="组件扫描",tags = "组件扫描")
 public class ScannerController extends BaseController {
 
     @Autowired

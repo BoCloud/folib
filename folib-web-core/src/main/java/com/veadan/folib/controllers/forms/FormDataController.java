@@ -39,7 +39,7 @@ import org.springframework.web.bind.annotation.RestController;
  */
 @RestController
 @RequestMapping("/api/formData")
-@Api(value = "/api/formData")
+@Api(description = "表单数据控制器",tags = "表单数据控制器")
 public class FormDataController
         extends BaseController
 {

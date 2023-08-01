@@ -19,7 +19,7 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @PreAuthorize("hasAuthority('ADMIN')")
 @RequestMapping("/api/node")
-@Api(value = "/api/node")
+@Api(description = "节点管理",tags = "节点管理")
 public class NodeController extends BaseController {
 
     @Autowired

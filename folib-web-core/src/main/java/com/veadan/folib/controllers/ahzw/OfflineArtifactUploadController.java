@@ -32,7 +32,7 @@ import java.nio.file.Files;
 
 @RestController
 @RequestMapping("/api/artifact/folib/offline")
-@Api(value = "/api/artifact/folib/offline")
+@Api(value = "离线制品管理",tags = "离线制品管理")
 @Slf4j
 public class OfflineArtifactUploadController extends BaseArtifactController {
 

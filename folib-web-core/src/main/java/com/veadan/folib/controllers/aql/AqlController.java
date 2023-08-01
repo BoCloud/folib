@@ -25,7 +25,7 @@ import java.util.List;
  */
 @Controller
 @RequestMapping("/api/fql")
-@Api(value = "/api/fql")
+@Api(description = "aql管理控制器",tags = "aql管理控制器")
 public class AqlController extends BaseController {
 
 //    @Inject

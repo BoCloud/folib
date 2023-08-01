@@ -37,7 +37,7 @@ import java.util.stream.Collectors;
  */
 @Controller
 @RequestMapping("/api/account")
-@Api(value = "/api/account")
+@Api(description = "账号管理",tags = "账号管理")
 public class AccountController
         extends BaseController
 {

@@ -41,7 +41,7 @@ import static com.veadan.folib.users.security.JwtAuthenticationClaimsProvider.Jw
  */
 @RestController
 @RequestMapping(value = REQUEST_MAPPING)
-@Api(value = REQUEST_MAPPING)
+@Api(description = "用户登录控制器",tags = "用户登录控制器")
 public class LoginController
         extends BaseController
 {
@@ -63,7 +63,7 @@ public class LoginController
                             @ApiResponse(code = 500, message = "org.springframework.security.core.Authentication " +
                                                                "fetched by the folib security implementation " +
                                                                "is not supported") })
-//    @PreAuthorize("hasAuthority('UI_LOGIN')")
+//  @PreAuthorize("hasAuthority('UI_LOGIN')")
     @GetMapping(produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity login(Authentication authentication) {
         return formLogin(authentication);

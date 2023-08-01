@@ -24,7 +24,7 @@ import java.util.Objects;
 @RestController
 @PreAuthorize("authenticated")
 @RequestMapping("/api/dict")
-@Api(value = "/api/dict")
+@Api(description = "字典管理",tags = "字典管理")
 public class DictController extends BaseController {
 
     @Inject
