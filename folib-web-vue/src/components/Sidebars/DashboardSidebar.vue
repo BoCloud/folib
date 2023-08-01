@@ -110,7 +110,7 @@
     <!-- / Sidebar Navigation Menu -->
 
     <!-- Sidebar Footer -->
-    <div class="aside-footer">
+    <!-- <div class="aside-footer">
       <div class="footer-box">
         <span class="icon">
           <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -132,7 +132,7 @@
         <p>请查阅帮助文档</p>
         <a-button block size="small" href="/docs/core/use.html" target="_blank"> FOLIB使用文档 </a-button>
       </div>
-    </div>
+    </div> -->
     <!-- / Sidebar Footer -->
   </a-layout-sider>
   <!-- / Main Sidebar -->
