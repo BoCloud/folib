@@ -30,7 +30,7 @@ import io.swagger.annotations.ApiResponses;
 @RestController
 @PreAuthorize("hasAuthority('ADMIN')")
 @RequestMapping("/api/configuration/authenticators")
-@Api(value = "/api/configuration/authenticators")
+@Api(description = "用户权限管理",tags = "用户权限管理")
 public class AuthenticatorsConfigController
         extends BaseController
 {

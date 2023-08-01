@@ -70,6 +70,7 @@ import java.util.stream.Collectors;
  * @see{@linkplain http://docs.spring.io/spring/docs/current/spring-framework-reference/html/mvc.html#mvc-config-path-matching}
  */
 @RestController
+@Api(description = "docker坐标控制器",tags = "docker坐标控制器")
 //@LayoutRequestMapping(DockerArtifactCoordinates.LAYOUT_NAME) docker工具访问接口路径从/v2开始，无法与/storages兼容
 public class DockerArtifactController extends BaseArtifactController {
 

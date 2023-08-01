@@ -17,6 +17,7 @@ import com.veadan.folib.users.userdetails.SpringSecurityUser;
 import com.veadan.folib.web.Constants;
 import com.veadan.folib.web.LayoutRequestMapping;
 import com.veadan.folib.web.RepositoryMapping;
+import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
@@ -51,6 +52,7 @@ import java.util.regex.Pattern;
 //@LayoutRequestMapping("conan")
 @RestController
 @Slf4j
+@Api(description = "Conan坐标控制器",tags = "Conan坐标控制器")
 public class ConanArtifactController extends BaseArtifactController {
 
     @Autowired

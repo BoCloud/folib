@@ -2,6 +2,7 @@ package com.veadan.folib.controllers.restart;
 
 import com.veadan.folib.app.FolibSpringBootApplication;
 import com.veadan.folib.controllers.BaseController;
+import io.swagger.annotations.Api;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -18,6 +19,7 @@ import static com.veadan.folib.controllers.restart.RestartController.MAPPING;
 @RestController
 @PreAuthorize("hasAuthority('ADMIN')")
 @RequestMapping(value = MAPPING)
+@Api(description = "服务重启控制器",tags = "服务重启控制器")
 public class RestartController
         extends BaseController
 {

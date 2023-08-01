@@ -26,10 +26,7 @@ import com.veadan.folib.storage.repository.RepositoryTypeEnum;
 import com.veadan.folib.util.RepositoryPathUtil;
 import com.veadan.folib.utils.TreeUtil;
 import com.veadan.folib.web.RepositoryMapping;
-import io.swagger.annotations.ApiOperation;
-import io.swagger.annotations.ApiParam;
-import io.swagger.annotations.ApiResponse;
-import io.swagger.annotations.ApiResponses;
+import io.swagger.annotations.*;
 import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -64,6 +61,7 @@ import static org.springframework.http.HttpStatus.OK;
  */
 @RestController
 @RequestMapping(path = BrowseController.ROOT_CONTEXT)
+@Api(description = "浏览存储/存储库/文件系统结构 控制器",tags = "浏览存储/存储库/文件系统结构 控制器")
 public class BrowseController
         extends BaseController {
 

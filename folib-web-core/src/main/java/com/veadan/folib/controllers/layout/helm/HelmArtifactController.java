@@ -27,6 +27,7 @@ import java.nio.file.Files;
  */
 //@LayoutRequestMapping("helm")
 @RestController
+@Api(description = "Helm坐标控制器",tags = "Helm坐标控制器")
 public class HelmArtifactController extends BaseArtifactController {
 
     @Autowired

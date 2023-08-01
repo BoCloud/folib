@@ -34,7 +34,7 @@ import io.swagger.annotations.ApiResponses;
 @RestController
 @PreAuthorize("hasAuthority('ADMIN')")
 @RequestMapping(value = "/api/configuration/ldap")
-@Api(value = "/api/configuration/ldap")
+@Api(description = "ldap配置管理",tags = "ldap配置管理")
 public class LdapAuthenticatorConfigurationController
         extends BaseController
 {

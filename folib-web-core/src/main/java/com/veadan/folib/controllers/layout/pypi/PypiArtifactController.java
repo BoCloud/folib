@@ -20,6 +20,7 @@ import com.veadan.folib.storage.validation.artifact.ArtifactCoordinatesValidatio
 import com.veadan.folib.utils.PypiPackageNameConverter;
 import com.veadan.folib.web.LayoutRequestMapping;
 import com.veadan.folib.web.RepositoryMapping;
+import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
@@ -50,6 +51,7 @@ import java.util.*;
  */
 @RestController
 @LayoutRequestMapping(PypiArtifactCoordinates.LAYOUT_NAME)
+@Api(description = "python坐标控制器",tags = "python坐标控制器")
 public class PypiArtifactController extends BaseArtifactController {
 
     private static final Set<String> VALID_ACTIONS = Sets.newHashSet("file_upload");

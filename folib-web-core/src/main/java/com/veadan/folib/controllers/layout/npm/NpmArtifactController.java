@@ -34,6 +34,7 @@ import com.veadan.folib.users.userdetails.SpringSecurityUser;
 import com.veadan.folib.util.CommonUtils;
 import com.veadan.folib.web.LayoutRequestMapping;
 import com.veadan.folib.web.RepositoryMapping;
+import io.swagger.annotations.Api;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
@@ -79,6 +80,7 @@ import java.util.stream.Collectors;
  */
 @RestController
 @LayoutRequestMapping(NpmArtifactCoordinates.LAYOUT_NAME)
+@Api(description = "npm坐标控制器",tags = "npm坐标控制器")
 public class NpmArtifactController
         extends BaseArtifactController {
 

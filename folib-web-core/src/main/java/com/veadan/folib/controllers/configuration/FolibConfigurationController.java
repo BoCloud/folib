@@ -22,7 +22,7 @@ import java.io.IOException;
  */
 @Controller
 @RequestMapping("/api/configuration/folib")
-@Api(value = "/api/configuration/folib", tags = "修改系统配置", description= "修改系统配置")
+@Api( tags = "修改系统配置", description= "修改系统配置")
 public class FolibConfigurationController
         extends BaseConfigurationController
 {
