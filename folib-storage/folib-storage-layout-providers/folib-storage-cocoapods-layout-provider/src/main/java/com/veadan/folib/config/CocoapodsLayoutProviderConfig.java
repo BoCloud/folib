@@ -41,27 +41,27 @@ public class CocoapodsLayoutProviderConfig
     {
         return (repository) -> {
             StorageProvider storageProvider = storageProviderRegistry.getProvider(repository.getStorageProvider());
-            return pypiFileSystemProvider(storageProvider.getFileSystemProvider());
+            return cocoapodsFileSystemProvider(storageProvider.getFileSystemProvider());
         };
 
     }
 
     @Bean
     @Scope("prototype")
-    public CocoapodsFileSystemProvider pypiFileSystemProvider(FileSystemProvider provider)
+    public CocoapodsFileSystemProvider cocoapodsFileSystemProvider(FileSystemProvider provider)
     {
         return new CocoapodsFileSystemProvider(provider);
     }
 
     @Bean(FILE_SYSTEM_ALIAS)
-    public LayoutFileSystemFactory pypiRepositoryFileSystemFactory(PropertiesBooter propertiesBooter)
+    public LayoutFileSystemFactory cocoapodsRepositoryFileSystemFactory(PropertiesBooter propertiesBooter)
     {
         LayoutFileSystemProviderFactory providerFactory = pypiRepositoryFileSystemProviderFactory();
 
         return (repository) -> {
             StorageProvider storageProvider = storageProviderRegistry.getProvider(repository.getStorageProvider());
 
-            return pypiRepositoryFileSystem(propertiesBooter,
+            return cocoapodsRepositoryFileSystem(propertiesBooter,
                                             repository,
                                             storageProvider.getFileSystem(),
                                             providerFactory.create(repository));
@@ -70,10 +70,10 @@ public class CocoapodsLayoutProviderConfig
 
     @Bean
     @Scope("prototype")
-    public CocoapodsFileSystem pypiRepositoryFileSystem(PropertiesBooter propertiesBooter,
-                                                                   Repository repository,
-                                                                   FileSystem storageFileSystem,
-                                                                   LayoutFileSystemProvider provider)
+    public CocoapodsFileSystem cocoapodsRepositoryFileSystem(PropertiesBooter propertiesBooter,
+                                                             Repository repository,
+                                                             FileSystem storageFileSystem,
+                                                             LayoutFileSystemProvider provider)
     {
         return new CocoapodsFileSystem(propertiesBooter, repository, storageFileSystem, provider);
     }
