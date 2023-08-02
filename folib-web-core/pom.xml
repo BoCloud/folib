@@ -673,6 +673,11 @@
             <artifactId>tencentcloud-sdk-java-tmt</artifactId>
             <version>3.1.754</version>
         </dependency>
+        <dependency>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>folib-storage-cocoapods-layout-provider</artifactId>
+            <version>${project.version}</version>
+        </dependency>
     </dependencies>
 
     <profiles>

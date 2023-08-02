@@ -1,0 +1,27 @@
+package com.veadan.folib.providers.layout;
+
+import com.veadan.folib.booters.PropertiesBooter;
+import com.veadan.folib.providers.io.LayoutFileSystem;
+import com.veadan.folib.storage.repository.Repository;
+
+import java.nio.file.FileSystem;
+import java.util.Set;
+
+/**
+ * @author xiaodong.wang
+ * @email wangxiaodong@beyondcent.com
+ * @date 2023/8/2 15:03
+ * @since x.x.x
+ */
+public class CocoapodsFileSystem extends LayoutFileSystem 
+{
+    public CocoapodsFileSystem(PropertiesBooter propertiesBooter, Repository repository, FileSystem storageFileSystem, LayoutFileSystemProvider provider) 
+    {
+        super(propertiesBooter, repository, storageFileSystem, provider);
+    }
+
+    @Override
+    public Set<String> getDigestAlgorithmSet() {
+        return null;
+    }
+}

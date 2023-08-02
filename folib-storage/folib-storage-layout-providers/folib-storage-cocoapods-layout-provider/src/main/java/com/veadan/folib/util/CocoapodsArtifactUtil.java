@@ -25,14 +25,14 @@ public class CocoapodsArtifactUtil
     private static final Pattern PODSPEC_HEAD_PATTERN = Pattern.compile("Pod\\:\\:Spec\\.new\\s+?do\\s+?\\|(.*?)\\|");
     
     /**
-     * 编辑Pod.tar.gz文件输入流中的*.podspec文件*.source属性，并另存为Pod.tar.gz文件
+     * 替换Pod.tar.gz文件输入流中的*.podspec文件*.source属性，并另存为Pod.tar.gz文件
      * @param inputStream Pod.tar.gz文件输入流
      * @param newSourceUrl 新的SourceUrl（非 Pod.tar.gz Url，例如：http://10.10.33.149:8081/artifactory/api/pods/Cocoapad-Local/pod/pkg/AFNetworking/4.0.1 ）
      * @param newTarGzFilePath 新的Pod.tar.gz存储路径
      * @return 结果
      * @since x.x.x
      */
-    public static boolean replacePodspecSourceSaveAsTarGzFile(InputStream inputStream, String newSourceUrl, String newTarGzFilePath)
+    public static boolean replacePodspecSourceSaveAsNewTarGzFile(InputStream inputStream, String newSourceUrl, String newTarGzFilePath)
     {
         try (InputStream gzipInputStream = new GzipCompressorInputStream(inputStream);
              TarArchiveInputStream tarInputStream = new TarArchiveInputStream(gzipInputStream);
@@ -83,6 +83,49 @@ public class CocoapodsArtifactUtil
         { 
             e.printStackTrace();
             return false; 
+        }
+    }
+
+    /**
+     * 获取Pod.tar.gz压缩包中的.podspec文件内容并替换*.podspec文件中*.source属性为新的newSourceUrl
+     * @param inputStream Pod.tar.gz文件输入流
+     * @param newSourceUrl 新的SourceUrl（非 Pod.tar.gz Url，例如：http://10.10.33.149:8081/artifactory/api/pods/Cocoapad-Local/pod/pkg/AFNetworking/4.0.1 ） 
+     * @return 新的*.podspec文件内容
+     * @since x.x.x
+     */
+    public static String fetchReplacePodspecSourceContent(InputStream inputStream, String newSourceUrl)
+    {
+        try (InputStream gzipInputStream = new GzipCompressorInputStream(inputStream);
+             TarArchiveInputStream tarInputStream = new TarArchiveInputStream(gzipInputStream);) {
+
+            TarArchiveEntry entry;
+            while ((entry = tarInputStream.getNextTarEntry()) != null) {
+                if (!entry.isDirectory()) {
+                    // 处理非目录文件
+                    String entryName = entry.getName();
+                    byte[] content = new byte[(int) entry.getSize()];
+                    tarInputStream.read(content);
+
+                    if (entryName.endsWith(".podspec")) {
+                        final String podspecContent = new String(content);
+                        final Matcher matcher = PODSPEC_HEAD_PATTERN.matcher(podspecContent);
+                        if (matcher.find()) {
+                            final String headVar = matcher.group(1);
+                            final String newSourceInfo = String.format("{ :http => \"%s\", :type => 'tgz'}", newSourceUrl);
+                            return podspecContent.replaceAll("(" + headVar + "\\.source\\s+?=\\s+?).*", String.format("$1%s", newSourceInfo));
+                        }
+                        else
+                        { throw new RuntimeException("未找到podspec文件头变量名称"); }
+                    }
+                }
+            }
+
+            return null;
+        }
+        catch (Exception e)
+        {
+            e.printStackTrace();
+            return null;
         }
     }
 }
