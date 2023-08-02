@@ -1021,17 +1021,17 @@
               </a-button>
               <p class="text-dark"
                  v-if="!machineInfo.haveError">
-                尊敬的用户,很荣幸您选择使用sup Library!
-                在接下来sup Library将会为您提供统一软件包管理。
-                IT数字化转型道路长远,sup Library与您随行！
+                尊敬的用户,很荣幸您选择使用Fo Library!
+                在接下来Fo Library将会为您提供统一软件包管理。
+                IT数字化转型道路长远,Fo Library与您随行！
               </p>
               <p class="text-dark"
                  v-if="machineInfo.haveError && machineInfo.dalyOut">
-                尊敬的用户,很荣幸您选择试用sup Library!如果觉得符合您企业信创发展战略,可选择购买正式版本。我们的服务热线：400-991-5355
+                尊敬的用户,很荣幸您选择试用Fo Library!如果觉得符合您企业信创发展战略,可选择购买正式版本。我们的服务热线：400-991-5355
               </p>
               <p class="text-dark"
                  v-if="(!machineInfo.haveError) && machineInfo.dalyOut">
-                尊敬的用户,很荣幸您选择试用sup Library!您的序列号已经过期，为了更好的为您提供服务请尽快续期。我们的服务热线：400-991-5355
+                尊敬的用户,很荣幸您选择试用Fo Library!您的序列号已经过期，为了更好的为您提供服务请尽快续期。我们的服务热线：400-991-5355
               </p>
               <hr class="my-25">
               <a-descriptions :title="machineInfo.haveError ? '未激活' : (!machineInfo.haveError) && machineInfo.dalyOut ? '已过期' : '已激活'"
