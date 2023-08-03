@@ -99,10 +99,15 @@ public class AccessModelData
             }
             privileges.addAll(storage.getStoragePrivileges());
             for (RepositoryPrivileges repository : storage.getRepositoryPrivileges()) {
-                String repositoryKey = storageKey + repository.getRepositoryId() + "/";
-                String repositoryDockerKey = dockerKey + repository.getRepositoryId() + "/";
-                String repositoryBrowseKey = storageBrowseKey + repository.getRepositoryId() + "/";
-                String repositoryConfigKey = storageConfigKey + repository.getRepositoryId() + "/";
+                isEnd = normalizedUrl.endsWith(repository.getRepositoryId());
+                separator = "";
+                if (!isEnd) {
+                    separator = "/";
+                }
+                String repositoryKey = storageKey + repository.getRepositoryId() + separator;
+                String repositoryDockerKey = dockerKey + repository.getRepositoryId() + separator;
+                String repositoryBrowseKey = storageBrowseKey + repository.getRepositoryId() + separator;
+                String repositoryConfigKey = storageConfigKey + repository.getRepositoryId() + separator;
                 if (!normalizedUrl.startsWith(repositoryKey) && !normalizedUrl.startsWith(repositoryDockerKey) && !normalizedUrl.startsWith(repositoryBrowseKey) && !normalizedUrl.startsWith(repositoryConfigKey)) {
                     continue;
                 }
