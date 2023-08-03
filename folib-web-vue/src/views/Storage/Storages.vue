@@ -563,7 +563,7 @@
                           <img src="images/folib/cocoapods.svg" style="width: 100%;" alt="">
                         </a-avatar>
                       </div>
-                      <h6>Swift</h6>
+                      <h6>CocoaPods</h6>
                     </a-col>
                   </a-row>
                   <a-checkbox-group class="d-none" v-model="checkedList" :options="checkboxOptions" />

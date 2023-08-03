@@ -17,7 +17,7 @@ import javax.xml.bind.annotation.XmlRootElement;
  * @since x.x.x
  */
 public class CocoapodsArtifactCoordinatesAdapter extends
-        LayoutArtifactCoordinatesAdapter<CocoapodsArtifactCoordinates, SemanticVersion> {
+        LayoutArtifactCoordinatesAdapter<CocoapodsArtifactCoordinates, String> {
 
     public static final String LAYOUT_NAME = "CocoaPods";
 

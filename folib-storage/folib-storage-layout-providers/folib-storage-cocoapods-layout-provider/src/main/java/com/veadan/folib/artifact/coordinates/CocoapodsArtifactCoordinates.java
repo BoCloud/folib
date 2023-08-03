@@ -22,7 +22,8 @@ import javax.xml.bind.annotation.XmlRootElement;
 public class CocoapodsArtifactCoordinates extends 
         LayoutArtifactCoordinatesEntity<CocoapodsArtifactCoordinates, String> {
 
-    public static final String LAYOUT_NAME = "CocoaPods";
+//    public static final String LAYOUT_NAME = "CocoaPods";
+    public static final String LAYOUT_NAME = "cocoapods";
 
     public static final String LAYOUT_ALIAS = LAYOUT_NAME;
     

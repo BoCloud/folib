@@ -1,11 +1,14 @@
 package com.veadan.folib.util;
 
+import cn.hutool.core.io.FileUtil;
+import lombok.Data;
 import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
 import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
 import org.apache.commons.compress.archivers.tar.TarArchiveOutputStream;
 import org.apache.commons.compress.compressors.gzip.GzipCompressorInputStream;
 import org.apache.commons.compress.compressors.gzip.GzipCompressorOutputStream;
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
@@ -22,7 +25,7 @@ import java.util.regex.Pattern;
  */
 public class CocoapodsArtifactUtil 
 {
-    private static final Pattern PODSPEC_HEAD_PATTERN = Pattern.compile("Pod\\:\\:Spec\\.new\\s+?do\\s+?\\|(.*?)\\|");
+    private static final Pattern PODSPEC_HEAD_LINE_PATTERN = Pattern.compile("Pod\\:\\:Spec\\.new\\s+?do\\s+?\\|(.*?)\\|");
     
     /**
      * 替换Pod.tar.gz文件输入流中的*.podspec文件*.source属性，并另存为Pod.tar.gz文件
@@ -53,7 +56,7 @@ public class CocoapodsArtifactUtil
 
                     if (entryName.endsWith(".podspec")) {
                         final String podspecContent = new String(content);
-                        final Matcher matcher = PODSPEC_HEAD_PATTERN.matcher(podspecContent);
+                        final Matcher matcher = PODSPEC_HEAD_LINE_PATTERN.matcher(podspecContent);
                         if (matcher.find()) {
                             final String headVar = matcher.group(1);
                             final String newSourceInfo = String.format("{ :http => \"%s\", :type => 'tgz'}", newSourceUrl);
@@ -108,7 +111,7 @@ public class CocoapodsArtifactUtil
 
                     if (entryName.endsWith(".podspec")) {
                         final String podspecContent = new String(content);
-                        final Matcher matcher = PODSPEC_HEAD_PATTERN.matcher(podspecContent);
+                        final Matcher matcher = PODSPEC_HEAD_LINE_PATTERN.matcher(podspecContent);
                         if (matcher.find()) {
                             final String headVar = matcher.group(1);
                             final String newSourceInfo = String.format("{ :http => \"%s\", :type => 'tgz'}", newSourceUrl);
@@ -127,5 +130,90 @@ public class CocoapodsArtifactUtil
             e.printStackTrace();
             return null;
         }
+    }
+
+    public static String fetchPodspecSourceContent(InputStream inputStream)
+    {
+        try (InputStream gzipInputStream = new GzipCompressorInputStream(inputStream);
+             TarArchiveInputStream tarInputStream = new TarArchiveInputStream(gzipInputStream);) {
+
+            TarArchiveEntry entry;
+            while ((entry = tarInputStream.getNextTarEntry()) != null) {
+                if (!entry.isDirectory()) {
+                    // 处理非目录文件
+                    String entryName = entry.getName();
+                    byte[] content = new byte[(int) entry.getSize()];
+                    tarInputStream.read(content);
+
+                    if (entryName.endsWith(".podspec")) {
+                        return new String(content);
+                    }
+                }
+            }
+
+            return null;
+        }
+        catch (Exception e)
+        {
+            e.printStackTrace();
+            return null;
+        }
+    }
+    
+    public static PodSpec resolvePodSpec(String podSpecContent)
+    {
+        final PodSpec podSpec = new PodSpec();
+        podSpec.setName(findAttr(podSpecContent, "name"));
+        podSpec.setVersion(findAttr(podSpecContent, "version"));
+        podSpec.setLicense(findAttr(podSpecContent, "license"));
+        return podSpec;
+    }
+    
+    private static String podspecHeadName(String podSpecContent)
+    {
+        final Matcher matcher = PODSPEC_HEAD_LINE_PATTERN.matcher(podSpecContent);
+        if (matcher.find())
+        { return matcher.group(1); }
+        
+        return null;
+    }
+
+    /**
+     * 查找属性（TODO：2023/8/3 16:48 此方法只支持查找 `s.name     = 'AFNetworking'` 简单属性，不支持查找复杂结构）
+     * @param podSpecContent
+     * @param attr
+     * @return
+     * @since x.x.x
+     */
+    private static String findAttr(String podSpecContent, String attr)
+    {
+        final String podspecHeadName = podspecHeadName(podSpecContent);
+        final Pattern pattern = Pattern.compile(String.format("%s\\.%s\\s+?=\\s+?['|\"](.*?)['|\"]", podspecHeadName, attr));
+        final Matcher matcher = pattern.matcher(podSpecContent);
+        if (matcher.find())
+        { return matcher.group(1); }
+
+        return null;
+    }
+    
+    public static void main(String[] args) throws IOException {
+        final String path = "/Users/zerowang/BoCloudWork/02_CodeManage/000_BoCloud/folib-server/folib-storage/folib-storage-layout-providers/folib-storage-cocoapods-layout-provider/src/main/java/com/veadan/folib/util/demo.txt";
+        final PodSpec podSpec = resolvePodSpec(FileUtil.readString(path, StandardCharsets.UTF_8));
+        System.out.println(podSpec);
+    }
+    
+    /**
+     *
+     * @author xiaodong.wang
+     * @email wangxiaodong@beyondcent.com
+     * @date 2023/8/3 16:14
+     * @since x.x.x
+     */
+    @Data
+    public static class PodSpec 
+    {
+        private String name;
+        private String version;
+        private String license;
     }
 }
