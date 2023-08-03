@@ -22,6 +22,7 @@ import java.util.*;
 public class CodeActivateService {
 
     private static final String SERVER_URL = "http://license.folib.com/";
+//    private static final String SERVER_URL = "http://127.0.0.1:9999/lic/activate";
 
     @Inject
     private  ConfigurationManagementService configurationManagementService;
@@ -79,6 +80,7 @@ public class CodeActivateService {
                 data.put("codes", code);
                 data.put("type", "试用版");
                 data.put("mac", MacUtil.getMachineCode());
+                data.put("level","pro");
                 data.put("rel", true);
                 String md5 = SecureUtil.md5(data.toJSONString() + "folib!@#$%^&*ABCD");
                 data.put("md5", md5);

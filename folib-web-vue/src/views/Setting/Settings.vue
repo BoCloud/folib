@@ -1027,11 +1027,11 @@
               </p>
               <p class="text-dark"
                  v-if="machineInfo.haveError && machineInfo.dalyOut">
-                尊敬的用户,很荣幸您选择试用Fo Library!如果觉得符合您企业信创发展战略,可选择购买正式版本。我们的服务热线：400-991-5355
+                尊敬的用户,很荣幸您选择试用Fo Library!如果觉得符合您企业信创发展战略,可选择购买正式版本。
               </p>
               <p class="text-dark"
                  v-if="(!machineInfo.haveError) && machineInfo.dalyOut">
-                尊敬的用户,很荣幸您选择试用Fo Library!您的序列号已经过期，为了更好的为您提供服务请尽快续期。我们的服务热线：400-991-5355
+                尊敬的用户,很荣幸您选择试用Fo Library!您的序列号已经过期，为了更好的为您提供服务请尽快续期。
               </p>
               <hr class="my-25">
               <a-descriptions :title="machineInfo.haveError ? '未激活' : (!machineInfo.haveError) && machineInfo.dalyOut ? '已过期' : '已激活'"
@@ -1047,6 +1047,9 @@
                 </a-descriptions-item>
                 <a-descriptions-item label="序列号">
                   {{ machineInfo.haveError ? "无" : machineInfo.object.codes }}
+                </a-descriptions-item>
+                <a-descriptions-item label="功能等级">
+                  <a-tag> {{ machineInfo.haveError ? "无" : upperCase(machineInfo.object.level) }}</a-tag>
                 </a-descriptions-item>
                 <a-descriptions-item label="是否激活">
                   <a href="http://folib.com"
@@ -1633,6 +1636,7 @@ import {
 
 } from '@/api/sso'
 import Webhook from './components/Webhook/index.vue'
+import {upperCase} from "@antv/util";
 
 export default {
   props: ['navbarFixed'],
@@ -1907,6 +1911,7 @@ export default {
     this.getSsoList()
   },
   methods: {
+    upperCase,
     getSsoList(){
       getSsoList().then(res=>{
         this.ssoList=res
