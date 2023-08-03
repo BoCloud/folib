@@ -1,9 +1,17 @@
 package com.veadan.folib.providers.layout;
 
 import com.veadan.folib.artifact.coordinates.CocoapodsArtifactCoordinates;
+import com.veadan.folib.providers.io.RepositoryFiles;
 import com.veadan.folib.providers.io.RepositoryPath;
+import com.veadan.folib.repository.CocoapodsRepositoryFeatures;
+import com.veadan.folib.repository.CocoapodsRepositoryManagementStrategy;
 import com.veadan.folib.repository.RepositoryManagementStrategy;
+import org.apache.commons.io.FilenameUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+import javax.annotation.PostConstruct;
+import javax.inject.Inject;
 import java.io.IOException;
 import java.util.Set;
 
@@ -15,21 +23,38 @@ import java.util.Set;
  */
 public class CocoapodsLayoutProvider extends AbstractLayoutProvider<CocoapodsArtifactCoordinates>
 {
+    private static final Logger logger = LoggerFactory.getLogger(CocoapodsLayoutProvider.class);
+    
+    
     public static final String ALIAS = CocoapodsArtifactCoordinates.LAYOUT_NAME;
+    
+    @Inject
+    private CocoapodsRepositoryManagementStrategy cocoapodsRepositoryManagementStrategy;
+    
+    @Inject
+    private CocoapodsRepositoryFeatures cocoapodsRepositoryFeatures;
+
+
+    @PostConstruct
+    public void register()
+    {
+        logger.info("Registered layout provider '{}' with alias '{}'.",
+                getClass().getCanonicalName(), ALIAS );
+    }
     
     @Override
     public RepositoryManagementStrategy getRepositoryManagementStrategy() {
-        return null;
+        return cocoapodsRepositoryManagementStrategy;
     }
 
     @Override
     public Set<String> getDefaultArtifactCoordinateValidators() {
-        return null;
+        return cocoapodsRepositoryFeatures.getDefaultArtifactCoordinateValidators();
     }
 
     @Override
     public String getAlias() {
-        return null;
+        return ALIAS;
     }
 
     @Override
@@ -38,7 +63,11 @@ public class CocoapodsLayoutProvider extends AbstractLayoutProvider<CocoapodsArt
     }
 
     @Override
-    protected CocoapodsArtifactCoordinates getArtifactCoordinates(RepositoryPath repositoryPath) throws IOException {
-        return null;
+    protected CocoapodsArtifactCoordinates getArtifactCoordinates(RepositoryPath repositoryPath) throws IOException 
+    {
+        final String relativizePath = RepositoryFiles.relativizePath(repositoryPath);
+        final String fileName = FilenameUtils.getName(relativizePath);
+
+        return new CocoapodsArtifactCoordinates(fileName);
     }
 }
