@@ -7,8 +7,10 @@ import com.veadan.folib.repository.CocoapodsRepositoryFeatures;
 import com.veadan.folib.repository.CocoapodsRepositoryManagementStrategy;
 import com.veadan.folib.repository.RepositoryManagementStrategy;
 import org.apache.commons.io.FilenameUtils;
+import org.checkerframework.checker.units.qual.C;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
 import javax.inject.Inject;
@@ -21,6 +23,7 @@ import java.util.Set;
  * @date 2023/8/2 15:09
  * @since x.x.x
  */
+@Component
 public class CocoapodsLayoutProvider extends AbstractLayoutProvider<CocoapodsArtifactCoordinates>
 {
     private static final Logger logger = LoggerFactory.getLogger(CocoapodsLayoutProvider.class);
