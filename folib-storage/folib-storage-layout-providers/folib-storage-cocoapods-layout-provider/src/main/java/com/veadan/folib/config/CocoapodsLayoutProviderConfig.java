@@ -37,7 +37,7 @@ public class CocoapodsLayoutProviderConfig
 
 
     @Bean(FILE_SYSTEM_PROVIDER_ALIAS)
-    public LayoutFileSystemProviderFactory pypiRepositoryFileSystemProviderFactory()
+    public LayoutFileSystemProviderFactory cocoapodsRepositoryFileSystemProviderFactory()
     {
         return (repository) -> {
             StorageProvider storageProvider = storageProviderRegistry.getProvider(repository.getStorageProvider());
@@ -56,7 +56,7 @@ public class CocoapodsLayoutProviderConfig
     @Bean(FILE_SYSTEM_ALIAS)
     public LayoutFileSystemFactory cocoapodsRepositoryFileSystemFactory(PropertiesBooter propertiesBooter)
     {
-        LayoutFileSystemProviderFactory providerFactory = pypiRepositoryFileSystemProviderFactory();
+        LayoutFileSystemProviderFactory providerFactory = cocoapodsRepositoryFileSystemProviderFactory();
 
         return (repository) -> {
             StorageProvider storageProvider = storageProviderRegistry.getProvider(repository.getStorageProvider());

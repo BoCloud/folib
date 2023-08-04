@@ -71,6 +71,6 @@ public class CocoapodsLayoutProvider extends AbstractLayoutProvider<CocoapodsArt
         final String relativizePath = RepositoryFiles.relativizePath(repositoryPath);
         final String fileName = FilenameUtils.getName(relativizePath);
 
-        return new CocoapodsArtifactCoordinates(fileName);
+        return new CocoapodsArtifactCoordinates(relativizePath);
     }
 }

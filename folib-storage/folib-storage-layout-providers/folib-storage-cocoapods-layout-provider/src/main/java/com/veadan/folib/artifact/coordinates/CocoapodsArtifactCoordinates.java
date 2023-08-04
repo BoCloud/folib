@@ -27,23 +27,23 @@ public class CocoapodsArtifactCoordinates extends
 
     public static final String LAYOUT_ALIAS = LAYOUT_NAME;
     
-    private static final String POD_NAME = "podName";
+    private static final String NAME = "name";
 
 
     public CocoapodsArtifactCoordinates() {
-        resetCoordinates(POD_NAME);
+        resetCoordinates(NAME);
     }
     
-    public CocoapodsArtifactCoordinates(String podName) {
+    public CocoapodsArtifactCoordinates(String name) {
         this();
         
-        this.setPodName(podName);
+        this.setName(name);
     }
     
 
     @Override
     public String getId() {
-        return this.getPodName();
+        return this.getName();
     }
 
     @Override
@@ -58,14 +58,14 @@ public class CocoapodsArtifactCoordinates extends
 
 
     @ArtifactLayoutCoordinate
-    @XmlAttribute(name = POD_NAME)
-    public String getPodName()
+    @XmlAttribute(name = NAME)
+    public String getName()
     {
-        return getCoordinate(POD_NAME);
+        return getCoordinate(NAME);
     }
 
-    public void setPodName(String podName)
+    public void setName(String name)
     {
-        setCoordinate(POD_NAME, podName);
+        setCoordinate(NAME, name);
     }
 }
