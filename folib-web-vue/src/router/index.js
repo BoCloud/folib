@@ -7,6 +7,8 @@ import {
 
 } from '@/api/sso'
 
+import {getServerName} from "@/api/settings";
+
 import storage from 'store'
 import {ACCESS_TOKEN, USER_INFO} from '@/store/mutation-types'
 import { encrypt } from "@/utils/jsencrypt"
@@ -338,6 +340,9 @@ const router = new VueRouter({
 // 校验登录信息
 router.beforeEach((from,to,next)=>{
 
+  getServerName().then(res=>{
+    sessionStorage.setItem("instanceName",res)
+  })
 
   // todo 校验合法性 keyClock确定登录的合法性，方式仿冒登录
   let flag = sessionStorage.getItem("loginMethod")

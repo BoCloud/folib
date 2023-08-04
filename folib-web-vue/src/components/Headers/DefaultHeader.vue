@@ -3,7 +3,7 @@
 	<!-- Layout Header ( Navbar ) -->
 	<a-layout-header>
 		<div class="header-col header-brand">
-			<h6>Fo Library</h6>
+			<h6>{{ instanceName }} Library</h6>
 
 			<!-- Trigger Button For Navigation Menu For Small Screens -->
 			<a-button type="link" @click="collapseNav = collapseNav ? 0 : 1 " class="btn-menu-trigger">
@@ -69,7 +69,7 @@
 </template>
 
 <script>
-import {checkMachineCode} from "@/api/settings";
+import {checkMachineCode,getServerName} from "@/api/settings";
 
 
 	export default ({
@@ -98,9 +98,16 @@ import {checkMachineCode} from "@/api/settings";
 				},
       			rootSubmenuKeys: ['dashboards', 'pages', 'applications', 'ecommerce', 'authentication', 'basic', 'components', 'changelog'],
 				openKeys: null,
+        instanceName:sessionStorage.getItem("instanceName")||""
 			}
 		},
     created() {
+
+      getServerName().then(res=>{
+        this.instanceName=res
+        sessionStorage.setItem("instanceName",res)
+      })
+
       checkMachineCode().then(res=>{
 
         this.haveError=res.haveError

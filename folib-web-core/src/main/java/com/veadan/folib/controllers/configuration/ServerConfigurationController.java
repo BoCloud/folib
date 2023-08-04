@@ -321,6 +321,21 @@ public class ServerConfigurationController
         return Objects.isNull(object);
     }
 
+
+
+    @ApiOperation(value = "get instanceName.")
+    @ApiResponses(value = { @ApiResponse(code = 200, message = SUCCESSFUL_SAVE_SERVER_SETTINGS),
+            @ApiResponse(code = 400, message = FAILED_SAVE_SERVER_SETTINGS) })
+    @GetMapping(value = "/getServerName",
+            produces = { MediaType.APPLICATION_JSON_VALUE })
+    public ResponseEntity getServerName()
+    {
+
+        Configuration configuration = configurationManagementService.getConfiguration();
+        return ResponseEntity.ok(configuration.getInstanceName());
+    }
+
+
     @ApiOperation(value = "Get global server settings.")
     @ApiResponses(value = { @ApiResponse(code = 200, message = SUCCESSFUL_SAVE_SERVER_SETTINGS),
                             @ApiResponse(code = 400, message = FAILED_SAVE_SERVER_SETTINGS) })

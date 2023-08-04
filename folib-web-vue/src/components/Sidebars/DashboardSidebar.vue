@@ -12,7 +12,7 @@
     theme="light"
     :style="{ backgroundColor: 'transparent' }"
   >
-    <div class="brand"><img src="images/folib/foliblogo.png" alt="" /> <span>Fo Library</span></div>
+    <div class="brand"><img src="images/folib/foliblogo.png" alt="" /> <span>{{ instanceName }} Library</span></div>
     <hr />
 
     <!-- Sidebar Navigation Menu -->
@@ -166,6 +166,7 @@ export default {
       rootSubmenuKeys: ["dashboards", "pages", "applications", "ecommerce", "authentication", "basic", "components", "changelog"],
       openKeys: this.$route.meta.sidebarMap,
       userInfo: {},
+      instanceName:sessionStorage.getItem("instanceName")||""
     };
   },
   created() {
