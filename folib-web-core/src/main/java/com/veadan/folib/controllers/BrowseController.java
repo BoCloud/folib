@@ -413,7 +413,9 @@ public class BrowseController
     protected boolean isPermittedForDirectoryListing(final RepositoryPath repositoryPath)
             throws IOException {
         //TODO: RepositoryFiles.isIndex(repositoryPath) || (
-        return !Files.isHidden(repositoryPath) && !RepositoryFiles.isTrash(repositoryPath)
+        return (!Files.isHidden(repositoryPath)
+                // 支持Cocoapods索引目录的显示
+                || repositoryPath.toString().contains(".specs")) && !RepositoryFiles.isTrash(repositoryPath)
                 && !RepositoryFiles.isTemp(repositoryPath);
     }
 

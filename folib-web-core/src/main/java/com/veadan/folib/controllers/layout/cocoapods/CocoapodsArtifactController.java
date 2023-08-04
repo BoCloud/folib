@@ -60,7 +60,7 @@ public class CocoapodsArtifactController extends BaseArtifactController
                 final CocoapodsArtifactUtil.PodSpec podSpec = CocoapodsArtifactUtil.resolvePodSpec(podspecSourceContent);
                 final ByteArrayInputStream byteArrayInputStream = new ByteArrayInputStream(podspecSourceContent.getBytes(StandardCharsets.UTF_8));
                 final RepositoryPath podSpecRepositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, String.format(".specs/%s/%s.podspec", podSpec.getVersion(), podSpec.getName()));
-                artifactManagementService.store(podSpecRepositoryPath, byteArrayInputStream);
+                artifactManagementService.validateAndStore(podSpecRepositoryPath, byteArrayInputStream);
             }
 
             return ResponseEntity.ok("The artifact was deployed successfully.");
