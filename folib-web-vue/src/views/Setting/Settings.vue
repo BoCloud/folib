@@ -110,7 +110,7 @@
                 <ul class="pl-15 text-muted">
                   <li>应用名称修改会自动修改到配置文件</li>
                   <li>baseurl,如果你使用了反向代理公网等情况下可以使用它</li>
-                  <li>folib-server服务的后端通信端口</li>
+                  <li>{{instanceName}}lib-server服务的后端通信端口</li>
                 </ul>
               </a-form>
             </a-card>
@@ -1048,6 +1048,9 @@
                 <a-descriptions-item label="序列号">
                   {{ machineInfo.haveError ? "无" : machineInfo.object.codes }}
                 </a-descriptions-item>
+                <a-descriptions-item label="功能等级">
+                  <a-tag> {{ machineInfo.haveError ? "无" : upperCase(machineInfo.object.level) }}</a-tag>
+                </a-descriptions-item>
                 <a-descriptions-item label="是否激活">
                   <a href="http://folib.com"
                      class="mx-5 px-5"
@@ -1633,6 +1636,7 @@ import {
 
 } from '@/api/sso'
 import Webhook from './components/Webhook/index.vue'
+import {upperCase} from "@antv/util";
 
 export default {
   props: ['navbarFixed'],
@@ -1908,6 +1912,7 @@ export default {
     this.getSsoList()
   },
   methods: {
+    upperCase,
     getSsoList(){
       getSsoList().then(res=>{
         this.ssoList=res
