@@ -20,16 +20,23 @@ public class ConfigurationUtils
 
     public static String getPathStorageId(String storageAndRepositoryId)
     {
-        String[] storageAndRepositoryIdTokens = storageAndRepositoryId.split("/");
+        String[] storageAndRepositoryIds = storageAndRepositoryId.split("/");
 
-        return storageAndRepositoryIdTokens[storageAndRepositoryIdTokens.length < 2 ? 0 : 1];
+        return storageAndRepositoryIds[0];
     }
 
     public static String getPathRepositoryId(String storageAndRepositoryId)
     {
-        String[] storageAndRepositoryIdTokens = storageAndRepositoryId.split("/");
+        String[] storageAndRepositoryIds = storageAndRepositoryId.split("/");
 
-        return storageAndRepositoryIdTokens[storageAndRepositoryIdTokens.length < 2 ? 0 : 1];
+        return storageAndRepositoryIds[1];
+    }
+
+    public static String getPathTag(String storageAndRepositoryId)
+    {
+        String[] storageAndRepositoryIds = storageAndRepositoryId.split("/");
+
+        return storageAndRepositoryIds[2];
     }
     
 }

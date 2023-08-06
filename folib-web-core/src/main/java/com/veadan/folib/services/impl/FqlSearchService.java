@@ -8,8 +8,6 @@ import com.veadan.folib.dependency.snippet.CodeSnippet;
 import com.veadan.folib.dependency.snippet.SnippetGenerator;
 import com.veadan.folib.domain.Artifact;
 import com.veadan.folib.domain.ArtifactEntity;
-import com.veadan.folib.domain.DirectoryListing;
-import com.veadan.folib.domain.FileContent;
 import com.veadan.folib.enums.RepositoryScopeEnum;
 import com.veadan.folib.gremlin.adapters.ArtifactAdapter;
 import com.veadan.folib.gremlin.adapters.EntityTraversalAdapter;
@@ -46,10 +44,8 @@ import javax.transaction.Transactional;
 import java.io.IOException;
 import java.net.URL;
 import java.nio.file.Files;
-import java.text.SimpleDateFormat;
 import java.time.ZoneId;
 import java.util.*;
-import java.util.stream.Collectors;
 
 @Component
 @Transactional
@@ -188,7 +184,7 @@ public class FqlSearchService extends GremlinVertexRepository<Artifact> implemen
                 String manifest = "manifest";
                 String artifactPath = repositoryPath.toAbsolutePath().toString();
                 if (artifactPath.contains("sha256") && !artifactPath.contains(blobs) && !artifactPath.contains(manifest) && !artifactPath.endsWith(".sha256")) {
-                    r.setSizeInBytes(getSearchDockerSize(repository.getStorage().getId(), repository.getId(), repositoryPath, path));
+                    r.setSizeInBytes(getSearchDockerSize(repositoryPath, r.getArtifactPath().replace("/" + r.getArtifactName(), "")));
                 }
             } else {
                 r.setArtifactName(path.substring(path.lastIndexOf("/") + 1));
@@ -232,18 +228,22 @@ public class FqlSearchService extends GremlinVertexRepository<Artifact> implemen
         return downloadUrls;
     }
 
-    private Long getSearchDockerSize(String storageId, String repositoryId, RepositoryPath repositoryPath, String path) throws IOException {
-        String versionPath = path.substring(0, path.indexOf("/sha256"));
-        String imagesName = versionPath.split("/")[0];
-        String blobsPath = imagesName + "/blobs";
-        RepositoryPath repositoryPathBlobs = repositoryPathResolver.resolve(storageId, repositoryId, blobsPath);
-
-        //获取blobs下的文件列表，为了获取层的大小。
-        DirectoryListing blobsListing = directoryListingService.fromRepositoryPath(repositoryPathBlobs);
-        String menifestString = Files.readString(repositoryPath);
-        ImageManifest menifest = JSON.parseObject(menifestString, ImageManifest.class);
-        List<String> digestList = menifest.getLayers().stream().map(LayerManifest::getDigest).collect(Collectors.toList());
-        List<FileContent> fileblobs = Optional.ofNullable(blobsListing.getFiles()).orElse(Lists.newArrayList()).stream().filter(file -> digestList.contains(file.getName())).collect(Collectors.toList());
-        return fileblobs.stream().mapToLong(FileContent::getSize).sum();
+    private Long getSearchDockerSize(RepositoryPath repositoryPath, String imageName) throws IOException {
+        Long size = 0L;
+        String manifestString = Files.readString(repositoryPath);
+        ImageManifest imageManifest = JSON.parseObject(manifestString, ImageManifest.class);
+        List<LayerManifest> layers = null;
+        if (CollectionUtils.isNotEmpty(imageManifest.getLayers())) {
+            layers = imageManifest.getLayers();
+        } else if (CollectionUtils.isNotEmpty(imageManifest.getManifests())) {
+            RepositoryPath manifestPath = repositoryPathResolver.resolve(repositoryPath.getStorageId(), repositoryPath.getRepositoryId(), imageName + "/manifest/" + imageManifest.getManifests().get(0).getDigest());
+            manifestString = Files.readString(manifestPath);
+            imageManifest = JSON.parseObject(manifestString, ImageManifest.class);
+            layers = imageManifest.getLayers();
+        }
+        if (CollectionUtils.isNotEmpty(layers)) {
+            size = layers.stream().mapToLong(LayerManifest::getSize).sum();
+        }
+        return size;
     }
 }

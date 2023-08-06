@@ -1,5 +1,5 @@
 <template>
-  <div>
+  <div class="artifact-base-data">
     <a-tabs default-active-key="1" @change="artifactTabChange">
       <a-tab-pane key="1" tab="基本信息">
         <a-descriptions
@@ -38,6 +38,11 @@
             </a-descriptions-item>
           </template>
         </a-descriptions>
+        <div v-if="currentFileDetial && currentFileDetial.manifest && currentFileDetial.manifest.manifests">
+          <a-tag class="mb-10" :color="index === selectedTag? selectedColor : ''" v-for="(item, index) in currentFileDetial.manifest.manifests" :key="index" @click="clickTag(item, index)">
+            <a> {{ item.platform.os + '/' + item.platform.architecture + (item.platform.variant? '/' + item.platform.variant : '') }} </a>
+          </a-tag>
+        </div>
         <a-descriptions
           v-if="folibRepository.layout === 'Docker'"
           title=""
@@ -75,6 +80,9 @@
           </a-descriptions-item>
           <a-descriptions-item v-if="currentFileDetial" label="基础架构">
             {{ currentFileDetial.manifestConfig.architecture }}
+          </a-descriptions-item>
+          <a-descriptions-item v-if="currentFileDetial && currentFileDetial.manifestConfig.variant" label="版本">
+            {{ currentFileDetial.manifestConfig.variant || ''}}
           </a-descriptions-item>
         </a-descriptions>
       </a-tab-pane>
@@ -254,6 +262,7 @@
         </a-descriptions>
       </a-tab-pane>
     </a-tabs>
+
     <hr class="my-25" />
 
     <a-col
@@ -476,6 +485,8 @@ export default {
         requires: {}
       },
       conanPackageInfoVisible: false,
+      selectedTag: 0,
+      selectedColor: "#2db7f5"
     };
   },
   created() {
@@ -498,6 +509,7 @@ export default {
       this.metadataList = []
       if (this.currentTreeNode.type === 'file') {
         this.getMetadata()
+        this.selectedTag = 0
       } else if (newval && newval.split('/').length === 5 && this.folibRepository.layout === 'conan'){
         this.conanInfoVisible = true
         this.getConanInfo()
@@ -527,24 +539,26 @@ export default {
       }
     },
     getMetadata() {
-      getArtifact(
-        this.repositoryType,
-        this.currentTreeNode.storageId,
-        this.currentTreeNode.repositoryId,
-        this.currentTreeNode.artifactPath
-      ).then((res) => {
-        this.handlerRespMetadata(res);
-        this.$forceUpdate();
-      });
+      if (this.currentTreeNode.type === 'file') {
+        getArtifact(
+          this.repositoryType,
+          this.currentTreeNode.storageId,
+          this.currentTreeNode.repositoryId,
+          this.currentTreeNode.artifactPath
+        ).then((res) => {
+          this.handlerRespMetadata(res)
+          this.$forceUpdate()
+        })
+      }      
     },
     handlerRespMetadata(res) {
-      let metadataList = [];
+      let metadataList = []
       if (
         res.artifact &&
         res.artifact.metadata &&
         res.artifact.metadata.length > 0
       ) {
-        let metadataJson = JSON.parse(res.artifact.metadata);
+        let metadataJson = JSON.parse(res.artifact.metadata)
         for (let key in metadataJson) {
           let flag = this.metadataConfigList.some(
             (metadataConfig) =>
@@ -690,6 +704,20 @@ export default {
         options: {},
         requires: {}
       }
+    },
+    clickTag(item, index) {
+      this.selectedTag = 0
+      getArtifact(
+        this.repositoryType,
+        this.currentTreeNode.storageId,
+        this.currentTreeNode.repositoryId,
+        this.currentTreeNode.artifactPath,
+        item.digest
+      ).then((res) => {
+        this.$emit("setCurrentFileDetial", res)
+        this.selectedTag = index
+        this.$forceUpdate()
+      })
     },
   },
 };

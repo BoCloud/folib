@@ -17,6 +17,7 @@ import com.veadan.folib.promotion.PromotionUtil;
 import com.veadan.folib.promotion.PullArtifactTask;
 import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.providers.io.RepositoryPathResolver;
+import com.veadan.folib.providers.layout.DockerLayoutProvider;
 import com.veadan.folib.providers.layout.LayoutProviderRegistry;
 import com.veadan.folib.repositories.ArtifactRepository;
 import com.veadan.folib.repository.MavenRepositoryFeatures;
@@ -248,7 +249,6 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
             if (sourcePath.contains(requestURL)) {
                 validateStorageAndRepository(srcStorageId, srcRepostoryId);
                 // 本地源 制品路径 推向 目标路径
-                Storage srcStorage = repositoryManagementService.getStorage(srcStorageId);// todo validate
                 Repository srcRepository = repositoryManagementService.getStorage(srcStorageId).getRepository(srcRepostoryId);
                 RepositoryPath srcPath = repositoryPathResolver.resolve(srcRepository, srcUri);
                 //  遍历所有制品文件后逐步上传
@@ -508,10 +508,7 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
             validateStorageAndRepository(artifactDto.getStorageId(), artifactDto.getRepostoryId());
             RepositoryPath repositoryPath = repositoryPathResolver.resolve(artifactDto.getStorageId(),
                     artifactDto.getRepostoryId(), artifactDto.getPath());
-            // 添加 docker version 请求处理
-            List<String> fileNameList = Lists.newArrayList();
-            fileNameList.add(artifactDto.getPath());
-            boolean isDockerVersionPath = promotionUtil.isDockerVersion(repositoryPath.getRepository().getLayout(), fileNameList);
+            boolean isDockerVersionPath = promotionUtil.isDockerVersion(repositoryPath.getRepository().getLayout(), artifactDto.getPath());
             PromotionFileRelativePath promotionFileRelativePath = promotionUtil.getFileRelativePaths(repositoryPath, isDockerVersionPath);
             return ResponseEntity.ok(promotionFileRelativePath);
         } catch (Exception e) {

@@ -179,7 +179,7 @@ public class ConanArtifactController extends BaseArtifactController {
         return conanArtifactServer.searchConanPackage(repository, query);
     }
 
-    @PreAuthorize("hasAuthority('ARTIFACTS_DEPLOY')")
+    @PreAuthorize("hasAuthority('ARTIFACTS_RESOLVE')")
     @PostMapping(value = "{storageId}/{repositoryId}/v1/conans/{name}/{version}/{user}/{channel}/upload_urls")
     public ResponseEntity uploadExportUrls(@RepositoryMapping Repository repository,
                                            @PathVariable("name") String name,
@@ -256,7 +256,7 @@ public class ConanArtifactController extends BaseArtifactController {
         return new ResponseEntity<>(map, HttpStatus.OK);
     }
 
-    @PreAuthorize("hasAuthority('ARTIFACTS_DEPLOY')")
+    @PreAuthorize("hasAuthority('ARTIFACTS_RESOLVE')")
     @PostMapping(value = "{storageId}/{repositoryId}/v1/conans/{name}/{version}/{user}/{channel}/packages/{id}/upload_urls")
     public ResponseEntity uploadPackagesUrls(@RepositoryMapping Repository repository,
                                              @PathVariable("name") String name,

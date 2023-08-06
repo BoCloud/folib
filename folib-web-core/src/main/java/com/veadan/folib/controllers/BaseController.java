@@ -18,6 +18,7 @@ import com.veadan.folib.users.domain.SystemRole;
 import com.veadan.folib.users.userdetails.SpringSecurityUser;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.IteratorUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.io.InputStreamResource;
@@ -284,8 +285,9 @@ public abstract class BaseController {
 
                 totalBytes += readLength;
             }
-
-            response.setHeader(HttpHeaders.CONTENT_LENGTH, Long.toString(totalBytes));
+            if (setContentLength(response)) {
+                response.setHeader(HttpHeaders.CONTENT_LENGTH, Long.toString(totalBytes));
+            }
             response.flushBuffer();
         }
     }
@@ -333,5 +335,13 @@ public abstract class BaseController {
             return "";
         }
         return springSecurityUser.getUsername();
+    }
+
+    private static boolean setContentLength(HttpServletResponse response) {
+        String contentLength = response.getHeader(HttpHeaders.CONTENT_LENGTH);
+        if (StringUtils.isBlank(contentLength) || "-1".equalsIgnoreCase(contentLength)) {
+            return true;
+        }
+        return false;
     }
 }

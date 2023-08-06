@@ -15,7 +15,7 @@ import org.springframework.http.HttpStatus;
 public enum DockerApiHeader {
 
     DOCKER_DISTRIBUTION_API_VERSION("Docker-Distribution-Api-Version", "registry/2.0"),
-    DOCKER_CONTENT_TYPE("content-type","application/vnd.docker.distribution.manifest.list.v2+json"),
+    DOCKER_CONTENT_TYPE("content-type","application/vnd.docker.distribution.manifest.v2+json"),
     DOCKER_UPLOAD_UUID("docker-upload-uuid"),
     DOCKER_CONTENT_DIGEST("docker-content-digest"),
     DOCKER_RATELIMIT_SOURCE("docker-ratelimit-source"),
@@ -27,7 +27,8 @@ public enum DockerApiHeader {
     CONTENT_RANGE("Content-Range"),
     RATELIMIT_LIMIT("ratelimit-limit"),
     RATELIMIT_REMAINING("ratelimit-remaining"),
-    STRICT_TRANSPORT_SECURITY("strict-transport-security");
+    STRICT_TRANSPORT_SECURITY("strict-transport-security"),
+    STREAM_CONTENT_TYPE("content-type","application/octet-stream"),;
 
 
     private String value;

@@ -1,5 +1,6 @@
 package com.veadan.folib.utils;
 
+import com.alibaba.fastjson.JSON;
 import com.veadan.folib.controllers.BaseController;
 import com.veadan.folib.exception.ExceptionHandlingOutputStream;
 import com.veadan.folib.io.ByteRangeInputStream;
@@ -7,6 +8,9 @@ import com.veadan.folib.io.StreamUtils;
 import com.veadan.folib.providers.io.RepositoryFileAttributes;
 import com.veadan.folib.providers.io.RepositoryFiles;
 import com.veadan.folib.providers.io.RepositoryPath;
+import com.veadan.folib.schema2.ImageManifest;
+import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.carlspring.commons.http.range.ByteRange;
 import org.carlspring.commons.http.range.ByteRangeHeaderParser;
 import org.carlspring.commons.http.range.validation.ByteRangeValidationException;
@@ -28,7 +32,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
-import org.springframework.util.CollectionUtils;
 
 import static org.springframework.http.HttpStatus.PARTIAL_CONTENT;
 import static org.springframework.http.HttpStatus.REQUESTED_RANGE_NOT_SATISFIABLE;
@@ -191,8 +194,9 @@ public class ArtifactControllerHelper
             return;
         }
         RepositoryFileAttributes fileAttributes = Files.readAttributes(path, RepositoryFileAttributes.class);
-
-        response.setHeader(HttpHeaders.CONTENT_LENGTH, String.valueOf(fileAttributes.size()));
+        if (setContentLength(response)) {
+            response.setHeader(HttpHeaders.CONTENT_LENGTH, String.valueOf(fileAttributes.size()));
+        }
         response.setHeader(HttpHeaders.LAST_MODIFIED, DateTimeFormatter.RFC_1123_DATE_TIME.format(
                 ZonedDateTime.ofInstant(fileAttributes.lastModifiedTime().toInstant(), ZoneId.systemDefault())));
 
@@ -234,9 +238,10 @@ public class ArtifactControllerHelper
         else if (path.getFileName().toString().endsWith(".gz"))
         {
             return com.google.common.net.MediaType.GZIP.toString();
-            // todo docker repository v2
         } else if (path.toString().contains("/manifest/") && path.getFileName().toString().startsWith("sha256:")) {
-            return "application/vnd.docker.distribution.manifest.v2+json";
+            //docker repository v2
+            ImageManifest imageManifest = JSON.parseObject(Files.readString(path), ImageManifest.class);
+            return imageManifest.getMediaType();
         } else if (path.toString().contains("/blobs/") && path.getFileName().toString().startsWith("sha256:")) {
             return "application/vnd.docker.image.rootfs.diff.tar.gzip";
         }
@@ -336,4 +341,12 @@ public class ArtifactControllerHelper
         return (string.concat(CRLF)).getBytes(StandardCharsets.UTF_8);
     }
 
+
+    private static boolean setContentLength(HttpServletResponse response) {
+        String contentLength = response.getHeader(HttpHeaders.CONTENT_LENGTH);
+        if (StringUtils.isBlank(contentLength) || "-1".equalsIgnoreCase(contentLength)) {
+            return true;
+        }
+        return false;
+    }
 }

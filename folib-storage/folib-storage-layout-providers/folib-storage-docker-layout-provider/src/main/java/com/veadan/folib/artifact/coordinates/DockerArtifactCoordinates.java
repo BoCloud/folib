@@ -269,5 +269,7 @@ public class DockerArtifactCoordinates
         setCoordinate(ARTIFACT_PATH,artifactPath);
     }
 
-
+    public String getName() {
+        return getCoordinate("name");
+    }
 }

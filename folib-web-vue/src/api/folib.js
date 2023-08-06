@@ -112,9 +112,12 @@ export function browse (storageId,repositoryId,path) {
     method: 'get'
   })
 }
-export function getArtifact (type,storageId,repositoryId,path){
+export function getArtifact (type,storageId,repositoryId,path, digest){
+  if (!digest) {
+    digest = ''
+  }
   return axios({
-    url: '/api/browse/getArtifact/'+storageId+'/'+repositoryId+'/'+path+'?type='+type,
+    url: '/api/browse/getArtifact/'+storageId+'/'+repositoryId+'/'+path+'?type='+type + '&digest=' + digest,
     method: 'get'
   })
 }

@@ -501,7 +501,7 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
 
                 SearchResults dockerResult = fqlSearchService.artifactQuery(false,
                         artifactMetaData.getArtifactPath(), null, storageId,
-                        dockerRepo, null, null, null, null, null, null, null,1, 1);
+                        dockerRepo, null, null, null, null, null, null, null, 1, 1);
                 if (dockerResult.getTotal() == 0) {
                     SearchResults rawResult = fqlSearchService.artifactQuery(false,
                             artifactMetaData.getArtifactPath(), null, storageId,
@@ -586,32 +586,16 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
      */
     private Artifact getDockerArtifact(String artifactName, String storageId, String repositoryId) throws IOException {
         RepositoryPath repositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, artifactName);
-        Path path = repositoryPath.getTarget();
-        String artifactPath = "";
-        if (path instanceof S3Path) {
-            //S3存储
-            S3Path s3Path = (S3Path) path;
-            S3Iterator iterators = new S3Iterator(s3Path);
-            S3Path imagePath = null;
-            while (iterators.hasNext()) {
-                S3Path itemS3Path = iterators.next();
-                if (!itemS3Path.endsWith(".sha256")) {
-                    imagePath = itemS3Path;
-                    break;
-                }
-            }
-            if (Objects.nonNull(imagePath)) {
-                artifactPath = imagePath.getKey().replace(String.format("%s/%s/", repositoryPath.getStorageId(), repositoryPath.getRepositoryId()), "");
-            }
-        } else {
-            if (!Files.isDirectory(repositoryPath)) {
-                return null;
-            }
-            DirectoryListing directoryListing = directoryListingService.fromRepositoryPath(repositoryPath);
-            List<FileContent> fileContents = directoryListing.getFiles().stream().filter(file -> !(file.getName().endsWith(".sha256"))).collect(Collectors.toList());
-            FileContent fileContent = fileContents.get(0);
-            artifactPath = fileContent.getArtifactPath();
+        if (!Files.isDirectory(repositoryPath)) {
+            return null;
         }
+        DirectoryListing directoryListing = directoryListingService.fromRepositoryPath(repositoryPath);
+        List<FileContent> fileContents = directoryListing.getFiles().stream().filter(file -> !(file.getName().endsWith(".sha256"))).collect(Collectors.toList());
+        if (CollectionUtils.isEmpty(fileContents)) {
+            return null;
+        }
+        FileContent fileContent = fileContents.get(0);
+        String artifactPath = fileContent.getArtifactPath();
         return artifactRepository.findOneArtifact(storageId, repositoryId, artifactPath);
     }
 
