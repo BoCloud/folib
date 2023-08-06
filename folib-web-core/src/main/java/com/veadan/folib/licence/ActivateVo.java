@@ -9,9 +9,8 @@ public class ActivateVo implements Serializable {
 
     private String mac;
     private boolean haveError;
-
     private boolean dalyOut;
-
+    private String level;
     private JSONObject object;
 
     public String getMac() {
@@ -44,5 +43,13 @@ public class ActivateVo implements Serializable {
 
     public void setObject(JSONObject object) {
         this.object = object;
+    }
+
+    public String getLevel() {
+        return level;
+    }
+
+    public void setLevel(String level) {
+        this.level = level;
     }
 }

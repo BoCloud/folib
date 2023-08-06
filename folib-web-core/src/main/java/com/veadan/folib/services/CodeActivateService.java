@@ -9,6 +9,7 @@ import com.alibaba.fastjson.JSONObject;
 import com.veadan.folib.licence.ActivateVo;
 import com.veadan.folib.licence.MacUtil;
 import com.veadan.folib.storage.Storage;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
@@ -102,6 +103,7 @@ public class CodeActivateService {
     public ActivateVo isNotActivate() throws Exception {
         JSONObject dataObj;
         ActivateVo activateVo = new ActivateVo();
+        activateVo.setLevel("basic");
         File file = new File(homePath + "/etc/lic/folib.lic");
         //文件是否存在
         if (file.exists()&&FileUtil.isNotEmpty(file)) {
@@ -112,6 +114,10 @@ public class CodeActivateService {
                 dataObj.remove("md5");
                 String md51=SecureUtil.md5(dataObj.toJSONString()+"folib!@#$%^&*ABCD");
                 if(md51.equals(md5)){
+                    String level = dataObj.getString("level");
+                    if (StringUtils.isNotBlank(level)) {
+                        activateVo.setLevel(level);
+                    }
                     //机器码经过校验之后范围为mac字段
                     if( dataObj.getString("mac").equals(MacUtil.getMachineCode())){
                         activateVo.setHaveError(false);

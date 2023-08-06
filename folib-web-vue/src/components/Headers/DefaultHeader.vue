@@ -85,6 +85,7 @@ import {checkMachineCode,getServerName} from "@/api/settings";
 				},
         haveError: false,
         dalyOut: false,
+				level: 'basic',
 				// Main sidebar color.
 				sidebarColor: {
 					type: String,
@@ -107,11 +108,12 @@ import {checkMachineCode,getServerName} from "@/api/settings";
         this.instanceName=res
         sessionStorage.setItem("instanceName",res)
       })
-
+	  sessionStorage.setItem("identityLevel",this.level)
       checkMachineCode().then(res=>{
-
         this.haveError=res.haveError
         this.dalyOut=res.dalyOut
+				this.level = res.level
+				sessionStorage.setItem("identityLevel",this.level)
       })
     },
     methods: {
