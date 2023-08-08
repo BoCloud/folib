@@ -20,7 +20,7 @@ import javax.inject.Inject;
  */
 @Controller
 @RequestMapping("/api/ping")
-@Api(value = "/api/ping")
+@Api(description = "ping服务管理",tags = "ping服务管理")
 public class PingController
         extends BaseController
 

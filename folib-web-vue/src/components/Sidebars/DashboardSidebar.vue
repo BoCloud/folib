@@ -12,7 +12,7 @@
     theme="light"
     :style="{ backgroundColor: 'transparent' }"
   >
-    <div class="brand"><img src="images/folib/foliblogo.png" alt="" /> <span>Fo Library</span></div>
+    <div class="brand"><img src="images/folib/foliblogo.png" alt="" /> <span>{{ instanceName }} Library</span></div>
     <hr />
 
     <!-- Sidebar Navigation Menu -->
@@ -110,7 +110,7 @@
     <!-- / Sidebar Navigation Menu -->
 
     <!-- Sidebar Footer -->
-    <div class="aside-footer">
+    <!-- <div class="aside-footer">
       <div class="footer-box">
         <span class="icon">
           <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -132,7 +132,7 @@
         <p>请查阅帮助文档</p>
         <a-button block size="small" href="/docs/core/use.html" target="_blank"> FOLIB使用文档 </a-button>
       </div>
-    </div>
+    </div> -->
     <!-- / Sidebar Footer -->
   </a-layout-sider>
   <!-- / Main Sidebar -->
@@ -166,6 +166,7 @@ export default {
       rootSubmenuKeys: ["dashboards", "pages", "applications", "ecommerce", "authentication", "basic", "components", "changelog"],
       openKeys: this.$route.meta.sidebarMap,
       userInfo: {},
+      instanceName:sessionStorage.getItem("instanceName")||""
     };
   },
   created() {

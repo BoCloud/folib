@@ -245,7 +245,7 @@ cacheManagerConfiguration:
       timeToLiveSeconds: 10
 s3fs:
   protocol: http
-  region: bo-nj-cn
+  region: folib
   uri: s3://192.168.5.100:9000/
   access:
     key: 94hug0FDbtjhbqo1

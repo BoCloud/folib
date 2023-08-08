@@ -31,7 +31,7 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @PreAuthorize("hasAuthority('ADMIN')")
 @RequestMapping(value = "/api/configuration/artifact-coordinate-validators")
-@Api(value = "/api/configuration/artifact-coordinate-validators")
+@Api(description = "制品存储空间坐标验证器",tags = "制品存储空间坐标验证器")
 public class ArtifactCoordinateValidatorsManagementController
         extends BaseController
 {

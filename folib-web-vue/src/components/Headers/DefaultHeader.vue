@@ -3,7 +3,7 @@
 	<!-- Layout Header ( Navbar ) -->
 	<a-layout-header>
 		<div class="header-col header-brand">
-			<h6>FO Library</h6>
+			<h6>{{ instanceName }} Library</h6>
 
 			<!-- Trigger Button For Navigation Menu For Small Screens -->
 			<a-button type="link" @click="collapseNav = collapseNav ? 0 : 1 " class="btn-menu-trigger">
@@ -69,7 +69,7 @@
 </template>
 
 <script>
-import {checkMachineCode} from "@/api/settings";
+import {checkMachineCode,getServerName} from "@/api/settings";
 
 
 	export default ({
@@ -85,6 +85,7 @@ import {checkMachineCode} from "@/api/settings";
 				},
         haveError: false,
         dalyOut: false,
+				level: 'basic',
 				// Main sidebar color.
 				sidebarColor: {
 					type: String,
@@ -98,13 +99,21 @@ import {checkMachineCode} from "@/api/settings";
 				},
       			rootSubmenuKeys: ['dashboards', 'pages', 'applications', 'ecommerce', 'authentication', 'basic', 'components', 'changelog'],
 				openKeys: null,
+        instanceName:sessionStorage.getItem("instanceName")||""
 			}
 		},
     created() {
-      checkMachineCode().then(res=>{
 
+      getServerName().then(res=>{
+        this.instanceName=res
+        sessionStorage.setItem("instanceName",res)
+      })
+	  sessionStorage.setItem("identityLevel",this.level)
+      checkMachineCode().then(res=>{
         this.haveError=res.haveError
         this.dalyOut=res.dalyOut
+				this.level = res.level
+				sessionStorage.setItem("identityLevel",this.level)
       })
     },
     methods: {

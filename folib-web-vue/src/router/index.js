@@ -7,11 +7,13 @@ import {
 
 } from '@/api/sso'
 
+import {getServerName} from "@/api/settings";
+
 import storage from 'store'
 import {ACCESS_TOKEN, USER_INFO} from '@/store/mutation-types'
 import { encrypt } from "@/utils/jsencrypt"
 import store from '@/store'
-
+import Swal from 'sweetalert2'
 
 
 Vue.use(VueRouter)
@@ -313,6 +315,8 @@ function addLayoutToRoute( route, parentLayout = "default" )
 	return route ;
 }
 
+let proLevel =  ["/artifacts", "/components", "/vulnerabilities", "/licenses"]
+
 routes = routes.map( ( route ) => addLayoutToRoute( route ) ) ;
 
 const router = new VueRouter({
@@ -336,8 +340,22 @@ const router = new VueRouter({
 
 
 // 校验登录信息
-router.beforeEach((from,to,next)=>{
+router.beforeEach((to,from,next)=>{
 
+  getServerName().then(res=>{
+    sessionStorage.setItem("instanceName",res)
+  })
+	let identityLevel = sessionStorage.getItem("identityLevel")
+	if (proLevel.includes(to.path) && identityLevel !== 'pro') {
+		Swal.fire({
+			title: '提示信息',
+			text: '此功能为高级版尊享，如需体验，请升级为高级版',
+			confirmButtonColor: '#1890ff',
+			confirmButtonText: '好的'
+		})
+		next(false)
+		return
+	}
 
   // todo 校验合法性 keyClock确定登录的合法性，方式仿冒登录
   let flag = sessionStorage.getItem("loginMethod")

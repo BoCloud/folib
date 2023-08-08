@@ -16,6 +16,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import javax.inject.Inject;
+import java.nio.charset.StandardCharsets;
 import java.util.Set;
 
 /**
@@ -25,7 +26,7 @@ import java.util.Set;
 @RestController
 @PreAuthorize("hasAuthority('ADMIN')")
 @RequestMapping("/api/janusGraph")
-@Api(value = "/api/janusGraph")
+@Api(description = "janusGraph图库管理",tags = "janusGraph图库管理")
 public class JanusGraphController extends BaseController {
 
     @Inject

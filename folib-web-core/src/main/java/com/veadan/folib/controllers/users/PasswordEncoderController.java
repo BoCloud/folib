@@ -26,7 +26,7 @@ import org.springframework.web.bind.annotation.*;
  */
 @Controller
 @RequestMapping("/api/users/encrypt/password")
-@Api(value = "/api/users/encrypt/encoder")
+@Api(description = "用户密码加密管理",tags = "用户密码加密管理")
 @PreAuthorize("hasAuthority('ADMIN')")
 public class PasswordEncoderController
         extends BaseController

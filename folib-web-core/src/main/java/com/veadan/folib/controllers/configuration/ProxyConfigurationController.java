@@ -24,7 +24,7 @@ import org.springframework.web.bind.annotation.*;
  */
 @Controller
 @RequestMapping("/api/configuration/folib/proxy-configuration")
-@Api(value = "/api/configuration/folib/proxy-configuration")
+@Api(description = "代理配置管理",tags="代理配置管理")
 public class ProxyConfigurationController
         extends BaseConfigurationController
 {

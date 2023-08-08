@@ -11,10 +11,7 @@ import com.veadan.folib.services.RepositoryManagementService;
 import com.veadan.folib.storage.repository.Repository;
 import com.veadan.folib.web.LayoutRequestMapping;
 import com.veadan.folib.web.RepositoryMapping;
-import io.swagger.annotations.ApiOperation;
-import io.swagger.annotations.ApiParam;
-import io.swagger.annotations.ApiResponse;
-import io.swagger.annotations.ApiResponses;
+import io.swagger.annotations.*;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -36,6 +33,7 @@ import static org.springframework.http.HttpStatus.NOT_FOUND;
 @RestController
 @LayoutRequestMapping(RpmLayoutProvider.ALIAS)
 @Slf4j
+@Api(description = "rpm坐标控制器",tags = "rpm坐标控制器")
 public class RpmArtifactController extends BaseArtifactController {
 
     @Autowired

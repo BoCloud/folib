@@ -15,6 +15,15 @@ export function postServerSettings (data) {
   })
 }
 
+
+export function getServerName () {
+  return axios({
+    url: '/api/configuration/folib/getServerName',
+    method: 'get',
+  })
+}
+
+
 export function getLdap () {
   return axios({
     url: '/api/configuration/ldap',

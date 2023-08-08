@@ -22,6 +22,7 @@ import com.veadan.folib.storage.repository.Repository;
 import com.veadan.folib.web.Constants;
 import com.veadan.folib.web.LayoutRequestMapping;
 import com.veadan.folib.web.RepositoryMapping;
+import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
@@ -49,6 +50,7 @@ import java.util.Objects;
 @RestController
 @LayoutRequestMapping(PhpLayoutProvider.ALIAS)
 @Slf4j
+@Api(description = "php坐标控制器",tags = "php坐标控制器")
 public class PhpArtifactController extends BaseArtifactController {
 
     private final static String DEFAULT_URL = "https://packagist.org/search.json";

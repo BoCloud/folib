@@ -17,6 +17,7 @@ import com.veadan.folib.users.userdetails.SpringSecurityUser;
 import com.veadan.folib.web.Constants;
 import com.veadan.folib.web.LayoutRequestMapping;
 import com.veadan.folib.web.RepositoryMapping;
+import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
@@ -51,6 +52,7 @@ import java.util.regex.Pattern;
 //@LayoutRequestMapping("conan")
 @RestController
 @Slf4j
+@Api(description = "Conan坐标控制器",tags = "Conan坐标控制器")
 public class ConanArtifactController extends BaseArtifactController {
 
     @Autowired
@@ -177,7 +179,7 @@ public class ConanArtifactController extends BaseArtifactController {
         return conanArtifactServer.searchConanPackage(repository, query);
     }
 
-    @PreAuthorize("hasAuthority('ARTIFACTS_DEPLOY')")
+    @PreAuthorize("hasAuthority('ARTIFACTS_RESOLVE')")
     @PostMapping(value = "{storageId}/{repositoryId}/v1/conans/{name}/{version}/{user}/{channel}/upload_urls")
     public ResponseEntity uploadExportUrls(@RepositoryMapping Repository repository,
                                            @PathVariable("name") String name,
@@ -254,7 +256,7 @@ public class ConanArtifactController extends BaseArtifactController {
         return new ResponseEntity<>(map, HttpStatus.OK);
     }
 
-    @PreAuthorize("hasAuthority('ARTIFACTS_DEPLOY')")
+    @PreAuthorize("hasAuthority('ARTIFACTS_RESOLVE')")
     @PostMapping(value = "{storageId}/{repositoryId}/v1/conans/{name}/{version}/{user}/{channel}/packages/{id}/upload_urls")
     public ResponseEntity uploadPackagesUrls(@RepositoryMapping Repository repository,
                                              @PathVariable("name") String name,

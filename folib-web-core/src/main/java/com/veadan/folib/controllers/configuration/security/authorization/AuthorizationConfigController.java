@@ -47,7 +47,7 @@ import io.swagger.annotations.ApiResponses;
 @Controller
 @PreAuthorize("hasAuthority('ADMIN')")
 @RequestMapping(value = "/api/configuration/authorization")
-@Api(value = "/api/configuration/authorization")
+@Api(description = "用户角色管理",tags = "用户角色管理")
 public class AuthorizationConfigController
         extends BaseController
 {

@@ -21,7 +21,7 @@ import java.io.IOException;
  */
 @RestController
 @RequestMapping("/api/configuration/folib/securityPolicy")
-@Api(value = "/api/configuration/folib/securityPolicy")
+@Api(description = "安全策略配置",tags = "安全策略配置")
 public class SecurityPolicyConfigurationController extends BaseController {
 
     @Inject

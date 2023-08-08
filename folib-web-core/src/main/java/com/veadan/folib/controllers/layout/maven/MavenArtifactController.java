@@ -14,10 +14,7 @@ import com.veadan.folib.storage.repository.Repository;
 import com.veadan.folib.storage.repository.RepositoryDto;
 import com.veadan.folib.web.LayoutRequestMapping;
 import com.veadan.folib.web.RepositoryMapping;
-import io.swagger.annotations.ApiOperation;
-import io.swagger.annotations.ApiParam;
-import io.swagger.annotations.ApiResponse;
-import io.swagger.annotations.ApiResponses;
+import io.swagger.annotations.*;
 import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -51,6 +48,8 @@ import static org.springframework.http.HttpStatus.NOT_FOUND;
 @LayoutRequestMapping(MavenArtifactCoordinates.LAYOUT_NAME)
 //@RequestMapping(
 //        headers = "user-agent=Maven/*")
+@Api(description = "maven坐标控制器",tags = "maven坐标控制器")
+
 public class MavenArtifactController
         extends BaseArtifactController {
 

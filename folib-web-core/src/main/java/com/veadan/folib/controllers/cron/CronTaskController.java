@@ -27,6 +27,7 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
@@ -53,6 +54,7 @@ import org.springframework.web.bind.annotation.*;
 @Controller
 @RequestMapping("/api/configuration/crontasks")
 @PreAuthorize("hasAuthority('AUTHENTICATED_USER')")
+@Api(description = "定时任务管理",tags = "定时任务管理")
 public class CronTaskController
         extends BaseController
 {

@@ -21,7 +21,7 @@ import java.util.Objects;
  */
 @RestController
 @RequestMapping("/api/license")
-@Api(value = "/api/license")
+@Api(description = "license证书管理",tags = "license证书管理")
 public class LicenseController extends BaseController {
 
     @Inject

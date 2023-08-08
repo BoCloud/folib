@@ -10,6 +10,7 @@ import com.veadan.folib.web.RepositoryMapping;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
@@ -24,6 +25,7 @@ import org.springframework.web.bind.annotation.*;
  */
 @RestController
 @LayoutRequestMapping(RawLayoutProvider.ALIAS)
+@Api(description = "raw坐标控制器",tags = "raw坐标控制器")
 public class RawArtifactController
         extends BaseArtifactController
 {

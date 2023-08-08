@@ -30,7 +30,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @PreAuthorize("hasAuthority('ADMIN')")
 @RequestMapping("/api/configuration/environment/info")
-@Api("/api/configuration/environment/info")
+@Api(description="环境参数控制器",tags = "环境参数控制器")
 public class EnvironmentInfoController
         extends BaseController
 {

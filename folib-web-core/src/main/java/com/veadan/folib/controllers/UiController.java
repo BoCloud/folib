@@ -2,6 +2,7 @@ package com.veadan.folib.controllers;
 
 import javax.servlet.http.HttpServletResponse;
 
+import io.swagger.annotations.Api;
 import org.springframework.boot.web.servlet.error.ErrorController;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -13,6 +14,7 @@ import org.springframework.web.servlet.view.RedirectView;
  * @author Steve Todorov
  */
 @Controller
+@Api(description = "跳转首页/错误页控制",tags = "跳转首页/错误页控制")
 public class UiController implements ErrorController
 {
 

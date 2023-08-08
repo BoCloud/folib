@@ -33,6 +33,7 @@
     "showdown": "2.1.0",
     "showdown-htmlescape": "0.1.9",
     "store": "^2.0.12",
+    "sweetalert2": "^11.7.20",
     "vis-network": "^6.4.0",
     "vue": "2.6.14",
     "vue-easy-pie-chart": "1.0.3",

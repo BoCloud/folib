@@ -12,6 +12,7 @@ import com.veadan.folib.web.RepositoryMapping;
 import javax.inject.Inject;
 import java.io.IOException;
 
+import io.swagger.annotations.Api;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -29,6 +30,7 @@ import static com.veadan.folib.config.Maven2LayoutProviderConfig.FILE_SYSTEM_ALI
  */
 @RestController
 @RequestMapping("/api/maven/index")
+@Api(description = "maven索引控制器",tags = "maven索引控制器")
 public class MavenIndexController
         extends BaseController
 {

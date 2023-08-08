@@ -17,6 +17,7 @@ import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.providers.layout.DockerLayoutProvider;
 import com.veadan.folib.schema2.ImageManifest;
 import com.veadan.folib.schema2.LayerManifest;
+import com.veadan.folib.schema2.Manifests;
 import com.veadan.folib.services.ArtifactManagementService;
 import com.veadan.folib.services.DirectoryListingService;
 import com.veadan.folib.storage.ArtifactStorageException;
@@ -26,10 +27,8 @@ import com.veadan.folib.storage.repository.RepositoryTypeEnum;
 import com.veadan.folib.util.RepositoryPathUtil;
 import com.veadan.folib.utils.TreeUtil;
 import com.veadan.folib.web.RepositoryMapping;
-import io.swagger.annotations.ApiOperation;
-import io.swagger.annotations.ApiParam;
-import io.swagger.annotations.ApiResponse;
-import io.swagger.annotations.ApiResponses;
+import io.swagger.annotations.*;
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -64,6 +63,7 @@ import static org.springframework.http.HttpStatus.OK;
  */
 @RestController
 @RequestMapping(path = BrowseController.ROOT_CONTEXT)
+@Api(description = "浏览存储/存储库/文件系统结构 控制器",tags = "浏览存储/存储库/文件系统结构 控制器")
 public class BrowseController
         extends BaseController {
 
@@ -84,13 +84,12 @@ public class BrowseController
     @Qualifier("browseRepositoryDirectoryListingService")
     private volatile DirectoryListingService directoryListingService;
 
-
-    //    @PreAuthorize("authenticated")
     @GetMapping(value = "/getArtifact/{storageId}/{repositoryId}/{artifactPath:.+}")
     public ResponseEntity getArtifact(@PathVariable String artifactPath,
                                       @PathVariable String storageId,
                                       @PathVariable String repositoryId,
-                                      @RequestParam(value = "type", required = false) String type, @RepositoryMapping Repository repositoryParam) {
+                                      @RequestParam(value = "type", required = false) String type,
+                                      @RequestParam(value = "digest", required = false) String digest, @RepositoryMapping Repository repositoryParam) {
         JSONObject jsonObject = new JSONObject();
         if (StringUtils.isBlank(type)) {
             type = repositoryParam.getLayout();
@@ -140,65 +139,58 @@ public class BrowseController
             String aName = a[0];
             String aVersion = a[1];
             RepositoryPath repositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, artifactPath);
-            String blobsPath = aName + "/blobs";
-            RepositoryPath repositoryPathBlobs = repositoryPathResolver.resolve(storageId, repositoryId, blobsPath);
             try {
                 DirectoryListing directoryListing = directoryListingService.fromRepositoryPath(repositoryPath);
-
-                //获取blobs下的文件列表，为了获取层的大小。
-                DirectoryListing blobsListing = directoryListingService.fromRepositoryPath(repositoryPathBlobs);
-
-
-                List<FileContent> fileContents = directoryListing.getFiles().stream().filter(file -> !(file.getName().endsWith(".sha256"))).collect(Collectors.toList());  //+propertiesBooter.getStorageBooterBasedir()+"/"+propertiesBooter.getVaultDirectory() + "/storages/"
+                List<FileContent> fileContents = directoryListing.getFiles().stream().filter(file -> !(file.getName().endsWith(".sha256"))).collect(Collectors.toList());
                 FileContent fileContent = fileContents.get(0);
                 RepositoryPath versionPath = repositoryPathResolver.resolve(storageId, repositoryId, artifactPath + File.separator + fileContent.getName());
-                String menifestString = Files.readString(versionPath);
-                String iamgeName = configurationManagementService.getConfiguration().getBaseUrl().replace("http://", "") + storageId + "/" + repositoryId + "/" + aName + ":" + aVersion;
-                String code = "docker  pull  " + iamgeName;
+                String manifestString = Files.readString(versionPath);
+                String imageName = configurationManagementService.getConfiguration().getBaseUrl().replace("http://", "") + storageId + "/" + repositoryId + "/" + aName + ":" + aVersion;
+                String code = "docker  pull  " + imageName;
                 CodeSnippet codeSnippet = new CodeSnippet("Docker", code);
                 List<CodeSnippet> snippets = new ArrayList<>();
                 snippets.add(codeSnippet);
-                ImageManifest menifest = JSON.parseObject(menifestString, ImageManifest.class);
-
-                List<String> digestList = menifest.getLayers().stream().map(LayerManifest::getDigest).collect(Collectors.toList());
-                List<FileContent> fileblobs = Optional.ofNullable(blobsListing.getFiles()).orElse(Lists.newArrayList()).stream().filter(file -> digestList.contains(file.getName())).collect(Collectors.toList());
-                String configDigest = menifest.getConfig().getDigest();
-                RepositoryPath manifestConfigPath = repositoryPathResolver.resolve(storageId, repositoryId, aName + "/blobs/" + configDigest);
-                String manifestConfigString = Files.readString(manifestConfigPath);
+                ImageManifest imageManifest = JSON.parseObject(manifestString, ImageManifest.class);
+                String configDigest = "";
+                if (Objects.nonNull(imageManifest.getConfig())) {
+                    configDigest = imageManifest.getConfig().getDigest();
+                } else if (CollectionUtils.isNotEmpty(imageManifest.getManifests())){
+                    Manifests manifests = imageManifest.getManifests().get(0);
+                    if (StringUtils.isNotBlank(digest)) {
+                        Optional<Manifests> optionalManifests = imageManifest.getManifests().stream().filter(item -> item.getDigest().equals(digest)).findFirst();
+                        if (optionalManifests.isPresent()) {
+                            manifests = optionalManifests.get();
+                        }
+                    }
+                    RepositoryPath manifestPath = repositoryPathResolver.resolve(storageId, repositoryId, aName + "/manifest/" + manifests.getDigest());
+                    if (Objects.nonNull(manifestPath) && Files.exists(manifestPath)) {
+                        ImageManifest manifest = JSON.parseObject(Files.readString(manifestPath), ImageManifest.class);
+                        if (Objects.nonNull(manifest)) {
+                            List<Manifests> manifestsList = imageManifest.getManifests();
+                            imageManifest = manifest;
+                            imageManifest.setManifests(manifestsList);
+                            configDigest = manifest.getConfig().getDigest();
+                        }
+                    }
+                }
+                if (StringUtils.isNotBlank(configDigest)) {
+                    RepositoryPath manifestConfigPath = repositoryPathResolver.resolve(storageId, repositoryId, aName + "/blobs/" + configDigest);
+                    String manifestConfigString = Files.readString(manifestConfigPath);
+                    JSONObject object = JSON.parseObject(manifestConfigString);
+                    jsonObject.put("manifestConfig", object);
+                    jsonObject.put("sha256", configDigest);
+                }
                 Artifact artifact = repositoryPathResolver.findOneArtifact(storageId, repositoryId, fileContent.getArtifactPath());
                 jsonObject.put("artifact", artifact);
-
-                Long size = fileblobs.stream().mapToLong(FileContent::getSize).sum();
-                jsonObject.put("sha256", menifest.getConfig().getDigest());
+                Long size = Optional.ofNullable(imageManifest.getLayers()).orElse(Collections.emptyList()).stream().mapToLong(LayerManifest::getSize).sum();
                 jsonObject.put("snippets", snippets);
-                jsonObject.put("manifest", menifest);
-                JSONObject object = JSON.parseObject(manifestConfigString);
-                jsonObject.put("manifestConfig", object);
-
+                jsonObject.put("manifest", imageManifest);
                 SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
                 dateFormat.setTimeZone(TimeZone.getTimeZone("Asia/Shanghai"));
                 String format = dateFormat.format(fileContent.getLastModified());
                 jsonObject.put("lastModified", format);
                 jsonObject.put("size", size);
-                jsonObject.put("imageName", iamgeName);
-
-                RepositoryPath appPackagePath = repositoryPathResolver.resolve(storageId, repositoryId, aName + "/" + aVersion + "/temp");
-                List<String> relativePaths = RepositoryPathUtil.getFileRelativePaths(appPackagePath);
-                Set<String> downloadUrls = new HashSet<String>();
-                Map<String, String> downloadUrlMap = new HashMap<String, String>();
-                for (String filePath : relativePaths) {
-                    if (filePath.endsWith(".config") || filePath.endsWith(".sha256")) {
-                        continue;
-                    }
-                    String[] filePathArray = filePath.split("/");
-                    String fileName = filePathArray[filePathArray.length - 1];
-                    downloadUrlMap.put(fileName, FolibPublicUtils.getFileUrl(repositoryParam, filePath));
-                }
-                downloadUrlMap.forEach((x, y) -> {
-                    downloadUrls.add(y);
-                });
-                jsonObject.put("downloadFilesUrl", downloadUrls);
-
+                jsonObject.put("imageName", imageName);
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }

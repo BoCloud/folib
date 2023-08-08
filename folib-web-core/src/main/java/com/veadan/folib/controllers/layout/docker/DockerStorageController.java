@@ -6,6 +6,7 @@ import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.storage.repository.Repository;
 import com.veadan.folib.web.LayoutRequestMapping;
 import com.veadan.folib.web.RepositoryMapping;
+import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
@@ -19,6 +20,7 @@ import java.nio.file.Files;
 
 @LayoutRequestMapping(DockerArtifactCoordinates.LAYOUT_NAME)
 @RestController
+@Api(description = "docker存储空间控制器",tags = "docker存储空间控制器")
 public class DockerStorageController extends BaseArtifactController {
 
     @ApiOperation(value = "Used to retrieve an artifact")

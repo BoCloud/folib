@@ -25,7 +25,7 @@ import org.springframework.web.bind.annotation.RequestParam;
  */
 @Controller
 @RequestMapping("/api/search")
-@Api(value = "/api/search")
+@Api(description = "搜索组件控制器",tags = "搜索组件控制器")
 public class SearchController
         extends BaseController
 {

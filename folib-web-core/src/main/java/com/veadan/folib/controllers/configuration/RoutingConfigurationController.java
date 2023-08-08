@@ -28,7 +28,7 @@ import org.springframework.web.bind.annotation.*;
  */
 @Controller
 @RequestMapping("/api/configuration/folib/routing/rules")
-@Api(value = "/api/configuration/folib/routing/rules")
+@Api(description = "路由规则管理",tags = "路由规则管理")
 public class RoutingConfigurationController
         extends BaseConfigurationController
 {

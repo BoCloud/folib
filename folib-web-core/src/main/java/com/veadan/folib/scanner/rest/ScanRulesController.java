@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/api/scanRules")
-@Api(tags = "")
+@Api(tags = "规则扫描控制器",description = "规则扫描控制器")
 public class ScanRulesController extends BaseController<ScanRulesBiz, ScanRules, String> {
 
 

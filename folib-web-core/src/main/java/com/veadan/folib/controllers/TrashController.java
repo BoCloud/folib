@@ -29,7 +29,7 @@ import org.springframework.web.bind.annotation.*;
  */
 @Controller
 @RequestMapping("/api/trash")
-@Api(value = "/api/trash")
+@Api(description = "垃圾管理控制器",tags = "垃圾管理控制器")
 public class TrashController
         extends BaseController
 {

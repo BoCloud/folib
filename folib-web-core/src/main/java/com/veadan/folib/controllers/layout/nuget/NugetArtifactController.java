@@ -52,6 +52,7 @@ import com.veadan.folib.storage.metadata.nuget.rss.PackageFeed;
 import com.veadan.folib.storage.repository.Repository;
 import com.veadan.folib.web.LayoutRequestMapping;
 import com.veadan.folib.web.RepositoryMapping;
+import io.swagger.annotations.*;
 import org.springframework.core.io.InputStreamResource;
 import org.springframework.core.io.Resource;
 import org.springframework.http.HttpHeaders;
@@ -70,11 +71,6 @@ import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 import org.springframework.web.multipart.MultipartFile;
 
-import io.swagger.annotations.ApiOperation;
-import io.swagger.annotations.ApiParam;
-import io.swagger.annotations.ApiResponse;
-import io.swagger.annotations.ApiResponses;
-
 /**
  * This Controller used to handle Nuget requests.
  * 
@@ -83,6 +79,7 @@ import io.swagger.annotations.ApiResponses;
  */
 @RestController
 @LayoutRequestMapping(NugetArtifactCoordinates.LAYOUT_NAME)
+@Api(description = "Nuget坐标控制器",tags = "Nuget坐标控制器")
 public class NugetArtifactController
         extends BaseArtifactController
 {

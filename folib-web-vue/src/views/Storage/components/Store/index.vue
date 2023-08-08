@@ -225,7 +225,7 @@
                       </a-menu-item>
 
                       <a-menu-item key="6"
-                        v-if="currentTreeNode && currentTreeNode.type === 'file' && currentFileDetial && currentFileDetial.artifact">
+                        v-if="folibRepository.layout !== 'Docker' && currentTreeNode && currentTreeNode.type === 'file' && currentFileDetial && currentFileDetial.artifact">
                         <a-icon type="download" />下载
                       </a-menu-item>
                     </a-menu>
@@ -332,7 +332,7 @@
                       </a-menu-item>
 
                       <a-menu-item key="6"
-                        v-if="currentTreeNode && currentTreeNode.type === 'file' && currentFileDetial && currentFileDetial.artifact">
+                        v-if="folibRepository.layout !== 'Docker' && currentTreeNode && currentTreeNode.type === 'file' && currentFileDetial && currentFileDetial.artifact">
                         <a-icon type="download" />下载
                       </a-menu-item>
                     </a-menu>
@@ -360,7 +360,7 @@
           <hr class="my-25" />
           <BaseData ref="BaseData" :currentTreeNode="currentTreeNode" :repositoryType="repositoryType"
             :currentFileDetial="currentFileDetial" :successMsg="successMsg" :folibRepository="folibRepository"
-            @metadataEditHandler="metadataEditHandler" @metadataHandler="metadataHandler" />
+            @metadataEditHandler="metadataEditHandler" @metadataHandler="metadataHandler" @setCurrentFileDetial="setCurrentFileDetial"/>
         </a-card>
       </a-col>
     </a-row>
@@ -2003,7 +2003,14 @@ export default {
       {
         this.uploadType = 2
       }
-    }
+    },
+    setCurrentFileDetial(currentFileDetial) {
+      if (currentFileDetial) {
+        this.currentFileDetial = currentFileDetial
+        this.currentManifest = currentFileDetial.manifestConfig
+        this.$forceUpdate()
+      }
+    },
   }
 }
 </script>

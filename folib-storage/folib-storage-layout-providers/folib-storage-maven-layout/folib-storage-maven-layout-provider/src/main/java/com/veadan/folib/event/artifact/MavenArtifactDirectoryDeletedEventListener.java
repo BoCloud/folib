@@ -1,12 +1,11 @@
 package com.veadan.folib.event.artifact;
 
-import com.veadan.folib.providers.io.RepositoryFiles;
+import com.veadan.folib.event.AsyncEventListener;
 import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.providers.io.RepositoryPathResolver;
 import com.veadan.folib.providers.layout.Maven2LayoutProvider;
 import com.veadan.folib.storage.repository.Repository;
 import org.apache.commons.lang3.StringUtils;
-import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
 
 import javax.inject.Inject;
@@ -23,7 +22,7 @@ public class MavenArtifactDirectoryDeletedEventListener
     @Inject
     private RepositoryPathResolver repositoryPathResolver;
 
-    @EventListener
+    @AsyncEventListener
     public void handle(final ArtifactEvent<RepositoryPath> event) {
         final Repository repository = getRepository(event);
 

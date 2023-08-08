@@ -3,10 +3,10 @@ package com.veadan.folib.eventlistener.scanner;
 import cn.hutool.core.io.FileTypeUtil;
 import cn.hutool.core.io.FileUtil;
 import cn.hutool.core.io.IoUtil;
-import com.alibaba.fastjson.JSON;
 import com.google.common.collect.Sets;
 import com.veadan.folib.cloud.storage.s3fs.S3Path;
 import com.veadan.folib.components.artifact.ArtifactComponent;
+import com.veadan.folib.components.layout.DockerComponent;
 import com.veadan.folib.domain.Artifact;
 import com.veadan.folib.enums.SafeLevelEnum;
 import com.veadan.folib.event.AsyncEventListener;
@@ -15,7 +15,6 @@ import com.veadan.folib.event.artifact.ArtifactEventTypeEnum;
 import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.providers.io.RepositoryPathResolver;
 import com.veadan.folib.providers.layout.DockerFileSystem;
-import com.veadan.folib.schema2.ImageManifest;
 import com.veadan.folib.schema2.LayerManifest;
 import com.veadan.folib.services.ArtifactService;
 import com.veadan.folib.services.DictService;
@@ -34,7 +33,6 @@ import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 
 import javax.inject.Inject;
 import java.io.*;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
@@ -59,6 +57,9 @@ public class ArtifactEventScannerListener {
 
     @Inject
     private ArtifactComponent artifactComponent;
+
+    @Inject
+    private DockerComponent dockerComponent;
 
     @Value("${folib.temp}")
     private String tempPath;
@@ -112,7 +113,7 @@ public class ArtifactEventScannerListener {
             File tempFile = new File(filePath);
             FileUtil.writeFromStream(inputStream, tempFile, true);
             //获取图层中的digest列表
-            List<String> digestList = getImageManifest(tempFile);
+            List<String> digestList = getImageManifest(repositoryPath);
             if (CollectionUtils.isNotEmpty(digestList)) {
                 String prefix = versionKey;
                 prefix = prefix.substring(0, prefix.lastIndexOf("/"));
@@ -154,7 +155,7 @@ public class ArtifactEventScannerListener {
         //版本目录
         File parentFile = file.getParentFile();
         //获取图层中的digest列表
-        List<String> digestList = getImageManifest(file);
+        List<String> digestList = getImageManifest(repositoryPath);
         //存放解压文件的目录路径
         String tempPath = parentFile.getPath() + File.separator + "temp";
         if (CollectionUtils.isNotEmpty(digestList)) {
@@ -168,15 +169,8 @@ public class ArtifactEventScannerListener {
         }
     }
 
-    private List<String> getImageManifest(File file) {
-        String manifestString = FileUtil.readString(file.getAbsolutePath(), StandardCharsets.UTF_8);
-        try {
-            ImageManifest manifest = JSON.parseObject(manifestString, ImageManifest.class);
-            return manifest.getLayers().stream().map(LayerManifest::getDigest).collect(Collectors.toList());
-        } catch (Exception ex) {
-            log.error("getImageManifest error file：{}，error：{}", file.getAbsolutePath(), ExceptionUtils.getStackTrace(ex));
-            throw new RuntimeException(file.getAbsolutePath() + " get image manifest error");
-        }
+    private List<String> getImageManifest(RepositoryPath repositoryPath) {
+        return Optional.ofNullable(dockerComponent.getImageLayers(repositoryPath)).orElse(Collections.emptyList()).stream().map(LayerManifest::getDigest).distinct().collect(Collectors.toList());
     }
 
     /**

@@ -34,7 +34,7 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 @RestController
 @PreAuthorize("hasAuthority('ADMIN')")
 @RequestMapping(value = "/api/configuration/cors")
-@Api(value = "/api/configuration/cors")
+@Api(description = "CORS跨域管理",tags = "CORS跨域管理")
 public class CorsConfigurationController
         extends BaseController
 {

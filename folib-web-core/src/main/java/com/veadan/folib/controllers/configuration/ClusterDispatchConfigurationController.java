@@ -33,7 +33,7 @@ import java.util.Map;
  */
 @RestController
 @RequestMapping("/api/configuration/folib/dispatch")
-@Api(value = "/api/configuration/folib/dispatch")
+@Api(description = "配置分发",tags = "配置分发")
 public class ClusterDispatchConfigurationController extends BaseConfigurationController {
 
     @Autowired

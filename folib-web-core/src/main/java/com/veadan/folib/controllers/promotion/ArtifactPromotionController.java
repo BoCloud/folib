@@ -32,7 +32,7 @@ import java.util.List;
  */
 @RestController
 @RequestMapping("/api/artifact/folib/promotion")
-@Api(value = "/api/artifact/folib/promotion")
+@Api(description = "制品文件管理",tags = "制品文件管理")
 @Slf4j
 public class ArtifactPromotionController extends BaseArtifactController {
 

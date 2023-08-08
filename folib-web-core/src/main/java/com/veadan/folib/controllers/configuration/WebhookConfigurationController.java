@@ -24,7 +24,7 @@ import java.util.List;
 @RestController
 @PreAuthorize("hasAuthority('ADMIN')")
 @RequestMapping("/api/configuration/folib/webhook")
-@Api(value = "/api/configuration/folib/webhook")
+@Api(description = "webhook管理",tags = "webhook管理")
 public class WebhookConfigurationController extends BaseController {
 
     @Inject
