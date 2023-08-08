@@ -1,9 +1,14 @@
 package com.veadan.folib.controllers.layout.cocoapods;
 
+import cn.hutool.core.io.FileUtil;
 import com.veadan.folib.controllers.BaseController;
 import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.storage.repository.Repository;
 import com.veadan.folib.web.RepositoryMapping;
+import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
+import org.apache.commons.compress.archivers.tar.TarArchiveOutputStream;
+import org.apache.commons.compress.compressors.gzip.GzipCompressorOutputStream;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -11,14 +16,10 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import javax.servlet.ServletOutputStream;
+import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import java.io.ByteArrayOutputStream;
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
 import java.nio.file.Path;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipOutputStream;
 
 /***
  *
@@ -28,51 +29,49 @@ import java.util.zip.ZipOutputStream;
  * @since x.x.x
  */
 @RestController
-@RequestMapping("/api/cocoapods/index")
+@RequestMapping("/api/cocoapods")
 public class CocoapodsIndexController
         extends BaseController {
 
     //    @PreAuthorize("hasAuthority('MANAGEMENT_REBUILD_INDEXES')")
-    @GetMapping(value = "/{storageId}/{repositoryId}")
-    public ResponseEntity repoArtIndex(@RepositoryMapping Repository repository, HttpServletResponse response) {
+    @GetMapping(value = "/{storageId}/{repositoryId}/index/fetchIndex")
+    public ResponseEntity repoArtIndex(@RepositoryMapping Repository repository, HttpServletRequest request, HttpServletResponse response) {
         final String storageId = repository.getStorage().getId();
         final String repositoryId = repository.getId();
         final RepositoryPath repositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, ".specs/");
         final Path repositoryPathTarget = repositoryPath.getTarget();
-        
-        ByteArrayOutputStream byteArrayOutputStream = null;
-        ZipOutputStream zipOutputStream = null;
+
+        ServletOutputStream servletOutputStream = null;
+        TarArchiveOutputStream tarArchiveOutputStream = null;
         try 
         {
-            byteArrayOutputStream = new ByteArrayOutputStream();
-            zipOutputStream = new ZipOutputStream(byteArrayOutputStream);
+            response.setHeader("Content-Disposition", "attachment;filename=file.tar.gz");
+            response.setContentType("application/x-gzip");
+            
             final String indexFolder = repositoryPathTarget.toUri().getPath();
-            zipFolder(indexFolder, indexFolder, zipOutputStream);
+            servletOutputStream = response.getOutputStream();
+            tarArchiveOutputStream = new TarArchiveOutputStream(new GzipCompressorOutputStream(servletOutputStream));
+            tarArchiveOutputStream.setLongFileMode(TarArchiveOutputStream.LONGFILE_GNU);
+            tarGzFolder(indexFolder, indexFolder, tarArchiveOutputStream);
+            servletOutputStream.flush();
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
         }
         finally {
             try {
-                byteArrayOutputStream.close();
-                zipOutputStream.close();
+                if (null != tarArchiveOutputStream)
+                { tarArchiveOutputStream.close(); }
+                if (null != servletOutputStream)
+                { servletOutputStream.close(); }
             } catch (Exception e) {
                 logger.error("关闭zip文件流失败", e);
             }
         }
 
-        try {
-            response.setHeader("Content-Disposition", "attachment;filename=file.zip");
-            response.setContentType("application/octet-stream");
-            ServletOutputStream servletOutputStream = response.getOutputStream();
-            servletOutputStream.write(byteArrayOutputStream.toByteArray());
-        } catch (IOException e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
-        }
-        
         return new ResponseEntity<>("ok", HttpStatus.OK);
     }
 
-    private void zipFolder(String rootPath, String srcFolder, ZipOutputStream zip) throws Exception 
+    private static void tarGzFolder(String rootPath, String srcFolder, TarArchiveOutputStream archiveOutputStream) throws Exception 
     {
         final File folder = new File(srcFolder);
         //遍历文件夹下所有的文件和文件夹
@@ -84,25 +83,21 @@ public class CocoapodsIndexController
             {
                 //如果是文件夹,递归压缩
                 if (file.isDirectory()) {
-                    zipFolder(rootPath, file.getAbsolutePath(), zip);
+                    tarGzFolder(rootPath, file.getAbsolutePath(), archiveOutputStream);
                     continue;
                 }
     
-                //打开文件输入流
-                final FileInputStream fi = new FileInputStream(file);
-    
-                //设置ZIP条目,并打包文件
-                final ZipEntry zipEntry = new ZipEntry(file.getAbsolutePath().replace(rootPath, ""));
-                zip.putNextEntry(zipEntry);
-                System.out.println(zipEntry.getName());
-    
-                final byte[] bytes = new byte[1024];
-                int length;
-                while((length = fi.read(bytes)) >= 0) {
-                    zip.write(bytes, 0, length);
+                if (file.getName().endsWith(".podspec"))
+                {
+                    final byte[] bytes = FileUtil.readBytes(file);
+                    final TarArchiveEntry entry = new TarArchiveEntry(file.getAbsolutePath().replace(rootPath, StringUtils.EMPTY));
+                    entry.setSize(bytes.length);
+                    archiveOutputStream.putArchiveEntry(entry);
+                    archiveOutputStream.write(bytes);
+                    archiveOutputStream.closeArchiveEntry();
                 }
-                fi.close();
             }
         }
     }
+
 }
