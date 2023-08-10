@@ -1,9 +1,10 @@
 package com.veadan.folib.controllers.layout.cocoapods;
 
 import cn.hutool.core.io.FileUtil;
-import cn.hutool.core.util.StrUtil;
 import com.veadan.folib.artifact.coordinates.CocoapodsArtifactCoordinates;
 import com.veadan.folib.controllers.BaseArtifactController;
+import com.veadan.folib.domain.ArtifactEntity;
+import com.veadan.folib.providers.io.RepositoryFiles;
 import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.storage.repository.Repository;
 import com.veadan.folib.util.CocoapodsArtifactUtil;
@@ -59,7 +60,13 @@ public class CocoapodsArtifactController extends BaseArtifactController
             {
                 final CocoapodsArtifactUtil.PodSpec podSpec = CocoapodsArtifactUtil.resolvePodSpec(podspecSourceContent);
                 final ByteArrayInputStream byteArrayInputStream = new ByteArrayInputStream(podspecSourceContent.getBytes(StandardCharsets.UTF_8));
+                final String uri = repositoryPath.toUri().getPath();
                 final RepositoryPath podSpecRepositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, String.format(".specs/%s/%s/%s.podspec", podSpec.getName(), podSpec.getVersion(), podSpec.getName()));
+                final ArtifactEntity artifactEntity = new ArtifactEntity(repositoryPath.getStorageId(), repositoryPath.getRepositoryId(), 
+                        RepositoryFiles.readCoordinates(podSpecRepositoryPath));
+                final CocoapodsArtifactCoordinates artifactCoordinates = (CocoapodsArtifactCoordinates) artifactEntity.getArtifactCoordinates();
+                artifactCoordinates.setPath(uri);
+                podSpecRepositoryPath.setArtifact(artifactEntity);
                 artifactManagementService.validateAndStore(podSpecRepositoryPath, byteArrayInputStream);
             }
 
