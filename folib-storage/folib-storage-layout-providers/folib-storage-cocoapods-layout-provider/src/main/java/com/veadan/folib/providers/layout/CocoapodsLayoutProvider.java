@@ -7,7 +7,6 @@ import com.veadan.folib.repository.CocoapodsRepositoryFeatures;
 import com.veadan.folib.repository.CocoapodsRepositoryManagementStrategy;
 import com.veadan.folib.repository.RepositoryManagementStrategy;
 import org.apache.commons.io.FilenameUtils;
-import org.checkerframework.checker.units.qual.C;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
@@ -71,6 +70,11 @@ public class CocoapodsLayoutProvider extends AbstractLayoutProvider<CocoapodsArt
         final String relativizePath = RepositoryFiles.relativizePath(repositoryPath);
         final String fileName = FilenameUtils.getName(relativizePath);
 
-        return new CocoapodsArtifactCoordinates(relativizePath);
+        if (null != repositoryPath.getArtifactEntry())
+        {
+            final CocoapodsArtifactCoordinates artifactCoordinates = (CocoapodsArtifactCoordinates) repositoryPath.getArtifactEntry().getArtifactCoordinates();
+            return new CocoapodsArtifactCoordinates(relativizePath, artifactCoordinates.getPath()); }
+        else
+        { return new CocoapodsArtifactCoordinates(relativizePath); }
     }
 }
