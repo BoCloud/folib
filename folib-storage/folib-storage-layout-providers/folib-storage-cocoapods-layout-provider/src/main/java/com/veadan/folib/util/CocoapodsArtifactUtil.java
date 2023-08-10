@@ -111,12 +111,9 @@ public class CocoapodsArtifactUtil
 
                     if (entryName.endsWith(".podspec")) {
                         final String podspecContent = new String(content);
-                        final Matcher matcher = PODSPEC_HEAD_LINE_PATTERN.matcher(podspecContent);
-                        if (matcher.find()) {
-                            final String headVar = matcher.group(1);
-                            final String newSourceInfo = String.format("{ :http => \"%s\", :type => 'tgz'}", newSourceUrl);
-                            return podspecContent.replaceAll("(" + headVar + "\\.source\\s+?=\\s+?).*", String.format("$1%s", newSourceInfo));
-                        }
+                        final String newPodspecContent = replaceNewSourceUrlOfPodspecContent(podspecContent, newSourceUrl);
+                        if (null != newPodspecContent) 
+                        { return newPodspecContent; }
                         else
                         { throw new RuntimeException("未找到podspec文件头变量名称"); }
                     }
@@ -130,6 +127,25 @@ public class CocoapodsArtifactUtil
             e.printStackTrace();
             return null;
         }
+    }
+
+    /**
+     * 替换Podspec内容中的SourceUrl为newSourceUrl
+     * @param podspecContent
+     * @param newSourceUrl
+     * @return
+     * @since x.x.x
+     */
+    public static String replaceNewSourceUrlOfPodspecContent(String podspecContent, String newSourceUrl)
+    {
+        final Matcher matcher = PODSPEC_HEAD_LINE_PATTERN.matcher(podspecContent);
+        if (matcher.find()) {
+            final String headVar = matcher.group(1);
+            final String newSourceInfo = String.format("{ :http => \"%s\", :type => 'tgz'}", newSourceUrl);
+            return podspecContent.replaceAll("(" + headVar + "\\.source\\s+?=\\s+?).*", String.format("$1%s", newSourceInfo));
+        }
+        
+        return null;
     }
 
     public static String fetchPodspecSourceContent(InputStream inputStream)
