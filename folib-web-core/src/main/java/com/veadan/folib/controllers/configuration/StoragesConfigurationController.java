@@ -26,6 +26,7 @@ import com.veadan.folib.domain.RepositoryPermission;
 import com.veadan.folib.domain.RepositoryUser;
 import com.veadan.folib.domain.User;
 import com.veadan.folib.dto.ArtifactDispatchRepositoryDto;
+import com.veadan.folib.enums.ArtifactoryRepositoryTypeEnum;
 import com.veadan.folib.enums.NotifyScopesTypeEnum;
 import com.veadan.folib.enums.RepositoryScopeEnum;
 import com.veadan.folib.event.repository.RepositoryEventListenerRegistry;
@@ -410,7 +411,7 @@ public class StoragesConfigurationController
         StorageTreeForm dispatchTreeForm = StorageTreeForm.builder()
                 .id(dispatchEnName)
                 .key(dispatchEnName)
-                .name(dispatchEnName).build();
+                .name(dispatchEnName).artifactoryRepositoryType(ArtifactoryRepositoryTypeEnum.INNER.getType()).build();
         if (CollectionUtil.isNotEmpty(storages)) {
             boolean filterByType = StringUtils.isNotBlank(type);
             boolean filterByLayout = StringUtils.isNotBlank(layout);
@@ -423,7 +424,7 @@ public class StoragesConfigurationController
                 StorageTreeForm storageTreeForm = StorageTreeForm.builder()
                         .id(storage.getId())
                         .key(dispatchEnName + "," + storage.getId())
-                        .name(storage.getId()).build();
+                        .name(storage.getId()).artifactoryRepositoryType(ArtifactoryRepositoryTypeEnum.INNER.getType()).build();
                 repositories = new LinkedList<Repository>(storage.getRepositories().values());
                 repositories = repositories.stream().distinct()
                         .filter(r -> !filterByType || r.getType().equalsIgnoreCase(type))
@@ -440,6 +441,7 @@ public class StoragesConfigurationController
                                 .name(repository.getId())
                                 .type(repository.getType())
                                 .layout(repository.getLayout())
+                                .artifactoryRepositoryType(ArtifactoryRepositoryTypeEnum.INNER.getType())
                                 .build()).collect(Collectors.toList()));
                 storageTreeForms.add(storageTreeForm);
             }

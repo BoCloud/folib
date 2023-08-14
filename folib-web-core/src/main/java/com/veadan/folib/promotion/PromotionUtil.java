@@ -29,6 +29,7 @@ import com.veadan.folib.storage.repository.Repository;
 import com.veadan.folib.util.RepositoryPathUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.glassfish.jersey.media.multipart.Boundary;
@@ -436,7 +437,10 @@ public class PromotionUtil {
         String absolutePath = promotionArtifactDto.getPath();
         String tempStr = promotionArtifactDto.getSrcStorageId() + File.separator + promotionArtifactDto.getSrcRepostoryId() + File.separator;
         int fPathIndex = absolutePath.lastIndexOf(tempStr);
-        String relativizePath = absolutePath.substring(fPathIndex).replace(tempStr, "");
+        String relativizePath = absolutePath;
+        if (fPathIndex != -1) {
+            relativizePath = absolutePath.substring(fPathIndex).replace(tempStr, "");
+        }
         RepositoryPath srcRepositoryPath = repositoryPathResolver.resolve(promotionArtifactDto.getSrcStorageId(), promotionArtifactDto.getSrcRepostoryId(), relativizePath);
         List<File> list = RepositoryPathUtil.getNFSFiles(promotionArtifactDto.getPath());
         if (DockerLayoutProvider.ALIAS.equalsIgnoreCase(srcRepositoryPath.getRepository().getLayout())) {
@@ -764,6 +768,9 @@ public class PromotionUtil {
     public String upload(String url, PromotionNodeOptionDto uploadDto) throws Exception {
         Response response = null;
         try {
+            if (Objects.isNull(uploadDto) || MapUtils.isEmpty(uploadDto.getPathMap())) {
+                return "";
+            }
             FormDataMultiPart part = new FormDataMultiPart();
             part.field("storageId", uploadDto.getStorageId());
             part.field("repostoryId", uploadDto.getRepostoryId());

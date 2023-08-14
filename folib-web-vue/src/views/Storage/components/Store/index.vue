@@ -602,6 +602,34 @@
       <a-form :form="operationForm" ref="operationForm" layout="vertical" @submit.prevent="handleOperationSubmit">
         <a-row :gutter="[24]">
           <a-col :span="24">
+            <a-form-item class="tags-field mb-10" label="节点类型" :colon="true" v-if="this.folibRepository.layout === 'Raw'">
+              <a-radio-group v-decorator="[
+                'type',
+                {
+                  rules: [{ required: true, message: '请选择节点类型' }],
+                },
+              ]"
+              @change="typeChange">
+                <a-radio :value="1">
+                  <span>内部节点</span>
+                  <a-popover placement="topLeft">
+                    <template slot="content">
+                      <p class="mb-0">{{ instanceName + '制品库节点'}}</p>
+                    </template>
+                    <a class="ml-5"><a-icon type="question-circle" theme="filled" /></a>
+                  </a-popover>
+                </a-radio>
+                <a-radio :value="2">
+                  <span>外部节点</span>
+                  <a-popover placement="topLeft">
+                    <template slot="content">
+                      <p class="mb-0">其他类型制品库节点</p>
+                    </template>
+                    <a class="ml-5"><a-icon type="question-circle" theme="filled" /></a>
+                  </a-popover>
+                </a-radio>
+              </a-radio-group>
+            </a-form-item>
             <a-form-item class="tags-field mb-10" label="目标仓库" :colon="false" ref="targetRepositories"
               prop="targetRepositories">
               <div class="selectdrop">
@@ -623,7 +651,27 @@
   text: 'key',
   children: 'children'
 }" allText="全选" noDataText="暂无数据" dropdownClassName="customer-multiple-cascader"
-                  :treeData="repositories" @handleCheckboxChange="handleCheckboxChange" />
+                  :treeData="repositories" @handleCheckboxChange="handleCheckboxChange" v-if="artifactoryType === 1" />
+
+                <gb-ant-select-two-cascader allowClear style="width:100%;" placeholder="请选择目标仓库" v-decorator="[
+                'targetRepositories',
+                {
+                  initialValue: [],
+                  rules: [
+                    {
+                      required: true,
+                      message: '请选择目标仓库',
+                      type: 'array',
+                    },
+                  ],
+                },
+              ]" :selectOptionsConfig="{
+  key: 'key',
+  value: 'key',
+  text: 'key',
+  children: 'children'
+}" allText="全选" noDataText="暂无数据" dropdownClassName="customer-multiple-cascader"
+                  :treeData="externalNodeRepositories"  v-if="artifactoryType === 2" />
               </div>
             </a-form-item>
             <a-form-item class="tags-field mb-10" v-if="!custom" label="目标目录" prop="path" :colon="false">
@@ -693,6 +741,7 @@ import {
 } from '@/api/artifact'
 import { getMetadataConfiguration } from '@/api/settings'
 import { hasRole, isAdmin, isAnonymous, isLogin } from '@/utils/permission'
+import { getExternalNodeRepositories } from "@/api/externalNode"
 
 import SearchBox from '@/components/Tools/SearchBox'
 import zhCN from 'ant-design-vue/es/locale/zh_CN'
@@ -869,7 +918,10 @@ export default {
       enablUploadedLayout: ['Raw', 'php', 'Maven 2', 'npm'],
       permissions: [],
       mavenUploadVisible: false,
-      uploadType: 1
+      uploadType: 1,
+      instanceName: '',
+      externalNodeRepositories: [],
+      artifactoryType: 1
     }
   },
   created () {
@@ -877,6 +929,7 @@ export default {
   },
   methods: {
     initData () {
+      this.instanceName = sessionStorage.getItem("instanceName")
       this.createData()
       this.getBrowse()
       if (isLogin())
@@ -1452,7 +1505,8 @@ export default {
         if (this.$refs.operationForm)
         {
           this.operationForm.setFieldsValue({
-            path: this.currentTreeNode.artifactPath
+            path: this.currentTreeNode.artifactPath,
+            type: 1,
           })
         }
       })
@@ -1487,6 +1541,7 @@ export default {
           this.folibRepository.id,
           this.folibRepository.policy
         )
+        this.getExternalNodeRepositories()
         this.operationTitle = '分发'
         this.customTitle = '分发到指定目录'
         // 下载  
@@ -1500,6 +1555,16 @@ export default {
 
       }
     },
+    getArtifactoryRepositoryType(key) {
+      let artifactoryRepositoryType = ''
+      this.externalNodeRepositories.forEach(node => {
+        let arr = node.children.filter(i => i.key === key)
+        if(arr && arr.length > 0){
+          artifactoryRepositoryType = arr[0].artifactoryRepositoryType
+        }
+      })
+      return artifactoryRepositoryType
+    },
     handleOperationSubmit (e) {
       e.preventDefault()
       this.operationForm.validateFields((err, values) => {
@@ -1512,21 +1577,31 @@ export default {
             let arrayLength = split.length
             if (this.operationTitle.indexOf('分发') !== -1)
             {
-              let dispatchClusterEnName = split[0]
-              let dispatchTargetStorageId = split[1]
-              let dispatchTargetReopsitoryId = ''
-              if (arrayLength === 3)
-              {
-                dispatchTargetReopsitoryId = split[2]
+              let json = {}
+              if (this.artifactoryType === 1) {
+                let dispatchClusterEnName = split[0]
+                let dispatchTargetStorageId = split[1]
+                let dispatchTargetReopsitoryId = ''
+                if (arrayLength === 3)
+                {
+                  dispatchTargetReopsitoryId = split[2]
+                }
+                json = {
+                  dispatchClusterEnName: dispatchClusterEnName,
+                  targetStorageId: dispatchTargetStorageId,
+                  targetRepositoryId: dispatchTargetReopsitoryId
+                }
+                json.artifactoryRepositoryType = 'inner'
+              } else {
+                let dispatchClusterEnName = split[0]
+                let dispatchTargetReopsitoryId = split[1]
+                json = {
+                  dispatchClusterEnName: dispatchClusterEnName,
+                  targetRepositoryId: dispatchTargetReopsitoryId
+                }
+                json.artifactoryRepositoryType = this.getArtifactoryRepositoryType(item)
               }
-              console.log(
-                dispatchTargetStorageId + ' , ' + dispatchTargetReopsitoryId
-              )
-              targetDispatchRepositoryList.push({
-                dispatchClusterEnName: dispatchClusterEnName,
-                targetStorageId: dispatchTargetStorageId,
-                targetRepositoryId: dispatchTargetReopsitoryId
-              })
+              targetDispatchRepositoryList.push(json)
             } else
             {
               targetRepositoyList.push({
@@ -2011,6 +2086,26 @@ export default {
         this.$forceUpdate()
       }
     },
+    getExternalNodeRepositories() {
+      getExternalNodeRepositories().then(res => {
+        if (res) {
+          res.forEach(node => {
+            let json = {key: node.key, artifactoryRepositoryType: '', children: [], }
+            node.repositories.forEach(repo => {
+              json.children.push({key: repo.key, artifactoryRepositoryType: repo.artifactoryRepositoryType, children: null})
+            })
+            this.externalNodeRepositories.push(json)
+          })
+        }
+      }).finally(() => { 
+      })
+    },
+    typeChange(event) {
+      this.artifactoryType = event.target.value
+      this.operationForm.setFieldsValue({
+        targetRepositories: [],
+      })
+    }
   }
 }
 </script>

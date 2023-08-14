@@ -17,6 +17,11 @@ public class TargetDispatchRepositoryDto {
     private String dispatchClusterEnName;
 
     /**
+     * 制品库类型
+     */
+    private String artifactoryRepositoryType;
+
+    /**
      * 目标存储id
      */
     private String targetStorageId;

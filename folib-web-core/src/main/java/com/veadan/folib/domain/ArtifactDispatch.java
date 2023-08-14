@@ -34,7 +34,7 @@ public class ArtifactDispatch {
     /**
      * 目标仓库集合
      */
-    List<TargetDispatchRepositoryDto> targetDispatchRepositoryList;
+    private List<TargetDispatchRepositoryDto> targetDispatchRepositoryList;
 
     /**
      * 制品uri

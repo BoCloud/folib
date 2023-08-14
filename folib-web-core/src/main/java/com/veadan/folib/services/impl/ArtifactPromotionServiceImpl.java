@@ -5,12 +5,11 @@ import cn.hutool.core.lang.UUID;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
 import com.veadan.folib.components.artifact.ArtifactComponent;
+import com.veadan.folib.components.promotion.ArtifactPromotionProvider;
+import com.veadan.folib.components.promotion.ArtifactPromotionProviderRegistry;
 import com.veadan.folib.components.security.SecurityComponent;
 import com.veadan.folib.domain.*;
-import com.veadan.folib.dto.ArtifactDto;
-import com.veadan.folib.dto.PromotionArtifactDto;
-import com.veadan.folib.dto.PromotionNodeOptionDto;
-import com.veadan.folib.dto.TargetRepositoyDto;
+import com.veadan.folib.dto.*;
 import com.veadan.folib.entity.Dict;
 import com.veadan.folib.promotion.ArtifactUploadTask;
 import com.veadan.folib.promotion.PromotionUtil;
@@ -36,6 +35,7 @@ import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
+import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Lazy;
@@ -65,6 +65,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
 import java.util.concurrent.FutureTask;
+import java.util.stream.Collectors;
 
 /**
  * @author qijianping
@@ -106,6 +107,9 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
 
     @Inject
     private ArtifactRepository artifactRepository;
+
+    @Inject
+    private ArtifactPromotionProviderRegistry artifactPromotionProviderRegistry;
 
     @Value("${folib.temp}")
     private String tempPath;
@@ -521,7 +525,14 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
     @Override
     public ResponseEntity artifactDispatch(ArtifactDispatch artifactDispatch) {
         log.info("start artifact dispatch");
-        promotionUtil.executeHandleDispatch(artifactDispatch);
+        Map<String, List<TargetDispatchRepositoryDto>> groupByMap = artifactDispatch.getTargetDispatchRepositoryList().stream().collect(Collectors.groupingBy(TargetDispatchRepositoryDto::getArtifactoryRepositoryType));
+        for(Map.Entry<String, List<TargetDispatchRepositoryDto>> item : groupByMap.entrySet()) {
+            ArtifactPromotionProvider artifactPromotionProvider = artifactPromotionProviderRegistry.getProvider(item.getKey());
+            ArtifactDispatch itemArtifactDispatch = new ArtifactDispatch();
+            BeanUtils.copyProperties(artifactDispatch, itemArtifactDispatch);
+            itemArtifactDispatch.setTargetDispatchRepositoryList(item.getValue());
+            artifactPromotionProvider.dispatch(itemArtifactDispatch);
+        }
         return ResponseEntity.ok("ok");
     }
 

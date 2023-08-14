@@ -11,3 +11,4 @@ com.veadan.folib.validation.users.UniqueUsernameValidator
 com.veadan.folib.validation.UniqueRoleNameValidator
 
 com.veadan.folib.validation.cron.CronTaskConfigurationFormValidator
+com.veadan.folib.validation.externalnode.ArtifactoryRepositoryEnumValueValidator
