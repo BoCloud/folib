@@ -3,7 +3,7 @@
 
 <mapper namespace="com.veadan.folib.mapper.LicenseMapper">
 
-    <resultMap id="dictResultMap" type="com.veadan.folib.entity.License">
+    <resultMap id="licenseResultMap" type="com.veadan.folib.entity.License">
         <id property="id" column="id"/>
         <result property="createTime" column="create_time"/>
         <result property="licenseId" column="license_id"/>

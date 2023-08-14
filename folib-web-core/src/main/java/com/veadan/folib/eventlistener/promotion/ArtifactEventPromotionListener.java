@@ -2,17 +2,16 @@ package com.veadan.folib.eventlistener.promotion;
 
 import com.alibaba.fastjson.JSONObject;
 import com.veadan.folib.components.artifact.ArtifactComponent;
+import com.veadan.folib.components.promotion.ArtifactPromotionProvider;
+import com.veadan.folib.components.promotion.ArtifactPromotionProviderRegistry;
 import com.veadan.folib.configuration.UnionRepositoryConfiguration;
 import com.veadan.folib.configuration.UnionTargetRepositoryConfiguration;
 import com.veadan.folib.domain.Artifact;
-import com.veadan.folib.domain.ArtifactDispatch;
-import com.veadan.folib.dto.TargetDispatchRepositoryDto;
 import com.veadan.folib.enums.PromotionStatusEnum;
 import com.veadan.folib.enums.UnionRepositorySyncTypeEnum;
 import com.veadan.folib.event.AsyncEventListener;
 import com.veadan.folib.event.artifact.ArtifactEvent;
 import com.veadan.folib.event.artifact.ArtifactEventTypeEnum;
-import com.veadan.folib.promotion.PromotionUtil;
 import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.providers.layout.DockerFileSystem;
 import com.veadan.folib.scanner.entity.ScanRules;
@@ -21,13 +20,15 @@ import com.veadan.folib.storage.repository.Repository;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 import tk.mybatis.mapper.entity.Example;
 
 import javax.inject.Inject;
-import java.util.*;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Objects;
+import java.util.Set;
 import java.util.regex.Pattern;
 
 /**
@@ -38,8 +39,8 @@ import java.util.regex.Pattern;
 @Component
 public class ArtifactEventPromotionListener {
 
-    @Autowired
-    private PromotionUtil promotionUtil;
+    @Inject
+    private ArtifactPromotionProviderRegistry artifactPromotionProviderRegistry;
 
     @Inject
     private ArtifactComponent artifactComponent;
@@ -122,22 +123,17 @@ public class ArtifactEventPromotionListener {
                         //加入晋级
                         log.info("存储空间：{} 仓库：{} 制品：{} 满足初步晋级条件，晋级状态为待晋级", storageId, repositoryId, artifactPath);
                         for (UnionTargetRepositoryConfiguration unionTargetRepository : unionTargetRepositoryConfigurations) {
-                            artifactComponent.handlerArtifactPromotion(unionTargetRepository.getNode(), artifact, PromotionStatusEnum.WAIT.getStatus());
+                            artifactComponent.handlerArtifactPromotion(unionTargetRepository.getNode(), artifact.getStorageId(), artifact.getRepositoryId(), artifact.getArtifactPath(), PromotionStatusEnum.WAIT.getStatus());
                         }
                     } else {
                         //开始晋级
-                        ArtifactDispatch artifactDispatch = null;
-                        TargetDispatchRepositoryDto targetDispatchRepository = null;
                         for (UnionTargetRepositoryConfiguration unionTargetRepository : unionTargetRepositoryConfigurations) {
                             try {
-                                targetDispatchRepository = TargetDispatchRepositoryDto.builder().dispatchClusterEnName(unionTargetRepository.getNode()).targetStorageId(unionTargetRepository.getStorageId()).targetRepositoryId(unionTargetRepository.getRepositoryId()).build();
-                                artifactDispatch = ArtifactDispatch.builder().srcStorageId(storageId).srcRepositoryId(repositoryId).path(artifactPath)
-                                        .targetDispatchRepositoryList(Collections.singletonList(targetDispatchRepository)).recordStatus(true).build();
-                                log.info("存储空间：{} 仓库：{} 制品：{} 目标节点：{} 目标存储空间：{} 目标仓库：{} 满足晋级条件，开始晋级", storageId, repositoryId, artifactPath, unionTargetRepository.getNode(), unionTargetRepository.getStorageId(), unionTargetRepository.getRepositoryId());
-                                promotionUtil.executeHandleDispatch(artifactDispatch);
+                                ArtifactPromotionProvider artifactPromotionProvider = artifactPromotionProviderRegistry.getProvider(unionTargetRepository.getType());
+                                artifactPromotionProvider.promotion(repositoryPath, artifact.getArtifactPath(), unionTargetRepository);
                             } catch (Exception ex) {
                                 log.error("存储空间：{} 仓库：{} 处理自动晋级，repositoryPath：{} 联邦仓库：{} 错误：{}", storageId, repositoryId, repositoryPath, JSONObject.toJSONString(unionTargetRepository), ExceptionUtils.getStackTrace(ex));
-                                artifactComponent.handlerArtifactPromotion(unionTargetRepository.getNode(), artifact, PromotionStatusEnum.FAIL.getStatus());
+                                artifactComponent.handlerArtifactPromotion(unionTargetRepository.getNode(), artifact.getStorageId(), artifact.getRepositoryId(), artifact.getArtifactPath(), PromotionStatusEnum.FAIL.getStatus());
                             }
                         }
                     }

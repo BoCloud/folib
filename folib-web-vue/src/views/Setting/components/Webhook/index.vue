@@ -328,7 +328,7 @@ export default {
           callBack();
         }
       } else {
-        callBack("请输入正确的URL");
+        callBack("请输入url");
       }
     }
     return {
@@ -375,7 +375,7 @@ export default {
       },
       webhookRules: {
         url: [
-          { required: true, trigger: ['blur', 'change'], validator: acceptUrlValidator },
+          { required: true, trigger: ['blur'], validator: acceptUrlValidator },
           { min: 10, max: 255, message: 'url长度在10到255个字符', trigger: 'blur' },
         ],
         accessToken: [

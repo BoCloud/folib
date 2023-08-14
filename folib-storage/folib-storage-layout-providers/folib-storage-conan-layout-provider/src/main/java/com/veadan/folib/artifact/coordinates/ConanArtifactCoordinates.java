@@ -13,17 +13,18 @@ import javax.xml.bind.annotation.XmlRootElement;
 import java.net.URI;
 
 @NodeEntity(Vertices.CONAN_ARTIFACT_COORDINATES)
-@XmlRootElement(name = "conanArtifactCoordinates")
+@XmlRootElement(name = "ConanArtifactCoordinates")
 @XmlAccessorType(XmlAccessType.NONE)
-@ArtifactCoordinatesLayout(name = "conan", alias = "conan")
+@ArtifactCoordinatesLayout(name = ConanArtifactCoordinates.LAYOUT_NAME, alias = ConanArtifactCoordinates.LAYOUT_ALIAS)
 @Slf4j
 public class ConanArtifactCoordinates extends LayoutArtifactCoordinatesEntity<ConanArtifactCoordinates, ComparableVersion> {
+    public static final String LAYOUT_NAME = "conan";
+    public static final String LAYOUT_ALIAS = LAYOUT_NAME;
     private static final String VERSION = "version";
     private static final String PATH = "path";
     private static final String NAME = "name";
     public static final String DESCRIPTION = "description";
     private static final String EXTENSION = "extension";
-
 
     public ConanArtifactCoordinates() {
         resetCoordinates(NAME);
