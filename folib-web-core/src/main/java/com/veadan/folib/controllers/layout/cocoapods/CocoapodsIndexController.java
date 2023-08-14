@@ -104,7 +104,7 @@ public class CocoapodsIndexController
                     { // 获取到有Pod源代码路径地址则替换
                         final Artifact artifactEntry = repositoryPath.getArtifactEntry();
                         final String path = artifactEntry.getArtifactCoordinates().getPath();
-                        final String newSourceUrl = String.format("%s%s", baseUrl, path);
+                        final String newSourceUrl = String.format("%s/%s%s", baseUrl, "storages", path);
                         final String newPodspecContent = CocoapodsArtifactUtil.replaceNewSourceUrlOfPodspecContent(new String(bytes), newSourceUrl);
                         if (StringUtils.isNotBlank(newPodspecContent))
                         { bytes = newPodspecContent.getBytes(StandardCharsets.UTF_8); }
