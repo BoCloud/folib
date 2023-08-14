@@ -14,14 +14,18 @@ import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RestController;
 
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import java.io.BufferedInputStream;
 import java.io.ByteArrayInputStream;
 import java.nio.charset.StandardCharsets;
@@ -76,5 +80,26 @@ public class CocoapodsArtifactController extends BaseArtifactController
 
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
         }
+    }
+
+    @ApiOperation(value = "Used to retrieve an artifact")
+    @ApiResponses(value = { @ApiResponse(code = 200, message = ""),
+            @ApiResponse(code = 400, message = "An error occurred.") })
+    @PreAuthorize("hasAuthority('ARTIFACTS_RESOLVE')")
+    @GetMapping(value = { "{storageId}/{repositoryId}/{path:.+}" })
+    public void download(@RepositoryMapping Repository repository,
+                         @RequestHeader HttpHeaders httpHeaders,
+                         @PathVariable String path,
+                         HttpServletRequest request,
+                         HttpServletResponse response)
+            throws Exception
+    {
+        final String storageId = repository.getStorage().getId();
+        final String repositoryId = repository.getId();
+        logger.info("Requested /{}/{}/{}.", storageId, repositoryId, path);
+
+        RepositoryPath repositoryPath = artifactResolutionService.resolvePath(storageId, repositoryId, path);
+        vulnerabilityBlock(repositoryPath);
+        provideArtifactDownloadResponse(request, response, httpHeaders, repositoryPath);
     }
 }
