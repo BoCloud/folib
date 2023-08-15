@@ -131,6 +131,21 @@
             <artifactId>hutool-all</artifactId>
             <version>5.7.20</version>
         </dependency>
+        <!-- docker java -->
+        <dependency>
+            <groupId>com.github.docker-java</groupId>
+            <artifactId>docker-java</artifactId>
+            <version>3.2.13</version>
+        </dependency>
+
+        <!-- docker java httpclient -->
+        <dependency>
+            <groupId>com.github.docker-java</groupId>
+            <artifactId>docker-java-transport-httpclient5</artifactId>
+            <version>3.2.13</version>
+        </dependency>
+
+
         <dependency>
             <groupId>com.alibaba</groupId>
             <artifactId>fastjson</artifactId>
