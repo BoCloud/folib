@@ -1346,6 +1346,11 @@
                   tab="Webhook">
         <Webhook :activeKey="activeKey"></Webhook>
       </a-tab-pane>
+
+      <a-tab-pane key="9"
+      tab="数据迁移">
+      <dataTrans></dataTrans>
+      </a-tab-pane>
     </a-tabs>
     <a-modal v-model="showMetadataHandler"
              :title="handlerMetadataType === 1 ? '新增元数据' : '修改元数据'"
@@ -1649,12 +1654,14 @@ import {
 import Webhook from './components/Webhook/index.vue'
 import ExternalNode from './components/ExternalNode/index.vue'
 import {upperCase} from "@antv/util";
+import dataTrans from "./components/dataTrans.vue";
 
 export default {
   props: ['navbarFixed'],
   components: {
     Webhook,
-    ExternalNode
+    ExternalNode,
+    dataTrans
   },
   data() {
     return {

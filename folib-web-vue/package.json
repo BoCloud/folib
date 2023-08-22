@@ -37,6 +37,7 @@
     "vis-network": "^6.4.0",
     "vue": "2.6.14",
     "vue-easy-pie-chart": "1.0.3",
+    "vue-json-viewer": "^2.2.22",
     "vue-prism-editor": "^1.3.0",
     "vue-pswipe": "0.15.3",
     "vue-quill-editor": "3.0.6",

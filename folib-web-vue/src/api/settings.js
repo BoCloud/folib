@@ -122,3 +122,21 @@ export function vulnerabilitiesDataUpdate() {
     method: 'get'
   })
 }
+
+
+export function getDataIndexDump(param) {
+  return axios({
+    url: '/api/cmdsevice/getIndexFile',
+    method: 'get',
+    params:param
+  })
+}
+
+
+export function uploadJsonFile(data) {
+  return axios({
+    url: '/api/cmdsevice/uploadJsonFile',
+    method: 'post',
+    data:data
+  })
+}
