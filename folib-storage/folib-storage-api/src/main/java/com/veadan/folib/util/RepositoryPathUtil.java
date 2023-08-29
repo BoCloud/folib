@@ -23,7 +23,9 @@ public class RepositoryPathUtil {
     public static List<S3Path> getS3FiePaths(S3Path s3Path) throws Exception {
         List<S3Path> listFile = new ArrayList<S3Path>();
         List<S3Path> listDir = new ArrayList<S3Path>();
-
+        if (Files.exists(s3Path) && !Files.isDirectory(s3Path)) {
+            listFile.add(s3Path);
+        }
         S3Iterator s3Iterator = new S3Iterator(s3Path);
         while (s3Iterator.hasNext()) {
             S3Path s3PathTemp = s3Iterator.next();

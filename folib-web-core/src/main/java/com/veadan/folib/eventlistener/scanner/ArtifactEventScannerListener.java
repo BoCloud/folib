@@ -4,6 +4,7 @@ import cn.hutool.core.io.FileTypeUtil;
 import cn.hutool.core.io.FileUtil;
 import cn.hutool.core.io.IoUtil;
 import com.google.common.collect.Sets;
+import com.veadan.folib.artifact.coordinates.DockerArtifactCoordinates;
 import com.veadan.folib.cloud.storage.s3fs.S3Path;
 import com.veadan.folib.components.artifact.ArtifactComponent;
 import com.veadan.folib.components.layout.DockerComponent;
@@ -106,7 +107,7 @@ public class ArtifactEventScannerListener {
             //S3存储
             S3Path s3Path = (S3Path) path;
             String key = s3Path.getKey();
-            String versionKey = key.substring(0, key.lastIndexOf("/"));
+            DockerArtifactCoordinates dockerArtifactCoordinates = (DockerArtifactCoordinates) repositoryPath.getArtifactEntry().getArtifactCoordinates();
             InputStream inputStream = Files.newInputStream(repositoryPath);
             parentPath = tempPath + File.separator + UUID.randomUUID();
             String filePath = parentPath + File.separator + s3Path.getFileName();
@@ -115,13 +116,10 @@ public class ArtifactEventScannerListener {
             //获取图层中的digest列表
             List<String> digestList = getImageManifest(repositoryPath);
             if (CollectionUtils.isNotEmpty(digestList)) {
-                String prefix = versionKey;
-                prefix = prefix.substring(0, prefix.lastIndexOf("/"));
-                String blobsPath = "", tempPath = "";
+                String blobsItemPath = "", tempPath = "", blobs = "blobs";
                 Set<String> filePaths = Sets.newLinkedHashSet();
                 for (String digest : digestList) {
-                    blobsPath = prefix + File.separator + "blobs" + File.separator + digest;
-                    String blobsItemPath = blobsPath.replace(String.format("%s/", repositoryPath.getRepositoryId()), "");
+                    blobsItemPath = String.format("%s/%s/%s", dockerArtifactCoordinates.getName(), blobs, digest);
                     RepositoryPath blobsRepositoryPath = repositoryPathResolver.resolve(repositoryPath.getStorageId(), repositoryPath.getRepositoryId(), blobsItemPath);
                     filePath = parentPath + File.separator + digest;
                     tempFile = new File(filePath);
