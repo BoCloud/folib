@@ -65,7 +65,7 @@ public class ScannerTask {
             if (CollectionUtils.isNotEmpty(artifactList)) {
                 artifactList.forEach(artifact -> scanService.asyncScan(artifact));
             }
-            logger.info("=====>>>>>当前线程名称：{}，使用cron异步执行：{}", Thread.currentThread().getName(), DateUtil.now());
+            logger.info("当前线程名称：{}，使用cron异步执行：{}", Thread.currentThread().getName(), DateUtil.now());
         }
         logger.info("ScannerTask end");
     }

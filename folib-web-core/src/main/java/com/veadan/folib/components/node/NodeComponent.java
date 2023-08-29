@@ -112,7 +112,7 @@ public class NodeComponent {
             SortedMap<String, SetHostStatWithPort> dcsMap = NodeTool.getOwnershipByDcWithPort(nodeProbe, true, tokensToEndpointsMap, effectiveOwnershipMap);
             cassandraClusterForm.setDcsMap(dcsMap);
         } catch (Exception ex) {
-            log.error("=====>>>>>获取cassandra集群信息错误：{}", ExceptionUtils.getStackTrace(ex));
+            log.error("获取cassandra集群信息错误：{}", ExceptionUtils.getStackTrace(ex));
             throw new RuntimeException("获取集群信息错误，请稍候重试");
         }
         return cassandraClusterForm;
@@ -124,7 +124,7 @@ public class NodeComponent {
      * @param token token
      */
     public void removeNode(String token) {
-        log.info("=====>>>>>从cassandra集群移除节点：{}", token);
+        log.info("从cassandra集群移除节点：{}", token);
         String localHostId = nodeProbe.getLocalHostId();
         if (localHostId.equals(token)) {
             throw new UnsupportedOperationException("不能移除自身");
@@ -137,12 +137,12 @@ public class NodeComponent {
      */
     public void repair() {
         try {
-            log.info("=====>>>>>开始尝试修复cassandra集群信息");
+            log.info("开始尝试修复cassandra集群信息");
             Map<String, String> options = Maps.newLinkedHashMap();
             options.put(RepairOption.PARALLELISM_KEY, RepairParallelism.DATACENTER_AWARE.getName());
             nodeProbe.repairAsync(System.out, keyspace, options);
         } catch (IOException ex) {
-            log.error("=====>>>>>修复cassandra集群错误：{}", ExceptionUtils.getStackTrace(ex));
+            log.error("修复cassandra集群错误：{}", ExceptionUtils.getStackTrace(ex));
             throw new RuntimeException("修复错误，请稍候重试");
         }
     }

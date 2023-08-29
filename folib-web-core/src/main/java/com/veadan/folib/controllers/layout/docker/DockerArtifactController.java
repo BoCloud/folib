@@ -46,7 +46,6 @@ import org.springframework.web.bind.annotation.*;
 import javax.inject.Inject;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import javax.validation.constraints.NotNull;
 import java.io.ByteArrayInputStream;
 import java.io.DataInputStream;
 import java.io.IOException;
@@ -72,7 +71,7 @@ import java.util.stream.Collectors;
  * @see{@linkplain http://docs.spring.io/spring/docs/current/spring-framework-reference/html/mvc.html#mvc-config-path-matching}
  */
 @RestController
-@Api(description = "docker坐标控制器",tags = "docker坐标控制器")
+@Api(description = "docker坐标控制器", tags = "docker坐标控制器")
 //@LayoutRequestMapping(DockerArtifactCoordinates.LAYOUT_NAME) docker工具访问接口路径从/v2开始，无法与/storages兼容
 public class DockerArtifactController extends BaseArtifactController {
 
@@ -429,7 +428,11 @@ public class DockerArtifactController extends BaseArtifactController {
             RepositoryPath repositoryPath = artifactResolutionService.resolvePath(storageId, repositoryId, artifactName);
             //200已经存在 404不存在
             if (artifactRealExists(repositoryPath)) {
-                response.addHeader(DockerApiHeader.CONTENT_LENGTH.key(), repositoryPath.getArtifactEntry().getSizeInBytes().toString());
+                Long size = repositoryPath.getArtifactEntry().getSizeInBytes();
+                if (Objects.isNull(size)) {
+                    size = 0L;
+                }
+                response.addHeader(DockerApiHeader.CONTENT_LENGTH.key(), size.toString());
                 response.addHeader(DockerApiHeader.STREAM_CONTENT_TYPE.key(), DockerApiHeader.STREAM_CONTENT_TYPE.value());
                 return new ResponseEntity<>("OK", HttpStatus.OK);
             } else {
@@ -533,7 +536,7 @@ public class DockerArtifactController extends BaseArtifactController {
     //镜像存储
 
     /**
-     * 镜像文件零时存储
+     * 镜像文件临时存储
      *
      * @param storageId
      * @param repositoryId
@@ -724,6 +727,7 @@ public class DockerArtifactController extends BaseArtifactController {
 
     /**
      * 是否存在镜像层
+     *
      * @return true 存在 false 不存在
      */
     private Boolean mirrorLayerExists(String artifactName, String storageId, String repositoryId) throws IOException {
@@ -745,7 +749,7 @@ public class DockerArtifactController extends BaseArtifactController {
 
     public Artifact getArtifact(String artifactName, String storageId, String repositoryId) throws IOException {
         RepositoryPath repositoryPath = artifactResolutionService.resolvePath(storageId, repositoryId, artifactName);
-        if (!artifactRealExists(repositoryPath)) {
+        if (Objects.isNull(repositoryPath) || !Files.exists(repositoryPath)) {
             return null;
         }
         Path path = repositoryPath.getTarget();
@@ -1211,15 +1215,6 @@ public class DockerArtifactController extends BaseArtifactController {
         list.add(resultData);
         result.put("errors", list);
         return result;
-    }
-
-    private boolean artifactRealExists(RepositoryPath repositoryPath) {
-        try {
-            return Objects.nonNull(repositoryPath) && Files.exists(repositoryPath) && Objects.nonNull(repositoryPath.getArtifactEntry()) && Boolean.TRUE.equals(repositoryPath.getArtifactEntry().getArtifactFileExists());
-        } catch (Exception ex) {
-            logger.error("判断制品是否存在发生错误：{}", ExceptionUtils.getStackTrace(ex));
-            return false;
-        }
     }
 }
 

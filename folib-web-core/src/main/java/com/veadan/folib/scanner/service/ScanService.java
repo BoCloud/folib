@@ -137,7 +137,7 @@ public class ScanService {
         } catch (Exception e) {
             artifact.setSafeLevel(SafeLevelEnum.SCAN_FAIL.getLevel());
             artifactService.saveOrUpdateArtifact(artifact);
-            log.error("=====>>>>>执行扫描失败：{}", ExceptionUtils.getStackTrace(e));
+            log.error("执行扫描失败：{}", ExceptionUtils.getStackTrace(e));
             throw new BusinessException("文件解析失败");
         }
     }
@@ -166,12 +166,12 @@ public class ScanService {
                 File tempFile = new File(filePath);
                 FileUtil.writeFromStream(inputStream, tempFile, true);
             }
-            log.info("=====>>>>> 扫描路径：{}", filePath);
+            log.info("扫描路径：{}", filePath);
             engine.scan(filePath);
             engine.analyzeDependencies();
             return engine.getDependencies();
         } catch (Exception ex) {
-            log.error("=====>>>>>scanWorker error：{}", ExceptionUtils.getStackTrace(ex));
+            log.error("ScanWorker error：{}", ExceptionUtils.getStackTrace(ex));
             throw new RuntimeException(ex);
         } finally {
             //删除临时文件
@@ -219,7 +219,7 @@ public class ScanService {
                 count1 = a.getVulnerabilitiesCount();
                 count2 = b.getVulnerabilitiesCount();
             } catch (JSONException e) {
-                log.error("=====>>>>>处理扫描报告失败：{}", ExceptionUtils.getStackTrace(e));
+                log.error("处理扫描报告失败：{}", ExceptionUtils.getStackTrace(e));
             }
             return count2.compareTo(count1);
         });
@@ -274,13 +274,13 @@ public class ScanService {
         component.setSha256sum(dependency.getSha256sum());
         if (CollectionUtils.isNotEmpty(licenses)) {
             if (StringUtils.isNotBlank(dependency.getLicense())) {
-                log.info("dependency license [{}]", dependency.getLicense());
+                log.info("Dependency license [{}]", dependency.getLicense());
                 String[] dependencyLicenses = dependency.getLicense().split(",");
                 Set<String> licenseSet = Sets.newLinkedHashSet();
                 for (String license : dependencyLicenses) {
                     licenseSet.addAll(licenses.stream().filter(item -> StringUtils.isNotBlank(item.getLicenseUrl())).filter(item -> Arrays.stream(item.getLicenseUrl().split(",")).anyMatch(license::contains)).map(License::getLicenseId).collect(Collectors.toSet()));
                 }
-                log.info("licenseSet {}", licenseSet);
+                log.info("LicenseSet {}", licenseSet);
                 component.setLicense(licenseSet);
             }
         }
@@ -425,7 +425,7 @@ public class ScanService {
                 }
             }
         } catch (Exception ex) {
-            log.error("=====>>>>>更新制品扫描数据到图数据库失败：{}", ExceptionUtils.getStackTrace(ex));
+            log.error("更新制品扫描数据到图数据库失败：{}", ExceptionUtils.getStackTrace(ex));
             throw new RuntimeException(ex);
         }
     }

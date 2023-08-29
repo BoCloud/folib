@@ -54,18 +54,18 @@ public class FolibApplicationRunner implements ApplicationRunner {
         initSystemPropertiesData();
         int total = scanService.countProperties();
         boolean isFirst = total <= 1;
-        log.info("=====>>>>> Table properties data total is {} <<<<<=====", total);
+        log.info("Table properties data total is {} ", total);
         if (isFirst) {
             if (JanusGraphDbProfile.PROFILE_EMBEDDED.equals(System.getProperty(JanusGraphDbProfile.PROPERTY_PROFILE))) {
                 String clusterNodeTotal = System.getProperty("CLUSTER_NODE_TOTAL");
                 if (StringUtils.isNotBlank(clusterNodeTotal)) {
-                    log.info("=====>>>>> Modify the cassandra replication factor ：{} <<<<<=====", clusterNodeTotal);
+                    log.info("Modify the cassandra replication factor ：{} ", clusterNodeTotal);
                     nodeService.modifyReplicationFactor(Integer.parseInt(clusterNodeTotal));
                 }
             }
-            log.info("=====>>>>> The initialization of vulnerability data begins <<<<<=====");
+            log.info("The initialization of vulnerability data begins ");
             scanService.updateMirror();
-            log.info("=====>>>>> The initialization of vulnerability data ends <<<<<=====");
+            log.info("The initialization of vulnerability data ends ");
         }
         handlerUnExecutedTask();
     }

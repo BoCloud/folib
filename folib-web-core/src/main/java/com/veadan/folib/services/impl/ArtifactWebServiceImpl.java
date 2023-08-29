@@ -246,7 +246,7 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
             repositoryPath.setArtifact(artifact);
             artifactEvent.dispatchArtifactMetaDataEvent(repositoryPath);
         } catch (Exception ex) {
-            log.error("=====>>>>>保存制品元数据错误：{}", ExceptionUtils.getStackTrace(ex));
+            log.error("保存制品元数据错误：{}", ExceptionUtils.getStackTrace(ex));
             throw new RuntimeException("保存制品元数据错误，请稍后重试");
         }
         return ResponseMessage.ok().getMessage();
@@ -270,7 +270,7 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
                 artifactEvent.dispatchArtifactMetaDataEvent(repositoryPath);
             }
         } catch (Exception ex) {
-            log.error("=====>>>>>修改制品元数据错误：{}", ExceptionUtils.getStackTrace(ex));
+            log.error("修改制品元数据错误：{}", ExceptionUtils.getStackTrace(ex));
             throw new RuntimeException("修改制品元数据错误，请稍后重试");
         }
         return ResponseMessage.ok().getMessage();
@@ -290,7 +290,7 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
                 artifactEvent.dispatchArtifactMetaDataEvent(repositoryPath);
             }
         } catch (Exception ex) {
-            log.error("=====>>>>>删除制品元数据错误：{}", ExceptionUtils.getStackTrace(ex));
+            log.error("删除制品元数据错误：{}", ExceptionUtils.getStackTrace(ex));
             throw new RuntimeException("删除制品元数据错误，请稍后重试");
         }
     }
@@ -477,7 +477,7 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
                 repositoryPath.setArtifact(artifact);
                 artifactEvent.dispatchArtifactMetaDataEvent(repositoryPath);
             } catch (Exception e) {
-                log.error("=====>>>>>批量新增制品元数据错误：{}", ExceptionUtils.getStackTrace(e));
+                log.error("批量新增制品元数据错误：{}", ExceptionUtils.getStackTrace(e));
                 throw new RuntimeException("批量新增制品元数据错误，请稍后重试");
             }
 
@@ -535,7 +535,7 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
                 repositoryPath.setArtifact(artifact);
                 artifactEvent.dispatchArtifactMetaDataEvent(repositoryPath);
             } catch (Exception e) {
-                log.error("=====>>>>>dokcer raw 共用一个仓库场景,批量新增制品元数据错误：{}", ExceptionUtils.getStackTrace(e));
+                log.error("dokcer raw 共用一个仓库场景,批量新增制品元数据错误：{}", ExceptionUtils.getStackTrace(e));
                 throw new RuntimeException("批量新增制品元数据错误，请稍后重试");
             }
         }
@@ -633,7 +633,7 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
     @Override
     @Async("asyncThreadPoolTaskExecutor")
     public void buildGraphIndex(String username, String storageId, String repositoryId, String path, Integer batch) {
-        log.info("=====>>>>> buildGraphIndex is started");
+        log.info("BuildGraphIndex is started");
         Long dictId = 0L;
         try {
             Dict existsDict = dictService.selectLatestOneDict(Dict.builder().dictType(DictTypeEnum.BUILD_GRAPH_INDEX.getType()).build());
@@ -675,10 +675,10 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
             }
             dictService.updateDict(DictForm.builder().id(dictId).comment("构建完成").build());
         } catch (Exception ex) {
-            log.error("=====>>>>> buildGraphIndex is error：{}", ExceptionUtils.getStackTrace(ex));
+            log.error("BuildGraphIndex is error：{}", ExceptionUtils.getStackTrace(ex));
             dictService.updateDict(DictForm.builder().id(dictId).comment("构建错误").build());
         }
-        log.info("=====>>>>> buildGraphIndex is finished");
+        log.info("BuildGraphIndex is finished");
     }
 
     @Override
@@ -1024,7 +1024,7 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
         for (FutureTask<String> task : futureTaskList) {
             task.get();
         }
-        log.info("=====>>>>> handlerNFSFiles is finished");
+        log.info("handlerNFSFiles is finished");
         return resultList;
     }
 
@@ -1138,7 +1138,7 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
         for (FutureTask<String> task : futureTaskList) {
             task.get();
         }
-        log.info("=====>>>>> handlerS3Paths is finished");
+        log.info("handlerS3Paths is finished");
         return listFile;
     }
 

@@ -29,8 +29,8 @@
                 <a-popover placement="topLeft">
                   <template slot="content">
                     <p class="mb-0">输入关键词用于匹配制品路径，支持正则表达式，</p>
-                    <p class="mb-0">普通示例：folib可匹配制品路径中包含folib的制品，</p>
-                    <p class="mb-0">正则示例：(.*folib.*)(.*V1.*)可匹配镜像名包含folib，</p>
+                    <p class="mb-0">普通示例：example可匹配制品路径中包含example的制品，</p>
+                    <p class="mb-0">正则示例：(.*example.*)(.*V1.*)可匹配镜像名包含example，</p>
                     <p class="mb-0">镜像版本包含V1的镜像</p>
                   </template>
                   <a class="ml-5"><a-icon type="question-circle" theme="filled" /></a>
@@ -472,7 +472,7 @@ export default {
               data.unionTargetRepositories.push(externalNode)
             })
           }
-          if (!data.unionTargetRepositories || data.unionTargetRepositories.length === 0) {
+          if (data.enable && (!data.unionTargetRepositories || data.unionTargetRepositories.length === 0)) {
             this.$notification.warning({
               message: "请选择联邦仓库",
               description: "",

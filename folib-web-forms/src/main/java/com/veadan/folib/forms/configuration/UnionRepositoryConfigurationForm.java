@@ -60,7 +60,6 @@ public class UnionRepositoryConfigurationForm
      * 联邦仓库列表
      */
     @Valid
-    @NotEmpty(message = "联邦仓库列表不能为空")
     private Set<UnionTargetRepositoryConfigurationForm> unionTargetRepositories;
 
     public UnionRepositoryConfigurationForm(UnionRepositoryConfiguration unionConfiguration) {

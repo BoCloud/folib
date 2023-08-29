@@ -32,7 +32,7 @@ public class AuthenticationSuppliers
     {
         if (suppliers == null || suppliers.isEmpty())
         {
-            logger.info("There was no [{}] provided.", AuthenticationSupplier.class);
+            logger.debug("There was no [{}] provided.", AuthenticationSupplier.class);
             
             return null;
         }
@@ -45,12 +45,12 @@ public class AuthenticationSuppliers
 
             if (!supplier.supports(request))
             {
-                logger.info("Supplier {} does not support this request [method: {}] [URI: {}] [ContentType {}]",
+                logger.debug("Supplier {} does not support this request [method: {}] [URI: {}] [ContentType {}]",
                              supplierName, request.getMethod(), request.getRequestURI(), request.getContentType());
                 continue;
             }
 
-            logger.info("Authentication supplier attempt using {}", supplierName);
+            logger.debug("Authentication supplier attempt using {}", supplierName);
             Authentication authentication;
             try
             {
@@ -64,7 +64,7 @@ public class AuthenticationSuppliers
 
             if (authentication != null)
             {
-                logger.info("Authentication supplied by {}", supplierName);
+                logger.debug("Authentication supplied by {}", supplierName);
 
                 return authentication;
             }
