@@ -25,7 +25,7 @@ import java.io.IOException;
  * @author veadan
  */
 @Component
-@Order(1)
+@Order(3)
 public class JsonFormLoginSupplier implements AuthenticationSupplier {
 
     private static final Logger logger = LoggerFactory.getLogger(JsonFormLoginSupplier.class);

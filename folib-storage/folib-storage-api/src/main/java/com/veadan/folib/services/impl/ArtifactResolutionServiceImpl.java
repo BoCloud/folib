@@ -44,7 +44,7 @@ public class ArtifactResolutionServiceImpl
         throws IOException
     {
         Repository repository = path.getFileSystem().getRepository();
-        artifactOperationsValidator.validate(path);
+//        artifactOperationsValidator.validate(path);
         
         RepositoryProvider repositoryProvider = repositoryProviderRegistry.getProvider(repository.getType());
         return (RepositoryStreamSupport.RepositoryInputStream) repositoryProvider.getInputStream(path);

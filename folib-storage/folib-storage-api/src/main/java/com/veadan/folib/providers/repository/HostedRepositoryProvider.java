@@ -277,19 +277,18 @@ public class HostedRepositoryProvider extends AbstractRepositoryProvider {
     @Override
     protected RepositoryPath fetchPath(RepositoryPath repositoryPath)
             throws IOException {
-        logger.info(" -> Checking local cache for {} ...", repositoryPath);
+        logger.debug(" -> Checking local cache for {} ...", repositoryPath);
         if (artifactNotExists(repositoryPath)) {
             logger.info("The artifact {} was not found in the local cache", repositoryPath);
-
             return null;
         }
-        boolean flag = RepositoryFiles.isArtifact(repositoryPath) && Objects.nonNull(repositoryPath.getArtifactEntry()) && Boolean.TRUE.equals(repositoryPath.getArtifactEntry().getArtifactFileExists()) && !Files.exists(repositoryPath);
-        if (flag) {
-            logger.warn("The artifact {} was found in the local cache but artifact file not exist delete local db cache", repositoryPath);
-            artifactManagementService.delete(repositoryPath, true);
-            return null;
-        }
-        logger.info("The artifact {} was found in the local cache", repositoryPath);
+//        boolean flag = RepositoryFiles.isArtifact(repositoryPath) && Objects.nonNull(repositoryPath.getArtifactEntry()) && Boolean.TRUE.equals(repositoryPath.getArtifactEntry().getArtifactFileExists()) && !Files.exists(repositoryPath);
+//        if (flag) {
+//            logger.warn("The artifact {} was found in the local cache but artifact file not exist delete local db cache", repositoryPath);
+//            artifactManagementService.delete(repositoryPath, true);
+//            return null;
+//        }
+        logger.debug("The artifact {} was found in the local cache", repositoryPath);
         return repositoryPath;
     }
 

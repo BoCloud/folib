@@ -179,14 +179,16 @@ public abstract class RepositoryFiles
     public static boolean artifactExists(RepositoryPath repositoryPath)
         throws IOException
     {
-        Repository repository = repositoryPath.getRepository();
-        if (repository.isGroupRepository() || !isArtifact(repositoryPath))
-        {
-            return Files.exists(repositoryPath);
-        }
-
-        Artifact artifactEntry = repositoryPath.getArtifactEntry();
-        return artifactEntry != null && Boolean.TRUE.equals(artifactEntry.getArtifactFileExists());
+//        Repository repository = repositoryPath.getRepository();
+        return Files.exists(repositoryPath);
+//        if (repository.isGroupRepository() || !isArtifact(repositoryPath))
+//        {
+//            return Files.exists(repositoryPath);
+//        }
+//
+//        Artifact artifactEntry = repositoryPath.getArtifactEntry();
+//        return artifactEntry != null && Boolean.TRUE.equals(artifactEntry.getArtifactFileExists());
+//        return repositoryPath.getArtifactExists();
     }
 
     public static void deleteTrash(RepositoryPath repositoryPath)

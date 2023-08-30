@@ -1,21 +1,18 @@
 package com.veadan.folib.controllers.layout.maven;
 
+import com.alibaba.fastjson.JSONArray;
 import com.google.common.collect.Sets;
-import com.veadan.folib.artifact.archive.JarArchiveListingFunction;
 import com.veadan.folib.artifact.coordinates.MavenArtifactCoordinates;
-import com.veadan.folib.configuration.MutableSecurityPolicyConfiguration;
 import com.veadan.folib.controllers.BaseArtifactController;
-import com.veadan.folib.domain.Artifact;
-import com.veadan.folib.domain.Vulnerability;
-import com.veadan.folib.enums.BlockTypeEnum;
 import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.storage.ArtifactStorageException;
 import com.veadan.folib.storage.repository.Repository;
-import com.veadan.folib.storage.repository.RepositoryDto;
 import com.veadan.folib.web.LayoutRequestMapping;
 import com.veadan.folib.web.RepositoryMapping;
 import io.swagger.annotations.*;
-import org.apache.commons.collections4.CollectionUtils;
+import org.eclipse.jetty.http.ResourceHttpContent;
+import org.eclipse.jetty.server.HttpOutput;
+import org.eclipse.jetty.util.resource.Resource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -25,11 +22,15 @@ import org.springframework.web.bind.annotation.*;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.lang.reflect.Field;
+import java.nio.ByteBuffer;
+import java.nio.channels.Channels;
+import java.nio.channels.FileChannel;
+import java.nio.channels.ReadableByteChannel;
+import java.nio.channels.WritableByteChannel;
 import java.nio.file.Files;
-import java.util.LinkedHashSet;
-import java.util.Objects;
-import java.util.Set;
-import java.util.stream.Collectors;
+import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
 
 import static org.springframework.http.HttpStatus.NOT_FOUND;
 
@@ -48,7 +49,7 @@ import static org.springframework.http.HttpStatus.NOT_FOUND;
 @LayoutRequestMapping(MavenArtifactCoordinates.LAYOUT_NAME)
 //@RequestMapping(
 //        headers = "user-agent=Maven/*")
-@Api(description = "maven坐标控制器",tags = "maven坐标控制器")
+@Api(description = "maven坐标控制器", tags = "maven坐标控制器")
 
 public class MavenArtifactController
         extends BaseArtifactController {
@@ -75,12 +76,123 @@ public class MavenArtifactController
             throws Exception {
         final String storageId = repository.getStorage().getId();
         final String repositoryId = repository.getId();
+//        final String storageId = repository.getStorage().getId();
+//        final String repositoryId = repository.getId();
         logger.info("Requested /{}/{}/{}.", storageId, repositoryId, artifactPath);
-
         artifactPath = correctIndexPathIfNecessary(repository, artifactPath);
         RepositoryPath repositoryPath = artifactResolutionService.resolvePath(storageId, repositoryId, artifactPath);
         vulnerabilityBlock(repositoryPath);
         provideArtifactDownloadResponse(request, response, httpHeaders, repositoryPath);
+//        Class<?> headerWriterResponseClass = response.getOutputStream().getClass();
+//        Field delegateField = headerWriterResponseClass.getDeclaredField("delegate");
+//        delegateField.setAccessible(true);
+//        Object delegate = delegateField.get(response.getOutputStream());
+//        Resource resource = Resource.newResource(repositoryPath);
+//        ResourceHttpContent resourceHttpContent = new ResourceHttpContent(resource, null, 0);
+//        response.setHeader(HttpHeaders.CONTENT_LENGTH, Long.toString(resource.length()));
+//        ((HttpOutput) delegate).sendContent(resourceHttpContent);
+//        logger.info("耗时 {}ms", System.currentTimeMillis() - startTime);
+//        provideArtifactDownloadResponse(request, response, httpHeaders, repositoryPath);
+//        try (InputStream is = Files.newInputStream(repositoryPath)) {
+//            try (OutputStream os = response.getOutputStream()) {
+//                int readLength;
+//                byte[] bytes = new byte[4096];
+//                while ((readLength = is.read(bytes)) != -1) {
+//                    // Write the artifact
+//                    os.write(bytes, 0, readLength);
+//                }
+//                os.flush();
+//            }
+//        }
+//        Class<?> headerWriterResponseClass = response.getOutputStream().getClass();
+//        Field delegateField = headerWriterResponseClass.getDeclaredField("delegate");
+//        delegateField.setAccessible(true);
+//        Object delegate = delegateField.get(response.getOutputStream());
+//        Resource resource = Resource.newResource(repositoryPath);
+//        ResourceHttpContent resourceHttpContent = new ResourceHttpContent(resource , null, 0);
+//        ((HttpOutput) delegate).sendContent(resourceHttpContent);
+
+//        StreamUtils.copy(Files.newInputStream(repositoryPath), response.getOutputStream());
+//        Resource resource = Resource.newResource(repositoryPath);
+//        ByteBuffer buffer = BufferUtil.toBuffer(resource, true);
+//        FileChannel fileChannel = repositoryPath.getFileSystem().provider().newFileChannel(repositoryPath, Sets.newHashSet(StandardOpenOption.READ));
+//        ((HttpOutput)delegate).sendContent(Files.newInputStream(repositoryPath), new Callback()
+//        {
+//            @Override
+//            public void succeeded()
+//            {
+//
+//            }
+//
+//            @Override
+//            public void failed(Throwable x)
+//            {
+//
+//            }
+//
+//            @Override
+//            public InvocationType getInvocationType()
+//            {
+//                return InvocationType.NON_BLOCKING;
+//            }
+//
+//            @Override
+//            public String toString()
+//            {
+//                return "";
+//            }
+//        });
+//        FileChannel fileChannel = repositoryPath.getFileSystem().provider().newFileChannel(repositoryPath, Sets.newHashSet(StandardOpenOption.READ));
+//        WritableByteChannel responseChannel = Channels.newChannel(response.getOutputStream());
+//        fileChannel.transferTo(0, fileChannel.size(), responseChannel);
+//        fastChannelCopy(fileChannel, responseChannel);
+//
+        // Call the wrapped response for processing
+//        getHandler().handle(request, responseWrapper);
+//        FileChannel fileChannel = repositoryPath.getFileSystem().provider().newFileChannel(repositoryPath, Sets.newHashSet(StandardOpenOption.READ));
+//        FileUrlResource resource = new FileUrlResource(repositoryPath.getTarget().toUri().toString());
+
+//        long fileSize = fileChannel.size();
+//        byte[] data = new byte[(int) fileSize];
+//        int bufferSize = 8192;
+//        ByteBuffer buffer = ByteBuffer.allocateDirect(bufferSize);
+//                httpHeaders.setContentType(MediaType.APPLICATION_OCTET_STREAM);
+//        response.setHeader("Content-Type", MediaType.APPLICATION_OCTET_STREAM.toString());
+//        ByteBuffer buffer = BufferUtil.toBuffer(resource, true);
+//        responseChannel.write(buffer);
+//        buffer.get(data);
+//        httpHeaders.setContentType(MediaType.APPLICATION_OCTET_STREAM);
+//        httpHeaders.setContentDispositionFormData("attachment", FilenameUtils.getName(repositoryPath.getFileName().toString()));
+//        return new ResponseEntity<Object>(resource, httpHeaders, HttpStatus.OK);
+//        artifactPath = correctIndexPathIfNecessary(repository, artifactPath);
+//        RepositoryPath repositoryPath = artifactResolutionService.resolvePath(storageId, repositoryId, artifactPath);
+////        vulnerabilityBlock(repositoryPath);
+//        provideArtifactDownloadResponse(request, response, httpHeaders, repositoryPath);
+    }
+
+    /**
+     * Copies data from one channel to another
+     *
+     * @param src  channel source
+     * @param dest destination channel
+     * @throws IOException input / output error
+     */
+    private static void fastChannelCopy(final ReadableByteChannel src,
+                                        final WritableByteChannel dest)
+            throws IOException {
+        final ByteBuffer buffer = ByteBuffer.allocateDirect(16 * 1024);
+
+        while (src.read(buffer) != -1) {
+            buffer.flip();
+            dest.write(buffer);
+            buffer.compact();
+        }
+
+        buffer.flip();
+
+        while (buffer.hasRemaining()) {
+            dest.write(buffer);
+        }
     }
 
     @ApiOperation(value = "Used to deploy an artifact")

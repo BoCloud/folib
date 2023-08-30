@@ -1,17 +1,13 @@
 package com.veadan.folib.web;
 
+import com.veadan.folib.configuration.Configuration;
 import com.veadan.folib.configuration.ConfigurationManager;
 import com.veadan.folib.exception.RepositoryNotFoundException;
 import com.veadan.folib.exception.ServiceUnavailableException;
 import com.veadan.folib.exception.StorageNotFoundException;
-import com.veadan.folib.configuration.Configuration;
 import com.veadan.folib.storage.Storage;
 import com.veadan.folib.storage.repository.Repository;
-
-import javax.inject.Inject;
-import java.util.Map;
-import java.util.Objects;
-
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.core.MethodParameter;
@@ -22,14 +18,19 @@ import org.springframework.web.context.request.RequestAttributes;
 import org.springframework.web.method.support.HandlerMethodArgumentResolver;
 import org.springframework.web.method.support.ModelAndViewContainer;
 import org.springframework.web.servlet.HandlerMapping;
+
+import javax.inject.Inject;
+import java.util.Map;
+import java.util.Objects;
+
 import static com.veadan.folib.web.Constants.REPOSITORY_REQUEST_ATTRIBUTE;
 
 /**
  * @author Veadan
  */
+@Slf4j
 public class RepositoryMethodArgumentResolver
-        implements HandlerMethodArgumentResolver
-{
+        implements HandlerMethodArgumentResolver {
 
     public static final String NOT_FOUND_STORAGE_MESSAGE = "Could not find requested storage %s.";
     public static final String NOT_FOUND_REPOSITORY_MESSAGE = "Could not find requested repository %s:%s.";
@@ -39,12 +40,10 @@ public class RepositoryMethodArgumentResolver
     protected ConfigurationManager configurationManager;
 
     @Override
-    public boolean supportsParameter(final MethodParameter parameter)
-    {
+    public boolean supportsParameter(final MethodParameter parameter) {
 
         // Check parameter annotation type
-        if (!parameter.hasParameterAnnotation(RepositoryMapping.class))
-        {
+        if (!parameter.hasParameterAnnotation(RepositoryMapping.class)) {
             return false;
         }
         // Check parameter type.
@@ -56,8 +55,9 @@ public class RepositoryMethodArgumentResolver
                                   final ModelAndViewContainer modelAndViewContainer,
                                   final NativeWebRequest nativeWebRequest,
                                   final WebDataBinderFactory webDataBinderFactory)
-            throws MissingPathVariableException
-    {
+            throws MissingPathVariableException {
+        long startTime = System.currentTimeMillis();
+        log.info("开始查找匹配仓库 {}", startTime);
         final RepositoryMapping repositoryMapping = parameter.getParameterAnnotation(RepositoryMapping.class);
         final String storageVariableName = repositoryMapping.storageVariableName();
         final String storageId = getRequiredPathVariable(parameter, nativeWebRequest, storageVariableName);
@@ -66,24 +66,22 @@ public class RepositoryMethodArgumentResolver
         final String repositoryId = getRequiredPathVariable(parameter, nativeWebRequest, repositoryVariableName);
 
         Repository repository = (Repository) nativeWebRequest.getAttribute(REPOSITORY_REQUEST_ATTRIBUTE,
-                                                                           RequestAttributes.SCOPE_REQUEST);
+                RequestAttributes.SCOPE_REQUEST);
 
         if (repository != null && Objects.equals(repository.getId(), repositoryId) &&
-            Objects.equals(repository.getStorage().getId(), storageId))
-        {
+                Objects.equals(repository.getStorage().getId(), storageId)) {
+            log.info("查找匹配仓库耗时 {}", System.currentTimeMillis() - startTime);
             return repository;
         }
 
         final Storage storage = getStorage(storageId);
-        if (storage == null)
-        {
+        if (storage == null) {
             final String message = String.format(NOT_FOUND_STORAGE_MESSAGE, storageId);
             throw new StorageNotFoundException(message);
         }
 
         repository = getRepository(storageId, repositoryId);
-        if (repository == null)
-        {
+        if (repository == null) {
             final String message = String.format(NOT_FOUND_REPOSITORY_MESSAGE, storageId, repositoryId);
             throw new RepositoryNotFoundException(message);
         }
@@ -91,59 +89,49 @@ public class RepositoryMethodArgumentResolver
         // This annotation is used in a lot of controllers - some of which are related to the configuration management.
         // It is necessary to allow requests to pass when the repository status is `out of service` (i.e. `/api/configuration/**`),
         // but still return `ServiceUnavailableException` when people are accessing `/storages/**`.
-        if (!repository.isInService() && !repositoryMapping.allowOutOfServiceRepository())
-        {
+        if (!repository.isInService() && !repositoryMapping.allowOutOfServiceRepository()) {
             final String message = String.format(NOT_IN_SERVICE_REPOSITORY_MESSAGE, storageId, repositoryId);
             throw new ServiceUnavailableException(message);
         }
-
+        log.info("查找匹配仓库耗时 {}", System.currentTimeMillis() - startTime);
         return repository;
     }
 
     private String getRequiredPathVariable(final MethodParameter parameter,
                                            final NativeWebRequest nativeWebRequest,
                                            final String variableName)
-            throws MissingPathVariableException
-    {
+            throws MissingPathVariableException {
         // Check @PathVariable parameter.
-        @SuppressWarnings("unchecked")
-        final Map<String, String> uriTemplateVars = (Map<String, String>) nativeWebRequest.getAttribute(
+        @SuppressWarnings("unchecked") final Map<String, String> uriTemplateVars = (Map<String, String>) nativeWebRequest.getAttribute(
                 HandlerMapping.URI_TEMPLATE_VARIABLES_ATTRIBUTE, RequestAttributes.SCOPE_REQUEST);
-        if (MapUtils.isNotEmpty(uriTemplateVars))
-        {
+        if (MapUtils.isNotEmpty(uriTemplateVars)) {
             final String pathVariable = uriTemplateVars.get(variableName);
-            if (StringUtils.isNotEmpty(pathVariable))
-            {
+            if (StringUtils.isNotEmpty(pathVariable)) {
                 return pathVariable;
             }
         }
 
         // Check @RequestParam parameter.
         final String requestParam = nativeWebRequest.getParameter(variableName);
-        if (StringUtils.isNotEmpty(requestParam))
-        {
+        if (StringUtils.isNotEmpty(requestParam)) {
             return requestParam;
         }
 
         throw new MissingPathVariableException(variableName, parameter);
     }
 
-    private Storage getStorage(final String storageId)
-    {
+    private Storage getStorage(final String storageId) {
         final Configuration configuration = configurationManager.getConfiguration();
-        if (configuration == null)
-        {
+        if (configuration == null) {
             return null;
         }
         return configuration.getStorage(storageId);
     }
 
     private Repository getRepository(final String storageId,
-                                     final String repositoryId)
-    {
+                                     final String repositoryId) {
         final Storage storage = getStorage(storageId);
-        if (storage == null)
-        {
+        if (storage == null) {
             return null;
         }
         return storage.getRepository(repositoryId);

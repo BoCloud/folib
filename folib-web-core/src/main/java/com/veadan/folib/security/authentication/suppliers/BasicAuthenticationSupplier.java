@@ -19,7 +19,7 @@ import org.springframework.util.Assert;
  * @author veadan
  */
 @Component
-@Order(4)
+@Order(0)
 class BasicAuthenticationSupplier implements AuthenticationSupplier
 {
 

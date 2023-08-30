@@ -7,6 +7,7 @@ import com.alibaba.fastjson.JSONException;
 import com.alibaba.fastjson.JSONObject;
 import com.beust.jcommander.internal.Sets;
 import com.veadan.folib.cloud.storage.s3fs.S3Path;
+import com.veadan.folib.components.artifact.ArtifactComponent;
 import com.veadan.folib.components.license.LicenseComponent;
 import com.veadan.folib.domain.Artifact;
 import com.veadan.folib.domain.Component;
@@ -93,6 +94,10 @@ public class ScanService {
 
     @Inject
     private LicenseComponent licenseComponent;
+
+    @Inject
+    @Lazy
+    private ArtifactComponent artifactComponent;
 
     @Value("${folib.temp}")
     private String tempPath;
@@ -418,6 +423,8 @@ public class ScanService {
                     artifact.setComponentSet(Collections.singleton(new ComponentEntity("drop")));
                 }
                 artifactService.saveOrUpdateArtifact(artifact);
+                RepositoryPath repositoryPath = repositoryPathResolver.resolve(artifact.getStorageId(), artifact.getRepositoryId(), artifact.getArtifactPath());
+                artifactComponent.storeArtifactMetadataFile(repositoryPath);
                 if (CollectionUtils.isNotEmpty(artifact.getVulnerabilitySet())) {
                     List<com.veadan.folib.domain.Vulnerability> vulnerabilityList = Lists.newArrayList();
                     vulnerabilityList.addAll(artifact.getVulnerabilitySet());

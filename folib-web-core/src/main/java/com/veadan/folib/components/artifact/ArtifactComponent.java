@@ -19,6 +19,7 @@ import com.veadan.folib.domain.ArtifactIdGroup;
 import com.veadan.folib.domain.Vulnerability;
 import com.veadan.folib.enums.BlockTypeEnum;
 import com.veadan.folib.enums.PromotionStatusEnum;
+import com.veadan.folib.event.artifact.ArtifactEventListenerRegistry;
 import com.veadan.folib.npm.metadata.*;
 import com.veadan.folib.providers.io.RepositoryFiles;
 import com.veadan.folib.providers.io.RepositoryPath;
@@ -46,6 +47,7 @@ import com.veadan.folib.utils.PypiPackageNameConverter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.maven.model.Model;
@@ -54,9 +56,11 @@ import org.apache.maven.model.io.xpp3.MavenXpp3Writer;
 import org.codehaus.plexus.util.xml.pull.XmlPullParserException;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.http.HttpStatus;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 
 import javax.inject.Inject;
@@ -140,6 +144,11 @@ public class ArtifactComponent {
     @Inject
     @Lazy
     private PypiBrowsePackageHtmlResponseBuilder pypiBrowsePackageHtmlResponseBuilder;
+
+    @Inject
+    @Lazy
+    private ArtifactEventListenerRegistry artifactEventListenerRegistry;
+
 
     /**
      * 读取文件内容
@@ -263,7 +272,7 @@ public class ArtifactComponent {
             return false;
         }
         if (repositoryPath.getFileSystem() instanceof DockerFileSystem) {
-            log.info(" docker布局");
+            log.debug("docker布局");
             String blobs = "blobs";
             String manifest = "manifest";
             String path = "";
@@ -284,42 +293,42 @@ public class ArtifactComponent {
                 flag = true;
             }
         } else if (repositoryPath.getFileSystem() instanceof MavenFileSystem) {
-            log.info(" maven布局");
+            log.debug("maven布局");
             if (Boolean.TRUE.equals(scan)) {
                 flag = JarArchiveListingFunction.INSTANCE.supports(repositoryPath);
             } else {
                 flag = JarArchiveListingFunction.INSTANCE.supports(repositoryPath) || endsWith(repositoryPath.getFileName().toString(), Collections.singletonList(".pom"));
             }
         } else if (repositoryPath.getFileSystem() instanceof NpmFileSystem) {
-            log.info(" npm布局");
+            log.debug("npm布局");
             List<String> suffixList = Arrays.asList(".json", ".tgz");
             flag = endsWith(repositoryPath.getFileName().toString(), suffixList);
         } else if (repositoryPath.getFileSystem() instanceof NugetFileSystem) {
-            log.info(" nuget布局");
+            log.debug("nuget布局");
             List<String> suffixList = Arrays.asList(".nupkg", ".nuspec", "packages.config");
             flag = endsWith(repositoryPath.getFileName().toString(), suffixList);
         } else if (repositoryPath.getFileSystem() instanceof PypiFileSystem) {
-            log.info(" pypi布局");
+            log.debug("pypi布局");
             List<String> suffixList = Arrays.asList(".whl", ".egg", ".zip");
             flag = endsWith(repositoryPath.getFileName().toString(), suffixList);
         } else if (repositoryPath.getFileSystem() instanceof RpmFileSystem) {
-            log.info(" rpm布局");
+            log.debug("rpm布局");
             List<String> suffixList = Collections.singletonList(".rpm");
             flag = endsWith(repositoryPath.getFileName().toString(), suffixList);
         } else if (repositoryPath.getFileSystem() instanceof PhpFileSystem) {
-            log.info(" php布局");
+            log.debug("php布局");
             List<String> suffixList = Arrays.asList("tar", "tar.gz", "tar.bz2", "zip", "json");
             flag = endsWith(repositoryPath.getFileName().toString(), suffixList);
         } else if (repositoryPath.getFileSystem() instanceof ConanFileSystem) {
-            log.info(" Conan布局");
+            log.debug("Conan布局");
             List<String> suffixList = Arrays.asList(".tgz", ".py");
             flag = endsWith(repositoryPath.getFileName().toString(), suffixList);
         } else if (repositoryPath.getFileSystem() instanceof HelmFileSystem) {
             List<String> suffixList = Collections.singletonList(".tgz");
             flag = endsWith(repositoryPath.getFileName().toString(), suffixList);
-            log.info(" Helm布局");
+            log.debug("Helm布局");
         } else if (repositoryPath.getFileSystem() instanceof RawFileSystem) {
-            log.info(" raw布局");
+            log.debug("raw布局");
             if (Boolean.TRUE.equals(scan)) {
                 List<String> allSuffixList = Lists.newArrayList(".jar", ".war", ".ear", ".zip", ".json", ".tgz", ".nupkg", ".nuspec", "packages.config", ".whl", ".egg", ".zip", ".rpm", "tar", "tar.gz", "tar.bz2", "zip", "json", ".tgz", ".py", ".tgz", ".exe");
                 flag = endsWith(repositoryPath.getFileName().toString(), allSuffixList);
@@ -1008,5 +1017,47 @@ public class ArtifactComponent {
             }
         }
         return html;
+    }
+
+    /**
+     * 存储制品元数据文件
+     *
+     * @param repositoryPath repositoryPath
+     */
+    public void storeArtifactMetadataFile(RepositoryPath repositoryPath) {
+        try {
+            if (Objects.nonNull(repositoryPath) && Files.exists(repositoryPath)) {
+                String fileName = "." + FilenameUtils.getName(repositoryPath.getFileName().toString()) + "-metadata";
+                RepositoryPath artifactRepositoryPath = repositoryPath.getParent().resolve(fileName);
+                Files.writeString(artifactRepositoryPath, JSONObject.toJSONString(repositoryPath.getArtifactEntry()));
+            }
+        } catch (Exception ex) {
+            log.error("StoreArtifactMetadataFile error ", ex);
+        }
+    }
+
+    @Async("eventTaskExecutor")
+    public void beforeRead(RepositoryPath repositoryPath) {
+        try {
+            if (!RepositoryFiles.isArtifact(repositoryPath)) {
+                return;
+            }
+            log.info("ThreadId {}", Thread.currentThread().getName());
+            artifactEventListenerRegistry.dispatchArtifactDownloadingEvent(repositoryPath);
+        } catch (Exception ex) {
+            log.error("RepositoryPath beforeRead error ", ex);
+        }
+    }
+
+    @Async("eventTaskExecutor")
+    public void afterRead(RepositoryPath repositoryPath) {
+        try {
+            if (!RepositoryFiles.isArtifact(repositoryPath)) {
+                return;
+            }
+            artifactEventListenerRegistry.dispatchArtifactDownloadedEvent(repositoryPath);
+        } catch (Exception ex) {
+            log.error("RepositoryPath beforeRead error ", ex);
+        }
     }
 }

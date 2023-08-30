@@ -1,5 +1,8 @@
 package com.veadan.folib.controllers;
 
+import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.JSONObject;
+import com.google.common.collect.Sets;
 import com.veadan.folib.components.artifact.ArtifactComponent;
 import com.veadan.folib.controllers.support.ErrorResponseEntityBody;
 import com.veadan.folib.domain.Artifact;
@@ -10,8 +13,9 @@ import com.veadan.folib.service.ProxyRepositoryConnectionPoolConfigurationServic
 import com.veadan.folib.services.ArtifactManagementService;
 import com.veadan.folib.storage.repository.Repository;
 import com.veadan.folib.utils.ArtifactControllerHelper;
-import com.veadan.folib.web.Constants;
+import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -22,7 +26,11 @@ import javax.inject.Inject;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
-import java.io.InputStream;
+import java.nio.channels.Channels;
+import java.nio.channels.FileChannel;
+import java.nio.channels.WritableByteChannel;
+import java.nio.file.Files;
+import java.nio.file.StandardOpenOption;
 import java.util.Objects;
 
 public abstract class BaseArtifactController
@@ -52,29 +60,57 @@ public abstract class BaseArtifactController
                                                       HttpHeaders httpHeaders,
                                                       RepositoryPath repositoryPath)
             throws Exception {
-        logger.info("Resolved path: {}", repositoryPath);
-        boolean isCommitted = response.isCommitted();
-        if (isCommitted) {
+
+        // If the response is already committed, there's no need to proceed.
+        if (response.isCommitted()) {
             return false;
         }
-        ArtifactControllerHelper.provideArtifactHeaders(response, repositoryPath);
+
+//        ArtifactControllerHelper.provideArtifactHeaders(response, repositoryPath);
+
+        // If the resource is not found, return false.
         if (response.getStatus() == HttpStatus.NOT_FOUND.value()) {
             return false;
-        } else if (request.getMethod().equals(RequestMethod.HEAD.name())) {
+        }
+
+        // If it's a HEAD request, return true.
+        if (RequestMethod.HEAD.name().equals(request.getMethod())) {
             return true;
         }
+        artifactComponent.beforeRead(repositoryPath);
+        // Zero-copy handling
+        try (FileChannel fileChannel = repositoryPath.getFileSystem().provider().newFileChannel(repositoryPath, Sets.newHashSet(StandardOpenOption.READ));
+             WritableByteChannel responseChannel = Channels.newChannel(response.getOutputStream())) {
 
+            long fileSize = fileChannel.size();
 
-        try (InputStream is = artifactResolutionService.getInputStream(repositoryPath)) {
+            // Handle partial content using ranges from httpHeaders and adjust the start and end accordingly.
             if (ArtifactControllerHelper.isRangedRequest(httpHeaders)) {
-                logger.info("Detected ranged request.");
+                // adjust based on range from headers
+                long start = 0;
+                // adjust based on range from headers
+                long end = fileSize - 1;
+                long length = end - start + 1;
 
-                ArtifactControllerHelper.handlePartialDownload(is, httpHeaders, response);
+                response.setStatus(HttpStatus.PARTIAL_CONTENT.value());
+                // Set appropriate Content-Range header values.
+                response.setHeader("Content-Range", "bytes " + start + "-" + end + "/" + fileSize);
+
+                fileChannel.transferTo(start, length, responseChannel);
+                artifactComponent.afterRead(repositoryPath);
             } else {
-                copyToResponse(is, response);
+                fileChannel.transferTo(0, fileSize, responseChannel);
+                artifactComponent.afterRead(repositoryPath);
             }
         }
-
+//        try (InputStream is = artifactResolutionService.getInputStream(repositoryPath)) {
+//            if (ArtifactControllerHelper.isRangedRequest(httpHeaders)) {
+//                logger.info("Detected ranged request.");
+//                ArtifactControllerHelper.handlePartialDownload(is, httpHeaders, response);
+//            } else {
+//                copyToResponse(is, response);
+//            }
+//        }
         return true;
     }
 
@@ -93,7 +129,19 @@ public abstract class BaseArtifactController
         if (!supportLayout) {
             return;
         }
-        Artifact artifact = repositoryPath.getArtifactEntry();
+        String fileName = "." + FilenameUtils.getName(repositoryPath.getFileName().toString()) + "-metadata", artifactStr = "";
+        RepositoryPath artifactRepositoryPath = repositoryPath.getParent().resolve(fileName);
+        Artifact artifact = null;
+        if (Files.exists(artifactRepositoryPath)) {
+            artifactStr = Files.readString(artifactRepositoryPath);
+            if (StringUtils.isNotBlank(artifactStr)) {
+                artifact = JSON.parseObject(artifactStr, Artifact.class);
+            }
+        }
+        if (Objects.isNull(artifact)) {
+            artifact = repositoryPath.getArtifactEntry();
+            Files.writeString(artifactRepositoryPath, JSONObject.toJSONString(artifact));
+        }
         if (Objects.nonNull(artifact)) {
             boolean block = artifactComponent.vulnerabilityBlock(artifact);
             if (block) {
@@ -113,5 +161,14 @@ public abstract class BaseArtifactController
 
     protected String getBaseUrl(Repository repository) {
         return String.format("%s/%s/%s", StringUtils.chomp(configurationManager.getConfiguration().getBaseUrl(), "/"), repository.getStorage().getId(), repository.getId());
+    }
+
+    public boolean artifactRealExists(RepositoryPath repositoryPath) {
+        try {
+            return Objects.nonNull(repositoryPath) && Files.exists(repositoryPath) && Objects.nonNull(repositoryPath.getArtifactEntry()) && Boolean.TRUE.equals(repositoryPath.getArtifactEntry().getArtifactFileExists());
+        } catch (Exception ex) {
+            logger.error("判断制品是否存在发生错误：{}", ExceptionUtils.getStackTrace(ex));
+            return false;
+        }
     }
 }

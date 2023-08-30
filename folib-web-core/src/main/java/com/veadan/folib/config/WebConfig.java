@@ -299,10 +299,10 @@ public class WebConfig
         return viewResolver;
     }
 
-    @Bean
-    MavenArtifactRequestInterceptor mavenArtifactRequestInterceptor(RepositoryPathResolver repositoryPathResolver) {
-        return new MavenArtifactRequestInterceptor(repositoryPathResolver);
-    }
+//    @Bean
+//    MavenArtifactRequestInterceptor mavenArtifactRequestInterceptor(RepositoryPathResolver repositoryPathResolver) {
+//        return new MavenArtifactRequestInterceptor(repositoryPathResolver);
+//    }
 
     @Bean
     PermissionCheckInterceptor permissionCheckInterceptor() {

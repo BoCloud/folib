@@ -11,7 +11,7 @@ import javax.servlet.http.HttpServletRequest;
 import org.springframework.core.annotation.Order;
 import static com.veadan.folib.web.Constants.ARTIFACT_ROOT_PATH;
 
-@Order(3)
+@Order(2)
 public abstract class LayoutAuthenticationSupplier
         implements AuthenticationSupplier
 {
