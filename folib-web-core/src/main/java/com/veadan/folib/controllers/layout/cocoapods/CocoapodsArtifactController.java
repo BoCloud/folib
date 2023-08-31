@@ -102,4 +102,25 @@ public class CocoapodsArtifactController extends BaseArtifactController
         vulnerabilityBlock(repositoryPath);
         provideArtifactDownloadResponse(request, response, httpHeaders, repositoryPath);
     }
+
+    @ApiOperation(value = "Download proxy pod and cache")
+    @ApiResponses(value = { @ApiResponse(code = 200, message = ""),
+            @ApiResponse(code = 400, message = "An error occurred.") })
+    @PreAuthorize("hasAuthority('ARTIFACTS_RESOLVE')")
+    @GetMapping(value = { "{storageId}/{repositoryId}/pod/git/{owner}/{podName}" })
+    public void downloadProxy(@RepositoryMapping Repository repository,
+                         @RequestHeader HttpHeaders httpHeaders,
+                         @PathVariable String owner,
+                         @PathVariable String podName,
+                         HttpServletRequest request,
+                         HttpServletResponse response)
+            throws Exception
+    {
+        final String storageId = repository.getStorage().getId();
+        final String repositoryId = repository.getId();
+
+//        RepositoryPath repositoryPath = artifactResolutionService.resolvePath(storageId, repositoryId, path);
+//        vulnerabilityBlock(repositoryPath);
+//        provideArtifactDownloadResponse(request, response, httpHeaders, repositoryPath);
+    }
 }
