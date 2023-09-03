@@ -5,6 +5,12 @@ server:
       timeout: 50000
   jetty:
     max-http-form-post-size: 524288000 # Maximum size in bytes of the HTTP post or put content.
+#    threads:
+#      acceptors: 16
+#      selectors: 32
+  compression:
+    enabled: true
+    mime-types: application/octet-stream
 spring:
   datasource:
     type: com.alibaba.druid.pool.DruidDataSource
@@ -183,7 +189,7 @@ folib:
 logging:
   debug: false
   console:
-    enabled: true
+    enabled: false
   file:
     name: ${logging.dir}/folib.log
     enabled: true

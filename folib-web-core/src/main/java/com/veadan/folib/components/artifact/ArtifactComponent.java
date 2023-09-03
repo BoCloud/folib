@@ -56,7 +56,6 @@ import org.apache.maven.model.io.xpp3.MavenXpp3Writer;
 import org.codehaus.plexus.util.xml.pull.XmlPullParserException;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.http.HttpStatus;
@@ -262,29 +261,20 @@ public class ArtifactComponent {
             log.error("RepositoryPath [{}] does not exist", repositoryPath);
             return false;
         }
-        try {
-            if (RepositoryFiles.isChecksum(repositoryPath)) {
-                log.error("LayoutSupports [{}] isChecksum", repositoryPath);
-                return false;
-            }
-        } catch (Exception ex) {
-            log.error("LayoutSupports get [{}] isChecksum error [{}]", repositoryPath, ExceptionUtils.getStackTrace(ex));
-            return false;
-        }
+//        try {
+//            if (RepositoryFiles.isChecksum(repositoryPath)) {
+//                log.error("LayoutSupports [{}] isChecksum", repositoryPath);
+//                return false;
+//            }
+//        } catch (Exception ex) {
+//            log.error("LayoutSupports get [{}] isChecksum error [{}]", repositoryPath, ExceptionUtils.getStackTrace(ex));
+//            return false;
+//        }
         if (repositoryPath.getFileSystem() instanceof DockerFileSystem) {
             log.debug("docker布局");
             String blobs = "blobs";
             String manifest = "manifest";
-            String path = "";
-            try {
-                path = repositoryPath.toAbsolutePath().toString();
-                if (Objects.nonNull(repositoryPath.getArtifactEntry())) {
-                    path = repositoryPath.getArtifactEntry().getArtifactPath();
-                }
-            } catch (Exception ex) {
-                log.error("Check docker layoutSupports error：{}", ExceptionUtils.getStackTrace(ex));
-                path = repositoryPath.toAbsolutePath().toString();
-            }
+            String path = repositoryPath.toAbsolutePath().toString();
             if (Boolean.TRUE.equals(block)) {
                 if (path.contains("sha256") && !path.endsWith(".sha256")) {
                     flag = true;
@@ -479,16 +469,20 @@ public class ArtifactComponent {
      * 判断是否需要阻断
      *
      * @param artifact 制品
+     * @param layout   layout
      * @return true
      */
-    public boolean vulnerabilityBlock(Artifact artifact) {
+    public boolean vulnerabilityBlock(Artifact artifact, String layout) {
         if (Objects.isNull(artifact)) {
             return false;
         }
         boolean block = false;
         String storageId = artifact.getStorageId(), repositoryId = artifact.getRepositoryId();
-        RootRepositoryPath rootRepositoryPath = repositoryPathResolver.resolve(storageId, repositoryId);
-        boolean isDockerLayout = DockerLayoutProvider.ALIAS.equals(rootRepositoryPath.getRepository().getLayout());
+        if (StringUtils.isBlank(layout)) {
+            RootRepositoryPath rootRepositoryPath = repositoryPathResolver.resolve(storageId, repositoryId);
+            layout = rootRepositoryPath.getRepository().getLayout();
+        }
+        boolean isDockerLayout = DockerLayoutProvider.ALIAS.equals(layout);
         Set<Vulnerability> vulnerabilitySet = artifact.getVulnerabilitySet();
         if (CollectionUtils.isEmpty(vulnerabilitySet)) {
             return false;
@@ -1036,25 +1030,24 @@ public class ArtifactComponent {
         }
     }
 
-    @Async("eventTaskExecutor")
+//    @Async("eventTaskExecutor")
     public void beforeRead(RepositoryPath repositoryPath) {
         try {
-            if (!RepositoryFiles.isArtifact(repositoryPath)) {
-                return;
-            }
-            log.info("ThreadId {}", Thread.currentThread().getName());
+//            if (!RepositoryFiles.isArtifact(repositoryPath)) {
+//                return;
+//            }
             artifactEventListenerRegistry.dispatchArtifactDownloadingEvent(repositoryPath);
         } catch (Exception ex) {
             log.error("RepositoryPath beforeRead error ", ex);
         }
     }
 
-    @Async("eventTaskExecutor")
+//    @Async("eventTaskExecutor")
     public void afterRead(RepositoryPath repositoryPath) {
         try {
-            if (!RepositoryFiles.isArtifact(repositoryPath)) {
-                return;
-            }
+//            if (!RepositoryFiles.isArtifact(repositoryPath)) {
+//                return;
+//            }
             artifactEventListenerRegistry.dispatchArtifactDownloadedEvent(repositoryPath);
         } catch (Exception ex) {
             log.error("RepositoryPath beforeRead error ", ex);

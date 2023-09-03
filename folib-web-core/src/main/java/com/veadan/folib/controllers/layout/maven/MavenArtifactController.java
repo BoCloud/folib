@@ -1,7 +1,5 @@
 package com.veadan.folib.controllers.layout.maven;
 
-import com.alibaba.fastjson.JSONArray;
-import com.google.common.collect.Sets;
 import com.veadan.folib.artifact.coordinates.MavenArtifactCoordinates;
 import com.veadan.folib.controllers.BaseArtifactController;
 import com.veadan.folib.providers.io.RepositoryPath;
@@ -10,9 +8,6 @@ import com.veadan.folib.storage.repository.Repository;
 import com.veadan.folib.web.LayoutRequestMapping;
 import com.veadan.folib.web.RepositoryMapping;
 import io.swagger.annotations.*;
-import org.eclipse.jetty.http.ResourceHttpContent;
-import org.eclipse.jetty.server.HttpOutput;
-import org.eclipse.jetty.util.resource.Resource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -22,15 +17,10 @@ import org.springframework.web.bind.annotation.*;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
-import java.lang.reflect.Field;
 import java.nio.ByteBuffer;
-import java.nio.channels.Channels;
-import java.nio.channels.FileChannel;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.channels.WritableByteChannel;
 import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.StandardOpenOption;
 
 import static org.springframework.http.HttpStatus.NOT_FOUND;
 
@@ -68,21 +58,49 @@ public class MavenArtifactController
             @ApiResponse(code = 503, message = "Repository currently not in service.")})
     @PreAuthorize("hasAuthority('ARTIFACTS_RESOLVE')")
     @RequestMapping(value = {"/{storageId}/{repositoryId}/{artifactPath:.+}"}, method = {RequestMethod.GET, RequestMethod.HEAD})
-    public void download(@RepositoryMapping Repository repository,
-                         @RequestHeader HttpHeaders httpHeaders,
-                         @PathVariable String artifactPath,
-                         HttpServletRequest request,
-                         HttpServletResponse response)
+    public void download(
+            @RequestHeader HttpHeaders httpHeaders,
+            @PathVariable String artifactPath,
+            @PathVariable String storageId,
+            @PathVariable String repositoryId,
+            HttpServletRequest request,
+            HttpServletResponse response)
             throws Exception {
-        final String storageId = repository.getStorage().getId();
-        final String repositoryId = repository.getId();
 //        final String storageId = repository.getStorage().getId();
 //        final String repositoryId = repository.getId();
-        logger.info("Requested /{}/{}/{}.", storageId, repositoryId, artifactPath);
-        artifactPath = correctIndexPathIfNecessary(repository, artifactPath);
+//        final String storageId = repository.getStorage().getId();
+//        final String repositoryId = repository.getId();
+        long startTime = System.currentTimeMillis();
+        logger.info("Requested /{}/{}/{} startTime {} .", storageId, repositoryId, artifactPath, startTime);
+//        artifactPath = correctIndexPathIfNecessary(repository, artifactPath);
         RepositoryPath repositoryPath = artifactResolutionService.resolvePath(storageId, repositoryId, artifactPath);
         vulnerabilityBlock(repositoryPath);
         provideArtifactDownloadResponse(request, response, httpHeaders, repositoryPath);
+        logger.info("Requested /{}/{}/{} endTime {} .", storageId, repositoryId, artifactPath, System.currentTimeMillis() - startTime);
+//        try (FileChannel fileChannel = FileChannel.open(repositoryPath)) {
+//            WritableByteChannel responseChannel = Channels.newChannel(response.getOutputStream());
+//            long fileSize = fileChannel.size();
+//
+//            // Handle partial content using ranges from httpHeaders and adjust the start and end accordingly.
+//            if (ArtifactControllerHelper.isRangedRequest(httpHeaders)) {
+//                // adjust based on range from headers
+//                long start = 0;
+//                // adjust based on range from headers
+//                long end = fileSize - 1;
+//                long length = end - start + 1;
+//
+//                response.setStatus(HttpStatus.PARTIAL_CONTENT.value());
+//                // Set appropriate Content-Range header values.
+//                response.setHeader("Content-Range", "bytes " + start + "-" + end + "/" + fileSize);
+//
+//                fileChannel.transferTo(start, length, responseChannel);
+////                artifactComponent.afterRead(repositoryPath);
+//            } else {
+//                fileChannel.transferTo(0, fileSize, responseChannel);
+////                artifactComponent.afterRead(repositoryPath);
+//            }
+//            logger.info("Requested /{}/{}/{} endTime {} .", storageId, repositoryId, artifactPath, System.currentTimeMillis() - startTime);
+//        }
 //        Class<?> headerWriterResponseClass = response.getOutputStream().getClass();
 //        Field delegateField = headerWriterResponseClass.getDeclaredField("delegate");
 //        delegateField.setAccessible(true);

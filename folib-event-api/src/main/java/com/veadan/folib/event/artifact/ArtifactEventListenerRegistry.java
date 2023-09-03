@@ -48,6 +48,7 @@ public class ArtifactEventListenerRegistry extends AbstractEventListenerRegistry
         dispatchEvent(event);
     }
 
+    @Async
     public void dispatchArtifactDownloadingEvent(Path path)
     {
         ArtifactEvent event = new ArtifactEvent(path,
@@ -58,6 +59,7 @@ public class ArtifactEventListenerRegistry extends AbstractEventListenerRegistry
         dispatchEvent(event);
     }
 
+    @Async
     public void dispatchArtifactDownloadedEvent(Path path)
     {
         ArtifactEvent event = new ArtifactEvent(path,

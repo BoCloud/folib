@@ -2,7 +2,6 @@ package com.veadan.folib.controllers;
 
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
-import com.google.common.collect.Sets;
 import com.veadan.folib.components.artifact.ArtifactComponent;
 import com.veadan.folib.controllers.support.ErrorResponseEntityBody;
 import com.veadan.folib.domain.Artifact;
@@ -20,6 +19,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.web.bind.annotation.RequestMethod;
 
 import javax.inject.Inject;
@@ -30,7 +30,6 @@ import java.nio.channels.Channels;
 import java.nio.channels.FileChannel;
 import java.nio.channels.WritableByteChannel;
 import java.nio.file.Files;
-import java.nio.file.StandardOpenOption;
 import java.util.Objects;
 
 public abstract class BaseArtifactController
@@ -54,6 +53,9 @@ public abstract class BaseArtifactController
     @Autowired
     private ArtifactComponent artifactComponent;
 
+    @Autowired
+    private ThreadPoolTaskExecutor asyncRepositoryThreadPoolExecutor;
+
 
     protected boolean provideArtifactDownloadResponse(HttpServletRequest request,
                                                       HttpServletResponse response,
@@ -66,7 +68,7 @@ public abstract class BaseArtifactController
             return false;
         }
 
-//        ArtifactControllerHelper.provideArtifactHeaders(response, repositoryPath);
+        ArtifactControllerHelper.provideArtifactHeaders(response, repositoryPath);
 
         // If the resource is not found, return false.
         if (response.getStatus() == HttpStatus.NOT_FOUND.value()) {
@@ -77,11 +79,12 @@ public abstract class BaseArtifactController
         if (RequestMethod.HEAD.name().equals(request.getMethod())) {
             return true;
         }
+        long startTime = System.currentTimeMillis();
+        logger.debug("Download {} 开始时间 {}", repositoryPath.toString(), startTime);
         artifactComponent.beforeRead(repositoryPath);
-        // Zero-copy handling
-        try (FileChannel fileChannel = repositoryPath.getFileSystem().provider().newFileChannel(repositoryPath, Sets.newHashSet(StandardOpenOption.READ));
-             WritableByteChannel responseChannel = Channels.newChannel(response.getOutputStream())) {
 
+        try (FileChannel fileChannel = FileChannel.open(repositoryPath)) {
+            WritableByteChannel responseChannel = Channels.newChannel(response.getOutputStream());
             long fileSize = fileChannel.size();
 
             // Handle partial content using ranges from httpHeaders and adjust the start and end accordingly.
@@ -103,14 +106,7 @@ public abstract class BaseArtifactController
                 artifactComponent.afterRead(repositoryPath);
             }
         }
-//        try (InputStream is = artifactResolutionService.getInputStream(repositoryPath)) {
-//            if (ArtifactControllerHelper.isRangedRequest(httpHeaders)) {
-//                logger.info("Detected ranged request.");
-//                ArtifactControllerHelper.handlePartialDownload(is, httpHeaders, response);
-//            } else {
-//                copyToResponse(is, response);
-//            }
-//        }
+        logger.debug("Download {} 结束时间 {}", repositoryPath.toString(), System.currentTimeMillis() - startTime);
         return true;
     }
 
@@ -132,26 +128,30 @@ public abstract class BaseArtifactController
         String fileName = "." + FilenameUtils.getName(repositoryPath.getFileName().toString()) + "-metadata", artifactStr = "";
         RepositoryPath artifactRepositoryPath = repositoryPath.getParent().resolve(fileName);
         Artifact artifact = null;
+        long startTime = System.currentTimeMillis();
+        logger.info("Block JSON {} 开始时间 {}", repositoryPath.toString(), startTime);
         if (Files.exists(artifactRepositoryPath)) {
             artifactStr = Files.readString(artifactRepositoryPath);
             if (StringUtils.isNotBlank(artifactStr)) {
                 artifact = JSON.parseObject(artifactStr, Artifact.class);
             }
         }
+        logger.info("Block JSON {} 结束时间 {}", repositoryPath.toString(), System.currentTimeMillis() - startTime);
         if (Objects.isNull(artifact)) {
             artifact = repositoryPath.getArtifactEntry();
+            if (Objects.isNull(artifact)) {
+                return;
+            }
             Files.writeString(artifactRepositoryPath, JSONObject.toJSONString(artifact));
         }
-        if (Objects.nonNull(artifact)) {
-            boolean block = artifactComponent.vulnerabilityBlock(artifact);
-            if (block) {
-                httpServletResponse.setContentType(org.springframework.http.MediaType.APPLICATION_JSON_VALUE);
-                httpServletResponse.setStatus(HttpServletResponse.SC_FORBIDDEN);
-                String msg = "The artifact " + artifact.getUuid() + " has a vulnerability, and downloading is prohibited";
-                httpServletResponse.getWriter().println(objectMapper.writeValueAsString(new ErrorResponseEntityBody(msg)));
-                httpServletResponse.flushBuffer();
-                artifactEventListenerRegistry.dispatchArtifactDownloadBlockedEvent(repositoryPath);
-            }
+        boolean block = artifactComponent.vulnerabilityBlock(artifact, repositoryPath.getRepository().getLayout());
+        if (block) {
+            httpServletResponse.setContentType(org.springframework.http.MediaType.APPLICATION_JSON_VALUE);
+            httpServletResponse.setStatus(HttpServletResponse.SC_FORBIDDEN);
+            String msg = "The artifact " + artifact.getUuid() + " has a vulnerability, and downloading is prohibited";
+            httpServletResponse.getWriter().println(objectMapper.writeValueAsString(new ErrorResponseEntityBody(msg)));
+            httpServletResponse.flushBuffer();
+            artifactEventListenerRegistry.dispatchArtifactDownloadBlockedEvent(repositoryPath);
         }
     }
 

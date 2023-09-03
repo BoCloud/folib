@@ -7,8 +7,10 @@ import java.util.List;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
+import org.springframework.security.core.context.SecurityContextHolder;
 
 /**
  * @author veadan
@@ -30,6 +32,7 @@ public class AuthenticationSuppliers
     @Override
     public Authentication supply(@Nonnull HttpServletRequest request)
     {
+        Authentication authentication;
         if (suppliers == null || suppliers.isEmpty())
         {
             logger.debug("There was no [{}] provided.", AuthenticationSupplier.class);
@@ -51,7 +54,6 @@ public class AuthenticationSuppliers
             }
 
             logger.debug("Authentication supplier attempt using {}", supplierName);
-            Authentication authentication;
             try
             {
                 authentication = supplier.supply(request);

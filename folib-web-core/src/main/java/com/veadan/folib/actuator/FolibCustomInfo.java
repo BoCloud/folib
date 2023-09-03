@@ -25,7 +25,6 @@ public class FolibCustomInfo implements InfoContributor
         Map<String, String> folibInfo = new HashMap<>();
         folibInfo.put("version", propertiesBooter.getFolibVersion());
         folibInfo.put("revision", propertiesBooter.getFolibRevision());
-
         builder.withDetail("folib", folibInfo);
     }
 }

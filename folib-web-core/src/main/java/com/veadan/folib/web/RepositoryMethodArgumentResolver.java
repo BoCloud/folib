@@ -70,7 +70,7 @@ public class RepositoryMethodArgumentResolver
 
         if (repository != null && Objects.equals(repository.getId(), repositoryId) &&
                 Objects.equals(repository.getStorage().getId(), storageId)) {
-            log.info("查找匹配仓库耗时 {}", System.currentTimeMillis() - startTime);
+            log.info("查找匹配仓库耗时 request {}", System.currentTimeMillis() - startTime);
             return repository;
         }
 
@@ -85,7 +85,6 @@ public class RepositoryMethodArgumentResolver
             final String message = String.format(NOT_FOUND_REPOSITORY_MESSAGE, storageId, repositoryId);
             throw new RepositoryNotFoundException(message);
         }
-
         // This annotation is used in a lot of controllers - some of which are related to the configuration management.
         // It is necessary to allow requests to pass when the repository status is `out of service` (i.e. `/api/configuration/**`),
         // but still return `ServiceUnavailableException` when people are accessing `/storages/**`.
@@ -93,7 +92,7 @@ public class RepositoryMethodArgumentResolver
             final String message = String.format(NOT_IN_SERVICE_REPOSITORY_MESSAGE, storageId, repositoryId);
             throw new ServiceUnavailableException(message);
         }
-        log.info("查找匹配仓库耗时 {}", System.currentTimeMillis() - startTime);
+        log.info("查找匹配仓库耗时 conf {}", System.currentTimeMillis() - startTime);
         return repository;
     }
 
