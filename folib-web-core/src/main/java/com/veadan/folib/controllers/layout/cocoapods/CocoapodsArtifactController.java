@@ -156,12 +156,23 @@ public class CocoapodsArtifactController extends BaseArtifactController
         final String targetUrl = String.format("https://github.com/%s/%s/archive/refs/tags/%s.zip", owner, podName, version),
                 artifactZipCachePath = String.format("%s/%s-%s.zip", artifactCacheFolderPath, podName, version), 
                 artifactTarGzPath = String.format("%s/%s/tags/%s/%s-%s.tar.gz", owner, podName, version, podName, version);
+
+        RepositoryPath repositoryTarGzPath = repositoryPathResolver.resolve(storageId, repositoryId, artifactTarGzPath);
+        if (null != repositoryTarGzPath)
+        { // 在repo-art插件请求下载前判断是否存在，存在则直接返回
+            vulnerabilityBlock(repositoryTarGzPath);
+            response.setHeader("Content-Disposition", String.format("attachment;filename=%s-%s.tar.gz", podName, version));
+            response.setContentType("application/x-gzip");
+            provideArtifactDownloadResponse(request, response, httpHeaders, repositoryTarGzPath);
+            return;
+        }
+        
         final RepositoryPath artifactZipCacheRPath = artifactResolutionService.resolvePath(storageId, repositoryId, targetUrl, artifactZipCachePath);
         final String artifact2TarGzPath = String.format("%s%s-%s.tar.gz", artifactZipCacheRPath.getParent().getParent().getTarget().toUri().getPath(), podName, version);
         // zip转tar.gz
         CompressUtil.zip2Targz(artifactZipCacheRPath.getTarget().toUri().getPath(), artifact2TarGzPath);
         
-        final RepositoryPath repositoryTarGzPath = repositoryPathResolver.resolve(storageId, repositoryId, artifactTarGzPath);
+        repositoryTarGzPath = repositoryPathResolver.resolve(storageId, repositoryId, artifactTarGzPath);
         artifactManagementService.validateAndStoreIndex(repositoryTarGzPath);
         
         vulnerabilityBlock(repositoryTarGzPath);
