@@ -13,6 +13,7 @@ import com.veadan.folib.storage.repository.Repository;
 import com.veadan.folib.storage.repository.RepositoryTypeEnum;
 import com.veadan.folib.storage.repository.remote.RemoteRepository;
 import com.veadan.folib.util.CocoapodsArtifactUtil;
+import com.veadan.folib.utils.CompressUtil;
 import com.veadan.folib.web.LayoutRequestMapping;
 import com.veadan.folib.web.RepositoryMapping;
 import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
@@ -121,7 +122,8 @@ public class CocoapodsIndexController
         return null;
     }
 
-    private final Pattern PROXY_REPO_URL_PATTERN = Pattern.compile("http(?:s)?\\:.*/(.*?)\\.zip");
+    private final Pattern REMOTE_REPO_URL_PATTERN = Pattern.compile("http(?:s)?\\:.*/(.*?)\\.zip");
+    private static final Pattern POD_REPO_GIT_URL_PATTERN = Pattern.compile("http(?:s)?://.*?/(.*?)/(.*?)\\.git");
     
     private final AtomicReference<CompletableFuture<Void>> DOWNLOAD_COCOAPODS_PROXY_INDEX_TASK = new AtomicReference<>();
     
@@ -143,14 +145,14 @@ public class CocoapodsIndexController
         final String username = remoteRepository.getUsername();
         final String password = remoteRepository.getPassword();
 
-        final Matcher matcher = PROXY_REPO_URL_PATTERN.matcher(url);
-        if (!matcher.find())
+        final Matcher remoteRepoUrlmatcher = REMOTE_REPO_URL_PATTERN.matcher(url);
+        if (!remoteRepoUrlmatcher.find())
         {
             return ResponseEntity
                     .status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body("代理仓库地址不正确");
         }
-        final String fileName = matcher.group(1);
+        final String fileName = remoteRepoUrlmatcher.group(1);
         final RepositoryPath repositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, String.format(".specs/%s.tar.gz", fileName));
         final File proxyTarGzFile = repositoryPath.getTarget().toFile();
 
@@ -177,13 +179,34 @@ public class CocoapodsIndexController
             try {
                 HttpUtil.download(url, Files.newOutputStream(tempZipFile.toPath()), true, streamProgress);
                 logger.info("开始转换Cocoapods仓库代理仓库Zip（{}）", tempZipFile.toPath());
-                this.zip2Targz(baseUrl, tempZipFile.getPath(), proxyTarGzFile.getPath());
+                final JSONObject podNewSourceObj = new JSONObject();
+                CompressUtil.zip2Targz(tempZipFile.getPath(), proxyTarGzFile.getPath(),
+                        (zipEntryName -> zipEntryName.endsWith(".podspec.json")),
+                        (extra ->
+                        {
+                            // 将资源下载指向folib
+                            final String podSpecJson = new String(extra, StandardCharsets.UTF_8);
+                            final JSONObject podJsonObj = JSON.parseObject(podSpecJson);
+                            final String version = podJsonObj.getString("version");
+                            final JSONObject sourceObj = podJsonObj.getJSONObject("source");
+                            if (null != sourceObj && sourceObj.containsKey("git") && StringUtils.isNotBlank(version)) {
+                                final String podRepoGitUrl = sourceObj.getString("git");
+                                final Matcher podRepoGitUrlMatcher = POD_REPO_GIT_URL_PATTERN.matcher(podRepoGitUrl);
+                                if (podRepoGitUrlMatcher.find()) {
+                                    final String owner = podRepoGitUrlMatcher.group(1);
+                                    final String podName = podRepoGitUrlMatcher.group(2);
+                                    final String newSourceUrl = String.format("%s/pod/git/%s/%s/%s", baseUrl, owner, podName, version);
+                                    podNewSourceObj.clear();
+                                    podNewSourceObj.put("http", newSourceUrl);
+                                    podNewSourceObj.put("type", "tgz");
+                                    podJsonObj.put("source", podNewSourceObj);
+                                    return JSON.toJSONString(podJsonObj, true).getBytes(StandardCharsets.UTF_8);
+                                } else { /*logger.info("非法PodGitUrl：{}", podRepoGitUrl);*/ }
+                            } else { /*logger.info("非法PodSource信息：{}", JSON.toJSONString(sourceObj));*/ }
+                            return extra;
+                        }));
                 logger.info("结束转换Cocoapods仓库代理仓库Zip（{}）", tempZipFile.toPath());
                 
-///                logger.info("开始调用validateAndStore存储Cocoapods仓库代理仓库TarGz（{}）", tempTarGzFile.toPath());
-///                final RepositoryPath repositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, String.format(".specs/%s.tar.gz", fileName));
-///                artifactManagementService.validateAndStore(repositoryPath, FileUtil.getInputStream(tempTarGzFile));
-///                logger.info("结束调用validateAndStore存储Cocoapods仓库代理仓库TarGz（{}）", tempTarGzFile.toPath());
             } catch (Exception e) {
                 logger.info("下载Cocoapods远程索引失败");
                 throw new RuntimeException(e);
@@ -195,11 +218,6 @@ public class CocoapodsIndexController
                 tempZipFile.delete();
                 logger.info("删除cocoapods仓库代理仓库Zip（{}）", tempZipFile.toPath());
             }
-//            if (tempTarGzFile.exists())
-//            { 
-//                tempTarGzFile.delete(); 
-//                logger.info("删除cocoapods仓库代理仓库TarGz（{}）", tempTarGzFile.toPath());
-//            }
         });
         downloadCocoapodsProxyIndexTask.thenRun(() -> {
             DOWNLOAD_COCOAPODS_PROXY_INDEX_TASK.set(null);
@@ -269,216 +287,4 @@ public class CocoapodsIndexController
             }
         }
     }
-
-    private static final Pattern POD_REPO_GIT_URL_PATTERN = Pattern.compile("http(?:s)?://.*?/(.*?)/(.*?)\\.git");
-
-    private void zip2Targz(String baseUrl, String zipPath, String targzPath) throws IOException
-    {
-        FileUtil.touch(targzPath);
-        // 创建tar.gz输出流
-        try (final FileOutputStream fos = new FileOutputStream(targzPath);
-             final GzipCompressorOutputStream gos = new GzipCompressorOutputStream(fos);
-             final TarArchiveOutputStream tos = new TarArchiveOutputStream(gos);
-
-             final FileInputStream fis = new FileInputStream(zipPath);
-             final ZipInputStream zis = new ZipInputStream(fis);
-             final ByteArrayOutputStream baos = new ByteArrayOutputStream();)
-        {
-            tos.setLongFileMode(TarArchiveOutputStream.LONGFILE_GNU);
-            final JSONObject podNewSourceObj = new JSONObject();
-
-            ZipEntry ze;
-            while ((ze = zis.getNextEntry()) != null) {
-                String name = ze.getName();
-                // 删除一层结构
-                name = name.substring(name.indexOf("/")+1);
-                if (StringUtils.isEmpty(name))
-                { continue; }
-                
-                final TarArchiveEntry tarArchiveEntry = new TarArchiveEntry(name);
-                if (ze.isDirectory()) {
-                    // 目录处理逻辑
-                    tos.putArchiveEntry(tarArchiveEntry);
-                } else {
-                    // 文件处理逻辑
-                    byte[] buffer = new byte[1024];
-                    int readLen = -1;
-                    baos.reset();
-                    while ((readLen = zis.read(buffer)) != -1) {
-                        baos.write(buffer, 0, readLen);
-                    }
-                    
-                    byte[] extra = baos.toByteArray();
-                    if (name.endsWith(".podspec.json"))
-                    { // 将资源下载指向folib
-                        // http://localhost:38080/storages/lcoal-mdo/zzzz-coccoapods-proxy
-                        final String podSpecJson = new String(extra, StandardCharsets.UTF_8);
-                        final JSONObject podJsonObj = JSON.parseObject(podSpecJson);
-                        final String version = podJsonObj.getString("version");
-                        final JSONObject sourceObj = podJsonObj.getJSONObject("source");
-                        if (null != sourceObj && sourceObj.containsKey("git") && StringUtils.isNotBlank(version))
-                        {
-                            final String podRepoGitUrl = sourceObj.getString("git");
-                            final Matcher matcher = POD_REPO_GIT_URL_PATTERN.matcher(podRepoGitUrl);
-                            if (matcher.find())
-                            {
-                                final String owner = matcher.group(1);
-                                final String podName = matcher.group(2);
-                                final String newSourceUrl = String.format("%s/pod/git/%s/%s/%s", baseUrl, owner, podName, version);
-                                podNewSourceObj.clear();
-                                podNewSourceObj.put("http", newSourceUrl);
-                                podNewSourceObj.put("type", "tgz");
-                                podJsonObj.put("source", podNewSourceObj);
-                                extra = JSON.toJSONString(podJsonObj, true).getBytes(StandardCharsets.UTF_8);
-                            }
-                            else
-                            { /*logger.info("非法PodGitUrl：{}", podRepoGitUrl);*/ }
-                        }
-                        else
-                        { /*logger.info("非法PodSource信息：{}", JSON.toJSONString(sourceObj));*/ }
-                    }
-
-                    tarArchiveEntry.setSize(extra.length);
-                    tos.putArchiveEntry(tarArchiveEntry);
-                    tos.write(extra);
-                }
-                tos.closeArchiveEntry();
-            }
-        }
-    }
-
-
-//    public static void main(String[] args) throws IOException {
-////        final long l = System.currentTimeMillis();
-//        new CocoapodsIndexController().zip2Targz("http://127.0.0.1:8081/proxy/dada", "/Users/zerowang/Downloads/demo/Specs-master.zip", "/Users/zerowang/Downloads/demo/Specs-master.tar.gz");
-////        System.out.println(System.currentTimeMillis() - l + " ms");
-////        traverseZip2("/Users/zerowang/Downloads/demo/Specs-master.tar.gz");
-//
-////        System.out.println("=========================");
-////
-////        traverse("/Users/zerowang/Downloads/demo/Specs-master.tar.gz");
-////        traverse("/Users/zerowang/.cocoapods/repos-art/CocoaPods-Proxy/file.tgz", true);
-////        System.out.println("=========================");
-////        traverse("/Users/zerowang/Downloads/demo/Specs-master.tar.gz", true);
-//
-//        final String s = "Specs-master/";
-//        System.out.println(s.substring(s.indexOf("/")+1));
-//    }
-//
-//    public static void traverseZip(String zipFilePath) throws IOException {
-//
-//        ZipFile zipFile = new ZipFile(zipFilePath);
-//
-//        Enumeration<? extends ZipEntry> entries = zipFile.getEntries();
-//        int i = 0;
-//        while(entries.hasMoreElements()){
-//            ZipEntry entry = entries.nextElement();
-//            String name = entry.getName();
-//            System.out.println("zip: " + name);
-//            if (++i >= 10)
-//            { break; }
-//        }
-//
-//        zipFile.close();
-//    }
-//
-//    public static void traverseZip2(String zipFilePath) throws IOException {
-//
-//        FileInputStream fis = new FileInputStream(zipFilePath);
-//        ZipInputStream zis = new ZipInputStream(fis);
-//        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-//
-//
-//        ZipEntry ze;
-//        int i = 0;
-//        while ((ze = zis.getNextEntry()) != null) {
-//
-//            String name = ze.getName();
-//            long size = ze.getSize();
-//
-//            System.out.println("zip: " + name);
-//            
-////            if (ze.isDirectory()) {
-////                // 目录处理逻辑
-////            } else {
-////                // 文件处理逻辑
-////
-////                byte[] buffer = new byte[1024];
-////                int readLen = -1;
-////                baos.reset();
-////                while ((readLen = zis.read(buffer)) != -1) {
-////                    baos.write(buffer, 0, readLen);
-////                }
-////                String content = new String(baos.toByteArray(), StandardCharsets.UTF_8);
-////                System.out.println(content);
-////                // TODO: 处理文件内容
-////                System.out.println("------------------");
-////            }
-//            if (++i >= 10)
-//            { break; }
-//        }
-//
-//        zis.close();
-//    }
-//    
-//    public static void traverse(String tarGzPath, boolean printFirst10) throws IOException {
-//
-//        InputStream is = new FileInputStream(tarGzPath);
-//        GzipCompressorInputStream gzIn = new GzipCompressorInputStream(is);
-//        TarArchiveInputStream tarIn = new TarArchiveInputStream(gzIn);
-//
-//        TarArchiveEntry entry;
-//        int i = 0;
-//        final ArrayList<String> strings = new ArrayList<>();
-//        while ((entry = tarIn.getNextTarEntry()) != null) {
-//            // 处理每个条目
-//            String name = entry.getName();
-//            long size = entry.getSize();
-//            if (printFirst10)
-//            {
-//                System.out.println("tarGz: " + name);
-//                if (++i >= 10)
-//                { break; }
-//            }
-//            else
-//            {
-//                if (StringUtils.isNotBlank(name) && name.contains(".podspec.json"))
-//                {
-//                    try {
-//                        // 读取文件内容
-//                        byte[] content = new byte[(int) size];
-//                        tarIn.read(content, 0, (int) size);
-//                        final String str = new String(content);
-//                        final JSONObject jsonObject = JSON.parseObject(str);
-//                        final JSONObject source = jsonObject.getJSONObject("source");
-//                        if (null != source)
-//                        {
-//                            final String key = source.keySet().stream().sorted().collect(Collectors.joining(","));
-//                            if (!strings.contains(key))
-//                            {
-//                                System.out.println("-------------------------------");
-//                                System.out.println();
-//                                strings.add(key);
-//                                System.out.printf("其他sourceInfo: %s%n", str);
-//                            }
-//                        }
-//                        else
-//                        {
-//                            System.out.println("-------------------------------");
-//                            System.out.println();
-//                            System.out.printf("不包含sourceInfoPod：%s%n", str);
-//                        }
-//                    }catch (Exception e)
-//                    {
-//                        e.printStackTrace();
-//                        System.out.printf("文件读取发送异常文件：%s%n", name);
-//                    }
-//                }
-//            }
-//        }
-//
-//        tarIn.close();
-//        gzIn.close();
-//        is.close();
-//    }
 }
