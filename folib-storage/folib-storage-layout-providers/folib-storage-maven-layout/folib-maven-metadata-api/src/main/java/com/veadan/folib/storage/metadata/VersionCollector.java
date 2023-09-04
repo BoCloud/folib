@@ -79,6 +79,10 @@ public class VersionCollector
                 if (pomArtifactPath != null)
                 {
                     logger.info("pomArtifactPath [{}]", pomArtifactPath.toString());
+                    if (!Files.exists(pomArtifactPath)) {
+                        logger.info("pomArtifactPath [{}] not exists", pomArtifactPath.toString());
+                        continue;
+                    }
                     Model pom = getPom(pomArtifactPath);
 
                     BasicFileAttributes fileAttributes = Files.readAttributes(versionDirectoryPath,
@@ -149,9 +153,13 @@ public class VersionCollector
         String version = versionDirectoryPath.getFileName().toString();
         if (!ArtifactUtils.isSnapshot(version))
         {
-            return Paths.get(versionDirectoryPath.toAbsolutePath().toString(),
-                             artifactBasePath.getFileName().toString() + "-" +
-                             versionDirectoryPath.getFileName() + ".pom");
+            Path path = Paths.get(versionDirectoryPath.toAbsolutePath().toString(),
+                    artifactBasePath.getFileName().toString() + "-" +
+                            versionDirectoryPath.getFileName() + ".pom");
+            if (artifactBasePath.toString().startsWith("s3://")) {
+                return new S3Path(SpringUtil.getBean(S3FileSystem.class), path.toString());
+            }
+            return path;
         }
         else
         {
