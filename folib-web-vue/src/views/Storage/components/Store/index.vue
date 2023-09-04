@@ -63,7 +63,7 @@
                     align-items: center;
                     justify-content: flex-end;
                   ">
-                  <a v-if="folibRepository.layout === 'rpm'">
+                  <a v-if="uploadEnabled && folibRepository.layout === 'rpm'">
                     <small style="padding-right: 20px" @click="handleRpmUpload">
                       上传
                       <a-icon type="cloud-upload" />
@@ -75,7 +75,7 @@
                       <a-icon type="cloud-upload" />
                     </small>
                   </a>
-                  <a v-if="uploadEnabled"><small style="padding-right: 20px" @click="handleUpload">
+                  <a v-if="uploadEnabled && folibRepository.layout !== 'rpm'"><small style="padding-right: 20px" @click="handleUpload">
                       批量上传
                       <a-icon type="cloud-upload" />
                     </small>
@@ -915,7 +915,7 @@ export default {
       showOperationDispatchFormModal: false,
       repositories: [],
       custom: false,
-      enablUploadedLayout: ['Raw', 'php', 'Maven 2', 'npm'],
+      enablUploadedLayout: ['Raw', 'php', 'Maven 2', 'npm', 'rpm'],
       permissions: [],
       mavenUploadVisible: false,
       uploadType: 1,

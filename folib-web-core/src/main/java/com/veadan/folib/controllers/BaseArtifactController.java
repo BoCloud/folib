@@ -120,10 +120,10 @@ public abstract class BaseArtifactController
      * @param repositoryPath 制品信息
      * @throws IOException io异常
      */
-    public void vulnerabilityBlock(RepositoryPath repositoryPath) throws IOException {
+    public Artifact vulnerabilityBlock(RepositoryPath repositoryPath) throws IOException {
         boolean supportLayout = artifactComponent.layoutSupportsForBlock(repositoryPath);
         if (!supportLayout) {
-            return;
+            return null;
         }
         String fileName = "." + FilenameUtils.getName(repositoryPath.getFileName().toString()) + "-metadata", artifactStr = "";
         RepositoryPath artifactRepositoryPath = repositoryPath.getParent().resolve(fileName);
@@ -140,7 +140,7 @@ public abstract class BaseArtifactController
         if (Objects.isNull(artifact)) {
             artifact = repositoryPath.getArtifactEntry();
             if (Objects.isNull(artifact)) {
-                return;
+                return null;
             }
             Files.writeString(artifactRepositoryPath, JSONObject.toJSONString(artifact));
         }
@@ -153,6 +153,7 @@ public abstract class BaseArtifactController
             httpServletResponse.flushBuffer();
             artifactEventListenerRegistry.dispatchArtifactDownloadBlockedEvent(repositoryPath);
         }
+        return artifact;
     }
 
     protected String getBaseUrl() {

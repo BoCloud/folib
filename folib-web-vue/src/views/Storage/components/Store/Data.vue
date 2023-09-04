@@ -134,7 +134,7 @@
             </a-button>
           </div>
           <div slot="operation" slot-scope="text, record">
-            <div class="col-action" v-if="$store.state.user.token">
+            <div class="col-action" v-if="metadataEnabled">
               <a-popconfirm
                 title="确定要删除吗？"
                 okType="danger"

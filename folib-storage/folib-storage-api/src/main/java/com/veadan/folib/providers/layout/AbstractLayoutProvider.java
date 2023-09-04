@@ -6,16 +6,15 @@ import java.net.URI;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import javax.inject.Inject;
 
+import com.google.common.cache.Cache;
+import com.google.common.cache.CacheBuilder;
 import com.veadan.folib.artifact.archive.*;
 import com.veadan.folib.configuration.ConfigurationManager;
 import com.veadan.folib.providers.io.RepositoryFileAttributeType;
@@ -55,6 +54,10 @@ public abstract class AbstractLayoutProvider<T extends LayoutArtifactCoordinates
                 JarArchiveListingFunction.INSTANCE
             )
     );
+
+    private final Cache<String, URI> baseURICache = CacheBuilder.newBuilder()
+            .expireAfterWrite(5, TimeUnit.MINUTES)
+            .build();
 
     @Inject
     private ConfigurationManager configurationManager;
@@ -200,8 +203,12 @@ public abstract class AbstractLayoutProvider<T extends LayoutArtifactCoordinates
     public URL resolveResource(RepositoryPath repositoryPath)
             throws IOException
     {
-        URI baseUri = configurationManager.getBaseUri();
-
+        String key = "uri";
+        URI baseUri = baseURICache.getIfPresent(key);
+        if (Objects.isNull(baseUri)) {
+            baseUri = configurationManager.getBaseUri();
+            baseURICache.put(key, baseUri);
+        }
         Repository repository = repositoryPath.getRepository();
         Storage storage = repository.getStorage();
         URI artifactResource = RepositoryFiles.resolveResource(repositoryPath);

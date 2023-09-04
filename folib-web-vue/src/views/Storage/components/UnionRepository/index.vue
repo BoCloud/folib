@@ -186,7 +186,7 @@ export default {
   },
   data() {
     const artifactPathsValidator = (rule, value, callBack) => {
-      if (this.unionRepositoryForm.syncType === 1) {
+      if (this.unionRepositoryForm.enable && this.unionRepositoryForm.syncType === 1) {
         if (!value) {
           callBack("请输入包路径")
         } else {
@@ -197,7 +197,7 @@ export default {
       }
     }
     const metadataKeyValidator = (rule, value, callBack) => {
-      if (this.unionRepositoryForm.syncType === 2) {
+      if (this.unionRepositoryForm.enable && this.unionRepositoryForm.syncType === 2) {
         if (!value) {
           callBack("请输入元数据KEY")
         } else {
@@ -208,7 +208,7 @@ export default {
       }
     }
     const metadataValueValidator = (rule, value, callBack) => {
-      if (this.unionRepositoryForm.syncType === 2) {
+      if (this.unionRepositoryForm.enable && this.unionRepositoryForm.syncType === 2) {
         if (!value) {
           callBack("请输入元数据值")
         } else {

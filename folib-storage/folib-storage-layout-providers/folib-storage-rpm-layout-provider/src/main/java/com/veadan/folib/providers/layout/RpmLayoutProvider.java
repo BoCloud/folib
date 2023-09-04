@@ -63,16 +63,16 @@ public class RpmLayoutProvider extends AbstractLayoutProvider<RpmArtifactCoordin
     }
 
 
+    @Override
     public boolean isArtifactMetadata(RepositoryPath path)
     {
-        return path.getFileName().toString().endsWith("package.json");//TODO 修复
+        return false;
     }
 
     public boolean isRpmMetadata(RepositoryPath path)
     {
-//        return path.getFileName().toString().endsWith("package-lock.json") ||
-//                path.getFileName().toString().endsWith("npm-shrinkwrap.json");
-        return true;//TODO 修复
+//        return !path.getFileName().toString().endsWith(".rpm");
+        return true;
     }
 
     @Override

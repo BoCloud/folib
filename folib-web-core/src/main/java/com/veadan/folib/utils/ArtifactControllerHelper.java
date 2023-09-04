@@ -206,22 +206,22 @@ public class ArtifactControllerHelper
 
         response.setHeader(HttpHeaders.ACCEPT_RANGES, "bytes");
 
-        path.getFileSystem().provider().resolveChecksumPathMap(path).forEach((key, value) -> {
-            String checksumValue;
-            try
-            {
-                checksumValue = new String(Files.readAllBytes(value), StandardCharsets.UTF_8).trim();
-            }
-            catch (IOException ioe)
-            {
-                return;
-            }
-
-            String checksumName = String.format("Checksum-%s",
-                                                key.toUpperCase().replace("-", ""));
-
-            response.setHeader(checksumName, checksumValue);
-        });
+//        path.getFileSystem().provider().resolveChecksumPathMap(path).forEach((key, value) -> {
+//            String checksumValue;
+//            try
+//            {
+//                checksumValue = new String(Files.readAllBytes(value), StandardCharsets.UTF_8).trim();
+//            }
+//            catch (IOException ioe)
+//            {
+//                return;
+//            }
+//
+//            String checksumName = String.format("Checksum-%s",
+//                                                key.toUpperCase().replace("-", ""));
+//
+//            response.setHeader(checksumName, checksumValue);
+//        });
     }
 
     private static String getContentType(RepositoryPath path)
