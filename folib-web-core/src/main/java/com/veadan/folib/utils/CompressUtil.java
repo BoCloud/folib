@@ -25,10 +25,10 @@ public class CompressUtil
 {
     public static void zip2Targz(String zipPath, String targzPath) throws IOException
     {
-        zip2Targz(zipPath, targzPath, null, null);
+        zip2Targz(zipPath, targzPath, null, null, null);
     }
     
-    public static void zip2Targz(String zipPath, String targzPath, Function<String, Boolean> predicate, Function<byte[], byte[]> contentHandler) throws IOException
+    public static void zip2Targz(String zipPath, String targzPath, Function<String, String> zipEntryNameRebuildFunc, Function<String, Boolean> predicate, Function<byte[], byte[]> contentHandler) throws IOException
     {
         FileUtil.touch(targzPath);
         // 创建tar.gz输出流
@@ -41,13 +41,12 @@ public class CompressUtil
              final ByteArrayOutputStream baos = new ByteArrayOutputStream();)
         {
             tos.setLongFileMode(TarArchiveOutputStream.LONGFILE_GNU);
-            final JSONObject podNewSourceObj = new JSONObject();
 
             ZipEntry ze;
             while ((ze = zis.getNextEntry()) != null) {
                 String name = ze.getName();
-                // 删除一层结构
-                name = name.substring(name.indexOf("/")+1);
+                if (null != zipEntryNameRebuildFunc)
+                { name = zipEntryNameRebuildFunc.apply(name); }
                 if (StringUtils.isEmpty(name))
                 { continue; }
 

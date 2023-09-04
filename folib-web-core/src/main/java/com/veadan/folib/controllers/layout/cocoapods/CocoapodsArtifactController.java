@@ -7,7 +7,10 @@ import com.veadan.folib.domain.ArtifactEntity;
 import com.veadan.folib.providers.io.RepositoryFiles;
 import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.storage.repository.Repository;
+import com.veadan.folib.storage.repository.RepositoryTypeEnum;
+import com.veadan.folib.storage.repository.remote.RemoteRepository;
 import com.veadan.folib.util.CocoapodsArtifactUtil;
+import com.veadan.folib.utils.CompressUtil;
 import com.veadan.folib.web.LayoutRequestMapping;
 import com.veadan.folib.web.RepositoryMapping;
 import io.swagger.annotations.ApiOperation;
@@ -28,8 +31,13 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.BufferedInputStream;
 import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * @author xiaodong.wang
@@ -94,33 +102,69 @@ public class CocoapodsArtifactController extends BaseArtifactController
                          HttpServletResponse response)
             throws Exception
     {
+        final String type = repository.getType();
+        if (type.equals(RepositoryTypeEnum.HOSTED.getType()))
+        { this.downloadHosted(repository, httpHeaders, path, request, response); }
+        else if (type.equals(RepositoryTypeEnum.PROXY.getType()))
+        { this.downloadProxy(repository, httpHeaders, path, request, response);}
+    }
+
+
+    private void downloadHosted(Repository repository,
+                                HttpHeaders httpHeaders,
+                                String path,
+                                HttpServletRequest request,
+                                HttpServletResponse response) throws Exception 
+    {
         final String storageId = repository.getStorage().getId();
         final String repositoryId = repository.getId();
         logger.info("Requested /{}/{}/{}.", storageId, repositoryId, path);
-
         RepositoryPath repositoryPath = artifactResolutionService.resolvePath(storageId, repositoryId, path);
+        
         vulnerabilityBlock(repositoryPath);
         provideArtifactDownloadResponse(request, response, httpHeaders, repositoryPath);
     }
-
-    @ApiOperation(value = "Download proxy pod and cache")
-    @ApiResponses(value = { @ApiResponse(code = 200, message = ""),
-            @ApiResponse(code = 400, message = "An error occurred.") })
-    @PreAuthorize("hasAuthority('ARTIFACTS_RESOLVE')")
-    @GetMapping(value = { "{storageId}/{repositoryId}/pod/git/{owner}/{podName}" })
-    public void downloadProxy(@RepositoryMapping Repository repository,
-                         @RequestHeader HttpHeaders httpHeaders,
-                         @PathVariable String owner,
-                         @PathVariable String podName,
-                         HttpServletRequest request,
-                         HttpServletResponse response)
-            throws Exception
+    
+    private void downloadProxy(Repository repository,
+                               HttpHeaders httpHeaders,
+                               String path,
+                               HttpServletRequest request,
+                               HttpServletResponse response) throws Exception 
     {
         final String storageId = repository.getStorage().getId();
         final String repositoryId = repository.getId();
 
-//        RepositoryPath repositoryPath = artifactResolutionService.resolvePath(storageId, repositoryId, path);
-//        vulnerabilityBlock(repositoryPath);
-//        provideArtifactDownloadResponse(request, response, httpHeaders, repositoryPath);
+        final RepositoryPath repositoryPath = artifactResolutionService.resolvePath(storageId, repositoryId, path);
+        if (null != repositoryPath)
+        { // 如果已经缓存过，则直接返回下载
+            vulnerabilityBlock(repositoryPath);
+            provideArtifactDownloadResponse(request, response, httpHeaders, repositoryPath);
+            return;
+        }
+        
+        final Pattern compile = Pattern.compile("pod/git/(.*?)/(.*?)/(.*?)$");
+        final Matcher matcher = compile.matcher(path);
+        if (!matcher.find()) 
+        { throw new RuntimeException("非法请求路径"); }
+        
+        final String owner = matcher.group(1);
+        final String podName = matcher.group(2);
+        final String version = matcher.group(3);
+        final String artifactCacheFolderPath = String.format("%s/%s/tags/%s/temp", owner, podName, version);
+
+        logger.info("Requested /{}/{}/{}.", storageId, repositoryId, path);
+        final String targetUrl = String.format("https://github.com/%s/%s/archive/refs/tags/%s.zip", owner, podName, version),
+                artifactZipCachePath = String.format("%s/%s-%s.zip", artifactCacheFolderPath, podName, version), 
+                artifactTarGzPath = String.format("%s/%s/tags/%s/%s-%s.tar.gz", owner, podName, version, podName, version);
+        final RepositoryPath artifactZipCacheRPath = artifactResolutionService.resolvePath(storageId, repositoryId, targetUrl, artifactZipCachePath);
+        final String artifact2TarGzPath = String.format("%s%s-%s.tar.gz", artifactZipCacheRPath.getParent().getParent().getTarget().toUri().getPath(), podName, version);
+        // zip转tar.gz
+        CompressUtil.zip2Targz(artifactZipCacheRPath.getTarget().toUri().getPath(), artifact2TarGzPath);
+        
+        final RepositoryPath repositoryTarGzPath = repositoryPathResolver.resolve(storageId, repositoryId, artifactTarGzPath);
+        artifactManagementService.validateAndStoreIndex(repositoryTarGzPath);
+        
+        vulnerabilityBlock(repositoryTarGzPath);
+        provideArtifactDownloadResponse(request, response, httpHeaders, repositoryTarGzPath);
     }
 }
