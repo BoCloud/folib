@@ -42,6 +42,7 @@
         <module>folib-storage-php-layout-provider</module>
         <module>folib-storage-helm-layout-provider</module>
         <module>folib-storage-conan-layout-provider</module>
+        <module>folib-storage-cocoapods-layout-provider</module>
     </modules>
 
     <dependencies>
