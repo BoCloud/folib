@@ -187,7 +187,7 @@ public class CocoapodsIndexController
         {
             DOWNLOAD_COCOAPODS_PROXY_INDEX_LOCK.set(false);
             if (null != specIndexZipTempPath)
-            { artifactManagementService.delete(specIndexZipTempPath, true); }
+            { artifactManagementService.delete(specIndexZipTempPath.getParent(), true); }
         }
 
         response.setHeader("Content-Disposition", "attachment;filename=file.tar.gz");
