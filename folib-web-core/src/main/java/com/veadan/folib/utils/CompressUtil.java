@@ -1,7 +1,6 @@
 package com.veadan.folib.utils;
 
 import cn.hutool.core.io.FileUtil;
-import com.alibaba.fastjson.JSONObject;
 import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
 import org.apache.commons.compress.archivers.tar.TarArchiveOutputStream;
 import org.apache.commons.compress.compressors.gzip.GzipCompressorOutputStream;
@@ -11,6 +10,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
@@ -25,10 +25,10 @@ public class CompressUtil
 {
     public static void zip2Targz(String zipPath, String targzPath) throws IOException
     {
-        zip2Targz(zipPath, targzPath, null, null, null);
+        zip2Targz(zipPath, targzPath, null, null, null, null);
     }
     
-    public static void zip2Targz(String zipPath, String targzPath, Function<String, String> zipEntryNameRebuildFunc, Function<String, Boolean> predicate, Function<byte[], byte[]> contentHandler) throws IOException
+    public static void zip2Targz(String zipPath, String targzPath, Function<String, Boolean> zipEntryPredicate, Function<String, String> zipEntryNameRebuildFunc, Function<String, Boolean> contentHandlerPredicate, BiFunction<String, byte[], byte[]> contentHandler) throws IOException
     {
         FileUtil.touch(targzPath);
         // 创建tar.gz输出流
@@ -45,6 +45,8 @@ public class CompressUtil
             ZipEntry ze;
             while ((ze = zis.getNextEntry()) != null) {
                 String name = ze.getName();
+                if (null != zipEntryPredicate && !zipEntryPredicate.apply(name))
+                { continue; }
                 if (null != zipEntryNameRebuildFunc)
                 { name = zipEntryNameRebuildFunc.apply(name); }
                 if (StringUtils.isEmpty(name))
@@ -65,9 +67,9 @@ public class CompressUtil
 
                     byte[] extra = baos.toByteArray();
                     // 按条件进行过滤进行内容重构
-                    if (null != predicate && predicate.apply(name)) {
+                    if (null != contentHandlerPredicate && contentHandlerPredicate.apply(name)) {
                         if (null != contentHandler)
-                        { extra = contentHandler.apply(extra); }
+                        { extra = contentHandler.apply(name, extra); }
                     }
                     tarArchiveEntry.setSize(extra.length);
                     tos.putArchiveEntry(tarArchiveEntry);
@@ -81,7 +83,24 @@ public class CompressUtil
 
 //    public static void main(String[] args) throws IOException {
 ////        final long l = System.currentTimeMillis();
-//        CompressUtil.zip2Targz("/Users/zerowang/Downloads/demo/Specs-master.zip", "/Users/zerowang/Downloads/demo/Specs-master.tar.gz");
+//        final String path = "/Users/zerowang/Downloads/demo/Specs-mini";
+//        final String tarPath = path+"111.tar.gz";
+////        CompressUtil.zip2Targz(path+".zip",
+////                tarPath, 
+////                (name) -> {
+////                    System.out.println(name);
+////                    return  name.matches(".*?/.{1}/.{1}/.{1}/(.*)");
+////                },
+////                (name -> name.replaceAll(".*?/.{1}/.{1}/.{1}/(.*)", "$1")),
+////                (zipEntryName -> zipEntryName.endsWith(".podspec.json")),
+////                ((zipEntryName, extra) -> {
+////
+////                    System.out.println("================================");
+////                    System.out.println(zipEntryName);
+////                    System.out.println(new String(extra));
+////                  return extra;  
+////                })
+////        );
 ////        System.out.println(System.currentTimeMillis() - l + " ms");
 ////        traverseZip2("/Users/zerowang/Downloads/demo/Specs-master.zip");
 ////        System.out.println("=========================");
@@ -89,10 +108,10 @@ public class CompressUtil
 //
 ////        System.out.println("=========================");
 ////
-////        traverse("/Users/zerowang/Downloads/demo/Specs-master.tar.gz");
-////        traverse("/Users/zerowang/.cocoapods/repos-art/CocoaPods-Proxy/file.tgz", true);
-////        System.out.println("=========================");
-////        traverse("/Users/zerowang/Downloads/demo/Specs-master.tar.gz", true);
+////        traverse(tarPath, true);
+//        traverse("/Users/zerowang/.cocoapods/repos-art/CocoaPods-Proxy/file.tgz", true);
+//        System.out.println("=========================");
+//        traverse("/Users/zerowang/.cocoapods/repos-art/CocoaPods-Proxy/file.tgz", true);
 //
 ////        final String s = "Specs-master/";
 ////        System.out.println(s.substring(s.indexOf("/")+1));
@@ -147,7 +166,7 @@ public class CompressUtil
 ////                // TODO: 处理文件内容
 ////                System.out.println("------------------");
 ////            }
-//            if (++i >= 20)
+//            if (++i >= 30)
 //            { break; }
 //        }
 //
@@ -170,7 +189,7 @@ public class CompressUtil
 //            if (printFirst10)
 //            {
 //                System.out.println("tarGz: " + name);
-//                if (++i >= 10)
+//                if (++i >= 30)
 //                { break; }
 //            }
 //            else

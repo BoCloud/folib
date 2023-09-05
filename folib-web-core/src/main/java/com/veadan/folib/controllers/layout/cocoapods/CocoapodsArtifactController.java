@@ -8,7 +8,6 @@ import com.veadan.folib.providers.io.RepositoryFiles;
 import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.storage.repository.Repository;
 import com.veadan.folib.storage.repository.RepositoryTypeEnum;
-import com.veadan.folib.storage.repository.remote.RemoteRepository;
 import com.veadan.folib.util.CocoapodsArtifactUtil;
 import com.veadan.folib.utils.CompressUtil;
 import com.veadan.folib.web.LayoutRequestMapping;
@@ -31,10 +30,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.BufferedInputStream;
 import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -158,7 +154,7 @@ public class CocoapodsArtifactController extends BaseArtifactController
                 artifactTarGzPath = String.format("%s/%s/tags/%s/%s-%s.tar.gz", owner, podName, version, podName, version);
 
         RepositoryPath repositoryTarGzPath = repositoryPathResolver.resolve(storageId, repositoryId, artifactTarGzPath);
-        if (null != repositoryTarGzPath)
+        if (null != repositoryTarGzPath && FileUtil.exist(repositoryTarGzPath.toString()))
         { // 在repo-art插件请求下载前判断是否存在，存在则直接返回
             vulnerabilityBlock(repositoryTarGzPath);
             response.setHeader("Content-Disposition", String.format("attachment;filename=%s-%s.tar.gz", podName, version));
