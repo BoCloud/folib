@@ -162,16 +162,25 @@ public class CocoapodsArtifactController extends BaseArtifactController
             provideArtifactDownloadResponse(request, response, httpHeaders, repositoryTarGzPath);
             return;
         }
-        
-        final RepositoryPath artifactZipCacheRPath = artifactResolutionService.resolvePath(storageId, repositoryId, targetUrl, artifactZipCachePath);
-        final String artifact2TarGzPath = String.format("%s%s-%s.tar.gz", artifactZipCacheRPath.getParent().getParent().getTarget().toUri().getPath(), podName, version);
-        // zip转tar.gz
-        CompressUtil.zip2Targz(artifactZipCacheRPath.getTarget().toUri().getPath(), artifact2TarGzPath);
-        
-        repositoryTarGzPath = repositoryPathResolver.resolve(storageId, repositoryId, artifactTarGzPath);
-        artifactManagementService.validateAndStoreIndex(repositoryTarGzPath);
-        
-        vulnerabilityBlock(repositoryTarGzPath);
-        provideArtifactDownloadResponse(request, response, httpHeaders, repositoryTarGzPath);
+
+        RepositoryPath artifactZipCacheRPath = null;
+        try {
+            artifactZipCacheRPath = artifactResolutionService.resolvePath(storageId, repositoryId, targetUrl, artifactZipCachePath);
+            final String artifact2TarGzPath = String.format("%s%s-%s.tar.gz", artifactZipCacheRPath.getParent().getParent().getTarget().toUri().getPath(), podName, version);
+            // zip转tar.gz
+            CompressUtil.zip2Targz(artifactZipCacheRPath.getTarget().toUri().getPath(), artifact2TarGzPath);
+            
+            repositoryTarGzPath = repositoryPathResolver.resolve(storageId, repositoryId, artifactTarGzPath);
+            artifactManagementService.validateAndStoreIndex(repositoryTarGzPath);
+            
+            vulnerabilityBlock(repositoryTarGzPath);
+            provideArtifactDownloadResponse(request, response, httpHeaders, repositoryTarGzPath);
+        }
+        finally
+        {
+            // 删除临时目录
+            if (null != artifactZipCacheRPath)
+            { artifactManagementService.delete(artifactZipCacheRPath.getParent(), true); }
+        }
     }
 }
