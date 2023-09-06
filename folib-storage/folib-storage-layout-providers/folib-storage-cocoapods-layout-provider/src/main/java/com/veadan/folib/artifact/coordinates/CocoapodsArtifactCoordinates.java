@@ -27,7 +27,7 @@ public class CocoapodsArtifactCoordinates extends
     public static final String LAYOUT_ALIAS = LAYOUT_NAME;
     
     private static final String NAME = "name";
-    
+    private static final String BASE_NAME = "base_name";
     private static final String PATH = "path";
 
 
@@ -77,6 +77,17 @@ public class CocoapodsArtifactCoordinates extends
     }
 
     @ArtifactLayoutCoordinate
+    @XmlAttribute(name = BASE_NAME)
+    public String getBaseName()
+    {
+        return getCoordinate(BASE_NAME);
+    }
+
+    public void setBaseName(String baseName) {
+        setCoordinate(BASE_NAME, baseName);
+    }
+    
+    @ArtifactLayoutCoordinate
     @XmlAttribute(name = PATH)
     public String getPath()
     {
@@ -85,5 +96,6 @@ public class CocoapodsArtifactCoordinates extends
 
     public void setPath(String path) {
         setCoordinate(PATH, path);
+        
     }
 }

@@ -6,6 +6,7 @@ import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.repository.CocoapodsRepositoryFeatures;
 import com.veadan.folib.repository.CocoapodsRepositoryManagementStrategy;
 import com.veadan.folib.repository.RepositoryManagementStrategy;
+import com.veadan.folib.util.CocoapodsArtifactUtil;
 import org.apache.commons.io.FilenameUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -13,6 +14,7 @@ import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
 import javax.inject.Inject;
+import java.io.File;
 import java.io.IOException;
 import java.util.Set;
 
@@ -68,13 +70,28 @@ public class CocoapodsLayoutProvider extends AbstractLayoutProvider<CocoapodsArt
     protected CocoapodsArtifactCoordinates getArtifactCoordinates(RepositoryPath repositoryPath) throws IOException 
     {
         final String relativizePath = RepositoryFiles.relativizePath(repositoryPath);
-        final String fileName = FilenameUtils.getName(relativizePath);
+        final String tarGzFilePath = repositoryPath.getTarget().toString();
+
+        CocoapodsArtifactCoordinates coordinates = null;
 
         if (null != repositoryPath.getArtifactEntry())
         {
             final CocoapodsArtifactCoordinates artifactCoordinates = (CocoapodsArtifactCoordinates) repositoryPath.getArtifactEntry().getArtifactCoordinates();
-            return new CocoapodsArtifactCoordinates(relativizePath, artifactCoordinates.getPath()); }
+            coordinates = new CocoapodsArtifactCoordinates(relativizePath, artifactCoordinates.getPath()); }
         else
-        { return new CocoapodsArtifactCoordinates(relativizePath); }
+        {
+            coordinates = new CocoapodsArtifactCoordinates(relativizePath); 
+        }
+        if (relativizePath.endsWith("tar.gz"))
+        {
+            final CocoapodsArtifactUtil.PodSpec podSpec = CocoapodsArtifactUtil.resolvePodSpecByTarGzFile(tarGzFilePath);
+            if (null != podSpec)
+            {
+                coordinates.setBaseName(podSpec.getName());
+                coordinates.setVersion(podSpec.getVersion());
+            }
+        }
+        
+        return coordinates;
     }
 }
