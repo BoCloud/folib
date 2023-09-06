@@ -7,7 +7,9 @@ import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
 import org.apache.commons.compress.archivers.tar.TarArchiveOutputStream;
 import org.apache.commons.compress.compressors.gzip.GzipCompressorInputStream;
 import org.apache.commons.compress.compressors.gzip.GzipCompressorOutputStream;
+import org.apache.commons.lang3.StringUtils;
 
+import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -148,7 +150,18 @@ public class CocoapodsArtifactUtil
         return null;
     }
 
-    public static String fetchPodspecSourceContent(InputStream inputStream)
+    public static String fetchPodspecSourceContentByTarGzFile(String tarGzFilePath)
+    {
+        if (FileUtil.exist(tarGzFilePath))
+        {
+            final BufferedInputStream inputStream = FileUtil.getInputStream(tarGzFilePath);
+            return fetchPodspecSourceContentByInputStream(inputStream);
+        }
+        
+        return null;
+    }
+    
+    public static String fetchPodspecSourceContentByInputStream(InputStream inputStream)
     {
         try (InputStream gzipInputStream = new GzipCompressorInputStream(inputStream);
              TarArchiveInputStream tarInputStream = new TarArchiveInputStream(gzipInputStream);) {
@@ -185,6 +198,21 @@ public class CocoapodsArtifactUtil
         return podSpec;
     }
     
+    public static PodSpec resolvePodSpecByTarGzFile(String podTarGzFilePath)
+    {
+        final String podSpecContent = fetchPodspecSourceContentByTarGzFile(podTarGzFilePath);
+        if (StringUtils.isNotBlank(podSpecContent))
+        {
+            final PodSpec podSpec = new PodSpec();
+            podSpec.setName(findAttr(podSpecContent, "name"));
+            podSpec.setVersion(findAttr(podSpecContent, "version"));
+            podSpec.setLicense(findAttr(podSpecContent, "license"));
+            return podSpec;
+        }
+        
+        return null;
+    }
+    
     private static String podspecHeadName(String podSpecContent)
     {
         final Matcher matcher = PODSPEC_HEAD_LINE_PATTERN.matcher(podSpecContent);
@@ -213,8 +241,8 @@ public class CocoapodsArtifactUtil
     }
     
     public static void main(String[] args) throws IOException {
-        final String path = "/Users/zerowang/BoCloudWork/02_CodeManage/000_BoCloud/folib-server/folib-storage/folib-storage-layout-providers/folib-storage-cocoapods-layout-provider/src/main/java/com/veadan/folib/util/demo.txt";
-        final PodSpec podSpec = resolvePodSpec(FileUtil.readString(path, StandardCharsets.UTF_8));
+        final String path = "/Users/zerowang/Downloads/AFNetworking.tar.gz";
+        final PodSpec podSpec = resolvePodSpecByTarGzFile(path);
         System.out.println(podSpec);
     }
     

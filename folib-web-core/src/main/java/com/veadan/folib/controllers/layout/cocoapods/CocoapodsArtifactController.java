@@ -63,7 +63,7 @@ public class CocoapodsArtifactController extends BaseArtifactController
             // 读取pod.tar.gz中的*.podspec文件内容
             final Path path = repositoryPath.getTarget();
             final BufferedInputStream podTarGzInputStream = FileUtil.getInputStream(path);
-            final String podspecSourceContent = CocoapodsArtifactUtil.fetchPodspecSourceContent(podTarGzInputStream);
+            final String podspecSourceContent = CocoapodsArtifactUtil.fetchPodspecSourceContentByInputStream(podTarGzInputStream);
             if (StringUtils.isNotBlank(podspecSourceContent))
             {
                 final CocoapodsArtifactUtil.PodSpec podSpec = CocoapodsArtifactUtil.resolvePodSpec(podspecSourceContent);
