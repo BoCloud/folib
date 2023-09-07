@@ -155,7 +155,7 @@ public class CocoapodsIndexController
                             final JSONObject sourceObj = podJsonObj.getJSONObject("source");
                             if (null != sourceObj && sourceObj.containsKey("git") && sourceObj.containsKey("tag")) {
                                 final String podRepoGitUrl = sourceObj.getString("git");
-                                final String version = podJsonObj.getString("tag");
+                                final String version = sourceObj.getString("tag");
                                 final Matcher podRepoGitUrlMatcher = POD_REPO_GIT_URL_PATTERN.matcher(podRepoGitUrl);
                                 if (podRepoGitUrlMatcher.find()) {
                                     final String owner = podRepoGitUrlMatcher.group(1);
