@@ -926,9 +926,9 @@
           <p>
             要从您添加的 Artifactory 规范存储库中解析 Pod，您必须将以下内容添加到 Podfile 中：
           </p>
-          <prism-editor class="my-editor height-300" value="plugin 'cocoapods-art', :sources => [
-  'Cocoapad-Local'
-]" 
+          <prism-editor class="my-editor height-300" :value="'plugin  \'cocoapods-art\', :sources => [\r'+
+'  \'' + folibRepository.id + '\'\r' +
+']'" 
           :highlight="highlighterHandle" :line-numbers="false" :readonly="true">
           </prism-editor>
           <p>
