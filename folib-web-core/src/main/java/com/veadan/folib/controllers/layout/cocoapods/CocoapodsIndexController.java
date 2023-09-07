@@ -152,10 +152,10 @@ public class CocoapodsIndexController
                             } catch (Exception e) {
                                 return extra;
                             }
-                            final String version = podJsonObj.getString("version");
                             final JSONObject sourceObj = podJsonObj.getJSONObject("source");
-                            if (null != sourceObj && sourceObj.containsKey("git") && StringUtils.isNotBlank(version)) {
+                            if (null != sourceObj && sourceObj.containsKey("git") && sourceObj.containsKey("tag")) {
                                 final String podRepoGitUrl = sourceObj.getString("git");
+                                final String version = podJsonObj.getString("tag");
                                 final Matcher podRepoGitUrlMatcher = POD_REPO_GIT_URL_PATTERN.matcher(podRepoGitUrl);
                                 if (podRepoGitUrlMatcher.find()) {
                                     final String owner = podRepoGitUrlMatcher.group(1);
