@@ -124,7 +124,19 @@ public class DockerArtifactController extends BaseArtifactController {
         response.reset();
         response.setDateHeader("Date", System.currentTimeMillis());
         response.setHeader(DockerApiHeader.DOCKER_DISTRIBUTION_API_VERSION.key(), DockerApiHeader.DOCKER_DISTRIBUTION_API_VERSION.value());
-        response.setHeader("WWW-Authenticate", MessageFormat.format("Bearer realm=\"{0}token\",service=\"{1}\"", request.getRequestURL(), request.getServerName() + ":" + request.getServerPort()));
+
+        //如果是nginxhttps的，则应该获在nignx里面配置：proxy_set_header X-Forwarded-Proto $scheme;
+        String originalProtocol = request.getHeader("X-Forwarded-Proto");
+
+        if (originalProtocol != null && originalProtocol.equals("https")) {
+            // 使用HTTPS协议
+            response.setHeader("WWW-Authenticate", MessageFormat.format("Bearer realm=\"{0}token\",service=\"{1}\"", originalProtocol+":"+request.getServerName()+request.getRequestURI(), request.getServerName()));
+        } else {
+            // 使用HTTP协议
+            response.setHeader("WWW-Authenticate", MessageFormat.format("Bearer realm=\"{0}token\",service=\"{1}\"", request.getRequestURL(), request.getServerName() + ":" + request.getServerPort()));
+        }
+
+
         if (Objects.isNull(authorization)) {
             return new ResponseEntity<>(unAuth(), HttpStatus.UNAUTHORIZED);
         }
