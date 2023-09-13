@@ -42,7 +42,7 @@ import java.util.Objects;
  */
 @RestController
 @RequestMapping("/api/artifact")
-@Api(description = "制品管理",tags = "制品管理")
+@Api(description = "制品管理", tags = "制品管理")
 public class ArtifactController extends BaseController {
 
     @Inject
@@ -148,18 +148,6 @@ public class ArtifactController extends BaseController {
         return ResponseEntity.ok("ok");
     }
 
-    @ApiOperation(value = "批量新增制品元数据适配安徽政务 docker 仓与 raw 仓 合并成一个仓的场景")
-    @ApiResponses(value = {@ApiResponse(code = 200, message = "OK")})
-    @PostMapping(value = "/batchArtifactMetaDataByahzw")
-    public ResponseEntity<String> batchArtifactMetaDataByahzw(@RequestBody @Validated({ArtifactMetadataForm.DeleteGroup.class}) List<ArtifactMetadataForm> list, BindingResult bindingResult) {
-        if (bindingResult.hasErrors()) {
-            throw new RequestBodyValidationException(GlobalConstants.REQUEST_PARAMS_ERROR, bindingResult);
-        }
-        logger.info(" 批量新增制品元数据 {}", JSON.toJSONString(list));
-        artifactWebService.batchArtifactMetaDataByahzw(list);
-        return ResponseEntity.ok("ok");
-    }
-
     @ApiOperation(value = "构建图数据库索引")
     @ApiResponses(value = {@ApiResponse(code = 200, message = "OK")})
     @PreAuthorize("hasAuthority('ADMIN')")
@@ -200,7 +188,11 @@ public class ArtifactController extends BaseController {
             return getFailedResponseEntity(HttpStatus.NOT_FOUND, REPOSITORY_NOT_FOUND, accept);
         }
         SyncArtifactProvider syncArtifactProvider = syncArtifactProviderRegistry.getProvider(repository.getLayout());
-        syncArtifactProvider.fullSync(syncArtifactForm);
+        if ("layout".equals(syncArtifactForm.getType())) {
+            syncArtifactProvider.fullSync(syncArtifactForm);
+        } else {
+            syncArtifactProvider.browseFullSync(syncArtifactForm);
+        }
         return ResponseEntity.ok("success");
     }
 }

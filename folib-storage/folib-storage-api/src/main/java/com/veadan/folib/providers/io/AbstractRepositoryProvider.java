@@ -169,10 +169,11 @@ public abstract class AbstractRepositoryProvider implements RepositoryProvider, 
         String storageId = repository.getStorage().getId();
         String repositoryId = repository.getId();
 
-        Artifact artifactEntry = provideArtifact(repositoryPath);
-        if (!shouldStoreArtifact(artifactEntry)) {
+        if (Boolean.TRUE.equals(repositoryPath.getArtifactExist())) {
             return;
         }
+        Artifact artifactEntry = new ArtifactEntity(repositoryPath.getStorageId(), repositoryPath.getRepositoryId(),
+                RepositoryFiles.readCoordinates(repositoryPath));
 
         artifactEntry.setStorageId(storageId);
         artifactEntry.setRepositoryId(repositoryId);
@@ -246,7 +247,7 @@ public abstract class AbstractRepositoryProvider implements RepositoryProvider, 
 
         ArtifactTag lastVersionTag = artifactTagService.findOneOrCreate(ArtifactTagEntity.LAST_VERSION);
 
-        ArtifactIdGroup artifactGroup = artifactIdGroupRepository.findArtifactsGroupWithTag(storage.getId(),
+        ArtifactIdGroup artifactGroup = artifactIdGroupRepository.findArtifactGroupWithTag(storage.getId(),
                 repository.getId(),
                 coordinates.getId(),
                 Optional.of(lastVersionTag))

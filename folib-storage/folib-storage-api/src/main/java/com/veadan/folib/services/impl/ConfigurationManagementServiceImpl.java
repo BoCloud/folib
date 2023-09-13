@@ -15,10 +15,13 @@ import com.veadan.folib.storage.StorageDto;
 import com.veadan.folib.storage.repository.*;
 import com.veadan.folib.storage.routing.MutableRoutingRule;
 import com.veadan.folib.storage.routing.MutableRoutingRules;
+import com.veadan.folib.util.CacheUtil;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.SerializationUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.commons.lang3.mutable.MutableBoolean;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
@@ -29,6 +32,7 @@ import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 import java.io.IOException;
 import java.lang.reflect.UndeclaredThrowableException;
+import java.net.URI;
 import java.util.*;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
@@ -39,6 +43,7 @@ import java.util.stream.Collectors;
 /**
  * @author mtodorov
  */
+@Slf4j
 @Service
 public class ConfigurationManagementServiceImpl
         implements ConfigurationManagementService {
@@ -136,7 +141,11 @@ public class ConfigurationManagementServiceImpl
 
     @Override
     public void setBaseUrl(String baseUrl) throws IOException {
-        modifyInLock(configuration -> configuration.setBaseUrl(baseUrl));
+        modifyInLock(configuration -> {
+            configuration.setBaseUrl(baseUrl);
+            CacheUtil<String, URI> cacheUtil = CacheUtil.getInstance();
+            cacheUtil.remove("uri");
+        });
     }
 
     @Override
@@ -217,6 +226,7 @@ public class ConfigurationManagementServiceImpl
                         repository.getRemoteRepository().getUrl(),
                         repository.getHttpConnectionPool().getAllocatedConnections());
             }
+            clearCacheRepository(storageId, repository.getId());
         });
     }
 
@@ -245,6 +255,7 @@ public class ConfigurationManagementServiceImpl
                     .getRepository(repositoryId);
             checkPlatformVulnerability(whites, repository);
             repository.addVulnerabilityWhites(whites);
+            clearCacheRepository(storageId, repositoryId);
         });
     }
 
@@ -255,6 +266,7 @@ public class ConfigurationManagementServiceImpl
             final RepositoryDto repository = configuration.getStorage(storageId)
                     .getRepository(repositoryId);
             repository.removeVulnerabilityWhites(whites);
+            clearCacheRepository(storageId, repositoryId);
         });
     }
 
@@ -266,6 +278,7 @@ public class ConfigurationManagementServiceImpl
                     .getRepository(repositoryId);
             checkPlatformVulnerability(blacks, repository);
             repository.addVulnerabilityBlacks(blacks);
+            clearCacheRepository(storageId, repositoryId);
         });
     }
 
@@ -276,6 +289,7 @@ public class ConfigurationManagementServiceImpl
             final RepositoryDto repository = configuration.getStorage(storageId)
                     .getRepository(repositoryId);
             repository.removeVulnerabilityBlacks(blacks);
+            clearCacheRepository(storageId, repositoryId);
         });
     }
 
@@ -287,6 +301,7 @@ public class ConfigurationManagementServiceImpl
                     .getRepository(repositoryId);
             checkPlatformVulnerability(whites, repository);
             repository.setVulnerabilityWhites(whites);
+            clearCacheRepository(storageId, repositoryId);
         });
     }
 
@@ -298,6 +313,7 @@ public class ConfigurationManagementServiceImpl
                     .getRepository(repositoryId);
             checkPlatformVulnerability(blacks, repository);
             repository.setVulnerabilityBlacks(blacks);
+            clearCacheRepository(storageId, repositoryId);
         });
     }
 
@@ -311,6 +327,7 @@ public class ConfigurationManagementServiceImpl
             } catch (IOException e) {
                 throw new UndeclaredThrowableException(e);
             }
+            clearCacheRepository(storageId, repositoryId);
         });
     }
 
@@ -326,6 +343,7 @@ public class ConfigurationManagementServiceImpl
             }
 
             repository.getHttpConnectionPool().setAllocatedConnections(numberOfConnections);
+            clearCacheRepository(storageId, repositoryId);
         });
     }
 
@@ -400,6 +418,7 @@ public class ConfigurationManagementServiceImpl
             final RepositoryDto repository = configuration.getStorage(storageId)
                     .getRepository(repositoryId);
             repository.addRepositoryToGroup(repositoryGroupMemberId);
+            clearCacheRepository(storageId, repositoryId);
         });
     }
 
@@ -532,6 +551,7 @@ public class ConfigurationManagementServiceImpl
             configuration.getStorage(storageId)
                     .getRepository(repositoryId)
                     .setArtifactMaxSize(value);
+            clearCacheRepository(storageId, repositoryId);
         });
     }
 
@@ -565,6 +585,7 @@ public class ConfigurationManagementServiceImpl
         {
             result.setValue(config.getStorage(storageId).getRepository(
                     repositoryId).getArtifactCoordinateValidators().remove(alias));
+            clearCacheRepository(storageId, repositoryId);
         });
 
         return result.isTrue();
@@ -836,6 +857,16 @@ public class ConfigurationManagementServiceImpl
         List<String> blacksContains = repositoryDto.getVulnerabilityBlacks().stream().filter(sets::contains).distinct().collect(Collectors.toList());
         if (CollectionUtils.isNotEmpty(blacksContains)) {
             throw new RuntimeException(blacksContains + "已在黑白名单中");
+        }
+    }
+
+    private void clearCacheRepository(String storageId, String repositoryId) {
+        try {
+            String key = String.format("%s:%s", storageId, repositoryId);
+            CacheUtil<String, Repository> cacheUtil = CacheUtil.getInstance();
+            cacheUtil.remove(key);
+        } catch (Exception ex) {
+            log.error("移除仓库缓存错误 storageId [{}] repositoryId [{}] error [{}]", storageId, repositoryId, ExceptionUtils.getStackTrace(ex));
         }
     }
 

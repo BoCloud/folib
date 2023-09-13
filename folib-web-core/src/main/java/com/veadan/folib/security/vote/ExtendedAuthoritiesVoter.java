@@ -4,8 +4,11 @@ import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import com.veadan.folib.controllers.BrowseController;
 import com.veadan.folib.services.ConfigurationManagementService;
+import com.veadan.folib.storage.Storage;
+import com.veadan.folib.storage.repository.Repository;
 import com.veadan.folib.users.domain.Privileges;
 import com.veadan.folib.users.userdetails.SpringSecurityUser;
+import com.veadan.folib.util.CacheUtil;
 import com.veadan.folib.utils.UrlUtils;
 import org.aopalliance.intercept.MethodInvocation;
 import org.apache.commons.lang3.StringUtils;
@@ -21,6 +24,8 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.stereotype.Component;
 
+import javax.inject.Inject;
+import java.net.URI;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 
@@ -33,10 +38,6 @@ import static com.veadan.folib.web.Constants.*;
 public class ExtendedAuthoritiesVoter extends PreInvocationAuthorizationAdviceVoter {
 
     private final Logger logger = LoggerFactory.getLogger(ExtendedAuthoritiesVoter.class);
-
-    private final Cache<String, Boolean> repositoryAllowAnonymousCache = CacheBuilder.newBuilder()
-            .expireAfterWrite(5, TimeUnit.MINUTES)
-            .build();
 
     @Autowired
     @Lazy
@@ -68,14 +69,18 @@ public class ExtendedAuthoritiesVoter extends PreInvocationAuthorizationAdviceVo
         }
 
         private Boolean getRepositoryAllowAnonymousFromCacheOrLoad(String storageId, String repositoryId) {
+            CacheUtil<String, Repository> cacheUtil = CacheUtil.getInstance();
             String key = String.format("%s:%s", storageId, repositoryId);
-            Boolean cacheAllowAnonymous = repositoryAllowAnonymousCache.getIfPresent(key);
-            if (Objects.isNull(cacheAllowAnonymous)) {
-                final boolean allowAnonymous = configurationManagementService.getConfiguration().getRepository(storageId, repositoryId).isAllowAnonymous();
-                cacheAllowAnonymous = allowAnonymous;
-                repositoryAllowAnonymousCache.put(key, allowAnonymous);
+            Repository repository = cacheUtil.get(key);
+            if (Objects.isNull(repository)) {
+                Storage storage = configurationManagementService.getConfiguration().getStorage(storageId);
+                if (Objects.isNull(storage)) {
+                    return true;
+                }
+                repository = storage.getRepository(repositoryId);
+                cacheUtil.put(key, repository);
             }
-            return cacheAllowAnonymous;
+            return repository.isAllowAnonymous();
         }
 
         private Collection<? extends GrantedAuthority> calculateExtendedAuthorities(Authentication authentication) {

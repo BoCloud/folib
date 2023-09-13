@@ -13,6 +13,13 @@ public interface SyncArtifactProvider {
     void register();
 
     /**
+     * 全量同步-基于browse
+     *
+     * @param syncArtifactForm 参数
+     */
+    void browseFullSync(SyncArtifactForm syncArtifactForm);
+
+    /**
      * 全量同步
      *
      * @param syncArtifactForm 参数

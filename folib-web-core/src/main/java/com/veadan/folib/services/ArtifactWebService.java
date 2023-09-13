@@ -159,11 +159,4 @@ public interface ArtifactWebService {
      * @return statusInfo 状态
      */
     StatusInfo store(String username, String storageId, String repositoryId, String path, String uuid, MultipartFile file);
-
-    /**
-     * 批量存储或更新元数据 适配安徽政务
-     *
-     * @param artifactMetadataFormList artifactMetadataFormList
-     */
-    void batchArtifactMetaDataByahzw(List<ArtifactMetadataForm> artifactMetadataFormList);
 }

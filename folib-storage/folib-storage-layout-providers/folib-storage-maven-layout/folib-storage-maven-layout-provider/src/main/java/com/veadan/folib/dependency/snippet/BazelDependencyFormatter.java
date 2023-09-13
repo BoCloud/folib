@@ -43,6 +43,7 @@ public class BazelDependencyFormatter
     }
     
     
+    @Override
     public String getFormatAlias()
     {
         return ALIAS;

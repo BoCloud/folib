@@ -1,11 +1,14 @@
 package com.veadan.folib.web;
 
+import cn.hutool.extra.spring.SpringUtil;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import com.veadan.folib.configuration.StoragesConfigurationManager;
 import com.veadan.folib.storage.repository.Repository;
+import com.veadan.folib.util.CacheUtil;
 import org.springframework.web.servlet.mvc.condition.AbstractRequestCondition;
 
+import javax.inject.Inject;
 import javax.servlet.http.HttpServletRequest;
 import java.util.Collection;
 import java.util.Collections;
@@ -19,9 +22,6 @@ public class LayoutRequestCondition extends AbstractRequestCondition<ExposableRe
 
     protected final String layout;
     protected final StoragesConfigurationManager configurationManager;
-    private final Cache<String, Repository> repositoryCache = CacheBuilder.newBuilder()
-            .expireAfterWrite(5, TimeUnit.MINUTES)
-            .build();
 
     public LayoutRequestCondition(StoragesConfigurationManager configurationManager, String layout) {
         this.layout = layout;
@@ -81,15 +81,15 @@ public class LayoutRequestCondition extends AbstractRequestCondition<ExposableRe
     }
 
     private ExposableRequestCondition getStorageAndRepositoryCondition(String storageId, String repositoryId) {
-        // 使用storageId和repositoryId的组合作为键来从缓存中获取repository
-        String repositoryKey = storageId + ":" + repositoryId;
-        Repository repository = repositoryCache.getIfPresent(repositoryKey);
+        String key = String.format("%s:%s", storageId, repositoryId);
+        CacheUtil<String, Repository> cacheUtil = CacheUtil.getInstance();
+        Repository repository = cacheUtil.get(key);
         if (repository == null) {
             repository = configurationManager.getRepository(storageId, repositoryId);
             if (repository == null) {
                 return new RepositoryNotFoundRequestCondition(repositoryId);
             }
-            repositoryCache.put(repositoryKey, repository);
+            cacheUtil.put(key, repository);
         }
         if (!layout.equals(repository.getLayout())) {
             return null;

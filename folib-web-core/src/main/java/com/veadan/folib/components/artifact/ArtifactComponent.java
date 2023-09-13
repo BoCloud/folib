@@ -2,6 +2,7 @@ package com.veadan.folib.components.artifact;
 
 import cn.hutool.core.io.FileUtil;
 import com.alibaba.fastjson.JSONObject;
+import com.alibaba.fastjson.serializer.SerializerFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
@@ -21,7 +22,6 @@ import com.veadan.folib.enums.BlockTypeEnum;
 import com.veadan.folib.enums.PromotionStatusEnum;
 import com.veadan.folib.event.artifact.ArtifactEventListenerRegistry;
 import com.veadan.folib.npm.metadata.*;
-import com.veadan.folib.providers.io.RepositoryFiles;
 import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.providers.io.RepositoryPathResolver;
 import com.veadan.folib.providers.io.RootRepositoryPath;
@@ -59,7 +59,6 @@ import org.jsoup.nodes.Document;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.http.HttpStatus;
-import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 
 import javax.inject.Inject;
@@ -147,7 +146,6 @@ public class ArtifactComponent {
     @Inject
     @Lazy
     private ArtifactEventListenerRegistry artifactEventListenerRegistry;
-
 
     /**
      * 读取文件内容
@@ -484,9 +482,6 @@ public class ArtifactComponent {
         }
         boolean isDockerLayout = DockerLayoutProvider.ALIAS.equals(layout);
         Set<Vulnerability> vulnerabilitySet = artifact.getVulnerabilitySet();
-        if (CollectionUtils.isEmpty(vulnerabilitySet)) {
-            return false;
-        }
         if (isDockerLayout) {
             String manifest = "manifest";
             String path = artifact.getUuid();
@@ -495,7 +490,7 @@ public class ArtifactComponent {
                 vulnerabilitySet = artifactRepository.fetchVulnerabilitiesByKeywords(storageId, repositoryId, keywords);
             }
         }
-        Set<String> vulnerabilities = vulnerabilitySet.stream().map(Vulnerability::getUuid).collect(Collectors.toSet());
+        Set<String> vulnerabilities = Optional.ofNullable(vulnerabilitySet).orElse(Collections.emptySet()).stream().map(Vulnerability::getUuid).collect(Collectors.toSet());
         MutableSecurityPolicyConfiguration mutableSecurityPolicyConfiguration = configurationManagementService.getMutableConfigurationClone().getSecurityPolicyConfiguration();
         if (Objects.nonNull(mutableSecurityPolicyConfiguration)) {
             RepositoryDto repositoryDto = configurationManagementService.getMutableConfigurationClone().getStorage(storageId).getRepository(repositoryId);
@@ -504,6 +499,9 @@ public class ArtifactComponent {
             Set<String> platformBlacks = mutableSecurityPolicyConfiguration.getBlacks();
             Set<String> platformWhites = mutableSecurityPolicyConfiguration.getWhites();
             if (BlockTypeEnum.ALL.getType().equals(mutableSecurityPolicyConfiguration.getBlockType())) {
+                if (CollectionUtils.isEmpty(vulnerabilitySet)) {
+                    return false;
+                }
                 //过滤仓库级别黑名单
                 block = vulnerabilities.stream().anyMatch(repositoryBlacks::contains);
                 if (!block) {
@@ -532,6 +530,9 @@ public class ArtifactComponent {
                     block = CollectionUtils.isNotEmpty(allSet);
                 }
             } else if (BlockTypeEnum.BLACK.getType().equals(mutableSecurityPolicyConfiguration.getBlockType())) {
+                if (CollectionUtils.isEmpty(vulnerabilitySet)) {
+                    return false;
+                }
                 //黑名单阻断
                 block = vulnerabilities.stream().anyMatch(item -> repositoryBlacks.contains(item) ||
                         (!repositoryWhites.contains(item) && platformBlacks.contains(item)));
@@ -1021,16 +1022,23 @@ public class ArtifactComponent {
     public void storeArtifactMetadataFile(RepositoryPath repositoryPath) {
         try {
             if (Objects.nonNull(repositoryPath) && Files.exists(repositoryPath)) {
-                String fileName = "." + FilenameUtils.getName(repositoryPath.getFileName().toString()) + "-metadata";
+                String fileName = "." + FilenameUtils.getName(repositoryPath.getFileName().toString()) + ".metadata";
                 RepositoryPath artifactRepositoryPath = repositoryPath.getParent().resolve(fileName);
-                Files.writeString(artifactRepositoryPath, JSONObject.toJSONString(repositoryPath.getArtifactEntry()));
+                try (ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+                     ObjectOutputStream objectOutputStream = new ObjectOutputStream(byteArrayOutputStream)) {
+                    objectOutputStream.writeObject(repositoryPath.getArtifactEntry());
+                    byte[] byteArray = byteArrayOutputStream.toByteArray();
+                    Files.write(artifactRepositoryPath, byteArray);
+                } catch (Exception ex) {
+                    log.error("写入制品 [{}] 本地缓存.metadata文件错误", ExceptionUtils.getStackTrace(ex));
+                }
             }
         } catch (Exception ex) {
             log.error("StoreArtifactMetadataFile error ", ex);
         }
     }
 
-//    @Async("eventTaskExecutor")
+    //    @Async("eventTaskExecutor")
     public void beforeRead(RepositoryPath repositoryPath) {
         try {
 //            if (!RepositoryFiles.isArtifact(repositoryPath)) {
@@ -1042,7 +1050,7 @@ public class ArtifactComponent {
         }
     }
 
-//    @Async("eventTaskExecutor")
+    //    @Async("eventTaskExecutor")
     public void afterRead(RepositoryPath repositoryPath) {
         try {
 //            if (!RepositoryFiles.isArtifact(repositoryPath)) {

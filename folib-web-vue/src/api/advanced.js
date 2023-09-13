@@ -45,3 +45,11 @@ export function updateSingleDict(data) {
     data: data
   })
 }
+
+export function syncArtifactProvider(data) {
+  return axios({
+    url: '/api/artifact/syncArtifactProvider',
+    method: 'post',
+    data: data
+  })
+}

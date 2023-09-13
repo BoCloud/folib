@@ -1,7 +1,5 @@
 package com.veadan.folib.controllers;
 
-import com.alibaba.fastjson.JSON;
-import com.alibaba.fastjson.JSONObject;
 import com.veadan.folib.components.artifact.ArtifactComponent;
 import com.veadan.folib.controllers.support.ErrorResponseEntityBody;
 import com.veadan.folib.domain.Artifact;
@@ -25,7 +23,7 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import javax.inject.Inject;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import java.io.IOException;
+import java.io.*;
 import java.nio.channels.Channels;
 import java.nio.channels.FileChannel;
 import java.nio.channels.WritableByteChannel;
@@ -125,15 +123,17 @@ public abstract class BaseArtifactController
         if (!supportLayout) {
             return null;
         }
-        String fileName = "." + FilenameUtils.getName(repositoryPath.getFileName().toString()) + "-metadata", artifactStr = "";
+        String fileName = "." + FilenameUtils.getName(repositoryPath.getFileName().toString()) + ".metadata";
         RepositoryPath artifactRepositoryPath = repositoryPath.getParent().resolve(fileName);
         Artifact artifact = null;
         long startTime = System.currentTimeMillis();
         logger.info("Block JSON {} 开始时间 {}", repositoryPath.toString(), startTime);
         if (Files.exists(artifactRepositoryPath)) {
-            artifactStr = Files.readString(artifactRepositoryPath);
-            if (StringUtils.isNotBlank(artifactStr)) {
-                artifact = JSON.parseObject(artifactStr, Artifact.class);
+            try (InputStream byteArrayInputStream = Files.newInputStream(artifactRepositoryPath);
+                 ObjectInputStream objectInputStream = new ObjectInputStream(byteArrayInputStream)) {
+                artifact = (Artifact) objectInputStream.readObject();
+            } catch (Exception ex) {
+                logger.error("解析制品 [{}] 本地缓存.metadata文件错误", ExceptionUtils.getStackTrace(ex));
             }
         }
         logger.info("Block JSON {} 结束时间 {}", repositoryPath.toString(), System.currentTimeMillis() - startTime);
@@ -142,7 +142,14 @@ public abstract class BaseArtifactController
             if (Objects.isNull(artifact)) {
                 return null;
             }
-            Files.writeString(artifactRepositoryPath, JSONObject.toJSONString(artifact));
+            try (ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+                 ObjectOutputStream objectOutputStream = new ObjectOutputStream(byteArrayOutputStream)) {
+                objectOutputStream.writeObject(artifact);
+                byte[] byteArray = byteArrayOutputStream.toByteArray();
+                Files.write(artifactRepositoryPath, byteArray);
+            } catch (Exception ex) {
+                logger.error("写入制品 [{}] 本地缓存.metadata文件错误", ExceptionUtils.getStackTrace(ex));
+            }
         }
         boolean block = artifactComponent.vulnerabilityBlock(artifact, repositoryPath.getRepository().getLayout());
         if (block) {

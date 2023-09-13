@@ -56,8 +56,6 @@ public class RepositoryMethodArgumentResolver
                                   final NativeWebRequest nativeWebRequest,
                                   final WebDataBinderFactory webDataBinderFactory)
             throws MissingPathVariableException {
-        long startTime = System.currentTimeMillis();
-        log.info("开始查找匹配仓库 {}", startTime);
         final RepositoryMapping repositoryMapping = parameter.getParameterAnnotation(RepositoryMapping.class);
         final String storageVariableName = repositoryMapping.storageVariableName();
         final String storageId = getRequiredPathVariable(parameter, nativeWebRequest, storageVariableName);
@@ -70,7 +68,6 @@ public class RepositoryMethodArgumentResolver
 
         if (repository != null && Objects.equals(repository.getId(), repositoryId) &&
                 Objects.equals(repository.getStorage().getId(), storageId)) {
-            log.info("查找匹配仓库耗时 request {}", System.currentTimeMillis() - startTime);
             return repository;
         }
 
@@ -92,7 +89,6 @@ public class RepositoryMethodArgumentResolver
             final String message = String.format(NOT_IN_SERVICE_REPOSITORY_MESSAGE, storageId, repositoryId);
             throw new ServiceUnavailableException(message);
         }
-        log.info("查找匹配仓库耗时 conf {}", System.currentTimeMillis() - startTime);
         return repository;
     }
 

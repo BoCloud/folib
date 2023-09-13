@@ -13,11 +13,9 @@ import com.veadan.folib.converters.users.AccessModelFormToUserAccessModelDtoConv
 import com.veadan.folib.converters.users.UserFormToUserDtoConverter;
 import com.veadan.folib.cron.config.CronTasksConfig;
 import com.veadan.folib.filter.WrapperRequestFilter;
-import com.veadan.folib.interceptors.MavenArtifactRequestInterceptor;
 import com.veadan.folib.interceptors.PermissionCheckInterceptor;
 import com.veadan.folib.jtwig.extensions.ByteSizeConversionExtension;
 import com.veadan.folib.mapper.WebObjectMapperSubtypes;
-import com.veadan.folib.providers.io.RepositoryPathResolver;
 import com.veadan.folib.services.DirectoryListingService;
 import com.veadan.folib.services.DirectoryListingServiceImpl;
 import com.veadan.folib.utils.CustomAntPathMatcher;
@@ -295,7 +293,7 @@ public class WebConfig
         viewResolver.setViewClass(InternalResourceView.class);
         viewResolver.setViewNames("*.html");
         viewResolver.setOrder(1);
-
+        viewResolver.setRedirectHttp10Compatible(false);
         return viewResolver;
     }
 
@@ -323,5 +321,4 @@ public class WebConfig
     public MultipartResolver multipartResolver() {
         return new CustomMultipartResolver();
     }
-
 }

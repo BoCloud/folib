@@ -84,6 +84,22 @@ public class ArtifactIdGroupRepository extends GremlinVertexRepository<ArtifactI
         return Optional.of(t.next());
     }
 
+    public Optional<ArtifactIdGroup> findArtifactGroupWithTag(String storageId,
+                                                               String repositoryId,
+                                                               String artifactId,
+                                                               Optional<ArtifactTag> tag) {
+        ArtifactIdGroup artifactIdGroup = new ArtifactIdGroupEntity(storageId, repositoryId, artifactId);
+        EntityTraversal<Vertex, ArtifactIdGroup> t = g().V()
+                .hasLabel(Vertices.ARTIFACT_ID_GROUP)
+                .has("uuid", artifactIdGroup.getUuid())
+                .map(adapter.artifactIdGroupFold());
+        if (!t.hasNext()) {
+            return Optional.empty();
+        }
+
+        return Optional.of(t.next());
+    }
+
     public Boolean artifactsExists(Set<String> storageRepositoryIds,
                                    String artifactId,
                                    Collection<String> coordinateValues) {

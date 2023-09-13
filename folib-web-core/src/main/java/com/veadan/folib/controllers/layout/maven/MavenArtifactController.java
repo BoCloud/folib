@@ -70,7 +70,7 @@ public class MavenArtifactController
         logger.debug("Requested /{}/{}/{} startTime {} .", storageId, repositoryId, artifactPath, startTime);
 //        artifactPath = correctIndexPathIfNecessary(repository, artifactPath);
         RepositoryPath repositoryPath = artifactResolutionService.resolvePath(storageId, repositoryId, artifactPath);
-//        vulnerabilityBlock(repositoryPath);
+        vulnerabilityBlock(repositoryPath);
         provideArtifactDownloadResponse(request, response, httpHeaders, repositoryPath);
         logger.debug("Requested /{}/{}/{} endTime {} .", storageId, repositoryId, artifactPath, System.currentTimeMillis() - startTime);
     }

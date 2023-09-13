@@ -6,12 +6,18 @@ import com.veadan.folib.components.artifact.ArtifactComponent;
 import com.veadan.folib.configuration.ConfigurationManager;
 import com.veadan.folib.forms.syncartifact.SyncArtifactForm;
 import com.veadan.folib.providers.layout.Maven2LayoutProvider;
+import com.veadan.folib.service.ProxyRepositoryConnectionPoolConfigurationService;
+import com.veadan.folib.services.MavenIndexerService;
 import com.veadan.folib.storage.repository.Repository;
 import com.veadan.folib.storage.repository.RepositoryTypeEnum;
+import com.veadan.folib.storage.repository.remote.RemoteRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
-import org.jsoup.Jsoup;
+import org.apache.http.HttpStatus;
+import org.apache.http.client.config.RequestConfig;
+import org.glassfish.jersey.apache.connector.ApacheClientProperties;
+import org.glassfish.jersey.client.authentication.HttpAuthenticationFeature;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
@@ -20,10 +26,15 @@ import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
 import javax.inject.Inject;
+import javax.ws.rs.client.Client;
+import javax.ws.rs.client.WebTarget;
+import javax.ws.rs.core.Response;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * @author leipenghui
@@ -54,6 +65,12 @@ public class MavenSyncArtifactProvider implements SyncArtifactProvider {
     @Inject
     private ArtifactComponent artifactComponent;
 
+    @Inject
+    private ProxyRepositoryConnectionPoolConfigurationService proxyRepositoryConnectionPoolConfigurationService;
+
+    @Inject
+    private MavenIndexerService mavenIndexerService;
+
     @PostConstruct
     @Override
     public void register() {
@@ -63,7 +80,7 @@ public class MavenSyncArtifactProvider implements SyncArtifactProvider {
     }
 
     @Override
-    public void fullSync(SyncArtifactForm syncArtifactForm) {
+    public void browseFullSync(SyncArtifactForm syncArtifactForm) {
         try {
             long startTime = System.currentTimeMillis();
             Repository repository = configurationManager.getRepository(syncArtifactForm.getStorageId(), syncArtifactForm.getRepositoryId());
@@ -143,6 +160,83 @@ public class MavenSyncArtifactProvider implements SyncArtifactProvider {
             log.error("[{}] maven全量同步制品，fullSync错误 [{}]", this.getClass().getSimpleName(), ExceptionUtils.getStackTrace(e));
         } finally {
             THREAD_LOCAL.remove();
+        }
+    }
+
+    @Override
+    public void fullSync(SyncArtifactForm syncArtifactForm) {
+        String storageId = syncArtifactForm.getStorageId(), repositoryId = syncArtifactForm.getRepositoryId();
+        Repository repository = configurationManager.getRepository(storageId, repositoryId);
+        if (Objects.nonNull(repository) && RepositoryTypeEnum.PROXY.getType().equals(repository.getType())) {
+            RemoteRepository remoteRepository = repository.getRemoteRepository();
+            String remoteRepositoryUrl = remoteRepository.getUrl(), indexPath = ".index/nexus-maven-repository-index.properties";
+            remoteRepositoryUrl = StringUtils.removeEnd(remoteRepositoryUrl, "/");
+            String indexUrl = String.format("%s/%s", remoteRepositoryUrl, indexPath);
+            Client restClient = proxyRepositoryConnectionPoolConfigurationService.getRestClient(storageId, repositoryId);
+            Response response = null;
+            try {
+                WebTarget service = restClient.target(indexUrl);
+                authentication(service, remoteRepository.getUsername(), remoteRepository.getPassword());
+                log.info("Get maven index properties {} start", indexUrl);
+                response = service.request().get();
+                if (response.getStatus() != HttpStatus.SC_OK) {
+                    log.warn("Get maven index properties {} error {}", indexUrl, response.getStatus());
+                    return;
+                }
+                String indexProperties = response.readEntity(String.class), id, chainId, timestamp;
+                id = extractValue(indexProperties, "nexus.index.id=(.*?)\\n");
+                chainId = extractValue(indexProperties, "nexus.index.chain-id=(.*?)\\n");
+                timestamp = extractValue(indexProperties, "nexus.index.timestamp=(.*?)\\n");
+                if (StringUtils.isBlank(id) || StringUtils.isBlank(chainId)) {
+                    log.warn("Get maven index properties {} id {} chainId {} timestamp {} has null value", indexProperties, id, chainId, timestamp);
+                    return;
+                }
+                log.info("Get maven index properties {} id {} chainId {} timestamp {}", indexProperties, id, chainId, timestamp);
+                String mavenIndexerPath = mavenIndexerService.storeMavenIndexer("json", id, chainId, remoteRepositoryUrl);
+                if (StringUtils.isNotBlank(mavenIndexerPath)) {
+                    mavenIndexerService.handlerMavenIndexerAndDownLoad(repository, mavenIndexerPath, syncArtifactForm.getBatch());
+                }
+            } catch (Exception e) {
+                log.error("Failed to download {} error {}", indexUrl, e);
+            } finally {
+                if (Objects.nonNull(response)) {
+                    response.close();
+                }
+                restClient.close();
+            }
+        }
+    }
+
+    /**
+     * Client WebTarget 构建认证信息
+     *
+     * @param webTarget webTarget
+     * @param username  username
+     * @param password  password
+     */
+    public void authentication(WebTarget webTarget, String username, String password) {
+        final HttpAuthenticationFeature authenticationFeature = (StringUtils.isNotBlank(username) && StringUtils.isNotBlank(password)) ? HttpAuthenticationFeature.basic(username, password) : null;
+        if (authenticationFeature != null) {
+            webTarget.register(authenticationFeature);
+            webTarget.property(ApacheClientProperties.REQUEST_CONFIG,
+                    RequestConfig.custom().setCircularRedirectsAllowed(true).build());
+        }
+    }
+
+    /**
+     * 提取信息
+     *
+     * @param input   原字符串
+     * @param pattern 正则表达式
+     * @return 结果
+     */
+    private static String extractValue(String input, String pattern) {
+        Pattern regexPattern = Pattern.compile(pattern);
+        Matcher matcher = regexPattern.matcher(input);
+        if (matcher.find()) {
+            return matcher.group(1);
+        } else {
+            return null;
         }
     }
 
