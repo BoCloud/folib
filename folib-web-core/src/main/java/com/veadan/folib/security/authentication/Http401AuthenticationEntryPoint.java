@@ -33,7 +33,7 @@ public class Http401AuthenticationEntryPoint implements AuthenticationEntryPoint
 
     @Inject
     private ObjectMapper objectMapper;
-    
+
     @Override
     public void commence(HttpServletRequest request,
                          HttpServletResponse response,
@@ -54,7 +54,7 @@ public class Http401AuthenticationEntryPoint implements AuthenticationEntryPoint
         response.setContentType(MediaType.APPLICATION_JSON_VALUE);
 
         response.getWriter().println(objectMapper.writeValueAsString(new ErrorResponseEntityBody(message)));
-        response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);      
+        response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
 
         response.flushBuffer();
     }

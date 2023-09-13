@@ -168,10 +168,15 @@ public class DirectoryListingServiceImpl implements DirectoryListingService
         try (Stream<Path> pathStream = Files.list(path))
         {
             contentPaths = pathStream.filter(p -> !p.toString().startsWith("."))
-                    .filter(p -> !p.toString().contains("/.")).filter(p -> {
+                    .filter(p -> !p.toString().contains("/.") 
+                            // 支持Cocoapods索引目录的显示
+                            || p.toString().contains(".specs"))
+                    .filter(p -> {
                         try
                         {
-                            return !Files.isHidden(p);
+                            return !Files.isHidden(p)
+                                    // 支持Cocoapods索引目录的显示
+                                    || p.toString().contains(".specs");
                         }
                         catch (IOException e)
                         {

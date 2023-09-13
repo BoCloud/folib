@@ -887,6 +887,58 @@
           'composer clear-cache'" :highlight="highlighterHandle" :line-numbers="false" :readonly="true"></prism-editor>
         </a-timeline-item>
       </a-timeline>
+      <a-timeline v-if="repositoryType === 'cocoapods'">
+        <a-timeline-item color="primary">
+          通用
+          <p>
+            为了在Artifactory中使用CocoaPods，你需要安装"cocoapods-art"。插件。安装cocoapods-art命令如下:
+          </p>
+          <prism-editor class="my-editor height-300" value="gem install cocoapods-art" 
+          :highlight="highlighterHandle" :line-numbers="false" :readonly="true">
+          </prism-editor>
+          <p>
+            repo-art使用标准<a href="https://www.gnu.org/software/inetutils/manual/html_node/The-_002enetrc-file.html">netrc file</a>中指定的身份验证
+          </p>
+          <prism-editor class="my-editor height-300" 
+          :highlight="highlighterHandle" :line-numbers="false" :value='"machine "+(baseUrl.endsWith("/") ? baseUrl:baseUrl+"/").replaceAll(/https?\:\/\/(.*?)(:\d+?)?\//g, "$1")+
+"\rlogin <USERNAME>"+
+"\rpassword <PASSWORD>"' :readonly="true">
+          </prism-editor>
+          <p>
+            要添加一个Artifactory Specs库:
+          </p>
+          <prism-editor class="my-editor height-300" 
+          :highlight="highlighterHandle" :line-numbers="false" :value='baseUrl+"storages/"+folibRepository.storageId+"/"+folibRepository.id' :readonly="true">
+          </prism-editor>
+        </a-timeline-item>
+        <a-timeline-item color="primary">
+          部署
+          <p>
+            要将pod部署到Artifactory存储库中，您需要使用Artifactory的REST API或Web UI。
+            例如，要使用REST API将pod部署到此存储库，请使用以下命令:
+          </p>
+          <prism-editor class="my-editor height-300" :value='"curl -u<USERNAME>:<PASSWORD> -XPUT "+baseUrl+"storages/"+folibRepository.storageId+"/"+folibRepository.id+"/<TARGET_FILE_PATH> -T <PATH_TO_FILE>"' 
+          :highlight="highlighterHandle" :line-numbers="false" :readonly="true">
+          </prism-editor>
+        </a-timeline-item>
+        <a-timeline-item color="primary">
+          Podfile插件集成
+          <p>
+            要从您添加的 Artifactory 规范存储库中解析 Pod，您必须将以下内容添加到 Podfile 中：
+          </p>
+          <prism-editor class="my-editor height-300" :value="'plugin  \'cocoapods-art\', :sources => [\r'+
+'  \'' + folibRepository.id + '\'\r' +
+']'" 
+          :highlight="highlighterHandle" :line-numbers="false" :readonly="true">
+          </prism-editor>
+          <p>
+            然后，您可以像往常一样使用安装：
+          </p>
+          <prism-editor class="my-editor height-300" value="pod install" 
+          :highlight="highlighterHandle" :line-numbers="false" :readonly="true">
+          </prism-editor>
+        </a-timeline-item>
+      </a-timeline>
       <a-timeline>
         <a-timeline-item color="primary">
           仓库地址

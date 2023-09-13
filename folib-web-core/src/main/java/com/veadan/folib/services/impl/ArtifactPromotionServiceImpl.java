@@ -67,6 +67,8 @@ import java.util.*;
 import java.util.concurrent.FutureTask;
 import java.util.stream.Collectors;
 
+import static com.veadan.folib.utils.UrlUtils.parsePath;
+
 /**
  * @author qijianping
  */
@@ -230,14 +232,18 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
         try {
             String sourcePath = promotionNodeOption.getSourcePath();
             String targetPath = promotionNodeOption.getTargetPath();
-            String srcStorageId = sourcePath.split(":")[2].split("/")[1];
-            String srcRepostoryId = sourcePath.split(":")[2].split("/")[2];
+            String srcStorageId = parsePath(sourcePath)[0];
+            String srcRepostoryId = parsePath(sourcePath)[1];
             String srcUrl = sourcePath.split("/" + srcStorageId + "/" + srcRepostoryId + "/")[0];
             String srcUri = sourcePath.split("/" + srcStorageId + "/" + srcRepostoryId + "/")[1];
-            String targetStorageId = targetPath.split(":")[2].split("/")[1];
-            String targetRepostoryId = targetPath.split(":")[2].split("/")[2];
+            String targetStorageId =  parsePath(targetPath)[0];
+            String targetRepostoryId = parsePath(targetPath)[1];
             String targetUrl = targetPath.split("/" + targetStorageId + "/" + targetRepostoryId + "/")[0];
             String targetUri = targetPath.split("/" + targetStorageId + "/" + targetRepostoryId + "/")[1];
+
+            log.info("sourcePath={},srcStorageId={},srcRepostoryId={}\ntargetPath={},targetStorageId={},targetRepostoryId={}",sourcePath,srcStorageId,srcRepostoryId,targetStorageId,targetStorageId,targetRepostoryId);
+            log.info("srcUrl={},srcUri={}",srcUrl,srcUri);
+            log.info("targetUrl={},targetUri={}",targetUrl,targetUri);
             if (srcUrl.equals(targetUrl)) {
                 validateStorageAndRepository(srcStorageId, srcRepostoryId);
                 validateStorageAndRepository(targetStorageId, targetRepostoryId);
@@ -249,8 +255,11 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
             }
 
             // 判断节点参数是 做推 push  或者 拉取 pull
-            String requestURL = request.getRequestURL().toString().replace(request.getRequestURI(), "");
+            String requestURL = request.getServerName();
+            log.info("requestURL={}",requestURL);
+
             if (sourcePath.contains(requestURL)) {
+                log.info("进入推模式={}",true);
                 validateStorageAndRepository(srcStorageId, srcRepostoryId);
                 // 本地源 制品路径 推向 目标路径
                 Repository srcRepository = repositoryManagementService.getStorage(srcStorageId).getRepository(srcRepostoryId);
@@ -266,6 +275,7 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
                 promotionUtil.upload(targetUrl + upLoadURI, uploadDto);
 
             } else if (targetPath.contains(requestURL)) {
+                log.info("进入拉模式={}",true);
                 validateStorageAndRepository(targetStorageId, targetRepostoryId);
                 // 从源仓路径 pull 到目标仓路径 获取目标主机的path 路径下的文件与目录 然后依次提交到任务队列里面后将文件存入仓库
                 String url = srcUrl + getFileRelativePaths;

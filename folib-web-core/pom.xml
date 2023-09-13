@@ -131,21 +131,6 @@
             <artifactId>hutool-all</artifactId>
             <version>5.7.20</version>
         </dependency>
-        <!-- docker java -->
-        <dependency>
-            <groupId>com.github.docker-java</groupId>
-            <artifactId>docker-java</artifactId>
-            <version>3.2.13</version>
-        </dependency>
-
-        <!-- docker java httpclient -->
-        <dependency>
-            <groupId>com.github.docker-java</groupId>
-            <artifactId>docker-java-transport-httpclient5</artifactId>
-            <version>3.2.13</version>
-        </dependency>
-
-
         <dependency>
             <groupId>com.alibaba</groupId>
             <artifactId>fastjson</artifactId>
@@ -687,6 +672,11 @@
             <groupId>com.tencentcloudapi</groupId>
             <artifactId>tencentcloud-sdk-java-tmt</artifactId>
             <version>3.1.754</version>
+        </dependency>
+        <dependency>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>folib-storage-cocoapods-layout-provider</artifactId>
+            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>org.jfrog.artifactory.client</groupId>

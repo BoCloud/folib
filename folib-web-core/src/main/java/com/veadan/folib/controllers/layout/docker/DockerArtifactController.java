@@ -124,7 +124,7 @@ public class DockerArtifactController extends BaseArtifactController {
         response.reset();
         response.setDateHeader("Date", System.currentTimeMillis());
         response.setHeader(DockerApiHeader.DOCKER_DISTRIBUTION_API_VERSION.key(), DockerApiHeader.DOCKER_DISTRIBUTION_API_VERSION.value());
-        response.setHeader("WWW-Authenticate", MessageFormat.format("Bearer realm=\"{0}token\",service=\"{1}\"", request.getRequestURL(), request.getServerName() + ":" + request.getServerPort()));
+        setTokenUrl(request, response);
         if (Objects.isNull(authorization)) {
             return new ResponseEntity<>(unAuth(), HttpStatus.UNAUTHORIZED);
         }
@@ -190,7 +190,7 @@ public class DockerArtifactController extends BaseArtifactController {
     ) {
         try {
             if (Objects.isNull(authentication)) {
-                response.setHeader("WWW-Authenticate", MessageFormat.format("Bearer realm=\"{0}token\",service=\"{1}\"", request.getRequestURL().substring(0, request.getRequestURL().indexOf("/v2/") + 4), request.getServerName() + ":" + request.getServerPort()));
+                setTokenUrl(request, response);
                 return new ResponseEntity<>(unAuth(), HttpStatus.UNAUTHORIZED);
             }
             SpringSecurityUser userDetails = (SpringSecurityUser) authentication.getPrincipal();
@@ -265,7 +265,7 @@ public class DockerArtifactController extends BaseArtifactController {
 
     ) {
         if (Objects.isNull(authentication)) {
-            response.setHeader("WWW-Authenticate", MessageFormat.format("Bearer realm=\"{0}token\",service=\"{1}\"", request.getRequestURL().substring(0, request.getRequestURL().indexOf("/v2/") + 4), request.getServerName() + ":" + request.getServerPort()));
+            setTokenUrl(request, response);
             return new ResponseEntity<>(unAuth(), HttpStatus.UNAUTHORIZED);
         }
         SpringSecurityUser userDetails = (SpringSecurityUser) authentication.getPrincipal();
@@ -507,7 +507,7 @@ public class DockerArtifactController extends BaseArtifactController {
                                                  @RequestBody byte[] bytes
     ) {
         if (Objects.isNull(authentication)) {
-            response.setHeader("WWW-Authenticate", MessageFormat.format("Bearer realm=\"{0}token\",service=\"{1}\"", request.getRequestURL().substring(0, request.getRequestURL().indexOf("/v2/") + 4), request.getServerName() + ":" + request.getServerPort()));
+            setTokenUrl(request, response);
             return new ResponseEntity<>(unAuth(), HttpStatus.UNAUTHORIZED);
         }
         SpringSecurityUser userDetails = (SpringSecurityUser) authentication.getPrincipal();
@@ -1216,5 +1216,26 @@ public class DockerArtifactController extends BaseArtifactController {
         result.put("errors", list);
         return result;
     }
+
+    private boolean artifactRealExists(RepositoryPath repositoryPath) {
+        try {
+            return Objects.nonNull(repositoryPath) && Files.exists(repositoryPath) && Objects.nonNull(repositoryPath.getArtifactEntry()) && Boolean.TRUE.equals(repositoryPath.getArtifactEntry().getArtifactFileExists());
+        } catch (Exception ex) {
+            logger.error("判断制品是否存在发生错误：{}", ExceptionUtils.getStackTrace(ex));
+            return false;
+        }
+    }
+
+    private void setTokenUrl(HttpServletRequest request, HttpServletResponse response) {
+        String originalProtocol = request.getHeader("X-Forwarded-Proto"), https = "https";
+        if (https.equals(originalProtocol)) {
+            // 使用HTTPS协议
+            response.setHeader("WWW-Authenticate", MessageFormat.format("Bearer realm=\"{0}token\",service=\"{1}\"", "https://" + request.getServerName() + "/v2/", request.getServerName()));
+        } else {
+            // 使用HTTP协议
+            response.setHeader("WWW-Authenticate", MessageFormat.format("Bearer realm=\"{0}token\",service=\"{1}\"", "http://" + request.getServerName() + ":" + request.getServerPort() + "/v2/", request.getServerName() + ":" + request.getServerPort()));
+        }
+    }
+    
 }
 
