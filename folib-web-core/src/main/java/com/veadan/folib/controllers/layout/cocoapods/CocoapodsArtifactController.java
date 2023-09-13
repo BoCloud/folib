@@ -160,16 +160,17 @@ public class CocoapodsArtifactController extends BaseArtifactController
         downloadNewPod:
         if (null != repositoryTarGzPath && FileUtil.exist(repositoryTarGzPath.toString()))
         { // 在repo-art插件请求下载前判断是否存在，存在则直接返回
-            final Artifact artifactEntry = repositoryTarGzPath.getArtifactEntry();
-            if (null != artifactEntry)
-            {
-                final CocoapodsArtifactCoordinates artifactCoordinates = (CocoapodsArtifactCoordinates) artifactEntry.getArtifactCoordinates();
-                if (null != artifactCoordinates && (StringUtils.isEmpty(artifactCoordinates.getBaseName()) || StringUtils.isEmpty(artifactCoordinates.getVersion())))
-                { // 检查制品包信息是否完整，不完整则重新下载新的制品包，进行信息不全
-                    logger.info("发现Cocoapods制品包信息不完整，现进行重新下载，进行信息补全");
-                    break downloadNewPod;
-                }
-            }
+///            final Artifact artifactEntry = repositoryTarGzPath.getArtifactEntry();
+///            if (null != artifactEntry)
+///            {
+///                final CocoapodsArtifactCoordinates artifactCoordinates = (CocoapodsArtifactCoordinates) artifactEntry.getArtifactCoordinates();
+///                if (null != artifactCoordinates && (StringUtils.isEmpty(artifactCoordinates.getBaseName()) || StringUtils.isEmpty(artifactCoordinates.getVersion())))
+///                { // 检查制品包信息是否完整，不完整则重新下载新的制品包，进行信息不全
+///                    artifactManagementService.delete(repositoryTarGzPath.getParent(), true);
+///                    logger.info("发现Cocoapods制品包信息不完整，现进行重新下载，进行信息补全");
+///                    break downloadNewPod;
+///                }
+///            }
             
             vulnerabilityBlock(repositoryTarGzPath);
             response.setHeader("Content-Disposition", String.format("attachment;filename=%s-%s.tar.gz", podName, version));
