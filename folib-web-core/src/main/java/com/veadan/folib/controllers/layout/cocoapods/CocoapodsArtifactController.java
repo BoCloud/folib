@@ -1,8 +1,10 @@
 package com.veadan.folib.controllers.layout.cocoapods;
 
 import cn.hutool.core.io.FileUtil;
+import com.veadan.folib.artifact.coordinates.ArtifactCoordinates;
 import com.veadan.folib.artifact.coordinates.CocoapodsArtifactCoordinates;
 import com.veadan.folib.controllers.BaseArtifactController;
+import com.veadan.folib.domain.Artifact;
 import com.veadan.folib.domain.ArtifactEntity;
 import com.veadan.folib.providers.io.RepositoryFiles;
 import com.veadan.folib.providers.io.RepositoryPath;
@@ -131,8 +133,20 @@ public class CocoapodsArtifactController extends BaseArtifactController
         final String repositoryId = repository.getId();
 
         final RepositoryPath repositoryPath = artifactResolutionService.resolvePath(storageId, repositoryId, path);
+        
+        downloadNewPod:
         if (null != repositoryPath)
         { // 如果已经缓存过，则直接返回下载
+            final Artifact artifactEntry = repositoryPath.getArtifactEntry();
+            if (null != artifactEntry)
+            {
+                final CocoapodsArtifactCoordinates artifactCoordinates = (CocoapodsArtifactCoordinates) artifactEntry.getArtifactCoordinates();
+                if (null != artifactCoordinates && (StringUtils.isEmpty(artifactCoordinates.getBaseName()) || StringUtils.isEmpty(artifactCoordinates.getVersion())))
+                { // 检查制品包信息是否完整，不完整则重新下载新的制品包，进行信息不全
+                    break downloadNewPod;
+                }
+                
+            }
             vulnerabilityBlock(repositoryPath);
             provideArtifactDownloadResponse(request, response, httpHeaders, repositoryPath);
             return;
@@ -169,8 +183,14 @@ public class CocoapodsArtifactController extends BaseArtifactController
             final String artifact2TarGzPath = String.format("%s%s-%s.tar.gz", artifactZipCacheRPath.getParent().getParent().getTarget().toUri().getPath(), podName, version);
             // zip转tar.gz
             CompressUtil.zip2Targz(artifactZipCacheRPath.getTarget().toUri().getPath(), artifact2TarGzPath);
-            
+
             repositoryTarGzPath = repositoryPathResolver.resolve(storageId, repositoryId, artifactTarGzPath);
+            // 装在附加信息
+            final ArtifactEntity artifactEntity = new ArtifactEntity(storageId, repositoryId, RepositoryFiles.readCoordinates(repositoryTarGzPath));
+            final CocoapodsArtifactCoordinates artifactCoordinates = (CocoapodsArtifactCoordinates) artifactEntity.getArtifactCoordinates();
+            artifactCoordinates.setVersion(version);
+            artifactCoordinates.setBaseName(podName);
+            repositoryTarGzPath.setArtifact(artifactEntity);
             artifactManagementService.validateAndStoreIndex(repositoryTarGzPath);
             
             vulnerabilityBlock(repositoryTarGzPath);

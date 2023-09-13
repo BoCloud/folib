@@ -1,8 +1,13 @@
 package com.veadan.folib.utils;
 
 import cn.hutool.core.io.FileUtil;
+import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.JSONObject;
 import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
+import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
 import org.apache.commons.compress.archivers.tar.TarArchiveOutputStream;
+import org.apache.commons.compress.archivers.zip.ZipFile;
+import org.apache.commons.compress.compressors.gzip.GzipCompressorInputStream;
 import org.apache.commons.compress.compressors.gzip.GzipCompressorOutputStream;
 import org.apache.commons.lang3.StringUtils;
 
@@ -10,8 +15,12 @@ import java.io.ByteArrayOutputStream;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.Enumeration;
 import java.util.function.BiFunction;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
@@ -109,9 +118,9 @@ public class CompressUtil
 ////        System.out.println("=========================");
 ////
 ////        traverse(tarPath, true);
-//        traverse("/Users/zerowang/.cocoapods/repos-art/CocoaPods-Proxy/file.tgz", true);
-//        System.out.println("=========================");
-//        traverse("/Users/zerowang/.cocoapods/repos-art/CocoaPods-Proxy/file.tgz", true);
+//        traverse("/Users/zerowang/Downloads/demo/Specs-master111.tar.gz", false);
+////        System.out.println("=========================");
+////        traverse("/Users/zerowang/.cocoapods/repos-art/CocoaPods-Proxy/file.tgz", true);
 //
 ////        final String s = "Specs-master/";
 ////        System.out.println(s.substring(s.indexOf("/")+1));
@@ -224,6 +233,7 @@ public class CompressUtil
 //                    {
 //                        e.printStackTrace();
 //                        System.out.printf("文件读取发送异常文件：%s%n", name);
+//                        continue;
 //                    }
 //                }
 //            }
