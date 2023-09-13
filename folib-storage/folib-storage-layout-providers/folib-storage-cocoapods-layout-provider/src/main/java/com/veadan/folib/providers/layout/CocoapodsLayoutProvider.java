@@ -8,6 +8,7 @@ import com.veadan.folib.repository.CocoapodsRepositoryManagementStrategy;
 import com.veadan.folib.repository.RepositoryManagementStrategy;
 import com.veadan.folib.util.CocoapodsArtifactUtil;
 import org.apache.commons.io.FilenameUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
@@ -72,23 +73,31 @@ public class CocoapodsLayoutProvider extends AbstractLayoutProvider<CocoapodsArt
         final String relativizePath = RepositoryFiles.relativizePath(repositoryPath);
         final String tarGzFilePath = repositoryPath.getTarget().toString();
 
-        CocoapodsArtifactCoordinates coordinates = null;
+        CocoapodsArtifactCoordinates coordinates = new CocoapodsArtifactCoordinates(relativizePath);
 
         if (null != repositoryPath.getArtifactEntry())
         {
             final CocoapodsArtifactCoordinates artifactCoordinates = (CocoapodsArtifactCoordinates) repositoryPath.getArtifactEntry().getArtifactCoordinates();
-            coordinates = new CocoapodsArtifactCoordinates(relativizePath, artifactCoordinates.getPath()); }
-        else
-        {
-            coordinates = new CocoapodsArtifactCoordinates(relativizePath); 
+            final String path = artifactCoordinates.getPath();
+            final String version = artifactCoordinates.getVersion();
+            final String baseName = artifactCoordinates.getBaseName();
+            if (StringUtils.isNotBlank(path))
+            { coordinates.setPath(path); }
+            if (StringUtils.isNotBlank(version))
+            { coordinates.setPath(version); }
+            if (StringUtils.isNotBlank(baseName))
+            { coordinates.setPath(baseName); }
         }
         if (relativizePath.endsWith("tar.gz"))
         {
-            final CocoapodsArtifactUtil.PodSpec podSpec = CocoapodsArtifactUtil.resolvePodSpecByTarGzFile(tarGzFilePath);
-            if (null != podSpec)
-            {
-                coordinates.setBaseName(podSpec.getName());
-                coordinates.setVersion(podSpec.getVersion());
+            if (StringUtils.isEmpty(coordinates.getBaseName()) || StringUtils.isEmpty(coordinates.getVersion())) 
+            { // 如发现制品信息不全，尝试从制品包里读取数据
+                final CocoapodsArtifactUtil.PodSpec podSpec = CocoapodsArtifactUtil.resolvePodSpecByTarGzFile(tarGzFilePath);
+                if (null != podSpec)
+                {
+                    coordinates.setBaseName(podSpec.getName());
+                    coordinates.setVersion(podSpec.getVersion());
+                }
             }
         }
         

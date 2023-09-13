@@ -240,12 +240,6 @@ public class CocoapodsArtifactUtil
         return null;
     }
     
-    public static void main(String[] args) throws IOException {
-        final String path = "/Users/zerowang/Downloads/AFNetworking.tar.gz";
-        final PodSpec podSpec = resolvePodSpecByTarGzFile(path);
-        System.out.println(podSpec);
-    }
-    
     /**
      *
      * @author xiaodong.wang
@@ -259,5 +253,12 @@ public class CocoapodsArtifactUtil
         private String name;
         private String version;
         private String license;
+    }
+
+
+    public static void main(String[] args) throws IOException {
+        final String path = "/Users/zerowang/Downloads/AFNetworking.tar.gz";
+        final PodSpec podSpec = resolvePodSpecByTarGzFile(path);
+        System.out.println(podSpec);
     }
 }
