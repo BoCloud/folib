@@ -134,19 +134,8 @@ public class CocoapodsArtifactController extends BaseArtifactController
 
         final RepositoryPath repositoryPath = artifactResolutionService.resolvePath(storageId, repositoryId, path);
         
-        downloadNewPod:
         if (null != repositoryPath)
         { // 如果已经缓存过，则直接返回下载
-            final Artifact artifactEntry = repositoryPath.getArtifactEntry();
-            if (null != artifactEntry)
-            {
-                final CocoapodsArtifactCoordinates artifactCoordinates = (CocoapodsArtifactCoordinates) artifactEntry.getArtifactCoordinates();
-                if (null != artifactCoordinates && (StringUtils.isEmpty(artifactCoordinates.getBaseName()) || StringUtils.isEmpty(artifactCoordinates.getVersion())))
-                { // 检查制品包信息是否完整，不完整则重新下载新的制品包，进行信息不全
-                    break downloadNewPod;
-                }
-                
-            }
             vulnerabilityBlock(repositoryPath);
             provideArtifactDownloadResponse(request, response, httpHeaders, repositoryPath);
             return;
@@ -168,8 +157,19 @@ public class CocoapodsArtifactController extends BaseArtifactController
                 artifactTarGzPath = String.format("%s/%s/tags/%s/%s-%s.tar.gz", owner, podName, version, podName, version);
 
         RepositoryPath repositoryTarGzPath = repositoryPathResolver.resolve(storageId, repositoryId, artifactTarGzPath);
+        downloadNewPod:
         if (null != repositoryTarGzPath && FileUtil.exist(repositoryTarGzPath.toString()))
         { // 在repo-art插件请求下载前判断是否存在，存在则直接返回
+            final Artifact artifactEntry = repositoryTarGzPath.getArtifactEntry();
+            if (null != artifactEntry)
+            {
+                final CocoapodsArtifactCoordinates artifactCoordinates = (CocoapodsArtifactCoordinates) artifactEntry.getArtifactCoordinates();
+                if (null != artifactCoordinates && (StringUtils.isEmpty(artifactCoordinates.getBaseName()) || StringUtils.isEmpty(artifactCoordinates.getVersion())))
+                { // 检查制品包信息是否完整，不完整则重新下载新的制品包，进行信息不全
+                    break downloadNewPod;
+                }
+            }
+            
             vulnerabilityBlock(repositoryTarGzPath);
             response.setHeader("Content-Disposition", String.format("attachment;filename=%s-%s.tar.gz", podName, version));
             response.setContentType("application/x-gzip");
