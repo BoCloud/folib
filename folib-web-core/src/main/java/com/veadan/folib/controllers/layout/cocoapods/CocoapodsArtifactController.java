@@ -166,6 +166,7 @@ public class CocoapodsArtifactController extends BaseArtifactController
                 final CocoapodsArtifactCoordinates artifactCoordinates = (CocoapodsArtifactCoordinates) artifactEntry.getArtifactCoordinates();
                 if (null != artifactCoordinates && (StringUtils.isEmpty(artifactCoordinates.getBaseName()) || StringUtils.isEmpty(artifactCoordinates.getVersion())))
                 { // 检查制品包信息是否完整，不完整则重新下载新的制品包，进行信息不全
+                    logger.info("发现Cocoapods制品包信息不完整，现进行重新下载，进行信息补全");
                     break downloadNewPod;
                 }
             }
