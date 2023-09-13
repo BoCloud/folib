@@ -6,7 +6,6 @@ import com.alibaba.fastjson.JSONObject;
 import com.veadan.folib.scanner.common.util.file.FileFolibUtils;
 import com.veadan.folib.services.JavaCmdService;
 import lombok.extern.slf4j.Slf4j;
-
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.commons.CommonsMultipartFile;
@@ -16,9 +15,13 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.*;
 
-
+/**
+ * @author yuyongyang
+ */
 @Service
 @Slf4j
 public class JavaCmdServiceImpl implements JavaCmdService {
@@ -26,32 +29,36 @@ public class JavaCmdServiceImpl implements JavaCmdService {
     @Value("${cmdFile.path}")
     private String exeFilePath;
 
-    @Value("${cmdFile.saveDir}")
-    private String exeSaveDir;
+    @Value("${folib.temp}")
+    private String tempPath;
 
 
     @PostConstruct
-    public void init(){
+    public void init() {
         System.out.println(this.exeFilePath);
     }
 
-    public  String getArtifactIndex(String format,String indexId,String chainId,String url) {
+    @Override
+    public String getArtifactIndex(String format, String indexId, String chainId, String url) {
         // 关键是进去目录再执行
         try {
             // 调用CMD命令 这里确定是什么呢系统调用，todo 待拆分
-            String command =  this.exeFilePath +" --format "+format+"  --indexId "+indexId+ " --chainId "+chainId+" --url "+url;
+            String command = this.exeFilePath + " --format " + format + "  --indexId " + indexId + " --chainId " + chainId + " --url " + url;
             Process process = Runtime.getRuntime().exec(command);
             // 获取命令输出结果
-            InputStream inputStream = process.getInputStream();
-            BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream, "GBK")); // 设置编码为GBK
-            StringBuffer stringBuffer=new StringBuffer("");
-            String line;
-            while ((line = reader.readLine()) != null) {
-                stringBuffer.append(line);
+            String targetPath = tempPath + File.separator + UUID.randomUUID() + File.separator + "index.dump";
+            try (InputStream inputStream = process.getInputStream()) {
+                Files.copy(inputStream, Path.of(targetPath));
             }
+//            BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream, "GBK")); // 设置编码为GBK
+//            StringBuffer stringBuffer=new StringBuffer("");
+//            String line;
+//            while ((line = reader.readLine()) != null) {
+//                stringBuffer.append(line);
+//            }
             // 等待命令执行完成
             process.waitFor();
-           return stringBuffer.toString();
+            return targetPath;
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -59,13 +66,13 @@ public class JavaCmdServiceImpl implements JavaCmdService {
     }
 
     @Override
-    public Map<String,String> parseFileAndDownLoad(CommonsMultipartFile file,String baseUrl)  {
-        Map<String,String> result=new HashMap<String, String>() ;
-        InputStream inputStream=null;
+    public Map<String, String> parseFileAndDownLoad(CommonsMultipartFile file, String baseUrl) {
+        Map<String, String> result = new HashMap<String, String>();
+        InputStream inputStream = null;
         try {
-            inputStream=file.getInputStream();
+            inputStream = file.getInputStream();
             BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream, "GBK")); // 设置编码为GBK
-            StringBuffer stringBuffer=new StringBuffer("");
+            StringBuffer stringBuffer = new StringBuffer("");
             String line;
             while ((line = reader.readLine()) != null) {
                 stringBuffer.append(line);
@@ -80,15 +87,15 @@ public class JavaCmdServiceImpl implements JavaCmdService {
             // 需要下载的url集合
             for (JSONObject itemData : jsonObjectList) {
 
-                    String fileExtension = itemData.getString("fileExtension");
-                    String groupId = itemData.getString("groupId").replaceAll("\\.", "/");
-                    String artifactId = itemData.getString("artifactId");
-                    String version = itemData.getString("version");
-                    String artifactPath = String.format("%s/%s/%s/%s-%s.%s", groupId, artifactId, version, artifactId, version, fileExtension);
-                    String url = baseUrl + artifactPath;
+                String fileExtension = itemData.getString("fileExtension");
+                String groupId = itemData.getString("groupId").replaceAll("\\.", "/");
+                String artifactId = itemData.getString("artifactId");
+                String version = itemData.getString("version");
+                String artifactPath = String.format("%s/%s/%s/%s-%s.%s", groupId, artifactId, version, artifactId, version, fileExtension);
+                String url = baseUrl + artifactPath;
                 try {
                     String[] dir = groupId.split("\\.");
-                    String path = this.exeSaveDir;
+                    String path = tempPath;
                     for (int i = 0; i < dir.length; i++) {
                         if (!"".equals(dir[i])) {
                             path += File.separator + dir[i];
@@ -101,19 +108,19 @@ public class JavaCmdServiceImpl implements JavaCmdService {
                         file1.mkdirs();
                     }
                     log.info("======》下载文件" + artifactPath);
-                    FileFolibUtils.saveUrlAs(url, this.exeSaveDir, artifactPath, "GET");
-                }catch (Exception exception){
+                    FileFolibUtils.saveUrlAs(url, tempPath, artifactPath, "GET");
+                } catch (Exception exception) {
                     // 下载失败的会记录下来
-                    result.put(url,url);
+                    result.put(url, url);
                 }
             }
-        }catch (Exception e){
-            log.error("===============>"+e.getStackTrace().toString());
-        }finally {
+        } catch (Exception e) {
+            log.error("===============>" + e.getStackTrace().toString());
+        } finally {
             try {
                 inputStream.close();
-            }catch (Exception e){
-                log.error("===============>"+e.getStackTrace().toString());
+            } catch (Exception e) {
+                log.error("===============>" + e.getStackTrace().toString());
             }
         }
         return result;
@@ -121,14 +128,14 @@ public class JavaCmdServiceImpl implements JavaCmdService {
 
 
     /**
-     *  判断当前系统类型
+     * 判断当前系统类型
      */
-    private String isLinux(){
+    private String isLinux() {
         String osName = System.getProperty("os.name");
-        if(osName.startsWith("Win")) {
+        if (osName.startsWith("Win")) {
             return "windows";
         }
-        if(osName.startsWith("Linux")) {
+        if (osName.startsWith("Linux")) {
             return "Linux";
         }
         return "Linux";
