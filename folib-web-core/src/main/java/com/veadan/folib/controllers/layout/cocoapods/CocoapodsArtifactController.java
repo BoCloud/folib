@@ -28,6 +28,7 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RestController;
 
+import javax.naming.Name;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.BufferedInputStream;
@@ -76,6 +77,8 @@ public class CocoapodsArtifactController extends BaseArtifactController
                         RepositoryFiles.readCoordinates(podSpecRepositoryPath));
                 final CocoapodsArtifactCoordinates artifactCoordinates = (CocoapodsArtifactCoordinates) artifactEntity.getArtifactCoordinates();
                 artifactCoordinates.setPath(uri);
+                artifactCoordinates.setBaseName(podSpec.getName());
+                artifactCoordinates.setVersion(podSpec.getVersion());
                 podSpecRepositoryPath.setArtifact(artifactEntity);
                 artifactManagementService.validateAndStore(podSpecRepositoryPath, byteArrayInputStream);
             }
