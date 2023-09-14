@@ -84,9 +84,9 @@ public class CocoapodsLayoutProvider extends AbstractLayoutProvider<CocoapodsArt
             if (StringUtils.isNotBlank(path))
             { coordinates.setPath(path); }
             if (StringUtils.isNotBlank(version))
-            { coordinates.setPath(version); }
+            { coordinates.setVersion(version); }
             if (StringUtils.isNotBlank(baseName))
-            { coordinates.setPath(baseName); }
+            { coordinates.setBaseName(baseName); }
         }
         if (relativizePath.endsWith("tar.gz"))
         {
