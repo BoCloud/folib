@@ -10,7 +10,6 @@ import org.apache.commons.compress.compressors.gzip.GzipCompressorOutputStream;
 import org.apache.commons.lang3.StringUtils;
 
 import java.io.BufferedInputStream;
-import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
@@ -256,9 +255,9 @@ public class CocoapodsArtifactUtil
     }
 
 
-    public static void main(String[] args) throws IOException {
-        final String path = "/Users/zerowang/Downloads/AFNetworking.tar.gz";
-        final PodSpec podSpec = resolvePodSpecByTarGzFile(path);
-        System.out.println(podSpec);
-    }
+//    public static void main(String[] args) throws IOException {
+//        final String path = "/Users/zerowang/Downloads/AFNetworking.tar.gz";
+//        final PodSpec podSpec = resolvePodSpecByTarGzFile(path);
+//        System.out.println(podSpec);
+//    }
 }
