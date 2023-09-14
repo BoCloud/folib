@@ -1217,15 +1217,6 @@ public class DockerArtifactController extends BaseArtifactController {
         return result;
     }
 
-    private boolean artifactRealExists(RepositoryPath repositoryPath) {
-        try {
-            return Objects.nonNull(repositoryPath) && Files.exists(repositoryPath) && Objects.nonNull(repositoryPath.getArtifactEntry()) && Boolean.TRUE.equals(repositoryPath.getArtifactEntry().getArtifactFileExists());
-        } catch (Exception ex) {
-            logger.error("判断制品是否存在发生错误：{}", ExceptionUtils.getStackTrace(ex));
-            return false;
-        }
-    }
-
     private void setTokenUrl(HttpServletRequest request, HttpServletResponse response) {
         String originalProtocol = request.getHeader("X-Forwarded-Proto"), https = "https";
         if (https.equals(originalProtocol)) {
