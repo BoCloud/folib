@@ -12,7 +12,7 @@
     theme="light"
     :style="{ backgroundColor: 'transparent' }"
   >
-    <div class="brand"><img src="images/folib/foliblogo.png" alt="" /> <span>{{ instanceName }} Library</span></div>
+    <div class="brand"><img src="images/folib/foliblogo.png" alt="" /> <span>{{ instanceName }}</span></div>
     <hr />
 
     <!-- Sidebar Navigation Menu -->

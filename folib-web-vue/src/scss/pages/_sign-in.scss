@@ -7,11 +7,11 @@
     padding: 0px 20px;
 	.col-img img {
 		width: 100%;
-		max-width: 500px;
+		max-width: 800px;
 		margin: auto !important;
 		display: block;
 
-		@media( min-width: $lg) {
+		@media( min-width: $lg){
 			margin: 0;
 		}
 	}

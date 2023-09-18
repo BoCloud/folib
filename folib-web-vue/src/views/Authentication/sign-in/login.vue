@@ -89,10 +89,10 @@
 			<a-col :span="24" :md="12" :lg="12" :xl="12" class="col-img">
 				<div>
 					<div class="img">
-						<img src="images/info-rocket-ill.png" alt="rocket">
+						<img src="images/login-bk.svg" alt="rocket">
 					</div>
-					<h4 class="text-white">Library为你的软件制品保驾护航,为国产化、信创加油助力!</h4>
-					<p class="text-white">Library starts from FO" Buddha "to protect your products!</p>
+					<h5 class="text-white">{{ instanceName }} 携手国产化，引领信创未来，我们为你的软件制品保驾护航！</h5>
+					<p class="text-white">{{ instanceName }} Joining Hands in National Innovation, Pioneering the Future of Technology, We Safeguard Your Software Solutions!</p>
 				</div>
 			</a-col>
 			<!-- / Sign Up Image Column -->
@@ -116,6 +116,7 @@ export default {
   },
 	data() {
 		return {
+      instanceName:sessionStorage.getItem("instanceName")||"",
       clientList:[],
 			// Sign up form object.
 			form: this.$form.createForm(this, { name: 'signup_illustration' }),
