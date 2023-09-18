@@ -135,19 +135,20 @@ public class CocoapodsArtifactController extends BaseArtifactController
         final String storageId = repository.getStorage().getId();
         final String repositoryId = repository.getId();
 
-        final RepositoryPath repositoryPath = artifactResolutionService.resolvePath(storageId, repositoryId, path);
-        
-        if (null != repositoryPath)
-        { // 如果已经缓存过，则直接返回下载
-            vulnerabilityBlock(repositoryPath);
-            provideArtifactDownloadResponse(request, response, httpHeaders, repositoryPath);
-            return;
-        }
-        
+//        final RepositoryPath repositoryPath = artifactResolutionService.resolvePath(storageId, repositoryId, path);
         final Pattern compile = Pattern.compile("pod/git/(.*?)/(.*?)/(.*?)$");
         final Matcher matcher = compile.matcher(path);
         if (!matcher.find()) 
-        { throw new RuntimeException("非法请求路径"); }
+        { 
+            final RepositoryPath repositoryPath = repositoryPathResolver.resolve(repository, path);
+    
+            if (null != repositoryPath)
+            { // 如果已经缓存过，则直接返回下载
+                vulnerabilityBlock(repositoryPath);
+                provideArtifactDownloadResponse(request, response, httpHeaders, repositoryPath);
+                return;
+            }
+        }
         
         final String owner = matcher.group(1);
         final String podName = matcher.group(2);
@@ -159,7 +160,8 @@ public class CocoapodsArtifactController extends BaseArtifactController
                 artifactZipCachePath = String.format("%s/%s-%s.zip", artifactCacheFolderPath, podName, version), 
                 artifactTarGzPath = String.format("%s/%s/tags/%s/%s-%s.tar.gz", owner, podName, version, podName, version);
 
-        RepositoryPath repositoryTarGzPath = repositoryPathResolver.resolve(storageId, repositoryId, artifactTarGzPath);
+//        RepositoryPath repositoryTarGzPath = repositoryPathResolver.resolve(storageId, repositoryId, artifactTarGzPath);
+        RepositoryPath repositoryTarGzPath = repositoryPathResolver.resolve(repository, artifactTarGzPath);
         downloadNewPod:
         if (null != repositoryTarGzPath && FileUtil.exist(repositoryTarGzPath.toString()))
         { // 在repo-art插件请求下载前判断是否存在，存在则直接返回
@@ -174,7 +176,7 @@ public class CocoapodsArtifactController extends BaseArtifactController
 ///                    break downloadNewPod;
 ///                }
 ///            }
-            
+
             vulnerabilityBlock(repositoryTarGzPath);
             response.setHeader("Content-Disposition", String.format("attachment;filename=%s-%s.tar.gz", podName, version));
             response.setContentType("application/x-gzip");

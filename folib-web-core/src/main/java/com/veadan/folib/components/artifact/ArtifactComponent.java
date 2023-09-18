@@ -326,6 +326,14 @@ public class ArtifactComponent {
             } else {
                 flag = true;
             }
+        } else if (repositoryPath.getFileSystem() instanceof CocoapodsFileSystem) {
+            log.info("=====>>>>> cocoapods布局");
+            if (Boolean.TRUE.equals(scan)) {
+                List<String> allSuffixList = Lists.newArrayList(".tar.gz");
+                flag = endsWith(repositoryPath.getFileName().toString(), allSuffixList);
+            } else {
+                flag = true;
+            }
         }
         log.info("=====>>>>>制品路径 [{}] 布局 [{}] 是否是该布局支持的制品类型 [{}]", repositoryPath.toString(), repositoryPath.getRepository().getLayout(), flag);
         return flag;
@@ -381,6 +389,10 @@ public class ArtifactComponent {
             } else if (RawLayoutProvider.ALIAS.equals(layout)) {
                 log.info("=====>>>>> raw布局");
                 flag = true;
+            } else if (CocoapodsLayoutProvider.ALIAS.equals(layout)) {
+                List<String> suffixList = Collections.singletonList(".tar.gz");
+                flag = endsWith(filePath, suffixList);
+                log.info("=====>>>>> Cocoapods布局");
             }
             log.info("=====>>>>>制品路径 [{}] 布局 [{}] 是否是该布局支持的制品类型 [{}]", filePath, layout, flag);
         }

@@ -109,6 +109,7 @@ public class ScanService {
         settings.setBoolean(Settings.KEYS.ANALYZER_NEXUS_ENABLED, false);
         settings.setBoolean(Settings.KEYS.ANALYZER_OSSINDEX_ENABLED, false);
         settings.setBoolean(Settings.KEYS.ANALYZER_RETIREJS_ENABLED, false);
+        settings.setBoolean(Settings.KEYS.ANALYZER_EXPERIMENTAL_ENABLED, true);
         settings.setString(Settings.KEYS.ANALYZER_RETIREJS_REPO_JS_URL, "http://" + scanConfig.getScanPoxy() + "/jsrepository.json");
         settings.setString(Settings.KEYS.CVE_BASE_JSON, "http://" + scanConfig.getScanPoxy() + "/nvdcve-1.1-%d.json.gz");
         settings.setString(Settings.KEYS.CVE_MODIFIED_JSON, "http://" + scanConfig.getScanPoxy() + "/nvdcve-1.1-modified.json.gz");
