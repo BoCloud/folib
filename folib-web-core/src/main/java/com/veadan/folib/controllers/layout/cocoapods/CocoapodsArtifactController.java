@@ -15,7 +15,9 @@ import com.veadan.folib.web.RepositoryMapping;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -30,7 +32,11 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.BufferedInputStream;
 import java.io.ByteArrayInputStream;
+import java.io.File;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.UUID;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -44,6 +50,9 @@ import java.util.regex.Pattern;
 @LayoutRequestMapping(CocoapodsArtifactCoordinates.LAYOUT_NAME)
 public class CocoapodsArtifactController extends BaseArtifactController
 {
+    @Value("${folib.temp}")
+    private String tempPath;
+    
     @ApiOperation(value = "Used to deploy an artifact")
     @ApiResponses(value = {@ApiResponse(code = 200, message = "The artifact was deployed successfully."),
             @ApiResponse(code = 400, message = "An error occurred.")})
@@ -146,12 +155,13 @@ public class CocoapodsArtifactController extends BaseArtifactController
         { 
             final RepositoryPath repositoryPath = repositoryPathResolver.resolve(repository, path);
     
-            if (null != repositoryPath)
+            if (Files.exists(repositoryPath))
             { // 如果已经缓存过，则直接返回下载
                 vulnerabilityBlock(repositoryPath);
                 provideArtifactDownloadResponse(request, response, httpHeaders, repositoryPath);
-                return;
             }
+            response.setStatus(HttpStatus.NOT_FOUND.value());
+            return;
         }
         
         final String owner = matcher.group(1);
@@ -169,18 +179,6 @@ public class CocoapodsArtifactController extends BaseArtifactController
         downloadNewPod:
         if (null != repositoryTarGzPath && FileUtil.exist(repositoryTarGzPath.toString()))
         { // 在repo-art插件请求下载前判断是否存在，存在则直接返回
-///            final Artifact artifactEntry = repositoryTarGzPath.getArtifactEntry();
-///            if (null != artifactEntry)
-///            {
-///                final CocoapodsArtifactCoordinates artifactCoordinates = (CocoapodsArtifactCoordinates) artifactEntry.getArtifactCoordinates();
-///                if (null != artifactCoordinates && (StringUtils.isEmpty(artifactCoordinates.getBaseName()) || StringUtils.isEmpty(artifactCoordinates.getVersion())))
-///                { // 检查制品包信息是否完整，不完整则重新下载新的制品包，进行信息不全
-///                    artifactManagementService.delete(repositoryTarGzPath.getParent(), true);
-///                    logger.info("发现Cocoapods制品包信息不完整，现进行重新下载，进行信息补全");
-///                    break downloadNewPod;
-///                }
-///            }
-
             vulnerabilityBlock(repositoryTarGzPath);
             response.setHeader("Content-Disposition", String.format("attachment;filename=%s-%s.tar.gz", podName, version));
             response.setContentType("application/x-gzip");
@@ -189,13 +187,17 @@ public class CocoapodsArtifactController extends BaseArtifactController
         }
 
         RepositoryPath artifactZipCacheRPath = null;
+        final String artifact2TarGzLocalTempPath = String.format("%s/%s.zip", tempPath, UUID.randomUUID());
         try {
             artifactZipCacheRPath = artifactResolutionService.resolvePath(storageId, repositoryId, targetUrl, artifactZipCachePath);
-            final String artifact2TarGzPath = String.format("%s%s-%s.tar.gz", artifactZipCacheRPath.getParent().getParent().getTarget().toUri().getPath(), podName, version);
-            // zip转tar.gz
-            CompressUtil.zip2Targz(artifactZipCacheRPath.getTarget().toUri().getPath(), artifact2TarGzPath);
+            final BufferedInputStream zipInputStream = new BufferedInputStream(Files.newInputStream(artifactZipCacheRPath));
+            // 转存到本地临时文件
+            CompressUtil.zipInputSteam2TarGzFile(zipInputStream, artifact2TarGzLocalTempPath);
 
             repositoryTarGzPath = repositoryPathResolver.resolve(storageId, repositoryId, artifactTarGzPath);
+            artifactManagementService.store(repositoryTarGzPath, Files.newInputStream(Path.of(artifact2TarGzLocalTempPath)));
+            artifactManagementService.validateAndStoreIndex(repositoryTarGzPath);
+            
             // 装在附加信息
             final ArtifactEntity artifactEntity = new ArtifactEntity(storageId, repositoryId, RepositoryFiles.readCoordinates(repositoryTarGzPath));
             final CocoapodsArtifactCoordinates artifactCoordinates = (CocoapodsArtifactCoordinates) artifactEntity.getArtifactCoordinates();
@@ -212,6 +214,9 @@ public class CocoapodsArtifactController extends BaseArtifactController
             // 删除临时目录
             if (null != artifactZipCacheRPath)
             { artifactManagementService.delete(artifactZipCacheRPath.getParent(), true); }
+            final File artifact2TarGzLocalTempFile = new File(artifact2TarGzLocalTempPath);
+            if (FileUtil.exist(artifact2TarGzLocalTempFile))
+            { FileUtil.del(artifact2TarGzLocalTempFile); }
         }
     }
 }
