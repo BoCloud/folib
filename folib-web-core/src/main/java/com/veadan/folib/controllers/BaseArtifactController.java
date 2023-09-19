@@ -95,7 +95,7 @@ public abstract class BaseArtifactController
         }
         Artifact artifact = repositoryPath.getArtifactEntry();
         if (Objects.nonNull(artifact)) {
-            boolean block = artifactComponent.vulnerabilityBlock(artifact);
+            boolean block = artifactComponent.vulnerabilityBlock(artifact, repositoryPath.getRepository().getLayout());
             if (block) {
                 httpServletResponse.setContentType(org.springframework.http.MediaType.APPLICATION_JSON_VALUE);
                 httpServletResponse.setStatus(HttpServletResponse.SC_FORBIDDEN);

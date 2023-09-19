@@ -19,6 +19,7 @@ import com.veadan.folib.domain.ArtifactIdGroup;
 import com.veadan.folib.domain.Vulnerability;
 import com.veadan.folib.enums.BlockTypeEnum;
 import com.veadan.folib.enums.PromotionStatusEnum;
+import com.veadan.folib.enums.VersionConditionTypeEnum;
 import com.veadan.folib.npm.metadata.*;
 import com.veadan.folib.providers.io.RepositoryFiles;
 import com.veadan.folib.providers.io.RepositoryPath;
@@ -43,6 +44,7 @@ import com.veadan.folib.storage.repository.RepositoryDto;
 import com.veadan.folib.storage.repository.RepositoryTypeEnum;
 import com.veadan.folib.util.CommonUtils;
 import com.veadan.folib.utils.PypiPackageNameConverter;
+import com.veadan.folib.utils.VersionUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.collections4.CollectionUtils;
@@ -300,7 +302,7 @@ public class ArtifactComponent {
             flag = endsWith(repositoryPath.getFileName().toString(), suffixList);
         } else if (repositoryPath.getFileSystem() instanceof PypiFileSystem) {
             log.info("=====>>>>> pypi布局");
-            List<String> suffixList = Arrays.asList(".whl", ".egg", ".zip");
+            List<String> suffixList = Arrays.asList(".whl", ".egg", ".zip", "tar.gz");
             flag = endsWith(repositoryPath.getFileName().toString(), suffixList);
         } else if (repositoryPath.getFileSystem() instanceof RpmFileSystem) {
             log.info("=====>>>>> rpm布局");
@@ -368,7 +370,7 @@ public class ArtifactComponent {
                 flag = endsWith(filePath, suffixList);
             } else if (PypiLayoutProvider.ALIAS.equals(layout)) {
                 log.info("=====>>>>> pypi布局");
-                List<String> suffixList = Arrays.asList(".whl", ".egg", ".zip");
+                List<String> suffixList = Arrays.asList(".whl", ".egg", ".zip", "tar.gz");
                 flag = endsWith(filePath, suffixList);
             } else if (RpmLayoutProvider.ALIAS.equals(layout)) {
                 log.info("=====>>>>> rpm布局");
@@ -482,20 +484,21 @@ public class ArtifactComponent {
      * 判断是否需要阻断
      *
      * @param artifact 制品
+     * @param layout   layout
      * @return true
      */
-    public boolean vulnerabilityBlock(Artifact artifact) {
+    public boolean vulnerabilityBlock(Artifact artifact, String layout) {
         if (Objects.isNull(artifact)) {
             return false;
         }
         boolean block = false;
         String storageId = artifact.getStorageId(), repositoryId = artifact.getRepositoryId();
-        RootRepositoryPath rootRepositoryPath = repositoryPathResolver.resolve(storageId, repositoryId);
-        boolean isDockerLayout = DockerLayoutProvider.ALIAS.equals(rootRepositoryPath.getRepository().getLayout());
-        Set<Vulnerability> vulnerabilitySet = artifact.getVulnerabilitySet();
-        if (CollectionUtils.isEmpty(vulnerabilitySet)) {
-            return false;
+        if (StringUtils.isBlank(layout)) {
+            RootRepositoryPath rootRepositoryPath = repositoryPathResolver.resolve(storageId, repositoryId);
+            layout = rootRepositoryPath.getRepository().getLayout();
         }
+        boolean isDockerLayout = DockerLayoutProvider.ALIAS.equals(layout);
+        Set<Vulnerability> vulnerabilitySet = artifact.getVulnerabilitySet();
         if (isDockerLayout) {
             String manifest = "manifest";
             String path = artifact.getUuid();
@@ -504,7 +507,7 @@ public class ArtifactComponent {
                 vulnerabilitySet = artifactRepository.fetchVulnerabilitiesByKeywords(storageId, repositoryId, keywords);
             }
         }
-        Set<String> vulnerabilities = vulnerabilitySet.stream().map(Vulnerability::getUuid).collect(Collectors.toSet());
+        Set<String> vulnerabilities = Optional.ofNullable(vulnerabilitySet).orElse(Collections.emptySet()).stream().map(Vulnerability::getUuid).collect(Collectors.toSet());
         MutableSecurityPolicyConfiguration mutableSecurityPolicyConfiguration = configurationManagementService.getMutableConfigurationClone().getSecurityPolicyConfiguration();
         if (Objects.nonNull(mutableSecurityPolicyConfiguration)) {
             RepositoryDto repositoryDto = configurationManagementService.getMutableConfigurationClone().getStorage(storageId).getRepository(repositoryId);
@@ -513,6 +516,9 @@ public class ArtifactComponent {
             Set<String> platformBlacks = mutableSecurityPolicyConfiguration.getBlacks();
             Set<String> platformWhites = mutableSecurityPolicyConfiguration.getWhites();
             if (BlockTypeEnum.ALL.getType().equals(mutableSecurityPolicyConfiguration.getBlockType())) {
+                if (CollectionUtils.isEmpty(vulnerabilitySet)) {
+                    return false;
+                }
                 //过滤仓库级别黑名单
                 block = vulnerabilities.stream().anyMatch(repositoryBlacks::contains);
                 if (!block) {
@@ -541,6 +547,9 @@ public class ArtifactComponent {
                     block = CollectionUtils.isNotEmpty(allSet);
                 }
             } else if (BlockTypeEnum.BLACK.getType().equals(mutableSecurityPolicyConfiguration.getBlockType())) {
+                if (CollectionUtils.isEmpty(vulnerabilitySet)) {
+                    return false;
+                }
                 //黑名单阻断
                 block = vulnerabilities.stream().anyMatch(item -> repositoryBlacks.contains(item) ||
                         (!repositoryWhites.contains(item) && platformBlacks.contains(item)));
@@ -548,7 +557,34 @@ public class ArtifactComponent {
                 //包名阻断
                 Set<String> packageNames = mutableSecurityPolicyConfiguration.getPackageNames();
                 if (CollectionUtils.isNotEmpty(packageNames)) {
-                    block = packageNames.stream().anyMatch(packageName -> artifact.getArtifactPath().contains(packageName));
+                    String separator = ",";
+                    block = packageNames.stream().anyMatch(packageName -> {
+                        if (StringUtils.isNotBlank(packageName) && packageName.contains(separator)) {
+                            //需要分隔
+                            List<String> list = Arrays.asList(packageName.split(separator));
+                            String name = "", condition = "", version = "", artifactVersion = "";
+                            if (list.size() == 3) {
+                                name = list.get(0);
+                                condition = list.get(1);
+                                version = list.get(2);
+                                if (artifact.getArtifactPath().contains(name) && StringUtils.isNotBlank(condition) && StringUtils.isNotBlank(version)) {
+                                    artifactVersion = artifact.getArtifactCoordinates().getVersion();
+                                    if (StringUtils.isBlank(artifactVersion)) {
+                                        return false;
+                                    }
+                                    try {
+                                        int compare = VersionUtil.compareVersions(artifactVersion, version);
+                                        log.info("StorageId [{}] repositoryId [{}] artifactPath [{}] name [{}] condition [{}] version [{}] artifactVersion [{}] compare [{}]", storageId, repositoryId, artifact.getArtifactPath(), name, condition, version, artifactVersion, compare);
+                                        return VersionConditionTypeEnum.queryValue(condition).contains(compare);
+                                    } catch (Exception ex) {
+                                        log.error(ExceptionUtils.getStackTrace(ex));
+                                    }
+                                    return false;
+                                }
+                            }
+                        }
+                        return artifact.getArtifactPath().contains(packageName);
+                    });
                 }
             }
         }

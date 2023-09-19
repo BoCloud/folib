@@ -693,45 +693,8 @@
                     </a-form>
                   </a-card>
                 </a-col>
-                <a-col :span="10">
-                  <a-card class="header-solid package-name-list"
-                          v-if="packageNameShow">
-                    <a-row>
-                      <a-col :span="24">
-                        <a-list v-if="packageNameData && packageNameData.length > 0"
-                                item-layout="vertical"
-                                size="large"
-                                :data-source="packageNameData"
-                                :pagination="packageNameData.length === 0 ? false : { pageSize: 5, total: packageNameData.length, showLessItems: true }">
-                          <a-list-item slot="renderItem"
-                                       :key="index"
-                                       slot-scope="item, index">
-                            <label>{{ item }}</label>
-                            <template #extra>
-                              <a-popconfirm title="确定要删除吗？"
-                                            ok-text="确定"
-                                            cancel-text="取消"
-                                            class="d-popconfirm"
-                                            @confirm="deletePackageName(item)">
-                                <svg width="16"
-                                     height="16"
-                                     viewBox="0 0 20 20"
-                                     fill="none"
-                                     xmlns="http://www.w3.org/2000/svg">
-                                  <path class="fill-danger"
-                                        fill-rule="evenodd"
-                                        clip-rule="evenodd"
-                                        d="M9 2C8.62123 2 8.27497 2.214 8.10557 2.55279L7.38197 4H4C3.44772 4 3 4.44772 3 5C3 5.55228 3.44772 6 4 6L4 16C4 17.1046 4.89543 18 6 18H14C15.1046 18 16 17.1046 16 16V6C16.5523 6 17 5.55228 17 5C17 4.44772 16.5523 4 16 4H12.618L11.8944 2.55279C11.725 2.214 11.3788 2 11 2H9ZM7 8C7 7.44772 7.44772 7 8 7C8.55228 7 9 7.44772 9 8V14C9 14.5523 8.55228 15 8 15C7.44772 15 7 14.5523 7 14V8ZM12 7C11.4477 7 11 7.44772 11 8V14C11 14.5523 11.4477 15 12 15C12.5523 15 13 14.5523 13 14V8C13 7.44772 12.5523 7 12 7Z"
-                                        fill="#111827" />
-                                </svg>
-                                <span class="text-danger">DELETE</span>
-                              </a-popconfirm>
-                            </template>
-                          </a-list-item>
-                        </a-list>
-                      </a-col>
-                    </a-row>
-                  </a-card>
+                <a-col :span="24">
+                  <package-name v-if="packageNameShow" ref="packageName"/>
                 </a-col>
               </a-row>
             </a-card>
@@ -1417,17 +1380,9 @@
                placeholder="请输入漏洞编号" />
     </a-modal>
 
-    <a-modal v-model="showPackageNameModal"
-             title="添加包名"
-             :maskClosable="false"
-             cancelText="取消"
-             okText="确定"
-             @cancel="packageNameModalCancel()"
-             @ok="addPackageName()"
-             centered>
-      <a-input v-model="packageName"
-               placeholder="请输入包名" />
-    </a-modal>
+    <AddPackageName v-if="showPackageNameModal" :modelVisible="showPackageNameModal"
+      @packageNameHandlerCancel="packageNameModalCancel" @packageNameRefresh="packageNameRefresh" />
+
     <a-modal v-model="showArtifactDispatchHandler"
              :title="handlerArtifactDispatchType === 1 ? '新增分发配置' : '修改分发配置'"
              :maskClosable="false"
@@ -1655,13 +1610,16 @@ import Webhook from './components/Webhook/index.vue'
 import ExternalNode from './components/ExternalNode/index.vue'
 import {upperCase} from "@antv/util";
 import dataTrans from "./components/dataTrans.vue";
-
+import PackageName from "./components/Package/index.vue"
+import AddPackageName from "./components/Package/add.vue"
 export default {
   props: ['navbarFixed'],
   components: {
     Webhook,
     ExternalNode,
-    dataTrans
+    dataTrans,
+    PackageName,
+    AddPackageName
   },
   data() {
     return {
@@ -1861,9 +1819,7 @@ export default {
           value: 'JSON'
         }
       ],
-      packageNameData: [],
       packageNameShow: false,
-      packageName: '',
       showPackageNameModal: false,
       activeKey: '1',
       showArtifactDispatchHandler: false,
@@ -2186,7 +2142,6 @@ export default {
                 blockLevels: res.blockLevels,
                 filterWhites: res.filterWhites
               })
-              this.packageNameData = res.packageNames
               if (res.blockType === 3) {
                 this.packageNameShow = true
               } else {
@@ -2422,67 +2377,11 @@ export default {
       this.showArtifactDispatchHandler = false
     },
     packageNameModalCancel() {
-      this.packageName = ''
       this.showPackageNameModal = false
     },
     packageNameModalShow() {
-      this.packageName = ''
       this.showPackageNameModal = true
-    },
-    addPackageName() {
-      this.packageName = this.packageName.trim()
-      if (!this.packageName || this.packageName.length < 1) {
-        this.$notification['warning']({
-          message: '请输入包名',
-          description: ''
-        })
-        return false
-      }
-      securityPolicyAddPackageName({
-        blockType: 3,
-        packageNames: [this.packageName]
-      })
-        .then(res => {
-          this.successMsg('添加包名 ' + this.packageName + ' 成功')
-        })
-        .catch(err => {
-          this.$notification['error']({
-            message: err.response.data.error,
-            description: ''
-          })
-        })
-        .finally(() => {
-          this.packageName = ''
-          this.showPackageNameModal = false
-          this.getSecurityPolicy()
-        })
-    },
-    deletePackageName(packageName) {
-      packageName = packageName.trim()
-      if (!packageName || packageName.length < 1) {
-        this.$notification['warning']({
-          message: '请选择包名',
-          description: ''
-        })
-        return false
-      }
-      securityPolicyDeletePackageName({
-        blockType: 3,
-        packageNames: [packageName]
-      })
-        .then(res => {
-          this.successMsg('删除包名 ' + packageName + ' 成功')
-        })
-        .catch(err => {
-          this.$notification['error']({
-            message: err.response.data.error,
-            description: ''
-          })
-        })
-        .finally(() => {
-          this.getSecurityPolicy()
-        })
-    },
+    }, 
     allowedOriginsChange() {
       let allowedOrigins = this.serverSettings.corsConfigurationForm
         .allowedOrigins
@@ -2595,7 +2494,10 @@ export default {
      */
     handleCancel() {
       this.ssoDialogShow = false
-    }
+    },
+    packageNameRefresh() {
+      this.$refs.packageName.getPackageNameList()
+    },
   }
 }
 </script>
