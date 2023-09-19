@@ -1,12 +1,16 @@
 package com.veadan.folib.controllers.layout.cocoapods;
 
 import cn.hutool.core.io.FileUtil;
+import cn.hutool.core.io.IoUtil;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
 import com.veadan.folib.artifact.coordinates.CocoapodsArtifactCoordinates;
+import com.veadan.folib.cloud.storage.s3fs.S3FileSystemProvider;
+import com.veadan.folib.cloud.storage.s3fs.S3Path;
 import com.veadan.folib.controllers.BaseArtifactController;
 import com.veadan.folib.domain.Artifact;
 import com.veadan.folib.providers.io.RepositoryPath;
+import com.veadan.folib.providers.storage.S3FileSystemStorageProvider;
 import com.veadan.folib.storage.repository.Repository;
 import com.veadan.folib.storage.repository.RepositoryTypeEnum;
 import com.veadan.folib.storage.repository.remote.RemoteRepository;
@@ -18,6 +22,7 @@ import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
 import org.apache.commons.compress.archivers.tar.TarArchiveOutputStream;
 import org.apache.commons.compress.compressors.gzip.GzipCompressorOutputStream;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -26,11 +31,15 @@ import org.springframework.web.bind.annotation.RestController;
 import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -47,6 +56,9 @@ import java.util.regex.Pattern;
 public class CocoapodsIndexController
         extends BaseArtifactController {
 
+    @Value("${folib.temp}")
+    private String tempPath;
+    
     //    @PreAuthorize("hasAuthority('MANAGEMENT_REBUILD_INDEXES')")
     @GetMapping(value = "/{storageId}/{repositoryId}/index/fetchIndex")
     public ResponseEntity repoArtIndex(@RepositoryMapping Repository repository, HttpServletRequest request, HttpServletResponse response) throws Exception {
@@ -127,17 +139,37 @@ public class CocoapodsIndexController
         final String baseUrl = super.getBaseUrl();
         final String username = remoteRepository.getUsername();
         final String password = remoteRepository.getPassword();
-        url = String.format("%s/archive/refs/heads/master.zip", url);
+//        url = String.format("%s/archive/refs/heads/master.zip", url);
+        url = "http://192.168.3.4:12345/files/ed518046-b4aa-4bdb-843f-7da91a0fc7dd";
         final String specIndexZipTempUri = ".specs/temp/master.zip";
+        final String specIndexTarGzTempUri = ".specs/master.tar.gz";
+        final String indexTempFolderPath = String.format("%s%s%s%s", tempPath, File.separator, UUID.randomUUID(), File.separator);
         RepositoryPath specIndexZipTempPath = null;
+        String ziFilePath = null;
 
         try {
             // 下载代理索引zip
             specIndexZipTempPath = artifactResolutionService.resolvePath(storageId, repositoryId, url, specIndexZipTempUri);
-//            final RepositoryPath specIndexZipTempPath = artifactResolutionService.resolvePath(storageId, repositoryId, specIndexZipTempUri);
+
+            ziFilePath = specIndexZipTempPath.getTarget().toString();
+            String tarGzFilePath = specIndexZipTempPath.getTarget().getParent().getParent().toString()+"/master.tar.gz";
+            if (S3FileSystemStorageProvider.ALIAS.equals(repository.getStorageProvider())) 
+            { // 转换网路路径为本地路径
+                final String localZipFileTempPath = String.format("%s%s/master.zip", indexTempFolderPath, UUID.randomUUID());
+                final String localTarGzFileTempPath = String.format("%s%s/master.tar.gz", indexTempFolderPath, UUID.randomUUID());
+                ziFilePath = localZipFileTempPath;
+                tarGzFilePath = localTarGzFileTempPath;
+                FileUtil.touch(new File(ziFilePath));
+                FileUtil.touch(new File(tarGzFilePath));
+                
+                // 将S3网络路径缓存到本地
+                FileUtil.writeFromStream(new BufferedInputStream(Files.newInputStream(specIndexZipTempPath)), localZipFileTempPath);
+                logger.info("S3存储，转存S3文件到本本地：{}", specIndexZipTempPath);
+            }
+            
             logger.info("开始转换Cocoapods仓库代理仓库Zip（{}）", specIndexZipTempUri);
             final JSONObject podNewSourceObj = new JSONObject();
-            CompressUtil.zip2Targz(specIndexZipTempPath.getTarget().toString(), specIndexZipTempPath.getTarget().getParent().getParent().toString()+"/master.tar.gz",
+            CompressUtil.zip2Targz(ziFilePath, tarGzFilePath,
                     (zipEntryName -> zipEntryName.matches(".*?/.{1}/.{1}/.{1}/(.*)")),
                     (zipEntryName -> zipEntryName.replaceAll(".*?/.{1}/.{1}/.{1}/(.*)", "Specs/$1")),
                     (zipEntryName -> zipEntryName.endsWith(".podspec.json")),
@@ -169,13 +201,18 @@ public class CocoapodsIndexController
                                 } else { /*logger.info("非法PodGitUrl：{}", podRepoGitUrl);*/ }
                             } else { /*logger.info("非法PodSource信息：{}", JSON.toJSONString(sourceObj));*/ }
                         }catch (Exception e)
-                        {
-                            logger.info("编码错误PodSpecJson文件：{}", zipEntryName);
-                        }
+                        { logger.info("编码错误PodSpecJson文件：{}", zipEntryName); }
+                        
                         return extra;
                     }));
             logger.info("结束转换Cocoapods仓库代理仓库Zip（{}）", specIndexZipTempUri);
 
+            if (S3FileSystemStorageProvider.ALIAS.equals(repository.getStorageProvider()))
+            { // 存储模式为S3将转换后的索引TarGz上传到S3
+                final RepositoryPath indexTarZipPath = repositoryPathResolver.resolve(storageId, repositoryId, specIndexTarGzTempUri);
+                artifactManagementService.store(indexTarZipPath, Files.newInputStream(Path.of(tarGzFilePath)));
+                logger.info("S3存储，回传本地转换后TarGz文件成功：{}", specIndexTarGzTempUri);
+            }
         } 
         catch (Exception e) 
         {
@@ -186,16 +223,17 @@ public class CocoapodsIndexController
         finally 
         {
             DOWNLOAD_COCOAPODS_PROXY_INDEX_LOCK.set(false);
-            if (null != specIndexZipTempPath)
-            { artifactManagementService.delete(specIndexZipTempPath.getParent(), true); }
+//            if (null != specIndexZipTempPath)
+//            { artifactManagementService.delete(specIndexZipTempPath.getParent(), true); }
+            if (null != ziFilePath)
+            { FileUtil.del(new File(ziFilePath)); }
         }
 
         response.setHeader("Content-Disposition", "attachment;filename=file.tar.gz");
         response.setContentType("application/x-gzip");
         final RepositoryPath repositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, ".specs/master.tar.gz");
-        final File proxyTarGzFile = repositoryPath.getTarget().toFile();
         try (final ServletOutputStream outputStream = response.getOutputStream();
-             final FileInputStream fileInputStream = new FileInputStream(proxyTarGzFile);
+             final InputStream fileInputStream = new BufferedInputStream(Files.newInputStream(repositoryPath));
         ){
             int len = 0;
             byte[] buffer = new byte[1024];

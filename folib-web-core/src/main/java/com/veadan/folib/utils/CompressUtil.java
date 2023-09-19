@@ -12,6 +12,7 @@ import org.apache.commons.compress.compressors.gzip.GzipCompressorOutputStream;
 import org.apache.commons.lang3.StringUtils;
 
 import java.io.ByteArrayOutputStream;
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -39,7 +40,7 @@ public class CompressUtil
     
     public static void zip2Targz(String zipPath, String targzPath, Function<String, Boolean> zipEntryPredicate, Function<String, String> zipEntryNameRebuildFunc, Function<String, Boolean> contentHandlerPredicate, BiFunction<String, byte[], byte[]> contentHandler) throws IOException
     {
-        FileUtil.touch(targzPath);
+        FileUtil.touch(new File(targzPath));
         // 创建tar.gz输出流
         try (final FileOutputStream fos = new FileOutputStream(targzPath);
              final GzipCompressorOutputStream gos = new GzipCompressorOutputStream(fos);
