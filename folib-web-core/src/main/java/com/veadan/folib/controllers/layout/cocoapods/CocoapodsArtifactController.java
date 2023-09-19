@@ -193,16 +193,14 @@ public class CocoapodsArtifactController extends BaseArtifactController
             // 转存到本地临时文件
             CompressUtil.zipInputSteam2TarGzFile(zipInputStream, artifact2TarGzLocalTempPath);
 
-            repositoryTarGzPath = repositoryPathResolver.resolve(storageId, repositoryId, artifactTarGzPath);
-            artifactManagementService.store(repositoryTarGzPath, Files.newInputStream(Path.of(artifact2TarGzLocalTempPath)));
-            artifactManagementService.validateAndStoreIndex(repositoryTarGzPath);
-            
             // 装在附加信息
             final ArtifactEntity artifactEntity = new ArtifactEntity(storageId, repositoryId, RepositoryFiles.readCoordinates(repositoryTarGzPath));
             final CocoapodsArtifactCoordinates artifactCoordinates = (CocoapodsArtifactCoordinates) artifactEntity.getArtifactCoordinates();
             artifactCoordinates.setVersion(version);
             artifactCoordinates.setBaseName(podName);
             repositoryTarGzPath.setArtifact(artifactEntity);
+            // 将本地临时TarGz文件转存到Folib
+            artifactManagementService.store(repositoryTarGzPath, Files.newInputStream(Path.of(artifact2TarGzLocalTempPath)));
             artifactManagementService.validateAndStoreIndex(repositoryTarGzPath);
             
             vulnerabilityBlock(repositoryTarGzPath);
