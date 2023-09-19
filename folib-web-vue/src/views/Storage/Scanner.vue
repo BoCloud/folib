@@ -71,6 +71,7 @@
             <!-- / Widget 1 Card -->
           </a-col>
         </a-row>
+
         <a-row :gutter="24">
           <a-col :span="24" :lg="24" :xl="6" class="mb-24" style="position: relative; z-index: 1;">
             <!-- Widget 1 Card -->
@@ -135,6 +136,60 @@
             <!-- / Widget 1 Card -->
           </a-col>
         </a-row>
+
+        <!-- Charts -->
+        <a-row :gutter="24" type="flex" align="stretch">
+          <a-col :span="24" :lg="10" class="mb-24">
+
+            <!-- Active Users Card -->
+            <a-card :bordered="false" class="dashboard-bar-chart">
+              <chart-bar ref="volFolib" :height="220" :data="barChartData"></chart-bar>
+              <div class="card-title">
+                <h6>近7天漏洞分布视图</h6>
+                <p>较上周包数量 <span class="text-success">{{weekCompare.scanCount>0?'+'+weekCompare.scanCount:weekCompare.scanCount===0?'不变':'未知'}}</span></p>
+              </div>
+              <div class="card-content">
+                <p>以下为本周与上周(14天)的数据进行比较的结果</p>
+              </div>
+              <a-row class="card-footer" type="flex" justify="center" align="top">
+                <a-col :span="6">
+                  <h6>{{weekCompare.dependencyVulnerabilitiesCount}}</h6>
+                  <span>漏洞包新增</span>
+                </a-col>
+                <a-col :span="6">
+                  <h6>{{weekCompare.dependencyCount}}</h6>
+                  <span>扫描依赖新增</span>
+                </a-col>
+                <a-col :span="6">
+                  <h6>{{weekCompare.vulnerabilitiesCount}}</h6>
+                  <span>漏洞依赖新增</span>
+                </a-col>
+                <a-col :span="6">
+                  <h6>{{weekCompare.suppressedVulnerabilitiesCount}}</h6>
+                  <span>封存漏洞数新增</span>
+                </a-col>
+              </a-row>
+            </a-card>
+            <!-- Active Users Card -->
+
+          </a-col>
+          <a-col :span="24" :lg="14" class="mb-24">
+
+            <a-card :bordered="false" class="dashboard-bar-line header-solid">
+              <template #title>
+                <h6>近30天数据</h6>
+                <p>本图为近30天数据,无新增数据的日期不展示</p>
+              </template>
+              <template #extra>
+                <a-badge color="primary" class="badge-dot-primary" text="依赖数量" />
+                <a-badge color="primary" class="badge-dot-secondary" text="漏洞数量" />
+              </template>
+              <chart-line  ref="d30map" :height="310" :data="lineChartData"></chart-line>
+            </a-card>
+
+          </a-col>
+        </a-row>
+        <!-- / Charts -->
         <a-row :gutter="24">
           <a-col :span="24" :lg="24" class="mb-24" style="position: relative; z-index: 1;">
             <a-card :bordered="false" class="header-solid h-full" :bodyStyle="{padding: 0,}">
@@ -173,60 +228,6 @@
       </a-col>
     </a-row>
 
-
-    <!-- Charts -->
-    <a-row :gutter="24" type="flex" align="stretch">
-      <a-col :span="24" :lg="10" class="mb-24">
-
-        <!-- Active Users Card -->
-        <a-card :bordered="false" class="dashboard-bar-chart">
-          <chart-bar ref="volFolib" :height="220" :data="barChartData"></chart-bar>
-          <div class="card-title">
-            <h6>近7天漏洞分布视图</h6>
-            <p>较上周包数量 <span class="text-success">{{weekCompare.scanCount>0?'+'+weekCompare.scanCount:weekCompare.scanCount===0?'不变':'未知'}}</span></p>
-          </div>
-          <div class="card-content">
-            <p>以下为本周与上周(14天)的数据进行比较的结果</p>
-          </div>
-          <a-row class="card-footer" type="flex" justify="center" align="top">
-            <a-col :span="6">
-              <h6>{{weekCompare.dependencyVulnerabilitiesCount}}</h6>
-              <span>漏洞包新增</span>
-            </a-col>
-            <a-col :span="6">
-              <h6>{{weekCompare.dependencyCount}}</h6>
-              <span>扫描依赖新增</span>
-            </a-col>
-            <a-col :span="6">
-              <h6>{{weekCompare.vulnerabilitiesCount}}</h6>
-              <span>漏洞依赖新增</span>
-            </a-col>
-            <a-col :span="6">
-              <h6>{{weekCompare.suppressedVulnerabilitiesCount}}</h6>
-              <span>封存漏洞数新增</span>
-            </a-col>
-          </a-row>
-        </a-card>
-        <!-- Active Users Card -->
-
-      </a-col>
-      <a-col :span="24" :lg="14" class="mb-24">
-
-        <a-card :bordered="false" class="dashboard-bar-line header-solid">
-          <template #title>
-            <h6>近30天数据</h6>
-            <p>本图为近30天数据,无新增数据的日期不展示</p>
-          </template>
-          <template #extra>
-            <a-badge color="primary" class="badge-dot-primary" text="依赖数量" />
-            <a-badge color="primary" class="badge-dot-secondary" text="漏洞数量" />
-          </template>
-          <chart-line  ref="d30map" :height="310" :data="lineChartData"></chart-line>
-        </a-card>
-
-      </a-col>
-    </a-row>
-    <!-- / Charts -->
   </div>
 </template>
 
