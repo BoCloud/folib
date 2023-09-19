@@ -908,7 +908,7 @@
             要添加一个Artifactory Specs库:
           </p>
           <prism-editor class="my-editor height-300" 
-          :highlight="highlighterHandle" :line-numbers="false" :value='baseUrl+"storages/"+folibRepository.storageId+"/"+folibRepository.id' :readonly="true">
+          :highlight="highlighterHandle" :line-numbers="false" :value='"pod repo-art add \""+baseUrl+"storages/"+folibRepository.storageId+"/"+folibRepository.id + "\""' :readonly="true">
           </prism-editor>
         </a-timeline-item>
         <a-timeline-item color="primary">
