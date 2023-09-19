@@ -7,7 +7,6 @@ import com.veadan.folib.repository.CocoapodsRepositoryFeatures;
 import com.veadan.folib.repository.CocoapodsRepositoryManagementStrategy;
 import com.veadan.folib.repository.RepositoryManagementStrategy;
 import com.veadan.folib.util.CocoapodsArtifactUtil;
-import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -15,8 +14,9 @@ import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
 import javax.inject.Inject;
-import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
+import java.nio.file.Files;
 import java.util.Set;
 
 /**
@@ -71,7 +71,6 @@ public class CocoapodsLayoutProvider extends AbstractLayoutProvider<CocoapodsArt
     protected CocoapodsArtifactCoordinates getArtifactCoordinates(RepositoryPath repositoryPath) throws IOException 
     {
         final String relativizePath = RepositoryFiles.relativizePath(repositoryPath);
-        final String tarGzFilePath = repositoryPath.getTarget().toString();
 
         CocoapodsArtifactCoordinates coordinates = new CocoapodsArtifactCoordinates(relativizePath);
 
@@ -92,11 +91,17 @@ public class CocoapodsLayoutProvider extends AbstractLayoutProvider<CocoapodsArt
         {
             if (StringUtils.isEmpty(coordinates.getBaseName()) || StringUtils.isEmpty(coordinates.getVersion())) 
             { // 如发现制品信息不全，尝试从制品包里读取数据
-                final CocoapodsArtifactUtil.PodSpec podSpec = CocoapodsArtifactUtil.resolvePodSpecByTarGzFile(tarGzFilePath);
-                if (null != podSpec)
+                if (Files.exists(repositoryPath)) 
                 {
-                    coordinates.setBaseName(podSpec.getName());
-                    coordinates.setVersion(podSpec.getVersion());
+                    final InputStream inputStream = Files.newInputStream(repositoryPath);
+                    final String podspecSourceContent = CocoapodsArtifactUtil.fetchPodspecSourceContentByInputStream(inputStream);
+                    final CocoapodsArtifactUtil.PodSpec podSpec = CocoapodsArtifactUtil.resolvePodSpec(podspecSourceContent);
+                    if (null != podSpec)
+                    {
+                        coordinates.setBaseName(podSpec.getName());
+                        coordinates.setVersion(podSpec.getVersion());
+                    }
+                    
                 }
             }
         }

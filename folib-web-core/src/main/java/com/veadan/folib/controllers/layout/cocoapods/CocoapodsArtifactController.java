@@ -1,10 +1,8 @@
 package com.veadan.folib.controllers.layout.cocoapods;
 
 import cn.hutool.core.io.FileUtil;
-import com.veadan.folib.artifact.coordinates.ArtifactCoordinates;
 import com.veadan.folib.artifact.coordinates.CocoapodsArtifactCoordinates;
 import com.veadan.folib.controllers.BaseArtifactController;
-import com.veadan.folib.domain.Artifact;
 import com.veadan.folib.domain.ArtifactEntity;
 import com.veadan.folib.providers.io.RepositoryFiles;
 import com.veadan.folib.providers.io.RepositoryPath;
@@ -28,13 +26,11 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RestController;
 
-import javax.naming.Name;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.BufferedInputStream;
 import java.io.ByteArrayInputStream;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Path;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -60,27 +56,35 @@ public class CocoapodsArtifactController extends BaseArtifactController
         final String repositoryId = repository.getId();
 
         try {
-            RepositoryPath repositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, artifactPath);
-            artifactManagementService.validateAndStore(repositoryPath, request.getInputStream());
+            final BufferedInputStream artifactByteArrayInputStream = new BufferedInputStream(request.getInputStream());
+            final byte[] cacheBytes = artifactByteArrayInputStream.readAllBytes();
+            // 兼容网络路径
+            final String podspecSourceContent = CocoapodsArtifactUtil.fetchPodspecSourceContentByInputStream(new ByteArrayInputStream(cacheBytes));
 
             // 读取pod.tar.gz中的*.podspec文件内容
-            final Path path = repositoryPath.getTarget();
-            final BufferedInputStream podTarGzInputStream = FileUtil.getInputStream(path);
-            final String podspecSourceContent = CocoapodsArtifactUtil.fetchPodspecSourceContentByInputStream(podTarGzInputStream);
             if (StringUtils.isNotBlank(podspecSourceContent))
             {
                 final CocoapodsArtifactUtil.PodSpec podSpec = CocoapodsArtifactUtil.resolvePodSpec(podspecSourceContent);
-                final ByteArrayInputStream byteArrayInputStream = new ByteArrayInputStream(podspecSourceContent.getBytes(StandardCharsets.UTF_8));
-                final String uri = repositoryPath.toUri().getPath();
+                // 存储制品文件
+                final RepositoryPath podRepositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, artifactPath);
+                final ArtifactEntity podArtifactEntity = new ArtifactEntity(storageId, repositoryId, RepositoryFiles.readCoordinates(podRepositoryPath));
+                final CocoapodsArtifactCoordinates podArtifactCoordinates = (CocoapodsArtifactCoordinates) podArtifactEntity.getArtifactCoordinates();
+                podArtifactCoordinates.setBaseName(podSpec.getName());
+                podArtifactCoordinates.setVersion(podSpec.getVersion());
+                podRepositoryPath.setArtifact(podArtifactEntity);
+                artifactManagementService.validateAndStore(podRepositoryPath, new ByteArrayInputStream(cacheBytes));
+                
+                // 存储索引文件
+                final ByteArrayInputStream podspecContentByteArrayInputStream = new ByteArrayInputStream(podspecSourceContent.getBytes(StandardCharsets.UTF_8));
+                final String uri = podRepositoryPath.toUri().getPath();
                 final RepositoryPath podSpecRepositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, String.format(".specs/%s/%s/%s.podspec", podSpec.getName(), podSpec.getVersion(), podSpec.getName()));
-                final ArtifactEntity artifactEntity = new ArtifactEntity(repositoryPath.getStorageId(), repositoryPath.getRepositoryId(), 
-                        RepositoryFiles.readCoordinates(podSpecRepositoryPath));
-                final CocoapodsArtifactCoordinates artifactCoordinates = (CocoapodsArtifactCoordinates) artifactEntity.getArtifactCoordinates();
+                final ArtifactEntity podSpecArtifactEntity = new ArtifactEntity(storageId, repositoryId, RepositoryFiles.readCoordinates(podSpecRepositoryPath));
+                final CocoapodsArtifactCoordinates artifactCoordinates = (CocoapodsArtifactCoordinates) podSpecArtifactEntity.getArtifactCoordinates();
                 artifactCoordinates.setPath(uri);
                 artifactCoordinates.setBaseName(podSpec.getName());
                 artifactCoordinates.setVersion(podSpec.getVersion());
-                podSpecRepositoryPath.setArtifact(artifactEntity);
-                artifactManagementService.validateAndStore(podSpecRepositoryPath, byteArrayInputStream);
+                podSpecRepositoryPath.setArtifact(podSpecArtifactEntity);
+                artifactManagementService.validateAndStore(podSpecRepositoryPath, podspecContentByteArrayInputStream);
             }
 
             return ResponseEntity.ok("The artifact was deployed successfully.");
