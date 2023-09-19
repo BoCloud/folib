@@ -176,8 +176,7 @@ public class CocoapodsArtifactController extends BaseArtifactController
 
 //        RepositoryPath repositoryTarGzPath = repositoryPathResolver.resolve(storageId, repositoryId, artifactTarGzPath);
         RepositoryPath repositoryTarGzPath = repositoryPathResolver.resolve(repository, artifactTarGzPath);
-        downloadNewPod:
-        if (null != repositoryTarGzPath && FileUtil.exist(repositoryTarGzPath.toString()))
+        if (Files.exists(repositoryTarGzPath))
         { // 在repo-art插件请求下载前判断是否存在，存在则直接返回
             vulnerabilityBlock(repositoryTarGzPath);
             response.setHeader("Content-Disposition", String.format("attachment;filename=%s-%s.tar.gz", podName, version));
