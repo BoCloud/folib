@@ -277,7 +277,7 @@
       <a-card :bordered="false" class="card-billing-info">
         <div class="col-info">
           <a-descriptions
-            :title="'使用示例11122(' + codeParam.type + ')'"
+            :title="'使用示例(' + codeParam.type + ')'"
             :column="1"
           >
             <a-descriptions-item v-if="currentFileDetial">

@@ -58,7 +58,7 @@ public class CocoapodsDependencyFormatter
         if (StringUtils.isNotBlank(coordinates.getBaseName()) && StringUtils.isNotBlank(coordinates.getVersion()))
         {
             return "target 'MyApp' do\n" +
-                    "  pod '"+coordinates.getBaseName()+"', '~> "+coordinates.getVersion()+"'\n" +
+                    "  pod '"+coordinates.getBaseName()+"', ' "+coordinates.getVersion()+"'\n" +
                     "end";
         }
 
