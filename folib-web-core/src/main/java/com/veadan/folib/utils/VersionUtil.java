@@ -30,14 +30,15 @@ public class VersionUtil {
     }
 
     public static int getVersionComponent(String part) {
-        if (part.contains("-")) {
-            part = part.split("-")[0];
-        }
         try {
+            if (part.contains("-")) {
+                part = part.split("-")[0];
+            }
+            part = part.replaceAll("[^0-9]", "");
             return Integer.parseInt(part);
         } catch (Exception ex) {
             log.error("转换错误 {}", ExceptionUtils.getStackTrace(ex));
-            throw new RuntimeException(String.format("ParseInt [%s] error", part));
+            throw new RuntimeException(String.format("Parse [%s] error", part));
         }
     }
 }
