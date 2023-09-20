@@ -318,7 +318,7 @@ public class ArtifactComponent {
         } else if (repositoryPath.getFileSystem() instanceof RawFileSystem) {
             log.debug("raw布局");
             if (Boolean.TRUE.equals(scan)) {
-                List<String> allSuffixList = Lists.newArrayList(".jar", ".war", ".ear", ".zip", ".json", ".tgz", ".nupkg", ".nuspec", "packages.config", ".whl", ".egg", ".zip", ".rpm", "tar", "tar.gz", "tar.bz2", "zip", "json", ".tgz", ".py", ".tgz", ".exe");
+                List<String> allSuffixList = Lists.newArrayList(".jar", ".war", ".ear", ".zip", ".json", ".tgz", ".nupkg", ".nuspec", "packages.config", ".whl", ".egg", ".zip", ".rpm", "tar", "tar.gz", "tar.bz2", "zip", "json", ".tgz", ".py", ".tgz", ".exe", ".podspec");
                 flag = endsWith(repositoryPath.getFileName().toString(), allSuffixList);
             } else {
                 flag = true;

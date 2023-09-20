@@ -127,7 +127,7 @@ public abstract class BaseArtifactController
         RepositoryPath artifactRepositoryPath = repositoryPath.getParent().resolve(fileName);
         Artifact artifact = null;
         long startTime = System.currentTimeMillis();
-        logger.info("Block JSON {} 开始时间 {}", repositoryPath.toString(), startTime);
+        logger.debug("Block JSON {} 开始时间 {}", repositoryPath.toString(), startTime);
         if (Files.exists(artifactRepositoryPath)) {
             try (InputStream byteArrayInputStream = Files.newInputStream(artifactRepositoryPath);
                  ObjectInputStream objectInputStream = new ObjectInputStream(byteArrayInputStream)) {
@@ -136,7 +136,7 @@ public abstract class BaseArtifactController
                 logger.error("解析制品 [{}] 本地缓存.metadata文件错误", ExceptionUtils.getStackTrace(ex));
             }
         }
-        logger.info("Block JSON {} 结束时间 {}", repositoryPath.toString(), System.currentTimeMillis() - startTime);
+        logger.debug("Block JSON {} 结束时间 {}", repositoryPath.toString(), System.currentTimeMillis() - startTime);
         if (Objects.isNull(artifact)) {
             artifact = repositoryPath.getArtifactEntry();
             if (Objects.isNull(artifact)) {

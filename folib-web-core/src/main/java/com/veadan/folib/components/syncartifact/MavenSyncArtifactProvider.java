@@ -4,13 +4,17 @@ import cn.hutool.core.io.FileUtil;
 import cn.hutool.http.HttpUtil;
 import com.veadan.folib.components.artifact.ArtifactComponent;
 import com.veadan.folib.configuration.ConfigurationManager;
+import com.veadan.folib.entity.Dict;
+import com.veadan.folib.enums.DictTypeEnum;
 import com.veadan.folib.forms.syncartifact.SyncArtifactForm;
 import com.veadan.folib.providers.layout.Maven2LayoutProvider;
 import com.veadan.folib.service.ProxyRepositoryConnectionPoolConfigurationService;
+import com.veadan.folib.services.DictService;
 import com.veadan.folib.services.MavenIndexerService;
 import com.veadan.folib.storage.repository.Repository;
 import com.veadan.folib.storage.repository.RepositoryTypeEnum;
 import com.veadan.folib.storage.repository.remote.RemoteRepository;
+import com.veadan.folib.users.userdetails.SpringSecurityUser;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
@@ -22,6 +26,8 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
@@ -70,6 +76,9 @@ public class MavenSyncArtifactProvider implements SyncArtifactProvider {
 
     @Inject
     private MavenIndexerService mavenIndexerService;
+
+    @Inject
+    private DictService dictService;
 
     @PostConstruct
     @Override
@@ -165,9 +174,17 @@ public class MavenSyncArtifactProvider implements SyncArtifactProvider {
 
     @Override
     public void fullSync(SyncArtifactForm syncArtifactForm) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        SpringSecurityUser userDetails = (SpringSecurityUser) authentication.getPrincipal();
         String storageId = syncArtifactForm.getStorageId(), repositoryId = syncArtifactForm.getRepositoryId();
         Repository repository = configurationManager.getRepository(storageId, repositoryId);
         if (Objects.nonNull(repository) && RepositoryTypeEnum.PROXY.getType().equals(repository.getType())) {
+            Dict existsDict = dictService.selectLatestOneDict(Dict.builder().dictType(DictTypeEnum.HANDLER_MAVEN_INDEXER.getType()).build());
+            String comment = "迁移中";
+            if (Objects.nonNull(existsDict) && comment.equals(existsDict.getComment())) {
+                return;
+            }
+
             RemoteRepository remoteRepository = repository.getRemoteRepository();
             String remoteRepositoryUrl = remoteRepository.getUrl(), indexPath = ".index/nexus-maven-repository-index.properties";
             remoteRepositoryUrl = StringUtils.removeEnd(remoteRepositoryUrl, "/");
@@ -194,7 +211,7 @@ public class MavenSyncArtifactProvider implements SyncArtifactProvider {
                 log.info("Get maven index properties {} id {} chainId {} timestamp {}", indexProperties, id, chainId, timestamp);
                 String mavenIndexerPath = mavenIndexerService.storeMavenIndexer("json", id, chainId, remoteRepositoryUrl);
                 if (StringUtils.isNotBlank(mavenIndexerPath)) {
-                    mavenIndexerService.handlerMavenIndexerAndDownLoad(repository, mavenIndexerPath, syncArtifactForm.getBatch());
+                    mavenIndexerService.handlerMavenIndexerAndDownLoad(userDetails.getUsername(), repository, mavenIndexerPath, syncArtifactForm.getBatch(), null);
                 }
             } catch (Exception e) {
                 log.error("Failed to download {} error {}", indexUrl, e);

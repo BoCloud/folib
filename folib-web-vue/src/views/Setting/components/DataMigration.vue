@@ -2,7 +2,41 @@
   <div>
     <a-row type="flex" :gutter="24">
       <a-col :span="24" class="mb-24">
-        <a-form-model layout="horizontal" ref="dataMigrationForm" :model="dataMigrationForm" :hideRequiredMark="true">
+        <a-descriptions title="最近一次构建" :column="1" class="mb-20" v-if="record.info">
+          <a-descriptions-item label="操作用户">
+            {{ record.info.operator }}
+          </a-descriptions-item>
+          <a-descriptions-item label="操作时间">
+            {{ record.createTime }}
+          </a-descriptions-item>
+          <a-descriptions-item label="存储空间">
+            {{ record.info.storageId }}
+          </a-descriptions-item>
+          <a-descriptions-item label="所属仓库">
+            {{ record.info.repositoryId }}
+          </a-descriptions-item>
+          <a-descriptions-item label="制品总数">
+            {{ record.info.artifactsCount }}
+          </a-descriptions-item>
+          <a-descriptions-item label="迁移制品">
+            {{ record.info.process }}
+          </a-descriptions-item>
+          <a-descriptions-item label="迁移进度">
+            {{ record.info.progress + '%'}}
+          </a-descriptions-item>
+          <a-descriptions-item label="迁移状态">
+            <a-tag v-if="record.comment"
+              :color="record.comment.indexOf('完成') !== -1 ? 'green' : record.comment.indexOf('错误') !== -1 ? 'red' : 'orange'">
+              {{ record.comment }}
+              <a-popconfirm title="确定要更改状态吗？" okType="danger" ok-text="确定" cancel-text="取消"
+                @confirm="updateSingleDict(record.id, '手动结束')">
+                <a-icon type="unlock" theme="filled" v-if="record.comment.indexOf('中') !== -1" />
+              </a-popconfirm>
+            </a-tag>
+            <span v-else>--</span>
+          </a-descriptions-item>
+        </a-descriptions>
+        <a-form-model layout="horizontal" ref="dataMigrationForm" :model="dataMigrationForm" :rules="dataMigrationRules" :hideRequiredMark="true">
           <a-row :gutter="[24]">
             <a-col :span="24">
               <a-row :gutter="[24]">
@@ -36,8 +70,8 @@
                 <a-col :span="12">
                   <a-form-model-item :wrapper-col="{ span: 14, offset: 6 }">
                     <a-popconfirm title="确定要执行数据迁移吗？" okType="danger" ok-text="确定" cancel-text="取消"
-                      @confirm="dataMigrationFormSubmit">
-                      <a-button type="danger">
+                      @confirm="dataMigrationFormSubmit" :disabled="record.comment && record.comment.length > 0 && record.comment.indexOf('中') > -1">
+                      <a-button type="danger" :disabled="record.comment && record.comment.length > 0 && record.comment.indexOf('中') > -1">
                         保存
                       </a-button>
                     </a-popconfirm>
@@ -59,10 +93,13 @@ import {
   getStoragesAndRepositories
 } from "@/api/folib"
 import {
+  getSingleDict,
+  updateSingleDict,
   syncArtifactProvider
 } from "@/api/advanced"
 
 export default {
+  inject: ["reload"],
   data() {
     return {
       storages: [],
@@ -74,7 +111,28 @@ export default {
         type: "layout",
         batch: 500,
       },
-      process: {}
+      dataMigrationRules:  {
+        storageId: [{ required: true, message: "请选择存储空间", trigger: "blur" }],
+        repositoryId: [{ required: true, message: "请选择所属仓库", trigger: "blur" }],
+      },
+      record: {
+        id: 0,
+        createTime: "",
+        comment: "",
+        info: {
+          fail: 0,
+          process: 0,
+          artifactsCount: 0,
+          success: 0,
+          takeTime: 0,
+          repositoryId: "",
+          progress: 0.00,
+          mavenIndexerFileName: "",
+          lines: 0,
+          operator: "",
+          storageId: ""
+        }
+      }
     }
   },
   components: {
@@ -101,6 +159,7 @@ export default {
     },
     initData() {
       this.queryStoragesAndRepositories()
+      this.getSingleDict("handler_maven_indexer")
     },
     queryStoragesAndRepositories() {
       getStoragesAndRepositories({ excludeType: 'group', layout: 'Maven 2', type: 'proxy' }).then(res => {
@@ -130,7 +189,7 @@ export default {
           syncArtifactProvider(this.dataMigrationForm).then(res => {
             if (res) {
               setTimeout(() => {
-                // this.getSingleDict()
+                this.getSingleDict("handler_maven_indexer")
               }, 100)
               this.message("success", "请稍等，数据迁移任务已启动，正在异步执行")
             }
@@ -147,15 +206,24 @@ export default {
       this.initData()
     },
     getSingleDict(dictType) {
-      this.process = {
+      this.record = {
        
       }
       getSingleDict({ dictType: dictType }).then(res => {
         if (res) {
-          this.process = res
+          this.record = res
+          if (res.dictValue) {
+            this.record.info = JSON.parse(res.dictValue)
+          }
         }
       })
     },
+    updateSingleDict(id, comment) {
+      updateSingleDict({ id: id, comment: comment }).then(res => {
+        this.initData()
+        this.message("success", "状态更新成功")
+      })
+    }
   }
 }
 </script>

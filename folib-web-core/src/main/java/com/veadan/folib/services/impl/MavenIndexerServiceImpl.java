@@ -13,6 +13,7 @@ import com.veadan.folib.services.ArtifactResolutionService;
 import com.veadan.folib.services.DictService;
 import com.veadan.folib.services.MavenIndexerService;
 import com.veadan.folib.storage.repository.Repository;
+import com.veadan.folib.users.userdetails.SpringSecurityUser;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.io.FileUtils;
@@ -21,15 +22,17 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.SystemUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.core.io.DefaultResourceLoader;
-import org.springframework.core.io.Resource;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import javax.inject.Inject;
 import java.io.File;
 import java.io.InputStream;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
@@ -39,7 +42,9 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.FutureTask;
+import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.stream.Collectors;
 
 /**
  * @author leipenghui
@@ -95,15 +100,20 @@ public class MavenIndexerServiceImpl implements MavenIndexerService {
 
     @Async
     @Override
-    public void handlerMavenIndexerAndDownLoad(Repository repository, String mavenIndexerPath, Integer batch) {
+    public void handlerMavenIndexerAndDownLoad(String username,Repository repository, String mavenIndexerPath, Integer batch, Integer poolSize) {
         if (Objects.isNull(batch)) {
             batch = 500;
         }
+        ThreadPoolTaskExecutor threadPoolTaskExecutor = null;
+        if (Objects.nonNull(poolSize)) {
+            threadPoolTaskExecutor = buildThreadPoolTaskExecutor(poolSize, poolSize);
+        }
         File file = null;
-        String dictKey = repository.getStorageIdAndRepositoryId(), storageId = repository.getStorage().getId(), repositoryId = repository.getId();
+        String dictKey = String.format("%s:%s", repository.getStorageIdAndRepositoryId(), System.currentTimeMillis()), storageId = repository.getStorage().getId(), repositoryId = repository.getId();
         JSONObject dictValueJson = new JSONObject();
-        long lines = 0, validLines = 0, startTime = System.currentTimeMillis();
+        long lines = 0, artifactsCount = 0, startTime = System.currentTimeMillis();
         AtomicLong al = new AtomicLong(0), successAl = new AtomicLong(0), failAl = new AtomicLong(0);
+        BigDecimal oneHundred = BigDecimal.valueOf(100);
         try {
             file = new File(mavenIndexerPath);
             dictValueJson.put("mavenIndexerFileName", file.getName());
@@ -113,7 +123,7 @@ public class MavenIndexerServiceImpl implements MavenIndexerService {
             }
             List<String> fileExtensionList = Lists.newArrayList("pom", "jar", "war", "ear", "zip"), artifactPathList = Lists.newArrayList();
             try (LineIterator lineIterator = FileUtils.lineIterator(file, "UTF-8")) {
-                String fileExtension, groupId, artifactId, version, artifactPath, repositoryUrl = String.format("%s/storages/%s/%s/", StringUtils.chomp(configurationManager.getConfiguration().getBaseUrl(), "/"), storageId, repositoryId), currentLine = "";
+                String fileExtension, groupId, artifactId, version, artifactPath, pom = "pom", currentLine = "";
                 JSONObject itemData;
                 while (lineIterator.hasNext()) {
                     try {
@@ -130,8 +140,11 @@ public class MavenIndexerServiceImpl implements MavenIndexerService {
                         version = itemData.getString("version");
                         artifactPath = String.format("%s/%s/%s/%s-%s.%s", groupId, artifactId, version, artifactId, version, fileExtension);
                         if (fileExtensionList.contains(fileExtension)) {
-                            validLines++;
                             artifactPathList.add(artifactPath);
+                            if (!fileExtension.equals(pom)) {
+                                artifactPath = String.format("%s/%s/%s/%s-%s.%s", groupId, artifactId, version, artifactId, version, pom);
+                                artifactPathList.add(artifactPath);
+                            }
                         }
                     } catch (Exception ex) {
                         log.error("同步MavenIndexer storageId [{}] repositoryId [{}] mavenIndexerPath [{}] currentLine [{}] 错误 [{}]", storageId, repositoryId, mavenIndexerPath, currentLine, ExceptionUtils.getStackTrace(ex));
@@ -142,7 +155,21 @@ public class MavenIndexerServiceImpl implements MavenIndexerService {
                 log.info("同步MavenIndexer storageId [{}] repositoryId [{}] mavenIndexerPath [{}] 未找到匹配的制品数据", storageId, repositoryId, mavenIndexerPath);
                 return;
             }
-            log.info("开始同步MavenIndexer storageId [{}] repositoryId [{}] mavenIndexerPath [{}] batch [{}] 找到 [{}] 条匹配的制品数据", storageId, repositoryId, mavenIndexerPath, batch, artifactPathList.size());
+            artifactPathList = artifactPathList.stream().distinct().collect(Collectors.toList());
+            artifactsCount = artifactPathList.size();
+            long point = artifactsCount / 100;
+            BigDecimal bCount = new BigDecimal(artifactsCount);
+            dictValueJson.put("storageId", repository.getStorage().getId());
+            dictValueJson.put("repositoryId", repository.getId());
+            dictValueJson.put("lines", lines);
+            dictValueJson.put("artifactsCount", artifactsCount);
+            dictValueJson.put("progress", 0);
+            dictValueJson.put("process", 0);
+            dictValueJson.put("success", 0);
+            dictValueJson.put("fail", 0);
+            dictValueJson.put("operator", username);
+            handlerDownLoadStatus(dictKey, dictValueJson.toJSONString(), "迁移中");
+            log.info("开始同步MavenIndexer storageId [{}] repositoryId [{}] mavenIndexerPath [{}] batch [{}] 找到 [{}] 条匹配的制品数据", storageId, repositoryId, mavenIndexerPath, batch, artifactsCount);
             List<List<String>> artifactPathLists = Lists.partition(artifactPathList, batch);
             FutureTask<String> futureTask = null;
             List<FutureTask<String>> futureTaskList = Lists.newArrayList();
@@ -158,6 +185,13 @@ public class MavenIndexerServiceImpl implements MavenIndexerService {
                             } else {
                                 log.warn("同步MavenIndexer storageId [{}] repositoryId [{}] artifactPath [{}] mavenIndexerPath [{}] 第 [{}] 个有效行, fail [{}] success [{}]", storageId, repositoryId, itemArtifactPath, mavenIndexerPath, current, failAl.getAndIncrement(), successAl.get());
                             }
+                            if (current % point == 0) {
+                                dictValueJson.put("progress", BigDecimal.valueOf(current).divide(bCount, 2, RoundingMode.HALF_UP).multiply(oneHundred));
+                                dictValueJson.put("process", al.get());
+                                dictValueJson.put("success", successAl.get());
+                                dictValueJson.put("fail", failAl.get());
+                                handlerDownLoadStatus(dictKey, dictValueJson.toJSONString(), "迁移中");
+                            }
                         } catch (Exception ex) {
                             log.warn("同步MavenIndexer storageId [{}] repositoryId [{}] artifactPath [{}] mavenIndexerPath [{}] 第 [{}] 个有效行, fail [{}]", storageId, repositoryId, itemArtifactPath, mavenIndexerPath, current, failAl.get());
                         }
@@ -165,31 +199,37 @@ public class MavenIndexerServiceImpl implements MavenIndexerService {
                     return "success";
                 });
                 futureTaskList.add(futureTask);
-                asyncDownloadArtifactThreadPoolTaskExecutor.submit(futureTask);
+                if (Objects.nonNull(threadPoolTaskExecutor)) {
+                    threadPoolTaskExecutor.submit(futureTask);
+                } else {
+                    asyncDownloadArtifactThreadPoolTaskExecutor.submit(futureTask);
+                }
             }
             for (FutureTask<String> task : futureTaskList) {
                 task.get();
             }
-            dictValueJson.put("lines", lines);
-            dictValueJson.put("validLines", validLines);
+            dictValueJson.put("progress", BigDecimal.valueOf(al.get()).divide(bCount, 2, RoundingMode.HALF_UP).multiply(oneHundred));
             dictValueJson.put("process", al.get());
             dictValueJson.put("success", successAl.get());
             dictValueJson.put("fail", failAl.get());
             dictValueJson.put("takeTime", System.currentTimeMillis() - startTime);
-            handlerDownLoadStatus(dictKey, dictValueJson.toJSONString(), null);
+            handlerDownLoadStatus(dictKey, dictValueJson.toJSONString(), "迁移完成");
         } catch (Exception ex) {
             log.error("同步MavenIndexer storageId [{}] repositoryId [{}] mavenIndexerPath [{}] 错误 [{}]", storageId, repositoryId, mavenIndexerPath, ExceptionUtils.getStackTrace(ex));
-            dictValueJson.put("lines", lines);
-            dictValueJson.put("validLines", validLines);
+            dictValueJson.put("progress", BigDecimal.valueOf(al.get()).divide(BigDecimal.valueOf(artifactsCount), 2, RoundingMode.HALF_UP).multiply(oneHundred));
             dictValueJson.put("process", al.get());
             dictValueJson.put("success", successAl.get());
             dictValueJson.put("fail", failAl.get());
             dictValueJson.put("takeTime", System.currentTimeMillis() - startTime);
-            handlerDownLoadStatus(dictKey, dictValueJson.toJSONString(), al.get() + "");
+            handlerDownLoadStatus(dictKey, dictValueJson.toJSONString(), "迁移错误");
         } finally {
-            log.info("同步MavenIndexer storageId [{}] repositoryId [{}] mavenIndexerPath [{}] 结束 lines [{}] validLines [{}] process [{}] fail [{}] success [{}] take time [{}]", storageId, repositoryId, mavenIndexerPath, lines, validLines, al.get(), failAl.get(), successAl.get(), System.currentTimeMillis() - startTime);
+            log.info("同步MavenIndexer storageId [{}] repositoryId [{}] mavenIndexerPath [{}] 结束 lines [{}] artifactsCount [{}] process [{}] fail [{}] success [{}] take time [{}]", storageId, repositoryId, mavenIndexerPath, lines, artifactsCount, al.get(), failAl.get(), successAl.get(), System.currentTimeMillis() - startTime);
             if (Objects.nonNull(file)) {
                 FileUtil.del(file.getParent());
+            }
+            if (Objects.nonNull(threadPoolTaskExecutor)) {
+                threadPoolTaskExecutor.shutdown();
+                threadPoolTaskExecutor.destroy();
             }
         }
     }
@@ -250,40 +290,32 @@ public class MavenIndexerServiceImpl implements MavenIndexerService {
      *
      * @param key         key
      * @param value       value
-     * @param currentLine currentLine
+     * @param comment comment
      */
-    private void handlerDownLoadStatus(String key, String value, String currentLine) {
-        Dict dict = Dict.builder().dictType(DictTypeEnum.HANDLER_MAVEN_INDEXER.getType()).dictKey(key).dictValue(value).comment(currentLine).build();
+    private void handlerDownLoadStatus(String key, String value, String comment) {
+        Dict dict = Dict.builder().dictType(DictTypeEnum.HANDLER_MAVEN_INDEXER.getType()).dictKey(key).dictValue(value).comment(comment).build();
         dictService.saveOrUpdateDict(dict, true);
     }
 
-    public static void main(String[] args) throws Exception {
-        String p = "/Users/leipenghui/project/java/boyun/folib-server/folib-vault/tmp/20a57af5-fd71-4bf5-ab50-88f34dfadf12/local-maven_index.dump";
-        File file = new File(p);
-        LineIterator lineIterator = FileUtils.lineIterator(file, "UTF-8");
-        long startTime = System.currentTimeMillis();
-        long lines = 0, validLines = 0;
-        List<String> fileExtensionList = Lists.newArrayList("pom", "jar", "war", "ear", "zip");
-        String fileExtension, currentLine = "";
-        JSONObject itemData;
-        while (lineIterator.hasNext()) {
-            try {
-                lines++;
-                currentLine = lineIterator.nextLine();
-                if (currentLine.startsWith("[") || currentLine.startsWith("]")) {
-                    continue;
-                }
-                currentLine = StringUtils.chomp(currentLine, ",");
-                itemData = JSONObject.parseObject(currentLine);
-                fileExtension = itemData.getString("fileExtension");
-                if (fileExtensionList.contains(fileExtension)) {
-                    validLines++;
-                }
-            } catch (Exception ex) {
-            }
-        }
-        long endTime = System.currentTimeMillis() - startTime;
-        System.out.println(String.format("总行数 [%s] 有效行数 [%s] ,耗时 [%s] 毫秒 [%s] 秒", lines, validLines, endTime, (endTime / 1000)));
+    /**
+     * build ThreadPoolTaskExecutor
+     *
+     * @param corePoolSize corePoolSize
+     * @param maxPoolSize  maxPoolSize
+     * @return ThreadPoolTaskExecutor
+     */
+    private ThreadPoolTaskExecutor buildThreadPoolTaskExecutor(Integer corePoolSize, Integer maxPoolSize) {
+        ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
+        executor.setCorePoolSize(corePoolSize);
+        executor.setMaxPoolSize(maxPoolSize);
+        executor.setQueueCapacity(Integer.MAX_VALUE);
+        executor.setKeepAliveSeconds(120);
+        executor.setThreadNamePrefix("customSyncArtifact_");
+        executor.setWaitForTasksToCompleteOnShutdown(true);
+        executor.setAwaitTerminationSeconds(60);
+        executor.setRejectedExecutionHandler(new ThreadPoolExecutor.CallerRunsPolicy());
+        executor.initialize();
+        return executor;
     }
 }
 

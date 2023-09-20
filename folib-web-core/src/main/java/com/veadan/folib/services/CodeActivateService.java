@@ -79,6 +79,7 @@ public class CodeActivateService {
                 data.put("endDate", DateUtil.nextMonth().toDateStr());
                 data.put("codes", code);
                 data.put("type", "试用版");
+                data.put("level", "pro");
                 data.put("mac", MacUtil.getMachineCode());
                 data.put("rel", true);
                 String md5 = SecureUtil.md5(data.toJSONString() + "folib!@#$%^&*ABCD");
