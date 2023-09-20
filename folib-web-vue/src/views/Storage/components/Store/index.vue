@@ -97,7 +97,7 @@
                     align-items: center;
                     justify-content: flex-end;
                   ">
-                  <a v-if="folibRepository.layout === 'rpm'">
+                  <a v-if="uploadEnabled && folibRepository.layout === 'rpm'">
                     <small style="padding-right: 20px" @click="handleRpmUpload">
                       上传
                       <a-icon type="cloud-upload" />
