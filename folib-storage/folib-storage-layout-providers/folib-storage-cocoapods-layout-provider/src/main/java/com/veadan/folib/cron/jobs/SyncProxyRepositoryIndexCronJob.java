@@ -58,7 +58,7 @@ public class SyncProxyRepositoryIndexCronJob extends JavaCronJob
             logger.info("仓库（{}）不存在，无法执行同步远程仓库索引定时任务", String.format("%s:%s", storageId, repositoryId));
             return;
         }
-        if (repository.getType().equals(RepositoryTypeEnum.PROXY.getType()))
+        if (!repository.getType().equals(RepositoryTypeEnum.PROXY.getType()))
         {
             logger.info("当前仓库非代理仓库（{}），无法执行同步远程仓库索引定时任务", String.format("%s:%s", storageId, repositoryId));
             return;
