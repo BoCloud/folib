@@ -76,7 +76,6 @@ public class CocoapodsIndexServiceImpl implements CocoapodsIndexService
         final String username = remoteRepository.getUsername();
         final String password = remoteRepository.getPassword();
         url = String.format("%s/archive/refs/heads/master.zip", url);
-        url = "http://192.168.1.5:12345/files/1dc953f6-308a-47a7-a7d2-31ba72488944";
         final String specIndexZipTempUri = ".specs/temp/master.zip";
         final String specIndexTarGzTempUri = ".specs/master.tar.gz";
         final String indexTempFolderPath = String.format("%s%s%s%s", tempPath, File.separator, UUID.randomUUID(), File.separator);
