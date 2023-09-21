@@ -13,6 +13,7 @@ import com.veadan.folib.providers.io.RepositoryPathResolver;
 import com.veadan.folib.service.CocoapodsIndexService;
 import com.veadan.folib.services.ArtifactResolutionService;
 import com.veadan.folib.storage.repository.Repository;
+import com.veadan.folib.storage.repository.RepositoryTypeEnum;
 
 import javax.inject.Inject;
 import java.util.Set;
@@ -52,6 +53,16 @@ public class SyncProxyRepositoryIndexCronJob extends JavaCronJob
         final String storageId = config.getProperty(PROPERTY_STORAGE_ID);
         final String repositoryId = config.getProperty(PROPERTY_REPOSITORY_ID);
         final Repository repository = configurationManager.getRepository(storageId, repositoryId);
+        if (null == repository)
+        {
+            logger.info("仓库（{}）不存在，无法执行同步远程仓库索引定时任务", String.format("%s:%s", storageId, repositoryId));
+            return;
+        }
+        if (repository.getType().equals(RepositoryTypeEnum.PROXY.getType()))
+        {
+            logger.info("当前仓库非代理仓库（{}），无法执行同步远程仓库索引定时任务", String.format("%s:%s", storageId, repositoryId));
+            return;
+        }
         if (cocoapodsIndexService.getSyncProxyIndexLock(repository))
         {
             logger.info("定时任务，已存在正在执行的同步远程仓库（{}）任务， 跳过当次定时任务执行", String.format("%s:%s", storageId, repositoryId));
