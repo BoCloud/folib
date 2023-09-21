@@ -606,7 +606,7 @@
                       <a-select-option value="proxy">
                         代理
                       </a-select-option>
-                      <a-select-option value="group">
+                      <a-select-option value="group" v-if="this.layoutChecked !== 'cocoapods'">
                         组合
                       </a-select-option>
                     </a-select>
