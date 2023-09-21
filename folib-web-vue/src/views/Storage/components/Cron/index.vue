@@ -116,6 +116,11 @@ export default {
     crontasksListHandle() {
       crontasksList(this.folibRepository.layout === 'Maven 2' ? 'MAVEN' : this.folibRepository.layout.toUpperCase()).then(res => {
         this.cronCanSetList = res
+        
+        // Cocoapods: 本地仓库过滤掉代理仓库定时任务
+        if (this.folibRepository.type === "hosted")
+        { this.cronCanSetList = this.cronCanSetList.filter(e => !(e.jobClass === "com.veadan.folib.cron.jobs.SyncProxyRepositoryIndexCronJob")) }
+        
         crontasksByRepository(this.folibRepository.storageId, this.folibRepository.id).then(res => {
           //已经被设置的定时任务列表
           this.cronSettedList = res.cronTaskConfigurations

@@ -1,4 +1,4 @@
-package com.veadan.folib.utils;
+package com.veadan.folib.util;
 
 import cn.hutool.core.io.FileUtil;
 import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
