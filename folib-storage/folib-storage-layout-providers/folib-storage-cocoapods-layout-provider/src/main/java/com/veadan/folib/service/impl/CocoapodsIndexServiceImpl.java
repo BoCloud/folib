@@ -85,6 +85,8 @@ public class CocoapodsIndexServiceImpl implements CocoapodsIndexService
         try {
             // 下载代理索引zip
             specIndexZipTempPath = artifactResolutionService.resolvePath(storageId, repositoryId, url, specIndexZipTempUri);
+            if (!Files.exists(specIndexZipTempPath))
+            { throw new RuntimeException("下载Cocoapods远程仓库索引Zip失败"); }
 
             ziFilePath = specIndexZipTempPath.getTarget().toString();
             String tarGzFilePath = specIndexZipTempPath.getTarget().getParent().getParent().toString()+"/master.tar.gz";
