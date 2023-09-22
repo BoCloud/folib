@@ -83,6 +83,13 @@ public class CocoapodsIndexServiceImpl implements CocoapodsIndexService
         String ziFilePath = null;
 
         try {
+            // 删除就的索引文件
+            try {
+                specIndexZipTempPath = repositoryPathResolver.resolve(storageId, repositoryId, specIndexZipTempUri);
+                artifactManagementService.delete(specIndexZipTempPath, true);
+            }
+            catch (Exception e)
+            { logger.error("删除旧的索引文件失败", e); }
             // 下载代理索引zip
             specIndexZipTempPath = artifactResolutionService.resolvePath(storageId, repositoryId, url, specIndexZipTempUri);
             if (!Files.exists(specIndexZipTempPath))
@@ -104,7 +111,7 @@ public class CocoapodsIndexServiceImpl implements CocoapodsIndexService
                 logger.info("S3存储，转存S3文件到本本地：{}", specIndexZipTempPath);
             }
 
-            logger.info("开始转换Cocoapods仓库代理仓库Zip（{}）", specIndexZipTempUri);
+            logger.info("开始转换Cocoapods仓库代理仓库Zip（{}:{}）", specIndexZipTempPath, ziFilePath);
             final JSONObject podNewSourceObj = new JSONObject();
             CompressUtil.zip2Targz(ziFilePath, tarGzFilePath,
                     (zipEntryName -> zipEntryName.matches(".*?/.{1}/.{1}/.{1}/(.*)")),
