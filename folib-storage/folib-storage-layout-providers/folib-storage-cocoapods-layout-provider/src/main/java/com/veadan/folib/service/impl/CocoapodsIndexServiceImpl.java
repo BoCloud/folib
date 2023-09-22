@@ -43,7 +43,7 @@ import java.util.regex.Pattern;
 public class CocoapodsIndexServiceImpl implements CocoapodsIndexService
 {
     
-    protected final Logger logger = LoggerFactory.getLogger(getClass());
+    protected final Logger logger = LoggerFactory.getLogger(CocoapodsIndexServiceImpl.class);
     private static final Pattern POD_REPO_GIT_URL_PATTERN = Pattern.compile("http(?:s)?://.*?/(.*?)/(.*?)\\.git");
     private final Map<String, Boolean> SYNC_COCOAPODS_PROXY_INDEX_LOCK_MAP = new ConcurrentHashMap<>();
     
@@ -148,6 +148,14 @@ public class CocoapodsIndexServiceImpl implements CocoapodsIndexService
                 artifactManagementService.store(indexTarZipPath, Files.newInputStream(Path.of(tarGzFilePath)));
                 logger.info("S3存储，回传本地转换后TarGz文件成功：{}", specIndexTarGzTempUri);
             }
+
+            { // 转换成功后把临时文件删除
+                try {
+                    artifactManagementService.delete(specIndexZipTempPath.getParent(), true);
+                } catch (IOException e) {
+                    logger.error("删除临时索引文件失败", e);
+                }
+            }
         }
         catch (Exception e)
         {
@@ -157,16 +165,6 @@ public class CocoapodsIndexServiceImpl implements CocoapodsIndexService
         finally
         {
             SYNC_COCOAPODS_PROXY_INDEX_LOCK_MAP.remove(repositorySyncLockKey);
-            if (null != specIndexZipTempPath)
-            {
-                try {
-                    artifactManagementService.delete(specIndexZipTempPath.getParent(), true);
-                } catch (IOException e) {
-                    logger.error("删除临时索引文件失败", e);
-                }
-            }
-            if (null != ziFilePath)
-            { FileUtil.del(new File(ziFilePath)); }
         }
         
         return true;
