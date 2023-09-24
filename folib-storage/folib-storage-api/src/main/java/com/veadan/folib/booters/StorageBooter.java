@@ -156,7 +156,6 @@ public class StorageBooter
 
             return;
         }
-
         groupRepositorySetCollector.collect(repository, true)
                                    .stream().forEach(r -> addRepositoriesByChildrenFirst(repositoriesHierarchy, r));
 

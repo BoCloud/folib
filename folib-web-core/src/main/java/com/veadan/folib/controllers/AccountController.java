@@ -131,7 +131,7 @@ public class AccountController
     @ResponseBody
     public ResponseEntity<Set<String>> getStorageAndRepositoryPermission(Authentication authentication, @ApiParam(value = "The storageId", required = true) @PathVariable String storageId, @ApiParam(value = "The repositoryId", required = true) @PathVariable String repositoryId) {
         SpringSecurityUser userDetails = (SpringSecurityUser)authentication.getPrincipal();
-        Collection<Privileges> storageAuthorities = userDetails.getStorageAuthorities(storageId, repositoryId);
+        Collection<Privileges> storageAuthorities = userDetails.getStorageAuthorities(storageId, repositoryId, null);
         return ResponseEntity.ok(storageAuthorities.stream().map(Privileges::getAuthority).collect(Collectors.toSet()));
     }
 }

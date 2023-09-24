@@ -41,6 +41,8 @@ public class RepositoryPath
 
     protected Artifact artifact;
 
+    protected Boolean artifactExist;
+
     protected Map<RepositoryFileAttributeType, Object> cachedAttributes = new HashMap<>();
 
     protected URI uri;
@@ -78,6 +80,10 @@ public class RepositoryPath
     public Artifact getArtifactEntry() throws IOException
     {
         return artifact;
+    }
+
+    public Boolean getArtifactExist () throws IOException {
+        return artifactExist;
     }
 
     public void setArtifact(Artifact artifact) {

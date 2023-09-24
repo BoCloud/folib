@@ -43,11 +43,11 @@ public class JanusGraphController extends BaseController {
         JanusGraphManagement janusGraphManagement = janusGraph.openManagement();
         try {
             Set<String> ids = janusGraphManagement.getOpenInstances();
-            log.info("=====>>>>> 所有实例：{}，要删除的实例：{}", ids, instanceId);
+            log.info("所有实例：{}，要删除的实例：{}", ids, instanceId);
             janusGraphManagement.forceCloseInstance(instanceId);
             janusGraphManagement.commit();
         } catch (Exception ex) {
-            log.error("=====>>>>> 删除实例异常：", ex);
+            log.error("删除实例异常：", ex);
             janusGraphManagement.rollback();
             throw new RuntimeException(ex);
         }
@@ -64,7 +64,7 @@ public class JanusGraphController extends BaseController {
             data.put("schema", janusGraphManagement.printSchema());
             janusGraphManagement.rollback();
         } catch (Exception ex) {
-            log.error("=====>>>>> 查询janusGraph信息异常：", ex);
+            log.error("查询janusGraph信息异常：", ex);
             janusGraphManagement.rollback();
             throw new RuntimeException(ex);
         }
@@ -76,10 +76,10 @@ public class JanusGraphController extends BaseController {
     @PostMapping(value = "/reindex")
     public void reindex(@RequestBody JanusGraphIndex janusGraphIndex) {
         try {
-            log.info("=====>>>>> 重建索引：{}", janusGraphIndex);
+            log.info("重建索引：{}", janusGraphIndex);
             SchemaUtils.reVertexIndexes(janusGraph, janusGraphIndex.getIndexNames());
         } catch (Exception ex) {
-            log.error("=====>>>>> 重建索引异常：", ex);
+            log.error("重建索引异常：", ex);
             throw new RuntimeException(CommonUtils.getRealMessage(ex));
         }
     }
@@ -89,10 +89,10 @@ public class JanusGraphController extends BaseController {
     @PostMapping(value = "/registerIndex")
     public void registerIndex(@RequestBody JanusGraphIndex janusGraphIndex) {
         try {
-            log.info("=====>>>>> 注册索引：{}", janusGraphIndex);
+            log.info("注册索引：{}", janusGraphIndex);
             SchemaUtils.registerVertexIndexes(janusGraph, janusGraphIndex.getIndexNames());
         } catch (Exception ex) {
-            log.error("=====>>>>> 注册索引异常：", ex);
+            log.error("注册索引异常：", ex);
             throw new RuntimeException(CommonUtils.getRealMessage(ex));
         }
     }

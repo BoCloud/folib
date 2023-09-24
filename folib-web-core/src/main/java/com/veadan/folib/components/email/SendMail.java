@@ -60,7 +60,7 @@ public class SendMail {
         //邮件发送时间
         message.setSentDate(DateUtil.date());
         javaMailSender.send(message);
-        log.info("=====>>>>>发送邮件成功:{}->{}", sendMailer, mailRequest.getSendTo());
+        log.info("发送邮件成功:{}->{}", sendMailer, mailRequest.getSendTo());
     }
 
     /**
@@ -92,9 +92,9 @@ public class SendMail {
                 helper.addAttachment(fileName, file);
             }
             javaMailSender.send(message);
-            log.info("=====>>>>>发送邮件成功:{}->{}", sendMailer, mailRequest.getSendTo());
+            log.info("发送邮件成功:{}->{}", sendMailer, mailRequest.getSendTo());
         } catch (MessagingException e) {
-            log.error("=====>>>>>发送邮件时发生异常！", e);
+            log.error("发送邮件时发生异常！", e);
         }
     }
 

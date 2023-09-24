@@ -192,7 +192,7 @@ export default {
       }).catch((err) => {
         let msg = err.response.data.error ? err.response.data.error : err.response.data
         console.log('upload error：', msg)
-        let errStatusArr = [200, 500]
+        let errStatusArr = [200, 500, 403, 304, 401]
         if (!errStatusArr.includes(err.response.status)) {
           this.message("error", "错误编码：" + err.response.status)
         }

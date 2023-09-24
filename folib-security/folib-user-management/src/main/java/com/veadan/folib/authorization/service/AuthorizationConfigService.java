@@ -33,4 +33,6 @@ public interface AuthorizationConfigService
      * @param roleInfo 角色信息
      */
     void handlerRole(String roleInfo);
+
+    void clearPrivilegesAnonymous() throws IOException;
 }

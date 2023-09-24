@@ -56,4 +56,9 @@ public class TempRepositoryPath extends RepositoryPath
         return tempTarget.getArtifactEntry();
     }
 
+    @Override
+    public Boolean getArtifactExist() throws IOException
+    {
+        return tempTarget.getArtifactExist();
+    }
 }

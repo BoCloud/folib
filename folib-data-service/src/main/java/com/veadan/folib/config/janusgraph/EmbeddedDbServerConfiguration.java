@@ -98,7 +98,7 @@ public class EmbeddedDbServerConfiguration implements Condition
                     Files.createDirectories(filePath);
                     continue;
                 }
-                logger.info(String.format("=====>>>>>从 [%s] 提取文件到 [%s].", file.getName(), filePath.toAbsolutePath().toString()));
+                logger.info(String.format("从 [%s] 提取文件到 [%s].", file.getName(), filePath.toAbsolutePath().toString()));
 
                 try (InputStream is = new BufferedInputStream(jar.getInputStream(file)))
                 {

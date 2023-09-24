@@ -1,26 +1,32 @@
 package com.veadan.folib.providers.io;
 
-import java.io.IOException;
-import java.lang.reflect.Proxy;
-import java.util.Objects;
-import java.util.Optional;
-
-import javax.inject.Inject;
-
-import com.veadan.folib.configuration.ConfigurationManager;
+import com.google.common.cache.Cache;
+import com.google.common.cache.CacheBuilder;
 import com.veadan.folib.artifact.coordinates.ArtifactCoordinates;
+import com.veadan.folib.configuration.ConfigurationManager;
 import com.veadan.folib.domain.Artifact;
 import com.veadan.folib.repositories.ArtifactRepository;
 import com.veadan.folib.storage.Storage;
 import com.veadan.folib.storage.repository.Repository;
+import com.veadan.folib.util.CacheUtil;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.exception.ExceptionUtils;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
+
+import javax.inject.Inject;
+import java.io.IOException;
+import java.lang.reflect.Proxy;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.concurrent.TimeUnit;
 
 /**
  * @author veadan
  */
+@Slf4j
 @Component
-public class RepositoryPathResolver
-{
+public class RepositoryPathResolver {
 
     @Inject
     protected ConfigurationManager configurationManager;
@@ -32,16 +38,20 @@ public class RepositoryPathResolver
     protected RepositoryFileSystemRegistry fileSystemRegistry;
 
     public RootRepositoryPath resolve(String storageId,
-                                      String repositoryId)
-    {
-        Storage storage = configurationManager.getConfiguration().getStorage(storageId);
-        Objects.requireNonNull(storage, String.format("Storage [%s] not found", storageId));
-
-        return resolve(storage.getRepository(repositoryId));
+                                      String repositoryId) {
+        CacheUtil<String, Repository> cacheUtil = CacheUtil.getInstance();
+        String key = String.format("%s:%s", storageId, repositoryId);
+        Repository repository = cacheUtil.get(key);
+        if (Objects.isNull(repository)) {
+            Storage storage = configurationManager.getConfiguration().getStorage(storageId);
+            Objects.requireNonNull(storage, String.format("Storage [%s] not found", storageId));
+            repository = storage.getRepository(repositoryId);
+            cacheUtil.put(key, repository);
+        }
+        return resolve(repository);
     }
-    
-    public RootRepositoryPath resolve(final Repository repository)
-    {
+
+    public RootRepositoryPath resolve(final Repository repository) {
         Objects.requireNonNull(repository, "Repository should be provided");
 
         LayoutFileSystemFactory fileSystemFactory = fileSystemRegistry.lookupRepositoryFileSystemFactory(repository);
@@ -51,27 +61,29 @@ public class RepositoryPathResolver
 
     public RepositoryPath resolve(String storageId,
                                   String repositoryId,
-                                  String path)
-    {
-        Storage storage = configurationManager.getConfiguration().getStorage(storageId);
-        Objects.requireNonNull(storage, String.format("Storage [%s] not found", storageId));
-
-        return resolve(storage.getRepository(repositoryId), path);
+                                  String path) {
+        CacheUtil<String, Repository> cacheUtil = CacheUtil.getInstance();
+        String key = String.format("%s:%s", storageId, repositoryId);
+        Repository repository = cacheUtil.get(key);
+        if (Objects.isNull(repository)) {
+            Storage storage = configurationManager.getConfiguration().getStorage(storageId);
+            Objects.requireNonNull(storage, String.format("Storage [%s] not found", storageId));
+            repository = storage.getRepository(repositoryId);
+            cacheUtil.put(key, repository);
+        }
+        return resolve(repository, path);
     }
 
     public RepositoryPath resolve(final Repository repository,
-                                  final ArtifactCoordinates c)
-    {
+                                  final ArtifactCoordinates c) {
         return resolve(repository, c.buildPath());
     }
 
     public RepositoryPath resolve(final Repository repository,
                                   final RepositoryPath otherPath)
-        throws IOException
-    {
+            throws IOException {
         if (otherPath.getRepository().getId().equals(repository.getId())
-                && otherPath.getArtifactEntry() != null)
-        {
+                && otherPath.getArtifactEntry() != null) {
             return otherPath;
         }
 
@@ -79,14 +91,12 @@ public class RepositoryPathResolver
     }
 
     public RepositoryPath resolve(final Repository repository,
-                                  final String path)
-    {
+                                  final String path) {
         RootRepositoryPath repositoryPath = resolve(repository);
-        if (repository.isGroupRepository())
-        {
+        if (repository.isGroupRepository()) {
             return repositoryPath.resolve(path);
         }
-        
+
         return new LazyRepositoryPath(repositoryPath.resolve(path));
     }
 
@@ -94,39 +104,31 @@ public class RepositoryPathResolver
         return artifactEntityRepository.findOneArtifact(storageId, repositoryId, path);
     }
 
-    private class LazyRepositoryPath extends RepositoryPath
-    {
+    private class LazyRepositoryPath extends RepositoryPath {
 
-        private LazyRepositoryPath(RepositoryPath target)
-        {
+        private LazyRepositoryPath(RepositoryPath target) {
             super(target.getTarget(), target.getFileSystem());
             this.artifact = target.artifact;
+            this.artifactExist = target.artifactExist;
         }
 
         @Override
         public Artifact getArtifactEntry()
-            throws IOException
-        {
+                throws IOException {
             Artifact artifactLocal = super.getArtifactEntry();
-            if (artifactLocal == NullArtifact.INSTANCE)
-            {
+            if (artifactLocal == NullArtifact.INSTANCE) {
                 return null;
-            }
-            else if (artifactLocal != null)
-            {
+            } else if (artifactLocal != null) {
                 return artifactLocal;
             }
 
-            if (this.getRepository().isGroupRepository() || !RepositoryFiles.isArtifact(this))
-            {
+            if (this.getRepository().isGroupRepository() || !RepositoryFiles.isArtifact(this)) {
                 artifact = NullArtifact.INSTANCE;
-            }
-            else
-            {
+            } else {
                 artifact = Optional.ofNullable(artifactEntityRepository.findOneArtifact(getRepository().getStorage().getId(),
-                                                                                        getRepository().getId(),
-                                                                                        RepositoryFiles.relativizePath(this)))
-                                   .orElse(NullArtifact.INSTANCE);
+                        getRepository().getId(),
+                        RepositoryFiles.relativizePath(this)))
+                        .orElse(NullArtifact.INSTANCE);
             }
 
             return getArtifactEntry();
@@ -140,24 +142,41 @@ public class RepositoryPathResolver
         }
 
         @Override
-        public RepositoryPath normalize()
-        {
+        public Boolean getArtifactExist() throws IOException {
+            Boolean artifactExistLocal = super.getArtifactExist();
+            if (Objects.nonNull(artifactExistLocal)) {
+                return artifactExistLocal;
+            }
+
+            if (this.getRepository().isGroupRepository() || !RepositoryFiles.isArtifact(this)) {
+                artifactExist = false;
+            } else {
+                artifactExist = Optional.ofNullable(artifactEntityRepository.artifactExists(getRepository().getStorage().getId(),
+                        getRepository().getId(),
+                        RepositoryFiles.relativizePath(this)))
+                        .orElse(false);
+            }
+
+            return getArtifactExist();
+        }
+
+        @Override
+        public RepositoryPath normalize() {
             RepositoryPath target = super.normalize();
             return new LazyRepositoryPath(target);
         }
-        
+
     }
-    
-    private static class NullArtifact
-    {
+
+    private static class NullArtifact {
 
         private static final Artifact INSTANCE = (Artifact) Proxy.newProxyInstance(Artifact.class.getClassLoader(),
-                                                                                   new Class[] { Artifact.class },
-                                                                                   (proxy,
-                                                                                    method,
-                                                                                    args) -> {
-                                                                                       throw new UnsupportedOperationException();
-                                                                                   });
+                new Class[]{Artifact.class},
+                (proxy,
+                 method,
+                 args) -> {
+                    throw new UnsupportedOperationException();
+                });
 
     }
 

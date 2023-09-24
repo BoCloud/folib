@@ -49,7 +49,6 @@ import com.veadan.folib.storage.Storage;
 import com.veadan.folib.storage.StorageDto;
 import com.veadan.folib.storage.repository.Repository;
 import com.veadan.folib.storage.repository.RepositoryTypeEnum;
-import com.veadan.folib.storage.search.SearchResults;
 import com.veadan.folib.users.domain.SystemRole;
 import com.veadan.folib.users.userdetails.SpringSecurityUser;
 import com.veadan.folib.util.CompressUtils;
@@ -86,7 +85,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URLEncoder;
 import java.nio.file.Files;
-import java.nio.file.Path;
 import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
 import java.time.LocalDateTime;
@@ -246,7 +244,7 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
             repositoryPath.setArtifact(artifact);
             artifactEvent.dispatchArtifactMetaDataEvent(repositoryPath);
         } catch (Exception ex) {
-            log.error("=====>>>>>保存制品元数据错误：{}", ExceptionUtils.getStackTrace(ex));
+            log.error("保存制品元数据错误：{}", ExceptionUtils.getStackTrace(ex));
             throw new RuntimeException("保存制品元数据错误，请稍后重试");
         }
         return ResponseMessage.ok().getMessage();
@@ -270,7 +268,7 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
                 artifactEvent.dispatchArtifactMetaDataEvent(repositoryPath);
             }
         } catch (Exception ex) {
-            log.error("=====>>>>>修改制品元数据错误：{}", ExceptionUtils.getStackTrace(ex));
+            log.error("修改制品元数据错误：{}", ExceptionUtils.getStackTrace(ex));
             throw new RuntimeException("修改制品元数据错误，请稍后重试");
         }
         return ResponseMessage.ok().getMessage();
@@ -290,7 +288,7 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
                 artifactEvent.dispatchArtifactMetaDataEvent(repositoryPath);
             }
         } catch (Exception ex) {
-            log.error("=====>>>>>删除制品元数据错误：{}", ExceptionUtils.getStackTrace(ex));
+            log.error("删除制品元数据错误：{}", ExceptionUtils.getStackTrace(ex));
             throw new RuntimeException("删除制品元数据错误，请稍后重试");
         }
     }
@@ -477,83 +475,11 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
                 repositoryPath.setArtifact(artifact);
                 artifactEvent.dispatchArtifactMetaDataEvent(repositoryPath);
             } catch (Exception e) {
-                log.error("=====>>>>>批量新增制品元数据错误：{}", ExceptionUtils.getStackTrace(e));
+                log.error("批量新增制品元数据错误：{}", ExceptionUtils.getStackTrace(e));
                 throw new RuntimeException("批量新增制品元数据错误，请稍后重试");
             }
 
         }
-    }
-
-    @Override
-    public void batchArtifactMetaDataByahzw(List<ArtifactMetadataForm> artifactMetadataFormList) {
-        // 批量的新增或更新 path Artifact 是一致的
-        String artifactPathTemp = "";
-        String repoTemp = "";
-        if (artifactMetadataFormList.size() > 0) {
-            ArtifactMetadataForm artifactMetaData = artifactMetadataFormList.get(0);
-            // 查询是否存在 path 的更新事件
-            Artifact artifact = null;
-            try {
-                // 默认传过来path  docker 仓库名/version
-                String rawRepo = artifactMetaData.getRepositoryId() + "-raw";
-                String dockerRepo = artifactMetaData.getRepositoryId();
-                String storageId = artifactMetaData.getStorageId();
-
-                SearchResults dockerResult = fqlSearchService.artifactQuery(false,
-                        artifactMetaData.getArtifactPath(), null, storageId,
-                        dockerRepo, null, null, null, null, null, null, null, 1, 1);
-                if (dockerResult.getTotal() == 0) {
-                    SearchResults rawResult = fqlSearchService.artifactQuery(false,
-                            artifactMetaData.getArtifactPath(), null, storageId,
-                            rawRepo, null, null, null, null, null, null, null, 1, 1);
-                    if (rawResult.getTotal() == 1) {
-                        artifactPathTemp = Lists.newArrayList(rawResult.getResults()).get(0).getArtifactPath();
-                        repoTemp = rawRepo;
-                    } else {
-                        throw new Exception("没有找到版本号制品");
-                    }
-                } else {
-                    artifactPathTemp = Lists.newArrayList(dockerResult.getResults()).get(0).getArtifactPath();
-                    repoTemp = dockerRepo;
-                }
-                RepositoryPath repositoryPath = repositoryPathResolver.
-                        resolve(artifactMetaData.getStorageId(), repoTemp, artifactPathTemp);
-                if (repositoryPath == null) {
-                    throw new Exception("制品路径未找到");
-                }
-                artifact = resolvePath(artifactMetaData.getStorageId(), repoTemp, artifactPathTemp);
-                JSONObject metadataJson = getMetadata(artifact);
-                metadataJson = metadataJson == null ? new JSONObject() : metadataJson;
-                for (ArtifactMetadataForm artifactMetadataForm : artifactMetadataFormList) {
-                    String key = artifactMetadataForm.getKey();
-                    ArtifactMetadata artifactMetadata = ArtifactMetadata.builder().build();
-                    BeanUtils.copyProperties(artifactMetadataForm, artifactMetadata);
-                    metadataJson.put(key, artifactMetadata);
-                }
-                artifact.setMetadata(metadataJson.toJSONString());
-                artifactService.saveOrUpdateArtifact(artifact);
-                repositoryPath.setArtifact(artifact);
-                artifactEvent.dispatchArtifactMetaDataEvent(repositoryPath);
-            } catch (Exception e) {
-                log.error("=====>>>>>dokcer raw 共用一个仓库场景,批量新增制品元数据错误：{}", ExceptionUtils.getStackTrace(e));
-                throw new RuntimeException("批量新增制品元数据错误，请稍后重试");
-            }
-        }
-    }
-
-    private Artifact resolvePathByDockerOrRaw(String storageId, String repositoryId, String artifactPath) throws IOException {
-        RepositoryPath repositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, artifactPath);
-        Artifact artifact = Objects.nonNull(repositoryPath) ? repositoryPath.getArtifactEntry() : null;
-        if (Objects.isNull(artifact)) {
-            //兼容已存在数据的docker布局仓库
-            Repository repository = configurationManagementService.getConfiguration().getRepository(storageId, repositoryId);
-            if (DockerLayoutProvider.ALIAS.equalsIgnoreCase(repository.getLayout())) {
-                //docker
-                artifact = getDockerArtifact(artifactPath, storageId, repositoryId);
-                return artifact;
-            }
-        }
-        return artifact;
     }
 
     /**
@@ -633,7 +559,7 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
     @Override
     @Async("asyncThreadPoolTaskExecutor")
     public void buildGraphIndex(String username, String storageId, String repositoryId, String path, Integer batch) {
-        log.info("=====>>>>> buildGraphIndex is started");
+        log.info("BuildGraphIndex is started");
         Long dictId = 0L;
         try {
             Dict existsDict = dictService.selectLatestOneDict(Dict.builder().dictType(DictTypeEnum.BUILD_GRAPH_INDEX.getType()).build());
@@ -675,10 +601,10 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
             }
             dictService.updateDict(DictForm.builder().id(dictId).comment("构建完成").build());
         } catch (Exception ex) {
-            log.error("=====>>>>> buildGraphIndex is error：{}", ExceptionUtils.getStackTrace(ex));
+            log.error("BuildGraphIndex is error：{}", ExceptionUtils.getStackTrace(ex));
             dictService.updateDict(DictForm.builder().id(dictId).comment("构建错误").build());
         }
-        log.info("=====>>>>> buildGraphIndex is finished");
+        log.info("BuildGraphIndex is finished");
     }
 
     @Override
@@ -1024,7 +950,7 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
         for (FutureTask<String> task : futureTaskList) {
             task.get();
         }
-        log.info("=====>>>>> handlerNFSFiles is finished");
+        log.info("handlerNFSFiles is finished");
         return resultList;
     }
 
@@ -1138,7 +1064,7 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
         for (FutureTask<String> task : futureTaskList) {
             task.get();
         }
-        log.info("=====>>>>> handlerS3Paths is finished");
+        log.info("handlerS3Paths is finished");
         return listFile;
     }
 

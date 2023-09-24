@@ -4,9 +4,7 @@ import cn.hutool.core.date.DateUtil;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
-import com.beust.jcommander.internal.Lists;
 import com.veadan.folib.booters.PropertiesBooter;
-import com.veadan.folib.config.FolibPublicUtils;
 import com.veadan.folib.dependency.snippet.CodeSnippet;
 import com.veadan.folib.dependency.snippet.SnippetGenerator;
 import com.veadan.folib.domain.Artifact;
@@ -19,12 +17,12 @@ import com.veadan.folib.schema2.ImageManifest;
 import com.veadan.folib.schema2.LayerManifest;
 import com.veadan.folib.schema2.Manifests;
 import com.veadan.folib.services.ArtifactManagementService;
+import com.veadan.folib.services.ConfigurationManagementService;
 import com.veadan.folib.services.DirectoryListingService;
 import com.veadan.folib.storage.ArtifactStorageException;
 import com.veadan.folib.storage.Storage;
 import com.veadan.folib.storage.repository.Repository;
 import com.veadan.folib.storage.repository.RepositoryTypeEnum;
-import com.veadan.folib.util.RepositoryPathUtil;
 import com.veadan.folib.utils.TreeUtil;
 import com.veadan.folib.web.RepositoryMapping;
 import io.swagger.annotations.*;
@@ -63,7 +61,7 @@ import static org.springframework.http.HttpStatus.OK;
  */
 @RestController
 @RequestMapping(path = BrowseController.ROOT_CONTEXT)
-@Api(description = "浏览存储/存储库/文件系统结构 控制器",tags = "浏览存储/存储库/文件系统结构 控制器")
+@Api(description = "浏览存储/存储库/文件系统结构 控制器", tags = "浏览存储/存储库/文件系统结构 控制器")
 public class BrowseController
         extends BaseController {
 
@@ -73,12 +71,15 @@ public class BrowseController
     public final static String ROOT_CONTEXT = "/api/browse";
     @Inject
     protected ArtifactManagementService artifactManagementService;
+
     @Inject
     private SnippetGenerator snippetGenerator;
 
     @Inject
     private PropertiesBooter propertiesBooter;
 
+    @Inject
+    private ConfigurationManagementService configurationManagementService;
 
     @Inject
     @Qualifier("browseRepositoryDirectoryListingService")
@@ -154,7 +155,7 @@ public class BrowseController
                 String configDigest = "";
                 if (Objects.nonNull(imageManifest.getConfig())) {
                     configDigest = imageManifest.getConfig().getDigest();
-                } else if (CollectionUtils.isNotEmpty(imageManifest.getManifests())){
+                } else if (CollectionUtils.isNotEmpty(imageManifest.getManifests())) {
                     Manifests manifests = imageManifest.getManifests().get(0);
                     if (StringUtils.isNotBlank(digest)) {
                         Optional<Manifests> optionalManifests = imageManifest.getManifests().stream().filter(item -> item.getDigest().equals(digest)).findFirst();

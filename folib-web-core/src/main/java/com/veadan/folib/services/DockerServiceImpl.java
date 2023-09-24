@@ -70,7 +70,7 @@
 ////                    .withRegistryAddress(this.respositry);
 //        } catch (Exception e) {
 //            log.error(ExceptionUtils.getStackTrace(e));
-//            throw new Exception("=====>>>>>doccker 服务器连接异常，请检查服务器以及客户端端口是否打开");
+//            throw new Exception("doccker 服务器连接异常，请检查服务器以及客户端端口是否打开");
 //        }
 //
 //    }
@@ -83,13 +83,13 @@
 //    private   PushImageResultCallback push = new PushImageResultCallback() {
 //        @Override
 //        public void onNext(PushResponseItem item) {
-//            log.info("=====>>>>>推送镜像中" + JSONObject.toJSONString(item));
+//            log.info("推送镜像中" + JSONObject.toJSONString(item));
 //            super.onNext(item);
 //        }
 //
 //        @Override
 //        public void onComplete() {
-//            log.info("=====>>>>>推送镜像完成=====================");
+//            log.info("推送镜像完成=====================");
 //            super.onComplete();
 //        }
 //    };
@@ -159,7 +159,7 @@
 //            dockerClient.pushImageCmd(storagePath + ":" + tag).withAuthConfig(authConfig).exec(push).awaitSuccess();
 //        }catch (Exception e){
 //            log.error(ExceptionUtils.getStackTrace(e));
-//            throw  new Exception("=====>>>>>制品同步失败"+e.getMessage());
+//            throw  new Exception("制品同步失败"+e.getMessage());
 //        }
 //
 //    }

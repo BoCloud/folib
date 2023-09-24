@@ -44,9 +44,9 @@ import org.slf4j.LoggerFactory;
 /**
  * This class decorates {@link StorageFileSystemProvider} with common layout specific
  * logic. <br>
- * 
+ *
  * @author xuxinping
- * 
+ *
  * @see LayoutProvider
  */
 public abstract class LayoutFileSystemProvider extends StorageFileSystemProvider
@@ -56,10 +56,10 @@ public abstract class LayoutFileSystemProvider extends StorageFileSystemProvider
 
     @Inject
     private ArtifactEventListenerRegistry artifactEventListenerRegistry;
-    
+
     @Inject
     private RepositoryEventListenerRegistry repositoryEventListenerRegistry;
-    
+
     @Inject
     private ArtifactRepository artifactEntityRepository;
 
@@ -73,12 +73,12 @@ public abstract class LayoutFileSystemProvider extends StorageFileSystemProvider
     }
 
     protected abstract AbstractLayoutProvider getLayoutProvider();
-    
+
     @Override
     public LazyInputStream newInputStream(Path path,
                                           OpenOption... options)
             throws IOException
-    {        
+    {
         return new LazyInputStream(() -> {
             try
             {
@@ -86,14 +86,14 @@ public abstract class LayoutFileSystemProvider extends StorageFileSystemProvider
                 {
                     throw new ArtifactNotFoundException(path.toUri());
                 }
-                
+
                 if (Files.isDirectory(path))
                 {
                     throw new ArtifactNotFoundException(path.toUri(),
-                                                        String.format("The artifact path is a directory: [%s]",
-                                                                      path.toString()));
+                            String.format("The artifact path is a directory: [%s]",
+                                    path.toString()));
                 }
-                
+
                 ByteRangeInputStream bris = new ByteRangeInputStream(super.newInputStream(path, options));
                 bris.setReloadableInputStreamHandler(new FSReloadableInputStreamHandler(path));
                 bris.setLength(Files.size(path));
@@ -127,7 +127,7 @@ public abstract class LayoutFileSystemProvider extends StorageFileSystemProvider
 
         return path.resolveSibling(path.getFileName().toString().concat(checksumExtension));
     }
-    
+
     @Override
     public LazyOutputStream newOutputStream(Path path,
                                             OpenOption... options)
@@ -137,7 +137,7 @@ public abstract class LayoutFileSystemProvider extends StorageFileSystemProvider
             if (Files.exists(path) && Files.isDirectory(path))
             {
                 throw new ArtifactResolutionException(String.format("The artifact path is a directory: [%s]",
-                                                                    path.toString()));
+                        path.toString()));
             }
 
             Files.createDirectories(path.getParent());
@@ -159,57 +159,57 @@ public abstract class LayoutFileSystemProvider extends StorageFileSystemProvider
     {
         Set<String> digestAlgorithmSet = path.getFileSystem().getDigestAlgorithmSet();
         LayoutOutputStream result = new LayoutOutputStream(os);
-        
+
         // Add digest algorithm only if it is not a Checksum (we don't need a Checksum of Checksum).
         if (Boolean.TRUE.equals(RepositoryFiles.isChecksum(path)))
         {
             return result;
         }
-        
+
         digestAlgorithmSet.stream()
-                          .forEach(e -> {
-                              try
-                              {
-                                  result.addAlgorithm(e);
-                              }
-                              catch (NoSuchAlgorithmException t)
-                              {
-                                  logger.error("Digest algorithm not supported: alg-[{}]", e, t);
-                              }
-                          });
+                .forEach(e -> {
+                    try
+                    {
+                        result.addAlgorithm(e);
+                    }
+                    catch (NoSuchAlgorithmException t)
+                    {
+                        logger.error("Digest algorithm not supported: alg-[{}]", e, t);
+                    }
+                });
         return result;
     }
-    
+
     public void storeChecksum(RepositoryPath basePath,
                               boolean forceRegeneration)
             throws IOException
     {
         Files.walk(basePath)
-             .filter(p -> !Files.isDirectory(p))
-             .filter(p -> {
-                 try
-                 {
-                     return !Boolean.TRUE.equals(RepositoryFiles.isChecksum((RepositoryPath) p));
-                 }
-                 catch (IOException e)
-                 {
-                     logger.error("Failed to read attributes for [{}]", p, e);
-                 }
-                 return false;
-             })
-             .forEach(p -> {
-                 try
-                 {
-                     writeChecksum((RepositoryPath) p, forceRegeneration);
-                 }
-                 catch (IOException e)
-                 {
-                     logger.error("Failed to write checksum for [{}]", p, e);
-                 }
-             });
+                .filter(p -> !Files.isDirectory(p))
+                .filter(p -> {
+                    try
+                    {
+                        return !Boolean.TRUE.equals(RepositoryFiles.isChecksum((RepositoryPath) p));
+                    }
+                    catch (IOException e)
+                    {
+                        logger.error("Failed to read attributes for [{}]", p, e);
+                    }
+                    return false;
+                })
+                .forEach(p -> {
+                    try
+                    {
+                        writeChecksum((RepositoryPath) p, forceRegeneration);
+                    }
+                    catch (IOException e)
+                    {
+                        logger.error("Failed to write checksum for [{}]", p, e);
+                    }
+                });
     }
 
-    
+
     protected void writeChecksum(RepositoryPath path,
                                  boolean force)
             throws IOException
@@ -221,27 +221,28 @@ public abstract class LayoutFileSystemProvider extends StorageFileSystemProvider
             {
                 //calculate checksum while reading the stream
             }
+            String layout = path.getRepository().getLayout();
             Set<String> digestAlgorithmSet = path.getFileSystem().getDigestAlgorithmSet();
             digestAlgorithmSet.stream()
-                              .forEach(p ->
-                                       {
-                                           String checksum = StreamUtils.findSource(LayoutInputStream.class, is)
-                                                                        .getMessageDigestAsHexadecimalString(p);
-                                           RepositoryPath checksumPath = getChecksumPath(path, p);
-                                           if (Files.exists(checksumPath) && !force)
-                                           {
-                                               return;
-                                           }
-                                           try
-                                           {
-                                               Files.write(checksumPath, checksum.getBytes());
-                                           }
-                                           catch (IOException e)
-                                           {
-                                               logger.error("Failed to write checksum for [{}]",
-                                                            checksumPath.toString(), e);
-                                           }
-                                       });
+                    .forEach(p ->
+                    {
+                        String checksum = StreamUtils.findSource(LayoutInputStream.class, is)
+                                .getMessageDigestAsHexadecimalString(p, layout);
+                        RepositoryPath checksumPath = getChecksumPath(path, p);
+                        if (Files.exists(checksumPath) && !force)
+                        {
+                            return;
+                        }
+                        try
+                        {
+                            Files.write(checksumPath, checksum.getBytes());
+                        }
+                        catch (IOException e)
+                        {
+                            logger.error("Failed to write checksum for [{}]",
+                                    checksumPath.toString(), e);
+                        }
+                    });
         }
     }
 
@@ -259,7 +260,7 @@ public abstract class LayoutFileSystemProvider extends StorageFileSystemProvider
         if (!Files.exists(path))
         {
             logger.warn("Path not found: path-[{}]", path);
-            
+
             return;
         }
 
@@ -284,16 +285,16 @@ public abstract class LayoutFileSystemProvider extends StorageFileSystemProvider
             super.doDeletePath(repositoryPath, force);
             return;
         }
-        
+
         Artifact artifactEntry = Optional.ofNullable(repositoryPath.getArtifactEntry())
-                                         .orElseGet(() -> fetchArtifactEntry(repositoryPath));
+                .orElseGet(() -> fetchArtifactEntry(repositoryPath));
         if (artifactEntry != null)
         {
             Set<String> vulnerabilities = Optional.ofNullable(artifactEntry.getVulnerabilitySet()).orElse(Collections.emptySet()).stream().map(Vulnerability::getUuid).collect(Collectors.toSet());
             artifactEntityRepository.delete(artifactEntry);
             vulnerabilityRepository.handlerVulnerabilityForArtifactDelete(vulnerabilities);
         }
-        
+
         super.doDeletePath(repositoryPath, force);
     }
 
@@ -312,8 +313,8 @@ public abstract class LayoutFileSystemProvider extends StorageFileSystemProvider
         }
 
         return artifactEntityRepository.findOneArtifact(repository.getStorage().getId(),
-                                                        repository.getId(),
-                                                        path);
+                repository.getId(),
+                path);
     }
 
     @Override
@@ -332,8 +333,8 @@ public abstract class LayoutFileSystemProvider extends StorageFileSystemProvider
         logger.info("Trash for {}:{} removed.", storage.getId(), repository.getId());
     }
 
-    
-    
+
+
     @Override
     public void undelete(RepositoryPath path)
             throws IOException
@@ -342,7 +343,7 @@ public abstract class LayoutFileSystemProvider extends StorageFileSystemProvider
         Storage storage = repository.getStorage();
 
         logger.info("Attempting to restore: [{}]; ", path);
-        
+
         super.undelete(path);
 
         repositoryEventListenerRegistry.dispatchUndeleteTrashEvent(storage.getId(), repository.getId());
@@ -357,17 +358,17 @@ public abstract class LayoutFileSystemProvider extends StorageFileSystemProvider
     {
         return getLayoutProvider().getRepositoryFileAttributes(repositoryRelativePath, attributeTypes);
     }
-    
+
     protected void deleteMetadata(RepositoryPath repositoryPath)
             throws IOException
     {
 
     }
-    
+
     public class PathOutputStreamSupplier implements OutputStreamSupplier
     {
         private Path path;
-        
+
         private OpenOption[] options;
 
         public PathOutputStreamSupplier(Path path,

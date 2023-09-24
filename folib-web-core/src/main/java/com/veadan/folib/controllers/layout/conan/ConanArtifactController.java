@@ -14,13 +14,8 @@ import com.veadan.folib.users.security.JwtAuthenticationClaimsProvider;
 import com.veadan.folib.users.security.JwtClaimsProvider;
 import com.veadan.folib.users.security.SecurityTokenProvider;
 import com.veadan.folib.users.userdetails.SpringSecurityUser;
-import com.veadan.folib.web.Constants;
-import com.veadan.folib.web.LayoutRequestMapping;
 import com.veadan.folib.web.RepositoryMapping;
 import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
-import io.swagger.annotations.ApiResponse;
-import io.swagger.annotations.ApiResponses;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.codec.digest.MessageDigestAlgorithms;
 import org.apache.commons.collections4.CollectionUtils;
@@ -52,7 +47,7 @@ import java.util.regex.Pattern;
 //@LayoutRequestMapping("conan")
 @RestController
 @Slf4j
-@Api(description = "Conan坐标控制器",tags = "Conan坐标控制器")
+@Api(description = "Conan坐标控制器", tags = "Conan坐标控制器")
 public class ConanArtifactController extends BaseArtifactController {
 
     @Autowired
@@ -137,6 +132,9 @@ public class ConanArtifactController extends BaseArtifactController {
                                            @RequestHeader(HttpHeaders.ACCEPT) String accept,
                                            @RequestHeader HttpHeaders httpHeaders,
                                            HttpServletRequest request, HttpServletResponse response) {
+        if (Objects.isNull(authentication)) {
+            return new ResponseEntity<>(HttpStatus.UNAUTHORIZED.getReasonPhrase(), HttpStatus.UNAUTHORIZED);
+        }
         return new ResponseEntity<>("ok", HttpStatus.OK);
     }
 
@@ -312,22 +310,33 @@ public class ConanArtifactController extends BaseArtifactController {
     @PreAuthorize("hasAuthority('ARTIFACTS_RESOLVE')")
     @RequestMapping(value = "{storageId}/{repositoryId}/v1/files/{path:.+}",
             method = {RequestMethod.PUT})
-    public ResponseEntity uploadFiles(@RepositoryMapping Repository repository,
+    public ResponseEntity uploadFiles(HttpServletRequest request,
+                                      @RepositoryMapping Repository repository,
                                       @PathVariable("path") String path,
                                       @RequestBody(required = false) byte[] is) throws IOException {
+        final String storageId = repository.getStorage().getId();
+        final String repositoryId = repository.getId();
         if (is == null) {
+            String checksumDeploy = request.getHeader("X-Checksum-Deploy"), checksumSha1 = request.getHeader("X-Checksum-Sha1");
+            if (Boolean.TRUE.equals(Boolean.valueOf(checksumDeploy)) && StringUtils.isNotBlank(checksumSha1)) {
+                RepositoryPath repositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, path);
+                if (artifactRealExists(repositoryPath)) {
+                    String sha1 = repositoryPath.getArtifactEntry().getChecksums().getOrDefault(MessageDigestAlgorithms.SHA_1, "");
+                    if (checksumSha1.equals(sha1)) {
+                        return ResponseEntity.status(HttpStatus.CREATED).body("The artifact was exists.");
+                    }
+                }
+            }
             return new ResponseEntity<>(HttpStatus.NOT_FOUND.getReasonPhrase(), HttpStatus.NOT_FOUND);
         }
         try (InputStream inputStream = new ByteArrayInputStream(is)) {
-            final String storageId = repository.getStorage().getId();
-            final String repositoryId = repository.getId();
             RepositoryPath repositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, path);
             logger.info("conan upload path {}", repositoryPath.toString());
             artifactManagementService.validateAndStore(repositoryPath, inputStream);
             return ResponseEntity.status(HttpStatus.CREATED).body("The artifact was deployed successfully.");
         } catch (Exception e) {
             logger.error(e.getMessage(), e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(e.getMessage());
         }
     }
 
@@ -389,7 +398,7 @@ public class ConanArtifactController extends BaseArtifactController {
         }
         return ResponseEntity.ok(ConanInfo.builder().recipeInfo(conanRecipeInfo).packageCount(packageCount).build());
     }
-    
+
     @PreAuthorize("hasAuthority('ARTIFACTS_RESOLVE')")
     @RequestMapping(value = {"/api/conan/packageInfo"}, method = {RequestMethod.POST})
     public ResponseEntity<ConanPackageInfo> packageInfo(@RequestHeader HttpHeaders httpHeaders,

@@ -7,6 +7,7 @@ import com.alibaba.fastjson.JSONException;
 import com.alibaba.fastjson.JSONObject;
 import com.beust.jcommander.internal.Sets;
 import com.veadan.folib.cloud.storage.s3fs.S3Path;
+import com.veadan.folib.components.artifact.ArtifactComponent;
 import com.veadan.folib.components.license.LicenseComponent;
 import com.veadan.folib.domain.Artifact;
 import com.veadan.folib.domain.Component;
@@ -38,6 +39,7 @@ import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.compress.utils.Lists;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
+import org.owasp.dependencycheck.analyzer.Analyzer;
 import org.owasp.dependencycheck.data.update.exception.UpdateException;
 import org.owasp.dependencycheck.dependency.*;
 import org.owasp.dependencycheck.dependency.naming.Identifier;
@@ -94,6 +96,10 @@ public class ScanService {
     @Inject
     private LicenseComponent licenseComponent;
 
+    @Inject
+    @Lazy
+    private ArtifactComponent artifactComponent;
+
     @Value("${folib.temp}")
     private String tempPath;
 
@@ -138,7 +144,7 @@ public class ScanService {
         } catch (Exception e) {
             artifact.setSafeLevel(SafeLevelEnum.SCAN_FAIL.getLevel());
             artifactService.saveOrUpdateArtifact(artifact);
-            log.error("=====>>>>>执行扫描失败：{}", ExceptionUtils.getStackTrace(e));
+            log.error("执行扫描失败：{}", ExceptionUtils.getStackTrace(e));
             throw new BusinessException("文件解析失败");
         }
     }
@@ -167,12 +173,12 @@ public class ScanService {
                 File tempFile = new File(filePath);
                 FileUtil.writeFromStream(inputStream, tempFile, true);
             }
-            log.info("=====>>>>> 扫描路径：{}", filePath);
+            log.info("扫描路径：{}", filePath);
             engine.scan(filePath);
             engine.analyzeDependencies();
             return engine.getDependencies();
         } catch (Exception ex) {
-            log.error("=====>>>>>scanWorker error：{}", ExceptionUtils.getStackTrace(ex));
+            log.error("ScanWorker error：{}", ExceptionUtils.getStackTrace(ex));
             throw new RuntimeException(ex);
         } finally {
             //删除临时文件
@@ -220,7 +226,7 @@ public class ScanService {
                 count1 = a.getVulnerabilitiesCount();
                 count2 = b.getVulnerabilitiesCount();
             } catch (JSONException e) {
-                log.error("=====>>>>>处理扫描报告失败：{}", ExceptionUtils.getStackTrace(e));
+                log.error("处理扫描报告失败：{}", ExceptionUtils.getStackTrace(e));
             }
             return count2.compareTo(count1);
         });
@@ -275,13 +281,13 @@ public class ScanService {
         component.setSha256sum(dependency.getSha256sum());
         if (CollectionUtils.isNotEmpty(licenses)) {
             if (StringUtils.isNotBlank(dependency.getLicense())) {
-                log.info("dependency license [{}]", dependency.getLicense());
+                log.info("Dependency license [{}]", dependency.getLicense());
                 String[] dependencyLicenses = dependency.getLicense().split(",");
                 Set<String> licenseSet = Sets.newLinkedHashSet();
                 for (String license : dependencyLicenses) {
                     licenseSet.addAll(licenses.stream().filter(item -> StringUtils.isNotBlank(item.getLicenseUrl())).filter(item -> Arrays.stream(item.getLicenseUrl().split(",")).anyMatch(license::contains)).map(License::getLicenseId).collect(Collectors.toSet()));
                 }
-                log.info("licenseSet {}", licenseSet);
+                log.info("LicenseSet {}", licenseSet);
                 component.setLicense(licenseSet);
             }
         }
@@ -419,6 +425,8 @@ public class ScanService {
                     artifact.setComponentSet(Collections.singleton(new ComponentEntity("drop")));
                 }
                 artifactService.saveOrUpdateArtifact(artifact);
+                RepositoryPath repositoryPath = repositoryPathResolver.resolve(artifact.getStorageId(), artifact.getRepositoryId(), artifact.getArtifactPath());
+                artifactComponent.storeArtifactMetadataFile(repositoryPath);
                 if (CollectionUtils.isNotEmpty(artifact.getVulnerabilitySet())) {
                     List<com.veadan.folib.domain.Vulnerability> vulnerabilityList = Lists.newArrayList();
                     vulnerabilityList.addAll(artifact.getVulnerabilitySet());
@@ -426,7 +434,7 @@ public class ScanService {
                 }
             }
         } catch (Exception ex) {
-            log.error("=====>>>>>更新制品扫描数据到图数据库失败：{}", ExceptionUtils.getStackTrace(ex));
+            log.error("更新制品扫描数据到图数据库失败：{}", ExceptionUtils.getStackTrace(ex));
             throw new RuntimeException(ex);
         }
     }

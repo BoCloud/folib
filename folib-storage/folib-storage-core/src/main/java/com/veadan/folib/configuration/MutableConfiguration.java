@@ -76,6 +76,8 @@ public class MutableConfiguration
      */
     private Map<String, MutableWebhookConfiguration> webhookConfiguration = new LinkedHashMap<>();
 
+    private MutableAdvancedConfiguration advancedConfiguration = new MutableAdvancedConfiguration();
+
     public String getId() {
         return id;
     }
@@ -340,6 +342,14 @@ public class MutableConfiguration
         this.webhookConfiguration.put(uuid, mutableWebhookConfiguration);
     }
 
+    public MutableAdvancedConfiguration getAdvancedConfiguration() {
+        return advancedConfiguration;
+    }
+
+    public void setAdvancedConfiguration(MutableAdvancedConfiguration advancedConfiguration) {
+        this.advancedConfiguration = advancedConfiguration;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) {
@@ -362,13 +372,14 @@ public class MutableConfiguration
                 Objects.equal(smtpConfiguration, that.smtpConfiguration) &&
                 Objects.equal(securityPolicyConfiguration, that.securityPolicyConfiguration) &&
                 Objects.equal(metadataConfiguration, that.metadataConfiguration) &&
-                Objects.equal(webhookConfiguration, that.webhookConfiguration);
+                Objects.equal(webhookConfiguration, that.webhookConfiguration) &&
+                Objects.equal(advancedConfiguration, that.advancedConfiguration);
     }
 
     @Override
     public int hashCode() {
         return Objects.hashCode(version, baseUrl, port, proxyConfiguration, sessionConfiguration, storages,
-                routingRules, securityPolicyConfiguration, remoteRepositoriesConfiguration, corsConfiguration, smtpConfiguration, metadataConfiguration, webhookConfiguration);
+                routingRules, securityPolicyConfiguration, remoteRepositoriesConfiguration, corsConfiguration, smtpConfiguration, metadataConfiguration, webhookConfiguration, advancedConfiguration);
     }
 
     @Override
@@ -388,6 +399,7 @@ public class MutableConfiguration
                 .add("\n\tsmtpConfiguration", smtpConfiguration)
                 .add("\n\tmetadataConfiguration", metadataConfiguration)
                 .add("\n\twebhookConfiguration", webhookConfiguration)
+                .add("\n\tadvancedConfiguration", advancedConfiguration)
                 .toString();
     }
 

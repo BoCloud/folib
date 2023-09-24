@@ -74,9 +74,24 @@
               </a-select>
             </div>
             <a-table v-if="permissionForm.userList && permissionForm.userList.length >0" :columns="permissionColumns" :data-source="permissionForm.userList" :scroll="{ x: true }" :pagination="false" rowKwy="username">
+              <template slot="customTitle">
+                路径 
+                <a-popover placement="topLeft">
+                  <template slot="content">
+                    <p class="mb-0">不填写路径，是对整个仓库的权限设置，</p>
+                    <p class="mb-0">填写了路径，是对仓库下路径的权限设置，</p>
+                    <p class="mb-0">支持设置多个路径之间用逗号（","）分隔，</p>
+                    <p class="mb-0">示例路径：example/a,example/b。</p>
+                  </template>
+                  <a class="ml-5"><a-icon type="question-circle" theme="filled" /></a>
+                </a-popover>
+              </template>
               <template slot="username" slot-scope="text, record">
                 <p class="username">{{record.username}}</p>
                 <small v-if="record.permissions && record.permissions.length>0">{{'拥有该仓库的' + (record.permissions.length === 2?'上传、删除权限':(record.permissions.includes('ARTIFACTS_DEPLOY')?'上传权限':'删除权限'))}}</small>
+              </template>
+              <template slot="paths" slot-scope="text, record">
+                <a-textarea class="description" :rows="4" v-model="record.paths" placeholder="请输入路径"/>
               </template>
               <template slot="deploy" slot-scope="text, record">
                 <a-switch :checked="record.permissions&&record.permissions.includes('ARTIFACTS_DEPLOY')" @change="deploySwitchChange($event, record)" checked-children="是" un-checked-children="否"/>
@@ -152,7 +167,13 @@ export default {
           title: "用户名",
           dataIndex: "username",
           scopedSlots: { customRender: "username" },
-          width: 350,
+          width: 150,
+        },
+        {
+          dataIndex: "paths",
+          slots: { title: 'customTitle' },
+          scopedSlots: { customRender: "paths" },
+          width: 250,
         },
         {
           title: "上传",
@@ -209,6 +230,9 @@ export default {
       this.getUsersList()
       this.getStorage()
       this.userRadioDefault = 0
+      if (this.folibRepository.layout !== 'Raw') {
+        this.permissionColumns.splice(this.permissionColumns.findIndex((item) => item.dataIndex === 'paths'), 1)
+      }
     },
     successMsg(message) {
       if (!message) {
@@ -299,7 +323,8 @@ export default {
             })
             return false
           }
-          for (let item of this.permissionForm.userList) {
+          let userData = this.permissionForm.userList
+          for (let item of userData) {
             if (this.permissionForm.scope === 1 && !this.storageUsers.includes(item.username)) {
               this.$notification.warning({
                 message: "仓库可见范围改为存储空间内，用户" + item.username + "不属于该存储空间，需要先从授权列表中移除",
@@ -314,11 +339,17 @@ export default {
               })
               return false
             }
+            if (item.paths == "") {
+              item.paths = null
+            }
+            if (item.paths) {
+              item.paths = item.paths.split(",")
+            }
           }
           let data = {
             scope: this.permissionForm.scope,
             allowAnonymous: this.permissionForm.allowAnonymous,
-            userList: this.permissionForm.userList
+            userList: userData
           }
           repositoryPermission(this.folibRepository.storageId, this.folibRepository.id, data).then(res => {
             this.successMsg("仓库设置成功")

@@ -29,11 +29,13 @@ public class TreeUtil {
                     setType("DIR");
                     setIsLeaf(false);
                     ArrayList<FileObj> objects = new ArrayList<>();
-                    str2List(str.replaceFirst(current + "/", ""), objects);
+                    str2List(str.substring(current.length() + 1), objects);
+//                    str2List(str.replaceFirst(current + "/", ""), objects);
                     setChildren(objects);
                 }});
             } else {
-                str2List(str.replaceFirst(current + "/", ""), fileObj.getChildren());
+                str2List(str.substring(current.length() + 1), fileObj.getChildren());
+//                str2List(str.replaceFirst(current + "/", ""), fileObj.getChildren());
             }
         } else {
             if(!StringUtils.isEmpty(str)){

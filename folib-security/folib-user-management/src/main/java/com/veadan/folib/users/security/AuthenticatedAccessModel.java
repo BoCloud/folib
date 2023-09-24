@@ -2,6 +2,7 @@ package com.veadan.folib.users.security;
 
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 import com.veadan.folib.users.domain.Privileges;
@@ -37,8 +38,8 @@ public class AuthenticatedAccessModel implements AccessModel
     }
 
     @Override
-    public Set<Privileges> getPathAuthorities(String storageId, String repositoryId) {
-        return target.getPathAuthorities(storageId, repositoryId);
+    public Set<Privileges> getPathAuthorities(String storageId, String repositoryId, List<String> paths) {
+        return target.getPathAuthorities(storageId, repositoryId, paths);
     }
 
 }

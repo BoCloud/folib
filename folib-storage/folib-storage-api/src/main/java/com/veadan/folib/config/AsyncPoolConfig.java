@@ -5,7 +5,6 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 
-import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadPoolExecutor;
 
 @Configuration
@@ -209,6 +208,24 @@ public class AsyncPoolConfig {
     @Value("${folib.threadPool.asyncScan.awaitTerminationSeconds}")
     private Integer asyncScanAwaitTerminationSeconds;
 
+    @Value("${folib.threadPool.asyncDownloadArtifact.corePoolSize}")
+    private Integer asyncDownloadArtifactCorePoolSize;
+
+    @Value("${folib.threadPool.asyncDownloadArtifact.maxPoolSize}")
+    private Integer asyncDownloadArtifactMaxPoolSize;
+
+    @Value("${folib.threadPool.asyncDownloadArtifact.queueCapacity}")
+    private Integer asyncDownloadArtifactQueueCapacity;
+
+    @Value("${folib.threadPool.asyncDownloadArtifact.keepAliveSeconds}")
+    private Integer asyncDownloadArtifactKeepAliveSeconds;
+
+    @Value("${folib.threadPool.asyncDownloadArtifact.threadNamePrefix}")
+    private String asyncDownloadArtifactThreadNamePrefix;
+
+    @Value("${folib.threadPool.asyncDownloadArtifact.awaitTerminationSeconds}")
+    private Integer asyncDownloadArtifactAwaitTerminationSeconds;
+
     @Bean
     public ThreadPoolTaskExecutor asyncThreadPoolTaskExecutor() {
         return buildThreadPoolTaskExecutor(asyncCorePoolSize, asyncMaxPoolSize, asyncQueueCapacity, asyncKeepAliveSeconds, asyncThreadNamePrefix, asyncAwaitTerminationSeconds);
@@ -235,8 +252,8 @@ public class AsyncPoolConfig {
     }
 
     @Bean
-    public ThreadPoolTaskExecutor asyncClusterDispatchThreadPoolExecutor(){
-        return buildThreadPoolTaskExecutor(asyncClusterDispatchCorePoolSize,asyncClusterDispatchMaxPoolSize,asyncClusterDispatchQueueCapacity,asyncClusterDispatchKeepAliveSeconds,asyncClusterDispatchThreadNamePrefix,asyncClusterDispatchAwaitTerminationSeconds);
+    public ThreadPoolTaskExecutor asyncClusterDispatchThreadPoolExecutor() {
+        return buildThreadPoolTaskExecutor(asyncClusterDispatchCorePoolSize, asyncClusterDispatchMaxPoolSize, asyncClusterDispatchQueueCapacity, asyncClusterDispatchKeepAliveSeconds, asyncClusterDispatchThreadNamePrefix, asyncClusterDispatchAwaitTerminationSeconds);
     }
 
     @Bean
@@ -250,7 +267,7 @@ public class AsyncPoolConfig {
     }
 
     @Bean
-    public ThreadPoolTaskExecutor asyncRepositoryCleanupThreadPoolExecutor(){
+    public ThreadPoolTaskExecutor asyncRepositoryCleanupThreadPoolExecutor() {
         return buildThreadPoolTaskExecutor(
                 asyncRepositoryCleanupCorePoolSize,
                 asyncRepositoryCleanupMaxPoolSize,
@@ -262,7 +279,7 @@ public class AsyncPoolConfig {
     }
 
     @Bean
-    public ThreadPoolTaskExecutor asyncFetchRemotePackageThreadPoolTaskExecutor(){
+    public ThreadPoolTaskExecutor asyncFetchRemotePackageThreadPoolTaskExecutor() {
         return buildThreadPoolTaskExecutor(
                 asyncFetchRemotePackageCorePoolSize,
                 asyncFetchRemotePackageMaxPoolSize,
@@ -273,7 +290,7 @@ public class AsyncPoolConfig {
     }
 
     @Bean
-    public ThreadPoolTaskExecutor asyncScanThreadPoolTaskExecutor(){
+    public ThreadPoolTaskExecutor asyncScanThreadPoolTaskExecutor() {
         return buildThreadPoolTaskExecutor(
                 asyncScanCorePoolSize,
                 asyncScanMaxPoolSize,
@@ -281,6 +298,17 @@ public class AsyncPoolConfig {
                 asyncScanKeepAliveSeconds,
                 asyncScanThreadNamePrefix,
                 asyncScanAwaitTerminationSeconds);
+    }
+
+    @Bean
+    public ThreadPoolTaskExecutor asyncDownloadArtifactThreadPoolTaskExecutor() {
+        return buildThreadPoolTaskExecutor(
+                asyncDownloadArtifactCorePoolSize,
+                asyncDownloadArtifactMaxPoolSize,
+                asyncDownloadArtifactQueueCapacity,
+                asyncDownloadArtifactKeepAliveSeconds,
+                asyncDownloadArtifactThreadNamePrefix,
+                asyncDownloadArtifactAwaitTerminationSeconds);
     }
 
     /**

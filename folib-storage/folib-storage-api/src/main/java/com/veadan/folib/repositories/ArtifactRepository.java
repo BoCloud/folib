@@ -213,8 +213,8 @@ public class ArtifactRepository extends GremlinVertexRepository<Artifact> {
     }
 
     public long countByVulnerabilityUuid(String vulnerabilityUuid,
-                                                          String storageId,
-                                                          List<String> storageIdAndRepositoryIdList) {
+                                         String storageId,
+                                         List<String> storageIdAndRepositoryIdList) {
         return buildEntityTraversalByVulnerabilityUuid(vulnerabilityUuid, storageId, storageIdAndRepositoryIdList).count().tryNext().orElse(0L);
     }
 
@@ -521,7 +521,7 @@ public class ArtifactRepository extends GremlinVertexRepository<Artifact> {
     }
 
     private EntityTraversal<Vertex, Vertex> buildEntityTraversalByComponentUuid(String componentUuid,
-                                                                                    String artifactPath) {
+                                                                                String artifactPath) {
         EntityTraversal<Vertex, Vertex> entityTraversal = g().V().hasLabel(Vertices.COMPONENT)
                 .has(Properties.UUID, componentUuid).inE(Edges.ARTIFACT_HAS_COMPONENTS).outV();
         if (StringUtils.isNotBlank(artifactPath)) {
@@ -533,6 +533,8 @@ public class ArtifactRepository extends GremlinVertexRepository<Artifact> {
     public Boolean artifactExists(String storageId,
                                   String repositoryId,
                                   String path) {
+        log.info("Find storageId [{}] repositoryId [{}] path [{}] artifactExists", storageId, repositoryId, path);
+        long startTime = System.currentTimeMillis();
         EntityTraversal<Vertex, Vertex> t = g().V()
                 .hasLabel(Vertices.GENERIC_ARTIFACT_COORDINATES)
                 .has(Properties.UUID, path)
@@ -542,13 +544,15 @@ public class ArtifactRepository extends GremlinVertexRepository<Artifact> {
                 .has(Properties.STORAGE_ID, storageId)
                 .has(Properties.REPOSITORY_ID, repositoryId)
                 .has(Properties.ARTIFACT_FILE_EXISTS, true);
-        return t.hasNext();
+        Boolean result = t.hasNext();
+        log.info("Find storageId [{}] repositoryId [{}] path [{}] artifactExists [{}] take time [{}] ms", storageId, repositoryId, path, result, System.currentTimeMillis() - startTime);
+        return result;
     }
 
     public Artifact findOneArtifact(String storageId,
                                     String repositoryId,
                                     String path) {
-        log.info("storageId [{}] repositoryId [{}] path [{}]", storageId, repositoryId, path);
+        log.info("FindOneArtifact storageId [{}] repositoryId [{}] path [{}]", storageId, repositoryId, path);
         com.veadan.folib.storage.repository.Repository repository = configurationManager.getRepository(storageId, repositoryId);
         long startTime = System.currentTimeMillis();
         EntityTraversal<Vertex, Artifact> t = g().V()
@@ -559,7 +563,7 @@ public class ArtifactRepository extends GremlinVertexRepository<Artifact> {
                         .map(ArtifactLayoutLocator.getLayoutByNameEntityMap()::get)
                         .map(ArtifactLayoutDescription::getArtifactCoordinatesClass)));
         Artifact artifact = t.tryNext().orElse(null);
-        log.info("FindOneArtifact storageId [{}] repositoryId [{}] path [{}] take time [{}] ms", storageId, repositoryId, path, System.currentTimeMillis() - startTime);
+        log.info("FindOneArtifact storageId [{}] repositoryId [{}] path [{}] artifactExists [{}] take time [{}] ms", storageId, repositoryId, path, Objects.nonNull(artifact), System.currentTimeMillis() - startTime);
         return artifact;
     }
 
