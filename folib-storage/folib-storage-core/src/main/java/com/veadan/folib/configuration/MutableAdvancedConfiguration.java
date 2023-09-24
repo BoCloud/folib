@@ -17,7 +17,7 @@ import java.io.Serializable;
 @NoArgsConstructor
 public class MutableAdvancedConfiguration implements Serializable {
 
-    private boolean allowAnonymous;
+    private boolean allowAnonymous = true;
 
-    private boolean showChecksum;
+    private boolean showChecksum = false;
 }
