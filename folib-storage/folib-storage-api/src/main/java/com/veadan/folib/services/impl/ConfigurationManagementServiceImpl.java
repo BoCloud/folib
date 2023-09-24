@@ -154,6 +154,14 @@ public class ConfigurationManagementServiceImpl
     }
 
     @Override
+    public void setAdvancedConfiguration(MutableAdvancedConfiguration advancedConfiguration) throws IOException {
+        modifyInLock(configuration ->
+        {
+            configuration.setAdvancedConfiguration(advancedConfiguration);
+        });
+    }
+
+    @Override
     public void setProxyConfiguration(String storageId,
                                       String repositoryId,
                                       MutableProxyConfiguration proxyConfiguration) throws IOException {

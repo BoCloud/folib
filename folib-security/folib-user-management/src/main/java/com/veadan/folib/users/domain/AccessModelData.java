@@ -2,13 +2,14 @@ package com.veadan.folib.users.domain;
 
 import com.google.common.collect.ImmutableSet;
 import com.veadan.folib.users.dto.*;
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
 
 import javax.annotation.concurrent.Immutable;
-import java.io.File;
 import java.io.Serializable;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 import static java.util.stream.Collectors.toSet;
@@ -52,15 +53,16 @@ public class AccessModelData
     }
 
     @Override
-    public Set<Privileges> getPathAuthorities(String storageId, String repositoryId) {
-        return getPathAuthorities(storageId, repositoryId, getStorageAuthorities());
+    public Set<Privileges> getPathAuthorities(String storageId, String repositoryId, List<String> paths) {
+        return getPathAuthorities(storageId, repositoryId, paths, getStorageAuthorities());
     }
 
-    public static Set<Privileges> getPathAuthorities(String storageId, String repositoryId, Set<? extends StoragePrivileges> storages) {
+    public static Set<Privileges> getPathAuthorities(String storageId, String repositoryId, List<String> paths, Set<? extends StoragePrivileges> storages) {
         if (StringUtils.isBlank(storageId)) {
             return Collections.emptySet();
         }
         Set<Privileges> privileges = new HashSet<>();
+        String pattern = null, end = "/.*";
         for (final StoragePrivileges storage : storages) {
             if (!storage.getStorageId().equals(storageId)) {
                 continue;
@@ -74,6 +76,28 @@ public class AccessModelData
                     continue;
                 }
                 privileges.addAll(repository.getRepositoryPrivileges());
+                if (CollectionUtils.isEmpty(paths)) {
+                    for (PathPrivileges pathPrivilege : repository.getPathPrivileges()) {
+                        privileges.addAll(pathPrivilege.getPrivileges());
+                    }
+                    continue;
+                }
+                for (String path : paths) {
+                    for (PathPrivileges pathPrivilege : repository.getPathPrivileges()) {
+                        pattern = pathPrivilege.getPath();
+                        if (StringUtils.isBlank(pattern)) {
+                            continue;
+                        }
+                        pattern = StringUtils.chomp(pattern, "/");
+                        if (!pattern.endsWith(end)) {
+                            pattern = pattern + end;
+                        }
+                        if (path.matches(pattern)) {
+                            privileges.addAll(pathPrivilege.getPrivileges());
+                            break;
+                        }
+                    }
+                }
             }
         }
         return privileges;
@@ -82,7 +106,7 @@ public class AccessModelData
     public static Set<Privileges> getPathAuthorities(String url, Set<? extends StoragePrivileges> storages) {
         String normalizedUrl = StringUtils.chomp(url, "/");
         boolean isEnd = false;
-        String separator = "";
+        String separator = "", end = "/.*";
         Set<Privileges> privileges = new HashSet<>();
         for (final StoragePrivileges storage : storages) {
             isEnd = normalizedUrl.endsWith(storage.getStorageId());
@@ -115,11 +139,14 @@ public class AccessModelData
                 for (PathPrivileges pathPrivilege : repository.getPathPrivileges()) {
                     String normalizedPath = StringUtils.chomp(pathPrivilege.getPath(), "/");
                     String pathKey = repositoryKey + normalizedPath;
-
-                    if (!normalizedUrl.startsWith(pathKey)) {
+                    String pathBrowseKey = storageBrowseKey + repository.getRepositoryId() + separator + normalizedPath;
+                    if (!normalizedUrl.startsWith(pathKey) && !normalizedUrl.startsWith(pathBrowseKey)) {
                         continue;
                     }
-                    if (normalizedUrl.equals(pathKey) || pathPrivilege.isWildcard()) {
+                    String pathKeyPattern = pathKey + end;
+                    String pathBrowseKeyPattern = pathBrowseKey + end;
+                    boolean flag = normalizedUrl.matches(pathKeyPattern) || normalizedUrl.matches(pathBrowseKeyPattern) || normalizedUrl.equals(pathKey) || normalizedUrl.equals(pathBrowseKey) || pathPrivilege.isWildcard();
+                    if (flag) {
                         privileges.addAll(pathPrivilege.getPrivileges());
                     }
                 }

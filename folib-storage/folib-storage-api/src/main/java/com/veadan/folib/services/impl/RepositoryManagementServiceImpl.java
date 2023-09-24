@@ -1,6 +1,7 @@
 package com.veadan.folib.services.impl;
 
 import com.google.common.collect.Lists;
+import com.google.common.collect.Sets;
 import com.veadan.folib.authorization.dto.AuthorizationConfigDto;
 import com.veadan.folib.authorization.dto.RoleDto;
 import com.veadan.folib.authorization.service.AuthorizationConfigService;
@@ -30,6 +31,9 @@ import com.veadan.folib.storage.repository.RepositoryPermissionUserDto;
 import com.veadan.folib.storage.validation.resource.ArtifactOperationsValidator;
 import com.veadan.folib.users.domain.Privileges;
 import com.veadan.folib.users.domain.SystemRole;
+import com.veadan.folib.users.dto.PathPrivilegesDto;
+import com.veadan.folib.users.dto.RepositoryPrivilegesDto;
+import com.veadan.folib.users.dto.StoragePrivilegesDto;
 import com.veadan.folib.users.service.UserService;
 import com.veadan.folib.users.service.impl.DatabaseUserService;
 import org.apache.commons.collections4.CollectionUtils;
@@ -44,8 +48,7 @@ import org.springframework.transaction.annotation.Transactional;
 import javax.inject.Inject;
 import java.io.IOException;
 import java.nio.file.Files;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -292,7 +295,7 @@ public class RepositoryManagementServiceImpl
             return;
         }
         for (RepositoryPermissionUserDto repositoryPermissionUser : userList) {
-            handlerRepositoryUserPermission(storageId, repositoryId, repositoryPermissionUser.getUsername(), repositoryPermissionUser.getPermissions());
+            handlerRepositoryUserPermission(storageId, repositoryId, repositoryPermissionUser.getUsername(), repositoryPermissionUser.getPermissions(), repositoryPermissionUser.getPaths());
         }
     }
 
@@ -318,6 +321,7 @@ public class RepositoryManagementServiceImpl
                     user.getRoles().remove(securityRole);
                 }
             }
+            removeRepositoryRole(user, authorizationConfigService.getDto(), storageId, repositoryId);
             userService.saveOverrideRole(user);
         } catch (Exception ex) {
             logger.error("delete storage {} repository {} user {} permission error：{}", storageId, repositoryId, username, ExceptionUtils.getStackTrace(ex));
@@ -336,53 +340,71 @@ public class RepositoryManagementServiceImpl
      * @param repositoryId 仓库名称
      * @param username     用户名
      * @param permissions  权限
+     * @param paths        路径
      */
-    private void handlerRepositoryUserPermission(String storageId, String repositoryId, String username, List<String> permissions) {
+    private void handlerRepositoryUserPermission(String storageId, String repositoryId, String username, List<String> permissions, List<String> paths) {
         if (StringUtils.isNotBlank(username) && !isAdmin(username)) {
             try {
                 User user = userInfo(username);
                 AuthorizationConfigDto authorizationConfigDto = authorizationConfigService.getDto();
                 String repositoryDeployRoleName = String.format("%s|%s|%s", storageId.toUpperCase(), repositoryId.toUpperCase(), Privileges.ARTIFACTS_DEPLOY.getAuthority());
-                if (permissions.contains(Privileges.ARTIFACTS_DEPLOY.getAuthority())) {
-                    //上传权限
-                    boolean repositoryDeployRoleNameExists = authorizationConfigDto.getRoles().stream().anyMatch(item -> item.getName().equals(repositoryDeployRoleName));
-                    if (!repositoryDeployRoleNameExists) {
-                        //仓库deploy角色不存在，创建
-                        createRole(repositoryDeployRoleName, storageId, repositoryId, Lists.newArrayList(Privileges.ARTIFACTS_DEPLOY.getAuthority()));
-                    }
-                    if (user.getRoles().stream().noneMatch(item -> item.getRoleName().equals(repositoryDeployRoleName))) {
-                        SecurityRoleEntity securityRole = new SecurityRoleEntity();
-                        securityRole.setUuid(repositoryDeployRoleName);
-                        user.getRoles().add(securityRole);
-                    }
-                } else {
-                    //包含仓库上传角色，移除
-                    if (user.getRoles().stream().anyMatch(item -> item.getRoleName().equals(repositoryDeployRoleName))) {
-                        SecurityRoleEntity securityRole = new SecurityRoleEntity();
-                        securityRole.setUuid(repositoryDeployRoleName);
-                        user.getRoles().remove(securityRole);
-                    }
-                }
                 String repositoryDeleteRoleName = String.format("%s|%s|%s", storageId.toUpperCase(), repositoryId.toUpperCase(), Privileges.ARTIFACTS_DELETE.getAuthority());
-                if (permissions.contains(Privileges.ARTIFACTS_DELETE.getAuthority())) {
-                    //删除权限
-                    boolean repositoryDeleteRoleNameExists = authorizationConfigDto.getRoles().stream().anyMatch(item -> item.getName().equals(repositoryDeleteRoleName));
-                    if (!repositoryDeleteRoleNameExists) {
-                        //仓库delete角色不存在，创建
-                        createRole(repositoryDeleteRoleName, storageId, repositoryId, Lists.newArrayList(Privileges.ARTIFACTS_DELETE.getAuthority()));
+                List<String> repositoryRoleNameList = Lists.newArrayList(repositoryDeployRoleName, repositoryDeleteRoleName);
+                if (CollectionUtils.isEmpty(paths)) {
+                    if (permissions.contains(Privileges.ARTIFACTS_DEPLOY.getAuthority())) {
+                        //上传权限
+                        boolean repositoryDeployRoleNameExists = authorizationConfigDto.getRoles().stream().anyMatch(item -> item.getName().equals(repositoryDeployRoleName));
+                        if (!repositoryDeployRoleNameExists) {
+                            //仓库deploy角色不存在，创建
+                            createRole(repositoryDeployRoleName, "", storageId, repositoryId, Lists.newArrayList(Privileges.ARTIFACTS_DEPLOY.getAuthority()), paths);
+                        }
+                        if (user.getRoles().stream().noneMatch(item -> item.getRoleName().equals(repositoryDeployRoleName))) {
+                            SecurityRoleEntity securityRole = new SecurityRoleEntity();
+                            securityRole.setUuid(repositoryDeployRoleName);
+                            user.getRoles().add(securityRole);
+                        }
+                    } else {
+                        //包含仓库上传角色，移除
+                        if (user.getRoles().stream().anyMatch(item -> item.getRoleName().equals(repositoryDeployRoleName))) {
+                            SecurityRoleEntity securityRole = new SecurityRoleEntity();
+                            securityRole.setUuid(repositoryDeployRoleName);
+                            user.getRoles().remove(securityRole);
+                        }
                     }
-                    if (user.getRoles().stream().noneMatch(item -> item.getRoleName().equals(repositoryDeleteRoleName))) {
-                        SecurityRoleEntity securityRole = new SecurityRoleEntity();
-                        securityRole.setUuid(repositoryDeleteRoleName);
-                        user.getRoles().add(securityRole);
+                    if (permissions.contains(Privileges.ARTIFACTS_DELETE.getAuthority())) {
+                        //删除权限
+                        boolean repositoryDeleteRoleNameExists = authorizationConfigDto.getRoles().stream().anyMatch(item -> item.getName().equals(repositoryDeleteRoleName));
+                        if (!repositoryDeleteRoleNameExists) {
+                            //仓库delete角色不存在，创建
+                            createRole(repositoryDeleteRoleName, "", storageId, repositoryId, Lists.newArrayList(Privileges.ARTIFACTS_DELETE.getAuthority()), paths);
+                        }
+                        if (user.getRoles().stream().noneMatch(item -> item.getRoleName().equals(repositoryDeleteRoleName))) {
+                            SecurityRoleEntity securityRole = new SecurityRoleEntity();
+                            securityRole.setUuid(repositoryDeleteRoleName);
+                            user.getRoles().add(securityRole);
+                        }
+                    } else {
+                        //包含仓库删除角色，移除
+                        if (user.getRoles().stream().anyMatch(item -> item.getRoleName().equals(repositoryDeleteRoleName))) {
+                            SecurityRoleEntity securityRole = new SecurityRoleEntity();
+                            securityRole.setUuid(repositoryDeleteRoleName);
+                            user.getRoles().remove(securityRole);
+                        }
                     }
+                    removeRepositoryRole(user, authorizationConfigDto, storageId, repositoryId);
                 } else {
-                    //包含仓库删除角色，移除
-                    if (user.getRoles().stream().anyMatch(item -> item.getRoleName().equals(repositoryDeleteRoleName))) {
-                        SecurityRoleEntity securityRole = new SecurityRoleEntity();
-                        securityRole.setUuid(repositoryDeleteRoleName);
-                        user.getRoles().remove(securityRole);
+                    String roleName = username.toUpperCase();
+                    boolean roleNameExists = authorizationConfigDto.getRoles().stream().anyMatch(item -> item.getName().equals(roleName));
+                    if (!roleNameExists) {
+                        //仓库deploy角色不存在，创建
+                        createRole(roleName, String.format("【%s】的权限", roleName), storageId, repositoryId, permissions, paths);
+                    } else {
+                        updateRole(authorizationConfigDto, roleName, storageId, repositoryId, permissions, paths);
                     }
+                    user.getRoles().removeIf(item -> repositoryRoleNameList.contains(item.getRoleName()));
+                    SecurityRoleEntity securityRole = new SecurityRoleEntity();
+                    securityRole.setUuid(roleName);
+                    user.getRoles().add(securityRole);
                 }
                 userService.saveOverrideRole(user);
             } catch (Exception ex) {
@@ -416,25 +438,144 @@ public class RepositoryManagementServiceImpl
      * 创建角色
      *
      * @param roleName     角色名称
+     * @param description  描述
      * @param storageId    存储空间名称
      * @param repositoryId 仓库名称
      * @param privileges   权限点
+     * @param paths        路径
      * @throws IOException 异常
      */
-    private void createRole(String roleName, String storageId, String repositoryId, List<String> privileges) throws IOException {
+    private void createRole(String roleName, String description, String storageId, String repositoryId, List<String> privileges, List<String> paths) throws IOException {
         RoleModel roleModel = new RoleModel();
         roleModel.setName(roleName);
-        String description = String.format("【%s-%s】的权限", storageId.toUpperCase(), repositoryId.toUpperCase());
+        if (StringUtils.isBlank(description)) {
+            description = String.format("【%s-%s】的权限", storageId.toUpperCase(), repositoryId.toUpperCase());
+        }
         roleModel.setDescription(description);
         AccessModel accessModelModelForm = new AccessModel();
-        RepositoryAccessModel repositoryAccessModelForm = new RepositoryAccessModel();
-        repositoryAccessModelForm.setStorageId(storageId);
-        repositoryAccessModelForm.setRepositoryId(repositoryId);
-        repositoryAccessModelForm.setPrivileges(privileges);
-        accessModelModelForm.addRepositoryAccess(repositoryAccessModelForm);
+        if (CollectionUtils.isEmpty(paths)) {
+            RepositoryAccessModel repositoryAccessModelForm = new RepositoryAccessModel();
+            repositoryAccessModelForm.setStorageId(storageId);
+            repositoryAccessModelForm.setRepositoryId(repositoryId);
+            repositoryAccessModelForm.setPrivileges(privileges);
+            accessModelModelForm.addRepositoryAccess(repositoryAccessModelForm);
+        } else {
+            paths.forEach(path -> {
+                if (StringUtils.isNotBlank(path)) {
+                    path = StringUtils.removeEnd(path, "/");
+                    RepositoryAccessModel repositoryAccessModelForm = new RepositoryAccessModel();
+                    repositoryAccessModelForm.setStorageId(storageId);
+                    repositoryAccessModelForm.setRepositoryId(repositoryId);
+                    repositoryAccessModelForm.setPrivileges(privileges);
+                    repositoryAccessModelForm.setPath(path);
+                    accessModelModelForm.addRepositoryAccess(repositoryAccessModelForm);
+                }
+            });
+        }
         roleModel.setAccessModel(accessModelModelForm);
         RoleDto role = RoleModelToRoleConverter.convert(roleModel);
         authorizationConfigService.addRole(role);
     }
 
+    /**
+     * 更新角色
+     *
+     * @param authorizationConfigDto 权限信息
+     * @param roleName               角色名称
+     * @param storageId              存储空间名称
+     * @param repositoryId           仓库名称
+     * @param privileges             权限点
+     * @param paths                  路径
+     * @throws IOException 异常
+     */
+    private void updateRole(AuthorizationConfigDto authorizationConfigDto, String roleName, String storageId, String repositoryId, List<String> privileges, List<String> paths) throws IOException {
+        try {
+            Optional<RoleDto> roleOptional = authorizationConfigDto.getRoles().stream().filter(item -> item.getName().equals(roleName)).findFirst();
+            if (roleOptional.isEmpty()) {
+                return;
+            }
+            RoleDto role = roleOptional.get();
+            StoragePrivilegesDto storagePrivileges = null;
+            RepositoryPrivilegesDto repositoryPrivileges = null;
+            Set<Privileges> privilegeSet = Sets.newLinkedHashSet();
+            if (privileges.contains(Privileges.ARTIFACTS_DEPLOY.getAuthority())) {
+                privilegeSet.add(Privileges.ARTIFACTS_DEPLOY);
+            }
+            if (privileges.contains(Privileges.ARTIFACTS_DELETE.getAuthority())) {
+                privilegeSet.add(Privileges.ARTIFACTS_DELETE);
+            }
+            Optional<StoragePrivilegesDto> storagePrivilegesOptional = role.getAccessModel().getStorageAuthorities(storageId);
+            if (storagePrivilegesOptional.isPresent()) {
+                storagePrivileges = storagePrivilegesOptional.get();
+                Optional<RepositoryPrivilegesDto> repositoryPrivilegesOptional = storagePrivileges.getRepositoryPrivileges(repositoryId);
+                if (repositoryPrivilegesOptional.isPresent()) {
+                    repositoryPrivileges = repositoryPrivilegesOptional.get();
+                }
+            }
+            if (Objects.isNull(storagePrivileges)) {
+                storagePrivileges = new StoragePrivilegesDto();
+                storagePrivileges.setStorageId(storageId);
+                role.getAccessModel().getStorageAuthorities().add(storagePrivileges);
+            }
+            if (Objects.isNull(repositoryPrivileges)) {
+                repositoryPrivileges = new RepositoryPrivilegesDto();
+                repositoryPrivileges.setRepositoryId(repositoryId);
+                storagePrivileges.getRepositoryPrivileges().add(repositoryPrivileges);
+            }
+            repositoryPrivileges.getPathPrivileges().clear();
+            for (String path : paths) {
+                if (StringUtils.isBlank(path)) {
+                    continue;
+                }
+                path = StringUtils.removeEnd(path, "/");
+                RepositoryAccessModel repositoryAccessModelForm = new RepositoryAccessModel();
+                repositoryAccessModelForm.setStorageId(storageId);
+                repositoryAccessModelForm.setRepositoryId(repositoryId);
+                repositoryAccessModelForm.setPrivileges(privileges);
+                repositoryAccessModelForm.setPath(path);
+                PathPrivilegesDto pathPrivilegesDto = new PathPrivilegesDto();
+                pathPrivilegesDto.setPath(path);
+                pathPrivilegesDto.setPrivileges(privilegeSet);
+                repositoryPrivileges.getPathPrivileges().add(pathPrivilegesDto);
+            }
+            authorizationConfigService.deleteRole(role.getName());
+            authorizationConfigService.addRole(role);
+        } catch (Exception ex) {
+            throw new RuntimeException(ex);
+        }
+    }
+
+    /**
+     * 移除仓库角色
+     *
+     * @param user                   用户
+     * @param authorizationConfigDto 权限信息
+     * @param storageId              存储空间名称
+     * @param repositoryId           仓库名称
+     */
+    private void removeRepositoryRole(User user, AuthorizationConfigDto authorizationConfigDto, String storageId, String repositoryId) {
+        try {
+            String roleName = user.getUsername().toUpperCase();
+            Optional<RoleDto> roleOptional = authorizationConfigDto.getRoles().stream().filter(item -> item.getName().equals(roleName)).findFirst();
+            if (roleOptional.isEmpty()) {
+                return;
+            }
+            RoleDto role = roleOptional.get();
+            Optional<StoragePrivilegesDto> storagePrivilegesOptional = role.getAccessModel().getStorageAuthorities(storageId);
+            if (storagePrivilegesOptional.isPresent()) {
+                StoragePrivilegesDto storagePrivileges = storagePrivilegesOptional.get();
+                Optional<RepositoryPrivilegesDto> repositoryPrivilegesOptional = storagePrivileges.getRepositoryPrivileges(repositoryId);
+                if (repositoryPrivilegesOptional.isPresent()) {
+                    storagePrivileges.getRepositoryPrivileges().removeIf(item -> item.getRepositoryId().equals(repositoryId));
+                    if (CollectionUtils.isEmpty(storagePrivileges.getRepositoryPrivileges())) {
+                        role.getAccessModel().getStorageAuthorities().removeIf(item -> item.getStorageId().equals(storageId));
+                    }
+                    authorizationConfigService.deleteRole(role.getName());
+                    authorizationConfigService.addRole(role);
+                }
+            }
+        } catch (Exception ex) {
+            throw new RuntimeException(ex);
+        }
+    }
 }

@@ -194,7 +194,7 @@ public class DockerArtifactController extends BaseArtifactController {
                 return new ResponseEntity<>(unAuth(), HttpStatus.UNAUTHORIZED);
             }
             SpringSecurityUser userDetails = (SpringSecurityUser) authentication.getPrincipal();
-            Collection<Privileges> allAuthorities = userDetails.getAllAuthorities(storageId, repositoryId);
+            Collection<Privileges> allAuthorities = userDetails.getAllAuthorities(storageId, repositoryId, null);
             if (allAuthorities.stream().noneMatch(item -> item.getAuthority().equals(Privileges.ARTIFACTS_DEPLOY.getAuthority()))) {
                 return new ResponseEntity<>(unForbidden(storageId, repositoryId), HttpStatus.FORBIDDEN);
             }
@@ -269,7 +269,7 @@ public class DockerArtifactController extends BaseArtifactController {
             return new ResponseEntity<>(unAuth(), HttpStatus.UNAUTHORIZED);
         }
         SpringSecurityUser userDetails = (SpringSecurityUser) authentication.getPrincipal();
-        Collection<Privileges> allAuthorities = userDetails.getAllAuthorities(storageId, repositoryId);
+        Collection<Privileges> allAuthorities = userDetails.getAllAuthorities(storageId, repositoryId, null);
         if (allAuthorities.stream().noneMatch(item -> item.getAuthority().equals(Privileges.ARTIFACTS_DEPLOY.getAuthority()))) {
             return new ResponseEntity<>(unForbidden(storageId, repositoryId), HttpStatus.FORBIDDEN);
         }
@@ -511,7 +511,7 @@ public class DockerArtifactController extends BaseArtifactController {
             return new ResponseEntity<>(unAuth(), HttpStatus.UNAUTHORIZED);
         }
         SpringSecurityUser userDetails = (SpringSecurityUser) authentication.getPrincipal();
-        Collection<Privileges> allAuthorities = userDetails.getAllAuthorities(storageId, repositoryId);
+        Collection<Privileges> allAuthorities = userDetails.getAllAuthorities(storageId, repositoryId, null);
         if (allAuthorities.stream().noneMatch(item -> item.getAuthority().equals(Privileges.ARTIFACTS_DEPLOY.getAuthority()))) {
             return new ResponseEntity<>(unForbidden(storageId, repositoryId), HttpStatus.FORBIDDEN);
         }

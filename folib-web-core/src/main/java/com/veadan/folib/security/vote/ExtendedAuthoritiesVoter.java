@@ -2,11 +2,15 @@ package com.veadan.folib.security.vote;
 
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
+import com.veadan.folib.authorization.domain.RoleData;
+import com.veadan.folib.authorization.service.AuthorizationConfigService;
 import com.veadan.folib.controllers.BrowseController;
 import com.veadan.folib.services.ConfigurationManagementService;
 import com.veadan.folib.storage.Storage;
 import com.veadan.folib.storage.repository.Repository;
 import com.veadan.folib.users.domain.Privileges;
+import com.veadan.folib.users.domain.SystemRole;
+import com.veadan.folib.users.security.AuthoritiesProvider;
 import com.veadan.folib.users.userdetails.SpringSecurityUser;
 import com.veadan.folib.util.CacheUtil;
 import com.veadan.folib.utils.UrlUtils;
@@ -42,6 +46,10 @@ public class ExtendedAuthoritiesVoter extends PreInvocationAuthorizationAdviceVo
     @Autowired
     @Lazy
     private ConfigurationManagementService configurationManagementService;
+
+    @Autowired
+    @Lazy
+    private AuthoritiesProvider authoritiesProvider;
 
     public ExtendedAuthoritiesVoter() {
         super(new ExpressionBasedPreInvocationAdvice());
@@ -95,7 +103,7 @@ public class ExtendedAuthoritiesVoter extends PreInvocationAuthorizationAdviceVo
                         return Collections.emptySet();
                     }
                 }
-                return authentication.getAuthorities();
+                return authoritiesProvider.getRuntimeRole(SystemRole.ANONYMOUS.name()).getAccessModel().getApiAuthorities();
             } else if (!(principal instanceof SpringSecurityUser)) {
                 logger.warn("Unknown authentication principal type [{}]", principal.getClass());
                 return authentication.getAuthorities();

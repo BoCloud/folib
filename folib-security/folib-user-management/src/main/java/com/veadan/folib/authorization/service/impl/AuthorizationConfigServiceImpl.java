@@ -154,6 +154,19 @@ public class AuthorizationConfigServiceImpl
                      });
     }
 
+    @Override
+    public void clearPrivilegesAnonymous() throws IOException {
+        modifyInLock(config ->
+        {
+            Set<RoleDto> roles = config.getRoles();
+            roles.stream()
+                    .filter(r -> r.getName()
+                            .equalsIgnoreCase(SystemRole.ANONYMOUS.name()))
+                    .findFirst()
+                    .ifPresent(r -> r.getAccessModel().getApiAuthorities().clear());
+        });
+    }
+
     private void modifyInLock(final Consumer<AuthorizationConfigDto> operation) throws IOException
     {
         modifyInLock(operation, true);

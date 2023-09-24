@@ -26,4 +26,6 @@ public interface AuthorizationConfigService
     boolean deleteRole(String roleName) throws IOException;
 
     void addPrivilegesToAnonymous(List<Privileges> privilegeList) throws IOException;
+
+    void clearPrivilegesAnonymous() throws IOException;
 }

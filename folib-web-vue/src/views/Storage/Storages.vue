@@ -433,7 +433,7 @@
                           <img src="images/folib/npm.svg" style="width: 100%;" alt="">
                         </a-avatar>
                       </div>
-                      <h6>npm</h6>
+                      <h6>Npm</h6>
                     </a-col>
                     <a-col :span="4">
                       <div class="checkbox-label" :class="[layoutChecked === 'yarn' ? 'active' : '']"
@@ -443,7 +443,7 @@
                           <img src="images/folib/yarn.svg" style="width: 100%;" alt="">
                         </a-avatar>
                       </div>
-                      <h6>yarn</h6>
+                      <h6>Yarn</h6>
                     </a-col>
                     <a-col :span="4">
                       <div class="checkbox-label" :class="[layoutChecked === 'nuget' ? 'active' : '']"
@@ -473,7 +473,7 @@
                           <img src="images/folib/sbt.svg" style="width: 100%;" alt="">
                         </a-avatar>
                       </div>
-                      <h6>sbt</h6>
+                      <h6>SBT</h6>
                     </a-col>
                     <a-col :span="4">
                       <div class="checkbox-label" :class="[layoutChecked === 'gradle' ? 'active' : '']"
@@ -493,7 +493,7 @@
                           <img src="images/folib/rpm.svg" style="width: 100%;" alt="">
                         </a-avatar>
                       </div>
-                      <h6>rpm</h6>
+                      <h6>Rpm</h6>
                     </a-col>
                     <a-col :span="4">
                       <div class="checkbox-label" :class="[layoutChecked === 'docker' ? 'active' : '']"
@@ -513,7 +513,7 @@
                           <img src="images/folib/php.svg" style="width: 100%;" alt="">
                         </a-avatar>
                       </div>
-                      <h6>php</h6>
+                      <h6>Php</h6>
                     </a-col>
                     <a-col :span="4">
                       <div class="checkbox-label" :class="[layoutChecked === 'pypi' ? 'active' : '']"
@@ -546,16 +546,6 @@
                       <h6>Helm</h6>
                     </a-col>
                     <a-col :span="4">
-                      <div class="checkbox-label" :class="[layoutChecked === 'go' ? 'active' : '']"
-                           @click="toggleCheckbox('go')">
-                        <a-avatar :size="44" shape="square"
-                                  style="border-radius: 8px; background-image: linear-gradient( 310deg, #020202, #5c6391 );">
-                          <img src="images/folib/go.svg" style="width: 100%;" alt="">
-                        </a-avatar>
-                      </div>
-                      <h6>Go</h6>
-                    </a-col>
-                    <a-col :span="4">
                       <div class="checkbox-label" :class="[layoutChecked === 'cocoapods' ? 'active' : '']"
                            @click="toggleCheckbox('cocoapods')">
                         <a-avatar :size="44" shape="square"
@@ -564,6 +554,33 @@
                         </a-avatar>
                       </div>
                       <h6>CocoaPods</h6>
+                    </a-col>
+                    <a-col :span="4">
+                      <div class="checkbox-label" :class="[layoutChecked === 'go' ? 'active' : '']">
+                        <a-avatar :size="44" shape="square"
+                                  style="border-radius: 8px; background-image: linear-gradient( 310deg, #020202, #5c6391 );">
+                          <img src="images/folib/go.svg" style="width: 100%;" alt="">
+                        </a-avatar>
+                      </div>
+                      <h6>Go</h6>
+                    </a-col>
+                    <a-col :span="4">
+                      <div class="checkbox-label" :class="[layoutChecked === 'gems' ? 'active' : '']">
+                        <a-avatar :size="44" shape="square"
+                                  style="border-radius: 8px; background-image: linear-gradient( 310deg, #020202, #5c6391 );">
+                          <img src="images/folib/gems.svg" style="width: 100%;" alt="">
+                        </a-avatar>
+                      </div>
+                      <h6>Gems</h6>
+                    </a-col>
+                    <a-col :span="4">
+                      <div class="checkbox-label" :class="[layoutChecked === 'rust' ? 'active' : '']">
+                        <a-avatar :size="44" shape="square"
+                                  style="border-radius: 8px; background-image: linear-gradient( 310deg, #020202, #5c6391 );">
+                          <img src="images/folib/rust.svg" style="width: 100%;" alt="">
+                        </a-avatar>
+                      </div>
+                      <h6>Rust</h6>
                     </a-col>
                   </a-row>
                   <a-checkbox-group class="d-none" v-model="checkedList" :options="checkboxOptions" />

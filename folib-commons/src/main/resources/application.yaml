@@ -196,7 +196,7 @@ folib:
 logging:
   debug: false
   console:
-    enabled: false
+    enabled: true
   file:
     name: ${logging.dir}/folib.log
     enabled: true

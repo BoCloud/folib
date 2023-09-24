@@ -140,3 +140,10 @@ export function uploadJsonFile(data) {
     data:data
   })
 }
+
+export function getAllowAnonymous () {
+  return axios({
+    url: '/api/configuration/folib/allowAnonymous',
+    method: 'get'
+  })
+}

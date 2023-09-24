@@ -8,10 +8,7 @@ import com.veadan.folib.users.domain.Privileges;
 import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.security.core.userdetails.UserDetails;
 
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 public class SpringSecurityUser
@@ -116,17 +113,17 @@ public class SpringSecurityUser
                 .collect(Collectors.toSet());
     }
 
-    public Collection<Privileges> getStorageAuthorities(String storageId, String repositoryId) {
+    public Collection<Privileges> getStorageAuthorities(String storageId, String repositoryId, List<String> paths) {
         return getRoles().stream()
                 .flatMap(r -> r.getAccessModel()
-                        .getPathAuthorities(storageId, repositoryId)
+                        .getPathAuthorities(storageId, repositoryId, paths)
                         .stream())
                 .collect(Collectors.toSet());
     }
 
-    public Collection<Privileges> getAllAuthorities(String storageId, String repositoryId) {
+    public Collection<Privileges> getAllAuthorities(String storageId, String repositoryId, List<String> paths) {
         Collection<Privileges> privilegesCollection = getAuthorities();
-        privilegesCollection.addAll(getStorageAuthorities(storageId, repositoryId));
+        privilegesCollection.addAll(getStorageAuthorities(storageId, repositoryId, paths));
         return privilegesCollection;
     }
 
