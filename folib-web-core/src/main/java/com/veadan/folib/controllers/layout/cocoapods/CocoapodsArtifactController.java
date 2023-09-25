@@ -1,23 +1,22 @@
 package com.veadan.folib.controllers.layout.cocoapods;
 
 import cn.hutool.core.io.FileUtil;
-import com.veadan.folib.artifact.coordinates.ArtifactCoordinates;
 import com.veadan.folib.artifact.coordinates.CocoapodsArtifactCoordinates;
 import com.veadan.folib.controllers.BaseArtifactController;
-import com.veadan.folib.domain.Artifact;
 import com.veadan.folib.domain.ArtifactEntity;
 import com.veadan.folib.providers.io.RepositoryFiles;
 import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.storage.repository.Repository;
 import com.veadan.folib.storage.repository.RepositoryTypeEnum;
 import com.veadan.folib.util.CocoapodsArtifactUtil;
-import com.veadan.folib.utils.CompressUtil;
+import com.veadan.folib.util.CompressUtil;
 import com.veadan.folib.web.LayoutRequestMapping;
 import com.veadan.folib.web.RepositoryMapping;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -28,13 +27,15 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RestController;
 
-import javax.naming.Name;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.BufferedInputStream;
 import java.io.ByteArrayInputStream;
+import java.io.File;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.UUID;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -48,6 +49,9 @@ import java.util.regex.Pattern;
 @LayoutRequestMapping(CocoapodsArtifactCoordinates.LAYOUT_NAME)
 public class CocoapodsArtifactController extends BaseArtifactController
 {
+    @Value("${folib.temp}")
+    private String tempPath;
+    
     @ApiOperation(value = "Used to deploy an artifact")
     @ApiResponses(value = {@ApiResponse(code = 200, message = "The artifact was deployed successfully."),
             @ApiResponse(code = 400, message = "An error occurred.")})
@@ -60,27 +64,35 @@ public class CocoapodsArtifactController extends BaseArtifactController
         final String repositoryId = repository.getId();
 
         try {
-            RepositoryPath repositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, artifactPath);
-            artifactManagementService.validateAndStore(repositoryPath, request.getInputStream());
+            final BufferedInputStream artifactByteArrayInputStream = new BufferedInputStream(request.getInputStream());
+            final byte[] cacheBytes = artifactByteArrayInputStream.readAllBytes();
+            // 兼容网络路径
+            final String podspecSourceContent = CocoapodsArtifactUtil.fetchPodspecSourceContentByInputStream(new ByteArrayInputStream(cacheBytes));
 
             // 读取pod.tar.gz中的*.podspec文件内容
-            final Path path = repositoryPath.getTarget();
-            final BufferedInputStream podTarGzInputStream = FileUtil.getInputStream(path);
-            final String podspecSourceContent = CocoapodsArtifactUtil.fetchPodspecSourceContentByInputStream(podTarGzInputStream);
             if (StringUtils.isNotBlank(podspecSourceContent))
             {
                 final CocoapodsArtifactUtil.PodSpec podSpec = CocoapodsArtifactUtil.resolvePodSpec(podspecSourceContent);
-                final ByteArrayInputStream byteArrayInputStream = new ByteArrayInputStream(podspecSourceContent.getBytes(StandardCharsets.UTF_8));
-                final String uri = repositoryPath.toUri().getPath();
+                // 存储制品文件
+                final RepositoryPath podRepositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, artifactPath);
+                final ArtifactEntity podArtifactEntity = new ArtifactEntity(storageId, repositoryId, RepositoryFiles.readCoordinates(podRepositoryPath));
+                final CocoapodsArtifactCoordinates podArtifactCoordinates = (CocoapodsArtifactCoordinates) podArtifactEntity.getArtifactCoordinates();
+                podArtifactCoordinates.setBaseName(podSpec.getName());
+                podArtifactCoordinates.setVersion(podSpec.getVersion());
+                podRepositoryPath.setArtifact(podArtifactEntity);
+                artifactManagementService.validateAndStore(podRepositoryPath, new ByteArrayInputStream(cacheBytes));
+                
+                // 存储索引文件
+                final ByteArrayInputStream podspecContentByteArrayInputStream = new ByteArrayInputStream(podspecSourceContent.getBytes(StandardCharsets.UTF_8));
+                final String uri = podRepositoryPath.toUri().getPath();
                 final RepositoryPath podSpecRepositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, String.format(".specs/%s/%s/%s.podspec", podSpec.getName(), podSpec.getVersion(), podSpec.getName()));
-                final ArtifactEntity artifactEntity = new ArtifactEntity(repositoryPath.getStorageId(), repositoryPath.getRepositoryId(), 
-                        RepositoryFiles.readCoordinates(podSpecRepositoryPath));
-                final CocoapodsArtifactCoordinates artifactCoordinates = (CocoapodsArtifactCoordinates) artifactEntity.getArtifactCoordinates();
+                final ArtifactEntity podSpecArtifactEntity = new ArtifactEntity(storageId, repositoryId, RepositoryFiles.readCoordinates(podSpecRepositoryPath));
+                final CocoapodsArtifactCoordinates artifactCoordinates = (CocoapodsArtifactCoordinates) podSpecArtifactEntity.getArtifactCoordinates();
                 artifactCoordinates.setPath(uri);
                 artifactCoordinates.setBaseName(podSpec.getName());
                 artifactCoordinates.setVersion(podSpec.getVersion());
-                podSpecRepositoryPath.setArtifact(artifactEntity);
-                artifactManagementService.validateAndStore(podSpecRepositoryPath, byteArrayInputStream);
+                podSpecRepositoryPath.setArtifact(podSpecArtifactEntity);
+                artifactManagementService.validateAndStore(podSpecRepositoryPath, podspecContentByteArrayInputStream);
             }
 
             return ResponseEntity.ok("The artifact was deployed successfully.");
@@ -135,19 +147,21 @@ public class CocoapodsArtifactController extends BaseArtifactController
         final String storageId = repository.getStorage().getId();
         final String repositoryId = repository.getId();
 
-        final RepositoryPath repositoryPath = artifactResolutionService.resolvePath(storageId, repositoryId, path);
-        
-        if (null != repositoryPath)
-        { // 如果已经缓存过，则直接返回下载
-            vulnerabilityBlock(repositoryPath);
-            provideArtifactDownloadResponse(request, response, httpHeaders, repositoryPath);
-            return;
-        }
-        
+//        final RepositoryPath repositoryPath = artifactResolutionService.resolvePath(storageId, repositoryId, path);
         final Pattern compile = Pattern.compile("pod/git/(.*?)/(.*?)/(.*?)$");
         final Matcher matcher = compile.matcher(path);
         if (!matcher.find()) 
-        { throw new RuntimeException("非法请求路径"); }
+        { 
+            final RepositoryPath repositoryPath = repositoryPathResolver.resolve(repository, path);
+    
+            if (Files.exists(repositoryPath))
+            { // 如果已经缓存过，则直接返回下载
+                vulnerabilityBlock(repositoryPath);
+                provideArtifactDownloadResponse(request, response, httpHeaders, repositoryPath);
+            }
+            response.setStatus(HttpStatus.NOT_FOUND.value());
+            return;
+        }
         
         final String owner = matcher.group(1);
         final String podName = matcher.group(2);
@@ -159,22 +173,10 @@ public class CocoapodsArtifactController extends BaseArtifactController
                 artifactZipCachePath = String.format("%s/%s-%s.zip", artifactCacheFolderPath, podName, version), 
                 artifactTarGzPath = String.format("%s/%s/tags/%s/%s-%s.tar.gz", owner, podName, version, podName, version);
 
-        RepositoryPath repositoryTarGzPath = repositoryPathResolver.resolve(storageId, repositoryId, artifactTarGzPath);
-        downloadNewPod:
-        if (null != repositoryTarGzPath && FileUtil.exist(repositoryTarGzPath.toString()))
+//        RepositoryPath repositoryTarGzPath = repositoryPathResolver.resolve(storageId, repositoryId, artifactTarGzPath);
+        RepositoryPath repositoryTarGzPath = repositoryPathResolver.resolve(repository, artifactTarGzPath);
+        if (Files.exists(repositoryTarGzPath))
         { // 在repo-art插件请求下载前判断是否存在，存在则直接返回
-///            final Artifact artifactEntry = repositoryTarGzPath.getArtifactEntry();
-///            if (null != artifactEntry)
-///            {
-///                final CocoapodsArtifactCoordinates artifactCoordinates = (CocoapodsArtifactCoordinates) artifactEntry.getArtifactCoordinates();
-///                if (null != artifactCoordinates && (StringUtils.isEmpty(artifactCoordinates.getBaseName()) || StringUtils.isEmpty(artifactCoordinates.getVersion())))
-///                { // 检查制品包信息是否完整，不完整则重新下载新的制品包，进行信息不全
-///                    artifactManagementService.delete(repositoryTarGzPath.getParent(), true);
-///                    logger.info("发现Cocoapods制品包信息不完整，现进行重新下载，进行信息补全");
-///                    break downloadNewPod;
-///                }
-///            }
-            
             vulnerabilityBlock(repositoryTarGzPath);
             response.setHeader("Content-Disposition", String.format("attachment;filename=%s-%s.tar.gz", podName, version));
             response.setContentType("application/x-gzip");
@@ -183,19 +185,21 @@ public class CocoapodsArtifactController extends BaseArtifactController
         }
 
         RepositoryPath artifactZipCacheRPath = null;
+        final String artifact2TarGzLocalTempPath = String.format("%s/%s.zip", tempPath, UUID.randomUUID());
         try {
             artifactZipCacheRPath = artifactResolutionService.resolvePath(storageId, repositoryId, targetUrl, artifactZipCachePath);
-            final String artifact2TarGzPath = String.format("%s%s-%s.tar.gz", artifactZipCacheRPath.getParent().getParent().getTarget().toUri().getPath(), podName, version);
-            // zip转tar.gz
-            CompressUtil.zip2Targz(artifactZipCacheRPath.getTarget().toUri().getPath(), artifact2TarGzPath);
+            final BufferedInputStream zipInputStream = new BufferedInputStream(Files.newInputStream(artifactZipCacheRPath));
+            // 转存到本地临时文件
+            CompressUtil.zipInputSteam2TarGzFile(zipInputStream, artifact2TarGzLocalTempPath);
 
-            repositoryTarGzPath = repositoryPathResolver.resolve(storageId, repositoryId, artifactTarGzPath);
             // 装在附加信息
             final ArtifactEntity artifactEntity = new ArtifactEntity(storageId, repositoryId, RepositoryFiles.readCoordinates(repositoryTarGzPath));
             final CocoapodsArtifactCoordinates artifactCoordinates = (CocoapodsArtifactCoordinates) artifactEntity.getArtifactCoordinates();
             artifactCoordinates.setVersion(version);
             artifactCoordinates.setBaseName(podName);
             repositoryTarGzPath.setArtifact(artifactEntity);
+            // 将本地临时TarGz文件转存到Folib
+            artifactManagementService.store(repositoryTarGzPath, Files.newInputStream(Path.of(artifact2TarGzLocalTempPath)));
             artifactManagementService.validateAndStoreIndex(repositoryTarGzPath);
             
             vulnerabilityBlock(repositoryTarGzPath);
@@ -206,6 +210,9 @@ public class CocoapodsArtifactController extends BaseArtifactController
             // 删除临时目录
             if (null != artifactZipCacheRPath)
             { artifactManagementService.delete(artifactZipCacheRPath.getParent(), true); }
+            final File artifact2TarGzLocalTempFile = new File(artifact2TarGzLocalTempPath);
+            if (FileUtil.exist(artifact2TarGzLocalTempFile))
+            { FileUtil.del(artifact2TarGzLocalTempFile); }
         }
     }
 }

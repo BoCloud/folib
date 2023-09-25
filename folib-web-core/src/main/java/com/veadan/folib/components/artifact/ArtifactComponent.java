@@ -20,6 +20,7 @@ import com.veadan.folib.domain.ArtifactIdGroup;
 import com.veadan.folib.domain.Vulnerability;
 import com.veadan.folib.enums.BlockTypeEnum;
 import com.veadan.folib.enums.PromotionStatusEnum;
+import com.veadan.folib.enums.VersionConditionTypeEnum;
 import com.veadan.folib.event.artifact.ArtifactEventListenerRegistry;
 import com.veadan.folib.npm.metadata.*;
 import com.veadan.folib.providers.io.RepositoryPath;
@@ -44,6 +45,7 @@ import com.veadan.folib.storage.repository.RepositoryDto;
 import com.veadan.folib.storage.repository.RepositoryTypeEnum;
 import com.veadan.folib.util.CommonUtils;
 import com.veadan.folib.utils.PypiPackageNameConverter;
+import com.veadan.folib.utils.VersionUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.collections4.CollectionUtils;
@@ -297,7 +299,7 @@ public class ArtifactComponent {
             flag = endsWith(repositoryPath.getFileName().toString(), suffixList);
         } else if (repositoryPath.getFileSystem() instanceof PypiFileSystem) {
             log.debug("pypi布局");
-            List<String> suffixList = Arrays.asList(".whl", ".egg", ".zip");
+            List<String> suffixList = Arrays.asList(".whl", ".egg", ".zip", "tar.gz");
             flag = endsWith(repositoryPath.getFileName().toString(), suffixList);
         } else if (repositoryPath.getFileSystem() instanceof RpmFileSystem) {
             log.debug("rpm布局");
@@ -319,6 +321,14 @@ public class ArtifactComponent {
             log.debug("raw布局");
             if (Boolean.TRUE.equals(scan)) {
                 List<String> allSuffixList = Lists.newArrayList(".jar", ".war", ".ear", ".zip", ".json", ".tgz", ".nupkg", ".nuspec", "packages.config", ".whl", ".egg", ".zip", ".rpm", "tar", "tar.gz", "tar.bz2", "zip", "json", ".tgz", ".py", ".tgz", ".exe", ".podspec");
+                flag = endsWith(repositoryPath.getFileName().toString(), allSuffixList);
+            } else {
+                flag = true;
+            }
+        } else if (repositoryPath.getFileSystem() instanceof CocoapodsFileSystem) {
+            log.info("=====>>>>> cocoapods布局");
+            if (Boolean.TRUE.equals(scan)) {
+                List<String> allSuffixList = Lists.newArrayList(".tar.gz");
                 flag = endsWith(repositoryPath.getFileName().toString(), allSuffixList);
             } else {
                 flag = true;
@@ -357,7 +367,7 @@ public class ArtifactComponent {
                 flag = endsWith(filePath, suffixList);
             } else if (PypiLayoutProvider.ALIAS.equals(layout)) {
                 log.info(" pypi布局");
-                List<String> suffixList = Arrays.asList(".whl", ".egg", ".zip");
+                List<String> suffixList = Arrays.asList(".whl", ".egg", ".zip", "tar.gz");
                 flag = endsWith(filePath, suffixList);
             } else if (RpmLayoutProvider.ALIAS.equals(layout)) {
                 log.info(" rpm布局");
@@ -378,6 +388,10 @@ public class ArtifactComponent {
             } else if (RawLayoutProvider.ALIAS.equals(layout)) {
                 log.info(" raw布局");
                 flag = true;
+            } else if (CocoapodsLayoutProvider.ALIAS.equals(layout)) {
+                List<String> suffixList = Collections.singletonList(".tar.gz");
+                flag = endsWith(filePath, suffixList);
+                log.info("=====>>>>> Cocoapods布局");
             }
             log.info("制品路径 [{}] 布局 [{}] 是否是该布局支持的制品类型 [{}]", filePath, layout, flag);
         }
@@ -540,7 +554,34 @@ public class ArtifactComponent {
                 //包名阻断
                 Set<String> packageNames = mutableSecurityPolicyConfiguration.getPackageNames();
                 if (CollectionUtils.isNotEmpty(packageNames)) {
-                    block = packageNames.stream().anyMatch(packageName -> artifact.getArtifactPath().contains(packageName));
+                    String separator = ",";
+                    block = packageNames.stream().anyMatch(packageName -> {
+                        if (StringUtils.isNotBlank(packageName) && packageName.contains(separator)) {
+                            //需要分隔
+                            List<String> list = Arrays.asList(packageName.split(separator));
+                            String name = "", condition = "", version = "", artifactVersion = "";
+                            if (list.size() == 3) {
+                                name = list.get(0);
+                                condition = list.get(1);
+                                version = list.get(2);
+                                if (artifact.getArtifactPath().contains(name) && StringUtils.isNotBlank(condition) && StringUtils.isNotBlank(version)) {
+                                    artifactVersion = artifact.getArtifactCoordinates().getVersion();
+                                    if (StringUtils.isBlank(artifactVersion)) {
+                                        return false;
+                                    }
+                                    try {
+                                        int compare = VersionUtil.compareVersions(artifactVersion, version);
+                                        log.info("StorageId [{}] repositoryId [{}] artifactPath [{}] name [{}] condition [{}] version [{}] artifactVersion [{}] compare [{}]", storageId, repositoryId, artifact.getArtifactPath(), name, condition, version, artifactVersion, compare);
+                                        return VersionConditionTypeEnum.queryValue(condition).contains(compare);
+                                    } catch (Exception ex) {
+                                        log.error(ExceptionUtils.getStackTrace(ex));
+                                    }
+                                    return false;
+                                }
+                            }
+                        }
+                        return artifact.getArtifactPath().contains(packageName);
+                    });
                 }
             }
         }

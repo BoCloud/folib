@@ -27,5 +27,12 @@ public interface AuthorizationConfigService
 
     void addPrivilegesToAnonymous(List<Privileges> privilegeList) throws IOException;
 
+    /**
+     * 处理角色信息
+     *
+     * @param roleInfo 角色信息
+     */
+    void handlerRole(String roleInfo);
+
     void clearPrivilegesAnonymous() throws IOException;
 }

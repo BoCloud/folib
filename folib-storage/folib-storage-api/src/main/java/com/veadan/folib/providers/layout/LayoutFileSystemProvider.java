@@ -1,5 +1,28 @@
 package com.veadan.folib.providers.layout;
 
+import com.veadan.folib.artifact.ArtifactNotFoundException;
+import com.veadan.folib.domain.Artifact;
+import com.veadan.folib.domain.Vulnerability;
+import com.veadan.folib.event.artifact.ArtifactEventListenerRegistry;
+import com.veadan.folib.event.repository.RepositoryEventListenerRegistry;
+import com.veadan.folib.io.*;
+import com.veadan.folib.io.LazyOutputStream.OutputStreamSupplier;
+import com.veadan.folib.providers.io.RepositoryFileAttributeType;
+import com.veadan.folib.providers.io.RepositoryFiles;
+import com.veadan.folib.providers.io.RepositoryPath;
+import com.veadan.folib.providers.io.StorageFileSystemProvider;
+import com.veadan.folib.repositories.ArtifactRepository;
+import com.veadan.folib.repositories.VulnerabilityRepository;
+import com.veadan.folib.storage.ArtifactResolutionException;
+import com.veadan.folib.storage.Storage;
+import com.veadan.folib.storage.repository.Repository;
+import org.apache.commons.io.FilenameUtils;
+import org.apache.commons.lang3.exception.ExceptionUtils;
+import org.carlspring.commons.io.reloading.FSReloadableInputStreamHandler;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import javax.inject.Inject;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -14,43 +37,14 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import javax.inject.Inject;
-
-import com.veadan.folib.domain.Vulnerability;
-import com.veadan.folib.repositories.VulnerabilityRepository;
-import org.carlspring.commons.io.reloading.FSReloadableInputStreamHandler;
-import com.veadan.folib.artifact.ArtifactNotFoundException;
-import com.veadan.folib.domain.Artifact;
-import com.veadan.folib.event.artifact.ArtifactEventListenerRegistry;
-import com.veadan.folib.event.repository.RepositoryEventListenerRegistry;
-import com.veadan.folib.io.ByteRangeInputStream;
-import com.veadan.folib.io.LayoutInputStream;
-import com.veadan.folib.io.LayoutOutputStream;
-import com.veadan.folib.io.LazyInputStream;
-import com.veadan.folib.io.LazyOutputStream;
-import com.veadan.folib.io.LazyOutputStream.OutputStreamSupplier;
-import com.veadan.folib.io.StreamUtils;
-import com.veadan.folib.providers.io.RepositoryFileAttributeType;
-import com.veadan.folib.providers.io.RepositoryFiles;
-import com.veadan.folib.providers.io.RepositoryPath;
-import com.veadan.folib.providers.io.StorageFileSystemProvider;
-import com.veadan.folib.repositories.ArtifactRepository;
-import com.veadan.folib.storage.ArtifactResolutionException;
-import com.veadan.folib.storage.Storage;
-import com.veadan.folib.storage.repository.Repository;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 /**
  * This class decorates {@link StorageFileSystemProvider} with common layout specific
  * logic. <br>
  *
  * @author xuxinping
- *
  * @see LayoutProvider
  */
-public abstract class LayoutFileSystemProvider extends StorageFileSystemProvider
-{
+public abstract class LayoutFileSystemProvider extends StorageFileSystemProvider {
 
     private static final Logger logger = LoggerFactory.getLogger(LayoutFileSystemProvider.class);
 
@@ -67,8 +61,7 @@ public abstract class LayoutFileSystemProvider extends StorageFileSystemProvider
     private VulnerabilityRepository vulnerabilityRepository;
 
 
-    public LayoutFileSystemProvider(FileSystemProvider storageFileSystemProvider)
-    {
+    public LayoutFileSystemProvider(FileSystemProvider storageFileSystemProvider) {
         super(storageFileSystemProvider);
     }
 
@@ -77,18 +70,14 @@ public abstract class LayoutFileSystemProvider extends StorageFileSystemProvider
     @Override
     public LazyInputStream newInputStream(Path path,
                                           OpenOption... options)
-            throws IOException
-    {
+            throws IOException {
         return new LazyInputStream(() -> {
-            try
-            {
-                if (!Files.exists(path))
-                {
+            try {
+                if (!Files.exists(path)) {
                     throw new ArtifactNotFoundException(path.toUri());
                 }
 
-                if (Files.isDirectory(path))
-                {
+                if (Files.isDirectory(path)) {
                     throw new ArtifactNotFoundException(path.toUri(),
                             String.format("The artifact path is a directory: [%s]",
                                     path.toString()));
@@ -99,9 +88,7 @@ public abstract class LayoutFileSystemProvider extends StorageFileSystemProvider
                 bris.setLength(Files.size(path));
 
                 return decorateStream((RepositoryPath) path, bris);
-            }
-            catch (NoSuchAlgorithmException e)
-            {
+            } catch (NoSuchAlgorithmException e) {
                 throw new IOException(e);
             }
         });
@@ -109,11 +96,9 @@ public abstract class LayoutFileSystemProvider extends StorageFileSystemProvider
 
     protected LayoutInputStream decorateStream(RepositoryPath path,
                                                InputStream is)
-            throws NoSuchAlgorithmException, IOException
-    {
+            throws NoSuchAlgorithmException, IOException {
         // Add digest algorithm only if it is not a Checksum (we don't need a Checksum of Checksum).
-        if (Boolean.TRUE.equals(RepositoryFiles.isChecksum(path)))
-        {
+        if (Boolean.TRUE.equals(RepositoryFiles.isChecksum(path))) {
             return new LayoutInputStream(is, Collections.emptySet());
         }
 
@@ -121,8 +106,7 @@ public abstract class LayoutFileSystemProvider extends StorageFileSystemProvider
     }
 
     public RepositoryPath getChecksumPath(RepositoryPath path,
-                                          String digestAlgorithm)
-    {
+                                          String digestAlgorithm) {
         String checksumExtension = ".".concat(digestAlgorithm.toLowerCase().replaceAll("-", ""));
 
         return path.resolveSibling(path.getFileName().toString().concat(checksumExtension));
@@ -131,23 +115,18 @@ public abstract class LayoutFileSystemProvider extends StorageFileSystemProvider
     @Override
     public LazyOutputStream newOutputStream(Path path,
                                             OpenOption... options)
-            throws IOException
-    {
+            throws IOException {
         return new LazyOutputStream(() -> {
-            if (Files.exists(path) && Files.isDirectory(path))
-            {
+            if (Files.exists(path) && Files.isDirectory(path)) {
                 throw new ArtifactResolutionException(String.format("The artifact path is a directory: [%s]",
                         path.toString()));
             }
 
             Files.createDirectories(path.getParent());
 
-            try
-            {
+            try {
                 return decorateStream((RepositoryPath) path, super.newOutputStream(path, options));
-            }
-            catch (NoSuchAlgorithmException e)
-            {
+            } catch (NoSuchAlgorithmException e) {
                 throw new IOException(e);
             }
         });
@@ -155,25 +134,20 @@ public abstract class LayoutFileSystemProvider extends StorageFileSystemProvider
 
     protected LayoutOutputStream decorateStream(RepositoryPath path,
                                                 OutputStream os)
-            throws NoSuchAlgorithmException, IOException
-    {
+            throws NoSuchAlgorithmException, IOException {
         Set<String> digestAlgorithmSet = path.getFileSystem().getDigestAlgorithmSet();
         LayoutOutputStream result = new LayoutOutputStream(os);
 
         // Add digest algorithm only if it is not a Checksum (we don't need a Checksum of Checksum).
-        if (Boolean.TRUE.equals(RepositoryFiles.isChecksum(path)))
-        {
+        if (Boolean.TRUE.equals(RepositoryFiles.isChecksum(path))) {
             return result;
         }
 
         digestAlgorithmSet.stream()
                 .forEach(e -> {
-                    try
-                    {
+                    try {
                         result.addAlgorithm(e);
-                    }
-                    catch (NoSuchAlgorithmException t)
-                    {
+                    } catch (NoSuchAlgorithmException t) {
                         logger.error("Digest algorithm not supported: alg-[{}]", e, t);
                     }
                 });
@@ -182,28 +156,21 @@ public abstract class LayoutFileSystemProvider extends StorageFileSystemProvider
 
     public void storeChecksum(RepositoryPath basePath,
                               boolean forceRegeneration)
-            throws IOException
-    {
+            throws IOException {
         Files.walk(basePath)
                 .filter(p -> !Files.isDirectory(p))
                 .filter(p -> {
-                    try
-                    {
+                    try {
                         return !Boolean.TRUE.equals(RepositoryFiles.isChecksum((RepositoryPath) p));
-                    }
-                    catch (IOException e)
-                    {
+                    } catch (IOException e) {
                         logger.error("Failed to read attributes for [{}]", p, e);
                     }
                     return false;
                 })
                 .forEach(p -> {
-                    try
-                    {
+                    try {
                         writeChecksum((RepositoryPath) p, forceRegeneration);
-                    }
-                    catch (IOException e)
-                    {
+                    } catch (IOException e) {
                         logger.error("Failed to write checksum for [{}]", p, e);
                     }
                 });
@@ -212,13 +179,10 @@ public abstract class LayoutFileSystemProvider extends StorageFileSystemProvider
 
     protected void writeChecksum(RepositoryPath path,
                                  boolean force)
-            throws IOException
-    {
-        try (InputStream is = newInputStream(path))
-        {
+            throws IOException {
+        try (InputStream is = newInputStream(path)) {
             byte[] buffer = new byte[1024];
-            while (is.read(buffer) > 0)
-            {
+            while (is.read(buffer) > 0) {
                 //calculate checksum while reading the stream
             }
             String layout = path.getRepository().getLayout();
@@ -229,16 +193,12 @@ public abstract class LayoutFileSystemProvider extends StorageFileSystemProvider
                         String checksum = StreamUtils.findSource(LayoutInputStream.class, is)
                                 .getMessageDigestAsHexadecimalString(p, layout);
                         RepositoryPath checksumPath = getChecksumPath(path, p);
-                        if (Files.exists(checksumPath) && !force)
-                        {
+                        if (Files.exists(checksumPath) && !force) {
                             return;
                         }
-                        try
-                        {
+                        try {
                             Files.write(checksumPath, checksum.getBytes());
-                        }
-                        catch (IOException e)
-                        {
+                        } catch (IOException e) {
                             logger.error("Failed to write checksum for [{}]",
                                     checksumPath.toString(), e);
                         }
@@ -249,47 +209,43 @@ public abstract class LayoutFileSystemProvider extends StorageFileSystemProvider
     @Override
     public void delete(Path path,
                        boolean force)
-            throws IOException
-    {
+            throws IOException {
         logger.info("Deleting in ({})...", path);
 
 
         RepositoryPath repositoryPath = (RepositoryPath) path;
         deleteMetadata(repositoryPath);
 
-        if (!Files.exists(path))
-        {
+        if (!Files.exists(path)) {
             logger.warn("Path not found: path-[{}]", path);
 
             return;
         }
 
         boolean directory = Files.isDirectory(path);
+        deleteArtifactMedataFile(repositoryPath);
         super.delete(path, force);
-        if (!directory)
-        {
+        if (!directory) {
             artifactEventListenerRegistry.dispatchArtifactPathDeletedEvent(path);
-        }else{
+        } else {
             artifactEventListenerRegistry.dispatchArtifactDirectoryPathDeletedEvent(path);
         }
 
         logger.info("Deleted [{}]", path);
     }
+
     @Override
     protected void doDeletePath(RepositoryPath repositoryPath,
                                 boolean force)
-            throws IOException
-    {
-        if (!RepositoryFiles.isArtifact(repositoryPath))
-        {
+            throws IOException {
+        if (!RepositoryFiles.isArtifact(repositoryPath)) {
             super.doDeletePath(repositoryPath, force);
             return;
         }
 
         Artifact artifactEntry = Optional.ofNullable(repositoryPath.getArtifactEntry())
                 .orElseGet(() -> fetchArtifactEntry(repositoryPath));
-        if (artifactEntry != null)
-        {
+        if (artifactEntry != null) {
             Set<String> vulnerabilities = Optional.ofNullable(artifactEntry.getVulnerabilitySet()).orElse(Collections.emptySet()).stream().map(Vulnerability::getUuid).collect(Collectors.toSet());
             artifactEntityRepository.delete(artifactEntry);
             vulnerabilityRepository.handlerVulnerabilityForArtifactDelete(vulnerabilities);
@@ -298,16 +254,12 @@ public abstract class LayoutFileSystemProvider extends StorageFileSystemProvider
         super.doDeletePath(repositoryPath, force);
     }
 
-    private Artifact fetchArtifactEntry(RepositoryPath repositoryPath)
-    {
+    private Artifact fetchArtifactEntry(RepositoryPath repositoryPath) {
         Repository repository = repositoryPath.getRepository();
         String path;
-        try
-        {
+        try {
             path = RepositoryFiles.relativizePath(repositoryPath);
-        }
-        catch (IOException e)
-        {
+        } catch (IOException e) {
             logger.error("Failed to fetch ArtifactEntry for [{}]", repositoryPath, e);
             return null;
         }
@@ -319,8 +271,7 @@ public abstract class LayoutFileSystemProvider extends StorageFileSystemProvider
 
     @Override
     public void deleteTrash(RepositoryPath path)
-            throws IOException
-    {
+            throws IOException {
         Repository repository = path.getRepository();
         Storage storage = repository.getStorage();
 
@@ -334,11 +285,9 @@ public abstract class LayoutFileSystemProvider extends StorageFileSystemProvider
     }
 
 
-
     @Override
     public void undelete(RepositoryPath path)
-            throws IOException
-    {
+            throws IOException {
         Repository repository = path.getRepository();
         Storage storage = repository.getStorage();
 
@@ -354,36 +303,43 @@ public abstract class LayoutFileSystemProvider extends StorageFileSystemProvider
     @Override
     protected Map<RepositoryFileAttributeType, Object> getRepositoryFileAttributes(RepositoryPath repositoryRelativePath,
                                                                                    RepositoryFileAttributeType... attributeTypes)
-            throws IOException
-    {
+            throws IOException {
         return getLayoutProvider().getRepositoryFileAttributes(repositoryRelativePath, attributeTypes);
     }
 
     protected void deleteMetadata(RepositoryPath repositoryPath)
-            throws IOException
-    {
+            throws IOException {
 
     }
 
-    public class PathOutputStreamSupplier implements OutputStreamSupplier
-    {
+    public class PathOutputStreamSupplier implements OutputStreamSupplier {
         private Path path;
 
         private OpenOption[] options;
 
         public PathOutputStreamSupplier(Path path,
-                                        OpenOption... options)
-        {
+                                        OpenOption... options) {
             this.path = path;
             this.options = options;
         }
 
         @Override
-        public OutputStream get() throws IOException
-        {
+        public OutputStream get() throws IOException {
             return LayoutFileSystemProvider.super.newOutputStream(unwrap(path), options);
         }
 
+    }
+
+    private void deleteArtifactMedataFile(RepositoryPath repositoryPath) {
+        try {
+            String artifactMetadataFileName = "." + FilenameUtils.getName(repositoryPath.getFileName().toString()) + ".metadata";
+            RepositoryPath artifactRepositoryPath = repositoryPath.getParent().resolve(artifactMetadataFileName);
+            if (Files.exists(artifactRepositoryPath)) {
+                super.delete(artifactRepositoryPath, true);
+            }
+        } catch (Exception ex) {
+            logger.error("删除制品缓存元数据文件 [{}] 失败：[{}]", repositoryPath.toString(), ExceptionUtils.getStackTrace(ex));
+        }
     }
 
 }

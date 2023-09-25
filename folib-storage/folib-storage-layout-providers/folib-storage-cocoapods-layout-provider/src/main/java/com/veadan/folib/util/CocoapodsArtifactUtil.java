@@ -163,7 +163,11 @@ public class CocoapodsArtifactUtil
     
     public static String fetchPodspecSourceContentByInputStream(InputStream inputStream)
     {
-        try (InputStream gzipInputStream = new GzipCompressorInputStream(inputStream);
+        if (null == inputStream)
+        { return null; }
+        
+        try (BufferedInputStream bis = new BufferedInputStream(inputStream);
+             InputStream gzipInputStream = new GzipCompressorInputStream(bis);
              TarArchiveInputStream tarInputStream = new TarArchiveInputStream(gzipInputStream);) {
 
             TarArchiveEntry entry;
@@ -188,14 +192,69 @@ public class CocoapodsArtifactUtil
             return null;
         }
     }
+    public static String fetchPodspecSourceContentByInputStream(InputStream inputStream, boolean close)
+    {
+        if (null == inputStream)
+        { return null; }
+
+        BufferedInputStream bis = null;
+        InputStream gzipInputStream = null;
+        TarArchiveInputStream tarInputStream = null;
+        
+        try {
+            bis = new BufferedInputStream(inputStream);
+            gzipInputStream = new GzipCompressorInputStream(bis);
+            tarInputStream = new TarArchiveInputStream(gzipInputStream);
+            TarArchiveEntry entry;
+            while ((entry = tarInputStream.getNextTarEntry()) != null) {
+                if (!entry.isDirectory()) {
+                    // 处理非目录文件
+                    String entryName = entry.getName();
+                    byte[] content = new byte[(int) entry.getSize()];
+                    tarInputStream.read(content);
+
+                    if (entryName.endsWith(".podspec")) {
+                        return new String(content);
+                    }
+                }
+            }
+
+            return null;
+        }
+        catch (Exception e)
+        {
+            e.printStackTrace();
+            return null;
+        }
+        finally {
+            if (close)
+            {
+                try {
+                    if (null != bis)
+                    { bis.close(); }
+                    if (null != gzipInputStream)
+                    { gzipInputStream.close(); }
+                    if (null != tarInputStream)
+                    { tarInputStream.close(); }
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+        }
+    }
     
     public static PodSpec resolvePodSpec(String podSpecContent)
     {
-        final PodSpec podSpec = new PodSpec();
-        podSpec.setName(findAttr(podSpecContent, "name"));
-        podSpec.setVersion(findAttr(podSpecContent, "version"));
-        podSpec.setLicense(findAttr(podSpecContent, "license"));
-        return podSpec;
+        if (StringUtils.isNotBlank(podSpecContent))
+        {
+            final PodSpec podSpec = new PodSpec();
+            podSpec.setName(findAttr(podSpecContent, "name"));
+            podSpec.setVersion(findAttr(podSpecContent, "version"));
+            podSpec.setLicense(findAttr(podSpecContent, "license"));
+            return podSpec;
+        }
+        
+        return null;
     }
     
     public static PodSpec resolvePodSpecByTarGzFile(String podTarGzFilePath)
@@ -256,9 +315,9 @@ public class CocoapodsArtifactUtil
     }
 
 
-    public static void main(String[] args) throws IOException {
-        final String path = "/Users/zerowang/Downloads/AFNetworking.tar.gz";
-        final PodSpec podSpec = resolvePodSpecByTarGzFile(path);
-        System.out.println(podSpec);
-    }
+//    public static void main(String[] args) throws IOException {
+//        final String path = "/Users/zerowang/Downloads/AFNetworking.tar.gz";
+//        final PodSpec podSpec = resolvePodSpecByTarGzFile(path);
+//        System.out.println(podSpec);
+//    }
 }

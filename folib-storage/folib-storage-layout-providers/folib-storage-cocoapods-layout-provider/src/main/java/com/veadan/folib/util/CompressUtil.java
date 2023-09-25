@@ -1,26 +1,19 @@
-package com.veadan.folib.utils;
+package com.veadan.folib.util;
 
 import cn.hutool.core.io.FileUtil;
-import com.alibaba.fastjson.JSON;
-import com.alibaba.fastjson.JSONObject;
 import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
-import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
 import org.apache.commons.compress.archivers.tar.TarArchiveOutputStream;
-import org.apache.commons.compress.archivers.zip.ZipFile;
-import org.apache.commons.compress.compressors.gzip.GzipCompressorInputStream;
 import org.apache.commons.compress.compressors.gzip.GzipCompressorOutputStream;
 import org.apache.commons.lang3.StringUtils;
 
 import java.io.ByteArrayOutputStream;
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.Enumeration;
 import java.util.function.BiFunction;
 import java.util.function.Function;
-import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
@@ -39,7 +32,7 @@ public class CompressUtil
     
     public static void zip2Targz(String zipPath, String targzPath, Function<String, Boolean> zipEntryPredicate, Function<String, String> zipEntryNameRebuildFunc, Function<String, Boolean> contentHandlerPredicate, BiFunction<String, byte[], byte[]> contentHandler) throws IOException
     {
-        FileUtil.touch(targzPath);
+        FileUtil.touch(new File(targzPath));
         // 创建tar.gz输出流
         try (final FileOutputStream fos = new FileOutputStream(targzPath);
              final GzipCompressorOutputStream gos = new GzipCompressorOutputStream(fos);
@@ -47,6 +40,62 @@ public class CompressUtil
 
              final FileInputStream fis = new FileInputStream(zipPath);
              final ZipInputStream zis = new ZipInputStream(fis);
+             final ByteArrayOutputStream baos = new ByteArrayOutputStream();)
+        {
+            tos.setLongFileMode(TarArchiveOutputStream.LONGFILE_GNU);
+
+            ZipEntry ze;
+            while ((ze = zis.getNextEntry()) != null) {
+                String name = ze.getName();
+                if (null != zipEntryPredicate && !zipEntryPredicate.apply(name))
+                { continue; }
+                if (null != zipEntryNameRebuildFunc)
+                { name = zipEntryNameRebuildFunc.apply(name); }
+                if (StringUtils.isEmpty(name))
+                { continue; }
+
+                final TarArchiveEntry tarArchiveEntry = new TarArchiveEntry(name);
+                if (ze.isDirectory()) {
+                    // 目录处理逻辑
+                    tos.putArchiveEntry(tarArchiveEntry);
+                } else {
+                    // 文件处理逻辑
+                    byte[] buffer = new byte[1024];
+                    int readLen = -1;
+                    baos.reset();
+                    while ((readLen = zis.read(buffer)) != -1) {
+                        baos.write(buffer, 0, readLen);
+                    }
+
+                    byte[] extra = baos.toByteArray();
+                    // 按条件进行过滤进行内容重构
+                    if (null != contentHandlerPredicate && contentHandlerPredicate.apply(name)) {
+                        if (null != contentHandler)
+                        { extra = contentHandler.apply(name, extra); }
+                    }
+                    tarArchiveEntry.setSize(extra.length);
+                    tos.putArchiveEntry(tarArchiveEntry);
+                    tos.write(extra);
+                }
+                tos.closeArchiveEntry();
+            }
+        }
+    }
+
+    public static void zipInputSteam2TarGzFile(InputStream zipInputSteam, String targzPath) throws IOException
+    {
+        zipInputSteam2TarGzFile(zipInputSteam, targzPath, null, null, null, null);
+    }
+
+    public static void zipInputSteam2TarGzFile(InputStream zipInputSteam, String targzPath, Function<String, Boolean> zipEntryPredicate, Function<String, String> zipEntryNameRebuildFunc, Function<String, Boolean> contentHandlerPredicate, BiFunction<String, byte[], byte[]> contentHandler) throws IOException
+    {
+        FileUtil.touch(new File(targzPath));
+        // 创建tar.gz输出流
+        try (final FileOutputStream fos = new FileOutputStream(targzPath);
+             final GzipCompressorOutputStream gos = new GzipCompressorOutputStream(fos);
+             final TarArchiveOutputStream tos = new TarArchiveOutputStream(gos);
+
+             final ZipInputStream zis = new ZipInputStream(zipInputSteam);
              final ByteArrayOutputStream baos = new ByteArrayOutputStream();)
         {
             tos.setLongFileMode(TarArchiveOutputStream.LONGFILE_GNU);

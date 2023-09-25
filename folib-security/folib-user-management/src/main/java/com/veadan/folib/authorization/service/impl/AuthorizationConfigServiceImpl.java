@@ -11,8 +11,11 @@ import java.util.function.Consumer;
 
 import javax.inject.Inject;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.veadan.folib.authorization.domain.Client;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.SerializationUtils;
+import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.commons.lang3.mutable.MutableBoolean;
 import com.veadan.folib.authorization.AuthorizationConfigFileManager;
 import com.veadan.folib.authorization.domain.AuthorizationConfig;
@@ -25,9 +28,10 @@ import org.springframework.stereotype.Service;
 
 
 /**
- * @author 
+ * @author
  * @author veadan
  */
+@Slf4j
 @Service
 public class AuthorizationConfigServiceImpl
         implements AuthorizationConfigService
@@ -154,6 +158,20 @@ public class AuthorizationConfigServiceImpl
                      });
     }
 
+    @Override
+    public void handlerRole(String roleInfo) {
+        try {
+            ObjectMapper objectMapper = new ObjectMapper();
+            RoleDto role = objectMapper.readValue(roleInfo, RoleDto.class);
+            if (getDto().getRoles().stream().anyMatch(item -> item.getName().equals(role.getName()))) {
+                deleteRole(role.getName());
+            }
+            addRole(role);
+        } catch (Exception ex) {
+            log.error("处理角色信息 [{}] 失败 [{}]", roleInfo, ExceptionUtils.getStackTrace(ex));
+        }
+    }
+    
     @Override
     public void clearPrivilegesAnonymous() throws IOException {
         modifyInLock(config ->

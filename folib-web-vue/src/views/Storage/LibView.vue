@@ -19,7 +19,7 @@
       :activeKey="tabActiveKey"
       @change="tabChange($event)"
     >
-      <a-tab-pane :key="1" tab="仓库">
+      <a-tab-pane :key="1" tab="详情">
         <store
           ref="store"
           :metadataTypes="metadataTypes"
@@ -30,7 +30,7 @@
           @openDetial="openDetial"
         />
       </a-tab-pane>
-      <a-tab-pane :key="2" tab="安全" v-if="$store.state.user.token">
+      <a-tab-pane :key="2" tab="统计" v-if="$store.state.user.token">
         <safe
           v-if="tabActiveKey == 2"
           :folibRepository="folibRepository"

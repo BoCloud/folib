@@ -4,6 +4,7 @@ import com.veadan.folib.artifact.coordinates.ArtifactCoordinates;
 import com.veadan.folib.artifact.coordinates.CocoapodsArtifactCoordinates;
 import com.veadan.folib.providers.layout.AbstractLayoutProvider;
 import com.veadan.folib.providers.layout.CocoapodsLayoutProvider;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
@@ -54,11 +55,14 @@ public class CocoapodsDependencyFormatter
     public String getDependencySnippet(ArtifactCoordinates artifactCoordinates)
     {
         CocoapodsArtifactCoordinates coordinates = (CocoapodsArtifactCoordinates) artifactCoordinates;
-        String sb = "target 'MyApp' do\n" +
-                "  pod '"+coordinates.getBaseName()+"', '~> "+coordinates.getVersion()+"'\n" +
-                "end";
+        if (StringUtils.isNotBlank(coordinates.getBaseName()) && StringUtils.isNotBlank(coordinates.getVersion()))
+        {
+            return "target 'MyApp' do\n" +
+                    "  pod '"+coordinates.getBaseName()+"', '"+coordinates.getVersion()+"'\n" +
+                    "end";
+        }
 
-        return sb;
+        return null;
     }
 
 }

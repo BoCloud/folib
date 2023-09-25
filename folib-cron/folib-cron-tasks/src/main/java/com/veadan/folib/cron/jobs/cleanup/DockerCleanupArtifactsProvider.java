@@ -73,7 +73,7 @@ public class DockerCleanupArtifactsProvider implements CleanupArtifactsProvider 
         //获取仓库下制品更新时间比较
         LocalDateTime localDateTime = artifact.getLastUpdated();
         //保留N天的制品
-        if (!LocalDateTime.now().minusSeconds(tempDay).isBefore(localDateTime)) {
+        if (!LocalDateTime.now().minusDays(tempDay).isBefore(localDateTime)) {
             try {
                 RepositoryPath deleteRepositoryPath = repositoryPath.getParent();
                 log.info("Cleanup docker version storageId {} repositoryId {} path {}", storageId, repositoryId, deleteRepositoryPath.toString());

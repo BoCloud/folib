@@ -3,7 +3,6 @@ package com.veadan.folib.components;
 import com.veadan.folib.config.janusgraph.JanusGraphDbProfile;
 import com.veadan.folib.entity.Dict;
 import com.veadan.folib.enums.DictTypeEnum;
-import com.veadan.folib.enums.LockTypeEnum;
 import com.veadan.folib.enums.UpgradeTaskStatusEnum;
 import com.veadan.folib.scanner.common.util.SpringContextUtil;
 import com.veadan.folib.scanner.service.ScanService;
@@ -18,7 +17,6 @@ import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.stereotype.Component;
 
-import javax.inject.Inject;
 import java.lang.reflect.Method;
 import java.util.Collections;
 import java.util.List;
@@ -92,7 +90,11 @@ public class FolibApplicationRunner implements ApplicationRunner {
                         targetMethod = getMethod(proxyObject.getClass(), methodName);
                         if (Objects.nonNull(targetMethod)) {
                             // 执行方法
-                            targetMethod.invoke(proxyObject);
+                            if (StringUtils.isNotBlank(dict.getAlias())) {
+                                targetMethod.invoke(proxyObject, dict.getAlias());
+                            } else {
+                                targetMethod.invoke(proxyObject);
+                            }
                             log.info("执行升级task：{} {}", clazz, methodName);
                             dict.setComment(UpgradeTaskStatusEnum.EXECUTED_SUCCESS.getStatus());
                             dictService.updateUnExecutedTask(dict);

@@ -1,5 +1,5 @@
 <template>
-  <div>
+  <div class="repo-info">
     <a-affix :offset-top="50" class="repository-affix">
       <a-row>
         <a-col :span="24" :md="24" class="mb-24">
@@ -37,25 +37,59 @@
                         </h4>
                       </a>
                     </a-tooltip>
-                    <a-tooltip>
-                      <template slot="title">
-                        仓库使用地址，具体使用方法，请看页面右侧使用帮助
-                      </template>
-                      <a>
-                        <p class="copy-p">
-                          {{
+                    <a-descriptions title="" :column="1" class="repo-address">
+                      <a-descriptions-item label="浏览地址">
+                        <a-tooltip placement="topLeft">
+                          <template slot="title">
+                            仓库浏览地址，点击可进入浏览页面
+                          </template>
+                          <a :href="baseUrl +
+                            'api/browse/' +
+                            folibRepository.storageId +
+                            '/' +
+                            folibRepository.id" target="_blank">
+                            <p class="copy-p">
+                              {{ baseUrl +
+                              'api/browse/' +
+                              folibRepository.storageId +
+                              '/' +
+                              folibRepository.id }}
+                            </p>
+                          </a>
+                        </a-tooltip>
+                        <a class="ml-10">
+                          <a-icon type="copy" @click="
+                            copy(
+                              baseUrl +
+                              'api/browse/' +
+                              folibRepository.storageId +
+                              '/' +
+                              folibRepository.id 
+                            )" />
+                        </a>
+                      </a-descriptions-item>
+                      <a-descriptions-item label="使用地址">
+                        <a-tooltip>
+                          <template slot="title">
+                            仓库使用地址，具体使用方法，请看页面右侧使用帮助
+                          </template>
+                          <a>
+                            <p class="copy-p">
+                              {{
+                                getRepositoryUrl()
+                              }}
+                            </p>
+                          </a>
+                        </a-tooltip>
+                        <a class="ml-10">
+                          <a-icon type="copy" @click="
+                          copy(
                             getRepositoryUrl()
-                          }}
-                        </p>
-                      </a>
-                    </a-tooltip>
-                    <a class="ml-10">
-                      <a-icon type="copy" @click="
-                      copy(
-                        getRepositoryUrl()
-                      )
-                        " />
-                    </a>
+                          )
+                            " />
+                        </a>
+                      </a-descriptions-item>
+                    </a-descriptions>
                   </div>
                 </a-col>
                 <a-col :span="24" :md="12" style="
@@ -2128,11 +2162,15 @@ export default {
 }
 </script>
 <style lang="scss" scoped>
-.selectdrop::v-deep .gb-ant-select-multiple-cascader .cascader-content-wrap .cascader-content-container .cascader-content-list {
-  min-width: 280px;
-}
-
-.copy-p {
-  display: inline-block;
+.repo-info::v-deep {
+  .selectdrop .gb-ant-select-multiple-cascader .cascader-content-wrap .cascader-content-container .cascader-content-list {
+    min-width: 280px;
+  }
+  .copy-p {
+    display: inline-block;
+  }
+  .repo-address .ant-descriptions-item-label {
+    margin-left: 0px !important;
+  }
 }
 </style>

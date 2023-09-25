@@ -7,7 +7,7 @@ module.exports = {
 		config
 			.plugin('html')
 			.tap(args => {
-				args[0].title = 'FoLibrary'
+				args[0].title = '制品库'
 				return args
 			})
 	},
