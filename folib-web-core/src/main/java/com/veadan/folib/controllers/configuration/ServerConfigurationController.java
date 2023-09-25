@@ -1,12 +1,19 @@
 package com.veadan.folib.controllers.configuration;
 
 import com.google.common.collect.Lists;
+import com.veadan.folib.authorization.dto.AuthorizationConfigDto;
 import com.veadan.folib.authorization.service.AuthorizationConfigService;
+import com.veadan.folib.cluster.SyncAuthorizationEnum;
+import com.veadan.folib.cluster.SyncServerSettingsEnum;
+import com.veadan.folib.components.common.CommonComponent;
 import com.veadan.folib.configuration.Configuration;
+import com.veadan.folib.controllers.cluster.dto.SyncAuthorizationDto;
+import com.veadan.folib.controllers.cluster.dto.SyncServerSettingsDto;
 import com.veadan.folib.controllers.support.BaseUrlEntityBody;
 import com.veadan.folib.controllers.support.InstanceNameEntityBody;
 import com.veadan.folib.controllers.support.PortEntityBody;
 import com.veadan.folib.forms.configuration.*;
+import com.veadan.folib.services.ClusterSyncService;
 import com.veadan.folib.services.ConfigurationManagementService;
 import com.veadan.folib.services.support.ConfigurationException;
 import com.veadan.folib.users.domain.Privileges;
@@ -18,6 +25,7 @@ import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.ApplicationContext;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -53,14 +61,17 @@ public class ServerConfigurationController
 
     private final Validator validator;
 
-    @Autowired
+    @Inject
+    @Lazy
+    private CommonComponent commonComponent;
+
+    @Inject
+    @Lazy
+    private ClusterSyncService clusterSyncService;
+
+    @Inject
+    @Lazy
     private AuthorizationConfigService authorizationConfigService;
-
-    @Inject
-    private ApplicationContext applicationContext;
-
-    @Inject
-    private AuthoritiesProvider authoritiesProvider;
 
     public ServerConfigurationController(ConfigurationManagementService configurationManagementService,
                                          @Qualifier("localValidatorFactoryBean") Validator validator) {
@@ -227,50 +238,20 @@ public class ServerConfigurationController
                     MediaType.APPLICATION_JSON_VALUE})
     public ResponseEntity setServerSettings(@RequestBody ServerSettingsForm serverSettingsForm,
                                             BindingResult bindingResult,
-                                            @RequestHeader(HttpHeaders.ACCEPT) String acceptHeader) throws IOException {
+                                            @RequestHeader(HttpHeaders.ACCEPT) String acceptHeader) throws Exception {
         if (serverSettingsForm == null) {
             return getBadRequestResponseEntity(FAILED_EMPTY_FORM, acceptHeader);
         }
-
         validateServerSettingsForm(serverSettingsForm, bindingResult);
-
         if (bindingResult.hasErrors()) {
             throw new RequestBodyValidationException(FAILED_SAVE_SERVER_SETTINGS, bindingResult);
 
         }
-
-        configurationManagementService.setBaseUrl(serverSettingsForm.getBaseUrl());
-        configurationManagementService.setPort(serverSettingsForm.getPort());
-        configurationManagementService.setInstanceName(serverSettingsForm.getInstanceName());
-        if (serverSettingsForm.getCorsConfigurationForm() != null) {
-            configurationManagementService.setCorsAllowedOrigins(
-                    serverSettingsForm.getCorsConfigurationForm().getAllowedOrigins()
-            );
-        }
-
-        if (serverSettingsForm.getSmtpConfigurationForm() != null) {
-            // SMTP settings
-            configurationManagementService.setSmtpSettings(
-                    serverSettingsForm.getSmtpConfigurationForm().getMutableSmtpConfiguration()
-            );
-        }
-
-        if (serverSettingsForm.getProxyConfigurationForm() != null) {
-            // Global Proxy settings
-            configurationManagementService.setProxyConfiguration(
-                    null, null, serverSettingsForm.getProxyConfigurationForm().getMutableProxyConfiguration()
-            );
-        }
-
-        if (serverSettingsForm.getAdvancedConfigurationForm() != null) {
-            configurationManagementService.setAdvancedConfiguration(serverSettingsForm.getAdvancedConfigurationForm().getMutableProxyConfiguration());
-            if (Boolean.FALSE.equals(serverSettingsForm.getAdvancedConfigurationForm().getAllowAnonymous())) {
-                authorizationConfigService.clearPrivilegesAnonymous();
-            } else if (Boolean.TRUE.equals(serverSettingsForm.getAdvancedConfigurationForm().getAllowAnonymous())) {
-                authorizationConfigService.addPrivilegesToAnonymous(Lists.newArrayList(Privileges.ARTIFACTS_RESOLVE, Privileges.SEARCH_ARTIFACTS, Privileges.ARTIFACTS_VIEW));
-            }
-        }
-
+        commonComponent.updateServerSettings(serverSettingsForm);
+        clusterSyncService.syncServerSettings(SyncServerSettingsDto.builder().serverSettingsForm(serverSettingsForm).syncServerSettingsEnum(SyncServerSettingsEnum.ADD_OR_UPDATE).build());
+        AuthorizationConfigDto authorizationConfigDto = authorizationConfigService.getDto();
+        SyncAuthorizationDto syncAuthorizationDto = new SyncAuthorizationDto(authorizationConfigDto, SyncAuthorizationEnum.UPDATE);
+        clusterSyncService.syncAuthorization(syncAuthorizationDto);
         return getSuccessfulResponseEntity(SUCCESSFUL_SAVE_SERVER_SETTINGS, acceptHeader);
     }
 

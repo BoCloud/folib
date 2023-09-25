@@ -42,6 +42,20 @@ public interface ClusterSyncService {
      */
     void syncUnionRepositoryConfiguration(SyncUnionRepositoryDto syncUnionRepositoryDto);
 
+    /**
+     * 同步全局配置
+     *
+     * @param syncServerSettingsDto 全局配置
+     */
+    void syncServerSettings(SyncServerSettingsDto syncServerSettingsDto);
+
+    /**
+     * 同步LDAP配置
+     *
+     * @param syncLdapDto LDAP配置
+     */
+    void syncLdapConfiguration(SyncLdapDto syncLdapDto);
+
     Boolean isNeedClusterSync();
 
     Boolean clusterOpenFlag();
@@ -64,6 +78,10 @@ public interface ClusterSyncService {
 
     ClusterSyncResultEnum handleSyncUnionRepositoryConfiguration(SyncUnionRepositoryDto syncUnionRepositoryDto, String nodeUrl, Boolean isScheduled);
 
-    void addduledScheTask(ClusterDataSyncTaskPo clusterDataSyncTaskPo);
+    ClusterSyncResultEnum handleSyncServerSettingsConfiguration(SyncServerSettingsDto syncServerSettingsDto, String nodeUrl, Boolean isScheduled);
+
+    ClusterSyncResultEnum handleSyncLdapConfiguration(SyncLdapDto syncLdapDto, String nodeUrl, Boolean isScheduled);
+
+    void addScheduledTask(ClusterDataSyncTaskPo clusterDataSyncTaskPo);
 
 }
