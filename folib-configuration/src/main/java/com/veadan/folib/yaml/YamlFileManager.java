@@ -108,7 +108,7 @@ public abstract class YamlFileManager<T> {
                 Path backupFilePath = backupDir.resolve(currentTime + "_" + fileName);
                 // Copy the current configuration to the backup file
                 Files.write(backupFilePath, bytes);
-                logger.info("备份 [{}] 成功", backupFilePath.toString());
+                logger.debug("备份 [{}] 成功", backupFilePath.toString());
             } catch (Exception ex) {
                 try {
                     logger.error("备份文件失败: [{}] [{}]", fileName, ExceptionUtils.getStackTrace(ex));
@@ -152,15 +152,15 @@ public abstract class YamlFileManager<T> {
 
     private void deleteBackupDirectory(Path directoryPath) throws IOException {
         FileUtils.deleteDirectory(directoryPath.toFile());
-        logger.info("删除备份目录 [{}] 成功", directoryPath.toString());
+        logger.debug("删除备份目录 [{}] 成功", directoryPath.toString());
     }
 
     private String getBackupPath() {
-        String home = System.getProperty("folib.home");
+        String home = System.getProperty("folib.vault");
         if (StringUtils.isBlank(home)) {
-            home = SpringUtil.getProperty("folib.home");
+            home = SpringUtil.getProperty("folib.vault");
         }
-        logger.info("备份目录: [{}]", home);
+        logger.debug("备份目录: [{}]", home);
         return StringUtils.removeEnd(home, File.separator) + File.separator + "backup";
     }
 

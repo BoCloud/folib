@@ -3,6 +3,7 @@ package com.veadan.folib.services.impl;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
 import com.beust.jcommander.internal.Sets;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.veadan.folib.booters.PropertiesBooter;
 import com.veadan.folib.cluster.*;
 import com.veadan.folib.components.node.NodeComponent;
@@ -64,6 +65,9 @@ public class ClusterSyncServiceImpl implements ClusterSyncService {
 
     @Inject
     private PropertiesBooter propertiesBooter;
+
+    @Inject
+    private ObjectMapper objectMapper;
 
     @Override
     public void syncConfiguration() {
@@ -631,10 +635,12 @@ public class ClusterSyncServiceImpl implements ClusterSyncService {
     public ClusterSyncResultEnum handleSyncLdapConfiguration(SyncLdapDto syncLdapDto, String nodeUrl, Boolean isScheduled) {
         Response response = null;
         Client client = null;
+        String data = "";
         try {
+            data = objectMapper.writeValueAsString(syncLdapDto);
             client = clientPool.getRestClient();
             WebTarget target = client.target(nodeUrl + SYNC_LDAP);
-            response = target.request().post(Entity.entity(syncLdapDto, MediaType.APPLICATION_JSON));
+            response = target.request().post(Entity.entity(data, MediaType.APPLICATION_JSON));
             if (response.getStatus() != 200) {
                 logger.error("Sync handleSyncLdapConfiguration error {} {}", nodeUrl, JSONObject.toJSONString(response));
                 throw new RuntimeException("Failed with HTTP error code : " + response.getStatus());
@@ -645,7 +651,7 @@ public class ClusterSyncServiceImpl implements ClusterSyncService {
                 addScheduledTask(
                         new ClusterDataSyncTaskPo(UUID.randomUUID().toString(),
                                 ipProperties.getFolibLockIp(),
-                                JSON.toJSONString(syncLdapDto),
+                                data,
                                 SyncDataTypeEnum.LDAP.getValue(),
                                 SyncDataStatusEnum.WILL_EXECUTE_STATUS.getStatus()
                                 , nodeUrl, BigInteger.valueOf(System.currentTimeMillis())
