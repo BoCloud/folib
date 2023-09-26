@@ -53,3 +53,11 @@ export function syncArtifactProvider(data) {
     data: data
   })
 }
+
+export function folderList(data) {
+  return axios({
+    url: '/api/folder/list',
+    method: 'get',
+    params: data
+  })
+}
