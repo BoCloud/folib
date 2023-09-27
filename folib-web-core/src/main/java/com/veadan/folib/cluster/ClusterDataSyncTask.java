@@ -45,13 +45,13 @@ public class ClusterDataSyncTask {
             return;
         }
         reExecuteFlag = true;
-        logger.info("start handle abnormal node data");
+        logger.info("Start handle abnormal node data");
 
         // 查询 cluster_datasync_task
         List<ClusterDataSyncTaskPo> list = clusterDataSyncTaskMapper.getClusterDataSyncTaskList(
                 SyncDataStatusEnum.WILL_EXECUTE_STATUS.getStatus(), ipProperties.getFolibLockIp());
         if (CollectionUtils.isEmpty(list)) {
-            logger.info("handle data is empty");
+            logger.info("Handle data is empty");
             reExecuteFlag = false;
             return;
         }
@@ -62,11 +62,11 @@ public class ClusterDataSyncTask {
                 if (Objects.equals(SyncDataTypeEnum.STORAGE.getValue(), task.getTaskType())) {
                     SyncStorageDto storageDto = JSONObject.parseObject(task.getDataJson(),
                             SyncStorageDto.class);
-                    logger.info("start sync storage data [{} {}]", storageDto.getStorageId(), url);
+                    logger.info("Start sync storage data [{} {}]", storageDto.getStorageId(), url);
 
                     ClusterSyncResultEnum syncResult = clusterSyncService.handleSyncStorage(storageDto.getStorageId(), storageDto, url, true);
                     isSuccess(syncResult, task);
-                    logger.info("sync data end [{} {}]", storageDto.getStorageId(), url);
+                    logger.info("Sync data end [{} {}]", storageDto.getStorageId(), url);
                 }
                 //同步REPOSITORY
                 if (Objects.equals(SyncDataTypeEnum.REPOSITORY.getValue(), task.getTaskType())) {
@@ -74,13 +74,13 @@ public class ClusterDataSyncTask {
                     SyncRepositoryDto syncRepositoryDto = JSONObject.parseObject(task.getDataJson(),
                             SyncRepositoryDto.class);
 
-                    logger.info("start sync repository data [{} {} {} ]",
+                    logger.info("Start sync repository data [{} {} {} ]",
                             syncRepositoryDto.getStorageId(), syncRepositoryDto.getRepositoryId(), url);
 
                     ClusterSyncResultEnum syncResult = clusterSyncService.handleSyncRepository(syncRepositoryDto.getStorageId(),
                             syncRepositoryDto.getRepositoryId(), syncRepositoryDto, url, true);
                     isSuccess(syncResult, task);
-                    logger.info("sync repository data end [{} {} {} ]",
+                    logger.info("Sync repository data end [{} {} {} ]",
                             syncRepositoryDto.getStorageId(), syncRepositoryDto.getRepositoryId(), url);
                 }
                 //同步SECURITY_POLICY
@@ -89,11 +89,11 @@ public class ClusterDataSyncTask {
                     MutableSecurityPolicyConfiguration mutableSecurityPolicyConfiguration = JSONObject.parseObject(task.getDataJson(),
                             MutableSecurityPolicyConfiguration.class);
 
-                    logger.info("start sync securityPolicyConfiguration data [{}]", url);
+                    logger.info("Start sync securityPolicyConfiguration data [{}]", url);
 
                     ClusterSyncResultEnum syncResult = clusterSyncService.handleSyncSecurityPolicyConfiguration(mutableSecurityPolicyConfiguration, url, true);
                     isSuccess(syncResult, task);
-                    logger.info("sync securityPolicyConfiguration data end [{} ]", url);
+                    logger.info("Sync securityPolicyConfiguration data end [{} ]", url);
                 }
                 //同步METADATA
                 if (Objects.equals(SyncDataTypeEnum.METADATA.getValue(), task.getTaskType())) {
@@ -101,57 +101,73 @@ public class ClusterDataSyncTask {
                     SyncMetadataDto syncMetadataDto = JSONObject.parseObject(task.getDataJson(),
                             SyncMetadataDto.class);
 
-                    logger.info("start sync metadataConfiguration data [{}]", url);
+                    logger.info("Start sync metadataConfiguration data [{}]", url);
 
                     ClusterSyncResultEnum syncResult = clusterSyncService.handleSyncMetadataConfiguration(syncMetadataDto, url, true);
                     isSuccess(syncResult, task);
-                    logger.info("sync metadataConfiguration data end [{} ]", url);
+                    logger.info("Sync metadataConfiguration data end [{} ]", url);
                 }
                 // 同步仓库定时任务
                 if (Objects.equals(SyncDataTypeEnum.REPOSITORY_JOB.getValue(), task.getTaskType())) {
                     SyncCronJobDto syncCronJobDto = JSONObject.parseObject(task.getDataJson(),
                             SyncCronJobDto.class);
 
-                    logger.info("start sync cronJob data [{}]", url);
+                    logger.info("Start sync cronJob data [{}]", url);
                     ClusterSyncResultEnum syncResult = clusterSyncService.handleSyncCronJob(syncCronJobDto, url, true);
                     isSuccess(syncResult, task);
-                    logger.info("sync cronJob data end [{} ]", url);
+                    logger.info("Sync cronJob data end [{} ]", url);
                 }
                 // 同步授权配置信息
                 if (Objects.equals(SyncDataTypeEnum.AUTHORIZATION.getValue(), task.getTaskType())) {
                     SyncAuthorizationDto syncAuthorizationDto = JSONObject.parseObject(task.getDataJson(),
                             SyncAuthorizationDto.class);
 
-                    logger.info("start sync authorization data [{}]", url);
+                    logger.info("Start sync authorization data [{}]", url);
                     ClusterSyncResultEnum syncResult = clusterSyncService.handleSyncAuthorization(syncAuthorizationDto, url, true);
                     isSuccess(syncResult, task);
-                    logger.info("sync authorization data end [{} ]", url);
+                    logger.info("Sync authorization data end [{} ]", url);
                 }
                 // 同步webhook配置信息
                 if (Objects.equals(SyncDataTypeEnum.WEBHOOK.getValue(), task.getTaskType())) {
                     SyncWebhookDto syncWebhookDto = JSONObject.parseObject(task.getDataJson(),
                             SyncWebhookDto.class);
 
-                    logger.info("start sync webhook data [{}]", url);
+                    logger.info("Start sync webhook data [{}]", url);
                     ClusterSyncResultEnum syncResult = clusterSyncService.handleSyncWebhookConfiguration(syncWebhookDto, url, true);
                     isSuccess(syncResult, task);
-                    logger.info("sync webhook data end [{} ]", url);
+                    logger.info("Sync webhook data end [{} ]", url);
                 }
                 // 同步分发配置
                 if (Objects.equals(SyncDataTypeEnum.CLUSTER_DISPATCH.getValue(), task.getTaskType())) {
                     SyncClusterDispatchDto syncClusterDispatchDto = JSONObject.parseObject(task.getDataJson(), SyncClusterDispatchDto.class);
-                    logger.info("start sync dispatch data [{}]", url);
+                    logger.info("Start sync dispatch data [{}]", url);
                     ClusterSyncResultEnum syncResult = clusterSyncService.handleSyncClusterDispatch(syncClusterDispatchDto, url, true);
                     isSuccess(syncResult, task);
-                    logger.info("sync dispatch data end [{} ]", url);
+                    logger.info("Sync dispatch data end [{} ]", url);
                 }
                 // 同步联邦仓库配置
                 if (Objects.equals(SyncDataTypeEnum.UNION_REPOSITORY.getValue(), task.getTaskType())) {
                     SyncUnionRepositoryDto syncUnionRepositoryDto = JSONObject.parseObject(task.getDataJson(), SyncUnionRepositoryDto.class);
-                    logger.info("start sync unionRepository data [{}]", url);
+                    logger.info("Start sync unionRepository data [{}]", url);
                     ClusterSyncResultEnum syncResult = clusterSyncService.handleSyncUnionRepositoryConfiguration(syncUnionRepositoryDto, url, true);
                     isSuccess(syncResult, task);
-                    logger.info("sync unionRepository data end [{} ]", url);
+                    logger.info("Sync unionRepository data end [{} ]", url);
+                }
+                // 同步全局配置
+                if (Objects.equals(SyncDataTypeEnum.SERVER_SETTINGS.getValue(), task.getTaskType())) {
+                    SyncServerSettingsDto syncServerSettingsDto = JSONObject.parseObject(task.getDataJson(), SyncServerSettingsDto.class);
+                    logger.info("Start sync serverSettings data [{}]", url);
+                    ClusterSyncResultEnum syncResult = clusterSyncService.handleSyncServerSettingsConfiguration(syncServerSettingsDto, url, true);
+                    isSuccess(syncResult, task);
+                    logger.info("Sync serverSettings data end [{} ]", url);
+                }
+                // 同步LDAP配置
+                if (Objects.equals(SyncDataTypeEnum.LDAP.getValue(), task.getTaskType())) {
+                    SyncLdapDto syncLdapDto = JSONObject.parseObject(task.getDataJson(), SyncLdapDto.class);
+                    logger.info("Start sync Ldap data [{}]", url);
+                    ClusterSyncResultEnum syncResult = clusterSyncService.handleSyncLdapConfiguration(syncLdapDto, url, true);
+                    isSuccess(syncResult, task);
+                    logger.info("Sync Ldap data end [{} ]", url);
                 }
             } catch (Exception e) {
                 logger.error("error {}", e.getMessage());
@@ -166,7 +182,7 @@ public class ClusterDataSyncTask {
             // 更新task 状态
             task.setStatus(SyncDataStatusEnum.COMPLETE_STATUS.getStatus());
             clusterDataSyncTaskMapper.updateTask(task);
-            logger.info("sync success");
+            logger.info("Sync success");
         }
     }
 

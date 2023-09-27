@@ -60,7 +60,17 @@
                       </h4>
                     </div>
                   </a-anchor-link>
-
+                  <a-anchor-link href="#advance">
+                    <div slot="title"
+                         class="ant-list-item-meta">
+                      <a-icon type="setting"
+                              theme="filled"
+                              class="text-gray-6 text-lg" />
+                      <h4 class="ant-list-item-meta-title">
+                        <span class="font-regular">高级配置</span>
+                      </h4>
+                    </div>
+                  </a-anchor-link>
                 </a-anchor>
               </a-card>
             </a-affix>
@@ -308,6 +318,44 @@
                 </ul>
               </a-form>
             </a-card>
+
+            <a-card :bordered="false"
+                    id="advance"
+                    class="header-solid mb-24">
+              <template #title>
+                <h5 class="mb-0 font-semibold">高级配置</h5>
+              </template>
+              <a-form :hideRequiredMark="true">
+                <a-row :gutter="[24]">
+                  <a-col :span="24"
+                         :lg="8">
+                    <a-form-item class="mb-10"
+                                 label="允许匿名访问"
+                                 :colon="false">
+                      <span class="mr-15">开启</span>
+                      <a-switch v-model="serverSettings.advancedConfigurationForm.allowAnonymous"
+                                @change="corsAllowAllChange" />
+                    </a-form-item>
+                  </a-col>
+                  <a-col :span="24"
+                         :lg="8">
+                    <a-form-item class="mb-10"
+                                 label="显示校验文件"
+                                 :colon="false">
+                      <span class="mr-15">开启</span>
+                      <a-switch v-model="serverSettings.advancedConfigurationForm.showChecksum"
+                                @change="corsAllowAllChange" />
+                    </a-form-item>
+                  </a-col>
+                </a-row>
+                <p>说明:</p>
+                <ul class="pl-15 text-muted">
+                  <li>开启允许匿名访问，匿名用户可访问公开库及结构，关闭后匿名用户必须登录方可正常使用。</li>
+                  <li>开启显示校验文件，仓库详情页会展示校验文件，关闭后仓库详情页则不会展示校验文件。</li>
+                </ul>
+              </a-form>
+            </a-card>
+            
             <a-card :bordered="false"
                     id="delete-account"
                     class="header-solid mb-24">
@@ -1310,10 +1358,6 @@
         <Webhook :activeKey="activeKey"></Webhook>
       </a-tab-pane>
 
-      <a-tab-pane key="9"
-      tab="数据迁移">
-      <dataTrans></dataTrans>
-      </a-tab-pane>
     </a-tabs>
     <a-modal v-model="showMetadataHandler"
              :title="handlerMetadataType === 1 ? '新增元数据' : '修改元数据'"
@@ -1609,15 +1653,14 @@ import {
 import Webhook from './components/Webhook/index.vue'
 import ExternalNode from './components/ExternalNode/index.vue'
 import {upperCase} from "@antv/util";
-import dataTrans from "./components/dataTrans.vue";
 import PackageName from "./components/Package/index.vue"
 import AddPackageName from "./components/Package/add.vue"
+
 export default {
   props: ['navbarFixed'],
   components: {
     Webhook,
     ExternalNode,
-    dataTrans,
     PackageName,
     AddPackageName
   },
@@ -1628,6 +1671,10 @@ export default {
         instanceName: 'folib',
         baseUrl: 'http://localhost:38080/',
         port: 38080,
+        advancedConfigurationForm: {
+          allowAnonymous: true,
+          showChecksum: true,
+        },
         corsConfigurationForm: { allowedOrigins: ['*'], corsAllowAll: false },
         smtpConfigurationForm: {
           host: null,

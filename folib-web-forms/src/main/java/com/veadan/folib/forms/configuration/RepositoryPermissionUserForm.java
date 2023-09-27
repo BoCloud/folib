@@ -30,4 +30,9 @@ public class RepositoryPermissionUserForm {
     @NotEmpty(message = "A permissions must be specified.")
     private List<String> permissions;
 
+    /**
+     * 路径
+     */
+    private List<String> paths;
+
 }

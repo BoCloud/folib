@@ -1,10 +1,12 @@
 package com.veadan.folib.artifact.coordinates;
 
+import java.io.Serializable;
 import java.util.Comparator;
 
 public class ArtifactCoordinatesComparator<C extends ArtifactCoordinates<C, V>, V extends Comparable<V>>
-        implements Comparator<C>
+        implements Comparator<C>, Serializable
 {
+
 
     @Override
     public int compare(C o1,

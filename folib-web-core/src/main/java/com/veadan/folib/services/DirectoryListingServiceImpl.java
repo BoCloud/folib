@@ -1,5 +1,6 @@
 package com.veadan.folib.services;
 
+import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import com.veadan.folib.booters.PropertiesBooter;
 import com.veadan.folib.configuration.ConfigurationUtils;
@@ -15,7 +16,7 @@ import com.veadan.folib.storage.Storage;
 import com.veadan.folib.storage.repository.Repository;
 import com.veadan.folib.storage.repository.RepositoryTypeEnum;
 import com.veadan.folib.utils.compatator.DirectoryNameCompatator;
-import org.apache.commons.compress.utils.Lists;
+import org.apache.commons.codec.digest.MessageDigestAlgorithms;
 import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -31,27 +32,23 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 
-public class DirectoryListingServiceImpl implements DirectoryListingService
-{
+public class DirectoryListingServiceImpl implements DirectoryListingService {
 
     private static final Logger logger = LoggerFactory.getLogger(DirectoryListingService.class);
 
     private String baseUrl;
 
-    public DirectoryListingServiceImpl(String baseUrl)
-    {
+    public DirectoryListingServiceImpl(String baseUrl) {
         super();
         this.baseUrl = StringUtils.chomp(baseUrl.toString(), "/");
     }
 
     @Override
     public DirectoryListing fromStorages(Map<String, ? extends Storage> storages)
-        throws IOException
-    {
+            throws IOException {
         DirectoryListing directoryListing = new DirectoryListing();
 
-        for (Storage storage : storages.values())
-        {
+        for (Storage storage : storages.values()) {
             FileContent fileContent = new FileContent(storage.getId());
             directoryListing.getDirectories().add(fileContent);
 
@@ -64,12 +61,10 @@ public class DirectoryListingServiceImpl implements DirectoryListingService
 
     @Override
     public DirectoryListing fromRepositories(Map<String, ? extends Repository> repositories)
-        throws IOException
-    {
+            throws IOException {
         DirectoryListing directoryListing = new DirectoryListing();
 
-        for (Repository repository : repositories.values())
-        {
+        for (Repository repository : repositories.values()) {
             FileContent fileContent = new FileContent(repository.getId());
             directoryListing.getDirectories().add(fileContent);
 
@@ -84,8 +79,7 @@ public class DirectoryListingServiceImpl implements DirectoryListingService
 
     @Override
     public DirectoryListing fromRepositoryPath(RepositoryPath path)
-        throws IOException
-    {
+            throws IOException {
         return fromPath(path);
     }
 
@@ -115,7 +109,7 @@ public class DirectoryListingServiceImpl implements DirectoryListingService
             }
             if (RepositoryTypeEnum.PROXY.getType().equals(subRepository.getType())) {
                 proxyRepositoryPathList.add(resolvedPath);
-            } else if (RepositoryTypeEnum.HOSTED.getType().equals(subRepository.getType())){
+            } else if (RepositoryTypeEnum.HOSTED.getType().equals(subRepository.getType())) {
                 hostedRepositoryPathList.add(resolvedPath);
             }
         }
@@ -144,8 +138,7 @@ public class DirectoryListingServiceImpl implements DirectoryListingService
     }
 
     private DirectoryListing fromPath(Path path)
-        throws IOException
-    {
+            throws IOException {
         path = path.normalize();
 
         DirectoryListing directoryListing = new DirectoryListing();
@@ -159,27 +152,26 @@ public class DirectoryListingServiceImpl implements DirectoryListingService
     }
 
     private Map<String, List<FileContent>> generateDirectoryListing(Path path)
-        throws IOException
-    {
+            throws IOException {
+        RepositoryPathResolver repositoryPathResolver = SpringContextUtil.getBean(RepositoryPathResolver.class);
+        ConfigurationManagementService configurationManagementService = SpringContextUtil.getBean(ConfigurationManagementService.class);
+        List<String> messageDigestAlgorithms = Lists.newArrayList(MessageDigestAlgorithms.MD5, MessageDigestAlgorithms.SHA_1, MessageDigestAlgorithms.SHA_256, MessageDigestAlgorithms.SHA_512);
+        final boolean showChecksum = configurationManagementService.getConfiguration().getAdvancedConfiguration().isShowChecksum();
         List<FileContent> directories = new ArrayList<>();
         List<FileContent> files = new ArrayList<>();
 
         List<Path> contentPaths;
-        try (Stream<Path> pathStream = Files.list(path))
-        {
+        try (Stream<Path> pathStream = Files.list(path)) {
             contentPaths = pathStream.filter(p -> !p.toString().startsWith("."))
-                    .filter(p -> !p.toString().contains("/.") 
+                    .filter(p -> !p.toString().contains("/.")
                             // 支持Cocoapods索引目录的显示
                             || p.toString().contains(".specs"))
                     .filter(p -> {
-                        try
-                        {
+                        try {
                             return !Files.isHidden(p)
                                     // 支持Cocoapods索引目录的显示
                                     || p.toString().contains(".specs");
-                        }
-                        catch (IOException e)
-                        {
+                        } catch (IOException e) {
                             logger.info("Error accessing path {}", p);
                             return false;
                         }
@@ -188,9 +180,8 @@ public class DirectoryListingServiceImpl implements DirectoryListingService
                     .collect(Collectors.toList());
         }
 
-        PropertiesBooter  propertiesBooter = SpringContextUtil.getBean(PropertiesBooter.class);
-        for (Path contentPath : contentPaths)
-        {
+        PropertiesBooter propertiesBooter = SpringContextUtil.getBean(PropertiesBooter.class);
+        for (Path contentPath : contentPaths) {
             FileContent file = new FileContent(contentPath.getFileName().toString());
             file.setPath(contentPath.toString().replace(propertiesBooter.getLogsDirectory().replace("./", ""), ""));
             Map<String, Object> fileAttributes = Files.readAttributes(contentPath, "*");
@@ -199,9 +190,13 @@ public class DirectoryListingServiceImpl implements DirectoryListingService
             file.setRepositoryId((String) fileAttributes.get(RepositoryFileAttributeType.REPOSITORY_ID.getName()));
 
             file.setArtifactPath((String) fileAttributes.get("artifactPath"));
-
-            if (Boolean.TRUE.equals(fileAttributes.get("isDirectory")))
-            {
+            if (!showChecksum) {
+                RepositoryPath repositoryPath = repositoryPathResolver.resolve(file.getStorageId(), file.getRepositoryId(), file.getArtifactPath());
+                if (RepositoryFiles.isChecksum(repositoryPath)) {
+                    continue;
+                }
+            }
+            if (Boolean.TRUE.equals(fileAttributes.get("isDirectory"))) {
                 file.setUrl(calculateDirectoryUrl(file));
 
                 directories.add(file);
@@ -224,29 +219,24 @@ public class DirectoryListingServiceImpl implements DirectoryListingService
     }
 
     /**
-     * @param rootPath
-     *            The root path in which directory listing is allowed. Used as a
-     *            precaution to prevent directory traversing.
-     *            When "path" is outside "rootPath" an exception will be thrown.
-     * @param path
-     *            The path which needs to be listed
+     * @param rootPath The root path in which directory listing is allowed. Used as a
+     *                 precaution to prevent directory traversing.
+     *                 When "path" is outside "rootPath" an exception will be thrown.
+     * @param path     The path which needs to be listed
      * @return DirectoryListing
-     * @throws RuntimeException
-     *             when path is not within rootPath.
+     * @throws RuntimeException when path is not within rootPath.
      */
     @Override
     public DirectoryListing fromPath(Path rootPath,
                                      Path path)
-        throws IOException
-    {
+            throws IOException {
         rootPath = rootPath.normalize();
         path = path.normalize();
 
-        if (!path.equals(rootPath) && !path.startsWith(rootPath))
-        {
+        if (!path.equals(rootPath) && !path.startsWith(rootPath)) {
             String message = String.format(
-                                           "Requested directory listing for [%s] is outside the scope of the root path [%s]! Possible intrusion attack or misconfiguration!",
-                                           path, rootPath);
+                    "Requested directory listing for [%s] is outside the scope of the root path [%s]! Possible intrusion attack or misconfiguration!",
+                    path, rootPath);
             logger.error(message);
             throw new RuntimeException(message);
         }
@@ -255,24 +245,20 @@ public class DirectoryListingServiceImpl implements DirectoryListingService
     }
 
     private URL calculateDirectoryUrl(FileContent file)
-        throws MalformedURLException
-    {
-        if (file.getRepositoryId() == null)
-        {
+            throws MalformedURLException {
+        if (file.getRepositoryId() == null) {
 
             return new URL(String.format("%s/%s", baseUrl, file.getStorageId()));
 
-        }
-        else if (file.getArtifactPath() == null)
-        {
+        } else if (file.getArtifactPath() == null) {
 
             return new URL(String.format("%s/%s/%s", baseUrl, file.getStorageId(),
-                                         file.getRepositoryId()));
+                    file.getRepositoryId()));
 
         }
 
         return new URL(String.format("%s/%s/%s/%s", baseUrl, file.getStorageId(),
-                                     file.getRepositoryId(), file.getArtifactPath()));
+                file.getRepositoryId(), file.getArtifactPath()));
     }
 
     protected boolean probeForDirectoryListing(final RepositoryPath repositoryPath)

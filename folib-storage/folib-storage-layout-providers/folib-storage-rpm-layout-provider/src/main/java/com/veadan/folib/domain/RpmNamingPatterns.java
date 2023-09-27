@@ -4,7 +4,7 @@ import java.util.regex.Pattern;
 
 public class RpmNamingPatterns
 {
-    private static final String RPM_PACKAGE_NAME_REGEXP = "^([a-zA-Z0-9_\\-+]+?)(?=-\\d)";
+    private static final String RPM_PACKAGE_NAME_REGEXP = "^([a-zA-Z0-9_.\\-+]+?)(?=-\\d)";
 
     private static final String RPM_PACKAGE_VERSION_REGEXP = "(?<=-)([\\d\\.]+)(?=-)";
 

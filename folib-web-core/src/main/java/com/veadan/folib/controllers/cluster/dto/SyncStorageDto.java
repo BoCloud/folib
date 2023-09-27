@@ -36,14 +36,6 @@ public class SyncStorageDto {
         this.storageDto = storageDto;
     }
 
-    public SyncStorageEnum getSycnStorageEnum() {
-        return syncStorageEnum;
-    }
-
-    public void setSycnStorageEnum(SyncStorageEnum syncStorageEnum) {
-        this.syncStorageEnum = syncStorageEnum;
-    }
-
     public String getStorageId() {
         return storageId;
     }

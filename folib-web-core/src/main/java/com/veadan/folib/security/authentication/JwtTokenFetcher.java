@@ -21,7 +21,7 @@ public interface JwtTokenFetcher
 
     String AUTHORIZATION_HEADER = "Authorization";
 
-    String AUTHORIZATION_COOKIE = "access_token";
+    String AUTHORIZATION_COOKIE = "token";
 
     String BEARER_AUTHORIZATION_PREFIX = "Bearer";
 

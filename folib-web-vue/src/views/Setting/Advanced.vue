@@ -95,7 +95,17 @@
               </a-form-model>
             </a-card>
           </a-tab-pane>
-          <a-tab-pane :key="2" tab="漏洞更新">
+          <a-tab-pane :key="2" tab="Maven数据迁移">
+            <a-card :bordered="false" class="header-solid">
+              <template #title>
+                <h6>制品数据迁移</h6>
+                <p>该功能用于从 JFrog Artifactory、Sonatype Nexus 使用MavenIndxer方式迁移制品数据
+                </p>
+              </template>
+              <data-migration/>
+            </a-card>
+          </a-tab-pane>
+          <a-tab-pane :key="3" tab="漏洞更新">
             <a-card :bordered="false" class="header-solid">
               <template #title>
                 <h6>更新漏洞数据</h6>
@@ -142,7 +152,17 @@
               </a-form-model>
             </a-card>
           </a-tab-pane>
-          <a-tab-pane :key="3" tab="DB信息">
+          <a-tab-pane :key="4" tab="备份策略">
+            <a-card :bordered="false" class="header-solid">
+              <template #title>
+                <h6>备份策略</h6>
+                <p>该功能用于设置备份策略备份指定存储空间、仓库的制品数据
+                </p>
+              </template>
+              <ArtifactsBackup/>
+            </a-card>
+          </a-tab-pane>
+          <a-tab-pane :key="5" tab="DB信息">
             <a-tabs class="tabs-sliding" :default-active-key="1" @change="dbTabChange($event)">
               <a-tab-pane :key="1" tab="Schema">
                 <a-card :bordered="false" class="header-solid">
@@ -236,6 +256,8 @@ import { highlight, languages } from "prismjs/components/prism-core"
 import "prismjs/components/prism-clike"
 import "prismjs/components/prism-javascript"
 import "prismjs/themes/prism-tomorrow.css"
+import DataMigration from "./components/DataMigration.vue"
+import ArtifactsBackup from "./components/ArtifactsBackup.vue";
 import {
   getStoragesAndRepositories
 } from "@/api/folib"
@@ -289,7 +311,9 @@ export default {
     }
   },
   components: {
-    PrismEditor
+    PrismEditor,
+    DataMigration,
+    ArtifactsBackup
   },
   computed: {
 
@@ -434,15 +458,16 @@ export default {
       if (activeTab === 1) {
         this.buildGraphIndexResetForm()
       } else if (activeTab === 2) {
-        this.getSingleDict('vulnerability_update')
       } else if (activeTab === 3) {
+        this.getSingleDict('vulnerability_update')
+      } else if (activeTab === 5) {
         this.getJanusGraphInfo()
       }
     },
-    dbTabChange(activeTab) {
-      if (activeTab === 1 || activeTab === 3) {
+    dbTabChange(active) {
+      if (active === 1 || active === 3) {
         this.getJanusGraphInfo()
-      } else if (activeTab === 2) {
+      } else if (active === 2) {
         if (this.$refs.janusGraphIndexForm) {
           this.$refs.janusGraphIndexForm.resetFields()
         }

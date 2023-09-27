@@ -47,7 +47,7 @@ public class TranslateUtil {
             if (StringUtils.isBlank(content)) {
                 return "";
             }
-            log.info("=====>>>>>开始翻译<<<<<=====");
+            log.info("开始翻译");
             TranslateUtil g = TranslateUtil.getInstance();
             return g.translateText(content, "auto", "zh_cn");
         } catch (Exception ex) {

@@ -4,10 +4,14 @@ import cn.hutool.jwt.JWTUtil;
 import com.alibaba.fastjson.JSONObject;
 import com.google.common.collect.Sets;
 import com.veadan.folib.authorization.domain.Client;
+import com.veadan.folib.authorization.dto.AuthorizationConfigDto;
 import com.veadan.folib.authorization.service.impl.AuthorizationConfigServiceImpl;
+import com.veadan.folib.cluster.SyncAuthorizationEnum;
+import com.veadan.folib.controllers.cluster.dto.SyncAuthorizationDto;
 import com.veadan.folib.domain.User;
 import com.veadan.folib.dto.SSOsessionDto;
 import com.veadan.folib.service.ProxyRepositoryConnectionPoolConfigurationService;
+import com.veadan.folib.services.ClusterSyncService;
 import com.veadan.folib.users.domain.SystemRole;
 import com.veadan.folib.users.dto.UserDto;
 import com.veadan.folib.users.service.UserService;
@@ -52,6 +56,9 @@ public class SSOController {
 
     @Inject
     private ProxyRepositoryConnectionPoolConfigurationService clientPool;
+
+    @Inject
+    private ClusterSyncService clusterSyncService;
 
 
     /**
@@ -120,10 +127,12 @@ public class SSOController {
     @PostMapping(value = "/addClient", produces = {MediaType.APPLICATION_JSON_VALUE})
     @ResponseBody
     public ResponseEntity addClient(@RequestBody Client client) throws IOException {
-        Set<Client> clients = authorizationConfigService.getDto().getClients();
+        AuthorizationConfigDto authorizationConfigDto = authorizationConfigService.getDto();
+        Set<Client> clients = authorizationConfigDto.getClients();
         boolean exist = clients.stream().anyMatch(s -> s.getClientId().equals(client.getClientId()));
         if (!exist) {
             authorizationConfigService.addClient(client);
+            syncAuthorizationConfig();
             return ResponseEntity.ok(client);
         } else {
             throw new RuntimeException("clientId已存在，不能重复添加！");
@@ -137,6 +146,7 @@ public class SSOController {
     public ResponseEntity updateClient(@RequestBody Client client) throws Exception {
         authorizationConfigService.deleteClient(client.getClientId());
         authorizationConfigService.addClient(client);
+        syncAuthorizationConfig();
         return ResponseEntity.ok(client);
     }
 
@@ -146,6 +156,13 @@ public class SSOController {
     @ResponseBody
     public ResponseEntity delClient(@PathVariable(name = "clientId") String clientId) throws Exception {
         authorizationConfigService.deleteClient(clientId);
+        syncAuthorizationConfig();
         return ResponseEntity.ok(clientId);
+    }
+
+    private void syncAuthorizationConfig() {
+        AuthorizationConfigDto authorizationConfigDto = authorizationConfigService.getDto();
+        SyncAuthorizationDto syncAuthorizationDto = new SyncAuthorizationDto(authorizationConfigDto, SyncAuthorizationEnum.UPDATE);
+        clusterSyncService.syncAuthorization(syncAuthorizationDto);
     }
 }

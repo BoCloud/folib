@@ -2,6 +2,7 @@ package com.veadan.folib.components.artifact;
 
 import cn.hutool.core.io.FileUtil;
 import com.alibaba.fastjson.JSONObject;
+import com.alibaba.fastjson.serializer.SerializerFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
@@ -20,8 +21,8 @@ import com.veadan.folib.domain.Vulnerability;
 import com.veadan.folib.enums.BlockTypeEnum;
 import com.veadan.folib.enums.PromotionStatusEnum;
 import com.veadan.folib.enums.VersionConditionTypeEnum;
+import com.veadan.folib.event.artifact.ArtifactEventListenerRegistry;
 import com.veadan.folib.npm.metadata.*;
-import com.veadan.folib.providers.io.RepositoryFiles;
 import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.providers.io.RepositoryPathResolver;
 import com.veadan.folib.providers.io.RootRepositoryPath;
@@ -48,6 +49,7 @@ import com.veadan.folib.utils.VersionUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.maven.model.Model;
@@ -142,6 +144,10 @@ public class ArtifactComponent {
     @Inject
     @Lazy
     private PypiBrowsePackageHtmlResponseBuilder pypiBrowsePackageHtmlResponseBuilder;
+
+    @Inject
+    @Lazy
+    private ArtifactEventListenerRegistry artifactEventListenerRegistry;
 
     /**
      * 读取文件内容
@@ -255,29 +261,20 @@ public class ArtifactComponent {
             log.error("RepositoryPath [{}] does not exist", repositoryPath);
             return false;
         }
-        try {
-            if (RepositoryFiles.isChecksum(repositoryPath)) {
-                log.error("LayoutSupports [{}] isChecksum", repositoryPath);
-                return false;
-            }
-        } catch (Exception ex) {
-            log.error("LayoutSupports get [{}] isChecksum error [{}]", repositoryPath, ExceptionUtils.getStackTrace(ex));
-            return false;
-        }
+//        try {
+//            if (RepositoryFiles.isChecksum(repositoryPath)) {
+//                log.error("LayoutSupports [{}] isChecksum", repositoryPath);
+//                return false;
+//            }
+//        } catch (Exception ex) {
+//            log.error("LayoutSupports get [{}] isChecksum error [{}]", repositoryPath, ExceptionUtils.getStackTrace(ex));
+//            return false;
+//        }
         if (repositoryPath.getFileSystem() instanceof DockerFileSystem) {
-            log.info("=====>>>>> docker布局");
+            log.debug("docker布局");
             String blobs = "blobs";
             String manifest = "manifest";
-            String path = "";
-            try {
-                path = repositoryPath.toAbsolutePath().toString();
-                if (Objects.nonNull(repositoryPath.getArtifactEntry())) {
-                    path = repositoryPath.getArtifactEntry().getArtifactPath();
-                }
-            } catch (Exception ex) {
-                log.error("Check docker layoutSupports error：{}", ExceptionUtils.getStackTrace(ex));
-                path = repositoryPath.toAbsolutePath().toString();
-            }
+            String path = repositoryPath.toAbsolutePath().toString();
             if (Boolean.TRUE.equals(block)) {
                 if (path.contains("sha256") && !path.endsWith(".sha256")) {
                     flag = true;
@@ -286,44 +283,44 @@ public class ArtifactComponent {
                 flag = true;
             }
         } else if (repositoryPath.getFileSystem() instanceof MavenFileSystem) {
-            log.info("=====>>>>> maven布局");
+            log.debug("maven布局");
             if (Boolean.TRUE.equals(scan)) {
                 flag = JarArchiveListingFunction.INSTANCE.supports(repositoryPath);
             } else {
                 flag = JarArchiveListingFunction.INSTANCE.supports(repositoryPath) || endsWith(repositoryPath.getFileName().toString(), Collections.singletonList(".pom"));
             }
         } else if (repositoryPath.getFileSystem() instanceof NpmFileSystem) {
-            log.info("=====>>>>> npm布局");
+            log.debug("npm布局");
             List<String> suffixList = Arrays.asList(".json", ".tgz");
             flag = endsWith(repositoryPath.getFileName().toString(), suffixList);
         } else if (repositoryPath.getFileSystem() instanceof NugetFileSystem) {
-            log.info("=====>>>>> nuget布局");
+            log.debug("nuget布局");
             List<String> suffixList = Arrays.asList(".nupkg", ".nuspec", "packages.config");
             flag = endsWith(repositoryPath.getFileName().toString(), suffixList);
         } else if (repositoryPath.getFileSystem() instanceof PypiFileSystem) {
-            log.info("=====>>>>> pypi布局");
+            log.debug("pypi布局");
             List<String> suffixList = Arrays.asList(".whl", ".egg", ".zip", "tar.gz");
             flag = endsWith(repositoryPath.getFileName().toString(), suffixList);
         } else if (repositoryPath.getFileSystem() instanceof RpmFileSystem) {
-            log.info("=====>>>>> rpm布局");
+            log.debug("rpm布局");
             List<String> suffixList = Collections.singletonList(".rpm");
             flag = endsWith(repositoryPath.getFileName().toString(), suffixList);
         } else if (repositoryPath.getFileSystem() instanceof PhpFileSystem) {
-            log.info("=====>>>>> php布局");
+            log.debug("php布局");
             List<String> suffixList = Arrays.asList("tar", "tar.gz", "tar.bz2", "zip", "json");
             flag = endsWith(repositoryPath.getFileName().toString(), suffixList);
         } else if (repositoryPath.getFileSystem() instanceof ConanFileSystem) {
-            log.info("=====>>>>> Conan布局");
+            log.debug("Conan布局");
             List<String> suffixList = Arrays.asList(".tgz", ".py");
             flag = endsWith(repositoryPath.getFileName().toString(), suffixList);
         } else if (repositoryPath.getFileSystem() instanceof HelmFileSystem) {
             List<String> suffixList = Collections.singletonList(".tgz");
             flag = endsWith(repositoryPath.getFileName().toString(), suffixList);
-            log.info("=====>>>>> Helm布局");
+            log.debug("Helm布局");
         } else if (repositoryPath.getFileSystem() instanceof RawFileSystem) {
-            log.info("=====>>>>> raw布局");
+            log.debug("raw布局");
             if (Boolean.TRUE.equals(scan)) {
-                List<String> allSuffixList = Lists.newArrayList(".jar", ".war", ".ear", ".zip", ".json", ".tgz", ".nupkg", ".nuspec", "packages.config", ".whl", ".egg", ".zip", ".rpm", "tar", "tar.gz", "tar.bz2", "zip", "json", ".tgz", ".py", ".tgz", ".exe");
+                List<String> allSuffixList = Lists.newArrayList(".jar", ".war", ".ear", ".zip", ".json", ".tgz", ".nupkg", ".nuspec", "packages.config", ".whl", ".egg", ".zip", ".rpm", "tar", "tar.gz", "tar.bz2", "zip", "json", ".tgz", ".py", ".tgz", ".exe", ".podspec");
                 flag = endsWith(repositoryPath.getFileName().toString(), allSuffixList);
             } else {
                 flag = true;
@@ -337,7 +334,7 @@ public class ArtifactComponent {
                 flag = true;
             }
         }
-        log.info("=====>>>>>制品路径 [{}] 布局 [{}] 是否是该布局支持的制品类型 [{}]", repositoryPath.toString(), repositoryPath.getRepository().getLayout(), flag);
+        log.info("制品路径 [{}] 布局 [{}] 是否是该布局支持的制品类型 [{}]", repositoryPath.toString(), repositoryPath.getRepository().getLayout(), flag);
         return flag;
     }
 
@@ -351,52 +348,52 @@ public class ArtifactComponent {
         boolean flag = false;
         if (Objects.nonNull(filePath)) {
             if (DockerLayoutProvider.ALIAS.equals(layout)) {
-                log.info("=====>>>>> docker布局");
+                log.info(" docker布局");
                 String blobs = "blobs";
                 String manifest = "manifest";
                 if (filePath.contains("sha256") && !filePath.contains(blobs) && !filePath.contains(manifest) && !filePath.endsWith(".sha256")) {
                     flag = true;
                 }
             } else if (Maven2LayoutProvider.ALIAS.equals(layout)) {
-                log.info("=====>>>>> maven布局");
+                log.info(" maven布局");
                 flag = endsWith(filePath, Lists.newArrayList(".pom", ".jar", ".war", ".ear"));
             } else if (NpmLayoutProvider.ALIAS.equals(layout)) {
-                log.info("=====>>>>> npm布局");
+                log.info(" npm布局");
                 List<String> suffixList = Arrays.asList(".json", ".tgz");
                 flag = endsWith(filePath, suffixList);
             } else if (NugetLayoutProvider.ALIAS.equals(layout)) {
-                log.info("=====>>>>> nuget布局");
+                log.info(" nuget布局");
                 List<String> suffixList = Arrays.asList(".nupkg", ".nuspec", "packages.config");
                 flag = endsWith(filePath, suffixList);
             } else if (PypiLayoutProvider.ALIAS.equals(layout)) {
-                log.info("=====>>>>> pypi布局");
+                log.info(" pypi布局");
                 List<String> suffixList = Arrays.asList(".whl", ".egg", ".zip", "tar.gz");
                 flag = endsWith(filePath, suffixList);
             } else if (RpmLayoutProvider.ALIAS.equals(layout)) {
-                log.info("=====>>>>> rpm布局");
+                log.info(" rpm布局");
                 List<String> suffixList = Collections.singletonList(".rpm");
                 flag = endsWith(filePath, suffixList);
             } else if (PhpLayoutProvider.ALIAS.equals(layout)) {
-                log.info("=====>>>>> php布局");
+                log.info(" php布局");
                 List<String> suffixList = Arrays.asList("tar", "tar.gz", "tar.bz2", "zip", "json");
                 flag = endsWith(filePath, suffixList);
             } else if (ConanLayoutProvider.ALIAS.equals(layout)) {
-                log.info("=====>>>>> Conan布局");
+                log.info(" Conan布局");
                 List<String> suffixList = Arrays.asList(".tgz", ".py");
                 flag = endsWith(filePath, suffixList);
             } else if (HelmLayoutProvider.ALIAS.equals(layout)) {
                 List<String> suffixList = Collections.singletonList(".tgz");
                 flag = endsWith(filePath, suffixList);
-                log.info("=====>>>>> Helm布局");
+                log.info(" Helm布局");
             } else if (RawLayoutProvider.ALIAS.equals(layout)) {
-                log.info("=====>>>>> raw布局");
+                log.info(" raw布局");
                 flag = true;
             } else if (CocoapodsLayoutProvider.ALIAS.equals(layout)) {
                 List<String> suffixList = Collections.singletonList(".tar.gz");
                 flag = endsWith(filePath, suffixList);
                 log.info("=====>>>>> Cocoapods布局");
             }
-            log.info("=====>>>>>制品路径 [{}] 布局 [{}] 是否是该布局支持的制品类型 [{}]", filePath, layout, flag);
+            log.info("制品路径 [{}] 布局 [{}] 是否是该布局支持的制品类型 [{}]", filePath, layout, flag);
         }
         return flag;
     }
@@ -1056,5 +1053,53 @@ public class ArtifactComponent {
             }
         }
         return html;
+    }
+
+    /**
+     * 存储制品元数据文件
+     *
+     * @param repositoryPath repositoryPath
+     */
+    public void storeArtifactMetadataFile(RepositoryPath repositoryPath) {
+        try {
+            if (Objects.nonNull(repositoryPath) && Files.exists(repositoryPath)) {
+                String fileName = "." + FilenameUtils.getName(repositoryPath.getFileName().toString()) + ".metadata";
+                RepositoryPath artifactRepositoryPath = repositoryPath.getParent().resolve(fileName);
+                try (ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+                     ObjectOutputStream objectOutputStream = new ObjectOutputStream(byteArrayOutputStream)) {
+                    objectOutputStream.writeObject(repositoryPath.getArtifactEntry());
+                    byte[] byteArray = byteArrayOutputStream.toByteArray();
+                    Files.write(artifactRepositoryPath, byteArray);
+                } catch (Exception ex) {
+                    log.error("写入制品 [{}] 本地缓存.metadata文件错误", ExceptionUtils.getStackTrace(ex));
+                }
+            }
+        } catch (Exception ex) {
+            log.error("StoreArtifactMetadataFile error ", ex);
+        }
+    }
+
+    //    @Async("eventTaskExecutor")
+    public void beforeRead(RepositoryPath repositoryPath) {
+        try {
+//            if (!RepositoryFiles.isArtifact(repositoryPath)) {
+//                return;
+//            }
+            artifactEventListenerRegistry.dispatchArtifactDownloadingEvent(repositoryPath);
+        } catch (Exception ex) {
+            log.error("RepositoryPath beforeRead error ", ex);
+        }
+    }
+
+    //    @Async("eventTaskExecutor")
+    public void afterRead(RepositoryPath repositoryPath) {
+        try {
+//            if (!RepositoryFiles.isArtifact(repositoryPath)) {
+//                return;
+//            }
+            artifactEventListenerRegistry.dispatchArtifactDownloadedEvent(repositoryPath);
+        } catch (Exception ex) {
+            log.error("RepositoryPath beforeRead error ", ex);
+        }
     }
 }

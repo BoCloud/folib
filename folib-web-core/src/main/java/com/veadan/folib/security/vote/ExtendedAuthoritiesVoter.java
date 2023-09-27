@@ -1,11 +1,18 @@
 package com.veadan.folib.security.vote;
 
+import com.google.common.cache.Cache;
+import com.google.common.cache.CacheBuilder;
+import com.veadan.folib.authorization.domain.RoleData;
+import com.veadan.folib.authorization.service.AuthorizationConfigService;
 import com.veadan.folib.controllers.BrowseController;
 import com.veadan.folib.services.ConfigurationManagementService;
-import com.veadan.folib.storage.StorageDto;
-import com.veadan.folib.storage.repository.RepositoryDto;
+import com.veadan.folib.storage.Storage;
+import com.veadan.folib.storage.repository.Repository;
 import com.veadan.folib.users.domain.Privileges;
+import com.veadan.folib.users.domain.SystemRole;
+import com.veadan.folib.users.security.AuthoritiesProvider;
 import com.veadan.folib.users.userdetails.SpringSecurityUser;
+import com.veadan.folib.util.CacheUtil;
 import com.veadan.folib.utils.UrlUtils;
 import org.aopalliance.intercept.MethodInvocation;
 import org.apache.commons.lang3.StringUtils;
@@ -21,11 +28,10 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.stereotype.Component;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.Objects;
-import java.util.stream.Collectors;
+import javax.inject.Inject;
+import java.net.URI;
+import java.util.*;
+import java.util.concurrent.TimeUnit;
 
 import static com.veadan.folib.web.Constants.*;
 
@@ -34,11 +40,16 @@ import static com.veadan.folib.web.Constants.*;
  */
 @Component
 public class ExtendedAuthoritiesVoter extends PreInvocationAuthorizationAdviceVoter {
+
     private final Logger logger = LoggerFactory.getLogger(ExtendedAuthoritiesVoter.class);
 
     @Autowired
     @Lazy
     private ConfigurationManagementService configurationManagementService;
+
+    @Autowired
+    @Lazy
+    private AuthoritiesProvider authoritiesProvider;
 
     public ExtendedAuthoritiesVoter() {
         super(new ExpressionBasedPreInvocationAdvice());
@@ -65,52 +76,54 @@ public class ExtendedAuthoritiesVoter extends PreInvocationAuthorizationAdviceVo
             return source;
         }
 
+        private Boolean getRepositoryAllowAnonymousFromCacheOrLoad(String storageId, String repositoryId) {
+            CacheUtil<String, Repository> cacheUtil = CacheUtil.getInstance();
+            String key = String.format("%s:%s", storageId, repositoryId);
+            Repository repository = cacheUtil.get(key);
+            if (Objects.isNull(repository)) {
+                Storage storage = configurationManagementService.getConfiguration().getStorage(storageId);
+                if (Objects.isNull(storage)) {
+                    return true;
+                }
+                repository = storage.getRepository(repositoryId);
+                cacheUtil.put(key, repository);
+            }
+            return repository.isAllowAnonymous();
+        }
+
         private Collection<? extends GrantedAuthority> calculateExtendedAuthorities(Authentication authentication) {
             String storageId = UrlUtils.getCurrentStorageId();
             String repositoryId = UrlUtils.getCurrentRepositoryId();
             Object principal = authentication.getPrincipal();
             Collection<? extends GrantedAuthority> apiAuthorities = authentication.getAuthorities();
             logger.debug("Privileges for [{}] are [{}]", principal, apiAuthorities);
-
             if (!authentication.isAuthenticated() || authentication instanceof AnonymousAuthenticationToken) {
-                //匿名访问
                 if (StringUtils.isNotBlank(storageId) && StringUtils.isNotBlank(repositoryId)) {
-                    StorageDto storageDto = configurationManagementService.getMutableConfigurationClone().getStorage(storageId);
-                    if (Objects.nonNull(storageDto)) {
-                        RepositoryDto repositoryDto = storageDto.getRepository(repositoryId);
-                        if (Objects.nonNull(repositoryDto) && Boolean.FALSE.equals(repositoryDto.isAllowAnonymous())) {
-                            //不允许匿名访问
-                            return authentication.getAuthorities().stream().filter(item -> !Privileges.anonymous().contains(item.getAuthority())).collect(Collectors.toList());
-                        }
+                    if (Boolean.FALSE.equals(getRepositoryAllowAnonymousFromCacheOrLoad(storageId, repositoryId))) {
+                        return Collections.emptySet();
                     }
                 }
-                return authentication.getAuthorities();
+                return authoritiesProvider.getRuntimeRole(SystemRole.ANONYMOUS.name()).getAccessModel().getApiAuthorities();
             } else if (!(principal instanceof SpringSecurityUser)) {
-
                 logger.warn("Unknown authentication principal type [{}]", principal.getClass());
-
                 return authentication.getAuthorities();
             }
-
             String requestUri = UrlUtils.getRequestUri();
-            if (!requestUri.startsWith(ARTIFACT_ROOT_PATH) && !requestUri.startsWith(DOCKER_ROOT_PATH) && !requestUri.startsWith(BrowseController.ROOT_CONTEXT) && !requestUri.startsWith(STORAGE_ROOT_PATH)) {
+            List<String> paths = Arrays.asList(ARTIFACT_ROOT_PATH, DOCKER_ROOT_PATH, BrowseController.ROOT_CONTEXT, STORAGE_ROOT_PATH);
+            if (paths.stream().noneMatch(requestUri::startsWith)) {
                 return apiAuthorities;
             }
-
             if (storageId == null || repositoryId == null) {
                 return apiAuthorities;
             }
             SpringSecurityUser userDetails = (SpringSecurityUser) authentication.getPrincipal();
-            // calculate privileges based on roles access model
-            Collection<Privileges> storageAuthorities = userDetails.getStorageAuthorities(UrlUtils.getRequestUri());
+            Collection<Privileges> storageAuthorities = userDetails.getStorageAuthorities(requestUri);
             if (storageAuthorities.isEmpty()) {
                 return apiAuthorities;
             }
-
             List<GrantedAuthority> extendedAuthorities = new ArrayList<>(apiAuthorities);
             extendedAuthorities.addAll(storageAuthorities);
             logger.debug("Privileges for [{}] was extended to [{}]", userDetails.getUsername(), extendedAuthorities);
-
             return extendedAuthorities;
         }
 

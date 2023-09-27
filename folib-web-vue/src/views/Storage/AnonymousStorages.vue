@@ -13,11 +13,14 @@
         <SearchBox @mouse="searchBoxMouseStatus" @search="search"/>
       </a-row>
     </div>
-    <Storages v-if="!searchVisible" :anonymous="true" class="mt-15"/>
-    <Search ref="search" class="mt-20" v-if="searchVisible" :openRepository="true" :columns="columns"/>
+    <Storages v-if="!searchVisible && allowAnonymous" :anonymous="true" class="mt-15"/>
+    <Search ref="search" class="mt-20" v-if="searchVisible && allowAnonymous" :openRepository="true" :columns="columns"/>
   </div>
 </template>
 <script>
+import {
+  getAllowAnonymous,
+} from '@/api/settings'
 import Storages from "../Storage/Storages.vue"
 import SearchBox from "@/components/Tools/SearchBox"
 import Search from "../Storage/components/Search/index.vue"
@@ -76,6 +79,7 @@ export default {
         },
       ],
       searchVisible: false,
+      allowAnonymous: false,
     }
   },
   components: {
@@ -84,6 +88,7 @@ export default {
     Search,
   },
   created() {
+    this.getAllowAnonymous()
   },
 	watch: {
     
@@ -97,6 +102,14 @@ export default {
       this.searchVisible = true
       this.$nextTick(() => {
         this.$refs.search.search(value, searchType, type)
+      })
+    },
+    getAllowAnonymous() {
+      getAllowAnonymous().then(res => {
+        this.allowAnonymous = res
+        if(!this.allowAnonymous) {
+          this.$router.push('/login')
+        }
       })
     },
   }

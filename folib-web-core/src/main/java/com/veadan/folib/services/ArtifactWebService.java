@@ -1,6 +1,7 @@
 package com.veadan.folib.services;
 
 import com.veadan.folib.domain.Artifact;
+import com.veadan.folib.domain.ArtifactStatistics;
 import com.veadan.folib.domain.StatusInfo;
 import com.veadan.folib.forms.artifact.ArtifactMetadataForm;
 import com.veadan.folib.forms.scanner.*;
@@ -161,9 +162,8 @@ public interface ArtifactWebService {
     StatusInfo store(String username, String storageId, String repositoryId, String path, String uuid, MultipartFile file);
 
     /**
-     * 批量存储或更新元数据 适配安徽政务
-     *
-     * @param artifactMetadataFormList artifactMetadataFormList
+     * 制品统计信息
+     * @return 制品统计信息
      */
-    void batchArtifactMetaDataByahzw(List<ArtifactMetadataForm> artifactMetadataFormList);
+    ArtifactStatistics artifactStatistics();
 }

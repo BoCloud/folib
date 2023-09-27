@@ -62,7 +62,7 @@ public class NpmSyncArtifactProvider implements SyncArtifactProvider {
     }
 
     @Override
-    public void fullSync(SyncArtifactForm syncArtifactForm) {
+    public void browseFullSync(SyncArtifactForm syncArtifactForm) {
         try {
             long startTime = System.currentTimeMillis();
             Repository repository = configurationManager.getRepository(syncArtifactForm.getStorageId(), syncArtifactForm.getRepositoryId());
@@ -143,6 +143,11 @@ public class NpmSyncArtifactProvider implements SyncArtifactProvider {
         } finally {
             THREAD_LOCAL.remove();
         }
+    }
+
+    @Override
+    public void fullSync(SyncArtifactForm syncArtifactForm) {
+
     }
 
     /**

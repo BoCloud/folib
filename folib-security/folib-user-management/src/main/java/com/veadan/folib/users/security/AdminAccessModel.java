@@ -1,5 +1,6 @@
 package com.veadan.folib.users.security;
 
+import java.util.List;
 import java.util.Set;
 
 import com.veadan.folib.users.domain.Privileges;
@@ -25,7 +26,7 @@ public class AdminAccessModel implements AccessModel
     }
 
     @Override
-    public Set<Privileges> getPathAuthorities(String storageId, String repositoryId) {
+    public Set<Privileges> getPathAuthorities(String storageId, String repositoryId, List<String> paths) {
         return Privileges.all();
     }
 

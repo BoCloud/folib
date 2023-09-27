@@ -19,7 +19,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Component;
 
 @Component
-@Order(0)
+@Order(1)
 public class JWTAuthenticationSupplier
         implements AuthenticationSupplier, JwtTokenFetcher
 {

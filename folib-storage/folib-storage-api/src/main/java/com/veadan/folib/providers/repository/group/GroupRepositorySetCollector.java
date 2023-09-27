@@ -11,12 +11,14 @@ import java.util.LinkedHashSet;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.stereotype.Component;
 
 /**
  * @author veadan
  */
+@Slf4j
 @Component
 public class GroupRepositorySetCollector
 {
@@ -32,6 +34,7 @@ public class GroupRepositorySetCollector
     public Set<Repository> collect(Repository groupRepository,
                                    boolean traverse)
     {
+        log.info("GroupRepository {}", groupRepository.getId());
         Set<Repository> result = groupRepository.getGroupRepositories()
                                                 .stream()
                                                 .map(groupRepoId -> getRepository(groupRepository.getStorage(),

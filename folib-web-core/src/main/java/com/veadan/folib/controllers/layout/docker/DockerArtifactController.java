@@ -194,7 +194,7 @@ public class DockerArtifactController extends BaseArtifactController {
                 return new ResponseEntity<>(unAuth(), HttpStatus.UNAUTHORIZED);
             }
             SpringSecurityUser userDetails = (SpringSecurityUser) authentication.getPrincipal();
-            Collection<Privileges> allAuthorities = userDetails.getAllAuthorities(storageId, repositoryId);
+            Collection<Privileges> allAuthorities = userDetails.getAllAuthorities(storageId, repositoryId, null);
             if (allAuthorities.stream().noneMatch(item -> item.getAuthority().equals(Privileges.ARTIFACTS_DEPLOY.getAuthority()))) {
                 return new ResponseEntity<>(unForbidden(storageId, repositoryId), HttpStatus.FORBIDDEN);
             }
@@ -269,7 +269,7 @@ public class DockerArtifactController extends BaseArtifactController {
             return new ResponseEntity<>(unAuth(), HttpStatus.UNAUTHORIZED);
         }
         SpringSecurityUser userDetails = (SpringSecurityUser) authentication.getPrincipal();
-        Collection<Privileges> allAuthorities = userDetails.getAllAuthorities(storageId, repositoryId);
+        Collection<Privileges> allAuthorities = userDetails.getAllAuthorities(storageId, repositoryId, null);
         if (allAuthorities.stream().noneMatch(item -> item.getAuthority().equals(Privileges.ARTIFACTS_DEPLOY.getAuthority()))) {
             return new ResponseEntity<>(unForbidden(storageId, repositoryId), HttpStatus.FORBIDDEN);
         }
@@ -428,7 +428,11 @@ public class DockerArtifactController extends BaseArtifactController {
             RepositoryPath repositoryPath = artifactResolutionService.resolvePath(storageId, repositoryId, artifactName);
             //200已经存在 404不存在
             if (artifactRealExists(repositoryPath)) {
-                response.addHeader(DockerApiHeader.CONTENT_LENGTH.key(), repositoryPath.getArtifactEntry().getSizeInBytes().toString());
+                Long size = repositoryPath.getArtifactEntry().getSizeInBytes();
+                if (Objects.isNull(size)) {
+                    size = 0L;
+                }
+                response.addHeader(DockerApiHeader.CONTENT_LENGTH.key(), size.toString());
                 response.addHeader(DockerApiHeader.STREAM_CONTENT_TYPE.key(), DockerApiHeader.STREAM_CONTENT_TYPE.value());
                 return new ResponseEntity<>("OK", HttpStatus.OK);
             } else {
@@ -507,7 +511,7 @@ public class DockerArtifactController extends BaseArtifactController {
             return new ResponseEntity<>(unAuth(), HttpStatus.UNAUTHORIZED);
         }
         SpringSecurityUser userDetails = (SpringSecurityUser) authentication.getPrincipal();
-        Collection<Privileges> allAuthorities = userDetails.getAllAuthorities(storageId, repositoryId);
+        Collection<Privileges> allAuthorities = userDetails.getAllAuthorities(storageId, repositoryId, null);
         if (allAuthorities.stream().noneMatch(item -> item.getAuthority().equals(Privileges.ARTIFACTS_DEPLOY.getAuthority()))) {
             return new ResponseEntity<>(unForbidden(storageId, repositoryId), HttpStatus.FORBIDDEN);
         }
@@ -532,7 +536,7 @@ public class DockerArtifactController extends BaseArtifactController {
     //镜像存储
 
     /**
-     * 镜像文件零时存储
+     * 镜像文件临时存储
      *
      * @param storageId
      * @param repositoryId
@@ -1213,15 +1217,6 @@ public class DockerArtifactController extends BaseArtifactController {
         return result;
     }
 
-    private boolean artifactRealExists(RepositoryPath repositoryPath) {
-        try {
-            return Objects.nonNull(repositoryPath) && Files.exists(repositoryPath) && Objects.nonNull(repositoryPath.getArtifactEntry()) && Boolean.TRUE.equals(repositoryPath.getArtifactEntry().getArtifactFileExists());
-        } catch (Exception ex) {
-            logger.error("判断制品是否存在发生错误：{}", ExceptionUtils.getStackTrace(ex));
-            return false;
-        }
-    }
-
     private void setTokenUrl(HttpServletRequest request, HttpServletResponse response) {
         String originalProtocol = request.getHeader("X-Forwarded-Proto"), https = "https";
         if (https.equals(originalProtocol)) {
@@ -1232,6 +1227,6 @@ public class DockerArtifactController extends BaseArtifactController {
             response.setHeader("WWW-Authenticate", MessageFormat.format("Bearer realm=\"{0}token\",service=\"{1}\"", "http://" + request.getServerName() + ":" + request.getServerPort() + "/v2/", request.getServerName() + ":" + request.getServerPort()));
         }
     }
-
+    
 }
 

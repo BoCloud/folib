@@ -4,14 +4,17 @@ import cn.hutool.core.collection.CollectionUtil;
 import cn.hutool.extra.spring.SpringUtil;
 import com.alibaba.fastjson.JSONObject;
 import com.veadan.folib.config.PermissionCheck;
+import com.veadan.folib.controllers.support.ErrorResponseEntityBody;
 import com.veadan.folib.dispatch.ClusterDispatchNodeDto;
 import com.veadan.folib.scanner.common.util.IPUtil;
+import com.veadan.folib.services.ConfigurationManagementService;
 import com.veadan.folib.users.domain.Privileges;
 import com.veadan.folib.users.userdetails.SpringSecurityUser;
 import com.veadan.folib.wrapper.RequestWrapper;
-import com.veadan.folib.services.ConfigurationManagementService;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.compress.utils.Lists;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.method.HandlerMethod;
@@ -20,7 +23,6 @@ import org.springframework.web.servlet.HandlerInterceptor;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.util.*;
-import java.util.Collection;
 
 /**
  * 自定义权限拦截器 校验节点间请求的白名单
@@ -80,6 +82,7 @@ public class PermissionCheckInterceptor implements HandlerInterceptor {
         //获取用的角色权限列表中是否拥有该权限
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (!authentication.isAuthenticated()) {
+            handlerResponse(response);
             return false;
         }
         boolean auth = authentication.getAuthorities().stream().anyMatch(item -> item.getAuthority().equals(resourceKey));
@@ -91,7 +94,21 @@ public class PermissionCheckInterceptor implements HandlerInterceptor {
         if (StringUtils.isNotBlank(storageKey) && StringUtils.isNotBlank(repositoryKey)) {
             String storageId = request.getParameter(storageKey);
             String repositoryId = request.getParameter(repositoryKey);
-
+            String filePathMap = request.getParameter("filePathMap");
+            List<String> filePaths = null;
+            if (StringUtils.isNotBlank(filePathMap)) {
+                JSONObject filePathJson = JSONObject.parseObject(request.getParameter("filePathMap"));
+                Iterator<String> iterable = filePathJson.keySet().iterator();
+                String filePathKey = "", filePath;
+                filePaths = Lists.newArrayList();
+                while (iterable.hasNext()) {
+                    filePathKey = iterable.next();
+                    filePath = filePathJson.getString(filePathKey);
+                    if (StringUtils.isNotBlank(filePath)) {
+                        filePaths.add(filePath);
+                    }
+                }
+            }
             String body = StringUtils.EMPTY;
             if (request instanceof RequestWrapper) {
                 body = ((RequestWrapper) request).getBody();
@@ -102,9 +119,14 @@ public class PermissionCheckInterceptor implements HandlerInterceptor {
                 repositoryId = jsonObject.getString(repositoryKey);
             }
             SpringSecurityUser userDetails = (SpringSecurityUser) authentication.getPrincipal();
-            Collection<Privileges> storageAuthorities = userDetails.getStorageAuthorities(storageId, repositoryId);
-            return storageAuthorities.stream().anyMatch(item -> item.getAuthority().equals(resourceKey));
+            Collection<Privileges> storageAuthorities = userDetails.getStorageAuthorities(storageId, repositoryId, filePaths);
+            boolean flag = storageAuthorities.stream().anyMatch(item -> item.getAuthority().equals(resourceKey));
+            if (!flag) {
+                handlerResponse(response);
+            }
+            return flag;
         }
+        handlerResponse(response);
         return false;
     }
 
@@ -122,5 +144,17 @@ public class PermissionCheckInterceptor implements HandlerInterceptor {
             permission = handlerMethod.getBeanType().getAnnotation(PermissionCheck.class);
         }
         return permission;
+    }
+
+    private void handlerResponse(HttpServletResponse response) {
+        try {
+            response.setContentType(org.springframework.http.MediaType.APPLICATION_JSON_VALUE);
+            response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+            String msg = "Access to the requested resource is not authorized.";
+            response.getWriter().println(JSONObject.toJSONString(new ErrorResponseEntityBody(msg)));
+            response.flushBuffer();
+        } catch (Exception ex) {
+            log.error("处理响应失败：{}", ExceptionUtils.getStackTrace(ex));
+        }
     }
 }

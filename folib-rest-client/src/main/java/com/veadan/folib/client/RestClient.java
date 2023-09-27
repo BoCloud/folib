@@ -876,6 +876,31 @@ public class RestClient extends ArtifactClient {
     }
 
     /**
+     * 制品统计信息
+     * @return 制品统计信息
+     */
+    public ArtifactStatistics artifactStatistics() {
+        String url = getContextBaseUrl() + "/api/artifact/artifactStatistics";
+        WebTarget resource = getClientInstance().target(url);
+        setupAuthentication(resource);
+        Response response = resource.request(MediaType.APPLICATION_JSON).get();
+        if (response.getStatus() != HttpStatus.SC_OK) {
+            displayResponseError(response);
+            throw new ServerErrorException(response.getStatus() + " | Unable to greet()",
+                    Response.Status.INTERNAL_SERVER_ERROR);
+        } else {
+            String res = response.readEntity(String.class);
+            if (StringUtils.isNotBlank(res)) {
+                return JSONObject.parseObject(res, ArtifactStatistics.class);
+            }
+            Long zero = 0L;
+            return ArtifactStatistics.builder().artifactsCount(zero).artifactsNormalCount(zero).artifactsVulnerabilitiesCount(zero)
+                    .criticalVulnerabilitiesCount(zero).highVulnerabilitiesCount(zero).lowVulnerabilitiesCount(zero)
+                    .mediumVulnerabilitiesCount(zero).suppressedVulnerabilitiesCount(zero).vulnerabilitiesCount(zero).build();
+        }
+    }
+
+    /**
      * 把数组所有元素排序，并按照“参数=参数值”的模式用“&”字符拼接成字符串
      *
      * @param params 需要排序并参与字符拼接的参数组

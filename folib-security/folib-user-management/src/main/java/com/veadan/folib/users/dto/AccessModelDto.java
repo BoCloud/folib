@@ -2,6 +2,7 @@ package com.veadan.folib.users.dto;
 
 
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
@@ -45,8 +46,8 @@ public class AccessModelDto
     }
 
     @Override
-    public Set<Privileges> getPathAuthorities(String storageId, String repositoryId) {
-        return AccessModelData.getPathAuthorities(storageId, repositoryId, storageAuthorities);
+    public Set<Privileges> getPathAuthorities(String storageId, String repositoryId, List<String> paths) {
+        return AccessModelData.getPathAuthorities(storageId, repositoryId, paths, storageAuthorities);
     }
 
 }

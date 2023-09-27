@@ -1,21 +1,13 @@
 package com.veadan.folib.controllers.layout.maven;
 
-import com.google.common.collect.Sets;
-import com.veadan.folib.artifact.archive.JarArchiveListingFunction;
 import com.veadan.folib.artifact.coordinates.MavenArtifactCoordinates;
-import com.veadan.folib.configuration.MutableSecurityPolicyConfiguration;
 import com.veadan.folib.controllers.BaseArtifactController;
-import com.veadan.folib.domain.Artifact;
-import com.veadan.folib.domain.Vulnerability;
-import com.veadan.folib.enums.BlockTypeEnum;
 import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.storage.ArtifactStorageException;
 import com.veadan.folib.storage.repository.Repository;
-import com.veadan.folib.storage.repository.RepositoryDto;
 import com.veadan.folib.web.LayoutRequestMapping;
 import com.veadan.folib.web.RepositoryMapping;
 import io.swagger.annotations.*;
-import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -25,11 +17,10 @@ import org.springframework.web.bind.annotation.*;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.nio.channels.ReadableByteChannel;
+import java.nio.channels.WritableByteChannel;
 import java.nio.file.Files;
-import java.util.LinkedHashSet;
-import java.util.Objects;
-import java.util.Set;
-import java.util.stream.Collectors;
 
 import static org.springframework.http.HttpStatus.NOT_FOUND;
 
@@ -48,7 +39,7 @@ import static org.springframework.http.HttpStatus.NOT_FOUND;
 @LayoutRequestMapping(MavenArtifactCoordinates.LAYOUT_NAME)
 //@RequestMapping(
 //        headers = "user-agent=Maven/*")
-@Api(description = "maven坐标控制器",tags = "maven坐标控制器")
+@Api(description = "maven坐标控制器", tags = "maven坐标控制器")
 
 public class MavenArtifactController
         extends BaseArtifactController {
@@ -67,20 +58,21 @@ public class MavenArtifactController
             @ApiResponse(code = 503, message = "Repository currently not in service.")})
     @PreAuthorize("hasAuthority('ARTIFACTS_RESOLVE')")
     @RequestMapping(value = {"/{storageId}/{repositoryId}/{artifactPath:.+}"}, method = {RequestMethod.GET, RequestMethod.HEAD})
-    public void download(@RepositoryMapping Repository repository,
-                         @RequestHeader HttpHeaders httpHeaders,
-                         @PathVariable String artifactPath,
-                         HttpServletRequest request,
-                         HttpServletResponse response)
+    public void download(
+            @RequestHeader HttpHeaders httpHeaders,
+            @PathVariable String artifactPath,
+            @PathVariable String storageId,
+            @PathVariable String repositoryId,
+            HttpServletRequest request,
+            HttpServletResponse response)
             throws Exception {
-        final String storageId = repository.getStorage().getId();
-        final String repositoryId = repository.getId();
-        logger.info("Requested /{}/{}/{}.", storageId, repositoryId, artifactPath);
-
-        artifactPath = correctIndexPathIfNecessary(repository, artifactPath);
+        long startTime = System.currentTimeMillis();
+        logger.debug("Requested /{}/{}/{} startTime {} .", storageId, repositoryId, artifactPath, startTime);
+//        artifactPath = correctIndexPathIfNecessary(repository, artifactPath);
         RepositoryPath repositoryPath = artifactResolutionService.resolvePath(storageId, repositoryId, artifactPath);
         vulnerabilityBlock(repositoryPath);
         provideArtifactDownloadResponse(request, response, httpHeaders, repositoryPath);
+        logger.debug("Requested /{}/{}/{} endTime {} .", storageId, repositoryId, artifactPath, System.currentTimeMillis() - startTime);
     }
 
     @ApiOperation(value = "Used to deploy an artifact")

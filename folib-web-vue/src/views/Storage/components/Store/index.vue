@@ -109,7 +109,7 @@
                       <a-icon type="cloud-upload" />
                     </small>
                   </a>
-                  <a v-if="uploadEnabled"><small style="padding-right: 20px" @click="handleUpload">
+                  <a v-if="uploadEnabled && folibRepository.layout !== 'rpm'"><small style="padding-right: 20px" @click="handleUpload">
                       批量上传
                       <a-icon type="cloud-upload" />
                     </small>
@@ -949,7 +949,7 @@ export default {
       showOperationDispatchFormModal: false,
       repositories: [],
       custom: false,
-      enablUploadedLayout: ['Raw', 'php', 'Maven 2', 'npm'],
+      enablUploadedLayout: ['Raw', 'php', 'Maven 2', 'npm', 'rpm'],
       permissions: [],
       mavenUploadVisible: false,
       uploadType: 1,
@@ -1092,9 +1092,23 @@ export default {
       this.$nextTick(() => {
         if (this.$refs.uploadForm)
         {
+          let targetPath = ''
+          if (this.folibRepository.layout === 'Raw') {
+            if (this.currentTreeNode.type === 'dir') {
+              targetPath = this.currentTreeNode.artifactPath
+            } else if (this.currentTreeNode.type === 'file') {
+              let length = this.currentTreeNode.artifactPath.length
+              let nameLength = this.currentTreeNode.name.length
+              targetPath = this.currentTreeNode.artifactPath.substring(0, length - nameLength)
+              if (targetPath && targetPath.endsWith("/")) {
+                targetPath = targetPath.substring(0, targetPath.length - 1)
+              }
+            }
+          }
           this.uploadForm.setFieldsValue({
             repostoryId: this.folibRepository.id,
-            type: 1
+            type: 1,
+            targetPath: targetPath,
           })
         }
       })
@@ -1177,7 +1191,7 @@ export default {
             ? err.response.data.error
             : err.response.data
           console.log('rpm upload error：', msg)
-          let errStatusArr = [200, 500]
+          let errStatusArr = [200, 500, 403, 304, 401]
           if (!errStatusArr.includes(err.response.status))
           {
             this.$notification['error']({
@@ -1303,7 +1317,7 @@ export default {
             ? err.response.data.error
             : err.response.data
           console.log('upload error：', msg)
-          let errStatusArr = [200, 500]
+          let errStatusArr = [200, 500, 403, 304, 401]
           if (!errStatusArr.includes(err.response.status))
           {
             this.$notification['error']({
@@ -1329,7 +1343,7 @@ export default {
             ? err.response.data.error
             : err.response.data
           console.log('upload error：', msg)
-          let errStatusArr = [200, 500]
+          let errStatusArr = [200, 500, 403, 304, 401]
           if (!errStatusArr.includes(err.response.status))
           {
             this.$notification['error']({
@@ -1808,6 +1822,10 @@ export default {
           }, 100)
         })
         .catch(err => {
+          let errStatusArr = [403, 401]
+          if (errStatusArr.includes(err.response.status)) {
+            return false
+          }
           let msg = err.response.data.message
             ? err.response.data.message
             : err.response.data.error

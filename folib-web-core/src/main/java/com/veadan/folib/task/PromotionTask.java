@@ -87,7 +87,7 @@ public class PromotionTask {
                     try {
                         storageId = artifact.getStorageId();
                         repositoryId = artifact.getRepositoryId();
-                        block = artifactComponent.vulnerabilityBlock(artifact, repositoryPathResolver.resolve(storageId, repositoryId).getRepository().getLayout());
+                        block = artifactComponent.vulnerabilityBlock(artifact, null);
                         if (block) {
                             log.info("存储空间 [{}] 所属仓库 [{}] 制品 [{}] 存在漏洞，满足安全策略配置中的阻断条件，取消晋级", storageId, repositoryId, artifact.getArtifactPath());
                             artifactComponent.handlerArtifactPromotion("", artifact.getStorageId(), artifact.getRepositoryId(), artifact.getArtifactPath(), PromotionStatusEnum.BLOCK.getStatus());

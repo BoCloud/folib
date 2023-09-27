@@ -1,26 +1,31 @@
 package com.veadan.folib.controllers.configuration;
 
-import com.veadan.folib.forms.configuration.CorsConfigurationForm;
-import com.veadan.folib.forms.configuration.ProxyConfigurationForm;
-import com.veadan.folib.forms.configuration.ServerSettingsForm;
-import com.veadan.folib.forms.configuration.SmtpConfigurationForm;
-import com.veadan.folib.services.support.ConfigurationException;
+import com.google.common.collect.Lists;
+import com.veadan.folib.authorization.dto.AuthorizationConfigDto;
+import com.veadan.folib.authorization.service.AuthorizationConfigService;
+import com.veadan.folib.cluster.SyncAuthorizationEnum;
+import com.veadan.folib.cluster.SyncServerSettingsEnum;
+import com.veadan.folib.components.common.CommonComponent;
 import com.veadan.folib.configuration.Configuration;
+import com.veadan.folib.controllers.cluster.dto.SyncAuthorizationDto;
+import com.veadan.folib.controllers.cluster.dto.SyncServerSettingsDto;
 import com.veadan.folib.controllers.support.BaseUrlEntityBody;
 import com.veadan.folib.controllers.support.InstanceNameEntityBody;
 import com.veadan.folib.controllers.support.PortEntityBody;
+import com.veadan.folib.forms.configuration.*;
+import com.veadan.folib.services.ClusterSyncService;
 import com.veadan.folib.services.ConfigurationManagementService;
+import com.veadan.folib.services.support.ConfigurationException;
+import com.veadan.folib.users.domain.Privileges;
+import com.veadan.folib.users.security.AuthoritiesProvider;
 import com.veadan.folib.validation.RequestBodyValidationException;
-
-import java.io.IOException;
-import java.util.Collection;
-import java.util.Objects;
-import java.util.stream.Stream;
-
 import io.swagger.annotations.*;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -33,15 +38,20 @@ import org.springframework.validation.ValidationUtils;
 import org.springframework.validation.Validator;
 import org.springframework.web.bind.annotation.*;
 
+import javax.inject.Inject;
+import java.io.IOException;
+import java.util.Collection;
+import java.util.Objects;
+import java.util.stream.Stream;
+
 /**
  * @author Veadan
  */
 @Controller
 @RequestMapping("/api/configuration/folib")
-@Api(description = "服务器设置",tags = "服务器设置")
+@Api(description = "服务器设置", tags = "服务器设置")
 public class ServerConfigurationController
-        extends BaseConfigurationController
-{
+        extends BaseConfigurationController {
 
     static final String SUCCESSFUL_SAVE_SERVER_SETTINGS = "服务器设置已成功更新.";
 
@@ -51,270 +61,232 @@ public class ServerConfigurationController
 
     private final Validator validator;
 
+    @Inject
+    @Lazy
+    private CommonComponent commonComponent;
+
+    @Inject
+    @Lazy
+    private ClusterSyncService clusterSyncService;
+
+    @Inject
+    @Lazy
+    private AuthorizationConfigService authorizationConfigService;
+
     public ServerConfigurationController(ConfigurationManagementService configurationManagementService,
-                                         @Qualifier("localValidatorFactoryBean") Validator validator)
-    {
+                                         @Qualifier("localValidatorFactoryBean") Validator validator) {
         super(configurationManagementService);
         this.validator = validator;
     }
 
     @ApiOperation(value = "Updates the instance name.")
-    @ApiResponses(value = { @ApiResponse(code = 200, message = "实例名称已更新."),
-                            @ApiResponse(code = 400, message = "无法更新实例的名称.") })
+    @ApiResponses(value = {@ApiResponse(code = 200, message = "实例名称已更新."),
+            @ApiResponse(code = 400, message = "无法更新实例的名称.")})
     @PreAuthorize("hasAnyAuthority('CONFIGURATION_SET_INSTANCE_NAME', 'GLOBAL_CONFIGURATION_MANAGE')")
     @PutMapping(value = "/instanceName",
-                produces = { MediaType.TEXT_PLAIN_VALUE,
-                             MediaType.APPLICATION_JSON_VALUE })
+            produces = {MediaType.TEXT_PLAIN_VALUE,
+                    MediaType.APPLICATION_JSON_VALUE})
     public ResponseEntity setInstanceName(@ApiParam(value = "The instance's name", required = true)
                                           @RequestBody InstanceNameEntityBody instanceNameEntityBody,
-                                          @RequestHeader(HttpHeaders.ACCEPT) String accept) throws IOException
-    {
-        try
-        {
+                                          @RequestHeader(HttpHeaders.ACCEPT) String accept) throws IOException {
+        try {
             configurationManagementService.setInstanceName(instanceNameEntityBody.getInstanceName());
 
             logger.info("Set instance's name to [{}].", instanceNameEntityBody.getInstanceName());
 
             return ResponseEntity.ok(getResponseEntityBody("The instance's name was updated.", accept));
-        }
-        catch (ConfigurationException e)
-        {
+        } catch (ConfigurationException e) {
             String message = "Could not update the instance's name.";
 
             logger.error(message, e);
 
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                                 .body(getResponseEntityBody(message, accept));
+                    .body(getResponseEntityBody(message, accept));
         }
     }
 
     @ApiOperation(value = "Returns the instance name of the service.")
-    @ApiResponses(value = { @ApiResponse(code = 200, message = "", response = String.class),
-                            @ApiResponse(code = 404, message = "No value for instanceName has been defined yet.") })
+    @ApiResponses(value = {@ApiResponse(code = 200, message = "", response = String.class),
+            @ApiResponse(code = 404, message = "No value for instanceName has been defined yet.")})
     @PreAuthorize("hasAnyAuthority('CONFIGURATION_VIEW_INSTANCE_NAME', 'GLOBAL_CONFIGURATION_MANAGE')")
     @GetMapping(value = "/instanceName",
-                produces = { MediaType.TEXT_PLAIN_VALUE,
-                             MediaType.APPLICATION_JSON_VALUE })
-    public ResponseEntity getInstanceName(@RequestHeader(HttpHeaders.ACCEPT) String accept)
-    {
+            produces = {MediaType.TEXT_PLAIN_VALUE,
+                    MediaType.APPLICATION_JSON_VALUE})
+    public ResponseEntity getInstanceName(@RequestHeader(HttpHeaders.ACCEPT) String accept) {
         String instanceName = configurationManagementService.getConfiguration().getInstanceName();
-        if (instanceName != null)
-        {
+        if (instanceName != null) {
             return ResponseEntity.ok(getInstanceNameEntityBody(instanceName,
-                                                               accept));
-        }
-        else
-        {
+                    accept));
+        } else {
             String message = "No value for instanceName has been defined yet.";
 
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                                 .body(getResponseEntityBody(message, accept));
+                    .body(getResponseEntityBody(message, accept));
         }
     }
 
     @ApiOperation(value = "Updates the base URL of the service.")
-    @ApiResponses(value = { @ApiResponse(code = 200, message = "The base URL was updated."),
-                            @ApiResponse(code = 400, message = "Could not update the base URL of the service.") })
+    @ApiResponses(value = {@ApiResponse(code = 200, message = "The base URL was updated."),
+            @ApiResponse(code = 400, message = "Could not update the base URL of the service.")})
     @PreAuthorize("hasAnyAuthority('CONFIGURATION_SET_BASE_URL', 'GLOBAL_CONFIGURATION_MANAGE')")
     @PutMapping(value = "/baseUrl",
-                produces = { MediaType.TEXT_PLAIN_VALUE,
-                             MediaType.APPLICATION_JSON_VALUE })
+            produces = {MediaType.TEXT_PLAIN_VALUE,
+                    MediaType.APPLICATION_JSON_VALUE})
     public ResponseEntity setBaseUrl(@ApiParam(value = "The base URL", required = true)
                                      @RequestBody BaseUrlEntityBody baseUrlEntity,
-                                     @RequestHeader(HttpHeaders.ACCEPT) String accept) throws IOException
-    {
-        try
-        {
+                                     @RequestHeader(HttpHeaders.ACCEPT) String accept) throws IOException {
+        try {
             String newBaseUrl = baseUrlEntity.getBaseUrl();
             configurationManagementService.setBaseUrl(newBaseUrl);
 
             logger.info("Set baseUrl to [{}].", newBaseUrl);
 
             return ResponseEntity.ok(getResponseEntityBody("The base URL was updated.", accept));
-        }
-        catch (ConfigurationException e)
-        {
+        } catch (ConfigurationException e) {
             String message = "Could not update the base URL of the service.";
 
             logger.error(message, e);
 
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                                 .body(getResponseEntityBody(message, accept));
+                    .body(getResponseEntityBody(message, accept));
         }
     }
 
     @ApiOperation(value = "Returns the base URL of the service.")
-    @ApiResponses(value = { @ApiResponse(code = 200, message = "", response = String.class),
-                            @ApiResponse(code = 404, message = "No value for baseUrl has been defined yet.") })
+    @ApiResponses(value = {@ApiResponse(code = 200, message = "", response = String.class),
+            @ApiResponse(code = 404, message = "No value for baseUrl has been defined yet.")})
     @PreAuthorize("hasAnyAuthority('CONFIGURATION_VIEW_BASE_URL', 'GLOBAL_CONFIGURATION_MANAGE', 'ARTIFACTS_VIEW')")
     @GetMapping(value = "/baseUrl",
-                produces = { MediaType.TEXT_PLAIN_VALUE,
-                             MediaType.APPLICATION_JSON_VALUE })
-    public ResponseEntity getBaseUrl(@RequestHeader(HttpHeaders.ACCEPT) String accept)
-    {
+            produces = {MediaType.TEXT_PLAIN_VALUE,
+                    MediaType.APPLICATION_JSON_VALUE})
+    public ResponseEntity getBaseUrl(@RequestHeader(HttpHeaders.ACCEPT) String accept) {
         String baseUrl = configurationManagementService.getConfiguration().getBaseUrl();
-        if (baseUrl != null)
-        {
+        if (baseUrl != null) {
             return ResponseEntity.ok(getBaseUrlEntityBody(baseUrl, accept));
-        }
-        else
-        {
+        } else {
             String message = "No value for baseUrl has been defined yet.";
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                                 .body(getResponseEntityBody(message, accept));
+                    .body(getResponseEntityBody(message, accept));
         }
     }
 
     @ApiOperation(value = "Sets the port of the service.")
-    @ApiResponses(value = { @ApiResponse(code = 200, message = "The port was updated."),
-                            @ApiResponse(code = 400, message = "Could not update the Folib port.") })
+    @ApiResponses(value = {@ApiResponse(code = 200, message = "The port was updated."),
+            @ApiResponse(code = 400, message = "Could not update the Folib port.")})
     @PreAuthorize("hasAnyAuthority('CONFIGURATION_SET_PORT', 'GLOBAL_CONFIGURATION_MANAGE')")
     @PutMapping(value = "/port/{port}",
-                produces = { MediaType.TEXT_PLAIN_VALUE,
-                             MediaType.APPLICATION_JSON_VALUE })
+            produces = {MediaType.TEXT_PLAIN_VALUE,
+                    MediaType.APPLICATION_JSON_VALUE})
     public ResponseEntity setPort(@ApiParam(value = "The port of the service", required = true)
                                   @PathVariable int port,
-                                  @RequestHeader(HttpHeaders.ACCEPT) String accept) throws IOException
-    {
-        try
-        {
+                                  @RequestHeader(HttpHeaders.ACCEPT) String accept) throws IOException {
+        try {
             configurationManagementService.setPort(port);
 
             logger.info("Set port to {}. This operation will require a server restart.", port);
 
             return ResponseEntity.ok(getResponseEntityBody("The port was updated.", accept));
-        }
-        catch (ConfigurationException e)
-        {
+        } catch (ConfigurationException e) {
             String message = "Could not update the Folib port.";
             logger.error(message, e);
 
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                                 .body(getResponseEntityBody(message, accept));
+                    .body(getResponseEntityBody(message, accept));
         }
     }
 
     @ApiOperation(value = "Sets the port of the service.")
-    @ApiResponses(value = { @ApiResponse(code = 200, message = "The port was updated."),
-                            @ApiResponse(code = 400, message = "Could not update the Folib port.") })
+    @ApiResponses(value = {@ApiResponse(code = 200, message = "The port was updated."),
+            @ApiResponse(code = 400, message = "Could not update the Folib port.")})
     @PreAuthorize("hasAnyAuthority('CONFIGURATION_SET_PORT', 'GLOBAL_CONFIGURATION_MANAGE')")
     @PutMapping(value = "/port",
-                produces = { MediaType.TEXT_PLAIN_VALUE,
-                             MediaType.APPLICATION_JSON_VALUE })
+            produces = {MediaType.TEXT_PLAIN_VALUE,
+                    MediaType.APPLICATION_JSON_VALUE})
     public ResponseEntity setPort(@ApiParam(value = "The port of the service", required = true)
                                   @RequestBody PortEntityBody portEntity,
-                                  @RequestHeader(HttpHeaders.ACCEPT) String accept) throws IOException
-    {
+                                  @RequestHeader(HttpHeaders.ACCEPT) String accept) throws IOException {
         return setPort(portEntity.getPort(), accept);
     }
 
     @ApiOperation(value = "Returns the port of the service.")
-    @ApiResponses(value = { @ApiResponse(code = 200, message = "", response = String.class) })
+    @ApiResponses(value = {@ApiResponse(code = 200, message = "", response = String.class)})
     @PreAuthorize("hasAnyAuthority('CONFIGURATION_VIEW_PORT', 'GLOBAL_CONFIGURATION_MANAGE')")
     @GetMapping(value = "/port",
-                produces = { MediaType.TEXT_PLAIN_VALUE,
-                             MediaType.APPLICATION_JSON_VALUE })
-    public ResponseEntity getPort(@RequestHeader(HttpHeaders.ACCEPT) String accept)
-    {
+            produces = {MediaType.TEXT_PLAIN_VALUE,
+                    MediaType.APPLICATION_JSON_VALUE})
+    public ResponseEntity getPort(@RequestHeader(HttpHeaders.ACCEPT) String accept) {
         return ResponseEntity.ok(
                 getPortEntityBody(configurationManagementService.getConfiguration().getPort(), accept));
     }
 
+    @ApiOperation(value = "Returns the allowAnonymous of the service.")
+    @ApiResponses(value = {@ApiResponse(code = 200, message = "", response = String.class)})
+    @GetMapping(value = "/allowAnonymous",
+            produces = {MediaType.TEXT_PLAIN_VALUE,
+                    MediaType.APPLICATION_JSON_VALUE})
+    public ResponseEntity getAllowAnonymous() {
+        return ResponseEntity.ok(configurationManagementService.getConfiguration().getAdvancedConfiguration().isAllowAnonymous());
+    }
+
     @ApiOperation(value = "Set global server settings.")
-    @ApiResponses(value = { @ApiResponse(code = 200, message = SUCCESSFUL_SAVE_SERVER_SETTINGS),
-                            @ApiResponse(code = 400, message = FAILED_SAVE_SERVER_SETTINGS) })
+    @ApiResponses(value = {@ApiResponse(code = 200, message = SUCCESSFUL_SAVE_SERVER_SETTINGS),
+            @ApiResponse(code = 400, message = FAILED_SAVE_SERVER_SETTINGS)})
     @PreAuthorize("hasAnyAuthority('CONFIGURATION_SET_BASE_URL', 'CONFIGURATION_SET_PORT', 'GLOBAL_CONFIGURATION_MANAGE')")
     @PostMapping(value = "/serverSettings",
-                 consumes = MediaType.APPLICATION_JSON_VALUE,
-                 produces = { MediaType.TEXT_PLAIN_VALUE,
-                              MediaType.APPLICATION_JSON_VALUE })
+            consumes = MediaType.APPLICATION_JSON_VALUE,
+            produces = {MediaType.TEXT_PLAIN_VALUE,
+                    MediaType.APPLICATION_JSON_VALUE})
     public ResponseEntity setServerSettings(@RequestBody ServerSettingsForm serverSettingsForm,
                                             BindingResult bindingResult,
-                                            @RequestHeader(HttpHeaders.ACCEPT) String acceptHeader) throws IOException
-    {
-        if (serverSettingsForm == null)
-        {
+                                            @RequestHeader(HttpHeaders.ACCEPT) String acceptHeader) throws Exception {
+        if (serverSettingsForm == null) {
             return getBadRequestResponseEntity(FAILED_EMPTY_FORM, acceptHeader);
         }
-
         validateServerSettingsForm(serverSettingsForm, bindingResult);
-
-        if (bindingResult.hasErrors())
-        {
+        if (bindingResult.hasErrors()) {
             throw new RequestBodyValidationException(FAILED_SAVE_SERVER_SETTINGS, bindingResult);
 
         }
-
-        configurationManagementService.setBaseUrl(serverSettingsForm.getBaseUrl());
-        configurationManagementService.setPort(serverSettingsForm.getPort());
-        configurationManagementService.setInstanceName(serverSettingsForm.getInstanceName());
-
-        if (serverSettingsForm.getCorsConfigurationForm() != null)
-        {
-            configurationManagementService.setCorsAllowedOrigins(
-                    serverSettingsForm.getCorsConfigurationForm().getAllowedOrigins()
-            );
-        }
-
-        if (serverSettingsForm.getSmtpConfigurationForm() != null)
-        {
-            // SMTP settings
-            configurationManagementService.setSmtpSettings(
-                    serverSettingsForm.getSmtpConfigurationForm().getMutableSmtpConfiguration()
-            );
-        }
-
-        if (serverSettingsForm.getProxyConfigurationForm() != null)
-        {
-            // Global Proxy settings
-            configurationManagementService.setProxyConfiguration(
-                    null, null, serverSettingsForm.getProxyConfigurationForm().getMutableProxyConfiguration()
-            );
-        }
-
+        commonComponent.updateServerSettings(serverSettingsForm);
+        clusterSyncService.syncServerSettings(SyncServerSettingsDto.builder().serverSettingsForm(serverSettingsForm).syncServerSettingsEnum(SyncServerSettingsEnum.ADD_OR_UPDATE).build());
+        AuthorizationConfigDto authorizationConfigDto = authorizationConfigService.getDto();
+        SyncAuthorizationDto syncAuthorizationDto = new SyncAuthorizationDto(authorizationConfigDto, SyncAuthorizationEnum.UPDATE);
+        clusterSyncService.syncAuthorization(syncAuthorizationDto);
         return getSuccessfulResponseEntity(SUCCESSFUL_SAVE_SERVER_SETTINGS, acceptHeader);
     }
 
     private void validateServerSettingsForm(ServerSettingsForm form,
-                                            BindingResult bindingResult)
-    {
-        if (!isProxyConfigurationFormEmpty(form.getProxyConfigurationForm()))
-        {
+                                            BindingResult bindingResult) {
+        if (!isProxyConfigurationFormEmpty(form.getProxyConfigurationForm())) {
             ValidationUtils.invokeValidator(validator, form, bindingResult,
-                                            ProxyConfigurationForm.ProxyConfigurationFormChecks.class);
+                    ProxyConfigurationForm.ProxyConfigurationFormChecks.class);
         }
 
-        if (!isSmtpConfigurationFormEmpty(form.getSmtpConfigurationForm()))
-        {
+        if (!isSmtpConfigurationFormEmpty(form.getSmtpConfigurationForm())) {
             ValidationUtils.invokeValidator(validator, form, bindingResult,
-                                            SmtpConfigurationForm.SmtpConfigurationFormChecks.class);
+                    SmtpConfigurationForm.SmtpConfigurationFormChecks.class);
         }
 
         ValidationUtils.invokeValidator(validator, form, bindingResult);
 
     }
 
-    private boolean isProxyConfigurationFormEmpty(ProxyConfigurationForm form)
-    {
+    private boolean isProxyConfigurationFormEmpty(ProxyConfigurationForm form) {
         return Stream.of(form.getHost(), form.getPort(), form.getType())
-                     .allMatch(this::isNullOrEmpty);
+                .allMatch(this::isNullOrEmpty);
     }
 
-    private boolean isSmtpConfigurationFormEmpty(SmtpConfigurationForm form)
-    {
+    private boolean isSmtpConfigurationFormEmpty(SmtpConfigurationForm form) {
         return Stream.of(form.getHost(), form.getPort(), form.getConnection())
-                     .allMatch(this::isNullOrEmpty);
+                .allMatch(this::isNullOrEmpty);
     }
 
-    private boolean isNullOrEmpty(Object object)
-    {
-        if (object instanceof String)
-        {
+    private boolean isNullOrEmpty(Object object) {
+        if (object instanceof String) {
             String strObject = (String) object;
             return StringUtils.isBlank(strObject);
         }
-        if (object instanceof Collection)
-        {
+        if (object instanceof Collection) {
             Collection collectionObject = (Collection) object;
             return CollectionUtils.isEmpty(collectionObject);
         }
@@ -322,14 +294,12 @@ public class ServerConfigurationController
     }
 
 
-
     @ApiOperation(value = "get instanceName.")
-    @ApiResponses(value = { @ApiResponse(code = 200, message = SUCCESSFUL_SAVE_SERVER_SETTINGS),
-            @ApiResponse(code = 400, message = FAILED_SAVE_SERVER_SETTINGS) })
+    @ApiResponses(value = {@ApiResponse(code = 200, message = SUCCESSFUL_SAVE_SERVER_SETTINGS),
+            @ApiResponse(code = 400, message = FAILED_SAVE_SERVER_SETTINGS)})
     @GetMapping(value = "/getServerName",
-            produces = { MediaType.APPLICATION_JSON_VALUE })
-    public ResponseEntity getServerName()
-    {
+            produces = {MediaType.APPLICATION_JSON_VALUE})
+    public ResponseEntity getServerName() {
 
         Configuration configuration = configurationManagementService.getConfiguration();
         return ResponseEntity.ok(configuration.getInstanceName());
@@ -337,13 +307,12 @@ public class ServerConfigurationController
 
 
     @ApiOperation(value = "Get global server settings.")
-    @ApiResponses(value = { @ApiResponse(code = 200, message = SUCCESSFUL_SAVE_SERVER_SETTINGS),
-                            @ApiResponse(code = 400, message = FAILED_SAVE_SERVER_SETTINGS) })
+    @ApiResponses(value = {@ApiResponse(code = 200, message = SUCCESSFUL_SAVE_SERVER_SETTINGS),
+            @ApiResponse(code = 400, message = FAILED_SAVE_SERVER_SETTINGS)})
     @PreAuthorize("hasAnyAuthority('CONFIGURATION_SET_BASE_URL', 'CONFIGURATION_SET_PORT', 'GLOBAL_CONFIGURATION_MANAGE')")
     @GetMapping(value = "/serverSettings",
-                produces = { MediaType.APPLICATION_JSON_VALUE })
-    public ResponseEntity getServerSettings(Model model)
-    {
+            produces = {MediaType.APPLICATION_JSON_VALUE})
+    public ResponseEntity getServerSettings(Model model) {
 
         Configuration configuration = configurationManagementService.getConfiguration();
 
@@ -360,45 +329,33 @@ public class ServerConfigurationController
         settings.setProxyConfigurationForm(
                 ProxyConfigurationForm.fromConfiguration(configuration.getProxyConfiguration())
         );
-
+        settings.setAdvancedConfigurationForm(AdvancedConfigurationForm.fromConfiguration(configuration.getAdvancedConfiguration()));
         return ResponseEntity.ok(settings);
     }
 
     private Object getInstanceNameEntityBody(String instanceName,
-                                             String accept)
-    {
-        if (MediaType.APPLICATION_JSON_VALUE.equals(accept))
-        {
+                                             String accept) {
+        if (MediaType.APPLICATION_JSON_VALUE.equals(accept)) {
             return new InstanceNameEntityBody(instanceName);
-        }
-        else
-        {
+        } else {
             return instanceName;
         }
     }
 
     private Object getBaseUrlEntityBody(String baseUrl,
-                                        String accept)
-    {
-        if (MediaType.APPLICATION_JSON_VALUE.equals(accept))
-        {
+                                        String accept) {
+        if (MediaType.APPLICATION_JSON_VALUE.equals(accept)) {
             return new BaseUrlEntityBody(baseUrl);
-        }
-        else
-        {
+        } else {
             return baseUrl;
         }
     }
 
     private Object getPortEntityBody(int port,
-                                     String accept)
-    {
-        if (MediaType.APPLICATION_JSON_VALUE.equals(accept))
-        {
+                                     String accept) {
+        if (MediaType.APPLICATION_JSON_VALUE.equals(accept)) {
             return new PortEntityBody(port);
-        }
-        else
-        {
+        } else {
             return String.valueOf(port);
         }
     }

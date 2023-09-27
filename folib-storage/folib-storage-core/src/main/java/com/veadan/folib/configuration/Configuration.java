@@ -65,6 +65,11 @@ public class Configuration {
      */
     private final Map<String, WebhookConfiguration> webhookConfiguration;
 
+    /**
+     * 高级配置
+     */
+    private final AdvancedConfiguration advancedConfiguration;
+
     public Configuration(final MutableConfiguration delegate) {
 
         id = delegate.getId();
@@ -84,6 +89,7 @@ public class Configuration {
         securityPolicyConfiguration = immuteSecurityPolicyConfiguration(delegate.getSecurityPolicyConfiguration());
         metadataConfiguration = immuteMetadataConfiguration(delegate.getMetadataConfiguration());
         webhookConfiguration = immuteWebhookConfiguration(delegate.getWebhookConfiguration());
+        advancedConfiguration = immuteAdvancedConfiguration(delegate.getAdvancedConfiguration());
     }
 
     private ProxyConfiguration immuteProxyConfiguration(final MutableProxyConfiguration source) {
@@ -127,6 +133,10 @@ public class Configuration {
     private Map<String, MetadataConfiguration> immuteMetadataConfiguration(final Map<String, MutableMetadataConfiguration> source) {
         return source != null ? ImmutableSortedMap.copyOf(source.entrySet().stream().collect(
                 toMap(Map.Entry::getKey, e -> new MetadataConfiguration(e.getValue())))) : Collections.emptyMap();
+    }
+
+    private AdvancedConfiguration immuteAdvancedConfiguration(final MutableAdvancedConfiguration source) {
+        return source != null ? new AdvancedConfiguration(source) : null;
     }
 
     public String getId() {
@@ -289,5 +299,9 @@ public class Configuration {
 
     public Map<String, WebhookConfiguration> getWebhookConfiguration() {
         return webhookConfiguration;
+    }
+
+    public AdvancedConfiguration getAdvancedConfiguration() {
+        return advancedConfiguration;
     }
 }

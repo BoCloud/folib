@@ -21,10 +21,7 @@ import com.veadan.folib.controllers.cluster.dto.SyncRepositoryDto;
 import com.veadan.folib.controllers.cluster.dto.SyncStorageDto;
 import com.veadan.folib.controllers.cluster.dto.SyncUnionRepositoryDto;
 import com.veadan.folib.dispatch.ClusterDispatchNodeDto;
-import com.veadan.folib.domain.DispatchStorageTree;
-import com.veadan.folib.domain.RepositoryPermission;
-import com.veadan.folib.domain.RepositoryUser;
-import com.veadan.folib.domain.User;
+import com.veadan.folib.domain.*;
 import com.veadan.folib.dto.ArtifactDispatchRepositoryDto;
 import com.veadan.folib.enums.ArtifactoryRepositoryTypeEnum;
 import com.veadan.folib.enums.NotifyScopesTypeEnum;
@@ -49,6 +46,7 @@ import com.veadan.folib.storage.repository.*;
 import com.veadan.folib.users.domain.Privileges;
 import com.veadan.folib.users.domain.SystemRole;
 import com.veadan.folib.users.domain.Users;
+import com.veadan.folib.users.dto.PathPrivilegesDto;
 import com.veadan.folib.users.service.UserService;
 import com.veadan.folib.users.service.impl.DatabaseUserService;
 import com.veadan.folib.users.userdetails.SpringSecurityUser;
@@ -92,7 +90,7 @@ import java.util.stream.Collectors;
  */
 @RestController
 @RequestMapping("/api/configuration/folib/storages")
-@Api(description = "存储控件设置",tags = "存储控件设置")
+@Api(description = "存储控件设置", tags = "存储控件设置")
 public class StoragesConfigurationController
         extends BaseConfigurationController {
     static final String SUCCESSFUL_SAVE_STORAGE = "The storage was created successfully.";
@@ -1156,21 +1154,40 @@ public class StoragesConfigurationController
             Repository repository = storage.getRepository(repositoryId);
             String repositoryDeployRoleName = String.format("%s|%s|%s", storageId.toUpperCase(), repositoryId.toUpperCase(), Privileges.ARTIFACTS_DEPLOY.getAuthority());
             String repositoryDeleteRoleName = String.format("%s|%s|%s", storageId.toUpperCase(), repositoryId.toUpperCase(), Privileges.ARTIFACTS_DELETE.getAuthority());
-            List<User> users = userService.findUserByRoles(Lists.newArrayList(repositoryDeployRoleName, repositoryDeleteRoleName));
+            List<String> roleNameList = Lists.newArrayList(repositoryDeployRoleName, repositoryDeleteRoleName);
+            List<String> excludeRoleNameList = Lists.newArrayList(SystemRole.ARTIFACTS_MANAGER.name(), SystemRole.ADMIN.name());
+            Users userList = userService.getUsers();
+            roleNameList.addAll(userList.getUsers().stream().filter(user -> user.getRoles().stream().noneMatch(r -> excludeRoleNameList.contains(r.getRoleName()))).map(user -> user.getUsername().toUpperCase()).collect(Collectors.toList()));
+            List<User> users = userService.findUserByRoles(roleNameList);
+            AuthorizationConfigDto authorizationConfigDto = authorizationConfigService.getDto();
             RepositoryPermission repositoryPermission = RepositoryPermission.builder().build();
+            List<String> permissionList = Lists.newArrayList(Privileges.ARTIFACTS_DEPLOY.getAuthority(), Privileges.ARTIFACTS_DELETE.getAuthority());
             List<RepositoryUser> repositoryUserList = Optional.ofNullable(users).orElse(Collections.emptyList()).stream().map(user -> {
                 RepositoryUser repositoryUser = RepositoryUser.builder().build();
                 repositoryUser.setUsername(user.getUsername());
-                List<String> permissions = Lists.newArrayList();
-                if (user.getRoles().stream().anyMatch(role -> repositoryDeployRoleName.equals(role.getRoleName()))) {
+                List<String> permissions = Lists.newArrayList(), paths = Lists.newArrayList(), roleNames = user.getRoles().stream().map(SecurityRole::getRoleName).collect(Collectors.toList());
+                boolean deployFlag = user.getRoles().stream().anyMatch(role -> repositoryDeployRoleName.equals(role.getRoleName()));
+                if (deployFlag) {
                     permissions.add(Privileges.ARTIFACTS_DEPLOY.getAuthority());
                 }
                 if (user.getRoles().stream().anyMatch(role -> repositoryDeleteRoleName.equals(role.getRoleName()))) {
                     permissions.add(Privileges.ARTIFACTS_DELETE.getAuthority());
                 }
+                paths = authorizationConfigDto.getRoles().stream().filter(auth -> roleNames.contains(auth.getName())).flatMap(item -> item.getAccessModel().getStorageAuthorities().stream().filter(s -> s.getStorageId().equals(storageId)))
+                        .flatMap(item -> item.getRepositoryPrivileges().stream().filter(r -> r.getRepositoryId().equals(repositoryId)))
+                        .flatMap(item -> item.getPathPrivileges().stream().filter(i -> StringUtils.isNotBlank(i.getPath())))
+                        .map(PathPrivilegesDto::getPath).distinct()
+                        .collect(Collectors.toList());
+                permissions.addAll(authorizationConfigDto.getRoles().stream().filter(auth -> roleNames.contains(auth.getName())).flatMap(item -> item.getAccessModel().getStorageAuthorities().stream().filter(s -> s.getStorageId().equals(storageId)))
+                        .flatMap(item -> item.getRepositoryPrivileges().stream().filter(r -> r.getRepositoryId().equals(repositoryId)))
+                        .flatMap(item -> item.getPathPrivileges().stream().filter(i -> StringUtils.isNotBlank(i.getPath())))
+                        .flatMap(item -> item.getPrivileges().stream())
+                        .filter(p -> permissionList.contains(p.toString())).map(Enum::toString).distinct()
+                        .collect(Collectors.toList()));
+                repositoryUser.setPaths(String.join(",", paths));
                 repositoryUser.setPermissions(permissions);
                 return repositoryUser;
-            }).collect(Collectors.toList());
+            }).filter(repositoryUser -> CollectionUtils.isNotEmpty(repositoryUser.getPermissions())).collect(Collectors.toList());
             repositoryPermission.setScope(repository.getScope());
             repositoryPermission.setAllowAnonymous(repository.isAllowAnonymous());
             repositoryPermission.setUserList(repositoryUserList);

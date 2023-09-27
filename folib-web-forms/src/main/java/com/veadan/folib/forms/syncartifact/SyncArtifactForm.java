@@ -17,6 +17,11 @@ import javax.validation.constraints.NotBlank;
 public class SyncArtifactForm {
 
     /**
+     * 同步类型
+     */
+    private String type;
+
+    /**
      * 存储空间
      */
     @NotBlank(message = "存储空间不能为空")
@@ -41,6 +46,10 @@ public class SyncArtifactForm {
     /**
      * dom
      */
-    @NotBlank(message = "dom不能为空")
     private String dom;
+
+    /**
+     * 每批数量
+     */
+    private Integer batch;
 }

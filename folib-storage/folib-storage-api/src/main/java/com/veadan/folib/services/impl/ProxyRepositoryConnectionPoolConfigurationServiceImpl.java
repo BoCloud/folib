@@ -64,7 +64,7 @@ public class ProxyRepositoryConnectionPoolConfigurationServiceImpl
     private int maxTotal;
     @Value("${pool.defaultConnectionsPerRoute:5}")
     private int defaultMaxPerRoute;
-    @Value("${pool.idleConnectionsTimeoutInSeconds:60}")
+    @Value("${pool.idleConnectionsTimeoutInSeconds:300}")
     private int idleConnectionsTimeoutInSeconds;
 
     @PostConstruct

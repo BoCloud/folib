@@ -6,6 +6,7 @@ import java.io.InputStream;
 import java.nio.file.Path;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.Base64;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
@@ -18,35 +19,35 @@ import org.apache.commons.io.input.ProxyInputStream;
 
 /**
  * This class decorates storage {@link InputStream} with common layout specific logic.
- * 
+ *
  * You don't need to instantiate it directly, see example below:
- * 
+ *
  * <pre>
  *     RepositoryPath repositoryPath = repositlryPathResolver.resolve("path/to/your/artifact/file.ext");
- *     ArtifactInputStream aos = (ArtifactInputStream) Files.newInputStream(repositoryPath); 
+ *     ArtifactInputStream aos = (ArtifactInputStream) Files.newInputStream(repositoryPath);
  * </pre>
- * 
+ *
  * @author mtodorov
- * 
+ *
  */
 public class LayoutInputStream
         extends ProxyInputStream
 {
 
     private static final Set<String> DEFAULT_ALGORITHM_SET = Stream.of(MessageDigestAlgorithms.MD5,
-                                                                       MessageDigestAlgorithms.SHA_1)
-                                                                   .collect(Collectors.toSet()); 
-    
+            MessageDigestAlgorithms.SHA_1)
+            .collect(Collectors.toSet());
+
     private Map<String, MessageDigest> digests = new LinkedHashMap<>();
 
     private Map<String, String> hexDigests = new LinkedHashMap<>();
 
     public LayoutInputStream(InputStream is,
                              Set<String> checkSumDigestAlgorithmSet)
-        throws NoSuchAlgorithmException
+            throws NoSuchAlgorithmException
     {
         super(new BufferedInputStream(is));
-        
+
         for (String algorithm : checkSumDigestAlgorithmSet)
         {
             addAlgorithm(algorithm);
@@ -54,7 +55,7 @@ public class LayoutInputStream
     }
 
     public LayoutInputStream(InputStream is)
-        throws NoSuchAlgorithmException
+            throws NoSuchAlgorithmException
     {
         this(is, DEFAULT_ALGORITHM_SET);
     }
@@ -81,13 +82,13 @@ public class LayoutInputStream
     {
         hexDigests.clear();
     }
-    
+
     public Map<String, String> getHexDigests()
     {
         return hexDigests;
     }
 
-    public String getMessageDigestAsHexadecimalString(String algorithm)
+    public String getMessageDigestAsHexadecimalString(String algorithm, String layout)
     {
         if (hexDigests.containsKey(algorithm))
         {
@@ -97,7 +98,12 @@ public class LayoutInputStream
         {
             // This method will invoke MessageDigest.digest() which will reset the bytes when it's done
             // and thus this data will no longer be available, so we'll need to cache the calculated digest
-            String hexDigest = MessageDigestUtils.convertToHexadecimalString(getMessageDigest(algorithm));
+            String hexDigest;
+            if ("npm".equals(layout) && MessageDigestAlgorithms.SHA_512.equals(algorithm)) {
+                hexDigest = printBase64Binary(getMessageDigest(algorithm).digest());
+            } else {
+                hexDigest = MessageDigestUtils.convertToHexadecimalString(getMessageDigest(algorithm));
+            }
             hexDigests.put(algorithm, hexDigest);
 
             return hexDigest;
@@ -171,5 +177,10 @@ public class LayoutInputStream
     {
         return in;
     }
-    
+
+    protected String printBase64Binary(
+            byte[] digest)
+    {
+        return String.format("%s-%s", "sha512", Base64.getEncoder().encodeToString(digest));
+    }
 }

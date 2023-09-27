@@ -45,6 +45,10 @@ public enum DictTypeEnum {
      * docker数据
      */
     DOCKER_DATA("docker_data"),
+    /**
+     * 处理mavenIndexer
+     */
+    HANDLER_MAVEN_INDEXER("handler_maven_indexer"),
     ;
 
     private String type;

@@ -134,7 +134,7 @@
             </a-button>
           </div>
           <div slot="operation" slot-scope="text, record">
-            <div class="col-action" v-if="$store.state.user.token">
+            <div class="col-action" v-if="metadataEnabled">
               <a-popconfirm
                 title="确定要删除吗？"
                 okType="danger"
@@ -352,6 +352,7 @@ import store from "store";
 import { fileSizeConver, formateDate } from "@/utils/layoutUtil";
 import { getArtifact } from "@/api/folib";
 import {  deleteArtifactMetadata, conanInfo, conanPackageInfo } from "@/api/artifact";
+import { getMetadataConfiguration } from '@/api/settings'
 import { PrismEditor } from "vue-prism-editor";
 import "vue-prism-editor/dist/prismeditor.min.css"; // import the styles somewhere
 // import highlighting library (you can use any library you want just return html string)
@@ -521,6 +522,13 @@ export default {
     },
   },
   methods: {
+    getMetadataConfiguration () {
+      getMetadataConfiguration()
+        .then(res => {
+          this.metadataConfigList = res
+        })
+        .finally(() => { })
+    },
     metadataShow() {
       this.metadataEnabled = isLogin() && this.folibRepository.type !== 'group' &&
                           this.currentFileDetial &&
@@ -541,6 +549,7 @@ export default {
     },
     getMetadata() {
       if (this.currentTreeNode.type === 'file') {
+        this.getMetadataConfiguration()
         getArtifact(
           this.repositoryType,
           this.currentTreeNode.storageId,
@@ -567,6 +576,7 @@ export default {
           );
           if (flag) {
             metadataJson[key].viewShow = false;
+            continue
           }
           let metadata = Object.assign({}, metadataJson[key]);
           metadata.key = key;

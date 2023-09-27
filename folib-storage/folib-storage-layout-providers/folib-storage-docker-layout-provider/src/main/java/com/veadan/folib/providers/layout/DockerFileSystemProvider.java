@@ -1,6 +1,5 @@
 package com.veadan.folib.providers.layout;
 
-import cn.hutool.core.io.FileUtil;
 import com.alibaba.fastjson.JSON;
 import com.google.common.collect.Lists;
 import com.veadan.folib.artifact.coordinates.DockerArtifactCoordinates;
@@ -22,12 +21,13 @@ import org.springframework.beans.factory.annotation.Value;
 import javax.inject.Inject;
 import java.io.File;
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.spi.FileSystemProvider;
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 
@@ -66,6 +66,15 @@ public class DockerFileSystemProvider
         logger.info("Removing {}...", repositoryPath);
         handlerManifestAndBlob(repositoryPath, force);
         super.delete(repositoryPath, force);
+        RepositoryPath parent = repositoryPath.getParent();
+        try {
+            if (!repositoryPath.getRoot().toString().equals(parent.toString()) && Files.exists(parent) && Files.list(parent).count() == 0) {
+                Files.deleteIfExists(parent);
+                logger.info("Delete parent root path {}", parent.toString());
+            }
+        } catch (Exception ex) {
+            logger.error("删除父目录失败 {}", ExceptionUtils.getStackTrace(ex));
+        }
     }
 
     /**
@@ -75,43 +84,44 @@ public class DockerFileSystemProvider
      * @param force          是否强制
      * @throws IOException io异常
      */
-    private void handlerManifestAndBlob(RepositoryPath repositoryPath, boolean force) throws IOException {
+    public void handlerManifestAndBlob(RepositoryPath repositoryPath, boolean force) throws IOException {
+        handlerManifestAndBlob(repositoryPath, force, null);
+    }
+
+    /**
+     * 处理manifest和blob文件
+     *
+     * @param repositoryPath      路径
+     * @param force               是否强制
+     * @param currentManifestPath manifestPath
+     * @throws IOException io异常
+     */
+    public void handlerManifestAndBlob(RepositoryPath repositoryPath, boolean force, Path currentManifestPath) throws IOException {
         if (!Files.isDirectory(repositoryPath)) {
             return;
         }
-        //当前版本下manifest文件信息
-        Path currentManifestPath = null;
-        List<Path> pathList = Files.list(repositoryPath).filter(f -> !Files.isDirectory(f) && !f.getFileName().toString().endsWith(".sha256") && f.getFileName().toString().startsWith("sha256")).collect(Collectors.toList());
-        if (CollectionUtils.isNotEmpty(pathList)) {
-            currentManifestPath = pathList.get(0);
+        if (Objects.isNull(currentManifestPath)) {
+            //当前版本下manifest文件信息
+            List<Path> pathList = Files.list(repositoryPath).filter(f -> !Files.isDirectory(f) && !f.getFileName().toString().endsWith(".sha256") && f.getFileName().toString().startsWith("sha256")).collect(Collectors.toList());
+            if (CollectionUtils.isNotEmpty(pathList)) {
+                currentManifestPath = pathList.get(0);
+            }
         }
         if (Objects.nonNull(currentManifestPath)) {
             RepositoryPath parent = repositoryPath.getParent();
             String manifest = "manifest";
-            logger.info("=====>>>>>当前版本下的manifest路径：{}", currentManifestPath.toAbsolutePath().toString());
+            logger.info("当前版本下的manifest路径：{}", currentManifestPath.toAbsolutePath().toString());
             //manifest目录下的当前版本的文件信息
             RepositoryPath manifestRepositoryPath = repositoryPathResolver.resolve(repositoryPath.getStorageId(), repositoryPath.getRepositoryId(), parent.getFileName() + File.separator + manifest + File.separator + currentManifestPath.getFileName().toString());
-            logger.info("=====>>>>>manifest目录下的当前版本的文件路径：{}", manifestRepositoryPath.toAbsolutePath());
-            boolean isS3 = repositoryPath.getTarget() instanceof S3Path;
-            boolean flag;
-            if (isS3) {
-                S3Path s3Path = (S3Path) repositoryPath.getTarget();
-                flag = checkS3DockerRelation(s3Path, manifestRepositoryPath.getFileName().toString(), repositoryPath.getFileName().toString());
-            } else {
-                flag = checkRelation(parent.toAbsolutePath().toString(), manifestRepositoryPath.getFileName().toString(), repositoryPath.getFileName().toString());
-            }
+            logger.info("manifest目录下的当前版本的文件路径：{}", manifestRepositoryPath.toAbsolutePath());
+            boolean flag = checkRelation(parent, manifestRepositoryPath.getFileName().toString(), repositoryPath.getFileName().toString());
             if (!flag) {
-                //当前版本下的manifest信息
-                if (isS3) {
-                    handlerS3Path(currentManifestPath, parent, manifestRepositoryPath, repositoryPath, force);
-                } else {
-                    handlerLocalPath(currentManifestPath, parent, manifestRepositoryPath, repositoryPath, force);
-                }
+                handlerLocalPath(currentManifestPath, parent, manifestRepositoryPath, repositoryPath, force);
             }
         }
     }
 
-    private void handlerLocalPath(Path currentManifestPath, RepositoryPath parent, RepositoryPath manifestRepositoryPath, RepositoryPath repositoryPath, boolean force) throws IOException {
+    public void handlerLocalPath(Path currentManifestPath, RepositoryPath parent, RepositoryPath manifestRepositoryPath, RepositoryPath repositoryPath, boolean force) throws IOException {
         String manifest = "manifest";
         String blobs = "blobs";
         List<ImageManifest> currentManifestList = getImageManifests(manifestRepositoryPath);
@@ -120,44 +130,51 @@ public class DockerFileSystemProvider
         }
         List<String> imageManifestDigestList = currentManifestList.stream().filter(item -> StringUtils.isNotBlank(item.getDigest())).map(ImageManifest::getDigest).collect(Collectors.toList());
         for (ImageManifest itemImageManifest : currentManifestList) {
+            RepositoryPath manifestRootRepositoryPath = parent.resolve(manifest);
             //当前版本下的层级信息
             List<LayerManifest> currentLayerManifestList = itemImageManifest.getLayers();
             if (CollectionUtils.isEmpty(currentLayerManifestList)) {
+                logger.info("Delete manifestRepositoryPath：{}", manifestRepositoryPath.toAbsolutePath());
                 this.delete(manifestRepositoryPath, force);
                 continue;
             }
             //存放在其他版本下使用到的层级信息
             List<LayerManifest> layerManifestExistList = Lists.newArrayList();
-            //docker镜像下的manifest目录路径
-            String manifestPath = parent.toAbsolutePath().toString() + File.separator + manifest;
-            //docker镜像下的manifest目录信息
-            Path path = Path.of(manifestPath);
             //过滤找出其他版本的manifest文件信息
-            Path finalCurrentManifestPath = currentManifestPath;
             List<String> manifestConfigList = Lists.newArrayList();
-            Files.list(path).filter(f -> !Files.isDirectory(f) && f.getFileName().toString().startsWith("sha256") && !f.getFileName().toString().endsWith(".sha256") && !f.getFileName().toString().equals(finalCurrentManifestPath.getFileName().toString()) && imageManifestDigestList.stream().noneMatch(f.getFileName().toString()::equals)).forEach(f -> {
-                logger.info("=====>>>>>其他版本的manifest文件名：{}", f.getFileName().toString());
-                String manifestStringItem = FileUtil.readString(manifestPath + File.separator + f.getFileName().toString(), StandardCharsets.UTF_8);
-                ImageManifest manifestItem = JSON.parseObject(manifestStringItem, ImageManifest.class);
-                manifestConfigList.add(manifestItem.getConfig().getDigest());
-                //循环查询当前版本下的被其他版本使用了的层级信息
-                for (LayerManifest layerManifest : currentLayerManifestList) {
-                    if (layersContains(layerManifest, manifestItem.getLayers())) {
-                        layerManifestExistList.add(layerManifest);
+            Files.list(manifestRootRepositoryPath).filter(f -> !Files.isDirectory(f) && f.getFileName().toString().startsWith("sha256") && !f.getFileName().toString().endsWith(".sha256") && !f.getFileName().toString().equals(currentManifestPath.getFileName().toString()) && imageManifestDigestList.stream().noneMatch(f.getFileName().toString()::equals)).forEach(f -> {
+                logger.info("其他版本的manifest文件名：{}", f.getFileName().toString());
+                RepositoryPath itemManifestRepositoryPath = parent.resolve(manifest + File.separator + f.getFileName().toString());
+                try {
+                    List<ImageManifest> imageManifestList = getImageManifests(itemManifestRepositoryPath);
+                    manifestConfigList.addAll(Optional.ofNullable(imageManifestList).orElse(Collections.emptyList()).stream().filter(item -> Objects.nonNull(item.getConfig())).map(item -> item.getConfig().getDigest()).collect(Collectors.toList()));
+                    List<LayerManifest> layerManifests = Optional.ofNullable(imageManifestList).orElse(Collections.emptyList()).stream().flatMap(ele -> Optional.ofNullable(ele.getLayers()).orElse(Collections.emptyList()).stream()).collect(Collectors.toList());
+                    //循环查询当前版本下的被其他版本使用了的层级信息
+                    for (LayerManifest layerManifest : currentLayerManifestList) {
+                        if (layersContains(layerManifest, layerManifests)) {
+                            layerManifestExistList.add(layerManifest);
+                        }
                     }
+                } catch (IOException ex) {
+                    logger.error("获取 {} 的imageManifestList错误 {}", itemManifestRepositoryPath, ExceptionUtils.getStackTrace(ex));
                 }
             });
             currentLayerManifestList.removeAll(layerManifestExistList);
-            //配置信息，不存在关联，删除manifest目录下的当前版本信息
             RepositoryPath currentManifestRepositoryPath = repositoryPathResolver.resolve(repositoryPath.getStorageId(), repositoryPath.getRepositoryId(), parent.getFileName() + File.separator + manifest + File.separator + itemImageManifest.getDigest());
-            this.delete(currentManifestRepositoryPath, force);
+            boolean flag = checkRelation(parent, currentManifestRepositoryPath.getFileName().toString(), repositoryPath.getFileName().toString());
+            if (!flag) {
+                //配置信息，不存在关联，删除manifest目录下的当前版本信息
+                logger.info("Delete manifestRepositoryPath：{}", manifestRepositoryPath.toAbsolutePath());
+                this.delete(currentManifestRepositoryPath, force);
+            }
+            RepositoryPath configRepositoryPath = null;
             //当前版本下的配置信息
             if (Objects.nonNull(itemImageManifest.getConfig())) {
                 String currentConfigDigest = itemImageManifest.getConfig().getDigest();
                 if (!manifestConfigList.contains(currentConfigDigest)) {
                     //删除blobs目录下的配置信息
-                    RepositoryPath configRepositoryPath = repositoryPathResolver.resolve(repositoryPath.getStorageId(), repositoryPath.getRepositoryId(), parent.getFileName() + File.separator + blobs + File.separator + currentConfigDigest);
-                    logger.info("=====>>>>>configRepositoryPath：{}", configRepositoryPath.toAbsolutePath());
+                    configRepositoryPath = repositoryPathResolver.resolve(repositoryPath.getStorageId(), repositoryPath.getRepositoryId(), parent.getFileName() + File.separator + blobs + File.separator + currentConfigDigest);
+                    logger.info("Delete configRepositoryPath：{}", configRepositoryPath.toAbsolutePath());
                     this.delete(configRepositoryPath, force);
                 }
             }
@@ -166,153 +183,53 @@ public class DockerFileSystemProvider
                 for (LayerManifest item : currentLayerManifestList) {
                     String blobRepositoryPath = blobs + File.separator + item.getDigest();
                     RepositoryPath itemRepositoryPath = repositoryPathResolver.resolve(repositoryPath.getStorageId(), repositoryPath.getRepositoryId(), parent.getFileName() + File.separator + blobRepositoryPath);
-                    logger.info("=====>>>>>blobRepositoryPath：{}", itemRepositoryPath.toAbsolutePath());
+                    logger.info("Delete blobRepositoryPath：{}", itemRepositoryPath.toAbsolutePath());
                     this.delete(itemRepositoryPath, force);
                 }
             }
         }
     }
 
-    private void handlerS3Path(Path currentManifestPath, RepositoryPath parent, RepositoryPath manifestRepositoryPath, RepositoryPath repositoryPath, boolean force) {
-        //S3存储
-        try {
-            String manifest = "manifest";
-            String blobs = "blobs";
-            S3Path s3Path = (S3Path) repositoryPath.getTarget();
-            List<ImageManifest> currentManifestList = getImageManifests(manifestRepositoryPath);
-            if (CollectionUtils.isEmpty(currentManifestList)) {
-                return;
-            }
-            List<String> imageManifestDigestList = currentManifestList.stream().filter(item -> StringUtils.isNotBlank(item.getDigest())).map(ImageManifest::getDigest).collect(Collectors.toList());
-            for (ImageManifest itemImageManifest : currentManifestList) {
-                //当前版本下的层级信息
-                List<LayerManifest> currentLayerManifestList = itemImageManifest.getLayers();
-                if (CollectionUtils.isEmpty(currentLayerManifestList)) {
-                    this.delete(manifestRepositoryPath, force);
-                    continue;
-                }
-
-
-                //存放在其他版本下使用到的层级信息
-                List<LayerManifest> layerManifestExistList = Lists.newArrayList();
-                //过滤找出其他版本的manifest文件信息
-                List<String> manifestConfigList = Lists.newArrayList();
-                Path path = s3Path.getParent();
-                S3Path parentS3Path = (S3Path) path;
-                S3Iterator s3Iterator = new S3Iterator(parentS3Path);
-                while (s3Iterator.hasNext()) {
-                    S3Path childrenS3Path = s3Iterator.next();
-                    if (manifest.equals(childrenS3Path.getFileName().toString())) {
-                        S3Iterator manifestS3Iterator = new S3Iterator(childrenS3Path);
-                        while (manifestS3Iterator.hasNext()) {
-                            S3Path itemManifestPath = manifestS3Iterator.next();
-                            if (itemManifestPath.getFileName().toString().startsWith("sha256") && !itemManifestPath.getFileName().toString().endsWith(".sha256") && !itemManifestPath.getFileName().toString().equals(currentManifestPath.getFileName().toString()) && imageManifestDigestList.stream().noneMatch(currentManifestPath.getFileName().toString()::equals)) {
-                                logger.info("=====>>>>>其他版本的manifest文件名：{}", itemManifestPath.getFileName().toString());
-                                String manifestStringItem = Files.readString(itemManifestPath);
-                                ImageManifest manifestItem = JSON.parseObject(manifestStringItem, ImageManifest.class);
-                                manifestConfigList.add(manifestItem.getConfig().getDigest());
-                                //循环查询当前版本下的被其他版本使用了的层级信息
-                                for (LayerManifest layerManifest : currentLayerManifestList) {
-                                    if (layersContains(layerManifest, manifestItem.getLayers())) {
-                                        layerManifestExistList.add(layerManifest);
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-                currentLayerManifestList.removeAll(layerManifestExistList);
-                //配置信息，不存在关联，删除manifest目录下的当前版本信息
-                RepositoryPath currentManifestRepositoryPath = repositoryPathResolver.resolve(repositoryPath.getStorageId(), repositoryPath.getRepositoryId(), parent.getFileName() + File.separator + manifest + File.separator + itemImageManifest.getDigest());
-                this.delete(currentManifestRepositoryPath, force);
-                //当前版本下的配置信息
-                if (Objects.nonNull(itemImageManifest.getConfig())) {
-                    String currentConfigDigest = itemImageManifest.getConfig().getDigest();
-                    if (!manifestConfigList.contains(currentConfigDigest)) {
-                        //删除blobs目录下的配置信息
-                        RepositoryPath configRepositoryPath = repositoryPathResolver.resolve(repositoryPath.getStorageId(), repositoryPath.getRepositoryId(), parent.getFileName() + File.separator + blobs + File.separator + currentConfigDigest);
-                        logger.info("=====>>>>>configRepositoryPath：{}", configRepositoryPath.toAbsolutePath());
-                        this.delete(configRepositoryPath, force);
-                    }
-                }
-                //删除blobs目录下的层级文件
-                if (CollectionUtils.isNotEmpty(currentLayerManifestList)) {
-                    for (LayerManifest item : currentLayerManifestList) {
-                        String blobRepositoryPath = blobs + File.separator + item.getDigest();
-                        RepositoryPath itemRepositoryPath = repositoryPathResolver.resolve(repositoryPath.getStorageId(), repositoryPath.getRepositoryId(), parent.getFileName() + File.separator + blobRepositoryPath);
-                        logger.info("=====>>>>>blobRepositoryPath：{}", itemRepositoryPath.toAbsolutePath());
-                        this.delete(itemRepositoryPath, force);
-                    }
-                }
-            }
-        } catch (Exception ex) {
-            logger.error("=====>>>>>获取S3 docker 层级信息错误：{}", ExceptionUtils.getStackTrace(ex));
-            throw new RuntimeException(ex.getMessage());
-        }
-    }
-
     /**
      * 校验当前版本的manifest文件是否被其他版本使用
      *
-     * @param parentPath    父级目录
-     * @param fileName      文件名称
-     * @param directoryName 当前目录名称
+     * @param parentRepositoryPath 父级目录
+     * @param fileName             文件名称
+     * @param directoryName        当前目录名称
      * @return true 在使用 false 不在使用
      */
-    private boolean checkRelation(String parentPath, String fileName, String directoryName) {
+    public boolean checkRelation(RepositoryPath parentRepositoryPath, String fileName, String directoryName) {
         //镜像顶级路径
-        Path path = Path.of(parentPath);
         AtomicBoolean flag = new AtomicBoolean(false);
-        List<String> directoryNameList = Lists.newArrayList("blobs", "manifest", directoryName);
+        String blobs = "blobs";
+        String manifest = "manifest";
+        String sha256 = "sha256";
+        List<String> directoryNameList = Lists.newArrayList(blobs, manifest, directoryName);
         try {
-            Files.list(path).filter(f -> Files.isDirectory(f) && !directoryNameList.contains(f.getFileName().toString())).forEach(item -> {
+            Files.list(parentRepositoryPath).filter(f -> Files.isDirectory(f) && !directoryNameList.contains(f.getFileName().toString())).forEach(item -> {
                 try {
-                    boolean b = Files.list(item).anyMatch(fc -> !Files.isDirectory(fc) && fc.getFileName().toString().equals(fileName));
+                    boolean b = Files.list(item).filter(f -> !Files.isDirectory(f) && f.getFileName().toString().startsWith(sha256) && !f.getFileName().toString().endsWith(sha256)).anyMatch(fc -> {
+                        RepositoryPath itemManifestRepositoryPath = null;
+                        List<String> imageManifestNames = Collections.emptyList();
+                        try {
+                            itemManifestRepositoryPath = parentRepositoryPath.resolve(manifest + File.separator + fc.getFileName().toString());
+                            List<ImageManifest> imageManifestList = getImageManifests(itemManifestRepositoryPath);
+                            imageManifestNames = Optional.ofNullable(imageManifestList).orElse(Collections.emptyList()).stream().map(ImageManifest::getDigest).collect(Collectors.toList());
+                        } catch (IOException ex) {
+                            logger.error("获取 {} 的imageManifestList错误 {}", itemManifestRepositoryPath, ExceptionUtils.getStackTrace(ex));
+                        }
+                        return !Files.isDirectory(fc) && imageManifestNames.contains(fileName);
+                    });
                     if (b) {
-                        logger.info("=====>>>>>存在关联，版本目录名称：{}", item.getFileName().toString());
+                        logger.info("存在关联 {}，版本目录名称：{}", fileName, item.getFileName().toString());
                         flag.set(true);
                     }
                 } catch (IOException ex) {
-                    logger.error("=====>>>>>IO异常：{}", ExceptionUtils.getStackTrace(ex));
+                    logger.error("IO异常：{}", ExceptionUtils.getStackTrace(ex));
                 }
             });
         } catch (IOException ex) {
-            logger.error("=====>>>>>IO异常：{}", ExceptionUtils.getStackTrace(ex));
-        }
-        return flag.get();
-    }
-
-    /**
-     * 校验当前版本的manifest文件是否被其他版本使用
-     *
-     * @param s3Path        父级目录
-     * @param fileName      文件名称
-     * @param directoryName 当前目录名称
-     * @return true 在使用 false 不在使用
-     */
-    private boolean checkS3DockerRelation(S3Path s3Path, String fileName, String directoryName) {
-        //镜像顶级路径
-        Path parentPath = s3Path.getParent();
-        S3Path parentS3Path = (S3Path) parentPath;
-        S3Iterator s3Iterator = new S3Iterator(parentS3Path);
-        AtomicBoolean flag = new AtomicBoolean(false);
-        List<String> directoryNameList = Lists.newArrayList("blobs", "manifest", directoryName);
-        while (s3Iterator.hasNext()) {
-            if (flag.get()) {
-                break;
-            }
-            S3Path sonS3Path = s3Iterator.next();
-            if (!directoryNameList.contains(sonS3Path.getFileName().toString())) {
-                S3Iterator sonS3Iterator = new S3Iterator(sonS3Path);
-                while (sonS3Iterator.hasNext()) {
-                    S3Path grandsonS3Path = sonS3Iterator.next();
-                    if (fileName.equals(grandsonS3Path.getFileName().toString())) {
-                        logger.info("=====>>>>>存在关联，版本目录名称：{}", grandsonS3Path.getFileName().toString());
-                        flag.set(true);
-                        break;
-                    }
-                }
-            }
+            logger.error("IO异常：{}", ExceptionUtils.getStackTrace(ex));
         }
         return flag.get();
     }

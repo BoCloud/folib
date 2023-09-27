@@ -26,4 +26,9 @@ public class RepositoryUser {
      * 权限
      */
     private List<String> permissions;
+
+    /**
+     * 路径
+     */
+    private String paths;
 }

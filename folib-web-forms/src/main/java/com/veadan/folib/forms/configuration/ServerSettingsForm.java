@@ -34,6 +34,10 @@ public class ServerSettingsForm
 
     @Valid
     @JsonProperty
+    private AdvancedConfigurationForm advancedConfigurationForm = new AdvancedConfigurationForm();
+
+    @Valid
+    @JsonProperty
     private CorsConfigurationForm corsConfigurationForm = new CorsConfigurationForm();
 
     @Valid
@@ -132,4 +136,11 @@ public class ServerSettingsForm
         this.proxyConfigurationForm = proxyConfigurationForm;
     }
 
+    public AdvancedConfigurationForm getAdvancedConfigurationForm() {
+        return advancedConfigurationForm;
+    }
+
+    public void setAdvancedConfigurationForm(AdvancedConfigurationForm advancedConfigurationForm) {
+        this.advancedConfigurationForm = advancedConfigurationForm;
+    }
 }

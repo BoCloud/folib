@@ -11,6 +11,8 @@ public enum SyncDataTypeEnum {
     AUTHORIZATION(7),
     WEBHOOK(8),
     UNION_REPOSITORY(9),
+    SERVER_SETTINGS(10),
+    LDAP(11),
     ;
 
     private Integer value;
