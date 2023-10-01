@@ -1,0 +1,1 @@
+__NUXT_JSONP__("/artifact-manager/cli-tool", {data:[{}],fetch:{},mutations:void 0});

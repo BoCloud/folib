@@ -1,0 +1,1 @@
+__NUXT_JSONP__("/store-manager/storages", {data:[{}],fetch:{},mutations:void 0});

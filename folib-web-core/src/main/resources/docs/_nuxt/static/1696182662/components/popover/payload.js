@@ -1,0 +1,1 @@
+__NUXT_JSONP__("/components/popover", {data:[{}],fetch:{},mutations:void 0});

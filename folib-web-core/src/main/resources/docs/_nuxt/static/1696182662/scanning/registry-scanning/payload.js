@@ -1,0 +1,1 @@
+__NUXT_JSONP__("/scanning/registry-scanning", {data:[{}],fetch:{},mutations:void 0});

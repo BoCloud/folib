@@ -1,0 +1,1 @@
+__NUXT_JSONP__("/artifact-manager/artifact", {data:[{}],fetch:{},mutations:void 0});
