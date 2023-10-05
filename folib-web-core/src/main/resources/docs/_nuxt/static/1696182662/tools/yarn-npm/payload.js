@@ -1,0 +1,1 @@
+__NUXT_JSONP__("/tools/yarn-npm", {data:[{}],fetch:{},mutations:void 0});

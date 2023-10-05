@@ -18,7 +18,7 @@
                     }" @click="goBack()" />
                   </a>
                   <a>
-                    <a-avatar @click="createData" :size="54" shape="square"
+                    <a-avatar @click="createData" :size="84" shape="square"
                       style="border-radius: 8px; background-image: linear-gradient( 310deg, #020202, #5c6391 );"
                       :src="'images/folib/' + getLayoutTypeHandle() + '.svg'" />
                   </a>

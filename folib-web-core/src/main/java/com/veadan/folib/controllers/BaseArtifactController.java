@@ -1,5 +1,4 @@
 package com.veadan.folib.controllers;
-
 import com.veadan.folib.components.artifact.ArtifactComponent;
 import com.veadan.folib.controllers.support.ErrorResponseEntityBody;
 import com.veadan.folib.domain.Artifact;
@@ -81,29 +80,46 @@ public abstract class BaseArtifactController
         logger.debug("Download {} 开始时间 {}", repositoryPath.toString(), startTime);
         artifactComponent.beforeRead(repositoryPath);
 
-        try (FileChannel fileChannel = FileChannel.open(repositoryPath)) {
-            WritableByteChannel responseChannel = Channels.newChannel(response.getOutputStream());
-            long fileSize = fileChannel.size();
+        if(repositoryPath.toString().startsWith("s3://")){
+            try (InputStream is = artifactResolutionService.getInputStream(repositoryPath))
+            {
+                if (ArtifactControllerHelper.isRangedRequest(httpHeaders))
+                {
+                    logger.debug("Detected ranged request.");
 
-            // Handle partial content using ranges from httpHeaders and adjust the start and end accordingly.
-            if (ArtifactControllerHelper.isRangedRequest(httpHeaders)) {
-                // adjust based on range from headers
-                long start = 0;
-                // adjust based on range from headers
-                long end = fileSize - 1;
-                long length = end - start + 1;
+                    ArtifactControllerHelper.handlePartialDownload(is, httpHeaders, response);
+                }
+                else
+                {
+                    copyToResponse(is, response);
+                }
+            }
+        }else {
+            try (FileChannel fileChannel = FileChannel.open(repositoryPath)) {
+                WritableByteChannel responseChannel = Channels.newChannel(response.getOutputStream());
+                long fileSize = fileChannel.size();
 
-                response.setStatus(HttpStatus.PARTIAL_CONTENT.value());
-                // Set appropriate Content-Range header values.
-                response.setHeader("Content-Range", "bytes " + start + "-" + end + "/" + fileSize);
+                // Handle partial content using ranges from httpHeaders and adjust the start and end accordingly.
+                if (ArtifactControllerHelper.isRangedRequest(httpHeaders)) {
+                    // adjust based on range from headers
+                    long start = 0;
+                    // adjust based on range from headers
+                    long end = fileSize - 1;
+                    long length = end - start + 1;
 
-                fileChannel.transferTo(start, length, responseChannel);
-                artifactComponent.afterRead(repositoryPath);
-            } else {
-                fileChannel.transferTo(0, fileSize, responseChannel);
-                artifactComponent.afterRead(repositoryPath);
+                    response.setStatus(HttpStatus.PARTIAL_CONTENT.value());
+                    // Set appropriate Content-Range header values.
+                    response.setHeader("Content-Range", "bytes " + start + "-" + end + "/" + fileSize);
+
+                    fileChannel.transferTo(start, length, responseChannel);
+                    artifactComponent.afterRead(repositoryPath);
+                } else {
+                    fileChannel.transferTo(0, fileSize, responseChannel);
+                    artifactComponent.afterRead(repositoryPath);
+                }
             }
         }
+
         logger.debug("Download {} 结束时间 {}", repositoryPath.toString(), System.currentTimeMillis() - startTime);
         return true;
     }

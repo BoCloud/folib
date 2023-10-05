@@ -3,7 +3,7 @@
           xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
           xsi:schemaLocation="http://maven.apache.org/SETTINGS/1.0.0 http://maven.apache.org/xsd/settings-1.0.0.xsd">
     <!--本地依赖位置按照实际情况进行修改-->
-    <localRepository>/Users/leipenghui/apps/m2/repository</localRepository>
+    <localRepository>/Users/xuxinping/maven/repository-folib</localRepository>
 
     <mirrors>
         <mirror>
@@ -37,53 +37,7 @@
 
     </servers>
     <profiles>
-        <profile>
-            <id>nexus</id>
-            <repositories>
-                <repository>
-                    <id>central</id>
-                    <url>https://maven.aliyun.com/nexus/content/groups/public</url>
-                    <releases>
-                        <enabled>true</enabled>
-                    </releases>
-                    <snapshots>
-                        <enabled>false</enabled>
-                    </snapshots>
-                </repository>
-                <repository>
-                    <id>snapshots</id>
-                    <url>https://maven.aliyun.com/nexus/content/groups/public</url>
-                    <releases>
-                        <enabled>false</enabled>
-                    </releases>
-                    <snapshots>
-                        <enabled>true</enabled>
-                    </snapshots>
-                </repository>
-            </repositories>
-            <pluginRepositories>
-                <pluginRepository>
-                    <id>central</id>
-                    <url>https://maven.aliyun.com/nexus/content/groups/public</url>
-                    <releases>
-                        <enabled>true</enabled>
-                    </releases>
-                    <snapshots>
-                        <enabled>false</enabled>
-                    </snapshots>
-                </pluginRepository>
-                <pluginRepository>
-                    <id>snapshots</id>
-                    <url>https://maven.aliyun.com/nexus/content/groups/public</url>
-                    <releases>
-                        <enabled>false</enabled>
-                    </releases>
-                    <snapshots>
-                        <enabled>true</enabled>
-                    </snapshots>
-                </pluginRepository>
-            </pluginRepositories>
-        </profile>
+
 
 <!--        <profile>-->
 <!--            <id>jdk-1.8</id>-->
@@ -114,11 +68,8 @@
     </profiles>
 
     <activeProfiles>
-        <activeProfile>nexus</activeProfile>
-        <activeProfile>devops-snapshot</activeProfile>
-        <activeProfile>devops-release</activeProfile>
         <activeProfile>folib-local-maven</activeProfile>
-        <activeProfile>jdk-1.8</activeProfile>
+        <activeProfile>jdk-11</activeProfile>
 
     </activeProfiles>
 

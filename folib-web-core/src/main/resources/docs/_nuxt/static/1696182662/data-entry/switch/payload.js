@@ -1,0 +1,1 @@
+__NUXT_JSONP__("/data-entry/switch", {data:[{}],fetch:{},mutations:void 0});

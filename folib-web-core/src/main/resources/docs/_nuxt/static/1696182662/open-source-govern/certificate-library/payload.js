@@ -1,0 +1,1 @@
+__NUXT_JSONP__("/open-source-govern/certificate-library", {data:[{}],fetch:{},mutations:void 0});
