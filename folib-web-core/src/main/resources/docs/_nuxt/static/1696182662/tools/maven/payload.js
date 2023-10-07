@@ -1,0 +1,1 @@
+__NUXT_JSONP__("/tools/maven", {data:[{}],fetch:{},mutations:void 0});

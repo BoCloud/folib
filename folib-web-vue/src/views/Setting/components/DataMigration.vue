@@ -2,7 +2,7 @@
   <div>
     <a-row type="flex" :gutter="24">
       <a-col :span="24" class="mb-24">
-        <a-descriptions title="最近一次构建" :column="1" class="mb-20" v-if="record.info">
+        <a-descriptions title="最近一次迁移" :column="1" class="mb-20" v-if="record.info">
           <a-descriptions-item label="操作用户">
             {{ record.info.operator }}
           </a-descriptions-item>

@@ -36,4 +36,12 @@
             create_time,
             now()) > #{seconds}
     </delete>
+
+    <insert id="batchInsertDict">
+        INSERT INTO `dict` ( `dict_type`, `dict_key`, `dict_value`, `alias`, `comment` )
+        VALUES
+        <foreach collection="dictList" item="item" separator=",">
+            (#{item.dictType}, #{item.dictKey}, #{item.dictValue}, #{item.alias}, #{item.comment})
+        </foreach>
+    </insert>
 </mapper>

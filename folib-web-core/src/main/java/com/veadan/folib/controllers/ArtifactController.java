@@ -6,6 +6,7 @@ import com.veadan.folib.components.syncartifact.SyncArtifactProviderRegistry;
 import com.veadan.folib.configuration.ConfigurationManager;
 import com.veadan.folib.configuration.MetadataConfiguration;
 import com.veadan.folib.constant.GlobalConstants;
+import com.veadan.folib.domain.ArtifactStatistics;
 import com.veadan.folib.domain.StatusInfo;
 import com.veadan.folib.forms.artifact.ArtifactMetadataForm;
 import com.veadan.folib.forms.syncartifact.SyncArtifactForm;
@@ -194,5 +195,11 @@ public class ArtifactController extends BaseController {
             syncArtifactProvider.browseFullSync(syncArtifactForm);
         }
         return ResponseEntity.ok("success");
+    }
+
+    @GetMapping(value = "/artifactStatistics")
+    @PreAuthorize("hasAuthority('ADMIN')")
+    public ResponseEntity<ArtifactStatistics> artifactStatistics() {
+        return ResponseEntity.ok(artifactWebService.artifactStatistics());
     }
 }

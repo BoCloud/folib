@@ -571,6 +571,34 @@ public class ArtifactRepository extends GremlinVertexRepository<Artifact> {
         return g().V().hasLabel(Vertices.ARTIFACT).has(Properties.ARTIFACT_FILE_EXISTS, true).has(Properties.SAFE_LEVEL, P.within(safeLevelList)).has(Properties.PROMOTION, P.within(promotionStatusList)).map(artifactAdapter.fold()).toList();
     }
 
+    public Long artifactsCount() {
+        return g().V().hasLabel(Vertices.ARTIFACT).has(Properties.CREATED, P.gte(0)).count().tryNext().orElse(0L);
+    }
+
+    public Long artifactsVulnerabilitiesCount() {
+        return g().V().hasLabel(Vertices.ARTIFACT).has(Properties.CREATED, P.gte(0)).has(Properties.VULNERABILITIES_COUNT, P.gt(0)).count().tryNext().orElse(0L);
+    }
+
+    public Long criticalVulnerabilitiesCount() {
+        return g().V().hasLabel(Vertices.ARTIFACT).has(Properties.CREATED, P.gte(0)).has(Properties.CRITICAL_VULNERABILITIES_COUNT, P.gt(0)).values(Properties.CRITICAL_VULNERABILITIES_COUNT).sum().tryNext().orElse(0L).longValue();
+    }
+
+    public Long highVulnerabilitiesCount() {
+        return g().V().hasLabel(Vertices.ARTIFACT).has(Properties.CREATED, P.gte(0)).has(Properties.HIGH_VULNERABILITIES_COUNT, P.gt(0)).values(Properties.HIGH_VULNERABILITIES_COUNT).sum().tryNext().orElse(0L).longValue();
+    }
+
+    public Long mediumVulnerabilitiesCount() {
+        return g().V().hasLabel(Vertices.ARTIFACT).has(Properties.CREATED, P.gte(0)).has(Properties.MEDIUM_VULNERABILITIES_COUNT, P.gt(0)).values(Properties.MEDIUM_VULNERABILITIES_COUNT).sum().tryNext().orElse(0L).longValue();
+    }
+
+    public Long lowVulnerabilitiesCount() {
+        return g().V().hasLabel(Vertices.ARTIFACT).has(Properties.CREATED, P.gte(0)).has(Properties.LOW_VULNERABILITIES_COUNT, P.gt(0)).values(Properties.LOW_VULNERABILITIES_COUNT).sum().tryNext().orElse(0L).longValue();
+    }
+
+    public Long suppressedVulnerabilitiesCount() {
+        return g().V().hasLabel(Vertices.ARTIFACT).has(Properties.CREATED, P.gte(0)).has(Properties.SUPPRESSED_VULNERABILITIES_COUNT, P.gt(0)).values(Properties.SUPPRESSED_VULNERABILITIES_COUNT).sum().tryNext().orElse(0L).longValue();
+    }
+
 }
 
 @Repository

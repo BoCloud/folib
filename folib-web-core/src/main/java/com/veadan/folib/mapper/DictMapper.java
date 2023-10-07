@@ -2,7 +2,10 @@ package com.veadan.folib.mapper;
 
 import com.veadan.folib.entity.Dict;
 import com.veadan.folib.scanner.common.base.CommonMapper;
+import org.apache.ibatis.annotations.Param;
 import org.springframework.stereotype.Component;
+
+import java.util.List;
 
 /**
  * @author leipenghui
@@ -25,5 +28,11 @@ public interface DictMapper extends CommonMapper<Dict> {
      * @return 受影响条数
      */
     int deleteHistoryDataForUploadProcessBySeconds(int seconds);
+
+    /**
+     * 批量保存字典数据
+     * @param dictList 字典列表
+     */
+    void batchInsertDict(@Param("dictList") List<Dict> dictList);
 
 }

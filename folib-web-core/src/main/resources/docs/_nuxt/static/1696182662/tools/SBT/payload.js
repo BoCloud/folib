@@ -1,0 +1,1 @@
+__NUXT_JSONP__("/tools/SBT", {data:[{}],fetch:{},mutations:void 0});

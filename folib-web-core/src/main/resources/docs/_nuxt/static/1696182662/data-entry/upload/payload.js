@@ -1,0 +1,1 @@
+__NUXT_JSONP__("/data-entry/upload", {data:[{}],fetch:{},mutations:void 0});

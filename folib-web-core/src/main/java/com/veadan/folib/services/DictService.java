@@ -41,6 +41,13 @@ public interface DictService {
     void deleteDict(Dict dict);
 
     /**
+     * 删除字典
+     *
+     * @param id 字典id
+     */
+    void deleteDictById(Long id);
+
+    /**
      * 查询字典
      *
      * @param dict 字典
@@ -74,13 +81,22 @@ public interface DictService {
 
     /**
      * 查询未执行的升级任务
+     *
      * @return 未执行的升级任务
      */
     List<Dict> selectUnExecutedTask();
 
     /**
      * 更新未执行的升级任务的状态
+     *
      * @param dict 参数
      */
     void updateUnExecutedTask(Dict dict);
+
+    /**
+     * 批量保存字典数据
+     *
+     * @param dictList 字典数据
+     */
+    void batchInsertDict(List<Dict> dictList);
 }

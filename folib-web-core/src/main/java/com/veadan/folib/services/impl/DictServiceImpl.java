@@ -99,6 +99,12 @@ public class DictServiceImpl implements DictService {
 
     @Override
     @Transactional(rollbackFor = Exception.class)
+    public void deleteDictById(Long id) {
+        dictMapper.deleteByPrimaryKey(id);
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
     public List<Dict> selectDict(Dict dict) {
         deleteHistoryDataForUploadProcessBySeconds(null);
         Example example = Example.builder(Dict.class).build();
@@ -172,6 +178,18 @@ public class DictServiceImpl implements DictService {
         criteria.andEqualTo("dictKey", dict.getDictKey());
         criteria.andEqualTo("dictValue", dict.getDictValue());
         dictMapper.updateByExampleSelective(Dict.builder().comment(dict.getComment()).build(), example);
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void batchInsertDict(List<Dict> dictList) {
+        if (CollectionUtils.isEmpty(dictList)) {
+            return;
+        }
+        List<List<Dict>> lists = Lists.partition(dictList, 100);
+        for (List<Dict> list : lists) {
+            dictMapper.batchInsertDict(list);
+        }
     }
 
     private String handlerComment(Dict dict) {

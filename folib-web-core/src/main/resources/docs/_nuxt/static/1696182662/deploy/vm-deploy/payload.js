@@ -1,0 +1,1 @@
+__NUXT_JSONP__("/deploy/vm-deploy", {data:[{}],fetch:{},mutations:void 0});

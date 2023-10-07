@@ -1,6 +1,7 @@
 package com.veadan.folib.services;
 
 import com.veadan.folib.domain.Artifact;
+import com.veadan.folib.domain.ArtifactStatistics;
 import com.veadan.folib.domain.StatusInfo;
 import com.veadan.folib.forms.artifact.ArtifactMetadataForm;
 import com.veadan.folib.forms.scanner.*;
@@ -159,4 +160,10 @@ public interface ArtifactWebService {
      * @return statusInfo 状态
      */
     StatusInfo store(String username, String storageId, String repositoryId, String path, String uuid, MultipartFile file);
+
+    /**
+     * 制品统计信息
+     * @return 制品统计信息
+     */
+    ArtifactStatistics artifactStatistics();
 }

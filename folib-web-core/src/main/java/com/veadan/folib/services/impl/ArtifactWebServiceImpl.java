@@ -685,6 +685,21 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
         return statusInfo;
     }
 
+    @Override
+    public ArtifactStatistics artifactStatistics() {
+        Long artifactsCount = artifactRepository.artifactsCount();
+        Long artifactsVulnerabilitiesCount = artifactRepository.artifactsVulnerabilitiesCount();
+        Long criticalVulnerabilitiesCount = artifactRepository.criticalVulnerabilitiesCount();
+        Long highVulnerabilitiesCount = artifactRepository.highVulnerabilitiesCount();
+        Long mediumVulnerabilitiesCount = artifactRepository.mediumVulnerabilitiesCount();
+        Long lowVulnerabilitiesCount = artifactRepository.lowVulnerabilitiesCount();
+        Long suppressedVulnerabilitiesCount = artifactRepository.suppressedVulnerabilitiesCount();
+        Long vulnerabilitiesCount = criticalVulnerabilitiesCount + highVulnerabilitiesCount + mediumVulnerabilitiesCount + lowVulnerabilitiesCount + suppressedVulnerabilitiesCount;
+        return ArtifactStatistics.builder().artifactsCount(artifactsCount).artifactsVulnerabilitiesCount(artifactsVulnerabilitiesCount).artifactsNormalCount(artifactsCount - artifactsVulnerabilitiesCount)
+                .criticalVulnerabilitiesCount(criticalVulnerabilitiesCount).highVulnerabilitiesCount(highVulnerabilitiesCount).mediumVulnerabilitiesCount(mediumVulnerabilitiesCount)
+                .lowVulnerabilitiesCount(lowVulnerabilitiesCount).suppressedVulnerabilitiesCount(suppressedVulnerabilitiesCount).vulnerabilitiesCount(vulnerabilitiesCount).build();
+    }
+
     /**
      * 处理上传状态信息
      *

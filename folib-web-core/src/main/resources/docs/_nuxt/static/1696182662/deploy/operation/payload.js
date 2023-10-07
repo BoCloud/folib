@@ -1,0 +1,1 @@
+__NUXT_JSONP__("/deploy/operation", {data:[{}],fetch:{},mutations:void 0});

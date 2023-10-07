@@ -1,0 +1,1 @@
+__NUXT_JSONP__("/deploy/configration-deploy", {data:[{}],fetch:{},mutations:void 0});

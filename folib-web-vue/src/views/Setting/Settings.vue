@@ -1031,18 +1031,18 @@
                         theme="twoTone" />
               </a-button>
               <p class="text-dark"
-                 v-if="!machineInfo.haveError">
-                尊敬的用户,很荣幸您选择使用{{instanceName}} Library!
-                在接下来{{instanceName}} Library将会为您提供统一软件包管理。
-                IT数字化转型道路长远,{{instanceName}} Library与您随行！
+                 v-if="!machineInfo.haveError && !machineInfo.dalyOut">
+                尊敬的用户,很荣幸您选择使用{{instanceName}}!
+                在接下来{{instanceName}} 将会为您提供统一软件包管理。
+                IT数字化转型道路长远,{{instanceName}} 与您随行！
               </p>
               <p class="text-dark"
                  v-if="machineInfo.haveError && machineInfo.dalyOut">
-                尊敬的用户,很荣幸您选择试用{{instanceName}} Library!如果觉得符合您企业信创发展战略,可选择购买正式版本。我们的服务热线：400-991-5355
+                尊敬的用户,很荣幸您选择使用{{instanceName}}! 如果觉得符合您企业信创发展战略,可选择购买正式版本。我们的服务热线：400-991-5355
               </p>
               <p class="text-dark"
                  v-if="(!machineInfo.haveError) && machineInfo.dalyOut">
-                尊敬的用户,很荣幸您选择试用{{ instanceName }} Library!您的序列号已经过期，为了更好的为您提供服务请尽快续期。我们的服务热线：400-991-5355
+                尊敬的用户,很荣幸您选择使用{{ instanceName }}! 您的序列号已经过期，为了更好的为您提供服务请尽快续期。我们的服务热线：400-991-5355
               </p>
               <hr class="my-25">
               <a-descriptions :title="machineInfo.haveError ? '未激活' : (!machineInfo.haveError) && machineInfo.dalyOut ? '已过期' : '已激活'"
@@ -1051,16 +1051,16 @@
                   {{ machineInfo.mac }}
                 </a-descriptions-item>
                 <a-descriptions-item label="版本类型">
-                  {{ machineInfo.haveError ? "无" : machineInfo.object.type }}
+                  {{ machineInfo.haveError || !machineInfo.object ? "无" : machineInfo.object.type }}
                 </a-descriptions-item>
                 <a-descriptions-item label="有效日期">
-                  {{ machineInfo.haveError ? "无" : machineInfo.object.endDate }}
+                  {{ machineInfo.haveError || !machineInfo.object ? "无" : machineInfo.object.endDate }}
                 </a-descriptions-item>
                 <a-descriptions-item label="序列号">
-                  {{ machineInfo.haveError ? "无" : machineInfo.object.codes }}
+                  {{ machineInfo.haveError || !machineInfo.object ? "无" : machineInfo.object.codes }}
                 </a-descriptions-item>
                 <a-descriptions-item label="功能等级">
-                  <a-tag> {{ machineInfo.haveError ? "无" : upperCase(machineInfo.object.level) }}</a-tag>
+                  <a-tag> {{ machineInfo.haveError || !machineInfo.object ? "无" : upperCase(machineInfo.object.level) }}</a-tag>
                 </a-descriptions-item>
                 <a-descriptions-item label="是否激活">
                   <a href="http://folib.com"
