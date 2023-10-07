@@ -15,6 +15,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import javax.inject.Inject;
+import java.util.List;
 import java.util.Objects;
 
 /**
@@ -24,7 +25,7 @@ import java.util.Objects;
 @RestController
 @PreAuthorize("authenticated")
 @RequestMapping("/api/dict")
-@Api(description = "字典管理",tags = "字典管理")
+@Api(description = "字典管理", tags = "字典管理")
 public class DictController extends BaseController {
 
     @Inject
@@ -46,6 +47,21 @@ public class DictController extends BaseController {
             throw new BusinessException("参数错误");
         }
         dictService.updateDict(dict);
+        return ResponseEntity.ok("ok");
+    }
+
+    @ApiOperation(value = "查询最新的字典列表信息")
+    @ApiResponses(value = {@ApiResponse(code = 200, message = "OK")})
+    @GetMapping(value = "/list")
+    public ResponseEntity<List<Dict>> dictList(Dict dict) {
+        return ResponseEntity.ok(dictService.selectLatestListDict(dict));
+    }
+
+    @ApiOperation(value = "删除字典信息")
+    @ApiResponses(value = {@ApiResponse(code = 200, message = "OK")})
+    @DeleteMapping(value = "/delete")
+    public ResponseEntity<String> delete(@RequestParam("id") Long id) {
+        dictService.deleteDictById(id);
         return ResponseEntity.ok("ok");
     }
 }

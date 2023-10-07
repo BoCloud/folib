@@ -46,6 +46,14 @@ export function updateSingleDict(data) {
   })
 }
 
+export function getDictList(data) {
+  return axios({
+    url: '/api/dict/list',
+    method: 'get',
+    params: data
+  })
+}
+
 export function syncArtifactProvider(data) {
   return axios({
     url: '/api/artifact/syncArtifactProvider',
@@ -58,6 +66,22 @@ export function folderList(data) {
   return axios({
     url: '/api/folder/list',
     method: 'get',
+    params: data
+  })
+}
+
+export function saveBackup(data) {
+  return axios({
+    url: '/api/backup',
+    method: 'post',
+    data: data
+  })
+}
+
+export function deleteDict(data) {
+  return axios({
+    url: '/api/dict/delete',
+    method: 'delete',
     params: data
   })
 }

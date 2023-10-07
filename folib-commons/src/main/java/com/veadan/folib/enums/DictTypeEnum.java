@@ -49,6 +49,10 @@ public enum DictTypeEnum {
      * 处理mavenIndexer
      */
     HANDLER_MAVEN_INDEXER("handler_maven_indexer"),
+    /**
+     * 备份策略
+     */
+    BACKUP_SETTINGS("backup_settings"),
     ;
 
     private String type;
