@@ -25,6 +25,8 @@ public interface ArtifactPromotionService {
     ResponseEntity move(ArtifactPromotion artifactPromotion);
 
     ResponseEntity nodeOption(PromotionNodeOption promotionNodeOption, HttpServletRequest request);
+    
+    ResponseEntity nodeOptionAttachRecord(PromotionNodeOption promotionNodeOption, HttpServletRequest request);
 
     ResponseEntity upload(MultipartFile[] files, String storageId, String repositoryId, String filePathMap, String fileMetaDataMap, String uuid);
 

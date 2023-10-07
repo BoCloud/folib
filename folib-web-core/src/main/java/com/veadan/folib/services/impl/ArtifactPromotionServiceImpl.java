@@ -1,4 +1,5 @@
 package com.veadan.folib.services.impl;
+import java.util.Date;
 
 import cn.hutool.core.io.FileUtil;
 import cn.hutool.core.lang.UUID;
@@ -10,6 +11,7 @@ import com.veadan.folib.components.promotion.ArtifactPromotionProviderRegistry;
 import com.veadan.folib.components.security.SecurityComponent;
 import com.veadan.folib.domain.*;
 import com.veadan.folib.dto.*;
+import com.veadan.folib.entity.ArtifactSyncRecord;
 import com.veadan.folib.entity.Dict;
 import com.veadan.folib.promotion.ArtifactUploadTask;
 import com.veadan.folib.promotion.PromotionUtil;
@@ -330,6 +332,30 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
                     .body(e.getMessage());
         }
         return ResponseEntity.ok("ok");
+    }
+
+    @Override
+    public ResponseEntity nodeOptionAttachRecord(PromotionNodeOption promotionNodeOption, HttpServletRequest request) 
+    {
+        // 生成日志记录
+        final ArtifactSyncRecord artifactSyncRecord = new ArtifactSyncRecord();
+        artifactSyncRecord.setSourcePath("");
+        artifactSyncRecord.setTargetPath("");
+        artifactSyncRecord.setOpsType(0);
+        artifactSyncRecord.setSyncNo("");
+        artifactSyncRecord.setSyncModel(0);
+        artifactSyncRecord.setStatus(0);
+        artifactSyncRecord.setCreatedBy("");
+        artifactSyncRecord.setCreateTime(new Date());
+        artifactSyncRecord.setUpdatedBy("");
+        artifactSyncRecord.setUpdatedTime(new Date());
+        
+        final ResponseEntity responseEntity = this.nodeOption(promotionNodeOption, request);
+        
+        // 更新日志结束开始时间
+        
+
+        return responseEntity;
     }
 
     @Override
