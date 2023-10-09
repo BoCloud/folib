@@ -1,5 +1,7 @@
 package com.veadan.folib.controllers.adapter.jfrog;
 import cn.hutool.core.date.DateTime;
+import cn.hutool.core.date.DateUnit;
+import cn.hutool.core.date.DateUtil;
 import com.alibaba.fastjson.JSON;
 import com.veadan.folib.dto.ArtifactUploadAdapterJfrogDto.OriginalChecksums;
 import com.veadan.folib.dto.ArtifactUploadAdapterJfrogDto.Checksums;
@@ -9,6 +11,7 @@ import com.veadan.folib.controllers.BaseController;
 import com.veadan.folib.dto.ArtifactUploadAdapterJfrogDto;
 import com.veadan.folib.promotion.ArtifactUploadTask;
 import com.veadan.folib.promotion.PromotionUtil;
+import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.providers.layout.LayoutProviderRegistry;
 import com.veadan.folib.repositories.ArtifactRepository;
 import com.veadan.folib.repository.MavenRepositoryFeatures;
@@ -20,6 +23,7 @@ import com.veadan.folib.web.RepositoryMapping;
 import io.swagger.annotations.Api;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.tika.Tika;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Lazy;
@@ -41,7 +45,11 @@ import javax.inject.Inject;
 import javax.servlet.ServletInputStream;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import java.nio.file.Files;
+import java.util.Collections;
 import java.util.Date;
+import java.util.Map;
+import java.util.Optional;
 
 /**
  * @author leipenghui
@@ -77,7 +85,8 @@ public class ArtifactUploadController extends BaseController
     
     @PreAuthorize("authenticated")
     @PutMapping(value = "/{storageId}/{repositoryId}/{artifactPath:.+}")
-    public ResponseEntity<?> upload(@PathVariable String storageId,
+    public ResponseEntity<?> upload(@RepositoryMapping Repository repository,
+                                    @PathVariable String storageId,
                                     @PathVariable String repositoryId,
                                     @PathVariable String artifactPath,
                                     @RequestParam(value = "uuid", required = false) String uuid,
@@ -103,16 +112,28 @@ public class ArtifactUploadController extends BaseController
         if (StringUtils.isNotBlank(msg))
         { return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(msg); }
         
+        // 生成checksums
+        RepositoryPath repositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, artifactPath);
+        if (!Files.exists(repositoryPath))
+        {
+            artifactManagementService.validateAndStoreIndex(repositoryPath);
+            repositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, artifactPath);
+        }
+
+        final Map<String, String> checksums = Optional.ofNullable(repositoryPath.getArtifactEntry().getChecksums()).orElse(Collections.emptyMap());
         final ArtifactUploadAdapterJfrogDto artifactUploadAdapterJfrogDto = new ArtifactUploadAdapterJfrogDto();
         artifactUploadAdapterJfrogDto.setRepo(repositoryId);
         artifactUploadAdapterJfrogDto.setPath(artifactPath);
-        artifactUploadAdapterJfrogDto.setCreated(new Date().toString());
+        artifactUploadAdapterJfrogDto.setCreated(DateUtil.format(new Date(), "yyyy-MM-dd HH:mm:ss"));
         artifactUploadAdapterJfrogDto.setCreatedBy("admin");
         artifactUploadAdapterJfrogDto.setDownloadUri(fileDownUrl);
-        artifactUploadAdapterJfrogDto.setMimeType("");
+        artifactUploadAdapterJfrogDto.setMimeType(new Tika().detect(fileBytes));
         artifactUploadAdapterJfrogDto.setSize(String.valueOf(fileBytes.length));
-        artifactUploadAdapterJfrogDto.setChecksums(new Checksums());
-        artifactUploadAdapterJfrogDto.setOriginalChecksums(new OriginalChecksums());
+        artifactUploadAdapterJfrogDto.setChecksums(new Checksums()
+                .setMd5(checksums.get("MD5"))
+                .setSha1(checksums.get("SHA-1"))
+                .setSha256(checksums.get("SHA-256")));
+        artifactUploadAdapterJfrogDto.setOriginalChecksums(new OriginalChecksums().setSha256(""));
         artifactUploadAdapterJfrogDto.setUri(fileDownUrl);
         
         return ResponseEntity.ok(JSON.toJSONString(artifactUploadAdapterJfrogDto, true));
