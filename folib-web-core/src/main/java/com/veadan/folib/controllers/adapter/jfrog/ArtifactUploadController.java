@@ -108,14 +108,7 @@ public class ArtifactUploadController extends BaseController
         if (StringUtils.isNotBlank(msg))
         { return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(msg); }
         
-        // 生成checksums
-        RepositoryPath repositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, artifactPath);
-        if (!Files.exists(repositoryPath))
-        {
-            artifactManagementService.validateAndStoreIndex(repositoryPath);
-            repositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, artifactPath);
-        }
-
+        final RepositoryPath repositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, artifactPath);
         final Map<String, String> checksums = Optional.ofNullable(repositoryPath.getArtifactEntry().getChecksums()).orElse(Collections.emptyMap());
         final String sha256 = checksums.get("SHA-256");
         final ArtifactUploadAdapterJfrogDto artifactUploadAdapterJfrogDto = new ArtifactUploadAdapterJfrogDto();
