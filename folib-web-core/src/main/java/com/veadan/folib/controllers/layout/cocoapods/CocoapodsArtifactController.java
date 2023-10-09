@@ -70,11 +70,11 @@ public class CocoapodsArtifactController extends BaseArtifactController
             final String podspecSourceContent = CocoapodsArtifactUtil.fetchPodspecSourceContentByInputStream(new ByteArrayInputStream(cacheBytes));
 
             // 读取pod.tar.gz中的*.podspec文件内容
+            final RepositoryPath podRepositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, artifactPath);
             if (StringUtils.isNotBlank(podspecSourceContent))
             {
                 final CocoapodsArtifactUtil.PodSpec podSpec = CocoapodsArtifactUtil.resolvePodSpec(podspecSourceContent);
                 // 存储制品文件
-                final RepositoryPath podRepositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, artifactPath);
                 final ArtifactEntity podArtifactEntity = new ArtifactEntity(storageId, repositoryId, RepositoryFiles.readCoordinates(podRepositoryPath));
                 final CocoapodsArtifactCoordinates podArtifactCoordinates = (CocoapodsArtifactCoordinates) podArtifactEntity.getArtifactCoordinates();
                 podArtifactCoordinates.setBaseName(podSpec.getName());
@@ -94,6 +94,8 @@ public class CocoapodsArtifactController extends BaseArtifactController
                 podSpecRepositoryPath.setArtifact(podSpecArtifactEntity);
                 artifactManagementService.validateAndStore(podSpecRepositoryPath, podspecContentByteArrayInputStream);
             }
+            else
+            { artifactManagementService.validateAndStore(podRepositoryPath, new ByteArrayInputStream(cacheBytes)); }
 
             return ResponseEntity.ok("The artifact was deployed successfully.");
         } catch (Exception e) {
