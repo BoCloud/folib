@@ -1,7 +1,9 @@
 package com.veadan.folib.controllers.adapter.jfrog;
 
 import cn.hutool.core.date.DateUtil;
+import cn.hutool.json.JSONUtil;
 import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.serializer.SerializerFeature;
 import com.veadan.folib.components.promotion.ArtifactPromotionProviderRegistry;
 import com.veadan.folib.controllers.BaseController;
 import com.veadan.folib.dto.ArtifactUploadAdapterJfrogDto;
@@ -93,7 +95,7 @@ public class ArtifactUploadController extends BaseController
         final byte[] fileBytes = inputStream.readAllBytes();
         final MultipartFile file = new MockMultipartFile(fileName, fileBytes);
         final String baseUrl = StringUtils.chomp(configurationManager.getConfiguration().getBaseUrl(), "/");
-        final String fileDownUrl = String.format("%s/%s/%s/%s", baseUrl, storageId, repositoryId, artifactPath);
+        final String fileDownUrl = String.format("%s/artifactory/%s/%s/%s", baseUrl, storageId, repositoryId, artifactPath);
         final Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         final SpringSecurityUser userDetails = (SpringSecurityUser) authentication.getPrincipal();
         final String userName = Optional.ofNullable(userDetails).map(SpringSecurityUser::getUsername).orElse(null);
@@ -115,6 +117,7 @@ public class ArtifactUploadController extends BaseController
         }
 
         final Map<String, String> checksums = Optional.ofNullable(repositoryPath.getArtifactEntry().getChecksums()).orElse(Collections.emptyMap());
+        final String sha256 = checksums.get("SHA-256");
         final ArtifactUploadAdapterJfrogDto artifactUploadAdapterJfrogDto = new ArtifactUploadAdapterJfrogDto();
         artifactUploadAdapterJfrogDto.setRepo(repositoryId);
         artifactUploadAdapterJfrogDto.setPath(artifactPath);
@@ -126,10 +129,10 @@ public class ArtifactUploadController extends BaseController
         artifactUploadAdapterJfrogDto.setChecksums(new Checksums()
                 .setMd5(checksums.get("MD5"))
                 .setSha1(checksums.get("SHA-1"))
-                .setSha256(checksums.get("SHA-256")));
-        artifactUploadAdapterJfrogDto.setOriginalChecksums(new OriginalChecksums().setSha256(""));
+                .setSha256(sha256));
+        artifactUploadAdapterJfrogDto.setOriginalChecksums(new OriginalChecksums().setSha256(sha256));
         artifactUploadAdapterJfrogDto.setUri(fileDownUrl);
-        
-        return ResponseEntity.ok(JSON.toJSONString(artifactUploadAdapterJfrogDto, true));
+
+        return ResponseEntity.ok(JSONUtil.toJsonStr(JSONUtil.parse(artifactUploadAdapterJfrogDto), 2));
     }
 }
