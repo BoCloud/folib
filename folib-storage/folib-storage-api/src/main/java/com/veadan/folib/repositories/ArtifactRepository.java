@@ -533,7 +533,7 @@ public class ArtifactRepository extends GremlinVertexRepository<Artifact> {
     public Boolean artifactExists(String storageId,
                                   String repositoryId,
                                   String path) {
-        log.info("Find storageId [{}] repositoryId [{}] path [{}] artifactExists", storageId, repositoryId, path);
+        log.debug("Find storageId [{}] repositoryId [{}] path [{}] artifactExists", storageId, repositoryId, path);
         long startTime = System.currentTimeMillis();
         EntityTraversal<Vertex, Vertex> t = g().V()
                 .hasLabel(Vertices.GENERIC_ARTIFACT_COORDINATES)
@@ -545,14 +545,14 @@ public class ArtifactRepository extends GremlinVertexRepository<Artifact> {
                 .has(Properties.REPOSITORY_ID, repositoryId)
                 .has(Properties.ARTIFACT_FILE_EXISTS, true);
         Boolean result = t.hasNext();
-        log.info("Find storageId [{}] repositoryId [{}] path [{}] artifactExists [{}] take time [{}] ms", storageId, repositoryId, path, result, System.currentTimeMillis() - startTime);
+        log.debug("Find storageId [{}] repositoryId [{}] path [{}] artifactExists [{}] take time [{}] ms", storageId, repositoryId, path, result, System.currentTimeMillis() - startTime);
         return result;
     }
 
     public Artifact findOneArtifact(String storageId,
                                     String repositoryId,
                                     String path) {
-        log.info("FindOneArtifact storageId [{}] repositoryId [{}] path [{}]", storageId, repositoryId, path);
+        log.debug("FindOneArtifact storageId [{}] repositoryId [{}] path [{}]", storageId, repositoryId, path);
         com.veadan.folib.storage.repository.Repository repository = configurationManager.getRepository(storageId, repositoryId);
         long startTime = System.currentTimeMillis();
         EntityTraversal<Vertex, Artifact> t = g().V()
@@ -563,7 +563,7 @@ public class ArtifactRepository extends GremlinVertexRepository<Artifact> {
                         .map(ArtifactLayoutLocator.getLayoutByNameEntityMap()::get)
                         .map(ArtifactLayoutDescription::getArtifactCoordinatesClass)));
         Artifact artifact = t.tryNext().orElse(null);
-        log.info("FindOneArtifact storageId [{}] repositoryId [{}] path [{}] artifactExists [{}] take time [{}] ms", storageId, repositoryId, path, Objects.nonNull(artifact), System.currentTimeMillis() - startTime);
+        log.debug("FindOneArtifact storageId [{}] repositoryId [{}] path [{}] artifactExists [{}] take time [{}] ms", storageId, repositoryId, path, Objects.nonNull(artifact), System.currentTimeMillis() - startTime);
         return artifact;
     }
 

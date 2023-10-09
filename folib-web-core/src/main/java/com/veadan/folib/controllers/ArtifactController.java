@@ -156,10 +156,11 @@ public class ArtifactController extends BaseController {
     public ResponseEntity<String> buildGraphIndex(@RequestParam(name = "storageId", required = false) String storageId,
                                                   @RequestParam(name = "repositoryId", required = false) String repositoryId,
                                                   @RequestParam(name = "path", required = false) String path,
+                                                  @RequestParam(name = "metadata", required = false) Boolean metadata,
                                                   @RequestParam(name = "batch", required = false) Integer batch) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         SpringSecurityUser userDetails = (SpringSecurityUser) authentication.getPrincipal();
-        artifactWebService.buildGraphIndex(userDetails.getUsername(), storageId, repositoryId, path, batch);
+        artifactWebService.buildGraphIndex(userDetails.getUsername(), storageId, repositoryId, path, metadata, batch);
         return ResponseEntity.ok("ok");
     }
 

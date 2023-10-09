@@ -8,10 +8,17 @@ import com.veadan.folib.configuration.MutableConfiguration;
 import com.veadan.folib.controllers.support.ErrorResponseEntityBody;
 import com.veadan.folib.controllers.support.ListEntityBody;
 import com.veadan.folib.controllers.support.ResponseEntityBody;
+import com.veadan.folib.domain.Artifact;
+import com.veadan.folib.domain.DirectoryListing;
+import com.veadan.folib.domain.FileContent;
 import com.veadan.folib.exception.ExceptionHandlingOutputStream;
+import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.providers.io.RepositoryPathResolver;
+import com.veadan.folib.providers.layout.DockerLayoutProvider;
+import com.veadan.folib.repositories.ArtifactRepository;
 import com.veadan.folib.services.ArtifactResolutionService;
 import com.veadan.folib.services.ConfigurationManagementService;
+import com.veadan.folib.services.DirectoryListingService;
 import com.veadan.folib.storage.Storage;
 import com.veadan.folib.storage.repository.Repository;
 import com.veadan.folib.users.domain.SystemRole;
@@ -21,6 +28,7 @@ import org.apache.commons.collections4.IteratorUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.core.io.InputStreamResource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -34,6 +42,7 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.nio.file.Files;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -62,6 +71,13 @@ public abstract class BaseController {
 
     @Inject
     protected ArtifactResolutionService artifactResolutionService;
+
+    @Inject
+    @Qualifier("browseRepositoryDirectoryListingService")
+    private DirectoryListingService directoryListingService;
+
+    @Inject
+    private ArtifactRepository artifactRepository;
 
     protected Configuration getConfiguration() {
         return configurationManagementService.getConfiguration();
@@ -343,5 +359,60 @@ public abstract class BaseController {
             return true;
         }
         return false;
+    }
+
+    protected String getBaseUrl(Repository repository) {
+        return String.format("%s/%s/%s", StringUtils.chomp(configurationManager.getConfiguration().getBaseUrl(), "/"), repository.getStorage().getId(), repository.getId());
+    }
+
+    protected String getBaseUrl(String storageId, String repositoryId) {
+        return String.format("%s/%s/%s", StringUtils.chomp(configurationManager.getConfiguration().getBaseUrl(), "/"), storageId, repositoryId);
+    }
+
+    /***
+     * 获取制品RepositoryPath
+     * @param storageId 存储空间名称
+     * @param repositoryId 仓库名称
+     * @param artifactPath 制品路径
+     * @return RepositoryPath
+     * @throws Exception 异常
+     */
+    public Artifact findArtifact(String storageId, String repositoryId, String artifactPath) throws Exception {
+        RepositoryPath repositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, artifactPath);
+        Artifact artifact = Objects.nonNull(repositoryPath) ? repositoryPath.getArtifactEntry() : null;
+        if (Objects.isNull(artifact)) {
+            //兼容已存在数据的docker布局仓库
+            Repository repository = configurationManagementService.getConfiguration().getRepository(storageId, repositoryId);
+            if (DockerLayoutProvider.ALIAS.equalsIgnoreCase(repository.getLayout())) {
+                //docker
+                artifact = findDockerArtifact(artifactPath, storageId, repositoryId);
+                return artifact;
+            }
+        }
+        return artifact;
+    }
+
+    /**
+     * 获取docker Artifact 非镜像版本Artifact信息
+     *
+     * @param artifactName 制品名称
+     * @param storageId    存储空间名称
+     * @param repositoryId 仓库名称
+     * @return docker Artifact 非镜像版本Artifact信息
+     * @throws IOException 异常
+     */
+    public Artifact findDockerArtifact(String artifactName, String storageId, String repositoryId) throws IOException {
+        RepositoryPath repositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, artifactName);
+        if (!Files.isDirectory(repositoryPath)) {
+            return null;
+        }
+        DirectoryListing directoryListing = directoryListingService.fromRepositoryPath(repositoryPath);
+        List<FileContent> fileContents = directoryListing.getFiles().stream().filter(file -> !(file.getName().endsWith(".sha256"))).collect(Collectors.toList());
+        if (CollectionUtils.isEmpty(fileContents)) {
+            return null;
+        }
+        FileContent fileContent = fileContents.get(0);
+        String artifactPath = fileContent.getArtifactPath();
+        return artifactRepository.findOneArtifact(storageId, repositoryId, artifactPath);
     }
 }

@@ -76,6 +76,13 @@
                       </a-col>
                     </a-row>
                     <a-row :gutter="[24]">
+                      <a-col :span="4">
+                        <a-form-model-item class="mb-10" label="同步元数据" :colon="false" prop="metadata">
+                          <a-switch v-model="buildGraphIndexForm.metadata"  />
+                        </a-form-model-item>
+                      </a-col>
+                    </a-row>
+                    <a-row :gutter="[24]">
                       <a-col :span="12">
                         <a-form-model-item :wrapper-col="{ span: 14, offset: 6 }">
                           <a-popconfirm title="确定要构建数据吗？" okType="danger" ok-text="确定" cancel-text="取消"
@@ -285,6 +292,7 @@ export default {
       buildGraphIndexForm: {
         storageId: undefined,
         repositoryId: undefined,
+        metadata: false,
         path: ''
       },
       vulnerabilitiesForm: {
@@ -372,6 +380,7 @@ export default {
         if (valid) {
           buildGraphIndex(this.buildGraphIndexForm).then(res => {
             if (res) {
+              this.buildGraphIndexResetForm()
               setTimeout(() => {
                 this.getSingleDict('build_graph_index')
               }, 100)
