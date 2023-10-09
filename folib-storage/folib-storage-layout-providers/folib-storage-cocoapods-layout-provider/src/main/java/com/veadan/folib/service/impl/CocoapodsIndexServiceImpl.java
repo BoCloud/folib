@@ -82,11 +82,14 @@ public class CocoapodsIndexServiceImpl implements CocoapodsIndexService
         RepositoryPath specIndexZipTempPath = null;
         String ziFilePath = null;
 
-        try {
+        try 
+        {
             // 删除就的索引文件
-            try {
+            try 
+            {
                 specIndexZipTempPath = repositoryPathResolver.resolve(storageId, repositoryId, specIndexZipTempUri);
                 artifactManagementService.delete(specIndexZipTempPath, true);
+                logger.error("删除旧的索引文件成功（{}）", specIndexZipTempPath);
             }
             catch (Exception e)
             { logger.error("删除旧的索引文件失败", e); }

@@ -403,7 +403,7 @@
 
             <a-form :form="form" class="mt-30" :hideRequiredMark="true">
               <a-row type="flex" :gutter="[24]">
-                <a-col :span="24" :md="20" :lg="18" class="mx-auto">
+                <a-col :span="24" :md="10" :lg="20" class="mx-auto">
                   <a-row class="checkbox-group" type="flex" :gutter="[50]">
                     <a-col :span="4">
                       <div class="checkbox-label" :class="[layoutChecked === 'raw' ? 'active' : '']"
@@ -557,30 +557,59 @@
                     </a-col>
                     <a-col :span="4">
                       <div class="checkbox-label" :class="[layoutChecked === 'go' ? 'active' : '']">
+                        <a-tooltip>
+                          <template slot="title">
+                            下一个版本更新即将呈现🤝
+                          </template>
                         <a-avatar :size="44" shape="square"
                                   style="border-radius: 8px; background-image: linear-gradient( 310deg, #020202, #5c6391 );">
                           <img src="images/folib/go.svg" style="width: 100%;" alt="">
                         </a-avatar>
+                        </a-tooltip>
                       </div>
                       <h6>Go</h6>
                     </a-col>
                     <a-col :span="4">
                       <div class="checkbox-label" :class="[layoutChecked === 'gems' ? 'active' : '']">
+                        <a-tooltip>
+                          <template slot="title">
+                            下一个版本更新即将呈现🤝
+                          </template>
                         <a-avatar :size="44" shape="square"
                                   style="border-radius: 8px; background-image: linear-gradient( 310deg, #020202, #5c6391 );">
                           <img src="images/folib/gems.svg" style="width: 100%;" alt="">
                         </a-avatar>
+                        </a-tooltip>
                       </div>
                       <h6>Gems</h6>
                     </a-col>
                     <a-col :span="4">
                       <div class="checkbox-label" :class="[layoutChecked === 'rust' ? 'active' : '']">
+                        <a-tooltip>
+                          <template slot="title">
+                            下一个版本更新即将呈现🤝
+                          </template>
                         <a-avatar :size="44" shape="square"
                                   style="border-radius: 8px; background-image: linear-gradient( 310deg, #020202, #5c6391 );">
                           <img src="images/folib/rust.svg" style="width: 100%;" alt="">
                         </a-avatar>
+                        </a-tooltip>
                       </div>
                       <h6>Rust</h6>
+                    </a-col>
+                    <a-col :span="4">
+                      <div class="checkbox-label" :class="[layoutChecked === 'huggingface' ? 'active' : '']">
+                        <a-tooltip>
+                          <template slot="title">
+                            下一个版本更新即将呈现🤝
+                          </template>
+                        <a-avatar :size="44" shape="square"
+                                  style="border-radius: 8px; background-image: linear-gradient( 310deg, #020202, #5c6391 );">
+                          <img src="images/folib/huggingface.svg" style="width: 100%;" alt="">
+                        </a-avatar>
+                        </a-tooltip>
+                      </div>
+                      <h6>huggingface</h6>
                     </a-col>
                   </a-row>
                   <a-checkbox-group class="d-none" v-model="checkedList" :options="checkboxOptions" />
