@@ -13,6 +13,9 @@ import com.alibaba.excel.write.metadata.fill.FillConfig;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.dataformat.xml.XmlMapper;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.veadan.folib.authorization.dto.Role;
@@ -23,10 +26,12 @@ import com.veadan.folib.cluster.SyncMetadataEnum;
 import com.veadan.folib.components.artifact.ArtifactComponent;
 import com.veadan.folib.configuration.ConfigurationUtils;
 import com.veadan.folib.configuration.MutableMetadataConfiguration;
+import com.veadan.folib.constant.GlobalConstants;
 import com.veadan.folib.controllers.ResponseMessage;
 import com.veadan.folib.controllers.cluster.dto.SyncMetadataDto;
 import com.veadan.folib.domain.*;
 import com.veadan.folib.entity.Dict;
+import com.veadan.folib.enums.ArtifactMetadataEnum;
 import com.veadan.folib.enums.DictTypeEnum;
 import com.veadan.folib.enums.RepositoryScopeEnum;
 import com.veadan.folib.event.artifact.ArtifactEventListenerRegistry;
@@ -35,6 +40,7 @@ import com.veadan.folib.forms.dict.DictForm;
 import com.veadan.folib.forms.scanner.*;
 import com.veadan.folib.gremlin.dsl.EntityTraversalUtils;
 import com.veadan.folib.gremlin.entity.vo.ArtifactVo;
+import com.veadan.folib.promotion.PromotionUtil;
 import com.veadan.folib.providers.io.RepositoryFiles;
 import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.providers.io.RepositoryPathResolver;
@@ -142,6 +148,10 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
     @Inject
     private ArtifactMetadataService artifactMetadataService;
 
+    @Inject
+    @Lazy
+    private PromotionUtil promotionUtil;
+
     @Value("${folib.temp}")
     private String tempPath;
 
@@ -226,6 +236,9 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
     public String saveArtifactMetadata(ArtifactMetadataForm artifactMetadataForm) {
         try {
             Artifact artifact = resolvePath(artifactMetadataForm.getStorageId(), artifactMetadataForm.getRepositoryId(), artifactMetadataForm.getArtifactPath());
+            if (Objects.isNull(artifact)) {
+                throw new RuntimeException(GlobalConstants.ARTIFACT_NOT_FOUND_MESSAGE);
+            }
             JSONObject metadataJson = getMetadata(artifact);
             if (Objects.isNull(metadataJson)) {
                 metadataJson = new JSONObject();
@@ -454,7 +467,7 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
     @Override
     public void batchArtifactMetadata(List<ArtifactMetadataForm> artifactMetadataFormList) {
         // 批量的新增或更新 path Artifact 是一致的
-        if (artifactMetadataFormList.size() > 0) {
+        if (CollectionUtils.isNotEmpty(artifactMetadataFormList)) {
             ArtifactMetadataForm artifactMetaData = artifactMetadataFormList.get(0);
             // 查询是否存在 path 的更新事件 todo
             Artifact artifact = null;
@@ -558,7 +571,7 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
 
     @Override
     @Async("asyncThreadPoolTaskExecutor")
-    public void buildGraphIndex(String username, String storageId, String repositoryId, String path, Integer batch) {
+    public void buildGraphIndex(String username, String storageId, String repositoryId, String path, Boolean metadata, Integer batch) {
         log.info("BuildGraphIndex is started");
         Long dictId = 0L;
         try {
@@ -571,18 +584,19 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
             data.put("storageId", storageId);
             data.put("repositoryId", repositoryId);
             data.put("path", path);
+            data.put("metadata", metadata);
             data.put("batch", batch);
             Dict dict = Dict.builder().dictType(DictTypeEnum.BUILD_GRAPH_INDEX.getType()).dictKey(username).dictValue(data.toJSONString()).createTime(new Date()).comment(comment).build();
             dictService.saveDict(dict);
             dictId = dict.getId();
             if (StringUtils.isNotBlank(storageId) && StringUtils.isNotBlank(repositoryId)) {
-                handlerRepository(storageId, repositoryId, path, batch);
+                handlerRepository(storageId, repositoryId, path, metadata, batch);
             } else if (StringUtils.isNotBlank(storageId)) {
                 path = "";
                 Map<String, ? extends Repository> repositoryMaps = configurationManagementService.getMutableConfigurationClone().getStorage(storageId).getRepositories();
                 if (!repositoryMaps.isEmpty()) {
                     for (String repository : repositoryMaps.keySet()) {
-                        handlerRepository(storageId, repository, path, batch);
+                        handlerRepository(storageId, repository, path, metadata, batch);
                     }
                 }
             } else if (StringUtils.isBlank(storageId) && StringUtils.isBlank(repositoryId)) {
@@ -593,7 +607,7 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
                         Map<String, ? extends Repository> repositoryMaps = configurationManagementService.getMutableConfigurationClone().getStorage(storageEntry.getKey()).getRepositories();
                         if (!repositoryMaps.isEmpty()) {
                             for (String repository : repositoryMaps.keySet()) {
-                                handlerRepository(storageEntry.getKey(), repository, path, batch);
+                                handlerRepository(storageEntry.getKey(), repository, path, metadata, batch);
                             }
                         }
                     }
@@ -738,16 +752,17 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
      * @param storageId    存储空间
      * @param repositoryId 仓库id
      * @param path         path
+     * @param metadata     是否同步元数据 true 是 false 否
      * @param batch        每批数量
      */
-    private void handlerRepository(String storageId, String repositoryId, String path, Integer batch) {
+    private void handlerRepository(String storageId, String repositoryId, String path, Boolean metadata, Integer batch) {
         try {
             log.info("handlerRepository storageId：{}，repositoryId：{} start", storageId, repositoryId);
             RootRepositoryPath rootRepositoryPath = repositoryPathResolver.resolve(storageId, repositoryId);
             if (StringUtils.isBlank(path)) {
                 path = rootRepositoryPath.toAbsolutePath().toString();
             }
-            handlerArtifacts(path, rootRepositoryPath.getRepository(), batch);
+            handlerArtifacts(path, rootRepositoryPath.getRepository(), metadata, batch);
             log.info("handlerRepository storageId：{}，repositoryId：{} finished", storageId, repositoryId);
         } catch (Exception ex) {
             log.error("handlerRepository storageId：{}，repositoryId：{} error：{}", storageId, repositoryId, ExceptionUtils.getStackTrace(ex));
@@ -829,16 +844,16 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
         return EntityTraversalUtils.toLong(endLocalDateTime);
     }
 
-    private void handlerArtifacts(String path, Repository repository, Integer batch) throws Exception {
+    private void handlerArtifacts(String path, Repository repository, Boolean metadata, Integer batch) throws Exception {
         if (Objects.isNull(batch)) {
             batch = 500;
         }
         String s3 = "s3://";
         if (path.startsWith(s3)) {
             S3Path s3Path = new S3Path(SpringUtil.getBean(S3FileSystem.class), path);
-            handlerS3Paths(s3Path, repository, batch);
+            handlerS3Paths(s3Path, repository, metadata, batch);
         } else {
-            handlerNFSFiles(path, repository, batch);
+            handlerNFSFiles(path, repository, metadata, batch);
         }
     }
 
@@ -864,7 +879,11 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
                 for (File f : rootFile.listFiles()) {
                     if (f.isDirectory()) {
                         if (f.isHidden()) {
-                            log.info("directory：{} is a hidden directory", f.getName());
+                            log.info("directory：{} is a hidden directory skip", f.getName());
+                            continue;
+                        }
+                        if (f.getName().endsWith(".artifactory-metadata")) {
+                            log.info("directory：{} is a artifactory metadata directory skip", f.getName());
                             continue;
                         }
                         list.add(f);
@@ -924,26 +943,33 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
      *
      * @param path       NFS目录
      * @param repository 仓库信息
+     * @param metadata   是否同步元数据 true 是 false 否
      * @param batch      每批数量
      * @return NFS目录下的所有文件
      */
-    private List<File> handlerNFSFiles(String path, Repository repository, Integer batch) throws Exception {
+    private List<File> handlerNFSFiles(String path, Repository repository, Boolean metadata, Integer batch) throws Exception {
         List<File> resultList = getNFSFiles(path, repository);
         List<List<File>> fileLists = Lists.partition(resultList, batch);
         List<FutureTask<String>> futureTaskList = Lists.newArrayList();
         FutureTask<String> futureTask = null;
         for (List<File> fileList : fileLists) {
             futureTask = new FutureTask<String>(() -> {
+                String fPath, tempStr, artifactPath;
+                RepositoryPath repositoryPath;
+                int fPathIndex;
                 for (File file : fileList) {
-                    String fPath = file.getAbsolutePath();
+                    fPath = file.getAbsolutePath();
                     try {
-                        String tempStr = repository.getStorage().getId() + File.separator + repository.getId() + File.separator;
-                        int fPathIndex = fPath.lastIndexOf(tempStr);
-                        String artifactPath = fPath.substring(fPathIndex).replace(tempStr, "");
-                        RepositoryPath repositoryPath = repositoryPathResolver.resolve(repository.getStorage().getId(), repository.getId(), artifactPath);
+                        tempStr = repository.getStorage().getId() + File.separator + repository.getId() + File.separator;
+                        fPathIndex = fPath.lastIndexOf(tempStr);
+                        artifactPath = fPath.substring(fPathIndex).replace(tempStr, "");
+                        repositoryPath = repositoryPathResolver.resolve(repository.getStorage().getId(), repository.getId(), artifactPath);
                         if (!RepositoryFiles.isArtifact(repositoryPath)) {
                             log.info("handlerArtifact path：{} not is a artifact", fPath);
                             continue;
+                        }
+                        if (Boolean.TRUE.equals(metadata)) {
+                            handlerMetadata(artifactPath, repositoryPath);
                         }
                         artifactManagementService.validateAndStoreIndex(repositoryPath);
                         if (Maven2LayoutProvider.ALIAS.equals(repository.getLayout())) {
@@ -985,7 +1011,11 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
             S3Path s3PathTemp = s3Iterator.next();
             if (s3PathTemp.getFileAttributes() == null || s3PathTemp.getFileAttributes().isDirectory()) {
                 if (s3PathTemp.getFileName().toString().startsWith(".")) {
-                    log.info("s3 directory {} is a hidden directory", s3PathTemp);
+                    log.info("s3 directory {} is a hidden directory skip", s3PathTemp);
+                    continue;
+                }
+                if (s3PathTemp.getFileName().toString().endsWith(".artifactory-metadata")) {
+                    log.info("s3 directory {} is a artifactory metadata directory skip", s3PathTemp);
                     continue;
                 }
                 listDir.add(s3PathTemp);
@@ -1038,10 +1068,11 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
      *
      * @param s3Path     S3目录
      * @param repository 仓库信息
+     * @param metadata   是否同步元数据 true 是 false 否
      * @param batch      每批数量
      * @return S3存储目录下的所有文件
      */
-    private List<S3Path> handlerS3Paths(S3Path s3Path, Repository repository, Integer batch) throws Exception {
+    private List<S3Path> handlerS3Paths(S3Path s3Path, Repository repository, Boolean metadata, Integer batch) throws Exception {
         List<S3Path> listFile = getS3Paths(s3Path, repository);
         List<List<S3Path>> s3PathLists = Lists.partition(listFile, batch);
         List<FutureTask<String>> futureTaskList = Lists.newArrayList();
@@ -1058,6 +1089,9 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
                         if (!RepositoryFiles.isArtifact(repositoryPath)) {
                             log.info("handlerArtifact path：{} not is a artifact", s3FilePath.toAbsolutePath());
                             continue;
+                        }
+                        if (Boolean.TRUE.equals(metadata)) {
+                            handlerMetadata(artifactPath, repositoryPath);
                         }
                         artifactManagementService.validateAndStoreIndex(repositoryPath);
                         if (Maven2LayoutProvider.ALIAS.equals(repository.getLayout())) {
@@ -1216,4 +1250,33 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
         }
         return storageIdAndRepositoryIdList;
     }
+
+    private void handlerMetadata(String artifactPath, RepositoryPath repositoryPath) {
+        try {
+            String metadataPath = String.format("%s%s/%s", artifactPath, ".artifactory-metadata", "properties.xml");
+            RepositoryPath metadataRepositoryPath = repositoryPathResolver.resolve(repositoryPath.getStorageId(), repositoryPath.getRepositoryId(), metadataPath);
+            if (Objects.nonNull(metadataRepositoryPath) && Files.exists(metadataRepositoryPath)) {
+                String metadataXml = Files.readString(metadataRepositoryPath), metadataValue;
+                ArtifactMetadata artifactMetadata = null;
+                List<JSONObject> artifactMetadataList = Lists.newArrayList();
+                // 创建XML解析器
+                XmlMapper xmlMapper = new XmlMapper();
+                // 将XML解析为JsonNode对象
+                JsonNode jsonNode = xmlMapper.readTree(metadataXml);
+                // 使用ObjectMapper将JsonNode转换为JSON字符串
+                ObjectMapper objectMapper = new ObjectMapper();
+                String metadataJsonStr = objectMapper.writeValueAsString(jsonNode);
+                JSONObject metadataJson = JSONObject.parseObject(metadataJsonStr), itemMetadataJson = new JSONObject();
+                for (String metadataKey : metadataJson.keySet()) {
+                    metadataValue = metadataJson.getString(metadataKey);
+                    artifactMetadata = ArtifactMetadata.builder().type(ArtifactMetadataEnum.STRING.toString()).value(metadataValue).viewShow(1).build();
+                    itemMetadataJson.put(metadataKey, artifactMetadata);
+                }
+                promotionUtil.setMetaData(repositoryPath, JSONObject.toJSONString(itemMetadataJson));
+            }
+        } catch (Exception ex) {
+            log.error("handlerArtifact sync metadata path：{}，error：{}", repositoryPath.toString(), ExceptionUtils.getStackTrace(ex));
+        }
+    }
+
 }

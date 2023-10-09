@@ -2,7 +2,6 @@ package com.veadan.folib.components.artifact;
 
 import cn.hutool.core.io.FileUtil;
 import com.alibaba.fastjson.JSONObject;
-import com.alibaba.fastjson.serializer.SerializerFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
@@ -291,7 +290,7 @@ public class ArtifactComponent {
             }
         } else if (repositoryPath.getFileSystem() instanceof NpmFileSystem) {
             log.debug("npm布局");
-            List<String> suffixList = Arrays.asList(".json", ".tgz");
+            List<String> suffixList = Arrays.asList("package.json", ".tgz");
             flag = endsWith(repositoryPath.getFileName().toString(), suffixList);
         } else if (repositoryPath.getFileSystem() instanceof NugetFileSystem) {
             log.debug("nuget布局");
@@ -307,7 +306,7 @@ public class ArtifactComponent {
             flag = endsWith(repositoryPath.getFileName().toString(), suffixList);
         } else if (repositoryPath.getFileSystem() instanceof PhpFileSystem) {
             log.debug("php布局");
-            List<String> suffixList = Arrays.asList("tar", "tar.gz", "tar.bz2", "zip", "json");
+            List<String> suffixList = Arrays.asList("tar", "tar.gz", "tar.bz2", "zip");
             flag = endsWith(repositoryPath.getFileName().toString(), suffixList);
         } else if (repositoryPath.getFileSystem() instanceof ConanFileSystem) {
             log.debug("Conan布局");
@@ -320,13 +319,13 @@ public class ArtifactComponent {
         } else if (repositoryPath.getFileSystem() instanceof RawFileSystem) {
             log.debug("raw布局");
             if (Boolean.TRUE.equals(scan)) {
-                List<String> allSuffixList = Lists.newArrayList(".jar", ".war", ".ear", ".zip", ".json", ".tgz", ".nupkg", ".nuspec", "packages.config", ".whl", ".egg", ".zip", ".rpm", "tar", "tar.gz", "tar.bz2", "zip", "json", ".tgz", ".py", ".tgz", ".exe", ".podspec");
+                List<String> allSuffixList = Lists.newArrayList(".jar", ".war", ".ear", ".zip", "package.json", ".tgz", ".nupkg", ".nuspec", "packages.config", ".whl", ".egg", ".rpm", "tar", "tar.gz", "tar.bz2", ".py", ".exe", ".podspec");
                 flag = endsWith(repositoryPath.getFileName().toString(), allSuffixList);
             } else {
                 flag = true;
             }
         } else if (repositoryPath.getFileSystem() instanceof CocoapodsFileSystem) {
-            log.info("=====>>>>> cocoapods布局");
+            log.debug("cocoapods布局");
             if (Boolean.TRUE.equals(scan)) {
                 List<String> allSuffixList = Lists.newArrayList(".tar.gz");
                 flag = endsWith(repositoryPath.getFileName().toString(), allSuffixList);
@@ -334,7 +333,7 @@ public class ArtifactComponent {
                 flag = true;
             }
         }
-        log.info("制品路径 [{}] 布局 [{}] 是否是该布局支持的制品类型 [{}]", repositoryPath.toString(), repositoryPath.getRepository().getLayout(), flag);
+        log.debug("制品路径 [{}] 布局 [{}] 是否是该布局支持的制品类型 [{}]", repositoryPath.toString(), repositoryPath.getRepository().getLayout(), flag);
         return flag;
     }
 
@@ -348,52 +347,52 @@ public class ArtifactComponent {
         boolean flag = false;
         if (Objects.nonNull(filePath)) {
             if (DockerLayoutProvider.ALIAS.equals(layout)) {
-                log.info(" docker布局");
+                log.debug("docker布局");
                 String blobs = "blobs";
                 String manifest = "manifest";
                 if (filePath.contains("sha256") && !filePath.contains(blobs) && !filePath.contains(manifest) && !filePath.endsWith(".sha256")) {
                     flag = true;
                 }
             } else if (Maven2LayoutProvider.ALIAS.equals(layout)) {
-                log.info(" maven布局");
+                log.debug("maven布局");
                 flag = endsWith(filePath, Lists.newArrayList(".pom", ".jar", ".war", ".ear"));
             } else if (NpmLayoutProvider.ALIAS.equals(layout)) {
-                log.info(" npm布局");
-                List<String> suffixList = Arrays.asList(".json", ".tgz");
+                log.debug("npm布局");
+                List<String> suffixList = Arrays.asList("package.json", ".tgz");
                 flag = endsWith(filePath, suffixList);
             } else if (NugetLayoutProvider.ALIAS.equals(layout)) {
-                log.info(" nuget布局");
+                log.debug("nuget布局");
                 List<String> suffixList = Arrays.asList(".nupkg", ".nuspec", "packages.config");
                 flag = endsWith(filePath, suffixList);
             } else if (PypiLayoutProvider.ALIAS.equals(layout)) {
-                log.info(" pypi布局");
+                log.debug("pypi布局");
                 List<String> suffixList = Arrays.asList(".whl", ".egg", ".zip", "tar.gz");
                 flag = endsWith(filePath, suffixList);
             } else if (RpmLayoutProvider.ALIAS.equals(layout)) {
-                log.info(" rpm布局");
+                log.debug("rpm布局");
                 List<String> suffixList = Collections.singletonList(".rpm");
                 flag = endsWith(filePath, suffixList);
             } else if (PhpLayoutProvider.ALIAS.equals(layout)) {
-                log.info(" php布局");
-                List<String> suffixList = Arrays.asList("tar", "tar.gz", "tar.bz2", "zip", "json");
+                log.debug("php布局");
+                List<String> suffixList = Arrays.asList("tar", "tar.gz", "tar.bz2", "zip");
                 flag = endsWith(filePath, suffixList);
             } else if (ConanLayoutProvider.ALIAS.equals(layout)) {
-                log.info(" Conan布局");
+                log.debug("Conan布局");
                 List<String> suffixList = Arrays.asList(".tgz", ".py");
                 flag = endsWith(filePath, suffixList);
             } else if (HelmLayoutProvider.ALIAS.equals(layout)) {
                 List<String> suffixList = Collections.singletonList(".tgz");
                 flag = endsWith(filePath, suffixList);
-                log.info(" Helm布局");
+                log.debug("Helm布局");
             } else if (RawLayoutProvider.ALIAS.equals(layout)) {
-                log.info(" raw布局");
+                log.debug("raw布局");
                 flag = true;
             } else if (CocoapodsLayoutProvider.ALIAS.equals(layout)) {
                 List<String> suffixList = Collections.singletonList(".tar.gz");
                 flag = endsWith(filePath, suffixList);
-                log.info("=====>>>>> Cocoapods布局");
+                log.debug("Cocoapods布局");
             }
-            log.info("制品路径 [{}] 布局 [{}] 是否是该布局支持的制品类型 [{}]", filePath, layout, flag);
+            log.debug("制品路径 [{}] 布局 [{}] 是否是该布局支持的制品类型 [{}]", filePath, layout, flag);
         }
         return flag;
     }
@@ -696,7 +695,7 @@ public class ArtifactComponent {
                     if (StringUtils.isNotBlank(promotionNode) && promotionNode.contains(node)) {
                         //节点信息已存在，移除
                         iterable.remove();
-                        log.info("存储空间： {} 仓库：{} 制品：{} 节点：{} 已存在，移除", updateArtifact.getStorageId(), updateArtifact.getRepositoryId(), artifactPath, node);
+                        log.debug("存储空间： {} 仓库：{} 制品：{} 节点：{} 已存在，移除", updateArtifact.getStorageId(), updateArtifact.getRepositoryId(), artifactPath, node);
                     }
                 }
                 promotionNode = String.format("%s,%s", node, promotion);
@@ -744,7 +743,7 @@ public class ArtifactComponent {
                     if (StringUtils.isNotBlank(promotionNode) && promotionNode.contains(node)) {
                         //节点信息已存在，移除
                         iterable.remove();
-                        log.info("存储空间： {} 仓库：{} 制品：{} 节点：{} 不存在，移除", artifact.getStorageId(), artifact.getRepositoryId(), artifact.getArtifactPath(), node);
+                        log.debug("存储空间： {} 仓库：{} 制品：{} 节点：{} 不存在，移除", artifact.getStorageId(), artifact.getRepositoryId(), artifact.getArtifactPath(), node);
                     }
                 }
                 if (CollectionUtils.isNotEmpty(promotionNodes) && promotionNodes.stream().allMatch(PromotionStatusEnum.SUCCESS.getStatus()::contains)) {
@@ -793,7 +792,7 @@ public class ArtifactComponent {
     public ArtifactIdGroup getArtifactIdGroup(String uuid) {
         long startTime = System.currentTimeMillis();
         ArtifactIdGroup artifactIdGroup = artifactIdGroupRepository.findByArtifactIdGroup(uuid);
-        log.info("[{}] getArtifactIdGroup [{}] take time [{}] ms", this.getClass().getSimpleName(), uuid, System.currentTimeMillis() - startTime);
+        log.debug("[{}] getArtifactIdGroup [{}] take time [{}] ms", this.getClass().getSimpleName(), uuid, System.currentTimeMillis() - startTime);
         return artifactIdGroup;
     }
 
@@ -849,7 +848,7 @@ public class ArtifactComponent {
             if (Objects.nonNull(artifactIdGroup)) {
                 artifactIdGroup.setMetadata(metadata);
                 artifactIdGroupRepository.merge(artifactIdGroup);
-                log.info("[{}] updateArtifactIdGroup [{}] take time [{}] ms", this.getClass().getSimpleName(), uuid, System.currentTimeMillis() - startTime);
+                log.debug("[{}] updateArtifactIdGroup [{}] take time [{}] ms", this.getClass().getSimpleName(), uuid, System.currentTimeMillis() - startTime);
             }
         } catch (Exception ex) {
             String realMessage = CommonUtils.getRealMessage(ex);
@@ -883,7 +882,7 @@ public class ArtifactComponent {
         } else if (RepositoryTypeEnum.HOSTED.getType().equals(repository.getType())) {
             packageFeed = handlePackageFeed(repository, artifactId, repositorySearchRequest);
         }
-        log.info("[{}] getNpmArtifactPackageFeed storageId [{}] repositoryId [{}] artifactId [{}] coordinateValues [{}] take time [{}] ms", this.getClass().getSimpleName(), repository.getStorage().getId(), repository.getId(), artifactId, coordinateValues, System.currentTimeMillis() - startTime);
+        log.debug("[{}] getNpmArtifactPackageFeed storageId [{}] repositoryId [{}] artifactId [{}] coordinateValues [{}] take time [{}] ms", this.getClass().getSimpleName(), repository.getStorage().getId(), repository.getId(), artifactId, coordinateValues, System.currentTimeMillis() - startTime);
         return packageFeed;
     }
 
@@ -1034,7 +1033,7 @@ public class ArtifactComponent {
             final String packageNameToDownload = PypiPackageNameConverter.escapeSpecialCharacters(pypiSearchRequest.getPackageName());
             obj = handlePypiLocalRepository(repository, packageNameToDownload);
         }
-        log.info("[{}] getPypiArtifactPackageFeed storageId [{}] repositoryId [{}] artifactId [{}] take time [{}] ms", this.getClass().getSimpleName(), repository.getStorage().getId(), repository.getId(), pypiSearchRequest.getPackageName(), System.currentTimeMillis() - startTime);
+        log.debug("[{}] getPypiArtifactPackageFeed storageId [{}] repositoryId [{}] artifactId [{}] take time [{}] ms", this.getClass().getSimpleName(), repository.getStorage().getId(), repository.getId(), pypiSearchRequest.getPackageName(), System.currentTimeMillis() - startTime);
         return obj;
     }
 

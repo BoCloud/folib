@@ -144,9 +144,10 @@ public interface ArtifactWebService {
      * @param storageId    存储空间
      * @param repositoryId 仓库id
      * @param path         path
+     * @param metadata     是否同步元数据 true 是 false 否
      * @param batch        每批数量
      */
-    void buildGraphIndex(String username, String storageId, String repositoryId, String path, Integer batch);
+    void buildGraphIndex(String username, String storageId, String repositoryId, String path, Boolean metadata, Integer batch);
 
     /**
      * 根据压缩包生成制品信息
@@ -163,6 +164,7 @@ public interface ArtifactWebService {
 
     /**
      * 制品统计信息
+     *
      * @return 制品统计信息
      */
     ArtifactStatistics artifactStatistics();

@@ -37,7 +37,7 @@ public class ArtifactEventBackupListener {
         int source = (int) event.getSource();
         RepositoryPath repositoryPath = event.getPath();
         ArtifactEventTypeEnum artifactEventTypeEnum = ArtifactEventTypeEnum.queryArtifactEventTypeEnumByType(source);
-        log.info("{} 监听到制品事件：{}，path路径：{}", ArtifactEventBackupListener.class.getSimpleName(), artifactEventTypeEnum, repositoryPath);
+        log.debug("{} 监听到制品事件：{}，path路径：{}", ArtifactEventBackupListener.class.getSimpleName(), artifactEventTypeEnum, repositoryPath);
         if (Objects.isNull(artifactEventTypeEnum)) {
             return;
         }
