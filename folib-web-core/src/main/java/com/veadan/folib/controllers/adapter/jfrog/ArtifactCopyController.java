@@ -127,45 +127,59 @@ public class ArtifactCopyController extends BaseController
         String srcFilePath=dockerCopyDto.getDockerRepository();
         String targerStorageId = dockerCopyDto.getTargetStorageId();
         String tagetRespositryId = dockerCopyDto.getTargetDockerRepository();
-        Map<String, Object> result = new HashMap<>();
         List<JSONObject> infoList = new ArrayList<>();
         JSONObject jsonObject = new JSONObject();
-        // 如果有带tag号
+        List<String> tagList=new ArrayList<>();
+        // 如果有带tag号 这边默认时晋级最新的
         if(!StringUtils.isNullOrEmpty(dockerCopyDto.getTag())){
-            srcFilePath+=dockerCopyDto.getTag();
-        }
-        try {
-            ArtifactPromotion artifactPromotion = new ArtifactPromotion();
-            artifactPromotion.setPath(srcFilePath);
-            artifactPromotion.setSrcStorageId(srcStorageId);
-            artifactPromotion.setSrcRepositoryId(srcRespositryId);
-            List<TargetRepositoyDto> list = new ArrayList<>();
-            TargetRepositoyDto targetRepositoyDto = new TargetRepositoyDto();
-            targetRepositoyDto.setTargetStorageId(targerStorageId);
-            targetRepositoyDto.setTargetRepositoryId(tagetRespositryId);
-            list.add(targetRepositoyDto);
-            artifactPromotion.setTargetRepositoyList(list);
-            ResponseEntity responseEntity = artifactPromotionServiceImp.copy(artifactPromotion);
-            // 需要改tag
-            if (responseEntity.getStatusCode().value() == 200) {
-                jsonObject.put("level", "info");
-                jsonObject.put("message", "copying " + storageId + "/" + respositryId + "/" + srcFilePath + " to " + jsonObject.toJSONString(dockerCopyDto) + " completed successfully");
-                infoList.add(jsonObject);
-                result.put("messages", infoList);
-                return ResponseEntity.ok(result);
-            } else {
-                jsonObject.put("level", "error");
-                jsonObject.put("message", "copying " + storageId + "/" + respositryId + "/" + srcFilePath + " to " + jsonObject.toJSONString(dockerCopyDto) + " fail " + responseEntity.getStatusCode());
-                infoList.add(jsonObject);
-                result.put("messages", infoList);
-                return ResponseEntity.ok(result);
+            tagList.add(dockerCopyDto.getTag());
+        }else{
+            //查找所有的tag号，将所有的tag全部晋级到姆目标仓库
+            RepositoryPath repositoryPath = repositoryPathResolver.resolve(srcStorageId, srcRespositryId, dockerCopyDto.getDockerRepository());
+            try {
+                DirectoryListing directoryListing = directoryListingService.fromRepositoryPath(repositoryPath);
+                List<FileContent> imageDirList = directoryListing.getDirectories().stream().filter(f -> (!f.getName().equals("blobs")) && (!f.getName().equals("manifest"))).collect(Collectors.toList());
+                imageDirList.forEach(item->{
+                    log.info("晋级镜像版本{}",item.getName());
+                    tagList.add(item.getName());
+                });
+            } catch (IOException e) {
+                jsonObject.put("info", "error");
+                jsonObject.put("message", "镜像版本失败获取失败");
+                return ResponseEntity.ok(jsonObject);
             }
-        } catch (Exception exception) {
-            jsonObject.put("level", "error");
-            jsonObject.put("message", "copying " + storageId + "/" + respositryId + "/" + srcFilePath + " to " + jsonObject.toJSONString(dockerCopyDto) + " fail " + exception.getMessage());
-            infoList.add(jsonObject);
-            result.put("messages", infoList);
-            return ResponseEntity.ok(result);
         }
+        // 这里已经获取到所有的镜像tag 循环上传
+        for(String tag:tagList) {
+            try {
+                ArtifactPromotion artifactPromotion = new ArtifactPromotion();
+                artifactPromotion.setPath(srcFilePath + "/" + tag);
+                artifactPromotion.setSrcStorageId(srcStorageId);
+                artifactPromotion.setSrcRepositoryId(srcRespositryId);
+                List<TargetRepositoyDto> list = new ArrayList<>();
+                TargetRepositoyDto targetRepositoyDto = new TargetRepositoyDto();
+                targetRepositoyDto.setTargetStorageId(targerStorageId);
+                targetRepositoyDto.setTargetRepositoryId(tagetRespositryId);
+                list.add(targetRepositoyDto);
+                artifactPromotion.setTargetRepositoyList(list);
+                ResponseEntity responseEntity = artifactPromotionServiceImp.copy(artifactPromotion);
+
+                if (responseEntity.getStatusCode().value() == 200) {
+                    jsonObject.put("level", "info");
+                    jsonObject.put("message", "copying " + storageId + "/" + respositryId + "/" + srcFilePath + " to " + jsonObject.toJSONString(artifactPromotion) + " completed successfully");
+                    infoList.add(jsonObject);
+                } else {
+                    jsonObject.put("level", "error");
+                    jsonObject.put("message", "copying " + storageId + "/" + respositryId + "/" + srcFilePath + " to " + jsonObject.toJSONString(artifactPromotion) + " fail " + responseEntity.getStatusCode());
+                    infoList.add(jsonObject);
+                }
+            } catch (Exception exception) {
+                jsonObject.put("level", "error");
+                jsonObject.put("message", "copying " + storageId + "/" + respositryId + "/" + srcFilePath + " to " + jsonObject.toJSONString(dockerCopyDto) + " fail " + exception.getMessage());
+                infoList.add(jsonObject);
+            }
+
+        }
+        return ResponseEntity.ok(infoList);
     }
 }
