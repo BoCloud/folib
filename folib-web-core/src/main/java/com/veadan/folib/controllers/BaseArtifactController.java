@@ -183,6 +183,7 @@ public abstract class BaseArtifactController
         return StringUtils.chomp(configurationManager.getConfiguration().getBaseUrl(), "/");
     }
 
+    @Override
     protected String getBaseUrl(Repository repository) {
         return String.format("%s/%s/%s", StringUtils.chomp(configurationManager.getConfiguration().getBaseUrl(), "/"), repository.getStorage().getId(), repository.getId());
     }

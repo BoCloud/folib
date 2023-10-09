@@ -10,4 +10,10 @@ public interface GlobalConstants {
      * 请求参数错误
      */
     String REQUEST_PARAMS_ERROR = "请求参数错误，请检查";
+
+    /**
+     * 制品未找到
+     */
+    String ARTIFACT_NOT_FOUND_MESSAGE = "The artifact was not found.";
+
 }

@@ -190,7 +190,8 @@ public class DirectoryListingServiceImpl implements DirectoryListingService {
             file.setRepositoryId((String) fileAttributes.get(RepositoryFileAttributeType.REPOSITORY_ID.getName()));
 
             file.setArtifactPath((String) fileAttributes.get("artifactPath"));
-            if (!showChecksum) {
+            boolean flag = !showChecksum && StringUtils.isNotBlank(file.getStorageId()) && StringUtils.isNotBlank(file.getRepositoryId()) && StringUtils.isNotBlank(file.getArtifactPath());
+            if (flag) {
                 RepositoryPath repositoryPath = repositoryPathResolver.resolve(file.getStorageId(), file.getRepositoryId(), file.getArtifactPath());
                 if (RepositoryFiles.isChecksum(repositoryPath)) {
                     continue;

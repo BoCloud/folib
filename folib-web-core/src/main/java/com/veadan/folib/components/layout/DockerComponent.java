@@ -45,6 +45,9 @@ public class DockerComponent {
             FileContent fileContent = fileContents.get(0);
             repositoryPath = repositoryPathResolver.resolve(repositoryPath.getStorageId(), repositoryPath.getRepositoryId(), fileContent.getArtifactPath());
         }
+        if (!Files.exists(repositoryPath)) {
+            return null;
+        }
         DockerArtifactCoordinates dockerArtifactCoordinates = DockerArtifactCoordinates.parse(RepositoryFiles.relativizePath(repositoryPath));
         String imageName = dockerArtifactCoordinates.getName();
         List<ImageManifest> imageManifestList = Lists.newArrayList();

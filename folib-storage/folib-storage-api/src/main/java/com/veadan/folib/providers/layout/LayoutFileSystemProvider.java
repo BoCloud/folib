@@ -332,6 +332,9 @@ public abstract class LayoutFileSystemProvider extends StorageFileSystemProvider
 
     private void deleteArtifactMedataFile(RepositoryPath repositoryPath) {
         try {
+            if (repositoryPath.getRoot().toString().equals(repositoryPath.toString())) {
+                return;
+            }
             String artifactMetadataFileName = "." + FilenameUtils.getName(repositoryPath.getFileName().toString()) + ".metadata";
             RepositoryPath artifactRepositoryPath = repositoryPath.getParent().resolve(artifactMetadataFileName);
             if (Files.exists(artifactRepositoryPath)) {

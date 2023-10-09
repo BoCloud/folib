@@ -73,7 +73,7 @@ public class ArtifactEventScannerListener {
         if (!validate) {
             return;
         }
-        log.info("Start handler artifact event：{}，path：{}", ArtifactEventTypeEnum.queryArtifactEventTypeEnumByType(source), repositoryPath);
+        log.info("Start handler artifact scan {}，path {}", ArtifactEventTypeEnum.queryArtifactEventTypeEnumByType(source), repositoryPath);
         if (repositoryPath.getFileSystem() instanceof DockerFileSystem) {
             //docker布局
             boolean isStoredEvent = ArtifactEventTypeEnum.EVENT_ARTIFACT_PATH_DELETED.getType() != source && ArtifactEventTypeEnum.EVENT_ARTIFACT_DIRECTORY_PATH_DELETED.getType() != source;
@@ -156,10 +156,14 @@ public class ArtifactEventScannerListener {
         List<String> digestList = getImageManifest(repositoryPath);
         //存放解压文件的目录路径
         String tempPath = parentFile.getPath() + File.separator + "temp";
+        int maxSize = 100;
         if (CollectionUtils.isNotEmpty(digestList)) {
             String blobsPath = "";
             Set<String> filePaths = Sets.newLinkedHashSet();
             for (String digest : digestList) {
+                if (filePaths.size() >= maxSize) {
+                   break;
+                }
                 blobsPath = parentFile.getParent() + File.separator + "blobs" + File.separator + digest;
                 handlerDockerBlobFile(repositoryPath, filePaths, blobsPath, tempPath);
             }
@@ -189,14 +193,15 @@ public class ArtifactEventScannerListener {
         FileTypeUtil.putFileType("1f8b08000000000000ff", "gz");
         try {
             String hex = IoUtil.readHex28Lower(new FileInputStream(file));
-            log.info(" 路径：{}，hex：{}", file.getAbsolutePath(), hex);
+            log.debug("路径：{}，hex：{}", file.getAbsolutePath(), hex);
         } catch (Exception ex) {
             log.error("读取魔数类型失败：{}", ExceptionUtils.getStackTrace(ex));
         }
         String type = FileTypeUtil.getType(file);
         String gz = "gz";
+        int maxSize = 100;
         if (gz.equals(type)) {
-            log.info(" 路径：{}，类型：{}", file.getAbsolutePath(), type);
+            log.debug("路径：{}，类型：{}", file.getAbsolutePath(), type);
             List<String> filePathList = readTarFile(file, tempPath);
             if (CollectionUtils.isNotEmpty(filePathList)) {
                 Path path = repositoryPath.getTarget();
@@ -212,7 +217,11 @@ public class ArtifactEventScannerListener {
                 S3Path finalS3Path = s3Path;
                 String finalPrefix = prefix;
                 String finalVersionKey = versionKey;
-                filePathList.forEach(filePath -> {
+                for (String filePath : filePathList) {
+                    if (filePaths.size() >= maxSize) {
+                        log.info("Docker制品扫描结果过多超出限制：{} size {} maxSize：{}", path.toString(), filePaths.size(), maxSize);
+                        return;
+                    }
                     if (isS3) {
                         S3Path s3PathObject = new S3Path(finalS3Path.getFileSystem(), finalVersionKey + File.separator + "temp" + File.separator + FileUtil.getName(filePath));
                         //将docker镜像中解压出来的文件上传到S3
@@ -221,7 +230,7 @@ public class ArtifactEventScannerListener {
                     } else {
                         filePaths.add(filePath);
                     }
-                });
+                }
             }
         }
     }
@@ -292,12 +301,11 @@ public class ArtifactEventScannerListener {
         int source = (int) event.getSource();
         RepositoryPath repositoryPath = event.getPath();
         ArtifactEventTypeEnum artifactEventTypeEnum = ArtifactEventTypeEnum.queryArtifactEventTypeEnumByType(source);
-        log.info("监听到制品事件：{}，path路径：{}", artifactEventTypeEnum, repositoryPath);
         if (Objects.isNull(artifactEventTypeEnum)) {
             return false;
         }
         flag = validateArtifactEvent(artifactEventTypeEnum);
-        log.info("制品事件类型是否为需要处理的类型：{}", flag);
+        log.debug("监听到制品事件：{}，path路径：{} 制品事件类型是否为需要处理的类型：{}", artifactEventTypeEnum, repositoryPath, flag);
         if (ArtifactEventTypeEnum.EVENT_ARTIFACT_DIRECTORY_PATH_DELETED.getType() == source) {
             //删除制品目录后续不需要校验文件类型是否支持
             return true;
@@ -340,25 +348,27 @@ public class ArtifactEventScannerListener {
             gzipCompressorInputStream = new GzipCompressorInputStream(fileInputStream);
             tarArchiveInputStream = new TarArchiveInputStream(gzipCompressorInputStream);
             TarArchiveEntry entry = null;
-            List<String> list = Arrays.asList("jar", "war", "ear", "zip", "json", "tgz", "nupkg", "nuspec", "packages.config", "whl", "egg", "rpm");
+            List<String> list = Arrays.asList("jar", "war", "ear", "zip", "tgz", "nupkg", "nuspec", "packages.config", "whl", "egg", "rpm", "tar", "exe", "podspec");
             File extractFolder = new File(tempPath);
+            String type, fileName;
             while ((entry = tarArchiveInputStream.getNextTarEntry()) != null) {
                 if (entry.isDirectory()) {
                     continue;
                 }
                 if (entry.getSize() > 0) {
-                    String type = FileUtil.getSuffix(entry.getName());
-                    if (list.contains(type)) {
+                    type = FileUtil.getSuffix(entry.getName());
+                    fileName = FileUtil.getName(entry.getName());
+                    if (list.contains(type) || list.stream().anyMatch(fileName::equals)) {
                         File curFile = new File(extractFolder, entry.getName());
                         File parent = curFile.getParentFile();
                         if (!parent.exists()) {
                             parent.mkdirs();
                         }
-                        FileOutputStream fileOutputStream = new FileOutputStream(curFile);
-                        IOUtils.copy(tarArchiveInputStream, fileOutputStream);
-                        IOUtils.closeQuietly(fileOutputStream);
+                        try (FileOutputStream fileOutputStream = new FileOutputStream(curFile)) {
+                            IOUtils.copy(tarArchiveInputStream, fileOutputStream);
+                        }
                         pathList.add(curFile.getPath());
-                        log.info(" 文件名称：{}，文件类型：{}，生成文件路径：{}", entry.getName(), type, curFile.getPath());
+                        log.debug("文件名称：{}，文件类型：{}，生成文件路径：{}", entry.getName(), type, curFile.getPath());
                     }
                 }
             }
