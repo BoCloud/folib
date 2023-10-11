@@ -36,7 +36,7 @@ import java.util.stream.Collectors;
 @Slf4j
 @RequestMapping("/artifactory")
 @RestController
-@PreAuthorize("hasAuthority('ADMIN')")
+//@PreAuthorize("hasAuthority('ADMIN')")
 @Api(description = "JFrog拷贝", tags = "JFrog拷贝")
 public class ArtifactCopyController extends BaseController {
     @Inject
