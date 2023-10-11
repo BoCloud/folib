@@ -1,6 +1,5 @@
 package com.veadan.folib.controllers.layout.npm;
 
-import cn.hutool.core.io.IoUtil;
 import com.alibaba.fastjson.JSONObject;
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonParser;
@@ -15,12 +14,15 @@ import com.veadan.folib.components.artifact.ArtifactComponent;
 import com.veadan.folib.config.NpmLayoutProviderConfig.NpmObjectMapper;
 import com.veadan.folib.controllers.BaseArtifactController;
 import com.veadan.folib.data.criteria.Paginator;
+import com.veadan.folib.domain.Artifact;
+import com.veadan.folib.domain.ArtifactEntity;
 import com.veadan.folib.domain.ArtifactIdGroup;
 import com.veadan.folib.domain.ArtifactIdGroupEntity;
 import com.veadan.folib.npm.NpmSearchRequest;
 import com.veadan.folib.npm.NpmViewRequest;
 import com.veadan.folib.npm.metadata.*;
 import com.veadan.folib.providers.ProviderImplementationException;
+import com.veadan.folib.providers.io.RepositoryFiles;
 import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.providers.layout.*;
 import com.veadan.folib.providers.repository.RepositoryProvider;
@@ -58,7 +60,6 @@ import org.springframework.web.bind.annotation.*;
 
 import javax.inject.Inject;
 import javax.servlet.ServletInputStream;
-import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.*;
@@ -635,6 +636,8 @@ public class NpmArtifactController
             ArtifactCoordinatesValidationException {
         RepositoryPath repositoryPath = repositoryPathResolver.resolve(repository, coordinates);
         try (InputStream is = new BufferedInputStream(Files.newInputStream(packageTgzTmp))) {
+            Artifact artifact = provideArtifact(repositoryPath);
+            artifact.setPackageInfo(npmJacksonMapper.writeValueAsString(packageDef));
             artifactManagementService.validateAndStore(repositoryPath, is);
         }
 
@@ -833,6 +836,12 @@ public class NpmArtifactController
             default:
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
         }
+    }
+
+    protected Artifact provideArtifact(RepositoryPath repositoryPath) throws IOException {
+        return Optional.ofNullable(repositoryPath.getArtifactEntry())
+                .orElse(new ArtifactEntity(repositoryPath.getStorageId(), repositoryPath.getRepositoryId(),
+                        RepositoryFiles.readCoordinates(repositoryPath)));
     }
 
 }

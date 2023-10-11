@@ -16,4 +16,9 @@ public interface GlobalConstants {
      */
     String ARTIFACT_NOT_FOUND_MESSAGE = "The artifact was not found.";
 
+    /**
+     * UI 访问前缀key
+     */
+    String WEB_URL_PREFIX = "WEB_URL_PREFIX";
+
 }

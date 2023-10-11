@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.veadan.folib.configuration.ConfigurationManager;
 import com.veadan.folib.configuration.FolibSecurityConfig;
+import com.veadan.folib.constant.GlobalConstants;
 import com.veadan.folib.converters.RoleFormToRoleConverter;
 import com.veadan.folib.converters.RoleListFormToRoleListConverter;
 import com.veadan.folib.converters.configuration.*;
@@ -237,7 +238,11 @@ public class WebConfig
                 .addResourceLocations("classpath:/")
                 .setCachePeriod(3600);
 
-        registry.addResourceHandler("/ui/**")
+        String webUrlPrefix = System.getProperty(GlobalConstants.WEB_URL_PREFIX);
+        if (StringUtils.isBlank(webUrlPrefix)) {
+            webUrlPrefix = "/ui/";
+        }
+        registry.addResourceHandler(webUrlPrefix + "**")
                 .addResourceLocations("classpath:/ui/")
                 .setCachePeriod(3600)
                 .resourceChain(true)

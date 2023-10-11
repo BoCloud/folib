@@ -22,6 +22,8 @@ import com.veadan.folib.storage.Storage;
 import com.veadan.folib.storage.repository.Repository;
 import com.veadan.folib.util.CommonUtils;
 import com.veadan.folib.util.LocalDateTimeInstance;
+import com.veadan.folib.util.UserUtils;
+import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.output.CountingOutputStream;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
@@ -37,6 +39,7 @@ import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.LocalDateTime;
+import java.util.Objects;
 import java.util.Optional;
 
 /**
@@ -172,9 +175,11 @@ public abstract class AbstractRepositoryProvider implements RepositoryProvider, 
         if (Boolean.TRUE.equals(repositoryPath.getArtifactExist())) {
             return;
         }
-        Artifact artifactEntry = new ArtifactEntity(repositoryPath.getStorageId(), repositoryPath.getRepositoryId(),
-                RepositoryFiles.readCoordinates(repositoryPath));
-
+        Artifact artifactEntry = repositoryPath.getArtifactEntry();
+        if (Objects.isNull(artifactEntry)) {
+            artifactEntry = new ArtifactEntity(repositoryPath.getStorageId(), repositoryPath.getRepositoryId(),
+                    RepositoryFiles.readCoordinates(repositoryPath));
+        }
         artifactEntry.setStorageId(storageId);
         artifactEntry.setRepositoryId(repositoryId);
 
@@ -186,6 +191,11 @@ public abstract class AbstractRepositoryProvider implements RepositoryProvider, 
         artifactEntry.setLastUpdated(now);
         artifactEntry.setLastUsed(now);
 
+        String username = UserUtils.getUsername();
+        artifactEntry.setCreatedBy(username);
+        artifactEntry.setUpdatedBy(username);
+        artifactEntry.setArtifactName(FilenameUtils.getName(repositoryPath.toString()));
+        artifactEntry.setArtifactPath(artifactEntry.getArtifactCoordinates().buildPath());
         repositoryPath.artifact = artifactEntry;
     }
 
@@ -234,7 +244,11 @@ public abstract class AbstractRepositoryProvider implements RepositoryProvider, 
         if (artifact == null) {
             return;
         }
-
+        String username = UserUtils.getUsername();
+        LocalDateTime now = LocalDateTimeInstance.now();
+        artifact.setLastUpdated(now);
+        artifact.setLastUsed(now);
+        artifact.setUpdatedBy(username);
         Repository repository = repositoryPath.getRepository();
         Storage storage = repository.getStorage();
         ArtifactCoordinates coordinates = RepositoryFiles.readCoordinates(repositoryPath);
@@ -288,14 +302,18 @@ public abstract class AbstractRepositoryProvider implements RepositoryProvider, 
         if (!shouldStoreArtifact(artifact)) {
             return;
         }
+        String username = UserUtils.getUsername();
         LocalDateTime now = LocalDateTimeInstance.now();
         artifact.setCreated(now);
+        artifact.setCreatedBy(username);
+        artifact.setUpdatedBy(username);
         artifact.setLastUpdated(now);
         artifact.setLastUsed(now);
         Repository repository = repositoryPath.getRepository();
         Storage storage = repository.getStorage();
         ArtifactCoordinates coordinates = RepositoryFiles.readCoordinates(repositoryPath);
-
+        artifact.setArtifactName(FilenameUtils.getName(repositoryPath.toString()));
+        artifact.setArtifactPath(coordinates.buildPath());
         artifact.setSizeInBytes(Files.size(repositoryPath));
 
         LayoutInputStream lis = StreamUtils.findSource(LayoutInputStream.class, ctx.getStream());

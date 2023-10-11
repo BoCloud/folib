@@ -45,8 +45,7 @@ import com.veadan.folib.providers.io.RepositoryFiles;
 import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.providers.io.RepositoryPathResolver;
 import com.veadan.folib.providers.io.RootRepositoryPath;
-import com.veadan.folib.providers.layout.DockerLayoutProvider;
-import com.veadan.folib.providers.layout.Maven2LayoutProvider;
+import com.veadan.folib.providers.layout.*;
 import com.veadan.folib.repositories.ArtifactRepository;
 import com.veadan.folib.scanner.entity.ScanRules;
 import com.veadan.folib.scanner.mapper.ScanRulesMapper;
@@ -90,6 +89,7 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
@@ -151,6 +151,9 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
     @Inject
     @Lazy
     private PromotionUtil promotionUtil;
+
+    @Inject
+    private LayoutProviderRegistry layoutProviderRegistry;
 
     @Value("${folib.temp}")
     private String tempPath;
@@ -971,6 +974,14 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
                         if (Boolean.TRUE.equals(metadata)) {
                             handlerMetadata(artifactPath, repositoryPath);
                         }
+                        if (NpmLayoutProvider.ALIAS.equals(repository.getLayout()) && RepositoryTypeEnum.HOSTED.getType().equals(repository.getType()) && repositoryPath.toString().endsWith(NpmLayoutProvider.DEFAULT_SUFFIX)) {
+                            LayoutProvider layoutProvider = layoutProviderRegistry.getProvider(repository.getLayout());
+                            if (Objects.nonNull(layoutProvider)) {
+                                byte[] packageJsonBytes = layoutProvider.getContentByFileName(repositoryPath, repositoryPath, NpmLayoutProvider.PACKAGE_JSON);
+                                String packageJson = new String(packageJsonBytes, StandardCharsets.UTF_8);
+                                promotionUtil.setPackageInfo(repositoryPath, packageJson);
+                            }
+                        }
                         artifactManagementService.validateAndStoreIndex(repositoryPath);
                         if (Maven2LayoutProvider.ALIAS.equals(repository.getLayout())) {
                             try {
@@ -1092,6 +1103,14 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
                         }
                         if (Boolean.TRUE.equals(metadata)) {
                             handlerMetadata(artifactPath, repositoryPath);
+                        }
+                        if (NpmLayoutProvider.ALIAS.equals(repository.getLayout()) && RepositoryTypeEnum.HOSTED.getType().equals(repository.getType()) && repositoryPath.toString().endsWith(NpmLayoutProvider.DEFAULT_SUFFIX)) {
+                            LayoutProvider layoutProvider = layoutProviderRegistry.getProvider(repository.getLayout());
+                            if (Objects.nonNull(layoutProvider)) {
+                                byte[] packageJsonBytes = layoutProvider.getContentByFileName(repositoryPath, repositoryPath, NpmLayoutProvider.PACKAGE_JSON);
+                                String packageJson = new String(packageJsonBytes, StandardCharsets.UTF_8);
+                                promotionUtil.setPackageInfo(repositoryPath, packageJson);
+                            }
                         }
                         artifactManagementService.validateAndStoreIndex(repositoryPath);
                         if (Maven2LayoutProvider.ALIAS.equals(repository.getLayout())) {

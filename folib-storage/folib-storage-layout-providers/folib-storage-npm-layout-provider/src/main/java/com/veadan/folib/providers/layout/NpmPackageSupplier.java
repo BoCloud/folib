@@ -1,8 +1,10 @@
 package com.veadan.folib.providers.layout;
 
 import com.alibaba.fastjson.JSONObject;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.veadan.folib.artifact.ArtifactTag;
 import com.veadan.folib.artifact.coordinates.NpmArtifactCoordinates;
+import com.veadan.folib.config.NpmLayoutProviderConfig;
 import com.veadan.folib.domain.Artifact;
 import com.veadan.folib.npm.metadata.Dependency;
 import com.veadan.folib.npm.metadata.Dist;
@@ -43,6 +45,10 @@ public class NpmPackageSupplier implements Function<Path, NpmPackageDesc> {
     @Inject
     private ArtifactTagService artifactTagService;
 
+    @Inject
+    @NpmLayoutProviderConfig.NpmObjectMapper
+    private ObjectMapper npmJacksonMapper;
+
     @Override
     public NpmPackageDesc apply(Path path) {
         RepositoryPath repositoryPath = (RepositoryPath) path;
@@ -65,7 +71,17 @@ public class NpmPackageSupplier implements Function<Path, NpmPackageDesc> {
         }
         npmPackageDesc.setReleaseDate(releaseDate);
 
-        PackageVersion npmPackage = new PackageVersion();
+        PackageVersion npmPackage = null;
+        if (StringUtils.isNotBlank(artifactEntry.getPackageInfo())) {
+            try {
+                npmPackage = npmJacksonMapper.readValue(artifactEntry.getPackageInfo(), PackageVersion.class);
+            } catch (Exception ex) {
+                logger.warn("Artifact packageVersion 转换异常 [{}]", artifactEntry.getUuid());
+            }
+        }
+        if (Objects.isNull(npmPackage)) {
+            npmPackage = new PackageVersion();
+        }
         npmPackageDesc.setNpmPackage(npmPackage);
 
         npmPackage.setAdditionalProperty("_id", String.format("%s@%s", c.getId(), c.getVersion()));

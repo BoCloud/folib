@@ -34,6 +34,7 @@ import java.util.stream.Collectors;
  * 需要验证仓库的唯一性
  */
 @Slf4j
+@RequestMapping("/artifactory")
 @RestController
 @PreAuthorize("hasAuthority('ADMIN')")
 @Api(description = "JFrog拷贝", tags = "JFrog拷贝")
@@ -56,7 +57,7 @@ public class ArtifactCopyController extends BaseController {
      */
     @ApiOperation(value = "JFrog拷贝")
     @ApiResponses(value = {@ApiResponse(code = 200, message = "OK")})
-    @GetMapping("/api/copy/{storageId}/{repositoryId}/{srcFilePath:.+}")
+    @PostMapping("/api/copy/{storageId}/{repositoryId}/{srcFilePath:.+}")
     public ResponseEntity<Object> copy(
             @PathVariable("storageId") String storageId,
             @PathVariable("repositoryId") String repositoryId,
@@ -69,6 +70,9 @@ public class ArtifactCopyController extends BaseController {
         try {
             log.info("制品copy接口调用，参数respositryId:{};参数srcFilePath:{};参数to:{};参数dry:{}", repositoryId, srcFilePath, to, dry);
             // 解析目标地址 目录地址必须是/开始
+            if (!to.startsWith("/")) {
+                to = "/" + to;
+            }
             String[] targetStrs = to.split("/");
             String targetStorageId = targetStrs[1];
             String targetRepositoryId = targetStrs[2];
@@ -119,12 +123,14 @@ public class ArtifactCopyController extends BaseController {
      */
     @ApiOperation(value = "JFrog镜像拷贝")
     @ApiResponses(value = {@ApiResponse(code = 200, message = "OK")})
-    @RequestMapping("/api/docker/{storageId}/{repositoryId}/v2/promote")
+    @PostMapping("/api/docker/{storageId}/{repositoryId}/v2/promote")
     public ResponseEntity<Object> dockerCopy(@PathVariable("storageId") String storageId, @PathVariable("repositoryId") String repositoryId, @RequestBody DockerCopyDto dockerCopyDto) {
         log.info("docker 制品晋级(copy)接口调用，参数{}实体{}", repositoryId, JSONObject.toJSONString(dockerCopyDto));
         String srcFilePath = dockerCopyDto.getDockerRepository();
-        String targetStorageId = dockerCopyDto.getTargetStorageId();
-        String targetRepositoryId = dockerCopyDto.getTargetDockerRepository();
+        String targetRepo = dockerCopyDto.getTargetRepo();
+        String[] targets = targetRepo.split("/");
+        String targetStorageId = targets[0];
+        String targetRepositoryId = targets[1];
         List<JSONObject> infoList = new ArrayList<>();
         JSONObject jsonObject = new JSONObject();
         List<String> tagList = new ArrayList<>();
