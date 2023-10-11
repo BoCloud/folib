@@ -18,6 +18,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.commons.lang.BooleanUtils;
+import org.springframework.beans.factory.InitializingBean;
 import org.springframework.boot.actuate.autoconfigure.security.servlet.EndpointRequest;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
@@ -37,6 +38,7 @@ import org.springframework.security.config.annotation.web.configuration.WebSecur
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.AuthorityUtils;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.security.web.access.AccessDeniedHandler;
 import org.springframework.security.web.access.ExceptionTranslationFilter;
@@ -218,5 +220,10 @@ public class WebSecurityConfig
     public static @interface UnauthorizedEntyPoint
     {
 
+    }
+
+    @Bean
+    public InitializingBean initializingBean() {
+        return () -> SecurityContextHolder.setStrategyName(SecurityContextHolder.MODE_INHERITABLETHREADLOCAL);
     }
 }

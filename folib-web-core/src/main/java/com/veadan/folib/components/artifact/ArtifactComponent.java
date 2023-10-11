@@ -2,6 +2,7 @@ package com.veadan.folib.components.artifact;
 
 import cn.hutool.core.io.FileUtil;
 import com.alibaba.fastjson.JSONObject;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
@@ -61,6 +62,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
+import org.springframework.util.Assert;
 
 import javax.inject.Inject;
 import javax.ws.rs.client.Client;
@@ -912,7 +914,6 @@ public class ArtifactComponent {
         searchResult.stream().map(npmPackageSupplier).forEach(p -> {
             PackageVersion npmPackage = p.getNpmPackage();
             versions.setAdditionalProperty(npmPackage.getVersion(), npmPackage);
-
             npmTime.setAdditionalProperty(npmPackage.getVersion(), p.getReleaseDate());
 
             Date created = npmTime.getCreated();
@@ -1100,5 +1101,20 @@ public class ArtifactComponent {
         } catch (Exception ex) {
             log.error("RepositoryPath beforeRead error ", ex);
         }
+    }
+
+    public PackageVersion extractPackageVersion(String packageName, String packageJsonSource)
+            throws IOException {
+        PackageVersion packageVersion;
+        try {
+            packageVersion = npmJacksonMapper.readValue(packageJsonSource, PackageVersion.class);
+        } catch (JsonProcessingException e) {
+            throw new IllegalArgumentException(String.format("Failed to parse package.json info for [%s]", packageName),
+                    e);
+        }
+        Assert.isTrue(packageName.equals(packageVersion.getName()),
+                String.format("Package name [%s] don't match with [%s].", packageVersion.getName(), packageName));
+
+        return packageVersion;
     }
 }

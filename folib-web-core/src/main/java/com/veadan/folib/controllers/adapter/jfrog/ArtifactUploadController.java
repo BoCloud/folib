@@ -19,6 +19,7 @@ import com.veadan.folib.services.ArtifactManagementService;
 import com.veadan.folib.services.ArtifactMetadataService;
 import com.veadan.folib.services.RepositoryManagementService;
 import com.veadan.folib.users.userdetails.SpringSecurityUser;
+import com.veadan.folib.utils.UserUtils;
 import io.swagger.annotations.Api;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -96,9 +97,7 @@ public class ArtifactUploadController extends BaseController
         final MultipartFile file = new MockMultipartFile(fileName, fileBytes);
         final String baseUrl = StringUtils.chomp(configurationManager.getConfiguration().getBaseUrl(), "/");
         final String fileDownUrl = String.format("%s/artifactory/%s/%s/%s", baseUrl, storageId, repositoryId, artifactPath);
-        final Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        final SpringSecurityUser userDetails = (SpringSecurityUser) authentication.getPrincipal();
-        final String userName = Optional.ofNullable(userDetails).map(SpringSecurityUser::getUsername).orElse(null);
+        final String userName = UserUtils.getUsername();
 
         final ArtifactUploadTask artifactUploadTask = new ArtifactUploadTask(storageId, repositoryId, file,
                 repositoryManagementService, repositoryPathResolver, artifactManagementService, promotionUtil, 

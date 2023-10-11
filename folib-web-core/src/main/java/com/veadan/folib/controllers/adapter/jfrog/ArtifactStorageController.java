@@ -38,7 +38,7 @@ import java.util.*;
 @Slf4j
 @RestController
 @RequestMapping("/artifactory/api/storage")
-@PreAuthorize("hasAuthority('ARTIFACTS_VIEW')")
+//@PreAuthorize("hasAuthority('ARTIFACTS_VIEW')")
 @Api(description = "JFrog存储", tags = "JFrog存储")
 public class ArtifactStorageController extends BaseController {
 
@@ -179,7 +179,7 @@ public class ArtifactStorageController extends BaseController {
             }
             artifactWebService.batchArtifactMetadata(artifactMetadataFormList);
         }
-        return ResponseEntity.ok("ok");
+        return ResponseEntity.status(HttpStatus.NO_CONTENT.value()).body("");
     }
 
     /**

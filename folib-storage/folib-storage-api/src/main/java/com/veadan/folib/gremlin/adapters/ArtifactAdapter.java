@@ -10,6 +10,7 @@ import com.veadan.folib.domain.*;
 import com.veadan.folib.gremlin.dsl.EntityTraversal;
 import com.veadan.folib.gremlin.dsl.EntityTraversalUtils;
 import com.veadan.folib.gremlin.dsl.__;
+import com.veadan.folib.util.UserUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.MapUtils;
@@ -92,6 +93,11 @@ public class ArtifactAdapter implements VertexEntityTraversalAdapter<Artifact> {
                 "promotion",
                 "promotionNodes",
                 "enabled",
+                "createdBy",
+                "updatedBy",
+                "artifactName",
+                "artifactPath",
+                "packageInfo",
                 "componentSet")
                 .by(__.id())
                 .by(__.enrichPropertyValue("uuid"))
@@ -140,6 +146,11 @@ public class ArtifactAdapter implements VertexEntityTraversalAdapter<Artifact> {
                 .by(__.enrichPropertyValue("promotion"))
                 .by(__.enrichPropertyValues("promotionNodes"))
                 .by(__.enrichPropertyValue("enabled"))
+                .by(__.enrichPropertyValue("createdBy"))
+                .by(__.enrichPropertyValue("updatedBy"))
+                .by(__.enrichPropertyValue("artifactName"))
+                .by(__.enrichPropertyValue("artifactPath"))
+                .by(__.enrichPropertyValue("packageInfo"))
                 .by(__.outE(Edges.ARTIFACT_HAS_COMPONENTS)
                         .inV()
                         .map(componentAdapter.fold())
@@ -340,6 +351,11 @@ public class ArtifactAdapter implements VertexEntityTraversalAdapter<Artifact> {
                 .filter(e -> !e.trim().isBlank())
                 .collect(Collectors.toSet()));
         result.setEnabled(extractObject(Boolean.class, t.get().get("enabled")));
+        result.setCreatedBy(extractObject(String.class, t.get().get("createdBy")));
+        result.setUpdatedBy(extractObject(String.class, t.get().get("updatedBy")));
+        result.setArtifactName(extractObject(String.class, t.get().get("artifactName")));
+        result.setArtifactPath(extractObject(String.class, t.get().get("artifactPath")));
+        result.setPackageInfo(extractObject(String.class, t.get().get("packageInfo")));
         return result;
     }
 
@@ -436,7 +452,7 @@ public class ArtifactAdapter implements VertexEntityTraversalAdapter<Artifact> {
         if (Objects.nonNull(entity.getSizeInBytes())) {
             t = t.property(single, "sizeInBytes", entity.getSizeInBytes());
         }
-        log.info("[{}] downloadCount changed [{}]", entity.getUuid(), entity.getDownloadCount());
+        log.debug("[{}] downloadCount changed [{}]", entity.getUuid(), entity.getDownloadCount());
         if (Objects.nonNull(entity.getDownloadCount())) {
             t = t.property(single, "downloadCount", entity.getDownloadCount());
         }
@@ -525,6 +541,24 @@ public class ArtifactAdapter implements VertexEntityTraversalAdapter<Artifact> {
         }
         if (Objects.nonNull(entity.getEnabled())) {
             t = t.property(single, "enabled", entity.getEnabled());
+        }
+        if (StringUtils.isNotBlank(entity.getCreatedBy())) {
+            t = t.property(single, "createdBy", entity.getCreatedBy());
+        }
+        if (StringUtils.isBlank(entity.getUpdatedBy())) {
+            entity.setUpdatedBy(UserUtils.getUsername());
+        }
+        if (StringUtils.isNotBlank(entity.getUpdatedBy())) {
+            t = t.property(single, "updatedBy", entity.getUpdatedBy());
+        }
+        if (StringUtils.isNotBlank(entity.getArtifactName())) {
+            t = t.property(single, "artifactName", entity.getArtifactName());
+        }
+        if (StringUtils.isNotBlank(entity.getArtifactPath())) {
+            t = t.property(single, "artifactPath", entity.getArtifactPath());
+        }
+        if (StringUtils.isNotBlank(entity.getPackageInfo())) {
+            t = t.property(single, "packageInfo", entity.getPackageInfo());
         }
         return t;
     }

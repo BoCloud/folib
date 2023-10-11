@@ -5,6 +5,8 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.List;
+
 /**
  * @author leipenghui
  **/
@@ -12,21 +14,16 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 @Data
-public class ArtifactDockerQuery {
+public class ArtifactSearchResult {
 
     /**
-     * view
+     * 制品列表
      */
-    private String view;
+    private List<ArtifactSearchInfo> results;
 
     /**
-     * 仓库
+     * 分页信息
      */
-    private String repoKey;
-
-    /**
-     * 制品路径
-     */
-    private String path;
+    private ArtifactSearchRange range;
 
 }

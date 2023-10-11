@@ -8,12 +8,15 @@ import cn.hutool.extra.compress.extractor.Extractor;
 import cn.hutool.extra.spring.SpringUtil;
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.veadan.folib.artifact.MavenArtifactUtils;
 import com.veadan.folib.artifact.coordinates.NpmArtifactCoordinates;
 import com.veadan.folib.components.artifact.ArtifactComponent;
+import com.veadan.folib.config.NpmLayoutProviderConfig;
 import com.veadan.folib.domain.ArtifactParse;
 import com.veadan.folib.domain.DockerManifest;
 import com.veadan.folib.entity.Dict;
+import com.veadan.folib.npm.metadata.PackageVersion;
 import com.veadan.folib.providers.io.RepositoryFiles;
 import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.providers.io.RepositoryPathResolver;
@@ -39,10 +42,11 @@ import org.apache.maven.artifact.repository.metadata.Snapshot;
 import org.apache.maven.artifact.repository.metadata.Versioning;
 import org.apache.maven.index.artifact.Gav;
 import org.apache.maven.model.Model;
-import org.apache.maven.model.io.xpp3.MavenXpp3Reader;
-import org.codehaus.plexus.util.xml.pull.XmlPullParserException;
+import org.springframework.context.annotation.Lazy;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.multipart.MultipartFile;
 
+import javax.inject.Inject;
 import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -480,27 +484,23 @@ public class ArtifactUploadTask implements Callable<String> {
                     throw runtimeException;
                 }
                 try {
-                    NpmArtifactCoordinates npmArtifactCoordinates = JSONObject.parseObject(packageJson, NpmArtifactCoordinates.class);
-                    if (Objects.nonNull(npmArtifactCoordinates)) {
-                        String name = npmArtifactCoordinates.getName();
-                        String version = npmArtifactCoordinates.getVersion();
-                        if (StringUtils.isBlank(name) || StringUtils.isBlank(version)) {
-                            throw runtimeException;
-                        }
-                        String packageId = NpmArtifactCoordinates.calculatePackageId(npmArtifactCoordinates.getScope(), name);
-                        npmArtifactCoordinates = NpmArtifactCoordinates.of(packageId, version);
-                        String artifactPath = npmArtifactCoordinates.convertToPath(npmArtifactCoordinates);
-                        log.info("The fileRelativePath：{} artifactPath：{}", fileRelativePath, artifactPath);
-                        repositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, artifactPath);
-                        try (InputStream inputStream = new BufferedInputStream(Files.newInputStream(path))) {
-                            promotionUtil.setMetaData(repositoryPath, metaData);
-                            artifactManagementService.store(repositoryPath, inputStream);
-                        }
-                        try (InputStream inputStream = new ByteArrayInputStream(packageJsonBytes)) {
-                            artifactManagementService.store(repositoryPath.resolveSibling("package.json"), inputStream);
-                        }
-                    } else {
+                    JSONObject packageJsonObj = JSONObject.parseObject(packageJson);
+                    String name = packageJsonObj.getString("name");
+                    String version = packageJsonObj.getString("version");
+                    if (StringUtils.isBlank(name) || StringUtils.isBlank(version)) {
                         throw runtimeException;
+                    }
+                    NpmArtifactCoordinates npmArtifactCoordinates = NpmArtifactCoordinates.of(name, version);
+                    String artifactPath = npmArtifactCoordinates.convertToPath(npmArtifactCoordinates);
+                    log.info("The fileRelativePath：{} artifactPath：{}", fileRelativePath, artifactPath);
+                    repositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, artifactPath);
+                    try (InputStream inputStream = new BufferedInputStream(Files.newInputStream(path))) {
+                        promotionUtil.setMetaData(repositoryPath, metaData);
+                        promotionUtil.setPackageInfo(repositoryPath, packageJson);
+                        artifactManagementService.store(repositoryPath, inputStream);
+                    }
+                    try (InputStream inputStream = new ByteArrayInputStream(packageJsonBytes)) {
+                        artifactManagementService.store(repositoryPath.resolveSibling("package.json"), inputStream);
                     }
                 } catch (Exception ex) {
                     log.error("handlerNpmLayoutUpload file：{}，error：{}", artifactTempFile.getAbsolutePath(), ExceptionUtils.getStackTrace(ex));
@@ -626,4 +626,5 @@ public class ArtifactUploadTask implements Callable<String> {
             dictService.saveOrUpdateDict(Dict.builder().dictKey(uuid).comment(comment).build(), null);
         }
     }
+
 }

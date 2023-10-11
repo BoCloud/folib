@@ -40,6 +40,8 @@ public class NpmLayoutProvider
 
     public static final String  PACKAGE_JSON = "package.json";
 
+    public static final String DEFAULT_SUFFIX = "tgz";
+
     public static final Pattern NPM_URL_USERNAME_PATTERN = Pattern.compile(
             "(?:" + NpmLayoutProvider.NPM_USER_PATH + ")(.*)");
 

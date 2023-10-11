@@ -1,5 +1,6 @@
 package com.veadan.folib.domain.adapter.jfrog;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -12,21 +13,23 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 @Data
-public class ArtifactDockerQuery {
+public class ArtifactSearchRange {
 
     /**
-     * view
+     * 开始
      */
-    private String view;
+    @JsonProperty(value = "start_pos")
+    private Integer startPos;
 
     /**
-     * 仓库
+     * 结束
      */
-    private String repoKey;
+    @JsonProperty(value = "end_pos")
+    private Integer endPos;
 
     /**
-     * 制品路径
+     * 总数
      */
-    private String path;
+    private Integer total;
 
 }

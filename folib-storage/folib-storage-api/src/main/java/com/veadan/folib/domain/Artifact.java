@@ -147,4 +147,22 @@ public interface Artifact extends DomainObject {
     Set<Component> getComponentSet();
 
     void setComponentSet(Set<Component> componentSet);
+
+    String getCreatedBy();
+
+    void setCreatedBy(String createdBy);
+
+    String getUpdatedBy();
+
+    void setUpdatedBy(String updatedBy);
+
+    void setArtifactPath(String artifactPath);
+
+    String getPackageInfo();
+
+    void setPackageInfo(String packageInfo);
+
+    String getArtifactName();
+
+    void setArtifactName(String artifactName);
 }

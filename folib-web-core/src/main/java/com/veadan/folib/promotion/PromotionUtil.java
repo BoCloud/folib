@@ -857,6 +857,26 @@ public class PromotionUtil {
     }
 
     /**
+     * 处理packageInfo
+     *
+     * @param repositoryPath repositoryPath
+     * @param packageInfo    packageInfo
+     */
+    public void setPackageInfo(RepositoryPath repositoryPath, String packageInfo) {
+        if (Objects.nonNull(repositoryPath) && StringUtils.isNotBlank(packageInfo)) {
+            try {
+                Artifact artifact = Optional.ofNullable(repositoryPath.getArtifactEntry())
+                        .orElse(new ArtifactEntity(repositoryPath.getStorageId(), repositoryPath.getRepositoryId(),
+                                RepositoryFiles.readCoordinates(repositoryPath)));
+                artifact.setPackageInfo(packageInfo);
+                repositoryPath.setArtifact(artifact);
+            } catch (Exception ex) {
+                log.error("setPackageInfo Exception {} repositoryPath {} packageInfo {}", ExceptionUtils.getStackTrace(ex), repositoryPath.toString(), packageInfo);
+            }
+        }
+    }
+
+    /**
      * 校验是否是对docker版本的操作
      *
      * @param layout    布局类型
@@ -870,8 +890,8 @@ public class PromotionUtil {
     /**
      * 校验是否是对docker版本的操作
      *
-     * @param layout    布局类型
-     * @param path 文件名
+     * @param layout 布局类型
+     * @param path   文件名
      * @return true 是 false 不是
      */
     public boolean isDockerVersion(String layout, String path) {

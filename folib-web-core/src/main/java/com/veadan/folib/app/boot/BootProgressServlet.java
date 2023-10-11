@@ -10,7 +10,9 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintWriter;
+import java.nio.file.Files;
 
+import com.veadan.folib.constant.GlobalConstants;
 import io.reactivex.Observable;
 import io.reactivex.disposables.Disposable;
 import org.apache.commons.io.IOUtils;
@@ -132,9 +134,12 @@ class BootProgressServlet
 
             // Set default status code for all requests
             response.setStatus(HttpStatus.SERVICE_UNAVAILABLE.value());
-
+            String webUrlPrefix = System.getProperty(GlobalConstants.WEB_URL_PREFIX);
+            if (StringUtils.isBlank(webUrlPrefix)) {
+                webUrlPrefix = assetsRequestURI;
+            }
             // Serve assets
-            if (requestedUri.startsWith(assetsRequestURI))
+            if (requestedUri.startsWith(webUrlPrefix))
             {
                 response.setStatus(HttpStatus.OK.value());
                 requestedResource = requestedUri;

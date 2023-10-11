@@ -71,6 +71,9 @@ FOLIB_REDIS_ENABLED="${FOLIB_REDIS_ENABLED:-false}"
 FOLIB_REDIS_HOST="${FOLIB_REDIS_HOST:-127.0.0.1}"
 FOLIB_REDIS_PASSWORD="${FOLIB_REDIS_PASSWORD:-123456}"
 
+#UI 访问前缀key
+FOLIB_WEB_URL_PREFIX = "${FOLIB_WEB_URL_PREFIX:-/ui/}"
+
 print_banner()
 {
     echo "  _____ ___  _     ___ ____  ";
@@ -178,6 +181,7 @@ run()
     JAVA_OPTS+=" -Ds3fs.secret.key=${FOLIB_S3_SECRET_KEY}"
     JAVA_OPTS+=" -Dfolib.docker.getAppPackagePathConfig=${FOLIB_DOCKER_GET_APP_PACAKGEPATH}"
     JAVA_OPTS+=" -DPROMOTION_BLOCK=${FOLIB_PROMOTION_BLOCK}"
+    JAVA_OPTS+=" -DWEB_URL_PREFIX=${FOLIB_WEB_URL_PREFIX}"
 
     #s3fs:
     #  protocol: http

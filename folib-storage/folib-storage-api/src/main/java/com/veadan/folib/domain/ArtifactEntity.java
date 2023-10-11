@@ -1,6 +1,5 @@
 package com.veadan.folib.domain;
 
-import com.google.common.collect.Sets;
 import com.veadan.folib.artifact.ArtifactTag;
 import com.veadan.folib.artifact.coordinates.ArtifactCoordinates;
 import com.veadan.folib.artifact.coordinates.GenericArtifactCoordinates;
@@ -10,13 +9,13 @@ import com.veadan.folib.db.schema.Vertices;
 import com.veadan.folib.enums.SafeLevelEnum;
 import com.veadan.folib.gremlin.adapters.DateConverter;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.neo4j.ogm.annotation.NodeEntity;
 import org.neo4j.ogm.annotation.Relationship;
 import org.neo4j.ogm.annotation.typeconversion.Convert;
 import org.springframework.util.Assert;
 
-import javax.persistence.Transient;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -151,6 +150,26 @@ public class ArtifactEntity
      * 状态 true 可用 false 禁用
      */
     private Boolean enabled;
+    /**
+     * 创建人
+     */
+    private String createdBy;
+    /**
+     * 更新人
+     */
+    private String updatedBy;
+    /**
+     * 制品名称
+     */
+    private String artifactName;
+    /**
+     * 制品路径
+     */
+    private String artifactPath;
+    /**
+     * 综合信息
+     */
+    private String packageInfo;
 
     /**
      * 组件列表
@@ -170,6 +189,8 @@ public class ArtifactEntity
         this.repositoryId = repositoryId;
         this.artifactCoordinates = artifactCoordinates;
         setUuid(uuid);
+        setArtifactPath(getArtifactPath());
+        setArtifactName(FilenameUtils.getName(getArtifactPath()));
     }
 
     public ArtifactEntity(String storageId,
@@ -182,6 +203,8 @@ public class ArtifactEntity
         this.storageIdAndRepositoryId = String.format("%s-%s", storageId, repositoryId);
         this.artifactCoordinates = artifactCoordinates;
         setUuid(String.format("%s-%s-%s", getStorageId(), getRepositoryId(), getArtifactCoordinates().buildPath()));
+        setArtifactPath(getArtifactPath());
+        setArtifactName(FilenameUtils.getName(getArtifactPath()));
         if (Objects.isNull(this.downloadCount)) {
             this.downloadCount = 0;
         }
@@ -369,8 +392,10 @@ public class ArtifactEntity
     }
 
     @Override
-    @Transient
     public String getArtifactPath() {
+        if (StringUtils.isNotBlank(artifactPath)) {
+            return artifactPath;
+        }
         return Optional.of(getArtifactCoordinates())
                 .map(c -> c.buildPath())
                 .orElseThrow(() -> new IllegalStateException("ArtifactCoordinates required to be set."));
@@ -607,5 +632,59 @@ public class ArtifactEntity
     @Override
     public void setComponentSet(Set<Component> componentSet) {
         this.componentSet = componentSet;
+    }
+
+    @Override
+    public String getCreatedBy() {
+        return createdBy;
+    }
+
+    @Override
+    public void setCreatedBy(String createdBy) {
+        if (StringUtils.isNotBlank(this.createdBy) && !this.createdBy.equals(createdBy)) {
+            return;
+        }
+        this.createdBy = createdBy;
+    }
+
+    @Override
+    public String getUpdatedBy() {
+        return updatedBy;
+    }
+
+    @Override
+    public void setUpdatedBy(String updatedBy) {
+        this.updatedBy = updatedBy;
+    }
+
+    @Override
+    public void setArtifactPath(String artifactPath) {
+        if (StringUtils.isNotBlank(this.artifactPath) && !this.artifactPath.equals(artifactPath)) {
+            return;
+        }
+        this.artifactPath = artifactPath;
+    }
+
+    @Override
+    public String getPackageInfo() {
+        return packageInfo;
+    }
+
+    @Override
+    public void setPackageInfo(String packageInfo) {
+        this.packageInfo = packageInfo;
+    }
+
+    @Override
+    public String getArtifactName() {
+        return artifactName;
+    }
+
+    @Override
+    public void setArtifactName(String artifactName) {
+        if (StringUtils.isNotBlank(this.artifactName) && !this.artifactName.equals(artifactName)) {
+            return;
+        }
+        this.artifactName = artifactName;
     }
 }
