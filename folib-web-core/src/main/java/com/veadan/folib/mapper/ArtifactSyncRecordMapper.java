@@ -12,7 +12,6 @@ import org.springframework.stereotype.Component;
  * @since x.x.x
  */
 @Component
-public interface ArtifactSyncRecordMapper extends CommonMapper<ArtifactSyncRecord> {
-
+public interface ArtifactSyncRecordMapper extends CommonMapper<ArtifactSyncRecord>{
 
 }

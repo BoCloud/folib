@@ -363,35 +363,52 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
         artifactSyncRecord.setCreatedTime(new Date());
         artifactSyncRecordMapper.insert(artifactSyncRecord);
 
-        ResponseEntity responseEntity = null;
         try 
         {
-            responseEntity = this.nodeOption(promotionNodeOption, request);
-            if (HttpStatus.OK.equals(responseEntity.getStatusCode())) 
-            { artifactSyncRecord.setStatus(ArtifactSyncRecordStatusEnum.SUCCESS.getVal()); }
-            else
-            { 
-                artifactSyncRecord.setStatus(ArtifactSyncRecordStatusEnum.FAILED.getVal()); 
-                if (Objects.nonNull(responseEntity.getBody()))
-                { artifactSyncRecord.setFailedReason(responseEntity.getBody().toString()); } 
-            }
+            asyncRepositoryThreadPoolExecutor.execute(() -> 
+            { // 异步执行制品晋级
+                ResponseEntity re = this.nodeOption(promotionNodeOption, request);
+                if (HttpStatus.OK.equals(re.getStatusCode())) 
+                { artifactSyncRecord.setStatus(ArtifactSyncRecordStatusEnum.SUCCESS.getVal()); }
+                else
+                { 
+                    artifactSyncRecord.setStatus(ArtifactSyncRecordStatusEnum.FAILED.getVal()); 
+                    if (Objects.nonNull(re.getBody()))
+                    { artifactSyncRecord.setFailedReason(re.getBody().toString()); } 
+                }
+
+                // 更新日志结束开始时间
+                artifactSyncRecordMapper.updateByPrimaryKey(artifactSyncRecord
+                        .setUpdatedTime(new Date())
+                        .setUpdatedBy(userName));
+            });
         }catch (Exception e)
         {
-            responseEntity = ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(e.getMessage());
             artifactSyncRecord.setStatus(ArtifactSyncRecordStatusEnum.FAILED.getVal());
             artifactSyncRecord.setFailedReason(e.getMessage());
+
+            // 更新日志结束开始时间
+            artifactSyncRecordMapper.updateByPrimaryKey(artifactSyncRecord
+                    .setUpdatedTime(new Date())
+                    .setUpdatedBy(userName));
+        }
+
+        return ResponseEntity.ok(syncNo);
+    }
+
+    @Override
+    public ResponseEntity artifactPromotionInfo(String syncNo) 
+    {
+        final ArtifactSyncRecord artifactSyncRecord = artifactSyncRecordMapper.selectOne(new ArtifactSyncRecord().setSyncNo(syncNo));
+        if (null == artifactSyncRecord)
+        {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("查询制品晋级信息不存在或已被删除"); 
         }
         
-        // 更新日志结束开始时间
-        artifactSyncRecordMapper.updateByPrimaryKey(artifactSyncRecord
-                .setUpdatedTime(new Date())
-                .setUpdatedBy(userName));
-
-        if (HttpStatus.OK.equals(responseEntity.getStatusCode()))
-        { return ResponseEntity.ok(syncNo); }
-
-        return responseEntity;
+        final ArtifactPromotionInfoDto infoDto = new ArtifactPromotionInfoDto();
+        BeanUtils.copyProperties(artifactSyncRecord, infoDto);
+        return ResponseEntity.ok(infoDto);
     }
 
     @Override
