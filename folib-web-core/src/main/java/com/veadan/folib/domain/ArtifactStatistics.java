@@ -58,4 +58,9 @@ public class ArtifactStatistics {
      * 被封存的漏洞数量
      */
     private Long suppressedVulnerabilitiesCount;
+
+    /**
+     * 制品大小统计 bytes
+     */
+    private Long artifactsBytes;
 }

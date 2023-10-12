@@ -267,6 +267,14 @@ public class ArtifactRepository extends GremlinVertexRepository<Artifact> {
         return entityTraversal.count().tryNext().orElse(0L);
     }
 
+    public Long artifactsBytesStatistics(List<String> storageIdAndRepositoryIdList) {
+        EntityTraversal<Vertex, Vertex> entityTraversal = g().V().hasLabel(Vertices.ARTIFACT).has(Properties.ARTIFACT_FILE_EXISTS, true);
+        if (CollectionUtils.isNotEmpty(storageIdAndRepositoryIdList)) {
+            entityTraversal = entityTraversal.has(Properties.STORAGE_ID_AND_REPOSITORY_ID, P.within(storageIdAndRepositoryIdList));
+        }
+        return entityTraversal.values(Properties.SIZE_IN_BYTES).sum().tryNext().orElse(0L).longValue();
+    }
+
     public Map<String, Long> countArtifactByStorageIdAndRepositoryId(List<String> storageIdAndRepositoryIdList) {
         Long downloadCount = sumDownloadCountByStorageIdAndRepositoryId(storageIdAndRepositoryIdList);
         Long dependencyCount = sumDependencyCountByStorageIdsAndRepositoryIds(storageIdAndRepositoryIdList, null, null, null);
@@ -665,31 +673,31 @@ public class ArtifactRepository extends GremlinVertexRepository<Artifact> {
     }
 
     public Long artifactsCount() {
-        return g().V().hasLabel(Vertices.ARTIFACT).has(Properties.CREATED, P.gte(0)).count().tryNext().orElse(0L);
+        return g().V().hasLabel(Vertices.ARTIFACT).has(Properties.ARTIFACT_FILE_EXISTS, true).count().tryNext().orElse(0L);
     }
 
     public Long artifactsVulnerabilitiesCount() {
-        return g().V().hasLabel(Vertices.ARTIFACT).has(Properties.CREATED, P.gte(0)).has(Properties.VULNERABILITIES_COUNT, P.gt(0)).count().tryNext().orElse(0L);
+        return g().V().hasLabel(Vertices.ARTIFACT).has(Properties.ARTIFACT_FILE_EXISTS, true).has(Properties.VULNERABILITIES_COUNT, P.gt(0)).count().tryNext().orElse(0L);
     }
 
     public Long criticalVulnerabilitiesCount() {
-        return g().V().hasLabel(Vertices.ARTIFACT).has(Properties.CREATED, P.gte(0)).has(Properties.CRITICAL_VULNERABILITIES_COUNT, P.gt(0)).values(Properties.CRITICAL_VULNERABILITIES_COUNT).sum().tryNext().orElse(0L).longValue();
+        return g().V().hasLabel(Vertices.ARTIFACT).has(Properties.ARTIFACT_FILE_EXISTS, true).has(Properties.CRITICAL_VULNERABILITIES_COUNT, P.gt(0)).values(Properties.CRITICAL_VULNERABILITIES_COUNT).sum().tryNext().orElse(0L).longValue();
     }
 
     public Long highVulnerabilitiesCount() {
-        return g().V().hasLabel(Vertices.ARTIFACT).has(Properties.CREATED, P.gte(0)).has(Properties.HIGH_VULNERABILITIES_COUNT, P.gt(0)).values(Properties.HIGH_VULNERABILITIES_COUNT).sum().tryNext().orElse(0L).longValue();
+        return g().V().hasLabel(Vertices.ARTIFACT).has(Properties.ARTIFACT_FILE_EXISTS, true).has(Properties.HIGH_VULNERABILITIES_COUNT, P.gt(0)).values(Properties.HIGH_VULNERABILITIES_COUNT).sum().tryNext().orElse(0L).longValue();
     }
 
     public Long mediumVulnerabilitiesCount() {
-        return g().V().hasLabel(Vertices.ARTIFACT).has(Properties.CREATED, P.gte(0)).has(Properties.MEDIUM_VULNERABILITIES_COUNT, P.gt(0)).values(Properties.MEDIUM_VULNERABILITIES_COUNT).sum().tryNext().orElse(0L).longValue();
+        return g().V().hasLabel(Vertices.ARTIFACT).has(Properties.ARTIFACT_FILE_EXISTS, true).has(Properties.MEDIUM_VULNERABILITIES_COUNT, P.gt(0)).values(Properties.MEDIUM_VULNERABILITIES_COUNT).sum().tryNext().orElse(0L).longValue();
     }
 
     public Long lowVulnerabilitiesCount() {
-        return g().V().hasLabel(Vertices.ARTIFACT).has(Properties.CREATED, P.gte(0)).has(Properties.LOW_VULNERABILITIES_COUNT, P.gt(0)).values(Properties.LOW_VULNERABILITIES_COUNT).sum().tryNext().orElse(0L).longValue();
+        return g().V().hasLabel(Vertices.ARTIFACT).has(Properties.ARTIFACT_FILE_EXISTS, true).has(Properties.LOW_VULNERABILITIES_COUNT, P.gt(0)).values(Properties.LOW_VULNERABILITIES_COUNT).sum().tryNext().orElse(0L).longValue();
     }
 
     public Long suppressedVulnerabilitiesCount() {
-        return g().V().hasLabel(Vertices.ARTIFACT).has(Properties.CREATED, P.gte(0)).has(Properties.SUPPRESSED_VULNERABILITIES_COUNT, P.gt(0)).values(Properties.SUPPRESSED_VULNERABILITIES_COUNT).sum().tryNext().orElse(0L).longValue();
+        return g().V().hasLabel(Vertices.ARTIFACT).has(Properties.ARTIFACT_FILE_EXISTS, true).has(Properties.SUPPRESSED_VULNERABILITIES_COUNT, P.gt(0)).values(Properties.SUPPRESSED_VULNERABILITIES_COUNT).sum().tryNext().orElse(0L).longValue();
     }
 
 }

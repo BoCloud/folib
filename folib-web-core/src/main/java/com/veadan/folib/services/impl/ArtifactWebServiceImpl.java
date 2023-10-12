@@ -705,6 +705,7 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
     @Override
     public ArtifactStatistics artifactStatistics() {
         Long artifactsCount = artifactRepository.artifactsCount();
+        Long artifactsBytes = artifactRepository.artifactsBytesStatistics(null);
         Long artifactsVulnerabilitiesCount = artifactRepository.artifactsVulnerabilitiesCount();
         Long criticalVulnerabilitiesCount = artifactRepository.criticalVulnerabilitiesCount();
         Long highVulnerabilitiesCount = artifactRepository.highVulnerabilitiesCount();
@@ -714,7 +715,7 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
         Long vulnerabilitiesCount = criticalVulnerabilitiesCount + highVulnerabilitiesCount + mediumVulnerabilitiesCount + lowVulnerabilitiesCount + suppressedVulnerabilitiesCount;
         return ArtifactStatistics.builder().artifactsCount(artifactsCount).artifactsVulnerabilitiesCount(artifactsVulnerabilitiesCount).artifactsNormalCount(artifactsCount - artifactsVulnerabilitiesCount)
                 .criticalVulnerabilitiesCount(criticalVulnerabilitiesCount).highVulnerabilitiesCount(highVulnerabilitiesCount).mediumVulnerabilitiesCount(mediumVulnerabilitiesCount)
-                .lowVulnerabilitiesCount(lowVulnerabilitiesCount).suppressedVulnerabilitiesCount(suppressedVulnerabilitiesCount).vulnerabilitiesCount(vulnerabilitiesCount).build();
+                .lowVulnerabilitiesCount(lowVulnerabilitiesCount).suppressedVulnerabilitiesCount(suppressedVulnerabilitiesCount).vulnerabilitiesCount(vulnerabilitiesCount).artifactsBytes(artifactsBytes).build();
     }
 
     /**
