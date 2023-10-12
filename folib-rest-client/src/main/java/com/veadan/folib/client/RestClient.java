@@ -896,7 +896,7 @@ public class RestClient extends ArtifactClient {
             Long zero = 0L;
             return ArtifactStatistics.builder().artifactsCount(zero).artifactsNormalCount(zero).artifactsVulnerabilitiesCount(zero)
                     .criticalVulnerabilitiesCount(zero).highVulnerabilitiesCount(zero).lowVulnerabilitiesCount(zero)
-                    .mediumVulnerabilitiesCount(zero).suppressedVulnerabilitiesCount(zero).vulnerabilitiesCount(zero).build();
+                    .mediumVulnerabilitiesCount(zero).suppressedVulnerabilitiesCount(zero).vulnerabilitiesCount(zero).artifactsBytes(zero).build();
         }
     }
 
