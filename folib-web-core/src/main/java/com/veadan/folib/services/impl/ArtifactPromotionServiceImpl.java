@@ -13,22 +13,23 @@ import com.veadan.folib.domain.*;
 import com.veadan.folib.dto.*;
 import com.veadan.folib.entity.ArtifactSyncRecord;
 import com.veadan.folib.entity.Dict;
+import com.veadan.folib.enums.ArtifactSyncRecordStatusEnum;
+import com.veadan.folib.enums.ArtifactSyncRecordSyncModelEnum;
+import com.veadan.folib.mapper.ArtifactSyncRecordMapper;
 import com.veadan.folib.promotion.ArtifactUploadTask;
 import com.veadan.folib.promotion.PromotionUtil;
 import com.veadan.folib.promotion.PullArtifactTask;
 import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.providers.io.RepositoryPathResolver;
-import com.veadan.folib.providers.layout.DockerLayoutProvider;
 import com.veadan.folib.providers.layout.LayoutProviderRegistry;
 import com.veadan.folib.repositories.ArtifactRepository;
 import com.veadan.folib.repository.MavenRepositoryFeatures;
 import com.veadan.folib.service.ProxyRepositoryConnectionPoolConfigurationService;
 import com.veadan.folib.services.*;
-import com.veadan.folib.storage.Storage;
 import com.veadan.folib.storage.repository.Repository;
+import com.veadan.folib.users.userdetails.SpringSecurityUser;
 import com.veadan.folib.utils.PropertiesUtils;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.compress.utils.Lists;
 import org.apache.commons.fileupload.disk.DiskFileItem;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
@@ -44,6 +45,7 @@ import org.springframework.context.annotation.Lazy;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 import org.springframework.web.multipart.MultipartFile;
@@ -137,6 +139,9 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
     @Inject
     @Lazy
     private ArtifactComponent artifactComponent;
+    
+    @Inject
+    private ArtifactSyncRecordMapper artifactSyncRecordMapper;
 
     @Override
     public ResponseEntity copy(ArtifactPromotion artifactPromotion) {
@@ -234,6 +239,8 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
         try {
             String sourcePath = promotionNodeOption.getSourcePath();
             String targetPath = promotionNodeOption.getTargetPath();
+            final Integer opsType = promotionNodeOption.getOpsType();
+            final Integer syncModel = promotionNodeOption.getSyncModel();
             String srcStorageId = parsePath(sourcePath)[0];
             String srcRepostoryId = parsePath(sourcePath)[1];
             String srcUrl = sourcePath.split("/" + srcStorageId + "/" + srcRepostoryId + "/")[0];
@@ -260,7 +267,8 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
             String requestURL = request.getServerName();
             log.info("requestURL={}",requestURL);
 
-            if (sourcePath.contains(requestURL)) {
+//            if (sourcePath.contains(requestURL)) {
+            if (ArtifactSyncRecordSyncModelEnum.PUSH.getVal().equals(syncModel)) {
                 log.info("进入推模式={}",true);
                 validateStorageAndRepository(srcStorageId, srcRepostoryId);
                 // 本地源 制品路径 推向 目标路径
@@ -276,7 +284,8 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
                 //向目标仓库推包
                 promotionUtil.upload(targetUrl + upLoadURI, uploadDto);
 
-            } else if (targetPath.contains(requestURL)) {
+//            } else if (targetPath.contains(requestURL)) {
+            } else if (ArtifactSyncRecordSyncModelEnum.PULL.getVal().equals(syncModel)) {
                 log.info("进入拉模式={}",true);
                 validateStorageAndRepository(targetStorageId, targetRepostoryId);
                 // 从源仓路径 pull 到目标仓路径 获取目标主机的path 路径下的文件与目录 然后依次提交到任务队列里面后将文件存入仓库
@@ -337,23 +346,50 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
     @Override
     public ResponseEntity nodeOptionAttachRecord(PromotionNodeOption promotionNodeOption, HttpServletRequest request) 
     {
+        // 生成同步编号
+        final String syncNo = String.format("SyncNo-%s", UUID.fastUUID());
+        final SpringSecurityUser userDetails = (SpringSecurityUser) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        final String userName = Optional.ofNullable(userDetails).map(SpringSecurityUser::getUsername).orElse(null);
+
         // 生成日志记录
         final ArtifactSyncRecord artifactSyncRecord = new ArtifactSyncRecord();
-        artifactSyncRecord.setSourcePath("");
-        artifactSyncRecord.setTargetPath("");
-        artifactSyncRecord.setOpsType(0);
-        artifactSyncRecord.setSyncNo("");
-        artifactSyncRecord.setSyncModel(0);
-        artifactSyncRecord.setStatus(0);
-        artifactSyncRecord.setCreatedBy("");
-        artifactSyncRecord.setCreateTime(new Date());
-        artifactSyncRecord.setUpdatedBy("");
-        artifactSyncRecord.setUpdatedTime(new Date());
-        
-        final ResponseEntity responseEntity = this.nodeOption(promotionNodeOption, request);
+        artifactSyncRecord.setSourcePath(promotionNodeOption.getSourcePath());
+        artifactSyncRecord.setTargetPath(promotionNodeOption.getTargetPath());
+        artifactSyncRecord.setOpsType(promotionNodeOption.getOpsType());
+        artifactSyncRecord.setSyncNo(syncNo);
+        artifactSyncRecord.setSyncModel(promotionNodeOption.getSyncModel());
+        artifactSyncRecord.setStatus(ArtifactSyncRecordStatusEnum.IN_SYNC.getVal());
+        artifactSyncRecord.setCreatedBy(userName);
+        artifactSyncRecord.setCreatedTime(new Date());
+        artifactSyncRecordMapper.insert(artifactSyncRecord);
+
+        ResponseEntity responseEntity = null;
+        try 
+        {
+            responseEntity = this.nodeOption(promotionNodeOption, request);
+            if (HttpStatus.OK.equals(responseEntity.getStatusCode())) 
+            { artifactSyncRecord.setStatus(ArtifactSyncRecordStatusEnum.SUCCESS.getVal()); }
+            else
+            { 
+                artifactSyncRecord.setStatus(ArtifactSyncRecordStatusEnum.FAILED.getVal()); 
+                if (Objects.nonNull(responseEntity.getBody()))
+                { artifactSyncRecord.setFailedReason(responseEntity.getBody().toString()); } 
+            }
+        }catch (Exception e)
+        {
+            responseEntity = ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(e.getMessage());
+            artifactSyncRecord.setStatus(ArtifactSyncRecordStatusEnum.FAILED.getVal());
+            artifactSyncRecord.setFailedReason(e.getMessage());
+        }
         
         // 更新日志结束开始时间
-        
+        artifactSyncRecordMapper.updateByPrimaryKey(artifactSyncRecord
+                .setUpdatedTime(new Date())
+                .setUpdatedBy(userName));
+
+        if (HttpStatus.OK.equals(responseEntity.getStatusCode()))
+        { return ResponseEntity.ok(syncNo); }
 
         return responseEntity;
     }
