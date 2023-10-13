@@ -250,9 +250,12 @@ public class DockerFileSystemProvider
     }
 
     public List<ImageManifest> getImageManifests(RepositoryPath repositoryPath) throws IOException {
+        if (Objects.isNull(repositoryPath) || !Files.exists(repositoryPath)) {
+            return null;
+        }
         DockerArtifactCoordinates dockerArtifactCoordinates = DockerArtifactCoordinates.parse(RepositoryFiles.relativizePath(repositoryPath));
         String imageName = dockerArtifactCoordinates.getName();
-        List<ImageManifest> imageManifestList = org.apache.commons.compress.utils.Lists.newArrayList();
+        List<ImageManifest> imageManifestList = Lists.newArrayList();
         String manifestString = Files.readString(repositoryPath);
         ImageManifest imageManifest = JSON.parseObject(manifestString, ImageManifest.class);
         if (CollectionUtils.isNotEmpty(imageManifest.getManifests())) {
@@ -260,10 +263,12 @@ public class DockerFileSystemProvider
             ImageManifest itemImageManifest = null;
             for (Manifests manifests : imageManifest.getManifests()) {
                 RepositoryPath manifestPath = repositoryPathResolver.resolve(repositoryPath.getStorageId(), repositoryPath.getRepositoryId(), imageName + "/manifest/" + manifests.getDigest());
-                manifestString = Files.readString(manifestPath);
-                itemImageManifest = JSON.parseObject(manifestString, ImageManifest.class);
-                itemImageManifest.setDigest(manifests.getDigest());
-                imageManifestList.add(itemImageManifest);
+                if (Files.exists(manifestPath)) {
+                    manifestString = Files.readString(manifestPath);
+                    itemImageManifest = JSON.parseObject(manifestString, ImageManifest.class);
+                    itemImageManifest.setDigest(manifests.getDigest());
+                    imageManifestList.add(itemImageManifest);
+                }
             }
         }
         imageManifest.setDigest(dockerArtifactCoordinates.getLayers());
