@@ -5,7 +5,6 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.veadan.folib.artifact.coordinates.DockerArtifactCoordinates;
 import com.veadan.folib.components.layout.DockerComponent;
-import com.veadan.folib.controllers.BaseController;
 import com.veadan.folib.domain.Artifact;
 import com.veadan.folib.domain.ArtifactMetadataCondition;
 import com.veadan.folib.domain.ArtifactNameCondition;
@@ -31,7 +30,6 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
@@ -52,7 +50,7 @@ import java.util.stream.Collectors;
 @RestController
 //@PreAuthorize("hasAuthority('ARTIFACTS_VIEW')")
 @Api(description = "JFrog搜索", tags = "JFrog搜索")
-public class ArtifactSearchController extends BaseController {
+public class ArtifactSearchController extends JFrogBaseController {
 
     private static final String NOT_FOUND_MESSAGE = "No properties could be found.";
 
@@ -90,9 +88,8 @@ public class ArtifactSearchController extends BaseController {
             fields.put(fieldName, fieldValue);
         }
         // 提取 "repo", "path" 和 "include" 字段
-        String repo = fields.get(repoKey);
-        String[] arr = repo.split("/");
-        String storageId = arr[0], repositoryId = arr[1];
+        String storageId = getDefaultStorageId();
+        String repositoryId = fields.get(repoKey);
         Storage storage = getStorage(storageId);
         if (Objects.isNull(storage)) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(handlerErrors(null, STORAGE_NOT_FOUND_MESSAGE));
@@ -168,8 +165,7 @@ public class ArtifactSearchController extends BaseController {
     @ApiResponses(value = {@ApiResponse(code = 200, message = "OK")})
     @PostMapping(value = {"/ui/api/v1/ui/views/dockerv2"})
     public ResponseEntity<Object> dockerv2(@RequestBody ArtifactDockerQuery artifactDockerQuery, HttpServletRequest request) throws Exception {
-        String[] arr = artifactDockerQuery.getRepoKey().split("/");
-        String storageId = arr[0], repositoryId = arr[1], artifactPath = artifactDockerQuery.getPath();
+        String storageId = getDefaultStorageId(), repositoryId = artifactDockerQuery.getRepoKey(), artifactPath = artifactDockerQuery.getPath();
         String[] imageArr = artifactPath.split("/");
         String name = imageArr[0];
         Storage storage = getStorage(storageId);
@@ -248,28 +244,6 @@ public class ArtifactSearchController extends BaseController {
     }
 
     /**
-     * 处理错误
-     *
-     * @param status  状态
-     * @param message 消息
-     * @return 结果
-     */
-    private Map<String, Object> handlerErrors(Integer status, String message) {
-        Map<String, Object> result = Maps.newHashMap();
-        Map<String, Object> resultData = Maps.newHashMap();
-        if (Objects.isNull(status)) {
-            status = HttpStatus.NOT_FOUND.value();
-        }
-        resultData.put("status", status);
-        if (StringUtils.isBlank(message)) {
-            message = NOT_FOUND_MESSAGE;
-        }
-        resultData.put("message", message);
-        result.put("errors", Collections.singletonList(resultData));
-        return result;
-    }
-
-    /**
      * 解析command
      *
      * @param text 源文本
@@ -292,7 +266,7 @@ public class ArtifactSearchController extends BaseController {
         String regex = "limit\\((\\d+)\\)";
         limit = getInteger(query, regex);
         if (Objects.isNull(limit)) {
-            limit = 10;
+            limit = 100;
         }
         regex = "offset\\((\\d+)\\)";
         page = getInteger(query, regex);
@@ -324,8 +298,8 @@ public class ArtifactSearchController extends BaseController {
         ArtifactSearchInfo artifactSearchInfo = new ArtifactSearchInfo();
         if (CollectionUtils.isEmpty(propertyList)) {
             artifactSearchInfo.setRepo(String.format("%s/%s", artifact.getStorageId(), artifact.getRepositoryId()));
-            artifactSearchInfo.setPath(artifact.getArtifactPath());
             artifactSearchInfo.setName(artifact.getArtifactName());
+            artifactSearchInfo.setPath(getPath(artifact.getArtifactPath(), artifact.getArtifactName()));
             artifactSearchInfo.setCreated(Date.from(artifact.getCreated().atZone(ZoneId.of("Asia/Shanghai")).toOffsetDateTime().toInstant()));
             artifactSearchInfo.setCreatedBy(artifact.getCreatedBy());
             artifactSearchInfo.setModified(Date.from(artifact.getLastUpdated().atZone(ZoneId.of("Asia/Shanghai")).toOffsetDateTime().toInstant()));
@@ -341,7 +315,7 @@ public class ArtifactSearchController extends BaseController {
                     artifactSearchInfo.setRepo(String.format("%s/%s", artifact.getStorageId(), artifact.getRepositoryId()));
                     break;
                 case "path":
-                    artifactSearchInfo.setPath(artifact.getArtifactPath());
+                    artifactSearchInfo.setPath(getPath(artifact.getArtifactPath(), artifact.getArtifactName()));
                     break;
                 case "name":
                     artifactSearchInfo.setName(artifact.getArtifactName());
@@ -401,6 +375,18 @@ public class ArtifactSearchController extends BaseController {
                 artifactSearchInfo.setProperties(properties);
             }
         }
+    }
+
+    private String getPath(String path, String name) {
+        if (StringUtils.isBlank(path)) {
+            return "";
+        }
+        if (path.equals(name)) {
+            path = ".";
+        } else {
+            path = path.substring(0, path.indexOf(name) - 1);
+        }
+        return path;
     }
 
 }

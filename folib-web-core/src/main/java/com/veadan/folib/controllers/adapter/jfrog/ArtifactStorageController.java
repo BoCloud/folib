@@ -3,12 +3,10 @@ package com.veadan.folib.controllers.adapter.jfrog;
 import com.alibaba.fastjson.JSONObject;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
-import com.veadan.folib.controllers.BaseController;
 import com.veadan.folib.domain.Artifact;
 import com.veadan.folib.domain.adapter.jfrog.ArtifactStorageInfo;
 import com.veadan.folib.enums.ArtifactMetadataEnum;
 import com.veadan.folib.forms.artifact.ArtifactMetadataForm;
-import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.providers.io.RepositoryPathResolver;
 import com.veadan.folib.services.ArtifactWebService;
 import com.veadan.folib.storage.Storage;
@@ -21,14 +19,11 @@ import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import javax.activation.MimetypesFileTypeMap;
 import javax.inject.Inject;
 import javax.servlet.http.HttpServletRequest;
-import java.net.URLEncoder;
-import java.nio.file.Files;
 import java.time.ZoneId;
 import java.util.*;
 
@@ -40,7 +35,7 @@ import java.util.*;
 @RequestMapping("/artifactory/api/storage")
 //@PreAuthorize("hasAuthority('ARTIFACTS_VIEW')")
 @Api(description = "JFrog存储", tags = "JFrog存储")
-public class ArtifactStorageController extends BaseController {
+public class ArtifactStorageController extends JFrogBaseController {
 
     private static final String NOT_FOUND_MESSAGE = "No properties could be found.";
 
@@ -60,9 +55,10 @@ public class ArtifactStorageController extends BaseController {
 
     @ApiOperation(value = "JFrog存储")
     @ApiResponses(value = {@ApiResponse(code = 200, message = "OK")})
-    @RequestMapping(value = {"/{storageId}/{repositoryId}/{artifactPath:.+}"}, method = {RequestMethod.GET})
-    public ResponseEntity<Object> itemProperties(@PathVariable("storageId") String storageId, @PathVariable("repositoryId") String repositoryId, @PathVariable("artifactPath") String artifactPath,
+    @RequestMapping(value = {"/{repositoryId}/{artifactPath:.+}"}, method = {RequestMethod.GET})
+    public ResponseEntity<Object> itemProperties(@PathVariable("repositoryId") String repositoryId, @PathVariable("artifactPath") String artifactPath,
                                                  @RequestParam(value = "properties", required = false) String properties, HttpServletRequest request) throws Exception {
+        String storageId = getDefaultStorageId();
         Storage storage = getStorage(storageId);
         if (Objects.isNull(storage)) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(handlerErrors(null, STORAGE_NOT_FOUND_MESSAGE));
@@ -132,10 +128,11 @@ public class ArtifactStorageController extends BaseController {
 
     @ApiOperation(value = "JFrog存储")
     @ApiResponses(value = {@ApiResponse(code = 200, message = "OK")})
-    @PutMapping(value = {"/{storageId}/{repositoryId}/{artifactPath:.+}"})
-    public ResponseEntity<Object> setItemProperties(@PathVariable("storageId") String storageId, @PathVariable("repositoryId") String repositoryId, @PathVariable("artifactPath") String artifactPath,
+    @PutMapping(value = {"/{repositoryId}/{artifactPath:.+}"})
+    public ResponseEntity<Object> setItemProperties(@PathVariable("repositoryId") String repositoryId, @PathVariable("artifactPath") String artifactPath,
                                                     @RequestParam(value = "properties", required = false) String properties, HttpServletRequest request) throws Exception {
 
+        String storageId = getDefaultStorageId();
         Storage storage = getStorage(storageId);
         if (StringUtils.isBlank(properties)) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(handlerErrors(HttpStatus.BAD_REQUEST.value(), PROPERTIES_VALUE_CANNOT_BE_EMPTY));
@@ -180,28 +177,6 @@ public class ArtifactStorageController extends BaseController {
             artifactWebService.batchArtifactMetadata(artifactMetadataFormList);
         }
         return ResponseEntity.status(HttpStatus.NO_CONTENT.value()).body("");
-    }
-
-    /**
-     * 处理错误
-     *
-     * @param status  状态
-     * @param message 消息
-     * @return 结果
-     */
-    private Map<String, Object> handlerErrors(Integer status, String message) {
-        Map<String, Object> result = Maps.newHashMap();
-        Map<String, Object> resultData = Maps.newHashMap();
-        if (Objects.isNull(status)) {
-            status = HttpStatus.NOT_FOUND.value();
-        }
-        resultData.put("status", status);
-        if (StringUtils.isBlank(message)) {
-            message = NOT_FOUND_MESSAGE;
-        }
-        resultData.put("message", message);
-        result.put("errors", Collections.singletonList(resultData));
-        return result;
     }
 
     /**
