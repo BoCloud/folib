@@ -396,7 +396,7 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
             artifactParse = ArtifactParse.builder().type(1).groupId(groupId).artifactId(artifactId).version(version).filePath(artifactPath).build();
             return artifactParse;
         } catch (Exception ex) {
-            log.error("解析制品错误：{}", ExceptionUtils.getStackTrace(ex));
+            log.warn("解析制品错误：{}", ExceptionUtils.getStackTrace(ex));
             artifactParse = ArtifactParse.builder().type(2).build();
             return artifactParse;
         }

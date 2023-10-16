@@ -149,7 +149,7 @@ public abstract class BaseArtifactController
                  ObjectInputStream objectInputStream = new ObjectInputStream(byteArrayInputStream)) {
                 artifact = (Artifact) objectInputStream.readObject();
             } catch (Exception ex) {
-                logger.error("解析制品 [{}] 本地缓存.metadata文件错误", ExceptionUtils.getStackTrace(ex));
+                logger.warn("解析制品 [{}] 本地缓存.metadata文件错误", ExceptionUtils.getStackTrace(ex));
             }
         }
         logger.debug("Block JSON {} 结束时间 {}", repositoryPath.toString(), System.currentTimeMillis() - startTime);
@@ -164,7 +164,7 @@ public abstract class BaseArtifactController
                 byte[] byteArray = byteArrayOutputStream.toByteArray();
                 Files.write(artifactRepositoryPath, byteArray);
             } catch (Exception ex) {
-                logger.error("写入制品 [{}] 本地缓存.metadata文件错误", ExceptionUtils.getStackTrace(ex));
+                logger.warn("写入制品 [{}] 本地缓存.metadata文件错误", ExceptionUtils.getStackTrace(ex));
             }
         }
         boolean block = artifactComponent.vulnerabilityBlock(artifact, repositoryPath.getRepository().getLayout());
