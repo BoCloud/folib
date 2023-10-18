@@ -232,8 +232,8 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
     @Override
     public ResponseEntity nodeOption(PromotionNodeOption promotionNodeOption, HttpServletRequest request) {
         try {
-            String sourcePath = promotionNodeOption.getSourcePath();
-            String targetPath = promotionNodeOption.getTargetPath();
+            String sourcePath = StringUtils.removeEnd(promotionNodeOption.getSourcePath(), "/");
+            String targetPath = StringUtils.removeEnd( promotionNodeOption.getTargetPath(), "/");
             String srcStorageId = parsePath(sourcePath)[0];
             String srcRepostoryId = parsePath(sourcePath)[1];
             String srcUrl = sourcePath.split("/" + srcStorageId + "/" + srcRepostoryId + "/")[0];
@@ -320,7 +320,7 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
 
                     } catch (Exception e) {
                         fail++;
-                        log.error("pull fail {}", e.getMessage());
+                        log.error("pull fail {}", ExceptionUtils.getStackTrace(e));
                     }
                 }
                 log.info("Handle pulled! Task size {} success {} fail {}", listTask.size(), success, fail);
@@ -466,7 +466,7 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
 
                 } catch (Exception e) {
                     temp.append(e.getMessage()).append(System.lineSeparator());
-                    log.error("upload exception {}", e.getMessage());
+                    log.error("upload exception {}", ExceptionUtils.getStackTrace(e));
                 }
             }
             if (StringUtils.isNotBlank(temp.toString())) {
@@ -502,7 +502,7 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
 
                 } catch (Exception e) {
                     temp.append(e.getMessage()).append(System.lineSeparator());
-                    log.error("upload exception {}", e.getMessage());
+                    log.error("upload exception {}", ExceptionUtils.getStackTrace(e));
                 }
             }
             if (StringUtils.isNotBlank(temp.toString())) {
@@ -534,7 +534,7 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
             }
             out.flush();
         } catch (IOException e) {
-            log.error("download exception {}", e.getMessage());
+            log.error("download exception {}", ExceptionUtils.getStackTrace(e));
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(e.getMessage());
         }
@@ -552,7 +552,7 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
             PromotionFileRelativePath promotionFileRelativePath = promotionUtil.getFileRelativePaths(repositoryPath, isDockerVersionPath);
             return ResponseEntity.ok(promotionFileRelativePath);
         } catch (Exception e) {
-            log.error("Get files relative paths exception {}", e.getMessage());
+            log.error("Get files relative paths exception {}", ExceptionUtils.getStackTrace(e));
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(e.getMessage());
         }

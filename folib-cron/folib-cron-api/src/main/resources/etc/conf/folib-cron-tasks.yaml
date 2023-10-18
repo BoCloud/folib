@@ -32,3 +32,9 @@ cronTasksConfiguration:
       cronExpression: 0 0 1 * * ?
       oneTimeExecution: false
       immediateExecution: false
+    - uuid: 00dcbfe3-461b-4dc7-995b-4cc637ca611e
+      name: Docker仓库清理任务
+      jobClass: com.veadan.folib.cron.jobs.CleanupDockerRepositoryCronJob
+      cronExpression: 0 0 1 * * ?
+      oneTimeExecution: false
+      immediateExecution: false
