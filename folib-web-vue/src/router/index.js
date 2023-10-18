@@ -83,7 +83,7 @@ let routes = [
 	},
 
 	{
-		path: '/storage/libDetial',
+		path: '/storage/list/libDetial',
 		name: 'libDetial',
 		layout: "dashboard",
 		meta: {
@@ -212,7 +212,7 @@ let routes = [
     component: () => import("../views/ComponentAnalysis/Artifacts/index.vue"),
   },
   {
-    path: "/artifactsDetail/",
+    path: "/artifacts/artifactsDetail",
     name: "artifactsDetail",
     layout: "dashboard",
     meta: {
@@ -234,7 +234,7 @@ let routes = [
     component: () => import("../views/ComponentAnalysis/Module/index.vue"),
   },
   {
-    path: "/componentsDetail/:id",
+    path: "/components/componentsDetail/:id",
     name: "componentsDetail",
     layout: "dashboard",
     meta: {
@@ -256,7 +256,7 @@ let routes = [
     component: () => import("../views/ComponentAnalysis/Vulnerabilities/index.vue"),
   },
   {
-    path: "/vulnerabilitiesDetail/:id",
+    path: "/vulnerabilities/vulnerabilitiesDetail/:id",
     name: "vulnerabilitiesDetail",
     layout: "dashboard",
     meta: {
@@ -278,7 +278,7 @@ let routes = [
     component: () => import("../views/ComponentAnalysis/Licenses/index.vue"),
   },
   {
-    path: "/licensesDetail/:id",
+    path: "/licenses/licensesDetail/:id",
     name: "licensesDetail",
     layout: "dashboard",
     meta: {

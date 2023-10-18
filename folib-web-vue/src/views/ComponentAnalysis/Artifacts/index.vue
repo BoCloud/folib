@@ -248,7 +248,7 @@ export default {
         layout: row.layout
       })
       this.$router.push({ 
-        path: '/artifactsDetail',
+        path: '/artifacts/artifactsDetail',
         query: {
           data: data
         }
