@@ -50,7 +50,7 @@ public class ArtifactDownloadingEventHandler extends AsyncArtifactEntryHandler {
             byte[] byteArray = byteArrayOutputStream.toByteArray();
             Files.write(artifactRepositoryPath, byteArray);
         } catch (Exception ex) {
-            log.error("写入制品 [{}] 本地缓存.metadata文件错误", ExceptionUtils.getStackTrace(ex));
+            log.warn("写入制品 [{}] 本地缓存.metadata文件错误", ExceptionUtils.getStackTrace(ex));
         }
         Artifact updateArtifactEntry = new ArtifactEntity(artifactEntry.getNativeId(), artifactEntry.getStorageId(), artifactEntry.getRepositoryId(), artifactEntry.getUuid(), artifactEntry.getArtifactCoordinates());
         updateArtifactEntry.setDownloadCount(artifactEntry.getDownloadCount() + 1);

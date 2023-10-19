@@ -9,6 +9,7 @@ import com.google.common.collect.Lists;
 import com.veadan.folib.cloud.storage.s3fs.S3Iterator;
 import com.veadan.folib.cloud.storage.s3fs.S3Path;
 import com.veadan.folib.cluster.ClusterProperties;
+import com.veadan.folib.constant.GlobalConstants;
 import com.veadan.folib.controllers.BaseArtifactController;
 import com.veadan.folib.domain.*;
 import com.veadan.folib.entity.Dict;
@@ -23,6 +24,7 @@ import com.veadan.folib.services.DirectoryListingService;
 import com.veadan.folib.storage.Storage;
 import com.veadan.folib.storage.repository.Repository;
 import com.veadan.folib.users.domain.Privileges;
+import com.veadan.folib.users.domain.UserData;
 import com.veadan.folib.users.security.JwtAuthenticationClaimsProvider;
 import com.veadan.folib.users.security.JwtClaimsProvider;
 import com.veadan.folib.users.security.SecurityTokenProvider;
@@ -39,7 +41,11 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.annotation.CurrentSecurityContext;
+import org.springframework.security.core.context.SecurityContext;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
@@ -136,17 +142,28 @@ public class DockerArtifactController extends BaseArtifactController {
             @ApiResponse(code = 500, message = "An error occurred.")})
     @PreAuthorize("hasAuthority('ARTIFACTS_RESOLVE')")
     @RequestMapping(value = {"/v2/token"}, method = {RequestMethod.GET})
-    public ResponseEntity<Object> token(Authentication authentication, HttpServletResponse response) {
+    public ResponseEntity<Object> token(HttpServletResponse response) {
         try {
+            SecurityContext securityContext = SecurityContextHolder.getContext();
+            Authentication authentication = securityContext.getAuthentication();
             if (Objects.isNull(authentication)) {
                 return new ResponseEntity<>(unAuth(), HttpStatus.UNAUTHORIZED);
+            }
+            int expireSeconds = 7200;
+            if (authentication instanceof AnonymousAuthenticationToken) {
+                String username = authentication.getPrincipal().toString();
+                Map<String, String> claimMap = Collections.singletonMap(GlobalConstants.ANONYMOUS_TOKEN_KEY, username);
+                JSONObject resultData = new JSONObject();
+                String token = securityTokenProvider.getToken(username, claimMap, expireSeconds, null);
+                resultData.put("token", token);
+                resultData.put("expires_in", expireSeconds);
+                return ResponseEntity.ok(resultData);
             }
             if (authentication.getPrincipal() instanceof SpringSecurityUser) {
                 SpringSecurityUser springSecurityUser = (SpringSecurityUser) authentication.getPrincipal();
                 response.setHeader(DockerApiHeader.DOCKER_DISTRIBUTION_API_VERSION.key(), DockerApiHeader.DOCKER_DISTRIBUTION_API_VERSION.value());
                 Map<String, String> claimMap = jwtClaimsProvider.getClaims(springSecurityUser);
                 JSONObject resultData = new JSONObject();
-                int expireSeconds = 7200;
                 String token = securityTokenProvider.getToken(springSecurityUser.getUsername(), claimMap, expireSeconds, null);
                 resultData.put("token", token);
                 resultData.put("expires_in", expireSeconds);
@@ -1196,7 +1213,7 @@ public class DockerArtifactController extends BaseArtifactController {
     private Map<String, Object> unForbidden(String storageId, String repositoryId) {
         Map<String, Object> result = new HashMap<>(1);
         Map<String, Object> resultData = new HashMap<>(1);
-        resultData.put("code", "Forbidden");
+        resultData.put("code", "UNAUTHORIZED");
         resultData.put("message", MessageFormat.format("access to the requested storage {0} repository {1} is forbidden", storageId, repositoryId));
         resultData.put("detail", null);
         List<Map> list = new ArrayList<>();

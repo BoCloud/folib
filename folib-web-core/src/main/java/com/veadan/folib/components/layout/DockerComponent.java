@@ -42,6 +42,9 @@ public class DockerComponent {
         if (Files.isDirectory(repositoryPath)) {
             DirectoryListing directoryListing = directoryListingService.fromRepositoryPath(repositoryPath);
             List<FileContent> fileContents = directoryListing.getFiles().stream().filter(file -> !(file.getName().endsWith(".sha256"))).collect(Collectors.toList());
+            if (CollectionUtils.isEmpty(fileContents)) {
+                return null;
+            }
             FileContent fileContent = fileContents.get(0);
             repositoryPath = repositoryPathResolver.resolve(repositoryPath.getStorageId(), repositoryPath.getRepositoryId(), fileContent.getArtifactPath());
         }

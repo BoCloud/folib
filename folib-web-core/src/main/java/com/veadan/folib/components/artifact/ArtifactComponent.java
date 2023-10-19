@@ -1071,11 +1071,36 @@ public class ArtifactComponent {
                     byte[] byteArray = byteArrayOutputStream.toByteArray();
                     Files.write(artifactRepositoryPath, byteArray);
                 } catch (Exception ex) {
-                    log.error("写入制品 [{}] 本地缓存.metadata文件错误", ExceptionUtils.getStackTrace(ex));
+                    log.warn("写入制品 [{}] 本地缓存.metadata文件错误", ExceptionUtils.getStackTrace(ex));
                 }
             }
         } catch (Exception ex) {
-            log.error("StoreArtifactMetadataFile error ", ex);
+            log.warn("StoreArtifactMetadataFile error [{}]", ExceptionUtils.getStackTrace(ex));
+        }
+    }
+
+    /**
+     * 存储制品元数据文件
+     *
+     * @param repositoryPath repositoryPath
+     * @param metadataPath   metadataPath
+     */
+    public void storeArtifactMetadataFile(RepositoryPath repositoryPath, Path metadataPath) {
+        try {
+            if (Objects.nonNull(repositoryPath) && Files.exists(repositoryPath)) {
+                String fileName = "." + FilenameUtils.getName(repositoryPath.getFileName().toString()) + ".metadata";
+                Path artifactRepositoryPath = metadataPath.getParent().resolve(fileName);
+                try (ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+                     ObjectOutputStream objectOutputStream = new ObjectOutputStream(byteArrayOutputStream)) {
+                    objectOutputStream.writeObject(repositoryPath.getArtifactEntry());
+                    byte[] byteArray = byteArrayOutputStream.toByteArray();
+                    Files.write(artifactRepositoryPath, byteArray);
+                } catch (Exception ex) {
+                    log.warn("写入制品 [{}] 本地缓存.metadata文件错误", ExceptionUtils.getStackTrace(ex));
+                }
+            }
+        } catch (Exception ex) {
+            log.warn("StoreArtifactMetadataFile error [{}]", ExceptionUtils.getStackTrace(ex));
         }
     }
 

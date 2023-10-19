@@ -895,7 +895,8 @@ public class PromotionUtil {
      * @return true 是 false 不是
      */
     public boolean isDockerVersion(String layout, String path) {
-        return DockerLayoutProvider.ALIAS.equalsIgnoreCase(layout) && path.contains("/") && !path.contains("blobs/sha256") && !path.contains("manifest/sha256");
+        String split = "/";
+        return DockerLayoutProvider.ALIAS.equalsIgnoreCase(layout) && path.split(split).length == 2 && !path.contains("blobs/sha256") && !path.contains("manifest/sha256");
     }
 
     private List<File> sortDocker(List<File> list, String layout) {
