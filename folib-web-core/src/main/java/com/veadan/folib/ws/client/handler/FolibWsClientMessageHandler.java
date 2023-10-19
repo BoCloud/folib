@@ -2,7 +2,7 @@ package com.veadan.folib.ws.client.handler;
 
 import com.alibaba.fastjson.JSON;
 import com.veadan.folib.ws.FolibWsAction;
-import com.veadan.folib.ws.client.handler.dispatch.FolibClientCommandDispatch;
+import com.veadan.folib.ws.client.handler.dispatch.FolibWsClientCommandDispatch;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.socket.TextMessage;
 import org.springframework.web.socket.WebSocketSession;
@@ -15,11 +15,11 @@ import org.springframework.web.socket.handler.BinaryWebSocketHandler;
  * @since x.x.x
  */
 @Slf4j
-public class FolibClientMessageHandler extends BinaryWebSocketHandler
+public class FolibWsClientMessageHandler extends BinaryWebSocketHandler
 {
-    private FolibClientCommandDispatch folibClientCommandDispatch;
+    private FolibWsClientCommandDispatch folibClientCommandDispatch;
 
-    public FolibClientMessageHandler(FolibClientCommandDispatch folibClientCommandDispatch) {
+    public FolibWsClientMessageHandler(FolibWsClientCommandDispatch folibClientCommandDispatch) {
         this.folibClientCommandDispatch = folibClientCommandDispatch;
     }
 

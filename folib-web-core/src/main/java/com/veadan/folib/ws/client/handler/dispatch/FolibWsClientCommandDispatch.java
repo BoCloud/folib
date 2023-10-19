@@ -2,7 +2,7 @@ package com.veadan.folib.ws.client.handler.dispatch;
 
 import com.alibaba.fastjson.JSON;
 import com.veadan.folib.ws.FolibWsAction;
-import com.veadan.folib.ws.client.handler.command.FolibClientCommand;
+import com.veadan.folib.ws.client.handler.command.FolibWsClientCommand;
 import lombok.Data;
 import lombok.experimental.Accessors;
 import lombok.extern.slf4j.Slf4j;
@@ -25,7 +25,7 @@ import java.util.Optional;
  */
 @Slf4j
 @Component
-public class FolibClientCommandDispatch 
+public class FolibWsClientCommandDispatch 
 {
     @Autowired
     private ApplicationContext applicationContext;
@@ -34,7 +34,7 @@ public class FolibClientCommandDispatch
 
     public void init()
     {
-        Optional.of(applicationContext.getBeansOfType(FolibClientCommand.class).values())
+        Optional.of(applicationContext.getBeansOfType(FolibWsClientCommand.class).values())
                 .orElse(Collections.emptyList())
                 .forEach(command -> {
                     wsCommandRegister.put(command.command(), new FolibClientCommandRegister()
@@ -56,7 +56,7 @@ public class FolibClientCommandDispatch
 
         final String payload = action.getPayload();
         final Class<?> payloadClass = folibClientCommandRegister.getPayloadClass();
-        final FolibClientCommand clientCommandRegisterCommand = folibClientCommandRegister.getCommand();
+        final FolibWsClientCommand clientCommandRegisterCommand = folibClientCommandRegister.getCommand();
 
         if (String.class.equals(payloadClass))
         { // 基础参数类型
@@ -68,7 +68,7 @@ public class FolibClientCommandDispatch
         }
     }
 
-    private Class<?> getPayloadClass(FolibClientCommand<?> agentCommand) {
+    private Class<?> getPayloadClass(FolibWsClientCommand<?> agentCommand) {
         // 获取实现接口的类型参数信息
         Type[] genericInterfaces = agentCommand.getClass().getGenericInterfaces();
         final String typeName = ((ParameterizedType) genericInterfaces[0]).getActualTypeArguments()[0].getTypeName();
@@ -85,7 +85,7 @@ public class FolibClientCommandDispatch
     @Accessors(chain = true)
     public static class FolibClientCommandRegister 
     {
-        public FolibClientCommand<? > command;
+        public FolibWsClientCommand<? > command;
         public Class<?> payloadClass;
     }
     

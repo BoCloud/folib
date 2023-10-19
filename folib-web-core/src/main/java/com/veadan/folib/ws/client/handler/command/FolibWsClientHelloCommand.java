@@ -9,7 +9,7 @@ import org.springframework.stereotype.Component;
  * @since x.x.x
  */
 @Component
-public class FolibClientHelloCommand implements FolibClientCommand<String> {
+public class FolibWsClientHelloCommand implements FolibWsClientCommand<String> {
     @Override
     public String command() {
         return "/hello";

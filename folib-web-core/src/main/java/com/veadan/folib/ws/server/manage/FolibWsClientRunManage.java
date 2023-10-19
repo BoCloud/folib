@@ -1,4 +1,4 @@
-package com.veadan.folib.ws.client.manage;
+package com.veadan.folib.ws.server.manage;
 
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
@@ -6,7 +6,6 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.web.socket.WebSocketSession;
 
 import javax.websocket.Session;
 import java.io.IOException;
@@ -21,34 +20,35 @@ import java.util.concurrent.ConcurrentHashMap;
  * @since x.x.x
  */
 @Slf4j
-public class FolibWsServerManage
+public class FolibWsClientRunManage
 {
-    private static final Map<String, FolibWsServerRun> FOLIB_WS_CLIENT_RUN_MAP = new ConcurrentHashMap<>();
 
-    public static boolean online(String nodeName, WebSocketSession session)
+    private static final Map<String, FolibWsClientRun> FOLIB_WS_CLIENT_RUN_MAP = new ConcurrentHashMap<>();
+
+    public static boolean online(String nodeName, Session session)
     {
-        final FolibWsServerRun folibWsServerRun = FOLIB_WS_CLIENT_RUN_MAP.get(nodeName);
-        if (null != folibWsServerRun)
+        final FolibWsClientRun folibWsClientRun = FOLIB_WS_CLIENT_RUN_MAP.get(nodeName);
+        if (null != folibWsClientRun)
         {
             try {
-                folibWsServerRun.getSession().close();
+                folibWsClientRun.getSession().close();
             } catch (IOException e) {
                 log.error("【FolibWs客户端上线】，发现关闭已存在会话，进行关闭操作失败", e);
                 return false;
             }
         }
-        FOLIB_WS_CLIENT_RUN_MAP.put(nodeName, new FolibWsServerRun(nodeName, session, LocalDateTime.now()));
+        FOLIB_WS_CLIENT_RUN_MAP.put(nodeName, new FolibWsClientRun(nodeName, session, LocalDateTime.now()));
 
         return true;
     }
 
     public static boolean offline(String agentId)
     {
-        final FolibWsServerRun folibWsServerRun = FOLIB_WS_CLIENT_RUN_MAP.get(agentId);
-        if (null != folibWsServerRun)
+        final FolibWsClientRun folibWsClientRun = FOLIB_WS_CLIENT_RUN_MAP.get(agentId);
+        if (null != folibWsClientRun)
         {
             try {
-                folibWsServerRun.getSession().close();
+                folibWsClientRun.getSession().close();
                 FOLIB_WS_CLIENT_RUN_MAP.remove(agentId);
             } catch (IOException e) {
                 log.error("【FolibWs客户端下线】，发现关闭存在会话，进行关闭操作失败", e);
@@ -61,7 +61,7 @@ public class FolibWsServerManage
         return true;
     }
 
-    public static FolibWsServerRun getWsServerRun(String nodeName)
+    public static FolibWsClientRun getWsClientRun(String nodeName)
     {
         return FOLIB_WS_CLIENT_RUN_MAP.get(nodeName);
     }
@@ -78,12 +78,12 @@ public class FolibWsServerManage
     @AllArgsConstructor
     @NoArgsConstructor
     @ApiModel("FolibWs运行管理对象")
-    public static class FolibWsServerRun
+    public static class FolibWsClientRun
     {
         @ApiModelProperty(value = "节点名称")
         private String nodeName;
-        @ApiModelProperty(value = "Ws服务端会话")
-        private WebSocketSession session;
+        @ApiModelProperty(value = "Ws客户端会话")
+        private Session session;
         @ApiModelProperty(value = "上线时间")
         private LocalDateTime onlineTime;
     }

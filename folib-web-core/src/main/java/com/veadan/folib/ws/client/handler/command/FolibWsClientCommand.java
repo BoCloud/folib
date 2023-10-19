@@ -6,7 +6,7 @@ package com.veadan.folib.ws.client.handler.command;
  * @date 2023/10/19 16:35
  * @since x.x.x
  */
-public interface FolibClientCommand<T>
+public interface FolibWsClientCommand<T>
 {
     String command();
     

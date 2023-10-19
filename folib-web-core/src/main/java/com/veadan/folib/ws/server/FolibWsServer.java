@@ -1,6 +1,6 @@
 package com.veadan.folib.ws.server;
 
-import com.veadan.folib.ws.server.manage.FolibWsClientManage;
+import com.veadan.folib.ws.server.manage.FolibWsClientRunManage;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
@@ -26,7 +26,7 @@ public class FolibWsServer
 {
     @OnOpen
     public void onOpen(@PathParam("nodeName") String nodeName, Session session) {
-        FolibWsClientManage.online(nodeName, session);
+        FolibWsClientRunManage.online(nodeName, session);
         log.info("连接建立成功，nodeName = {} session_id = {}", nodeName, session.getId());
         try {
             session.getBasicRemote().sendText(String.format("%s 你已经成功上线！！！", nodeName));
@@ -37,7 +37,7 @@ public class FolibWsServer
 
     @OnClose
     public void onClose(@PathParam("nodeName") String nodeName, Session session) {
-        FolibWsClientManage.offline(nodeName);
+        FolibWsClientRunManage.offline(nodeName);
         log.info("连接关闭成功，nodeName = {} session_id = {}", nodeName, session.getId());
     }
 

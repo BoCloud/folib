@@ -1,5 +1,7 @@
 package com.veadan.folib.ws.client.init;
 
+import com.veadan.folib.ws.client.handler.dispatch.FolibWsClientCommandDispatch;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.stereotype.Component;
@@ -11,13 +13,14 @@ import org.springframework.stereotype.Component;
  * @since x.x.x
  */
 @Component
-public class FolibServerConnectionInit implements ApplicationRunner 
+public class FolibWsClientInit implements ApplicationRunner 
 {
+    @Autowired
+    private FolibWsClientCommandDispatch folibClientCommandDispatch;
+    
     @Override
     public void run(ApplicationArguments args) throws Exception 
-    { 
-        // 初始化连接到集群服务端
-        
-        
+    {
+        folibClientCommandDispatch.init();
     }
 }
