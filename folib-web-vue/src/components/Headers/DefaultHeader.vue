@@ -57,11 +57,11 @@
 
 		</div>
 		<div v-if="dalyOut||haveError" class="header-col header-btn">
-			<a-button size="small" type="dark" class="px-30 border-dark" shape="round" href="http://folib.com" target="_blank">购买正式版</a-button>
+			<a-button size="small" type="dark" class="px-30 border-dark" shape="round" href="https://www.bocloud.com.cn/product/BeyondFolibrary" target="_blank">购买正式版</a-button>
 		</div>
 
     <div v-if="!(dalyOut||haveError)" class="header-col header-btn">
-      <a-button size="small" type="dark" class="px-30 border-dark" shape="round" href="http://folib.com/core/use.html" target="_blank">使用文档</a-button>
+      <a-button size="small" type="dark" class="px-30 border-dark" shape="round" href="/docs/overview/index.html" target="_blank">使用文档</a-button>
     </div>
 	</a-layout-header>
 	<!-- / Layout Header ( Navbar ) -->

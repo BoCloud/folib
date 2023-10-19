@@ -10,7 +10,7 @@
 
       <a-col :span="24" :lg="6">
         <!-- Page Anchors -->
-        <a-affix :offset-top="navbarFixed ? 100 : 10">
+<!--        <a-affix :offset-top="navbarFixed ? 100 : 10">-->
           <a-card :bordered="false" class="header-solid mb-24">
             <template #title>
               <a-row type="flex" align="middle">
@@ -38,7 +38,7 @@
               </a-anchor-link>
             </a-anchor>
           </a-card>
-        </a-affix>
+<!--        </a-affix>-->
         <!-- / Page Anchors -->
 
       </a-col>
