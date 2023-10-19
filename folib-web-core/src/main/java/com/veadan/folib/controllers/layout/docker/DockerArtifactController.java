@@ -149,6 +149,7 @@ public class DockerArtifactController extends BaseArtifactController {
             if (Objects.isNull(authentication)) {
                 return new ResponseEntity<>(unAuth(), HttpStatus.UNAUTHORIZED);
             }
+            response.setHeader(DockerApiHeader.DOCKER_DISTRIBUTION_API_VERSION.key(), DockerApiHeader.DOCKER_DISTRIBUTION_API_VERSION.value());
             int expireSeconds = 7200;
             if (authentication instanceof AnonymousAuthenticationToken) {
                 String username = authentication.getPrincipal().toString();
@@ -161,7 +162,6 @@ public class DockerArtifactController extends BaseArtifactController {
             }
             if (authentication.getPrincipal() instanceof SpringSecurityUser) {
                 SpringSecurityUser springSecurityUser = (SpringSecurityUser) authentication.getPrincipal();
-                response.setHeader(DockerApiHeader.DOCKER_DISTRIBUTION_API_VERSION.key(), DockerApiHeader.DOCKER_DISTRIBUTION_API_VERSION.value());
                 Map<String, String> claimMap = jwtClaimsProvider.getClaims(springSecurityUser);
                 JSONObject resultData = new JSONObject();
                 String token = securityTokenProvider.getToken(springSecurityUser.getUsername(), claimMap, expireSeconds, null);
