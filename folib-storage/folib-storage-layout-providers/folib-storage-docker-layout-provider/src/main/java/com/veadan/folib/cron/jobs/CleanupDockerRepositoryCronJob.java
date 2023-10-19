@@ -143,7 +143,7 @@ public class CleanupDockerRepositoryCronJob extends JavaCronJob {
                 imageTagList = getDirectory(imageRepositoryPath, excludeList);
                 if (CollectionUtils.isEmpty(imageTagList)) {
                     //镜像下无tag，删除镜像
-                    if (delete(imageRepositoryPath)) {
+                    if (delete(imageRepositoryPath, false)) {
                         resultList.add(successMsg);
                         log.info("Docker repository [{}] [{}] image [{}] has no tag delete", storageId, repositoryId, imagePath.getFileName().toString());
                     }
@@ -157,7 +157,7 @@ public class CleanupDockerRepositoryCronJob extends JavaCronJob {
                     dockerImageTag = handlerDockerImageTag(imageTagRepositoryPath, imageManifestsRepositoryPath, imageBlobsRepositoryPath, dockerImageTagList);
                     if (Objects.isNull(dockerImageTag)) {
                         //镜像tag无法读取manifest、blobs信息，删除tag
-                        if (delete(imageTagRepositoryPath)) {
+                        if (delete(imageTagRepositoryPath, false)) {
                             resultList.add(successMsg);
                             log.info("Docker repository [{}] [{}] image [{}] tag [{}] not exists blobs delete", storageId, repositoryId, imagePath.getFileName().toString(), imageTagPath.getFileName().toString());
                         }
@@ -165,7 +165,7 @@ public class CleanupDockerRepositoryCronJob extends JavaCronJob {
                 }
                 if (CollectionUtils.isEmpty(dockerImageTagList)) {
                     //镜像下无tag，删除镜像
-                    if (delete(imageRepositoryPath)) {
+                    if (delete(imageRepositoryPath,true)) {
                         resultList.add(successMsg);
                         log.info("Docker repository [{}] [{}] image [{}] not exists tag delete", storageId, repositoryId, imagePath.getFileName().toString());
                     }
@@ -186,7 +186,7 @@ public class CleanupDockerRepositoryCronJob extends JavaCronJob {
                 }
                 if (!Files.exists(imageRepositoryPath) || Files.list(imageRepositoryPath).count() == 0) {
                     //镜像目录为空删除镜像
-                    if (delete(imageRepositoryPath)) {
+                    if (delete(imageRepositoryPath, true)) {
                         resultList.add(successMsg);
                         log.info("Docker repository [{}] [{}] image [{}] not exists files delete", storageId, repositoryId, imagePath.getFileName().toString());
                     }
@@ -201,14 +201,14 @@ public class CleanupDockerRepositoryCronJob extends JavaCronJob {
 
     private boolean handlerManifest(RepositoryPath imageRepositoryPath, String storageId, String repositoryId, RepositoryPath imageManifestsRepositoryPath, Set<String> manifestSet, List<String> resultList, String successMsg, String failMsg) throws Exception {
         boolean isContinue = false;
-        if (Files.exists(imageManifestsRepositoryPath)) {
+        if (Files.exists(imageManifestsRepositoryPath) && CollectionUtils.isNotEmpty(manifestSet)) {
             try (Stream<Path> pathStream = Files.list(imageManifestsRepositoryPath)) {
                 pathStream.forEach(p -> {
                     try {
                         RepositoryPath repositoryPath = (RepositoryPath) p;
                         if (!RepositoryFiles.isChecksum(repositoryPath) && !manifestSet.contains(p.getFileName().toString())) {
                             //在manifest中，该manifest文件未被tag使用，删除该manifest
-                            if (delete(repositoryPath)) {
+                            if (delete(repositoryPath, false)) {
                                 resultList.add(successMsg);
                                 log.info("Docker repository [{}] [{}] image [{}] manifest [{}] did not use delete", storageId, repositoryId, imageRepositoryPath.getFileName().toString(), p.toString());
                             }
@@ -222,7 +222,7 @@ public class CleanupDockerRepositoryCronJob extends JavaCronJob {
         }
         if (!Files.exists(imageManifestsRepositoryPath) || Files.list(imageManifestsRepositoryPath).count() == 0) {
             //manifest目录为空删除镜像
-            if (delete(imageRepositoryPath)) {
+            if (delete(imageRepositoryPath, true)) {
                 resultList.add(successMsg);
                 log.info("Docker repository [{}] [{}] image [{}] not exists manifest delete", storageId, repositoryId, imageRepositoryPath.getFileName().toString());
             }
@@ -233,14 +233,14 @@ public class CleanupDockerRepositoryCronJob extends JavaCronJob {
 
     private boolean handlerBlobs(RepositoryPath imageRepositoryPath, String storageId, String repositoryId, RepositoryPath imageBlobsRepositoryPath, Set<String> blobSet, List<String> resultList, String successMsg, String failMsg) throws Exception {
         boolean isContinue = false;
-        if (Files.exists(imageBlobsRepositoryPath)) {
+        if (Files.exists(imageBlobsRepositoryPath) && CollectionUtils.isNotEmpty(blobSet)) {
             try (Stream<Path> pathStream = Files.list(imageBlobsRepositoryPath)) {
                 pathStream.forEach(p -> {
                     try {
                         RepositoryPath repositoryPath = (RepositoryPath) p;
-                        if (!RepositoryFiles.isChecksum(repositoryPath) && !blobSet.contains(p.getFileName().toString()) && compareTime(repositoryPath)) {
+                        if (!RepositoryFiles.isChecksum(repositoryPath) && !blobSet.contains(p.getFileName().toString())) {
                             //在blobs中，该blob文件未被tag使用，删除该blob
-                            if (delete(repositoryPath)) {
+                            if (delete(repositoryPath, false)) {
                                 resultList.add(successMsg);
                                 log.info("Docker repository [{}] [{}] image [{}] blob [{}] did not use delete", storageId, repositoryId, imageRepositoryPath.getFileName().toString(), p.toString());
                             }
@@ -254,7 +254,7 @@ public class CleanupDockerRepositoryCronJob extends JavaCronJob {
         }
         if (!Files.exists(imageBlobsRepositoryPath) || Files.list(imageBlobsRepositoryPath).count() == 0) {
             //blobs目录为空删除镜像
-            if (delete(imageRepositoryPath)) {
+            if (delete(imageRepositoryPath, true)) {
                 resultList.add(successMsg);
                 log.info("Docker repository [{}] [{}] image [{}] not exists blobs delete", storageId, repositoryId, imageRepositoryPath.getFileName().toString());
             }
@@ -305,7 +305,11 @@ public class CleanupDockerRepositoryCronJob extends JavaCronJob {
         return lastModifiedDateTime;
     }
 
-    private boolean delete(RepositoryPath repositoryPath) throws Exception {
+    private boolean delete(RepositoryPath repositoryPath, boolean ignoreTime) throws Exception {
+        if (ignoreTime) {
+            artifactManagementService.delete(repositoryPath, true);
+            return true;
+        }
         if (compareTime(repositoryPath)) {
             artifactManagementService.delete(repositoryPath, true);
             return true;

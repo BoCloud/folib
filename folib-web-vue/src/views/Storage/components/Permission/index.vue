@@ -9,7 +9,7 @@
     >
       <a-row :gutter="[24]">
         <a-col :span="24">
-          <a-card v-if="this.folibRepository.layout !== 'Docker'" :bordered="false" class="header-solid">
+          <a-card :bordered="false" class="header-solid">
             <template #title>
               <h6>允许匿名访问</h6>
               <p v-if="permissionForm.allowAnonymous === true">匿名用户可拉取制品</p>

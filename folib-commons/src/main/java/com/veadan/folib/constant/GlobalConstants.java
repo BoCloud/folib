@@ -21,4 +21,9 @@ public interface GlobalConstants {
      */
     String WEB_URL_PREFIX = "WEB_URL_PREFIX";
 
+    /**
+     * 匿名用户
+     */
+    String ANONYMOUS_TOKEN_KEY = "anonymousUser";
+
 }
