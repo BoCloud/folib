@@ -1,5 +1,6 @@
 package com.veadan.folib.controllers.promotion;
 
+import com.alibaba.fastjson.JSONObject;
 import com.veadan.folib.config.PermissionCheck;
 import com.veadan.folib.controllers.BaseArtifactController;
 import com.veadan.folib.domain.ArtifactDispatch;
@@ -32,7 +33,7 @@ import java.util.List;
  */
 @RestController
 @RequestMapping("/api/artifact/folib/promotion")
-@Api(description = "制品文件管理",tags = "制品文件管理")
+@Api(description = "制品文件管理", tags = "制品文件管理")
 @Slf4j
 public class ArtifactPromotionController extends BaseArtifactController {
 
@@ -64,6 +65,7 @@ public class ArtifactPromotionController extends BaseArtifactController {
     public ResponseEntity nodeOption(@RequestBody @Validated PromotionNodeOption promotionNodeOption,
                                      HttpServletRequest request,
                                      BindingResult bindingResult) {
+        logger.info("NodeOption params [{}]", JSONObject.toJSONString(promotionNodeOption));
         if (bindingResult.hasErrors()) {
             throw new RequestBodyValidationException("请求参数错误", bindingResult);
         }

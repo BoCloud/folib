@@ -1,9 +1,18 @@
 package com.veadan.folib.security.authentication.suppliers;
 
 import com.veadan.folib.authentication.api.jwt.JwtAuthentication;
+import com.veadan.folib.constant.GlobalConstants;
 import com.veadan.folib.security.authentication.JwtTokenFetcher;
 import com.veadan.folib.security.exceptions.InvalidTokenException;
 import com.veadan.folib.users.security.SecurityTokenProvider;
+import org.apache.commons.lang.StringUtils;
+import org.springframework.core.annotation.Order;
+import org.springframework.security.authentication.AnonymousAuthenticationToken;
+import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContext;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.stereotype.Component;
 
 import javax.annotation.CheckForNull;
 import javax.annotation.Nonnull;
@@ -12,75 +21,64 @@ import javax.servlet.http.HttpServletRequest;
 import java.util.Arrays;
 import java.util.Optional;
 
-import org.apache.commons.lang.StringUtils;
-import org.springframework.core.annotation.Order;
-import org.springframework.security.authentication.BadCredentialsException;
-import org.springframework.security.core.Authentication;
-import org.springframework.stereotype.Component;
-
 @Component
 @Order(1)
 public class JWTAuthenticationSupplier
-        implements AuthenticationSupplier, JwtTokenFetcher
-{
+        implements AuthenticationSupplier, JwtTokenFetcher {
 
     @Inject
     private SecurityTokenProvider securityTokenProvider;
 
     @CheckForNull
     @Override
-    public Authentication supply(@Nonnull HttpServletRequest request)
-    {
+    public Authentication supply(@Nonnull HttpServletRequest request) {
         final Optional<String> optToken = getToken(request);
-        if (!optToken.isPresent())
-        {
+        if (!optToken.isPresent()) {
             return null;
         }
 
         final String token = optToken.get();
         String username;
-        try
-        {
+        try {
             username = securityTokenProvider.getSubject(token);
-        }
-        catch (InvalidTokenException e)
-        {
+        } catch (InvalidTokenException e) {
             throw new BadCredentialsException("invalid.token");
         }
-
+        if (GlobalConstants.ANONYMOUS_TOKEN_KEY.equals(username)) {
+            SecurityContext securityContext = SecurityContextHolder.getContext();
+            Authentication authentication = securityContext.getAuthentication();
+            if (authentication instanceof AnonymousAuthenticationToken) {
+                return authentication;
+            }
+        }
         return new JwtAuthentication(username, token);
     }
 
     @Override
-    public boolean supports(HttpServletRequest request)
-    {
+    public boolean supports(HttpServletRequest request) {
         boolean hasHeader = false;
         boolean hasCookie = false;
 
         // give priority to header based authentication, because it is more likely to be present
-        if(request.getHeader(AUTHORIZATION_HEADER) != null)
-        {
+        if (request.getHeader(AUTHORIZATION_HEADER) != null) {
             String authHeader = request.getHeader(AUTHORIZATION_HEADER);
             hasHeader = StringUtils.isNotBlank(authHeader) && authHeader.startsWith(BEARER_AUTHORIZATION_PREFIX);
         }
         // fallback - check if a cookie is present (necessary for EventSource; check gh#1046).
-        else if (request.getCookies() != null && matchesScope(request))
-        {
+        else if (request.getCookies() != null && matchesScope(request)) {
             hasCookie = Arrays.stream(request.getCookies())
-                              .anyMatch(c -> c.getName()
-                                              .equals(AUTHORIZATION_COOKIE));
+                    .anyMatch(c -> c.getName()
+                            .equals(AUTHORIZATION_COOKIE));
         }
 
-        if (hasHeader || hasCookie)
-        {
+        if (hasHeader || hasCookie) {
             return true;
         }
 
         return false;
     }
 
-    private boolean matchesScope(HttpServletRequest request)
-    {
+    private boolean matchesScope(HttpServletRequest request) {
         final String uri = request.getRequestURI();
 
         // wildcard match
@@ -88,7 +86,7 @@ public class JWTAuthenticationSupplier
 
         // exclude `/api/ping` since it's under the wild card match, but is called to check for liveliness which
         // means it might contain the `cookie` thus triggering a basic auth (gh#1687).
-        if(matches && uri.equals("/api/ping")) {
+        if (matches && uri.equals("/api/ping")) {
             matches = false;
         }
 

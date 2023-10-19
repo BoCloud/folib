@@ -1,5 +1,6 @@
 package com.veadan.folib.eventlistener.backup;
 
+import com.veadan.folib.components.artifact.ArtifactComponent;
 import com.veadan.folib.entity.Dict;
 import com.veadan.folib.enums.DictTypeEnum;
 import com.veadan.folib.event.AsyncEventListener;
@@ -32,6 +33,9 @@ public class ArtifactEventBackupListener {
     @Inject
     private DictService dictService;
 
+    @Inject
+    private ArtifactComponent artifactComponent;
+
     @AsyncEventListener
     public void handle(final ArtifactEvent<RepositoryPath> event) {
         int source = (int) event.getSource();
@@ -50,11 +54,12 @@ public class ArtifactEventBackupListener {
                     Path backupPath = Files.createDirectories(Paths.get(backupDir));
                     String sourcePath = repositoryPath.toString();
                     String prefix = String.format("/%s/%s/", storageId, repositoryId);
-                    String targetSubPath = sourcePath.substring(sourcePath.indexOf(prefix) + prefix.length());
+                    String targetSubPath = sourcePath.substring(sourcePath.indexOf(prefix) + 1);
                     Path targetPath = backupPath.resolve(targetSubPath);
                     log.info("StorageId [{}] repositoryId [{}] 开启备份功能，源制品地址 [{}] 备份制品地址 [{}]", storageId, repositoryId, sourcePath, targetPath.toString());
                     Files.createDirectories(targetPath.getParent());
                     Files.copy(repositoryPath.getTarget(), targetPath, StandardCopyOption.REPLACE_EXISTING);
+                    artifactComponent.storeArtifactMetadataFile(repositoryPath, targetPath);
                 }
             } catch (Exception ex) {
                 log.error("事件监听，处理backup，事件类型：{} repositoryPath：{} 错误：{}", source, repositoryPath, ExceptionUtils.getStackTrace(ex));
@@ -69,7 +74,7 @@ public class ArtifactEventBackupListener {
      * @return true 需要处理 false 不需要处理
      */
     private boolean validateArtifactEvent(ArtifactEventTypeEnum artifactEventTypeEnum) {
-        List<Integer> list = Arrays.asList(ArtifactEventTypeEnum.EVENT_ARTIFACT_FILE_STORED.getType(), ArtifactEventTypeEnum.EVENT_ARTIFACT_FILE_UPDATED.getType(), ArtifactEventTypeEnum.EVENT_ARTIFACT_METADATA_STORED.getType());
+        List<Integer> list = Arrays.asList(ArtifactEventTypeEnum.EVENT_ARTIFACT_FILE_STORED.getType(), ArtifactEventTypeEnum.EVENT_ARTIFACT_FILE_UPDATED.getType(), ArtifactEventTypeEnum.EVENT_ARTIFACT_METADATA_STORED.getType(), ArtifactEventTypeEnum.EVENT_ARTIFACT_METADATA_UPDATE.getType());
         return list.contains(artifactEventTypeEnum.getType());
     }
 
