@@ -131,10 +131,10 @@ export default {
       this.getData()
     },
     handleGoDetail(row) {
-      this.$router.push(`/componentsDetail/${row.uuid}`)
+      this.$router.push(`/components/componentsDetail/${row.uuid}`)
     },
     handleGoLicense(licenseId) {
-      this.$router.push(`/licensesDetail/${licenseId}`)
+      this.$router.push(`/licenses/licensesDetail/${licenseId}`)
     },
     handheTableSearch() {
       this.queryParams.page = 1

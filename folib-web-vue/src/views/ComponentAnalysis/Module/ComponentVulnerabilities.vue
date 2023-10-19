@@ -181,10 +181,10 @@ export default {
       this.getData()
     },
     handleGoCom(row) {
-      this.$router.push(`/componentsDetail/${row.component.uuid}`)
+      this.$router.push(`/components/componentsDetail/${row.component.uuid}`)
     },
     handleGoVul(uuid) {
-      this.$router.push(`/vulnerabilitiesDetail/${uuid}`)
+      this.$router.push(`/vulnerabilities/vulnerabilitiesDetail/${uuid}`)
     },
     handheTableSearch() {
       this.queryParams.page = 1

@@ -154,7 +154,7 @@ export default {
       }  
     },
     handleClickMenu(p) {
-      this.$router.push(`/artifactsDetail/${p.uuid}`);
+      this.$router.push(`/artifacts/artifactsDetail/${p.uuid}`);
       this.initialize();
     },
     handleChangeTabs(val) {

@@ -122,7 +122,7 @@ export default {
       this.getData()
     },
     handleGoDetail(row) {
-      this.$router.push(`/vulnerabilitiesDetail/${row.cve}`)
+      this.$router.push(`/vulnerabilities/vulnerabilitiesDetail/${row.cve}`)
     },
     handheTableSearch() {
       this.queryParams.page = 1

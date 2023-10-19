@@ -127,13 +127,13 @@ export default {
       this.getData()
     },
     handleGoDetail(row) {
-      this.$router.push(`/componentsDetail/${row.uuid}`)
+      this.$router.push(`/components/componentsDetail/${row.uuid}`)
     },
     handleGoProject(row) {
-      this.$router.push(`/artifactsDetail/${row.project.uuid}`)
+      this.$router.push(`/artifacts/artifactsDetail/${row.project.uuid}`)
     },
     handleGoLicense(item) {
-      this.$router.push(`/licensesDetail/${item}`)
+      this.$router.push(`/licenses/licensesDetail/${item}`)
     },
     handheTableSearch() {
       this.queryParams.page = 1

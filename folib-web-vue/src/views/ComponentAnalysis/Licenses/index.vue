@@ -84,7 +84,7 @@ export default {
       this.getData()
     },
     handleGoDetail(row) {
-      this.$router.push(`/licensesDetail/${row.licenseId}`)
+      this.$router.push(`/licenses/licensesDetail/${row.licenseId}`)
     },
     handheTableSearch() {
       this.queryParams.page = 1
