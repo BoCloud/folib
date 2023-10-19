@@ -7,7 +7,6 @@
         <id property="id" column="id"/>
         <result property="sourcePath" column="source_path"/>
         <result property="targetPath" column="target_path"/>
-        <result property="opsType" column="ops_type"/>
         <result property="syncNo" column="sync_no"/>
         <result property="syncModel" column="sync_model"/>
         <result property="status" column="status"/>

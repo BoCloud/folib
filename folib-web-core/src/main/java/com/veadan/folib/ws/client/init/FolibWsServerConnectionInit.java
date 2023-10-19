@@ -37,7 +37,6 @@ public class FolibWsServerConnectionInit implements ApplicationRunner
         clusterDispatchNode.values().forEach((nodeInfo) -> {
             final String clusterNodeHost = nodeInfo.getClusterNodeHost();
             try {
-                final String instanceName = configurationManager.getConfiguration().getInstanceName();
                 final String clusterEnName = nodeInfo.getClusterEnName();
                 final URL destUrl = new URL(clusterNodeHost);
                 final URL originUrl = new URL(configurationManager.getConfiguration().getBaseUrl());

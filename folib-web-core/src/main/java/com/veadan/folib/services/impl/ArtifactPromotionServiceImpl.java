@@ -239,7 +239,6 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
         try {
             String sourcePath = promotionNodeOption.getSourcePath();
             String targetPath = promotionNodeOption.getTargetPath();
-            final Integer opsType = promotionNodeOption.getOpsType();
             final Integer syncModel = promotionNodeOption.getSyncModel();
             String srcStorageId = parsePath(sourcePath)[0];
             String srcRepostoryId = parsePath(sourcePath)[1];
@@ -264,8 +263,8 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
             }
 
             // 判断节点参数是 做推 push  或者 拉取 pull
-            String requestURL = request.getServerName();
-            log.info("requestURL={}",requestURL);
+//            String requestURL = request.getServerName();
+//            log.info("requestURL={}",requestURL);
 
 //            if (sourcePath.contains(requestURL)) {
             if (ArtifactSyncRecordSyncModelEnum.PUSH.getVal().equals(syncModel)) {
@@ -355,7 +354,6 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
         final ArtifactSyncRecord artifactSyncRecord = new ArtifactSyncRecord();
         artifactSyncRecord.setSourcePath(promotionNodeOption.getSourcePath());
         artifactSyncRecord.setTargetPath(promotionNodeOption.getTargetPath());
-        artifactSyncRecord.setOpsType(promotionNodeOption.getOpsType());
         artifactSyncRecord.setSyncNo(syncNo);
         artifactSyncRecord.setSyncModel(promotionNodeOption.getSyncModel());
         artifactSyncRecord.setStatus(ArtifactSyncRecordStatusEnum.IN_SYNC.getVal());

@@ -50,7 +50,7 @@ public class FolibWsServerRunManage
             return false;
         }
     }
-    
+
     public static boolean online(String nodeName, WebSocketSession session)
     {
         final FolibWsServerRun folibWsServerRun = FOLIB_WS_CLIENT_RUN_MAP.get(nodeName);

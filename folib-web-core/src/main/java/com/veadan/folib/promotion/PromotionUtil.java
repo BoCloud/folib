@@ -15,6 +15,7 @@ import com.veadan.folib.configuration.ConfigurationManager;
 import com.veadan.folib.dispatch.ClusterDispatchNodeDto;
 import com.veadan.folib.domain.*;
 import com.veadan.folib.dto.*;
+import com.veadan.folib.enums.ArtifactSyncRecordSyncModelEnum;
 import com.veadan.folib.enums.PromotionStatusEnum;
 import com.veadan.folib.forms.common.StorageTreeForm;
 import com.veadan.folib.providers.io.RepositoryFiles;
@@ -27,6 +28,8 @@ import com.veadan.folib.service.ProxyRepositoryConnectionPoolConfigurationServic
 import com.veadan.folib.services.*;
 import com.veadan.folib.storage.repository.Repository;
 import com.veadan.folib.util.RepositoryPathUtil;
+import com.veadan.folib.ws.FolibWsAction;
+import com.veadan.folib.ws.server.manage.FolibWsClientRunManage;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.MapUtils;
@@ -43,6 +46,7 @@ import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.stereotype.Component;
 
 import javax.inject.Inject;
+import javax.websocket.Session;
 import javax.ws.rs.client.Client;
 import javax.ws.rs.client.Entity;
 import javax.ws.rs.client.Invocation;
@@ -273,22 +277,31 @@ public class PromotionUtil {
             log.info("分发 [{}] 开始", dispatchType);
             if (dispatchType.equals("pull")) {
                 promotionNodeOption = new PromotionNodeOption(sourcePath, targetPath);
-                String url = dispatchNodeHost.endsWith("/") ?
-                        dispatchNodeHost + "api/artifact/folib/promotion/nodeOption" :
-                        dispatchNodeHost + "/api/artifact/folib/promotion/nodeOption";
-                Client client = clientPool.getRestClient();
-                WebTarget target = client.target(url);
-                Invocation.Builder builder = target.request();
-                securityComponent.securityTokenHeader(builder);
-                response = builder.post(Entity.entity(promotionNodeOption, MediaType.APPLICATION_JSON));
-                if (response.getStatus() != 200) {
-                    log.error("分发 [{}] 失败 {}", dispatchType, JSONUtil.toJsonStr(promotionNodeOption));
-                    throw new Exception("分发失败 ! http status " + response.getStatus());
-                }
-                response.readEntity(java.lang.String.class);
-                if (Boolean.TRUE.equals(recordStatus)) {
-                    artifactComponent.handlerArtifactPromotion(dispatchNodeDto.getClusterEnName(), srcStorageId, srcRepositoryId, artifactPath, PromotionStatusEnum.SUCCESS.getStatus());
-                }
+                promotionNodeOption.setSyncModel(ArtifactSyncRecordSyncModelEnum.PULL.getVal());
+                
+                // 通过Ws协议通知客户端拉取制品
+                final FolibWsClientRunManage.FolibWsClientRun wsClientRun = FolibWsClientRunManage.getWsClientRun(dispatchNodeDto.getClusterEnName());
+                final Session session = wsClientRun.getSession();
+                session.getBasicRemote().sendText(JSON.toJSONString(new FolibWsAction()
+                        .setCommand("/artifact/pull")
+                        .setPayload(JSON.toJSONString(promotionNodeOption))));
+                
+///                String url = dispatchNodeHost.endsWith("/") ?
+///                        dispatchNodeHost + "api/artifact/folib/promotion/nodeOption" :
+///                        dispatchNodeHost + "/api/artifact/folib/promotion/nodeOption";
+///                Client client = clientPool.getRestClient();
+///                WebTarget target = client.target(url);
+///                Invocation.Builder builder = target.request();
+///                securityComponent.securityTokenHeader(builder);
+///                response = builder.post(Entity.entity(promotionNodeOption, MediaType.APPLICATION_JSON));
+///                if (response.getStatus() != 200) {
+///                    log.error("分发 [{}] 失败 {}", dispatchType, JSONUtil.toJsonStr(promotionNodeOption));
+///                    throw new Exception("分发失败 ! http status " + response.getStatus());
+///                }
+///                response.readEntity(java.lang.String.class);
+///                if (Boolean.TRUE.equals(recordStatus)) {
+///                    artifactComponent.handlerArtifactPromotion(dispatchNodeDto.getClusterEnName(), srcStorageId, srcRepositoryId, artifactPath, PromotionStatusEnum.SUCCESS.getStatus());
+///                }
             } else {
                 Repository srcRepository = repositoryManagementService.getStorage(srcStorageId).getRepository(srcRepositoryId);
                 RepositoryPath srcPath = repositoryPathResolver.resolve(srcRepository, artifactPath);

@@ -1,4 +1,5 @@
 package com.veadan.folib.controllers;
+import com.alibaba.fastjson.JSONObject;
 
 import com.veadan.folib.licence.ActivateVo;
 import com.veadan.folib.licence.MacUtil;
@@ -93,7 +94,11 @@ public class PingController
 
         try {
             ActivateVo activateVo = codeActivateService.isNotActivate();
-
+            activateVo.setMac("");
+            activateVo.setHaveError(false);
+            activateVo.setDalyOut(false);
+            activateVo.setObject(new JSONObject());
+            activateVo.setLevel("pro");
 
             return ResponseEntity.ok().body(activateVo);
 
