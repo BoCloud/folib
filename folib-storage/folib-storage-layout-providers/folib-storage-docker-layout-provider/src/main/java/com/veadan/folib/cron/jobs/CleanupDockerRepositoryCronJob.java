@@ -206,7 +206,7 @@ public class CleanupDockerRepositoryCronJob extends JavaCronJob {
                 pathStream.forEach(p -> {
                     try {
                         RepositoryPath repositoryPath = (RepositoryPath) p;
-                        if (!RepositoryFiles.isChecksum(repositoryPath) && !manifestSet.contains(p.getFileName().toString())) {
+                        if (!RepositoryFiles.isChecksum(repositoryPath) && !RepositoryFiles.isArtifactMetadata(repositoryPath) && !manifestSet.contains(p.getFileName().toString())) {
                             //在manifest中，该manifest文件未被tag使用，删除该manifest
                             if (delete(repositoryPath, false)) {
                                 resultList.add(successMsg);
@@ -238,7 +238,7 @@ public class CleanupDockerRepositoryCronJob extends JavaCronJob {
                 pathStream.forEach(p -> {
                     try {
                         RepositoryPath repositoryPath = (RepositoryPath) p;
-                        if (!RepositoryFiles.isChecksum(repositoryPath) && !blobSet.contains(p.getFileName().toString())) {
+                        if (!RepositoryFiles.isChecksum(repositoryPath) && !RepositoryFiles.isArtifactMetadata(repositoryPath) && !blobSet.contains(p.getFileName().toString())) {
                             //在blobs中，该blob文件未被tag使用，删除该blob
                             if (delete(repositoryPath, false)) {
                                 resultList.add(successMsg);

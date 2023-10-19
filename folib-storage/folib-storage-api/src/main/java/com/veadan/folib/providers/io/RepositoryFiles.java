@@ -40,6 +40,13 @@ public abstract class RepositoryFiles
         return (Boolean) Files.getAttribute(path, formatAttributes(RepositoryFileAttributeType.METADATA));
     }
 
+    public static Boolean isArtifactMetadata(RepositoryPath path)
+            throws IOException
+    {
+        String fileName = path.getFileName().toString();
+        return fileName.startsWith(".") && fileName.endsWith(".metadata");
+    }
+
     public static Boolean isTrash(RepositoryPath path)
         throws IOException
     {
