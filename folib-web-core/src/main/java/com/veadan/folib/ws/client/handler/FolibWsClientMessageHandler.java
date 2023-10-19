@@ -17,17 +17,11 @@ import org.springframework.web.socket.handler.BinaryWebSocketHandler;
 @Slf4j
 public class FolibWsClientMessageHandler extends BinaryWebSocketHandler
 {
-    private FolibWsClientCommandDispatch folibClientCommandDispatch;
-
-    public FolibWsClientMessageHandler(FolibWsClientCommandDispatch folibClientCommandDispatch) {
-        this.folibClientCommandDispatch = folibClientCommandDispatch;
-    }
-
     @Override
     protected void handleTextMessage(WebSocketSession session, TextMessage message) 
     {
         final String textMessage = new String(message.asBytes());
         final FolibWsAction folibWsAction = JSON.parseObject(textMessage, FolibWsAction.class);
-        folibClientCommandDispatch.dispatch(folibWsAction);
+        FolibWsClientCommandDispatch.dispatch(folibWsAction);
     }
 }

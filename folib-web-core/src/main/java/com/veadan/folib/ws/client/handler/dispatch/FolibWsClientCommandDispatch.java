@@ -30,7 +30,7 @@ public class FolibWsClientCommandDispatch
     @Autowired
     private ApplicationContext applicationContext;
 
-    private final Map<String, FolibClientCommandRegister> wsCommandRegister = new HashMap<>();
+    private static final Map<String, FolibClientCommandRegister> wsCommandRegister = new HashMap<>();
 
     public void init()
     {
@@ -45,7 +45,7 @@ public class FolibWsClientCommandDispatch
                 });
     }
     
-    public void dispatch(FolibWsAction action)
+    public static void dispatch(FolibWsAction action)
     {
         final FolibClientCommandRegister folibClientCommandRegister = wsCommandRegister.get(action.getCommand());
         if (null == folibClientCommandRegister)
