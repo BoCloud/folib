@@ -1,5 +1,6 @@
 package com.veadan.folib.utils;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 
@@ -11,6 +12,7 @@ import java.util.Optional;
 /**
  * @author
  */
+@Slf4j
 public class UrlUtils {
 
     private UrlUtils() {
