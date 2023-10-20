@@ -47,7 +47,7 @@ public class FolibWsServerConnectionInit implements ApplicationRunner
                 final String destUri = String.format("/ws/folib/%s", nodeName);
                 
                 FolibWsServerRunManage.up(nodeName, destHost, destPort, destUri, false);
-                log.info("【FolibWs连接初始化】成功连接到节点({}:{}) ===> ({}:{})", 
+                log.info("【FolibWs连接初始化】开始连接到节点({}:{}) ===> ({}:{})", 
                         originUrl.getHost(), originUrl.getPort(),
                         destHost, destPort);
             } catch (Exception e) {

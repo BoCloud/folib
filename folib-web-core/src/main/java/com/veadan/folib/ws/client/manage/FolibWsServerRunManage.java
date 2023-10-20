@@ -44,6 +44,7 @@ public class FolibWsServerRunManage
             final StandardWebSocketClient webSocketClient = new StandardWebSocketClient();
             final String url = String.format("ws://%s:%s%s", host, port, uri);
             final WebSocketSession webSocketSession = webSocketClient.doHandshake(new FolibWsClientMessageHandler(), url).get();
+            log.info("【FolibWs服务端运行管理器】连接到节点（{}:{}）成功", host, port);
             return online(nodeName, webSocketSession);
         } catch (Exception e) {
             log.error("【FolibWs服务端运行管理器】连接到节点（{}:{}）失败", host, port, e);
