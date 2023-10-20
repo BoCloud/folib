@@ -18,6 +18,6 @@ public class FolibWsClientHelloCommand implements FolibWsClientCommand<String> {
     @Override
     public void execute(String content) 
     {
-        System.out.println("接收到hello command内容：" + content);
+        System.out.println("hello command接收到内容：" + content);
     }
 }
