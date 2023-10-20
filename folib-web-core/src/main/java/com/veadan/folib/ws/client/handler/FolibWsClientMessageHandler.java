@@ -21,7 +21,13 @@ public class FolibWsClientMessageHandler extends BinaryWebSocketHandler
     protected void handleTextMessage(WebSocketSession session, TextMessage message) 
     {
         final String textMessage = new String(message.asBytes());
-        final FolibWsAction folibWsAction = JSON.parseObject(textMessage, FolibWsAction.class);
-        FolibWsClientCommandDispatch.dispatch(folibWsAction);
+        try 
+        {
+            final FolibWsAction folibWsAction = JSON.parseObject(textMessage, FolibWsAction.class);
+            FolibWsClientCommandDispatch.dispatch(folibWsAction);
+        }catch (Exception e)
+        {
+            log.error("解析来自FolibWs服务端的消息（{}）失败", textMessage, e);    
+        }
     }
 }
