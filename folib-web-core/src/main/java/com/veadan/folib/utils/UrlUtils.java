@@ -86,4 +86,15 @@ public class UrlUtils {
         }
     }
 
+    public static String getHost(String urlStr)
+    {
+        try {
+            final URL url = new URL(urlStr);
+            return url.getHost();
+        } catch (MalformedURLException e) {
+            log.error("解析Host错误", e);
+            return null;
+        }
+    }
+
 }

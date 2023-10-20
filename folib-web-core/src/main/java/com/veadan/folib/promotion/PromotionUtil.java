@@ -28,6 +28,7 @@ import com.veadan.folib.service.ProxyRepositoryConnectionPoolConfigurationServic
 import com.veadan.folib.services.*;
 import com.veadan.folib.storage.repository.Repository;
 import com.veadan.folib.util.RepositoryPathUtil;
+import com.veadan.folib.utils.UrlUtils;
 import com.veadan.folib.ws.FolibWsAction;
 import com.veadan.folib.ws.server.manage.FolibWsClientRunManage;
 import lombok.extern.slf4j.Slf4j;
@@ -280,7 +281,11 @@ public class PromotionUtil {
                 promotionNodeOption.setSyncModel(ArtifactSyncRecordSyncModelEnum.PULL.getVal());
                 
                 // 通过Ws协议通知客户端拉取制品
-                final FolibWsClientRunManage.FolibWsClientRun wsClientRun = FolibWsClientRunManage.getWsClientRun(dispatchNodeDto.getClusterEnName());
+                final String clusterNodeHost = dispatchNodeDto.getClusterNodeHost();
+                final Integer nodePort = UrlUtils.getPort(clusterNodeHost);
+                final String nodeHost = UrlUtils.getHost(clusterNodeHost);
+                final String nodeName = String.format("%s:%s", nodeHost, nodePort);
+                final FolibWsClientRunManage.FolibWsClientRun wsClientRun = FolibWsClientRunManage.getWsClientRun(nodeName);
                 final Session session = wsClientRun.getSession();
                 session.getBasicRemote().sendText(JSON.toJSONString(new FolibWsAction()
                         .setCommand("/artifact/pull")

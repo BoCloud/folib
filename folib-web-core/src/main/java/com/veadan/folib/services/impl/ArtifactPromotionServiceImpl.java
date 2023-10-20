@@ -292,14 +292,16 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
             } else if (ArtifactSyncRecordSyncModelEnum.PULL.getVal().equals(syncModel)) {
                 log.info("进入拉模式={}",true);
                 // 通过Ws协议通知客户端进行拉取操作
-                final URL url = new URL(srcUrl);
-                final Integer port = UrlUtils.getPort(srcUrl);
-                final String nodeName = String.format("%s:%s", url.getHost(), port);
+                final URL url = new URL(targetUrl);
+                final String targetHost = url.getHost();
+                final Integer targetPort = UrlUtils.getPort(targetUrl);
+                final String nodeName = String.format("%s:%s", targetHost, targetPort);
                 final FolibWsClientRunManage.FolibWsClientRun wsClientRun = FolibWsClientRunManage.getWsClientRun(nodeName);
                 final Session session = wsClientRun.getSession();
-                session.getBasicRemote().sendText(JSON.toJSONString(new FolibWsAction()
+                session.getBasicRemote().sendText(new FolibWsAction()
                         .setCommand("/artifact/pull")
-                        .setPayload(JSON.toJSONString(promotionNodeOption))));
+                        .setPayload(JSON.toJSONString(promotionNodeOption))
+                        .encode());
                 
 ///                validateStorageAndRepository(targetStorageId, targetRepostoryId);
 ///                // 从源仓路径 pull 到目标仓路径 获取目标主机的path 路径下的文件与目录 然后依次提交到任务队列里面后将文件存入仓库

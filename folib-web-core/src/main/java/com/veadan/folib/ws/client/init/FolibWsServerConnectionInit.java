@@ -41,14 +41,16 @@ public class FolibWsServerConnectionInit implements ApplicationRunner
             try {
                 final URL destUrl = new URL(clusterNodeHost);
                 final URL originUrl = new URL(configurationManager.getConfiguration().getBaseUrl());
+                final String originHost = originUrl.getHost();
+                final Integer originPort = UrlUtils.getPort(originUrl.toString());
                 final String destHost = destUrl.getHost();
                 final Integer destPort = UrlUtils.getPort(clusterNodeHost);
-                final String nodeName = String.format("%s:%s", destHost, destPort);
+                final String nodeName = String.format("%s:%s", originHost, originPort);
                 final String destUri = String.format("/ws/folib/%s", nodeName);
                 
                 FolibWsServerRunManage.up(nodeName, destHost, destPort, destUri, false);
-                log.info("【FolibWs连接初始化】开始连接到节点({}:{}) ===> ({}:{})", 
-                        originUrl.getHost(), originUrl.getPort(),
+                log.info("【FolibWs连接初始化】开始连接到节点({}:{}) ===> ({}:{})",
+                        originHost, originPort,
                         destHost, destPort);
             } catch (Exception e) {
                 log.error("【FolibWs连接初始化】连接失败", e);
