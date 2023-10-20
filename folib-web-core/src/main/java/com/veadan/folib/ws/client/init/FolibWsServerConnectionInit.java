@@ -3,6 +3,7 @@ package com.veadan.folib.ws.client.init;
 import com.veadan.folib.configuration.ConfigurationManager;
 import com.veadan.folib.dispatch.ClusterDispatchNodeDto;
 import com.veadan.folib.services.ConfigurationManagementService;
+import com.veadan.folib.utils.UrlUtils;
 import com.veadan.folib.ws.client.manage.FolibWsServerRunManage;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -13,6 +14,7 @@ import org.springframework.stereotype.Component;
 import javax.inject.Inject;
 import java.net.URL;
 import java.util.Map;
+import java.util.Optional;
 
 /**
  * @author xiaodong.wang
@@ -37,14 +39,14 @@ public class FolibWsServerConnectionInit implements ApplicationRunner
         clusterDispatchNode.values().forEach((nodeInfo) -> {
             final String clusterNodeHost = nodeInfo.getClusterNodeHost();
             try {
-                final String clusterEnName = nodeInfo.getClusterEnName();
                 final URL destUrl = new URL(clusterNodeHost);
                 final URL originUrl = new URL(configurationManager.getConfiguration().getBaseUrl());
                 final String destHost = destUrl.getHost();
-                final int destPort = destUrl.getPort();
-                final String destUri = String.format("/ws/folib/%s", clusterEnName);
+                final Integer destPort = UrlUtils.getPort(clusterNodeHost);
+                final String nodeName = String.format("%s:%s", destHost, destPort);
+                final String destUri = String.format("/ws/folib/%s", nodeName);
                 
-                FolibWsServerRunManage.up(clusterEnName, destHost, destPort, destUri, false);
+                FolibWsServerRunManage.up(nodeName, destHost, destPort, destUri, false);
                 log.info("【FolibWs连接初始化】成功连接到节点({}:{}) ===> ({}:{})", 
                         originUrl.getHost(), originUrl.getPort(),
                         destHost, destPort);

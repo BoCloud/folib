@@ -2,14 +2,21 @@ package com.veadan.folib.utils;
 
 import javax.servlet.http.HttpServletRequest;
 
+import jnr.ffi.annotations.In;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
+import scala.Int;
 
+import java.net.MalformedURLException;
+import java.net.URI;
 import java.net.URL;
+import java.util.Optional;
 
 /**
  * @author 
  */
+@Slf4j
 public class UrlUtils
 {
 
@@ -44,6 +51,20 @@ public class UrlUtils
         return args[index];
     }
 
+    public static Integer getPort(String urlStr)
+    {
+        if (urlStr.startsWith("https")) {
+            return 443;
+        }
+        try {
+            final URL url = new URL(urlStr);
+            return Optional.of(url.getPort()).map(p -> p < 0 ? 80:p).get();
+        } catch (MalformedURLException e) {
+            log.error("解析端口错误", e);
+            return null;
+        }
+    }
+    
 
 
         public static void main(String[] args) {
