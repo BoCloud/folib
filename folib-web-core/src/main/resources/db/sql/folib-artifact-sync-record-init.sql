@@ -15,7 +15,7 @@ CREATE TABLE `artifact_sync_record` (
   `updated_by` varchar(255) DEFAULT NULL COMMENT '更新人',
   `updated_time` datetime DEFAULT NULL COMMENT '更新时间',
   PRIMARY KEY (`id`),
-  UNIQUE KEY `idx_sync_no` (`sync_no`) USING BTREE,
+  UNIQUE KEY `uk_sync_no` (`sync_no`) USING BTREE,
   KEY `idx_ops_type` (`ops_type`) USING BTREE,
   KEY `idx_status` (`status`) USING BTREE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='制品同步记录';
