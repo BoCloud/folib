@@ -144,6 +144,9 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
     @Inject
     @Lazy
     private ArtifactComponent artifactComponent;
+    
+    @Inject
+    private ArtifactSyncRecordMapper artifactSyncRecordMapper;
 
     @Override
     public ResponseEntity copy(ArtifactPromotion artifactPromotion) {
@@ -241,6 +244,7 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
         try {
             String sourcePath = StringUtils.removeEnd(promotionNodeOption.getSourcePath(), "/");
             String targetPath = StringUtils.removeEnd( promotionNodeOption.getTargetPath(), "/");
+            final Integer syncModel = promotionNodeOption.getSyncModel();
             String srcStorageId = parsePath(sourcePath)[0];
             String srcRepostoryId = parsePath(sourcePath)[1];
             String srcUrl = sourcePath.split("/" + srcStorageId + "/" + srcRepostoryId + "/")[0];
@@ -356,6 +360,11 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
     @Override
     public ResponseEntity nodeOptionAttachRecord(PromotionNodeOption promotionNodeOption, HttpServletRequest request) 
     {
+        // 生成同步编号
+        final String syncNo = String.format("SyncNo-%s", UUID.fastUUID());
+        final SpringSecurityUser userDetails = (SpringSecurityUser) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        final String userName = Optional.ofNullable(userDetails).map(SpringSecurityUser::getUsername).orElse(null);
+
         // 生成日志记录
         final ArtifactSyncRecord artifactSyncRecord = new ArtifactSyncRecord();
         artifactSyncRecord.setSourcePath(promotionNodeOption.getSourcePath());
