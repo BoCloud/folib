@@ -45,10 +45,11 @@ public class FolibWsServerConnectionInit implements ApplicationRunner
                 final Integer originPort = UrlUtils.getPort(originUrl.toString());
                 final String destHost = destUrl.getHost();
                 final Integer destPort = UrlUtils.getPort(clusterNodeHost);
-                final String nodeName = String.format("%s:%s", originHost, originPort);
-                final String destUri = String.format("/ws/folib/%s", nodeName);
+                final String destNodeName = String.format("%s:%s", destHost, destPort);
+                final String originNodeName = String.format("%s:%s", originHost, originPort);
+                final String destUri = String.format("/ws/folib/%s", originNodeName);
                 
-                FolibWsServerRunManage.up(nodeName, destHost, destPort, destUri, false);
+                FolibWsServerRunManage.up(destNodeName, destHost, destPort, destUri, true);
                 log.info("【FolibWs连接初始化】开始连接到节点({}:{}) ===> ({}:{})",
                         originHost, originPort,
                         destHost, destPort);

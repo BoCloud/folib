@@ -25,6 +25,7 @@ import com.veadan.folib.providers.io.RepositoryPathResolver;
 import com.veadan.folib.providers.layout.LayoutProviderRegistry;
 import com.veadan.folib.repositories.ArtifactRepository;
 import com.veadan.folib.repository.MavenRepositoryFeatures;
+import com.veadan.folib.scanner.common.exception.BusinessException;
 import com.veadan.folib.service.ProxyRepositoryConnectionPoolConfigurationService;
 import com.veadan.folib.services.*;
 import com.veadan.folib.storage.repository.Repository;
@@ -297,6 +298,8 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
                 final Integer targetPort = UrlUtils.getPort(targetUrl);
                 final String nodeName = String.format("%s:%s", targetHost, targetPort);
                 final FolibWsClientRunManage.FolibWsClientRun wsClientRun = FolibWsClientRunManage.getWsClientRun(nodeName);
+                if (null == wsClientRun)
+                { throw new BusinessException("需要晋级的节点不可用，请检查节点是否配置正确"); }
                 final Session session = wsClientRun.getSession();
                 session.getBasicRemote().sendText(new FolibWsAction()
                         .setCommand("/artifact/pull")
