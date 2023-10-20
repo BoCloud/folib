@@ -4,7 +4,9 @@ import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 
 import javax.servlet.http.HttpServletRequest;
+import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.Optional;
 
 /**
  * @author
@@ -66,6 +68,20 @@ public class UrlUtils {
             // URL 格式不正确或解析失败
         }
         return null;
+    }
+
+    public static Integer getPort(String urlStr)
+    {
+        if (urlStr.startsWith("https")) {
+            return 443;
+        }
+        try {
+            final URL url = new URL(urlStr);
+            return Optional.of(url.getPort()).map(p -> p < 0 ? 80:p).get();
+        } catch (MalformedURLException e) {
+            log.error("解析端口错误", e);
+            return null;
+        }
     }
 
 }

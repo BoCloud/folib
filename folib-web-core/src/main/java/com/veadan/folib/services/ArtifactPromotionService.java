@@ -28,6 +28,8 @@ public interface ArtifactPromotionService {
     
     ResponseEntity nodeOptionAttachRecord(PromotionNodeOption promotionNodeOption, HttpServletRequest request);
 
+    ResponseEntity artifactPromotionInfo(String syncNo);
+
     ResponseEntity upload(MultipartFile[] files, String storageId, String repositoryId, String filePathMap, String fileMetaDataMap, String uuid);
 
     ResponseEntity upload(String parseArtifact, String storageId, String repositoryId);

@@ -1,6 +1,6 @@
 package com.veadan.folib.mapper;
 
-import com.veadan.folib.entity.Dict;
+import com.veadan.folib.entity.ArtifactSyncRecord;
 import com.veadan.folib.scanner.common.base.CommonMapper;
 import org.springframework.stereotype.Component;
 
@@ -12,7 +12,6 @@ import org.springframework.stereotype.Component;
  * @since x.x.x
  */
 @Component
-public interface ArtifactSyncRecordMapper extends CommonMapper<Dict> {
-
+public interface ArtifactSyncRecordMapper extends CommonMapper<ArtifactSyncRecord>{
 
 }
