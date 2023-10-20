@@ -22,6 +22,7 @@ import com.veadan.folib.providers.io.RepositoryFiles;
 import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.providers.io.RepositoryPathResolver;
 import com.veadan.folib.providers.layout.DockerLayoutProvider;
+import com.veadan.folib.scanner.common.exception.BusinessException;
 import com.veadan.folib.schema2.ImageManifest;
 import com.veadan.folib.schema2.LayerManifest;
 import com.veadan.folib.service.ProxyRepositoryConnectionPoolConfigurationService;
@@ -286,6 +287,9 @@ public class PromotionUtil {
                 final String nodeHost = UrlUtils.getHost(clusterNodeHost);
                 final String nodeName = String.format("%s:%s", nodeHost, nodePort);
                 final FolibWsClientRunManage.FolibWsClientRun wsClientRun = FolibWsClientRunManage.getWsClientRun(nodeName);
+                if (null == wsClientRun)
+                { throw new BusinessException("当前分发的节点不可用，请检查节点是否配置正确"); }
+                
                 final Session session = wsClientRun.getSession();
                 session.getBasicRemote().sendText(JSON.toJSONString(new FolibWsAction()
                         .setCommand("/artifact/pull")
