@@ -259,7 +259,7 @@ public class ArtifactComponent {
     public boolean layoutSupports(RepositoryPath repositoryPath, Boolean block, Boolean scan) {
         boolean flag = false;
         if (Objects.isNull(repositoryPath) || !Files.exists(repositoryPath)) {
-            log.error("RepositoryPath [{}] does not exist", repositoryPath);
+            log.warn("RepositoryPath [{}] does not exist", repositoryPath);
             return false;
         }
 //        try {
