@@ -1,6 +1,4 @@
 package com.veadan.folib.services.impl;
-import java.net.URL;
-import java.util.Date;
 
 import cn.hutool.core.io.FileUtil;
 import cn.hutool.core.lang.UUID;
@@ -10,8 +8,18 @@ import com.veadan.folib.components.artifact.ArtifactComponent;
 import com.veadan.folib.components.promotion.ArtifactPromotionProvider;
 import com.veadan.folib.components.promotion.ArtifactPromotionProviderRegistry;
 import com.veadan.folib.components.security.SecurityComponent;
-import com.veadan.folib.domain.*;
-import com.veadan.folib.dto.*;
+import com.veadan.folib.domain.AnalysisHtmlGetDirAndFilePath;
+import com.veadan.folib.domain.ArtifactDispatch;
+import com.veadan.folib.domain.ArtifactParse;
+import com.veadan.folib.domain.ArtifactPromotion;
+import com.veadan.folib.domain.PromotionFileRelativePath;
+import com.veadan.folib.domain.PromotionNodeOption;
+import com.veadan.folib.dto.ArtifactDto;
+import com.veadan.folib.dto.ArtifactPromotionInfoDto;
+import com.veadan.folib.dto.PromotionArtifactDto;
+import com.veadan.folib.dto.PromotionNodeOptionDto;
+import com.veadan.folib.dto.TargetDispatchRepositoryDto;
+import com.veadan.folib.dto.TargetRepositoyDto;
 import com.veadan.folib.entity.ArtifactSyncRecord;
 import com.veadan.folib.entity.Dict;
 import com.veadan.folib.enums.ArtifactSyncRecordStatusEnum;
@@ -19,7 +27,6 @@ import com.veadan.folib.enums.ArtifactSyncRecordSyncModelEnum;
 import com.veadan.folib.mapper.ArtifactSyncRecordMapper;
 import com.veadan.folib.promotion.ArtifactUploadTask;
 import com.veadan.folib.promotion.PromotionUtil;
-import com.veadan.folib.promotion.PullArtifactTask;
 import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.providers.io.RepositoryPathResolver;
 import com.veadan.folib.providers.layout.LayoutProviderRegistry;
@@ -27,12 +34,18 @@ import com.veadan.folib.repositories.ArtifactRepository;
 import com.veadan.folib.repository.MavenRepositoryFeatures;
 import com.veadan.folib.scanner.common.exception.BusinessException;
 import com.veadan.folib.service.ProxyRepositoryConnectionPoolConfigurationService;
-import com.veadan.folib.services.*;
+import com.veadan.folib.services.ArtifactManagementService;
+import com.veadan.folib.services.ArtifactMetadataService;
+import com.veadan.folib.services.ArtifactPromotionService;
+import com.veadan.folib.services.ArtifactResolutionService;
+import com.veadan.folib.services.DictService;
+import com.veadan.folib.services.RepositoryManagementService;
 import com.veadan.folib.storage.repository.Repository;
 import com.veadan.folib.users.userdetails.SpringSecurityUser;
 import com.veadan.folib.utils.PropertiesUtils;
 import com.veadan.folib.utils.UrlUtils;
 import com.veadan.folib.ws.FolibWsAction;
+import com.veadan.folib.ws.client.handler.command.FolibWsClientArtifactPullCommand;
 import com.veadan.folib.ws.server.manage.FolibWsClientRunManage;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.fileupload.disk.DiskFileItem;
@@ -61,19 +74,24 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.websocket.Session;
 import javax.ws.rs.client.Client;
-import javax.ws.rs.client.Entity;
 import javax.ws.rs.client.Invocation;
 import javax.ws.rs.client.WebTarget;
-import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.concurrent.FutureTask;
 import java.util.stream.Collectors;
 
@@ -302,7 +320,7 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
                 { throw new BusinessException("需要晋级的节点不可用，请检查节点是否配置正确"); }
                 final Session session = wsClientRun.getSession();
                 session.getBasicRemote().sendText(new FolibWsAction()
-                        .setCommand("/artifact/pull")
+                        .setCommand(FolibWsClientArtifactPullCommand.COMMAND)
                         .setPayload(JSON.toJSONString(promotionNodeOption))
                         .encode());
                 

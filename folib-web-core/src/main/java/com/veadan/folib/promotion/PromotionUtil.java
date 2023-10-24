@@ -31,6 +31,7 @@ import com.veadan.folib.storage.repository.Repository;
 import com.veadan.folib.util.RepositoryPathUtil;
 import com.veadan.folib.utils.UrlUtils;
 import com.veadan.folib.ws.FolibWsAction;
+import com.veadan.folib.ws.client.handler.command.FolibWsClientArtifactPullCommand;
 import com.veadan.folib.ws.server.manage.FolibWsClientRunManage;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
@@ -292,7 +293,7 @@ public class PromotionUtil {
                 
                 final Session session = wsClientRun.getSession();
                 session.getBasicRemote().sendText(JSON.toJSONString(new FolibWsAction()
-                        .setCommand("/artifact/pull")
+                        .setCommand(FolibWsClientArtifactPullCommand.COMMAND)
                         .setPayload(JSON.toJSONString(promotionNodeOption))));
                 
 ///                String url = dispatchNodeHost.endsWith("/") ?

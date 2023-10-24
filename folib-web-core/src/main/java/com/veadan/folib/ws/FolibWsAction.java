@@ -1,6 +1,5 @@
 package com.veadan.folib.ws;
 
-import com.alibaba.fastjson.JSON;
 import lombok.Data;
 import lombok.experimental.Accessors;
 
@@ -12,13 +11,8 @@ import lombok.experimental.Accessors;
  */
 @Data
 @Accessors(chain = true)
-public class FolibWsAction 
+public class FolibWsAction implements JsonEncoder
 {
     private String command;
     private String payload;
-    
-    public String encode()
-    {
-        return JSON.toJSONString(this);
-    }
 }

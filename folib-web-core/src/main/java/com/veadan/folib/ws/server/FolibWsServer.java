@@ -1,10 +1,13 @@
 package com.veadan.folib.ws.server;
 
+import com.veadan.folib.configuration.ConfigurationManager;
 import com.veadan.folib.ws.FolibWsAction;
+import com.veadan.folib.ws.client.handler.command.FolibWsClientConsoleCommand;
 import com.veadan.folib.ws.server.manage.FolibWsClientRunManage;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
+import javax.inject.Inject;
 import javax.websocket.OnClose;
 import javax.websocket.OnError;
 import javax.websocket.OnMessage;
@@ -25,12 +28,31 @@ import java.io.IOException;
 @Component
 public class FolibWsServer 
 {
+    @Inject
+    protected ConfigurationManager configurationManager;
+    
     @OnOpen
-    public void onOpen(@PathParam("nodeName") String nodeName, Session session) {
-        FolibWsClientRunManage.online(nodeName, session);
-        log.info("连接建立成功，nodeName = {} session_id = {}", nodeName, session.getId());
+    public void onOpen(@PathParam("nodeName") String nodeName, Session session) 
+    {
         try {
-            session.getBasicRemote().sendText(new FolibWsAction().setCommand("/hello").setPayload(String.format("%s 你已经成功上线！！！", nodeName)).encode());
+            final FolibWsClientRunManage.FolibWsClientRun wsClientRun = FolibWsClientRunManage.getWsClientRun(nodeName);
+            if (null != wsClientRun)
+            {
+                final String baseUrl = configurationManager.getConfiguration().getBaseUrl();
+                final String info = String.format("连接失败，当前节点（%s）已存在连接的客户端（%s）会话", baseUrl, nodeName);
+                session.getBasicRemote().sendText(new FolibWsAction()
+                        .setCommand(FolibWsClientConsoleCommand.COMMAND)
+                        .setPayload(new FolibWsClientConsoleCommand.Payload()
+                                .setLevel(FolibWsClientConsoleCommand.LogConsoleLevel.ERROR)
+                                .setContent(info)
+                                .encode())
+                        .encode());
+                log.info(info);
+                session.close();
+            }
+            
+            FolibWsClientRunManage.online(nodeName, session);
+            log.info("连接建立成功，nodeName = {} session_id = {}", nodeName, session.getId());
         } catch (IOException e) {
             throw new RuntimeException(e);
         }

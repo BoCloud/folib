@@ -39,7 +39,8 @@ import static com.veadan.folib.utils.UrlUtils.parsePath;
 @Component
 public class FolibWsClientArtifactPullCommand implements FolibWsClientCommand<PromotionNodeOption> 
 {
-    private final String getFileRelativePaths = "/api/artifact/folib/promotion/getFileRelativePaths";
+    public static final String COMMAND = "/artifact/pull";
+    private static final String API_ARTIFACT_FOLIB_PROMOTION_GET_FILE_RELATIVE_PATHS = "/api/artifact/folib/promotion/getFileRelativePaths";
     
     @Autowired
     private ArtifactPromotionService artifactPromotionService;
@@ -61,7 +62,7 @@ public class FolibWsClientArtifactPullCommand implements FolibWsClientCommand<Pr
     
     @Override
     public String command() {
-        return "/artifact/pull";
+        return COMMAND;
     }
 
     @Override
@@ -83,7 +84,7 @@ public class FolibWsClientArtifactPullCommand implements FolibWsClientCommand<Pr
             log.info("进入拉模式={}",true);
             artifactPromotionService.validateStorageAndRepository(targetStorageId, targetRepostoryId);
             // 从源仓路径 pull 到目标仓路径 获取目标主机的path 路径下的文件与目录 然后依次提交到任务队列里面后将文件存入仓库
-            String url = srcUrl + getFileRelativePaths;
+            String url = srcUrl + API_ARTIFACT_FOLIB_PROMOTION_GET_FILE_RELATIVE_PATHS;
             Client client = clientPool.getRestClient();
             WebTarget target = client.target(url);
             ArtifactDto artifactDto = ArtifactDto.builder().storageId(srcStorageId).
