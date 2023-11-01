@@ -209,6 +209,7 @@ public class ArtifactController extends BaseController {
 
     @ApiOperation(value = "查询制品分页列表", response = ArtifactInfo.class)
     @ApiResponses(value = {@ApiResponse(code = 200, message = "OK")})
+    @PreAuthorize("hasAuthority('ARTIFACTS_VIEW')")
     @GetMapping(value = "/thirdParty/page")
     public TableResultResponse<ArtifactInfo> thirdPartyPage(ArtifactQuery artifactQuery) {
         return artifactWebService.thirdPartyPage(artifactQuery);

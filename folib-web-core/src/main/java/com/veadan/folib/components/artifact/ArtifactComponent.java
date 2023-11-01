@@ -23,6 +23,7 @@ import com.veadan.folib.enums.PromotionStatusEnum;
 import com.veadan.folib.enums.VersionConditionTypeEnum;
 import com.veadan.folib.event.artifact.ArtifactEventListenerRegistry;
 import com.veadan.folib.npm.metadata.*;
+import com.veadan.folib.providers.io.RepositoryFiles;
 import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.providers.io.RepositoryPathResolver;
 import com.veadan.folib.providers.io.RootRepositoryPath;
@@ -61,6 +62,7 @@ import org.jsoup.nodes.Document;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.http.HttpStatus;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 import org.springframework.util.Assert;
 
@@ -1104,24 +1106,24 @@ public class ArtifactComponent {
         }
     }
 
-    //    @Async("eventTaskExecutor")
+    @Async("eventTaskExecutor")
     public void beforeRead(RepositoryPath repositoryPath) {
         try {
-//            if (!RepositoryFiles.isArtifact(repositoryPath)) {
-//                return;
-//            }
+            if (Objects.isNull(repositoryPath) || !RepositoryFiles.isArtifact(repositoryPath)) {
+                return;
+            }
             artifactEventListenerRegistry.dispatchArtifactDownloadingEvent(repositoryPath);
         } catch (Exception ex) {
             log.error("RepositoryPath beforeRead error ", ex);
         }
     }
 
-    //    @Async("eventTaskExecutor")
+    @Async("eventTaskExecutor")
     public void afterRead(RepositoryPath repositoryPath) {
         try {
-//            if (!RepositoryFiles.isArtifact(repositoryPath)) {
-//                return;
-//            }
+            if (Objects.isNull(repositoryPath) || !RepositoryFiles.isArtifact(repositoryPath)) {
+                return;
+            }
             artifactEventListenerRegistry.dispatchArtifactDownloadedEvent(repositoryPath);
         } catch (Exception ex) {
             log.error("RepositoryPath beforeRead error ", ex);

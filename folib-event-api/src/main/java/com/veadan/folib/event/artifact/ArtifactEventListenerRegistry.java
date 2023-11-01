@@ -6,7 +6,6 @@ import java.nio.file.Path;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 
 /**
@@ -48,7 +47,6 @@ public class ArtifactEventListenerRegistry extends AbstractEventListenerRegistry
         dispatchEvent(event);
     }
 
-    @Async
     public void dispatchArtifactDownloadingEvent(Path path)
     {
         ArtifactEvent event = new ArtifactEvent(path,
@@ -59,7 +57,6 @@ public class ArtifactEventListenerRegistry extends AbstractEventListenerRegistry
         dispatchEvent(event);
     }
 
-    @Async
     public void dispatchArtifactDownloadedEvent(Path path)
     {
         ArtifactEvent event = new ArtifactEvent(path,
