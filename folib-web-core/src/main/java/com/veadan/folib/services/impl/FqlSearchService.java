@@ -173,8 +173,10 @@ public class FqlSearchService extends GremlinVertexRepository<Artifact> implemen
             Repository repository = repositoryPath.getRepository();
             URL artifactResource = RepositoryFiles.readResourceUrl(repositoryPath);
             r.setUrl(artifactResource.toString());
-            r.setLayout(repository.getLayout());
-            r.setSubLayout(repository.getSubLayout());
+            if (Objects.nonNull(repository)) {
+                r.setLayout(repository.getLayout());
+                r.setSubLayout(repository.getSubLayout());
+            }
             String path = artifact.getArtifactCoordinates().buildPath();
             if (DockerLayoutProvider.ALIAS.equalsIgnoreCase(r.getLayout())) {
                 //docker
@@ -190,9 +192,11 @@ public class FqlSearchService extends GremlinVertexRepository<Artifact> implemen
                 r.setArtifactName(path.substring(path.lastIndexOf("/") + 1));
                 r.setArtifactPath(path);
             }
-            List<CodeSnippet> snippets = snippetGenerator.generateSnippets(repository.getLayout(),
-                    artifact.getArtifactCoordinates());
-            r.setSnippets(snippets);
+            if (Objects.nonNull(repository)) {
+                List<CodeSnippet> snippets = snippetGenerator.generateSnippets(repository.getLayout(),
+                        artifact.getArtifactCoordinates());
+                r.setSnippets(snippets);
+            }
 
             TreeUtil treeUtil = new TreeUtil();
             Set<String> fileNames = artifact.getArtifactArchiveListing().getFilenames();
@@ -230,6 +234,9 @@ public class FqlSearchService extends GremlinVertexRepository<Artifact> implemen
 
     private Long getSearchDockerSize(RepositoryPath repositoryPath, String imageName) throws IOException {
         Long size = 0L;
+        if (Objects.isNull(repositoryPath) || !Files.exists(repositoryPath)) {
+            return size;
+        }
         String manifestString = Files.readString(repositoryPath);
         ImageManifest imageManifest = JSON.parseObject(manifestString, ImageManifest.class);
         List<LayerManifest> layers = null;
@@ -237,6 +244,9 @@ public class FqlSearchService extends GremlinVertexRepository<Artifact> implemen
             layers = imageManifest.getLayers();
         } else if (CollectionUtils.isNotEmpty(imageManifest.getManifests())) {
             RepositoryPath manifestPath = repositoryPathResolver.resolve(repositoryPath.getStorageId(), repositoryPath.getRepositoryId(), imageName + "/manifest/" + imageManifest.getManifests().get(0).getDigest());
+            if (Objects.isNull(manifestPath) || !Files.exists(manifestPath)) {
+                return size;
+            }
             manifestString = Files.readString(manifestPath);
             imageManifest = JSON.parseObject(manifestString, ImageManifest.class);
             layers = imageManifest.getLayers();
