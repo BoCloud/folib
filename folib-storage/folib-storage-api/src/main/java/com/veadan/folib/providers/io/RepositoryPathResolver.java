@@ -46,6 +46,7 @@ public class RepositoryPathResolver {
             Storage storage = configurationManager.getConfiguration().getStorage(storageId);
             Objects.requireNonNull(storage, String.format("Storage [%s] not found", storageId));
             repository = storage.getRepository(repositoryId);
+            Objects.requireNonNull(repository, String.format("Repository [%s] [%s] not found", storageId, repositoryId));
             cacheUtil.put(key, repository);
         }
         return resolve(repository);
@@ -69,6 +70,7 @@ public class RepositoryPathResolver {
             Storage storage = configurationManager.getConfiguration().getStorage(storageId);
             Objects.requireNonNull(storage, String.format("Storage [%s] not found", storageId));
             repository = storage.getRepository(repositoryId);
+            Objects.requireNonNull(repository, String.format("Repository [%s] [%s] not found", storageId, repositoryId));
             cacheUtil.put(key, repository);
         }
         return resolve(repository, path);

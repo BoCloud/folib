@@ -112,7 +112,7 @@ public class UserController
 
     @ApiOperation(value = "Used to retrieve users")
     @ApiResponses(value = {@ApiResponse(code = 200, message = SUCCESSFUL_GET_USERS)})
-    @PreAuthorize("hasAuthority('VIEW_USER')")
+    @PreAuthorize("hasAuthority('ADMIN')")
     @PostMapping(value = "/queryUser", produces = {MediaType.APPLICATION_JSON_VALUE})
     @ResponseBody
     public TableResultResponse<UserOutput> queryUser(@RequestBody UserDto user, Integer page, Integer limit) {
