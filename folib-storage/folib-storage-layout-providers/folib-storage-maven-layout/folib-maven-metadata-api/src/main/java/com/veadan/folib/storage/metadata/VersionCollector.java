@@ -212,6 +212,9 @@ public class VersionCollector
         {
             String unixBasedFilePath = FilenameUtils.separatorsToUnix(filePath.toString());
             Gav gav = M2_GAV_CALCULATOR.pathToGav(unixBasedFilePath);
+            if (Objects.isNull(gav)) {
+                continue;
+            }
             //TODO 非空判断 其他仓库的metadata.xml
             Artifact artifact = new DefaultArtifact(gav.getGroupId(),
                                                     gav.getArtifactId(),
