@@ -183,6 +183,20 @@ public class ArtifactRepository extends GremlinVertexRepository<Artifact> {
         return new PageImpl<>(artifactList, pagination, count);
     }
 
+    public Page<Artifact> findMatchingForThirdParty(Pageable pagination, String searchKeyword) {
+        Long zero = 0L;
+        Long count = buildEntityTraversalForThirdParty(searchKeyword).count().tryNext().orElse(zero);
+        if (zero.equals(count)) {
+            return new PageImpl<>(Collections.emptyList(), pagination, count);
+        }
+        long low = pagination.getPageNumber() * pagination.getPageSize();
+        long high = (pagination.getPageNumber() + 1) * pagination.getPageSize();
+        List<Artifact> artifactList = buildEntityTraversalForThirdParty(searchKeyword)
+                .range(low, high)
+                .map(artifactAdapter.fold()).toList();
+        return new PageImpl<>(artifactList, pagination, count);
+    }
+
     private List<String> getGroupStorageIdAndRepositoryId(com.veadan.folib.storage.repository.Repository repository) {
         List<String> storageIdAndRepositoryIdList = Lists.newArrayList();
         for (String storageAndRepositoryId : repository.getGroupRepositories()) {
@@ -503,6 +517,7 @@ public class ArtifactRepository extends GremlinVertexRepository<Artifact> {
         EntityTraversal<Vertex, Vertex> entityTraversal = g().V().hasLabel(Vertices.ARTIFACT);
         entityTraversal = entityTraversal.has(Properties.ARTIFACT_PATH, Text.textNotContains("blobs/sha256"));
         entityTraversal = entityTraversal.has(Properties.ARTIFACT_PATH, Text.textNotContains("manifest/sha256"));
+        entityTraversal = entityTraversal.has(Properties.ARTIFACT_FILE_EXISTS, true);
         if (StringUtils.isNotBlank(storageId)) {
             entityTraversal = entityTraversal.has(Properties.STORAGE_ID, storageId);
         }
@@ -560,6 +575,18 @@ public class ArtifactRepository extends GremlinVertexRepository<Artifact> {
                 }
             }
         }
+        return entityTraversal;
+    }
+
+    public EntityTraversal<Vertex, Vertex> buildEntityTraversalForThirdParty(String searchKeyword) {
+        EntityTraversal<Vertex, Vertex> entityTraversal = g().V().hasLabel(Vertices.ARTIFACT);
+        entityTraversal = entityTraversal.has(Properties.ARTIFACT_PATH, Text.textNotContains("blobs/sha256"));
+        entityTraversal = entityTraversal.has(Properties.ARTIFACT_PATH, Text.textNotContains("manifest/sha256"));
+        entityTraversal = entityTraversal.has(Properties.ARTIFACT_FILE_EXISTS, true);
+        if (StringUtils.isNotBlank(searchKeyword)) {
+            entityTraversal = entityTraversal.has(Properties.ARTIFACT_PATH, Text.textContains(searchKeyword));
+        }
+        entityTraversal = entityTraversal.order().by(Properties.CREATED, Order.desc);
         return entityTraversal;
     }
 
