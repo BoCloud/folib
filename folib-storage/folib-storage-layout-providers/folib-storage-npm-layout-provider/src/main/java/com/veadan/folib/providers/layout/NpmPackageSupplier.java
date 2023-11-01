@@ -72,9 +72,11 @@ public class NpmPackageSupplier implements Function<Path, NpmPackageDesc> {
         npmPackageDesc.setReleaseDate(releaseDate);
 
         PackageVersion npmPackage = null;
-        if (StringUtils.isNotBlank(artifactEntry.getPackageInfo())) {
+        byte[] packageJsonBytes = layoutProvider.getContentByFileName(repositoryPath, repositoryPath, NpmLayoutProvider.PACKAGE_JSON);
+        if (Objects.nonNull(packageJsonBytes)) {
+            String packageJson = new String(packageJsonBytes, StandardCharsets.UTF_8);
             try {
-                npmPackage = npmJacksonMapper.readValue(artifactEntry.getPackageInfo(), PackageVersion.class);
+                npmPackage = npmJacksonMapper.readValue(packageJson, PackageVersion.class);
             } catch (Exception ex) {
                 logger.warn("Artifact packageVersion 转换异常 [{}]", artifactEntry.getUuid());
             }
