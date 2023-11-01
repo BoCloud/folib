@@ -3,9 +3,12 @@ package com.veadan.folib.services;
 import com.veadan.folib.domain.Artifact;
 import com.veadan.folib.domain.ArtifactStatistics;
 import com.veadan.folib.domain.StatusInfo;
+import com.veadan.folib.domain.thirdparty.ArtifactInfo;
+import com.veadan.folib.domain.thirdparty.ArtifactQuery;
 import com.veadan.folib.forms.artifact.ArtifactMetadataForm;
 import com.veadan.folib.forms.scanner.*;
 import com.veadan.folib.providers.io.RepositoryPath;
+import com.veadan.folib.scanner.common.msg.TableResultResponse;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -168,4 +171,12 @@ public interface ArtifactWebService {
      * @return 制品统计信息
      */
     ArtifactStatistics artifactStatistics();
+
+    /**
+     * 查询制品分页列表
+     *
+     * @param artifactQuery 查询参数
+     * @return 制品分页列表
+     */
+    TableResultResponse<ArtifactInfo> thirdPartyPage(ArtifactQuery artifactQuery);
 }
