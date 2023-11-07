@@ -3,6 +3,7 @@ package com.veadan.folib.controllers;
 import com.alibaba.fastjson.JSON;
 import com.veadan.folib.components.syncartifact.SyncArtifactProvider;
 import com.veadan.folib.components.syncartifact.SyncArtifactProviderRegistry;
+import com.veadan.folib.config.PermissionCheck;
 import com.veadan.folib.configuration.ConfigurationManager;
 import com.veadan.folib.configuration.MetadataConfiguration;
 import com.veadan.folib.constant.GlobalConstants;
@@ -169,7 +170,7 @@ public class ArtifactController extends BaseController {
 
     @ApiOperation(value = "根据压缩包生成制品信息")
     @ApiResponses(value = {@ApiResponse(code = 200, message = "OK")})
-    @PreAuthorize("hasAuthority('ADMIN')")
+    @PermissionCheck(resourceKey = "ARTIFACTS_DEPLOY", storageKey = "storageId", repositoryKey = "repositoryId")
     @PostMapping(value = "/store")
     public ResponseEntity<StatusInfo> store(@RequestParam(name = "storageId") String storageId,
                                             @RequestParam(name = "repositoryId") String repositoryId,
