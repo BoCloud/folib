@@ -30,14 +30,14 @@ public class FileUtils {
      *
      * @return
      */
-    public String getTempPath() {
+    public static String getTempPath() {
         return SpringUtil.getProperty("folib.temp");
     }
 
     /**
      * @return basePath
      */
-    public String getBasePath() {
+    public static String getBasePath() {
         return getTempPath() + "/";
     }
 
