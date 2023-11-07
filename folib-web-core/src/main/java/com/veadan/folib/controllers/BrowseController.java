@@ -181,7 +181,7 @@ public class BrowseController
                     jsonObject.put("manifestConfig", object);
                     jsonObject.put("sha256", configDigest);
                 }
-                Artifact artifact = getArtifact(repositoryPath);
+                Artifact artifact = getArtifact(repositoryPathResolver.resolve(storageId, repositoryId, fileContent.getArtifactPath()));
                 jsonObject.put("artifact", artifact);
                 Long size = Optional.ofNullable(imageManifest.getLayers()).orElse(Collections.emptyList()).stream().mapToLong(LayerManifest::getSize).sum();
                 jsonObject.put("snippets", snippets);
