@@ -26,7 +26,7 @@ public class LayerManifest {
     /**
      * size
      */
-    private Integer size;
+    private Long size;
 
     /**
      * digest
