@@ -1,12 +1,12 @@
 package com.veadan.folib.controllers;
+
 import com.veadan.folib.components.artifact.ArtifactComponent;
 import com.veadan.folib.controllers.support.ErrorResponseEntityBody;
 import com.veadan.folib.domain.Artifact;
 import com.veadan.folib.event.artifact.ArtifactEventListenerRegistry;
 import com.veadan.folib.providers.io.RepositoryPath;
-import com.veadan.folib.repositories.ArtifactRepository;
-import com.veadan.folib.service.ProxyRepositoryConnectionPoolConfigurationService;
 import com.veadan.folib.services.ArtifactManagementService;
+import com.veadan.folib.services.DictService;
 import com.veadan.folib.storage.repository.Repository;
 import com.veadan.folib.utils.ArtifactControllerHelper;
 import org.apache.commons.io.FilenameUtils;
@@ -16,7 +16,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.web.bind.annotation.RequestMethod;
 
 import javax.inject.Inject;
@@ -27,6 +26,7 @@ import java.nio.channels.Channels;
 import java.nio.channels.FileChannel;
 import java.nio.channels.WritableByteChannel;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Objects;
 
 public abstract class BaseArtifactController
@@ -34,12 +34,6 @@ public abstract class BaseArtifactController
 
     @Inject
     protected ArtifactManagementService artifactManagementService;
-
-    @Inject
-    private ArtifactRepository artifactRepository;
-
-    @Autowired
-    private ProxyRepositoryConnectionPoolConfigurationService clientPool;
 
     @Autowired
     private HttpServletResponse httpServletResponse;
@@ -51,7 +45,7 @@ public abstract class BaseArtifactController
     private ArtifactComponent artifactComponent;
 
     @Autowired
-    private ThreadPoolTaskExecutor asyncRepositoryThreadPoolExecutor;
+    private DictService dictService;
 
 
     protected boolean provideArtifactDownloadResponse(HttpServletRequest request,
@@ -79,47 +73,31 @@ public abstract class BaseArtifactController
         long startTime = System.currentTimeMillis();
         logger.debug("Download {} 开始时间 {}", repositoryPath.toString(), startTime);
         artifactComponent.beforeRead(repositoryPath);
-
-        if(repositoryPath.toString().startsWith("s3://")){
-            try (InputStream is = artifactResolutionService.getInputStream(repositoryPath))
-            {
-                if (ArtifactControllerHelper.isRangedRequest(httpHeaders))
-                {
-                    logger.debug("Detected ranged request.");
-
-                    ArtifactControllerHelper.handlePartialDownload(is, httpHeaders, response);
-                }
-                else
-                {
+        Path path = repositoryPath;
+        if (ArtifactControllerHelper.isRangedRequest(httpHeaders)) {
+            //分片
+            logger.debug("RepositoryPath [{}] Detected ranged request.", path.toString());
+            try (InputStream is = artifactResolutionService.getInputStream((RepositoryPath) path)) {
+                ArtifactControllerHelper.handlePartialDownload(is, httpHeaders, response);
+            }
+        } else if (path.toString().startsWith("s3://")) {
+            //S3
+            if (path instanceof RepositoryPath) {
+                try (InputStream is = artifactResolutionService.getInputStream((RepositoryPath) path)) {
                     copyToResponse(is, response);
                 }
             }
-        }else {
-            try (FileChannel fileChannel = FileChannel.open(repositoryPath)) {
-                WritableByteChannel responseChannel = Channels.newChannel(response.getOutputStream());
+        } else {
+            try (FileChannel fileChannel = FileChannel.open(path);
+                 WritableByteChannel responseChannel = Channels.newChannel(response.getOutputStream())) {
                 long fileSize = fileChannel.size();
-
-                // Handle partial content using ranges from httpHeaders and adjust the start and end accordingly.
-                if (ArtifactControllerHelper.isRangedRequest(httpHeaders)) {
-                    // adjust based on range from headers
-                    long start = 0;
-                    // adjust based on range from headers
-                    long end = fileSize - 1;
-                    long length = end - start + 1;
-
-                    response.setStatus(HttpStatus.PARTIAL_CONTENT.value());
-                    // Set appropriate Content-Range header values.
-                    response.setHeader("Content-Range", "bytes " + start + "-" + end + "/" + fileSize);
-
-                    fileChannel.transferTo(start, length, responseChannel);
-                    artifactComponent.afterRead(repositoryPath);
-                } else {
-                    fileChannel.transferTo(0, fileSize, responseChannel);
-                    artifactComponent.afterRead(repositoryPath);
+                for (long left = fileSize; left > 0; ) {
+                    logger.debug("RepositoryPath [{}] position: [{}] left: [{}]", path.toString(), fileSize - left, left);
+                    left -= fileChannel.transferTo((fileSize - left), left, responseChannel);
                 }
             }
         }
-
+        artifactComponent.afterRead(repositoryPath);
         logger.debug("Download {} 结束时间 {}", repositoryPath.toString(), System.currentTimeMillis() - startTime);
         return true;
     }
@@ -145,8 +123,8 @@ public abstract class BaseArtifactController
         long startTime = System.currentTimeMillis();
         logger.debug("Block JSON {} 开始时间 {}", repositoryPath.toString(), startTime);
         if (Files.exists(artifactRepositoryPath)) {
-            try (InputStream byteArrayInputStream = Files.newInputStream(artifactRepositoryPath);
-                 ObjectInputStream objectInputStream = new ObjectInputStream(byteArrayInputStream)) {
+            try (InputStream inputStream = Files.newInputStream(artifactRepositoryPath);
+                 ObjectInputStream objectInputStream = new ObjectInputStream(inputStream)) {
                 artifact = (Artifact) objectInputStream.readObject();
             } catch (Exception ex) {
                 logger.warn("解析制品 [{}] 本地缓存.metadata文件错误", ExceptionUtils.getStackTrace(ex));
