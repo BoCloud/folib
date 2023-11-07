@@ -1383,7 +1383,7 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
                      ObjectInputStream objectInputStream = new ObjectInputStream(inputStream)) {
                     Artifact artifact = (Artifact) objectInputStream.readObject();
                     if (Objects.nonNull(artifact) && StringUtils.isNotBlank(artifact.getMetadata())) {
-                        promotionUtil.setMetaData(repositoryPath, JSONObject.toJSONString(artifact.getMetadata()));
+                        promotionUtil.setMetaData(repositoryPath, artifact.getMetadata());
                     }
                 } catch (Exception ex) {
                     log.warn("解析制品 [{}] 本地缓存.metadata文件错误", ExceptionUtils.getStackTrace(ex));
