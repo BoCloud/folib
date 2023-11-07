@@ -49,7 +49,9 @@ import com.veadan.folib.providers.io.RepositoryFiles;
 import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.providers.io.RepositoryPathResolver;
 import com.veadan.folib.providers.io.RootRepositoryPath;
-import com.veadan.folib.providers.layout.*;
+import com.veadan.folib.providers.layout.DockerLayoutProvider;
+import com.veadan.folib.providers.layout.LayoutProviderRegistry;
+import com.veadan.folib.providers.layout.Maven2LayoutProvider;
 import com.veadan.folib.repositories.ArtifactRepository;
 import com.veadan.folib.scanner.common.msg.TableResultResponse;
 import com.veadan.folib.scanner.entity.ScanRules;
@@ -66,6 +68,7 @@ import com.veadan.folib.util.CustomDateUtils;
 import com.veadan.folib.util.FileSizeConvertUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.springframework.beans.BeanUtils;
@@ -90,11 +93,9 @@ import tk.mybatis.mapper.entity.Example;
 import javax.inject.Inject;
 import javax.servlet.http.HttpServletResponse;
 import javax.transaction.Transactional;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.*;
 import java.net.URI;
+import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -554,19 +555,28 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
      * @param repositoryId 仓库名称
      * @param artifactPath 制品路径
      * @return RepositoryPath
-     * @throws Exception 异常
      */
-    private Artifact resolvePath(String storageId, String repositoryId, String artifactPath) throws Exception {
-        RepositoryPath repositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, artifactPath);
-        Artifact artifact = Objects.nonNull(repositoryPath) ? repositoryPath.getArtifactEntry() : null;
-        if (Objects.isNull(artifact)) {
-            //兼容已存在数据的docker布局仓库
-            Repository repository = configurationManagementService.getConfiguration().getRepository(storageId, repositoryId);
-            if (DockerLayoutProvider.ALIAS.equalsIgnoreCase(repository.getLayout())) {
-                //docker
-                artifact = getDockerArtifact(artifactPath, storageId, repositoryId);
-                return artifact;
+    private Artifact resolvePath(String storageId, String repositoryId, String artifactPath) {
+        Artifact artifact = null;
+        try {
+            RepositoryPath repositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, artifactPath);
+            artifact = Objects.nonNull(repositoryPath) ? repositoryPath.getArtifactEntry() : null;
+            if (Objects.isNull(artifact)) {
+                artifactPath = URLDecoder.decode(artifactPath, StandardCharsets.UTF_8);
+                repositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, artifactPath);
+                artifact = Objects.nonNull(repositoryPath) ? repositoryPath.getArtifactEntry() : null;
             }
+            if (Objects.isNull(artifact)) {
+                //兼容已存在数据的docker布局仓库
+                Repository repository = configurationManagementService.getConfiguration().getRepository(storageId, repositoryId);
+                if (DockerLayoutProvider.ALIAS.equalsIgnoreCase(repository.getLayout())) {
+                    //docker
+                    artifact = getDockerArtifact(artifactPath, storageId, repositoryId);
+                    return artifact;
+                }
+            }
+        } catch (Exception ex) {
+            log.warn(ExceptionUtils.getStackTrace(ex));
         }
         return artifact;
     }
@@ -1365,6 +1375,19 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
                     itemMetadataJson.put(metadataKey, artifactMetadata);
                 }
                 promotionUtil.setMetaData(repositoryPath, JSONObject.toJSONString(itemMetadataJson));
+            }
+            String fileName = "." + FilenameUtils.getName(repositoryPath.getFileName().toString()) + ".metadata";
+            RepositoryPath artifactMetadataRepositoryPath = repositoryPath.getParent().resolve(fileName);
+            if (Files.exists(artifactMetadataRepositoryPath)) {
+                try (InputStream inputStream = Files.newInputStream(artifactMetadataRepositoryPath);
+                     ObjectInputStream objectInputStream = new ObjectInputStream(inputStream)) {
+                    Artifact artifact = (Artifact) objectInputStream.readObject();
+                    if (Objects.nonNull(artifact) && StringUtils.isNotBlank(artifact.getMetadata())) {
+                        promotionUtil.setMetaData(repositoryPath, JSONObject.toJSONString(artifact.getMetadata()));
+                    }
+                } catch (Exception ex) {
+                    log.warn("解析制品 [{}] 本地缓存.metadata文件错误", ExceptionUtils.getStackTrace(ex));
+                }
             }
         } catch (Exception ex) {
             log.error("handlerArtifact sync metadata path：{}，error：{}", repositoryPath.toString(), ExceptionUtils.getStackTrace(ex));
