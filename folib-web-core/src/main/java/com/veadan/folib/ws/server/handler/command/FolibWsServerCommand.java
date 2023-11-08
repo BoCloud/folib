@@ -1,4 +1,4 @@
-package com.veadan.folib.ws.client.handler.command;
+package com.veadan.folib.ws.server.handler.command;
 
 import com.veadan.folib.ws.FolibWsCommand;
 
@@ -8,5 +8,6 @@ import com.veadan.folib.ws.FolibWsCommand;
  * @date 2023/10/19 16:35
  * @since x.x.x
  */
-public interface FolibWsClientCommand<T> extends FolibWsCommand<T> {
+public interface FolibWsServerCommand<T> extends FolibWsCommand<T>
+{
 }

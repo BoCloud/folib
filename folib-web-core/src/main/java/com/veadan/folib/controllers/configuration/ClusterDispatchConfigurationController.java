@@ -10,7 +10,9 @@ import com.veadan.folib.services.ClusterSyncService;
 import com.veadan.folib.services.ConfigurationManagementService;
 import com.veadan.folib.utils.UrlUtils;
 import com.veadan.folib.validation.RequestBodyValidationException;
+import com.veadan.folib.ws.FolibWsAction;
 import com.veadan.folib.ws.client.manage.FolibWsServerRunManage;
+import com.veadan.folib.ws.server.handler.command.FolibWsServerSaveNodeInfoCommand;
 import io.swagger.annotations.*;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,6 +24,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.socket.TextMessage;
 
 import java.net.URL;
 import java.time.LocalDateTime;
@@ -101,6 +104,16 @@ public class ClusterDispatchConfigurationController extends BaseConfigurationCon
             final String destUri = String.format("/ws/folib/%s", originNodeName);
             FolibWsServerRunManage.up(destNodeName, destHost, destPort, destUri, true);
             
+            // 向WsServer发送创建节点维护信息
+            final FolibWsServerRunManage.FolibWsServerRun wsServerRun = FolibWsServerRunManage.getWsServerRun(destNodeName);
+            final FolibWsAction folibWsAction = new FolibWsAction()
+                    .setCommand(FolibWsServerSaveNodeInfoCommand.COMMAND)
+                    .setPayload(
+                        new FolibWsServerSaveNodeInfoCommand.Payload(nodeDto, 
+                                SyncClusterDispatchEnum.ADD_OR_UPDATE).encode()    
+                    );
+            wsServerRun.getSession().sendMessage(new TextMessage(folibWsAction.encode()));
+
             // 向其他集群节点同步同步制品分发节点信息
             SyncClusterDispatchDto syncClusterDispatchDto =
                     new SyncClusterDispatchDto(nodeDto, SyncClusterDispatchEnum.ADD_OR_UPDATE);
@@ -134,6 +147,8 @@ public class ClusterDispatchConfigurationController extends BaseConfigurationCon
             BeanUtils.copyProperties(clusterDispatchNodeForm, nodeDto);
             clusterDispatchManagementService.createClusterNode(nodeDto);
 
+            // 
+            
             // 向其他集群节点同步制品分发节点信息
             SyncClusterDispatchDto syncClusterDispatchDto =
                     new SyncClusterDispatchDto(nodeDto, SyncClusterDispatchEnum.ADD_OR_UPDATE);
