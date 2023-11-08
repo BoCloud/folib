@@ -1,10 +1,12 @@
 package com.veadan.folib.controllers.configuration;
 
 
+import cn.hutool.json.JSONUtil;
 import com.veadan.folib.cluster.SyncClusterDispatchEnum;
 import com.veadan.folib.controllers.cluster.dto.SyncClusterDispatchDto;
 import com.veadan.folib.dispatch.ClusterDispatchNodeDto;
 import com.veadan.folib.forms.configuration.ClusterDispatchNodeForm;
+import com.veadan.folib.scanner.common.exception.BusinessException;
 import com.veadan.folib.services.ClusterDispatchManagementService;
 import com.veadan.folib.services.ClusterSyncService;
 import com.veadan.folib.services.ConfigurationManagementService;
@@ -13,6 +15,8 @@ import com.veadan.folib.validation.RequestBodyValidationException;
 import com.veadan.folib.ws.client.manage.FolibWsServerRunManage;
 import com.veadan.folib.ws.common.FolibWsAction;
 import com.veadan.folib.ws.server.handler.command.FolibWsServerSaveNodeInfoCommand;
+import com.veadan.folib.ws.server.handler.command.FolibWsServerDeleteNodeInfoCommand;
+import com.veadan.folib.ws.server.manage.FolibWsClientRunManage;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
@@ -114,7 +118,15 @@ public class ClusterDispatchConfigurationController extends BaseConfigurationCon
             final String destNodeName = String.format("%s:%s", destHost, destPort);
             final String originNodeName = String.format("%s:%s", originHost, originPort);
             final String destUri = String.format("/ws/folib/%s", originNodeName);
-            FolibWsServerRunManage.up(destNodeName, destHost, destPort, destUri, true);
+            final boolean upResult = FolibWsServerRunManage.up(destNodeName, destHost, destPort, destUri, true);
+            if (!upResult) {
+                throw new BusinessException("尝试连接到添加目标节点失败，请检查添加节点信息是否正确");
+            }
+
+            // 向其他集群节点同步同步制品分发节点信息
+            SyncClusterDispatchDto syncClusterDispatchDto =
+                    new SyncClusterDispatchDto(nodeDto, SyncClusterDispatchEnum.ADD_OR_UPDATE);
+            clusterSyncService.syncClusterDispatch(syncClusterDispatchDto);
 
             // 向WsServer发送创建节点维护信息
             final FolibWsServerRunManage.FolibWsServerRun wsServerRun = FolibWsServerRunManage.getWsServerRun(destNodeName);
@@ -124,11 +136,11 @@ public class ClusterDispatchConfigurationController extends BaseConfigurationCon
                 registerNodeInfoDto.setClusterNodeHost(baseUrl);
                 registerNodeInfoDto.setClusterEnName(originNodeName);
                 registerNodeInfoDto.setClusterCnName(String.format("【自动注册节点】%s", originNodeName));
-                registerNodeInfoDto.setClusterNodeDesc(String.format("【自动注册节点】次节点信息是由客户端节点（%s）向服务端节点（%s）发起注册生成", originNodeName, destNodeName));
+                registerNodeInfoDto.setClusterNodeDesc(String.format("【自动注册节点】不可编辑，次节点信息是由客户端节点（%s）向服务端节点（%s）发起注册生成", originNodeName, destNodeName));
                 final FolibWsAction folibWsAction = new FolibWsAction()
-                        .setCommand(FolibWsServerSaveNodeInfoCommand.COMMAND)
+                        .setCommand(FolibWsServerDeleteNodeInfoCommand.COMMAND)
                         .setPayload(
-                                new FolibWsServerSaveNodeInfoCommand.Payload(registerNodeInfoDto,
+                                new FolibWsServerDeleteNodeInfoCommand.Payload(registerNodeInfoDto,
                                         SyncClusterDispatchEnum.ADD_OR_UPDATE).encode()
                         );
                 if (wsServerRun.getSession().isOpen()) {
@@ -136,12 +148,10 @@ public class ClusterDispatchConfigurationController extends BaseConfigurationCon
                 }
             }
 
-            // 向其他集群节点同步同步制品分发节点信息
-            SyncClusterDispatchDto syncClusterDispatchDto =
-                    new SyncClusterDispatchDto(nodeDto, SyncClusterDispatchEnum.ADD_OR_UPDATE);
-            clusterSyncService.syncClusterDispatch(syncClusterDispatchDto);
             return getSuccessfulResponseEntity("ok", accept);
-        } catch (Exception e) {
+        } catch (BusinessException e) {
+            return getExceptionResponseEntity(HttpStatus.INTERNAL_SERVER_ERROR, e.getMessage(), e, accept);
+        }catch (Exception e) {
             return getExceptionResponseEntity(HttpStatus.INTERNAL_SERVER_ERROR, "新增制品分发节点信息失败", e, accept);
         }
     }
@@ -169,8 +179,6 @@ public class ClusterDispatchConfigurationController extends BaseConfigurationCon
             BeanUtils.copyProperties(clusterDispatchNodeForm, nodeDto);
             clusterDispatchManagementService.createClusterNode(nodeDto);
 
-            // 
-
             // 向其他集群节点同步制品分发节点信息
             SyncClusterDispatchDto syncClusterDispatchDto =
                     new SyncClusterDispatchDto(nodeDto, SyncClusterDispatchEnum.ADD_OR_UPDATE);
@@ -194,10 +202,29 @@ public class ClusterDispatchConfigurationController extends BaseConfigurationCon
             nodeDto.setClusterEnName(clusterEnName);
             clusterDispatchManagementService.deleteClusterNode(nodeDto);
 
-            // 向其他集群节点同步制品分发节点信息
             SyncClusterDispatchDto syncClusterDispatchDto =
                     new SyncClusterDispatchDto(nodeDto, SyncClusterDispatchEnum.DELETE);
+            // 向其他集群节点同步制品分发节点信息
             clusterSyncService.syncClusterDispatch(syncClusterDispatchDto);
+            
+            // 通知WsServer删除节点信息 & 断开与WsServer的连接
+            // - 获取与WsServer通信会话
+            final ClusterDispatchNodeDto clusterDispatchNodeDto = configurationManagementService.getMutableConfigurationClone().getClusterDispatchNode().get(clusterEnName);
+            if (null != clusterDispatchNodeDto) {
+                final String clusterNodeHost = clusterDispatchNodeDto.getClusterNodeHost();
+                final URL destUrl = new URL(clusterNodeHost);
+                final String destHost = destUrl.getHost();
+                final Integer destPort = UrlUtils.getPort(clusterNodeHost);
+                final String nodeName = String.format("%s:%s", destHost, destPort);
+                final FolibWsServerRunManage.FolibWsServerRun wsServerRun = FolibWsServerRunManage.getWsServerRun(nodeName);
+                syncClusterDispatchDto.getNodeDto().setClusterEnName(nodeName);
+                final FolibWsAction folibWsAction = new FolibWsAction()
+                        .setCommand(FolibWsServerSaveNodeInfoCommand.COMMAND)
+                        .setPayload(JSONUtil.toJsonStr(syncClusterDispatchDto));
+                wsServerRun.getSession().sendMessage(new TextMessage(folibWsAction.encode()));
+                FolibWsClientRunManage.offline(nodeName);
+            }
+            
             return ResponseEntity.ok("ok");
         } catch (Exception e) {
             return getExceptionResponseEntity(HttpStatus.INTERNAL_SERVER_ERROR, "修改制品分发节点信息失败", e, accept);

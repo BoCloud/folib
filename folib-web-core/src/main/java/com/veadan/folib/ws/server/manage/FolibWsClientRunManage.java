@@ -42,14 +42,14 @@ public class FolibWsClientRunManage
         return true;
     }
 
-    public static boolean offline(String agentId)
+    public static boolean offline(String nodeName)
     {
-        final FolibWsClientRun folibWsClientRun = FOLIB_WS_CLIENT_RUN_MAP.get(agentId);
+        final FolibWsClientRun folibWsClientRun = FOLIB_WS_CLIENT_RUN_MAP.get(nodeName);
         if (null != folibWsClientRun)
         {
             try {
                 folibWsClientRun.getSession().close();
-                FOLIB_WS_CLIENT_RUN_MAP.remove(agentId);
+                FOLIB_WS_CLIENT_RUN_MAP.remove(nodeName);
             } catch (IOException e) {
                 log.error("【FolibWs客户端下线】，发现关闭存在会话，进行关闭操作失败", e);
                 return false;
