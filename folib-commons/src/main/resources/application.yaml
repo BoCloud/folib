@@ -226,14 +226,13 @@ cacheManagerConfiguration:
   groupConfig:
     name: folib
     password: password
-  enableMulticastConfig: false
-  multicast:
-    multicastGroup: 224.2.2.3
-    multicastPort: 54327
-    multicastTimeoutSeconds: 2
-    multicastTimeToLive: 32
-    trustedInterfaces: en0,en1
-    loopbackModeEnabled: false
+  tcpIpPort: ${folib.cache.port:5701}
+  enableTcpIpConfig: true
+  tcpIp:
+    tcpIpTimeoutSeconds: 20
+    #ip地址逗号隔开
+    members: ${folib.cache.cluster:127.0.0.1:5701,127.0.0.2:5701}
+
   instanceId: folib
   caches:
     remoteRepositoryAliveness:
