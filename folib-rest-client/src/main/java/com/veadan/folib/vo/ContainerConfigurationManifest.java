@@ -24,7 +24,7 @@ public class ContainerConfigurationManifest {
     /**
      * size
      */
-    private Integer size;
+    private Long size;
 
     /**
      * digest

@@ -306,6 +306,10 @@ public class CleanupDockerRepositoryCronJob extends JavaCronJob {
     }
 
     private boolean delete(RepositoryPath repositoryPath, boolean ignoreTime) throws Exception {
+        if (Objects.isNull(repositoryPath) || !Files.exists(repositoryPath)) {
+            log.warn("Docker repository [{}] [{}] repositoryPath [{}] not exists skip delete", repositoryPath.getStorageId(), repositoryPath.getRepositoryId(), repositoryPath.toString());
+            return false;
+        }
         if (ignoreTime) {
             artifactManagementService.delete(repositoryPath, true);
             return true;

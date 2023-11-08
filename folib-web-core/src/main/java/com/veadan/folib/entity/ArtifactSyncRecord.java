@@ -31,7 +31,7 @@ import java.util.Date;
 @NoArgsConstructor
 @Accessors(chain = true)
 @Table(name = "artifact_sync_record")
-@ApiModel("dict")
+@ApiModel("ArtifactSyncRecord")
 public class ArtifactSyncRecord implements Serializable {
     private static final long serialVersionUID = 1L;
 

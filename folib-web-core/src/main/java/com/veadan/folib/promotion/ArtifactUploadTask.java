@@ -496,7 +496,6 @@ public class ArtifactUploadTask implements Callable<String> {
                     repositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, artifactPath);
                     try (InputStream inputStream = new BufferedInputStream(Files.newInputStream(path))) {
                         promotionUtil.setMetaData(repositoryPath, metaData);
-                        promotionUtil.setPackageInfo(repositoryPath, packageJson);
                         artifactManagementService.store(repositoryPath, inputStream);
                     }
                     try (InputStream inputStream = new ByteArrayInputStream(packageJsonBytes)) {

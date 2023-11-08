@@ -2,6 +2,7 @@ package com.veadan.folib.services.impl;
 
 import com.alibaba.fastjson.JSON;
 import com.google.common.collect.Lists;
+import com.veadan.folib.artifact.coordinates.DockerArtifactCoordinates;
 import com.veadan.folib.config.FolibPublicUtils;
 import com.veadan.folib.data.criteria.Selector;
 import com.veadan.folib.dependency.snippet.CodeSnippet;
@@ -28,8 +29,10 @@ import com.veadan.folib.storage.search.SearchResult;
 import com.veadan.folib.storage.search.SearchResults;
 import com.veadan.folib.util.RepositoryPathUtil;
 import com.veadan.folib.utils.TreeUtil;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.MapUtils;
+import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.commons.lang3.time.DateFormatUtils;
 import org.apache.tinkerpop.gremlin.structure.Vertex;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -47,6 +50,7 @@ import java.nio.file.Files;
 import java.time.ZoneId;
 import java.util.*;
 
+@Slf4j
 @Component
 @Transactional
 public class FqlSearchService extends GremlinVertexRepository<Artifact> implements AqlSearchService {
@@ -173,13 +177,16 @@ public class FqlSearchService extends GremlinVertexRepository<Artifact> implemen
             Repository repository = repositoryPath.getRepository();
             URL artifactResource = RepositoryFiles.readResourceUrl(repositoryPath);
             r.setUrl(artifactResource.toString());
-            r.setLayout(repository.getLayout());
-            r.setSubLayout(repository.getSubLayout());
+            if (Objects.nonNull(repository)) {
+                r.setLayout(repository.getLayout());
+                r.setSubLayout(repository.getSubLayout());
+            }
             String path = artifact.getArtifactCoordinates().buildPath();
             if (DockerLayoutProvider.ALIAS.equalsIgnoreCase(r.getLayout())) {
                 //docker
-                r.setArtifactName(path.substring(path.indexOf("/") + 1, path.indexOf("/sha256")));
-                r.setArtifactPath(path.substring(0, path.indexOf("/sha256")));
+                DockerArtifactCoordinates dockerArtifactCoordinates = (DockerArtifactCoordinates) artifact.getArtifactCoordinates();
+                r.setArtifactName(dockerArtifactCoordinates.getTAG());
+                r.setArtifactPath(String.format("%s/%s", dockerArtifactCoordinates.getName(), dockerArtifactCoordinates.getTAG()));
                 String blobs = "blobs";
                 String manifest = "manifest";
                 String artifactPath = repositoryPath.toAbsolutePath().toString();
@@ -190,9 +197,11 @@ public class FqlSearchService extends GremlinVertexRepository<Artifact> implemen
                 r.setArtifactName(path.substring(path.lastIndexOf("/") + 1));
                 r.setArtifactPath(path);
             }
-            List<CodeSnippet> snippets = snippetGenerator.generateSnippets(repository.getLayout(),
-                    artifact.getArtifactCoordinates());
-            r.setSnippets(snippets);
+            if (Objects.nonNull(repository)) {
+                List<CodeSnippet> snippets = snippetGenerator.generateSnippets(repository.getLayout(),
+                        artifact.getArtifactCoordinates());
+                r.setSnippets(snippets);
+            }
 
             TreeUtil treeUtil = new TreeUtil();
             Set<String> fileNames = artifact.getArtifactArchiveListing().getFilenames();
@@ -228,21 +237,31 @@ public class FqlSearchService extends GremlinVertexRepository<Artifact> implemen
         return downloadUrls;
     }
 
-    private Long getSearchDockerSize(RepositoryPath repositoryPath, String imageName) throws IOException {
+    private Long getSearchDockerSize(RepositoryPath repositoryPath, String imageName) {
         Long size = 0L;
-        String manifestString = Files.readString(repositoryPath);
-        ImageManifest imageManifest = JSON.parseObject(manifestString, ImageManifest.class);
-        List<LayerManifest> layers = null;
-        if (CollectionUtils.isNotEmpty(imageManifest.getLayers())) {
-            layers = imageManifest.getLayers();
-        } else if (CollectionUtils.isNotEmpty(imageManifest.getManifests())) {
-            RepositoryPath manifestPath = repositoryPathResolver.resolve(repositoryPath.getStorageId(), repositoryPath.getRepositoryId(), imageName + "/manifest/" + imageManifest.getManifests().get(0).getDigest());
-            manifestString = Files.readString(manifestPath);
-            imageManifest = JSON.parseObject(manifestString, ImageManifest.class);
-            layers = imageManifest.getLayers();
-        }
-        if (CollectionUtils.isNotEmpty(layers)) {
-            size = layers.stream().mapToLong(LayerManifest::getSize).sum();
+        try {
+            if (Objects.isNull(repositoryPath) || !Files.exists(repositoryPath)) {
+                return size;
+            }
+            String manifestString = Files.readString(repositoryPath);
+            ImageManifest imageManifest = JSON.parseObject(manifestString, ImageManifest.class);
+            List<LayerManifest> layers = null;
+            if (CollectionUtils.isNotEmpty(imageManifest.getLayers())) {
+                layers = imageManifest.getLayers();
+            } else if (CollectionUtils.isNotEmpty(imageManifest.getManifests())) {
+                RepositoryPath manifestPath = repositoryPathResolver.resolve(repositoryPath.getStorageId(), repositoryPath.getRepositoryId(), imageName + "/manifest/" + imageManifest.getManifests().get(0).getDigest());
+                if (Objects.isNull(manifestPath) || !Files.exists(manifestPath)) {
+                    return size;
+                }
+                manifestString = Files.readString(manifestPath);
+                imageManifest = JSON.parseObject(manifestString, ImageManifest.class);
+                layers = imageManifest.getLayers();
+            }
+            if (CollectionUtils.isNotEmpty(layers)) {
+                size = layers.stream().mapToLong(LayerManifest::getSize).sum();
+            }
+        } catch (Exception ex) {
+            log.warn("计算Docker镜像大小错误：镜像 [{}] [{}] 错误信息 [{}]", repositoryPath.toString(), imageName, ExceptionUtils.getStackTrace(ex));
         }
         return size;
     }

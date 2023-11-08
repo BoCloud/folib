@@ -1,34 +1,33 @@
 package com.veadan.folib.providers.io;
 
+import com.google.common.collect.Lists;
 import com.veadan.folib.configuration.ConfigurationManager;
+import com.veadan.folib.configuration.ConfigurationUtils;
+import com.veadan.folib.event.AsyncEventListener;
 import com.veadan.folib.providers.layout.Maven2LayoutProvider;
 import com.veadan.folib.providers.repository.GroupRepositoryProvider;
-import com.veadan.folib.providers.repository.event.GroupRepositoryPathFetchEvent;
-import com.veadan.folib.services.support.ArtifactRoutingRulesChecker;
-import com.veadan.folib.configuration.ConfigurationUtils;
 import com.veadan.folib.providers.repository.RepositoryProvider;
 import com.veadan.folib.providers.repository.RepositoryProviderRegistry;
+import com.veadan.folib.providers.repository.event.GroupRepositoryPathFetchEvent;
+import com.veadan.folib.services.support.ArtifactRoutingRulesChecker;
 import com.veadan.folib.storage.Storage;
 import com.veadan.folib.storage.repository.Repository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
+import org.springframework.stereotype.Component;
 
 import javax.inject.Inject;
 import java.io.IOException;
 import java.nio.file.Path;
-import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.Callable;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.context.event.EventListener;
-import org.springframework.stereotype.Component;
+import java.util.concurrent.FutureTask;
 
 /**
  * @author veadan
  */
 @Component
-public class MavenGroupRepositoryPathFetchEventListener
-{
+public class MavenGroupRepositoryPathFetchEventListener {
 
     private static final Logger logger = LoggerFactory.getLogger(MavenGroupRepositoryPathFetchEventListener.class);
 
@@ -47,18 +46,18 @@ public class MavenGroupRepositoryPathFetchEventListener
     @Inject
     private RepositoryProviderRegistry repositoryProviderRegistry;
 
-    @EventListener
+    @Inject
+    private ThreadPoolTaskExecutor asyncFetchRemotePackageThreadPoolTaskExecutor;
+
+    @AsyncEventListener
     public void handle(final GroupRepositoryPathFetchEvent event)
-            throws IOException
-    {
+            throws IOException {
         RepositoryPath repositoryPath = event.getPath();
-        if (!Maven2LayoutProvider.ALIAS.equals(repositoryPath.getRepository().getLayout()))
-        {
+        if (!Maven2LayoutProvider.ALIAS.equals(repositoryPath.getRepository().getLayout())) {
             return;
         }
 
-        if (!maven2LayoutProvider.requiresGroupAggregation(repositoryPath))
-        {
+        if (!maven2LayoutProvider.requiresGroupAggregation(repositoryPath)) {
             return;
         }
 
@@ -69,47 +68,42 @@ public class MavenGroupRepositoryPathFetchEventListener
      * @see GroupRepositoryProvider#resolvePathTraversal(RepositoryPath)
      */
     private void fetchInSubRepositories(final RepositoryPath repositoryPath)
-            throws IOException
-    {
+            throws IOException {
         Repository groupRepository = repositoryPath.getRepository();
         Storage storage = groupRepository.getStorage();
-        List<Callable<Path>> fetchActions = new ArrayList<>();
-
-        for (String storageAndRepositoryId : groupRepository.getGroupRepositories())
-        {
+        List<FutureTask<Path>> futureTasks = Lists.newArrayList();
+        FutureTask<Path> futureTask = null;
+        MavenGroupRepositoryPathFetchTask mavenGroupRepositoryPathFetchTask = null;
+        for (String storageAndRepositoryId : groupRepository.getGroupRepositories()) {
             String sId = ConfigurationUtils.getStorageId(storage.getId(), storageAndRepositoryId);
             String rId = ConfigurationUtils.getRepositoryId(storageAndRepositoryId);
             Repository subRepository = configurationManager.getRepository(sId, rId);
 
-            if (!subRepository.isInService())
-            {
+            if (!subRepository.isInService()) {
                 continue;
             }
 
             RepositoryPath resolvedPath = repositoryPathResolver.resolve(subRepository, repositoryPath);
-            if (artifactRoutingRulesChecker.isDenied(groupRepository, resolvedPath))
-            {
+            if (artifactRoutingRulesChecker.isDenied(groupRepository, resolvedPath)) {
                 continue;
             }
 
             RepositoryProvider provider = repositoryProviderRegistry.getProvider(subRepository.getType());
-            fetchActions.add(() -> provider.fetchPath(resolvedPath));
+            mavenGroupRepositoryPathFetchTask = new MavenGroupRepositoryPathFetchTask(provider, resolvedPath);
+            futureTask = new FutureTask<>(mavenGroupRepositoryPathFetchTask);
+            futureTasks.add(futureTask);
+            asyncFetchRemotePackageThreadPoolTaskExecutor.submit(futureTask);
         }
 
-        fetchPathsInParallel(fetchActions);
+        fetchPathsInParallel(futureTasks);
     }
 
-    private void fetchPathsInParallel(final List<Callable<Path>> fetchActions)
-    {
-        fetchActions
-                .parallelStream()
+    private void fetchPathsInParallel(final List<FutureTask<Path>> futureTasks) {
+        futureTasks
                 .forEach(action -> {
-                    try
-                    {
-                        action.call();
-                    }
-                    catch (Exception e)
-                    {
+                    try {
+                        action.get();
+                    } catch (Exception e) {
                         logger.error(e.getMessage(), e);
                     }
                 });

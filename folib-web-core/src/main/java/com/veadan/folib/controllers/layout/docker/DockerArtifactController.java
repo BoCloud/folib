@@ -24,7 +24,6 @@ import com.veadan.folib.services.DirectoryListingService;
 import com.veadan.folib.storage.Storage;
 import com.veadan.folib.storage.repository.Repository;
 import com.veadan.folib.users.domain.Privileges;
-import com.veadan.folib.users.domain.UserData;
 import com.veadan.folib.users.security.JwtAuthenticationClaimsProvider;
 import com.veadan.folib.users.security.JwtClaimsProvider;
 import com.veadan.folib.users.security.SecurityTokenProvider;
@@ -43,7 +42,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.annotation.CurrentSecurityContext;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -53,11 +51,11 @@ import javax.inject.Inject;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.ByteArrayInputStream;
-import java.io.DataInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.security.MessageDigest;
 import java.text.MessageFormat;
 import java.util.*;
@@ -277,8 +275,7 @@ public class DockerArtifactController extends BaseArtifactController {
                                                    @PathVariable String repositoryId,
                                                    @PathVariable String name,
                                                    @PathVariable String uuid,
-                                                   @RequestParam String digest,
-                                                   @RequestBody(required = false) byte[] blobBytes
+                                                   @RequestParam String digest
 
     ) {
         if (Objects.isNull(authentication)) {
@@ -293,16 +290,12 @@ public class DockerArtifactController extends BaseArtifactController {
         ResponseEntity result = new ResponseEntity<>(HttpStatus.CREATED);
         try {
             int totalBytes = request.getContentLength();
-            //totalBytes > 0
-            if (totalBytes > 0) {
-                FileUtils utils = new FileUtils();
-                String fileDir = storageId + "/" + repositoryId + "/" + name;
-                utils.upload(fileDir, uuid, blobBytes);
-                updateRanges(uuid, blobBytes.length);
+            InputStream inputStream = request.getInputStream();
+            if (totalBytes <= 0 || inputStream.available() == 0) {
+                totalBytes = getRanges().getOrDefault(uuid, 1L).intValue();
+                updateData(digest, uuid);
+                inputStream = getInputStreamData(storageId, repositoryId, name, digest);
             }
-            totalBytes = getRanges().getOrDefault(uuid, 1L).intValue();
-            updateData(digest, uuid);
-            InputStream inputStream = storageData(storageId, repositoryId, name, digest);
             String artifactPath = String.format("%s/blobs/%s", name, digest);
             RepositoryPath repositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, artifactPath);
             logger.info("storageId:{},repositoryId:{},name:{},digest:{},uuid:{}", storageId, repositoryId, name, digest, uuid);
@@ -346,19 +339,18 @@ public class DockerArtifactController extends BaseArtifactController {
                                                 @PathVariable String storageId,
                                                 @PathVariable String repositoryId,
                                                 @PathVariable String name,
-                                                @PathVariable String uuid,
-                                                @RequestBody byte[] inputStream
+                                                @PathVariable String uuid
 
 
     ) throws Exception {
+        InputStream inputStream = request.getInputStream();
         response.setCharacterEncoding("utf8");
-        byte[] bytes = inputStream;
-        FileUtils utils = new FileUtils();
-        String fileDir = new StringBuffer().append(storageId).append("/").append(repositoryId).append("/").append(name).toString();
-        String fileName = uuid;
-        utils.upload(fileDir, fileName, bytes);
-
-        updateRanges(uuid, bytes.length);
+        String targetFilePath = FileUtils.getBasePath() + storageId + "/" + repositoryId + "/" + name + "/" + uuid;
+        Path targetPath = Path.of(targetFilePath);
+        Files.createDirectories(targetPath.getParent());
+        Files.copy(inputStream, targetPath, StandardCopyOption.REPLACE_EXISTING);
+        long fileSize = Files.size(targetPath);
+        updateRanges(uuid, fileSize);
         String url = request.getRequestURI();
         response.reset();
         response.setDateHeader(DockerApiHeader.DATE.key(), System.currentTimeMillis());
@@ -394,13 +386,7 @@ public class DockerArtifactController extends BaseArtifactController {
         final String path = name;
 
         try {
-            int totalBytes = request.getContentLength();
             InputStream inputStream = request.getInputStream();
-            DataInputStream dataInputStream = new DataInputStream(inputStream);
-            byte[] bytes = new byte[totalBytes];
-            dataInputStream.readFully(bytes);
-            dataInputStream.close();
-            inputStream = new ByteArrayInputStream(bytes);
             RepositoryPath repositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, path);
             artifactManagementService.validateAndStore(repositoryPath, inputStream);
             //202 Accepted
@@ -520,8 +506,7 @@ public class DockerArtifactController extends BaseArtifactController {
                                                  @PathVariable String storageId,
                                                  @PathVariable String repositoryId,
                                                  @PathVariable String name,
-                                                 @PathVariable String reference,
-                                                 @RequestBody byte[] bytes
+                                                 @PathVariable String reference
     ) {
         if (Objects.isNull(authentication)) {
             setTokenUrl(request, response);
@@ -535,8 +520,10 @@ public class DockerArtifactController extends BaseArtifactController {
         String manifestSha256 = null;
         ResponseEntity result = ResponseEntity.status(HttpStatus.CREATED).build();
         try {
+            InputStream inputStream = request.getInputStream();
+            byte[] bytes = inputStream.readAllBytes();
             logger.info("manifest.json size:{}", bytes.length);
-            manifestSha256 = imagesStorage(storageId, repositoryId, name, reference, bytes);
+            manifestSha256 = handlerManifest(storageId, repositoryId, name, reference, bytes);
         } catch (Exception e) {
             logger.error(e.getMessage(), e);
             result = ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
@@ -550,22 +537,21 @@ public class DockerArtifactController extends BaseArtifactController {
         }
     }
 
-    //镜像存储
-
     /**
-     * 镜像文件临时存储
+     * 处理manifest文件
      *
-     * @param storageId
-     * @param repositoryId
-     * @param name
-     * @param reference
-     * @return
+     * @param storageId    存储空间
+     * @param repositoryId 所属仓库
+     * @param name         tag
+     * @param reference    sha256
+     * @param bytes        文件字节数组
+     * @return manifest sha256
      */
-    String imagesStorage(String storageId,
-                         String repositoryId,
-                         String name,
-                         String reference,
-                         byte[] bytes) {
+    String handlerManifest(String storageId,
+                           String repositoryId,
+                           String name,
+                           String reference,
+                           byte[] bytes) {
         String manifestSha256 = null, directory;
         try (InputStream stream = new ByteArrayInputStream(bytes); InputStream destStream = new ByteArrayInputStream(bytes)) {
             boolean isTag = false;
@@ -619,7 +605,7 @@ public class DockerArtifactController extends BaseArtifactController {
         //FileInputStream fis = new FileInputStream(file);
 
         //Create byte array to read data in chunks
-        byte[] byteArray = new byte[1024];
+        byte[] byteArray = new byte[4096];
         int bytesCount = 0;
 
         //Read file data and update in message digest
@@ -677,7 +663,7 @@ public class DockerArtifactController extends BaseArtifactController {
      * @param digest
      * @return
      */
-    public InputStream storageData(String storageId, String repositoryId, String name, String digest) {
+    public InputStream getInputStreamData(String storageId, String repositoryId, String name, String digest) {
         FileUtils utils = new FileUtils();
         String fileDir = String.format("%s/%s/%s", storageId, repositoryId, name);
         String fileName = getData().get(digest);
@@ -1244,6 +1230,6 @@ public class DockerArtifactController extends BaseArtifactController {
             response.setHeader("WWW-Authenticate", MessageFormat.format("Bearer realm=\"{0}token\",service=\"{1}\"", "http://" + request.getServerName() + ":" + request.getServerPort() + "/v2/", request.getServerName() + ":" + request.getServerPort()));
         }
     }
-    
+
 }
 

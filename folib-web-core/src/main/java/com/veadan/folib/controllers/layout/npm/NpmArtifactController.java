@@ -205,14 +205,18 @@ public class NpmArtifactController
                                          @RequestHeader HttpHeaders httpHeaders)
             throws Exception {
         long startTime = System.currentTimeMillis();
+        response.setContentType(MediaType.APPLICATION_JSON_VALUE);
         RepositorySearchRequest predicate = createSearchPredicate(packageScope, packageName);
         String packageId = NpmArtifactCoordinates.calculatePackageId(packageScope, packageName);
         PackageFeed packageFeed = artifactComponent.getNpmArtifactIdGroupCache(repository, predicate.getArtifactId(), Collections.singletonList("tgz"), predicate);
-        if (Objects.nonNull(packageFeed)) {
-            response.setContentType(MediaType.APPLICATION_JSON_VALUE);
-            try (InputStream inputStream = new ByteArrayInputStream(npmJacksonMapper.writeValueAsBytes(packageFeed))) {
-                copyToResponse(inputStream, response);
-            }
+        if (Objects.isNull(packageFeed)) {
+            String msg = "{\"error\":\"[NOT_FOUND] %s not found\"}";
+            response.setStatus(HttpStatus.NOT_FOUND.value());
+            response.getOutputStream().write(String.format(msg, packageId).getBytes());
+            return;
+        }
+        try (InputStream inputStream = new ByteArrayInputStream(npmJacksonMapper.writeValueAsBytes(packageFeed))) {
+            copyToResponse(inputStream, response);
         }
         logger.info("[{}] viewPackageFeedWithScope storageId [{}] repositoryId [{}] packageId [{}] task time [{}] ms", this.getClass().getSimpleName(), repository.getStorage().getId(), repository.getId(), packageId, System.currentTimeMillis() - startTime);
     }
@@ -636,8 +640,6 @@ public class NpmArtifactController
             ArtifactCoordinatesValidationException {
         RepositoryPath repositoryPath = repositoryPathResolver.resolve(repository, coordinates);
         try (InputStream is = new BufferedInputStream(Files.newInputStream(packageTgzTmp))) {
-            Artifact artifact = provideArtifact(repositoryPath);
-            artifact.setPackageInfo(npmJacksonMapper.writeValueAsString(packageDef));
             artifactManagementService.validateAndStore(repositoryPath, is);
         }
 

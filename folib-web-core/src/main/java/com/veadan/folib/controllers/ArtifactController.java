@@ -3,13 +3,17 @@ package com.veadan.folib.controllers;
 import com.alibaba.fastjson.JSON;
 import com.veadan.folib.components.syncartifact.SyncArtifactProvider;
 import com.veadan.folib.components.syncartifact.SyncArtifactProviderRegistry;
+import com.veadan.folib.config.PermissionCheck;
 import com.veadan.folib.configuration.ConfigurationManager;
 import com.veadan.folib.configuration.MetadataConfiguration;
 import com.veadan.folib.constant.GlobalConstants;
 import com.veadan.folib.domain.ArtifactStatistics;
 import com.veadan.folib.domain.StatusInfo;
+import com.veadan.folib.domain.thirdparty.ArtifactInfo;
+import com.veadan.folib.domain.thirdparty.ArtifactQuery;
 import com.veadan.folib.forms.artifact.ArtifactMetadataForm;
 import com.veadan.folib.forms.syncartifact.SyncArtifactForm;
+import com.veadan.folib.scanner.common.msg.TableResultResponse;
 import com.veadan.folib.services.ArtifactWebService;
 import com.veadan.folib.storage.Storage;
 import com.veadan.folib.storage.repository.Repository;
@@ -166,7 +170,7 @@ public class ArtifactController extends BaseController {
 
     @ApiOperation(value = "根据压缩包生成制品信息")
     @ApiResponses(value = {@ApiResponse(code = 200, message = "OK")})
-    @PreAuthorize("hasAuthority('ADMIN')")
+    @PermissionCheck(resourceKey = "ARTIFACTS_DEPLOY", storageKey = "storageId", repositoryKey = "repositoryId")
     @PostMapping(value = "/store")
     public ResponseEntity<StatusInfo> store(@RequestParam(name = "storageId") String storageId,
                                             @RequestParam(name = "repositoryId") String repositoryId,
@@ -202,5 +206,13 @@ public class ArtifactController extends BaseController {
     @PreAuthorize("hasAuthority('ADMIN')")
     public ResponseEntity<ArtifactStatistics> artifactStatistics() {
         return ResponseEntity.ok(artifactWebService.artifactStatistics());
+    }
+
+    @ApiOperation(value = "查询制品分页列表", response = ArtifactInfo.class)
+    @ApiResponses(value = {@ApiResponse(code = 200, message = "OK")})
+    @PreAuthorize("hasAuthority('ARTIFACTS_VIEW')")
+    @GetMapping(value = "/thirdParty/page")
+    public TableResultResponse<ArtifactInfo> thirdPartyPage(ArtifactQuery artifactQuery) {
+        return artifactWebService.thirdPartyPage(artifactQuery);
     }
 }
