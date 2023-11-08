@@ -83,8 +83,6 @@ folib:
       basedir: ${folib.vault}/storages
   host: localhost
   port: 38080
-  dependentLibraryPrefix: anhui
-  dependentPushUrl: http://172.29.63.45:9022
   nuget:
     download:
       feed: false
@@ -231,7 +229,7 @@ cacheManagerConfiguration:
   tcpIp:
     tcpIpTimeoutSeconds: 20
     #ip地址逗号隔开
-    members: ${folib.cache.cluster:127.0.0.1:5701,127.0.0.2:5701}
+    members: ${folib.cache.cluster:127.0.0.1:5701,10.10.33.149:5701}
 
   instanceId: folib
   caches:
