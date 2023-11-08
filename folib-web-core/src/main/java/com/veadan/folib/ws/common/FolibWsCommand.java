@@ -1,4 +1,4 @@
-package com.veadan.folib.ws;
+package com.veadan.folib.ws.common;
 
 /**
  * @author xiaodong.wang

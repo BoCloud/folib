@@ -1,4 +1,4 @@
-package com.veadan.folib.ws;
+package com.veadan.folib.ws.common;
 
 import lombok.Data;
 import lombok.experimental.Accessors;

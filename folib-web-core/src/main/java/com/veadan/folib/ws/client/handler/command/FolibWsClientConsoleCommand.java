@@ -1,6 +1,6 @@
 package com.veadan.folib.ws.client.handler.command;
 
-import com.veadan.folib.ws.JsonEncoder;
+import com.veadan.folib.ws.common.JsonEncoder;
 import lombok.Data;
 import lombok.experimental.Accessors;
 import lombok.extern.slf4j.Slf4j;

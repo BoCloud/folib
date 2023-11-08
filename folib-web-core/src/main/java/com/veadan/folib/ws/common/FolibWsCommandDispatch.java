@@ -1,13 +1,10 @@
-package com.veadan.folib.ws;
+package com.veadan.folib.ws.common;
 
 import com.alibaba.fastjson.JSON;
-import com.veadan.folib.ws.client.handler.command.FolibWsClientCommand;
 import lombok.Data;
 import lombok.experimental.Accessors;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
-import org.springframework.stereotype.Component;
 
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;

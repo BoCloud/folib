@@ -10,10 +10,14 @@ import com.veadan.folib.services.ClusterSyncService;
 import com.veadan.folib.services.ConfigurationManagementService;
 import com.veadan.folib.utils.UrlUtils;
 import com.veadan.folib.validation.RequestBodyValidationException;
-import com.veadan.folib.ws.FolibWsAction;
 import com.veadan.folib.ws.client.manage.FolibWsServerRunManage;
+import com.veadan.folib.ws.common.FolibWsAction;
 import com.veadan.folib.ws.server.handler.command.FolibWsServerSaveNodeInfoCommand;
-import io.swagger.annotations.*;
+import io.swagger.annotations.Api;
+import io.swagger.annotations.ApiOperation;
+import io.swagger.annotations.ApiParam;
+import io.swagger.annotations.ApiResponse;
+import io.swagger.annotations.ApiResponses;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.convert.ConversionService;
@@ -23,7 +27,14 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.BindingResult;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.socket.TextMessage;
 
 import java.net.URL;
@@ -39,7 +50,7 @@ import java.util.Map;
  */
 @RestController
 @RequestMapping("/api/configuration/folib/dispatch")
-@Api(description = "配置分发",tags = "配置分发")
+@Api(description = "配置分发", tags = "配置分发")
 public class ClusterDispatchConfigurationController extends BaseConfigurationController {
 
     @Autowired
@@ -80,7 +91,7 @@ public class ClusterDispatchConfigurationController extends BaseConfigurationCon
     public ResponseEntity createClusterNode(@RequestBody ClusterDispatchNodeForm clusterDispatchNodeForm,
                                             BindingResult bindingResult,
                                             @RequestHeader(HttpHeaders.ACCEPT)
-                                                    String accept) {
+                                            String accept) {
         if (bindingResult.hasErrors()) {
             throw new RequestBodyValidationException("参数异常", bindingResult);
         }
@@ -90,11 +101,12 @@ public class ClusterDispatchConfigurationController extends BaseConfigurationCon
             BeanUtils.copyProperties(clusterDispatchNodeForm, nodeDto);
             nodeDto.setCreateTime(LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
             clusterDispatchManagementService.createClusterNode(nodeDto);
-            
+
             // 连接到WsServer
             final String clusterNodeHost = nodeDto.getClusterNodeHost();
+            final String baseUrl = configurationManager.getConfiguration().getBaseUrl();
             final URL destUrl = new URL(clusterNodeHost);
-            final URL originUrl = new URL(configurationManager.getConfiguration().getBaseUrl());
+            final URL originUrl = new URL(baseUrl);
             final String originHost = originUrl.getHost();
             final Integer originPort = UrlUtils.getPort(originUrl.toString());
             final String destHost = destUrl.getHost();
@@ -103,16 +115,26 @@ public class ClusterDispatchConfigurationController extends BaseConfigurationCon
             final String originNodeName = String.format("%s:%s", originHost, originPort);
             final String destUri = String.format("/ws/folib/%s", originNodeName);
             FolibWsServerRunManage.up(destNodeName, destHost, destPort, destUri, true);
-            
+
             // 向WsServer发送创建节点维护信息
             final FolibWsServerRunManage.FolibWsServerRun wsServerRun = FolibWsServerRunManage.getWsServerRun(destNodeName);
-            final FolibWsAction folibWsAction = new FolibWsAction()
-                    .setCommand(FolibWsServerSaveNodeInfoCommand.COMMAND)
-                    .setPayload(
-                        new FolibWsServerSaveNodeInfoCommand.Payload(nodeDto, 
-                                SyncClusterDispatchEnum.ADD_OR_UPDATE).encode()    
-                    );
-            wsServerRun.getSession().sendMessage(new TextMessage(folibWsAction.encode()));
+            if (null != wsServerRun) {
+                final ClusterDispatchNodeDto registerNodeInfoDto = new ClusterDispatchNodeDto();
+                BeanUtils.copyProperties(clusterDispatchNodeForm, registerNodeInfoDto);
+                registerNodeInfoDto.setClusterNodeHost(baseUrl);
+                registerNodeInfoDto.setClusterEnName(originNodeName);
+                registerNodeInfoDto.setClusterCnName(String.format("【自动注册节点】%s", originNodeName));
+                registerNodeInfoDto.setClusterNodeDesc(String.format("【自动注册节点】次节点信息是由客户端节点（%s）向服务端节点（%s）发起注册生成", originNodeName, destNodeName));
+                final FolibWsAction folibWsAction = new FolibWsAction()
+                        .setCommand(FolibWsServerSaveNodeInfoCommand.COMMAND)
+                        .setPayload(
+                                new FolibWsServerSaveNodeInfoCommand.Payload(registerNodeInfoDto,
+                                        SyncClusterDispatchEnum.ADD_OR_UPDATE).encode()
+                        );
+                if (wsServerRun.getSession().isOpen()) {
+                    wsServerRun.getSession().sendMessage(new TextMessage(folibWsAction.encode()));
+                }
+            }
 
             // 向其他集群节点同步同步制品分发节点信息
             SyncClusterDispatchDto syncClusterDispatchDto =
@@ -148,7 +170,7 @@ public class ClusterDispatchConfigurationController extends BaseConfigurationCon
             clusterDispatchManagementService.createClusterNode(nodeDto);
 
             // 
-            
+
             // 向其他集群节点同步制品分发节点信息
             SyncClusterDispatchDto syncClusterDispatchDto =
                     new SyncClusterDispatchDto(nodeDto, SyncClusterDispatchEnum.ADD_OR_UPDATE);

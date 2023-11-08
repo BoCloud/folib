@@ -1,6 +1,6 @@
 package com.veadan.folib.ws.server.handler.command;
 
-import com.veadan.folib.ws.FolibWsCommand;
+import com.veadan.folib.ws.common.FolibWsCommand;
 
 /**
  * @author xiaodong.wang

@@ -1,6 +1,6 @@
 package com.veadan.folib.ws.server.handler.dispatch;
 
-import com.veadan.folib.ws.FolibWsCommandDispatch;
+import com.veadan.folib.ws.common.FolibWsCommandDispatch;
 import com.veadan.folib.ws.server.handler.command.FolibWsServerCommand;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationContext;
