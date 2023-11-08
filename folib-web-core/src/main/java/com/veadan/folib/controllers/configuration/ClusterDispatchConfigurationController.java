@@ -138,9 +138,9 @@ public class ClusterDispatchConfigurationController extends BaseConfigurationCon
                 registerNodeInfoDto.setClusterCnName(String.format("【自动注册节点】%s", originNodeName));
                 registerNodeInfoDto.setClusterNodeDesc(String.format("【自动注册节点】不可编辑，次节点信息是由客户端节点（%s）向服务端节点（%s）发起注册生成", originNodeName, destNodeName));
                 final FolibWsAction folibWsAction = new FolibWsAction()
-                        .setCommand(FolibWsServerDeleteNodeInfoCommand.COMMAND)
+                        .setCommand(FolibWsServerSaveNodeInfoCommand.COMMAND)
                         .setPayload(
-                                new FolibWsServerDeleteNodeInfoCommand.Payload(registerNodeInfoDto,
+                                new FolibWsServerSaveNodeInfoCommand.Payload(registerNodeInfoDto,
                                         SyncClusterDispatchEnum.ADD_OR_UPDATE).encode()
                         );
                 if (wsServerRun.getSession().isOpen()) {
@@ -219,7 +219,7 @@ public class ClusterDispatchConfigurationController extends BaseConfigurationCon
                 final FolibWsServerRunManage.FolibWsServerRun wsServerRun = FolibWsServerRunManage.getWsServerRun(nodeName);
                 syncClusterDispatchDto.getNodeDto().setClusterEnName(nodeName);
                 final FolibWsAction folibWsAction = new FolibWsAction()
-                        .setCommand(FolibWsServerSaveNodeInfoCommand.COMMAND)
+                        .setCommand(FolibWsServerDeleteNodeInfoCommand.COMMAND)
                         .setPayload(JSONUtil.toJsonStr(syncClusterDispatchDto));
                 wsServerRun.getSession().sendMessage(new TextMessage(folibWsAction.encode()));
                 FolibWsClientRunManage.offline(nodeName);
