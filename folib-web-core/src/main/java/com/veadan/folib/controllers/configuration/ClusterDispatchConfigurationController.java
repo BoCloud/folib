@@ -1,6 +1,7 @@
 package com.veadan.folib.controllers.configuration;
 
 
+import cn.hutool.core.util.StrUtil;
 import cn.hutool.json.JSONUtil;
 import com.veadan.folib.cluster.SyncClusterDispatchEnum;
 import com.veadan.folib.controllers.cluster.dto.SyncClusterDispatchDto;
@@ -14,9 +15,8 @@ import com.veadan.folib.utils.UrlUtils;
 import com.veadan.folib.validation.RequestBodyValidationException;
 import com.veadan.folib.ws.client.manage.FolibWsServerRunManage;
 import com.veadan.folib.ws.common.FolibWsAction;
-import com.veadan.folib.ws.server.handler.command.FolibWsServerSaveNodeInfoCommand;
 import com.veadan.folib.ws.server.handler.command.FolibWsServerDeleteNodeInfoCommand;
-import com.veadan.folib.ws.server.manage.FolibWsClientRunManage;
+import com.veadan.folib.ws.server.handler.command.FolibWsServerSaveNodeInfoCommand;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
@@ -198,32 +198,48 @@ public class ClusterDispatchConfigurationController extends BaseConfigurationCon
             @PathVariable String clusterEnName,
             @RequestHeader(HttpHeaders.ACCEPT) String accept) {
         try {
-            ClusterDispatchNodeDto nodeDto = new ClusterDispatchNodeDto();
-            nodeDto.setClusterEnName(clusterEnName);
-            clusterDispatchManagementService.deleteClusterNode(nodeDto);
-
-            SyncClusterDispatchDto syncClusterDispatchDto =
+            final ClusterDispatchNodeDto nodeDto = new ClusterDispatchNodeDto();
+            final SyncClusterDispatchDto syncClusterDispatchDto =
                     new SyncClusterDispatchDto(nodeDto, SyncClusterDispatchEnum.DELETE);
-            // 向其他集群节点同步制品分发节点信息
-            clusterSyncService.syncClusterDispatch(syncClusterDispatchDto);
             
             // 通知WsServer删除节点信息 & 断开与WsServer的连接
             // - 获取与WsServer通信会话
             final ClusterDispatchNodeDto clusterDispatchNodeDto = configurationManagementService.getMutableConfigurationClone().getClusterDispatchNode().get(clusterEnName);
+            out:
             if (null != clusterDispatchNodeDto) {
+                if (StrUtil.isNotBlank(clusterDispatchNodeDto.getClusterNodeDesc()) &&
+                        !(clusterDispatchNodeDto.getClusterNodeDesc().contains("【自动注册节点】"))) {
+                    break out;
+                }
+                
+                final String baseUrl = configurationManager.getConfiguration().getBaseUrl();
+                final URL originUrl = new URL(baseUrl);
                 final String clusterNodeHost = clusterDispatchNodeDto.getClusterNodeHost();
                 final URL destUrl = new URL(clusterNodeHost);
+                final String originHost = originUrl.getHost();
+                final Integer originPort = UrlUtils.getPort(originUrl.toString());
                 final String destHost = destUrl.getHost();
                 final Integer destPort = UrlUtils.getPort(clusterNodeHost);
-                final String nodeName = String.format("%s:%s", destHost, destPort);
-                final FolibWsServerRunManage.FolibWsServerRun wsServerRun = FolibWsServerRunManage.getWsServerRun(nodeName);
-                syncClusterDispatchDto.getNodeDto().setClusterEnName(nodeName);
+                final String originNodeName = String.format("%s:%s", originHost, originPort);
+                final String destNodeName = String.format("%s:%s", destHost, destPort);
+                final FolibWsServerRunManage.FolibWsServerRun wsServerRun = FolibWsServerRunManage.getWsServerRun(destNodeName);
+                // 远程对应节点名称是：originNodeName
+                syncClusterDispatchDto.getNodeDto().setClusterEnName(originNodeName);
                 final FolibWsAction folibWsAction = new FolibWsAction()
                         .setCommand(FolibWsServerDeleteNodeInfoCommand.COMMAND)
                         .setPayload(JSONUtil.toJsonStr(syncClusterDispatchDto));
-                wsServerRun.getSession().sendMessage(new TextMessage(folibWsAction.encode()));
-                FolibWsClientRunManage.offline(nodeName);
+                if (wsServerRun.getSession().isOpen()) {
+                    wsServerRun.getSession().sendMessage(new TextMessage(folibWsAction.encode()));
+                } else {
+                    logger.info("【删除节点】与远程节点（{}）处于断开连接状态，无法通知远程节点进行删除操作", destNodeName);
+                }
+                FolibWsServerRunManage.remove(destNodeName);
             }
+
+            nodeDto.setClusterEnName(clusterEnName);
+            clusterDispatchManagementService.deleteClusterNode(nodeDto);
+            // 向其他集群节点同步制品分发节点信息
+            clusterSyncService.syncClusterDispatch(syncClusterDispatchDto);
             
             return ResponseEntity.ok("ok");
         } catch (Exception e) {

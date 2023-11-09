@@ -1,13 +1,8 @@
 package com.veadan.folib.ws.server.handler.command;
 
-import com.veadan.folib.cluster.SyncClusterDispatchEnum;
 import com.veadan.folib.controllers.cluster.dto.SyncClusterDispatchDto;
-import com.veadan.folib.dispatch.ClusterDispatchNodeDto;
 import com.veadan.folib.services.ClusterDispatchManagementService;
 import com.veadan.folib.services.ClusterSyncService;
-import com.veadan.folib.ws.common.JsonEncoder;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -20,7 +15,7 @@ import org.springframework.stereotype.Component;
  */
 @Component
 @Slf4j
-public class FolibWsServerDeleteNodeInfoCommand implements FolibWsServerCommand<String> {
+public class FolibWsServerDeleteNodeInfoCommand implements FolibWsServerCommand<SyncClusterDispatchDto> {
 
     public static final String COMMAND = "/deleteNodeInfo";
 
@@ -36,26 +31,16 @@ public class FolibWsServerDeleteNodeInfoCommand implements FolibWsServerCommand<
     }
 
     @Override
-    public void execute(String clusterEnName) {
+    public void execute(SyncClusterDispatchDto dispatchDto) {
+        final String clusterEnName = dispatchDto.getNodeDto().getClusterEnName();
         try {
-            final ClusterDispatchNodeDto nodeDto = new ClusterDispatchNodeDto();
-            nodeDto.setClusterEnName(clusterEnName);
-            clusterDispatchManagementService.deleteClusterNode(nodeDto);
-
+            clusterDispatchManagementService.deleteClusterNode(dispatchDto.getNodeDto());
             // 向其他集群节点同步制品分发节点信息
-            SyncClusterDispatchDto syncClusterDispatchDto =
-                    new SyncClusterDispatchDto(nodeDto, SyncClusterDispatchEnum.DELETE);
-            clusterSyncService.syncClusterDispatch(syncClusterDispatchDto);
+            clusterSyncService.syncClusterDispatch(dispatchDto);
+            log.error("删除节点（{}）成功", clusterEnName);
         } catch (Exception e) {
-            throw new RuntimeException(e);
+            log.error("删除节点（{}）失败", clusterEnName, e);
         }
     }
     
-    @Data
-    @EqualsAndHashCode(callSuper = true)
-    public static class Payload extends SyncClusterDispatchDto implements JsonEncoder {
-        public Payload(ClusterDispatchNodeDto nodeDto, SyncClusterDispatchEnum syncClusterDispatchEnum) {
-            super(nodeDto, syncClusterDispatchEnum);
-        }
-    }
 }

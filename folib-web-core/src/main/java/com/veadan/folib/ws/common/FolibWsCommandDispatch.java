@@ -37,11 +37,12 @@ public abstract class FolibWsCommandDispatch<T extends FolibWsCommand>
         Optional.of(applicationContext.getBeansOfType(this.getFolibWsCommandClass()).values())
                 .orElse(Collections.emptyList())
                 .forEach(command -> {
+                    final Class<?> payloadClass = this.getPayloadClass(command);
                     wsCommandRegister.put(command.command(), new FolibCommandRegister()
                             .setCommand(command)
-                            .setPayloadClass(this.getPayloadClass(command))
+                            .setPayloadClass(payloadClass)
                     );
-                    log.info("【{}分发器】Dispatcher初始化，命令（{}）注册成功", this.getClass().getSimpleName(), command.command());
+                    log.info("【{}分发器】Dispatcher初始化，命令（{}）注册成功，载体为：{}", this.getClass().getSimpleName(), command.command(), payloadClass);
                 });
     }
     

@@ -33,10 +33,10 @@ import java.io.IOException;
 @ServerEndpoint("/ws/folib/{nodeName}")
 @Component
 public class FolibWsServer {
-    @Inject
-    protected ConfigurationManager configurationManager;
     @Autowired
-    private FolibWsServerCommandDispatch folibWsServerCommandDispatch;
+    protected ConfigurationManager configurationManager;
+//    @Autowired
+//    private FolibWsServerCommandDispatch folibWsServerCommandDispatch;
 
     @OnOpen
     public void onOpen(@PathParam("nodeName") String nodeName, Session session) {
@@ -45,7 +45,12 @@ public class FolibWsServer {
             if (null != wsClientRun) {
                 final String baseUrl = configurationManager.getConfiguration().getBaseUrl();
                 final String info = String.format("连接失败，当前节点（%s）已存在连接的客户端（%s）会话", baseUrl, nodeName);
-                session.getBasicRemote().sendText(new FolibWsAction().setCommand(FolibWsClientConsoleCommand.COMMAND).setPayload(new FolibWsClientConsoleCommand.Payload().setLevel(FolibWsClientConsoleCommand.LogConsoleLevel.ERROR).setContent(info).encode()).encode());
+                session.getBasicRemote().sendText(new FolibWsAction()
+                        .setCommand(FolibWsClientConsoleCommand.COMMAND)
+                        .setPayload(new FolibWsClientConsoleCommand.Payload()
+                                .setLevel(FolibWsClientConsoleCommand.LogConsoleLevel.ERROR)
+                                .setContent(info).encode()
+                        ).encode());
                 log.info(info);
                 session.close();
             }
