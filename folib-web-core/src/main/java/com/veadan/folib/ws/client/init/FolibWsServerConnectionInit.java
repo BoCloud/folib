@@ -36,26 +36,29 @@ public class FolibWsServerConnectionInit implements ApplicationRunner
     {
         // 初始化连接到集群服务端
         final Map<String, ClusterDispatchNodeDto> clusterDispatchNode = configurationManagementService.getMutableConfigurationClone().getClusterDispatchNode();
-        clusterDispatchNode.values().forEach((nodeInfo) -> {
-            final String clusterNodeHost = nodeInfo.getClusterNodeHost();
-            try {
-                final URL destUrl = new URL(clusterNodeHost);
-                final URL originUrl = new URL(configurationManager.getConfiguration().getBaseUrl());
-                final String originHost = originUrl.getHost();
-                final Integer originPort = UrlUtils.getPort(originUrl.toString());
-                final String destHost = destUrl.getHost();
-                final Integer destPort = UrlUtils.getPort(clusterNodeHost);
-                final String destNodeName = String.format("%s:%s", destHost, destPort);
-                final String originNodeName = String.format("%s:%s", originHost, originPort);
-                final String destUri = String.format("/ws/folib/%s", originNodeName);
-                
-                FolibWsServerRunManage.up(destNodeName, destHost, destPort, destUri, true);
-                log.info("【FolibWs连接初始化】开始连接到节点({}:{}) ===> ({}:{})",
-                        originHost, originPort,
-                        destHost, destPort);
-            } catch (Exception e) {
-                log.error("【FolibWs连接初始化】连接失败", e);
-            }
-        });
+        clusterDispatchNode.values().stream()
+                // 排除自动注册的节点信息
+                .filter(e -> null != e.getAutoRegister() && !e.getAutoRegister())
+                .forEach((nodeInfo) -> {
+                    final String clusterNodeHost = nodeInfo.getClusterNodeHost();
+                    try {
+                        final URL destUrl = new URL(clusterNodeHost);
+                        final URL originUrl = new URL(configurationManager.getConfiguration().getBaseUrl());
+                        final String originHost = originUrl.getHost();
+                        final Integer originPort = UrlUtils.getPort(originUrl.toString());
+                        final String destHost = destUrl.getHost();
+                        final Integer destPort = UrlUtils.getPort(clusterNodeHost);
+                        final String destNodeName = String.format("%s:%s", destHost, destPort);
+                        final String originNodeName = String.format("%s:%s", originHost, originPort);
+                        final String destUri = String.format("/ws/folib/%s", originNodeName);
+                        
+                        FolibWsServerRunManage.up(destNodeName, destHost, destPort, destUri, true);
+                        log.info("【FolibWs连接初始化】开始连接到节点({}:{}) ===> ({}:{})",
+                                originHost, originPort,
+                                destHost, destPort);
+                    } catch (Exception e) {
+                        log.error("【FolibWs连接初始化】连接失败", e);
+                    }
+                });
     }
 }

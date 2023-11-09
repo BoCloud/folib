@@ -51,4 +51,15 @@ public class ClusterDispatchNodeDto implements Serializable {
      * 创建时间
      */
     private String createTime;
+
+    /**
+     * 自动注册<br>
+     * 自动注册的节点无法编辑或删除
+     */
+    private Boolean autoRegister = false;
+
+    /**
+     * 节点在线状态
+     */
+    private Boolean online;
 }

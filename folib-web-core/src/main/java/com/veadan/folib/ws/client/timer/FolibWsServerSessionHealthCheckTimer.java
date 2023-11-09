@@ -15,7 +15,7 @@ import org.springframework.stereotype.Component;
 @Component
 public class FolibWsServerSessionHealthCheckTimer {
 
-    @Scheduled(cron = "0/15 * * * * ?")
+    @Scheduled(cron = "0/5 * * * * ?")
     public void scan() {
         for (FolibWsServerRunManage.FolibWsServerRun folibWsServerRun : FolibWsServerRunManage.getAllRun()) {
             final String nodeName = folibWsServerRun.getNodeName();

@@ -44,6 +44,7 @@ import org.springframework.web.socket.TextMessage;
 import java.net.URL;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.Collection;
 import java.util.Map;
 
 
@@ -82,7 +83,18 @@ public class ClusterDispatchConfigurationController extends BaseConfigurationCon
     public ResponseEntity queryClusterDispatch() {
         Map<String, ClusterDispatchNodeDto> map = configurationManagementService.
                 getMutableConfigurationClone().getClusterDispatchNode();
-        return ResponseEntity.ok(map.values());
+        final Collection<ClusterDispatchNodeDto> values = map.values();
+        values.stream().filter(ClusterDispatchNodeDto::getAutoRegister).forEach(nodeDto -> {
+            final FolibWsServerRunManage.FolibWsServerRun wsServerRun = FolibWsServerRunManage.getWsServerRun(nodeDto.getClusterEnName());
+            if (null != wsServerRun && wsServerRun.getSession().isOpen()) {
+                nodeDto.setOnline(true);
+            } else {
+                nodeDto.setOnline(false);
+            }
+        });
+        
+        
+        return ResponseEntity.ok(values);
     }
 
     // 新增
@@ -133,10 +145,11 @@ public class ClusterDispatchConfigurationController extends BaseConfigurationCon
             if (null != wsServerRun) {
                 final ClusterDispatchNodeDto registerNodeInfoDto = new ClusterDispatchNodeDto();
                 BeanUtils.copyProperties(clusterDispatchNodeForm, registerNodeInfoDto);
+                registerNodeInfoDto.setAutoRegister(true);
                 registerNodeInfoDto.setClusterNodeHost(baseUrl);
                 registerNodeInfoDto.setClusterEnName(originNodeName);
                 registerNodeInfoDto.setClusterCnName(String.format("【自动注册节点】%s", originNodeName));
-                registerNodeInfoDto.setClusterNodeDesc(String.format("【自动注册节点】不可编辑，次节点信息是由客户端节点（%s）向服务端节点（%s）发起注册生成", originNodeName, destNodeName));
+                registerNodeInfoDto.setClusterNodeDesc(String.format("【自动注册节点】禁止操作，此节点信息是由客户端节点（%s）向当前节点（%s）发起注册生成", originNodeName, destNodeName));
                 final FolibWsAction folibWsAction = new FolibWsAction()
                         .setCommand(FolibWsServerSaveNodeInfoCommand.COMMAND)
                         .setPayload(
@@ -224,16 +237,18 @@ public class ClusterDispatchConfigurationController extends BaseConfigurationCon
                 final String destNodeName = String.format("%s:%s", destHost, destPort);
                 final FolibWsServerRunManage.FolibWsServerRun wsServerRun = FolibWsServerRunManage.getWsServerRun(destNodeName);
                 // 远程对应节点名称是：originNodeName
-                syncClusterDispatchDto.getNodeDto().setClusterEnName(originNodeName);
-                final FolibWsAction folibWsAction = new FolibWsAction()
-                        .setCommand(FolibWsServerDeleteNodeInfoCommand.COMMAND)
-                        .setPayload(JSONUtil.toJsonStr(syncClusterDispatchDto));
-                if (wsServerRun.getSession().isOpen()) {
-                    wsServerRun.getSession().sendMessage(new TextMessage(folibWsAction.encode()));
-                } else {
-                    logger.info("【删除节点】与远程节点（{}）处于断开连接状态，无法通知远程节点进行删除操作", destNodeName);
+                if (null != wsServerRun) {
+                    syncClusterDispatchDto.getNodeDto().setClusterEnName(originNodeName);
+                    final FolibWsAction folibWsAction = new FolibWsAction()
+                            .setCommand(FolibWsServerDeleteNodeInfoCommand.COMMAND)
+                            .setPayload(JSONUtil.toJsonStr(syncClusterDispatchDto));
+                    if (wsServerRun.getSession().isOpen()) {
+                        wsServerRun.getSession().sendMessage(new TextMessage(folibWsAction.encode()));
+                    } else {
+                        logger.info("【删除节点】与远程节点（{}）处于断开连接状态，无法通知远程节点进行删除操作", destNodeName);
+                    }
+                    FolibWsServerRunManage.remove(destNodeName);
                 }
-                FolibWsServerRunManage.remove(destNodeName);
             }
 
             nodeDto.setClusterEnName(clusterEnName);
