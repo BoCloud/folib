@@ -1300,10 +1300,14 @@
                       slot-scope="text, record">
                     {{ record.isThisCluster === true ? '是' : '否' }}
                   </div>
+                  <div slot="autoRegister"
+                      slot-scope="text, record">
+                    {{ record.autoRegister && record.autoRegister === true ? '自动' : '手动' }}
+                  </div>
 
                   <div slot="operation"
                       slot-scope="text, record">
-                    <div class="col-action">
+                    <div class="col-action" v-if="!record.autoRegister">
                       <a-popconfirm title="确定要删除吗？"
                                     okType="danger"
                                     ok-text="确定"
@@ -1761,6 +1765,13 @@ export default {
           key: 'isThisCluster',
           width: 80,
           scopedSlots: { customRender: 'isThisCluster' }
+        },
+        {
+          title: '添加方式',
+          dataIndex: 'autoRegister',
+          key: 'autoRegister',
+          width: 80,
+          scopedSlots: { customRender: 'autoRegister' }
         },
         {
           title: '操作',
