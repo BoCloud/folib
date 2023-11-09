@@ -17,6 +17,7 @@ import com.veadan.folib.ws.client.manage.FolibWsServerRunManage;
 import com.veadan.folib.ws.common.FolibWsAction;
 import com.veadan.folib.ws.server.handler.command.FolibWsServerDeleteNodeInfoCommand;
 import com.veadan.folib.ws.server.handler.command.FolibWsServerSaveNodeInfoCommand;
+import com.veadan.folib.ws.server.manage.FolibWsClientRunManage;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
@@ -85,11 +86,11 @@ public class ClusterDispatchConfigurationController extends BaseConfigurationCon
                 getMutableConfigurationClone().getClusterDispatchNode();
         final Collection<ClusterDispatchNodeDto> values = map.values();
         values.stream().filter(ClusterDispatchNodeDto::getAutoRegister).forEach(nodeDto -> {
-            final FolibWsServerRunManage.FolibWsServerRun wsServerRun = FolibWsServerRunManage.getWsServerRun(nodeDto.getClusterEnName());
-            if (null != wsServerRun && wsServerRun.getSession().isOpen()) {
-                nodeDto.setOnline(true);
+            final FolibWsClientRunManage.FolibWsClientRun wsClientRun = FolibWsClientRunManage.getWsClientRun(nodeDto.getClusterEnName());
+            if (null != wsClientRun && wsClientRun.getSession().isOpen()) {
+                nodeDto.setWsClientOnline(true);
             } else {
-                nodeDto.setOnline(false);
+                nodeDto.setWsClientOnline(false);
             }
         });
         

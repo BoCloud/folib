@@ -59,7 +59,7 @@ public class ClusterDispatchNodeDto implements Serializable {
     private Boolean autoRegister = false;
 
     /**
-     * 节点在线状态
+     * Ws客户端节点在线状态
      */
-    private Boolean online;
+    private Boolean wsClientOnline;
 }
