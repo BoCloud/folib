@@ -1,6 +1,7 @@
 package com.veadan.folib.ws.client.manage;
 
 import cn.hutool.core.date.DateUtil;
+import cn.hutool.core.lang.UUID;
 import com.veadan.folib.ws.client.handler.FolibWsClientMessageHandler;
 import com.veadan.folib.ws.client.handler.command.FolibWsClientConsoleCommand;
 import com.veadan.folib.ws.common.FolibWsAction;
@@ -20,8 +21,11 @@ import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.Date;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 /**
  * @author xiaodong.wang
@@ -80,7 +84,7 @@ public class FolibWsServerRunManage {
         final FolibWsServerRun folibWsServerRun = FOLIB_WS_CLIENT_RUN_MAP.get(nodeName);
         if (null != folibWsServerRun) {
             try {
-                if (folibWsServerRun.getSession().isOpen()) {
+                if (null != folibWsServerRun.getSession() && folibWsServerRun.getSession().isOpen()) {
                     folibWsServerRun.getSession().close();
                 }
                 log.error("【FolibWs服务端运行管理器-停止】停止会话成功");
@@ -118,8 +122,37 @@ public class FolibWsServerRunManage {
     public static FolibWsServerRun getWsServerRun(String nodeName) {
         return FOLIB_WS_CLIENT_RUN_MAP.get(nodeName);
     }
+    
+    private static final Map<String, String> SYNC_ACTION_LOCK_MAP = new ConcurrentHashMap<>(); 
+    private static final String ACTION_LOCK_MARK = "ACTION_LOCK"; 
 
+    public static void actionLock(String actionReqId) {
+        SYNC_ACTION_LOCK_MAP.put(actionReqId, ACTION_LOCK_MARK);
+    }
 
+    public static void actionUnLock(String actionReqId) {
+        SYNC_ACTION_LOCK_MAP.remove(actionReqId);
+    }
+    
+    public static String actionUnLockAndGetValue(String actionReqId, long timeout, TimeUnit unit) {
+        try {
+            return CompletableFuture.supplyAsync(() -> {
+                String lockActionValue = SYNC_ACTION_LOCK_MAP.getOrDefault(actionReqId, ACTION_LOCK_MARK);
+                while (lockActionValue.equals(ACTION_LOCK_MARK)) {
+                    lockActionValue = SYNC_ACTION_LOCK_MAP.getOrDefault(actionReqId, ACTION_LOCK_MARK);
+                }
+
+                return lockActionValue;
+            }).get(timeout, unit);
+        } catch (Exception e) {
+            log.error("【FolibWs服务端运行管理器】获取同步Action结果失败", e);
+        } finally {
+            SYNC_ACTION_LOCK_MAP.remove(actionReqId);
+        }
+        
+        return null;
+    }
+    
     /**
      * @author xiaodong.wang
      * @email wangxiaodong@beyondcent.com
@@ -150,36 +183,50 @@ public class FolibWsServerRunManage {
         public String getWsUrl() {
             return String.format("ws://%s:%s%s", this.host, this.port, this.uri);
         }
-    }
-
-    public static void main(String[] args) throws Exception {
-        final String nnodeName = "zhangsan";
-        FolibWsServerRunManage.up(nnodeName, "10.50.8.55", 38080, "/ws/folib/zhangsan", true);
-        final FolibWsServerRun wsServerRun = FolibWsServerRunManage.getWsServerRun(nnodeName);
-        for (int i = 0; i < 10; i++) {
-            TimeUnit.SECONDS.sleep(1L);
-            log.info("发送消息：{}", i);
-
-            wsServerRun.getSession().sendMessage(new TextMessage(
-                    new FolibWsAction().setCommand(FolibWsClientConsoleCommand.COMMAND).setPayload(new FolibWsClientConsoleCommand.Payload()
-                            .setLevel(FolibWsClientConsoleCommand.LogConsoleLevel.INFO)
-                            .setContent(String.format("当前时间：%s", DateUtil.format(new Date(), "yyyy-MM-dd HH:mm:ss"))).encode()
-                    ).encode()
-            ));
-        }
-        new Thread(() -> {
-            final FolibWsServerRun wsServerRun1 = FolibWsServerRunManage.getWsServerRun(nnodeName);
+        
+        public <T> T syncReq(FolibWsAction folibWsAction) {
+            final String reqId = UUID.fastUUID().toString(true);
             try {
-                log.info("另一个线程中发送消息");
-                wsServerRun1.getSession().sendMessage(new TextMessage(
-                        new FolibWsAction().setCommand(FolibWsClientConsoleCommand.COMMAND).setPayload(new FolibWsClientConsoleCommand.Payload()
-                                .setLevel(FolibWsClientConsoleCommand.LogConsoleLevel.INFO)
-                                .setContent(String.format("在另一个线程中，当前时间：%s", DateUtil.format(new Date(), "yyyy-MM-dd HH:mm:ss"))).encode()
-                        ).encode()
-                ));
-            } catch (IOException e) {
-                throw new RuntimeException(e);
+                actionLock(reqId);
+                final String resPayload = actionUnLockAndGetValue(reqId, 2, TimeUnit.SECONDS);
+            } catch (Exception e) {
+                
+            } finally {
+                actionUnLock(reqId);
             }
-        }, "CCCCCC-11").start();
+            
+            return null;
+        }
     }
+
+//    public static void main(String[] args) throws Exception {
+//        final String nnodeName = "zhangsan";
+//        FolibWsServerRunManage.up(nnodeName, "10.50.8.55", 38080, "/ws/folib/zhangsan", true);
+//        final FolibWsServerRun wsServerRun = FolibWsServerRunManage.getWsServerRun(nnodeName);
+//        for (int i = 0; i < 10; i++) {
+//            TimeUnit.SECONDS.sleep(1L);
+//            log.info("发送消息：{}", i);
+//
+//            wsServerRun.getSession().sendMessage(new TextMessage(
+//                    new FolibWsAction().setCommand(FolibWsClientConsoleCommand.COMMAND).setPayload(new FolibWsClientConsoleCommand.Payload()
+//                            .setLevel(FolibWsClientConsoleCommand.LogConsoleLevel.INFO)
+//                            .setContent(String.format("当前时间：%s", DateUtil.format(new Date(), "yyyy-MM-dd HH:mm:ss"))).encode()
+//                    ).encode()
+//            ));
+//        }
+//        new Thread(() -> {
+//            final FolibWsServerRun wsServerRun1 = FolibWsServerRunManage.getWsServerRun(nnodeName);
+//            try {
+//                log.info("另一个线程中发送消息");
+//                wsServerRun1.getSession().sendMessage(new TextMessage(
+//                        new FolibWsAction().setCommand(FolibWsClientConsoleCommand.COMMAND).setPayload(new FolibWsClientConsoleCommand.Payload()
+//                                .setLevel(FolibWsClientConsoleCommand.LogConsoleLevel.INFO)
+//                                .setContent(String.format("在另一个线程中，当前时间：%s", DateUtil.format(new Date(), "yyyy-MM-dd HH:mm:ss"))).encode()
+//                        ).encode()
+//                ));
+//            } catch (IOException e) {
+//                throw new RuntimeException(e);
+//            }
+//        }, "CCCCCC-11").start();
+//    }
 }
