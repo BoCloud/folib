@@ -1,5 +1,6 @@
 package com.veadan.folib.ws.client.context;
 
+import com.veadan.folib.ws.client.manage.FolibWsServerRunManage;
 import com.veadan.folib.ws.common.FolibWsSessionContextHolder;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -18,5 +19,5 @@ import org.springframework.web.socket.WebSocketSession;
 @Accessors(chain = true)
 @AllArgsConstructor
 @EqualsAndHashCode(callSuper = true)
-public class FolibWsClientContextInfo extends FolibWsSessionContextHolder.FolibWsSessionContextInfo<WebSocketSession> {
+public class FolibWsClientContextInfo extends FolibWsSessionContextHolder.FolibWsSessionContextInfo<FolibWsServerRunManage.FolibWsServerRun> {
 }

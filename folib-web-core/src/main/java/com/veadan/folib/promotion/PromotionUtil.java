@@ -293,8 +293,8 @@ public class PromotionUtil {
                 
                 final Session session = wsClientRun.getSession();
                 session.getBasicRemote().sendText(JSON.toJSONString(new FolibWsAction()
-                        .setCommand(FolibWsClientArtifactPullCommand.COMMAND)
-                        .setPayload(JSON.toJSONString(promotionNodeOption))));
+                        .command(FolibWsClientArtifactPullCommand.COMMAND)
+                        .payload(promotionNodeOption)));
                 
 ///                String url = dispatchNodeHost.endsWith("/") ?
 ///                        dispatchNodeHost + "api/artifact/folib/promotion/nodeOption" :

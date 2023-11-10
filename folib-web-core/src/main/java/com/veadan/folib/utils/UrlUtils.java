@@ -41,19 +41,6 @@ public class UrlUtils {
     }
 
 
-    public static void main(String[] args) {
-        String sourcePath = "";
-        String[] result = parsePath(sourcePath);
-        if (result != null) {
-            String srcStorageId = result[0];
-            String srcRepostoryId = result[1];
-            System.out.println("srcStorageId: " + srcStorageId);
-            System.out.println("srcRepostoryId: " + srcRepostoryId);
-        } else {
-            System.out.println("Invalid sourcePath format");
-        }
-    }
-
     public static String[] parsePath(String artiactPath) {
         try {
             URL url = new URL(artiactPath);

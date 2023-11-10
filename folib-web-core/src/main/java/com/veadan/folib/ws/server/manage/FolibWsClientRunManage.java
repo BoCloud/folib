@@ -23,11 +23,11 @@ import java.util.concurrent.ConcurrentHashMap;
 public class FolibWsClientRunManage
 {
 
-    private static final Map<String, FolibWsClientRun> FOLIB_WS_CLIENT_RUN_MAP = new ConcurrentHashMap<>();
+    private static final Map<String, FolibWsClientRun> FOLIB_WS_RUN_MAP = new ConcurrentHashMap<>();
 
     public static boolean online(String nodeName, Session session)
     {
-        final FolibWsClientRun folibWsClientRun = FOLIB_WS_CLIENT_RUN_MAP.get(nodeName);
+        final FolibWsClientRun folibWsClientRun = FOLIB_WS_RUN_MAP.get(nodeName);
         if (null != folibWsClientRun)
         {
             try {
@@ -37,19 +37,19 @@ public class FolibWsClientRunManage
                 return false;
             }
         }
-        FOLIB_WS_CLIENT_RUN_MAP.put(nodeName, new FolibWsClientRun(nodeName, session, LocalDateTime.now()));
+        FOLIB_WS_RUN_MAP.put(nodeName, new FolibWsClientRun(nodeName, session, LocalDateTime.now()));
 
         return true;
     }
 
-    public static boolean offline(String nodeName)
+    public static boolean remove(String nodeName)
     {
-        final FolibWsClientRun folibWsClientRun = FOLIB_WS_CLIENT_RUN_MAP.get(nodeName);
+        final FolibWsClientRun folibWsClientRun = FOLIB_WS_RUN_MAP.get(nodeName);
         if (null != folibWsClientRun)
         {
             try {
                 folibWsClientRun.getSession().close();
-                FOLIB_WS_CLIENT_RUN_MAP.remove(nodeName);
+                FOLIB_WS_RUN_MAP.remove(nodeName);
             } catch (IOException e) {
                 log.error("【FolibWs客户端下线】，发现关闭存在会话，进行关闭操作失败", e);
                 return false;
@@ -63,9 +63,16 @@ public class FolibWsClientRunManage
 
     public static FolibWsClientRun getWsClientRun(String nodeName)
     {
-        return FOLIB_WS_CLIENT_RUN_MAP.get(nodeName);
+        return FOLIB_WS_RUN_MAP.get(nodeName);
     }
-    
+
+    public static FolibWsClientRun findRunBySession(Session session) {
+        return FOLIB_WS_RUN_MAP.values()
+                .stream()
+                .filter(e -> null != e.getSession() && e.getSession().equals(session))
+                .findFirst()
+                .orElse(null);
+    }
 
     /**
      *

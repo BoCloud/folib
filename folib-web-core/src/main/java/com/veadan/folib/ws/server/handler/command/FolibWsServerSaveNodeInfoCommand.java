@@ -53,8 +53,8 @@ public class FolibWsServerSaveNodeInfoCommand implements FolibWsServerCommand<Fo
             clusterSyncService.syncClusterDispatch(payload);
             
             // 断开与WsClient的连接
-            final FolibWsServerContextInfo session = FolibWsSessionContextHolder.getSession(FolibWsServerContextInfo.class);
-            FolibWsClientRunManage.offline(session.getNodeName());
+            final FolibWsServerContextInfo session = FolibWsSessionContextHolder.getContextSessionInfo(FolibWsServerContextInfo.class);
+            FolibWsClientRunManage.remove(session.getNodeName());
         } catch (Exception e) {
             throw new RuntimeException(e);
         }

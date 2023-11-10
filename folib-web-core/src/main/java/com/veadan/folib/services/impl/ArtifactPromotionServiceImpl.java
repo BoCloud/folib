@@ -320,8 +320,8 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
                 { throw new BusinessException("需要晋级的节点不可用，请检查节点是否配置正确"); }
                 final Session session = wsClientRun.getSession();
                 session.getBasicRemote().sendText(new FolibWsAction()
-                        .setCommand(FolibWsClientArtifactPullCommand.COMMAND)
-                        .setPayload(JSON.toJSONString(promotionNodeOption))
+                        .command(FolibWsClientArtifactPullCommand.COMMAND)
+                        .payload(promotionNodeOption)
                         .encode());
                 
 ///                validateStorageAndRepository(targetStorageId, targetRepostoryId);

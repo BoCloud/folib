@@ -4,12 +4,6 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.experimental.Accessors;
-import org.springframework.web.socket.WebSocketSession;
-
-import javax.websocket.Session;
-import java.util.Map;
-import java.util.Objects;
-import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * @author xiaodong.wang
@@ -21,15 +15,15 @@ public class FolibWsSessionContextHolder {
 
     public static final ThreadLocal<Object> sessionContext = new InheritableThreadLocal();
 
-    public static <T extends FolibWsSessionContextHolder.FolibWsSessionContextInfo<?>> void setSession(T session) {
+    public static <T extends FolibWsSessionContextHolder.FolibWsSessionContextInfo<?>> void setContextSessionInfo(T session) {
         sessionContext.set(session);
     }
 
-    public static <T extends FolibWsSessionContextHolder.FolibWsSessionContextInfo<?>> T getSession(Class<T> tClass) {
+    public static <T extends FolibWsSessionContextHolder.FolibWsSessionContextInfo<?>> T getContextSessionInfo(Class<T> tClass) {
         return (T) sessionContext.get();
     }
 
-    public static void remove() {
+    public static void removeContextSessionInfo() {
         sessionContext.remove();
     }
 
@@ -37,7 +31,8 @@ public class FolibWsSessionContextHolder {
     @Accessors(chain = true)
     @AllArgsConstructor
     @NoArgsConstructor
-    public static class FolibWsSessionContextInfo<S> {
-        private S session;
+    public static class FolibWsSessionContextInfo<R> {
+        private R wsRunInfo;
+        private String syncId;
     }
 }

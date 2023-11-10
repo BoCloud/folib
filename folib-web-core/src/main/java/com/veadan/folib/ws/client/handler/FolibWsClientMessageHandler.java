@@ -2,9 +2,11 @@ package com.veadan.folib.ws.client.handler;
 
 import com.alibaba.fastjson.JSON;
 import com.veadan.folib.ws.client.context.FolibWsClientContextInfo;
+import com.veadan.folib.ws.client.manage.FolibWsServerRunManage;
 import com.veadan.folib.ws.common.FolibWsAction;
 import com.veadan.folib.ws.client.handler.dispatch.FolibWsClientCommandDispatch;
 import com.veadan.folib.ws.common.FolibWsSessionContextHolder;
+import com.veadan.folib.ws.server.manage.FolibWsClientRunManage;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.socket.TextMessage;
 import org.springframework.web.socket.WebSocketSession;
@@ -22,13 +24,15 @@ public class FolibWsClientMessageHandler extends BinaryWebSocketHandler {
     protected void handleTextMessage(WebSocketSession session, TextMessage message) {
         final String textMessage = new String(message.asBytes());
         try {
-            FolibWsSessionContextHolder.setSession(new FolibWsClientContextInfo().setSession(session));
             final FolibWsAction folibWsAction = JSON.parseObject(textMessage, FolibWsAction.class);
+            FolibWsSessionContextHolder.setContextSessionInfo(new FolibWsClientContextInfo()
+                    .setWsRunInfo(FolibWsServerRunManage.findRunBySession(session))
+                    .setSyncId(folibWsAction.getSyncId()));
             FolibWsClientCommandDispatch.dispatch(folibWsAction);
         } catch (Exception e) {
             log.error("解析来自FolibWs服务端的消息（{}）失败", textMessage, e);
         } finally {
-            FolibWsSessionContextHolder.remove();
+            FolibWsSessionContextHolder.removeContextSessionInfo();
         }
     }
 }

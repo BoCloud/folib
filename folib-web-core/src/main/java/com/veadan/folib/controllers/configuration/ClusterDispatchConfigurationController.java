@@ -2,7 +2,6 @@ package com.veadan.folib.controllers.configuration;
 
 
 import cn.hutool.core.util.StrUtil;
-import cn.hutool.json.JSONUtil;
 import com.veadan.folib.cluster.SyncClusterDispatchEnum;
 import com.veadan.folib.controllers.cluster.dto.SyncClusterDispatchDto;
 import com.veadan.folib.dispatch.ClusterDispatchNodeDto;
@@ -40,7 +39,6 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.socket.TextMessage;
 
 import java.net.URL;
 import java.time.LocalDateTime;
@@ -152,14 +150,11 @@ public class ClusterDispatchConfigurationController extends BaseConfigurationCon
                 registerNodeInfoDto.setClusterCnName(String.format("【自动注册节点】%s", originNodeName));
                 registerNodeInfoDto.setClusterNodeDesc(String.format("【自动注册节点】禁止操作，此节点信息是由客户端节点（%s）向当前节点（%s）发起注册生成", originNodeName, destNodeName));
                 final FolibWsAction folibWsAction = new FolibWsAction()
-                        .setCommand(FolibWsServerSaveNodeInfoCommand.COMMAND)
-                        .setPayload(
-                                new FolibWsServerSaveNodeInfoCommand.Payload(registerNodeInfoDto,
-                                        SyncClusterDispatchEnum.ADD_OR_UPDATE).encode()
+                        .command(FolibWsServerSaveNodeInfoCommand.COMMAND)
+                        .payload(new FolibWsServerSaveNodeInfoCommand.Payload(registerNodeInfoDto,                                 
+                                SyncClusterDispatchEnum.ADD_OR_UPDATE)
                         );
-                if (wsServerRun.getSession().isOpen()) {
-                    wsServerRun.getSession().sendMessage(new TextMessage(folibWsAction.encode()));
-                }
+                wsServerRun.doSyncAction(folibWsAction);
             }
 
             return getSuccessfulResponseEntity("ok", accept);
@@ -227,13 +222,11 @@ public class ClusterDispatchConfigurationController extends BaseConfigurationCon
                 }
                 
                 final String baseUrl = configurationManager.getConfiguration().getBaseUrl();
-                final URL originUrl = new URL(baseUrl);
                 final String clusterNodeHost = clusterDispatchNodeDto.getClusterNodeHost();
-                final URL destUrl = new URL(clusterNodeHost);
-                final String originHost = originUrl.getHost();
-                final Integer originPort = UrlUtils.getPort(originUrl.toString());
-                final String destHost = destUrl.getHost();
-                final Integer destPort = UrlUtils.getPort(clusterNodeHost);
+                final String originHost = UrlUtils.getHost(baseUrl);
+                final Integer originPort = UrlUtils.getPort(baseUrl);
+                final Integer destHost = UrlUtils.getPort(clusterNodeHost);
+                final String destPort = UrlUtils.getHost(clusterNodeHost);
                 final String originNodeName = String.format("%s:%s", originHost, originPort);
                 final String destNodeName = String.format("%s:%s", destHost, destPort);
                 final FolibWsServerRunManage.FolibWsServerRun wsServerRun = FolibWsServerRunManage.getWsServerRun(destNodeName);
@@ -241,13 +234,9 @@ public class ClusterDispatchConfigurationController extends BaseConfigurationCon
                 if (null != wsServerRun) {
                     syncClusterDispatchDto.getNodeDto().setClusterEnName(originNodeName);
                     final FolibWsAction folibWsAction = new FolibWsAction()
-                            .setCommand(FolibWsServerDeleteNodeInfoCommand.COMMAND)
-                            .setPayload(JSONUtil.toJsonStr(syncClusterDispatchDto));
-                    if (wsServerRun.getSession().isOpen()) {
-                        wsServerRun.getSession().sendMessage(new TextMessage(folibWsAction.encode()));
-                    } else {
-                        logger.info("【删除节点】与远程节点（{}）处于断开连接状态，无法通知远程节点进行删除操作", destNodeName);
-                    }
+                            .command(FolibWsServerDeleteNodeInfoCommand.COMMAND)
+                            .payload(syncClusterDispatchDto);
+                    wsServerRun.doSyncAction(folibWsAction);
                     FolibWsServerRunManage.remove(destNodeName);
                 }
             }

@@ -2,7 +2,6 @@ package com.veadan.folib.ws.server;
 
 import com.alibaba.fastjson.JSON;
 import com.veadan.folib.configuration.ConfigurationManager;
-import com.veadan.folib.ws.client.context.FolibWsClientContextInfo;
 import com.veadan.folib.ws.common.FolibWsAction;
 import com.veadan.folib.ws.client.handler.command.FolibWsClientConsoleCommand;
 import com.veadan.folib.ws.common.FolibWsSessionContextHolder;
@@ -13,7 +12,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import javax.inject.Inject;
 import javax.websocket.OnClose;
 import javax.websocket.OnError;
 import javax.websocket.OnMessage;
@@ -46,11 +44,11 @@ public class FolibWsServer {
                 final String baseUrl = configurationManager.getConfiguration().getBaseUrl();
                 final String info = String.format("连接失败，当前节点（%s）已存在连接的客户端（%s）会话", baseUrl, nodeName);
                 session.getBasicRemote().sendText(new FolibWsAction()
-                        .setCommand(FolibWsClientConsoleCommand.COMMAND)
-                        .setPayload(new FolibWsClientConsoleCommand.Payload()
+                        .command(FolibWsClientConsoleCommand.COMMAND)
+                        .payload(new FolibWsClientConsoleCommand.Payload()
                                 .setLevel(FolibWsClientConsoleCommand.LogConsoleLevel.ERROR)
-                                .setContent(info).encode()
-                        ).encode());
+                                .setContent(info))
+                        .encode());
                 log.info(info);
                 session.close();
             }
@@ -68,20 +66,23 @@ public class FolibWsServer {
 
     @OnClose
     public void onClose(@PathParam("nodeName") String nodeName, Session session) {
-        FolibWsClientRunManage.offline(nodeName);
+        FolibWsClientRunManage.remove(nodeName);
         log.info("连接关闭成功，nodeName = {} session_id = {}", nodeName, session.getId());
     }
 
     @OnMessage
     public void onMessage(@PathParam("nodeName") String nodeName, String message, Session session) {
         try {
-            FolibWsSessionContextHolder.setSession(new FolibWsServerContextInfo().setNodeName(nodeName).setSession(session));
             final FolibWsAction folibWsAction = JSON.parseObject(message, FolibWsAction.class);
+            FolibWsSessionContextHolder.setContextSessionInfo(new FolibWsServerContextInfo()
+                    .setNodeName(nodeName)
+                    .setSyncId(folibWsAction.getSyncId())
+                    .setWsRunInfo(FolibWsClientRunManage.findRunBySession(session)));
             FolibWsServerCommandDispatch.dispatch(folibWsAction);
         } catch (Exception e) {
             log.error("解析来自FolibWs客户端的消息（{}）失败", message, e);
         } finally {
-            FolibWsSessionContextHolder.remove();
+            FolibWsSessionContextHolder.removeContextSessionInfo();
         }
 
         log.info("服务端收到客户端消息，nodeName = {}  {} message = {}", nodeName, message, session.getId());

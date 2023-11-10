@@ -1,9 +1,7 @@
 package com.veadan.folib.ws.client.manage;
 
-import cn.hutool.core.date.DateUtil;
-import cn.hutool.core.lang.UUID;
+import com.veadan.folib.scanner.common.exception.BusinessException;
 import com.veadan.folib.ws.client.handler.FolibWsClientMessageHandler;
-import com.veadan.folib.ws.client.handler.command.FolibWsClientConsoleCommand;
 import com.veadan.folib.ws.common.FolibWsAction;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
@@ -14,18 +12,15 @@ import lombok.experimental.Accessors;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.socket.TextMessage;
 import org.springframework.web.socket.WebSocketSession;
-import org.springframework.web.socket.client.standard.StandardWebSocketClient;
+import org.springframework.web.socket.client.jetty.JettyWebSocketClient;
 
 import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.Collection;
-import java.util.Date;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 
 /**
  * @author xiaodong.wang
@@ -35,15 +30,20 @@ import java.util.concurrent.TimeoutException;
  */
 @Slf4j
 public class FolibWsServerRunManage {
-    private static final Map<String, FolibWsServerRun> FOLIB_WS_CLIENT_RUN_MAP = new ConcurrentHashMap<>();
+    private static final Map<String, FolibWsServerRun> FOLIB_WS_RUN_MAP = new ConcurrentHashMap<>();
+    public static final JettyWebSocketClient WEB_SOCKET_CLIENT = new JettyWebSocketClient();
+    
+    static {
+        WEB_SOCKET_CLIENT.start();
+    }
 
     public static Collection<FolibWsServerRun> getAllRun() {
-        return FOLIB_WS_CLIENT_RUN_MAP.values();
+        return FOLIB_WS_RUN_MAP.values();
     } 
     
     public static boolean up(String nodeName, String host, Integer port, String uri, boolean forceUp) {
         try {
-            FolibWsServerRun folibWsServerRun = FOLIB_WS_CLIENT_RUN_MAP.get(nodeName);
+            FolibWsServerRun folibWsServerRun = FOLIB_WS_RUN_MAP.get(nodeName);
             if (forceUp) {
                 down(nodeName);
             } else {
@@ -53,21 +53,20 @@ public class FolibWsServerRunManage {
                 }
             }
 
-//            final JettyWebSocketClient socketClient = new JettyWebSocketClient();
-//            socketClient.start();
-            final StandardWebSocketClient socketClient = new StandardWebSocketClient();
-
+            
+//            final StandardWebSocketClient socketClient = new StandardWebSocketClient();
             if (null == folibWsServerRun) {
                 folibWsServerRun = new FolibWsServerRun();
             }
+            
             folibWsServerRun.setNodeName(nodeName);
             folibWsServerRun.setHost(host);
             folibWsServerRun.setPort(port);
             folibWsServerRun.setUri(uri);
             folibWsServerRun.setForceUp(forceUp);
-            FOLIB_WS_CLIENT_RUN_MAP.put(nodeName, folibWsServerRun);
+            FOLIB_WS_RUN_MAP.put(nodeName, folibWsServerRun);
             final String url = folibWsServerRun.getWsUrl();
-            final WebSocketSession webSocketSession = socketClient.doHandshake(new FolibWsClientMessageHandler(), url).get();
+            final WebSocketSession webSocketSession = WEB_SOCKET_CLIENT.doHandshake(new FolibWsClientMessageHandler(), url).get();
 //            final WebSocketSession webSocketSession = webSocketClient.doHandshake(new FolibWsClientMessageHandler(), url).get();
             log.info("【FolibWs服务端运行管理器-启动】连接到节点（{}:{}）成功", host, port);
             folibWsServerRun.setSession(webSocketSession);
@@ -81,7 +80,7 @@ public class FolibWsServerRunManage {
     }
 
     public static boolean down(String nodeName) {
-        final FolibWsServerRun folibWsServerRun = FOLIB_WS_CLIENT_RUN_MAP.get(nodeName);
+        final FolibWsServerRun folibWsServerRun = FOLIB_WS_RUN_MAP.get(nodeName);
         if (null != folibWsServerRun) {
             try {
                 if (null != folibWsServerRun.getSession() && folibWsServerRun.getSession().isOpen()) {
@@ -100,13 +99,13 @@ public class FolibWsServerRunManage {
     }
 
     public static boolean remove(String nodeName) {
-        final FolibWsServerRun folibWsServerRun = FOLIB_WS_CLIENT_RUN_MAP.get(nodeName);
+        final FolibWsServerRun folibWsServerRun = FOLIB_WS_RUN_MAP.get(nodeName);
         if (null != folibWsServerRun) {
             try {
                 if (folibWsServerRun.getSession().isOpen()) {
                     folibWsServerRun.getSession().close();
                 }
-                FOLIB_WS_CLIENT_RUN_MAP.remove(nodeName);
+                FOLIB_WS_RUN_MAP.remove(nodeName);
                 log.error("【FolibWs服务端运行管理器】移除会话成功");
             } catch (IOException e) {
                 log.error("【FolibWs服务端运行管理器】发现关闭存在会话，进行关闭操作失败", e);
@@ -120,34 +119,46 @@ public class FolibWsServerRunManage {
     }
 
     public static FolibWsServerRun getWsServerRun(String nodeName) {
-        return FOLIB_WS_CLIENT_RUN_MAP.get(nodeName);
+        return FOLIB_WS_RUN_MAP.get(nodeName);
     }
     
-    private static final Map<String, String> SYNC_ACTION_LOCK_MAP = new ConcurrentHashMap<>(); 
+    public static FolibWsServerRun findRunBySession(WebSocketSession session) {
+        return FOLIB_WS_RUN_MAP.values()
+                .stream()
+                .filter(e -> null != e.getSession() && e.getSession().equals(session))
+                .findFirst()
+                .orElse(null);
+    }
+    
+    private static final Map<String, Object> SYNC_ACTION_LOCK_MAP = new ConcurrentHashMap<>(); 
     private static final String ACTION_LOCK_MARK = "ACTION_LOCK"; 
 
-    public static void actionLock(String actionReqId) {
-        SYNC_ACTION_LOCK_MAP.put(actionReqId, ACTION_LOCK_MARK);
+    public static void actionLock(String loackId) {
+        SYNC_ACTION_LOCK_MAP.put(loackId, ACTION_LOCK_MARK);
     }
 
-    public static void actionUnLock(String actionReqId) {
-        SYNC_ACTION_LOCK_MAP.remove(actionReqId);
+    public static void actionUpdateLockValue(String lockId, Object value) {
+        SYNC_ACTION_LOCK_MAP.put(lockId, value);
     }
     
-    public static String actionUnLockAndGetValue(String actionReqId, long timeout, TimeUnit unit) {
+    public static void actionUnLock(String lockId) {
+        SYNC_ACTION_LOCK_MAP.remove(lockId);
+    }
+    
+    public static <T> T actionUnLockAndGetValue(String lockId, Class<T> valueClass, long timeout, TimeUnit unit) {
         try {
             return CompletableFuture.supplyAsync(() -> {
-                String lockActionValue = SYNC_ACTION_LOCK_MAP.getOrDefault(actionReqId, ACTION_LOCK_MARK);
+                Object lockActionValue = SYNC_ACTION_LOCK_MAP.getOrDefault(lockId, ACTION_LOCK_MARK);
                 while (lockActionValue.equals(ACTION_LOCK_MARK)) {
-                    lockActionValue = SYNC_ACTION_LOCK_MAP.getOrDefault(actionReqId, ACTION_LOCK_MARK);
+                    lockActionValue = SYNC_ACTION_LOCK_MAP.getOrDefault(lockId, ACTION_LOCK_MARK);
                 }
 
-                return lockActionValue;
+                return (T) lockActionValue;
             }).get(timeout, unit);
         } catch (Exception e) {
             log.error("【FolibWs服务端运行管理器】获取同步Action结果失败", e);
         } finally {
-            SYNC_ACTION_LOCK_MAP.remove(actionReqId);
+            actionUnLock(lockId);
         }
         
         return null;
@@ -183,50 +194,45 @@ public class FolibWsServerRunManage {
         public String getWsUrl() {
             return String.format("ws://%s:%s%s", this.host, this.port, this.uri);
         }
-        
-        public <T> T syncReq(FolibWsAction folibWsAction) {
-            final String reqId = UUID.fastUUID().toString(true);
+
+        public boolean doSyncAction(FolibWsAction folibWsAction) {
             try {
-                actionLock(reqId);
-                final String resPayload = actionUnLockAndGetValue(reqId, 2, TimeUnit.SECONDS);
+                if (null == this.session) {
+                    throw new BusinessException("发起请求失败，还未创建Ws会话");
+                }
+                if (!this.session.isOpen()) {
+                    throw new BusinessException("发起请求失败，Ws会话已经关闭");
+                }
+
+                // 发起请求
+                this.session.sendMessage(new TextMessage(folibWsAction.encode()));
+                return true;
             } catch (Exception e) {
-                
-            } finally {
-                actionUnLock(reqId);
+                log.error("发起Ws异步请求失败", e);
+                return false;
             }
-            
-            return null;
+        }
+        
+        public <T> T doAsyncAction(FolibWsAction folibWsAction, Class<T> responseClass) {
+            final String syncId = folibWsAction.sync().getSyncId();
+            try {
+                if (null == this.session) {
+                    throw new BusinessException("发起请求失败，还未创建Ws会话");
+                }
+                if (!this.session.isOpen()) {
+                    throw new BusinessException("发起请求失败，Ws会话已经关闭");
+                }
+                
+                actionLock(syncId);
+                // 发起请求
+                this.session.sendMessage(new TextMessage(folibWsAction.encode()));
+                return actionUnLockAndGetValue(syncId, responseClass, 3, TimeUnit.SECONDS);
+            } catch (Exception e) {
+                log.error("发起Ws同步请求失败", e);
+                return null;
+            } finally {
+                actionUnLock(syncId);
+            }
         }
     }
-
-//    public static void main(String[] args) throws Exception {
-//        final String nnodeName = "zhangsan";
-//        FolibWsServerRunManage.up(nnodeName, "10.50.8.55", 38080, "/ws/folib/zhangsan", true);
-//        final FolibWsServerRun wsServerRun = FolibWsServerRunManage.getWsServerRun(nnodeName);
-//        for (int i = 0; i < 10; i++) {
-//            TimeUnit.SECONDS.sleep(1L);
-//            log.info("发送消息：{}", i);
-//
-//            wsServerRun.getSession().sendMessage(new TextMessage(
-//                    new FolibWsAction().setCommand(FolibWsClientConsoleCommand.COMMAND).setPayload(new FolibWsClientConsoleCommand.Payload()
-//                            .setLevel(FolibWsClientConsoleCommand.LogConsoleLevel.INFO)
-//                            .setContent(String.format("当前时间：%s", DateUtil.format(new Date(), "yyyy-MM-dd HH:mm:ss"))).encode()
-//                    ).encode()
-//            ));
-//        }
-//        new Thread(() -> {
-//            final FolibWsServerRun wsServerRun1 = FolibWsServerRunManage.getWsServerRun(nnodeName);
-//            try {
-//                log.info("另一个线程中发送消息");
-//                wsServerRun1.getSession().sendMessage(new TextMessage(
-//                        new FolibWsAction().setCommand(FolibWsClientConsoleCommand.COMMAND).setPayload(new FolibWsClientConsoleCommand.Payload()
-//                                .setLevel(FolibWsClientConsoleCommand.LogConsoleLevel.INFO)
-//                                .setContent(String.format("在另一个线程中，当前时间：%s", DateUtil.format(new Date(), "yyyy-MM-dd HH:mm:ss"))).encode()
-//                        ).encode()
-//                ));
-//            } catch (IOException e) {
-//                throw new RuntimeException(e);
-//            }
-//        }, "CCCCCC-11").start();
-//    }
 }
