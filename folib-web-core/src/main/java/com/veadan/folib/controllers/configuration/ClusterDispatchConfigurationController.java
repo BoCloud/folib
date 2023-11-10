@@ -83,12 +83,25 @@ public class ClusterDispatchConfigurationController extends BaseConfigurationCon
         Map<String, ClusterDispatchNodeDto> map = configurationManagementService.
                 getMutableConfigurationClone().getClusterDispatchNode();
         final Collection<ClusterDispatchNodeDto> values = map.values();
-        values.stream().filter(ClusterDispatchNodeDto::getAutoRegister).forEach(nodeDto -> {
-            final FolibWsClientRunManage.FolibWsClientRun wsClientRun = FolibWsClientRunManage.getWsClientRun(nodeDto.getClusterEnName());
-            if (null != wsClientRun && wsClientRun.getSession().isOpen()) {
-                nodeDto.setWsClientOnline(true);
+        values.forEach(nodeDto -> {
+            if (nodeDto.getAutoRegister()) {
+                final FolibWsClientRunManage.FolibWsClientRun wsClientRun = FolibWsClientRunManage.getWsClientRun(nodeDto.getClusterEnName());
+                if (null != wsClientRun && wsClientRun.getSession().isOpen()) {
+                    nodeDto.setWsClientOnline(true);
+                } else {
+                    nodeDto.setWsClientOnline(false);
+                }
             } else {
-                nodeDto.setWsClientOnline(false);
+                final String clusterNodeHost = nodeDto.getClusterNodeHost();
+                final String host = UrlUtils.getHost(clusterNodeHost);
+                final Integer port = UrlUtils.getPort(clusterNodeHost);
+                final String nodeName = String.format("%s:%s", host, port);
+                final FolibWsServerRunManage.FolibWsServerRun wsServerRun = FolibWsServerRunManage.getWsServerRun(nodeName);
+                if (null != wsServerRun && null != wsServerRun.getSession() && wsServerRun.getSession().isOpen()) {
+                    nodeDto.setWsClientOnline(true);
+                } else {
+                    nodeDto.setWsClientOnline(false);
+                }
             }
         });
         

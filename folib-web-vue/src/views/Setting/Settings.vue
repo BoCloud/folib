@@ -1300,6 +1300,12 @@
                       slot-scope="text, record">
                     {{ record.isThisCluster === true ? '是' : '否' }}
                   </div>
+                  <div slot="wsClientOnline"
+                      slot-scope="text, record">
+                    <span v-if="record.wsClientOnline && record.wsClientOnline === true" class="text-success">在线</span>
+                    <span v-else class="text-danger">离线</span>
+<!--                    {{ record.online && record.online === true ? '在线' : '离线' }}-->
+                  </div>
                   <div slot="autoRegister"
                       slot-scope="text, record">
                     {{ record.autoRegister && record.autoRegister === true ? '自动' : '手动' }}
@@ -1765,6 +1771,13 @@ export default {
           key: 'isThisCluster',
           width: 80,
           scopedSlots: { customRender: 'isThisCluster' }
+        },
+        {
+          title: '在线状态',
+          dataIndex: 'wsClientOnline',
+          key: 'wsClientOnline',
+          width: 80,
+          scopedSlots: { customRender: 'wsClientOnline' }
         },
         {
           title: '添加方式',
