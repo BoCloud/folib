@@ -2,6 +2,7 @@ package com.veadan.folib.ws.common;
 
 import cn.hutool.core.lang.UUID;
 import cn.hutool.json.JSONUtil;
+import lombok.Data;
 import lombok.experimental.Accessors;
 
 /**
@@ -10,6 +11,7 @@ import lombok.experimental.Accessors;
  * @date 2023/10/19 16:27
  * @since x.x.x
  */
+@Data
 @Accessors(chain = true)
 public class FolibWsAction implements JsonEncoder {
     private String syncId;

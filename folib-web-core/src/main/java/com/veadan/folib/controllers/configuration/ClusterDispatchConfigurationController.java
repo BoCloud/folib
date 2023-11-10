@@ -225,8 +225,8 @@ public class ClusterDispatchConfigurationController extends BaseConfigurationCon
                 final String clusterNodeHost = clusterDispatchNodeDto.getClusterNodeHost();
                 final String originHost = UrlUtils.getHost(baseUrl);
                 final Integer originPort = UrlUtils.getPort(baseUrl);
-                final Integer destHost = UrlUtils.getPort(clusterNodeHost);
-                final String destPort = UrlUtils.getHost(clusterNodeHost);
+                final String destHost = UrlUtils.getHost(clusterNodeHost);
+                final Integer destPort = UrlUtils.getPort(clusterNodeHost);
                 final String originNodeName = String.format("%s:%s", originHost, originPort);
                 final String destNodeName = String.format("%s:%s", destHost, destPort);
                 final FolibWsServerRunManage.FolibWsServerRun wsServerRun = FolibWsServerRunManage.getWsServerRun(destNodeName);
