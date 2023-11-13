@@ -133,11 +133,9 @@ public class ClusterDispatchConfigurationController extends BaseConfigurationCon
             // 连接到WsServer
             final String clusterNodeHost = nodeDto.getClusterNodeHost();
             final String baseUrl = configurationManager.getConfiguration().getBaseUrl();
-            final URL destUrl = new URL(clusterNodeHost);
-            final URL originUrl = new URL(baseUrl);
-            final String originHost = originUrl.getHost();
-            final Integer originPort = UrlUtils.getPort(originUrl.toString());
-            final String destHost = destUrl.getHost();
+            final String originHost = UrlUtils.getHost(baseUrl);
+            final Integer originPort = UrlUtils.getPort(baseUrl);
+            final String destHost = UrlUtils.getHost(clusterNodeHost);
             final Integer destPort = UrlUtils.getPort(clusterNodeHost);
             final String destNodeName = String.format("%s:%s", destHost, destPort);
             final String originNodeName = String.format("%s:%s", originHost, originPort);

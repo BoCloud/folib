@@ -62,4 +62,10 @@ public class ClusterDispatchNodeDto implements Serializable {
      * Ws客户端节点在线状态
      */
     private Boolean wsClientOnline;
+
+
+    /**
+     * 节点传输速率（Kbs）
+     */
+    private Long kbps;
 }
