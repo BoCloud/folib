@@ -1,6 +1,5 @@
 package com.veadan.folib.services.impl;
 
-import com.alibaba.fastjson.JSONObject;
 import com.google.common.collect.Lists;
 import com.veadan.folib.domain.CacheSettings;
 import com.veadan.folib.entity.Dict;
@@ -70,9 +69,11 @@ public class DictServiceImpl implements DictService {
             log.info("更新系统属性：key {}，value：{}", dict.getDictKey(), dict.getDictValue());
         }
         String key = DictTypeEnum.CACHE_SETTINGS.getType();
-        if (key.equals(dict.getDictType())){
+        if (key.equals(dict.getDictType())) {
             CacheUtil<String, CacheSettings> cacheUtil = CacheUtil.getInstance();
             cacheUtil.remove(key);
+            CacheUtil<String, String> cachePathUtil = CacheUtil.getInstance();
+            cachePathUtil.remove("ARTIFACT_CACHE_ROOT_PATH");
         }
     }
 
