@@ -15,7 +15,6 @@ import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.compress.utils.Lists;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
-import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 
 import javax.inject.Inject;
 import java.util.List;
@@ -48,9 +47,6 @@ public class CleanupArtifactsRepositoryCronJob extends JavaCronJob {
 
     @Inject
     private RepositoryPathResolver repositoryPathResolver;
-
-    @Inject
-    private ThreadPoolTaskExecutor asyncRepositoryCleanupThreadPoolExecutor;
 
     @Inject
     private ConfigurationManager configurationManager;

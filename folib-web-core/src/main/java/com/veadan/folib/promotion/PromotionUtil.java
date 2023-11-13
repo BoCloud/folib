@@ -87,7 +87,7 @@ public class PromotionUtil {
     protected ArtifactManagementService artifactManagementService;
 
     @Autowired
-    private ThreadPoolTaskExecutor asyncRepositoryThreadPoolExecutor;
+    private ThreadPoolTaskExecutor asyncThreadPoolTaskExecutor;
 
     @Autowired
     private ProxyRepositoryConnectionPoolConfigurationService clientPool;
@@ -109,7 +109,7 @@ public class PromotionUtil {
     @Lazy
     private DockerComponent dockerComponent;
 
-    @Async("asyncStorageThreadPoolExecutor")
+    @Async("asyncThreadPoolTaskExecutor")
     public void executeHanleCopy(String path, Repository destRepository, Repository srcRepository) {
         try {
             if (path.startsWith("s3://")) {
@@ -124,7 +124,7 @@ public class PromotionUtil {
 
     }
 
-    @Async("asyncStorageThreadPoolExecutor")
+    @Async("asyncThreadPoolTaskExecutor")
     public void executeHandleDispatch(ArtifactDispatch artifactDispatch) {
         // 获取分发配置信息
         Map<String, ClusterDispatchNodeDto> map = configurationManagementService.
@@ -145,7 +145,6 @@ public class PromotionUtil {
         }
     }
 
-    //    @Async("asyncClusterDispatchThreadPoolExecutor")
     public void handlerDispatch(Map<String, ClusterDispatchNodeDto> map, ArtifactDispatch artifactDispatch,
                                 TargetDispatchRepositoryDto targetDispatchRepositoryDto) {
         Response response = null;
@@ -321,7 +320,7 @@ public class PromotionUtil {
         }
     }
 
-    @Async("asyncStorageThreadPoolExecutor")
+    @Async("asyncThreadPoolTaskExecutor")
     public void executeHandleMove(ArtifactPromotion artifactPromotion) {
         final String srcStorageId = artifactPromotion.getSrcStorageId();
         final String srcRepositoryId = artifactPromotion.getSrcRepositoryId();
@@ -340,7 +339,7 @@ public class PromotionUtil {
             FutureTask<String> future = new FutureTask<String>(
                     new ArtifactPromotionCopyTask(srcPath.getTarget().toString(), destRepository, srcRepository));
             listTask.add(future);
-            asyncRepositoryThreadPoolExecutor.submit(future);
+            asyncThreadPoolTaskExecutor.submit(future);
         });
         boolean delFlag = true;
         for (FutureTask<String> task : listTask) {
@@ -852,26 +851,6 @@ public class PromotionUtil {
                 repositoryPath.setArtifact(artifact);
             } catch (Exception ex) {
                 log.error("setMetaData Exception {} repositoryPath {} metadata {}", ExceptionUtils.getStackTrace(ex), repositoryPath.toString(), metadata);
-            }
-        }
-    }
-
-    /**
-     * 处理packageInfo
-     *
-     * @param repositoryPath repositoryPath
-     * @param packageInfo    packageInfo
-     */
-    public void setPackageInfo(RepositoryPath repositoryPath, String packageInfo) {
-        if (Objects.nonNull(repositoryPath) && StringUtils.isNotBlank(packageInfo)) {
-            try {
-                Artifact artifact = Optional.ofNullable(repositoryPath.getArtifactEntry())
-                        .orElse(new ArtifactEntity(repositoryPath.getStorageId(), repositoryPath.getRepositoryId(),
-                                RepositoryFiles.readCoordinates(repositoryPath)));
-                artifact.setPackageInfo(packageInfo);
-                repositoryPath.setArtifact(artifact);
-            } catch (Exception ex) {
-                log.error("setPackageInfo Exception {} repositoryPath {} packageInfo {}", ExceptionUtils.getStackTrace(ex), repositoryPath.toString(), packageInfo);
             }
         }
     }

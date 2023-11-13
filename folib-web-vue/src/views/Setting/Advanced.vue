@@ -169,7 +169,17 @@
               <ArtifactsBackup/>
             </a-card>
           </a-tab-pane>
-          <a-tab-pane :key="5" tab="DB信息">
+          <a-tab-pane :key="5" tab="缓存策略">
+            <a-card :bordered="false" class="header-solid">
+              <template #title>
+                <h6>缓存策略</h6>
+                <p>该功能用于设置制品的SSD缓存加速策略，推荐存储卷采用高性能SSD磁盘
+                </p>
+              </template>
+              <ArtifactsCache/>
+            </a-card>
+          </a-tab-pane>
+          <a-tab-pane :key="6" tab="DB信息">
             <a-tabs class="tabs-sliding" :default-active-key="1" @change="dbTabChange($event)">
               <a-tab-pane :key="1" tab="Schema">
                 <a-card :bordered="false" class="header-solid">
@@ -273,6 +283,7 @@ import "prismjs/components/prism-javascript"
 import "prismjs/themes/prism-tomorrow.css"
 import DataMigration from "./components/DataMigration.vue"
 import ArtifactsBackup from "./components/ArtifactsBackup.vue";
+import ArtifactsCache from "./components/Cache/index.vue";
 import {
   getStoragesAndRepositories
 } from "@/api/folib"
@@ -332,7 +343,8 @@ export default {
   components: {
     PrismEditor,
     DataMigration,
-    ArtifactsBackup
+    ArtifactsBackup,
+    ArtifactsCache
   },
   computed: {
 
@@ -480,7 +492,7 @@ export default {
       } else if (activeTab === 2) {
       } else if (activeTab === 3) {
         this.getSingleDict('vulnerability_update')
-      } else if (activeTab === 5) {
+      } else if (activeTab === 6) {
         this.getJanusGraphInfo()
       }
     },

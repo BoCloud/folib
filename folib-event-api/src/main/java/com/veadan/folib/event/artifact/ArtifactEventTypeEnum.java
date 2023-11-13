@@ -113,6 +113,10 @@ public enum ArtifactEventTypeEnum {
      * Occurs when an artifact download operation has blocked.
      */
     EVENT_ARTIFACT_FILE_DOWNLOAD_BLOCKED(25),
+    /**
+     * Occurs when an artifact download operation has completed.
+     */
+    EVENT_ARTIFACT_FILE_CACHE(26),
     ;
 
 

@@ -35,7 +35,7 @@ import javax.inject.Inject;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.validation.Valid;
-import java.io.ByteArrayInputStream;
+import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -312,11 +312,11 @@ public class ConanArtifactController extends BaseArtifactController {
             method = {RequestMethod.PUT})
     public ResponseEntity uploadFiles(HttpServletRequest request,
                                       @RepositoryMapping Repository repository,
-                                      @PathVariable("path") String path,
-                                      @RequestBody(required = false) byte[] is) throws IOException {
+                                      @PathVariable("path") String path) throws IOException {
         final String storageId = repository.getStorage().getId();
         final String repositoryId = repository.getId();
-        if (is == null) {
+        InputStream inputStream = request.getInputStream();
+        if (inputStream == null) {
             String checksumDeploy = request.getHeader("X-Checksum-Deploy"), checksumSha1 = request.getHeader("X-Checksum-Sha1");
             if (Boolean.TRUE.equals(Boolean.valueOf(checksumDeploy)) && StringUtils.isNotBlank(checksumSha1)) {
                 RepositoryPath repositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, path);
@@ -329,10 +329,10 @@ public class ConanArtifactController extends BaseArtifactController {
             }
             return new ResponseEntity<>(HttpStatus.NOT_FOUND.getReasonPhrase(), HttpStatus.NOT_FOUND);
         }
-        try (InputStream inputStream = new ByteArrayInputStream(is)) {
+        try (InputStream bufferedInputStream = new BufferedInputStream(inputStream)) {
             RepositoryPath repositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, path);
             logger.info("conan upload path {}", repositoryPath.toString());
-            artifactManagementService.validateAndStore(repositoryPath, inputStream);
+            artifactManagementService.validateAndStore(repositoryPath, bufferedInputStream);
             return ResponseEntity.status(HttpStatus.CREATED).body("The artifact was deployed successfully.");
         } catch (Exception e) {
             logger.error(e.getMessage(), e);

@@ -14,13 +14,12 @@ import com.veadan.folib.config.NpmLayoutProviderConfig;
 import com.veadan.folib.configuration.*;
 import com.veadan.folib.controllers.layout.pypi.PypiBrowsePackageHtmlResponseBuilder;
 import com.veadan.folib.data.criteria.Paginator;
-import com.veadan.folib.domain.Artifact;
-import com.veadan.folib.domain.ArtifactEntity;
-import com.veadan.folib.domain.ArtifactIdGroup;
-import com.veadan.folib.domain.Vulnerability;
+import com.veadan.folib.domain.*;
+import com.veadan.folib.entity.ArtifactCacheRecord;
+import com.veadan.folib.entity.PackageNameBlock;
 import com.veadan.folib.enums.BlockTypeEnum;
+import com.veadan.folib.enums.ConditionTypeEnum;
 import com.veadan.folib.enums.PromotionStatusEnum;
-import com.veadan.folib.enums.VersionConditionTypeEnum;
 import com.veadan.folib.event.artifact.ArtifactEventListenerRegistry;
 import com.veadan.folib.npm.metadata.*;
 import com.veadan.folib.providers.io.RepositoryFiles;
@@ -38,17 +37,16 @@ import com.veadan.folib.repositories.ArtifactRepository;
 import com.veadan.folib.repository.NpmRepositoryFeatures;
 import com.veadan.folib.repository.PypiRepositoryFeatures;
 import com.veadan.folib.service.ProxyRepositoryConnectionPoolConfigurationService;
-import com.veadan.folib.services.ArtifactService;
-import com.veadan.folib.services.ConfigurationManagementService;
-import com.veadan.folib.services.DictService;
+import com.veadan.folib.services.*;
 import com.veadan.folib.storage.repository.Repository;
 import com.veadan.folib.storage.repository.RepositoryDto;
 import com.veadan.folib.storage.repository.RepositoryTypeEnum;
 import com.veadan.folib.util.CommonUtils;
 import com.veadan.folib.utils.PypiPackageNameConverter;
-import com.veadan.folib.utils.VersionUtil;
+import com.veadan.folib.utils.VersionUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.codec.digest.DigestUtils;
+import org.apache.commons.codec.digest.MessageDigestAlgorithms;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -151,6 +149,14 @@ public class ArtifactComponent {
     @Inject
     @Lazy
     private ArtifactEventListenerRegistry artifactEventListenerRegistry;
+
+    @Inject
+    @Lazy
+    private PackageNameBlockService packageNameBlockService;
+
+    @Inject
+    @Lazy
+    private ArtifactCacheRecordService artifactCacheRecordService;
 
     /**
      * 读取文件内容
@@ -264,15 +270,6 @@ public class ArtifactComponent {
             log.warn("RepositoryPath [{}] does not exist", repositoryPath);
             return false;
         }
-//        try {
-//            if (RepositoryFiles.isChecksum(repositoryPath)) {
-//                log.error("LayoutSupports [{}] isChecksum", repositoryPath);
-//                return false;
-//            }
-//        } catch (Exception ex) {
-//            log.error("LayoutSupports get [{}] isChecksum error [{}]", repositoryPath, ExceptionUtils.getStackTrace(ex));
-//            return false;
-//        }
         if (repositoryPath.getFileSystem() instanceof DockerFileSystem) {
             log.debug("docker布局");
             String blobs = "blobs";
@@ -555,35 +552,22 @@ public class ArtifactComponent {
                         (!repositoryWhites.contains(item) && platformBlacks.contains(item)));
             } else if (BlockTypeEnum.PACKAGE_NAME.getType().equals(mutableSecurityPolicyConfiguration.getBlockType())) {
                 //包名阻断
-                Set<String> packageNames = mutableSecurityPolicyConfiguration.getPackageNames();
-                if (CollectionUtils.isNotEmpty(packageNames)) {
-                    String separator = ",";
-                    block = packageNames.stream().anyMatch(packageName -> {
-                        if (StringUtils.isNotBlank(packageName) && packageName.contains(separator)) {
-                            //需要分隔
-                            List<String> list = Arrays.asList(packageName.split(separator));
-                            String name = "", condition = "", version = "", artifactVersion = "";
-                            if (list.size() == 3) {
-                                name = list.get(0);
-                                condition = list.get(1);
-                                version = list.get(2);
-                                if (artifact.getArtifactPath().contains(name) && StringUtils.isNotBlank(condition) && StringUtils.isNotBlank(version)) {
-                                    artifactVersion = artifact.getArtifactCoordinates().getVersion();
-                                    if (StringUtils.isBlank(artifactVersion)) {
-                                        return false;
-                                    }
-                                    try {
-                                        int compare = VersionUtil.compareVersions(artifactVersion, version);
-                                        log.info("StorageId [{}] repositoryId [{}] artifactPath [{}] name [{}] condition [{}] version [{}] artifactVersion [{}] compare [{}]", storageId, repositoryId, artifact.getArtifactPath(), name, condition, version, artifactVersion, compare);
-                                        return VersionConditionTypeEnum.queryValue(condition).contains(compare);
-                                    } catch (Exception ex) {
-                                        log.error(ExceptionUtils.getStackTrace(ex));
-                                    }
-                                    return false;
-                                }
+                List<PackageNameBlock> packageNameBlockList = packageNameBlockService.getPackageNameBlockCache();
+                if (CollectionUtils.isNotEmpty(packageNameBlockList)) {
+                    packageNameBlockList = packageNameBlockList.stream().filter(item -> artifact.getArtifactPath().contains(item.getPackageName())).collect(Collectors.toList());
+                    block = packageNameBlockList.stream().anyMatch(packageNameBlock -> {
+                        if (ConditionTypeEnum.RANGE.getCondition().equals(packageNameBlock.getConditionValue())) {
+                            String artifactVersion = artifact.getArtifactCoordinates().getVersion();
+                            if (StringUtils.isBlank(artifactVersion)) {
+                                return false;
                             }
+                            long startTime = System.currentTimeMillis();
+                            boolean flag = VersionUtils.versionInRange(artifactVersion, packageNameBlock.getVersion());
+                            long endTime = System.currentTimeMillis();
+                            log.info("比较版本耗时：[{}] 毫秒", endTime - startTime);
+                            return flag;
                         }
-                        return artifact.getArtifactPath().contains(packageName);
+                        return artifact.getArtifactPath().contains(packageNameBlock.getPackageName());
                     });
                 }
             }
@@ -1089,7 +1073,7 @@ public class ArtifactComponent {
      */
     public void storeArtifactMetadataFile(RepositoryPath repositoryPath, Path metadataPath) {
         try {
-            if (Objects.nonNull(repositoryPath) && Files.exists(repositoryPath)) {
+            if (Objects.nonNull(repositoryPath) && Objects.nonNull(repositoryPath.getArtifactEntry()) && Files.exists(repositoryPath)) {
                 String fileName = "." + FilenameUtils.getName(repositoryPath.getFileName().toString()) + ".metadata";
                 Path artifactRepositoryPath = metadataPath.getParent().resolve(fileName);
                 try (ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
@@ -1130,6 +1114,15 @@ public class ArtifactComponent {
         }
     }
 
+    @Async("eventTaskExecutor")
+    public void artifactCache(RepositoryPath repositoryPath) {
+        try {
+            artifactEventListenerRegistry.dispatchArtifactCacheEvent(repositoryPath);
+        } catch (Exception ex) {
+            log.error("RepositoryPath artifactCache error ", ex);
+        }
+    }
+
     public PackageVersion extractPackageVersion(String packageName, String packageJsonSource)
             throws IOException {
         PackageVersion packageVersion;
@@ -1143,5 +1136,51 @@ public class ArtifactComponent {
                 String.format("Package name [%s] don't match with [%s].", packageVersion.getName(), packageName));
 
         return packageVersion;
+    }
+
+    public void handlerArtifactCacheRecord(RepositoryPath repositoryPath, CacheSettings cacheSettings, Path targetPath) {
+        try {
+            String artifactPath = "", md5, sha1, sha256;
+            Long size = 0L;
+            Artifact artifact = repositoryPath.getArtifactEntry();
+            if (Objects.nonNull(artifact)) {
+                artifactPath = artifact.getArtifactPath();
+                size = artifact.getSizeInBytes();
+                md5 = artifact.getChecksums().getOrDefault(MessageDigestAlgorithms.MD5, "");
+                sha1 = artifact.getChecksums().getOrDefault(MessageDigestAlgorithms.SHA_1, "");
+                sha256 = artifact.getChecksums().getOrDefault(MessageDigestAlgorithms.SHA_256, "");
+            } else {
+                artifactPath = FilenameUtils.getName(repositoryPath.toString());
+                md5 = getChecksum(repositoryPath, "md5");
+                sha1 = getChecksum(repositoryPath, "sha1");
+                sha256 = getChecksum(repositoryPath, "sha256");
+            }
+            ArtifactCacheRecord artifactCacheRecord = ArtifactCacheRecord.builder().storageId(repositoryPath.getStorageId())
+                    .repositoryId(repositoryPath.getRepositoryId()).artifactPath(artifactPath).size(size).md5(md5).sha1(sha1).sha256(sha256)
+                    .cacheDirectoryPath(cacheSettings.getDirectoryPath()).cachePath(targetPath.toString()).build();
+            handlerArtifactCacheRecord(artifactCacheRecord);
+        } catch (Exception ex) {
+            log.warn("处理制品缓存记录失败：[{}]", ExceptionUtils.getStackTrace(ex));
+        }
+    }
+
+    public String getChecksum(RepositoryPath repositoryPath, String checksumKey) {
+        try {
+            Path checksumSha1Path = repositoryPath.resolveSibling(repositoryPath.getFileName().toString() + "." + checksumKey);
+            if (Files.exists(checksumSha1Path)) {
+                return Files.readString(checksumSha1Path);
+            }
+        } catch (Exception ex) {
+            log.warn(ExceptionUtils.getStackTrace(ex));
+        }
+        return "";
+    }
+
+    public void handlerArtifactCacheRecord(ArtifactCacheRecord artifactCacheRecord) {
+        artifactCacheRecordService.saveOrUpdateArtifactCacheRecord(artifactCacheRecord);
+    }
+
+    public List<ArtifactCacheRecord> getArtifactCacheRecord(ArtifactCacheRecord artifactCacheRecord,Integer limit) {
+        return artifactCacheRecordService.getArtifactCacheRecord(artifactCacheRecord, limit);
     }
 }

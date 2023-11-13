@@ -1,5 +1,4 @@
 package com.veadan.folib.services.impl;
-import java.util.Date;
 
 import cn.hutool.core.io.FileUtil;
 import cn.hutool.core.lang.UUID;
@@ -18,17 +17,14 @@ import com.veadan.folib.promotion.PromotionUtil;
 import com.veadan.folib.promotion.PullArtifactTask;
 import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.providers.io.RepositoryPathResolver;
-import com.veadan.folib.providers.layout.DockerLayoutProvider;
 import com.veadan.folib.providers.layout.LayoutProviderRegistry;
 import com.veadan.folib.repositories.ArtifactRepository;
 import com.veadan.folib.repository.MavenRepositoryFeatures;
 import com.veadan.folib.service.ProxyRepositoryConnectionPoolConfigurationService;
 import com.veadan.folib.services.*;
-import com.veadan.folib.storage.Storage;
 import com.veadan.folib.storage.repository.Repository;
 import com.veadan.folib.utils.PropertiesUtils;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.compress.utils.Lists;
 import org.apache.commons.fileupload.disk.DiskFileItem;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
@@ -95,7 +91,7 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
     private PromotionUtil promotionUtil;
 
     @Autowired
-    private ThreadPoolTaskExecutor asyncRepositoryThreadPoolExecutor;
+    private ThreadPoolTaskExecutor asyncThreadPoolTaskExecutor;
 
     @Autowired
     private ProxyRepositoryConnectionPoolConfigurationService clientPool;
@@ -233,19 +229,19 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
     public ResponseEntity nodeOption(PromotionNodeOption promotionNodeOption, HttpServletRequest request) {
         try {
             String sourcePath = StringUtils.removeEnd(promotionNodeOption.getSourcePath(), "/");
-            String targetPath = StringUtils.removeEnd( promotionNodeOption.getTargetPath(), "/");
+            String targetPath = StringUtils.removeEnd(promotionNodeOption.getTargetPath(), "/");
             String srcStorageId = parsePath(sourcePath)[0];
             String srcRepostoryId = parsePath(sourcePath)[1];
             String srcUrl = sourcePath.split("/" + srcStorageId + "/" + srcRepostoryId + "/")[0];
             String srcUri = sourcePath.split("/" + srcStorageId + "/" + srcRepostoryId + "/")[1];
-            String targetStorageId =  parsePath(targetPath)[0];
+            String targetStorageId = parsePath(targetPath)[0];
             String targetRepostoryId = parsePath(targetPath)[1];
             String targetUrl = targetPath.split("/" + targetStorageId + "/" + targetRepostoryId + "/")[0];
             String targetUri = targetPath.split("/" + targetStorageId + "/" + targetRepostoryId + "/")[1];
 
-            log.info("sourcePath={},srcStorageId={},srcRepostoryId={}\ntargetPath={},targetStorageId={},targetRepostoryId={}",sourcePath,srcStorageId,srcRepostoryId,targetStorageId,targetStorageId,targetRepostoryId);
-            log.info("srcUrl={},srcUri={}",srcUrl,srcUri);
-            log.info("targetUrl={},targetUri={}",targetUrl,targetUri);
+            log.info("sourcePath={},srcStorageId={},srcRepostoryId={}\ntargetPath={},targetStorageId={},targetRepostoryId={}", sourcePath, srcStorageId, srcRepostoryId, targetStorageId, targetStorageId, targetRepostoryId);
+            log.info("srcUrl={},srcUri={}", srcUrl, srcUri);
+            log.info("targetUrl={},targetUri={}", targetUrl, targetUri);
             if (srcUrl.equals(targetUrl)) {
                 validateStorageAndRepository(srcStorageId, srcRepostoryId);
                 validateStorageAndRepository(targetStorageId, targetRepostoryId);
@@ -258,10 +254,10 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
 
             // 判断节点参数是 做推 push  或者 拉取 pull
             String requestURL = request.getServerName();
-            log.info("requestURL={}",requestURL);
+            log.info("requestURL={}", requestURL);
 
             if (sourcePath.contains(requestURL)) {
-                log.info("进入推模式={}",true);
+                log.info("进入推模式={}", true);
                 validateStorageAndRepository(srcStorageId, srcRepostoryId);
                 // 本地源 制品路径 推向 目标路径
                 Repository srcRepository = repositoryManagementService.getStorage(srcStorageId).getRepository(srcRepostoryId);
@@ -277,7 +273,7 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
                 promotionUtil.upload(targetUrl + upLoadURI, uploadDto);
 
             } else if (targetPath.contains(requestURL)) {
-                log.info("进入拉模式={}",true);
+                log.info("进入拉模式={}", true);
                 validateStorageAndRepository(targetStorageId, targetRepostoryId);
                 // 从源仓路径 pull 到目标仓路径 获取目标主机的path 路径下的文件与目录 然后依次提交到任务队列里面后将文件存入仓库
                 String url = srcUrl + getFileRelativePaths;
@@ -309,7 +305,7 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
                             promotionUtil, artifac, metaData);
                     FutureTask<String> futureTask = new FutureTask<String>(pullArtifactTask);
                     listTask.add(futureTask);
-                    asyncRepositoryThreadPoolExecutor.submit(futureTask);
+                    asyncThreadPoolTaskExecutor.submit(futureTask);
                 }
                 int success = 0;
                 int fail = 0;
@@ -335,8 +331,7 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
     }
 
     @Override
-    public ResponseEntity nodeOptionAttachRecord(PromotionNodeOption promotionNodeOption, HttpServletRequest request) 
-    {
+    public ResponseEntity nodeOptionAttachRecord(PromotionNodeOption promotionNodeOption, HttpServletRequest request) {
         // 生成日志记录
         final ArtifactSyncRecord artifactSyncRecord = new ArtifactSyncRecord();
         artifactSyncRecord.setSourcePath("");
@@ -349,11 +344,11 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
         artifactSyncRecord.setCreateTime(new Date());
         artifactSyncRecord.setUpdatedBy("");
         artifactSyncRecord.setUpdatedTime(new Date());
-        
+
         final ResponseEntity responseEntity = this.nodeOption(promotionNodeOption, request);
-        
+
         // 更新日志结束开始时间
-        
+
 
         return responseEntity;
     }
@@ -453,7 +448,7 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
                         repositoryManagementService, repositoryPathResolver, artifactManagementService, promotionUtil, layoutProviderRegistry, artifactMetadataService, artifactRepository, mavenRepositoryFeatures, tempPath, fileRelativePath, metaData, uuid, null);
                 FutureTask<String> task = new FutureTask<String>(artifactUploadTask);
                 listTask.add(task);
-                asyncRepositoryThreadPoolExecutor.submit(task);
+                asyncThreadPoolTaskExecutor.submit(task);
             }
             StringBuilder temp = new StringBuilder();
             for (FutureTask<String> task : listTask) {
@@ -490,7 +485,7 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
                     repositoryManagementService, repositoryPathResolver, artifactManagementService, promotionUtil, layoutProviderRegistry, artifactMetadataService, artifactRepository, mavenRepositoryFeatures, tempPath, FileUtil.getName(artifactParse.getFilePath()), null, null, parseArtifact);
             FutureTask<String> futureTask = new FutureTask<String>(artifactUploadTask);
             listTask.add(futureTask);
-            asyncRepositoryThreadPoolExecutor.submit(futureTask);
+            asyncThreadPoolTaskExecutor.submit(futureTask);
             StringBuilder temp = new StringBuilder();
             for (FutureTask<String> task : listTask) {
                 try {
@@ -562,7 +557,7 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
     public ResponseEntity artifactDispatch(ArtifactDispatch artifactDispatch) {
         log.info("start artifact dispatch");
         Map<String, List<TargetDispatchRepositoryDto>> groupByMap = artifactDispatch.getTargetDispatchRepositoryList().stream().collect(Collectors.groupingBy(TargetDispatchRepositoryDto::getArtifactoryRepositoryType));
-        for(Map.Entry<String, List<TargetDispatchRepositoryDto>> item : groupByMap.entrySet()) {
+        for (Map.Entry<String, List<TargetDispatchRepositoryDto>> item : groupByMap.entrySet()) {
             ArtifactPromotionProvider artifactPromotionProvider = artifactPromotionProviderRegistry.getProvider(item.getKey());
             ArtifactDispatch itemArtifactDispatch = new ArtifactDispatch();
             BeanUtils.copyProperties(artifactDispatch, itemArtifactDispatch);

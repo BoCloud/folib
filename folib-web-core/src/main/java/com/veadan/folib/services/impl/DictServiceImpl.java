@@ -45,18 +45,23 @@ public class DictServiceImpl implements DictService {
         Dict dict = Dict.builder().build();
         BeanUtils.copyProperties(dictForm, dict);
         dict.setComment(handlerComment(dict));
-        Example example = Example.builder(Dict.class).build();
-        Example.Criteria criteria = example.createCriteria();
-        if (Objects.nonNull(dict.getId())) {
-            criteria.andEqualTo("id", dict.getId());
+        Dict dbDict = selectLatestOneDict(dict);
+        if (Objects.isNull(dbDict)) {
+            saveDict(dict);
+        } else {
+            Example example = Example.builder(Dict.class).build();
+            Example.Criteria criteria = example.createCriteria();
+            if (Objects.nonNull(dict.getId())) {
+                criteria.andEqualTo("id", dict.getId());
+            }
+            if (StringUtils.isNotBlank(dict.getDictKey())) {
+                criteria.andEqualTo("dictKey", dict.getDictKey());
+            }
+            if (StringUtils.isNotBlank(dict.getDictType())) {
+                criteria.andEqualTo("dictType", dict.getDictType());
+            }
+            dictMapper.updateByExampleSelective(dict, example);
         }
-        if (StringUtils.isNotBlank(dict.getDictKey())) {
-            criteria.andEqualTo("dictKey", dict.getDictKey());
-        }
-        if (StringUtils.isNotBlank(dict.getDictType())) {
-            criteria.andEqualTo("dictType", dict.getDictType());
-        }
-        dictMapper.updateByExampleSelective(dict, example);
         if (Boolean.TRUE.equals(dictForm.getOverrideSystemProperty())) {
             System.setProperty(dict.getDictKey(), dict.getDictValue());
             log.info("更新系统属性：key {}，value：{}", dict.getDictKey(), dict.getDictValue());
