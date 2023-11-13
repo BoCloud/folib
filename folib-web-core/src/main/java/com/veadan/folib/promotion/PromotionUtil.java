@@ -291,10 +291,10 @@ public class PromotionUtil {
                 if (null == wsClientRun)
                 { throw new BusinessException("当前分发的节点不可用，请检查节点是否配置正确"); }
                 
-                final Session session = wsClientRun.getSession();
-                session.getBasicRemote().sendText(JSON.toJSONString(new FolibWsAction()
+                final FolibWsAction folibWsAction = new FolibWsAction()
                         .command(FolibWsClientArtifactPullCommand.COMMAND)
-                        .payload(promotionNodeOption)));
+                        .payload(promotionNodeOption);
+                wsClientRun.doAction(folibWsAction);
                 
 ///                String url = dispatchNodeHost.endsWith("/") ?
 ///                        dispatchNodeHost + "api/artifact/folib/promotion/nodeOption" :

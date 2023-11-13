@@ -1,13 +1,11 @@
 package com.veadan.folib.ws.server.handler.command;
 
 import com.veadan.folib.domain.DispatchStorageTree;
-import com.veadan.folib.ws.client.context.FolibWsClientContextInfo;
 import com.veadan.folib.ws.client.handler.command.FolibWsClientCommand;
 import com.veadan.folib.ws.client.manage.FolibWsClientRunManage;
 import com.veadan.folib.ws.common.FolibWsSessionContextHolder;
 import com.veadan.folib.ws.server.context.FolibWsServerContextInfo;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 
 /**
@@ -18,9 +16,9 @@ import org.springframework.stereotype.Component;
  */
 @Slf4j
 @Component
-public class FolibWsServerActionResCommand implements FolibWsClientCommand<DispatchStorageTree> 
+public class FolibWsServerGetStoragesRepositoryTreeResCommand implements FolibWsClientCommand<DispatchStorageTree> 
 {
-    public static final String COMMAND = "/actionResCommand";
+    public static final String COMMAND = "/getStoragesRepositoryTreeRes";
     
     @Override
     public String command() {

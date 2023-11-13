@@ -44,8 +44,8 @@ import com.veadan.folib.storage.repository.Repository;
 import com.veadan.folib.users.userdetails.SpringSecurityUser;
 import com.veadan.folib.utils.PropertiesUtils;
 import com.veadan.folib.utils.UrlUtils;
-import com.veadan.folib.ws.common.FolibWsAction;
 import com.veadan.folib.ws.client.handler.command.FolibWsClientArtifactPullCommand;
+import com.veadan.folib.ws.common.FolibWsAction;
 import com.veadan.folib.ws.server.manage.FolibWsServerRunManage;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.fileupload.disk.DiskFileItem;
@@ -72,7 +72,6 @@ import org.springframework.web.multipart.commons.CommonsMultipartFile;
 import javax.inject.Inject;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import javax.websocket.Session;
 import javax.ws.rs.client.Client;
 import javax.ws.rs.client.Invocation;
 import javax.ws.rs.client.WebTarget;
@@ -318,11 +317,16 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
                 final FolibWsServerRunManage.FolibWsClientRun wsClientRun = FolibWsServerRunManage.getWsClientRun(nodeName);
                 if (null == wsClientRun)
                 { throw new BusinessException("需要晋级的节点不可用，请检查节点是否配置正确"); }
-                final Session session = wsClientRun.getSession();
-                session.getBasicRemote().sendText(new FolibWsAction()
+
+                final FolibWsAction folibWsAction = new FolibWsAction()
                         .command(FolibWsClientArtifactPullCommand.COMMAND)
-                        .payload(promotionNodeOption)
-                        .encode());
+                        .payload(promotionNodeOption);
+                wsClientRun.doAction(folibWsAction);
+///                final Session session = wsClientRun.getSession();
+///                session.getBasicRemote().sendText(new FolibWsAction()
+///                        .command(FolibWsClientArtifactPullCommand.COMMAND)
+///                        .payload(promotionNodeOption)
+///                        .encode());
                 
 ///                validateStorageAndRepository(targetStorageId, targetRepostoryId);
 ///                // 从源仓路径 pull 到目标仓路径 获取目标主机的path 路径下的文件与目录 然后依次提交到任务队列里面后将文件存入仓库

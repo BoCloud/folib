@@ -4,17 +4,14 @@ import com.veadan.folib.controllers.configuration.StoragesConfigurationControlle
 import com.veadan.folib.domain.DispatchStorageTree;
 import com.veadan.folib.dto.ArtifactDispatchRepositoryDto;
 import com.veadan.folib.ws.client.context.FolibWsClientContextInfo;
-import com.veadan.folib.ws.server.handler.command.FolibWsServerActionResCommand;
 import com.veadan.folib.ws.common.FolibWsAction;
 import com.veadan.folib.ws.common.FolibWsSessionContextHolder;
 import com.veadan.folib.ws.server.handler.command.FolibWsServerCommand;
+import com.veadan.folib.ws.server.handler.command.FolibWsServerGetStoragesRepositoryTreeResCommand;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
-import org.springframework.web.socket.TextMessage;
-
-import java.io.IOException;
 
 /**
  * @author xiaodong.wang
@@ -39,20 +36,25 @@ public class FolibWsClientGetStoragesRepositoryTreeCommand implements FolibWsSer
 
     @Override
     public void execute(ArtifactDispatchRepositoryDto req) {
-        final ResponseEntity<DispatchStorageTree> dispatchRepositories = storagesConfigurationController.getDispatchRepositories(req);
-        final FolibWsClientContextInfo contextSessionInfo = FolibWsSessionContextHolder.getContextSessionInfo(FolibWsClientContextInfo.class);
         try {
+            final ResponseEntity<DispatchStorageTree> dispatchRepositories = storagesConfigurationController.getDispatchRepositories(req);
+            final FolibWsClientContextInfo contextSessionInfo = FolibWsSessionContextHolder.getContextSessionInfo(FolibWsClientContextInfo.class);
             final String syncId = contextSessionInfo.getSyncId();
-            contextSessionInfo.getWsRunInfo()
-                    .getSession()
-                    .sendMessage(new TextMessage(
-                            new FolibWsAction()
-                                    .sync(syncId)
-                                    .command(FolibWsServerActionResCommand.COMMAND)
-                                    .payload(dispatchRepositories.getBody())
-                                    .encode()));
-        } catch (IOException e) {
-            throw new RuntimeException(e);
+            final FolibWsAction folibWsAction = new FolibWsAction()
+                    .sync(syncId)
+                    .command(FolibWsServerGetStoragesRepositoryTreeResCommand.COMMAND)
+                    .payload(dispatchRepositories.getBody());
+            contextSessionInfo.getWsRunInfo().doAction(folibWsAction);
+//            contextSessionInfo.getWsRunInfo()
+//                    .getSession()
+//                    .sendMessage(new TextMessage(
+//                            new FolibWsAction()
+//                                    .sync(syncId)
+//                                    .command(FolibWsServerGetStoragesRepositoryTreeResCommand.COMMAND)
+//                                    .payload(dispatchRepositories.getBody())
+//                                    .encode()));
+        } catch (Exception e) {
+            log.error("处理获取获取节点仓库Ws处理逻辑异常", e);
         }
     }
 }
