@@ -17,6 +17,7 @@ import com.veadan.folib.storage.ArtifactResolutionException;
 import com.veadan.folib.storage.Storage;
 import com.veadan.folib.storage.repository.Repository;
 import org.apache.commons.io.FilenameUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.carlspring.commons.io.reloading.FSReloadableInputStreamHandler;
 import org.slf4j.Logger;
@@ -332,7 +333,7 @@ public abstract class LayoutFileSystemProvider extends StorageFileSystemProvider
 
     private void deleteArtifactMedataFile(RepositoryPath repositoryPath) {
         try {
-            if (repositoryPath.getRoot().toString().equals(repositoryPath.toString())) {
+            if (Files.isSameFile(repositoryPath.getRoot(),repositoryPath)) {
                 return;
             }
             String artifactMetadataFileName = "." + FilenameUtils.getName(repositoryPath.getFileName().toString()) + ".metadata";

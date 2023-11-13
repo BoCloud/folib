@@ -11,6 +11,7 @@ import org.springframework.stereotype.Component;
 import javax.inject.Inject;
 import java.io.File;
 import java.lang.reflect.UndeclaredThrowableException;
+import java.nio.file.Files;
 
 /**
  * @author veadan
@@ -45,7 +46,7 @@ public class MavenArtifactDirectoryDeletedEventListener
             String artifactPath = path.replace(String.format(format, storageId, repositoryId), "");
             if (StringUtils.isNotBlank(artifactPath)) {
                 RepositoryPath repositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, artifactPath);
-                if (repositoryPath.getRoot().toString().equalsIgnoreCase(repositoryPath.getParent().toString())) {
+                if (Files.isSameFile(repositoryPath.getRoot(), repositoryPath.getParent())) {
                     return;
                 }
                 artifactMetadataService.rebuildMetadata(storageId, repositoryId, artifactPath);

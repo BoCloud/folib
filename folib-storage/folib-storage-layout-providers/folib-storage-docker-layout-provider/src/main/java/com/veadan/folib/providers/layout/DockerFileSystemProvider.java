@@ -68,7 +68,7 @@ public class DockerFileSystemProvider
         super.delete(repositoryPath, force);
         RepositoryPath parent = repositoryPath.getParent();
         try {
-            if (!repositoryPath.getRoot().toString().equals(parent.toString()) && Files.exists(parent) && Files.list(parent).count() == 0) {
+            if (!Files.isSameFile(repositoryPath.getRoot(), parent) && Files.exists(parent) && Files.list(parent).count() == 0) {
                 Files.deleteIfExists(parent);
                 logger.info("Delete parent root path {}", parent.toString());
             }

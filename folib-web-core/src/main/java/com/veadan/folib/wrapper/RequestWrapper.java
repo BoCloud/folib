@@ -25,7 +25,7 @@ public class RequestWrapper extends HttpServletRequestWrapper {
      */
     public RequestWrapper(HttpServletRequest request) throws IOException {
         super(request);
-        log.info("==========进入RequestWrapper [{}]==========", request.getRequestURL());
+        log.debug("==========进入RequestWrapper [{}]==========", request.getRequestURL());
         StringBuilder stringBuilder = new StringBuilder();
         BufferedReader bufferedReader = null;
         try {

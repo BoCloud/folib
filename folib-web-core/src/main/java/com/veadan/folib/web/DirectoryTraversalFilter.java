@@ -1,5 +1,6 @@
 package com.veadan.folib.web;
 
+import com.veadan.folib.cloud.storage.s3fs.util.UriUtils;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import javax.servlet.FilterChain;
@@ -9,8 +10,6 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
 
 /**
  * @author veadan
@@ -23,7 +22,7 @@ public class DirectoryTraversalFilter
                                     HttpServletResponse response,
                                     FilterChain filterChain)
             throws ServletException, IOException {
-        final String decodedRequestURI = URLEncoder.encode(request.getRequestURI(), StandardCharsets.UTF_8.name());
+        final String decodedRequestURI = UriUtils.encode(request.getRequestURI());
         URI requestURI;
         try {
             requestURI = new URI(decodedRequestURI);

@@ -69,19 +69,19 @@ public class FileSizeConvertUtils {
         BigDecimal divisor = BigDecimal.ONE;
         switch (targetUnit) {
             case "KB":
-                divisor = BigDecimal.valueOf(1024);
+                divisor = BigDecimal.valueOf(1000);
                 break;
             case "MB":
-                divisor = BigDecimal.valueOf(1024 * 1024);
+                divisor = BigDecimal.valueOf(1000 * 1000);
                 break;
             case "GB":
-                divisor = BigDecimal.valueOf(1024 * 1024 * 1024);
+                divisor = BigDecimal.valueOf(1000 * 1000 * 1000);
                 break;
             case "TB":
-                divisor = BigDecimal.valueOf(1024L * 1024 * 1024 * 1024);
+                divisor = BigDecimal.valueOf(1000L * 1000 * 1000 * 1000);
                 break;
             case "PB":
-                divisor = BigDecimal.valueOf(1024L * 1024 * 1024 * 1024 * 1024);
+                divisor = BigDecimal.valueOf(1000L * 1000 * 1000 * 1000 * 1000);
                 break;
             default:
                 throw new IllegalArgumentException("Unsupported target unit: " + targetUnit);

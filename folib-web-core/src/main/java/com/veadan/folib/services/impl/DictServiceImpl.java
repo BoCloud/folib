@@ -1,12 +1,15 @@
 package com.veadan.folib.services.impl;
 
+import com.alibaba.fastjson.JSONObject;
 import com.google.common.collect.Lists;
+import com.veadan.folib.domain.CacheSettings;
 import com.veadan.folib.entity.Dict;
 import com.veadan.folib.enums.DictTypeEnum;
 import com.veadan.folib.enums.UpgradeTaskStatusEnum;
 import com.veadan.folib.forms.dict.DictForm;
 import com.veadan.folib.mapper.DictMapper;
 import com.veadan.folib.services.DictService;
+import com.veadan.folib.util.CacheUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -65,6 +68,11 @@ public class DictServiceImpl implements DictService {
         if (Boolean.TRUE.equals(dictForm.getOverrideSystemProperty())) {
             System.setProperty(dict.getDictKey(), dict.getDictValue());
             log.info("更新系统属性：key {}，value：{}", dict.getDictKey(), dict.getDictValue());
+        }
+        String key = DictTypeEnum.CACHE_SETTINGS.getType();
+        if (key.equals(dict.getDictType())){
+            CacheUtil<String, CacheSettings> cacheUtil = CacheUtil.getInstance();
+            cacheUtil.remove(key);
         }
     }
 

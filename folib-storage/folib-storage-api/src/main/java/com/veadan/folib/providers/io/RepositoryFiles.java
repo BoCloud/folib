@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.net.URI;
 import java.net.URL;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.attribute.FileTime;
 import java.time.Instant;
 import java.util.Arrays;
@@ -13,8 +14,11 @@ import java.util.StringJoiner;
 import java.util.stream.Collectors;
 
 import com.veadan.folib.artifact.coordinates.ArtifactCoordinates;
+import com.veadan.folib.cloud.storage.s3fs.S3Path;
 import com.veadan.folib.domain.Artifact;
 import com.veadan.folib.storage.repository.Repository;
+import com.veadan.folib.util.CacheUtil;
+import org.apache.commons.lang3.StringUtils;
 
 /**
  * This utility class contains common methods to work with {@link RepositoryPath}
@@ -186,16 +190,24 @@ public abstract class RepositoryFiles
     public static boolean artifactExists(RepositoryPath repositoryPath)
         throws IOException
     {
-//        Repository repository = repositoryPath.getRepository();
-        return Files.exists(repositoryPath);
-//        if (repository.isGroupRepository() || !isArtifact(repositoryPath))
-//        {
-//            return Files.exists(repositoryPath);
-//        }
-//
-//        Artifact artifactEntry = repositoryPath.getArtifactEntry();
-//        return artifactEntry != null && Boolean.TRUE.equals(artifactEntry.getArtifactFileExists());
-//        return repositoryPath.getArtifactExists();
+        boolean exists = false;
+        if (repositoryPath.getTarget() instanceof S3Path) {
+            CacheUtil<String,String> cacheUtil = CacheUtil.getInstance();
+            String cacheRootPathDir = cacheUtil.get("ARTIFACT_CACHE_ROOT_PATH");
+            if (StringUtils.isNotBlank(cacheRootPathDir)) {
+                Path cacheRootPath = Path.of(cacheRootPathDir);
+                String sourcePath = repositoryPath.toString();
+                String storageId = repositoryPath.getStorageId(), repositoryId = repositoryPath.getRepositoryId();
+                String prefix = String.format("/%s/%s/", storageId, repositoryId);
+                String targetSubPath = sourcePath.substring(sourcePath.indexOf(prefix) + 1);
+                Path cachePath = cacheRootPath.resolve(targetSubPath);
+                exists = Files.exists(cachePath);
+            }
+        }
+        if (!exists) {
+            exists = Files.exists(repositoryPath);
+        }
+        return exists;
     }
 
     public static void deleteTrash(RepositoryPath repositoryPath)

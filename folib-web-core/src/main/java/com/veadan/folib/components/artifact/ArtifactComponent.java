@@ -16,9 +16,11 @@ import com.veadan.folib.controllers.layout.pypi.PypiBrowsePackageHtmlResponseBui
 import com.veadan.folib.data.criteria.Paginator;
 import com.veadan.folib.domain.*;
 import com.veadan.folib.entity.ArtifactCacheRecord;
+import com.veadan.folib.entity.Dict;
 import com.veadan.folib.entity.PackageNameBlock;
 import com.veadan.folib.enums.BlockTypeEnum;
 import com.veadan.folib.enums.ConditionTypeEnum;
+import com.veadan.folib.enums.DictTypeEnum;
 import com.veadan.folib.enums.PromotionStatusEnum;
 import com.veadan.folib.event.artifact.ArtifactEventListenerRegistry;
 import com.veadan.folib.npm.metadata.*;
@@ -41,6 +43,7 @@ import com.veadan.folib.services.*;
 import com.veadan.folib.storage.repository.Repository;
 import com.veadan.folib.storage.repository.RepositoryDto;
 import com.veadan.folib.storage.repository.RepositoryTypeEnum;
+import com.veadan.folib.util.CacheUtil;
 import com.veadan.folib.util.CommonUtils;
 import com.veadan.folib.utils.PypiPackageNameConverter;
 import com.veadan.folib.utils.VersionUtils;
@@ -266,7 +269,7 @@ public class ArtifactComponent {
      */
     public boolean layoutSupports(RepositoryPath repositoryPath, Boolean block, Boolean scan) {
         boolean flag = false;
-        if (Objects.isNull(repositoryPath) || !Files.exists(repositoryPath)) {
+        if (Objects.isNull(repositoryPath)) {
             log.warn("RepositoryPath [{}] does not exist", repositoryPath);
             return false;
         }
@@ -1048,7 +1051,7 @@ public class ArtifactComponent {
      */
     public void storeArtifactMetadataFile(RepositoryPath repositoryPath) {
         try {
-            if (Objects.nonNull(repositoryPath) && Files.exists(repositoryPath)) {
+            if (Objects.nonNull(repositoryPath) && Objects.nonNull(repositoryPath.getArtifactEntry()) && Files.exists(repositoryPath)) {
                 String fileName = "." + FilenameUtils.getName(repositoryPath.getFileName().toString()) + ".metadata";
                 RepositoryPath artifactRepositoryPath = repositoryPath.getParent().resolve(fileName);
                 try (ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
@@ -1063,6 +1066,11 @@ public class ArtifactComponent {
         } catch (Exception ex) {
             log.warn("StoreArtifactMetadataFile error [{}]", ExceptionUtils.getStackTrace(ex));
         }
+    }
+
+    @Async("asyncThreadPoolTaskExecutor")
+    public void asyncStoreArtifactMetadataFile(RepositoryPath repositoryPath) {
+        storeArtifactMetadataFile(repositoryPath);
     }
 
     /**
@@ -1138,6 +1146,7 @@ public class ArtifactComponent {
         return packageVersion;
     }
 
+    @Async("asyncThreadPoolTaskExecutor")
     public void handlerArtifactCacheRecord(RepositoryPath repositoryPath, CacheSettings cacheSettings, Path targetPath) {
         try {
             String artifactPath = "", md5, sha1, sha256;
@@ -1176,11 +1185,34 @@ public class ArtifactComponent {
         return "";
     }
 
+    public CacheSettings getCacheConfig() {
+        CacheUtil<String, CacheSettings> cacheUtil = CacheUtil.getInstance();
+        String key = DictTypeEnum.CACHE_SETTINGS.getType();
+        CacheSettings cacheSettings = cacheUtil.get(key);
+        if (Objects.isNull(cacheSettings)) {
+            Dict dict = dictService.selectLatestOneDict(Dict.builder().dictType(DictTypeEnum.CACHE_SETTINGS.getType()).build());
+            if (Objects.nonNull(dict)) {
+                cacheSettings = JSONObject.parseObject(dict.getDictValue(), CacheSettings.class);
+                if (Objects.nonNull(cacheSettings)) {
+                    cacheUtil.put(key, cacheSettings);
+                    CacheUtil<String, String> cacheUtilPath = CacheUtil.getInstance();
+                    String pathKey = "ARTIFACT_CACHE_ROOT_PATH";
+                    if (Boolean.TRUE.equals(cacheSettings.isEnabled())) {
+                        cacheUtilPath.put(pathKey, cacheSettings.getDirectoryPath());
+                    } else {
+                        cacheUtilPath.remove(pathKey);
+                    }
+                }
+            }
+        }
+        return cacheSettings;
+    }
+
     public void handlerArtifactCacheRecord(ArtifactCacheRecord artifactCacheRecord) {
         artifactCacheRecordService.saveOrUpdateArtifactCacheRecord(artifactCacheRecord);
     }
 
-    public List<ArtifactCacheRecord> getArtifactCacheRecord(ArtifactCacheRecord artifactCacheRecord,Integer limit) {
-        return artifactCacheRecordService.getArtifactCacheRecord(artifactCacheRecord, limit);
+    public List<ArtifactCacheRecord> getArtifactCacheRecord(ArtifactCacheRecord artifactCacheRecord, Integer limit) {
+        return artifactCacheRecordService.getArtifactCacheRecord(artifactCacheRecord, null, limit);
     }
 }

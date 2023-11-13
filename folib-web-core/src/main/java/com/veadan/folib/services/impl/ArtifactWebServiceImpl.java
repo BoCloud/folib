@@ -24,6 +24,7 @@ import com.veadan.folib.authorization.dto.Role;
 import com.veadan.folib.cloud.storage.s3fs.S3FileSystem;
 import com.veadan.folib.cloud.storage.s3fs.S3Iterator;
 import com.veadan.folib.cloud.storage.s3fs.S3Path;
+import com.veadan.folib.cloud.storage.s3fs.util.UriUtils;
 import com.veadan.folib.cluster.SyncMetadataEnum;
 import com.veadan.folib.components.artifact.ArtifactComponent;
 import com.veadan.folib.configuration.ConfigurationUtils;
@@ -95,9 +96,6 @@ import javax.servlet.http.HttpServletResponse;
 import javax.transaction.Transactional;
 import java.io.*;
 import java.net.URI;
-import java.net.URLDecoder;
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
@@ -211,8 +209,8 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
             // 设置响应头
             response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
             response.setCharacterEncoding("utf-8");
-            // 这里URLEncoder.encode可以防止中文乱码
-            String fileName = URLEncoder.encode(vulnerabilityUuid + "影响范围", "utf-8").replaceAll("\\+", "%20");
+            // encode可以防止中文乱码
+            String fileName = UriUtils.encode(vulnerabilityUuid + "影响范围");
             response.setHeader("Content-disposition", "attachment;filename*=utf-8''" + fileName + ".xlsx");
             excelWriter.finish();
         }
@@ -562,7 +560,7 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
             RepositoryPath repositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, artifactPath);
             artifact = Objects.nonNull(repositoryPath) ? repositoryPath.getArtifactEntry() : null;
             if (Objects.isNull(artifact)) {
-                artifactPath = URLDecoder.decode(artifactPath, StandardCharsets.UTF_8);
+                artifactPath = UriUtils.decode(artifactPath);
                 repositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, artifactPath);
                 artifact = Objects.nonNull(repositoryPath) ? repositoryPath.getArtifactEntry() : null;
             }

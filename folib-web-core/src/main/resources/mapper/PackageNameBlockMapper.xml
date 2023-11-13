@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.veadan.folib.mapper.PackageNameBlockMapper">
+
+    <resultMap id="packageNameBlockResultMap" type="com.veadan.folib.entity.PackageNameBlock">
+        <id property="id" column="id"/>
+        <result property="createBy" column="create_by"/>
+        <result property="createTime" column="create_time"/>
+        <result property="updateBy" column="update_by"/>
+        <result property="updateTime" column="update_time"/>
+        <result property="packageName" column="package_name"/>
+        <result property="conditionValue" column="condition_value"/>
+        <result property="version" column="version"/>
+    </resultMap>
+
+    <insert id="batchInsertPackageNameBlock">
+        INSERT INTO `package_name_block` ( `create_by`, `create_time`, `update_by`, `update_time`, `package_name`, `condition_value`, `version` )
+        VALUES
+        <foreach collection="packageNameBlockList" item="item" separator=",">
+            (#{item.createBy}, #{item.createTime}, #{item.updateBy}, #{item.updateTime}, #{item.packageName}, #{item.conditionValue}, #{item.version})
+        </foreach>
+    </insert>
+
+</mapper>

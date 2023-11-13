@@ -16,5 +16,6 @@
     <include file="classpath:db/changelog/changelog_upgrade_task_init_1.xml"/>
     <include file="classpath:db/changelog/changelog_upgrade_task_init_2.xml"/>
     <include file="classpath:db/changelog/changelog_package_name_block_init.xml"/>
+    <include file="classpath:db/changelog/changelog_artifact_cache_record_init.xml"/>
     <!--后续增加的按照写对应的sql与changelog-->
 </databaseChangeLog>
