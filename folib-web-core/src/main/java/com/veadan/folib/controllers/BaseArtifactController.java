@@ -155,6 +155,9 @@ public abstract class BaseArtifactController
     }
 
     private Path getCachePath(RepositoryPath repositoryPath) {
+        if (Objects.isNull(repositoryPath)) {
+            return null;
+        }
         Path path = repositoryPath;
         String storageId = repositoryPath.getStorageId(), repositoryId = repositoryPath.getRepositoryId();
         try {

@@ -159,20 +159,28 @@ public class ArtifactCacheRecordServiceImpl implements ArtifactCacheRecordServic
         if (Objects.isNull(page)) {
             page = 1;
         }
-        if (Objects.nonNull(limit)) {
-            if (Objects.isNull(example)) {
-                example = Example.builder(ArtifactCacheRecord.class).build();
-            }
-            example.setOrderByClause("latest_download_time asc");
-
-            PageHelper.startPage(page, limit);
-            return artifactCacheRecordMapper.selectByExample(example);
+        if (Objects.isNull(limit)) {
+            limit = 1000;
         }
-        return artifactCacheRecordMapper.selectAll();
+        if (Objects.isNull(example)) {
+            example = Example.builder(ArtifactCacheRecord.class).build();
+        }
+        example.setOrderByClause("latest_download_time asc");
+        PageHelper.startPage(page, limit);
+        return artifactCacheRecordMapper.selectByExample(example);
     }
 
     @Override
-    public int getArtifactCacheRecordCount() {
+    public int getArtifactCacheRecordCount(ArtifactCacheRecord artifactCacheRecord) {
+        Example example = null;
+        if (Objects.nonNull(artifactCacheRecord)) {
+            example = Example.builder(ArtifactCacheRecord.class).build();
+            Example.Criteria criteria = example.createCriteria();
+            criteria.andEqualTo("storageId", artifactCacheRecord.getStorageId());
+            criteria.andEqualTo("repositoryId", artifactCacheRecord.getRepositoryId());
+            example.and().andLike("artifactPathPrefix", artifactCacheRecord.getArtifactPath() + "%");
+            return artifactCacheRecordMapper.selectCountByExample(example);
+        }
         return artifactCacheRecordMapper.selectCount(null);
     }
 

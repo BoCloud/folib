@@ -47,7 +47,7 @@ public class ArtifactCacheCheckTask {
         log.info("Wait for the lock [{}]", lockName);
         if (folibDistributedSchedulerLock.getLock(lockName, lockTime)) {
             log.info("Get lock [{}]", lockName);
-            int totalCount = artifactCacheRecordService.getArtifactCacheRecordCount();
+            int totalCount = artifactCacheRecordService.getArtifactCacheRecordCount(null);
             if (totalCount <= 0) {
                 return;
             }

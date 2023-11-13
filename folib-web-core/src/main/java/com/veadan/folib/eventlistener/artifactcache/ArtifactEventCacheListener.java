@@ -73,7 +73,8 @@ public class ArtifactEventCacheListener {
                 artifactPath = ArtifactEventTypeEnum.EVENT_ARTIFACT_DIRECTORY_PATH_DELETED.getType() == artifactEventTypeEnum.getType() ? artifactPath + "/" : artifactPath;
                 ArtifactCacheRecord artifactCacheRecord = ArtifactCacheRecord.builder().storageId(repositoryPath.getStorageId()).repositoryId(repositoryPath.getRepositoryId())
                         .artifactPath(artifactPath).build();
-                List<ArtifactCacheRecord> artifactCacheRecordList = artifactComponent.getArtifactCacheRecord(artifactCacheRecord, null);
+                int limit = artifactCacheRecordService.getArtifactCacheRecordCount(artifactCacheRecord);
+                List<ArtifactCacheRecord> artifactCacheRecordList = artifactComponent.getArtifactCacheRecord(artifactCacheRecord, limit);
                 if (CollectionUtils.isNotEmpty(artifactCacheRecordList)) {
                     List<List<ArtifactCacheRecord>> deleteIdList = Lists.partition(artifactCacheRecordList, 200);
                     for (List<ArtifactCacheRecord> itemList : deleteIdList) {

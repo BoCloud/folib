@@ -76,26 +76,9 @@ public class Maven2FileSystemProvider extends LayoutFileSystemProvider
         
         logger.info("Removing {}...", repositoryPath);
 
-        if (Files.isDirectory(repositoryPath)) {
-            if (path.toString().startsWith("s3://")) {
-                S3Path paths = (S3Path) repositoryPath.getTarget();
-                S3Iterator s3Iterator = new S3Iterator(paths);
-                while (s3Iterator.hasNext()) {
-                    try {
-                        S3Path s3Path = s3Iterator.next();
-                        ((RepositoryPath) path).setTarget(s3Path);
-                        if (s3Path.getFileSystem().provider().exists(s3Path)) {
-                            super.delete(path, force);
-                        }
-                    } catch (Throwable e) {
-                        logger.error("S3Iterator delete error :{} ", e.getMessage());
-                    }
-                }
-                cleanupDirectory(repositoryPath, force);
-            } else {
-                cleanupDirectory(repositoryPath.relativize(), force);
-            }
-        }
+//        if (Files.isDirectory(repositoryPath)) {
+//            cleanupDirectory(repositoryPath.relativize(), force);
+//        }
 
         super.delete(repositoryPath, force);
     }

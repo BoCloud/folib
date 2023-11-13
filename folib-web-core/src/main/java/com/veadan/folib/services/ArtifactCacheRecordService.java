@@ -59,9 +59,10 @@ public interface ArtifactCacheRecordService {
     /**
      * 获取制品缓存记录数量
      *
+     * @param artifactCacheRecord 参数
      * @return 制品缓存记录数量
      */
-    int getArtifactCacheRecordCount();
+    int getArtifactCacheRecordCount(ArtifactCacheRecord artifactCacheRecord);
 
     /**
      * 删除制品缓存记录
