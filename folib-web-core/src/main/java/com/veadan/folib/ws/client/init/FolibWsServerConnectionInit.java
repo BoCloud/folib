@@ -4,7 +4,7 @@ import com.veadan.folib.configuration.ConfigurationManager;
 import com.veadan.folib.dispatch.ClusterDispatchNodeDto;
 import com.veadan.folib.services.ConfigurationManagementService;
 import com.veadan.folib.utils.UrlUtils;
-import com.veadan.folib.ws.client.manage.FolibWsServerRunManage;
+import com.veadan.folib.ws.client.manage.FolibWsClientRunManage;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.ApplicationArguments;
@@ -14,7 +14,6 @@ import org.springframework.stereotype.Component;
 import javax.inject.Inject;
 import java.net.URL;
 import java.util.Map;
-import java.util.Optional;
 
 /**
  * @author xiaodong.wang
@@ -52,7 +51,7 @@ public class FolibWsServerConnectionInit implements ApplicationRunner
                         final String originNodeName = String.format("%s:%s", originHost, originPort);
                         final String destUri = String.format("/ws/folib/%s", originNodeName);
                         
-                        FolibWsServerRunManage.up(destNodeName, destHost, destPort, destUri, true);
+                        FolibWsClientRunManage.up(destNodeName, destHost, destPort, destUri, true);
                         log.info("【FolibWs连接初始化】开始连接到节点({}:{}) ===> ({}:{})",
                                 originHost, originPort,
                                 destHost, destPort);

@@ -1,13 +1,11 @@
-package com.veadan.folib.ws.client.handler.command;
+package com.veadan.folib.ws.server.handler.command;
 
 import com.veadan.folib.domain.DispatchStorageTree;
 import com.veadan.folib.ws.client.context.FolibWsClientContextInfo;
-import com.veadan.folib.ws.client.manage.FolibWsServerRunManage;
+import com.veadan.folib.ws.client.handler.command.FolibWsClientCommand;
+import com.veadan.folib.ws.client.manage.FolibWsClientRunManage;
 import com.veadan.folib.ws.common.FolibWsSessionContextHolder;
-import com.veadan.folib.ws.common.JsonEncoder;
 import com.veadan.folib.ws.server.context.FolibWsServerContextInfo;
-import lombok.Data;
-import lombok.experimental.Accessors;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
@@ -20,7 +18,7 @@ import org.springframework.stereotype.Component;
  */
 @Slf4j
 @Component
-public class FolibWsClientActionResCommand implements FolibWsClientCommand<ResponseEntity<DispatchStorageTree>> 
+public class FolibWsServerActionResCommand implements FolibWsClientCommand<DispatchStorageTree> 
 {
     public static final String COMMAND = "/actionResCommand";
     
@@ -30,11 +28,10 @@ public class FolibWsClientActionResCommand implements FolibWsClientCommand<Respo
     }
 
     @Override
-    public void execute(ResponseEntity<DispatchStorageTree> res) 
+    public void execute(DispatchStorageTree res) 
     {
-        final FolibWsClientContextInfo contextSessionInfo = FolibWsSessionContextHolder.getContextSessionInfo(FolibWsClientContextInfo.class);
+        final FolibWsServerContextInfo contextSessionInfo = FolibWsSessionContextHolder.getContextSessionInfo(FolibWsServerContextInfo.class);
         final String syncId = contextSessionInfo.getSyncId();
-        FolibWsServerRunManage.actionUpdateLockValue(syncId, res);
-        
+        FolibWsClientRunManage.actionUpdateLockValue(syncId, res);
     }
 }

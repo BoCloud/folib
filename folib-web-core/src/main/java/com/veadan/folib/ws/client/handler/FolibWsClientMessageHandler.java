@@ -2,11 +2,10 @@ package com.veadan.folib.ws.client.handler;
 
 import com.alibaba.fastjson.JSON;
 import com.veadan.folib.ws.client.context.FolibWsClientContextInfo;
-import com.veadan.folib.ws.client.manage.FolibWsServerRunManage;
+import com.veadan.folib.ws.client.manage.FolibWsClientRunManage;
 import com.veadan.folib.ws.common.FolibWsAction;
 import com.veadan.folib.ws.client.handler.dispatch.FolibWsClientCommandDispatch;
 import com.veadan.folib.ws.common.FolibWsSessionContextHolder;
-import com.veadan.folib.ws.server.manage.FolibWsClientRunManage;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.socket.TextMessage;
 import org.springframework.web.socket.WebSocketSession;
@@ -26,7 +25,7 @@ public class FolibWsClientMessageHandler extends BinaryWebSocketHandler {
         try {
             final FolibWsAction folibWsAction = JSON.parseObject(textMessage, FolibWsAction.class);
             FolibWsSessionContextHolder.setContextSessionInfo(new FolibWsClientContextInfo()
-                    .setWsRunInfo(FolibWsServerRunManage.findRunBySession(session))
+                    .setWsRunInfo(FolibWsClientRunManage.findRunBySession(session))
                     .setSyncId(folibWsAction.getSyncId()));
             FolibWsClientCommandDispatch.dispatch(folibWsAction);
         } catch (Exception e) {

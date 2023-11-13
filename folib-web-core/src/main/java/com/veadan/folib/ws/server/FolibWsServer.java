@@ -7,7 +7,7 @@ import com.veadan.folib.ws.client.handler.command.FolibWsClientConsoleCommand;
 import com.veadan.folib.ws.common.FolibWsSessionContextHolder;
 import com.veadan.folib.ws.server.context.FolibWsServerContextInfo;
 import com.veadan.folib.ws.server.handler.dispatch.FolibWsServerCommandDispatch;
-import com.veadan.folib.ws.server.manage.FolibWsClientRunManage;
+import com.veadan.folib.ws.server.manage.FolibWsServerRunManage;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -39,7 +39,7 @@ public class FolibWsServer {
     @OnOpen
     public void onOpen(@PathParam("nodeName") String nodeName, Session session) {
         try {
-            final FolibWsClientRunManage.FolibWsClientRun wsClientRun = FolibWsClientRunManage.getWsClientRun(nodeName);
+            final FolibWsServerRunManage.FolibWsClientRun wsClientRun = FolibWsServerRunManage.getWsClientRun(nodeName);
             if (null != wsClientRun) {
                 final String baseUrl = configurationManager.getConfiguration().getBaseUrl();
                 final String info = String.format("连接失败，当前节点（%s）已存在连接的客户端（%s）会话", baseUrl, nodeName);
@@ -53,7 +53,7 @@ public class FolibWsServer {
                 session.close();
             }
 
-            FolibWsClientRunManage.online(nodeName, session);
+            FolibWsServerRunManage.online(nodeName, session);
             log.info("连接建立成功，nodeName = {} session_id = {}", nodeName, session.getId());
 
             // 将连接的节点信息维护到数据库
@@ -66,7 +66,7 @@ public class FolibWsServer {
 
     @OnClose
     public void onClose(@PathParam("nodeName") String nodeName, Session session) {
-        FolibWsClientRunManage.remove(nodeName);
+        FolibWsServerRunManage.remove(nodeName);
         log.info("连接关闭成功，nodeName = {} session_id = {}", nodeName, session.getId());
     }
 
@@ -77,7 +77,7 @@ public class FolibWsServer {
             FolibWsSessionContextHolder.setContextSessionInfo(new FolibWsServerContextInfo()
                     .setNodeName(nodeName)
                     .setSyncId(folibWsAction.getSyncId())
-                    .setWsRunInfo(FolibWsClientRunManage.findRunBySession(session)));
+                    .setWsRunInfo(FolibWsServerRunManage.findRunBySession(session)));
             FolibWsServerCommandDispatch.dispatch(folibWsAction);
         } catch (Exception e) {
             log.error("解析来自FolibWs客户端的消息（{}）失败", message, e);

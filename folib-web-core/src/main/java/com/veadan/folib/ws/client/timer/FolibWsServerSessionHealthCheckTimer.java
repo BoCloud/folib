@@ -1,6 +1,6 @@
 package com.veadan.folib.ws.client.timer;
 
-import com.veadan.folib.ws.client.manage.FolibWsServerRunManage;
+import com.veadan.folib.ws.client.manage.FolibWsClientRunManage;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
@@ -17,7 +17,7 @@ public class FolibWsServerSessionHealthCheckTimer {
 
     @Scheduled(cron = "0/5 * * * * ?")
     public void scan() {
-        for (FolibWsServerRunManage.FolibWsServerRun folibWsServerRun : FolibWsServerRunManage.getAllRun()) {
+        for (FolibWsClientRunManage.FolibWsServerRun folibWsServerRun : FolibWsClientRunManage.getAllRun()) {
             final String nodeName = folibWsServerRun.getNodeName();
             final String host = folibWsServerRun.getHost();
             final Integer port = folibWsServerRun.getPort();
@@ -26,7 +26,7 @@ public class FolibWsServerSessionHealthCheckTimer {
             
             if (null == folibWsServerRun.getSession() || !folibWsServerRun.getSession().isOpen()) {
                 log.info("【Ws连接健康定时任务】扫描到Ws连接（{}）断开，进行重连开始", folibWsServerRun.getWsUrl());
-                final boolean reUp = FolibWsServerRunManage.up(nodeName, host, port, uri, isForceUp);
+                final boolean reUp = FolibWsClientRunManage.up(nodeName, host, port, uri, isForceUp);
                 log.info("【Ws连接健康定时任务】扫描到Ws连接（{}）断开，进行重连结束，重连结果：{}", folibWsServerRun.getWsUrl(), reUp);
             }
         }

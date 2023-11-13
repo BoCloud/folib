@@ -12,11 +12,11 @@ import com.veadan.folib.services.ClusterSyncService;
 import com.veadan.folib.services.ConfigurationManagementService;
 import com.veadan.folib.utils.UrlUtils;
 import com.veadan.folib.validation.RequestBodyValidationException;
-import com.veadan.folib.ws.client.manage.FolibWsServerRunManage;
+import com.veadan.folib.ws.client.manage.FolibWsClientRunManage;
 import com.veadan.folib.ws.common.FolibWsAction;
 import com.veadan.folib.ws.server.handler.command.FolibWsServerDeleteNodeInfoCommand;
 import com.veadan.folib.ws.server.handler.command.FolibWsServerSaveNodeInfoCommand;
-import com.veadan.folib.ws.server.manage.FolibWsClientRunManage;
+import com.veadan.folib.ws.server.manage.FolibWsServerRunManage;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
@@ -85,7 +85,7 @@ public class ClusterDispatchConfigurationController extends BaseConfigurationCon
         final Collection<ClusterDispatchNodeDto> values = map.values();
         values.forEach(nodeDto -> {
             if (nodeDto.getAutoRegister()) {
-                final FolibWsClientRunManage.FolibWsClientRun wsClientRun = FolibWsClientRunManage.getWsClientRun(nodeDto.getClusterEnName());
+                final FolibWsServerRunManage.FolibWsClientRun wsClientRun = FolibWsServerRunManage.getWsClientRun(nodeDto.getClusterEnName());
                 if (null != wsClientRun && wsClientRun.getSession().isOpen()) {
                     nodeDto.setWsClientOnline(true);
                 } else {
@@ -96,7 +96,7 @@ public class ClusterDispatchConfigurationController extends BaseConfigurationCon
                 final String host = UrlUtils.getHost(clusterNodeHost);
                 final Integer port = UrlUtils.getPort(clusterNodeHost);
                 final String nodeName = String.format("%s:%s", host, port);
-                final FolibWsServerRunManage.FolibWsServerRun wsServerRun = FolibWsServerRunManage.getWsServerRun(nodeName);
+                final FolibWsClientRunManage.FolibWsServerRun wsServerRun = FolibWsClientRunManage.getWsServerRun(nodeName);
                 if (null != wsServerRun && null != wsServerRun.getSession() && wsServerRun.getSession().isOpen()) {
                     nodeDto.setWsClientOnline(true);
                 } else {
@@ -142,7 +142,7 @@ public class ClusterDispatchConfigurationController extends BaseConfigurationCon
             final String destNodeName = String.format("%s:%s", destHost, destPort);
             final String originNodeName = String.format("%s:%s", originHost, originPort);
             final String destUri = String.format("/ws/folib/%s", originNodeName);
-            final boolean upResult = FolibWsServerRunManage.up(destNodeName, destHost, destPort, destUri, true);
+            final boolean upResult = FolibWsClientRunManage.up(destNodeName, destHost, destPort, destUri, true);
             if (!upResult) {
                 throw new BusinessException("尝试连接到添加目标节点失败，请检查添加节点信息是否正确");
             }
@@ -153,7 +153,7 @@ public class ClusterDispatchConfigurationController extends BaseConfigurationCon
             clusterSyncService.syncClusterDispatch(syncClusterDispatchDto);
 
             // 向WsServer发送创建节点维护信息
-            final FolibWsServerRunManage.FolibWsServerRun wsServerRun = FolibWsServerRunManage.getWsServerRun(destNodeName);
+            final FolibWsClientRunManage.FolibWsServerRun wsServerRun = FolibWsClientRunManage.getWsServerRun(destNodeName);
             if (null != wsServerRun) {
                 final ClusterDispatchNodeDto registerNodeInfoDto = new ClusterDispatchNodeDto();
                 BeanUtils.copyProperties(clusterDispatchNodeForm, registerNodeInfoDto);
@@ -167,7 +167,7 @@ public class ClusterDispatchConfigurationController extends BaseConfigurationCon
                         .payload(new FolibWsServerSaveNodeInfoCommand.Payload(registerNodeInfoDto,                                 
                                 SyncClusterDispatchEnum.ADD_OR_UPDATE)
                         );
-                wsServerRun.doSyncAction(folibWsAction);
+                wsServerRun.doAction(folibWsAction);
             }
 
             return getSuccessfulResponseEntity("ok", accept);
@@ -242,15 +242,15 @@ public class ClusterDispatchConfigurationController extends BaseConfigurationCon
                 final Integer destPort = UrlUtils.getPort(clusterNodeHost);
                 final String originNodeName = String.format("%s:%s", originHost, originPort);
                 final String destNodeName = String.format("%s:%s", destHost, destPort);
-                final FolibWsServerRunManage.FolibWsServerRun wsServerRun = FolibWsServerRunManage.getWsServerRun(destNodeName);
+                final FolibWsClientRunManage.FolibWsServerRun wsServerRun = FolibWsClientRunManage.getWsServerRun(destNodeName);
                 // 远程对应节点名称是：originNodeName
                 if (null != wsServerRun) {
                     syncClusterDispatchDto.getNodeDto().setClusterEnName(originNodeName);
                     final FolibWsAction folibWsAction = new FolibWsAction()
                             .command(FolibWsServerDeleteNodeInfoCommand.COMMAND)
                             .payload(syncClusterDispatchDto);
-                    wsServerRun.doSyncAction(folibWsAction);
-                    FolibWsServerRunManage.remove(destNodeName);
+                    wsServerRun.doAction(folibWsAction);
+                    FolibWsClientRunManage.remove(destNodeName);
                 }
             }
 

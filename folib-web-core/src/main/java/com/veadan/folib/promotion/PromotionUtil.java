@@ -32,7 +32,7 @@ import com.veadan.folib.util.RepositoryPathUtil;
 import com.veadan.folib.utils.UrlUtils;
 import com.veadan.folib.ws.common.FolibWsAction;
 import com.veadan.folib.ws.client.handler.command.FolibWsClientArtifactPullCommand;
-import com.veadan.folib.ws.server.manage.FolibWsClientRunManage;
+import com.veadan.folib.ws.server.manage.FolibWsServerRunManage;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.MapUtils;
@@ -287,7 +287,7 @@ public class PromotionUtil {
                 final Integer nodePort = UrlUtils.getPort(clusterNodeHost);
                 final String nodeHost = UrlUtils.getHost(clusterNodeHost);
                 final String nodeName = String.format("%s:%s", nodeHost, nodePort);
-                final FolibWsClientRunManage.FolibWsClientRun wsClientRun = FolibWsClientRunManage.getWsClientRun(nodeName);
+                final FolibWsServerRunManage.FolibWsClientRun wsClientRun = FolibWsServerRunManage.getWsClientRun(nodeName);
                 if (null == wsClientRun)
                 { throw new BusinessException("当前分发的节点不可用，请检查节点是否配置正确"); }
                 

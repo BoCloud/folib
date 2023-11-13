@@ -3,6 +3,7 @@ package com.veadan.folib.ws.client.manage;
 import com.veadan.folib.scanner.common.exception.BusinessException;
 import com.veadan.folib.ws.client.handler.FolibWsClientMessageHandler;
 import com.veadan.folib.ws.common.FolibWsAction;
+import com.veadan.folib.ws.common.FolibWsRunManage;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import lombok.AllArgsConstructor;
@@ -18,7 +19,6 @@ import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.Map;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 
@@ -29,7 +29,7 @@ import java.util.concurrent.TimeUnit;
  * @since x.x.x
  */
 @Slf4j
-public class FolibWsServerRunManage {
+public class FolibWsClientRunManage extends FolibWsRunManage {
     private static final Map<String, FolibWsServerRun> FOLIB_WS_RUN_MAP = new ConcurrentHashMap<>();
     public static final JettyWebSocketClient WEB_SOCKET_CLIENT = new JettyWebSocketClient();
     
@@ -52,7 +52,6 @@ public class FolibWsServerRunManage {
                     return false;
                 }
             }
-
             
 //            final StandardWebSocketClient socketClient = new StandardWebSocketClient();
             if (null == folibWsServerRun) {
@@ -74,7 +73,7 @@ public class FolibWsServerRunManage {
             
             return true;
         } catch (Exception e) {
-            log.error("【FolibWs服务端运行管理器-启动】连接到节点（{}:{}）失败", host, port, e);
+//            log.error("【FolibWs服务端运行管理器-启动】连接到节点（{}:{}）失败", host, port, e);
             return false;
         }
     }
@@ -130,39 +129,6 @@ public class FolibWsServerRunManage {
                 .orElse(null);
     }
     
-    private static final Map<String, Object> SYNC_ACTION_LOCK_MAP = new ConcurrentHashMap<>(); 
-    private static final String ACTION_LOCK_MARK = "ACTION_LOCK"; 
-
-    public static void actionLock(String loackId) {
-        SYNC_ACTION_LOCK_MAP.put(loackId, ACTION_LOCK_MARK);
-    }
-
-    public static void actionUpdateLockValue(String lockId, Object value) {
-        SYNC_ACTION_LOCK_MAP.put(lockId, value);
-    }
-    
-    public static void actionUnLock(String lockId) {
-        SYNC_ACTION_LOCK_MAP.remove(lockId);
-    }
-    
-    public static <T> T actionUnLockAndGetValue(String lockId, Class<T> valueClass, long timeout, TimeUnit unit) {
-        try {
-            return CompletableFuture.supplyAsync(() -> {
-                Object lockActionValue = SYNC_ACTION_LOCK_MAP.getOrDefault(lockId, ACTION_LOCK_MARK);
-                while (lockActionValue.equals(ACTION_LOCK_MARK)) {
-                    lockActionValue = SYNC_ACTION_LOCK_MAP.getOrDefault(lockId, ACTION_LOCK_MARK);
-                }
-
-                return (T) lockActionValue;
-            }).get(timeout, unit);
-        } catch (Exception e) {
-            log.error("【FolibWs服务端运行管理器】获取同步Action结果失败", e);
-        } finally {
-            actionUnLock(lockId);
-        }
-        
-        return null;
-    }
     
     /**
      * @author xiaodong.wang
@@ -195,7 +161,7 @@ public class FolibWsServerRunManage {
             return String.format("ws://%s:%s%s", this.host, this.port, this.uri);
         }
 
-        public boolean doSyncAction(FolibWsAction folibWsAction) {
+        public boolean doAction(FolibWsAction folibWsAction) {
             try {
                 if (null == this.session) {
                     throw new BusinessException("发起请求失败，还未创建Ws会话");
@@ -213,7 +179,7 @@ public class FolibWsServerRunManage {
             }
         }
         
-        public <T> T doAsyncAction(FolibWsAction folibWsAction, Class<T> responseClass) {
+        public <T> T doSyncAction(FolibWsAction folibWsAction, Class<T> responseClass) {
             final String syncId = folibWsAction.sync().getSyncId();
             try {
                 if (null == this.session) {

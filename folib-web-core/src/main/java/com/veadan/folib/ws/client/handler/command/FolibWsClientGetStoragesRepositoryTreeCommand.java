@@ -1,12 +1,13 @@
-package com.veadan.folib.ws.server.handler.command;
+package com.veadan.folib.ws.client.handler.command;
 
 import com.veadan.folib.controllers.configuration.StoragesConfigurationController;
 import com.veadan.folib.domain.DispatchStorageTree;
 import com.veadan.folib.dto.ArtifactDispatchRepositoryDto;
 import com.veadan.folib.ws.client.context.FolibWsClientContextInfo;
-import com.veadan.folib.ws.client.handler.command.FolibWsClientActionResCommand;
+import com.veadan.folib.ws.server.handler.command.FolibWsServerActionResCommand;
 import com.veadan.folib.ws.common.FolibWsAction;
 import com.veadan.folib.ws.common.FolibWsSessionContextHolder;
+import com.veadan.folib.ws.server.handler.command.FolibWsServerCommand;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -23,7 +24,7 @@ import java.io.IOException;
  */
 @Component
 @Slf4j
-public class FolibWsServerGetStoragesRepositoryTreeCommand implements FolibWsServerCommand<ArtifactDispatchRepositoryDto> {
+public class FolibWsClientGetStoragesRepositoryTreeCommand implements FolibWsServerCommand<ArtifactDispatchRepositoryDto> {
 
     public static final String COMMAND = "/getStoragesRepositoryTreeCommand";
     
@@ -47,8 +48,8 @@ public class FolibWsServerGetStoragesRepositoryTreeCommand implements FolibWsSer
                     .sendMessage(new TextMessage(
                             new FolibWsAction()
                                     .sync(syncId)
-                                    .command(FolibWsClientActionResCommand.COMMAND)
-                                    .payload(dispatchRepositories)
+                                    .command(FolibWsServerActionResCommand.COMMAND)
+                                    .payload(dispatchRepositories.getBody())
                                     .encode()));
         } catch (IOException e) {
             throw new RuntimeException(e);

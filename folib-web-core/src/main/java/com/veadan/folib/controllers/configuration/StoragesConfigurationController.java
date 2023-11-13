@@ -53,9 +53,9 @@ import com.veadan.folib.users.userdetails.SpringSecurityUser;
 import com.veadan.folib.utils.UrlUtils;
 import com.veadan.folib.validation.RequestBodyValidationException;
 import com.veadan.folib.web.RepositoryMapping;
-import com.veadan.folib.ws.client.manage.FolibWsServerRunManage;
 import com.veadan.folib.ws.common.FolibWsAction;
-import com.veadan.folib.ws.server.handler.command.FolibWsServerGetStoragesRepositoryTreeCommand;
+import com.veadan.folib.ws.client.handler.command.FolibWsClientGetStoragesRepositoryTreeCommand;
+import com.veadan.folib.ws.server.manage.FolibWsServerRunManage;
 import io.swagger.annotations.*;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.MapUtils;
@@ -491,23 +491,26 @@ public class StoragesConfigurationController
             final Boolean autoRegister = clusterDispatchNodeDto.getAutoRegister();
             final String clusterNodeHost = clusterDispatchNodeDto.getClusterNodeHost();
             try {
+                dispatchRepositoryDto.setDispatchEnName(dispatchEnName);
                 if (null != autoRegister && autoRegister) {
                     // 自动注册通过Ws协议获取
                     final Integer port = UrlUtils.getPort(clusterNodeHost);
                     final String host = UrlUtils.getHost(clusterNodeHost);
                     final String nodeName = String.format("%s:%s", host, port);
-                    final FolibWsServerRunManage.FolibWsServerRun wsServerRun = FolibWsServerRunManage.getWsServerRun(nodeName);
-                    if (null != wsServerRun) {
+                    final FolibWsServerRunManage.FolibWsClientRun wsClientRun = FolibWsServerRunManage.getWsClientRun(nodeName);
+                    if (null != wsClientRun) {
                         final FolibWsAction folibWsAction = new FolibWsAction();
-                        folibWsAction.command(FolibWsServerGetStoragesRepositoryTreeCommand.COMMAND);
+                        folibWsAction.command(FolibWsClientGetStoragesRepositoryTreeCommand.COMMAND);
                         folibWsAction.payload(dispatchRepositoryDto);
-                        wsServerRun.doAsyncAction(folibWsAction, ResponseEntity.class);
+                        final DispatchStorageTree dispatchStorageTree = wsClientRun.doSyncAction(folibWsAction, DispatchStorageTree.class);
+                        if (null != dispatchStorageTree) {
+                            repoList.addAll(dispatchStorageTree.getList());
+                        }
                     }
                 } else {
                     // 手动通过Http协议获取
                     String url = clusterNodeHost.endsWith("/") ? clusterNodeHost + "api/configuration/folib/storages/getDispatchRepositories" :
                             clusterNodeHost + "/api/configuration/folib/storages/getDispatchRepositories";
-                    dispatchRepositoryDto.setDispatchEnName(dispatchEnName);
                     WebTarget target = client.target(url);
                     logger.info("请求 {} 获取分发仓库信息 {}", url, JSONUtil.toJsonStr(dispatchRepositoryDto));
                     Invocation.Builder builder = target.request();

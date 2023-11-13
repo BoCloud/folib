@@ -8,7 +8,7 @@ import com.veadan.folib.services.ClusterSyncService;
 import com.veadan.folib.ws.common.FolibWsSessionContextHolder;
 import com.veadan.folib.ws.common.JsonEncoder;
 import com.veadan.folib.ws.server.context.FolibWsServerContextInfo;
-import com.veadan.folib.ws.server.manage.FolibWsClientRunManage;
+import com.veadan.folib.ws.server.manage.FolibWsServerRunManage;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.extern.slf4j.Slf4j;
@@ -54,7 +54,7 @@ public class FolibWsServerSaveNodeInfoCommand implements FolibWsServerCommand<Fo
             
             // 断开与WsClient的连接
             final FolibWsServerContextInfo session = FolibWsSessionContextHolder.getContextSessionInfo(FolibWsServerContextInfo.class);
-            FolibWsClientRunManage.remove(session.getNodeName());
+            FolibWsServerRunManage.remove(session.getNodeName());
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
