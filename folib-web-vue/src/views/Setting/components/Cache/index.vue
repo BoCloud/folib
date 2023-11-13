@@ -12,7 +12,7 @@
                 <a-switch v-model="cacheForm.enabled" />
               </a-form-model-item>
             </a-col>
-            <a-col :span="12" :xs="{ span: 4, offset: 8 }">
+            <a-col :span="12" :xs="{ span: 5, offset: 7 }">
               <a-form-model-item >
                 <a-button type="danger" @click="cacheHandlerConfirm">
                   保存
