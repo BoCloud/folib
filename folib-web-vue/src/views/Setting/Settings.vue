@@ -1310,6 +1310,10 @@
                       slot-scope="text, record">
                     {{ record.autoRegister && record.autoRegister === true ? '自动' : '手动' }}
                   </div>
+                  <div slot="kbps"
+                      slot-scope="text, record">
+                    {{ record.kbps && record.kbps > 0 ? (record.kbps+' MB/s') : '不限速' }}
+                  </div>
 
                   <div slot="operation"
                       slot-scope="text, record">
@@ -1504,6 +1508,15 @@
                   {{ item.label }}
                 </a-select-option>
               </a-select>
+            </a-form-model-item>
+          </a-col>
+          <a-col :span="24">
+            <a-form-model-item class="mb-10"
+                               label="传输速率（MB/秒）"
+                               :colon="false"
+                               prop="clusterNodeDesc">
+              <a-input placeholder="请输入传输速率" type="number"
+                       v-model="artifactDispatchForm.kbps" />
             </a-form-model-item>
           </a-col>
           <a-col :span="24">
@@ -1766,6 +1779,13 @@ export default {
           width: 80
         },
         {
+          title: '传输速率',
+          dataIndex: 'kbps',
+          key: 'kbps',
+          width: 100,
+          scopedSlots: { customRender: 'kbps' }
+        },
+        {
           title: '本集群',
           dataIndex: 'isThisCluster',
           key: 'isThisCluster',
@@ -1832,7 +1852,8 @@ export default {
         clusterNodeDesc: undefined,
         clusterNodeHost: undefined,
         dispatchType: undefined,
-        isThisCluster: undefined
+        isThisCluster: undefined,
+        kbps: undefined
       },
       metadataForm: {
         key: undefined,

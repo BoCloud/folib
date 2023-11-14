@@ -1,6 +1,7 @@
 package com.veadan.folib.utils;
 
 import cn.hutool.extra.spring.SpringUtil;
+import org.opencypher.v9_0.expressions.functions.E;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -9,6 +10,7 @@ import java.nio.MappedByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
+import java.util.List;
 import java.util.Objects;
 
 /**
@@ -234,4 +236,23 @@ public class FileUtils {
         return String.format("%.1f %s", size / Math.pow(1000, digitGroups), units[digitGroups]);
     }
 
+    public static boolean mergeFiles(String targetFilePath, List<String> sourceFilePaths)  {
+        try (BufferedOutputStream outputStream = new BufferedOutputStream(Files.newOutputStream(Paths.get(targetFilePath)))) {
+            for (String sourceFilePath : sourceFilePaths) {
+                try (BufferedInputStream inputStream = new BufferedInputStream(Files.newInputStream(Paths.get(sourceFilePath)))) {
+                    byte[] buffer = new byte[1024];
+                    int bytesRead;
+
+                    while ((bytesRead = inputStream.read(buffer)) != -1) {
+                        outputStream.write(buffer, 0, bytesRead);
+                    }
+                }
+            }
+        } catch (Exception e) {
+            logger.error("文件合并失败", e);
+            return false;
+        }
+
+        return true;
+    }
 }

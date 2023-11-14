@@ -17,7 +17,7 @@ import org.springframework.stereotype.Component;
 @Slf4j
 public class FolibWsServerDeleteNodeInfoCommand implements FolibWsServerCommand<SyncClusterDispatchDto> {
 
-    public static final String COMMAND = "/deleteNodeInfo";
+    public static final String COMMAND = "/server/deleteNodeInfo";
 
 
     @Autowired

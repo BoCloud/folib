@@ -39,7 +39,7 @@ import static com.veadan.folib.utils.UrlUtils.parsePath;
 @Component
 public class FolibWsClientArtifactPullCommand implements FolibWsClientCommand<PromotionNodeOption> 
 {
-    public static final String COMMAND = "/artifact/pull";
+    public static final String COMMAND = "/client/artifact/pull";
     private static final String API_ARTIFACT_FOLIB_PROMOTION_GET_FILE_RELATIVE_PATHS = "/api/artifact/folib/promotion/getFileRelativePaths";
     
     @Autowired

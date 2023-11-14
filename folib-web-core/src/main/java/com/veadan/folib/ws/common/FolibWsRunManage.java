@@ -17,14 +17,19 @@ import java.util.concurrent.TimeUnit;
 public abstract class FolibWsRunManage {
 
     protected static final Map<String, Object> SYNC_ACTION_LOCK_MAP = new ConcurrentHashMap<>();
-    protected static final String ACTION_LOCK_MARK = "ACTION_LOCK";
+    protected static final String ACTION_LOCK_MARK = "<<<ACTION_LOCK>>>";
 
     public static void actionLock(String loackId) {
         SYNC_ACTION_LOCK_MAP.put(loackId, ACTION_LOCK_MARK);
     }
 
-    public static void actionUpdateLockValue(String lockId, Object value) {
+    public static boolean actionUpdateLockValue(String lockId, Object value) {
+        if (!SYNC_ACTION_LOCK_MAP.containsKey(lockId)) {
+            return false;
+        }
         SYNC_ACTION_LOCK_MAP.put(lockId, value);
+        
+        return true;
     }
 
     public static void actionUnLock(String lockId) {

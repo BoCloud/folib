@@ -23,7 +23,7 @@ import org.springframework.stereotype.Component;
 @Slf4j
 public class FolibWsClientGetStoragesRepositoryTreeCommand implements FolibWsServerCommand<ArtifactDispatchRepositoryDto> {
 
-    public static final String COMMAND = "/getStoragesRepositoryTreeCommand";
+    public static final String COMMAND = "/client/getStoragesRepositoryTreeCommand";
     
     @Autowired
     private StoragesConfigurationController storagesConfigurationController;

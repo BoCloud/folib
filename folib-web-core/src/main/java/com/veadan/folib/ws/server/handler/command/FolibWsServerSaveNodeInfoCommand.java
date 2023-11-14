@@ -28,7 +28,7 @@ import java.time.format.DateTimeFormatter;
 @Slf4j
 public class FolibWsServerSaveNodeInfoCommand implements FolibWsServerCommand<FolibWsServerSaveNodeInfoCommand.Payload> {
 
-    public static final String COMMAND = "/saveNodeInfo";
+    public static final String COMMAND = "/server/saveNodeInfo";
 
 
     @Autowired

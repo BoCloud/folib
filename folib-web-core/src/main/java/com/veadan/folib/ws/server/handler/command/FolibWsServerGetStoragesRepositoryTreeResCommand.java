@@ -18,7 +18,7 @@ import org.springframework.stereotype.Component;
 @Component
 public class FolibWsServerGetStoragesRepositoryTreeResCommand implements FolibWsClientCommand<DispatchStorageTree> 
 {
-    public static final String COMMAND = "/getStoragesRepositoryTreeRes";
+    public static final String COMMAND = "/server/getStoragesRepositoryTreeRes";
     
     @Override
     public String command() {

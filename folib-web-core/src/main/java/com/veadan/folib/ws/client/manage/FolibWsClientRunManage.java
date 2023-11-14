@@ -192,7 +192,7 @@ public class FolibWsClientRunManage extends FolibWsRunManage {
                 actionLock(syncId);
                 // 发起请求
                 this.session.sendMessage(new TextMessage(folibWsAction.encode()));
-                return actionUnLockAndGetValue(syncId, responseClass, 3, TimeUnit.SECONDS);
+                return actionUnLockAndGetValue(syncId, responseClass, 10, TimeUnit.SECONDS);
             } catch (Exception e) {
                 log.error("发起Ws同步请求失败", e);
                 return null;

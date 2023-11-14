@@ -16,7 +16,7 @@ import org.springframework.stereotype.Component;
 @Component
 public class FolibWsClientConsoleCommand implements FolibWsClientCommand<FolibWsClientConsoleCommand.Payload> 
 {
-    public static final String COMMAND = "/console";
+    public static final String COMMAND = "/client/console";
     
     @Override
     public String command() {
