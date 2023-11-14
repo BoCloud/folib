@@ -32,6 +32,11 @@ public class ServerSettingsForm
     @JsonProperty
     private Integer port;
 
+    /**
+     * 节点传输速率（Kbs）
+     */
+    private Long kbps;
+
     @Valid
     @JsonProperty
     private AdvancedConfigurationForm advancedConfigurationForm = new AdvancedConfigurationForm();
@@ -94,6 +99,14 @@ public class ServerSettingsForm
     public void setPort(Integer port)
     {
         this.port = port;
+    }
+
+    public Long getKbps() {
+        return kbps;
+    }
+
+    public void setKbps(Long kbps) {
+        this.kbps = kbps;
     }
 
     public String getInstanceName()

@@ -31,6 +31,8 @@ public interface ConfigurationManagementService {
     void setBaseUrl(String baseUrl) throws IOException;
 
     void setPort(int port) throws IOException;
+    
+    void setKbps(Long kbps) throws IOException;
 
     void setAdvancedConfiguration(MutableAdvancedConfiguration advancedConfiguration) throws IOException;
 

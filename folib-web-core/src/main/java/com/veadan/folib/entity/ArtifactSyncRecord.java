@@ -55,6 +55,13 @@ public class ArtifactSyncRecord implements Serializable {
     @Column(name = "target_path")
     private String targetPath;
     /**
+     * 制品操作（1：制品晋级；2：制品分发）
+     * {@linkplain com.veadan.folib.enums.ArtifactSyncRecordOpsTypeEnum }
+     */
+    @ApiModelProperty("制品操作（1：制品晋级；2：制品分发）")
+    @Column(name = "ops_type")
+    private Integer opsType;
+    /**
      * 制品同步编号
      */
     @ApiModelProperty("制品同步编号")

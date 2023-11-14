@@ -20,5 +20,4 @@ public class ClusterDispatchNodeForm {
     private String dispatchType;
     private Boolean isThisCluster = false;
     private String createTime;
-    private Long kbps;
 }
