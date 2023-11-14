@@ -350,7 +350,7 @@ export default {
           this.cacheDirectoryUseSize = res
           let useSize = new Number(this.cacheDirectoryUseSize)
           let size = new Number(this.cacheForm.size)
-          this.cacheDirectoryUseProportion = ( useSize / size).toFixed(2)
+          this.cacheDirectoryUseProportion = ( useSize / size * 100).toFixed(2)
         }
       }).catch(err => {
         this.$notification['error']({
