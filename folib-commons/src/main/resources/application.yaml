@@ -185,6 +185,13 @@ folib:
       keepAliveSeconds: 0
       threadNamePrefix: asyncDownloadArtifact_
       awaitTerminationSeconds: 0
+    asyncWsCommand:
+      corePoolSize: 16
+      maxPoolSize: 16
+      queueCapacity: 2147483647
+      keepAliveSeconds: 0
+      threadNamePrefix: asyncWsCommand_
+      awaitTerminationSeconds: 0
 # Changes to these properties must also be applied to [folib/folib-web-integration-tests] and possibly the pipeline.
 # Please ping us on our chat channel (https://chat.carlspring.org/) to confirm.
 logging:
