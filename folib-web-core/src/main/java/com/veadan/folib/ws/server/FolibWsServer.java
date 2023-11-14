@@ -76,9 +76,9 @@ public class FolibWsServer {
 
     @OnMessage
     public void onMessage(@PathParam("nodeName") String nodeName, String message, Session session) {
+        final FolibWsAction folibWsAction = JSON.parseObject(message, FolibWsAction.class);
         asyncWsCommandThreadPoolTaskExecutor.submit(() -> {
             try {
-                final FolibWsAction folibWsAction = JSON.parseObject(message, FolibWsAction.class);
                 FolibWsSessionContextHolder.setContextSessionInfo(new FolibWsServerContextInfo()
                         .setNodeName(nodeName)
                         .setSyncId(folibWsAction.getSyncId())

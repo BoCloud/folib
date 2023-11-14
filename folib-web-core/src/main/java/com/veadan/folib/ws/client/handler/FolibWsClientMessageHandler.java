@@ -26,8 +26,8 @@ public class FolibWsClientMessageHandler extends BinaryWebSocketHandler {
 
     @Override
     protected void handleTextMessage(WebSocketSession session, TextMessage message) {
+        final String textMessage = new String(message.asBytes());
         this.getAsyncWsCommandThreadPoolTaskExecutor().submit(() -> {
-            final String textMessage = new String(message.asBytes());
             try {
                 final FolibWsAction folibWsAction = JSON.parseObject(textMessage, FolibWsAction.class);
                 FolibWsSessionContextHolder.setContextSessionInfo(new FolibWsClientContextInfo()
