@@ -1,4 +1,4 @@
-package com.veadan.folib.dto;
+package com.veadan.folib.model.response;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -12,7 +12,10 @@ import java.util.List;
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
-public class ArtifactSliceDownloadInfoDto {
+public class ArtifactSliceDownloadInfoRes {
+    private String storageId;
+    private String repositoryId;
+    private String path;
     
     private Boolean usedSlice;
     private String artifactMd5;
@@ -22,9 +25,6 @@ public class ArtifactSliceDownloadInfoDto {
     @Data
     @Accessors(chain = true)
     public static class DownloadPartInfo implements Cloneable {
-        private String storageId;
-        private String repositoryId;
-        private String path;
         private String downloadUri;
         private String downloadUrl;
 
