@@ -4,6 +4,7 @@ import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.io.FileUtil;
 import cn.hutool.core.io.IoUtil;
 import cn.hutool.core.lang.UUID;
+import cn.hutool.socket.SocketUtil;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
 import com.veadan.folib.components.artifact.ArtifactComponent;
@@ -90,6 +91,8 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.net.Socket;
+import java.net.SocketAddress;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -324,71 +327,25 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
             } else if (ArtifactSyncRecordSyncModelEnum.PULL.getVal().equals(syncModel)) {
                 log.info("进入拉模式={}",true);
                 // 通过Ws协议通知客户端进行拉取操作
-                final URL url = new URL(targetUrl);
-                final String targetHost = url.getHost();
+                final String targetHost = UrlUtils.getHost(targetUrl);
                 final Integer targetPort = UrlUtils.getPort(targetUrl);
                 final String nodeName = String.format("%s:%s", targetHost, targetPort);
                 final FolibWsServerRunManage.FolibWsClientRun wsClientRun = FolibWsServerRunManage.getWsClientRun(nodeName);
-                if (null == wsClientRun)
-                { throw new BusinessException("需要晋级的节点不可用，请检查节点是否配置正确"); }
+                if (null == wsClientRun) { 
+                    // 检查如果可以直接连接访问到目标节点，则将模式转换为push模式
+                    try (final Socket socket = new Socket(targetHost, targetPort);){
+                        socket.setSoTimeout(200);
+                        promotionNodeOption.setSyncModel(ArtifactSyncRecordSyncModelEnum.PUSH.getVal());
+                        return this.nodeOption(promotionNodeOption, request);
+                    } catch (Exception e) {
+                        throw new BusinessException("需要晋级的节点不可用，请检查节点是否配置正确"); 
+                    }
+                }
 
                 final FolibWsAction folibWsAction = new FolibWsAction()
                         .command(FolibWsClientArtifactPullCommand.COMMAND)
                         .payload(promotionNodeOption);
                 wsClientRun.doAction(folibWsAction);
-///                final Session session = wsClientRun.getSession();
-///                session.getBasicRemote().sendText(new FolibWsAction()
-///                        .command(FolibWsClientArtifactPullCommand.COMMAND)
-///                        .payload(promotionNodeOption)
-///                        .encode());
-                
-///                validateStorageAndRepository(targetStorageId, targetRepostoryId);
-///                // 从源仓路径 pull 到目标仓路径 获取目标主机的path 路径下的文件与目录 然后依次提交到任务队列里面后将文件存入仓库
-///                String url = srcUrl + getFileRelativePaths;
-///                Client client = clientPool.getRestClient();
-///                WebTarget target = client.target(url);
-///                ArtifactDto artifactDto = ArtifactDto.builder().storageId(srcStorageId).
-///                        repostoryId(srcRepostoryId).path(srcUri).build();
-///                Invocation.Builder builder = target.request();
-///                securityComponent.securityTokenHeader(builder);
-///                Response response = builder.
-///                        post(Entity.entity(artifactDto, MediaType.APPLICATION_JSON));
-///                if (response.getStatus() != 200) {
-///                    throw new Exception("{} get error" + url);
-///                }
-///                PromotionFileRelativePath promotionFileRelativePath = response.readEntity(PromotionFileRelativePath.class);
-///                List<String> getFileRelativePaths = promotionFileRelativePath.getList();
-///                Map<String, Object> metaDataMap = promotionFileRelativePath.getMetaData();
-///
-///                // 添加task
-///                List<FutureTask<String>> listTask = new ArrayList<>();
-///                for (String path : getFileRelativePaths) {
-///                    ArtifactDto artifac = ArtifactDto.builder().storageId(srcStorageId)
-///                            .repostoryId(srcRepostoryId).path(path).build();
-///                    String fileUlr = srcUrl + "/api/artifact/folib/promotion/download";
-///                    String metaData = metaDataMap.getOrDefault(path, "") == null ?
-///                            "" : metaDataMap.getOrDefault(path, "").toString();
-///                    PullArtifactTask pullArtifactTask = new PullArtifactTask(path, fileUlr, targetStorageId,
-///                            targetRepostoryId, repositoryPathResolver, artifactManagementService, clientPool,
-///                            promotionUtil, artifac, metaData);
-///                    FutureTask<String> futureTask = new FutureTask<String>(pullArtifactTask);
-///                    listTask.add(futureTask);
-///                    asyncRepositoryThreadPoolExecutor.submit(futureTask);
-///                }
-///                int success = 0;
-///                int fail = 0;
-///                for (FutureTask<String> task : listTask) {
-///                    try {
-///                        task.get();
-///                        success++;
-///
-///                    } catch (Exception e) {
-///                        fail++;
-///                        log.error("pull fail {}", e.getMessage());
-///                    }
-///                }
-///                log.info("Handle pulled! Task size {} success {} fail {}", listTask.size(), success, fail);
-///                listTask.clear();
             }
         } catch (Exception e) {
             log.error("制品晋级错误 {}", ExceptionUtils.getStackTrace(e));
