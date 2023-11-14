@@ -293,23 +293,6 @@ public abstract class BaseController {
     public static void copyToResponse(InputStream is,
                                       HttpServletResponse response)
             throws IOException {
-//        try (OutputStream os = new ExceptionHandlingOutputStream(response.getOutputStream())) {
-//            long totalBytes = 0L;
-//
-//            int readLength;
-//            byte[] bytes = new byte[4096];
-//            while ((readLength = is.read(bytes)) != -1) {
-//                // Write the artifact
-//                os.write(bytes, 0, readLength);
-//                os.flush();
-//
-//                totalBytes += readLength;
-//            }
-//            if (setContentLength(response)) {
-//                response.setHeader(HttpHeaders.CONTENT_LENGTH, Long.toString(totalBytes));
-//            }
-//            response.flushBuffer();
-//        }
         try (
                 OutputStream os = new ExceptionHandlingOutputStream(response.getOutputStream());
                 WritableByteChannel outputChannel = Channels.newChannel(os)

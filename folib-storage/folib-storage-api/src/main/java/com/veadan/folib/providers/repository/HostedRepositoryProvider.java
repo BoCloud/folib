@@ -282,12 +282,6 @@ public class HostedRepositoryProvider extends AbstractRepositoryProvider {
             logger.info("The artifact {} was not found in the local cache", repositoryPath);
             return null;
         }
-//        boolean flag = RepositoryFiles.isArtifact(repositoryPath) && Objects.nonNull(repositoryPath.getArtifactEntry()) && Boolean.TRUE.equals(repositoryPath.getArtifactEntry().getArtifactFileExists()) && !Files.exists(repositoryPath);
-//        if (flag) {
-//            logger.warn("The artifact {} was found in the local cache but artifact file not exist delete local db cache", repositoryPath);
-//            artifactManagementService.delete(repositoryPath, true);
-//            return null;
-//        }
         logger.debug("The artifact {} was found in the local cache", repositoryPath);
         return repositoryPath;
     }

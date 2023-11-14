@@ -492,88 +492,101 @@ public class ArtifactComponent {
             return false;
         }
         boolean block = false;
-        String storageId = artifact.getStorageId(), repositoryId = artifact.getRepositoryId();
-        if (StringUtils.isBlank(layout)) {
-            RootRepositoryPath rootRepositoryPath = repositoryPathResolver.resolve(storageId, repositoryId);
-            layout = rootRepositoryPath.getRepository().getLayout();
-        }
-        boolean isDockerLayout = DockerLayoutProvider.ALIAS.equals(layout);
-        Set<Vulnerability> vulnerabilitySet = artifact.getVulnerabilitySet();
-        if (isDockerLayout) {
-            String manifest = "manifest";
-            String path = artifact.getUuid();
-            if (path.contains("sha256") && !path.endsWith(".sha256") && path.contains(manifest)) {
-                String keywords = path.substring(path.lastIndexOf("manifest/") + "manifest/".length());
-                vulnerabilitySet = artifactRepository.fetchVulnerabilitiesByKeywords(storageId, repositoryId, keywords);
+        try {
+            String storageId = artifact.getStorageId(), repositoryId = artifact.getRepositoryId();
+            if (StringUtils.isBlank(layout)) {
+                RootRepositoryPath rootRepositoryPath = repositoryPathResolver.resolve(storageId, repositoryId);
+                layout = rootRepositoryPath.getRepository().getLayout();
             }
-        }
-        Set<String> vulnerabilities = Optional.ofNullable(vulnerabilitySet).orElse(Collections.emptySet()).stream().map(Vulnerability::getUuid).collect(Collectors.toSet());
-        MutableSecurityPolicyConfiguration mutableSecurityPolicyConfiguration = configurationManagementService.getMutableConfigurationClone().getSecurityPolicyConfiguration();
-        if (Objects.nonNull(mutableSecurityPolicyConfiguration)) {
-            RepositoryDto repositoryDto = configurationManagementService.getMutableConfigurationClone().getStorage(storageId).getRepository(repositoryId);
-            Set<String> repositoryBlacks = repositoryDto.getVulnerabilityBlacks();
-            Set<String> repositoryWhites = repositoryDto.getVulnerabilityWhites();
-            Set<String> platformBlacks = mutableSecurityPolicyConfiguration.getBlacks();
-            Set<String> platformWhites = mutableSecurityPolicyConfiguration.getWhites();
-            if (BlockTypeEnum.ALL.getType().equals(mutableSecurityPolicyConfiguration.getBlockType())) {
-                if (CollectionUtils.isEmpty(vulnerabilitySet)) {
-                    return false;
+            boolean isDockerLayout = DockerLayoutProvider.ALIAS.equals(layout);
+            Set<Vulnerability> vulnerabilitySet = artifact.getVulnerabilitySet();
+            if (isDockerLayout) {
+                String manifest = "manifest";
+                String path = artifact.getUuid();
+                if (path.contains("sha256") && !path.endsWith(".sha256") && path.contains(manifest)) {
+                    String keywords = path.substring(path.lastIndexOf("manifest/") + "manifest/".length());
+                    vulnerabilitySet = artifactRepository.fetchVulnerabilitiesByKeywords(storageId, repositoryId, keywords);
                 }
-                //过滤仓库级别黑名单
-                block = vulnerabilities.stream().anyMatch(repositoryBlacks::contains);
-                if (!block) {
-                    Set<String> allSet = Sets.newLinkedHashSet(), blackSet;
-                    //不在阻断漏洞等级内的漏洞集合，需要过滤黑名单
-                    Set<Vulnerability> unIncludeVulnerabilitySet = Sets.newLinkedHashSet();
-                    if (CollectionUtils.isNotEmpty(mutableSecurityPolicyConfiguration.getBlockLevels())) {
-                        for (Vulnerability vulnerability : vulnerabilitySet) {
-                            //开启白名单过滤
-                            if (Boolean.TRUE.equals(mutableSecurityPolicyConfiguration.getFilterWhites())) {
-                                //过滤仓库级别白名单、平台级别白名单
-                                if (repositoryWhites.contains(vulnerability.getUuid()) || platformWhites.contains(vulnerability.getUuid())) {
-                                    continue;
+            }
+            Set<String> vulnerabilities = Optional.ofNullable(vulnerabilitySet).orElse(Collections.emptySet()).stream().map(Vulnerability::getUuid).collect(Collectors.toSet());
+            MutableSecurityPolicyConfiguration mutableSecurityPolicyConfiguration = configurationManagementService.getMutableConfigurationClone().getSecurityPolicyConfiguration();
+            if (Objects.nonNull(mutableSecurityPolicyConfiguration)) {
+                RepositoryDto repositoryDto = configurationManagementService.getMutableConfigurationClone().getStorage(storageId).getRepository(repositoryId);
+                Set<String> repositoryBlacks = repositoryDto.getVulnerabilityBlacks();
+                Set<String> repositoryWhites = repositoryDto.getVulnerabilityWhites();
+                Set<String> platformBlacks = mutableSecurityPolicyConfiguration.getBlacks();
+                Set<String> platformWhites = mutableSecurityPolicyConfiguration.getWhites();
+                if (BlockTypeEnum.ALL.getType().equals(mutableSecurityPolicyConfiguration.getBlockType())) {
+                    if (CollectionUtils.isEmpty(vulnerabilitySet)) {
+                        return false;
+                    }
+                    //过滤仓库级别黑名单
+                    block = vulnerabilities.stream().anyMatch(repositoryBlacks::contains);
+                    if (!block) {
+                        Set<String> allSet = Sets.newLinkedHashSet(), blackSet;
+                        //不在阻断漏洞等级内的漏洞集合，需要过滤黑名单
+                        Set<Vulnerability> unIncludeVulnerabilitySet = Sets.newLinkedHashSet();
+                        if (CollectionUtils.isNotEmpty(mutableSecurityPolicyConfiguration.getBlockLevels())) {
+                            for (Vulnerability vulnerability : vulnerabilitySet) {
+                                //开启白名单过滤
+                                if (Boolean.TRUE.equals(mutableSecurityPolicyConfiguration.getFilterWhites())) {
+                                    //过滤仓库级别白名单、平台级别白名单
+                                    if (repositoryWhites.contains(vulnerability.getUuid()) || platformWhites.contains(vulnerability.getUuid())) {
+                                        continue;
+                                    }
+                                }
+                                if (mutableSecurityPolicyConfiguration.getBlockLevels().contains(vulnerability.getHighestSeverityText())) {
+                                    allSet.add(vulnerability.getUuid());
+                                } else {
+                                    unIncludeVulnerabilitySet.add(vulnerability);
                                 }
                             }
-                            if (mutableSecurityPolicyConfiguration.getBlockLevels().contains(vulnerability.getHighestSeverityText())) {
-                                allSet.add(vulnerability.getUuid());
-                            } else {
-                                unIncludeVulnerabilitySet.add(vulnerability);
-                            }
                         }
+                        //过滤平台级别黑名单
+                        blackSet = unIncludeVulnerabilitySet.stream().filter(item -> platformBlacks.contains(item.getUuid())).map(Vulnerability::getUuid).collect(Collectors.toCollection(LinkedHashSet::new));
+                        allSet.addAll(blackSet);
+                        block = CollectionUtils.isNotEmpty(allSet);
                     }
-                    //过滤平台级别黑名单
-                    blackSet = unIncludeVulnerabilitySet.stream().filter(item -> platformBlacks.contains(item.getUuid())).map(Vulnerability::getUuid).collect(Collectors.toCollection(LinkedHashSet::new));
-                    allSet.addAll(blackSet);
-                    block = CollectionUtils.isNotEmpty(allSet);
-                }
-            } else if (BlockTypeEnum.BLACK.getType().equals(mutableSecurityPolicyConfiguration.getBlockType())) {
-                if (CollectionUtils.isEmpty(vulnerabilitySet)) {
-                    return false;
-                }
-                //黑名单阻断
-                block = vulnerabilities.stream().anyMatch(item -> repositoryBlacks.contains(item) ||
-                        (!repositoryWhites.contains(item) && platformBlacks.contains(item)));
-            } else if (BlockTypeEnum.PACKAGE_NAME.getType().equals(mutableSecurityPolicyConfiguration.getBlockType())) {
-                //包名阻断
-                List<PackageNameBlock> packageNameBlockList = packageNameBlockService.getPackageNameBlockCache();
-                if (CollectionUtils.isNotEmpty(packageNameBlockList)) {
-                    packageNameBlockList = packageNameBlockList.stream().filter(item -> artifact.getArtifactPath().contains(item.getPackageName())).collect(Collectors.toList());
-                    block = packageNameBlockList.stream().anyMatch(packageNameBlock -> {
-                        if (ConditionTypeEnum.RANGE.getCondition().equals(packageNameBlock.getConditionValue())) {
-                            String artifactVersion = artifact.getArtifactCoordinates().getVersion();
-                            if (StringUtils.isBlank(artifactVersion)) {
-                                return false;
-                            }
-                            long startTime = System.currentTimeMillis();
-                            boolean flag = VersionUtils.versionInRange(artifactVersion, packageNameBlock.getVersion());
-                            long endTime = System.currentTimeMillis();
-                            log.info("比较版本耗时：[{}] 毫秒", endTime - startTime);
-                            return flag;
+                } else if (BlockTypeEnum.BLACK.getType().equals(mutableSecurityPolicyConfiguration.getBlockType())) {
+                    if (CollectionUtils.isEmpty(vulnerabilitySet)) {
+                        return false;
+                    }
+                    //黑名单阻断
+                    block = vulnerabilities.stream().anyMatch(item -> repositoryBlacks.contains(item) ||
+                            (!repositoryWhites.contains(item) && platformBlacks.contains(item)));
+                } else if (BlockTypeEnum.PACKAGE_NAME.getType().equals(mutableSecurityPolicyConfiguration.getBlockType())) {
+                    //包名阻断
+                    List<PackageNameBlock> packageNameBlockList = packageNameBlockService.getPackageNameBlockCache();
+                    if (CollectionUtils.isNotEmpty(packageNameBlockList)) {
+                        packageNameBlockList = packageNameBlockList.stream().filter(item -> artifact.getArtifactPath().contains(item.getPackageName())).collect(Collectors.toList());
+                        if (CollectionUtils.isEmpty(packageNameBlockList)) {
+                            return false;
                         }
-                        return artifact.getArtifactPath().contains(packageNameBlock.getPackageName());
-                    });
+                        block = packageNameBlockList.stream().anyMatch(packageNameBlock -> {
+                            if (ConditionTypeEnum.RANGE.getCondition().equals(packageNameBlock.getConditionValue())) {
+                                String artifactVersion = artifact.getArtifactCoordinates().getVersion();
+                                if (StringUtils.isBlank(artifactVersion)) {
+                                    return false;
+                                }
+                                long startTime = System.currentTimeMillis();
+                                boolean flag = VersionUtils.versionInRange(artifactVersion, packageNameBlock.getVersion());
+                                long endTime = System.currentTimeMillis();
+                                log.debug("比较版本耗时：[{}] 毫秒", endTime - startTime);
+                                return flag;
+                            } else if (ConditionTypeEnum.EQ.getCondition().equals(packageNameBlock.getConditionValue())) {
+                                String artifactVersion = artifact.getArtifactCoordinates().getVersion();
+                                if (StringUtils.isBlank(artifactVersion)) {
+                                    return false;
+                                }
+                                return artifact.getArtifactPath().contains(packageNameBlock.getPackageName()) && artifactVersion.equals(packageNameBlock.getVersion());
+                            }
+                            return artifact.getArtifactPath().contains(packageNameBlock.getPackageName());
+                        });
+                    }
                 }
             }
+        } catch (Exception ex) {
+            log.warn("判断制品 [{}] [{}] [{}] 是否需要阻断错误 [{}]", artifact.getStorageId(), artifact.getRepositoryId(), artifact.getArtifactPath(), ExceptionUtils.getStackTrace(ex));
         }
         return block;
     }

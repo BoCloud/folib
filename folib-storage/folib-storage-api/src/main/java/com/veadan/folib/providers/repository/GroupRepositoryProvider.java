@@ -162,9 +162,10 @@ public class GroupRepositoryProvider
 
     private RepositoryPath resolvePathDirectlyFromGroupPathIfPossible(final RepositoryPath artifactPath)
     {
-        if (Files.exists(artifactPath))
-        {
-            return artifactPath;
+        try {
+            return hostedRepositoryProvider.fetchPath(artifactPath);
+        } catch (Exception ex) {
+            logger.warn(ExceptionUtils.getStackTrace(ex));
         }
         return null;
     }
