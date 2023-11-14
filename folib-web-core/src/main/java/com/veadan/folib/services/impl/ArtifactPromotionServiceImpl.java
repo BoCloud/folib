@@ -716,12 +716,11 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
             final Path fileName = artifactPath.getTarget().getFileName();
             final String baseUrl = StringUtils.chomp(configurationManagementService.getConfiguration().getBaseUrl(), "/");
             final String md5 = artifactPath.getArtifactEntry().getChecksums().get("MD5");
-//            final Long kbps = configurationManagementService.getConfiguration().getKbps();
-            final Long kbps = 1024*1024*200L;
+            final long kbps = Optional.ofNullable(configurationManagementService.getConfiguration().getKbps()).orElse(0L) * (1024*1024);
             final long artifactFileLength = artifactPath.toFile().length();
             String artifactFilePath = artifactPath.toString();
             String artifactFileSliceFolderPath = String.format("%s/artifactSlice%s", StringUtils.chomp(tempPath, "/"), UUID.fastUUID().toString(true));
-            artifactSliceDownloadInfoDto.setUsedSlice(null != kbps && artifactFileLength > kbps);
+            artifactSliceDownloadInfoDto.setUsedSlice(artifactFileLength > kbps);
             artifactSliceDownloadInfoDto.setUsedSlice(true);
             artifactSliceDownloadInfoDto.setArtifactMd5(md5);
 
@@ -746,7 +745,7 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
                             if (null != cacheDto && StringUtils.isNotBlank(md5) && md5.equals(cacheDto.getArtifactMd5())) {
                                 if (CollUtil.isNotEmpty(cacheDto.getDownloadPartList())) {
                                     for (ArtifactSliceDownloadInfoDto.DownloadPartInfo downloadPartInfo : cacheDto.getDownloadPartList()) {
-                                        downloadPartInfo.setDownloadUrl(String.format("%s/%s/%s/%s", baseUrl, storageId, repositoryId, downloadPartInfo.getDownloadUri()));
+                                        downloadPartInfo.setDownloadUrl(String.format("%s/storages/%s/%s/%s", baseUrl, storageId, repositoryId, downloadPartInfo.getDownloadUri()));
                                     }
                                 }
                                 return cacheDto;
@@ -785,7 +784,7 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
                                 final String splitFileStoreUri = String.format("%s/%s", sliceStoreFolderUri, splitFileName);
                                 return template.clone()
                                         .setDownloadUri(splitFileStoreUri)
-                                        .setDownloadUrl(String.format("%s/%s/%s/%s", baseUrl, storageId, repositoryId, splitFileStoreUri));
+                                        .setDownloadUrl(String.format("%s/storages/%s/%s/%s", baseUrl, storageId, repositoryId, splitFileStoreUri));
                             })
                             .collect(Collectors.toList());
                     artifactSliceDownloadInfoDto.setDownloadPartList(downloadPartInfoList);
@@ -800,7 +799,7 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
                 }
             } else {
                 artifactSliceDownloadInfoDto.setDownloadPartList(Collections.singletonList(
-                        template.setDownloadUrl(String.format("%s/%s/%s/%s", baseUrl, storageId, repositoryId, artifactPath.getArtifactEntry().getArtifactPath()))
+                        template.setDownloadUrl(String.format("%s/storages/%s/%s/%s", baseUrl, storageId, repositoryId, artifactPath.getArtifactEntry().getArtifactPath()))
                 ));
             }  
         } catch (BusinessException e) {

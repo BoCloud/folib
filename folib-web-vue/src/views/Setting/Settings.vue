@@ -100,6 +100,17 @@
                   <a-col :span="24"
                          :lg="8">
                     <a-form-item class="mb-10"
+                                 label="网络限速（MB/s）"
+                                 :colon="false">
+                      <a-input placeholder="MB/s" type="number"
+                               v-model="serverSettings.kbps" />
+                    </a-form-item>
+                  </a-col>
+                </a-row>
+                <a-row :gutter="[24]">
+                  <a-col :span="24"
+                         :lg="8">
+                    <a-form-item class="mb-10"
                                  label="Base Url"
                                  :colon="false">
                       <a-input placeholder="http://localhot:38080"
@@ -116,9 +127,11 @@
                     </a-form-item>
                   </a-col>
                 </a-row>
+                
                 <p>说明:</p>
                 <ul class="pl-15 text-muted">
                   <li>应用名称修改会自动修改到配置文件</li>
+                  <li>网络限速，不设置则不限速</li>
                   <li>baseurl,如果你使用了反向代理公网等情况下可以使用它</li>
                   <li>{{instanceName}}-Server服务的后端通信端口</li>
                 </ul>
@@ -1681,6 +1694,7 @@ export default {
         instanceName: 'folib',
         baseUrl: 'http://localhost:38080/',
         port: 38080,
+        kbps: 0,
         advancedConfigurationForm: {
           allowAnonymous: true,
           showChecksum: true,
