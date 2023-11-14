@@ -408,7 +408,7 @@ public class BrowseController
         //TODO: RepositoryFiles.isIndex(repositoryPath) || (
         return (!Files.isHidden(repositoryPath)
                 // 支持Cocoapods索引目录的显示
-                || repositoryPath.toString().contains(".specs")) && !RepositoryFiles.isTrash(repositoryPath)
+                || repositoryPath.toString().contains(".specs") || repositoryPath.toString().contains(".slice")) && !RepositoryFiles.isTrash(repositoryPath)
                 && !RepositoryFiles.isTemp(repositoryPath);
     }
 

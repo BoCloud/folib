@@ -8,6 +8,7 @@ import com.veadan.folib.domain.ArtifactParse;
 import com.veadan.folib.domain.ArtifactPromotion;
 import com.veadan.folib.domain.PromotionNodeOption;
 import com.veadan.folib.dto.ArtifactDto;
+import com.veadan.folib.dto.ArtifactSliceDownloadInfoDto;
 import com.veadan.folib.entity.Dict;
 import com.veadan.folib.services.ArtifactPromotionService;
 import com.veadan.folib.validation.RequestBodyValidationException;
@@ -168,5 +169,14 @@ public class ArtifactPromotionController extends BaseArtifactController {
     public ResponseEntity<String> deleteUploadProcess(@RequestParam("dictType") String dictType, @RequestParam(name = "uuid", required = false) String uuid) {
         artifactPromotionService.deleteUploadProcess(dictType, uuid);
         return ResponseEntity.ok("");
+    }
+
+
+    @GetMapping(value = "/slice/download/info")
+    @PermissionCheck(resourceKey = "ARTIFACTS_RESOLVE")
+    public ResponseEntity<ArtifactSliceDownloadInfoDto> getSliceDownloadInfo(@RequestParam("storageId") String storageId,
+                                                                             @RequestParam("repositoryId") String repositoryId,
+                                                                             @RequestParam("path") String path) {
+        return ResponseEntity.ok(artifactPromotionService.getSliceDownloadInfo(storageId, repositoryId, path));
     }
 }

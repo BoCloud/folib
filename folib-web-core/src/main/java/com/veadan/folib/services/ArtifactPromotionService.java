@@ -5,6 +5,7 @@ import com.veadan.folib.domain.ArtifactParse;
 import com.veadan.folib.domain.ArtifactPromotion;
 import com.veadan.folib.domain.PromotionNodeOption;
 import com.veadan.folib.dto.ArtifactDto;
+import com.veadan.folib.dto.ArtifactSliceDownloadInfoDto;
 import com.veadan.folib.entity.Dict;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.multipart.MultipartFile;
@@ -69,4 +70,13 @@ public interface ArtifactPromotionService {
      */
     ArtifactParse parseArtifact(String storageId, String repositoryId, MultipartFile file);
 
+    /**
+     * 获取制品切片下载信息
+     * @param storageId
+     * @param repositoryId
+     * @param path
+     * @return
+     * @since x.x.x
+     */
+    ArtifactSliceDownloadInfoDto getSliceDownloadInfo(String storageId, String repositoryId, String path);
 }

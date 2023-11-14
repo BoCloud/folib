@@ -16,6 +16,7 @@ import com.veadan.folib.domain.PromotionFileRelativePath;
 import com.veadan.folib.domain.PromotionNodeOption;
 import com.veadan.folib.dto.ArtifactDto;
 import com.veadan.folib.dto.ArtifactPromotionInfoDto;
+import com.veadan.folib.dto.ArtifactSliceDownloadInfoDto;
 import com.veadan.folib.dto.PromotionArtifactDto;
 import com.veadan.folib.dto.PromotionNodeOptionDto;
 import com.veadan.folib.dto.TargetDispatchRepositoryDto;
@@ -30,6 +31,7 @@ import com.veadan.folib.promotion.PromotionUtil;
 import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.providers.io.RepositoryPathResolver;
 import com.veadan.folib.providers.layout.LayoutProviderRegistry;
+import com.veadan.folib.providers.storage.S3FileSystemStorageProvider;
 import com.veadan.folib.repositories.ArtifactRepository;
 import com.veadan.folib.repository.MavenRepositoryFeatures;
 import com.veadan.folib.scanner.common.exception.BusinessException;
@@ -38,10 +40,12 @@ import com.veadan.folib.services.ArtifactManagementService;
 import com.veadan.folib.services.ArtifactMetadataService;
 import com.veadan.folib.services.ArtifactPromotionService;
 import com.veadan.folib.services.ArtifactResolutionService;
+import com.veadan.folib.services.ConfigurationManagementService;
 import com.veadan.folib.services.DictService;
 import com.veadan.folib.services.RepositoryManagementService;
 import com.veadan.folib.storage.repository.Repository;
 import com.veadan.folib.users.userdetails.SpringSecurityUser;
+import com.veadan.folib.utils.FileUtils;
 import com.veadan.folib.utils.PropertiesUtils;
 import com.veadan.folib.utils.UrlUtils;
 import com.veadan.folib.ws.client.handler.command.FolibWsClientArtifactPullCommand;
@@ -76,6 +80,7 @@ import javax.ws.rs.client.Client;
 import javax.ws.rs.client.Invocation;
 import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.Response;
+import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -84,7 +89,9 @@ import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -684,5 +691,100 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
     @Override
     public void deleteUploadProcess(String dictType, String uuid) {
         dictService.deleteDict(Dict.builder().dictType(dictType).dictKey(uuid).build());
+    }
+
+    @Autowired
+    private ConfigurationManagementService configurationManagementService;
+
+    @Override
+    public ArtifactSliceDownloadInfoDto getSliceDownloadInfo(String storageId, String repositoryId, String path) {
+        final ArtifactSliceDownloadInfoDto artifactSliceDownloadInfoDto = new ArtifactSliceDownloadInfoDto();
+        final RepositoryPath artifactPath = repositoryPathResolver.resolve(storageId, repositoryId, path);
+        if (!Files.exists(artifactPath)) {
+            throw new BusinessException("获取制品切片下载信息不存在或已被删除");
+        }
+
+        try {
+            final ArtifactSliceDownloadInfoDto.DownloadPartInfo template = new ArtifactSliceDownloadInfoDto.DownloadPartInfo()
+                    .setStorageId(storageId)
+                    .setRepositoryId(repositoryId)
+                    .setPath(path);
+            final Repository repository = artifactPath.getRepository();
+            final Path fileName = artifactPath.getTarget().getFileName();
+            final String baseUrl = StringUtils.chomp(configurationManagementService.getConfiguration().getBaseUrl(), "/");
+//            final Long kbps = configurationManagementService.getConfiguration().getKbps();
+            final Long kbps = 1024*1024*200L;
+            final long artifactFileLength = artifactPath.toFile().length();
+            String artifactFilePath = artifactPath.toString();
+            String artifactFileSliceFolderPath = String.format("%s/artifactSlice%s", StringUtils.chomp(tempPath, "/"), UUID.fastUUID().toString(true));
+            artifactSliceDownloadInfoDto.setUsedSlice(null != kbps && artifactFileLength > kbps);
+            artifactSliceDownloadInfoDto.setUsedSlice(true);
+
+            if (artifactSliceDownloadInfoDto.getUsedSlice()) {
+                try {
+                    if (S3FileSystemStorageProvider.ALIAS.equals(repository.getStorageProvider())) {
+                        // 由于是网络路径，需要暂存到本地进行暂存
+                        artifactFilePath = String.format("%s/artifactTemp/%s/%s", StringUtils.chomp(tempPath, "/"), UUID.randomUUID().toString(true), fileName);
+                        FileUtil.writeFromStream(new BufferedInputStream(Files.newInputStream(artifactPath)), artifactFilePath);
+                    }
+                    final List<String> splitFilePathList = FileUtils.splitFile(artifactFilePath, artifactFileSliceFolderPath, kbps);
+                    final String artifactParentUri = Optional.of(artifactPath.relativize()).map(p -> {
+                        try {
+                            return p.getParent().toString();
+                        } catch (Exception e) {
+                            return StringUtils.EMPTY;
+                        }
+                    }).get();
+                    final String sliceStoreFolderPath = String.format("%s.slice", StringUtils.isNotBlank(artifactParentUri) ? artifactParentUri+"/":StringUtils.EMPTY);
+                    // 将暂存的文件
+                    final boolean result = splitFilePathList.stream().parallel().allMatch(splitFilePath -> {
+                        final String splitFileName = FileUtil.getName(splitFilePath);
+                        final String splitFileStoreUri = String.format("%s/%s", sliceStoreFolderPath, splitFileName);
+                        final RepositoryPath splitFileStorePath = repositoryPathResolver.resolve(storageId, repositoryId, splitFileStoreUri);
+                        try {
+                            artifactManagementService.store(splitFileStorePath, Files.newInputStream(Path.of(splitFilePath)));
+                        } catch (IOException e) {
+                            log.error("转存切片文件（{} => {}）失败", splitFilePath, splitFileStorePath, e);
+                            return false;
+                        }
+                        return true;
+                    });
+                    if (!result) {
+                        throw new BusinessException("转存切片文件失败");
+                    }
+
+                    // 生成下载路径
+                    final List<ArtifactSliceDownloadInfoDto.DownloadPartInfo> downloadPartInfoList = splitFilePathList.stream()
+                            .map(splitFilePath -> {
+                                final String splitFileName = FileUtil.getName(splitFilePath);
+                                final String splitFileStoreUri = String.format("%s/%s", sliceStoreFolderPath, splitFileName);
+                                return template.clone().setDownloadUrl(String.format("%s/%s/%s/%s", baseUrl, storageId, repositoryId, splitFileStoreUri));
+                            })
+                            .collect(Collectors.toList());
+                    artifactSliceDownloadInfoDto.setDownloadPartList(downloadPartInfoList);
+                } catch (IOException e) {
+                    log.error("切片制品文件失败", e);
+                    throw new BusinessException("切片制品文件失败");
+                }
+            } else {
+                artifactSliceDownloadInfoDto.setDownloadPartList(Collections.singletonList(
+                        template
+                                .setDownloadUrl(artifactFilePath)
+                                .setDownloadUrl(String.format("%s/%s/%s/%s", baseUrl, storageId, repositoryId, artifactPath.getArtifactEntry().getArtifactPath()))
+                ));
+            }  
+        } catch (BusinessException e) {
+            throw e;
+        } catch (Exception e) {
+            log.error("获取制品切片下载信息失败", e);
+            throw new BusinessException("获取制品切片下载信息失败");
+        }
+
+        return artifactSliceDownloadInfoDto;
+    }
+
+    public static void main(String[] args) {
+        
+        System.out.println(Paths.get("dada").getParent().toString());
     }
 }
