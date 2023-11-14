@@ -9,6 +9,7 @@ import com.veadan.folib.event.artifact.ArtifactEventListenerRegistry;
 import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.services.ArtifactManagementService;
 import com.veadan.folib.services.DictService;
+import com.veadan.folib.storage.metadata.MetadataHelper;
 import com.veadan.folib.storage.repository.Repository;
 import com.veadan.folib.util.CacheUtil;
 import com.veadan.folib.utils.ArtifactControllerHelper;
@@ -177,8 +178,11 @@ public abstract class BaseArtifactController
             if (existsCache) {
                 logger.info("存在缓存 storageId [{}] repositoryId [{}]，源制品地址 [{}] 缓存制品地址 [{}]", storageId, repositoryId, sourcePath, targetPath.toString());
                 path = targetPath;
-                artifactComponent.handlerArtifactCacheRecord(repositoryPath, cacheSettings, targetPath);
+                artifactComponent.asyncHandlerArtifactCacheRecord(repositoryPath, cacheSettings, targetPath);
             } else {
+                if (repositoryPath.toString().contains(MetadataHelper.MAVEN_METADATA_XML)) {
+                    return path;
+                }
                 artifactComponent.artifactCache(repositoryPath);
             }
         } catch (Exception ex) {

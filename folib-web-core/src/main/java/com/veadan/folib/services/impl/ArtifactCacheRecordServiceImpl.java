@@ -1,8 +1,11 @@
 package com.veadan.folib.services.impl;
 
 import com.github.pagehelper.PageHelper;
+import com.veadan.folib.components.artifact.ArtifactComponent;
+import com.veadan.folib.domain.CacheSettings;
 import com.veadan.folib.entity.ArtifactCacheRecord;
 import com.veadan.folib.mapper.ArtifactCacheRecordMapper;
+import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.services.ArtifactCacheRecordService;
 import com.veadan.folib.util.FileSizeConvertUtils;
 import com.veadan.folib.utils.SnowflakeIdWorkerUtils;
@@ -12,6 +15,7 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import tk.mybatis.mapper.entity.Example;
@@ -37,6 +41,10 @@ public class ArtifactCacheRecordServiceImpl implements ArtifactCacheRecordServic
 
     @Inject
     private ArtifactCacheRecordMapper artifactCacheRecordMapper;
+
+    @Inject
+    @Lazy
+    private ArtifactComponent artifactComponent;
 
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -165,7 +173,7 @@ public class ArtifactCacheRecordServiceImpl implements ArtifactCacheRecordServic
         if (Objects.isNull(example)) {
             example = Example.builder(ArtifactCacheRecord.class).build();
         }
-        example.setOrderByClause("latest_download_time asc");
+        example.setOrderByClause("latest_download_time asc, size desc");
         PageHelper.startPage(page, limit);
         return artifactCacheRecordMapper.selectByExample(example);
     }
@@ -214,6 +222,44 @@ public class ArtifactCacheRecordServiceImpl implements ArtifactCacheRecordServic
             size = FileSizeConvertUtils.convertBytesWithDecimal(bytesSize, unit);
         }
         return size;
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void verifySourceRepositoryPath(RepositoryPath repositoryPath) {
+        String sourcePath = repositoryPath.toString();
+        String storageId = repositoryPath.getStorageId(), repositoryId = repositoryPath.getRepositoryId();
+        String prefix = String.format("/%s/%s/", storageId, repositoryId);
+        String artifactPath = sourcePath.substring(sourcePath.indexOf(prefix) + prefix.length());
+        ArtifactCacheRecord artifactCacheRecord = ArtifactCacheRecord.builder().storageId(storageId).repositoryId(repositoryId).artifactPath(artifactPath).build();
+        artifactCacheRecord = selectOneArtifactCacheRecord(artifactCacheRecord);
+        if (Objects.nonNull(artifactCacheRecord) && !Files.exists(repositoryPath)) {
+            deleteArtifactCacheRecord(artifactCacheRecord);
+        } else if (!Files.exists(repositoryPath)) {
+            try {
+                CacheSettings cacheSettings = artifactComponent.getCacheConfig();
+                if (Objects.isNull(cacheSettings)) {
+                    return;
+                }
+                boolean flag;
+                String cachePath = String.format("%s/%s/%s/%s", cacheSettings.getDirectoryPath(), storageId, repositoryId, artifactPath);
+                Path artifactCachePath = Path.of(cachePath);
+                if (!Files.exists(artifactCachePath)) {
+                    //缓存制品文件不存在，删除缓存checksum文件
+                    handlerArtifactCacheDelete(artifactCachePath);
+                    return;
+                }
+                //删除缓存制品文件
+                flag = Files.deleteIfExists(artifactCachePath);
+                if (flag) {
+                    //删除缓存checksum文件
+                    handlerArtifactCacheDelete(artifactCachePath);
+                }
+            } catch (Exception ex) {
+                log.error(ExceptionUtils.getStackTrace(ex));
+                throw new RuntimeException(ex.getMessage());
+            }
+        }
     }
 
     private boolean handlerArtifactCacheDelete(Path artifactCachePath) {

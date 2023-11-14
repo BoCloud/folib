@@ -1160,11 +1160,20 @@ public class ArtifactComponent {
     }
 
     @Async("asyncThreadPoolTaskExecutor")
+    public void asyncHandlerArtifactCacheRecord(RepositoryPath repositoryPath, CacheSettings cacheSettings, Path targetPath) {
+        handlerArtifactCacheRecord(repositoryPath, cacheSettings, targetPath);
+    }
+
     public void handlerArtifactCacheRecord(RepositoryPath repositoryPath, CacheSettings cacheSettings, Path targetPath) {
         try {
+            if (Objects.isNull(repositoryPath)) {
+                return;
+            }
             String artifactPath = "", md5, sha1, sha256;
             Long size = 0L;
             Artifact artifact = repositoryPath.getArtifactEntry();
+            String sourcePath = repositoryPath.toString();
+            String storageId = repositoryPath.getStorageId(), repositoryId = repositoryPath.getRepositoryId();
             if (Objects.nonNull(artifact)) {
                 artifactPath = artifact.getArtifactPath();
                 size = artifact.getSizeInBytes();
@@ -1172,14 +1181,20 @@ public class ArtifactComponent {
                 sha1 = artifact.getChecksums().getOrDefault(MessageDigestAlgorithms.SHA_1, "");
                 sha256 = artifact.getChecksums().getOrDefault(MessageDigestAlgorithms.SHA_256, "");
             } else {
-                artifactPath = FilenameUtils.getName(repositoryPath.toString());
+                String prefix = String.format("/%s/%s/", storageId, repositoryId);
+                artifactPath = sourcePath.substring(sourcePath.indexOf(prefix) + prefix.length());
+                size = Files.size(repositoryPath);
                 md5 = getChecksum(repositoryPath, "md5");
                 sha1 = getChecksum(repositoryPath, "sha1");
                 sha256 = getChecksum(repositoryPath, "sha256");
             }
-            ArtifactCacheRecord artifactCacheRecord = ArtifactCacheRecord.builder().storageId(repositoryPath.getStorageId())
-                    .repositoryId(repositoryPath.getRepositoryId()).artifactPath(artifactPath).size(size).md5(md5).sha1(sha1).sha256(sha256)
+            ArtifactCacheRecord artifactCacheRecord = ArtifactCacheRecord.builder().storageId(storageId)
+                    .repositoryId(repositoryId).artifactPath(artifactPath).size(size).md5(md5).sha1(sha1).sha256(sha256)
                     .cacheDirectoryPath(cacheSettings.getDirectoryPath()).cachePath(targetPath.toString()).build();
+            if (!Files.exists(repositoryPath)) {
+                artifactCacheRecordService.verifySourceRepositoryPath(repositoryPath);
+                return;
+            }
             handlerArtifactCacheRecord(artifactCacheRecord);
         } catch (Exception ex) {
             log.warn("处理制品缓存记录失败：[{}]", ExceptionUtils.getStackTrace(ex));

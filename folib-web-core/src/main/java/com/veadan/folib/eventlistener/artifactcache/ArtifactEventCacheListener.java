@@ -10,6 +10,7 @@ import com.veadan.folib.event.artifact.ArtifactEventTypeEnum;
 import com.veadan.folib.providers.io.RepositoryFiles;
 import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.services.ArtifactCacheRecordService;
+import com.veadan.folib.storage.metadata.MetadataHelper;
 import com.veadan.folib.util.FileSizeConvertUtils;
 import com.veadan.folib.util.StripedLockUtils;
 import lombok.extern.slf4j.Slf4j;
@@ -61,6 +62,9 @@ public class ArtifactEventCacheListener {
             return;
         }
         try {
+            if (repositoryPath.toString().contains(MetadataHelper.MAVEN_METADATA_XML)) {
+                return;
+            }
             if (ArtifactEventTypeEnum.EVENT_ARTIFACT_FILE_CACHE.getType() == artifactEventTypeEnum.getType() && !artifactExists(repositoryPath)) {
                 return;
             }

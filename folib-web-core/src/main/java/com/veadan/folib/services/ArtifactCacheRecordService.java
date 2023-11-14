@@ -1,6 +1,7 @@
 package com.veadan.folib.services;
 
 import com.veadan.folib.entity.ArtifactCacheRecord;
+import com.veadan.folib.providers.io.RepositoryPath;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -88,4 +89,10 @@ public interface ArtifactCacheRecordService {
      * @throws Exception 异常
      */
     BigDecimal artifactCacheDirectoryUseSize(String directoryPath, String unit) throws Exception;
+
+    /**
+     * 校验制品
+     * @param repositoryPath 制品
+     */
+    void verifySourceRepositoryPath(RepositoryPath repositoryPath);
 }
