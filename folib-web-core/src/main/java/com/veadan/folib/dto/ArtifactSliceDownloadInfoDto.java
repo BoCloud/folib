@@ -15,6 +15,7 @@ import java.util.List;
 public class ArtifactSliceDownloadInfoDto {
     
     private Boolean usedSlice;
+    private String artifactMd5;
     private List<DownloadPartInfo> downloadPartList; 
     
     
@@ -24,6 +25,7 @@ public class ArtifactSliceDownloadInfoDto {
         private String storageId;
         private String repositoryId;
         private String path;
+        private String downloadUri;
         private String downloadUrl;
 
         @Override
