@@ -66,7 +66,6 @@ public class FolibWsClientRunManage extends FolibWsRunManage {
             FOLIB_WS_RUN_MAP.put(nodeName, folibWsServerRun);
             final String url = folibWsServerRun.getWsUrl();
             final WebSocketSession webSocketSession = WEB_SOCKET_CLIENT.doHandshake(new FolibWsClientMessageHandler(), url).get();
-//            final WebSocketSession webSocketSession = webSocketClient.doHandshake(new FolibWsClientMessageHandler(), url).get();
             log.info("【FolibWs服务端运行管理器-启动】连接到节点（{}:{}）成功", host, port);
             folibWsServerRun.setSession(webSocketSession);
             folibWsServerRun.setOnlineTime(LocalDateTime.now());

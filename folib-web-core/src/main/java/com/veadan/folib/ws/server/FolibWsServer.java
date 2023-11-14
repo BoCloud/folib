@@ -10,6 +10,7 @@ import com.veadan.folib.ws.server.handler.dispatch.FolibWsServerCommandDispatch;
 import com.veadan.folib.ws.server.manage.FolibWsServerRunManage;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.stereotype.Component;
 
 import javax.websocket.OnClose;
@@ -35,6 +36,9 @@ public class FolibWsServer {
     protected ConfigurationManager configurationManager;
 //    @Autowired
 //    private FolibWsServerCommandDispatch folibWsServerCommandDispatch;
+
+    @Autowired
+    private ThreadPoolTaskExecutor asyncWsCommandThreadPoolTaskExecutor;
 
     @OnOpen
     public void onOpen(@PathParam("nodeName") String nodeName, Session session) {
@@ -72,20 +76,22 @@ public class FolibWsServer {
 
     @OnMessage
     public void onMessage(@PathParam("nodeName") String nodeName, String message, Session session) {
-        try {
-            final FolibWsAction folibWsAction = JSON.parseObject(message, FolibWsAction.class);
-            FolibWsSessionContextHolder.setContextSessionInfo(new FolibWsServerContextInfo()
-                    .setNodeName(nodeName)
-                    .setSyncId(folibWsAction.getSyncId())
-                    .setWsRunInfo(FolibWsServerRunManage.findRunBySession(session)));
-            FolibWsServerCommandDispatch.dispatch(folibWsAction);
-        } catch (Exception e) {
-            log.error("解析来自FolibWs客户端的消息（{}）失败", message, e);
-        } finally {
-            FolibWsSessionContextHolder.removeContextSessionInfo();
-        }
-
-        log.info("服务端收到客户端消息，nodeName = {}  {} message = {}", nodeName, message, session.getId());
+        asyncWsCommandThreadPoolTaskExecutor.submit(() -> {
+            try {
+                final FolibWsAction folibWsAction = JSON.parseObject(message, FolibWsAction.class);
+                FolibWsSessionContextHolder.setContextSessionInfo(new FolibWsServerContextInfo()
+                        .setNodeName(nodeName)
+                        .setSyncId(folibWsAction.getSyncId())
+                        .setWsRunInfo(FolibWsServerRunManage.findRunBySession(session)));
+                FolibWsServerCommandDispatch.dispatch(folibWsAction);
+            } catch (Exception e) {
+                log.error("解析来自FolibWs客户端的消息（{}）失败", message, e);
+            } finally {
+                FolibWsSessionContextHolder.removeContextSessionInfo();
+            }
+    
+            log.info("服务端收到客户端消息，nodeName = {}  {} message = {}", nodeName, message, session.getId());
+        });
     }
 
     @OnError

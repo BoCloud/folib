@@ -226,6 +226,24 @@ public class AsyncPoolConfig {
     @Value("${folib.threadPool.asyncDownloadArtifact.awaitTerminationSeconds}")
     private Integer asyncDownloadArtifactAwaitTerminationSeconds;
 
+    @Value("${folib.threadPool.asyncWsCommand.corePoolSize}")
+    private Integer asyncWsCommandArtifactCorePoolSize;
+
+    @Value("${folib.threadPool.asyncWsCommand.maxPoolSize}")
+    private Integer asyncWsCommandArtifactMaxPoolSize;
+
+    @Value("${folib.threadPool.asyncWsCommand.queueCapacity}")
+    private Integer asyncWsCommandArtifactQueueCapacity;
+
+    @Value("${folib.threadPool.asyncWsCommand.keepAliveSeconds}")
+    private Integer asyncWsCommandArtifactKeepAliveSeconds;
+
+    @Value("${folib.threadPool.asyncWsCommand.threadNamePrefix}")
+    private String asyncWsCommandArtifactThreadNamePrefix;
+
+    @Value("${folib.threadPool.asyncWsCommand.awaitTerminationSeconds}")
+    private Integer asyncWsCommandArtifactAwaitTerminationSeconds;
+
     @Bean
     public ThreadPoolTaskExecutor asyncThreadPoolTaskExecutor() {
         return buildThreadPoolTaskExecutor(asyncCorePoolSize, asyncMaxPoolSize, asyncQueueCapacity, asyncKeepAliveSeconds, asyncThreadNamePrefix, asyncAwaitTerminationSeconds);
@@ -309,6 +327,16 @@ public class AsyncPoolConfig {
                 asyncDownloadArtifactKeepAliveSeconds,
                 asyncDownloadArtifactThreadNamePrefix,
                 asyncDownloadArtifactAwaitTerminationSeconds);
+    }
+    @Bean
+    public ThreadPoolTaskExecutor asyncWsCommandThreadPoolTaskExecutor() {
+        return buildThreadPoolTaskExecutor(
+                asyncWsCommandArtifactCorePoolSize,
+                asyncWsCommandArtifactMaxPoolSize,
+                asyncWsCommandArtifactQueueCapacity,
+                asyncWsCommandArtifactKeepAliveSeconds,
+                asyncWsCommandArtifactThreadNamePrefix,
+                asyncWsCommandArtifactAwaitTerminationSeconds);
     }
 
     /**

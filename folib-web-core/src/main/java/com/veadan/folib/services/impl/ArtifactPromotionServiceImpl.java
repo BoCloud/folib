@@ -741,12 +741,15 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
         if (!Files.exists(artifactPath)) {
             throw new BusinessException("需要获取切片下载信息的制品不存在或已被删除");
         }
+        if (Files.isDirectory(artifactPath)) {
+            return null;
+        }
 
         try {
             final Repository repository = artifactPath.getRepository();
             final Path fileName = artifactPath.getTarget().getFileName();
             final String baseUrl = StringUtils.chomp(configurationManagementService.getConfiguration().getBaseUrl(), "/");
-            final String md5 = artifactPath.getArtifactEntry().getChecksums().get("MD5");
+            final String md5 = null != artifactPath.getArtifactEntry() ? Optional.ofNullable(artifactPath.getArtifactEntry().getChecksums()).orElse(Collections.emptyMap()).get("MD5"):null;
             final long kbps = Optional.ofNullable(configurationManagementService.getConfiguration().getKbps()).orElse(0L) * (1024*1024);
             final long artifactFileLength = artifactPath.toFile().length();
             String artifactFilePath = artifactPath.toString();
@@ -794,14 +797,15 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
                     final List<String> splitFilePathList = FileUtils.splitFile(artifactFilePath, artifactFileSliceFolderPath, kbps);
                     
                     // 将暂存的文件
-                    final boolean result = splitFilePathList.stream().parallel().allMatch(splitFilePath -> {
+                    log.info("splitFilePathList>>> {}", JSON.toJSONString(splitFilePathList));
+                    final boolean result = splitFilePathList.stream()./*parallel().*/allMatch(splitFilePath -> {
                         final String splitFileName = FileUtil.getName(splitFilePath);
                         final String splitFileStoreUri = String.format("%s/%s", sliceStoreFolderUri, splitFileName);
-                        final RepositoryPath splitFileStorePath = repositoryPathResolver.resolve(storageId, repositoryId, splitFileStoreUri);
                         try {
+                            final RepositoryPath splitFileStorePath = repositoryPathResolver.resolve(storageId, repositoryId, splitFileStoreUri);
                             artifactManagementService.store(splitFileStorePath, Files.newInputStream(Path.of(splitFilePath)));
                         } catch (IOException e) {
-                            log.error("转存切片文件（{} => {}）失败", splitFilePath, splitFileStorePath, e);
+                            log.error("转存切片文件（{} => {}）失败", splitFilePath, splitFileStoreUri, e);
                             return false;
                         }
                         return true;
@@ -831,9 +835,11 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
                     throw new BusinessException("切片制品文件失败");
                 }
             } else {
+                final String artifactUri = String.format("%s/%s/%s", storageId, repositoryId, artifactPath.relativize());
                 artifactSliceDownloadInfoDto.setDownloadPartList(Collections.singletonList(
                         new ArtifactSliceDownloadInfoRes.DownloadPartInfo()
-                                .setDownloadUrl(String.format("%s/storages/%s/%s/%s", baseUrl, storageId, repositoryId, artifactPath.getArtifactEntry().getArtifactPath()))
+                                .setDownloadUri(artifactUri)
+                                .setDownloadUrl(String.format("%s/storages/%s", baseUrl, artifactUri))
                 ));
             }  
         } catch (BusinessException e) {
@@ -848,6 +854,6 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
 
     @Override
     public List<ArtifactSliceDownloadInfoRes> batchQuerySliceDownloadInfo(List<ArtifactSliceDownloadInfoReq> models) {
-        return models.stream().map(this::querySliceDownloadInfo).collect(Collectors.toList());
+        return models.stream().map(this::querySliceDownloadInfo).filter(Objects::nonNull).collect(Collectors.toList());
     }
 }
