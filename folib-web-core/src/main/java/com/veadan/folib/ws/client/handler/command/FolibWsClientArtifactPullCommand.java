@@ -99,7 +99,6 @@ public class FolibWsClientArtifactPullCommand implements FolibWsClientCommand<Pr
     public void execute(PromotionNodeOption promotionNodeOption) {
         try {
             log.info("进入拉模式={}", true);
-            // http://10.8.10.38:38080/Cocoapods-Local/Cocoapods-Local/AFNetworking/3.2.0/AFNetworking-3.2.0.tar.gz
             final String sourcePath = promotionNodeOption.getSourcePath();
             final String targetPath = promotionNodeOption.getTargetPath();
             final String srcStorageId = parsePath(sourcePath)[0];
