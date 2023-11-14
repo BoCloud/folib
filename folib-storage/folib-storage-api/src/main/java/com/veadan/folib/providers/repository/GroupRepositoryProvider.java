@@ -86,7 +86,7 @@ public class GroupRepositoryProvider
     {
         eventPublisher.publishEvent(new GroupRepositoryPathFetchEvent(repositoryPath));
 
-        if (RepositoryFiles.isMetadata(repositoryPath) && repositoryPath.toString().endsWith(MetadataHelper.MAVEN_METADATA_XML)) {
+        if (Objects.nonNull(repositoryPath) && repositoryPath.toString().endsWith(MetadataHelper.MAVEN_METADATA_XML)) {
             RepositoryPath result = resolvePathDirectlyFromGroupPathIfPossible(repositoryPath);
             if (result != null)
             {
