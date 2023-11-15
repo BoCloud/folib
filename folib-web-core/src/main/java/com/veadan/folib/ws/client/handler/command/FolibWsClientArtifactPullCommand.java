@@ -146,7 +146,7 @@ public class FolibWsClientArtifactPullCommand implements FolibWsClientCommand<Pr
             batchQueryArtifactSupportSliceDownloadQueryRequest.body(bodyJsonStr);
             final HttpResponse sliceDownloadInfosQueryRes = batchQueryArtifactSupportSliceDownloadQueryRequest.execute();
             if (!sliceDownloadInfosQueryRes.isOk()) {
-                log.error("批量查询制品切片下载信息失败（{}）", bodyJsonStr);
+                log.error("批量查询制品切片下载信息失败（{}:{}）", bodyJsonStr, sliceDownloadInfosQueryRes.body());
                 throw new BusinessException("批量查询制品切片下载信息失败");
             }
             final String sliceDownloadInfosJson = sliceDownloadInfosQueryRes.body();
