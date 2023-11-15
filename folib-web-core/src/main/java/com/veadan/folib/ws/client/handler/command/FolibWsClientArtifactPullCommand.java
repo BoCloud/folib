@@ -65,8 +65,8 @@ import static com.veadan.folib.utils.UrlUtils.parsePath;
 public class FolibWsClientArtifactPullCommand implements FolibWsClientCommand<PromotionNodeOption> {
     public static final String COMMAND = "/client/artifact/pull";
     private static final String API_ARTIFACT_FOLIB_PROMOTION_GET_FILE_RELATIVE_PATHS = "/api/artifact/folib/promotion/getFileRelativePaths";
-    private static final String BATCH_QUERY_ARTIFACT_SUPPORT_SLICE_DOWNLOAD_URL = "/api/artifact/folib/promotion/batch/support/slice/download";
-    private static final String BATCH_QUERY_ARTIFACT_GET_SLICE_DOWNLOAD_INFO_URL = "/api/artifact/folib/promotion/batch/slice/download/info";
+    private static final String BATCH_QUERY_ARTIFACT_SUPPORT_SLICE_DOWNLOAD_URL = "/api/artifact/folib/promotion/batch/query/support/slice/download";
+    private static final String BATCH_QUERY_ARTIFACT_GET_SLICE_DOWNLOAD_INFO_URL = "/api/artifact/folib/promotion/batch/query/slice/download/info";
 
     @Autowired
     private ArtifactPromotionService artifactPromotionService;

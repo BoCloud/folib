@@ -13,7 +13,9 @@ import com.veadan.folib.model.response.ArtifactSliceDownloadInfoRes;
 import com.veadan.folib.entity.Dict;
 import com.veadan.folib.model.request.ArtifactSupportSliceDownloadQueryReq;
 import com.veadan.folib.services.ArtifactPromotionService;
+import com.veadan.folib.storage.repository.Repository;
 import com.veadan.folib.validation.RequestBodyValidationException;
+import com.veadan.folib.web.RepositoryMapping;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import lombok.extern.slf4j.Slf4j;
@@ -24,6 +26,7 @@ import org.springframework.validation.BindingResult;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -175,24 +178,31 @@ public class ArtifactPromotionController extends BaseArtifactController {
     }
 
 
-    @PostMapping(value = "/support/slice/download")
+    @GetMapping(value = "/slice/file/download/{storageId}/{repositoryId}/{artifactPath:.+}")
+    public ResponseEntity<Boolean> sliceDownload(@RepositoryMapping Repository repository,
+                                                 @PathVariable String artifactPath, HttpServletResponse response) {
+        return ResponseEntity.ok(artifactPromotionService.sliceFileDownload(repository, artifactPath, response));
+    }
+
+    @PostMapping(value = "/query/support/slice/download")
     @PermissionCheck(resourceKey = "ARTIFACTS_RESOLVE")
     public ResponseEntity<Boolean> querySupportSliceDownload(@RequestBody @Validated ArtifactSupportSliceDownloadQueryReq model) {
         return ResponseEntity.ok(artifactPromotionService.querySupportSliceDownload(model));
     }
 
-    @PostMapping(value = "/batch/support/slice/download")
+    @PostMapping(value = "/batch/query/support/slice/download")
     @PermissionCheck(resourceKey = "ARTIFACTS_RESOLVE")
     public ResponseEntity<Map<String, Boolean>> batchQuerySupportSliceDownload(@RequestBody @Validated List<ArtifactSupportSliceDownloadQueryReq> models) {
         return ResponseEntity.ok(artifactPromotionService.batchQuerySupportSliceDownload(models));
     }
-    @PostMapping(value = "/slice/download/info")
+    
+    @PostMapping(value = "/query/slice/download/info")
     @PermissionCheck(resourceKey = "ARTIFACTS_RESOLVE")
     public ResponseEntity<ArtifactSliceDownloadInfoRes> querySliceDownloadInfo(@RequestBody ArtifactSliceDownloadInfoReq model) {
-        return ResponseEntity.ok(artifactPromotionService.querySliceDownloadInfo(model));
+        return ResponseEntity.ok(artifactPromotionService.querySliceDownloadInfoStoreTemp(model));
     }
 
-    @PostMapping(value = "/batch/slice/download/info")
+    @PostMapping(value = "/batch/query/slice/download/info")
     @PermissionCheck(resourceKey = "ARTIFACTS_RESOLVE")
     public ResponseEntity<List<ArtifactSliceDownloadInfoRes>> batchQuerySliceDownloadInfo(@RequestBody List<ArtifactSliceDownloadInfoReq> models) {
         return ResponseEntity.ok(artifactPromotionService.batchQuerySliceDownloadInfo(models));

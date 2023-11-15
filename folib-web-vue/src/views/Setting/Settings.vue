@@ -100,9 +100,9 @@
                   <a-col :span="24"
                          :lg="8">
                     <a-form-item class="mb-10"
-                                 label="网络限速（MB/s）"
+                                 label="制品传输切片大小（MB）"
                                  :colon="false">
-                      <a-input placeholder="MB/s" type="number"
+                      <a-input placeholder="MB" type="number"
                                v-model="serverSettings.kbps" />
                     </a-form-item>
                   </a-col>
