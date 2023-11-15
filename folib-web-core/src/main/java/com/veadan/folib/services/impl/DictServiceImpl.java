@@ -36,6 +36,9 @@ public class DictServiceImpl implements DictService {
     @Override
     @Transactional(rollbackFor = Exception.class)
     public void saveDict(Dict dict) {
+        if (StringUtils.isBlank(dict.getDictType()) || StringUtils.isBlank(dict.getDictKey())) {
+            return;
+        }
         dict.setCreateTime(new Date());
         dict.setComment(handlerComment(dict));
         dictMapper.insertSelective(dict);
@@ -140,6 +143,9 @@ public class DictServiceImpl implements DictService {
 
     @Override
     public Dict selectLatestOneDict(Dict dict) {
+        if (Objects.nonNull(dict.getId())) {
+            return dictMapper.selectByPrimaryKey(dict.getId());
+        }
         Example example = Example.builder(Dict.class).build();
         Example.Criteria criteria = example.createCriteria();
         criteria.andEqualTo("dictType", dict.getDictType());

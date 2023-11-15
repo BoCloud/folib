@@ -217,7 +217,7 @@ s3fs:
 #  region: sh1a
   region: folib
 #  uri: s3://s3.sh1a.qingstor.com
-  uri: s3://192.168.5.100:9000
+  uri: s3://192.168.5.118:9000
   access:
 #    key: HRKZYMEFVAJMZMMUXBNG
     key: admin

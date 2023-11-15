@@ -538,7 +538,7 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
             return null;
         }
         DirectoryListing directoryListing = directoryListingService.fromRepositoryPath(repositoryPath);
-        List<FileContent> fileContents = directoryListing.getFiles().stream().filter(file -> !(file.getName().endsWith(".sha256"))).collect(Collectors.toList());
+        List<FileContent> fileContents = directoryListing.getFiles().stream().filter(file -> DockerArtifactCoordinates.include(file.getName())).collect(Collectors.toList());
         if (CollectionUtils.isEmpty(fileContents)) {
             return null;
         }
@@ -970,7 +970,7 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
         if (rootFile.exists()) {
             if (null == rootFile.listFiles() && rootFile.isFile()) {
                 if (dockerLayout && !rootFile.getName().contains("sha256")) {
-                    log.info("file：{} is a docker layout file", rootFile.getName());
+                    log.info("file：{} not is a docker layout file", rootFile.getName());
                     return Collections.emptyList();
                 }
                 resultList.add(rootFile);
@@ -994,7 +994,7 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
                             continue;
                         }
                         if (dockerLayout && !f.getName().contains("sha256")) {
-                            log.info("file：{} is a docker layout file", f.getName());
+                            log.info("file：{} not is a docker layout file", f.getName());
                             continue;
                         }
                         resultList.add(f);
@@ -1022,7 +1022,7 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
                             continue;
                         }
                         if (dockerLayout && !f.getName().contains("sha256")) {
-                            log.info("file：{} is a docker layout file", f.getName());
+                            log.info("file：{} not is a docker layout file", f.getName());
                             continue;
                         }
                         log.info("file:{}", f.getAbsolutePath());
@@ -1102,7 +1102,7 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
         S3Iterator s3Iterator = new S3Iterator(s3Path);
         if (!s3Iterator.hasNext()) {
             if (dockerLayout && !s3Path.getFileName().toString().contains("sha256")) {
-                log.info("s3 file：{} is a docker layout file", s3Path);
+                log.info("s3 file：{} not is a docker layout file", s3Path);
                 return listFile;
             }
             listFile.add(s3Path);
@@ -1125,7 +1125,7 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
                     continue;
                 }
                 if (dockerLayout && !s3PathTemp.getFileName().toString().contains("sha256")) {
-                    log.info("s3 file：{} is a docker layout file", s3PathTemp);
+                    log.info("s3 file：{} not is a docker layout file", s3PathTemp);
                     continue;
                 }
                 log.info("s3 file {}", s3PathTemp);
@@ -1150,7 +1150,7 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
                         continue;
                     }
                     if (dockerLayout && !s3PathTemp.getFileName().toString().contains("sha256")) {
-                        log.info("s3 file：{} is a docker layout file", s3PathTemp);
+                        log.info("s3 file：{} not is a docker layout file", s3PathTemp);
                         continue;
                     }
                     log.info("s3 file {}", s3PathTemp);
@@ -1221,7 +1221,7 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
         if (CollectionUtils.isEmpty(s3FilesPaths)) {
             return "";
         }
-        List<S3Path> fileContents = s3FilesPaths.stream().filter(file -> !(file.toAbsolutePath().endsWith(".sha256"))).collect(Collectors.toList());
+        List<S3Path> fileContents = s3FilesPaths.stream().filter(file -> DockerArtifactCoordinates.include(file.toAbsolutePath().toString())).collect(Collectors.toList());
         S3Path filePath = fileContents.get(0);
         String[] array = filePath.getKey().split(File.separator);
         manifestBuilder.append(array[array.length - 1]);
@@ -1232,7 +1232,7 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
         if (CollectionUtils.isEmpty(fileList)) {
             return "";
         }
-        List<File> fileContents = fileList.stream().filter(file -> !(file.getName().endsWith(".sha256"))).collect(Collectors.toList());
+        List<File> fileContents = fileList.stream().filter(file -> DockerArtifactCoordinates.include(file.getName())).collect(Collectors.toList());
         File file = fileContents.get(0);
         manifestBuilder.append(file.getName());
         return Files.readString(file.toPath());

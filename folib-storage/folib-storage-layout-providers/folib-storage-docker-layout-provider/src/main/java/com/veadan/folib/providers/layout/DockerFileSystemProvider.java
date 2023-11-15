@@ -62,13 +62,12 @@ public class DockerFileSystemProvider
                        boolean force)
             throws IOException {
         RepositoryPath repositoryPath = (RepositoryPath) path;
-
         logger.info("Removing {}...", repositoryPath);
         handlerManifestAndBlob(repositoryPath, force);
         super.delete(repositoryPath, force);
         RepositoryPath parent = repositoryPath.getParent();
         try {
-            if (!Files.isSameFile(repositoryPath.getRoot(), parent) && Files.exists(parent) && Files.list(parent).count() == 0) {
+            if (Files.exists(parent) && !Files.isSameFile(repositoryPath.getRoot(), parent) && Files.list(parent).count() == 0) {
                 Files.deleteIfExists(parent);
                 logger.info("Delete parent root path {}", parent.toString());
             }
@@ -102,7 +101,7 @@ public class DockerFileSystemProvider
         }
         if (Objects.isNull(currentManifestPath)) {
             //当前版本下manifest文件信息
-            List<Path> pathList = Files.list(repositoryPath).filter(f -> !Files.isDirectory(f) && !f.getFileName().toString().endsWith(".sha256") && f.getFileName().toString().startsWith("sha256")).collect(Collectors.toList());
+            List<Path> pathList = Files.list(repositoryPath).filter(f -> !Files.isDirectory(f) && DockerArtifactCoordinates.isManifestPath(f)).collect(Collectors.toList());
             if (CollectionUtils.isNotEmpty(pathList)) {
                 currentManifestPath = pathList.get(0);
             }
@@ -142,7 +141,7 @@ public class DockerFileSystemProvider
             List<LayerManifest> layerManifestExistList = Lists.newArrayList();
             //过滤找出其他版本的manifest文件信息
             List<String> manifestConfigList = Lists.newArrayList();
-            Files.list(manifestRootRepositoryPath).filter(f -> !Files.isDirectory(f) && f.getFileName().toString().startsWith("sha256") && !f.getFileName().toString().endsWith(".sha256") && !f.getFileName().toString().equals(currentManifestPath.getFileName().toString()) && imageManifestDigestList.stream().noneMatch(f.getFileName().toString()::equals)).forEach(f -> {
+            Files.list(manifestRootRepositoryPath).filter(f -> !Files.isDirectory(f) && DockerArtifactCoordinates.isManifestPath(f) && !f.getFileName().toString().equals(currentManifestPath.getFileName().toString()) && imageManifestDigestList.stream().noneMatch(f.getFileName().toString()::equals)).forEach(f -> {
                 logger.info("其他版本的manifest文件名：{}", f.getFileName().toString());
                 RepositoryPath itemManifestRepositoryPath = parent.resolve(manifest + File.separator + f.getFileName().toString());
                 try {

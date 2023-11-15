@@ -7,6 +7,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import com.veadan.folib.artifact.archive.JarArchiveListingFunction;
+import com.veadan.folib.artifact.coordinates.DockerArtifactCoordinates;
 import com.veadan.folib.artifact.coordinates.PypiArtifactCoordinates;
 import com.veadan.folib.cloud.storage.s3fs.S3Path;
 import com.veadan.folib.components.common.CommonComponent;
@@ -279,10 +280,10 @@ public class ArtifactComponent {
             String manifest = "manifest";
             String path = repositoryPath.toAbsolutePath().toString();
             if (Boolean.TRUE.equals(block)) {
-                if (path.contains("sha256") && !path.endsWith(".sha256")) {
+                if (DockerArtifactCoordinates.include(path)) {
                     flag = true;
                 }
-            } else if (path.contains("sha256") && !path.contains(blobs) && !path.contains(manifest) && !path.endsWith(".sha256")) {
+            } else if (path.contains("sha256") && !path.contains(blobs) && !path.contains(manifest) && DockerArtifactCoordinates.include(path)) {
                 flag = true;
             }
         } else if (repositoryPath.getFileSystem() instanceof MavenFileSystem) {
@@ -354,7 +355,7 @@ public class ArtifactComponent {
                 log.debug("docker布局");
                 String blobs = "blobs";
                 String manifest = "manifest";
-                if (filePath.contains("sha256") && !filePath.contains(blobs) && !filePath.contains(manifest) && !filePath.endsWith(".sha256")) {
+                if (filePath.contains("sha256") && !filePath.contains(blobs) && !filePath.contains(manifest) && DockerArtifactCoordinates.include(filePath)) {
                     flag = true;
                 }
             } else if (Maven2LayoutProvider.ALIAS.equals(layout)) {
@@ -503,7 +504,7 @@ public class ArtifactComponent {
             if (isDockerLayout) {
                 String manifest = "manifest";
                 String path = artifact.getUuid();
-                if (path.contains("sha256") && !path.endsWith(".sha256") && path.contains(manifest)) {
+                if (DockerArtifactCoordinates.include(path) && path.contains(manifest)) {
                     String keywords = path.substring(path.lastIndexOf("manifest/") + "manifest/".length());
                     vulnerabilitySet = artifactRepository.fetchVulnerabilitiesByKeywords(storageId, repositoryId, keywords);
                 }

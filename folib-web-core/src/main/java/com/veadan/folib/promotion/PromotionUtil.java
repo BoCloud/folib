@@ -6,6 +6,7 @@ import cn.hutool.extra.spring.SpringUtil;
 import cn.hutool.json.JSONUtil;
 import com.alibaba.fastjson.JSON;
 import com.google.common.collect.Lists;
+import com.veadan.folib.artifact.coordinates.DockerArtifactCoordinates;
 import com.veadan.folib.cloud.storage.s3fs.S3FileSystem;
 import com.veadan.folib.cloud.storage.s3fs.S3Path;
 import com.veadan.folib.components.artifact.ArtifactComponent;
@@ -420,7 +421,7 @@ public class PromotionUtil {
                     promotionArtifactDto.getSrcStorageId(),
                     promotionArtifactDto.getSrcRepostoryId());
             RepositoryPath srcPath = repositoryPathResolver.resolve(srcRepositoryPath.getStorageId(), srcRepositoryPath.getRepositoryId(), relativePath);
-            if (RepositoryFiles.isChecksum(srcPath)) {
+            if (RepositoryFiles.isChecksum(srcPath) || RepositoryFiles.isArtifactMetadata(srcPath)) {
                 log.warn(String.format("RepositoryPath：%s is checksum file skip", srcPath));
                 continue;
             }
@@ -477,7 +478,7 @@ public class PromotionUtil {
                     promotionArtifactDto.getSrcStorageId(),
                     promotionArtifactDto.getSrcRepostoryId());
             RepositoryPath srcPath = repositoryPathResolver.resolve(promotionArtifactDto.getSrcStorageId(), promotionArtifactDto.getSrcRepostoryId(), relativePath);
-            if (RepositoryFiles.isChecksum(srcPath)) {
+            if (RepositoryFiles.isChecksum(srcPath) || RepositoryFiles.isArtifactMetadata(srcPath)) {
                 log.warn(String.format("RepositoryPath：%s is checksum file skip", srcPath));
                 continue;
             }
@@ -510,7 +511,7 @@ public class PromotionUtil {
             if (arrayPath.length != 2) {
                 return;
             }
-            List<File> fileContents = list.stream().filter(file -> !(file.getName().endsWith(".sha256"))).collect(Collectors.toList());
+            List<File> fileContents = list.stream().filter(file -> DockerArtifactCoordinates.isManifestPath(file.getName())).collect(Collectors.toList());
             File file = fileContents.get(0);
             RepositoryPath repositoryPath = repositoryPathResolver.resolve(srcRepository.getStorage().getId(), srcRepository.getId(), String.format("%s/%s", relativizePath, file.getName()));
             List<ImageManifest> imageManifestList = dockerComponent.getImageManifests(repositoryPath);
@@ -548,14 +549,14 @@ public class PromotionUtil {
             int fPathIndex = fPath.lastIndexOf(tempStr);
             String temp = fPath.substring(fPathIndex).replace(tempStr, "");
             RepositoryPath destPath = repositoryPathResolver.resolve(destRepository.getStorage().getId(), destRepository.getId(), temp);
-            if (RepositoryFiles.isChecksum(destPath)) {
+            if (RepositoryFiles.isChecksum(destPath) || RepositoryFiles.isArtifactMetadata(destPath)) {
                 log.warn(String.format("RepositoryPath：%s is checksum file skip", destPath));
                 continue;
             }
             log.info("temp {}   destPath {}", temp, destPath.toString());
             boolean isDocker = DockerLayoutProvider.ALIAS.equalsIgnoreCase(srcRepository.getLayout());
             if (isDocker) {
-                if (!file.getName().contains("sha256") && !file.getName().endsWith(".sha256")) {
+                if (!file.getName().contains("sha256") && !DockerArtifactCoordinates.exclude(file.getName())) {
                     Files.copy(Paths.get(file.getAbsolutePath()), destPath, StandardCopyOption.REPLACE_EXISTING);
                     continue;
                 }
@@ -589,7 +590,7 @@ public class PromotionUtil {
             if (arrayPath.length != 2) {
                 return;
             }
-            List<S3Path> fileContents = s3FilesPaths.stream().filter(file -> !(file.toAbsolutePath().endsWith(".sha256"))).collect(Collectors.toList());
+            List<S3Path> fileContents = s3FilesPaths.stream().filter(file -> DockerArtifactCoordinates.include(file.toAbsolutePath().toString())).collect(Collectors.toList());
             S3Path filePath = fileContents.get(0);
             RepositoryPath repositoryPath = repositoryPathResolver.resolve(srcRepository.getStorage().getId(), srcRepository.getId(), String.format("%s/%s", relativizePath, filePath.getFileName().toString()));
             List<ImageManifest> imageManifestList = dockerComponent.getImageManifests(repositoryPath);
@@ -629,7 +630,7 @@ public class PromotionUtil {
             int fPathIndex = fPath.lastIndexOf(tempStr);
             String temp = fPath.substring(fPathIndex, fPath.length()).replace(tempStr, "");
             RepositoryPath uploadPath = repositoryPathResolver.resolve(destRepository.getStorage().getId(), destRepository.getId(), temp);
-            if (RepositoryFiles.isChecksum(uploadPath)) {
+            if (RepositoryFiles.isChecksum(uploadPath) || RepositoryFiles.isArtifactMetadata(uploadPath)) {
                 log.warn(String.format("RepositoryPath：%s is checksum file skip", uploadPath));
                 continue;
             }

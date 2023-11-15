@@ -6,17 +6,13 @@ import com.veadan.folib.cloud.storage.s3fs.S3Iterator;
 import com.veadan.folib.cloud.storage.s3fs.S3Path;
 import com.veadan.folib.providers.io.RepositoryPath;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.exception.ExceptionUtils;
+import org.apache.commons.lang3.StringUtils;
 
 import java.io.File;
-import java.io.IOException;
 import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 @Slf4j
 public class RepositoryPathUtil {
@@ -24,7 +20,9 @@ public class RepositoryPathUtil {
         List<S3Path> listFile = new ArrayList<S3Path>();
         List<S3Path> listDir = new ArrayList<S3Path>();
         if (Files.exists(s3Path) && !Files.isDirectory(s3Path)) {
-            listFile.add(s3Path);
+            if (!exclude(s3Path.getFileName().toString())) {
+                listFile.add(s3Path);
+            }
         }
         S3Iterator s3Iterator = new S3Iterator(s3Path);
         while (s3Iterator.hasNext()) {
@@ -32,7 +30,9 @@ public class RepositoryPathUtil {
             if (s3PathTemp.getFileAttributes() == null || s3PathTemp.getFileAttributes().isDirectory()) {
                 listDir.add(s3PathTemp);
             } else {
-                listFile.add(s3PathTemp);
+                if (!exclude(s3PathTemp.getFileName().toString())) {
+                    listFile.add(s3PathTemp);
+                }
             }
         }
         while (listDir.size() != 0) {
@@ -44,8 +44,10 @@ public class RepositoryPathUtil {
                 if (s3PathTemp.getFileAttributes() == null || s3PathTemp.getFileAttributes().isDirectory()) {
                     listDir.add(s3PathTemp);
                 } else {
-                    log.info("s3 file {}", s3PathTemp);
-                    listFile.add(s3PathTemp);
+                    if (!exclude(s3PathTemp.getFileName().toString())) {
+                        log.info("s3 file {}", s3PathTemp);
+                        listFile.add(s3PathTemp);
+                    }
                 }
             }
         }
@@ -66,7 +68,9 @@ public class RepositoryPathUtil {
 
         if (file.exists()) {
             if (null == file.listFiles()) {
-                resultList.add(file);
+                if (!exclude(file.getName())) {
+                    resultList.add(file);
+                }
                 return resultList;
             }
             for (File f : file.listFiles()) {
@@ -74,8 +78,10 @@ public class RepositoryPathUtil {
                     list.add(f);
                     folderNum++;
                 } else {
-                    resultList.add(f);
-                    fileNum++;
+                    if (!exclude(f.getName())) {
+                        resultList.add(f);
+                        fileNum++;
+                    }
                 }
             }
             while (!list.isEmpty()) {
@@ -89,9 +95,11 @@ public class RepositoryPathUtil {
                         list.add(f);
                         folderNum++;
                     } else {
-                        log.info("文件:{}", f.getAbsolutePath());
-                        resultList.add(f);
-                        fileNum++;
+                        if (!exclude(f.getName())) {
+                            log.info("文件:{}", f.getAbsolutePath());
+                            resultList.add(f);
+                            fileNum++;
+                        }
                     }
                 }
             }
@@ -118,7 +126,9 @@ public class RepositoryPathUtil {
                 if (temp.startsWith("/")) {
                     temp = temp.substring(1, temp.length());
                 }
-                list.add(temp);
+                if (!exclude(file.getFileName().toString())) {
+                    list.add(temp);
+                }
             }
 
         } else {
@@ -131,10 +141,25 @@ public class RepositoryPathUtil {
                 if (temp.startsWith("/")) {
                     temp = temp.substring(1, temp.length());
                 }
-                list.add(temp);
+                if (!exclude(file.getName())) {
+                    list.add(temp);
+                }
             }
         }
         return list;
     }
 
+    private static boolean exclude(String name) {
+        if (StringUtils.isBlank(name)) {
+            return true;
+        }
+        if (name.startsWith(".") && name.endsWith(".metadata")) {
+            return true;
+        }
+        String dsStore = ".DS_Store";
+        if (dsStore.equalsIgnoreCase(name)) {
+            return true;
+        }
+        return false;
+    }
 }

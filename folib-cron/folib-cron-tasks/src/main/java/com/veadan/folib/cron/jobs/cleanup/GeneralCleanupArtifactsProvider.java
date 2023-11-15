@@ -73,7 +73,7 @@ public class GeneralCleanupArtifactsProvider implements CleanupArtifactsProvider
                 RepositoryPath parent = null;
                 try {
                     parent = repositoryPath.getParent();
-                    if (!Files.isSameFile(repositoryPath.getRoot(), parent) && Files.exists(parent) && Files.list(parent).count() == 0) {
+                    if (Files.exists(parent) && !Files.isSameFile(repositoryPath.getRoot(), parent) && Files.list(parent).count() == 0) {
                         Files.deleteIfExists(parent);
                         log.info("Delete parent root path {}", parent.toString());
                     }

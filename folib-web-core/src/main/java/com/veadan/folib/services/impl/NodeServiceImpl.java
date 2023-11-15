@@ -44,4 +44,9 @@ public class NodeServiceImpl implements NodeService {
     public String queryReplicationFactor(String keySpace) {
         return cassandraComponent.queryReplicationFactor(keySpace);
     }
+
+    @Override
+    public void modifyGcGraceSeconds(Integer seconds) {
+        cassandraComponent.modifyGcGraceSeconds(seconds);
+    }
 }

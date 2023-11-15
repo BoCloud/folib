@@ -376,7 +376,7 @@ public class CleanupDockerRepositoryCronJob extends JavaCronJob {
             return null;
         }
         //当前版本下manifest文件信息
-        List<Path> pathList = Files.list(repositoryPath).filter(f -> !Files.isDirectory(f) && !f.getFileName().toString().endsWith(".sha256") && f.getFileName().toString().startsWith("sha256")).collect(Collectors.toList());
+        List<Path> pathList = Files.list(repositoryPath).filter(f -> !Files.isDirectory(f) && DockerArtifactCoordinates.isManifestPath(f)).collect(Collectors.toList());
         if (CollectionUtils.isEmpty(pathList)) {
             log.warn("Clean docker artifact job repository [{}] [{}] manifest [{}] not exists, The image is damaged and will be deleted", repositoryPath.getStorageId(), repositoryPath.getRepositoryId(), repositoryPath);
             return null;

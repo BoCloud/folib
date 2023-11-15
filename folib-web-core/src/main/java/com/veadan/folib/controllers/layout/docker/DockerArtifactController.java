@@ -6,6 +6,7 @@ import cn.hutool.core.lang.UUID;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
 import com.google.common.collect.Lists;
+import com.veadan.folib.artifact.coordinates.DockerArtifactCoordinates;
 import com.veadan.folib.cloud.storage.s3fs.S3Iterator;
 import com.veadan.folib.cloud.storage.s3fs.S3Path;
 import com.veadan.folib.cluster.ClusterProperties;
@@ -764,7 +765,7 @@ public class DockerArtifactController extends BaseArtifactController {
             S3Path imagePath = null;
             while (iterators.hasNext()) {
                 S3Path itemS3Path = iterators.next();
-                if (!itemS3Path.endsWith(".sha256")) {
+                if (DockerArtifactCoordinates.include(itemS3Path.getFileName().toString())) {
                     imagePath = itemS3Path;
                     break;
                 }
@@ -774,7 +775,7 @@ public class DockerArtifactController extends BaseArtifactController {
             }
         } else {
             DirectoryListing directoryListing = directoryListingService.fromRepositoryPath(repositoryPath);
-            List<FileContent> fileContents = directoryListing.getFiles().stream().filter(file -> !(file.getName().endsWith(".sha256"))).collect(Collectors.toList());
+            List<FileContent> fileContents = directoryListing.getFiles().stream().filter(file -> DockerArtifactCoordinates.include(file.getName())).collect(Collectors.toList());
             FileContent fileContent = fileContents.get(0);
             artifactPath = fileContent.getArtifactPath();
         }
@@ -1063,7 +1064,7 @@ public class DockerArtifactController extends BaseArtifactController {
                 return manifest;
             }
             DirectoryListing directoryListing = directoryListingService.fromRepositoryPath(repositoryPath);
-            List<FileContent> fileContents = directoryListing.getFiles().stream().filter(file -> !(file.getName().endsWith(".sha256"))).collect(Collectors.toList());
+            List<FileContent> fileContents = directoryListing.getFiles().stream().filter(file -> DockerArtifactCoordinates.include(file.getName())).collect(Collectors.toList());
             FileContent fileContent = fileContents.get(0);
             artifact = artifactRepository.findOneArtifact(storageId, repositoryId, fileContent.getArtifactPath());
         } catch (Exception e) {

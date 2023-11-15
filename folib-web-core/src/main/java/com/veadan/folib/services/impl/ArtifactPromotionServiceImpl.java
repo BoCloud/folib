@@ -4,6 +4,7 @@ import cn.hutool.core.io.FileUtil;
 import cn.hutool.core.lang.UUID;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
+import com.veadan.folib.cloud.storage.s3fs.util.UriUtils;
 import com.veadan.folib.components.artifact.ArtifactComponent;
 import com.veadan.folib.components.promotion.ArtifactPromotionProvider;
 import com.veadan.folib.components.promotion.ArtifactPromotionProviderRegistry;
@@ -174,7 +175,7 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
         if (!srcRepository.getType().equals("hosted")) {
             throw new Exception("The source RepositoryId does not local");
         }
-
+        artifactPromotion.setPath(UriUtils.decode(artifactPromotion.getPath()));
         final RepositoryPath srcRepositoryPath = repositoryPathResolver.resolve(srcRepository, artifactPromotion.getPath());
         if (!Files.exists(srcRepositoryPath)) {
             throw new Exception("The source path does not exist!");
@@ -228,8 +229,8 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
     @Override
     public ResponseEntity nodeOption(PromotionNodeOption promotionNodeOption, HttpServletRequest request) {
         try {
-            String sourcePath = StringUtils.removeEnd(promotionNodeOption.getSourcePath(), "/");
-            String targetPath = StringUtils.removeEnd(promotionNodeOption.getTargetPath(), "/");
+            String sourcePath = UriUtils.decode(StringUtils.removeEnd(promotionNodeOption.getSourcePath(), "/"));
+            String targetPath = UriUtils.decode(StringUtils.removeEnd(promotionNodeOption.getTargetPath(), "/"));
             String srcStorageId = parsePath(sourcePath)[0];
             String srcRepostoryId = parsePath(sourcePath)[1];
             String srcUrl = sourcePath.split("/" + srcStorageId + "/" + srcRepostoryId + "/")[0];
@@ -556,6 +557,11 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
     @Override
     public ResponseEntity artifactDispatch(ArtifactDispatch artifactDispatch) {
         log.info("start artifact dispatch");
+        try {
+            artifactDispatch.setPath(UriUtils.decode(artifactDispatch.getPath()));
+        } catch (Exception ex) {
+            log.warn(ExceptionUtils.getStackTrace(ex));
+        }
         Map<String, List<TargetDispatchRepositoryDto>> groupByMap = artifactDispatch.getTargetDispatchRepositoryList().stream().collect(Collectors.groupingBy(TargetDispatchRepositoryDto::getArtifactoryRepositoryType));
         for (Map.Entry<String, List<TargetDispatchRepositoryDto>> item : groupByMap.entrySet()) {
             ArtifactPromotionProvider artifactPromotionProvider = artifactPromotionProviderRegistry.getProvider(item.getKey());

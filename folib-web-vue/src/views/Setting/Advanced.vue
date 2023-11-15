@@ -131,7 +131,7 @@
                     :color="singleDict.comment.indexOf('完成') !== -1 ? 'green' : singleDict.comment.indexOf('错误') !== -1 ? 'red' : 'orange'">
                     {{ singleDict.comment }}
                     <a-popconfirm title="确定要更改状态吗？" okType="danger" ok-text="确定" cancel-text="取消"
-                      @confirm="updateSingleDict(2, singleDict.id, '手动结束')">
+                      @confirm="updateSingleDict(3, singleDict.id, '手动结束')">
                       <a-icon type="unlock" theme="filled" v-if="singleDict.comment.indexOf('中') !== -1" />
                     </a-popconfirm>
                   </a-tag>

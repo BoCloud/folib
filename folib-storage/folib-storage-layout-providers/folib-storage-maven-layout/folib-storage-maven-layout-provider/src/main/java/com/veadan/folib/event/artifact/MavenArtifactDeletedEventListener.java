@@ -46,7 +46,7 @@ public class MavenArtifactDeletedEventListener
             }
             String artifactPath = path.replace(String.format(format, storageId, repositoryId), "");
             RepositoryPath repositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, artifactPath);
-            if (Files.isSameFile(repositoryPath.getRoot(), repositoryPath.getParent())) {
+            if (Files.exists(repositoryPath.getParent()) && Files.isSameFile(repositoryPath.getRoot(), repositoryPath.getParent())) {
                 return;
             }
             artifactMetadataService.rebuildMetadata(storageId, repositoryId, artifactPath);
