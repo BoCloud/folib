@@ -18,6 +18,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.xml.XmlMapper;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
+import com.veadan.folib.artifact.coordinates.DockerArtifactCoordinates;
+import com.veadan.folib.artifact.coordinates.MavenArtifactCoordinates;
 import com.veadan.folib.authorization.dto.Role;
 import com.veadan.folib.cloud.storage.s3fs.S3FileSystem;
 import com.veadan.folib.cloud.storage.s3fs.S3Iterator;
@@ -30,6 +32,8 @@ import com.veadan.folib.constant.GlobalConstants;
 import com.veadan.folib.controllers.ResponseMessage;
 import com.veadan.folib.controllers.cluster.dto.SyncMetadataDto;
 import com.veadan.folib.domain.*;
+import com.veadan.folib.domain.thirdparty.ArtifactInfo;
+import com.veadan.folib.domain.thirdparty.ArtifactQuery;
 import com.veadan.folib.entity.Dict;
 import com.veadan.folib.enums.ArtifactMetadataEnum;
 import com.veadan.folib.enums.DictTypeEnum;
@@ -45,8 +49,11 @@ import com.veadan.folib.providers.io.RepositoryFiles;
 import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.providers.io.RepositoryPathResolver;
 import com.veadan.folib.providers.io.RootRepositoryPath;
-import com.veadan.folib.providers.layout.*;
+import com.veadan.folib.providers.layout.DockerLayoutProvider;
+import com.veadan.folib.providers.layout.LayoutProviderRegistry;
+import com.veadan.folib.providers.layout.Maven2LayoutProvider;
 import com.veadan.folib.repositories.ArtifactRepository;
+import com.veadan.folib.scanner.common.msg.TableResultResponse;
 import com.veadan.folib.scanner.entity.ScanRules;
 import com.veadan.folib.scanner.mapper.ScanRulesMapper;
 import com.veadan.folib.services.*;
@@ -61,6 +68,7 @@ import com.veadan.folib.util.CustomDateUtils;
 import com.veadan.folib.util.FileSizeConvertUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.springframework.beans.BeanUtils;
@@ -79,15 +87,15 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.multipart.commons.CommonsMultipartFile;
+import org.springframework.web.util.UriComponentsBuilder;
 import tk.mybatis.mapper.entity.Example;
 
 import javax.inject.Inject;
 import javax.servlet.http.HttpServletResponse;
 import javax.transaction.Transactional;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.*;
+import java.net.URI;
+import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -547,19 +555,28 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
      * @param repositoryId 仓库名称
      * @param artifactPath 制品路径
      * @return RepositoryPath
-     * @throws Exception 异常
      */
-    private Artifact resolvePath(String storageId, String repositoryId, String artifactPath) throws Exception {
-        RepositoryPath repositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, artifactPath);
-        Artifact artifact = Objects.nonNull(repositoryPath) ? repositoryPath.getArtifactEntry() : null;
-        if (Objects.isNull(artifact)) {
-            //兼容已存在数据的docker布局仓库
-            Repository repository = configurationManagementService.getConfiguration().getRepository(storageId, repositoryId);
-            if (DockerLayoutProvider.ALIAS.equalsIgnoreCase(repository.getLayout())) {
-                //docker
-                artifact = getDockerArtifact(artifactPath, storageId, repositoryId);
-                return artifact;
+    private Artifact resolvePath(String storageId, String repositoryId, String artifactPath) {
+        Artifact artifact = null;
+        try {
+            RepositoryPath repositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, artifactPath);
+            artifact = Objects.nonNull(repositoryPath) ? repositoryPath.getArtifactEntry() : null;
+            if (Objects.isNull(artifact)) {
+                artifactPath = URLDecoder.decode(artifactPath, StandardCharsets.UTF_8);
+                repositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, artifactPath);
+                artifact = Objects.nonNull(repositoryPath) ? repositoryPath.getArtifactEntry() : null;
             }
+            if (Objects.isNull(artifact)) {
+                //兼容已存在数据的docker布局仓库
+                Repository repository = configurationManagementService.getConfiguration().getRepository(storageId, repositoryId);
+                if (DockerLayoutProvider.ALIAS.equalsIgnoreCase(repository.getLayout())) {
+                    //docker
+                    artifact = getDockerArtifact(artifactPath, storageId, repositoryId);
+                    return artifact;
+                }
+            }
+        } catch (Exception ex) {
+            log.warn(ExceptionUtils.getStackTrace(ex));
         }
         return artifact;
     }
@@ -716,6 +733,87 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
         return ArtifactStatistics.builder().artifactsCount(artifactsCount).artifactsVulnerabilitiesCount(artifactsVulnerabilitiesCount).artifactsNormalCount(artifactsCount - artifactsVulnerabilitiesCount)
                 .criticalVulnerabilitiesCount(criticalVulnerabilitiesCount).highVulnerabilitiesCount(highVulnerabilitiesCount).mediumVulnerabilitiesCount(mediumVulnerabilitiesCount)
                 .lowVulnerabilitiesCount(lowVulnerabilitiesCount).suppressedVulnerabilitiesCount(suppressedVulnerabilitiesCount).vulnerabilitiesCount(vulnerabilitiesCount).artifactsBytes(artifactsBytes).build();
+    }
+
+    @Override
+    public TableResultResponse<ArtifactInfo> thirdPartyPage(ArtifactQuery artifactQuery) {
+        Integer page = artifactQuery.getPage(), limit = artifactQuery.getLimit();
+        String searchKeyword = artifactQuery.getSearchKeyword();
+        if (Objects.isNull(page)) {
+            page = 1;
+        }
+        if (Objects.isNull(limit)) {
+            limit = 5;
+        }
+        Pageable pageable;
+        if (page == 1) {
+            pageable = PageRequest.of(page, limit).first();
+        } else {
+            pageable = PageRequest.of(page, limit).previous();
+        }
+        TableResultResponse<ArtifactInfo> tableResultResponse = new TableResultResponse<ArtifactInfo>(0, null);
+        Page<Artifact> artifactPage = artifactRepository.findMatchingForThirdParty(pageable, searchKeyword);
+        if (Objects.nonNull(artifactPage) && CollectionUtils.isNotEmpty(artifactPage.getContent())) {
+            String baseUrl = configurationManagementService.getConfiguration().getBaseUrl();
+            List<ArtifactInfo> artifactInfoList = Lists.newArrayList();
+            ArtifactInfo artifactInfo = null;
+            Repository repository = null;
+            String download = "";
+            RepositoryPath repositoryPath = null;
+            for (Artifact artifact : artifactPage.getContent()) {
+                repositoryPath = repositoryPathResolver.resolve(artifact.getStorageId(), artifact.getRepositoryId(), artifact.getArtifactPath());
+                artifactInfo = ArtifactInfo.builder().build();
+                artifactInfo.setRepo(String.format("%s/%s", artifact.getStorageId(), artifact.getRepositoryId()));
+                artifactInfo.setPath(artifact.getArtifactPath());
+                artifactInfo.setName(artifact.getArtifactName());
+                repository = getRepository(artifact.getStorageId(), artifact.getRepositoryId());
+                if (Objects.nonNull(repository) && Maven2LayoutProvider.ALIAS.equals(repository.getLayout())) {
+                    if (artifact.getArtifactCoordinates() instanceof MavenArtifactCoordinates) {
+                        MavenArtifactCoordinates mavenArtifactCoordinates = (MavenArtifactCoordinates) artifact.getArtifactCoordinates();
+                        artifactInfo.setName(String.format("%s:%s", mavenArtifactCoordinates.getGroupId(), mavenArtifactCoordinates.getArtifactId()));
+                    }
+                } else if (Objects.nonNull(repository) && DockerLayoutProvider.ALIAS.equals(repository.getLayout())) {
+                    if (artifact.getArtifactCoordinates() instanceof DockerArtifactCoordinates) {
+                        DockerArtifactCoordinates dockerArtifactCoordinates = (DockerArtifactCoordinates) artifact.getArtifactCoordinates();
+                        artifactInfo.setPath(dockerArtifactCoordinates.getIMAGE_NAME());
+                        artifactInfo.setName(dockerArtifactCoordinates.getName());
+                    }
+                }
+                artifactInfo.setDownload(getDownload(baseUrl, artifact.getStorageId(), artifact.getRepositoryId(), repository.getLayout(), repositoryPath, artifact));
+                artifactInfo.setCreated(Date.from(artifact.getCreated().atZone(ZoneId.of("Asia/Shanghai")).toOffsetDateTime().toInstant()));
+                artifactInfo.setUpdated(Date.from(artifact.getLastUpdated().atZone(ZoneId.of("Asia/Shanghai")).toOffsetDateTime().toInstant()));
+                artifactInfo.setVersion(artifact.getArtifactCoordinates().getVersion());
+                artifactInfo.setFormat(repository.getLayout());
+                artifactInfo.setRepoType(repository.getType());
+                artifactInfoList.add(artifactInfo);
+            }
+            tableResultResponse = new TableResultResponse<ArtifactInfo>(artifactPage.getTotalElements(), artifactInfoList);
+        }
+        return tableResultResponse;
+    }
+
+    private String getDownload(String baseUrl, String storageId, String repositoryId, String layout, RepositoryPath repositoryPath, Artifact artifact) {
+        try {
+            String storage = "storages";
+            if (DockerLayoutProvider.ALIAS.equals(layout)) {
+                if (artifact.getArtifactCoordinates() instanceof DockerArtifactCoordinates) {
+                    DockerArtifactCoordinates dockerArtifactCoordinates = (DockerArtifactCoordinates) artifact.getArtifactCoordinates();
+                    baseUrl = StringUtils.removeEnd(baseUrl, "/");
+                    return String.format("%s/%s/%s/%s/%s/%s/%s", baseUrl, "v2", storageId, repositoryId, dockerArtifactCoordinates.getName(), "manifests", dockerArtifactCoordinates.getTAG());
+                }
+                return "";
+            }
+            URI artifactResource = RepositoryFiles.resolveResource(repositoryPath);
+            return UriComponentsBuilder.fromUri(URI.create(baseUrl))
+                    .pathSegment(storage, storageId, repositoryId, "/")
+                    .build()
+                    .toUri()
+                    .resolve(artifactResource)
+                    .toURL().toString();
+        } catch (Exception ex) {
+            log.warn("获取repositoryPath [{}] URI错误：[{}]", repositoryPath.toString(), ExceptionUtils.getStackTrace(ex));
+        }
+        return "";
     }
 
     /**
@@ -975,14 +1073,6 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
                         if (Boolean.TRUE.equals(metadata)) {
                             handlerMetadata(artifactPath, repositoryPath);
                         }
-                        if (NpmLayoutProvider.ALIAS.equals(repository.getLayout()) && RepositoryTypeEnum.HOSTED.getType().equals(repository.getType()) && repositoryPath.toString().endsWith(NpmLayoutProvider.DEFAULT_SUFFIX)) {
-                            LayoutProvider layoutProvider = layoutProviderRegistry.getProvider(repository.getLayout());
-                            if (Objects.nonNull(layoutProvider)) {
-                                byte[] packageJsonBytes = layoutProvider.getContentByFileName(repositoryPath, repositoryPath, NpmLayoutProvider.PACKAGE_JSON);
-                                String packageJson = new String(packageJsonBytes, StandardCharsets.UTF_8);
-                                promotionUtil.setPackageInfo(repositoryPath, packageJson);
-                            }
-                        }
                         artifactManagementService.validateAndStoreIndex(repositoryPath);
                         if (Maven2LayoutProvider.ALIAS.equals(repository.getLayout())) {
                             try {
@@ -1104,14 +1194,6 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
                         }
                         if (Boolean.TRUE.equals(metadata)) {
                             handlerMetadata(artifactPath, repositoryPath);
-                        }
-                        if (NpmLayoutProvider.ALIAS.equals(repository.getLayout()) && RepositoryTypeEnum.HOSTED.getType().equals(repository.getType()) && repositoryPath.toString().endsWith(NpmLayoutProvider.DEFAULT_SUFFIX)) {
-                            LayoutProvider layoutProvider = layoutProviderRegistry.getProvider(repository.getLayout());
-                            if (Objects.nonNull(layoutProvider)) {
-                                byte[] packageJsonBytes = layoutProvider.getContentByFileName(repositoryPath, repositoryPath, NpmLayoutProvider.PACKAGE_JSON);
-                                String packageJson = new String(packageJsonBytes, StandardCharsets.UTF_8);
-                                promotionUtil.setPackageInfo(repositoryPath, packageJson);
-                            }
                         }
                         artifactManagementService.validateAndStoreIndex(repositoryPath);
                         if (Maven2LayoutProvider.ALIAS.equals(repository.getLayout())) {
@@ -1294,9 +1376,26 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
                 }
                 promotionUtil.setMetaData(repositoryPath, JSONObject.toJSONString(itemMetadataJson));
             }
+            String fileName = "." + FilenameUtils.getName(repositoryPath.getFileName().toString()) + ".metadata";
+            RepositoryPath artifactMetadataRepositoryPath = repositoryPath.getParent().resolve(fileName);
+            if (Files.exists(artifactMetadataRepositoryPath)) {
+                try (InputStream inputStream = Files.newInputStream(artifactMetadataRepositoryPath);
+                     ObjectInputStream objectInputStream = new ObjectInputStream(inputStream)) {
+                    Artifact artifact = (Artifact) objectInputStream.readObject();
+                    if (Objects.nonNull(artifact) && StringUtils.isNotBlank(artifact.getMetadata())) {
+                        promotionUtil.setMetaData(repositoryPath, artifact.getMetadata());
+                    }
+                } catch (Exception ex) {
+                    log.warn("解析制品 [{}] 本地缓存.metadata文件错误", ExceptionUtils.getStackTrace(ex));
+                }
+            }
         } catch (Exception ex) {
             log.error("handlerArtifact sync metadata path：{}，error：{}", repositoryPath.toString(), ExceptionUtils.getStackTrace(ex));
         }
+    }
+
+    private Repository getRepository(String storageId, String repositoryId) {
+        return configurationManagementService.getConfiguration().getRepository(storageId, repositoryId);
     }
 
 }

@@ -62,6 +62,7 @@ public class CommonComponent {
     public void updateServerSettings(ServerSettingsForm serverSettingsForm) throws Exception {
         configurationManagementService.setBaseUrl(serverSettingsForm.getBaseUrl());
         configurationManagementService.setPort(serverSettingsForm.getPort());
+        configurationManagementService.setKbps(serverSettingsForm.getKbps());
         configurationManagementService.setInstanceName(serverSettingsForm.getInstanceName());
         if (serverSettingsForm.getCorsConfigurationForm() != null) {
             configurationManagementService.setCorsAllowedOrigins(

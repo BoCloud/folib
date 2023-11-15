@@ -179,6 +179,9 @@
                   </template>
                   <a-row :gutter="[24]">
                     <a-col :span="24">
+                      <a-tag color="#f50" class="mb-10 ml-15" v-if="janusGraphInfo.exceptionalIndexSet && janusGraphInfo.exceptionalIndexSet.length > 0">
+                        注意， {{janusGraphInfo.exceptionalIndexSet }} 索引未生效，请检查索引信息！
+                      </a-tag>
                       <prism-editor class="metadata-prism-editor" v-model="janusGraphInfo.schema"
                         :highlight="highlighterHandle" :line-numbers="true" :readonly="true">
                       </prism-editor>
@@ -237,6 +240,11 @@
                     <p>该功能用于查看、删除实例操作，下方为实例列表</p>
                   </template>
                   <a-row :gutter="[24]">
+                    <a-col :span="24">
+                      <a-tag color="#f50" class="mb-10" v-if="janusGraphInfo.instanceStatus !== 'normal'">
+                        注意，集群节点数量为[{{janusGraphInfo.clusterNodeTotal}}]，实例数量存在异常，请检查实例信息！
+                      </a-tag>
+                    </a-col>
                     <a-col :span="6" v-for="(instance, index) in janusGraphInfo.openInstances" :key="index">
                       <a-tag :color="instance.indexOf('(current)') !== -1 ? 'red' : 'green'">
                         {{ instance }}
@@ -300,6 +308,9 @@ export default {
       },
       janusGraphInfo: {
         openInstances: [],
+        exceptionalIndexSet: [],
+        clusterNodeTotal: 0,
+        instanceStatus: '',
         schema: '',
       },
       janusGraphIndexForm: {

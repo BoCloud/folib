@@ -36,6 +36,11 @@ public class MutableConfiguration
     private int port = 48080;
 
     /**
+     * 节点传输速率（Kbs）
+     */
+    private Long kbps;
+
+    /**
      * The global proxy settings to use when no per-repository proxy settings have been defined.
      */
     private MutableProxyConfiguration proxyConfiguration;
@@ -124,6 +129,14 @@ public class MutableConfiguration
 
     public void setPort(int port) {
         this.port = port;
+    }
+
+    public Long getKbps() {
+        return kbps;
+    }
+
+    public void setKbps(Long kbps) {
+        this.kbps = kbps;
     }
 
     public MutableProxyConfiguration getProxyConfiguration() {

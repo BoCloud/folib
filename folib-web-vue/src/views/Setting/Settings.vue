@@ -100,6 +100,17 @@
                   <a-col :span="24"
                          :lg="8">
                     <a-form-item class="mb-10"
+                                 label="网络限速（MB/s）"
+                                 :colon="false">
+                      <a-input placeholder="MB/s" type="number"
+                               v-model="serverSettings.kbps" />
+                    </a-form-item>
+                  </a-col>
+                </a-row>
+                <a-row :gutter="[24]">
+                  <a-col :span="24"
+                         :lg="8">
+                    <a-form-item class="mb-10"
                                  label="Base Url"
                                  :colon="false">
                       <a-input placeholder="http://localhot:38080"
@@ -116,9 +127,11 @@
                     </a-form-item>
                   </a-col>
                 </a-row>
+                
                 <p>说明:</p>
                 <ul class="pl-15 text-muted">
                   <li>应用名称修改会自动修改到配置文件</li>
+                  <li>网络限速，不设置则不限速</li>
                   <li>baseurl,如果你使用了反向代理公网等情况下可以使用它</li>
                   <li>{{instanceName}}-Server服务的后端通信端口</li>
                 </ul>
@@ -1300,10 +1313,20 @@
                       slot-scope="text, record">
                     {{ record.isThisCluster === true ? '是' : '否' }}
                   </div>
+                  <div slot="wsClientOnline"
+                      slot-scope="text, record">
+                    <span v-if="record.wsClientOnline && record.wsClientOnline === true" class="text-success">在线</span>
+                    <span v-else class="text-danger">离线</span>
+<!--                    {{ record.online && record.online === true ? '在线' : '离线' }}-->
+                  </div>
+                  <div slot="autoRegister"
+                      slot-scope="text, record">
+                    {{ record.autoRegister && record.autoRegister === true ? '自动' : '手动' }}
+                  </div>
 
                   <div slot="operation"
                       slot-scope="text, record">
-                    <div class="col-action">
+                    <div class="col-action" v-if="!record.autoRegister">
                       <a-popconfirm title="确定要删除吗？"
                                     okType="danger"
                                     ok-text="确定"
@@ -1671,6 +1694,7 @@ export default {
         instanceName: 'folib',
         baseUrl: 'http://localhost:38080/',
         port: 38080,
+        kbps: 0,
         advancedConfigurationForm: {
           allowAnonymous: true,
           showChecksum: true,
@@ -1761,6 +1785,20 @@ export default {
           key: 'isThisCluster',
           width: 80,
           scopedSlots: { customRender: 'isThisCluster' }
+        },
+        {
+          title: '在线状态',
+          dataIndex: 'wsClientOnline',
+          key: 'wsClientOnline',
+          width: 80,
+          scopedSlots: { customRender: 'wsClientOnline' }
+        },
+        {
+          title: '添加方式',
+          dataIndex: 'autoRegister',
+          key: 'autoRegister',
+          width: 80,
+          scopedSlots: { customRender: 'autoRegister' }
         },
         {
           title: '操作',

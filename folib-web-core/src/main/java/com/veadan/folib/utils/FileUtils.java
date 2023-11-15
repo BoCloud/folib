@@ -1,14 +1,18 @@
 package com.veadan.folib.utils;
 
 import cn.hutool.extra.spring.SpringUtil;
+import org.opencypher.v9_0.expressions.functions.E;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.*;
+import java.nio.ByteBuffer;
 import java.nio.MappedByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 
 /**
@@ -30,14 +34,14 @@ public class FileUtils {
      *
      * @return
      */
-    public String getTempPath() {
+    public static String getTempPath() {
         return SpringUtil.getProperty("folib.temp");
     }
 
     /**
      * @return basePath
      */
-    public String getBasePath() {
+    public static String getBasePath() {
         return getTempPath() + "/";
     }
 
@@ -234,4 +238,76 @@ public class FileUtils {
         return String.format("%.1f %s", size / Math.pow(1000, digitGroups), units[digitGroups]);
     }
 
+    /**
+     * 文件切割
+     * @param sourceFilePath 
+     * @param destinationFolderPath
+     * @param chunkSize 切割大小（KB） 
+     * @throws IOException
+     * @since x.x.x
+     */
+    public static List<String> splitFile(String sourceFilePath, String destinationFolderPath, long chunkSize) throws IOException {
+        final List<String> sliceFilePathList = new ArrayList<>();
+        
+        File destinationFolder = new File(destinationFolderPath);
+        if (!destinationFolder.exists()) {
+            destinationFolder.mkdirs();
+        }
+        if (destinationFolderPath.endsWith("/") || destinationFolderPath.endsWith("\\")) {
+            destinationFolderPath = destinationFolderPath.substring(0, destinationFolderPath.length() - 1);
+        }
+
+        try (RandomAccessFile sourceFile = new RandomAccessFile(sourceFilePath, "r");
+             FileChannel sourceChannel = sourceFile.getChannel()) {
+            final String name = new File(sourceFilePath).getName();
+            long fileSize = sourceFile.length();
+            long numberOfChunks = (long) Math.ceil((double) fileSize / chunkSize);
+
+            for (long i = 0; i < numberOfChunks; i++) {
+                long offset = i * chunkSize;
+                int bufferSize = (int) Math.min(chunkSize, fileSize - offset);
+
+                sourceChannel.position(offset);
+
+                ByteBuffer buffer = ByteBuffer.allocate(bufferSize);
+                sourceChannel.read(buffer);
+                buffer.flip();
+
+                String chunkFileName = String.format("%s%s%s-chunk%s", destinationFolderPath, File.separator, name, i);
+                sliceFilePathList.add(chunkFileName);
+                try (FileOutputStream outputStream = new FileOutputStream(chunkFileName)) {
+                    outputStream.getChannel().write(buffer);
+                }
+            }
+        }
+        
+        return sliceFilePathList;
+    }
+
+    /**
+     * 文件合并
+     * @param targetFilePath
+     * @param sourceFilePaths 需要合并路径的集合
+     * @return
+     * @since x.x.x
+     */
+    public static boolean mergeFiles(String targetFilePath, List<String> sourceFilePaths)  {
+        try (BufferedOutputStream outputStream = new BufferedOutputStream(Files.newOutputStream(Paths.get(targetFilePath)))) {
+            for (String sourceFilePath : sourceFilePaths) {
+                try (BufferedInputStream inputStream = new BufferedInputStream(Files.newInputStream(Paths.get(sourceFilePath)))) {
+                    byte[] buffer = new byte[1024];
+                    int bytesRead;
+
+                    while ((bytesRead = inputStream.read(buffer)) != -1) {
+                        outputStream.write(buffer, 0, bytesRead);
+                    }
+                }
+            }
+        } catch (Exception e) {
+            logger.error("文件合并失败", e);
+            return false;
+        }
+
+        return true;
+    }
 }

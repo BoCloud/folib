@@ -42,6 +42,10 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.nio.ByteBuffer;
+import java.nio.channels.Channels;
+import java.nio.channels.ReadableByteChannel;
+import java.nio.channels.WritableByteChannel;
 import java.nio.file.Files;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -289,20 +293,33 @@ public abstract class BaseController {
     public static void copyToResponse(InputStream is,
                                       HttpServletResponse response)
             throws IOException {
-        try (OutputStream os = new ExceptionHandlingOutputStream(response.getOutputStream())) {
-            long totalBytes = 0L;
-
-            int readLength;
-            byte[] bytes = new byte[4096];
-            while ((readLength = is.read(bytes)) != -1) {
-                // Write the artifact
-                os.write(bytes, 0, readLength);
-                os.flush();
-
-                totalBytes += readLength;
-            }
-            if (setContentLength(response)) {
-                response.setHeader(HttpHeaders.CONTENT_LENGTH, Long.toString(totalBytes));
+//        try (OutputStream os = new ExceptionHandlingOutputStream(response.getOutputStream())) {
+//            long totalBytes = 0L;
+//
+//            int readLength;
+//            byte[] bytes = new byte[4096];
+//            while ((readLength = is.read(bytes)) != -1) {
+//                // Write the artifact
+//                os.write(bytes, 0, readLength);
+//                os.flush();
+//
+//                totalBytes += readLength;
+//            }
+//            if (setContentLength(response)) {
+//                response.setHeader(HttpHeaders.CONTENT_LENGTH, Long.toString(totalBytes));
+//            }
+//            response.flushBuffer();
+//        }
+        try (
+                OutputStream os = new ExceptionHandlingOutputStream(response.getOutputStream());
+                WritableByteChannel outputChannel = Channels.newChannel(os)
+        ) {
+            ReadableByteChannel inputChannel = Channels.newChannel(is);
+            ByteBuffer buffer = ByteBuffer.allocate(8192);
+            while (inputChannel.read(buffer) != -1) {
+                buffer.flip();
+                outputChannel.write(buffer);
+                buffer.clear();
             }
             response.flushBuffer();
         }

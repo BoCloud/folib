@@ -6,9 +6,11 @@ import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.Feature;
 import javax.ws.rs.core.Response;
 import java.io.Closeable;
+import java.util.Objects;
 
 import org.apache.http.client.config.RequestConfig;
 import org.glassfish.jersey.apache.connector.ApacheClientProperties;
+import org.glassfish.jersey.client.ClientProperties;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.util.StringUtils;
@@ -33,6 +35,11 @@ public class RestArtifactResolver
                                 RemoteRepositoryRetryArtifactDownloadConfiguration configuration)
     {
         this.client = client;
+        //连接建立超时时间
+        Integer connectTimeOut = globalClientConnectTimeOut();
+        if (Objects.nonNull(connectTimeOut)) {
+            this.client.property(ClientProperties.CONNECT_TIMEOUT, connectTimeOut);
+        }
         this.targetUrl = targetUrl;
         this.repositoryBaseUrl = normalize(repositoryBaseUrl);
         this.configuration = configuration;
@@ -47,12 +54,12 @@ public class RestArtifactResolver
         this(client, repositoryBaseUrl, targetUrl, configuration);
         this.authentication = authentication;
     }
-    
+
     public RemoteRepositoryRetryArtifactDownloadConfiguration getConfiguration()
     {
         return configuration;
     }
-    
+
     public boolean isAlive()
     {
         return true;
@@ -85,6 +92,8 @@ public class RestArtifactResolver
                                                       .customRequestConfig()
                                                       .build();
 
+        long startTime = System.currentTimeMillis();
+        logger.debug("Url [{}] 开始于 [{}]", url, startTime);
         Invocation.Builder request = resource.request();
         Response response;
 
@@ -96,7 +105,8 @@ public class RestArtifactResolver
         {
             response = request.get();
         }
-
+        long endTime = System.currentTimeMillis();
+        logger.debug("Url [{}] 结束于 [{}] 耗时约 [{}] 毫秒", url, endTime, endTime - startTime);
         return new CloseableRestResponse(response);
     }
 
@@ -157,6 +167,15 @@ public class RestArtifactResolver
         {
             return target;
         }
+    }
+
+    private static Integer globalClientConnectTimeOut() {
+        String key = "globalClientConnectTimeOut";
+        String globalClientConnectTimeOut = System.getProperty(key);
+        if (!StringUtils.hasText(globalClientConnectTimeOut)) {
+            return null;
+        }
+        return Integer.parseInt(globalClientConnectTimeOut);
     }
 
 }

@@ -36,6 +36,11 @@ public class Configuration {
 
     private final int port;
 
+    /**
+     * 节点传输速率（Kbs）
+     */
+    private Long kbps;
+
     private final ProxyConfiguration proxyConfiguration;
 
     private final SessionConfiguration sessionConfiguration;
@@ -78,6 +83,7 @@ public class Configuration {
         revision = delegate.getRevision();
         baseUrl = delegate.getBaseUrl();
         port = delegate.getPort();
+        kbps = delegate.getKbps();
         proxyConfiguration = immuteProxyConfiguration(delegate.getProxyConfiguration());
         sessionConfiguration = immuteSessionConfiguration(delegate.getSessionConfiguration());
         remoteRepositoriesConfiguration = immuteRemoteRepositoriesConfiguration(
@@ -161,6 +167,10 @@ public class Configuration {
 
     public int getPort() {
         return port;
+    }
+
+    public Long getKbps() {
+        return kbps;
     }
 
     public ProxyConfiguration getProxyConfiguration() {

@@ -5,13 +5,17 @@ import com.veadan.folib.domain.ArtifactParse;
 import com.veadan.folib.domain.ArtifactPromotion;
 import com.veadan.folib.domain.PromotionNodeOption;
 import com.veadan.folib.dto.ArtifactDto;
+import com.veadan.folib.model.request.ArtifactSliceDownloadInfoReq;
+import com.veadan.folib.model.response.ArtifactSliceDownloadInfoRes;
 import com.veadan.folib.entity.Dict;
+import com.veadan.folib.model.request.ArtifactSupportSliceDownloadQueryReq;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.util.List;
+import java.util.Map;
 
 /**
  * 制品晋级service
@@ -69,4 +73,26 @@ public interface ArtifactPromotionService {
      */
     ArtifactParse parseArtifact(String storageId, String repositoryId, MultipartFile file);
 
+
+    
+    /**
+     * 判断制品是否支持切片下载
+     * @param model
+     * @return
+     * @since x.x.x
+     */
+    Boolean querySupportSliceDownload(ArtifactSupportSliceDownloadQueryReq model);
+
+
+    Map<String, Boolean> batchQuerySupportSliceDownload(List<ArtifactSupportSliceDownloadQueryReq> models);
+    
+    /**
+     * 获取制品切片下载信息
+     * @param model
+     * @return
+     * @since x.x.x
+     */
+    ArtifactSliceDownloadInfoRes querySliceDownloadInfo(ArtifactSliceDownloadInfoReq model);
+
+    List<ArtifactSliceDownloadInfoRes> batchQuerySliceDownloadInfo(List<ArtifactSliceDownloadInfoReq> models);
 }

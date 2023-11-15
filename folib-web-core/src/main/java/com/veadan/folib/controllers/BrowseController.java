@@ -28,6 +28,7 @@ import com.veadan.folib.web.RepositoryMapping;
 import io.swagger.annotations.*;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -96,10 +97,9 @@ public class BrowseController
             type = repositoryParam.getLayout();
         }
         if (!DockerLayoutProvider.ALIAS.equalsIgnoreCase(type)) {
-            Artifact artifact = repositoryPathResolver.findOneArtifact(storageId, repositoryId, artifactPath);
             RepositoryPath repositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, artifactPath);
             Repository repository = repositoryPath.getRepository();
-
+            Artifact artifact = getArtifact(repositoryPath);
             if (artifact != null) {
                 List<CodeSnippet> snippets = snippetGenerator.generateSnippets(repository.getLayout(), artifact.getArtifactCoordinates());
                 jsonObject.put("snippets", snippets);
@@ -181,7 +181,7 @@ public class BrowseController
                     jsonObject.put("manifestConfig", object);
                     jsonObject.put("sha256", configDigest);
                 }
-                Artifact artifact = repositoryPathResolver.findOneArtifact(storageId, repositoryId, fileContent.getArtifactPath());
+                Artifact artifact = getArtifact(repositoryPathResolver.resolve(storageId, repositoryId, fileContent.getArtifactPath()));
                 jsonObject.put("artifact", artifact);
                 Long size = Optional.ofNullable(imageManifest.getLayers()).orElse(Collections.emptyList()).stream().mapToLong(LayerManifest::getSize).sum();
                 jsonObject.put("snippets", snippets);
@@ -408,8 +408,17 @@ public class BrowseController
         //TODO: RepositoryFiles.isIndex(repositoryPath) || (
         return (!Files.isHidden(repositoryPath)
                 // 支持Cocoapods索引目录的显示
-                || repositoryPath.toString().contains(".specs")) && !RepositoryFiles.isTrash(repositoryPath)
+                || repositoryPath.toString().contains(".specs") || repositoryPath.toString().contains(".slice")) && !RepositoryFiles.isTrash(repositoryPath)
                 && !RepositoryFiles.isTemp(repositoryPath);
+    }
+
+    private Artifact getArtifact(RepositoryPath repositoryPath) {
+        try {
+            return repositoryPath.getArtifactEntry();
+        } catch (Exception ex) {
+            logger.warn(ExceptionUtils.getStackTrace(ex));
+        }
+        return null;
     }
 
 }

@@ -31,7 +31,7 @@ import java.util.Date;
 @NoArgsConstructor
 @Accessors(chain = true)
 @Table(name = "artifact_sync_record")
-@ApiModel("dict")
+@ApiModel("ArtifactSyncRecord")
 public class ArtifactSyncRecord implements Serializable {
     private static final long serialVersionUID = 1L;
 
@@ -54,6 +54,13 @@ public class ArtifactSyncRecord implements Serializable {
     @ApiModelProperty("目标制品路径")
     @Column(name = "target_path")
     private String targetPath;
+    /**
+     * 制品操作（1：制品晋级；2：制品分发）
+     * {@linkplain com.veadan.folib.enums.ArtifactSyncRecordOpsTypeEnum }
+     */
+    @ApiModelProperty("制品操作（1：制品晋级；2：制品分发）")
+    @Column(name = "ops_type")
+    private Integer opsType;
     /**
      * 制品同步编号
      */

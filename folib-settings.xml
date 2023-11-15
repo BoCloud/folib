@@ -3,7 +3,9 @@
           xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
           xsi:schemaLocation="http://maven.apache.org/SETTINGS/1.0.0 http://maven.apache.org/xsd/settings-1.0.0.xsd">
     <!--本地依赖位置按照实际情况进行修改-->
-    <localRepository>/Users/leipenghui/apps/m2/repository</localRepository>
+<!--    <localRepository>/Users/leipenghui/apps/m2/repository</localRepository>-->
+    <localRepository>/Users/zerowang/data/maven/repository-folib-server</localRepository>
+
 
     <mirrors>
         <mirror>
@@ -39,18 +41,18 @@
     <profiles>
 
 
-<!--        <profile>-->
-<!--            <id>jdk-1.8</id>-->
-<!--            <activation>-->
-<!--                <activeByDefault>true</activeByDefault>-->
-<!--                <jdk>1.8</jdk>-->
-<!--            </activation>-->
-<!--            <properties>-->
-<!--                <maven.compiler.source>1.8</maven.compiler.source>-->
-<!--                <maven.compiler.target>1.8</maven.compiler.target>-->
-<!--                <maven.compiler.compilerVersion>1.8</maven.compiler.compilerVersion>-->
-<!--            </properties>-->
-<!--        </profile>-->
+        <profile>
+            <id>jdk-11</id>
+            <activation>
+                <activeByDefault>true</activeByDefault>
+                <jdk>11</jdk>
+            </activation>
+            <properties>
+                <maven.compiler.source>11</maven.compiler.source>
+                <maven.compiler.target>11</maven.compiler.target>
+                <maven.compiler.compilerVersion>11</maven.compiler.compilerVersion>
+            </properties>
+        </profile>
 
         <profile>
             <id>folib-local-maven</id>

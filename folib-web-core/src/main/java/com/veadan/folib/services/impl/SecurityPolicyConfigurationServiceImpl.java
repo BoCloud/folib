@@ -50,28 +50,28 @@ public class SecurityPolicyConfigurationServiceImpl implements SecurityPolicyCon
 
     @Override
     public void addVulnerabilitiesWhite(String white) throws IOException {
-        checkParams(white);
+//        checkParams(white);
         configurationManagementService.addVulnerabilitiesWhite(white);
         syncDataSecurityPolicyConfiguration();
     }
 
     @Override
     public void addVulnerabilitiesBlack(String black) throws IOException {
-        checkParams(black);
+//        checkParams(black);
         configurationManagementService.addVulnerabilitiesBlack(black);
         syncDataSecurityPolicyConfiguration();
     }
 
     @Override
     public void removeVulnerabilitiesWhite(String white) throws IOException {
-        checkParams(white);
+//        checkParams(white);
         configurationManagementService.removeVulnerabilitiesWhite(white);
         syncDataSecurityPolicyConfiguration();
     }
 
     @Override
     public void removeVulnerabilitiesBlack(String black) throws IOException {
-        checkParams(black);
+//        checkParams(black);
         configurationManagementService.removeVulnerabilitiesBlack(black);
         syncDataSecurityPolicyConfiguration();
     }

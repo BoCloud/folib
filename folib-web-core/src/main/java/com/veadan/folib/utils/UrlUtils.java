@@ -41,19 +41,6 @@ public class UrlUtils {
     }
 
 
-    public static void main(String[] args) {
-        String sourcePath = "";
-        String[] result = parsePath(sourcePath);
-        if (result != null) {
-            String srcStorageId = result[0];
-            String srcRepostoryId = result[1];
-            System.out.println("srcStorageId: " + srcStorageId);
-            System.out.println("srcRepostoryId: " + srcRepostoryId);
-        } else {
-            System.out.println("Invalid sourcePath format");
-        }
-    }
-
     public static String[] parsePath(String artiactPath) {
         try {
             URL url = new URL(artiactPath);
@@ -82,6 +69,17 @@ public class UrlUtils {
             return Optional.of(url.getPort()).map(p -> p < 0 ? 80:p).get();
         } catch (MalformedURLException e) {
             log.error("解析端口错误", e);
+            return null;
+        }
+    }
+
+    public static String getHost(String urlStr)
+    {
+        try {
+            final URL url = new URL(urlStr);
+            return url.getHost();
+        } catch (MalformedURLException e) {
+            log.error("解析Host错误", e);
             return null;
         }
     }

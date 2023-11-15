@@ -119,6 +119,22 @@ public class NodeComponent {
     }
 
     /**
+     * 获取集群节点个数
+     *
+     * @return 集群节点个数
+     */
+    public int getClusterNodeTotal() {
+        Map<String, Float> effectiveOwnershipMap = nodeProbe.effectiveOwnershipWithPort(keyspace);
+        Map<String, String> tokensToEndpointsMap = nodeProbe.getTokenToEndpointMap(true);
+        SortedMap<String, SetHostStatWithPort> dcsMap = NodeTool.getOwnershipByDcWithPort(nodeProbe, true, tokensToEndpointsMap, effectiveOwnershipMap);
+        int nodeTotal = 0;
+        for (Map.Entry<String, SetHostStatWithPort> entry : dcsMap.entrySet()) {
+            nodeTotal = nodeTotal + entry.getValue().size();
+        }
+        return nodeTotal;
+    }
+
+    /**
      * 移除节点
      *
      * @param token token
