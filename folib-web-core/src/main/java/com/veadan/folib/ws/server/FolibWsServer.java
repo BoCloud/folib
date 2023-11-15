@@ -2,6 +2,7 @@ package com.veadan.folib.ws.server;
 
 import com.alibaba.fastjson.JSON;
 import com.veadan.folib.configuration.ConfigurationManager;
+import com.veadan.folib.scanner.common.util.BeanUtils;
 import com.veadan.folib.ws.common.FolibWsAction;
 import com.veadan.folib.ws.client.handler.command.FolibWsClientConsoleCommand;
 import com.veadan.folib.ws.common.FolibWsSessionContextHolder;
@@ -10,9 +11,12 @@ import com.veadan.folib.ws.server.handler.dispatch.FolibWsServerCommandDispatch;
 import com.veadan.folib.ws.server.manage.FolibWsServerRunManage;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.stereotype.Component;
 
+import javax.inject.Inject;
 import javax.websocket.OnClose;
 import javax.websocket.OnError;
 import javax.websocket.OnMessage;
@@ -37,7 +41,6 @@ public class FolibWsServer {
 //    @Autowired
 //    private FolibWsServerCommandDispatch folibWsServerCommandDispatch;
 
-    @Autowired
     private ThreadPoolTaskExecutor asyncWsCommandThreadPoolTaskExecutor;
 
     @OnOpen
@@ -77,7 +80,7 @@ public class FolibWsServer {
     @OnMessage
     public void onMessage(@PathParam("nodeName") String nodeName, String message, Session session) {
         final FolibWsAction folibWsAction = JSON.parseObject(message, FolibWsAction.class);
-        asyncWsCommandThreadPoolTaskExecutor.submit(() -> {
+        this.getAsyncWsCommandThreadPoolTaskExecutor().submit(() -> {
             try {
                 FolibWsSessionContextHolder.setContextSessionInfo(new FolibWsServerContextInfo()
                         .setNodeName(nodeName)
@@ -98,5 +101,12 @@ public class FolibWsServer {
     public void onError(@PathParam("nodeName") String nodeName, Session session, Throwable error) {
         log.error("WebSocket(nodeName = {})发生错误，错误信息为: {} ", nodeName, error.getMessage());
         error.printStackTrace();
+    }
+
+    private synchronized ThreadPoolTaskExecutor getAsyncWsCommandThreadPoolTaskExecutor() {
+        if (null == this.asyncWsCommandThreadPoolTaskExecutor) {
+            this.asyncWsCommandThreadPoolTaskExecutor = BeanUtils.getBean("asyncWsCommandThreadPoolTaskExecutor", ThreadPoolTaskExecutor.class);
+        }
+        return asyncWsCommandThreadPoolTaskExecutor;
     }
 }
