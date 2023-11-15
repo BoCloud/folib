@@ -60,6 +60,7 @@ import org.apache.commons.fileupload.disk.DiskFileItem;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.maven.model.Model;
+import org.ehcache.core.util.ByteBufferInputStream;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -673,17 +674,25 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
         final Path fileName = filePath.getFileName();
         response.setHeader("Content-Disposition", String.format("attachment;filename=%s", fileName));
         response.setContentType("application/x-gzip");
-        
-        try (FileChannel fileChannel = FileChannel.open(filePath);
-             WritableByteChannel responseChannel = Channels.newChannel(response.getOutputStream())) {
-            long fileSize = fileChannel.size();
-            for (long left = fileSize; left > 0; ) {
-                left -= fileChannel.transferTo((fileSize - left), left, responseChannel);
-            }
+
+        try (final OutputStream outputStream = response.getOutputStream();
+             final BufferedInputStream bufferedInputStream = new BufferedInputStream(Files.newInputStream(filePath)); ) {
+            IoUtil.copy(bufferedInputStream, outputStream);
         } catch (Exception e) {
             log.error("下载切片文件失败", e);
             return false;
         }
+        
+//        try (FileChannel fileChannel = FileChannel.open(filePath);
+//             WritableByteChannel responseChannel = Channels.newChannel(response.getOutputStream())) {
+//            long fileSize = fileChannel.size();
+//            for (long left = fileSize; left > 0; ) {
+//                left -= fileChannel.transferTo((fileSize - left), left, responseChannel);
+//            }
+//        } catch (Exception e) {
+//            log.error("下载切片文件失败", e);
+//            return false;
+//        }
         
         return true;
     }
@@ -892,7 +901,7 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
 
                     // 将暂存的文件
                     log.info("splitFilePathList>>> {}", JSON.toJSONString(splitFilePathList));
-                    final boolean result = splitFilePathList.stream()./*parallel().*/allMatch(splitFilePath -> {
+                    final boolean result = splitFilePathList.stream().parallel().allMatch(splitFilePath -> {
                         final String splitFileName = FileUtil.getName(splitFilePath);
                         final String splitFileStoreUri = String.format("%s/%s", sliceStoreFolderUri, splitFileName);
                         try {

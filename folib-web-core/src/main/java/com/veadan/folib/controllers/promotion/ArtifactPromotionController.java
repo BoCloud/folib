@@ -179,9 +179,9 @@ public class ArtifactPromotionController extends BaseArtifactController {
 
 
     @GetMapping(value = "/slice/file/download/{storageId}/{repositoryId}/{artifactPath:.+}")
-    public ResponseEntity<Boolean> sliceDownload(@RepositoryMapping Repository repository,
+    public void sliceDownload(@RepositoryMapping Repository repository,
                                                  @PathVariable String artifactPath, HttpServletResponse response) {
-        return ResponseEntity.ok(artifactPromotionService.sliceFileDownload(repository, artifactPath, response));
+        artifactPromotionService.sliceFileDownload(repository, artifactPath, response);
     }
 
     @PostMapping(value = "/query/support/slice/download")

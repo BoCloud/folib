@@ -152,7 +152,7 @@ public class FolibWsClientArtifactPullCommand implements FolibWsClientCommand<Pr
             final String sliceDownloadInfosJson = sliceDownloadInfosQueryRes.body();
             final List<ArtifactSliceDownloadInfoRes> artifactSliceDownloadInfoRes = JSON.parseArray(sliceDownloadInfosJson, ArtifactSliceDownloadInfoRes.class);
 
-            final boolean result = artifactSliceDownloadInfoRes.stream()/*.parallel()*/.allMatch(artifactSliceDownloadInfoRe -> {
+            final boolean result = artifactSliceDownloadInfoRes.stream().parallel().allMatch(artifactSliceDownloadInfoRe -> {
 //                final String storageId = artifactSliceDownloadInfoRe.getStorageId();
 //                final String repositoryId = artifactSliceDownloadInfoRe.getRepositoryId();
                 final String path = artifactSliceDownloadInfoRe.getPath();
