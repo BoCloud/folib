@@ -58,6 +58,7 @@ public class DockerLayoutProvider
 
     protected DockerArtifactCoordinates getArtifactCoordinates(RepositoryPath path) throws IOException
     {
+        logger.info("DockerArtifactCoordinates parse path [{}]", path);
         return DockerArtifactCoordinates.parse(RepositoryFiles.relativizePath(path));
     }
 

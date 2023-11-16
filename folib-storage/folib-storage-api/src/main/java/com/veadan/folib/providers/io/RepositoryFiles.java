@@ -7,16 +7,12 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.attribute.FileTime;
 import java.time.Instant;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Set;
-import java.util.StringJoiner;
+import java.util.*;
 import java.util.stream.Collectors;
 
+import com.google.common.collect.Lists;
 import com.veadan.folib.artifact.coordinates.ArtifactCoordinates;
 import com.veadan.folib.cloud.storage.s3fs.S3Path;
-import com.veadan.folib.domain.Artifact;
-import com.veadan.folib.storage.repository.Repository;
 import com.veadan.folib.util.CacheUtil;
 import org.apache.commons.lang3.StringUtils;
 
@@ -45,10 +41,18 @@ public abstract class RepositoryFiles
     }
 
     public static Boolean isArtifactMetadata(RepositoryPath path)
-            throws IOException
     {
         String fileName = path.getFileName().toString();
         return fileName.startsWith(".") && fileName.endsWith(".metadata");
+    }
+
+    public static Boolean isArtifactChecksum(String name)
+    {
+        if (StringUtils.isBlank(name)) {
+            return true;
+        }
+        List<String> checksumList = Lists.newArrayList(".md5",".sha1",".sha256",".sha512");
+        return checksumList.stream().anyMatch(name::endsWith);
     }
 
     public static Boolean isTrash(RepositoryPath path)

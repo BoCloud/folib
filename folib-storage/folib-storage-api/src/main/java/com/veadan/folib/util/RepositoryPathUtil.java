@@ -21,6 +21,7 @@ public class RepositoryPathUtil {
         List<S3Path> listDir = new ArrayList<S3Path>();
         if (Files.exists(s3Path) && !Files.isDirectory(s3Path)) {
             if (!exclude(s3Path.getFileName().toString())) {
+                log.info("S3 file {}", s3Path.getFileName().toString());
                 listFile.add(s3Path);
             }
         }
@@ -31,6 +32,7 @@ public class RepositoryPathUtil {
                 listDir.add(s3PathTemp);
             } else {
                 if (!exclude(s3PathTemp.getFileName().toString())) {
+                    log.info("S3 file {}", s3PathTemp);
                     listFile.add(s3PathTemp);
                 }
             }
@@ -45,7 +47,7 @@ public class RepositoryPathUtil {
                     listDir.add(s3PathTemp);
                 } else {
                     if (!exclude(s3PathTemp.getFileName().toString())) {
-                        log.info("s3 file {}", s3PathTemp);
+                        log.info("S3 file {}", s3PathTemp);
                         listFile.add(s3PathTemp);
                     }
                 }
@@ -69,6 +71,7 @@ public class RepositoryPathUtil {
         if (file.exists()) {
             if (null == file.listFiles()) {
                 if (!exclude(file.getName())) {
+                    log.info("文件:{}", file.getAbsolutePath());
                     resultList.add(file);
                 }
                 return resultList;
@@ -79,6 +82,7 @@ public class RepositoryPathUtil {
                     folderNum++;
                 } else {
                     if (!exclude(f.getName())) {
+                        log.info("文件:{}", f.getAbsolutePath());
                         resultList.add(f);
                         fileNum++;
                     }
@@ -157,7 +161,7 @@ public class RepositoryPathUtil {
             return true;
         }
         String dsStore = ".DS_Store";
-        if (dsStore.equalsIgnoreCase(name)) {
+        if (name.endsWith(dsStore)) {
             return true;
         }
         return false;

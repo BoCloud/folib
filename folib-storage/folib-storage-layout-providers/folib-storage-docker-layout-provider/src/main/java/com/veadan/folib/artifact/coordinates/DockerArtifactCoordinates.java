@@ -1,5 +1,6 @@
 package com.veadan.folib.artifact.coordinates;
 
+import com.alibaba.fastjson.JSONObject;
 import com.veadan.folib.db.schema.Vertices;
 import com.veadan.folib.domain.LayoutArtifactCoordinatesEntity;
 import lombok.extern.slf4j.Slf4j;
@@ -118,8 +119,8 @@ public class DockerArtifactCoordinates
         }
 
         String repository = strings[0];
-        String artifactPath = ARTIFACT_PATH;
-        String layers = LAYERS;
+        String artifactPath = "";
+        String layers = "";
         if (strings[strings.length - 1].contains("sha256:")) {
             layers = strings[strings.length - 1];
             String finalLayers = layers;
@@ -132,8 +133,9 @@ public class DockerArtifactCoordinates
             artifactPath = Arrays.stream(strings).filter(data -> !Objects.equals(finalLayers, data) || !Objects.equals(repository, data))
                     .collect(Collectors.joining("/"));
         }
-
-
+        if (StringUtils.isBlank(artifactPath)) {
+            throw new IllegalArgumentException(String.format("Path [%s] not a standard Docker layout file", path));
+        }
         return new DockerArtifactCoordinates(repository, tag, layers, artifactPath);
     }
 

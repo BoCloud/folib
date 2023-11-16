@@ -54,8 +54,6 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
-import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption;
 import java.util.*;
 import java.util.concurrent.FutureTask;
 import java.util.stream.Collectors;
@@ -422,7 +420,12 @@ public class PromotionUtil {
                     promotionArtifactDto.getSrcRepostoryId());
             RepositoryPath srcPath = repositoryPathResolver.resolve(srcRepositoryPath.getStorageId(), srcRepositoryPath.getRepositoryId(), relativePath);
             if (RepositoryFiles.isChecksum(srcPath) || RepositoryFiles.isArtifactMetadata(srcPath)) {
-                log.warn(String.format("RepositoryPath：%s is checksum file skip", srcPath));
+                log.info(String.format("RepositoryPath：%s is checksum file skip", srcPath));
+                continue;
+            }
+            boolean isDocker = DockerLayoutProvider.ALIAS.equalsIgnoreCase(srcRepositoryPath.getRepository().getLayout());
+            if (isDocker && !srcPath.getFileName().toString().contains("sha256")) {
+                log.info(String.format("RepositoryPath：%s not is docker layout file skip", srcPath));
                 continue;
             }
             Map<String, InputStream> inputStreamMap = new HashMap<>();
@@ -479,7 +482,12 @@ public class PromotionUtil {
                     promotionArtifactDto.getSrcRepostoryId());
             RepositoryPath srcPath = repositoryPathResolver.resolve(promotionArtifactDto.getSrcStorageId(), promotionArtifactDto.getSrcRepostoryId(), relativePath);
             if (RepositoryFiles.isChecksum(srcPath) || RepositoryFiles.isArtifactMetadata(srcPath)) {
-                log.warn(String.format("RepositoryPath：%s is checksum file skip", srcPath));
+                log.info(String.format("RepositoryPath：%s is checksum file skip", srcPath));
+                continue;
+            }
+            boolean isDocker = DockerLayoutProvider.ALIAS.equalsIgnoreCase(srcRepositoryPath.getRepository().getLayout());
+            if (isDocker && !srcPath.getFileName().toString().contains("sha256")) {
+                log.info(String.format("RepositoryPath：%s not is docker layout file skip", srcPath));
                 continue;
             }
             Map<String, InputStream> inputStreamMap = new HashMap<>();
@@ -550,16 +558,14 @@ public class PromotionUtil {
             String temp = fPath.substring(fPathIndex).replace(tempStr, "");
             RepositoryPath destPath = repositoryPathResolver.resolve(destRepository.getStorage().getId(), destRepository.getId(), temp);
             if (RepositoryFiles.isChecksum(destPath) || RepositoryFiles.isArtifactMetadata(destPath)) {
-                log.warn(String.format("RepositoryPath：%s is checksum file skip", destPath));
+                log.info(String.format("RepositoryPath：%s is checksum file skip", destPath));
                 continue;
             }
             log.info("temp {}   destPath {}", temp, destPath.toString());
             boolean isDocker = DockerLayoutProvider.ALIAS.equalsIgnoreCase(srcRepository.getLayout());
-            if (isDocker) {
-                if (!file.getName().contains("sha256") && !DockerArtifactCoordinates.exclude(file.getName())) {
-                    Files.copy(Paths.get(file.getAbsolutePath()), destPath, StandardCopyOption.REPLACE_EXISTING);
-                    continue;
-                }
+            if (isDocker && !destPath.getFileName().toString().contains("sha256")) {
+                log.info(String.format("RepositoryPath：%s not is docker layout file skip", destPath));
+                continue;
             }
             try (InputStream is = Files.newInputStream(file.toPath());) {
                 // 同步metadata
@@ -629,16 +635,21 @@ public class PromotionUtil {
             String tempStr = srcRepository.getStorage().getId() + File.separator + srcRepository.getId() + File.separator;
             int fPathIndex = fPath.lastIndexOf(tempStr);
             String temp = fPath.substring(fPathIndex, fPath.length()).replace(tempStr, "");
-            RepositoryPath uploadPath = repositoryPathResolver.resolve(destRepository.getStorage().getId(), destRepository.getId(), temp);
-            if (RepositoryFiles.isChecksum(uploadPath) || RepositoryFiles.isArtifactMetadata(uploadPath)) {
-                log.warn(String.format("RepositoryPath：%s is checksum file skip", uploadPath));
+            RepositoryPath destPath = repositoryPathResolver.resolve(destRepository.getStorage().getId(), destRepository.getId(), temp);
+            if (RepositoryFiles.isChecksum(destPath) || RepositoryFiles.isArtifactMetadata(destPath)) {
+                log.info(String.format("RepositoryPath：%s is checksum file skip", destPath));
+                continue;
+            }
+            boolean isDocker = DockerLayoutProvider.ALIAS.equalsIgnoreCase(srcRepository.getLayout());
+            if (isDocker && !destPath.getFileName().toString().contains("sha256")) {
+                log.info(String.format("RepositoryPath：%s not is docker layout file skip", destPath));
                 continue;
             }
             try (InputStream is = Files.newInputStream(s3FilePath);) {
                 // 同步metadata
                 RepositoryPath srcPath = repositoryPathResolver.resolve(srcRepository.getStorage().getId(), srcRepository.getId(), temp);
-                setMetaData(uploadPath, getMetaData(srcPath));
-                artifactManagementService.store(uploadPath, is);
+                setMetaData(destPath, getMetaData(srcPath));
+                artifactManagementService.store(destPath, is);
             } catch (IOException e) {
                 log.error("s3FilePath {} copy fail {}", s3FilePath, ExceptionUtils.getStackTrace(e));
                 throw new Exception(e.getMessage());
@@ -653,10 +664,11 @@ public class PromotionUtil {
         String absolutePath = repositoryPath.toAbsolutePath().toString();
         List<String> list = new ArrayList<String>();
         Map<String, Object> metaData = new HashMap<>();
+        boolean isDockerLayout = DockerLayoutProvider.ALIAS.equalsIgnoreCase(repositoryPath.getRepository().getLayout());
         if (absolutePath.contains("s3://")) {
             S3Path s3Path = new S3Path(SpringUtil.getBean(S3FileSystem.class), repositoryPath.getTarget().toString());
             List<S3Path> s3FilesPaths = RepositoryPathUtil.getS3FiePaths(s3Path);
-            if (DockerLayoutProvider.ALIAS.equalsIgnoreCase(repositoryPath.getRepository().getLayout())) {
+            if (isDockerLayout) {
                 s3FilesPaths = sortS3Docker(s3FilesPaths, repositoryPath.getRepository().getLayout());
             }
             if (isDockerVersionPath) {
@@ -681,6 +693,10 @@ public class PromotionUtil {
             }
             for (S3Path file : s3FilesPaths) {
                 String filePathStr = file.toAbsolutePath().toString();
+                if (isDockerLayout && !file.getFileName().toString().contains("sha256")) {
+                    log.info(String.format("RepositoryPath：%s not is docker layout file skip", filePathStr));
+                    continue;
+                }
                 int indexTemp = filePathStr.indexOf(storageId + "/" + repositoryId);
                 String temp = filePathStr.
                         substring(indexTemp + (storageId + "/" + repositoryId).length());
@@ -694,7 +710,7 @@ public class PromotionUtil {
             }
         } else {
             List<File> files = RepositoryPathUtil.getNFSFiles(absolutePath);
-            if (DockerLayoutProvider.ALIAS.equalsIgnoreCase(repositoryPath.getRepository().getLayout())) {
+            if (isDockerLayout) {
                 files = sortDocker(files, repositoryPath.getRepository().getLayout());
             }
             if (isDockerVersionPath) {
@@ -720,6 +736,10 @@ public class PromotionUtil {
             }
             for (File file : files) {
                 String fileAbsolutePath = file.getAbsolutePath();
+                if (isDockerLayout && !file.getName().contains("sha256")) {
+                    log.info(String.format("RepositoryPath：%s not is docker layout file skip", fileAbsolutePath));
+                    continue;
+                }
                 int indexTemp = fileAbsolutePath.indexOf(storageId + "/" + repositoryId);
                 String temp = fileAbsolutePath.
                         substring(indexTemp + (storageId + "/" + repositoryId).length());

@@ -5,6 +5,7 @@ import com.alibaba.fastjson.JSON;
 import com.veadan.folib.artifact.coordinates.DockerArtifactCoordinates;
 import com.veadan.folib.components.security.SecurityComponent;
 import com.veadan.folib.dto.ArtifactDto;
+import com.veadan.folib.providers.io.RepositoryFiles;
 import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.providers.io.RepositoryPathResolver;
 import com.veadan.folib.service.ProxyRepositoryConnectionPoolConfigurationService;
@@ -61,12 +62,15 @@ public class PullArtifactTask implements Callable<String> {
     public String call() throws Exception {
         Response response = null;
         try {
+            RepositoryPath destPath = repositoryPathResolver.resolve(targetStorageId, targetRepostoryId, path);
+            if (RepositoryFiles.isChecksum(destPath)) {
+                return "ok";
+            }
             Client client = clientPool.getRestClient();
             WebTarget target = client.target(srcUrl);
             Invocation.Builder builder = target.request();
             securityComponent.securityTokenHeader(builder);
             response = builder.post(Entity.entity(artifac, MediaType.APPLICATION_JSON));
-            RepositoryPath destPath = repositoryPathResolver.resolve(targetStorageId, targetRepostoryId, path);
             boolean isDocker = destPath.getRepository().getLayout().equalsIgnoreCase("docker");
             if (isDocker) {
                 if (!path.contains("sha256") && !DockerArtifactCoordinates.exclude(path)) {

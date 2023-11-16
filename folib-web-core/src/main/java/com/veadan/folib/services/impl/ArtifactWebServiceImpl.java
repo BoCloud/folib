@@ -973,6 +973,11 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
                     log.info("file：{} not is a docker layout file", rootFile.getName());
                     return Collections.emptyList();
                 }
+                if (RepositoryFiles.isArtifactChecksum(rootFile.getName())) {
+                    log.info("file {} is a checksum file skip", rootFile.getName());
+                    return Collections.emptyList();
+                }
+                log.info("file:{}", rootFile.getAbsolutePath());
                 resultList.add(rootFile);
                 fileNum++;
             } else if (Objects.nonNull(rootFile.listFiles())) {
@@ -997,6 +1002,11 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
                             log.info("file：{} not is a docker layout file", f.getName());
                             continue;
                         }
+                        if (RepositoryFiles.isArtifactChecksum(f.getName())) {
+                            log.info("file {} is a checksum file skip", f.getName());
+                            continue;
+                        }
+                        log.info("file:{}", f.getAbsolutePath());
                         resultList.add(f);
                         fileNum++;
                     }
@@ -1013,6 +1023,10 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
                             log.info("directory：{} is a hidden directory", f.getName());
                             continue;
                         }
+                        if (f.getName().endsWith(".artifactory-metadata")) {
+                            log.info("directory：{} is a artifactory metadata directory skip", f.getName());
+                            continue;
+                        }
                         log.info("directory:{}", f.getAbsolutePath());
                         list.add(f);
                         folderNum++;
@@ -1023,6 +1037,10 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
                         }
                         if (dockerLayout && !f.getName().contains("sha256")) {
                             log.info("file：{} not is a docker layout file", f.getName());
+                            continue;
+                        }
+                        if (RepositoryFiles.isArtifactChecksum(f.getName())) {
+                            log.info("file {} is a checksum file skip", f.getName());
                             continue;
                         }
                         log.info("file:{}", f.getAbsolutePath());
@@ -1103,7 +1121,11 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
         if (!s3Iterator.hasNext()) {
             if (dockerLayout && !s3Path.getFileName().toString().contains("sha256")) {
                 log.info("s3 file：{} not is a docker layout file", s3Path);
-                return listFile;
+                return Collections.emptyList();
+            }
+            if (RepositoryFiles.isArtifactChecksum(s3Path.getFileName().toString())) {
+                log.info("s3 file：{} is a checksum file skip", s3Path);
+                return Collections.emptyList();
             }
             listFile.add(s3Path);
         }
@@ -1128,6 +1150,10 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
                     log.info("s3 file：{} not is a docker layout file", s3PathTemp);
                     continue;
                 }
+                if (RepositoryFiles.isArtifactChecksum(s3PathTemp.getFileName().toString())) {
+                    log.info("s3 file {} is a checksum file skip", s3PathTemp);
+                    continue;
+                }
                 log.info("s3 file {}", s3PathTemp);
                 listFile.add(s3PathTemp);
             }
@@ -1143,6 +1169,10 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
                         log.info("s3 directory {} is a hidden directory", s3PathTemp);
                         continue;
                     }
+                    if (s3PathTemp.getFileName().toString().endsWith(".artifactory-metadata")) {
+                        log.info("s3 directory {} is a artifactory metadata directory skip", s3PathTemp);
+                        continue;
+                    }
                     listDir.add(s3PathTemp);
                 } else {
                     if (s3PathTemp.getFileName().toString().startsWith(".")) {
@@ -1151,6 +1181,10 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
                     }
                     if (dockerLayout && !s3PathTemp.getFileName().toString().contains("sha256")) {
                         log.info("s3 file：{} not is a docker layout file", s3PathTemp);
+                        continue;
+                    }
+                    if (RepositoryFiles.isArtifactChecksum(s3PathTemp.getFileName().toString())) {
+                        log.info("s3 file {} is a checksum file skip", s3PathTemp);
                         continue;
                     }
                     log.info("s3 file {}", s3PathTemp);
