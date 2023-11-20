@@ -128,8 +128,6 @@ public class FolibWsClientArtifactPullCommand implements FolibWsClientCommand<Pr
             final PromotionFileRelativePath promotionFileRelativePath = response.readEntity(PromotionFileRelativePath.class);
             final List<String> getFileRelativePaths = Optional.ofNullable(promotionFileRelativePath.getList()).orElse(Collections.emptyList())
                     .stream()
-                    // 排除Slice文件
-                    .filter(p -> !p.contains(".slice"))
                     .collect(Collectors.toList());
             final Map<String, Object> metaDataMap = Optional.ofNullable(promotionFileRelativePath.getMetaData()).filter(MapUtil::isNotEmpty).orElse(Collections.emptyMap());
 
