@@ -32,7 +32,9 @@ public interface ConfigurationManagementService {
 
     void setPort(int port) throws IOException;
     
-    void setKbps(Long kbps) throws IOException;
+    void setKbps(Integer kbps) throws IOException;
+    
+    void setSliceMbSize(Long sliceMbSize) throws IOException;
 
     void setAdvancedConfiguration(MutableAdvancedConfiguration advancedConfiguration) throws IOException;
 

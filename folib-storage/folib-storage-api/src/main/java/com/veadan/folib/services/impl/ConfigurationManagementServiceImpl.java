@@ -154,8 +154,13 @@ public class ConfigurationManagementServiceImpl
     }
 
     @Override
-    public void setKbps(Long kbps) throws IOException {
+    public void setKbps(Integer kbps) throws IOException {
         modifyInLock(configuration -> configuration.setKbps(kbps));
+    }
+
+    @Override
+    public void setSliceMbSize(Long sliceMbSize) throws IOException {
+        modifyInLock(configuration -> configuration.setSliceMbSize(sliceMbSize));
     }
 
     @Override

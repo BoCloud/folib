@@ -24,7 +24,9 @@ import com.veadan.folib.service.ProxyRepositoryConnectionPoolConfigurationServic
 import com.veadan.folib.services.ArtifactManagementService;
 import com.veadan.folib.services.ArtifactPromotionService;
 import com.veadan.folib.services.ArtifactResolutionService;
+import com.veadan.folib.services.ConfigurationManagementService;
 import com.veadan.folib.utils.FileUtils;
+import com.veadan.folib.utils.UrlUtils;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.experimental.Accessors;
@@ -33,6 +35,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
+import org.springframework.validation.BindingResult;
 
 import javax.ws.rs.client.Entity;
 import javax.ws.rs.client.Invocation;
@@ -64,9 +67,12 @@ import static com.veadan.folib.utils.UrlUtils.parsePath;
 @Component
 public class FolibWsClientArtifactPullCommand implements FolibWsClientCommand<PromotionNodeOption> {
     public static final String COMMAND = "/client/artifact/pull";
+    /** {@linkplain com.veadan.folib.controllers.promotion.ArtifactPromotionController#getFiles(ArtifactDto, BindingResult)} */
     private static final String API_ARTIFACT_FOLIB_PROMOTION_GET_FILE_RELATIVE_PATHS = "/api/artifact/folib/promotion/getFileRelativePaths";
-    private static final String BATCH_QUERY_ARTIFACT_SUPPORT_SLICE_DOWNLOAD_URL = "/api/artifact/folib/promotion/batch/support/slice/download";
-    private static final String BATCH_QUERY_ARTIFACT_GET_SLICE_DOWNLOAD_INFO_URL = "/api/artifact/folib/promotion/batch/slice/download/info";
+    /** {@linkplain com.veadan.folib.controllers.promotion.ArtifactPromotionController#querySliceDownloadInfo(ArtifactSliceDownloadInfoReq)} */
+    private static final String BATCH_QUERY_ARTIFACT_SUPPORT_SLICE_DOWNLOAD_URL = "/api/artifact/folib/promotion/batch/query/support/slice/download";
+    /** {@linkplain com.veadan.folib.controllers.promotion.ArtifactPromotionController#batchQuerySliceDownloadInfo(List)} */
+    private static final String BATCH_QUERY_ARTIFACT_GET_SLICE_DOWNLOAD_INFO_URL = "/api/artifact/folib/promotion/batch/query/slice/download/info";
 
     @Autowired
     private ArtifactPromotionService artifactPromotionService;
@@ -74,6 +80,8 @@ public class FolibWsClientArtifactPullCommand implements FolibWsClientCommand<Pr
     private ArtifactManagementService artifactManagementService;
     @Autowired
     protected ArtifactResolutionService artifactResolutionService;
+    @Autowired
+    private ConfigurationManagementService configurationManagementService;
 
     @Autowired
     private RepositoryPathResolver repositoryPathResolver;
@@ -128,8 +136,6 @@ public class FolibWsClientArtifactPullCommand implements FolibWsClientCommand<Pr
             final PromotionFileRelativePath promotionFileRelativePath = response.readEntity(PromotionFileRelativePath.class);
             final List<String> getFileRelativePaths = Optional.ofNullable(promotionFileRelativePath.getList()).orElse(Collections.emptyList())
                     .stream()
-                    // 排除Slice文件
-                    .filter(p -> !p.contains(".slice"))
                     .collect(Collectors.toList());
             final Map<String, Object> metaDataMap = Optional.ofNullable(promotionFileRelativePath.getMetaData()).filter(MapUtil::isNotEmpty).orElse(Collections.emptyMap());
 
@@ -146,13 +152,16 @@ public class FolibWsClientArtifactPullCommand implements FolibWsClientCommand<Pr
             batchQueryArtifactSupportSliceDownloadQueryRequest.body(bodyJsonStr);
             final HttpResponse sliceDownloadInfosQueryRes = batchQueryArtifactSupportSliceDownloadQueryRequest.execute();
             if (!sliceDownloadInfosQueryRes.isOk()) {
-                log.error("批量查询制品切片下载信息失败（{}）", bodyJsonStr);
+                log.error("批量查询制品切片下载信息失败（{}:{}）", bodyJsonStr, sliceDownloadInfosQueryRes.body());
                 throw new BusinessException("批量查询制品切片下载信息失败");
             }
             final String sliceDownloadInfosJson = sliceDownloadInfosQueryRes.body();
             final List<ArtifactSliceDownloadInfoRes> artifactSliceDownloadInfoRes = JSON.parseArray(sliceDownloadInfosJson, ArtifactSliceDownloadInfoRes.class);
+            // - 获取当前节点标记（用于限速）
+            final String baseUrl = configurationManagementService.getConfiguration().getBaseUrl();
+            final String nodeMark = String.format("%s:%s", UrlUtils.getHost(baseUrl), UrlUtils.getHost(baseUrl));
 
-            final boolean result = artifactSliceDownloadInfoRes.stream()/*.parallel()*/.allMatch(artifactSliceDownloadInfoRe -> {
+            final boolean result = artifactSliceDownloadInfoRes.stream().parallel().allMatch(artifactSliceDownloadInfoRe -> {
 //                final String storageId = artifactSliceDownloadInfoRe.getStorageId();
 //                final String repositoryId = artifactSliceDownloadInfoRe.getRepositoryId();
                 final String path = artifactSliceDownloadInfoRe.getPath();
@@ -164,7 +173,7 @@ public class FolibWsClientArtifactPullCommand implements FolibWsClientCommand<Pr
                 if (!usedSlice) {
                     // 非切片下载（下载Part有且只有一个）
                     final String artifactFileSliceFolderPath = String.format("%s/artifactTemp/%s", StringUtils.chomp(tempPath, "/"), UUID.fastUUID().toString(true));
-                    final String downloadUrl = downloadParInfotList.get(0).getDownloadUrl();
+                    final String downloadUrl = String.format("%s?nodeMark=%s", downloadParInfotList.get(0).getDownloadUrl(), nodeMark);
                     try {
                         final String tempPath = String.format("%s/%s", artifactFileSliceFolderPath, FileUtil.getName(path));
                         FileUtil.touch(new File(tempPath));
@@ -188,13 +197,13 @@ public class FolibWsClientArtifactPullCommand implements FolibWsClientCommand<Pr
                     }
                 } else {
                     // 切片下载
-                    // - 临时下载到本地
                     final String artifactFileSliceFolderPath = String.format("%s/artifactMerge/%s", StringUtils.chomp(tempPath, "/"), UUID.fastUUID().toString(true));
+                    // - 临时下载到本地
                     final List<String> sliceFileDownloadPathList = IntStream.range(0, downloadParInfotList.size())
                             .parallel()
                             .mapToObj(index -> {
                                 final DownloadPartInfo downloadPartInfo = downloadParInfotList.get(index);
-                                final String downloadUrl = downloadPartInfo.getDownloadUrl();
+                                final String downloadUrl = String.format("%s?nodeMark=%s", downloadPartInfo.getDownloadUrl(), nodeMark);
                                 final String downloadFilePath = String.format("%s/chunk%s", artifactFileSliceFolderPath, index);
                                 final File downloadFile = new File(downloadFilePath);
                                 FileUtil.touch(downloadFile);

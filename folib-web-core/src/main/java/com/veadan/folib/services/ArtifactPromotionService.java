@@ -9,6 +9,7 @@ import com.veadan.folib.model.request.ArtifactSliceDownloadInfoReq;
 import com.veadan.folib.model.response.ArtifactSliceDownloadInfoRes;
 import com.veadan.folib.entity.Dict;
 import com.veadan.folib.model.request.ArtifactSupportSliceDownloadQueryReq;
+import com.veadan.folib.storage.repository.Repository;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -74,6 +75,8 @@ public interface ArtifactPromotionService {
     ArtifactParse parseArtifact(String storageId, String repositoryId, MultipartFile file);
 
 
+    Boolean sliceFileDownload(Repository repository, String artifactPath, String nodeMark, HttpServletResponse response);
+    
     
     /**
      * 判断制品是否支持切片下载
@@ -87,12 +90,21 @@ public interface ArtifactPromotionService {
     Map<String, Boolean> batchQuerySupportSliceDownload(List<ArtifactSupportSliceDownloadQueryReq> models);
     
     /**
-     * 获取制品切片下载信息
+     * 获取制品切片下载信息（基于临时文件目录存储）
      * @param model
      * @return
      * @since x.x.x
      */
-    ArtifactSliceDownloadInfoRes querySliceDownloadInfo(ArtifactSliceDownloadInfoReq model);
+    ArtifactSliceDownloadInfoRes querySliceDownloadInfoStoreTemp(ArtifactSliceDownloadInfoReq model);
+    
+    /**
+     * 获取制品切片下载信息（基于临时Folib目录存储）
+     * @param model
+     * @return
+     * @since x.x.x
+     */
+    ArtifactSliceDownloadInfoRes querySliceDownloadInfoStoreFolib(ArtifactSliceDownloadInfoReq model);
 
     List<ArtifactSliceDownloadInfoRes> batchQuerySliceDownloadInfo(List<ArtifactSliceDownloadInfoReq> models);
+
 }

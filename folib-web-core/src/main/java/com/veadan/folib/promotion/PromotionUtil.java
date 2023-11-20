@@ -299,6 +299,7 @@ public class PromotionUtil {
                     } catch (Exception e) {
                         throw new BusinessException("当前分发的节点不可用，请检查节点是否配置正确");
                     }
+                    return;
                 }
                 
                 final FolibWsAction folibWsAction = new FolibWsAction()

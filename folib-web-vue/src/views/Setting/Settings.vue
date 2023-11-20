@@ -100,10 +100,19 @@
                   <a-col :span="24"
                          :lg="8">
                     <a-form-item class="mb-10"
-                                 label="网络限速（MB/s）"
+                                 label="节点传输限速（KB/s）"
                                  :colon="false">
-                      <a-input placeholder="MB/s" type="number"
+                      <a-input placeholder="KB/s" type="number"
                                v-model="serverSettings.kbps" />
+                    </a-form-item>
+                  </a-col>
+                  <a-col :span="24"
+                         :lg="8">
+                    <a-form-item class="mb-10"
+                                 label="制品传输切片大小（MB）"
+                                 :colon="false">
+                      <a-input placeholder="MB" type="number"
+                               v-model="serverSettings.sliceMbSize" />
                     </a-form-item>
                   </a-col>
                 </a-row>
@@ -131,8 +140,9 @@
                 <p>说明:</p>
                 <ul class="pl-15 text-muted">
                   <li>应用名称修改会自动修改到配置文件</li>
-                  <li>网络限速，不设置则不限速</li>
-                  <li>baseurl,如果你使用了反向代理公网等情况下可以使用它</li>
+                  <li>制品传输切片大小，大制品节点之间传输切片大小（上限2000MB=2048000KB）</li>
+                  <li>节点传输节点传输限速（KB/s），不设置则不限速。传输节点限速未设置，则采用全局限速；全局和传输节点均未设置，则传输不限速（上限2000MB=2048000KB）</li>
+                  <li>baseurl，如果你使用了反向代理公网等情况下可以使用它</li>
                   <li>{{instanceName}}-Server服务的后端通信端口</li>
                 </ul>
               </a-form>
@@ -1323,6 +1333,10 @@
                       slot-scope="text, record">
                     {{ record.autoRegister && record.autoRegister === true ? '自动' : '手动' }}
                   </div>
+                  <div slot="kbps"
+                      slot-scope="text, record">
+                    {{ record.kbps && record.kbps > 0 ? record.kbps+' KB/s' : '不限速' }}
+                  </div>
 
                   <div slot="operation"
                       slot-scope="text, record">
@@ -1499,6 +1513,15 @@
                                prop="clusterNodeDesc">
               <a-input placeholder="请输入描述"
                        v-model="artifactDispatchForm.clusterNodeDesc" />
+            </a-form-model-item>
+          </a-col>
+          <a-col :span="24">
+            <a-form-model-item class="mb-10"
+                               label="节点传输限速（KB/s）"
+                               :colon="false"
+                               prop="clusterNodeDesc">
+              <a-input placeholder="请输入节点传输限速（KB/s）"
+                       v-model="artifactDispatchForm.kbps" />
             </a-form-model-item>
           </a-col>
           <a-col :span="24">
@@ -1695,6 +1718,7 @@ export default {
         baseUrl: 'http://localhost:38080/',
         port: 38080,
         kbps: 0,
+        sliceMbSize: 0,
         advancedConfigurationForm: {
           allowAnonymous: true,
           showChecksum: true,
@@ -1774,6 +1798,13 @@ export default {
           width: 100
         },
         {
+          title: '节点传输限速',
+          dataIndex: 'kbps',
+          key: 'kbps',
+          width: 80,
+          scopedSlots: { customRender: 'kbps' }
+        },
+        {
           title: '分发方式',
           dataIndex: 'dispatchType',
           key: 'dispatchType',
@@ -1846,7 +1877,8 @@ export default {
         clusterNodeDesc: undefined,
         clusterNodeHost: undefined,
         dispatchType: undefined,
-        isThisCluster: undefined
+        isThisCluster: undefined,
+        kbps: 0
       },
       metadataForm: {
         key: undefined,
