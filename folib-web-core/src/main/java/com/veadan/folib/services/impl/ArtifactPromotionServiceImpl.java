@@ -656,42 +656,68 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
         dictService.deleteDict(Dict.builder().dictType(dictType).dictKey(uuid).build());
     }
 
+    /** 当前下载连接数 */
+    public static final AtomicInteger DOWNLOAD_CONNECTION_COUNTER = new AtomicInteger();
 
     @Override
     public Boolean sliceFileDownload(Repository repository, String artifactPath, HttpServletResponse response) {
-        final String storageId = repository.getStorage().getId();
-        final String repositoryId = repository.getId();
-        final String artifactFileSliceFilePath = String.format("%s/artifactSlice/%s/%s/%s", StringUtils.chomp(tempPath, "/"), storageId, repositoryId, artifactPath);
-        final Path filePath = Path.of(artifactFileSliceFilePath);
-        
-        if (!Files.exists(filePath)) {
-            throw new BusinessException("下载的切片文件不存在或还未生成");
-        }
+        try {
+            // 获取全局节点限速
+            final long kbps = Optional.ofNullable(configurationManagementService.getConfiguration().getKbps()).orElse(0L) * (1024);
+            // 获取初始下载速度
+            int speedByteSize = this.getDownloadSpeedByte(DOWNLOAD_CONNECTION_COUNTER.incrementAndGet());
+            final String storageId = repository.getStorage().getId();
+            final String repositoryId = repository.getId();
+            final String artifactFileSliceFilePath = String.format("%s/artifactSlice/%s/%s/%s", StringUtils.chomp(tempPath, "/"), storageId, repositoryId, artifactPath);
+            final Path filePath = Path.of(artifactFileSliceFilePath);
 
-        final Path fileName = filePath.getFileName();
-        response.setHeader("Content-Disposition", String.format("attachment;filename=%s", fileName));
-        response.setContentType("application/x-gzip");
+            if (!Files.exists(filePath)) {
+                throw new BusinessException("下载的切片文件不存在或还未生成");
+            }
 
-        try (final OutputStream outputStream = response.getOutputStream();
-             final BufferedInputStream bufferedInputStream = new BufferedInputStream(Files.newInputStream(filePath)); ) {
-            IoUtil.copy(bufferedInputStream, outputStream);
-        } catch (Exception e) {
-            log.error("下载切片文件失败", e);
-            return false;
+            final String fileName = filePath.getFileName().toString();
+            response.setHeader("Content-Disposition", String.format("attachment;filename=%s", fileName));
+            response.setContentType("application/x-gzip");
+
+            // 判断文件是否存在Folib，有则直接返回
+            final RepositoryPath artifactRepositoryPath = repositoryPathResolver.resolve(repository, artifactPath);
+            if (Files.exists(artifactRepositoryPath)) {
+                try {
+                    IoUtil.copy(Files.newInputStream(artifactRepositoryPath), response.getOutputStream());
+                    return true;
+                } catch (IOException e) {
+                    log.error("", e);
+                    return false;
+                }
+            }
+
+///        final String mark = UUID.randomUUID().toString(true);
+            try (final OutputStream outputStream = response.getOutputStream();
+                 final BufferedInputStream bufferedInputStream = new BufferedInputStream(Files.newInputStream(filePath)); ) {
+
+                byte[] speedBytes = new byte[1024*1024*4];
+                int offset;
+                while ((offset = bufferedInputStream.read(speedBytes, 0, speedByteSize)) != -1) {
+                    TimeUnit.SECONDS.sleep(1);
+                    // 获取下一秒下载速度
+                    speedByteSize = this.getDownloadSpeedByte(DOWNLOAD_CONNECTION_COUNTER.get());
+///                log.info("当前({})({})的下载速度为：{}", DOWNLOAD_CONNECTION_COUNTER, mark, speedByteSize);
+                    outputStream.write(speedBytes, 0, offset);
+                }
+            } catch (Exception e) {
+                log.error("下载切片文件失败", e);
+                return false;
+            }
+        }finally {
+            DOWNLOAD_CONNECTION_COUNTER.decrementAndGet();
         }
-        
-//        try (FileChannel fileChannel = FileChannel.open(filePath);
-//             WritableByteChannel responseChannel = Channels.newChannel(response.getOutputStream())) {
-//            long fileSize = fileChannel.size();
-//            for (long left = fileSize; left > 0; ) {
-//                left -= fileChannel.transferTo((fileSize - left), left, responseChannel);
-//            }
-//        } catch (Exception e) {
-//            log.error("下载切片文件失败", e);
-//            return false;
-//        }
         
         return true;
+    }
+    
+    private int getDownloadSpeedByte(int downloadThreadCount) {
+        int kbps = 1024*1024;
+        return kbps / downloadThreadCount;
     }
 
     @Override
