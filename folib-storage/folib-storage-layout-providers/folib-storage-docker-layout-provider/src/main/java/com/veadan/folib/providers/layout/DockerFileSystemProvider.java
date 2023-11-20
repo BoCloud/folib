@@ -3,8 +3,6 @@ package com.veadan.folib.providers.layout;
 import com.alibaba.fastjson.JSON;
 import com.google.common.collect.Lists;
 import com.veadan.folib.artifact.coordinates.DockerArtifactCoordinates;
-import com.veadan.folib.cloud.storage.s3fs.S3Iterator;
-import com.veadan.folib.cloud.storage.s3fs.S3Path;
 import com.veadan.folib.providers.io.RepositoryFiles;
 import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.providers.io.RepositoryPathResolver;
@@ -30,6 +28,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * @author Veadan
@@ -101,7 +100,10 @@ public class DockerFileSystemProvider
         }
         if (Objects.isNull(currentManifestPath)) {
             //当前版本下manifest文件信息
-            List<Path> pathList = Files.list(repositoryPath).filter(f -> !Files.isDirectory(f) && DockerArtifactCoordinates.isManifestPath(f)).collect(Collectors.toList());
+            List<Path> pathList;
+            try (Stream<Path> pathStream = Files.list(repositoryPath)) {
+                pathList = pathStream.filter(f -> !Files.isDirectory(f) && DockerArtifactCoordinates.isManifestPath(f)).collect(Collectors.toList());
+            }
             if (CollectionUtils.isNotEmpty(pathList)) {
                 currentManifestPath = pathList.get(0);
             }
@@ -141,23 +143,25 @@ public class DockerFileSystemProvider
             List<LayerManifest> layerManifestExistList = Lists.newArrayList();
             //过滤找出其他版本的manifest文件信息
             List<String> manifestConfigList = Lists.newArrayList();
-            Files.list(manifestRootRepositoryPath).filter(f -> !Files.isDirectory(f) && DockerArtifactCoordinates.isManifestPath(f) && !f.getFileName().toString().equals(currentManifestPath.getFileName().toString()) && imageManifestDigestList.stream().noneMatch(f.getFileName().toString()::equals)).forEach(f -> {
-                logger.info("其他版本的manifest文件名：{}", f.getFileName().toString());
-                RepositoryPath itemManifestRepositoryPath = parent.resolve(manifest + File.separator + f.getFileName().toString());
-                try {
-                    List<ImageManifest> imageManifestList = getImageManifests(itemManifestRepositoryPath);
-                    manifestConfigList.addAll(Optional.ofNullable(imageManifestList).orElse(Collections.emptyList()).stream().filter(item -> Objects.nonNull(item.getConfig())).map(item -> item.getConfig().getDigest()).collect(Collectors.toList()));
-                    List<LayerManifest> layerManifests = Optional.ofNullable(imageManifestList).orElse(Collections.emptyList()).stream().flatMap(ele -> Optional.ofNullable(ele.getLayers()).orElse(Collections.emptyList()).stream()).collect(Collectors.toList());
-                    //循环查询当前版本下的被其他版本使用了的层级信息
-                    for (LayerManifest layerManifest : currentLayerManifestList) {
-                        if (layersContains(layerManifest, layerManifests)) {
-                            layerManifestExistList.add(layerManifest);
+            try (Stream<Path> pathStream = Files.list(manifestRootRepositoryPath)) {
+                pathStream.filter(f -> !Files.isDirectory(f) && DockerArtifactCoordinates.isManifestPath(f) && !f.getFileName().toString().equals(currentManifestPath.getFileName().toString()) && imageManifestDigestList.stream().noneMatch(f.getFileName().toString()::equals)).forEach(f -> {
+                    logger.info("其他版本的manifest文件名：{}", f.getFileName().toString());
+                    RepositoryPath itemManifestRepositoryPath = parent.resolve(manifest + File.separator + f.getFileName().toString());
+                    try {
+                        List<ImageManifest> imageManifestList = getImageManifests(itemManifestRepositoryPath);
+                        manifestConfigList.addAll(Optional.ofNullable(imageManifestList).orElse(Collections.emptyList()).stream().filter(item -> Objects.nonNull(item.getConfig())).map(item -> item.getConfig().getDigest()).collect(Collectors.toList()));
+                        List<LayerManifest> layerManifests = Optional.ofNullable(imageManifestList).orElse(Collections.emptyList()).stream().flatMap(ele -> Optional.ofNullable(ele.getLayers()).orElse(Collections.emptyList()).stream()).collect(Collectors.toList());
+                        //循环查询当前版本下的被其他版本使用了的层级信息
+                        for (LayerManifest layerManifest : currentLayerManifestList) {
+                            if (layersContains(layerManifest, layerManifests)) {
+                                layerManifestExistList.add(layerManifest);
+                            }
                         }
+                    } catch (IOException ex) {
+                        logger.error("获取 {} 的imageManifestList错误 {}", itemManifestRepositoryPath, ExceptionUtils.getStackTrace(ex));
                     }
-                } catch (IOException ex) {
-                    logger.error("获取 {} 的imageManifestList错误 {}", itemManifestRepositoryPath, ExceptionUtils.getStackTrace(ex));
-                }
-            });
+                });
+            }
             currentLayerManifestList.removeAll(layerManifestExistList);
             RepositoryPath currentManifestRepositoryPath = repositoryPathResolver.resolve(repositoryPath.getStorageId(), repositoryPath.getRepositoryId(), parent.getFileName() + File.separator + manifest + File.separator + itemImageManifest.getDigest());
             boolean flag = checkRelation(parent, currentManifestRepositoryPath.getFileName().toString(), repositoryPath.getFileName().toString());
@@ -204,21 +208,24 @@ public class DockerFileSystemProvider
         String manifest = "manifest";
         String sha256 = "sha256";
         List<String> directoryNameList = Lists.newArrayList(blobs, manifest, directoryName);
-        try {
-            Files.list(parentRepositoryPath).filter(f -> Files.isDirectory(f) && !directoryNameList.contains(f.getFileName().toString())).forEach(item -> {
+        try (Stream<Path> pathStream = Files.list(parentRepositoryPath)) {
+            pathStream.filter(f -> Files.isDirectory(f) && !directoryNameList.contains(f.getFileName().toString())).forEach(item -> {
                 try {
-                    boolean b = Files.list(item).filter(f -> !Files.isDirectory(f) && f.getFileName().toString().startsWith(sha256) && !f.getFileName().toString().endsWith(sha256)).anyMatch(fc -> {
-                        RepositoryPath itemManifestRepositoryPath = null;
-                        List<String> imageManifestNames = Collections.emptyList();
-                        try {
-                            itemManifestRepositoryPath = parentRepositoryPath.resolve(manifest + File.separator + fc.getFileName().toString());
-                            List<ImageManifest> imageManifestList = getImageManifests(itemManifestRepositoryPath);
-                            imageManifestNames = Optional.ofNullable(imageManifestList).orElse(Collections.emptyList()).stream().map(ImageManifest::getDigest).collect(Collectors.toList());
-                        } catch (IOException ex) {
-                            logger.error("获取 {} 的imageManifestList错误 {}", itemManifestRepositoryPath, ExceptionUtils.getStackTrace(ex));
-                        }
-                        return !Files.isDirectory(fc) && imageManifestNames.contains(fileName);
-                    });
+                    boolean b;
+                    try (Stream<Path> itemPathStream = Files.list(item)) {
+                        b = itemPathStream.filter(f -> !Files.isDirectory(f) && f.getFileName().toString().startsWith(sha256) && !f.getFileName().toString().endsWith(sha256)).anyMatch(fc -> {
+                            RepositoryPath itemManifestRepositoryPath = null;
+                            List<String> imageManifestNames = Collections.emptyList();
+                            try {
+                                itemManifestRepositoryPath = parentRepositoryPath.resolve(manifest + File.separator + fc.getFileName().toString());
+                                List<ImageManifest> imageManifestList = getImageManifests(itemManifestRepositoryPath);
+                                imageManifestNames = Optional.ofNullable(imageManifestList).orElse(Collections.emptyList()).stream().map(ImageManifest::getDigest).collect(Collectors.toList());
+                            } catch (IOException ex) {
+                                logger.error("获取 {} 的imageManifestList错误 {}", itemManifestRepositoryPath, ExceptionUtils.getStackTrace(ex));
+                            }
+                            return !Files.isDirectory(fc) && imageManifestNames.contains(fileName);
+                        });
+                    }
                     if (b) {
                         logger.info("存在关联 {}，版本目录名称：{}", fileName, item.getFileName().toString());
                         flag.set(true);

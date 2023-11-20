@@ -55,6 +55,7 @@ public class ArtifactDownloadingEventHandler extends AsyncArtifactEntryHandler {
         Artifact updateArtifactEntry = new ArtifactEntity(artifactEntry.getNativeId(), artifactEntry.getStorageId(), artifactEntry.getRepositoryId(), artifactEntry.getUuid(), artifactEntry.getArtifactCoordinates());
         updateArtifactEntry.setDownloadCount(artifactEntry.getDownloadCount() + 1);
         updateArtifactEntry.setLastUsed(LocalDateTimeInstance.now());
+        updateArtifactEntry.setLastUpdated(updateArtifactEntry.getLastUsed());
         log.debug("[{}] [{}] downloadCount changed from [{}] to [{}].",
                 this.getClass().getSimpleName(),
                 repositoryPath,

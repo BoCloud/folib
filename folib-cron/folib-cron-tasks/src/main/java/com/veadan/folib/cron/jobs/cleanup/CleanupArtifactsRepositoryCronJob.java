@@ -68,6 +68,11 @@ public class CleanupArtifactsRepositoryCronJob extends JavaCronJob {
 
     private void cleanRepositoryByDay(String storageId, String repositoryId, String cleanDay) {
         try {
+            Repository repository = configurationManager.getRepository(storageId, repositoryId);
+            String dockerLayout = "Docker", cleanupRepositoryType = "GENERAL";
+            if (dockerLayout.equalsIgnoreCase(repository.getLayout())) {
+                cleanupRepositoryType = "DOCKER";
+            }
             RepositoryPath repositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, "");
             List<String> paths = RepositoryPathUtil.getFileRelativePaths(repositoryPath);
             if (CollectionUtils.isEmpty(paths)) {
@@ -78,11 +83,6 @@ public class CleanupArtifactsRepositoryCronJob extends JavaCronJob {
             List<String> resultList = Lists.newArrayList();
             for (String path : paths) {
                 try {
-                    Repository repository = configurationManager.getRepository(storageId, repositoryId);
-                    String dockerLayout = "Docker", cleanupRepositoryType = "GENERAL";
-                    if (dockerLayout.equalsIgnoreCase(repository.getLayout())) {
-                        cleanupRepositoryType = "DOCKER";
-                    }
                     CleanupArtifactsProvider cleanupArtifactsProvider = cleanupArtifactsProviderRegistry.getProvider(cleanupRepositoryType);
                     String result = cleanupArtifactsProvider.cleanup(storageId, repositoryId, path, cleanDay);
                     resultList.add(result);

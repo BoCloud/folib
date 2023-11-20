@@ -10,6 +10,7 @@ import com.veadan.folib.services.ArtifactManagementService;
 import com.veadan.folib.storage.Storage;
 import com.veadan.folib.storage.repository.Repository;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
@@ -26,6 +27,7 @@ import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * @author Veadan
@@ -136,29 +138,34 @@ public class HostedRepositoryProvider extends AbstractRepositoryProvider {
             return Map.of("results", new ArrayList<>());
         }
         if (StringUtils.isBlank(name)) {
-            List<String> list = Files.list(repositoryPath)
-                    .flatMap(p -> {
-                        try {
-                            return Files.list(p);
-                        } catch (IOException e) {
-                            return null;
-                        }
-                    })
-                    .map(p -> (RepositoryPath) p)
-                    .map(RepositoryPath::relativize)
-                    .map(Path::toString)
-                    .map(p -> p.replace("\\", "/"))
-                    .collect(Collectors.toList());
-            return Map.of("results", list);
+            try (Stream<Path> pathStream = Files.list(repositoryPath)) {
+                List<String> list = pathStream
+                        .flatMap(p -> {
+                            try (Stream<Path> nestedPathStream = Files.list(p)) {
+                                return nestedPathStream.collect(Collectors.toList()).stream();
+                            } catch (IOException e) {
+                                logger.error(ExceptionUtils.getStackTrace(e));
+                                return Stream.empty();
+                            }
+                        })
+                        .map(p -> (RepositoryPath) p)
+                        .map(RepositoryPath::relativize)
+                        .map(Path::toString)
+                        .map(p -> p.replace("\\", "/"))
+                        .collect(Collectors.toList());
+                return Map.of("results", list);
+            }
         } else {
-            List<String> list = Files.list(repositoryPath)
-                    .filter(p -> version == null || p.endsWith(version))
-                    .map(a -> (RepositoryPath) a)
-                    .map(RepositoryPath::relativize)
-                    .map(Path::toString)
-                    .map(p -> p.replace("\\", "/"))
-                    .collect(Collectors.toList());
-            return Map.of("results", list);
+            try (Stream<Path> pathStream = Files.list(repositoryPath)) {
+                List<String> list = pathStream
+                        .filter(p -> version == null || p.endsWith(version))
+                        .map(a -> (RepositoryPath) a)
+                        .map(RepositoryPath::relativize)
+                        .map(Path::toString)
+                        .map(p -> p.replace("\\", "/"))
+                        .collect(Collectors.toList());
+                return Map.of("results", list);
+            }
         }
     }
 
@@ -211,66 +218,67 @@ public class HostedRepositoryProvider extends AbstractRepositoryProvider {
             return Maps.newHashMap();
         }
         Map<String, Object> resultMap = new HashMap<>();
-        List list = Files.list(repositoryPath).collect(Collectors.toList());
-        list.forEach(x -> {
-            try {
-                RepositoryPath packageIdPath = (RepositoryPath) x;
-                String a = packagePath + "/" + "";
-                Map<String, Object> resultInfoMap = new HashMap<>();
-                String[] packageArray = packageIdPath.relativize().toString().split("/");
-                String packageId = packageArray.length > 0 ? packageArray[packageArray.length - 1] : "";
-                String packageIdPathStr = packagePath + "/" + packageId + "/0/conaninfo.txt";
-                RepositoryPath packageIdInfoPath = repositoryPathResolver.resolve(repository.getStorage().getId()
-                        , repository.getId(), packageIdPathStr);
-                List<String> infoList = Files.readAllLines(packageIdInfoPath);
-                resultMap.put(packageId, resultInfoMap);
-                Map<String, Map<String, Object>> settingsMap = new HashMap<>();
-                Map<String, Map<String, Object>> optionsMap = new HashMap<>();
-                List<String> requireList = new ArrayList<>();
-                resultInfoMap.put("settings", settingsMap);
-                resultInfoMap.put("options", optionsMap);
-                resultInfoMap.put("requires", requireList);
-                resultInfoMap.put("recipe_hash", "");
-                String key = "";
-                for (String line : infoList) {
-                    line = line.trim();
-                    if (line.equals("[settings]")) {
-                        key = "settings";
-                        continue;
-                    } else if (line.equals("[options]")) {
-                        key = "options";
-                        continue;
-                    } else if (line.equals("[full_requires]")) {
-                        key = "requires";
-                        continue;
-                    } else if (line.equals("[recipe_hash]")) {
-                        key = "recipe_hash";
-                        continue;
-                    } else if (line.contains("[") && line.contains("]")) {
-                        key = "other";
-                        continue;
-                    }
-                    if (org.junit.platform.commons.util.StringUtils.isBlank(line)) {
-                        continue;
-                    }
-
-                    if (key.equals("settings") || key.equals("options")) {
-                        Map<String, Object> map = (Map<String, Object>) resultInfoMap.get(key);
-                        if (line.contains("=")) {
-                            map.put(line.split("=")[0], line.split("=")[1]);
+        try (Stream<Path> pathStream = Files.list(repositoryPath)) {
+            List list = pathStream.collect(Collectors.toList());
+            list.forEach(x -> {
+                try {
+                    RepositoryPath packageIdPath = (RepositoryPath) x;
+                    String a = packagePath + "/" + "";
+                    Map<String, Object> resultInfoMap = new HashMap<>();
+                    String[] packageArray = packageIdPath.relativize().toString().split("/");
+                    String packageId = packageArray.length > 0 ? packageArray[packageArray.length - 1] : "";
+                    String packageIdPathStr = packagePath + "/" + packageId + "/0/conaninfo.txt";
+                    RepositoryPath packageIdInfoPath = repositoryPathResolver.resolve(repository.getStorage().getId()
+                            , repository.getId(), packageIdPathStr);
+                    List<String> infoList = Files.readAllLines(packageIdInfoPath);
+                    resultMap.put(packageId, resultInfoMap);
+                    Map<String, Map<String, Object>> settingsMap = new HashMap<>();
+                    Map<String, Map<String, Object>> optionsMap = new HashMap<>();
+                    List<String> requireList = new ArrayList<>();
+                    resultInfoMap.put("settings", settingsMap);
+                    resultInfoMap.put("options", optionsMap);
+                    resultInfoMap.put("requires", requireList);
+                    resultInfoMap.put("recipe_hash", "");
+                    String key = "";
+                    for (String line : infoList) {
+                        line = line.trim();
+                        if (line.equals("[settings]")) {
+                            key = "settings";
+                            continue;
+                        } else if (line.equals("[options]")) {
+                            key = "options";
+                            continue;
+                        } else if (line.equals("[full_requires]")) {
+                            key = "requires";
+                            continue;
+                        } else if (line.equals("[recipe_hash]")) {
+                            key = "recipe_hash";
+                            continue;
+                        } else if (line.contains("[") && line.contains("]")) {
+                            key = "other";
+                            continue;
                         }
-                    } else if (key.equals("requires")) {
-                        List<String> listRequires = (List<String>) resultInfoMap.get(key);
-                        listRequires.add(line);
-                    } else if (key.equals("recipe_hash")) {
-                        resultInfoMap.put("recipe_hash", line);
-                    }
-                }
-            } catch (Exception e) {
-                logger.error("get package info error {}", e.getMessage());
-            }
+                        if (org.junit.platform.commons.util.StringUtils.isBlank(line)) {
+                            continue;
+                        }
 
-        });
+                        if (key.equals("settings") || key.equals("options")) {
+                            Map<String, Object> map = (Map<String, Object>) resultInfoMap.get(key);
+                            if (line.contains("=")) {
+                                map.put(line.split("=")[0], line.split("=")[1]);
+                            }
+                        } else if (key.equals("requires")) {
+                            List<String> listRequires = (List<String>) resultInfoMap.get(key);
+                            listRequires.add(line);
+                        } else if (key.equals("recipe_hash")) {
+                            resultInfoMap.put("recipe_hash", line);
+                        }
+                    }
+                } catch (Exception e) {
+                    logger.error("get package info error {}", e.getMessage());
+                }
+            });
+        }
         return resultMap;
     }
 

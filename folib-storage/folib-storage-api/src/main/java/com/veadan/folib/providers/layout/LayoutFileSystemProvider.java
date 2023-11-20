@@ -37,6 +37,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * This class decorates {@link StorageFileSystemProvider} with common layout specific
@@ -158,23 +159,25 @@ public abstract class LayoutFileSystemProvider extends StorageFileSystemProvider
     public void storeChecksum(RepositoryPath basePath,
                               boolean forceRegeneration)
             throws IOException {
-        Files.walk(basePath)
-                .filter(p -> !Files.isDirectory(p))
-                .filter(p -> {
-                    try {
-                        return !Boolean.TRUE.equals(RepositoryFiles.isChecksum((RepositoryPath) p));
-                    } catch (IOException e) {
-                        logger.error("Failed to read attributes for [{}]", p, e);
-                    }
-                    return false;
-                })
-                .forEach(p -> {
-                    try {
-                        writeChecksum((RepositoryPath) p, forceRegeneration);
-                    } catch (IOException e) {
-                        logger.error("Failed to write checksum for [{}]", p, e);
-                    }
-                });
+        try (Stream<Path> pathStream = Files.walk(basePath)) {
+            pathStream
+                    .filter(p -> !Files.isDirectory(p))
+                    .filter(p -> {
+                        try {
+                            return !Boolean.TRUE.equals(RepositoryFiles.isChecksum((RepositoryPath) p));
+                        } catch (IOException e) {
+                            logger.error("Failed to read attributes for [{}]", p, e);
+                        }
+                        return false;
+                    })
+                    .forEach(p -> {
+                        try {
+                            writeChecksum((RepositoryPath) p, forceRegeneration);
+                        } catch (IOException e) {
+                            logger.error("Failed to write checksum for [{}]", p, e);
+                        }
+                    });
+        }
     }
 
 

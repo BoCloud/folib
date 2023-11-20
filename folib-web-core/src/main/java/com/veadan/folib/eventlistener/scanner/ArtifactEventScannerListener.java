@@ -65,6 +65,8 @@ public class ArtifactEventScannerListener {
     @Value("${folib.temp}")
     private String tempPath;
 
+    private static final String temp = ".temp";
+
     @AsyncEventListener
     public void handle(final ArtifactEvent<RepositoryPath> event) throws IOException {
         RepositoryPath repositoryPath = event.getPath();
@@ -125,7 +127,7 @@ public class ArtifactEventScannerListener {
                     tempFile = new File(filePath);
                     inputStream = Files.newInputStream(blobsRepositoryPath);
                     FileUtil.writeFromStream(inputStream, tempFile, true);
-                    tempPath = parentPath + File.separator + "temp";
+                    tempPath = parentPath + File.separator + temp;
                     handlerDockerBlobFile(repositoryPath, filePaths, tempFile.getPath(), tempPath);
                 }
                 handlerScan(repositoryPath, source, filePaths);
@@ -155,7 +157,7 @@ public class ArtifactEventScannerListener {
         //获取图层中的digest列表
         List<String> digestList = getImageManifest(repositoryPath);
         //存放解压文件的目录路径
-        String tempPath = parentFile.getPath() + File.separator + "temp";
+        String tempPath = parentFile.getPath() + File.separator + temp;
         int maxSize = 100;
         if (CollectionUtils.isNotEmpty(digestList)) {
             String blobsPath = "";
@@ -223,7 +225,7 @@ public class ArtifactEventScannerListener {
                         return;
                     }
                     if (isS3) {
-                        S3Path s3PathObject = new S3Path(finalS3Path.getFileSystem(), finalVersionKey + File.separator + "temp" + File.separator + FileUtil.getName(filePath));
+                        S3Path s3PathObject = new S3Path(finalS3Path.getFileSystem(), finalVersionKey + File.separator + temp + File.separator + FileUtil.getName(filePath));
                         //将docker镜像中解压出来的文件上传到S3
                         finalS3Path.getFileSystem().getClient().putObject(PutObjectRequest.builder().bucket(finalS3Path.getBucketName()).key(s3PathObject.getKey()).build(), Path.of(filePath));
                         filePaths.add(finalS3Path.toString().substring(0, finalS3Path.toString().indexOf(finalS3Path.getKey())) + s3PathObject.toString());
