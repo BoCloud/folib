@@ -5,13 +5,18 @@ import com.veadan.folib.domain.ArtifactParse;
 import com.veadan.folib.domain.ArtifactPromotion;
 import com.veadan.folib.domain.PromotionNodeOption;
 import com.veadan.folib.dto.ArtifactDto;
+import com.veadan.folib.model.request.ArtifactSliceDownloadInfoReq;
+import com.veadan.folib.model.response.ArtifactSliceDownloadInfoRes;
 import com.veadan.folib.entity.Dict;
+import com.veadan.folib.model.request.ArtifactSupportSliceDownloadQueryReq;
+import com.veadan.folib.storage.repository.Repository;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.util.List;
+import java.util.Map;
 
 /**
  * 制品晋级service
@@ -27,6 +32,8 @@ public interface ArtifactPromotionService {
     ResponseEntity nodeOption(PromotionNodeOption promotionNodeOption, HttpServletRequest request);
     
     ResponseEntity nodeOptionAttachRecord(PromotionNodeOption promotionNodeOption, HttpServletRequest request);
+
+    ResponseEntity artifactPromotionInfo(String syncNo);
 
     ResponseEntity upload(MultipartFile[] files, String storageId, String repositoryId, String filePathMap, String fileMetaDataMap, String uuid);
 
@@ -66,5 +73,38 @@ public interface ArtifactPromotionService {
      * @return 制品结果
      */
     ArtifactParse parseArtifact(String storageId, String repositoryId, MultipartFile file);
+
+
+    Boolean sliceFileDownload(Repository repository, String artifactPath, String nodeMark, HttpServletResponse response);
+    
+    
+    /**
+     * 判断制品是否支持切片下载
+     * @param model
+     * @return
+     * @since x.x.x
+     */
+    Boolean querySupportSliceDownload(ArtifactSupportSliceDownloadQueryReq model);
+
+
+    Map<String, Boolean> batchQuerySupportSliceDownload(List<ArtifactSupportSliceDownloadQueryReq> models);
+    
+    /**
+     * 获取制品切片下载信息（基于临时文件目录存储）
+     * @param model
+     * @return
+     * @since x.x.x
+     */
+    ArtifactSliceDownloadInfoRes querySliceDownloadInfoStoreTemp(ArtifactSliceDownloadInfoReq model);
+    
+    /**
+     * 获取制品切片下载信息（基于临时Folib目录存储）
+     * @param model
+     * @return
+     * @since x.x.x
+     */
+    ArtifactSliceDownloadInfoRes querySliceDownloadInfoStoreFolib(ArtifactSliceDownloadInfoReq model);
+
+    List<ArtifactSliceDownloadInfoRes> batchQuerySliceDownloadInfo(List<ArtifactSliceDownloadInfoReq> models);
 
 }

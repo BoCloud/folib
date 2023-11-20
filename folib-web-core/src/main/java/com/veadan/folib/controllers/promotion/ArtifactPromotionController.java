@@ -9,8 +9,13 @@ import com.veadan.folib.domain.ArtifactPromotion;
 import com.veadan.folib.domain.PromotionNodeOption;
 import com.veadan.folib.dto.ArtifactDto;
 import com.veadan.folib.entity.Dict;
+import com.veadan.folib.model.request.ArtifactSliceDownloadInfoReq;
+import com.veadan.folib.model.request.ArtifactSupportSliceDownloadQueryReq;
+import com.veadan.folib.model.response.ArtifactSliceDownloadInfoRes;
 import com.veadan.folib.services.ArtifactPromotionService;
+import com.veadan.folib.storage.repository.Repository;
 import com.veadan.folib.validation.RequestBodyValidationException;
+import com.veadan.folib.web.RepositoryMapping;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import lombok.extern.slf4j.Slf4j;
@@ -19,12 +24,20 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.annotation.Validated;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.util.List;
+import java.util.Map;
 
 /**
  * 制品晋级控制层
@@ -69,7 +82,14 @@ public class ArtifactPromotionController extends BaseArtifactController {
         if (bindingResult.hasErrors()) {
             throw new RequestBodyValidationException("请求参数错误", bindingResult);
         }
-        return artifactPromotionService.nodeOption(promotionNodeOption, request);
+        return artifactPromotionService.nodeOptionAttachRecord(promotionNodeOption, request);
+    }
+
+    
+    @GetMapping("/info/{syncNo}")
+    @PermissionCheck(resourceKey = "ARTIFACTS_PROMOTION")
+    public ResponseEntity artifactPromotionInfo(@PathVariable("syncNo") String syncNo) {
+        return artifactPromotionService.artifactPromotionInfo(syncNo);
     }
 
 
@@ -154,5 +174,37 @@ public class ArtifactPromotionController extends BaseArtifactController {
     public ResponseEntity<String> deleteUploadProcess(@RequestParam("dictType") String dictType, @RequestParam(name = "uuid", required = false) String uuid) {
         artifactPromotionService.deleteUploadProcess(dictType, uuid);
         return ResponseEntity.ok("");
+    }
+
+
+    @GetMapping(value = "/file/speedLimitDownload/{storageId}/{repositoryId}/{artifactPath:.+}")
+    public void speedLimitDownload(@RepositoryMapping Repository repository,
+                                   @PathVariable String artifactPath, @RequestParam("nodeMark") String nodeMark,
+                                   HttpServletResponse response) {
+        artifactPromotionService.sliceFileDownload(repository, artifactPath, nodeMark, response);
+    }
+
+    @PostMapping(value = "/query/support/slice/download")
+    @PermissionCheck(resourceKey = "ARTIFACTS_RESOLVE")
+    public ResponseEntity<Boolean> querySupportSliceDownload(@RequestBody @Validated ArtifactSupportSliceDownloadQueryReq model) {
+        return ResponseEntity.ok(artifactPromotionService.querySupportSliceDownload(model));
+    }
+
+    @PostMapping(value = "/batch/query/support/slice/download")
+    @PermissionCheck(resourceKey = "ARTIFACTS_RESOLVE")
+    public ResponseEntity<Map<String, Boolean>> batchQuerySupportSliceDownload(@RequestBody @Validated List<ArtifactSupportSliceDownloadQueryReq> models) {
+        return ResponseEntity.ok(artifactPromotionService.batchQuerySupportSliceDownload(models));
+    }
+    
+    @PostMapping(value = "/query/slice/download/info")
+    @PermissionCheck(resourceKey = "ARTIFACTS_RESOLVE")
+    public ResponseEntity<ArtifactSliceDownloadInfoRes> querySliceDownloadInfo(@RequestBody ArtifactSliceDownloadInfoReq model) {
+        return ResponseEntity.ok(artifactPromotionService.querySliceDownloadInfoStoreTemp(model));
+    }
+
+    @PostMapping(value = "/batch/query/slice/download/info")
+    @PermissionCheck(resourceKey = "ARTIFACTS_RESOLVE")
+    public ResponseEntity<List<ArtifactSliceDownloadInfoRes>> batchQuerySliceDownloadInfo(@RequestBody List<ArtifactSliceDownloadInfoReq> models) {
+        return ResponseEntity.ok(artifactPromotionService.batchQuerySliceDownloadInfo(models));
     }
 }

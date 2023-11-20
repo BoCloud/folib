@@ -85,8 +85,6 @@ folib:
       basedir: ${folib.vault}/storages
   host: localhost
   port: 38080
-  dependentLibraryPrefix: anhui
-  dependentPushUrl: http://172.29.63.45:9022
   nuget:
     download:
       feed: false
@@ -138,6 +136,13 @@ folib:
       keepAliveSeconds: 0
       threadNamePrefix: asyncScan_
       awaitTerminationSeconds: 0
+    asyncWsCommand:
+      corePoolSize: 16
+      maxPoolSize: 16
+      queueCapacity: 2147483647
+      keepAliveSeconds: 0
+      threadNamePrefix: asyncWsCommand_
+      awaitTerminationSeconds: 0
 # Changes to these properties must also be applied to [folib/folib-web-integration-tests] and possibly the pipeline.
 # Please ping us on our chat channel (https://chat.carlspring.org/) to confirm.
 logging:
@@ -179,14 +184,13 @@ cacheManagerConfiguration:
   groupConfig:
     name: folib
     password: password
-  enableMulticastConfig: false
-  multicast:
-    multicastGroup: 224.2.2.3
-    multicastPort: 54327
-    multicastTimeoutSeconds: 2
-    multicastTimeToLive: 32
-    trustedInterfaces: en0,en1
-    loopbackModeEnabled: false
+  tcpIpPort: ${folib.cache.port:5701}
+  enableTcpIpConfig: true
+  tcpIp:
+    tcpIpTimeoutSeconds: 20
+    #ip地址逗号隔开
+    members: ${folib.cache.cluster:127.0.0.1:5701,10.10.33.149:5701}
+
   instanceId: folib
   caches:
     remoteRepositoryAliveness:

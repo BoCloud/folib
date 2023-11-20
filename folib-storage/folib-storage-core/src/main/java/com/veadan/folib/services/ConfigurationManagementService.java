@@ -31,6 +31,10 @@ public interface ConfigurationManagementService {
     void setBaseUrl(String baseUrl) throws IOException;
 
     void setPort(int port) throws IOException;
+    
+    void setKbps(Integer kbps) throws IOException;
+    
+    void setSliceMbSize(Long sliceMbSize) throws IOException;
 
     void setAdvancedConfiguration(MutableAdvancedConfiguration advancedConfiguration) throws IOException;
 

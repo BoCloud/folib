@@ -1,14 +1,18 @@
 package com.veadan.folib.utils;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 
 import javax.servlet.http.HttpServletRequest;
+import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.Optional;
 
 /**
  * @author
  */
+@Slf4j
 public class UrlUtils {
 
     private UrlUtils() {
@@ -37,19 +41,6 @@ public class UrlUtils {
     }
 
 
-    public static void main(String[] args) {
-        String sourcePath = "";
-        String[] result = parsePath(sourcePath);
-        if (result != null) {
-            String srcStorageId = result[0];
-            String srcRepostoryId = result[1];
-            System.out.println("srcStorageId: " + srcStorageId);
-            System.out.println("srcRepostoryId: " + srcRepostoryId);
-        } else {
-            System.out.println("Invalid sourcePath format");
-        }
-    }
-
     public static String[] parsePath(String artiactPath) {
         try {
             URL url = new URL(artiactPath);
@@ -66,6 +57,31 @@ public class UrlUtils {
             // URL 格式不正确或解析失败
         }
         return null;
+    }
+
+    public static Integer getPort(String urlStr)
+    {
+        if (urlStr.startsWith("https")) {
+            return 443;
+        }
+        try {
+            final URL url = new URL(urlStr);
+            return Optional.of(url.getPort()).map(p -> p < 0 ? 80:p).get();
+        } catch (MalformedURLException e) {
+            log.error("解析端口错误", e);
+            return null;
+        }
+    }
+
+    public static String getHost(String urlStr)
+    {
+        try {
+            final URL url = new URL(urlStr);
+            return url.getHost();
+        } catch (MalformedURLException e) {
+            log.error("解析Host错误", e);
+            return null;
+        }
     }
 
 }

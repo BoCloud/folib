@@ -50,8 +50,12 @@ import com.veadan.folib.users.dto.PathPrivilegesDto;
 import com.veadan.folib.users.service.UserService;
 import com.veadan.folib.users.service.impl.DatabaseUserService;
 import com.veadan.folib.users.userdetails.SpringSecurityUser;
+import com.veadan.folib.utils.UrlUtils;
 import com.veadan.folib.validation.RequestBodyValidationException;
 import com.veadan.folib.web.RepositoryMapping;
+import com.veadan.folib.ws.common.FolibWsAction;
+import com.veadan.folib.ws.client.handler.command.FolibWsClientGetStoragesRepositoryTreeCommand;
+import com.veadan.folib.ws.server.manage.FolibWsServerRunManage;
 import io.swagger.annotations.*;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.MapUtils;
@@ -396,7 +400,7 @@ public class StoragesConfigurationController
 
     @PostMapping(value = "/getDispatchRepositories", produces = MediaType.APPLICATION_JSON_VALUE)
     @PermissionCheck(resourceKey = "ARTIFACTS_VIEW")
-    public ResponseEntity getDispatchRepositories(@RequestBody ArtifactDispatchRepositoryDto dispatchRepositoryDto) {
+    public ResponseEntity<DispatchStorageTree> getDispatchRepositories(@RequestBody ArtifactDispatchRepositoryDto dispatchRepositoryDto) {
         String dispatchEnName = dispatchRepositoryDto.getDispatchEnName();
         String type = dispatchRepositoryDto.getType();
         String layout = dispatchRepositoryDto.getLayout();
@@ -483,24 +487,43 @@ public class StoragesConfigurationController
                 .policy(policy).build();
         List<StorageTreeForm> repoList = new LinkedList<>();
         for (ClusterDispatchNodeDto clusterDispatchNodeDto : listDispatch) {
-            String dispatchEnName = clusterDispatchNodeDto.getClusterEnName();
+            final String dispatchEnName = clusterDispatchNodeDto.getClusterEnName();
+            final Boolean autoRegister = clusterDispatchNodeDto.getAutoRegister();
+            final String clusterNodeHost = clusterDispatchNodeDto.getClusterNodeHost();
             try {
-                String host = clusterDispatchNodeDto.getClusterNodeHost();
-                String url = host.endsWith("/") ? host + "api/configuration/folib/storages/getDispatchRepositories" :
-                        host + "/api/configuration/folib/storages/getDispatchRepositories";
                 dispatchRepositoryDto.setDispatchEnName(dispatchEnName);
-                WebTarget target = client.target(url);
-                logger.info("请求 {} 获取分发仓库信息 {}", url, JSONUtil.toJsonStr(dispatchRepositoryDto));
-                Invocation.Builder builder = target.request();
-                securityComponent.securityTokenHeader(builder);
-                Response response = builder.post(Entity.entity(dispatchRepositoryDto, javax.ws.rs.core.MediaType.APPLICATION_JSON));
-                if (response.getStatus() != 200) {
-                    logger.error("dispatch cluster {} get repositroy fail", dispatchEnName);
-                    continue;
-                }
-                DispatchStorageTree dispatchStorageTree = response.readEntity(DispatchStorageTree.class);
-                if (Objects.nonNull(dispatchStorageTree)) {
-                    repoList.addAll(dispatchStorageTree.getList());
+                if (null != autoRegister && autoRegister) {
+                    // 自动注册通过Ws协议获取
+                    final Integer port = UrlUtils.getPort(clusterNodeHost);
+                    final String host = UrlUtils.getHost(clusterNodeHost);
+                    final String nodeName = String.format("%s:%s", host, port);
+                    final FolibWsServerRunManage.FolibWsClientRun wsClientRun = FolibWsServerRunManage.getWsClientRun(nodeName);
+                    if (null != wsClientRun) {
+                        final FolibWsAction folibWsAction = new FolibWsAction();
+                        folibWsAction.command(FolibWsClientGetStoragesRepositoryTreeCommand.COMMAND);
+                        folibWsAction.payload(dispatchRepositoryDto);
+                        final DispatchStorageTree dispatchStorageTree = wsClientRun.doSyncAction(folibWsAction, DispatchStorageTree.class);
+                        if (null != dispatchStorageTree) {
+                            repoList.addAll(dispatchStorageTree.getList());
+                        }
+                    }
+                } else {
+                    // 手动通过Http协议获取
+                    String url = clusterNodeHost.endsWith("/") ? clusterNodeHost + "api/configuration/folib/storages/getDispatchRepositories" :
+                            clusterNodeHost + "/api/configuration/folib/storages/getDispatchRepositories";
+                    WebTarget target = client.target(url);
+                    logger.info("请求 {} 获取分发仓库信息 {}", url, JSONUtil.toJsonStr(dispatchRepositoryDto));
+                    Invocation.Builder builder = target.request();
+                    securityComponent.securityTokenHeader(builder);
+                    Response response = builder.post(Entity.entity(dispatchRepositoryDto, javax.ws.rs.core.MediaType.APPLICATION_JSON));
+                    if (response.getStatus() != 200) {
+                        logger.error("dispatch cluster {} get repositroy fail", dispatchEnName);
+                        continue;
+                    }
+                    DispatchStorageTree dispatchStorageTree = response.readEntity(DispatchStorageTree.class);
+                    if (Objects.nonNull(dispatchStorageTree)) {
+                        repoList.addAll(dispatchStorageTree.getList());
+                    }
                 }
             } catch (Exception e) {
                 logger.error("分发获取 {} 仓库信息失败! {}", dispatchEnName, ExceptionUtils.getStackTrace(e));

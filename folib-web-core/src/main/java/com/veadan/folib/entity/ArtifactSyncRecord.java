@@ -8,7 +8,6 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.experimental.Accessors;
-import scala.Int;
 
 import javax.persistence.Column;
 import javax.persistence.GeneratedValue;
@@ -57,6 +56,7 @@ public class ArtifactSyncRecord implements Serializable {
     private String targetPath;
     /**
      * 制品操作（1：制品晋级；2：制品分发）
+     * {@linkplain com.veadan.folib.enums.ArtifactSyncRecordOpsTypeEnum }
      */
     @ApiModelProperty("制品操作（1：制品晋级；2：制品分发）")
     @Column(name = "ops_type")
@@ -69,16 +69,24 @@ public class ArtifactSyncRecord implements Serializable {
     private String syncNo;
     /**
      * 同步模式（1：推；2：拉）
+     * {@linkplain  com.veadan.folib.enums.ArtifactSyncRecordSyncModelEnum }
      */
     @ApiModelProperty("同步模式（1：推；2：拉）")
     @Column(name = "sync_model")
     private Integer syncModel;
     /**
      * 同步状态（1：就绪；2：同步中；3：成功；4：失败）
+     * {@linkplain com.veadan.folib.enums.ArtifactSyncRecordStatusEnum }
      */
     @ApiModelProperty("同步状态（1：就绪；2：同步中；3：成功；4：失败）")
     @Column(name = "status")
     private Integer status;
+    /**
+     * 失败的原因
+     */
+    @ApiModelProperty("失败的原因")
+    @Column(name = "failed_reason")
+    private String failedReason;
     /**
      * 创建人
      */
@@ -89,9 +97,9 @@ public class ArtifactSyncRecord implements Serializable {
      * 创建时间
      */
     @ApiModelProperty("创建时间")
-    @Column(name = "create_time")
+    @Column(name = "created_time")
     @JsonFormat(timezone = "GMT+8", pattern = "yyyy-MM-dd HH:mm:ss")
-    private Date createTime;
+    private Date createdTime;
     /**
      * 更新人
      */

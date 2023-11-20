@@ -1,5 +1,7 @@
 package com.veadan.folib.domain;
 
+import com.veadan.folib.enums.ArtifactSyncRecordSyncModelEnum;
+import io.swagger.annotations.ApiModelProperty;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -22,4 +24,15 @@ public class PromotionNodeOption {
     @NotEmpty
     private String targetPath;
 
+    /**
+     * 同步模式（1：推；2：拉）
+     * {@linkplain  com.veadan.folib.enums.ArtifactSyncRecordSyncModelEnum }
+     */
+    @ApiModelProperty("同步模式（1：推；2：拉），缺省值：拉")
+    private Integer syncModel = ArtifactSyncRecordSyncModelEnum.PULL.getVal();
+
+    public PromotionNodeOption(String sourcePath, String targetPath) {
+        this.sourcePath = sourcePath;
+        this.targetPath = targetPath;
+    }
 }

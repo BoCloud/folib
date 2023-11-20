@@ -2,9 +2,7 @@ package com.veadan.folib.config.hazelcast;
 
 import com.veadan.folib.data.CacheName;
 
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.*;
 
 import com.hazelcast.config.*;
 import com.hazelcast.config.security.RealmConfig;
@@ -37,14 +35,7 @@ public class HazelcastConfiguration
     @Value("${cacheManagerConfiguration.caches.authentications.invalidateOnChange:true}")
     public boolean authenticationsCacheInvalidateOnChange;
 
-    public MapConfig authenticationCacheConfig(String name)
-    {
-        return new MapConfig().setName(name).setNearCacheConfig(new NearCacheConfig().setCacheLocalEntries(authenticationsCacheCacheLocalEntries)
-                                                                                     .setEvictionConfig(new EvictionConfig().setMaxSizePolicy(authenticationsCacheEvictionConfigMaxSizePolicy)
-                                                                                                                            .setSize(authenticationsCacheEvictionConfigSize))
-                                                                                     .setInvalidateOnChange(authenticationsCacheInvalidateOnChange)
-                                                                                     .setTimeToLiveSeconds(authenticationsCacheInvalidateInterval));
-    }
+
     
     @Value("${cacheManagerConfiguration.caches.remoteRepositoryAliveness.maxSizeLimit:1000}")
     public int remoteRepositoryAlivenessMaxSizeLimit;
@@ -63,16 +54,6 @@ public class HazelcastConfiguration
 
     @Value("${cacheManagerConfiguration.caches.tags.evictionPolicy:LFU}")
     public EvictionPolicy tagsEvictionPolicy;
-
-    public static MapConfig newDefaultMapConfig(String name,
-                                                int maxSize,
-                                                MaxSizePolicy maxSizePolicy,
-                                                EvictionPolicy evictionPolicy)
-    {
-        return new MapConfig().setName(name)
-                              .setEvictionConfig(new EvictionConfig().setEvictionPolicy(evictionPolicy)
-                                                                     .setMaxSizePolicy(maxSizePolicy));
-    }
 
     @Bean
     public HazelcastInstance hazelcastInstance(Config config)
@@ -95,26 +76,39 @@ public class HazelcastConfiguration
     @Value("${cacheManagerConfiguration.groupConfig.password:password}")
     public String groupConfigPassword;
 
-    @Value("${cacheManagerConfiguration.enableMulticastConfig:false}")
-    public boolean enableMulticastConfig;
+    @Value("${cacheManagerConfiguration.tcpIpPort:5701}")
+    public int tcpIpPort;
 
-    @Value("${cacheManagerConfiguration.multicast.multicastGroup:224.2.2.3}")
-    public String multicastGroup;
+    @Value("${cacheManagerConfiguration.enableTcpIpConfig:false}")
+    public boolean enableTcpIpConfig;
 
-    @Value("${cacheManagerConfiguration.multicast.multicastPort:54327}")
-    public int multicastPort;
 
-    @Value("${cacheManagerConfiguration.multicast.multicastTimeoutSeconds:2}")
-    public int multicastTimeoutSeconds;
+    @Value("${cacheManagerConfiguration.tcpIp.tcpIpTimeoutSeconds:10}")
+    public int tcpIpTimeoutSeconds;
 
-    @Value("${cacheManagerConfiguration.multicast.multicastTimeToLive:32}")
-    public int multicastTimeToLive;
 
-    @Value("#{'${cacheManagerConfiguration.multicast.trustedInterfaces:}'.split(',')}")
-    public String[] multicastTrustedInterfaces;
+    @Value("#{'${cacheManagerConfiguration.tcpIp.members:}'.split(',')}")
+    public String[] tcpIpMembers;
 
-    @Value("${cacheManagerConfiguration.multicast.loopbackModeEnabled:false}")
-    public boolean multicastLoopbackModeEnabled;
+
+    public static MapConfig newDefaultMapConfig(String name,
+                                                int maxSize,
+                                                MaxSizePolicy maxSizePolicy,
+                                                EvictionPolicy evictionPolicy)
+    {
+        return new MapConfig().setName(name)
+                .setEvictionConfig(new EvictionConfig().setEvictionPolicy(evictionPolicy)
+                        .setMaxSizePolicy(maxSizePolicy));
+    }
+
+    public MapConfig authenticationCacheConfig(String name)
+    {
+        return new MapConfig().setName(name).setNearCacheConfig(new NearCacheConfig().setCacheLocalEntries(authenticationsCacheCacheLocalEntries)
+                .setEvictionConfig(new EvictionConfig().setMaxSizePolicy(authenticationsCacheEvictionConfigMaxSizePolicy)
+                        .setSize(authenticationsCacheEvictionConfigSize))
+                .setInvalidateOnChange(authenticationsCacheInvalidateOnChange)
+                .setTimeToLiveSeconds(authenticationsCacheInvalidateInterval));
+    }
 
     @Bean
     public Config hazelcastConfig(HazelcastInstanceId hazelcastInstanceId)
@@ -129,26 +123,20 @@ public class HazelcastConfiguration
                                                                             tagsMaxSizePolicy,
                                                                             tagsEvictionPolicy))
                                           .addMapConfig(authenticationCacheConfig(CacheName.User.AUTHENTICATIONS));
-        //config.setGroupConfig(new GroupConfig(groupConfigName, groupConfigPassword));
+        //采用TCP/IP的方式，可以通过制定IP端口的方式，默认端口是5701可以通过参数指定；
         config.setSecurityConfig(new SecurityConfig().setClientRealmConfig(groupConfigName, new RealmConfig().setUsernamePasswordIdentityConfig(groupConfigName, groupConfigPassword)));
         config.setClusterName(groupConfigName);
-        
-        config.getNetworkConfig().getJoin().getMulticastConfig().setEnabled(enableMulticastConfig);
+        config.getNetworkConfig().getJoin().getMulticastConfig().setEnabled(false);
+        config.getNetworkConfig().setPort(tcpIpPort);
+        config.getNetworkConfig().getJoin().getTcpIpConfig().setEnabled(enableTcpIpConfig);
 
-        if (enableMulticastConfig)
+        if(enableTcpIpConfig)
         {
-
-            Set<String> trustedInterfaces = new HashSet<>();
-            Arrays.stream(multicastTrustedInterfaces).forEach(trustedInterfaces::add);
-            MulticastConfig mcConfig = config.getNetworkConfig().getJoin().getMulticastConfig();
-            mcConfig.setMulticastGroup(multicastGroup)
-                    .setMulticastPort(multicastPort)
-                    .setMulticastTimeoutSeconds(multicastTimeoutSeconds)
-                    .setMulticastTimeToLive(multicastTimeToLive)
-                    .setTrustedInterfaces(trustedInterfaces)
-                    .setLoopbackModeEnabled(multicastLoopbackModeEnabled);
+            List<String> members = new ArrayList<>();
+            Arrays.stream(tcpIpMembers).forEach(members::add);
+            TcpIpConfig tcpIpConfig = config.getNetworkConfig().getJoin().getTcpIpConfig();
+            tcpIpConfig.setMembers(members).setConnectionTimeoutSeconds(tcpIpTimeoutSeconds);
         }
-
         return config;
     }
 

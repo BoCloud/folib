@@ -165,7 +165,8 @@ public class DirectoryListingServiceImpl implements DirectoryListingService {
             contentPaths = pathStream.filter(p -> !p.toString().startsWith("."))
                     .filter(p -> !p.toString().contains("/.")
                             // 支持Cocoapods索引目录的显示
-                            || p.toString().contains(".specs"))
+                            || p.toString().contains(".specs")
+                    )
                     .filter(p -> {
                         try {
                             return !Files.isHidden(p)

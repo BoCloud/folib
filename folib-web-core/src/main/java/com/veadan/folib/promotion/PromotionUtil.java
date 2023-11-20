@@ -16,18 +16,24 @@ import com.veadan.folib.configuration.ConfigurationManager;
 import com.veadan.folib.dispatch.ClusterDispatchNodeDto;
 import com.veadan.folib.domain.*;
 import com.veadan.folib.dto.*;
+import com.veadan.folib.enums.ArtifactSyncRecordSyncModelEnum;
 import com.veadan.folib.enums.PromotionStatusEnum;
 import com.veadan.folib.forms.common.StorageTreeForm;
 import com.veadan.folib.providers.io.RepositoryFiles;
 import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.providers.io.RepositoryPathResolver;
 import com.veadan.folib.providers.layout.DockerLayoutProvider;
+import com.veadan.folib.scanner.common.exception.BusinessException;
 import com.veadan.folib.schema2.ImageManifest;
 import com.veadan.folib.schema2.LayerManifest;
 import com.veadan.folib.service.ProxyRepositoryConnectionPoolConfigurationService;
 import com.veadan.folib.services.*;
 import com.veadan.folib.storage.repository.Repository;
 import com.veadan.folib.util.RepositoryPathUtil;
+import com.veadan.folib.utils.UrlUtils;
+import com.veadan.folib.ws.common.FolibWsAction;
+import com.veadan.folib.ws.client.handler.command.FolibWsClientArtifactPullCommand;
+import com.veadan.folib.ws.server.manage.FolibWsServerRunManage;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.MapUtils;
@@ -44,6 +50,7 @@ import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.stereotype.Component;
 
 import javax.inject.Inject;
+import javax.websocket.Session;
 import javax.ws.rs.client.Client;
 import javax.ws.rs.client.Entity;
 import javax.ws.rs.client.Invocation;
@@ -53,6 +60,7 @@ import javax.ws.rs.core.Response;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.Socket;
 import java.nio.file.Files;
 import java.util.*;
 import java.util.concurrent.FutureTask;
@@ -271,22 +279,31 @@ public class PromotionUtil {
             log.info("分发 [{}] 开始", dispatchType);
             if (dispatchType.equals("pull")) {
                 promotionNodeOption = new PromotionNodeOption(sourcePath, targetPath);
-                String url = dispatchNodeHost.endsWith("/") ?
-                        dispatchNodeHost + "api/artifact/folib/promotion/nodeOption" :
-                        dispatchNodeHost + "/api/artifact/folib/promotion/nodeOption";
-                Client client = clientPool.getRestClient();
-                WebTarget target = client.target(url);
-                Invocation.Builder builder = target.request();
-                securityComponent.securityTokenHeader(builder);
-                response = builder.post(Entity.entity(promotionNodeOption, MediaType.APPLICATION_JSON));
-                if (response.getStatus() != 200) {
-                    log.error("分发 [{}] 失败 {}", dispatchType, JSONUtil.toJsonStr(promotionNodeOption));
-                    throw new Exception("分发失败 ! http status " + response.getStatus());
+                promotionNodeOption.setSyncModel(ArtifactSyncRecordSyncModelEnum.PULL.getVal());
+                
+                // 通过Ws协议通知客户端拉取制品
+                final String clusterNodeHost = dispatchNodeDto.getClusterNodeHost();
+                final String nodeHost = UrlUtils.getHost(clusterNodeHost);
+                final Integer nodePort = UrlUtils.getPort(clusterNodeHost);
+                final String nodeName = String.format("%s:%s", nodeHost, nodePort);
+                final FolibWsServerRunManage.FolibWsClientRun wsClientRun = FolibWsServerRunManage.getWsClientRun(nodeName);
+                if (null == wsClientRun) {
+                    // 检查如果可以直接连接访问到目标节点，则将模式转换为push模式
+                    try (final Socket socket = new Socket(nodeHost, nodePort);){
+                        socket.setSoTimeout(200);
+                        promotionNodeOption.setSyncModel(ArtifactSyncRecordSyncModelEnum.PUSH.getVal());
+                        dispatchNodeDto.setDispatchType("push");
+                        this.executeDispatch(artifactPath, srcRepositoryId, srcStorageId, targetStorageId, targetRepositoryId, dispatchNodeDto, recordStatus);
+                    } catch (Exception e) {
+                        throw new BusinessException("当前分发的节点不可用，请检查节点是否配置正确");
+                    }
+                    return;
                 }
-                response.readEntity(java.lang.String.class);
-                if (Boolean.TRUE.equals(recordStatus)) {
-                    artifactComponent.handlerArtifactPromotion(dispatchNodeDto.getClusterEnName(), srcStorageId, srcRepositoryId, artifactPath, PromotionStatusEnum.SUCCESS.getStatus());
-                }
+                
+                final FolibWsAction folibWsAction = new FolibWsAction()
+                        .command(FolibWsClientArtifactPullCommand.COMMAND)
+                        .payload(promotionNodeOption);
+                wsClientRun.doAction(folibWsAction);
             } else {
                 Repository srcRepository = repositoryManagementService.getStorage(srcStorageId).getRepository(srcRepositoryId);
                 RepositoryPath srcPath = repositoryPathResolver.resolve(srcRepository, artifactPath);

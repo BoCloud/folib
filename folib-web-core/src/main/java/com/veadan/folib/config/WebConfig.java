@@ -80,7 +80,8 @@ import java.util.List;
         "com.veadan.folib.eventlistener",
         "com.veadan.folib.promotion",
         "com.veadan.folib.task",
-        "com.veadan.folib.aop"})
+        "com.veadan.folib.aop",
+        "com.veadan.folib.ws"})
 @Import({CommonConfig.class,
         FolibSecurityConfig.class,
         StorageApiConfig.class,
