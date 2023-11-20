@@ -24,7 +24,9 @@ import com.veadan.folib.service.ProxyRepositoryConnectionPoolConfigurationServic
 import com.veadan.folib.services.ArtifactManagementService;
 import com.veadan.folib.services.ArtifactPromotionService;
 import com.veadan.folib.services.ArtifactResolutionService;
+import com.veadan.folib.services.ConfigurationManagementService;
 import com.veadan.folib.utils.FileUtils;
+import com.veadan.folib.utils.UrlUtils;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.experimental.Accessors;
@@ -33,6 +35,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
+import org.springframework.validation.BindingResult;
 
 import javax.ws.rs.client.Entity;
 import javax.ws.rs.client.Invocation;
@@ -64,8 +67,11 @@ import static com.veadan.folib.utils.UrlUtils.parsePath;
 @Component
 public class FolibWsClientArtifactPullCommand implements FolibWsClientCommand<PromotionNodeOption> {
     public static final String COMMAND = "/client/artifact/pull";
+    /** {@linkplain com.veadan.folib.controllers.promotion.ArtifactPromotionController#getFiles(ArtifactDto, BindingResult)} */
     private static final String API_ARTIFACT_FOLIB_PROMOTION_GET_FILE_RELATIVE_PATHS = "/api/artifact/folib/promotion/getFileRelativePaths";
+    /** {@linkplain com.veadan.folib.controllers.promotion.ArtifactPromotionController#querySliceDownloadInfo(ArtifactSliceDownloadInfoReq)} */
     private static final String BATCH_QUERY_ARTIFACT_SUPPORT_SLICE_DOWNLOAD_URL = "/api/artifact/folib/promotion/batch/query/support/slice/download";
+    /** {@linkplain com.veadan.folib.controllers.promotion.ArtifactPromotionController#batchQuerySliceDownloadInfo(List)} */
     private static final String BATCH_QUERY_ARTIFACT_GET_SLICE_DOWNLOAD_INFO_URL = "/api/artifact/folib/promotion/batch/query/slice/download/info";
 
     @Autowired
@@ -74,6 +80,8 @@ public class FolibWsClientArtifactPullCommand implements FolibWsClientCommand<Pr
     private ArtifactManagementService artifactManagementService;
     @Autowired
     protected ArtifactResolutionService artifactResolutionService;
+    @Autowired
+    private ConfigurationManagementService configurationManagementService;
 
     @Autowired
     private RepositoryPathResolver repositoryPathResolver;
@@ -186,13 +194,16 @@ public class FolibWsClientArtifactPullCommand implements FolibWsClientCommand<Pr
                     }
                 } else {
                     // 切片下载
-                    // - 临时下载到本地
+                    // - 获取当前节点标记（用于限速）
+                    final String baseUrl = configurationManagementService.getConfiguration().getBaseUrl();
+                    final String nodeMark = String.format("%s:%s", UrlUtils.getHost(baseUrl), UrlUtils.getHost(baseUrl));
                     final String artifactFileSliceFolderPath = String.format("%s/artifactMerge/%s", StringUtils.chomp(tempPath, "/"), UUID.fastUUID().toString(true));
+                    // - 临时下载到本地
                     final List<String> sliceFileDownloadPathList = IntStream.range(0, downloadParInfotList.size())
                             .parallel()
                             .mapToObj(index -> {
                                 final DownloadPartInfo downloadPartInfo = downloadParInfotList.get(index);
-                                final String downloadUrl = downloadPartInfo.getDownloadUrl();
+                                final String downloadUrl = String.format("%s?nodeMark=%s", downloadPartInfo.getDownloadUrl(), nodeMark);
                                 final String downloadFilePath = String.format("%s/chunk%s", artifactFileSliceFolderPath, index);
                                 final File downloadFile = new File(downloadFilePath);
                                 FileUtil.touch(downloadFile);

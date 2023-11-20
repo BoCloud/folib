@@ -8,10 +8,10 @@ import com.veadan.folib.domain.ArtifactParse;
 import com.veadan.folib.domain.ArtifactPromotion;
 import com.veadan.folib.domain.PromotionNodeOption;
 import com.veadan.folib.dto.ArtifactDto;
-import com.veadan.folib.model.request.ArtifactSliceDownloadInfoReq;
-import com.veadan.folib.model.response.ArtifactSliceDownloadInfoRes;
 import com.veadan.folib.entity.Dict;
+import com.veadan.folib.model.request.ArtifactSliceDownloadInfoReq;
 import com.veadan.folib.model.request.ArtifactSupportSliceDownloadQueryReq;
+import com.veadan.folib.model.response.ArtifactSliceDownloadInfoRes;
 import com.veadan.folib.services.ArtifactPromotionService;
 import com.veadan.folib.storage.repository.Repository;
 import com.veadan.folib.validation.RequestBodyValidationException;
@@ -179,9 +179,9 @@ public class ArtifactPromotionController extends BaseArtifactController {
 
     @GetMapping(value = "/file/speedLimitDownload/{storageId}/{repositoryId}/{artifactPath:.+}")
     public void speedLimitDownload(@RepositoryMapping Repository repository,
-                                   @PathVariable String artifactPath, @RequestParam("nodeName") String nodeName,
+                                   @PathVariable String artifactPath, @RequestParam("nodeMark") String nodeMark,
                                    HttpServletResponse response) {
-        artifactPromotionService.sliceFileDownload(repository, artifactPath, nodeName, response);
+        artifactPromotionService.sliceFileDownload(repository, artifactPath, nodeMark, response);
     }
 
     @PostMapping(value = "/query/support/slice/download")

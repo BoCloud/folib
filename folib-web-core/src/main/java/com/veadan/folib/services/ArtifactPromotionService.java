@@ -75,7 +75,7 @@ public interface ArtifactPromotionService {
     ArtifactParse parseArtifact(String storageId, String repositoryId, MultipartFile file);
 
 
-    Boolean sliceFileDownload(Repository repository, String artifactPath, String nodeName, HttpServletResponse response);
+    Boolean sliceFileDownload(Repository repository, String artifactPath, String nodeMark, HttpServletResponse response);
     
     
     /**

@@ -664,13 +664,13 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
     public static final Map<String, AtomicInteger> DOWNLOAD_CONNECTION_COUNTER_MAP = new ConcurrentHashMap<>();
 
     @Override
-    public Boolean sliceFileDownload(Repository repository, String artifactPath, String nodeName, HttpServletResponse response) {
+    public Boolean sliceFileDownload(Repository repository, String artifactPath, String nodeMark, HttpServletResponse response) {
         // 获取全局节点限速
         final int kbps = Optional.ofNullable(configurationManagementService.getConfiguration().getKbps()).orElse(0) * (1024);
         // 获取节点限速
         final Collection<ClusterDispatchNodeDto> clusterDispatchNodeDtos = configurationManagementService.getMutableConfigurationClone().getClusterDispatchNode().values();
         final Map<String, Integer> nodeKbpsMap = clusterDispatchNodeDtos.stream().collect(Collectors.toMap(e -> String.format("%s:%s", UrlUtils.getHost(e.getClusterNodeHost()), UrlUtils.getPort(e.getClusterNodeHost())), e -> null != e.getKbps() ? e.getKbps() * 1024:0));
-        final int finalKbps = Optional.ofNullable(nodeKbpsMap.get(nodeName)).filter(k -> k > 0).orElse(kbps);
+        final int finalKbps = Optional.ofNullable(nodeKbpsMap.get(nodeMark)).filter(k -> k > 0).orElse(kbps);
 
         // 下载文件流
         InputStream sliceFileInputSteam = null;
@@ -703,10 +703,10 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
         if (finalKbps > 0) {
             // 限速下载
             // - 获取初始下载速度
-            AtomicInteger nodeDownloadConnectionCounter = DOWNLOAD_CONNECTION_COUNTER_MAP.get(nodeName);
+            AtomicInteger nodeDownloadConnectionCounter = DOWNLOAD_CONNECTION_COUNTER_MAP.get(nodeMark);
             if (null == nodeDownloadConnectionCounter) {
                 nodeDownloadConnectionCounter = new AtomicInteger(0);
-                DOWNLOAD_CONNECTION_COUNTER_MAP.put(nodeName, nodeDownloadConnectionCounter);
+                DOWNLOAD_CONNECTION_COUNTER_MAP.put(nodeMark, nodeDownloadConnectionCounter);
             }
 
             try {
