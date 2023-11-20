@@ -321,6 +321,7 @@ public class ServerConfigurationController
         settings.setInstanceName(configuration.getInstanceName());
         settings.setPort(configuration.getPort());
         settings.setKbps(configuration.getKbps());
+        settings.setSliceMbSize(configuration.getSliceMbSize());
         settings.setCorsConfigurationForm(
                 CorsConfigurationForm.fromConfiguration(configuration.getCorsConfiguration())
         );

@@ -159,6 +159,11 @@ public class ConfigurationManagementServiceImpl
     }
 
     @Override
+    public void setSliceMbSize(Long sliceMbSize) throws IOException {
+        modifyInLock(configuration -> configuration.setSliceMbSize(sliceMbSize));
+    }
+
+    @Override
     public void setAdvancedConfiguration(MutableAdvancedConfiguration advancedConfiguration) throws IOException {
         modifyInLock(configuration ->
         {

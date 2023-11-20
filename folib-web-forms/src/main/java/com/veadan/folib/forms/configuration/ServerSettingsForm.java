@@ -33,9 +33,13 @@ public class ServerSettingsForm
     private Integer port;
 
     /**
-     * 节点传输速率（Kbs）
+     * 节点传输速率（KB/s）
      */
     private Long kbps;
+    /**
+     * 节点传输切片大小（MB）
+     */
+    private Long sliceMbSize;
 
     @Valid
     @JsonProperty
@@ -107,6 +111,14 @@ public class ServerSettingsForm
 
     public void setKbps(Long kbps) {
         this.kbps = kbps;
+    }
+
+    public Long getSliceMbSize() {
+        return sliceMbSize;
+    }
+
+    public void setSliceMbSize(Long sliceMbSize) {
+        this.sliceMbSize = sliceMbSize;
     }
 
     public String getInstanceName()

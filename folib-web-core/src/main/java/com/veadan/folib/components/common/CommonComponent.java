@@ -63,6 +63,7 @@ public class CommonComponent {
         configurationManagementService.setBaseUrl(serverSettingsForm.getBaseUrl());
         configurationManagementService.setPort(serverSettingsForm.getPort());
         configurationManagementService.setKbps(serverSettingsForm.getKbps());
+        configurationManagementService.setSliceMbSize(serverSettingsForm.getSliceMbSize());
         configurationManagementService.setInstanceName(serverSettingsForm.getInstanceName());
         if (serverSettingsForm.getCorsConfigurationForm() != null) {
             configurationManagementService.setCorsAllowedOrigins(

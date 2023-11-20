@@ -18,8 +18,6 @@ import com.veadan.folib.domain.PromotionFileRelativePath;
 import com.veadan.folib.domain.PromotionNodeOption;
 import com.veadan.folib.dto.ArtifactDto;
 import com.veadan.folib.dto.ArtifactPromotionInfoDto;
-import com.veadan.folib.model.request.ArtifactSliceDownloadInfoReq;
-import com.veadan.folib.model.response.ArtifactSliceDownloadInfoRes;
 import com.veadan.folib.dto.PromotionArtifactDto;
 import com.veadan.folib.dto.PromotionNodeOptionDto;
 import com.veadan.folib.dto.TargetDispatchRepositoryDto;
@@ -29,7 +27,9 @@ import com.veadan.folib.entity.Dict;
 import com.veadan.folib.enums.ArtifactSyncRecordStatusEnum;
 import com.veadan.folib.enums.ArtifactSyncRecordSyncModelEnum;
 import com.veadan.folib.mapper.ArtifactSyncRecordMapper;
+import com.veadan.folib.model.request.ArtifactSliceDownloadInfoReq;
 import com.veadan.folib.model.request.ArtifactSupportSliceDownloadQueryReq;
+import com.veadan.folib.model.response.ArtifactSliceDownloadInfoRes;
 import com.veadan.folib.promotion.ArtifactUploadTask;
 import com.veadan.folib.promotion.PromotionUtil;
 import com.veadan.folib.providers.io.RepositoryPath;
@@ -60,7 +60,6 @@ import org.apache.commons.fileupload.disk.DiskFileItem;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.maven.model.Model;
-import org.ehcache.core.util.ByteBufferInputStream;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -80,7 +79,6 @@ import org.springframework.web.multipart.commons.CommonsMultipartFile;
 import software.amazon.awssdk.utils.StringInputStream;
 
 import javax.inject.Inject;
-import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.client.Client;
@@ -93,9 +91,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.Socket;
-import java.nio.channels.Channels;
-import java.nio.channels.FileChannel;
-import java.nio.channels.WritableByteChannel;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -108,6 +103,8 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.FutureTask;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 import static com.veadan.folib.utils.UrlUtils.parsePath;
@@ -708,7 +705,7 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
         }
 
         final long artifactFileLength = artifactPath.toFile().length();
-        final long kbps = Optional.ofNullable(configurationManagementService.getConfiguration().getKbps()).orElse(0L) * (1024*1024);
+        final long kbps = Optional.ofNullable(configurationManagementService.getConfiguration().getSliceMbSize()).orElse(0L) * (1024*1024);
         
         return artifactFileLength > kbps;
     }
@@ -746,7 +743,7 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
             final Path fileName = artifactPath.getTarget().getFileName();
             final String baseUrl = StringUtils.chomp(configurationManagementService.getConfiguration().getBaseUrl(), "/");
             final String md5 = null != artifactPath.getArtifactEntry() ? Optional.ofNullable(artifactPath.getArtifactEntry().getChecksums()).orElse(Collections.emptyMap()).get("MD5"):null;
-            final long kbps = Optional.ofNullable(configurationManagementService.getConfiguration().getKbps()).orElse(0L) * (1024*1024);
+            final long kbps = Optional.ofNullable(configurationManagementService.getConfiguration().getSliceMbSize()).orElse(0L) * (1024*1024);
             final long artifactFileLength = artifactPath.toFile().length();
             String artifactFilePath = artifactPath.toString();
             final String artifactParentUri = Optional.of(artifactPath.relativize()).map(p -> {
@@ -853,7 +850,7 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
             final Path fileName = artifactPath.getTarget().getFileName();
             final String baseUrl = StringUtils.chomp(configurationManagementService.getConfiguration().getBaseUrl(), "/");
             final String md5 = null != artifactPath.getArtifactEntry() ? Optional.ofNullable(artifactPath.getArtifactEntry().getChecksums()).orElse(Collections.emptyMap()).get("MD5"):null;
-            final long kbps = Optional.ofNullable(configurationManagementService.getConfiguration().getKbps()).orElse(0L) * (1024*1024);
+            final long kbps = Optional.ofNullable(configurationManagementService.getConfiguration().getSliceMbSize()).orElse(0L) * (1024*1024);
             final long artifactFileLength = artifactPath.toFile().length();
             String artifactFilePath = artifactPath.toString();
             String artifactFileSliceFolderPath = String.format("%s/artifactSlice/%s", StringUtils.chomp(tempPath, "/"), UUID.fastUUID().toString(true));

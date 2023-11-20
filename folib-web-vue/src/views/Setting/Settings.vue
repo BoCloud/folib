@@ -100,10 +100,19 @@
                   <a-col :span="24"
                          :lg="8">
                     <a-form-item class="mb-10"
+                                 label="节点传输限速（KB/s）"
+                                 :colon="false">
+                      <a-input placeholder="KB/s" type="number"
+                               v-model="serverSettings.kbps" />
+                    </a-form-item>
+                  </a-col>
+                  <a-col :span="24"
+                         :lg="8">
+                    <a-form-item class="mb-10"
                                  label="制品传输切片大小（MB）"
                                  :colon="false">
                       <a-input placeholder="MB" type="number"
-                               v-model="serverSettings.kbps" />
+                               v-model="serverSettings.sliceMbSize" />
                     </a-form-item>
                   </a-col>
                 </a-row>
@@ -131,8 +140,9 @@
                 <p>说明:</p>
                 <ul class="pl-15 text-muted">
                   <li>应用名称修改会自动修改到配置文件</li>
-                  <li>网络限速，不设置则不限速</li>
-                  <li>baseurl,如果你使用了反向代理公网等情况下可以使用它</li>
+                  <li>制品传输切片大小，大制品节点之间传输切片大小</li>
+                  <li>节点传输节点传输限速（KB/s），不设置则不限速。传输节点限速未设置，则采用全局限速；全局和传输节点均未设置，则传输不限速</li>
+                  <li>baseurl，如果你使用了反向代理公网等情况下可以使用它</li>
                   <li>{{instanceName}}-Server服务的后端通信端口</li>
                 </ul>
               </a-form>
@@ -1695,6 +1705,7 @@ export default {
         baseUrl: 'http://localhost:38080/',
         port: 38080,
         kbps: 0,
+        sliceMbSize: 0,
         advancedConfigurationForm: {
           allowAnonymous: true,
           showChecksum: true,
