@@ -157,6 +157,9 @@ public class FolibWsClientArtifactPullCommand implements FolibWsClientCommand<Pr
             }
             final String sliceDownloadInfosJson = sliceDownloadInfosQueryRes.body();
             final List<ArtifactSliceDownloadInfoRes> artifactSliceDownloadInfoRes = JSON.parseArray(sliceDownloadInfosJson, ArtifactSliceDownloadInfoRes.class);
+            // - 获取当前节点标记（用于限速）
+            final String baseUrl = configurationManagementService.getConfiguration().getBaseUrl();
+            final String nodeMark = String.format("%s:%s", UrlUtils.getHost(baseUrl), UrlUtils.getHost(baseUrl));
 
             final boolean result = artifactSliceDownloadInfoRes.stream().parallel().allMatch(artifactSliceDownloadInfoRe -> {
 //                final String storageId = artifactSliceDownloadInfoRe.getStorageId();
@@ -170,7 +173,7 @@ public class FolibWsClientArtifactPullCommand implements FolibWsClientCommand<Pr
                 if (!usedSlice) {
                     // 非切片下载（下载Part有且只有一个）
                     final String artifactFileSliceFolderPath = String.format("%s/artifactTemp/%s", StringUtils.chomp(tempPath, "/"), UUID.fastUUID().toString(true));
-                    final String downloadUrl = downloadParInfotList.get(0).getDownloadUrl();
+                    final String downloadUrl = String.format("%s?nodeMark=%s", downloadParInfotList.get(0).getDownloadUrl(), nodeMark);
                     try {
                         final String tempPath = String.format("%s/%s", artifactFileSliceFolderPath, FileUtil.getName(path));
                         FileUtil.touch(new File(tempPath));
@@ -194,9 +197,6 @@ public class FolibWsClientArtifactPullCommand implements FolibWsClientCommand<Pr
                     }
                 } else {
                     // 切片下载
-                    // - 获取当前节点标记（用于限速）
-                    final String baseUrl = configurationManagementService.getConfiguration().getBaseUrl();
-                    final String nodeMark = String.format("%s:%s", UrlUtils.getHost(baseUrl), UrlUtils.getHost(baseUrl));
                     final String artifactFileSliceFolderPath = String.format("%s/artifactMerge/%s", StringUtils.chomp(tempPath, "/"), UUID.fastUUID().toString(true));
                     // - 临时下载到本地
                     final List<String> sliceFileDownloadPathList = IntStream.range(0, downloadParInfotList.size())
