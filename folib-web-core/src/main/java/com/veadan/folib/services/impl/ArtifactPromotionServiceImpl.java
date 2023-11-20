@@ -4,12 +4,16 @@ import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.io.FileUtil;
 import cn.hutool.core.io.IoUtil;
 import cn.hutool.core.lang.UUID;
+import cn.hutool.core.util.StrUtil;
+import cn.hutool.core.util.URLUtil;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
 import com.veadan.folib.components.artifact.ArtifactComponent;
 import com.veadan.folib.components.promotion.ArtifactPromotionProvider;
 import com.veadan.folib.components.promotion.ArtifactPromotionProviderRegistry;
 import com.veadan.folib.components.security.SecurityComponent;
+import com.veadan.folib.controllers.promotion.ArtifactPromotionController;
+import com.veadan.folib.dispatch.ClusterDispatchNodeDto;
 import com.veadan.folib.domain.AnalysisHtmlGetDirAndFilePath;
 import com.veadan.folib.domain.ArtifactDispatch;
 import com.veadan.folib.domain.ArtifactParse;
@@ -44,6 +48,7 @@ import com.veadan.folib.services.ArtifactManagementService;
 import com.veadan.folib.services.ArtifactMetadataService;
 import com.veadan.folib.services.ArtifactPromotionService;
 import com.veadan.folib.services.ArtifactResolutionService;
+import com.veadan.folib.services.ClusterDispatchManagementService;
 import com.veadan.folib.services.ConfigurationManagementService;
 import com.veadan.folib.services.DictService;
 import com.veadan.folib.services.RepositoryManagementService;
@@ -95,6 +100,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
@@ -102,6 +108,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.FutureTask;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -175,7 +182,7 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
     @Inject
     @Lazy
     private ArtifactComponent artifactComponent;
-    
+
     @Inject
     private ArtifactSyncRecordMapper artifactSyncRecordMapper;
 
@@ -277,20 +284,20 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
     public ResponseEntity nodeOption(PromotionNodeOption promotionNodeOption, HttpServletRequest request) {
         try {
             String sourcePath = StringUtils.removeEnd(promotionNodeOption.getSourcePath(), "/");
-            String targetPath = StringUtils.removeEnd( promotionNodeOption.getTargetPath(), "/");
+            String targetPath = StringUtils.removeEnd(promotionNodeOption.getTargetPath(), "/");
             final Integer syncModel = promotionNodeOption.getSyncModel();
             String srcStorageId = parsePath(sourcePath)[0];
             String srcRepostoryId = parsePath(sourcePath)[1];
             String srcUrl = sourcePath.split("/" + srcStorageId + "/" + srcRepostoryId + "/")[0];
             String srcUri = sourcePath.split("/" + srcStorageId + "/" + srcRepostoryId + "/")[1];
-            String targetStorageId =  parsePath(targetPath)[0];
+            String targetStorageId = parsePath(targetPath)[0];
             String targetRepostoryId = parsePath(targetPath)[1];
             String targetUrl = targetPath.split("/" + targetStorageId + "/" + targetRepostoryId + "/")[0];
             String targetUri = targetPath.split("/" + targetStorageId + "/" + targetRepostoryId + "/")[1];
 
-            log.info("sourcePath={},srcStorageId={},srcRepostoryId={}\ntargetPath={},targetStorageId={},targetRepostoryId={}",sourcePath,srcStorageId,srcRepostoryId,targetStorageId,targetStorageId,targetRepostoryId);
-            log.info("srcUrl={},srcUri={}",srcUrl,srcUri);
-            log.info("targetUrl={},targetUri={}",targetUrl,targetUri);
+            log.info("sourcePath={},srcStorageId={},srcRepostoryId={}\ntargetPath={},targetStorageId={},targetRepostoryId={}", sourcePath, srcStorageId, srcRepostoryId, targetStorageId, targetStorageId, targetRepostoryId);
+            log.info("srcUrl={},srcUri={}", srcUrl, srcUri);
+            log.info("targetUrl={},targetUri={}", targetUrl, targetUri);
             if (srcUrl.equals(targetUrl)) {
                 validateStorageAndRepository(srcStorageId, srcRepostoryId);
                 validateStorageAndRepository(targetStorageId, targetRepostoryId);
@@ -307,7 +314,7 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
 
 //            if (sourcePath.contains(requestURL)) {
             if (ArtifactSyncRecordSyncModelEnum.PUSH.getVal().equals(syncModel)) {
-                log.info("进入推模式={}",true);
+                log.info("进入推模式={}", true);
                 validateStorageAndRepository(srcStorageId, srcRepostoryId);
                 // 本地源 制品路径 推向 目标路径
                 Repository srcRepository = repositoryManagementService.getStorage(srcStorageId).getRepository(srcRepostoryId);
@@ -324,20 +331,20 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
 
 //            } else if (targetPath.contains(requestURL)) {
             } else if (ArtifactSyncRecordSyncModelEnum.PULL.getVal().equals(syncModel)) {
-                log.info("进入拉模式={}",true);
+                log.info("进入拉模式={}", true);
                 // 通过Ws协议通知客户端进行拉取操作
                 final String targetHost = UrlUtils.getHost(targetUrl);
                 final Integer targetPort = UrlUtils.getPort(targetUrl);
                 final String nodeName = String.format("%s:%s", targetHost, targetPort);
                 final FolibWsServerRunManage.FolibWsClientRun wsClientRun = FolibWsServerRunManage.getWsClientRun(nodeName);
-                if (null == wsClientRun) { 
+                if (null == wsClientRun) {
                     // 检查如果可以直接连接访问到目标节点，则将模式转换为push模式
-                    try (final Socket socket = new Socket(targetHost, targetPort);){
+                    try (final Socket socket = new Socket(targetHost, targetPort);) {
                         socket.setSoTimeout(200);
                         promotionNodeOption.setSyncModel(ArtifactSyncRecordSyncModelEnum.PUSH.getVal());
                         return this.nodeOption(promotionNodeOption, request);
                     } catch (Exception e) {
-                        throw new BusinessException("需要晋级的节点不可用，请检查节点是否配置正确"); 
+                        throw new BusinessException("需要晋级的节点不可用，请检查节点是否配置正确");
                     }
                 }
 
@@ -355,8 +362,7 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
     }
 
     @Override
-    public ResponseEntity nodeOptionAttachRecord(PromotionNodeOption promotionNodeOption, HttpServletRequest request) 
-    {
+    public ResponseEntity nodeOptionAttachRecord(PromotionNodeOption promotionNodeOption, HttpServletRequest request) {
         // 生成同步编号
         final String syncNo = String.format("SyncNo-%s", UUID.fastUUID());
         final SpringSecurityUser userDetails = (SpringSecurityUser) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
@@ -373,18 +379,17 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
         artifactSyncRecord.setCreatedTime(new Date());
         artifactSyncRecordMapper.insert(artifactSyncRecord);
 
-        try 
-        {
-            asyncRepositoryThreadPoolExecutor.execute(() -> 
+        try {
+            asyncRepositoryThreadPoolExecutor.execute(() ->
             { // 异步执行制品晋级
                 ResponseEntity re = this.nodeOption(promotionNodeOption, request);
-                if (HttpStatus.OK.equals(re.getStatusCode())) 
-                { artifactSyncRecord.setStatus(ArtifactSyncRecordStatusEnum.SUCCESS.getVal()); }
-                else
-                { 
-                    artifactSyncRecord.setStatus(ArtifactSyncRecordStatusEnum.FAILED.getVal()); 
-                    if (Objects.nonNull(re.getBody()))
-                    { artifactSyncRecord.setFailedReason(re.getBody().toString()); } 
+                if (HttpStatus.OK.equals(re.getStatusCode())) {
+                    artifactSyncRecord.setStatus(ArtifactSyncRecordStatusEnum.SUCCESS.getVal());
+                } else {
+                    artifactSyncRecord.setStatus(ArtifactSyncRecordStatusEnum.FAILED.getVal());
+                    if (Objects.nonNull(re.getBody())) {
+                        artifactSyncRecord.setFailedReason(re.getBody().toString());
+                    }
                 }
 
                 // 更新日志结束开始时间
@@ -392,8 +397,7 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
                         .setUpdatedTime(new Date())
                         .setUpdatedBy(userName));
             });
-        }catch (Exception e)
-        {
+        } catch (Exception e) {
             artifactSyncRecord.setStatus(ArtifactSyncRecordStatusEnum.FAILED.getVal());
             artifactSyncRecord.setFailedReason(e.getMessage());
 
@@ -407,15 +411,13 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
     }
 
     @Override
-    public ResponseEntity artifactPromotionInfo(String syncNo) 
-    {
+    public ResponseEntity artifactPromotionInfo(String syncNo) {
         final ArtifactSyncRecord artifactSyncRecord = artifactSyncRecordMapper.selectOne(new ArtifactSyncRecord().setSyncNo(syncNo));
-        if (null == artifactSyncRecord)
-        {
+        if (null == artifactSyncRecord) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("查询制品晋级信息不存在或已被删除"); 
+                    .body("查询制品晋级信息不存在或已被删除");
         }
-        
+
         final ArtifactPromotionInfoDto infoDto = new ArtifactPromotionInfoDto();
         BeanUtils.copyProperties(artifactSyncRecord, infoDto);
         return ResponseEntity.ok(infoDto);
@@ -625,7 +627,7 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
     public ResponseEntity artifactDispatch(ArtifactDispatch artifactDispatch) {
         log.info("start artifact dispatch");
         Map<String, List<TargetDispatchRepositoryDto>> groupByMap = artifactDispatch.getTargetDispatchRepositoryList().stream().collect(Collectors.groupingBy(TargetDispatchRepositoryDto::getArtifactoryRepositoryType));
-        for(Map.Entry<String, List<TargetDispatchRepositoryDto>> item : groupByMap.entrySet()) {
+        for (Map.Entry<String, List<TargetDispatchRepositoryDto>> item : groupByMap.entrySet()) {
             ArtifactPromotionProvider artifactPromotionProvider = artifactPromotionProviderRegistry.getProvider(item.getKey());
             ArtifactDispatch itemArtifactDispatch = new ArtifactDispatch();
             BeanUtils.copyProperties(artifactDispatch, itemArtifactDispatch);
@@ -656,68 +658,101 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
         dictService.deleteDict(Dict.builder().dictType(dictType).dictKey(uuid).build());
     }
 
-    /** 当前下载连接数 */
-    public static final AtomicInteger DOWNLOAD_CONNECTION_COUNTER = new AtomicInteger();
+    /**
+     * 节点下载连接数
+     */
+    public static final Map<String, AtomicInteger> DOWNLOAD_CONNECTION_COUNTER_MAP = new ConcurrentHashMap<>();
 
     @Override
-    public Boolean sliceFileDownload(Repository repository, String artifactPath, HttpServletResponse response) {
+    public Boolean sliceFileDownload(Repository repository, String artifactPath, String nodeName, HttpServletResponse response) {
+        // 获取全局节点限速
+        final int kbps = Optional.ofNullable(configurationManagementService.getConfiguration().getKbps()).orElse(0) * (1024);
+        // 获取节点限速
+        final Collection<ClusterDispatchNodeDto> clusterDispatchNodeDtos = configurationManagementService.getMutableConfigurationClone().getClusterDispatchNode().values();
+        final Map<String, Integer> nodeKbpsMap = clusterDispatchNodeDtos.stream().collect(Collectors.toMap(e -> String.format("%s:%s", UrlUtils.getHost(e.getClusterNodeHost()), UrlUtils.getPort(e.getClusterNodeHost())), e -> null != e.getKbps() ? e.getKbps() * 1024:0));
+        final int finalKbps = Optional.ofNullable(nodeKbpsMap.get(nodeName)).filter(k -> k > 0).orElse(kbps);
+
+        // 下载文件流
+        InputStream sliceFileInputSteam = null;
+        final RepositoryPath artifactRepositoryPath = repositoryPathResolver.resolve(repository, artifactPath);
+        final String fileName = artifactRepositoryPath.getFileName().toString();
+        response.setHeader("Content-Disposition", String.format("attachment;filename=%s", fileName));
+        response.setContentType("application/x-gzip");
+
         try {
-            // 获取全局节点限速
-            final long kbps = Optional.ofNullable(configurationManagementService.getConfiguration().getKbps()).orElse(0L) * (1024);
-            // 获取初始下载速度
-            int speedByteSize = this.getDownloadSpeedByte(DOWNLOAD_CONNECTION_COUNTER.incrementAndGet());
-            final String storageId = repository.getStorage().getId();
-            final String repositoryId = repository.getId();
-            final String artifactFileSliceFilePath = String.format("%s/artifactSlice/%s/%s/%s", StringUtils.chomp(tempPath, "/"), storageId, repositoryId, artifactPath);
-            final Path filePath = Path.of(artifactFileSliceFilePath);
-
-            if (!Files.exists(filePath)) {
-                throw new BusinessException("下载的切片文件不存在或还未生成");
-            }
-
-            final String fileName = filePath.getFileName().toString();
-            response.setHeader("Content-Disposition", String.format("attachment;filename=%s", fileName));
-            response.setContentType("application/x-gzip");
-
-            // 判断文件是否存在Folib，有则直接返回
-            final RepositoryPath artifactRepositoryPath = repositoryPathResolver.resolve(repository, artifactPath);
             if (Files.exists(artifactRepositoryPath)) {
-                try {
-                    IoUtil.copy(Files.newInputStream(artifactRepositoryPath), response.getOutputStream());
-                    return true;
-                } catch (IOException e) {
-                    log.error("", e);
-                    return false;
+                // Folib
+                sliceFileInputSteam = Files.newInputStream(artifactRepositoryPath);
+            } else {
+                // Local-Temp（Slice file）
+                final String storageId = repository.getStorage().getId();
+                final String repositoryId = repository.getId();
+                final String artifactFileSliceFilePath = String.format("%s/artifactSlice/%s/%s/%s", StringUtils.chomp(tempPath, "/"), storageId, repositoryId, artifactPath);
+                final Path filePath = Path.of(artifactFileSliceFilePath);
+
+                if (!Files.exists(filePath)) {
+                    throw new BusinessException("下载的切片文件不存在或还未生成");
                 }
+                sliceFileInputSteam = Files.newInputStream(filePath);
+            }
+        } catch (IOException e) {
+            log.error("获取下载文件流失败", e);
+            return false;
+        }
+
+        if (finalKbps > 0) {
+            // 限速下载
+            // - 获取初始下载速度
+            AtomicInteger nodeDownloadConnectionCounter = DOWNLOAD_CONNECTION_COUNTER_MAP.get(nodeName);
+            if (null == nodeDownloadConnectionCounter) {
+                nodeDownloadConnectionCounter = new AtomicInteger(0);
+                DOWNLOAD_CONNECTION_COUNTER_MAP.put(nodeName, nodeDownloadConnectionCounter);
             }
 
-///        final String mark = UUID.randomUUID().toString(true);
-            try (final OutputStream outputStream = response.getOutputStream();
-                 final BufferedInputStream bufferedInputStream = new BufferedInputStream(Files.newInputStream(filePath)); ) {
-
-                byte[] speedBytes = new byte[1024*1024*4];
-                int offset;
-                while ((offset = bufferedInputStream.read(speedBytes, 0, speedByteSize)) != -1) {
-                    TimeUnit.SECONDS.sleep(1);
-                    // 获取下一秒下载速度
-                    speedByteSize = this.getDownloadSpeedByte(DOWNLOAD_CONNECTION_COUNTER.get());
-///                log.info("当前({})({})的下载速度为：{}", DOWNLOAD_CONNECTION_COUNTER, mark, speedByteSize);
-                    outputStream.write(speedBytes, 0, offset);
-                }
+            try {
+                this.sliceSpeedLimitDownload(sliceFileInputSteam, response.getOutputStream(), nodeDownloadConnectionCounter, finalKbps);
             } catch (Exception e) {
-                log.error("下载切片文件失败", e);
+                log.error("限速下载文件失败", e);
+                return false;
+            } finally {
+                nodeDownloadConnectionCounter.decrementAndGet();
+            }
+        } else {
+            // 非限速下载
+            try (final InputStream inputStream = sliceFileInputSteam;
+                 final OutputStream outputStream = response.getOutputStream();) {
+                IoUtil.copy(inputStream, outputStream);
+            } catch (Exception e) {
+                log.error("非限速下载文件失败", e);
                 return false;
             }
-        }finally {
-            DOWNLOAD_CONNECTION_COUNTER.decrementAndGet();
         }
-        
+
         return true;
     }
-    
-    private int getDownloadSpeedByte(int downloadThreadCount) {
-        int kbps = 1024*1024;
-        return kbps / downloadThreadCount;
+
+    private int getDownloadSpeedByte(int limitKbps, int downloadThreadCount) {
+        return limitKbps / downloadThreadCount;
+    }
+
+    private void sliceSpeedLimitDownload(InputStream inputStream, OutputStream outputStream, AtomicInteger downloadConnectionCounter, int finalKbps) {
+        try (final OutputStream outputStream1 = outputStream;
+             final InputStream inputStream1 = inputStream;) {
+            int speedByteSize = this.getDownloadSpeedByte(finalKbps, downloadConnectionCounter.incrementAndGet());
+            final byte[] speedBytes = new byte[finalKbps];
+///            final String mark = UUID.randomUUID().toString(true);
+
+            int offset;
+            while ((offset = inputStream1.read(speedBytes, 0, speedByteSize)) != -1) {
+                TimeUnit.SECONDS.sleep(1);
+                // 获取下一秒下载速度
+                speedByteSize = this.getDownloadSpeedByte(finalKbps, downloadConnectionCounter.get());
+///                log.info("当前({})({})的下载速度为：{}", downloadConnectionCounter, mark, speedByteSize);
+                outputStream1.write(speedBytes, 0, offset);
+            }
+        } catch (Exception e) {
+            log.error("下载切片文件失败", e);
+        }
     }
 
     @Override
@@ -731,8 +766,8 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
         }
 
         final long artifactFileLength = artifactPath.toFile().length();
-        final long kbps = Optional.ofNullable(configurationManagementService.getConfiguration().getSliceMbSize()).orElse(0L) * (1024*1024);
-        
+        final long kbps = Optional.ofNullable(configurationManagementService.getConfiguration().getSliceMbSize()).orElse(0L) * (1024 * 1024);
+
         return artifactFileLength > kbps;
     }
 
@@ -746,7 +781,7 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
             final String fullPath = String.format("%s/%s/%s", storageId, repositoryId, path);
             resultMap.put(fullPath, this.querySupportSliceDownload(model));
         }
-        
+
         return resultMap;
     }
 
@@ -768,8 +803,8 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
             final Repository repository = artifactPath.getRepository();
             final Path fileName = artifactPath.getTarget().getFileName();
             final String baseUrl = StringUtils.chomp(configurationManagementService.getConfiguration().getBaseUrl(), "/");
-            final String md5 = null != artifactPath.getArtifactEntry() ? Optional.ofNullable(artifactPath.getArtifactEntry().getChecksums()).orElse(Collections.emptyMap()).get("MD5"):null;
-            final long kbps = Optional.ofNullable(configurationManagementService.getConfiguration().getSliceMbSize()).orElse(0L) * (1024*1024);
+            final String md5 = null != artifactPath.getArtifactEntry() ? Optional.ofNullable(artifactPath.getArtifactEntry().getChecksums()).orElse(Collections.emptyMap()).get("MD5") : null;
+            final long kbps = Optional.ofNullable(configurationManagementService.getConfiguration().getSliceMbSize()).orElse(0L) * (1024 * 1024);
             final long artifactFileLength = artifactPath.toFile().length();
             String artifactFilePath = artifactPath.toString();
             final String artifactParentUri = Optional.of(artifactPath.relativize()).map(p -> {
@@ -788,7 +823,7 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
 
             if (artifactSliceDownloadInfoDto.getUsedSlice()) {
                 try {
-                    final String sliceStoreFolderUri = String.format("%s.slice", StringUtils.isNotBlank(artifactParentUri) ? artifactParentUri+"/":StringUtils.EMPTY);
+                    final String sliceStoreFolderUri = String.format("%s.slice", StringUtils.isNotBlank(artifactParentUri) ? artifactParentUri + "/" : StringUtils.EMPTY);
                     final String sliceGenJsonFileUri = String.format("%s/slice-gen.json", sliceStoreFolderUri);
                     final String artifactFileSliceRootFolderPathStr = String.format("%s/artifactSlice/%s/%s", StringUtils.chomp(tempPath, "/"), storageId, repositoryId);
                     final String artifactFileSliceFolderPathStr = String.format("%s/%s", artifactFileSliceRootFolderPathStr, sliceStoreFolderUri);
@@ -803,6 +838,7 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
                             if (null != cacheDto && StringUtils.isNotBlank(md5) && md5.equals(cacheDto.getArtifactMd5())) {
                                 if (CollUtil.isNotEmpty(cacheDto.getDownloadPartList())) {
                                     for (ArtifactSliceDownloadInfoRes.DownloadPartInfo downloadPartInfo : cacheDto.getDownloadPartList()) {
+                                        /** {@linkplain ArtifactPromotionController#speedLimitDownload(Repository, String, String, HttpServletResponse)} */
                                         downloadPartInfo.setDownloadUrl(String.format("%s/artifactSlice/%s/%s/%s", baseUrl, storageId, repositoryId, downloadPartInfo.getDownloadUri()));
                                     }
                                 }
@@ -825,7 +861,8 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
                                 final String splitFileStoreUri = String.format("%s/%s", sliceStoreFolderUri, splitFileName);
                                 return new ArtifactSliceDownloadInfoRes.DownloadPartInfo()
                                         .setDownloadUri(splitFileStoreUri)
-                                        .setDownloadUrl(String.format("%s/api/artifact/folib/promotion/slice/file/download/%s/%s/%s", baseUrl, storageId, repositoryId, splitFileStoreUri));
+                                        /** {@linkplain ArtifactPromotionController#speedLimitDownload(Repository, String, String, HttpServletResponse)} */
+                                        .setDownloadUrl(String.format("%s/api/artifact/folib/promotion/file/speedLimitDownload/%s/%s/%s", baseUrl, storageId, repositoryId, splitFileStoreUri));
                             })
                             .collect(Collectors.toList());
                     artifactSliceDownloadInfoDto.setDownloadPartList(downloadPartInfoList);
@@ -844,7 +881,7 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
                 artifactSliceDownloadInfoDto.setDownloadPartList(Collections.singletonList(
                         new ArtifactSliceDownloadInfoRes.DownloadPartInfo()
                                 .setDownloadUri(artifactUri)
-                                .setDownloadUrl(String.format("%s/storages/%s", baseUrl, artifactUri))
+                                .setDownloadUrl(String.format("%s/api/artifact/folib/promotion/file/speedLimitDownload/%s", baseUrl, artifactUri))
                 ));
             }
         } catch (BusinessException e) {
@@ -875,8 +912,8 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
             final Repository repository = artifactPath.getRepository();
             final Path fileName = artifactPath.getTarget().getFileName();
             final String baseUrl = StringUtils.chomp(configurationManagementService.getConfiguration().getBaseUrl(), "/");
-            final String md5 = null != artifactPath.getArtifactEntry() ? Optional.ofNullable(artifactPath.getArtifactEntry().getChecksums()).orElse(Collections.emptyMap()).get("MD5"):null;
-            final long kbps = Optional.ofNullable(configurationManagementService.getConfiguration().getSliceMbSize()).orElse(0L) * (1024*1024);
+            final String md5 = null != artifactPath.getArtifactEntry() ? Optional.ofNullable(artifactPath.getArtifactEntry().getChecksums()).orElse(Collections.emptyMap()).get("MD5") : null;
+            final long kbps = Optional.ofNullable(configurationManagementService.getConfiguration().getSliceMbSize()).orElse(0L) * (1024 * 1024);
             final long artifactFileLength = artifactPath.toFile().length();
             String artifactFilePath = artifactPath.toString();
             String artifactFileSliceFolderPath = String.format("%s/artifactSlice/%s", StringUtils.chomp(tempPath, "/"), UUID.fastUUID().toString(true));
@@ -895,7 +932,7 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
                             return StringUtils.EMPTY;
                         }
                     }).get();
-                    final String sliceStoreFolderUri = String.format("%s.slice", StringUtils.isNotBlank(artifactParentUri) ? artifactParentUri+"/":StringUtils.EMPTY);
+                    final String sliceStoreFolderUri = String.format("%s.slice", StringUtils.isNotBlank(artifactParentUri) ? artifactParentUri + "/" : StringUtils.EMPTY);
                     final String sliceGenJsonFileUri = String.format("%s/slice-gen.json", sliceStoreFolderUri);
 
                     // 根据文件MD5检查是否已经生成切片数据，如有则返回生成已经存在的切片数据（避免重复生成）

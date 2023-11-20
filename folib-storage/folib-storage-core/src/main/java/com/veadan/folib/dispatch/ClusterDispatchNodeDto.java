@@ -66,6 +66,6 @@ public class ClusterDispatchNodeDto implements Serializable {
     /**
      * 节点传输速率（KB/s）
      */
-    private Long kbps;
+    private Integer kbps;
 
 }

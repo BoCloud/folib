@@ -38,7 +38,7 @@ public class MutableConfiguration
     /**
      * 节点传输速率（KB/s）
      */
-    private Long kbps;
+    private Integer kbps;
     /**
      * 节点传输切片大小（MB）
      */
@@ -135,11 +135,11 @@ public class MutableConfiguration
         this.port = port;
     }
 
-    public Long getKbps() {
+    public Integer getKbps() {
         return kbps;
     }
 
-    public void setKbps(Long kbps) {
+    public void setKbps(Integer kbps) {
         this.kbps = kbps;
     }
 

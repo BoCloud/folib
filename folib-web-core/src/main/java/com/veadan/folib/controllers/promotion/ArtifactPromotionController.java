@@ -26,7 +26,6 @@ import org.springframework.validation.BindingResult;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -178,10 +177,11 @@ public class ArtifactPromotionController extends BaseArtifactController {
     }
 
 
-    @GetMapping(value = "/slice/file/download/{storageId}/{repositoryId}/{artifactPath:.+}")
-    public void sliceDownload(@RepositoryMapping Repository repository,
-                                                 @PathVariable String artifactPath, HttpServletResponse response) {
-        artifactPromotionService.sliceFileDownload(repository, artifactPath, response);
+    @GetMapping(value = "/file/speedLimitDownload/{storageId}/{repositoryId}/{artifactPath:.+}")
+    public void speedLimitDownload(@RepositoryMapping Repository repository,
+                                   @PathVariable String artifactPath, @RequestParam("nodeName") String nodeName,
+                                   HttpServletResponse response) {
+        artifactPromotionService.sliceFileDownload(repository, artifactPath, nodeName, response);
     }
 
     @PostMapping(value = "/query/support/slice/download")

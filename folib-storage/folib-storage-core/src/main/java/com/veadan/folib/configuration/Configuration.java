@@ -39,7 +39,7 @@ public class Configuration {
     /**
      * 全局节点传输速率（KB/s）
      */
-    private Long kbps;
+    private Integer kbps;
 
     /**
      * 节点传输切片大小（MB）
@@ -175,7 +175,7 @@ public class Configuration {
         return port;
     }
 
-    public Long getKbps() {
+    public Integer getKbps() {
         return kbps;
     }
 
