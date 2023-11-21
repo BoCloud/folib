@@ -7,6 +7,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -33,13 +34,17 @@ public class ArtifactLocationReportOperation
         setBasePath(basePath);
     }
 
+    @Override
     public void execute(RepositoryPath path) throws IOException
     {
-        List<Path> filePathList = Files.walk(path)
-                                       .filter(p -> !p.getFileName().startsWith(".pom"))
-                                                                    .sorted()
-                                                                    .collect(Collectors.toList());
+        List<Path> filePathList;
+        try (Stream<Path> pathStream = Files.walk(path)) {
+            filePathList =  pathStream
+                    .filter(p -> !p.getFileName().startsWith(".pom"))
+                    .sorted()
+                    .collect(Collectors.toList());
 
+        }
         if (filePathList.isEmpty())
         {
             return;

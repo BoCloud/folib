@@ -4,6 +4,7 @@ import cn.hutool.core.date.DateUtil;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
+import com.veadan.folib.artifact.coordinates.DockerArtifactCoordinates;
 import com.veadan.folib.booters.PropertiesBooter;
 import com.veadan.folib.dependency.snippet.CodeSnippet;
 import com.veadan.folib.dependency.snippet.SnippetGenerator;
@@ -142,7 +143,7 @@ public class BrowseController
             RepositoryPath repositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, artifactPath);
             try {
                 DirectoryListing directoryListing = directoryListingService.fromRepositoryPath(repositoryPath);
-                List<FileContent> fileContents = directoryListing.getFiles().stream().filter(file -> !(file.getName().endsWith(".sha256"))).collect(Collectors.toList());
+                List<FileContent> fileContents = directoryListing.getFiles().stream().filter(file -> DockerArtifactCoordinates.include(file.getName())).collect(Collectors.toList());
                 FileContent fileContent = fileContents.get(0);
                 RepositoryPath versionPath = repositoryPathResolver.resolve(storageId, repositoryId, artifactPath + File.separator + fileContent.getName());
                 String manifestString = Files.readString(versionPath);

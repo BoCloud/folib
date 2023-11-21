@@ -5,6 +5,7 @@ server:
       timeout: 50000
   jetty:
     max-http-form-post-size: 524288000 # Maximum size in bytes of the HTTP post or put content.
+
 spring:
   datasource:
     type: com.alibaba.druid.pool.DruidDataSource
@@ -51,7 +52,8 @@ spring:
     password: ${folib.redis.password:123456}
 mybatis:
   mapper-locations: "classpath*:mapper/*.xml"
-
+#  configuration:
+#    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
 mapper:
   mappers: com.veadan.folib.scanner.common.base.CommonMapper
   identity: MYSQL
@@ -103,7 +105,7 @@ folib:
       corePoolSize: 12
       maxPoolSize: 12
       queueCapacity: 2147483647
-      keepAliveSeconds: 200
+      keepAliveSeconds: 0
       threadNamePrefix: async_
       awaitTerminationSeconds: 60
     asyncEventListener:
@@ -113,55 +115,13 @@ folib:
       keepAliveSeconds: 0
       threadNamePrefix: asyncEventListener_
       awaitTerminationSeconds: 0
-    asyncStorage:
-      corePoolSize: 12
-      maxPoolSize: 12
-      queueCapacity: 2147483647
-      keepAliveSeconds: 200
-      threadNamePrefix: asyncStorage_
-      awaitTerminationSeconds: 60
-    asyncRepository:
-      corePoolSize: 12
-      maxPoolSize: 12
-      queueCapacity: 2147483647
-      keepAliveSeconds: 200
-      threadNamePrefix: asyncRepository_
-      awaitTerminationSeconds: 60
-    asyncSecurityPolicy:
-      corePoolSize: 12
-      maxPoolSize: 12
-      queueCapacity: 2147483647
-      keepAliveSeconds: 200
-      threadNamePrefix: asyncSecurityPolicyConfig_
-      awaitTerminationSeconds: 60
     asyncConfig:
-      corePoolSize: 12
-      maxPoolSize: 12
+      corePoolSize: 2
+      maxPoolSize: 2
       queueCapacity: 2147483647
-      keepAliveSeconds: 200
+      keepAliveSeconds: 0
       threadNamePrefix: asyncConfig_
       awaitTerminationSeconds: 60
-    asyncRepositoryCleanup:
-      corePoolSize: 12
-      maxPoolSize: 12
-      queueCapacity: 2147483647
-      keepAliveSeconds: 200
-      threadNamePrefix: asyncRepositoryCleanup_
-      awaitTerminationSeconds: 120
-    asyncCronJob:
-      corePoolSize: 12
-      maxPoolSize: 12
-      queueCapacity: 2147483647
-      keepAliveSeconds: 200
-      threadNamePrefix: asyncCronJob_
-      awaitTerminationSeconds: 120
-    asyncClusterDispatch:
-      corePoolSize: 12
-      maxPoolSize: 12
-      queueCapacity: 2147483647
-      keepAliveSeconds: 200
-      threadNamePrefix: asyncClusterDispatch_
-      awaitTerminationSeconds: 120
     asyncFetchRemotePackage:
       corePoolSize: 12
       maxPoolSize: 12
@@ -170,18 +130,11 @@ folib:
       threadNamePrefix: asyncFetchRemotePackage_
       awaitTerminationSeconds: 0
     asyncScan:
-      corePoolSize: 30
-      maxPoolSize: 30
-      queueCapacity: 2147483647
-      keepAliveSeconds: 0
-      threadNamePrefix: asyncScan_
-      awaitTerminationSeconds: 0
-    asyncDownloadArtifact:
       corePoolSize: 16
       maxPoolSize: 16
       queueCapacity: 2147483647
       keepAliveSeconds: 0
-      threadNamePrefix: asyncDownloadArtifact_
+      threadNamePrefix: asyncScan_
       awaitTerminationSeconds: 0
     asyncWsCommand:
       corePoolSize: 16
@@ -265,11 +218,15 @@ s3fs:
   max:
     connections: 1000
   protocol: http
+#  region: sh1a
   region: folib
-  uri: s3://192.168.5.100:9000/
+#  uri: s3://s3.sh1a.qingstor.com
+  uri: s3://192.168.5.118:9000
   access:
+#    key: HRKZYMEFVAJMZMMUXBNG
     key: admin
   secret:
+#    key: KjIm1Cl3V9TBK0HQmlH3j3KYEM83FmILv5AIJwAg
     key: admin@V587
 rsa:
   privateKey: MIICdQIBADANBgkqhkiG9w0BAQEFAASCAl8wggJbAgEAAoGBAIyu/3z87O6l94pIricIgo1VpYvNuK/StdlehIaQM6R9PmDAr5/phnFYWJEh+ZhMUIl6c/qIvcQr0y0Q2FRPF6085l4QLvbJI+FQ9xSspKWFGEzUuoEVogOtjlBz0Fl3VXO0wmZSrCnUhF14PWWBNz5e0X1ZIVEreGWj4XrCR+NjAgMBAAECgYB53Kig2vJdstQfK9/3Hc8AoHzbAiOF4e710ILZkRW62WZsJty6l22GxzFI3nY3L3vf6nuGPGatBA1UDzBkr3Jgqm0TSKSqlZokmCs3v1/gtkr/TSt36F58lAswR4I5iPdcDXkNfViidzqnvCahpwWpUAjteeUsx1hBQM1p8gWvOQJBANFs78S/EXfmkxy0d4Pf7uoFRXlrMC4SpP/9AjKHaRexbLesG4jYXLclx16pZXj7VqOWBORcVBKn9y1guFOnYdUCQQCr+G3EsX++e8G32lYmYnNp082Fg+tGSz2RG/LrwDqJOSyuB87LFJcRphNdo266f23SpQI2luqh91ByiBatPRRXAkBNlZTyB3LaP4JqlPTd1xz0d4V4aNxNhTy5VSr2OzIUw/cpyEnfFYCrnQRSLmFYQ4yiR9aCHy5KRw2MMxO2cgENAkAs9RRVQIYB2T6qftTY0hIUD4ACMJuYU+Ezh1f5U9a5uw24LWhdZPOddIpJh4lSDjA6ylKKzOdoEkygtH0hKv+fAkBcHH9QUQsUE40ffNcITptbMJGfQzkl3yYCwuM8xrK3KyvYLSk5qL+xcCnTloboTjVNuwgJWuiujBy6DlAZTAj/

@@ -24,6 +24,7 @@ import com.veadan.folib.authorization.dto.Role;
 import com.veadan.folib.cloud.storage.s3fs.S3FileSystem;
 import com.veadan.folib.cloud.storage.s3fs.S3Iterator;
 import com.veadan.folib.cloud.storage.s3fs.S3Path;
+import com.veadan.folib.cloud.storage.s3fs.util.UriUtils;
 import com.veadan.folib.cluster.SyncMetadataEnum;
 import com.veadan.folib.components.artifact.ArtifactComponent;
 import com.veadan.folib.configuration.ConfigurationUtils;
@@ -95,9 +96,6 @@ import javax.servlet.http.HttpServletResponse;
 import javax.transaction.Transactional;
 import java.io.*;
 import java.net.URI;
-import java.net.URLDecoder;
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
@@ -211,8 +209,8 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
             // 设置响应头
             response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
             response.setCharacterEncoding("utf-8");
-            // 这里URLEncoder.encode可以防止中文乱码
-            String fileName = URLEncoder.encode(vulnerabilityUuid + "影响范围", "utf-8").replaceAll("\\+", "%20");
+            // encode可以防止中文乱码
+            String fileName = UriUtils.encode(vulnerabilityUuid + "影响范围");
             response.setHeader("Content-disposition", "attachment;filename*=utf-8''" + fileName + ".xlsx");
             excelWriter.finish();
         }
@@ -540,7 +538,7 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
             return null;
         }
         DirectoryListing directoryListing = directoryListingService.fromRepositoryPath(repositoryPath);
-        List<FileContent> fileContents = directoryListing.getFiles().stream().filter(file -> !(file.getName().endsWith(".sha256"))).collect(Collectors.toList());
+        List<FileContent> fileContents = directoryListing.getFiles().stream().filter(file -> DockerArtifactCoordinates.include(file.getName())).collect(Collectors.toList());
         if (CollectionUtils.isEmpty(fileContents)) {
             return null;
         }
@@ -562,7 +560,7 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
             RepositoryPath repositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, artifactPath);
             artifact = Objects.nonNull(repositoryPath) ? repositoryPath.getArtifactEntry() : null;
             if (Objects.isNull(artifact)) {
-                artifactPath = URLDecoder.decode(artifactPath, StandardCharsets.UTF_8);
+                artifactPath = UriUtils.decode(artifactPath);
                 repositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, artifactPath);
                 artifact = Objects.nonNull(repositoryPath) ? repositoryPath.getArtifactEntry() : null;
             }
@@ -972,9 +970,14 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
         if (rootFile.exists()) {
             if (null == rootFile.listFiles() && rootFile.isFile()) {
                 if (dockerLayout && !rootFile.getName().contains("sha256")) {
-                    log.info("file：{} is a docker layout file", rootFile.getName());
+                    log.info("file：{} not is a docker layout file", rootFile.getName());
                     return Collections.emptyList();
                 }
+                if (RepositoryFiles.isArtifactChecksum(rootFile.getName())) {
+                    log.info("file {} is a checksum file skip", rootFile.getName());
+                    return Collections.emptyList();
+                }
+                log.info("file:{}", rootFile.getAbsolutePath());
                 resultList.add(rootFile);
                 fileNum++;
             } else if (Objects.nonNull(rootFile.listFiles())) {
@@ -996,9 +999,14 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
                             continue;
                         }
                         if (dockerLayout && !f.getName().contains("sha256")) {
-                            log.info("file：{} is a docker layout file", f.getName());
+                            log.info("file：{} not is a docker layout file", f.getName());
                             continue;
                         }
+                        if (RepositoryFiles.isArtifactChecksum(f.getName())) {
+                            log.info("file {} is a checksum file skip", f.getName());
+                            continue;
+                        }
+                        log.info("file:{}", f.getAbsolutePath());
                         resultList.add(f);
                         fileNum++;
                     }
@@ -1015,6 +1023,10 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
                             log.info("directory：{} is a hidden directory", f.getName());
                             continue;
                         }
+                        if (f.getName().endsWith(".artifactory-metadata")) {
+                            log.info("directory：{} is a artifactory metadata directory skip", f.getName());
+                            continue;
+                        }
                         log.info("directory:{}", f.getAbsolutePath());
                         list.add(f);
                         folderNum++;
@@ -1024,7 +1036,11 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
                             continue;
                         }
                         if (dockerLayout && !f.getName().contains("sha256")) {
-                            log.info("file：{} is a docker layout file", f.getName());
+                            log.info("file：{} not is a docker layout file", f.getName());
+                            continue;
+                        }
+                        if (RepositoryFiles.isArtifactChecksum(f.getName())) {
+                            log.info("file {} is a checksum file skip", f.getName());
                             continue;
                         }
                         log.info("file:{}", f.getAbsolutePath());
@@ -1104,8 +1120,12 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
         S3Iterator s3Iterator = new S3Iterator(s3Path);
         if (!s3Iterator.hasNext()) {
             if (dockerLayout && !s3Path.getFileName().toString().contains("sha256")) {
-                log.info("s3 file：{} is a docker layout file", s3Path);
-                return listFile;
+                log.info("s3 file：{} not is a docker layout file", s3Path);
+                return Collections.emptyList();
+            }
+            if (RepositoryFiles.isArtifactChecksum(s3Path.getFileName().toString())) {
+                log.info("s3 file：{} is a checksum file skip", s3Path);
+                return Collections.emptyList();
             }
             listFile.add(s3Path);
         }
@@ -1127,7 +1147,11 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
                     continue;
                 }
                 if (dockerLayout && !s3PathTemp.getFileName().toString().contains("sha256")) {
-                    log.info("s3 file：{} is a docker layout file", s3PathTemp);
+                    log.info("s3 file：{} not is a docker layout file", s3PathTemp);
+                    continue;
+                }
+                if (RepositoryFiles.isArtifactChecksum(s3PathTemp.getFileName().toString())) {
+                    log.info("s3 file {} is a checksum file skip", s3PathTemp);
                     continue;
                 }
                 log.info("s3 file {}", s3PathTemp);
@@ -1145,6 +1169,10 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
                         log.info("s3 directory {} is a hidden directory", s3PathTemp);
                         continue;
                     }
+                    if (s3PathTemp.getFileName().toString().endsWith(".artifactory-metadata")) {
+                        log.info("s3 directory {} is a artifactory metadata directory skip", s3PathTemp);
+                        continue;
+                    }
                     listDir.add(s3PathTemp);
                 } else {
                     if (s3PathTemp.getFileName().toString().startsWith(".")) {
@@ -1152,7 +1180,11 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
                         continue;
                     }
                     if (dockerLayout && !s3PathTemp.getFileName().toString().contains("sha256")) {
-                        log.info("s3 file：{} is a docker layout file", s3PathTemp);
+                        log.info("s3 file：{} not is a docker layout file", s3PathTemp);
+                        continue;
+                    }
+                    if (RepositoryFiles.isArtifactChecksum(s3PathTemp.getFileName().toString())) {
+                        log.info("s3 file {} is a checksum file skip", s3PathTemp);
                         continue;
                     }
                     log.info("s3 file {}", s3PathTemp);
@@ -1223,7 +1255,7 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
         if (CollectionUtils.isEmpty(s3FilesPaths)) {
             return "";
         }
-        List<S3Path> fileContents = s3FilesPaths.stream().filter(file -> !(file.toAbsolutePath().endsWith(".sha256"))).collect(Collectors.toList());
+        List<S3Path> fileContents = s3FilesPaths.stream().filter(file -> DockerArtifactCoordinates.include(file.toAbsolutePath().toString())).collect(Collectors.toList());
         S3Path filePath = fileContents.get(0);
         String[] array = filePath.getKey().split(File.separator);
         manifestBuilder.append(array[array.length - 1]);
@@ -1234,7 +1266,7 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
         if (CollectionUtils.isEmpty(fileList)) {
             return "";
         }
-        List<File> fileContents = fileList.stream().filter(file -> !(file.getName().endsWith(".sha256"))).collect(Collectors.toList());
+        List<File> fileContents = fileList.stream().filter(file -> DockerArtifactCoordinates.include(file.getName())).collect(Collectors.toList());
         File file = fileContents.get(0);
         manifestBuilder.append(file.getName());
         return Files.readString(file.toPath());

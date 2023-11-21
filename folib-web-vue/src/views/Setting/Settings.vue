@@ -632,7 +632,7 @@
                       tab="阻断设置">
             <a-card>
               <a-row :gutter="16">
-                <a-col :span="14">
+                <a-col :span="18">
                   <a-card class="header-solid block block-settings">
                     <a-form class="block-form"
                             ref="blockForm"
@@ -743,9 +743,11 @@
                             </a-radio-group>
                           </a-form-item>
                         </a-col>
+                        <a-col :span="24">
+                          <package-name v-if="packageNameShow" ref="packageName"/>
+                        </a-col>
                         <a-col :span="12"
-                               class="text-right mt-50"
-                               v-if="!packageNameShow">
+                               class="text-right mt-50">
                           <a-button key="submit"
                                     class="px-30"
                                     size="small"
@@ -753,8 +755,7 @@
                                     htmlType="submit">保存</a-button>
                         </a-col>
                         <a-col :span="12"
-                               class="text-left mt-50"
-                               v-if="!packageNameShow">
+                               class="text-left mt-50">
                           <a-button key="back"
                                     class="px-30 ml-10"
                                     size="small"
@@ -763,9 +764,6 @@
                       </a-row>
                     </a-form>
                   </a-card>
-                </a-col>
-                <a-col :span="24">
-                  <package-name v-if="packageNameShow" ref="packageName"/>
                 </a-col>
               </a-row>
             </a-card>

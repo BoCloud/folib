@@ -1,6 +1,7 @@
 package com.veadan.folib.controllers;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.veadan.folib.artifact.coordinates.DockerArtifactCoordinates;
 import com.veadan.folib.authorization.dto.Role;
 import com.veadan.folib.configuration.Configuration;
 import com.veadan.folib.configuration.ConfigurationManager;
@@ -293,23 +294,6 @@ public abstract class BaseController {
     public static void copyToResponse(InputStream is,
                                       HttpServletResponse response)
             throws IOException {
-//        try (OutputStream os = new ExceptionHandlingOutputStream(response.getOutputStream())) {
-//            long totalBytes = 0L;
-//
-//            int readLength;
-//            byte[] bytes = new byte[4096];
-//            while ((readLength = is.read(bytes)) != -1) {
-//                // Write the artifact
-//                os.write(bytes, 0, readLength);
-//                os.flush();
-//
-//                totalBytes += readLength;
-//            }
-//            if (setContentLength(response)) {
-//                response.setHeader(HttpHeaders.CONTENT_LENGTH, Long.toString(totalBytes));
-//            }
-//            response.flushBuffer();
-//        }
         try (
                 OutputStream os = new ExceptionHandlingOutputStream(response.getOutputStream());
                 WritableByteChannel outputChannel = Channels.newChannel(os)
@@ -424,7 +408,7 @@ public abstract class BaseController {
             return null;
         }
         DirectoryListing directoryListing = directoryListingService.fromRepositoryPath(repositoryPath);
-        List<FileContent> fileContents = directoryListing.getFiles().stream().filter(file -> !(file.getName().endsWith(".sha256"))).collect(Collectors.toList());
+        List<FileContent> fileContents = directoryListing.getFiles().stream().filter(file -> DockerArtifactCoordinates.include(file.getName())).collect(Collectors.toList());
         if (CollectionUtils.isEmpty(fileContents)) {
             return null;
         }

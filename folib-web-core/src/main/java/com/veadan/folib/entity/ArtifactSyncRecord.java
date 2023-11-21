@@ -91,26 +91,26 @@ public class ArtifactSyncRecord implements Serializable {
      * 创建人
      */
     @ApiModelProperty("创建人")
-    @Column(name = "created_by")
-    private String createdBy;
+    @Column(name = "create_by")
+    private String createBy;
     /**
      * 创建时间
      */
     @ApiModelProperty("创建时间")
-    @Column(name = "created_time")
+    @Column(name = "create_time")
     @JsonFormat(timezone = "GMT+8", pattern = "yyyy-MM-dd HH:mm:ss")
-    private Date createdTime;
+    private Date createTime;
     /**
      * 更新人
      */
     @ApiModelProperty("更新人")
-    @Column(name = "updated_by")
-    private String updatedBy;
+    @Column(name = "update_by")
+    private String updateBy;
     /**
      * 更新时间
      */
     @ApiModelProperty("更新时间")
-    @Column(name = "updated_time")
+    @Column(name = "update_time")
     @JsonFormat(timezone = "GMT+8", pattern = "yyyy-MM-dd HH:mm:ss")
-    private Date updatedTime;
+    private Date updateTime;
 }

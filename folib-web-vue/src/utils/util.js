@@ -157,3 +157,31 @@ export function concatenateComponentName(group, name, version) {
   let v = trimToNull(version);
   return (g != null ? g + " " : "") + (n != null ? n : "") + (v != null ? " " + v : "");
 }
+
+export function convertToBytes(size, unit) {
+  const sizeNumeric = Number(size);
+  if (isNaN(sizeNumeric)) {
+    throw new Error("Invalid size value: " + size);
+  }
+  switch (unit) {
+    case "B":
+      return sizeNumeric;
+    case "KB":
+      return sizeNumeric * 1024;
+    case "MB":
+      return sizeNumeric * 1024 * 1024;
+    case "GB":
+      return sizeNumeric * 1024 * 1024 * 1024;
+    case "TB":
+      return sizeNumeric * 1024 * 1024 * 1024 * 1024;
+    case "PB":
+      return sizeNumeric * 1024 * 1024 * 1024 * 1024 * 1024;
+    default:
+      throw new Error("Unsupported unit: " + unit);
+  }
+}
+
+
+
+
+

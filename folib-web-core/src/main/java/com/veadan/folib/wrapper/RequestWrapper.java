@@ -1,5 +1,7 @@
 package com.veadan.folib.wrapper;
 
+import lombok.extern.slf4j.Slf4j;
+
 import javax.servlet.ReadListener;
 import javax.servlet.ServletInputStream;
 import javax.servlet.http.HttpServletRequest;
@@ -9,6 +11,7 @@ import java.io.*;
 /**
  * @author leipenghui
  **/
+@Slf4j
 public class RequestWrapper extends HttpServletRequestWrapper {
 
     private String body;
@@ -22,7 +25,7 @@ public class RequestWrapper extends HttpServletRequestWrapper {
      */
     public RequestWrapper(HttpServletRequest request) throws IOException {
         super(request);
-
+        log.debug("==========进入RequestWrapper [{}]==========", request.getRequestURL());
         StringBuilder stringBuilder = new StringBuilder();
         BufferedReader bufferedReader = null;
         try {

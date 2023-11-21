@@ -130,7 +130,7 @@ public abstract class AbstractLayoutProvider<T extends LayoutArtifactCoordinates
                     boolean isChecksum = Boolean.TRUE.equals(attributesLocal.get(RepositoryFileAttributeType.CHECKSUM));
                     boolean isDirectory = Files.isDirectory(repositoryPath);
 
-                    value = !isChecksum && !isDirectory;
+                    value = !isChecksum && !isDirectory && !RepositoryFiles.isArtifactMetadata(repositoryPath);
 
                     break;
                 case COORDINATES:

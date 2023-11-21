@@ -1,0 +1,74 @@
+package com.veadan.folib.controllers.packagenameblock;
+
+import com.veadan.folib.controllers.BaseController;
+import com.veadan.folib.domain.PackageNameBlockInfo;
+import com.veadan.folib.forms.packagenameblock.PackageNameBlockForm;
+import com.veadan.folib.scanner.common.msg.TableResultResponse;
+import com.veadan.folib.services.PackageNameBlockService;
+import io.swagger.annotations.Api;
+import io.swagger.annotations.ApiOperation;
+import io.swagger.annotations.ApiResponse;
+import io.swagger.annotations.ApiResponses;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.*;
+
+import javax.inject.Inject;
+
+/**
+ * @author leipenghui
+ */
+@RestController
+@RequestMapping("/api/packageNameBlock")
+@Api(description = "包名阻断", tags = "包名阻断")
+public class PackageNameBlockController extends BaseController {
+
+    @Inject
+    private PackageNameBlockService packageNameBlockService;
+
+    @ApiOperation(value = "查询包名阻断分页列表", response = PackageNameBlockInfo.class)
+    @ApiResponses(value = {@ApiResponse(code = 200, message = "OK")})
+    @PreAuthorize("hasAuthority('CONFIGURATION_VIEW_SECURITY_POLICY_CONFIGURATION')")
+    @GetMapping(value = "/page")
+    public TableResultResponse<PackageNameBlockInfo> page(@RequestParam(name = "page", required = false) Integer page,
+                                                          @RequestParam(name = "limit", required = false) Integer limit,
+                                                          PackageNameBlockForm packageNameBlockForm) {
+        return packageNameBlockService.queryPackageNameBlockList(page, limit, packageNameBlockForm);
+    }
+
+    @ApiOperation(value = "查询包名阻断信息", response = PackageNameBlockInfo.class)
+    @ApiResponses(value = {@ApiResponse(code = 200, message = "OK")})
+    @PreAuthorize("hasAuthority('CONFIGURATION_VIEW_SECURITY_POLICY_CONFIGURATION')")
+    @GetMapping(value = "/info")
+    public ResponseEntity<PackageNameBlockInfo> packageNameBlockInfo(PackageNameBlockForm packageNameBlockForm) {
+        PackageNameBlockInfo packageNameBlockInfo = packageNameBlockService.selectOnePackageNameBlock(packageNameBlockForm);
+        return ResponseEntity.ok(packageNameBlockInfo);
+    }
+
+    @ApiOperation(value = "保存包名阻断信息")
+    @ApiResponses(value = {@ApiResponse(code = 200, message = "OK")})
+    @PreAuthorize("hasAuthority('CONFIGURATION_ADD_UPDATE_SECURITY_POLICY')")
+    @PutMapping
+    public ResponseEntity<Void> savePackageNameBlock(@RequestBody PackageNameBlockForm packageNameBlockForm) {
+        packageNameBlockService.savePackageNameBlock(packageNameBlockForm);
+        return ResponseEntity.ok().build();
+    }
+
+    @ApiOperation(value = "更新包名阻断信息")
+    @ApiResponses(value = {@ApiResponse(code = 200, message = "OK")})
+    @PreAuthorize("hasAuthority('CONFIGURATION_ADD_UPDATE_SECURITY_POLICY')")
+    @PostMapping
+    public ResponseEntity<Void> updatePackageNameBlock(@RequestBody PackageNameBlockForm packageNameBlockForm) {
+        packageNameBlockService.updatePackageNameBlock(packageNameBlockForm);
+        return ResponseEntity.ok().build();
+    }
+
+    @ApiOperation(value = "删除包名阻断信息")
+    @ApiResponses(value = {@ApiResponse(code = 200, message = "OK")})
+    @PreAuthorize("hasAuthority('CONFIGURATION_ADD_UPDATE_SECURITY_POLICY')")
+    @DeleteMapping
+    public ResponseEntity<Void> deletePackageNameBlock(@RequestBody PackageNameBlockForm packageNameBlockForm) {
+        packageNameBlockService.deletePackageNameBlock(packageNameBlockForm);
+        return ResponseEntity.ok().build();
+    }
+}

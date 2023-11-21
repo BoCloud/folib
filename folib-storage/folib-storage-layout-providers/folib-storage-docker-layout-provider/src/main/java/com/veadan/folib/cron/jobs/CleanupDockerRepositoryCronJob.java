@@ -270,8 +270,8 @@ public class CleanupDockerRepositoryCronJob extends JavaCronJob {
         try {
             Artifact artifact = repositoryPath.getArtifactEntry();
             if (Objects.nonNull(artifact)) {
-                //获取仓库下制品更新时间比较
-                updateDateTime = artifact.getLastUpdated();
+                //获取仓库下制品最近使用时间比较
+                updateDateTime = artifact.getLastUsed();
             }
         } catch (Exception ex) {
             log.error(ExceptionUtils.getStackTrace(ex));
@@ -376,7 +376,10 @@ public class CleanupDockerRepositoryCronJob extends JavaCronJob {
             return null;
         }
         //当前版本下manifest文件信息
-        List<Path> pathList = Files.list(repositoryPath).filter(f -> !Files.isDirectory(f) && !f.getFileName().toString().endsWith(".sha256") && f.getFileName().toString().startsWith("sha256")).collect(Collectors.toList());
+        List<Path> pathList;
+        try (Stream<Path> pathStream = Files.list(repositoryPath)) {
+            pathList = pathStream.filter(f -> !Files.isDirectory(f) && DockerArtifactCoordinates.isManifestPath(f)).collect(Collectors.toList());
+        }
         if (CollectionUtils.isEmpty(pathList)) {
             log.warn("Clean docker artifact job repository [{}] [{}] manifest [{}] not exists, The image is damaged and will be deleted", repositoryPath.getStorageId(), repositoryPath.getRepositoryId(), repositoryPath);
             return null;

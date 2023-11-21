@@ -17,6 +17,7 @@ import com.veadan.folib.storage.ArtifactResolutionException;
 import com.veadan.folib.storage.Storage;
 import com.veadan.folib.storage.repository.Repository;
 import org.apache.commons.io.FilenameUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.carlspring.commons.io.reloading.FSReloadableInputStreamHandler;
 import org.slf4j.Logger;
@@ -36,6 +37,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * This class decorates {@link StorageFileSystemProvider} with common layout specific
@@ -157,23 +159,25 @@ public abstract class LayoutFileSystemProvider extends StorageFileSystemProvider
     public void storeChecksum(RepositoryPath basePath,
                               boolean forceRegeneration)
             throws IOException {
-        Files.walk(basePath)
-                .filter(p -> !Files.isDirectory(p))
-                .filter(p -> {
-                    try {
-                        return !Boolean.TRUE.equals(RepositoryFiles.isChecksum((RepositoryPath) p));
-                    } catch (IOException e) {
-                        logger.error("Failed to read attributes for [{}]", p, e);
-                    }
-                    return false;
-                })
-                .forEach(p -> {
-                    try {
-                        writeChecksum((RepositoryPath) p, forceRegeneration);
-                    } catch (IOException e) {
-                        logger.error("Failed to write checksum for [{}]", p, e);
-                    }
-                });
+        try (Stream<Path> pathStream = Files.walk(basePath)) {
+            pathStream
+                    .filter(p -> !Files.isDirectory(p))
+                    .filter(p -> {
+                        try {
+                            return !Boolean.TRUE.equals(RepositoryFiles.isChecksum((RepositoryPath) p));
+                        } catch (IOException e) {
+                            logger.error("Failed to read attributes for [{}]", p, e);
+                        }
+                        return false;
+                    })
+                    .forEach(p -> {
+                        try {
+                            writeChecksum((RepositoryPath) p, forceRegeneration);
+                        } catch (IOException e) {
+                            logger.error("Failed to write checksum for [{}]", p, e);
+                        }
+                    });
+        }
     }
 
 
@@ -332,7 +336,7 @@ public abstract class LayoutFileSystemProvider extends StorageFileSystemProvider
 
     private void deleteArtifactMedataFile(RepositoryPath repositoryPath) {
         try {
-            if (repositoryPath.getRoot().toString().equals(repositoryPath.toString())) {
+            if (Files.exists(repositoryPath) && Files.isSameFile(repositoryPath.getRoot(),repositoryPath)) {
                 return;
             }
             String artifactMetadataFileName = "." + FilenameUtils.getName(repositoryPath.getFileName().toString()) + ".metadata";

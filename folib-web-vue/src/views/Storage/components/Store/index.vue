@@ -583,7 +583,7 @@
               </a-radio-group>
               <div>
                 <span v-if="uploadType === 1">此方式支持多个制品包批量上传，一次不能超过10个文件</span>
-                <span v-if="uploadType === 2">此方式支持上传一个ZIP文件格式的压缩包，大小不能超过100M</span>
+                <span v-if="uploadType === 2">此方式支持上传一个ZIP文件格式的压缩包，大小不能超过{{ this.uploadMaxSize.size + this.uploadMaxSize.unit }}</span>
               </div>
             </a-form-item>
             <a-form-item label="选择文件">
@@ -751,6 +751,9 @@ import {
   artifactCheck
 } from '@/utils/layoutUtil'
 import {
+  convertToBytes
+} from '@/utils/util'
+import {
   browse,
   getArtifact,
   viewArtifactFile,
@@ -776,7 +779,9 @@ import {
 import { getMetadataConfiguration } from '@/api/settings'
 import { hasRole, isAdmin, isAnonymous, isLogin } from '@/utils/permission'
 import { getExternalNodeRepositories } from "@/api/externalNode"
-
+import {
+  getSingleDict
+} from "@/api/advanced"
 import SearchBox from '@/components/Tools/SearchBox'
 import zhCN from 'ant-design-vue/es/locale/zh_CN'
 
@@ -955,7 +960,11 @@ export default {
       uploadType: 1,
       instanceName: '',
       externalNodeRepositories: [],
-      artifactoryType: 1
+      artifactoryType: 1,
+      uploadMaxSize: {
+        size: 100,
+        unit: 'MB',
+      }
     }
   },
   created () {
@@ -971,6 +980,7 @@ export default {
         this.scannerRules()
         this.scanReport = Object.assign({}, this.propScanReport)
         this.queryStorageAndRepositoryPermission()
+        this.getUploadMaxSize()
       }
     },
     scannerRules () {
@@ -1112,6 +1122,7 @@ export default {
           })
         }
       })
+      this.uploadType = 1
       this.showUploadFormModal = true
     },
     message (type, message) {
@@ -1202,6 +1213,16 @@ export default {
         })
         .finally(() => { })
     },
+    getUploadMaxSize() {
+      getSingleDict({ dictType: 'ui_upload_max_size' }).then(res => {
+        if (res && res.dictValue) {
+          this.uploadMaxSize = JSON.parse(res.dictValue)
+        }
+      })
+    },
+    convertToBytes (size, unit) {
+      return convertToBytes(size, unit)
+    },
     handleUploadSubmit (e) {
       e.preventDefault()
       this.uploadForm.validateFields((err, values) => {
@@ -1218,11 +1239,11 @@ export default {
               return false
             }
             const file = values.files[0]
-            const sizeLimit = file.size / 1024 / 1024 > 100
+            const sizeLimit = file.size > this.convertToBytes(this.uploadMaxSize.size, this.uploadMaxSize.unit)
             if (sizeLimit)
             {
               this.$notification.warning({
-                message: '文件大小不能超过100M'
+                message: '文件大小不能超过' + this.uploadMaxSize.size + this.uploadMaxSize.unit
               })
               return false
             }

@@ -680,7 +680,7 @@ public class ArtifactRepository extends GremlinVertexRepository<Artifact> {
     public Artifact findOneArtifact(String storageId,
                                     String repositoryId,
                                     String path) {
-        log.debug("FindOneArtifact storageId [{}] repositoryId [{}] path [{}]", storageId, repositoryId, path);
+        log.info("FindOneArtifact storageId [{}] repositoryId [{}] path [{}]", storageId, repositoryId, path);
         com.veadan.folib.storage.repository.Repository repository = configurationManager.getRepository(storageId, repositoryId);
         long startTime = System.currentTimeMillis();
         EntityTraversal<Vertex, Artifact> t = g().V()
@@ -691,7 +691,7 @@ public class ArtifactRepository extends GremlinVertexRepository<Artifact> {
                         .map(ArtifactLayoutLocator.getLayoutByNameEntityMap()::get)
                         .map(ArtifactLayoutDescription::getArtifactCoordinatesClass)));
         Artifact artifact = t.tryNext().orElse(null);
-        log.debug("FindOneArtifact storageId [{}] repositoryId [{}] path [{}] artifactExists [{}] take time [{}] ms", storageId, repositoryId, path, Objects.nonNull(artifact), System.currentTimeMillis() - startTime);
+        log.info("FindOneArtifact storageId [{}] repositoryId [{}] path [{}] artifactExists [{}] take time [{}] ms", storageId, repositoryId, path, Objects.nonNull(artifact), System.currentTimeMillis() - startTime);
         return artifact;
     }
 

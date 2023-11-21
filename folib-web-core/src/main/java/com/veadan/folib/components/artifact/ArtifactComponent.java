@@ -7,6 +7,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import com.veadan.folib.artifact.archive.JarArchiveListingFunction;
+import com.veadan.folib.artifact.coordinates.DockerArtifactCoordinates;
 import com.veadan.folib.artifact.coordinates.PypiArtifactCoordinates;
 import com.veadan.folib.cloud.storage.s3fs.S3Path;
 import com.veadan.folib.components.common.CommonComponent;
@@ -14,13 +15,14 @@ import com.veadan.folib.config.NpmLayoutProviderConfig;
 import com.veadan.folib.configuration.*;
 import com.veadan.folib.controllers.layout.pypi.PypiBrowsePackageHtmlResponseBuilder;
 import com.veadan.folib.data.criteria.Paginator;
-import com.veadan.folib.domain.Artifact;
-import com.veadan.folib.domain.ArtifactEntity;
-import com.veadan.folib.domain.ArtifactIdGroup;
-import com.veadan.folib.domain.Vulnerability;
+import com.veadan.folib.domain.*;
+import com.veadan.folib.entity.ArtifactCacheRecord;
+import com.veadan.folib.entity.Dict;
+import com.veadan.folib.entity.PackageNameBlock;
 import com.veadan.folib.enums.BlockTypeEnum;
+import com.veadan.folib.enums.ConditionTypeEnum;
+import com.veadan.folib.enums.DictTypeEnum;
 import com.veadan.folib.enums.PromotionStatusEnum;
-import com.veadan.folib.enums.VersionConditionTypeEnum;
 import com.veadan.folib.event.artifact.ArtifactEventListenerRegistry;
 import com.veadan.folib.npm.metadata.*;
 import com.veadan.folib.providers.io.RepositoryFiles;
@@ -38,17 +40,17 @@ import com.veadan.folib.repositories.ArtifactRepository;
 import com.veadan.folib.repository.NpmRepositoryFeatures;
 import com.veadan.folib.repository.PypiRepositoryFeatures;
 import com.veadan.folib.service.ProxyRepositoryConnectionPoolConfigurationService;
-import com.veadan.folib.services.ArtifactService;
-import com.veadan.folib.services.ConfigurationManagementService;
-import com.veadan.folib.services.DictService;
+import com.veadan.folib.services.*;
 import com.veadan.folib.storage.repository.Repository;
 import com.veadan.folib.storage.repository.RepositoryDto;
 import com.veadan.folib.storage.repository.RepositoryTypeEnum;
+import com.veadan.folib.util.CacheUtil;
 import com.veadan.folib.util.CommonUtils;
 import com.veadan.folib.utils.PypiPackageNameConverter;
-import com.veadan.folib.utils.VersionUtil;
+import com.veadan.folib.utils.VersionUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.codec.digest.DigestUtils;
+import org.apache.commons.codec.digest.MessageDigestAlgorithms;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -151,6 +153,14 @@ public class ArtifactComponent {
     @Inject
     @Lazy
     private ArtifactEventListenerRegistry artifactEventListenerRegistry;
+
+    @Inject
+    @Lazy
+    private PackageNameBlockService packageNameBlockService;
+
+    @Inject
+    @Lazy
+    private ArtifactCacheRecordService artifactCacheRecordService;
 
     /**
      * 读取文件内容
@@ -260,29 +270,20 @@ public class ArtifactComponent {
      */
     public boolean layoutSupports(RepositoryPath repositoryPath, Boolean block, Boolean scan) {
         boolean flag = false;
-        if (Objects.isNull(repositoryPath) || !Files.exists(repositoryPath)) {
+        if (Objects.isNull(repositoryPath)) {
             log.warn("RepositoryPath [{}] does not exist", repositoryPath);
             return false;
         }
-//        try {
-//            if (RepositoryFiles.isChecksum(repositoryPath)) {
-//                log.error("LayoutSupports [{}] isChecksum", repositoryPath);
-//                return false;
-//            }
-//        } catch (Exception ex) {
-//            log.error("LayoutSupports get [{}] isChecksum error [{}]", repositoryPath, ExceptionUtils.getStackTrace(ex));
-//            return false;
-//        }
         if (repositoryPath.getFileSystem() instanceof DockerFileSystem) {
             log.debug("docker布局");
             String blobs = "blobs";
             String manifest = "manifest";
             String path = repositoryPath.toAbsolutePath().toString();
             if (Boolean.TRUE.equals(block)) {
-                if (path.contains("sha256") && !path.endsWith(".sha256")) {
+                if (DockerArtifactCoordinates.include(path)) {
                     flag = true;
                 }
-            } else if (path.contains("sha256") && !path.contains(blobs) && !path.contains(manifest) && !path.endsWith(".sha256")) {
+            } else if (path.contains("sha256") && !path.contains(blobs) && !path.contains(manifest) && DockerArtifactCoordinates.include(path)) {
                 flag = true;
             }
         } else if (repositoryPath.getFileSystem() instanceof MavenFileSystem) {
@@ -354,7 +355,7 @@ public class ArtifactComponent {
                 log.debug("docker布局");
                 String blobs = "blobs";
                 String manifest = "manifest";
-                if (filePath.contains("sha256") && !filePath.contains(blobs) && !filePath.contains(manifest) && !filePath.endsWith(".sha256")) {
+                if (filePath.contains("sha256") && !filePath.contains(blobs) && !filePath.contains(manifest) && DockerArtifactCoordinates.include(filePath)) {
                     flag = true;
                 }
             } else if (Maven2LayoutProvider.ALIAS.equals(layout)) {
@@ -492,101 +493,101 @@ public class ArtifactComponent {
             return false;
         }
         boolean block = false;
-        String storageId = artifact.getStorageId(), repositoryId = artifact.getRepositoryId();
-        if (StringUtils.isBlank(layout)) {
-            RootRepositoryPath rootRepositoryPath = repositoryPathResolver.resolve(storageId, repositoryId);
-            layout = rootRepositoryPath.getRepository().getLayout();
-        }
-        boolean isDockerLayout = DockerLayoutProvider.ALIAS.equals(layout);
-        Set<Vulnerability> vulnerabilitySet = artifact.getVulnerabilitySet();
-        if (isDockerLayout) {
-            String manifest = "manifest";
-            String path = artifact.getUuid();
-            if (path.contains("sha256") && !path.endsWith(".sha256") && path.contains(manifest)) {
-                String keywords = path.substring(path.lastIndexOf("manifest/") + "manifest/".length());
-                vulnerabilitySet = artifactRepository.fetchVulnerabilitiesByKeywords(storageId, repositoryId, keywords);
+        try {
+            String storageId = artifact.getStorageId(), repositoryId = artifact.getRepositoryId();
+            if (StringUtils.isBlank(layout)) {
+                RootRepositoryPath rootRepositoryPath = repositoryPathResolver.resolve(storageId, repositoryId);
+                layout = rootRepositoryPath.getRepository().getLayout();
             }
-        }
-        Set<String> vulnerabilities = Optional.ofNullable(vulnerabilitySet).orElse(Collections.emptySet()).stream().map(Vulnerability::getUuid).collect(Collectors.toSet());
-        MutableSecurityPolicyConfiguration mutableSecurityPolicyConfiguration = configurationManagementService.getMutableConfigurationClone().getSecurityPolicyConfiguration();
-        if (Objects.nonNull(mutableSecurityPolicyConfiguration)) {
-            RepositoryDto repositoryDto = configurationManagementService.getMutableConfigurationClone().getStorage(storageId).getRepository(repositoryId);
-            Set<String> repositoryBlacks = repositoryDto.getVulnerabilityBlacks();
-            Set<String> repositoryWhites = repositoryDto.getVulnerabilityWhites();
-            Set<String> platformBlacks = mutableSecurityPolicyConfiguration.getBlacks();
-            Set<String> platformWhites = mutableSecurityPolicyConfiguration.getWhites();
-            if (BlockTypeEnum.ALL.getType().equals(mutableSecurityPolicyConfiguration.getBlockType())) {
-                if (CollectionUtils.isEmpty(vulnerabilitySet)) {
-                    return false;
+            boolean isDockerLayout = DockerLayoutProvider.ALIAS.equals(layout);
+            Set<Vulnerability> vulnerabilitySet = artifact.getVulnerabilitySet();
+            if (isDockerLayout) {
+                String manifest = "manifest";
+                String path = artifact.getUuid();
+                if (DockerArtifactCoordinates.include(path) && path.contains(manifest)) {
+                    String keywords = path.substring(path.lastIndexOf("manifest/") + "manifest/".length());
+                    vulnerabilitySet = artifactRepository.fetchVulnerabilitiesByKeywords(storageId, repositoryId, keywords);
                 }
-                //过滤仓库级别黑名单
-                block = vulnerabilities.stream().anyMatch(repositoryBlacks::contains);
-                if (!block) {
-                    Set<String> allSet = Sets.newLinkedHashSet(), blackSet;
-                    //不在阻断漏洞等级内的漏洞集合，需要过滤黑名单
-                    Set<Vulnerability> unIncludeVulnerabilitySet = Sets.newLinkedHashSet();
-                    if (CollectionUtils.isNotEmpty(mutableSecurityPolicyConfiguration.getBlockLevels())) {
-                        for (Vulnerability vulnerability : vulnerabilitySet) {
-                            //开启白名单过滤
-                            if (Boolean.TRUE.equals(mutableSecurityPolicyConfiguration.getFilterWhites())) {
-                                //过滤仓库级别白名单、平台级别白名单
-                                if (repositoryWhites.contains(vulnerability.getUuid()) || platformWhites.contains(vulnerability.getUuid())) {
-                                    continue;
+            }
+            Set<String> vulnerabilities = Optional.ofNullable(vulnerabilitySet).orElse(Collections.emptySet()).stream().map(Vulnerability::getUuid).collect(Collectors.toSet());
+            MutableSecurityPolicyConfiguration mutableSecurityPolicyConfiguration = configurationManagementService.getMutableConfigurationClone().getSecurityPolicyConfiguration();
+            if (Objects.nonNull(mutableSecurityPolicyConfiguration)) {
+                RepositoryDto repositoryDto = configurationManagementService.getMutableConfigurationClone().getStorage(storageId).getRepository(repositoryId);
+                Set<String> repositoryBlacks = repositoryDto.getVulnerabilityBlacks();
+                Set<String> repositoryWhites = repositoryDto.getVulnerabilityWhites();
+                Set<String> platformBlacks = mutableSecurityPolicyConfiguration.getBlacks();
+                Set<String> platformWhites = mutableSecurityPolicyConfiguration.getWhites();
+                if (BlockTypeEnum.ALL.getType().equals(mutableSecurityPolicyConfiguration.getBlockType())) {
+                    if (CollectionUtils.isEmpty(vulnerabilitySet)) {
+                        return false;
+                    }
+                    //过滤仓库级别黑名单
+                    block = vulnerabilities.stream().anyMatch(repositoryBlacks::contains);
+                    if (!block) {
+                        Set<String> allSet = Sets.newLinkedHashSet(), blackSet;
+                        //不在阻断漏洞等级内的漏洞集合，需要过滤黑名单
+                        Set<Vulnerability> unIncludeVulnerabilitySet = Sets.newLinkedHashSet();
+                        if (CollectionUtils.isNotEmpty(mutableSecurityPolicyConfiguration.getBlockLevels())) {
+                            for (Vulnerability vulnerability : vulnerabilitySet) {
+                                //开启白名单过滤
+                                if (Boolean.TRUE.equals(mutableSecurityPolicyConfiguration.getFilterWhites())) {
+                                    //过滤仓库级别白名单、平台级别白名单
+                                    if (repositoryWhites.contains(vulnerability.getUuid()) || platformWhites.contains(vulnerability.getUuid())) {
+                                        continue;
+                                    }
+                                }
+                                if (mutableSecurityPolicyConfiguration.getBlockLevels().contains(vulnerability.getHighestSeverityText())) {
+                                    allSet.add(vulnerability.getUuid());
+                                } else {
+                                    unIncludeVulnerabilitySet.add(vulnerability);
                                 }
                             }
-                            if (mutableSecurityPolicyConfiguration.getBlockLevels().contains(vulnerability.getHighestSeverityText())) {
-                                allSet.add(vulnerability.getUuid());
-                            } else {
-                                unIncludeVulnerabilitySet.add(vulnerability);
-                            }
                         }
+                        //过滤平台级别黑名单
+                        blackSet = unIncludeVulnerabilitySet.stream().filter(item -> platformBlacks.contains(item.getUuid())).map(Vulnerability::getUuid).collect(Collectors.toCollection(LinkedHashSet::new));
+                        allSet.addAll(blackSet);
+                        block = CollectionUtils.isNotEmpty(allSet);
                     }
-                    //过滤平台级别黑名单
-                    blackSet = unIncludeVulnerabilitySet.stream().filter(item -> platformBlacks.contains(item.getUuid())).map(Vulnerability::getUuid).collect(Collectors.toCollection(LinkedHashSet::new));
-                    allSet.addAll(blackSet);
-                    block = CollectionUtils.isNotEmpty(allSet);
-                }
-            } else if (BlockTypeEnum.BLACK.getType().equals(mutableSecurityPolicyConfiguration.getBlockType())) {
-                if (CollectionUtils.isEmpty(vulnerabilitySet)) {
-                    return false;
-                }
-                //黑名单阻断
-                block = vulnerabilities.stream().anyMatch(item -> repositoryBlacks.contains(item) ||
-                        (!repositoryWhites.contains(item) && platformBlacks.contains(item)));
-            } else if (BlockTypeEnum.PACKAGE_NAME.getType().equals(mutableSecurityPolicyConfiguration.getBlockType())) {
-                //包名阻断
-                Set<String> packageNames = mutableSecurityPolicyConfiguration.getPackageNames();
-                if (CollectionUtils.isNotEmpty(packageNames)) {
-                    String separator = ",";
-                    block = packageNames.stream().anyMatch(packageName -> {
-                        if (StringUtils.isNotBlank(packageName) && packageName.contains(separator)) {
-                            //需要分隔
-                            List<String> list = Arrays.asList(packageName.split(separator));
-                            String name = "", condition = "", version = "", artifactVersion = "";
-                            if (list.size() == 3) {
-                                name = list.get(0);
-                                condition = list.get(1);
-                                version = list.get(2);
-                                if (artifact.getArtifactPath().contains(name) && StringUtils.isNotBlank(condition) && StringUtils.isNotBlank(version)) {
-                                    artifactVersion = artifact.getArtifactCoordinates().getVersion();
-                                    if (StringUtils.isBlank(artifactVersion)) {
-                                        return false;
-                                    }
-                                    try {
-                                        int compare = VersionUtil.compareVersions(artifactVersion, version);
-                                        log.info("StorageId [{}] repositoryId [{}] artifactPath [{}] name [{}] condition [{}] version [{}] artifactVersion [{}] compare [{}]", storageId, repositoryId, artifact.getArtifactPath(), name, condition, version, artifactVersion, compare);
-                                        return VersionConditionTypeEnum.queryValue(condition).contains(compare);
-                                    } catch (Exception ex) {
-                                        log.error(ExceptionUtils.getStackTrace(ex));
-                                    }
+                } else if (BlockTypeEnum.BLACK.getType().equals(mutableSecurityPolicyConfiguration.getBlockType())) {
+                    if (CollectionUtils.isEmpty(vulnerabilitySet)) {
+                        return false;
+                    }
+                    //黑名单阻断
+                    block = vulnerabilities.stream().anyMatch(item -> repositoryBlacks.contains(item) ||
+                            (!repositoryWhites.contains(item) && platformBlacks.contains(item)));
+                } else if (BlockTypeEnum.PACKAGE_NAME.getType().equals(mutableSecurityPolicyConfiguration.getBlockType())) {
+                    //包名阻断
+                    List<PackageNameBlock> packageNameBlockList = packageNameBlockService.getPackageNameBlockCache();
+                    if (CollectionUtils.isNotEmpty(packageNameBlockList)) {
+                        packageNameBlockList = packageNameBlockList.stream().filter(item -> artifact.getArtifactPath().contains(item.getPackageName())).collect(Collectors.toList());
+                        if (CollectionUtils.isEmpty(packageNameBlockList)) {
+                            return false;
+                        }
+                        block = packageNameBlockList.stream().anyMatch(packageNameBlock -> {
+                            if (ConditionTypeEnum.RANGE.getCondition().equals(packageNameBlock.getConditionValue())) {
+                                String artifactVersion = artifact.getArtifactCoordinates().getVersion();
+                                if (StringUtils.isBlank(artifactVersion)) {
                                     return false;
                                 }
+                                long startTime = System.currentTimeMillis();
+                                boolean flag = VersionUtils.versionInRange(artifactVersion, packageNameBlock.getVersion());
+                                long endTime = System.currentTimeMillis();
+                                log.debug("比较版本耗时：[{}] 毫秒", endTime - startTime);
+                                return flag;
+                            } else if (ConditionTypeEnum.EQ.getCondition().equals(packageNameBlock.getConditionValue())) {
+                                String artifactVersion = artifact.getArtifactCoordinates().getVersion();
+                                if (StringUtils.isBlank(artifactVersion)) {
+                                    return false;
+                                }
+                                return artifact.getArtifactPath().contains(packageNameBlock.getPackageName()) && artifactVersion.equals(packageNameBlock.getVersion());
                             }
-                        }
-                        return artifact.getArtifactPath().contains(packageName);
-                    });
+                            return artifact.getArtifactPath().contains(packageNameBlock.getPackageName());
+                        });
+                    }
                 }
             }
+        } catch (Exception ex) {
+            log.warn("判断制品 [{}] [{}] [{}] 是否需要阻断错误 [{}]", artifact.getStorageId(), artifact.getRepositoryId(), artifact.getArtifactPath(), ExceptionUtils.getStackTrace(ex));
         }
         return block;
     }
@@ -1064,7 +1065,7 @@ public class ArtifactComponent {
      */
     public void storeArtifactMetadataFile(RepositoryPath repositoryPath) {
         try {
-            if (Objects.nonNull(repositoryPath) && Files.exists(repositoryPath)) {
+            if (Objects.nonNull(repositoryPath) && Objects.nonNull(repositoryPath.getArtifactEntry()) && Files.exists(repositoryPath)) {
                 String fileName = "." + FilenameUtils.getName(repositoryPath.getFileName().toString()) + ".metadata";
                 RepositoryPath artifactRepositoryPath = repositoryPath.getParent().resolve(fileName);
                 try (ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
@@ -1081,6 +1082,11 @@ public class ArtifactComponent {
         }
     }
 
+    @Async("asyncThreadPoolTaskExecutor")
+    public void asyncStoreArtifactMetadataFile(RepositoryPath repositoryPath) {
+        storeArtifactMetadataFile(repositoryPath);
+    }
+
     /**
      * 存储制品元数据文件
      *
@@ -1089,7 +1095,7 @@ public class ArtifactComponent {
      */
     public void storeArtifactMetadataFile(RepositoryPath repositoryPath, Path metadataPath) {
         try {
-            if (Objects.nonNull(repositoryPath) && Files.exists(repositoryPath)) {
+            if (Objects.nonNull(repositoryPath) && Objects.nonNull(repositoryPath.getArtifactEntry()) && Files.exists(repositoryPath)) {
                 String fileName = "." + FilenameUtils.getName(repositoryPath.getFileName().toString()) + ".metadata";
                 Path artifactRepositoryPath = metadataPath.getParent().resolve(fileName);
                 try (ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
@@ -1130,6 +1136,15 @@ public class ArtifactComponent {
         }
     }
 
+    @Async("eventTaskExecutor")
+    public void artifactCache(RepositoryPath repositoryPath) {
+        try {
+            artifactEventListenerRegistry.dispatchArtifactCacheEvent(repositoryPath);
+        } catch (Exception ex) {
+            log.error("RepositoryPath artifactCache error ", ex);
+        }
+    }
+
     public PackageVersion extractPackageVersion(String packageName, String packageJsonSource)
             throws IOException {
         PackageVersion packageVersion;
@@ -1143,5 +1158,90 @@ public class ArtifactComponent {
                 String.format("Package name [%s] don't match with [%s].", packageVersion.getName(), packageName));
 
         return packageVersion;
+    }
+
+    @Async("asyncThreadPoolTaskExecutor")
+    public void asyncHandlerArtifactCacheRecord(RepositoryPath repositoryPath, CacheSettings cacheSettings, Path targetPath) {
+        handlerArtifactCacheRecord(repositoryPath, cacheSettings, targetPath);
+    }
+
+    public void handlerArtifactCacheRecord(RepositoryPath repositoryPath, CacheSettings cacheSettings, Path targetPath) {
+        try {
+            if (Objects.isNull(repositoryPath)) {
+                return;
+            }
+            String artifactPath = "", md5, sha1, sha256;
+            Long size = 0L;
+            Artifact artifact = repositoryPath.getArtifactEntry();
+            String sourcePath = repositoryPath.toString();
+            String storageId = repositoryPath.getStorageId(), repositoryId = repositoryPath.getRepositoryId();
+            if (Objects.nonNull(artifact)) {
+                artifactPath = artifact.getArtifactPath();
+                size = artifact.getSizeInBytes();
+                md5 = artifact.getChecksums().getOrDefault(MessageDigestAlgorithms.MD5, "");
+                sha1 = artifact.getChecksums().getOrDefault(MessageDigestAlgorithms.SHA_1, "");
+                sha256 = artifact.getChecksums().getOrDefault(MessageDigestAlgorithms.SHA_256, "");
+            } else {
+                String prefix = String.format("/%s/%s/", storageId, repositoryId);
+                artifactPath = sourcePath.substring(sourcePath.indexOf(prefix) + prefix.length());
+                size = Files.size(repositoryPath);
+                md5 = getChecksum(repositoryPath, "md5");
+                sha1 = getChecksum(repositoryPath, "sha1");
+                sha256 = getChecksum(repositoryPath, "sha256");
+            }
+            ArtifactCacheRecord artifactCacheRecord = ArtifactCacheRecord.builder().storageId(storageId)
+                    .repositoryId(repositoryId).artifactPath(artifactPath).size(size).md5(md5).sha1(sha1).sha256(sha256)
+                    .cacheDirectoryPath(cacheSettings.getDirectoryPath()).cachePath(targetPath.toString()).build();
+            if (!Files.exists(repositoryPath)) {
+                artifactCacheRecordService.verifySourceRepositoryPath(repositoryPath);
+                return;
+            }
+            handlerArtifactCacheRecord(artifactCacheRecord);
+        } catch (Exception ex) {
+            log.warn("处理制品缓存记录失败：[{}]", ExceptionUtils.getStackTrace(ex));
+        }
+    }
+
+    public String getChecksum(RepositoryPath repositoryPath, String checksumKey) {
+        try {
+            Path checksumSha1Path = repositoryPath.resolveSibling(repositoryPath.getFileName().toString() + "." + checksumKey);
+            if (Files.exists(checksumSha1Path)) {
+                return Files.readString(checksumSha1Path);
+            }
+        } catch (Exception ex) {
+            log.warn(ExceptionUtils.getStackTrace(ex));
+        }
+        return "";
+    }
+
+    public CacheSettings getCacheConfig() {
+        CacheUtil<String, CacheSettings> cacheUtil = CacheUtil.getInstance();
+        String key = DictTypeEnum.CACHE_SETTINGS.getType();
+        CacheSettings cacheSettings = cacheUtil.get(key);
+        if (Objects.isNull(cacheSettings)) {
+            Dict dict = dictService.selectLatestOneDict(Dict.builder().dictType(DictTypeEnum.CACHE_SETTINGS.getType()).build());
+            if (Objects.nonNull(dict)) {
+                cacheSettings = JSONObject.parseObject(dict.getDictValue(), CacheSettings.class);
+                if (Objects.nonNull(cacheSettings)) {
+                    cacheUtil.put(key, cacheSettings);
+                    CacheUtil<String, String> cacheUtilPath = CacheUtil.getInstance();
+                    String pathKey = "ARTIFACT_CACHE_ROOT_PATH";
+                    if (Boolean.TRUE.equals(cacheSettings.isEnabled())) {
+                        cacheUtilPath.put(pathKey, cacheSettings.getDirectoryPath());
+                    } else {
+                        cacheUtilPath.remove(pathKey);
+                    }
+                }
+            }
+        }
+        return cacheSettings;
+    }
+
+    public void handlerArtifactCacheRecord(ArtifactCacheRecord artifactCacheRecord) {
+        artifactCacheRecordService.saveOrUpdateArtifactCacheRecord(artifactCacheRecord);
+    }
+
+    public List<ArtifactCacheRecord> getArtifactCacheRecord(ArtifactCacheRecord artifactCacheRecord, Integer limit) {
+        return artifactCacheRecordService.getArtifactCacheRecord(artifactCacheRecord, null, limit);
     }
 }

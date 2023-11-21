@@ -26,6 +26,7 @@ import com.veadan.folib.repositories.ArtifactIdGroupRepository;
 import com.veadan.folib.services.ArtifactResolutionService;
 import com.veadan.folib.services.support.ArtifactRoutingRulesChecker;
 import com.veadan.folib.storage.Storage;
+import com.veadan.folib.storage.metadata.MetadataHelper;
 import com.veadan.folib.storage.repository.Repository;
 import com.veadan.folib.util.ThrowingFunction;
 import org.apache.commons.collections4.MapUtils;
@@ -85,12 +86,13 @@ public class GroupRepositoryProvider
     {
         eventPublisher.publishEvent(new GroupRepositoryPathFetchEvent(repositoryPath));
 
-        RepositoryPath result = resolvePathDirectlyFromGroupPathIfPossible(repositoryPath);
-        if (result != null)
-        {
-            return result;
+        if (Objects.nonNull(repositoryPath) && repositoryPath.toString().endsWith(MetadataHelper.MAVEN_METADATA_XML)) {
+            RepositoryPath result = resolvePathDirectlyFromGroupPathIfPossible(repositoryPath);
+            if (result != null)
+            {
+                return result;
+            }
         }
-
         return resolvePathTraversal(repositoryPath);
     }
 
@@ -162,9 +164,10 @@ public class GroupRepositoryProvider
 
     private RepositoryPath resolvePathDirectlyFromGroupPathIfPossible(final RepositoryPath artifactPath)
     {
-        if (Files.exists(artifactPath))
-        {
-            return artifactPath;
+        try {
+            return hostedRepositoryProvider.fetchPath(artifactPath);
+        } catch (Exception ex) {
+            logger.warn(ExceptionUtils.getStackTrace(ex));
         }
         return null;
     }

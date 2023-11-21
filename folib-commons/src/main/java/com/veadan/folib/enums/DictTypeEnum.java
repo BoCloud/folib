@@ -53,6 +53,14 @@ public enum DictTypeEnum {
      * 备份策略
      */
     BACKUP_SETTINGS("backup_settings"),
+    /**
+     * 缓存策略
+     */
+    CACHE_SETTINGS("cache_settings"),
+    /**
+     * 页面上传制品大小限制
+     */
+    UI_UPLOAD_MAX_SIZE("ui_upload_max_size"),
     ;
 
     private String type;

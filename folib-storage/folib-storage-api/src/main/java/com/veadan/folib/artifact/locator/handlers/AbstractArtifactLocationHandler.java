@@ -8,6 +8,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.stream.Stream;
 
 import com.veadan.folib.providers.io.RepositoryFiles;
 import com.veadan.folib.providers.io.RepositoryPath;
@@ -40,15 +41,17 @@ public abstract class AbstractArtifactLocationHandler
         throws IOException
     {
         Set<RepositoryPath> versionDirectorySet = new TreeSet<>();
-        Files.walk(basePath)
-             .forEach(p -> {
-                 if (isMetadata(p))
-                 {
-                     versionDirectorySet.add((RepositoryPath) p.getParent());
-                 }
-             });
-        
-        return new ArrayList<>(versionDirectorySet);
+        try (Stream<Path> pathStream = Files.walk(basePath)) {
+            pathStream
+                    .forEach(p -> {
+                        if (isMetadata(p))
+                        {
+                            versionDirectorySet.add((RepositoryPath) p.getParent());
+                        }
+                    });
+
+            return new ArrayList<>(versionDirectorySet);
+        }
     }
 
     protected boolean isMetadata(Path path)

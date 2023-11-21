@@ -19,17 +19,25 @@ import java.util.List;
 public enum VersionConditionTypeEnum {
 
     /**
+     * 大于
+     */
+    GT(">", Lists.newArrayList(1), "("),
+    /**
+     * 大于等于
+     */
+    GE(">=", Lists.newArrayList(1, 0), "["),
+    /**
      * 小于
      */
-    LT("<", Lists.newArrayList(-1)),
+    LT("<", Lists.newArrayList(-1), ")"),
     /**
      * 小于等于
      */
-    LE("<=", Lists.newArrayList(-1, 0)),
+    LE("<=", Lists.newArrayList(-1, 0), "]"),
     /**
      * 等于
      */
-    EQ("=", Lists.newArrayList(0)),
+    EQ("=", Lists.newArrayList(0), "="),
     ;
 
     /**
@@ -40,10 +48,23 @@ public enum VersionConditionTypeEnum {
      * value
      */
     private List<Integer> value;
+    /**
+     * symbol
+     */
+    private String symbol;
 
     public static List<Integer> queryValue(String condition) {
         for (VersionConditionTypeEnum item : VersionConditionTypeEnum.values()) {
             if (item.condition.equals(condition)) {
+                return item.value;
+            }
+        }
+        return Collections.emptyList();
+    }
+
+    public static List<Integer> queryValueBySymbol(String symbol) {
+        for (VersionConditionTypeEnum item : VersionConditionTypeEnum.values()) {
+            if (item.symbol.equals(symbol)) {
                 return item.value;
             }
         }
