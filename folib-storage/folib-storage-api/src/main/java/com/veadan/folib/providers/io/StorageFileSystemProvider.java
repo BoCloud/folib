@@ -21,6 +21,7 @@ import java.nio.file.spi.FileSystemProvider;
 import java.util.*;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * This class decorates storage {@link FileSystemProvider}.
@@ -212,12 +213,14 @@ public abstract class StorageFileSystemProvider
                 try {
                     Files.delete(unwrap(dir));
                 } catch (DirectoryNotEmptyException e) {
-                    String message = Files.list(unwrap(dir))
+                    try (Stream<Path> pathStream = Files.list(unwrap(dir))) {
+                        String message = pathStream
                             .map(p -> p.getFileName().toString())
-                            .reduce((p1,
-                                     p2) -> String.format("%s%n%s", p1, p2))
-                            .get();
-                    throw new IOException(message, e);
+                                .reduce((p1,
+                                         p2) -> String.format("%s%n%s", p1, p2))
+                                .get();
+                        throw new IOException(message, e);
+                    }
                 }
 
                 return FileVisitResult.CONTINUE;

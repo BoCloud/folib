@@ -32,8 +32,8 @@
 </template>
 <script>
 import {
-  securityPolicyAddPackageName,
-} from '@/api/folib'
+  savePackageNameBlock,
+} from '@/api/packageNameBlock'
 
 export default {
   props: {
@@ -123,14 +123,22 @@ export default {
     packageNameHandlerConfirm() {
       this.$refs.packageNameForm.validate((valid) => {
         if (valid) {
-          let data = this.packageNameForm.packageName
-          if (this.packageNameForm.condition && this.packageNameForm.version) {
-            data = data + "," + this.packageNameForm.condition + "," + this.packageNameForm.version
+          let data = {
+            packageName: this.packageNameForm.packageName
           }
-          securityPolicyAddPackageName({
-            blockType: 3,
-            packageNames: [data]
-          }).then(res => {
+          if (this.packageNameForm.condition && this.packageNameForm.version) {
+            if (this.packageNameForm.condition === '<') {
+              data.conditionValue =  'range'
+              data.version = '(*,' + this.packageNameForm.version + ')'
+            } else if (this.packageNameForm.condition === '<=') {
+              data.conditionValue =  'range'
+              data.version = '(*,' + this.packageNameForm.version + ']'
+            } else {
+              data.conditionValue =  'eq'
+              data.version = this.packageNameForm.version
+            }
+          }
+          savePackageNameBlock(data).then(res => {
             this.successMsg('添加包名 ' + this.packageNameForm.packageName + ' 成功')
           }).catch(err => {
             this.$notification['error']({

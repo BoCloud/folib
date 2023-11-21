@@ -60,20 +60,22 @@ public class GeneralCleanupArtifactsProvider implements CleanupArtifactsProvider
             return null;
         }
         Artifact artifact = repositoryPath.getArtifactEntry();
-        if (null == artifact || null == artifact.getLastUpdated()) {
+        if (null == artifact || null == artifact.getLastUsed()) {
             log.warn("Cleanup storageId {} repositoryId {} path {} artifact not found", storageId, repositoryId, path);
             return null;
         }
-        //获取仓库下制品更新时间比较
-        LocalDateTime localDateTime = artifact.getLastUpdated();
+        //获取仓库下制品最近使用时间做比较
+        LocalDateTime localDateTime = artifact.getLastUsed();
         //保留N天的制品
+        log.info("Cleanup storageId {} repositoryId {} artifact {} time {} current time {}", storageId, repositoryId, artifact.getArtifactPath(), localDateTime, LocalDateTime.now());
         if (!LocalDateTime.now().minusDays(tempDay).isBefore(localDateTime)) {
             try {
+                log.info("Cleanup storageId {} repositoryId {} path {} do delete", storageId, repositoryId, repositoryPath.toString());
                 artifactManagementService.delete(repositoryPath, true);
                 RepositoryPath parent = null;
                 try {
                     parent = repositoryPath.getParent();
-                    if (!repositoryPath.getRoot().toString().equals(parent.toString()) && Files.exists(parent) && Files.list(parent).count() == 0) {
+                    if (Files.exists(parent) && !Files.isSameFile(repositoryPath.getRoot(), parent) && Files.list(parent).count() == 0) {
                         Files.deleteIfExists(parent);
                         log.info("Delete parent root path {}", parent.toString());
                     }

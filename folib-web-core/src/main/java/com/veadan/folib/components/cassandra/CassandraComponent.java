@@ -28,9 +28,11 @@ public class CassandraComponent {
     private static String NODE_IP_ADDRESS = "127.0.0.1";
     private static String NODE_PORT = "49142";
     private static String USERNAME = "root";
-    private static String PASSWORD = "folib-cassandra";
+    private static String PASSWORD = "super@V587";
     private static Cluster CLUSTER;
     private static Session SESSION;
+    public static final String GC_GRACE_SECONDS_KEY = "GC_GRACE_SECONDS";
+    public static final Integer DEFAULT_GC_GRACE_SECONDS = 864000;
 
     @Value("${folib.etc}")
     private String folibEtc;
@@ -39,11 +41,11 @@ public class CassandraComponent {
     public void initNodeProbe() throws IOException {
         Resource resource = new FileSystemResource(folibEtc + "/conf/janusgraph-cassandra.properties");
         Properties properties = PropertiesLoaderUtils.loadProperties(resource);
-        NODE_IP_ADDRESS = System.getProperty("EMBEDDED_DB_HOST");
-        NODE_PORT = properties.getProperty("storage.port");
-        KEYS_PACE_NAME = properties.getProperty("storage.cql.keyspace");
-        USERNAME = properties.getProperty("storage.username");
-        PASSWORD = properties.getProperty("storage.password");
+        NODE_IP_ADDRESS = System.getProperty("EMBEDDED_DB_HOST", NODE_IP_ADDRESS);
+        NODE_PORT = properties.getProperty("storage.port", NODE_PORT);
+        KEYS_PACE_NAME = properties.getProperty("storage.cql.keyspace", KEYS_PACE_NAME);
+        USERNAME = properties.getProperty("storage.username", USERNAME);
+        PASSWORD = properties.getProperty("storage.password", PASSWORD);
     }
 
     /**
@@ -162,5 +164,35 @@ public class CassandraComponent {
         } finally {
             close();
         }
+    }
+
+    public void modifyGcGraceSeconds(Integer seconds) {
+        if (Objects.isNull(seconds) || seconds < 0) {
+            return;
+        }
+        try {
+            open();
+
+            printGc();
+
+            String query = String.format("ALTER TABLE %s.edgestore WITH GC_GRACE_SECONDS = %s", KEYS_PACE_NAME, seconds);
+            SESSION.execute(query);
+            log.info("{} GC grace seconds updated to {}", KEYS_PACE_NAME, seconds);
+
+            printGc();
+
+        } finally {
+            close();
+        }
+    }
+
+    /**
+     * 打印GC
+     */
+    private static void printGc() {
+        String query = String.format("SELECT table_name,gc_grace_seconds FROM system_schema.tables WHERE keyspace_name = %s%s%s", "'", KEYS_PACE_NAME, "'");
+        ResultSet rs = SESSION.execute(query);
+        Row row = rs.one();
+        log.info("{} GC grace seconds current info: {}", KEYS_PACE_NAME, row);
     }
 }

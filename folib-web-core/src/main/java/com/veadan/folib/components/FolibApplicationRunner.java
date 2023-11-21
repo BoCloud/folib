@@ -1,5 +1,6 @@
 package com.veadan.folib.components;
 
+import com.veadan.folib.components.cassandra.CassandraComponent;
 import com.veadan.folib.config.janusgraph.JanusGraphDbProfile;
 import com.veadan.folib.entity.Dict;
 import com.veadan.folib.enums.DictTypeEnum;
@@ -65,6 +66,8 @@ public class FolibApplicationRunner implements ApplicationRunner {
             scanService.updateMirror();
             log.info("The initialization of vulnerability data ends ");
         }
+        String gcGraceSeconds = System.getProperty(CassandraComponent.GC_GRACE_SECONDS_KEY, CassandraComponent.DEFAULT_GC_GRACE_SECONDS.toString());
+        nodeService.modifyGcGraceSeconds(Integer.parseInt(gcGraceSeconds));
         handlerUnExecutedTask();
     }
 

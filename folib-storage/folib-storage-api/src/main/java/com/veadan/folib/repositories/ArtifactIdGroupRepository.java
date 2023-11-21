@@ -16,6 +16,7 @@ import com.veadan.folib.gremlin.dsl.EntityTraversal;
 import com.veadan.folib.gremlin.repositories.GremlinVertexRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
+import org.apache.tinkerpop.gremlin.process.traversal.Order;
 import org.apache.tinkerpop.gremlin.structure.Vertex;
 import org.janusgraph.core.attribute.Text;
 import org.springframework.context.annotation.Lazy;
@@ -195,7 +196,7 @@ public class ArtifactIdGroupRepository extends GremlinVertexRepository<ArtifactI
         }
         com.veadan.folib.storage.repository.Repository repository = configurationManager.getRepository(storageId, repositoryId);
         long startTime = System.currentTimeMillis();
-        List<Artifact> artifactList = commonFindArtifacts(storageId, repositoryId, artifactId, coordinateValues).map(artifactAdapter.fold(Optional.ofNullable(repository)
+        List<Artifact> artifactList = commonFindArtifacts(storageId, repositoryId, artifactId, coordinateValues).order().by(Properties.CREATED, Order.asc).map(artifactAdapter.fold(Optional.ofNullable(repository)
                 .map(com.veadan.folib.storage.repository.Repository::getLayout)
                 .map(ArtifactLayoutLocator.getLayoutByNameEntityMap()::get)
                 .map(ArtifactLayoutDescription::getArtifactCoordinatesClass))).range(skip, limit).toList();

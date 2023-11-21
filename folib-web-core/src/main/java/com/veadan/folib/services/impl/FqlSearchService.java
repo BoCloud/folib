@@ -190,7 +190,7 @@ public class FqlSearchService extends GremlinVertexRepository<Artifact> implemen
                 String blobs = "blobs";
                 String manifest = "manifest";
                 String artifactPath = repositoryPath.toAbsolutePath().toString();
-                if (artifactPath.contains("sha256") && !artifactPath.contains(blobs) && !artifactPath.contains(manifest) && !artifactPath.endsWith(".sha256")) {
+                if (artifactPath.contains("sha256") && !artifactPath.contains(blobs) && !artifactPath.contains(manifest) && DockerArtifactCoordinates.include(artifactPath)) {
                     r.setSizeInBytes(getSearchDockerSize(repositoryPath, r.getArtifactPath().replace("/" + r.getArtifactName(), "")));
                 }
             } else {
@@ -211,30 +211,6 @@ public class FqlSearchService extends GremlinVertexRepository<Artifact> implemen
             }
         }
         return result;
-    }
-
-    private Set<String> getDockerDownLoadAppPackageUrls(String storageId, String repositoryId, RepositoryPath repositoryPath, String path) {
-        Set<String> downloadUrls = new HashSet<String>();
-        Map<String, String> downloadUrlMap = new HashMap<String, String>();
-        try {
-            RepositoryPath appPackagePath = repositoryPathResolver.resolve(storageId, repositoryId, path);
-            List<String> relativePaths = RepositoryPathUtil.getFileRelativePaths(appPackagePath);
-
-            for (String filePath : relativePaths) {
-                if (filePath.endsWith(".config") || filePath.endsWith(".sha256")) {
-                    continue;
-                }
-                String[] filePathArray = filePath.split("/");
-                String fileName = filePathArray[filePathArray.length - 1];
-                downloadUrlMap.put(fileName, FolibPublicUtils.getFileUrl(repositoryPath.getRepository(), filePath));
-            }
-            downloadUrlMap.forEach((x, y) -> {
-                downloadUrls.add(y);
-            });
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return downloadUrls;
     }
 
     private Long getSearchDockerSize(RepositoryPath repositoryPath, String imageName) {

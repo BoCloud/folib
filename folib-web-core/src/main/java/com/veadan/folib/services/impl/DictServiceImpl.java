@@ -1,12 +1,14 @@
 package com.veadan.folib.services.impl;
 
 import com.google.common.collect.Lists;
+import com.veadan.folib.domain.CacheSettings;
 import com.veadan.folib.entity.Dict;
 import com.veadan.folib.enums.DictTypeEnum;
 import com.veadan.folib.enums.UpgradeTaskStatusEnum;
 import com.veadan.folib.forms.dict.DictForm;
 import com.veadan.folib.mapper.DictMapper;
 import com.veadan.folib.services.DictService;
+import com.veadan.folib.util.CacheUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -34,6 +36,9 @@ public class DictServiceImpl implements DictService {
     @Override
     @Transactional(rollbackFor = Exception.class)
     public void saveDict(Dict dict) {
+        if (StringUtils.isBlank(dict.getDictType()) || StringUtils.isBlank(dict.getDictKey())) {
+            return;
+        }
         dict.setCreateTime(new Date());
         dict.setComment(handlerComment(dict));
         dictMapper.insertSelective(dict);
@@ -45,21 +50,33 @@ public class DictServiceImpl implements DictService {
         Dict dict = Dict.builder().build();
         BeanUtils.copyProperties(dictForm, dict);
         dict.setComment(handlerComment(dict));
-        Example example = Example.builder(Dict.class).build();
-        Example.Criteria criteria = example.createCriteria();
-        if (Objects.nonNull(dict.getId())) {
-            criteria.andEqualTo("id", dict.getId());
+        Dict dbDict = selectLatestOneDict(dict);
+        if (Objects.isNull(dbDict)) {
+            saveDict(dict);
+        } else {
+            Example example = Example.builder(Dict.class).build();
+            Example.Criteria criteria = example.createCriteria();
+            if (Objects.nonNull(dict.getId())) {
+                criteria.andEqualTo("id", dict.getId());
+            }
+            if (StringUtils.isNotBlank(dict.getDictKey())) {
+                criteria.andEqualTo("dictKey", dict.getDictKey());
+            }
+            if (StringUtils.isNotBlank(dict.getDictType())) {
+                criteria.andEqualTo("dictType", dict.getDictType());
+            }
+            dictMapper.updateByExampleSelective(dict, example);
         }
-        if (StringUtils.isNotBlank(dict.getDictKey())) {
-            criteria.andEqualTo("dictKey", dict.getDictKey());
-        }
-        if (StringUtils.isNotBlank(dict.getDictType())) {
-            criteria.andEqualTo("dictType", dict.getDictType());
-        }
-        dictMapper.updateByExampleSelective(dict, example);
         if (Boolean.TRUE.equals(dictForm.getOverrideSystemProperty())) {
             System.setProperty(dict.getDictKey(), dict.getDictValue());
             log.info("更新系统属性：key {}，value：{}", dict.getDictKey(), dict.getDictValue());
+        }
+        String key = DictTypeEnum.CACHE_SETTINGS.getType();
+        if (key.equals(dict.getDictType())) {
+            CacheUtil<String, CacheSettings> cacheUtil = CacheUtil.getInstance();
+            cacheUtil.remove(key);
+            CacheUtil<String, String> cachePathUtil = CacheUtil.getInstance();
+            cachePathUtil.remove("ARTIFACT_CACHE_ROOT_PATH");
         }
     }
 
@@ -126,6 +143,9 @@ public class DictServiceImpl implements DictService {
 
     @Override
     public Dict selectLatestOneDict(Dict dict) {
+        if (Objects.nonNull(dict.getId())) {
+            return dictMapper.selectByPrimaryKey(dict.getId());
+        }
         Example example = Example.builder(Dict.class).build();
         Example.Criteria criteria = example.createCriteria();
         criteria.andEqualTo("dictType", dict.getDictType());

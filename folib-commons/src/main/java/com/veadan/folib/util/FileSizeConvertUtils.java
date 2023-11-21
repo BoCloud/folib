@@ -11,6 +11,7 @@ public class FileSizeConvertUtils {
 
     /**
      * 文件大小转换
+     *
      * @param sizeInBytes 字节大小
      * @return B、KB、MB、GB
      */
@@ -38,4 +39,69 @@ public class FileSizeConvertUtils {
         }
         return size;
     }
+
+    public static double convertBytes(long bytes, String targetUnit) {
+        double convertedSize = bytes;
+        switch (targetUnit) {
+            case "KB":
+                convertedSize /= 1024;
+                break;
+            case "MB":
+                convertedSize /= (1024 * 1024);
+                break;
+            case "GB":
+                convertedSize /= (1024 * 1024 * 1024);
+                break;
+            case "TB":
+                convertedSize /= (1024L * 1024 * 1024 * 1024);
+                break;
+            case "PB":
+                convertedSize /= (1024L * 1024 * 1024 * 1024 * 1024);
+                break;
+            default:
+                throw new IllegalArgumentException("Unsupported target unit: " + targetUnit);
+        }
+        return convertedSize;
+    }
+
+    public static BigDecimal convertBytesWithDecimal(long bytes, String targetUnit) {
+        BigDecimal convertedSize = BigDecimal.valueOf(bytes);
+        BigDecimal divisor = BigDecimal.ONE;
+        switch (targetUnit) {
+            case "KB":
+                divisor = BigDecimal.valueOf(1000);
+                break;
+            case "MB":
+                divisor = BigDecimal.valueOf(1000 * 1000);
+                break;
+            case "GB":
+                divisor = BigDecimal.valueOf(1000 * 1000 * 1000);
+                break;
+            case "TB":
+                divisor = BigDecimal.valueOf(1000L * 1000 * 1000 * 1000);
+                break;
+            case "PB":
+                divisor = BigDecimal.valueOf(1000L * 1000 * 1000 * 1000 * 1000);
+                break;
+            default:
+                throw new IllegalArgumentException("Unsupported target unit: " + targetUnit);
+        }
+        return convertedSize.divide(divisor, 4, RoundingMode.HALF_UP);
+    }
+
+    public static long convertToBytes(long size, String unit) {
+        switch (unit.toUpperCase()) {
+            case "KB":
+                return size * 1024;
+            case "MB":
+                return size * 1024 * 1024;
+            case "GB":
+                return size * 1024 * 1024 * 1024;
+            case "TB":
+                return size * 1024L * 1024 * 1024 * 1024;
+            default:
+                throw new IllegalArgumentException("Unsupported unit: " + unit);
+        }
+    }
 }
+

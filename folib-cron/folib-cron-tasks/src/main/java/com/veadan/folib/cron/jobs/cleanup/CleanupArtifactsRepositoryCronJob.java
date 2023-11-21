@@ -15,7 +15,6 @@ import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.compress.utils.Lists;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
-import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 
 import javax.inject.Inject;
 import java.util.List;
@@ -50,9 +49,6 @@ public class CleanupArtifactsRepositoryCronJob extends JavaCronJob {
     private RepositoryPathResolver repositoryPathResolver;
 
     @Inject
-    private ThreadPoolTaskExecutor asyncRepositoryCleanupThreadPoolExecutor;
-
-    @Inject
     private ConfigurationManager configurationManager;
 
     @Override
@@ -72,6 +68,11 @@ public class CleanupArtifactsRepositoryCronJob extends JavaCronJob {
 
     private void cleanRepositoryByDay(String storageId, String repositoryId, String cleanDay) {
         try {
+            Repository repository = configurationManager.getRepository(storageId, repositoryId);
+            String dockerLayout = "Docker", cleanupRepositoryType = "GENERAL";
+            if (dockerLayout.equalsIgnoreCase(repository.getLayout())) {
+                cleanupRepositoryType = "DOCKER";
+            }
             RepositoryPath repositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, "");
             List<String> paths = RepositoryPathUtil.getFileRelativePaths(repositoryPath);
             if (CollectionUtils.isEmpty(paths)) {
@@ -82,11 +83,6 @@ public class CleanupArtifactsRepositoryCronJob extends JavaCronJob {
             List<String> resultList = Lists.newArrayList();
             for (String path : paths) {
                 try {
-                    Repository repository = configurationManager.getRepository(storageId, repositoryId);
-                    String dockerLayout = "Docker", cleanupRepositoryType = "GENERAL";
-                    if (dockerLayout.equalsIgnoreCase(repository.getLayout())) {
-                        cleanupRepositoryType = "DOCKER";
-                    }
                     CleanupArtifactsProvider cleanupArtifactsProvider = cleanupArtifactsProviderRegistry.getProvider(cleanupRepositoryType);
                     String result = cleanupArtifactsProvider.cleanup(storageId, repositoryId, path, cleanDay);
                     resultList.add(result);

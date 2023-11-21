@@ -8,6 +8,8 @@ import cn.hutool.http.HttpResponse;
 import cn.hutool.http.HttpUtil;
 import cn.hutool.json.JSONUtil;
 import com.alibaba.fastjson.JSON;
+import com.veadan.folib.artifact.coordinates.DockerArtifactCoordinates;
+import com.veadan.folib.cloud.storage.s3fs.util.UriUtils;
 import com.veadan.folib.components.security.SecurityComponent;
 import com.veadan.folib.domain.PromotionFileRelativePath;
 import com.veadan.folib.domain.PromotionNodeOption;
@@ -16,8 +18,10 @@ import com.veadan.folib.model.request.ArtifactSliceDownloadInfoReq;
 import com.veadan.folib.model.response.ArtifactSliceDownloadInfoRes;
 import com.veadan.folib.model.response.ArtifactSliceDownloadInfoRes.DownloadPartInfo;
 import com.veadan.folib.promotion.PromotionUtil;
+import com.veadan.folib.providers.io.RepositoryFiles;
 import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.providers.io.RepositoryPathResolver;
+import com.veadan.folib.providers.layout.DockerLayoutProvider;
 import com.veadan.folib.scanner.common.exception.BusinessException;
 import com.veadan.folib.security.authentication.JwtTokenFetcher;
 import com.veadan.folib.service.ProxyRepositoryConnectionPoolConfigurationService;
@@ -32,6 +36,7 @@ import lombok.Data;
 import lombok.experimental.Accessors;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
@@ -44,6 +49,7 @@ import javax.ws.rs.core.Response;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Collections;
@@ -107,8 +113,8 @@ public class FolibWsClientArtifactPullCommand implements FolibWsClientCommand<Pr
     public void execute(PromotionNodeOption promotionNodeOption) {
         try {
             log.info("进入拉模式={}", true);
-            final String sourcePath = promotionNodeOption.getSourcePath();
-            final String targetPath = promotionNodeOption.getTargetPath();
+            final String sourcePath = UriUtils.decode(StringUtils.removeEnd(promotionNodeOption.getSourcePath(), "/"));
+            final String targetPath = UriUtils.decode(StringUtils.removeEnd(promotionNodeOption.getTargetPath(), "/"));
             final String srcStorageId = parsePath(sourcePath)[0];
             final String srcRepostoryId = parsePath(sourcePath)[1];
             final String srcUrl = sourcePath.split("/" + srcStorageId + "/" + srcRepostoryId + "/")[0];
@@ -168,8 +174,15 @@ public class FolibWsClientArtifactPullCommand implements FolibWsClientCommand<Pr
                 final Boolean usedSlice = artifactSliceDownloadInfoRe.getUsedSlice();
                 final List<DownloadPartInfo> downloadParInfotList = Optional.ofNullable(artifactSliceDownloadInfoRe.getDownloadPartList()).orElse(Collections.emptyList());
                 final RepositoryPath destPath = repositoryPathResolver.resolve(targetStorageId, targetRepostoryId, path);
+                try {
+                    if (RepositoryFiles.isChecksum(destPath)) {
+                        return true;
+                    }
+                } catch (IOException ex) {
+                    log.error(ExceptionUtils.getStackTrace(ex));
+                }
                 promotionUtil.setMetaData(destPath, String.valueOf(metaDataMap.getOrDefault(path, StringUtils.EMPTY)));
-
+                final boolean isDocker = DockerLayoutProvider.ALIAS.equalsIgnoreCase(destPath.getRepository().getLayout());
                 if (!usedSlice) {
                     // 非切片下载（下载Part有且只有一个）
                     final String artifactFileSliceFolderPath = String.format("%s/artifactTemp/%s", StringUtils.chomp(tempPath, "/"), UUID.fastUUID().toString(true));
@@ -178,12 +191,11 @@ public class FolibWsClientArtifactPullCommand implements FolibWsClientCommand<Pr
                         final String tempPath = String.format("%s/%s", artifactFileSliceFolderPath, FileUtil.getName(path));
                         FileUtil.touch(new File(tempPath));
                         HttpUtil.download(downloadUrl, new FileOutputStream(tempPath), true);
-                        final boolean isDocker = destPath.getRepository().getLayout().equalsIgnoreCase("docker");
-                        if (isDocker) {
-                            if (!path.contains("sha256") && !path.endsWith(".sha256")) {
-                                artifactManagementService.store(destPath, Files.newInputStream(Path.of(tempPath)));
-                                return true;
+                        if (isDocker && !path.contains("sha256") && !DockerArtifactCoordinates.exclude(tempPath)) {
+                            try (InputStream is = Files.newInputStream(Path.of(tempPath))) {
+                                Files.copy(is, destPath);
                             }
+                            return true;
                         }
 
                         // pull artifact file
@@ -198,45 +210,52 @@ public class FolibWsClientArtifactPullCommand implements FolibWsClientCommand<Pr
                 } else {
                     // 切片下载
                     final String artifactFileSliceFolderPath = String.format("%s/artifactMerge/%s", StringUtils.chomp(tempPath, "/"), UUID.fastUUID().toString(true));
-                    // - 临时下载到本地
-                    final List<String> sliceFileDownloadPathList = IntStream.range(0, downloadParInfotList.size())
-                            .parallel()
-                            .mapToObj(index -> {
-                                final DownloadPartInfo downloadPartInfo = downloadParInfotList.get(index);
-                                final String downloadUrl = String.format("%s?nodeMark=%s", downloadPartInfo.getDownloadUrl(), nodeMark);
-                                final String downloadFilePath = String.format("%s/chunk%s", artifactFileSliceFolderPath, index);
-                                final File downloadFile = new File(downloadFilePath);
-                                FileUtil.touch(downloadFile);
-                                try {
-                                    HttpUtil.download(downloadUrl, Files.newOutputStream(downloadFile.toPath()), true);
-                                    return new SliceSyncDownloadResult(index, downloadFilePath);
-                                } catch (Exception e) {
-                                    log.error("切片拉取制品失败（{}）", downloadUrl, e);
-                                }
-                                return null;
-                            })
-                            .filter(Objects::nonNull)
-                            .sorted(Comparator.comparing(SliceSyncDownloadResult::getOrder))
-                            .map(SliceSyncDownloadResult::getDownFilePath)
-                            .collect(Collectors.toList());
-
-                    // - 合并
-                    if (sliceFileDownloadPathList.size() != downloadParInfotList.size()) {
-                        throw new BusinessException("切片文件下载不完整");
-                    }
-                    final String mergeFilePath = String.format("%s/%s", artifactFileSliceFolderPath, FileUtil.getName(path));
-                    FileUtils.mergeFiles(mergeFilePath, sliceFileDownloadPathList);
-
-                    // - 转存到Folib
                     try {
-                        artifactManagementService.store(destPath, Files.newInputStream(Path.of(mergeFilePath)));
-                    } catch (IOException e) {
-                        log.error("转存合并制品文件失败", e);
-                        throw new BusinessException("转存合并制品文件失败");
-                    }
+                        // - 临时下载到本地
+                        final List<String> sliceFileDownloadPathList = IntStream.range(0, downloadParInfotList.size())
+                                .parallel()
+                                .mapToObj(index -> {
+                                    final DownloadPartInfo downloadPartInfo = downloadParInfotList.get(index);
+                                    final String downloadUrl = String.format("%s?nodeMark=%s", downloadPartInfo.getDownloadUrl(), nodeMark);
+                                    final String downloadFilePath = String.format("%s/chunk%s", artifactFileSliceFolderPath, index);
+                                    final File downloadFile = new File(downloadFilePath);
+                                    FileUtil.touch(downloadFile);
+                                    try {
+                                        HttpUtil.download(downloadUrl, Files.newOutputStream(downloadFile.toPath()), true);
+                                        return new SliceSyncDownloadResult(index, downloadFilePath);
+                                    } catch (Exception e) {
+                                        log.error("切片拉取制品失败（{}）", downloadUrl, e);
+                                    }
+                                    return null;
+                                })
+                                .filter(Objects::nonNull)
+                                .sorted(Comparator.comparing(SliceSyncDownloadResult::getOrder))
+                                .map(SliceSyncDownloadResult::getDownFilePath)
+                                .collect(Collectors.toList());
 
-                    // - 删除本地临时合并目录
-                    FileUtil.del(new File(artifactFileSliceFolderPath));
+                        // - 合并
+                        if (sliceFileDownloadPathList.size() != downloadParInfotList.size()) {
+                            throw new BusinessException("切片文件下载不完整");
+                        }
+                        final String mergeFilePath = String.format("%s/%s", artifactFileSliceFolderPath, FileUtil.getName(path));
+                        FileUtils.mergeFiles(mergeFilePath, sliceFileDownloadPathList);
+                        // - 转存到Folib
+                        try {
+                            if (isDocker && !path.contains("sha256") && !DockerArtifactCoordinates.exclude(mergeFilePath)) {
+                                try (InputStream is = Files.newInputStream(Path.of(mergeFilePath))) {
+                                    Files.copy(is, destPath);
+                                }
+                                return true;
+                            }
+                            artifactManagementService.store(destPath, Files.newInputStream(Path.of(mergeFilePath)));
+                        } catch (IOException e) {
+                            log.error("转存合并制品文件失败", e);
+                            throw new BusinessException("转存合并制品文件失败");
+                        }
+                    } finally {
+                        // - 删除本地临时合并目录
+                        FileUtil.del(new File(artifactFileSliceFolderPath));
+                    }
                 }
                 return true;
             });

@@ -41,4 +41,10 @@ public interface NodeService {
      * @return 复制因子信息
      */
     String queryReplicationFactor(String keySpace);
+
+    /**
+     * 修改gcGraceSeconds
+     * @param seconds 秒
+     */
+    void modifyGcGraceSeconds(Integer seconds);
 }

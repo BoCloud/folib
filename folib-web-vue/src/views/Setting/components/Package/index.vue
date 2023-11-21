@@ -3,11 +3,13 @@
     <div class="mx-25 search">
 			<a-col :span="24" class="text-right">
 				<a-input-search placeholder="输入包名称查询" class="v-search"
-					v-model="packageNameQuery.packageName" @search="getPackageNameList()" />
+					v-model="packageNameQuery.packageName" @search="handleSearch()" />
 			</a-col>
 		</div>
     <a-table :columns="packageNameColumns" :data-source="packageNameList" :scroll="{ x: true }"
+      @change="handleChangeTable"
       :loading="loading"
+      :pagination="{ pageSize: packageNameQuery.limit, current: packageNameQuery.page, total: packageNameQuery.total, showLessItems: true }"
       :row-key="(r, i) => i.toString()">
       <div slot="operation" slot-scope="text, record">
         <div class="col-action">
@@ -29,9 +31,9 @@
 </template>
 <script>
 import {
-  securityPolicyConfig,
-  securityPolicyDeletePackageName
-} from '@/api/folib'
+  getPackageNameBlock,
+  deletePackageNameBlock
+} from '@/api/packageNameBlock'
 export default {
   props: [
 
@@ -50,10 +52,10 @@ export default {
         },
         {
           title: '条件类型',
-          dataIndex: 'condition',
-          key: 'condition',
+          dataIndex: 'conditionValue',
+          key: 'conditionValue',
           width: 150,
-          scopedSlots: { customRender: 'condition' },
+          scopedSlots: { customRender: 'conditionValue' },
         },
         {
           title: '版本号',
@@ -71,7 +73,7 @@ export default {
       ],
       packageNameQuery: {
         page: 1,
-        limit: 10,
+        limit: 5,
         total: 0,
         packageName: undefined
       },
@@ -94,41 +96,36 @@ export default {
     },
     getPackageNameList() {
       this.loading = true
-      securityPolicyConfig().then(res => {
+      getPackageNameBlock(this.packageNameQuery).then(res => {
         this.packageNameList = []
-        let packageNameData = res.packageNames
-        if (packageNameData) {
-          if (this.packageNameQuery.packageName) {
-            packageNameData = packageNameData.filter(item => item.indexOf(this.packageNameQuery.packageName) !== -1)
-          }
-          for (let data of packageNameData) {
-            let arr = data.split(",")
-            this.packageNameList.push({
-              packageName: arr[0],
-              condition: arr.length > 1 ? arr[1]: undefined,
-              version: arr.length > 2 ? arr[2]: undefined,
-              source: data
-            })
-          }
-          this.packageNameQuery.total = packageNameData.length
+        if (res && res.data) {
+          this.packageNameList = res.data.rows
+          this.packageNameQuery.total = res.data.total
         }
       }).finally(() => {
         this.loading = false
       })
     },
+    handleChangeTable(pagination, filters, sorter) {
+      if (pagination) {
+        this.packageNameQuery.page = pagination.current
+      }
+      this.getPackageNameList()
+    },
+    handleSearch() {
+      this.packageNameQuery.page = 1
+      this.getPackageNameList()
+    },
     packageNameHandlerDelete(record) {
-      securityPolicyDeletePackageName({
-        blockType: 3,
-        packageNames: [record.source]
-      }).then(res => {
-        this.successMsg('删除包名 ' + packageName + ' 成功')
+      deletePackageNameBlock({id: record.id}).then(res => {
+        this.successMsg('删除包名 ' + record.packageName + ' 成功')
       }).catch(err => {
         this.$notification['error']({
           message: err.response.data.error,
           description: ''
         })
       }).finally(() => {
-        this.getPackageNameList()
+        this.handleSearch()
       })
     },
   },

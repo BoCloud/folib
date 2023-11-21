@@ -6,11 +6,13 @@ import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.providers.io.RepositoryPathResolver;
 import com.veadan.folib.services.ArtifactManagementService;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
 import javax.inject.Inject;
+import java.io.File;
 import java.nio.file.Files;
 import java.time.LocalDateTime;
 import java.util.Objects;
@@ -59,30 +61,47 @@ public class DockerCleanupArtifactsProvider implements CleanupArtifactsProvider 
             log.info("Cleanup storageId {} repositoryId {} path {} is checksum file skip", storageId, repositoryId, path);
             return null;
         }
-        Artifact artifact = repositoryPath.getArtifactEntry();
-        if (null == artifact || null == artifact.getLastUpdated()) {
-            log.warn("Cleanup storageId {} repositoryId {} path {} artifact not found", storageId, repositoryId, path);
+        if (!RepositoryFiles.isArtifact(repositoryPath)) {
+            log.info("Cleanup storageId {} repositoryId {} path {} not is artifact file skip", storageId, repositoryId, path);
             return null;
         }
-        String artifactPath = artifact.getArtifactPath();
-        boolean isDockerVersion = artifactPath.contains("sha256:") && !artifactPath.contains("blobs/sha256") && !artifactPath.contains("manifest/sha256");
+        String artifactPath = repositoryPath.toString();
+        boolean isDockerVersion = repositoryPath.getFileName().toString().startsWith("sha256:") && !artifactPath.contains("blobs/sha256") && !artifactPath.contains("manifest/sha256");
         if (!isDockerVersion) {
             log.info("Cleanup storageId {} repositoryId {} path {} not a docker version file skip", storageId, repositoryId, path);
             return null;
         }
-        //获取仓库下制品更新时间比较
-        LocalDateTime localDateTime = artifact.getLastUpdated();
+        log.info("Cleanup storageId {} repositoryId {} path {} find a docker version file", storageId, repositoryId, path);
+        Artifact artifact = repositoryPath.getArtifactEntry();
+        if (null == artifact || null == artifact.getLastUsed()) {
+            log.warn("Cleanup storageId {} repositoryId {} path {} artifact not found", storageId, repositoryId, path);
+            return null;
+        }
+        RepositoryPath manifestRepositoryPath = repositoryPathResolver.resolve(repositoryPath.getStorageId(), repositoryPath.getRepositoryId(), repositoryPath.getParent().getParent().getFileName().toString() + File.separator + "manifest" + File.separator + repositoryPath.getFileName().toString());
+        if (!Files.exists(manifestRepositoryPath)) {
+            log.warn("Cleanup storageId {} repositoryId {} path {} manifest file not exists", storageId, repositoryId, manifestRepositoryPath.toString());
+            return null;
+        }
+        Artifact manifestArtifact = manifestRepositoryPath.getArtifactEntry();
+        if (null == manifestArtifact || null == manifestArtifact.getLastUsed()) {
+            log.warn("Cleanup storageId {} repositoryId {} path {} manifest artifact not found", storageId, repositoryId, manifestRepositoryPath.toString());
+            return null;
+        }
+        //获取仓库下制品最近使用时间做比较
+        LocalDateTime tagTime = artifact.getLastUsed();
+        LocalDateTime manifestTime = manifestArtifact.getLastUsed();
         //保留N天的制品
-        if (!LocalDateTime.now().minusDays(tempDay).isBefore(localDateTime)) {
+        log.info("Cleanup docker storageId {} repositoryId {} artifact {} time {} manifest time {} current time {}", storageId, repositoryId, artifact.getArtifactPath(), tagTime, manifestTime, LocalDateTime.now());
+        if (!LocalDateTime.now().minusDays(tempDay).isBefore(tagTime) && !LocalDateTime.now().minusDays(tempDay).isBefore(manifestTime)) {
             try {
                 RepositoryPath deleteRepositoryPath = repositoryPath.getParent();
-                log.info("Cleanup docker version storageId {} repositoryId {} path {}", storageId, repositoryId, deleteRepositoryPath.toString());
+                log.info("Cleanup docker version storageId {} repositoryId {} path {} do delete", storageId, repositoryId, deleteRepositoryPath.toString());
                 artifactManagementService.delete(deleteRepositoryPath, true);
                 RepositoryPath dockerImageRepositoryPath = deleteRepositoryPath.getParent();
                 long count = Files.list(dockerImageRepositoryPath).count();
                 if (count == 0) {
                     Files.delete(dockerImageRepositoryPath);
-                    log.info("Cleanup docker image storageId {} repositoryId {} path {}", storageId, repositoryId, dockerImageRepositoryPath.toString());
+                    log.info("Cleanup docker image storageId {} repositoryId {} path {} do delete", storageId, repositoryId, dockerImageRepositoryPath.toString());
                 }
                 return "ok";
             } catch (Exception e) {

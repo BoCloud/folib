@@ -90,7 +90,7 @@ request.interceptors.request.use((config) => {
     const hasWordDependency = config.url.includes("/dependency");
     // 有/dependency
     if (hasWordDependency) {
-      config.headers["X-Api-Key"] = "9y8uatB9rJefH6uvVrNKIBQ3vgLlhuxp";
+      config.headers["X-Api-Key"] = "pheWYMqsYbJOaOQlDI48mIvOPI1d39ks";
     } else {
       config.headers[ACCESS_TOKEN] = "Bearer " + token;
     }
