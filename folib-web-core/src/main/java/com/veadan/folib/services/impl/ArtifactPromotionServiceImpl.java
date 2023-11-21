@@ -796,8 +796,8 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
             final Path fileName = artifactPath.getTarget().getFileName();
             final String baseUrl = StringUtils.chomp(configurationManagementService.getConfiguration().getBaseUrl(), "/");
             final String md5 = null != artifactPath.getArtifactEntry() ? Optional.ofNullable(artifactPath.getArtifactEntry().getChecksums()).orElse(Collections.emptyMap()).get("MD5") : null;
-            final long kbps = Optional.ofNullable(configurationManagementService.getConfiguration().getSliceMbSize()).orElse(50L) * (1024 * 1024);
-            if (kbps < 0) {
+            final long kbps = Optional.ofNullable(configurationManagementService.getConfiguration().getSliceMbSize()).orElse(0L) * (1024 * 1024);
+            if (kbps <= 0) {
                 throw new BusinessException("制品传输切片大小不能为空，请前往全局配置进行配置");
             }
 
