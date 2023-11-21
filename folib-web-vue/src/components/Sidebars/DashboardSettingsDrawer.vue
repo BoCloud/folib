@@ -107,7 +107,7 @@
 			// Main sidebar theme : light, white, dark.
 			sidebarTheme: {
 				type: String,
-				default: "light",
+				default: "white",
 			},
 
 			// Header fixed status.
