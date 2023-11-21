@@ -880,7 +880,7 @@ public class PromotionUtil {
      * @param metadata       metadata
      */
     public void setMetaData(RepositoryPath repositoryPath, String metadata) {
-        if (Objects.nonNull(repositoryPath) && StringUtils.isNotBlank(metadata)) {
+        if (Objects.nonNull(repositoryPath) && StringUtils.isNotBlank(metadata) && JSONUtil.isJson(metadata)) {
             try {
                 Artifact artifact = Optional.ofNullable(repositoryPath.getArtifactEntry())
                         .orElse(new ArtifactEntity(repositoryPath.getStorageId(), repositoryPath.getRepositoryId(),
