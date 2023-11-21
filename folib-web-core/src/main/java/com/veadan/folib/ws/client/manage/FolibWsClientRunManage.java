@@ -100,7 +100,7 @@ public class FolibWsClientRunManage extends FolibWsRunManage {
         final FolibWsServerRun folibWsServerRun = FOLIB_WS_RUN_MAP.get(nodeName);
         if (null != folibWsServerRun) {
             try {
-                if (folibWsServerRun.getSession().isOpen()) {
+                if (null != folibWsServerRun.getSession() && folibWsServerRun.getSession().isOpen()) {
                     folibWsServerRun.getSession().close();
                 }
                 FOLIB_WS_RUN_MAP.remove(nodeName);

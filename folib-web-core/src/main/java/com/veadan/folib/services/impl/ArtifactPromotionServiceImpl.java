@@ -333,19 +333,12 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
             } else if (ArtifactSyncRecordSyncModelEnum.PULL.getVal().equals(syncModel)) {
                 log.info("进入拉模式={}", true);
                 // 通过Ws协议通知客户端进行拉取操作
-                final String targetHost = UrlUtils.getHost(targetUrl);
-                final Integer targetPort = UrlUtils.getPort(targetUrl);
+                final String targetHost = UrlUtils.getHost(srcUrl);
+                final Integer targetPort = UrlUtils.getPort(srcUrl);
                 final String nodeName = String.format("%s:%s", targetHost, targetPort);
                 final FolibWsServerRunManage.FolibWsClientRun wsClientRun = FolibWsServerRunManage.getWsClientRun(nodeName);
                 if (null == wsClientRun) {
-                    // 检查如果可以直接连接访问到目标节点，则将模式转换为push模式
-                    try (final Socket socket = new Socket(targetHost, targetPort);) {
-                        socket.setSoTimeout(200);
-                        promotionNodeOption.setSyncModel(ArtifactSyncRecordSyncModelEnum.PUSH.getVal());
-                        return this.nodeOption(promotionNodeOption, request);
-                    } catch (Exception e) {
-                        throw new BusinessException("需要晋级的节点不可用，请检查节点是否配置正确");
-                    }
+                    throw new BusinessException("Folib客户端未连接，发送命令失败");
                 }
 
                 final FolibWsAction folibWsAction = new FolibWsAction()
