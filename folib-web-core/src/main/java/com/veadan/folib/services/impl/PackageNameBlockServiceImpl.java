@@ -3,9 +3,11 @@ package com.veadan.folib.services.impl;
 import com.github.pagehelper.Page;
 import com.github.pagehelper.PageHelper;
 import com.google.common.collect.Lists;
+import com.veadan.folib.configuration.MutableSecurityPolicyConfiguration;
 import com.veadan.folib.configuration.SecurityPolicyConfiguration;
 import com.veadan.folib.domain.PackageNameBlockInfo;
 import com.veadan.folib.entity.PackageNameBlock;
+import com.veadan.folib.enums.BlockTypeEnum;
 import com.veadan.folib.enums.ConditionTypeEnum;
 import com.veadan.folib.enums.VersionConditionTypeEnum;
 import com.veadan.folib.forms.packagenameblock.PackageNameBlockForm;
@@ -18,6 +20,7 @@ import com.veadan.folib.utils.UserUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -70,6 +73,13 @@ public class PackageNameBlockServiceImpl implements PackageNameBlockService {
     public void savePackageNameBlock(PackageNameBlockForm packageNameBlockForm) {
         String username = UserUtils.getUsername();
         Date date = new Date();
+        try {
+            MutableSecurityPolicyConfiguration mutableSecurityPolicyConfiguration = configurationManagementService.getMutableConfigurationClone().getSecurityPolicyConfiguration();
+            mutableSecurityPolicyConfiguration.setBlockType(BlockTypeEnum.PACKAGE_NAME.getType());
+            configurationManagementService.saveOrUpdateBlock(mutableSecurityPolicyConfiguration);
+        } catch (Exception ex) {
+            log.error(ExceptionUtils.getStackTrace(ex));
+        }
         if (CollectionUtils.isNotEmpty(packageNameBlockForm.getPackageNameBlocks())) {
             List<PackageNameBlock> packageNameBlockList = Lists.newArrayList();
             PackageNameBlock packageNameBlock;

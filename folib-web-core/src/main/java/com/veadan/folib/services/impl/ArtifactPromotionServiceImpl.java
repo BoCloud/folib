@@ -4,8 +4,6 @@ import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.io.FileUtil;
 import cn.hutool.core.io.IoUtil;
 import cn.hutool.core.lang.UUID;
-import cn.hutool.core.util.StrUtil;
-import cn.hutool.core.util.URLUtil;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
 import com.veadan.folib.cloud.storage.s3fs.util.UriUtils;
@@ -34,6 +32,7 @@ import com.veadan.folib.providers.storage.S3FileSystemStorageProvider;
 import com.veadan.folib.repositories.ArtifactRepository;
 import com.veadan.folib.repository.MavenRepositoryFeatures;
 import com.veadan.folib.scanner.common.exception.BusinessException;
+import com.veadan.folib.service.ProxyRepositoryConnectionPoolConfigurationService;
 import com.veadan.folib.services.*;
 import com.veadan.folib.storage.repository.Repository;
 import com.veadan.folib.users.userdetails.SpringSecurityUser;
@@ -73,16 +72,13 @@ import javax.ws.rs.client.Client;
 import javax.ws.rs.client.Invocation;
 import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.Response;
-import java.io.BufferedInputStream;
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
+import java.io.*;
 import java.net.Socket;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.FutureTask;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -160,8 +156,12 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
     @Inject
     private ArtifactSyncRecordMapper artifactSyncRecordMapper;
 
-    @Autowired
+    @Inject
     private ConfigurationManagementService configurationManagementService;
+
+    @Inject
+    @Lazy
+    private FolibWsClientArtifactPullCommand wsClientArtifactPullCommand;
 
     @Override
     public ResponseEntity copy(ArtifactPromotion artifactPromotion) {
@@ -283,8 +283,8 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
             }
 
             // 判断节点参数是 做推 push  或者 拉取 pull
-//            String requestURL = request.getServerName();
-//            log.info("requestURL={}",requestURL);
+            String requestURL = request.getServerName();
+            log.info("requestURL={}", requestURL);
 
 //            if (sourcePath.contains(requestURL)) {
             if (ArtifactSyncRecordSyncModelEnum.PUSH.getVal().equals(syncModel)) {
@@ -307,14 +307,28 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
             } else if (ArtifactSyncRecordSyncModelEnum.PULL.getVal().equals(syncModel)) {
                 log.info("进入拉模式={}", true);
                 // 通过Ws协议通知客户端进行拉取操作
-                final String targetHost = UrlUtils.getHost(srcUrl);
-                final Integer targetPort = UrlUtils.getPort(srcUrl);
+                final String targetHost = UrlUtils.getHost(targetUrl);
+                final Integer targetPort = UrlUtils.getPort(targetUrl);
                 final String nodeName = String.format("%s:%s", targetHost, targetPort);
                 final FolibWsServerRunManage.FolibWsClientRun wsClientRun = FolibWsServerRunManage.getWsClientRun(nodeName);
                 if (null == wsClientRun) {
-                    throw new BusinessException("Folib客户端未连接，发送命令失败");
+                    if (sourcePath.contains(requestURL)) {
+                        //检查如果可以直接连接访问到目标节点，则将模式转换为push模式，兼容源头和请求一致时未找到或者未设置ws节点的情况
+                        try (final Socket socket = new Socket(targetHost, targetPort);) {
+                            socket.setSoTimeout(200);
+                            promotionNodeOption.setSyncModel(ArtifactSyncRecordSyncModelEnum.PUSH.getVal());
+                            return this.nodeOption(promotionNodeOption, request);
+                        } catch (Exception e) {
+                            throw new BusinessException("需要晋级的节点不可用，请检查节点是否配置正确");
+                        }
+                    } else if (targetPath.contains(requestURL)) {
+                        //兼容请求和目标一致时，未注册自身ws节点的情况
+                        wsClientArtifactPullCommand.execute(promotionNodeOption);
+                        return ResponseEntity.ok("ok");
+                    } else {
+                        throw new BusinessException(String.format("客户端 host [%s] port [%s] 未连接，发送命令失败", targetHost, targetPort));
+                    }
                 }
-
                 final FolibWsAction folibWsAction = new FolibWsAction()
                         .command(FolibWsClientArtifactPullCommand.COMMAND)
                         .payload(promotionNodeOption);
@@ -329,7 +343,8 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
     }
 
     @Override
-    public ResponseEntity nodeOptionAttachRecord(PromotionNodeOption promotionNodeOption, HttpServletRequest request) {
+    public ResponseEntity nodeOptionAttachRecord(PromotionNodeOption promotionNodeOption, HttpServletRequest
+            request) {
         // 生成同步编号
         final String syncNo = String.format("SyncNo-%s", UUID.fastUUID());
         final SpringSecurityUser userDetails = (SpringSecurityUser) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
@@ -340,10 +355,11 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
         artifactSyncRecord.setSourcePath(promotionNodeOption.getSourcePath());
         artifactSyncRecord.setTargetPath(promotionNodeOption.getTargetPath());
         artifactSyncRecord.setSyncNo(syncNo);
+        artifactSyncRecord.setOpsType(1);
         artifactSyncRecord.setSyncModel(promotionNodeOption.getSyncModel());
         artifactSyncRecord.setStatus(ArtifactSyncRecordStatusEnum.IN_SYNC.getVal());
-        artifactSyncRecord.setCreatedBy(userName);
-        artifactSyncRecord.setCreatedTime(new Date());
+        artifactSyncRecord.setCreateBy(userName);
+        artifactSyncRecord.setCreateTime(new Date());
         artifactSyncRecordMapper.insert(artifactSyncRecord);
 
         try {
@@ -361,8 +377,8 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
 
                 // 更新日志结束开始时间
                 artifactSyncRecordMapper.updateByPrimaryKey(artifactSyncRecord
-                        .setUpdatedTime(new Date())
-                        .setUpdatedBy(userName));
+                        .setUpdateTime(new Date())
+                        .setUpdateBy(userName));
             });
         } catch (Exception e) {
             artifactSyncRecord.setStatus(ArtifactSyncRecordStatusEnum.FAILED.getVal());
@@ -370,8 +386,8 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
 
             // 更新日志结束开始时间
             artifactSyncRecordMapper.updateByPrimaryKey(artifactSyncRecord
-                    .setUpdatedTime(new Date())
-                    .setUpdatedBy(userName));
+                    .setUpdateTime(new Date())
+                    .setUpdateBy(userName));
         }
 
         return ResponseEntity.ok(syncNo);
@@ -469,7 +485,8 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
     }
 
     @Override
-    public ResponseEntity upload(MultipartFile[] files, String storageId, String repositoryId, String filePathMap, String fileMetaDataMap, String uuid) {
+    public ResponseEntity upload(MultipartFile[] files, String storageId, String repositoryId, String
+            filePathMap, String fileMetaDataMap, String uuid) {
         try {
             validateStorageAndRepository(storageId, repositoryId);
             List<FutureTask<String>> listTask = new ArrayList<>();
@@ -636,12 +653,13 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
     public static final Map<String, AtomicInteger> DOWNLOAD_CONNECTION_COUNTER_MAP = new ConcurrentHashMap<>();
 
     @Override
-    public Boolean sliceFileDownload(Repository repository, String artifactPath, String nodeMark, HttpServletResponse response) {
+    public Boolean sliceFileDownload(Repository repository, String artifactPath, String
+            nodeMark, HttpServletResponse response) {
         // 获取全局节点限速
         final int kbps = Optional.ofNullable(configurationManagementService.getConfiguration().getKbps()).orElse(0) * (1024);
         // 获取节点限速
         final Collection<ClusterDispatchNodeDto> clusterDispatchNodeDtos = configurationManagementService.getMutableConfigurationClone().getClusterDispatchNode().values();
-        final Map<String, Integer> nodeKbpsMap = clusterDispatchNodeDtos.stream().collect(Collectors.toMap(e -> String.format("%s:%s", UrlUtils.getHost(e.getClusterNodeHost()), UrlUtils.getPort(e.getClusterNodeHost())), e -> null != e.getKbps() ? e.getKbps() * 1024:0));
+        final Map<String, Integer> nodeKbpsMap = clusterDispatchNodeDtos.stream().filter(e -> null == e.getAutoRegister() || !e.getAutoRegister()).collect(Collectors.toMap(e -> String.format("%s:%s", UrlUtils.getHost(e.getClusterNodeHost()), UrlUtils.getPort(e.getClusterNodeHost())), e -> null != e.getKbps() ? e.getKbps() * 1024 : 0));
         final int finalKbps = Optional.ofNullable(nodeKbpsMap.get(nodeMark)).filter(k -> k > 0).orElse(kbps);
 
         // 下载文件流
@@ -707,7 +725,8 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
         return limitKbps / downloadThreadCount;
     }
 
-    private void sliceSpeedLimitDownload(InputStream inputStream, OutputStream outputStream, AtomicInteger downloadConnectionCounter, int finalKbps) {
+    private void sliceSpeedLimitDownload(InputStream inputStream, OutputStream outputStream, AtomicInteger
+            downloadConnectionCounter, int finalKbps) {
         try (final OutputStream outputStream1 = outputStream;
              final InputStream inputStream1 = inputStream;) {
             int speedByteSize = this.getDownloadSpeedByte(finalKbps, downloadConnectionCounter.incrementAndGet());
@@ -744,7 +763,8 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
     }
 
     @Override
-    public Map<String, Boolean> batchQuerySupportSliceDownload(List<ArtifactSupportSliceDownloadQueryReq> models) {
+    public Map<String, Boolean> batchQuerySupportSliceDownload
+            (List<ArtifactSupportSliceDownloadQueryReq> models) {
         final Map<String, Boolean> resultMap = new HashMap<>();
         for (ArtifactSupportSliceDownloadQueryReq model : models) {
             final String storageId = model.getStorageId();
@@ -780,7 +800,7 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
             if (kbps < 0) {
                 throw new BusinessException("制品传输切片大小不能为空，请前往全局配置进行配置");
             }
-            
+
             final long artifactFileLength = artifactPath.toFile().length();
             String artifactFilePath = artifactPath.toString();
             final String artifactParentUri = Optional.of(artifactPath.relativize()).map(p -> {
@@ -992,7 +1012,8 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
     }
 
     @Override
-    public List<ArtifactSliceDownloadInfoRes> batchQuerySliceDownloadInfo(List<ArtifactSliceDownloadInfoReq> models) {
+    public List<ArtifactSliceDownloadInfoRes> batchQuerySliceDownloadInfo
+            (List<ArtifactSliceDownloadInfoReq> models) {
         return models.stream().map(this::querySliceDownloadInfoStoreTemp).filter(Objects::nonNull).collect(Collectors.toList());
     }
 }
