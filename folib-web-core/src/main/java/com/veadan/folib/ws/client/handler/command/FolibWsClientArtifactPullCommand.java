@@ -140,9 +140,7 @@ public class FolibWsClientArtifactPullCommand implements FolibWsClientCommand<Pr
             }
             // 获取需要拉取的文件集合信息
             final PromotionFileRelativePath promotionFileRelativePath = response.readEntity(PromotionFileRelativePath.class);
-            final List<String> getFileRelativePaths = Optional.ofNullable(promotionFileRelativePath.getList()).orElse(Collections.emptyList())
-                    .stream()
-                    .collect(Collectors.toList());
+            final List<String> getFileRelativePaths = Optional.ofNullable(promotionFileRelativePath.getList()).orElse(Collections.emptyList());
             final Map<String, Object> metaDataMap = Optional.ofNullable(promotionFileRelativePath.getMetaData()).filter(MapUtil::isNotEmpty).orElse(Collections.emptyMap());
 
             // 判断是否支持切片下载
