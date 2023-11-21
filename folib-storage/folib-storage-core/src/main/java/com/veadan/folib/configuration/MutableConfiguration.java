@@ -42,7 +42,7 @@ public class MutableConfiguration
     /**
      * 节点传输切片大小（MB）
      */
-    private Long sliceMbSize = 50L;
+    private Long sliceMbSize = 1024L;
 
     /**
      * The global proxy settings to use when no per-repository proxy settings have been defined.
