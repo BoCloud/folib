@@ -90,6 +90,10 @@ public class FolibWsServerRunManage extends FolibWsRunManage {
         @ApiModelProperty(value = "上线时间")
         private LocalDateTime onlineTime;
 
+        public boolean getSessionStatus() {
+            return null != this.session && this.session.isOpen();
+        }
+        
         public boolean doAction(FolibWsAction folibWsAction) {
             try {
                 if (null == this.session) {

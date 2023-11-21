@@ -23,10 +23,11 @@ public class FolibWsServerSessionHealthCheckTimer {
             final Integer port = folibWsServerRun.getPort();
             final String uri = folibWsServerRun.getUri();
             final boolean isForceUp = folibWsServerRun.isForceUp();
+            final boolean enableSSL = folibWsServerRun.isEnableSSL();
             
-            if (null == folibWsServerRun.getSession() || !folibWsServerRun.getSession().isOpen()) {
+            if (null == folibWsServerRun.getSession() || !folibWsServerRun.getSessionStatus()) {
                 log.info("【Ws连接健康定时任务】扫描到Ws连接（{}）断开，进行重连开始", folibWsServerRun.getWsUrl());
-                final boolean reUp = FolibWsClientRunManage.up(nodeName, host, port, uri, isForceUp);
+                final boolean reUp = FolibWsClientRunManage.up(nodeName, host, port, uri, isForceUp, enableSSL);
                 log.info("【Ws连接健康定时任务】扫描到Ws连接（{}）断开，进行重连结束，重连结果：{}", folibWsServerRun.getWsUrl(), reUp);
             }
         }
