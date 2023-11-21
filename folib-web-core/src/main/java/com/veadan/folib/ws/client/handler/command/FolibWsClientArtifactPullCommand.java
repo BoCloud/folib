@@ -179,7 +179,8 @@ public class FolibWsClientArtifactPullCommand implements FolibWsClientCommand<Pr
                 } catch (IOException ex) {
                     log.error(ExceptionUtils.getStackTrace(ex));
                 }
-                promotionUtil.setMetaData(destPath, String.valueOf(metaDataMap.getOrDefault(path, StringUtils.EMPTY)));
+                Object metadata = metaDataMap.get(path);
+                promotionUtil.setMetaData(destPath, Objects.isNull(metadata) ? StringUtils.EMPTY: metadata.toString());
                 final boolean isDocker = DockerLayoutProvider.ALIAS.equalsIgnoreCase(destPath.getRepository().getLayout());
                 if (!usedSlice) {
                     // 非切片下载（下载Part有且只有一个）
