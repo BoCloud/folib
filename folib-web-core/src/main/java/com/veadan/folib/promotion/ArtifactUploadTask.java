@@ -601,7 +601,9 @@ public class ArtifactUploadTask implements Callable<String> {
                 metadataPath = MetadataHelper.getMetadataPath(repositoryPath);
             }
             if (Files.exists(metadataPath)) {
-                metadata = artifactMetadataService.getMetadata(Files.newInputStream(metadataPath));
+                try (InputStream inputStream = Files.newInputStream(metadataPath)) {
+                    metadata = artifactMetadataService.getMetadata(inputStream);
+                }
             }
             return metadata;
         } catch (Exception ex) {

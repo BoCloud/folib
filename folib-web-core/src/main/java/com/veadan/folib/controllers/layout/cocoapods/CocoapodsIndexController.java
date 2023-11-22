@@ -207,26 +207,27 @@ public class CocoapodsIndexController
         {
             if (s3FiePath.getFileName().toString().endsWith(".podspec"))
             {
-                final BufferedInputStream bufferedInputStream = new BufferedInputStream(Files.newInputStream(s3FiePath));
-                byte[] bytes = bufferedInputStream.readAllBytes();
-                final String podspecFileUri = s3FiePath.toAbsolutePath().toUri().getPath().replaceAll(".*?\\.specs/(.*?)", "$1");
+                try (final BufferedInputStream bufferedInputStream = new BufferedInputStream(Files.newInputStream(s3FiePath))) {
+                    byte[] bytes = bufferedInputStream.readAllBytes();
+                    final String podspecFileUri = s3FiePath.toAbsolutePath().toUri().getPath().replaceAll(".*?\\.specs/(.*?)", "$1");
 
-                final RepositoryPath repositoryPath = artifactResolutionService.resolvePath(repository.getStorage().getId(), repository.getId(), String.format(".specs/%s", podspecFileUri));
-                if (repositoryPath != null  && null != repositoryPath.getArtifactEntry())
-                { // 获取到有Pod源代码路径地址则替换
-                    final Artifact artifactEntry = repositoryPath.getArtifactEntry();
-                    final String path = artifactEntry.getArtifactCoordinates().getPath();
-                    final String newSourceUrl = String.format("%s/%s%s", baseUrl, "storages", path);
-                    final String newPodspecContent = CocoapodsArtifactUtil.replaceNewSourceUrlOfPodspecContent(new String(bytes), newSourceUrl);
-                    if (StringUtils.isNotBlank(newPodspecContent))
-                    { bytes = newPodspecContent.getBytes(StandardCharsets.UTF_8); }
+                    final RepositoryPath repositoryPath = artifactResolutionService.resolvePath(repository.getStorage().getId(), repository.getId(), String.format(".specs/%s", podspecFileUri));
+                    if (repositoryPath != null  && null != repositoryPath.getArtifactEntry())
+                    { // 获取到有Pod源代码路径地址则替换
+                        final Artifact artifactEntry = repositoryPath.getArtifactEntry();
+                        final String path = artifactEntry.getArtifactCoordinates().getPath();
+                        final String newSourceUrl = String.format("%s/%s%s", baseUrl, "storages", path);
+                        final String newPodspecContent = CocoapodsArtifactUtil.replaceNewSourceUrlOfPodspecContent(new String(bytes), newSourceUrl);
+                        if (StringUtils.isNotBlank(newPodspecContent))
+                        { bytes = newPodspecContent.getBytes(StandardCharsets.UTF_8); }
+                    }
+
+                    final TarArchiveEntry entry = new TarArchiveEntry(podspecFileUri);
+                    entry.setSize(bytes.length);
+                    archiveOutputStream.putArchiveEntry(entry);
+                    archiveOutputStream.write(bytes);
+                    archiveOutputStream.closeArchiveEntry();
                 }
-
-                final TarArchiveEntry entry = new TarArchiveEntry(podspecFileUri);
-                entry.setSize(bytes.length);
-                archiveOutputStream.putArchiveEntry(entry);
-                archiveOutputStream.write(bytes);
-                archiveOutputStream.closeArchiveEntry();
             }
         }
     }

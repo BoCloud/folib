@@ -57,6 +57,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -156,22 +157,23 @@ public class ScanService {
             engine = new XpEngine(getSettings());
             RepositoryPath repositoryPath = resolvePath(artifact);
             if (repositoryPath.getTarget() instanceof S3Path) {
+                Path artifactPath;
                 S3Path s3RepositoryPath = (S3Path) repositoryPath.getTarget();
                 parentPath = tempPath + File.separator + UUID.randomUUID();
-                InputStream inputStream = null;
                 //s3存储
                 if (repositoryPath.getFileSystem() instanceof DockerFileSystem) {
                     String temp = filePath.substring(filePath.indexOf(repositoryPath.getStorageId()));
                     S3Path s3Path = new S3Path(s3RepositoryPath.getFileSystem(), temp);
                     filePath = parentPath + File.separator + s3Path.getFileName();
-                    inputStream = s3Path.getFileSystem().getClient().getObject(GetObjectRequest.builder().bucket(s3RepositoryPath.getBucketName())
-                            .key(s3Path.getKey()).build());
+                    artifactPath = s3Path;
                 } else {
                     filePath = parentPath + File.separator + s3RepositoryPath.getFileName();
-                    inputStream = Files.newInputStream(repositoryPath);
+                    artifactPath = repositoryPath;
                 }
                 File tempFile = new File(filePath);
-                FileUtil.writeFromStream(inputStream, tempFile, true);
+                try (InputStream inputStream = Files.newInputStream(artifactPath)) {
+                    FileUtil.writeFromStream(inputStream, tempFile);
+                }
             }
             log.info("扫描路径：{}", filePath);
             engine.scan(filePath);

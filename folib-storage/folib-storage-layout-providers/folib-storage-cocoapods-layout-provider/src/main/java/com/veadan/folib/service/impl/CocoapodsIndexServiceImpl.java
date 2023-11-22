@@ -23,6 +23,7 @@ import javax.inject.Inject;
 import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -108,10 +109,11 @@ public class CocoapodsIndexServiceImpl implements CocoapodsIndexService
                 tarGzFilePath = localTarGzFileTempPath;
                 FileUtil.touch(new File(ziFilePath));
                 FileUtil.touch(new File(tarGzFilePath));
-
-                // 将S3网络路径缓存到本地
-                FileUtil.writeFromStream(new BufferedInputStream(Files.newInputStream(specIndexZipTempPath)), localZipFileTempPath);
-                logger.info("S3存储，转存S3文件到本本地：{}", specIndexZipTempPath);
+                try (InputStream inputStream = new BufferedInputStream(Files.newInputStream(specIndexZipTempPath))) {
+                    // 将S3网络路径缓存到本地
+                    FileUtil.writeFromStream(inputStream, localZipFileTempPath);
+                    logger.info("S3存储，转存S3文件到本本地：{}", specIndexZipTempPath);
+                }
             }
 
             logger.info("开始转换Cocoapods仓库代理仓库Zip（{}:{}）", specIndexZipTempPath, ziFilePath);
@@ -157,7 +159,9 @@ public class CocoapodsIndexServiceImpl implements CocoapodsIndexService
             if (S3FileSystemStorageProvider.ALIAS.equals(repository.getStorageProvider()))
             { // 存储模式为S3将转换后的索引TarGz上传到S3
                 final RepositoryPath indexTarZipPath = repositoryPathResolver.resolve(storageId, repositoryId, specIndexTarGzTempUri);
-                artifactManagementService.store(indexTarZipPath, Files.newInputStream(Path.of(tarGzFilePath)));
+                try (InputStream inputStream = Files.newInputStream(Path.of(tarGzFilePath))) {
+                    artifactManagementService.store(indexTarZipPath, inputStream);
+                }
                 logger.info("S3存储，回传本地转换后TarGz文件成功：{}", specIndexTarGzTempUri);
             }
 
