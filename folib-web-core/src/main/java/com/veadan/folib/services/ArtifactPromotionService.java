@@ -75,7 +75,16 @@ public interface ArtifactPromotionService {
     ArtifactParse parseArtifact(String storageId, String repositoryId, MultipartFile file);
 
 
-    Boolean sliceFileDownload(Repository repository, String artifactPath, String nodeMark, HttpServletResponse response);
+    /**
+     * 限速下载
+     * @param repository
+     * @param artifactPath
+     * @param nodeMark
+     * @param response
+     * @return
+     * @since x.x.x
+     */
+    Boolean speedLimitDownload(Repository repository, String artifactPath, String nodeMark, HttpServletResponse response);
     
     
     /**

@@ -653,7 +653,7 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
     public static final Map<String, AtomicInteger> DOWNLOAD_CONNECTION_COUNTER_MAP = new ConcurrentHashMap<>();
 
     @Override
-    public Boolean sliceFileDownload(Repository repository, String artifactPath, String
+    public Boolean speedLimitDownload(Repository repository, String artifactPath, String
             nodeMark, HttpServletResponse response) {
         // 获取全局节点限速
         final int kbps = Optional.ofNullable(configurationManagementService.getConfiguration().getKbps()).orElse(0) * (1024);

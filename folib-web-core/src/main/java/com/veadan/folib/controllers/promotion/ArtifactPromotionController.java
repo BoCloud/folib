@@ -181,7 +181,7 @@ public class ArtifactPromotionController extends BaseArtifactController {
     public void speedLimitDownload(@RepositoryMapping Repository repository,
                                    @PathVariable String artifactPath, @RequestParam("nodeMark") String nodeMark,
                                    HttpServletResponse response) {
-        artifactPromotionService.sliceFileDownload(repository, artifactPath, nodeMark, response);
+        artifactPromotionService.speedLimitDownload(repository, artifactPath, nodeMark, response);
     }
 
     @PostMapping(value = "/query/support/slice/download")
