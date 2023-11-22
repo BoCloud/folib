@@ -756,10 +756,14 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
             throw new BusinessException("需要获取切片下载信息的制品不存在或已被删除");
         }
 
-        final long artifactFileLength = artifactPath.toFile().length();
-        final long kbps = Optional.ofNullable(configurationManagementService.getConfiguration().getSliceMbSize()).orElse(0L) * (1024 * 1024);
-
-        return artifactFileLength > kbps;
+        try {
+            final long artifactFileLength = Files.size(artifactPath);
+            final long kbps = Optional.ofNullable(configurationManagementService.getConfiguration().getSliceMbSize()).orElse(0L) * (1024 * 1024);
+            return artifactFileLength > kbps;
+        } catch (Exception ex) {
+            log.error(ExceptionUtils.getStackTrace(ex));
+            throw new RuntimeException(ex);
+        }
     }
 
     @Override
@@ -801,7 +805,7 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
                 throw new BusinessException("制品传输切片大小不能为空，请前往全局配置进行配置");
             }
 
-            final long artifactFileLength = artifactPath.toFile().length();
+            final long artifactFileLength = Files.size(artifactPath);
             String artifactFilePath = artifactPath.toString();
             final String artifactParentUri = Optional.of(artifactPath.relativize()).map(p -> {
                 try {
@@ -910,7 +914,7 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
             final String baseUrl = StringUtils.chomp(configurationManagementService.getConfiguration().getBaseUrl(), "/");
             final String md5 = null != artifactPath.getArtifactEntry() ? Optional.ofNullable(artifactPath.getArtifactEntry().getChecksums()).orElse(Collections.emptyMap()).get("MD5") : null;
             final long kbps = Optional.ofNullable(configurationManagementService.getConfiguration().getSliceMbSize()).orElse(0L) * (1024 * 1024);
-            final long artifactFileLength = artifactPath.toFile().length();
+            final long artifactFileLength = Files.size(artifactPath);
             String artifactFilePath = artifactPath.toString();
             String artifactFileSliceFolderPath = String.format("%s/artifactSlice/%s", StringUtils.chomp(tempPath, "/"), UUID.fastUUID().toString(true));
             artifactSliceDownloadInfoDto.setStorageId(storageId);
@@ -957,7 +961,7 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
 
                     // 将暂存的文件
                     log.info("splitFilePathList>>> {}", JSON.toJSONString(splitFilePathList));
-                    final boolean result = splitFilePathList.stream().parallel().allMatch(splitFilePath -> {
+                    final boolean result = splitFilePathList.stream().allMatch(splitFilePath -> {
                         final String splitFileName = FileUtil.getName(splitFilePath);
                         final String splitFileStoreUri = String.format("%s/%s", sliceStoreFolderUri, splitFileName);
                         try {

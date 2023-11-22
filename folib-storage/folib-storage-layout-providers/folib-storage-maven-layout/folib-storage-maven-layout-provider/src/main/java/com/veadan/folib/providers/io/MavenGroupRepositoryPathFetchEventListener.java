@@ -95,10 +95,10 @@ public class MavenGroupRepositoryPathFetchEventListener {
             asyncFetchRemotePackageThreadPoolTaskExecutor.submit(futureTask);
         }
 
-        fetchPathsInParallel(futureTasks);
+        fetchPathsInTask(futureTasks);
     }
 
-    private void fetchPathsInParallel(final List<FutureTask<Path>> futureTasks) {
+    private void fetchPathsInTask(final List<FutureTask<Path>> futureTasks) {
         futureTasks
                 .forEach(action -> {
                     try {
