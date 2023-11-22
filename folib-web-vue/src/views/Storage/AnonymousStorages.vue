@@ -5,7 +5,7 @@
         <div
           :class="[mouseEnter ? 'mouse-enter nested' : 'nested']"
           style="
-            background: url(images/bg-profile.jpg) center/cover;
+            background: url(images/banner-c.jpg) center/cover;
             transition: all 0.3s;
           "
         ></div>

@@ -44,7 +44,7 @@ public class Configuration {
     /**
      * 节点传输切片大小（MB）,缺省值50MB
      */
-    private Long sliceMbSize = 50L;
+    private Long sliceMbSize;
 
     private final ProxyConfiguration proxyConfiguration;
 

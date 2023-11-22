@@ -124,7 +124,7 @@
 				sidebarColor: "primary",
 				
 				// Main sidebar theme : light, white, dark.
-				sidebarTheme: "light",
+				sidebarTheme: "white",
 
 				// Header fixed status.
 				navbarFixed: false,
