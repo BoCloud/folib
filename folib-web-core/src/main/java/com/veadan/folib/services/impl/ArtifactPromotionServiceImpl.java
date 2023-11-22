@@ -21,8 +21,10 @@ import com.veadan.folib.enums.ArtifactSyncRecordStatusEnum;
 import com.veadan.folib.enums.ArtifactSyncRecordSyncModelEnum;
 import com.veadan.folib.mapper.ArtifactSyncRecordMapper;
 import com.veadan.folib.model.request.ArtifactSliceDownloadInfoReq;
+import com.veadan.folib.model.request.ArtifactSliceUploadReq;
 import com.veadan.folib.model.request.ArtifactSupportSliceDownloadQueryReq;
 import com.veadan.folib.model.response.ArtifactSliceDownloadInfoRes;
+import com.veadan.folib.model.response.ArtifactSliceUploadInfoRes;
 import com.veadan.folib.promotion.ArtifactUploadTask;
 import com.veadan.folib.promotion.PromotionUtil;
 import com.veadan.folib.providers.io.RepositoryPath;
@@ -73,16 +75,20 @@ import javax.ws.rs.client.Invocation;
 import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.Response;
 import java.io.*;
+import java.math.BigInteger;
 import java.net.Socket;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.FutureTask;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import static com.veadan.folib.utils.UrlUtils.parsePath;
 
@@ -1020,4 +1026,113 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
             (List<ArtifactSliceDownloadInfoReq> models) {
         return models.stream().map(this::querySliceDownloadInfoStoreTemp).filter(Objects::nonNull).collect(Collectors.toList());
     }
+
+    @Override
+    public ArtifactSliceUploadInfoRes querySliceUploadInfo() {
+        final ArtifactSliceUploadInfoRes artifactSliceUploadInfoRes = new ArtifactSliceUploadInfoRes();
+        artifactSliceUploadInfoRes.setMergeId(UUID.randomUUID().toString(true));
+        final int chunkSize = Math.toIntExact(Optional.ofNullable(configurationManagementService.getConfiguration().getSliceMbSize()).orElse(0L));
+        artifactSliceUploadInfoRes.setChunkSize(chunkSize);
+        return artifactSliceUploadInfoRes;
+    }
+
+    @Override
+    public Boolean sliceUpload(ArtifactSliceUploadReq model) {
+        final String storageId = model.getStorageId();
+        final String repositoryId = model.getRepositoryId();
+        final String path = model.getPath();
+        final MultipartFile file = model.getFile();
+        final String mergeId = model.getMergeId();
+        final Integer chunkIndex = model.getChunkIndex();
+        final Integer chunkIndexMax = model.getChunkIndexMax();
+        final String originFileMd5 = model.getOriginFileMd5();
+
+        // 临时存储目录
+        final String artifactFileSliceUploadRootFolderPathStr = String.format("%s/artifactSliceUpload/%s/%s/%s", StringUtils.chomp(tempPath, "/"), storageId, repositoryId, mergeId);
+        final String artifactFileSliceUploadFilePathStr = String.format("%s/chunkFile_%s", artifactFileSliceUploadRootFolderPathStr, chunkIndex);
+        boolean allSliceFileUploadCompleted = false;
+
+        try {
+            if (!FileUtil.exist(new File(artifactFileSliceUploadFilePathStr))) {
+                FileUtil.touch(artifactFileSliceUploadFilePathStr);
+            }
+            try (final InputStream inputStream = file.getInputStream();
+                 final FileOutputStream fileOutputStream = new FileOutputStream(artifactFileSliceUploadFilePathStr)) {
+                IoUtil.copy(inputStream, fileOutputStream);
+                // 状态写入
+                this.writeSliceUploadStatus(artifactFileSliceUploadRootFolderPathStr, chunkIndex, true);
+            } catch (IOException e) {
+                log.info("切片文件转存失败", e);
+                // 状态写入
+                this.writeSliceUploadStatus(artifactFileSliceUploadRootFolderPathStr, chunkIndex, false);
+                return false;
+            }
+
+            // 根据切片状态文件判断所有切片文件是否都已经上传完成
+            final JSONObject sliceUploadStatusJSONObj = this.getSliceUploadStatusJSONObj(artifactFileSliceUploadRootFolderPathStr);
+            // 通过判读上传完成的数量与最大切片块的数量确定是否所有切片文件都已经上传完成
+            allSliceFileUploadCompleted = chunkIndexMax == sliceUploadStatusJSONObj.values().size();
+            if (allSliceFileUploadCompleted) {
+                sliceUploadStatusJSONObj.forEach((index, status) -> {
+                    if (!(Boolean) status) {
+                        throw new BusinessException(String.format("第%s切片文件上传失败，请重新上传", index));
+                    }
+                });
+
+                // 进行合并操作
+                final List<String> sliceFilePathList = IntStream.range(1, chunkIndexMax + 1)
+                        .mapToObj(i -> String.format("%s/chunkFile_%s", artifactFileSliceUploadRootFolderPathStr, i))
+                        .collect(Collectors.toList());
+                final RepositoryPath artifactFilePath = repositoryPathResolver.resolve(storageId, repositoryId, path);
+                final String fileName = FileUtil.getName(artifactFilePath);
+                final String mergeFilePath = String.format("%s/merge/%s", artifactFileSliceUploadRootFolderPathStr, fileName);
+
+                final boolean mergeResult = FileUtils.mergeFiles(mergeFilePath, sliceFilePathList);
+                if (!mergeResult) {
+                    throw new BusinessException("切片上传文件合并失败");
+                }
+                final String uploadArtifactFileMd5 = FileUtils.getMD5(mergeFilePath);
+                // 校验MD5
+                if (!originFileMd5.equals(uploadArtifactFileMd5)) {
+                    throw new BusinessException("切片上传后合并的文件与原文件的MD5不一致");
+                }
+
+                // 转存合并文件到Folib
+                artifactManagementService.store(artifactFilePath, Files.newInputStream(Path.of(mergeFilePath)));
+            }  
+        } catch (Exception e) {
+            log.error("切片上传失败", e);
+            return false;
+        } finally {
+            if (allSliceFileUploadCompleted) {
+                FileUtil.del(artifactFileSliceUploadRootFolderPathStr);
+            }
+        }
+
+        return true;
+    }
+
+    private JSONObject getSliceUploadStatusJSONObj(String artifactFileSliceUploadRootFolderPathStr) {
+        return Optional.ofNullable(FileUtil.readString(artifactFileSliceUploadRootFolderPathStr, StandardCharsets.UTF_8))
+                .filter(StringUtils::isNotBlank)
+                .map(JSON::parseObject)
+                .orElse(new JSONObject());
+    }
+
+    private synchronized void writeSliceUploadStatus(String artifactFileSliceUploadRootFolderPathStr, Integer chunkIndex, Boolean uploadStatus) {
+        final File sliceUploadStatusFile = new File(String.format("%s/sliceUploadStatus.json", artifactFileSliceUploadRootFolderPathStr));
+
+        if (!FileUtil.exist(sliceUploadStatusFile)) {
+            FileUtil.touch(sliceUploadStatusFile);
+        }
+
+        final JSONObject uploadStatusJsonObj = Optional.ofNullable(FileUtil.readString(sliceUploadStatusFile, StandardCharsets.UTF_8))
+                .filter(StringUtils::isNotBlank)
+                .map(JSON::parseObject)
+                .orElse(new JSONObject());
+        uploadStatusJsonObj.put(String.valueOf(chunkIndex), uploadStatus);
+        FileUtil.writeString(uploadStatusJsonObj.toJSONString(), sliceUploadStatusFile, StandardCharsets.UTF_8);
+    }
+
+
 }

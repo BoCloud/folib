@@ -6,11 +6,14 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.*;
+import java.math.BigInteger;
 import java.nio.ByteBuffer;
 import java.nio.MappedByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -309,5 +312,28 @@ public class FileUtils {
         }
 
         return true;
+    }
+
+    public static String getMD5(String filePath) {
+        return getMD5(new File(filePath));
+    }
+    
+    public static String getMD5(File file) {
+        try {
+            final MessageDigest md = MessageDigest.getInstance("MD5");
+            final FileInputStream fis = new FileInputStream(file);
+            final byte[] buffer = new byte[8192];
+            int length;
+            while ((length = fis.read(buffer)) != -1) {
+                md.update(buffer, 0, length);
+            }
+            fis.close();
+            final byte[] digest = md.digest();
+            final BigInteger bigInt = new BigInteger(1, digest);
+            return bigInt.toString(16);
+        } catch (Exception e) {
+            logger.info("获取文件的MD5失败", e);
+            return null;
+        }
     }
 }

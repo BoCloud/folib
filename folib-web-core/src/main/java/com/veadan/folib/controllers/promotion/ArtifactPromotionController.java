@@ -10,8 +10,10 @@ import com.veadan.folib.domain.PromotionNodeOption;
 import com.veadan.folib.dto.ArtifactDto;
 import com.veadan.folib.entity.Dict;
 import com.veadan.folib.model.request.ArtifactSliceDownloadInfoReq;
+import com.veadan.folib.model.request.ArtifactSliceUploadReq;
 import com.veadan.folib.model.request.ArtifactSupportSliceDownloadQueryReq;
 import com.veadan.folib.model.response.ArtifactSliceDownloadInfoRes;
+import com.veadan.folib.model.response.ArtifactSliceUploadInfoRes;
 import com.veadan.folib.services.ArtifactPromotionService;
 import com.veadan.folib.storage.repository.Repository;
 import com.veadan.folib.validation.RequestBodyValidationException;
@@ -26,6 +28,7 @@ import org.springframework.validation.BindingResult;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -206,5 +209,17 @@ public class ArtifactPromotionController extends BaseArtifactController {
     @PermissionCheck(resourceKey = "ARTIFACTS_RESOLVE")
     public ResponseEntity<List<ArtifactSliceDownloadInfoRes>> batchQuerySliceDownloadInfo(@RequestBody List<ArtifactSliceDownloadInfoReq> models) {
         return ResponseEntity.ok(artifactPromotionService.batchQuerySliceDownloadInfo(models));
+    }
+
+    @GetMapping(value = "/slice/upload/info")
+    @PermissionCheck(resourceKey = "ARTIFACTS_RESOLVE")
+    public ResponseEntity<ArtifactSliceUploadInfoRes> querySliceUploadInfo() {
+        return ResponseEntity.ok(artifactPromotionService.querySliceUploadInfo());
+    }
+
+    @PostMapping(value = "/slice/upload")
+    @PermissionCheck(resourceKey = "ARTIFACTS_RESOLVE")
+    public ResponseEntity<Boolean> sliceUpload(@ModelAttribute @Validated ArtifactSliceUploadReq model) {
+        return ResponseEntity.ok(artifactPromotionService.sliceUpload(model));
     }
 }

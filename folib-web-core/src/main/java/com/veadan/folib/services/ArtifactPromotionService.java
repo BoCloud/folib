@@ -6,9 +6,11 @@ import com.veadan.folib.domain.ArtifactPromotion;
 import com.veadan.folib.domain.PromotionNodeOption;
 import com.veadan.folib.dto.ArtifactDto;
 import com.veadan.folib.model.request.ArtifactSliceDownloadInfoReq;
+import com.veadan.folib.model.request.ArtifactSliceUploadReq;
 import com.veadan.folib.model.response.ArtifactSliceDownloadInfoRes;
 import com.veadan.folib.entity.Dict;
 import com.veadan.folib.model.request.ArtifactSupportSliceDownloadQueryReq;
+import com.veadan.folib.model.response.ArtifactSliceUploadInfoRes;
 import com.veadan.folib.storage.repository.Repository;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.multipart.MultipartFile;
@@ -116,4 +118,18 @@ public interface ArtifactPromotionService {
 
     List<ArtifactSliceDownloadInfoRes> batchQuerySliceDownloadInfo(List<ArtifactSliceDownloadInfoReq> models);
 
+    /**
+     * 查询文件切片预信息
+     * @return
+     * @since x.x.x
+     */
+    ArtifactSliceUploadInfoRes querySliceUploadInfo();
+
+    /**
+     * 文件切片上传
+     * @param model
+     * @return
+     * @since x.x.x
+     */
+    Boolean sliceUpload(ArtifactSliceUploadReq model);
 }
