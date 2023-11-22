@@ -32,6 +32,7 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.BufferedInputStream;
 import java.io.ByteArrayInputStream;
 import java.io.File;
+import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -188,9 +189,8 @@ public class CocoapodsArtifactController extends BaseArtifactController
 
         RepositoryPath artifactZipCacheRPath = null;
         final String artifact2TarGzLocalTempPath = String.format("%s/%s.zip", tempPath, UUID.randomUUID());
-        try {
-            artifactZipCacheRPath = artifactResolutionService.resolvePath(storageId, repositoryId, targetUrl, artifactZipCachePath);
-            final BufferedInputStream zipInputStream = new BufferedInputStream(Files.newInputStream(artifactZipCacheRPath));
+        artifactZipCacheRPath = artifactResolutionService.resolvePath(storageId, repositoryId, targetUrl, artifactZipCachePath);
+        try (final BufferedInputStream zipInputStream = new BufferedInputStream(Files.newInputStream(artifactZipCacheRPath))){
             // 转存到本地临时文件
             CompressUtil.zipInputSteam2TarGzFile(zipInputStream, artifact2TarGzLocalTempPath);
 
@@ -201,7 +201,9 @@ public class CocoapodsArtifactController extends BaseArtifactController
             artifactCoordinates.setBaseName(podName);
             repositoryTarGzPath.setArtifact(artifactEntity);
             // 将本地临时TarGz文件转存到Folib
-            artifactManagementService.store(repositoryTarGzPath, Files.newInputStream(Path.of(artifact2TarGzLocalTempPath)));
+            try (InputStream inputStream = Files.newInputStream(Path.of(artifact2TarGzLocalTempPath))) {
+                artifactManagementService.store(repositoryTarGzPath, inputStream);
+            }
             artifactManagementService.validateAndStoreIndex(repositoryTarGzPath);
             
             vulnerabilityBlock(repositoryTarGzPath);

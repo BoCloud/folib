@@ -110,25 +110,28 @@ public class ArtifactEventScannerListener {
             S3Path s3Path = (S3Path) path;
             String key = s3Path.getKey();
             DockerArtifactCoordinates dockerArtifactCoordinates = (DockerArtifactCoordinates) repositoryPath.getArtifactEntry().getArtifactCoordinates();
-            InputStream inputStream = Files.newInputStream(repositoryPath);
             parentPath = tempPath + File.separator + UUID.randomUUID();
             String filePath = parentPath + File.separator + s3Path.getFileName();
-            File tempFile = new File(filePath);
-            FileUtil.writeFromStream(inputStream, tempFile, true);
+            try (InputStream inputStream = Files.newInputStream(repositoryPath)) {
+                File tempFile = new File(filePath);
+                FileUtil.writeFromStream(inputStream, tempFile);
+            }
             //获取图层中的digest列表
             List<String> digestList = getImageManifest(repositoryPath);
             if (CollectionUtils.isNotEmpty(digestList)) {
                 String blobsItemPath = "", tempPath = "", blobs = "blobs";
                 Set<String> filePaths = Sets.newLinkedHashSet();
+                File digestTempFile;
                 for (String digest : digestList) {
                     blobsItemPath = String.format("%s/%s/%s", dockerArtifactCoordinates.getName(), blobs, digest);
                     RepositoryPath blobsRepositoryPath = repositoryPathResolver.resolve(repositoryPath.getStorageId(), repositoryPath.getRepositoryId(), blobsItemPath);
                     filePath = parentPath + File.separator + digest;
-                    tempFile = new File(filePath);
-                    inputStream = Files.newInputStream(blobsRepositoryPath);
-                    FileUtil.writeFromStream(inputStream, tempFile, true);
+                    digestTempFile = new File(filePath);
+                    try (InputStream digestInputStream = Files.newInputStream(blobsRepositoryPath)) {
+                        FileUtil.writeFromStream(digestInputStream, digestTempFile);
+                    }
                     tempPath = parentPath + File.separator + temp;
-                    handlerDockerBlobFile(repositoryPath, filePaths, tempFile.getPath(), tempPath);
+                    handlerDockerBlobFile(repositoryPath, filePaths, digestTempFile.getPath(), tempPath);
                 }
                 handlerScan(repositoryPath, source, filePaths);
             }
@@ -164,7 +167,7 @@ public class ArtifactEventScannerListener {
             Set<String> filePaths = Sets.newLinkedHashSet();
             for (String digest : digestList) {
                 if (filePaths.size() >= maxSize) {
-                   break;
+                    break;
                 }
                 blobsPath = parentFile.getParent() + File.separator + "blobs" + File.separator + digest;
                 handlerDockerBlobFile(repositoryPath, filePaths, blobsPath, tempPath);

@@ -187,13 +187,12 @@ public class ArtifactComponent {
         String artifactContent = "";
         if (repositoryPath.getTarget() instanceof S3Path) {
             String parentPath = "";
-            try {
+            try (InputStream inputStream = Files.newInputStream(repositoryPath)) {
                 S3Path s3Path = (S3Path) repositoryPath.getTarget();
-                InputStream inputStream = Files.newInputStream(repositoryPath);
                 parentPath = tempPath + File.separator + UUID.randomUUID();
                 String filePath = parentPath + File.separator + s3Path.getFileName();
                 File tempFile = new File(filePath);
-                FileUtil.writeFromStream(inputStream, tempFile, true);
+                FileUtil.writeFromStream(inputStream, tempFile);
                 artifactContent = FileUtil.readString(tempFile, StandardCharsets.UTF_8);
             } catch (IOException ex) {
                 throw new IOException(ex);

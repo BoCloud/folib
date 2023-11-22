@@ -110,9 +110,9 @@ public class PathNupkg implements Nupkg
             return result;
         }
         
-        try
+        try (InputStream inputStream = Files.newInputStream(nuspecPath))
         {
-            return Nuspec.parse(Files.newInputStream(nuspecPath));
+            return Nuspec.parse(inputStream);
         }
         catch (IOException e)
         {

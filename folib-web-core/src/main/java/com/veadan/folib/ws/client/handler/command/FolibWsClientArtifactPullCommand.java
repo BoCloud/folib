@@ -207,8 +207,9 @@ public class FolibWsClientArtifactPullCommand implements FolibWsClientCommand<Pr
                         }
 
                         // pull artifact file
-                        artifactManagementService.store(destPath, Files.newInputStream(Path.of(tempPath)));
-
+                        try (InputStream inputStream = Files.newInputStream(Path.of(tempPath))) {
+                            artifactManagementService.store(destPath, inputStream);
+                        }
                         // 删除临时目录
                         FileUtil.del(new File(artifactFileSliceFolderPath));
                     } catch (Exception e) {
@@ -254,7 +255,9 @@ public class FolibWsClientArtifactPullCommand implements FolibWsClientCommand<Pr
                                 }
                                 return true;
                             }
-                            artifactManagementService.store(destPath, Files.newInputStream(Path.of(mergeFilePath)));
+                            try (InputStream inputStream = Files.newInputStream(Path.of(mergeFilePath))) {
+                                artifactManagementService.store(destPath, inputStream);
+                            }
                         } catch (IOException e) {
                             log.error("转存合并制品文件失败", e);
                             throw new BusinessException("转存合并制品文件失败");

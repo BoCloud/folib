@@ -93,15 +93,15 @@ public class CocoapodsLayoutProvider extends AbstractLayoutProvider<CocoapodsArt
             { // 如发现制品信息不全，尝试从制品包里读取数据
                 if (Files.exists(repositoryPath)) 
                 {
-                    final InputStream inputStream = Files.newInputStream(repositoryPath);
-                    final String podspecSourceContent = CocoapodsArtifactUtil.fetchPodspecSourceContentByInputStream(inputStream);
-                    final CocoapodsArtifactUtil.PodSpec podSpec = CocoapodsArtifactUtil.resolvePodSpec(podspecSourceContent);
-                    if (null != podSpec)
-                    {
-                        coordinates.setBaseName(podSpec.getName());
-                        coordinates.setVersion(podSpec.getVersion());
+                    try (final InputStream inputStream = Files.newInputStream(repositoryPath)) {
+                        final String podspecSourceContent = CocoapodsArtifactUtil.fetchPodspecSourceContentByInputStream(inputStream);
+                        final CocoapodsArtifactUtil.PodSpec podSpec = CocoapodsArtifactUtil.resolvePodSpec(podspecSourceContent);
+                        if (null != podSpec)
+                        {
+                            coordinates.setBaseName(podSpec.getName());
+                            coordinates.setVersion(podSpec.getVersion());
+                        }
                     }
-                    
                 }
             }
         }
