@@ -77,13 +77,10 @@ import javax.ws.rs.client.Invocation;
 import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.Response;
 import java.io.*;
-import java.math.BigInteger;
 import java.net.Socket;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.FutureTask;
@@ -263,7 +260,7 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
     }
 
     @Override
-    public ResponseEntity nodeOption(PromotionNodeOption promotionNodeOption, HttpServletRequest request) {
+    public ResponseEntity<String> nodeOption(PromotionNodeOption promotionNodeOption, HttpServletRequest request) {
         try {
             String sourcePath = UriUtils.decode(StringUtils.removeEnd(promotionNodeOption.getSourcePath(), "/"));
             String targetPath = UriUtils.decode(StringUtils.removeEnd(promotionNodeOption.getTargetPath(), "/"));
@@ -321,7 +318,7 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
                 final FolibWsServerRunManage.FolibWsClientRun wsClientRun = FolibWsServerRunManage.getWsClientRun(nodeName);
                 if (null == wsClientRun) {
                     if (sourcePath.contains(requestURL)) {
-                        //检查如果可以直接连接访问到目标节点，则将模式转换为push模式，兼容源头和请求一致时未找到或者未设置ws节点的情况
+                        // 检查如果可以直接连接访问到目标节点，则将模式转换为push模式，兼容源头和请求一致时未找到或者未设置ws节点的情况
                         try (final Socket socket = new Socket(targetHost, targetPort);) {
                             socket.setSoTimeout(200);
                             promotionNodeOption.setSyncModel(ArtifactSyncRecordSyncModelEnum.PUSH.getVal());
@@ -330,17 +327,20 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
                             throw new BusinessException("需要晋级的节点不可用，请检查节点是否配置正确");
                         }
                     } else if (targetPath.contains(requestURL)) {
-                        //兼容请求和目标一致时，未注册自身ws节点的情况
+                        // 兼容请求和目标一致时，未注册自身ws节点的情况
                         wsClientArtifactPullCommand.execute(promotionNodeOption);
                         return ResponseEntity.ok("ok");
                     } else {
                         throw new BusinessException(String.format("客户端 host [%s] port [%s] 未连接，发送命令失败", targetHost, targetPort));
                     }
                 }
+                
                 final FolibWsAction folibWsAction = new FolibWsAction()
                         .command(FolibWsClientArtifactPullCommand.COMMAND)
                         .payload(promotionNodeOption);
                 wsClientRun.doAction(folibWsAction);
+                // 表示通过拉取
+                return ResponseEntity.ok(FolibWsClientArtifactPullCommand.COMMAND);
             }
         } catch (Exception e) {
             log.error("制品晋级错误 {}", ExceptionUtils.getStackTrace(e));
@@ -357,9 +357,11 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
         final String syncNo = String.format("SyncNo-%s", UUID.fastUUID());
         final SpringSecurityUser userDetails = (SpringSecurityUser) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         final String userName = Optional.ofNullable(userDetails).map(SpringSecurityUser::getUsername).orElse(null);
-
+        final String requestHostName = request.getServerName();
+        
         // 生成日志记录
         final ArtifactSyncRecord artifactSyncRecord = new ArtifactSyncRecord();
+        artifactSyncRecord.setRequestHostName(requestHostName);
         artifactSyncRecord.setSourcePath(promotionNodeOption.getSourcePath());
         artifactSyncRecord.setTargetPath(promotionNodeOption.getTargetPath());
         artifactSyncRecord.setSyncNo(syncNo);
@@ -374,20 +376,26 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
         try {
             asyncThreadPoolTaskExecutor.execute(() ->
             { // 异步执行制品晋级
-                ResponseEntity re = this.nodeOption(promotionNodeOption, request);
-                if (HttpStatus.OK.equals(re.getStatusCode())) {
-                    artifactSyncRecord.setStatus(ArtifactSyncRecordStatusEnum.SUCCESS.getVal());
+                final ResponseEntity<String> re = this.nodeOption(promotionNodeOption, request);
+                
+                if (FolibWsClientArtifactPullCommand.COMMAND.equals(re.getBody())) {
+                    /** 异步使用回调更新状态等信息 {@linkplain ArtifactPromotionServiceImpl#nodeOptionCallback(ArtifactPromotionNodeOptionCallbackReq)} */
                 } else {
-                    artifactSyncRecord.setStatus(ArtifactSyncRecordStatusEnum.FAILED.getVal());
-                    if (Objects.nonNull(re.getBody())) {
-                        artifactSyncRecord.setFailedReason(re.getBody().toString());
+                    // 更新同步的逻辑状态等信息
+                    if (HttpStatus.OK.equals(re.getStatusCode())) {
+                        artifactSyncRecord.setStatus(ArtifactSyncRecordStatusEnum.SUCCESS.getVal());
+                    } else {
+                        artifactSyncRecord.setStatus(ArtifactSyncRecordStatusEnum.FAILED.getVal());
+                        if (Objects.nonNull(re.getBody())) {
+                            artifactSyncRecord.setFailedReason(re.getBody().toString());
+                        }
                     }
-                }
 
-                // 更新日志结束开始时间
-                artifactSyncRecordMapper.updateByPrimaryKey(artifactSyncRecord
-                        .setUpdateTime(new Date())
-                        .setUpdateBy(userName));
+                    // 更新日志结束开始时间
+                    artifactSyncRecordMapper.updateByPrimaryKey(artifactSyncRecord
+                            .setUpdateTime(new Date())
+                            .setUpdateBy(userName));
+                }
             });
         } catch (Exception e) {
             artifactSyncRecord.setStatus(ArtifactSyncRecordStatusEnum.FAILED.getVal());
@@ -407,7 +415,16 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
         final String syncNo = model.getSyncNo();
         final Integer status = model.getStatus();
         final String failedReason = model.getFailedReason();
-        artifactSyncRecordMapper.updateStatusAndFailedReasonBySyncNo(status, failedReason, syncNo);
+        artifactSyncRecordMapper.updateByExample(new ArtifactSyncRecord().setSyncNo(syncNo), 
+                new ArtifactSyncRecord()
+                        .setStatus(status)
+                        .setFailedReason(failedReason)
+///                        .setUpdateBy(null)
+                        .setUpdateTime(new Date()));
+                
+        // 删除临时生成的切片文件
+        
+        
         return true;
     }
 

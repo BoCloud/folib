@@ -43,6 +43,13 @@ public class ArtifactSyncRecord implements Serializable {
     private Long id;
 
     /**
+     * 请求主机名称
+     */
+    @ApiModelProperty("请求主机名称")
+    @Column(name = "request_host_name")
+    private String requestHostName;
+    
+    /**
      * 源制品路径
      */
     @ApiModelProperty("源制品路径")

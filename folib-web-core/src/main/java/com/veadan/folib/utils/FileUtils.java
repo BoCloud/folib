@@ -1,7 +1,9 @@
 package com.veadan.folib.utils;
 
+import cn.hutool.core.io.FileUtil;
 import cn.hutool.extra.spring.SpringUtil;
-import org.opencypher.v9_0.expressions.functions.E;
+import com.veadan.folib.scanner.common.exception.BusinessException;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -13,10 +15,10 @@ import java.nio.channels.FileChannel;
 import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 
 /**
  * @ProjectName: folib-server
@@ -336,4 +338,51 @@ public class FileUtils {
             return null;
         }
     }
+
+
+    public static boolean lockFileStatus(String filePath) {
+        return lockFileNumber(filePath) > 0;
+    }
+    
+    public synchronized static Integer lockFile(String filePath) {
+        final File folderLockFile = getLockFile(filePath);
+        if (!FileUtil.exist(folderLockFile)) {
+            FileUtil.writeUtf8String(String.valueOf(0), folderLockFile);
+        }
+
+        Integer lockNumber = Optional.ofNullable(FileUtil.readUtf8String(folderLockFile)).map(Integer::parseInt).orElse(0);
+        FileUtil.writeUtf8String(String.valueOf(++lockNumber), folderLockFile);
+
+        return lockNumber;
+    }
+
+    public synchronized static Integer unlockFile(String filePath) {
+        final File folderLockFile = getLockFile(filePath);
+        Integer lockNumber = lockFileNumber(filePath);
+        if (lockNumber > 0) {
+            FileUtil.writeUtf8String(String.valueOf(--lockNumber), folderLockFile);
+        }
+        
+        return lockNumber; 
+    }
+
+    public static Integer lockFileNumber(String filePath) {
+        final File folderLockFile = getLockFile(filePath);
+        return Optional.ofNullable(FileUtil.readUtf8String(folderLockFile)).map(Integer::parseInt).orElse(0);
+    }
+    
+    private static File getLockFile(String filePath) {
+        final File file = new File(filePath);
+        
+        if (!FileUtil.exist(file)) {
+            throw new BusinessException("获取文件锁的文件或文件夹不存在");
+        }
+
+        if (FileUtil.isFile(file)) {
+            return new File(String.format("%s.lock", filePath));
+        } else {
+            return new File(String.format("%s/folder.lock", StringUtils.chomp(filePath, "/")));
+        }
+    }
+
 }

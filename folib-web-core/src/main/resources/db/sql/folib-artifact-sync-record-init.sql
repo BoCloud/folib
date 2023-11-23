@@ -2,6 +2,7 @@ DROP TABLE IF EXISTS `artifact_sync_record`;
 
 CREATE TABLE `artifact_sync_record` (
   `id` bigint(20) NOT NULL AUTO_INCREMENT COMMENT '主键ID',
+  `request_host_name` varchar(255) default '' null comment '请求主机名称',
   `source_path` text COMMENT '源制品路径',
   `target_path` text COMMENT '目标制品路径',
   `sync_no` varchar(64) DEFAULT '' COMMENT '制品同步编号',

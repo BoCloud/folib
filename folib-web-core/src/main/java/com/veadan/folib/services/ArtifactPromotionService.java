@@ -32,7 +32,7 @@ public interface ArtifactPromotionService {
 
     ResponseEntity move(ArtifactPromotion artifactPromotion);
 
-    ResponseEntity nodeOption(PromotionNodeOption promotionNodeOption, HttpServletRequest request);
+    ResponseEntity<String> nodeOption(PromotionNodeOption promotionNodeOption, HttpServletRequest request);
     
     ResponseEntity nodeOptionAttachRecord(PromotionNodeOption promotionNodeOption, HttpServletRequest request);
 
