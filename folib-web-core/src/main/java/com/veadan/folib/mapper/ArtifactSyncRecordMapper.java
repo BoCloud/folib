@@ -2,6 +2,9 @@ package com.veadan.folib.mapper;
 
 import com.veadan.folib.entity.ArtifactSyncRecord;
 import com.veadan.folib.scanner.common.base.CommonMapper;
+import org.apache.ibatis.annotations.Param;
+import org.apache.ibatis.annotations.Select;
+import org.apache.ibatis.annotations.Update;
 import org.springframework.stereotype.Component;
 
 /**
@@ -13,5 +16,5 @@ import org.springframework.stereotype.Component;
  */
 @Component
 public interface ArtifactSyncRecordMapper extends CommonMapper<ArtifactSyncRecord>{
-
+    boolean updateStatusAndFailedReasonBySyncNo(@Param("status") Integer status, @Param("failedReason") String failedReason, @Param("syncNo") String syncNo);
 }

@@ -17,9 +17,11 @@ import com.veadan.folib.domain.*;
 import com.veadan.folib.dto.*;
 import com.veadan.folib.entity.ArtifactSyncRecord;
 import com.veadan.folib.entity.Dict;
+import com.veadan.folib.enums.ArtifactSyncRecordOpsTypeEnum;
 import com.veadan.folib.enums.ArtifactSyncRecordStatusEnum;
 import com.veadan.folib.enums.ArtifactSyncRecordSyncModelEnum;
 import com.veadan.folib.mapper.ArtifactSyncRecordMapper;
+import com.veadan.folib.model.request.ArtifactPromotionNodeOptionCallbackReq;
 import com.veadan.folib.model.request.ArtifactSliceDownloadInfoReq;
 import com.veadan.folib.model.request.ArtifactSliceUploadReq;
 import com.veadan.folib.model.request.ArtifactSupportSliceDownloadQueryReq;
@@ -361,12 +363,13 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
         artifactSyncRecord.setSourcePath(promotionNodeOption.getSourcePath());
         artifactSyncRecord.setTargetPath(promotionNodeOption.getTargetPath());
         artifactSyncRecord.setSyncNo(syncNo);
-        artifactSyncRecord.setOpsType(1);
+        artifactSyncRecord.setOpsType(ArtifactSyncRecordOpsTypeEnum.PROMOTION.getVal());
         artifactSyncRecord.setSyncModel(promotionNodeOption.getSyncModel());
         artifactSyncRecord.setStatus(ArtifactSyncRecordStatusEnum.IN_SYNC.getVal());
         artifactSyncRecord.setCreateBy(userName);
         artifactSyncRecord.setCreateTime(new Date());
         artifactSyncRecordMapper.insert(artifactSyncRecord);
+        promotionNodeOption.setSyncNo(syncNo);
 
         try {
             asyncThreadPoolTaskExecutor.execute(() ->
@@ -397,6 +400,15 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
         }
 
         return ResponseEntity.ok(syncNo);
+    }
+
+    @Override
+    public Boolean nodeOptionCallback(ArtifactPromotionNodeOptionCallbackReq model) {
+        final String syncNo = model.getSyncNo();
+        final Integer status = model.getStatus();
+        final String failedReason = model.getFailedReason();
+        artifactSyncRecordMapper.updateStatusAndFailedReasonBySyncNo(status, failedReason, syncNo);
+        return true;
     }
 
     @Override

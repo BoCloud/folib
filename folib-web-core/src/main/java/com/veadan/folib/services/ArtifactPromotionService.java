@@ -5,6 +5,7 @@ import com.veadan.folib.domain.ArtifactParse;
 import com.veadan.folib.domain.ArtifactPromotion;
 import com.veadan.folib.domain.PromotionNodeOption;
 import com.veadan.folib.dto.ArtifactDto;
+import com.veadan.folib.model.request.ArtifactPromotionNodeOptionCallbackReq;
 import com.veadan.folib.model.request.ArtifactSliceDownloadInfoReq;
 import com.veadan.folib.model.request.ArtifactSliceUploadReq;
 import com.veadan.folib.model.response.ArtifactSliceDownloadInfoRes;
@@ -34,6 +35,8 @@ public interface ArtifactPromotionService {
     ResponseEntity nodeOption(PromotionNodeOption promotionNodeOption, HttpServletRequest request);
     
     ResponseEntity nodeOptionAttachRecord(PromotionNodeOption promotionNodeOption, HttpServletRequest request);
+
+    Boolean nodeOptionCallback(ArtifactPromotionNodeOptionCallbackReq model);
 
     ResponseEntity artifactPromotionInfo(String syncNo);
 
@@ -132,4 +135,5 @@ public interface ArtifactPromotionService {
      * @since x.x.x
      */
     Boolean sliceUpload(ArtifactSliceUploadReq model);
+
 }

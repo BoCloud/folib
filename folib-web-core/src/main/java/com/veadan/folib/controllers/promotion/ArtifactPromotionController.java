@@ -9,6 +9,7 @@ import com.veadan.folib.domain.ArtifactPromotion;
 import com.veadan.folib.domain.PromotionNodeOption;
 import com.veadan.folib.dto.ArtifactDto;
 import com.veadan.folib.entity.Dict;
+import com.veadan.folib.model.request.ArtifactPromotionNodeOptionCallbackReq;
 import com.veadan.folib.model.request.ArtifactSliceDownloadInfoReq;
 import com.veadan.folib.model.request.ArtifactSliceUploadReq;
 import com.veadan.folib.model.request.ArtifactSupportSliceDownloadQueryReq;
@@ -88,6 +89,12 @@ public class ArtifactPromotionController extends BaseArtifactController {
         return artifactPromotionService.nodeOptionAttachRecord(promotionNodeOption, request);
     }
 
+
+///    @PostMapping("/nodeOptionCallback")
+///    @PermissionCheck(resourceKey = "ARTIFACTS_PROMOTION")
+///    public ResponseEntity<Boolean> nodeOptionCallback(@RequestBody @Validated ArtifactPromotionNodeOptionCallbackReq model) {
+///        return ResponseEntity.ok(artifactPromotionService.nodeOptionCallback(model));
+///    }
     
     @GetMapping("/info/{syncNo}")
     @PermissionCheck(resourceKey = "ARTIFACTS_PROMOTION")

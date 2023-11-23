@@ -14,6 +14,8 @@ import com.veadan.folib.components.security.SecurityComponent;
 import com.veadan.folib.domain.PromotionFileRelativePath;
 import com.veadan.folib.domain.PromotionNodeOption;
 import com.veadan.folib.dto.ArtifactDto;
+import com.veadan.folib.enums.ArtifactSyncRecordStatusEnum;
+import com.veadan.folib.model.request.ArtifactPromotionNodeOptionCallbackReq;
 import com.veadan.folib.model.request.ArtifactSliceDownloadInfoReq;
 import com.veadan.folib.model.response.ArtifactSliceDownloadInfoRes;
 import com.veadan.folib.model.response.ArtifactSliceDownloadInfoRes.DownloadPartInfo;
@@ -31,6 +33,11 @@ import com.veadan.folib.services.ArtifactResolutionService;
 import com.veadan.folib.services.ConfigurationManagementService;
 import com.veadan.folib.utils.FileUtils;
 import com.veadan.folib.utils.UrlUtils;
+import com.veadan.folib.ws.common.FolibWsAction;
+import com.veadan.folib.ws.common.FolibWsSessionContextHolder;
+import com.veadan.folib.ws.server.context.FolibWsServerContextInfo;
+import com.veadan.folib.ws.server.handler.command.FolibWsServerArtifactPullCallbackCommand;
+import com.veadan.folib.ws.server.manage.FolibWsServerRunManage;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.experimental.Accessors;
@@ -267,16 +274,31 @@ public class FolibWsClientArtifactPullCommand implements FolibWsClientCommand<Pr
                 return true;
             });
             if (!result) {
-                log.info("制品拉取失败");
+                throw new BusinessException("制品拉取失败");
             }
-
+            
+            this.resultCallback(ArtifactSyncRecordStatusEnum.SUCCESS.getVal(), null, promotionNodeOption.getSyncNo());
         } catch (Exception e) {
             log.error("拉取制品失败", e);
+            this.resultCallback(ArtifactSyncRecordStatusEnum.FAILED.getVal(), e.getMessage(), promotionNodeOption.getSyncNo());
         } finally {
             if (Objects.nonNull(response)) {
                 response.close();
             }
         }
+    }
+    
+    private void resultCallback(Integer status, String failedReason, String syncNo) {
+        final FolibWsServerContextInfo contextSessionInfo = FolibWsSessionContextHolder.getContextSessionInfo(FolibWsServerContextInfo.class);
+        final FolibWsServerRunManage.FolibWsClientRun wsRunInfo = contextSessionInfo.getWsRunInfo();
+        wsRunInfo.doAction(new FolibWsAction()
+                .command(FolibWsServerArtifactPullCallbackCommand.COMMAND)
+                .payload(new ArtifactPromotionNodeOptionCallbackReq()
+                        .setStatus(status)
+                        .setFailedReason(failedReason)
+                        .setSyncNo(syncNo)
+                )
+        );
     }
 
 //    private void download(PromotionNodeOption promotionNodeOption) throws Exception {
