@@ -5,6 +5,8 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 
+import java.util.Objects;
+import java.util.concurrent.RejectedExecutionHandler;
 import java.util.concurrent.ThreadPoolExecutor;
 
 @Configuration
@@ -153,7 +155,8 @@ public class AsyncPoolConfig {
                 asyncScanQueueCapacity,
                 asyncScanKeepAliveSeconds,
                 asyncScanThreadNamePrefix,
-                asyncScanAwaitTerminationSeconds);
+                asyncScanAwaitTerminationSeconds,
+                new ThreadPoolExecutor.DiscardPolicy());
     }
 
     @Bean
@@ -179,6 +182,22 @@ public class AsyncPoolConfig {
      * @return ThreadPoolTaskExecutor
      */
     private ThreadPoolTaskExecutor buildThreadPoolTaskExecutor(Integer corePoolSize, Integer maxPoolSize, Integer queueCapacity, Integer keepAliveSeconds, String threadNamePrefix, Integer awaitTerminationSeconds) {
+        return buildThreadPoolTaskExecutor(corePoolSize, maxPoolSize, queueCapacity, keepAliveSeconds, threadNamePrefix, awaitTerminationSeconds, null);
+    }
+
+    /**
+     * build ThreadPoolTaskExecutor
+     *
+     * @param corePoolSize             corePoolSize
+     * @param maxPoolSize              maxPoolSize
+     * @param queueCapacity            queueCapacity
+     * @param keepAliveSeconds         keepAliveSeconds
+     * @param threadNamePrefix         threadNamePrefix
+     * @param awaitTerminationSeconds  awaitTerminationSeconds
+     * @param rejectedExecutionHandler rejectedExecutionHandler
+     * @return ThreadPoolTaskExecutor
+     */
+    private ThreadPoolTaskExecutor buildThreadPoolTaskExecutor(Integer corePoolSize, Integer maxPoolSize, Integer queueCapacity, Integer keepAliveSeconds, String threadNamePrefix, Integer awaitTerminationSeconds, RejectedExecutionHandler rejectedExecutionHandler) {
         ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
         executor.setCorePoolSize(corePoolSize);
         executor.setMaxPoolSize(maxPoolSize);
@@ -187,7 +206,10 @@ public class AsyncPoolConfig {
         executor.setThreadNamePrefix(threadNamePrefix);
         executor.setWaitForTasksToCompleteOnShutdown(true);
         executor.setAwaitTerminationSeconds(awaitTerminationSeconds);
-        executor.setRejectedExecutionHandler(new ThreadPoolExecutor.CallerRunsPolicy());
+        if (Objects.isNull(rejectedExecutionHandler)) {
+            rejectedExecutionHandler = new ThreadPoolExecutor.CallerRunsPolicy();
+        }
+        executor.setRejectedExecutionHandler(rejectedExecutionHandler);
         executor.initialize();
         return executor;
     }

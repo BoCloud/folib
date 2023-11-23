@@ -179,4 +179,14 @@ public interface ArtifactWebService {
      * @return 制品分页列表
      */
     TableResultResponse<ArtifactInfo> thirdPartyPage(ArtifactQuery artifactQuery);
+
+    /**
+     * 清理仓库-快速
+     *
+     * @param storageId    存储空间
+     * @param repositoryId 仓库
+     * @param deleteFile   true 删除文件 其他不删除
+     * @param limit        批处理数量
+     */
+    void cleanupRepository(String storageId, String repositoryId, Boolean deleteFile, Integer limit);
 }

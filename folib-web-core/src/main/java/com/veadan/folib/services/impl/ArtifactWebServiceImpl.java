@@ -96,7 +96,8 @@ import javax.servlet.http.HttpServletResponse;
 import javax.transaction.Transactional;
 import java.io.*;
 import java.net.URI;
-import java.nio.file.Files;
+import java.nio.file.*;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
 import java.time.LocalDateTime;
@@ -104,6 +105,7 @@ import java.time.ZoneId;
 import java.util.*;
 import java.util.concurrent.FutureTask;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @Slf4j
 @Service
@@ -788,6 +790,78 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
             tableResultResponse = new TableResultResponse<ArtifactInfo>(artifactPage.getTotalElements(), artifactInfoList);
         }
         return tableResultResponse;
+    }
+
+    @Override
+    public void cleanupRepository(String storageId, String repositoryId, Boolean deleteFile, Integer limit) {
+        if (Boolean.TRUE.equals(deleteFile)) {
+            RepositoryPath repositoryPath = repositoryPathResolver.resolve(storageId, repositoryId);
+            dropFiles(repositoryPath);
+        }
+        dropArtifact(storageId, repositoryId, limit);
+    }
+
+    /**
+     * 清空仓库
+     *
+     * @param repositoryPath 仓库路径
+     */
+    private void dropFiles(RepositoryPath repositoryPath) {
+        try {
+            RootRepositoryPath root = repositoryPath.getFileSystem().getRootDirectory();
+            Files.walkFileTree(repositoryPath, new SimpleFileVisitor<Path>() {
+                @Override
+                public FileVisitResult visitFile(Path file,
+                                                 BasicFileAttributes attrs)
+                        throws IOException {
+                    Files.delete(file);
+                    return FileVisitResult.CONTINUE;
+                }
+
+                @Override
+                public FileVisitResult postVisitDirectory(Path dir,
+                                                          IOException exc)
+                        throws IOException {
+                    if (root.equals(dir)) {
+                        return FileVisitResult.CONTINUE;
+                    }
+                    try {
+                        Files.delete(dir);
+                    } catch (DirectoryNotEmptyException e) {
+                        try (Stream<Path> pathStream = Files.list(dir)) {
+                            String message = pathStream
+                                    .map(p -> p.getFileName().toString())
+                                    .reduce((p1,
+                                             p2) -> String.format("%s%n%s", p1, p2))
+                                    .get();
+                            throw new IOException(message, e);
+                        }
+                    }
+                    return FileVisitResult.CONTINUE;
+                }
+            });
+        } catch (Exception ex) {
+            log.error(ExceptionUtils.getStackTrace(ex));
+        }
+    }
+
+    /**
+     * 清空db
+     *
+     * @param storageId    存储空间
+     * @param repositoryId 仓库
+     * @param limit        批处理数量
+     */
+    private void dropArtifact(String storageId, String repositoryId, Integer limit) {
+        Long count = artifactRepository.artifactsCount(storageId, repositoryId);
+        log.info("DropArtifact storageId [{}] repositoryId [{}] count [{}] limit [{}]", storageId, repositoryId, count, limit);
+        long deleteCount = Long.parseLong("0");
+        while (count > 0) {
+            artifactRepository.dropArtifacts(storageId, repositoryId, limit);
+            count = artifactRepository.artifactsCount(storageId, repositoryId);
+            deleteCount = deleteCount + 1;
+            log.info("DropArtifact storageId [{}] repositoryId [{}] count [{}] limit [{}] deleteCount [{}]", storageId, repositoryId, count, limit, deleteCount);
+        }
     }
 
     private String getDownload(String baseUrl, String storageId, String repositoryId, String layout, RepositoryPath repositoryPath, Artifact artifact) {

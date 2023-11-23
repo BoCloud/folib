@@ -1,6 +1,7 @@
 package com.veadan.folib.controllers;
 
 import com.alibaba.fastjson.JSON;
+import com.google.common.collect.Lists;
 import com.veadan.folib.components.syncartifact.SyncArtifactProvider;
 import com.veadan.folib.components.syncartifact.SyncArtifactProviderRegistry;
 import com.veadan.folib.config.PermissionCheck;
@@ -215,4 +216,24 @@ public class ArtifactController extends BaseController {
     public TableResultResponse<ArtifactInfo> thirdPartyPage(ArtifactQuery artifactQuery) {
         return artifactWebService.thirdPartyPage(artifactQuery);
     }
+
+    @PostMapping(value = "/cleanupRepository/{storageId}/{repositoryId}")
+    @PreAuthorize("hasAuthority('ADMIN')")
+    @ResponseBody
+    public ResponseEntity<String> cleanupRepository(@PathVariable(name = "storageId") String storageId,
+                                                    @PathVariable(name = "repositoryId") String repositoryId,
+                                                    @RequestParam(name = "deleteFile", required = false) Boolean deleteFile,
+                                                    @RequestParam(name = "limit", required = false) Integer limit, @RequestHeader(HttpHeaders.ACCEPT) String accept) {
+        Storage storage = configurationManager.getConfiguration().getStorage(storageId);
+        if (Objects.isNull(storage)) {
+            return getFailedResponseEntity(HttpStatus.NOT_FOUND, STORAGE_NOT_FOUND, accept);
+        }
+        Repository repository = configurationManager.getRepository(storageId, repositoryId);
+        if (Objects.isNull(repository)) {
+            return getFailedResponseEntity(HttpStatus.NOT_FOUND, REPOSITORY_NOT_FOUND, accept);
+        }
+        artifactWebService.cleanupRepository(storageId, repositoryId, deleteFile, limit);
+        return ResponseEntity.ok("success");
+    }
+
 }
