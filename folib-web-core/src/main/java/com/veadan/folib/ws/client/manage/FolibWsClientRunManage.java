@@ -34,19 +34,19 @@ import java.util.concurrent.TimeUnit;
 public class FolibWsClientRunManage extends FolibWsRunManage {
     private static final Map<String, FolibWsServerRun> FOLIB_WS_RUN_MAP = new ConcurrentHashMap<>();
     public static final JettyWebSocketClient WEB_SOCKET_CLIENT = new JettyWebSocketClient();
-    
+
     static {
         WEB_SOCKET_CLIENT.start();
     }
 
     public static Collection<FolibWsServerRun> getAllRun() {
         return FOLIB_WS_RUN_MAP.values();
-    } 
-    
+    }
+
     public static boolean up(String nodeName, String host, Integer port, String uri, boolean forceUp) {
         return up(nodeName, host, port, uri, forceUp, false);
     }
-    
+
     public static boolean up(String nodeName, String host, Integer port, String uri, boolean forceUp, boolean enableSSL) {
         try {
             FolibWsServerRun folibWsServerRun = FOLIB_WS_RUN_MAP.get(nodeName);
@@ -58,12 +58,12 @@ public class FolibWsClientRunManage extends FolibWsRunManage {
                     return false;
                 }
             }
-            
+
 //            final StandardWebSocketClient socketClient = new StandardWebSocketClient();
             if (null == folibWsServerRun) {
                 folibWsServerRun = new FolibWsServerRun();
             }
-            
+
             folibWsServerRun.setNodeName(nodeName);
             folibWsServerRun.setHost(host);
             folibWsServerRun.setPort(port);
@@ -78,7 +78,7 @@ public class FolibWsClientRunManage extends FolibWsRunManage {
             folibWsServerRun.setOnlineTime(LocalDateTime.now());
             webSocketSession.sendMessage(new PingMessage());
 //            FOLIB_WS_RUN_MAP.put(nodeName, folibWsServerRun);
-            
+
             return true;
         } catch (Exception e) {
 //            log.error("【FolibWs服务端运行管理器-启动】连接到节点（{}:{}）失败", host, port, e);
@@ -101,7 +101,7 @@ public class FolibWsClientRunManage extends FolibWsRunManage {
         } else {
             log.error("【FolibWs服务端运行管理器-停止】，未发现关闭存在的连接会话，进行下线操作失败");
         }
-        
+
         return true;
     }
 
@@ -128,7 +128,7 @@ public class FolibWsClientRunManage extends FolibWsRunManage {
     public static FolibWsServerRun getWsServerRun(String nodeName) {
         return FOLIB_WS_RUN_MAP.get(nodeName);
     }
-    
+
     public static FolibWsServerRun findRunBySession(WebSocketSession session) {
         return FOLIB_WS_RUN_MAP.values()
                 .stream()
@@ -136,8 +136,8 @@ public class FolibWsClientRunManage extends FolibWsRunManage {
                 .findFirst()
                 .orElse(null);
     }
-    
-    
+
+
     /**
      * @author xiaodong.wang
      * @email wangxiaodong@beyondcent.com
@@ -155,7 +155,7 @@ public class FolibWsClientRunManage extends FolibWsRunManage {
         @ApiModelProperty(value = "主机地址")
         private String host;
         @ApiModelProperty(value = "端口")
-        private Integer port; 
+        private Integer port;
         @ApiModelProperty(value = "uri")
         private String uri;
         @ApiModelProperty(value = "强制启动")
@@ -166,13 +166,25 @@ public class FolibWsClientRunManage extends FolibWsRunManage {
         private WebSocketSession session;
         @ApiModelProperty(value = "上线时间")
         private LocalDateTime onlineTime;
-        
+
         public String getWsUrl() {
-            return String.format("ws%s://%s:%s%s", (this.enableSSL ? "s": StrUtil.EMPTY), this.host, this.port, this.uri);
+            return String.format("ws%s://%s:%s%s", (this.enableSSL ? "s" : StrUtil.EMPTY), this.host, this.port, this.uri);
         }
-        
+
         public boolean getSessionStatus() {
             return null != this.session && this.session.isOpen();
+        }
+
+        public boolean ping() {
+            try {
+                if (this.getSessionStatus()) {
+                    this.session.sendMessage(new PingMessage());
+                    return true;
+                }
+                return false;
+            } catch (Exception e) {
+                return false;
+            }
         }
 
         public boolean doAction(FolibWsAction folibWsAction) {
@@ -192,7 +204,7 @@ public class FolibWsClientRunManage extends FolibWsRunManage {
                 return false;
             }
         }
-        
+
         public <T> T doSyncAction(FolibWsAction folibWsAction, Class<T> responseClass) {
             final String syncId = folibWsAction.sync().getSyncId();
             try {
@@ -202,7 +214,7 @@ public class FolibWsClientRunManage extends FolibWsRunManage {
                 if (!this.session.isOpen()) {
                     throw new BusinessException("发起请求失败，Ws会话已经关闭");
                 }
-                
+
                 actionLock(syncId);
                 // 发起请求
                 this.session.sendMessage(new TextMessage(folibWsAction.encode()));
