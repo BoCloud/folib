@@ -415,15 +415,14 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
         final String syncNo = model.getSyncNo();
         final Integer status = model.getStatus();
         final String failedReason = model.getFailedReason();
-        artifactSyncRecordMapper.updateByExample(new ArtifactSyncRecord().setSyncNo(syncNo), 
-                new ArtifactSyncRecord()
-                        .setStatus(status)
-                        .setFailedReason(failedReason)
-///                        .setUpdateBy(null)
-                        .setUpdateTime(new Date()));
-                
-        // 删除临时生成的切片文件
-        
+        if (StringUtils.isNotBlank(syncNo)) {
+            artifactSyncRecordMapper.updateByExample(new ArtifactSyncRecord().setSyncNo(syncNo), 
+                    new ArtifactSyncRecord()
+                            .setStatus(status)
+                            .setFailedReason(failedReason)
+    ///                        .setUpdateBy(null)
+                            .setUpdateTime(new Date()));
+        }
         
         return true;
     }

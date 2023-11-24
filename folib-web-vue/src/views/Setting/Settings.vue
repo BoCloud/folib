@@ -1338,7 +1338,8 @@
 
                   <div slot="operation"
                       slot-scope="text, record">
-                    <div class="col-action" v-if="!record.autoRegister">
+<!--                    <div class="col-action" v-if="!record.autoRegister">-->
+                    <div class="col-action">
                       <a-popconfirm title="确定要删除吗？"
                                     okType="danger"
                                     ok-text="确定"
