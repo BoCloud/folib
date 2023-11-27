@@ -297,6 +297,11 @@ public class FileUtils {
      * @since x.x.x
      */
     public static boolean mergeFiles(String targetFilePath, List<String> sourceFilePaths)  {
+        final File targetFile = new File(targetFilePath);
+        if (!FileUtil.exist(targetFile)) {
+            FileUtil.touch(targetFile);
+        }
+        
         try (BufferedOutputStream outputStream = new BufferedOutputStream(Files.newOutputStream(Paths.get(targetFilePath)))) {
             for (String sourceFilePath : sourceFilePaths) {
                 try (BufferedInputStream inputStream = new BufferedInputStream(Files.newInputStream(Paths.get(sourceFilePath)))) {

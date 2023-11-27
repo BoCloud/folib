@@ -1071,35 +1071,36 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
         final String path = model.getPath();
         final MultipartFile file = model.getFile();
         final String mergeId = model.getMergeId();
-        final Integer chunkIndex = model.getChunkIndex();
-        final Integer chunkIndexMax = model.getChunkIndexMax();
+        final Integer chunkNo = model.getChunkIndex();
+        final Integer chunkNoMax = model.getChunkIndexMax();
         final String originFileMd5 = model.getOriginFileMd5();
 
         // 临时存储目录
         final String artifactFileSliceUploadRootFolderPathStr = String.format("%s/artifactSliceUpload/%s/%s/%s", StringUtils.chomp(tempPath, "/"), storageId, repositoryId, mergeId);
-        final String artifactFileSliceUploadFilePathStr = String.format("%s/chunkFile_%s", artifactFileSliceUploadRootFolderPathStr, chunkIndex);
+        final String artifactFileSliceUploadFilePathStr = String.format("%s/chunkFile_%s", artifactFileSliceUploadRootFolderPathStr, chunkNo);
+        final File artifactFileSliceUploadFile = new File(artifactFileSliceUploadFilePathStr);
         boolean allSliceFileUploadCompleted = false;
 
         try {
-            if (!FileUtil.exist(new File(artifactFileSliceUploadFilePathStr))) {
-                FileUtil.touch(artifactFileSliceUploadFilePathStr);
+            if (!FileUtil.exist(artifactFileSliceUploadFile)) {
+                FileUtil.touch(artifactFileSliceUploadFile);
             }
             try (final InputStream inputStream = file.getInputStream();
                  final FileOutputStream fileOutputStream = new FileOutputStream(artifactFileSliceUploadFilePathStr)) {
                 IoUtil.copy(inputStream, fileOutputStream);
                 // 状态写入
-                this.writeSliceUploadStatus(artifactFileSliceUploadRootFolderPathStr, chunkIndex, true);
+                this.writeSliceUploadStatus(artifactFileSliceUploadRootFolderPathStr, chunkNo, true);
             } catch (IOException e) {
                 log.info("切片文件转存失败", e);
                 // 状态写入
-                this.writeSliceUploadStatus(artifactFileSliceUploadRootFolderPathStr, chunkIndex, false);
+                this.writeSliceUploadStatus(artifactFileSliceUploadRootFolderPathStr, chunkNo, false);
                 return false;
             }
 
             // 根据切片状态文件判断所有切片文件是否都已经上传完成
             final JSONObject sliceUploadStatusJSONObj = this.getSliceUploadStatusJSONObj(artifactFileSliceUploadRootFolderPathStr);
             // 通过判读上传完成的数量与最大切片块的数量确定是否所有切片文件都已经上传完成
-            allSliceFileUploadCompleted = chunkIndexMax == sliceUploadStatusJSONObj.values().size();
+            allSliceFileUploadCompleted = chunkNoMax == sliceUploadStatusJSONObj.values().size();
             if (allSliceFileUploadCompleted) {
                 sliceUploadStatusJSONObj.forEach((index, status) -> {
                     if (!(Boolean) status) {
@@ -1108,8 +1109,9 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
                 });
 
                 // 进行合并操作
-                final List<String> sliceFilePathList = IntStream.range(1, chunkIndexMax + 1)
+                final List<String> sliceFilePathList = IntStream.range(1, chunkNoMax + 1)
                         .mapToObj(i -> String.format("%s/chunkFile_%s", artifactFileSliceUploadRootFolderPathStr, i))
+                        .map(p -> new File(p).getPath())
                         .collect(Collectors.toList());
                 final RepositoryPath artifactFilePath = repositoryPathResolver.resolve(storageId, repositoryId, path);
                 final String fileName = FileUtil.getName(artifactFilePath);
@@ -1141,7 +1143,9 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
     }
 
     private JSONObject getSliceUploadStatusJSONObj(String artifactFileSliceUploadRootFolderPathStr) {
-        return Optional.ofNullable(FileUtil.readString(artifactFileSliceUploadRootFolderPathStr, StandardCharsets.UTF_8))
+        final File sliceUploadStatusFile = new File(String.format("%s/sliceUploadStatus.json", artifactFileSliceUploadRootFolderPathStr));
+        
+        return Optional.ofNullable(FileUtil.readString(sliceUploadStatusFile, StandardCharsets.UTF_8))
                 .filter(StringUtils::isNotBlank)
                 .map(JSON::parseObject)
                 .orElse(new JSONObject());
