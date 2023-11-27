@@ -695,6 +695,20 @@ public class ArtifactRepository extends GremlinVertexRepository<Artifact> {
         return artifact;
     }
 
+    public Artifact findArtifactReport(String storageId,
+                                    String repositoryId,
+                                    String path) {
+        com.veadan.folib.storage.repository.Repository repository = configurationManager.getRepository(storageId, repositoryId);
+        EntityTraversal<Vertex, Artifact> t = g().V()
+                .hasLabel(Vertices.ARTIFACT)
+                .has(Properties.UUID, String.format("%s-%s-%s", storageId, repositoryId, path))
+                .map(artifactAdapter.reportFold(Optional.ofNullable(repository)
+                        .map(com.veadan.folib.storage.repository.Repository::getLayout)
+                        .map(ArtifactLayoutLocator.getLayoutByNameEntityMap()::get)
+                        .map(ArtifactLayoutDescription::getArtifactCoordinatesClass)));
+        return t.tryNext().orElse(null);
+    }
+
     public List<Artifact> findPromotionMatchingByIndex(List<String> safeLevelList, List<String> promotionStatusList) {
         return g().V().hasLabel(Vertices.ARTIFACT).has(Properties.ARTIFACT_FILE_EXISTS, true).has(Properties.SAFE_LEVEL, P.within(safeLevelList)).has(Properties.PROMOTION, P.within(promotionStatusList)).map(artifactAdapter.fold()).toList();
     }
