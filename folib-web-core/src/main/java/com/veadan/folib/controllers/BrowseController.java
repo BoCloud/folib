@@ -18,6 +18,7 @@ import com.veadan.folib.schema2.ImageManifest;
 import com.veadan.folib.schema2.LayerManifest;
 import com.veadan.folib.schema2.Manifests;
 import com.veadan.folib.services.ArtifactManagementService;
+import com.veadan.folib.services.ArtifactService;
 import com.veadan.folib.services.ConfigurationManagementService;
 import com.veadan.folib.services.DirectoryListingService;
 import com.veadan.folib.storage.ArtifactStorageException;
@@ -33,6 +34,7 @@ import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -86,6 +88,10 @@ public class BrowseController
     @Inject
     @Qualifier("browseRepositoryDirectoryListingService")
     private volatile DirectoryListingService directoryListingService;
+
+    @Inject
+    @Lazy
+    private ArtifactService artifactService;
 
     @GetMapping(value = "/getArtifact/{storageId}/{repositoryId}/{artifactPath:.+}")
     public ResponseEntity getArtifact(@PathVariable String artifactPath,
@@ -415,7 +421,7 @@ public class BrowseController
 
     private Artifact getArtifact(RepositoryPath repositoryPath) {
         try {
-            return repositoryPath.getArtifactEntry();
+            return artifactService.findArtifactReport(repositoryPath);
         } catch (Exception ex) {
             logger.warn(ExceptionUtils.getStackTrace(ex));
         }
