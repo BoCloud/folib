@@ -211,7 +211,7 @@ public class DockerCleanupArtifactsProvider implements CleanupArtifactsProvider 
         LocalDateTime tagTime = artifact.getLastUsed();
         LocalDateTime manifestTime = manifestArtifact.getLastUsed();
         log.info("Cleanup docker storageId [{}] repositoryId [{}] storageDay [{}] path [{}] time [{}] manifest time [{}] current time [{}]", storageId, repositoryId, storageDay, artifact.getArtifactPath(), tagTime, manifestTime, LocalDateTime.now());
-        boolean canDelete = (!LocalDateTime.now().minusSeconds(tempDay).isBefore(tagTime) && !LocalDateTime.now().minusSeconds(tempDay).isBefore(manifestTime)) || MINUS_ONE.equals(tempDay);
+        boolean canDelete = (!LocalDateTime.now().minusDays(tempDay).isBefore(tagTime) && !LocalDateTime.now().minusDays(tempDay).isBefore(manifestTime)) || MINUS_ONE.equals(tempDay);
         if (canDelete) {
             try {
                 RepositoryPath deleteRepositoryPath = repositoryPath.getParent();

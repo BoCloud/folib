@@ -111,7 +111,7 @@ public class GeneralCleanupArtifactsProvider implements CleanupArtifactsProvider
         //获取仓库下制品最近使用时间做比较
         LocalDateTime lastUsedTime = artifact.getLastUsed();
         log.info("Cleanup storageId [{}] repositoryId [{}] storageDay [{}] path [{}] lastUsedTime [{}] current time [{}]", storageId, repositoryId, storageDay, artifact.getArtifactPath(), lastUsedTime, LocalDateTime.now());
-        if (!LocalDateTime.now().minusSeconds(tempDay).isBefore(lastUsedTime)) {
+        if (!LocalDateTime.now().minusDays(tempDay).isBefore(lastUsedTime)) {
             try {
                 log.info("Cleanup storageId [{}] repositoryId [{}] path [{}] do delete", storageId, repositoryId, repositoryPath.toString());
                 artifactManagementService.delete(repositoryPath, true);
