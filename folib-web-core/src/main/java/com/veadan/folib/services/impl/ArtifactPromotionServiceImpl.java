@@ -1135,7 +1135,7 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
             return false;
         } finally {
             if (allSliceFileUploadCompleted) {
-                FileUtil.del(artifactFileSliceUploadRootFolderPathStr);
+                FileUtil.del(new File(artifactFileSliceUploadRootFolderPathStr));
             }
         }
 

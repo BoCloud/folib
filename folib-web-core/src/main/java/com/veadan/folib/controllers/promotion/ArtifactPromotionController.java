@@ -7,6 +7,7 @@ import com.veadan.folib.domain.ArtifactDispatch;
 import com.veadan.folib.domain.ArtifactParse;
 import com.veadan.folib.domain.ArtifactPromotion;
 import com.veadan.folib.domain.PromotionNodeOption;
+import com.veadan.folib.domain.StatusInfo;
 import com.veadan.folib.dto.ArtifactDto;
 import com.veadan.folib.entity.Dict;
 import com.veadan.folib.model.request.ArtifactPromotionNodeOptionCallbackReq;
@@ -17,14 +18,19 @@ import com.veadan.folib.model.response.ArtifactSliceDownloadInfoRes;
 import com.veadan.folib.model.response.ArtifactSliceUploadInfoRes;
 import com.veadan.folib.services.ArtifactPromotionService;
 import com.veadan.folib.storage.repository.Repository;
+import com.veadan.folib.users.userdetails.SpringSecurityUser;
 import com.veadan.folib.validation.RequestBodyValidationException;
 import com.veadan.folib.web.RepositoryMapping;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
+import io.swagger.annotations.ApiResponse;
+import io.swagger.annotations.ApiResponses;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -35,11 +41,14 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import java.io.File;
+import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 
@@ -95,7 +104,7 @@ public class ArtifactPromotionController extends BaseArtifactController {
 ///    public ResponseEntity<Boolean> nodeOptionCallback(@RequestBody @Validated ArtifactPromotionNodeOptionCallbackReq model) {
 ///        return ResponseEntity.ok(artifactPromotionService.nodeOptionCallback(model));
 ///    }
-    
+
     @GetMapping("/info/{syncNo}")
     @PermissionCheck(resourceKey = "ARTIFACTS_PROMOTION")
     public ResponseEntity artifactPromotionInfo(@PathVariable("syncNo") String syncNo) {
@@ -205,7 +214,7 @@ public class ArtifactPromotionController extends BaseArtifactController {
     public ResponseEntity<Map<String, Boolean>> batchQuerySupportSliceDownload(@RequestBody @Validated List<ArtifactSupportSliceDownloadQueryReq> models) {
         return ResponseEntity.ok(artifactPromotionService.batchQuerySupportSliceDownload(models));
     }
-    
+
     @PostMapping(value = "/query/slice/download/info")
     @PermissionCheck(resourceKey = "ARTIFACTS_RESOLVE")
     public ResponseEntity<ArtifactSliceDownloadInfoRes> querySliceDownloadInfo(@RequestBody ArtifactSliceDownloadInfoReq model) {

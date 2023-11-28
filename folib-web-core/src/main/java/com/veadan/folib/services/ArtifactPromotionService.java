@@ -130,6 +130,7 @@ public interface ArtifactPromotionService {
 
     /**
      * 文件切片上传
+     *
      * @param model
      * @return
      * @since x.x.x
