@@ -47,18 +47,31 @@
             <p class="font-semibold mb-0 ml-10">其他参数:</p>
           </a-col>
           <div v-if="i.fields.length > 2">
-            <div v-for="(f, index) in i.fields" :key="index">
-              <a-col v-if="f.name !== 'storageId' && f.name !== 'repositoryId'" class="ml-auto">
-                <span style="margin-left: 15px" class="mr-15">{{ f.name }}</span>
+            <div v-for="(f, index) in i.fields" :key="index" class="mt-10">
+              <a-col v-if="f.name !== 'storageId' && f.name !== 'repositoryId' && f.name !=='storageCondition'" class="ml-auto">
+                <span style="margin-left: 15px" class="mr-15" v-if="f.aliasName && f.aliasName.length > 0">{{ f.aliasName }}</span>
+                <span style="margin-left: 15px" class="mr-15" v-else>{{ f.name }}</span>
                 <a-input v-if="f.type === 'string'" v-model="f.value" size="small"
                   class="font-regular text-sm text-dark" style="width: 250px;" />
                 <a-input-number v-if="f.type === 'int' && f.name === 'numberToKeep'" v-model="f.value"
                   size="small" class="font-regular text-sm text-dark" style="width: 120px;" />
                 <a-input-number :min="1" v-if="f.type === 'int' && f.name === 'storageDay'" v-model="f.value"
-                                size="small" class="font-regular text-sm text-dark" style="width: 120px;" />
+                                size="small" class="font-regular text-sm text-dark" style="width: 120px;"/>  
                 <a-date-picker v-if="f.type === 'int' && f.name === 'keepPeriod'" v-model="f.value"
                   size="small" class="font-regular text-sm text-dark" style="width: 120px;" />
                 <a-switch v-if="f.type === 'boolean'" v-model="f.value" @change="() => { $forceUpdate() }" />
+              </a-col>
+              <a-col v-if="folibRepository.layout.toLowerCase() === 'docker' && f.name ==='storageCondition'" class="ml-auto">
+                <span style="margin-left: 15px" class="mr-15" v-if="f.aliasName && f.aliasName.length > 0">{{ f.aliasName }}</span>
+                <span style="margin-left: 15px" class="mr-15" v-else>{{ f.name }}</span>
+                <a-select v-model="f.value" style="width: 120px" @change="storageConditionChange($event, i.fields)">
+                  <a-select-option v-for="(item, index) in storageConditions"
+                  :label="item.label"
+                  :key="index"
+                  :value="item.value">
+                  {{ item.label }}
+                  </a-select-option>
+                </a-select>
               </a-col>
             </div>
           </div>
@@ -98,6 +111,16 @@ export default {
     return {
       cronCanSetList: [],
       cronSettedList: [],
+      storageConditions: [
+        {
+          label: "Tag",
+          value: "tag"
+        },
+        {
+          label: "天数",
+          value: "day"
+        }
+      ],
     }
   },
   components: {
@@ -112,6 +135,16 @@ export default {
     resetData() {
       this.cronCanSetList = []
       this.cronSettedList = []
+    },
+    storageConditionChange(event, fields) {
+      let aliasName = "保留天数"
+      if (event === 'tag') {
+        aliasName = "保留个数"
+      } else if (event === 'day') {
+        aliasName = "保留天数"
+      }
+      fields.filter(i => i.name === "storageDay").forEach(i => i.aliasName = aliasName)
+      this.$forceUpdate()
     },
     crontasksListHandle() {
       crontasksList(this.folibRepository.layout === 'Maven 2' ? 'MAVEN' : this.folibRepository.layout.toUpperCase()).then(res => {
@@ -161,6 +194,14 @@ export default {
       } else {
         i.isShow = true
         this.cronCanSetList.splice(index, i)
+        if (this.folibRepository.layout.toLowerCase() === "docker") {
+          let storageCondition = 'day'
+          let cleanupTask = i.fields.filter(i => i.name === 'storageCondition')
+          if (cleanupTask && cleanupTask.length >0) {
+            storageCondition = cleanupTask[0].value
+          } 
+          this.storageConditionChange(storageCondition, i.fields)
+        }
       }
       this.$forceUpdate()
 

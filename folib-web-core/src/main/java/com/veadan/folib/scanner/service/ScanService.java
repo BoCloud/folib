@@ -49,6 +49,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.scheduling.annotation.Async;
+import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.stereotype.Service;
 import software.amazon.awssdk.services.s3.model.GetObjectRequest;
 
@@ -101,6 +102,9 @@ public class ScanService {
     @Lazy
     private ArtifactComponent artifactComponent;
 
+    @Inject
+    private ThreadPoolTaskExecutor asyncScanThreadPoolTaskExecutor;
+
     @Value("${folib.temp}")
     private String tempPath;
 
@@ -139,9 +143,12 @@ public class ScanService {
                 scannerReport.setFilePath(filePath);
                 filePathSet.add(JSONObject.toJSONString(scannerReport));
                 dependencyList.addAll(itemDependencyList);
+                itemDependencyList = null;
             }
             artifact.setFilePaths(filePathSet);
             buildReport(artifact, dependencyList);
+            dependencyList.clear();
+            dependencyList = null;
         } catch (Exception e) {
             artifact.setSafeLevel(SafeLevelEnum.SCAN_FAIL.getLevel());
             artifactService.saveOrUpdateArtifact(artifact);

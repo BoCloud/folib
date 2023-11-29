@@ -1,9 +1,9 @@
 package com.veadan.folib.services;
 
 import com.veadan.folib.domain.Artifact;
+import com.veadan.folib.providers.io.RepositoryPath;
 
 import java.io.IOException;
-import java.util.List;
 
 /**
  * @author leipenghui
@@ -17,4 +17,13 @@ public interface ArtifactService {
      * @param artifact 制品
      */
     void saveOrUpdateArtifact(Artifact artifact);
+
+    /**
+     * 查找制品和扫描报告
+     *
+     * @param repositoryPath 制品路径
+     * @return 制品
+     * @throws IOException io异常
+     */
+    Artifact findArtifactReport(RepositoryPath repositoryPath) throws IOException;
 }

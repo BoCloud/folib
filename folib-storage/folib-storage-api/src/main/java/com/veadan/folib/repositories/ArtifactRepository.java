@@ -250,7 +250,7 @@ public class ArtifactRepository extends GremlinVertexRepository<Artifact> {
     public List<Artifact> findMatchingByVulnerabilityUuid(String vulnerabilityUuid,
                                                           String storageId,
                                                           List<String> storageIdAndRepositoryIdList) {
-        List<Artifact> artifactList = buildEntityTraversalByVulnerabilityUuid(vulnerabilityUuid, storageId, storageIdAndRepositoryIdList)
+        List<Artifact> artifactList = buildEntityTraversalByVulnerabilityUuid(vulnerabilityUuid, storageId, storageIdAndRepositoryIdList).range(0, 1000)
                 .map(artifactAdapter.fold()).toList();
         return EntityTraversalUtils.reduceHierarchy(artifactList);
     }
@@ -262,7 +262,7 @@ public class ArtifactRepository extends GremlinVertexRepository<Artifact> {
     }
 
     public List<Artifact> findMatchingBySafeLevels(List<String> storageIdAndRepositoryIdList, List<String> safeLevels) {
-        List<Artifact> artifactList = g().V().hasLabel(Vertices.ARTIFACT).has(Properties.STORAGE_ID_AND_REPOSITORY_ID, P.within(storageIdAndRepositoryIdList)).has(Properties.SAFE_LEVEL, P.within(safeLevels)).map(artifactAdapter.fold()).toList();
+        List<Artifact> artifactList = g().V().hasLabel(Vertices.ARTIFACT).has(Properties.STORAGE_ID_AND_REPOSITORY_ID, P.within(storageIdAndRepositoryIdList)).has(Properties.SAFE_LEVEL, P.within(safeLevels)).range(0, 1000).map(artifactAdapter.fold()).toList();
         return EntityTraversalUtils.reduceHierarchy(artifactList);
     }
 
@@ -643,7 +643,7 @@ public class ArtifactRepository extends GremlinVertexRepository<Artifact> {
     }
 
     public List<Artifact> queryArtifactByComponentUuid(String componentUuid) {
-        List<Artifact> artifactList = buildEntityTraversalByComponentUuid(componentUuid, "")
+        List<Artifact> artifactList = buildEntityTraversalByComponentUuid(componentUuid, "").range(0, 1000)
                 .map(artifactAdapter.fold()).toList();
         return artifactList;
     }
@@ -695,6 +695,20 @@ public class ArtifactRepository extends GremlinVertexRepository<Artifact> {
         return artifact;
     }
 
+    public Artifact findArtifactReport(String storageId,
+                                    String repositoryId,
+                                    String path) {
+        com.veadan.folib.storage.repository.Repository repository = configurationManager.getRepository(storageId, repositoryId);
+        EntityTraversal<Vertex, Artifact> t = g().V()
+                .hasLabel(Vertices.ARTIFACT)
+                .has(Properties.UUID, String.format("%s-%s-%s", storageId, repositoryId, path))
+                .map(artifactAdapter.reportFold(Optional.ofNullable(repository)
+                        .map(com.veadan.folib.storage.repository.Repository::getLayout)
+                        .map(ArtifactLayoutLocator.getLayoutByNameEntityMap()::get)
+                        .map(ArtifactLayoutDescription::getArtifactCoordinatesClass)));
+        return t.tryNext().orElse(null);
+    }
+
     public List<Artifact> findPromotionMatchingByIndex(List<String> safeLevelList, List<String> promotionStatusList) {
         return g().V().hasLabel(Vertices.ARTIFACT).has(Properties.ARTIFACT_FILE_EXISTS, true).has(Properties.SAFE_LEVEL, P.within(safeLevelList)).has(Properties.PROMOTION, P.within(promotionStatusList)).map(artifactAdapter.fold()).toList();
     }
@@ -725,6 +739,17 @@ public class ArtifactRepository extends GremlinVertexRepository<Artifact> {
 
     public Long suppressedVulnerabilitiesCount() {
         return g().V().hasLabel(Vertices.ARTIFACT).has(Properties.ARTIFACT_FILE_EXISTS, true).has(Properties.SUPPRESSED_VULNERABILITIES_COUNT, P.gt(0)).values(Properties.SUPPRESSED_VULNERABILITIES_COUNT).sum().tryNext().orElse(0L).longValue();
+    }
+
+    public Long artifactsCount(String storageId, String repositoryId) {
+        return g().V().hasLabel(Vertices.ARTIFACT).has(Properties.CREATED, P.gt(0)).has(Properties.STORAGE_ID, storageId).has(Properties.REPOSITORY_ID, repositoryId).count().tryNext().orElse(0L);
+    }
+
+    public void dropArtifacts(String storageId, String repositoryId, Integer limit) {
+        if (Objects.isNull(limit)) {
+            limit = 800;
+        }
+        g().V().hasLabel(Vertices.ARTIFACT).has(Properties.CREATED, P.gt(0)).has(Properties.STORAGE_ID, storageId).has(Properties.REPOSITORY_ID, repositoryId).range(0, limit).drop();
     }
 
 }

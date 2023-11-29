@@ -219,6 +219,11 @@
                         </template>
                       </a-space>
                     </span>
+                    <span v-if="scanReport.fail">
+                      <a-tag color="#f50">
+                        扫描失败
+                      </a-tag>
+                    </span>
                   </a-col>
                 </a-row>
               </a-col>
@@ -325,6 +330,11 @@
                           </a-tooltip>
                         </template>
                       </a-space>
+                    </span>
+                    <span v-if="scanReport.fail">
+                      <a-tag color="#f50">
+                        扫描失败
+                      </a-tag>
                     </span>
                   </a-col>
                 </a-row>
@@ -942,6 +952,7 @@ export default {
       ],
       scanReport: {
         show: false,
+        fail: false,
         report: [],
         vulnerabilitesCount: 0,
         critical: 0,
@@ -1524,6 +1535,7 @@ export default {
       this.currentTreeNode = e.node.dataRef
       this.scanReport = {
         show: false,
+        fail: false,
         report: [],
         vulnerabilitesCount: 0,
         critical: 0,
@@ -1557,6 +1569,8 @@ export default {
               this.scanReport.report = JSON.parse(
                 this.currentFileDetial.artifact.report
               )
+            } else if (this.currentFileDetial.artifact.safeLevel === 'scanFail') {
+              this.scanReport.fail = true
             }
           }
           this.currentManifest = res.manifestConfig

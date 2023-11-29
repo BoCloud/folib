@@ -2,6 +2,8 @@ package com.veadan.folib.services.impl;
 
 import com.veadan.folib.domain.Artifact;
 import com.veadan.folib.gremlin.dsl.EntityTraversalSource;
+import com.veadan.folib.providers.io.RepositoryFiles;
+import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.repositories.ArtifactRepository;
 import com.veadan.folib.services.ArtifactService;
 import com.veadan.folib.util.CommonUtils;
@@ -14,6 +16,7 @@ import org.springframework.stereotype.Service;
 
 import javax.inject.Inject;
 import javax.transaction.Transactional;
+import java.io.IOException;
 import java.lang.reflect.UndeclaredThrowableException;
 
 @Slf4j
@@ -53,5 +56,10 @@ public class ArtifactServiceImpl implements ArtifactService {
         } finally {
             g.tx().close();
         }
+    }
+
+    @Override
+    public Artifact findArtifactReport(RepositoryPath repositoryPath) throws IOException {
+        return artifactRepository.findArtifactReport(repositoryPath.getStorageId(), repositoryPath.getRepositoryId(), RepositoryFiles.relativizePath(repositoryPath));
     }
 }
