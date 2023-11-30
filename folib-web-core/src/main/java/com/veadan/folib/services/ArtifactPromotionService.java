@@ -92,6 +92,19 @@ public interface ArtifactPromotionService {
      * @since x.x.x
      */
     Boolean speedLimitDownload(Repository repository, String artifactPath, String nodeMark, HttpServletResponse response);
+
+    /**
+     * 切片&限速下载
+     * @param repository
+     * @param artifactPath
+     * @param nodeMark
+     * @param artifactMd5
+     * @param startDownloadIndex
+     * @param endDownloadIndex
+     * @param response
+     * @since x.x.x
+     */
+    Boolean speedLimitSliceDownload(Repository repository, String artifactPath, String nodeMark, String artifactMd5, Long startDownloadIndex, Long endDownloadIndex, HttpServletResponse response);
     
     
     /**

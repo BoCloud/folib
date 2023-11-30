@@ -1,8 +1,4 @@
 package com.veadan.folib.services.impl;
-import java.util.List;
-import com.veadan.folib.dto.TargetDispatchRepositoryDto;
-import java.util.Map;
-import java.io.InputStream;
 
 import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.io.FileUtil;
@@ -17,8 +13,18 @@ import com.veadan.folib.components.promotion.ArtifactPromotionProviderRegistry;
 import com.veadan.folib.components.security.SecurityComponent;
 import com.veadan.folib.controllers.promotion.ArtifactPromotionController;
 import com.veadan.folib.dispatch.ClusterDispatchNodeDto;
-import com.veadan.folib.domain.*;
-import com.veadan.folib.dto.*;
+import com.veadan.folib.domain.AnalysisHtmlGetDirAndFilePath;
+import com.veadan.folib.domain.ArtifactDispatch;
+import com.veadan.folib.domain.ArtifactParse;
+import com.veadan.folib.domain.ArtifactPromotion;
+import com.veadan.folib.domain.PromotionFileRelativePath;
+import com.veadan.folib.domain.PromotionNodeOption;
+import com.veadan.folib.dto.ArtifactDto;
+import com.veadan.folib.dto.ArtifactPromotionInfoDto;
+import com.veadan.folib.dto.PromotionArtifactDto;
+import com.veadan.folib.dto.PromotionNodeOptionDto;
+import com.veadan.folib.dto.TargetDispatchRepositoryDto;
+import com.veadan.folib.dto.TargetRepositoyDto;
 import com.veadan.folib.entity.ArtifactSyncRecord;
 import com.veadan.folib.entity.Dict;
 import com.veadan.folib.enums.ArtifactSyncRecordOpsTypeEnum;
@@ -41,7 +47,13 @@ import com.veadan.folib.repositories.ArtifactRepository;
 import com.veadan.folib.repository.MavenRepositoryFeatures;
 import com.veadan.folib.scanner.common.exception.BusinessException;
 import com.veadan.folib.service.ProxyRepositoryConnectionPoolConfigurationService;
-import com.veadan.folib.services.*;
+import com.veadan.folib.services.ArtifactManagementService;
+import com.veadan.folib.services.ArtifactMetadataService;
+import com.veadan.folib.services.ArtifactPromotionService;
+import com.veadan.folib.services.ArtifactResolutionService;
+import com.veadan.folib.services.ConfigurationManagementService;
+import com.veadan.folib.services.DictService;
+import com.veadan.folib.services.RepositoryManagementService;
 import com.veadan.folib.storage.repository.Repository;
 import com.veadan.folib.users.userdetails.SpringSecurityUser;
 import com.veadan.folib.utils.FileUtils;
@@ -80,12 +92,25 @@ import javax.ws.rs.client.Client;
 import javax.ws.rs.client.Invocation;
 import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.Response;
-import java.io.*;
+import java.io.BufferedInputStream;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.net.Socket;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.FutureTask;
 import java.util.concurrent.TimeUnit;
@@ -819,6 +844,86 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
                 log.error("非限速下载文件失败", e);
                 return false;
             }
+        }
+
+        return true;
+    }
+
+    @Override
+    public Boolean speedLimitSliceDownload(Repository repository, String artifactPath, String nodeMark, 
+                                        String artifactMd5, Long startDownloadIndex, Long endDownloadIndex, 
+                                        HttpServletResponse response) {
+        // 获取全局节点限速
+        final int kbps = Optional.ofNullable(configurationManagementService.getConfiguration().getKbps()).orElse(0) * (1024);
+        // 获取节点限速
+        final Collection<ClusterDispatchNodeDto> clusterDispatchNodeDtos = configurationManagementService.getMutableConfigurationClone().getClusterDispatchNode().values();
+        final Map<String, Integer> nodeKbpsMap = clusterDispatchNodeDtos.stream().filter(e -> null == e.getAutoRegister() || !e.getAutoRegister()).collect(Collectors.toMap(e -> String.format("%s:%s", UrlUtils.getHost(e.getClusterNodeHost()), UrlUtils.getPort(e.getClusterNodeHost())), e -> null != e.getKbps() ? e.getKbps() * 1024 : 0));
+        final int finalKbps = Optional.ofNullable(nodeKbpsMap.get(nodeMark)).filter(k -> k > 0).orElse(kbps);
+
+        try {
+            // 下载文件流
+            final RepositoryPath artifactRepositoryPath = repositoryPathResolver.resolve(repository, artifactPath);
+            if (!Files.exists(artifactRepositoryPath)) {
+                throw new BusinessException("下载的文件不存在或已被删除");
+            }
+            final long fileSize = Files.size(artifactRepositoryPath);
+            if (endDownloadIndex > Files.size(artifactRepositoryPath)) {
+                endDownloadIndex = fileSize;
+            }
+
+            final String fileName = artifactRepositoryPath.getFileName().toString();
+            response.setHeader("Content-Disposition", String.format("attachment;filename=%s", fileName));
+            response.setContentType("application/x-gzip");
+            
+            if (finalKbps > 0) {
+                // 限速下载
+                // - 获取初始下载速度
+                AtomicInteger nodeDownloadConnectionCounter = DOWNLOAD_CONNECTION_COUNTER_MAP.get(nodeMark);
+                if (null == nodeDownloadConnectionCounter) {
+                    nodeDownloadConnectionCounter = new AtomicInteger(0);
+                    DOWNLOAD_CONNECTION_COUNTER_MAP.put(nodeMark, nodeDownloadConnectionCounter);
+                }
+
+                try (final InputStream sliceFileInputSteam = Files.newInputStream(artifactRepositoryPath);
+                     final OutputStream outputStream = response.getOutputStream();){
+                    int speedByteSize = this.getDownloadSpeedByte(finalKbps, nodeDownloadConnectionCounter.incrementAndGet());
+                    if (speedByteSize > endDownloadIndex) {
+                        speedByteSize = Math.toIntExact(endDownloadIndex);
+                    }
+                    
+                    sliceFileInputSteam.skip(startDownloadIndex);
+                    final byte[] buffer = new byte[finalKbps];
+                    long offset;
+                    long totalOffset = 0;
+                    while ((offset = sliceFileInputSteam.read(buffer, 0, speedByteSize)) != -1 & totalOffset < endDownloadIndex) {
+                        TimeUnit.SECONDS.sleep(1);
+                        // 获取下一秒下载速度
+                        speedByteSize = this.getDownloadSpeedByte(finalKbps, nodeDownloadConnectionCounter.get());
+                        outputStream.write(buffer, 0, (int) offset);
+                        totalOffset += offset;
+                        if (totalOffset > endDownloadIndex) {
+                            speedByteSize = Math.toIntExact(endDownloadIndex);
+                        }
+                    }
+                } catch (Exception e) {
+                    log.error("限速下载文件失败", e);
+                    return false;
+                } finally {
+                    nodeDownloadConnectionCounter.decrementAndGet();
+                }
+            } else {
+                // 非限速下载
+                try (final InputStream inputStream = Files.newInputStream(artifactRepositoryPath);
+                     final OutputStream outputStream = response.getOutputStream();) {
+                    IoUtil.copy(inputStream, outputStream);
+                } catch (Exception e) {
+                    log.error("非限速下载文件失败", e);
+                    return false;
+                }
+            }
+            
+        } catch (IOException e) {
+            throw new RuntimeException(e);
         }
 
         return true;
