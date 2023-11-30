@@ -10,7 +10,7 @@
           </template>
       <div @click="toSingleLogin(item)" class="item-con">
        
-          <div class="text-icon" :class="textBg(index)">{{ item.clientId.substring(0,1) }} </div>
+          <div class="text-icon" :class="textBg(index)">{{ item.clientName.substring(0,1) }} </div>
         
       </div>   
     </a-tooltip>

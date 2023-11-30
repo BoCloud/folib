@@ -4,13 +4,18 @@ import com.alibaba.fastjson.JSONObject;
 import com.alibaba.fastjson.serializer.SerializerFeature;
 import com.veadan.folib.artifact.AsyncArtifactEntryHandler;
 import com.veadan.folib.domain.Artifact;
+import com.veadan.folib.domain.ArtifactArchiveListing;
 import com.veadan.folib.domain.ArtifactEntity;
 import com.veadan.folib.event.artifact.ArtifactEventTypeEnum;
 import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.providers.io.RepositoryPathResolver;
+import com.veadan.folib.providers.layout.LayoutProvider;
+import com.veadan.folib.providers.layout.LayoutProviderRegistry;
+import com.veadan.folib.storage.repository.Repository;
 import com.veadan.folib.util.LocalDateTimeInstance;
 import jnr.ffi.annotations.In;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.springframework.stereotype.Component;
@@ -20,6 +25,8 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.ObjectOutputStream;
 import java.nio.file.Files;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Component
@@ -27,6 +34,9 @@ public class ArtifactDownloadingEventHandler extends AsyncArtifactEntryHandler {
 
     @Inject
     private RepositoryPathResolver repositoryPathResolver;
+
+    @Inject
+    private LayoutProviderRegistry layoutProviderRegistry;
 
     public ArtifactDownloadingEventHandler() {
         super(ArtifactEventTypeEnum.EVENT_ARTIFACT_FILE_DOWNLOADING);
@@ -62,6 +72,20 @@ public class ArtifactDownloadingEventHandler extends AsyncArtifactEntryHandler {
                 artifactEntry.getDownloadCount(),
                 updateArtifactEntry.getDownloadCount()
         );
+        try {
+            Repository repository = repositoryPath.getRepository();
+            LayoutProvider layoutProvider = layoutProviderRegistry.getProvider(repository.getLayout());
+            Set<String> archiveFilenames = layoutProvider.listArchiveFilenames(repositoryPath);
+            if (CollectionUtils.isNotEmpty(archiveFilenames)) {
+                if (archiveFilenames.size() > 5) {
+                    archiveFilenames = archiveFilenames.stream().limit(100).collect(Collectors.toSet());
+                }
+                ArtifactArchiveListing artifactArchiveListing = updateArtifactEntry.getArtifactArchiveListing();
+                artifactArchiveListing.setFilenames(archiveFilenames);
+            }
+        } catch (Exception ex) {
+            log.warn(ExceptionUtils.getStackTrace(ex));
+        }
         return updateArtifactEntry;
     }
 

@@ -117,7 +117,7 @@ export function getArtifact (type,storageId,repositoryId,path, digest){
     digest = ''
   }
   return axios({
-    url: '/api/browse/getArtifact/'+storageId+'/'+repositoryId+'/'+path+'?type='+type + '&digest=' + digest,
+    url: '/api/browse/getArtifact/'+storageId+'/'+repositoryId+'/'+path+'?type='+type + '&digest=' + digest + '&report=' + true,
     method: 'get'
   })
 }
@@ -134,6 +134,14 @@ export function viewArtifactFile (url) {
     method: 'get'
   })
 }
+
+export function previewArtifact (storageId,repositoryId,path){
+  return axios({
+    url: '/api/artifact/preview/'+storageId+'/'+repositoryId+'/'+path,
+    method: 'get'
+  })
+}
+
 //aql搜索接口
 export function fql (query) {
   return axios({

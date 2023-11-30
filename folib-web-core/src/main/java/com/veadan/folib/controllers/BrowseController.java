@@ -98,7 +98,8 @@ public class BrowseController
                                       @PathVariable String storageId,
                                       @PathVariable String repositoryId,
                                       @RequestParam(value = "type", required = false) String type,
-                                      @RequestParam(value = "digest", required = false) String digest, @RepositoryMapping Repository repositoryParam) {
+                                      @RequestParam(value = "digest", required = false) String digest,
+                                      @RequestParam(value = "report", required = false) Boolean report, @RepositoryMapping Repository repositoryParam) {
         JSONObject jsonObject = new JSONObject();
         if (StringUtils.isBlank(type)) {
             type = repositoryParam.getLayout();
@@ -106,7 +107,7 @@ public class BrowseController
         if (!DockerLayoutProvider.ALIAS.equalsIgnoreCase(type)) {
             RepositoryPath repositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, artifactPath);
             Repository repository = repositoryPath.getRepository();
-            Artifact artifact = getArtifact(repositoryPath);
+            Artifact artifact = getArtifact(repositoryPath, report);
             if (artifact != null) {
                 List<CodeSnippet> snippets = snippetGenerator.generateSnippets(repository.getLayout(), artifact.getArtifactCoordinates());
                 jsonObject.put("snippets", snippets);
@@ -188,9 +189,9 @@ public class BrowseController
                     jsonObject.put("manifestConfig", object);
                     jsonObject.put("sha256", configDigest);
                 }
-                Artifact artifact = getArtifact(repositoryPathResolver.resolve(storageId, repositoryId, fileContent.getArtifactPath()));
+                Artifact artifact = getArtifact(repositoryPathResolver.resolve(storageId, repositoryId, fileContent.getArtifactPath()), report);
                 jsonObject.put("artifact", artifact);
-                Long size = Optional.ofNullable(imageManifest.getLayers()).orElse(Collections.emptyList()).stream().mapToLong(LayerManifest::getSize).sum();
+                Long size = Optional.ofNullable(imageManifest.getLayers()).orElse(Collections.emptyList()).stream().filter(item -> Objects.nonNull(item.getSize())).mapToLong(LayerManifest::getSize).sum();
                 jsonObject.put("snippets", snippets);
                 jsonObject.put("manifest", imageManifest);
                 SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
@@ -419,7 +420,7 @@ public class BrowseController
                 && !RepositoryFiles.isTemp(repositoryPath);
     }
 
-    private Artifact getArtifact(RepositoryPath repositoryPath) {
+    private Artifact getArtifact(RepositoryPath repositoryPath, Boolean report) {
         try {
             return artifactService.findArtifactReport(repositoryPath);
         } catch (Exception ex) {

@@ -2,6 +2,7 @@ package com.veadan.folib.scanner.config;
 
 
 import cn.hutool.core.date.DateUtil;
+import com.google.common.collect.Lists;
 import com.veadan.folib.domain.Artifact;
 import com.veadan.folib.enums.SafeLevelEnum;
 import com.veadan.folib.repositories.ArtifactRepository;
@@ -11,7 +12,6 @@ import com.veadan.folib.scanner.service.ScanService;
 import com.veadan.folib.services.ArtifactService;
 import com.veadan.folib.services.FolibDistributedSchedulerLock;
 import org.apache.commons.collections4.CollectionUtils;
-import org.apache.commons.compress.utils.Lists;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -63,10 +63,13 @@ public class ScannerTask {
             safeLevels.add(SafeLevelEnum.UN_SCAN.getLevel());
             List<Artifact> artifactList = artifactRepository.findMatchingBySafeLevels(storageIdAndRepositoryIdList, safeLevels);
             if (CollectionUtils.isNotEmpty(artifactList)) {
-                artifactList.forEach(artifact -> scanService.asyncScan(artifact));
+                int size = 50;
+                List<List<Artifact>> lists = Lists.partition(artifactList, size);
+                for (List<Artifact> itemList : lists) {
+                    scanService.asyncScan(itemList);
+                }
             }
-            logger.info("当前线程名称：{}，使用cron异步执行：{}", Thread.currentThread().getName(), DateUtil.now());
+            logger.info("ScannerTask thread name [{}] time [{}]", Thread.currentThread().getName(), DateUtil.now());
         }
-        logger.info("ScannerTask end");
     }
 }

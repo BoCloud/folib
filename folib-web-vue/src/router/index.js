@@ -369,10 +369,10 @@ router.beforeEach((to,from,next)=>{
     let param = window.location.search.substring(1).split("&")
     let clientInfo=JSON.parse(sessionStorage.getItem("clientInfo"))
     let sessionParam={
-          grant_type:"authorization_code",
-          client_id:clientInfo.clientId,
-          redirect_uri:clientInfo.redirectPath,
-          access_token_url:clientInfo.access_token_url
+          grantType:"authorization_code",
+          clientId:clientInfo.clientId,
+          redirectUri:clientInfo.redirectPath,
+          accessTokenUrl:clientInfo.accessTokenUrl
     }
    
     param.forEach(e=>{

@@ -766,6 +766,7 @@ import {
 import {
   browse,
   getArtifact,
+  previewArtifact,
   viewArtifactFile,
   fql,
   scannerRules,
@@ -1993,39 +1994,61 @@ export default {
       if (this.folibRepository.layout !== 'Docker')
       {
         if (this.currentFileDetial && !this.currentFileDetial.listTree)
-        {
-          viewArtifactFile(this.currentTreeNode.url).then(res => {
-            if ('string' === typeof res && res.startsWith('PK'))
-            {
-              this.viewCodes = undefined
-            } else if ('object' === typeof res)
-            {
-              if (res.data)
-              {
-                if ('string' === typeof res.data)
-                {
-                  this.viewCodes = res.data
-                } else
-                {
-                  this.viewCodes = JSON.stringify(res.data)
+        { 
+          if (this.currentFileDetial.artifact) {
+            previewArtifact(this.currentTreeNode.storageId, this.currentTreeNode.repositoryId,this.currentTreeNode.artifactPath).then(res => {
+              if (res && res.length > 0) {
+                this.currentFileDetial.listTree = res
+                this.$forceUpdate()
+              } else {
+                let len = this.currentFileDetial.artifact.sizeInBytes
+                if (len && len > 1048576) {
+                  this.viewCodes = '该制品无法预览'
+                } else{
+                  this.viewArtifactFile()
                 }
-              } else
-              {
-                this.viewCodes = JSON.stringify(res)
               }
-            } else
-            {
-              this.viewCodes = res
-            }
-          })
-        }
+            })
+          } else {
+            this.viewArtifactFile()
+          }
       } else
       {
         // this.viewCodes=this.currentManifest.config
       }
-
       this.viewCodeVisible = true
-    },
+    }
+  },
+  viewArtifactFile () {
+    viewArtifactFile(this.currentTreeNode.url).then(res => {
+      if ('string' === typeof res && res.startsWith('PK'))
+      {
+        this.viewCodes = undefined
+      } else if ('object' === typeof res)
+      {
+        if (res.data)
+        {
+          if ('string' === typeof res.data)
+          {
+            if (res.data.startsWith('PK')) {
+              this.viewCodes = '该制品无法预览'
+            } else {
+              this.viewCodes = res.data
+            }
+          } else
+          {
+            this.viewCodes = JSON.stringify(res.data)
+          }
+        } else
+        {
+          this.viewCodes = JSON.stringify(res)
+        }
+      } else
+      {
+        this.viewCodes = res
+      }
+    })
+  },
     closeViewCodeDialog () {
       this.viewCodeVisible = false
       this.viewCodes = null

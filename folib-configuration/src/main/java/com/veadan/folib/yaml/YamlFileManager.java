@@ -174,11 +174,11 @@ public abstract class YamlFileManager<T> {
         ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
         executor.setCorePoolSize(corePoolSize);
         executor.setMaxPoolSize(maxPoolSize);
-        executor.setQueueCapacity(Integer.MAX_VALUE);
+        executor.setQueueCapacity(1000);
         executor.setKeepAliveSeconds(60);
         executor.setThreadNamePrefix("backup_");
         executor.setWaitForTasksToCompleteOnShutdown(true);
-        executor.setAwaitTerminationSeconds(60);
+        executor.setAwaitTerminationSeconds(6);
         executor.setRejectedExecutionHandler(new ThreadPoolExecutor.CallerRunsPolicy());
         executor.initialize();
         return executor;

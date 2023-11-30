@@ -78,6 +78,7 @@ public class LicenseServiceImpl implements LicenseService {
                 criteria.andEqualTo("isDeprecated", license.getIsDeprecated());
             }
         }
+        example.selectProperties("id", "licenseId", "licenseUrl");
         example.setOrderByClause("create_time");
         return licenseMapper.selectByExample(example);
     }

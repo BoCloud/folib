@@ -8,11 +8,12 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 public class SSOsessionDto {
-    private String session_state;
-    private  String code;
-    private  String grant_type="authorization_code";
-    private  String client_id;
-    private  String redirect_uri;
-    private  String access_token_url;
+
+    private String sessionState;
+    private String code;
+    private String grantType = "authorization_code";
+    private String clientId;
+    private String redirectUri;
+    private String accessTokenUrl;
 
 }

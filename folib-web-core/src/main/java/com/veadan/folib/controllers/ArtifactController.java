@@ -1,7 +1,6 @@
 package com.veadan.folib.controllers;
 
 import com.alibaba.fastjson.JSON;
-import com.google.common.collect.Lists;
 import com.veadan.folib.components.syncartifact.SyncArtifactProvider;
 import com.veadan.folib.components.syncartifact.SyncArtifactProviderRegistry;
 import com.veadan.folib.config.PermissionCheck;
@@ -14,6 +13,7 @@ import com.veadan.folib.domain.thirdparty.ArtifactInfo;
 import com.veadan.folib.domain.thirdparty.ArtifactQuery;
 import com.veadan.folib.forms.artifact.ArtifactMetadataForm;
 import com.veadan.folib.forms.syncartifact.SyncArtifactForm;
+import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.scanner.common.msg.TableResultResponse;
 import com.veadan.folib.services.ArtifactWebService;
 import com.veadan.folib.storage.Storage;
@@ -47,7 +47,7 @@ import java.util.Objects;
  * @author leipenghui
  */
 @RestController
-@RequestMapping("/api/artifact")
+@RequestMapping("/api/artifact/")
 @Api(description = "制品管理", tags = "制品管理")
 public class ArtifactController extends BaseController {
 
@@ -236,4 +236,30 @@ public class ArtifactController extends BaseController {
         return ResponseEntity.ok("success");
     }
 
+    @PreAuthorize("hasAuthority('ARTIFACTS_VIEW')")
+    @GetMapping(value = "/preview/{storageId}/{repositoryId}/{artifactPath:.+}")
+    public ResponseEntity<List> preview(@PathVariable String artifactPath,
+                                        @PathVariable String storageId,
+                                        @PathVariable String repositoryId) {
+        RepositoryPath repositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, artifactPath);
+        return ResponseEntity.ok(artifactWebService.preview(repositoryPath));
+    }
+
+    @ApiOperation(value = "制品扫描")
+    @ApiResponses(value = {@ApiResponse(code = 200, message = "OK")})
+    @PreAuthorize("hasAuthority('ADMIN')")
+    @GetMapping(value = "/scan/{storageId}/{repositoryId}/{artifactPath:.+}")
+    public ResponseEntity<String> scan(@PathVariable String artifactPath,
+                                       @PathVariable String storageId,
+                                       @PathVariable String repositoryId) {
+        RepositoryPath repositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, artifactPath);
+        artifactWebService.scan(repositoryPath);
+        return ResponseEntity.ok("");
+    }
+
+    @PreAuthorize("hasAuthority('ADMIN')")
+    @GetMapping(value = "/dumpHead")
+    public ResponseEntity<String> dumpHead(@RequestParam(value = "filePath",required = false) String filePath) {
+        return ResponseEntity.ok(artifactWebService.dumpHead(filePath));
+    }
 }

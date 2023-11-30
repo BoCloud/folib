@@ -19,9 +19,7 @@ import com.veadan.folib.gremlin.adapters.ArtifactAdapter;
 import com.veadan.folib.gremlin.dsl.EntityTraversal;
 import com.veadan.folib.gremlin.dsl.EntityTraversalUtils;
 import com.veadan.folib.gremlin.repositories.GremlinVertexRepository;
-import com.veadan.folib.providers.io.RepositoryPathResolver;
 import com.veadan.folib.services.ConfigurationManagementService;
-import com.veadan.folib.services.support.ArtifactRoutingRulesChecker;
 import com.veadan.folib.storage.repository.RepositoryTypeEnum;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
@@ -34,8 +32,6 @@ import org.janusgraph.core.attribute.Text;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.neo4j.annotation.Query;
-import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import javax.inject.Inject;
@@ -51,25 +47,13 @@ public class ArtifactRepository extends GremlinVertexRepository<Artifact> {
     @Inject
     ArtifactAdapter artifactAdapter;
     @Inject
-    ArtifactEntityQueries queries;
-    @Inject
     ConfigurationManager configurationManager;
     @Inject
     ConfigurationManagementService configurationManagementService;
-    @Inject
-    RepositoryPathResolver repositoryPathResolver;
-    @Inject
-    ArtifactRoutingRulesChecker artifactRoutingRulesChecker;
 
     @Override
     protected ArtifactAdapter adapter() {
         return artifactAdapter;
-    }
-
-    public List<Artifact> findByPathLike(String storageId,
-                                         String repositoryId,
-                                         String path) {
-        return EntityTraversalUtils.reduceHierarchy(queries.findByPathLike(storageId, repositoryId, path));
     }
 
     public Page<Artifact> findMatching(Integer lastAccessedTimeInDays,
@@ -84,31 +68,11 @@ public class ArtifactRepository extends GremlinVertexRepository<Artifact> {
     public Page<Artifact> findMatching(LocalDateTime lastAccessedDate,
                                        Long minSizeInBytes,
                                        Pageable pagination) {
-        Page<Artifact> result = queries.findMatching(lastAccessedDate, minSizeInBytes, pagination);
+        Page<Artifact> result = new PageImpl<Artifact>(Collections.emptyList(), pagination, 0);
 
         return new PageImpl<>(EntityTraversalUtils.reduceHierarchy(result.toList()), pagination, result.getTotalElements());
     }
 
-    public Page<Artifact> findMatching1(String artifactName,
-                                        Pageable pagination) {
-        Page<Artifact> result = queries.findMatching1(artifactName, pagination);
-
-        return new PageImpl<>(EntityTraversalUtils.reduceHierarchy(result.toList()), pagination, result.getTotalElements());
-    }
-
-    public Page<Artifact> findMatching2(String artifactName,
-                                        String storageId,
-                                        String repositoryId,
-                                        Pageable pagination) {
-        Page<Artifact> result = queries.findMatching2(artifactName, storageId, repositoryId, pagination);
-        return new PageImpl<>(EntityTraversalUtils.reduceHierarchy(result.toList()), pagination, result.getTotalElements());
-    }
-
-    public Boolean artifactEntityExists(String storageId,
-                                        String repositoryId,
-                                        String path) {
-        return Optional.ofNullable(queries.artifactEntityExists(storageId, repositoryId, path)).orElse(Boolean.FALSE);
-    }
 
     public Page<Artifact> findMatchingByIndex(Pageable pagination, Boolean regex, String artifactName,
                                               String metadataSearch,
@@ -262,7 +226,7 @@ public class ArtifactRepository extends GremlinVertexRepository<Artifact> {
     }
 
     public List<Artifact> findMatchingBySafeLevels(List<String> storageIdAndRepositoryIdList, List<String> safeLevels) {
-        List<Artifact> artifactList = g().V().hasLabel(Vertices.ARTIFACT).has(Properties.STORAGE_ID_AND_REPOSITORY_ID, P.within(storageIdAndRepositoryIdList)).has(Properties.SAFE_LEVEL, P.within(safeLevels)).range(0, 1000).map(artifactAdapter.fold()).toList();
+        List<Artifact> artifactList = g().V().hasLabel(Vertices.ARTIFACT).has(Properties.STORAGE_ID_AND_REPOSITORY_ID, P.within(storageIdAndRepositoryIdList)).has(Properties.SAFE_LEVEL, P.within(safeLevels)).order().by(Properties.SAFE_LEVEL, Order.valueOf("desc")).range(0, 800).map(artifactAdapter.baseFold(Optional.empty())).toList();
         return EntityTraversalUtils.reduceHierarchy(artifactList);
     }
 
@@ -696,8 +660,8 @@ public class ArtifactRepository extends GremlinVertexRepository<Artifact> {
     }
 
     public Artifact findArtifactReport(String storageId,
-                                    String repositoryId,
-                                    String path) {
+                                       String repositoryId,
+                                       String path) {
         com.veadan.folib.storage.repository.Repository repository = configurationManager.getRepository(storageId, repositoryId);
         EntityTraversal<Vertex, Artifact> t = g().V()
                 .hasLabel(Vertices.ARTIFACT)
@@ -707,6 +671,21 @@ public class ArtifactRepository extends GremlinVertexRepository<Artifact> {
                         .map(ArtifactLayoutLocator.getLayoutByNameEntityMap()::get)
                         .map(ArtifactLayoutDescription::getArtifactCoordinatesClass)));
         return t.tryNext().orElse(null);
+    }
+
+    public Artifact findOneArtifactBase(String storageId,
+                                    String repositoryId,
+                                    String path) {
+        com.veadan.folib.storage.repository.Repository repository = configurationManager.getRepository(storageId, repositoryId);
+        EntityTraversal<Vertex, Artifact> t = g().V()
+                .hasLabel(Vertices.ARTIFACT)
+                .has(Properties.UUID, String.format("%s-%s-%s", storageId, repositoryId, path))
+                .map(artifactAdapter.baseFold(Optional.ofNullable(repository)
+                        .map(com.veadan.folib.storage.repository.Repository::getLayout)
+                        .map(ArtifactLayoutLocator.getLayoutByNameEntityMap()::get)
+                        .map(ArtifactLayoutDescription::getArtifactCoordinatesClass)));
+        Artifact artifact = t.tryNext().orElse(null);
+        return artifact;
     }
 
     public List<Artifact> findPromotionMatchingByIndex(List<String> safeLevelList, List<String> promotionStatusList) {
@@ -751,75 +730,5 @@ public class ArtifactRepository extends GremlinVertexRepository<Artifact> {
         }
         g().V().hasLabel(Vertices.ARTIFACT).has(Properties.CREATED, P.gt(0)).has(Properties.STORAGE_ID, storageId).has(Properties.REPOSITORY_ID, repositoryId).range(0, limit).drop();
     }
-
-}
-
-@Repository
-interface ArtifactEntityQueries extends org.springframework.data.repository.Repository<Artifact, String> {
-
-    @Query("MATCH (genericCoordinates:GenericArtifactCoordinates)<-[r1]-(artifact:Artifact) " +
-            "WHERE genericCoordinates.uuid=$path AND artifact.storageId=$storageId AND artifact.repositoryId=$repositoryId " +
-            "WITH artifact, r1, genericCoordinates " +
-            "OPTIONAL MATCH (artifact)-[r4]->(tag:ArtifactTag) " +
-            "WITH artifact, r1, genericCoordinates, r4, tag " +
-            "MATCH (genericCoordinates)<-[r2]-(layoutCoordinates) " +
-            "WITH artifact, r1, genericCoordinates, r2, layoutCoordinates, r4, tag " +
-            "RETURN artifact, r1, genericCoordinates, r2, layoutCoordinates, r4, tag")
-    List<Artifact> findByPathLike(@Param("storageId") String storageId,
-                                  @Param("repositoryId") String repositoryId,
-                                  @Param("path") String path);
-
-    @Query(value = "MATCH (genericCoordinates:GenericArtifactCoordinates)<-[r1]-(artifact:Artifact) " +
-            "WHERE artifact.lastUsed <= coalesce($lastAccessedDate, artifact.lastUsed) AND artifact.sizeInBytes >=  coalesce($minSizeInBytes, artifact.sizeInBytes) " +
-            "WITH artifact, r1, genericCoordinates " +
-            "OPTIONAL MATCH (artifact)-[r4]->(tag:ArtifactTag) " +
-            "WITH artifact, r1, genericCoordinates, r4, tag " +
-            "MATCH (genericCoordinates)<-[r2]-(layoutCoordinates) " +
-            "WITH artifact, r1, genericCoordinates, r2, layoutCoordinates, r4, tag " +
-            "RETURN artifact, r1, genericCoordinates, r2, layoutCoordinates, r4, tag",
-            countQuery = "MATCH (artifact:Artifact) " +
-                    "WHERE artifact.lastUsed <= coalesce($lastAccessedDate, artifact.lastUsed) AND artifact.sizeInBytes >=  coalesce($minSizeInBytes, artifact.sizeInBytes) " +
-                    "RETURN count(artifact)")
-    Page<Artifact> findMatching(@Param("lastAccessedDate") LocalDateTime lastAccessedDate,
-                                @Param("minSizeInBytes") Long minSizeInBytes,
-                                Pageable page);
-
-    @Query("MATCH (genericCoordinates:GenericArtifactCoordinates)<-[r1]-(artifact:Artifact) " +
-            "WHERE genericCoordinates.uuid=$path AND artifact.storageId=$storageId AND artifact.repositoryId=$repositoryId " +
-            "RETURN exists(artifact.uuid)")
-    Boolean artifactEntityExists(@Param("storageId") String storageId,
-                                 @Param("repositoryId") String repositoryId,
-                                 @Param("path") String path);
-
-    @Query(value = "MATCH (genericCoordinates:GenericArtifactCoordinates)<-[r1]-(artifact:Artifact) " +
-            "WHERE artifact.uuid CONTAINS  $artifactName" +
-            "WITH artifact, r1, genericCoordinates " +
-            "OPTIONAL MATCH (artifact)-[r4]->(tag:ArtifactTag) " +
-            "WITH artifact, r1, genericCoordinates, r4, tag " +
-            "MATCH (genericCoordinates)<-[r2]-(layoutCoordinates) " +
-            "WITH artifact, r1, genericCoordinates, r2, layoutCoordinates, r4, tag " +
-            "RETURN artifact, r1, genericCoordinates, r2, layoutCoordinates, r4, tag",
-            countQuery = "MATCH (artifact:Artifact) " +
-                    "WHERE  artifact.uuid CONTAINS $artifactName" +
-                    "RETURN count(artifact)")
-    Page<Artifact> findMatching1(@Param("artifactName") String artifactName,
-                                 Pageable page);
-
-    @Query(value = "MATCH (genericCoordinates:GenericArtifactCoordinates)<-[r1]-(artifact:Artifact) " +
-            "WHERE artifact.uuid CONTAINS  $artifactName AND artifact.storageId=$storageId AND artifact.repositoryId=$repositoryId " +
-            "WITH artifact, r1, genericCoordinates " +
-            "OPTIONAL MATCH (artifact)-[r4]->(tag:ArtifactTag) " +
-            "WITH artifact, r1, genericCoordinates, r4, tag " +
-            "MATCH (genericCoordinates)<-[r2]-(layoutCoordinates) " +
-            "WITH artifact, r1, genericCoordinates, r2, layoutCoordinates, r4, tag " +
-            "RETURN artifact, r1, genericCoordinates, r2, layoutCoordinates, r4, tag",
-            countQuery = "MATCH (artifact:Artifact) " +
-                    "WHERE  artifact.uuid CONTAINS $artifactName AND artifact.storageId=$storageId AND artifact.repositoryId=$repositoryId " +
-                    "RETURN count(artifact)")
-    Page<Artifact> findMatching2(@Param("artifactName") String artifactName,
-                                 @Param("storageId") String storageId,
-                                 @Param("repositoryId") String repositoryId,
-                                 Pageable page);
-
 
 }

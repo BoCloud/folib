@@ -18,8 +18,8 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.attribute.FileTime;
 import java.time.LocalDateTime;
-import java.time.ZoneId;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -113,16 +113,18 @@ public class DockerCleanupArtifactsProvider implements CleanupArtifactsProvider 
                 continue;
             }
             artifact = manifestRepositoryPath.getArtifactEntry();
-            if (Objects.isNull(artifact) || Objects.isNull(artifact.getLastUsed())) {
+            if (Objects.isNull(artifact)) {
                 log.warn("Cleanup storageId [{}] repositoryId [{}] path [{}] artifact not found", storageId, repositoryId, manifestRepositoryPath);
                 continue;
             }
-            map.put(manifestRepositoryPath, artifact.getLastUsed().atZone(ZoneId.of("Asia/Shanghai")).toOffsetDateTime().toInstant().getEpochSecond());
+            Map<String, Object> fileAttributes = Files.readAttributes(manifestRepositoryPath, "*");
+            map.put(manifestRepositoryPath, ((FileTime) fileAttributes.get("creationTime")).toMillis());
         }
         map = map.entrySet().stream()
-                .sorted(Map.Entry.comparingByKey())
+                .sorted(Map.Entry.comparingByValue())
                 .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue,
                         (oldValue, newValue) -> oldValue, LinkedHashMap::new));
+        log.info("Cleanup artifact job storageId [{}] repositoryId [{}] storageCondition [{}] storage quantity [{}] imagePath [{}] tag quantity [{}] order tags [{}]", storageId, repositoryId, storageCondition, storageQuantity, imageRepositoryPath, tagRepositoryPathList.size(), map.keySet().toString());
         for (Map.Entry<RepositoryPath, Long> manifestEntry : map.entrySet()) {
             Long currentTagSize = getTagSize(imageRepositoryPath, excludeList);
             log.info("Cleanup artifact job storageId [{}] repositoryId [{}] storageCondition [{}] storage quantity [{}] imagePath [{}] tag [{}] currentTagSize [{}]", storageId, repositoryId, storageCondition, storageQuantity, imageRepositoryPath, manifestEntry.getKey(), currentTagSize);

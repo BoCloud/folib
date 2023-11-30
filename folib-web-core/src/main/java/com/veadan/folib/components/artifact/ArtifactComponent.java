@@ -817,7 +817,7 @@ public class ArtifactComponent {
                 String sId = ConfigurationUtils.getStorageId(repository.getStorage().getId(), storageAndRepositoryId);
                 String rId = ConfigurationUtils.getRepositoryId(storageAndRepositoryId);
                 itemPackageFeed = getNpmArtifactPackageFeed(configurationManager.getRepository(sId, rId), artifactId, coordinateValues, predicate);
-                if (Objects.nonNull(itemPackageFeed)) {
+                if (Objects.nonNull(itemPackageFeed) && Objects.nonNull(itemPackageFeed.getVersions())) {
                     packageFeedList.add(itemPackageFeed);
                 }
             }

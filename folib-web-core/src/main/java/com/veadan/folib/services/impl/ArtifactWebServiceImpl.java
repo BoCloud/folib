@@ -18,6 +18,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.xml.XmlMapper;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
+import com.sun.management.HotSpotDiagnosticMXBean;
 import com.veadan.folib.artifact.coordinates.DockerArtifactCoordinates;
 import com.veadan.folib.artifact.coordinates.MavenArtifactCoordinates;
 import com.veadan.folib.authorization.dto.Role;
@@ -51,12 +52,14 @@ import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.providers.io.RepositoryPathResolver;
 import com.veadan.folib.providers.io.RootRepositoryPath;
 import com.veadan.folib.providers.layout.DockerLayoutProvider;
+import com.veadan.folib.providers.layout.LayoutProvider;
 import com.veadan.folib.providers.layout.LayoutProviderRegistry;
 import com.veadan.folib.providers.layout.Maven2LayoutProvider;
 import com.veadan.folib.repositories.ArtifactRepository;
 import com.veadan.folib.scanner.common.msg.TableResultResponse;
 import com.veadan.folib.scanner.entity.ScanRules;
 import com.veadan.folib.scanner.mapper.ScanRulesMapper;
+import com.veadan.folib.scanner.service.ScanService;
 import com.veadan.folib.services.*;
 import com.veadan.folib.storage.Storage;
 import com.veadan.folib.storage.StorageDto;
@@ -67,6 +70,7 @@ import com.veadan.folib.users.userdetails.SpringSecurityUser;
 import com.veadan.folib.util.CompressUtils;
 import com.veadan.folib.util.CustomDateUtils;
 import com.veadan.folib.util.FileSizeConvertUtils;
+import com.veadan.folib.utils.TreeUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.io.FilenameUtils;
@@ -95,6 +99,7 @@ import javax.inject.Inject;
 import javax.servlet.http.HttpServletResponse;
 import javax.transaction.Transactional;
 import java.io.*;
+import java.lang.management.ManagementFactory;
 import java.net.URI;
 import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
@@ -144,7 +149,8 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
     private ThreadPoolTaskExecutor asyncThreadPoolTaskExecutor;
 
     @Inject
-    private FqlSearchService fqlSearchService;
+    @Lazy
+    private ScanService scanService;
 
     @Inject
     @Lazy
@@ -799,6 +805,67 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
             dropFiles(repositoryPath);
         }
         dropArtifact(storageId, repositoryId, limit);
+    }
+
+    @Override
+    public List preview(RepositoryPath repositoryPath) {
+        List result = null;
+        try {
+            Artifact updateArtifactEntry = repositoryPath.getArtifactEntry();
+            if (Objects.isNull(updateArtifactEntry)) {
+                return null;
+            }
+            Repository repository = repositoryPath.getRepository();
+            LayoutProvider layoutProvider = layoutProviderRegistry.getProvider(repository.getLayout());
+            Set<String> archiveFilenames = layoutProvider.listArchiveFilenames(repositoryPath);
+            if (CollectionUtils.isNotEmpty(archiveFilenames)) {
+                if (archiveFilenames.size() > 5) {
+                    archiveFilenames = archiveFilenames.stream().limit(100).collect(Collectors.toSet());
+                }
+                ArtifactArchiveListing artifactArchiveListing = updateArtifactEntry.getArtifactArchiveListing();
+                artifactArchiveListing.setFilenames(archiveFilenames);
+                TreeUtil treeUtil = new TreeUtil();
+                Set<String> fileNames = artifactArchiveListing.getFilenames();
+                if (CollectionUtils.isNotEmpty(fileNames)) {
+                    result = treeUtil.toTree(fileNames);
+                }
+                artifactService.saveOrUpdateArtifact(updateArtifactEntry);
+            }
+        } catch (Exception ex) {
+            log.error(ExceptionUtils.getStackTrace(ex));
+        }
+        return result;
+    }
+
+    @Override
+    public void scan(RepositoryPath repositoryPath) {
+        try {
+            Artifact artifact = artifactRepository.findOneArtifactBase(repositoryPath.getStorageId(), repositoryPath.getRepositoryId(), RepositoryFiles.relativizePath(repositoryPath));
+            if (Objects.nonNull(artifact)) {
+                scanService.doScan(artifact);
+            }
+        } catch (Exception ex) {
+            log.error(ExceptionUtils.getStackTrace(ex));
+        }
+    }
+
+    @Override
+    public String dumpHead(String filePath) {
+        try {
+            if (StringUtils.isBlank(filePath)) {
+                String filename = DateUtil.format(DateUtil.date(), DatePattern.PURE_DATETIME_PATTERN) + "_dump.hprof";
+                filePath = tempPath + File.separator + "dumpHead" + File.separator + filename;
+            }
+            log.info("DumpHead file path [{}]", filePath);
+            Path path = Path.of(filePath);
+            Files.createDirectories(path.getParent());
+            HotSpotDiagnosticMXBean bean = ManagementFactory.getPlatformMXBean(
+                    HotSpotDiagnosticMXBean.class);
+            bean.dumpHeap(filePath, true);
+        } catch (Exception ex) {
+            log.error(ExceptionUtils.getStackTrace(ex));
+        }
+        return filePath;
     }
 
     /**

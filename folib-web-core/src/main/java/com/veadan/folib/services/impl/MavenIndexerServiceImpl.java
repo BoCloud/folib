@@ -309,7 +309,7 @@ public class MavenIndexerServiceImpl implements MavenIndexerService {
         executor.setKeepAliveSeconds(120);
         executor.setThreadNamePrefix("customSyncArtifact_");
         executor.setWaitForTasksToCompleteOnShutdown(true);
-        executor.setAwaitTerminationSeconds(60);
+        executor.setAwaitTerminationSeconds(6);
         executor.setRejectedExecutionHandler(new ThreadPoolExecutor.CallerRunsPolicy());
         executor.initialize();
         return executor;
