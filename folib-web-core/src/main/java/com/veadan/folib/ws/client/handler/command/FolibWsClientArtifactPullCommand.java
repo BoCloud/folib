@@ -60,7 +60,12 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.*;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -201,7 +206,7 @@ public class FolibWsClientArtifactPullCommand implements FolibWsClientCommand<Pr
                 if (!usedSlice) {
                     // 非切片下载（下载Part有且只有一个）
                     final String artifactFileSliceFolderPath = String.format("%s/artifactTemp/%s", StringUtils.chomp(tempPath, "/"), UUID.fastUUID().toString(true));
-                    final String downloadUrl = String.format("%s?nodeMark=%s", downloadParInfotList.get(0).getDownloadUrl(), nodeMark);
+                    final String downloadUrl = UrlUtils.addQuery(downloadParInfotList.get(0).getDownloadUrl(), "nodeMark", nodeMark);
                     try {
                         final String tempPath = String.format("%s/%s", artifactFileSliceFolderPath, FileUtil.getName(path));
                         FileUtil.touch(new File(tempPath));
@@ -230,7 +235,7 @@ public class FolibWsClientArtifactPullCommand implements FolibWsClientCommand<Pr
                         final List<String> sliceFileDownloadPathList = IntStream.range(0, downloadParInfotList.size())
                                 .mapToObj(index -> {
                                     final DownloadPartInfo downloadPartInfo = downloadParInfotList.get(index);
-                                    final String downloadUrl = String.format("%s?nodeMark=%s", downloadPartInfo.getDownloadUrl(), nodeMark);
+                                    final String downloadUrl = UrlUtils.addQuery(downloadPartInfo.getDownloadUrl(), "nodeMark", nodeMark);
                                     final String downloadFilePath = String.format("%s/chunk%s", artifactFileSliceFolderPath, index);
                                     final File downloadFile = new File(downloadFilePath);
                                     FileUtil.touch(downloadFile);

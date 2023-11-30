@@ -100,11 +100,11 @@ public interface ArtifactPromotionService {
      * @param nodeMark
      * @param artifactMd5
      * @param startDownloadIndex
-     * @param endDownloadIndex
+     * @param readLength
      * @param response
      * @since x.x.x
      */
-    Boolean speedLimitSliceDownload(Repository repository, String artifactPath, String nodeMark, String artifactMd5, Long startDownloadIndex, Long endDownloadIndex, HttpServletResponse response);
+    Boolean speedLimitSliceDownload(Repository repository, String artifactPath, String nodeMark, String artifactMd5, Long startDownloadIndex, Long readLength, HttpServletResponse response);
     
     
     /**
@@ -126,13 +126,9 @@ public interface ArtifactPromotionService {
      */
     ArtifactSliceDownloadInfoRes querySliceDownloadInfoStoreTemp(ArtifactSliceDownloadInfoReq model);
     
-    /**
-     * 获取制品切片下载信息（基于临时Folib目录存储）
-     * @param model
-     * @return
-     * @since x.x.x
-     */
-    ArtifactSliceDownloadInfoRes querySliceDownloadInfoStoreFolib(ArtifactSliceDownloadInfoReq model);
+    
+    ArtifactSliceDownloadInfoRes querySliceDownloadInfo(ArtifactSliceDownloadInfoReq model);
+    
 
     List<ArtifactSliceDownloadInfoRes> batchQuerySliceDownloadInfo(List<ArtifactSliceDownloadInfoReq> models);
 

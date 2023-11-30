@@ -203,10 +203,10 @@ public class ArtifactPromotionController extends BaseArtifactController {
                                      @RequestParam("nodeMark") String nodeMark,
                                      @RequestParam("artifactMd5") String artifactMd5,
                                      @RequestParam("startDownloadIndex") Long startDownloadIndex,
-                                     @RequestParam("endDownloadIndex") Long endDownloadIndex,
+                                     @RequestParam("readLength") Long readLength,
                                      HttpServletResponse response) {
         artifactPromotionService.speedLimitSliceDownload(repository, artifactPath, nodeMark, artifactMd5, 
-                startDownloadIndex, endDownloadIndex, response);
+                startDownloadIndex, readLength, response);
     }
 
     @PostMapping(value = "/query/support/slice/download")
@@ -224,7 +224,7 @@ public class ArtifactPromotionController extends BaseArtifactController {
     @PostMapping(value = "/query/slice/download/info")
     @PermissionCheck(resourceKey = "ARTIFACTS_RESOLVE")
     public ResponseEntity<ArtifactSliceDownloadInfoRes> querySliceDownloadInfo(@RequestBody ArtifactSliceDownloadInfoReq model) {
-        return ResponseEntity.ok(artifactPromotionService.querySliceDownloadInfoStoreTemp(model));
+        return ResponseEntity.ok(artifactPromotionService.querySliceDownloadInfo(model));
     }
 
     @PostMapping(value = "/batch/query/slice/download/info")

@@ -98,6 +98,8 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.net.Socket;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -363,7 +365,7 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
                         throw new BusinessException(String.format("客户端 host [%s] port [%s] 未连接，发送命令失败", targetHost, targetPort));
                     }
                 }
-                
+
                 final FolibWsAction folibWsAction = new FolibWsAction()
                         .command(FolibWsClientArtifactPullCommand.COMMAND)
                         .payload(promotionNodeOption);
@@ -387,7 +389,7 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
         final SpringSecurityUser userDetails = (SpringSecurityUser) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         final String userName = Optional.ofNullable(userDetails).map(SpringSecurityUser::getUsername).orElse(null);
         final String requestHostName = request.getServerName();
-        
+
         // 生成日志记录
         final ArtifactSyncRecord artifactSyncRecord = new ArtifactSyncRecord();
         artifactSyncRecord.setRequestHostName(requestHostName);
@@ -406,7 +408,7 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
             asyncThreadPoolTaskExecutor.execute(() ->
             { // 异步执行制品晋级
                 final ResponseEntity<String> re = this.nodeOption(promotionNodeOption, request);
-                
+
                 if (FolibWsClientArtifactPullCommand.COMMAND.equals(re.getBody())) {
                     /** 异步使用回调更新状态等信息 {@linkplain ArtifactPromotionServiceImpl#nodeOptionCallback(ArtifactPromotionNodeOptionCallbackReq)} */
                 } else {
@@ -445,14 +447,14 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
         final Integer status = model.getStatus();
         final String failedReason = model.getFailedReason();
         if (StringUtils.isNotBlank(syncNo)) {
-            artifactSyncRecordMapper.updateByExample(new ArtifactSyncRecord().setSyncNo(syncNo), 
+            artifactSyncRecordMapper.updateByExample(new ArtifactSyncRecord().setSyncNo(syncNo),
                     new ArtifactSyncRecord()
                             .setStatus(status)
                             .setFailedReason(failedReason)
-    ///                        .setUpdateBy(null)
+                            ///                        .setUpdateBy(null)
                             .setUpdateTime(new Date()));
         }
-        
+
         return true;
     }
 
@@ -669,14 +671,14 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
                     .body(e.getMessage());
         }
     }
-    
+
     @Override
     public ResponseEntity artifactDispatchAttachRecord(ArtifactDispatch artifactDispatch, HttpServletRequest request) {
         final String srcStorageId = artifactDispatch.getSrcStorageId();
         final String srcRepositoryId = artifactDispatch.getSrcRepositoryId();
         final List<TargetDispatchRepositoryDto> targetDispatchRepositoryList = artifactDispatch.getTargetDispatchRepositoryList();
         final String path = artifactDispatch.getPath();
-        
+
         // 生成同步编号
         final String syncNo = String.format("SyncNo-%s", UUID.fastUUID());
         final SpringSecurityUser userDetails = (SpringSecurityUser) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
@@ -731,10 +733,10 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
                     .setUpdateTime(new Date())
                     .setUpdateBy(userName));
         }
-        
+
         return ResponseEntity.ok(syncNo);
     }
-    
+
     @Override
     public ResponseEntity artifactDispatch(ArtifactDispatch artifactDispatch) {
         log.info("start artifact dispatch");
@@ -850,9 +852,9 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
     }
 
     @Override
-    public Boolean speedLimitSliceDownload(Repository repository, String artifactPath, String nodeMark, 
-                                        String artifactMd5, Long startDownloadIndex, Long endDownloadIndex, 
-                                        HttpServletResponse response) {
+    public Boolean speedLimitSliceDownload(Repository repository, String artifactPath, String nodeMark,
+                                           String artifactMd5, Long startDownloadIndex, Long readLength,
+                                           HttpServletResponse response) {
         // 获取全局节点限速
         final int kbps = Optional.ofNullable(configurationManagementService.getConfiguration().getKbps()).orElse(0) * (1024);
         // 获取节点限速
@@ -874,14 +876,16 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
             if (!artifactMd5.equals(artifactFileMd5)) {
                 throw new BusinessException("下载文件的MD5已经发生变化，请重写获取切片下载信息");
             }
-            if (endDownloadIndex > fileSize) {
-                endDownloadIndex = fileSize;
+            if (readLength > fileSize) {
+                readLength = fileSize;
             }
 
             final String fileName = artifactRepositoryPath.getFileName().toString();
-            response.setHeader("Content-Disposition", String.format("attachment;filename=%s-chunk-%s-%s", fileName, startDownloadIndex, endDownloadIndex));
+            response.setHeader("Content-Disposition", finalKbps > 0 ?
+                    String.format("attachment;filename=%s-chunk-%s-%s", fileName, startDownloadIndex, readLength)
+                    : fileName);
             response.setContentType("application/x-gzip");
-            
+
             if (finalKbps > 0) {
                 // 限速下载
                 // - 获取初始下载速度
@@ -892,24 +896,24 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
                 }
 
                 try (final InputStream sliceFileInputSteam = Files.newInputStream(artifactRepositoryPath);
-                     final OutputStream outputStream = response.getOutputStream();){
+                     final OutputStream outputStream = response.getOutputStream();) {
                     int speedByteSize = this.getDownloadSpeedByte(finalKbps, nodeDownloadConnectionCounter.incrementAndGet());
-                    if (speedByteSize > endDownloadIndex) {
-                        speedByteSize = Math.toIntExact(endDownloadIndex);
+                    if (speedByteSize > readLength) {
+                        speedByteSize = Math.toIntExact(readLength);
                     }
-                    
+
                     sliceFileInputSteam.skip(startDownloadIndex);
                     final byte[] buffer = new byte[finalKbps];
                     long offset;
                     long totalOffset = 0;
-                    while ((offset = sliceFileInputSteam.read(buffer, 0, speedByteSize)) != -1 & totalOffset < endDownloadIndex) {
+                    while ((offset = sliceFileInputSteam.read(buffer, 0, speedByteSize)) != -1 & totalOffset < readLength) {
                         TimeUnit.SECONDS.sleep(1);
                         // 获取下一秒下载速度
                         speedByteSize = this.getDownloadSpeedByte(finalKbps, nodeDownloadConnectionCounter.get());
                         outputStream.write(buffer, 0, (int) offset);
                         totalOffset += offset;
-                        if (totalOffset > endDownloadIndex) {
-                            speedByteSize = Math.toIntExact(endDownloadIndex);
+                        if (totalOffset > readLength) {
+                            speedByteSize = Math.toIntExact(readLength);
                         }
                     }
                 } catch (Exception e) {
@@ -993,6 +997,67 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
         }
 
         return resultMap;
+    }
+
+    @Override
+    public ArtifactSliceDownloadInfoRes querySliceDownloadInfo(ArtifactSliceDownloadInfoReq model) {
+        final String storageId = model.getStorageId();
+        final String repositoryId = model.getRepositoryId();
+        final String path = model.getPath();
+        final ArtifactSliceDownloadInfoRes artifactSliceDownloadInfoDto = new ArtifactSliceDownloadInfoRes();
+        final RepositoryPath artifactPath = repositoryPathResolver.resolve(storageId, repositoryId, path);
+        if (!Files.exists(artifactPath)) {
+            throw new BusinessException("需要获取切片下载信息的制品不存在或已被删除");
+        }
+        if (Files.isDirectory(artifactPath)) {
+            throw new BusinessException("获取切片下载信息失败，目标是文件夹");
+        }
+
+        try {
+            final long sliceByteSize = Optional.ofNullable(configurationManagementService.getConfiguration().getSliceMbSize()).orElse(0L) * (1024 * 1024);
+            if (sliceByteSize <= 0) {
+                throw new BusinessException("制品传输切片大小不能为空，请前往全局配置进行配置");
+            }
+
+            final long artifactFileLength = Files.size(artifactPath);
+            final String artifactUri = String.format("%s/%s/%s", storageId, repositoryId, artifactPath.relativize());
+            final String baseUrl = StringUtils.chomp(configurationManagementService.getConfiguration().getBaseUrl(), "/");
+            final String md5 = null != artifactPath.getArtifactEntry() ? Optional.ofNullable(artifactPath.getArtifactEntry().getChecksums()).orElse(Collections.emptyMap()).get("MD5") : null;
+            final int chunkCount = BigDecimal.valueOf(artifactFileLength).divide(BigDecimal.valueOf(sliceByteSize), 0, RoundingMode.CEILING).intValue();
+
+            artifactSliceDownloadInfoDto.setStorageId(storageId);
+            artifactSliceDownloadInfoDto.setRepositoryId(repositoryId);
+            artifactSliceDownloadInfoDto.setPath(path);
+            artifactSliceDownloadInfoDto.setUsedSlice(artifactFileLength > sliceByteSize);
+            artifactSliceDownloadInfoDto.setArtifactMd5(md5);
+            artifactSliceDownloadInfoDto.setDownloadPartList(new ArrayList<>());
+
+            if (artifactSliceDownloadInfoDto.getUsedSlice()) {
+                for (int i = 0; i < chunkCount; i++) {
+                    // 计算每个线程的起始位置和结束位置
+                    long start = i * sliceByteSize;
+///                    long end = (i == chunkCount - 1) ? artifactFileLength : start + sliceByteSize;
+
+                    artifactSliceDownloadInfoDto.getDownloadPartList().add(
+                            new ArtifactSliceDownloadInfoRes.DownloadPartInfo()
+                                    .setDownloadUri(artifactUri)
+                                    .setDownloadUrl(String.format("%s/api/artifact/folib/promotion/file/speedLimitSliceDownload/%s?artifactMd5=%s&startDownloadIndex=%s&readLength=%s", baseUrl, artifactUri, md5, start, sliceByteSize))
+                    );
+                }
+            } else {
+                artifactSliceDownloadInfoDto.getDownloadPartList().add(
+                        new ArtifactSliceDownloadInfoRes.DownloadPartInfo()
+                                .setDownloadUri(artifactUri)
+                                .setDownloadUrl(String.format("%s/api/artifact/folib/promotion/file/speedLimitSliceDownload/%s?artifactMd5=%s&startDownloadIndex=0&readLength=%s", baseUrl, artifactUri, md5, artifactFileLength))
+                );
+            }
+
+        } catch (Exception e) {
+            log.error("获取制品切片下载信息失败", e);
+            throw new BusinessException("获取制品切片下载信息失败");
+        }
+
+        return artifactSliceDownloadInfoDto;
     }
 
     @Override
@@ -1109,130 +1174,9 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
     }
 
     @Override
-    public ArtifactSliceDownloadInfoRes querySliceDownloadInfoStoreFolib(ArtifactSliceDownloadInfoReq model) {
-        final String storageId = model.getStorageId();
-        final String repositoryId = model.getRepositoryId();
-        final String path = model.getPath();
-        final ArtifactSliceDownloadInfoRes artifactSliceDownloadInfoDto = new ArtifactSliceDownloadInfoRes();
-        final RepositoryPath artifactPath = repositoryPathResolver.resolve(storageId, repositoryId, path);
-        if (!Files.exists(artifactPath)) {
-            throw new BusinessException("需要获取切片下载信息的制品不存在或已被删除");
-        }
-        if (Files.isDirectory(artifactPath)) {
-            return null;
-        }
-
-        try {
-            final Repository repository = artifactPath.getRepository();
-            final Path fileName = artifactPath.getTarget().getFileName();
-            final String baseUrl = StringUtils.chomp(configurationManagementService.getConfiguration().getBaseUrl(), "/");
-            final String md5 = null != artifactPath.getArtifactEntry() ? Optional.ofNullable(artifactPath.getArtifactEntry().getChecksums()).orElse(Collections.emptyMap()).get("MD5") : null;
-            final long kbps = Optional.ofNullable(configurationManagementService.getConfiguration().getSliceMbSize()).orElse(0L) * (1024 * 1024);
-            final long artifactFileLength = Files.size(artifactPath);
-            String artifactFilePath = artifactPath.toString();
-            String artifactFileSliceFolderPath = String.format("%s/artifactSlice/%s", StringUtils.chomp(tempPath, "/"), UUID.fastUUID().toString(true));
-            artifactSliceDownloadInfoDto.setStorageId(storageId);
-            artifactSliceDownloadInfoDto.setRepositoryId(repositoryId);
-            artifactSliceDownloadInfoDto.setPath(path);
-            artifactSliceDownloadInfoDto.setUsedSlice(artifactFileLength > kbps);
-            artifactSliceDownloadInfoDto.setArtifactMd5(md5);
-
-            if (artifactSliceDownloadInfoDto.getUsedSlice()) {
-                try {
-                    final String artifactParentUri = Optional.of(artifactPath.relativize()).map(p -> {
-                        try {
-                            return p.getParent().toString();
-                        } catch (Exception e) {
-                            return StringUtils.EMPTY;
-                        }
-                    }).get();
-                    final String sliceStoreFolderUri = String.format("%s.slice", StringUtils.isNotBlank(artifactParentUri) ? artifactParentUri + "/" : StringUtils.EMPTY);
-                    final String sliceGenJsonFileUri = String.format("%s/slice-gen.json", sliceStoreFolderUri);
-
-                    // 根据文件MD5检查是否已经生成切片数据，如有则返回生成已经存在的切片数据（避免重复生成）
-                    final RepositoryPath sliceGenJsonUriPath = repositoryPathResolver.resolve(storageId, repositoryId, sliceGenJsonFileUri);
-                    if (Files.exists(sliceGenJsonUriPath)) {
-                        final String sliceGenJson = IoUtil.readUtf8(Files.newInputStream(sliceGenJsonUriPath));
-                        if (StringUtils.isNotBlank(sliceGenJson)) {
-                            final ArtifactSliceDownloadInfoRes cacheDto = JSON.parseObject(sliceGenJson, ArtifactSliceDownloadInfoRes.class);
-                            if (null != cacheDto && StringUtils.isNotBlank(md5) && md5.equals(cacheDto.getArtifactMd5())) {
-                                if (CollUtil.isNotEmpty(cacheDto.getDownloadPartList())) {
-                                    for (ArtifactSliceDownloadInfoRes.DownloadPartInfo downloadPartInfo : cacheDto.getDownloadPartList()) {
-                                        downloadPartInfo.setDownloadUrl(String.format("%s/storages/%s/%s/%s", baseUrl, storageId, repositoryId, downloadPartInfo.getDownloadUri()));
-                                    }
-                                }
-                                return cacheDto;
-                            }
-                        }
-                    }
-
-                    if (S3FileSystemStorageProvider.ALIAS.equals(repository.getStorageProvider())) {
-                        // 由于是网络路径，需要暂存到本地进行暂存
-                        artifactFilePath = String.format("%s/artifactTemp/%s/%s", StringUtils.chomp(tempPath, "/"), UUID.randomUUID().toString(true), fileName);
-                        FileUtil.writeFromStream(new BufferedInputStream(Files.newInputStream(artifactPath)), artifactFilePath);
-                    }
-                    final List<String> splitFilePathList = FileUtils.splitFile(artifactFilePath, artifactFileSliceFolderPath, kbps);
-
-                    // 将暂存的文件
-                    log.info("splitFilePathList>>> {}", JSON.toJSONString(splitFilePathList));
-                    final boolean result = splitFilePathList.stream().allMatch(splitFilePath -> {
-                        final String splitFileName = FileUtil.getName(splitFilePath);
-                        final String splitFileStoreUri = String.format("%s/%s", sliceStoreFolderUri, splitFileName);
-                        try {
-                            final RepositoryPath splitFileStorePath = repositoryPathResolver.resolve(storageId, repositoryId, splitFileStoreUri);
-                            artifactManagementService.store(splitFileStorePath, Files.newInputStream(Path.of(splitFilePath)));
-                        } catch (IOException e) {
-                            log.error("转存切片文件（{} => {}）失败", splitFilePath, splitFileStoreUri, e);
-                            return false;
-                        }
-                        return true;
-                    });
-                    if (!result) {
-                        throw new BusinessException("转存切片文件失败");
-                    }
-
-                    // 生成下载路径
-                    final List<ArtifactSliceDownloadInfoRes.DownloadPartInfo> downloadPartInfoList = splitFilePathList.stream()
-                            .map(splitFilePath -> {
-                                final String splitFileName = FileUtil.getName(splitFilePath);
-                                final String splitFileStoreUri = String.format("%s/%s", sliceStoreFolderUri, splitFileName);
-                                return new ArtifactSliceDownloadInfoRes.DownloadPartInfo()
-                                        .setDownloadUri(splitFileStoreUri)
-                                        .setDownloadUrl(String.format("%s/storages/%s/%s/%s", baseUrl, storageId, repositoryId, splitFileStoreUri));
-                            })
-                            .collect(Collectors.toList());
-                    artifactSliceDownloadInfoDto.setDownloadPartList(downloadPartInfoList);
-
-                    // 持久化切片数据
-                    artifactManagementService.store(repositoryPathResolver.resolve(storageId, repositoryId, sliceGenJsonFileUri),
-                            new StringInputStream(JSON.toJSONString(artifactSliceDownloadInfoDto)));
-
-                } catch (IOException e) {
-                    log.error("切片制品文件失败", e);
-                    throw new BusinessException("切片制品文件失败");
-                }
-            } else {
-                final String artifactUri = String.format("%s/%s/%s", storageId, repositoryId, artifactPath.relativize());
-                artifactSliceDownloadInfoDto.setDownloadPartList(Collections.singletonList(
-                        new ArtifactSliceDownloadInfoRes.DownloadPartInfo()
-                                .setDownloadUri(artifactUri)
-                                .setDownloadUrl(String.format("%s/storages/%s", baseUrl, artifactUri))
-                ));
-            }
-        } catch (BusinessException e) {
-            throw e;
-        } catch (Exception e) {
-            log.error("获取制品切片下载信息失败", e);
-            throw new BusinessException("获取制品切片下载信息失败");
-        }
-
-        return artifactSliceDownloadInfoDto;
-    }
-
-    @Override
     public List<ArtifactSliceDownloadInfoRes> batchQuerySliceDownloadInfo
             (List<ArtifactSliceDownloadInfoReq> models) {
-        return models.stream().map(this::querySliceDownloadInfoStoreTemp).filter(Objects::nonNull).collect(Collectors.toList());
+        return models.stream().map(this::querySliceDownloadInfo).filter(Objects::nonNull).collect(Collectors.toList());
     }
 
     @Override
@@ -1309,7 +1253,7 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
 
                 // 转存合并文件到Folib
                 artifactManagementService.store(artifactFilePath, Files.newInputStream(Path.of(mergeFilePath)));
-            }  
+            }
         } catch (Exception e) {
             log.error("切片上传失败", e);
             return false;
@@ -1324,7 +1268,7 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
 
     private JSONObject getSliceUploadStatusJSONObj(String artifactFileSliceUploadRootFolderPathStr) {
         final File sliceUploadStatusFile = new File(String.format("%s/sliceUploadStatus.json", artifactFileSliceUploadRootFolderPathStr));
-        
+
         return Optional.ofNullable(FileUtil.readString(sliceUploadStatusFile, StandardCharsets.UTF_8))
                 .filter(StringUtils::isNotBlank)
                 .map(JSON::parseObject)
