@@ -1,4 +1,6 @@
 package com.veadan.folib.services.impl;
+import java.util.List;
+import com.veadan.folib.dto.TargetDispatchRepositoryDto;
 import java.util.Map;
 import java.io.InputStream;
 
@@ -642,7 +644,72 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
                     .body(e.getMessage());
         }
     }
+    
+    @Override
+    public ResponseEntity artifactDispatchAttachRecord(ArtifactDispatch artifactDispatch, HttpServletRequest request) {
+        final String srcStorageId = artifactDispatch.getSrcStorageId();
+        final String srcRepositoryId = artifactDispatch.getSrcRepositoryId();
+        final List<TargetDispatchRepositoryDto> targetDispatchRepositoryList = artifactDispatch.getTargetDispatchRepositoryList();
+        final String path = artifactDispatch.getPath();
+        
+        // 生成同步编号
+        final String syncNo = String.format("SyncNo-%s", UUID.fastUUID());
+        final SpringSecurityUser userDetails = (SpringSecurityUser) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        final String userName = Optional.ofNullable(userDetails).map(SpringSecurityUser::getUsername).orElse(null);
+        final String requestHostName = request.getServerName();
 
+        // 生成日志记录
+        final ArtifactSyncRecord artifactSyncRecord = new ArtifactSyncRecord();
+        artifactSyncRecord.setRequestHostName(requestHostName);
+        artifactSyncRecord.setSourcePath(String.format("%s/%s/%s", srcStorageId, srcRepositoryId, path));
+        artifactSyncRecord.setTargetPath(JSON.toJSONString(targetDispatchRepositoryList));
+        artifactSyncRecord.setSyncNo(syncNo);
+        artifactSyncRecord.setOpsType(ArtifactSyncRecordOpsTypeEnum.DISPATCH.getVal());
+///        artifactSyncRecord.setSyncModel(promotionNodeOption.getSyncModel());
+        artifactSyncRecord.setStatus(ArtifactSyncRecordStatusEnum.IN_SYNC.getVal());
+        artifactSyncRecord.setCreateBy(userName);
+        artifactSyncRecord.setCreateTime(new Date());
+        artifactSyncRecordMapper.insert(artifactSyncRecord);
+
+        try {
+            asyncThreadPoolTaskExecutor.execute(() ->
+            { // 异步执行制品晋级
+                final ResponseEntity<String> re = this.artifactDispatch(artifactDispatch);
+
+                // 更新同步的逻辑状态等信息，由于制品分发涉及多个制品，即成功状态时所有支配完成时更新
+//                if (!HttpStatus.OK.equals(re.getStatusCode())) {
+//                    artifactSyncRecord.setStatus(ArtifactSyncRecordStatusEnum.FAILED.getVal());
+//                    if (Objects.nonNull(re.getBody())) {
+//                        artifactSyncRecord.setFailedReason(re.getBody().toString());
+//                    }
+//                }
+                if (HttpStatus.OK.equals(re.getStatusCode())) {
+                    artifactSyncRecord.setStatus(ArtifactSyncRecordStatusEnum.SUCCESS.getVal());
+                } else {
+                    artifactSyncRecord.setStatus(ArtifactSyncRecordStatusEnum.FAILED.getVal());
+                    if (Objects.nonNull(re.getBody())) {
+                        artifactSyncRecord.setFailedReason(re.getBody().toString());
+                    }
+                }
+
+                // 更新日志结束开始时间
+                artifactSyncRecordMapper.updateByPrimaryKey(artifactSyncRecord
+                        .setUpdateTime(new Date())
+                        .setUpdateBy(userName));
+            });
+        } catch (Exception e) {
+            artifactSyncRecord.setStatus(ArtifactSyncRecordStatusEnum.FAILED.getVal());
+            artifactSyncRecord.setFailedReason(e.getMessage());
+
+            // 更新日志结束开始时间
+            artifactSyncRecordMapper.updateByPrimaryKey(artifactSyncRecord
+                    .setUpdateTime(new Date())
+                    .setUpdateBy(userName));
+        }
+        
+        return ResponseEntity.ok(syncNo);
+    }
+    
     @Override
     public ResponseEntity artifactDispatch(ArtifactDispatch artifactDispatch) {
         log.info("start artifact dispatch");

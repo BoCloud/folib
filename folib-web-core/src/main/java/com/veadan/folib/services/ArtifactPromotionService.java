@@ -48,6 +48,8 @@ public interface ArtifactPromotionService {
 
     ResponseEntity getFileRelativePaths(ArtifactDto artifactDto);
 
+    ResponseEntity artifactDispatchAttachRecord(ArtifactDispatch artifactDispatch, HttpServletRequest request);
+
     ResponseEntity artifactDispatch(ArtifactDispatch artifactDispatch);
 
     void validateStorageAndRepository(String storageId, String repositoryId) throws Exception;
