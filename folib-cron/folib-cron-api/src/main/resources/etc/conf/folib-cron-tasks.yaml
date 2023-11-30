@@ -6,14 +6,6 @@ cronTasksConfiguration:
       cronExpression: 0 0 1 * * ?
       oneTimeExecution: false
       immediateExecution: false
-    - uuid: 2222a559-6eac-4cda-81d2-83dbfcf1b1e0
-      name: Cleanup Expired Artifacts From Proxy Repositories Cron Job
-      jobClass: com.veadan.folib.cron.jobs.CleanupExpiredArtifactsFromProxyRepositoriesCronJob
-      cronExpression: 0 0 1 * * ?
-      oneTimeExecution: false
-      immediateExecution: false
-      properties:
-        lastAccessedTimeInDays: 60
     - uuid: 9dd9a6ef-d953-4ce0-be3d-3031fcfd993b
       name: Re-generate Artifacts Checksums Cron Job
       jobClass: com.veadan.folib.cron.jobs.RegenerateChecksumCronJob
@@ -23,12 +15,6 @@ cronTasksConfiguration:
     - uuid: b44164a5-c900-43ff-8d13-7a0d0e509d1d
       name: Re-build All Maven Repositories Metadata Files Cron Job
       jobClass: com.veadan.folib.cron.jobs.RebuildMavenMetadataCronJob
-      cronExpression: 0 0 1 * * ?
-      oneTimeExecution: false
-      immediateExecution: false
-    - uuid: c9e7eeef-4e97-4500-aa12-e714a246c2dc
-      name: Remove Timestamped Maven Snapshots Cron Job
-      jobClass: com.veadan.folib.cron.jobs.RemoveTimestampedMavenSnapshotCronJob
       cronExpression: 0 0 1 * * ?
       oneTimeExecution: false
       immediateExecution: false

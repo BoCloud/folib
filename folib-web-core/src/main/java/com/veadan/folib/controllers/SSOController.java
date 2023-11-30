@@ -21,12 +21,12 @@ import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Controller;
-import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.*;
 
 import javax.inject.Inject;
@@ -36,6 +36,7 @@ import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.MultivaluedHashMap;
 import javax.ws.rs.core.Response;
 import java.io.IOException;
+import java.util.Objects;
 import java.util.Set;
 
 
@@ -74,12 +75,19 @@ public class SSOController {
     @ResponseBody
     public ResponseEntity ssoLogin(@RequestBody SSOsessionDto ssOsessionDto) throws Exception {
         javax.ws.rs.client.Client client = clientPool.getRestClient();
-        WebTarget resource = client.target(ssOsessionDto.getAccess_token_url());
+        WebTarget resource = client.target(ssOsessionDto.getAccessTokenUrl());
+        Set<Client> clients = authorizationConfigService.getDto().getClients();
+        Client clientConfig = clients.stream()
+                .filter(r -> r.getClientId()
+                        .equalsIgnoreCase(ssOsessionDto.getClientId()))
+                .findFirst()
+                .get();
         MultivaluedHashMap<String, String> map = new MultivaluedHashMap();
-        map.add("client_id", ssOsessionDto.getClient_id());
+        map.add("client_id", ssOsessionDto.getClientId());
+        map.add("client_secret", clientConfig.getClientSecret());
         map.add("code", ssOsessionDto.getCode());
-        map.add("grant_type", ssOsessionDto.getGrant_type());
-        map.add("redirect_uri", ssOsessionDto.getRedirect_uri());
+        map.add("grant_type", ssOsessionDto.getGrantType());
+        map.add("redirect_uri", ssOsessionDto.getRedirectUri());
         Response response = resource.request().header("Content-Type", "application/x-www-form-urlencoded").post(Entity.form(map));
 
         if (response.getStatus() != HttpStatus.SC_OK) {
@@ -89,9 +97,13 @@ public class SSOController {
             String json = response.readEntity(String.class);
             JSONObject jsonObject = JSONObject.parseObject(json);
             String accessToken = jsonObject.getString("access_token");
-            if (!StringUtils.isEmpty(accessToken)) {
+            if (StringUtils.isNotBlank(accessToken)) {
                 cn.hutool.jwt.JWT jwt = JWTUtil.parseToken(accessToken);
-                String username = jwt.getPayload().getClaim("preferred_username").toString();
+                String username = ssOsessionDto.getClientId();
+                Object preferredUsername = jwt.getPayload().getClaim("preferred_username");
+                if (Objects.nonNull(preferredUsername)) {
+                    username = preferredUsername.toString();
+                }
                 User user = userService.findByUsername(username);
                 if (user == null) {
                     Set<String> roleNames = Sets.newLinkedHashSet();

@@ -189,4 +189,27 @@ public interface ArtifactWebService {
      * @param limit        批处理数量
      */
     void cleanupRepository(String storageId, String repositoryId, Boolean deleteFile, Integer limit);
+
+    /**
+     * 制品预览
+     *
+     * @param repositoryPath 制品路径
+     * @return 预览信息
+     */
+    List preview(RepositoryPath repositoryPath);
+
+    /**
+     * 制品扫描
+     *
+     * @param repositoryPath 制品路径
+     */
+    void scan(RepositoryPath repositoryPath);
+
+    /**
+     * 生成Java Heap Dump
+     *
+     * @param filePath 保存路径
+     * @return 保存路径
+     */
+    String dumpHead(String filePath);
 }

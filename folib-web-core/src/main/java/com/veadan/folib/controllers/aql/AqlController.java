@@ -7,7 +7,6 @@ import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
-import org.apache.commons.lang3.StringUtils;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -25,11 +24,8 @@ import java.util.List;
  */
 @Controller
 @RequestMapping("/api/fql")
-@Api(description = "aql管理控制器",tags = "aql管理控制器")
+@Api(description = "aql管理控制器", tags = "aql管理控制器")
 public class AqlController extends BaseController {
-
-//    @Inject
-//    private AqlSearchService aqlSearchService;
 
     @Inject
     private FqlSearchService fqlSearchService;
@@ -52,9 +48,6 @@ public class AqlController extends BaseController {
                                  @RequestParam(name = "safeLevel", required = false) String safeLevel,
                                  @RequestParam(name = "limit", required = false) Integer limit,
                                  @RequestParam(name = "page", required = false) Integer page) throws IOException {
-//        if (StringUtils.isBlank(artifactName) && StringUtils.isBlank(metadataSearch)) {
-//            throw new RuntimeException("请输入查询参数");
-//        }
         SearchResults result = fqlSearchService.artifactQuery(regex, artifactName, metadataSearch, storageId, repositoryId, beginDate, endDate, sortField, sortOrder, repositoryIds, openRepository, safeLevel, limit, page);
         return ResponseEntity.ok(result);
     }

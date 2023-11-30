@@ -7,6 +7,7 @@ import java.io.OutputStream;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -94,6 +95,16 @@ public class ArtifactManagementService
         return doStore(repositoryPath, is);
     }
 
+    public long validateAndStore(RepositoryPath repositoryPath,
+                                 Path sourcePath)
+            throws IOException,
+            ProviderImplementationException,
+            ArtifactCoordinatesValidationException
+    {
+        performRepositoryAcceptanceValidation(repositoryPath);
+        return doStore(repositoryPath, sourcePath);
+    }
+
     public void validateAndStoreIndex(RepositoryPath repositoryPath)
             throws IOException,
             ProviderImplementationException,
@@ -119,6 +130,31 @@ public class ArtifactManagementService
         try (final RepositoryStreamSupport.RepositoryOutputStream aos = artifactResolutionService.getOutputStream(repositoryPath))
         {
             result = writeArtifact(repositoryPath, is, aos);
+            logger.info("Stored [{}] bytes for [{}].", result, repositoryPath);
+            aos.flush();
+        }
+        catch (IOException e)
+        {
+            throw e;
+        }
+        catch (Exception e)
+        {
+            throw new ArtifactStorageException(e);
+        }
+        logger.info("DoStore {} take time：{} ms" , repositoryPath.toString(), System.currentTimeMillis() - startTime);
+
+        return result;
+    }
+
+    private long doStore(RepositoryPath repositoryPath,
+                         Path sourcePath)
+            throws IOException
+    {
+        long  startTime = System.currentTimeMillis();
+        long result;
+        try (final RepositoryStreamSupport.RepositoryOutputStream aos = artifactResolutionService.getOutputStream(repositoryPath))
+        {
+            result = writeArtifact(repositoryPath, sourcePath, aos);
             logger.info("Stored [{}] bytes for [{}].", result, repositoryPath);
             aos.flush();
         }
@@ -179,6 +215,55 @@ public class ArtifactManagementService
         long startTime = System.currentTimeMillis();
         long totalAmountOfBytes = IOUtils.copy(is, os);
         logger.info("IOUtils copy {} ,take time：{} ms" , repositoryPath.toString(), System.currentTimeMillis() - startTime);
+
+        URI repositoryPathId = repositoryPath.toUri();
+        Map<String, String> digestMap = aos.getDigestMap(repository.getLayout());
+        if (Boolean.FALSE.equals(checksumAttribute) && !digestMap.isEmpty())
+        {
+            // Store artifact digests in cache if we have them.
+            addChecksumsToCacheManager(digestMap, repositoryPathId);
+
+            writeChecksums(repositoryPath, digestMap);
+        }
+
+        if (Boolean.TRUE.equals(checksumAttribute))
+        {
+            byte[] checksumValue = ((ByteArrayOutputStream) aos.getCacheOutputStream()).toByteArray();
+            if (checksumValue != null && checksumValue.length > 0)
+            {
+                // Validate checksum with artifact digest cache.
+                validateUploadedChecksumAgainstCache(checksumValue, repositoryPathId);
+            }
+        }
+
+        return totalAmountOfBytes;
+    }
+
+    private long writeArtifact(RepositoryPath repositoryPath,
+                               Path sourcePath,
+                               OutputStream os)
+            throws IOException
+    {
+        LayoutOutputStream aos = StreamUtils.findSource(LayoutOutputStream.class, os);
+
+        Repository repository = repositoryPath.getRepository();
+
+        Boolean checksumAttribute = RepositoryFiles.isChecksum(repositoryPath);
+
+        // If we have no digests, then we have a checksum to store.
+        if (Boolean.TRUE.equals(checksumAttribute))
+        {
+            aos.setCacheOutputStream(new ByteArrayOutputStream());
+        }
+
+        if (repository.isHostedRepository())
+        {
+            artifactEventListenerRegistry.dispatchArtifactUploadingEvent(repositoryPath);
+        }
+
+        long startTime = System.currentTimeMillis();
+        long totalAmountOfBytes = Files.copy(sourcePath, os);
+        logger.info("Files copy {} ,take time：{} ms" , repositoryPath.toString(), System.currentTimeMillis() - startTime);
 
         URI repositoryPathId = repositoryPath.toUri();
         Map<String, String> digestMap = aos.getDigestMap(repository.getLayout());

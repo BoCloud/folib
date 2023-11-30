@@ -177,6 +177,21 @@ public class FileUtils {
         return inputStream;
     }
 
+    /**
+     * 读取文件
+     *
+     * @param fileDir
+     * @param fileName
+     * @return
+     */
+    public Path getPath(String fileDir, String fileName) {
+        String filePath = getTempPath() +
+                "/" +
+                fileDir + "/" +
+                fileName;
+        return Path.of(filePath);
+    }
+
     public Long getFileSize(String fileDir, String fileName) {
         FileChannel to = null;
         long offset = 0L;

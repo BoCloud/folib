@@ -2,19 +2,31 @@ package com.veadan.folib.providers.repository;
 
 import com.veadan.folib.artifact.AsyncArtifactEntryHandler;
 import com.veadan.folib.domain.Artifact;
+import com.veadan.folib.domain.ArtifactArchiveListing;
 import com.veadan.folib.domain.ArtifactEntity;
 import com.veadan.folib.event.artifact.ArtifactEventTypeEnum;
 import com.veadan.folib.providers.io.RepositoryPath;
+import com.veadan.folib.providers.layout.LayoutProvider;
+import com.veadan.folib.providers.layout.LayoutProviderRegistry;
+import com.veadan.folib.storage.repository.Repository;
 import com.veadan.folib.util.LocalDateTimeInstance;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.springframework.stereotype.Component;
 
+import javax.inject.Inject;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Component
 @Slf4j
 public class ArtifactUpdatedEventHandler extends AsyncArtifactEntryHandler {
+
+    @Inject
+    private LayoutProviderRegistry layoutProviderRegistry;
 
     public ArtifactUpdatedEventHandler() {
         super(ArtifactEventTypeEnum.EVENT_ARTIFACT_FILE_UPDATED);
@@ -34,8 +46,22 @@ public class ArtifactUpdatedEventHandler extends AsyncArtifactEntryHandler {
         }
         Artifact updateArtifactEntry = new ArtifactEntity(artifactEntry.getNativeId(), artifactEntry.getStorageId(), artifactEntry.getRepositoryId(), artifactEntry.getUuid(), artifactEntry.getArtifactCoordinates());
         updateArtifactEntry.setLastUpdated(LocalDateTimeInstance.now());
+        updateArtifactEntry.setLastUsed(updateArtifactEntry.getLastUpdated());
         updateArtifactEntry.setSizeInBytes(size);
-
+        try {
+            Repository repository = repositoryPath.getRepository();
+            LayoutProvider layoutProvider = layoutProviderRegistry.getProvider(repository.getLayout());
+            Set<String> archiveFilenames = layoutProvider.listArchiveFilenames(repositoryPath);
+            if (CollectionUtils.isNotEmpty(archiveFilenames)) {
+                if (archiveFilenames.size() > 5) {
+                    archiveFilenames = archiveFilenames.stream().limit(100).collect(Collectors.toSet());
+                }
+                ArtifactArchiveListing artifactArchiveListing = updateArtifactEntry.getArtifactArchiveListing();
+                artifactArchiveListing.setFilenames(archiveFilenames);
+            }
+        } catch (Exception ex) {
+            log.warn(ExceptionUtils.getStackTrace(ex));
+        }
         return updateArtifactEntry;
     }
 

@@ -250,9 +250,8 @@ public abstract class LayoutFileSystemProvider extends StorageFileSystemProvider
         Artifact artifactEntry = Optional.ofNullable(repositoryPath.getArtifactEntry())
                 .orElseGet(() -> fetchArtifactEntry(repositoryPath));
         if (artifactEntry != null) {
-            Set<String> vulnerabilities = Optional.ofNullable(artifactEntry.getVulnerabilitySet()).orElse(Collections.emptySet()).stream().map(Vulnerability::getUuid).collect(Collectors.toSet());
             artifactEntityRepository.delete(artifactEntry);
-            vulnerabilityRepository.handlerVulnerabilityForArtifactDelete(vulnerabilities);
+            vulnerabilityRepository.handlerVulnerabilityForArtifactDelete(artifactEntry.getVulnerabilities());
         }
 
         super.doDeletePath(repositoryPath, force);

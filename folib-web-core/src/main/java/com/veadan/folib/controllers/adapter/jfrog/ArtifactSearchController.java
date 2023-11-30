@@ -201,7 +201,7 @@ public class ArtifactSearchController extends JFrogBaseController {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(handlerErrors(null, String.format(DOCKER_MANIFEST_NOT_FOUND_MESSAGE, artifactPath)));
         }
         DockerArtifactCoordinates dockerArtifactCoordinates = (DockerArtifactCoordinates) artifact.getArtifactCoordinates();
-        Long totalSize = imageManifest.getLayers().stream().mapToLong(LayerManifest::getSize).sum();
+        Long totalSize = imageManifest.getLayers().stream().filter(item -> Objects.nonNull(item.getSize())).mapToLong(LayerManifest::getSize).sum();
         DockerTagInfo dockerTagInfo = DockerTagInfo.builder().title(dockerArtifactCoordinates.getId()).digest(imageManifest.getDigest()).totalSize(FileUtils.formatSize(totalSize)).totalSizeLong(totalSize)
                 .ports(ports).volumes(volumes).labels(labels).build();
         List<DockerBlobsInfo> dockerBlobsInfoList = Lists.newArrayList();

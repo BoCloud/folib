@@ -1,14 +1,17 @@
 package com.veadan.folib.config;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 
+import javax.annotation.PreDestroy;
 import java.util.Objects;
 import java.util.concurrent.RejectedExecutionHandler;
 import java.util.concurrent.ThreadPoolExecutor;
 
+@Slf4j
 @Configuration
 public class AsyncPoolConfig {
 
@@ -170,6 +173,16 @@ public class AsyncPoolConfig {
                 asyncWsCommandArtifactAwaitTerminationSeconds);
     }
 
+    @PreDestroy
+    public void shutdown() {
+        asyncThreadPoolTaskExecutor().shutdown();
+        asyncEventListenerExecutor().shutdown();
+        asyncConfigThreadPoolExecutor().shutdown();
+        asyncFetchRemotePackageThreadPoolTaskExecutor().shutdown();
+        asyncScanThreadPoolTaskExecutor().shutdown();
+        asyncWsCommandThreadPoolTaskExecutor().shutdown();
+    }
+
     /**
      * build ThreadPoolTaskExecutor
      *
@@ -199,8 +212,23 @@ public class AsyncPoolConfig {
      */
     private ThreadPoolTaskExecutor buildThreadPoolTaskExecutor(Integer corePoolSize, Integer maxPoolSize, Integer queueCapacity, Integer keepAliveSeconds, String threadNamePrefix, Integer awaitTerminationSeconds, RejectedExecutionHandler rejectedExecutionHandler) {
         ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
-        executor.setCorePoolSize(corePoolSize);
-        executor.setMaxPoolSize(maxPoolSize);
+        int availableCores = getAvailableCores();
+        log.info("Current available cpu cores [{}]", availableCores);
+        if (availableCores < 8) {
+            availableCores = 8;
+            log.info("Modify available cpu cores [{}]", availableCores);
+        }
+        if (corePoolSize > availableCores) {
+            executor.setCorePoolSize(availableCores);
+            executor.setMaxPoolSize(availableCores);
+        } else {
+            executor.setCorePoolSize(corePoolSize);
+            executor.setMaxPoolSize(maxPoolSize);
+        }
+        Integer maxQueueCapacity = 100000;
+        if (queueCapacity > maxQueueCapacity) {
+            queueCapacity = maxQueueCapacity;
+        }
         executor.setQueueCapacity(queueCapacity);
         executor.setKeepAliveSeconds(keepAliveSeconds);
         executor.setThreadNamePrefix(threadNamePrefix);
@@ -211,7 +239,12 @@ public class AsyncPoolConfig {
         }
         executor.setRejectedExecutionHandler(rejectedExecutionHandler);
         executor.initialize();
+        log.info("Thread pool name [{}] core size [{}] max size [{}] queue capacity [{}]", executor.getThreadNamePrefix(), executor.getCorePoolSize(), executor.getMaxPoolSize(), queueCapacity);
         return executor;
+    }
+
+    private int getAvailableCores() {
+        return Runtime.getRuntime().availableProcessors();
     }
 }
 

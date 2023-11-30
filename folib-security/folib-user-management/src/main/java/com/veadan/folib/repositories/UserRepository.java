@@ -12,8 +12,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.tinkerpop.gremlin.process.traversal.P;
 import org.apache.tinkerpop.gremlin.structure.Vertex;
 import org.janusgraph.core.attribute.Text;
-import org.springframework.data.neo4j.annotation.Query;
-import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import javax.inject.Inject;
@@ -22,12 +20,7 @@ import java.util.List;
 
 @Repository
 @Transactional
-public class UserRepository extends GremlinVertexRepository<User>
-        implements UserQueries {
-
-
-    @Inject
-    UserQueries queries;
+public class UserRepository extends GremlinVertexRepository<User> {
 
     @Inject
     UserAdapter adapter;
@@ -37,7 +30,6 @@ public class UserRepository extends GremlinVertexRepository<User>
         return adapter;
     }
 
-    @Override
     public List<User> findUsersWithRole(String role) {
         return g().V().hasLabel(Vertices.SECURITY_ROLE).has(Properties.UUID, role).inE(Edges.USER_HAS_SECURITY_ROLES).outV()
                 .has(Properties.USER_TYPE, "general").has(Properties.ENABLED, true).map(adapter.fold()).dedup().toList();
@@ -53,11 +45,6 @@ public class UserRepository extends GremlinVertexRepository<User>
         return g().V().hasLabel(Vertices.USER).has(Properties.USER_TYPE, "general").map(adapter.fold()).toList();
     }
 
-    @Override
-    public List<User> findAllUsers() {
-        return g().V().hasLabel(Vertices.USER).has(Properties.USER_TYPE, "general").has(Properties.ENABLED, true).map(adapter.fold()).toList();
-    }
-
     public List<User> findUsersPage(User user, int start, int end) {
         return commonUserPage(user).range(start, end).map(adapter.fold()).dedup().toList();
     }
@@ -67,7 +54,7 @@ public class UserRepository extends GremlinVertexRepository<User>
     }
 
     private EntityTraversal<Vertex, Vertex> commonUserPage(User user) {
-        EntityTraversal<Vertex, Vertex>  entityTraversal = g().V().hasLabel(Vertices.USER).has(Properties.USER_TYPE, "general");
+        EntityTraversal<Vertex, Vertex> entityTraversal = g().V().hasLabel(Vertices.USER).has(Properties.USER_TYPE, "general");
         if (StringUtils.isNotBlank(user.getUsername())) {
             entityTraversal = entityTraversal.has(Properties.UUID, Text.textContains(user.getUsername()));
         }
@@ -76,20 +63,5 @@ public class UserRepository extends GremlinVertexRepository<User>
         }
         return entityTraversal;
     }
-
-}
-
-@Repository
-interface UserQueries extends org.springframework.data.repository.Repository<User, String> {
-
-    @Query("MATCH (user:User)-[r]->(securityRole:SecurityRole) " +
-            "WHERE securityRole.uuid=$role " +
-            "RETURN user, r, securityRole")
-    List<User> findUsersWithRole(@Param("role") String role);
-
-    @Query("MATCH (user:User)-[r]->(securityRole:SecurityRole) " +
-            "WHERE user.userType='general' AND user.enabled='true'" +
-            "RETURN user, r, securityRole")
-    List<User> findAllUsers();
 
 }

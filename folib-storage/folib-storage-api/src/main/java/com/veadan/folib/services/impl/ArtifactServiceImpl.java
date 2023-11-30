@@ -35,6 +35,7 @@ public class ArtifactServiceImpl implements ArtifactService {
         Graph g = janusGraph.tx().createThreadedTx();
         try {
             artifact.setLastUpdated(LocalDateTimeInstance.now());
+            artifact.setLastUsed(artifact.getLastUpdated());
             artifact.setUpdatedBy(UserUtils.getUsername());
             artifactRepository.save(() -> g.traversal(EntityTraversalSource.class), artifact);
             if (g.tx().isOpen()) {

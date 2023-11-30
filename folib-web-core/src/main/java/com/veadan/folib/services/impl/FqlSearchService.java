@@ -234,7 +234,7 @@ public class FqlSearchService extends GremlinVertexRepository<Artifact> implemen
                 layers = imageManifest.getLayers();
             }
             if (CollectionUtils.isNotEmpty(layers)) {
-                size = layers.stream().mapToLong(LayerManifest::getSize).sum();
+                size = layers.stream().filter(item -> Objects.nonNull(item.getSize())).mapToLong(LayerManifest::getSize).sum();
             }
         } catch (Exception ex) {
             log.warn("计算Docker镜像大小错误：镜像 [{}] [{}] 错误信息 [{}]", repositoryPath.toString(), imageName, ExceptionUtils.getStackTrace(ex));

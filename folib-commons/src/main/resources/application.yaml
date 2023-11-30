@@ -104,45 +104,45 @@ folib:
     async:
       corePoolSize: 12
       maxPoolSize: 12
-      queueCapacity: 2147483647
+      queueCapacity: 10000
       keepAliveSeconds: 0
       threadNamePrefix: async_
-      awaitTerminationSeconds: 60
+      awaitTerminationSeconds: 6
     asyncEventListener:
       corePoolSize: 12
       maxPoolSize: 12
-      queueCapacity: 2147483647
+      queueCapacity: 10000
       keepAliveSeconds: 0
       threadNamePrefix: asyncEventListener_
-      awaitTerminationSeconds: 0
+      awaitTerminationSeconds: 6
     asyncConfig:
       corePoolSize: 2
       maxPoolSize: 2
-      queueCapacity: 2147483647
+      queueCapacity: 1000
       keepAliveSeconds: 0
       threadNamePrefix: asyncConfig_
-      awaitTerminationSeconds: 60
+      awaitTerminationSeconds: 6
     asyncFetchRemotePackage:
       corePoolSize: 12
       maxPoolSize: 12
-      queueCapacity: 2147483647
+      queueCapacity: 10000
       keepAliveSeconds: 0
       threadNamePrefix: asyncFetchRemotePackage_
-      awaitTerminationSeconds: 0
+      awaitTerminationSeconds: 6
     asyncScan:
       corePoolSize: 12
       maxPoolSize: 12
-      queueCapacity: 1000
+      queueCapacity: 80
       keepAliveSeconds: 0
       threadNamePrefix: asyncScan_
       awaitTerminationSeconds: 0
     asyncWsCommand:
       corePoolSize: 12
       maxPoolSize: 12
-      queueCapacity: 2147483647
+      queueCapacity: 2000
       keepAliveSeconds: 0
       threadNamePrefix: asyncWsCommand_
-      awaitTerminationSeconds: 0
+      awaitTerminationSeconds: 6
 # Changes to these properties must also be applied to [folib/folib-web-integration-tests] and possibly the pipeline.
 # Please ping us on our chat channel (https://chat.carlspring.org/) to confirm.
 logging:

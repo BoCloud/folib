@@ -1,7 +1,10 @@
 package com.veadan.folib.scanner.service;
 
 
+import cn.hutool.core.date.DatePattern;
+import cn.hutool.core.date.DateUtil;
 import cn.hutool.core.io.FileUtil;
+import cn.hutool.json.JSONUtil;
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONException;
 import com.alibaba.fastjson.JSONObject;
@@ -19,6 +22,7 @@ import com.veadan.folib.enums.DictTypeEnum;
 import com.veadan.folib.enums.SafeLevelEnum;
 import com.veadan.folib.enums.VulnerabilityPlatformEnum;
 import com.veadan.folib.forms.dict.DictForm;
+import com.veadan.folib.forms.scanner.ScannerReportForm;
 import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.providers.io.RepositoryPathResolver;
 import com.veadan.folib.providers.layout.DockerFileSystem;
@@ -33,13 +37,13 @@ import com.veadan.folib.services.ArtifactService;
 import com.veadan.folib.services.DictService;
 import com.veadan.folib.services.VulnerabilityService;
 import com.veadan.folib.services.VulnerabilityWebService;
+import com.veadan.folib.util.FileSizeConvertUtils;
 import com.veadan.folib.util.LocalDateTimeInstance;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.compress.utils.Lists;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
-import org.owasp.dependencycheck.analyzer.Analyzer;
 import org.owasp.dependencycheck.data.update.exception.UpdateException;
 import org.owasp.dependencycheck.dependency.*;
 import org.owasp.dependencycheck.dependency.naming.Identifier;
@@ -51,12 +55,12 @@ import org.springframework.context.annotation.Lazy;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.stereotype.Service;
-import software.amazon.awssdk.services.s3.model.GetObjectRequest;
 
 import javax.inject.Inject;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.math.BigDecimal;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.LocalDateTime;
@@ -127,18 +131,30 @@ public class ScanService {
         return settings;
     }
 
-    @Async("asyncScanThreadPoolTaskExecutor")
-    public void asyncScan(Artifact artifact) {
+    public void doScan(Artifact artifact) {
         try {
+            if (artifact.getSizeInBytes() > 0 && !checkSize(artifact.getSizeInBytes())) {
+                log.warn("Artifact size exceeds scan limit [{}]", artifact.getUuid());
+                //文件大于3GB，放弃扫描
+                artifact.setSafeLevel(SafeLevelEnum.UNWANTED_SCAN.getLevel());
+                artifactService.saveOrUpdateArtifact(artifact);
+                return;
+            }
             //将数据库中该记录变为扫描中
             artifact.setSafeLevel(SafeLevelEnum.SCANNING.getLevel());
             artifactService.saveOrUpdateArtifact(artifact);
             Set<String> filePaths = artifact.getFilePaths();
             Set<String> filePathSet = Sets.newLinkedHashSet();
             List<Dependency> dependencyList = Lists.newArrayList(), itemDependencyList;
+            Dependency[] dependencies = null;
             for (String filePath : filePaths) {
+                filePath = parseFilePath(filePath);
                 //执行扫描
-                itemDependencyList = Arrays.asList(scanWorker(artifact, filePath));
+                dependencies =  scanWorker(artifact, filePath);
+                if (Objects.isNull(dependencies)) {
+                    continue;
+                }
+                itemDependencyList = Arrays.asList(dependencies);
                 ScannerReport scannerReport = resolveReport(itemDependencyList);
                 scannerReport.setFilePath(filePath);
                 filePathSet.add(JSONObject.toJSONString(scannerReport));
@@ -153,9 +169,49 @@ public class ScanService {
             artifact.setSafeLevel(SafeLevelEnum.SCAN_FAIL.getLevel());
             artifactService.saveOrUpdateArtifact(artifact);
             log.error("执行扫描失败：{}", ExceptionUtils.getStackTrace(e));
-            throw new BusinessException("文件解析失败");
         }
     }
+
+    private boolean checkSize(long sizeInBytes) {
+        BigDecimal maxSize = new BigDecimal(3);
+        BigDecimal convertSize = FileSizeConvertUtils.convertBytesWithDecimal(sizeInBytes, "GB");
+        if (convertSize.compareTo(maxSize) > 0) {
+            return false;
+        }
+        return true;
+    }
+
+    @Async("asyncScanThreadPoolTaskExecutor")
+    public void asyncScan(Artifact artifact) {
+        doScan(artifact);
+    }
+
+    @Async("asyncScanThreadPoolTaskExecutor")
+    public void asyncScan(List<Artifact> artifactList) {
+        if (CollectionUtils.isEmpty(artifactList)) {
+            return;
+        }
+        long startTime = System.currentTimeMillis();
+        log.info("Artifact asyncScan batch size [{}] starts with [{}]", artifactList.size(), DateUtil.format(DateUtil.date(), DatePattern.NORM_DATETIME_MS_FORMATTER));
+        for (Artifact artifact : artifactList) {
+            doScan(artifact);
+        }
+        long endTime = System.currentTimeMillis();
+        log.info("Artifact asyncScan batch size [{}] ends with [{}] take time [{}] ms", artifactList.size(), DateUtil.format(DateUtil.date(), DatePattern.NORM_DATETIME_MS_FORMATTER), (endTime - startTime) / 1000);
+    }
+
+    private String parseFilePath(String filePath) {
+        if (JSONUtil.isJson(filePath)) {
+            ScannerReportForm scannerReportForm = JSONObject.parseObject(filePath, ScannerReportForm.class);
+            filePath = scannerReportForm.getFilePath();
+            if (JSONUtil.isJson(filePath)) {
+                scannerReportForm = JSONObject.parseObject(filePath, ScannerReportForm.class);
+                filePath = scannerReportForm.getFilePath();
+            }
+        }
+        return filePath;
+    }
+
 
     public Dependency[] scanWorker(Artifact artifact, String filePath) {
         String parentPath = null;
@@ -182,7 +238,16 @@ public class ScanService {
                     FileUtil.writeFromStream(inputStream, tempFile);
                 }
             }
-            log.info("扫描路径：{}", filePath);
+            Path path = Path.of(filePath);
+            if (!Files.exists(path)) {
+                log.warn("File does not exist [{}]", path.toString());
+                return null;
+            }
+            if (!checkSize(Files.size(path))) {
+                log.warn("File size exceeds scan limit [{}]", path.toString());
+                return null;
+            }
+            log.info("Scan file path [{}]", filePath);
             engine.scan(filePath);
             engine.analyzeDependencies();
             return engine.getDependencies();
