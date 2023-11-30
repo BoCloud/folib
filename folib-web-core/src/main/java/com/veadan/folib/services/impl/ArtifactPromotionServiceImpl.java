@@ -870,6 +870,10 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
             if (startDownloadIndex >= fileSize) {
                 throw new BusinessException("下载的起始长度不能大于等于下载文件的最大长度");
             }
+            final String artifactFileMd5 = Optional.ofNullable(artifactRepositoryPath.getArtifactEntry().getChecksums()).orElse(Collections.emptyMap()).get("MD5");
+            if (!artifactMd5.equals(artifactFileMd5)) {
+                throw new BusinessException("下载文件的MD5已经发生变化，请重写获取切片下载信息");
+            }
             if (endDownloadIndex > fileSize) {
                 endDownloadIndex = fileSize;
             }
