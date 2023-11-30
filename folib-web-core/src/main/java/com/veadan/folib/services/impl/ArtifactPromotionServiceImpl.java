@@ -867,12 +867,15 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
                 throw new BusinessException("下载的文件不存在或已被删除");
             }
             final long fileSize = Files.size(artifactRepositoryPath);
-            if (endDownloadIndex > Files.size(artifactRepositoryPath)) {
+            if (startDownloadIndex >= fileSize) {
+                throw new BusinessException("下载的起始长度不能大于等于下载文件的最大长度");
+            }
+            if (endDownloadIndex > fileSize) {
                 endDownloadIndex = fileSize;
             }
 
             final String fileName = artifactRepositoryPath.getFileName().toString();
-            response.setHeader("Content-Disposition", String.format("attachment;filename=%s", fileName));
+            response.setHeader("Content-Disposition", String.format("attachment;filename=%s-chunk-%s-%s", fileName, startDownloadIndex, endDownloadIndex));
             response.setContentType("application/x-gzip");
             
             if (finalKbps > 0) {
@@ -921,7 +924,6 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
                     return false;
                 }
             }
-            
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
