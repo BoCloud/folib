@@ -28,6 +28,7 @@ import io.swagger.annotations.ApiResponses;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -39,18 +40,21 @@ import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
+import javax.servlet.ServletInputStream;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.File;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 /**
  * 制品晋级控制层
@@ -237,5 +241,34 @@ public class ArtifactPromotionController extends BaseArtifactController {
     @PermissionCheck(resourceKey = "ARTIFACTS_RESOLVE")
     public ResponseEntity<Boolean> sliceUpload(@ModelAttribute @Validated ArtifactSliceUploadReq model) {
         return ResponseEntity.ok(artifactPromotionService.sliceUpload(model));
+    }
+    
+    @PostMapping(value = "/header/slice/upload")
+    @PermissionCheck(resourceKey = "ARTIFACTS_RESOLVE")
+    public ResponseEntity<Boolean> sliceUploadByHeader(
+                                               @RequestHeader("storageId") String storageId,
+                                               @RequestHeader("repositoryId") String repositoryId,
+                                               @RequestHeader("path") String path,
+                                               @RequestHeader("mergeId") String mergeId,
+                                               @RequestHeader("chunkIndex") Integer chunkIndex,
+                                               @RequestHeader("chunkIndexMax") Integer chunkIndexMax,
+                                               @RequestHeader("originFileMd5") String originFileMd5,
+                                               HttpServletRequest request) {
+        try {
+            final MockMultipartFile mockMultipartFile = new MockMultipartFile(UUID.randomUUID().toString(), request.getInputStream());
+            final ArtifactSliceUploadReq model = new ArtifactSliceUploadReq();
+            model.setStorageId(storageId);
+            model.setRepositoryId(repositoryId);
+            model.setPath(path);
+            model.setMergeId(mergeId);
+            model.setChunkIndex(chunkIndex);
+            model.setChunkIndexMax(chunkIndexMax);
+            model.setOriginFileMd5(originFileMd5);
+            model.setFile(mockMultipartFile);
+            return ResponseEntity.ok(artifactPromotionService.sliceUpload(model));
+        } catch (IOException e) {
+            log.error("通过Header传参方式，文件切片上传失败", e);
+            return ResponseEntity.internalServerError().build();
+        }
     }
 }

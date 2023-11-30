@@ -18,7 +18,10 @@ public class WrapperRequestFilter implements Filter {
 
     private static final Set<String> FILTER_PATHS = Collections.unmodifiableSet(Sets.newHashSet("/api/artifact/folib/promotion/"));
 
-    private static final Set<String> ALLOWED_PATHS = Collections.unmodifiableSet(Sets.newHashSet("/api/artifact/folib/promotion/upload-files", "/api/artifact/folib/promotion/parseArtifact", "/api/artifact/folib/promotion/slice/upload"));
+    private static final Set<String> ALLOWED_PATHS = Collections.unmodifiableSet(Sets.newHashSet("/api/artifact/folib/promotion/upload-files", "/api/artifact/folib/promotion/parseArtifact"
+            , "/api/artifact/folib/promotion/slice/upload"
+            , "/api/artifact/folib/promotion/header/slice/upload"
+    ));
 
     @Override
     public void init(FilterConfig filterConfig) throws ServletException {
