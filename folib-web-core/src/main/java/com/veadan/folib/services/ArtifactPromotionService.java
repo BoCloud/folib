@@ -118,15 +118,20 @@ public interface ArtifactPromotionService {
 
     Map<String, Boolean> batchQuerySupportSliceDownload(List<ArtifactSupportSliceDownloadQueryReq> models);
     
+///    /**
+///     * 获取制品切片下载信息（基于临时文件目录存储）
+///     * @param model
+///     * @return
+///     * @since x.x.x
+///     */
+///    ArtifactSliceDownloadInfoRes querySliceDownloadInfoStoreTemp(ArtifactSliceDownloadInfoReq model);
+
     /**
-     * 获取制品切片下载信息（基于临时文件目录存储）
+     * 查询制品下载信息
      * @param model
      * @return
      * @since x.x.x
      */
-    ArtifactSliceDownloadInfoRes querySliceDownloadInfoStoreTemp(ArtifactSliceDownloadInfoReq model);
-    
-    
     ArtifactSliceDownloadInfoRes querySliceDownloadInfo(ArtifactSliceDownloadInfoReq model);
     
 
