@@ -192,20 +192,20 @@ public class ArtifactPromotionController extends BaseArtifactController {
 
     @GetMapping(value = "/file/speedLimitDownload/{storageId}/{repositoryId}/{artifactPath:.+}")
     public void speedLimitDownload(@RepositoryMapping Repository repository,
-                                     @PathVariable String artifactPath, @RequestParam("nodeMark") String nodeMark,
-                                     HttpServletResponse response) {
+                                   @PathVariable String artifactPath, @RequestParam("nodeMark") String nodeMark,
+                                   HttpServletResponse response) {
         artifactPromotionService.speedLimitDownload(repository, artifactPath, nodeMark, response);
     }
 
     @GetMapping(value = "/file/speedLimitSliceDownload/{storageId}/{repositoryId}/{artifactPath:.+}")
     public void speedLimitSliceDownload(@RepositoryMapping Repository repository,
-                                     @PathVariable String artifactPath,
-                                     @RequestParam("nodeMark") String nodeMark,
-                                     @RequestParam("artifactMd5") String artifactMd5,
-                                     @RequestParam("startDownloadIndex") Long startDownloadIndex,
-                                     @RequestParam("readLength") Long readLength,
-                                     HttpServletResponse response) {
-        artifactPromotionService.speedLimitSliceDownload(repository, artifactPath, nodeMark, artifactMd5, 
+                                        @PathVariable String artifactPath,
+                                        @RequestParam("nodeMark") String nodeMark,
+                                        @RequestParam("artifactMd5") String artifactMd5,
+                                        @RequestParam("startDownloadIndex") Long startDownloadIndex,
+                                        @RequestParam("readLength") Long readLength,
+                                        HttpServletResponse response) {
+        artifactPromotionService.speedLimitSliceDownload(repository, artifactPath, nodeMark, artifactMd5,
                 startDownloadIndex, readLength, response);
     }
 
@@ -245,8 +245,8 @@ public class ArtifactPromotionController extends BaseArtifactController {
         return ResponseEntity.ok(artifactPromotionService.sliceUpload(model));
     }
 
-    @PostMapping(value = "/header/slice/upload")
-    @PermissionCheck(resourceKey = "ARTIFACTS_RESOLVE")
+    @PostMapping(value = "/header/slice/upload", consumes = {"application/octet-stream"})
+//    @PermissionCheck(resourceKey = "ARTIFACTS_RESOLVE")
     public ResponseEntity<Boolean> sliceUploadByHeader(
             @RequestHeader("storageId") String storageId,
             @RequestHeader("repositoryId") String repositoryId,
