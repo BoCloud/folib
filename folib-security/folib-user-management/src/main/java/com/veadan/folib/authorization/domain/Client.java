@@ -8,6 +8,9 @@ import lombok.NoArgsConstructor;
 import javax.annotation.concurrent.Immutable;
 import java.io.Serializable;
 
+/**
+ * @author leipenghui
+ */
 @Immutable
 @Data
 @NoArgsConstructor
@@ -57,29 +60,21 @@ public class Client implements Serializable {
 
     /**
      * 退出单点登录的uri
-     *
-     * @param source
      */
     private String loginOutUrl;
 
     /**
      * 退出单点登录的重定向的url
-     *
-     * @param source
      */
     private String loginOutRedPath;
 
     /**
      * 获取accessToken的url
-     *
-     * @param source
      */
     private String accessTokenUrl;
 
     /**
      * 退出单点登录的重定向的url
-     *
-     * @param source
      */
     public Client(final Client source) {
         this.clientId = source.getClientId();

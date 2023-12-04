@@ -1616,7 +1616,7 @@
               <a-icon type="question-circle-o" />
             </a-tooltip>
           </span>
-          <a-input v-decorator="['clientSecret', { rules: [{ required: false, message: '请输入客户端密钥' }] }]"
+          <a-input-password v-decorator="['clientSecret', { rules: [{ required: false, message: '请输入客户端密钥' }] }]"
                    placeholder="请输入客户端密钥"/>
         </a-form-item>
         <a-form-item >
@@ -1700,7 +1700,7 @@
         <a-form-item >
           <span slot="label">
             用户名称字段&nbsp;
-            <a-tooltip title="在用户信息中表示用户名称的字段名称" class="info-message">
+            <a-tooltip title="设置该字段后，将使用该字段所对应的值作为系统的用户名" class="info-message">
               <a-icon type="question-circle-o" />
             </a-tooltip>
           </span>

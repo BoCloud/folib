@@ -137,7 +137,7 @@ export default {
     },
 		// Handles input validation after submission.
 		handleSubmit(e) {
-			e.preventDefault();
+			e.preventDefault()
 			this.form.validateFields((err, values) => {
 				if (!err) {
 					let password = encrypt(values.password)
@@ -152,7 +152,6 @@ export default {
 						}
 						//
 						this.$router.push({ name: 'storages' })
-            sessionStorage.setItem('loginMethod','systemLocal')
 						// 延迟 1 秒显示欢迎信息
 						setTimeout(() => {
 							this.$notification.success({

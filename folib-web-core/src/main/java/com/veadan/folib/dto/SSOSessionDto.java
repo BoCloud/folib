@@ -4,10 +4,13 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+/**
+ * @author leipenghui
+ */
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class SSOsessionDto {
+public class SSOSessionDto {
 
     private String sessionState;
     private String code;

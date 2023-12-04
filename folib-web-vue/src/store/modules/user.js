@@ -59,7 +59,11 @@ const user = {
         })
       })
     },
-
+    Token ({ commit }, token) {
+      storage.remove(ACCESS_TOKEN)
+      storage.set(ACCESS_TOKEN, token, jwt_decode(token).exp)
+      commit('SET_TOKEN', token)
+    },
     GetInfo ({ commit }) {
       return new Promise((resolve, reject) => {
         getInfo().then(response => {
@@ -74,9 +78,9 @@ const user = {
 
 
             // console.log(store.state)
-            // storage.set(USER_INFO,user.state)
-          //
-
+            if (store.state) {
+              storage.set(USER_INFO, store.state)
+            }
           resolve(response)
         }).catch(error => {
           reject(error)
@@ -97,17 +101,14 @@ const user = {
         storage.remove(ACCESS_TOKEN)
         storage.remove(USER_INFO)
         storage.remove("libView_repository")
-        sessionStorage.setItem("loginStatus",'off')
-        if(sessionStorage.getItem("loginMethod")==="single"){
-          sessionStorage.setItem('loginMethod','loginOut') 
-          window.location.href=sessionStorage.getItem("loginOutUti")     
+        if (localStorage.getItem("SSOIdToken") && localStorage.getItem("SSOLogout")) {
+          //退出单点登录系统
+          window.location.href = localStorage.getItem("SSOLogout") + "&id_token_hint=" + localStorage.getItem("SSOIdToken")
         }
-        sessionStorage.setItem('loginMethod','loginOut')
         document.cookie = "token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;"
         localStorage.clear()
         sessionStorage.clear()
         router.push({ name: 'login' })
-        // 推出登录时需要调用单点登录的退出
       })
     }
 

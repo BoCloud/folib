@@ -201,7 +201,6 @@ export default {
   watch: {
     activeTab:{
       handler(val) {
-      // debugger
       if (val === "1") {
         this.getMetrics();
       } else {
