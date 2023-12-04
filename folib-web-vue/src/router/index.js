@@ -1,11 +1,5 @@
 import Vue from 'vue'
 import VueRouter from 'vue-router'
-import {
-  getSsoList,
-  ssoLogin,
-  getToken
-
-} from '@/api/sso'
 
 import {getServerName} from "@/api/settings";
 
@@ -288,6 +282,12 @@ let routes = [
     },
     component: () => import("../views/ComponentAnalysis/Licenses/Detail.vue"),
   },
+	{
+		// will match sso
+		path: '/sso',
+		name: "sso",
+		component: () => import('../views/SSO/index.vue'),
+	},
   // {
   //   path: "/policy",
   //   name: "policy",
@@ -338,10 +338,8 @@ const router = new VueRouter({
 	}
 })
 
-
 // 校验登录信息
 router.beforeEach((to,from,next)=>{
-
   getServerName().then(res=>{
     sessionStorage.setItem("instanceName",res)
   })
@@ -356,56 +354,7 @@ router.beforeEach((to,from,next)=>{
 		next(false)
 		return
 	}
-
-  // todo 校验合法性 keyClock确定登录的合法性，方式仿冒登录
-  let flag = sessionStorage.getItem("loginMethod")
-  if(flag==="single"){
-   // 判断单点是否已经登录
-   if(sessionStorage.getItem("loginStatus")==="on"){
-    // 校验单点登录授权是都合法
-    next(true)
-   }else{
-  // 如果没有登录，则进行登录操作 如果已经登录则需要校验登录的合法性
-    let param = window.location.search.substring(1).split("&")
-    let clientInfo=JSON.parse(sessionStorage.getItem("clientInfo"))
-    let sessionParam={
-          grantType:"authorization_code",
-          clientId:clientInfo.clientId,
-          redirectUri:clientInfo.redirectPath,
-          accessTokenUrl:clientInfo.accessTokenUrl
-    }
-   
-    param.forEach(e=>{
-      let temp = e.split("=")
-      sessionParam[temp[0]]=temp[1]||""
-    })
-
-    if(!sessionParam.code){
-      next(true)
-      return
-    }    
-     //  这是从单点登录的页面跳转过来的
-       ssoLogin(sessionParam).then(res=>{
-        //在这里获取accessToken
-        let password = encrypt("guest")
-        let user = {
-          username:res.username,
-          password:password
-        }
-        sessionStorage.setItem("loginStatus","on")
-        store.dispatch("Login", user).then((res) => {
-          if (res.token != null) {
-            store.dispatch("GetInfo").then((res) => {
-            })
-          }  
-  
-       })    
-      })
-   }
-}
   next(true)
 })
-
-
 
 export default router

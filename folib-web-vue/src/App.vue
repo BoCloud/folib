@@ -14,6 +14,7 @@
 </template>
 
 <script>
+import {ACCESS_TOKEN, USER_INFO} from '@/store/mutation-types'
 
 export default ({
   provide() {
@@ -31,12 +32,12 @@ export default ({
   created() {
 
     // 在页面加载时读取sessionStorage里的状态信息
-    if (sessionStorage.getItem('store')) {
+    if (localStorage.getItem(USER_INFO) && localStorage.getItem(ACCESS_TOKEN)) {  
       this.$store.replaceState(
         Object.assign(
           {},
           this.$store.state,
-          JSON.parse(sessionStorage.getItem('store'))
+          JSON.parse(localStorage.getItem(USER_INFO))
         )
       )
     }
@@ -44,7 +45,9 @@ export default ({
     // 在页面刷新时将vuex里的信息保存到sessionStorage里
     // beforeunload事件在页面刷新时先触发
     window.addEventListener('beforeunload', () => {
-      sessionStorage.setItem('store', JSON.stringify(this.$store.state))
+      if (this.$store.state && localStorage.getItem(ACCESS_TOKEN)) {
+        localStorage.setItem(USER_INFO, JSON.stringify(this.$store.state))
+      }
     })
 
     this.storageExpireLocal()

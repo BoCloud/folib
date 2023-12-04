@@ -21,6 +21,8 @@ public class LoginOutput
 //    @XmlElement
     private String token;
 
+    private String idToken;
+
 //    @XmlElement()
     private LinkedHashSet<String> authorities;
 
@@ -39,6 +41,23 @@ public class LoginOutput
                                       .collect(Collectors.toCollection(LinkedHashSet::new));
     }
 
+    public LoginOutput(String token, String idToken,
+                       Collection<? extends GrantedAuthority> authorities)
+    {
+        this.token = token;
+        this.idToken = idToken;
+        this.authorities = authorities.stream()
+                .map(GrantedAuthority::getAuthority)
+                .sorted()
+                .collect(Collectors.toCollection(LinkedHashSet::new));
+    }
+
+    public LoginOutput(String token, String idToken)
+    {
+        this.token = token;
+        this.idToken = idToken;
+    }
+
     public String getToken()
     {
         return token;
@@ -47,6 +66,14 @@ public class LoginOutput
     public void setToken(String token)
     {
         this.token = token;
+    }
+
+    public String getIdToken() {
+        return idToken;
+    }
+
+    public void setIdToken(String idToken) {
+        this.idToken = idToken;
     }
 
     public LinkedHashSet<String> getAuthorities()

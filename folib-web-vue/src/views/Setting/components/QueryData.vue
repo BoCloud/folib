@@ -390,7 +390,6 @@ export default {
       });
       // 鼠标事件
       this.graph.on("node:mouseenter", (e) => {
-        // debugger;
         const globalFontSize = 8;
 
         const item = e.item;

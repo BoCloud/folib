@@ -1,7 +1,5 @@
 package com.veadan.folib.providers.repository;
 
-import com.alibaba.fastjson.JSONObject;
-import com.alibaba.fastjson.serializer.SerializerFeature;
 import com.veadan.folib.artifact.AsyncArtifactEntryHandler;
 import com.veadan.folib.domain.Artifact;
 import com.veadan.folib.domain.ArtifactArchiveListing;
@@ -13,7 +11,6 @@ import com.veadan.folib.providers.layout.LayoutProvider;
 import com.veadan.folib.providers.layout.LayoutProviderRegistry;
 import com.veadan.folib.storage.repository.Repository;
 import com.veadan.folib.util.LocalDateTimeInstance;
-import jnr.ffi.annotations.In;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.io.FilenameUtils;
@@ -25,6 +22,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.ObjectOutputStream;
 import java.nio.file.Files;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -63,7 +61,11 @@ public class ArtifactDownloadingEventHandler extends AsyncArtifactEntryHandler {
             log.warn("写入制品 [{}] 本地缓存.metadata文件错误", ExceptionUtils.getStackTrace(ex));
         }
         Artifact updateArtifactEntry = new ArtifactEntity(artifactEntry.getNativeId(), artifactEntry.getStorageId(), artifactEntry.getRepositoryId(), artifactEntry.getUuid(), artifactEntry.getArtifactCoordinates());
-        updateArtifactEntry.setDownloadCount(artifactEntry.getDownloadCount() + 1);
+        Integer downloadCount = artifactEntry.getDownloadCount();
+        if (Objects.isNull(downloadCount)) {
+            downloadCount = 0;
+        }
+        updateArtifactEntry.setDownloadCount(downloadCount + 1);
         updateArtifactEntry.setLastUsed(LocalDateTimeInstance.now());
         updateArtifactEntry.setLastUpdated(updateArtifactEntry.getLastUsed());
         log.debug("[{}] [{}] downloadCount changed from [{}] to [{}].",

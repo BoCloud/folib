@@ -245,7 +245,7 @@ public class RepositoryStreamSupport {
                     throw ex;
                 }
             } else {
-                logger.info("Skip commit [{}]", getContext().getPath());
+                logger.warn("Skip commit [{}]", getContext().getPath());
             }
         }
 
@@ -356,7 +356,7 @@ public class RepositoryStreamSupport {
                 logger.info("Commited [{}]", getContext().getPath());
                 callback.onStoreIndexAfter((RepositoryStreamReadContext) ctx);
             } else {
-                logger.info("Skip commit [{}]", getContext().getPath());
+                logger.warn("Skip commit [{}]", getContext().getPath());
             }
         }
 

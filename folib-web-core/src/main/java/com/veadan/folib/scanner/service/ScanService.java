@@ -197,7 +197,7 @@ public class ScanService {
             doScan(artifact);
         }
         long endTime = System.currentTimeMillis();
-        log.info("Artifact asyncScan batch size [{}] ends with [{}] take time [{}] ms", artifactList.size(), DateUtil.format(DateUtil.date(), DatePattern.NORM_DATETIME_MS_FORMATTER), (endTime - startTime) / 1000);
+        log.info("Artifact asyncScan batch size [{}] ends with [{}] take time [{}] seconds", artifactList.size(), DateUtil.format(DateUtil.date(), DatePattern.NORM_DATETIME_MS_FORMATTER), (endTime - startTime) / 1000);
     }
 
     private String parseFilePath(String filePath) {
