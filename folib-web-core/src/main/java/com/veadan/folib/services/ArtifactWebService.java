@@ -212,4 +212,12 @@ public interface ArtifactWebService {
      * @return 保存路径
      */
     String dumpHead(String filePath);
+
+    /**
+     * 上传制品的bom文件
+     *
+     * @param repositoryPath 制品信息
+     * @param file           bom文件
+     */
+    void bomUpload(RepositoryPath repositoryPath, MultipartFile file);
 }

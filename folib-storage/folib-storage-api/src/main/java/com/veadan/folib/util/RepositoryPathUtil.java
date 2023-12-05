@@ -29,7 +29,9 @@ public class RepositoryPathUtil {
         while (s3Iterator.hasNext()) {
             S3Path s3PathTemp = s3Iterator.next();
             if (s3PathTemp.getFileAttributes() == null || s3PathTemp.getFileAttributes().isDirectory()) {
-                listDir.add(s3PathTemp);
+                if (!exclude(s3PathTemp.getFileName().toString())) {
+                    listDir.add(s3PathTemp);
+                }
             } else {
                 if (!exclude(s3PathTemp.getFileName().toString())) {
                     log.info("S3 file {}", s3PathTemp);
@@ -44,7 +46,9 @@ public class RepositoryPathUtil {
             while (s3Iterator.hasNext()) {
                 S3Path s3PathTemp = s3Iterator.next();
                 if (s3PathTemp.getFileAttributes() == null || s3PathTemp.getFileAttributes().isDirectory()) {
-                    listDir.add(s3PathTemp);
+                    if (!exclude(s3PathTemp.getFileName().toString())) {
+                        listDir.add(s3PathTemp);
+                    }
                 } else {
                     if (!exclude(s3PathTemp.getFileName().toString())) {
                         log.info("S3 file {}", s3PathTemp);
@@ -77,7 +81,7 @@ public class RepositoryPathUtil {
                 return resultList;
             }
             for (File f : file.listFiles()) {
-                if (f.isDirectory()) {
+                if (f.isDirectory() && !exclude(f.getName())) {
                     list.add(f);
                     folderNum++;
                 } else {
@@ -94,7 +98,7 @@ public class RepositoryPathUtil {
                     continue;
                 }
                 for (File f : files) {
-                    if (f.isDirectory()) {
+                    if (f.isDirectory() && !exclude(f.getName())) {
                         log.info("文件夹:{}", f.getAbsolutePath());
                         list.add(f);
                         folderNum++;
@@ -121,7 +125,7 @@ public class RepositoryPathUtil {
         List<String> list = new ArrayList<String>();
         if (absolutePath.contains("s3://")) {
             S3Path s3Path = new S3Path(SpringUtil.getBean(S3FileSystem.class), repositoryPath.getTarget().toString());
-            List<S3Path> s3FilesPaths = RepositoryPathUtil.getS3FiePaths(s3Path);
+            List<S3Path> s3FilesPaths = getS3FiePaths(s3Path);
             for (S3Path file : s3FilesPaths) {
                 String filePathStr = file.toAbsolutePath().toString();
                 int indexTemp = filePathStr.indexOf(storageId + "/" + repositoryId);
@@ -136,7 +140,7 @@ public class RepositoryPathUtil {
             }
 
         } else {
-            List<File> files = RepositoryPathUtil.getNFSFiles(absolutePath);
+            List<File> files = getNFSFiles(absolutePath);
             for (File file : files) {
                 String fileAbsolutePath = file.getAbsolutePath();
                 int indexTemp = fileAbsolutePath.indexOf(storageId + "/" + repositoryId);
@@ -158,6 +162,9 @@ public class RepositoryPathUtil {
             return true;
         }
         if (name.startsWith(".") && name.endsWith(".metadata")) {
+            return true;
+        }
+        if (name.startsWith(".") && name.endsWith(".foLibrary-metadata")) {
             return true;
         }
         String dsStore = ".DS_Store";

@@ -61,6 +61,7 @@ import org.apache.maven.model.io.xpp3.MavenXpp3Writer;
 import org.codehaus.plexus.util.xml.pull.XmlPullParserException;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.http.HttpStatus;
@@ -161,6 +162,11 @@ public class ArtifactComponent {
     @Inject
     @Lazy
     private ArtifactCacheRecordService artifactCacheRecordService;
+
+    @Inject
+    @Qualifier("browseRepositoryDirectoryListingService")
+    @Lazy
+    private volatile DirectoryListingService directoryListingService;
 
     /**
      * 读取文件内容
@@ -1243,4 +1249,29 @@ public class ArtifactComponent {
     public List<ArtifactCacheRecord> getArtifactCacheRecord(ArtifactCacheRecord artifactCacheRecord, Integer limit) {
         return artifactCacheRecordService.getArtifactCacheRecord(artifactCacheRecord, null, limit);
     }
+
+    public RepositoryPath getRepositoryPath(String storageId, String repositoryId, String artifactPath) {
+        try {
+            RepositoryPath repositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, artifactPath);
+            Repository repository = getRepository(storageId, repositoryId);
+            if (!DockerLayoutProvider.ALIAS.equalsIgnoreCase(repository.getLayout())) {
+                //非docker布局
+                return repositoryPath;
+            }
+            if (!Files.isDirectory(repositoryPath)) {
+                return null;
+            }
+            DirectoryListing directoryListing = directoryListingService.fromRepositoryPath(repositoryPath);
+            List<FileContent> fileContents = directoryListing.getFiles().stream().filter(file -> DockerArtifactCoordinates.include(file.getName())).collect(Collectors.toList());
+            if (CollectionUtils.isEmpty(fileContents)) {
+                return null;
+            }
+            FileContent fileContent = fileContents.get(0);
+            return repositoryPathResolver.resolve(storageId, repositoryId, fileContent.getArtifactPath());
+        } catch (Exception ex) {
+            log.error(ExceptionUtils.getStackTrace(ex));
+            return null;
+        }
+    }
+
 }

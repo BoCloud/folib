@@ -1,6 +1,7 @@
 package com.veadan.folib.controllers;
 
 import com.alibaba.fastjson.JSON;
+import com.veadan.folib.components.artifact.ArtifactComponent;
 import com.veadan.folib.components.syncartifact.SyncArtifactProvider;
 import com.veadan.folib.components.syncartifact.SyncArtifactProviderRegistry;
 import com.veadan.folib.config.PermissionCheck;
@@ -24,6 +25,7 @@ import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -40,6 +42,7 @@ import javax.inject.Inject;
 import javax.servlet.http.HttpServletResponse;
 import javax.validation.Valid;
 import java.io.IOException;
+import java.nio.file.Files;
 import java.util.List;
 import java.util.Objects;
 
@@ -59,6 +62,10 @@ public class ArtifactController extends BaseController {
 
     @Inject
     private ConfigurationManager configurationManager;
+
+    @Inject
+    @Lazy
+    private ArtifactComponent artifactComponent;
 
     private static final String STORAGE_NOT_FOUND = "The storage was not found.";
 
@@ -259,7 +266,32 @@ public class ArtifactController extends BaseController {
 
     @PreAuthorize("hasAuthority('ADMIN')")
     @GetMapping(value = "/dumpHead")
-    public ResponseEntity<String> dumpHead(@RequestParam(value = "filePath",required = false) String filePath) {
+    public ResponseEntity<String> dumpHead(@RequestParam(value = "filePath", required = false) String filePath) {
         return ResponseEntity.ok(artifactWebService.dumpHead(filePath));
+    }
+
+    @ApiOperation(value = "上传制品的bom文件")
+    @ApiResponses(value = {@ApiResponse(code = 200, message = "OK")})
+    @PermissionCheck(resourceKey = "ARTIFACTS_DEPLOY", storageKey = "storageId", repositoryKey = "repositoryId")
+    @PostMapping(value = "/bom/{storageId}/{repositoryId}/{artifactPath:.+}")
+    public ResponseEntity<String> bomUpload(@PathVariable(name = "storageId") String storageId,
+                                            @PathVariable(name = "repositoryId") String repositoryId,
+                                            @PathVariable(name = "artifactPath") String artifactPath,
+                                            @RequestParam(name = "storageId") String reqStorageId,
+                                            @RequestParam(name = "repositoryId") String reqRepositoryId,
+                                            @RequestParam(name = "file") MultipartFile file) {
+        Storage storage = getStorage(storageId);
+        if (Objects.isNull(storage)) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(GlobalConstants.STORAGE_NOT_FOUND_MESSAGE);
+        }
+        if (Objects.isNull(storage.getRepository(repositoryId))) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(GlobalConstants.REPOSITORY_NOT_FOUND_MESSAGE);
+        }
+        RepositoryPath repositoryPath = artifactComponent.getRepositoryPath(storageId, repositoryId, artifactPath);
+        if (Objects.isNull(repositoryPath) || !Files.exists(repositoryPath)) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(GlobalConstants.ARTIFACT_NOT_FOUND_MESSAGE);
+        }
+        artifactWebService.bomUpload(repositoryPath, file);
+        return ResponseEntity.ok("success");
     }
 }
