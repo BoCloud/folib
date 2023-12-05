@@ -964,40 +964,40 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
         }
     }
 
-    @Override
-    public Boolean querySupportSliceDownload(ArtifactSupportSliceDownloadQueryReq model) {
-        final String storageId = model.getStorageId();
-        final String repositoryId = model.getRepositoryId();
-        final String path = model.getPath();
-        final RepositoryPath artifactPath = repositoryPathResolver.resolve(storageId, repositoryId, path);
-        if (!Files.exists(artifactPath)) {
-            throw new BusinessException("需要获取切片下载信息的制品不存在或已被删除");
-        }
-
-        try {
-            final long artifactFileLength = Files.size(artifactPath);
-            final long kbps = Optional.ofNullable(configurationManagementService.getConfiguration().getSliceMbSize()).orElse(0L) * (1024 * 1024);
-            return artifactFileLength > kbps;
-        } catch (Exception ex) {
-            log.error(ExceptionUtils.getStackTrace(ex));
-            throw new RuntimeException(ex);
-        }
-    }
-
-    @Override
-    public Map<String, Boolean> batchQuerySupportSliceDownload
-            (List<ArtifactSupportSliceDownloadQueryReq> models) {
-        final Map<String, Boolean> resultMap = new HashMap<>();
-        for (ArtifactSupportSliceDownloadQueryReq model : models) {
-            final String storageId = model.getStorageId();
-            final String repositoryId = model.getRepositoryId();
-            final String path = model.getPath();
-            final String fullPath = String.format("%s/%s/%s", storageId, repositoryId, path);
-            resultMap.put(fullPath, this.querySupportSliceDownload(model));
-        }
-
-        return resultMap;
-    }
+///    @Override
+///    public Boolean querySupportSliceDownload(ArtifactSupportSliceDownloadQueryReq model) {
+///        final String storageId = model.getStorageId();
+///        final String repositoryId = model.getRepositoryId();
+///        final String path = model.getPath();
+///        final RepositoryPath artifactPath = repositoryPathResolver.resolve(storageId, repositoryId, path);
+///        if (!Files.exists(artifactPath)) {
+///            throw new BusinessException("需要获取切片下载信息的制品不存在或已被删除");
+///        }
+///
+///        try {
+///            final long artifactFileLength = Files.size(artifactPath);
+///            final long kbps = Optional.ofNullable(configurationManagementService.getConfiguration().getSliceMbSize()).orElse(0L) * (1024 * 1024);
+///            return artifactFileLength > kbps;
+///        } catch (Exception ex) {
+///            log.error(ExceptionUtils.getStackTrace(ex));
+///            throw new RuntimeException(ex);
+///        }
+///    }
+///
+///    @Override
+///    public Map<String, Boolean> batchQuerySupportSliceDownload
+///            (List<ArtifactSupportSliceDownloadQueryReq> models) {
+///        final Map<String, Boolean> resultMap = new HashMap<>();
+///        for (ArtifactSupportSliceDownloadQueryReq model : models) {
+///            final String storageId = model.getStorageId();
+///            final String repositoryId = model.getRepositoryId();
+///            final String path = model.getPath();
+///            final String fullPath = String.format("%s/%s/%s", storageId, repositoryId, path);
+///            resultMap.put(fullPath, this.querySupportSliceDownload(model));
+///        }
+///
+///        return resultMap;
+///    }
 
     @Override
     public ArtifactSliceDownloadInfoRes querySliceDownloadInfo(ArtifactSliceDownloadInfoReq model) {

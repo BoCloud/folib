@@ -209,17 +209,17 @@ public class ArtifactPromotionController extends BaseArtifactController {
                 startDownloadIndex, readLength, response);
     }
 
-    @PostMapping(value = "/query/support/slice/download")
-    @PermissionCheck(resourceKey = "ARTIFACTS_RESOLVE")
-    public ResponseEntity<Boolean> querySupportSliceDownload(@RequestBody @Validated ArtifactSupportSliceDownloadQueryReq model) {
-        return ResponseEntity.ok(artifactPromotionService.querySupportSliceDownload(model));
-    }
-
-    @PostMapping(value = "/batch/query/support/slice/download")
-    @PermissionCheck(resourceKey = "ARTIFACTS_RESOLVE")
-    public ResponseEntity<Map<String, Boolean>> batchQuerySupportSliceDownload(@RequestBody @Validated List<ArtifactSupportSliceDownloadQueryReq> models) {
-        return ResponseEntity.ok(artifactPromotionService.batchQuerySupportSliceDownload(models));
-    }
+///    @PostMapping(value = "/query/support/slice/download")
+///    @PermissionCheck(resourceKey = "ARTIFACTS_RESOLVE")
+///    public ResponseEntity<Boolean> querySupportSliceDownload(@RequestBody @Validated ArtifactSupportSliceDownloadQueryReq model) {
+///        return ResponseEntity.ok(artifactPromotionService.querySupportSliceDownload(model));
+///    }
+///
+///    @PostMapping(value = "/batch/query/support/slice/download")
+///    @PermissionCheck(resourceKey = "ARTIFACTS_RESOLVE")
+///    public ResponseEntity<Map<String, Boolean>> batchQuerySupportSliceDownload(@RequestBody @Validated List<ArtifactSupportSliceDownloadQueryReq> models) {
+///        return ResponseEntity.ok(artifactPromotionService.batchQuerySupportSliceDownload(models));
+///    }
 
     @PostMapping(value = "/query/slice/download/info")
     @PermissionCheck(resourceKey = "ARTIFACTS_RESOLVE")

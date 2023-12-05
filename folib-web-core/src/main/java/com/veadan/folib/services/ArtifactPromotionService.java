@@ -107,16 +107,16 @@ public interface ArtifactPromotionService {
     Boolean speedLimitSliceDownload(Repository repository, String artifactPath, String nodeMark, String artifactMd5, Long startDownloadIndex, Long readLength, HttpServletResponse response);
     
     
-    /**
-     * 判断制品是否支持切片下载
-     * @param model
-     * @return
-     * @since x.x.x
-     */
-    Boolean querySupportSliceDownload(ArtifactSupportSliceDownloadQueryReq model);
-
-
-    Map<String, Boolean> batchQuerySupportSliceDownload(List<ArtifactSupportSliceDownloadQueryReq> models);
+///    /**
+///     * 判断制品是否支持切片下载
+///     * @param model
+///     * @return
+///     * @since x.x.x
+///     */
+///    Boolean querySupportSliceDownload(ArtifactSupportSliceDownloadQueryReq model);
+///
+///
+///    Map<String, Boolean> batchQuerySupportSliceDownload(List<ArtifactSupportSliceDownloadQueryReq> models);
     
 ///    /**
 ///     * 获取制品切片下载信息（基于临时文件目录存储）
