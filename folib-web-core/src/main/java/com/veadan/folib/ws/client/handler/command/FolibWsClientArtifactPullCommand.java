@@ -86,10 +86,6 @@ public class FolibWsClientArtifactPullCommand implements FolibWsClientCommand<Pr
      */
     private static final String API_ARTIFACT_FOLIB_PROMOTION_GET_FILE_RELATIVE_PATHS = "/api/artifact/folib/promotion/getFileRelativePaths";
     /**
-     * {@linkplain com.veadan.folib.controllers.promotion.ArtifactPromotionController#querySliceDownloadInfo(ArtifactSliceDownloadInfoReq)}
-     */
-    private static final String BATCH_QUERY_ARTIFACT_SUPPORT_SLICE_DOWNLOAD_URL = "/api/artifact/folib/promotion/batch/query/support/slice/download";
-    /**
      * {@linkplain com.veadan.folib.controllers.promotion.ArtifactPromotionController#batchQuerySliceDownloadInfo(List)}
      */
     private static final String BATCH_QUERY_ARTIFACT_GET_SLICE_DOWNLOAD_INFO_URL = "/api/artifact/folib/promotion/batch/query/slice/download/info";
@@ -170,12 +166,12 @@ public class FolibWsClientArtifactPullCommand implements FolibWsClientCommand<Pr
                             .setStorageId(srcStorageId).setRepositoryId(srcRepostoryId)
                             .setPath(path)
                     ).collect(Collectors.toList());
-            final HttpRequest batchQueryArtifactSupportSliceDownloadQueryRequest = HttpUtil.createPost(srcUrl + BATCH_QUERY_ARTIFACT_GET_SLICE_DOWNLOAD_INFO_URL);
+            final HttpRequest batchQueryArtifactSliceDownloadQueryRequest = HttpUtil.createPost(srcUrl + BATCH_QUERY_ARTIFACT_GET_SLICE_DOWNLOAD_INFO_URL);
             final String bodyJsonStr = JSONUtil.toJsonStr(sliceDownloadInfosQueryReq);
-            batchQueryArtifactSupportSliceDownloadQueryRequest.header(JwtTokenFetcher.AUTHORIZATION_HEADER,
+            batchQueryArtifactSliceDownloadQueryRequest.header(JwtTokenFetcher.AUTHORIZATION_HEADER,
                     JwtTokenFetcher.BEARER_AUTHORIZATION_PREFIX + " " + securityComponent.getSecurityToken());
-            batchQueryArtifactSupportSliceDownloadQueryRequest.body(bodyJsonStr);
-            final HttpResponse sliceDownloadInfosQueryRes = batchQueryArtifactSupportSliceDownloadQueryRequest.execute();
+            batchQueryArtifactSliceDownloadQueryRequest.body(bodyJsonStr);
+            final HttpResponse sliceDownloadInfosQueryRes = batchQueryArtifactSliceDownloadQueryRequest.execute();
             if (!sliceDownloadInfosQueryRes.isOk()) {
                 log.error("批量查询制品切片下载信息失败（{}:{}）", bodyJsonStr, sliceDownloadInfosQueryRes.body());
                 throw new BusinessException("批量查询制品切片下载信息失败");
