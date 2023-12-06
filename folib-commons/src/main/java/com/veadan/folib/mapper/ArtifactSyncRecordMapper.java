@@ -16,5 +16,7 @@ import tk.mybatis.mapper.common.ids.SelectByIdsMapper;
  */
 @Component
 public interface ArtifactSyncRecordMapper extends SelectByIdsMapper<ArtifactSyncRecord>, Mapper<ArtifactSyncRecord>, DeleteByIdsMapper<ArtifactSyncRecord>{
+    
+    
     boolean updateStatusAndFailedReasonBySyncNo(@Param("status") Integer status, @Param("failedReason") String failedReason, @Param("syncNo") String syncNo);
 }
