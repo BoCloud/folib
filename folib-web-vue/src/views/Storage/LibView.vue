@@ -37,11 +37,13 @@
           :vulnerabilityColumns="vulnerabilityColumns"
         />
       </a-tab-pane>
+      <a-button v-if="eventSettingEnabled" slot="tabBarExtraContent" icon="event" class="repository-setting" size="small" @click="eventPageVisible = true" />
       <a-button v-if="settingsEnabled" slot="tabBarExtraContent" icon="setting" class="repository-setting" size="small" @click="settingDrawerShow()" />
     </a-tabs>
     <!-- / Header Background Image -->
 
     <SettingsDrawer :folibRepository="this.folibRepository" :settingVisible="settingVisible" @settingDrawerClose="settingDrawerClose"></SettingsDrawer>
+    <EventPageDrawer :folibRepository="this.folibRepository" :eventPageVisible="eventPageVisible" @eventDrawerClose="eventPageVisible = false"></EventPageDrawer>
 
     <!-- docker -->
     <a-drawer
@@ -155,6 +157,7 @@ import { quillEditor } from "vue-quill-editor";
 import Store from "./components/Store/index.vue";
 import Safe from "./components/Safe/index.vue";
 import SettingsDrawer from "./components/Repository/SettingsDrawer.vue";
+import EventPageDrawer from "./components/Repository/EventPageDrawer.vue";
 import { hasRole, isAdmin, hasPermission, isLogin } from "@/utils/permission";
 import VunlerabilityReport from '@/components/Vulnerabilities/VunlerabilityReport'
 
@@ -170,6 +173,7 @@ export default {
     Store,
     Safe,
     SettingsDrawer,
+    EventPageDrawer,
     VunlerabilityReport,
   },
   data() {
@@ -369,6 +373,8 @@ export default {
       },
       settingsEnabled: false,
       settingVisible: false,
+      eventSettingEnabled: false,
+      eventPageVisible: false,
     }
   },
   created() {
@@ -505,6 +511,7 @@ export default {
     },
     getStorage(id) {
       getLibraryFilter(id).then(response => {
+        this.eventSettingEnabled = isAdmin() || response.admin === this.$store.state.user.name
         this.settingsEnabled = isAdmin() || response.admin === this.$store.state.user.name
       })
     },
