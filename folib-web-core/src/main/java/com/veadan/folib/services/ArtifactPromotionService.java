@@ -10,7 +10,6 @@ import com.veadan.folib.model.request.ArtifactSliceDownloadInfoReq;
 import com.veadan.folib.model.request.ArtifactSliceUploadReq;
 import com.veadan.folib.model.response.ArtifactSliceDownloadInfoRes;
 import com.veadan.folib.entity.Dict;
-import com.veadan.folib.model.request.ArtifactSupportSliceDownloadQueryReq;
 import com.veadan.folib.model.response.ArtifactSliceUploadInfoRes;
 import com.veadan.folib.storage.repository.Repository;
 import org.springframework.http.ResponseEntity;
@@ -19,7 +18,6 @@ import org.springframework.web.multipart.MultipartFile;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.util.List;
-import java.util.Map;
 
 /**
  * 制品晋级service
@@ -36,7 +34,7 @@ public interface ArtifactPromotionService {
     
     ResponseEntity nodeOptionAttachRecord(PromotionNodeOption promotionNodeOption, HttpServletRequest request);
 
-    Boolean nodeOptionCallback(ArtifactPromotionNodeOptionCallbackReq model);
+    Boolean artifactPullCallback(ArtifactPromotionNodeOptionCallbackReq model);
 
     ResponseEntity artifactPromotionInfo(String syncNo);
 

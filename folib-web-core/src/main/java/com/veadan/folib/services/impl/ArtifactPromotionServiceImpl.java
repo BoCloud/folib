@@ -1,6 +1,5 @@
 package com.veadan.folib.services.impl;
 
-import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.io.FileUtil;
 import cn.hutool.core.io.IoUtil;
 import cn.hutool.core.lang.UUID;
@@ -11,7 +10,6 @@ import com.veadan.folib.components.artifact.ArtifactComponent;
 import com.veadan.folib.components.promotion.ArtifactPromotionProvider;
 import com.veadan.folib.components.promotion.ArtifactPromotionProviderRegistry;
 import com.veadan.folib.components.security.SecurityComponent;
-import com.veadan.folib.controllers.promotion.ArtifactPromotionController;
 import com.veadan.folib.dispatch.ClusterDispatchNodeDto;
 import com.veadan.folib.domain.AnalysisHtmlGetDirAndFilePath;
 import com.veadan.folib.domain.ArtifactDispatch;
@@ -34,7 +32,6 @@ import com.veadan.folib.mapper.ArtifactSyncRecordMapper;
 import com.veadan.folib.model.request.ArtifactPromotionNodeOptionCallbackReq;
 import com.veadan.folib.model.request.ArtifactSliceDownloadInfoReq;
 import com.veadan.folib.model.request.ArtifactSliceUploadReq;
-import com.veadan.folib.model.request.ArtifactSupportSliceDownloadQueryReq;
 import com.veadan.folib.model.response.ArtifactSliceDownloadInfoRes;
 import com.veadan.folib.model.response.ArtifactSliceUploadInfoRes;
 import com.veadan.folib.promotion.ArtifactUploadTask;
@@ -42,7 +39,6 @@ import com.veadan.folib.promotion.PromotionUtil;
 import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.providers.io.RepositoryPathResolver;
 import com.veadan.folib.providers.layout.LayoutProviderRegistry;
-import com.veadan.folib.providers.storage.S3FileSystemStorageProvider;
 import com.veadan.folib.repositories.ArtifactRepository;
 import com.veadan.folib.repository.MavenRepositoryFeatures;
 import com.veadan.folib.scanner.common.exception.BusinessException;
@@ -83,7 +79,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.multipart.commons.CommonsMultipartFile;
-import software.amazon.awssdk.utils.StringInputStream;
 
 import javax.inject.Inject;
 import javax.servlet.http.HttpServletRequest;
@@ -92,7 +87,6 @@ import javax.ws.rs.client.Client;
 import javax.ws.rs.client.Invocation;
 import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.Response;
-import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -403,6 +397,9 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
         artifactSyncRecord.setCreateTime(new Date());
         artifactSyncRecordMapper.insert(artifactSyncRecord);
         promotionNodeOption.setSyncNo(syncNo);
+        
+        // 生成从日志记录
+        
 
         try {
             asyncThreadPoolTaskExecutor.execute(() ->
@@ -410,7 +407,7 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
                 final ResponseEntity<String> re = this.nodeOption(promotionNodeOption, request);
 
                 if (FolibWsClientArtifactPullCommand.COMMAND.equals(re.getBody())) {
-                    /** 异步使用回调更新状态等信息 {@linkplain ArtifactPromotionServiceImpl#nodeOptionCallback(ArtifactPromotionNodeOptionCallbackReq)} */
+                    /** 异步使用回调更新状态等信息 {@linkplain ArtifactPromotionServiceImpl#artifactPullCallback(ArtifactPromotionNodeOptionCallbackReq)} */
                 } else {
                     // 更新同步的逻辑状态等信息
                     if (HttpStatus.OK.equals(re.getStatusCode())) {
@@ -442,7 +439,7 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
     }
 
     @Override
-    public Boolean nodeOptionCallback(ArtifactPromotionNodeOptionCallbackReq model) {
+    public Boolean artifactPullCallback(ArtifactPromotionNodeOptionCallbackReq model) {
         final String syncNo = model.getSyncNo();
         final Integer status = model.getStatus();
         final String failedReason = model.getFailedReason();
@@ -681,6 +678,7 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
 
         // 生成同步编号
         final String syncNo = String.format("SyncNo-%s", UUID.fastUUID());
+        artifactDispatch.setSyncNo(syncNo);
         final SpringSecurityUser userDetails = (SpringSecurityUser) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         final String userName = Optional.ofNullable(userDetails).map(SpringSecurityUser::getUsername).orElse(null);
         final String requestHostName = request.getServerName();
@@ -703,13 +701,13 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
             { // 异步执行制品晋级
                 final ResponseEntity<String> re = this.artifactDispatch(artifactDispatch);
 
-                // 更新同步的逻辑状态等信息，由于制品分发涉及多个制品，即成功状态时所有支配完成时更新
-//                if (!HttpStatus.OK.equals(re.getStatusCode())) {
-//                    artifactSyncRecord.setStatus(ArtifactSyncRecordStatusEnum.FAILED.getVal());
-//                    if (Objects.nonNull(re.getBody())) {
-//                        artifactSyncRecord.setFailedReason(re.getBody().toString());
-//                    }
-//                }
+                // 更新同步的逻辑状态等信息，由于制品分发涉及多个制品，即成功状态是所有支配完成时更新
+///                if (!HttpStatus.OK.equals(re.getStatusCode())) {
+///                    artifactSyncRecord.setStatus(ArtifactSyncRecordStatusEnum.FAILED.getVal());
+///                    if (Objects.nonNull(re.getBody())) {
+///                        artifactSyncRecord.setFailedReason(re.getBody().toString());
+///                    }
+///                }
                 if (HttpStatus.OK.equals(re.getStatusCode())) {
                     artifactSyncRecord.setStatus(ArtifactSyncRecordStatusEnum.SUCCESS.getVal());
                 } else {

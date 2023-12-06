@@ -18,6 +18,7 @@ import com.veadan.folib.domain.*;
 import com.veadan.folib.dto.*;
 import com.veadan.folib.enums.ArtifactSyncRecordSyncModelEnum;
 import com.veadan.folib.enums.PromotionStatusEnum;
+import com.veadan.folib.enums.ThreadLocalContextFieldNameEnum;
 import com.veadan.folib.forms.common.StorageTreeForm;
 import com.veadan.folib.providers.io.RepositoryFiles;
 import com.veadan.folib.providers.io.RepositoryPath;
@@ -30,6 +31,7 @@ import com.veadan.folib.service.ProxyRepositoryConnectionPoolConfigurationServic
 import com.veadan.folib.services.*;
 import com.veadan.folib.storage.repository.Repository;
 import com.veadan.folib.util.RepositoryPathUtil;
+import com.veadan.folib.util.ThreadLocalUtil;
 import com.veadan.folib.utils.UrlUtils;
 import com.veadan.folib.ws.common.FolibWsAction;
 import com.veadan.folib.ws.client.handler.command.FolibWsClientArtifactPullCommand;
@@ -133,6 +135,9 @@ public class PromotionUtil {
 
     @Async("asyncThreadPoolTaskExecutor")
     public void executeHandleDispatch(ArtifactDispatch artifactDispatch) {
+        // 设置上下文字段
+        ThreadLocalUtil.set(ThreadLocalContextFieldNameEnum.ARTIFACT_DISPATCH_SYNC_NO.getFieldName(), artifactDispatch.getSyncNo());
+
         // 获取分发配置信息
         Map<String, ClusterDispatchNodeDto> map = configurationManagementService.
                 getMutableConfigurationClone().getClusterDispatchNode();
@@ -279,7 +284,9 @@ public class PromotionUtil {
             log.info("分发 [{}] 开始", dispatchType);
             if (dispatchType.equals("pull")) {
                 promotionNodeOption = new PromotionNodeOption(sourcePath, targetPath);
+                final String syncNo = ThreadLocalUtil.get(ThreadLocalContextFieldNameEnum.ARTIFACT_DISPATCH_SYNC_NO.getFieldName(), String.class);
                 promotionNodeOption.setSyncModel(ArtifactSyncRecordSyncModelEnum.PULL.getVal());
+                promotionNodeOption.setSyncNo(syncNo);
                 
                 // 通过Ws协议通知客户端拉取制品
                 final String clusterNodeHost = dispatchNodeDto.getClusterNodeHost();

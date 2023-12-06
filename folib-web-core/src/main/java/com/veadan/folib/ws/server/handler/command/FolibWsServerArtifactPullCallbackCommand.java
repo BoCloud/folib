@@ -1,13 +1,8 @@
 package com.veadan.folib.ws.server.handler.command;
 
-import com.veadan.folib.controllers.cluster.dto.SyncClusterDispatchDto;
-import com.veadan.folib.mapper.ArtifactSyncRecordMapper;
 import com.veadan.folib.model.request.ArtifactPromotionNodeOptionCallbackReq;
 import com.veadan.folib.services.ArtifactPromotionService;
-import com.veadan.folib.services.ClusterDispatchManagementService;
-import com.veadan.folib.services.ClusterSyncService;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import javax.inject.Inject;
@@ -37,7 +32,7 @@ public class FolibWsServerArtifactPullCallbackCommand implements FolibWsServerCo
     public void execute(ArtifactPromotionNodeOptionCallbackReq model) {
         final String syncNo = model.getSyncNo();
         try {
-            artifactPromotionService.nodeOptionCallback(model);
+            artifactPromotionService.artifactPullCallback(model);
             log.info("回调更新制品拉取（{}）成功", syncNo);
         } catch (Exception e) {
             log.error("删除节点（{}）失败", syncNo, e);
