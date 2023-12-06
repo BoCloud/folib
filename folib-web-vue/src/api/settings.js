@@ -147,3 +147,17 @@ export function getAllowAnonymous () {
     method: 'get'
   })
 }
+
+export function getArtifactSyncRecordPage(dataFilter){
+  return axios({
+    url: '/api/artifactSyncRecord/page?'+objToUrlQuery(dataFilter),
+    method: 'get'
+  })
+}
+
+function objToUrlQuery(obj) {
+  if (undefined !== obj && obj) {
+    return Object.keys(obj).map(k => k+"="+obj[k]).join("&")
+  }
+  return ""
+}
