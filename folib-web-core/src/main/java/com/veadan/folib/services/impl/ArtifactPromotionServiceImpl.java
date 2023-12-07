@@ -303,6 +303,8 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
             log.info("srcUrl={},srcUri={}", srcUrl, srcUri);
             log.info("targetUrl={},targetUri={}", targetUrl, targetUri);
             if (srcUrl.equals(targetUrl)) {
+                // TODO：2023/12/6 17:36 生成从记录
+                
                 validateStorageAndRepository(srcStorageId, srcRepostoryId);
                 validateStorageAndRepository(targetStorageId, targetRepostoryId);
                 Repository destRepository = repositoryManagementService.getStorage(targetStorageId).getRepository(targetRepostoryId);
@@ -320,6 +322,10 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
             if (ArtifactSyncRecordSyncModelEnum.PUSH.getVal().equals(syncModel)) {
                 log.info("进入推模式={}", true);
                 validateStorageAndRepository(srcStorageId, srcRepostoryId);
+
+                // TODO：2023/12/6 17:36 生成从记录
+                
+                
                 // 本地源 制品路径 推向 目标路径
                 Repository srcRepository = repositoryManagementService.getStorage(srcStorageId).getRepository(srcRepostoryId);
                 RepositoryPath srcPath = repositoryPathResolver.resolve(srcRepository, srcUri);
@@ -335,6 +341,9 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
 
 //            } else if (targetPath.contains(requestURL)) {
             } else if (ArtifactSyncRecordSyncModelEnum.PULL.getVal().equals(syncModel)) {
+                // TODO：2023/12/6 17:36 生成从记录
+                
+                
                 log.info("进入拉模式={}", true);
                 // 通过Ws协议通知客户端进行拉取操作
                 final String targetHost = UrlUtils.getHost(targetUrl);
@@ -695,7 +704,7 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
         artifactSyncRecord.setCreateBy(userName);
         artifactSyncRecord.setCreateTime(new Date());
         artifactSyncRecordMapper.insert(artifactSyncRecord);
-
+        
         try {
             asyncThreadPoolTaskExecutor.execute(() ->
             { // 异步执行制品晋级

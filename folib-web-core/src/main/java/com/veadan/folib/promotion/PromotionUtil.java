@@ -306,6 +306,10 @@ public class PromotionUtil {
                     }
                     return;
                 }
+
+                // 生成从记录 API_ARTIFACT_FOLIB_PROMOTION_GET_FILE_RELATIVE_PATHS
+                // TODO：2023/12/6 17:36 生成从记录
+                
                 
                 final FolibWsAction folibWsAction = new FolibWsAction()
                         .command(FolibWsClientArtifactPullCommand.COMMAND)
@@ -322,6 +326,10 @@ public class PromotionUtil {
                 PromotionArtifactDto promotionArtifactDto = new PromotionArtifactDto(srcStorageId, srcRepositoryId,
                         targetStorageId, targetRepositoryId, srcAbsolutePath, targetUploadUrl);
                 PromotionNodeOptionDto uploadDto = getPromotionUploadDto(promotionArtifactDto);
+                
+                // TODO：2023/12/6 17:36 生成从记录
+                
+                
                 upload(targetUploadUrl, uploadDto);
                 if (Boolean.TRUE.equals(recordStatus)) {
                     artifactComponent.handlerArtifactPromotion(dispatchNodeDto.getClusterEnName(), srcStorageId, srcRepositoryId, artifactPath, PromotionStatusEnum.SUCCESS.getStatus());
