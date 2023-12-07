@@ -103,7 +103,7 @@ import {checkMachineCode,getServerName} from "@/api/settings";
 			}
 		},
     created() {
-
+// TODO 这处代码要考虑在session过期之后不要在充分调用
       getServerName().then(res=>{
         this.instanceName=res
         sessionStorage.setItem("instanceName",res)

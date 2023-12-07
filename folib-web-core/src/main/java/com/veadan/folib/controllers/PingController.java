@@ -1,11 +1,17 @@
 package com.veadan.folib.controllers;
 
+import com.hazelcast.core.HazelcastInstance;
+import com.veadan.folib.data.CacheName;
 import com.veadan.folib.licence.ActivateVo;
 import com.veadan.folib.licence.MacUtil;
 import com.veadan.folib.services.CodeActivateService;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.cache.annotation.CachePut;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -14,6 +20,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 
 import javax.inject.Inject;
+import java.util.concurrent.ConcurrentMap;
 
 /**
  * @author Steve Todorov
@@ -26,6 +33,14 @@ public class PingController
 
 
 {
+
+    @Inject
+    private HazelcastInstance hazelcastInstance;
+
+    private ConcurrentMap<String,String> retrieveMap() {
+        return hazelcastInstance.getMap("map");
+    }
+
     @Inject
     private CodeActivateService codeActivateService;
 
@@ -103,5 +118,31 @@ public class PingController
         }
 
     }
+
+
+    // 使用 @CachePut 更新缓存
+    @ApiResponses(value = { @ApiResponse(code = 200, message = "Successful machineCode") })
+    @PostMapping("/saveTest/{name}")
+    public ResponseEntity saveTest(@PathVariable String name, @RequestBody String data){
+
+        retrieveMap().put(name, data);
+        // 这里应该有一些逻辑来处理数据并保存
+        return ResponseEntity.ok().body(data);
+    }
+
+
+
+
+    // 使用 @Cacheable 读取缓存
+    @ApiResponses(value = { @ApiResponse(code = 200, message = "Successful machineCode") })
+    @GetMapping("/getTest/{name}")
+    public ResponseEntity getTest(@PathVariable String name){
+        String value = retrieveMap().get(name);
+        return ResponseEntity.ok().body(value);
+    }
+
+
+
+
 
 }
