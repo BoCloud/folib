@@ -191,6 +191,7 @@ public class ArtifactPromotionController extends BaseArtifactController {
 
 
     @GetMapping(value = "/file/speedLimitDownload/{storageId}/{repositoryId}/{artifactPath:.+}")
+    @Deprecated
     public void speedLimitDownload(@RepositoryMapping Repository repository,
                                    @PathVariable String artifactPath, @RequestParam("nodeMark") String nodeMark,
                                    HttpServletResponse response) {
