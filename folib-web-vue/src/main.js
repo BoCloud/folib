@@ -42,11 +42,13 @@ import './utils/filter' // global filter
 
 Vue.config.productionTip = false
 
+import i18n from './locale'
 
 // Initialize Vue
 new Vue({
   router,
   store,
+  i18n,
   render: h => h(App)
 }).$mount('#app')
 
