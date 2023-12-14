@@ -1,5 +1,5 @@
-<!-- 
-	This is the Settings page, it uses the dashboard layout in: 
+<!--
+	This is the Settings page, it uses the dashboard layout in:
 	"./layouts/Dashboard.vue" .
  -->
 
@@ -15,7 +15,7 @@
             <template #title>
               <a-row type="flex" align="middle">
                 <a-col :span="24" :md="12" class="col-info">
-                  <h6 class="font-semibold m-0">存储列表</h6>
+                  <h6 class="font-semibold m-0">{{ $t('Storage.StorageList') }}</h6>
                 </a-col>
                 <a-col :span="24" :md="12" style="display: flex; align-items: center; justify-content: flex-end">
                   <a class="text-center text-muted font-bold">
@@ -54,7 +54,7 @@
                     <span>{{ currentStorage.id }}</span>
                     <a-tooltip placement="topLeft">
                       <template slot="title">
-                        <span>S3存储</span>
+                        <span>{{ $t('Storage.s3Storage') }}</span>
                       </template>
                       <a-icon style="margin-left: 15px" v-if="currentStorage.basedir != null" type="cloud"
                         theme="filled" class="text-gray-6 text-lg" />
@@ -63,7 +63,7 @@
                   <p>{{ baseUrl }}api/browse/{{ currentStorage.id }} <a>
                       <a-tooltip placement="topLeft">
                         <template slot="title">
-                          <span>复制存储空间路径</span>
+                          <span>{{ $t('Storage.CopyStorageSpacePath') }}</span>
                         </template>
                         <a-icon type="copy" @click="copy(baseUrl + 'api/browse/' + currentStorage.id)" />
                       </a-tooltip>
@@ -73,7 +73,7 @@
               <a-col :span="24" :md="12" style="display: flex; align-items: center; justify-content: flex-end">
                 <a-tooltip placement="topLeft">
                   <template slot="title">
-                    <span>修改存储空间</span>
+                    <span>{{ $t('Storage.ModifyStorageSpace') }}</span>
                   </template>
                   <div v-if="hasStoragePermission()" @click="updateHandleView">
                     <svg width="20px" height="20px" viewBox="0 0 40 40" version="1.1" xmlns="http://www.w3.org/2000/svg"
@@ -128,7 +128,7 @@
               :bodyStyle="{ padding: 0, height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }">
               <a class="text-center text-muted font-bold">
                 <h3 class="font-semibold text-muted mb-0">+</h3>
-                <h5 class="font-semibold text-muted">新 建</h5>
+                <h5 class="font-semibold text-muted">{{ $t('Storage.createModal') }}</h5>
               </a>
             </a-card>
 
@@ -137,35 +137,35 @@
 
       </a-col>
     </a-row>
-    <a-modal v-model="showsTorageFormModal" :footer="null" :forceRender="true" title="新建存储空间"
+    <a-modal v-model="showsTorageFormModal" :footer="null" :forceRender="true" :title="$t('Storage.CreateStorageSpace')"
       on-ok="showsTorageFormModal = false">
       <a-form-model :model="storageCreateData" ref="storageCreate" :rules="storageRules" :hideRequiredMark="true"
         @submit.prevent="handleCreateSubmit">
         <a-row :gutter="[24]">
           <a-col :span="24">
-            <a-form-model-item class="tags-field mb-10" label="存储空间名称" :colon="false" prop="id">
-              <a-input v-model="storageCreateData.id" placeholder="存储空间名称">
+            <a-form-model-item class="tags-field mb-10" :label="$t('Storage.StorageSpaceName')" :colon="false" prop="id">
+              <a-input v-decorator="['id']" v-model="storageCreateData.id" :placeholder="$t('Storage.StorageSpaceName')">
                 <a-icon slot="prefix" type="appstore" />
               </a-input>
             </a-form-model-item>
-            <a-form-model-item class="tags-field mb-10" label="存储类型" :colon="false">
+            <a-form-model-item class="tags-field mb-10" :label="$t('Storage.StorageType')" :colon="false">
               <a-radio-group name="radioGroup" default-value="local" @change="changeStorageType()"
                 v-model="storageCreateData.type">
                 <a-radio value="local">
-                  本地存储
+                  {{ $t('Storage.LocalStorage') }}
                 </a-radio>
                 <a-radio value="S3">
-                  S3存储
+                  {{ $t('Storage.s3Storage') }}
                 </a-radio>
               </a-radio-group>
             </a-form-model-item>
-            <p>说明:</p>
+            <p>{{ $t('Storage.Note') }}：</p>
             <ul class="pl-15 text-muted">
-              <li>默认为本地存储即:NFS本地目录存储</li>
-              <li>S3存储：默认以存储空间名称作为桶名,您也可以自定义桶名称</li>
-              <li><strong>注意：存储空间名称、存储类型、S3存储桶路径，一旦创建不可修改</strong></li>
+              <li>{{ $t('Storage.NFSStorage') }}</li>
+              <li>{{ $t('Storage.BucketNameDefinition') }}</li>
+              <li><strong>{{ $t('Storage.unmodifiableNote') }}</strong></li>
             </ul>
-            <a-form-model-item v-if="storageCreateData.type === 'S3'" class="tags-field mb-10" label="S3路径"
+            <a-form-model-item v-if="storageCreateData.type === 'S3'" class="tags-field mb-10" :label="$t('Storage.S3Path')"
               :colon="false">
               <a-card :bordered="false" class="bg-gray-3 shadow-0 mb-24" :bodyStyle="{ padding: '8px' }">
                 <a-row type="flex" align="middle">
@@ -175,36 +175,36 @@
                     }}/{{ storageCreateData.id }}</strong>
                   </a-col>
                   <a-col class="ml-auto">
-                    <a-input v-if="storageCreateData.isNotCustom" v-model="storageCreateData.bucket" placeholder="桶名称"
+                    <a-input v-if="storageCreateData.isNotCustom" v-model="storageCreateData.bucket" :placeholder="$t('Storage.BucketName')"
                       class="font-regular text-sm text-dark" style="width: 150px;">
                       <a-icon slot="prefix" type="cloud" />
                     </a-input>
                     <a-button v-if="!storageCreateData.isNotCustom"
                       @click="() => (storageCreateData.isNotCustom = true)" size="small" type="link"
-                      class="ml-10 px-25 font-bold">自定义
+                      class="ml-10 px-25 font-bold">{{ $t('Storage.Custom') }}
                     </a-button>
                     <a-button v-if="storageCreateData.isNotCustom"
                       @click="() => (storageCreateData.isNotCustom = false, delete storageCreateData.bucket)"
-                      size="small" type="link" class="ml-10 px-25 font-bold">取消自定义
+                      size="small" type="link" class="ml-10 px-25 font-bold">{{ $t('Storage.cancelCustom') }}
                     </a-button>
                   </a-col>
                 </a-row>
               </a-card>
             </a-form-model-item>
-            <a-form-model-item class="tags-field mb-10" v-if="userInfo.roles.indexOf('ADMIN') > -1" label="管理员选择"
+            <a-form-model-item class="tags-field mb-10" v-if="userInfo.roles.indexOf('ADMIN') > -1" :label="$t('Storage.Administrator')"
               :colon="false">
               <a-select v-model="storageCreateData.admin" style="width: 100%" model="default" show-search
-                placeholder="请选择管理员">
+                :placeholder="$t('Storage.SelectAdministrator')">
                 <a-select-option v-for="(tag, index) in userList" :key="index" :value="tag.username">
                   {{ tag.username }}
                 </a-select-option>
               </a-select>
             </a-form-model-item>
             <a-form-model-item class="tags-field mb-10"
-              v-if="hasStoragePermission()" label="用户成员选择"
+              v-if="hasStoragePermission()" :label="$t('Storage.user')"
               show-search :colon="false">
               <a-select v-model="storageCreateData.users" mode="multiple" :defaultValue="storageCreateData.users"
-                style="width: 100%" placeholder="请选择用户">
+                style="width: 100%" :placeholder="$t('Storage.selectUser')">
                 <a-select-option v-for="(tag, index) in userList" :key="index" :value="tag.username">
                   {{ tag.username }}
                 </a-select-option>
@@ -218,40 +218,40 @@
             <!--            <a-button key="back" @click="deleteCurrentTask" class="px-30" size="small" type="danger">Delete</a-button>-->
           </a-col>
           <a-col :span="12" class="text-right">
-            <a-button key="submit" class="px-30" size="small" type="primary" htmlType="submit">创建</a-button>
-            <a-button key="back" @click="showsTorageFormModal = false" class="px-30 ml-10" size="small">取消</a-button>
+            <a-button key="submit" class="px-30" size="small" type="primary" htmlType="submit">{{ $t('Storage.Confirm') }}</a-button>
+            <a-button key="back" @click="showsTorageFormModal = false" class="px-30 ml-10" size="small">{{ $t('Storage.Cancel') }}</a-button>
           </a-col>
         </a-row>
       </a-form-model>
     </a-modal>
 
-    <a-modal v-model="showStorageUpdate" :footer="null" :forceRender="true" title="修改或删除存储空间"
-      on-ok="showStorageUpdate = false">
+    <a-modal v-model="showStorageUpdate" :footer="null" :forceRender="true" :title="$t('Storage.StorageSpaceOperation')"
+      on-ok="showStorageUpdate = false" width="50%">
       <a-form :hideRequiredMark="true">
         <a-row :gutter="[24]">
           <a-col :span="24">
-            <a-form-item class="tags-field mb-10" label="存储空间名称" :colon="false">
-              <a-input disabled v-model="currentStorage.id" placeholder="存储空间名称">
+            <a-form-item class="tags-field mb-10" :label="$t('Storage.StorageSpaceName')" :colon="false">
+              <a-input disabled v-model="currentStorage.id" :placeholder="$t('Storage.StorageSpaceName')">
                 <a-icon slot="prefix" type="appstore" />
               </a-input>
             </a-form-item>
-            <a-form-item class="tags-field mb-10" label="存储类型" :colon="false">
+            <a-form-item class="tags-field mb-10" :label="$t('Storage.StorageType')" :colon="false">
               <a-radio-group disabled name="radioGroup" default-value="local" @change="changeStorageUpdateType()"
                 v-model="currentStorage.type">
                 <a-radio value="local">
-                  本地存储
+                  {{ $t('Storage.LocalStorage') }}
                 </a-radio>
                 <a-radio value="S3">
-                  S3存储
+                  {{ $t('Storage.s3Storage') }}
                 </a-radio>
               </a-radio-group>
             </a-form-item>
             <p>Tip:</p>
             <ul class="pl-15 text-muted">
-              <li>存储空间名称不允许修改</li>
-              <li>存储类型、S3类型的桶均不允许修改</li>
+              <li>{{ $t('Storage.SpaceNameRemain') }}</li>
+              <li>{{ $t('Storage.BucketRemain') }}</li>
             </ul>
-            <a-form-item v-if="currentStorage.type === 'S3'" class="tags-field mb-10" label="S3路径" :colon="false">
+            <a-form-item v-if="currentStorage.type === 'S3'" class="tags-field mb-10" :label="$t('Storage.S3Path')" :colon="false">
               <a-card :bordered="false" class="bg-gray-3 shadow-0 mb-24" :bodyStyle="{ padding: '8px' }">
                 <a-row type="flex" align="middle">
                   <a-col>
@@ -260,36 +260,36 @@
                     }}/{{ currentStorage.id }}</strong>
                   </a-col>
                   <a-col class="ml-auto">
-                    <a-input v-if="currentStorage.isNotCustom" v-model="currentStorage.bucket" placeholder="桶名称"
+                    <a-input v-if="currentStorage.isNotCustom" v-model="currentStorage.bucket" :placeholder="$t('Storage.BucketName')"
                       class="font-regular text-sm text-dark" style="width: 150px;">
                       <a-icon slot="prefix" type="cloud" />
                     </a-input>
                     <a-button disabled v-if="!currentStorage.isNotCustom"
                       @click="() => (currentStorage.isNotCustom = true)" size="small" type="link"
-                      class="ml-10 px-25 font-bold">自定义
+                      class="ml-10 px-25 font-bold">{{ $t('Storage.Custom') }}
                     </a-button>
                     <a-button v-if="currentStorage.isNotCustom"
                       @click="() => (currentStorage.isNotCustom = false, currentStorage.bucket = null)" size="small"
-                      type="link" class="ml-10 px-25 font-bold">取消自定义
+                      type="link" class="ml-10 px-25 font-bold">{{ $t('Storage.cancelCustom') }}
                     </a-button>
                   </a-col>
                 </a-row>
               </a-card>
             </a-form-item>
-            <a-form-item class="tags-field mb-10" v-if="userInfo.roles.indexOf('ADMIN') > -1" label="管理员选择"
+            <a-form-item class="tags-field mb-10" v-if="userInfo.roles.indexOf('ADMIN') > -1" :label="$t('Storage.Administrator')"
               :colon="false">
               <a-select v-model="currentStorage.admin" style="width: 100%" model="default" show-search
-                placeholder="请选择管理员">
+                :placeholder="$t('Storage.SelectAdministrator')">
                 <a-select-option v-for="(tag, index) in userList" :key="index" :value="tag.username">
                   {{ tag.username }}
                 </a-select-option>
               </a-select>
             </a-form-item>
             <a-form-item class="tags-field mb-10"
-              v-if="hasStoragePermission()" label="用户成员选择"
+              v-if="hasStoragePermission()" :label="$t('Storage.user')"
               :colon="false">
               <a-select v-model="currentStorage.users" mode="multiple" :defaultValue="currentStorage.users"
-                style="width: 100%" placeholder="请选择用户">
+                style="width: 100%" :placeholder="$t('Storage.selectUser')">
                 <a-select-option v-for="(tag, index) in userList" :key="index" :value="tag.username">
                   {{ tag.username }}
                 </a-select-option>
@@ -303,21 +303,21 @@
 
           </a-col>
         </a-row>
-        <p>说明（请谨慎操作！！！）:</p>
+        <p>{{ $t('Storage.ImportantNote') }}:</p>
         <ul class="pl-15 text-muted">
-          <li>你选择的管理员/成员列表将拥有该存储空间的使用权限</li>
-          <li>删除:只删除存储配置，每日0点会定时清理</li>
-          <li>若强制删除则无法恢复仓库列表</li>
+          <li>{{ $t('Storage.HaveAccess') }}</li>
+          <li>{{ $t('Storage.RegularCleaning') }}</li>
+          <li>{{ $t('Storage.IfForcedDeletion') }}</li>
         </ul>
         <a-row :span="24">
           <a-col :span="12" class="text-left">
-            <a-button @click="handleUpdateSubmit" class="px-30" size="small" type="primary" htmlType="submit">修改
+            <a-button @click="handleUpdateSubmit" class="px-30" size="small" type="primary" htmlType="submit">{{ $t('Storage.Edit') }}
             </a-button>
-            <a-button @click="showStorageUpdate = false" class="px-30 ml-10" size="small">取消</a-button>
+            <a-button @click="showStorageUpdate = false" class="px-30 ml-10" size="small">{{ $t('Storage.Cancel') }}</a-button>
           </a-col>
           <a-col :span="12" class="text-right">
-            <a-button @click="storageDelHandle" class="px-30 ml-10" type="danger" size="small">删除</a-button>
-            <a-button @click="storageForceDelHandle" class="px-30 ml-10" type="dashed" size="small">强制删除</a-button>
+            <a-button @click="storageDelHandle" class="px-30 ml-10" type="danger" size="small">{{ $t('Storage.Delete') }}</a-button>
+            <a-button @click="storageForceDelHandle" class="px-30 ml-10" type="dashed" size="small">{{ $t('Storage.ForcedDeletion') }}</a-button>
           </a-col>
         </a-row>
       </a-form>
@@ -326,13 +326,13 @@
       <a-form :form="delForm" ref="delForm" :hideRequiredMark="true">
         <a-row :gutter="[24]">
           <a-col :span="24">
-            <h6 class="text-center font-regular">你确定要删除<a>{{ willDelId }}</a>这个制品仓库么？请谨慎操作</h6>
+            <h6 class="text-center font-regular">{{ $t('Storage.ConfirmDeletion1') }}<a>{{ willDelId }}</a>{{ $t('Storage.ConfirmDeletion2') }}</h6>
           </a-col>
           <a-col :span="8">
           </a-col>
           <a-col :span="8">
             <a-form-item class="mb-10" :colon="false">
-              <a-input v-decorator="['id',]" placeholder="仓库名称">
+              <a-input v-decorator="['id',]" :placeholder="$t('Storage.WarehouseName')">
               </a-input>
             </a-form-item>
           </a-col>
@@ -340,46 +340,51 @@
             <!--            <a-button key="back" @click="deleteCurrentTask" class="px-30" size="small" type="danger">Delete</a-button>-->
           </a-col>
         </a-row>
-        <p>说明（请谨慎操作！！！）:</p>
+        <p>{{ $t('Storage.ImportantNote') }}:</p>
         <ul class="pl-15 text-muted">
-          <li>删除:只逻辑删除，不删除安装包</li>
-          <li>若强制删除则无法恢复仓库列表</li>
+          <li>{{ $t('Storage.LogicalDeletion') }}</li>
+          <li>{{ $t('Storage.IfForcedDeletion') }}</li>
         </ul>
         <a-row :span="24">
           <a-col :span="12" class="text-left">
-            <a-button key="back" @click="deleteFormVisible = false" class="px-30 ml-10" size="small">取消</a-button>
+            <a-button key="back" @click="deleteFormVisible = false" class="px-30 ml-10" size="small">{{ $t('Storage.Cancel') }}</a-button>
           </a-col>
           <a-col :span="12" class="text-right">
             <a-button v-if="deleteBtnVisible" @click="delRepositoryResponseEntity" class="px-30 ml-10" type="danger"
-              size="small">删除</a-button>
+              size="small">{{ $t('Storage.Delete') }}</a-button>
             <a-button v-if="forceDeleteBtnVisible" @click="delRepositoryResponseEntityForce" class="px-30 ml-10"
-              type="dashed" size="small">强制删除
+              type="dashed" size="small">{{ $t('Storage.ForcedDeletion') }}
             </a-button>
           </a-col>
         </a-row>
       </a-form>
     </a-modal>
-    <a-drawer placement="right" width="65%" :title="(folibRepositoryEditDisabled ? '修改' : '新建') + '制品库'"
+    <a-drawer placement="right" width="65%" :title="(folibRepositoryEditDisabled ? $t('Storage.Edit') : $t('Storage.create')) + $t('Storage.ProductWarehouse')"
       :visible="folibVisible" @close="closeUserDialog">
       <div class="mx-auto m-50" style="max-width: 1000px;">
 
         <!-- Header -->
-        <h3 class="mt-25 mb-5 text-center">开始{{ folibRepositoryEditDisabled? '修改': '新建' }}你的制品库</h3>
-        <h5 class="text-center font-regular">将会在<a>{{
-          currentStorage.id
-        }}</a>存储空间下{{ folibRepositoryEditDisabled? '修改': '新建' }}制品仓库</h5>
+        <h3 class="mt-25 mb-5 text-center">{{ $t('Storage.Start') }}{{ folibRepositoryEditDisabled ? $t('Storage.Edit') : $t('Storage.create') }}{{ $t('Storage.yourFolib') }}</h3>
+        <h5 v-if="language==='zh'" class="text-center font-regular">{{ $t('Storage.Will') }}
+          <a>{{currentStorage.id }}</a>
+          {{ $t('Storage.UnderStorageSpace') }}{{ folibRepositoryEditDisabled ? $t('Storage.Edit') : $t('Storage.create') }}{{ $t('Storage.ProductWarehouse') }}
+        </h5>
+        <h5 v-if="language==='en'" class="text-center font-regular">{{ $t('Storage.Will') }}
+          {{ folibRepositoryEditDisabled ? $t('Storage.Edit') : $t('Storage.create') }} {{ $t('Storage.Under') }}
+          <a>{{currentStorage.id }}</a> {{ $t('Storage.StorageSpace') }}
+        </h5>
         <div class="my-50" style="max-width: 1000px;">
 
           <!-- Steps -->
           <a-steps progress-dot v-model="step">
             <a-step
               v-if="folibRepository.type === 'hosted' || folibRepository.type === 'proxy' || folibRepository.type === 'group'"
-              title="类型选择" />
+              :title="$t('Storage.TypeSelection')" />
             <a-step
               v-if="folibRepository.type === 'hosted' || folibRepository.type === 'proxy' || folibRepository.type === 'group'"
-              title="基础信息" />
-            <a-step v-if="folibRepository.type === 'proxy'" title="远程配置" />
-            <a-step v-if="folibRepository.type === 'group'" title="组合配置" />
+              :title="$t('Storage.BasicInformation')" />
+            <a-step v-if="folibRepository.type === 'proxy'" :title="$t('Storage.RemoteConfiguration')" />
+            <a-step v-if="folibRepository.type === 'group'" :title="$t('Storage.CombinationConfiguration')" />
             <!-- <a-step title="定时策略" /> -->
           </a-steps>
           <!-- / Steps -->
@@ -394,11 +399,9 @@
             v-if="step === 0 && (folibRepository.type === 'hosted' || folibRepository.type === 'proxy' || folibRepository.type === 'group')"
             :bordered="false" class="header-solid">
 
-            <h5 class="font-regular text-center">{{ folibRepositoryEditDisabled? '不可修改，请点击下一步': '不知道怎么选择?' }} </h5>
-            <p class="text-center">{{
-              folibRepositoryEditDisabled? '修改模式下不可以更换仓库类型！':
-                '根据图标以及下发的类型名称进行识别，找到你要选择的仓库类型吧！'
-            }}
+            <h5 class="font-regular text-center">{{ folibRepositoryEditDisabled ? $t('Storage.ClickNext') : $t('Storage.HowToChoose') }} </h5>
+            <p class="text-center">
+              {{ folibRepositoryEditDisabled ? $t('Storage.WarehouseTypeRemain') : $t('Storage.IdentifyWarehouseType') }}
             </p>
 
             <a-form :form="form" class="mt-30" :hideRequiredMark="true">
@@ -559,7 +562,7 @@
                       <div class="checkbox-label" :class="[layoutChecked === 'go' ? 'active' : '']">
                         <a-tooltip>
                           <template slot="title">
-                            下一个版本更新即将呈现🤝
+                            {{ $t('Storage.NextVersion') }}🤝
                           </template>
                         <a-avatar :size="44" shape="square"
                                   style="border-radius: 8px; background-image: linear-gradient( 310deg, #020202, #5c6391 );">
@@ -573,7 +576,7 @@
                       <div class="checkbox-label" :class="[layoutChecked === 'gems' ? 'active' : '']">
                         <a-tooltip>
                           <template slot="title">
-                            下一个版本更新即将呈现🤝
+                            {{ $t('Storage.NextVersion') }}🤝
                           </template>
                         <a-avatar :size="44" shape="square"
                                   style="border-radius: 8px; background-image: linear-gradient( 310deg, #020202, #5c6391 );">
@@ -587,7 +590,7 @@
                       <div class="checkbox-label" :class="[layoutChecked === 'rust' ? 'active' : '']">
                         <a-tooltip>
                           <template slot="title">
-                            下一个版本更新即将呈现🤝
+                            {{ $t('Storage.NextVersion') }}🤝
                           </template>
                         <a-avatar :size="44" shape="square"
                                   style="border-radius: 8px; background-image: linear-gradient( 310deg, #020202, #5c6391 );">
@@ -601,7 +604,7 @@
                       <div class="checkbox-label" :class="[layoutChecked === 'huggingface' ? 'active' : '']">
                         <a-tooltip>
                           <template slot="title">
-                            下一个版本更新即将呈现🤝
+                            {{ $t('Storage.NextVersion') }}🤝
                           </template>
                         <a-avatar :size="44" shape="square"
                                   style="border-radius: 8px; background-image: linear-gradient( 310deg, #020202, #5c6391 );">
@@ -620,7 +623,7 @@
                   <!--                  <a-button @click="moveStep(-1)" class="px-25">PREV</a-button>-->
                 </a-col>
                 <a-col :span="12" class="text-right">
-                  <a-button :disabled="!layoutChecked" type="primary" @click="moveStep(1)" class="px-25">下一步
+                  <a-button :disabled="!layoutChecked" type="primary" @click="moveStep(1)" class="px-25">{{ $t('Storage.Next') }}
                   </a-button>
                 </a-col>
               </a-row>
@@ -631,35 +634,35 @@
           <a-card
             v-else-if="step === 1 && (folibRepository.type === 'hosted' || folibRepository.type === 'proxy' || folibRepository.type === 'group')"
             :bordered="false" class="header-solid">
-            <h5 class="font-regular text-center">OK,接下来要填写基础信息</h5>
+            <h5 class="font-regular text-center">{{ $t('Storage.FillInInformation') }}</h5>
             <p class="text-center">
-              {{ layoutChecked === 'docker' ? '你选择的是Docker仓库类型' : '选择不同的仓库策略要配置的流程不太一样' }}</p>
+              {{ layoutChecked === 'docker' ? $t('Storage.DockerType') : $t('Storage.DifferentProcess') }}</p>
             <a-form :form="form" :hideRequiredMark="true">
               <a-row :gutter="[24]">
                 <a-col :span="12">
-                  <a-form-item class="mb-10" label="仓库名称" :colon="false">
-                    <a-input :disabled="folibRepositoryEditDisabled" placeholder="不要出现仓库类型的关键字"
+                  <a-form-item class="mb-10" :label="$t('Storage.WarehouseName')" :colon="false">
+                    <a-input :disabled="folibRepositoryEditDisabled" :placeholder="$t('Storage.KeywordPrompt')"
                       v-model="folibRepositoryIds" />
                   </a-form-item>
                 </a-col>
                 <a-col :span="6">
-                  <a-form-item class="mb-10" label="策略" :colon="false">
+                  <a-form-item class="mb-10" :label="$t('Storage.Strategy')" :colon="false">
                     <a-select :disabled="layoutChecked === 'docker' || folibRepositoryEditDisabled"
                       default-value="hosted" v-model="folibRepository.type">
                       <a-select-option value="hosted">
-                        本地
+                        {{ $t('Storage.Local') }}
                       </a-select-option>
                       <a-select-option value="proxy">
-                        代理
+                        {{ $t('Storage.Agent') }}
                       </a-select-option>
                       <a-select-option value="group" v-if="this.layoutChecked !== 'cocoapods'">
-                        组合
+                        {{ $t('Storage.Combination') }}
                       </a-select-option>
                     </a-select>
                   </a-form-item>
                 </a-col>
                 <a-col :span="6">
-                  <a-form-item class="mb-10" label="版本策略" :colon="false">
+                  <a-form-item class="mb-10" :label="$t('Storage.VersioningStrategy')" :colon="false">
                     <a-select default-value="release" v-model="folibRepository.policy">
                       <a-select-option value="release">
                         release
@@ -674,24 +677,24 @@
                   </a-form-item>
                 </a-col>
                 <a-col :span="12">
-                  <a-form-item class="mb-10" label="仓库路径" :colon="false">
-                    <a-input disabled placeholder="当前存储为分布式，不支持存储路径定义" v-model="folibRepository.basedir" />
+                  <a-form-item class="mb-10" :label="$t('Storage.WarehousePath')" :colon="false">
+                    <a-input disabled :placeholder="$t('Storage.DistributedRemain')" v-model="folibRepository.basedir" />
                   </a-form-item>
                 </a-col>
                 <a-col :span="6">
-                  <a-form-item class="mb-10" label="制品大小限制(MB)" :colon="false">
+                  <a-form-item class="mb-10" :label="$t('Storage.ItemLimit')" :colon="false">
                     <a-input v-model="artifactMaxSize" addon-after="MB">
                     </a-input>
                   </a-form-item>
                 </a-col>
                 <a-col :span="6">
-                  <a-form-item class="mb-10" label="服务状态" :colon="false">
+                  <a-form-item class="mb-10" :label="$t('Storage.ServiceStatus')" :colon="false">
                     <a-select default-value="In Service" v-model="folibRepository.status">
                       <a-select-option value="In Service">
-                        开放服务
+                        {{ $t('Storage.OpenService') }}
                       </a-select-option>
                       <a-select-option value="Out of Service">
-                        关闭服务
+                        {{ $t('Storage.ShutdownService') }}
                       </a-select-option>
                     </a-select>
                   </a-form-item>
@@ -699,63 +702,63 @@
               </a-row>
               <a-row :gutter="[24]">
                 <a-col :span="4">
-                  <a-form-item class="mb-10" label="回收站" :colon="false">
+                  <a-form-item class="mb-10" :label="$t('Storage.RecycleBin')" :colon="false">
                     <a-checkbox v-model="folibRepository.trashEnabled">
-                      {{ folibRepository.trashEnabled ? '开启' : '关闭' }}
+                      {{ folibRepository.trashEnabled ? $t('Storage.On') : $t('Storage.Off') }}
                     </a-checkbox>
                   </a-form-item>
                 </a-col>
                 <a-col :span="4">
-                  <a-form-item class="mb-10" label="删除" :colon="false">
+                  <a-form-item class="mb-10" :label="$t('Storage.Delete')" :colon="false">
                     <a-checkbox v-model="folibRepository.allowsDeletion">
-                      {{ folibRepository.allowsDeletion ? '允许' : '不允许' }}
+                      {{ folibRepository.allowsDeletion ? $t('Storage.Allowed') : $t('Storage.NotAllowed') }}
                     </a-checkbox>
                   </a-form-item>
                 </a-col>
                 <a-col :span="4">
-                  <a-form-item class="mb-10" label="强制删除" :colon="false">
+                  <a-form-item class="mb-10" :label="$t('Storage.ForcedDeletion')" :colon="false">
                     <a-checkbox v-model="folibRepository.allowsForceDeletion">
-                      {{ folibRepository.allowsForceDeletion ? '允许' : '不允许' }}
+                      {{ folibRepository.allowsForceDeletion ? $t('Storage.Allowed') : $t('Storage.NotAllowed') }}
                     </a-checkbox>
                   </a-form-item>
                 </a-col>
                 <a-col :span="4">
-                  <a-form-item class="mb-10" label="上传部署" :colon="false">
+                  <a-form-item class="mb-10" :label="$t('Storage.UploadDeploy')" :colon="false">
                     <a-checkbox v-model="folibRepository.allowsDeployment">
-                      {{ folibRepository.allowsDeployment ? '允许' : '不允许' }}
+                      {{ folibRepository.allowsDeployment ? $t('Storage.Allowed') : $t('Storage.NotAllowed') }}
                     </a-checkbox>
                   </a-form-item>
                 </a-col>
                 <a-col :span="4">
-                  <a-form-item class="mb-10" label="上传覆盖" :colon="false">
+                  <a-form-item class="mb-10" :label="$t('Storage.UploadOverlay')" :colon="false">
                     <a-checkbox v-model="folibRepository.allowsRedeployment">
-                      {{ folibRepository.allowsRedeployment ? '允许' : '不允许' }}
+                      {{ folibRepository.allowsRedeployment ? $t('Storage.Allowed') : $t('Storage.NotAllowed') }}
                     </a-checkbox>
                   </a-form-item>
                 </a-col>
                 <a-col :span="4">
-                  <a-form-item class="mb-10" label="目录浏览" :colon="false">
+                  <a-form-item class="mb-10" :label="$t('Storage.DirectoryBrowsing')" :colon="false">
                     <a-checkbox v-model="folibRepository.allowsDirectoryBrowsing">
-                      {{ folibRepository.allowsDirectoryBrowsing ? '允许' : '不允许' }}
+                      {{ folibRepository.allowsDirectoryBrowsing ? $t('Storage.Allowed') : $t('Storage.NotAllowed') }}
                     </a-checkbox>
                   </a-form-item>
                 </a-col>
               </a-row>
               <a-row :gutter="[24]">
                 <a-col :span="12">
-                  <a-button @click="moveStep(-1)" class="px-25">回退</a-button>
+                  <a-button @click="moveStep(-1)" class="px-25">{{ $t('Storage.Back') }}</a-button>
                 </a-col>
                 <a-col :span="12" class="text-right">
                   <a-button v-if="folibRepository.type === 'hosted'" type="primary"
                     @click="addOrUpdateRepositorySecond(false)" class="px-25">
-                    完成{{ folibRepositoryEditDisabled? '修改': '创建' }}
+                    {{ $t('Storage.Complete') }}{{ folibRepositoryEditDisabled ? $t('Storage.Edit') : $t('Storage.create') }}
                   </a-button>
                   <!-- <a-button v-if="folibRepository.type === 'hosted'" style="margin-left: 20px"
                     @click="addOrUpdateRepositorySecond(true)" class="px-25">
                     {{ folibRepositoryEditDisabled? '修改': '创建' }}并设置定时策略</a-button> -->
 
                   <a-button v-else-if="folibRepository.type !== 'hosted'" type="primary" @click="moveStep(1)"
-                    class="px-25">下一步
+                    class="px-25">{{ $t('Storage.Next') }}
                   </a-button>
                 </a-col>
               </a-row>
@@ -764,89 +767,89 @@
 
           <!-- Step 3 : Address -->
           <a-card v-else-if="step === 2 && (folibRepository.type === 'proxy')" :bordered="false" class="header-solid">
-            <h5 class="font-regular text-center">远程仓库配置</h5>
+            <h5 class="font-regular text-center">{{ $t('Storage.WarehouseConfig') }}</h5>
             <p class="text-center">
-              您选择的是远程仓库类型，还需要配置一下你的远程库地址，也可以开启本地代理访问远程地址</p>
+              {{ $t('Storage.RemoteLibraryAddress') }}</p>
             <a-form :form="form" :hideRequiredMark="true">
               <a-row :gutter="[24]">
                 <a-col :span="12">
-                  <a-form-item class="mb-10" label="远程访问地址" :colon="false">
-                    <a-input placeholder="http://xxxx或者https://xxxx" v-model="folibRepository.remoteRepository.url" />
+                  <a-form-item class="mb-10" :label="$t('Storage.RemoteAccessAddress')" :colon="false">
+                    <a-input :placeholder="$t('Storage.AddressFormat')" v-model="folibRepository.remoteRepository.url" />
                   </a-form-item>
                 </a-col>
                 <a-col :span="2">
                   <a-form-item class="mb-10" label=" "  :colon="false">
-                    <a-button @click="verifyAlive()">测试</a-button>
+                    <a-button @click="verifyAlive()">{{ $t('Storage.Test') }}</a-button>
                   </a-form-item>
                 </a-col>
                 <a-col :span="5">
-                  <a-form-item class="mb-10" label="用户名" :colon="false">
+                  <a-form-item class="mb-10" :label="$t('Storage.Username')" :colon="false">
                     <a-input v-model="folibRepository.remoteRepository.username" autocomplete="new-text"
-                      placeholder="远程仓库访问用户名" />
+                      :placeholder="$t('Storage.AccessUser')" />
                   </a-form-item>
                 </a-col>
                 <a-col :span="5">
-                  <a-form-item class="mb-10" label="密码" :colon="false">
+                  <a-form-item class="mb-10" :label="$t('Storage.Password')" :colon="false">
                     <a-input-password v-model="folibRepository.remoteRepository.password" autocomplete="new-password"
-                      placeholder="远程仓库访问密码" />
+                      :placeholder="$t('Storage.AccessPassword')" />
                   </a-form-item>
                 </a-col>
                 <a-col :span="4">
-                  <a-form-item class="mb-10" label="定时检查时间(秒)" :colon="false">
-                    <a-input placeholder="默认60秒" v-model="folibRepository.remoteRepository.checkIntervalSeconds"
+                  <a-form-item class="mb-10" :label="$t('Storage.TimedCheck')" :colon="false">
+                    <a-input :placeholder="$t('Storage.DefaultTime')" v-model="folibRepository.remoteRepository.checkIntervalSeconds"
                       addon-after="s" />
                   </a-form-item>
                 </a-col>
                 <a-col :span="4">
-                  <a-form-item class="mb-10" label="检查机制" :colon="false">
+                  <a-form-item class="mb-10" :label="$t('Storage.InspectionMechanism')" :colon="false">
                     <a-select default-value="None" v-model="folibRepository.remoteRepository.checksumPolicy">
                       <a-select-option value="None">
-                        无
+                        {{ $t('Storage.None') }}
                       </a-select-option>
                       <a-select-option value="Strict">
-                        严格
+                        {{ $t('Storage.Strict') }}
                       </a-select-option>
                       <a-select-option value="Log">
-                        日志记录
+                        {{ $t('Storage.LogRecording') }}
                       </a-select-option>
                       <a-select-option value="Warn">
-                        高级
+                        {{ $t('Storage.Advanced') }}
                       </a-select-option>
                     </a-select>
                   </a-form-item>
                 </a-col>
                 <a-col :span="4">
-                  <a-form-item class="mb-10" label="本地代理" :colon="false">
+                  <a-form-item class="mb-10" :label="$t('Storage.LocalAgent')" :colon="false">
                     <a-checkbox v-model="enableHostProxy" @change="proxyConfigurationHandle">
-                      {{ enableHostProxy? '开启': '不开启' }}
+                      {{ enableHostProxy ? $t('Storage.On') : $t('Storage.Off') }}
                     </a-checkbox>
                   </a-form-item>
                 </a-col>
                 <a-col :span="3">
-                  <a-form-item class="mb-10" label="目录浏览" :colon="false">
+                  <a-form-item class="mb-10" :label="$t('Storage.DirectoryBrowsing')" :colon="false">
                     <a-checkbox v-model="folibRepository.remoteRepository.allowsDirectoryBrowsing">
-                      {{ folibRepository.remoteRepository.allowsDirectoryBrowsing ? '运行' : '不允许' }}
+                      {{ folibRepository.remoteRepository.allowsDirectoryBrowsing ? $t('Storage.Allowed') : $t('Storage.NotAllowed') }}
                     </a-checkbox>
                   </a-form-item>
                 </a-col>
                 <a-col :span="3">
-                  <a-form-item class="mb-10" label="自动封锁" :colon="false">
+                  <a-form-item class="mb-10" :label="$t('Storage.AutomaticLock')" :colon="false">
                     <a-checkbox v-model="folibRepository.remoteRepository.autoBlocking">
-                      {{ folibRepository.remoteRepository.autoBlocking ? '开启' : '关闭' }}
+                      {{ folibRepository.remoteRepository.autoBlocking ? $t('Storage.On') : $t('Storage.Off') }}
                     </a-checkbox>
                   </a-form-item>
                 </a-col>
                 <a-col :span="3">
-                  <a-form-item class="mb-10" label="校验和 检查" :colon="false">
+                  <a-form-item class="mb-10" :label="$t('Storage.ChecksumCheck')" :colon="false">
                     <a-checkbox v-model="folibRepository.remoteRepository.checksumValidation">
-                      {{ folibRepository.remoteRepository.checksumValidation ? '开启' : '关闭' }}
+                      {{ folibRepository.remoteRepository.checksumValidation ? $t('Storage.On') : $t('Storage.Off') }}
                     </a-checkbox>
                   </a-form-item>
                 </a-col>
                 <a-col :span="3">
-                  <a-form-item class="mb-10" label="远程索引下载" :colon="false">
+                  <a-form-item class="mb-10" :label="$t('Storage.RemoteIndexDownload')" :colon="false">
                     <a-checkbox v-model="folibRepository.remoteRepository.downloadRemoteIndexes">
-                      {{ folibRepository.remoteRepository.downloadRemoteIndexes ? '下载' : '不下载' }}
+                      {{ folibRepository.remoteRepository.downloadRemoteIndexes ? $t('Storage.Download') : $t('Storage.NoDownload') }}
                     </a-checkbox>
                   </a-form-item>
                 </a-col>
@@ -854,8 +857,8 @@
 
               <a-row v-if="enableHostProxy" :gutter="[24]">
                 <a-col :span="24">
-                  <h5 class="font-regular text-center">代理设置</h5>
-                  <p class="text-center">只有在当前制品库无法访问远程代理库的情况下，可以使用该功能</p>
+                  <h5 class="font-regular text-center">{{ $t('Storage.ProxySetup') }}</h5>
+                  <p class="text-center">{{ $t('Storage.UseProxySettings') }}</p>
                 </a-col>
                 <a-col :span="8">
                   <a-form-item class="mb-10" label="ProxyHost" :colon="false">
@@ -863,13 +866,13 @@
                   </a-form-item>
                 </a-col>
                 <a-col :span="4">
-                  <a-form-item class="mb-10" label="端口号" :colon="false">
-                    <a-input v-model="folibRepository.proxyConfiguration.port" placeholder="端口号" />
+                  <a-form-item class="mb-10" :label="$t('Storage.Port')" :colon="false">
+                    <a-input v-model="folibRepository.proxyConfiguration.port" :placeholder="$t('Storage.Port')" />
                   </a-form-item>
                 </a-col>
                 <a-col :span="4">
-                  <a-form-item class="mb-10" label="协议" :colon="false">
-                    <a-select default-value="None" :allowClear="true" v-model="folibRepository.proxyConfiguration.type" placeholder="协议">
+                  <a-form-item class="mb-10" :label="$t('Storage.Port')" :colon="false">
+                    <a-select default-value="None" :allowClear="true" v-model="folibRepository.proxyConfiguration.type" :placeholder="$t('Storage.Protocol')">
                       <a-select-option value="HTTP">
                         HTTP
                       </a-select-option>
@@ -880,24 +883,25 @@
                   </a-form-item>
                 </a-col>
                 <a-col :span="4">
-                  <a-form-item class="mb-10" label="用户名" :colon="false">
-                    <a-input v-model="folibRepository.proxyConfiguration.username" placeholder="proxy的用户名，没有可以不填写" />
+                  <a-form-item class="mb-10" :label="$t('Storage.Username')" :colon="false">
+                    <a-input v-model="folibRepository.proxyConfiguration.username" :placeholder="$t('Storage.NoUserName')" />
                   </a-form-item>
                 </a-col>
                 <a-col :span="4">
-                  <a-form-item class="mb-10" label="密码" :colon="false">
-                    <a-input-password v-model="folibRepository.proxyConfiguration.password" placeholder="proxy的用户密码，没有可以不填写" />
+                  <a-form-item class="mb-10" :label="$t('Storage.Password')" :colon="false">
+                    <a-input-password v-model="folibRepository.proxyConfiguration.password" :placeholder="$t('Storage.NoPassword')" />
                   </a-form-item>
                 </a-col>
 
               </a-row>
               <a-row :gutter="[24]">
                 <a-col :span="12">
-                  <a-button @click="moveStep(-1)" class="px-25">回退</a-button>
+                  <a-button @click="moveStep(-1)" class="px-25">{{ $t('Storage.Back') }}</a-button>
                 </a-col>
                 <a-col :span="12" class="text-right">
                   <a-button type="primary" @click="addOrUpdateRepositoryHandel(false)" class="px-25">
-                    完成{{ folibRepositoryEditDisabled? '修改': '创建' }}</a-button>
+                    {{ $t('Storage.Complete') }}{{ folibRepositoryEditDisabled ? $t('Storage.Edit') : $t('Storage.create') }}
+                  </a-button>
                   <!-- <a-button style="margin-left: 20px" @click="addOrUpdateRepositoryHandel(true)" class="px-25">
                     {{ folibRepositoryEditDisabled? '修改': '创建' }}并设置定时策略</a-button> -->
                 </a-col>
@@ -906,8 +910,8 @@
           </a-card>
 
           <a-card v-else-if="step === 2 && (folibRepository.type === 'group')" :bordered="false" class="header-solid">
-            <h5 class="font-regular text-center">组合仓库配置</h5>
-            <p class="text-center">你选择的是组合仓库，可以将多个仓库从左至右进行拖动，进行组合.</p>
+            <h5 class="font-regular text-center">{{ $t('Storage.CompositeWarehouse') }}</h5>
+            <p class="text-center">{{ $t('Storage.WarehousePortfolio') }}</p>
             <div class="kanban-page mb-24">
               <div id="kanban" class="kanban">
                 <draggable :list="boards" :animation="200" class="kanban-boards" ghost-class="ghost-card"
@@ -927,19 +931,20 @@
             </div>
             <a-row :gutter="[24]">
               <a-col :span="12">
-                <a-button @click="moveStep(-1)" class="px-25">回退</a-button>
+                <a-button @click="moveStep(-1)" class="px-25">{{ $t('Storage.Back') }}</a-button>
               </a-col>
               <a-col :span="12" class="text-right">
                 <a-button type="primary" @click="addOrUpdateRepositoryHandel(false)" class="px-25">
-                  完成{{ folibRepositoryEditDisabled? '修改': '创建' }}</a-button>
+                  {{ $t('Storage.Complete') }}{{ folibRepositoryEditDisabled ? $t('Storage.Edit') : $t('Storage.create') }}
+                </a-button>
                 <!-- <a-button style="margin-left:20px" @click="addOrUpdateRepositoryHandel(true)" class="px-25">
                   {{ folibRepositoryEditDisabled? '修改': '创建' }}并设置定时策略</a-button> -->
               </a-col>
             </a-row>
           </a-card>
           <a-card v-else-if="step === 3" :bordered="false" class="header-solid">
-            <h5 class="font-regular text-center">给仓库配置定制策略</h5>
-            <p class="text-center">定时策略用来设定仓库垃圾清理，同步等相关策略</p>
+            <h5 class="font-regular text-center">{{ $t('Storage.CustomizedStrategy') }}</h5>
+            <p class="text-center">{{ $t('Storage.TimingStrategy') }}</p>
             <a-form :form="form" :hideRequiredMark="true">
 
               <div v-for="(i, index) in cronCanSetList" :key="index">
@@ -953,11 +958,11 @@
                   </a-col>
                   <a-col :span="24" :md="12" class="ml-auto"
                     style="display: flex; align-items: center; justify-content: flex-end">
-                    <a-tag v-if="i.isSetted && i.isSetted.uuid" color="success" class="ant-tag-success font-bold">已设定
+                    <a-tag v-if="i.isSetted && i.isSetted.uuid" color="success" class="ant-tag-success font-bold">{{ $t('Storage.HaveSet') }}
                     </a-tag>
                     <span class="ml-5">{{ i.scope }}</span>
                     <a-button @click="cronShowHandle(i, index)" type="link" class="btn-more ml-5">
-                      展开设定
+                      {{ $t('Storage.ExpandSetting') }}
                       <a-icon :type="i.isShow ? 'arrow-down' : 'arrow-right'" />
                     </a-button>
                   </a-col>
@@ -973,12 +978,12 @@
                         style="width: 100px;" />
                     </a-col>
                     <a-col class="ml-auto">
-                      <span class="mr-15">{{ i.isSetted.oneTimeExecution ? '执行一次' : '循环执行' }}</span>
+                      <span class="mr-15">{{ i.isSetted.oneTimeExecution ? $t('Storage.ExecuteOnce') : $t('Storage.LoopExecution') }}</span>
                       <a-switch v-model="i.isSetted.oneTimeExecution"
                         @change="oneTimeExecutionChange($event, i.isSetted)" />
                     </a-col>
                     <a-col class="ml-auto">
-                      <span class="mr-15">{{ i.isSetted.immediateExecution ? '立即执行' : '不立即执行' }}</span>
+                      <span class="mr-15">{{ i.isSetted.immediateExecution ? $t('Storage.ImmediateExecution') : $t('Storage.NoImmediateExecution') }}</span>
                       <a-switch v-model="i.isSetted.immediateExecution"
                         @change="immediateExecutionChange($event, i.isSetted)" />
                     </a-col>
@@ -986,7 +991,7 @@
                   <hr v-if="i.fields.length > 2" class="gradient-line my-10">
                   <a-row type="flex" align="middle">
                     <a-col v-if="i.fields.length > 2" style="margin-right: 15px">
-                      <p class="font-semibold mb-0 ml-10">其他参数:</p>
+                      <p class="font-semibold mb-0 ml-10">{{ $t('Storage.OtherParameters') }}:</p>
                     </a-col>
                     <div v-if="i.fields.length > 2">
                       <div v-for="(f, index) in i.fields" :key="index">
@@ -1023,7 +1028,7 @@
                 <a-col :span="12">
                 </a-col>
                 <a-col :span="12" class="text-right">
-                  <a-button type="primary" @click="andCronSetHandle" class="px-25">完成策略设定</a-button>
+                  <a-button type="primary" @click="andCronSetHandle" class="px-25">{{ $t('Storage.CompleteSetting') }}</a-button>
                 </a-col>
               </a-row>
             </a-form>
@@ -1066,6 +1071,7 @@ import storage from 'store'
 import store from '@/store'
 import { checkMachineCode } from "@/api/settings"
 import { hasRole, isAdmin, hasPermission } from "@/utils/permission"
+import language from "@/store/modules/language";
 
 export default {
   inject: ["reload"],
@@ -1090,7 +1096,10 @@ export default {
       if (value) {
         var reg = /^[a-zA-Z0-9_.\\-]+$/
         if (reg.test(value) === false) {
-          callback(new Error('存储空间名称应为大小写字母，数字，特殊符号(-_.)'))
+          callback(new Error(
+              this.language === 'en' ? 'The storage space name should consist of uppercase and lowercase letters, numbers, and special characters (-.)'
+                  : '存储空间名称应为大小写字母，数字，特殊符号(-_.)'
+          ))
         } else {
           callback()
         }
@@ -1222,21 +1231,21 @@ export default {
       boards: [
         {
           id: "folibHub",
-          title: "可选择制品仓库",
+          title: this.language === 'en' ? 'Selectable Artifact Repository' : "可选择制品仓库",
           tasks: []
         },
         {
           id: "folibGoup",
-          title: "已组合仓库",
+          title: this.language === 'en' ? 'Composite Repository' : "已组合仓库",
           tasks: []
         }
       ],
       storageRules: {
         id: [
           // 限制必填
-          { required: true, message: '请输入存储空间名称', trigger: 'blur' },
+          { required: true, message: this.$t('Storage.EnterSpaceName') },
           // 限制字符串长度
-          { min: 1, max: 30, message: '长度在 1 到 30 个字符', trigger: 'blur' },
+          { min: 1, max: 30, message: this.$t('Storage.SpaceNameLimit') },
           // 自定义正则
           { required: true, trigger: 'blur', validator: checkStorageId }
         ]
@@ -1261,7 +1270,11 @@ export default {
 
     this.getStorage(this.currentStorage.id)
   },
-  computed: {},
+  computed: {
+    language() {
+      return this.$store.state.language.lang
+    }
+  },
   methods: {
     resetFolibRepository() {
       this.folibRepository = {

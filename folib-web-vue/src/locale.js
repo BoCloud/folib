@@ -1,5 +1,6 @@
 import Vue from 'vue'
 import VueI18n from 'vue-i18n' // 引入 i18n 模块
+import store from "@/store";
 
 Vue.use(VueI18n)
 
@@ -18,6 +19,7 @@ export const setLanguage = (lang) => {
         lang = window.sessionStorage.getItem('language') ? window.sessionStorage.getItem('language') : 'zh';
     }
     window.sessionStorage.setItem('language', lang)
+    store.commit('changeLanguage', lang)
     Vue.config.lang = lang
     i18n.locale = lang
 }
