@@ -6,6 +6,7 @@ import cn.hutool.core.io.FileUtil;
 import cn.hutool.core.io.IORuntimeException;
 import cn.hutool.core.lang.UUID;
 import cn.hutool.extra.spring.SpringUtil;
+import cn.hutool.json.JSONUtil;
 import com.alibaba.excel.EasyExcel;
 import com.alibaba.excel.ExcelWriter;
 import com.alibaba.excel.write.metadata.WriteSheet;
@@ -101,6 +102,7 @@ import javax.transaction.Transactional;
 import java.io.*;
 import java.lang.management.ManagementFactory;
 import java.net.URI;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.text.DecimalFormat;
@@ -868,6 +870,37 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
         return filePath;
     }
 
+    @Override
+    public void bomUpload(RepositoryPath repositoryPath, MultipartFile file) {
+        String filename = FilenameUtils.getName(repositoryPath.getFileName().toString());
+        String filePath = "." + filename + ".foLibrary-metadata/bom.json";
+        RepositoryPath bomRepositoryPath = repositoryPath.getParent().resolve(filePath);
+        try {
+            log.info("Upload bom repositoryPath [{}] bomPath [{}]", repositoryPath.toString(), bomRepositoryPath.toString());
+            Files.createDirectories(bomRepositoryPath.getParent());
+            int batchSize = 1024;
+            try (InputStream inputStream = file.getInputStream(); BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream, StandardCharsets.UTF_8))) {
+                StringBuilder stringBuilder = new StringBuilder();
+                char[] buffer = new char[batchSize];
+                int charsRead;
+                while ((charsRead = reader.read(buffer, 0, batchSize)) != -1) {
+                    stringBuilder.append(buffer, 0, charsRead);
+                }
+                String bom = stringBuilder.toString();
+                if (!JSONUtil.isJson(bom)) {
+                    throw new IllegalArgumentException("BOM content must be in JSON format");
+                }
+                JSONObject bomJson = new JSONObject();
+                bomJson.put("bomId", "");
+                bomJson.put("bomValue", JSONObject.parseObject(bom));
+                Files.write(bomRepositoryPath, bomJson.toJSONString().getBytes(StandardCharsets.UTF_8), StandardOpenOption.TRUNCATE_EXISTING, StandardOpenOption.CREATE);
+            }
+        } catch (Exception ex) {
+            log.error(ExceptionUtils.getStackTrace(ex));
+            throw new RuntimeException(ex.getMessage());
+        }
+    }
+
     /**
      * 清空仓库
      *
@@ -1161,7 +1194,7 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
                 for (File f : files) {
                     if (f.isDirectory()) {
                         if (f.isHidden()) {
-                            log.info("directory：{} is a hidden directory", f.getName());
+                            log.info("directory：{} is a hidden directory skip", f.getName());
                             continue;
                         }
                         if (f.getName().endsWith(".artifactory-metadata")) {
@@ -1307,7 +1340,7 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
                 S3Path s3PathTemp = s3Iterator.next();
                 if (s3PathTemp.getFileAttributes() == null || s3PathTemp.getFileAttributes().isDirectory()) {
                     if (s3PathTemp.getFileName().toString().startsWith(".")) {
-                        log.info("s3 directory {} is a hidden directory", s3PathTemp);
+                        log.info("s3 directory {} is a hidden directory skip", s3PathTemp);
                         continue;
                     }
                     if (s3PathTemp.getFileName().toString().endsWith(".artifactory-metadata")) {

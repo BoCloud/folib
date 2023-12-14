@@ -343,6 +343,11 @@ public abstract class LayoutFileSystemProvider extends StorageFileSystemProvider
             if (Files.exists(artifactRepositoryPath)) {
                 super.delete(artifactRepositoryPath, true);
             }
+            String artifactMetadataDirectoryName = "." + FilenameUtils.getName(repositoryPath.getFileName().toString()) + ".foLibrary-metadata";
+            RepositoryPath artifactMetadataDirectoryPath = repositoryPath.getParent().resolve(artifactMetadataDirectoryName);
+            if (Files.exists(artifactMetadataDirectoryPath)) {
+                super.delete(artifactMetadataDirectoryPath, true);
+            }
         } catch (Exception ex) {
             logger.error("删除制品缓存元数据文件 [{}] 失败：[{}]", repositoryPath.toString(), ExceptionUtils.getStackTrace(ex));
         }
