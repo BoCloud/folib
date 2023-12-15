@@ -646,7 +646,7 @@
       <a-form :form="operationForm" ref="operationForm" layout="vertical" @submit.prevent="handleOperationSubmit">
         <a-row :gutter="[24]">
           <a-col :span="24">
-            <a-form-item class="tags-field mb-10" label="节点类型" :colon="true" v-if="this.folibRepository.layout === 'Raw'">
+            <a-form-item class="tags-field mb-10" label="节点类型" :colon="true" v-if="this.enableUnionRepository.includes(this.folibRepository.layout)">
               <a-radio-group v-decorator="[
                 'type',
                 {
@@ -976,7 +976,12 @@ export default {
       uploadMaxSize: {
         size: 100,
         unit: 'MB',
-      }
+      },
+      enableUnionRepository: [
+        "Raw",
+        "Maven 2",
+        "Docker"
+      ]
     }
   },
   created () {

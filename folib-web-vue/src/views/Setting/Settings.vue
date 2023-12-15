@@ -100,7 +100,7 @@
                   <a-col :span="24"
                          :lg="8">
                     <a-form-item class="mb-10"
-                                 label="节点传输限速（KB/s）"
+                                 label="节点限速（KB/s）"
                                  :colon="false">
                       <a-input placeholder="KB/s" type="number"
                                v-model="serverSettings.kbps" />
@@ -141,9 +141,9 @@
                 <ul class="pl-15 text-muted">
                   <li>应用名称修改会自动修改到配置文件</li>
                   <li>制品传输切片大小，大制品节点之间传输切片大小（上限2000MB=2048000KB）</li>
-                  <li>节点传输节点传输限速（KB/s），不设置则不限速。传输节点限速未设置，则采用全局限速；全局和传输节点均未设置，则传输不限速（上限2000MB=2048000KB）</li>
-                  <li>baseurl，如果你使用了反向代理公网等情况下可以使用它</li>
-                  <li>{{instanceName}}-Server服务的后端通信端口</li>
+                  <li>节点限速（KB/s），不设置则不限速。传输节点限速未设置，则采用全局限速；全局和传输节点均未设置，则传输不限速（上限2000MB=2048000KB）</li>
+                  <li>Base Url，如果你使用了反向代理公网等情况下可以使用它</li>
+                  <li>{{instanceName}}主服务的后端通信端口</li>
                 </ul>
               </a-form>
             </a-card>
@@ -1551,10 +1551,10 @@
           </a-col>
           <a-col :span="24">
             <a-form-model-item class="mb-10"
-                               label="节点传输限速（KB/s）"
+                               label="节点限速（KB/s）"
                                :colon="false"
                                prop="clusterNodeDesc">
-              <a-input placeholder="请输入节点传输限速（KB/s）"
+              <a-input placeholder="请输入节点限速（KB/s）"
                        v-model="artifactDispatchForm.kbps" />
             </a-form-model-item>
           </a-col>
@@ -1864,7 +1864,7 @@ export default {
           width: 100
         },
         {
-          title: '节点传输限速',
+          title: '节点限速',
           dataIndex: 'kbps',
           key: 'kbps',
           width: 80,

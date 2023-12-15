@@ -1,4 +1,4 @@
-package com.veadan.folib.scanner.config;
+package com.veadan.folib.task;
 
 
 import cn.hutool.core.date.DateUtil;
@@ -10,10 +10,9 @@ import com.veadan.folib.repositories.ArtifactRepository;
 import com.veadan.folib.scanner.entity.ScanRules;
 import com.veadan.folib.scanner.mapper.ScanRulesMapper;
 import com.veadan.folib.scanner.service.ScanService;
-import com.veadan.folib.services.ArtifactService;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -24,17 +23,13 @@ import javax.inject.Inject;
 import java.util.List;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Component
 @EnableScheduling
 public class ScannerTask {
-    private static final Logger logger = LoggerFactory.getLogger(
-            ScannerTask.class);
 
     @Inject
     private ArtifactRepository artifactRepository;
-
-    @Inject
-    private ArtifactService artifactService;
 
     @Autowired
     private ScanService scanService;
@@ -45,13 +40,14 @@ public class ScannerTask {
     @Autowired
     private DistributedLockComponent distributedLockComponent;
 
-    @Scheduled(cron = "0 0/1 * * * ? ")
+    @Scheduled(cron = "0 0/5 * * * ? ")
     public void run() {
         String lockName = "ScannerTask";
-        logger.info("Wait for the lock [{}]", lockName);
-        if (distributedLockComponent.lock(lockName)) {
+        long waitTime = 3L;
+        log.info("Wait for the lock [{}]", lockName);
+        if (distributedLockComponent.lock(lockName, waitTime)) {
             try {
-                logger.info("Locked [{}]", lockName);
+                log.info("Locked for [{}]", lockName);
                 Example example = new Example(ScanRules.class);
                 example.createCriteria().andEqualTo("onScan", 1);
                 List<ScanRules> scanRulesList = scanRulesMapper.selectByExample(example);
@@ -71,10 +67,12 @@ public class ScannerTask {
                         scanService.asyncScan(itemList);
                     }
                 }
-                logger.info("ScannerTask thread name [{}] time [{}]", Thread.currentThread().getName(), DateUtil.now());
+                log.info("ScannerTask thread name [{}] time [{}]", Thread.currentThread().getName(), DateUtil.now());
             } finally {
-                distributedLockComponent.unLock(lockName);
+                distributedLockComponent.unLock(lockName, 3500L);
             }
+        } else {
+            log.info("LockName [{}] was not get lock", lockName);
         }
     }
 }

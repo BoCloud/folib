@@ -1,8 +1,9 @@
 package com.veadan.folib.artifact.coordinates;
 
-import com.alibaba.fastjson.JSONObject;
 import com.veadan.folib.db.schema.Vertices;
 import com.veadan.folib.domain.LayoutArtifactCoordinatesEntity;
+import com.veadan.folib.providers.io.RepositoryFiles;
+import com.veadan.folib.providers.io.RepositoryPath;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
@@ -49,6 +50,8 @@ public class DockerArtifactCoordinates
     public static final String CHECKSUM_SHA_256 = ".sha256";
 
     public static final String SELF_METADATA = ".metadata";
+
+    public static final String FO_LIBRARY_METADATA = ".foLibrary-metadata";
 
 
     public DockerArtifactCoordinates() {
@@ -276,7 +279,7 @@ public class DockerArtifactCoordinates
                 return false;
             }
             String name = path.getFileName().toString();
-            return name.startsWith(SHA_256) && !name.endsWith(CHECKSUM_SHA_256) && !name.endsWith(SELF_METADATA) && !path.toString().contains("blobs/sha256");
+            return name.startsWith(SHA_256) && !name.endsWith(CHECKSUM_SHA_256) && !name.endsWith(SELF_METADATA) && !name.endsWith(FO_LIBRARY_METADATA) && !path.toString().contains("blobs/sha256");
         } catch (Exception ex) {
             log.warn(ExceptionUtils.getStackTrace(ex));
             return false;
@@ -287,16 +290,26 @@ public class DockerArtifactCoordinates
         if (StringUtils.isBlank(name)) {
             return false;
         }
-        return name.startsWith(SHA_256) && !name.endsWith(CHECKSUM_SHA_256) && !name.endsWith(SELF_METADATA) && !name.contains("blobs");
+        return name.startsWith(SHA_256) && !name.endsWith(CHECKSUM_SHA_256) && !name.endsWith(SELF_METADATA) && !name.endsWith(FO_LIBRARY_METADATA) && !name.contains("blobs");
     }
 
-    public static boolean isDockerVersion(Path path) {
+    public static boolean isDockerVersion(RepositoryPath path) {
         try {
             if (Objects.isNull(path) || Files.notExists(path) || Files.isHidden(path)) {
                 return false;
             }
+            String fullPath = path.toString();
+            String relativizePath = RepositoryFiles.relativizePath(path);
+            int deepSize = relativizePath.split("/").length;
+            int two = 2;
+            if (deepSize < two) {
+                return false;
+            }
+            if (Files.isDirectory(path)) {
+                return deepSize == two && !fullPath.contains("blobs") && !fullPath.contains("manifest");
+            }
             String name = path.getFileName().toString();
-            return name.startsWith(SHA_256) && !name.endsWith(CHECKSUM_SHA_256) && !name.endsWith(SELF_METADATA) && !name.contains("blobs/sha256") && !name.contains("manifest/sha256");
+            return name.startsWith(SHA_256) && !name.endsWith(CHECKSUM_SHA_256) && !name.endsWith(SELF_METADATA) && !name.endsWith(FO_LIBRARY_METADATA) && !fullPath.contains("blobs/sha256") && !fullPath.contains("manifest/sha256");
         } catch (Exception ex) {
             log.warn(ExceptionUtils.getStackTrace(ex));
             return false;
@@ -307,14 +320,14 @@ public class DockerArtifactCoordinates
         if (StringUtils.isBlank(name)) {
             return true;
         }
-        return name.endsWith(CHECKSUM_SHA_256) || name.endsWith(SELF_METADATA);
+        return name.endsWith(CHECKSUM_SHA_256) || name.endsWith(SELF_METADATA) || !name.endsWith(FO_LIBRARY_METADATA);
     }
 
     public static boolean include(String name) {
         if (StringUtils.isBlank(name)) {
             return true;
         }
-        return name.contains(SHA_256) && !name.endsWith(CHECKSUM_SHA_256) && !name.endsWith(SELF_METADATA);
+        return name.contains(SHA_256) && !name.endsWith(CHECKSUM_SHA_256) && !name.endsWith(SELF_METADATA) && !name.endsWith(FO_LIBRARY_METADATA);
     }
 
 }

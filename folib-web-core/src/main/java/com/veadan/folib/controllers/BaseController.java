@@ -14,6 +14,7 @@ import com.veadan.folib.domain.DirectoryListing;
 import com.veadan.folib.domain.FileContent;
 import com.veadan.folib.exception.ExceptionHandlingOutputStream;
 import com.veadan.folib.providers.io.RepositoryPath;
+import com.veadan.folib.providers.io.RepositoryPathLock;
 import com.veadan.folib.providers.io.RepositoryPathResolver;
 import com.veadan.folib.providers.layout.DockerLayoutProvider;
 import com.veadan.folib.repositories.ArtifactRepository;
@@ -73,6 +74,9 @@ public abstract class BaseController {
 
     @Inject
     protected RepositoryPathResolver repositoryPathResolver;
+
+    @Inject
+    protected RepositoryPathLock repositoryPathLock;
 
     @Inject
     protected ArtifactResolutionService artifactResolutionService;

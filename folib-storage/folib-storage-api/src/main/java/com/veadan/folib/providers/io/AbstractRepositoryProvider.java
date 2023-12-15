@@ -133,7 +133,7 @@ public abstract class AbstractRepositoryProvider implements RepositoryProvider, 
             return (RepositoryStreamSupport.RepositoryStoreIndexInputStream) is;
         }
 
-        return new RepositoryStreamSupport(repositoryPathLock.lock(repositoryPath), this, transactionManager).
+        return new RepositoryStreamSupport(repositoryPathLock, this, transactionManager).
                 new RepositoryStoreIndexInputStream(repositoryPath, is);
     }
 
@@ -155,7 +155,7 @@ public abstract class AbstractRepositoryProvider implements RepositoryProvider, 
             return (RepositoryStreamSupport.RepositoryOutputStream) os;
         }
 
-        return new RepositoryStreamSupport(repositoryPathLock.lock(repositoryPath), this, transactionManager).
+        return new RepositoryStreamSupport(repositoryPathLock, this, transactionManager).
                 new RepositoryOutputStream(repositoryPath, os);
     }
 

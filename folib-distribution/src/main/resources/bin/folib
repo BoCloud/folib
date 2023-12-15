@@ -81,6 +81,8 @@ FOLIB_WEB_URL_PREFIX= "${FOLIB_WEB_URL_PREFIX:-'/ui/'}"
 FOLIB_CACHE_PORT="${FOLIB_CACHE_PORT:-5071}"
 FOLIB_CACHE_CLUSTER="${FOLIB_CACHE_CLUSTER:-127.0.0.1:5071,127.0.0.2:5071}"
 
+FOLIB_SWAGGER_ENABLE="${FOLIB_SWAGGER_ENABLE:-false}"
+
 print_banner()
 {
     echo "  _____ ___  _     ___ ____  ";
@@ -180,6 +182,7 @@ run()
     JAVA_OPTS+=" -Dscan.storage-base=${FOLIB_STORAGE_BASE_DIR}/"
     JAVA_OPTS+=" -DES_HOST=${FOLIB_ES_HOST}"
     JAVA_OPTS+=" -DGLOBAL_REINDEX=false"
+    JAVA_OPTS+=" -Dfolib.swagger.enable=${FOLIB_SWAGGER_ENABLE}"
 #    JAVA_OPTS+=" -Dfolib.dependentPushUrl=${FOLIB_DEPENDENT_PUSHURL}"
 
     JAVA_OPTS+=" -Ds3fs.uri=${FOLIB_S3_URI}"

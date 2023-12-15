@@ -341,6 +341,15 @@ public class ArtifactManagementService
                 });
     }
 
+    public void checksums(RepositoryPath repositoryPath, Map<String, String> digestMap)
+    {
+        if (Objects.nonNull(digestMap) && !digestMap.isEmpty())
+        {
+            addChecksumsToCacheManager(digestMap, repositoryPath.toUri());
+            writeChecksums(repositoryPath, digestMap);
+        }
+    }
+
     private void validateUploadedChecksumAgainstCache(byte[] checksum,
                                                       URI artifactPathId)
     {
@@ -403,7 +412,7 @@ public class ArtifactManagementService
                 .forEach(e -> checksumCacheManager.addArtifactChecksum(artifactPath.toString(), e.getKey(), e.getValue()));
     }
 
-    private boolean performRepositoryAcceptanceValidation(RepositoryPath path)
+    public boolean performRepositoryAcceptanceValidation(RepositoryPath path)
             throws IOException, ProviderImplementationException, ArtifactCoordinatesValidationException
     {
         logger.info("Validate artifact with path [{}]", path);

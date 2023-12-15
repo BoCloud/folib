@@ -3,7 +3,6 @@ package com.veadan.folib.providers.repository;
 
 import com.alibaba.fastjson.JSONObject;
 import com.google.common.collect.Maps;
-import com.veadan.folib.artifact.archive.TarGzArchiveListingFunction;
 import com.veadan.folib.config.FolibPublicUtils;
 import com.veadan.folib.data.criteria.Paginator;
 import com.veadan.folib.domain.Artifact;
@@ -24,14 +23,12 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
-import org.yaml.snakeyaml.Yaml;
 
 import javax.inject.Inject;
 import javax.ws.rs.client.Client;
 import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -41,8 +38,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReadWriteLock;
 
 /**
  * @author Veadan
@@ -100,10 +95,6 @@ public class ProxyRepositoryProvider
 
     private RepositoryPath resolvePathExclusive(RepositoryPath repositoryPath)
             throws IOException {
-
-//        ReadWriteLock lockSource = repositoryPathLock.lock(repositoryPath, "pre-remote-fetch");
-//        Lock lock = lockSource.writeLock();
-//        lock.lock();
         try {
             return proxyRepositoryArtifactResolver.fetchRemoteResource(repositoryPath);
         } catch (IOException e) {
@@ -112,9 +103,6 @@ public class ProxyRepositoryProvider
 
             throw e;
         }
-//        finally {
-//            lock.unlock();
-//        }
     }
 
     @Override

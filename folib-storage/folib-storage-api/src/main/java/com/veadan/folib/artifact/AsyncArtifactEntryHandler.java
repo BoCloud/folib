@@ -20,8 +20,7 @@ import org.slf4j.LoggerFactory;
 import javax.inject.Inject;
 import java.io.IOException;
 import java.lang.reflect.UndeclaredThrowableException;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReadWriteLock;
+import java.util.concurrent.TimeUnit;
 
 @Slf4j
 public abstract class AsyncArtifactEntryHandler {
@@ -66,13 +65,14 @@ public abstract class AsyncArtifactEntryHandler {
     private void handleLocked(RepositoryPath repositoryPath)
             throws IOException,
             InterruptedException {
-        ReadWriteLock lockSource = repositoryPathLock.lock(repositoryPath);
-        Lock lock = lockSource.writeLock();
-        lock.lock();
-        try {
-            handleTransactional(repositoryPath);
-        } finally {
-            lock.unlock();
+        if (repositoryPathLock.lock(repositoryPath)) {
+            try {
+                handleTransactional(repositoryPath);
+            } finally {
+                repositoryPathLock.unLock(repositoryPath);
+            }
+        } else {
+            logger.warn("RepositoryPath [{}] was not get lock", repositoryPath);
         }
     }
 

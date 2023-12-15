@@ -67,22 +67,22 @@ public class RepositoryGroupIndexCreator
 
             final RepositoryPath subRepositoryIndexDirectoryPath = getSubRepositoryIndexPath(sId, rId);
 
-            final Lock lock = repositoryPathLock.lock(subRepositoryIndexDirectoryPath).readLock();
-            lock.lock();
-            try
-            {
+            if (repositoryPathLock.lock(subRepositoryIndexDirectoryPath)) {
                 try
                 {
-                    indexingContext.merge(new SimpleFSDirectory(subRepositoryIndexDirectoryPath));
+                    try
+                    {
+                        indexingContext.merge(new SimpleFSDirectory(subRepositoryIndexDirectoryPath));
+                    }
+                    catch (IndexNotFoundException ex)
+                    {
+                        logger.warn("IndexNotFound in [{}]", subRepositoryIndexDirectoryPath, ex);
+                    }
                 }
-                catch (IndexNotFoundException ex)
+                finally
                 {
-                    logger.warn("IndexNotFound in [{}]", subRepositoryIndexDirectoryPath, ex);
+                    repositoryPathLock.unLock(subRepositoryIndexDirectoryPath);
                 }
-            }
-            finally
-            {
-                lock.unlock();
             }
         }
     }

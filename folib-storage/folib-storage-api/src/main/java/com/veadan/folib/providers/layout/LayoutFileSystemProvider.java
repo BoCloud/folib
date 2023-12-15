@@ -251,7 +251,7 @@ public abstract class LayoutFileSystemProvider extends StorageFileSystemProvider
                 .orElseGet(() -> fetchArtifactEntry(repositoryPath));
         if (artifactEntry != null) {
             artifactEntityRepository.delete(artifactEntry);
-            vulnerabilityRepository.handlerVulnerabilityForArtifactDelete(artifactEntry.getVulnerabilities());
+            vulnerabilityRepository.handlerVulnerabilityForArtifactDelete(repositoryPath, artifactEntry.getVulnerabilities());
         }
 
         super.doDeletePath(repositoryPath, force);

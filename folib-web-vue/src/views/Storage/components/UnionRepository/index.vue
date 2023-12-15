@@ -82,7 +82,7 @@
                   <a class="ml-5"><a-icon type="question-circle" theme="filled" /></a>
                 </a-popover>
               </a-radio>
-              <a-radio :value="2" v-if="this.folibRepository.layout === 'Raw'">
+              <a-radio :value="2" v-if="this.enableUnionRepository.includes(this.folibRepository.layout)">
                 <span>外部节点</span>
                 <a-popover placement="topLeft">
                   <template slot="content">
@@ -309,6 +309,11 @@ export default {
           width: 150,
         },
       ],
+      enableUnionRepository: [
+        "Raw",
+        "Maven 2",
+        "Docker"
+      ]
     }
   },
   components: {

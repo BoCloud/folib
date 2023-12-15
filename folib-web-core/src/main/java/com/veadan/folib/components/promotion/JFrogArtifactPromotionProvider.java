@@ -1,5 +1,7 @@
 package com.veadan.folib.components.promotion;
 
+import com.veadan.folib.artifact.coordinates.DockerArtifactCoordinates;
+import com.veadan.folib.components.layout.DockerComponent;
 import com.veadan.folib.configuration.UnionTargetRepositoryConfiguration;
 import com.veadan.folib.domain.ArtifactDispatch;
 import com.veadan.folib.dto.PromotionArtifactDto;
@@ -8,13 +10,14 @@ import com.veadan.folib.dto.TargetDispatchRepositoryDto;
 import com.veadan.folib.enums.ArtifactoryRepositoryTypeEnum;
 import com.veadan.folib.enums.PromotionStatusEnum;
 import com.veadan.folib.promotion.PromotionUtil;
+import com.veadan.folib.providers.io.RepositoryFiles;
 import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.providers.io.RepositoryPathResolver;
+import com.veadan.folib.providers.layout.DockerLayoutProvider;
 import com.veadan.folib.services.JFrogService;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
-import org.jfrog.artifactory.client.model.File;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
@@ -41,6 +44,9 @@ public class JFrogArtifactPromotionProvider implements ArtifactPromotionProvider
     private RepositoryPathResolver repositoryPathResolver;
 
     @Inject
+    private DockerComponent dockerComponent;
+
+    @Inject
     private PromotionUtil promotionUtil;
 
     @PostConstruct
@@ -57,8 +63,8 @@ public class JFrogArtifactPromotionProvider implements ArtifactPromotionProvider
         String repositoryId = repositoryPath.getRepositoryId();
         artifactPath = artifactPath.replace(String.format("%s/%s/", storageId, repositoryId), "");
         log.info("存储空间：{} 仓库：{} 制品：{} 目标节点：{} 目标节点类型：{} 目标仓库：{} 目标路径：{} 满足晋级条件，开始晋级", storageId, repositoryId, artifactPath, unionTargetRepositoryConfiguration.getNode(), unionTargetRepositoryConfiguration.getType(), unionTargetRepositoryConfiguration.getRepositoryId(), artifactPath);
-        File file = jFrogService.uploadItem(unionTargetRepositoryConfiguration.getNode(), unionTargetRepositoryConfiguration.getRepositoryId(), repositoryPath, artifactPath, true);
-        log.info("存储空间：{} 仓库：{} 制品：{} 目标节点：{} 目标节点类型：{} 目标仓库：{} 目标路径：{} 晋级结果：{}", storageId, repositoryId, artifactPath, unionTargetRepositoryConfiguration.getNode(), unionTargetRepositoryConfiguration.getType(), unionTargetRepositoryConfiguration.getRepositoryId(), artifactPath, Objects.isNull(file) ? PromotionStatusEnum.FAIL.getStatus() : PromotionStatusEnum.SUCCESS.getStatus());
+        boolean success = jFrogService.uploadItem(unionTargetRepositoryConfiguration.getNode(), unionTargetRepositoryConfiguration.getRepositoryId(), repositoryPath, artifactPath, true);
+        log.info("存储空间：{} 仓库：{} 制品：{} 目标节点：{} 目标节点类型：{} 目标仓库：{} 目标路径：{} 晋级结果：{}", storageId, repositoryId, artifactPath, unionTargetRepositoryConfiguration.getNode(), unionTargetRepositoryConfiguration.getType(), unionTargetRepositoryConfiguration.getRepositoryId(), artifactPath, success ? PromotionStatusEnum.SUCCESS.getStatus() : PromotionStatusEnum.FAIL.getStatus());
     }
 
     @Override
@@ -71,9 +77,22 @@ public class JFrogArtifactPromotionProvider implements ArtifactPromotionProvider
         RepositoryPath uploadRepositoryPath;
         PromotionArtifactDto promotionArtifactDto;
         PromotionNodeOptionDto uploadDto;
+        boolean isDockerLayout = DockerLayoutProvider.ALIAS.equals(repositoryPath.getRepository().getLayout());
+        boolean isDockerVersion = DockerArtifactCoordinates.isDockerVersion(repositoryPath);
+        if (isDockerLayout && !isDockerVersion) {
+            log.info("存储空间：{} 仓库：{} 制品：{} 非Docker tag路径跳过", storageId, repositoryId, artifactPath);
+            return;
+        }
         for (TargetDispatchRepositoryDto item : artifactDispatch.getTargetDispatchRepositoryList()) {
             log.info("存储空间：{} 仓库：{} 制品：{} 目标节点：{} 目标节点类型：{} 目标仓库：{}", storageId, repositoryId, artifactPath, item.getDispatchClusterEnName(), item.getArtifactoryRepositoryType(), item.getTargetRepositoryId());
             try {
+                if (isDockerLayout) {
+                    uploadArtifactPath = RepositoryFiles.relativizePath(repositoryPath);
+                    log.info("存储空间：{} 仓库：{} 制品：{} 目标节点：{} 目标节点类型：{} 目标仓库：{} 目标路径：{} 开始分发", storageId, repositoryId, artifactPath, item.getDispatchClusterEnName(), item.getArtifactoryRepositoryType(), item.getTargetRepositoryId(), uploadArtifactPath);
+                    boolean success = jFrogService.uploadItem(item.getDispatchClusterEnName(), item.getTargetRepositoryId(), repositoryPath, uploadArtifactPath, false);
+                    log.info("存储空间：{} 仓库：{} 制品：{} 目标节点：{} 目标节点类型：{} 目标仓库：{} 目标路径：{} 分发结果：{}", storageId, repositoryId, artifactPath, item.getDispatchClusterEnName(), item.getArtifactoryRepositoryType(), item.getTargetRepositoryId(), uploadArtifactPath, success ? PromotionStatusEnum.SUCCESS.getStatus() : PromotionStatusEnum.FAIL.getStatus());
+                    continue;
+                }
                 promotionArtifactDto = new PromotionArtifactDto(storageId, repositoryId,
                         "", "", srcArtifactPath, "");
                 uploadDto = promotionUtil.getPromotionUploadDto(promotionArtifactDto);
@@ -87,11 +106,10 @@ public class JFrogArtifactPromotionProvider implements ArtifactPromotionProvider
                         log.warn("存储空间：{} 仓库：{} 制品：{} 目标节点：{} 目标节点类型：{} 目标仓库：{} 制品源文件[{}]未找到", storageId, repositoryId, artifactPath, item.getDispatchClusterEnName(), item.getArtifactoryRepositoryType(), item.getTargetRepositoryId(), entry.getKey());
                         continue;
                     }
-                    uploadArtifactPath = uploadRepositoryPath.getArtifactEntry().getArtifactPath().replace(String.format("%s/%s/", storageId, repositoryId), "");
+                    uploadArtifactPath = RepositoryFiles.relativizePath(uploadRepositoryPath);
                     log.info("存储空间：{} 仓库：{} 制品：{} 目标节点：{} 目标节点类型：{} 目标仓库：{} 目标路径：{} 开始分发", storageId, repositoryId, artifactPath, item.getDispatchClusterEnName(), item.getArtifactoryRepositoryType(), item.getTargetRepositoryId(), uploadArtifactPath);
-                    File file = jFrogService.uploadItem(item.getDispatchClusterEnName(), item.getTargetRepositoryId(), uploadRepositoryPath, uploadArtifactPath, false);
-                    log.info("存储空间：{} 仓库：{} 制品：{} 目标节点：{} 目标节点类型：{} 目标仓库：{} 目标路径：{} 分发结果：{}", storageId, repositoryId, artifactPath, item.getDispatchClusterEnName(), item.getArtifactoryRepositoryType(), item.getTargetRepositoryId(), uploadArtifactPath, Objects.isNull(file) ? PromotionStatusEnum.FAIL.getStatus() : PromotionStatusEnum.SUCCESS.getStatus());
-
+                    boolean success = jFrogService.uploadItem(item.getDispatchClusterEnName(), item.getTargetRepositoryId(), uploadRepositoryPath, uploadArtifactPath, false);
+                    log.info("存储空间：{} 仓库：{} 制品：{} 目标节点：{} 目标节点类型：{} 目标仓库：{} 目标路径：{} 分发结果：{}", storageId, repositoryId, artifactPath, item.getDispatchClusterEnName(), item.getArtifactoryRepositoryType(), item.getTargetRepositoryId(), uploadArtifactPath, success ? PromotionStatusEnum.SUCCESS.getStatus() : PromotionStatusEnum.FAIL.getStatus());
                 }
             } catch (Exception ex) {
                 log.error("存储空间：{} 仓库：{} 制品：{} 目标节点：{} 目标节点类型：{} 目标仓库：{} 分发错误：{}", storageId, repositoryId, artifactPath, item.getDispatchClusterEnName(), item.getArtifactoryRepositoryType(), item.getTargetRepositoryId(), ExceptionUtils.getStackTrace(ex));

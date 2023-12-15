@@ -36,4 +36,9 @@ public interface GlobalConstants {
      */
     String ANONYMOUS_TOKEN_KEY = "anonymousUser";
 
+    /**
+     * 分布式锁名称
+     */
+    String DISTRIBUTED_LOCK_NAME = "distributedLock";
+
 }

@@ -1,6 +1,7 @@
 package com.veadan.folib.components.layout;
 
 import com.alibaba.fastjson.JSON;
+import com.google.common.collect.Lists;
 import com.veadan.folib.artifact.coordinates.DockerArtifactCoordinates;
 import com.veadan.folib.domain.DirectoryListing;
 import com.veadan.folib.domain.FileContent;
@@ -13,15 +14,17 @@ import com.veadan.folib.schema2.Manifests;
 import com.veadan.folib.services.DirectoryListingService;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
-import org.apache.commons.compress.utils.Lists;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
 
 import javax.inject.Inject;
+import java.io.IOException;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.List;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * @author leipenghui
@@ -29,6 +32,8 @@ import java.util.stream.Collectors;
 @Slf4j
 @Component
 public class DockerComponent {
+
+    private static final String PREFIX = "sha256:";
 
     @Inject
     private RepositoryPathResolver repositoryPathResolver;
@@ -39,6 +44,9 @@ public class DockerComponent {
 
     public List<ImageManifest> getImageManifests(RepositoryPath repositoryPath) throws Exception {
         log.info("Get manifest param [{}]", repositoryPath);
+        if (!Files.exists(repositoryPath)) {
+            return null;
+        }
         if (Files.isDirectory(repositoryPath)) {
             DirectoryListing directoryListing = directoryListingService.fromRepositoryPath(repositoryPath);
             List<FileContent> fileContents = directoryListing.getFiles().stream().filter(file -> DockerArtifactCoordinates.isManifestPath(file.getName())).collect(Collectors.toList());
@@ -113,4 +121,37 @@ public class DockerComponent {
         }
     }
 
+    /**
+     * 获取仓库下的tag路径
+     *
+     * @param repositoryPath 仓库路径
+     * @return tag路径
+     * @throws IOException 异常
+     */
+    public RepositoryPath getManifestPath(RepositoryPath repositoryPath)
+            throws IOException {
+        RepositoryPath path = null;
+        List<String> excludeList = Lists.newArrayList("temp", ".temp");
+        try (Stream<Path> pathStream = Files.list(repositoryPath)) {
+            List<Path> pathList = pathStream.filter(p -> {
+                try {
+                    RepositoryPath itemRepositoryPath = (RepositoryPath) p;
+                    return p.getFileName().toString().startsWith(PREFIX) && !p.toString().startsWith(".") && !p.toString().contains("/.") && excludeList.stream().noneMatch(p.getFileName().toString()::equals) &&
+                            !Files.isHidden(p) && !Files.isDirectory(p) && !RepositoryFiles.isChecksum(itemRepositoryPath) && !RepositoryFiles.isArtifactMetadata(itemRepositoryPath);
+                } catch (IOException e) {
+                    log.warn("Error accessing path [{}] error [{}]", p, ExceptionUtils.getStackTrace(e));
+                    return false;
+                }
+            })
+                    .sorted()
+                    .collect(Collectors.toList());
+            if (CollectionUtils.isNotEmpty(pathList)) {
+                path = (RepositoryPath) pathList.get(0);
+                path.setArtifact(repositoryPathResolver.resolve(path.getStorageId(), path.getRepositoryId(), RepositoryFiles.relativizePath(path)).getArtifactEntry());
+
+            }
+            log.info("Tag [{}] manifestRepositoryPath [{}]", repositoryPath, path);
+        }
+        return path;
+    }
 }

@@ -1,18 +1,21 @@
 package com.veadan.folib.providers.io;
 
-import com.google.common.util.concurrent.Striped;
+import com.hazelcast.core.HazelcastInstance;
 import com.veadan.folib.artifact.coordinates.ArtifactCoordinates;
 import com.veadan.folib.cloud.storage.s3fs.util.UriUtils;
+import com.veadan.folib.constant.GlobalConstants;
+import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 import org.springframework.util.Assert;
 
 import javax.annotation.Nonnull;
+import javax.inject.Inject;
 import java.io.IOException;
 import java.net.URI;
 import java.util.Optional;
-import java.util.concurrent.locks.ReadWriteLock;
+import java.util.concurrent.TimeUnit;
 
 /**
  * @author veadan
@@ -22,26 +25,26 @@ public class RepositoryPathLock {
 
     private static final Logger logger = LoggerFactory.getLogger(RepositoryPathLock.class);
 
-    private Striped<ReadWriteLock> locks = Striped.lazyWeakReadWriteLock(1024);
-    ;
+    @Inject
+    private HazelcastInstance hazelcastInstance;
 
-    public ReadWriteLock lock(final @Nonnull RepositoryPath repositoryPath) throws IOException {
+    public boolean lock(final @Nonnull RepositoryPath repositoryPath) throws IOException {
         return lock(repositoryPath, null);
     }
 
-    public ReadWriteLock lock(final @Nonnull RepositoryPath repositoryPath,
-                              String id) throws IOException {
+    public boolean lock(final @Nonnull RepositoryPath repositoryPath,
+                        String id) throws IOException {
         URI lock = getLock(repositoryPath);
         String lockName = Optional.ofNullable(id)
                 .map(p -> String.format("%s?%s", lock, p))
-                .orElseGet(() -> lock.toString());
-        logger.info("Get lock for [{}]", lock);
-
-        return locks.get(lockName);
-    }
-
-    public ReadWriteLock lock(String srtifactId) {
-        return locks.get(srtifactId);
+                .orElseGet(lock::toString);
+        logger.info("Get lock for [{}]", lockName);
+        try {
+            return hazelcastInstance.getMap(GlobalConstants.DISTRIBUTED_LOCK_NAME).tryLock(lockName, 30L, TimeUnit.SECONDS, 1800, TimeUnit.SECONDS);
+        } catch (Exception ex) {
+            logger.warn(ExceptionUtils.getStackTrace(ex));
+            return false;
+        }
     }
 
     private URI getLock(final @Nonnull RepositoryPath repositoryPath) throws IOException {
@@ -58,6 +61,30 @@ public class RepositoryPathLock {
         Assert.isTrue(lock.isAbsolute(), String.format("Unable to lock relative path %s", lock));
 
         return lock;
+    }
+
+    public void unLock(String lockName) {
+        if (hazelcastInstance.getMap(GlobalConstants.DISTRIBUTED_LOCK_NAME).isLocked(lockName)) {
+            hazelcastInstance.getMap(GlobalConstants.DISTRIBUTED_LOCK_NAME).forceUnlock(lockName);
+            logger.info("Unlocked for [{}]", lockName);
+        }
+    }
+
+    public void unLock(RepositoryPath repositoryPath) {
+        try {
+            URI lock = getLock(repositoryPath);
+            String lockName = Optional.empty()
+                    .map(p -> String.format("%s?%s", lock, p))
+                    .orElseGet(lock::toString);
+            unLock(lockName);
+        } catch (Exception ex) {
+            logger.error(ExceptionUtils.getStackTrace(ex));
+            throw new RuntimeException(ex.getMessage());
+        }
+    }
+
+    public int getLockInfo() {
+        return hazelcastInstance.getMap(GlobalConstants.DISTRIBUTED_LOCK_NAME).size();
     }
 
 }

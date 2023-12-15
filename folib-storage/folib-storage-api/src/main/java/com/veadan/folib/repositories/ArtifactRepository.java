@@ -674,8 +674,8 @@ public class ArtifactRepository extends GremlinVertexRepository<Artifact> {
     }
 
     public Artifact findOneArtifactBase(String storageId,
-                                    String repositoryId,
-                                    String path) {
+                                        String repositoryId,
+                                        String path) {
         com.veadan.folib.storage.repository.Repository repository = configurationManager.getRepository(storageId, repositoryId);
         EntityTraversal<Vertex, Artifact> t = g().V()
                 .hasLabel(Vertices.ARTIFACT)
@@ -688,8 +688,14 @@ public class ArtifactRepository extends GremlinVertexRepository<Artifact> {
         return artifact;
     }
 
-    public List<Artifact> findPromotionMatchingByIndex(List<String> safeLevelList, List<String> promotionStatusList) {
-        return g().V().hasLabel(Vertices.ARTIFACT).has(Properties.ARTIFACT_FILE_EXISTS, true).has(Properties.SAFE_LEVEL, P.within(safeLevelList)).has(Properties.PROMOTION, P.within(promotionStatusList)).map(artifactAdapter.fold()).toList();
+    public long countPromotionMatchingByIndex(List<String> safeLevelList, List<String> promotionStatusList) {
+        return g().V().hasLabel(Vertices.ARTIFACT).has(Properties.ARTIFACT_FILE_EXISTS, true).has(Properties.SAFE_LEVEL, P.within(safeLevelList)).has(Properties.PROMOTION, P.within(promotionStatusList)).count().tryNext().orElse(0L);
+    }
+
+    public List<Artifact> findPromotionMatchingByIndex(List<String> safeLevelList, List<String> promotionStatusList, Pageable pageable) {
+        long low = pageable.getPageNumber() * pageable.getPageSize();
+        long high = (pageable.getPageNumber() + 1) * pageable.getPageSize();
+        return g().V().hasLabel(Vertices.ARTIFACT).has(Properties.ARTIFACT_FILE_EXISTS, true).has(Properties.SAFE_LEVEL, P.within(safeLevelList)).has(Properties.PROMOTION, P.within(promotionStatusList)).range(low, high).map(artifactAdapter.fold()).toList();
     }
 
     public Long artifactsCount() {
@@ -728,7 +734,7 @@ public class ArtifactRepository extends GremlinVertexRepository<Artifact> {
         if (Objects.isNull(limit)) {
             limit = 800;
         }
-        g().V().hasLabel(Vertices.ARTIFACT).has(Properties.CREATED, P.gt(0)).has(Properties.STORAGE_ID, storageId).has(Properties.REPOSITORY_ID, repositoryId).range(0, limit).drop();
+        g().V().hasLabel(Vertices.ARTIFACT).has(Properties.CREATED, P.gt(0)).has(Properties.STORAGE_ID, storageId).has(Properties.REPOSITORY_ID, repositoryId).limit(limit).drop().iterate();
     }
 
 }

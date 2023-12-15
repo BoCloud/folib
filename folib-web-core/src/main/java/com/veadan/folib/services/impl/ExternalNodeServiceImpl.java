@@ -2,6 +2,7 @@ package com.veadan.folib.services.impl;
 
 import com.github.pagehelper.Page;
 import com.github.pagehelper.PageHelper;
+import com.google.common.collect.Lists;
 import com.veadan.folib.entity.ExternalNode;
 import com.veadan.folib.enums.ArtifactoryFolibRepositoryTypeEnum;
 import com.veadan.folib.enums.ArtifactoryRepositoryTypeEnum;
@@ -110,7 +111,7 @@ public class ExternalNodeServiceImpl implements ExternalNodeService {
             ExternalNodeRepositoryForm externalNodeRepositoryForm = ExternalNodeRepositoryForm.builder().build();
             BeanUtils.copyProperties(externalNode, externalNodeRepositoryForm);
             externalNodeRepositoryForm.setKey(externalNodeRepositoryForm.getNodeName());
-            List<LightweightRepository> lightweightRepositories = jFrogService.listRepository(externalNode.getAddress(), externalNode.getUsername(), rsaUtils.decrypt(externalNode.getPassword()), ArtifactoryFolibRepositoryTypeEnum.GENERIC.getName());
+            List<LightweightRepository> lightweightRepositories = jFrogService.listRepository(externalNode.getAddress(), externalNode.getUsername(), rsaUtils.decrypt(externalNode.getPassword()), Lists.newArrayList(ArtifactoryFolibRepositoryTypeEnum.GENERIC.getName(), ArtifactoryFolibRepositoryTypeEnum.MAVEN.getName(), ArtifactoryFolibRepositoryTypeEnum.DOCKER.getName()));
             externalNodeRepositoryForm.setRepositories(Optional.ofNullable(lightweightRepositories).orElse(Collections.emptyList()).stream().map(lightweightRepository -> RepositoryForm.builder().name(lightweightRepository.getKey()).key(String.format("%s,%s", externalNodeRepositoryForm.getKey(), lightweightRepository.getKey())).artifactoryRepositoryType(externalNodeRepositoryForm.getType()).build()).collect(Collectors.toList()));
             return externalNodeRepositoryForm;
         }).collect(Collectors.toList());

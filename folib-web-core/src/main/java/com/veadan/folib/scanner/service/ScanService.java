@@ -48,6 +48,7 @@ import org.owasp.dependencycheck.data.update.exception.UpdateException;
 import org.owasp.dependencycheck.dependency.*;
 import org.owasp.dependencycheck.dependency.naming.Identifier;
 import org.owasp.dependencycheck.dependency.naming.PurlIdentifier;
+import org.owasp.dependencycheck.utils.Checksum;
 import org.owasp.dependencycheck.utils.Settings;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -195,6 +196,7 @@ public class ScanService {
         log.info("Artifact asyncScan batch size [{}] starts with [{}]", artifactList.size(), DateUtil.format(DateUtil.date(), DatePattern.NORM_DATETIME_MS_FORMATTER));
         for (Artifact artifact : artifactList) {
             doScan(artifact);
+            Checksum.clearCache();
         }
         long endTime = System.currentTimeMillis();
         log.info("Artifact asyncScan batch size [{}] ends with [{}] take time [{}] seconds", artifactList.size(), DateUtil.format(DateUtil.date(), DatePattern.NORM_DATETIME_MS_FORMATTER), (endTime - startTime) / 1000);
@@ -255,13 +257,13 @@ public class ScanService {
             log.error("ScanWorker error：{}", ExceptionUtils.getStackTrace(ex));
             throw new RuntimeException(ex);
         } finally {
-            //删除临时文件
-            if (Objects.nonNull(parentPath)) {
-                FileUtil.del(new File(parentPath));
-            }
             if (Objects.nonNull(engine)) {
                 engine.getSettings().cleanup(true);
                 engine.close();
+            }
+            //删除临时文件
+            if (Objects.nonNull(parentPath)) {
+                FileUtil.del(new File(parentPath));
             }
         }
     }
@@ -504,7 +506,7 @@ public class ScanService {
                 if (CollectionUtils.isNotEmpty(artifact.getVulnerabilitySet())) {
                     List<com.veadan.folib.domain.Vulnerability> vulnerabilityList = Lists.newArrayList();
                     vulnerabilityList.addAll(artifact.getVulnerabilitySet());
-                    vulnerabilityWebService.handlerStoragesAndRepositoriesByVulnerabilityList(vulnerabilityList);
+                    vulnerabilityWebService.handlerStoragesAndRepositoriesByVulnerabilityList(artifact.getStorageId(), artifact.getRepositoryId(), vulnerabilityList);
                 }
             }
         } catch (Exception ex) {

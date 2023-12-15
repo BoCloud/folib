@@ -540,16 +540,15 @@ public class MavenMetadataManager
     private void doInLock(RepositoryPath metadataBasePath,
                           Consumer<Path> operation) throws IOException
     {
-        Lock lock = repositoryPathLock.lock(metadataBasePath).writeLock();
-        lock.lock();
-
-        try
-        {
-            operation.accept(metadataBasePath);
-        }
-        finally
-        {
-            lock.unlock();
+        if (repositoryPathLock.lock(metadataBasePath)) {
+            try
+            {
+                operation.accept(metadataBasePath);
+            }
+            finally
+            {
+                repositoryPathLock.unLock(metadataBasePath);
+            }
         }
     }
 }

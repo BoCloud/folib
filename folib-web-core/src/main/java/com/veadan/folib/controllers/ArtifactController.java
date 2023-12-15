@@ -294,4 +294,20 @@ public class ArtifactController extends BaseController {
         artifactWebService.bomUpload(repositoryPath, file);
         return ResponseEntity.ok("success");
     }
+
+    @PreAuthorize("hasAuthority('ADMIN')")
+    @GetMapping(value = "/releaseLock/{storageId}/{repositoryId}/{artifactPath:.+}")
+    public ResponseEntity<String> releaseLock(@PathVariable String artifactPath,
+                                              @PathVariable String storageId,
+                                              @PathVariable String repositoryId) {
+        RepositoryPath repositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, artifactPath);
+        repositoryPathLock.unLock(repositoryPath);
+        return ResponseEntity.ok("");
+    }
+
+    @PreAuthorize("hasAuthority('ADMIN')")
+    @GetMapping(value = "/lockInfo")
+    public ResponseEntity<Integer> lockInfo() {
+        return ResponseEntity.ok(repositoryPathLock.getLockInfo());
+    }
 }
