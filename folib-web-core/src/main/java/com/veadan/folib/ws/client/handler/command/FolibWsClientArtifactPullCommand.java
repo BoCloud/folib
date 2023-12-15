@@ -14,6 +14,8 @@ import com.veadan.folib.components.security.SecurityComponent;
 import com.veadan.folib.domain.PromotionFileRelativePath;
 import com.veadan.folib.domain.PromotionNodeOption;
 import com.veadan.folib.dto.ArtifactDto;
+import com.veadan.folib.enums.ArtifactSyncRecordStatusEnum;
+import com.veadan.folib.model.request.ArtifactPromotionNodeOptionCallbackReq;
 import com.veadan.folib.model.request.ArtifactSliceDownloadInfoReq;
 import com.veadan.folib.model.response.ArtifactSliceDownloadInfoRes;
 import com.veadan.folib.model.response.ArtifactSliceDownloadInfoRes.DownloadPartInfo;
@@ -31,6 +33,11 @@ import com.veadan.folib.services.ArtifactResolutionService;
 import com.veadan.folib.services.ConfigurationManagementService;
 import com.veadan.folib.utils.FileUtils;
 import com.veadan.folib.utils.UrlUtils;
+import com.veadan.folib.ws.common.FolibWsAction;
+import com.veadan.folib.ws.common.FolibWsSessionContextHolder;
+import com.veadan.folib.ws.server.context.FolibWsServerContextInfo;
+import com.veadan.folib.ws.server.handler.command.FolibWsServerArtifactPullCallbackCommand;
+import com.veadan.folib.ws.server.manage.FolibWsServerRunManage;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.experimental.Accessors;
@@ -53,7 +60,12 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.*;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -73,10 +85,6 @@ public class FolibWsClientArtifactPullCommand implements FolibWsClientCommand<Pr
      * {@linkplain com.veadan.folib.controllers.promotion.ArtifactPromotionController#getFiles(ArtifactDto, BindingResult)}
      */
     private static final String API_ARTIFACT_FOLIB_PROMOTION_GET_FILE_RELATIVE_PATHS = "/api/artifact/folib/promotion/getFileRelativePaths";
-    /**
-     * {@linkplain com.veadan.folib.controllers.promotion.ArtifactPromotionController#querySliceDownloadInfo(ArtifactSliceDownloadInfoReq)}
-     */
-    private static final String BATCH_QUERY_ARTIFACT_SUPPORT_SLICE_DOWNLOAD_URL = "/api/artifact/folib/promotion/batch/query/support/slice/download";
     /**
      * {@linkplain com.veadan.folib.controllers.promotion.ArtifactPromotionController#batchQuerySliceDownloadInfo(List)}
      */
@@ -158,12 +166,12 @@ public class FolibWsClientArtifactPullCommand implements FolibWsClientCommand<Pr
                             .setStorageId(srcStorageId).setRepositoryId(srcRepostoryId)
                             .setPath(path)
                     ).collect(Collectors.toList());
-            final HttpRequest batchQueryArtifactSupportSliceDownloadQueryRequest = HttpUtil.createPost(srcUrl + BATCH_QUERY_ARTIFACT_GET_SLICE_DOWNLOAD_INFO_URL);
+            final HttpRequest batchQueryArtifactSliceDownloadQueryRequest = HttpUtil.createPost(srcUrl + BATCH_QUERY_ARTIFACT_GET_SLICE_DOWNLOAD_INFO_URL);
             final String bodyJsonStr = JSONUtil.toJsonStr(sliceDownloadInfosQueryReq);
-            batchQueryArtifactSupportSliceDownloadQueryRequest.header(JwtTokenFetcher.AUTHORIZATION_HEADER,
+            batchQueryArtifactSliceDownloadQueryRequest.header(JwtTokenFetcher.AUTHORIZATION_HEADER,
                     JwtTokenFetcher.BEARER_AUTHORIZATION_PREFIX + " " + securityComponent.getSecurityToken());
-            batchQueryArtifactSupportSliceDownloadQueryRequest.body(bodyJsonStr);
-            final HttpResponse sliceDownloadInfosQueryRes = batchQueryArtifactSupportSliceDownloadQueryRequest.execute();
+            batchQueryArtifactSliceDownloadQueryRequest.body(bodyJsonStr);
+            final HttpResponse sliceDownloadInfosQueryRes = batchQueryArtifactSliceDownloadQueryRequest.execute();
             if (!sliceDownloadInfosQueryRes.isOk()) {
                 log.error("批量查询制品切片下载信息失败（{}:{}）", bodyJsonStr, sliceDownloadInfosQueryRes.body());
                 throw new BusinessException("批量查询制品切片下载信息失败");
@@ -194,7 +202,7 @@ public class FolibWsClientArtifactPullCommand implements FolibWsClientCommand<Pr
                 if (!usedSlice) {
                     // 非切片下载（下载Part有且只有一个）
                     final String artifactFileSliceFolderPath = String.format("%s/artifactTemp/%s", StringUtils.chomp(tempPath, "/"), UUID.fastUUID().toString(true));
-                    final String downloadUrl = String.format("%s?nodeMark=%s", downloadParInfotList.get(0).getDownloadUrl(), nodeMark);
+                    final String downloadUrl = UrlUtils.addQuery(downloadParInfotList.get(0).getDownloadUrl(), "nodeMark", nodeMark);
                     try {
                         final String tempPath = String.format("%s/%s", artifactFileSliceFolderPath, FileUtil.getName(path));
                         FileUtil.touch(new File(tempPath));
@@ -224,7 +232,7 @@ public class FolibWsClientArtifactPullCommand implements FolibWsClientCommand<Pr
                         final List<String> sliceFileDownloadPathList = IntStream.range(0, downloadParInfotList.size())
                                 .mapToObj(index -> {
                                     final DownloadPartInfo downloadPartInfo = downloadParInfotList.get(index);
-                                    final String downloadUrl = String.format("%s?nodeMark=%s", downloadPartInfo.getDownloadUrl(), nodeMark);
+                                    final String downloadUrl = UrlUtils.addQuery(downloadPartInfo.getDownloadUrl(), "nodeMark", nodeMark);
                                     final String downloadFilePath = String.format("%s/chunk%s", artifactFileSliceFolderPath, index);
                                     final File downloadFile = new File(downloadFilePath);
                                     FileUtil.touch(downloadFile);
@@ -270,16 +278,31 @@ public class FolibWsClientArtifactPullCommand implements FolibWsClientCommand<Pr
                 return true;
             });
             if (!result) {
-                log.info("制品拉取失败");
+                throw new BusinessException("制品拉取失败");
             }
-
+            
+            this.resultCallback(ArtifactSyncRecordStatusEnum.SUCCESS.getVal(), null, promotionNodeOption.getSyncNo());
         } catch (Exception e) {
             log.error("拉取制品失败", e);
+            this.resultCallback(ArtifactSyncRecordStatusEnum.FAILED.getVal(), e.getMessage(), promotionNodeOption.getSyncNo());
         } finally {
             if (Objects.nonNull(response)) {
                 response.close();
             }
         }
+    }
+    
+    private void resultCallback(Integer status, String failedReason, String syncNo) {
+        final FolibWsServerContextInfo contextSessionInfo = FolibWsSessionContextHolder.getContextSessionInfo(FolibWsServerContextInfo.class);
+        final FolibWsServerRunManage.FolibWsClientRun wsRunInfo = contextSessionInfo.getWsRunInfo();
+        wsRunInfo.doAction(new FolibWsAction()
+                .command(FolibWsServerArtifactPullCallbackCommand.COMMAND)
+                .payload(new ArtifactPromotionNodeOptionCallbackReq()
+                        .setStatus(status)
+                        .setFailedReason(failedReason)
+                        .setSyncNo(syncNo)
+                )
+        );
     }
 
 //    private void download(PromotionNodeOption promotionNodeOption) throws Exception {

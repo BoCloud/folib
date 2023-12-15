@@ -1,5 +1,6 @@
 package com.veadan.folib.ws.client.init;
 
+import cn.hutool.http.HttpUtil;
 import com.veadan.folib.configuration.ConfigurationManager;
 import com.veadan.folib.dispatch.ClusterDispatchNodeDto;
 import com.veadan.folib.services.ConfigurationManagementService;
@@ -47,11 +48,12 @@ public class FolibWsServerConnectionInit implements ApplicationRunner
                         final Integer originPort = UrlUtils.getPort(originUrl.toString());
                         final String destHost = destUrl.getHost();
                         final Integer destPort = UrlUtils.getPort(clusterNodeHost);
-                        final String destNodeName = String.format("%s:%s", destHost, destPort);
+///                        final String destNodeName = String.format("%s:%s", destHost, destPort);
                         final String originNodeName = String.format("%s:%s", originHost, originPort);
                         final String destUri = String.format("/ws/folib/%s", originNodeName);
+                        final boolean enableSSL = HttpUtil.isHttps(clusterNodeHost);
                         
-                        FolibWsClientRunManage.up(destNodeName, destHost, destPort, destUri, true);
+                        FolibWsClientRunManage.up(destHost, destHost, destPort, destUri, true, enableSSL);
                         log.info("【FolibWs连接初始化】开始连接到节点({}:{}) ===> ({}:{})",
                                 originHost, originPort,
                                 destHost, destPort);

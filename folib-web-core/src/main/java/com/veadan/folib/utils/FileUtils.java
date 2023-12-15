@@ -1,19 +1,24 @@
 package com.veadan.folib.utils;
 
+import cn.hutool.core.io.FileUtil;
 import cn.hutool.extra.spring.SpringUtil;
-import org.opencypher.v9_0.expressions.functions.E;
+import com.veadan.folib.scanner.common.exception.BusinessException;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.*;
+import java.math.BigInteger;
 import java.nio.ByteBuffer;
 import java.nio.MappedByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
+import java.security.MessageDigest;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 
 /**
  * @ProjectName: folib-server
@@ -307,6 +312,11 @@ public class FileUtils {
      * @since x.x.x
      */
     public static boolean mergeFiles(String targetFilePath, List<String> sourceFilePaths)  {
+        final File targetFile = new File(targetFilePath);
+        if (!FileUtil.exist(targetFile)) {
+            FileUtil.touch(targetFile);
+        }
+        
         try (BufferedOutputStream outputStream = new BufferedOutputStream(Files.newOutputStream(Paths.get(targetFilePath)))) {
             for (String sourceFilePath : sourceFilePaths) {
                 try (BufferedInputStream inputStream = new BufferedInputStream(Files.newInputStream(Paths.get(sourceFilePath)))) {
@@ -325,4 +335,74 @@ public class FileUtils {
 
         return true;
     }
+
+    public static String getMD5(String filePath) {
+        return getMD5(new File(filePath));
+    }
+    
+    public static String getMD5(File file) {
+        try {
+            final MessageDigest md = MessageDigest.getInstance("MD5");
+            final FileInputStream fis = new FileInputStream(file);
+            final byte[] buffer = new byte[8192];
+            int length;
+            while ((length = fis.read(buffer)) != -1) {
+                md.update(buffer, 0, length);
+            }
+            fis.close();
+            final byte[] digest = md.digest();
+            final BigInteger bigInt = new BigInteger(1, digest);
+            return bigInt.toString(16);
+        } catch (Exception e) {
+            logger.info("获取文件的MD5失败", e);
+            return null;
+        }
+    }
+
+
+    public static boolean lockFileStatus(String filePath) {
+        return lockFileNumber(filePath) > 0;
+    }
+    
+    public synchronized static Integer lockFile(String filePath) {
+        final File folderLockFile = getLockFile(filePath);
+        if (!FileUtil.exist(folderLockFile)) {
+            FileUtil.writeUtf8String(String.valueOf(0), folderLockFile);
+        }
+
+        Integer lockNumber = Optional.ofNullable(FileUtil.readUtf8String(folderLockFile)).map(Integer::parseInt).orElse(0);
+        FileUtil.writeUtf8String(String.valueOf(++lockNumber), folderLockFile);
+
+        return lockNumber;
+    }
+
+    public synchronized static Integer unlockFile(String filePath) {
+        final File folderLockFile = getLockFile(filePath);
+        Integer lockNumber = lockFileNumber(filePath);
+        if (lockNumber > 0) {
+            FileUtil.writeUtf8String(String.valueOf(--lockNumber), folderLockFile);
+        }
+        
+        return lockNumber; 
+    }
+
+    public static Integer lockFileNumber(String filePath) {
+        final File folderLockFile = getLockFile(filePath);
+        return Optional.ofNullable(FileUtil.readUtf8String(folderLockFile)).map(Integer::parseInt).orElse(0);
+    }
+    
+    private static File getLockFile(String filePath) {
+        final File file = new File(filePath);
+        
+        if (!FileUtil.exist(file)) {
+            throw new BusinessException("获取文件锁的文件或文件夹不存在");
+        }
+
+        if (FileUtil.isFile(file)) {
+            return new File(String.format("%s.lock", filePath));
+        } else {
+            return new File(String.format("%s/folder.lock", StringUtils.chomp(filePath, "/")));
+        }
+    }
+
 }
