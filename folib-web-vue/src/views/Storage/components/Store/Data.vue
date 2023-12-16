@@ -263,7 +263,7 @@
       </a-tab-pane>
     </a-tabs>
 
-    <hr class="my-25" />
+    <hr class="gradient-line" />
 
     <a-col
       :span="24"
