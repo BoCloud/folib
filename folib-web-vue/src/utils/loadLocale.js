@@ -1,6 +1,5 @@
 // 获取全部locales目录
-const localeFiles = require.context('../views', true, /locale\/index\.js$/)
-console.log(localeFiles, 'index')
+const localeFiles = require.context('../../src', true, /locale\/index\.js$/)
 // 组织locales为数组
 const applocales = localeFiles.keys().reduce((locales, localePath) => {
     const value = localeFiles(localePath)

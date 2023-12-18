@@ -3,15 +3,15 @@
     <a-drawer
       placement="right"
       width="65%"
-      title="使用说明"
+      :title="$t('Store.Instructions')"
       :visible="usedVisible"
       @close="closeUsedVisibleDialog"
     >
       <a-timeline v-if="repositoryType === 'maven'">
         <a-timeline-item color="primary">
-          Maven全局配置
-          <small>maven settings配置</small>
-          <p>你需要复制以下配置到你的maven的/conf/settings.xml中</p>
+          Maven{{ $t('Store.GlobalConfiguration') }}
+          <small>maven settings{{ $t('Store.Configuration') }}</small>
+          <p>{{ $t('Store.copyConfiguration') }}</p>
 
           <prism-editor
             class="my-editor height-300"
@@ -39,25 +39,25 @@
           ></prism-editor>
         </a-timeline-item>
         <a-timeline-item color="primary">
-          POM配置
-          <small>pom.xml配置</small>
+          POM{{ $t('Store.Configuration') }}
+          <small>pom.xml{{ $t('Store.Configuration') }}</small>
           <p>
-            通常需要在pom.xml中进行指定上传的配置，和常用的maven仓库一样使用,具体pom配置可参阅：https://maven.apache.org/pom.html
+            {{ $t('Store.POMConfiguration') }}
           </p>
           <p>
-            注意：本仓库类型为:<strong>{{
+            {{ $t('Store.warehouseType') }}<strong>{{
               folibRepository.type === "proxy"
-                ? "代理库"
+                ? $t('Store.ProxyLibrary')
                 : folibRepository.type === "group"
-                ? "组合库"
-                : "本地库"
+                ? $t('Store.CombinatorialLibrary')
+                : $t('Store.LocalLibrary')
             }}</strong
             >{{
               folibRepository.type === "proxy"
-                ? "不支持上传"
+                ? $t('Store.NotUpload')
                 : folibRepository.type === "group"
-                ? "不支持上传"
-                : "可以上传"
+                ? $t('Store.NotUpload')
+                : $t('Store.SupportUpload')
             }}
           </p>
           <prism-editor
@@ -100,10 +100,10 @@
           </prism-editor>
         </a-timeline-item>
         <a-timeline-item color="primary">
-          命令操作
-          <small>maven 通常使用命令</small>
+          {{ $t('Store.CommandOperation') }}
+          <small>maven {{ $t('Store.UsuallyCommand') }}</small>
           <p>
-            和通常maven一样使用，具体参阅：https://maven.apache.org/index.html
+            {{ $t('Store.UsuallyUse') }}maven{{ $t('Store.specificRefer') }}https://maven.apache.org/index.html
           </p>
 
           <prism-editor
@@ -117,9 +117,9 @@
       </a-timeline>
       <a-timeline v-if="repositoryType === 'gradle'">
         <a-timeline-item color="primary">
-          Gradle配置
-          <small>Gradle配置仓库</small>
-          <p>你需要在 build.gradle 文件中加入以下代码:</p>
+          Gradle{{ $t('Store.Configuration') }}
+          <small>Gradle{{ $t('Store.ConfigWarehouse') }}</small>
+          <p>{{ $t('Store.gradleCode') }}</p>
 
           <prism-editor
             class="my-editor height-300"
@@ -146,10 +146,10 @@
           ></prism-editor>
         </a-timeline-item>
         <a-timeline-item color="primary">
-          命令操作
-          <small>Gradle 通常使用命令</small>
+          {{ $t('Store.CommandOperation') }}
+          <small>Gradle {{ $t('Store.UsuallyCommand') }}</small>
           <p>
-            和通常Gradle一样使用，具体参阅：https://docs.gradle.org/current/userguide/userguide.html
+            {{ $t('Store.UsuallyUse') }}Gradle{{ $t('Store.specificRefer') }}https://docs.gradle.org/current/userguide/userguide.html
           </p>
 
           <prism-editor
@@ -164,9 +164,9 @@
       </a-timeline>
       <a-timeline v-if="repositoryType === 'sbt'">
         <a-timeline-item color="primary">
-          SBT配置
-          <small>SBT配置仓库</small>
-          <p>你需要编辑或新建 ${HOME}/.sbt/repositories，文件中加入以下代码:</p>
+          SBT{{ $t('Store.Configuration') }}
+          <small>SBT{{ $t('Store.ConfigWarehouse') }}</small>
+          <p>{{ $t('Store.SBTCode') }}</p>
 
           <prism-editor
             class="my-editor height-300"
@@ -189,11 +189,10 @@
           ></prism-editor>
         </a-timeline-item>
         <a-timeline-item color="primary">
-          全局配置
-          <small>SBT全局配置</small>
+          {{ $t('Store.GlobalConfiguration') }}
+          <small>SBT{{ $t('Store.GlobalConfiguration') }}</small>
           <p>
-            编辑 ${sbt_安装目录}/conf/sbtconfig.txt，如果你使用的 idea，在
-            settings->SBT-> jvm parameters 添加
+            {{ $t('Store.SBTGlobalConfig') }}
           </p>
 
           <prism-editor
@@ -205,9 +204,9 @@
           ></prism-editor>
         </a-timeline-item>
         <a-timeline-item color="primary">
-          使用命令操作
-          <small>SBT命令使用</small>
-          <p>和通常SBT命令一样使用，具体参阅：https://www.scala-sbt.org/</p>
+          {{ $t('Store.CommandOperation') }}
+          <small>SBT{{ $t('Store.CommandOperation') }}</small>
+          <p>{{ $t('Store.UsuallyUse') }}SBT{{ $t('Store.specificRefer') }}https://www.scala-sbt.org/</p>
 
           <prism-editor
             class="my-editor height-300"
@@ -220,10 +219,10 @@
       </a-timeline>
       <a-timeline v-if="repositoryType === 'ivy'">
         <a-timeline-item color="primary">
-          ivy配置
-          <small>ivy配置仓库</small>
+          ivy{{ $t('Store.Configuration') }}
+          <small>ivy{{ $t('Store.ConfigWarehouse') }}</small>
           <p>
-            你需要修改 ${USER_HOME}/.ivy2/ivysettings.xml，文件中加入以下代码:
+            {{ $t('Store.ivyCode') }}
           </p>
 
           <prism-editor
@@ -235,10 +234,10 @@
           ></prism-editor>
         </a-timeline-item>
         <a-timeline-item color="primary">
-          使用命令操作
-          <small>ant-ivy命令使用</small>
+          {{ $t('Store.CommandOperation') }}
+          <small>ant-ivy{{ $t('Store.UsuallyCommand') }}</small>
           <p>
-            和通常SBT命令一样使用，具体参阅：https://ant.apache.org/ivy/history/2.4.0/use/makepom.html
+            {{ $t('Store.UsuallyUse') }}SBT{{ $t('Store.specificRefer') }}https://ant.apache.org/ivy/history/2.4.0/use/makepom.html
           </p>
 
           <prism-editor
@@ -252,9 +251,9 @@
       </a-timeline>
       <a-timeline v-if="repositoryType === 'npm'">
         <a-timeline-item color="primary">
-          NPM全局配置
-          <small>NPM配置全局配置</small>
-          <p>你可以全局配置npm的mirror,操作如下:</p>
+          NPM{{ $t('Store.GlobalConfiguration') }}
+          <small>NPM{{ $t('Store.Configuration') }}{{ $t('Store.GlobalConfiguration') }}</small>
+          <p>{{ $t('Store.ConfigMirror') }}</p>
 
           <prism-editor
             class="my-editor height-300"
@@ -276,9 +275,9 @@
           </prism-editor>
         </a-timeline-item>
         <a-timeline-item color="primary">
-          工程配置
-          <small>该方式只对当前工程生效</small>
-          <p>需要在仓库下创建.npmrc文件并填入如下：</p>
+          {{ $t('Store.EngineerAllocation') }}
+          <small>{{ $t('Store.validCurrent') }}</small>
+          <p>{{ $t('Store.npmrcCode') }}</p>
 
           <prism-editor
             class="my-editor height-300"
@@ -305,9 +304,9 @@
           ></prism-editor>
         </a-timeline-item>
         <a-timeline-item color="primary">
-          命令操作
-          <small>NPM 通常使用命令</small>
-          <p>和通常NPM一样使用，具体参阅：https://npmjs.org/</p>
+          {{ $t('Store.CommandOperation') }}
+          <small>NPM {{ $t('Store.UsuallyCommand') }}</small>
+          <p>{{ $t('Store.UsuallyUse') }}NPM{{ $t('Store.specificRefer') }}https://npmjs.org/</p>
 
           <prism-editor
             class="my-editor height-300"
@@ -322,10 +321,10 @@
       </a-timeline>
       <a-timeline v-if="repositoryType === 'rpm'">
         <a-timeline-item color="primary">
-          RPM配置
-          <small>centOS yum源配置</small>
+          RPM{{ $t('Store.Configuration') }}
+          <small>centOS yum{{ $t('Store.SourceConfiguration') }}</small>
           <p>
-            在/etc/yum.repos.d/中添加一个local_test.repo文件,镜像服务器为阿里云,操作如下:
+            {{ $t('Store.RPMOperation') }}
           </p>
 
           <prism-editor
@@ -353,9 +352,9 @@
           ></prism-editor>
         </a-timeline-item>
         <a-timeline-item color="primary">
-          命令操作
-          <small>yum 使用命令</small>
-          <p>仅供参考，详情请查相关文档</p>
+          {{ $t('Store.CommandOperation') }}
+          <small>yum {{ $t('Store.UsuallyCommand') }}</small>
+          <p>{{ $t('Store.ForReference') }}</p>
 
           <prism-editor
             class="my-editor height-300"
@@ -374,8 +373,8 @@
       </a-timeline>
       <a-timeline v-if="repositoryType === 'helm'">
         <a-timeline-item color="primary">
-          Helm配置
-          <p>将folib helm仓添加到本地操作步骤</p>
+          Helm{{ $t('Store.Configuration') }}
+          <p>{{ $t('Store.folibOperation') }}</p>
 
           <prism-editor
             class="my-editor height-300"
@@ -402,8 +401,8 @@
           ></prism-editor>
         </a-timeline-item>
         <a-timeline-item color="primary">
-          上传Chart包到Helm仓库
-          <p>安装 helm-cm-push插件</p>
+          {{ $t('Store.ChartPackage') }}
+          <p>{{ $t('Store.HelmPlugin') }}</p>
           <prism-editor
             class="my-editor height-300"
             :value="
@@ -440,8 +439,8 @@
         </a-timeline-item>
 
         <a-timeline-item color="primary">
-          helm 使用常用命令
-          <p>详细使用参考官网 https://helm.sh/zh/docs/intro/using_helm/</p>
+          helm {{ $t('Store.UsuallyCommand') }}
+          <p>{{ $t('Store.HelmCommand') }} https://helm.sh/zh/docs/intro/using_helm/</p>
           <prism-editor
             class="my-editor height-300"
             :value="
@@ -464,8 +463,8 @@
       </a-timeline>
       <a-timeline v-if="repositoryType === 'conan'">
         <a-timeline-item color="primary">
-          Conan配置
-          <p>将folib conan仓添加到本地操作步骤</p>
+          {{ Conan$t('Store.Configuration') }}
+          <p>{{ $t('Store.conanConfig') }}</p>
 
           <prism-editor
             class="my-editor height-300"
@@ -487,7 +486,7 @@
           ></prism-editor>
         </a-timeline-item>
         <a-timeline-item color="primary">
-          Conan包 相关操作
+          Conan{{ $t('Store.Package') }} {{ $t('Store.ConanOperation') }}
           <p></p>
           <prism-editor
             class="my-editor height-300"
@@ -531,9 +530,9 @@
         </a-timeline-item>
 
         <a-timeline-item color="primary">
-          Conan 使用常用命令
+          Conan {{ $t('Store.UsuallyCommand') }}
           <p>
-            详细使用参考官网
+            {{ $t('Store.HelmCommand') }}
             https://docs.conan.io/en/latest/reference/commands.html
           </p>
           <prism-editor
@@ -547,9 +546,9 @@
       </a-timeline>
       <a-timeline v-if="repositoryType === 'yarn'">
         <a-timeline-item color="primary">
-          Yarn配置
-          <small>Yarn配置全局配置</small>
-          <p>你可以全局配置Yarn的mirror,操作如下:</p>
+          Yarn{{ $t('Store.Configuration') }}
+          <small>Yarn{{ $t('Store.Configuration') }}{{ $t('Store.GlobalConfiguration') }}</small>
+          <p>{{ $t('Store.YarnConfig') }}</p>
 
           <prism-editor
             class="my-editor height-300"
@@ -571,9 +570,9 @@
           </prism-editor>
         </a-timeline-item>
         <a-timeline-item color="primary">
-          工程配置
-          <small>该方式只对当前工程生效</small>
-          <p>需要在仓库下创建.npmrc文件并填入如下：</p>
+          {{ $t('Store.EngineerAllocation') }}
+          <small>{{ $t('Store.validCurrent') }}</small>
+          <p>{{ $t('Store.npmrcCode') }}</p>
 
           <prism-editor
             class="my-editor height-300"
@@ -600,9 +599,9 @@
           ></prism-editor>
         </a-timeline-item>
         <a-timeline-item color="primary">
-          命令操作
-          <small>Yarn 通常使用命令</small>
-          <p>和通常Yarn一样使用，具体参阅：https://npmjs.org/</p>
+          {{ $t('Store.CommandOperation') }}
+          <small>Yarn {{ $t('Store.UsuallyCommand') }}</small>
+          <p>{{ $t('Store.UsuallyUse') }}Yarn{{ $t('Store.specificRefer') }}https://npmjs.org/</p>
 
           <prism-editor
             class="my-editor height-300"
@@ -617,9 +616,9 @@
       </a-timeline>
       <a-timeline v-if="repositoryType === 'pypi'">
         <a-timeline-item color="primary">
-          Pypi配置
-          <small>Pypi配置</small>
-          <p>编写.pypirc配置文件如下:</p>
+          Pypi{{ $t('Store.Configuration') }}
+          <small>Pypi{{ $t('Store.Configuration') }}</small>
+          <p>{{ $t('Store.PypiConfig') }}</p>
 
           <prism-editor
             class="my-editor height-300"
@@ -656,9 +655,9 @@
           ></prism-editor>
         </a-timeline-item>
         <a-timeline-item color="primary">
-          打包上传
-          <small>该方式打包时指定仓库</small>
-          <p>如下命令：</p>
+          {{ $t('Store.PackageUpload') }}
+          <small>{{ $t('Store.DesignatedRepository') }}</small>
+          <p>{{ $t('Store.followingCommand') }}</p>
 
           <prism-editor
             class="my-editor height-300"
@@ -678,9 +677,9 @@
           </prism-editor>
         </a-timeline-item>
         <a-timeline-item color="primary">
-          命令操作
-          <small>Pypi 通常使用命令</small>
-          <p>操作命令和通常Pypi一样使用，具体参阅：https://pypi.org/</p>
+          {{ $t('Store.CommandOperation') }}
+          <small>Pypi {{ $t('Store.UsuallyCommand') }}</small>
+          <p>{{ $t('Store.UsuallyUse') }}Pypi{{ $t('Store.specificRefer') }}https://pypi.org/</p>
 
           <prism-editor
             class="my-editor height-300"
@@ -693,9 +692,9 @@
       </a-timeline>
       <a-timeline v-if="repositoryType === 'docker'">
         <a-timeline-item color="primary">
-          Ubuntu配置
-          <small>针对Docker客户端版本大于 1.10.0 的用户</small>
-          <p>您可以通过修改daemon配置文件/etc/docker/daemon.json来使用:</p>
+          Ubuntu{{ $t('Store.Configuration') }}
+          <small>{{ $t('Store.DockerVersions') }}</small>
+          <p>{{ $t('Store.modifyDaemon') }}</p>
           <prism-editor
             class="my-editor height-300"
             :value="dockerCode.ubuntu"
@@ -705,9 +704,9 @@
           ></prism-editor>
         </a-timeline-item>
         <a-timeline-item color="primary">
-          CentOS配置
-          <small>针对Docker客户端版本大于 1.10.0 的用户</small>
-          <p>您可以通过修改daemon配置文件/etc/docker/daemon.json来使用:</p>
+          CentOS{{ $t('Store.Configuration') }}
+          <small>{{ $t('Store.DockerVersions') }}</small>
+          <p>{{ $t('Store.modifyDaemon') }}</p>
           <prism-editor
             class="my-editor height-300"
             :value="dockerCode.centos"
@@ -717,14 +716,14 @@
           ></prism-editor>
         </a-timeline-item>
         <a-timeline-item color="primary">
-          MacOS配置
+          MacOS{{ $t('Store.Configuration') }}
           <small
-            >针对安装了Docker for Mac的用户，您可以参考以下配置步骤：</small
+            >{{ $t('Store.MacDocker') }}</small
           >
           <p>
-            在任务栏点击 Docker Desktop 应用图标 ->
-            Perferences，在左侧导航菜单选择 Docker Engine，在右侧输入栏编辑 json
-            文件。将:
+            {{ $t('Store.clickIcon') }}
+            {{ $t('Store.selectLeft') }}
+            {{ $t('Store.will') }}
           </p>
           <prism-editor
             class="my-editor height-300"
@@ -734,19 +733,19 @@
             :readonly="true"
           ></prism-editor>
           <p>
-            加到"insecure-registries"的数组里，点击 Apply &
-            Restart按钮，等待Docker重启
+            {{ $t('Store.clickButton') }}
+            {{ $t('Store.waitDocker') }}
           </p>
         </a-timeline-item>
         <a-timeline-item color="primary">
-          Windows配置
+          Windows{{ $t('Store.Configuration') }}
           <small
-            >针对安装了Docker for Windows的用户，您可以参考以下配置步骤：</small
-          >
+            >{{ $t('Store.WindowsDocker') }})
+          </small>
           <p>
-            在系统右下角托盘图标内右键菜单选择
-            Settings，打开配置窗口后左侧导航菜单选择 Docker
-            Daemon。编辑窗口内的JSON串，填写下方地址：
+            {{ $t('Store.RightClickMenu') }}
+            {{ $t('Store.LeftClickMenu') }}
+            {{ $t('Store.EditJSON') }}
           </p>
           <prism-editor
             class="my-editor height-300"
@@ -758,10 +757,10 @@
         </a-timeline-item>
 
         <a-timeline-item color="primary">
-          镜像打包命名说明
-          <small>请一定要看，这决定了你的镜像包能否上传：</small>
+          {{ $t('Store.ImagePackage') }}
+          <small>{{ $t('Store.ImagePackageTips') }}</small>
           <p>
-            镜像命名规则如下：仓库访问url/存储空间/仓库名称/镜像名称:版本号，具体如下：
+            {{ $t('Store.ImageNamingRules') }}
           </p>
           <prism-editor
             class="my-editor height-300"
@@ -781,9 +780,9 @@
       </a-timeline>
       <a-timeline v-if="repositoryType === 'nuget'">
         <a-timeline-item color="primary">
-          NuGet+Mono配置
-          <small>添加默认推送存储库 URL</small>
-          <p>示例如下，详细请看文档</p>
+          NuGet+Mono{{ $t('Store.Configuration') }}
+          <small>{{ $t('Store.URLRepository') }} URL</small>
+          <p>{{ $t('Store.SeeDocumentation') }}</p>
           <prism-editor
             class="my-editor height-300"
             :value="
@@ -801,9 +800,9 @@
           ></prism-editor>
         </a-timeline-item>
         <a-timeline-item color="primary">
-          Nuget+Visual Studio配置
-          <small>以下为示例</small>
-          <p>为了方便访问folib可将 -Source 选项附加到 NuGet.exe：</p>
+          Nuget+Visual Studio{{ $t('Store.Configuration') }}
+          <small>{{ $t('Store.example') }}</small>
+          <p>{{ $t('Store.accessFolib') }}</p>
           <prism-editor
             class="my-editor height-300"
             :value="
@@ -819,130 +818,138 @@
             :line-numbers="false"
             :readonly="true"
           ></prism-editor>
-          <p>Visual Studio中的详细配置请看平台帮助文档</p>
+          <p>{{ $t('Store.VSConfig') }}</p>
         </a-timeline-item>
       </a-timeline>
       <a-timeline v-if="repositoryType === 'php'">
         <a-timeline-item color="primary">
-          Composer认证
+          Composer{{ $t('Store.Authentication') }}
           <p>
             http-basic
           </p>
           <p>
-            打开命令行窗口（windows用户）或控制台（Linux、Mac 用户）并执行如下命令：
+            {{ $t('Store.ExecuteCommand') }}
           </p>
-          <prism-editor class="my-editor height-300" :value="'composer config -g http-basic.' + baseUrl + ' admin folib@v587'" 
+          <prism-editor class="my-editor height-300" :value="'composer config -g http-basic.' + baseUrl + ' admin folib@v587'"
           :highlight="highlighterHandle" :line-numbers="false" :readonly="true"></prism-editor>
         </a-timeline-item>
         <a-timeline-item color="primary">
-          Composer配置
+          {{ Composer$t('Store.Configuration') }}
           <p>
-            方法一： 修改 composer 的全局配置文件（推荐方式）
+            {{ $t('Store.Method1') }}
           </p>
           <p>
-            打开命令行窗口（windows用户）或控制台（Linux、Mac 用户）并执行如下命令：
+            {{ $t('Store.ExecuteCommand') }}
           </p>
-          <prism-editor class="my-editor height-300" :value="'composer config -g repo.packagist composer ' + baseUrl + 'storages/' + folibRepository.storageId + '/' + folibRepository.id" 
+          <prism-editor class="my-editor height-300" :value="'composer config -g repo.packagist composer ' + baseUrl + 'storages/' + folibRepository.storageId + '/' + folibRepository.id"
           :highlight="highlighterHandle" :line-numbers="false" :readonly="true"></prism-editor>
           <p>
-          方法二： 修改当前项目的 composer.json 配置文件
+            {{ $t('Store.Method2') }}
           </p>
           <p>
-            打开命令行窗口（windows用户）或控制台（Linux、Mac 用户），进入你的项目的根目录（也就是 composer.json 文件所在目录），执行如下命令：
+            {{ $t('Store.ExecuteCommand') }}
           </p>
-          <prism-editor class="my-editor height-300" :value="'composer config repo.packagist composer ' + baseUrl + 'storages/' + folibRepository.storageId + '/' + folibRepository.id" 
+          <prism-editor class="my-editor height-300" :value="'composer config repo.packagist composer ' + baseUrl + 'storages/' + folibRepository.storageId + '/' + folibRepository.id"
           :highlight="highlighterHandle" :line-numbers="false" :readonly="true"></prism-editor>
         </a-timeline-item>
         <a-timeline-item color="primary">
-          取消配置
-          <p>#全局取消</p>
+          {{ $t('Store.Unconfigure') }}
+          <p>#{{ $t('Store.GlobalCancel') }}</p>
           <p>
             composer config -g --unset repos.packagist
           </p>
-          <p>#项目取消</p>
+          <p>#{{ $t('Store.ProjectCancel') }}</p>
           <p>
             composer config --unset repos.packagist
           </p>
           <p>
-            注意：本仓库类型为:<strong>{{ folibRepository.type === 'proxy' ? '代理库' : folibRepository.type === 'group' ? '组合库' :
-                '本地库'
-            }}</strong>{{ folibRepository.type === 'proxy' ? '不支持上传' : folibRepository.type === 'group' ?
-    '不支持上传' : '可以上传'
-}}
-          </p>
+            {{ $t('Store.warehouseType') }}<strong>{{
+              folibRepository.type === "proxy"
+                ? $t('Store.ProxyLibrary')
+                : folibRepository.type === "group"
+                ? $t('Store.CombinatorialLibrary')
+                : $t('Store.LocalLibrary')
+            }}</strong
+          >{{
+              folibRepository.type === "proxy"
+                ? $t('Store.NotUpload')
+                : folibRepository.type === "group"
+                ? $t('Store.NotUpload')
+                : $t('Store.SupportUpload')
+            }}</p>
           <p v-if="folibRepository.type === 'hosted'">
-            使用API或页面上传按钮进行上传
+            {{ $t('Store.useAPI') }}
           </p>
         </a-timeline-item>
         <a-timeline-item color="primary">
-          命令操作
-          <small>composer 通常使用命令</small>
+          {{ $t('Store.CommandOperation') }}
+          <small>composer {{ $t('Store.UsuallyCommand') }}</small>
           <p>
-            和通常composer一样使用，具体参阅：<a target="_blank" href="https://getcomposer.org/doc/03-cli.md">https://getcomposer.org/doc/03-cli.md</a>
+            {{ $t('Store.UsuallyUse') }}composer{{ $t('Store.specificRefer') }} <a target="_blank" href="https://getcomposer.org/doc/03-cli.md">https://getcomposer.org/doc/03-cli.md</a>
           </p>
 
           <prism-editor class="my-editor height-300" :value="'composer init\n' +
-          'composer install\n' + 
-          'composer -vvv require\n' + 
+          'composer install\n' +
+          'composer -vvv require\n' +
           'composer clear-cache'" :highlight="highlighterHandle" :line-numbers="false" :readonly="true"></prism-editor>
         </a-timeline-item>
       </a-timeline>
       <a-timeline v-if="repositoryType === 'cocoapods'">
         <a-timeline-item color="primary">
-          通用
+          {{ $t('Store.GeneralPurpose') }}
           <p>
-            为了在Artifactory中使用CocoaPods，你需要安装"cocoapods-art"。插件。安装cocoapods-art命令如下:
+            {{ $t('Store.useCocoapods') }}
           </p>
-          <prism-editor class="my-editor height-300" value="gem install cocoapods-art" 
+          <prism-editor class="my-editor height-300" value="gem install cocoapods-art"
           :highlight="highlighterHandle" :line-numbers="false" :readonly="true">
           </prism-editor>
           <p>
-            repo-art使用标准<a href="https://www.gnu.org/software/inetutils/manual/html_node/The-_002enetrc-file.html">netrc file</a>中指定的身份验证
+            {{ $t('Store.UseStandards') }}<a href="https://www.gnu.org/software/inetutils/manual/html_node/The-_002enetrc-file.html">netrc file</a>{{ $t('Store.SpecifyAuthentication') }}
           </p>
-          <prism-editor class="my-editor height-300" 
+          <prism-editor class="my-editor height-300"
           :highlight="highlighterHandle" :line-numbers="false" :value='"machine "+(baseUrl.endsWith("/") ? baseUrl:baseUrl+"/").replaceAll(/https?\:\/\/(.*?)(:\d+?)?\//g, "$1")+
 "\rlogin <USERNAME>"+
 "\rpassword <PASSWORD>"' :readonly="true">
           </prism-editor>
           <p>
-            要添加一个Artifactory Specs库:
+            {{ $t('Store.addLibrary') }}
           </p>
-          <prism-editor class="my-editor height-300" 
+          <prism-editor class="my-editor height-300"
           :highlight="highlighterHandle" :line-numbers="false" :value='"pod repo-art add "+folibRepository.id+" \""+baseUrl+"storages/"+folibRepository.storageId+"/"+folibRepository.id + "\""' :readonly="true">
           </prism-editor>
         </a-timeline-item>
         <a-timeline-item color="primary">
-          部署
+          {{ $t('Store.Deployment') }}
           <p>
-            要将pod部署到Artifactory存储库中，您需要使用Artifactory的REST API或Web UI。
-            例如，要使用REST API将pod部署到此存储库，请使用以下命令:
+            {{ $t('Store.podDeployment') }}
+            {{ $t('Store.podDeployExample') }}
           </p>
-          <prism-editor class="my-editor height-300" :value='"curl -u<USERNAME>:<PASSWORD> -XPUT "+baseUrl+"storages/"+folibRepository.storageId+"/"+folibRepository.id+"/<TARGET_FILE_PATH> -T <PATH_TO_FILE>"' 
+          <prism-editor class="my-editor height-300" :value='"curl -u<USERNAME>:<PASSWORD> -XPUT "+baseUrl+"storages/"+folibRepository.storageId+"/"+folibRepository.id+"/<TARGET_FILE_PATH> -T <PATH_TO_FILE>"'
           :highlight="highlighterHandle" :line-numbers="false" :readonly="true">
           </prism-editor>
         </a-timeline-item>
         <a-timeline-item color="primary">
-          Podfile插件集成
+          Podfile{{ $t('Store.PlugIntegration') }}
           <p>
-            要从您添加的 Artifactory 规范存储库中解析 Pod，您必须将以下内容添加到 Podfile 中：
+            {{ $t('Store.parsePod') }}
           </p>
           <prism-editor class="my-editor height-300" :value="'plugin  \'cocoapods-art\', :sources => [\r'+
 '  \'' + folibRepository.id + '\'\r' +
-']'" 
+']'"
           :highlight="highlighterHandle" :line-numbers="false" :readonly="true">
           </prism-editor>
           <p>
-            然后，您可以像往常一样使用安装：
+            {{ $t('Store.use') }}
           </p>
-          <prism-editor class="my-editor height-300" value="pod install" 
+          <prism-editor class="my-editor height-300" value="pod install"
           :highlight="highlighterHandle" :line-numbers="false" :readonly="true">
           </prism-editor>
         </a-timeline-item>
       </a-timeline>
       <a-timeline>
         <a-timeline-item color="primary">
-          仓库地址
-          <small>仓库使用地址</small>
+          {{ $t('Store.WarehouseAddress') }}
+          <small>{{ $t('Store.WarehouseUseAddress') }}</small>
           <p>
             {{ repositoryUrl }}
             <a-button type="link" slot="extra"
@@ -999,16 +1006,16 @@ export default {
       this.$emit("close");
     },
     copy(code) {
-      var input = document.createElement("input"); // 创建input对象
-      input.value = code; // 设置复制内容
-      document.body.appendChild(input); // 添加临时实例
-      input.select(); // 选择实例内容
-      document.execCommand("Copy"); // 执行复制
-      document.body.removeChild(input); // 删除临时实例
+      var input = document.createElement("input"); // $t('Store.创建')input$t('Store.对象')
+      input.value = code; // $t('Store.设置复制内容')
+      document.body.appendChild(input); // $t('Store.添加临时实例')
+      input.select(); // $t('Store.选择实例内容')
+      document.execCommand("Copy"); // $t('Store.执行复制')
+      document.body.removeChild(input); // $t('Store.删除临时实例')
       // console.log(url)
       setTimeout(() => {
         this.$notification.success({
-          message: '复制成功'
+          message: this.$t('Store.CopySuccess')
         })
       }, 100)
     },

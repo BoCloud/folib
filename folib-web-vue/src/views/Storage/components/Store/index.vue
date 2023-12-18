@@ -25,7 +25,7 @@
                   <div class="avatar-info">
                     <a-tooltip placement="topLeft">
                       <template slot="title">
-                        点击可进入浏览页面
+                        {{ $t('Store.GotoBrowsePage') }}
                       </template>
                       <a :href="baseUrl +
                         'api/browse/' +
@@ -38,10 +38,10 @@
                       </a>
                     </a-tooltip>
                     <a-descriptions title="" :column="1" class="repo-address">
-                      <a-descriptions-item label="浏览地址">
+                      <a-descriptions-item :label="$t('Store.BrowseAddress')">
                         <a-tooltip placement="topLeft">
                           <template slot="title">
-                            仓库浏览地址，点击可进入浏览页面
+                            {{ $t('Store.WarehouseBrowseAddress') }}
                           </template>
                           <a :href="baseUrl +
                             'api/browse/' +
@@ -64,14 +64,14 @@
                               'api/browse/' +
                               folibRepository.storageId +
                               '/' +
-                              folibRepository.id 
+                              folibRepository.id
                             )" />
                         </a>
                       </a-descriptions-item>
-                      <a-descriptions-item label="使用地址">
+                      <a-descriptions-item :label="$t('Store.UseAddress')">
                         <a-tooltip>
                           <template slot="title">
-                            仓库使用地址，具体使用方法，请看页面右侧使用帮助
+                            {{ $t('Store.WarehouseUsageAddress') }}
                           </template>
                           <a>
                             <p class="copy-p">
@@ -99,30 +99,30 @@
                   ">
                   <a v-if="uploadEnabled && folibRepository.layout === 'rpm'">
                     <small style="padding-right: 20px" @click="handleRpmUpload">
-                      上传
+                      {{ $t('Store.Upload') }}
                       <a-icon type="cloud-upload" />
                     </small>
                   </a>
                   <a v-if="uploadEnabled && folibRepository.layout === 'Maven 2'"><small style="padding-right: 20px"
                       @click="handleMavenUpload">
-                      上传
+                    {{ $t('Store.Upload') }}
                       <a-icon type="cloud-upload" />
                     </small>
                   </a>
                   <a v-if="uploadEnabled && folibRepository.layout !== 'rpm'"><small style="padding-right: 20px" @click="handleUpload">
-                      批量上传
+                      ${{ t('BatchUpload') }}
                       <a-icon type="cloud-upload" />
                     </small>
                   </a>
                   <a v-if="folibRepository.layout !== 'Raw'">
                     <small style="padding-right: 20px" @click="UsedHelperVisible">
-                      使用帮助
+                      {{ $t('Store.UseHelp') }}
                       <a-icon type="question-circle" theme="filled" />
                     </small>
                   </a>
                   <div v-if="$store.state.user.token && folibRepository.type !== 'group'">
                     <span class="mr-15">{{
-                      scan.onScan ? "扫描开启" : "扫描关闭"
+                      scan.onScan ? $t('Store.ScanOn') : $t('Store.ScanOff')
                     }}</span>
                     <a-switch default-checked v-model="scan.onScan" @change="scannerChange" />
                   </div>
@@ -139,7 +139,7 @@
         <a-card :bordered="false" style="max-height: 1024px; min-height: 454px; overflow-y: auto" class="header-solid"
           :bodyStyle="{ paddingTop: 0, paddingBottom: 0 }">
           <template #title>
-            <h6 class="font-semibold m-0">包列表 <a class="ml-10" @click="reload()">
+            <h6 class="font-semibold m-0">{{ $t('Store.PacketList') }} <a class="ml-10" @click="reload()">
                 <a-icon type="reload" /></a></h6>
           </template>
           <a-directory-tree :replaceFields="{
@@ -150,7 +150,6 @@
           </a-directory-tree>
         </a-card>
       </a-col>
-
       <a-col :span="24" :md="14" class="mb-24">
         <a-card :bordered="false" class="header-solid h-full card-profile-information"
           :bodyStyle="{ paddingTop: 0, paddingBottom: '16px' }" :headStyle="{ paddingRight: 0 }">
@@ -172,7 +171,7 @@
                       <a-space :size="1" class="avatar-chips">
                         <template v-if="scanReport.vulnerabilitesCount > 0">
                           <a-tooltip>
-                            <template slot="title">严重</template>
+                            <template slot="title">{{ $t('Store.Seriousness') }}</template>
                             <div class="">
                               <a-avatar :size="24" :src="'images/folib/critical.svg'" />
                               <span class="mb-0 text-dark">{{
@@ -182,7 +181,7 @@
                           </a-tooltip>
 
                           <a-tooltip>
-                            <template slot="title">高危</template>
+                            <template slot="title">{{ $t('Store.HighRisk') }}</template>
                             <div class="">
                               <a-avatar :size="24" :src="'images/folib/high.svg'" />
                               <span class="mb-0 text-dark">{{
@@ -192,7 +191,7 @@
                           </a-tooltip>
 
                           <a-tooltip>
-                            <template slot="title">中危</template>
+                            <template slot="title">{{ $t('Store.MediumRisk') }}</template>
                             <div class="">
                               <a-avatar :size="24" :src="'images/folib/medium.svg'" />
                               <span class="mb-0 text-dark">{{
@@ -202,7 +201,7 @@
                           </a-tooltip>
 
                           <a-tooltip>
-                            <template slot="title">低危</template>
+                            <template slot="title">{{ $t('Store.LowRisk') }}</template>
                             <div class="">
                               <a-avatar :size="24" :src="'images/folib/low.svg'" />
                               <span class="mb-0 text-dark">{{
@@ -213,7 +212,7 @@
                         </template>
                         <template v-else>
                           <a-tooltip>
-                            <template slot="title">健康</template>
+                            <template slot="title">{{ $t('Store.Health') }}</template>
                             <a-avatar :size="24" :src="'images/folib/healthy.svg'" />
                           </a-tooltip>
                         </template>
@@ -221,7 +220,7 @@
                     </span>
                     <span v-if="scanReport.fail">
                       <a-tag color="#f50">
-                        扫描失败
+                        {{ $t('Store.ScanFailure') }}
                       </a-tag>
                     </span>
                   </a-col>
@@ -230,7 +229,7 @@
               <a-col :span="8" class="text-right">
                 <a-dropdown v-if="$store.state.user.token && currentTreeNode.url" class="mr-30" placement="bottomCenter">
                   <span style="font-size: 16px; cursor: pointer">
-                    更多
+                    {{ $t('Store.More') }}
                     <a-icon type="more" class="text-muted" style="font-size: 16px" />
                   </span>
                   <template #overlay>
@@ -239,33 +238,33 @@
                         <a-icon type="eye" />
                         {{
                           currentFileDetial.listTree
-                          ? "包"
+                          ? $t('Store.Package')
                           : viewCodes
-                            ? "文件"
+                            ? $t('Store.Document')
                             : folibRepository.layout === "Docker"
-                              ? "详情"
+                              ? $t('Store.Details')
                               : ""
-                        }}预览
+                        }}{{ $t('Store.Preview') }}
                       </a-menu-item>
                       <a-menu-item key="2" v-if="copyEnabled">
-                        <a-icon type="copy" />复制
+                        <a-icon type="copy" />{{ $t('Store.Copy') }}
                       </a-menu-item>
                       <a-menu-item key="3" v-if="moveEnabled">
-                        <a-icon type="swap" />移动
+                        <a-icon type="swap" />{{ $t('Store.Move') }}
                       </a-menu-item>
                       <a-menu-item key="4" v-if="deleteEnabled">
-                        <a-popconfirm title="确定要删除吗？" placement="topLeft" okType="danger" ok-text="确定" cancel-text="取消"
+                        <a-popconfirm :title="$t('Store.SuerDelete')" placement="topLeft" okType="danger" :ok-text="$t('Store.Confirm')" :cancel-text="$t('Store.Cancel')"
                           @confirm="deletePackageHandle">
-                          <a-icon type="delete" />删除
+                          <a-icon type="delete" />{{ $t('Store.Delete') }}
                         </a-popconfirm>
                       </a-menu-item>
                       <a-menu-item key="5" v-if="dispatchEnabled">
-                        <a-icon type="retweet" />分发
+                        <a-icon type="retweet" />{{ $t('Store.Distribute') }}
                       </a-menu-item>
 
                       <a-menu-item key="6"
                         v-if="folibRepository.layout !== 'Docker' && currentTreeNode && currentTreeNode.type === 'file' && currentFileDetial && currentFileDetial.artifact">
-                        <a-icon type="download" />下载
+                        <a-icon type="download" />{{ $t('Store.DownLoad') }}
                       </a-menu-item>
                     </a-menu>
                   </template>
@@ -284,7 +283,7 @@
                       <a-space :size="1" class="avatar-chips">
                         <template v-if="scanReport.vulnerabilitesCount > 0">
                           <a-tooltip>
-                            <template slot="title">严重</template>
+                            <template slot="title">{{ $t('Store.Seriousness') }}</template>
                             <div class="">
                               <a-avatar :size="24" :src="'images/folib/critical.svg'" />
                               <span class="mb-0 text-dark">{{
@@ -294,7 +293,7 @@
                           </a-tooltip>
 
                           <a-tooltip>
-                            <template slot="title">高危</template>
+                            <template slot="title">{{ $t('Store.HighRisk') }}</template>
                             <div class="">
                               <a-avatar :size="24" :src="'images/folib/high.svg'" />
                               <span class="mb-0 text-dark">{{
@@ -304,7 +303,7 @@
                           </a-tooltip>
 
                           <a-tooltip>
-                            <template slot="title">中危</template>
+                            <template slot="title">{{ $t('Store.MediumRisk') }}</template>
                             <div class="">
                               <a-avatar :size="24" :src="'images/folib/medium.svg'" />
                               <span class="mb-0 text-dark">{{
@@ -314,7 +313,7 @@
                           </a-tooltip>
 
                           <a-tooltip>
-                            <template slot="title">低危</template>
+                            <template slot="title">{{ $t('Store.LowRisk') }}</template>
                             <div class="">
                               <a-avatar :size="24" :src="'images/folib/low.svg'" />
                               <span class="mb-0 text-dark">{{
@@ -325,7 +324,7 @@
                         </template>
                         <template v-else>
                           <a-tooltip>
-                            <template slot="title">健康</template>
+                            <template slot="title">{{ $t('Store.Health') }}</template>
                             <a-avatar :size="24" :src="'images/folib/healthy.svg'" />
                           </a-tooltip>
                         </template>
@@ -333,56 +332,67 @@
                     </span>
                     <span v-if="scanReport.fail">
                       <a-tag color="#f50">
-                        扫描失败
+                        {{ $t('Store.ScanFailure') }}
                       </a-tag>
                     </span>
                   </a-col>
                 </a-row>
               </a-col>
+
+
               <a-col :span="8" class="text-right">
                 <a-dropdown v-if="$store.state.user.token && currentTreeNode.url" class="mr-45">
                   <span style="font-size: 16px; cursor: pointer">
-                    更多
+                    {{ $t('Store.More') }}
                     <a-icon type="more" class="text-muted" style="font-size: 16px" />
                   </span>
                   <template #overlay>
+
+
                     <a-menu slot="overlay" @click="handleMenuClick">
                       <a-menu-item key="1" v-if="currentFileDetial">
                         <a-icon type="eye" />
                         {{
                           currentFileDetial.listTree
-                          ? "包"
-                          : viewCodes
-                            ? "文件"
+                          ? $t('Store.Package')
+                              : viewCodes
+                            ? $t('Store.Document')
                             : folibRepository.layout === "Docker"
-                              ? "详情"
+                              ? $t('Store.Details')
                               : ""
-                        }}预览
+                        }}{{ $t('Store.Preview') }}
                       </a-menu-item>
                       <a-menu-item key="2" v-if="copyEnabled">
-                        <a-icon type="copy" />复制
+                        <a-icon type="copy" />
+                        {{ $t('Store.Copy') }}
                       </a-menu-item>
                       <a-menu-item key="3" v-if="moveEnabled">
-                        <a-icon type="swap" />移动
+                        <a-icon type="swap" />
+                        {{ $t('Store.Move') }}
                       </a-menu-item>
                       <a-menu-item key="4" v-if="deleteEnabled">
-                        <a-popconfirm title="确定要删除吗？" placement="topLeft" okType="danger" ok-text="确定" cancel-text="取消"
+                        <a-popconfirm :title="$t('Store.SuerDelete')" placement="topLeft" okType="danger" :ok-text="$t('Store.Confirm')" :cancel-text="$t('Store.Cancel')"
                           @confirm="deletePackageHandle">
-                          <a-icon type="delete" />删除
+                          <a-icon type="delete" />
+                          {{ $t('Store.Delete') }}
                         </a-popconfirm>
                       </a-menu-item>
                       <a-menu-item key="5" v-if="dispatchEnabled">
-                        <a-icon type="retweet" /> 分发
+                        <a-icon type="retweet" />
+                        {{ $t('Store.Distribute') }}
                       </a-menu-item>
 
                       <a-menu-item key="6"
                         v-if="folibRepository.layout !== 'Docker' && currentTreeNode && currentTreeNode.type === 'file' && currentFileDetial && currentFileDetial.artifact">
-                        <a-icon type="download" />下载
+                        <a-icon type="download" />
+                        {{ $t('Store.DownLoad') }}
                       </a-menu-item>
                     </a-menu>
                   </template>
                 </a-dropdown>
               </a-col>
+
+
             </a-row>
           </template>
 
@@ -442,7 +452,7 @@
                 </a-timeline-item>
               </a-timeline>
             </a-tab-pane>
-            <a-tab-pane key="2" tab="制作历史">
+            <a-tab-pane key="2" :tab="$t('Store.ProductionHistory')">
               <a-timeline>
                 <a-timeline-item color="primary" v-for="(key, index) in currentManifest.history" :key="index">
                   {{ formateDate(key.created) }}
@@ -467,16 +477,16 @@
       <a-form :form="operationForm" ref="operationForm" layout="vertical" @submit.prevent="handleOperationSubmit">
         <a-row :gutter="[24]">
           <a-col :span="24">
-            <a-form-item class="tags-field mb-10" label="目标仓库" :colon="false" ref="targetRepositories"
+            <a-form-item class="tags-field mb-10" :label="$t('Store.TargetWarehouse')" :colon="false" ref="targetRepositories"
               prop="targetRepositories">
-              <gb-ant-select-two-cascader allowClear placeholder="请选择目标仓库" v-decorator="[
+              <gb-ant-select-two-cascader allowClear :placeholder="$t('Store.SelectTargetWarehouse')" v-decorator="[
                 'targetRepositories',
                 {
                   initialValue: [],
                   rules: [
                     {
                       required: true,
-                      message: '请选择目标仓库',
+                      message: $t('Store.SelectTargetWarehouse'),
                       type: 'array',
                     },
                   ],
@@ -499,124 +509,126 @@
               ]" style="width:10%;" @change="customChange">
               </a-switch>
             </a-form-item> -->
-            <a-form-item class="tags-field mb-10" v-if="!custom" label="目标目录" prop="path" :colon="false">
+            <a-form-item class="tags-field mb-10" v-if="!custom" :label="$t('Store.TargetDirectory')" prop="path" :colon="false">
               <a-input v-decorator="[
                 'path',
                 {
-                  rules: [{ required: true, message: '请输入目标目录' }],
+                  rules: [{ required: true, message: $t('Store.TargetDirectory') }],
                 },
-              ]" :disabled="true" placeholder="请输入目标目录">
+              ]" :disabled="true" :placeholder="$t('Store.TargetDirectory')">
               </a-input>
             </a-form-item>
-            <a-form-item class="tags-field mb-10" v-if="custom" label="目标目录" prop="path" :colon="false">
+            <a-form-item class="tags-field mb-10" v-if="custom" :label="$t('Store.TargetDirectory')" prop="path" :colon="false">
               <a-input v-decorator="[
                 'path',
                 {
-                  rules: [{ required: true, message: '请输入目标目录' }],
+                  rules: [{ required: true, message: $t('Store.InputTargetDirectory') }],
                 },
-              ]" :disabled="false" placeholder="请输入目标目录">
+              ]" :disabled="false" :placeholder="$t('Store.InputTargetDirectory')">
               </a-input>
             </a-form-item>
           </a-col>
           <a-col :span="24" class="text-center">
-            <a-button key="submit" class="px-30" size="small" type="primary" htmlType="submit">提交</a-button>
-            <a-button key="back" @click="operationFormModalClose()" class="px-30 ml-10" size="small">取消</a-button>
+            <a-button key="submit" class="px-30" size="small" type="primary" htmlType="submit">{{ $t('Store.Submit') }}</a-button>
+            <a-button key="back" @click="operationFormModalClose()" class="px-30 ml-10" size="small">{{ $t('Store.Cancel') }}</a-button>
           </a-col>
         </a-row>
       </a-form>
     </a-modal>
     <!--    rpm 上传表单 start-->
-    <a-modal v-model="showRpmUploadFormModal" :footer="null" :forceRender="true" :centered="true" title="上传"
+    <a-modal v-model="showRpmUploadFormModal" :footer="null" :forceRender="true" :centered="true" :title="$t('Store.Upload')"
       on-ok="showRpmUploadFormModal = false">
       <a-form :form="rpmUploadForm" ref="rpmUploadForm" layout="horizontal" @submit.prevent="handleRpmUploadSubmit">
         <a-row :gutter="[24]">
           <a-col :span="24">
-            <a-form-item class="tags-field mb-10" label="目标仓库" prop="repostoryId" :colon="false">
+            <a-form-item class="tags-field mb-10" :label="$t('Store.TargetWarehouse')" prop="repostoryId" :colon="false">
               <a-input v-decorator="[
                 'repostoryId',
                 {
-                  rules: [{ required: true, message: '请输入目标仓库' }],
+                  rules: [{ required: true, message: $t('Store.InputWarehouse') }],
                 },
-              ]" :disabled="true" placeholder="请输入目标仓库">
+              ]" :disabled="true" :placeholder="$t('Store.InputWarehouse')">
               </a-input>
             </a-form-item>
-            <a-form-item label="选择文件">
+            <a-form-item :label="$t('Store.SelectFile')">
               <a-upload v-decorator="[
                 'files',
                 {
-                  rules: [{ required: true, message: '请选择文件' }],
+                  rules: [{ required: true, message: $t('Store.PleaseSelectFile') }],
                   valuePropName: 'fileList',
                   getValueFromEvent: normFile,
                 },
               ]" name="files" :multiple="true" :beforeUpload="beforeUpload" list-type="text" accept=".rpm">
                 <a-button>
-                  <a-icon type="upload" />选择文件 </a-button>
+                  <a-icon type="upload" />
+                  {{ $t('Store.SelectFile') }} </a-button>
               </a-upload>
             </a-form-item>
           </a-col>
           <a-col :span="24" class="text-center">
-            <a-button key="submit" class="px-30" size="small" type="primary" htmlType="submit">上传</a-button>
-            <a-button key="back" @click="uploadRpmFormModalClose()" class="px-30 ml-10" size="small">取消</a-button>
+            <a-button key="submit" class="px-30" size="small" type="primary" htmlType="submit">{{ $t('Store.Upload') }}</a-button>
+            <a-button key="back" @click="uploadRpmFormModalClose()" class="px-30 ml-10" size="small">{{ $t('Store.Cancel') }}</a-button>
           </a-col>
         </a-row>
       </a-form>
     </a-modal>
     <!--   rpm 上传表单 end -->
     <!-- raw 、maven、npm 上传 -->
-    <a-modal v-model="showUploadFormModal" :footer="null" :forceRender="true" :centered="true" title="上传"
+    <a-modal v-model="showUploadFormModal" :footer="null" :forceRender="true" :centered="true" :title="$t('Store.Upload')"
       on-ok="showUploadFormModal = false">
       <a-form :form="uploadForm" ref="uploadForm" layout="horizontal" @submit.prevent="handleUploadSubmit">
         <a-row :gutter="[24]">
           <a-col :span="24">
-            <a-form-item class="tags-field mb-10" label="目标仓库" prop="repostoryId" :colon="false">
+            <a-form-item class="tags-field mb-10" :label="$t('Store.TargetWarehouse')" prop="repostoryId" :colon="false">
               <a-input v-decorator="[
                 'repostoryId',
                 {
-                  rules: [{ required: true, message: '请输入目标仓库' }],
+                  rules: [{ required: true, message: $t('Store.InputWarehouse') }],
                 },
-              ]" :disabled="true" placeholder="请输入目标仓库">
+              ]" :disabled="true" :placeholder="$t('Store.InputWarehouse')">
               </a-input>
             </a-form-item>
-            <a-form-item label="上传方式" v-if="folibRepository.layout === 'Maven 2'">
+            <a-form-item :label="$t('Store.UploadMode')" v-if="folibRepository.layout === 'Maven 2'">
               <a-radio-group v-decorator="[
                 'type',
                 {
-                  rules: [{ required: true, message: '请选择上传方式' }],
+                  rules: [{ required: true, message: $t('Store.SelectUploadMode') }],
                 },
               ]" @change="uploadTypeChange">
                 <a-radio :value="1">
-                  制品
+                  {{ $t('Store.Product') }}
                 </a-radio>
                 <a-radio :value="2">
-                  压缩包
+                  {{ $t('Store.ZipUpload') }}
                 </a-radio>
               </a-radio-group>
               <div>
-                <span v-if="uploadType === 1">此方式支持多个制品包批量上传，一次不能超过10个文件</span>
-                <span v-if="uploadType === 2">此方式支持上传一个ZIP文件格式的压缩包，大小不能超过{{ this.uploadMaxSize.size + this.uploadMaxSize.unit }}</span>
+                <span v-if="uploadType === 1">{{ $t('Store.ProductUpload') }}</span>
+                <span v-if="uploadType === 2">{{ $t('Store.ZipFileUpload') }}{{ this.uploadMaxSize.size + this.uploadMaxSize.unit }}</span>
               </div>
             </a-form-item>
-            <a-form-item label="选择文件">
+            <a-form-item :label="$t('Store.SelectFile')">
               <a-upload v-decorator="[
                 'files',
                 {
-                  rules: [{ required: true, message: '请选择文件' }],
+                  rules: [{ required: true, message: $t('Store.PleaseSelectFile') }],
                   valuePropName: 'fileList',
                   getValueFromEvent: normFile,
                 },
               ]" name="files" :multiple="uploadType === 1 ? true : false" :beforeUpload="beforeUpload" list-type="text"
                 :accept="uploadType === 1 ? (folibRepository.layout === 'Raw' ? '*' : folibRepository.layout === 'npm' ? '.tgz' : '.jar,.war,.pom') : ('.zip')">
                 <a-button>
-                  <a-icon type="upload" />选择文件</a-button>
+                  <a-icon type="upload" />
+                  {{ $t('Store.SelectFile') }}</a-button>
               </a-upload>
             </a-form-item>
             <a-form-item class="tags-field mb-10" prop="targetPath" :colon="false"
               v-if="(folibRepository.layout !== 'Maven 2' && folibRepository.layout !== 'npm') || uploadType === 2">
               <template slot="label">
-                目标目录
+                {{ $t('Store.TargetDirectory') }}
                 <a-popover placement="topLeft" v-if="uploadType === 2">
                   <template slot="content">
-                    <p class="mb-0">压缩包将会解压到仓库内的此目录下</p>
+                    <p class="mb-0">{{ $t('Store.unzippedDirectory') }}</p>
                   </template>
                   <a class="ml-5">
                     <a-icon type="question-circle" theme="filled" /></a>
@@ -626,65 +638,65 @@
                 'targetPath',
                 {
                   rules: [
-                    { required: false, message: '请输入目标目录' }
+                    { required: false, message: $t('Store.InputTargetDirectory') }
                   ],
                 },
-              ]" placeholder="请输入目标目录">
+              ]" :placeholder="$t('Store.InputTargetDirectory')">
               </a-input>
             </a-form-item>
           </a-col>
           <a-col :span="24" class="text-center">
-            <a-button key="submit" class="px-30" size="small" type="primary" htmlType="submit">上传</a-button>
-            <a-button key="back" @click="uploadFormModalClose()" class="px-30 ml-10" size="small">取消</a-button>
+            <a-button key="submit" class="px-30" size="small" type="primary" htmlType="submit">{{ $t('Store.Upload') }}</a-button>
+            <a-button key="back" @click="uploadFormModalClose()" class="px-30 ml-10" size="small">{{ $t('Store.Cancel') }}</a-button>
           </a-col>
         </a-row>
       </a-form>
     </a-modal>
-    <!-- 分发 -->
+    <!--分发 -->
     <a-modal v-model="showOperationDispatchFormModal" width="50%" :footer="null" :forceRender="true" :centered="true"
       :title="operationTitle">
       <a-form :form="operationForm" ref="operationForm" layout="vertical" @submit.prevent="handleOperationSubmit">
         <a-row :gutter="[24]">
           <a-col :span="24">
-            <a-form-item class="tags-field mb-10" label="节点类型" :colon="true" v-if="this.folibRepository.layout === 'Raw'">
+            <a-form-item class="tags-field mb-10" :label="$t('Store.NodeType')" :colon="true" v-if="this.folibRepository.layout === 'Raw'">
               <a-radio-group v-decorator="[
                 'type',
                 {
-                  rules: [{ required: true, message: '请选择节点类型' }],
+                  rules: [{ required: true, message: $t('Store.NodeTypeSelect') }],
                 },
               ]"
               @change="typeChange">
                 <a-radio :value="1">
-                  <span>内部节点</span>
+                  <span>{{ $t('Store.InternalNode') }}</span>
                   <a-popover placement="topLeft">
                     <template slot="content">
-                      <p class="mb-0">{{ instanceName + '制品库节点'}}</p>
+                      <p class="mb-0">{{ instanceName + $t('Store.ProductWarehouseNode') }}</p>
                     </template>
                     <a class="ml-5"><a-icon type="question-circle" theme="filled" /></a>
                   </a-popover>
                 </a-radio>
                 <a-radio :value="2">
-                  <span>外部节点</span>
+                  <span>{{ $t('Store.ExternalNode') }}</span>
                   <a-popover placement="topLeft">
                     <template slot="content">
-                      <p class="mb-0">其他类型制品库节点</p>
+                      <p class="mb-0">{{ $t('Store.OtherTypeNode') }}</p>
                     </template>
                     <a class="ml-5"><a-icon type="question-circle" theme="filled" /></a>
                   </a-popover>
                 </a-radio>
               </a-radio-group>
             </a-form-item>
-            <a-form-item class="tags-field mb-10" label="目标仓库" :colon="false" ref="targetRepositories"
+            <a-form-item class="tags-field mb-10" :label="$t('Store.TargetWarehouse')" :colon="false" ref="targetRepositories"
               prop="targetRepositories">
               <div class="selectdrop">
-                <gb-ant-select-multiple-cascader allowClear style="width:100%;" placeholder="请选择目标仓库" v-decorator="[
+                <gb-ant-select-multiple-cascader allowClear style="width:100%;" :placeholder="$t('Store.SelectTargetWarehouse')" v-decorator="[
                   'targetRepositories',
                   {
                     initialValue: [],
                     rules: [
                       {
                         required: true,
-                        message: '请选择目标仓库',
+                        message: $t('Store.SelectTargetWarehouse'),
                         type: 'array',
                       },
                     ],
@@ -694,17 +706,17 @@
   value: 'key',
   text: 'key',
   children: 'children'
-}" allText="全选" noDataText="暂无数据" dropdownClassName="customer-multiple-cascader"
+}" :allText="$t('Store.selectAll')" :noDataText="$t('Store.NoData')" dropdownClassName="customer-multiple-cascader"
                   :treeData="repositories" @handleCheckboxChange="handleCheckboxChange" v-if="artifactoryType === 1" />
 
-                <gb-ant-select-two-cascader allowClear style="width:100%;" placeholder="请选择目标仓库" v-decorator="[
+                <gb-ant-select-two-cascader allowClear style="width:100%;" :placeholder="$t('Store.SelectTargetWarehouse')" v-decorator="[
                 'targetRepositories',
                 {
                   initialValue: [],
                   rules: [
                     {
                       required: true,
-                      message: '请选择目标仓库',
+                      message: $t('Store.SelectTargetWarehouse'),
                       type: 'array',
                     },
                   ],
@@ -714,32 +726,32 @@
   value: 'key',
   text: 'key',
   children: 'children'
-}" allText="全选" noDataText="暂无数据" dropdownClassName="customer-multiple-cascader"
+}" :allText="$t('Store.selectAll')" :noDataText="$t('Store.NoData')" dropdownClassName="customer-multiple-cascader"
                   :treeData="externalNodeRepositories"  v-if="artifactoryType === 2" />
               </div>
             </a-form-item>
-            <a-form-item class="tags-field mb-10" v-if="!custom" label="目标目录" prop="path" :colon="false">
+            <a-form-item class="tags-field mb-10" v-if="!custom" :label="$t('Store.TargetDirectory')" prop="path" :colon="false">
               <a-input v-decorator="[
                 'path',
                 {
-                  rules: [{ required: true, message: '请输入目标目录' }],
+                  rules: [{ required: true, message: $t('Store.TargetDirectory') }],
                 },
-              ]" :disabled="true" placeholder="请输入目标目录">
+              ]" :disabled="true" :placeholder="$t('Store.InputTargetDirectory')">
               </a-input>
             </a-form-item>
-            <a-form-item class="tags-field mb-10" v-if="custom" label="目标目录" prop="path" :colon="false">
+            <a-form-item class="tags-field mb-10" v-if="custom" :label="$t('Store.TargetDirectory')" prop="path" :colon="false">
               <a-input v-decorator="[
                 'path',
                 {
-                  rules: [{ required: true, message: '请输入目标目录' }],
+                  rules: [{ required: true, message: $t('Store.InputTargetDirectory') }],
                 },
-              ]" :disabled="false" placeholder="请输入目标目录">
+              ]" :disabled="false" :placeholder="$t('Store.InputTargetDirectory')">
               </a-input>
             </a-form-item>
           </a-col>
           <a-col :span="24" class="text-center">
-            <a-button key="submit" class="px-30" size="small" type="primary" htmlType="submit">提交</a-button>
-            <a-button key="back" @click="operationFormModalClose()" class="px-30 ml-10" size="small">取消</a-button>
+            <a-button key="submit" class="px-30" size="small" type="primary" htmlType="submit">{{ $t('Store.Submit') }}</a-button>
+            <a-button key="back" @click="operationFormModalClose()" class="px-30 ml-10" size="small">{{ $t('Store.Cancel') }}</a-button>
           </a-col>
         </a-row>
       </a-form>
@@ -910,19 +922,19 @@ export default {
       searchViewCodes: null,
       columns: [
         {
-          title: '所属仓库',
+          title: this.$t('Store.OwnedWarehouse'),
           dataIndex: 'repositoryId',
           scopedSlots: { customRender: 'repositoryId' },
           width: 150
         },
         {
-          title: '制品路径',
+          title: this.$t('Store.ProductPath'),
           dataIndex: 'path',
           scopedSlots: { customRender: 'path' },
           width: 550
         },
         {
-          title: '创建时间',
+          title: this.$t('Store.CreationTime'),
           dataIndex: 'created',
           sorter: true,
           sortDirections: ['descend', 'ascend'],
@@ -930,21 +942,21 @@ export default {
           width: 200
         },
         {
-          title: '最近使用时间',
+          title: this.$t('Store.LastUsedTime'),
           dataIndex: 'lastUsed',
           sorter: true,
           scopedSlots: { customRender: 'lastUsed' },
           width: 200
         },
         {
-          title: '下载次数',
+          title: this.$t('Store.DownloadTimes'),
           dataIndex: 'downloadCount',
           sorter: true,
           scopedSlots: { customRender: 'created' },
           width: 200
         },
         {
-          title: '制品大小',
+          title: this.$t('Store.ProductSize'),
           dataIndex: 'sizeInBytes',
           sorter: true,
           scopedSlots: { customRender: 'sizeInBytes' },
@@ -1015,7 +1027,7 @@ export default {
       insertOrUpdateRules(this.scan).then(res => {
         setTimeout(() => {
           this.$notification.success({
-            message: this.scan.onScan ? '开启扫描' : '关闭扫描'
+            message: this.scan.onScan ? this.$t('Store.ScanOn') : this.$t('Store.ScanOff')
           })
         }, 100)
       })
@@ -1036,14 +1048,14 @@ export default {
       if (this.folibRepository.status.indexOf('Out of Service') !== -1)
       {
         this.$notification.warning({
-          message: '该仓库已关闭服务'
+          message: this.$t('Store.ServiceShutdown')
         })
         return false
       }
       if (!this.folibRepository.allowsDirectoryBrowsing)
       {
         this.$notification.warning({
-          message: '该仓库目录浏览未开启'
+          message: this.$t('Store.BrowseNotEnabled')
         })
         return false
       }
@@ -1079,7 +1091,7 @@ export default {
       // console.log(url)
       setTimeout(() => {
         this.$notification.success({
-          message: '复制成功'
+          message: this.$t('Store.CopySuccess')
         })
       }, 100)
     },
@@ -1140,7 +1152,7 @@ export default {
     message (type, message) {
       if (!message)
       {
-        message = '操作成功'
+        message = this.$t('Store.OperationSuccess')
       }
       this.$notification[type]({
         message: message,
@@ -1155,7 +1167,7 @@ export default {
           if (values.files.length > 10)
           {
             this.$notification['warning']({
-              message: '一次上传不能超过10个文件',
+              message: this.$t('Store.UploadCount'),
               description: ''
             })
             return false
@@ -1184,7 +1196,7 @@ export default {
               item.originFileObj
             )
           })
-          this.successMsg('请至页面右上角上传进度中查看')
+          this.successMsg(this.$t('Store.CheckProgress'))
           this.uploadRpmFormModalClose()
         }
       })
@@ -1218,7 +1230,7 @@ export default {
           if (!errStatusArr.includes(err.response.status))
           {
             this.$notification['error']({
-              message: '错误编码：' + err.response.status,
+              message: this.$t('Store.EncodingError') + err.response.status,
               description: ''
             })
           }
@@ -1245,7 +1257,7 @@ export default {
             if (values.files.length > 1)
             {
               this.$notification['warning']({
-                message: '只能上传一个压缩包',
+                message: this.$t('Store.UploadZipPackage'),
                 description: ''
               })
               return false
@@ -1255,7 +1267,7 @@ export default {
             if (sizeLimit)
             {
               this.$notification.warning({
-                message: '文件大小不能超过' + this.uploadMaxSize.size + this.uploadMaxSize.unit
+                message: this.$t('Store.fileSize') + this.uploadMaxSize.size + this.uploadMaxSize.unit
               })
               return false
             }
@@ -1265,7 +1277,7 @@ export default {
             if (fileFamart !== 'zip')
             {
               this.$notification.warning({
-                message: '必须上传zip格式的文件!'
+                message: this.$t('Store.ZIPFormat')
               })
               return false
             }
@@ -1288,7 +1300,7 @@ export default {
             if (values.files.length > 10)
             {
               this.$notification['warning']({
-                message: '一次上传不能超过10个文件',
+                message: this.$t('Store.UploadCount'),
                 description: ''
               })
               return false
@@ -1296,7 +1308,7 @@ export default {
             if (values.targetPath && values.targetPath.startsWith('/'))
             {
               this.$notification['warning']({
-                message: '目标目录不能以/开头',
+                message: this.$t('Store.DirectoryFormat'),
                 description: ''
               })
               return false
@@ -1326,7 +1338,7 @@ export default {
               )
             })
           }
-          this.successMsg('请至页面右上角上传进度中查看')
+          this.successMsg(this.$t('Store.CheckProgress'))
           this.uploadFormModalClose()
         }
       })
@@ -1354,7 +1366,7 @@ export default {
           if (!errStatusArr.includes(err.response.status))
           {
             this.$notification['error']({
-              message: '错误编码：' + err.response.status,
+              message: this.$t('Store.EncodingError') + err.response.status,
               description: ''
             })
           }
@@ -1380,7 +1392,7 @@ export default {
           if (!errStatusArr.includes(err.response.status))
           {
             this.$notification['error']({
-              message: '错误编码：' + err.response.status,
+              message: this.$t('Store.EncodingError') + err.response.status,
               description: ''
             })
           }
@@ -1609,10 +1621,10 @@ export default {
         )
         this.operationTitle =
           active.key === '2'
-            ? '复制 ' + this.currentTreeNode.artifactPath
-            : '移动  ' + this.currentTreeNode.artifactPath
+            ? this.$t('Store.Copy')  + this.currentTreeNode.artifactPath
+            : this.$t('Store.Move')  + this.currentTreeNode.artifactPath
         this.customTitle =
-          active.key === '2' ? '复制到自定义目录' : '移动到自定义目录'
+          active.key === '2' ? this.$t('Store.CopyCustomDirectory') : this.$t('Store.MoveCustomDirectory')
       } else if (active.key === '4')
       {
         //删除
@@ -1626,9 +1638,9 @@ export default {
           this.folibRepository.policy
         )
         this.getExternalNodeRepositories()
-        this.operationTitle = '分发'
-        this.customTitle = '分发到指定目录'
-        // 下载  
+        this.operationTitle = this.$t('Store.Distribute')
+        this.customTitle = this.$t('Store.DistributeCustomDirectory')
+        // 下载
       } else if (active.key === '6')
       {
         let url = this.currentTreeNode.url
@@ -1659,7 +1671,7 @@ export default {
           values.targetRepositories.forEach(item => {
             let split = item.split(',')
             let arrayLength = split.length
-            if (this.operationTitle.indexOf('分发') !== -1)
+            if (this.operationTitle.indexOf(this.$t('Store.Distribute')) !== -1)
             {
               let json = {}
               if (this.artifactoryType === 1) {
@@ -1709,11 +1721,11 @@ export default {
             layout: this.folibRepository.layout,
             policy: this.folibRepository.policy
           }
-          if (this.operationTitle.indexOf('复制') !== -1)
+          if (this.operationTitle.indexOf(this.$t('Store.Copy')) !== -1)
           {
             artifactCopy(data)
               .then(res => {
-                this.successMsg('复制中，请稍候查看')
+                this.successMsg(this.$t('Store.Copying'))
                 this.operationFormModalClose()
                 this.reload()
               })
@@ -1724,11 +1736,11 @@ export default {
                 })
               })
               .finally(() => { })
-          } else if (this.operationTitle.indexOf('移动') !== -1)
+          } else if (this.operationTitle.indexOf(this.$t('Store.Move')) !== -1)
           {
             artifactMove(data)
               .then(res => {
-                this.successMsg('移动中，请稍候查看')
+                this.successMsg(this.$t('Store.Moving'))
                 this.operationFormModalClose()
                 this.reload()
               })
@@ -1739,11 +1751,11 @@ export default {
                 })
               })
               .finally(() => { })
-          } else if (this.operationTitle.indexOf('分发') !== -1)
+          } else if (this.operationTitle.indexOf(this.$t('Store.Distribute')) !== -1)
           {
             artifactDispatch(dispatchData)
               .then(res => {
-                this.successMsg('分发中，请稍候查看')
+                this.successMsg(this.$t('Store.Distributing'))
                 this.operationFormModalClose()
                 this.reload()
               })
@@ -1852,7 +1864,7 @@ export default {
         .then(res => {
           setTimeout(() => {
             this.$notification.success({
-              message: '删除成功'
+              message: this.$t('Store.DeletionSuccessful')
             })
             this.reload()
           }, 100)
@@ -1869,7 +1881,7 @@ export default {
               : err.response.data
           if (!msg || msg.length === 0 || typeof msg === 'object')
           {
-            msg = '删除失败'
+            msg = this.$t('Store.DeletionFailed')
           }
           this.$notification.error({
             message: msg,
@@ -1994,7 +2006,7 @@ export default {
       if (this.folibRepository.layout !== 'Docker')
       {
         if (this.currentFileDetial && !this.currentFileDetial.listTree)
-        { 
+        {
           if (this.currentFileDetial.artifact) {
             previewArtifact(this.currentTreeNode.storageId, this.currentTreeNode.repositoryId,this.currentTreeNode.artifactPath).then(res => {
               if (res && res.length > 0) {
@@ -2003,7 +2015,7 @@ export default {
               } else {
                 let len = this.currentFileDetial.artifact.sizeInBytes
                 if (len && len > 1048576) {
-                  this.viewCodes = '该制品无法预览'
+                  this.viewCodes = this.$t('Store.CannotPreview')
                 } else{
                   this.viewArtifactFile()
                 }
@@ -2031,7 +2043,7 @@ export default {
           if ('string' === typeof res.data)
           {
             if (res.data.startsWith('PK')) {
-              this.viewCodes = '该制品无法预览'
+              this.viewCodes = this.$t('Store.CannotPreview')
             } else {
               this.viewCodes = res.data
             }
@@ -2207,7 +2219,7 @@ export default {
             this.externalNodeRepositories.push(json)
           })
         }
-      }).finally(() => { 
+      }).finally(() => {
       })
     },
     typeChange(event) {

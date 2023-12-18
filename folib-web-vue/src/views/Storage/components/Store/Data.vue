@@ -1,35 +1,35 @@
 <template>
   <div class="artifact-base-data">
     <a-tabs default-active-key="1" @change="artifactTabChange">
-      <a-tab-pane key="1" tab="基本信息">
+      <a-tab-pane key="1" :tab="$t('Store.BasicInformation')">
         <a-descriptions
           v-if="folibRepository.layout !== 'Docker'"
           title=""
           :column="1"
           style="word-break: break-all;word-wrap: break-word;"
         >
-          <a-descriptions-item label="所属空间">
+          <a-descriptions-item :label="$t('Store.OwningSpace')">
             {{ currentTreeNode.storageId }}
           </a-descriptions-item>
-          <a-descriptions-item label="所属仓库">
+          <a-descriptions-item :label="$t('Store.OwnedWarehouse')">
             {{ currentTreeNode.repositoryId }}
           </a-descriptions-item>
-          <a-descriptions-item label="名称">
+          <a-descriptions-item :label="$t('Store.Name')">
             {{ currentTreeNode.name }}
           </a-descriptions-item>
-          <a-descriptions-item label="路径">
+          <a-descriptions-item :label="$t('Store.ThePath')">
             {{ currentTreeNode.artifactPath }}
           </a-descriptions-item>
-          <a-descriptions-item label="文件大小">
+          <a-descriptions-item :label="$t('Store.FileSize')">
             {{ fileSizeConver(currentTreeNode.size) }}
           </a-descriptions-item>
-          <a-descriptions-item label="修改时间">
+          <a-descriptions-item :label="$t('Store.ModifyTheTime')">
             {{ formateDate(currentTreeNode.lastModified) }}
           </a-descriptions-item>
-          <a-descriptions-item v-if="currentFileDetial" label="最近使用时间">
+          <a-descriptions-item v-if="currentFileDetial" :label="$t('Store.LastUsedTime')">
             {{ currentFileDetial.lastUsedTime }}
           </a-descriptions-item>
-          <a-descriptions-item v-if="currentFileDetial" label="下载次数">
+          <a-descriptions-item v-if="currentFileDetial" :label="$t('Store.DownloadTimes')">
             {{ currentFileDetial.downloadCount }}
           </a-descriptions-item>
           <template v-if="currentFileDetial && currentFileDetial.artifact && currentFileDetial.artifact.checksums" >
@@ -48,48 +48,48 @@
           title=""
           :column="1"
         >
-          <a-descriptions-item label="所属空间">
+          <a-descriptions-item :label="$t('Store.OwningSpace')">
             {{ currentTreeNode.storageId }}
           </a-descriptions-item>
-          <a-descriptions-item label="所属仓库">
+          <a-descriptions-item :label="$t('Store.OwningSpace')">
             {{ currentTreeNode.repositoryId }}
           </a-descriptions-item>
-          <a-descriptions-item v-if="currentFileDetial" label="镜像名称">
+          <a-descriptions-item v-if="currentFileDetial" :label="$t('Store.ImageName')">
             {{ currentFileDetial.imageName }}
           </a-descriptions-item>
-          <a-descriptions-item :label="currentFileDetial ? '版本号' : '名称'">
+          <a-descriptions-item :label="currentFileDetial ? $t('Store.VersionNumber') : $t('Store.Name')">
             {{ currentTreeNode.name }}
           </a-descriptions-item>
-          <a-descriptions-item v-if="currentFileDetial" label="文件大小">
+          <a-descriptions-item v-if="currentFileDetial" :label="$t('Store.FileSize')">
             {{ fileSizeConver(currentFileDetial.size) }}
           </a-descriptions-item>
-          <a-descriptions-item v-if="currentFileDetial" label="SHA-256">
+          <a-descriptions-item v-if="currentFileDetial" :label="SHA-256">
             {{ currentFileDetial.sha256 }}
           </a-descriptions-item>
-          <a-descriptions-item v-if="currentFileDetial" label="修改时间">
+          <a-descriptions-item v-if="currentFileDetial" :label="$t('Store.ModifyTheTime')">
             {{ currentFileDetial.lastModified }}
           </a-descriptions-item>
-          <a-descriptions-item v-if="currentFileDetial" label="层数">
+          <a-descriptions-item v-if="currentFileDetial" :label="$t('Store.NumberOfFloors')">
             {{ currentFileDetial.manifest.layers.length }}
           </a-descriptions-item>
-          <a-descriptions-item v-if="currentFileDetial" label="制作Docker版本">
+          <a-descriptions-item v-if="currentFileDetial" :label="$t('Store.MakeADockerVersion')">
             {{ currentFileDetial.manifestConfig.docker_version }}
           </a-descriptions-item>
-          <a-descriptions-item v-if="currentFileDetial" label="镜像OS">
+          <a-descriptions-item v-if="currentFileDetial" :label="$t('Store.MirrorOS')">
             <a-tag> {{ currentFileDetial.manifestConfig.os }}</a-tag>
           </a-descriptions-item>
-          <a-descriptions-item v-if="currentFileDetial" label="基础架构">
+          <a-descriptions-item v-if="currentFileDetial" :label="$t('Store.TheInfrastructure')">
             {{ currentFileDetial.manifestConfig.architecture }}
           </a-descriptions-item>
-          <a-descriptions-item v-if="currentFileDetial && currentFileDetial.manifestConfig.variant" label="版本">
+          <a-descriptions-item v-if="currentFileDetial && currentFileDetial.manifestConfig.variant" :label="$t('Store.Version')">
             {{ currentFileDetial.manifestConfig.variant || ''}}
           </a-descriptions-item>
         </a-descriptions>
       </a-tab-pane>
-      <a-tab-pane key="2" tab="元数据">
+      <a-tab-pane key="2" :tab="$t('Store.Metadata')">
         <a v-if="metadataEnabled" @click="metadataHandler()">
           <a-tooltip>
-            <template slot="title">新增</template>
+            <template slot="title">{{ $t('Store.Create') }}</template>
             <a-icon type="plus-circle" theme="filled" class="ml-30"
               :style="{ fontSize: '28px', color: '#1890FF' }" />
           </a-tooltip>
@@ -122,7 +122,7 @@
               v-if="record.type === 'TEXT' || record.type === 'MD'"
               @click="metadataEditorDrawerShow(record)"
             >
-              查看
+              {{ $t('Store.View') }}
             </a-button>
             <a-button
               type="link"
@@ -130,16 +130,16 @@
               v-if="record.type === 'JSON'"
               @click="metadataPrismEditorDrawerShow(record)"
             >
-              查看
+              {{ $t('Store.View') }}
             </a-button>
           </div>
           <div slot="operation" slot-scope="text, record">
             <div class="col-action" v-if="metadataEnabled">
               <a-popconfirm
-                title="确定要删除吗？"
+                :title="$t('Store.SuerDelete')"
                 okType="danger"
-                ok-text="确定"
-                cancel-text="取消"
+                :ok-text="$t('Store.Confirm')"
+                :cancel-text="$t('Store.Cancel')"
                 @confirm="deleteArtifactMetadata(record.key)"
               >
                 <a-button type="link" size="small">
@@ -190,48 +190,48 @@
           </div>
         </a-table>
       </a-tab-pane>
-      <a-tab-pane key="3" tab="Conan信息" v-if="conanInfoVisible">
+      <a-tab-pane key="3" :tab="$t('Store.ConanInformation')" v-if="conanInfoVisible">
         <a-descriptions
-          title="配置"
+          :title="$t('Store.Configure')"
           :column="1"
           style="word-break: break-all;word-wrap: break-word;"
         >
-          <a-descriptions-item label="包名">
+          <a-descriptions-item :label="$t('Store.PackageName')">
             {{ conanInfo.recipeInfo.name }}
           </a-descriptions-item>
-          <a-descriptions-item label="版本">
+          <a-descriptions-item :label="$t('Store.Version')">
             {{ conanInfo.recipeInfo.version }}
           </a-descriptions-item>
-          <a-descriptions-item label="用户">
+          <a-descriptions-item :label="$t('Store.User')">
             {{ conanInfo.recipeInfo.user }}
           </a-descriptions-item>
-          <a-descriptions-item label="频道">
+          <a-descriptions-item :label="$t('Store.Channel')">
             {{ conanInfo.recipeInfo.channel }}
           </a-descriptions-item>
-          <a-descriptions-item label="引用">
+          <a-descriptions-item :label="$t('Store.Quote')">
             {{ conanInfo.recipeInfo.reference }}
           </a-descriptions-item>
-          <a-descriptions-item label="作者">
+          <a-descriptions-item :label="$t('Store.TheAuthor')">
             {{ conanInfo.recipeInfo.author }}
           </a-descriptions-item>
-          <a-descriptions-item label="许可">
+          <a-descriptions-item :label="$t('Store.Permission')">
             {{ conanInfo.recipeInfo.license }}
           </a-descriptions-item>
-          <a-descriptions-item label="URL">
+          <a-descriptions-item :label="URL">
             {{ conanInfo.recipeInfo.url }}
           </a-descriptions-item>
         </a-descriptions>
         <a-descriptions
-          title="包信息"
+          :title="$t('Store.PackageInformation')"
           :column="1"
           style="word-break: break-all;word-wrap: break-word;"
         >
-          <a-descriptions-item label="包个数">
+          <a-descriptions-item :label="$t('Store.NumberOfPackets')">
             {{ conanInfo.packageCount }}
           </a-descriptions-item>
         </a-descriptions>
       </a-tab-pane>
-      <a-tab-pane key="4" tab="Conan包信息" v-if="conanPackageInfoVisible">
+      <a-tab-pane key="4" :tab="$t('Store.ConanBagInfo')" v-if="conanPackageInfoVisible">
         <a-descriptions
           title="Settings"
           :column="1"
@@ -270,14 +270,14 @@
       v-if="
         currentFileDetial &&
         currentFileDetial.snippets &&
-        currentFileDetial.snippets.length > 0 && 
+        currentFileDetial.snippets.length > 0 &&
         currentFileDetial.snippets.map(e => e.code).filter(e => e).length > 0
       "
     >
       <a-card :bordered="false" class="card-billing-info">
         <div class="col-info">
           <a-descriptions
-            :title="'使用示例(' + codeParam.type + ')'"
+            :title="$t('Store.UseExamples') + '(' + codeParam.type + ')'"
             :column="1"
           >
             <a-descriptions-item v-if="currentFileDetial">
@@ -384,15 +384,15 @@ export default {
       metadataConfigList: [],
       metadataTypes: [
         {
-          label: "数字",
+          label: this.$t('Store.Number'),
           value: "NUMERICAL",
         },
         {
-          label: "字符串",
+          label: this.$t('Store.String'),
           value: "STRING",
         },
         {
-          label: "文本",
+          label: this.$t('Store.Text'),
           value: "TEXT",
         },
         {
@@ -406,27 +406,27 @@ export default {
       ],
       metadataColumns: [
         {
-          title: "元数据KEY",
+          title: this.$t('Store.Metadata')+''+'Key',
           dataIndex: "key",
           key: "key",
           width: 150,
         },
         {
-          title: "元数据类型",
+          title: this.$t('Store.MetadataType'),
           dataIndex: "type",
           key: "type",
           width: 150,
           scopedSlots: { customRender: "type" },
         },
         {
-          title: "元数据值",
+          title: this.$t('Store.MetadataValues'),
           dataIndex: "value",
           key: "value",
           width: 300,
           scopedSlots: { customRender: "value" },
         },
         {
-          title: "操作",
+          title: this.$t('Store.Operations'),
           dataIndex: "operation",
           width: 250,
           scopedSlots: { customRender: "operation" },
@@ -533,7 +533,7 @@ export default {
       this.metadataEnabled = isLogin() && this.folibRepository.type !== 'group' &&
                           this.currentFileDetial &&
                           this.currentFileDetial.artifact &&
-                          this.currentFileDetial.artifact.artifactFileExists   
+                          this.currentFileDetial.artifact.artifactFileExists
       if (!(typeof(this.metadataEnabled) == 'boolean')) {
         this.metadataEnabled = false
       }
@@ -559,7 +559,7 @@ export default {
           this.handlerRespMetadata(res)
           this.$forceUpdate()
         })
-      }      
+      }
     },
     handlerRespMetadata(res) {
       let metadataList = []
@@ -610,7 +610,7 @@ export default {
       };
       deleteArtifactMetadata(data)
         .then((res) => {
-          this.successMsg("删除制品元数据成功");
+          this.successMsg(this.$t('Store.DeletedProductSuccess'));
           this.getMetadata();
         })
         .finally(() => {});
@@ -670,8 +670,8 @@ export default {
     },
     getConanInfo() {
       let data = {
-        storageId: this.currentTreeNode.storageId, 
-        repositoryId: this.currentTreeNode.repositoryId, 
+        storageId: this.currentTreeNode.storageId,
+        repositoryId: this.currentTreeNode.repositoryId,
         artifactPath: this.currentTreeNode.artifactPath
       }
       conanInfo(data).then((res) => {
@@ -694,12 +694,12 @@ export default {
               url: ""
           },
           packageCount: 0
-      }      
+      }
     },
     getConanPackageInfo() {
       let data = {
-        storageId: this.currentTreeNode.storageId, 
-        repositoryId: this.currentTreeNode.repositoryId, 
+        storageId: this.currentTreeNode.storageId,
+        repositoryId: this.currentTreeNode.repositoryId,
         artifactPath: this.currentTreeNode.artifactPath
       }
       conanPackageInfo(data).then((res) => {
