@@ -73,6 +73,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -334,10 +335,15 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
                 PromotionArtifactDto promotionArtifactDto = new PromotionArtifactDto(srcStorageId, srcRepostoryId,
                         targetStorageId, targetRepostoryId, srcAbsolutePath, targetUrl + upLoadURI);
 
-                PromotionNodeOptionDto uploadDto = promotionUtil.getPromotionUploadDto(promotionArtifactDto);
-
-                //向目标仓库推包
+                PromotionNodeOptionDto uploadDto = promotionUtil.getPromotionUploadDtoV2(promotionArtifactDto);
+//
+//                //向目标仓库推包
                 promotionUtil.upload(targetUrl + upLoadURI, uploadDto);
+
+//                final PromotionNodeOptionDto uploadDto = promotionUtil.getPromotionUploadDtoV2(promotionArtifactDto);
+                final Map<String, Map<String, Path>> filePathMap = uploadDto.getFilePathMap();
+//                filePathMap.
+
 
 //            } else if (targetPath.contains(requestURL)) {
             } else if (ArtifactSyncRecordSyncModelEnum.PULL.getVal().equals(syncModel)) {
@@ -711,20 +717,20 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
                 final ResponseEntity<String> re = this.artifactDispatch(artifactDispatch);
 
                 // 更新同步的逻辑状态等信息，由于制品分发涉及多个制品，即成功状态是所有支配完成时更新
-///                if (!HttpStatus.OK.equals(re.getStatusCode())) {
-///                    artifactSyncRecord.setStatus(ArtifactSyncRecordStatusEnum.FAILED.getVal());
-///                    if (Objects.nonNull(re.getBody())) {
-///                        artifactSyncRecord.setFailedReason(re.getBody().toString());
-///                    }
-///                }
-                if (HttpStatus.OK.equals(re.getStatusCode())) {
-                    artifactSyncRecord.setStatus(ArtifactSyncRecordStatusEnum.SUCCESS.getVal());
-                } else {
+                if (!HttpStatus.OK.equals(re.getStatusCode())) {
                     artifactSyncRecord.setStatus(ArtifactSyncRecordStatusEnum.FAILED.getVal());
                     if (Objects.nonNull(re.getBody())) {
                         artifactSyncRecord.setFailedReason(re.getBody().toString());
                     }
                 }
+//                if (HttpStatus.OK.equals(re.getStatusCode())) {
+//                    artifactSyncRecord.setStatus(ArtifactSyncRecordStatusEnum.SUCCESS.getVal());
+//                } else {
+//                    artifactSyncRecord.setStatus(ArtifactSyncRecordStatusEnum.FAILED.getVal());
+//                    if (Objects.nonNull(re.getBody())) {
+//                        artifactSyncRecord.setFailedReason(re.getBody().toString());
+//                    }
+//                }
 
                 // 更新日志结束开始时间
                 artifactSyncRecordMapper.updateByPrimaryKey(artifactSyncRecord
@@ -1187,6 +1193,8 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
         final Integer chunkNo = model.getChunkIndex();
         final Integer chunkNoMax = model.getChunkIndexMax();
         final String originFileMd5 = model.getOriginFileMd5();
+        final Map<String, Object> metaData = Optional.ofNullable(model.getMetaData()).orElse(Collections.emptyMap());
+        final String metaDataJsonStr = JSON.toJSONString(metaData);
 
         // 临时存储目录
         final String artifactFileSliceUploadRootFolderPathStr = String.format("%s/artifactSliceUpload/%s/%s/%s", StringUtils.chomp(tempPath, "/"), storageId, repositoryId, mergeId);
@@ -1241,7 +1249,17 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
                 }
 
                 // 转存合并文件到Folib
-                artifactManagementService.store(artifactFilePath, Files.newInputStream(Path.of(mergeFilePath)));
+///                artifactManagementService.store(artifactFilePath, Files.newInputStream(Path.of(mergeFilePath)));
+                final MockMultipartFile multipartFile = new MockMultipartFile(fileName, Files.newInputStream(Path.of(mergeFilePath)));
+                // 兼容原来上传逻辑
+                final ArtifactUploadTask artifactUploadTask = new ArtifactUploadTask(storageId, repositoryId, multipartFile,
+                        repositoryManagementService, repositoryPathResolver, artifactManagementService, promotionUtil, 
+                        layoutProviderRegistry, artifactMetadataService, artifactRepository, mavenRepositoryFeatures, 
+                        tempPath, path, metaDataJsonStr, null, null);
+                final String result = artifactUploadTask.call();
+                if (StringUtils.isNotBlank(result)) {
+                    throw new BusinessException(result);
+                }
             }
         } catch (Exception e) {
             log.error("切片上传失败", e);

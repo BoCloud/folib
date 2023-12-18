@@ -247,7 +247,7 @@ public class ArtifactPromotionController extends BaseArtifactController {
     }
 
     @PostMapping(value = "/header/slice/upload", consumes = {"application/octet-stream"})
-//    @PermissionCheck(resourceKey = "ARTIFACTS_RESOLVE")
+    @PermissionCheck(resourceKey = "ARTIFACTS_RESOLVE")
     public ResponseEntity<Boolean> sliceUploadByHeader(
             @RequestHeader("storageId") String storageId,
             @RequestHeader("repositoryId") String repositoryId,
