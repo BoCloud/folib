@@ -15,7 +15,12 @@
 				</a-col>
 				<a-col @click="goToDetial">
           <a >
-					<h6 class="font-semibold mb-10">{{ title }}</h6>
+					<h6 class="font-semibold mb-10">
+            <textOver
+                :text="title"
+                :max="14"
+            />
+          </h6>
           </a>
 					<a-space :size="-12" class="avatar-chips">
 						<a-avatar size="small" v-for="(src, key) in team" :key="key" :src="src" />
@@ -28,8 +33,8 @@
           </a>
             <template #overlay>
               <a-menu slot="overlay" @click="handleMenuClick">
-                <a-menu-item key="edit" v-if="editEnabled"> <a-icon type="edit" />编辑 </a-menu-item>
-                <a-menu-item key="delete" v-if="deleteEnabled"> <a-icon type="delete" />删除</a-menu-item>
+                <a-menu-item key="edit" v-if="editEnabled"> <a-icon type="edit" />{{ $t('Cards.Edit') }}</a-menu-item>
+                <a-menu-item key="delete" v-if="deleteEnabled"> <a-icon type="delete" />{{ $t('Cards.Delete') }}</a-menu-item>
               </a-menu>
             </template>
           </a-dropdown>
@@ -42,7 +47,7 @@
 			<a-col>
 
 				<h6 class="font-semibold text-md mb-0">{{ due }}</h6>
-				<p class="font-semibold text-muted mb-0">仓库类型</p>
+				<p class="font-semibold text-muted mb-0">{{ $t('Cards.WarehouseType') }}</p>
 			</a-col>
 			<a-col class="ml-auto">
 				<a-icon v-if="repository.scope===2" :style="{fontSize: '18px', color:'#52C41A'}" type="unlock" />
@@ -59,7 +64,11 @@
 
 <script>
 import { hasRole, isAdmin, hasPermission } from "@/utils/permission";
+import textOver from "@/components/Tools/textOver";
 export default ({
+  components: {
+    textOver
+  },
 	props: {
 		title: {
 			type: String,
