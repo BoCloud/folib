@@ -1,8 +1,10 @@
 package com.veadan.folib.services.impl;
 
+import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.io.FileUtil;
 import cn.hutool.core.io.IoUtil;
 import cn.hutool.core.lang.UUID;
+import cn.hutool.http.HttpUtil;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
 import com.veadan.folib.cloud.storage.s3fs.util.UriUtils;
@@ -55,6 +57,7 @@ import com.veadan.folib.users.userdetails.SpringSecurityUser;
 import com.veadan.folib.utils.FileUtils;
 import com.veadan.folib.utils.PropertiesUtils;
 import com.veadan.folib.utils.UrlUtils;
+import com.veadan.folib.wrapper.BufferedInputStreamWrapper;
 import com.veadan.folib.ws.client.handler.command.FolibWsClientArtifactPullCommand;
 import com.veadan.folib.ws.common.FolibWsAction;
 import com.veadan.folib.ws.server.manage.FolibWsServerRunManage;
@@ -62,6 +65,15 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.fileupload.disk.DiskFileItem;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
+import org.apache.http.HttpEntity;
+import org.apache.http.HttpResponse;
+import org.apache.http.client.HttpClient;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.entity.ContentType;
+import org.apache.http.entity.mime.MultipartEntityBuilder;
+import org.apache.http.entity.mime.content.InputStreamBody;
+import org.apache.http.entity.mime.content.StringBody;
+import org.apache.http.impl.client.HttpClients;
 import org.apache.maven.model.Model;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -338,12 +350,13 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
                 PromotionNodeOptionDto uploadDto = promotionUtil.getPromotionUploadDtoV2(promotionArtifactDto);
 //
 //                //向目标仓库推包
-                promotionUtil.upload(targetUrl + upLoadURI, uploadDto);
+//                promotionUtil.upload(targetUrl + upLoadURI, uploadDto);
 
-//                final PromotionNodeOptionDto uploadDto = promotionUtil.getPromotionUploadDtoV2(promotionArtifactDto);
-                final Map<String, Map<String, Path>> filePathMap = uploadDto.getFilePathMap();
-//                filePathMap.
-
+                // 异步制品切片上传
+                asyncThreadPoolTaskExecutor.submit(() -> {
+                    final List<PromotionUtil.ArtifactSliceUploadHttpEntityResponse> uploadResults = promotionUtil.artifactSliceUpload(uploadDto, targetUrl, srcStorageId, srcRepostoryId);
+                    // 更新记录结果
+                });
 
 //            } else if (targetPath.contains(requestURL)) {
             } else if (ArtifactSyncRecordSyncModelEnum.PULL.getVal().equals(syncModel)) {
@@ -390,6 +403,7 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
         return ResponseEntity.ok("ok");
     }
 
+    
     @Override
     public ResponseEntity nodeOptionAttachRecord(PromotionNodeOption promotionNodeOption, HttpServletRequest
             request) {

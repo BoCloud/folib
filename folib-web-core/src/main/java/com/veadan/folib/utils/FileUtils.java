@@ -327,14 +327,22 @@ public class FileUtils {
     
     public static String getMD5(File file) {
         try {
-            final MessageDigest md = MessageDigest.getInstance("MD5");
             final FileInputStream fis = new FileInputStream(file);
+            return getMD5(fis);
+        } catch (Exception e) {
+            logger.info("获取文件的MD5失败", e);
+            return null;
+        }
+    }
+    public static String getMD5(InputStream fileInputStream) {
+        try {
+            final MessageDigest md = MessageDigest.getInstance("MD5");
             final byte[] buffer = new byte[8192];
             int length;
-            while ((length = fis.read(buffer)) != -1) {
+            while ((length = fileInputStream.read(buffer)) != -1) {
                 md.update(buffer, 0, length);
             }
-            fis.close();
+            fileInputStream.close();
             final byte[] digest = md.digest();
             final BigInteger bigInt = new BigInteger(1, digest);
             return bigInt.toString(16);

@@ -1,8 +1,12 @@
 package com.veadan.folib.promotion;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.nio.file.Path;
 import java.util.Date;
 
+import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.collection.CollectionUtil;
+import cn.hutool.core.lang.UUID;
 import cn.hutool.core.map.MapUtil;
 import cn.hutool.extra.spring.SpringUtil;
 import cn.hutool.json.JSONUtil;
@@ -38,21 +42,35 @@ import com.veadan.folib.storage.repository.Repository;
 import com.veadan.folib.users.userdetails.SpringSecurityUser;
 import com.veadan.folib.util.RepositoryPathUtil;
 import com.veadan.folib.util.ThreadLocalUtil;
+import com.veadan.folib.utils.FileUtils;
 import com.veadan.folib.utils.UrlUtils;
+import com.veadan.folib.wrapper.BufferedInputStreamWrapper;
 import com.veadan.folib.ws.common.FolibWsAction;
 import com.veadan.folib.ws.client.handler.command.FolibWsClientArtifactPullCommand;
 import com.veadan.folib.ws.server.manage.FolibWsServerRunManage;
+import lombok.Data;
+import lombok.experimental.Accessors;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
+import org.apache.http.HttpEntity;
+import org.apache.http.HttpResponse;
+import org.apache.http.client.HttpClient;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.entity.ContentType;
+import org.apache.http.entity.mime.MultipartEntityBuilder;
+import org.apache.http.entity.mime.content.InputStreamBody;
+import org.apache.http.entity.mime.content.StringBody;
+import org.apache.http.impl.client.HttpClients;
 import org.glassfish.jersey.media.multipart.Boundary;
 import org.glassfish.jersey.media.multipart.FormDataMultiPart;
 import org.glassfish.jersey.media.multipart.file.StreamDataBodyPart;
 import org.glassfish.jersey.media.multipart.internal.MultiPartWriter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
+import org.springframework.http.HttpStatus;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -74,6 +92,7 @@ import java.nio.file.Files;
 import java.util.*;
 import java.util.concurrent.FutureTask;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 /**
  * @author qijianping
@@ -337,7 +356,9 @@ public class PromotionUtil {
                         dispatchNodeHost + "/api/artifact/folib/promotion/upload-files";
                 PromotionArtifactDto promotionArtifactDto = new PromotionArtifactDto(srcStorageId, srcRepositoryId,
                         targetStorageId, targetRepositoryId, srcAbsolutePath, targetUploadUrl);
-                PromotionNodeOptionDto uploadDto = getPromotionUploadDto(promotionArtifactDto);
+                PromotionNodeOptionDto uploadDto = getPromotionUploadDtoV2(promotionArtifactDto);
+
+//                upload(targetUploadUrl, uploadDto);
                 
                 // TODO：2023/12/6 17:36 生成从记录
 //                final Map<String, Map<String, InputStream>> pathMap = uploadDto.getPathMap();
@@ -352,10 +373,12 @@ public class PromotionUtil {
 //                    return artifactSyncSlaveRecord;
 //                }).collect(Collectors.toList());
 //                artifactSyncSlaveRecordList.forEach(artifactSyncSlaveRecordMapper::insert);
-
-                upload(targetUploadUrl, uploadDto);
                 
-                // 更新从记录结果
+                // 异步制品切片上传
+                asyncThreadPoolTaskExecutor.submit(() -> {
+                    final List<PromotionUtil.ArtifactSliceUploadHttpEntityResponse> uploadResults = this.artifactSliceUpload(uploadDto, StringUtils.chomp(dispatchNodeHost, "/"), srcStorageId, srcRepositoryId);
+                    // 更新记录结果
+                });
                 
                 
                 if (Boolean.TRUE.equals(recordStatus)) {
@@ -1066,5 +1089,120 @@ public class PromotionUtil {
         }
         return Collections.emptyList();
     }
+    
+    public List<ArtifactSliceUploadHttpEntityResponse> artifactSliceUpload(PromotionNodeOptionDto uploadDto, String targetUrl, String storageId, String repositoryId) {
+        final Map<String, Map<String, Path>> filePathMap = uploadDto.getFilePathMap();
+        final long sliceByteSize = Optional.ofNullable(configurationManagementService.getConfiguration().getSliceMbSize()).orElse(0L) * (1024 * 1024);
+        final HttpClient httpClient = HttpClients.createDefault();
+        final HttpPost httpPost = new HttpPost(String.format("%s/api/artifact/folib/promotion/slice/upload", StringUtils.chomp(targetUrl, "/")));
 
+        return filePathMap.values().stream().map(m -> {
+            return m.entrySet().stream().map(entry -> {
+                final String saveUri = entry.getKey();
+                final Path path = entry.getValue();
+                final List<PromotionUtil.ArtifactSliceUploadHttpEntityBuilder> artifactSliceUploadHttpEntityList = this.getArtifactSliceUploadHttpEntityList(storageId, repositoryId, saveUri, path, sliceByteSize);
+
+                return artifactSliceUploadHttpEntityList.stream().map(builder -> {
+                    httpPost.setEntity(builder.build());
+                    final ArtifactSliceUploadHttpEntityResponse res = new ArtifactSliceUploadHttpEntityResponse();
+                    res.setChunkArtifactRecordId(builder.getChunkArtifactRecordId());
+                    res.setSuccess(false);
+                    try {
+                        final HttpResponse response = httpClient.execute(httpPost);
+                        int responseCode = response.getStatusLine().getStatusCode();
+
+                        res.setSuccess(HttpStatus.OK.value() != responseCode);
+                        if (res.getSuccess()) {
+                            res.setFailedReason(String.format("上传制品(%s)切片失败", saveUri));
+                        }
+                    } catch (IOException e) {
+                        res.setFailedReason(e.getMessage());
+                    }
+                    return res;
+                }).collect(Collectors.toList());
+            }).flatMap(Collection::stream).collect(Collectors.toList());
+        }).flatMap(Collection::stream).collect(Collectors.toList());
+    }
+
+    public List<ArtifactSliceUploadHttpEntityBuilder> getArtifactSliceUploadHttpEntityList(String storageId, String repositoryId, String saveUri, Path artifactPath, long chunkSize) {
+        try {
+            final long fileLength = Files.size(artifactPath);
+            final int threadCount = BigDecimal.valueOf(fileLength).divide(BigDecimal.valueOf(chunkSize), 0, RoundingMode.CEILING).intValue();
+            final InputStream inputStream = Files.newInputStream(artifactPath);
+            final String md5 = FileUtils.getMD5(inputStream);
+            final String mergeId = UUID.randomUUID().toString(true);
+            inputStream.reset();
+
+            return IntStream.range(0, threadCount).mapToObj(index -> {
+                long startLength = index * chunkSize;
+                try {
+
+                    return new ArtifactSliceUploadHttpEntityBuilder()
+                    .setChunkArtifactRecordId("")
+                    .setStorageId(storageId)
+                    .setRepositoryId(repositoryId)
+                    .setPath(saveUri)
+                    .setMergeId(mergeId)
+                    .setChunkIndex(index + 1)
+                    .setChunkIndexMax(threadCount)
+                    .setOriginFileMd5(md5)
+                    .setFileInputStream(inputStream)
+                    .setStartLength(startLength)
+                    .setChunkSize(chunkSize);
+                } catch (Exception e) {
+                    log.error("构建文件切片HttpEntity请求失败", e);
+                    return null;
+                }
+            }).collect(Collectors.toList());
+        }catch (Exception e) {
+            log.error("构建文件切片请求集合失败", e);
+            return Collections.emptyList();
+        }
+    }
+
+    
+    @Data
+    @Accessors(chain = true)
+    public static class ArtifactSliceUploadHttpEntityBuilder {
+        /** 制品切片记录ID */
+        private String chunkArtifactRecordId;
+        private String storageId;
+        private String repositoryId;
+        private String path;
+        private String mergeId;
+        private Integer chunkIndex;
+        private Integer chunkIndexMax;
+        private String originFileMd5;
+        private InputStream fileInputStream;
+        private Long startLength;
+        private Long chunkSize;
+        
+        public HttpEntity build() {
+            try {
+                return MultipartEntityBuilder.create()
+                        .setContentType(ContentType.MULTIPART_FORM_DATA)
+                        .addPart("storageId", new StringBody(storageId))
+                        .addPart("repositoryId", new StringBody(repositoryId))
+                        .addPart("path", new StringBody(path))
+                        .addPart("mergeId", new StringBody(mergeId))
+                        .addPart("chunkIndex", new StringBody(String.valueOf(chunkIndex)))
+                        .addPart("chunkIndexMax", new StringBody(String.valueOf(chunkIndexMax)))
+                        .addPart("originFileMd5", new StringBody(originFileMd5))
+                        .addPart("file", new InputStreamBody(new BufferedInputStreamWrapper(fileInputStream, startLength, chunkSize), "chunk" + chunkIndex))
+                        .build();
+            } catch (Exception e) {
+                log.error("构建文件切片HttpEntity请求失败", e);
+                return null;
+            }
+        }
+    }
+
+    @Data
+    @Accessors(chain = true)
+    public static class ArtifactSliceUploadHttpEntityResponse {
+        /** 制品切片记录ID */
+        private String chunkArtifactRecordId;
+        private Boolean success;
+        private String failedReason;
+    }
 }

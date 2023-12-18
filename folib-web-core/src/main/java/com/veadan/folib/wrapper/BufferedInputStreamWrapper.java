@@ -27,6 +27,14 @@ public class BufferedInputStreamWrapper extends InputStream {
         final FileInputStream fileInputStream = new FileInputStream(randomAccessFile.getFD());
         this.bufferedInputStream = new BufferedInputStream(fileInputStream);
     }
+    
+    public BufferedInputStreamWrapper(InputStream inputStream, long startPosition, long numberOfBytesToRead) throws IOException {
+        this.currentPosition = startPosition;
+        this.endPosition = startPosition + numberOfBytesToRead;
+        inputStream.skip(startPosition);
+        
+        this.bufferedInputStream = new BufferedInputStream(inputStream);
+    }
 
     @Override
     public int read() throws IOException {
@@ -42,6 +50,8 @@ public class BufferedInputStreamWrapper extends InputStream {
     @Override
     public void close() throws IOException {
         bufferedInputStream.close();
-        randomAccessFile.close();
+        if (null != randomAccessFile) {
+            randomAccessFile.close();
+        }
     }
 }
