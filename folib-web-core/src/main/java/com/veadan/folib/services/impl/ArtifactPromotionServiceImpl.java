@@ -292,6 +292,7 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
             String sourcePath = UriUtils.decode(StringUtils.removeEnd(promotionNodeOption.getSourcePath(), "/"));
             String targetPath = UriUtils.decode(StringUtils.removeEnd(promotionNodeOption.getTargetPath(), "/"));
             final Integer syncModel = promotionNodeOption.getSyncModel();
+            final String syncNo = promotionNodeOption.getSyncNo();
             String srcStorageId = parsePath(sourcePath)[0];
             String srcRepostoryId = parsePath(sourcePath)[1];
             String srcUrl = sourcePath.split("/" + srcStorageId + "/" + srcRepostoryId + "/")[0];
@@ -343,7 +344,7 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
 
                 // 异步制品切片上传
                 asyncThreadPoolTaskExecutor.submit(() -> {
-                    final List<PromotionUtil.ArtifactSliceUploadHttpEntityResponse> uploadResults = promotionUtil.artifactSliceUpload(uploadDto, targetUrl, srcStorageId, srcRepostoryId);
+                    final List<PromotionUtil.ArtifactSliceUploadHttpEntityResponse> uploadResults = promotionUtil.artifactSliceUpload(uploadDto, targetUrl, srcStorageId, srcRepostoryId, syncNo);
                     // 更新记录结果
                 });
 
