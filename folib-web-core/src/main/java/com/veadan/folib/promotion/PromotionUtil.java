@@ -376,8 +376,14 @@ public class PromotionUtil {
                 
                 // 异步制品切片上传
                 asyncThreadPoolTaskExecutor.submit(() -> {
-                    final List<PromotionUtil.ArtifactSliceUploadHttpEntityResponse> uploadResults = this.artifactSliceUpload(uploadDto, StringUtils.chomp(dispatchNodeHost, "/"), srcStorageId, srcRepositoryId);
-                    // 更新记录结果
+                    try {
+                        final List<PromotionUtil.ArtifactSliceUploadHttpEntityResponse> uploadResults = this.artifactSliceUpload(uploadDto, StringUtils.chomp(dispatchNodeHost, "/"), uploadDto.getStorageId(), uploadDto.getRepostoryId());
+                        // 更新记录结果
+                        log.info("制品分发结果：{}", JSONUtil.toJsonStr(uploadResults));
+                        
+                    } catch (Exception e) {
+                        log.error("异步制品切片上传失败", e);  
+                    }
                 });
                 
                 
@@ -530,16 +536,20 @@ public class PromotionUtil {
                 for (String layer : layerList) {
                     String blob = arrayPath[0] + File.separator + "blobs" + File.separator + layer;
                     RepositoryPath vSrcBlobPath = repositoryPathResolver.resolve(promotionArtifactDto.getSrcStorageId(), promotionArtifactDto.getSrcRepostoryId(), blob);
+                    final String relativePath = this.getRelativePath(vSrcBlobPath.getTarget().toAbsolutePath().toString(), promotionArtifactDto.getSrcStorageId(), promotionArtifactDto.getSrcRepostoryId());
                     Map<String, Path> inputStreamMapBlobPath = new HashMap<>();
-                    inputStreamMapBlobPath.put(vSrcBlobPath.getTarget().toAbsolutePath().toString(), vSrcBlobPath);
+///                    inputStreamMapBlobPath.put(vSrcBlobPath.getTarget().toAbsolutePath().toString(), vSrcBlobPath);
+                    inputStreamMapBlobPath.put(relativePath, vSrcBlobPath);
                     filePathMap.put(blob, inputStreamMapBlobPath);
                 }
                 if (StringUtils.isNotBlank(manifest.getDigest())) {
                     //manifest
                     String mainFestFile = arrayPath[0] + File.separator + "manifest" + File.separator + manifest.getDigest();
                     RepositoryPath srcMainFestPath = repositoryPathResolver.resolve(promotionArtifactDto.getSrcStorageId(), promotionArtifactDto.getSrcRepostoryId(), mainFestFile);
+                    final String relativePath = this.getRelativePath(srcMainFestPath.getTarget().toAbsolutePath().toString(), promotionArtifactDto.getSrcStorageId(), promotionArtifactDto.getSrcRepostoryId());
                     Map<String, Path> inputStreamMapMainFestPath = new HashMap<>();
-                    inputStreamMapMainFestPath.put(srcMainFestPath.getTarget().toAbsolutePath().toString(), srcMainFestPath);
+///                    inputStreamMapMainFestPath.put(srcMainFestPath.getTarget().toAbsolutePath().toString(), srcMainFestPath);
+                    inputStreamMapMainFestPath.put(relativePath, srcMainFestPath);
                     filePathMap.put(mainFestFile, inputStreamMapMainFestPath);
                 }
             }
@@ -559,7 +569,8 @@ public class PromotionUtil {
                 continue;
             }
             Map<String, Path> inputStreamMap = new HashMap<>();
-            inputStreamMap.put(s3FilePath.toAbsolutePath().toString(), s3FilePath);
+///            inputStreamMap.put(s3FilePath.toAbsolutePath().toString(), s3FilePath);
+            inputStreamMap.put(relativePath, s3FilePath);
             filePathMap.put(relativePath, inputStreamMap);
             // 添加跨节点的元数据同步
             fileMetaDataMap.put(relativePath, getMetaData(srcPath));
@@ -609,16 +620,20 @@ public class PromotionUtil {
                     for (String layer : layerList) {
                         String blob = arrayPath[0] + File.separator + "blobs" + File.separator + layer;
                         RepositoryPath vSrcBlobPath = repositoryPathResolver.resolve(promotionArtifactDto.getSrcStorageId(), promotionArtifactDto.getSrcRepostoryId(), blob);
+                        final String relativePath = this.getRelativePath(vSrcBlobPath.getTarget().toAbsolutePath().toString(), promotionArtifactDto.getSrcStorageId(), promotionArtifactDto.getSrcRepostoryId());
                         Map<String, Path> inputStreamMapBlobPath = new HashMap<>();
-                        inputStreamMapBlobPath.put(vSrcBlobPath.getTarget().toAbsolutePath().toString(), vSrcBlobPath);
+///                        inputStreamMapBlobPath.put(vSrcBlobPath.getTarget().toAbsolutePath().toString(), vSrcBlobPath);
+                        inputStreamMapBlobPath.put(relativePath, vSrcBlobPath);
                         filePathMap.put(blob, inputStreamMapBlobPath);
                     }
                     if (StringUtils.isNotBlank(manifest.getDigest())) {
                         //manifest
                         String mainFestFileStr = arrayPath[0] + File.separator + "manifest" + File.separator + manifest.getDigest();
                         RepositoryPath srcMainFestPath = repositoryPathResolver.resolve(promotionArtifactDto.getSrcStorageId(), promotionArtifactDto.getSrcRepostoryId(), mainFestFileStr);
+                        final String relativePath = this.getRelativePath(srcMainFestPath.getTarget().toAbsolutePath().toString(), promotionArtifactDto.getSrcStorageId(), promotionArtifactDto.getSrcRepostoryId());
                         Map<String, Path> inputStreamMapMainFestPath = new HashMap<>();
-                        inputStreamMapMainFestPath.put(srcMainFestPath.getTarget().toAbsolutePath().toString(), srcMainFestPath);
+///                        inputStreamMapMainFestPath.put(srcMainFestPath.getTarget().toAbsolutePath().toString(), srcMainFestPath);
+                        inputStreamMapMainFestPath.put(relativePath, srcMainFestPath);
                         filePathMap.put(mainFestFileStr, inputStreamMapMainFestPath);
                     }
                 }
@@ -639,7 +654,8 @@ public class PromotionUtil {
                 continue;
             }
             Map<String, Path> inputStreamMap = new HashMap<>();
-            inputStreamMap.put(file.getAbsolutePath(), file.toPath());
+///            inputStreamMap.put(file.getAbsolutePath(), file.toPath());
+            inputStreamMap.put(relativePath, file.toPath());
             filePathMap.put(relativePath, inputStreamMap);
             // 添加跨节点的元数据同步
             fileMetaDataMap.put(relativePath, getMetaData(srcPath));
@@ -1103,6 +1119,7 @@ public class PromotionUtil {
                 final List<PromotionUtil.ArtifactSliceUploadHttpEntityBuilder> artifactSliceUploadHttpEntityList = this.getArtifactSliceUploadHttpEntityList(storageId, repositoryId, saveUri, path, sliceByteSize);
 
                 return artifactSliceUploadHttpEntityList.stream().map(builder -> {
+                    httpPost.reset();
                     httpPost.setEntity(builder.build());
                     final ArtifactSliceUploadHttpEntityResponse res = new ArtifactSliceUploadHttpEntityResponse();
                     res.setChunkArtifactRecordId(builder.getChunkArtifactRecordId());
@@ -1111,12 +1128,13 @@ public class PromotionUtil {
                         final HttpResponse response = httpClient.execute(httpPost);
                         int responseCode = response.getStatusLine().getStatusCode();
 
-                        res.setSuccess(HttpStatus.OK.value() != responseCode);
-                        if (res.getSuccess()) {
+                        res.setSuccess(HttpStatus.OK.value() == responseCode);
+                        if (!res.getSuccess()) {
                             res.setFailedReason(String.format("上传制品(%s)切片失败", saveUri));
                         }
                     } catch (IOException e) {
                         res.setFailedReason(e.getMessage());
+                        log.error("制品切片上传失败", e);
                     }
                     return res;
                 }).collect(Collectors.toList());
@@ -1128,10 +1146,8 @@ public class PromotionUtil {
         try {
             final long fileLength = Files.size(artifactPath);
             final int threadCount = BigDecimal.valueOf(fileLength).divide(BigDecimal.valueOf(chunkSize), 0, RoundingMode.CEILING).intValue();
-            final InputStream inputStream = Files.newInputStream(artifactPath);
-            final String md5 = FileUtils.getMD5(inputStream);
+            final String md5 = FileUtils.getMD5(Files.newInputStream(artifactPath));
             final String mergeId = UUID.randomUUID().toString(true);
-            inputStream.reset();
 
             return IntStream.range(0, threadCount).mapToObj(index -> {
                 long startLength = index * chunkSize;
@@ -1146,7 +1162,7 @@ public class PromotionUtil {
                     .setChunkIndex(index + 1)
                     .setChunkIndexMax(threadCount)
                     .setOriginFileMd5(md5)
-                    .setFileInputStream(inputStream)
+                    .setArtifactPath(artifactPath)
                     .setStartLength(startLength)
                     .setChunkSize(chunkSize);
                 } catch (Exception e) {
@@ -1173,7 +1189,7 @@ public class PromotionUtil {
         private Integer chunkIndex;
         private Integer chunkIndexMax;
         private String originFileMd5;
-        private InputStream fileInputStream;
+        private Path artifactPath;
         private Long startLength;
         private Long chunkSize;
         
@@ -1188,7 +1204,7 @@ public class PromotionUtil {
                         .addPart("chunkIndex", new StringBody(String.valueOf(chunkIndex)))
                         .addPart("chunkIndexMax", new StringBody(String.valueOf(chunkIndexMax)))
                         .addPart("originFileMd5", new StringBody(originFileMd5))
-                        .addPart("file", new InputStreamBody(new BufferedInputStreamWrapper(fileInputStream, startLength, chunkSize), "chunk" + chunkIndex))
+                        .addPart("file", new InputStreamBody(new BufferedInputStreamWrapper(Files.newInputStream(artifactPath), startLength, chunkSize), "chunk" + chunkIndex))
                         .build();
             } catch (Exception e) {
                 log.error("构建文件切片HttpEntity请求失败", e);

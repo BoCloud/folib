@@ -11,9 +11,9 @@ import com.veadan.folib.dto.ArtifactDto;
 import com.veadan.folib.entity.Dict;
 import com.veadan.folib.model.request.ArtifactSliceDownloadInfoReq;
 import com.veadan.folib.model.request.ArtifactSliceUploadReq;
-import com.veadan.folib.model.request.ArtifactSupportSliceDownloadQueryReq;
 import com.veadan.folib.model.response.ArtifactSliceDownloadInfoRes;
 import com.veadan.folib.model.response.ArtifactSliceUploadInfoRes;
+import com.veadan.folib.model.response.Result;
 import com.veadan.folib.services.ArtifactPromotionService;
 import com.veadan.folib.storage.repository.Repository;
 import com.veadan.folib.validation.RequestBodyValidationException;
@@ -41,9 +41,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import java.io.IOException;
 import java.util.List;
-import java.util.Map;
 import java.util.UUID;
 
 /**
@@ -236,19 +234,23 @@ public class ArtifactPromotionController extends BaseArtifactController {
 
     @GetMapping(value = "/slice/upload/info")
     @PermissionCheck(resourceKey = "ARTIFACTS_RESOLVE")
-    public ResponseEntity<ArtifactSliceUploadInfoRes> querySliceUploadInfo() {
-        return ResponseEntity.ok(artifactPromotionService.querySliceUploadInfo());
+    public Result<ArtifactSliceUploadInfoRes> querySliceUploadInfo() {
+        return Result.success(artifactPromotionService.querySliceUploadInfo());
     }
 
     @PostMapping(value = "/slice/upload")
     @PermissionCheck(resourceKey = "ARTIFACTS_RESOLVE")
-    public ResponseEntity<Boolean> sliceUpload(@ModelAttribute @Validated ArtifactSliceUploadReq model) {
-        return ResponseEntity.ok(artifactPromotionService.sliceUpload(model));
+    public Result<Boolean> sliceUpload(@ModelAttribute @Validated ArtifactSliceUploadReq model) {
+        try {
+            return Result.success(artifactPromotionService.sliceUpload(model));
+        } catch (Exception e) {
+            return Result.error(e);
+        }
     }
 
     @PostMapping(value = "/header/slice/upload", consumes = {"application/octet-stream"})
     @PermissionCheck(resourceKey = "ARTIFACTS_RESOLVE")
-    public ResponseEntity<Boolean> sliceUploadByHeader(
+    public Result<Boolean> sliceUploadByHeader(
             @RequestHeader("storageId") String storageId,
             @RequestHeader("repositoryId") String repositoryId,
             @RequestHeader("path") String path,
@@ -268,10 +270,10 @@ public class ArtifactPromotionController extends BaseArtifactController {
             model.setChunkIndexMax(chunkIndexMax);
             model.setOriginFileMd5(originFileMd5);
             model.setFile(mockMultipartFile);
-            return ResponseEntity.ok(artifactPromotionService.sliceUpload(model));
-        } catch (IOException e) {
+            return Result.success(artifactPromotionService.sliceUpload(model));
+        } catch (Exception e) {
             log.error("通过Header传参方式，文件切片上传失败", e);
-            return ResponseEntity.internalServerError().build();
-        }
+            return Result.error(e);
+        } 
     }
 }
