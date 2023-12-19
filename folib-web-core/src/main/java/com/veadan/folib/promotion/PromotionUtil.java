@@ -366,10 +366,7 @@ public class PromotionUtil {
                 // 异步制品切片上传
                 asyncThreadPoolTaskExecutor.submit(() -> {
                     try {
-                        final List<PromotionUtil.ArtifactSliceUploadHttpEntityResponse> uploadResults = this.artifactSliceUpload(uploadDto, StringUtils.chomp(dispatchNodeHost, "/"), uploadDto.getStorageId(), uploadDto.getRepostoryId(), syncNo);
-                        // 更新记录结果
-                        log.info("制品分发结果：{}", JSONUtil.toJsonStr(uploadResults));
-                        
+                        this.artifactSliceUpload(uploadDto, StringUtils.chomp(dispatchNodeHost, "/"), uploadDto.getStorageId(), uploadDto.getRepostoryId(), syncNo);
                     } catch (Exception e) {
                         log.error("异步制品切片上传失败", e);  
                     }
@@ -1110,6 +1107,7 @@ public class PromotionUtil {
             artifactSyncSlaveRecord.setSourcePath(e.getPath());
             artifactSyncSlaveRecord.setTargetPath(String.format("%s/%s/%s/%s", finalTargetUrl, e.getStorageId(), e.getRepositoryId(), e.getPath()));
             artifactSyncSlaveRecord.setSyncNo(syncNo);
+            artifactSyncSlaveRecord.setSyncModel(ArtifactSyncRecordSyncModelEnum.PUSH.getVal());
             artifactSyncSlaveRecord.setStatus(ArtifactSyncRecordStatusEnum.IN_SYNC.getVal());
 //            artifactSyncSlaveRecord.setCreateBy(userName);
             artifactSyncSlaveRecord.setCreateTime(new Date());

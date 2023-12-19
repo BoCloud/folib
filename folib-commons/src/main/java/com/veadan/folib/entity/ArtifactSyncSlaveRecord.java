@@ -61,13 +61,13 @@ public class ArtifactSyncSlaveRecord implements Serializable {
     @ApiModelProperty("制品同步编号")
     @Column(name = "sync_no")
     private String syncNo;
-//    /**
-//     * 同步模式（1：推；2：拉）
-//     * {@linkplain  com.veadan.folib.enums.ArtifactSyncRecordSyncModelEnum }
-//     */
-//    @ApiModelProperty("同步模式（1：推；2：拉）")
-//    @Column(name = "sync_model")
-//    private Integer syncModel;
+    /**
+     * 同步模式（1：推；2：拉）
+     * {@linkplain  com.veadan.folib.enums.ArtifactSyncRecordSyncModelEnum }
+     */
+    @ApiModelProperty("同步模式（1：推；2：拉）")
+    @Column(name = "sync_model")
+    private Integer syncModel;
     /**
      * 同步状态（1：就绪；2：同步中；3：成功；4：失败）
      * {@linkplain com.veadan.folib.enums.ArtifactSyncRecordStatusEnum }

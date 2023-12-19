@@ -398,7 +398,7 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
     public ResponseEntity nodeOptionAttachRecord(PromotionNodeOption promotionNodeOption, HttpServletRequest
             request) {
         // 生成同步编号
-        final String syncNo = String.format("SyncNo-%s", UUID.fastUUID());
+        final String syncNo = String.format("SyncNo%s", UUID.randomUUID().toString(true));
         final SpringSecurityUser userDetails = (SpringSecurityUser) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         final String userName = Optional.ofNullable(userDetails).map(SpringSecurityUser::getUsername).orElse(null);
         final String requestHostName = request.getServerName();
@@ -696,7 +696,7 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
         final String path = artifactDispatch.getPath();
 
         // 生成同步编号
-        final String syncNo = String.format("SyncNo-%s", UUID.fastUUID());
+        final String syncNo = String.format("SyncNo%s", UUID.randomUUID().toString(true));
         artifactDispatch.setSyncNo(syncNo);
         final SpringSecurityUser userDetails = (SpringSecurityUser) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         final String userName = Optional.ofNullable(userDetails).map(SpringSecurityUser::getUsername).orElse(null);
