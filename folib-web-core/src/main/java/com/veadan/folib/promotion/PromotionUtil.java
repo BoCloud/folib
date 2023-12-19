@@ -1105,7 +1105,7 @@ public class PromotionUtil {
         artifactSliceUploadHttpEntityList.stream().forEach(e -> {
             final ArtifactSyncSlaveRecord artifactSyncSlaveRecord = new ArtifactSyncSlaveRecord();
             artifactSyncSlaveRecord.setSourcePath(e.getPath());
-            artifactSyncSlaveRecord.setTargetPath(String.format("%s/%s/%s/%s", finalTargetUrl, e.getStorageId(), e.getRepositoryId(), e.getPath()));
+            artifactSyncSlaveRecord.setTargetPath(String.format("%s/%s/%s/%s-chunk%s", finalTargetUrl, e.getStorageId(), e.getRepositoryId(), e.getPath(), e.getChunkIndex()));
             artifactSyncSlaveRecord.setSyncNo(syncNo);
             artifactSyncSlaveRecord.setSyncModel(ArtifactSyncRecordSyncModelEnum.PUSH.getVal());
             artifactSyncSlaveRecord.setStatus(ArtifactSyncRecordStatusEnum.IN_SYNC.getVal());
