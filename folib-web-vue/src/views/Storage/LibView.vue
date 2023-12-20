@@ -19,10 +19,10 @@
       :activeKey="tabActiveKey"
       @change="tabChange($event)"
     >
-      <a-tab-pane :key="1" tab="详情">
+      <a-tab-pane :key="1" :tab="$t('Storage.Details')">
         <store
           ref="store"
-          :metadataTypes="metadataTypes"
+          :metadataTypes="i18nMetadataTypes"
           :quillOptions="quillOptions"
           :propScanReport="scanReport"
           :successMsg="successMsg"
@@ -30,11 +30,11 @@
           @openDetial="openDetial"
         />
       </a-tab-pane>
-      <a-tab-pane :key="2" tab="统计" v-if="$store.state.user.token">
+      <a-tab-pane :key="2" :tab="$t('Storage.Statistics')" v-if="$store.state.user.token">
         <safe
           v-if="tabActiveKey == 2"
           :folibRepository="folibRepository"
-          :vulnerabilityColumns="vulnerabilityColumns"
+          :vulnerabilityColumns="i18nVulnerabilityColumns"
         />
       </a-tab-pane>
       <a-button v-if="settingsEnabled" slot="tabBarExtraContent" icon="setting" class="repository-setting" size="small" @click="settingDrawerShow()" />
@@ -98,7 +98,7 @@
                 </template>
               </a-timeline>
             </a-tab-pane>
-            <a-tab-pane key="2" tab="制作历史">
+            <a-tab-pane key="2" :tab="$t('Storage.MakingHistory')">
               <a-timeline>
                 <template v-if="currentManifest.history[index]">
                   <a-timeline-item
@@ -200,12 +200,14 @@ export default {
       columns: [
         {
           title: "制品路径",
+          i18nKey: "Storage.ProductPath",
           dataIndex: "path",
           scopedSlots: { customRender: "path" },
           width: 550,
         },
         {
           title: "创建时间",
+          i18nKey: "Storage.CreationTime",
           dataIndex: "created",
           sorter: true,
           sortDirections: ["descend", "ascend"],
@@ -214,6 +216,7 @@ export default {
         },
         {
           title: "最近使用时间",
+          i18nKey: "Storage.LastTimeOfUse",
           dataIndex: "lastUsed",
           sorter: true,
           scopedSlots: { customRender: "lastUsed" },
@@ -221,6 +224,7 @@ export default {
         },
         {
           title: "下载次数",
+          i18nKey: "Storage.NumberOfDownloads",
           dataIndex: "downloadCount",
           sorter: true,
           scopedSlots: { customRender: "created" },
@@ -228,6 +232,7 @@ export default {
         },
         {
           title: "制品大小",
+          i18nKey: "Storage.ProductSize",
           dataIndex: "sizeInBytes",
           sorter: true,
           scopedSlots: { customRender: "sizeInBytes" },
@@ -247,82 +252,97 @@ export default {
       vulnerColumns: [
         {
           title: "CVE编号",
+          i18nKey: "Storage.CVENumber",
           dataIndex: "name",
           scopedSlots: { customRender: "name" },
         },
         {
           title: "漏洞等级",
+          i18nKey: "Storage.VulnerabilityLevel",
           dataIndex: "highestSeverityText",
           scopedSlots: { customRender: "highestSeverityText" },
         },
         {
           title: "CvssV2评分",
+          i18nKey: "Storage.CvssV2Score",
           dataIndex: "cvssV2",
           scopedSlots: { customRender: "v2_exploitabilityScore" },
         },
         {
           title: "CvssV3评分",
+          i18nKey: "Storage.CvssV3Score",
           dataIndex: "cvssV3",
           scopedSlots: { customRender: "v3_exploitabilityScore" },
         },
         {
           title: "引入版本",
+          i18nKey: "Storage.ImportVersion",
           scopedSlots: { customRender: "versionStartIncluding" },
         },
         {
           title: "建议修复版本",
+          i18nKey: "Storage.RecommendedFixVersion",
           scopedSlots: { customRender: "versionEndExcluding" },
         },
       ],
       vulnerabilityColumns: [
         {
           title: "漏洞编号",
+          i18nKey: "Storage.VulnerabilityNumber",
           dataIndex: "uuid",
           scopedSlots: { customRender: "uuid" },
         },
         {
           title: "引入时间",
+          i18nKey: "Storage.IntroducingTime",
           dataIndex: "created",
           scopedSlots: { customRender: "created" },
           align: "center",
         },
         {
           title: "CvssV2评分",
+          i18nKey: "Storage.CvssV2Score",
           dataIndex: "cvssV2Score",
           scopedSlots: { customRender: "cvssV2Score" },
           align: "center",
         },
         {
           title: "CvssV2漏洞等级",
+          i18nKey: "Storage.CvssV2VulnerabilityLevel",
           dataIndex: "cvssV2Severity",
           scopedSlots: { customRender: "cvssV2Severity" },
           align: "center",
         },
         {
           title: "CvssV3评分",
+          i18nKey: "Storage.CvssV3Score",
           dataIndex: "cvssV3Score",
           scopedSlots: { customRender: "cvssV3Score" },
           align: "center",
         },
         {
           title: "CvssV3漏洞等级",
+          i18nKey: "Storage.CvssV3VulnerabilityLevel",
           dataIndex: "cvssV3Severity",
           scopedSlots: { customRender: "cvssV3Severity" },
           align: "center",
         },
         {
           title: "最高漏洞等级",
+          i18nKey: "Storage.HighestVulnerabilityLevel",
           dataIndex: "highestSeverityText",
           scopedSlots: { customRender: "highestSeverityText" },
           align: "center",
         },
         {
           title: "建议修复版本",
+          i18nKey: "Storage.RecommendedFixVersion",
           dataIndex: "versionEndExcluding",
           scopedSlots: { customRender: "versionEndExcluding" },
         },
         {
           title: "操作",
+          i18nKey: "Storage.Operation",
           dataIndex: "operation",
           scopedSlots: { customRender: "operation" },
         },
@@ -338,14 +358,17 @@ export default {
       metadataTypes: [
         {
           label: "数字",
+          i18nKey: "Storage.TheNumbers",
           value: "NUMERICAL",
         },
         {
           label: "字符串",
+          i18nKey: "Storage.String",
           value: "STRING",
         },
         {
           label: "文本",
+          i18nKey: "Storage.Text",
           value: "TEXT",
         },
         {
@@ -369,6 +392,24 @@ export default {
       },
       settingsEnabled: false,
       settingVisible: false,
+    }
+  },
+  computed: {
+    i18nVulnerabilityColumns() {
+      return this.vulnerabilityColumns.map(column => {
+        if (column.i18nKey) {
+          column.title = this.$t(column.i18nKey);
+        }
+        return column;
+      });
+    },
+    i18nMetadataTypes() {
+      return this.metadataTypes.map(item => {
+        if (item.i18nKey) {
+          item.title = this.$t(item.i18nKey);
+        }
+        return item;
+      });
     }
   },
   created() {
@@ -471,8 +512,9 @@ export default {
       }
     },
     successMsg(message) {
+      console.log(message, '--------')
       if (!message) {
-        message = "操作成功";
+        message = this.$t('Storage.OperationSuccessful');
       }
       this.$notification["success"]({
         message: message,
