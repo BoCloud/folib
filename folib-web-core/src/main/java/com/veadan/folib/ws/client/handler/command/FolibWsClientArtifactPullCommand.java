@@ -38,6 +38,8 @@ import com.veadan.folib.services.ArtifactResolutionService;
 import com.veadan.folib.services.ConfigurationManagementService;
 import com.veadan.folib.utils.FileUtils;
 import com.veadan.folib.utils.UrlUtils;
+import com.veadan.folib.ws.client.context.FolibWsClientContextInfo;
+import com.veadan.folib.ws.client.manage.FolibWsClientRunManage;
 import com.veadan.folib.ws.common.FolibWsAction;
 import com.veadan.folib.ws.common.FolibWsSessionContextHolder;
 import com.veadan.folib.ws.server.context.FolibWsServerContextInfo;
@@ -45,6 +47,8 @@ import com.veadan.folib.ws.server.handler.command.FolibWsServerArtifactPullCallb
 import com.veadan.folib.ws.server.manage.FolibWsServerRunManage;
 import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.ToString;
 import lombok.experimental.Accessors;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -178,10 +182,22 @@ public class FolibWsClientArtifactPullCommand implements FolibWsClientCommand<Pr
                             .setStorageId(srcStorageId).setRepositoryId(srcRepostoryId)
                             .setPath(path)
                     ).collect(toList());
-            final List<ArtifactSliceDownloadInfoRes> artifactSliceDownloadInfoRes = this.doRequestReturnListEntity(Method.POST, srcUrl + BATCH_QUERY_ARTIFACT_GET_SLICE_DOWNLOAD_INFO_URL, (req) -> {
+            List<ArtifactSliceDownloadInfoRes> artifactSliceDownloadInfoRes = this.doRequestReturnListEntity(Method.POST, srcUrl + BATCH_QUERY_ARTIFACT_GET_SLICE_DOWNLOAD_INFO_URL, (req) -> {
                 final String bodyJsonStr = JSONUtil.toJsonStr(sliceDownloadInfosQueryReq);
                 req.body(bodyJsonStr);
             }, ArtifactSliceDownloadInfoRes.class);
+            // 过滤 .sha1、.sha256、.md5文件
+            artifactSliceDownloadInfoRes = artifactSliceDownloadInfoRes.stream().filter(e -> {
+                final RepositoryPath destPath = repositoryPathResolver.resolve(targetStorageId, targetRepostoryId, e.getPath());
+                try {
+                    if (RepositoryFiles.isChecksum(destPath)) {
+                        return false;
+                    }
+                    return true;
+                } catch (IOException ex) {
+                    return false;
+                }
+            }).collect(toList());
             // - 获取当前节点标记（用于限速）
             final String baseUrl = configurationManagementService.getConfiguration().getBaseUrl();
             final String nodeMark = String.format("%s:%s", UrlUtils.getHost(baseUrl), UrlUtils.getHost(baseUrl));
@@ -204,26 +220,27 @@ public class FolibWsClientArtifactPullCommand implements FolibWsClientCommand<Pr
                     return artifactSyncSlaveRecord;
                 }).collect(toList());
             }).flatMap(Collection::stream).collect(toList());
-            final Result<Map<String, Long>> batchAddSlaveRecordResult = this.doRequestReturnEntity(Method.POST, srcUrl + BATCH_ADD_ARTIFACT_SYNC_SLAVE_RECORD_POST_URL, (req) -> {
+            final ResultMapStringLong batchAddSlaveRecordResult = this.doRequestReturnEntity(Method.POST, srcUrl + BATCH_ADD_ARTIFACT_SYNC_SLAVE_RECORD_POST_URL, (req) -> {
                 req.body(JSON.toJSONString(artifactSyncSlaveRecordList));
-            }, Result.class);
+            }, ResultMapStringLong.class);
             if (!batchAddSlaveRecordResult.isSuccess()) {
                 throw new BusinessException(batchAddSlaveRecordResult.getMessage());
             }
             final Map<String, Long> temIdToIdMap = batchAddSlaveRecordResult.getData();
+            log.info("temIdToIdMap:>>> {}", JSON.toJSONString(temIdToIdMap));
 
             final boolean result = artifactSliceDownloadInfoRes.stream().allMatch(artifactSliceDownloadInfoRe -> {
                 final String path = artifactSliceDownloadInfoRe.getPath();
                 final Boolean usedSlice = artifactSliceDownloadInfoRe.getUsedSlice();
                 final List<DownloadPartInfo> downloadParInfotList = Optional.ofNullable(artifactSliceDownloadInfoRe.getDownloadPartList()).orElse(Collections.emptyList());
                 final RepositoryPath destPath = repositoryPathResolver.resolve(targetStorageId, targetRepostoryId, path);
-                try {
-                    if (RepositoryFiles.isChecksum(destPath)) {
-                        return true;
-                    }
-                } catch (IOException ex) {
-                    log.error(ExceptionUtils.getStackTrace(ex));
-                }
+///                try {
+///                    if (RepositoryFiles.isChecksum(destPath)) {
+///                        return true;
+///                    }
+///                } catch (IOException ex) {
+///                    log.error(ExceptionUtils.getStackTrace(ex));
+///                }
                 final Object metadata = metaDataMap.get(path);
                 promotionUtil.setMetaData(destPath, Objects.isNull(metadata) ? StringUtils.EMPTY : metadata.toString());
                 final boolean isDocker = DockerLayoutProvider.ALIAS.equalsIgnoreCase(destPath.getRepository().getLayout());
@@ -347,8 +364,8 @@ public class FolibWsClientArtifactPullCommand implements FolibWsClientCommand<Pr
     }
 
     private void resultCallback(Integer status, String failedReason, String syncNo) {
-        final FolibWsServerContextInfo contextSessionInfo = FolibWsSessionContextHolder.getContextSessionInfo(FolibWsServerContextInfo.class);
-        final FolibWsServerRunManage.FolibWsClientRun wsRunInfo = contextSessionInfo.getWsRunInfo();
+        final FolibWsClientContextInfo contextSessionInfo = FolibWsSessionContextHolder.getContextSessionInfo(FolibWsClientContextInfo.class);
+        final FolibWsClientRunManage.FolibWsServerRun wsRunInfo = contextSessionInfo.getWsRunInfo();
         wsRunInfo.doAction(new FolibWsAction()
                 .command(FolibWsServerArtifactPullCallbackCommand.COMMAND)
                 .payload(new ArtifactPromotionNodeOptionCallbackReq()
@@ -360,6 +377,7 @@ public class FolibWsClientArtifactPullCommand implements FolibWsClientCommand<Pr
     }
 
     private void updateSlaveRecord(String srcUrl, ArtifactSyncSlaveRecordUpdateReq req) {
+        log.info("开始回调（{}:{}）", srcUrl + UPDATE_ARTIFACT_SYNC_SLAVE_RECORD_PUT_URL, JSON.toJSONString(req));
         final Result<Boolean> updateSlaveRecordResult = this.doRequestReturnEntity(Method.PUT, srcUrl + UPDATE_ARTIFACT_SYNC_SLAVE_RECORD_PUT_URL, (request) -> {
             request.body(JSON.toJSONString(req));
         }, Result.class);
@@ -416,4 +434,11 @@ public class FolibWsClientArtifactPullCommand implements FolibWsClientCommand<Pr
         private String downFilePath;
     }
 
+    
+    @Data
+    @ToString(callSuper = true)
+    @EqualsAndHashCode(callSuper = false)
+    public static class ResultMapStringLong extends Result<Map<String, Long>> {
+        
+    }
 }

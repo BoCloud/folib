@@ -455,12 +455,7 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
         final Integer status = model.getStatus();
         final String failedReason = model.getFailedReason();
         if (StringUtils.isNotBlank(syncNo)) {
-            artifactSyncRecordMapper.updateByExample(new ArtifactSyncRecord().setSyncNo(syncNo),
-                    new ArtifactSyncRecord()
-                            .setStatus(status)
-                            .setFailedReason(failedReason)
-                            ///                        .setUpdateBy(null)
-                            .setUpdateTime(new Date()));
+            artifactSyncRecordMapper.updateStatusAndFailedReasonBySyncNo(status, failedReason, syncNo, new Date());
         }
 
         return true;
