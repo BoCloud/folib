@@ -2,7 +2,7 @@
   <a-drawer
     placement="right"
     width="65%"
-    title="仓库设置"
+    :title="$t('Storage.WarehouseSetup')"
     :visible="settingVisible"
     @close="settingDrawerClose"
     :zIndex="100"
@@ -19,13 +19,13 @@
         :activeKey="settingTabActiveKey"
         @change="settingTabChange($event)"
       >
-      <a-tab-pane :key="1" tab="权限设置">
+      <a-tab-pane :key="1":tab="$t('Storage.PermissionSetting')">
         <Permission :folibRepository="this.folibRepository" :settingVisible="settingVisible" @settingDrawerClose="settingDrawerClose"></Permission>
       </a-tab-pane>
-      <a-tab-pane :key="2" tab="定时策略">
+      <a-tab-pane :key="2" :tab="$t('Storage.TimingPolicy')">
         <CronTask :folibRepository="this.folibRepository" @settingDrawerClose="settingDrawerClose"></CronTask>
       </a-tab-pane>
-      <a-tab-pane :key="3" tab="联邦仓库" v-if="this.folibRepository.type === 'hosted'">
+      <a-tab-pane :key="3" :tab="$t('Storage.FederatedRepository')" v-if="this.folibRepository.type === 'hosted'">
         <UnionRepository :folibRepository="this.folibRepository" :settingVisible="settingVisible" @settingDrawerClose="settingDrawerClose"></UnionRepository>
       </a-tab-pane>
       </a-tabs>
@@ -40,7 +40,7 @@ import CronTask from "../Cron/index.vue"
 import UnionRepository from "../UnionRepository/index.vue"
 
 export default {
-  props: { 
+  props: {
 		folibRepository: {
 			type: Object,
 			default: {},
