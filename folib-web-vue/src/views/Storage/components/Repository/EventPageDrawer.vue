@@ -47,12 +47,12 @@
                  slot-scope="text, record">
               <!--                    <div class="col-action" v-if="!record.autoRegister">-->
               <div class="col-action">
-                <a-popconfirm title="确定要进行制品补偿吗？"
+                <a-popconfirm :title="(currentClickRecord && currentClickRecord.status === 2 ? '当前制品正在同步中，':'')+'确定要进行制品补偿吗'"
                               okType="danger"
                               ok-text="确定"
                               cancel-text="取消"
                               @confirm="">
-                  <a-button type="link" v-if="record.status === 2 || record.status === 4"
+                  <a-button type="link" v-if="record.status === 2 || record.status === 4" @click="clickRecord(record)"
                             size="small">
                     <span class="text-danger">补偿</span>
                   </a-button>
@@ -161,7 +161,8 @@ export default {
         pageNumber: 1,
         pageSize: 2,
         total: 0
-      }
+      },
+      currentClickRecord: undefined
     }
   },
   components: {
@@ -208,7 +209,10 @@ export default {
       this.dataFilter.pageNumber = pagination.current
       this.dataFilter.pageSize = pagination.pageSize
       this.getArtifactSyncRecordPage()
-    }
+    },
+    clickRecord(v) {
+      this.currentClickRecord = v
+    },
   },
 };
 </script>
