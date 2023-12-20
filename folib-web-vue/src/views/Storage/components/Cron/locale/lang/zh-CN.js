@@ -1,0 +1,16 @@
+export default {
+    'HasBeenSet': '已设定',
+    'ExpandSettings': '展开设定',
+    'DoItOnce': '执行一次',
+    'LoopExecution': '循环执行',
+    'ExecuteImmediately': '立即执行',
+    'NotExecutedImmediately': '不立即执行',
+    'OtherParameters': '其他参数：',
+    'Days': '天数',
+    'RetentionDaysNum': '保留天数',
+    'KeepTheNumber': '保留个数',
+    'Success': '成功',
+    'TheOperationIsIncorrect': '操作不正确',
+    'FillInTheCronExpression': '请填写cron表达式',
+    'Failure': '失败',
+}
