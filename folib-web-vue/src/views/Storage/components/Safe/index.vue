@@ -169,7 +169,7 @@
         "
       >
         <a-list-item slot="renderItem" :key="index" slot-scope="item, index">
-          {{ item }}11111
+          {{ item }}
         </a-list-item>
       </a-list>
       <!-- </a-card> -->

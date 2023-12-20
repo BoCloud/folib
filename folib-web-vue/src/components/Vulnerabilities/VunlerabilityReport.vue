@@ -1,6 +1,6 @@
 <template>
     <div class="vulnerability-report">
-        <a-drawer placement="right" width="65%" title="报告详情" :visible="reportVisible" @close="closeReport">
+        <a-drawer placement="right" width="65%" :title="$t('Vulnerabilities.ReportDetail')" :visible="reportVisible" @close="closeReport">
             <a-collapse default-active-key="1" :bordered="false" accordion>
                 <template #expandIcon="props">
                     <a-icon type="caret-right" :rotate="props.isActive ? 90 : 0" />
@@ -16,14 +16,14 @@
                         <div class="collapse-panel-header-info">
                             <span class="file-name">{{ item.fileName }}</span>
                             <a-tooltip v-if="item.vulnerabilitiesCount > 0">
-                                <template slot="title">漏洞数量</template>
+                                <template slot="title">{{ $t('Vulnerabilities.VulnerabilitiesNum') }}</template>
                                 <a-avatar :size="24" :src="'images/folib/bug.svg'" />
                                 <span class="mb-0 text-dark bug-count">{{
                                     item.vulnerabilitiesCount
                                 }}</span>
                             </a-tooltip>
                             <a-tooltip v-else>
-                                <template slot="title">健康</template>
+                                <template slot="title">{{ $t('Vulnerabilities.Health') }}</template>
                                 <a-avatar :size="24" :src="'images/folib/healthy.svg'" />
                             </a-tooltip>
                         </div>
@@ -36,10 +36,10 @@
                         <a-row :gutter="[24]" type="flex">
                             <a-col :span="24" :md="16">
                                 <p class="mb-0">
-                                    该依赖含有
+                                    {{ $t('Vulnerabilities.DependencyRiskVulnerability1') }}
                                     <strong>{{ item.evidence.length }}</strong>
-                                    个风险凭证，并在扫描检测中发现
-                                    <strong>{{ item.vulnerabilitiesCount }}</strong>个漏洞
+                                    {{ $t('Vulnerabilities.DependencyRiskVulnerability2') }}
+                                    <strong>{{ item.vulnerabilitiesCount }}</strong>{{ $t('Vulnerabilities.DependencyRiskVulnerability3') }}
                                 </p>
                                 <p class="mb-0">
                                     MD5: <strong>{{ item.md5sum }}</strong>
@@ -50,7 +50,7 @@
                             </a-col>
                             <a-col :span="24" :md="8" class="ml-auto text-right">
                                 <p class="mb-0">
-                                    版本号: <strong>{{ item.version }}</strong>
+                                    {{ $t('Vulnerabilities.VersionNumber') }}: <strong>{{ item.version }}</strong>
                                 </p>
                             </a-col>
                         </a-row>
@@ -81,17 +81,17 @@
 
                         <a-row :gutter="[24]" type="flex">
                             <a-col :span="24" :md="24" :lg="24">
-                                <a-table :columns="vulnerColumns" :data-source="item.vulnerabilities" :pagination="false" :scroll="{ x: true }"
+                                <a-table :columns="i18nVulnerColumns" :data-source="item.vulnerabilities" :pagination="false" :scroll="{ x: true }"
                                     :row-key="(r, i) => i.toString()">
                                     <a-row slot="expandedRowRender" :gutter="[24, 24]" slot-scope="record">
                                         <a-col :span="24">
                                             <a-card :bordered="false" class="card-billing-info">
                                                 <div class="col-info">
-                                                    <a-descriptions :title="record.references.length + '个参考信息'" :column="1">
-                                                        <a-descriptions-item label="说明">
-                                                            以下信息均来自于开源社区
+                                                    <a-descriptions :title="record.references.length + $t('Vulnerabilities.references')" :column="1">
+                                                        <a-descriptions-item label="{{ $t('Vulnerabilities.Instructions') }}">
+                                                            {{ $t('Vulnerabilities.InformationSource') }}
                                                         </a-descriptions-item>
-                                                        <a-descriptions-item label="相关信息链接">
+                                                        <a-descriptions-item label="{{ $t('Vulnerabilities.Links') }}">
                                                             <p v-for="(ritem, index1) in record.references" :key="index1">
                                                                 {{ ritem.url }}
                                                             </p>
@@ -128,13 +128,13 @@
                                                 <p class="mb-0 text-dark">
                                                     {{
                                                         highestSeverityText === "CRITICAL"
-                                                        ? "严重"
+                                                        ? $t('Vulnerabilities.Seriously')
                                                         : highestSeverityText === "MEDIUM"
-                                                            ? "中危"
+                                                            ? $t('Vulnerabilities.MediumRisk')
                                                             : highestSeverityText === "HIGH"
-                                                                ? "高危"
+                                                                ? $t('Vulnerabilities.HighRisk')
                                                                 : highestSeverityText === "LOW"
-                                                                    ? "低危"
+                                                                    ? $t('Vulnerabilities.LowRisk')
                                                                     : highestSeverityText
                                                     }}
                                                 </p>
@@ -186,34 +186,50 @@ export default {
             vulnerColumns: [
                 {
                     title: 'CVE编号',
+                    i18nKey: 'Vulnerabilities.CVENumber',
                     dataIndex: 'name',
                     scopedSlots: { customRender: 'name' },
                 },
                 {
                     title: '漏洞等级',
+                    i18nKey: 'Vulnerabilities.VulnerabilityLevel',
                     dataIndex: 'highestSeverityText',
                     scopedSlots: { customRender: 'highestSeverityText' },
                 },
                 {
                     title: 'CvssV2评分',
+                    i18nKey: 'Vulnerabilities.CvssV2Score',
                     dataIndex: 'cvssV2',
                     scopedSlots: { customRender: 'v2_exploitabilityScore' },
                 },
                 {
                     title: 'CvssV3评分',
+                    i18nKey: 'Vulnerabilities.CvssV3Score',
                     dataIndex: 'cvssV3',
                     scopedSlots: { customRender: 'v3_exploitabilityScore' },
                 },
                 {
                     title: '引入版本',
+                    i18nKey: 'Vulnerabilities.ImportVersion',
                     scopedSlots: { customRender: 'versionStartIncluding' }
                 },
                 {
                     title: '建议修复版本',
+                    i18nKey: 'Vulnerabilities.RecommendedFixVersion',
                     scopedSlots: { customRender: 'versionEndExcluding' }
                 }
             ],
         }
+    },
+    computed: {
+      i18nVulnerColumns() {
+        return this.vulnerColumns.map(column => {
+          if (column.i18nKey) {
+            column.title = this.$t(column.i18nKey);
+          }
+          return column;
+        });
+      }
     },
     methods: {
         closeReport() {
