@@ -36,7 +36,12 @@
             </div>
             <div slot="syncProgress"
                  slot-scope="text, record">
-              {{ record.syncProgress * 100 }} %
+              <template v-if="record.syncProgress && record.syncProgress > 0">
+                {{ (record.syncProgress * 100).toFixed(2) }} %
+              </template>
+              <template v-else>
+                0.00%
+              </template>
             </div>
             <div slot="operation"
                  slot-scope="text, record">
@@ -82,6 +87,7 @@ export default {
   },
   data() {
     return {
+      intervalId: undefined,
       settingTabActiveKey: 1,
       opsTypeMap: {
         1: "制品晋级",
@@ -170,12 +176,17 @@ export default {
   mounted() {
   },
   watch: {
-    settingVisible: function (val) {
-      this.settingTabActiveKey = 1
-    },
     eventPageVisible: function (val) {
       if (val) {
         this.getArtifactSyncRecordPage()
+        this.intervalId = setInterval(() => {
+          this.getArtifactSyncRecordPage()
+        }, 1000);
+      } else {
+        if (this.intervalId) {
+          clearInterval(this.intervalId);
+          this.intervalId = undefined
+        }
       }
     }
   },
@@ -187,7 +198,6 @@ export default {
       this.$emit('eventDrawerClose')
     },
     getArtifactSyncRecordPage() {
-      console.log(this.folibRepository)
       getArtifactSyncRecordPage(this.dataFilter)
           .then(res => {
             this.recordList = res.data.rows
