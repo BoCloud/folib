@@ -34,6 +34,10 @@
                  slot-scope="text, record">
               {{ statusMap[record.status] || "未知状态" }}
             </div>
+            <div slot="syncProgress"
+                 slot-scope="text, record">
+              {{ record.syncProgress * 100 }} %
+            </div>
             <div slot="operation"
                  slot-scope="text, record">
               <!--                    <div class="col-action" v-if="!record.autoRegister">-->
@@ -124,6 +128,13 @@ export default {
           scopedSlots: {customRender: 'status'}
         },
         {
+          title: '同步进度',
+          dataIndex: 'syncProgress',
+          key: 'syncProgress',
+          width: 100,
+          scopedSlots: {customRender: 'syncProgress'}
+        },
+        {
           title: '状态时间',
           dataIndex: 'createTime',
           key: 'createTime',
@@ -134,7 +145,7 @@ export default {
           title: '操作',
           dataIndex: 'operation',
           width: 100,
-          scopedSlots: { customRender: 'operation' }
+          scopedSlots: {customRender: 'operation'}
         }
       ],
       recordList: [],
@@ -155,7 +166,6 @@ export default {
   created() {
     this.dataFilter.storageId = this.folibRepository.storageId
     this.dataFilter.repositoryId = this.folibRepository.id
-    this.getArtifactSyncRecordPage()
   },
   mounted() {
   },
@@ -163,6 +173,11 @@ export default {
     settingVisible: function (val) {
       this.settingTabActiveKey = 1
     },
+    eventPageVisible: function (val) {
+      if (val) {
+        this.getArtifactSyncRecordPage()
+      }
+    }
   },
   methods: {
     settingTabChange(activeKey) {

@@ -88,7 +88,9 @@ public class ArtifactSyncRecordPageRes {
     @ApiModelProperty("更新时间")
     @JsonFormat(timezone = "GMT+8", pattern = "yyyy-MM-dd HH:mm:ss")
     private Date updateTime;
-
+    @ApiModelProperty("同步进度")
+    private Double syncProgress;
+    
     public ArtifactSyncRecordPageRes(ArtifactSyncRecord original) {
         if (null != original) {
             BeanUtil.copyProperties(original, this);
