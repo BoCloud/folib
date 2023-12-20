@@ -341,10 +341,6 @@ public class PromotionUtil {
                     return;
                 }
 
-                // 生成从记录 API_ARTIFACT_FOLIB_PROMOTION_GET_FILE_RELATIVE_PATHS
-                // TODO：2023/12/6 17:36 生成从记录
-                
-                
                 final FolibWsAction folibWsAction = new FolibWsAction()
                         .command(FolibWsClientArtifactPullCommand.COMMAND)
                         .payload(promotionNodeOption);

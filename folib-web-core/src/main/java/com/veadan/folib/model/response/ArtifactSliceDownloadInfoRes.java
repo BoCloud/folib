@@ -27,6 +27,8 @@ public class ArtifactSliceDownloadInfoRes {
     public static class DownloadPartInfo implements Cloneable {
         private String downloadUri;
         private String downloadUrl;
+        private Long size;
+        private String temId;
 
         @Override
         public DownloadPartInfo clone() {
