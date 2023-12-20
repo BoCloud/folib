@@ -45,7 +45,6 @@
             </div>
             <div slot="operation"
                  slot-scope="text, record">
-              <!--                    <div class="col-action" v-if="!record.autoRegister">-->
               <div class="col-action">
                 <a-popconfirm :title="(currentClickRecord && currentClickRecord.status === 2 ? '当前制品正在同步中，':'')+'确定要进行制品补偿吗'"
                               okType="danger"
