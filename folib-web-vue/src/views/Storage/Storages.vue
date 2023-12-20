@@ -914,9 +914,9 @@
             <p class="text-center">{{ $t('Storage.WarehousePortfolio') }}</p>
             <div class="kanban-page mb-24">
               <div id="kanban" class="kanban">
-                <draggable :list="boards" :animation="200" class="kanban-boards" ghost-class="ghost-card"
-                  group="boards">
-                  <FolibKanbanBoard v-for="(board) in boards" :key="board.id" :board="board">
+                <draggable :list="i18nBoards" :animation="200" class="kanban-boards" ghost-class="ghost-card"
+                  group="i18nBoards">
+                  <FolibKanbanBoard v-for="(board) in i18nBoards" :key="board.id" :board="board">
                     <draggable :list="board.tasks" :animation="200" ghost-class="ghost-card" group="tasks" ref="draggable" :style="{minHeight: draggableHeight}">
                       <FolibKanbanTask v-for="(task) in board.tasks" :key="task.id" :task="task" :boardId="board.id">
                       </FolibKanbanTask>
@@ -1096,15 +1096,14 @@ export default {
       if (value) {
         var reg = /^[a-zA-Z0-9_.\\-]+$/
         if (reg.test(value) === false) {
-          callback(new Error(
-              this.language === 'en' ? 'The storage space name should consist of uppercase and lowercase letters, numbers, and special characters (-.)'
-                  : '存储空间名称应为大小写字母，数字，特殊符号(-_.)'
-          ))
+          callback(new Error(this.$t('Storage.SpaceNameLimit')))
+        } else if(value.length < 1 || value.length > 30) {
+          callback(new Error(this.$t('Storage.SpaceNameLengthLimit')))
         } else {
           callback()
         }
-      } else {
-        callback()
+      } else if (!value) {
+        callback(new Error(this.$t('Storage.EnterSpaceName')))
       }
     }
     return {
@@ -1231,27 +1230,29 @@ export default {
       boards: [
         {
           id: "folibHub",
-          title: this.language === 'en' ? 'Selectable Artifact Repository' : "可选择制品仓库",
+          title: "可选择制品仓库",
+          i18nKey: 'Storage.SelectableRepository',
           tasks: []
         },
         {
           id: "folibGoup",
-          title: this.language === 'en' ? 'Composite Repository' : "已组合仓库",
+          title: "已组合仓库",
+          i18nKey: 'Storage.CompositeRepository',
           tasks: []
         }
       ],
       storageRules: {
         id: [
-          // 限制必填
-          { required: true, message: this.$t('Storage.EnterSpaceName') },
-          // 限制字符串长度
-          { min: 1, max: 30, message: this.$t('Storage.SpaceNameLimit') },
-          // 自定义正则
           { required: true, trigger: 'blur', validator: checkStorageId }
         ]
       },
       draggableHeight: '100vh'
     };
+  },
+  watch: {
+    '$i18n.locale'() {
+      this.$forceUpdate();
+    }
   },
   async created() {
     this.userInfo = store.state.user
@@ -1271,6 +1272,14 @@ export default {
     this.getStorage(this.currentStorage.id)
   },
   computed: {
+    i18nBoards() {
+      return this.boards.map(column => {
+        if (column.i18nKey) {
+          column.title = this.$t(column.i18nKey);
+        }
+        return column;
+      });
+    },
     language() {
       return this.$store.state.language.lang
     }
@@ -1341,8 +1350,8 @@ export default {
           setTimeout(() => {
             this.$notification.open({
               class: 'ant-notification-warning',
-              message: 'License不正确',
-              description: '请检查License是否存在',
+              message: this.$t('Storage.LicenseError'),
+              description: this.$t('Storage.CheckLicense'),
             });
           }, 1000);
         } else {
@@ -1350,8 +1359,8 @@ export default {
             setTimeout(() => {
               this.$notification.open({
                 class: 'ant-notification-warning',
-                message: 'License已过期',
-                description: '请续期后再添加制品仓库',
+                message: this.$t('Storage.LicenseExpired'),
+                description: this.$t('Storage.AddWarehouseAfterRenewal'),
               });
             }, 1000);
           } else {
@@ -1398,7 +1407,7 @@ export default {
       document.body.removeChild(input); // 删除临时实例
       setTimeout(() => {
         this.$notification.success({
-          message: '复制成功'
+          message: this.$t('Storage.CopySuccessful')
         })
       }, 100)
     },
@@ -1427,7 +1436,7 @@ export default {
           this.currentStorage = this.currentDefultStorage
           this.reload()
         }).catch(err => {
-          let error = err.response.data?err.response.data:"未知错误"
+          let error = err.response.data?err.response.data:this.$t('Storage.UnknownError')
           this.$notification["error"]({
             message: error,
           })
@@ -1460,7 +1469,7 @@ export default {
           this.currentStorage = this.currentDefultStorage
           this.reload()
         }).catch(err => {
-          let error = err.response.data?err.response.data:"未知错误"
+          let error = err.response.data?err.response.data:this.$t('Storage.UnknownError')
           this.$notification["error"]({
             message: error,
           })
@@ -1492,7 +1501,7 @@ export default {
             }).catch((err) => {
               let error = JSON.stringify(err.response.data)
               this.$notification["error"]({
-                message: error.indexOf('The storage id already exists') !== -1 ? '存储空间名称已存在' : "创建失败",
+                message: error.indexOf('The storage id already exists') !== -1 ? this.$t('Storage.StorageNameExists') : this.$t('Storage.FailedCreate'),
               })
             })
           }
@@ -1627,8 +1636,8 @@ export default {
           setTimeout(() => {
             this.$notification.open({
               class: 'ant-notification-warning',
-              message: 'License不正确',
-              description: '请检查License是否存在',
+              message: this.$t('Storage.LicenseError'),
+              description:  this.$t('Storage.CheckLicense'),
             });
           }, 1000);
         } else {
@@ -1637,8 +1646,8 @@ export default {
             setTimeout(() => {
               this.$notification.open({
                 class: 'ant-notification-warning',
-                message: 'License已过期',
-                description: '请续期后再添加制品仓库',
+                message: this.$t('Storage.LicenseExpired'),
+                description: this.$t('Storage.AddWarehouseAfterRenewal'),
               });
             }, 1000);
           } else {
@@ -1656,8 +1665,8 @@ export default {
               setTimeout(() => {
                 this.$notification.open({
                   class: 'ant-notification-warning',
-                  message: '操作不正确',
-                  description: '你应该先从左侧选中一个存储空间，然后再新建仓库',
+                  message: this.$t('Storage.OperationIncorrect'),
+                  description: this.$t('Storage.selectSpace'),
                 });
               }, 1000);
             }
@@ -1701,7 +1710,7 @@ export default {
         setTimeout(() => {
           this.$notification.open({
             class: 'ant-notification-success',
-            message: '成功',
+            message: this.$t('Storage.Success'),
             description: res,
           });
         }, 100)
@@ -1713,8 +1722,8 @@ export default {
         if (!i.isSetted.cronExpression) {
           this.$notification.open({
             class: 'ant-notification-warning',
-            message: '操作不正确',
-            description: '请填写cron表达式',
+            message: this.$t('Storage.OperationIncorrect'),
+            description: this.$t('Storage.FillInCronExpression'),
           })
           return false
         }
@@ -1735,7 +1744,7 @@ export default {
             setTimeout(() => {
               this.$notification.open({
                 class: 'ant-notification-success',
-                message: '成功',
+                message: this.$t('Storage.Success'),
                 description: res,
               });
             }, 100)
@@ -1743,7 +1752,7 @@ export default {
             setTimeout(() => {
               this.$notification.open({
                 class: 'ant-notification-warning',
-                message: '失败',
+                message: this.$t('Storage.Failure'),
                 description: err.response.data.error,
               });
             }, 100)
@@ -1754,7 +1763,7 @@ export default {
             setTimeout(() => {
               this.$notification.open({
                 class: 'ant-notification-success',
-                message: '成功',
+                message: this.$t('Storage.Success'),
                 description: res,
               });
             }, 100)
@@ -1762,7 +1771,7 @@ export default {
             setTimeout(() => {
               this.$notification.open({
                 class: 'ant-notification-warning',
-                message: '失败',
+                message: this.$t('Storage.Failure'),
                 description: err.response.data.error,
               });
             }, 100)
@@ -1777,29 +1786,29 @@ export default {
       if (!repositoryName) {
         this.$notification.open({
           class: 'ant-notification-warning',
-          message: '填写错误',
-          description: '请输入仓库名称',
+          message: this.$t('Storage.FillInErrors'),
+          description: this.$t('Storage.EnterRepository'),
         });
         return false
       }
       if (repositoryName.length < 1 || repositoryName.length > 30) {
         this.$notification.open({
           class: 'ant-notification-warning',
-          message: '填写错误',
-          description: '仓库名称长度在 1 到 30 个字符',
+          message: this.$t('Storage.FillInErrors'),
+          description: this.$t('Storage.RepositoryLimit'),
         })
         return false
       }
       let reg = /^(?![_.])[a-zA-Z0-9_.\\-]+$/
-      let description = '仓库名称应为大小写字母，数字，特殊符号(-_.)，不能以_.开头'
+      let description = this.$t('Storage.RepositoryLimit')
       if (this.layoutChecked === 'docker') {
         reg = /^(?![_.])[a-z0-9_.\\-]+$/
-        description = 'docker仓库名称应为小写字母，数字，特殊符号(-_.)，不能以_.开头'
+        description = 'docker'+this.$t('Storage.RepositoryLimit')
       }
       if (reg.test(repositoryName) === false) {
         this.$notification.open({
           class: 'ant-notification-warning',
-          message: '填写错误',
+          message: this.$t('Storage.FillInErrors'),
           description: description,
         })
         return false
@@ -1849,7 +1858,7 @@ export default {
           setTimeout(() => {
             this.$notification.open({
               class: 'ant-notification-success',
-              message: this.folibRepositoryEditDisabled ? '仓库已修改完成' : '仓库已新增完成',
+              message: this.folibRepositoryEditDisabled ? this.$t('Storage.WarehouseModified') : this.$t('Storage.WarehouseAdded'),
               description: res.message,
             });
           }, 1000);
@@ -1873,7 +1882,7 @@ export default {
       }).catch((err) => {
         let error = JSON.stringify(err.response.data)
         this.$notification["error"]({
-          message: error.indexOf('The repository id already exists') !== -1 ? '仓库名称已存在' : "创建失败",
+          message: error.indexOf('The repository id already exists') !== -1 ? this.$t('Storage.RepositoryNameExists') : this.$t('Storage.FailedCreate'),
         })
       })
 
@@ -1959,12 +1968,12 @@ export default {
               setTimeout(() => {
                 this.$notification.open({
                   class: 'ant-notification-success',
-                  message: '成功',
-                  description: values.id + '已删除',
+                  message: this.$t('Storage.Success'),
+                  description: values.id + this.$t('Storage.Deleted'),
                 });
               }, 100)
             }).catch((err) => {
-              let error = err.response.data?err.response.data:"未知错误"
+              let error = err.response.data?err.response.data:this.$t('Storage.UnknownError')
               this.$notification["error"]({
                 message: error,
               })
@@ -1976,8 +1985,8 @@ export default {
             setTimeout(() => {
               this.$notification.open({
                 class: 'ant-notification-warning',
-                message: '填写错误',
-                description: '要删除的内容填写错误',
+                message: this.$t('Storage.FillInErrors'),
+                description: this.$t('Storage.ContentError'),
               });
             }, 1000);
           }
@@ -1993,12 +2002,12 @@ export default {
               setTimeout(() => {
                 this.$notification.open({
                   class: 'ant-notification-success',
-                  message: '成功',
-                  description: values.id + '已删除',
+                  message: this.$t('Storage.Success'),
+                  description: values.id + this.$t('Storage.Deleted'),
                 });
               }, 100)
             }).catch((err) => {
-              let error = err.response.data?err.response.data:"未知错误"
+              let error = err.response.data?err.response.data:this.$t('Storage.UnknownError')
               this.$notification["error"]({
                 message: error,
               })
@@ -2010,8 +2019,8 @@ export default {
             setTimeout(() => {
               this.$notification.open({
                 class: 'ant-notification-warning',
-                message: '填写错误',
-                description: '要删除的内容填写错误',
+                message: this.$t('Storage.FillInErrors'),
+                description: this.$t('Storage.ContentError'),
               });
             }, 1000);
           }
@@ -2101,22 +2110,22 @@ export default {
       aliveRepository(this.currentStorage.id, this.folibRepository.id, this.folibRepository).then(res => {
         if (res.alive) {
           this.$notification["success"]({
-            message: "远程仓库连接正常",
+            message: this.$t('Storage.ConnectedFine'),
           })
         } else {
-          let msg = "远程仓库连接失败"
+          let msg = this.$t('Storage.ConnectedFailed')
           if (res.statusCode) {
-            msg = msg + "，响应状态码 " + res.statusCode
+            msg = msg + "，" + this.$t('Storage.ResponseStatusCode') + res.statusCode
           }
           if (res.statusCode === 404) {
-            msg = msg + "（tips: 某些仓库不支持浏览也会返回404，但不影响构建使用，请检查该远程仓库是否为此类仓库）"
+            msg = msg + this.$t('Storage.warehouseTips')
           }
           this.$notification["warning"]({
             message: msg,
           })
         }
       }).catch((err) => {
-        let error = err.response.data?err.response.data:"未知错误"
+        let error = err.response.data?err.response.data:this.$t('Storage.UnknownError')
         this.$notification.error({
           message: error,
         })
