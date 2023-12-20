@@ -411,7 +411,7 @@
     : currentTreeNode.url
   }}</a>
 
-          <hr class="my-25" />
+          <hr class="gradient-line" />
           <BaseData ref="BaseData" :currentTreeNode="currentTreeNode" :repositoryType="repositoryType"
             :currentFileDetial="currentFileDetial" :successMsg="successMsg" :folibRepository="folibRepository"
             @metadataEditHandler="metadataEditHandler" @metadataHandler="metadataHandler" @setCurrentFileDetial="setCurrentFileDetial"/>

@@ -135,7 +135,7 @@
         </a-button>
         <a class="text-dark" :href="searchDataCurrentSelect ? searchDataCurrentSelect.url : ''" target="_blank">{{
           searchDataCurrentSelect ? searchDataCurrentSelect.url : "" }}</a>
-        <hr class="my-25" />
+        <hr class="gradient-line" />
         <a-descriptions title="基本信息" :column="1" v-if="searchDataCurrentSelect">
           <a-descriptions-item label="所属空间">
             {{ searchDataCurrentSelect.storageId }}
@@ -165,7 +165,7 @@
             </a-descriptions-item>
           </template>
         </a-descriptions>
-        <hr class="my-25" />
+        <hr class="gradient-line" />
 
         <a-col :span="24" v-if="
           searchDataCurrentSelect &&

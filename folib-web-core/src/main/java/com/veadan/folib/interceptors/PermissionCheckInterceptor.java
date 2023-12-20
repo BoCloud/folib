@@ -15,6 +15,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.compress.utils.Lists;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.method.HandlerMethod;
@@ -74,14 +75,14 @@ public class PermissionCheckInterceptor implements HandlerInterceptor {
 
         //是否在白名单中
         String ipAddr = IPUtil.getIpAddr(request);
-        log.info("当前调用ip {} ", ipAddr);
+        log.info("Current request ip [{}]", ipAddr);
         if (getWhiteList(ipAddr).contains(ipAddr)) {
-            log.info("{} 白名单调用 {}", ipAddr, handlerMethod.toString());
+            log.info("Whitelist call [{}] [{}]", ipAddr, handlerMethod.toString());
             return true;
         }
         //获取用的角色权限列表中是否拥有该权限
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        if (!authentication.isAuthenticated()) {
+        if (Objects.isNull(authentication) || !authentication.isAuthenticated()) {
             handlerResponse(response);
             return false;
         }
@@ -118,13 +119,15 @@ public class PermissionCheckInterceptor implements HandlerInterceptor {
                 storageId = jsonObject.getString(storageKey);
                 repositoryId = jsonObject.getString(repositoryKey);
             }
-            SpringSecurityUser userDetails = (SpringSecurityUser) authentication.getPrincipal();
-            Collection<Privileges> storageAuthorities = userDetails.getStorageAuthorities(storageId, repositoryId, filePaths);
-            boolean flag = storageAuthorities.stream().anyMatch(item -> item.getAuthority().equals(resourceKey));
-            if (!flag) {
-                handlerResponse(response);
+            if (authentication.getPrincipal() instanceof SpringSecurityUser) {
+                SpringSecurityUser userDetails = (SpringSecurityUser) authentication.getPrincipal();
+                Collection<Privileges> storageAuthorities = userDetails.getStorageAuthorities(storageId, repositoryId, filePaths);
+                boolean flag = storageAuthorities.stream().anyMatch(item -> item.getAuthority().equals(resourceKey));
+                if (!flag) {
+                    handlerResponse(response);
+                }
+                return flag;
             }
-            return flag;
         }
         handlerResponse(response);
         return false;

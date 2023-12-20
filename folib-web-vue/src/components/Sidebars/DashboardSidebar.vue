@@ -13,7 +13,7 @@
     :style="{ backgroundColor: 'transparent' }"
   >
     <div class="brand"><img src="images/folib/foliblogo.png" alt="" /> <span>{{ instanceName }}</span></div>
-    <hr />
+    <hr class="gradient-line"/>
 
     <!-- Sidebar Navigation Menu -->
     <a-menu theme="light" mode="inline" :open-keys="openKeys" @openChange="onOpenChange">

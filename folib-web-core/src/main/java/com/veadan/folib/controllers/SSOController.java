@@ -26,6 +26,7 @@ import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -52,7 +53,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 
-
+@Slf4j
 @Controller
 @RequestMapping("/api/sso")
 @Api(value = "单点登录", tags = "单点登录客户端管理")
@@ -135,12 +136,13 @@ public class SSOController {
      * @return token信息
      * @throws Exception 异常
      */
-    @GetMapping(value = "/login")
-    public RedirectView login(@RequestParam(name = "code") String code, @RequestParam(name = "state") String state) throws Exception {
+    @GetMapping(value = "/login/{clientId}")
+    public RedirectView login(@RequestParam(name = "code") String code, @RequestParam(name = "state", required = false) String state, @PathVariable("clientId") String clientId) throws Exception {
+        log.info("Params code [{}] state [{}] clientId [{}]", code, state, clientId);
         Set<Client> clients = authorizationConfigService.getDto().getClients();
         Client clientConfig = Optional.of(clients.stream()
                 .filter(r -> r.getClientId()
-                        .equalsIgnoreCase(state))
+                        .equalsIgnoreCase(clientId))
                 .findFirst()).get().orElse(null);
         if (Objects.isNull(clientConfig)) {
             throw new IllegalArgumentException("Param clientId error");
@@ -252,11 +254,12 @@ public class SSOController {
         Response response = null;
         try {
             response = doPostForm(client.getAccessTokenUrl(), map, headerMap);
+            String json = response.readEntity(String.class);
+            log.info("AccessToken result [{}]", json);
             if (response.getStatus() != HttpStatus.SC_OK) {
                 throw new ServerErrorException(response.getStatus() + " | Unable to greet()",
                         Response.Status.INTERNAL_SERVER_ERROR);
             } else {
-                String json = response.readEntity(String.class);
                 return JSONObject.parseObject(json);
             }
         } finally {
@@ -306,11 +309,12 @@ public class SSOController {
             Response response = null;
             try {
                 response = doGet(client.getUserInfoUrl(), headerMap);
+                String userInfo = response.readEntity(String.class);
+                log.info("UserInfo result [{}]", userInfo);
                 if (response.getStatus() != HttpStatus.SC_OK) {
                     throw new ServerErrorException(response.getStatus() + " | Unable to greet()",
                             Response.Status.INTERNAL_SERVER_ERROR);
                 }
-                String userInfo = response.readEntity(String.class);
                 JSONObject userInfoJson = JSONObject.parseObject(userInfo);
                 if (userInfoJson.containsKey(client.getUsername())) {
                     String realUsername = userInfoJson.getString(client.getUsername());

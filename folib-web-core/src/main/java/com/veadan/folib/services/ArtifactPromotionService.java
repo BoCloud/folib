@@ -5,10 +5,12 @@ import com.veadan.folib.domain.ArtifactParse;
 import com.veadan.folib.domain.ArtifactPromotion;
 import com.veadan.folib.domain.PromotionNodeOption;
 import com.veadan.folib.dto.ArtifactDto;
+import com.veadan.folib.model.request.ArtifactPromotionNodeOptionCallbackReq;
 import com.veadan.folib.model.request.ArtifactSliceDownloadInfoReq;
+import com.veadan.folib.model.request.ArtifactSliceUploadReq;
 import com.veadan.folib.model.response.ArtifactSliceDownloadInfoRes;
 import com.veadan.folib.entity.Dict;
-import com.veadan.folib.model.request.ArtifactSupportSliceDownloadQueryReq;
+import com.veadan.folib.model.response.ArtifactSliceUploadInfoRes;
 import com.veadan.folib.storage.repository.Repository;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.multipart.MultipartFile;
@@ -16,7 +18,6 @@ import org.springframework.web.multipart.MultipartFile;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.util.List;
-import java.util.Map;
 
 /**
  * 制品晋级service
@@ -29,9 +30,11 @@ public interface ArtifactPromotionService {
 
     ResponseEntity move(ArtifactPromotion artifactPromotion);
 
-    ResponseEntity nodeOption(PromotionNodeOption promotionNodeOption, HttpServletRequest request);
+    ResponseEntity<String> nodeOption(PromotionNodeOption promotionNodeOption, HttpServletRequest request);
     
     ResponseEntity nodeOptionAttachRecord(PromotionNodeOption promotionNodeOption, HttpServletRequest request);
+
+    Boolean artifactPullCallback(ArtifactPromotionNodeOptionCallbackReq model);
 
     ResponseEntity artifactPromotionInfo(String syncNo);
 
@@ -42,6 +45,8 @@ public interface ArtifactPromotionService {
     ResponseEntity download(ArtifactDto artifactDto, HttpServletResponse response);
 
     ResponseEntity getFileRelativePaths(ArtifactDto artifactDto);
+
+    ResponseEntity artifactDispatchAttachRecord(ArtifactDispatch artifactDispatch, HttpServletRequest request);
 
     ResponseEntity artifactDispatch(ArtifactDispatch artifactDispatch);
 
@@ -75,36 +80,75 @@ public interface ArtifactPromotionService {
     ArtifactParse parseArtifact(String storageId, String repositoryId, MultipartFile file);
 
 
-    Boolean sliceFileDownload(Repository repository, String artifactPath, String nodeMark, HttpServletResponse response);
-    
-    
     /**
-     * 判断制品是否支持切片下载
-     * @param model
+     * 限速下载
+     * @param repository
+     * @param artifactPath
+     * @param nodeMark
+     * @param response
      * @return
      * @since x.x.x
      */
-    Boolean querySupportSliceDownload(ArtifactSupportSliceDownloadQueryReq model);
+    Boolean speedLimitDownload(Repository repository, String artifactPath, String nodeMark, HttpServletResponse response);
 
+    /**
+     * 切片&限速下载
+     * @param repository
+     * @param artifactPath
+     * @param nodeMark
+     * @param artifactMd5
+     * @param startDownloadIndex
+     * @param readLength
+     * @param response
+     * @since x.x.x
+     */
+    Boolean speedLimitSliceDownload(Repository repository, String artifactPath, String nodeMark, String artifactMd5, Long startDownloadIndex, Long readLength, HttpServletResponse response);
+    
+    
+///    /**
+///     * 判断制品是否支持切片下载
+///     * @param model
+///     * @return
+///     * @since x.x.x
+///     */
+///    Boolean querySupportSliceDownload(ArtifactSupportSliceDownloadQueryReq model);
+///
+///
+///    Map<String, Boolean> batchQuerySupportSliceDownload(List<ArtifactSupportSliceDownloadQueryReq> models);
+    
+///    /**
+///     * 获取制品切片下载信息（基于临时文件目录存储）
+///     * @param model
+///     * @return
+///     * @since x.x.x
+///     */
+///    ArtifactSliceDownloadInfoRes querySliceDownloadInfoStoreTemp(ArtifactSliceDownloadInfoReq model);
 
-    Map<String, Boolean> batchQuerySupportSliceDownload(List<ArtifactSupportSliceDownloadQueryReq> models);
-    
     /**
-     * 获取制品切片下载信息（基于临时文件目录存储）
+     * 查询制品下载信息
      * @param model
      * @return
      * @since x.x.x
      */
-    ArtifactSliceDownloadInfoRes querySliceDownloadInfoStoreTemp(ArtifactSliceDownloadInfoReq model);
+    ArtifactSliceDownloadInfoRes querySliceDownloadInfo(ArtifactSliceDownloadInfoReq model);
     
-    /**
-     * 获取制品切片下载信息（基于临时Folib目录存储）
-     * @param model
-     * @return
-     * @since x.x.x
-     */
-    ArtifactSliceDownloadInfoRes querySliceDownloadInfoStoreFolib(ArtifactSliceDownloadInfoReq model);
 
     List<ArtifactSliceDownloadInfoRes> batchQuerySliceDownloadInfo(List<ArtifactSliceDownloadInfoReq> models);
+
+    /**
+     * 查询文件切片预信息
+     * @return
+     * @since x.x.x
+     */
+    ArtifactSliceUploadInfoRes querySliceUploadInfo();
+
+    /**
+     * 文件切片上传
+     *
+     * @param model
+     * @return
+     * @since x.x.x
+     */
+    Boolean sliceUpload(ArtifactSliceUploadReq model);
 
 }

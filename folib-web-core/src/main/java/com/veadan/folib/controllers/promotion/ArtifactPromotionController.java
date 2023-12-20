@@ -10,8 +10,10 @@ import com.veadan.folib.domain.PromotionNodeOption;
 import com.veadan.folib.dto.ArtifactDto;
 import com.veadan.folib.entity.Dict;
 import com.veadan.folib.model.request.ArtifactSliceDownloadInfoReq;
+import com.veadan.folib.model.request.ArtifactSliceUploadReq;
 import com.veadan.folib.model.request.ArtifactSupportSliceDownloadQueryReq;
 import com.veadan.folib.model.response.ArtifactSliceDownloadInfoRes;
+import com.veadan.folib.model.response.ArtifactSliceUploadInfoRes;
 import com.veadan.folib.services.ArtifactPromotionService;
 import com.veadan.folib.storage.repository.Repository;
 import com.veadan.folib.validation.RequestBodyValidationException;
@@ -21,14 +23,17 @@ import io.swagger.annotations.ApiOperation;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -36,8 +41,10 @@ import org.springframework.web.multipart.MultipartFile;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 /**
  * 制品晋级控制层
@@ -85,7 +92,13 @@ public class ArtifactPromotionController extends BaseArtifactController {
         return artifactPromotionService.nodeOptionAttachRecord(promotionNodeOption, request);
     }
 
-    
+
+///    @PostMapping("/nodeOptionCallback")
+///    @PermissionCheck(resourceKey = "ARTIFACTS_PROMOTION")
+///    public ResponseEntity<Boolean> nodeOptionCallback(@RequestBody @Validated ArtifactPromotionNodeOptionCallbackReq model) {
+///        return ResponseEntity.ok(artifactPromotionService.nodeOptionCallback(model));
+///    }
+
     @GetMapping("/info/{syncNo}")
     @PermissionCheck(resourceKey = "ARTIFACTS_PROMOTION")
     public ResponseEntity artifactPromotionInfo(@PathVariable("syncNo") String syncNo) {
@@ -137,11 +150,11 @@ public class ArtifactPromotionController extends BaseArtifactController {
 
     @PostMapping(value = "/artifactDispatch")
     @PermissionCheck(resourceKey = "CONFIGURATION_ADD_UPDATE_STORAGE")
-    public ResponseEntity artifactDispatch(@RequestBody @Validated ArtifactDispatch artifactDispatch, BindingResult bindingResult) {
+    public ResponseEntity artifactDispatch(@RequestBody @Validated ArtifactDispatch artifactDispatch, HttpServletRequest request, BindingResult bindingResult) {
         if (bindingResult.hasErrors()) {
             throw new RequestBodyValidationException("请求参数错误", bindingResult);
         }
-        return artifactPromotionService.artifactDispatch(artifactDispatch);
+        return artifactPromotionService.artifactDispatchAttachRecord(artifactDispatch, request);
     }
 
     @PostMapping("/parseArtifact")
@@ -178,33 +191,87 @@ public class ArtifactPromotionController extends BaseArtifactController {
 
 
     @GetMapping(value = "/file/speedLimitDownload/{storageId}/{repositoryId}/{artifactPath:.+}")
+    @Deprecated
     public void speedLimitDownload(@RepositoryMapping Repository repository,
                                    @PathVariable String artifactPath, @RequestParam("nodeMark") String nodeMark,
                                    HttpServletResponse response) {
-        artifactPromotionService.sliceFileDownload(repository, artifactPath, nodeMark, response);
+        artifactPromotionService.speedLimitDownload(repository, artifactPath, nodeMark, response);
     }
 
-    @PostMapping(value = "/query/support/slice/download")
-    @PermissionCheck(resourceKey = "ARTIFACTS_RESOLVE")
-    public ResponseEntity<Boolean> querySupportSliceDownload(@RequestBody @Validated ArtifactSupportSliceDownloadQueryReq model) {
-        return ResponseEntity.ok(artifactPromotionService.querySupportSliceDownload(model));
+    @GetMapping(value = "/file/speedLimitSliceDownload/{storageId}/{repositoryId}/{artifactPath:.+}")
+    public void speedLimitSliceDownload(@RepositoryMapping Repository repository,
+                                        @PathVariable String artifactPath,
+                                        @RequestParam("nodeMark") String nodeMark,
+                                        @RequestParam("artifactMd5") String artifactMd5,
+                                        @RequestParam("startDownloadIndex") Long startDownloadIndex,
+                                        @RequestParam("readLength") Long readLength,
+                                        HttpServletResponse response) {
+        artifactPromotionService.speedLimitSliceDownload(repository, artifactPath, nodeMark, artifactMd5,
+                startDownloadIndex, readLength, response);
     }
 
-    @PostMapping(value = "/batch/query/support/slice/download")
-    @PermissionCheck(resourceKey = "ARTIFACTS_RESOLVE")
-    public ResponseEntity<Map<String, Boolean>> batchQuerySupportSliceDownload(@RequestBody @Validated List<ArtifactSupportSliceDownloadQueryReq> models) {
-        return ResponseEntity.ok(artifactPromotionService.batchQuerySupportSliceDownload(models));
-    }
-    
+///    @PostMapping(value = "/query/support/slice/download")
+///    @PermissionCheck(resourceKey = "ARTIFACTS_RESOLVE")
+///    public ResponseEntity<Boolean> querySupportSliceDownload(@RequestBody @Validated ArtifactSupportSliceDownloadQueryReq model) {
+///        return ResponseEntity.ok(artifactPromotionService.querySupportSliceDownload(model));
+///    }
+///
+///    @PostMapping(value = "/batch/query/support/slice/download")
+///    @PermissionCheck(resourceKey = "ARTIFACTS_RESOLVE")
+///    public ResponseEntity<Map<String, Boolean>> batchQuerySupportSliceDownload(@RequestBody @Validated List<ArtifactSupportSliceDownloadQueryReq> models) {
+///        return ResponseEntity.ok(artifactPromotionService.batchQuerySupportSliceDownload(models));
+///    }
+
     @PostMapping(value = "/query/slice/download/info")
     @PermissionCheck(resourceKey = "ARTIFACTS_RESOLVE")
     public ResponseEntity<ArtifactSliceDownloadInfoRes> querySliceDownloadInfo(@RequestBody ArtifactSliceDownloadInfoReq model) {
-        return ResponseEntity.ok(artifactPromotionService.querySliceDownloadInfoStoreTemp(model));
+        return ResponseEntity.ok(artifactPromotionService.querySliceDownloadInfo(model));
     }
 
     @PostMapping(value = "/batch/query/slice/download/info")
     @PermissionCheck(resourceKey = "ARTIFACTS_RESOLVE")
     public ResponseEntity<List<ArtifactSliceDownloadInfoRes>> batchQuerySliceDownloadInfo(@RequestBody List<ArtifactSliceDownloadInfoReq> models) {
         return ResponseEntity.ok(artifactPromotionService.batchQuerySliceDownloadInfo(models));
+    }
+
+    @GetMapping(value = "/slice/upload/info")
+    @PermissionCheck(resourceKey = "ARTIFACTS_RESOLVE")
+    public ResponseEntity<ArtifactSliceUploadInfoRes> querySliceUploadInfo() {
+        return ResponseEntity.ok(artifactPromotionService.querySliceUploadInfo());
+    }
+
+    @PostMapping(value = "/slice/upload")
+    @PermissionCheck(resourceKey = "ARTIFACTS_RESOLVE")
+    public ResponseEntity<Boolean> sliceUpload(@ModelAttribute @Validated ArtifactSliceUploadReq model) {
+        return ResponseEntity.ok(artifactPromotionService.sliceUpload(model));
+    }
+
+    @PostMapping(value = "/header/slice/upload", consumes = {"application/octet-stream"})
+//    @PermissionCheck(resourceKey = "ARTIFACTS_RESOLVE")
+    public ResponseEntity<Boolean> sliceUploadByHeader(
+            @RequestHeader("storageId") String storageId,
+            @RequestHeader("repositoryId") String repositoryId,
+            @RequestHeader("path") String path,
+            @RequestHeader("mergeId") String mergeId,
+            @RequestHeader("chunkIndex") Integer chunkIndex,
+            @RequestHeader("chunkIndexMax") Integer chunkIndexMax,
+            @RequestHeader("originFileMd5") String originFileMd5,
+            HttpServletRequest request) {
+        try {
+            final MockMultipartFile mockMultipartFile = new MockMultipartFile(UUID.randomUUID().toString(), request.getInputStream());
+            final ArtifactSliceUploadReq model = new ArtifactSliceUploadReq();
+            model.setStorageId(storageId);
+            model.setRepositoryId(repositoryId);
+            model.setPath(path);
+            model.setMergeId(mergeId);
+            model.setChunkIndex(chunkIndex);
+            model.setChunkIndexMax(chunkIndexMax);
+            model.setOriginFileMd5(originFileMd5);
+            model.setFile(mockMultipartFile);
+            return ResponseEntity.ok(artifactPromotionService.sliceUpload(model));
+        } catch (IOException e) {
+            log.error("通过Header传参方式，文件切片上传失败", e);
+            return ResponseEntity.internalServerError().build();
+        }
     }
 }

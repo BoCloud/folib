@@ -42,7 +42,7 @@
 			</a-row>
 		</template>
 		<p><slot></slot></p>
-		<hr>
+		<hr class="gradient-line">
 		<a-row type="flex" :gutter="[24,24]" align="middle">
 			<a-col>
 

@@ -2,6 +2,7 @@ package com.veadan.folib.controllers.configuration;
 
 
 import cn.hutool.core.util.StrUtil;
+import cn.hutool.http.HttpUtil;
 import com.veadan.folib.cluster.SyncClusterDispatchEnum;
 import com.veadan.folib.controllers.cluster.dto.SyncClusterDispatchDto;
 import com.veadan.folib.dispatch.ClusterDispatchNodeDto;
@@ -86,22 +87,15 @@ public class ClusterDispatchConfigurationController extends BaseConfigurationCon
         values.forEach(nodeDto -> {
             if (nodeDto.getAutoRegister()) {
                 final FolibWsServerRunManage.FolibWsClientRun wsClientRun = FolibWsServerRunManage.getWsClientRun(nodeDto.getClusterEnName());
-                if (null != wsClientRun && wsClientRun.getSession().isOpen()) {
-                    nodeDto.setWsClientOnline(true);
-                } else {
-                    nodeDto.setWsClientOnline(false);
-                }
+                nodeDto.setWsClientOnline(null != wsClientRun && wsClientRun.getSessionStatus());
             } else {
                 final String clusterNodeHost = nodeDto.getClusterNodeHost();
                 final String host = UrlUtils.getHost(clusterNodeHost);
                 final Integer port = UrlUtils.getPort(clusterNodeHost);
-                final String nodeName = String.format("%s:%s", host, port);
+///                final String nodeName = String.format("%s:%s", host, port);
+                final String nodeName = String.format("%s", host);
                 final FolibWsClientRunManage.FolibWsServerRun wsServerRun = FolibWsClientRunManage.getWsServerRun(nodeName);
-                if (null != wsServerRun && null != wsServerRun.getSession() && wsServerRun.getSession().isOpen()) {
-                    nodeDto.setWsClientOnline(true);
-                } else {
-                    nodeDto.setWsClientOnline(false);
-                }
+                nodeDto.setWsClientOnline(null != wsServerRun && wsServerRun.getSessionStatus());
             }
         });
         
@@ -137,10 +131,13 @@ public class ClusterDispatchConfigurationController extends BaseConfigurationCon
             final Integer originPort = UrlUtils.getPort(baseUrl);
             final String destHost = UrlUtils.getHost(clusterNodeHost);
             final Integer destPort = UrlUtils.getPort(clusterNodeHost);
-            final String destNodeName = String.format("%s:%s", destHost, destPort);
+            final String destNodeName = String.format("%s", destHost);
+///            final String destNodeName = String.format("%s", destHost, destPort);
             final String originNodeName = String.format("%s:%s", originHost, originPort);
             final String destUri = String.format("/ws/folib/%s", originNodeName);
-            final boolean upResult = FolibWsClientRunManage.up(destNodeName, destHost, destPort, destUri, true);
+            final boolean enableSSL = HttpUtil.isHttps(clusterNodeHost);
+            
+            final boolean upResult = FolibWsClientRunManage.up(destNodeName, destHost, destPort, destUri, true, enableSSL);
             if (!upResult) {
                 throw new BusinessException("尝试连接到添加目标节点失败，请检查添加节点信息是否正确");
             }

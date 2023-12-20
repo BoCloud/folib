@@ -62,4 +62,9 @@ public class ArtifactDispatch {
      */
     private Boolean recordStatus;
 
+    /**
+     * 分发编号
+     */
+    private String syncNo;
+
 }

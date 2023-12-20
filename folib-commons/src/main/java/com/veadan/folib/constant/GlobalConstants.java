@@ -12,6 +12,16 @@ public interface GlobalConstants {
     String REQUEST_PARAMS_ERROR = "请求参数错误，请检查";
 
     /**
+     * 存储空间未找到
+     */
+    String STORAGE_NOT_FOUND_MESSAGE = "The storage was not found.";
+
+    /**
+     * 仓库未找到
+     */
+    String REPOSITORY_NOT_FOUND_MESSAGE = "The repository was not found.";
+
+    /**
      * 制品未找到
      */
     String ARTIFACT_NOT_FOUND_MESSAGE = "The artifact was not found.";

@@ -6,6 +6,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import javax.persistence.Column;
 import javax.validation.constraints.NotEmpty;
 
 /**
@@ -30,6 +31,9 @@ public class PromotionNodeOption {
      */
     @ApiModelProperty("同步模式（1：推；2：拉），缺省值：拉")
     private Integer syncModel = ArtifactSyncRecordSyncModelEnum.PULL.getVal();
+
+    @ApiModelProperty("制品同步编号")
+    private String syncNo;
 
     public PromotionNodeOption(String sourcePath, String targetPath) {
         this.sourcePath = sourcePath;

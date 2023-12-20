@@ -67,7 +67,7 @@ public class FolibWsServer {
 
 
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            log.error("连接失败", e);
         }
     }
 
