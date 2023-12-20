@@ -37,14 +37,12 @@
           :vulnerabilityColumns="vulnerabilityColumns"
         />
       </a-tab-pane>
-<!--      <a-button v-if="eventSettingEnabled" slot="tabBarExtraContent" icon="event" class="repository-setting" size="small" @click="eventPageVisible = true" />-->
+      <a-button v-if="eventSettingEnabled" slot="tabBarExtraContent" icon="event" class="repository-setting" size="small" @click="eventPageVisible = true" />
       <a-button v-if="settingsEnabled" slot="tabBarExtraContent" icon="setting" class="repository-setting" size="small" @click="settingDrawerShow()" />
     </a-tabs>
     <!-- / Header Background Image -->
-
     <SettingsDrawer :folibRepository="this.folibRepository" :settingVisible="settingVisible" @settingDrawerClose="settingDrawerClose"></SettingsDrawer>
-    <!-- TODO:2023/12/15 18:33 暂时注释待功能完成后打开   -->
-    <EventPageDrawer :folibRepository="this.folibRepository" :eventPageVisible="eventPageVisible" @eventDrawerClose="eventPageVisible = false"></EventPageDrawer>
+    <EventPageDrawer :folibRepository="this.folibRepository" :eventPageVisible="eventPageVisible" @eventDrawerClose="eventPageVisible=false"></EventPageDrawer>
 
     <!-- docker -->
     <a-drawer
