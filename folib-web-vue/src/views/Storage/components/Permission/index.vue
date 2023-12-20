@@ -11,52 +11,52 @@
         <a-col :span="24">
           <a-card :bordered="false" class="header-solid">
             <template #title>
-              <h6>允许匿名访问</h6>
-              <p v-if="permissionForm.allowAnonymous === true">匿名用户可拉取制品</p>
-              <p v-else>匿名用户不可拉取制品</p>
+              <h6>{{ $t('Permission.AllowAccess') }}</h6>
+              <p v-if="permissionForm.allowAnonymous === true">{{ $t('Permission.AnonymousPull') }}</p>
+              <p v-else>{{ $t('Permission.CannotPullArtifacts') }}</p>
             </template>
-  
+
             <a-radio-group v-model="permissionForm.allowAnonymous">
               <a-radio :value="true">
-                开启&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                {{ $t('Permission.On') }}
               </a-radio>
               <a-radio :value="false">
-                关闭
+                {{ $t('Permission.Off') }}
               </a-radio>
             </a-radio-group>
           </a-card>
           <a-card :bordered="false" class="header-solid" v-if="this.folibRepository.type !== 'group'">
             <template #title>
-              <h6>仓库可见范围</h6>
-              <p v-if="permissionForm.scope === 1">存储空间成员可见，可拉取</p>
-              <p v-else>所有成员可见，可拉取</p>
+              <h6>{{ $t('Permission.VisibilityRange') }}</h6>
+              <p v-if="permissionForm.scope === 1">{{ $t('Permission.StorageMembers') }}</p>
+              <p v-else>{{ $t('Permission.AllMembers') }}</p>
             </template>
-  
+
             <a-radio-group v-model="permissionForm.scope" @change="scopeChange">
               <a-radio :value="1">
-                存储空间
+                {{ $t('Permission.StorageSpace') }}
               </a-radio>
               <a-radio :value="2">
-                公开
+                {{ $t('Permission.Public') }}
               </a-radio>
             </a-radio-group>
           </a-card>
           <a-card :bordered="false" class="header-solid" v-if="this.folibRepository.type !== 'group'">
             <template #title>
-              <h6>仓库权限定义</h6>
-              <p>在此定义用户对于该仓库的制品上传、制品删除权限</p>
+              <h6>{{ $t('Permission.PublicPermissionDefinition') }}</h6>
+              <p>{{ $t('Permission.SpecificAuthority') }}</p>
             </template>
             <a-radio-group @change="userChange" v-model="userRadioDefault">
               <a-radio :value="1">
-                添加用户
+                {{ $t('Permission.AddUser') }}
               </a-radio>
               <a-radio :value="2">
-                选择全部
+                {{ $t('Permission.SelectAll') }}
               </a-radio>
             </a-radio-group>
             <div class="mt-10">
               <a-select
-                placeholder="添加用户"
+                :placeholder="$t('Permission.AddUser')"
                 show-search
                 allowClear
                 v-if="permissionUserShow"
@@ -73,34 +73,34 @@
                 </a-select-option>
               </a-select>
             </div>
-            <a-table v-if="permissionForm.userList && permissionForm.userList.length >0" :columns="permissionColumns" :data-source="permissionForm.userList" :scroll="{ x: true }" :pagination="false" rowKwy="username">
+            <a-table v-if="permissionForm.userList && permissionForm.userList.length >0" :columns="i18nPermissionColumns" :data-source="permissionForm.userList" :scroll="{ x: true }" :pagination="false" rowKwy="username">
               <template slot="customTitle">
-                路径 
+                {{ $t('Permission.Path') }}
                 <a-popover placement="topLeft">
                   <template slot="content">
-                    <p class="mb-0">不填写路径，是对整个仓库的权限设置，</p>
-                    <p class="mb-0">填写了路径，是对仓库下路径的权限设置，</p>
-                    <p class="mb-0">支持设置多个路径之间用逗号（","）分隔，</p>
-                    <p class="mb-0">示例路径：example/a,example/b。</p>
+                    <p class="mb-0">{{ $t('Permission.NoPath') }}</p>
+                    <p class="mb-0">{{ $t('Permission.HavePath') }}</p>
+                    <p class="mb-0">{{ $t('Permission.PathFormat') }}</p>
+                    <p class="mb-0">{{ $t('Permission.ExamplePath') }}</p>
                   </template>
                   <a class="ml-5"><a-icon type="question-circle" theme="filled" /></a>
                 </a-popover>
               </template>
               <template slot="username" slot-scope="text, record">
                 <p class="username">{{record.username}}</p>
-                <small v-if="record.permissions && record.permissions.length>0">{{'拥有该仓库的' + (record.permissions.length === 2?'上传、删除权限':(record.permissions.includes('ARTIFACTS_DEPLOY')?'上传权限':'删除权限'))}}</small>
+                <small v-if="record.permissions && record.permissions.length>0">{{ $t('Permission.havePermissions') + (record.permissions.length === 2?$t('Permission.UploadAndDelete'):(record.permissions.includes('ARTIFACTS_DEPLOY')?$t('Permission.UploadPermissions'):$t('Permission.DeletePermissions')))}}</small>
               </template>
               <template slot="paths" slot-scope="text, record">
-                <a-textarea class="description" :rows="4" v-model="record.paths" placeholder="请输入路径"/>
+                <a-textarea class="description" :rows="4" v-model="record.paths" :placeholder="$t('Permission.EnterPath')"/>
               </template>
               <template slot="deploy" slot-scope="text, record">
-                <a-switch :checked="record.permissions&&record.permissions.includes('ARTIFACTS_DEPLOY')" @change="deploySwitchChange($event, record)" checked-children="是" un-checked-children="否"/>
+                <a-switch :checked="record.permissions&&record.permissions.includes('ARTIFACTS_DEPLOY')" @change="deploySwitchChange($event, record)" :checked-children="$t('Permission.Yes')" :un-checked-children="$t('Permission.No')"/>
               </template>
               <template slot="delete" slot-scope="text, record">
-                <a-switch :checked="record.permissions&&record.permissions.includes('ARTIFACTS_DELETE')" @change="deployDeleteChange($event, record)" checked-children="是" un-checked-children="否"/>
+                <a-switch :checked="record.permissions&&record.permissions.includes('ARTIFACTS_DELETE')" @change="deployDeleteChange($event, record)" :checked-children="$t('Permission.Yes')" :un-checked-children="$t('Permission.No')"/>
               </template>
               <template slot="operation" slot-scope="text, record">
-                <a-popconfirm title="确定要删除吗？" okType="danger" ok-text="确定" cancel-text="取消"
+                <a-popconfirm :title="$t('Permission.SureDelete')" okType="danger" :ok-text="$t('Permission.Confirm')" :cancel-text="$t('Permission.Cancel')"
                     @confirm="permissionUserDelete(record)">
                     <a-button type="link" size="small">
                       <svg width="16" height="16" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -116,10 +116,10 @@
           </a-card>
           <a-form-model-item :wrapper-col="{ span: 14, offset: 4 }">
             <a-button type="primary" @click="permissionFormSubmit">
-              保存
+              {{ $t('Permission.Save') }}
             </a-button>
             <a-button class="ml-10" @click="permissionResetForm">
-              取消
+              {{ $t('Permission.Cancel') }}
             </a-button>
           </a-form-model-item>
         </a-col>
@@ -137,7 +137,7 @@ import {
 } from "@/api/folib"
 
 export default {
-  props: { 
+  props: {
 		folibRepository: {
 			type: Object,
 			default: {},
@@ -148,6 +148,11 @@ export default {
 		},
 	},
   data() {
+    const checkScope = (rule, value, callback) => {
+      if (!value) {
+        callback(new Error(this.$t('Permission.SelectRepositoryVisibility')))
+      }
+    }
     return {
       permissionUserShow: false,
       permissionForm: {
@@ -159,12 +164,13 @@ export default {
       sourceUserList: [],
       permissionRules: {
         scope: [
-          { required: true, message: '请选择仓库可见范围', trigger: 'blur' },
+          { required: true,  trigger: 'blur', validator: checkScope },
         ],
       },
       permissionColumns: [
         {
           title: "用户名",
+          i18nKey: 'Permission.UserName',
           dataIndex: "username",
           scopedSlots: { customRender: "username" },
           width: 150,
@@ -177,6 +183,7 @@ export default {
         },
         {
           title: "上传",
+          i18nKey: 'Permission.Upload',
           dataIndex: "deploy",
           scopedSlots: { customRender: "deploy" },
           align: "center",
@@ -184,6 +191,7 @@ export default {
         },
         {
           title: "删除",
+          i18nKey: 'Permission.Delete',
           dataIndex: "delete",
           scopedSlots: { customRender: "delete" },
           align: "center",
@@ -191,6 +199,7 @@ export default {
         },
         {
           title: "操作",
+          i18nKey: 'Permission.Operation',
           dataIndex: "operation",
           scopedSlots: { customRender: "operation" },
           width: 150,
@@ -199,10 +208,12 @@ export default {
       permissionList: [
         {
           label: "上传",
+          i18nKey: 'Permission.Upload',
           value: "ARTIFACTS_DEPLOY",
         },
         {
           label: "删除",
+          i18nKey: 'Permission.Delete',
           value: "ARTIFACTS_DELETE",
         },
       ],
@@ -211,7 +222,17 @@ export default {
     }
   },
   components: {
-    
+
+  },
+  computed: {
+    i18nPermissionColumns() {
+      return this.permissionColumns.map(column => {
+        if (column.i18nKey) {
+          column.title = this.$t(column.i18nKey);
+        }
+        return column;
+      });
+    },
   },
   created() {
     this.initData()
@@ -236,7 +257,7 @@ export default {
     },
     successMsg(message) {
       if (!message) {
-        message = "操作成功";
+        message = this.$t('Permission.OperationSuccessful');
       }
       this.$notification["success"]({
         message: message,
@@ -318,7 +339,7 @@ export default {
         if (valid) {
           if (this.permissionForm.scope === null) {
             this.$notification.warning({
-              message: "请选择仓库可见范围",
+              message: this.$t('Permission.SelectRepositoryVisibility'),
               description: ""
             })
             return false
@@ -327,14 +348,14 @@ export default {
           for (let item of userData) {
             if (this.permissionForm.scope === 1 && !this.storageUsers.includes(item.username)) {
               this.$notification.warning({
-                message: "仓库可见范围改为存储空间内，用户" + item.username + "不属于该存储空间，需要先从授权列表中移除",
+                message: this.$t('Permission.ModifyScope') + item.username + this.$t('Permission.removedUser'),
                 description: ""
               })
               return false
             }
             if (!item.permissions || item.permissions.length < 1) {
               this.$notification.warning({
-                message: "至少给" + item.username + '赋予一项权限',
+                message: this.$t('Permission.Give') + item.username + this.$t('Permission.permission'),
                 description: ""
               })
               return false
@@ -352,7 +373,7 @@ export default {
             userList: userData
           }
           repositoryPermission(this.folibRepository.storageId, this.folibRepository.id, data).then(res => {
-            this.successMsg("仓库设置成功")
+            this.successMsg(this.$t('Permission.OperationSuccessful'))
             this.permissionUserShow = false
             this.$emit('settingDrawerClose')
           }).catch((err) => {
@@ -388,7 +409,7 @@ export default {
     permissionStorageUser() {
       if (!this.userList || this.userList.length === 0) {
         this.$notification.warning({
-          message: "没有满足条件的成员，请先给存储空间分配合适的成员",
+          message: this.$t('Permission.AssigningMembers'),
           description: "",
         })
         return
