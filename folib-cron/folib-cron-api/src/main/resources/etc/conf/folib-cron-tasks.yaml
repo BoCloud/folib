@@ -38,3 +38,9 @@ cronTasksConfiguration:
       cronExpression: 0 0 1 * * ?
       oneTimeExecution: false
       immediateExecution: false
+    - uuid: e4087b9a-202d-46d0-972a-5fb374b6b423
+      name: 定时清除晋级/分发记录表数据任务
+      jobClass: com.veadan.folib.cron.jobs.ClearArtifactSyncRecordCronJob
+      cronExpression: 0 0 1 * * 7
+      oneTimeExecution: false
+      immediateExecution: false
