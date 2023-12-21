@@ -3,11 +3,11 @@
     <a-card :bordered="false" style="margin-top: 20px; margin-bottom: 20px">
       <div class="mx-25 search">
         <a-col :span="24" class="text-right">
-          <a-input-search placeholder="输入漏洞编号查询" class="v-search" v-model="queryParams.searchKeyword"
+          <a-input-search :placeholder="$t('Vulnerabilities.EnterVulnerabilityNumber')" class="v-search" v-model="queryParams.searchKeyword"
             @search="handheTableSearch()" />
         </a-col>
       </div>
-      <a-table rowKey="uuid" class="mt-20" :columns="columns2" :data-source="vulnerabilityDatabaseData"
+      <a-table rowKey="uuid" class="mt-20" :columns="i18nColumns2" :data-source="vulnerabilityDatabaseData"
         @change="handleChangeTable" :scroll="{ x: true }" :loading="vulnerabilityTableLoading"
         :pagination="{ pageSize: queryParams.limit, current: queryParams.page, total: queryParams.total, showLessItems: true }">
         <template slot="cve" slot-scope="cve, row">
@@ -27,14 +27,14 @@
               <p class="mb-0 text-dark">
                 {{
                   severity === "CRITICAL"
-                  ? "严重"
+                  ? $t('Vulnerabilities.Seriously')
                   : severity === "MEDIUM"
-                    ? "中危"
+                    ? $t('Vulnerabilities.MediumRisk')
                     : severity === "HIGH"
-                      ? "高危"
+                      ? $t('Vulnerabilities.HighRisk')
                       : severity === "LOW"
-                        ? "低危"
-                        : "未赋值"
+                        ? $t('Vulnerabilities.LowRisk')
+                        : $t('Vulnerabilities.Unassigned')
                 }}
               </p>
             </div>
@@ -55,27 +55,32 @@ export default {
       columns2: [
         {
           title: "漏洞编号",
+          i18nKey: 'Vulnerabilities.VulnerabilityNumber',
           dataIndex: "cve",
           scopedSlots: { customRender: "cve" },
         },
         {
           title: "CVSS评分",
+          i18nKey: 'Vulnerabilities.CVSSScore',
           dataIndex: "cvssScore",
           scopedSlots: { customRender: "cvssScore" },
         },
         {
-          
+
           title: "漏洞类型",
+          i18nKey: 'Vulnerabilities.VulnerabilityType',
           dataIndex: "cweList",
           scopedSlots: { customRender: "cweList" },
         },
         {
           title: "受影响的制品",
+          i18nKey: 'Vulnerabilities.AffectedProducts',
           dataIndex: "artifactCount",
           scopedSlots: { customRender: "artifactCount" },
         },
         {
           title: "等级",
+          i18nKey: 'Vulnerabilities.Level',
           dataIndex: "severity",
           scopedSlots: { customRender: "severity" },
         },
@@ -91,6 +96,16 @@ export default {
         total: 0,
       },
     };
+  },
+  computed: {
+    i18nColumns2() {
+      return this.columns2.map(column => {
+        if (column.i18nKey) {
+          column.title = this.$t(column.i18nKey);
+        }
+        return column;
+      })
+    },
   },
   created() {
     this.getData()

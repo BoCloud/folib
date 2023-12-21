@@ -37,10 +37,10 @@
     </a-card>
 
     <a-tabs class="tabs-sliding" default-active-key="1" @change="handleChangeTabs">
-      <a-tab-pane key="1" tab="总览">
+      <a-tab-pane key="1" :tab="$t('Vulnerabilities.GeneralView')">
         <VulnerabilitiesOverView v-if="tabActive == 1" :vulnerability="vulnerability"></VulnerabilitiesOverView>
       </a-tab-pane>
-      <a-tab-pane key="2" tab="受影响的制品">
+      <a-tab-pane key="2" :tab="$t('Vulnerabilities.AffectedProducts')">
         <AffectedArtifacts v-if="tabActive == 2"></AffectedArtifacts>
       </a-tab-pane>
     </a-tabs>
@@ -71,17 +71,17 @@ export default {
     severityLabel() {
       switch (this.vulnerability.severity) {
         case "CRITICAL":
-          return "严重";
+          return this.$t('Vulnerabilities.Seriously');
         case "HIGH":
-          return "高危";
+          return this.$t('Vulnerabilities.HighRisk');
         case "MEDIUM":
-          return "中危";
+          return this.$t('Vulnerabilities.MediumRisk');
         case "LOW":
-          return "低危";
+          return this.$t('Vulnerabilities.LowRisk');
         case "INFO":
-          return "信息";
+          return this.$t('Vulnerabilities.Information');
         default:
-          return "未赋值";
+          return this.$t('Vulnerabilities.Unassigned');
       }
     },
     severityColor() {
