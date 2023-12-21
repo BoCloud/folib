@@ -4,13 +4,13 @@
     <a-card :bordered="false" style="margin-top: 20px; margin-bottom: 20px; overflow-y: auto" class="header-solid" >
       <div class="mx-25 search">
         <a-col :span="24" class="text-right">
-          <a-input-search placeholder="输入制品路径查询" class="v-search" v-model="queryParams.artifactName" @search="handheTableSearch()" />
+          <a-input-search :placeholder="$t('Artifacts.ArtifactPathQuery')" class="v-search" v-model="queryParams.artifactName" @search="handheTableSearch()" />
         </a-col>
       </div>
       <a-table
         rowKey="uuid"
         class="mt-20"
-        :columns="columns"
+        :columns="i18nColumns"
         :data-source="artifactsData"
         @change="handleChangeTable"
         :scroll="{ x: true }"
@@ -124,18 +124,21 @@ export default {
         // },
         {
           title: "存储空间",
+          i18nKey: 'Artifacts.StorageSpace',
           dataIndex: "storageId",
           scopedSlots: { customRender: "storageId" },
           width: 130,
         },
         {
           title: "所属仓库",
+          i18nKey: 'Artifacts.OwnedWarehouse',
           dataIndex: "repositoryId",
           scopedSlots: { customRender: "repositoryId" },
-          width: 130,
+          width: 160,
         },
         {
           title: "制品路径",
+          i18nKey: 'Artifacts.ProductPath',
           dataIndex: "artifactPath",
           scopedSlots: { customRender: "artifactPath" },
           width: 550,
@@ -150,6 +153,7 @@ export default {
         // },
         {
           title: "最近使用时间",
+          i18nKey: 'Artifacts.LastUsedTime',
           dataIndex: "lastUsed",
           sorter: true,
           scopedSlots: { customRender: "lastUsed" },
@@ -157,20 +161,23 @@ export default {
         },
         {
           title: "下载次数",
+          i18nKey: 'Artifacts.DownloadTimes',
           dataIndex: "downloadCount",
           sorter: true,
           scopedSlots: { customRender: "created" },
-          width: 120,
+          width: 160,
         },
         {
           title: "制品大小",
+          i18nKey: 'Artifacts.ProductSize',
           dataIndex: "sizeInBytes",
           sorter: true,
           scopedSlots: { customRender: "sizeInBytes" },
-          width: 120,
+          width: 150,
         },
         {
           title: "漏洞",
+          i18nKey: 'Artifacts.Vulnerability',
           dataIndex: "vulnerabilitiesCount",
           sorter: true,
           scopedSlots: { customRender: "vulnerabilitiesCount" },
@@ -201,6 +208,16 @@ export default {
         endDate: null,
       },
     };
+  },
+  computed: {
+    i18nColumns() {
+      return this.columns.map(column => {
+        if (column.i18nKey) {
+          column.title = this.$t(column.i18nKey);
+        }
+        return column;
+      })
+    },
   },
   created() {
     this.getData()
@@ -247,7 +264,7 @@ export default {
         artifactPath: row.layout.toLowerCase() === "docker" ?row.artifactPath:row.path,
         layout: row.layout
       })
-      this.$router.push({ 
+      this.$router.push({
         path: '/artifacts/artifactsDetail',
         query: {
           data: data

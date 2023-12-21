@@ -57,7 +57,7 @@ export default {
     'OwnedWarehouse': 'Owned warehouse',
     'ProductPath': 'Product path',
     'CreationTime': 'Creation time',
-    'LastUsedTime': 'LastUsed time',
+    'LastUsedTime': 'Last used time',
     'DownloadTimes': 'Download times',
     'ProductSize': 'Product size',
     'ServiceShutdown': 'The warehouse is out of service',
