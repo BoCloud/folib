@@ -136,7 +136,7 @@ export default {
           title: '目标制品路径信息',
           dataIndex: 'targetPath',
           key: 'targetPath',
-          width: 80,
+          width: 100,
           scopedSlots: {customRender: 'targetPath'}
         },
         {
@@ -161,7 +161,7 @@ export default {
           scopedSlots: {customRender: 'syncProgress'}
         },
         {
-          title: '状态时间',
+          title: '创建时间',
           dataIndex: 'createTime',
           key: 'createTime',
           width: 100,
