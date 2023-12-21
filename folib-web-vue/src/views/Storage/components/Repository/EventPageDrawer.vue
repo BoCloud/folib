@@ -33,11 +33,13 @@
                   <template v-if="record.opsType === 1">
                     {{record.targetPath}}
                   </template>
-                  <template v-if="record.opsType === 2" v-for="(info, index) in JSON.parse(record.targetPath)">
-                    分发节点{{index+1}}: {{info.dispatchClusterEnName}}
-                    <template v-if="info.targetStorageId">&nbsp;&nbsp;存储空间: {{info.targetStorageId||'-'}}</template>
-                    <template v-if="info.targetRepositoryId">&nbsp;&nbsp;仓库名称: {{info.targetRepositoryId||'-'}}</template>
-                    <br/>
+                  <template v-if="record.opsType === 2">
+                    <template v-for="(info, index) in JSON.parse(record.targetPath)">
+                      分发节点{{index+1}}: {{info.dispatchClusterEnName}}
+                      <template v-if="info.targetStorageId">&nbsp;&nbsp;存储空间: {{info.targetStorageId||'-'}}</template>
+                      <template v-if="info.targetRepositoryId">&nbsp;&nbsp;仓库名称: {{info.targetRepositoryId||'-'}}</template>
+                      <br/>
+                    </template>
                   </template>
                 </template>
                 <a>
@@ -46,6 +48,24 @@
                   </p>
                 </a>
               </a-tooltip>
+            </div>
+            <div slot="failedReason"
+                 slot-scope="text, record">
+              <template v-if="record.failedReason">
+                <a-tooltip>
+                  <template slot="title">
+                      {{record.failedReason}}
+                    </template>
+                  <a>
+                    <p class="copy-p">
+                      查看
+                    </p>
+                  </a>
+                </a-tooltip>
+              </template>
+              <template v-else>
+                -
+              </template>
             </div>
             <div slot="opsType"
                  slot-scope="text, record">
@@ -170,6 +190,13 @@ export default {
           key: 'syncProgress',
           width: 100,
           scopedSlots: {customRender: 'syncProgress'}
+        },
+        {
+          title: '失败原因',
+          dataIndex: 'failedReason',
+          key: 'failedReason',
+          width: 100,
+          scopedSlots: {customRender: 'failedReason'}
         },
         {
           title: '创建时间',

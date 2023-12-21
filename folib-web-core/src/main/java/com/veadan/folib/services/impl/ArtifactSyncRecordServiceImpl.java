@@ -49,8 +49,11 @@ public class ArtifactSyncRecordServiceImpl implements ArtifactSyncRecordService 
         final Page<Object> page = PageHelper.startPage(pageNumber, pageSize);
         final Example recordExample = Example.builder(ArtifactSyncRecord.class).build();
         recordExample.setOrderByClause("create_time desc");
-        if (StringUtils.isNotEmpty(storageId) && StringUtils.isNotEmpty(repositoryId)) {
-            recordExample.and().andLike("sourcePath", storageId + "/" + repositoryId + "/%");
+        if (StringUtils.isNotEmpty(storageId)) {
+            recordExample.and().andEqualTo("sourceStorageId", storageId);
+        }
+        if (StringUtils.isNotEmpty(repositoryId)) {
+            recordExample.and().andEqualTo("sourceRepositoryId", repositoryId);
         }
         
         final List<ArtifactSyncRecordPageRes> pageResult = Optional.ofNullable(artifactSyncRecordMapper.selectByExample(recordExample))

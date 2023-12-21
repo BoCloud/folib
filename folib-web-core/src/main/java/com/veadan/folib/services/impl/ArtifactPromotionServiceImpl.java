@@ -400,12 +400,13 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
             final String sourcePath = UriUtils.decode(StringUtils.removeEnd(promotionNodeOption.getSourcePath(), "/"));
             final String srcStorageId = parsePath(sourcePath)[0];
             final String srcRepositoryId = parsePath(sourcePath)[1];
+            final String srcUri = sourcePath.split("/" + srcStorageId + "/" + srcRepositoryId + "/")[1];
     
             // 生成日志记录
             artifactSyncRecord.setRequestHostName(requestHostName);
             artifactSyncRecord.setSourceStorageId(srcStorageId);
             artifactSyncRecord.setSourceRepositoryId(srcRepositoryId);
-            artifactSyncRecord.setSourcePath(promotionNodeOption.getSourcePath());
+            artifactSyncRecord.setSourcePath(srcUri);
             artifactSyncRecord.setTargetPath(promotionNodeOption.getTargetPath());
             artifactSyncRecord.setSyncNo(syncNo);
             artifactSyncRecord.setOpsType(ArtifactSyncRecordOpsTypeEnum.PROMOTION.getVal());
