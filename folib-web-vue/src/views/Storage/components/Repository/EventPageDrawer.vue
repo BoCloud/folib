@@ -26,6 +26,27 @@
                    :scroll="{ x: true }"
                    :data-source="recordList"
                    :row-key="(r, i) => i.toString()">
+            <div slot="targetPath"
+                 slot-scope="text, record">
+              <a-tooltip>
+                <template slot="title">
+                  <template v-if="record.opsType === 1">
+                    {{record.targetPath}}
+                  </template>
+                  <template v-if="record.opsType === 2" v-for="(info, index) in JSON.parse(record.targetPath)">
+                    分发节点{{index+1}}: {{info.dispatchClusterEnName}}
+                    <template v-if="info.targetStorageId">&nbsp;&nbsp;存储空间: {{info.targetStorageId||'-'}}</template>
+                    <template v-if="info.targetRepositoryId">&nbsp;&nbsp;仓库名称: {{info.targetRepositoryId||'-'}}</template>
+                    <br/>
+                  </template>
+                </template>
+                <a>
+                  <p class="copy-p">
+                    查看
+                  </p>
+                </a>
+              </a-tooltip>
+            </div>
             <div slot="opsType"
                  slot-scope="text, record">
               {{ opsTypeMap[record.opsType] || "未知操作" }}
@@ -115,7 +136,7 @@ export default {
           title: '目标制品路径信息',
           dataIndex: 'targetPath',
           key: 'targetPath',
-          width: 100,
+          width: 80,
           scopedSlots: {customRender: 'targetPath'}
         },
         {
