@@ -3,13 +3,13 @@
     <a-card :bordered="false" style="margin-top: 20px; margin-bottom: 20px">
       <div class="mx-25 search">
         <a-col :span="24" class="text-right">
-          <a-input-search placeholder="输入许可证名称查询" class="v-search" v-model="queryParams.searchKeyword" @search="handheTableSearch()" />
+          <a-input-search :placeholder="$t('Licenses.EnterLicenseNameQuery')" class="v-search" v-model="queryParams.searchKeyword" @search="handheTableSearch()" />
         </a-col>
       </div>
       <a-table
         rowKey="uuid"
         class="mt-20"
-        :columns="columns2"
+        :columns="i18nColumns2"
         :data-source="licenseData"
         @change="handleChangeTable"
         :scroll="{ x: true }"
@@ -36,10 +36,12 @@ export default {
       columns2: [
         {
           title: "名称",
+          i18nKey: 'Licenses.Name',
           dataIndex: "licenseName",
         },
         {
           title: "许可证编号",
+          i18nKey: 'Licenses.LicenseNumber',
           dataIndex: "licenseId",
           scopedSlots: { customRender: "licenseId" },
         },
@@ -53,6 +55,16 @@ export default {
         searchKeyword: ''
       },
     };
+  },
+  computed: {
+    i18nColumns2() {
+      return this.columns2.map(column => {
+        if (column.i18nKey) {
+          column.title = this.$t(column.i18nKey);
+        }
+        return column;
+      })
+    },
   },
   created() {
     this.getData()
