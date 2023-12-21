@@ -32,6 +32,11 @@ public class ArtifactServiceImpl implements ArtifactService {
 
     @Override
     public void saveOrUpdateArtifact(Artifact artifact) {
+        try {
+            Thread.sleep(100L);
+        } catch (Exception ex) {
+
+        }
         Graph g = janusGraph.tx().createThreadedTx();
         try {
             artifact.setLastUpdated(LocalDateTimeInstance.now());

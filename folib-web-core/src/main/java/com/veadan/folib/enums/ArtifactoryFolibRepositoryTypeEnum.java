@@ -44,9 +44,21 @@ public enum ArtifactoryFolibRepositoryTypeEnum {
      * Artifactory名称
      */
     private String name;
+
     /**
      * Folib名称
      */
     private String foLibraryName;
+
+    public static String queryNameByFoLibraryName(String foLibraryName) {
+        String name = "";
+        for (ArtifactoryFolibRepositoryTypeEnum itemEnum : ArtifactoryFolibRepositoryTypeEnum.values()) {
+            if (itemEnum.getFoLibraryName().equalsIgnoreCase(foLibraryName)) {
+                name = itemEnum.getName();
+                break;
+            }
+        }
+        return name;
+    }
 
 }

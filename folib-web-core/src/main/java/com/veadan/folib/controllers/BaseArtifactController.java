@@ -6,6 +6,7 @@ import com.veadan.folib.controllers.support.ErrorResponseEntityBody;
 import com.veadan.folib.domain.Artifact;
 import com.veadan.folib.domain.CacheSettings;
 import com.veadan.folib.event.artifact.ArtifactEventListenerRegistry;
+import com.veadan.folib.providers.io.RepositoryFiles;
 import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.services.ArtifactManagementService;
 import com.veadan.folib.services.DictService;
@@ -20,7 +21,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.util.AntPathMatcher;
 import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.servlet.HandlerMapping;
 
 import javax.inject.Inject;
 import javax.servlet.http.HttpServletRequest;
@@ -148,7 +151,11 @@ public abstract class BaseArtifactController
 
     public boolean artifactRealExists(RepositoryPath repositoryPath) {
         try {
-            return Objects.nonNull(repositoryPath) && Files.exists(repositoryPath) && Objects.nonNull(repositoryPath.getArtifactEntry()) && Boolean.TRUE.equals(repositoryPath.getArtifactEntry().getArtifactFileExists());
+            if (Objects.isNull(repositoryPath)) {
+                return false;
+            }
+            repositoryPath = repositoryPathResolver.resolve(repositoryPath.getStorageId(), repositoryPath.getRepositoryId(), RepositoryFiles.relativizePath(repositoryPath));
+            return Files.exists(repositoryPath) && Objects.nonNull(repositoryPath.getArtifactEntry());
         } catch (Exception ex) {
             logger.error("判断制品是否存在发生错误：{}", ExceptionUtils.getStackTrace(ex));
             return false;
@@ -239,6 +246,18 @@ public abstract class BaseArtifactController
             logger.warn("解析制品 [{}] 本地缓存.metadata文件错误 [{}]", path, ExceptionUtils.getStackTrace(ex));
         }
         return artifact;
+    }
+
+    /**
+     * 提取请求路径中为/**的内容
+     *
+     * @param request 请求
+     * @return 提取请求路径中为/**的内容
+     */
+    protected String getExtractPath(final HttpServletRequest request) {
+        String path = (String) request.getAttribute(HandlerMapping.PATH_WITHIN_HANDLER_MAPPING_ATTRIBUTE);
+        String bestMatchPattern = (String) request.getAttribute(HandlerMapping.BEST_MATCHING_PATTERN_ATTRIBUTE);
+        return new AntPathMatcher().extractPathWithinPattern(bestMatchPattern, path);
     }
 
 }

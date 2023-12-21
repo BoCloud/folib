@@ -68,7 +68,7 @@ public class DockerComponent {
             //多架构镜像
             ImageManifest itemImageManifest = null;
             for (Manifests manifests : imageManifest.getManifests()) {
-                RepositoryPath manifestPath = repositoryPathResolver.resolve(repositoryPath.getStorageId(), repositoryPath.getRepositoryId(), imageName + "/manifest/" + manifests.getDigest());
+                RepositoryPath manifestPath = repositoryPathResolver.resolve(repositoryPath.getStorageId(), repositoryPath.getRepositoryId(),  "manifest/" + manifests.getDigest());
                 manifestString = readManifest(manifestPath);
                 itemImageManifest = JSON.parseObject(manifestString, ImageManifest.class);
                 itemImageManifest.setDigest(manifests.getDigest());
@@ -94,7 +94,7 @@ public class DockerComponent {
                 //多架构镜像
                 ImageManifest itemImageManifest = null;
                 for (Manifests manifests : imageManifest.getManifests()) {
-                    RepositoryPath manifestPath = repositoryPathResolver.resolve(repositoryPath.getStorageId(), repositoryPath.getRepositoryId(), imageName + "/manifest/" + manifests.getDigest());
+                    RepositoryPath manifestPath = repositoryPathResolver.resolve(repositoryPath.getStorageId(), repositoryPath.getRepositoryId(), "manifest/" + manifests.getDigest());
                     manifestString = readManifest(manifestPath);
                     itemImageManifest = JSON.parseObject(manifestString, ImageManifest.class);
                     if (CollectionUtils.isNotEmpty(itemImageManifest.getLayers())) {

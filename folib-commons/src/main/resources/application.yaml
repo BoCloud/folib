@@ -102,16 +102,16 @@ folib:
             enabled: true
   threadPool:
     async:
-      corePoolSize: 12
-      maxPoolSize: 12
-      queueCapacity: 10000
+      corePoolSize: ${threadPool.common.core:12}
+      maxPoolSize: ${threadPool.common.max:12}
+      queueCapacity: ${threadPool.common.queue:100000000}
       keepAliveSeconds: 0
       threadNamePrefix: async_
       awaitTerminationSeconds: 6
     asyncEventListener:
-      corePoolSize: 12
-      maxPoolSize: 12
-      queueCapacity: 10000
+      corePoolSize: ${threadPool.common.core:12}
+      maxPoolSize: ${threadPool.common.max:12}
+      queueCapacity: ${threadPool.common.queue:100000000}
       keepAliveSeconds: 0
       threadNamePrefix: asyncEventListener_
       awaitTerminationSeconds: 6
@@ -123,9 +123,9 @@ folib:
       threadNamePrefix: asyncConfig_
       awaitTerminationSeconds: 6
     asyncFetchRemotePackage:
-      corePoolSize: 12
-      maxPoolSize: 12
-      queueCapacity: 10000
+      corePoolSize: ${threadPool.common.core:12}
+      maxPoolSize: ${threadPool.common.max:12}
+      queueCapacity: ${threadPool.common.queue:100000000}
       keepAliveSeconds: 0
       threadNamePrefix: asyncFetchRemotePackage_
       awaitTerminationSeconds: 6
@@ -139,7 +139,7 @@ folib:
     asyncWsCommand:
       corePoolSize: 12
       maxPoolSize: 12
-      queueCapacity: 2000
+      queueCapacity: 200000
       keepAliveSeconds: 0
       threadNamePrefix: asyncWsCommand_
       awaitTerminationSeconds: 6
@@ -148,7 +148,7 @@ folib:
 logging:
   debug: false
   console:
-    enabled: true
+    enabled: false
   file:
     name: ${logging.dir}/folib.log
     enabled: true
@@ -221,13 +221,13 @@ s3fs:
 #  region: sh1a
   region: folib
 #  uri: s3://s3.sh1a.qingstor.com
-  uri: s3://192.168.5.118:9000
+  uri: s3://192.168.5.116:9000
   access:
 #    key: HRKZYMEFVAJMZMMUXBNG
     key: admin
   secret:
 #    key: KjIm1Cl3V9TBK0HQmlH3j3KYEM83FmILv5AIJwAg
-    key: admin@V587
+    key: folib@v587
 rsa:
   privateKey: MIICdQIBADANBgkqhkiG9w0BAQEFAASCAl8wggJbAgEAAoGBAIyu/3z87O6l94pIricIgo1VpYvNuK/StdlehIaQM6R9PmDAr5/phnFYWJEh+ZhMUIl6c/qIvcQr0y0Q2FRPF6085l4QLvbJI+FQ9xSspKWFGEzUuoEVogOtjlBz0Fl3VXO0wmZSrCnUhF14PWWBNz5e0X1ZIVEreGWj4XrCR+NjAgMBAAECgYB53Kig2vJdstQfK9/3Hc8AoHzbAiOF4e710ILZkRW62WZsJty6l22GxzFI3nY3L3vf6nuGPGatBA1UDzBkr3Jgqm0TSKSqlZokmCs3v1/gtkr/TSt36F58lAswR4I5iPdcDXkNfViidzqnvCahpwWpUAjteeUsx1hBQM1p8gWvOQJBANFs78S/EXfmkxy0d4Pf7uoFRXlrMC4SpP/9AjKHaRexbLesG4jYXLclx16pZXj7VqOWBORcVBKn9y1guFOnYdUCQQCr+G3EsX++e8G32lYmYnNp082Fg+tGSz2RG/LrwDqJOSyuB87LFJcRphNdo266f23SpQI2luqh91ByiBatPRRXAkBNlZTyB3LaP4JqlPTd1xz0d4V4aNxNhTy5VSr2OzIUw/cpyEnfFYCrnQRSLmFYQ4yiR9aCHy5KRw2MMxO2cgENAkAs9RRVQIYB2T6qftTY0hIUD4ACMJuYU+Ezh1f5U9a5uw24LWhdZPOddIpJh4lSDjA6ylKKzOdoEkygtH0hKv+fAkBcHH9QUQsUE40ffNcITptbMJGfQzkl3yYCwuM8xrK3KyvYLSk5qL+xcCnTloboTjVNuwgJWuiujBy6DlAZTAj/
   publicKey: MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQCMrv98/OzupfeKSK4nCIKNVaWLzbiv0rXZXoSGkDOkfT5gwK+f6YZxWFiRIfmYTFCJenP6iL3EK9MtENhUTxetPOZeEC72ySPhUPcUrKSlhRhM1LqBFaIDrY5Qc9BZd1VztMJmUqwp1IRdeD1lgTc+XtF9WSFRK3hlo+F6wkfjYwIDAQAB

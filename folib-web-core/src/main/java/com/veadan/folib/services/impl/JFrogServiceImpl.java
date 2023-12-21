@@ -3,10 +3,13 @@ package com.veadan.folib.services.impl;
 import cn.hutool.core.collection.CollectionUtil;
 import cn.hutool.core.io.FileUtil;
 import cn.hutool.core.util.URLUtil;
+import cn.hutool.json.JSONUtil;
 import com.alibaba.fastjson.JSONObject;
+import com.google.common.collect.Maps;
 import com.veadan.folib.artifact.coordinates.DockerArtifactCoordinates;
 import com.veadan.folib.components.artifact.ArtifactComponent;
 import com.veadan.folib.components.layout.DockerComponent;
+import com.veadan.folib.domain.Artifact;
 import com.veadan.folib.enums.PromotionStatusEnum;
 import com.veadan.folib.forms.externalnode.ExternalNodeForm;
 import com.veadan.folib.providers.io.RepositoryFiles;
@@ -24,6 +27,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.codec.digest.MessageDigestAlgorithms;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.io.FilenameUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.http.Header;
 import org.apache.http.client.HttpResponseException;
@@ -45,10 +49,7 @@ import javax.inject.Inject;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
-import java.util.Collections;
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -131,9 +132,13 @@ public class JFrogServiceImpl implements JFrogService {
             }
             return flag;
         }
+        artifactPath = URLUtil.encode(artifactPath);
+        //TODO 使用checksum校验，已存在跳过上传制品，仅上传元数据
         try (InputStream inputStream = FileUtil.getInputStream(repositoryPath)) {
-            artifactPath = URLUtil.encode(artifactPath);
             File file = artifactory.repository(repositoryName).upload(artifactPath, inputStream).bySha1Checksum(repositoryPath.getArtifactEntry().getChecksums().get(MessageDigestAlgorithms.SHA_1)).doUpload();
+            if (Objects.nonNull(file)) {
+                syncMetadata(artifactory, repositoryName, repositoryPath);
+            }
             if (Boolean.TRUE.equals(recordStatus)) {
                 if (Objects.nonNull(file)) {
                     artifactComponent.handlerArtifactPromotion(nodeName, repositoryPath.getStorageId(), repositoryPath.getRepositoryId(), artifactPath, PromotionStatusEnum.SUCCESS.getStatus());
@@ -228,8 +233,8 @@ public class JFrogServiceImpl implements JFrogService {
     }
 
     private void uploadImageTag(Artifactory artifactory, String repositoryName, RepositoryPath repositoryPath) throws Exception {
-        boolean isDockerVersion = DockerArtifactCoordinates.isDockerVersion(repositoryPath);
-        if (!isDockerVersion) {
+        boolean isDockerTag = DockerArtifactCoordinates.isDockerTag(repositoryPath);
+        if (!isDockerTag) {
             return;
         }
         if (Files.isDirectory(repositoryPath)) {
@@ -250,24 +255,24 @@ public class JFrogServiceImpl implements JFrogService {
         for (ImageManifest imageManifest : imageManifestList) {
             if (Objects.nonNull(imageManifest.getConfig())) {
                 //config layer
-                doUploadLayer(artifactory, repositoryName, repositoryPathResolver.resolve(repositoryPath.getStorageId(), repositoryPath.getRepositoryId(), imageName + "/blobs/" + imageManifest.getConfig().getDigest()));
+                doUploadLayer(artifactory, repositoryName, imageName, repositoryPathResolver.resolve(repositoryPath.getStorageId(), repositoryPath.getRepositoryId(), DockerLayoutProvider.BLOBS + "/" + imageManifest.getConfig().getDigest()));
             }
             if (CollectionUtils.isNotEmpty(imageManifest.getLayers())) {
                 for (LayerManifest layerManifest : imageManifest.getLayers()) {
                     //blob layer
-                    doUploadLayer(artifactory, repositoryName, repositoryPathResolver.resolve(repositoryPath.getStorageId(), repositoryPath.getRepositoryId(), imageName + "/blobs/" + layerManifest.getDigest()));
+                    doUploadLayer(artifactory, repositoryName, imageName, repositoryPathResolver.resolve(repositoryPath.getStorageId(), repositoryPath.getRepositoryId(), DockerLayoutProvider.BLOBS + "/" + layerManifest.getDigest()));
                 }
             }
             if (imageManifestList.size() > 1) {
                 //manifest layer
-                doUploadLayer(artifactory, repositoryName, repositoryPathResolver.resolve(repositoryPath.getStorageId(), repositoryPath.getRepositoryId(), imageName + "/blobs/" + imageManifest.getDigest()));
+                doUploadLayer(artifactory, repositoryName, imageName, repositoryPathResolver.resolve(repositoryPath.getStorageId(), repositoryPath.getRepositoryId(), DockerLayoutProvider.BLOBS + "/" + imageManifest.getDigest()));
             }
         }
         //manifest layer
-        uploadManifest(artifactory, repositoryName, dockerArtifactCoordinates, repositoryPathResolver.resolve(repositoryPath.getStorageId(), repositoryPath.getRepositoryId(), imageName + "/manifest/" + repositoryPath.getFileName().toString()));
+        uploadManifest(artifactory, repositoryName, imageName, dockerArtifactCoordinates, repositoryPathResolver.resolve(repositoryPath.getStorageId(), repositoryPath.getRepositoryId(), DockerLayoutProvider.MANIFEST + "/" + repositoryPath.getFileName().toString()));
     }
 
-    private void doUploadLayer(Artifactory artifactory, String repositoryName, RepositoryPath dockerLayerPath) throws Exception {
+    private void doUploadLayer(Artifactory artifactory, String repositoryName, String imageName, RepositoryPath dockerLayerPath) throws Exception {
         if (!Files.exists(dockerLayerPath)) {
             return;
         }
@@ -276,18 +281,19 @@ public class JFrogServiceImpl implements JFrogService {
             return;
         }
         String digest = dockerArtifactCoordinates.getLayers(), layerUrl = "v2/%s/%s/blobs/%s", startUploadUrl = "v2/%s/%s/blobs/uploads";
-        layerUrl = String.format(layerUrl, repositoryName, dockerArtifactCoordinates.getName(), digest);
+        layerUrl = String.format(layerUrl, repositoryName, imageName, digest);
         log.info("LayerUrl [{}]", layerUrl);
         if (!checkLayerExist(artifactory, layerUrl, dockerLayerPath)) {
             log.info("Layer [{}] doesn't exist. Initiating upload...", dockerLayerPath.toString());
-            startUploadUrl = String.format(startUploadUrl, repositoryName, dockerArtifactCoordinates.getName());
+            startUploadUrl = String.format(startUploadUrl, repositoryName, imageName);
             log.info("StartUploadUrl [{}]", startUploadUrl);
             String uploadLocation = startUpload(artifactory, startUploadUrl, dockerLayerPath);
             if (uploadLocation != null) {
                 log.info("Starting layer [{}] upload...", dockerLayerPath.toString());
                 uploadLayer(artifactory, uploadLocation, dockerLayerPath);
             } else {
-                log.info("Layer [{}] failed to initiate upload.", dockerLayerPath.toString());
+                log.warn("Layer [{}] failed to initiate upload.", dockerLayerPath.toString());
+                throw new BusinessException(String.format("Layer [%s] failed to initiate upload.", dockerLayerPath.toString()));
             }
         } else {
             log.info("Layer [{}] already exists. No need to upload.", dockerLayerPath.toString());
@@ -326,7 +332,7 @@ public class JFrogServiceImpl implements JFrogService {
                         return locationValue;
                     }
                 }
-                throw new RuntimeException("layer location not found");
+                throw new BusinessException("layer location not found");
             }
         } catch (IOException e) {
             log.error(ExceptionUtils.getStackTrace(e));
@@ -346,9 +352,11 @@ public class JFrogServiceImpl implements JFrogService {
                 completeUpload(artifactory, uploadLocation, repositoryPath);
             } else {
                 log.warn("Layer [{}] upload failed. Response code [{}]", repositoryPath.toString(), response.getStatusLine().getStatusCode());
+                throw new BusinessException(String.format("Layer [%s] upload failed.", repositoryPath.toString()));
             }
         } catch (IOException e) {
             log.error(ExceptionUtils.getStackTrace(e));
+            throw new BusinessException(String.format("Layer [%s] upload failed.", repositoryPath.toString()));
         }
     }
 
@@ -365,15 +373,17 @@ public class JFrogServiceImpl implements JFrogService {
                 log.info("Layer [{}] upload completed!", repositoryPath.toString());
             } else {
                 log.warn("Layer [{}] upload completion failed. Response code [{}]", repositoryPath.toString(), response.getStatusLine().getStatusCode());
+                throw new BusinessException(String.format("Layer [%s] upload completion failed.", repositoryPath.toString()));
             }
         } catch (IOException e) {
             log.error(ExceptionUtils.getStackTrace(e));
+            throw new BusinessException(String.format("Layer [%s] upload completion failed.", repositoryPath.toString()));
         }
     }
 
-    private void uploadManifest(Artifactory artifactory, String repositoryName, DockerArtifactCoordinates dockerArtifactCoordinates, RepositoryPath repositoryPath) {
+    private void uploadManifest(Artifactory artifactory, String repositoryName, String imageName, DockerArtifactCoordinates dockerArtifactCoordinates, RepositoryPath repositoryPath) {
         String uploadUrl = "v2/%s/%s/manifests/%s";
-        uploadUrl = String.format(uploadUrl, repositoryName, dockerArtifactCoordinates.getName(), dockerArtifactCoordinates.getTAG());
+        uploadUrl = String.format(uploadUrl, repositoryName, imageName, dockerArtifactCoordinates.getTAG());
         log.info("Manifest uploadUrl [{}]", uploadUrl);
         try (InputStream inputStream = Files.newInputStream(repositoryPath)) {
             ArtifactoryRequest request = new ArtifactoryRequestImpl()
@@ -387,9 +397,126 @@ public class JFrogServiceImpl implements JFrogService {
                 log.info("Manifest [{}] upload successful!", repositoryPath.toString());
             } else {
                 log.warn("Manifest [{}] upload failed. Response code [{}]", repositoryPath.toString(), response.getStatusLine().getStatusCode());
+                throw new BusinessException(String.format("Manifest [%s] upload failed.", repositoryPath.toString()));
+            }
+        } catch (IOException e) {
+            log.error(ExceptionUtils.getStackTrace(e));
+            throw new BusinessException(String.format("Manifest [%s] upload failed.", repositoryPath.toString()));
+        }
+    }
+
+    private void syncMetadata(Artifactory artifactory, String repositoryName, RepositoryPath repositoryPath) {
+        if (Objects.isNull(repositoryPath) || !Files.exists(repositoryPath)) {
+            throw new BusinessException(String.format("RepositoryPath [%s] not exists", repositoryPath.toString()));
+        }
+        try {
+            String artifactPath = RepositoryFiles.relativizePath(repositoryPath);
+            Artifact artifact = repositoryPath.getArtifactEntry();
+            if (Objects.isNull(artifact)) {
+                log.warn("RepositoryPath artifact [{}] not exists", repositoryPath.toString());
+                return;
+            }
+            if (StringUtils.isBlank(artifact.getMetadata()) || !JSONUtil.isJson(artifact.getMetadata())) {
+                return;
+            }
+            if (!artifactPath.startsWith(java.io.File.separator)) {
+                artifactPath = java.io.File.separator + artifactPath;
+            }
+            handlerMetadata(artifactory, repositoryName, repositoryPath);
+            Map<String, String> queryParams = Maps.newHashMap();
+            queryParams.put("recursive", "0");
+            JSONObject metadataJson = JSONObject.parseObject(artifact.getMetadata());
+            if (metadataJson.keySet().size() == 0) {
+                return;
+            }
+            StringBuilder metadataStringBuilder = new StringBuilder();
+            JSONObject valueJson = null;
+            String valueKey = "value";
+            for (String key : metadataJson.keySet()) {
+                valueJson = metadataJson.getJSONObject(key);
+                if (valueJson.containsKey(valueKey) && StringUtils.isNotBlank(valueJson.getString(valueKey))) {
+                    metadataStringBuilder.append(key);
+                    metadataStringBuilder.append("=");
+                    metadataStringBuilder.append(valueJson.getString(valueKey));
+                    metadataStringBuilder.append(";");
+                }
+            }
+            metadataStringBuilder.deleteCharAt(metadataStringBuilder.lastIndexOf(";"));
+            queryParams.put("properties", metadataStringBuilder.toString());
+            String metadataUrl = "/api/storage/" + repositoryName + artifactPath;
+            log.info("Sync metadata url [{}] params [{}]", metadataUrl, queryParams.toString());
+            ArtifactoryRequest request = new ArtifactoryRequestImpl()
+                    .method(ArtifactoryRequest.Method.PUT)
+                    .apiUrl(metadataUrl)
+                    .setQueryParams(queryParams);
+            ArtifactoryResponse response = artifactory.restCall(request);
+            log.info("Sync metadata [{}] response [{}]", repositoryPath.toString(), JSONObject.toJSONString(response.getStatusLine()));
+            if (response.getStatusLine().getStatusCode() == HttpStatus.NO_CONTENT.value()) {
+                log.info("Sync metadata [{}] successful!", repositoryPath.toString());
+            } else {
+                log.warn("Sync metadata [{}] failed. Response code [{}]", repositoryPath.toString(), response.getStatusLine().getStatusCode());
+                throw new BusinessException(String.format("Sync metadata [%s] failed.", repositoryPath.toString()));
+            }
+        } catch (IOException e) {
+            log.error(ExceptionUtils.getStackTrace(e));
+            throw new BusinessException(String.format("Sync metadata [%s] failed.", repositoryPath.toString()));
+        }
+    }
+
+    private void handlerMetadata(Artifactory artifactory, String repositoryName, RepositoryPath repositoryPath) {
+        try {
+            String artifactPath = RepositoryFiles.relativizePath(repositoryPath);
+            if (!artifactPath.startsWith(java.io.File.separator)) {
+                artifactPath = java.io.File.separator + artifactPath;
+            }
+            String metadataUrl = "/api/storage/" + repositoryName + artifactPath + "?properties";
+            log.info("Get metadata url [{}]", metadataUrl);
+            ArtifactoryRequest request = new ArtifactoryRequestImpl()
+                    .method(ArtifactoryRequest.Method.GET)
+                    .apiUrl(metadataUrl);
+            ArtifactoryResponse response = artifactory.restCall(request);
+            log.info("Get metadata [{}] response [{}]", repositoryPath.toString(), JSONObject.toJSONString(response.getStatusLine()));
+            if (response.getStatusLine().getStatusCode() == HttpStatus.OK.value()) {
+                String rawBody = response.getRawBody(), propertiesKey = "properties";
+                if (StringUtils.isNotBlank(rawBody) && JSONUtil.isJson(rawBody)) {
+                    JSONObject propertiesJson = JSONObject.parseObject(rawBody);
+                    if (propertiesJson.containsKey(propertiesKey)) {
+                        Set<String> propertiesSet = propertiesJson.getJSONObject(propertiesKey).keySet();
+                        if (CollectionUtils.isNotEmpty(propertiesSet)) {
+                            log.info("Get metadata [{}] successful! [{}]", repositoryPath.toString(), propertiesSet);
+                            deleteMetadata(artifactory, repositoryName, repositoryPath, String.join(",", propertiesSet));
+                        }
+                    }
+                }
+            } else {
+                log.warn("Get metadata [{}] failed. Response code [{}]", repositoryPath.toString(), response.getStatusLine().getStatusCode());
             }
         } catch (IOException e) {
             log.error(ExceptionUtils.getStackTrace(e));
         }
     }
+
+    private void deleteMetadata(Artifactory artifactory, String repositoryName, RepositoryPath repositoryPath, String properties) {
+        try {
+            String artifactPath = RepositoryFiles.relativizePath(repositoryPath);
+            if (!artifactPath.startsWith(java.io.File.separator)) {
+                artifactPath = java.io.File.separator + artifactPath;
+            }
+            String metadataUrl = "/api/storage/" + repositoryName + artifactPath + "?properties=" + properties;
+            log.info("Delete metadata url [{}]", metadataUrl);
+            ArtifactoryRequest request = new ArtifactoryRequestImpl()
+                    .method(ArtifactoryRequest.Method.DELETE)
+                    .apiUrl(metadataUrl);
+            ArtifactoryResponse response = artifactory.restCall(request);
+            log.info("Delete metadata [{}] response [{}]", repositoryPath.toString(), JSONObject.toJSONString(response.getStatusLine()));
+            if (response.getStatusLine().getStatusCode() == HttpStatus.NO_CONTENT.value()) {
+                log.info("Delete metadata [{}] successful!", repositoryPath.toString());
+            } else {
+                log.warn("Delete metadata [{}] failed. Response code [{}]", repositoryPath.toString(), response.getStatusLine().getStatusCode());
+            }
+        } catch (IOException e) {
+            log.error(ExceptionUtils.getStackTrace(e));
+        }
+    }
+
 }

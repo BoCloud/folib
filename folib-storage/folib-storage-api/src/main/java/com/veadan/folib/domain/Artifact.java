@@ -165,4 +165,8 @@ public interface Artifact extends DomainObject {
     String getArtifactName();
 
     void setArtifactName(String artifactName);
+
+    Set<String> getLayers();
+
+    void setLayers(Set<String> layers);
 }

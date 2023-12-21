@@ -47,6 +47,11 @@ public abstract class RepositoryFiles {
         return flag;
     }
 
+    public static Boolean isHidden(Path path) throws IOException {
+        String fileName = path.getFileName().toString();
+        return Files.isHidden(path) || fileName.startsWith(".");
+    }
+
     public static Boolean isArtifactChecksum(String name) {
         if (StringUtils.isBlank(name)) {
             return true;

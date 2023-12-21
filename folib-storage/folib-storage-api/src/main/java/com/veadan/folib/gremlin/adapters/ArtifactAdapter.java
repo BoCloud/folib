@@ -97,6 +97,7 @@ public class ArtifactAdapter implements VertexEntityTraversalAdapter<Artifact> {
                 "artifactName",
                 "artifactPath",
                 "packageInfo",
+                "layers",
                 "componentSet")
                 .by(__.id())
                 .by(__.enrichPropertyValue("uuid"))
@@ -149,6 +150,7 @@ public class ArtifactAdapter implements VertexEntityTraversalAdapter<Artifact> {
                 .by(__.enrichPropertyValue("artifactName"))
                 .by(__.enrichPropertyValue("artifactPath"))
                 .by(__.enrichPropertyValue("packageInfo"))
+                .by(__.enrichPropertyValues("layers"))
                 .by(__.outE(Edges.ARTIFACT_HAS_COMPONENTS)
                         .inV()
                         .map(componentAdapter.fold())
@@ -508,6 +510,9 @@ public class ArtifactAdapter implements VertexEntityTraversalAdapter<Artifact> {
         result.setArtifactName(extractObject(String.class, t.get().get("artifactName")));
         result.setArtifactPath(extractObject(String.class, t.get().get("artifactPath")));
         result.setPackageInfo(extractObject(String.class, t.get().get("packageInfo")));
+        result.setLayers(extractPropertyList(String.class, t.get().get("layers")).stream()
+                .filter(e -> !e.trim().isBlank())
+                .collect(Collectors.toSet()));
         return result;
     }
 
@@ -711,6 +716,10 @@ public class ArtifactAdapter implements VertexEntityTraversalAdapter<Artifact> {
         }
         if (StringUtils.isNotBlank(entity.getPackageInfo())) {
             t = t.property(single, "packageInfo", entity.getPackageInfo());
+        }
+        if (CollectionUtils.isNotEmpty(entity.getLayers())) {
+            t = t.sideEffect(__.properties("layers").drop());
+            t = t.property("layers", entity.getLayers());
         }
         return t;
     }

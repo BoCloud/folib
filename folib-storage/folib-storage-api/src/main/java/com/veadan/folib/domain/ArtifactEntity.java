@@ -170,12 +170,17 @@ public class ArtifactEntity
      * 综合信息
      */
     private String packageInfo;
+    /**
+     * Layers
+     */
+    private Set<String> layers = new LinkedHashSet<>();
 
     /**
      * 组件列表
      */
     @Relationship(type = Edges.ARTIFACT_HAS_COMPONENTS, direction = Relationship.OUTGOING)
     private Set<Component> componentSet;
+
 
     public ArtifactEntity() {
     }
@@ -686,5 +691,15 @@ public class ArtifactEntity
             return;
         }
         this.artifactName = artifactName;
+    }
+
+    @Override
+    public Set<String> getLayers() {
+        return layers;
+    }
+
+    @Override
+    public void setLayers(Set<String> layers) {
+        this.layers = layers;
     }
 }

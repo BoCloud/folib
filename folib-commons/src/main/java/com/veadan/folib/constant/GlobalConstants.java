@@ -41,4 +41,24 @@ public interface GlobalConstants {
      */
     String DISTRIBUTED_LOCK_NAME = "distributedLock";
 
+    /**
+     * SHA_256
+     */
+    String SHA_256 = "sha256";
+
+    /**
+     * CHECKSUM_SHA_256
+     */
+    String CHECKSUM_SHA_256 = ".sha256";
+
+    /**
+     * SELF_METADATA
+     */
+    String SELF_METADATA = ".metadata";
+
+    /**
+     * FO_LIBRARY_METADATA
+     */
+    String FO_LIBRARY_METADATA = ".foLibrary-metadata";
+
 }

@@ -374,6 +374,10 @@ public abstract class BaseController {
         return String.format("%s/%s/%s", StringUtils.chomp(configurationManager.getConfiguration().getBaseUrl(), "/"), storageId, repositoryId);
     }
 
+    protected String getBaseUrlSimple(String storageId, String repositoryId) {
+        return String.format("%s/%s/%s", StringUtils.chomp(configurationManager.getConfiguration().getBaseUrl().replace("http://", "").replace("https://", ""), "/"), storageId, repositoryId);
+    }
+
     /***
      * 获取制品RepositoryPath
      * @param storageId 存储空间名称

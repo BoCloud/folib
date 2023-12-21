@@ -83,6 +83,11 @@ FOLIB_CACHE_CLUSTER="${FOLIB_CACHE_CLUSTER:-127.0.0.1:5071,127.0.0.2:5071}"
 
 FOLIB_SWAGGER_ENABLE="${FOLIB_SWAGGER_ENABLE:-false}"
 
+##线程池相关配置
+FOLIB_THREAD_POOL_COMMON_CORE="${FOLIB_THREAD_POOL_COMMON_CORE:-12}"
+FOLIB_THREAD_POOL_COMMON_MAX="${FOLIB_THREAD_POOL_COMMON_MAX:-12}"
+FOLIB_THREAD_POOL_COMMON_QUEUE="${FOLIB_THREAD_POOL_COMMON_QUEUE:-100000000}"
+
 print_banner()
 {
     echo "  _____ ___  _     ___ ____  ";
@@ -197,6 +202,10 @@ run()
     JAVA_OPTS+=" -Dfolib.cache.cluster=${FOLIB_CACHE_CLUSTER}"
     JAVA_OPTS+=" -Dfolib.cache.port=${FOLIB_CACHE_PORT}"
 
+    ##线程池相关配置
+    JAVA_OPTS+=" -DthreadPool.common.core=${FOLIB_THREAD_POOL_COMMON_CORE}"
+    JAVA_OPTS+=" -DthreadPool.common.max=${FOLIB_THREAD_POOL_COMMON_MAX}"
+    JAVA_OPTS+=" -DthreadPool.common.queue=${FOLIB_THREAD_POOL_COMMON_QUEUE}"
 
     #s3fs:
     #  protocol: http

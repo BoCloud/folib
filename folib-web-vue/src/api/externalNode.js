@@ -38,9 +38,10 @@ export function deleteExternalNode(id) {
   })
 }
 
-export function getExternalNodeRepositories() {
+export function getExternalNodeRepositories(query) {
   return axios({
     url: '/api/externalNode/repositories',
     method: 'get',
+    params: query
   })
 }

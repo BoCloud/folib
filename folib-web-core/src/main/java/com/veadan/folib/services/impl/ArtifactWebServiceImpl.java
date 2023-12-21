@@ -5,14 +5,11 @@ import cn.hutool.core.date.DateUtil;
 import cn.hutool.core.io.FileUtil;
 import cn.hutool.core.io.IORuntimeException;
 import cn.hutool.core.lang.UUID;
-import cn.hutool.extra.spring.SpringUtil;
 import cn.hutool.json.JSONUtil;
 import com.alibaba.excel.EasyExcel;
 import com.alibaba.excel.ExcelWriter;
 import com.alibaba.excel.write.metadata.WriteSheet;
 import com.alibaba.excel.write.metadata.fill.FillConfig;
-import com.alibaba.fastjson.JSON;
-import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -23,12 +20,10 @@ import com.sun.management.HotSpotDiagnosticMXBean;
 import com.veadan.folib.artifact.coordinates.DockerArtifactCoordinates;
 import com.veadan.folib.artifact.coordinates.MavenArtifactCoordinates;
 import com.veadan.folib.authorization.dto.Role;
-import com.veadan.folib.cloud.storage.s3fs.S3FileSystem;
-import com.veadan.folib.cloud.storage.s3fs.S3Iterator;
-import com.veadan.folib.cloud.storage.s3fs.S3Path;
 import com.veadan.folib.cloud.storage.s3fs.util.UriUtils;
 import com.veadan.folib.cluster.SyncMetadataEnum;
 import com.veadan.folib.components.artifact.ArtifactComponent;
+import com.veadan.folib.components.layout.DockerComponent;
 import com.veadan.folib.configuration.ConfigurationUtils;
 import com.veadan.folib.configuration.MutableMetadataConfiguration;
 import com.veadan.folib.constant.GlobalConstants;
@@ -61,6 +56,7 @@ import com.veadan.folib.scanner.common.msg.TableResultResponse;
 import com.veadan.folib.scanner.entity.ScanRules;
 import com.veadan.folib.scanner.mapper.ScanRulesMapper;
 import com.veadan.folib.scanner.service.ScanService;
+import com.veadan.folib.schema2.ImageManifest;
 import com.veadan.folib.services.*;
 import com.veadan.folib.storage.Storage;
 import com.veadan.folib.storage.StorageDto;
@@ -71,6 +67,7 @@ import com.veadan.folib.users.userdetails.SpringSecurityUser;
 import com.veadan.folib.util.CompressUtils;
 import com.veadan.folib.util.CustomDateUtils;
 import com.veadan.folib.util.FileSizeConvertUtils;
+import com.veadan.folib.util.RepositoryPathUtil;
 import com.veadan.folib.utils.TreeUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
@@ -170,6 +167,10 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
 
     @Inject
     private LayoutProviderRegistry layoutProviderRegistry;
+
+    @Inject
+    @Lazy
+    private DockerComponent dockerComponent;
 
     @Value("${folib.temp}")
     private String tempPath;
@@ -461,7 +462,6 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
         Page<Artifact> artifactPage = artifactRepository.scannerListByParams(pageable, artifactName, storageId, repositoryId);
         RepositoryScannerForm repositoryScannerForm = RepositoryScannerForm.builder().total(artifactPage.getTotalElements()).build();
         SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-        String finalPrefix = prefix;
         repositoryScannerForm.setList(artifactPage.getContent().stream().map(artifact -> {
             String scanTime = DateUtil.format(Date.from(artifact.getScanDateTime().atZone(ZoneId.of("Asia/Shanghai")).toOffsetDateTime().toInstant()), df);
             RepositoryForm repositoryForm = RepositoryForm.builder().dependencyCount(artifact.getDependencyCount()).dependencyVulnerabilitiesCount(artifact.getDependencyVulnerabilitiesCount())
@@ -470,9 +470,9 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
             repositoryForm.setFilePaths(Optional.ofNullable(artifact.getFilePaths()).orElse(Collections.emptySet()).stream().map(item -> JSONObject.parseObject(item, ScannerReportForm.class)).collect(Collectors.toList()));
             if (DockerLayoutProvider.ALIAS.equals(repository.getLayout())) {
                 //docker
-                String uuid = artifact.getUuid();
-                repositoryForm.setImageName(uuid.substring(finalPrefix.length(), uuid.indexOf("/")));
-                repositoryForm.setVersion(uuid.substring(uuid.indexOf("/") + 1, uuid.indexOf("/sha256")));
+                DockerArtifactCoordinates dockerArtifactCoordinates = (DockerArtifactCoordinates) artifact.getArtifactCoordinates();
+                repositoryForm.setImageName(dockerArtifactCoordinates.getName());
+                repositoryForm.setVersion(dockerArtifactCoordinates.getTAG());
             } else {
                 if (CollectionUtils.isNotEmpty(repositoryForm.getFilePaths())) {
                     repositoryForm.setFilePath(repositoryForm.getFilePaths().get(0).getFilePath());
@@ -600,7 +600,7 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
     @Override
     @Async("asyncThreadPoolTaskExecutor")
     public void buildGraphIndex(String username, String storageId, String repositoryId, String path, Boolean metadata, Integer batch) {
-        log.info("BuildGraphIndex is started");
+        log.info("BuildGraphIndex is starting...");
         Long dictId = 0L;
         try {
             Dict existsDict = dictService.selectLatestOneDict(Dict.builder().dictType(DictTypeEnum.BUILD_GRAPH_INDEX.getType()).build());
@@ -618,13 +618,13 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
             dictService.saveDict(dict);
             dictId = dict.getId();
             if (StringUtils.isNotBlank(storageId) && StringUtils.isNotBlank(repositoryId)) {
-                handlerRepository(storageId, repositoryId, path, metadata, batch);
+                handleRepository(storageId, repositoryId, path, metadata, batch);
             } else if (StringUtils.isNotBlank(storageId)) {
                 path = "";
                 Map<String, ? extends Repository> repositoryMaps = configurationManagementService.getMutableConfigurationClone().getStorage(storageId).getRepositories();
                 if (!repositoryMaps.isEmpty()) {
                     for (String repository : repositoryMaps.keySet()) {
-                        handlerRepository(storageId, repository, path, metadata, batch);
+                        handleRepository(storageId, repository, path, metadata, batch);
                     }
                 }
             } else if (StringUtils.isBlank(storageId) && StringUtils.isBlank(repositoryId)) {
@@ -635,7 +635,7 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
                         Map<String, ? extends Repository> repositoryMaps = configurationManagementService.getMutableConfigurationClone().getStorage(storageEntry.getKey()).getRepositories();
                         if (!repositoryMaps.isEmpty()) {
                             for (String repository : repositoryMaps.keySet()) {
-                                handlerRepository(storageEntry.getKey(), repository, path, metadata, batch);
+                                handleRepository(storageEntry.getKey(), repository, path, metadata, batch);
                             }
                         }
                     }
@@ -643,7 +643,7 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
             }
             dictService.updateDict(DictForm.builder().id(dictId).comment("构建完成").build());
         } catch (Exception ex) {
-            log.error("BuildGraphIndex is error：{}", ExceptionUtils.getStackTrace(ex));
+            log.error("BuildGraphIndex is error [{}]", ExceptionUtils.getStackTrace(ex));
             dictService.updateDict(DictForm.builder().id(dictId).comment("构建错误").build());
         }
         log.info("BuildGraphIndex is finished");
@@ -1029,17 +1029,21 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
      * @param metadata     是否同步元数据 true 是 false 否
      * @param batch        每批数量
      */
-    private void handlerRepository(String storageId, String repositoryId, String path, Boolean metadata, Integer batch) {
+    private void handleRepository(String storageId, String repositoryId, String path, Boolean metadata, Integer batch) {
         try {
-            log.info("handlerRepository storageId：{}，repositoryId：{} start", storageId, repositoryId);
+            log.info("StorageId [{}]，repositoryId [{}] starting...", storageId, repositoryId);
             RootRepositoryPath rootRepositoryPath = repositoryPathResolver.resolve(storageId, repositoryId);
-            if (StringUtils.isBlank(path)) {
-                path = rootRepositoryPath.toAbsolutePath().toString();
+            RepositoryPath repositoryPath = rootRepositoryPath;
+            if (StringUtils.isNotBlank(path)) {
+                repositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, path);
             }
-            handlerArtifacts(path, rootRepositoryPath.getRepository(), metadata, batch);
-            log.info("handlerRepository storageId：{}，repositoryId：{} finished", storageId, repositoryId);
+            if (Objects.isNull(batch)) {
+                batch = 500;
+            }
+            handleArtifacts(repositoryPath, repositoryPath.getRepository(), metadata, batch);
+            log.info("StorageId [{}] repositoryId [{}] is finished", storageId, repositoryId);
         } catch (Exception ex) {
-            log.error("handlerRepository storageId：{}，repositoryId：{} error：{}", storageId, repositoryId, ExceptionUtils.getStackTrace(ex));
+            log.error("StorageId [{}] repositoryId [{}] error [{}]", storageId, repositoryId, ExceptionUtils.getStackTrace(ex));
         }
     }
 
@@ -1116,19 +1120,6 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
     private Long getEndLong(String date) {
         LocalDateTime endLocalDateTime = DateUtil.parseLocalDateTime(date + " 23:59:59", DatePattern.NORM_DATETIME_PATTERN);
         return EntityTraversalUtils.toLong(endLocalDateTime);
-    }
-
-    private void handlerArtifacts(String path, Repository repository, Boolean metadata, Integer batch) throws Exception {
-        if (Objects.isNull(batch)) {
-            batch = 500;
-        }
-        String s3 = "s3://";
-        if (path.startsWith(s3)) {
-            S3Path s3Path = new S3Path(SpringUtil.getBean(S3FileSystem.class), path);
-            handlerS3Paths(s3Path, repository, metadata, batch);
-        } else {
-            handlerNFSFiles(path, repository, metadata, batch);
-        }
     }
 
     private List<File> getNFSFiles(String path, Repository repository) {
@@ -1231,34 +1222,46 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
     }
 
     /**
-     * 处理NFS存储制品
+     * 处理存储制品
      *
-     * @param path       NFS目录
-     * @param repository 仓库信息
-     * @param metadata   是否同步元数据 true 是 false 否
-     * @param batch      每批数量
+     * @param rootRepositoryPath rootRepositoryPath
+     * @param repository         仓库信息
+     * @param metadata           是否同步元数据 true 是 false 否
+     * @param batch              每批数量
      * @return NFS目录下的所有文件
      */
-    private List<File> handlerNFSFiles(String path, Repository repository, Boolean metadata, Integer batch) throws Exception {
-        List<File> resultList = getNFSFiles(path, repository);
-        List<List<File>> fileLists = Lists.partition(resultList, batch);
+    private List<RepositoryPath> handleArtifacts(RepositoryPath rootRepositoryPath, Repository repository, Boolean metadata, Integer batch) throws Exception {
+        List<RepositoryPath> resultList = RepositoryPathUtil.getPaths(repository.getLayout(), rootRepositoryPath, Lists.newArrayList(DockerLayoutProvider.BLOBS, DockerLayoutProvider.MANIFEST));
+        List<List<RepositoryPath>> fileLists = Lists.partition(resultList, batch);
         List<FutureTask<String>> futureTaskList = Lists.newArrayList();
+        final boolean isDocker = DockerLayoutProvider.ALIAS.equalsIgnoreCase(repository.getLayout());
         FutureTask<String> futureTask = null;
-        for (List<File> fileList : fileLists) {
+        for (List<RepositoryPath> fileList : fileLists) {
             futureTask = new FutureTask<String>(() -> {
-                String fPath, tempStr, artifactPath;
-                RepositoryPath repositoryPath;
-                int fPathIndex;
-                for (File file : fileList) {
-                    fPath = file.getAbsolutePath();
+                String artifactPath;
+                for (RepositoryPath repositoryPath : fileList) {
                     try {
-                        tempStr = repository.getStorage().getId() + File.separator + repository.getId() + File.separator;
-                        fPathIndex = fPath.lastIndexOf(tempStr);
-                        artifactPath = fPath.substring(fPathIndex).replace(tempStr, "");
-                        repositoryPath = repositoryPathResolver.resolve(repository.getStorage().getId(), repository.getId(), artifactPath);
+                        artifactPath = RepositoryFiles.relativizePath(repositoryPath);
                         if (!RepositoryFiles.isArtifact(repositoryPath)) {
-                            log.info("handlerArtifact path：{} not is a artifact", fPath);
+                            log.info("HandleArtifacts path [{}] not is a artifact", repositoryPath.toString());
                             continue;
+                        }
+                        if (isDocker) {
+                            List<ImageManifest> imageManifestList = dockerComponent.getImageManifests(repositoryPath);
+                            if (CollectionUtils.isNotEmpty(imageManifestList)) {
+                                for (ImageManifest manifest : imageManifestList) {
+                                    List<String> layerList = promotionUtil.getAllLayerList(manifest);
+                                    //blobs
+                                    for (String layer : layerList) {
+                                        RepositoryPath blobPath = repositoryPathResolver.resolve(repositoryPath.getStorageId(), repositoryPath.getRepositoryId(), DockerLayoutProvider.BLOBS + File.separator + layer);
+                                        artifactManagementService.validateAndStoreIndex(blobPath);
+                                    }
+                                    if (StringUtils.isNotBlank(manifest.getDigest())) {
+                                        RepositoryPath mainFestPath = repositoryPathResolver.resolve(repositoryPath.getStorageId(), repositoryPath.getRepositoryId(), DockerLayoutProvider.MANIFEST + File.separator + manifest.getDigest());
+                                        artifactManagementService.validateAndStoreIndex(mainFestPath);
+                                    }
+                                }
+                            }
                         }
                         if (Boolean.TRUE.equals(metadata)) {
                             handlerMetadata(artifactPath, repositoryPath);
@@ -1268,11 +1271,11 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
                             try {
                                 artifactMetadataService.rebuildMetadata(repositoryPath.getStorageId(), repositoryPath.getRepositoryId(), repositoryPath.getArtifactEntry().getArtifactPath());
                             } catch (Exception ex) {
-                                log.error("handlerArtifact rebuildMetadata path：{}，error：{}", repositoryPath.toString(), ExceptionUtils.getStackTrace(ex));
+                                log.error("HandleArtifacts rebuildMetadata path [{}] error [{}]", repositoryPath.toString(), ExceptionUtils.getStackTrace(ex));
                             }
                         }
                     } catch (Exception ex) {
-                        log.error("handlerArtifact path：{} error：{}", fPath, ExceptionUtils.getStackTrace(ex));
+                        log.error("HandleArtifacts path [{}] error [{}]", repositoryPath.toString(), ExceptionUtils.getStackTrace(ex));
                     }
                 }
                 return "success";
@@ -1283,208 +1286,8 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
         for (FutureTask<String> task : futureTaskList) {
             task.get();
         }
-        log.info("handlerNFSFiles is finished");
+        log.info("HandleArtifacts [{}] is finished", rootRepositoryPath.toString());
         return resultList;
-    }
-
-    private List<S3Path> getS3Paths(S3Path s3Path, Repository repository) {
-        List<S3Path> listFile = new ArrayList<>();
-        List<S3Path> listDir = new ArrayList<>();
-        boolean dockerLayout = DockerLayoutProvider.ALIAS.equalsIgnoreCase(repository.getLayout());
-        S3Iterator s3Iterator = new S3Iterator(s3Path);
-        if (!s3Iterator.hasNext()) {
-            if (dockerLayout && !s3Path.getFileName().toString().contains("sha256")) {
-                log.info("s3 file：{} not is a docker layout file", s3Path);
-                return Collections.emptyList();
-            }
-            if (RepositoryFiles.isArtifactChecksum(s3Path.getFileName().toString())) {
-                log.info("s3 file：{} is a checksum file skip", s3Path);
-                return Collections.emptyList();
-            }
-            listFile.add(s3Path);
-        }
-        while (s3Iterator.hasNext()) {
-            S3Path s3PathTemp = s3Iterator.next();
-            if (s3PathTemp.getFileAttributes() == null || s3PathTemp.getFileAttributes().isDirectory()) {
-                if (s3PathTemp.getFileName().toString().startsWith(".")) {
-                    log.info("s3 directory {} is a hidden directory skip", s3PathTemp);
-                    continue;
-                }
-                if (s3PathTemp.getFileName().toString().endsWith(".artifactory-metadata")) {
-                    log.info("s3 directory {} is a artifactory metadata directory skip", s3PathTemp);
-                    continue;
-                }
-                listDir.add(s3PathTemp);
-            } else {
-                if (s3PathTemp.getFileName().toString().startsWith(".")) {
-                    log.info("s3 file {} is a hidden file", s3PathTemp);
-                    continue;
-                }
-                if (dockerLayout && !s3PathTemp.getFileName().toString().contains("sha256")) {
-                    log.info("s3 file：{} not is a docker layout file", s3PathTemp);
-                    continue;
-                }
-                if (RepositoryFiles.isArtifactChecksum(s3PathTemp.getFileName().toString())) {
-                    log.info("s3 file {} is a checksum file skip", s3PathTemp);
-                    continue;
-                }
-                log.info("s3 file {}", s3PathTemp);
-                listFile.add(s3PathTemp);
-            }
-        }
-        while (listDir.size() != 0) {
-            S3Path currentPath = listDir.get(0);
-            listDir.remove(currentPath);
-            s3Iterator = new S3Iterator(currentPath);
-            while (s3Iterator.hasNext()) {
-                S3Path s3PathTemp = s3Iterator.next();
-                if (s3PathTemp.getFileAttributes() == null || s3PathTemp.getFileAttributes().isDirectory()) {
-                    if (s3PathTemp.getFileName().toString().startsWith(".")) {
-                        log.info("s3 directory {} is a hidden directory skip", s3PathTemp);
-                        continue;
-                    }
-                    if (s3PathTemp.getFileName().toString().endsWith(".artifactory-metadata")) {
-                        log.info("s3 directory {} is a artifactory metadata directory skip", s3PathTemp);
-                        continue;
-                    }
-                    listDir.add(s3PathTemp);
-                } else {
-                    if (s3PathTemp.getFileName().toString().startsWith(".")) {
-                        log.info("s3 file {} is a hidden file", s3PathTemp);
-                        continue;
-                    }
-                    if (dockerLayout && !s3PathTemp.getFileName().toString().contains("sha256")) {
-                        log.info("s3 file：{} not is a docker layout file", s3PathTemp);
-                        continue;
-                    }
-                    if (RepositoryFiles.isArtifactChecksum(s3PathTemp.getFileName().toString())) {
-                        log.info("s3 file {} is a checksum file skip", s3PathTemp);
-                        continue;
-                    }
-                    log.info("s3 file {}", s3PathTemp);
-                    listFile.add(s3PathTemp);
-                }
-            }
-        }
-        log.info("s3Path [{}]  file size：{}", s3Path.toUri().toString(), listFile.size());
-        return listFile;
-    }
-
-
-    /**
-     * 处理S3存储制品
-     *
-     * @param s3Path     S3目录
-     * @param repository 仓库信息
-     * @param metadata   是否同步元数据 true 是 false 否
-     * @param batch      每批数量
-     * @return S3存储目录下的所有文件
-     */
-    private List<S3Path> handlerS3Paths(S3Path s3Path, Repository repository, Boolean metadata, Integer batch) throws Exception {
-        List<S3Path> listFile = getS3Paths(s3Path, repository);
-        List<List<S3Path>> s3PathLists = Lists.partition(listFile, batch);
-        List<FutureTask<String>> futureTaskList = Lists.newArrayList();
-        FutureTask<String> futureTask = null;
-        for (List<S3Path> s3PathList : s3PathLists) {
-            futureTask = new FutureTask<String>(() -> {
-                for (S3Path s3FilePath : s3PathList) {
-                    try {
-                        String fPath = s3FilePath.toString();
-                        String tempStr = repository.getStorage().getId() + File.separator + repository.getId() + File.separator;
-                        int fPathIndex = fPath.lastIndexOf(tempStr);
-                        String artifactPath = fPath.substring(fPathIndex).replace(tempStr, "");
-                        RepositoryPath repositoryPath = repositoryPathResolver.resolve(repository.getStorage().getId(), repository.getId(), artifactPath);
-                        if (!RepositoryFiles.isArtifact(repositoryPath)) {
-                            log.info("handlerArtifact path：{} not is a artifact", s3FilePath.toAbsolutePath());
-                            continue;
-                        }
-                        if (Boolean.TRUE.equals(metadata)) {
-                            handlerMetadata(artifactPath, repositoryPath);
-                        }
-                        artifactManagementService.validateAndStoreIndex(repositoryPath);
-                        if (Maven2LayoutProvider.ALIAS.equals(repository.getLayout())) {
-                            try {
-                                artifactMetadataService.rebuildMetadata(repositoryPath.getStorageId(), repositoryPath.getRepositoryId(), repositoryPath.getArtifactEntry().getArtifactPath());
-                            } catch (Exception ex) {
-                                log.error("handlerArtifact rebuildMetadata path：{}，error：{}", repositoryPath.toString(), ExceptionUtils.getStackTrace(ex));
-                            }
-                        }
-                    } catch (Exception ex) {
-                        log.error("handlerArtifact path：{} error：{}", s3FilePath.toAbsolutePath(), ExceptionUtils.getStackTrace(ex));
-                    }
-                }
-                return "success";
-            });
-            futureTaskList.add(futureTask);
-            asyncThreadPoolTaskExecutor.submit(futureTask);
-        }
-        for (FutureTask<String> task : futureTaskList) {
-            task.get();
-        }
-        log.info("handlerS3Paths is finished");
-        return listFile;
-    }
-
-    private String s3Manifest(List<S3Path> s3FilesPaths, StringBuilder manifestBuilder) throws IOException {
-        if (CollectionUtils.isEmpty(s3FilesPaths)) {
-            return "";
-        }
-        List<S3Path> fileContents = s3FilesPaths.stream().filter(file -> DockerArtifactCoordinates.include(file.toAbsolutePath().toString())).collect(Collectors.toList());
-        S3Path filePath = fileContents.get(0);
-        String[] array = filePath.getKey().split(File.separator);
-        manifestBuilder.append(array[array.length - 1]);
-        return Files.readString(filePath);
-    }
-
-    private String nfsManifest(List<File> fileList, StringBuilder manifestBuilder) throws IOException {
-        if (CollectionUtils.isEmpty(fileList)) {
-            return "";
-        }
-        List<File> fileContents = fileList.stream().filter(file -> DockerArtifactCoordinates.include(file.getName())).collect(Collectors.toList());
-        File file = fileContents.get(0);
-        manifestBuilder.append(file.getName());
-        return Files.readString(file.toPath());
-    }
-
-    private void handlerDockerBlobAndManifest(String path, Repository repository, List<File> fileList, List<S3Path> s3FilesPaths) throws Exception {
-        //判断是否是docker布局
-        boolean dockerLayout = "docker".equalsIgnoreCase(repository.getLayout());
-        String s3 = "s3://";
-        if (dockerLayout) {
-            // blobs manifest
-            String tempStr = repository.getStorage().getId() + File.separator + repository.getId() + File.separator;
-            int fPathIndex = path.lastIndexOf(tempStr);
-            String relativizePath = path.substring(fPathIndex).replace(tempStr, "");
-            String[] arrayPath = relativizePath.split(File.separator);
-            if (arrayPath.length != 2) {
-                return;
-            }
-            String manifestContent = "";
-            StringBuilder manifestBuilder = new StringBuilder();
-            if (path.startsWith(s3)) {
-                manifestContent = s3Manifest(s3FilesPaths, manifestBuilder);
-            } else {
-                manifestContent = nfsManifest(fileList, manifestBuilder);
-            }
-            JSONObject manifest = JSON.parseObject(manifestContent);
-            JSONArray layers = manifest.getJSONArray("layers");
-            List<String> layerList = new ArrayList<>();
-            for (int i = 0; i < layers.size(); i++) {
-                layerList.add(layers.getJSONObject(i).getString("digest"));
-            }
-            String manifestConfig = manifest.getJSONObject("config").getString("digest");
-            // blobs
-            layerList.add(manifestConfig);
-            for (String layer : layerList) {
-                String blob = arrayPath[0] + File.separator + "blobs" + File.separator + layer;
-                RepositoryPath blobPath = repositoryPathResolver.resolve(repository.getStorage().getId(), repository.getId(), blob);
-                artifactManagementService.validateAndStoreIndex(blobPath);
-            }
-            // manifest
-            String manifestFile = arrayPath[0] + File.separator + "manifest" + File.separator + manifestBuilder;
-            RepositoryPath manifestPath = repositoryPathResolver.resolve(repository.getStorage().getId(), repository.getId(), manifestFile);
-            artifactManagementService.validateAndStoreIndex(manifestPath);
-        }
     }
 
     public boolean hasAdmin() {
@@ -1566,7 +1369,6 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
             if (Objects.nonNull(metadataRepositoryPath) && Files.exists(metadataRepositoryPath)) {
                 String metadataXml = Files.readString(metadataRepositoryPath), metadataValue;
                 ArtifactMetadata artifactMetadata = null;
-                List<JSONObject> artifactMetadataList = Lists.newArrayList();
                 // 创建XML解析器
                 XmlMapper xmlMapper = new XmlMapper();
                 // 将XML解析为JsonNode对象
@@ -1596,7 +1398,7 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
                 }
             }
         } catch (Exception ex) {
-            log.error("handlerArtifact sync metadata path：{}，error：{}", repositoryPath.toString(), ExceptionUtils.getStackTrace(ex));
+            log.error("handleArtifact sync metadata path：{}，error：{}", repositoryPath.toString(), ExceptionUtils.getStackTrace(ex));
         }
     }
 

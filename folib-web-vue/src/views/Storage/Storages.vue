@@ -1591,7 +1591,7 @@ export default {
       this.getStoragesAndRepositories(layout, this.folibRepository.id)
     },
     getStoragesAndRepositories(layout, excludeRepositoryId) {
-      getStoragesAndRepositories({ layout: layout, excludeRepositoryId: excludeRepositoryId }).then(res => {
+      getStoragesAndRepositories({  excludeType: 'group', layout: layout, excludeRepositoryId: excludeRepositoryId }).then(res => {
         let repositories = []
         let id,arr
         res.forEach(item => {

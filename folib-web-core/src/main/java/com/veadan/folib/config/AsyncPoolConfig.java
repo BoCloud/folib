@@ -225,7 +225,7 @@ public class AsyncPoolConfig {
             executor.setCorePoolSize(corePoolSize);
             executor.setMaxPoolSize(maxPoolSize);
         }
-        Integer maxQueueCapacity = 100000;
+        Integer maxQueueCapacity = 2100000000;
         if (queueCapacity > maxQueueCapacity) {
             queueCapacity = maxQueueCapacity;
         }

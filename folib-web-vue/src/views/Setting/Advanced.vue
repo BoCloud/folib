@@ -62,16 +62,16 @@
                       <a-col :span="8">
                         <a-form-model-item class="mb-10" :colon="false" prop="path">
                           <template slot="label">
-                            制品绝对路径
+                            制品相对路径
                             <a-popover placement="topLeft">
                               <template slot="content">
                                 <p class="mb-0">可指定目录进行构建数据，若不填写则为仓库的根目录</p>
-                                <p class="mb-0">目录为绝对路径（容器部署，则为容器内部的绝对路径）</p>
+                                <p class="mb-0">目录为仓库下的相对路径</p>
                               </template>
                               <a class="ml-5"><a-icon type="question-circle" theme="filled" /></a>
                             </a-popover>
                           </template>
-                          <a-input v-model="buildGraphIndexForm.path" placeholder="请输入制品绝对路径" />
+                          <a-input v-model="buildGraphIndexForm.path" placeholder="请输入制品相对路径" />
                         </a-form-model-item>
                       </a-col>
                     </a-row>

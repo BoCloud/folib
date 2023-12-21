@@ -308,6 +308,7 @@ public abstract class StorageFileSystemProvider
 
     public RepositoryPath moveFromTemporaryDirectory(TempRepositoryPath tempPath)
             throws IOException {
+        long startTime = System.currentTimeMillis();
         logger.info("Moving [{}]", tempPath.getTarget());
         RepositoryPath path = tempPath.getTempTarget();
 
@@ -327,7 +328,7 @@ public abstract class StorageFileSystemProvider
             Files.move(tempPath.getTarget(), path.getTarget(), StandardCopyOption.ATOMIC_MOVE);
         }
 
-
+        logger.info("Moving finished [{}] task time [{}] ms", tempPath.getTarget(), System.currentTimeMillis() - startTime);
         //path.artifactEntry = tempPath.artifactEntry;
 
         return path;

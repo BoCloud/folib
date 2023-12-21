@@ -1,11 +1,15 @@
 package com.veadan.folib.controllers;
 
 import cn.hutool.core.date.DateUtil;
+import cn.hutool.extra.spring.SpringUtil;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
+import com.google.common.collect.Lists;
 import com.veadan.folib.artifact.coordinates.DockerArtifactCoordinates;
 import com.veadan.folib.booters.PropertiesBooter;
+import com.veadan.folib.cloud.storage.s3fs.S3FileSystem;
+import com.veadan.folib.cloud.storage.s3fs.S3Path;
 import com.veadan.folib.dependency.snippet.CodeSnippet;
 import com.veadan.folib.dependency.snippet.SnippetGenerator;
 import com.veadan.folib.domain.Artifact;
@@ -29,6 +33,7 @@ import com.veadan.folib.utils.TreeUtil;
 import com.veadan.folib.web.RepositoryMapping;
 import io.swagger.annotations.*;
 import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.slf4j.Logger;
@@ -49,11 +54,16 @@ import javax.servlet.http.HttpServletRequest;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
+import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.SimpleFileVisitor;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.text.SimpleDateFormat;
 import java.time.ZoneId;
 import java.util.*;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static org.springframework.http.HttpStatus.NOT_FOUND;
 import static org.springframework.http.HttpStatus.OK;
@@ -144,17 +154,18 @@ public class BrowseController
                 jsonObject.put("artifact", artifact);
             }
         } else {
-            String[] a = artifactPath.split("/");
-            String aName = a[0];
-            String aVersion = a[1];
             RepositoryPath repositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, artifactPath);
             try {
                 DirectoryListing directoryListing = directoryListingService.fromRepositoryPath(repositoryPath);
                 List<FileContent> fileContents = directoryListing.getFiles().stream().filter(file -> DockerArtifactCoordinates.include(file.getName())).collect(Collectors.toList());
                 FileContent fileContent = fileContents.get(0);
                 RepositoryPath versionPath = repositoryPathResolver.resolve(storageId, repositoryId, artifactPath + File.separator + fileContent.getName());
+                Artifact artifact = getArtifact(repositoryPathResolver.resolve(storageId, repositoryId, fileContent.getArtifactPath()), report);
+                DockerArtifactCoordinates dockerArtifactCoordinates = (DockerArtifactCoordinates) artifact.getArtifactCoordinates();
+                jsonObject.put("artifact", artifact);
                 String manifestString = Files.readString(versionPath);
-                String imageName = configurationManagementService.getConfiguration().getBaseUrl().replace("http://", "") + storageId + "/" + repositoryId + "/" + aName + ":" + aVersion;
+
+                String imageName = getBaseUrlSimple(storageId, repositoryId)  + "/" + dockerArtifactCoordinates.getIMAGE_NAME();
                 String code = "docker  pull  " + imageName;
                 CodeSnippet codeSnippet = new CodeSnippet("Docker", code);
                 List<CodeSnippet> snippets = new ArrayList<>();
@@ -171,7 +182,7 @@ public class BrowseController
                             manifests = optionalManifests.get();
                         }
                     }
-                    RepositoryPath manifestPath = repositoryPathResolver.resolve(storageId, repositoryId, aName + "/manifest/" + manifests.getDigest());
+                    RepositoryPath manifestPath = repositoryPathResolver.resolve(storageId, repositoryId, "manifest/" + manifests.getDigest());
                     if (Objects.nonNull(manifestPath) && Files.exists(manifestPath)) {
                         ImageManifest manifest = JSON.parseObject(Files.readString(manifestPath), ImageManifest.class);
                         if (Objects.nonNull(manifest)) {
@@ -183,14 +194,12 @@ public class BrowseController
                     }
                 }
                 if (StringUtils.isNotBlank(configDigest)) {
-                    RepositoryPath manifestConfigPath = repositoryPathResolver.resolve(storageId, repositoryId, aName + "/blobs/" + configDigest);
+                    RepositoryPath manifestConfigPath = repositoryPathResolver.resolve(storageId, repositoryId, "blobs/" + configDigest);
                     String manifestConfigString = Files.readString(manifestConfigPath);
                     JSONObject object = JSON.parseObject(manifestConfigString);
                     jsonObject.put("manifestConfig", object);
                     jsonObject.put("sha256", configDigest);
                 }
-                Artifact artifact = getArtifact(repositoryPathResolver.resolve(storageId, repositoryId, fileContent.getArtifactPath()), report);
-                jsonObject.put("artifact", artifact);
                 Long size = Optional.ofNullable(imageManifest.getLayers()).orElse(Collections.emptyList()).stream().filter(item -> Objects.nonNull(item.getSize())).mapToLong(LayerManifest::getSize).sum();
                 jsonObject.put("snippets", snippets);
                 jsonObject.put("manifest", imageManifest);
@@ -210,7 +219,7 @@ public class BrowseController
 
     @PreAuthorize("hasAuthority('ARTIFACTS_RESOLVE')")
     @ApiOperation(value = "List the contents for a docker.")
-    @GetMapping(value = "/getDockerArtifact/{storageId}/{repositoryId}/{path}")
+    @GetMapping(value = "/getDockerArtifact/{storageId}/{repositoryId}/{path:.+}")
     public Object getDockerArtifact(@PathVariable("storageId") String storageId,
                                     @PathVariable("repositoryId") String repositoryId,
                                     @PathVariable(value = "path", required = false) String path) {
@@ -221,6 +230,7 @@ public class BrowseController
             try {
                 DirectoryListing directoryListing = directoryListingService.fromRepositoryPath(repositoryPath);
                 List<FileContent> imageDirList = directoryListing.getDirectories();
+                imageDirList = imageDirList.stream().filter(f -> !DockerLayoutProvider.BLOBS.equalsIgnoreCase(f.getName()) && !DockerLayoutProvider.MANIFEST.equalsIgnoreCase(f.getName())).collect(Collectors.toList());
                 jsonObject.put("directories", imageDirList);
                 jsonObject.put("files", new JSONArray());
             } catch (IOException e) {
@@ -233,9 +243,20 @@ public class BrowseController
             RepositoryPath repositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, path);
             try {
                 DirectoryListing directoryListing = directoryListingService.fromRepositoryPath(repositoryPath);
-                List<FileContent> imageDirList = directoryListing.getDirectories().stream().filter(f -> (!f.getName().equals("blobs")) && (!f.getName().equals("manifest"))).collect(Collectors.toList());
+                List<FileContent> imageDirList = Lists.newArrayList(), directories = Lists.newArrayList();
+                directoryListing.getDirectories().forEach(f -> {
+                    try (Stream<Path> pathStream = Files.list(repositoryPathResolver.resolve(storageId, repositoryId, f.getArtifactPath()))) {
+                        if (pathStream.anyMatch(DockerArtifactCoordinates::isManifestPath)) {
+                            imageDirList.add(f);
+                        } else if (!DockerLayoutProvider.BLOBS.equalsIgnoreCase(f.getName()) && !DockerLayoutProvider.MANIFEST.equalsIgnoreCase(f.getName())) {
+                            directories.add(f);
+                        }
+                    } catch (Exception ex) {
+                        logger.warn(ExceptionUtils.getStackTrace(ex));
+                    }
+                });
                 jsonObject.put("files", imageDirList);
-                jsonObject.put("directories", new JSONArray());
+                jsonObject.put("directories", directories);
             } catch (IOException e) {
                 jsonObject.put("files", new JSONArray());
                 jsonObject.put("message", "获取失败");

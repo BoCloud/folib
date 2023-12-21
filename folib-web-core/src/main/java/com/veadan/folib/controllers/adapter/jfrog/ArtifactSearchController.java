@@ -13,6 +13,7 @@ import com.veadan.folib.domain.adapter.jfrog.*;
 import com.veadan.folib.enums.ArtifactSearchConditionTypeEnum;
 import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.providers.io.RepositoryPathResolver;
+import com.veadan.folib.providers.layout.DockerLayoutProvider;
 import com.veadan.folib.repositories.ArtifactRepository;
 import com.veadan.folib.schema2.ImageManifest;
 import com.veadan.folib.schema2.LayerManifest;
@@ -36,6 +37,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import javax.inject.Inject;
 import javax.servlet.http.HttpServletRequest;
+import java.io.File;
 import java.nio.file.Files;
 import java.time.ZoneId;
 import java.util.*;
@@ -182,7 +184,7 @@ public class ArtifactSearchController extends JFrogBaseController {
         }
         ImageManifest imageManifest = imageManifestList.get(0);
         String configDigest = imageManifest.getConfig().getDigest();
-        RepositoryPath manifestConfigPath = repositoryPathResolver.resolve(storageId, repositoryId, name + "/blobs/" + configDigest);
+        RepositoryPath manifestConfigPath = repositoryPathResolver.resolve(storageId, repositoryId, DockerLayoutProvider.BLOBS + File.separator + configDigest);
         String manifestConfigString = Files.readString(manifestConfigPath);
         ManifestConfig manifestConfig = JSONObject.parseObject(manifestConfigString, ManifestConfig.class);
         String exposedPortsKey = "ExposedPorts", volumesKey = "Volumes", labelsKey = "Labels";

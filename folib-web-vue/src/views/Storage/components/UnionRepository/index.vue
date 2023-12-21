@@ -335,7 +335,7 @@ export default {
       this.instanceName = sessionStorage.getItem("instanceName")
       this.repositoryInfo()
       this.getTargetRepositories(this.folibRepository.type, this.folibRepository.layout, this.folibRepository.id, this.folibRepository.policy)
-      this.getExternalNodeRepositories()
+      this.getExternalNodeRepositories({type: this.folibRepository.layout})
       this.selectTargetRepositories = []
     },
     repositoryInfo() {
@@ -493,8 +493,8 @@ export default {
         }
       })
     },
-    getExternalNodeRepositories() {
-      getExternalNodeRepositories().then(res => {
+    getExternalNodeRepositories(params) {
+      getExternalNodeRepositories(params).then(res => {
         if (res) {
           this.externalNodeRepositories = res
         }

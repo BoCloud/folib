@@ -38,6 +38,7 @@ import javax.inject.Inject;
 import javax.transaction.Transactional;
 import java.time.LocalDateTime;
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Repository
@@ -141,7 +142,7 @@ public class ArtifactRepository extends GremlinVertexRepository<Artifact> {
         }
         long low = pagination.getPageNumber() * pagination.getPageSize();
         long high = (pagination.getPageNumber() + 1) * pagination.getPageSize();
-        List<Artifact> artifactList = buildEntityTraversalByAql(storageId, repositoryId, storageIdAndRepositoryIdList, artifactSearchCondition)
+        List<Artifact> artifactList = buildEntityTraversalByAql(storageId, repositoryId, storageIdAndRepositoryIdList, artifactSearchCondition).order().by(Properties.CREATED, Order.valueOf("desc"))
                 .range(low, high)
                 .map(artifactAdapter.fold()).toList();
         return new PageImpl<>(artifactList, pagination, count);
@@ -735,6 +736,28 @@ public class ArtifactRepository extends GremlinVertexRepository<Artifact> {
             limit = 800;
         }
         g().V().hasLabel(Vertices.ARTIFACT).has(Properties.CREATED, P.gt(0)).has(Properties.STORAGE_ID, storageId).has(Properties.REPOSITORY_ID, repositoryId).limit(limit).drop().iterate();
+    }
+
+    public Long countDockerArtifactRelation(String storageId, String repositoryId, String uuid, String keyword, Integer type) {
+        EntityTraversal<Vertex, Vertex> entityTraversal = g().V().hasLabel(Vertices.ARTIFACT).has(Properties.STORAGE_ID, storageId).has(Properties.REPOSITORY_ID, repositoryId).has(Properties.UUID, Text.textNotPrefix(uuid));
+        if (type == 1) {
+            entityTraversal = entityTraversal.has(Properties.UUID, Text.textContains(keyword)).has(Properties.UUID, Text.textNotContains("blobs/sha256")).has(Properties.UUID, Text.textNotContains("manifest/sha256")).has(Properties.ARTIFACT_FILE_EXISTS, true);
+        } else if (type == 2) {
+            entityTraversal = entityTraversal.has(Properties.UUID, Text.textContains(keyword)).has(Properties.UUID, Text.textContains("manifest/sha256")).has(Properties.ARTIFACT_FILE_EXISTS, true);
+        } else if (type == 3) {
+            entityTraversal = entityTraversal.has(Properties.LAYERS, keyword).has(Properties.UUID, Text.textContains("manifest/sha256")).has(Properties.ARTIFACT_FILE_EXISTS, true);
+        }
+        long count = entityTraversal.count().tryNext().orElse(0L);
+        entityTraversal = g().V().hasLabel(Vertices.ARTIFACT).has(Properties.STORAGE_ID, storageId).has(Properties.REPOSITORY_ID, repositoryId).has(Properties.UUID, Text.textNotPrefix(uuid));
+        if (type == 1) {
+            entityTraversal = entityTraversal.has(Properties.UUID, Text.textContains(keyword)).has(Properties.UUID, Text.textNotContains("blobs/sha256")).has(Properties.UUID, Text.textNotContains("manifest/sha256")).has(Properties.ARTIFACT_FILE_EXISTS, true);
+        } else if (type == 2) {
+            entityTraversal = entityTraversal.has(Properties.UUID, Text.textContains(keyword)).has(Properties.UUID, Text.textContains("manifest/sha256")).has(Properties.ARTIFACT_FILE_EXISTS, true);
+        } else if (type == 3) {
+            entityTraversal = entityTraversal.has(Properties.LAYERS, keyword).has(Properties.UUID, Text.textContains("manifest/sha256")).has(Properties.ARTIFACT_FILE_EXISTS, true);
+        }
+        log.info("UUIDList [{}]", entityTraversal.map(artifactAdapter.baseFold(Optional.empty())).toList().stream().map(Artifact::getUuid).collect(Collectors.toList()));
+        return count;
     }
 
 }

@@ -80,7 +80,7 @@ public class ExternalNodeController extends BaseController {
     @ApiResponses(value = {@ApiResponse(code = 200, message = "OK")})
     @PreAuthorize("hasAuthority('EXTERNAL_NODE_VIEW')")
     @GetMapping(value = "/repositories")
-    public ResponseEntity<List<ExternalNodeRepositoryForm>> getExternalNodeRepositories() {
-        return ResponseEntity.ok(externalNodeService.getExternalNodeRepositories());
+    public ResponseEntity<List<ExternalNodeRepositoryForm>> getExternalNodeRepositories(@RequestParam(name = "type", required = false) String type) {
+        return ResponseEntity.ok(externalNodeService.getExternalNodeRepositories(type));
     }
 }

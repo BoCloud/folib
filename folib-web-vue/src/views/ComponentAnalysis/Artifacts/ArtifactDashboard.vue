@@ -43,7 +43,7 @@
           {{ artifactData.artifact.repositoryId }}
         </a-descriptions-item>
         <a-descriptions-item label="镜像名称">
-          {{ artifactData.artifact.artifactCoordinates.imageName }}
+          {{ artifactData.artifact.artifactCoordinates.name }}
         </a-descriptions-item>
         <a-descriptions-item label="版本号">
           {{ artifactData.artifact.artifactCoordinates.version }}

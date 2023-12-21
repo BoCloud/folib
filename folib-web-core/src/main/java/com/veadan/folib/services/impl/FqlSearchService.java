@@ -3,13 +3,13 @@ package com.veadan.folib.services.impl;
 import com.alibaba.fastjson.JSON;
 import com.google.common.collect.Lists;
 import com.veadan.folib.artifact.coordinates.DockerArtifactCoordinates;
-import com.veadan.folib.config.FolibPublicUtils;
 import com.veadan.folib.data.criteria.Selector;
 import com.veadan.folib.dependency.snippet.CodeSnippet;
 import com.veadan.folib.dependency.snippet.SnippetGenerator;
 import com.veadan.folib.domain.Artifact;
 import com.veadan.folib.domain.ArtifactEntity;
 import com.veadan.folib.enums.RepositoryScopeEnum;
+import com.veadan.folib.enums.SafeLevelEnum;
 import com.veadan.folib.gremlin.adapters.ArtifactAdapter;
 import com.veadan.folib.gremlin.adapters.EntityTraversalAdapter;
 import com.veadan.folib.gremlin.repositories.GremlinVertexRepository;
@@ -27,7 +27,6 @@ import com.veadan.folib.storage.Storage;
 import com.veadan.folib.storage.repository.Repository;
 import com.veadan.folib.storage.search.SearchResult;
 import com.veadan.folib.storage.search.SearchResults;
-import com.veadan.folib.util.RepositoryPathUtil;
 import com.veadan.folib.utils.TreeUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
@@ -134,6 +133,9 @@ public class FqlSearchService extends GremlinVertexRepository<Artifact> implemen
                 return result;
             }
         }
+        if (SafeLevelEnum.SCAN_COMPLETE.getLevel().equalsIgnoreCase(safeLevel)) {
+            storageIdAndRepositoryIdList = getAllRepository();
+        }
         Page<Artifact> artifacts = artifactRepository.findMatchingByIndex(pageable, regex, artifactName, metadataSearch, storageId, repositoryId, repositoryIds, storageIdAndRepositoryIdList, beginDate, endDate, safeLevel, sortField, sortOrder);
         List<Artifact> artifactEntityList = artifacts.getContent();
 
@@ -186,7 +188,7 @@ public class FqlSearchService extends GremlinVertexRepository<Artifact> implemen
                 //docker
                 DockerArtifactCoordinates dockerArtifactCoordinates = (DockerArtifactCoordinates) artifact.getArtifactCoordinates();
                 r.setArtifactName(dockerArtifactCoordinates.getTAG());
-                r.setArtifactPath(String.format("%s/%s", dockerArtifactCoordinates.getName(), dockerArtifactCoordinates.getTAG()));
+                r.setArtifactPath(dockerArtifactCoordinates.getIMAGE_NAME().replace(":", "/"));
                 String blobs = "blobs";
                 String manifest = "manifest";
                 String artifactPath = repositoryPath.toAbsolutePath().toString();
@@ -225,7 +227,7 @@ public class FqlSearchService extends GremlinVertexRepository<Artifact> implemen
             if (CollectionUtils.isNotEmpty(imageManifest.getLayers())) {
                 layers = imageManifest.getLayers();
             } else if (CollectionUtils.isNotEmpty(imageManifest.getManifests())) {
-                RepositoryPath manifestPath = repositoryPathResolver.resolve(repositoryPath.getStorageId(), repositoryPath.getRepositoryId(), imageName + "/manifest/" + imageManifest.getManifests().get(0).getDigest());
+                RepositoryPath manifestPath = repositoryPathResolver.resolve(repositoryPath.getStorageId(), repositoryPath.getRepositoryId(), "manifest/" + imageManifest.getManifests().get(0).getDigest());
                 if (Objects.isNull(manifestPath) || !Files.exists(manifestPath)) {
                     return size;
                 }
@@ -240,5 +242,22 @@ public class FqlSearchService extends GremlinVertexRepository<Artifact> implemen
             log.warn("计算Docker镜像大小错误：镜像 [{}] [{}] 错误信息 [{}]", repositoryPath.toString(), imageName, ExceptionUtils.getStackTrace(ex));
         }
         return size;
+    }
+
+    private List<String> getAllRepository() {
+        final List<Storage> storageList = new ArrayList<>(configurationManagementService.getConfiguration()
+                .getStorages()
+                .values());
+        List<String> allStorageIdAndRepositoryIdList = Lists.newArrayList();
+        if (CollectionUtils.isNotEmpty(storageList)) {
+            for (Storage storage : storageList) {
+                if (MapUtils.isNotEmpty(storage.getRepositories())) {
+                    for (Repository repository : storage.getRepositories().values()) {
+                        allStorageIdAndRepositoryIdList.add(String.format("%s-%s", storage.getId(), repository.getId()));
+                    }
+                }
+            }
+        }
+        return allStorageIdAndRepositoryIdList;
     }
 }

@@ -36,7 +36,12 @@ public class DockerLayoutProvider
 
     public static final String  IMAGES_MANIFEST = "manifest.json";
 
-    public static final String USER_AGENT_PREFIX =ALIAS;
+    public static final String USER_AGENT_PREFIX = ALIAS;
+
+    public static final String BLOBS = "blobs";
+
+    public static final String MANIFEST = "manifest";
+
 
     @Inject
     private HeaderMappingRegistry headerMappingRegistry;

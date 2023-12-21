@@ -12,7 +12,6 @@ import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.services.ArtifactCacheRecordService;
 import com.veadan.folib.storage.metadata.MetadataHelper;
 import com.veadan.folib.util.FileSizeConvertUtils;
-import com.veadan.folib.util.StripedLockUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.io.FileUtils;
@@ -32,8 +31,6 @@ import java.nio.file.StandardCopyOption;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.locks.Lock;
 
 /**
  * @author leipenghui
@@ -118,58 +115,48 @@ public class ArtifactEventCacheListener {
                     return;
                 }
             }
-            long timeout = 300L;
-            Lock lock = StripedLockUtils.lock("ARTIFACT_CACHE");
             try {
-                if (lock.tryLock(timeout, TimeUnit.SECONDS)) {
-                    try {
-                        BigDecimal oneHundred = BigDecimal.valueOf(100);
-                        int clearCondition = cacheSettings.getClearCondition();
-                        long cacheDirectoryPathUseSize = FileUtils.sizeOfDirectory(new File(cacheSettings.getDirectoryPath()));
-                        //加上当前的制品大小
-                        long cacheDirectoryPathAllSize = cacheDirectoryPathUseSize + Files.size(repositoryPath);
-                        BigDecimal cacheDirectoryPathConvertSize = FileSizeConvertUtils.convertBytesWithDecimal(cacheDirectoryPathUseSize, cacheSettings.getSizeUnit());
-                        BigDecimal cacheDirectoryPathProportion = cacheDirectoryPathConvertSize.divide(new BigDecimal(cacheSettings.getSize()), 4, RoundingMode.HALF_UP).multiply(oneHundred);
+                BigDecimal oneHundred = BigDecimal.valueOf(100);
+                int clearCondition = cacheSettings.getClearCondition();
+                long cacheDirectoryPathUseSize = FileUtils.sizeOfDirectory(new File(cacheSettings.getDirectoryPath()));
+                //加上当前的制品大小
+                long cacheDirectoryPathAllSize = cacheDirectoryPathUseSize + Files.size(repositoryPath);
+                BigDecimal cacheDirectoryPathConvertSize = FileSizeConvertUtils.convertBytesWithDecimal(cacheDirectoryPathUseSize, cacheSettings.getSizeUnit());
+                BigDecimal cacheDirectoryPathProportion = cacheDirectoryPathConvertSize.divide(new BigDecimal(cacheSettings.getSize()), 4, RoundingMode.HALF_UP).multiply(oneHundred);
 
-                        BigDecimal cacheDirectoryPathConvertAllSize = FileSizeConvertUtils.convertBytesWithDecimal(cacheDirectoryPathAllSize, cacheSettings.getSizeUnit());
-                        BigDecimal cacheDirectoryPathAllProportion = cacheDirectoryPathConvertAllSize.divide(new BigDecimal(cacheSettings.getSize()), 4, RoundingMode.HALF_UP).multiply(oneHundred);
+                BigDecimal cacheDirectoryPathConvertAllSize = FileSizeConvertUtils.convertBytesWithDecimal(cacheDirectoryPathAllSize, cacheSettings.getSizeUnit());
+                BigDecimal cacheDirectoryPathAllProportion = cacheDirectoryPathConvertAllSize.divide(new BigDecimal(cacheSettings.getSize()), 4, RoundingMode.HALF_UP).multiply(oneHundred);
 
-                        int clearProportion = cacheSettings.getClearProportion();
-                        long clearBytes = FileSizeConvertUtils.convertToBytes(clearProportion, cacheSettings.getSizeUnit());
-                        log.info("缓存功能已开启，缓存容量 [{}] [{}] 当前已缓存制品 [{}] 字节，约为[{}] [{}]，占用缓存比为 [{}%]，加上当前制品后为 [{}] 字节，约为 [{}] [{}] 占用缓存比为 [{}%]", cacheSettings.getSize(), cacheSettings.getSizeUnit(), cacheDirectoryPathUseSize, cacheDirectoryPathConvertSize, cacheSettings.getSizeUnit(), cacheDirectoryPathProportion, cacheDirectoryPathAllSize, cacheDirectoryPathConvertAllSize, cacheSettings.getSizeUnit(), cacheDirectoryPathAllProportion);
-                        if (cacheDirectoryPathAllProportion.compareTo(oneHundred) >= 0) {
-                            log.warn("缓存功能已开启，缓存容量 [{}] [{}] 当前已缓存制品 [{}] 字节，约为[{}] [{}]，占用缓存比为 [{}%]，加上当前制品后为 [{}] 字节，约为 [{}] [{}] 占用缓存比为 [{}%]，大于总容量，禁止写入", cacheSettings.getSize(), cacheSettings.getSizeUnit(), cacheDirectoryPathUseSize, cacheDirectoryPathConvertSize, cacheSettings.getSizeUnit(), cacheDirectoryPathProportion, cacheDirectoryPathAllSize, cacheDirectoryPathConvertAllSize, cacheSettings.getSizeUnit(), cacheDirectoryPathAllProportion);
-                            return;
-                        }
-                        if (cacheDirectoryPathAllProportion.compareTo(new BigDecimal(clearCondition)) >= 0) {
-                            log.info("缓存功能已开启，缓存容量 [{}] [{}] 当前已缓存制品 [{}] 字节，约为[{}] [{}]，占用缓存比为 [{}%]，加上当前制品后为 [{}] 字节，约为 [{}] [{}] 占用缓存比为 [{}%]，已达到清理条件 [{}%]", cacheSettings.getSize(), cacheSettings.getSizeUnit(), cacheDirectoryPathUseSize, cacheDirectoryPathConvertSize, cacheSettings.getSizeUnit(), cacheDirectoryPathProportion, cacheDirectoryPathAllSize, cacheDirectoryPathConvertAllSize, cacheSettings.getSizeUnit(), cacheDirectoryPathAllProportion, clearCondition);
-                            long deleteBytes = 0L;
-                            cleanup(clearBytes, deleteBytes, cacheSettings, cacheDirectoryPathUseSize, cacheDirectoryPathConvertSize, cacheDirectoryPathProportion, cacheDirectoryPathAllSize, cacheDirectoryPathConvertAllSize, cacheDirectoryPathAllProportion);
-                        }
-                        Files.createDirectories(targetPath.getParent());
-                        //缓存制品
-                        Files.copy(repositoryPath.getTarget(), targetPath, StandardCopyOption.REPLACE_EXISTING);
-                        if (RepositoryFiles.isArtifact(repositoryPath)) {
-                            //缓存checksum
-                            repositoryPath.getFileSystem().provider().resolveChecksumPathMap(repositoryPath).forEach((key, value) -> {
-                                try {
-                                    Path checksumPath = targetPath.getParent().resolve(FilenameUtils.getName(value.toString()));
-                                    Files.copy(value, checksumPath, StandardCopyOption.REPLACE_EXISTING);
-                                } catch (Exception ex) {
-                                    log.warn("缓存制品checksumPath [{}] [{}] [{}] 错误 [{}]", storageId, repositoryId, repositoryPath.toString(), ExceptionUtils.getStackTrace(ex));
-                                }
-                            });
-                        }
-                        //缓存metadata
-                        artifactComponent.storeArtifactMetadataFile(repositoryPath, targetPath);
-                        artifactComponent.handlerArtifactCacheRecord(repositoryPath, cacheSettings, targetPath);
-                    } finally {
-                        lock.unlock();
-                    }
-                } else {
-                    log.warn("处理制品缓存 [{}] 未获取到锁", repositoryPath.toString());
+                int clearProportion = cacheSettings.getClearProportion();
+                long clearBytes = FileSizeConvertUtils.convertToBytes(clearProportion, cacheSettings.getSizeUnit());
+                log.info("缓存功能已开启，缓存容量 [{}] [{}] 当前已缓存制品 [{}] 字节，约为[{}] [{}]，占用缓存比为 [{}%]，加上当前制品后为 [{}] 字节，约为 [{}] [{}] 占用缓存比为 [{}%]", cacheSettings.getSize(), cacheSettings.getSizeUnit(), cacheDirectoryPathUseSize, cacheDirectoryPathConvertSize, cacheSettings.getSizeUnit(), cacheDirectoryPathProportion, cacheDirectoryPathAllSize, cacheDirectoryPathConvertAllSize, cacheSettings.getSizeUnit(), cacheDirectoryPathAllProportion);
+                if (cacheDirectoryPathAllProportion.compareTo(oneHundred) >= 0) {
+                    log.warn("缓存功能已开启，缓存容量 [{}] [{}] 当前已缓存制品 [{}] 字节，约为[{}] [{}]，占用缓存比为 [{}%]，加上当前制品后为 [{}] 字节，约为 [{}] [{}] 占用缓存比为 [{}%]，大于总容量，禁止写入", cacheSettings.getSize(), cacheSettings.getSizeUnit(), cacheDirectoryPathUseSize, cacheDirectoryPathConvertSize, cacheSettings.getSizeUnit(), cacheDirectoryPathProportion, cacheDirectoryPathAllSize, cacheDirectoryPathConvertAllSize, cacheSettings.getSizeUnit(), cacheDirectoryPathAllProportion);
+                    return;
                 }
-            } catch (InterruptedException e) {
+                if (cacheDirectoryPathAllProportion.compareTo(new BigDecimal(clearCondition)) >= 0) {
+                    log.info("缓存功能已开启，缓存容量 [{}] [{}] 当前已缓存制品 [{}] 字节，约为[{}] [{}]，占用缓存比为 [{}%]，加上当前制品后为 [{}] 字节，约为 [{}] [{}] 占用缓存比为 [{}%]，已达到清理条件 [{}%]", cacheSettings.getSize(), cacheSettings.getSizeUnit(), cacheDirectoryPathUseSize, cacheDirectoryPathConvertSize, cacheSettings.getSizeUnit(), cacheDirectoryPathProportion, cacheDirectoryPathAllSize, cacheDirectoryPathConvertAllSize, cacheSettings.getSizeUnit(), cacheDirectoryPathAllProportion, clearCondition);
+                    long deleteBytes = 0L;
+                    cleanup(clearBytes, deleteBytes, cacheSettings, cacheDirectoryPathUseSize, cacheDirectoryPathConvertSize, cacheDirectoryPathProportion, cacheDirectoryPathAllSize, cacheDirectoryPathConvertAllSize, cacheDirectoryPathAllProportion);
+                }
+                Files.createDirectories(targetPath.getParent());
+                //缓存制品
+                Files.copy(repositoryPath.getTarget(), targetPath, StandardCopyOption.REPLACE_EXISTING);
+                if (RepositoryFiles.isArtifact(repositoryPath)) {
+                    //缓存checksum
+                    repositoryPath.getFileSystem().provider().resolveChecksumPathMap(repositoryPath).forEach((key, value) -> {
+                        try {
+                            Path checksumPath = targetPath.getParent().resolve(FilenameUtils.getName(value.toString()));
+                            Files.copy(value, checksumPath, StandardCopyOption.REPLACE_EXISTING);
+                        } catch (Exception ex) {
+                            log.warn("缓存制品checksumPath [{}] [{}] [{}] 错误 [{}]", storageId, repositoryId, repositoryPath.toString(), ExceptionUtils.getStackTrace(ex));
+                        }
+                    });
+                }
+                //缓存metadata
+                artifactComponent.storeArtifactMetadataFile(repositoryPath, targetPath);
+                artifactComponent.handlerArtifactCacheRecord(repositoryPath, cacheSettings, targetPath);
+            } catch (Exception e) {
                 log.warn("处理制品缓存错误 [{}] 错误：[{}]", repositoryPath.toString(), ExceptionUtils.getStackTrace(e));
             }
         } catch (Exception ex) {

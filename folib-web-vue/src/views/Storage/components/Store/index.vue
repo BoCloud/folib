@@ -1476,23 +1476,23 @@ export default {
             this.folibRepository.id,
             treeNode.dataRef.artifactPath
           ).then(res => {
-            if (res.directories.length > 0)
-            {
+            treeNode.dataRef.children = []
+            if (res.directories.length > 0) {
               const d = res.directories
+              
               d.forEach((item, index, d) => {
                 item.type = 'dir'
+                treeNode.dataRef.children.push(item)
               })
-              treeNode.dataRef.children = d
-            } else if (res.files.length > 0)
-            {
+            }
+            if (res.files.length > 0) {
               const a = res.files
               a.forEach((item, index, a) => {
                 item.isLeaf = true
                 item.type = 'file'
+                treeNode.dataRef.children.push(item)
               })
-              treeNode.dataRef.children = a
             }
-
             this.treeData = [...this.treeData]
             resolve()
           })
@@ -1630,7 +1630,7 @@ export default {
           this.folibRepository.id,
           this.folibRepository.policy
         )
-        this.getExternalNodeRepositories()
+        this.getExternalNodeRepositories({type: this.folibRepository.layout})
         this.operationTitle = '分发'
         this.customTitle = '分发到指定目录'
         // 下载  
@@ -2201,8 +2201,8 @@ export default {
         this.$forceUpdate()
       }
     },
-    getExternalNodeRepositories() {
-      getExternalNodeRepositories().then(res => {
+    getExternalNodeRepositories(params) {
+      getExternalNodeRepositories(params).then(res => {
         if (res) {
           res.forEach(node => {
             let json = {key: node.key, artifactoryRepositoryType: '', children: [], }

@@ -82,13 +82,13 @@ public class DockerArtifactCoordinates
         // setLayers(layers);
     }
 
-    public DockerArtifactCoordinates(String repository,
+    public DockerArtifactCoordinates(String imageName,
                                      String reference,
                                      String layers,
                                      String artifactPath) {
         // if any of the required arguments are empty, throw an error
-        if (StringUtils.isBlank(repository)) {
-            throw new IllegalArgumentException("The repository field is mandatory.");
+        if (StringUtils.isBlank(imageName)) {
+            throw new IllegalArgumentException("The imageName field is mandatory.");
         }
 
 //        if (StringUtils.isBlank(reference))
@@ -96,7 +96,7 @@ public class DockerArtifactCoordinates
 //            throw new IllegalArgumentException("The reference field is mandatory.");
 //        }
 
-        setId(repository);
+        setId(imageName);
         setVersion(reference);
         setTAG(reference);
         setLayers(layers);
@@ -120,32 +120,35 @@ public class DockerArtifactCoordinates
         } else {
             tag = "v2";
         }
-
-        String repository = strings[0];
+        String layers = strings[strings.length - 1];
+        String finalTag = tag;
+        String imageName = Arrays.stream(strings).filter(data -> !Objects.equals(layers, data) && !Objects.equals(finalTag, data))
+                .collect(Collectors.joining("/"));
+        if (StringUtils.isBlank(imageName)) {
+            imageName = finalTag;
+        }
         String artifactPath = "";
-        String layers = "";
+        String finalImageName = tag;
         if (strings[strings.length - 1].contains("sha256:")) {
-            layers = strings[strings.length - 1];
-            String finalLayers = layers;
-            artifactPath = Arrays.stream(strings).filter(data -> !Objects.equals(finalLayers, data) || !Objects.equals(repository, data))
+            artifactPath = Arrays.stream(strings).filter(data -> !Objects.equals(layers, data) || !Objects.equals(finalImageName, data))
                     .collect(Collectors.joining("/"));
 
         } else if (strings[strings.length - 1].contains("manifest.json")) {
-            layers = strings[strings.length - 1];
-            String finalLayers = layers;
-            artifactPath = Arrays.stream(strings).filter(data -> !Objects.equals(finalLayers, data) || !Objects.equals(repository, data))
+            artifactPath = Arrays.stream(strings).filter(data -> !Objects.equals(layers, data) || !Objects.equals(finalImageName, data))
                     .collect(Collectors.joining("/"));
         }
         if (StringUtils.isBlank(artifactPath)) {
             throw new IllegalArgumentException(String.format("Path [%s] not a standard Docker layout file", path));
         }
-        return new DockerArtifactCoordinates(repository, tag, layers, artifactPath);
+        log.info("Docker path [{}] tag [{}] imageName [{}] artifactPath [{}] layers [{}]", path, tag, imageName, artifactPath, layers);
+        return new DockerArtifactCoordinates(imageName, tag, layers, artifactPath);
     }
 
     public String getIMAGE_NAME() {
         String str = getArtifactPath().replace("/" + getLayers(), "");
-        str = str.replace("/", ":");
-        return str;
+        str = StringUtils.reverse(str);
+        str = str.replaceFirst("/", ":");
+        return StringUtils.reverse(str);
     }
 
     public void setIMAGE_NAME(String imageName) {
@@ -173,6 +176,12 @@ public class DockerArtifactCoordinates
     @XmlAttribute(name = "path")
     public String getPath() {
         return super.getPath();
+    }
+
+    @ArtifactLayoutCoordinate
+    @XmlAttribute(name = "name")
+    public String getName() {
+        return getCoordinate(IMAGE_NAME);
     }
 
     @Override
@@ -269,13 +278,9 @@ public class DockerArtifactCoordinates
         setCoordinate(ARTIFACT_PATH, artifactPath);
     }
 
-    public String getName() {
-        return getCoordinate("name");
-    }
-
     public static boolean isManifestPath(Path path) {
         try {
-            if (Objects.isNull(path) || Files.notExists(path) || Files.isDirectory(path) || Files.isHidden(path)) {
+            if (Objects.isNull(path) || Files.notExists(path) || Files.isDirectory(path) || RepositoryFiles.isHidden(path)) {
                 return false;
             }
             String name = path.getFileName().toString();
@@ -293,9 +298,9 @@ public class DockerArtifactCoordinates
         return name.startsWith(SHA_256) && !name.endsWith(CHECKSUM_SHA_256) && !name.endsWith(SELF_METADATA) && !name.endsWith(FO_LIBRARY_METADATA) && !name.contains("blobs");
     }
 
-    public static boolean isDockerVersion(RepositoryPath path) {
+    public static boolean isDockerTag(RepositoryPath path) {
         try {
-            if (Objects.isNull(path) || Files.notExists(path) || Files.isHidden(path)) {
+            if (Objects.isNull(path) || Files.notExists(path) || RepositoryFiles.isHidden(path)) {
                 return false;
             }
             String fullPath = path.toString();

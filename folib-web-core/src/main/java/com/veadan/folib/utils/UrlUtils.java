@@ -41,16 +41,16 @@ public class UrlUtils {
     }
 
 
-    public static String[] parsePath(String artiactPath) {
+    public static String[] parsePath(String artifactPath) {
         try {
-            URL url = new URL(artiactPath);
+            URL url = new URL(artifactPath);
             String path = url.getPath();
             String hostUrl = url.getHost();
             String[] parts = path.split("/");
             if (parts.length >= 0) {
                 String storageId = parts[1];
-                String repostoryId = parts[2];
-                return new String[]{storageId, repostoryId, hostUrl};
+                String repositoryId = parts[2];
+                return new String[]{storageId, repositoryId, hostUrl};
             }
 
         } catch (Exception e) {
