@@ -26,7 +26,7 @@ import com.veadan.folib.dto.TargetRepositoyDto;
 import com.veadan.folib.entity.ArtifactSyncRecord;
 import com.veadan.folib.entity.Dict;
 import com.veadan.folib.enums.ArtifactSyncRecordOpsTypeEnum;
-import com.veadan.folib.enums.ArtifactSyncRecordStatusEnum;
+import com.veadan.folib.constant.ArtifactSyncRecordStatusEnum;
 import com.veadan.folib.enums.ArtifactSyncRecordSyncModelEnum;
 import com.veadan.folib.enums.BusinessCodeEnum;
 import com.veadan.folib.mapper.ArtifactSyncRecordMapper;
@@ -394,25 +394,28 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
         final SpringSecurityUser userDetails = (SpringSecurityUser) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         final String userName = Optional.ofNullable(userDetails).map(SpringSecurityUser::getUsername).orElse(null);
         final String requestHostName = request.getServerName();
-
-        // 生成日志记录
         final ArtifactSyncRecord artifactSyncRecord = new ArtifactSyncRecord();
-        artifactSyncRecord.setRequestHostName(requestHostName);
-        artifactSyncRecord.setSourcePath(promotionNodeOption.getSourcePath());
-        artifactSyncRecord.setTargetPath(promotionNodeOption.getTargetPath());
-        artifactSyncRecord.setSyncNo(syncNo);
-        artifactSyncRecord.setOpsType(ArtifactSyncRecordOpsTypeEnum.PROMOTION.getVal());
-        artifactSyncRecord.setSyncModel(promotionNodeOption.getSyncModel());
-        artifactSyncRecord.setStatus(ArtifactSyncRecordStatusEnum.IN_SYNC.getVal());
-        artifactSyncRecord.setCreateBy(userName);
-        artifactSyncRecord.setCreateTime(new Date());
-        artifactSyncRecordMapper.insert(artifactSyncRecord);
-        promotionNodeOption.setSyncNo(syncNo);
         
-        // 生成从日志记录
-        
-
         try {
+            final String sourcePath = UriUtils.decode(StringUtils.removeEnd(promotionNodeOption.getSourcePath(), "/"));
+            final String srcStorageId = parsePath(sourcePath)[0];
+            final String srcRepositoryId = parsePath(sourcePath)[1];
+    
+            // 生成日志记录
+            artifactSyncRecord.setRequestHostName(requestHostName);
+            artifactSyncRecord.setSourceStorageId(srcStorageId);
+            artifactSyncRecord.setSourceRepositoryId(srcRepositoryId);
+            artifactSyncRecord.setSourcePath(promotionNodeOption.getSourcePath());
+            artifactSyncRecord.setTargetPath(promotionNodeOption.getTargetPath());
+            artifactSyncRecord.setSyncNo(syncNo);
+            artifactSyncRecord.setOpsType(ArtifactSyncRecordOpsTypeEnum.PROMOTION.getVal());
+            artifactSyncRecord.setSyncModel(promotionNodeOption.getSyncModel());
+            artifactSyncRecord.setStatus(ArtifactSyncRecordStatusEnum.IN_SYNC.getVal());
+            artifactSyncRecord.setCreateBy(userName);
+            artifactSyncRecord.setCreateTime(new Date());
+            artifactSyncRecordMapper.insert(artifactSyncRecord);
+            promotionNodeOption.setSyncNo(syncNo);
+            
             asyncThreadPoolTaskExecutor.execute(() ->
             { // 异步执行制品晋级
                 final ResponseEntity<String> re = this.nodeOption(promotionNodeOption, request);
@@ -692,6 +695,8 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
         // 生成日志记录
         final ArtifactSyncRecord artifactSyncRecord = new ArtifactSyncRecord();
         artifactSyncRecord.setRequestHostName(requestHostName);
+        artifactSyncRecord.setSourceStorageId(srcStorageId);
+        artifactSyncRecord.setSourceRepositoryId(srcRepositoryId);
         artifactSyncRecord.setSourcePath(String.format("%s/%s/%s", srcStorageId, srcRepositoryId, path));
         artifactSyncRecord.setTargetPath(JSON.toJSONString(targetDispatchRepositoryList));
         artifactSyncRecord.setSyncNo(syncNo);

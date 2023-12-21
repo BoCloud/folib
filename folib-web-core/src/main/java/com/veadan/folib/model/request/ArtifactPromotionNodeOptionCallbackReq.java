@@ -1,5 +1,6 @@
 package com.veadan.folib.model.request;
 
+import com.veadan.folib.constant.ArtifactSyncRecordStatusEnum;
 import io.swagger.annotations.ApiModelProperty;
 import lombok.Data;
 import lombok.experimental.Accessors;
@@ -17,7 +18,7 @@ public class ArtifactPromotionNodeOptionCallbackReq {
     private String syncNo;
     /**
      * 同步状态（1：就绪；2：同步中；3：成功；4：失败）
-     * {@linkplain com.veadan.folib.enums.ArtifactSyncRecordStatusEnum }
+     * {@linkplain ArtifactSyncRecordStatusEnum }
      */
     @ApiModelProperty("同步状态（1：就绪；2：同步中；3：成功；4：失败）")
     private Integer status;

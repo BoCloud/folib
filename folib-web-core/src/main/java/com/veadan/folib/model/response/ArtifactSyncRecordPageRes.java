@@ -2,8 +2,8 @@ package com.veadan.folib.model.response;
 
 import cn.hutool.core.bean.BeanUtil;
 import com.fasterxml.jackson.annotation.JsonFormat;
+import com.veadan.folib.constant.ArtifactSyncRecordStatusEnum;
 import com.veadan.folib.entity.ArtifactSyncRecord;
-import com.veadan.folib.scanner.common.util.BeanUtils;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import lombok.Data;
@@ -57,7 +57,7 @@ public class ArtifactSyncRecordPageRes {
     private Integer syncModel;
     /**
      * 同步状态（1：就绪；2：同步中；3：成功；4：失败）
-     * {@linkplain com.veadan.folib.enums.ArtifactSyncRecordStatusEnum }
+     * {@linkplain ArtifactSyncRecordStatusEnum }
      */
     @ApiModelProperty("同步状态（1：就绪；2：同步中；3：成功；4：失败）")
     private Integer status;

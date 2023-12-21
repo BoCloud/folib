@@ -5,6 +5,8 @@
 
     <resultMap id="artifactSyncRecordResultMap" type="com.veadan.folib.entity.ArtifactSyncRecord">
         <id property="id" column="id"/>
+        <result property="sourceStorageId" column="source_storage_id"/>
+        <result property="sourceRepositoryId" column="source_repository_id"/>
         <result property="sourcePath" column="source_path"/>
         <result property="targetPath" column="target_path"/>
         <result property="syncNo" column="sync_no"/>
@@ -25,5 +27,18 @@
                 </if>
         where sync_no = #{syncNo}
     </update>
-
+    
+    <select id="selectClearRecordList" resultType="com.veadan.folib.entity.ArtifactSyncRecord">
+        select id, sync_no as syncNo from artifact_sync_record
+        <where>
+            1 = 1
+            <if test="storageId != null and storageId.trim() != ''">
+                and source_storage_id = #{storageId}
+            </if>
+            <if test="repositoryId != null and repositoryId.trim() != ''">
+                and source_repository_id = #{repositoryId}
+            </if>
+            and create_time &lt; #{time}
+        </where>
+    </select>
 </mapper>

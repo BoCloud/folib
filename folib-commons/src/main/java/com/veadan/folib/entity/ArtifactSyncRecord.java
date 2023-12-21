@@ -50,6 +50,20 @@ public class ArtifactSyncRecord implements Serializable {
     private String requestHostName;
     
     /**
+     * 源制品存储空间
+     */
+    @ApiModelProperty("源制品存储空间")
+    @Column(name = "source_storage_id")
+    private String sourceStorageId;
+    
+    /**
+     * 源制品仓库ID
+     */
+    @ApiModelProperty("源制品仓库ID")
+    @Column(name = "source_repository_id")
+    private String sourceRepositoryId;
+    
+    /**
      * 源制品路径
      */
     @ApiModelProperty("源制品路径")
@@ -68,6 +82,9 @@ public class ArtifactSyncRecord implements Serializable {
     @ApiModelProperty("制品操作（1：制品晋级；2：制品分发）")
     @Column(name = "ops_type")
     private Integer opsType;
+    @ApiModelProperty("同步进度（只有被清除从数据采用持久化）")
+    @Column(name = "sync_progress")
+    private Double syncProgress;
     /**
      * 制品同步编号
      */

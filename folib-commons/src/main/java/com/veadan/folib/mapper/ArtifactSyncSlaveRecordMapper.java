@@ -10,6 +10,7 @@ import tk.mybatis.mapper.common.ids.DeleteByIdsMapper;
 import tk.mybatis.mapper.common.ids.SelectByIdsMapper;
 
 import java.util.Date;
+import java.util.List;
 
 /**
  *
@@ -23,4 +24,8 @@ public interface ArtifactSyncSlaveRecordMapper extends SelectByIdsMapper<Artifac
     
     @Update("update artifact_sync_slave_record set status = #{status}, update_time = #{updateTime}, failed_reason = #{failedReason} where id = #{id}")
     Boolean updateRecordStatus(@Param("id") Long id, @Param("status") Integer status, @Param("updateTime") Date updateTime, @Param("failedReason") String failedReason);
+    
+    List<ArtifactSyncSlaveRecord> selectListBySyncNoList(@Param("syncNoList") List<String> syncNoList);
+    
+    Boolean batchDeleteBySyncNoList(@Param("syncNoList") List<String> syncNoList);
 }

@@ -1,14 +1,10 @@
 package com.veadan.folib.model.request;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
+import com.veadan.folib.constant.ArtifactSyncRecordStatusEnum;
 import io.swagger.annotations.ApiModelProperty;
 import lombok.Data;
 
-import javax.persistence.Column;
-import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
-import javax.persistence.Id;
-import javax.persistence.Transient;
 import javax.validation.constraints.NotEmpty;
 import java.util.Date;
 
@@ -43,7 +39,7 @@ public class ArtifactSyncSlaveRecordAddReq {
     private Integer syncModel;
     /**
      * 同步状态（1：就绪；2：同步中；3：成功；4：失败）
-     * {@linkplain com.veadan.folib.enums.ArtifactSyncRecordStatusEnum }
+     * {@linkplain ArtifactSyncRecordStatusEnum }
      */
     @ApiModelProperty("同步状态（1：就绪；2：同步中；3：成功；4：失败）")
     private Integer status;

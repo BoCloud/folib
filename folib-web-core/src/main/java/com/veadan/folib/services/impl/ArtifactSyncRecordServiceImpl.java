@@ -1,14 +1,11 @@
 package com.veadan.folib.services.impl;
 
 import cn.hutool.core.collection.CollUtil;
-import cn.hutool.core.math.MathUtil;
 import com.github.pagehelper.Page;
 import com.github.pagehelper.PageHelper;
 import com.veadan.folib.entity.ArtifactSyncRecord;
 import com.veadan.folib.entity.ArtifactSyncSlaveRecord;
-import com.veadan.folib.entity.Dict;
-import com.veadan.folib.entity.ExternalNode;
-import com.veadan.folib.enums.ArtifactSyncRecordStatusEnum;
+import com.veadan.folib.constant.ArtifactSyncRecordStatusEnum;
 import com.veadan.folib.mapper.ArtifactSyncRecordMapper;
 import com.veadan.folib.mapper.ArtifactSyncSlaveRecordMapper;
 import com.veadan.folib.model.request.ArtifactSyncRecordPageReq;
@@ -74,15 +71,17 @@ public class ArtifactSyncRecordServiceImpl implements ArtifactSyncRecordService 
                             Collectors.groupingBy(ArtifactSyncSlaveRecord::getStatus, Collectors.counting())));
 
             pageResult.forEach(e -> {
-                final Map<Integer, Long> groupStatusMap = groupSyncNoSlaveRecordCountMap.getOrDefault(e.getSyncNo(), Collections.emptyMap());
-                final int sumCount = groupStatusMap.values().stream().mapToInt(Long::intValue).sum();
-                final Long successCount = groupStatusMap.getOrDefault(ArtifactSyncRecordStatusEnum.SUCCESS.getVal(), 0L);
-                e.setSyncProgress(0D);
-                if (successCount > 0) {
-                    final double syncProgress = BigDecimal.valueOf(successCount).divide(new BigDecimal(sumCount)).setScale(2).doubleValue();
-                    e.setSyncProgress(syncProgress);
-                    if (syncProgress >= 1.0D) {
-                        e.setStatus(ArtifactSyncRecordStatusEnum.SUCCESS.getVal());
+                if (e.getSyncProgress() == null) {
+                    final Map<Integer, Long> groupStatusMap = groupSyncNoSlaveRecordCountMap.getOrDefault(e.getSyncNo(), Collections.emptyMap());
+                    final int sumCount = groupStatusMap.values().stream().mapToInt(Long::intValue).sum();
+                    final Long successCount = groupStatusMap.getOrDefault(ArtifactSyncRecordStatusEnum.SUCCESS.getVal(), 0L);
+                    e.setSyncProgress(0D);
+                    if (successCount > 0) {
+                        final double syncProgress = BigDecimal.valueOf(successCount).divide(new BigDecimal(sumCount)).setScale(2).doubleValue();
+                        e.setSyncProgress(syncProgress);
+                        if (syncProgress >= 1.0D) {
+                            e.setStatus(ArtifactSyncRecordStatusEnum.SUCCESS.getVal());
+                        }
                     }
                 }
             });
