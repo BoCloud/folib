@@ -460,7 +460,7 @@ export default ({
 		},
 		successMsg(message) {
 			if (!message) {
-				message = "操作成功"
+				message = this.$t('Module.OperateSuccess')
 			}
 			this.$notification["success"]({
 				message: message,

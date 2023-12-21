@@ -1,17 +1,17 @@
 <template>
   <div class="wrapper">
-    <a-card :bordered="false" style="margin-top: 20px; margin-bottom: 20p; overflow-y: auto">
+    <a-card :bordered="false" style="margin-top: 20px; margin-bottom: 20px; overflow-y: auto">
       <div class="mx-25 search">
         <a-col :span="24" class="text-right">
-          <a-input-search placeholder="输入组名称查询" class="v-search" v-model="queryParams.groupId" @search="handheTableSearch()" />
-          <a-input-search placeholder="输入组件名称查询" class="v-search" v-model="queryParams.name" @search="handheTableSearch()" />
-          <a-input-search placeholder="输入版本查询" class="v-search" v-model="queryParams.version" @search="handheTableSearch()" />
+          <a-input-search :placeholder="$t('Module.groupNameQuery')" class="v-search" v-model="queryParams.groupId" @search="handheTableSearch()" />
+          <a-input-search :placeholder="$t('Module.componentNameQuery')" class="v-search" v-model="queryParams.name" @search="handheTableSearch()" />
+          <a-input-search :placeholder="$t('Module.versionQuery')" class="v-search" v-model="queryParams.version" @search="handheTableSearch()" />
         </a-col>
       </div>
       <a-table
         rowKey="uuid"
         class="mt-20"
-        :columns="columns"
+        :columns="i18nColumns"
         :data-source="compentsData"
         @change="handleChangeTable"
         :scroll="{ x: true }"
@@ -51,21 +51,25 @@ export default {
       columns: [
         {
           title: "组件名称",
+          i18nKey: 'Module.ComponentName',
           dataIndex: "name",
           scopedSlots: { customRender: "name" },
         },
         {
           title: "版本",
+          i18nKey: 'Module.VersionNumber',
           dataIndex: "version",
-          width: "100px",
+          width: "150px",
         },
         {
           title: "组",
+          i18nKey: 'Module.Group',
           dataIndex: "groupId",
           scopedSlots: { customRender: "groupId" },
         },
         {
           title: "许可证",
+          i18nKey: 'Module.Licence',
           dataIndex: "license",
           scopedSlots: { customRender: "license" },
           width: "200px",
@@ -78,6 +82,7 @@ export default {
         },
         {
           title: "漏洞",
+          i18nKey: 'Module.Vulnerability',
           dataIndex: "vulnerabilitiesCount",
           scopedSlots: { customRender: "vulnerabilitiesCount" },
           width: "200px",
@@ -96,6 +101,16 @@ export default {
         total: 0,
       },
     };
+  },
+  computed: {
+    i18nColumns() {
+      return this.columns.map(column => {
+        if (column.i18nKey) {
+          column.title = this.$t(column.i18nKey);
+        }
+        return column;
+      })
+    },
   },
   created() {
     this.getData()

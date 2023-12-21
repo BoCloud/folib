@@ -3,13 +3,13 @@
     <a-card :bordered="false" style="margin-top: 20px; margin-bottom: 20px">
       <div class="mx-25 search">
         <a-col :span="24" class="text-right">
-          <a-input-search placeholder="输入漏洞编号查询" class="v-search" v-model="queryParams.searchKeyword" @search="handheTableSearch()" />
+          <a-input-search :placeholder="$t('Module.EnterVulnerabilityNumber')" class="v-search" v-model="queryParams.searchKeyword" @search="handheTableSearch()" />
         </a-col>
       </div>
       <a-table
         rowKey="uuid"
         class="mt-20"
-        :columns="columns"
+        :columns="i18nColumns"
         :data-source="vulnerabilityData"
         @change="handleChangeTable"
         :scroll="{ x: true }"
@@ -28,7 +28,7 @@
             <a-avatar v-else shape="circle" :size="24">{{ cvssV2Severity.slice(0, 1) }}</a-avatar>
             <div class="avatar-info">
               <p class="mb-0 text-dark">{{
-                  cvssV2Severity === 'CRITICAL' ? '严重' : cvssV2Severity === 'MEDIUM' ? '中危' : cvssV2Severity === 'HIGH' ? '高危' : cvssV2Severity === 'LOW' ? '低危' : cvssV2Severity
+                  cvssV2Severity === 'CRITICAL' ? $t('Module.Seriously') : cvssV2Severity === 'MEDIUM' ? $t('Module.MediumRisk') : cvssV2Severity === 'HIGH' ? $t('Module.HighRisk') : cvssV2Severity === 'LOW' ? $t('Module.LowRisk') : cvssV2Severity
               }}
               </p>
             </div>
@@ -41,14 +41,14 @@
             <a-avatar v-else shape="circle" :size="24">{{ cvssV3Severity.slice(0, 1) }}</a-avatar>
             <div class="avatar-info">
               <p class="mb-0 text-dark">{{
-                  cvssV3Severity === 'CRITICAL' ? '严重' : cvssV3Severity === 'MEDIUM' ? '中危' : cvssV3Severity === 'HIGH' ? '高危' : cvssV3Severity === 'LOW' ? '低危' : cvssV3Severity
+                  cvssV3Severity === 'CRITICAL' ? $t('Module.Seriously') : cvssV3Severity === 'MEDIUM' ? $t('Module.MediumRisk') : cvssV3Severity === 'HIGH' ? $t('Module.HighRisk') : cvssV3Severity === 'LOW' ? $t('Module.LowRisk') : cvssV3Severity
               }}
               </p>
             </div>
           </div>
         </template>
         <template slot="expandedRowRender" slot-scope="record">
-          <a-tag color="#87d068" class="description-title">漏洞描述</a-tag>
+          <a-tag color="#87d068" class="description-title">{{ $t('Module.VulnerabilityDescription') }}</a-tag>
           <a-textarea class="description" :autoSize="true" :read-only="true" v-model="record.description" />
         </template>
         <template slot="highestSeverityText" slot-scope="highestSeverityText">
@@ -58,7 +58,7 @@
             <a-avatar v-else shape="circle" :size="24">{{ highestSeverityText.slice(0, 1) }}</a-avatar>
             <div class="avatar-info">
               <p class="mb-0 text-dark">{{
-                  highestSeverityText === 'CRITICAL' ? '严重' : highestSeverityText === 'MEDIUM' ? '中危' : highestSeverityText === 'HIGH' ? '高危' : highestSeverityText === 'LOW' ? '低危' : highestSeverityText
+                  highestSeverityText === 'CRITICAL' ? $t('Module.Seriously') : highestSeverityText === 'MEDIUM' ? $t('Module.MediumRisk') : highestSeverityText === 'HIGH' ? $t('Module.HighRisk') : highestSeverityText === 'LOW' ? $t('Module.LowRisk') : highestSeverityText
               }}
               </p>
             </div>
@@ -85,47 +85,55 @@ export default {
       columns: [
         {
           title: '漏洞编号',
+          i18nKey: 'Module.VulnerabilityNumber',
           dataIndex: 'uuid',
           scopedSlots: { customRender: 'uuid' },
         },
         {
           title: '引入时间',
+          i18nKey: 'Module.IntroducingTime',
           dataIndex: 'created',
           scopedSlots: { customRender: 'created' },
           align: "center",
         },
         {
           title: 'CvssV2评分',
+          i18nKey: 'Module.CvssV2Score',
           dataIndex: 'cvssV2Score',
           scopedSlots: { customRender: 'cvssV2Score' },
           align: "center",
         },
         {
           title: 'CvssV2漏洞等级',
+          i18nKey: 'Module.CvssV2VulnerabilityLevel',
           dataIndex: 'cvssV2Severity',
           scopedSlots: { customRender: 'cvssV2Severity' },
           align: "center",
         },
         {
           title: 'CvssV3评分',
+          i18nKey: 'Module.CvssV3Score',
           dataIndex: 'cvssV3Score',
           scopedSlots: { customRender: 'cvssV3Score' },
           align: "center",
         },
         {
           title: 'CvssV3漏洞等级',
+          i18nKey: 'Module.CvssV3VulnerabilityLevel',
           dataIndex: 'cvssV3Severity',
           scopedSlots: { customRender: 'cvssV3Severity' },
           align: "center",
         },
         {
           title: '最高漏洞等级',
+          i18nKey: 'Module.HighestVulnerabilityLevel',
           dataIndex: 'highestSeverityText',
           scopedSlots: { customRender: 'highestSeverityText' },
           align: "center",
         },
         {
           title: '建议修复版本',
+          i18nKey: 'Module.RecommendedFixVersion',
           dataIndex: 'versionEndExcluding',
           scopedSlots: { customRender: 'versionEndExcluding' },
         },
@@ -146,6 +154,16 @@ export default {
       this.getData()
     },
     deep: true,
+  },
+  computed: {
+    i18nColumns() {
+      return this.columns.map(column => {
+        if (column.i18nKey) {
+          column.title = this.$t(column.i18nKey);
+        }
+        return column;
+      })
+    },
   },
   created() {
     this.getData()
