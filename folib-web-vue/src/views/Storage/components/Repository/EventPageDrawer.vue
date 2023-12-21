@@ -55,6 +55,10 @@
                  slot-scope="text, record">
               {{ statusMap[record.status] || "未知状态" }}
             </div>
+            <div slot="slaveRecordCleared"
+                 slot-scope="text, record">
+              {{ record.slaveRecordCleared ? '已清除':'未清除' }}
+            </div>
             <div slot="syncProgress"
                  slot-scope="text, record">
               <template v-if="record.syncProgress && record.syncProgress > 0">
@@ -154,6 +158,13 @@ export default {
           scopedSlots: {customRender: 'status'}
         },
         {
+          title: '从记录状态',
+          dataIndex: 'slaveRecordCleared',
+          key: 'slaveRecordCleared',
+          width: 100,
+          scopedSlots: {customRender: 'slaveRecordCleared'}
+        },
+        {
           title: '同步进度',
           dataIndex: 'syncProgress',
           key: 'syncProgress',
@@ -179,7 +190,7 @@ export default {
         storageId: "",
         repositoryId: "",
         pageNumber: 1,
-        pageSize: 2,
+        pageSize: 20,
         total: 0
       },
       currentClickRecord: undefined

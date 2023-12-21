@@ -11,6 +11,7 @@
         <result property="targetPath" column="target_path"/>
         <result property="syncNo" column="sync_no"/>
         <result property="syncModel" column="sync_model"/>
+        <result property="syncProgress" column="sync_progress"/>
         <result property="status" column="status"/>
         <result property="failedReason" column="failed_reason"/>
         <result property="createBy" column="create_by"/>
@@ -32,6 +33,7 @@
         select id, sync_no as syncNo from artifact_sync_record
         <where>
             1 = 1
+            and sync_progress is null
             <if test="storageId != null and storageId.trim() != ''">
                 and source_storage_id = #{storageId}
             </if>

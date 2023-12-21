@@ -71,7 +71,8 @@ public class ArtifactSyncRecordServiceImpl implements ArtifactSyncRecordService 
                             Collectors.groupingBy(ArtifactSyncSlaveRecord::getStatus, Collectors.counting())));
 
             pageResult.forEach(e -> {
-                if (e.getSyncProgress() == null) {
+                e.setSlaveRecordCleared(e.getSyncProgress() != null);
+                if (!e.getSlaveRecordCleared()) {
                     final Map<Integer, Long> groupStatusMap = groupSyncNoSlaveRecordCountMap.getOrDefault(e.getSyncNo(), Collections.emptyMap());
                     final int sumCount = groupStatusMap.values().stream().mapToInt(Long::intValue).sum();
                     final Long successCount = groupStatusMap.getOrDefault(ArtifactSyncRecordStatusEnum.SUCCESS.getVal(), 0L);
