@@ -1,5 +1,5 @@
-<!-- 
-	This is the Billing page, it uses the dashboard layout in: 
+<!--
+	This is the Billing page, it uses the dashboard layout in:
 	"./layouts/Dashboard.vue" .
  -->
 
@@ -16,11 +16,11 @@
               <template #title>
                 <a-row type="flex" align="middle">
                   <a-col :span="24" :md="12">
-                    <h6 class="font-semibold m-0">用户管理</h6>
+                    <h6 class="font-semibold m-0">{{ $t('Users.UserManagement') }}</h6>
                   </a-col>
                   <a-col :span="24" :md="12" style="display: flex; align-items: center; justify-content: flex-end">
                     <a-button type="primary" @click="userCreate()">
-                      添加 用户
+                      {{ $t('Users.Adduser') }}
                     </a-button>
                   </a-col>
                 </a-row>
@@ -29,7 +29,7 @@
                 <a-col :span="24" :md="8">
                   <a-card class="payment-method-card">
                     <img src="images/folib/userAdmin.svg" alt="">
-                    <h6 class="card-number">用户总数</h6>
+                    <h6 class="card-number">{{ $t('Users.TotalNumberOfUsers') }}</h6>
                     <a-button type="link">
                       <h6 class="card-number">{{ allUsers.length }}</h6>
                     </a-button>
@@ -38,7 +38,7 @@
                 <a-col :span="24" :md="8">
                   <a-card class="payment-method-card">
                     <img src="images/folib/userAdmin.svg" alt="">
-                    <h6 class="card-number">管理员数</h6>
+                    <h6 class="card-number">{{ $t('Users.NumberOfAdministrators') }}</h6>
                     <a-button type="link">
                       <h6 class="card-number">{{ getUserCount("ADMIN").length }}</h6>
                     </a-button>
@@ -47,7 +47,7 @@
                 <a-col :span="24" :md="8">
                   <a-card class="payment-method-card">
                     <img src="images/folib/userAdmin.svg" alt="">
-                    <h6 class="card-number">匿名用户数</h6>
+                    <h6 class="card-number">{{ $t('Users.NumberOfAnonymousUsers') }}</h6>
                     <a-button type="link">
                       <h6 class="card-number">{{ getUserCount("ANONYMOUS").length }}</h6>
                     </a-button>
@@ -60,16 +60,16 @@
           <a-col :span="24" class="mb-24">
             <a-card :bordered="false" class="header-solid" :bodyStyle="{ paddingTop: 0, paddingBottom: '16px' }">
               <template #title>
-                <h6 class="font-semibold m-0">用户列表</h6>
+                <h6 class="font-semibold m-0">{{ $t('Users.UserList') }}</h6>
               </template>
               <a-row :gutter="[24, 24]">
                 <a-col :span="24" class="ml-20">
                   <a-row :gutter="[24, 24]">
-                    <a-col :span="3" class="">
-                      <a-input-search v-model="userQuery.username" placeholder="输入用户名查询" @search="searchUser()"/>
+                    <a-col :span="6" class="">
+                      <a-input-search v-model="userQuery.username" :placeholder="$t('Users.EnterTheUsernameQuery')" @search="searchUser()"/>
                     </a-col>
-                    <a-col :span="3" class="ml-10">
-                      <a-input-search v-model="userQuery.email" placeholder="输入邮箱查询" @search="searchUser()"/>
+                    <a-col :span="6" class="ml-10">
+                      <a-input-search v-model="userQuery.email" :placeholder="$t('Users.EnterTheEmailQuery')" @search="searchUser()"/>
                     </a-col>
                   </a-row>
                 </a-col>
@@ -82,13 +82,13 @@
                           <a-card :bordered="false" class="card-billing-info" @click.prevent="getUserDetial(item.username)">
                             <div class="col-info">
                               <a-descriptions :title="item.username" :column="1">
-                                <a-descriptions-item label="是否可用">
-                                  {{ item.enabled ? "可用" : "不可用" }}
+                                <a-descriptions-item :label="$t('Users.IsItAvailable')">
+                                  {{ item.enabled ? $t('Users.Available') : $t('Users.NotAvailable') }}
                                 </a-descriptions-item>
-                                <a-descriptions-item label="Email">
+                                <a-descriptions-item :label="Email">
                                   {{ item.email ? item.email : "" }}
                                 </a-descriptions-item>
-                                <a-descriptions-item label="角色信息">
+                                <a-descriptions-item :label="$t('Users.RoleInformation')">
                                   {{ item.roles }}
                                 </a-descriptions-item>
                               </a-descriptions>
@@ -133,7 +133,7 @@
             <a-card :bordered="false" class="header-solid h-full" :bodyStyle="{ paddingTop: 0, paddingBottom: '16px' }"
               v-if="currentUser">
               <template #title>
-                <h6 class="font-semibold m-0">{{ userNotEdit ? "用户信息" : "用户编辑" }}</h6>
+                <h6 class="font-semibold m-0">{{ userNotEdit ? $t('Users.UserInformation') : $t('Users.UserEdit') }}</h6>
               </template>
               <template slot="extra" class="mb-0" v-if="!userNotEdit">
                 <div class="col-action">
@@ -143,23 +143,23 @@
                         d="M9 2C8.62123 2 8.27497 2.214 8.10557 2.55279L7.38197 4H4C3.44772 4 3 4.44772 3 5C3 5.55228 3.44772 6 4 6L4 16C4 17.1046 4.89543 18 6 18H14C15.1046 18 16 17.1046 16 16V6C16.5523 6 17 5.55228 17 5C17 4.44772 16.5523 4 16 4H12.618L11.8944 2.55279C11.725 2.214 11.3788 2 11 2H9ZM7 8C7 7.44772 7.44772 7 8 7C8.55228 7 9 7.44772 9 8V14C9 14.5523 8.55228 15 8 15C7.44772 15 7 14.5523 7 14V8ZM12 7C11.4477 7 11 7.44772 11 8V14C11 14.5523 11.4477 15 12 15C12.5523 15 13 14.5523 13 14V8C13 7.44772 12.5523 7 12 7Z"
                         fill="#111827" />
                     </svg>
-                    <span class="text-danger">取消</span>
+                    <span class="text-danger">{{ $t('Users.Cancel') }}</span>
                   </a-button>
                   <a-button type="link" size="small" @click="userEditSaveHandle">
                     <a-icon type="save" theme="twoTone" />
-                    <span class="text-dark">保存</span>
+                    <span class="text-dark">{{ $t('Users.Save') }}</span>
                   </a-button>
                 </div>
               </template>
               <a-form-model ref="userForm" :model="currentUser.user" :rules="rules" :hideRequiredMark="true">
                 <a-row :gutter="[24]">
                   <a-col :span="12">
-                    <a-form-model-item class="mb-10" label="用户名" :colon="false" prop="username" :required="true">
-                      <a-input :disabled="userNotEdit" placeholder="请输入用户名" v-model="currentUser.user.username" />
+                    <a-form-model-item class="mb-10" :label="$t('Users.UserName')" :colon="false" prop="username" :required="true">
+                      <a-input :disabled="userNotEdit" :placeholder="$t('Users.EnterYourUsername')" v-model="currentUser.user.username" />
                     </a-form-model-item>
                   </a-col>
                   <a-col :span="12">
-                    <a-form-model-item class="mb-10" label="密码" :colon="false" prop="password"
+                    <a-form-model-item class="mb-10" :label="$t('Users.Password')" :colon="false" prop="password"
                       :required="passwordRequired">
                       <a-input-password :disabled="userNotEdit" autocomplete="new-password" placeholder="******"
                         v-model="currentUser.user.password" />
@@ -167,12 +167,12 @@
                   </a-col>
                   <a-col :span="12">
                     <a-form-model-item class="mb-10" label="EMAIL" :colon="false">
-                      <a-input :disabled="userNotEdit" v-model="currentUser.user.email" placeholder="请输入邮箱，非必填" />
+                      <a-input :disabled="userNotEdit" v-model="currentUser.user.email" :placeholder="$t('Users.PleaseEnterEmail')" />
                     </a-form-model-item>
                   </a-col>
                   <a-col :span="12">
-                    <a-form-model-item class="mb-10" label="是否激活" :colon="false">
-                      <span class="mr-15">{{ true ? '开启' : '关闭' }}</span>
+                    <a-form-model-item class="mb-10" :label="$t('Users.ActivatedOrNot')" :colon="false">
+                      <span class="mr-15">{{ true ? $t('Users.TurnOn') : $t('Users.ShutDown') }}</span>
                       <a-switch :disabled="userNotEdit" default-checked v-model="currentUser.user.enabled" />
                     </a-form-model-item>
                   </a-col>
@@ -184,7 +184,7 @@
             <a-card :bordered="false" class="header-solid h-full" :bodyStyle="{ paddingTop: 0, paddingBottom: '16px' }"
               v-if="currentUser">
               <template #title>
-                <h6 class="font-semibold m-0">{{ userNotEdit ? "角色信息" : "角色编辑" }}</h6>
+                <h6 class="font-semibold m-0">{{ userNotEdit ? $t('Users.RoleInformation') : $t('Users.RoleEditing') }}</h6>
               </template>
               <div v-for="(item, index) in currentUser.assignableRoles" :key="index">
                 <hr class="gradient-line">
@@ -198,7 +198,7 @@
                   </a-col>
                   <a-col :span="24" :md="8" class="ml-auto"
                     style="display: flex; align-items: center; justify-content: flex-end">
-                    <span class="mr-15">{{ item.enabled ? '开启' : '关闭' }}</span>
+                    <span class="mr-15">{{ item.enabled ? $t('Users.TurnOn') : $t('Users.ShutDown') }}</span>
                     <a-switch :disabled="userNotEdit" default-checked v-model="item.enabled" @change="roleChange(index)" />
                   </a-col>
                 </a-row>
@@ -208,16 +208,16 @@
         </a-row>
       </a-col>
     </a-row>
-    <a-modal v-model="deleteVisible" title="删除确认" :footer="null" :forceRender="true" on-back="deleteVisible = false">
+    <a-modal v-model="deleteVisible" title="$t('Users.DeleteConfirmation')" :footer="null" :forceRender="true" on-back="deleteVisible = false">
 
       <a-row :gutter="[24]">
         <a-col :span="24">
-          <h6 v-if="deleteVisible" class="text-center font-regular">你确定要删除<a>{{ willDelUserName }}</a>这个用户么？</h6>
+          <h6 v-if="deleteVisible" class="text-center font-regular">{{ $t('Users.SureDeleteUser1') }}<a>{{ willDelUserName }}</a>{{ $t('Users.SureDeleteUser2') }}</h6>
         </a-col>
         <a-col :span="24" class="text-right">
-          <a-button key="submit" class="px-30" size="small" type="danger" @click="delUser(willDelUserName)">删除
+          <a-button key="submit" class="px-30" size="small" type="danger" @click="delUser(willDelUserName)">{{ $t('Users.Delete') }}
           </a-button>
-          <a-button key="back" @click="deleteVisible = false" class="px-30 ml-10" size="small">取消</a-button>
+          <a-button key="back" @click="deleteVisible = false" class="px-30 ml-10" size="small">{{ $t('Users.Cancel') }}</a-button>
         </a-col>
       </a-row>
     </a-modal>
@@ -239,10 +239,27 @@ export default ({
       if (value) {
         var reg = /(?!^(\d+|[a-zA-Z]+|[~!@#$%^&*()_.]+)$)^[\w~!@#$%^&*()_.]{8,16}$/
         if (reg.test(value) === false) {
-          callback(new Error('密码应为字母，数字，特殊符号(~!@#$%^&*()_.)，两种及以上组合，8-16位字符串，如：zs666@abc'))
+          callback(new Error(this.$('passwordFormat')))
+        } else if (value.length < 8 || value.length > 16) {
+          callback(new Error(this.$('passwordLength')))
         } else {
           callback()
         }
+      } else if (!value) {
+        callback(new Error(this.$t('Users.EnterThePassword')))
+      } else {
+        callback()
+      }
+    }
+    const checkUsername = (rule, value, callback) => {
+      if (value) {
+        if (value.length < 2 || value.length > 30) {
+          callback(new Error(this.$('userNameLength')))
+        } else {
+          callback()
+        }
+      } else if (!value) {
+        callback(new Error(this.$t('Users.EnterYourUsername')))
       } else {
         callback()
       }
@@ -251,17 +268,9 @@ export default ({
       // Salary cards data
       rules: {
         username: [
-          // 限制必填
-          { required: false, message: '请输入用户名', trigger: 'blur' },
-          // 限制字符串长度
-          { min: 2, max: 30, message: '长度在 2 到 30 个字符', trigger: 'blur' },
+          { required: true, trigger: 'blur', validator: checkUsername }
         ],
         password: [
-          // 限制必填
-          { required: false, message: '请输入密码', trigger: 'blur' },
-          // 限制字符串长度
-          { min: 8, max: 16, message: '长度在 8 到 16 个字符', trigger: 'blur' },
-          // 自定义正则
           { required: true, trigger: 'blur', validator: checkPassword }
         ]
       },
@@ -355,7 +364,7 @@ export default ({
           })
           if (!roles || roles.length === 0) {
             this.$notification.warning({
-              message: "请选择角色",
+              message: this.$t('Users.PleaseSelectTheRole'),
               description: ""
             })
             return false
@@ -402,7 +411,7 @@ export default ({
       delUser(username).then(res => {
         setTimeout(() => {
           this.$notification.success({
-            message: '删除成功',
+            message: this.$t('Users.DeleteSuccess'),
           })
         }, 100)
         this.deleteVisible = false

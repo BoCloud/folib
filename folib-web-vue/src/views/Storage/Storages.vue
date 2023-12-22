@@ -1104,6 +1104,8 @@ export default {
         }
       } else if (!value) {
         callback(new Error(this.$t('Storage.EnterSpaceName')))
+      } else {
+        callback()
       }
     }
     return {
