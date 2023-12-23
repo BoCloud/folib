@@ -2,16 +2,16 @@
   <div id="settings">
     <a-tabs class="tabs-sliding" v-model="activeTab" default-active-key="1" >
 
-      <a-tab-pane key="1" tab="基础监控">
+      <a-tab-pane key="1" :tab="$t('Setting.BaseMonitoring')">
       <base-data  :activeTab="activeTab"/>
       </a-tab-pane>
-      <a-tab-pane key="2" tab="系统日志">
+      <a-tab-pane key="2" :tab="$t('Setting.SystemLog')">
     <system-log />
       </a-tab-pane>
-      <a-tab-pane key="3" tab="数据查询">
+      <a-tab-pane key="3" :tab="$t('Setting.dataQuery')">
         <query-data :navbar-fixed="navbarFixed"/>
       </a-tab-pane>
-      <a-tab-pane key="4" tab="集群信息" class="cluster">
+      <a-tab-pane key="4" :tab="$t('Setting.clusterInformation')" class="cluster">
              <cluster-info v-if="activeTab==='4'" />
 
       </a-tab-pane>
@@ -29,7 +29,7 @@ export default {
   data() {
     return {
       activeTab:'1',
-  
+
     };
   },
   components: {

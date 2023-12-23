@@ -4,7 +4,7 @@
             default-active-key="1"
             @change="tabChange($event)">
       <a-tab-pane key="1"
-                  tab="全局配置">
+                  :tab="$t('Setting.GlobalConfiguration')">
         <a-row type="flex"
                :gutter="[24, 24]">
           <a-col :span="24"
@@ -23,7 +23,7 @@
                               theme="filled"
                               class="text-gray-6 text-lg" />
                       <h4 class="ant-list-item-meta-title">
-                        <span class="font-regular">基础信息配置</span>
+                        <span class="font-regular">{{ $t('Setting.BasicInfoConfig') }}</span>
                       </h4>
                     </div>
                   </a-anchor-link>
@@ -34,7 +34,7 @@
                               theme="filled"
                               class="text-gray-6 text-lg" />
                       <h4 class="ant-list-item-meta-title">
-                        <span class="font-regular">SMTP配置</span>
+                        <span class="font-regular">SMTP {{ $t('Setting.configuration') }}</span>
                       </h4>
                     </div>
                   </a-anchor-link>
@@ -45,7 +45,7 @@
                               theme="filled"
                               class="text-gray-6 text-lg" />
                       <h4 class="ant-list-item-meta-title">
-                        <span class="font-regular">网络代理配置</span>
+                        <span class="font-regular">{{ $t('Setting.NetworkAgentConfig') }}</span>
                       </h4>
                     </div>
                   </a-anchor-link>
@@ -56,7 +56,7 @@
                               theme="filled"
                               class="text-gray-6 text-lg" />
                       <h4 class="ant-list-item-meta-title">
-                        <span class="font-regular">CORS配置</span>
+                        <span class="font-regular">CORS {{ $t('Setting.configuration') }}</span>
                       </h4>
                     </div>
                   </a-anchor-link>
@@ -67,7 +67,7 @@
                               theme="filled"
                               class="text-gray-6 text-lg" />
                       <h4 class="ant-list-item-meta-title">
-                        <span class="font-regular">高级配置</span>
+                        <span class="font-regular">{{ $t('Setting.AdvancedConfig') }}</span>
                       </h4>
                     </div>
                   </a-anchor-link>
@@ -84,14 +84,14 @@
                     id="basic"
                     class="header-solid mb-24">
               <template #title>
-                <h5 class="mb-0 font-semibold">基础 配置</h5>
+                <h5 class="mb-0 font-semibold">{{ $t('Setting.BasicConfig') }}</h5>
               </template>
               <a-form :hideRequiredMark="true">
                 <a-row :gutter="[24]">
                   <a-col :span="24"
                          :lg="8">
                     <a-form-item class="mb-10"
-                                 label="应用名称"
+                                 :label="$t('Setting.ApplicationName')"
                                  :colon="false">
                       <a-input placeholder="folib"
                                v-model="serverSettings.instanceName" />
@@ -100,7 +100,7 @@
                   <a-col :span="24"
                          :lg="8">
                     <a-form-item class="mb-10"
-                                 label="节点传输限速（KB/s）"
+                                 :label="$t('Setting.NodeTransmissionRateLimit')"
                                  :colon="false">
                       <a-input placeholder="KB/s" type="number"
                                v-model="serverSettings.kbps" />
@@ -109,7 +109,7 @@
                   <a-col :span="24"
                          :lg="8">
                     <a-form-item class="mb-10"
-                                 label="制品传输切片大小（MB）"
+                                 :label="$t('Setting.ProductTransferSliceSize')"
                                  :colon="false">
                       <a-input placeholder="MB" type="number"
                                v-model="serverSettings.sliceMbSize" />
@@ -129,21 +129,21 @@
                   <a-col :span="24"
                          :lg="8">
                     <a-form-item class="mb-10"
-                                 label="端口号"
+                                 :label="$t('Setting.PortNumber')"
                                  :colon="false">
                       <a-input placeholder="38080"
                                v-model="serverSettings.port" />
                     </a-form-item>
                   </a-col>
                 </a-row>
-                
-                <p>说明:</p>
+
+                <p>{{ $t('Setting.Note') }}</p>
                 <ul class="pl-15 text-muted">
-                  <li>应用名称修改会自动修改到配置文件</li>
-                  <li>制品传输切片大小，大制品节点之间传输切片大小（上限2000MB=2048000KB）</li>
-                  <li>节点传输节点传输限速（KB/s），不设置则不限速。传输节点限速未设置，则采用全局限速；全局和传输节点均未设置，则传输不限速（上限2000MB=2048000KB）</li>
-                  <li>baseurl，如果你使用了反向代理公网等情况下可以使用它</li>
-                  <li>{{instanceName}}-Server服务的后端通信端口</li>
+                  <li>{{ $t('Setting.autoChangeConfigFile') }}</li>
+                  <li>{{ $t('Setting.TransferSliceSize') }}</li>
+                  <li>{{ $t('Setting.NodeSpeedLimit') }}</li>
+                  <li>{{ $t('Setting.useBaseUrl') }}</li>
+                  <li>{{instanceName}}-{{ $t('Setting.communicationPort') }}</li>
                 </ul>
               </a-form>
             </a-card>
@@ -154,25 +154,25 @@
                     id="smtp"
                     class="header-solid mb-24">
               <template #title>
-                <h5 class="mb-0 font-semibold">SMTP配置</h5>
+                <h5 class="mb-0 font-semibold">SMTP {{ $t('Setting.configuration') }}</h5>
               </template>
               <a-form :hideRequiredMark="true">
                 <a-row :gutter="[24]">
                   <a-col :span="24"
                          :lg="12">
                     <a-form-item class="mb-10"
-                                 label="用户名"
+                                 :label="$t('Setting.username')"
                                  :colon="false">
-                      <a-input placeholder="SMTP用户名"
+                      <a-input :placeholder="'SMTP' + $t('Setting.username')"
                                v-model="serverSettings.smtpConfigurationForm.username" />
                     </a-form-item>
                   </a-col>
                   <a-col :span="24"
                          :lg="12">
                     <a-form-item class="mb-10"
-                                 label="密码"
+                                 :label="$t('Setting.Password')"
                                  :colon="false">
-                      <a-input-password placeholder="SMTP密码"
+                      <a-input-password :placeholder="'SMTP' + $t('Setting.Password')"
                                         autocomplete="new-password"
                                         v-model="serverSettings.smtpConfigurationForm.password" />
                     </a-form-item>
@@ -189,21 +189,21 @@
                   <a-col :span="24"
                          :lg="6">
                     <a-form-item class="mb-10"
-                                 label="端口"
+                                 :label="$t('Setting.Port')"
                                  :colon="false">
-                      <a-input placeholder="端口"
+                      <a-input :placeholder="$t('Setting.Port')"
                                v-model="serverSettings.smtpConfigurationForm.port" />
                     </a-form-item>
                   </a-col>
                   <a-col :span="24"
                          :lg="6">
                     <a-form-item class="mb-10"
-                                 label="协议类型"
+                                 :label="$t('Setting.ProtocolType')"
                                  :colon="false">
                       <a-select v-model="serverSettings.smtpConfigurationForm.connection"
                                 show-search
                                 :allowClear="true"
-                                placeholder="协议类型"
+                                :placeholder="$t('Setting.ProtocolType')"
                                 option-filter-prop="children"
                                 :filter-option="filterOption">
                         <a-select-option value="plain">
@@ -219,10 +219,10 @@
                     </a-form-item>
                   </a-col>
                 </a-row>
-                <p>说明:</p>
+                <p>{{ $t('Setting.Note') }}</p>
                 <ul class="pl-15 text-muted">
-                  <li>该配置是用来设置系统邮件</li>
-                  <li>程序中某些事件会对相关用户进行邮件通知</li>
+                  <li>{{ $t('Setting.SetSystemMail') }}</li>
+                  <li>{{ $t('Setting.EmailNotification') }}</li>
                 </ul>
               </a-form>
             </a-card>
@@ -232,25 +232,25 @@
                     id="proxy"
                     class="header-solid mb-24">
               <template #title>
-                <h5 class="mb-0 font-semibold">网络代理</h5>
+                <h5 class="mb-0 font-semibold">{{ $t('Setting.NetworkProxy') }}</h5>
               </template>
               <a-form :hideRequiredMark="true">
                 <a-row :gutter="[24]">
                   <a-col :span="24"
                          :lg="12">
                     <a-form-item class="mb-10"
-                                 label="用户名"
+                                 :label="$t('Setting.username')"
                                  :colon="false">
-                      <a-input placeholder="代理用户名"
+                      <a-input :placeholder="$t('Setting.ProxyUsername')"
                                v-model="serverSettings.proxyConfigurationForm.username" />
                     </a-form-item>
                   </a-col>
                   <a-col :span="24"
                          :lg="12">
                     <a-form-item class="mb-10"
-                                 label="密码"
+                                 :label="$t('Setting.Password')"
                                  :colon="false">
-                      <a-input-password placeholder="代理密码"
+                      <a-input-password :placeholder="$t('Setting.ProxyPassword')"
                                         autocomplete="new-password"
                                         v-model="serverSettings.proxyConfigurationForm.password" />
                     </a-form-item>
@@ -258,29 +258,29 @@
                   <a-col :span="24"
                          :lg="12">
                     <a-form-item class="mb-10"
-                                 label="代理地址"
+                                 :label="$t('Setting.ProxyAddress')"
                                  :colon="false">
-                      <a-input placeholder="代理地址"
+                      <a-input :placeholder="$t('Setting.ProxyAddress')"
                                v-model="serverSettings.proxyConfigurationForm.host" />
                     </a-form-item>
                   </a-col>
                   <a-col :span="24"
                          :lg="6">
                     <a-form-item class="mb-10"
-                                 label="端口"
+                                 :label="$t('Setting.Port')"
                                  :colon="false">
-                      <a-input placeholder="端口"
+                      <a-input :placeholder="$t('Setting.Port')"
                                v-model="serverSettings.proxyConfigurationForm.port" />
                     </a-form-item>
                   </a-col>
                   <a-col :span="24"
                          :lg="6">
                     <a-form-item class="mb-10"
-                                 label="类型"
+                                 :label="$t('Setting.Type')"
                                  :colon="false">
                       <a-select v-model="serverSettings.proxyConfigurationForm.type"
                                 show-search
-                                placeholder="类型"
+                                :placeholder="$t('Setting.Type')"
                                 :allowClear="true"
                                 option-filter-prop="children"
                                 :filter-option="filterOption">
@@ -294,11 +294,11 @@
                     </a-form-item>
                   </a-col>
                 </a-row>
-                <p>说明:</p>
+                <p>{{ $t('Setting.Note') }}</p>
                 <ul class="pl-15 text-muted">
-                  <li>该配置是用来针对某些情况下网络无法通信的情况下</li>
-                  <li>例如需要配置代理后可以访问公网</li>
-                  <li>可以通过代理获取公网仓库的依赖</li>
+                  <li>{{ $t('Setting.NetworkCommunicationFailure') }}</li>
+                  <li>{{ $t('Setting.accessPublicNetwork') }}</li>
+                  <li>{{ $t('Setting.AcquisitionDependency') }}</li>
                 </ul>
               </a-form>
             </a-card>
@@ -307,7 +307,7 @@
                     id="cors"
                     class="header-solid mb-24">
               <template #title>
-                <h5 class="mb-0 font-semibold">CORS配置</h5>
+                <h5 class="mb-0 font-semibold">CORS {{ $t('Setting.configuration') }}</h5>
               </template>
               <a-form :hideRequiredMark="true">
                 <a-row :gutter="[24]">
@@ -320,24 +320,24 @@
                                 v-model="serverSettings.corsConfigurationForm.allowedOrigins"
                                 @change="allowedOriginsChange"
                                 style="width: 100%"
-                                placeholder="例如：*">
+                                :placeholder="$t('Setting.ForExample') + '*'">
                       </a-select>
                     </a-form-item>
                   </a-col>
                   <a-col :span="24"
                          :lg="8">
                     <a-form-item class="mb-10"
-                                 label="开启所有"
+                                 :label="$t('Setting.TurnOnAll')"
                                  :colon="false">
-                      <span class="mr-15">开启</span>
+                      <span class="mr-15">{{ $t('Setting.TurnOn') }}</span>
                       <a-switch v-model="serverSettings.corsConfigurationForm.corsAllowAll"
                                 @change="corsAllowAllChange" />
                     </a-form-item>
                   </a-col>
                 </a-row>
-                <p>说明:</p>
+                <p>{{ $t('Setting.Note') }}</p>
                 <ul class="pl-15 text-muted">
-                  <li>开启所有意味着不再有跨域限制</li>
+                  <li>{{ $t('Setting.OnAllMeans') }}</li>
                 </ul>
               </a-form>
             </a-card>
@@ -346,16 +346,16 @@
                     id="advance"
                     class="header-solid mb-24">
               <template #title>
-                <h5 class="mb-0 font-semibold">高级配置</h5>
+                <h5 class="mb-0 font-semibold">{{ $t('Setting.AdvancedConfig') }}</h5>
               </template>
               <a-form :hideRequiredMark="true">
                 <a-row :gutter="[24]">
                   <a-col :span="24"
                          :lg="8">
                     <a-form-item class="mb-10"
-                                 label="允许匿名访问"
+                                 :label="$t('Setting.AllowingAnonymousAccess')"
                                  :colon="false">
-                      <span class="mr-15">开启</span>
+                      <span class="mr-15">{{ $t('Setting.TurnOn') }}</span>
                       <a-switch v-model="serverSettings.advancedConfigurationForm.allowAnonymous"
                                 @change="corsAllowAllChange" />
                     </a-form-item>
@@ -363,22 +363,22 @@
                   <a-col :span="24"
                          :lg="8">
                     <a-form-item class="mb-10"
-                                 label="显示校验文件"
+                                 :label="$t('Setting.DisplayValidationFile')"
                                  :colon="false">
-                      <span class="mr-15">开启</span>
+                      <span class="mr-15">{{ $t('Setting.TurnOn') }}</span>
                       <a-switch v-model="serverSettings.advancedConfigurationForm.showChecksum"
                                 @change="corsAllowAllChange" />
                     </a-form-item>
                   </a-col>
                 </a-row>
-                <p>说明:</p>
+                <p>{{ $t('Setting.Note') }}</p>
                 <ul class="pl-15 text-muted">
-                  <li>开启允许匿名访问，匿名用户可访问公开库及结构，关闭后匿名用户必须登录方可正常使用。</li>
-                  <li>开启显示校验文件，仓库详情页会展示校验文件，关闭后仓库详情页则不会展示校验文件。</li>
+                  <li>{{ $t('Setting.OpenAllowsAnonymousAccess') }}</li>
+                  <li>{{ $t('Setting.OpenDisplayVerificationFile') }}</li>
                 </ul>
               </a-form>
             </a-card>
-            
+
             <a-card :bordered="false"
                     id="delete-account"
                     class="header-solid mb-24">
@@ -392,20 +392,20 @@
                     <!--										<a-switch></a-switch>-->
                   </a-col>
                   <a-col class="pl-15">
-                    <p class="mb-0 font-semibold">保存操作</p>
-                    <small class="text-dark">该保存按钮将会针对以上4个部分的修改统一保存</small>
+                    <p class="mb-0 font-semibold">{{ $t('Setting.SaveOperation') }}</p>
+                    <small class="text-dark">{{ $t('Setting.saveButton') }}</small>
                   </a-col>
                   <a-col :span="24"
                          :md="12"
                          class="ml-auto"
                          style="display: flex; align-items: center; justify-content: flex-end">
                     <a-button @click="getServerSettings">
-                      取 消
+                      {{ $t('Setting.Cancel1') }}
                     </a-button>
                     <a-button type="danger"
                               class="ml-10"
                               @click="saveServerSettings">
-                      保 存
+                      {{ $t('Setting.Save1') }}
                     </a-button>
                   </a-col>
                 </a-row>
@@ -415,14 +415,14 @@
         </a-row>
       </a-tab-pane>
       <a-tab-pane key="2"
-                  tab="安全策略">
+                  :tab="$t('Setting.SecurityPolicy')">
         <!-- <a-row type="flex" :gutter="[24]"> -->
         <!-- <a-col :span="24" :lg="24"> -->
         <a-tabs class="tabs-sliding card-container"
                 default-active-key="1"
                 @change="vulnerabilityTabChange($event)">
           <a-tab-pane key="1"
-                      tab="白名单">
+                      :tab="$t('Setting.TheWhiteList')">
             <a-card class="header-solid white-card"
                     id="white">
               <!-- <template #title>
@@ -442,9 +442,9 @@
                                slot-scope="item, index">
                     <label>{{ item }}</label>
                     <template #extra>
-                      <a-popconfirm title="确定要从白名单移除吗？"
-                                    ok-text="确定"
-                                    cancel-text="取消"
+                      <a-popconfirm :title="$t('Setting.SureRemovedWhitelist')"
+                                    :ok-text="$t('Setting.BeSure')"
+                                    :cancel-text="$t('Setting.Cancel')"
                                     class="d-popconfirm"
                                     @confirm="removeWhite(item)">
                         <svg width="16"
@@ -467,7 +467,7 @@
             </a-card>
           </a-tab-pane>
           <a-tab-pane key="2"
-                      tab="黑名单">
+                      :tab="$t('Setting.Blacklist')">
             <a-card class="header-solid black-card"
                     id="black">
               <!-- <template #title>
@@ -487,9 +487,9 @@
                                slot-scope="item, index">
                     {{ item }}
                     <template #extra>
-                      <a-popconfirm title="确定要从黑名单移除吗？"
-                                    ok-text="确定"
-                                    cancel-text="取消"
+                      <a-popconfirm :title="$t('Setting.SureRemovedBlacklisted')"
+                                    :ok-text="$t('Setting.BeSure')"
+                                    :cancel-text="$t('Setting.Cancel')"
                                     class="d-popconfirm"
                                     @confirm="removeBlack(item)">
                         <svg width="16"
@@ -512,7 +512,7 @@
             </a-card>
           </a-tab-pane>
           <a-tab-pane key="3"
-                      tab="通知设置">
+                      :tab="$t('Setting.NotificationSet')">
             <a-card class="header-solid"
                     id="notice">
               <a-form :form="ruleForm"
@@ -523,11 +523,11 @@
                 <a-row :gutter="[24]">
                   <a-col :span="24">
                     <a-form-item class="mb-10"
-                                 label="通知漏洞等级">
+                                 :label="$t('Setting.NotifyVulnerabilityLevel')">
                       <a-checkbox-group v-decorator="['levels',
                         {
                           rules: [
-                            { required: true, message: '请选择漏洞等级', type: 'array' },
+                            { required: true, message: $t('Setting.SelectVulnerabilityLevel'), type: 'array' },
                           ],
                         },
                       ]"
@@ -535,22 +535,22 @@
                         <a-row>
                           <a-col :span="6">
                             <a-checkbox value="CRITICAL">
-                              严重
+                             {{ $t('Setting.Seriously') }}
                             </a-checkbox>
                           </a-col>
                           <a-col :span="6">
                             <a-checkbox value="HIGH">
-                              高危
+                             {{ $t('Setting.HighRisk') }}
                             </a-checkbox>
                           </a-col>
                           <a-col :span="6">
                             <a-checkbox value="MEDIUM">
-                              中危
+                             {{ $t('Setting.MediumRisk') }}
                             </a-checkbox>
                           </a-col>
                           <a-col :span="6">
                             <a-checkbox value="LOW">
-                              低危
+                             {{ $t('Setting.LowRisk') }}
                             </a-checkbox>
                           </a-col>
                         </a-row>
@@ -560,20 +560,20 @@
                   <a-col :span="24"
                          class="text-left">
                     <a-form-item class="mb-10"
-                                 label="通知策略">
+                                 :label="$t('Setting.NotificationPolicy')">
                       <a-checkbox-group v-decorator="['notifyScopes',
                       ]"
                                         style="width: 100%;">
                         <a-row>
                           <a-col :span="12">
                             <a-checkbox value="admin">
-                              通知平台管理员
+                              {{ $t('Setting.NotifyPlatformAdministrator') }}
                             </a-checkbox>
                           </a-col>
                           <a-col :span="12"
                                  class="text-right">
                             <a-checkbox value="storageAdmin">
-                              通知存储空间管理员
+                              {{ $t('Setting.NotifyStorageAdministrator') }}
                             </a-checkbox>
                           </a-col>
                         </a-row>
@@ -582,11 +582,11 @@
                   </a-col>
                   <a-col :span="24">
                     <a-form-item class="tags-field mb-10"
-                                 label="指定用户">
+                                 :label="$t('Setting.DesignatedUser')">
                       <a-select mode="multiple"
                                 style="width: 100%"
                                 show-search
-                                placeholder="请选择用户"
+                                :placeholder="$t('Setting.selectUser')"
                                 v-decorator="['receiverUsers',
                       ]">
                         <a-select-option v-for="(user, index) in userList"
@@ -599,11 +599,11 @@
                   </a-col>
                   <a-col :span="24">
                     <a-form-item class="tags-field mb-10"
-                                 label="指定邮箱">
+                                 :label="$t('Setting.SpecifyEmailAddress')">
                       <a-select mode="tags"
                                 style="width: 100%"
                                 notFoundContent=""
-                                placeholder="请输入邮箱"
+                                :placeholder="$t('Setting.EnterEmail')"
                                 v-decorator="['receiverEmails',
                       ]">
                       </a-select>
@@ -615,21 +615,21 @@
                               class="px-30"
                               size="small"
                               type="primary"
-                              htmlType="submit">保存</a-button>
+                              htmlType="submit">{{ $t('Setting.Save') }}</a-button>
                   </a-col>
                   <a-col :span="12"
                          class="text-left">
                     <a-button key="back"
                               class="px-30 ml-10"
                               size="small"
-                              @click="ruleFormCancel()">取消</a-button>
+                              @click="ruleFormCancel()">{{ $t('Setting.Cancel') }}</a-button>
                   </a-col>
                 </a-row>
               </a-form>
             </a-card>
           </a-tab-pane>
           <a-tab-pane key="4"
-                      tab="阻断设置">
+                      :tab="$t('Setting.BlockingSet')">
             <a-card>
               <a-row :gutter="16">
                 <a-col :span="18">
@@ -649,7 +649,7 @@
                             <a-radio-group v-decorator="['blockType',
                               {
                                 rules: [
-                                  { required: true, message: '请选择阻断方式' },
+                                  { required: true, message: $t('Setting.SelectBlockingMode') },
                                 ],
                               },
                             ]"
@@ -658,19 +658,19 @@
                               <a-row>
                                 <a-col :span="6">
                                   <a-radio :value="1">
-                                    全量阻断 <span class="tips">（tips：此种阻断方式会自动过滤黑名单）</span>
+                                    {{ $t('Setting.FullBlock') }} <span class="tips">{{ $t('Setting.autoFilterBlacklist') }}</span>
                                   </a-radio>
                                 </a-col>
                                 <a-row class="block-full mt-30">
                                   <a-col :span="24">
                                     <a-form-item class=""
-                                                 label="漏洞等级"
+                                                 :label="$t('Setting.VulnerabilityLevel')"
                                                  :label-col="{ span: 4 }"
                                                  :wrapper-col="{ span: 12 }">
                                       <a-checkbox-group v-decorator="['blockLevels',
                                         {
                                           rules: [
-                                            { required: false, message: '请选择漏洞等级', type: 'array' },
+                                            { required: false, message: $t('Setting.SelectVulnerabilityLevel'), type: 'array' },
                                           ],
                                         },
                                       ]"
@@ -678,22 +678,22 @@
                                         <a-row>
                                           <a-col :span="6">
                                             <a-checkbox value="CRITICAL">
-                                              严重
+                                              {{ $t('Setting.Seriously') }}
                                             </a-checkbox>
                                           </a-col>
                                           <a-col :span="6">
                                             <a-checkbox value="HIGH">
-                                              高危
+                                              {{ $t('Setting.HighRisk') }}
                                             </a-checkbox>
                                           </a-col>
                                           <a-col :span="6">
                                             <a-checkbox value="MEDIUM">
-                                              中危
+                                              {{ $t('Setting.MediumRisk') }}
                                             </a-checkbox>
                                           </a-col>
                                           <a-col :span="6">
                                             <a-checkbox value="LOW">
-                                              低危
+                                              {{ $t('Setting.LowRisk') }}
                                             </a-checkbox>
                                           </a-col>
                                         </a-row>
@@ -702,7 +702,7 @@
                                   </a-col>
                                   <a-col :span="24">
                                     <a-form-item class=""
-                                                 label="过滤白名单"
+                                                 :label="$t('Setting.FilteringWhitelist')"
                                                  :label-col="{ span: 4 }"
                                                  :wrapper-col="{ span: 1 }">
                                       <a-switch v-decorator="['filterWhites',
@@ -722,17 +722,17 @@
                                 <a-col class="mt-30"
                                        :span="24">
                                   <a-radio :value="2">
-                                    黑名单阻断 <span class="tips">（tips：此种阻断方式会自动过滤白名单）</span>
+                                    {{ $t('Setting.BlacklistBlocking') }} <span class="tips">{{ $t('Setting.autoFilterWhitelist') }}</span>
                                   </a-radio>
                                 </a-col>
                                 <a-col class="mt-30"
                                        :span="24">
                                   <a-radio :value="3">
-                                    包名阻断 <span class="tips">（tips：此种阻断方式会按照包名拦截）</span>
+                                    {{ $t('Setting.PackageNameBlocking') }} <span class="tips">{{ $t('Setting.InterceptByPacketName') }}</span>
                                   </a-radio>
                                   <a-tooltip v-if="packageNameShow"
                                              @click="packageNameModalShow">
-                                    <template slot="title">新增</template>
+                                    <template slot="title">{{ $t('Setting.Add') }}</template>
                                     <a-icon type="plus-circle"
                                             theme="filled"
                                             class="cursor-pointer package-name-add"
@@ -752,14 +752,14 @@
                                     class="px-30"
                                     size="small"
                                     type="primary"
-                                    htmlType="submit">保存</a-button>
+                                    htmlType="submit">{{ $t('Setting.Save') }}</a-button>
                         </a-col>
                         <a-col :span="12"
                                class="text-left mt-50">
                           <a-button key="back"
                                     class="px-30 ml-10"
                                     size="small"
-                                    @click="blockFormCancel()">取消</a-button>
+                                    @click="blockFormCancel()">{{ $t('Setting.Cancel') }}</a-button>
                         </a-col>
                       </a-row>
                     </a-form>
@@ -773,7 +773,7 @@
         <!-- </a-row> -->
       </a-tab-pane>
       <a-tab-pane key="3"
-                  tab="LDAP配置">
+                  :tab="'LDAP ' + $t('Setting.configuration')">
         <div class="mx-auto mt-50"
              style="max-width: 1000px;">
           <div class="mb-50"
@@ -781,9 +781,9 @@
 
             <a-steps progress-dot
                      v-model="step">
-              <a-step title="连接配置" />
-              <a-step title="用户映射" />
-              <a-step title="角色映射" />
+              <a-step :title="$t('Setting.ConnectionConfig')" />
+              <a-step :title="$t('Setting.UserMapping')" />
+              <a-step :title="$t('Setting.RoleMapping')" />
             </a-steps>
           </div>
 
@@ -795,8 +795,8 @@
                     :bodyStyle="{ paddingTop: 0 }"
                     :headStyle="{ paddingBottom: '0' }">
               <template #title>
-                <h5 class="mb-0">连接配置</h5>
-                <p class="font-regular">该部分配置用于和LDAP建立连接</p>
+                <h5 class="mb-0">{{ $t('Setting.ConnectionConfig') }}</h5>
+                <p class="font-regular">{{ $t('Setting.LDAPConnection') }}</p>
               </template>
               <a-form @submit="handleSubmit"
                       :hideRequiredMark="true">
@@ -805,21 +805,21 @@
                     <a-form-item class="mb-10"
                                  label="URL"
                                  :colon="false">
-                      <a-input placeholder="例如: ldap://1.2.3.4/dc=domain,dc=com"
+                      <a-input :placeholder="$t('Setting.ForExample') + 'ldap://1.2.3.4/dc=domain,dc=com'"
                                v-model="ldap.url" />
                     </a-form-item>
                   </a-col>
                   <a-col :span="12">
                     <a-form-item class="mb-10"
-                                 label="绑定DN"
+                                 :label="$t('Setting.BindingDN')"
                                  :colon="false">
-                      <a-input placeholder="例如:cn=manager,ou=users,dc=domain,dc=com"
+                      <a-input :placeholder="$t('Setting.ForExample') + ':cn=manager,ou=users,dc=domain,dc=com'"
                                v-model="ldap.managerDn" />
                     </a-form-item>
                   </a-col>
                   <a-col :span="12">
                     <a-form-item class="mb-10"
-                                 label="绑定密码"
+                                 :label="$t('Setting.BindingPasswords')"
                                  :colon="false">
                       <a-input placeholder="********"
                                v-model="ldap.managerPassword" />
@@ -827,9 +827,9 @@
                   </a-col>
                   <a-col :span="12">
                     <a-form-item class="mb-10"
-                                 label="是否开启LDAP服务"
+                                 :label="$t('Setting.EnableLDAPServer')"
                                  :colon="false">
-                      <span class="mr-15">{{ ldap.enableProvider ? '开启' : '关闭' }}</span>
+                      <span class="mr-15">{{ ldap.enableProvider ? $t('Setting.TurnOn') : $t('Setting.ShutDown') }}</span>
                       <a-switch default-checked
                                 v-model="ldap.enableProvider" />
                     </a-form-item>
@@ -842,7 +842,7 @@
                          class="text-right">
                     <a-button type="primary"
                               @click="moveStep(1)"
-                              class="px-25">下一步</a-button>
+                              class="px-25">{{ $t('Setting.NextStep') }}</a-button>
                   </a-col>
                 </a-row>
               </a-form>
@@ -854,36 +854,36 @@
                     :bodyStyle="{ paddingTop: 0 }"
                     :headStyle="{ paddingBottom: '0' }">
               <template #title>
-                <h5 class="mb-0">用户映射</h5>
+                <h5 class="mb-0">{{ $t('Setting.UserMapping') }}</h5>
               </template>
               <a-form @submit="handleSubmit"
                       :hideRequiredMark="true">
                 <a-row :gutter="[24]">
                   <a-col :span="12">
                     <a-form-item class="mb-10"
-                                 label="用户搜索对象"
+                                 :label="$t('Setting.UsersSearchForObjects')"
                                  :colon="false">
-                      <a-input placeholder="例如：ou=Users"
+                      <a-input :placeholder="$t('Setting.ForExample') + 'ou=Users'"
                                v-model="ldap.userSearchBase" />
                     </a-form-item>
                   </a-col>
                   <a-col :span="12">
                     <a-form-item class="mb-10"
-                                 label="用户过滤条件"
+                                 :label="$t('Setting.UserFilterCriteria')"
                                  :colon="false">
-                      <a-input placeholder="例如：(uid={0})"
+                      <a-input :placeholder="$t('Setting.ForExample') + '(uid={0})'"
                                v-model="ldap.userSearchFilter" />
                     </a-form-item>
                   </a-col>
                   <a-col :span="16">
                     <a-form-item class="tags-field mb-10"
-                                 label="在验证查找用户时将使用以下用户DN列表"
+                                 :label="$t('Setting.userDNList')"
                                  :colon="false">
                       <a-select mode="tags"
                                 v-model="ldap.userDnPatternList"
                                 :defaultValue="ldap.userDnPatternList"
                                 style="width: 100%"
-                                placeholder="例如：uid={0},uid={0},ou=Admins">
+                                :placeholder="$t('Setting.ForExample') + 'uid={0},uid={0},ou=Admins'">
                         <a-select-option v-for="(tag, index) in ldap.userDnPatternList"
                                          :key="index"
                                          :value="tag">
@@ -894,9 +894,9 @@
                   </a-col>
                   <a-col :span="8">
                     <a-form-item class="mb-10"
-                                 label="用户密码是否是Base64加密?"
+                                 :label="$t('Setting.Is64Encrypted')"
                                  :colon="false">
-                      <span class="mr-15">{{ ldap.userPasswordEncoded ? '是' : '否' }}</span>
+                      <span class="mr-15">{{ ldap.userPasswordEncoded ? $t('Setting.Yes') : $t('Setting.No') }}</span>
                       <a-switch default-checked
                                 v-model="ldap.userPasswordEncoded" />
                     </a-form-item>
@@ -905,13 +905,13 @@
                 <a-row :gutter="[24]">
                   <a-col :span="12">
                     <a-button @click="moveStep(-1)"
-                              class="px-25">上一步</a-button>
+                              class="px-25">{{ $t('Setting.Back') }}</a-button>
                   </a-col>
                   <a-col :span="12"
                          class="text-right">
                     <a-button type="primary"
                               @click="moveStep(1)"
-                              class="px-25">下一步</a-button>
+                              class="px-25">{{ $t('Setting.NextStep') }}</a-button>
                   </a-col>
                 </a-row>
               </a-form>
@@ -923,32 +923,32 @@
                     :bodyStyle="{ paddingTop: 0 }"
                     :headStyle="{ paddingBottom: '0' }">
               <template #title>
-                <h5 class="mb-0">角色匹配</h5>
+                <h5 class="mb-0">{{ $t('Setting.RoleMatching') }}</h5>
               </template>
               <a-form @submit="handleSubmit"
                       :hideRequiredMark="true">
                 <a-row :gutter="[24]">
                   <a-col :span="8">
                     <a-form-item class="mb-10"
-                                 label="Group匹配"
+                                 :label="'Group ' + $t('Setting.Match')"
                                  :colon="false">
-                      <a-input placeholder="例如：ou=Groups"
+                      <a-input :placeholder="$t('Setting.ForExample') + 'ou=Groups'"
                                v-model="ldap.authorities.groupSearchBase" />
                     </a-form-item>
                   </a-col>
                   <a-col :span="8">
                     <a-form-item class="mb-10"
-                                 label="Group过滤条件"
+                                 :label="'Group ' + $t('Setting.FilteringCriteria')"
                                  :colon="false">
-                      <a-input placeholder="例如：(uniqueMember={0})"
+                      <a-input :placeholder="$t('Setting.ForExample') + '(uniqueMember={0})'"
                                v-model="ldap.authorities.groupSearchFilter" />
                     </a-form-item>
                   </a-col>
                   <a-col :span="6">
                     <a-form-item class="mb-10"
-                                 label="角色属性"
+                                 :label="$t('Setting.RoleAttributes')"
                                  :colon="false">
-                      <a-input placeholder="例如：cn,ou"
+                      <a-input :placeholder="$t('Setting.ForExample') + 'cn,ou'"
                                v-model="ldap.authorities.groupRoleAttribute" />
                     </a-form-item>
 
@@ -960,7 +960,7 @@
                        :key="index">
                   <a-col :span="12">
                     <a-form-item class="mb-10"
-                                 label="FOLIB角色"
+                                 :label="'FOLIB ' + $t('Setting.Role')"
                                  :colon="false">
                       <a-select v-model="item.folibRole">
                         <a-select-option v-for="(i, index) in assignableRoles"
@@ -973,10 +973,10 @@
                   </a-col>
                   <a-col :span="12">
                     <a-form-item class="mb-10"
-                                 label="LDAP角色"
+                                 :label="LDAP$t('Role')"
                                  :colon="false">
                       <a-col :span="20">
-                        <a-input placeholder="输入LDAP的角色"
+                        <a-input :placeholder="$t('Setting.EnterLDAPRole')"
                                  v-model="item.externalRole" />
                       </a-col>
                       <a-col :span="4">
@@ -1005,7 +1005,7 @@
                               style="width: 91.66666%"
                               @click="roleMappingAddHandle">
                       <a-icon type="plus" />
-                      添加
+                      $t('Setting.Add')
                     </a-button>
                   </a-col>
                 </a-row>
@@ -1013,13 +1013,13 @@
                 <a-row :gutter="[24]">
                   <a-col :span="12">
                     <a-button @click="moveStep(-1)"
-                              class="px-25">上一步</a-button>
+                              class="px-25">{{ $t('Setting.Back') }}</a-button>
                   </a-col>
                   <a-col :span="12"
                          class="text-right">
                     <a-button type="primary"
                               class="px-25"
-                              @click="putLdap">完成</a-button>
+                              @click="putLdap">{{ $t('Setting.Done') }}</a-button>
                   </a-col>
                 </a-row>
               </a-form>
@@ -1028,7 +1028,7 @@
         </div>
       </a-tab-pane>
       <a-tab-pane key="4"
-                  tab="节点许可配置">
+                  :tab="$t('Setting.NodeLicenseConfig')">
         <a-row type="flex"
                :gutter="24">
 
@@ -1042,7 +1042,7 @@
                     :bodyStyle="{ paddingTop: 0, paddingBottom: '16px' }"
                     :headStyle="{ paddingRight: 0, }">
               <template #title>
-                <h6 class="font-semibold m-0">FOLIB 许可信息</h6>
+                <h6 class="font-semibold m-0">FOLIB {{ $t('Setting.LicenseInfo') }}</h6>
               </template>
               <a-button v-if="machineInfo.haveError || machineInfo.dalyOut"
                         type="link"
@@ -1053,37 +1053,37 @@
               </a-button>
               <p class="text-dark"
                  v-if="!machineInfo.haveError && !machineInfo.dalyOut">
-                尊敬的用户,很荣幸您选择使用{{instanceName}}!
-                在接下来{{instanceName}} 将会为您提供统一软件包管理。
-                IT数字化转型道路长远,{{instanceName}} 与您随行！
+                {{ $t('Setting.userChoose') }}{{instanceName}}!
+                {{ $t('Setting.InWhatFollows') }}{{instanceName}} {{ $t('Setting.provideYou') }}
+                {{ $t('Setting.ITDigital') }}{{instanceName}} {{ $t('Setting.IsWithYou') }}
               </p>
               <p class="text-dark"
                  v-if="machineInfo.haveError && machineInfo.dalyOut">
-                尊敬的用户,很荣幸您选择使用{{instanceName}}! 如果觉得符合您企业信创发展战略,可选择购买正式版本。我们的服务热线：400-991-5355
+                {{ $t('Setting.userChoose') }}{{instanceName}} ! {{ $t('Setting.serviceHotline') }}
               </p>
               <p class="text-dark"
                  v-if="(!machineInfo.haveError) && machineInfo.dalyOut">
-                尊敬的用户,很荣幸您选择使用{{ instanceName }}! 您的序列号已经过期，为了更好的为您提供服务请尽快续期。我们的服务热线：400-991-5355
+                {{ $t('Setting.userChoose') }}{{ instanceName }}! {{ $t('Setting.serialNumberExpired') }}
               </p>
               <hr class="my-25">
-              <a-descriptions :title="machineInfo.haveError ? '未激活' : (!machineInfo.haveError) && machineInfo.dalyOut ? '已过期' : '已激活'"
+              <a-descriptions :title="machineInfo.haveError ? $t('Setting.NotActivated') : (!machineInfo.haveError) && machineInfo.dalyOut ? $t('Setting.HasExpired') : $t('Setting.Activated')"
                               :column="1">
-                <a-descriptions-item label="机器码">
+                <a-descriptions-item :label="$t('Setting.MachineCode')">
                   {{ machineInfo.mac }}
                 </a-descriptions-item>
-                <a-descriptions-item label="版本类型">
-                  {{ machineInfo.haveError || !machineInfo.object ? "无" : machineInfo.object.type }}
+                <a-descriptions-item :label="$t('Setting.VersionType')">
+                  {{ machineInfo.haveError || !machineInfo.object ? $t('Setting.None') : machineInfo.object.type }}
                 </a-descriptions-item>
-                <a-descriptions-item label="有效日期">
-                  {{ machineInfo.haveError || !machineInfo.object ? "无" : machineInfo.object.endDate }}
+                <a-descriptions-item :label="$t('Setting.ExpirationDate')">
+                  {{ machineInfo.haveError || !machineInfo.object ? $t('Setting.None') : machineInfo.object.endDate }}
                 </a-descriptions-item>
-                <a-descriptions-item label="序列号">
-                  {{ machineInfo.haveError || !machineInfo.object ? "无" : machineInfo.object.codes }}
+                <a-descriptions-item :label="$t('Setting.SerialNumber')">
+                  {{ machineInfo.haveError || !machineInfo.object ? $t('Setting.None') : machineInfo.object.codes }}
                 </a-descriptions-item>
-                <a-descriptions-item label="功能等级">
-                  <a-tag> {{ machineInfo.haveError || !machineInfo.object ? "无" : upperCase(machineInfo.object.level) }}</a-tag>
+                <a-descriptions-item :label="$t('Setting.FunctionalLevel')">
+                  <a-tag> {{ machineInfo.haveError || !machineInfo.object ? $t('Setting.None') : upperCase(machineInfo.object.level) }}</a-tag>
                 </a-descriptions-item>
-                <a-descriptions-item label="是否激活">
+                <a-descriptions-item :label="$t('Setting.WhetherItIsActiveOrNot')">
                   <a href="http://folib.com"
                      class="mx-5 px-5"
                      v-if="!machineInfo.haveError">
@@ -1111,7 +1111,7 @@
                     :bodyStyle="{ paddingTop: 0, paddingBottom: '16px' }"
                     :headStyle="{ paddingRight: 0, }">
               <template #title>
-                <h6 class="font-semibold m-0">激活序列号</h6>
+                <h6 class="font-semibold m-0">{{ $t('Setting.ActivateSequenceNum') }}</h6>
               </template>
               <a-button type="link"
                         slot="extra"
@@ -1128,7 +1128,7 @@
                         d="M11.3787 5.79289L3 14.1716V17H5.82842L14.2071 8.62132L11.3787 5.79289Z"
                         fill="#111827" />
                 </svg>
-                正式激活
+                {{ $t('Setting.OfficiallyActivated') }}
               </a-button>
               <a-button type="link"
                         slot="extra"
@@ -1145,17 +1145,17 @@
                         d="M11.3787 5.79289L3 14.1716V17H5.82842L14.2071 8.62132L11.3787 5.79289Z"
                         fill="#111827" />
                 </svg>
-                试用
+                {{ $t('Setting.TryItOut') }}
               </a-button>
               <p class="$color-muted">
-                你可以复制左侧机器码来获取FOLIB的序列号，并将序列号填入下方。正式激活请确保激活过程可以联网，如果需要开通网络策略，请将"license.folib.com"设置为白名单,如果想通过离线方式激活请联系我司技术服务
+                {{ $t('Setting.FOLIBSerialNumber') }}
               </p>
               <hr class="my-25">
               <a-form-item class="mb-10"
-                           label="序列号"
+                           :label="$t('Setting.SerialNumber')"
                            :colon="false">
                 <a-textarea :rows="8"
-                            placeholder="请粘贴本机器码的序列号"
+                            :placeholder="$t('Setting.machineCode')"
                             v-model="activateCode" />
               </a-form-item>
             </a-card>
@@ -1168,7 +1168,7 @@
 
       <!--单点登录配置-->
       <a-tab-pane key="8"
-                  tab="SSO配置">
+                  :tab="'SSO ' + $t('Setting.configuration')">
         <a-card class="header-solid block">
           <a-col :span="24"
                  :md="24"
@@ -1178,7 +1178,7 @@
               <a-col :span="24"
                      class="text-right">
                 <a-tooltip @click="()=>ssoAdd()">
-                  <template slot="title">新增</template>
+                  <template slot="title">{{ $t('Setting.Add') }}</template>
                   <a-icon type="plus-circle"
                           theme="filled"
                           class="cursor-pointer"
@@ -1186,7 +1186,7 @@
                 </a-tooltip>
               </a-col>
             </div>
-            <a-table :columns="ssoColumns"
+            <a-table :columns="i18nSsoColumns"
                      :data-source="ssoList"
                      :pagination="false"
                      row-key="clientId">
@@ -1195,10 +1195,10 @@
                         slot-scope="text, record"  >
                 <div class="col-action">
                   <a-popconfirm
-                    title="确定要删除吗？"
+                    :title="$t('Setting.SureDelete')"
                     okType="danger"
-                    ok-text="确定"
-                    cancel-text="取消"
+                    :ok-text="$t('Setting.BeSure')"
+                    :cancel-text="$t('Setting.Cancel')"
                     @confirm="ssoDelete(record)"
                   >
                     <a-button type="link" size="small">
@@ -1254,13 +1254,13 @@
         </a-card>
       </a-tab-pane>
       <a-tab-pane key="5"
-                  tab="元数据配置">
+                  :tab="$t('Setting.MetadataConfig')">
         <a-card class="header-solid block">
           <div class="mx-25 mb-50">
             <a-col :span="24"
                    class="text-right">
               <a-tooltip @click="metadataHandler(1)">
-                <template slot="title">新增</template>
+                <template slot="title">{{ $t('Setting.Add') }}</template>
                 <a-icon type="plus-circle"
                         theme="filled"
                         class="cursor-pointer"
@@ -1268,28 +1268,28 @@
               </a-tooltip>
             </a-col>
           </div>
-          <a-table :columns="metadataColumns"
+          <a-table :columns="i18nMetadataColumns"
                    :scroll="{ x: true }"
                    :data-source="metadataList"
                    :row-key="(r, i) => i.toString()">
             <div slot="type"
                  slot-scope="type">
-              <span v-for="(item, index) in metadataTypes"
+              <span v-for="(item, index) in i18nMetadataTypes"
                     :key="index">
                 <span v-if="type === item.value">{{ item.label }}</span>
               </span>
             </div>
             <div slot="viewShow"
                  slot-scope="viewShow">
-              {{ viewShow === 1 ? '展示' : '不展示' }}
+              {{ viewShow === 1 ? $t('Setting.Display') : $t('Setting.NotToShow') }}
             </div>
             <div slot="operation"
                  slot-scope="text, record">
               <div class="col-action">
-                <a-popconfirm title="确定要删除吗？"
+                <a-popconfirm :title="$t('Setting.SureDelete')"
                               okType="danger"
-                              ok-text="确定"
-                              cancel-text="取消"
+                              :ok-text="$t('Setting.BeSure')"
+                              :cancel-text="$t('Setting.Cancel')"
                               @confirm="metadataHandlerDelete(record)">
                   <a-button type="link"
                             size="small">
@@ -1330,18 +1330,18 @@
         </a-card>
       </a-tab-pane>
       <a-tab-pane key="6"
-                  tab="节点分发配置">
+                  :tab="$t('Setting.NodeDistributeConfig')">
         <a-tabs class="tabs-sliding"
             default-active-key="1"
             @change="tabChange($event)">
             <a-tab-pane key="1"
-              tab="内部节点">
+              :tab="$t('Setting.InternalNodes')">
               <a-card class="header-solid block">
                 <div class="mx-25 mb-50">
                   <a-col :span="24"
                         class="text-right">
                     <a-tooltip @click="artifactDispatchHandler(1)">
-                      <template slot="title">新增</template>
+                      <template slot="title">{{ $t('Setting.Add') }}</template>
                       <a-icon type="plus-circle"
                               theme="filled"
                               class="cursor-pointer"
@@ -1349,37 +1349,37 @@
                     </a-tooltip>
                   </a-col>
                 </div>
-                <a-table :columns="artifactDispatchColumns"
+                <a-table :columns="i18nArtifactDispatchColumns"
                         :scroll="{ x: true }"
                         :data-source="artifactDispatchList"
                         :row-key="(r, i) => i.toString()">
                   <div slot="isThisCluster"
                       slot-scope="text, record">
-                    {{ record.isThisCluster === true ? '是' : '否' }}
+                    {{ record.isThisCluster === true ? $t('Setting.Yes') : $t('Setting.No') }}
                   </div>
                   <div slot="wsClientOnline"
                       slot-scope="text, record">
-                    <span v-if="record.wsClientOnline && record.wsClientOnline === true" class="text-success">在线</span>
-                    <span v-else class="text-danger">离线</span>
-<!--                    {{ record.online && record.online === true ? '在线' : '离线' }}-->
+                    <span v-if="record.wsClientOnline && record.wsClientOnline === true" class="text-success">{{ $t('Setting.Online') }}</span>
+                    <span v-else class="text-danger">{{ $t('Setting.Offline') }}</span>
+<!--                    {{ record.online && record.online === true ? $t('Setting.Online') : $t('Setting.Offline') }}-->
                   </div>
                   <div slot="autoRegister"
                       slot-scope="text, record">
-                    {{ record.autoRegister && record.autoRegister === true ? '自动' : '手动' }}
+                    {{ record.autoRegister && record.autoRegister === true ? $t('Setting.Auto') : $t('Setting.Manual') }}
                   </div>
                   <div slot="kbps"
                       slot-scope="text, record">
-                    {{ record.kbps && record.kbps > 0 ? record.kbps+' KB/s' : '不限速' }}
+                    {{ record.kbps && record.kbps > 0 ? record.kbps+' KB/s' : $t('Setting.NoSpeedLimit') }}
                   </div>
 
                   <div slot="operation"
                       slot-scope="text, record">
 <!--                    <div class="col-action" v-if="!record.autoRegister">-->
                     <div class="col-action">
-                      <a-popconfirm title="确定要删除吗？"
+                      <a-popconfirm :title="$t('Setting.SureDelete')"
                                     okType="danger"
-                                    ok-text="确定"
-                                    cancel-text="取消"
+                                    :ok-text="$t('Setting.BeSure')"
+                                    :cancel-text="$t('Setting.Cancel')"
                                     @confirm="artifactDispatchHandlerDelete(record)">
                         <a-button type="link"
                                   size="small">
@@ -1420,7 +1420,7 @@
               </a-card>
             </a-tab-pane>
             <a-tab-pane key="2"
-              tab="外部节点">
+              :tab="$t('Setting.ExternalNodes')">
               <ExternalNode/>
             </a-tab-pane>
         </a-tabs>
@@ -1432,10 +1432,10 @@
 
     </a-tabs>
     <a-modal v-model="showMetadataHandler"
-             :title="handlerMetadataType === 1 ? '新增元数据' : '修改元数据'"
+             :title="handlerMetadataType === 1 ? $t('Setting.AddMetadata') : $t('Setting.ModifyingMetadata')"
              :maskClosable="false"
-             cancelText="取消"
-             okText="确定"
+             :cancelText="$t('Setting.Cancel')"
+             :okText="$t('Setting.BeSure')"
              @cancel="metadataHandlerCancel()"
              @ok="metadataHandlerConfirm()"
              centered>
@@ -1447,24 +1447,24 @@
         <a-row :gutter="[24]">
           <a-col :span="24">
             <a-form-model-item class="mb-10"
-                               label="元数据KEY"
+                               :label="$t('Setting.MetadataKEY')"
                                :colon="false"
                                prop="key">
               <a-input :disabled="handlerMetadataType !== 1"
-                       placeholder="请输入元数据KEY"
+                       :placeholder="$t('Setting.EnterMetadataKEY')"
                        v-model="metadataForm.key" />
             </a-form-model-item>
           </a-col>
           <a-col :span="24">
             <a-form-model-item class="mb-10"
-                               label="元数据类型"
+                               :label="$t('Setting.MetadataTypes')"
                                :colon="false"
                                prop="type">
               <a-select v-model="metadataForm.type"
-                        placeholder="请选择元数据类型"
+                        :placeholder="$t('Setting.SelectMetadataType')"
                         show-search
                         optionFilterProp="label">
-                <a-select-option v-for="(item, index) in metadataTypes"
+                <a-select-option v-for="(item, index) in i18nMetadataTypes"
                                  :label="item.label"
                                  :key="index"
                                  :value="item.value">
@@ -1475,7 +1475,7 @@
           </a-col>
           <a-col :span="24">
             <a-form-model-item class="mb-10"
-                               label="是否展示"
+                               :label="$t('Setting.WhetherToDisplay')"
                                :colon="false"
                                prop="viewShow">
               <a-switch v-model="metadataForm.viewShow" />
@@ -1485,25 +1485,25 @@
       </a-form-model>
     </a-modal>
     <a-modal v-model="showVulnerabilitiesModal"
-             :title="vulnerabilitiesType === 1 ? '添加白名单' : '添加黑名单'"
+             :title="vulnerabilitiesType === 1 ? $t('Setting.AddWhitelist') : $t('Setting.AddBlacklist')"
              :maskClosable="false"
-             cancelText="取消"
-             okText="确定"
+             :cancelText="$t('Setting.Cancel')"
+             :okText="$t('Setting.BeSure')"
              @cancel="vulnerabilitiesModalCancel()"
              @ok="addVulnerabilities()"
              centered>
       <a-input v-model="uuid"
-               placeholder="请输入漏洞编号" />
+               :placeholder="$t('Setting.EnterVulnerabilityNum')" />
     </a-modal>
 
     <AddPackageName v-if="showPackageNameModal" :modelVisible="showPackageNameModal"
       @packageNameHandlerCancel="packageNameModalCancel" @packageNameRefresh="packageNameRefresh" />
 
     <a-modal v-model="showArtifactDispatchHandler"
-             :title="handlerArtifactDispatchType === 1 ? '新增分发配置' : '修改分发配置'"
+             :title="handlerArtifactDispatchType === 1 ? $t('Setting.AddDistributeConfig') : $t('Setting.ModifyDistributeConfig')"
              :maskClosable="false"
-             cancelText="取消"
-             okText="确定"
+             :cancelText="$t('Setting.Cancel')"
+             :okText="$t('Setting.BeSure')"
              @cancel="artifactDispatchHandlerCancel()"
              @ok="artifactDispatchHandlerConfirm()"
              centered>
@@ -1515,57 +1515,57 @@
         <a-row :gutter="[24]">
           <a-col :span="24">
             <a-form-model-item class="mb-10"
-                               label="集群节点英文名"
+                               :label="$t('Setting.ClusterNodeEnglish')"
                                :colon="false"
                                prop="clusterEnName">
               <a-input :disabled="handlerArtifactDispatchType !== 1"
-                       placeholder="请输入集群节点英文名"
+                       :placeholder="$t('Setting.EnterClusterNodeEnglish')"
                        v-model="artifactDispatchForm.clusterEnName" />
             </a-form-model-item>
           </a-col>
           <a-col :span="24">
             <a-form-model-item class="mb-10"
-                               label="集群中文名"
+                               :label="$t('Setting.ClusterChineseName')"
                                :colon="false"
                                prop="clusterCnName">
-              <a-input placeholder="请输入集群中文名"
+              <a-input :placeholder="$t('Setting.EnterClusterChinese')"
                        v-model="artifactDispatchForm.clusterCnName" />
             </a-form-model-item>
           </a-col>
           <a-col :span="24">
             <a-form-model-item class="mb-10"
-                               label="集群节点地址"
+                               :label="$t('Setting.ClusterNodeAddress')"
                                :colon="false"
                                prop="clusterNodeHost">
-              <a-input placeholder="请输入集群节点地址"
+              <a-input :placeholder="$t('Setting.EnterClusterNodeAddress')"
                        v-model="artifactDispatchForm.clusterNodeHost" />
             </a-form-model-item>
           </a-col>
           <a-col :span="24">
             <a-form-model-item class="mb-10"
-                               label="集群描述"
+                               :label="$t('Setting.ClusterDescribe')"
                                :colon="false"
                                prop="clusterNodeDesc">
-              <a-input placeholder="请输入描述"
+              <a-input :placeholder="$t('Setting.EnterDescribe')"
                        v-model="artifactDispatchForm.clusterNodeDesc" />
             </a-form-model-item>
           </a-col>
           <a-col :span="24">
             <a-form-model-item class="mb-10"
-                               label="节点传输限速（KB/s）"
+                               :label="$t('Setting.NodeTransmissionRateLimit')"
                                :colon="false"
                                prop="clusterNodeDesc">
-              <a-input placeholder="请输入节点传输限速（KB/s）"
+              <a-input :placeholder="$t('Setting.EnterTransmissionLimitOfNode')"
                        v-model="artifactDispatchForm.kbps" />
             </a-form-model-item>
           </a-col>
           <a-col :span="24">
             <a-form-model-item class="mb-10"
-                               label="分发类型"
+                               :label="$t('Setting.distributeType')"
                                :colon="false"
                                prop="dispatchType">
               <a-select v-model="artifactDispatchForm.dispatchType"
-                        placeholder="请选择分发类型"
+                        :placeholder="$t('Setting.SelectDistributeType')"
                         show-search
                         optionFilterProp="label">
                 <a-select-option v-for="(item, index) in artifactDispatchTypes"
@@ -1579,7 +1579,7 @@
           </a-col>
           <a-col :span="24">
             <a-form-model-item class="mb-10"
-                               label="本集群"
+                               :label="$t('Setting.LocalCluster')"
                                :colon="false"
                                prop="isThisCluster">
               <a-switch v-model="artifactDispatchForm.isThisCluster" />
@@ -1592,132 +1592,132 @@
     <!--新增/编辑sso 对话框-->
     <a-modal v-model="ssoDialogShow"
              :title="ssoActionName"
-             ok-text="保存"
-             cancel-text="取消"
+             :ok-text="$t('Setting.Save')"
+             :cancel-text="$t('Setting.Cancel')"
              @ok="handleOk"
              @cancel="handleCancel"
              width="60%">
       <a-form :form="ssoform"
               layout="vertical">
-             
+
         <a-form-item >
           <span slot="label">
             ClientId&nbsp;
-            <a-tooltip title="客户端唯一标识,客户端ID" class="info-message">
+            <a-tooltip :title="$t('Setting.ClientUniqueIdentifier')+$t('Setting.ClientID')" class="info-message">
               <a-icon type="question-circle-o" />
             </a-tooltip>
           </span>
-          <a-input v-decorator="['clientId', { rules: [{ required: true, message: '请输入客户端ID' }] }]"
-                   placeholder="请输入客户端ID"  :disabled="ssoActionName.includes('编辑')"/>
+          <a-input v-decorator="['clientId', { rules: [{ required: true, message: $t('Setting.EnterClientID') }] }]"
+                   :placeholder="$t('Setting.EnterClientID')"  :disabled="ssoActionName.includes($t('Setting.Edit'))"/>
         </a-form-item>
         <a-form-item >
           <span slot="label">
             ClientSecret&nbsp;
-            <a-tooltip title="客户端密钥" class="info-message">
+            <a-tooltip :title="$t('Setting.ClientKey')" class="info-message">
               <a-icon type="question-circle-o" />
             </a-tooltip>
           </span>
-          <a-input-password v-decorator="['clientSecret', { rules: [{ required: false, message: '请输入客户端密钥' }] }]"
-                   placeholder="请输入客户端密钥"/>
+          <a-input-password v-decorator="['clientSecret', { rules: [{ required: false, message: $t('Setting.EnterClientKey') }] }]"
+                   :placeholder="$t('Setting.EnterClientKey')"/>
         </a-form-item>
         <a-form-item >
           <span slot="label">
-            客户端名称&nbsp;
-            <a-tooltip title="自定义客户端名称，用于区别多个单点登录配置" class="info-message">
+            {{ $t('Setting.ClientName') }}&nbsp;
+            <a-tooltip :title="$t('Setting.CustomClientName')" class="info-message">
               <a-icon type="question-circle-o" />
             </a-tooltip>
           </span>
-          <a-input v-decorator="['clientName', { rules: [{ required: true, message: '请输入客户端名称' }] }]"
-                   placeholder="请输入客户端名称"  />
+          <a-input v-decorator="['clientName', { rules: [{ required: true, message: $t('Setting.EnterClientName') }] }]"
+                   :placeholder="$t('Setting.EnterClientName')"  />
         </a-form-item>
 
-        
-        <a-form-item >
-          <span slot="label">
-            登录地址&nbsp;
-            <a-tooltip title="单点登录系统的登录地址，由第三方登录系统提供" class="info-message">
-              <a-icon type="question-circle-o" />
-            </a-tooltip>
-          </span>
-          <a-input v-decorator="['ssoPath', { rules: [{ required: true, message: '请输入登录页面地址' }] }]"
-                   placeholder="请输入登录页面地址" />
-        </a-form-item>
 
         <a-form-item >
           <span slot="label">
-            登录重定向地址&nbsp;
-            <a-tooltip title="登录后的重定向地址" class="info-message">
+            {{ $t('Setting.LoginAddress') }}&nbsp;
+            <a-tooltip :title="$t('Setting.ThirdPartySystemProvideLogin')" class="info-message">
               <a-icon type="question-circle-o" />
             </a-tooltip>
           </span>
-          <a-input v-decorator="['redirectPath', { rules: [{ required: true, message: '请输入登录后的重定向地址' }] }]"
-                   placeholder="请输入登录后的重定向地址" />
+          <a-input v-decorator="['ssoPath', { rules: [{ required: true, message: $t('Setting.EnterLoginPageAddress') }] }]"
+                   :placeholder="$t('Setting.EnterLoginPageAddress')" />
         </a-form-item>
 
         <a-form-item >
           <span slot="label">
-            登出地址&nbsp;
-            <a-tooltip title="单点登录系统的登出地址，由第三方登录系统提供，用于清除服务端的会话" class="info-message">
+            {{ $t('Setting.LoginRedirectAddress') }}&nbsp;
+            <a-tooltip :title="$t('Setting.RedirectAddressAfterLogin')" class="info-message">
               <a-icon type="question-circle-o" />
             </a-tooltip>
           </span>
-          <a-input v-decorator="['loginOutUrl', { rules: [{ required: true, message: '请输入登出地址' }] }]"
-                   placeholder="请输入登出地址" />
+          <a-input v-decorator="['redirectPath', { rules: [{ required: true, message: $t('Setting.EnterRedirectAddress') }] }]"
+                   :placeholder="$t('Setting.EnterRedirectAddress')" />
         </a-form-item>
 
         <a-form-item >
           <span slot="label">
-            登出重定向URL&nbsp;
-            <a-tooltip title="登出后的重定向地址" class="info-message">
+            {{ $t('Setting.LogoutAddress') }}&nbsp;
+            <a-tooltip :title="$t('Setting.ClearSession')" class="info-message">
               <a-icon type="question-circle-o" />
             </a-tooltip>
           </span>
-          <a-input v-decorator="['loginOutRedPath', { rules: [{ required: true, message: '请输入登出后的重定向URL' }] }]"
-                   placeholder="请输入登出后的重定向URL" />
+          <a-input v-decorator="['loginOutUrl', { rules: [{ required: true, message: $t('Setting.EnterYourLogoutAddress') }] }]"
+                   :placeholder="$t('Setting.EnterYourLogoutAddress')" />
         </a-form-item>
 
         <a-form-item >
           <span slot="label">
-            AccessToken地址&nbsp;
-            <a-tooltip title="获取AccessToken的接口地址" class="info-message">
+            {{ $t('Setting.LogOutRedirectURL') }}&nbsp;
+            <a-tooltip :title="$t('Setting.RedirectURLAfterLogin')" class="info-message">
               <a-icon type="question-circle-o" />
             </a-tooltip>
           </span>
-          <a-input v-decorator="['accessTokenUrl', { rules: [{ required: true, message: '请输入AccessToken地址' }] }]"
-                   placeholder="请输入AccessToken地址" />
+          <a-input v-decorator="['loginOutRedPath', { rules: [{ required: true, message: $t('Setting.EnterRedirectURL') }] }]"
+                   :placeholder="$t('Setting.EnterRedirectURL')" />
         </a-form-item>
 
         <a-form-item >
           <span slot="label">
-            用户信息地址&nbsp;
-            <a-tooltip title="获取用户信息的接口地址" class="info-message">
+            AccessToken {{ $t('Setting.Address') }}&nbsp;
+            <a-tooltip :title="$t('Setting.GetInterfaceAddress')" class="info-message">
               <a-icon type="question-circle-o" />
             </a-tooltip>
           </span>
-          <a-input v-decorator="['userInfoUrl', { rules: [{ required: false, message: '请输入用户信息地址' }] }]"
-                   placeholder="请输入用户信息地址" />
+          <a-input v-decorator="['accessTokenUrl', { rules: [{ required: true, message: $t('Setting.EnterAccessTokenAddress') }] }]"
+                   :placeholder="$t('Setting.EnterAccessTokenAddress')" />
         </a-form-item>
 
         <a-form-item >
           <span slot="label">
-            用户名称字段&nbsp;
-            <a-tooltip title="设置该字段后，将使用该字段所对应的值作为系统的用户名" class="info-message">
+            {{ $t('Setting.UserInfoAddress') }}&nbsp;
+            <a-tooltip :title="$t('Setting.EnterUserInfoAddress')" class="info-message">
               <a-icon type="question-circle-o" />
             </a-tooltip>
           </span>
-          <a-input v-decorator="['username', { rules: [{ required: false, message: '请输入用户名称字段' }] }]"
-                   placeholder="请输入用户名称字段" />
+          <a-input v-decorator="['userInfoUrl', { rules: [{ required: false, message: $t('Setting.EnterInformationAddress') }] }]"
+                   :placeholder="$t('Setting.EnterInformationAddress')" />
         </a-form-item>
 
         <a-form-item >
           <span slot="label">
-            配置说明&nbsp;
-            <a-tooltip title="该单点登录配置自定义的描述信息" class="info-message">
+            {{ $t('Setting.UserNameField') }}&nbsp;
+            <a-tooltip :title="$t('Setting.setUserNameField')" class="info-message">
               <a-icon type="question-circle-o" />
             </a-tooltip>
           </span>
-          <a-input v-decorator="['desc', { rules: [{ required: false, message: '请输入配置说明' }] }]"
-                   placeholder="请输入配置说明" />
+          <a-input v-decorator="['username', { rules: [{ required: false, message: $t('Setting.EnterUserNameField') }] }]"
+                   :placeholder="$t('Setting.EnterUserNameField')" />
+        </a-form-item>
+
+        <a-form-item >
+          <span slot="label">
+            {{ $t('Setting.ConfigInstructions') }}&nbsp;
+            <a-tooltip :title="$t('Setting.SSOConfigCustomDescribeInfo')" class="info-message">
+              <a-icon type="question-circle-o" />
+            </a-tooltip>
+          </span>
+          <a-input v-decorator="['desc', { rules: [{ required: false, message: $t('Setting.EnterConfigInstructions') }] }]"
+                   :placeholder="$t('Setting.EnterConfigInstructions')" />
         </a-form-item>
 
       </a-form>
@@ -1778,6 +1778,53 @@ export default {
     AddPackageName
   },
   data() {
+    const checkClusterEnName = (rule, value, callback) => {
+      if (value) {
+        if(value.length < 1 || value.length > 60) {
+          callback(new Error(this.$t('Setting.ClusterEnNameLengthLimit')))
+        } else {
+          callback()
+        }
+      } else if (!value) {
+        callback(new Error(this.$t('Setting.EnterClusterNodeEnglish')))
+      } else {
+        callback()
+      }
+    }
+    const checkKey = (rule, value, callback) => {
+      if (value) {
+        if(value.length < 1 || value.length > 30) {
+          callback(new Error(this.$t('Setting.CheckKey')))
+        } else {
+          callback()
+        }
+      } else if (!value) {
+        callback(new Error(this.$t('Setting.EnterMetadataKEY')))
+      } else {
+        callback()
+      }
+    }
+    const checkClusterNodeHost = (rule, value, callback) => {
+      if (!value) {
+        callback(new Error(this.$t('Setting.enterNodeUrl')))
+      } else {
+        callback()
+      }
+    }
+    const checkDispatchType = (rule, value, callback) => {
+      if (!value) {
+        callback(new Error(this.$t('Setting.CheckDispatchType')))
+      } else {
+        callback()
+      }
+    }
+    const checkType = (rule, value, callback) => {
+      if (!value) {
+        callback(new Error(this.$t('Setting.SelectMetadataType')))
+      } else {
+        callback()
+      }
+    }
     return {
       step: 0,
       serverSettings: {
@@ -1842,30 +1889,35 @@ export default {
       artifactDispatchColumns: [
         {
           title: '集群节点英文名',
+          i18nKey: 'Setting.ClusterNodeEnglish',
           dataIndex: 'clusterEnName',
           key: 'clusterEnName',
           width: 100
         },
         {
           title: '集群中文名',
+          i18nKey: 'Setting.ClusterChineseName',
           dataIndex: 'clusterCnName',
           key: 'clusterCnName',
           width: 100
         },
         {
           title: '节点',
+          i18nKey: 'Setting.Node',
           dataIndex: 'clusterNodeHost',
           key: 'clusterNodeHost',
           width: 200
         },
         {
           title: '描述',
+          i18nKey: 'Setting.describe',
           dataIndex: 'clusterNodeDesc',
           key: 'clusterNodeDesc',
           width: 100
         },
         {
           title: '节点传输限速',
+          i18nKey: 'Setting.NodeTransmissionRateLimit',
           dataIndex: 'kbps',
           key: 'kbps',
           width: 80,
@@ -1873,12 +1925,14 @@ export default {
         },
         {
           title: '分发方式',
+          i18nKey: 'Setting.distributeMethod',
           dataIndex: 'dispatchType',
           key: 'dispatchType',
           width: 80
         },
         {
           title: '本集群',
+          i18nKey: 'Setting.LocalCluster',
           dataIndex: 'isThisCluster',
           key: 'isThisCluster',
           width: 80,
@@ -1886,6 +1940,7 @@ export default {
         },
         {
           title: '在线状态',
+          i18nKey: 'Setting.OnlineStatus',
           dataIndex: 'wsClientOnline',
           key: 'wsClientOnline',
           width: 80,
@@ -1893,6 +1948,7 @@ export default {
         },
         {
           title: '添加方式',
+          i18nKey: 'Setting.AddMethod',
           dataIndex: 'autoRegister',
           key: 'autoRegister',
           width: 80,
@@ -1900,6 +1956,7 @@ export default {
         },
         {
           title: '操作',
+          i18nKey: 'Setting.Operation',
           dataIndex: 'operation',
           width: 80,
           scopedSlots: { customRender: 'operation' }
@@ -1908,12 +1965,14 @@ export default {
       metadataColumns: [
         {
           title: '元数据KEY',
+          i18nKey: 'Setting.MetadataKEY',
           dataIndex: 'key',
           key: 'key',
           width: 200
         },
         {
           title: '元数据类型',
+          i18nKey: 'Setting.MetadataTypes',
           dataIndex: 'type',
           key: 'type',
           width: 200,
@@ -1921,6 +1980,7 @@ export default {
         },
         {
           title: '是否展示',
+          i18nKey: 'Setting.WhetherToDisplay',
           dataIndex: 'viewShow',
           key: 'viewShow',
           width: 200,
@@ -1928,6 +1988,7 @@ export default {
         },
         {
           title: '操作',
+          i18nKey: 'Setting.Operation',
           dataIndex: 'operation',
           width: 80,
           scopedSlots: { customRender: 'operation' }
@@ -1954,22 +2015,22 @@ export default {
       },
       artifactDispatchRules: {
         clusterEnName: [
-          { required: true, message: '请输入集群节点英文名', trigger: 'blur' },
-          { min: 1, max: 60, message: '长度在 1 到 60 个字符', trigger: 'blur' }
+          { required: true, trigger: 'blur', validator: checkClusterEnName },
         ],
         clusterNodeHost: [
-          { required: true, message: '请输入节点url', trigger: 'blur' }
+          { required: true, trigger: 'blur', validator: checkClusterNodeHost }
         ],
         dispatchType: [
-          { required: true, message: '请选择分发方式', trigger: 'blur' }
+          { required: true, trigger: 'blur', validator: checkDispatchType }
         ]
       },
       metadataRules: {
         key: [
-          { required: true, message: '请输入元数据KEY', trigger: 'blur' },
-          { min: 1, max: 30, message: '长度在 1 到 30 个字符', trigger: 'blur' }
+          { required: true, trigger: 'blur', validator: checkKey },
         ],
-        type: [{ required: true, message: '请选择元数据类型', trigger: 'blur' }]
+        type: [
+            { required: true, trigger: 'blur', validator: checkType }
+        ]
       },
       artifactDispatchTypes: [
         {
@@ -1984,14 +2045,17 @@ export default {
       metadataTypes: [
         {
           label: '数字',
+          i18nKey: 'Setting.Number',
           value: 'NUMERICAL'
         },
         {
           label: '字符串',
+          i18nKey: 'Setting.String',
           value: 'STRING'
         },
         {
           label: '文本',
+          i18nKey: 'Setting.Text',
           value: 'TEXT'
         },
         {
@@ -2009,25 +2073,29 @@ export default {
       showArtifactDispatchHandler: false,
       ssoform: this.$form.createForm(this, { name: 'ssoform' }),
       ssoColumns: [
-      
+
         {
           title: '客户端ID',
+          i18nKey: 'Setting.ClientID',
           dataIndex: 'clientId',
           key: 'clientId'
         },
 
         {
           title: '客户端名称',
+          i18nKey: 'Setting.ClientName',
           dataIndex: 'clientName',
           key: 'clientName'
         },
         {
           title: '登录地址',
+          i18nKey: 'Setting.LoginAddress',
           key: 'ssoPath',
           dataIndex: 'ssoPath'
         },
         {
           title: '重定向地址',
+          i18nKey: 'Setting.RedirectAddress',
           dataIndex: 'redirectPath',
           key: 'redirectPath'
         },
@@ -2041,14 +2109,16 @@ export default {
         //   title: '登出重定向地址',
         //   key: 'loginOutRedPath',
         //   dataIndex: 'loginOutRedPath'
-        // },     
+        // },
         {
           title: '描述',
+          i18nKey: 'Setting.describe',
           key: 'desc',
           dataIndex: 'desc'
         },
         {
           title: '操作',
+          i18nKey: 'Setting.Operation',
           dataIndex: 'operation',
           scopedSlots: { customRender: 'operation' }
         }
@@ -2060,7 +2130,40 @@ export default {
       ssoList: []
     }
   },
-  computed: {},
+  computed: {
+    i18nArtifactDispatchColumns() {
+      return this.artifactDispatchColumns.map(column => {
+        if (column.i18nKey) {
+          column.title = this.$t(column.i18nKey);
+        }
+        return column;
+      })
+    },
+    i18nMetadataColumns() {
+      return this.metadataColumns.map(column => {
+        if (column.i18nKey) {
+          column.title = this.$t(column.i18nKey);
+        }
+        return column;
+      })
+    },
+    i18nMetadataTypes() {
+      return this.metadataTypes.map(column => {
+        if (column.i18nKey) {
+          column.label = this.$t(column.i18nKey);
+        }
+        return column;
+      })
+    },
+    i18nSsoColumns() {
+      return this.ssoColumns.map(column => {
+        if (column.i18nKey) {
+          column.title = this.$t(column.i18nKey);
+        }
+        return column;
+      })
+    },
+  },
   created() {
     this.getServerSettings()
     this.getLdap()
@@ -2116,7 +2219,7 @@ export default {
       postServerSettings(this.serverSettings).then(res => {
         setTimeout(() => {
           this.$notification.success({
-            message: '保存成功'
+            message: this.$t('Setting.SavedSuccess')
           })
         }, 100)
       })
@@ -2141,7 +2244,7 @@ export default {
       putLdap(this.ldap).then(res => {
         setTimeout(() => {
           this.$notification.success({
-            message: '保存成功'
+            message: this.$t('Setting.SavedSuccess')
           })
         }, 100)
       })
@@ -2183,7 +2286,7 @@ export default {
       // console.log(url)
       setTimeout(() => {
         this.$notification.success({
-          message: '复制成功'
+          message: this.$t('Setting.CopySuccess')
         })
       }, 100)
     },
@@ -2193,7 +2296,7 @@ export default {
           if (res.rel) {
             setTimeout(() => {
               this.$notification.success({
-                message: '激活成功'
+                message: this.$t('Setting.SuccessfulActivation')
               })
               this.getMachineCode()
             }, 100)
@@ -2201,7 +2304,7 @@ export default {
             setTimeout(() => {
               this.$notification.open({
                 class: 'ant-notification-warning',
-                message: '激活失败',
+                message: this.$t('Setting.ActivationFailed'),
                 description: res.message
               })
             }, 100)
@@ -2211,8 +2314,8 @@ export default {
         setTimeout(() => {
           this.$notification.open({
             class: 'ant-notification-warning',
-            message: '无法激活',
-            description: '没有输入序列号'
+            message: this.$t('Setting.UnableToActivate'),
+            description: this.$t('Setting.NoSequenceNumberWasEntered'),
           })
         }, 100)
       }
@@ -2232,7 +2335,7 @@ export default {
     removeWhite(uuid) {
       removeVulnerabilitiesWhite({ white: uuid })
         .then(res => {
-          this.successMsg(uuid + '从白名单移除成功')
+          this.successMsg(uuid + this.$t('Setting.RemovedWhitelistSuccess'))
         })
         .finally(() => {
           this.getVulnerabilities(1)
@@ -2241,7 +2344,7 @@ export default {
     removeBlack(uuid) {
       removeVulnerabilitiesBlack({ black: uuid })
         .then(res => {
-          this.successMsg(uuid + '从黑名单移除成功')
+          this.successMsg(uuid + this.$t('Setting.RemovedBlacklistSuccess'))
         })
         .finally(() => {
           this.getVulnerabilities(2)
@@ -2250,7 +2353,7 @@ export default {
     addWhite(uuid) {
       addVulnerabilitiesWhite({ white: uuid })
         .then(res => {
-          this.successMsg(uuid + '添加到白名单成功')
+          this.successMsg(uuid + this.$t('Setting.AddWhitelistSuccess'))
         })
         .catch(err => {
           this.$notification['error']({
@@ -2267,7 +2370,7 @@ export default {
     addBlack(uuid) {
       addVulnerabilitiesBlack({ black: uuid })
         .then(res => {
-          this.successMsg(uuid + '添加到黑名单成功')
+          this.successMsg(uuid + this.$t('Setting.AddBlacklistSuccess'))
         })
         .catch(err => {
           this.$notification['error']({
@@ -2287,7 +2390,7 @@ export default {
     addVulnerabilities() {
       if (!this.uuid) {
         this.$notification['warning']({
-          message: '请输入漏洞编号',
+          message: this.$t('Setting.EnterVulnerabilityNum'),
           description: ''
         })
         return
@@ -2300,7 +2403,7 @@ export default {
     },
     successMsg(message) {
       if (!message) {
-        message = '操作成功'
+        message = this.$t('Setting.OperationSuccessful')
       }
       this.$notification['success']({
         message: message,
@@ -2351,7 +2454,7 @@ export default {
         if (!err) {
           saveOrUpdateVulnerabilityNotify(values)
             .then(res => {
-              this.successMsg('通知设置保存成功')
+              this.successMsg(this.$t('Setting.NotificationSetSavedSuccess'))
               this.getSecurityPolicy()
             })
             .finally(() => {})
@@ -2380,7 +2483,7 @@ export default {
         if (!err) {
           securityPolicyBlock(values)
             .then(res => {
-              this.successMsg('阻断设置保存成功')
+              this.successMsg(this.$t('Setting.BlockingSetSavedSuccess'))
               this.getSecurityPolicy()
             })
             .finally(() => {})
@@ -2457,7 +2560,7 @@ export default {
             )
             if (flag) {
               this.$notification['warning']({
-                message: '集群分发配置已存在',
+                message: this.$t('Setting.ClusterDistributeConfigExists'),
                 description: ''
               })
               return false
@@ -2465,11 +2568,11 @@ export default {
           }
           globalSettingArtifactDispatchConfig(data)
             .then(res => {
-              let prefix = '新增'
+              let prefix = this.$t('Setting.Add')
               if (this.handlerArtifactDispatchType === 2) {
-                prefix = '修改'
+                prefix = this.$t('Setting.Edit')
               }
-              this.successMsg(prefix + '分发配置成功')
+              this.successMsg(prefix + this.$t('Setting.distributeConfigSuccessful'))
               this.artifactDispatchFormRest()
               this.showArtifactDispatchHandler = false
               this.getArtifactDispatchConfig()
@@ -2490,7 +2593,7 @@ export default {
             )
             if (flag) {
               this.$notification['warning']({
-                message: '元数据KEY已存在',
+                message: this.$t('Setting.MetadataKEYyExists'),
                 description: ''
               })
               return false
@@ -2503,11 +2606,11 @@ export default {
           }
           globalSettingAddOrUpdateMetadata(data)
             .then(res => {
-              let prefix = '新增'
+              let prefix = this.$t('Setting.Add')
               if (this.handlerMetadataType === 2) {
-                prefix = '修改'
+                prefix = this.$t('Setting.Edit')
               }
-              this.successMsg(prefix + '元数据配置成功')
+              this.successMsg(prefix + this.$t('Setting.metadataConfigSuccess'))
               this.metadataFormReset()
               this.showMetadataHandler = false
               this.getMetadataConfiguration()
@@ -2521,7 +2624,7 @@ export default {
     artifactDispatchHandlerDelete(data) {
       globalSettingDelArtifactDispatchConfig(data.clusterEnName)
         .then(res => {
-          this.successMsg('删除分发配置成功')
+          this.successMsg(this.$t('Setting.DeleteDistributeConfigSuccess'))
         })
         .finally(() => {
           this.getArtifactDispatchConfig()
@@ -2530,7 +2633,7 @@ export default {
     metadataHandlerDelete(data) {
       globalSettingDeleteMetadata(data)
         .then(res => {
-          this.successMsg('删除元数据成功')
+          this.successMsg(this.$t('Setting.DeletingMetadataWasSuccessful'))
         })
         .finally(() => {
           this.getMetadataConfiguration()
@@ -2564,7 +2667,7 @@ export default {
     },
     packageNameModalShow() {
       this.showPackageNameModal = true
-    }, 
+    },
     allowedOriginsChange() {
       let allowedOrigins = this.serverSettings.corsConfigurationForm
         .allowedOrigins
@@ -2587,12 +2690,12 @@ export default {
      * 编辑单点登录客户端
      */
     ssoEdit(val) {
-      this.ssoActionName = '编辑客户端'
+      this.ssoActionName = this.$t('Setting.EditClient')
       this.$nextTick(() => {
-        this.ssoform.setFieldsValue({ ...val}) // loadsh的pick方     
+        this.ssoform.setFieldsValue({ ...val}) // loadsh的pick方
       })
       this.ssoDialogShow = true
-     
+
     },
     /**
      * 删除单点登录客户端
@@ -2600,9 +2703,9 @@ export default {
     ssoDelete(val) {
       deleteClient({clientId:val.clientId}).then(()=>{
         this.$notification.success({
-              message: "提示",
-              description: "删除客户端成功",
-            })   
+              message: this.$t('Setting.Tips'),
+              description: this.$t('Setting.DeleteClientSuccess'),
+            })
             this.getSsoList()
       }).catch((err) => {
         this.$notification["error"]({
@@ -2614,8 +2717,8 @@ export default {
      * 新增单点登录客户端
      */
     ssoAdd() {
-      this.ssoActionName = '新增客户端'
-      this.ssoObj = {    
+      this.ssoActionName = this.$t('Setting.AddNewClient')
+      this.ssoObj = {
         clientId: '',
         clientSecret: '',
         redirectPath: '',
@@ -2630,41 +2733,41 @@ export default {
         username: '',
       }
       this.$nextTick(() => {
-        this.ssoform.setFieldsValue({...this.ssoObj}) 
+        this.ssoform.setFieldsValue({...this.ssoObj})
         this.ssoDialogShow = true
       })
-     
+
     },
     /**
      * 提交客户端信息
      */
     handleOk() {
-      
+
       // 校验
       this.ssoform.validateFields((err,fieldsValue) => {
-       
+
         if (!err) {
           // 新增逻辑
-          if(this.ssoActionName.includes("新增")){
-          addSsoClient(fieldsValue).then(()=>{   
+          if(this.ssoActionName.includes(this.$t('Setting.Add'))){
+          addSsoClient(fieldsValue).then(()=>{
             this.$notification.success({
-              message: "提示",
-              description: "新增客户端成功",
-            })   
-            this.ssoDialogShow=false     
+              message: this.$t('Setting.Tips'),
+              description: this.$t('Setting.AddedClientSuccess'),
+            })
+            this.ssoDialogShow=false
             this.getSsoList()
           }).catch((err) => {
             this.$notification["error"]({
               message: err.response.data.error,
             })
-          })       
+          })
         }else{
-          updateSsoClient(fieldsValue).then(()=>{   
+          updateSsoClient(fieldsValue).then(()=>{
             this.$notification.success({
-              message: "提示",
-              description: "更新客户端成功",
-            })   
-            this.ssoDialogShow=false     
+              message: this.$t('Setting.Tips'),
+              description: this.$t('Setting.UpdateClientSuccess'),
+            })
+            this.ssoDialogShow=false
             this.getSsoList()
           }).catch((err) => {
             this.$notification["error"]({
