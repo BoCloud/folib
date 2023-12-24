@@ -62,7 +62,7 @@ public class ChecksumCacheManager
         final boolean containsChecksum = cachedChecksums.containsKey(artifactPath);
         if (containsChecksum)
         {
-            logger.info("Cache contains artifact path '{}'.", artifactPath);
+            logger.debug("Cache contains artifact path '{}'.", artifactPath);
         }
 
         return containsChecksum;
@@ -80,7 +80,7 @@ public class ChecksumCacheManager
         final String checksum = artifactChecksum.getChecksum(algorithm);
         if (checksum != null)
         {
-            logger.info("Found checksum '{}' [{}] for '{}' in cache.", checksum, algorithm, artifactBasePath);
+            logger.debug("Found checksum '{}' [{}] for '{}' in cache.", checksum, algorithm, artifactBasePath);
         }
 
         return checksum;
@@ -102,7 +102,7 @@ public class ChecksumCacheManager
                                                  String algorithm,
                                                  String checksum)
     {
-        logger.info("Adding checksum '{}' [{}] for '{}' in cache.", checksum, algorithm, artifactBasePath);
+        logger.debug("Adding checksum '{}' [{}] for '{}' in cache.", checksum, algorithm, artifactBasePath);
 
         if (cachedChecksums.containsKey(artifactBasePath))
         {
@@ -122,7 +122,7 @@ public class ChecksumCacheManager
                                                     String algorithm)
     {
         Optional.ofNullable(getArtifactChecksum(artifactBasePath)).map(ac -> {
-            logger.info(ac.removeChecksum(algorithm)
+            logger.debug(ac.removeChecksum(algorithm)
                            .map(c -> String.format("Removed [%s] artifact checksum value [%s] from cache.",
                                                    artifactBasePath,
                                                    c))
@@ -136,7 +136,7 @@ public class ChecksumCacheManager
     public synchronized void removeArtifactChecksum(String artifactBasePath)
     {
         Optional.ofNullable(cachedChecksums.remove(artifactBasePath))
-                .ifPresent(ac -> logger.info("Removed [{}] artifact checksum value [{}] from cache.",
+                .ifPresent(ac -> logger.debug("Removed [{}] artifact checksum value [{}] from cache.",
                                               artifactBasePath, ac));
     }
 

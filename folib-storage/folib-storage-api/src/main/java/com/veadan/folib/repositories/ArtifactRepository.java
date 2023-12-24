@@ -645,7 +645,7 @@ public class ArtifactRepository extends GremlinVertexRepository<Artifact> {
     public Artifact findOneArtifact(String storageId,
                                     String repositoryId,
                                     String path) {
-        log.info("FindOneArtifact storageId [{}] repositoryId [{}] path [{}]", storageId, repositoryId, path);
+        log.debug("FindOneArtifact storageId [{}] repositoryId [{}] path [{}]", storageId, repositoryId, path);
         com.veadan.folib.storage.repository.Repository repository = configurationManager.getRepository(storageId, repositoryId);
         long startTime = System.currentTimeMillis();
         EntityTraversal<Vertex, Artifact> t = g().V()
@@ -656,7 +656,7 @@ public class ArtifactRepository extends GremlinVertexRepository<Artifact> {
                         .map(ArtifactLayoutLocator.getLayoutByNameEntityMap()::get)
                         .map(ArtifactLayoutDescription::getArtifactCoordinatesClass)));
         Artifact artifact = t.tryNext().orElse(null);
-        log.info("FindOneArtifact storageId [{}] repositoryId [{}] path [{}] artifactExists [{}] take time [{}] ms", storageId, repositoryId, path, Objects.nonNull(artifact), System.currentTimeMillis() - startTime);
+        log.debug("FindOneArtifact storageId [{}] repositoryId [{}] path [{}] artifactExists [{}] take time [{}] ms", storageId, repositoryId, path, Objects.nonNull(artifact), System.currentTimeMillis() - startTime);
         return artifact;
     }
 
@@ -748,15 +748,7 @@ public class ArtifactRepository extends GremlinVertexRepository<Artifact> {
             entityTraversal = entityTraversal.has(Properties.LAYERS, keyword).has(Properties.UUID, Text.textContains("manifest/sha256")).has(Properties.ARTIFACT_FILE_EXISTS, true);
         }
         long count = entityTraversal.count().tryNext().orElse(0L);
-        entityTraversal = g().V().hasLabel(Vertices.ARTIFACT).has(Properties.STORAGE_ID, storageId).has(Properties.REPOSITORY_ID, repositoryId).has(Properties.UUID, Text.textNotPrefix(uuid));
-        if (type == 1) {
-            entityTraversal = entityTraversal.has(Properties.UUID, Text.textContains(keyword)).has(Properties.UUID, Text.textNotContains("blobs/sha256")).has(Properties.UUID, Text.textNotContains("manifest/sha256")).has(Properties.ARTIFACT_FILE_EXISTS, true);
-        } else if (type == 2) {
-            entityTraversal = entityTraversal.has(Properties.UUID, Text.textContains(keyword)).has(Properties.UUID, Text.textContains("manifest/sha256")).has(Properties.ARTIFACT_FILE_EXISTS, true);
-        } else if (type == 3) {
-            entityTraversal = entityTraversal.has(Properties.LAYERS, keyword).has(Properties.UUID, Text.textContains("manifest/sha256")).has(Properties.ARTIFACT_FILE_EXISTS, true);
-        }
-        log.info("UUIDList [{}]", entityTraversal.map(artifactAdapter.baseFold(Optional.empty())).toList().stream().map(Artifact::getUuid).collect(Collectors.toList()));
+        log.debug("Count for [{}] [{}]", count);
         return count;
     }
 

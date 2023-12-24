@@ -162,7 +162,7 @@ public abstract class AbstractRepositoryProvider implements RepositoryProvider, 
     @Override
     public void onBeforeWrite(RepositoryStreamWriteContext ctx) throws IOException {
         RepositoryPath repositoryPath = (RepositoryPath) ctx.getPath();
-        logger.info("Writing [{}]", repositoryPath);
+        logger.debug("Writing [{}]", repositoryPath);
 
         if (!RepositoryFiles.isArtifact(repositoryPath)) {
             return;
@@ -202,7 +202,7 @@ public abstract class AbstractRepositoryProvider implements RepositoryProvider, 
     @Override
     public void onAfterWrite(RepositoryStreamWriteContext ctx) throws IOException {
         RepositoryPath repositoryPath = (RepositoryPath) ctx.getPath();
-        logger.info("Complete writing [{}]", repositoryPath);
+        logger.debug("Complete writing [{}]", repositoryPath);
 
         if (RepositoryFiles.isArtifact(repositoryPath)) {
             if (ctx.getArtifactExists()) {
@@ -219,7 +219,7 @@ public abstract class AbstractRepositoryProvider implements RepositoryProvider, 
     public void onBeforeRead(RepositoryStreamReadContext ctx)
             throws IOException {
         RepositoryPath repositoryPath = (RepositoryPath) ctx.getPath();
-        logger.info("Reading {}", repositoryPath);
+        logger.debug("Reading {}", repositoryPath);
 
         if (!RepositoryFiles.isArtifact(repositoryPath)) {
             return;
@@ -232,7 +232,7 @@ public abstract class AbstractRepositoryProvider implements RepositoryProvider, 
     public void onAfterRead(RepositoryStreamReadContext ctx) {
         RepositoryPath repositoryPath = (RepositoryPath) ctx.getPath();
 
-        logger.info("Complete reading [{}]", repositoryPath);
+        logger.debug("Complete reading [{}]", repositoryPath);
 
         artifactEventListenerRegistry.dispatchArtifactDownloadedEvent(repositoryPath);
     }
@@ -270,7 +270,7 @@ public abstract class AbstractRepositoryProvider implements RepositoryProvider, 
                         coordinates.getId()));
         artifactGroup.setArtifacts(Sets.newHashSet());
         ArtifactCoordinates lastVersion = artifactIdGroupService.addArtifactToGroup(artifactGroup, artifact);
-        logger.info("Last version for group [{}] is [{}] with [{}]",
+        logger.debug("Last version for group [{}] is [{}] with [{}]",
                 artifactGroup.getName(),
                 lastVersion.getVersion(),
                 lastVersion.getPath());
@@ -330,7 +330,7 @@ public abstract class AbstractRepositoryProvider implements RepositoryProvider, 
                         coordinates.getId()));
         artifactGroup.setArtifacts(Sets.newHashSet());
         ArtifactCoordinates lastVersion = artifactIdGroupService.addArtifactToGroup(artifactGroup, artifact);
-        logger.info("Last version for group [{}] is [{}] with [{}]",
+        logger.debug("Last version for group [{}] is [{}] with [{}]",
                 artifactGroup.getName(),
                 lastVersion.getVersion(),
                 lastVersion.getPath());
@@ -343,7 +343,7 @@ public abstract class AbstractRepositoryProvider implements RepositoryProvider, 
     @Override
     public void onStoreIndexAfter(RepositoryStreamReadContext ctx) throws IOException {
         RepositoryPath repositoryPath = (RepositoryPath) ctx.getPath();
-        logger.info("Complete build index [{}]", repositoryPath);
+        logger.debug("Complete build index [{}]", repositoryPath);
 
         if (RepositoryFiles.isArtifact(repositoryPath)) {
             if (ctx.getArtifactExists()) {

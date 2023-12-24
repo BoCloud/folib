@@ -148,7 +148,7 @@ public class ArtifactIdGroupRepository extends GremlinVertexRepository<ArtifactI
         if (CollectionUtils.isEmpty(artifactList)) {
             artifactList = Collections.emptyList();
         }
-        log.info("FindArtifactsGremlin storageId [{}] repositoryId [{}] artifactId [{}] coordinateValues [{}] skip [{}] limit [{}] useLimit [{}] artifactListSize [{}] take time [{}] ms", storageId, repositoryId, artifactId, coordinateValues, skip, limit, useLimit, artifactList.size(), System.currentTimeMillis() - startTime);
+        log.debug("FindArtifactsGremlin storageId [{}] repositoryId [{}] artifactId [{}] coordinateValues [{}] skip [{}] limit [{}] useLimit [{}] artifactListSize [{}] take time [{}] ms", storageId, repositoryId, artifactId, coordinateValues, skip, limit, useLimit, artifactList.size(), System.currentTimeMillis() - startTime);
         return artifactList;
     }
 

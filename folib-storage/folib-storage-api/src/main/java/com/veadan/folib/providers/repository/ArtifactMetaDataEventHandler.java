@@ -23,7 +23,7 @@ public class ArtifactMetaDataEventHandler extends AsyncArtifactEntryHandler {
     protected Artifact handleEvent(RepositoryPath repositoryPath) throws IOException {
         Artifact artifactEntry = repositoryPath.getArtifactEntry();
         if (artifactEntry == null) {
-            log.warn("No [{}] for [{}].",
+            log.debug("No [{}] for [{}].",
                     Artifact.class.getSimpleName(),
                     repositoryPath);
 

@@ -52,7 +52,7 @@ public class LicenseAspect {
      */
     @Before(value = "brokerAspect()")
     public void before() {
-        log.info("[{}] License切面，开始校验License", this.getClass().getSimpleName());
+        log.debug("[{}] License切面，开始校验License", this.getClass().getSimpleName());
         ServletRequestAttributes servletRequestAttributes = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
         if (Objects.nonNull(servletRequestAttributes)) {
             HttpServletRequest request = servletRequestAttributes.getRequest();
@@ -64,7 +64,7 @@ public class LicenseAspect {
                 if (StringUtils.isNotBlank(storageId) && StringUtils.isNotBlank(repositoryId)) {
                     Repository repository = configurationManager.getRepository(storageId, repositoryId);
                     if (Objects.nonNull(repository)) {
-                        log.info("[{}] License切面，存储空间 [{}] 仓库 [{}] 已存在，跳过校验", this.getClass().getSimpleName(), storageId, repositoryId);
+                        log.debug("[{}] License切面，存储空间 [{}] 仓库 [{}] 已存在，跳过校验", this.getClass().getSimpleName(), storageId, repositoryId);
                         return;
                     }
                 }
@@ -93,7 +93,7 @@ public class LicenseAspect {
             log.warn("[{}] License切面，License已过期 mac [{}]", this.getClass().getSimpleName(), activateVo.getMac());
             throw new RuntimeException("请续期后再添加制品存储空间、仓库");
         }
-        log.info("[{}] License切面，License校验通过 mac [{}]", this.getClass().getSimpleName(), activateVo.getMac());
+        log.debug("[{}] License切面，License校验通过 mac [{}]", this.getClass().getSimpleName(), activateVo.getMac());
     }
 
 }

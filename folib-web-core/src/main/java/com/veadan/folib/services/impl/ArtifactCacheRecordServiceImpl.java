@@ -1,6 +1,7 @@
 package com.veadan.folib.services.impl;
 
 import com.github.pagehelper.PageHelper;
+import com.hazelcast.core.HazelcastInstance;
 import com.veadan.folib.components.artifact.ArtifactComponent;
 import com.veadan.folib.domain.CacheSettings;
 import com.veadan.folib.entity.ArtifactCacheRecord;
@@ -46,12 +47,14 @@ public class ArtifactCacheRecordServiceImpl implements ArtifactCacheRecordServic
     @Lazy
     private ArtifactComponent artifactComponent;
 
+    @Inject
+    private HazelcastInstance hazelcastInstance;
+
     @Override
     @Transactional(rollbackFor = Exception.class)
     public void saveArtifactCacheRecord(ArtifactCacheRecord artifactCacheRecord) {
         try {
             Date now = new Date();
-            SnowflakeIdWorkerUtils idWorker = new SnowflakeIdWorkerUtils(0, 0);
             if (StringUtils.isNotBlank(artifactCacheRecord.getArtifactPath())) {
                 int endIndex = artifactCacheRecord.getArtifactPath().length(), max = 768;
                 if (endIndex > max) {
@@ -59,7 +62,7 @@ public class ArtifactCacheRecordServiceImpl implements ArtifactCacheRecordServic
                 }
                 artifactCacheRecord.setArtifactPathPrefix(artifactCacheRecord.getArtifactPath().substring(0, endIndex));
             }
-            artifactCacheRecord.setId(idWorker.nextId());
+            artifactCacheRecord.setId(hazelcastInstance.getFlakeIdGenerator("artifactCacheRecordId").newId());
             artifactCacheRecord.setCreateTime(now);
             artifactCacheRecord.setUpdateTime(now);
             artifactCacheRecord.setLatestDownloadTime(now);

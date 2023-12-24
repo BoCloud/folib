@@ -1117,7 +1117,7 @@ public class ArtifactComponent {
         }
     }
 
-    @Async("eventTaskExecutor")
+//    @Async("eventTaskExecutor")
     public void beforeRead(RepositoryPath repositoryPath) {
         try {
             if (Objects.isNull(repositoryPath) || !RepositoryFiles.isArtifact(repositoryPath)) {
@@ -1129,7 +1129,7 @@ public class ArtifactComponent {
         }
     }
 
-    @Async("eventTaskExecutor")
+//    @Async("eventTaskExecutor")
     public void afterRead(RepositoryPath repositoryPath) {
         try {
             if (Objects.isNull(repositoryPath) || !RepositoryFiles.isArtifact(repositoryPath)) {
@@ -1141,7 +1141,7 @@ public class ArtifactComponent {
         }
     }
 
-    @Async("eventTaskExecutor")
+//    @Async("eventTaskExecutor")
     public void artifactCache(RepositoryPath repositoryPath) {
         try {
             artifactEventListenerRegistry.dispatchArtifactCacheEvent(repositoryPath);

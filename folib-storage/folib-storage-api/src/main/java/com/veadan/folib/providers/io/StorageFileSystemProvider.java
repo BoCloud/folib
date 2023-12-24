@@ -176,13 +176,13 @@ public abstract class StorageFileSystemProvider
             return;
         }
 
-        logger.info("Deleting hidden folders for [{}]", path);
+        logger.debug("Deleting hidden folders for [{}]", path);
 
         FileSystemUtils.deleteRecursively(unwrap(root).resolve(LayoutFileSystem.TEMP));
         FileSystemUtils.deleteRecursively(unwrap(root).resolve(LayoutFileSystem.TRASH));
         Files.delete(unwrap(root));
 
-        logger.info("Hidden folders deleted [{}]", path);
+        logger.debug("Hidden folders deleted [{}]", path);
 
     }
 
@@ -309,7 +309,7 @@ public abstract class StorageFileSystemProvider
     public RepositoryPath moveFromTemporaryDirectory(TempRepositoryPath tempPath)
             throws IOException {
         long startTime = System.currentTimeMillis();
-        logger.info("Moving [{}]", tempPath.getTarget());
+        logger.debug("Moving [{}]", tempPath.getTarget());
         RepositoryPath path = tempPath.getTempTarget();
 
         if (!Files.exists(tempPath.getTarget())) {
@@ -328,7 +328,7 @@ public abstract class StorageFileSystemProvider
             Files.move(tempPath.getTarget(), path.getTarget(), StandardCopyOption.ATOMIC_MOVE);
         }
 
-        logger.info("Moving finished [{}] task time [{}] ms", tempPath.getTarget(), System.currentTimeMillis() - startTime);
+        logger.debug("Moving finished [{}] task time [{}] ms", tempPath.getTarget(), System.currentTimeMillis() - startTime);
         //path.artifactEntry = tempPath.artifactEntry;
 
         return path;
@@ -360,7 +360,7 @@ public abstract class StorageFileSystemProvider
         RepositoryPath trashPath = rebase(path, trashBasePath);
 
         if (!Files.exists(trashPath.getParent().getTarget())) {
-            logger.info("Creating: [{}]", trashPath.getParent());
+            logger.debug("Creating: [{}]", trashPath.getParent());
 
             Files.createDirectories(trashPath.getParent().getTarget());
         }

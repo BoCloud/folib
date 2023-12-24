@@ -248,7 +248,7 @@ public class DockerArtifactController extends BaseArtifactController {
     @ApiResponses(value = {@ApiResponse(code = 200, message = "The artifact was deployed successfully."),
             @ApiResponse(code = 500, message = "An error occurred.")})
     @PreAuthorize("hasAuthority('ARTIFACTS_RESOLVE')")
-    @RequestMapping(value = {"/v2/{storageId}/{repositoryId}/{name}/blobs/uploads/", "/v2/{storageId}/{repositoryId}/{name}/**/blobs/uploads/"}, method = {RequestMethod.POST}, consumes = MediaType.APPLICATION_OCTET_STREAM_VALUE)
+    @RequestMapping(value = {"/v2/{storageId}/{repositoryId}/{name}/blobs/uploads/", "/v2/{storageId}/{repositoryId}/{name}/**/blobs/uploads/"}, method = {RequestMethod.POST}, consumes = MediaType.ALL_VALUE)
     public ResponseEntity<Object> startingAnUpload(@RequestHeader HttpHeaders httpHeaders,
                                                    Authentication authentication,
                                                    HttpServletRequest request,
@@ -342,7 +342,7 @@ public class DockerArtifactController extends BaseArtifactController {
     @ApiResponses(value = {@ApiResponse(code = 200, message = "The artifact was deployed successfully."),
             @ApiResponse(code = 400, message = "An error occurred.")})
     @PreAuthorize("hasAuthority('ARTIFACTS_DEPLOY')")
-    @RequestMapping(value = {"/v2/{storageId}/{repositoryId}/{name}/blobs/uploads/{uuid}", "/v2/{storageId}/{repositoryId}/{name}/**/blobs/uploads/{uuid}"}, method = {RequestMethod.GET}, consumes = MediaType.APPLICATION_OCTET_STREAM_VALUE)
+    @RequestMapping(value = {"/v2/{storageId}/{repositoryId}/{name}/blobs/uploads/{uuid}", "/v2/{storageId}/{repositoryId}/{name}/**/blobs/uploads/{uuid}"}, method = {RequestMethod.GET}, consumes = MediaType.ALL_VALUE)
     public ResponseEntity<String> uploadProgress(@RequestHeader HttpHeaders httpHeaders,
                                                  HttpServletRequest request,
                                                  HttpServletResponse response,

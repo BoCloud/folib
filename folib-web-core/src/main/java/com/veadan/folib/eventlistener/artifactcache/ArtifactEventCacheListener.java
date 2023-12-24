@@ -24,10 +24,7 @@ import javax.inject.Inject;
 import java.io.File;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption;
+import java.nio.file.*;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
@@ -51,7 +48,7 @@ public class ArtifactEventCacheListener {
         int source = (int) event.getSource();
         RepositoryPath repositoryPath = event.getPath();
         ArtifactEventTypeEnum artifactEventTypeEnum = ArtifactEventTypeEnum.queryArtifactEventTypeEnumByType(source);
-        log.debug("{} 监听到制品事件：{}，path路径：{}", ArtifactEventCacheListener.class.getSimpleName(), artifactEventTypeEnum, repositoryPath);
+        log.debug("监听到制品事件 [{}]，path路径 [{}]", artifactEventTypeEnum, repositoryPath);
         if (Objects.isNull(artifactEventTypeEnum)) {
             return;
         }
@@ -95,14 +92,14 @@ public class ArtifactEventCacheListener {
             if (ArtifactEventTypeEnum.EVENT_ARTIFACT_FILE_UPDATED.getType() == artifactEventTypeEnum.getType() && Files.notExists(targetPath)) {
                 return;
             }
-            log.info("缓存功能已开启 storageId [{}] repositoryId [{}]，源制品地址 [{}] 缓存制品地址 [{}]", storageId, repositoryId, sourcePath, targetPath.toString());
+            log.debug("缓存功能已开启 storageId [{}] repositoryId [{}]，源制品地址 [{}] 缓存制品地址 [{}]", storageId, repositoryId, sourcePath, targetPath.toString());
             String minSize = cacheSettings.getMinSize(), maxSize = cacheSettings.getMaxSize();
             if (StringUtils.isNotBlank(minSize)) {
                 String minSizeUnit = cacheSettings.getMinSizeUnit();
                 long size = Files.size(repositoryPath);
                 BigDecimal convertSize = FileSizeConvertUtils.convertBytesWithDecimal(size, minSizeUnit);
                 if (convertSize.compareTo(new BigDecimal(minSize)) < 0) {
-                    log.info("缓存功能已开启 storageId [{}] repositoryId [{}] byteSize [{}] convertSize [{}] beginSize [{}] [{}]源制品小于单文件最小缓存值不满足缓存条件", storageId, repositoryId, size, convertSize, minSize, minSizeUnit);
+                    log.debug("缓存功能已开启 storageId [{}] repositoryId [{}] byteSize [{}] convertSize [{}] beginSize [{}] [{}]源制品小于单文件最小缓存值不满足缓存条件", storageId, repositoryId, size, convertSize, minSize, minSizeUnit);
                     return;
                 }
             }
@@ -111,7 +108,7 @@ public class ArtifactEventCacheListener {
                 long size = Files.size(repositoryPath);
                 BigDecimal convertSize = FileSizeConvertUtils.convertBytesWithDecimal(size, maxSizeUnit);
                 if (convertSize.compareTo(new BigDecimal(maxSize)) > 0) {
-                    log.info("缓存功能已开启 storageId [{}] repositoryId [{}] byteSize [{}] convertSize [{}] beginSize [{}] [{}]源制品大于单文件最大缓存值不满足缓存条件", storageId, repositoryId, size, convertSize, maxSize, maxSizeUnit);
+                    log.debug("缓存功能已开启 storageId [{}] repositoryId [{}] byteSize [{}] convertSize [{}] beginSize [{}] [{}]源制品大于单文件最大缓存值不满足缓存条件", storageId, repositoryId, size, convertSize, maxSize, maxSizeUnit);
                     return;
                 }
             }
@@ -129,13 +126,13 @@ public class ArtifactEventCacheListener {
 
                 int clearProportion = cacheSettings.getClearProportion();
                 long clearBytes = FileSizeConvertUtils.convertToBytes(clearProportion, cacheSettings.getSizeUnit());
-                log.info("缓存功能已开启，缓存容量 [{}] [{}] 当前已缓存制品 [{}] 字节，约为[{}] [{}]，占用缓存比为 [{}%]，加上当前制品后为 [{}] 字节，约为 [{}] [{}] 占用缓存比为 [{}%]", cacheSettings.getSize(), cacheSettings.getSizeUnit(), cacheDirectoryPathUseSize, cacheDirectoryPathConvertSize, cacheSettings.getSizeUnit(), cacheDirectoryPathProportion, cacheDirectoryPathAllSize, cacheDirectoryPathConvertAllSize, cacheSettings.getSizeUnit(), cacheDirectoryPathAllProportion);
+                log.debug("缓存功能已开启，缓存容量 [{}] [{}] 当前已缓存制品 [{}] 字节，约为[{}] [{}]，占用缓存比为 [{}%]，加上当前制品后为 [{}] 字节，约为 [{}] [{}] 占用缓存比为 [{}%]", cacheSettings.getSize(), cacheSettings.getSizeUnit(), cacheDirectoryPathUseSize, cacheDirectoryPathConvertSize, cacheSettings.getSizeUnit(), cacheDirectoryPathProportion, cacheDirectoryPathAllSize, cacheDirectoryPathConvertAllSize, cacheSettings.getSizeUnit(), cacheDirectoryPathAllProportion);
                 if (cacheDirectoryPathAllProportion.compareTo(oneHundred) >= 0) {
                     log.warn("缓存功能已开启，缓存容量 [{}] [{}] 当前已缓存制品 [{}] 字节，约为[{}] [{}]，占用缓存比为 [{}%]，加上当前制品后为 [{}] 字节，约为 [{}] [{}] 占用缓存比为 [{}%]，大于总容量，禁止写入", cacheSettings.getSize(), cacheSettings.getSizeUnit(), cacheDirectoryPathUseSize, cacheDirectoryPathConvertSize, cacheSettings.getSizeUnit(), cacheDirectoryPathProportion, cacheDirectoryPathAllSize, cacheDirectoryPathConvertAllSize, cacheSettings.getSizeUnit(), cacheDirectoryPathAllProportion);
                     return;
                 }
                 if (cacheDirectoryPathAllProportion.compareTo(new BigDecimal(clearCondition)) >= 0) {
-                    log.info("缓存功能已开启，缓存容量 [{}] [{}] 当前已缓存制品 [{}] 字节，约为[{}] [{}]，占用缓存比为 [{}%]，加上当前制品后为 [{}] 字节，约为 [{}] [{}] 占用缓存比为 [{}%]，已达到清理条件 [{}%]", cacheSettings.getSize(), cacheSettings.getSizeUnit(), cacheDirectoryPathUseSize, cacheDirectoryPathConvertSize, cacheSettings.getSizeUnit(), cacheDirectoryPathProportion, cacheDirectoryPathAllSize, cacheDirectoryPathConvertAllSize, cacheSettings.getSizeUnit(), cacheDirectoryPathAllProportion, clearCondition);
+                    log.debug("缓存功能已开启，缓存容量 [{}] [{}] 当前已缓存制品 [{}] 字节，约为[{}] [{}]，占用缓存比为 [{}%]，加上当前制品后为 [{}] 字节，约为 [{}] [{}] 占用缓存比为 [{}%]，已达到清理条件 [{}%]", cacheSettings.getSize(), cacheSettings.getSizeUnit(), cacheDirectoryPathUseSize, cacheDirectoryPathConvertSize, cacheSettings.getSizeUnit(), cacheDirectoryPathProportion, cacheDirectoryPathAllSize, cacheDirectoryPathConvertAllSize, cacheSettings.getSizeUnit(), cacheDirectoryPathAllProportion, clearCondition);
                     long deleteBytes = 0L;
                     cleanup(clearBytes, deleteBytes, cacheSettings, cacheDirectoryPathUseSize, cacheDirectoryPathConvertSize, cacheDirectoryPathProportion, cacheDirectoryPathAllSize, cacheDirectoryPathConvertAllSize, cacheDirectoryPathAllProportion);
                 }
@@ -148,6 +145,8 @@ public class ArtifactEventCacheListener {
                         try {
                             Path checksumPath = targetPath.getParent().resolve(FilenameUtils.getName(value.toString()));
                             Files.copy(value, checksumPath, StandardCopyOption.REPLACE_EXISTING);
+                        } catch(FileAlreadyExistsException e) {
+                            //destination file already exists
                         } catch (Exception ex) {
                             log.warn("缓存制品checksumPath [{}] [{}] [{}] 错误 [{}]", storageId, repositoryId, repositoryPath.toString(), ExceptionUtils.getStackTrace(ex));
                         }
@@ -156,6 +155,8 @@ public class ArtifactEventCacheListener {
                 //缓存metadata
                 artifactComponent.storeArtifactMetadataFile(repositoryPath, targetPath);
                 artifactComponent.handlerArtifactCacheRecord(repositoryPath, cacheSettings, targetPath);
+            } catch(FileAlreadyExistsException e) {
+                //destination file already exists
             } catch (Exception e) {
                 log.warn("处理制品缓存错误 [{}] 错误：[{}]", repositoryPath.toString(), ExceptionUtils.getStackTrace(e));
             }
@@ -203,9 +204,9 @@ public class ArtifactEventCacheListener {
                 artifactCacheRecordService.deleteArtifactCacheRecord(artifactCacheRecord);
                 deleteBytes = deleteBytes + artifactCacheRecord.getSize();
                 deleteProportion = BigDecimal.valueOf(deleteBytes).divide(BigDecimal.valueOf(clearBytes), 4, RoundingMode.HALF_UP).multiply(BigDecimal.valueOf(100));
-                log.info("缓存功能已开启，缓存容量 [{}] [{}] 当前已缓存制品 [{}] 字节，约为[{}] [{}]，占用缓存比为 [{}%]，加上当前制品后为 [{}] 字节，约为 [{}] [{}] 占用缓存比为 [{}%]，已达到清理条件 [{}%]，缓存制品 [{}] 已清除，释放了 [{}] 字节，需释放 [{}] 字节 已释放总 [{}] 字节，已释放百分比为 [{}%]", cacheSettings.getSize(), cacheSettings.getSizeUnit(), cacheDirectoryPathUseSize, cacheDirectoryPathConvertSize, cacheSettings.getSizeUnit(), cacheDirectoryPathProportion, cacheDirectoryPathAllSize, cacheDirectoryPathConvertAllSize, cacheSettings.getSizeUnit(), cacheDirectoryPathAllProportion, cacheSettings.getClearCondition(), artifactCacheRecord.getCachePath(), artifactCacheRecord.getSize(), clearBytes, deleteBytes, deleteProportion);
+                log.debug("缓存功能已开启，缓存容量 [{}] [{}] 当前已缓存制品 [{}] 字节，约为[{}] [{}]，占用缓存比为 [{}%]，加上当前制品后为 [{}] 字节，约为 [{}] [{}] 占用缓存比为 [{}%]，已达到清理条件 [{}%]，缓存制品 [{}] 已清除，释放了 [{}] 字节，需释放 [{}] 字节 已释放总 [{}] 字节，已释放百分比为 [{}%]", cacheSettings.getSize(), cacheSettings.getSizeUnit(), cacheDirectoryPathUseSize, cacheDirectoryPathConvertSize, cacheSettings.getSizeUnit(), cacheDirectoryPathProportion, cacheDirectoryPathAllSize, cacheDirectoryPathConvertAllSize, cacheSettings.getSizeUnit(), cacheDirectoryPathAllProportion, cacheSettings.getClearCondition(), artifactCacheRecord.getCachePath(), artifactCacheRecord.getSize(), clearBytes, deleteBytes, deleteProportion);
                 if (deleteBytes >= clearBytes) {
-                    log.info("缓存功能已开启，缓存容量 [{}] [{}] 当前已缓存制品 [{}] 字节，约为[{}] [{}]，占用缓存比为 [{}%]，加上当前制品后为 [{}] 字节，约为 [{}] [{}] 占用缓存比为 [{}%]，已达到清理条件 [{}%]，缓存制品 [{}] 已清除，释放了 [{}] 字节，需释放 [{}] 字节 已释放总 [{}] 字节，已释放百分比为 [{}%]，已释放字节大于等于需释放字节，清理结束", cacheSettings.getSize(), cacheSettings.getSizeUnit(), cacheDirectoryPathUseSize, cacheDirectoryPathConvertSize, cacheSettings.getSizeUnit(), cacheDirectoryPathProportion, cacheDirectoryPathAllSize, cacheDirectoryPathConvertAllSize, cacheSettings.getSizeUnit(), cacheDirectoryPathAllProportion, cacheSettings.getClearCondition(), artifactCacheRecord.getCachePath(), artifactCacheRecord.getSize(), clearBytes, deleteBytes, deleteProportion);
+                    log.debug("缓存功能已开启，缓存容量 [{}] [{}] 当前已缓存制品 [{}] 字节，约为[{}] [{}]，占用缓存比为 [{}%]，加上当前制品后为 [{}] 字节，约为 [{}] [{}] 占用缓存比为 [{}%]，已达到清理条件 [{}%]，缓存制品 [{}] 已清除，释放了 [{}] 字节，需释放 [{}] 字节 已释放总 [{}] 字节，已释放百分比为 [{}%]，已释放字节大于等于需释放字节，清理结束", cacheSettings.getSize(), cacheSettings.getSizeUnit(), cacheDirectoryPathUseSize, cacheDirectoryPathConvertSize, cacheSettings.getSizeUnit(), cacheDirectoryPathProportion, cacheDirectoryPathAllSize, cacheDirectoryPathConvertAllSize, cacheSettings.getSizeUnit(), cacheDirectoryPathAllProportion, cacheSettings.getClearCondition(), artifactCacheRecord.getCachePath(), artifactCacheRecord.getSize(), clearBytes, deleteBytes, deleteProportion);
                     return;
                 }
             }
@@ -213,7 +214,7 @@ public class ArtifactEventCacheListener {
                 cleanup(clearBytes, deleteBytes, cacheSettings, cacheDirectoryPathUseSize, cacheDirectoryPathConvertSize, cacheDirectoryPathProportion, cacheDirectoryPathAllSize, cacheDirectoryPathConvertAllSize, cacheDirectoryPathAllProportion);
             }
         } else {
-            log.info("缓存功能已开启，缓存容量 [{}] [{}] 当前已缓存制品 [{}] 字节，约为[{}] [{}]，占用缓存比为 [{}%]，加上当前制品后为 [{}] 字节，约为 [{}] [{}] 占用缓存比为 [{}%]，已达到清理条件 [{}%]，需释放 [{}] 字节 已释放总 [{}] 字节，已没有数据可以清理，清理结束", cacheSettings.getSize(), cacheSettings.getSizeUnit(), cacheDirectoryPathUseSize, cacheDirectoryPathConvertSize, cacheSettings.getSizeUnit(), cacheDirectoryPathProportion, cacheDirectoryPathAllSize, cacheDirectoryPathConvertAllSize, cacheSettings.getSizeUnit(), cacheDirectoryPathAllProportion, cacheSettings.getClearCondition(), clearBytes, deleteBytes);
+            log.debug("缓存功能已开启，缓存容量 [{}] [{}] 当前已缓存制品 [{}] 字节，约为[{}] [{}]，占用缓存比为 [{}%]，加上当前制品后为 [{}] 字节，约为 [{}] [{}] 占用缓存比为 [{}%]，已达到清理条件 [{}%]，需释放 [{}] 字节 已释放总 [{}] 字节，已没有数据可以清理，清理结束", cacheSettings.getSize(), cacheSettings.getSizeUnit(), cacheDirectoryPathUseSize, cacheDirectoryPathConvertSize, cacheSettings.getSizeUnit(), cacheDirectoryPathProportion, cacheDirectoryPathAllSize, cacheDirectoryPathConvertAllSize, cacheSettings.getSizeUnit(), cacheDirectoryPathAllProportion, cacheSettings.getClearCondition(), clearBytes, deleteBytes);
         }
     }
 

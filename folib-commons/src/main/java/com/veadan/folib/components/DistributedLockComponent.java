@@ -21,7 +21,7 @@ public class DistributedLockComponent {
     private HazelcastInstance hazelcastInstance;
 
     public boolean lock(String lockName) {
-        log.info("Get lock for [{}]", lockName);
+        log.debug("Get lock for [{}]", lockName);
         try {
             return hazelcastInstance.getMap(GlobalConstants.DISTRIBUTED_LOCK_NAME).tryLock(lockName, 30L, TimeUnit.SECONDS, 1800, TimeUnit.SECONDS);
         } catch (Exception ex) {
@@ -31,7 +31,7 @@ public class DistributedLockComponent {
     }
 
     public boolean lock(String lockName, long waitTime, TimeUnit timeUnit) {
-        log.info("Get lock for [{}]", lockName);
+        log.debug("Get lock for [{}]", lockName);
         try {
             return hazelcastInstance.getMap(GlobalConstants.DISTRIBUTED_LOCK_NAME).tryLock(lockName, waitTime, timeUnit, 1800, TimeUnit.SECONDS);
         } catch (Exception ex) {

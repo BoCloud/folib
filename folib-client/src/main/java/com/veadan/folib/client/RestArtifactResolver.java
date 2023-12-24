@@ -86,7 +86,7 @@ public class RestArtifactResolver
         if(StringUtils.hasText(targetUrl)){
             url = targetUrl;
         }
-        logger.info("Getting {}...", url);
+        logger.debug("Getting {}...", url);
 
         WebTarget resource = new WebTargetBuilder(url).withAuthentication()
                                                       .customRequestConfig()
@@ -114,7 +114,7 @@ public class RestArtifactResolver
     {
         String url = escapeUrl(path);
 
-        logger.info("Heading {}...", url);
+        logger.debug("Heading {}...", url);
 
         WebTarget resource = new WebTargetBuilder(url)
                                      .withAuthentication()

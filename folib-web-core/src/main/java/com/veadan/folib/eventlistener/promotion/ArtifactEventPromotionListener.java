@@ -121,7 +121,7 @@ public class ArtifactEventPromotionListener {
                     log.debug("自动晋级阻断开关状态：{}，仓库扫描状态：{}", promotionBlock, scanEnable);
                     if (promotionBlock && scanEnable) {
                         //加入晋级
-                        log.info("存储空间：{} 仓库：{} 制品：{} 满足初步晋级条件，晋级状态为待晋级", storageId, repositoryId, artifactPath);
+                        log.debug("存储空间：{} 仓库：{} 制品：{} 满足初步晋级条件，晋级状态为待晋级", storageId, repositoryId, artifactPath);
                         for (UnionTargetRepositoryConfiguration unionTargetRepository : unionTargetRepositoryConfigurations) {
                             artifactComponent.handlerArtifactPromotion(unionTargetRepository.getNode(), artifact.getStorageId(), artifact.getRepositoryId(), artifact.getArtifactPath(), PromotionStatusEnum.WAIT.getStatus());
                         }

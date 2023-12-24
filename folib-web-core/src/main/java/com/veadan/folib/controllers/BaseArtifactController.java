@@ -79,7 +79,7 @@ public abstract class BaseArtifactController
             return true;
         }
         long startTime = System.currentTimeMillis();
-        logger.debug("Download {} 开始时间 {}", repositoryPath.toString(), startTime);
+        logger.debug("Download [{}] 开始时间 [{}]", repositoryPath.toString(), startTime);
         artifactComponent.beforeRead(repositoryPath);
         if (ArtifactControllerHelper.isRangedRequest(httpHeaders)) {
             //分片
@@ -99,13 +99,13 @@ public abstract class BaseArtifactController
                  WritableByteChannel responseChannel = Channels.newChannel(response.getOutputStream())) {
                 long fileSize = fileChannel.size();
                 for (long left = fileSize; left > 0; ) {
-                    logger.info("RepositoryPath [{}] position: [{}] left: [{}]", path.toString(), fileSize - left, left);
+                    logger.debug("RepositoryPath [{}] position [{}] left [{}]", path.toString(), fileSize - left, left);
                     left -= fileChannel.transferTo((fileSize - left), left, responseChannel);
                 }
             }
         }
         artifactComponent.afterRead(repositoryPath);
-        logger.debug("Download {} 结束时间 {}", repositoryPath.toString(), System.currentTimeMillis() - startTime);
+        logger.debug("Download [{}] 结束时间 [{}]", repositoryPath.toString(), System.currentTimeMillis() - startTime);
         return true;
     }
 
@@ -243,6 +243,11 @@ public abstract class BaseArtifactController
              ObjectInputStream objectInputStream = new ObjectInputStream(inputStream)) {
             artifact = (Artifact) objectInputStream.readObject();
         } catch (Exception ex) {
+            try {
+                Files.deleteIfExists(path);
+            } catch (Exception e) {
+
+            }
             logger.warn("解析制品 [{}] 本地缓存.metadata文件错误 [{}]", path, ExceptionUtils.getStackTrace(ex));
         }
         return artifact;

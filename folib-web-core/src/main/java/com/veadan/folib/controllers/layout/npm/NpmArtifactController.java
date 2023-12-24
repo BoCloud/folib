@@ -218,7 +218,7 @@ public class NpmArtifactController
         try (InputStream inputStream = new ByteArrayInputStream(npmJacksonMapper.writeValueAsBytes(packageFeed))) {
             copyToResponse(inputStream, response);
         }
-        logger.info("[{}] viewPackageFeedWithScope storageId [{}] repositoryId [{}] packageId [{}] task time [{}] ms", this.getClass().getSimpleName(), repository.getStorage().getId(), repository.getId(), packageId, System.currentTimeMillis() - startTime);
+        logger.debug("[{}] viewPackageFeedWithScope storageId [{}] repositoryId [{}] packageId [{}] task time [{}] ms", this.getClass().getSimpleName(), repository.getStorage().getId(), repository.getId(), packageId, System.currentTimeMillis() - startTime);
     }
 
     private PackageFeed handlePackageFeed(Repository repository, String packageId, RepositorySearchRequest predicate, ArtifactIdGroup artifactIdGroup) {
@@ -370,7 +370,7 @@ public class NpmArtifactController
             RepositoryPath repositoryPath = artifactResolutionService.resolvePath(storageId, repositoryId, artifactPath);
             vulnerabilityBlock(repositoryPath);
             provideArtifactDownloadResponse(request, response, httpHeaders, repositoryPath);
-            logger.info("[{}] downloadPackageWithScope [{}] task time [{}] ms", this.getClass().getSimpleName(), repositoryPath.toString(), System.currentTimeMillis() - startTime);
+            logger.debug("[{}] downloadPackageWithScope [{}] task time [{}] ms", this.getClass().getSimpleName(), repositoryPath.toString(), System.currentTimeMillis() - startTime);
         } else {
             packageVersion = getPackageJsonVersion(packageNameWithVersion);
             artifactPath = String.format("%s/%s/%s/%s", packageScope, packageName, packageVersion, NpmLayoutProvider.PACKAGE_JSON);
@@ -423,7 +423,7 @@ public class NpmArtifactController
             RepositoryPath path = artifactResolutionService.resolvePath(storageId, repositoryId, coordinates.buildPath());
             vulnerabilityBlock(path);
             provideArtifactDownloadResponse(request, response, httpHeaders, path);
-            logger.info("[{}] downloadPackage [{}] task time [{}] ms", this.getClass().getSimpleName(), path.toString(), System.currentTimeMillis() - startTime);
+            logger.debug("[{}] downloadPackage [{}] task time [{}] ms", this.getClass().getSimpleName(), path.toString(), System.currentTimeMillis() - startTime);
         } else {
             packageVersion = getPackageJsonVersion(packageNameWithVersion);
             artifactPath = String.format("%s/%s/%s/%s", packageName, packageName, packageVersion, NpmLayoutProvider.PACKAGE_JSON);

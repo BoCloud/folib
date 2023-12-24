@@ -75,7 +75,7 @@ public class ArtifactEventScannerListener {
         if (!validate) {
             return;
         }
-        log.info("Start handler artifact scan {}，path {}", ArtifactEventTypeEnum.queryArtifactEventTypeEnumByType(source), repositoryPath);
+        log.debug("Start handler artifact scan [{}] path [{}]", ArtifactEventTypeEnum.queryArtifactEventTypeEnumByType(source), repositoryPath);
         if (repositoryPath.getFileSystem() instanceof DockerFileSystem) {
             //docker布局
             boolean isStoredEvent = ArtifactEventTypeEnum.EVENT_ARTIFACT_PATH_DELETED.getType() != source && ArtifactEventTypeEnum.EVENT_ARTIFACT_DIRECTORY_PATH_DELETED.getType() != source;
@@ -224,7 +224,7 @@ public class ArtifactEventScannerListener {
                 String finalVersionKey = versionKey;
                 for (String filePath : filePathList) {
                     if (filePaths.size() >= maxSize) {
-                        log.info("Docker制品扫描结果过多超出限制：{} size {} maxSize：{}", path.toString(), filePaths.size(), maxSize);
+                        log.info("Docker制品扫描结果过多超出限制 [{}] size [{}] maxSize [{}]", path.toString(), filePaths.size(), maxSize);
                         return;
                     }
                     if (isS3) {
@@ -251,7 +251,7 @@ public class ArtifactEventScannerListener {
             try {
                 Artifact artifact = repositoryPath.getArtifactEntry();
                 if (artifact == null) {
-                    log.warn("No [{}] for [{}].",
+                    log.debug("No [{}] for [{}].",
                             Artifact.class.getSimpleName(),
                             repositoryPath);
 
@@ -280,7 +280,7 @@ public class ArtifactEventScannerListener {
             try {
                 Artifact artifact = repositoryPath.getArtifactEntry();
                 if (artifact == null) {
-                    log.warn("No [{}] for [{}].",
+                    log.debug("No [{}] for [{}].",
                             Artifact.class.getSimpleName(),
                             repositoryPath);
 
@@ -408,7 +408,7 @@ public class ArtifactEventScannerListener {
             try {
                 Artifact artifact = repositoryPath.getArtifactEntry();
                 if (artifact == null) {
-                    log.warn("No [{}] for [{}].",
+                    log.debug("No [{}] for [{}].",
                             Artifact.class.getSimpleName(),
                             repositoryPath);
 

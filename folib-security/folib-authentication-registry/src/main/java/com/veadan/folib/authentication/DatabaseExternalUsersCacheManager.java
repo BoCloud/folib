@@ -34,7 +34,7 @@ public class DatabaseExternalUsersCacheManager extends DatabaseUserService imple
     public UserEntity findByUsername(String username) {
         UserEntity result = super.findByUsername(username);
         if (result != null) {
-            logger.info("User found in DB: username=[{}], sourceId=[{}], id=[{}], uuid=[{}]",
+            logger.debug("User found in DB: username=[{}], sourceId=[{}], id=[{}], uuid=[{}]",
                     result.getUsername(),
                     result.getSourceId(),
                     result.getNativeId(),
@@ -85,7 +85,7 @@ public class DatabaseExternalUsersCacheManager extends DatabaseUserService imple
             userEntry.setSourceId(sourceId);
 
             UserEntity result = userRepository.save(userEntry);
-            logger.info("Cache external user: username=[{}], id=[{}], uuid=[{}], sourceId=[{}], lastUpdated=[{}], UserDetails=[{}]",
+            logger.debug("Cache external user: username=[{}], id=[{}], uuid=[{}], sourceId=[{}], lastUpdated=[{}], UserDetails=[{}]",
                     result.getUsername(),
                     result.getNativeId(),
                     result.getUuid(),

@@ -134,7 +134,7 @@ public class NpmRepositoryFeatures implements RepositoryFeatures {
         boolean allowsUnpublish = repositoryConfiguration.map(NpmRepositoryConfigurationData::isAllowsUnpublish)
                 .orElse(ALLOWS_UNPUBLISH_DEFAULT);
 
-        logger.info("allowsUnpublish is [{}] for storageId: [{}]; repositoryId: [{}]",
+        logger.debug("allowsUnpublish is [{}] for storageId: [{}]; repositoryId: [{}]",
                 allowsUnpublish,
                 storageId,
                 repositoryId);
@@ -158,7 +158,7 @@ public class NpmRepositoryFeatures implements RepositoryFeatures {
         SearchResults searchResults;
         Client restClient = proxyRepositoryConnectionPoolConfigurationService.getRestClient(storageId, repositoryId);
         try {
-            logger.info("Search NPM packages for [{}].", remoteRepositoryUrl);
+            logger.debug("Search NPM packages for [{}].", remoteRepositoryUrl);
 
             WebTarget service = restClient.target(remoteRepository.getUrl());
             authentication(service, remoteRepository.getUsername(), remoteRepository.getPassword());
@@ -167,11 +167,10 @@ public class NpmRepositoryFeatures implements RepositoryFeatures {
             InputStream inputStream = service.request().buildGet().invoke(InputStream.class);
             searchResults = npmJacksonMapper.readValue(inputStream, SearchResults.class);
 
-            logger.info("Searched NPM packages for [{}].", remoteRepository.getUrl());
+            logger.debug("Searched NPM packages for [{}].", remoteRepository.getUrl());
 
         } catch (Exception e) {
             logger.error("Failed to search NPM packages [{}]", remoteRepositoryUrl, e);
-
             return;
         } finally {
             restClient.close();
@@ -228,7 +227,7 @@ public class NpmRepositoryFeatures implements RepositoryFeatures {
         Client restClient = proxyRepositoryConnectionPoolConfigurationService.
                 getRestClient(repository.getStorage().getId(), repository.getId());
         try {
-            logger.info("Fetching remote changes for [{}] since [{}].", replicateUrl, since);
+            logger.debug("Fetching remote changes for [{}] since [{}].", replicateUrl, since);
 
             WebTarget service = restClient.target(replicateUrl);
             authentication(service, repository.getRemoteRepository().getUsername(), repository.getRemoteRepository().getPassword());
@@ -308,7 +307,7 @@ public class NpmRepositoryFeatures implements RepositoryFeatures {
 
         }
 
-        logger.info("Fetched remote changes for  [{}] since [{}].",
+        logger.debug("Fetched remote changes for  [{}] since [{}].",
                 repositoryConfiguration.getReplicateUrl(),
                 repositoryConfiguration.getLastChangeId());
 
@@ -335,7 +334,7 @@ public class NpmRepositoryFeatures implements RepositoryFeatures {
             authentication(service, remoteRepository.getUsername(), remoteRepository.getPassword());
             service = service.path(packageId);
             url = service.getUri().toString();
-            logger.info("Downloading NPM remote package feed for [{}].", url);
+            logger.debug("Downloading NPM remote package feed for [{}].", url);
             response = service.request(MediaType.APPLICATION_JSON).get();
             if (response.getStatus() == HttpStatus.SC_OK) {
                 String readString = response.readEntity(String.class);
@@ -346,7 +345,7 @@ public class NpmRepositoryFeatures implements RepositoryFeatures {
                 displayResponseError(url, response);
                 return null;
             }
-            logger.info("Downloaded NPM remote package feed for [{}] take time [{}] ms.", url, System.currentTimeMillis() - startTime);
+            logger.debug("Downloaded NPM remote package feed for [{}] take time [{}] ms.", url, System.currentTimeMillis() - startTime);
         } catch (Exception e) {
             logger.error("Failed to fetch NPM remote package feed [{}]", url, e);
             return packageFeed;
@@ -414,7 +413,7 @@ public class NpmRepositoryFeatures implements RepositoryFeatures {
             RepositorySearchRequest predicate = event.getPredicate();
             Long packagesCount = packagesCount(storageId, repositoryId, predicate);
 
-            logger.info("NPM remote repository [{}] local cached package count is [{}]",
+            logger.debug("NPM remote repository [{}] local cached package count is [{}]",
                     repository.getId(), packagesCount);
 
             Runnable job = () -> fetchRemoteSearchResult(storageId, repositoryId, npmSearchRequest.getText(),
@@ -472,7 +471,7 @@ public class NpmRepositoryFeatures implements RepositoryFeatures {
             String separator = "/";
             String baseUrl = StringUtils.chomp(configurationManager.getConfiguration().getBaseUrl(), separator);
             String repositoryBaseUrl = baseUrl + String.format("/storages/%s/%s/", storageId, repositoryId);
-            logger.info("[{}] storage [{}] repository [{}] repositoryBaseUrl is [{}]", this.getClass().getSimpleName(), storageId, repositoryId, repositoryBaseUrl);
+            logger.debug("[{}] storage [{}] repository [{}] repositoryBaseUrl is [{}]", this.getClass().getSimpleName(), storageId, repositoryId, repositoryBaseUrl);
             Versions versions = packageFeed.getVersions();
             if (Objects.nonNull(versions) && MapUtils.isNotEmpty(versions.getAdditionalProperties())) {
                 long startTime = System.currentTimeMillis();
@@ -486,7 +485,7 @@ public class NpmRepositoryFeatures implements RepositoryFeatures {
                         dist.setTarball(repositoryBaseUrl + uri.toString());
                     }
                 }
-                logger.info("[{}] storage [{}] repository [{}] replace tarball take time [{}] ms", this.getClass().getSimpleName(), storageId, repositoryId, System.currentTimeMillis() - startTime);
+                logger.debug("[{}] storage [{}] repository [{}] replace tarball take time [{}] ms", this.getClass().getSimpleName(), storageId, repositoryId, System.currentTimeMillis() - startTime);
             }
             ArtifactIdGroup finalArtifactIdGroup = artifactIdGroup;
             PackageFeed finalPackageFeed = packageFeed;
@@ -495,7 +494,7 @@ public class NpmRepositoryFeatures implements RepositoryFeatures {
                     long startTime = System.currentTimeMillis();
                     finalArtifactIdGroup.setMetadata(npmJacksonMapper.writeValueAsString(finalPackageFeed));
                     artifactIdGroupRepository.merge(finalArtifactIdGroup);
-                    logger.info("[{}] storage [{}] repository [{}] update artifactIdGroup [{}] metadata take time [{}] ms", this.getClass().getSimpleName(), storageId, repositoryId, finalArtifactIdGroup.getUuid(), System.currentTimeMillis() - startTime);
+                    logger.debug("[{}] storage [{}] repository [{}] update artifactIdGroup [{}] metadata take time [{}] ms", this.getClass().getSimpleName(), storageId, repositoryId, finalArtifactIdGroup.getUuid(), System.currentTimeMillis() - startTime);
                 } catch (Exception ex) {
                     String realMessage = CommonUtils.getRealMessage(ex);
                     logger.warn("[{}] [{}] updateArtifactIdGroup error [{}]",

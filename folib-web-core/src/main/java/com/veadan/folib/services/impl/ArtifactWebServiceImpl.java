@@ -1394,6 +1394,7 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
                         promotionUtil.setMetaData(repositoryPath, artifact.getMetadata());
                     }
                 } catch (Exception ex) {
+                    Files.deleteIfExists(artifactMetadataRepositoryPath);
                     log.warn("解析制品 [{}] 本地缓存.metadata文件错误", ExceptionUtils.getStackTrace(ex));
                 }
             }

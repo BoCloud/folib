@@ -29,6 +29,8 @@ import java.util.stream.Collectors;
 public class ArtifactEntity
         extends DomainEntity implements Artifact {
 
+    private static final long serialVersionUID = -1615799903531010501L;
+
     private String storageId;
 
     private String repositoryId;
