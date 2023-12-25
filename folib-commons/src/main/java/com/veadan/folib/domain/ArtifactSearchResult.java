@@ -1,5 +1,6 @@
 package com.veadan.folib.domain.adapter.jfrog;
 
+import com.veadan.folib.domain.ArtifactSearchRange;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;

@@ -32,4 +32,6 @@ public class ArtifactSearchRange {
      */
     private Integer total;
 
+    private Integer limit;
+
 }
