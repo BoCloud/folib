@@ -17,13 +17,13 @@
 
     <!-- Sidebar Navigation Menu -->
     <a-menu theme="light" mode="inline" :open-keys="openKeys" @openChange="onOpenChange">
-      <a-menu-item class="menu-item-header"> 制品管理 </a-menu-item>
+      <a-menu-item class="menu-item-header"> {{ $t('Sidebars.ProductManagement') }} </a-menu-item>
       <a-menu-item>
         <router-link :to="userInfo.token ? '/storage/list' : '/anonymous/storages'">
           <span class="icon">
             <a-icon type="appstore" theme="filled" class="m-0" />
           </span>
-          <span class="label">制品仓库</span>
+          <span class="label">{{ $t('Sidebars.ProductWarehouse') }}</span>
         </router-link>
       </a-menu-item>
       <a-menu-item v-if="userInfo.token">
@@ -31,19 +31,19 @@
           <span class="icon">
             <a-icon type="read" theme="filled" class="m-0" />
           </span>
-          <span class="label">安全扫描</span>
+          <span class="label">{{ $t('Sidebars.SecurityScanning') }}</span>
         </router-link>
       </a-menu-item>
       <a-menu-item v-if="this.userInfo.roles.indexOf('ADMIN') > -1 || this.userInfo.roles.indexOf('OPEN_SOURCE_MANAGE') > -1" class="menu-item-header">
         <hr class="mt-5" />
-        开源治理
+        {{ $t('Sidebars.OpenSourceGovernance') }}
       </a-menu-item>
       <a-menu-item v-if="this.userInfo.roles.indexOf('ADMIN') > -1 || this.userInfo.roles.indexOf('OPEN_SOURCE_MANAGE') > -1">
         <router-link to="/artifacts">
           <span class="icon">
             <a-icon type="profile" theme="filled" class="m-0" />
           </span>
-          <span class="label">制品分析</span>
+          <span class="label">{{ $t('Sidebars.ProductAnalysis') }}</span>
         </router-link>
       </a-menu-item>
       <a-menu-item v-if="this.userInfo.roles.indexOf('ADMIN') > -1 || this.userInfo.roles.indexOf('OPEN_SOURCE_MANAGE') > -1">
@@ -51,7 +51,7 @@
           <span class="icon">
             <a-icon type="hdd" theme="filled" class="m-0" />
           </span>
-          <span class="label">开源组件</span>
+          <span class="label">{{ $t('Sidebars.OpenSourceComponents') }}</span>
         </router-link>
       </a-menu-item>
       <a-menu-item v-if="this.userInfo.roles.indexOf('ADMIN') > -1 || this.userInfo.roles.indexOf('OPEN_SOURCE_MANAGE') > -1">
@@ -59,7 +59,7 @@
           <span class="icon">
             <a-icon type="alert" theme="filled" class="m-0" />
           </span>
-          <span class="label">漏洞库</span>
+          <span class="label">{{ $t('Sidebars.VulnerabilityDatabase') }}</span>
         </router-link>
       </a-menu-item>
       <a-menu-item v-if="this.userInfo.roles.indexOf('ADMIN') > -1 || this.userInfo.roles.indexOf('OPEN_SOURCE_MANAGE') > -1">
@@ -67,19 +67,19 @@
           <span class="icon">
             <a-icon type="file-text" theme="filled" class="m-0" />
           </span>
-          <span class="label">证书库</span>
+          <span class="label">{{ $t('Sidebars.CertificateStore') }}</span>
         </router-link>
       </a-menu-item>
       <a-menu-item v-if="userInfo.roles.indexOf('ADMIN') > -1" class="menu-item-header">
         <hr class="mt-5" />
-        设置管理
+        {{ $t('Sidebars.SetupManagement') }}
       </a-menu-item>
       <a-menu-item v-if="userInfo.roles.indexOf('ADMIN') > -1">
         <router-link to="/users">
           <span class="icon">
             <a-icon type="smile" theme="filled" class="m-0" />
           </span>
-          <span class="label">用户管理</span>
+          <span class="label">{{ $t('Sidebars.UserManagement') }}</span>
         </router-link>
       </a-menu-item>
       <a-menu-item v-if="userInfo.roles.indexOf('ADMIN') > -1">
@@ -87,7 +87,7 @@
           <span class="icon">
             <a-icon type="tool" theme="filled" class="m-0" />
           </span>
-          <span class="label">全局设置</span>
+          <span class="label">{{ $t('Sidebars.GlobalSettings') }}</span>
         </router-link>
       </a-menu-item>
       <a-menu-item v-if="userInfo.roles.indexOf('ADMIN') > -1">
@@ -95,7 +95,7 @@
           <span class="icon">
             <a-icon type="fund" theme="filled" class="m-0" />
           </span>
-          <span class="label">健康监测</span>
+          <span class="label">{{ $t('Sidebars.HealthMonitoring') }}</span>
         </router-link>
       </a-menu-item>
       <a-menu-item v-if="userInfo.roles.indexOf('ADMIN') > -1">
@@ -103,7 +103,7 @@
           <span class="icon">
             <a-icon type="control" theme="filled" class="m-0" />
           </span>
-          <span class="label">高级运维</span>
+          <span class="label">{{ $t('Sidebars.SeniorOperations') }}</span>
         </router-link>
       </a-menu-item>
     </a-menu>
@@ -128,9 +128,9 @@
             />
           </svg>
         </span>
-        <h6>不知道怎么用?</h6>
-        <p>请查阅帮助文档</p>
-        <a-button block size="small" href="/docs/overview/index.html" target="_blank"> 使用文档 </a-button>
+        <h6>{{ $t('Sidebars.DoNotKnowHowToUseIt') }}</h6>
+        <p>{{ $t('Sidebars.CheckTheHelpDocumentation') }}</p>
+        <a-button block size="small" href="/docs/overview/index.html" target="_blank"> {{ $t('Sidebars.userManual') }} </a-button>
       </div>
     </div>
     <!-- / Sidebar Footer -->

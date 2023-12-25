@@ -22,16 +22,16 @@
 			</svg>
 		</a-button>
 		<!-- / Settings Drawer Close Button -->
-		
+
 		<!-- Settings Drawer Content -->
 		<div class="drawer-content">
-			<h6>上传进度</h6>
+			<h6>{{ $t('Sidebars.UploadProgress') }}</h6>
 			<hr>
 			<a-card :bordered="false" class="header-solid h-full upload-process-card" :bodyStyle="{paddingTop: 0, paddingBottom: '12px' }">
 				<template #title>
-					<h6 class="font-semibold m-0">文件列表 
+					<h6 class="font-semibold m-0">{{ $t('Sidebars.FileList') }}
 						<a-tooltip class="process-reset-tip">
-							<template slot="title">清空</template>
+							<template slot="title">{{ $t('Sidebars.Empty') }}</template>
 							<div class="">
 								<a class="ml-10 process-reset" @click="uploadProcessRemove('')"><a-icon type="rest" /></a>
 							</div>
@@ -50,7 +50,7 @@
 							:title="item.alias"
 						>
 							<span slot="description" class="text-sm">
-								<p v-if="item.comment && item.comment.length > 0"><span v-if="!item.dictKey.includes('zip_')">失败原因：</span> {{ item.comment }}</p>
+								<p v-if="item.comment && item.comment.length > 0"><span v-if="!item.dictKey.includes('zip_')">{{ $t('Sidebars.ReasonsForFailure') }}</span> {{ item.comment }}</p>
 								<a-progress :percent="item.dictValue" :status="(item.comment && item.comment.length > 0 && !item.dictKey.includes('zip_'))?'exception':item.dictValue<100?'active':'success'" />
 
 								<div class="process-action">
@@ -89,13 +89,13 @@
 				type: Boolean,
 				default: false,
 			},
-			
+
 			// Main sidebar color.
 			sidebarColor: {
 				type: String,
 				default: "primary",
 			},
-			
+
 			// Main sidebar theme : light, white, dark.
 			sidebarTheme: {
 				type: String,
@@ -118,10 +118,10 @@
 			return {
 				// The wrapper element to attach dropdowns to.
 				wrapper: document.body,
-				
+
 				// Main sidebar color.
 				sidebarColorModel: this.sidebarColor,
-				
+
 				// Main sidebar theme : light, white, dark.
 				sidebarThemeModel: this.sidebarTheme,
 
