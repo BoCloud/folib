@@ -1,4 +1,4 @@
-package com.veadan.folib.domain.adapter.jfrog;
+package com.veadan.folib.domain;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
@@ -19,19 +19,22 @@ public class ArtifactSearchRange {
      * 开始
      */
     @JsonProperty(value = "start_pos")
-    private Integer startPos;
+    private Long startPos;
 
     /**
      * 结束
      */
     @JsonProperty(value = "end_pos")
-    private Integer endPos;
+    private Long endPos;
 
     /**
      * 总数
      */
-    private Integer total;
+    private Long total;
 
-    private Integer limit;
+    /**
+     * limit
+     */
+    private Long limit;
 
 }

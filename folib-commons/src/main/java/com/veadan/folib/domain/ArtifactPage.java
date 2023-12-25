@@ -1,6 +1,5 @@
 package com.veadan.folib.domain;
 
-import com.veadan.folib.domain.ArtifactSearchRange;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -10,21 +9,21 @@ import java.util.List;
 
 /**
  * @author leipenghui
+ * @date 2023/12/25
  **/
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
 @Data
-public class ArtifactSearchResult {
+public class ArtifactPage {
 
     /**
-     * 制品列表
+     * offset
      */
-    private List<ArtifactSearchInfo> results;
+    private Long offset;
 
     /**
-     * 分页信息
+     * limit
      */
-    private ArtifactSearchRange range;
-
+    private Long limit;
 }

@@ -1,15 +1,15 @@
 package com.veadan.folib.controllers.adapter.jfrog;
 
+import cn.hutool.json.JSONUtil;
+import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.veadan.folib.artifact.coordinates.DockerArtifactCoordinates;
 import com.veadan.folib.components.layout.DockerComponent;
-import com.veadan.folib.domain.Artifact;
-import com.veadan.folib.domain.ArtifactMetadataCondition;
-import com.veadan.folib.domain.ArtifactNameCondition;
-import com.veadan.folib.domain.ArtifactSearchCondition;
+import com.veadan.folib.domain.*;
 import com.veadan.folib.domain.adapter.jfrog.*;
+import com.veadan.folib.enums.ArtifactFieldTypeEnum;
 import com.veadan.folib.enums.ArtifactSearchConditionTypeEnum;
 import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.providers.io.RepositoryPathResolver;
@@ -26,9 +26,6 @@ import io.swagger.annotations.ApiResponses;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -77,21 +74,28 @@ public class ArtifactSearchController extends JFrogBaseController {
     @ApiResponses(value = {@ApiResponse(code = 200, message = "OK")})
     @PostMapping(value = {"/artifactory/api/search/aql"})
     public ResponseEntity<Object> aqlSearch(@RequestBody String query, HttpServletRequest request) throws Exception {
-        Map<String, String> fields = Maps.newHashMap();
-        List<String> includeFields = Lists.newArrayList();
-        String path = null, repoKey = "repo";
-        // 使用正则表达式匹配查询字符串中的字段和条件
-        String fieldPatternText = "\"([^\"]+)\":\\s*\"([^\"]+)\"";
-        Pattern fieldPattern = Pattern.compile(fieldPatternText);
-        Matcher fieldMatcher = fieldPattern.matcher(query);
-        while (fieldMatcher.find()) {
-            String fieldName = fieldMatcher.group(1);
-            String fieldValue = fieldMatcher.group(2);
-            fields.put(fieldName, fieldValue);
+        List<ArtifactSearchInfo> results = Lists.newArrayList();
+        long zero = 0L;
+        ArtifactSearchRange range = ArtifactSearchRange.builder().startPos(zero).endPos(zero).total(zero).build();
+        ArtifactSearchResult artifactSearchResult = ArtifactSearchResult.builder().results(results).range(range).build();
+        JSONObject findJson;
+        String findPatternText = "items\\.find\\(([^)]+)\\)";
+        // 使用正则表达式匹配 items.find() 括号内的内容
+        Pattern pattern = Pattern.compile(findPatternText, Pattern.DOTALL);
+        Matcher matcher = pattern.matcher(query);
+        if (matcher.find()) {
+            String contentInsideFind = matcher.group(1).trim();
+            log.info("Content inside items.find() [{}]" + contentInsideFind);
+            findJson = JSONObject.parseObject(contentInsideFind);
+        } else {
+            log.warn("No match found for items.find() [{}]", query);
+            return ResponseEntity.ok(artifactSearchResult);
         }
+        List<String> includeFields = Lists.newArrayList();
+        String repoKey = "repo", pathKey = "path";
         // 提取 "repo", "path" 和 "include" 字段
         String storageId = getDefaultStorageId();
-        String repositoryId = fields.get(repoKey);
+        String repositoryId = findJson.getString(repoKey);
         Storage storage = getStorage(storageId);
         if (Objects.isNull(storage)) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(handlerErrors(null, STORAGE_NOT_FOUND_MESSAGE));
@@ -99,61 +103,80 @@ public class ArtifactSearchController extends JFrogBaseController {
         if (Objects.isNull(storage.getRepository(repositoryId))) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(handlerErrors(null, REPOSITORY_NOT_FOUND_MESSAGE));
         }
-        String pathPatternText = "\"path\":\\s*\\{\\s*\"\\$(match)\":\\s*\"(.*?)\"\\s*}";
-        Pattern pathPattern = Pattern.compile(pathPatternText);
-        Matcher pathMatcher = pathPattern.matcher(query);
-        if (pathMatcher.find()) {
-            path = pathMatcher.group(2);
+        List<ArtifactConditionGroup> artifactConditionGroups = Lists.newArrayList();
+        ArtifactConditionGroup orArtifactConditionGroup = ArtifactConditionGroup.builder().artifactSearchConditionTypeEnum(ArtifactSearchConditionTypeEnum.OR)
+                .artifactConditions(Lists.newArrayList()).artifactMetadataConditions(Lists.newArrayList()).artifactNameConditions(Lists.newArrayList()).build();
+        artifactConditionGroups.add(orArtifactConditionGroup);
+        ArtifactConditionGroup andArtifactConditionGroup = ArtifactConditionGroup.builder().artifactSearchConditionTypeEnum(ArtifactSearchConditionTypeEnum.AND)
+                .artifactConditions(Lists.newArrayList()).artifactMetadataConditions(Lists.newArrayList()).artifactNameConditions(Lists.newArrayList()).build();
+        artifactConditionGroups.add(andArtifactConditionGroup);
+        boolean flag = findJson.containsKey(ArtifactSearchConditionTypeEnum.OR.getSource()) || findJson.containsKey(ArtifactSearchConditionTypeEnum.AND.getSource());
+        for (String key : findJson.keySet()) {
+            if (flag) {
+                String str = findJson.getString(key);
+                if (StringUtils.isBlank(str) || !JSONUtil.isJson(str)) {
+                    continue;
+                }
+                Optional<ArtifactConditionGroup> artifactConditionGroupOptional = artifactConditionGroups.stream().filter(item -> key.equals(item.getArtifactSearchConditionTypeEnum().getSource())).findFirst();
+                if (artifactConditionGroupOptional.isPresent()) {
+                    ArtifactConditionGroup artifactConditionGroup = artifactConditionGroupOptional.get();
+                    JSONArray jsonArray = findJson.getJSONArray(key);
+                    for (int i = 0; i < jsonArray.size(); i++) {
+                        JSONObject json = jsonArray.getJSONObject(i);
+                        for (String itemKey : json.keySet()) {
+                            handle(pathKey, itemKey, null, json.getJSONObject(itemKey), artifactConditionGroup);
+                        }
+                    }
+                }
+            } else {
+                handle(pathKey, key, findJson.getString(key), null, andArtifactConditionGroup);
+            }
         }
-        List<ArtifactNameCondition> artifactNameConditions = Lists.newArrayList();
-        List<ArtifactMetadataCondition> artifactMetadataConditions = Lists.newArrayList();
-
-        ArtifactSearchCondition artifactSearchCondition = ArtifactSearchCondition.builder().storageId(storageId).repositoryId(repositoryId).path(path).artifactNameConditions(artifactNameConditions).artifactMetadataConditions(artifactMetadataConditions).build();
-        String namePatternText = "\"name\"\\s*:\\s*\\{\\s*\"\\$(eq|ne|match|nmatch)\":\\s*\"(.*?)\"\\s*}";
-        Pattern namePattern = Pattern.compile(namePatternText);
-        Matcher nameMatcher = namePattern.matcher(query);
-        ArtifactNameCondition artifactNameCondition = null;
-        while (nameMatcher.find()) {
-            String operator = nameMatcher.group(1);
-            String value = nameMatcher.group(2);
-            artifactNameCondition = ArtifactNameCondition.builder().artifactSearchConditionTypeEnum(ArtifactSearchConditionTypeEnum.queryTypeEnum(operator)).searchValue(value).build();
-            artifactNameConditions.add(artifactNameCondition);
+        List<ArtifactSort> artifactSorts = Lists.newArrayList();
+        String sortPatternText = "\\.sort\\(([^)]+)\\)";
+        Pattern sortPattern = Pattern.compile(sortPatternText, Pattern.DOTALL);
+        Matcher sortMatcher = sortPattern.matcher(query);
+        if (sortMatcher.find()) {
+            String sortStr = sortMatcher.group(1).trim();
+            JSONObject sortJson = JSONObject.parseObject(sortStr);
+            ArtifactFieldTypeEnum artifactFieldTypeEnum = null;
+            for (String sortKey : sortJson.keySet()) {
+                List<String> keyList = Lists.newArrayList();
+                for (String key : sortJson.getJSONArray(sortKey).toJavaList(String.class)) {
+                    artifactFieldTypeEnum = ArtifactFieldTypeEnum.queryTypeEnum(key);
+                    if (Objects.isNull(artifactFieldTypeEnum)) {
+                        continue;
+                    }
+                    keyList.add(artifactFieldTypeEnum.getFolibary());
+                }
+                artifactSorts.add(ArtifactSort.builder().order(sortKey.replace("$", "")).keyList(keyList).build());
+            }
         }
+        ArtifactSearchCondition artifactSearchCondition = ArtifactSearchCondition.builder().storageId(storageId).repositoryId(repositoryId).path("").artifactConditionGroups(artifactConditionGroups).artifactSorts(artifactSorts).build();
         String includePatternText = "\\.include\\((.*?)\\)";
         Pattern includePattern = Pattern.compile(includePatternText);
         Matcher includeMatcher = includePattern.matcher(query);
         if (includeMatcher.find()) {
             String includeText = includeMatcher.group(1);
             String[] includeFieldArray = includeText.split(",");
+            List<String> unIncludeList = Lists.newArrayList("\"*\"");
             for (String includeField : includeFieldArray) {
+                if (unIncludeList.stream().anyMatch(includeField::equals)) {
+                    continue;
+                }
                 includeFields.add(includeField.trim().replaceAll("\"", ""));
             }
         }
-        // 动态获取字段名
-        String metadataPatternText = "\"@(\\w+)\"\\s*:\\s*\\{\\s*\"\\$(eq|ne|match|nmatch)\":\\s*\"(.*?)\"\\s*}";
-        Pattern metadataPattern = Pattern.compile(metadataPatternText);
-        Matcher metadataMatcher = metadataPattern.matcher(query);
-        ArtifactMetadataCondition artifactMetadataCondition = null;
-        while (metadataMatcher.find()) {
-            String metadataKey = metadataMatcher.group(1);
-            String operator = metadataMatcher.group(2);
-            String metadataValue = metadataMatcher.group(3);
-            artifactMetadataCondition = ArtifactMetadataCondition.builder().artifactSearchConditionTypeEnum(ArtifactSearchConditionTypeEnum.queryTypeEnum(operator)).medataKey(metadataKey).medataValue(metadataValue).build();
-            artifactMetadataConditions.add(artifactMetadataCondition);
-        }
-        List<ArtifactSearchInfo> results = Lists.newArrayList();
-        int zero = 0;
-        ArtifactSearchRange range = ArtifactSearchRange.builder().startPos(zero).endPos(zero).total(zero).build();
-        ArtifactSearchResult artifactSearchResult = ArtifactSearchResult.builder().results(results).range(range).build();
-        Page<Artifact> page = artifactRepository.findMatchingByAql(getPageable(query), artifactSearchCondition);
-        if (Objects.nonNull(page)) {
-            List<String> metadataKeyList = includeFields.stream().filter(item -> item.startsWith("@")).map(item -> item.replace("@", "")).collect(Collectors.toList());
-            range.setStartPos(page.getPageable().getPageNumber() + 1);
-            range.setEndPos(page.getPageable().getPageSize());
-            range.setTotal(Long.valueOf(page.getTotalElements()).intValue());
-            if (CollectionUtils.isNotEmpty(page.getContent())) {
+        ArtifactSearch<Artifact> artifactArtifactSearch = artifactRepository.findMatchingByAql(getPageable(query), artifactSearchCondition);
+        if (Objects.nonNull(artifactArtifactSearch)) {
+            List<String> metadataKeyList = includeFields.stream().filter(item -> item.startsWith("@") || item.contains("property")).map(item -> item.replace("@", "")).collect(Collectors.toList());
+            range.setStartPos(artifactArtifactSearch.getRange().getStartPos());
+            range.setTotal(artifactArtifactSearch.getRange().getTotal());
+            range.setEndPos(artifactArtifactSearch.getRange().getEndPos());
+            range.setLimit(artifactArtifactSearch.getRange().getLimit());
+            if (CollectionUtils.isNotEmpty(artifactArtifactSearch.getResults())) {
                 ArtifactSearchInfo artifactSearchInfo = null;
-                for (Artifact artifact : page.getContent()) {
+                for (Artifact artifact : artifactArtifactSearch.getResults()) {
                     artifactSearchInfo = filterObjectByProperties(artifact, includeFields);
                     filterMetadata(artifactSearchInfo, artifact, metadataKeyList);
                     results.add(artifactSearchInfo);
@@ -162,6 +185,40 @@ public class ArtifactSearchController extends JFrogBaseController {
         }
         return ResponseEntity.ok(artifactSearchResult);
     }
+
+    private String handle(String pathKey, String key, String content, JSONObject json, ArtifactConditionGroup artifactConditionGroup) {
+        String path = "";
+        if (StringUtils.isNotBlank(content) && JSONUtil.isJson(content)) {
+            json = JSONObject.parseObject(content);
+        }
+        if (Objects.isNull(json) || json.isEmpty()) {
+            return path;
+        }
+        if (key.startsWith("@")) {
+            for (String conditionKey : json.keySet()) {
+                //元数据
+                artifactConditionGroup.getArtifactMetadataConditions().add(ArtifactMetadataCondition.builder().medataKey(key.replace("@", ""))
+                        .artifactSearchConditionTypeEnum(ArtifactSearchConditionTypeEnum.queryTypeEnumBySource(conditionKey)).medataValue(json.getString(conditionKey)).build());
+            }
+        } else if ("name".equalsIgnoreCase(key)) {
+            for (String itemKey : json.keySet()) {
+                artifactConditionGroup.getArtifactNameConditions().add(ArtifactNameCondition.builder()
+                        .artifactSearchConditionTypeEnum(ArtifactSearchConditionTypeEnum.queryTypeEnumBySource(itemKey)).searchValue(json.getString(itemKey)).build());
+            }
+        } else {
+            ArtifactFieldTypeEnum artifactFieldTypeEnum = null;
+            for (String itemKey : json.keySet()) {
+                artifactFieldTypeEnum = ArtifactFieldTypeEnum.queryTypeEnum(key);
+                if (Objects.isNull(artifactFieldTypeEnum)) {
+                    continue;
+                }
+                artifactConditionGroup.getArtifactConditions().add(ArtifactCondition.builder()
+                        .artifactSearchConditionTypeEnum(ArtifactSearchConditionTypeEnum.queryTypeEnumBySource(itemKey)).searchKey(artifactFieldTypeEnum.getFolibary()).searchValue(json.getString(itemKey)).build());
+            }
+        }
+        return path;
+    }
+
 
     @ApiOperation(value = "JFrog搜索")
     @ApiResponses(value = {@ApiResponse(code = 200, message = "OK")})
@@ -262,43 +319,40 @@ public class ArtifactSearchController extends JFrogBaseController {
         }
     }
 
-    private Pageable getPageable(String query) {
-        Pageable pageable = null;
-        Integer page = null, limit = null;
+    private ArtifactPage getPageable(String query) {
+        ArtifactPage artifactPage = ArtifactPage.builder().build();
+        Long offset = null, limit = null;
         String regex = "limit\\((\\d+)\\)";
-        limit = getInteger(query, regex);
+        limit = getLong(query, regex);
         if (Objects.isNull(limit)) {
-            limit = 100;
+            limit = 100L;
         }
+        artifactPage.setLimit(limit);
         regex = "offset\\((\\d+)\\)";
-        page = getInteger(query, regex);
-        if (Objects.isNull(page)) {
-            page = 1;
+        offset = getLong(query, regex);
+        if (Objects.isNull(offset)) {
+            offset = 0L;
         }
-        if (page == 1) {
-            pageable = PageRequest.of(page, limit).first();
-        } else {
-            pageable = PageRequest.of(page, limit).previous();
-        }
-        return pageable;
+        artifactPage.setOffset(offset);
+        return artifactPage;
     }
 
-    private Integer getInteger(String query, String regex) {
-        Integer result = null;
+    private Long getLong(String query, String regex) {
+        Long result = null;
         Pattern pattern = Pattern.compile(regex);
         // 创建匹配器
         Matcher matcher = pattern.matcher(query);
         // 查找匹配项
         if (matcher.find()) {
             // 提取 limit 值
-            result = Integer.parseInt(matcher.group(1));
+            result = Long.parseLong(matcher.group(1));
         }
         return result;
     }
 
     private ArtifactSearchInfo filterObjectByProperties(Artifact artifact, List<String> propertyList) {
         ArtifactSearchInfo artifactSearchInfo = new ArtifactSearchInfo();
-        if (CollectionUtils.isEmpty(propertyList)) {
+        if (CollectionUtils.isEmpty(propertyList) || (CollectionUtils.isNotEmpty(propertyList) && propertyList.contains("property"))) {
             artifactSearchInfo.setRepo(String.format("%s/%s", artifact.getStorageId(), artifact.getRepositoryId()));
             artifactSearchInfo.setName(artifact.getArtifactName());
             artifactSearchInfo.setPath(getPath(artifact.getArtifactPath(), artifact.getArtifactName()));
@@ -358,6 +412,9 @@ public class ArtifactSearchController extends JFrogBaseController {
                 Map<String, Object> map = null;
                 JSONObject metadataJson = JSONObject.parseObject(artifact.getMetadata());
                 Set<String> keySet = metadataJson.keySet();
+                if (metadataList.contains("property")) {
+                    metadataList = Lists.newArrayList(keySet);
+                }
                 String key = "key", valueKey = "value";
                 for (String metadataKey : metadataList) {
                     String values = "", value = "";
