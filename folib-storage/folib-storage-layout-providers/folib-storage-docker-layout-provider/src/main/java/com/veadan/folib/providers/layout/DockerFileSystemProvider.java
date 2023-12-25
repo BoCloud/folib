@@ -62,16 +62,20 @@ public class DockerFileSystemProvider
             throws IOException {
         RepositoryPath repositoryPath = (RepositoryPath) path;
         logger.info("Removing {}...", repositoryPath);
+        String artifactPath = RepositoryFiles.relativizePath(repositoryPath);
+        String rootArtifactPath = RepositoryFiles.relativizePath(repositoryPath.getRoot());
         handlerManifestAndBlob(repositoryPath, force);
         super.delete(repositoryPath, force);
-        RepositoryPath parent = repositoryPath.getParent();
         try {
-            if (Files.exists(parent) && !Files.isSameFile(repositoryPath.getRoot(), parent) && Files.list(parent).count() == 0) {
-                Files.deleteIfExists(parent);
-                logger.info("Delete parent root path {}", parent.toString());
+            if (!artifactPath.equals(rootArtifactPath)) {
+                RepositoryPath parent = repositoryPath.getParent();
+                if (Files.exists(parent) && !Files.isSameFile(repositoryPath.getRoot(), parent) && Files.list(parent).count() == 0) {
+                    Files.deleteIfExists(parent);
+                    logger.info("Delete parent root path {}", parent.toString());
+                }
             }
         } catch (Exception ex) {
-            logger.error("删除父目录失败 {}", ExceptionUtils.getStackTrace(ex));
+            logger.warn("删除父目录失败 {}", ExceptionUtils.getStackTrace(ex));
         }
     }
 
