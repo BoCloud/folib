@@ -2,35 +2,35 @@
   <div>
     <a-row type="flex" :gutter="24">
       <a-col :span="24" class="mb-24">
-        <a-descriptions title="最近一次迁移" :column="1" class="mb-20" v-if="record.info">
-          <a-descriptions-item label="操作用户">
+        <a-descriptions :title="$t('Setting.LastMigration')" :column="1" class="mb-20" v-if="record.info">
+          <a-descriptions-item :label="$t('Setting.OperationUser')">
             {{ record.info.operator }}
           </a-descriptions-item>
-          <a-descriptions-item label="操作时间">
+          <a-descriptions-item :label="$t('Setting.OperationTime')">
             {{ record.createTime }}
           </a-descriptions-item>
-          <a-descriptions-item label="存储空间">
+          <a-descriptions-item :label="$t('Setting.StorageSpace')">
             {{ record.info.storageId }}
           </a-descriptions-item>
-          <a-descriptions-item label="所属仓库">
+          <a-descriptions-item :label="$t('Setting.OwnedWarehouse')">
             {{ record.info.repositoryId }}
           </a-descriptions-item>
-          <a-descriptions-item label="制品总数">
+          <a-descriptions-item :label="$t('Setting.ProductsNum')">
             {{ record.info.artifactsCount }}
           </a-descriptions-item>
-          <a-descriptions-item label="迁移制品">
+          <a-descriptions-item :label="$t('Setting.MigratedProducts')">
             {{ record.info.process }}
           </a-descriptions-item>
-          <a-descriptions-item label="迁移进度">
+          <a-descriptions-item :label="$t('Setting.MigrationProgress')">
             {{ record.info.progress + '%'}}
           </a-descriptions-item>
-          <a-descriptions-item label="迁移状态">
+          <a-descriptions-item :label="$t('Setting.TransitionState')">
             <a-tag v-if="record.comment"
               :color="record.comment.indexOf('完成') !== -1 ? 'green' : record.comment.indexOf('错误') !== -1 ? 'red' : 'orange'">
               {{ record.comment }}
-              <a-popconfirm title="确定要更改状态吗？" okType="danger" ok-text="确定" cancel-text="取消"
-                @confirm="updateSingleDict(record.id, '手动结束')">
-                <a-icon type="unlock" theme="filled" v-if="record.comment.indexOf('中') !== -1" />
+              <a-popconfirm :title="$t('Setting.sureChangeState')" okType="danger" :ok-text="$t('Setting.BeSure')" :cancel-text="$t('Setting.Cancel')"
+                @confirm="updateSingleDict(record.id, $t('Setting.ManualClosing'))">
+                <a-icon type="unlock" theme="filled" v-if="record.comment.indexOf('中)') !== -1" />
               </a-popconfirm>
             </a-tag>
             <span v-else>--</span>
@@ -41,9 +41,9 @@
             <a-col :span="24">
               <a-row :gutter="[24]">
                 <a-col :span="4">
-                  <a-form-model-item class="mb-10" label="存储空间" :colon="false" prop="storageId">
+                  <a-form-model-item class="mb-10" :label="$t('Setting.StorageSpace')" :colon="false" prop="storageId">
                     <a-select @change="handleStorageChange" showSearch allowClear v-model="dataMigrationForm.storageId"
-                      placeholder="请选择存储空间">
+                      :placeholder="$t('Setting.selectTheStorageSpace')">
                       <a-select-option v-for="storageId in storages" :key="storageId">
                         {{ storageId }}
                       </a-select-option>
@@ -51,9 +51,9 @@
                   </a-form-model-item>
                 </a-col>
                 <a-col :span="4">
-                  <a-form-model-item class="mb-10" label="所属仓库" :colon="false" prop="repositoryId">
+                  <a-form-model-item class="mb-10" :label="$t('Setting.OwnedWarehouse')" :colon="false" prop="repositoryId">
                     <a-select showSearch @change="handleRepositoryChange" allowClear
-                      v-model="dataMigrationForm.repositoryId" placeholder="请选择所属仓库">
+                      v-model="dataMigrationForm.repositoryId" :placeholder="$t('Setting.selectYourRepository')">
                       <a-select-option v-for="repositoryId in repositories" :key="repositoryId">
                         {{ repositoryId }}
                       </a-select-option>
@@ -61,22 +61,22 @@
                   </a-form-model-item>
                 </a-col>
                 <a-col :span="4">
-                  <a-form-model-item class="mb-10" label="批处理数量" :colon="false" prop="batch">
-                    <a-input placeholder="请输入批处理数量" v-model="dataMigrationForm.batch" />
+                  <a-form-model-item class="mb-10" :label="$t('Setting.BatchSize')" :colon="false" prop="batch">
+                    <a-input :placeholder="$t('Setting.enterTheBatchNumber')" v-model="dataMigrationForm.batch" />
                   </a-form-model-item>
                 </a-col>
               </a-row>
               <a-row :gutter="[24]">
                 <a-col :span="12">
                   <a-form-model-item :wrapper-col="{ span: 14, offset: 6 }">
-                    <a-popconfirm title="确定要执行数据迁移吗？" okType="danger" ok-text="确定" cancel-text="取消"
+                    <a-popconfirm :title="$t('Setting.surePerformDataMigration')" okType="danger" :ok-text="$t('Setting.BeSure')" :cancel-text="$t('Setting.Cancel')"
                       @confirm="dataMigrationFormSubmit" :disabled="record.comment && record.comment.length > 0 && record.comment.indexOf('中') > -1">
                       <a-button type="danger" :disabled="record.comment && record.comment.length > 0 && record.comment.indexOf('中') > -1">
-                        保存
+                        {{ $t('Setting.Save') }}
                       </a-button>
                     </a-popconfirm>
                     <a-button class="ml-10" @click="dataMigrationResetForm">
-                      取消
+                      {{ $t('Setting.Cancel') }}
                     </a-button>
                   </a-form-model-item>
                 </a-col>
@@ -101,6 +101,20 @@ import {
 export default {
   inject: ["reload"],
   data() {
+    const checkStorageId = (rule, value, callback) => {
+      if (!value) {
+        callback(new Error(this.$t('Setting.selectTheStorageSpace')))
+      } else {
+        callback()
+      }
+    }
+    const checkRepositoryId = (rule, value, callback) => {
+      if (!value) {
+        callback(new Error(this.$t('Setting.selectYourRepository')))
+      } else {
+        callback()
+      }
+    }
     return {
       storages: [],
       repositoriesData: {},
@@ -112,8 +126,8 @@ export default {
         batch: 500,
       },
       dataMigrationRules:  {
-        storageId: [{ required: true, message: "请选择存储空间", trigger: "blur" }],
-        repositoryId: [{ required: true, message: "请选择所属仓库", trigger: "blur" }],
+        storageId: [{ required: true, trigger: "blur", validator: checkStorageId }],
+        repositoryId: [{ required: true, trigger: "blur", validator: checkRepositoryId }],
       },
       record: {
         id: 0,
@@ -150,7 +164,7 @@ export default {
   methods: {
     message(type, message) {
       if (!message) {
-        message = "操作成功"
+        message = this.$t('Setting.OperationSuccessful')
       }
       this.$notification[type]({
         message: message,
@@ -191,10 +205,10 @@ export default {
               setTimeout(() => {
                 this.getSingleDict("handler_maven_indexer")
               }, 100)
-              this.message("success", "请稍等，数据迁移任务已启动，正在异步执行")
+              this.message("success", this.$t('Setting.dataMigrationTaskStart'))
             }
           }).catch((err) => {
-            this.message("error", "执行数据迁移任务失败")
+            this.message("error", this.$t('Setting.FailPerformMigration'))
           }).finally(() => {
             this.dataMigrationResetForm()
           })
@@ -207,7 +221,7 @@ export default {
     },
     getSingleDict(dictType) {
       this.record = {
-       
+
       }
       getSingleDict({ dictType: dictType }).then(res => {
         if (res) {
@@ -221,7 +235,7 @@ export default {
     updateSingleDict(id, comment) {
       updateSingleDict({ id: id, comment: comment }).then(res => {
         this.initData()
-        this.message("success", "状态更新成功")
+        this.message("success", this.$t('Setting.updateStatusSuccessful'))
       })
     }
   }
