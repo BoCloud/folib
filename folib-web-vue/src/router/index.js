@@ -23,7 +23,7 @@ let routes = [
 		name: 'Home',
 		redirect: '/anonymous/storages',
 	},
- 
+
 	{
 		path: '/dashboards/',
 		name: 'Dashboard',
@@ -32,9 +32,9 @@ let routes = [
 		// this generates a separate chunk (about.[hash].js) for this route
 		// which is lazy-loaded when the route is visited.
 		meta: {
-			title: '存储分析',
+			title: 'router.StorageAnalysis',
 			sidebarMap: ['dashboards'],
-			breadcrumbs: ['首页', '存储分析'],
+			breadcrumbs: ['router.Homepage', 'router.StorageAnalysis'],
 		},
 		component: () => import(/* webpackChunkName: "dashboard" */ '../views/Dashboards/Default.vue'),
 	},
@@ -57,9 +57,9 @@ let routes = [
 		// this generates a separate chunk (about.[hash].js) for this route
 		// which is lazy-loaded when the route is visited.
 		meta: {
-			title: '仓库列表',
-			sidebarMap: ['仓库列表'],
-			breadcrumbs: ['制品仓库', '仓库列表'],
+			title: 'router.RepositoryList',
+			sidebarMap: ['router.RepositoryList'],
+			breadcrumbs: ['router.ProductWarehouse', 'router.RepositoryList'],
 		},
 		component: () => import('../views/Storage/Storages.vue'),
 	},
@@ -68,10 +68,10 @@ let routes = [
 		name: 'anonymousStorages',
 		layout: "dashboard",
 		meta: {
-			title: '仓库列表',
+			title: 'router.RepositoryList',
 			layoutClass: 'layout-profile',
-			sidebarMap: ['仓库列表'],
-			breadcrumbs: ['制品仓库', '仓库列表'],
+			sidebarMap: ['router.RepositoryList'],
+			breadcrumbs: ['router.ProductWarehouse', 'router.RepositoryList'],
 		},
 		component: () => import('../views/Storage/AnonymousStorages.vue'),
 	},
@@ -81,10 +81,10 @@ let routes = [
 		name: 'libDetial',
 		layout: "dashboard",
 		meta: {
-			title: '仓库浏览',
+			title: 'router.WarehouseBrowsing',
 			layoutClass: 'layout-profile',
-			sidebarMap: ['制品仓库', '仓库列表', '仓库浏览'],
-			breadcrumbs: ['制品仓库', '仓库列表', '仓库浏览'],
+			sidebarMap: ['router.ProductWarehouse', 'router.RepositoryList', 'router.WarehouseBrowsing'],
+			breadcrumbs: ['router.ProductWarehouse', 'router.RepositoryList', 'router.WarehouseBrowsing'],
 		},
 		component: () => import('../views/Storage/LibView.vue'),
 	},
@@ -96,9 +96,9 @@ let routes = [
 		// this generates a separate chunk (about.[hash].js) for this route
 		// which is lazy-loaded when the route is visited.
 		meta: {
-			title: '扫描首页',
-			sidebarMap: ['安全扫描'],
-			breadcrumbs: ['安全扫描', '扫描首页'],
+			title: 'router.ScanTheHomePage',
+			sidebarMap: ['router.SecurityScanning'],
+			breadcrumbs: ['router.SecurityScanning', 'router.ScanTheHomePage'],
 		},
 		component: () => import('../views/Storage/Scanner.vue'),
 	},
@@ -110,9 +110,9 @@ let routes = [
 		// this generates a separate chunk (about.[hash].js) for this route
 		// which is lazy-loaded when the route is visited.
 		meta: {
-			title: '扫描详情',
-			sidebarMap: ['安全扫描','扫描详情'],
-			breadcrumbs: ['安全扫描', '扫描首页','扫描详情'],
+			title: 'router.ScanDetails',
+			sidebarMap: ['router.SecurityScanning','router.ScanDetails'],
+			breadcrumbs: ['router.SecurityScanning', 'router.ScanTheHomePage','router.ScanDetails'],
 		},
 		component: () => import('../views/Storage/ScannerView.vue'),
 	},
@@ -121,9 +121,9 @@ let routes = [
 		name: 'users',
 		layout: "dashboard",
 		meta: {
-			title: '用户管理',
-			sidebarMap: ['用户管理', '用户列表'],
-			breadcrumbs: ['用户管理', '用户列表'],
+			title: 'router.UserManagement',
+			sidebarMap: ['router.UserManagement', 'router.UserList'],
+			breadcrumbs: ['router.UserManagement', 'router.UserList'],
 		},
 		component: () => import('../views/Users/Users.vue'),
 	},
@@ -132,9 +132,9 @@ let routes = [
 		name: 'settings',
 		layout: "dashboard",
 		meta: {
-			title: '全局设置',
-			sidebarMap: ['设置管理', '全局设置'],
-			breadcrumbs: ['设置管理', '全局设置'],
+			title: 'router.GlobalSettings',
+			sidebarMap: ['router.SetupManagement', 'router.GlobalSettings'],
+			breadcrumbs: ['router.SetupManagement', 'router.GlobalSettings'],
 		},
 		component: () => import('../views/Setting/Settings.vue'),
 	},
@@ -143,9 +143,9 @@ let routes = [
 		name: 'monitor',
 		layout: "dashboard",
 		meta: {
-			title: '健康监测',
-			sidebarMap: ['设置管理', '健康监测'],
-			breadcrumbs: ['设置管理', '健康监测'],
+			title: 'router.HealthMonitoring',
+			sidebarMap: ['router.SetupManagement', 'router.HealthMonitoring'],
+			breadcrumbs: ['router.SetupManagement', 'router.HealthMonitoring'],
 		},
 		component: () => import('../views/Setting/Monitor.vue'),
 	},
@@ -154,7 +154,7 @@ let routes = [
 		name: 'login',
 		meta: {
 			layoutClass: 'layout-sign-up-illustration',
-			title: '登录',
+			title: 'router.Login',
 			sidebarMap: ['authentication', 'sign-up', 'illustration'],
 			breadcrumbs: ['Authentication', 'Sign Up', 'Illustration'],
 			nofooter: true,
@@ -173,9 +173,9 @@ let routes = [
 		name: 'personal',
 		layout: "dashboard",
 		meta: {
-			title: '个人中心',
-			sidebarMap: ['个人中心'],
-			breadcrumbs: ['个人中心'],
+			title: 'router.PersonalCenter',
+			sidebarMap: ['router.PersonalCenter'],
+			breadcrumbs: ['router.PersonalCenter'],
 			nofooter: true,
 		},
 		component: () => import('../views/Users/Personal.vue'),
@@ -185,9 +185,9 @@ let routes = [
 		name: 'advanced',
 		layout: "dashboard",
 		meta: {
-			title: '高级运维',
-			sidebarMap: ['设置管理', '高级运维'],
-			breadcrumbs: ['设置管理', '高级运维'],
+			title: 'router.SeniorOperations',
+			sidebarMap: ['router.SetupManagement', 'router.SeniorOperations'],
+			breadcrumbs: ['router.SetupManagement', 'router.SeniorOperations'],
 		},
 		component: () => import('../views/Setting/Advanced.vue'),
 	},
@@ -199,9 +199,9 @@ let routes = [
     name: "artifacts",
     layout: "dashboard",
     meta: {
-      title: "制品分析",
-      sidebarMap: ["开源治理", "制品分析"],
-      breadcrumbs: ["开源治理", "制品分析"],
+      title: 'router.ProductAnalysis',
+      sidebarMap: ['router.OpenSourceGovernance', 'router.ProductAnalysis'],
+      breadcrumbs: ['router.OpenSourceGovernance', 'router.ProductAnalysis'],
     },
     component: () => import("../views/ComponentAnalysis/Artifacts/index.vue"),
   },
@@ -210,9 +210,9 @@ let routes = [
     name: "artifactsDetail",
     layout: "dashboard",
     meta: {
-      title: "制品详情",
-      sidebarMap: ["开源治理", "制品分析", "制品详情"],
-      breadcrumbs: ["开源治理", "制品分析", "制品详情"],
+      title: 'router.ProductDetails',
+      sidebarMap: ['router.OpenSourceGovernance', 'router.ProductAnalysis', 'router.ProductDetails'],
+      breadcrumbs: ['router.OpenSourceGovernance', 'router.ProductAnalysis', 'router.ProductDetails'],
     },
     component: () => import("../views/ComponentAnalysis/Artifacts/Detail.vue"),
   },
@@ -221,9 +221,9 @@ let routes = [
     name: "components",
     layout: "dashboard",
     meta: {
-      title: "开源组件",
-      sidebarMap: ["开源治理", "开源组件"],
-      breadcrumbs: ["开源治理", "开源组件"],
+      title: 'router.OpenSourceComponents',
+      sidebarMap: ['router.OpenSourceGovernance', 'router.OpenSourceComponents'],
+      breadcrumbs: ['router.OpenSourceGovernance', 'router.OpenSourceComponents'],
     },
     component: () => import("../views/ComponentAnalysis/Module/index.vue"),
   },
@@ -232,9 +232,9 @@ let routes = [
     name: "componentsDetail",
     layout: "dashboard",
     meta: {
-      title: "组件详情",
-      sidebarMap: ["开源治理", "开源组件", "组件详情"],
-      breadcrumbs: ["开源治理", "开源组件", "组件详情"],
+      title: 'router.ComponentDetails',
+      sidebarMap: ['router.OpenSourceGovernance', 'router.OpenSourceComponents', 'router.ComponentDetails'],
+      breadcrumbs: ['router.OpenSourceGovernance', 'router.OpenSourceComponents', 'router.ComponentDetails'],
     },
     component: () => import("../views/ComponentAnalysis/Module/Detail.vue"),
   },
@@ -243,9 +243,9 @@ let routes = [
     name: "vulnerabilities",
     layout: "dashboard",
     meta: {
-      title: "漏洞库",
-      sidebarMap: ["开源治理", "漏洞库"],
-      breadcrumbs: ["开源治理", "漏洞库"],
+      title: 'router.VulnerabilityDatabase',
+      sidebarMap: ['router.OpenSourceGovernance', 'router.VulnerabilityDatabase'],
+      breadcrumbs: ['router.OpenSourceGovernance', 'router.VulnerabilityDatabase'],
     },
     component: () => import("../views/ComponentAnalysis/Vulnerabilities/index.vue"),
   },
@@ -254,9 +254,9 @@ let routes = [
     name: "vulnerabilitiesDetail",
     layout: "dashboard",
     meta: {
-      title: "漏洞详情",
-      sidebarMap: ["开源治理", "漏洞库", "漏洞详情"],
-      breadcrumbs: ["开源治理", "漏洞库", "漏洞详情"],
+      title: 'router.VulnerabilityDetails',
+      sidebarMap: ['router.OpenSourceGovernance', 'router.VulnerabilityDatabase', 'router.VulnerabilityDetails'],
+      breadcrumbs: ['router.OpenSourceGovernance', 'router.VulnerabilityDatabase', 'router.VulnerabilityDetails'],
     },
     component: () => import("../views/ComponentAnalysis/Vulnerabilities/Detail.vue"),
   },
@@ -265,9 +265,9 @@ let routes = [
     name: "licenses",
     layout: "dashboard",
     meta: {
-      title: "证书库",
-      sidebarMap: ["开源治理", "证书库"],
-      breadcrumbs: ["开源治理", "证书库"],
+      title: 'router.CertificateStore',
+      sidebarMap: ['router.OpenSourceGovernance', 'router.CertificateStore'],
+      breadcrumbs: ['router.OpenSourceGovernance', 'router.CertificateStore'],
     },
     component: () => import("../views/ComponentAnalysis/Licenses/index.vue"),
   },
@@ -276,9 +276,9 @@ let routes = [
     name: "licensesDetail",
     layout: "dashboard",
     meta: {
-      title: "证书详情",
-      sidebarMap: ["开源治理", "证书库", "证书详情"],
-      breadcrumbs: ["开源治理", "证书库", "证书详情"],
+      title: 'router.CertificateDetails',
+      sidebarMap: ['router.OpenSourceGovernance', 'router.CertificateStore', 'router.CertificateDetails'],
+      breadcrumbs: ['router.OpenSourceGovernance', 'router.CertificateStore', 'router.CertificateDetails'],
     },
     component: () => import("../views/ComponentAnalysis/Licenses/Detail.vue"),
   },
@@ -307,7 +307,7 @@ function addLayoutToRoute( route, parentLayout = "default" )
 {
 	route.meta = route.meta || {} ;
 	route.meta.layout = route.layout || parentLayout ;
-	
+
 	if( route.children )
 	{
 		route.children = route.children.map( ( childRoute ) => addLayoutToRoute( childRoute, route.meta.layout ) ) ;
@@ -340,16 +340,17 @@ const router = new VueRouter({
 
 // 校验登录信息
 router.beforeEach((to,from,next)=>{
-  getServerName().then(res=>{
+	getServerName().then(res=>{
     sessionStorage.setItem("instanceName",res)
   })
 	let identityLevel = sessionStorage.getItem("identityLevel")
 	if (proLevel.includes(to.path) && identityLevel !== 'pro') {
+		const lang = store.state.language.lang
 		Swal.fire({
-			title: '提示信息',
-			text: '此功能为高级版尊享，如需体验，请升级为高级版',
+			title: lang === 'zh' ? '提示信息' : 'Prompt information',
+			text: lang === 'zh' ? '此功能为高级版尊享，如需体验，请升级为高级版' : 'This feature is for the premium version, if you need to experience, please upgrade to the premium version.',
 			confirmButtonColor: '#1890ff',
-			confirmButtonText: '好的'
+			confirmButtonText: lang === 'zh' ? '好的' : 'Well',
 		})
 		next(false)
 		return

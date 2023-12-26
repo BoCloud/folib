@@ -1,5 +1,5 @@
 <template>
-	
+
 	<!-- Layout Footer -->
 	<a-layout-footer>
 		<a-row type="flex">
@@ -21,8 +21,8 @@
 				<!-- Footer Navigation Menu -->
 				<a-menu mode="horizontal">
 <!--					<a-menu-item><a href="https://bocloud.com.cn/" target="_blank">BoCloud</a></a-menu-item>-->
-					<a-menu-item><a href="http://folib.com" target="_blank">关于我们</a></a-menu-item>
-					<a-menu-item><a href="http://folib.com" target="_blank">博客</a></a-menu-item>
+					<a-menu-item><a href="http://folib.com" target="_blank">{{ $t('Footers.AboutUs') }}</a></a-menu-item>
+					<a-menu-item><a href="http://folib.com" target="_blank">{{ $t('Footers.Blog') }}</a></a-menu-item>
 				</a-menu>
 				<!-- / Footer Navigation Menu -->
 
@@ -34,7 +34,7 @@
 </template>
 
 <script>
- 
+
 
 	export default ({
 		data() {

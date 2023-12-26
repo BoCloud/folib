@@ -12,10 +12,10 @@
               <a-breadcrumb-item
                 v-if="key == $route.meta.breadcrumbs.length - 1"
                 :key="key"
-                >{{ item.name }}
+                >{{ $t(item.name) }}
               </a-breadcrumb-item>
               <a-breadcrumb-item v-else :key="key">
-                <router-link :to="item.path">{{ item.name }}</router-link>
+                <router-link :to="item.path">{{ $t(item.name) }}</router-link>
               </a-breadcrumb-item>
             </template>
           </a-breadcrumb>
@@ -24,7 +24,7 @@
           <!-- Header Page Title -->
           <div class="ant-page-header-heading">
             <span class="ant-page-header-heading-title">{{
-              this.$route.meta.title || this.$route.name
+              $t(this.$route.meta.title) || $t(this.$route.name)
             }}</span>
           </div>
           <!-- / Header Page Title -->
