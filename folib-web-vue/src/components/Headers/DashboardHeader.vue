@@ -5,7 +5,7 @@
     <a-layout-header>
       <a-row type="flex">
         <!-- Header Breadcrumbs & Title Column -->
-        <a-col :span="20" :md="6">
+        <a-col :span="8" :md="language === 'zh' ? 6 : 10">
           <!-- Header Breadcrumbs -->
           <a-breadcrumb>
             <template v-for="(item, key) in realPath">
@@ -54,7 +54,7 @@
         <!-- / Header Breadcrumbs & Title Column -->
 
         <!-- Header Control Column -->
-        <a-col :span="24" :md="17" class="header-control" v-if="userInfo.token">
+        <a-col :span="12" :md="language === 'zh' ? 17 : 13" class="header-control" v-if="userInfo.token">
           <!-- Header Control Buttons -->
 					<a-dropdown :trigger="['click']" v-model="visible" overlayClassName="header-notifications-dropdown" :getPopupContainer="() => wrapper">
 						<a-badge :count="uploadProcessList?uploadProcessList.length:0">
@@ -82,7 +82,7 @@
                     <a-tooltip placement="top">
                       <template slot="title">
                         <span v-if="item.comment && item.comment.length >0">
-                          <span v-if="!item.dictKey.includes('zip_')">错误：</span>
+                          <span v-if="!item.dictKey.includes('zip_')">{{ $t('Headers.Error') }}：</span>
                           {{item.comment}}
                         </span>
                       </template>
@@ -97,26 +97,35 @@
 							</a-list-item>
 						</a-list>
 					</a-dropdown>
-          <a-button
-            type="link"
-            ref="secondarySidebarTriggerBtn"
-            @click="toPersonl()"
+          <!-- 多语言 -->
+          <a-dropdown
+              :trigger="['click']"
+              overlayClassName="header-notifications-dropdown"
+              :getPopupContainer="() => wrapper"
           >
-            <svg
-              width="20"
-              height="20"
-              viewBox="0 0 20 20"
-              fill="none"
-              xmlns="http://www.w3.org/2000/svg"
+            <a class="btn-sign-in">
+              <div class="table-avatar-info">
+                <svg t="1702547797250" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="1871" width="20" height="20"><path d="M162.816 672h199.68c-5.472-40.192-8.96-83.2-10.08-128H129.28c3.744 45.344 15.36 88.48 33.504 128z m37.248 64a384.32 384.32 0 0 0 223.712 149.824c-20.64-38.272-37.92-89.6-50.368-149.824H200.064z m661.12-64c18.144-39.52 29.76-82.656 33.504-128h-223.104a1166.624 1166.624 0 0 1-10.08 128h199.68z m-37.248 64H650.56c-12.448 60.192-29.728 111.552-50.368 149.824A384.32 384.32 0 0 0 823.904 736z m-399.232-64h174.592c4.544-39.52 7.424-82.656 8.384-128h-191.36c0.96 45.344 3.84 88.48 8.384 128z m9.312 64c17.44 96.896 45.856 160 77.984 160 32.128 0 60.544-63.104 77.984-160h-155.968z m-304.704-256h223.104c1.12-44.8 4.608-87.808 10.08-128h-199.68a381.632 381.632 0 0 0-33.504 128z m765.376 0a381.632 381.632 0 0 0-33.504-128h-199.68c5.472 40.192 8.96 83.2 10.08 128h223.104zM416.32 480h191.36a1379.936 1379.936 0 0 0-8.384-128h-174.592a1379.936 1379.936 0 0 0-8.384 128zM200.064 288h173.344c12.448-60.192 29.728-111.552 50.368-149.824A384.32 384.32 0 0 0 200.096 288z m623.872 0a384.32 384.32 0 0 0-223.712-149.824c20.64 38.272 37.92 89.6 50.368 149.824h173.344zM434.016 288h155.968C572.544 191.104 544.128 128 512 128c-32.128 0-60.544 63.104-77.984 160zM512 960C264.576 960 64 759.424 64 512S264.576 64 512 64s448 200.576 448 448-200.576 448-448 448z" fill="#333333" p-id="1872"></path></svg>
+              </div>
+            </a>
+            <a-list
+                item-layout="horizontal"
+                class="header-notifications-list"
+                :data-source="LanguageList"
+                slot="overlay"
             >
-              <path
-                fill-rule="evenodd"
-                clip-rule="evenodd"
-                d="M11.4892 3.17094C11.1102 1.60969 8.8898 1.60969 8.51078 3.17094C8.26594 4.17949 7.11045 4.65811 6.22416 4.11809C4.85218 3.28212 3.28212 4.85218 4.11809 6.22416C4.65811 7.11045 4.17949 8.26593 3.17094 8.51078C1.60969 8.8898 1.60969 11.1102 3.17094 11.4892C4.17949 11.7341 4.65811 12.8896 4.11809 13.7758C3.28212 15.1478 4.85218 16.7179 6.22417 15.8819C7.11045 15.3419 8.26594 15.8205 8.51078 16.8291C8.8898 18.3903 11.1102 18.3903 11.4892 16.8291C11.7341 15.8205 12.8896 15.3419 13.7758 15.8819C15.1478 16.7179 16.7179 15.1478 15.8819 13.7758C15.3419 12.8896 15.8205 11.7341 16.8291 11.4892C18.3903 11.1102 18.3903 8.8898 16.8291 8.51078C15.8205 8.26593 15.3419 7.11045 15.8819 6.22416C16.7179 4.85218 15.1478 3.28212 13.7758 4.11809C12.8896 4.65811 11.7341 4.17949 11.4892 3.17094ZM10 13C11.6569 13 13 11.6569 13 10C13 8.34315 11.6569 7 10 7C8.34315 7 7 8.34315 7 10C7 11.6569 8.34315 13 10 13Z"
-                fill="#111827"
-              />
-            </svg>
-          </a-button>
+              <a-list-item slot="renderItem" slot-scope="item" class="user-title">
+                <a-list-item-meta @click="changeLanguage(item.value)">
+                  <span slot="title">{{ item.title }}</span>
+                  <a-avatar
+                      shape="square"
+                      slot="avatar"
+                      v-html="item.svg"
+                  />
+                </a-list-item-meta>
+              </a-list-item>
+            </a-list>
+          </a-dropdown>
           <a-button
             type="link"
             class="sidebar-toggler"
@@ -161,7 +170,7 @@
             >
               <a-list-item class="user-title" slot="renderItem" slot-scope="item">
                 <a-list-item-meta @click="item.event">
-                  <span slot="title">{{ item.title }}</span>
+                  <span slot="title">{{ $t(item.i18nKey) }}</span>
                   <a-avatar
                     v-if="item.img"
                     slot="avatar"
@@ -181,7 +190,7 @@
 
           <!-- / Header Control Buttons -->
         </a-col>
-        <a-col :span="24" :md="17" class="header-control" v-else>
+        <a-col :span="12" :md="language === 'zh' ? 17 : 13" class="header-control" v-else>
           <!-- Header Control Buttons -->
           <a-button
             type="link"
@@ -189,7 +198,7 @@
             @click="toLogin()"
           >
             <a-icon type="login" :style="{fontSize: '20px'}"/>
-            <span class="ml-5 login-span">登录</span>
+            <span class="ml-5 login-span">{{ $t('Headers.Login') }}</span>
           </a-button>
           <!-- / Header Control Buttons -->
         </a-col>
@@ -210,6 +219,7 @@ import {
   deleteArtifactUploadProcess,
 } from "@/api/artifact"
 import { hasRole, isAdmin, isAnonymous, isLogin } from "@/utils/permission"
+import {setLanguage} from "@/locale"
 
 export default {
   props: {
@@ -225,8 +235,8 @@ export default {
       default: false,
     },
   },
-  
-  data() { 
+
+  data() {
     return {
       // Fixed header/sidebar-footer ( Affix component ) top offset.
       top: 0,
@@ -253,12 +263,33 @@ export default {
         //   event: this.logout
         // },
         {
+          title: "个人信息",
+          i18nKey: 'Headers.PersonalInformation',
+          svg: `<svg t="1703588933319" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="21112" width="20" height="20">
+                <path d="M903.111111 938.296889a391.651556 391.651556 0 0 0-233.102222-346.510222 296.448 296.448 0 0 0 139.264-251.875556C809.244444 175.644444 676.266667 42.666667 512 42.666667S214.755556 175.644444 214.755556 339.911111c0 106.382222 55.523556 199.480889 140.003555 251.875556-134.513778 59.448889-229.176889 191.630222-233.870222 346.510222v3.925333c0 21.902222 17.208889 39.111111 39.111111 39.111111S199.111111 964.124444 199.111111 942.222222c3.896889-168.96 142.364444-305.066667 312.888889-305.066666s308.963556 136.106667 312.888889 305.066666c0 21.902222 17.208889 39.111111 39.111111 39.111111s39.111111-17.208889 39.111111-39.111111v-3.925333zM512 558.933333a218.652444 218.652444 0 0 1-219.022222-219.022222c0-121.258667 97.792-219.022222 219.022222-219.022222s218.993778 97.792 218.993778 219.022222c0 121.230222-97.735111 219.022222-218.993778 219.022222z" fill="" p-id="21113"/>
+                </svg>`,
+          event: this.toPersonl,
+        },{
           title: "退出登录",
+          i18nKey: 'Headers.LogOut',
           svg: `<svg v-else width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <path fill-rule="evenodd" clip-rule="evenodd" d="M3 17C3 16.4477 3.44772 16 4 16H16C16.5523 16 17 16.4477 17 17C17 17.5523 16.5523 18 16 18H4C3.44772 18 3 17.5523 3 17ZM6.29289 6.70711C5.90237 6.31658 5.90237 5.68342 6.29289 5.29289L9.29289 2.29289C9.48043 2.10536 9.73478 2 10 2C10.2652 2 10.5196 2.10536 10.7071 2.29289L13.7071 5.29289C14.0976 5.68342 14.0976 6.31658 13.7071 6.70711C13.3166 7.09763 12.6834 7.09763 12.2929 6.70711L11 5.41421L11 13C11 13.5523 10.5523 14 10 14C9.44771 14 9 13.5523 9 13L9 5.41421L7.70711 6.70711C7.31658 7.09763 6.68342 7.09763 6.29289 6.70711Z" fill="#111827"/>
                 </svg>`,
           event: this.logout,
         },
+      ],
+      LanguageList: [
+        {
+          title: "中文",
+          value: 'zh',
+          svg: `<svg t="1703595059282" class="icon" viewBox="0 0 1501 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="22719" width="36px" height="36px"><path d="M0.205 1003.52h1500.023V0.683H0.205z" fill="#DE2910" p-id="22720"></path><path d="M516.3 413.286l-2.184 33.724 31.403 12.425-32.768 8.465-2.185 33.723-18.022-28.672-32.905 8.397 21.573-25.941-18.023-28.672 31.54 12.493 21.572-25.942z m80.897-103.15l10.24 32.153h33.928l-27.306 19.934 10.24 32.154-27.307-20.07-27.307 19.933 10.513-32.085-27.306-19.798h33.86l10.445-32.222z m34.543-137.08l-15.292 30.174 23.893 23.893-33.382-5.325-15.497 30.174-5.188-33.587-33.45-5.188 30.242-15.36-5.257-33.383 23.757 23.894 30.174-15.292zM516.437 63.693l-2.048 33.655 31.403 12.493-32.836 8.465-2.185 33.656-18.09-28.672-32.7 8.465 21.572-25.942-18.022-28.672 31.402 12.493 21.504-25.941z m-267.605 51.063l31.676 97.622h102.81l-83.081 60.28 31.676 97.825-83.15-60.348-83.08 60.348 31.676-97.826-83.08-60.348h102.809l31.676-97.621z" fill="#FFDE00" p-id="22721"></path></svg>`,
+          img: '@/assets/img/icon-CNH.png'
+        },{
+          title: "English",
+          value: 'en',
+          svg: `<svg t="1703668600066" class="icon" viewBox="0 0 1536 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="31283" width="36px" height="36px"><path d="M0 0h1536v1024H0V0z" fill="#00458F" p-id="31284"></path><path d="M1536 358.4H921.6V0h-307.2v358.4H0v307.2h614.4V1024h307.2V665.6H1536v-307.2z" fill="#FFFFFF" p-id="31285"></path><path d="M1536 905.6L176 0H0v118.4L1360 1024H1536v-118.4z" fill="#FFFFFF" p-id="31286"></path><path d="M0 905.6L1360 0H1536v118.4L176 1024H0v-118.4z" fill="#FFFFFF" p-id="31287"></path><path d="M1536 422.4H857.6V0h-179.2v422.4H0v179.2h678.4V1024h179.2V601.6H1536v-179.2z" fill="#CC3440" p-id="31288"></path><path d="M1536 1020.8v-80l-412.8-275.2h-121.6L1536 1020.8zM1536 0h-121.6L921.6 326.4v28.8h76.8L1536 0zM534.4 665.6L0 1020.8v3.2h115.2l496-329.6v-28.8h-76.8zM0 0v80l416 278.4h121.6L0 0z" fill="#CC3440" p-id="31289"></path></svg>`,
+          img: '@/assets/img/icon-CNH.png'
+        }
       ],
       uploadProcessList: [],
       notFinishUploadList: [],
@@ -268,6 +299,10 @@ export default {
     };
   },
   methods: {
+    changeLanguage(val) {
+      setLanguage(val)
+      this.$forceUpdate()
+    },
     resizeEventHandler() {
       this.top = this.top ? 0 : -0.01;
     },
@@ -328,12 +363,15 @@ export default {
     this.wrapper = document.getElementById("layout-dashboard");
   },
   computed: {
+    language() {
+      return this.$store.state.language.lang
+    },
     realPath() {
       const breadcrumbs = this.$route.meta.breadcrumbs;
       const list = [];
       const routes = this.$router.options.routes;
       breadcrumbs.forEach((p, i) => {
-        
+
         const item = routes.find((o) => o.meta.title === p);
         list.push({ name: p, path: item ? item.path : "" });
       });
@@ -362,7 +400,7 @@ export default {
         }
       },
       immediate:true
-    }  
+    }
   },
 };
 </script>
