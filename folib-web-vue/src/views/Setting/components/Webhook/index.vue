@@ -8,7 +8,7 @@
           </template>
           <a slot="extra" @click="showWebhookInfo(null)">
             <a-tooltip>
-              <template slot="title">新增</template>
+              <template slot="title">{{ $t('Setting.Add') }}</template>
               <a-icon type="plus-circle" theme="filled" class="cursor-pointer mr-10"
                 :style="{ fontSize: '28px', color: '#1890FF' }" />
             </a-tooltip>
@@ -18,10 +18,10 @@
               <a-card :bordered="false" class="card-billing-info">
                 <div class="col-info">
                   <a-descriptions :title="item.url" :column="1">
-                    <a-descriptions-item label="访问令牌">
+                    <a-descriptions-item :label="$t('Setting.AccessToken')">
                       {{ item.accessToken }}
                     </a-descriptions-item>
-                    <a-descriptions-item label="触发事件">
+                    <a-descriptions-item :label="$t('Setting.TriggerEvent')">
                       <div v-if="item.events">
                         <span v-for="(se, sei) in events" :key="sei">
                           <span v-if="item.events.includes(se.value)" :class="sei==0?'':'ml-10'">{{ "[" + se.label +  "]" }}</span>
@@ -39,7 +39,7 @@
                   </a-descriptions>
                 </div>
                 <div class="col-action">
-                  <a-popconfirm title="确定要删除吗？" okType="danger" ok-text="确定" cancel-text="取消"
+                  <a-popconfirm :title="$t('Setting.SureDelete')" okType="danger" :ok-text="$t('Setting.BeSure')" :cancel-text="$t('Setting.Cancel')"
                     @confirm="deleteWebhook(item)">
                     <a-button type="link" size="small">
                       <svg width="16" height="16" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -86,7 +86,7 @@
     <a-drawer
       placement="right"
       width="45%"
-      title="webhook信息"
+      :title="'webhook' + $t('Setting.Information')"
       :visible="webhookVisible"
       @close="webhookDrawerClose"
       :zIndex="100"
@@ -111,33 +111,33 @@
             prop="url"
           >
             <a-input
-              placeholder="请输入url"
+              :placeholder="$t('Setting.enterTheURL')"
               v-model="webhookForm.url"
             />
           </a-form-model-item>
           <a-form-model-item
             class="mb-10"
-            label="访问令牌 Header X-Folibrary-Token"
+            :label="$t('Setting.AccessToken') + ' Header X-Folibrary-Token'"
             :colon="false"
             prop="accessToken"
           >
             <a-input
-              placeholder="请输入访问令牌"
+              :placeholder="$t('Setting.enterTheAccessToken')"
               v-model="webhookForm.accessToken"
             />
           </a-form-model-item>
           <a-form-model-item class="mb-10"
-            label="触发事件"
+            :label="$t('Setting.TriggerEvent')"
             :colon="false"
             prop="events">
             <a-checkbox-group v-model="webhookForm.events">
               <a-row type="flex" :gutter="24">
                 <a-col :span="24" class="mb-24" v-for="(item, index) in events" :key="index">
                   <a-checkbox :value="item.value" name="events" >
-                    {{ item.label }}
+                    {{ $t(item.i18nLabel) }}
                   </a-checkbox>
                   <a-col :span="24" class="mt-5 ml-10">
-                    {{ item.remark }}
+                    {{ $t(item.i18nRemark) }}
                   </a-col>
                 </a-col>
               </a-row>
@@ -155,10 +155,10 @@
           </a-form-model-item> -->
           <a-form-model-item :wrapper-col="{ span: 14, offset: 4 }">
             <a-button type="primary" @click="webhookFormSubmit">
-              保存
+              {{ $t('Setting.Save') }}
             </a-button>
             <a-button class="ml-10" @click="webhookDrawerClose">
-              取消
+              {{ $t('Setting.Cancel') }}
             </a-button>
           </a-form-model-item>
         </a-form-model>
@@ -167,7 +167,7 @@
     <a-drawer
       placement="right"
       width="80%"
-      title="Webhook记录"
+      :title="'Webhook' + $t('Setting.Record')"
       :visible="webhookLogVisible"
       @close="webhookLogDrawerClose"
       :zIndex="100"
@@ -178,10 +178,10 @@
         :bodyStyle="{ paddingTop: 0, paddingBottom: '16px' }"
         :headStyle="{ paddingRight: 0 }"
       >
-        <a-table :columns="webhookLogColumns" :data-source="webhookLogList" :scroll="{ x: true }" :row-key="(r, i) => i.toString()">
+        <a-table :columns="i18nWebhookLogColumns" :data-source="webhookLogList" :scroll="{ x: true }" :row-key="(r, i) => i.toString()">
           <div slot="responseStatus" slot-scope="responseStatus">
             <a-tag color="#f50" v-if="responseStatus != 200">
-              错误
+              {{ $t('Setting.Error') }}
             </a-tag>
             <a-tag color="#87d068" v-else>
               {{responseStatus}}
@@ -192,7 +192,7 @@
           </div>
           <div slot="operation" slot-scope="text, record">
             <div class="col-action">
-              <a-popconfirm title="确定要删除吗？" okType="danger" ok-text="确定" cancel-text="取消"
+              <a-popconfirm :title="$t('Setting.SureDelete')" okType="danger" :ok-text="$t('Setting.BeSure')" :cancel-text="$t('Setting.Cancel')"
                 @confirm="webhookLogDelete(record)">
                 <a-button type="link" size="small">
                   <svg width="16" height="16" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -215,7 +215,7 @@
     <a-drawer
       placement="right"
       width="50%"
-      title="Webhook记录详情"
+      :title="'Webhook' + $t('Setting.RecordDetails')"
       :visible="webhookLogInfoVisible"
       @close="webhookLogInfoDrawerClose"
       :zIndex="100"
@@ -235,23 +235,23 @@
             <a-tag color="green">
               {{ queryEvent(webhookLogInfo.eventType) }}
             </a-tag>
-            在{{ webhookLogInfo.completionTime}}秒内完成
+            {{ $t('Setting.On') }}{{ webhookLogInfo.completionTime}}{{ $t('Setting.CompletedSeconds') }}
           </span>
         </template>
         <a-button type="link" slot="extra">
-        
+
         </a-button>
         <p class="text-dark ml-5" v-if="webhookLogInfo.remark" >
           <a-tag color="red">
             <a-icon type="exclamation-circle"/>
-            <span class="ml-10">发送此 webhook 时发生内部错误。</span>
-            <div class="ml-20"> 
-              错误：{{ webhookLogInfo.remark }}
+            <span class="ml-10">{{ $t('Setting.sendingWebhookError') }}</span>
+            <div class="ml-20">
+              {{ $t('Setting.Error') }}：{{ webhookLogInfo.remark }}
             </div>
           </a-tag>
         </p>
         <hr class="my-25">
-        <a-descriptions title="响应" :column="1">
+        <a-descriptions :title="$t('Setting.Response')" :column="1">
           <a-descriptions-item label="">
             <prism-editor
               class="metadata-prism-editor"
@@ -271,7 +271,7 @@
           </a-descriptions-item>
         </a-descriptions>
         <hr class="my-25">
-        <a-descriptions title="请求" :column="1">
+        <a-descriptions :title="$t('Setting.Request')" :column="1">
           <a-descriptions-item label="">
             <prism-editor
               class="metadata-prism-editor"
@@ -312,7 +312,7 @@ import "prismjs/components/prism-javascript"
 import "prismjs/themes/prism-tomorrow.css"
 
 export default {
-  props: { 
+  props: {
     activeKey: {
 			type: String,
 			default: "",
@@ -323,47 +323,78 @@ export default {
       let url = /^(?:http(s)?:\/\/)?[\w.-]+(?:\.[\w\.-]+)+[\w\-\._~:/[\]@!\$&'\*\+,;=.]+$/;
       if (value) {
         if (!url.test(value)) {
-          callBack("请输入正确的URL");
+          callBack(this.$t('Setting.enterAValidURL'));
+        } else if(value.length < 10 || value.length > 255) {
+          callBack(this.$t('Setting.URLLengthLimit'))
         } else {
           callBack();
         }
       } else {
-        callBack("请输入url");
+        callBack(this.$t('Setting.enterTheURL'));
+      }
+    }
+    const accessTokenValidator = (rule, value, callBack) => {
+      if (value) {
+        if(value.length < 1 || value.length > 255) {
+          callBack(this.$t('Setting.AccessTokenLengthLimit'))
+        } else {
+          callBack();
+        }
+      }
+    }
+    const eventsValidator = (rule, value, callBack) => {
+      console.log(value, 1)
+      if (!value.length) {
+          callBack(this.$t('Setting.selectATriggerEvent'))
+      } else {
+        callBack();
       }
     }
     return {
       webhooks: [],
       webhookVisible: false,
-      events:[ 
+      events:[
         {
           label: '制品上传',
+          i18nLabel: 'Setting.ArtifactUpload',
           value: 'EVENT_ARTIFACT_FILE_STORED',
-          remark: '上传制品时触发 URL'
+          remark: '上传制品时触发 URL',
+          i18nRemark: 'Setting.uploadingArtifact',
         },
         {
           label: '制品更新',
+          i18nLabel: 'Setting.ArtifactUpdate',
           value: 'EVENT_ARTIFACT_FILE_UPDATED',
-          remark: '再次上传同一制品时触发 URL'
+          remark: '再次上传同一制品时触发 URL',
+          i18nRemark: 'Setting.uploadingTheSameArtifactAgain',
         },
         {
           label: '制品下载',
+          i18nLabel: 'Setting.ArtifactDownload',
           value: 'EVENT_ARTIFACT_FILE_DOWNLOADED',
-          remark: '下载制品时触发 URL'
+          remark: '下载制品时触发 URL',
+          i18nRemark: 'Setting.downloadingArtifact',
         },
         {
           label: '制品删除',
+          i18nLabel: 'Setting.ArtifactDeletion',
           value: 'EVENT_ARTIFACT_PATH_DELETED',
-          remark: '删除制品时触发 URL'
+          remark: '删除制品时触发 URL',
+          i18nRemark: 'Setting.deletingArtifact',
         },
         {
           label: '目录删除',
+          i18nLabel: 'Setting.DirectoryDeletion',
           value: 'EVENT_ARTIFACT_DIRECTORY_PATH_DELETED',
-          remark: '删除制品目录时触发 URL'
+          remark: '删除制品目录时触发 URL',
+          i18nRemark: 'Setting.deletingArtifactDirectory',
         },
         {
           label: '安全阻断',
+          i18nLabel: 'Setting.SecurityBlockage',
           value: 'EVENT_ARTIFACT_FILE_DOWNLOAD_BLOCKED',
-          remark: '下载被安全策略阻断时触发 URL'
+          remark: '下载被安全策略阻断时触发 URL',
+          i18nRemark: 'Setting.downloadIsBlockedBySecurityPolicy',
         },
       ],
       webhookForm: {
@@ -376,19 +407,19 @@ export default {
       webhookRules: {
         url: [
           { required: true, trigger: ['blur'], validator: acceptUrlValidator },
-          { min: 10, max: 255, message: 'url长度在10到255个字符', trigger: 'blur' },
         ],
         accessToken: [
-          { min: 1, max: 255, message: '访问令牌长度在1到255 个字符', trigger: 'blur' },
+          { min: 1, max: 255, trigger: 'blur', validator: accessTokenValidator },
         ],
         events: [
-          { required: true, message: '请选择触发事件', trigger: ['blur', 'change'] },
+          { required: true, trigger: ['blur', 'change'], validator: eventsValidator },
         ],
       },
       webhookLogVisible: false,
       webhookLogColumns: [
         {
           title: '存储空间',
+          i18nKey: 'Setting.StorageSpace',
           dataIndex: 'storageId',
           key: 'storageId',
           width: 150,
@@ -396,6 +427,7 @@ export default {
         },
         {
           title: '仓库名称',
+          i18nKey: 'Setting.WarehouseName',
           dataIndex: 'repositoryId',
           key: 'repositoryId',
           width: 150,
@@ -403,6 +435,7 @@ export default {
         },
         {
           title: '制品路径',
+          i18nKey: 'Setting.ProductPath',
           dataIndex: 'artifactPath',
           key: 'artifactPath',
           // width: 100,
@@ -410,6 +443,7 @@ export default {
         },
         {
           title: '状态',
+          i18nKey: 'Setting.Status',
           dataIndex: 'responseStatus',
           key: 'responseStatus',
           width: 100,
@@ -417,6 +451,7 @@ export default {
         },
         {
           title: '触发事件',
+          i18nKey: 'Setting.TriggerEvent',
           dataIndex: 'eventType',
           key: 'eventType',
           width: 150,
@@ -431,6 +466,7 @@ export default {
         // },
         {
           title: '请求时间',
+          i18nKey: 'Setting.RequestTime',
           dataIndex: 'createTime',
           key: 'createTime',
           width: 200,
@@ -438,8 +474,9 @@ export default {
         },
         {
           title: '操作',
+          i18nKey: 'Setting.Operation',
           dataIndex: 'operation',
-          width: 100,
+          width: 120,
           scopedSlots: { customRender: 'operation' },
         },
       ],
@@ -469,7 +506,14 @@ export default {
     PrismEditor,
   },
   computed: {
-
+    i18nWebhookLogColumns() {
+      return this.webhookLogColumns.map(column => {
+        if (column.i18nKey) {
+          column.title = this.$t(column.i18nKey);
+        }
+        return column;
+      })
+    }
   },
   created() {
     this.initData()
@@ -488,7 +532,7 @@ export default {
     },
     successMsg(message) {
       if (!message) {
-        message = "操作成功";
+        message = this.$t('Setting.OperationSuccessful');
       }
       this.$notification["success"]({
         message: message,
@@ -544,7 +588,7 @@ export default {
           delete this.webhookForm.eventList
           if(this.webhookForm.uuid) {
             updateWebhook(this.webhookForm).then(res => {
-              this.successMsg("更新webhook成功")
+              this.successMsg(this.$t('Setting.WebhookUpdateSuccess'))
               this.queryWebhooks()
               this.webhookDrawerClose()
             }).catch((err) => {
@@ -558,7 +602,7 @@ export default {
             })
           } else {
             saveWebhook(this.webhookForm).then(res => {
-                this.successMsg("新增webhook成功")
+                this.successMsg(this.$t('Setting.WebhookAddedSuccess'))
                 this.queryWebhooks()
                 this.webhookDrawerClose()
               }).catch((err) => {
@@ -588,7 +632,7 @@ export default {
     },
     deleteWebhook(item) {
       deleteWebhook({uuid: item.uuid}).then(res => {
-        this.successMsg("删除webhook成功")
+        this.successMsg(this.$t('Setting.WebhookDeletedSuccess'))
         this.queryWebhooks()
       }).catch((err) => {
       })
@@ -605,7 +649,7 @@ export default {
     },
     webhookLogDelete(item) {
       deleteWebhookLog({id: item.id}).then((res) => {
-        this.successMsg("删除webhook记录成功")
+        this.successMsg(this.$t('Setting.WebhookRecordDeletedSuccess'))
         this.showWebhookLog(item)
       })
     },
@@ -624,7 +668,7 @@ export default {
         try {
           response = JSON.stringify(JSON.parse(this.webhookLogInfo.response), null, '\t')
         } catch (e){
-          console.log('不是JSON格式'); 
+          console.log('不是JSON格式');
         }
         this.webhookLogInfo.response = response
       }
@@ -641,7 +685,7 @@ export default {
     doTestWebhook(event, item) {
       let e = this.events[event.key]
       testWebhook({uuid: item.uuid, events: [e.value]}).then((res) => {
-        this.successMsg("测试[" + e.label + "]webhook成功")
+        this.successMsg(this.$t('Setting.TestedWebhook') + [" + e.label + "] + this.$t('Setting.successTestWebhook'))
       })
     }
   },
