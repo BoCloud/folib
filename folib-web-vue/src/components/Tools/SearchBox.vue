@@ -48,7 +48,7 @@ $colorBrand: #2c76ff;
 //$colorBrand: #aeb0b9;
 $ff: 'Lato', sans-serif;
 $h: 50px;
-$btnWidth: 100px;
+$btnWidth: 120px;
 $fs: 17px;
 $bez: cubic-bezier(0, 0, 0.43, 1.49);
 
@@ -122,7 +122,7 @@ button {
 
 input:not(:placeholder-shown) {
   border-radius: $rad 0 0 $rad;
-  width: calc(100% - 90px);
+  width: calc(100% - 110px);
 
   +button {
     display: block;

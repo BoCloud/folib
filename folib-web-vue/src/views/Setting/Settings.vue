@@ -518,7 +518,7 @@
               <a-form :form="ruleForm"
                       ref="ruleForm"
                       layout="vertical"
-                      :wrapper-col="{ span: 8 }"
+                      :wrapper-col="{ span: 10 }"
                       @submit.prevent="ruleFormSubmit">
                 <a-row :gutter="[24]">
                   <a-col :span="24">
@@ -666,7 +666,7 @@
                                     <a-form-item class=""
                                                  :label="$t('Setting.VulnerabilityLevel')"
                                                  :label-col="{ span: 4 }"
-                                                 :wrapper-col="{ span: 12 }">
+                                                 :wrapper-col="{ span: 14 }">
                                       <a-checkbox-group v-decorator="['blockLevels',
                                         {
                                           rules: [
@@ -973,7 +973,7 @@
                   </a-col>
                   <a-col :span="12">
                     <a-form-item class="mb-10"
-                                 :label="LDAP$t('Role')"
+                                 :label="'LDAP' + $t('Role')"
                                  :colon="false">
                       <a-col :span="20">
                         <a-input :placeholder="$t('Setting.EnterLDAPRole')"
@@ -1005,7 +1005,7 @@
                               style="width: 91.66666%"
                               @click="roleMappingAddHandle">
                       <a-icon type="plus" />
-                      $t('Setting.Add')
+                      {{ $t('Setting.Add') }}
                     </a-button>
                   </a-col>
                 </a-row>
@@ -1891,36 +1891,79 @@ export default {
           title: '集群节点英文名',
           i18nKey: 'Setting.ClusterNodeEnglish',
           dataIndex: 'clusterEnName',
-          key: 'clusterEnName',
-          width: 100
+          customCell : () => {
+            return {
+              style: {
+                maxWidth: '220px',
+                overflow: 'hidden',
+                whiteSpace: 'nowrap',
+                textOverflow:'ellipsis',
+                cursor:'pointer'
+              }
+            }
+          },
+          customRender: (text,record) => <a-tooltip placement="topLeft" title = {record.clusterEnName} >{record.clusterEnName}</a-tooltip>
         },
         {
           title: '集群中文名',
           i18nKey: 'Setting.ClusterChineseName',
           dataIndex: 'clusterCnName',
           key: 'clusterCnName',
-          width: 100
+          customCell : () => {
+            return {
+              style: {
+                maxWidth: '220px',
+                overflow: 'hidden',
+                whiteSpace: 'nowrap',
+                textOverflow:'ellipsis',
+                cursor:'pointer'
+              }
+            }
+          },
+          customRender: (text,record) => <a-tooltip placement="topLeft" title = {record.clusterCnName} >{record.clusterCnName}</a-tooltip>
         },
         {
           title: '节点',
           i18nKey: 'Setting.Node',
           dataIndex: 'clusterNodeHost',
           key: 'clusterNodeHost',
-          width: 200
+          customCell : () => {
+            return {
+              style: {
+                maxWidth: '180px',
+                overflow: 'hidden',
+                whiteSpace: 'nowrap',
+                textOverflow:'ellipsis',
+                cursor:'pointer'
+              }
+            }
+          },
+          customRender: (text,record) => <a-tooltip placement="topLeft" title = {record.clusterNodeHost} >{record.clusterNodeHost}</a-tooltip>
         },
         {
           title: '描述',
           i18nKey: 'Setting.describe',
           dataIndex: 'clusterNodeDesc',
           key: 'clusterNodeDesc',
-          width: 100
+          customCell : () => {
+            return {
+              style: {
+                maxWidth: '220px',
+                overflow: 'hidden',
+                whiteSpace: 'nowrap',
+                textOverflow:'ellipsis',
+                cursor:'pointer'
+              }
+            }
+          },
+          customRender: (text,record) => <a-tooltip placement="topLeft" title = {record.clusterNodeDesc} >{record.clusterNodeDesc}</a-tooltip>
         },
         {
           title: '节点传输限速',
           i18nKey: 'Setting.NodeTransmissionRateLimit',
           dataIndex: 'kbps',
           key: 'kbps',
-          width: 80,
+          width: 180,
           scopedSlots: { customRender: 'kbps' }
         },
         {
@@ -1928,14 +1971,14 @@ export default {
           i18nKey: 'Setting.distributeMethod',
           dataIndex: 'dispatchType',
           key: 'dispatchType',
-          width: 80
+          width: 140
         },
         {
           title: '本集群',
           i18nKey: 'Setting.LocalCluster',
           dataIndex: 'isThisCluster',
           key: 'isThisCluster',
-          width: 80,
+          width: 140,
           scopedSlots: { customRender: 'isThisCluster' }
         },
         {
@@ -1943,7 +1986,7 @@ export default {
           i18nKey: 'Setting.OnlineStatus',
           dataIndex: 'wsClientOnline',
           key: 'wsClientOnline',
-          width: 80,
+          width: 140,
           scopedSlots: { customRender: 'wsClientOnline' }
         },
         {
@@ -1951,14 +1994,14 @@ export default {
           i18nKey: 'Setting.AddMethod',
           dataIndex: 'autoRegister',
           key: 'autoRegister',
-          width: 80,
+          width: 160,
           scopedSlots: { customRender: 'autoRegister' }
         },
         {
           title: '操作',
           i18nKey: 'Setting.Operation',
           dataIndex: 'operation',
-          width: 80,
+          width: 240,
           scopedSlots: { customRender: 'operation' }
         }
       ],
@@ -2792,6 +2835,10 @@ export default {
 </script>
 
 <style lang="scss" scoped>
+::v-deep .ant-steps-item-process > .ant-steps-item-container > .ant-steps-item-content > .ant-steps-item-title {
+  width: 200px;
+}
+
 #settings::v-deep {
   .ant-list {
     width: 100%;

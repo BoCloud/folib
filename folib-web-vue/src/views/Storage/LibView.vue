@@ -296,6 +296,7 @@ export default {
           i18nKey: "Storage.VulnerabilityNumber",
           dataIndex: "uuid",
           scopedSlots: { customRender: "uuid" },
+          width: 180,
         },
         {
           title: "引入时间",
@@ -303,6 +304,7 @@ export default {
           dataIndex: "created",
           scopedSlots: { customRender: "created" },
           align: "center",
+          width: 180,
         },
         {
           title: "CvssV2评分",
@@ -310,6 +312,7 @@ export default {
           dataIndex: "cvssV2Score",
           scopedSlots: { customRender: "cvssV2Score" },
           align: "center",
+          width: 130,
         },
         {
           title: "CvssV2漏洞等级",
@@ -317,6 +320,7 @@ export default {
           dataIndex: "cvssV2Severity",
           scopedSlots: { customRender: "cvssV2Severity" },
           align: "center",
+          width: 200,
         },
         {
           title: "CvssV3评分",
@@ -324,6 +328,7 @@ export default {
           dataIndex: "cvssV3Score",
           scopedSlots: { customRender: "cvssV3Score" },
           align: "center",
+          width: 130,
         },
         {
           title: "CvssV3漏洞等级",
@@ -331,6 +336,7 @@ export default {
           dataIndex: "cvssV3Severity",
           scopedSlots: { customRender: "cvssV3Severity" },
           align: "center",
+          width: 200,
         },
         {
           title: "最高漏洞等级",
@@ -338,18 +344,21 @@ export default {
           dataIndex: "highestSeverityText",
           scopedSlots: { customRender: "highestSeverityText" },
           align: "center",
+          width: 220,
         },
         {
           title: "建议修复版本",
           i18nKey: "Storage.RecommendedFixVersion",
           dataIndex: "versionEndExcluding",
           scopedSlots: { customRender: "versionEndExcluding" },
+          width: 200,
         },
         {
           title: "操作",
           i18nKey: "Storage.Operation",
           dataIndex: "operation",
           scopedSlots: { customRender: "operation" },
+          width: 240,
         },
       ],
       tabActiveKey: 1,

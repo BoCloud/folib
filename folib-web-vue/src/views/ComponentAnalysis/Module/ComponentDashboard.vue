@@ -90,7 +90,10 @@
 
                         <!-- <a-icon type="appstore" theme="filled" :style="{ fontSize: '28px' }" /> -->
                       </div>
-                      <span>{{ $t('Module.AssociatedStorageSpace') }}</span>
+                      <textOver
+                          :text="$t('Module.AssociatedStorageSpace')"
+                          :max="20"
+                      />
                     </template>
                   </a-statistic>
                 </a-card>
@@ -161,8 +164,9 @@ import { getArtifactStatistics } from "@/api/module.js";
 import { formatTimestamp, valueWithDefault } from "@/utils/util.js";
 import ArtifactGraph from "./ArtifactGraph.vue";
 import AffectedArtifacts from "./AffectedArtifacts.vue";
+import textOver from "@/components/Tools/textOver";
 export default {
-  components: { ArtifactGraph, AffectedArtifacts },
+  components: { ArtifactGraph, AffectedArtifacts, textOver },
   props: {
     component: {
       type: Object,
