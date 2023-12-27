@@ -45,4 +45,10 @@ export default {
     'IntroducingTime': '引入时间',
     'HighestVulnerabilityLevel': '最高漏洞等级',
     'RecommendedFixVersion': '建议修复版本',
+    // ChartArtifactComponent.vue
+    'ComponentStatistics': '组件统计',
+    'ComponentClassification': '组件分类',
+    'TotalNumberOfComponents': '组件总数',
+    'HealthyComponents': '健康组件',
+    'RiskComponents': '风险组件',
 }

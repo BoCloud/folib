@@ -45,4 +45,10 @@ export default {
     'IntroducingTime': 'Introducing time',
     'HighestVulnerabilityLevel': 'The highest vulnerability level',
     'RecommendedFixVersion': 'Recommended fix version',
+    // ChartArtifactComponent.vue
+    'ComponentStatistics': 'Component statistics',
+    'ComponentClassification': 'Component classification',
+    'TotalNumberOfComponents': 'Total number of components',
+    'HealthyComponents': 'Healthy components',
+    'RiskComponents': 'Risk components',
 }

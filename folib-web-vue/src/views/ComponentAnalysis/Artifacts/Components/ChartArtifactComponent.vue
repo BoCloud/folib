@@ -1,12 +1,12 @@
 <template>
   <div class="wrapper">
-    <h5 id="chart-policy-violation-breakdown" class="card-title mb-0">组件统计</h5>
-    <p>组件分类</p>
+    <h5 id="chart-policy-violation-breakdown" class="card-title mb-0">{{ $t('Artifacts.ComponentStatistics') }}</h5>
+    <p>{{ $t('Artifacts.ComponentClassification') }}</p>
     <div class="progress-group-inner">
       <div class="progress-group">
         <div class="progress-group-header">
           <a-icon type="hdd" />
-          <span class="title ml-5">组件总数</span>
+          <span class="title ml-5">{{ $t('Artifacts.TotalNumberOfComponents') }}</span>
           <span class="ml-auto font-weight-bold"
             >{{ components.length }} <span class="text-muted small"></span></span
           >
@@ -18,7 +18,7 @@
       <div class="progress-group">
         <div class="progress-group-header">
           <a-icon type="check-circle" />
-          <span class="title ml-5">健康组件</span>
+          <span class="title ml-5">{{ $t('Artifacts.HealthyComponents') }}</span>
           <span class="ml-auto font-weight-bold"
             >{{ healthComponentCount }} <span class="text-muted small">({{ healthComponentPercent }}%)</span></span
           >
@@ -30,7 +30,7 @@
       <div class="progress-group">
         <div class="progress-group-header">
           <a-icon type="close-circle" />
-          <span class="title ml-5">风险组件</span>
+          <span class="title ml-5">{{ $t('Artifacts.RiskComponents') }}</span>
           <span class="ml-auto font-weight-bold"
             >{{ vulnerabilityComponentCount }} <span class="text-muted small">({{ vulnerabilityComponentPercent }}%)</span></span
           >
