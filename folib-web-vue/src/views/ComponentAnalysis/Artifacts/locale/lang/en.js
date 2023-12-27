@@ -51,4 +51,6 @@ export default {
     'TotalNumberOfComponents': 'Total number of components',
     'HealthyComponents': 'Healthy components',
     'RiskComponents': 'Risk components',
+    'ComponentInformation': 'Component information',
+    'ComponentOverview': 'Component Overview',
 }

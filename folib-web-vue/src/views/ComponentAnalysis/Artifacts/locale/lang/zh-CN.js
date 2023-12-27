@@ -51,4 +51,6 @@ export default {
     'TotalNumberOfComponents': '组件总数',
     'HealthyComponents': '健康组件',
     'RiskComponents': '风险组件',
+    'ComponentInformation': '组件信息',
+    'ComponentOverview': '组件概览',
 }
