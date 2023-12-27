@@ -38,7 +38,7 @@
               </a-row>
               <a-row :gutter="[24]">
                 <a-col :span="12">
-                  <a-form-item :wrapper-col="{ span: 14, offset: 6 }">
+                  <a-form-item :wrapper-col="{ span: 16, offset: 6 }">
                     <a-popconfirm :title="$t('Setting.sureEnableBackup')" okType="danger" :ok-text="$t('Setting.BeSure')" :cancel-text="$t('Setting.Cancel')"
                       @confirm="backupFormSubmit">
                       <a-button type="danger">

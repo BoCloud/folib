@@ -29,7 +29,12 @@
                 <a-col :span="24" :md="8">
                   <a-card class="payment-method-card">
                     <img src="images/folib/userAdmin.svg" alt="">
-                    <h6 class="card-number">{{ $t('Users.TotalNumberOfUsers') }}</h6>
+                    <div v-if="currentUser" style="font-size:16px;color: #141414;font-weight: 600;">
+                      <textOver
+                          :text="$t('Users.TotalNumberOfUsers')"
+                          :max="8" />
+                    </div>
+                    <h6 v-else class="card-number" style="padding-left: 5px">{{ $t('Users.TotalNumberOfUsers') }}</h6>
                     <a-button type="link">
                       <h6 class="card-number">{{ allUsers.length }}</h6>
                     </a-button>
@@ -38,7 +43,12 @@
                 <a-col :span="24" :md="8">
                   <a-card class="payment-method-card">
                     <img src="images/folib/userAdmin.svg" alt="">
-                    <h6 class="card-number">{{ $t('Users.NumberOfAdministrators') }}</h6>
+                    <div v-if="currentUser" style="font-size:16px;color: #141414;font-weight: 600;">
+                      <textOver
+                          :text="$t('Users.NumberOfAdministrators')"
+                          :max="8" />
+                    </div>
+                    <h6 v-else class="card-number" style="padding-left: 5px">{{ $t('Users.NumberOfAdministrators') }}</h6>
                     <a-button type="link">
                       <h6 class="card-number">{{ getUserCount("ADMIN").length }}</h6>
                     </a-button>
@@ -47,7 +57,12 @@
                 <a-col :span="24" :md="8">
                   <a-card class="payment-method-card">
                     <img src="images/folib/userAdmin.svg" alt="">
-                    <h6 class="card-number">{{ $t('Users.NumberOfAnonymousUsers') }}</h6>
+                    <div v-if="currentUser" style="font-size:16px;color: #141414;font-weight: 600;">
+                      <textOver
+                          :text="$t('Users.NumberOfAnonymousUsers')"
+                          :max="8" />
+                    </div>
+                    <h6 v-else class="card-number" style="padding-left: 5px">{{ $t('Users.NumberOfAnonymousUsers') }}</h6>
                     <a-button type="link">
                       <h6 class="card-number">{{ getUserCount("ANONYMOUS").length }}</h6>
                     </a-button>
@@ -65,10 +80,10 @@
               <a-row :gutter="[24, 24]">
                 <a-col :span="24" class="ml-20">
                   <a-row :gutter="[24, 24]">
-                    <a-col :span="6" class="">
+                    <a-col :span="10" class="">
                       <a-input-search v-model="userQuery.username" :placeholder="$t('Users.EnterTheUsernameQuery')" @search="searchUser()"/>
                     </a-col>
-                    <a-col :span="6" class="ml-10">
+                    <a-col :span="10" class="ml-10">
                       <a-input-search v-model="userQuery.email" :placeholder="$t('Users.EnterTheEmailQuery')" @search="searchUser()"/>
                     </a-col>
                   </a-row>
@@ -85,7 +100,7 @@
                                 <a-descriptions-item :label="$t('Users.IsItAvailable')">
                                   {{ item.enabled ? $t('Users.Available') : $t('Users.NotAvailable') }}
                                 </a-descriptions-item>
-                                <a-descriptions-item :label="Email">
+                                <a-descriptions-item label="Email">
                                   {{ item.email ? item.email : "" }}
                                 </a-descriptions-item>
                                 <a-descriptions-item :label="$t('Users.RoleInformation')">
@@ -229,10 +244,12 @@
 
 import { getUsers, queryUser, getUserDetial, putUserDetial, getUsersCreateFields, delUser } from "@/api/users";
 import { encrypt } from "@/utils/jsencrypt"
+import textOver from "@/components/Tools/textOver";
 
 export default ({
   inject: ["reload"],
   components: {
+    textOver,
   },
   data() {
     const checkPassword = (rule, value, callback) => {

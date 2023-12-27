@@ -7,12 +7,12 @@
       <a-row :gutter="[24]">
         <a-col :span="24">
           <a-row :gutter="[24]">
-            <a-col :span="12">
+            <a-col :span="10">
               <a-form-model-item class="mb-10" :label="$t('Cache.EnableCaching')" :colon="false">
                 <a-switch v-model="cacheForm.enabled" />
               </a-form-model-item>
             </a-col>
-            <a-col :span="12" :xs="{ span: 5, offset: 7 }">
+            <a-col :span="14" :xs="{ span: 6, offset: 7 }">
               <a-form-model-item >
                 <a-button type="danger" @click="cacheHandlerConfirm">
                   {{ $t('Cache.Save') }}

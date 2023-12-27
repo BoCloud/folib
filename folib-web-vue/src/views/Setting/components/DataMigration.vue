@@ -40,7 +40,7 @@
           <a-row :gutter="[24]">
             <a-col :span="24">
               <a-row :gutter="[24]">
-                <a-col :span="4">
+                <a-col :span="6">
                   <a-form-model-item class="mb-10" :label="$t('Setting.StorageSpace')" :colon="false" prop="storageId">
                     <a-select @change="handleStorageChange" showSearch allowClear v-model="dataMigrationForm.storageId"
                       :placeholder="$t('Setting.selectTheStorageSpace')">
@@ -50,7 +50,7 @@
                     </a-select>
                   </a-form-model-item>
                 </a-col>
-                <a-col :span="4">
+                <a-col :span="6">
                   <a-form-model-item class="mb-10" :label="$t('Setting.OwnedWarehouse')" :colon="false" prop="repositoryId">
                     <a-select showSearch @change="handleRepositoryChange" allowClear
                       v-model="dataMigrationForm.repositoryId" :placeholder="$t('Setting.selectYourRepository')">
