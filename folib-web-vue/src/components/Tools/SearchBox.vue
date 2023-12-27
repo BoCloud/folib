@@ -1,17 +1,17 @@
 <template>
   <form onsubmit="event.preventDefault();" role="search" @mouseover="mouse(true)" @mouseleave="mouse(false)">
     <label for="search">Search for stuff</label>
-    <input id="search" type="search" placeholder="搜索制品..." required v-model="value" />
+    <input id="search" type="search" :placeholder="$t('Tools.SearchForProducts')" required v-model="value" />
     <a-dropdown>
       <a-menu slot="overlay" @click="handleSearchMenuClick">
         <a-menu-item :key="1">
-          普通
+          {{ $t('Tools.Ordinary') }}
         </a-menu-item>
         <a-menu-item :key="2">
-          元数据
+          {{ $t('Tools.Metadata') }}
         </a-menu-item>
       </a-menu>
-      <a-button> 维度 <a-icon type="down" /> </a-button>
+      <a-button> {{ $t('Tools.Dimension') }} <a-icon type="down" /> </a-button>
     </a-dropdown>
   </form>
 </template>
