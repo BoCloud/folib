@@ -7,7 +7,7 @@ export default {
     'DependenciesNum': 'Total number of dependencies',
     'Bug': 'Bug',
     'BugNum': 'Total number of vulnerabilities',
-    'WhiteList': 'The white list',
+    'WhiteList': 'White list',
     'bugWhitelist': 'vulnerability whitelist',
     'Blacklist': 'Blacklist',
     'bugBlacklist': 'Vulnerability blacklist',

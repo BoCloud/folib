@@ -1,4 +1,5 @@
 export default {
+    // Vulnerabilities有两个重名文件，翻译字段要两个文件同步。
     // Vulnerability.vue
     'EnterStorageSpace': 'Enter the storage space query',
     'EnterWarehouse': 'Enter the warehouse query',
@@ -11,7 +12,7 @@ export default {
     'VulnerabilityDescription': 'Vulnerability description',
     'Download': 'Download',
     'Atlas': 'Atlas',
-    'TheWhiteList': 'The white list',
+    'TheWhiteList': 'White list',
     'SureAddedWhitelist': 'Are you sure you want to be added to the whitelist?',
     'BeSure': 'Confirm',
     'Cancel': 'Cancel',
@@ -49,4 +50,24 @@ export default {
     'CvssV2Score': 'CvssV2 score',
     'CvssV3Score': 'CvssV3 score',
     'ImportVersion': 'Import version',
+    // index.vue
+    'Unassigned': 'Unassigned',
+    'CVSSScore': 'CVSSScore',
+    'VulnerabilityType': 'Vulnerability type',
+    'AffectedProducts': 'Affected products',
+    'Level': 'Level',
+    // Detail.vue
+    'GeneralView': 'General view',
+    'Information': 'Information',
+    // VulnerabilitiesOverView.vue
+    'Overview': 'Overview',
+    'basicScore': 'CVSS basic score',
+    'impactScore': 'CVSS impact score',
+    'availabilityScore': 'CVSS availability score',
+    'Reference': 'Reference',
+    // AffectedArtifacts.vue
+    'ArtifactPathQuery': 'Enter artifact path query',
+    'StorageSpace': 'storage space',
+    'OwnedWarehouse': 'Owned warehouse',
+    'ProductPath': 'Product path',
 }

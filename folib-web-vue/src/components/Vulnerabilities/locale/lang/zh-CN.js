@@ -1,4 +1,5 @@
 export default {
+    // Vulnerabilities有两个重名文件，翻译字段要两个文件同步。
     // Vulnerability.vue
     'EnterStorageSpace': '输入存储空间查询',
     'EnterWarehouse': '输入仓库查询',
@@ -49,4 +50,24 @@ export default {
     'CvssV2Score': 'CvssV2评分',
     'CvssV3Score': 'CvssV3评分',
     'ImportVersion': '引入版本',
+    // index.vue
+    'Unassigned': '未赋值',
+    'CVSSScore': 'CVSS评分',
+    'VulnerabilityType': '漏洞类型',
+    'AffectedProducts': '受影响的制品',
+    'Level': '等级',
+    // Detail.vue
+    'GeneralView': '总览',
+    'Information': '信息',
+    // VulnerabilitiesOverView.vue
+    'Overview': '概览',
+    'basicScore': 'CVSS基本得分',
+    'impactScore': 'CVSS影响性得分',
+    'availabilityScore': 'CVSS可利用性得分',
+    'Reference': '参考',
+    // AffectedArtifacts.vue
+    'ArtifactPathQuery': '输入制品路径查询',
+    'StorageSpace': '存储空间',
+    'OwnedWarehouse': '所属仓库',
+    'ProductPath': '制品路径',
 }
