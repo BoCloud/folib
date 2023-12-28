@@ -192,6 +192,35 @@
         </a-col>
         <a-col :span="12" :md="language === 'zh' ? 17 : 13" class="header-control" v-else>
           <!-- Header Control Buttons -->
+          <!-- 多语言 -->
+          <a-dropdown
+              :trigger="['click']"
+              overlayClassName="header-notifications-dropdown"
+              :getPopupContainer="() => wrapper"
+          >
+            <a class="btn-sign-in">
+              <div class="table-avatar-info">
+                <svg t="1702547797250" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="1871" width="20" height="20"><path d="M162.816 672h199.68c-5.472-40.192-8.96-83.2-10.08-128H129.28c3.744 45.344 15.36 88.48 33.504 128z m37.248 64a384.32 384.32 0 0 0 223.712 149.824c-20.64-38.272-37.92-89.6-50.368-149.824H200.064z m661.12-64c18.144-39.52 29.76-82.656 33.504-128h-223.104a1166.624 1166.624 0 0 1-10.08 128h199.68z m-37.248 64H650.56c-12.448 60.192-29.728 111.552-50.368 149.824A384.32 384.32 0 0 0 823.904 736z m-399.232-64h174.592c4.544-39.52 7.424-82.656 8.384-128h-191.36c0.96 45.344 3.84 88.48 8.384 128z m9.312 64c17.44 96.896 45.856 160 77.984 160 32.128 0 60.544-63.104 77.984-160h-155.968z m-304.704-256h223.104c1.12-44.8 4.608-87.808 10.08-128h-199.68a381.632 381.632 0 0 0-33.504 128z m765.376 0a381.632 381.632 0 0 0-33.504-128h-199.68c5.472 40.192 8.96 83.2 10.08 128h223.104zM416.32 480h191.36a1379.936 1379.936 0 0 0-8.384-128h-174.592a1379.936 1379.936 0 0 0-8.384 128zM200.064 288h173.344c12.448-60.192 29.728-111.552 50.368-149.824A384.32 384.32 0 0 0 200.096 288z m623.872 0a384.32 384.32 0 0 0-223.712-149.824c20.64 38.272 37.92 89.6 50.368 149.824h173.344zM434.016 288h155.968C572.544 191.104 544.128 128 512 128c-32.128 0-60.544 63.104-77.984 160zM512 960C264.576 960 64 759.424 64 512S264.576 64 512 64s448 200.576 448 448-200.576 448-448 448z" fill="#333333" p-id="1872"></path></svg>
+              </div>
+            </a>
+            <a-list
+                item-layout="horizontal"
+                class="header-notifications-list"
+                :data-source="LanguageList"
+                slot="overlay"
+            >
+              <a-list-item slot="renderItem" slot-scope="item" class="user-title">
+                <a-list-item-meta @click="changeLanguage(item.value)">
+                  <span slot="title">{{ item.title }}</span>
+                  <a-avatar
+                      shape="square"
+                      slot="avatar"
+                      v-html="item.svg"
+                  />
+                </a-list-item-meta>
+              </a-list-item>
+            </a-list>
+          </a-dropdown>
           <a-button
             type="link"
             ref="secondarySidebarTriggerBtn"

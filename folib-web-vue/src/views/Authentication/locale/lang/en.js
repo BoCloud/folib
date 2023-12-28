@@ -9,5 +9,5 @@ export default {
     'EnterYourUsername': 'Please enter your username!',
     'Password': 'Password',
     'EnterThePassword': 'Please enter the password!',
-    'Authentication': ' Authentication',
+    'Authentication': ' authentication',
 }
