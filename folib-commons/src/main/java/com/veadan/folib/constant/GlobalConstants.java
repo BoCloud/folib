@@ -61,4 +61,8 @@ public interface GlobalConstants {
      */
     String FO_LIBRARY_METADATA = ".foLibrary-metadata";
 
+    /**
+     * NO_DATA
+     */
+    String NO_DATA = "NO_DATA";
 }

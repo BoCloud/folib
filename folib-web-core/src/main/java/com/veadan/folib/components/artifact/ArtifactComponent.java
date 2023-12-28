@@ -1,6 +1,7 @@
 package com.veadan.folib.components.artifact;
 
 import cn.hutool.core.io.FileUtil;
+import cn.hutool.json.JSONUtil;
 import com.alibaba.fastjson.JSONObject;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -13,6 +14,7 @@ import com.veadan.folib.cloud.storage.s3fs.S3Path;
 import com.veadan.folib.components.common.CommonComponent;
 import com.veadan.folib.config.NpmLayoutProviderConfig;
 import com.veadan.folib.configuration.*;
+import com.veadan.folib.constant.GlobalConstants;
 import com.veadan.folib.controllers.layout.pypi.PypiBrowsePackageHtmlResponseBuilder;
 import com.veadan.folib.data.criteria.Paginator;
 import com.veadan.folib.domain.*;
@@ -46,6 +48,7 @@ import com.veadan.folib.storage.repository.RepositoryDto;
 import com.veadan.folib.storage.repository.RepositoryTypeEnum;
 import com.veadan.folib.util.CacheUtil;
 import com.veadan.folib.util.CommonUtils;
+import com.veadan.folib.util.LocalDateTimeInstance;
 import com.veadan.folib.utils.PypiPackageNameConverter;
 import com.veadan.folib.utils.VersionUtils;
 import lombok.extern.slf4j.Slf4j;
@@ -59,6 +62,7 @@ import org.apache.maven.model.Model;
 import org.apache.maven.model.io.xpp3.MavenXpp3Reader;
 import org.apache.maven.model.io.xpp3.MavenXpp3Writer;
 import org.codehaus.plexus.util.xml.pull.XmlPullParserException;
+import org.folib.util.Commons;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -77,6 +81,7 @@ import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -807,6 +812,31 @@ public class ArtifactComponent {
     }
 
     /**
+     * 校验metadata是否过期
+     *
+     * @param artifactIdGroup artifactIdGroup
+     * @return true 过期 false 未过期
+     */
+    public String getArtifactIdGroupMetadata(ArtifactIdGroup artifactIdGroup) {
+        if (Objects.isNull(artifactIdGroup) || StringUtils.isBlank(artifactIdGroup.getMetadata()) || !JSONUtil.isJson(artifactIdGroup.getMetadata())) {
+            return "";
+        }
+        JSONObject metadataJson = JSONObject.parseObject(artifactIdGroup.getMetadata());
+        String cacheTimeKey = "cacheTime", metadataKey = "metadata";
+        if (metadataJson.containsKey(cacheTimeKey)) {
+            Long cacheTimeLong = metadataJson.getLong(cacheTimeKey);
+            LocalDateTime cacheTime = Commons.toLocalDateTime(cacheTimeLong);
+            long timeout = 300L;
+            LocalDateTime nowDate = LocalDateTimeInstance.now();
+            LocalDateTime cacheExpireDate = cacheTime.plusSeconds(timeout);
+            if (!cacheExpireDate.isBefore(nowDate)) {
+                return metadataJson.getString(metadataKey);
+            }
+        }
+        return "";
+    }
+
+    /**
      * 查询NpmArtifactIdGroupCache
      *
      * @param repository       repository
@@ -848,15 +878,24 @@ public class ArtifactComponent {
     /**
      * 更新ArtifactIdGroup
      *
-     * @param uuid     uuid
-     * @param metadata metadata
+     * @param artifactIdGroup artifactIdGroup
+     * @param metadata        metadata
      */
-    public void updateArtifactIdGroup(String uuid, String metadata) {
+    public void updateArtifactIdGroup(ArtifactIdGroup artifactIdGroup, String metadata) {
+        String uuid = "";
         try {
             long startTime = System.currentTimeMillis();
-            ArtifactIdGroup artifactIdGroup = getArtifactIdGroup(uuid);
             if (Objects.nonNull(artifactIdGroup)) {
-                artifactIdGroup.setMetadata(metadata);
+                uuid = artifactIdGroup.getUuid();
+                if (StringUtils.isNotBlank(metadata)) {
+                    JSONObject metadataJson = new JSONObject();
+                    LocalDateTime nowDate = LocalDateTimeInstance.now();
+                    metadataJson.put("cacheTime", Commons.toLong(nowDate));
+                    metadataJson.put("metadata", metadata);
+                    artifactIdGroup.setMetadata(metadataJson.toJSONString());
+                } else {
+                    artifactIdGroup.setMetadata(metadata);
+                }
                 artifactIdGroupRepository.merge(artifactIdGroup);
                 log.debug("[{}] updateArtifactIdGroup [{}] take time [{}] ms", this.getClass().getSimpleName(), uuid, System.currentTimeMillis() - startTime);
             }
@@ -867,9 +906,7 @@ public class ArtifactComponent {
             if (CommonUtils.catchException(realMessage)) {
                 log.warn("[{}] [{}] updateArtifactIdGroup catch error",
                         this.getClass().getSimpleName(), uuid);
-                return;
             }
-            throw ex;
         }
     }
 
@@ -887,12 +924,36 @@ public class ArtifactComponent {
                                                  Collection<String> coordinateValues, RepositorySearchRequest repositorySearchRequest) {
         PackageFeed packageFeed = null;
         long startTime = System.currentTimeMillis();
-        if (RepositoryTypeEnum.PROXY.getType().equals(repository.getType())) {
-            packageFeed = npmRepositoryFeatures.handleViewPackage(repository.getStorage().getId(), repository.getId(), artifactId);
-        } else if (RepositoryTypeEnum.HOSTED.getType().equals(repository.getType())) {
-            packageFeed = handlePackageFeed(repository, artifactId, repositorySearchRequest);
+        String storageId = repository.getStorage().getId(), repositoryId = repository.getId();
+        ArtifactIdGroup artifactIdGroup = new ArtifactIdGroupEntity(repository.getStorage().getId(), repository.getId(), artifactId);
+        artifactIdGroup = getArtifactIdGroup(artifactIdGroup.getUuid());
+        String metadata = getArtifactIdGroupMetadata(artifactIdGroup);
+        if (StringUtils.isNotBlank(metadata)) {
+            if (JSONUtil.isJson(metadata)) {
+                log.info("Npm [{}] [{}] [{}] exists cache", storageId, repositoryId, artifactId);
+                try (InputStream inputStream = new ByteArrayInputStream(metadata.getBytes())) {
+                    packageFeed = npmJacksonMapper.readValue(inputStream, PackageFeed.class);
+                } catch (IOException ex) {
+                    log.error("[{}] storage [{}] repository [{}] artifactIdGroup [{}] metadata to packageFeed error [{}]", this.getClass().getSimpleName(), storageId, repositoryId, artifactIdGroup.getUuid(), ExceptionUtils.getStackTrace(ex));
+                }
+            }
+        } else {
+            if (RepositoryTypeEnum.PROXY.getType().equals(repository.getType())) {
+                packageFeed = npmRepositoryFeatures.handleViewPackage(storageId, repositoryId, artifactId);
+            } else if (RepositoryTypeEnum.HOSTED.getType().equals(repository.getType())) {
+                packageFeed = handlePackageFeed(repository, artifactId, repositorySearchRequest);
+            }
+            try {
+                String packageFeedJson = GlobalConstants.NO_DATA;
+                if (Objects.nonNull(packageFeed)) {
+                    packageFeedJson = npmJacksonMapper.writeValueAsString(packageFeed);
+                }
+                updateArtifactIdGroup(new ArtifactIdGroupEntity(repository.getStorage().getId(), repository.getId(), artifactId), packageFeedJson);
+            } catch (JsonProcessingException ex) {
+                log.warn("[{}] packageFeed 转换异常 [{}] error [{}]", this.getClass().getSimpleName(), JSONObject.toJSONString(packageFeed), ExceptionUtils.getStackTrace(ex));
+            }
         }
-        log.debug("[{}] getNpmArtifactPackageFeed storageId [{}] repositoryId [{}] artifactId [{}] coordinateValues [{}] take time [{}] ms", this.getClass().getSimpleName(), repository.getStorage().getId(), repository.getId(), artifactId, coordinateValues, System.currentTimeMillis() - startTime);
+        log.info("[{}] getNpmArtifactPackageFeed storageId [{}] repositoryId [{}] artifactId [{}] coordinateValues [{}] take time [{}] ms", this.getClass().getSimpleName(), repository.getStorage().getId(), repository.getId(), artifactId, coordinateValues, System.currentTimeMillis() - startTime);
         return packageFeed;
     }
 
@@ -1117,7 +1178,7 @@ public class ArtifactComponent {
         }
     }
 
-//    @Async("eventTaskExecutor")
+    //    @Async("eventTaskExecutor")
     public void beforeRead(RepositoryPath repositoryPath) {
         try {
             if (Objects.isNull(repositoryPath) || !RepositoryFiles.isArtifact(repositoryPath)) {
@@ -1129,7 +1190,7 @@ public class ArtifactComponent {
         }
     }
 
-//    @Async("eventTaskExecutor")
+    //    @Async("eventTaskExecutor")
     public void afterRead(RepositoryPath repositoryPath) {
         try {
             if (Objects.isNull(repositoryPath) || !RepositoryFiles.isArtifact(repositoryPath)) {
@@ -1141,7 +1202,7 @@ public class ArtifactComponent {
         }
     }
 
-//    @Async("eventTaskExecutor")
+    //    @Async("eventTaskExecutor")
     public void artifactCache(RepositoryPath repositoryPath) {
         try {
             artifactEventListenerRegistry.dispatchArtifactCacheEvent(repositoryPath);

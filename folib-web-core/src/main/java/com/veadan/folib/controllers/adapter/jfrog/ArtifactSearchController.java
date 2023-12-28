@@ -354,8 +354,8 @@ public class ArtifactSearchController extends JFrogBaseController {
         ArtifactSearchInfo artifactSearchInfo = new ArtifactSearchInfo();
         if (CollectionUtils.isEmpty(propertyList) || (CollectionUtils.isNotEmpty(propertyList) && propertyList.contains("property"))) {
             artifactSearchInfo.setRepo(String.format("%s/%s", artifact.getStorageId(), artifact.getRepositoryId()));
-            artifactSearchInfo.setName(artifact.getArtifactName());
-            artifactSearchInfo.setPath(getPath(artifact.getArtifactPath(), artifact.getArtifactName()));
+            artifactSearchInfo.setName(getName(artifact));
+            artifactSearchInfo.setPath(getPath(artifact));
             artifactSearchInfo.setCreated(Date.from(artifact.getCreated().atZone(ZoneId.of("Asia/Shanghai")).toOffsetDateTime().toInstant()));
             artifactSearchInfo.setCreatedBy(artifact.getCreatedBy());
             artifactSearchInfo.setModified(Date.from(artifact.getLastUpdated().atZone(ZoneId.of("Asia/Shanghai")).toOffsetDateTime().toInstant()));
@@ -371,10 +371,10 @@ public class ArtifactSearchController extends JFrogBaseController {
                     artifactSearchInfo.setRepo(String.format("%s/%s", artifact.getStorageId(), artifact.getRepositoryId()));
                     break;
                 case "path":
-                    artifactSearchInfo.setPath(getPath(artifact.getArtifactPath(), artifact.getArtifactName()));
+                    artifactSearchInfo.setPath(getPath(artifact));
                     break;
                 case "name":
-                    artifactSearchInfo.setName(artifact.getArtifactName());
+                    artifactSearchInfo.setName(getName(artifact));
                     break;
                 case "created":
                     artifactSearchInfo.setCreated(Date.from(artifact.getCreated().atZone(ZoneId.of("Asia/Shanghai")).toOffsetDateTime().toInstant()));
@@ -436,14 +436,29 @@ public class ArtifactSearchController extends JFrogBaseController {
         }
     }
 
-    private String getPath(String path, String name) {
-        if (StringUtils.isBlank(path)) {
-            return "";
+    private String getName(Artifact artifact) {
+        String name = artifact.getArtifactName();
+        if (artifact.getArtifactCoordinates() instanceof DockerArtifactCoordinates) {
+            DockerArtifactCoordinates dockerArtifactCoordinates = (DockerArtifactCoordinates) artifact.getArtifactCoordinates();
+            name = dockerArtifactCoordinates.getTAG();
         }
-        if (path.equals(name)) {
-            path = ".";
+        return name;
+    }
+
+    private String getPath(Artifact artifact) {
+        String path = artifact.getArtifactPath(), name = artifact.getArtifactName();
+        if (artifact.getArtifactCoordinates() instanceof DockerArtifactCoordinates) {
+            DockerArtifactCoordinates dockerArtifactCoordinates = (DockerArtifactCoordinates) artifact.getArtifactCoordinates();
+            path = dockerArtifactCoordinates.getName();
         } else {
-            path = path.substring(0, path.indexOf(name) - 1);
+            if (StringUtils.isBlank(path)) {
+                return "";
+            }
+            if (path.equals(name)) {
+                path = ".";
+            } else {
+                path = path.substring(0, path.indexOf(name) - 1);
+            }
         }
         return path;
     }

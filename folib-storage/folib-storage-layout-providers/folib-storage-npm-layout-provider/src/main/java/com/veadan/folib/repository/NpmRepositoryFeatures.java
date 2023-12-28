@@ -508,6 +508,7 @@ public class NpmRepositoryFeatures implements RepositoryFeatures {
             };
             eventTaskExecutor.execute(job);
         } else {
+            //兼容代理源不能使用的情况
             artifactIdGroup = artifactIdGroupRepository.findByArtifactIdGroup(artifactIdGroup.getUuid());
             if (Objects.nonNull(artifactIdGroup)) {
                 String metadata = artifactIdGroup.getMetadata();

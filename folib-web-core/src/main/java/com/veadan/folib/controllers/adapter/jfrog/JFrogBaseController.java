@@ -19,7 +19,7 @@ public abstract class JFrogBaseController extends BaseArtifactController {
 
     private static final String REPOSITORY_NOT_FOUND_MESSAGE = "The %s repository was not found.";
 
-    private static final String NOT_FOUND_MESSAGE = "No resources could be found.";
+    private static final String NOT_FOUND_MESSAGE = "The %s Artifact was not found.";
 
     /**
      * 获取设置默认的存储空间
@@ -69,7 +69,22 @@ public abstract class JFrogBaseController extends BaseArtifactController {
      * 仓库不存在
      */
     public ResponseEntity<Object> repositoryNotFound() {
-        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(handlerErrors(null, String.format(REPOSITORY_NOT_FOUND_MESSAGE, "")));
+        return repositoryNotFound("");
+    }
+
+    /**
+     * 制品不存在
+     * @param artifact 制品
+     */
+    public ResponseEntity<Object> artifactNotFound(String artifact) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(handlerErrors(null, String.format(NOT_FOUND_MESSAGE, artifact)));
+    }
+
+    /**
+     * 制品不存在
+     */
+    public ResponseEntity<Object> artifactNotFound() {
+        return artifactNotFound("");
     }
 
     /**

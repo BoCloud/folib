@@ -13,6 +13,7 @@ import com.veadan.folib.artifact.MavenArtifactUtils;
 import com.veadan.folib.artifact.coordinates.NpmArtifactCoordinates;
 import com.veadan.folib.components.artifact.ArtifactComponent;
 import com.veadan.folib.config.NpmLayoutProviderConfig;
+import com.veadan.folib.domain.ArtifactIdGroupEntity;
 import com.veadan.folib.domain.ArtifactParse;
 import com.veadan.folib.domain.DockerManifest;
 import com.veadan.folib.entity.Dict;
@@ -501,6 +502,7 @@ public class ArtifactUploadTask implements Callable<String> {
                     try (InputStream inputStream = new ByteArrayInputStream(packageJsonBytes)) {
                         artifactManagementService.store(repositoryPath.resolveSibling("package.json"), inputStream);
                     }
+                    artifactComponent.updateArtifactIdGroup(new ArtifactIdGroupEntity(storageId, repositoryId, npmArtifactCoordinates.getId()), "");
                 } catch (Exception ex) {
                     log.error("handlerNpmLayoutUpload file：{}，error：{}", artifactTempFile.getAbsolutePath(), ExceptionUtils.getStackTrace(ex));
                     throw runtimeException;
