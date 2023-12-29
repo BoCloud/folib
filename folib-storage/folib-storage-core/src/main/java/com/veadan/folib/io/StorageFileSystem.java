@@ -92,11 +92,10 @@ public abstract class StorageFileSystem
                                                                          "/storages"))
                                     .toAbsolutePath()
                                     .normalize();
-        
         return Optional.ofNullable(storage.getBasedir())
-                       .filter(p -> !p.trim().isEmpty())
-                       .map(p -> getTarget().getPath(p).toAbsolutePath().normalize())
-                       .orElseGet(() -> storagesRoot.resolve(storage.getId())).toAbsolutePath().normalize();
+                .filter(p -> !p.trim().isEmpty())
+                .map(p -> getTarget().getPath(propertiesBooter.getVaultDirectory() + p).resolve(storage.getId()).toAbsolutePath().normalize())
+                .orElseGet(() -> storagesRoot.resolve(storage.getId())).toAbsolutePath().normalize();
     }
 
     public Iterable<FileStore> getFileStores()
