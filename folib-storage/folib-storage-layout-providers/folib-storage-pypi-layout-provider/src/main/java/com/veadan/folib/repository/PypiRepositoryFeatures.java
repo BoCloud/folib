@@ -213,7 +213,7 @@ public class PypiRepositoryFeatures
                 try {
                     long startTime = System.currentTimeMillis();
                     artifactIdGroup.setMetadata(JSONObject.toJSONString(pypiSearchResult));
-                    artifactIdGroupRepository.merge(artifactIdGroup);
+                    artifactIdGroupRepository.saveOrUpdate(artifactIdGroup);
                     logger.info("[{}] storage [{}] repository [{}] update artifactIdGroup [{}] metadata take time [{}] ms", this.getClass().getSimpleName(), storageId, repositoryId, artifactIdGroup.getUuid(), System.currentTimeMillis() - startTime);
                 } catch (Exception ex) {
                     String realMessage = CommonUtils.getRealMessage(ex);
@@ -231,7 +231,7 @@ public class PypiRepositoryFeatures
                             itemArtifactIdGroup = new ArtifactIdGroupEntity(storageId, repositoryId, entry.getKey());
                             long startTime = System.currentTimeMillis();
                             itemArtifactIdGroup.setMetadata(JSONObject.toJSONString(entry.getValue()));
-                            artifactIdGroupRepository.merge(itemArtifactIdGroup);
+                            artifactIdGroupRepository.saveOrUpdate(itemArtifactIdGroup);
                             logger.info("[{}] storage [{}] repository [{}] update itemArtifactIdGroup [{}] metadata take time [{}] ms", this.getClass().getSimpleName(), storageId, repositoryId, itemArtifactIdGroup.getUuid(), System.currentTimeMillis() - startTime);
                         } catch (Exception ex) {
                             String realMessage = CommonUtils.getRealMessage(ex);

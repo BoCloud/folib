@@ -1,5 +1,7 @@
 package com.veadan.folib.components.artifact;
 
+import cn.hutool.core.date.DatePattern;
+import cn.hutool.core.date.DateUtil;
 import cn.hutool.core.io.FileUtil;
 import cn.hutool.json.JSONUtil;
 import com.alibaba.fastjson.JSONObject;
@@ -11,6 +13,7 @@ import com.veadan.folib.artifact.archive.JarArchiveListingFunction;
 import com.veadan.folib.artifact.coordinates.DockerArtifactCoordinates;
 import com.veadan.folib.artifact.coordinates.PypiArtifactCoordinates;
 import com.veadan.folib.cloud.storage.s3fs.S3Path;
+import com.veadan.folib.components.DistributedLockComponent;
 import com.veadan.folib.components.common.CommonComponent;
 import com.veadan.folib.config.NpmLayoutProviderConfig;
 import com.veadan.folib.configuration.*;
@@ -21,11 +24,9 @@ import com.veadan.folib.domain.*;
 import com.veadan.folib.entity.ArtifactCacheRecord;
 import com.veadan.folib.entity.Dict;
 import com.veadan.folib.entity.PackageNameBlock;
-import com.veadan.folib.enums.BlockTypeEnum;
-import com.veadan.folib.enums.ConditionTypeEnum;
-import com.veadan.folib.enums.DictTypeEnum;
-import com.veadan.folib.enums.PromotionStatusEnum;
+import com.veadan.folib.enums.*;
 import com.veadan.folib.event.artifact.ArtifactEventListenerRegistry;
+import com.veadan.folib.event.artifact.ArtifactEventTypeEnum;
 import com.veadan.folib.npm.metadata.*;
 import com.veadan.folib.providers.io.RepositoryFiles;
 import com.veadan.folib.providers.io.RepositoryPath;
@@ -48,6 +49,7 @@ import com.veadan.folib.storage.repository.RepositoryDto;
 import com.veadan.folib.storage.repository.RepositoryTypeEnum;
 import com.veadan.folib.util.CacheUtil;
 import com.veadan.folib.util.CommonUtils;
+import com.veadan.folib.util.FileSizeConvertUtils;
 import com.veadan.folib.util.LocalDateTimeInstance;
 import com.veadan.folib.utils.PypiPackageNameConverter;
 import com.veadan.folib.utils.VersionUtils;
@@ -78,12 +80,15 @@ import javax.ws.rs.client.Client;
 import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.Response;
 import java.io.*;
+import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * @author leipenghui
@@ -172,6 +177,10 @@ public class ArtifactComponent {
     @Qualifier("browseRepositoryDirectoryListingService")
     @Lazy
     private volatile DirectoryListingService directoryListingService;
+
+    @Inject
+    @Lazy
+    private DistributedLockComponent distributedLockComponent;
 
     /**
      * 读取文件内容
@@ -896,7 +905,7 @@ public class ArtifactComponent {
                 } else {
                     artifactIdGroup.setMetadata(metadata);
                 }
-                artifactIdGroupRepository.merge(artifactIdGroup);
+                artifactIdGroupRepository.saveOrUpdate(artifactIdGroup);
                 log.debug("[{}] updateArtifactIdGroup [{}] take time [{}] ms", this.getClass().getSimpleName(), uuid, System.currentTimeMillis() - startTime);
             }
         } catch (Exception ex) {
@@ -1148,11 +1157,6 @@ public class ArtifactComponent {
         }
     }
 
-    @Async("asyncThreadPoolTaskExecutor")
-    public void asyncStoreArtifactMetadataFile(RepositoryPath repositoryPath) {
-        storeArtifactMetadataFile(repositoryPath);
-    }
-
     /**
      * 存储制品元数据文件
      *
@@ -1178,31 +1182,88 @@ public class ArtifactComponent {
         }
     }
 
-    //    @Async("eventTaskExecutor")
+    public Integer getLatestIndex() {
+        Path path = Path.of(getEventParentPath());
+        if (Files.exists(path)) {
+            try (Stream<Path> pathStream = Files.list(path)) {
+                List<Path> pathList = pathStream.sorted().collect(Collectors.toList());
+                if (CollectionUtils.isNotEmpty(pathList)) {
+                    Path eventPath = pathList.get(pathList.size() - 1);
+                    String filename = eventPath.getFileName().toString();
+                    filename = FilenameUtils.getBaseName(filename);
+                    List<String> nameSplitList = Arrays.asList(filename.split("_"));
+                    if (CollectionUtils.isNotEmpty(nameSplitList)) {
+                        String index = nameSplitList.get(nameSplitList.size() - 1);
+                        return Integer.parseInt(index);
+                    }
+                }
+            } catch (Exception ex) {
+                log.warn(ExceptionUtils.getStackTrace(ex));
+            }
+        }
+        return null;
+    }
+
+    public String getEventParentPath() {
+        return tempPath + File.separator + "artifactEvent";
+    }
+
+    public Path getEventPath(Integer index) throws IOException {
+        if (Objects.isNull(index)) {
+            index = 1;
+        }
+        String filename = DateUtil.format(DateUtil.date(), DatePattern.PURE_DATE_PATTERN) + "_index_%s.txt";
+        String filePath = getEventParentPath() + File.separator + String.format(filename, index);
+        log.debug("Event file path [{}]", filePath);
+        Path path = Path.of(filePath);
+        Files.createDirectories(path.getParent());
+        //每个事件文件20M大小
+        BigDecimal maxSize = BigDecimal.valueOf(20);
+        if (!Files.exists(path)) {
+            Files.createFile(path);
+        }
+        if (FileSizeConvertUtils.convertBytesWithDecimal(Files.size(path), FileUnitTypeEnum.MB.getUnit()).compareTo(maxSize) >= 0) {
+            return getEventPath(index + 1);
+        }
+        return path;
+    }
+
+    private void storeEvent(RepositoryPath repositoryPath, ArtifactEventTypeEnum artifactEventTypeEnum) throws IOException {
+        Path eventPath = getEventPath(getLatestIndex());
+        //追加写模式
+        try (BufferedWriter writer = Files.newBufferedWriter(eventPath, StandardCharsets.UTF_8, StandardOpenOption.APPEND)) {
+            ArtifactEventRecord artifactEventRecord = ArtifactEventRecord.builder().storageId(repositoryPath.getStorageId()).repositoryId(repositoryPath.getRepositoryId())
+                    .artifactPath(RepositoryFiles.relativizePath(repositoryPath)).eventType(artifactEventTypeEnum.getType()).build();
+            writer.write(JSONObject.toJSONString(artifactEventRecord) + System.lineSeparator());
+        }
+    }
+
     public void beforeRead(RepositoryPath repositoryPath) {
         try {
             if (Objects.isNull(repositoryPath) || !RepositoryFiles.isArtifact(repositoryPath)) {
                 return;
             }
-            artifactEventListenerRegistry.dispatchArtifactDownloadingEvent(repositoryPath);
+            long startTime = System.currentTimeMillis();
+            storeEvent(repositoryPath, ArtifactEventTypeEnum.EVENT_ARTIFACT_FILE_DOWNLOADING);
+            log.debug("Write EVENT_ARTIFACT_FILE_DOWNLOADING take time [{}] ms", System.currentTimeMillis() - startTime);
         } catch (Exception ex) {
             log.error("RepositoryPath beforeRead error ", ex);
         }
     }
 
-    //    @Async("eventTaskExecutor")
     public void afterRead(RepositoryPath repositoryPath) {
         try {
             if (Objects.isNull(repositoryPath) || !RepositoryFiles.isArtifact(repositoryPath)) {
                 return;
             }
-            artifactEventListenerRegistry.dispatchArtifactDownloadedEvent(repositoryPath);
+            long startTime = System.currentTimeMillis();
+            storeEvent(repositoryPath, ArtifactEventTypeEnum.EVENT_ARTIFACT_FILE_DOWNLOADED);
+            log.debug("Write EVENT_ARTIFACT_FILE_DOWNLOADED take time [{}] ms", System.currentTimeMillis() - startTime);
         } catch (Exception ex) {
-            log.error("RepositoryPath beforeRead error ", ex);
+            log.error("RepositoryPath afterRead error ", ex);
         }
     }
 
-    //    @Async("eventTaskExecutor")
     public void artifactCache(RepositoryPath repositoryPath) {
         try {
             artifactEventListenerRegistry.dispatchArtifactCacheEvent(repositoryPath);

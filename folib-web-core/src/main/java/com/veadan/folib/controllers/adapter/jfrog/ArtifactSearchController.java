@@ -225,8 +225,6 @@ public class ArtifactSearchController extends JFrogBaseController {
     @PostMapping(value = {"/ui/api/v1/ui/views/dockerv2"})
     public ResponseEntity<Object> dockerv2(@RequestBody ArtifactDockerQuery artifactDockerQuery, HttpServletRequest request) throws Exception {
         String storageId = getDefaultStorageId(), repositoryId = artifactDockerQuery.getRepoKey(), artifactPath = artifactDockerQuery.getPath();
-        String[] imageArr = artifactPath.split("/");
-        String name = imageArr[0];
         Storage storage = getStorage(storageId);
         if (Objects.isNull(storage)) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(handlerErrors(null, STORAGE_NOT_FOUND_MESSAGE));

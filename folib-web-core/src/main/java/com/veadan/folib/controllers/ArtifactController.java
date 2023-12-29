@@ -19,6 +19,7 @@ import com.veadan.folib.scanner.common.msg.TableResultResponse;
 import com.veadan.folib.services.ArtifactWebService;
 import com.veadan.folib.storage.Storage;
 import com.veadan.folib.storage.repository.Repository;
+import com.veadan.folib.task.EventTask;
 import com.veadan.folib.users.userdetails.SpringSecurityUser;
 import com.veadan.folib.validation.RequestBodyValidationException;
 import io.swagger.annotations.Api;
@@ -66,6 +67,10 @@ public class ArtifactController extends BaseController {
     @Inject
     @Lazy
     private ArtifactComponent artifactComponent;
+
+    @Inject
+    @Lazy
+    private EventTask eventTask;
 
     private static final String STORAGE_NOT_FOUND = "The storage was not found.";
 
@@ -309,5 +314,12 @@ public class ArtifactController extends BaseController {
     @GetMapping(value = "/lockInfo")
     public ResponseEntity<Integer> lockInfo() {
         return ResponseEntity.ok(repositoryPathLock.getLockInfo());
+    }
+
+    @PreAuthorize("hasAuthority('ADMIN')")
+    @GetMapping(value = "/handleEvent")
+    public ResponseEntity<String> handleEvent(@RequestParam(value = "filename", required = false) String filename) {
+        eventTask.handle(filename);
+        return ResponseEntity.ok("");
     }
 }

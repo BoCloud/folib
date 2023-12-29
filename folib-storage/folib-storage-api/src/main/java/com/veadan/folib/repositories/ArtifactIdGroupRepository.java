@@ -3,7 +3,9 @@ package com.veadan.folib.repositories;
 import com.veadan.folib.artifact.ArtifactTag;
 import com.veadan.folib.artifact.coordinates.ArtifactLayoutDescription;
 import com.veadan.folib.artifact.coordinates.ArtifactLayoutLocator;
+import com.veadan.folib.components.DistributedLockComponent;
 import com.veadan.folib.configuration.ConfigurationManager;
+import com.veadan.folib.constant.GlobalConstants;
 import com.veadan.folib.db.schema.Edges;
 import com.veadan.folib.db.schema.Properties;
 import com.veadan.folib.db.schema.Vertices;
@@ -14,8 +16,10 @@ import com.veadan.folib.gremlin.adapters.ArtifactAdapter;
 import com.veadan.folib.gremlin.adapters.ArtifactIdGroupAdapter;
 import com.veadan.folib.gremlin.dsl.EntityTraversal;
 import com.veadan.folib.gremlin.repositories.GremlinVertexRepository;
+import com.veadan.folib.util.CommonUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.tinkerpop.gremlin.process.traversal.Order;
 import org.apache.tinkerpop.gremlin.structure.Vertex;
 import org.janusgraph.core.attribute.Text;
@@ -23,14 +27,12 @@ import org.springframework.context.annotation.Lazy;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.neo4j.annotation.Query;
-import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import javax.inject.Inject;
 import javax.transaction.Transactional;
 import java.util.*;
-import java.util.stream.Collectors;
+import java.util.concurrent.TimeUnit;
 
 @Repository
 @Transactional
@@ -44,6 +46,29 @@ public class ArtifactIdGroupRepository extends GremlinVertexRepository<ArtifactI
     @Inject
     @Lazy
     ArtifactAdapter artifactAdapter;
+    @Inject
+    DistributedLockComponent distributedLockComponent;
+
+    public void saveOrUpdate(ArtifactIdGroup artifactIdGroup) {
+        if (distributedLockComponent.lock(artifactIdGroup.getUuid(), GlobalConstants.WAIT_LOCK_TIME, TimeUnit.SECONDS)) {
+            try {
+                try {
+                    merge(artifactIdGroup);
+                } catch (Exception ex) {
+                    if (CommonUtils.catchException(ex)) {
+                        log.warn("Handle artifactIdGroup [{}] catch error", artifactIdGroup.getUuid());
+                        return;
+                    }
+                    log.error("Handle artifactIdGroup [{}] error [{}]", artifactIdGroup.getUuid(), ExceptionUtils.getStackTrace(ex));
+                    throw new RuntimeException(ex.getMessage());
+                }
+            } finally {
+                distributedLockComponent.unLock(artifactIdGroup.getUuid());
+            }
+        } else {
+            log.warn("Handle artifactIdGroup [{}] was not get lock", artifactIdGroup.getUuid());
+        }
+    }
 
     @Override
     protected ArtifactIdGroupAdapter adapter() {
@@ -102,9 +127,9 @@ public class ArtifactIdGroupRepository extends GremlinVertexRepository<ArtifactI
     }
 
     public Optional<ArtifactIdGroup> findArtifactGroupWithTag(String storageId,
-                                                               String repositoryId,
-                                                               String artifactId,
-                                                               Optional<ArtifactTag> tag) {
+                                                              String repositoryId,
+                                                              String artifactId,
+                                                              Optional<ArtifactTag> tag) {
         ArtifactIdGroup artifactIdGroup = new ArtifactIdGroupEntity(storageId, repositoryId, artifactId);
         EntityTraversal<Vertex, ArtifactIdGroup> t = g().V()
                 .hasLabel(Vertices.ARTIFACT_ID_GROUP)
@@ -200,7 +225,7 @@ public class ArtifactIdGroupRepository extends GremlinVertexRepository<ArtifactI
         ArtifactIdGroup artifactIdGroup = new ArtifactIdGroupEntity(storageId, repositoryId, artifactId);
         EntityTraversal<Vertex, Vertex> t = g().V()
                 .hasLabel(Vertices.ARTIFACT).has(Properties.STORAGE_ID_AND_REPOSITORY_ID, storageIdAndRepositoryId);
-        String regex = "(%s/)", suffix= "";
+        String regex = "(%s/)", suffix = "";
         //(folib-common-taobao-npm-vue)(.*tgz.*)
         regex = String.format(regex, artifactIdGroup.getUuid());
         if (CollectionUtils.isNotEmpty(coordinateValues)) {

@@ -275,7 +275,7 @@ public abstract class AbstractRepositoryProvider implements RepositoryProvider, 
                 lastVersion.getVersion(),
                 lastVersion.getPath());
         try {
-            artifactIdGroupRepository.merge(artifactGroup);
+            artifactIdGroupRepository.saveOrUpdate(artifactGroup);
         } catch (Exception ex) {
             String realMessage = CommonUtils.getRealMessage(ex);
             logger.warn("[{}] [{}] merge group error [{}]",
@@ -335,7 +335,7 @@ public abstract class AbstractRepositoryProvider implements RepositoryProvider, 
                 lastVersion.getVersion(),
                 lastVersion.getPath());
 
-        artifactIdGroupRepository.merge(artifactGroup);
+        artifactIdGroupRepository.saveOrUpdate(artifactGroup);
 
         repositoryPath.artifact = artifact;
     }

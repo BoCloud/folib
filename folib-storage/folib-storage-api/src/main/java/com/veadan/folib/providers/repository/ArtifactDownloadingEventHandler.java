@@ -9,6 +9,7 @@ import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.providers.io.RepositoryPathResolver;
 import com.veadan.folib.providers.layout.LayoutProvider;
 import com.veadan.folib.providers.layout.LayoutProviderRegistry;
+import com.veadan.folib.repositories.ArtifactRepository;
 import com.veadan.folib.storage.repository.Repository;
 import com.veadan.folib.util.LocalDateTimeInstance;
 import lombok.extern.slf4j.Slf4j;
@@ -36,12 +37,20 @@ public class ArtifactDownloadingEventHandler extends AsyncArtifactEntryHandler {
     @Inject
     private LayoutProviderRegistry layoutProviderRegistry;
 
+    @Inject
+    private ArtifactRepository artifactRepository;
+
     public ArtifactDownloadingEventHandler() {
         super(ArtifactEventTypeEnum.EVENT_ARTIFACT_FILE_DOWNLOADING);
     }
 
     @Override
     protected Artifact handleEvent(RepositoryPath repositoryPath) throws IOException {
+        return handleEventRecord(repositoryPath, 1L, false);
+    }
+
+
+    public Artifact handleEventRecord(RepositoryPath repositoryPath, Long count, Boolean commit) throws IOException {
         Artifact artifactEntry = repositoryPath.getArtifactEntry();
         if (artifactEntry == null) {
             log.debug("No [{}] for [{}].",
@@ -49,6 +58,9 @@ public class ArtifactDownloadingEventHandler extends AsyncArtifactEntryHandler {
                     repositoryPath);
 
             return null;
+        }
+        if (Objects.isNull(count)) {
+            count = 1L;
         }
         String fileName = "." + FilenameUtils.getName(repositoryPath.getFileName().toString()) + ".metadata";
         RepositoryPath artifactRepositoryPath = repositoryPath.getParent().resolve(fileName);
@@ -65,7 +77,7 @@ public class ArtifactDownloadingEventHandler extends AsyncArtifactEntryHandler {
         if (Objects.isNull(downloadCount)) {
             downloadCount = 0;
         }
-        updateArtifactEntry.setDownloadCount(downloadCount + 1);
+        updateArtifactEntry.setDownloadCount(downloadCount + count.intValue());
         updateArtifactEntry.setLastUsed(LocalDateTimeInstance.now());
         updateArtifactEntry.setLastUpdated(updateArtifactEntry.getLastUsed());
         log.debug("[{}] [{}] downloadCount changed from [{}] to [{}].",
@@ -87,6 +99,9 @@ public class ArtifactDownloadingEventHandler extends AsyncArtifactEntryHandler {
             }
         } catch (Exception ex) {
             log.warn(ExceptionUtils.getStackTrace(ex));
+        }
+        if (Boolean.TRUE.equals(commit)) {
+            artifactRepository.saveOrUpdate(updateArtifactEntry);
         }
         return updateArtifactEntry;
     }

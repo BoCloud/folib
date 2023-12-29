@@ -85,7 +85,7 @@ public class ArtifactIdGroupServiceImpl
                 lastVersion.getPath());
 
         try {
-            artifactIdGroupRepository.merge(artifactGroup);
+            artifactIdGroupRepository.saveOrUpdate(artifactGroup);
         } catch (Exception ex) {
             String realMessage = CommonUtils.getRealMessage(ex);
             if (CommonUtils.catchException(realMessage)) {

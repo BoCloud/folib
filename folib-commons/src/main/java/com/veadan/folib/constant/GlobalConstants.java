@@ -65,4 +65,9 @@ public interface GlobalConstants {
      * NO_DATA
      */
     String NO_DATA = "NO_DATA";
+
+    /**
+     * WAIT_LOCK_TIME
+     */
+    long WAIT_LOCK_TIME = 30L;
 }
