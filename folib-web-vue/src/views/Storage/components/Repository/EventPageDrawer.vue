@@ -26,6 +26,47 @@
                    :scroll="{ x: true }"
                    :data-source="recordList"
                    :row-key="(r, i) => i.toString()">
+            <div slot="targetPath"
+                 slot-scope="text, record">
+              <a-tooltip>
+                <template slot="title">
+                  <template v-if="record.opsType === 1">
+                    {{record.targetPath}}
+                  </template>
+                  <template v-if="record.opsType === 2">
+                    <template v-for="(info, index) in JSON.parse(record.targetPath)">
+                      分发节点{{index+1}}: {{info.dispatchClusterEnName}}
+                      <template v-if="info.targetStorageId">&nbsp;&nbsp;存储空间: {{info.targetStorageId||'-'}}</template>
+                      <template v-if="info.targetRepositoryId">&nbsp;&nbsp;仓库名称: {{info.targetRepositoryId||'-'}}</template>
+                      <br/>
+                    </template>
+                  </template>
+                </template>
+                <a>
+                  <p class="copy-p">
+                    查看
+                  </p>
+                </a>
+              </a-tooltip>
+            </div>
+            <div slot="failedReason"
+                 slot-scope="text, record">
+              <template v-if="record.failedReason">
+                <a-tooltip>
+                  <template slot="title">
+                      {{record.failedReason}}
+                    </template>
+                  <a>
+                    <p class="copy-p">
+                      查看
+                    </p>
+                  </a>
+                </a-tooltip>
+              </template>
+              <template v-else>
+                -
+              </template>
+            </div>
             <div slot="opsType"
                  slot-scope="text, record">
               {{ opsTypeMap[record.opsType] || "未知操作" }}
@@ -34,16 +75,28 @@
                  slot-scope="text, record">
               {{ statusMap[record.status] || "未知状态" }}
             </div>
+            <div slot="slaveRecordCleared"
+                 slot-scope="text, record">
+              {{ record.slaveRecordCleared ? '已清除':'未清除' }}
+            </div>
+            <div slot="syncProgress"
+                 slot-scope="text, record">
+              <template v-if="record.syncProgress && record.syncProgress > 0">
+                {{ (record.syncProgress * 100).toFixed(2) }} %
+              </template>
+              <template v-else>
+                0.00%
+              </template>
+            </div>
             <div slot="operation"
                  slot-scope="text, record">
-              <!--                    <div class="col-action" v-if="!record.autoRegister">-->
               <div class="col-action">
-                <a-popconfirm title="确定要进行制品补偿吗？"
+                <a-popconfirm :title="(currentClickRecord && currentClickRecord.status === 2 ? '当前制品正在同步中，':'')+'确定要进行制品补偿吗'"
                               okType="danger"
                               ok-text="确定"
                               cancel-text="取消"
                               @confirm="">
-                  <a-button type="link" v-if="record.status === 2 || record.status === 4"
+                  <a-button type="link" v-if="record.status === 2 || record.status === 4" @click="clickRecord(record)"
                             size="small">
                     <span class="text-danger">补偿</span>
                   </a-button>
@@ -78,6 +131,7 @@ export default {
   },
   data() {
     return {
+      intervalId: undefined,
       settingTabActiveKey: 1,
       opsTypeMap: {
         1: "制品晋级",
@@ -124,7 +178,28 @@ export default {
           scopedSlots: {customRender: 'status'}
         },
         {
-          title: '状态时间',
+          title: '从记录状态',
+          dataIndex: 'slaveRecordCleared',
+          key: 'slaveRecordCleared',
+          width: 100,
+          scopedSlots: {customRender: 'slaveRecordCleared'}
+        },
+        {
+          title: '同步进度',
+          dataIndex: 'syncProgress',
+          key: 'syncProgress',
+          width: 100,
+          scopedSlots: {customRender: 'syncProgress'}
+        },
+        {
+          title: '失败原因',
+          dataIndex: 'failedReason',
+          key: 'failedReason',
+          width: 100,
+          scopedSlots: {customRender: 'failedReason'}
+        },
+        {
+          title: '创建时间',
           dataIndex: 'createTime',
           key: 'createTime',
           width: 100,
@@ -134,7 +209,7 @@ export default {
           title: '操作',
           dataIndex: 'operation',
           width: 100,
-          scopedSlots: { customRender: 'operation' }
+          scopedSlots: {customRender: 'operation'}
         }
       ],
       recordList: [],
@@ -142,9 +217,10 @@ export default {
         storageId: "",
         repositoryId: "",
         pageNumber: 1,
-        pageSize: 2,
+        pageSize: 20,
         total: 0
-      }
+      },
+      currentClickRecord: undefined
     }
   },
   components: {
@@ -155,14 +231,23 @@ export default {
   created() {
     this.dataFilter.storageId = this.folibRepository.storageId
     this.dataFilter.repositoryId = this.folibRepository.id
-    this.getArtifactSyncRecordPage()
   },
   mounted() {
   },
   watch: {
-    settingVisible: function (val) {
-      this.settingTabActiveKey = 1
-    },
+    eventPageVisible: function (val) {
+      if (val) {
+        this.getArtifactSyncRecordPage()
+        this.intervalId = setInterval(() => {
+          this.getArtifactSyncRecordPage()
+        }, 1000);
+      } else {
+        if (this.intervalId) {
+          clearInterval(this.intervalId);
+          this.intervalId = undefined
+        }
+      }
+    }
   },
   methods: {
     settingTabChange(activeKey) {
@@ -172,7 +257,6 @@ export default {
       this.$emit('eventDrawerClose')
     },
     getArtifactSyncRecordPage() {
-      console.log(this.folibRepository)
       getArtifactSyncRecordPage(this.dataFilter)
           .then(res => {
             this.recordList = res.data.rows
@@ -183,7 +267,10 @@ export default {
       this.dataFilter.pageNumber = pagination.current
       this.dataFilter.pageSize = pagination.pageSize
       this.getArtifactSyncRecordPage()
-    }
+    },
+    clickRecord(v) {
+      this.currentClickRecord = v
+    },
   },
 };
 </script>

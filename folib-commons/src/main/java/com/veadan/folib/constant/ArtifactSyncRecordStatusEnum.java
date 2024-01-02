@@ -1,4 +1,4 @@
-package com.veadan.folib.enums;
+package com.veadan.folib.constant;
 
 /**
  * 制品同步记录-同步状态

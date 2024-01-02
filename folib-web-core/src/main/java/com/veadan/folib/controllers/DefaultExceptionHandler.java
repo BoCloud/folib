@@ -7,6 +7,7 @@ import com.veadan.folib.exception.Http202PropogateException;
 import com.veadan.folib.exception.RepositoryNotFoundException;
 import com.veadan.folib.exception.ServiceUnavailableException;
 import com.veadan.folib.exception.StorageNotFoundException;
+import com.veadan.folib.scanner.common.exception.BusinessException;
 import com.veadan.folib.validation.RequestBodyValidationError;
 import com.veadan.folib.validation.RequestBodyValidationException;
 
@@ -97,6 +98,15 @@ public class DefaultExceptionHandler extends ResponseEntityExceptionHandler
     {
         logger.info(ex.getMessage());
         httpResponse.setStatus(202);
+    }
+
+    @ExceptionHandler(BusinessException.class)
+    protected ResponseEntity<?> handleBusinessException(BusinessException ex,
+                                                   WebRequest request)
+    {
+        ResponseEntityBody body = new ResponseEntityBody(ex.getMessage());
+        HttpHeaders headers = new HttpHeaders();
+        return handleExceptionInternal(ex, body, headers, HttpStatus.SERVICE_UNAVAILABLE, request);
     }
 
     @ExceptionHandler(Exception.class)

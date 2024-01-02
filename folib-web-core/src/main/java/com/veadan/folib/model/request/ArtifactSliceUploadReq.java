@@ -6,6 +6,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;
+import java.util.Map;
 
 /**
  * @author xiaodong.wang
@@ -39,4 +40,6 @@ public class ArtifactSliceUploadReq {
     @ApiModelProperty("切片文件原始MD5（非切片文件的MD5）")
     @NotEmpty(message = "切片文件原始MD5不能为空")
     private String originFileMd5;
+    @ApiModelProperty("制品源数据")
+    private Map<String, Object> metaData;
 }

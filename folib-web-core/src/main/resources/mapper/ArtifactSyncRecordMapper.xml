@@ -5,25 +5,42 @@
 
     <resultMap id="artifactSyncRecordResultMap" type="com.veadan.folib.entity.ArtifactSyncRecord">
         <id property="id" column="id"/>
+        <result property="sourceStorageId" column="source_storage_id"/>
+        <result property="sourceRepositoryId" column="source_repository_id"/>
         <result property="sourcePath" column="source_path"/>
         <result property="targetPath" column="target_path"/>
         <result property="syncNo" column="sync_no"/>
         <result property="syncModel" column="sync_model"/>
+        <result property="syncProgress" column="sync_progress"/>
         <result property="status" column="status"/>
         <result property="failedReason" column="failed_reason"/>
-        <result property="createBy" column="created_by"/>
-        <result property="createTime" column="created_time"/>
-        <result property="updateBy" column="updated_by"/>
-        <result property="updateTime" column="updated_time"/>
+        <result property="createBy" column="create_by"/>
+        <result property="createTime" column="create_time"/>
+        <result property="updateBy" column="update_by"/>
+        <result property="updateTime" column="update_time"/>
     </resultMap>
     
     <update id="updateStatusAndFailedReasonBySyncNo" >
         update artifact_sync_record
-            set status=#{status}
+            set status=#{status}, update_time=#{updateTime}
                 <if test="failedReason != null and failedReason != ''">
                     ,failed_reason=#{failedReason}
                 </if>
         where sync_no = #{syncNo}
     </update>
-
+    
+    <select id="selectClearRecordList" resultType="com.veadan.folib.entity.ArtifactSyncRecord">
+        select id, sync_no as syncNo from artifact_sync_record
+        <where>
+            1 = 1
+            and sync_progress is null
+            <if test="storageId != null and storageId.trim() != ''">
+                and source_storage_id = #{storageId}
+            </if>
+            <if test="repositoryId != null and repositoryId.trim() != ''">
+                and source_repository_id = #{repositoryId}
+            </if>
+            and create_time &lt; #{time}
+        </where>
+    </select>
 </mapper>

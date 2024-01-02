@@ -1,35 +1,21 @@
-package com.veadan.folib.dto;
+package com.veadan.folib.model.request;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.veadan.folib.constant.ArtifactSyncRecordStatusEnum;
 import io.swagger.annotations.ApiModelProperty;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.Data;
-import lombok.NoArgsConstructor;
 
-import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
-import javax.persistence.Id;
+import javax.validation.constraints.NotEmpty;
 import java.util.Date;
 
 /**
  * @author xiaodong.wang
  * @email wangxiaodong@beyondcent.com
- * @date 2023/10/12 14:35
+ * @date 2023/12/20 14:06
  * @since x.x.x
  */
 @Data
-@AllArgsConstructor
-@NoArgsConstructor
-@Builder
-public class ArtifactPromotionInfoDto 
-{
-    @Id
-    @GeneratedValue(generator = "JDBC",strategy = GenerationType.IDENTITY)
-    @ApiModelProperty("id")
-    private Long id;
-
+public class ArtifactSyncSlaveRecordAddReq {
     /**
      * 源制品路径
      */
@@ -40,12 +26,6 @@ public class ArtifactPromotionInfoDto
      */
     @ApiModelProperty("目标制品路径")
     private String targetPath;
-    /**
-     * 制品操作（1：制品晋级；2：制品分发）
-     * {@linkplain com.veadan.folib.enums.ArtifactSyncRecordOpsTypeEnum }
-     */
-    @ApiModelProperty("制品操作（1：制品晋级；2：制品分发）")
-    private Integer opsType;
     /**
      * 制品同步编号
      */
@@ -72,22 +52,15 @@ public class ArtifactPromotionInfoDto
      * 创建人
      */
     @ApiModelProperty("创建人")
-    private String createdBy;
+    private String createBy;
     /**
      * 创建时间
      */
     @ApiModelProperty("创建时间")
     @JsonFormat(timezone = "GMT+8", pattern = "yyyy-MM-dd HH:mm:ss")
-    private Date createdTime;
-    /**
-     * 更新人
-     */
-    @ApiModelProperty("更新人")
-    private String updatedBy;
-    /**
-     * 更新时间
-     */
-    @ApiModelProperty("更新时间")
-    @JsonFormat(timezone = "GMT+8", pattern = "yyyy-MM-dd HH:mm:ss")
-    private Date updatedTime;
+    private Date createTime;
+    
+    @ApiModelProperty("临时ID，用于返回给请求端")
+    @NotEmpty(message = "临时ID不能为空")
+    private String tempId;
 }

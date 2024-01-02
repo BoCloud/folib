@@ -32,7 +32,7 @@ public class PromotionNodeOption {
     @ApiModelProperty("同步模式（1：推；2：拉），缺省值：拉")
     private Integer syncModel = ArtifactSyncRecordSyncModelEnum.PULL.getVal();
 
-    @ApiModelProperty("制品同步编号")
+    @ApiModelProperty("制品同步编号，无需调用方提供")
     private String syncNo;
 
     public PromotionNodeOption(String sourcePath, String targetPath) {

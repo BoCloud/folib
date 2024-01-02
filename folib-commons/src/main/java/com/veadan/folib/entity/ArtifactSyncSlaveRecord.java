@@ -6,6 +6,7 @@ import io.swagger.annotations.ApiModelProperty;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import lombok.experimental.Accessors;
 
@@ -14,6 +15,7 @@ import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
+import javax.persistence.Transient;
 import java.io.Serializable;
 import java.util.Date;
 
@@ -29,6 +31,7 @@ import java.util.Date;
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
+@EqualsAndHashCode
 @Accessors(chain = true)
 @Table(name = "artifact_sync_slave_record")
 @ApiModel("制品同步从记录")
@@ -61,13 +64,13 @@ public class ArtifactSyncSlaveRecord implements Serializable {
     @ApiModelProperty("制品同步编号")
     @Column(name = "sync_no")
     private String syncNo;
-//    /**
-//     * 同步模式（1：推；2：拉）
-//     * {@linkplain  com.veadan.folib.enums.ArtifactSyncRecordSyncModelEnum }
-//     */
-//    @ApiModelProperty("同步模式（1：推；2：拉）")
-//    @Column(name = "sync_model")
-//    private Integer syncModel;
+    /**
+     * 同步模式（1：推；2：拉）
+     * {@linkplain  com.veadan.folib.enums.ArtifactSyncRecordSyncModelEnum }
+     */
+    @ApiModelProperty("同步模式（1：推；2：拉）")
+    @Column(name = "sync_model")
+    private Integer syncModel;
     /**
      * 同步状态（1：就绪；2：同步中；3：成功；4：失败）
      * {@linkplain com.veadan.folib.enums.ArtifactSyncRecordStatusEnum }
@@ -107,4 +110,8 @@ public class ArtifactSyncSlaveRecord implements Serializable {
     @Column(name = "update_time")
     @JsonFormat(timezone = "GMT+8", pattern = "yyyy-MM-dd HH:mm:ss")
     private Date updateTime;
+
+    @ApiModelProperty("临时ID，用于返回给请求端")
+    @Transient
+    private String tempId;
 }

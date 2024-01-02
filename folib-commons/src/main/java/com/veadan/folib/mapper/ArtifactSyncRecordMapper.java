@@ -7,6 +7,9 @@ import tk.mybatis.mapper.common.Mapper;
 import tk.mybatis.mapper.common.ids.DeleteByIdsMapper;
 import tk.mybatis.mapper.common.ids.SelectByIdsMapper;
 
+import java.util.Date;
+import java.util.List;
+
 /**
  *
  * @author xiaodong.wang
@@ -18,5 +21,7 @@ import tk.mybatis.mapper.common.ids.SelectByIdsMapper;
 public interface ArtifactSyncRecordMapper extends SelectByIdsMapper<ArtifactSyncRecord>, Mapper<ArtifactSyncRecord>, DeleteByIdsMapper<ArtifactSyncRecord>{
     
     
-    boolean updateStatusAndFailedReasonBySyncNo(@Param("status") Integer status, @Param("failedReason") String failedReason, @Param("syncNo") String syncNo);
+    boolean updateStatusAndFailedReasonBySyncNo(@Param("status") Integer status, @Param("failedReason") String failedReason, @Param("syncNo") String syncNo, @Param("updateTime") Date updateTime);
+    
+    List<ArtifactSyncRecord> selectClearRecordList(@Param("storageId") String storageId, @Param("repositoryId") String repositoryId, @Param("time") Date time);
 }
