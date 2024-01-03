@@ -45,7 +45,6 @@ import javax.transaction.Transactional;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
 
 @Slf4j
 @Repository
@@ -291,6 +290,29 @@ public class ArtifactRepository extends GremlinVertexRepository<Artifact> {
             entityTraversal = entityTraversal.has(Properties.STORAGE_ID_AND_REPOSITORY_ID, P.within(storageIdAndRepositoryIdList));
         }
         return entityTraversal.count().tryNext().orElse(0L);
+    }
+
+    private EntityTraversal<Vertex, Vertex> buildEntityTraversalByStorageIdAndRepositoryId(String storageId, String repositoryId) {
+        EntityTraversal<Vertex, Vertex> entityTraversal = g().V().hasLabel(Vertices.ARTIFACT).has(Properties.ARTIFACT_FILE_EXISTS, true);
+        if (StringUtils.isNotBlank(storageId)) {
+            entityTraversal = entityTraversal.has(Properties.STORAGE_ID, storageId);
+        }
+        if (StringUtils.isNotBlank(repositoryId)) {
+            entityTraversal = entityTraversal.has(Properties.REPOSITORY_ID, repositoryId);
+        }
+        return entityTraversal;
+    }
+
+    public Long countAllByStorageIdAndRepositoryId(String storageId, String repositoryId) {
+       return buildEntityTraversalByStorageIdAndRepositoryId(storageId, repositoryId).count().tryNext().orElse(0L);
+    }
+
+    public List<Artifact> findByStorageIdAndRepositoryId(String storageId, String repositoryId, Pageable pageable) {
+        long low = pageable.getPageNumber() * pageable.getPageSize();
+        long high = (pageable.getPageNumber() + 1) * pageable.getPageSize();
+        return buildEntityTraversalByStorageIdAndRepositoryId(storageId, repositoryId)
+                .range(low, high)
+                .map(artifactAdapter.baseFold(Optional.empty())).toList();
     }
 
     public Long artifactsBytesStatistics(List<String> storageIdAndRepositoryIdList) {

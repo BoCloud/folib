@@ -45,6 +45,7 @@ public class ArtifactEventCacheListener {
 
     @AsyncEventListener
     public void handle(final ArtifactEvent<RepositoryPath> event) {
+        long startTime = System.currentTimeMillis();
         int source = (int) event.getSource();
         RepositoryPath repositoryPath = event.getPath();
         ArtifactEventTypeEnum artifactEventTypeEnum = ArtifactEventTypeEnum.queryArtifactEventTypeEnumByType(source);
@@ -145,7 +146,7 @@ public class ArtifactEventCacheListener {
                         try {
                             Path checksumPath = targetPath.getParent().resolve(FilenameUtils.getName(value.toString()));
                             Files.copy(value, checksumPath, StandardCopyOption.REPLACE_EXISTING);
-                        } catch(FileAlreadyExistsException e) {
+                        } catch (FileAlreadyExistsException e) {
                             //destination file already exists
                         } catch (Exception ex) {
                             log.warn("缓存制品checksumPath [{}] [{}] [{}] 错误 [{}]", storageId, repositoryId, repositoryPath.toString(), ExceptionUtils.getStackTrace(ex));
@@ -155,7 +156,8 @@ public class ArtifactEventCacheListener {
                 //缓存metadata
                 artifactComponent.storeArtifactMetadataFile(repositoryPath, targetPath);
                 artifactComponent.handlerArtifactCacheRecord(repositoryPath, cacheSettings, targetPath);
-            } catch(FileAlreadyExistsException e) {
+                log.info("Handle artifact cache storageId [{}] repositoryId [{}] artifactPath [{}] take time [{}] ms", storageId, repositoryId, targetSubPath, System.currentTimeMillis() - startTime);
+            } catch (FileAlreadyExistsException e) {
                 //destination file already exists
             } catch (Exception e) {
                 log.warn("处理制品缓存错误 [{}] 错误：[{}]", repositoryPath.toString(), ExceptionUtils.getStackTrace(e));
