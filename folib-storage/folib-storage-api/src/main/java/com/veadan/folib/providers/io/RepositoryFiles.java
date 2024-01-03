@@ -3,8 +3,11 @@ package com.veadan.folib.providers.io;
 import com.google.common.collect.Lists;
 import com.veadan.folib.artifact.coordinates.ArtifactCoordinates;
 import com.veadan.folib.cloud.storage.s3fs.S3Path;
+import com.veadan.folib.enums.ProductTypeEnum;
 import com.veadan.folib.util.CacheUtil;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.exception.ExceptionUtils;
 
 import java.io.IOException;
 import java.net.URI;
@@ -23,6 +26,7 @@ import java.util.stream.Collectors;
  * @see RepositoryPath
  * @see Files
  */
+@Slf4j
 public abstract class RepositoryFiles {
 
     public static Boolean isChecksum(RepositoryPath path)
@@ -185,7 +189,7 @@ public abstract class RepositoryFiles {
                 String prefix = String.format("/%s/%s/", storageId, repositoryId);
                 String targetSubPath = sourcePath.substring(sourcePath.indexOf(prefix) + 1);
                 Path cachePath = cacheRootPath.resolve(targetSubPath);
-                exists = Files.exists(cachePath);
+                exists = Files.exists(cachePath) && (ProductTypeEnum.Docker.getFoLibraryName().equals(repositoryPath.getRepository().getLayout()) || RepositoryFiles.validateChecksum(repositoryPath, cachePath));
             }
         }
         if (!exists) {
@@ -213,6 +217,25 @@ public abstract class RepositoryFiles {
     public static void delete(RepositoryPath path)
             throws IOException {
         Files.delete(path);
+    }
+
+    public static boolean validateChecksum(RepositoryPath repositoryPath, Path cachePath) {
+        try {
+            //对比checksum
+            String sourceSha1 = "sourceSha1", cacheSha1 = "cacheSha1";
+            RepositoryPath sha1RepositoryPath = repositoryPath.resolveSibling(repositoryPath.getFileName() + ".sha1");
+            if (Files.exists(sha1RepositoryPath)) {
+                sourceSha1 = Files.readString(sha1RepositoryPath);
+            }
+            Path sha1CachePath = cachePath.resolveSibling(cachePath.getFileName() + ".sha1");
+            if (Files.exists(sha1CachePath)) {
+                cacheSha1 = Files.readString(sha1CachePath);
+            }
+            return sourceSha1.equals(cacheSha1);
+        } catch (Exception ex) {
+            log.warn(ExceptionUtils.getStackTrace(ex));
+        }
+        return false;
     }
 
 }

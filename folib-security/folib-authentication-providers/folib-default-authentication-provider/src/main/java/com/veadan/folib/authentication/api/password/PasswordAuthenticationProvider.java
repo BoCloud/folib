@@ -101,7 +101,7 @@ public class PasswordAuthenticationProvider extends DaoAuthenticationProvider {
                         c.getCredentials()
                                 .toString()))
                 .isPresent()) {
-            logger.info("Found cached authentication for [{}]", userDetails.getUsername());
+            logger.debug("Found cached authentication for [{}]", userDetails.getUsername());
             return;
         }
 

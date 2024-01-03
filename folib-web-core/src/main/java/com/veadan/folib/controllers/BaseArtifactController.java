@@ -8,6 +8,7 @@ import com.veadan.folib.domain.CacheSettings;
 import com.veadan.folib.event.artifact.ArtifactEventListenerRegistry;
 import com.veadan.folib.providers.io.RepositoryFiles;
 import com.veadan.folib.providers.io.RepositoryPath;
+import com.veadan.folib.providers.layout.DockerLayoutProvider;
 import com.veadan.folib.services.ArtifactManagementService;
 import com.veadan.folib.services.DictService;
 import com.veadan.folib.storage.metadata.MetadataHelper;
@@ -173,15 +174,12 @@ public abstract class BaseArtifactController
             if (Objects.isNull(cacheSettings) || !cacheSettings.isEnabled()) {
                 return path;
             }
-            boolean existsCache = false;
-            Path backupPath = Files.createDirectories(Paths.get(cacheSettings.getDirectoryPath()));
+            Path cacheParentPath = Files.createDirectories(Paths.get(cacheSettings.getDirectoryPath()));
             String sourcePath = repositoryPath.toString();
             String prefix = String.format("/%s/%s/", storageId, repositoryId);
             String targetSubPath = sourcePath.substring(sourcePath.indexOf(prefix) + 1);
-            Path targetPath = backupPath.resolve(targetSubPath);
-            if (Files.exists(targetPath)) {
-                existsCache = true;
-            }
+            Path targetPath = cacheParentPath.resolve(targetSubPath);
+            boolean existsCache = Files.exists(targetPath) && (DockerLayoutProvider.ALIAS.equals(repositoryPath.getRepository().getLayout()) || RepositoryFiles.validateChecksum(repositoryPath, targetPath));
             if (existsCache) {
                 logger.info("存在缓存 storageId [{}] repositoryId [{}]，源制品地址 [{}] 缓存制品地址 [{}]", storageId, repositoryId, sourcePath, targetPath.toString());
                 path = targetPath;
@@ -265,5 +263,4 @@ public abstract class BaseArtifactController
         String bestMatchPattern = (String) request.getAttribute(HandlerMapping.BEST_MATCHING_PATTERN_ATTRIBUTE);
         return new AntPathMatcher().extractPathWithinPattern(bestMatchPattern, path);
     }
-
 }
