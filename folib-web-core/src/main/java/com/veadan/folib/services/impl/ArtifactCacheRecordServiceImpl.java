@@ -213,7 +213,7 @@ public class ArtifactCacheRecordServiceImpl implements ArtifactCacheRecordServic
     public void cleanupArtifactCacheDirectory(String directoryPath) throws Exception {
         File file = new File(directoryPath);
         if (file.exists()) {
-            FileUtils.forceDelete(file);
+            FileUtils.cleanDirectory(file);
             Example example = Example.builder(ArtifactCacheRecord.class).build();
             Example.Criteria criteria = example.createCriteria();
             criteria.andEqualTo("nodeId", getHostname());
