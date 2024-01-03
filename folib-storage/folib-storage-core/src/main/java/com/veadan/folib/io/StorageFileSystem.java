@@ -94,7 +94,7 @@ public abstract class StorageFileSystem
                                     .normalize();
         return Optional.ofNullable(storage.getBasedir())
                 .filter(p -> !p.trim().isEmpty())
-                .map(p -> getTarget().getPath(propertiesBooter.getVaultDirectory() + p).resolve(storage.getId()).toAbsolutePath().normalize())
+                .map(p -> getTarget().getPath(propertiesBooter.getVaultDirectory() + p).toAbsolutePath().normalize())
                 .orElseGet(() -> storagesRoot.resolve(storage.getId())).toAbsolutePath().normalize();
     }
 

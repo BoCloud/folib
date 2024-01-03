@@ -621,7 +621,7 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
                 handleRepository(storageId, repositoryId, path, metadata, batch);
             } else if (StringUtils.isNotBlank(storageId)) {
                 path = "";
-                Map<String, ? extends Repository> repositoryMaps = configurationManagementService.getMutableConfigurationClone().getStorage(storageId).getRepositories();
+                Map<String, ? extends Repository> repositoryMaps = configurationManagementService.getConfiguration().getStorage(storageId).getRepositories();
                 if (!repositoryMaps.isEmpty()) {
                     for (String repository : repositoryMaps.keySet()) {
                         handleRepository(storageId, repository, path, metadata, batch);
@@ -629,9 +629,9 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
                 }
             } else if (StringUtils.isBlank(storageId) && StringUtils.isBlank(repositoryId)) {
                 path = "";
-                Map<String, StorageDto> storageMap = configurationManagementService.getMutableConfigurationClone().getStorages();
+                Map<String, Storage> storageMap = configurationManagementService.getConfiguration().getStorages();
                 if (!storageMap.isEmpty()) {
-                    for (Map.Entry<String, StorageDto> storageEntry : storageMap.entrySet()) {
+                    for (Map.Entry<String, Storage> storageEntry : storageMap.entrySet()) {
                         Map<String, ? extends Repository> repositoryMaps = configurationManagementService.getMutableConfigurationClone().getStorage(storageEntry.getKey()).getRepositories();
                         if (!repositoryMaps.isEmpty()) {
                             for (String repository : repositoryMaps.keySet()) {
@@ -1075,10 +1075,10 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
         final UserDetails loggedUser = (UserDetails) authentication.getPrincipal();
         String username = loggedUser.getUsername();
         if (roleNames.contains(SystemRole.ADMIN.name())) {
-            storageIdList = new ArrayList<>(configurationManagementService.getMutableConfigurationClone().getStorages().keySet());
+            storageIdList = new ArrayList<>(configurationManagementService.getConfiguration().getStorages().keySet());
             return storageIdList;
         }
-        for (Map.Entry<String, StorageDto> entry : configurationManagementService.getMutableConfigurationClone().getStorages().entrySet()) {
+        for (Map.Entry<String, Storage> entry : configurationManagementService.getConfiguration().getStorages().entrySet()) {
             Set<String> userSet = entry.getValue().getUsers();
             if (CollectionUtils.isNotEmpty(userSet)) {
                 if (userSet.contains(username)) {
@@ -1314,13 +1314,13 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
     public List<String> getStorageIdAndRepositoryIdList(List<String> storageIdList) {
         List<String> storageIdAndRepositoryIdList = Lists.newArrayList();
         if (hasAdmin()) {
-            List<Storage> storageList = new ArrayList<>(configurationManagementService.getMutableConfigurationClone().getStorages().values());
+            List<Storage> storageList = new ArrayList<>(configurationManagementService.getConfiguration().getStorages().values());
             for (Storage storage : storageList) {
                 storageIdAndRepositoryIdList.addAll(storage.getRepositories().values().stream().map(item -> String.format("%s-%s", storage.getId(), item.getId())).collect(Collectors.toList()));
             }
             return storageIdAndRepositoryIdList;
         }
-        List<Storage> storageList = configurationManagementService.getMutableConfigurationClone().getStorages().values().stream().filter(item -> storageIdList.contains(item.getId())).collect(Collectors.toList());
+        List<Storage> storageList = configurationManagementService.getConfiguration().getStorages().values().stream().filter(item -> storageIdList.contains(item.getId())).collect(Collectors.toList());
         for (Storage storage : storageList) {
             Set<String> userSet = storage.getUsers();
             if (CollectionUtils.isNotEmpty(userSet) && userSet.contains(loginUsername())) {

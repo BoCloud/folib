@@ -49,7 +49,7 @@ public class DistributedLockComponent {
             hazelcastInstance.getMap(GlobalConstants.DISTRIBUTED_LOCK_NAME).forceUnlock(lockName);
             log.info("Unlocked for [{}]", lockName);
         } else {
-            log.warn("LockName for [{}] Not locked", lockName);
+            log.warn("LockName for [{}] not locked", lockName);
         }
     }
 
@@ -63,7 +63,7 @@ public class DistributedLockComponent {
                 hazelcastInstance.getMap(GlobalConstants.DISTRIBUTED_LOCK_NAME).forceUnlock(lockName);
                 log.info("Unlocked for [{}]", lockName);
             } else {
-                log.warn("LockName for [{}] Not locked", lockName);
+                log.warn("LockName for [{}] not locked", lockName);
             }
         }
     }

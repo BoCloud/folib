@@ -4,19 +4,27 @@ import com.google.common.collect.Lists;
 import com.veadan.folib.authentication.api.ldap.LdapAuthenticationConfigurationManager;
 import com.veadan.folib.authentication.api.ldap.LdapConfiguration;
 import com.veadan.folib.authorization.service.AuthorizationConfigService;
+import com.veadan.folib.cluster.SyncStorageEnum;
+import com.veadan.folib.controllers.cluster.dto.SyncStorageDto;
 import com.veadan.folib.forms.configuration.ServerSettingsForm;
+import com.veadan.folib.services.ClusterSyncService;
 import com.veadan.folib.services.ConfigurationManagementService;
+import com.veadan.folib.services.StorageManagementService;
+import com.veadan.folib.storage.StorageDto;
 import com.veadan.folib.users.domain.Privileges;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.client.config.RequestConfig;
 import org.glassfish.jersey.apache.connector.ApacheClientProperties;
 import org.glassfish.jersey.client.authentication.HttpAuthenticationFeature;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 
 import javax.inject.Inject;
 import javax.ws.rs.client.WebTarget;
+import java.io.IOException;
+import java.util.Map;
 
 /**
  * @author leipenghui
@@ -36,6 +44,14 @@ public class CommonComponent {
     @Inject
     @Lazy
     private LdapAuthenticationConfigurationManager ldapAuthenticationManager;
+
+    @Inject
+    @Lazy
+    private StorageManagementService storageManagementService;
+
+    @Inject
+    @Lazy
+    private ClusterSyncService clusterSyncService;
 
     /**
      * Client WebTarget 构建认证信息
@@ -100,6 +116,16 @@ public class CommonComponent {
      */
     public void updateLdap(LdapConfiguration ldapConfiguration) throws Exception {
         ldapAuthenticationManager.updateConfiguration(ldapConfiguration);
+    }
+
+    public void handleStorageProvider() throws IOException {
+        for (Map.Entry<String, StorageDto> entry : configurationManagementService.getMutableConfigurationClone().getStorages().entrySet()) {
+            StorageDto storage = entry.getValue();
+            storageManagementService.handleStorageProvider(storage);
+            // 向其他集群节点同步storage
+            SyncStorageDto syncStorageDto = new SyncStorageDto(storage, storage.getId(), SyncStorageEnum.UPDATE);
+            clusterSyncService.syncStorage(syncStorageDto);
+        }
     }
 
 }

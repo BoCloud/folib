@@ -26,6 +26,7 @@ import com.veadan.folib.dto.ArtifactDispatchRepositoryDto;
 import com.veadan.folib.enums.ArtifactoryRepositoryTypeEnum;
 import com.veadan.folib.enums.NotifyScopesTypeEnum;
 import com.veadan.folib.enums.RepositoryScopeEnum;
+import com.veadan.folib.enums.StorageProviderEnum;
 import com.veadan.folib.event.repository.RepositoryEventListenerRegistry;
 import com.veadan.folib.forms.common.StorageTreeForm;
 import com.veadan.folib.forms.configuration.*;
@@ -196,6 +197,9 @@ public class StoragesConfigurationController
             StorageDto storage = conversionService.convert(storageForm, StorageDto.class);
             if (StringUtils.isBlank(storage.getAdmin())) {
                 storage.setAdmin(NotifyScopesTypeEnum.ADMIN.getScope());
+            }
+            if (StringUtils.isBlank(storage.getStorageProvider())) {
+                storage.setStorageProvider(StorageProviderEnum.LOCAL.getType());
             }
             storageManagementService.createStorage(storage);
             // 向其他集群节点同步storage
