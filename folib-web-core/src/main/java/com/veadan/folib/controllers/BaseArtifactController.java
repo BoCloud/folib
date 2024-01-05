@@ -179,7 +179,7 @@ public abstract class BaseArtifactController
             String prefix = String.format("/%s/%s/", storageId, repositoryId);
             String targetSubPath = sourcePath.substring(sourcePath.indexOf(prefix) + 1);
             Path targetPath = cacheParentPath.resolve(targetSubPath);
-            boolean existsCache = Files.exists(targetPath) && (DockerLayoutProvider.ALIAS.equals(repositoryPath.getRepository().getLayout()) || RepositoryFiles.validateChecksum(repositoryPath, targetPath));
+            boolean existsCache = Files.exists(targetPath) && (RepositoryFiles.isArtifactChecksum(FilenameUtils.getName(targetPath.getFileName().toString())) || RepositoryFiles.validateChecksum(repositoryPath, targetPath) || DockerLayoutProvider.ALIAS.equals(repositoryPath.getRepository().getLayout()));
             if (existsCache) {
                 logger.info("存在缓存 storageId [{}] repositoryId [{}]，源制品地址 [{}] 缓存制品地址 [{}]", storageId, repositoryId, sourcePath, targetPath.toString());
                 path = targetPath;

@@ -305,13 +305,8 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
                 if (null == wsClientRun) {
                     if (sourcePath.contains(requestUrl)) {
                         //检查如果可以直接连接访问到目标节点，则将模式转换为push模式，兼容源头和请求一致时未找到或者未设置ws节点的情况
-                        try (final Socket socket = new Socket(targetHost, targetPort)) {
-                            socket.setSoTimeout(200);
-                            promotionNodeOption.setSyncModel(ArtifactSyncRecordSyncModelEnum.PUSH.getVal());
-                            return this.nodeOption(promotionNodeOption, request);
-                        } catch (Exception e) {
-                            throw new BusinessException("需要晋级的节点不可用，请检查节点是否配置正确");
-                        }
+                        promotionNodeOption.setSyncModel(ArtifactSyncRecordSyncModelEnum.PUSH.getVal());
+                        return this.nodeOption(promotionNodeOption, request);
                     } else if (targetPath.contains(requestUrl)) {
                         //兼容请求和目标一致时，未注册自身ws节点的情况
                         wsClientArtifactPullCommand.execute(promotionNodeOption);
