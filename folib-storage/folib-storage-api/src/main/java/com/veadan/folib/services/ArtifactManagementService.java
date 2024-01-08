@@ -141,7 +141,7 @@ public class ArtifactManagementService
         {
             throw new ArtifactStorageException(e);
         }
-        logger.info("DoStore {} take time：{} ms" , repositoryPath.toString(), System.currentTimeMillis() - startTime);
+        logger.info("DoStore [{}] take time [{}] ms." , repositoryPath.toString(), System.currentTimeMillis() - startTime);
 
         return result;
     }

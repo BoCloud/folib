@@ -61,6 +61,7 @@ public class ArtifactUploadTask implements Callable<String> {
     private String storageId;
     private String repositoryId;
     private MultipartFile file;
+    private InputStream inputStream;
     private RepositoryManagementService repositoryManagementService;
     private RepositoryPathResolver repositoryPathResolver;
     private ArtifactManagementService artifactManagementService;
@@ -111,6 +112,36 @@ public class ArtifactUploadTask implements Callable<String> {
         this.artifactComponent = SpringUtil.getBean(ArtifactComponent.class);
     }
 
+    public ArtifactUploadTask(String storageId,
+                              String repositoryId,
+                              InputStream inputStream,
+                              RepositoryPathResolver repositoryPathResolver,
+                              ArtifactManagementService artifactManagementService,
+                              PromotionUtil promotionUtil,
+                              LayoutProviderRegistry layoutProviderRegistry,
+                              ArtifactMetadataService artifactMetadataService,
+                              ArtifactRepository artifactRepository,
+                              MavenRepositoryFeatures mavenRepositoryFeatures,
+                              String tempPath,
+                              String fileRelativePath, String metaData, String uuid, String parseArtifact) {
+        this.storageId = storageId;
+        this.repositoryId = repositoryId;
+        this.inputStream = inputStream;
+        this.repositoryPathResolver = repositoryPathResolver;
+        this.artifactManagementService = artifactManagementService;
+        this.promotionUtil = promotionUtil;
+        this.layoutProviderRegistry = layoutProviderRegistry;
+        this.artifactMetadataService = artifactMetadataService;
+        this.artifactRepository = artifactRepository;
+        this.mavenRepositoryFeatures = mavenRepositoryFeatures;
+        this.tempPath = tempPath;
+        this.fileRelativePath = fileRelativePath;
+        this.metaData = metaData;
+        this.uuid = uuid;
+        this.parseArtifact = parseArtifact;
+        this.artifactComponent = SpringUtil.getBean(ArtifactComponent.class);
+    }
+
     @Override
     public String call() {
         String rs = "";
@@ -127,6 +158,8 @@ public class ArtifactUploadTask implements Callable<String> {
                     throw new IOException("artifact file not found");
                 }
                 is = Files.newInputStream(Path.of(artifactParse.getFilePath()));
+            } else if (Objects.nonNull(inputStream)) {
+                is = inputStream;
             }
             RepositoryPath repositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, fileRelativePath);
             if (RepositoryFiles.isChecksum(repositoryPath) || RepositoryFiles.isTrash(repositoryPath)) {
