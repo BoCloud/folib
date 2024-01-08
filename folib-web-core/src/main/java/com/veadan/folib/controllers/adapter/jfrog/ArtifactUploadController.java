@@ -76,7 +76,7 @@ public class ArtifactUploadController extends JFrogBaseController {
                                     @RequestParam(value = "uuid", required = false) String uuid,
                                     @RequestParam(value = "metaData", required = false) String metaData,
                                     HttpServletRequest request) throws Exception {
-        String storageId = getDefaultStorageId();
+        String storageId = getDefaultStorageId(repositoryId);
         boolean checkRepository = checkRepository(storageId, repositoryId);
         if (!checkRepository) {
             return repositoryNotFound();

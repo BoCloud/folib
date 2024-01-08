@@ -93,9 +93,9 @@ public class ArtifactSearchController extends JFrogBaseController {
         }
         List<String> includeFields = Lists.newArrayList();
         String repoKey = "repo", pathKey = "path";
-        // 提取 "repo", "path" 和 "include" 字段
-        String storageId = getDefaultStorageId();
         String repositoryId = findJson.getString(repoKey);
+        // 提取 "repo", "path" 和 "include" 字段
+        String storageId = getDefaultStorageId(repositoryId);
         Storage storage = getStorage(storageId);
         if (Objects.isNull(storage)) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(handlerErrors(null, STORAGE_NOT_FOUND_MESSAGE));
@@ -224,7 +224,7 @@ public class ArtifactSearchController extends JFrogBaseController {
     @ApiResponses(value = {@ApiResponse(code = 200, message = "OK")})
     @PostMapping(value = {"/ui/api/v1/ui/views/dockerv2"})
     public ResponseEntity<Object> dockerv2(@RequestBody ArtifactDockerQuery artifactDockerQuery, HttpServletRequest request) throws Exception {
-        String storageId = getDefaultStorageId(), repositoryId = artifactDockerQuery.getRepoKey(), artifactPath = artifactDockerQuery.getPath();
+        String repositoryId = artifactDockerQuery.getRepoKey(), artifactPath = artifactDockerQuery.getPath(), storageId = getDefaultStorageId(repositoryId);
         Storage storage = getStorage(storageId);
         if (Objects.isNull(storage)) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(handlerErrors(null, STORAGE_NOT_FOUND_MESSAGE));

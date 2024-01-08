@@ -42,6 +42,11 @@ public interface GlobalConstants {
     String DISTRIBUTED_LOCK_NAME = "distributedLock";
 
     /**
+     * 分布式缓存名称
+     */
+    String DISTRIBUTED_CACHE_NAME = "distributedCache";
+
+    /**
      * SHA_256
      */
     String SHA_256 = "sha256";

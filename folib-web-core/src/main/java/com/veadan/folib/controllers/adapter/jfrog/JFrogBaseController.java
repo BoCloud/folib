@@ -1,6 +1,8 @@
 package com.veadan.folib.controllers.adapter.jfrog;
 
+import cn.hutool.extra.spring.SpringUtil;
 import com.google.common.collect.Maps;
+import com.veadan.folib.components.DistributedCacheComponent;
 import com.veadan.folib.controllers.BaseArtifactController;
 import com.veadan.folib.storage.Storage;
 import org.apache.commons.lang3.StringUtils;
@@ -24,11 +26,21 @@ public abstract class JFrogBaseController extends BaseArtifactController {
     /**
      * 获取设置默认的存储空间
      *
+     * @param repositoryId 仓库名称
      * @return 存储空间
      */
-    public String getDefaultStorageId() {
+    public String getDefaultStorageId(String repositoryId) {
+        DistributedCacheComponent distributedCacheComponent = SpringUtil.getBean(DistributedCacheComponent.class);
+        if (StringUtils.isNotBlank(repositoryId)) {
+            //按照仓库查询对应的存储空间
+            String key = "JFrogAdapterStorage_" + repositoryId;
+            String jFrogAdapterStorage = distributedCacheComponent.get(key);
+            if (StringUtils.isNotBlank(jFrogAdapterStorage)) {
+                return jFrogAdapterStorage;
+            }
+        }
         String key = "JFrogAdapterDefaultStorage";
-        String jFrogAdapterDefaultStorage = System.getProperty(key);
+        String jFrogAdapterDefaultStorage = distributedCacheComponent.get(key);
         if (StringUtils.isBlank(jFrogAdapterDefaultStorage)) {
             throw new RuntimeException("Default storage not found,Please Set the default storageId");
         }
@@ -74,6 +86,7 @@ public abstract class JFrogBaseController extends BaseArtifactController {
 
     /**
      * 制品不存在
+     *
      * @param artifact 制品
      */
     public ResponseEntity<Object> artifactNotFound(String artifact) {

@@ -58,7 +58,7 @@ public class ArtifactStorageController extends JFrogBaseController {
     @RequestMapping(value = {"/{repositoryId}/{artifactPath:.+}"}, method = {RequestMethod.GET})
     public ResponseEntity<Object> itemProperties(@PathVariable("repositoryId") String repositoryId, @PathVariable("artifactPath") String artifactPath,
                                                  @RequestParam(value = "properties", required = false) String properties, HttpServletRequest request) throws Exception {
-        String storageId = getDefaultStorageId();
+        String storageId = getDefaultStorageId(repositoryId);
         Storage storage = getStorage(storageId);
         if (Objects.isNull(storage)) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(handlerErrors(null, STORAGE_NOT_FOUND_MESSAGE));
@@ -132,7 +132,7 @@ public class ArtifactStorageController extends JFrogBaseController {
     public ResponseEntity<Object> setItemProperties(@PathVariable("repositoryId") String repositoryId, @PathVariable("artifactPath") String artifactPath,
                                                     @RequestParam(value = "properties", required = false) String properties, HttpServletRequest request) throws Exception {
 
-        String storageId = getDefaultStorageId();
+        String storageId = getDefaultStorageId(repositoryId);
         Storage storage = getStorage(storageId);
         if (StringUtils.isBlank(properties)) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(handlerErrors(HttpStatus.BAD_REQUEST.value(), PROPERTIES_VALUE_CANNOT_BE_EMPTY));

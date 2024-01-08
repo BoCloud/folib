@@ -16,6 +16,7 @@ import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 
 import java.lang.reflect.Method;
@@ -40,6 +41,10 @@ public class FolibApplicationRunner implements ApplicationRunner {
 
     @Autowired
     private DictService dictService;
+
+    @Autowired
+    @Lazy
+    private DistributedCacheComponent distributedCacheComponent;
 
     @Override
     public void run(ApplicationArguments args) throws Exception {
@@ -137,6 +142,7 @@ public class FolibApplicationRunner implements ApplicationRunner {
         Optional.ofNullable(dictList).orElse(Collections.emptyList()).forEach(dict -> {
             if (StringUtils.isNotBlank(dict.getDictKey())) {
                 System.setProperty(dict.getDictKey(), dict.getDictValue());
+                distributedCacheComponent.put(dict.getDictKey(), dict.getDictValue());
                 log.info("Init System Properties Data key：{}, value：{}", dict.getDictKey(), dict.getDictValue());
             }
         });

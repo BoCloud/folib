@@ -59,7 +59,7 @@ public class ArtifactCopyController extends JFrogBaseController {
                                        @PathVariable("artifactPath") String artifactPath,
                                        String to,
                                        String dry) throws Exception {
-        String storageId = getDefaultStorageId();
+        String storageId = getDefaultStorageId(repositoryId);
         boolean checkRepository = checkRepository(storageId, repositoryId);
         if (!checkRepository) {
             return repositoryNotFound("source");
@@ -75,7 +75,8 @@ public class ArtifactCopyController extends JFrogBaseController {
             }
             String[] targetArr = to.split("/");
             String targetRepositoryId = targetArr[1];
-            checkRepository = checkRepository(storageId, targetRepositoryId);
+            String targetStorageId = getDefaultStorageId(targetRepositoryId);
+            checkRepository = checkRepository(targetStorageId, targetRepositoryId);
             if (!checkRepository) {
                 return repositoryNotFound("target");
             }
@@ -85,7 +86,7 @@ public class ArtifactCopyController extends JFrogBaseController {
             artifactPromotion.setSrcRepositoryId(repositoryId);
             List<TargetRepositoyDto> list = Lists.newArrayList();
             TargetRepositoyDto targetRepositoyDto = new TargetRepositoyDto();
-            targetRepositoyDto.setTargetStorageId(storageId);
+            targetRepositoyDto.setTargetStorageId(targetStorageId);
             targetRepositoyDto.setTargetRepositoryId(targetRepositoryId);
             list.add(targetRepositoyDto);
             artifactPromotion.setTargetRepositoyList(list);
@@ -129,7 +130,7 @@ public class ArtifactCopyController extends JFrogBaseController {
     @PostMapping("/api/docker/{repositoryId}/v2/promote")
     public ResponseEntity<Object> dockerCopy(@PathVariable("repositoryId") String repositoryId, @RequestBody DockerCopyDto dockerCopyDto) {
         log.info("Docker copy repositoryId [{}] params [{}]", repositoryId, JSONObject.toJSONString(dockerCopyDto));
-        String storageId = getDefaultStorageId();
+        String storageId = getDefaultStorageId(repositoryId);
         boolean checkRepository = checkRepository(storageId, repositoryId);
         if (!checkRepository) {
             return repositoryNotFound("source");
@@ -141,7 +142,8 @@ public class ArtifactCopyController extends JFrogBaseController {
             artifactPath = artifactPath + split + StringUtils.removeStart(imageTag, split);
         }
         String targetRepositoryId = dockerCopyDto.getTargetRepo();
-        checkRepository = checkRepository(storageId, targetRepositoryId);
+        String targetStorageId = getDefaultStorageId(targetRepositoryId);
+        checkRepository = checkRepository(targetStorageId, targetRepositoryId);
         if (!checkRepository) {
             return repositoryNotFound("target");
         }
@@ -158,7 +160,7 @@ public class ArtifactCopyController extends JFrogBaseController {
             artifactPromotion.setSrcRepositoryId(repositoryId);
             List<TargetRepositoyDto> list = new ArrayList<>();
             TargetRepositoyDto targetRepositoyDto = new TargetRepositoyDto();
-            targetRepositoyDto.setTargetStorageId(storageId);
+            targetRepositoyDto.setTargetStorageId(targetStorageId);
             targetRepositoyDto.setTargetRepositoryId(targetRepositoryId);
             list.add(targetRepositoyDto);
             artifactPromotion.setTargetRepositoyList(list);
