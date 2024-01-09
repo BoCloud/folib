@@ -22,4 +22,6 @@ public class PromotionNodeOption {
     @NotEmpty
     private String targetPath;
 
+    private Integer syncModel;
+
 }
