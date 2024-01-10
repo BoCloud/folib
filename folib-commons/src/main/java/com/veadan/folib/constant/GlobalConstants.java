@@ -41,4 +41,9 @@ public interface GlobalConstants {
      */
     String DISTRIBUTED_LOCK_NAME = "distributedLock";
 
+    /**
+     * WAIT_LOCK_TIME
+     */
+    long WAIT_LOCK_TIME = 30L;
+
 }
