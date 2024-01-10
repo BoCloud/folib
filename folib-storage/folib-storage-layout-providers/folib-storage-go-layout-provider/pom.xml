@@ -2,38 +2,30 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-
     <modelVersion>4.0.0</modelVersion>
 
- <parent>
+    <parent>
         <groupId>com.veadan.folib</groupId>
         <artifactId>folib-parent</artifactId>
         <version>1.0-SNAPSHOT</version>
         <relativePath/>
     </parent>
 
-    <artifactId>folib-storage-core</artifactId>
+    <artifactId>folib-storage-go-layout-provider</artifactId>
     <version>1.0-SNAPSHOT</version>
     <packaging>jar</packaging>
 
-    <name>Folib: Storage [Core]</name>
-
-
+    <name>Folib: Storage [Go Layout Provider]</name>
 
 
 
     <inceptionYear>2019</inceptionYear>
 
-     <scm>
+    <scm>
         <url>http://git.folib.com/folib/folib-server</url>
         <connection>scm:git:git://git.folib.com/folib/folib-server.git</connection>
         <developerConnection>scm:git:git://git.folib.com/folib/folib-server.git</developerConnection>
     </scm>
-
-    <properties>
-        <dir.folib.home>${project.build.directory}/folib</dir.folib.home>
-        <dir.folib.vault>${project.build.directory}/folib-vault</dir.folib.vault>
-    </properties>
 
     <build>
         <plugins>
@@ -50,10 +42,26 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
             </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-failsafe-plugin</artifactId>
+            </plugin>
 
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-dependency-plugin</artifactId>
+            </plugin>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-jar-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>test-jar</goal>
+                        </goals>
+                    </execution>
+                </executions>
             </plugin>
         </plugins>
     </build>
@@ -61,38 +69,55 @@
     <dependencies>
         <dependency>
             <groupId>${project.groupId}</groupId>
-            <artifactId>folib-configuration</artifactId>
+            <artifactId>folib-commons</artifactId>
             <version>1.0-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>${project.groupId}</groupId>
-            <artifactId>folib-data-service</artifactId>
+            <artifactId>folib-event-api</artifactId>
             <version>1.0-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>${project.groupId}</groupId>
-            <artifactId>folib-client</artifactId>
-            <version>1.1.1-RELEASE</version>
-        </dependency>
-        <dependency>
-            <groupId>${project.groupId}</groupId>
-            <artifactId>folib-security-api</artifactId>
+            <artifactId>folib-storage-api</artifactId>
             <version>1.0-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>${project.groupId}</groupId>
-            <artifactId>folib-maven-metadata-api</artifactId>
+            <artifactId>folib-cron-api</artifactId>
             <version>1.0-SNAPSHOT</version>
+        </dependency>
+        <dependency>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>folib-cron-api</artifactId>
+            <version>1.0-SNAPSHOT</version>
+            <type>test-jar</type>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>folib-cron-tasks</artifactId>
+            <version>1.0-SNAPSHOT</version>
+        </dependency>
+        <dependency>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>folib-cron-tasks</artifactId>
+            <version>1.0-SNAPSHOT</version>
+            <type>test-jar</type>
+            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>${project.groupId}</groupId>
             <artifactId>folib-common-resources</artifactId>
             <version>1.0-SNAPSHOT</version>
+            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>${project.groupId}</groupId>
-            <artifactId>folib-storage-api-resources</artifactId>
+            <artifactId>folib-storage-api</artifactId>
             <version>1.0-SNAPSHOT</version>
+            <type>test-jar</type>
+            <scope>test</scope>
         </dependency>
 
         <dependency>
@@ -101,20 +126,20 @@
         </dependency>
 
         <dependency>
+            <groupId>javax.servlet</groupId>
+            <artifactId>javax.servlet-api</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-tx</artifactId>
+        </dependency>
+        <dependency>
             <groupId>org.springframework</groupId>
             <artifactId>spring-context</artifactId>
         </dependency>
 
-        <dependency>
-            <groupId>org.apache.maven.indexer</groupId>
-            <artifactId>indexer-core</artifactId>
-            <version>6.1.1</version>
-        </dependency>
-
-        <dependency>
-            <groupId>org.junit.jupiter</groupId>
-            <artifactId>junit-jupiter</artifactId>
-        </dependency>
         <dependency>
             <groupId>com.carmatechnologies.commons</groupId>
             <artifactId>commons-testing</artifactId>
@@ -125,23 +150,25 @@
         </dependency>
 
         <dependency>
-            <groupId>xerces</groupId>
-            <artifactId>xercesImpl</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.springframework</groupId>
-            <artifactId>spring-tx</artifactId>
+            <groupId>org.codehaus.groovy</groupId>
+            <artifactId>groovy</artifactId>
+            <scope>test</scope>
         </dependency>
 
-<!--        <dependency>-->
-<!--            <groupId>com.amazonaws</groupId>-->
-<!--            <artifactId>aws-java-sdk-s3</artifactId>-->
-<!--            <version>1.12.261</version>-->
-<!--        </dependency>-->
         <dependency>
-            <groupId>com.veadan.folib</groupId>
-            <artifactId>folib-s3fs-nio</artifactId>
-            <version>1.0-SNAPSHOT</version>
+            <groupId>com.fasterxml.jackson.jaxrs</groupId>
+            <artifactId>jackson-jaxrs-json-provider</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.mockito</groupId>
+            <artifactId>mockito-core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter</artifactId>
         </dependency>
     </dependencies>
+
 </project>
