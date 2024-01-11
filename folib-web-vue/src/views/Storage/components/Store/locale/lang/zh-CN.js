@@ -212,4 +212,7 @@ export default {
     'KEYLength': '长度在 1 到 30 个字符',
     'ItExists': '已存在',
     'MetadataSuccess': '制品元数据成功',
+    //go
+    'GoProxyConfig':'配置go全局代理',
+    'useGo':'为了使用此代理，你需要通过以下方式修改go的全局代理',
 }

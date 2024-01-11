@@ -212,4 +212,7 @@ export default {
     'KEYLength': 'Between 1 and 30 characters in length',
     'ItExists': 'It already exists',
     'MetadataSuccess': ' product metadata successfully',
+    //go
+    'GoProxyConfig':'GoProxyConfig',
+    'useGo':'To use this proxy, you need to modify the global proxy of Go in the following way.',
 }
