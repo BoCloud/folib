@@ -45,7 +45,6 @@ import com.veadan.folib.repository.PypiRepositoryFeatures;
 import com.veadan.folib.service.ProxyRepositoryConnectionPoolConfigurationService;
 import com.veadan.folib.services.*;
 import com.veadan.folib.storage.repository.Repository;
-import com.veadan.folib.storage.repository.RepositoryDto;
 import com.veadan.folib.storage.repository.RepositoryTypeEnum;
 import com.veadan.folib.util.CacheUtil;
 import com.veadan.folib.util.CommonUtils;
@@ -529,9 +528,9 @@ public class ArtifactComponent {
                 }
             }
             Set<String> vulnerabilities = Optional.ofNullable(vulnerabilitySet).orElse(Collections.emptySet()).stream().map(Vulnerability::getUuid).collect(Collectors.toSet());
-            MutableSecurityPolicyConfiguration mutableSecurityPolicyConfiguration = configurationManagementService.getMutableConfigurationClone().getSecurityPolicyConfiguration();
+            final SecurityPolicyConfiguration mutableSecurityPolicyConfiguration = configurationManagementService.getConfiguration().getSecurityPolicyConfiguration();
             if (Objects.nonNull(mutableSecurityPolicyConfiguration)) {
-                RepositoryDto repositoryDto = configurationManagementService.getMutableConfigurationClone().getStorage(storageId).getRepository(repositoryId);
+                final Repository repositoryDto = configurationManagementService.getConfiguration().getStorage(storageId).getRepository(repositoryId);
                 Set<String> repositoryBlacks = repositoryDto.getVulnerabilityBlacks();
                 Set<String> repositoryWhites = repositoryDto.getVulnerabilityWhites();
                 Set<String> platformBlacks = mutableSecurityPolicyConfiguration.getBlacks();
@@ -620,15 +619,12 @@ public class ArtifactComponent {
      */
     public Set<UnionTargetRepositoryConfiguration> getUnionTargetRepositories(String storageId, String repositoryId) {
         Set<UnionTargetRepositoryConfiguration> unionTargetRepositoryConfigurations = null;
-        RootRepositoryPath rootRepositoryPath = repositoryPathResolver.resolve(storageId, repositoryId);
-        if (Objects.nonNull(rootRepositoryPath)) {
-            Repository repository = rootRepositoryPath.getRepository();
-            if (Objects.nonNull(repository)) {
-                UnionRepositoryConfiguration unionRepositoryConfiguration = repository.getUnionRepositoryConfig();
-                if (Objects.nonNull(unionRepositoryConfiguration)) {
-                    if (Boolean.TRUE.equals(unionRepositoryConfiguration.getEnable()) && CollectionUtils.isNotEmpty(unionRepositoryConfiguration.getUnionTargetRepositories())) {
-                        unionTargetRepositoryConfigurations = unionRepositoryConfiguration.getUnionTargetRepositories();
-                    }
+        Repository repository = configurationManager.getRepository(storageId, repositoryId);
+        if (Objects.nonNull(repository)) {
+            UnionRepositoryConfiguration unionRepositoryConfiguration = repository.getUnionRepositoryConfig();
+            if (Objects.nonNull(unionRepositoryConfiguration)) {
+                if (Boolean.TRUE.equals(unionRepositoryConfiguration.getEnable()) && CollectionUtils.isNotEmpty(unionRepositoryConfiguration.getUnionTargetRepositories())) {
+                    unionTargetRepositoryConfigurations = unionRepositoryConfiguration.getUnionTargetRepositories();
                 }
             }
         }
@@ -643,9 +639,9 @@ public class ArtifactComponent {
      * @return 仓库信息
      */
     public Repository getRepository(String storageId, String repositoryId) {
-        RootRepositoryPath rootRepositoryPath = repositoryPathResolver.resolve(storageId, repositoryId);
-        if (Objects.nonNull(rootRepositoryPath) && Objects.nonNull(rootRepositoryPath.getRepository())) {
-            return rootRepositoryPath.getRepository();
+        Repository repository = configurationManager.getRepository(storageId, repositoryId);
+        if (Objects.nonNull(repository)) {
+            return repository;
         }
         return null;
     }

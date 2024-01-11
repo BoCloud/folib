@@ -266,7 +266,7 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
                 log.debug("Locked for [{}]", lockKey);
                 Artifact artifact = resolvePath(artifactMetadataForm.getStorageId(), artifactMetadataForm.getRepositoryId(), artifactMetadataForm.getArtifactPath());
                 if (Objects.isNull(artifact)) {
-                    throw new RuntimeException(String.format(GlobalConstants.ARTIFACT_NOT_FOUND_MESSAGE, artifactMetadataForm.getStorageId(), artifactMetadataForm.getRepositoryId(), artifactMetadataForm.getArtifactPath()));
+                    throw new BusinessException(String.format(GlobalConstants.ARTIFACT_NOT_FOUND_MESSAGE, artifactMetadataForm.getStorageId(), artifactMetadataForm.getRepositoryId(), artifactMetadataForm.getArtifactPath()));
                 }
                 JSONObject metadataJson = getMetadata(artifact);
                 if (Objects.isNull(metadataJson)) {
@@ -311,7 +311,7 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
                 log.debug("Locked for [{}]", lockKey);
                 Artifact artifact = resolvePath(artifactMetadataForm.getStorageId(), artifactMetadataForm.getRepositoryId(), artifactMetadataForm.getArtifactPath());
                 if (Objects.isNull(artifact)) {
-                    throw new RuntimeException(String.format(GlobalConstants.ARTIFACT_NOT_FOUND_MESSAGE, artifactMetadataForm.getStorageId(), artifactMetadataForm.getRepositoryId(), artifactMetadataForm.getArtifactPath()));
+                    throw new BusinessException(String.format(GlobalConstants.ARTIFACT_NOT_FOUND_MESSAGE, artifactMetadataForm.getStorageId(), artifactMetadataForm.getRepositoryId(), artifactMetadataForm.getArtifactPath()));
                 }
                 JSONObject metadataJson = getMetadata(artifact);
                 String key = artifactMetadataForm.getKey();
@@ -352,7 +352,7 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
                 log.debug("Locked for [{}]", lockKey);
                 Artifact artifact = resolvePath(artifactMetadataForm.getStorageId(), artifactMetadataForm.getRepositoryId(), artifactMetadataForm.getArtifactPath());
                 if (Objects.isNull(artifact)) {
-                    throw new RuntimeException(String.format(GlobalConstants.ARTIFACT_NOT_FOUND_MESSAGE, artifactMetadataForm.getStorageId(), artifactMetadataForm.getRepositoryId(), artifactMetadataForm.getArtifactPath()));
+                    throw new BusinessException(String.format(GlobalConstants.ARTIFACT_NOT_FOUND_MESSAGE, artifactMetadataForm.getStorageId(), artifactMetadataForm.getRepositoryId(), artifactMetadataForm.getArtifactPath()));
                 }
                 JSONObject metadataJson = getMetadata(artifact);
                 if (Objects.nonNull(metadataJson) && metadataJson.containsKey(artifactMetadataForm.getKey())) {
@@ -550,7 +550,7 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
                     log.debug("Locked for [{}]", lockKey);
                     artifact = resolvePath(artifactMetaData.getStorageId(), artifactMetaData.getRepositoryId(), artifactMetaData.getArtifactPath());
                     if (Objects.isNull(artifact)) {
-                        throw new RuntimeException(String.format(GlobalConstants.ARTIFACT_NOT_FOUND_MESSAGE, artifactMetaData.getStorageId(), artifactMetaData.getRepositoryId(), artifactMetaData.getArtifactPath()));
+                        throw new BusinessException(String.format(GlobalConstants.ARTIFACT_NOT_FOUND_MESSAGE, artifactMetaData.getStorageId(), artifactMetaData.getRepositoryId(), artifactMetaData.getArtifactPath()));
                     }
                     JSONObject metadataJson = getMetadata(artifact);
                     metadataJson = metadataJson == null ? new JSONObject() : metadataJson;
