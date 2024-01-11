@@ -281,14 +281,18 @@ public class PypiRepositoryFeatures
 
     private List<PypiSearchResult> extractSearchResult(Repository repository, String targetUrl, String pypiSearchResult) {
         final String storageId = repository.getStorage().getId(), repositoryId = repository.getId();
-        final String prefix = String.format("/storages/%s/%s", storageId, repositoryId);
+        String prefix = "";
+        if (targetUrl.contains("/storages/")) {
+            prefix = targetUrl.substring(targetUrl.indexOf("/storages"), targetUrl.indexOf("/simple"));
+        }
+        String finalPrefix = prefix;
         Matcher matcher = PACKAGE_NAME_PATTERN.matcher(pypiSearchResult);
         return matcher.results()
                 .map(matchResult -> {
                     String artifactName = matchResult.group(2);
                     String artifactUrl = matchResult.group(1);
-                    if (artifactUrl.contains(prefix)) {
-                        artifactUrl = artifactUrl.replace(prefix, "/../..");
+                    if (StringUtils.isNotBlank(finalPrefix) && artifactUrl.contains(finalPrefix)) {
+                        artifactUrl = artifactUrl.replace(finalPrefix, "/../..");
                     }
                     artifactUrl = resolveUrl(targetUrl, artifactUrl);
                     return PypiSearchResult.builder().artifactName(artifactName).artifactUrl(artifactUrl).storageId(storageId).repositoryId(repositoryId).groupName(PypiArtifactCoordinates.parse(artifactName).getId()).build();

@@ -651,6 +651,7 @@ public class ArtifactAdapter implements VertexEntityTraversalAdapter<Artifact> {
             }
         }
         if (StringUtils.isNotBlank(entity.getMetadata())) {
+            log.info("Artifact [{}] metadata change to [{}]", entity.getUuid(), entity.getMetadata());
             t = t.property(single, "metadata", entity.getMetadata());
         }
         if (CollectionUtils.isNotEmpty(entity.getFilePaths())) {

@@ -161,7 +161,7 @@ public class ArtifactController extends BaseController {
         if (bindingResult.hasErrors()) {
             throw new RequestBodyValidationException(GlobalConstants.REQUEST_PARAMS_ERROR, bindingResult);
         }
-        logger.info(" 批量新增制品元数据 {}", JSON.toJSONString(list));
+        logger.info("批量新增制品元数据 [{}]", JSON.toJSONString(list));
         artifactWebService.batchArtifactMetadata(list);
         return ResponseEntity.ok("ok");
     }
@@ -294,7 +294,7 @@ public class ArtifactController extends BaseController {
         }
         RepositoryPath repositoryPath = artifactComponent.getRepositoryPath(storageId, repositoryId, artifactPath);
         if (Objects.isNull(repositoryPath) || !Files.exists(repositoryPath)) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(GlobalConstants.ARTIFACT_NOT_FOUND_MESSAGE);
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(String.format(GlobalConstants.ARTIFACT_NOT_FOUND_MESSAGE, storageId, repositoryId, artifactPath));
         }
         artifactWebService.bomUpload(repositoryPath, file);
         return ResponseEntity.ok("success");

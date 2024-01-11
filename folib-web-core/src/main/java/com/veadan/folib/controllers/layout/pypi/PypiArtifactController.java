@@ -257,7 +257,23 @@ public class PypiArtifactController extends BaseArtifactController {
                                                 HttpServletResponse response,
                                                 @RequestHeader HttpHeaders headers)
             throws Exception {
+        if (!request.getRequestURI().endsWith("/")) {
+            final Map<String, String> uriVariables = new HashMap<String, String>();
+            uriVariables.put("storageId", repository.getStorage().getId());
+            uriVariables.put("repositoryId", repository.getId());
+            uriVariables.put("packageName", packageName);
 
+            final URI location = ServletUriComponentsBuilder
+                    .fromCurrentServletMapping()
+                    .path("/storages/{storageId}/{repositoryId}/simple/{packageName}/")
+                    .build()
+                    .expand(uriVariables)
+                    .toUri();
+            headers.setLocation(location);
+            return ResponseEntity.status(HttpStatus.SEE_OTHER)
+                    .headers(headers)
+                    .body(HttpStatus.SEE_OTHER.getReasonPhrase());
+        }
         final String packageNameToDownload = PypiPackageNameConverter.escapeSpecialCharacters(packageName);
 
         logger.info("Get package path request for storageId -> [{}] , repositoryId -> [{}], packageName -> [{}]",

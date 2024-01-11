@@ -24,7 +24,7 @@ public interface GlobalConstants {
     /**
      * 制品未找到
      */
-    String ARTIFACT_NOT_FOUND_MESSAGE = "The artifact was not found.";
+    String ARTIFACT_NOT_FOUND_MESSAGE = "The artifact [%s-%s-%s] was not found.";
 
     /**
      * UI 访问前缀key

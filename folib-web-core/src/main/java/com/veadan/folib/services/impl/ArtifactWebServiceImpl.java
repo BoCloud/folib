@@ -22,6 +22,7 @@ import com.veadan.folib.artifact.coordinates.MavenArtifactCoordinates;
 import com.veadan.folib.authorization.dto.Role;
 import com.veadan.folib.cloud.storage.s3fs.util.UriUtils;
 import com.veadan.folib.cluster.SyncMetadataEnum;
+import com.veadan.folib.components.DistributedLockComponent;
 import com.veadan.folib.components.artifact.ArtifactComponent;
 import com.veadan.folib.components.layout.DockerComponent;
 import com.veadan.folib.configuration.ConfigurationUtils;
@@ -52,6 +53,7 @@ import com.veadan.folib.providers.layout.LayoutProvider;
 import com.veadan.folib.providers.layout.LayoutProviderRegistry;
 import com.veadan.folib.providers.layout.Maven2LayoutProvider;
 import com.veadan.folib.repositories.ArtifactRepository;
+import com.veadan.folib.scanner.common.exception.BusinessException;
 import com.veadan.folib.scanner.common.msg.TableResultResponse;
 import com.veadan.folib.scanner.entity.ScanRules;
 import com.veadan.folib.scanner.mapper.ScanRulesMapper;
@@ -59,7 +61,6 @@ import com.veadan.folib.scanner.service.ScanService;
 import com.veadan.folib.schema2.ImageManifest;
 import com.veadan.folib.services.*;
 import com.veadan.folib.storage.Storage;
-import com.veadan.folib.storage.StorageDto;
 import com.veadan.folib.storage.repository.Repository;
 import com.veadan.folib.storage.repository.RepositoryTypeEnum;
 import com.veadan.folib.users.domain.SystemRole;
@@ -133,6 +134,10 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
 
     @Inject
     private ScanRulesMapper scanRulesMapper;
+
+    @Inject
+    @Lazy
+    private DistributedLockComponent distributedLockComponent;
 
     @Inject
     @Qualifier("browseRepositoryDirectoryListingService")
@@ -254,43 +259,24 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
 
     @Override
     public String saveArtifactMetadata(ArtifactMetadataForm artifactMetadataForm) {
-        try {
-            Artifact artifact = resolvePath(artifactMetadataForm.getStorageId(), artifactMetadataForm.getRepositoryId(), artifactMetadataForm.getArtifactPath());
-            if (Objects.isNull(artifact)) {
-                throw new RuntimeException(GlobalConstants.ARTIFACT_NOT_FOUND_MESSAGE);
-            }
-            JSONObject metadataJson = getMetadata(artifact);
-            if (Objects.isNull(metadataJson)) {
-                metadataJson = new JSONObject();
-            }
-            String key = artifactMetadataForm.getKey();
-            if (metadataJson.containsKey(key)) {
-                //已存在
-                return "repeat";
-            }
-            ArtifactMetadata artifactMetadata = ArtifactMetadata.builder().build();
-            BeanUtils.copyProperties(artifactMetadataForm, artifactMetadata);
-            metadataJson.put(key, artifactMetadata);
-            artifact.setMetadata(metadataJson.toJSONString());
-            artifactService.saveOrUpdateArtifact(artifact);
-            RepositoryPath repositoryPath = repositoryPathResolver.resolve(artifactMetadataForm.getStorageId(), artifactMetadataForm.getRepositoryId(), artifactMetadataForm.getArtifactPath());
-            repositoryPath.setArtifact(artifact);
-            artifactEvent.dispatchArtifactMetaDataEvent(repositoryPath);
-        } catch (Exception ex) {
-            log.error("保存制品元数据错误：{}", ExceptionUtils.getStackTrace(ex));
-            throw new RuntimeException("保存制品元数据错误，请稍后重试");
-        }
-        return ResponseMessage.ok().getMessage();
-    }
-
-    @Override
-    public String updateArtifactMetadata(ArtifactMetadataForm artifactMetadataForm) {
-        try {
-            Artifact artifact = resolvePath(artifactMetadataForm.getStorageId(), artifactMetadataForm.getRepositoryId(), artifactMetadataForm.getArtifactPath());
-            JSONObject metadataJson = getMetadata(artifact);
-            String key = artifactMetadataForm.getKey();
-            metadataJson = metadataJson == null ? new JSONObject() : metadataJson;
-            if (metadataJson.containsKey(key)) {
+        String lockKey = String.format("%s-%s-%s-%s", "metadata", artifactMetadataForm.getStorageId(), artifactMetadataForm.getRepositoryId(), artifactMetadataForm.getArtifactPath());
+        if (distributedLockComponent.lock(lockKey, GlobalConstants.WAIT_LOCK_TIME)) {
+            try {
+                Thread.sleep(20L);
+                log.debug("Locked for [{}]", lockKey);
+                Artifact artifact = resolvePath(artifactMetadataForm.getStorageId(), artifactMetadataForm.getRepositoryId(), artifactMetadataForm.getArtifactPath());
+                if (Objects.isNull(artifact)) {
+                    throw new RuntimeException(String.format(GlobalConstants.ARTIFACT_NOT_FOUND_MESSAGE, artifactMetadataForm.getStorageId(), artifactMetadataForm.getRepositoryId(), artifactMetadataForm.getArtifactPath()));
+                }
+                JSONObject metadataJson = getMetadata(artifact);
+                if (Objects.isNull(metadataJson)) {
+                    metadataJson = new JSONObject();
+                }
+                String key = artifactMetadataForm.getKey();
+                if (metadataJson.containsKey(key)) {
+                    //已存在
+                    return "repeat";
+                }
                 ArtifactMetadata artifactMetadata = ArtifactMetadata.builder().build();
                 BeanUtils.copyProperties(artifactMetadataForm, artifactMetadata);
                 metadataJson.put(key, artifactMetadata);
@@ -299,30 +285,97 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
                 RepositoryPath repositoryPath = repositoryPathResolver.resolve(artifactMetadataForm.getStorageId(), artifactMetadataForm.getRepositoryId(), artifactMetadataForm.getArtifactPath());
                 repositoryPath.setArtifact(artifact);
                 artifactEvent.dispatchArtifactMetaDataEvent(repositoryPath);
+            } catch (Exception e) {
+                log.error("Save artifact metadata error [{}]", ExceptionUtils.getStackTrace(e));
+                if (e instanceof BusinessException) {
+                    throw new RuntimeException(e.getMessage());
+                } else {
+                    log.error("保存制品元数据错误：{}", ExceptionUtils.getStackTrace(e));
+                    throw new RuntimeException("保存制品元数据错误，请稍后重试");
+                }
+            } finally {
+                distributedLockComponent.unLock(lockKey);
             }
-        } catch (Exception ex) {
-            log.error("修改制品元数据错误：{}", ExceptionUtils.getStackTrace(ex));
-            throw new RuntimeException("修改制品元数据错误，请稍后重试");
+        } else {
+            log.warn("Artifact [{}] was not get lock", lockKey);
+        }
+        return ResponseMessage.ok().getMessage();
+    }
+
+    @Override
+    public String updateArtifactMetadata(ArtifactMetadataForm artifactMetadataForm) {
+        String lockKey = String.format("%s-%s-%s-%s", "metadata", artifactMetadataForm.getStorageId(), artifactMetadataForm.getRepositoryId(), artifactMetadataForm.getArtifactPath());
+        if (distributedLockComponent.lock(lockKey, GlobalConstants.WAIT_LOCK_TIME)) {
+            try {
+                Thread.sleep(20L);
+                log.debug("Locked for [{}]", lockKey);
+                Artifact artifact = resolvePath(artifactMetadataForm.getStorageId(), artifactMetadataForm.getRepositoryId(), artifactMetadataForm.getArtifactPath());
+                if (Objects.isNull(artifact)) {
+                    throw new RuntimeException(String.format(GlobalConstants.ARTIFACT_NOT_FOUND_MESSAGE, artifactMetadataForm.getStorageId(), artifactMetadataForm.getRepositoryId(), artifactMetadataForm.getArtifactPath()));
+                }
+                JSONObject metadataJson = getMetadata(artifact);
+                String key = artifactMetadataForm.getKey();
+                metadataJson = metadataJson == null ? new JSONObject() : metadataJson;
+                if (metadataJson.containsKey(key)) {
+                    ArtifactMetadata artifactMetadata = ArtifactMetadata.builder().build();
+                    BeanUtils.copyProperties(artifactMetadataForm, artifactMetadata);
+                    metadataJson.put(key, artifactMetadata);
+                    artifact.setMetadata(metadataJson.toJSONString());
+                    artifactService.saveOrUpdateArtifact(artifact);
+                    RepositoryPath repositoryPath = repositoryPathResolver.resolve(artifactMetadataForm.getStorageId(), artifactMetadataForm.getRepositoryId(), artifactMetadataForm.getArtifactPath());
+                    repositoryPath.setArtifact(artifact);
+                    artifactEvent.dispatchArtifactMetaDataEvent(repositoryPath);
+                }
+            } catch (Exception e) {
+                log.error("Update artifact metadata error [{}]", ExceptionUtils.getStackTrace(e));
+                if (e instanceof BusinessException) {
+                    throw new RuntimeException(e.getMessage());
+                } else {
+                    log.error("修改制品元数据错误：{}", ExceptionUtils.getStackTrace(e));
+                    throw new RuntimeException("修改制品元数据错误，请稍后重试");
+                }
+            } finally {
+                distributedLockComponent.unLock(lockKey);
+            }
+        } else {
+            log.warn("Artifact [{}] was not get lock", lockKey);
         }
         return ResponseMessage.ok().getMessage();
     }
 
     @Override
     public void deleteArtifactMetadata(ArtifactMetadataForm artifactMetadataForm) {
-        try {
-            Artifact artifact = resolvePath(artifactMetadataForm.getStorageId(), artifactMetadataForm.getRepositoryId(), artifactMetadataForm.getArtifactPath());
-            JSONObject metadataJson = getMetadata(artifact);
-            if (Objects.nonNull(metadataJson) && metadataJson.containsKey(artifactMetadataForm.getKey())) {
-                metadataJson.remove(artifactMetadataForm.getKey());
-                artifact.setMetadata(metadataJson.toJSONString());
-                artifactService.saveOrUpdateArtifact(artifact);
-                RepositoryPath repositoryPath = repositoryPathResolver.resolve(artifactMetadataForm.getStorageId(), artifactMetadataForm.getRepositoryId(), artifactMetadataForm.getArtifactPath());
-                repositoryPath.setArtifact(artifact);
-                artifactEvent.dispatchArtifactMetaDataEvent(repositoryPath);
+        String lockKey = String.format("%s-%s-%s-%s", "metadata", artifactMetadataForm.getStorageId(), artifactMetadataForm.getRepositoryId(), artifactMetadataForm.getArtifactPath());
+        if (distributedLockComponent.lock(lockKey, GlobalConstants.WAIT_LOCK_TIME)) {
+            try {
+                Thread.sleep(20L);
+                log.debug("Locked for [{}]", lockKey);
+                Artifact artifact = resolvePath(artifactMetadataForm.getStorageId(), artifactMetadataForm.getRepositoryId(), artifactMetadataForm.getArtifactPath());
+                if (Objects.isNull(artifact)) {
+                    throw new RuntimeException(String.format(GlobalConstants.ARTIFACT_NOT_FOUND_MESSAGE, artifactMetadataForm.getStorageId(), artifactMetadataForm.getRepositoryId(), artifactMetadataForm.getArtifactPath()));
+                }
+                JSONObject metadataJson = getMetadata(artifact);
+                if (Objects.nonNull(metadataJson) && metadataJson.containsKey(artifactMetadataForm.getKey())) {
+                    metadataJson.remove(artifactMetadataForm.getKey());
+                    artifact.setMetadata(metadataJson.toJSONString());
+                    artifactService.saveOrUpdateArtifact(artifact);
+                    RepositoryPath repositoryPath = repositoryPathResolver.resolve(artifactMetadataForm.getStorageId(), artifactMetadataForm.getRepositoryId(), artifactMetadataForm.getArtifactPath());
+                    repositoryPath.setArtifact(artifact);
+                    artifactEvent.dispatchArtifactMetaDataEvent(repositoryPath);
+                }
+            } catch (Exception e) {
+                log.error("Delete artifact metadata error [{}]", ExceptionUtils.getStackTrace(e));
+                if (e instanceof BusinessException) {
+                    throw new RuntimeException(e.getMessage());
+                } else {
+                    log.error("删除制品元数据错误：{}", ExceptionUtils.getStackTrace(e));
+                    throw new RuntimeException("删除制品元数据错误，请稍后重试");
+                }
+            } finally {
+                distributedLockComponent.unLock(lockKey);
             }
-        } catch (Exception ex) {
-            log.error("删除制品元数据错误：{}", ExceptionUtils.getStackTrace(ex));
-            throw new RuntimeException("删除制品元数据错误，请稍后重试");
+        } else {
+            log.warn("Artifact [{}] was not get lock", lockKey);
         }
     }
 
@@ -488,29 +541,43 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
         // 批量的新增或更新 path Artifact 是一致的
         if (CollectionUtils.isNotEmpty(artifactMetadataFormList)) {
             ArtifactMetadataForm artifactMetaData = artifactMetadataFormList.get(0);
-            // 查询是否存在 path 的更新事件 todo
+            // 查询是否存在 path 的更新事件
             Artifact artifact = null;
-            try {
-
-                artifact = resolvePath(artifactMetaData.getStorageId(), artifactMetaData.getRepositoryId(), artifactMetaData.getArtifactPath());
-                JSONObject metadataJson = getMetadata(artifact);
-                metadataJson = metadataJson == null ? new JSONObject() : metadataJson;
-                for (ArtifactMetadataForm artifactMetadataForm : artifactMetadataFormList) {
-                    String key = artifactMetadataForm.getKey();
-                    ArtifactMetadata artifactMetadata = ArtifactMetadata.builder().build();
-                    BeanUtils.copyProperties(artifactMetadataForm, artifactMetadata);
-                    metadataJson.put(key, artifactMetadata);
+            String lockKey = String.format("%s-%s-%s-%s", "metadata", artifactMetaData.getStorageId(), artifactMetaData.getRepositoryId(), artifactMetaData.getArtifactPath());
+            if (distributedLockComponent.lock(lockKey, GlobalConstants.WAIT_LOCK_TIME)) {
+                try {
+                    Thread.sleep(20L);
+                    log.debug("Locked for [{}]", lockKey);
+                    artifact = resolvePath(artifactMetaData.getStorageId(), artifactMetaData.getRepositoryId(), artifactMetaData.getArtifactPath());
+                    if (Objects.isNull(artifact)) {
+                        throw new RuntimeException(String.format(GlobalConstants.ARTIFACT_NOT_FOUND_MESSAGE, artifactMetaData.getStorageId(), artifactMetaData.getRepositoryId(), artifactMetaData.getArtifactPath()));
+                    }
+                    JSONObject metadataJson = getMetadata(artifact);
+                    metadataJson = metadataJson == null ? new JSONObject() : metadataJson;
+                    for (ArtifactMetadataForm artifactMetadataForm : artifactMetadataFormList) {
+                        String key = artifactMetadataForm.getKey();
+                        ArtifactMetadata artifactMetadata = ArtifactMetadata.builder().build();
+                        BeanUtils.copyProperties(artifactMetadataForm, artifactMetadata);
+                        metadataJson.put(key, artifactMetadata);
+                    }
+                    artifact.setMetadata(metadataJson.toJSONString());
+                    artifactService.saveOrUpdateArtifact(artifact);
+                    RepositoryPath repositoryPath = repositoryPathResolver.resolve(artifactMetaData.getStorageId(), artifactMetaData.getRepositoryId(), artifactMetaData.getArtifactPath());
+                    repositoryPath.setArtifact(artifact);
+                    artifactEvent.dispatchArtifactMetaDataEvent(repositoryPath);
+                } catch (Exception e) {
+                    log.error("Batch handle artifact metadata error [{}]", ExceptionUtils.getStackTrace(e));
+                    if (e instanceof BusinessException) {
+                        throw new RuntimeException(e.getMessage());
+                    } else {
+                        throw new RuntimeException("批量新增制品元数据错误，请稍后重试");
+                    }
+                } finally {
+                    distributedLockComponent.unLock(lockKey);
                 }
-                artifact.setMetadata(metadataJson.toJSONString());
-                artifactService.saveOrUpdateArtifact(artifact);
-                RepositoryPath repositoryPath = repositoryPathResolver.resolve(artifactMetaData.getStorageId(), artifactMetaData.getRepositoryId(), artifactMetaData.getArtifactPath());
-                repositoryPath.setArtifact(artifact);
-                artifactEvent.dispatchArtifactMetaDataEvent(repositoryPath);
-            } catch (Exception e) {
-                log.error("批量新增制品元数据错误：{}", ExceptionUtils.getStackTrace(e));
-                throw new RuntimeException("批量新增制品元数据错误，请稍后重试");
+            } else {
+                log.warn("Artifact [{}] was not get lock", lockKey);
             }
-
         }
     }
 
@@ -530,6 +597,7 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
         if (StringUtils.isNotBlank(metadata)) {
             metadataJson = JSONObject.parseObject(metadata);
         }
+        log.debug("Current artifact [{}] metadata [{}]", artifact.getUuid(), Objects.nonNull(metadataJson) ? metadataJson.toJSONString() : "");
         return metadataJson;
     }
 

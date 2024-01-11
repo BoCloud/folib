@@ -6,21 +6,28 @@ import com.veadan.folib.domain.Artifact;
 import com.veadan.folib.gremlin.dsl.EntityTraversalSource;
 import com.veadan.folib.providers.io.RepositoryFiles;
 import com.veadan.folib.providers.io.RepositoryPath;
+import com.veadan.folib.providers.io.RepositoryPathResolver;
 import com.veadan.folib.repositories.ArtifactRepository;
 import com.veadan.folib.services.ArtifactService;
 import com.veadan.folib.util.CommonUtils;
 import com.veadan.folib.util.LocalDateTimeInstance;
 import com.veadan.folib.util.UserUtils;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.tinkerpop.gremlin.structure.Graph;
 import org.janusgraph.core.JanusGraph;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 
 import javax.inject.Inject;
 import javax.transaction.Transactional;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.ObjectOutputStream;
 import java.lang.reflect.UndeclaredThrowableException;
+import java.nio.file.Files;
+import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 
 @Slf4j
@@ -35,7 +42,12 @@ public class ArtifactServiceImpl implements ArtifactService {
     private JanusGraph janusGraph;
 
     @Inject
-    DistributedLockComponent distributedLockComponent;
+    @Lazy
+    private DistributedLockComponent distributedLockComponent;
+
+    @Inject
+    @Lazy
+    private RepositoryPathResolver repositoryPathResolver;
 
     @Override
     public void saveOrUpdateArtifact(Artifact artifact) {
@@ -55,6 +67,7 @@ public class ArtifactServiceImpl implements ArtifactService {
                     if (g.tx().isOpen()) {
                         g.tx().commit();
                     }
+                    storeArtifactMetadataFile(artifact);
                 } catch (Exception ex) {
                     if (g.tx().isOpen()) {
                         g.tx().rollback();
@@ -79,5 +92,30 @@ public class ArtifactServiceImpl implements ArtifactService {
     @Override
     public Artifact findArtifactReport(RepositoryPath repositoryPath) throws IOException {
         return artifactRepository.findArtifactReport(repositoryPath.getStorageId(), repositoryPath.getRepositoryId(), RepositoryFiles.relativizePath(repositoryPath));
+    }
+
+    /**
+     * 存储制品元数据文件
+     *
+     * @param artifact artifact
+     */
+    public void storeArtifactMetadataFile(Artifact artifact) {
+        try {
+            RepositoryPath repositoryPath = repositoryPathResolver.resolve(artifact.getStorageId(), artifact.getRepositoryId(), artifact.getArtifactPath());
+            if (Objects.nonNull(repositoryPath) && Objects.nonNull(repositoryPath.getArtifactEntry()) && Files.exists(repositoryPath)) {
+                String fileName = "." + FilenameUtils.getName(repositoryPath.getFileName().toString()) + ".metadata";
+                RepositoryPath artifactRepositoryPath = repositoryPath.getParent().resolve(fileName);
+                try (ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+                     ObjectOutputStream objectOutputStream = new ObjectOutputStream(byteArrayOutputStream)) {
+                    objectOutputStream.writeObject(repositoryPath.getArtifactEntry());
+                    byte[] byteArray = byteArrayOutputStream.toByteArray();
+                    Files.write(artifactRepositoryPath, byteArray);
+                } catch (Exception ex) {
+                    log.warn("写入制品 [{}] 本地缓存.metadata文件错误", ExceptionUtils.getStackTrace(ex));
+                }
+            }
+        } catch (Exception ex) {
+            log.warn("StoreArtifactMetadataFile error [{}]", ExceptionUtils.getStackTrace(ex));
+        }
     }
 }

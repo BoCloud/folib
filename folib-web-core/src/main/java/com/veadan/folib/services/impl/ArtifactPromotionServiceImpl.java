@@ -37,6 +37,7 @@ import com.veadan.folib.services.*;
 import com.veadan.folib.storage.repository.Repository;
 import com.veadan.folib.storage.repository.RepositoryTypeEnum;
 import com.veadan.folib.users.userdetails.SpringSecurityUser;
+import com.veadan.folib.util.SocketUtils;
 import com.veadan.folib.utils.FileUtils;
 import com.veadan.folib.utils.PropertiesUtils;
 import com.veadan.folib.utils.UrlUtils;
@@ -303,7 +304,7 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
                 final String nodeName = String.format("%s:%s", targetHost, targetPort);
                 final FolibWsServerRunManage.FolibWsClientRun wsClientRun = FolibWsServerRunManage.getWsClientRun(nodeName);
                 if (null == wsClientRun) {
-                    if (sourcePath.contains(requestUrl)) {
+                    if (SocketUtils.isRunning(targetHost, targetPort)) {
                         //检查如果可以直接连接访问到目标节点，则将模式转换为push模式，兼容源头和请求一致时未找到或者未设置ws节点的情况
                         promotionNodeOption.setSyncModel(ArtifactSyncRecordSyncModelEnum.PUSH.getVal());
                         return this.nodeOption(promotionNodeOption, request);

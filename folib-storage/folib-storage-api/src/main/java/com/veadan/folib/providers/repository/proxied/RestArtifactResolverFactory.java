@@ -44,7 +44,7 @@ public class RestArtifactResolverFactory
         String password = repository.getPassword();
         String url = repository.getUrl();
 
-        final HttpAuthenticationFeature authenticationFeature = (username != null && password != null) ? HttpAuthenticationFeature.basic(username, password) : null;
+        final HttpAuthenticationFeature authenticationFeature = (StringUtils.isNotBlank(username) && StringUtils.isNotBlank(password)) ? HttpAuthenticationFeature.basic(username, password) : null;
 
         Client client  = proxyRepositoryConnectionPoolConfigurationService.getRestClient(repositoryPath.getStorageId(),repositoryPath.getRepositoryId());
         return new RestArtifactResolver(client , url, repositoryPath.getTargetUrl(),

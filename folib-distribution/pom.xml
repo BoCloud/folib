@@ -257,111 +257,111 @@
                 </configuration>
             </plugin>
 
-            <plugin>
-                <artifactId>jdeb</artifactId>
-                <groupId>org.vafer</groupId>
-                <executions>
-                    <execution>
-                        <phase>package</phase>
-                        <goals>
-                            <goal>jdeb</goal>
-                        </goals>
-                        <configuration>
-                            <deb>${basedir}/target/folib-distribution-${project.version}.deb</deb>
-                            <controlDir>${basedir}/src/main/resources/deb</controlDir>
-                            <skipPOMs>false</skipPOMs>
-                            <dataSet>
+<!--            <plugin>-->
+<!--                <artifactId>jdeb</artifactId>-->
+<!--                <groupId>org.vafer</groupId>-->
+<!--                <executions>-->
+<!--                    <execution>-->
+<!--                        <phase>package</phase>-->
+<!--                        <goals>-->
+<!--                            <goal>jdeb</goal>-->
+<!--                        </goals>-->
+<!--                        <configuration>-->
+<!--                            <deb>${basedir}/target/folib-distribution-${project.version}.deb</deb>-->
+<!--                            <controlDir>${basedir}/src/main/resources/deb</controlDir>-->
+<!--                            <skipPOMs>false</skipPOMs>-->
+<!--                            <dataSet>-->
 
-                                <data>
-                                    <src>${basedir}/target/assembly/folib-${project.version}/bin</src>
-                                    <type>directory</type>
-                                    <mapper>
-                                        <type>perm</type>
-                                        <prefix>/opt/folib/bin</prefix>
-                                        <user>folib</user>
-                                        <group>folib</group>
-                                        <filemode>770</filemode>
-                                        <dirmode>770</dirmode>
-                                    </mapper>
-                                </data>
+<!--                                <data>-->
+<!--                                    <src>${basedir}/target/assembly/folib-${project.version}/bin</src>-->
+<!--                                    <type>directory</type>-->
+<!--                                    <mapper>-->
+<!--                                        <type>perm</type>-->
+<!--                                        <prefix>/opt/folib/bin</prefix>-->
+<!--                                        <user>folib</user>-->
+<!--                                        <group>folib</group>-->
+<!--                                        <filemode>770</filemode>-->
+<!--                                        <dirmode>770</dirmode>-->
+<!--                                    </mapper>-->
+<!--                                </data>-->
 
-                                <data>
-                                    <src>${basedir}/target/assembly/folib-${project.version}/lib</src>
-                                    <type>directory</type>
-                                    <mapper>
-                                        <type>perm</type>
-                                        <prefix>/opt/folib/lib</prefix>
-                                        <user>folib</user>
-                                        <group>folib</group>
-                                        <filemode>770</filemode>
-                                        <dirmode>770</dirmode>
-                                    </mapper>
-                                </data>
+<!--                                <data>-->
+<!--                                    <src>${basedir}/target/assembly/folib-${project.version}/lib</src>-->
+<!--                                    <type>directory</type>-->
+<!--                                    <mapper>-->
+<!--                                        <type>perm</type>-->
+<!--                                        <prefix>/opt/folib/lib</prefix>-->
+<!--                                        <user>folib</user>-->
+<!--                                        <group>folib</group>-->
+<!--                                        <filemode>770</filemode>-->
+<!--                                        <dirmode>770</dirmode>-->
+<!--                                    </mapper>-->
+<!--                                </data>-->
 
-                                <data>
-                                    <src>${basedir}/target/assembly/folib-vault/logs</src>
-                                    <type>directory</type>
-                                    <mapper>
-                                    <type>perm</type>
-                                        <prefix>/opt/folib/logs</prefix>
-                                        <user>folib</user>
-                                        <group>folib</group>
-                                        <filemode>770</filemode>
-                                        <dirmode>770</dirmode>
-                                    </mapper>
-                                </data>
+<!--                                <data>-->
+<!--                                    <src>${basedir}/target/assembly/folib-vault/logs</src>-->
+<!--                                    <type>directory</type>-->
+<!--                                    <mapper>-->
+<!--                                    <type>perm</type>-->
+<!--                                        <prefix>/opt/folib/logs</prefix>-->
+<!--                                        <user>folib</user>-->
+<!--                                        <group>folib</group>-->
+<!--                                        <filemode>770</filemode>-->
+<!--                                        <dirmode>770</dirmode>-->
+<!--                                    </mapper>-->
+<!--                                </data>-->
 
-                                <data>
-                                    <src>${basedir}/target/assembly/folib-${project.version}/tmp</src>
-                                    <type>directory</type>
-                                    <mapper>
-                                        <type>perm</type>
-                                        <prefix>/opt/folib/tmp</prefix>
-                                        <user>folib</user>
-                                        <group>folib</group>
-                                        <filemode>770</filemode>
-                                        <dirmode>770</dirmode>
-                                     </mapper>
-                                </data>
+<!--                                <data>-->
+<!--                                    <src>${basedir}/target/assembly/folib-${project.version}/tmp</src>-->
+<!--                                    <type>directory</type>-->
+<!--                                    <mapper>-->
+<!--                                        <type>perm</type>-->
+<!--                                        <prefix>/opt/folib/tmp</prefix>-->
+<!--                                        <user>folib</user>-->
+<!--                                        <group>folib</group>-->
+<!--                                        <filemode>770</filemode>-->
+<!--                                        <dirmode>770</dirmode>-->
+<!--                                     </mapper>-->
+<!--                                </data>-->
 
-                                <data>
-                                    <src>${basedir}/target/assembly/folib-${project.version}/etc</src>
-                                    <type>directory</type>
-                                    <conffile>true</conffile>
-                                    <mapper>
-                                         <type>perm</type>
-                                         <prefix>/opt/folib/etc</prefix>
-                                         <user>folib</user>
-                                         <group>folib</group>
-                                         <filemode>770</filemode>
-                                         <dirmode>770</dirmode>
-                                    </mapper>
-                                </data>
+<!--                                <data>-->
+<!--                                    <src>${basedir}/target/assembly/folib-${project.version}/etc</src>-->
+<!--                                    <type>directory</type>-->
+<!--                                    <conffile>true</conffile>-->
+<!--                                    <mapper>-->
+<!--                                         <type>perm</type>-->
+<!--                                         <prefix>/opt/folib/etc</prefix>-->
+<!--                                         <user>folib</user>-->
+<!--                                         <group>folib</group>-->
+<!--                                         <filemode>770</filemode>-->
+<!--                                         <dirmode>770</dirmode>-->
+<!--                                    </mapper>-->
+<!--                                </data>-->
 
-                                <data>
-                                    <src>${basedir}/src/main/resources/folib.service</src>
-                                    <type>file</type>
-                                    <mapper>
-                                    <type>perm</type>
-                                        <prefix>/opt/folib</prefix>
-                                        <user>folib</user>
-                                        <group>folib</group>
-                                        <filemode>775</filemode>
-                                        <dirmode>775</dirmode>
-                                    </mapper>
-                                </data>
+<!--                                <data>-->
+<!--                                    <src>${basedir}/src/main/resources/folib.service</src>-->
+<!--                                    <type>file</type>-->
+<!--                                    <mapper>-->
+<!--                                    <type>perm</type>-->
+<!--                                        <prefix>/opt/folib</prefix>-->
+<!--                                        <user>folib</user>-->
+<!--                                        <group>folib</group>-->
+<!--                                        <filemode>775</filemode>-->
+<!--                                        <dirmode>775</dirmode>-->
+<!--                                    </mapper>-->
+<!--                                </data>-->
 
-                                <data>
-                                    <linkName>/etc/systemd/system/folib.service</linkName>
-                                        <linkTarget>/opt/folib/folib.service</linkTarget>
-                                    <type>link</type>
-                                </data>
+<!--                                <data>-->
+<!--                                    <linkName>/etc/systemd/system/folib.service</linkName>-->
+<!--                                        <linkTarget>/opt/folib/folib.service</linkTarget>-->
+<!--                                    <type>link</type>-->
+<!--                                </data>-->
 
-                            </dataSet>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
+<!--                            </dataSet>-->
+<!--                        </configuration>-->
+<!--                    </execution>-->
+<!--                </executions>-->
+<!--            </plugin>-->
 
         </plugins>
     </build>
@@ -528,7 +528,7 @@
                                         <include>${project.artifactId}*.tar.gz</include>
                                         <include>${project.artifactId}*.zip</include>
                                         <include>${project.artifactId}*.rpm</include>
-                                        <include>${project.artifactId}*.deb</include>
+<!--                                        <include>${project.artifactId}*.deb</include>-->
                                     </includes>
                                 </fileSet>
                             </fileSets>

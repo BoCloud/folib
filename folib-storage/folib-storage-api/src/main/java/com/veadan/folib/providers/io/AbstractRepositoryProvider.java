@@ -246,6 +246,9 @@ public abstract class AbstractRepositoryProvider implements RepositoryProvider, 
         }
         String username = UserUtils.getUsername();
         LocalDateTime now = LocalDateTimeInstance.now();
+        if (Objects.isNull(artifact.getNativeId())) {
+            artifact.setCreated(now);
+        }
         artifact.setLastUpdated(now);
         artifact.setLastUsed(now);
         artifact.setUpdatedBy(username);

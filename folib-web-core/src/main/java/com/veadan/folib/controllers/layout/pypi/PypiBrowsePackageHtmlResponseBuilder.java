@@ -55,19 +55,16 @@ public class PypiBrowsePackageHtmlResponseBuilder {
     private String getPackageLinks(List<Path> filePaths)
             throws IOException {
 
-        String packageLinks = "";
+        StringBuilder packageLinks = new StringBuilder();
 
         for (Path path : filePaths) {
             RepositoryPath repositoryPath = (RepositoryPath) path;
             PypiArtifactCoordinates artifactCoordinates = (PypiArtifactCoordinates) RepositoryFiles.readCoordinates(repositoryPath);
 
-            Repository repository = repositoryPath.getRepository();
-            packageLinks += "<a href=\"" + "/storages/" + repository.getStorage().getId() + "/" + repository.getId() +
-                    "/packages/" + artifactCoordinates.getFileName() + "\">" +
-                    artifactCoordinates.getFileName() + "</a><br>\n";
+            packageLinks.append("<a href=\"../../packages/").append(artifactCoordinates.getFileName()).append("\">").append(artifactCoordinates.getFileName()).append("</a><br>\n");
         }
 
-        return packageLinks;
+        return packageLinks.toString();
     }
 
     public String getProxyHtmlResponse(List<PypiSearchResult> pypiSearchResultList) {
@@ -98,15 +95,13 @@ public class PypiBrowsePackageHtmlResponseBuilder {
     }
 
     private String getProxyPackageLinks(List<PypiSearchResult> pypiSearchResultList) {
-        String packageLinks = "";
+        StringBuilder packageLinks = new StringBuilder();
         PypiArtifactCoordinates artifactCoordinates = null;
         for (PypiSearchResult pypiSearchResult : pypiSearchResultList) {
             artifactCoordinates = PypiArtifactCoordinates.parse(pypiSearchResult.getArtifactName());
-            packageLinks += "<a href=\"" + "/storages/" + pypiSearchResult.getStorageId() + "/" + pypiSearchResult.getRepositoryId() +
-                    "/packages/" + artifactCoordinates.getFileName() + "\">" +
-                    artifactCoordinates.getFileName() + "</a><br>\n";
+            packageLinks.append("<a href=\"../../packages/").append(artifactCoordinates.getFileName()).append("\">").append(artifactCoordinates.getFileName()).append("</a><br>\n");
         }
-        return packageLinks;
+        return packageLinks.toString();
     }
 
     public String nouFound() {
