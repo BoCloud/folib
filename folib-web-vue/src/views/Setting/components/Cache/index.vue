@@ -22,7 +22,7 @@
                 </a-button>
                 <a-popconfirm :title="'确定要清空缓存目录' + cacheForm.directoryPath + '吗？'" okType="danger" ok-text="确定" cancel-text="取消"
                   @confirm="cleanupCacheDirectory">
-                  <a-button class="ml-10" type="danger">
+                  <a-button class="ml-10" type="danger" v-if="cacheForm.directoryPath">
                     清空
                   </a-button>
                 </a-popconfirm>
