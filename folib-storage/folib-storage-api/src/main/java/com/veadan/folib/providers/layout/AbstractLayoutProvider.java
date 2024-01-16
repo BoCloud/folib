@@ -241,6 +241,19 @@ public abstract class AbstractLayoutProvider<T extends LayoutArtifactCoordinates
     }
 
     @Override
+    public byte[] getContentByEqualsFileName(RepositoryPath repositoryPath, Path path, String fileName) {
+        if (ARCHIVE_LISTING_FUNCTION.supports(repositoryPath)) {
+            try {
+                return ARCHIVE_LISTING_FUNCTION.getContentByEqualsFileName(repositoryPath, path, fileName);
+            } catch (IOException e) {
+                logger.warn("Unable to file content in archive path {} using {}",
+                        repositoryPath, ARCHIVE_LISTING_FUNCTION, e);
+            }
+        }
+        return null;
+    }
+
+    @Override
     public Set<ArtifactGroup> getArtifactGroups(RepositoryPath path)
             throws IOException {
         if (!RepositoryFiles.isArtifact(path)) {

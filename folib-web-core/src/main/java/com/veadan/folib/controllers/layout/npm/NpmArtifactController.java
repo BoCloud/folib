@@ -721,7 +721,7 @@ public class NpmArtifactController
             TarArchiveEntry entry;
 
             while ((entry = (TarArchiveEntry) tarIn.getNextEntry()) != null) {
-                if (!entry.getName().endsWith("package.json")) {
+                if (!entry.getName().equals(NpmLayoutProvider.DEFAULT_PACKAGE_JSON_PATH)) {
                     continue;
                 }
                 StringWriter writer = new StringWriter();

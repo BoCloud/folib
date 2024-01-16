@@ -230,7 +230,7 @@ export default {
       this.getUsersList()
       this.getStorage()
       this.userRadioDefault = 0
-      if (this.folibRepository.layout !== 'Raw') {
+      if (this.folibRepository.layout !== 'Raw' && this.folibRepository.layout !== 'Maven 2') {
         this.permissionColumns.splice(this.permissionColumns.findIndex((item) => item.dataIndex === 'paths'), 1)
       }
     },

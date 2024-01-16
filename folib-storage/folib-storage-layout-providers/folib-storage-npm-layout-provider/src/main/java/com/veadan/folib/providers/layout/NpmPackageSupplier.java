@@ -72,7 +72,7 @@ public class NpmPackageSupplier implements Function<Path, NpmPackageDesc> {
         npmPackageDesc.setReleaseDate(releaseDate);
 
         PackageVersion npmPackage = null;
-        byte[] packageJsonBytes = layoutProvider.getContentByFileName(repositoryPath, repositoryPath, NpmLayoutProvider.PACKAGE_JSON);
+        byte[] packageJsonBytes = layoutProvider.getContentByFileName(repositoryPath, repositoryPath, NpmLayoutProvider.DEFAULT_PACKAGE_JSON_PATH);
         if (Objects.nonNull(packageJsonBytes)) {
             String packageJson = new String(packageJsonBytes, StandardCharsets.UTF_8);
             try {

@@ -44,6 +44,7 @@ import com.veadan.folib.repository.NpmRepositoryFeatures;
 import com.veadan.folib.repository.PypiRepositoryFeatures;
 import com.veadan.folib.service.ProxyRepositoryConnectionPoolConfigurationService;
 import com.veadan.folib.services.*;
+import com.veadan.folib.storage.metadata.MetadataHelper;
 import com.veadan.folib.storage.repository.Repository;
 import com.veadan.folib.storage.repository.RepositoryTypeEnum;
 import com.veadan.folib.util.CacheUtil;
@@ -59,6 +60,10 @@ import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
+import org.apache.maven.artifact.ArtifactUtils;
+import org.apache.maven.artifact.repository.metadata.Metadata;
+import org.apache.maven.artifact.repository.metadata.Snapshot;
+import org.apache.maven.artifact.repository.metadata.Versioning;
 import org.apache.maven.model.Model;
 import org.apache.maven.model.io.xpp3.MavenXpp3Reader;
 import org.apache.maven.model.io.xpp3.MavenXpp3Writer;
@@ -180,6 +185,10 @@ public class ArtifactComponent {
     @Inject
     @Lazy
     private DistributedLockComponent distributedLockComponent;
+
+    @Inject
+    @Lazy
+    private ArtifactMetadataService artifactMetadataService;
 
     /**
      * 读取文件内容
@@ -1371,6 +1380,79 @@ public class ArtifactComponent {
             log.error(ExceptionUtils.getStackTrace(ex));
             return null;
         }
+    }
+
+    /**
+     * 获取metadata
+     *
+     * @param repositoryPath repositoryPath
+     * @param version        version
+     * @return metadata
+     */
+    private Metadata getMetadata(RepositoryPath repositoryPath, String version) {
+        Path metadataPath = null;
+        try {
+            Metadata metadata = null;
+            if (ArtifactUtils.isSnapshot(version)) {
+                metadataPath = MetadataHelper.getSnapshotMetadataPath(repositoryPath, version);
+            } else {
+                metadataPath = MetadataHelper.getMetadataPath(repositoryPath);
+            }
+            if (Files.exists(metadataPath)) {
+                try (InputStream inputStream = Files.newInputStream(metadataPath)) {
+                    metadata = artifactMetadataService.getMetadata(inputStream);
+                }
+            }
+            return metadata;
+        } catch (Exception ex) {
+            log.error("path：{}，getMetadata error：{}", metadataPath, ExceptionUtils.getStackTrace(ex));
+            throw new RuntimeException("path：【" + metadataPath + "】getMetadata error");
+        }
+    }
+
+    /**
+     * 计算版本号
+     *
+     * @param storageId    storageId
+     * @param repositoryId repositoryId
+     * @param groupId      groupId
+     * @param artifactId   artifactId
+     * @param version      version
+     * @param artifactName artifactName
+     * @return 版本号
+     */
+    private String calcLatestSnapshotVersion(String storageId, String repositoryId, String groupId, String artifactId, String version, String artifactName) {
+        if (ArtifactUtils.isSnapshot(version)) {
+            String artifactPath = String.format("%s/%s", groupId, artifactId);
+            RepositoryPath repositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, artifactPath);
+            try {
+                int buildNumber = 1;
+                Metadata metadata = getMetadata(repositoryPath, version);
+                if (Objects.nonNull(metadata)) {
+                    Versioning versioning = metadata.getVersioning();
+                    if (Objects.nonNull(versioning)) {
+                        Snapshot snapshot = versioning.getSnapshot();
+                        if (Objects.nonNull(snapshot)) {
+                            buildNumber = snapshot.getBuildNumber() + 1;
+                        }
+                    }
+                }
+                String timestamp = MetadataHelper.getDateFormatInstance().format(Calendar.getInstance().getTime());
+                artifactName = artifactName.replace("SNAPSHOT",
+                        timestamp.substring(0, 8) + "." + timestamp.substring(8) + "-" + buildNumber);
+            } catch (Exception ex) {
+                log.error("path：{}，calcLatestSnapshotVersion error：{}", repositoryPath.toAbsolutePath().toString(), ExceptionUtils.getStackTrace(ex));
+                throw new RuntimeException("path 【" + repositoryPath.toAbsolutePath().toString() + "】calcLatestSnapshotVersion error");
+            }
+        }
+        return artifactName;
+    }
+
+    public String calcMavenArtifactPath(String storageId, String repositoryId, String groupId, String artifactId, String version, String artifactName) {
+        if (groupId.contains(GlobalConstants.POINT)) {
+            groupId = groupId.replace(GlobalConstants.POINT, File.separator);
+        }
+        return String.format("%s/%s/%s/%s", groupId, artifactId, version, calcLatestSnapshotVersion(storageId, repositoryId, groupId, artifactId, version, artifactName));
     }
 
 }

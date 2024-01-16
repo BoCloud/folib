@@ -224,10 +224,11 @@ public class MavenMetadataManager
             if (!versioning.getVersions().isEmpty())
             {
                 String latestVersion = baseVersioning.get(baseVersioning.size() - 1).getVersion();
-
+                List<MetadataVersion> releaseVersionList = baseVersioning.stream().filter(item -> !ArtifactUtils.isSnapshot(item.getVersion())).collect(Collectors.toList());
+                if (CollectionUtils.isNotEmpty(releaseVersionList)) {
+                    versioning.setRelease(releaseVersionList.get(releaseVersionList.size() - 1).getVersion());
+                }
                 metadata.setVersioning(request.getVersioning());
-                versioning.setRelease(latestVersion);
-
                 // Set <latest> by figuring out the most recent upload
                 Collections.sort(baseVersioning);
                 versioning.setLatest(latestVersion);
@@ -287,8 +288,11 @@ public class MavenMetadataManager
                 {
                     String latestVersion = baseVersioning.get(baseVersioning.size() - 1).getVersion();
 
+                    List<MetadataVersion> releaseVersionList = baseVersioning.stream().filter(item -> !ArtifactUtils.isSnapshot(item.getVersion())).collect(Collectors.toList());
+                    if (CollectionUtils.isNotEmpty(releaseVersionList)) {
+                        versioning.setRelease(releaseVersionList.get(releaseVersionList.size() - 1).getVersion());
+                    }
                     releaseMetadata.setVersioning(request.getVersioning());
-                    versioning.setRelease(latestVersion);
 
                     // Set <latest> by figuring out the most recent upload
                     Collections.sort(baseVersioning);

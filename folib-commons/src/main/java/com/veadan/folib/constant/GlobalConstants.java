@@ -75,4 +75,9 @@ public interface GlobalConstants {
      * WAIT_LOCK_TIME
      */
     long WAIT_LOCK_TIME = 30L;
+
+    /**
+     * point
+     */
+    String POINT = ".";
 }

@@ -89,6 +89,10 @@ public class AccessModelData
                             continue;
                         }
                         pattern = StringUtils.chomp(pattern, "/");
+                        if (path.equals(pattern)) {
+                            privileges.addAll(pathPrivilege.getPrivileges());
+                            break;
+                        }
                         if (!pattern.endsWith(end)) {
                             pattern = pattern + end;
                         }

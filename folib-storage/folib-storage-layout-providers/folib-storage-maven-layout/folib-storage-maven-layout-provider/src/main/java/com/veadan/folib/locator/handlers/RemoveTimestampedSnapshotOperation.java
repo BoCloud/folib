@@ -31,7 +31,7 @@ public class RemoveTimestampedSnapshotOperation
 
     private int numberToKeep;
 
-    private Date keepDate;
+    private int keepPeriod;
 
     private MavenSnapshotManager mavenSnapshotManager;
 
@@ -45,9 +45,13 @@ public class RemoveTimestampedSnapshotOperation
         this.mavenSnapshotManager = mavenSnapshotManager;
     }
 
+    @Override
     public void execute(RepositoryPath basePath) throws IOException
     {
         boolean containsMetadata;
+        if (!Files.exists(basePath)) {
+            return;
+        }
         try (Stream<Path> pathStream = Files.walk(basePath))
         {
             containsMetadata = pathStream.anyMatch(p -> !p.getFileName().startsWith(".pom"));
@@ -110,7 +114,7 @@ public class RemoveTimestampedSnapshotOperation
         try
         {
             mavenSnapshotManager.deleteTimestampedSnapshotArtifacts(basePath, request.getVersioning(),
-                                                                    numberToKeep, keepDate);
+                                                                    numberToKeep, keepPeriod);
         }
         catch (IOException | XmlPullParserException e)
         {
@@ -138,14 +142,11 @@ public class RemoveTimestampedSnapshotOperation
         this.numberToKeep = numberToKeep;
     }
 
-    public Date getKeepDate()
-    {
-        return keepDate;
+    public int getKeepPeriod() {
+        return keepPeriod;
     }
 
-    public void setKeepDate(Date keepDate)
-    {
-        this.keepDate = keepDate;
+    public void setKeepPeriod(int keepPeriod) {
+        this.keepPeriod = keepPeriod;
     }
-
 }

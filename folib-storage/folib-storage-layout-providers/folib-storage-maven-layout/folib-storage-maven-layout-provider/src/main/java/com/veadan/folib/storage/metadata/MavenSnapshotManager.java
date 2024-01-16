@@ -1,22 +1,21 @@
 package com.veadan.folib.storage.metadata;
 
+import cn.hutool.core.date.DatePattern;
+import cn.hutool.core.date.DateUtil;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
 import com.veadan.folib.artifact.MavenArtifactUtils;
 import com.veadan.folib.providers.io.RepositoryFiles;
 import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.storage.repository.Repository;
-
-import javax.inject.Inject;
-import java.io.IOException;
-import java.nio.file.DirectoryStream;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.text.DateFormat;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
-import java.util.*;
-
+import com.veadan.folib.storage.repository.RepositoryPolicyEnum;
+import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.collections4.MapUtils;
+import org.apache.commons.io.FilenameUtils;
+import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.maven.artifact.ArtifactUtils;
 import org.apache.maven.artifact.repository.metadata.Metadata;
+import org.apache.maven.artifact.repository.metadata.SnapshotVersion;
 import org.apache.maven.artifact.repository.metadata.Versioning;
 import org.codehaus.plexus.util.xml.pull.XmlPullParserException;
 import org.javatuples.Pair;
@@ -24,129 +23,154 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
+import javax.inject.Inject;
+import java.io.IOException;
+import java.nio.file.DirectoryStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.*;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
 /**
  * @author Kate Novik.
  */
 @Component
-public class MavenSnapshotManager
-{
+public class MavenSnapshotManager {
 
     public static final String TIMESTAMP_FORMAT = "yyyyMMdd.HHmmss";
 
     private static final Logger logger = LoggerFactory.getLogger(MavenSnapshotManager.class);
 
+    private static final List<String> EXTENSION_LIST = Lists.newArrayList(".jar", ".war", ".ear");
+
     @Inject
     private MavenMetadataManager mavenMetadataManager;
 
-    public MavenSnapshotManager()
-    {
+    public MavenSnapshotManager() {
     }
 
     public void deleteTimestampedSnapshotArtifacts(RepositoryPath basePath,
                                                    Versioning versioning,
                                                    int numberToKeep,
-                                                   Date keepDate)
+                                                   int keepPeriod)
             throws IOException,
-                   XmlPullParserException
-    {
+            XmlPullParserException {
         Repository repository = basePath.getRepository();
-        if (!RepositoryFiles.artifactExists(basePath))
-        {
-            logger.error("Removal of timestamped Maven snapshot artifact: {}.", basePath);
-            
+        if (!Files.exists(basePath)) {
+            logger.warn("Removal of timestamped Maven snapshot artifact: {} not exists.", basePath);
             return;
         }
-        
+
         logger.info("Removal of timestamped Maven snapshot artifact {} in '{}:{}'.",
-                     basePath, repository.getStorage().getId(), repository.getId());
+                basePath, repository.getStorage().getId(), repository.getId());
 
         Pair<String, String> artifactGroup = MavenArtifactUtils.getDirectoryGA(basePath);
         String artifactGroupId = artifactGroup.getValue0();
         String artifactId = artifactGroup.getValue1();
 
-        if (versioning.getVersions().isEmpty())
-        {
+        if (versioning.getVersions().isEmpty()) {
             return;
         }
-        
-        for (String version : versioning.getVersions())
-        {
 
-            RepositoryPath versionDirectoryPath = basePath.resolve(ArtifactUtils.toSnapshotVersion(version));
-            if (!removeTimestampedSnapshot(versionDirectoryPath, numberToKeep, keepDate))
-            {
+        for (String version : versioning.getVersions()) {
+            if (!ArtifactUtils.isSnapshot(version)) {
                 continue;
             }
-
+            RepositoryPath versionDirectoryPath = basePath.resolve(ArtifactUtils.toSnapshotVersion(version));
+            if (!removeTimestampedSnapshot(versionDirectoryPath, numberToKeep, keepPeriod)) {
+                continue;
+            }
+            VersionCollector versionCollector = new VersionCollector();
+            List<SnapshotVersion> snapshotVersions = versionCollector.collectTimestampedSnapshotVersions(versionDirectoryPath);
+            Versioning snapshotVersioning = versionCollector.generateSnapshotVersions(snapshotVersions);
+            if (Objects.nonNull(snapshotVersioning) && CollectionUtils.isEmpty(snapshotVersioning.getVersions()) && CollectionUtils.isEmpty(snapshotVersioning.getSnapshotVersions())) {
+                RepositoryFiles.delete(versionDirectoryPath, true);
+                logger.info("Removal of timestamped Maven snapshot artifact [{}] path", versionDirectoryPath);
+                List<Integer> artifactCountList = Lists.newArrayList();
+                List<RepositoryPath> deleteRepositoryPathList = Lists.newArrayList();
+                RepositoryPath versionDirectoryPathParent = versionDirectoryPath.getParent();
+                try (Stream<Path> pathStream = Files.walk(versionDirectoryPathParent)) {
+                    pathStream
+                            .forEach(p -> {
+                                if (!isSameFile(versionDirectoryPathParent, p)) {
+                                    if (isArtifact(p)) {
+                                        artifactCountList.add(1);
+                                    } else if (!isChecksum(p)) {
+                                        deleteRepositoryPathList.add((RepositoryPath) p);
+                                    }
+                                }
+                            });
+                }
+                if (CollectionUtils.isEmpty(artifactCountList)) {
+                    for (RepositoryPath deleteRepositoryPath : deleteRepositoryPathList) {
+                        try {
+                            RepositoryFiles.delete(deleteRepositoryPath, true);
+                            logger.info("Removal of timestamped Maven snapshot artifact [{}] parent path", versionDirectoryPathParent);
+                        } catch (Exception ex) {
+                            logger.warn(ExceptionUtils.getStackTrace(ex));
+                        }
+                    }
+                }
+                continue;
+            }
             logger.info("Generate snapshot versioning metadata for {}.", versionDirectoryPath);
-
             mavenMetadataManager.generateLastSnapshotVersioningMetadata(artifactGroupId,
-                                                                    artifactId,
-                                                                    versionDirectoryPath,
-                                                                    version,
-                                                                    true);
+                    artifactId,
+                    versionDirectoryPath,
+                    version,
+                    true);
         }
     }
 
     private boolean removeTimestampedSnapshot(RepositoryPath basePath,
                                               int numberToKeep,
-                                              Date keepDate)
+                                              int keepPeriod)
             throws IOException,
-                   XmlPullParserException
-    {
+            XmlPullParserException {
         Metadata metadata = mavenMetadataManager.readMetadata(basePath);
 
-        if (metadata == null || metadata.getVersioning() == null)
-        {
+        if (metadata == null || metadata.getVersioning() == null) {
             return false;
         }
-        
-        /**
-         * map of snapshots for removing
-         * k - number of the build, v - version of the snapshot
-         */
-        Map<Integer, String> mapToRemove = getRemovableTimestampedSnapshots(metadata, numberToKeep, keepDate);
 
-        if (mapToRemove.isEmpty())
-        {
+        List<String> removeVersionList = getRemovableTimestampedSnapshots(basePath, metadata, numberToKeep, keepPeriod);
+
+        if (CollectionUtils.isEmpty(removeVersionList)) {
             return false;
         }
-        List<String> removingSnapshots = new ArrayList<>();
-
-        new ArrayList<>(mapToRemove.values()).forEach(e -> removingSnapshots.add(metadata.getArtifactId()
-                                                                                         .concat("-")
-                                                                                         .concat(e)
-                                                                                         .concat(".jar")));
-
-        try (final DirectoryStream<Path> directoryStream = Files.newDirectoryStream(basePath))
-        {
-            for (Path path : directoryStream)
-            {
-                if (!Files.isRegularFile(path))
-                {
+        List<String> removeFilenameList = Lists.newArrayList();
+        for (String removeVersion : removeVersionList) {
+            for (String extension : EXTENSION_LIST) {
+                removeFilenameList.add(metadata.getArtifactId()
+                        .concat("-")
+                        .concat(removeVersion)
+                        .concat(extension));
+            }
+        }
+        try (final DirectoryStream<Path> directoryStream = Files.newDirectoryStream(basePath)) {
+            for (Path path : directoryStream) {
+                if (!Files.isRegularFile(path)) {
                     continue;
                 }
-                
+
                 RepositoryPath repositoryPath = (RepositoryPath) path;
                 final String filename = path.getFileName().toString();
-                
-                if (!removingSnapshots.contains(filename) ||
-                    !RepositoryFiles.isArtifact(repositoryPath) ||
-                    RepositoryFiles.isMetadata(repositoryPath))
-                {
+
+                if (!removeFilenameList.contains(filename) ||
+                        !RepositoryFiles.isArtifact(repositoryPath) ||
+                        RepositoryFiles.isMetadata(repositoryPath)) {
                     continue;
                 }
-                
-                try
-                {
-                    RepositoryFiles.delete(repositoryPath, true);
 
-                    RepositoryPath pomRepositoryPath = repositoryPath.resolveSibling(filename.replace(".jar", ".pom"));
-                    
-                    RepositoryFiles.delete(pomRepositoryPath,true);
-                }
-                catch (IOException ex)
-                {
+                try {
+                    RepositoryFiles.delete(repositoryPath, true);
+                    logger.info("SnapshotRepositoryPath [{}] is removed", repositoryPath.toString());
+                    RepositoryPath pomRepositoryPath = repositoryPath.resolveSibling(filename.replace("." + FilenameUtils.getExtension(filename), ".pom"));
+                    if (Files.exists(pomRepositoryPath)) {
+                        RepositoryFiles.delete(pomRepositoryPath, true);
+                    }
+                } catch (IOException ex) {
                     logger.error(ex.getMessage(), ex);
                 }
             }
@@ -157,74 +181,102 @@ public class MavenSnapshotManager
     /**
      * To get map of removable timestamped snapshots
      *
+     * @param basePath     basePath
      * @param metadata     type Metadata
      * @param numberToKeep type int
-     * @param keepDate     type Date
+     * @param keepPeriod   type int
      * @return type Map<Integer, String>
      */
-    private Map<Integer, String> getRemovableTimestampedSnapshots(Metadata metadata,
-                                                                  int numberToKeep,
-                                                                  Date keepDate)
-    {
+    private List<String> getRemovableTimestampedSnapshots(RepositoryPath basePath, Metadata metadata,
+                                                          int numberToKeep,
+                                                          int keepPeriod) throws IOException {
         /**
          * map of the snapshots in metadata file
          * k - number of the build, v - version of the snapshot
          */
-        Map<Integer, SnapshotVersionDecomposition> snapshots = new HashMap<>();
+        Map<Integer, SnapshotVersionDecomposition> snapshots = Maps.newHashMap();
 
-        /**
-         * map of snapshots for removing
-         * k - number of the build, v - version of the snapshot
-         */
-        Map<Integer, String> mapToRemove = new HashMap<>();
+        List<String> removeVersionList = Lists.newArrayList();
 
-        metadata.getVersioning()
-                .getSnapshotVersions()
-                .forEach(e ->
-                         {
-                             if ("jar".equals(e.getExtension()))
-                             {
-                                 SnapshotVersionDecomposition snapshotVersion = SnapshotVersionDecomposition.of(e.getVersion());
-                                 if (SnapshotVersionDecomposition.INVALID.equals(snapshotVersion))
-                                 {
-                                     logger.warn("Received invalid snapshot version {}", snapshotVersion);
-                                     return;
-                                 }
-                                 snapshots.put(snapshotVersion.getBuildNumber(), snapshotVersion);
-                             }
-                         });
-
-        if (numberToKeep != 0 && snapshots.size() > numberToKeep)
-        {
-            snapshots.forEach((k, v) ->
-                              {
-                                  if (mapToRemove.size() < snapshots.size() - numberToKeep)
-                                  {
-                                      mapToRemove.put(k, v.getVersion());
-                                  }
-                              });
+        String lastVersion = "lastVersion", metadataLastVersion = "metadataLastVersion", version = metadata.getVersion();
+        VersionCollector versionCollector = new VersionCollector();
+        List<SnapshotVersion> snapshotVersions = versionCollector.collectTimestampedSnapshotVersions(basePath);
+        //获取最新的快照版本，maven-metadata.xml中只保存最新的快照版本号
+        String versionPrefix = version.replace(RepositoryPolicyEnum.SNAPSHOT.name(), "");
+        snapshotVersions = snapshotVersions.stream().filter(snapshotVersion -> snapshotVersion.getVersion().startsWith(versionPrefix)).collect(Collectors.toList());
+        if (CollectionUtils.isNotEmpty(snapshotVersions)) {
+            lastVersion = snapshotVersions.get(snapshotVersions.size() - 1).getVersion();
+            metadataLastVersion = String.format("%s%s-%s", versionPrefix, metadata.getVersioning().getSnapshot().getTimestamp(), metadata.getVersioning().getSnapshot().getBuildNumber());
+            logger.info("SnapshotBasePath [{}] lastVersion [{}] currentLastVersion [{}]", basePath.toString(), lastVersion, metadataLastVersion);
         }
-        else if (numberToKeep == 0 && keepDate != null)
-        {
-            snapshots.forEach((k, v) ->
-                              {
-                                  try
-                                  {
-                                      DateFormat formatter = new SimpleDateFormat(TIMESTAMP_FORMAT);
-                                      Date snapshotVersionDate = formatter.parse(v.getTimestamp());
-
-                                      if (keepDate.after(snapshotVersionDate))
-                                      {
-                                          mapToRemove.put(k, v.getVersion());
-                                      }
-                                  }
-                                  catch (ParseException e)
-                                  {
-                                      logger.error(e.getMessage(), e);
-                                  }
-                              });
+        if (!lastVersion.equals(metadataLastVersion)) {
+            return removeVersionList;
         }
 
-        return mapToRemove;
+        Map<String, List<SnapshotVersion>> snapshotVersionMap = snapshotVersions.stream().collect(Collectors.groupingBy(SnapshotVersion::getVersion, LinkedHashMap::new, Collectors.toList()));
+        for (Map.Entry<String, List<SnapshotVersion>> entry : snapshotVersionMap.entrySet()) {
+            SnapshotVersionDecomposition snapshotVersion = SnapshotVersionDecomposition.of(entry.getKey());
+            if (SnapshotVersionDecomposition.INVALID.equals(snapshotVersion)) {
+                logger.warn("SnapshotBasePath [{}] received invalid snapshot version {}", basePath.toString(), snapshotVersion);
+                continue;
+            }
+            snapshots.put(snapshotVersion.getBuildNumber(), snapshotVersion);
+        }
+        if (MapUtils.isEmpty(snapshots)) {
+            return removeVersionList;
+        }
+        logger.info("SnapshotBasePath [{}] snapshots [{}]", basePath.toString(), snapshots);
+        if (numberToKeep != 0 && snapshots.size() > 1 && snapshots.size() > numberToKeep) {
+            snapshots.forEach((k, v) -> {
+                if (removeVersionList.size() < snapshots.size() - numberToKeep) {
+                    logger.info("SnapshotBasePath [{}] removeVersionList add [{}]", basePath.toString(), v.getVersion());
+                    removeVersionList.add(v.getVersion());
+                }
+            });
+        } else if (numberToKeep == 0 && keepPeriod != 0) {
+            snapshots.forEach((k, v) -> {
+                try {
+                    Date snapshotVersionDate = DateUtil.parse(v.getTimestamp(), DatePattern.createFormatter(TIMESTAMP_FORMAT));
+                    Calendar calendar = Calendar.getInstance();
+                    calendar.setTime(snapshotVersionDate);
+                    calendar.add(Calendar.DAY_OF_MONTH, keepPeriod);
+                    Date keepDate = calendar.getTime();
+                    if (DateUtil.date().after(keepDate)) {
+                        logger.info("SnapshotBasePath [{}] removeVersionList add [{}]", basePath.toString(), v.getVersion());
+                        removeVersionList.add(v.getVersion());
+                    }
+                } catch (Exception e) {
+                    logger.error(e.getMessage(), e);
+                }
+            });
+        }
+        return removeVersionList;
+    }
+
+    protected boolean isArtifact(Path path) {
+        try {
+            return Boolean.TRUE.equals(RepositoryFiles.isArtifact((RepositoryPath) path));
+        } catch (IOException e) {
+            logger.error("Failed to read Path attributes for [{}]", path, e);
+            return false;
+        }
+    }
+
+    protected boolean isChecksum(Path path) {
+        try {
+            return Boolean.TRUE.equals(RepositoryFiles.isChecksum((RepositoryPath) path));
+        } catch (IOException e) {
+            logger.error("Failed to read Path attributes for [{}]", path, e);
+            return false;
+        }
+    }
+
+    protected boolean isSameFile(Path path1, Path path2) {
+        try {
+            return Files.isSameFile(path1, path2);
+        } catch (IOException e) {
+            logger.error("Failed to read Path attributes for [{}] [{}] [{}]", path1, path2, e);
+            return false;
+        }
     }
 }

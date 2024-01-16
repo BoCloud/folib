@@ -26,6 +26,8 @@ public interface LayoutProvider<T extends ArtifactCoordinates>
 
     byte[] getContentByFileName(RepositoryPath repositoryPath, Path path, String fileName);
 
+    byte[] getContentByEqualsFileName(RepositoryPath repositoryPath, Path path, String fileName);
+
     Set<String> getDefaultArtifactCoordinateValidators();
 
     String getAlias();

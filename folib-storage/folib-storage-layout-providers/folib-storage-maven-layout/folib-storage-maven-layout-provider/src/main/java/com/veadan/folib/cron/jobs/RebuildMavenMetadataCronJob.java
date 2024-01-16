@@ -80,8 +80,8 @@ public class RebuildMavenMetadataCronJob
     {
         return CronJobDefinition.newBuilder()
                                 .jobClass(RebuildMavenMetadataCronJob.class.getName())
-                                .name("定时重建Maven仓库制品包的Meatadata任务").scope(MAVEN)
-                                .description("该任务用于定时重建Maven仓库制品包的Meatadata任务，需要指定路径。")
+                                .name("定时重建Maven仓库制品包的Metadata任务").scope(MAVEN)
+                                .description("该任务用于定时重建Maven仓库制品包的Metadata任务")
                                 .fields(FIELDS)
                                 .build();
     }

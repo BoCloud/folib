@@ -510,7 +510,7 @@ public class ArtifactUploadTask implements Callable<String> {
             }
             LayoutProvider layoutProvider = layoutProviderRegistry.getProvider(layout);
             if (Objects.nonNull(layoutProvider)) {
-                byte[] packageJsonBytes = layoutProvider.getContentByFileName(repositoryPath, path, NpmLayoutProvider.PACKAGE_JSON);
+                byte[] packageJsonBytes = layoutProvider.getContentByEqualsFileName(repositoryPath, path, NpmLayoutProvider.DEFAULT_PACKAGE_JSON_PATH);
                 String packageJson = new String(packageJsonBytes, StandardCharsets.UTF_8);
                 log.info("npm package.json：{}", packageJson);
                 RuntimeException runtimeException = new RuntimeException("package.json is not found in this file or package.json has an error");

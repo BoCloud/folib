@@ -58,6 +58,16 @@ public enum TarGzArchiveListingFunction
     }
 
     @Override
+    public byte[] getContentByEqualsFileName(RepositoryPath repositoryPath, Path path, String fileName) throws IOException {
+        try (InputStream is = Files.newInputStream(path);
+             BufferedInputStream bis = new BufferedInputStream(is);
+             GzipCompressorInputStream gzi = new GzipCompressorInputStream(bis);
+             ArchiveInputStream ais = new TarArchiveInputStream(gzi)) {
+            return getContentByEqualsFileName(ais, fileName);
+        }
+    }
+
+    @Override
     public boolean supports(final RepositoryPath path) {
         final Path fileName = path.getFileName();
         return fileName != null && (fileName.toString().endsWith("tar.gz") || fileName.toString().endsWith("tgz"));

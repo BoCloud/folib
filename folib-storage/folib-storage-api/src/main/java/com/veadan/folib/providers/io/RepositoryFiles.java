@@ -47,6 +47,8 @@ public abstract class RepositoryFiles {
             flag = true;
         } else if (parentFileName.startsWith(".") && parentFileName.endsWith(".foLibrary-metadata")) {
             flag = true;
+        } else if (parentFileName.endsWith(".artifactory-metadata")) {
+            flag = true;
         }
         return flag;
     }

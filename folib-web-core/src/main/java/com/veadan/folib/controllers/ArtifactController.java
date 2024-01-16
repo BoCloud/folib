@@ -1,6 +1,7 @@
 package com.veadan.folib.controllers;
 
 import com.alibaba.fastjson.JSON;
+import com.google.common.collect.Lists;
 import com.veadan.folib.components.artifact.ArtifactComponent;
 import com.veadan.folib.components.syncartifact.SyncArtifactProvider;
 import com.veadan.folib.components.syncartifact.SyncArtifactProviderRegistry;
@@ -9,7 +10,6 @@ import com.veadan.folib.configuration.ConfigurationManager;
 import com.veadan.folib.configuration.MetadataConfiguration;
 import com.veadan.folib.constant.GlobalConstants;
 import com.veadan.folib.domain.ArtifactStatistics;
-import com.veadan.folib.domain.StatusInfo;
 import com.veadan.folib.domain.thirdparty.ArtifactInfo;
 import com.veadan.folib.domain.thirdparty.ArtifactQuery;
 import com.veadan.folib.forms.artifact.ArtifactMetadataForm;
@@ -20,12 +20,14 @@ import com.veadan.folib.services.ArtifactWebService;
 import com.veadan.folib.storage.Storage;
 import com.veadan.folib.storage.repository.Repository;
 import com.veadan.folib.task.EventTask;
+import com.veadan.folib.users.domain.Privileges;
 import com.veadan.folib.users.userdetails.SpringSecurityUser;
 import com.veadan.folib.validation.RequestBodyValidationException;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -185,12 +187,28 @@ public class ArtifactController extends BaseController {
     @ApiResponses(value = {@ApiResponse(code = 200, message = "OK")})
     @PermissionCheck(resourceKey = "ARTIFACTS_DEPLOY", storageKey = "storageId", repositoryKey = "repositoryId")
     @PostMapping(value = "/store")
-    public ResponseEntity<StatusInfo> store(@RequestParam(name = "storageId") String storageId,
-                                            @RequestParam(name = "repositoryId") String repositoryId,
-                                            @RequestParam(name = "path", required = false) String path,
-                                            @RequestParam(name = "uuid", required = false) String uuid, @RequestParam(name = "file") MultipartFile file) {
+    public ResponseEntity<Object> store(@RequestParam(name = "storageId") String storageId,
+                                        @RequestParam(name = "repositoryId") String repositoryId,
+                                        @RequestParam(name = "path", required = false) String path,
+                                        @RequestParam(name = "uuid", required = false) String uuid, @RequestParam(name = "file") MultipartFile file) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         SpringSecurityUser userDetails = (SpringSecurityUser) authentication.getPrincipal();
+        Storage storage = getStorage(storageId);
+        if (Objects.isNull(storage)) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(GlobalConstants.STORAGE_NOT_FOUND_MESSAGE);
+        }
+        if (Objects.isNull(storage.getRepository(repositoryId))) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(GlobalConstants.REPOSITORY_NOT_FOUND_MESSAGE);
+        }
+        if (!hasAdmin() && needValidatePathPrivileges(storageId, repositoryId)) {
+            if (StringUtils.isBlank(path)) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).body("在此仓库中您的操作受限，请填写目标目录后再上传");
+            } else {
+                if (!validatePathPrivileges(storageId, repositoryId, Lists.newArrayList(path), Privileges.ARTIFACTS_DEPLOY.getAuthority())) {
+                    return ResponseEntity.status(HttpStatus.FORBIDDEN).body("没有权限操作");
+                }
+            }
+        }
         return ResponseEntity.ok(artifactWebService.store(userDetails.getUsername(), storageId, repositoryId, path, uuid, file));
     }
 
