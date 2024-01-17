@@ -1,5 +1,9 @@
 package com.veadan.folib.constant;
 
+import com.google.common.collect.Lists;
+
+import java.util.List;
+
 /**
  * @author leipenghui
  * @date 2022/11/29
@@ -77,7 +81,17 @@ public interface GlobalConstants {
     long WAIT_LOCK_TIME = 30L;
 
     /**
+     * LONG_WAIT_LOCK_TIME
+     */
+    long LONG_WAIT_LOCK_TIME = 120L;
+
+    /**
      * point
      */
     String POINT = ".";
+
+    /**
+     * Docker层级信息目录名称列表
+     */
+    List<String> DOCKER_LAYER_DIR_NAME_LIST = Lists.newArrayList("blobs", "manifest");
 }

@@ -324,7 +324,7 @@ public abstract class AbstractRepositoryProvider implements RepositoryProvider, 
 
         ArtifactTag lastVersionTag = artifactTagService.findOneOrCreate(ArtifactTagEntity.LAST_VERSION);
 
-        ArtifactIdGroup artifactGroup = artifactIdGroupRepository.findArtifactsGroupWithTag(storage.getId(),
+        ArtifactIdGroup artifactGroup = artifactIdGroupRepository.findArtifactGroupWithTag(storage.getId(),
                 repository.getId(),
                 coordinates.getId(),
                 Optional.of(lastVersionTag))

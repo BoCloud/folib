@@ -36,4 +36,8 @@ public interface LayoutProvider<T extends ArtifactCoordinates>
     Set<ArtifactGroup> getArtifactGroups(RepositoryPath path)
             throws IOException;
 
+    default void initData(String storageId, String repositoryId) {
+
+    }
+
 }
