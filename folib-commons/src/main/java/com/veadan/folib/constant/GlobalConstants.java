@@ -91,7 +91,18 @@ public interface GlobalConstants {
     String POINT = ".";
 
     /**
+     * separator
+     */
+    String SEPARATOR = "/";
+
+    /**
      * Docker层级信息目录名称列表
      */
     List<String> DOCKER_LAYER_DIR_NAME_LIST = Lists.newArrayList("blobs", "manifest");
+
+    /**
+     * maven后缀列表
+     */
+    List<String> MAVEN_EXTENSION_LIST = Lists.newArrayList(".jar", ".war", ".ear", ".pom");
+
 }

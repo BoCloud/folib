@@ -17,6 +17,7 @@ import org.apache.maven.artifact.ArtifactUtils;
 import org.apache.maven.artifact.repository.metadata.Metadata;
 import org.apache.maven.artifact.repository.metadata.SnapshotVersion;
 import org.apache.maven.artifact.repository.metadata.Versioning;
+import org.apache.maven.index.artifact.Gav;
 import org.codehaus.plexus.util.xml.pull.XmlPullParserException;
 import org.javatuples.Pair;
 import org.slf4j.Logger;
@@ -139,32 +140,35 @@ public class MavenSnapshotManager {
         if (CollectionUtils.isEmpty(removeVersionList)) {
             return false;
         }
-        List<String> removeFilenameList = Lists.newArrayList();
+        List<Metadata> removeMetadataList = Lists.newArrayList();
+        Metadata removeMetadata = null;
         for (String removeVersion : removeVersionList) {
-            for (String extension : EXTENSION_LIST) {
-                removeFilenameList.add(metadata.getArtifactId()
-                        .concat("-")
-                        .concat(removeVersion)
-                        .concat(extension));
-            }
+            removeMetadata = new Metadata();
+            removeMetadata.setArtifactId(metadata.getArtifactId());
+            removeMetadata.setVersion(removeVersion);
+            removeMetadataList.add(removeMetadata);
         }
         try (final DirectoryStream<Path> directoryStream = Files.newDirectoryStream(basePath)) {
             for (Path path : directoryStream) {
                 if (!Files.isRegularFile(path)) {
                     continue;
                 }
-
                 RepositoryPath repositoryPath = (RepositoryPath) path;
-                final String filename = path.getFileName().toString();
-
-                if (!removeFilenameList.contains(filename) ||
-                        !RepositoryFiles.isArtifact(repositoryPath) ||
+                if (!RepositoryFiles.isArtifact(repositoryPath) ||
                         RepositoryFiles.isMetadata(repositoryPath)) {
+                    continue;
+                }
+                Gav gav = MavenArtifactUtils.convertPathToGav(repositoryPath);
+                if (Objects.isNull(gav)) {
+                    continue;
+                }
+                if (removeMetadataList.stream().noneMatch(item -> item.getArtifactId().equals(gav.getArtifactId()) && item.getVersion().equals(gav.getVersion()))) {
                     continue;
                 }
 
                 try {
                     RepositoryFiles.delete(repositoryPath, true);
+                    String filename = repositoryPath.getFileName().toString();
                     logger.info("SnapshotRepositoryPath [{}] is removed", repositoryPath.toString());
                     RepositoryPath pomRepositoryPath = repositoryPath.resolveSibling(filename.replace("." + FilenameUtils.getExtension(filename), ".pom"));
                     if (Files.exists(pomRepositoryPath)) {

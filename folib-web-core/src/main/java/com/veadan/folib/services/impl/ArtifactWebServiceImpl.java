@@ -17,6 +17,7 @@ import com.fasterxml.jackson.dataformat.xml.XmlMapper;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.sun.management.HotSpotDiagnosticMXBean;
+import com.veadan.folib.artifact.MavenArtifactUtils;
 import com.veadan.folib.artifact.coordinates.DockerArtifactCoordinates;
 import com.veadan.folib.artifact.coordinates.MavenArtifactCoordinates;
 import com.veadan.folib.authorization.dto.Role;
@@ -75,6 +76,8 @@ import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
+import org.apache.maven.artifact.ArtifactUtils;
+import org.apache.maven.index.artifact.Gav;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -966,6 +969,77 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
         } catch (Exception ex) {
             log.error(ExceptionUtils.getStackTrace(ex));
             throw new RuntimeException(ex.getMessage());
+        }
+    }
+
+    @Override
+    public void cleanSnapshot(String storageId, String repositoryId, String artifactPath) {
+        RepositoryPath rootRepositoryPath = repositoryPathResolver.resolve(storageId, repositoryId);
+        if (StringUtils.isNotBlank(artifactPath)) {
+            rootRepositoryPath = rootRepositoryPath.resolve(artifactPath);
+        }
+        try {
+            List<RepositoryPath> removeRepositoryPathList = Lists.newArrayList();
+            Files.walkFileTree(rootRepositoryPath, new SimpleFileVisitor<Path>() {
+                @Override
+                public FileVisitResult visitFile(Path file,
+                                                 BasicFileAttributes attrs)
+                        throws IOException {
+                    RepositoryPath repositoryPath, artifactRepositoryPath;
+                    Gav gav;
+                    boolean deleteFlag;
+                    repositoryPath = (RepositoryPath) file;
+                    if (!RepositoryFiles.isArtifact(repositoryPath) ||
+                            RepositoryFiles.isMetadata(repositoryPath)) {
+                        return FileVisitResult.CONTINUE;
+                    }
+                    gav = MavenArtifactUtils.convertPathToGav(repositoryPath);
+                    if (Objects.isNull(gav)) {
+                        return FileVisitResult.CONTINUE;
+                    }
+                    if (StringUtils.isBlank(gav.getVersion()) || !ArtifactUtils.isSnapshot(gav.getVersion())) {
+                        return FileVisitResult.CONTINUE;
+                    }
+                    if (StringUtils.isNotBlank(gav.getClassifier()) && gav.getClassifier().contains("jdk")) {
+                        return FileVisitResult.CONTINUE;
+                    }
+                    deleteFlag = true;
+                    for (String extension : GlobalConstants.MAVEN_EXTENSION_LIST) {
+                        artifactRepositoryPath = repositoryPath.resolveSibling(gav.getArtifactId()
+                                .concat("-")
+                                .concat(gav.getVersion())
+                                .concat(extension));
+
+                        if (Files.exists(artifactRepositoryPath)) {
+                            deleteFlag = false;
+                            break;
+                        }
+                    }
+                    if (deleteFlag) {
+                        removeRepositoryPathList.add(repositoryPath);
+                    }
+                    return FileVisitResult.CONTINUE;
+                }
+
+                @Override
+                public FileVisitResult postVisitDirectory(Path dir,
+                                                          IOException exc)
+                        throws IOException {
+                    return FileVisitResult.CONTINUE;
+                }
+            });
+            if (CollectionUtils.isNotEmpty(removeRepositoryPathList)) {
+                removeRepositoryPathList.forEach(repositoryPath -> {
+                    try {
+                        RepositoryFiles.delete(repositoryPath, true);
+                        log.info("Snapshot repositoryPath [{}] is removed", repositoryPath.toString());
+                    } catch (Exception ex) {
+                        log.warn(ExceptionUtils.getStackTrace(ex));
+                    }
+                });
+            }
+        } catch (Exception ex) {
+            log.error(ExceptionUtils.getStackTrace(ex));
         }
     }
 
