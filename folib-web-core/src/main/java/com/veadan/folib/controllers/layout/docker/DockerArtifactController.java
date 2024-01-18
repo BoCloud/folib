@@ -16,6 +16,7 @@ import com.veadan.folib.domain.*;
 import com.veadan.folib.entity.Dict;
 import com.veadan.folib.enums.DictTypeEnum;
 import com.veadan.folib.enums.RepositoryScopeEnum;
+import com.veadan.folib.providers.io.RepositoryFiles;
 import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.providers.layout.DockerLayoutProvider;
 import com.veadan.folib.repositories.ArtifactRepository;
@@ -917,8 +918,8 @@ public class DockerArtifactController extends BaseArtifactController {
             if (CollectionUtils.isNotEmpty(resultList)) {
                 last = resultList.get(resultList.size() - 1);
                 if (Objects.nonNull(n) && n > 0 & endIndex <= size - 1) {
-                    link = "</v2/{0}/tags/list?last={1}&n={2}>; rel=\"next\"";
-                    link = MessageFormat.format(link, name, last, n);
+                    link = "</v2/%s/tags/list?last=%s&n=%s>; rel=\"next\"";
+                    link = String.format(link, String.format("%s/%s/%s", storageId, repositoryId, name), last, n);
                 }
             }
             logger.info("Listing Image Tags [storageId:{}, repositoryId:{}, name:{}, startIndex:{}, endIndex:{}, link:{}]", storageId, repositoryId, name, startIndex, endIndex, link);
@@ -1024,11 +1025,11 @@ public class DockerArtifactController extends BaseArtifactController {
                 if (CollectionUtils.isNotEmpty(resultList)) {
                     last = resultList.get(resultList.size() - 1);
                     if (Objects.nonNull(n) && n > 0 & endIndex <= size - 1) {
-                        link = "</v2/_catalog?last={0}&n={1}>; rel=\"next\"";
-                        link = MessageFormat.format(link, last, n);
+                        link = "</v2/_catalog?last=%s&n=%s>; rel=\"next\"";
+                        link = String.format(link, last, n);
 
-                        next = "/v2/_catalog?last={0}&n={1}";
-                        next = MessageFormat.format(next, last, n);
+                        next = "/v2/_catalog?last=%s&n=%s";
+                        next = String.format(next, last, n);
                     }
                 }
                 logger.info("GET Catalog [n:{}, last:{} startIndex:{}, endIndex:{}, link:{}]", n, last, startIndex, endIndex, link);
@@ -1201,7 +1202,7 @@ public class DockerArtifactController extends BaseArtifactController {
         Map<String, Object> result = new HashMap<>(1);
         Map<String, Object> resultData = new HashMap<>(1);
         resultData.put("code", "UNAUTHORIZED");
-        resultData.put("message", MessageFormat.format("access to the requested storage {0} repository {1} is forbidden", storageId, repositoryId));
+        resultData.put("message", String.format("access to the requested storage %s repository %s is forbidden", storageId, repositoryId));
         resultData.put("detail", null);
         List<Map> list = new ArrayList<>();
         list.add(resultData);
@@ -1225,10 +1226,10 @@ public class DockerArtifactController extends BaseArtifactController {
         String originalProtocol = request.getHeader("X-Forwarded-Proto"), https = "https";
         if (https.equals(originalProtocol)) {
             // 使用HTTPS协议
-            response.setHeader("WWW-Authenticate", MessageFormat.format("Bearer realm=\"{0}token\",service=\"{1}\"", "https://" + request.getServerName() + "/v2/", request.getServerName()));
+            response.setHeader("WWW-Authenticate", String.format("Bearer realm=\"%stoken\",service=\"%s\"", "https://" + request.getServerName() + "/v2/", request.getServerName()));
         } else {
             // 使用HTTP协议
-            response.setHeader("WWW-Authenticate", MessageFormat.format("Bearer realm=\"{0}token\",service=\"{1}\"", "http://" + request.getServerName() + ":" + request.getServerPort() + "/v2/", request.getServerName() + ":" + request.getServerPort()));
+            response.setHeader("WWW-Authenticate", String.format("Bearer realm=\"%stoken\",service=\"%s\"", "http://" + request.getServerName() + ":" + request.getServerPort() + "/v2/", request.getServerName() + ":" + request.getServerPort()));
         }
     }
 
