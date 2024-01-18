@@ -1,13 +1,11 @@
 package com.veadan.folib.converters.configuration;
 
-import com.veadan.folib.forms.configuration.CustomRepositoryConfigurationFormVisitor;
-import com.veadan.folib.forms.configuration.MavenRepositoryConfigurationForm;
-import com.veadan.folib.forms.configuration.NugetRepositoryConfigurationForm;
-import com.veadan.folib.forms.configuration.RawRepositoryConfigurationForm;
-import com.veadan.folib.yaml.repository.CustomRepositoryConfigurationDto;
+import com.veadan.folib.forms.configuration.*;
+import com.veadan.folib.yaml.configuration.repository.GoRepositoryConfigurationDto;
 import com.veadan.folib.yaml.configuration.repository.MavenRepositoryConfigurationDto;
 import com.veadan.folib.yaml.configuration.repository.NugetRepositoryConfigurationDto;
 import com.veadan.folib.yaml.configuration.repository.RawRepositoryConfigurationDto;
+import com.veadan.folib.yaml.repository.CustomRepositoryConfigurationDto;
 
 /**
  * @author veadan
@@ -30,6 +28,11 @@ public enum CustomRepositoryConfigurationFormConverter
     public RawRepositoryConfigurationDto visit(RawRepositoryConfigurationForm form)
     {
         return RawRepositoryConfigurationConverter.INSTANCE.convert(form);
+    }
+
+    public GoRepositoryConfigurationDto visit(GoRepositoryConfigurationForm form)
+    {
+        return GoRepositoryConfigurationConverter.INSTANCE.convert(form);
     }
 
 }

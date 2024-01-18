@@ -5,6 +5,8 @@ import com.veadan.folib.artifact.coordinates.versioning.SemanticVersion;
 import com.veadan.folib.db.schema.Vertices;
 import com.veadan.folib.domain.LayoutArtifactCoordinatesEntity;
 import org.neo4j.ogm.annotation.NodeEntity;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.util.Assert;
 
 import javax.xml.bind.annotation.XmlAccessType;
@@ -26,6 +28,8 @@ public class GoArtifactCoordinates extends LayoutArtifactCoordinatesEntity<GoArt
     public static final String LAYOUT_NAME = "go";
 
     public static final String LAYOUT_ALIAS = LAYOUT_NAME;
+    private static final Logger logger = LoggerFactory.getLogger(GoArtifactCoordinates.class);
+
 
     private static final String NAME = "name";
     public static final String VERSION = "version";
@@ -108,4 +112,5 @@ public class GoArtifactCoordinates extends LayoutArtifactCoordinatesEntity<GoArt
     public String convertToPath(GoArtifactCoordinates artifactCoordinates) {
         return String.format("%s/@v/%s.%s", artifactCoordinates.getName(), artifactCoordinates.getVersion(), artifactCoordinates.getExtension());
     }
+
 }

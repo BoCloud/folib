@@ -13,6 +13,7 @@ import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -33,10 +34,21 @@ import javax.servlet.http.HttpServletResponse;
 @Api(description = "go坐标控制器",tags = "go坐标控制器")
 public class GoArtifactController extends BaseArtifactController {
 
+//
+//    @ApiOperation(value = "Used to retrieve an sumdb(not support)")
+//    @ApiResponses(value = {@ApiResponse(code = 200, message = ""),
+//    @ApiResponse(code = 400, message = "An error occurred.")})
+//    @PreAuthorize("hasAuthority('ARTIFACTS_RESOLVE')")
+    @GetMapping(value = {"sumdb/{url:.+}"})
+    public  ResponseEntity<Object> sumdb(@PathVariable String url)
+            throws Exception {
+        //校验和数据库服务 暂不支持
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body("not support sumdb");
+    }
 
     @ApiOperation(value = "Used to retrieve an artifact")
     @ApiResponses(value = {@ApiResponse(code = 200, message = ""),
-            @ApiResponse(code = 400, message = "An error occurred.")})
+    @ApiResponse(code = 400, message = "An error occurred.")})
     @PreAuthorize("hasAuthority('ARTIFACTS_RESOLVE')")
     @GetMapping(value = {"{storageId}/{repositoryId}/{artifactPath:.+}"})
     public ResponseEntity<Object> download(@RepositoryMapping Repository repository,

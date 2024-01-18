@@ -1,3 +1,4 @@
 com.veadan.folib.forms.configuration.MavenRepositoryConfigurationForm
 com.veadan.folib.forms.configuration.NugetRepositoryConfigurationForm
 com.veadan.folib.forms.configuration.RawRepositoryConfigurationForm
+com.veadan.folib.forms.configuration.GoRepositoryConfigurationForm

@@ -1,5 +1,40 @@
 package com.veadan.folib.services;
 
+import com.veadan.folib.artifact.coordinates.ArtifactCoordinates;
+import com.veadan.folib.configuration.Configuration;
+import com.veadan.folib.configuration.ConfigurationManager;
+import com.veadan.folib.domain.Artifact;
+import com.veadan.folib.event.artifact.ArtifactEventListenerRegistry;
+import com.veadan.folib.io.LayoutInputStream;
+import com.veadan.folib.io.LayoutOutputStream;
+import com.veadan.folib.io.StreamUtils;
+import com.veadan.folib.providers.ProviderImplementationException;
+import com.veadan.folib.providers.io.RepositoryFiles;
+import com.veadan.folib.providers.io.RepositoryPath;
+import com.veadan.folib.providers.io.RepositoryPathResolver;
+import com.veadan.folib.providers.io.RepositoryStreamSupport;
+import com.veadan.folib.providers.layout.LayoutFileSystemProvider;
+import com.veadan.folib.providers.layout.LayoutProviderRegistry;
+import com.veadan.folib.repositories.ArtifactRepository;
+import com.veadan.folib.storage.ArtifactStorageException;
+import com.veadan.folib.storage.Storage;
+import com.veadan.folib.storage.checksum.ArtifactChecksum;
+import com.veadan.folib.storage.checksum.ChecksumCacheManager;
+import com.veadan.folib.storage.repository.Repository;
+import com.veadan.folib.storage.validation.ArtifactCoordinatesValidator;
+import com.veadan.folib.storage.validation.artifact.ArtifactCoordinatesValidationException;
+import com.veadan.folib.storage.validation.artifact.ArtifactCoordinatesValidatorRegistry;
+import com.veadan.folib.storage.validation.artifact.version.VersionValidationException;
+import com.veadan.folib.storage.validation.deployment.RedeploymentValidator;
+import com.veadan.folib.storage.validation.resource.ArtifactOperationsValidator;
+import org.apache.commons.io.IOUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.FileSystemUtils;
+
+import javax.inject.Inject;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -13,42 +48,6 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
-
-import javax.inject.Inject;
-
-import com.veadan.folib.configuration.ConfigurationManager;
-import com.veadan.folib.io.LayoutInputStream;
-import com.veadan.folib.providers.io.RepositoryFiles;
-import com.veadan.folib.providers.io.RepositoryPath;
-import com.veadan.folib.providers.io.RepositoryPathResolver;
-import com.veadan.folib.providers.io.RepositoryStreamSupport;
-import com.veadan.folib.providers.layout.LayoutFileSystemProvider;
-import com.veadan.folib.providers.layout.LayoutProviderRegistry;
-import com.veadan.folib.storage.validation.deployment.RedeploymentValidator;
-import org.apache.commons.io.IOUtils;
-import com.veadan.folib.artifact.coordinates.ArtifactCoordinates;
-import com.veadan.folib.configuration.Configuration;
-import com.veadan.folib.domain.Artifact;
-import com.veadan.folib.event.artifact.ArtifactEventListenerRegistry;
-import com.veadan.folib.io.LayoutOutputStream;
-import com.veadan.folib.io.StreamUtils;
-import com.veadan.folib.providers.ProviderImplementationException;
-import com.veadan.folib.repositories.ArtifactRepository;
-import com.veadan.folib.storage.ArtifactStorageException;
-import com.veadan.folib.storage.Storage;
-import com.veadan.folib.storage.checksum.ArtifactChecksum;
-import com.veadan.folib.storage.checksum.ChecksumCacheManager;
-import com.veadan.folib.storage.repository.Repository;
-import com.veadan.folib.storage.validation.ArtifactCoordinatesValidator;
-import com.veadan.folib.storage.validation.artifact.ArtifactCoordinatesValidationException;
-import com.veadan.folib.storage.validation.artifact.ArtifactCoordinatesValidatorRegistry;
-import com.veadan.folib.storage.validation.artifact.version.VersionValidationException;
-import com.veadan.folib.storage.validation.resource.ArtifactOperationsValidator;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.stereotype.Component;
-import org.springframework.transaction.annotation.Transactional;
-import org.springframework.util.FileSystemUtils;
 
 /**
  * @author mtodorov

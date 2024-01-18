@@ -207,6 +207,7 @@ export default {
     'TotalNumberOfPackets': '包总数',
     'NumberOfQuestions': '问题包数',
     'SecurityScore': '安全评分',
+    'GitRepositoryAddr': 'git仓库地址',
 
 
 
