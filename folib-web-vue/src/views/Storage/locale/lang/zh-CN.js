@@ -208,7 +208,8 @@ export default {
     'NumberOfQuestions': '问题包数',
     'SecurityScore': '安全评分',
     'GitRepositoryAddr': 'git仓库地址',
-
+    'GitProvider': 'Git Provider',
+    'CreateGitCredential': '创建git凭据',
 
 
 }
