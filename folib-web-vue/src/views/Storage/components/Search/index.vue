@@ -168,21 +168,21 @@
         <hr class="my-25" />
 
         <a-col :span="24" v-if="
-          searchDataCurrentSelect &&
-          searchDataCurrentSelect.snippets &&
-          searchDataCurrentSelect.snippets.length > 0
+          searchDataCurrentSelectItem &&
+          searchDataCurrentSelectItem.snippets &&
+          searchDataCurrentSelectItem.snippets.length > 0
         ">
           <a-card :bordered="false" class="card-billing-info">
             <div class="col-info">
               <a-descriptions :title="'使用示例(' + codeParam.type + ')'" :column="1">
-                <a-descriptions-item v-if="searchDataCurrentSelect">
-                  <prism-editor class="my-editor height-300" v-if="searchDataCurrentSelect" v-model="codeParam.code"
+                <a-descriptions-item v-if="searchDataCurrentSelectItem">
+                  <prism-editor class="my-editor height-300" v-if="searchDataCurrentSelectItem" v-model="codeParam.code"
                     :highlight="highlighterHandle" :line-numbers="false" :readonly="true"></prism-editor>
                 </a-descriptions-item>
               </a-descriptions>
             </div>
             <div class="col-action">
-              <a-button v-for="(item, index) in this.searchDataCurrentSelect.snippets" :key="index" type="link"
+              <a-button v-for="(item, index) in this.searchDataCurrentSelectItem.snippets" :key="index" type="link"
                 size="small" @click="changeCodeTye(item)">
                 <a-avatar :size="20" shape="square" :src="'images/folib/' + getCodeImg(item) + '.svg'" />
               </a-button>
@@ -193,17 +193,43 @@
     </a-drawer>
 
     <!-- 搜索预览 -->
-    <a-drawer placement="right" width="45%" v-if="searchDataCurrentSelect" :title="searchDataCurrentSelect.artifactPath"
+    <a-drawer placement="right" width="45%" v-if="searchDataCurrentSelectItem" :title="searchDataCurrentSelectItem.artifactPath"
       :visible="searchViewCodeVisible" @close="closeSearchviewCodeDialog">
       <div class="mx-auto m-50" style="max-width: 1000px">
         <div class="mb-50">
           <a-card :bordered="false" class="header-solid">
-            <a-directory-tree v-if="searchDataCurrentSelect && searchDataCurrentSelect.treeNode"
-              :replaceFields="{ title: 'name', children: 'children' }" :tree-data="searchDataCurrentSelect.treeNode" />
+            <a-directory-tree v-if="searchDataCurrentSelectItem && searchDataCurrentSelectItem.listTree"
+              :replaceFields="{ title: 'name', children: 'children' }" :tree-data="searchDataCurrentSelectItem.listTree" />
           </a-card>
-          <prism-editor class="my-editor height-300" v-if="searchDataCurrentSelect && searchViewCodes"
+          <prism-editor class="my-editor height-300" v-if="folibRepository.layout !== 'Docker' && searchDataCurrentSelectItem && searchViewCodes"
             v-model="searchViewCodes" :highlight="highlighterHandle" :line-numbers="false" :readonly="true">
           </prism-editor>
+
+          <a-tabs v-if="searchDataCurrentSelectItem &&
+            searchDataCurrentSelectItem.manifestConfig &&
+            folibRepository.layout === 'Docker'
+            " class="tabs-sliding" default-active-key="1">
+            <a-tab-pane key="1" tab="Layers">
+              <a-timeline>
+                <a-timeline-item color="primary" v-for="(key, index) in searchDataCurrentSelectItem.manifestConfig.config" :key="index">
+                  {{ index }}
+                  <p>
+                    {{ searchDataCurrentSelectItem.manifestConfig.config[index] }}
+                  </p>
+                </a-timeline-item>
+              </a-timeline>
+            </a-tab-pane>
+            <a-tab-pane key="2" tab="制作历史">
+              <a-timeline>
+                <a-timeline-item color="primary" v-for="(key, index) in searchDataCurrentSelectItem.manifestConfig.history" :key="index">
+                  {{ formateDate(key.created) }}
+                  <p>
+                    {{ key.created_by }}
+                  </p>
+                </a-timeline-item>
+              </a-timeline>
+            </a-tab-pane>
+          </a-tabs>
         </div>
       </div>
     </a-drawer>
@@ -227,6 +253,7 @@ import {
 import {
   fql,
   getArtifact,
+  previewArtifact,
   viewArtifactFile,
 } from "@/api/folib"
 import { hasRole, isAdmin, hasPermission, isLogin } from "@/utils/permission"
@@ -289,6 +316,7 @@ export default {
         medium: 0,
         low: 0,
       },
+      searchDataCurrentSelectItem: {},
       artifactVisible: false,
       reportVisible: false,
     }
@@ -340,7 +368,8 @@ export default {
         this.codeParam = {
           type: item.name === "Maven 2" ? "maven" : item.name.toLowerCase(),
           code: item.code,
-        };
+        }
+        this.$forceUpdate()
       }
     },
     getCodeImg(item) {
@@ -348,12 +377,7 @@ export default {
     },
     searchDataHandle(item) {
       this.searchDataCurrentSelect = item
-      if (
-        this.searchDataCurrentSelect &&
-        this.searchDataCurrentSelect.snippets
-      ) {
-        this.changeCodeTye(this.searchDataCurrentSelect.snippets[0])
-      }
+      this.searchDataCurrentSelectItem = {}
       this.scanReport = {
         show: false,
         report: [],
@@ -370,6 +394,13 @@ export default {
         item.artifactPath
       ).then((res) => {
         let artifact = res.artifact
+        this.searchDataCurrentSelectItem = res
+        if (
+          this.searchDataCurrentSelectItem &&
+          this.searchDataCurrentSelectItem.snippets
+        ) {
+          this.changeCodeTye(this.searchDataCurrentSelectItem.snippets[0])
+        }
         if (isLogin() && artifact && artifact.safeLevel === "scanComplete") {
           this.scanReport.show = true
           this.scanReport.vulnerabilitesCount = artifact.vulnerabilitiesCount
@@ -443,22 +474,58 @@ export default {
       this.search(this.artifactQuery.artifactName, null, 1)
     },
     searchViewCodeHandle() {
-      if (
-        this.searchDataCurrentSelect &&
-        !this.searchDataCurrentSelect.treeNode
-      ) {
-        viewArtifactFile(this.searchDataCurrentSelect.url).then((res) => {
-          if ("string" === typeof res && res.startsWith("PK")) {
-            this.searchViewCodes = undefined;
-          } else if ("object" === typeof res) {
-            this.searchViewCodes = JSON.stringify(res)
+      if (this.searchDataCurrentSelectItem && !this.searchDataCurrentSelectItem.listTree)
+        { 
+          if (this.searchDataCurrentSelectItem.artifact) {
+            previewArtifact(this.searchDataCurrentSelect.storageId, this.searchDataCurrentSelect.repositoryId,this.searchDataCurrentSelect.artifactPath).then(res => {
+              if (res && res.length > 0) {
+                this.searchDataCurrentSelectItem.listTree = res
+                this.$forceUpdate()
+              } else {
+                let len = this.searchDataCurrentSelectItem.artifact.sizeInBytes
+                if (len && len > 1048576) {
+                  this.searchViewCodes = '该制品无法预览'
+                } else{
+                  this.viewArtifactFile()
+                }
+              }
+            })
           } else {
-            this.searchViewCodes = res
+            this.viewArtifactFile()
           }
-        });
       }
       this.searchViewCodeVisible = true
     },
+    viewArtifactFile () {
+    viewArtifactFile(this.searchDataCurrentSelect.url).then(res => {
+      if ('string' === typeof res && res.startsWith('PK'))
+      {
+        this.searchViewCodes = undefined
+      } else if ('object' === typeof res)
+      {
+        if (res.data)
+        {
+          if ('string' === typeof res.data)
+          {
+            if (res.data.startsWith('PK')) {
+              this.searchViewCodes = '该制品无法预览'
+            } else {
+              this.searchViewCodes = res.data
+            }
+          } else
+          {
+            this.searchViewCodes = JSON.stringify(res.data)
+          }
+        } else
+        {
+          this.searchViewCodes = JSON.stringify(res)
+        }
+      } else
+      {
+        this.searchViewCodes = res
+      }
+    })
+  },
     closeSearchviewCodeDialog() {
       this.searchViewCodeVisible = false
       this.searchViewCodes = null
@@ -468,6 +535,30 @@ export default {
     },
     goBack() {
       this.reload()
+    },
+    formateDate(time) {
+      if (time) {
+        var date = new Date(time);
+        var Y = date.getFullYear() + "-";
+        var M =
+          (date.getMonth() + 1 < 10
+            ? "0" + (date.getMonth() + 1)
+            : date.getMonth() + 1) + "-";
+        var D =
+          (date.getDate() < 10 ? "0" + date.getDate() : date.getDate()) + " ";
+        var h =
+          (date.getHours() < 10 ? "0" + date.getHours() : date.getHours()) +
+          ":";
+        var m =
+          (date.getMinutes() < 10
+            ? "0" + date.getMinutes()
+            : date.getMinutes()) + ":";
+        var s =
+          (date.getSeconds() < 10
+            ? "0" + date.getSeconds()
+            : date.getSeconds()) + "";
+        return Y + M + D + h + m + s;
+      }
     },
   }
 }

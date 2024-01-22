@@ -143,8 +143,6 @@ public class FqlSearchService extends GremlinVertexRepository<Artifact> implemen
         for (Artifact artifact : artifactEntityList) {
             SearchResult r = new SearchResult();
             result.getResults().add(r);
-
-            r.setMetadata(artifact.getMetadata());
             r.setStorageId(artifact.getStorageId());
             r.setRepositoryId(artifact.getRepositoryId());
             r.setArtifactCoordinates(artifact.getArtifactCoordinates());
@@ -196,18 +194,6 @@ public class FqlSearchService extends GremlinVertexRepository<Artifact> implemen
             } else {
                 r.setArtifactName(path.substring(path.lastIndexOf("/") + 1));
                 r.setArtifactPath(path);
-            }
-            if (Objects.nonNull(repository)) {
-                List<CodeSnippet> snippets = snippetGenerator.generateSnippets(repository.getLayout(),
-                        artifact.getArtifactCoordinates());
-                r.setSnippets(snippets);
-            }
-
-            TreeUtil treeUtil = new TreeUtil();
-            Set<String> fileNames = artifact.getArtifactArchiveListing().getFilenames();
-            if (fileNames != null && fileNames.size() > 0) {
-                List listTree = treeUtil.toTree(fileNames);
-                r.setTreeNode(listTree);
             }
         }
         return result;
