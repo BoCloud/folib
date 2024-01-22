@@ -2,15 +2,14 @@ package com.veadan.folib.storage.metadata;
 
 import cn.hutool.core.date.DatePattern;
 import cn.hutool.core.date.DateUtil;
+import com.alibaba.fastjson.JSONObject;
 import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
 import com.veadan.folib.artifact.MavenArtifactUtils;
 import com.veadan.folib.providers.io.RepositoryFiles;
 import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.storage.repository.Repository;
 import com.veadan.folib.storage.repository.RepositoryPolicyEnum;
 import org.apache.commons.collections4.CollectionUtils;
-import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.maven.artifact.ArtifactUtils;
@@ -29,7 +28,10 @@ import java.io.IOException;
 import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.*;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -183,22 +185,18 @@ public class MavenSnapshotManager {
     }
 
     /**
-     * To get map of removable timestamped snapshots
+     * To get list of removable timestamped snapshots
      *
      * @param basePath     basePath
      * @param metadata     type Metadata
      * @param numberToKeep type int
      * @param keepPeriod   type int
-     * @return type Map<Integer, String>
+     * @return type List<String>
      */
     private List<String> getRemovableTimestampedSnapshots(RepositoryPath basePath, Metadata metadata,
                                                           int numberToKeep,
                                                           int keepPeriod) throws IOException {
-        /**
-         * map of the snapshots in metadata file
-         * k - number of the build, v - version of the snapshot
-         */
-        Map<Integer, SnapshotVersionDecomposition> snapshots = Maps.newHashMap();
+        List<SnapshotVersionDecomposition> snapshots = Lists.newArrayList();
 
         List<String> removeVersionList = Lists.newArrayList();
 
@@ -217,28 +215,29 @@ public class MavenSnapshotManager {
             return removeVersionList;
         }
 
-        Map<String, List<SnapshotVersion>> snapshotVersionMap = snapshotVersions.stream().collect(Collectors.groupingBy(SnapshotVersion::getVersion, LinkedHashMap::new, Collectors.toList()));
-        for (Map.Entry<String, List<SnapshotVersion>> entry : snapshotVersionMap.entrySet()) {
-            SnapshotVersionDecomposition snapshotVersion = SnapshotVersionDecomposition.of(entry.getKey());
-            if (SnapshotVersionDecomposition.INVALID.equals(snapshotVersion)) {
-                logger.warn("SnapshotBasePath [{}] received invalid snapshot version {}", basePath.toString(), snapshotVersion);
+        for (SnapshotVersion snapshotVersion : snapshotVersions) {
+            SnapshotVersionDecomposition snapshotVersionDecomposition = SnapshotVersionDecomposition.of(snapshotVersion.getVersion());
+            if (SnapshotVersionDecomposition.INVALID.equals(snapshotVersionDecomposition)) {
+                logger.warn("SnapshotBasePath [{}] received invalid snapshot version {}", basePath.toString(), snapshotVersionDecomposition);
                 continue;
             }
-            snapshots.put(snapshotVersion.getBuildNumber(), snapshotVersion);
+            if (!snapshots.contains(snapshotVersionDecomposition)) {
+                snapshots.add(snapshotVersionDecomposition);
+            }
         }
-        if (MapUtils.isEmpty(snapshots)) {
+        if (CollectionUtils.isEmpty(snapshots)) {
             return removeVersionList;
         }
-        logger.info("SnapshotBasePath [{}] snapshots [{}]", basePath.toString(), snapshots);
+        logger.info("SnapshotBasePath [{}] snapshots [{}]", basePath.toString(), JSONObject.toJSONString(snapshots));
         if (numberToKeep != 0 && snapshots.size() > 1 && snapshots.size() > numberToKeep) {
-            snapshots.forEach((k, v) -> {
+            snapshots.forEach(v -> {
                 if (removeVersionList.size() < snapshots.size() - numberToKeep) {
                     logger.info("SnapshotBasePath [{}] removeVersionList add [{}]", basePath.toString(), v.getVersion());
                     removeVersionList.add(v.getVersion());
                 }
             });
         } else if (numberToKeep == 0 && keepPeriod != 0) {
-            snapshots.forEach((k, v) -> {
+            snapshots.forEach(v -> {
                 try {
                     Date snapshotVersionDate = DateUtil.parse(v.getTimestamp(), DatePattern.createFormatter(TIMESTAMP_FORMAT));
                     Calendar calendar = Calendar.getInstance();
@@ -254,6 +253,7 @@ public class MavenSnapshotManager {
                 }
             });
         }
+        logger.info("SnapshotBasePath [{}] removeVersionList [{}]", basePath.toString(), JSONObject.toJSONString(removeVersionList));
         return removeVersionList;
     }
 

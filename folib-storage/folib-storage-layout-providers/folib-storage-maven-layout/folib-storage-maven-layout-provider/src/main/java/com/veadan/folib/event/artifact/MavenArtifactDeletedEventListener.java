@@ -1,15 +1,14 @@
 package com.veadan.folib.event.artifact;
 
 import com.veadan.folib.event.AsyncEventListener;
+import com.veadan.folib.providers.io.RepositoryFiles;
 import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.providers.io.RepositoryPathResolver;
 import com.veadan.folib.providers.layout.Maven2LayoutProvider;
 import com.veadan.folib.storage.repository.Repository;
-import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Component;
 
 import javax.inject.Inject;
-import java.io.File;
 import java.lang.reflect.UndeclaredThrowableException;
 import java.nio.file.Files;
 
@@ -34,18 +33,13 @@ public class MavenArtifactDeletedEventListener
         if (event.getType() != ArtifactEventTypeEnum.EVENT_ARTIFACT_PATH_DELETED.getType()) {
             return;
         }
-
         try {
-            mavenMetadataGroupRepositoryComponent.cleanupGroupsContaining(event.getPath());
+            RepositoryPath repositoryPath = event.getPath();
+            mavenMetadataGroupRepositoryComponent.cleanupGroupsContaining(repositoryPath);
             String storageId = repository.getStorage().getId();
             String repositoryId = repository.getId();
-            String path = event.getPath().toUri().getPath();
-            String format = "%s/%s/";
-            if (path.startsWith(File.separator)) {
-                format = "/%s/%s/";
-            }
-            String artifactPath = path.replace(String.format(format, storageId, repositoryId), "");
-            RepositoryPath repositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, artifactPath);
+
+            String artifactPath = RepositoryFiles.relativizePath(repositoryPath);
             if (Files.exists(repositoryPath.getParent()) && Files.isSameFile(repositoryPath.getRoot(), repositoryPath.getParent())) {
                 return;
             }
