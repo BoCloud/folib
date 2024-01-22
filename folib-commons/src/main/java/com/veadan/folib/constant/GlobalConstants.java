@@ -46,4 +46,9 @@ public interface GlobalConstants {
      */
     long WAIT_LOCK_TIME = 30L;
 
+    /**
+     * separator
+     */
+    String SEPARATOR = "/";
+
 }
