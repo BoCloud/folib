@@ -281,7 +281,8 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
                 promotionUtil.executeHanleCopy(srcPath.getTarget().toString(), destRepository, srcRepository);
                 return ResponseEntity.ok("ok");
             }
-
+            String requestServerName = request.getServerName();
+            log.info("Request server name [{}]", requestServerName);
             if (ArtifactSyncRecordSyncModelEnum.PUSH.getVal().equals(syncModel)) {
                 log.info("Use push model");
                 validateStorageAndRepository(sourceStorageId, sourceRepositoryId);
@@ -303,15 +304,13 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
                 // 通过Ws协议通知客户端进行拉取操作
                 final String targetHost = UrlUtils.getHost(targetBaseUrl);
                 final Integer targetPort = UrlUtils.getPort(targetBaseUrl);
-                final String srcHost = UrlUtils.getHost(sourceBaseUrl);
-                final Integer srcPort = UrlUtils.getPort(sourceBaseUrl);
                 final String nodeName = String.format("%s:%s", targetHost, targetPort);
                 final FolibWsServerRunManage.FolibWsClientRun wsClientRun = FolibWsServerRunManage.getWsClientRun(nodeName);
                 if (null == wsClientRun) {
                     if (SocketUtils.isRunning(targetHost, targetPort)) {
                         promotionNodeOption.setSyncModel(ArtifactSyncRecordSyncModelEnum.PUSH.getVal());
                         return this.nodeOption(promotionNodeOption, request);
-                    } else if (SocketUtils.isRunning(srcHost, srcPort)) {
+                    } else if (targetBaseUrl.contains(requestServerName)) {
                         //兼容请求和目标一致时，未注册自身ws节点的情况
                         wsClientArtifactPullCommand.execute(promotionNodeOption);
                         return ResponseEntity.ok("ok");
