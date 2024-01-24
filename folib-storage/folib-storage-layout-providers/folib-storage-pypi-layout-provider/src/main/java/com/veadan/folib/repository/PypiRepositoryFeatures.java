@@ -283,7 +283,10 @@ public class PypiRepositoryFeatures
         final String storageId = repository.getStorage().getId(), repositoryId = repository.getId();
         String prefix = "";
         if (targetUrl.contains("/storages/")) {
-            prefix = targetUrl.substring(targetUrl.indexOf("/storages"), targetUrl.indexOf("/simple"));
+            prefix = targetUrl.substring(targetUrl.indexOf("/storages/"), targetUrl.indexOf("/simple/"));
+            if (!prefix.endsWith(GlobalConstants.SEPARATOR)) {
+                prefix = prefix + GlobalConstants.SEPARATOR;
+            }
         }
         String finalPrefix = prefix;
         Matcher matcher = PACKAGE_NAME_PATTERN.matcher(pypiSearchResult);
@@ -292,7 +295,7 @@ public class PypiRepositoryFeatures
                     String artifactName = matchResult.group(2);
                     String artifactUrl = matchResult.group(1);
                     if (StringUtils.isNotBlank(finalPrefix) && artifactUrl.contains(finalPrefix)) {
-                        artifactUrl = artifactUrl.replace(finalPrefix, "/../..");
+                        artifactUrl = artifactUrl.replace(finalPrefix, "/../../");
                     }
                     artifactUrl = resolveUrl(targetUrl, artifactUrl);
                     return PypiSearchResult.builder().artifactName(artifactName).artifactUrl(artifactUrl).storageId(storageId).repositoryId(repositoryId).groupName(PypiArtifactCoordinates.parse(artifactName).getId()).build();

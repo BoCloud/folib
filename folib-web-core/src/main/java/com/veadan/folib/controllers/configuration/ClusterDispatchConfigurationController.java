@@ -142,7 +142,7 @@ public class ClusterDispatchConfigurationController extends BaseConfigurationCon
             final String destUri = String.format("/ws/folib/%s", originNodeName);
             final boolean upResult = FolibWsClientRunManage.up(destNodeName, destHost, destPort, destUri, true);
             if (!upResult) {
-                throw new BusinessException("尝试连接到添加目标节点失败，请检查添加节点信息是否正确");
+                logger.warn("尝试连接到添加目标节点 [{}] [{}] [{}] [{}] 失败，请检查添加节点信息是否正确", destNodeName, destHost, destPort, destUri);
             }
 
             // 向其他集群节点同步同步制品分发节点信息

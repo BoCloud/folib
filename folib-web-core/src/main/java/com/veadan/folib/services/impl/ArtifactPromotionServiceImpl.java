@@ -263,7 +263,8 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
     @Override
     public ResponseEntity nodeOption(PromotionNodeOption promotionNodeOption, HttpServletRequest request) {
         try {
-            final Integer syncModel = promotionNodeOption.getSyncModel();
+            String baseUrl = StringUtils.removeEnd(configurationManagementService.getConfiguration().getBaseUrl(), GlobalConstants.SEPARATOR);
+            Integer syncModel = promotionNodeOption.getSyncModel();
             PromotionRepositoryInfo promotionRepositoryInfo = resolvePromotionRepository(promotionNodeOption);
             String sourceStorageId = promotionRepositoryInfo.getSourceStorageId();
             String sourceRepositoryId = promotionRepositoryInfo.getSourceRepositoryId();
@@ -281,8 +282,12 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
                 promotionUtil.executeHanleCopy(srcPath.getTarget().toString(), destRepository, srcRepository);
                 return ResponseEntity.ok("ok");
             }
-            String requestServerName = request.getServerName();
-            log.info("Request server name [{}]", requestServerName);
+            if (Objects.isNull(syncModel)) {
+                syncModel = ArtifactSyncRecordSyncModelEnum.PULL.getVal();
+                if (sourceBaseUrl.startsWith(baseUrl)) {
+                    syncModel = ArtifactSyncRecordSyncModelEnum.PUSH.getVal();
+                }
+            }
             if (ArtifactSyncRecordSyncModelEnum.PUSH.getVal().equals(syncModel)) {
                 log.info("Use push model");
                 validateStorageAndRepository(sourceStorageId, sourceRepositoryId);
@@ -307,15 +312,12 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
                 final String nodeName = String.format("%s:%s", targetHost, targetPort);
                 final FolibWsServerRunManage.FolibWsClientRun wsClientRun = FolibWsServerRunManage.getWsClientRun(nodeName);
                 if (null == wsClientRun) {
-                    if (SocketUtils.isRunning(targetHost, targetPort)) {
-                        promotionNodeOption.setSyncModel(ArtifactSyncRecordSyncModelEnum.PUSH.getVal());
-                        return this.nodeOption(promotionNodeOption, request);
-                    } else if (targetBaseUrl.contains(requestServerName)) {
-                        //兼容请求和目标一致时，未注册自身ws节点的情况
+                    if (targetBaseUrl.startsWith(baseUrl)) {
                         wsClientArtifactPullCommand.execute(promotionNodeOption);
                         return ResponseEntity.ok("ok");
                     } else {
-                        throw new BusinessException(String.format("客户端 host [%s] port [%s] 未连接，发送命令失败", targetHost, targetPort));
+                        promotionNodeOption.setSyncModel(ArtifactSyncRecordSyncModelEnum.PUSH.getVal());
+                        return this.nodeOption(promotionNodeOption, request);
                     }
                 }
                 final FolibWsAction folibWsAction = new FolibWsAction()
@@ -335,8 +337,8 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
     public ResponseEntity nodeOptionAttachRecord(PromotionNodeOption promotionNodeOption, HttpServletRequest
             request) {
         PromotionRepositoryInfo promotionRepositoryInfo = resolvePromotionRepository(promotionNodeOption);
-        validateSourceRepositoryPath(promotionRepositoryInfo.getSourceStorageId(), promotionRepositoryInfo.getSourceRepositoryId(), promotionRepositoryInfo.getSourceArtifactPath());
         if (ArtifactSyncRecordSyncModelEnum.PUSH.getVal().equals(promotionNodeOption.getSyncModel())) {
+            validateSourceRepositoryPath(promotionRepositoryInfo.getSourceStorageId(), promotionRepositoryInfo.getSourceRepositoryId(), promotionRepositoryInfo.getSourceArtifactPath());
             validateRemoteRepository(promotionRepositoryInfo.getTargetBaseUrl(), promotionRepositoryInfo.getTargetStorageId(), promotionRepositoryInfo.getTargetRepositoryId());
         }
         // 生成同步编号

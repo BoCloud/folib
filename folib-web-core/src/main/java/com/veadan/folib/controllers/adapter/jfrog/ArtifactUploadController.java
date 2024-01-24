@@ -8,6 +8,7 @@ import com.veadan.folib.dto.ArtifactUploadAdapterJfrogDto.Checksums;
 import com.veadan.folib.dto.ArtifactUploadAdapterJfrogDto.OriginalChecksums;
 import com.veadan.folib.promotion.ArtifactUploadTask;
 import com.veadan.folib.promotion.PromotionUtil;
+import com.veadan.folib.providers.io.RepositoryFiles;
 import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.providers.layout.LayoutProviderRegistry;
 import com.veadan.folib.repositories.ArtifactRepository;
@@ -30,9 +31,12 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import javax.activation.MimetypesFileTypeMap;
 import javax.inject.Inject;
 import javax.servlet.ServletInputStream;
 import javax.servlet.http.HttpServletRequest;
+import java.io.InputStream;
+import java.nio.file.Files;
 import java.util.Collections;
 import java.util.Date;
 import java.util.Map;
@@ -81,16 +85,13 @@ public class ArtifactUploadController extends JFrogBaseController {
         if (!checkRepository) {
             return repositoryNotFound();
         }
-        final ServletInputStream inputStream = request.getInputStream();
-        final String fileName = artifactPath.replaceAll(".*/(.*)", "$1");
-        final byte[] fileBytes = inputStream.readAllBytes();
-        final MultipartFile file = new MockMultipartFile(fileName, fileBytes);
+        final InputStream inputStream = request.getInputStream();
         final String baseUrl = StringUtils.chomp(configurationManager.getConfiguration().getBaseUrl(), "/");
-        final String fileDownUrl = String.format("%s/artifactory/%s/%s/%s", baseUrl, storageId, repositoryId, artifactPath);
+        final String fileDownUrl = String.format("%s/artifactory/%s/%s", baseUrl, repositoryId, artifactPath);
         final String userName = UserUtils.getUsername();
 
-        final ArtifactUploadTask artifactUploadTask = new ArtifactUploadTask(storageId, repositoryId, file,
-                repositoryManagementService, repositoryPathResolver, artifactManagementService, promotionUtil,
+        final ArtifactUploadTask artifactUploadTask = new ArtifactUploadTask(storageId, repositoryId, inputStream,
+                repositoryPathResolver, artifactManagementService, promotionUtil,
                 layoutProviderRegistry, artifactMetadataService, artifactRepository, mavenRepositoryFeatures,
                 tempPath, artifactPath, metaData, uuid, null);
         final String msg = artifactUploadTask.call();
@@ -107,8 +108,10 @@ public class ArtifactUploadController extends JFrogBaseController {
         artifactUploadAdapterJfrogDto.setCreated(DateUtil.format(new Date(), "yyyy-MM-dd HH:mm:ss"));
         artifactUploadAdapterJfrogDto.setCreatedBy(userName);
         artifactUploadAdapterJfrogDto.setDownloadUri(fileDownUrl);
-        artifactUploadAdapterJfrogDto.setMimeType(new Tika().detect(fileBytes));
-        artifactUploadAdapterJfrogDto.setSize(String.valueOf(fileBytes.length));
+        MimetypesFileTypeMap mimetypesFileTypeMap = new MimetypesFileTypeMap();
+        String mimeType = mimetypesFileTypeMap.getContentType(RepositoryFiles.relativizePath(repositoryPath));
+        artifactUploadAdapterJfrogDto.setMimeType(mimeType);
+        artifactUploadAdapterJfrogDto.setSize(Files.size(repositoryPath) + "");
         artifactUploadAdapterJfrogDto.setChecksums(new Checksums()
                 .setMd5(checksums.get("MD5"))
                 .setSha1(checksums.get("SHA-1"))

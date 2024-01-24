@@ -35,7 +35,6 @@ public class ArtifactDownController extends JFrogBaseController {
 
         vulnerabilityBlock(repositoryPath);
         provideArtifactDownloadResponse(request, response, httpHeaders, repositoryPath);
-
-        return ResponseEntity.ok("ok");
+        return null;
     }
 }

@@ -87,7 +87,7 @@ public class PromotionTask {
                 int totalPages = (int) Math.ceil((double) totalCount / batchSize);
                 Pageable pageable;
                 for (int currentPage = 1; currentPage <= totalPages; currentPage++) {
-                    log.info("CurrentPage [{}] batchSize [{}]", currentPage, batchSize);
+                    log.info("TotalPages [{}] currentPage [{}] batchSize [{}]", totalPages, currentPage, batchSize);
                     if (currentPage == 1) {
                         pageable = PageRequest.of(currentPage, batchSize).first();
                     } else {

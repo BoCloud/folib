@@ -276,7 +276,7 @@ public class ConanArtifactController extends BaseArtifactController {
             method = {RequestMethod.GET})
     public void getConanFile(@RepositoryMapping Repository repository,
                              @PathVariable("path") String path,
-                             HttpServletResponse response) throws Exception {
+                             @RequestHeader HttpHeaders httpHeaders, HttpServletRequest request, HttpServletResponse response) throws Exception {
         final String storageId = repository.getStorage().getId();
         final String repositoryId = repository.getId();
         logger.info("Requested getConanFile /{}/{}/{}.", storageId, repositoryId, path);
@@ -290,21 +290,10 @@ public class ConanArtifactController extends BaseArtifactController {
             return;
         }
         vulnerabilityBlock(repositoryPath);
-        try (InputStream in = Files.newInputStream(repositoryPath);) {
-            OutputStream out = response.getOutputStream();
-            response.setCharacterEncoding("UTF-8");
-            // 设置文件头：设置下载文件名
-            response.setHeader("Content-Disposition", "attachment;" + repositoryPath.getFileName().toString());
-            int byteRead = 0;
-            byte[] buffer = new byte[1024];
-            while ((byteRead = in.read(buffer)) != -1) {
-                out.write(buffer, 0, byteRead);
-            }
-            out.flush();
-            artifactEventListenerRegistry.dispatchArtifactDownloadingEvent(repositoryPath);
-        } catch (Exception e) {
-            logger.error("download conan artifact error {}", ExceptionUtils.getStackTrace(e));
-        }
+        response.setCharacterEncoding("UTF-8");
+        // 设置文件头：设置下载文件名
+        response.setHeader("Content-Disposition", "attachment;" + repositoryPath.getFileName().toString());
+        provideArtifactDownloadResponse(request, response, httpHeaders, repositoryPath);
     }
 
     @PreAuthorize("hasAuthority('ARTIFACTS_RESOLVE')")

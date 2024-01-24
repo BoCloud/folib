@@ -81,7 +81,6 @@ public abstract class BaseArtifactController
         }
         long startTime = System.currentTimeMillis();
         logger.debug("Download [{}] 开始时间 [{}]", repositoryPath.toString(), startTime);
-        artifactComponent.beforeRead(repositoryPath);
         if (ArtifactControllerHelper.isRangedRequest(httpHeaders)) {
             //分片
             logger.debug("RepositoryPath [{}] Detected ranged request.", path.toString());

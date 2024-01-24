@@ -6,8 +6,10 @@ import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import com.veadan.folib.artifact.coordinates.ArtifactLayoutDescription;
 import com.veadan.folib.artifact.coordinates.ArtifactLayoutLocator;
+import com.veadan.folib.components.DistributedLockComponent;
 import com.veadan.folib.configuration.ConfigurationManager;
 import com.veadan.folib.configuration.ConfigurationUtils;
+import com.veadan.folib.constant.GlobalConstants;
 import com.veadan.folib.db.schema.Edges;
 import com.veadan.folib.db.schema.Properties;
 import com.veadan.folib.db.schema.Vertices;
@@ -21,10 +23,12 @@ import com.veadan.folib.gremlin.dsl.EntityTraversalUtils;
 import com.veadan.folib.gremlin.repositories.GremlinVertexRepository;
 import com.veadan.folib.services.ConfigurationManagementService;
 import com.veadan.folib.storage.repository.RepositoryTypeEnum;
+import com.veadan.folib.util.CommonUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.compress.utils.Lists;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.tinkerpop.gremlin.process.traversal.Order;
 import org.apache.tinkerpop.gremlin.process.traversal.P;
 import org.apache.tinkerpop.gremlin.structure.Vertex;
@@ -38,6 +42,7 @@ import javax.inject.Inject;
 import javax.transaction.Transactional;
 import java.time.LocalDateTime;
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 
 @Slf4j
 @Repository
@@ -50,10 +55,33 @@ public class ArtifactRepository extends GremlinVertexRepository<Artifact> {
     ConfigurationManager configurationManager;
     @Inject
     ConfigurationManagementService configurationManagementService;
+    @Inject
+    DistributedLockComponent distributedLockComponent;
 
     @Override
     protected ArtifactAdapter adapter() {
         return artifactAdapter;
+    }
+
+    public void saveOrUpdate(Artifact artifact) {
+        if (distributedLockComponent.lock(artifact.getUuid(), GlobalConstants.WAIT_LOCK_TIME, TimeUnit.SECONDS)) {
+            try {
+                try {
+                    merge(artifact);
+                } catch (Exception ex) {
+                    if (CommonUtils.catchException(ex)) {
+                        log.warn("Handle artifact [{}] catch error", artifact.getUuid());
+                        return;
+                    }
+                    log.error("Handle artifact [{}] error [{}]", artifact.getUuid(), ExceptionUtils.getStackTrace(ex));
+                    throw new RuntimeException(ex.getMessage());
+                }
+            } finally {
+                distributedLockComponent.unLock(artifact.getUuid());
+            }
+        } else {
+            log.warn("Handle artifact [{}] was not get lock", artifact.getUuid());
+        }
     }
 
     public Page<Artifact> findMatching(Integer lastAccessedTimeInDays,

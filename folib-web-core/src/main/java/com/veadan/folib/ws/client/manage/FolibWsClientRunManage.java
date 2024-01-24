@@ -72,7 +72,7 @@ public class FolibWsClientRunManage extends FolibWsRunManage {
             
             return true;
         } catch (Exception e) {
-//            log.error("【FolibWs服务端运行管理器-启动】连接到节点（{}:{}）失败", host, port, e);
+            log.error("【FolibWs服务端运行管理器-启动】连接到节点（{}:{}）失败", host, port, e);
             return false;
         }
     }

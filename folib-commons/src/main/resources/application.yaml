@@ -102,16 +102,16 @@ folib:
             enabled: true
   threadPool:
     async:
-      corePoolSize: 12
-      maxPoolSize: 12
-      queueCapacity: 10000
+      corePoolSize: ${threadPool.common.core:12}
+      maxPoolSize: ${threadPool.common.max:12}
+      queueCapacity: ${threadPool.common.queue:100000000}
       keepAliveSeconds: 0
       threadNamePrefix: async_
       awaitTerminationSeconds: 6
     asyncEventListener:
-      corePoolSize: 12
-      maxPoolSize: 12
-      queueCapacity: 10000
+      corePoolSize: ${threadPool.common.core:12}
+      maxPoolSize: ${threadPool.common.max:12}
+      queueCapacity: ${threadPool.common.queue:100000000}
       keepAliveSeconds: 0
       threadNamePrefix: asyncEventListener_
       awaitTerminationSeconds: 6
@@ -123,23 +123,23 @@ folib:
       threadNamePrefix: asyncConfig_
       awaitTerminationSeconds: 6
     asyncFetchRemotePackage:
-      corePoolSize: 12
-      maxPoolSize: 12
-      queueCapacity: 10000
+      corePoolSize: ${threadPool.common.core:12}
+      maxPoolSize: ${threadPool.common.max:12}
+      queueCapacity: ${threadPool.common.queue:100000000}
       keepAliveSeconds: 0
       threadNamePrefix: asyncFetchRemotePackage_
       awaitTerminationSeconds: 6
     asyncScan:
-      corePoolSize: 12
-      maxPoolSize: 12
+      corePoolSize: ${threadPool.common.core:12}
+      maxPoolSize: ${threadPool.common.max:12}
       queueCapacity: 80
       keepAliveSeconds: 0
       threadNamePrefix: asyncScan_
       awaitTerminationSeconds: 0
     asyncWsCommand:
-      corePoolSize: 12
-      maxPoolSize: 12
-      queueCapacity: 2000
+      corePoolSize: ${threadPool.common.core:12}
+      maxPoolSize: ${threadPool.common.max:12}
+      queueCapacity: 200000
       keepAliveSeconds: 0
       threadNamePrefix: asyncWsCommand_
       awaitTerminationSeconds: 6

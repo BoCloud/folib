@@ -288,15 +288,9 @@ public class PromotionUtil {
                 final String nodeName = String.format("%s:%s", nodeHost, nodePort);
                 final FolibWsServerRunManage.FolibWsClientRun wsClientRun = FolibWsServerRunManage.getWsClientRun(nodeName);
                 if (null == wsClientRun) {
-                    // 检查如果可以直接连接访问到目标节点，则将模式转换为push模式
-                    try (final Socket socket = new Socket(nodeHost, nodePort);){
-                        socket.setSoTimeout(200);
-                        promotionNodeOption.setSyncModel(ArtifactSyncRecordSyncModelEnum.PUSH.getVal());
-                        dispatchNodeDto.setDispatchType("push");
-                        this.executeDispatch(artifactPath, srcRepositoryId, srcStorageId, targetStorageId, targetRepositoryId, dispatchNodeDto, recordStatus);
-                    } catch (Exception e) {
-                        throw new BusinessException("当前分发的节点不可用，请检查节点是否配置正确");
-                    }
+                    promotionNodeOption.setSyncModel(ArtifactSyncRecordSyncModelEnum.PUSH.getVal());
+                    dispatchNodeDto.setDispatchType("push");
+                    this.executeDispatch(artifactPath, srcRepositoryId, srcStorageId, targetStorageId, targetRepositoryId, dispatchNodeDto, recordStatus);
                     return;
                 }
                 

@@ -54,7 +54,7 @@ public class ArtifactCacheCheckTask {
         RepositoryPath repositoryPath;
         boolean delFlag = false;
         for (int currentPage = 1; currentPage <= totalPages; currentPage++) {
-            log.info("CurrentPage [{}] batchSize [{}]", currentPage, batchSize);
+            log.info("TotalPages [{}] currentPage [{}] batchSize [{}]", totalPages, currentPage, batchSize);
             List<ArtifactCacheRecord> artifactCacheRecordList = artifactCacheRecordService.getArtifactCacheRecord(null, currentPage, batchSize);
             if (CollectionUtils.isEmpty(artifactCacheRecordList)) {
                 continue;

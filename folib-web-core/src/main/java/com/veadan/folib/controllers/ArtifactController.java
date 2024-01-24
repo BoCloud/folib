@@ -156,7 +156,7 @@ public class ArtifactController extends BaseController {
         if (bindingResult.hasErrors()) {
             throw new RequestBodyValidationException(GlobalConstants.REQUEST_PARAMS_ERROR, bindingResult);
         }
-        logger.info(" 批量新增制品元数据 {}", JSON.toJSONString(list));
+        logger.info("批量新增制品元数据 [{}]", JSON.toJSONString(list));
         artifactWebService.batchArtifactMetadata(list);
         return ResponseEntity.ok("ok");
     }

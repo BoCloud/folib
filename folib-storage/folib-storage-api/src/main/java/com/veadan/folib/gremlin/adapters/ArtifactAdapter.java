@@ -331,6 +331,7 @@ public class ArtifactAdapter implements VertexEntityTraversalAdapter<Artifact> {
                 "mediumVulnerabilitiesCount",
                 "lowVulnerabilitiesCount",
                 "suppressedVulnerabilitiesCount",
+                "artifactFileExists",
                 "enabled",
                 "createdBy",
                 "updatedBy",
@@ -358,6 +359,7 @@ public class ArtifactAdapter implements VertexEntityTraversalAdapter<Artifact> {
                 .by(__.enrichPropertyValue("mediumVulnerabilitiesCount"))
                 .by(__.enrichPropertyValue("lowVulnerabilitiesCount"))
                 .by(__.enrichPropertyValue("suppressedVulnerabilitiesCount"))
+                .by(__.enrichPropertyValue("artifactFileExists"))
                 .by(__.enrichPropertyValue("enabled"))
                 .by(__.enrichPropertyValue("createdBy"))
                 .by(__.enrichPropertyValue("updatedBy"))

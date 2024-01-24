@@ -225,7 +225,7 @@ public abstract class AbstractRepositoryProvider implements RepositoryProvider, 
             return;
         }
 
-        artifactEventListenerRegistry.dispatchArtifactDownloadingEvent(repositoryPath);
+//        artifactEventListenerRegistry.dispatchArtifactDownloadingEvent(repositoryPath);
     }
 
     @Override
@@ -234,7 +234,7 @@ public abstract class AbstractRepositoryProvider implements RepositoryProvider, 
 
         logger.info("Complete reading [{}]", repositoryPath);
 
-        artifactEventListenerRegistry.dispatchArtifactDownloadedEvent(repositoryPath);
+//        artifactEventListenerRegistry.dispatchArtifactDownloadedEvent(repositoryPath);
     }
 
     @Override
@@ -246,6 +246,9 @@ public abstract class AbstractRepositoryProvider implements RepositoryProvider, 
         }
         String username = UserUtils.getUsername();
         LocalDateTime now = LocalDateTimeInstance.now();
+        if (Objects.isNull(artifact.getNativeId())) {
+            artifact.setCreated(now);
+        }
         artifact.setLastUpdated(now);
         artifact.setLastUsed(now);
         artifact.setUpdatedBy(username);
@@ -275,7 +278,7 @@ public abstract class AbstractRepositoryProvider implements RepositoryProvider, 
                 lastVersion.getVersion(),
                 lastVersion.getPath());
         try {
-            artifactIdGroupRepository.merge(artifactGroup);
+            artifactIdGroupRepository.saveOrUpdate(artifactGroup);
         } catch (Exception ex) {
             String realMessage = CommonUtils.getRealMessage(ex);
             logger.warn("[{}] [{}] merge group error [{}]",
@@ -321,7 +324,7 @@ public abstract class AbstractRepositoryProvider implements RepositoryProvider, 
 
         ArtifactTag lastVersionTag = artifactTagService.findOneOrCreate(ArtifactTagEntity.LAST_VERSION);
 
-        ArtifactIdGroup artifactGroup = artifactIdGroupRepository.findArtifactsGroupWithTag(storage.getId(),
+        ArtifactIdGroup artifactGroup = artifactIdGroupRepository.findArtifactGroupWithTag(storage.getId(),
                 repository.getId(),
                 coordinates.getId(),
                 Optional.of(lastVersionTag))
@@ -335,7 +338,7 @@ public abstract class AbstractRepositoryProvider implements RepositoryProvider, 
                 lastVersion.getVersion(),
                 lastVersion.getPath());
 
-        artifactIdGroupRepository.merge(artifactGroup);
+        artifactIdGroupRepository.saveOrUpdate(artifactGroup);
 
         repositoryPath.artifact = artifact;
     }
