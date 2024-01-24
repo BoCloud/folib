@@ -121,6 +121,13 @@ public class ArtifactManagementService
         return doStore(repositoryPath, is);
     }
 
+    public long store(RepositoryPath repositoryPath,
+                      RepositoryPath sourcePath)
+            throws IOException
+    {
+        return doStore(repositoryPath, sourcePath);
+    }
+
     private long doStore(RepositoryPath repositoryPath,
                          InputStream is)
             throws IOException

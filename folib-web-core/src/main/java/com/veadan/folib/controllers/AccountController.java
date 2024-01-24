@@ -2,10 +2,13 @@ package com.veadan.folib.controllers;
 
 import javax.inject.Inject;
 
+import com.veadan.folib.configuration.ConfigurationManager;
 import com.veadan.folib.controllers.users.UserController;
 import com.veadan.folib.controllers.users.support.UserOutput;
+import com.veadan.folib.domain.UserRepositoryPermission;
 import com.veadan.folib.forms.users.UserForm;
 import com.veadan.folib.domain.User;
+import com.veadan.folib.storage.Storage;
 import com.veadan.folib.users.domain.Privileges;
 import com.veadan.folib.users.dto.UserDto;
 import com.veadan.folib.users.service.UserService;
@@ -48,6 +51,9 @@ public class AccountController
 
     @Inject
     private PasswordEncoder passwordEncoder;
+
+    @Inject
+    private ConfigurationManager configurationManager;
 
     @Inject
     private RSAUtils rsaUtils;
@@ -129,9 +135,11 @@ public class AccountController
     @GetMapping(value = "/permission/{storageId}/{repositoryId}",
             produces = { MediaType.APPLICATION_JSON_VALUE })
     @ResponseBody
-    public ResponseEntity<Set<String>> getStorageAndRepositoryPermission(Authentication authentication, @ApiParam(value = "The storageId", required = true) @PathVariable String storageId, @ApiParam(value = "The repositoryId", required = true) @PathVariable String repositoryId) {
+    public ResponseEntity<UserRepositoryPermission> getStorageAndRepositoryPermission(Authentication authentication, @ApiParam(value = "The storageId", required = true) @PathVariable String storageId, @ApiParam(value = "The repositoryId", required = true) @PathVariable String repositoryId) {
         SpringSecurityUser userDetails = (SpringSecurityUser)authentication.getPrincipal();
+        Storage storage = configurationManager.getStorage(storageId);
         Collection<Privileges> storageAuthorities = userDetails.getStorageAuthorities(storageId, repositoryId, null);
-        return ResponseEntity.ok(storageAuthorities.stream().map(Privileges::getAuthority).collect(Collectors.toSet()));
+        UserRepositoryPermission userRepositoryPermission = UserRepositoryPermission.builder().storageAdmin(storage.getAdmin()).permissions(storageAuthorities.stream().map(Privileges::getAuthority).collect(Collectors.toSet())).build();
+        return ResponseEntity.ok(userRepositoryPermission);
     }
 }

@@ -821,7 +821,7 @@
                     <a-form-item class="mb-10"
                                  label="绑定密码"
                                  :colon="false">
-                      <a-input placeholder="********"
+                      <a-input-password placeholder="********"
                                v-model="ldap.managerPassword" />
                     </a-form-item>
                   </a-col>

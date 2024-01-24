@@ -1224,19 +1224,6 @@ public class ArtifactComponent {
         }
     }
 
-    public void beforeRead(RepositoryPath repositoryPath) {
-        try {
-            if (Objects.isNull(repositoryPath) || !RepositoryFiles.isArtifact(repositoryPath)) {
-                return;
-            }
-            long startTime = System.currentTimeMillis();
-            storeEvent(repositoryPath, ArtifactEventTypeEnum.EVENT_ARTIFACT_FILE_DOWNLOADING);
-            log.debug("Write EVENT_ARTIFACT_FILE_DOWNLOADING take time [{}] ms", System.currentTimeMillis() - startTime);
-        } catch (Exception ex) {
-            log.error("RepositoryPath beforeRead error ", ex);
-        }
-    }
-
     public void afterRead(RepositoryPath repositoryPath) {
         try {
             if (Objects.isNull(repositoryPath) || !RepositoryFiles.isArtifact(repositoryPath)) {

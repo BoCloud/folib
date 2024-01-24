@@ -298,6 +298,19 @@ public class DockerArtifactCoordinates
         return name.startsWith(SHA_256) && !name.endsWith(CHECKSUM_SHA_256) && !name.endsWith(SELF_METADATA) && !name.endsWith(FO_LIBRARY_METADATA) && !name.contains("blobs");
     }
 
+    public static boolean isRealManifestPath(Path path) {
+        try {
+            if (Objects.isNull(path) || Files.notExists(path) || Files.isDirectory(path) || RepositoryFiles.isHidden(path)) {
+                return false;
+            }
+            String name = path.getFileName().toString();
+            return name.startsWith(SHA_256) && !name.endsWith(CHECKSUM_SHA_256) && !name.endsWith(SELF_METADATA) && !name.endsWith(FO_LIBRARY_METADATA) && path.toString().contains("manifest/sha256");
+        } catch (Exception ex) {
+            log.warn(ExceptionUtils.getStackTrace(ex));
+            return false;
+        }
+    }
+
     public static boolean isDockerTag(RepositoryPath path) {
         try {
             if (Objects.isNull(path) || Files.notExists(path) || RepositoryFiles.isHidden(path)) {

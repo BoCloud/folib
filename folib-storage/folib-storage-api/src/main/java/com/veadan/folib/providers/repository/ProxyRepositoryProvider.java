@@ -4,6 +4,7 @@ package com.veadan.folib.providers.repository;
 import com.alibaba.fastjson.JSONObject;
 import com.google.common.collect.Maps;
 import com.veadan.folib.config.FolibPublicUtils;
+import com.veadan.folib.constant.GlobalConstants;
 import com.veadan.folib.data.criteria.Paginator;
 import com.veadan.folib.domain.Artifact;
 import com.veadan.folib.domain.ArtifactEntity;
@@ -87,15 +88,23 @@ public class ProxyRepositoryProvider
         if (targetPath == null) {
             targetPath = resolvePathExclusive(repositoryPath);
         } else if (RepositoryFiles.hasExpired(targetPath)) {
-            eventPublisher.publishEvent(new ProxyRepositoryPathExpiredEvent(targetPath));
+            if (StringUtils.isNotBlank(repositoryPath.getArtifactPath())) {
+                eventPublisher.publishEvent(new ProxyRepositoryPathExpiredEvent(repositoryPathResolver.resolve(targetPath.getRepository(), repositoryPath.getArtifactPath())));
+            } else {
+                eventPublisher.publishEvent(new ProxyRepositoryPathExpiredEvent(targetPath));
+            }
         }
 
         return targetPath;
     }
 
-    private RepositoryPath resolvePathExclusive(RepositoryPath repositoryPath)
+    public RepositoryPath resolvePathExclusive(RepositoryPath repositoryPath)
             throws IOException {
         try {
+            if (Boolean.TRUE.equals(repositoryPath.getEnableRemoteUrlPrefix()) && StringUtils.isNotBlank(repositoryPath.getTargetUrl())) {
+                String remoteUrl = repositoryPath.getRepository().getRemoteRepository().getUrl();
+                repositoryPath.setTargetUrl(String.format("%s/%s", StringUtils.removeEnd(remoteUrl, GlobalConstants.SEPARATOR), StringUtils.removeStart(repositoryPath.getTargetUrl(), GlobalConstants.SEPARATOR)));
+            }
             return proxyRepositoryArtifactResolver.fetchRemoteResource(repositoryPath);
         } catch (IOException e) {
             logger.error("Failed to resolve Path for proxied artifact [{}]",

@@ -1,11 +1,10 @@
 package com.veadan.folib.providers.io;
 
 import com.veadan.folib.event.AsyncEventListener;
-import com.veadan.folib.providers.layout.Maven2LayoutProvider;
+import com.veadan.folib.providers.layout.DockerLayoutProvider;
 import com.veadan.folib.providers.repository.event.ProxyRepositoryPathExpiredEvent;
 import com.veadan.folib.util.ThrowingPredicate;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
 import javax.inject.Inject;
@@ -14,21 +13,21 @@ import java.util.List;
 import java.util.function.Consumer;
 
 /**
- * @author veadan
- */
+ * @author leipenghui
+ * @date 2024/1/19
+ **/
+@Slf4j
 @Component
-public class MavenProxyRepositoryPathExpiredEventListener {
-
-    private static final Logger logger = LoggerFactory.getLogger(MavenProxyRepositoryPathExpiredEventListener.class);
+public class DockerProxyRepositoryPathFetchEventListener {
 
     @Inject
-    private List<MavenExpiredRepositoryPathHandler> expiredRepositoryPathHandlers;
+    private List<DockerExpiredRepositoryPathHandler> expiredRepositoryPathHandlers;
 
     @AsyncEventListener
     public void handle(final ProxyRepositoryPathExpiredEvent event) {
 
         RepositoryPath repositoryPath = event.getPath();
-        if (!Maven2LayoutProvider.ALIAS.equals(repositoryPath.getRepository().getLayout())) {
+        if (!DockerLayoutProvider.ALIAS.equals(repositoryPath.getRepository().getLayout())) {
             return;
         }
 
@@ -37,13 +36,13 @@ public class MavenProxyRepositoryPathExpiredEventListener {
                 .forEach(handleExpiration(repositoryPath));
     }
 
-    private Consumer<MavenExpiredRepositoryPathHandler> handleExpiration(final RepositoryPath repositoryPath) {
+    private Consumer<DockerExpiredRepositoryPathHandler> handleExpiration(final RepositoryPath repositoryPath) {
         return handler ->
         {
             try {
                 handler.handleExpiration(repositoryPath);
             } catch (IOException e) {
-                logger.error("Expired path [{}] improperly handled.", repositoryPath, e);
+                log.error("Expired path [{}] improperly handled.", repositoryPath, e);
             }
         };
     }

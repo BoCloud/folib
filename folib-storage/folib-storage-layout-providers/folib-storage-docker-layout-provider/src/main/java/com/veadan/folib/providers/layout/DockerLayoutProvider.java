@@ -13,6 +13,7 @@ import com.veadan.folib.repository.DockerRepositoryFeatures;
 import com.veadan.folib.repository.DockerRepositoryManagementStrategy;
 import com.veadan.folib.repository.RepositoryManagementStrategy;
 import org.apache.commons.codec.digest.MessageDigestAlgorithms;
+import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -21,6 +22,8 @@ import org.springframework.stereotype.Component;
 import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 import java.io.IOException;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
@@ -93,17 +96,23 @@ public class DockerLayoutProvider
                 case ARTIFACT:
                     value = (Boolean) value && !isMetadata(repositoryPath);
 
-                    if (value != null) {
-                        result.put(attributeType, value);
-                    }
+                    result.put(attributeType, value);
 
                     break;
                 case METADATA:
                     value = (Boolean) value || isMetadata(repositoryPath);
 
-                    if (value != null) {
-                        result.put(attributeType, value);
-                    }
+                    result.put(attributeType, value);
+
+                    break;
+                case EXPIRED:
+                    final Instant tenSecondsAgo = Instant.now().minus(10, ChronoUnit.SECONDS);
+                    value = BooleanUtils.isTrue((Boolean) value) || ((DockerArtifactCoordinates.isDockerTag(repositoryPath) || DockerArtifactCoordinates.isRealManifestPath(repositoryPath))
+                            &&
+                            !RepositoryFiles.wasModifiedAfter(repositoryPath,
+                                    tenSecondsAgo));
+
+                    result.put(attributeType, value);
 
                     break;
                 default:

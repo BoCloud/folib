@@ -646,7 +646,7 @@
                 </a-col>
                 <a-col :span="6">
                   <a-form-item class="mb-10" label="策略" :colon="false">
-                    <a-select :disabled="layoutChecked === 'docker' || folibRepositoryEditDisabled"
+                    <a-select :disabled="folibRepositoryEditDisabled"
                       default-value="hosted" v-model="folibRepository.type">
                       <a-select-option value="hosted">
                         本地

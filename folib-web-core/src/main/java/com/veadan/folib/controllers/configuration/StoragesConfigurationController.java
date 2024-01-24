@@ -684,7 +684,7 @@ public class StoragesConfigurationController
                 if (!Files.exists(repositoryPath)) {
                     repositoryManagementService.createRepository(storageId, repository.getId());
                 }
-                if (Objects.isNull(existRepository) && DockerLayoutProvider.ALIAS.equalsIgnoreCase(repository.getLayout())) {
+                if (Objects.isNull(existRepository) && DockerLayoutProvider.ALIAS.equalsIgnoreCase(repository.getLayout()) && !RepositoryTypeEnum.GROUP.getType().equals(repository.getType())) {
                     //初始化仓库数据
                     dockerLayoutProvider.initData(storageId, repositoryId);
                 }

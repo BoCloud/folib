@@ -22,7 +22,7 @@ import com.veadan.folib.schema2.LayerManifest;
 import com.veadan.folib.services.ExternalNodeService;
 import com.veadan.folib.services.JFrogService;
 import com.veadan.folib.util.RSAUtils;
-import com.veadan.folib.utils.DockerApiHeader;
+import com.veadan.folib.enums.DockerHeaderEnum;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.codec.digest.MessageDigestAlgorithms;
 import org.apache.commons.collections4.CollectionUtils;
@@ -389,7 +389,7 @@ public class JFrogServiceImpl implements JFrogService {
             ArtifactoryRequest request = new ArtifactoryRequestImpl()
                     .method(ArtifactoryRequest.Method.PUT)
                     .apiUrl(uploadUrl)
-                    .addHeader(DockerApiHeader.DOCKER_CONTENT_TYPE.key(), DockerApiHeader.DOCKER_CONTENT_TYPE.value())
+                    .addHeader(DockerHeaderEnum.DOCKER_CONTENT_TYPE.key(), DockerHeaderEnum.DOCKER_CONTENT_TYPE.value())
                     .requestBody(inputStream);
             ArtifactoryResponse response = artifactory.restCall(request);
             log.info("Manifest [{}] upload response [{}]", repositoryPath.toString(), JSONObject.toJSONString(response.getStatusLine()));

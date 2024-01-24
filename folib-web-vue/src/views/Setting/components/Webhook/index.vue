@@ -346,11 +346,6 @@ export default {
           remark: '再次上传同一制品时触发 URL'
         },
         {
-          label: '制品下载',
-          value: 'EVENT_ARTIFACT_FILE_DOWNLOADED',
-          remark: '下载制品时触发 URL'
-        },
-        {
           label: '制品删除',
           value: 'EVENT_ARTIFACT_PATH_DELETED',
           remark: '删除制品时触发 URL'

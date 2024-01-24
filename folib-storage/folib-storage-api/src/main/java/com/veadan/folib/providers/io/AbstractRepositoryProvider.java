@@ -225,7 +225,7 @@ public abstract class AbstractRepositoryProvider implements RepositoryProvider, 
             return;
         }
 
-        artifactEventListenerRegistry.dispatchArtifactDownloadingEvent(repositoryPath);
+//        artifactEventListenerRegistry.dispatchArtifactDownloadingEvent(repositoryPath);
     }
 
     @Override
@@ -234,7 +234,7 @@ public abstract class AbstractRepositoryProvider implements RepositoryProvider, 
 
         logger.debug("Complete reading [{}]", repositoryPath);
 
-        artifactEventListenerRegistry.dispatchArtifactDownloadedEvent(repositoryPath);
+//        artifactEventListenerRegistry.dispatchArtifactDownloadedEvent(repositoryPath);
     }
 
     @Override

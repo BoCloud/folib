@@ -4,8 +4,10 @@ import javax.ws.rs.client.Client;
 import javax.ws.rs.client.Invocation;
 import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.Feature;
+import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 import java.io.Closeable;
+import java.util.Map;
 import java.util.Objects;
 
 import org.apache.http.client.config.RequestConfig;
@@ -25,6 +27,7 @@ public class RestArtifactResolver
 
     private final String repositoryBaseUrl;
     private final String targetUrl;
+    private MultivaluedMap<String, Object> headers;
     private final Client client;
     private Feature authentication;
     private RemoteRepositoryRetryArtifactDownloadConfiguration configuration;
@@ -32,6 +35,7 @@ public class RestArtifactResolver
     public RestArtifactResolver(Client client,
                                 String repositoryBaseUrl,
                                 String targetUrl,
+                                MultivaluedMap<String, Object> headers,
                                 RemoteRepositoryRetryArtifactDownloadConfiguration configuration)
     {
         this.client = client;
@@ -41,6 +45,7 @@ public class RestArtifactResolver
             this.client.property(ClientProperties.CONNECT_TIMEOUT, connectTimeOut);
         }
         this.targetUrl = targetUrl;
+        this.headers = headers;
         this.repositoryBaseUrl = normalize(repositoryBaseUrl);
         this.configuration = configuration;
     }
@@ -48,10 +53,11 @@ public class RestArtifactResolver
     public RestArtifactResolver(Client client,
                                 String repositoryBaseUrl,
                                 String targetUrl,
+                                MultivaluedMap<String, Object> headers,
                                 RemoteRepositoryRetryArtifactDownloadConfiguration configuration,
                                 Feature authentication)
     {
-        this(client, repositoryBaseUrl, targetUrl, configuration);
+        this(client, repositoryBaseUrl, targetUrl, headers, configuration);
         this.authentication = authentication;
     }
 
@@ -91,10 +97,12 @@ public class RestArtifactResolver
         WebTarget resource = new WebTargetBuilder(url).withAuthentication()
                                                       .customRequestConfig()
                                                       .build();
-
         long startTime = System.currentTimeMillis();
         logger.debug("Url [{}] 开始于 [{}]", url, startTime);
         Invocation.Builder request = resource.request();
+        if (Objects.nonNull(headers)) {
+            request.headers(headers);
+        }
         Response response;
 
         if (offset > 0)

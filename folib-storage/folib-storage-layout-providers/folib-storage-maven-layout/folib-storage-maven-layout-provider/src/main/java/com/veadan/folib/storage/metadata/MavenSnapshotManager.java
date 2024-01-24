@@ -157,7 +157,7 @@ public class MavenSnapshotManager {
                 }
                 RepositoryPath repositoryPath = (RepositoryPath) path;
                 if (!RepositoryFiles.isArtifact(repositoryPath) ||
-                        RepositoryFiles.isMetadata(repositoryPath)) {
+                        RepositoryFiles.isChecksum(repositoryPath) || RepositoryFiles.isArtifactMetadata(repositoryPath)) {
                     continue;
                 }
                 Gav gav = MavenArtifactUtils.convertPathToGav(repositoryPath);

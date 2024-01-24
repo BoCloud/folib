@@ -120,7 +120,7 @@
                       <a-icon type="question-circle" theme="filled" />
                     </small>
                   </a>
-                  <div v-if="$store.state.user.token && folibRepository.type !== 'group'">
+                  <div v-if="(isAdmin() || storageAdmin === $store.state.user.name) && folibRepository.type !== 'group'">
                     <span class="mr-15">{{
                       scan.onScan ? "扫描开启" : "扫描关闭"
                     }}</span>
@@ -967,6 +967,7 @@ export default {
       repositories: [],
       custom: false,
       enablUploadedLayout: ['Raw', 'php', 'Maven 2', 'npm', 'rpm'],
+      storageAdmin: '',
       permissions: [],
       mavenUploadVisible: false,
       uploadType: 1,
@@ -2126,13 +2127,18 @@ export default {
         return fileSizeConver(size)
       }
     },
+    isAdmin() {
+      return isAdmin()
+    },
     queryStorageAndRepositoryPermission () {
+      this.storageAdmin = ""
       this.permissions = []
       getStorageAndRepositoryPermission(
         this.folibRepository.storageId,
         this.folibRepository.id
       ).then(res => {
-        this.permissions = res
+        this.storageAdmin = res.storageAdmin
+        this.permissions = res.permissions
         this.uploadEnabled =
           this.folibRepository.status.indexOf('Out of Service') === -1 &&
           this.enablUploadedLayout.includes(this.folibRepository.layout) &&

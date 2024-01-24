@@ -29,7 +29,7 @@ import java.util.stream.Collectors;
 
 @Slf4j
 @Component
-public class ArtifactDownloadingEventHandler extends AsyncArtifactEntryHandler {
+public class ArtifactDownloadedEventHandler extends AsyncArtifactEntryHandler {
 
     @Inject
     private RepositoryPathResolver repositoryPathResolver;
@@ -40,8 +40,8 @@ public class ArtifactDownloadingEventHandler extends AsyncArtifactEntryHandler {
     @Inject
     private ArtifactRepository artifactRepository;
 
-    public ArtifactDownloadingEventHandler() {
-        super(ArtifactEventTypeEnum.EVENT_ARTIFACT_FILE_DOWNLOADING);
+    public ArtifactDownloadedEventHandler() {
+        super(ArtifactEventTypeEnum.EVENT_ARTIFACT_FILE_DOWNLOADED);
     }
 
     @Override

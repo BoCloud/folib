@@ -7,10 +7,9 @@ import com.alibaba.fastjson.JSONObject;
 import com.veadan.folib.components.artifact.ArtifactComponent;
 import com.veadan.folib.domain.ArtifactEventRecord;
 import com.veadan.folib.event.artifact.ArtifactEventTypeEnum;
-import com.veadan.folib.eventlistener.webhook.ArtifactEventWebhookListener;
 import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.providers.io.RepositoryPathResolver;
-import com.veadan.folib.providers.repository.ArtifactDownloadingEventHandler;
+import com.veadan.folib.providers.repository.ArtifactDownloadedEventHandler;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.compress.utils.Lists;
@@ -47,11 +46,7 @@ public class EventTask {
 
     @Autowired
     @Lazy
-    private ArtifactDownloadingEventHandler artifactDownloadingEventHandler;
-
-    @Autowired
-    @Lazy
-    private ArtifactEventWebhookListener artifactEventWebhookListener;
+    private ArtifactDownloadedEventHandler artifactDownloadedEventHandler;
 
     @Autowired
     @Lazy
@@ -81,36 +76,37 @@ public class EventTask {
                         List<ArtifactEventRecord> artifactEventRecordList = Lists.newArrayList();
                         RepositoryPath repositoryPath;
                         long lines = 0, startTime = System.currentTimeMillis();
-                        try (LineIterator lineIterator = FileUtils.lineIterator(eventPath.toFile(), "UTF-8")) {
-                            while (lineIterator.hasNext()) {
-                                try {
-                                    lines++;
-                                    currentLine = lineIterator.nextLine();
-                                    if (StringUtils.isBlank(currentLine) || !JSONUtil.isJson(currentLine)) {
-                                        continue;
+                        try {
+                            try (LineIterator lineIterator = FileUtils.lineIterator(eventPath.toFile(), "UTF-8")) {
+                                while (lineIterator.hasNext()) {
+                                    try {
+                                        lines++;
+                                        currentLine = lineIterator.nextLine();
+                                        if (StringUtils.isBlank(currentLine) || !JSONUtil.isJson(currentLine)) {
+                                            continue;
+                                        }
+                                        artifactEventRecord = JSONObject.parseObject(currentLine, ArtifactEventRecord.class);
+                                        artifactEventRecord.setPath(String.format("%s-%s-%s", artifactEventRecord.getStorageId(), artifactEventRecord.getRepositoryId(), artifactEventRecord.getArtifactPath()));
+                                        repositoryPath = repositoryPathResolver.resolve(artifactEventRecord.getStorageId(), artifactEventRecord.getRepositoryId(), artifactEventRecord.getArtifactPath());
+                                        if (!Files.exists(repositoryPath)) {
+                                            continue;
+                                        }
+                                        if (ArtifactEventTypeEnum.EVENT_ARTIFACT_FILE_DOWNLOADED.getType() == artifactEventRecord.getEventType()) {
+                                            artifactEventRecordList.add(artifactEventRecord);
+                                        }
+                                        if (artifactEventRecordList.size() == batch) {
+                                            clear(artifactEventRecordList, lines);
+                                        }
+                                    } catch (Exception ex) {
+                                        log.warn(ExceptionUtils.getStackTrace(ex));
                                     }
-                                    artifactEventRecord = JSONObject.parseObject(currentLine, ArtifactEventRecord.class);
-                                    artifactEventRecord.setPath(String.format("%s-%s-%s", artifactEventRecord.getStorageId(), artifactEventRecord.getRepositoryId(), artifactEventRecord.getArtifactPath()));
-                                    //制品下载中事件
-                                    repositoryPath = repositoryPathResolver.resolve(artifactEventRecord.getStorageId(), artifactEventRecord.getRepositoryId(), artifactEventRecord.getArtifactPath());
-                                    if (!Files.exists(repositoryPath)) {
-                                        continue;
-                                    }
-                                    if (ArtifactEventTypeEnum.EVENT_ARTIFACT_FILE_DOWNLOADING.getType() == artifactEventRecord.getEventType()) {
-                                        artifactEventRecordList.add(artifactEventRecord);
-                                    } else if (ArtifactEventTypeEnum.EVENT_ARTIFACT_FILE_DOWNLOADED.getType() == artifactEventRecord.getEventType()) {
-                                        artifactEventRecordList.add(artifactEventRecord);
-                                    }
-                                    if (artifactEventRecordList.size() == batch) {
-                                        clear(artifactEventRecordList, lines);
-                                    }
-                                } catch (Exception ex) {
-                                    log.warn(ExceptionUtils.getStackTrace(ex));
+                                }
+                                if (CollectionUtils.isNotEmpty(artifactEventRecordList)) {
+                                    clear(artifactEventRecordList, lines);
                                 }
                             }
-                            if (CollectionUtils.isNotEmpty(artifactEventRecordList)) {
-                                clear(artifactEventRecordList, lines);
-                            }
+                        } catch (Exception ex) {
+                            log.info("Handle eventPath [{}] lines [{}] error [{}] ms", eventPath.toString(), lines, ExceptionUtils.getStackTrace(ex));
                         }
                         log.info("Handle eventPath [{}] lines [{}] finished take time [{}] ms", eventPath.toString(), lines, System.currentTimeMillis() - startTime);
                         deletePathList.add(eventPath);
@@ -144,11 +140,8 @@ public class EventTask {
             if (!Files.exists(repositoryPath)) {
                 continue;
             }
-            if (ArtifactEventTypeEnum.EVENT_ARTIFACT_FILE_DOWNLOADING.getType() == artifactEventRecordHandle.getEventType()) {
-                artifactDownloadingEventHandler.handleEventRecord(repositoryPath, size, true);
-                log.info("Handle current line [{}] repositoryPath [{}] EVENT_ARTIFACT_FILE_DOWNLOADING finished artifactEventRecordList size [{}]", lines, repositoryPath.toString(), artifactEventRecordList.size());
-            } else if (ArtifactEventTypeEnum.EVENT_ARTIFACT_FILE_DOWNLOADED.getType() == artifactEventRecordHandle.getEventType()) {
-                artifactEventWebhookListener.handleEventRecord(ArtifactEventTypeEnum.EVENT_ARTIFACT_FILE_DOWNLOADED, repositoryPath);
+            if (ArtifactEventTypeEnum.EVENT_ARTIFACT_FILE_DOWNLOADED.getType() == artifactEventRecordHandle.getEventType()) {
+                artifactDownloadedEventHandler.handleEventRecord(repositoryPath, size, true);
                 log.info("Handle current line [{}] repositoryPath [{}] EVENT_ARTIFACT_FILE_DOWNLOADED finished artifactEventRecordList size [{}]", lines, repositoryPath.toString(), artifactEventRecordList.size());
             }
         }

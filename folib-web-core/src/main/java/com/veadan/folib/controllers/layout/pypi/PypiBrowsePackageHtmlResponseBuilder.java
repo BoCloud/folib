@@ -61,7 +61,8 @@ public class PypiBrowsePackageHtmlResponseBuilder {
             RepositoryPath repositoryPath = (RepositoryPath) path;
             PypiArtifactCoordinates artifactCoordinates = (PypiArtifactCoordinates) RepositoryFiles.readCoordinates(repositoryPath);
 
-            packageLinks.append("<a href=\"../../packages/").append(artifactCoordinates.getFileName()).append("\">").append(artifactCoordinates.getFileName()).append("</a><br>\n");
+            Repository repository = repositoryPath.getRepository();
+            packageLinks.append("<a href=\"" + "/storages/").append(repository.getStorage().getId()).append("/").append(repository.getId()).append("/packages/").append(artifactCoordinates.getFileName()).append("\">").append(artifactCoordinates.getFileName()).append("</a><br>\n");
         }
 
         return packageLinks.toString();
@@ -99,7 +100,7 @@ public class PypiBrowsePackageHtmlResponseBuilder {
         PypiArtifactCoordinates artifactCoordinates = null;
         for (PypiSearchResult pypiSearchResult : pypiSearchResultList) {
             artifactCoordinates = PypiArtifactCoordinates.parse(pypiSearchResult.getArtifactName());
-            packageLinks.append("<a href=\"../../packages/").append(artifactCoordinates.getFileName()).append("\">").append(artifactCoordinates.getFileName()).append("</a><br>\n");
+            packageLinks.append("<a href=\"" + "/storages/").append(pypiSearchResult.getStorageId()).append("/").append(pypiSearchResult.getRepositoryId()).append("/packages/").append(artifactCoordinates.getFileName()).append("\">").append(artifactCoordinates.getFileName()).append("</a><br>\n");
         }
         return packageLinks.toString();
     }
