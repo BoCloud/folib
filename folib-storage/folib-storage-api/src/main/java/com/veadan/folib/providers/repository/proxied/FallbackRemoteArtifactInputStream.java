@@ -1,5 +1,6 @@
 package com.veadan.folib.providers.repository.proxied;
 
+import com.veadan.folib.artifact.ArtifactNotFoundException;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.FilterInputStream;
@@ -23,8 +24,11 @@ public class FallbackRemoteArtifactInputStream extends FilterInputStream {
         super(primaryInputStream);
         this.fallbackInputStreamSupplier = fallbackInputStreamSupplier;
     }
-    private void switchToFallback(Exception e) {
+    private void switchToFallback(Exception e) throws ArtifactNotFoundException {
         if (usingFallback) {
+            if (e instanceof ArtifactNotFoundException){
+                throw (ArtifactNotFoundException)e;
+            }
             throw new RuntimeException("Fallback Exception", e);
         }
         usingFallback = true;
@@ -59,6 +63,7 @@ public class FallbackRemoteArtifactInputStream extends FilterInputStream {
             switchToFallback(e);
             return read(b);
         }
+
     }
 
     @Override
@@ -91,7 +96,11 @@ public class FallbackRemoteArtifactInputStream extends FilterInputStream {
         try {
             super.mark(readlimit);
         } catch (Exception e) {
-            switchToFallback(e);
+            try {
+                switchToFallback(e);
+            } catch (ArtifactNotFoundException ex) {
+                throw new RuntimeException(ex);
+            }
             mark(readlimit);
         }
     }
@@ -111,7 +120,11 @@ public class FallbackRemoteArtifactInputStream extends FilterInputStream {
         try {
             return super.markSupported();
         } catch (Exception e) {
-            switchToFallback(e);
+            try {
+                switchToFallback(e);
+            } catch (ArtifactNotFoundException ex) {
+                throw new RuntimeException(ex);
+            }
             return markSupported();
         }
     }

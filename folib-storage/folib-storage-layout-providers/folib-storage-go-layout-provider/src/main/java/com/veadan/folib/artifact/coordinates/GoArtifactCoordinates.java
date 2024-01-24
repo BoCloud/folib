@@ -12,7 +12,7 @@ import org.springframework.util.Assert;
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlRootElement;
-import java.util.Arrays;
+import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -35,7 +35,7 @@ public class GoArtifactCoordinates extends LayoutArtifactCoordinatesEntity<GoArt
     public static final String VERSION = "version";
     public static final String EXTENSION = "extension";
 
-    public static final String GO_EXTENSION_REGEX = "(info|mod|zip)";
+    public static final String GO_EXTENSION_REGEX = "(zip)";
     private static final Pattern GO_EXTENSION_PATTERN = Pattern.compile(GO_EXTENSION_REGEX);
 
     public GoArtifactCoordinates() {
@@ -65,7 +65,7 @@ public class GoArtifactCoordinates extends LayoutArtifactCoordinatesEntity<GoArt
         String extName = FileUtil.extName(after);
         String suffix = "." + extName;
 
-        Assert.isTrue(Arrays.asList(".info", ".mod", ".zip").contains(suffix), String.format("Illegal artifact path [%s]", path));
+        Assert.isTrue(Objects.equals(".zip", suffix), String.format("Illegal artifact path [%s]", path));
 
         String version = after.substring(0, after.lastIndexOf(suffix));
 

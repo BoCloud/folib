@@ -1,6 +1,7 @@
 package com.veadan.folib.providers.layout;
 
 
+import cn.hutool.core.io.FileUtil;
 import com.veadan.folib.artifact.coordinates.GoArtifactCoordinates;
 import com.veadan.folib.providers.io.RepositoryFileAttributeType;
 import com.veadan.folib.providers.io.RepositoryFiles;
@@ -31,12 +32,15 @@ public class GoLayoutProvider extends AbstractLayoutProvider<GoArtifactCoordinat
     public static final String ALIAS = GoArtifactCoordinates.LAYOUT_NAME;
 
     public static final Collection<String> GO_METADATA_SET;
+
     static {
         HashSet<String> set = new HashSet<>();
         set.add("list");
         set.add("@latest");
+        set.add(".info");
         GO_METADATA_SET = Collections.unmodifiableSet(set);
     }
+
     @Inject
     private GoRepositoryManagementStrategy goRepositoryManagementStrategy;
 
@@ -57,7 +61,11 @@ public class GoLayoutProvider extends AbstractLayoutProvider<GoArtifactCoordinat
 
     @Override
     public boolean isArtifactMetadata(RepositoryPath path) {
-        return GO_METADATA_SET.contains(path.getFileName().toString());
+        return GO_METADATA_SET.stream().anyMatch(path::endsWith);
+    }
+
+    public boolean isArtifact(RepositoryPath path) {
+        return "zip".equals(FileUtil.extName(path.getFileName().toString()));
     }
 
 
@@ -81,13 +89,11 @@ public class GoLayoutProvider extends AbstractLayoutProvider<GoArtifactCoordinat
         Map<RepositoryFileAttributeType, Object> result = super.getRepositoryFileAttributes(repositoryPath,
                 attributeTypes);
 
-        for (RepositoryFileAttributeType attributeType : attributeTypes)
-        {
+        for (RepositoryFileAttributeType attributeType : attributeTypes) {
             Object value = result.get(attributeType);
-            switch (attributeType)
-            {
+            switch (attributeType) {
                 case ARTIFACT:
-                    value = (Boolean) value && !isArtifactMetadata(repositoryPath);
+                    value = (Boolean) value && !isArtifactMetadata(repositoryPath) && isArtifact(repositoryPath);
 
                     result.put(attributeType, value);
 
