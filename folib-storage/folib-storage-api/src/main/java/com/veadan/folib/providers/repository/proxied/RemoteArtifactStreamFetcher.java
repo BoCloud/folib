@@ -1,16 +1,15 @@
 package com.veadan.folib.providers.repository.proxied;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.net.URI;
-
-import javax.ws.rs.core.Response;
-
 import com.veadan.folib.artifact.ArtifactNotFoundException;
 import com.veadan.folib.client.CloseableRestResponse;
 import com.veadan.folib.client.RestArtifactResolver;
 import com.veadan.folib.providers.io.RepositoryFiles;
 import com.veadan.folib.providers.io.RepositoryPath;
+
+import javax.ws.rs.core.Response;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.URI;
 
 public class RemoteArtifactStreamFetcher
 {

@@ -207,7 +207,12 @@ export default {
     'TotalNumberOfPackets': '包总数',
     'NumberOfQuestions': '问题包数',
     'SecurityScore': '安全评分',
-
+    'GitRepositoryAddr': 'git仓库地址',
+    'GitProviderCredential': 'git私有仓库凭据',
+    'GitUsername': 'git仓库用户名',
+    'GitPassword': 'git仓库密码/token',
+    'GitProvider': 'Git Provider',
+    'AddGitCredential': '添加git凭据',
 
 
 }

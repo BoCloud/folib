@@ -1,14 +1,5 @@
 package com.veadan.folib.providers.repository.proxied;
 
-import java.io.BufferedInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.nio.file.Files;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReadWriteLock;
-
-import javax.inject.Inject;
-
 import com.veadan.folib.client.RestArtifactResolver;
 import com.veadan.folib.config.HelmRepoUtil;
 import com.veadan.folib.event.artifact.ArtifactEventListenerRegistry;
@@ -23,6 +14,13 @@ import com.veadan.folib.storage.repository.remote.heartbeat.RemoteRepositoryAliv
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
+
+import javax.inject.Inject;
+import java.io.BufferedInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.List;
+import java.util.function.Function;
 
 /**
  * @author veadan
@@ -52,6 +50,8 @@ public class ProxyRepositoryArtifactResolver
 
     @Inject
     private HelmRepoUtil helmRepoUtil;
+    @Inject
+    private List<FallbackRemoteArtifactInputStreamFactory> fallbackRemoteArtifactInputStreamRegistry;
 
     /**
      * This method has been developed to force fetch resource from remote.
@@ -74,9 +74,19 @@ public class ProxyRepositoryArtifactResolver
 //        ReadWriteLock lockSource = repositoryPathLock.lock(repositoryPath, "remote-fetch");
 //        Lock lock = lockSource.writeLock();
 //        lock.lock();
+        Function<Exception, InputStream> fallback = null;
+        for (FallbackRemoteArtifactInputStreamFactory fallbackRemoteArtifactInputStreamFactory : fallbackRemoteArtifactInputStreamRegistry) {
+            if (repositoryPath.getRepository().getLayout().equals(fallbackRemoteArtifactInputStreamFactory.getLayout())){
+                fallback = fallbackRemoteArtifactInputStreamFactory.getFallbackRemoteArtifactInputStream(repositoryPath);
+                break;
+            }
+        }
+        InputStream inputStream = new ProxyRepositoryInputStream(client, repositoryPath);
+        if (fallback != null) {
+            inputStream = new FallbackRemoteArtifactInputStream(inputStream, fallback);
+        }
 
-        try (InputStream is = new BufferedInputStream(new ProxyRepositoryInputStream(client, repositoryPath)))
-        {
+        try (InputStream is = new BufferedInputStream(inputStream)) {
             return doFetch(repositoryPath, is);
         }
 //        finally

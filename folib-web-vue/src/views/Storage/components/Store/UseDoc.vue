@@ -946,6 +946,17 @@
           </prism-editor>
         </a-timeline-item>
       </a-timeline>
+      <a-timeline v-if="repositoryType === 'go'">
+        <a-timeline-item color="primary">
+          {{ $t('Store.GoProxyConfig') }}
+          <p>
+            {{ $t('Store.useGo') }}
+          </p>
+          <prism-editor class="my-editor height-300"
+                        :highlight="highlighterHandle" :line-numbers="false" :value='"go env -w GOPROXY="+repositoryUrl' :readonly="true">
+          </prism-editor>
+        </a-timeline-item>
+      </a-timeline>
       <a-timeline>
         <a-timeline-item color="primary">
           {{ $t('Store.WarehouseAddress') }}

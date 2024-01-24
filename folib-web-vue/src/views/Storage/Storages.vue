@@ -559,16 +559,12 @@
                       <h6>CocoaPods</h6>
                     </a-col>
                     <a-col :span="4">
-                      <div class="checkbox-label" :class="[layoutChecked === 'go' ? 'active' : '']">
-                        <a-tooltip>
-                          <template slot="title">
-                            {{ $t('Storage.NextVersion') }}🤝
-                          </template>
+                      <div class="checkbox-label" :class="[layoutChecked === 'go' ? 'active' : '']"
+                           @click="toggleCheckbox('go')">
                         <a-avatar :size="44" shape="square"
                                   style="border-radius: 8px; background-image: linear-gradient( 310deg, #020202, #5c6391 );">
                           <img src="images/folib/go.svg" style="width: 100%;" alt="">
                         </a-avatar>
-                        </a-tooltip>
                       </div>
                       <h6>Go</h6>
                     </a-col>
@@ -794,6 +790,44 @@
                       :placeholder="$t('Storage.AccessPassword')" />
                   </a-form-item>
                 </a-col>
+
+                <!--git  layoutChecked === 'go' -->
+                <template v-if="layoutChecked === 'go' ">
+
+                  <template v-if="folibRepository.repositoryConfiguration">
+                      <template v-for="(item,index) in folibRepository.repositoryConfiguration.gitVCS">
+                        <a-col :span="12">
+                          <a-form-item class="mb-10" :label="$t('Storage.GitProviderCredential')" :colon="false">
+                            <a-input :placeholder="$t('Storage.AddressFormat')"
+                                     v-model="item.url"/>
+                          </a-form-item>
+                        </a-col>
+
+                        <a-col :span="5">
+                          <a-form-item class="mb-10" :label="$t('Storage.GitUsername')" :colon="false">
+                            <a-input v-model="item.username" autocomplete="new-text"
+                                     :placeholder="$t('Storage.AccessUser')"/>
+                          </a-form-item>
+                        </a-col>
+                        <a-col :span="5">
+                          <a-form-item class="mb-10" :label="$t('Storage.GitPassword')" :colon="false">
+                            <a-input-password v-model="item.password"
+                                              autocomplete="new-password"
+                                              :placeholder="$t('Storage.AccessPassword')"/>
+                          </a-form-item>
+                        </a-col>
+                        <a-col :span="2">
+                          <a-form-item class="mb-10" label=" " :colon="false">
+                            <a-button @click="delGitItem(index)">{{ $t('Storage.Delete') }}</a-button>
+                          </a-form-item>
+                        </a-col>
+                      </template>
+                    </template>
+                    <a-col :span="24">
+                        <a-button @click="addGitItem()">{{ $t('Storage.AddGitCredential') }}</a-button>
+                    </a-col>
+
+                </template>
                 <a-col :span="4">
                   <a-form-item class="mb-10" :label="$t('Storage.TimedCheck')" :colon="false">
                     <a-input :placeholder="$t('Storage.DefaultTime')" v-model="folibRepository.remoteRepository.checkIntervalSeconds"
@@ -1248,7 +1282,14 @@ export default {
           { required: true, trigger: 'blur', validator: checkStorageId }
         ]
       },
-      draggableHeight: '100vh'
+      draggableHeight: '100vh',
+      goRepositoryConfiguration:{
+        gitVCS:[
+
+        ],
+        gitVCS2:[]
+        //there may be other VCS ...
+      }
     };
   },
   watch: {
@@ -2132,6 +2173,16 @@ export default {
           message: error,
         })
       })
+    },
+    addGitItem(){
+      if (!this.folibRepository.repositoryConfiguration) {
+        // 如果 repositoryConfiguration 为 null 或未定义，则初始化它
+        this.folibRepository.repositoryConfiguration = { gitVCS: [],layout : "go" };
+      }
+      this.folibRepository.repositoryConfiguration.gitVCS.push({url:""})
+    },
+    delGitItem(index){
+      this.folibRepository.repositoryConfiguration.gitVCS.splice(index, 1);
     }
   },
 };

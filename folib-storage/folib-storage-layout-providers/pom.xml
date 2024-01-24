@@ -43,6 +43,7 @@
         <module>folib-storage-helm-layout-provider</module>
         <module>folib-storage-conan-layout-provider</module>
         <module>folib-storage-cocoapods-layout-provider</module>
+        <module>folib-storage-go-layout-provider</module>
     </modules>
 
     <dependencies>
