@@ -795,44 +795,38 @@
                 <template v-if="layoutChecked === 'go' ">
 
                   <template v-if="folibRepository.repositoryConfiguration">
-                    <template v-for="(item,index) in folibRepository.repositoryConfiguration.gitVCS">
-                      <a-col :span="10">
-                        <a-form-item class="mb-10" :label="$t('Storage.GitRepositoryAddr')" :colon="false">
-                          <a-input :placeholder="$t('Storage.AddressFormat')"
-                                   v-model="item.url"/>
-                        </a-form-item>
-                      </a-col>
-                      <a-col :span="2">
-                        <a-form-item class="mb-10" label=" " :colon="false">
-                          <a-button @click="verifyAlive()">{{ $t('Storage.Test') }}</a-button>
-                        </a-form-item>
-                      </a-col>
-                      <a-col :span="5">
-                        <a-form-item class="mb-10" :label="$t('Storage.Username')" :colon="false">
-                          <a-input v-model="item.username" autocomplete="new-text"
-                                   :placeholder="$t('Storage.AccessUser')"/>
-                        </a-form-item>
-                      </a-col>
-                      <a-col :span="5">
-                        <a-form-item class="mb-10" :label="$t('Storage.Password')" :colon="false">
-                          <a-input-password v-model="item.password"
-                                            autocomplete="new-password"
-                                            :placeholder="$t('Storage.AccessPassword')"/>
-                        </a-form-item>
-                      </a-col>
-                      <a-col :span="2">
-                        <a-form-item class="mb-10" label=" " :colon="false">
-                          <a-button @click="delGitItem(index)">{{ $t('Storage.Delete') }}</a-button>
-                        </a-form-item>
-                      </a-col>
-                    </template>
-                  </template>
+                      <template v-for="(item,index) in folibRepository.repositoryConfiguration.gitVCS">
+                        <a-col :span="12">
+                          <a-form-item class="mb-10" :label="$t('Storage.GitProviderCredential')" :colon="false">
+                            <a-input :placeholder="$t('Storage.AddressFormat')"
+                                     v-model="item.url"/>
+                          </a-form-item>
+                        </a-col>
 
-                  <a-col :span="24">
-                    <a-form-item class="mb-10" label=" " :colon="false">
-                      <a-button @click="addGitItem()">{{ $t('Storage.CreateGitCredential') }}</a-button>
-                    </a-form-item>
-                  </a-col>
+                        <a-col :span="5">
+                          <a-form-item class="mb-10" :label="$t('Storage.GitUsername')" :colon="false">
+                            <a-input v-model="item.username" autocomplete="new-text"
+                                     :placeholder="$t('Storage.AccessUser')"/>
+                          </a-form-item>
+                        </a-col>
+                        <a-col :span="5">
+                          <a-form-item class="mb-10" :label="$t('Storage.GitPassword')" :colon="false">
+                            <a-input-password v-model="item.password"
+                                              autocomplete="new-password"
+                                              :placeholder="$t('Storage.AccessPassword')"/>
+                          </a-form-item>
+                        </a-col>
+                        <a-col :span="2">
+                          <a-form-item class="mb-10" label=" " :colon="false">
+                            <a-button @click="delGitItem(index)">{{ $t('Storage.Delete') }}</a-button>
+                          </a-form-item>
+                        </a-col>
+                      </template>
+                    </template>
+                    <a-col :span="24">
+                        <a-button @click="addGitItem()">{{ $t('Storage.AddGitCredential') }}</a-button>
+                    </a-col>
+
                 </template>
                 <a-col :span="4">
                   <a-form-item class="mb-10" :label="$t('Storage.TimedCheck')" :colon="false">
@@ -2185,7 +2179,7 @@ export default {
         // 如果 repositoryConfiguration 为 null 或未定义，则初始化它
         this.folibRepository.repositoryConfiguration = { gitVCS: [],layout : "go" };
       }
-      this.folibRepository.repositoryConfiguration.gitVCS.push({url:"aaa"})
+      this.folibRepository.repositoryConfiguration.gitVCS.push({url:""})
     },
     delGitItem(index){
       this.folibRepository.repositoryConfiguration.gitVCS.splice(index, 1);
