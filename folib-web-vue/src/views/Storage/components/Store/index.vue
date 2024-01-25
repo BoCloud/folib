@@ -109,14 +109,8 @@
                       <a-icon type="cloud-upload" />
                     </small>
                   </a>
-                  <a v-if="uploadEnabled && folibRepository.layout === 'go'"><small style="padding-right: 20px"
-                      @click="handleMavenUpload">
-                    {{ $t('Store.Upload') }}
-                      <a-icon type="cloud-upload" />
-                    </small>
-                  </a>
                   <a v-if="uploadEnabled && folibRepository.layout !== 'rpm'"><small style="padding-right: 20px" @click="handleUpload">
-                      ${{ t('BatchUpload') }}
+                      {{ $t('Store.BatchUpload') }}
                       <a-icon type="cloud-upload" />
                     </small>
                   </a>
@@ -984,7 +978,7 @@ export default {
       showOperationDispatchFormModal: false,
       repositories: [],
       custom: false,
-      enablUploadedLayout: ['Raw', 'php', 'Maven 2', 'npm', 'rpm'],
+      enablUploadedLayout: ['Raw', 'php', 'Maven 2', 'npm', 'rpm', 'go'],
       permissions: [],
       mavenUploadVisible: false,
       uploadType: 1,
