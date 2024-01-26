@@ -2,12 +2,15 @@ package com.veadan.folib.providers.repository;
 
 
 import com.alibaba.fastjson.JSONObject;
+import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
+import com.veadan.folib.components.DistributedCacheComponent;
 import com.veadan.folib.config.FolibPublicUtils;
 import com.veadan.folib.constant.GlobalConstants;
 import com.veadan.folib.data.criteria.Paginator;
 import com.veadan.folib.domain.Artifact;
 import com.veadan.folib.domain.ArtifactEntity;
+import com.veadan.folib.enums.ProductTypeEnum;
 import com.veadan.folib.io.RepositoryStreamReadContext;
 import com.veadan.folib.io.RepositoryStreamWriteContext;
 import com.veadan.folib.providers.io.*;
@@ -17,6 +20,7 @@ import com.veadan.folib.providers.repository.proxied.ProxyRepositoryArtifactReso
 import com.veadan.folib.service.ProxyRepositoryConnectionPoolConfigurationService;
 import com.veadan.folib.services.ArtifactManagementService;
 import com.veadan.folib.storage.repository.Repository;
+import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -29,6 +33,8 @@ import javax.inject.Inject;
 import javax.ws.rs.client.Client;
 import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.MultivaluedHashMap;
+import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 import java.io.IOException;
 import java.io.InputStream;
@@ -70,6 +76,9 @@ public class ProxyRepositoryProvider
     @Autowired
     protected ArtifactManagementService artifactManagementService;
 
+    @Inject
+    private DistributedCacheComponent distributedCacheComponent;
+
     @Override
     public String getAlias() {
         return ALIAS;
@@ -87,7 +96,7 @@ public class ProxyRepositoryProvider
         RepositoryPath targetPath = hostedRepositoryProvider.fetchPath(repositoryPath);
         if (targetPath == null) {
             targetPath = resolvePathExclusive(repositoryPath);
-        } else if (RepositoryFiles.hasExpired(targetPath)) {
+        } else if (RepositoryFiles.hasExpired(targetPath) && !Files.isDirectory(targetPath)) {
             if (StringUtils.isNotBlank(repositoryPath.getArtifactPath())) {
                 eventPublisher.publishEvent(new ProxyRepositoryPathExpiredEvent(repositoryPathResolver.resolve(targetPath.getRepository(), repositoryPath.getArtifactPath())));
             } else {
@@ -101,9 +110,28 @@ public class ProxyRepositoryProvider
     public RepositoryPath resolvePathExclusive(RepositoryPath repositoryPath)
             throws IOException {
         try {
+            if (Boolean.TRUE.equals(repositoryPath.getDisableRemote())) {
+                return null;
+            }
             if (Boolean.TRUE.equals(repositoryPath.getEnableRemoteUrlPrefix()) && StringUtils.isNotBlank(repositoryPath.getTargetUrl())) {
                 String remoteUrl = repositoryPath.getRepository().getRemoteRepository().getUrl();
-                repositoryPath.setTargetUrl(String.format("%s/%s", StringUtils.removeEnd(remoteUrl, GlobalConstants.SEPARATOR), StringUtils.removeStart(repositoryPath.getTargetUrl(), GlobalConstants.SEPARATOR)));
+                remoteUrl = StringUtils.removeEnd(remoteUrl, GlobalConstants.SEPARATOR);
+                if (ProductTypeEnum.Docker.getFoLibraryName().equals(repositoryPath.getRepository().getLayout()) && remoteUrl.endsWith(GlobalConstants.DOCKER_V2)) {
+                    remoteUrl = remoteUrl.concat(GlobalConstants.SEPARATOR).concat(GlobalConstants.DOCKER_DEFAULT_REPO);
+                }
+                repositoryPath.setTargetUrl(String.format("%s/%s", remoteUrl, StringUtils.removeStart(repositoryPath.getTargetUrl(), GlobalConstants.SEPARATOR)));
+            }
+            if (StringUtils.isNotBlank(repositoryPath.getHeaderKey()) && StringUtils.isNotBlank(repositoryPath.getCacheKeyPattern())) {
+                String key = String.format(repositoryPath.getCacheKeyPattern(), repositoryPath.getStorageId(), repositoryPath.getRepositoryId());
+                String value = distributedCacheComponent.get(key);
+                if (StringUtils.isNotBlank(value)) {
+                    MultivaluedMap<String, Object> headers = repositoryPath.getHeaders();
+                    if (MapUtils.isEmpty(headers)) {
+                        headers = new MultivaluedHashMap();
+                    }
+                    headers.put(repositoryPath.getHeaderKey(), Lists.newArrayList(value));
+                    repositoryPath.setHeaders(headers);
+                }
             }
             return proxyRepositoryArtifactResolver.fetchRemoteResource(repositoryPath);
         } catch (IOException e) {

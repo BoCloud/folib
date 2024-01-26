@@ -49,7 +49,13 @@ public class RepositoryPath
 
     private Boolean enableRemoteUrlPrefix;
 
+    private Boolean disableRemote;
+
     private MultivaluedMap<String, Object> headers;
+
+    private String headerKey;
+
+    private String cacheKeyPattern;
 
     protected String path;
 
@@ -391,5 +397,29 @@ public class RepositoryPath
 
     public void setArtifactPath(String artifactPath) {
         this.artifactPath = artifactPath;
+    }
+
+    public Boolean getDisableRemote() {
+        return disableRemote;
+    }
+
+    public void setDisableRemote(Boolean disableRemote) {
+        this.disableRemote = disableRemote;
+    }
+
+    public String getHeaderKey() {
+        return headerKey;
+    }
+
+    public void setHeaderKey(String headerKey) {
+        this.headerKey = headerKey;
+    }
+
+    public String getCacheKeyPattern() {
+        return cacheKeyPattern;
+    }
+
+    public void setCacheKeyPattern(String cacheKeyPattern) {
+        this.cacheKeyPattern = cacheKeyPattern;
     }
 }

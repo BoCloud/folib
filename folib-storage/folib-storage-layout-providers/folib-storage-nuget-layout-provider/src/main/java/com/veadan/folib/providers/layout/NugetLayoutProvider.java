@@ -57,11 +57,13 @@ public class NugetLayoutProvider
                     getClass().getCanonicalName(), ALIAS);
     }
 
-    protected NugetArtifactCoordinates getArtifactCoordinates(RepositoryPath path) throws IOException
+    @Override
+    public NugetArtifactCoordinates getArtifactCoordinates(RepositoryPath path) throws IOException
     {
         return NugetArtifactCoordinates.parse(RepositoryFiles.relativizePath(path));
     }
 
+    @Override
     protected boolean isArtifactMetadata(RepositoryPath path)
     {
         return path.getFileName().toString().endsWith(".nuspec");

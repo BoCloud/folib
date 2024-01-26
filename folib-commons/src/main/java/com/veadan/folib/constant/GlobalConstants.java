@@ -105,4 +105,13 @@ public interface GlobalConstants {
      */
     List<String> MAVEN_EXTENSION_LIST = Lists.newArrayList(".jar", ".war", ".ear", ".pom");
 
+    /**
+     * docker v2
+     */
+    String DOCKER_V2 = "/v2";
+
+    /**
+     * library
+     */
+    String DOCKER_DEFAULT_REPO = "library";
 }

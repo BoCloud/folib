@@ -120,11 +120,20 @@ public class GroupRepositoryProvider
                 if (Objects.nonNull(repositoryPath.getEnableRemoteUrlPrefix())) {
                     subRepositoryPath.setEnableRemoteUrlPrefix(repositoryPath.getEnableRemoteUrlPrefix());
                 }
+                if (Objects.nonNull(repositoryPath.getDisableRemote())) {
+                    subRepositoryPath.setDisableRemote(repositoryPath.getDisableRemote());
+                }
                 if (StringUtils.isNotBlank(repositoryPath.getTargetUrl())) {
                     subRepositoryPath.setTargetUrl(repositoryPath.getTargetUrl());
                 }
                 if (MapUtils.isNotEmpty(repositoryPath.getHeaders())) {
                     subRepositoryPath.setHeaders(repositoryPath.getHeaders());
+                }
+                if (Objects.nonNull(repositoryPath.getHeaderKey())) {
+                    subRepositoryPath.setHeaderKey(repositoryPath.getHeaderKey());
+                }
+                if (StringUtils.isNotBlank(repositoryPath.getCacheKeyPattern())) {
+                    subRepositoryPath.setCacheKeyPattern(repositoryPath.getCacheKeyPattern());
                 }
                 if (StringUtils.isNotBlank(repositoryPath.getArtifactPath())) {
                     subRepositoryPath.setArtifactPath(repositoryPath.getArtifactPath());

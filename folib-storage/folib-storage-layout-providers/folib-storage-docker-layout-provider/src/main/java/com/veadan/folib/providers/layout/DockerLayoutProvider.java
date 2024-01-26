@@ -68,11 +68,13 @@ public class DockerLayoutProvider
         logger.info("Registered layout provider '" + getClass().getCanonicalName() + "' with alias '" + ALIAS + "'.");
     }
 
-    protected DockerArtifactCoordinates getArtifactCoordinates(RepositoryPath path) throws IOException {
+    @Override
+    public DockerArtifactCoordinates getArtifactCoordinates(RepositoryPath path) throws IOException {
         logger.info("DockerArtifactCoordinates parse path [{}]", path);
         return DockerArtifactCoordinates.parse(RepositoryFiles.relativizePath(path));
     }
 
+    @Override
     public boolean isArtifactMetadata(RepositoryPath path) {
         // TODO: Fix
         return path.getFileName().toString().endsWith(".sha256");

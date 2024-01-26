@@ -36,11 +36,13 @@ public class P2LayoutProvider
                     getClass().getCanonicalName(), ALIAS);
     }
 
-    protected P2ArtifactCoordinates getArtifactCoordinates(RepositoryPath path) throws IOException
+    @Override
+    public P2ArtifactCoordinates getArtifactCoordinates(RepositoryPath path) throws IOException
     {
         return P2ArtifactCoordinates.create(RepositoryFiles.relativizePath(path));
     }
 
+    @Override
     public boolean isArtifactMetadata(RepositoryPath path)
     {
         String fileName = path.getFileName().toString();

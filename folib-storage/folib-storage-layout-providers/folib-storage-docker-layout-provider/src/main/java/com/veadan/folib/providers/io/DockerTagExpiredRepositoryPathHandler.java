@@ -84,15 +84,20 @@ public class DockerTagExpiredRepositoryPathHandler
         }
         DockerArtifactCoordinates dockerArtifactCoordinates = (DockerArtifactCoordinates) RepositoryFiles.readCoordinates(repositoryPath);
         String digest = dockerExpirationStrategy.fetchDigest(repositoryPath);
+        if (StringUtils.isBlank(digest)) {
+            return;
+        }
         String targetUrl = String.format("%s/manifests/%s", StringUtils.removeEnd(dockerArtifactCoordinates.getName(), "/"), digest);
-        repositoryPath.setEnableRemoteUrlPrefix(true);
-        repositoryPath.setHeaders(DockerHeaderEnum.acceptHeaders());
-        repositoryPath.setTargetUrl(targetUrl);
-        proxyRepositoryProvider.resolvePathExclusive(repositoryPath);
+        RepositoryPath refreshRepositoryPath = repositoryPath.resolveSibling(digest);
+        refreshRepositoryPath.setEnableRemoteUrlPrefix(true);
+        refreshRepositoryPath.setHeaders(DockerHeaderEnum.acceptHeaders());
+        refreshRepositoryPath.setTargetUrl(targetUrl);
+        proxyRepositoryProvider.resolvePathExclusive(refreshRepositoryPath);
         RepositoryPath manifestRepositoryPath = repositoryPath.getRoot().resolve(DockerLayoutProvider.MANIFEST).resolve(digest);
         if (!Files.exists(manifestRepositoryPath)) {
-            artifactManagementService.store(manifestRepositoryPath, repositoryPath);
+            artifactManagementService.store(manifestRepositoryPath, refreshRepositoryPath);
         }
+        RepositoryFiles.delete(repositoryPath, true);
     }
 
     private DockerExpirationStrategy getTagStrategy() {

@@ -9,6 +9,7 @@ import org.springframework.stereotype.Component;
 
 import javax.inject.Inject;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 /**
  * @author leipenghui
@@ -25,6 +26,13 @@ public class DistributedCacheComponent {
         log.debug("Put cacheName [{}] cacheValue [{}]", cacheName, cacheValue);
         if (StringUtils.isNotBlank(cacheName)) {
             hazelcastInstance.getMap(GlobalConstants.DISTRIBUTED_CACHE_NAME).put(cacheName, cacheValue);
+        }
+    }
+
+    public void put(String cacheName, String cacheValue, long ttl, TimeUnit timeUnit) {
+        log.debug("Put cacheName [{}] cacheValue [{}] ttl [{}] timeUnit [{}]", cacheName, cacheValue, ttl, timeUnit);
+        if (StringUtils.isNotBlank(cacheName)) {
+            hazelcastInstance.getMap(GlobalConstants.DISTRIBUTED_CACHE_NAME).put(cacheName, cacheValue, ttl, timeUnit);
         }
     }
 

@@ -56,7 +56,7 @@ public class Maven2LayoutProvider
     }
 
     @Override
-    protected MavenArtifactCoordinates getArtifactCoordinates(RepositoryPath repositoryPath)
+    public MavenArtifactCoordinates getArtifactCoordinates(RepositoryPath repositoryPath)
             throws IOException
     {
         MavenArtifact artifact = MavenArtifactUtils.convertPathToArtifact(repositoryPath);

@@ -11,13 +11,13 @@ import com.veadan.folib.services.ClusterSyncService;
 import com.veadan.folib.services.ConfigurationManagementService;
 import com.veadan.folib.services.StorageManagementService;
 import com.veadan.folib.storage.StorageDto;
+import com.veadan.folib.storage.repository.Repository;
 import com.veadan.folib.users.domain.Privileges;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.client.config.RequestConfig;
 import org.glassfish.jersey.apache.connector.ApacheClientProperties;
 import org.glassfish.jersey.client.authentication.HttpAuthenticationFeature;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 
@@ -126,6 +126,16 @@ public class CommonComponent {
             SyncStorageDto syncStorageDto = new SyncStorageDto(storage, storage.getId(), SyncStorageEnum.UPDATE);
             clusterSyncService.syncStorage(syncStorageDto);
         }
+    }
+
+    public boolean isRepositoryResolvable(Repository repository) {
+        final boolean isInService = repository.isInService();
+        if (!isInService) {
+            log.info("- Repository [{}] is not in service, skipping...",
+                    repository.getStorageIdAndRepositoryId());
+            return false;
+        }
+        return true;
     }
 
 }

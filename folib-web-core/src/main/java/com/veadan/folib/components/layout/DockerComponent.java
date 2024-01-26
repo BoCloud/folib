@@ -14,6 +14,7 @@ import com.veadan.folib.schema2.Manifests;
 import com.veadan.folib.services.DirectoryListingService;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
@@ -63,6 +64,9 @@ public class DockerComponent {
         String imageName = dockerArtifactCoordinates.getName();
         List<ImageManifest> imageManifestList = Lists.newArrayList();
         String manifestString = readManifest(repositoryPath);
+        if (StringUtils.isBlank(manifestString)) {
+            return null;
+        }
         ImageManifest imageManifest = JSON.parseObject(manifestString, ImageManifest.class);
         if (CollectionUtils.isNotEmpty(imageManifest.getManifests())) {
             //多架构镜像
@@ -70,6 +74,9 @@ public class DockerComponent {
             for (Manifests manifests : imageManifest.getManifests()) {
                 RepositoryPath manifestPath = repositoryPathResolver.resolve(repositoryPath.getStorageId(), repositoryPath.getRepositoryId(),  "manifest/" + manifests.getDigest());
                 manifestString = readManifest(manifestPath);
+                if (StringUtils.isBlank(manifestString)) {
+                    continue;
+                }
                 itemImageManifest = JSON.parseObject(manifestString, ImageManifest.class);
                 itemImageManifest.setDigest(manifests.getDigest());
                 imageManifestList.add(itemImageManifest);
@@ -86,6 +93,9 @@ public class DockerComponent {
             String imageName = dockerArtifactCoordinates.getName();
             List<LayerManifest> layerManifests = Lists.newArrayList();
             String manifestString = readManifest(repositoryPath);
+            if (StringUtils.isBlank(manifestString)) {
+                return null;
+            }
             ImageManifest imageManifest = JSON.parseObject(manifestString, ImageManifest.class);
             if (CollectionUtils.isNotEmpty(imageManifest.getLayers())) {
                 layerManifests.addAll(imageManifest.getLayers());
@@ -96,6 +106,9 @@ public class DockerComponent {
                 for (Manifests manifests : imageManifest.getManifests()) {
                     RepositoryPath manifestPath = repositoryPathResolver.resolve(repositoryPath.getStorageId(), repositoryPath.getRepositoryId(), "manifest/" + manifests.getDigest());
                     manifestString = readManifest(manifestPath);
+                    if (StringUtils.isBlank(manifestString)) {
+                       continue;
+                    }
                     itemImageManifest = JSON.parseObject(manifestString, ImageManifest.class);
                     if (CollectionUtils.isNotEmpty(itemImageManifest.getLayers())) {
                         layerManifests.addAll(itemImageManifest.getLayers());
@@ -109,9 +122,10 @@ public class DockerComponent {
         }
     }
 
-    private String readManifest(RepositoryPath manifestPath) {
+    public String readManifest(RepositoryPath manifestPath) {
         if (!DockerArtifactCoordinates.isManifestPath(manifestPath)) {
-            throw new IllegalArgumentException(String.format("RepositoryPath [%s] not is a manifest path", manifestPath));
+            log.warn(String.format("RepositoryPath [%s] not is a manifest path or not exists", manifestPath));
+            return "";
         }
         try {
             return Files.readString(manifestPath);
