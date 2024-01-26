@@ -585,9 +585,17 @@ public class ArtifactRepository extends GremlinVertexRepository<Artifact> {
                             continue;
                         }
                         if (ArtifactSearchConditionTypeEnum.MATCH.equals(artifactCondition.getArtifactSearchConditionTypeEnum())) {
-                            orEntityTraversalList.add(__.has(artifactCondition.getSearchKey(), searchValue.equals(artifactCondition.getSearchValue()) ? Text.textContains(searchValue) : Text.textRegex(searchValue)));
+                            if (Properties.ARTIFACT_PATH.equals(artifactCondition.getSearchKey())) {
+                                orEntityTraversalList.add(__.has(artifactCondition.getSearchKey(), searchValue.equals(artifactCondition.getSearchValue()) ? Text.textPrefix(searchValue) : Text.textRegex(searchValue)));
+                            } else {
+                                orEntityTraversalList.add(__.has(artifactCondition.getSearchKey(), searchValue.equals(artifactCondition.getSearchValue()) ? Text.textContains(searchValue) : Text.textRegex(searchValue)));
+                            }
                         } else if (ArtifactSearchConditionTypeEnum.N_MATCH.equals(artifactCondition.getArtifactSearchConditionTypeEnum())) {
-                            orEntityTraversalList.add(__.has(artifactCondition.getSearchKey(), searchValue.equals(artifactCondition.getSearchValue()) ? Text.textNotContains(searchValue) : Text.textNotRegex(searchValue)));
+                            if (Properties.ARTIFACT_PATH.equals(artifactCondition.getSearchKey())) {
+                                orEntityTraversalList.add(__.has(artifactCondition.getSearchKey(), searchValue.equals(artifactCondition.getSearchValue()) ? Text.textNotPrefix(searchValue) : Text.textNotRegex(searchValue)));
+                            } else {
+                                orEntityTraversalList.add(__.has(artifactCondition.getSearchKey(), searchValue.equals(artifactCondition.getSearchValue()) ? Text.textNotContains(searchValue) : Text.textNotRegex(searchValue)));
+                            }
                         } else if (ArtifactSearchConditionTypeEnum.EQ.equals(artifactCondition.getArtifactSearchConditionTypeEnum())) {
                             orEntityTraversalList.add(__.has(artifactCondition.getSearchKey(), searchValue));
                         } else if (ArtifactSearchConditionTypeEnum.NE.equals(artifactCondition.getArtifactSearchConditionTypeEnum())) {
@@ -651,9 +659,17 @@ public class ArtifactRepository extends GremlinVertexRepository<Artifact> {
                             continue;
                         }
                         if (ArtifactSearchConditionTypeEnum.MATCH.equals(artifactCondition.getArtifactSearchConditionTypeEnum())) {
-                            entityTraversal = entityTraversal.has(artifactCondition.getSearchKey(), searchValue.equals(artifactCondition.getSearchValue()) ? Text.textContains(searchValue) : Text.textRegex(searchValue));
+                            if (Properties.ARTIFACT_PATH.equals(artifactCondition.getSearchKey())) {
+                                entityTraversal = entityTraversal.has(artifactCondition.getSearchKey(), searchValue.equals(artifactCondition.getSearchValue()) ? Text.textPrefix(searchValue) : Text.textRegex(searchValue));
+                            } else {
+                                entityTraversal = entityTraversal.has(artifactCondition.getSearchKey(), searchValue.equals(artifactCondition.getSearchValue()) ? Text.textContains(searchValue) : Text.textRegex(searchValue));
+                            }
                         } else if (ArtifactSearchConditionTypeEnum.N_MATCH.equals(artifactCondition.getArtifactSearchConditionTypeEnum())) {
-                            entityTraversal = entityTraversal.has(artifactCondition.getSearchKey(), searchValue.equals(artifactCondition.getSearchValue()) ? Text.textNotContains(searchValue) : Text.textNotRegex(searchValue));
+                            if (Properties.ARTIFACT_PATH.equals(artifactCondition.getSearchKey())) {
+                                entityTraversal = entityTraversal.has(artifactCondition.getSearchKey(), searchValue.equals(artifactCondition.getSearchValue()) ? Text.textNotPrefix(searchValue) : Text.textNotRegex(searchValue));
+                            } else {
+                                entityTraversal = entityTraversal.has(artifactCondition.getSearchKey(), searchValue.equals(artifactCondition.getSearchValue()) ? Text.textNotContains(searchValue) : Text.textNotRegex(searchValue));
+                            }
                         } else if (ArtifactSearchConditionTypeEnum.EQ.equals(artifactCondition.getArtifactSearchConditionTypeEnum())) {
                             entityTraversal = entityTraversal.has(artifactCondition.getSearchKey(), searchValue);
                         } else if (ArtifactSearchConditionTypeEnum.NE.equals(artifactCondition.getArtifactSearchConditionTypeEnum())) {
