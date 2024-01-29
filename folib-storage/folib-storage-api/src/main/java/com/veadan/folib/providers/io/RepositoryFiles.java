@@ -24,6 +24,7 @@ import java.util.stream.Collectors;
  * @see Files
  */
 public abstract class RepositoryFiles {
+    public final static String SCHEME_PREFIX = StorageFileSystemProvider.FOLIB_SCHEME + ":";
 
     public static Boolean isChecksum(RepositoryPath path)
             throws IOException {
@@ -108,8 +109,8 @@ public abstract class RepositoryFiles {
         if (attributes == null) {
             return Collections.emptySet();
         }
-        String schemePrefix = String.format("%s:", StorageFileSystemProvider.FOLIB_SCHEME);
-        String attributesLocal = attributes.replace(schemePrefix, "").trim();
+
+        String attributesLocal = attributes.replace(SCHEME_PREFIX, "").trim();
         if (attributesLocal.equals("*")) {
             return Arrays.stream(RepositoryFileAttributeType.values())
                     .collect(Collectors.toSet());

@@ -489,7 +489,7 @@ public abstract class StorageFileSystemProvider
         Set<RepositoryFileAttributeType> targetRepositoryAttributes = new HashSet<>(
                 RepositoryFiles.parseAttributes(attributes));
 
-        final Map<RepositoryFileAttributeType, Object> repositoryFileAttributes = new HashMap<>();
+        final Map<RepositoryFileAttributeType, Object> repositoryFileAttributes = new HashMap<>(targetRepositoryAttributes.size()*2);
         for (Iterator<RepositoryFileAttributeType> iterator = targetRepositoryAttributes.iterator(); iterator.hasNext(); ) {
             RepositoryFileAttributeType repositoryFileAttributeType = iterator.next();
             Optional.ofNullable(repositoryPath.cachedAttributes.get(repositoryFileAttributeType))
@@ -502,14 +502,13 @@ public abstract class StorageFileSystemProvider
         if (!targetRepositoryAttributes.isEmpty()) {
             Map<RepositoryFileAttributeType, Object> newAttributes = getRepositoryFileAttributes(repositoryPath,
                     targetRepositoryAttributes.toArray(new RepositoryFileAttributeType[targetRepositoryAttributes.size()]));
-            newAttributes.entrySet()
-                    .stream()
-                    .forEach(e -> {
-                        repositoryFileAttributes.put(e.getKey(),
-                                e.getValue());
-                        repositoryPath.cachedAttributes.put(e.getKey(),
-                                e.getValue());
-                    });
+            newAttributes.forEach((key, value) -> {
+                repositoryFileAttributes.put(key,
+                        value);
+
+                repositoryPath.cachedAttributes.put(key,
+                        value);
+            });
         }
 
         result.putAll(repositoryFileAttributes.entrySet()
