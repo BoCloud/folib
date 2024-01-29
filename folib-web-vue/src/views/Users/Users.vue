@@ -1,9 +1,9 @@
 <!--
-	This is the Billing page, it uses the dashboard layout in:
-	"./layouts/Dashboard.vue" .
+    This is the Billing page, it uses the dashboard layout in:
+    "./layouts/Dashboard.vue" .
  -->
 
- <template>
+<template>
   <div>
 
     <a-row type="flex" :gutter="24">
@@ -29,7 +29,7 @@
                 <a-col :span="24" :md="8">
                   <a-card class="payment-method-card">
                     <img src="images/folib/userAdmin.svg" alt="">
-                    <div v-if="currentUser" style="font-size:16px;color: #141414;font-weight: 600;">
+                    <div v-if="currentUser"  class="en-number">
                       <textOver
                           :text="$t('Users.TotalNumberOfUsers')"
                           :max="8" />
@@ -43,7 +43,7 @@
                 <a-col :span="24" :md="8">
                   <a-card class="payment-method-card">
                     <img src="images/folib/userAdmin.svg" alt="">
-                    <div v-if="currentUser" style="font-size:16px;color: #141414;font-weight: 600;">
+                    <div v-if="currentUser"  class="en-number">
                       <textOver
                           :text="$t('Users.NumberOfAdministrators')"
                           :max="8" />
@@ -57,7 +57,7 @@
                 <a-col :span="24" :md="8">
                   <a-card class="payment-method-card">
                     <img src="images/folib/userAdmin.svg" alt="">
-                    <div v-if="currentUser" style="font-size:16px;color: #141414;font-weight: 600;">
+                    <div v-if="currentUser" class="en-number">
                       <textOver
                           :text="$t('Users.NumberOfAnonymousUsers')"
                           :max="8" />
@@ -80,17 +80,17 @@
               <a-row :gutter="[24, 24]">
                 <a-col :span="24" class="ml-20">
                   <a-row :gutter="[24, 24]">
-                    <a-col :span="10" class="">
+                    <a-col :span="3" class="">
                       <a-input-search v-model="userQuery.username" :placeholder="$t('Users.EnterTheUsernameQuery')" @search="searchUser()"/>
                     </a-col>
-                    <a-col :span="10" class="ml-10">
+                    <a-col :span="3" class="ml-10">
                       <a-input-search v-model="userQuery.email" :placeholder="$t('Users.EnterTheEmailQuery')" @search="searchUser()"/>
                     </a-col>
                   </a-row>
                 </a-col>
                 <a-col :span="24">
                   <a-list class="mb-10 mr-10 ml-10" item-layout="vertical" size="large" :data-source="users" :loading="userLoading"
-                    :pagination="userTotal === 0 ? false : { pageSize: userPage.limit, total: userTotal, showLessItems: false, onChange: pageChange, current: userPage.page  }">
+                          :pagination="userTotal === 0 ? false : { pageSize: userPage.limit, total: userTotal, showLessItems: false, onChange: pageChange, current: userPage.page  }">
                     <a-list-item slot="renderItem" :key="index" slot-scope="item, index">
                       <label>
                         <a-col :span="24">
@@ -112,18 +112,18 @@
                               <a-button type="link" size="small" v-if="item.username !== 'admin'" @click.stop="delUserHandle(item.username)">
                                 <svg width="16" height="16" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
                                   <path class="fill-danger" fill-rule="evenodd" clip-rule="evenodd"
-                                    d="M9 2C8.62123 2 8.27497 2.214 8.10557 2.55279L7.38197 4H4C3.44772 4 3 4.44772 3 5C3 5.55228 3.44772 6 4 6L4 16C4 17.1046 4.89543 18 6 18H14C15.1046 18 16 17.1046 16 16V6C16.5523 6 17 5.55228 17 5C17 4.44772 16.5523 4 16 4H12.618L11.8944 2.55279C11.725 2.214 11.3788 2 11 2H9ZM7 8C7 7.44772 7.44772 7 8 7C8.55228 7 9 7.44772 9 8V14C9 14.5523 8.55228 15 8 15C7.44772 15 7 14.5523 7 14V8ZM12 7C11.4477 7 11 7.44772 11 8V14C11 14.5523 11.4477 15 12 15C12.5523 15 13 14.5523 13 14V8C13 7.44772 12.5523 7 12 7Z"
-                                    fill="#111827" />
+                                        d="M9 2C8.62123 2 8.27497 2.214 8.10557 2.55279L7.38197 4H4C3.44772 4 3 4.44772 3 5C3 5.55228 3.44772 6 4 6L4 16C4 17.1046 4.89543 18 6 18H14C15.1046 18 16 17.1046 16 16V6C16.5523 6 17 5.55228 17 5C17 4.44772 16.5523 4 16 4H12.618L11.8944 2.55279C11.725 2.214 11.3788 2 11 2H9ZM7 8C7 7.44772 7.44772 7 8 7C8.55228 7 9 7.44772 9 8V14C9 14.5523 8.55228 15 8 15C7.44772 15 7 14.5523 7 14V8ZM12 7C11.4477 7 11 7.44772 11 8V14C11 14.5523 11.4477 15 12 15C12.5523 15 13 14.5523 13 14V8C13 7.44772 12.5523 7 12 7Z"
+                                        fill="#111827" />
                                 </svg>
                                 <span class="text-danger">DELETE</span>
                               </a-button>
                               <a-button type="link" size="small" @click="userEditHandle">
                                 <svg width="16" height="16" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
                                   <path class="fill-muted"
-                                    d="M13.5858 3.58579C14.3668 2.80474 15.6332 2.80474 16.4142 3.58579C17.1953 4.36683 17.1953 5.63316 16.4142 6.41421L15.6213 7.20711L12.7929 4.37868L13.5858 3.58579Z"
-                                    fill="#111827" />
+                                        d="M13.5858 3.58579C14.3668 2.80474 15.6332 2.80474 16.4142 3.58579C17.1953 4.36683 17.1953 5.63316 16.4142 6.41421L15.6213 7.20711L12.7929 4.37868L13.5858 3.58579Z"
+                                        fill="#111827" />
                                   <path class="fill-muted"
-                                    d="M11.3787 5.79289L3 14.1716V17H5.82842L14.2071 8.62132L11.3787 5.79289Z" fill="#111827" />
+                                        d="M11.3787 5.79289L3 14.1716V17H5.82842L14.2071 8.62132L11.3787 5.79289Z" fill="#111827" />
                                 </svg>
                                 <span class="text-dark">EDIT</span>
                               </a-button>
@@ -146,7 +146,7 @@
         <a-row type="flex" :gutter="24">
           <a-col :span="24" class="mb-24">
             <a-card :bordered="false" class="header-solid h-full" :bodyStyle="{ paddingTop: 0, paddingBottom: '16px' }"
-              v-if="currentUser">
+                    v-if="currentUser">
               <template #title>
                 <h6 class="font-semibold m-0">{{ userNotEdit ? $t('Users.UserInformation') : $t('Users.UserEdit') }}</h6>
               </template>
@@ -155,8 +155,8 @@
                   <a-button type="link" size="small" @click="userEditCancelHandle">
                     <svg width="16" height="16" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
                       <path class="fill-danger" fill-rule="evenodd" clip-rule="evenodd"
-                        d="M9 2C8.62123 2 8.27497 2.214 8.10557 2.55279L7.38197 4H4C3.44772 4 3 4.44772 3 5C3 5.55228 3.44772 6 4 6L4 16C4 17.1046 4.89543 18 6 18H14C15.1046 18 16 17.1046 16 16V6C16.5523 6 17 5.55228 17 5C17 4.44772 16.5523 4 16 4H12.618L11.8944 2.55279C11.725 2.214 11.3788 2 11 2H9ZM7 8C7 7.44772 7.44772 7 8 7C8.55228 7 9 7.44772 9 8V14C9 14.5523 8.55228 15 8 15C7.44772 15 7 14.5523 7 14V8ZM12 7C11.4477 7 11 7.44772 11 8V14C11 14.5523 11.4477 15 12 15C12.5523 15 13 14.5523 13 14V8C13 7.44772 12.5523 7 12 7Z"
-                        fill="#111827" />
+                            d="M9 2C8.62123 2 8.27497 2.214 8.10557 2.55279L7.38197 4H4C3.44772 4 3 4.44772 3 5C3 5.55228 3.44772 6 4 6L4 16C4 17.1046 4.89543 18 6 18H14C15.1046 18 16 17.1046 16 16V6C16.5523 6 17 5.55228 17 5C17 4.44772 16.5523 4 16 4H12.618L11.8944 2.55279C11.725 2.214 11.3788 2 11 2H9ZM7 8C7 7.44772 7.44772 7 8 7C8.55228 7 9 7.44772 9 8V14C9 14.5523 8.55228 15 8 15C7.44772 15 7 14.5523 7 14V8ZM12 7C11.4477 7 11 7.44772 11 8V14C11 14.5523 11.4477 15 12 15C12.5523 15 13 14.5523 13 14V8C13 7.44772 12.5523 7 12 7Z"
+                            fill="#111827" />
                     </svg>
                     <span class="text-danger">{{ $t('Users.Cancel') }}</span>
                   </a-button>
@@ -175,9 +175,9 @@
                   </a-col>
                   <a-col :span="12">
                     <a-form-model-item class="mb-10" :label="$t('Users.Password')" :colon="false" prop="password"
-                      :required="passwordRequired">
+                                       :required="passwordRequired">
                       <a-input-password :disabled="userNotEdit" autocomplete="new-password" placeholder="******"
-                        v-model="currentUser.user.password" />
+                                        v-model="currentUser.user.password" />
                     </a-form-model-item>
                   </a-col>
                   <a-col :span="12">
@@ -197,7 +197,7 @@
           </a-col>
           <a-col :span="24" class="mb-24">
             <a-card :bordered="false" class="header-solid h-full" :bodyStyle="{ paddingTop: 0, paddingBottom: '16px' }"
-              v-if="currentUser">
+                    v-if="currentUser">
               <template #title>
                 <h6 class="font-semibold m-0">{{ userNotEdit ? $t('Users.RoleInformation') : $t('Users.RoleEditing') }}</h6>
               </template>
@@ -212,7 +212,7 @@
                     <a class="text-dark">{{ item.description }}</a>
                   </a-col>
                   <a-col :span="24" :md="8" class="ml-auto"
-                    style="display: flex; align-items: center; justify-content: flex-end">
+                         style="display: flex; align-items: center; justify-content: flex-end">
                     <span class="mr-15">{{ item.enabled ? $t('Users.TurnOn') : $t('Users.ShutDown') }}</span>
                     <a-switch :disabled="userNotEdit" default-checked v-model="item.enabled" @change="roleChange(index)" />
                   </a-col>
@@ -458,5 +458,5 @@ export default ({
 </script>
 
 <style lang="scss">
-
+.en-number {font-size:16px;color: #141414;font-weight: 600;}
 </style>

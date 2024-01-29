@@ -48,7 +48,7 @@ folib-commons/src/main/resources/application.yaml
 - 在该目录下利用Dockerfile进行build
 ```shell
 docker build -t folib-1.0 .
- docker buildx build --platform linux/amd64 -t folib-server:1.2.4-dev .
+ docker buildx build --platform linux/amd64 -t folib-server:1.2.3.12-dev .
 ```
 - docker启动
 ```shell

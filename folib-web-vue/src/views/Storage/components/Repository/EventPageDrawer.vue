@@ -2,7 +2,7 @@
   <a-drawer
       placement="right"
       width="65%"
-      title="事件"
+      :title="$t('Storage.EventRecord')"
       :visible="eventPageVisible"
       @close="eventDrawerClose"
       :zIndex="100"
