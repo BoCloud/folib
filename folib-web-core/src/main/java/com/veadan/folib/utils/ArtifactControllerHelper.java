@@ -1,6 +1,7 @@
 package com.veadan.folib.utils;
 
 import com.alibaba.fastjson.JSON;
+import com.veadan.folib.artifact.coordinates.DockerArtifactCoordinates;
 import com.veadan.folib.controllers.BaseController;
 import com.veadan.folib.exception.ExceptionHandlingOutputStream;
 import com.veadan.folib.io.ByteRangeInputStream;
@@ -221,7 +222,7 @@ public class ArtifactControllerHelper
         else if (path.getFileName().toString().endsWith(".gz"))
         {
             return com.google.common.net.MediaType.GZIP.toString();
-        } else if (path.toString().contains("/manifest/") && path.getFileName().toString().startsWith("sha256:")) {
+        } else if (DockerArtifactCoordinates.isManifestPath(path)) {
             //docker repository v2
             ImageManifest imageManifest = JSON.parseObject(Files.readString(path), ImageManifest.class);
             return imageManifest.getMediaType();

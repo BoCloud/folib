@@ -47,15 +47,9 @@ public class RepositoryPath
 
     private String targetUrl;
 
-    private Boolean enableRemoteUrlPrefix;
-
     private Boolean disableRemote;
 
     private MultivaluedMap<String, Object> headers;
-
-    private String headerKey;
-
-    private String cacheKeyPattern;
 
     protected String path;
 
@@ -375,14 +369,6 @@ public class RepositoryPath
         this.targetUrl = targetUrl;
     }
 
-    public Boolean getEnableRemoteUrlPrefix() {
-        return enableRemoteUrlPrefix;
-    }
-
-    public void setEnableRemoteUrlPrefix(Boolean enableRemoteUrlPrefix) {
-        this.enableRemoteUrlPrefix = enableRemoteUrlPrefix;
-    }
-
     public MultivaluedMap<String, Object> getHeaders() {
         return headers;
     }
@@ -405,21 +391,5 @@ public class RepositoryPath
 
     public void setDisableRemote(Boolean disableRemote) {
         this.disableRemote = disableRemote;
-    }
-
-    public String getHeaderKey() {
-        return headerKey;
-    }
-
-    public void setHeaderKey(String headerKey) {
-        this.headerKey = headerKey;
-    }
-
-    public String getCacheKeyPattern() {
-        return cacheKeyPattern;
-    }
-
-    public void setCacheKeyPattern(String cacheKeyPattern) {
-        this.cacheKeyPattern = cacheKeyPattern;
     }
 }

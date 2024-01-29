@@ -89,7 +89,6 @@ public class DockerTagExpiredRepositoryPathHandler
         }
         String targetUrl = String.format("%s/manifests/%s", StringUtils.removeEnd(dockerArtifactCoordinates.getName(), "/"), digest);
         RepositoryPath refreshRepositoryPath = repositoryPath.resolveSibling(digest);
-        refreshRepositoryPath.setEnableRemoteUrlPrefix(true);
         refreshRepositoryPath.setHeaders(DockerHeaderEnum.acceptHeaders());
         refreshRepositoryPath.setTargetUrl(targetUrl);
         proxyRepositoryProvider.resolvePathExclusive(refreshRepositoryPath);

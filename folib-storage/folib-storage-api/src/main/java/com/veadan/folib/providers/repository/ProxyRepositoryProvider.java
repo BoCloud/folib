@@ -14,6 +14,8 @@ import com.veadan.folib.enums.ProductTypeEnum;
 import com.veadan.folib.io.RepositoryStreamReadContext;
 import com.veadan.folib.io.RepositoryStreamWriteContext;
 import com.veadan.folib.providers.io.*;
+import com.veadan.folib.providers.layout.LayoutProvider;
+import com.veadan.folib.providers.layout.LayoutProviderRegistry;
 import com.veadan.folib.providers.repository.event.ProxyRepositoryPathExpiredEvent;
 import com.veadan.folib.providers.repository.event.RemoteRepositorySearchEvent;
 import com.veadan.folib.providers.repository.proxied.ProxyRepositoryArtifactResolver;
@@ -79,6 +81,9 @@ public class ProxyRepositoryProvider
     @Inject
     private DistributedCacheComponent distributedCacheComponent;
 
+    @Inject
+    private LayoutProviderRegistry layoutProviderRegistry;
+
     @Override
     public String getAlias() {
         return ALIAS;
@@ -113,26 +118,8 @@ public class ProxyRepositoryProvider
             if (Boolean.TRUE.equals(repositoryPath.getDisableRemote())) {
                 return null;
             }
-            if (Boolean.TRUE.equals(repositoryPath.getEnableRemoteUrlPrefix()) && StringUtils.isNotBlank(repositoryPath.getTargetUrl())) {
-                String remoteUrl = repositoryPath.getRepository().getRemoteRepository().getUrl();
-                remoteUrl = StringUtils.removeEnd(remoteUrl, GlobalConstants.SEPARATOR);
-                if (ProductTypeEnum.Docker.getFoLibraryName().equals(repositoryPath.getRepository().getLayout()) && remoteUrl.endsWith(GlobalConstants.DOCKER_V2)) {
-                    remoteUrl = remoteUrl.concat(GlobalConstants.SEPARATOR).concat(GlobalConstants.DOCKER_DEFAULT_REPO);
-                }
-                repositoryPath.setTargetUrl(String.format("%s/%s", remoteUrl, StringUtils.removeStart(repositoryPath.getTargetUrl(), GlobalConstants.SEPARATOR)));
-            }
-            if (StringUtils.isNotBlank(repositoryPath.getHeaderKey()) && StringUtils.isNotBlank(repositoryPath.getCacheKeyPattern())) {
-                String key = String.format(repositoryPath.getCacheKeyPattern(), repositoryPath.getStorageId(), repositoryPath.getRepositoryId());
-                String value = distributedCacheComponent.get(key);
-                if (StringUtils.isNotBlank(value)) {
-                    MultivaluedMap<String, Object> headers = repositoryPath.getHeaders();
-                    if (MapUtils.isEmpty(headers)) {
-                        headers = new MultivaluedHashMap();
-                    }
-                    headers.put(repositoryPath.getHeaderKey(), Lists.newArrayList(value));
-                    repositoryPath.setHeaders(headers);
-                }
-            }
+            LayoutProvider layoutProvider = layoutProviderRegistry.getProvider(ProductTypeEnum.Docker.getFoLibraryName());
+            layoutProvider.targetUrl(repositoryPath);
             return proxyRepositoryArtifactResolver.fetchRemoteResource(repositoryPath);
         } catch (IOException e) {
             logger.error("Failed to resolve Path for proxied artifact [{}]",

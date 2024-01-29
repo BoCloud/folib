@@ -39,8 +39,8 @@ public class DockerClientComponent {
     @Inject
     private ConfigurationManager configurationManager;
 
-    public ResponseResult doGet(String storageId, String repositoryId, String targetUrl, MultivaluedMap<String, Object> headers) {
-        log.info("StorageId [{}] repositoryId [{}] targetUrl [{}] headers [{}]", storageId, repositoryId, targetUrl, MapUtils.isNotEmpty(headers) ? JSONObject.toJSONString(headers) : null);
+    public ResponseResult doGet(String storageId, String repositoryId, String targetUrl, MultivaluedMap<String, Object> headers, boolean basicAuth) {
+        log.debug("StorageId [{}] repositoryId [{}] targetUrl [{}] headers [{}]", storageId, repositoryId, targetUrl, MapUtils.isNotEmpty(headers) ? JSONObject.toJSONString(headers) : null);
         Response response = null;
         Client client = null;
         try {
@@ -65,9 +65,11 @@ public class DockerClientComponent {
             //读取内容超时时间
             client.property(ClientProperties.READ_TIMEOUT, 10000);
             WebTarget target = client.target(targetUrl);
-            final HttpAuthenticationFeature authenticationFeature = (StringUtils.isNotBlank(username) && StringUtils.isNotBlank(password)) ? HttpAuthenticationFeature.basic(username, password) : null;
-            if (Objects.nonNull(authenticationFeature)) {
-                target.register(authenticationFeature);
+            if (basicAuth) {
+                final HttpAuthenticationFeature authenticationFeature = (StringUtils.isNotBlank(username) && StringUtils.isNotBlank(password)) ? HttpAuthenticationFeature.basic(username, password) : null;
+                if (Objects.nonNull(authenticationFeature)) {
+                    target.register(authenticationFeature);
+                }
             }
             Invocation.Builder builder = target.request();
             if (MapUtils.isNotEmpty(headers)) {
@@ -76,7 +78,7 @@ public class DockerClientComponent {
             response = builder.get();
             String responseBody = response.readEntity(String.class);
             if (HttpStatus.SC_OK != response.getStatus()) {
-                log.warn(String.format("Url response error [%s] [%s]", response.getStatus(), responseBody));
+                log.debug("Url response error [{}] [{}] [{}] [{}]", targetUrl, headers, response.getStatus(), responseBody);
             }
             ResponseResult responseResult = ResponseResult.builder().build();
             responseResult.setHttpStatus(response.getStatus());
@@ -86,7 +88,7 @@ public class DockerClientComponent {
                 responseResult.setDataType(ResponseDataTypeEnum.JSON);
             }
             responseResult.setHeaders(response.getStringHeaders());
-            log.info("ResponseResult [{}]", JSONObject.toJSONString(responseResult));
+            log.debug("ResponseResult [{}] [{}]", targetUrl, JSONObject.toJSONString(responseResult));
             return responseResult;
         } catch (Exception ex) {
             log.error("Get targetUrl [{}] error [{}]", targetUrl, ExceptionUtils.getStackTrace(ex));
@@ -102,14 +104,18 @@ public class DockerClientComponent {
     }
 
     public ResponseResult doGet(String targetUrl) {
-        return doGet(null, null, targetUrl, null);
+        return doGet(null, null, targetUrl, null, true);
     }
 
     public ResponseResult doGet(String targetUrl, MultivaluedMap<String, Object> headers) {
-        return doGet(null, null, targetUrl, headers);
+        return doGet(null, null, targetUrl, headers, true);
     }
 
     public ResponseResult doGet(String storageId, String repositoryId, String targetUrl) {
-        return doGet(storageId, repositoryId, targetUrl, null);
+        return doGet(storageId, repositoryId, targetUrl, null, true);
+    }
+
+    public ResponseResult doGet(String storageId, String repositoryId, String targetUrl, boolean basicAuth) {
+        return doGet(storageId, repositoryId, targetUrl, null, basicAuth);
     }
 }

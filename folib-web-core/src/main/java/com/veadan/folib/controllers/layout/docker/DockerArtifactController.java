@@ -6,21 +6,14 @@ import cn.hutool.core.lang.UUID;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
 import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
 import com.veadan.folib.artifact.coordinates.DockerArtifactCoordinates;
 import com.veadan.folib.cloud.storage.s3fs.S3Iterator;
 import com.veadan.folib.cloud.storage.s3fs.S3Path;
-import com.veadan.folib.components.DistributedCacheComponent;
-import com.veadan.folib.components.client.ClientComponent;
-import com.veadan.folib.components.common.CommonComponent;
-import com.veadan.folib.configuration.ConfigurationUtils;
 import com.veadan.folib.constant.GlobalConstants;
 import com.veadan.folib.controllers.BaseArtifactController;
 import com.veadan.folib.domain.*;
-import com.veadan.folib.domain.client.ResponseResult;
 import com.veadan.folib.enums.DockerHeaderEnum;
 import com.veadan.folib.enums.RepositoryScopeEnum;
-import com.veadan.folib.enums.ResponseDataTypeEnum;
 import com.veadan.folib.providers.io.RepositoryFiles;
 import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.providers.io.RootRepositoryPath;
@@ -28,26 +21,20 @@ import com.veadan.folib.providers.layout.DockerLayoutProvider;
 import com.veadan.folib.repositories.ArtifactRepository;
 import com.veadan.folib.schema2.ImageManifest;
 import com.veadan.folib.schema2.LayerManifest;
-import com.veadan.folib.security.authentication.JwtTokenFetcher;
 import com.veadan.folib.services.DirectoryListingService;
 import com.veadan.folib.storage.Storage;
 import com.veadan.folib.storage.repository.Repository;
-import com.veadan.folib.storage.repository.RepositoryTypeEnum;
-import com.veadan.folib.storage.repository.remote.RemoteRepository;
 import com.veadan.folib.users.domain.Privileges;
 import com.veadan.folib.users.security.JwtAuthenticationClaimsProvider;
 import com.veadan.folib.users.security.JwtClaimsProvider;
 import com.veadan.folib.users.security.SecurityTokenProvider;
 import com.veadan.folib.users.userdetails.SpringSecurityUser;
-import com.veadan.folib.util.CommonUtils;
 import com.veadan.folib.utils.FileUtils;
 import io.swagger.annotations.*;
 import org.apache.commons.collections4.CollectionUtils;
-import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.context.annotation.Lazy;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -63,7 +50,6 @@ import org.springframework.web.bind.annotation.*;
 import javax.inject.Inject;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import javax.ws.rs.core.MultivaluedMap;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
@@ -75,9 +61,6 @@ import java.nio.file.StandardCopyOption;
 import java.security.MessageDigest;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.TimeUnit;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 
@@ -110,17 +93,6 @@ public class DockerArtifactController extends BaseArtifactController {
     @Inject
     @JwtAuthenticationClaimsProvider.JwtAuthentication
     private JwtClaimsProvider jwtClaimsProvider;
-
-    @Inject
-    private DistributedCacheComponent distributedCacheComponent;
-
-    @Inject
-    @Lazy
-    private CommonComponent commonComponent;
-
-    @Inject
-    @Lazy
-    private ClientComponent clientComponent;
 
     /**
      * 文件进度
@@ -234,11 +206,11 @@ public class DockerArtifactController extends BaseArtifactController {
             String artifactPath = String.format("blobs/%s", digest);
             RepositoryPath repositoryPath = artifactResolutionService.resolvePath(storageId, repositoryId, artifactPath);
             boolean exists = artifactRealExists(repositoryPath);
-            logger.info("StorageId [{}] repositoryId [{}] name [{}] extractPath [{}] imagePath [{}] artifactPath [{}] exists [{}]", storageId, repositoryId, name, extractPath, imagePath, artifactPath, exists);
+            logger.debug("StorageId [{}] repositoryId [{}] name [{}] extractPath [{}] imagePath [{}] artifactPath [{}] exists [{}]", storageId, repositoryId, name, extractPath, imagePath, artifactPath, exists);
             //200已经存在 404不存在
             if (exists) {
                 long size = Files.size(repositoryPath);
-                logger.info("StorageId [{}] repositoryId [{}] name [{}] extractPath [{}] imagePath [{}] artifactPath [{}] size [{}]", storageId, repositoryId, name, extractPath, imagePath, artifactPath, size);
+                logger.debug("StorageId [{}] repositoryId [{}] name [{}] extractPath [{}] imagePath [{}] artifactPath [{}] size [{}]", storageId, repositoryId, name, extractPath, imagePath, artifactPath, size);
                 response.addHeader(DockerHeaderEnum.CONTENT_LENGTH.key(), size + "");
                 response.addHeader(DockerHeaderEnum.STREAM_CONTENT_TYPE.key(), DockerHeaderEnum.STREAM_CONTENT_TYPE.value());
                 return new ResponseEntity<>("OK", HttpStatus.OK);
@@ -545,7 +517,6 @@ public class DockerArtifactController extends BaseArtifactController {
             //判断镜像清单是否在
             if (!mirrorLayerExists(artifactPath, storageId, repositoryId)) {
                 RepositoryPath repositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, artifactPath);
-                logger.info(String.valueOf(System.currentTimeMillis()));
                 provideArtifact(repositoryPath, layers);
                 artifactManagementService.validateAndStore(repositoryPath, stream);
             }
@@ -777,15 +748,17 @@ public class DockerArtifactController extends BaseArtifactController {
         ResponseEntity entity = new ResponseEntity<>(notFound("MANIFEST_UNKNOWN", "The named manifest is not known to the registry."), HttpStatus.NOT_FOUND);
         try {
             String artifactPath = String.format("manifest/%s", digest);
-            logger.info("StorageId [{}] repositoryId [{}] name [{}] imagePath [{}] digest [{}] artifactPath [{}]", storageId, repositoryId, name, imagePath, digest, artifactPath);
+            logger.debug("StorageId [{}] repositoryId [{}] name [{}] imagePath [{}] digest [{}] artifactPath [{}]", storageId, repositoryId, name, imagePath, digest, artifactPath);
             RepositoryPath repositoryPath = resolveManifest(storageId, repositoryId, imagePath, digest);
             if (artifactRealExists(repositoryPath)) {
                 vulnerabilityBlock(repositoryPath);
                 response.reset();
-                response.setDateHeader(DockerHeaderEnum.DATE.key(), System.currentTimeMillis());
                 entity = ResponseEntity.status(HttpStatus.OK).build();
+                digest = repositoryPath.getFileName().toString();
+                response.setDateHeader(DockerHeaderEnum.DATE.key(), System.currentTimeMillis());
                 response.addHeader(DockerHeaderEnum.DOCKER_CONTENT_DIGEST.key(), digest);
                 response.addHeader(DockerHeaderEnum.DOCKER_DISTRIBUTION_API_VERSION.key(), DockerHeaderEnum.DOCKER_DISTRIBUTION_API_VERSION.value());
+                response.addHeader(DockerHeaderEnum.ETAG.key(), digest);
                 provideArtifactDownloadResponse(request, response, httpHeaders, repositoryPath);
             }
         } catch (Exception e) {
@@ -828,15 +801,12 @@ public class DockerArtifactController extends BaseArtifactController {
             return entity;
         }
         try {
-            logger.info("StorageId [{}] repositoryId [{}] name [{}] imagePath [{}] digest [{}] artifactPath [{}]", storageId, repositoryId, name, imagePath, digest, artifactPath);
+            logger.debug("StorageId [{}] repositoryId [{}] name [{}] imagePath [{}] digest [{}] artifactPath [{}]", storageId, repositoryId, name, imagePath, digest, artifactPath);
             String targetUrl = String.format("%s/blobs/%s", StringUtils.removeEnd(imagePath, "/"), digest);
             RepositoryPath repositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, artifactPath);
-            handleRepositoryAuth(storageId, repositoryId, imagePath);
             if (!artifactRealExists(repositoryPath)) {
-                repositoryPath.setEnableRemoteUrlPrefix(true);
                 repositoryPath.setTargetUrl(targetUrl);
-                repositoryPath.setHeaderKey(JwtTokenFetcher.AUTHORIZATION_HEADER);
-                repositoryPath.setCacheKeyPattern("docker-auth-%s-%s-" + imagePath);
+                repositoryPath.setArtifactPath(imagePath);
                 repositoryPath = artifactResolutionService.resolvePath(repositoryPath);
             }
             if (artifactRealExists(repositoryPath)) {
@@ -944,9 +914,7 @@ public class DockerArtifactController extends BaseArtifactController {
                                              @RequestParam(name = "last", required = false) String last,
                                              Authentication authentication) {
         try {
-            String userAgent = request.getHeader("User-Agent");
-            boolean resultFlag = true;
-            logger.info("GET Catalog [n:{}, last:{} resultFlag {}]", n, last, resultFlag);
+            logger.info("GET Catalog n [{}] last [{}]", n, last);
             List<Storage> storageList = new ArrayList<>(configurationManagementService.getConfiguration()
                     .getStorages()
                     .values());
@@ -976,24 +944,20 @@ public class DockerArtifactController extends BaseArtifactController {
                         repositories = repositories.stream().filter((item -> RepositoryScopeEnum.OPEN.getType().equals(item.getScope()))).collect(Collectors.toList());
                     }
                     if (CollectionUtils.isNotEmpty(repositories)) {
-                        if (resultFlag) {
-                            repositories.forEach(repository -> {
-                                RepositoryPath repositoryPath = repositoryPathResolver.resolve(repository.getStorage().getId(), repository.getId());
-                                String prefix = String.format("%s/%s", repository.getStorage().getId(), repository.getId());
-                                if (Objects.nonNull(repositoryPath) && Files.exists(repositoryPath)) {
-                                    try {
-                                        DirectoryListing directoryListing = directoryListingService.fromRepositoryPath(repositoryPath);
-                                        if (Objects.nonNull(directoryListing) && CollectionUtils.isNotEmpty(directoryListing.getDirectories())) {
-                                            dataList.addAll(directoryListing.getDirectories().stream().filter(item -> StringUtils.isNotBlank(item.getName())).map(item -> String.format("%s/%s", prefix, item.getName())).collect(Collectors.toList()));
-                                        }
-                                    } catch (Exception ex) {
-                                        logger.error("GET Catalog directory listing error [{}]", ExceptionUtils.getStackTrace(ex));
+                        repositories.forEach(repository -> {
+                            RepositoryPath repositoryPath = repositoryPathResolver.resolve(repository.getStorage().getId(), repository.getId());
+                            String prefix = String.format("%s/%s", repository.getStorage().getId(), repository.getId());
+                            if (Objects.nonNull(repositoryPath) && Files.exists(repositoryPath)) {
+                                try {
+                                    DirectoryListing directoryListing = directoryListingService.fromRepositoryPath(repositoryPath);
+                                    if (Objects.nonNull(directoryListing) && CollectionUtils.isNotEmpty(directoryListing.getDirectories())) {
+                                        dataList.addAll(directoryListing.getDirectories().stream().filter(item -> StringUtils.isNotBlank(item.getName())).map(item -> String.format("%s/%s", prefix, item.getName())).collect(Collectors.toList()));
                                     }
+                                } catch (Exception ex) {
+                                    logger.error("GET Catalog directory listing error [{}]", ExceptionUtils.getStackTrace(ex));
                                 }
-                            });
-                        } else {
-                            dataList.addAll(repositories.stream().map(item -> String.format("%s/%s", item.getStorage().getId(), item.getId())).collect(Collectors.toList()));
-                        }
+                            }
+                        });
                     }
                 }
                 int size = dataList.size(), startIndex = 0, endIndex = size;
@@ -1026,7 +990,7 @@ public class DockerArtifactController extends BaseArtifactController {
                         next = String.format(next, last, n);
                     }
                 }
-                logger.info("GET Catalog [n:{}, last:{} startIndex:{}, endIndex:{}, link:{}]", n, last, startIndex, endIndex, link);
+                logger.info("GET Catalog n [{}] last [{}] startIndex [{}] endIndex [{}] link [{}]", n, last, startIndex, endIndex, link);
             }
             DockerCatalog dockerCatalog = DockerCatalog.builder().next(next).repositories(resultList).build();
             response.reset();
@@ -1052,7 +1016,6 @@ public class DockerArtifactController extends BaseArtifactController {
      * @return RepositoryPath tag或者manifest的RepositoryPath
      */
     private RepositoryPath resolveManifest(String storageId, String repositoryId, String imagePath, String digestOrTag) {
-        handleRepositoryAuth(storageId, repositoryId, imagePath);
         imagePath = StringUtils.removeEnd(imagePath, GlobalConstants.SEPARATOR);
         digestOrTag = StringUtils.removeEnd(digestOrTag, GlobalConstants.SEPARATOR);
         boolean isTag = !digestOrTag.startsWith("sha256:");
@@ -1102,11 +1065,8 @@ public class DockerArtifactController extends BaseArtifactController {
             String tempManifestPath = String.format("%s/%s", targetPath, "manifest.json");
             String targetUrl = String.format("%s/manifests/%s", imagePath, digestOrTag);
             tempManifestRepositoryPath = rootRepositoryPath.resolve(tempManifestPath);
-            tempManifestRepositoryPath.setEnableRemoteUrlPrefix(true);
             tempManifestRepositoryPath.setTargetUrl(targetUrl);
-            tempManifestRepositoryPath.setHeaders(DockerHeaderEnum.acceptHeaders());
-            tempManifestRepositoryPath.setHeaderKey(JwtTokenFetcher.AUTHORIZATION_HEADER);
-            tempManifestRepositoryPath.setCacheKeyPattern("docker-auth-%s-%s-" + imagePath);
+            tempManifestRepositoryPath.setArtifactPath(imagePath);
             tempManifestRepositoryPath = artifactResolutionService.resolvePath(tempManifestRepositoryPath);
             if (Objects.isNull(tempManifestRepositoryPath) || !Files.exists(tempManifestRepositoryPath)) {
                 return null;
@@ -1236,105 +1196,5 @@ public class DockerArtifactController extends BaseArtifactController {
             imagePath = imagePath + File.separator + extractPath;
         }
         return imagePath;
-    }
-
-    private void handleRepositoryAuth(String storageId, String repositoryId, String imagePath) {
-        Repository repository = getRepository(storageId, repositoryId);
-        if (Objects.nonNull(repository)) {
-            if (RepositoryTypeEnum.PROXY.getType().equals(repository.getType())) {
-                doAuth(storageId, repositoryId, repository, imagePath);
-            } else if (RepositoryTypeEnum.GROUP.getType().equals(repository.getType())) {
-                for (String storageAndRepositoryId : repository.getGroupRepositories()) {
-                    try {
-                        String sId = ConfigurationUtils.getStorageId(storageId, storageAndRepositoryId);
-                        String rId = ConfigurationUtils.getRepositoryId(storageAndRepositoryId);
-                        Repository subRepository = getConfiguration().getStorage(sId).getRepository(rId);
-                        if (!commonComponent.isRepositoryResolvable(subRepository) || !RepositoryTypeEnum.PROXY.getType().equals(subRepository.getType())) {
-                            continue;
-                        }
-                        doAuth(sId, rId, subRepository, imagePath);
-                    } catch (Exception ex) {
-                        logger.warn(ExceptionUtils.getStackTrace(ex));
-                    }
-                }
-            }
-        }
-    }
-
-    private void doAuth(String storageId, String repositoryId, Repository repository, String imagePath) {
-        if (Objects.isNull(repository)) {
-            return;
-        }
-        String authToken = getAuthToken(storageId, repositoryId, imagePath);
-        if (StringUtils.isNotBlank(authToken)) {
-            return;
-        }
-        RemoteRepository remoteRepository = repository.getRemoteRepository();
-        if (Objects.isNull(remoteRepository)) {
-            return;
-        }
-        String end = "/v2/", remoteUrl = remoteRepository.getUrl();
-        if (!remoteUrl.endsWith(GlobalConstants.SEPARATOR)) {
-            remoteUrl = remoteUrl.concat(GlobalConstants.SEPARATOR);
-        }
-        int index = remoteUrl.indexOf(end) + end.length();
-        String targetUrl = remoteUrl.substring(0, index);
-        ResponseResult responseResult = clientComponent.doGet(storageId, repositoryId, targetUrl);
-        if (Objects.isNull(responseResult)) {
-            return;
-        }
-        MultivaluedMap<String, String> headers = responseResult.getHeaders();
-        if (MapUtils.isEmpty(headers)) {
-            return;
-        }
-        String authenticate = headers.getFirst("WWW-Authenticate");
-        if (StringUtils.isBlank(authenticate)) {
-            return;
-        }
-        String pattern = "realm=\"(.*?)\"";
-        String authUrl = resolveAuthParam(authenticate, pattern);
-        if (StringUtils.isBlank(authUrl)) {
-            return;
-        }
-        pattern = "service=\"(.*?)\"";
-        String service = resolveAuthParam(authenticate, pattern);
-        if (StringUtils.isBlank(service)) {
-            return;
-        }
-        String scope = "repository:%s%s:pull";
-        String scopeRepository = "library/";
-        if (imagePath.split(GlobalConstants.SEPARATOR).length > 1) {
-            scopeRepository = "";
-        }
-        scope = String.format(scope, scopeRepository, StringUtils.removeEnd(imagePath, GlobalConstants.SEPARATOR));
-        Map<String, String> params = Maps.newHashMap();
-        params.put("scope", scope);
-        params.put("service", service);
-        authUrl = authUrl + CommonUtils.createLinkStringByGet(params);
-        responseResult = clientComponent.doGet(storageId, repositoryId, authUrl);
-        if (StringUtils.isBlank(responseResult.getData()) || !ResponseDataTypeEnum.JSON.getType().equals(responseResult.getDataType().getType())) {
-            return;
-        }
-        AuthInfo authInfo = JSONObject.parseObject(responseResult.getData(), AuthInfo.class);
-        if (StringUtils.isBlank(authInfo.getToken()) || Objects.isNull(authInfo.getExpiresIn())) {
-            return;
-        }
-        String key = String.format("docker-auth-%s-%s-%s", storageId, repositoryId, imagePath);
-        distributedCacheComponent.put(key, String.format("%s %s", JwtTokenFetcher.BEARER_AUTHORIZATION_PREFIX, authInfo.getToken()), 120, TimeUnit.SECONDS);
-    }
-
-    private String resolveAuthParam(String authenticate, String pattern) {
-        Pattern r = Pattern.compile(pattern);
-        Matcher m = r.matcher(authenticate);
-        if (m.find()) {
-            return m.group(1);
-        } else {
-            return "";
-        }
-    }
-
-    private String getAuthToken(String storageId, String repositoryId, String imagePath) {
-        String key = String.format("docker-auth-%s-%s-%s", storageId, repositoryId, imagePath);
-        return distributedCacheComponent.get(key);
     }
 }

@@ -23,10 +23,7 @@ import com.veadan.folib.controllers.cluster.dto.SyncUnionRepositoryDto;
 import com.veadan.folib.dispatch.ClusterDispatchNodeDto;
 import com.veadan.folib.domain.*;
 import com.veadan.folib.dto.ArtifactDispatchRepositoryDto;
-import com.veadan.folib.enums.ArtifactoryRepositoryTypeEnum;
-import com.veadan.folib.enums.NotifyScopesTypeEnum;
-import com.veadan.folib.enums.RepositoryScopeEnum;
-import com.veadan.folib.enums.StorageProviderEnum;
+import com.veadan.folib.enums.*;
 import com.veadan.folib.event.repository.RepositoryEventListenerRegistry;
 import com.veadan.folib.forms.common.StorageTreeForm;
 import com.veadan.folib.forms.configuration.*;
@@ -172,6 +169,10 @@ public class StoragesConfigurationController
     @Inject
     @Lazy
     private DockerLayoutProvider dockerLayoutProvider;
+
+    @Inject
+    private LayoutProviderRegistry layoutProviderRegistry;
+
 
     public StoragesConfigurationController(ConfigurationManagementService configurationManagementService,
                                            StorageManagementService storageManagementService,
@@ -684,9 +685,10 @@ public class StoragesConfigurationController
                 if (!Files.exists(repositoryPath)) {
                     repositoryManagementService.createRepository(storageId, repository.getId());
                 }
-                if (Objects.isNull(existRepository) && DockerLayoutProvider.ALIAS.equalsIgnoreCase(repository.getLayout()) && !RepositoryTypeEnum.GROUP.getType().equals(repository.getType())) {
+                if (Objects.isNull(existRepository) && !RepositoryTypeEnum.GROUP.getType().equals(repository.getType())) {
                     //初始化仓库数据
-                    dockerLayoutProvider.initData(storageId, repositoryId);
+                    LayoutProvider layoutProvider = layoutProviderRegistry.getProvider(ProductTypeEnum.Docker.getFoLibraryName());
+                    layoutProvider.initData(storageId, repositoryId);
                 }
                 SyncRepositoryDto syncRepositoryDto = new SyncRepositoryDto(repositoryDto, storageId, repositoryId, SyncRepositoryEnum.ADD_OR_UPDATE);
                 clusterSyncService.syncRepository(syncRepositoryDto);

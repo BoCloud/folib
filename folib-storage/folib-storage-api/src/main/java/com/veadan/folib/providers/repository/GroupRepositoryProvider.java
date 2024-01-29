@@ -117,9 +117,6 @@ public class GroupRepositoryProvider
                 if (!isRepositoryResolvable(groupRepository, subRepository, subRepositoryPath)) {
                     continue;
                 }
-                if (Objects.nonNull(repositoryPath.getEnableRemoteUrlPrefix())) {
-                    subRepositoryPath.setEnableRemoteUrlPrefix(repositoryPath.getEnableRemoteUrlPrefix());
-                }
                 if (Objects.nonNull(repositoryPath.getDisableRemote())) {
                     subRepositoryPath.setDisableRemote(repositoryPath.getDisableRemote());
                 }
@@ -128,12 +125,6 @@ public class GroupRepositoryProvider
                 }
                 if (MapUtils.isNotEmpty(repositoryPath.getHeaders())) {
                     subRepositoryPath.setHeaders(repositoryPath.getHeaders());
-                }
-                if (Objects.nonNull(repositoryPath.getHeaderKey())) {
-                    subRepositoryPath.setHeaderKey(repositoryPath.getHeaderKey());
-                }
-                if (StringUtils.isNotBlank(repositoryPath.getCacheKeyPattern())) {
-                    subRepositoryPath.setCacheKeyPattern(repositoryPath.getCacheKeyPattern());
                 }
                 if (StringUtils.isNotBlank(repositoryPath.getArtifactPath())) {
                     subRepositoryPath.setArtifactPath(repositoryPath.getArtifactPath());

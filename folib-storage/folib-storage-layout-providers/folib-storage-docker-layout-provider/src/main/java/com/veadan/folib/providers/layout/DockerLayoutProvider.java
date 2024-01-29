@@ -1,9 +1,12 @@
 package com.veadan.folib.providers.layout;
 
 import com.veadan.folib.artifact.coordinates.DockerArtifactCoordinates;
+import com.veadan.folib.components.DockerAuthComponent;
 import com.veadan.folib.constant.GlobalConstants;
 import com.veadan.folib.domain.ArtifactIdGroup;
 import com.veadan.folib.domain.ArtifactIdGroupEntity;
+import com.veadan.folib.enums.DockerHeaderEnum;
+import com.veadan.folib.enums.ProductTypeEnum;
 import com.veadan.folib.providers.header.HeaderMappingRegistry;
 import com.veadan.folib.providers.io.RepositoryFileAttributeType;
 import com.veadan.folib.providers.io.RepositoryFiles;
@@ -12,8 +15,10 @@ import com.veadan.folib.repositories.ArtifactIdGroupRepository;
 import com.veadan.folib.repository.DockerRepositoryFeatures;
 import com.veadan.folib.repository.DockerRepositoryManagementStrategy;
 import com.veadan.folib.repository.RepositoryManagementStrategy;
+import com.veadan.folib.storage.repository.remote.RemoteRepository;
 import org.apache.commons.codec.digest.MessageDigestAlgorithms;
 import org.apache.commons.lang3.BooleanUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -21,6 +26,7 @@ import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
 import javax.inject.Inject;
+import javax.ws.rs.core.MultivaluedMap;
 import java.io.IOException;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
@@ -61,6 +67,9 @@ public class DockerLayoutProvider
     @Inject
     private ArtifactIdGroupRepository artifactIdGroupRepository;
 
+    @Inject
+    private DockerAuthComponent dockerAuthComponent;
+
     @PostConstruct
     public void register() {
         headerMappingRegistry.register(ALIAS, USER_AGENT_PREFIX);
@@ -70,7 +79,7 @@ public class DockerLayoutProvider
 
     @Override
     public DockerArtifactCoordinates getArtifactCoordinates(RepositoryPath path) throws IOException {
-        logger.info("DockerArtifactCoordinates parse path [{}]", path);
+        logger.debug("DockerArtifactCoordinates parse path [{}]", path);
         return DockerArtifactCoordinates.parse(RepositoryFiles.relativizePath(path));
     }
 
@@ -153,6 +162,34 @@ public class DockerLayoutProvider
                 ArtifactIdGroup artifactIdGroup = new ArtifactIdGroupEntity(storageId, repositoryId, key);
                 artifactIdGroupRepository.saveOrUpdate(artifactIdGroup);
             }
+        } catch (Exception ex) {
+            logger.warn(ExceptionUtils.getStackTrace(ex));
+        }
+    }
+
+    @Override
+    public void targetUrl(RepositoryPath path) {
+        String remoteUrl = path.getRepository().getRemoteRepository().getUrl();
+        remoteUrl = StringUtils.removeEnd(remoteUrl, GlobalConstants.SEPARATOR);
+        if (remoteUrl.endsWith(GlobalConstants.DOCKER_V2)) {
+            remoteUrl = remoteUrl.concat(GlobalConstants.SEPARATOR).concat(GlobalConstants.DOCKER_DEFAULT_REPO);
+        }
+        path.setTargetUrl(String.format("%s/%s", remoteUrl, StringUtils.removeStart(path.getTargetUrl(), GlobalConstants.SEPARATOR)));
+        authToken(path);
+        logger.debug("path [{}] docker headers [{}]", path, path.getHeaders());
+    }
+
+    private void authToken(RepositoryPath path) {
+        try {
+            RemoteRepository remoteRepository = path.getRepository().getRemoteRepository();
+            String storageId = path.getStorageId(), repositoryId = path.getRepositoryId();
+            DockerArtifactCoordinates dockerArtifactCoordinates = DockerArtifactCoordinates.parse(RepositoryFiles.relativizePath(path));
+            path.setHeaders(DockerHeaderEnum.acceptHeaders());
+            String imagePath = dockerArtifactCoordinates.getName();
+            if (StringUtils.isNotBlank(path.getArtifactPath())) {
+                imagePath = path.getArtifactPath();
+            }
+            dockerAuthComponent.handleAuthToken(remoteRepository, storageId, repositoryId, imagePath, path.getHeaders());
         } catch (Exception ex) {
             logger.warn(ExceptionUtils.getStackTrace(ex));
         }

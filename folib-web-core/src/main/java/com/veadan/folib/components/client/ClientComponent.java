@@ -40,7 +40,7 @@ public class ClientComponent {
     private ConfigurationManager configurationManager;
 
     public ResponseResult doGet(String storageId, String repositoryId, String targetUrl, MultivaluedMap<String, Object> headers) {
-        log.info("StorageId [{}] repositoryId [{}] targetUrl [{}] headers [{}]", storageId, repositoryId, targetUrl, MapUtils.isNotEmpty(headers) ? JSONObject.toJSONString(headers) : null);
+        log.debug("StorageId [{}] repositoryId [{}] targetUrl [{}] headers [{}]", storageId, repositoryId, targetUrl, MapUtils.isNotEmpty(headers) ? JSONObject.toJSONString(headers) : null);
         Response response = null;
         Client client = null;
         try {
@@ -76,7 +76,7 @@ public class ClientComponent {
             response = builder.get();
             String responseBody = response.readEntity(String.class);
             if (HttpStatus.SC_OK != response.getStatus()) {
-                log.warn(String.format("Url response error [%s] [%s]", response.getStatus(), responseBody));
+                log.debug("Url response error [{}] [{}] [{}] [{}]", targetUrl, headers, response.getStatus(), responseBody);
             }
             ResponseResult responseResult = ResponseResult.builder().build();
             responseResult.setHttpStatus(response.getStatus());
@@ -86,7 +86,7 @@ public class ClientComponent {
                 responseResult.setDataType(ResponseDataTypeEnum.JSON);
             }
             responseResult.setHeaders(response.getStringHeaders());
-            log.info("ResponseResult [{}]", JSONObject.toJSONString(responseResult));
+            log.debug("ResponseResult [{}] [{}]", targetUrl, JSONObject.toJSONString(responseResult));
             return responseResult;
         } catch (Exception ex) {
             log.error("Get targetUrl [{}] error [{}]", targetUrl, ExceptionUtils.getStackTrace(ex));

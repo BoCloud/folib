@@ -1,5 +1,6 @@
 package com.veadan.folib.artifact.coordinates;
 
+import com.google.common.collect.Lists;
 import com.veadan.folib.db.schema.Vertices;
 import com.veadan.folib.domain.LayoutArtifactCoordinatesEntity;
 import com.veadan.folib.providers.io.RepositoryFiles;
@@ -17,6 +18,7 @@ import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
@@ -53,6 +55,7 @@ public class DockerArtifactCoordinates
 
     public static final String FO_LIBRARY_METADATA = ".foLibrary-metadata";
 
+    public static final List<String> DOCKER_LAYER_DIR_NAME_LIST = Lists.newArrayList("blobs", "manifest");
 
     public DockerArtifactCoordinates() {
         resetCoordinates(LAYERS, ARTIFACT_PATH);
@@ -140,7 +143,7 @@ public class DockerArtifactCoordinates
         if (StringUtils.isBlank(artifactPath)) {
             throw new IllegalArgumentException(String.format("Path [%s] not a standard Docker layout file", path));
         }
-        log.info("Docker path [{}] tag [{}] imageName [{}] artifactPath [{}] layers [{}]", path, tag, imageName, artifactPath, layers);
+        log.debug("Docker path [{}] tag [{}] imageName [{}] artifactPath [{}] layers [{}]", path, tag, imageName, artifactPath, layers);
         return new DockerArtifactCoordinates(imageName, tag, layers, artifactPath);
     }
 
