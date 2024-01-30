@@ -118,7 +118,7 @@ public class ProxyRepositoryProvider
             if (Boolean.TRUE.equals(repositoryPath.getDisableRemote())) {
                 return null;
             }
-            LayoutProvider layoutProvider = layoutProviderRegistry.getProvider(ProductTypeEnum.Docker.getFoLibraryName());
+            LayoutProvider layoutProvider = layoutProviderRegistry.getProvider(repositoryPath.getRepository().getLayout());
             layoutProvider.targetUrl(repositoryPath);
             return proxyRepositoryArtifactResolver.fetchRemoteResource(repositoryPath);
         } catch (IOException e) {

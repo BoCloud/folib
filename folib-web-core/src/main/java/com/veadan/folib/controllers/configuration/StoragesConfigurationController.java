@@ -687,7 +687,7 @@ public class StoragesConfigurationController
                 }
                 if (Objects.isNull(existRepository) && !RepositoryTypeEnum.GROUP.getType().equals(repository.getType())) {
                     //初始化仓库数据
-                    LayoutProvider layoutProvider = layoutProviderRegistry.getProvider(ProductTypeEnum.Docker.getFoLibraryName());
+                    LayoutProvider layoutProvider = layoutProviderRegistry.getProvider(repositoryDto.getLayout());
                     layoutProvider.initData(storageId, repositoryId);
                 }
                 SyncRepositoryDto syncRepositoryDto = new SyncRepositoryDto(repositoryDto, storageId, repositoryId, SyncRepositoryEnum.ADD_OR_UPDATE);
