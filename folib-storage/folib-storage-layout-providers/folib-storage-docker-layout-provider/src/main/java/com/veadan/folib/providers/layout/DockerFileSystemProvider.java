@@ -73,7 +73,7 @@ public class DockerFileSystemProvider
         try {
             if (!artifactPath.equals(rootArtifactPath)) {
                 RepositoryPath parent = repositoryPath.getParent();
-                if (Files.exists(parent) && !Files.isSameFile(repositoryPath.getRoot(), parent) && Files.list(parent).count() == 0) {
+                if (Files.exists(parent) && !Files.isSameFile(repositoryPath.getRoot(), parent) && DockerArtifactCoordinates.DOCKER_LAYER_DIR_NAME_LIST.stream().noneMatch(item -> item.equals(parent.getFileName().toString())) && Files.list(parent).count() == 0) {
                     Files.deleteIfExists(parent);
                     logger.info("Delete parent root path {}", parent.toString());
                 }
@@ -117,7 +117,7 @@ public class DockerFileSystemProvider
                 public FileVisitResult visitFile(Path file,
                                                  BasicFileAttributes attrs)
                         throws IOException {
-                    if (DockerArtifactCoordinates.isManifestPath(file)) {
+                    if (DockerArtifactCoordinates.isTagPath(file)) {
                         tagList.add(file);
                     }
                     return FileVisitResult.CONTINUE;

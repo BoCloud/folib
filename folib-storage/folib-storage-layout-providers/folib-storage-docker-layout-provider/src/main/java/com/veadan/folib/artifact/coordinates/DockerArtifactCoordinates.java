@@ -330,9 +330,23 @@ public class DockerArtifactCoordinates
             }
             if (Files.isDirectory(path)) {
                 try (Stream<Path> pathStream = Files.list(path)) {
-                    return pathStream.anyMatch(DockerArtifactCoordinates::isManifestPath);
+                    return pathStream.anyMatch(DockerArtifactCoordinates::isTagPath);
                 }
             }
+            String name = path.getFileName().toString();
+            return name.startsWith(SHA_256) && !name.endsWith(CHECKSUM_SHA_256) && !name.endsWith(SELF_METADATA) && !name.endsWith(FO_LIBRARY_METADATA) && !fullPath.contains("blobs/sha256") && !fullPath.contains("manifest/sha256");
+        } catch (Exception ex) {
+            log.warn(ExceptionUtils.getStackTrace(ex));
+            return false;
+        }
+    }
+
+    public static boolean isTagPath(Path path) {
+        try {
+            if (Objects.isNull(path) || Files.notExists(path) || Files.isDirectory(path) || RepositoryFiles.isHidden(path)) {
+                return false;
+            }
+            String fullPath = path.toString();
             String name = path.getFileName().toString();
             return name.startsWith(SHA_256) && !name.endsWith(CHECKSUM_SHA_256) && !name.endsWith(SELF_METADATA) && !name.endsWith(FO_LIBRARY_METADATA) && !fullPath.contains("blobs/sha256") && !fullPath.contains("manifest/sha256");
         } catch (Exception ex) {

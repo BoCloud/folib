@@ -940,7 +940,7 @@ public class ArtifactRepository extends GremlinVertexRepository<Artifact> {
             entityTraversal = entityTraversal.has(Properties.LAYERS, keyword).has(Properties.UUID, Text.textContains("manifest/sha256")).has(Properties.ARTIFACT_FILE_EXISTS, true);
         }
         long count = entityTraversal.count().tryNext().orElse(0L);
-        log.debug("Count for [{}] [{}]", count);
+        log.debug("Count for [{}] [{}] [{}] [{}] [{}] [{}]", storageId, repositoryId, uuid, keyword, type, count);
         return count;
     }
 

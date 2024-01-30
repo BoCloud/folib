@@ -238,7 +238,7 @@ public class DockerCleanupArtifactsProvider implements CleanupArtifactsProvider 
     }
 
     /**
-     * 获取仓库下的目录列表
+     * 获取仓库下的tag列表
      *
      * @param repositoryPath 仓库路径
      * @param excludeList    要排除的列表

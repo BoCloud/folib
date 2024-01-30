@@ -207,7 +207,7 @@ public class RepositoryPathUtil {
         return pathList;
     }
 
-    private static boolean exclude(String name) {
+    public static boolean exclude(String name) {
         if (StringUtils.isBlank(name)) {
             return true;
         }
@@ -224,7 +224,7 @@ public class RepositoryPathUtil {
         return false;
     }
 
-    private static boolean include(int type, RepositoryPath repositoryPath, boolean isDockerLayout) throws IOException {
+    public static boolean include(int type, RepositoryPath repositoryPath, boolean isDockerLayout) throws IOException {
         String name = repositoryPath.getFileName().toString();
         if (StringUtils.isBlank(name)) {
             return false;
