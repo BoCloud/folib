@@ -24,6 +24,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
+import java.util.stream.Stream;
 
 @Slf4j
 public class RepositoryPathUtil {
@@ -263,10 +264,25 @@ public class RepositoryPathUtil {
                 return false;
             }
             if (Files.isDirectory(path)) {
-                return deepSize == two && !fullPath.contains("blobs") && !fullPath.contains("manifest");
+                try (Stream<Path> pathStream = Files.list(path)) {
+                    return pathStream.anyMatch(RepositoryPathUtil::isManifestPath);
+                }
             }
             String name = path.getFileName().toString();
             return name.startsWith(GlobalConstants.SHA_256) && !name.endsWith(GlobalConstants.CHECKSUM_SHA_256) && !name.endsWith(GlobalConstants.SELF_METADATA) && !name.endsWith(GlobalConstants.FO_LIBRARY_METADATA) && !fullPath.contains("blobs/sha256") && !fullPath.contains("manifest/sha256");
+        } catch (Exception ex) {
+            log.warn(ExceptionUtils.getStackTrace(ex));
+            return false;
+        }
+    }
+
+    public static boolean isManifestPath(Path path) {
+        try {
+            if (Objects.isNull(path) || Files.notExists(path) || Files.isDirectory(path) || RepositoryFiles.isHidden(path)) {
+                return false;
+            }
+            String name = path.getFileName().toString();
+            return name.startsWith(GlobalConstants.SHA_256) && !name.endsWith(GlobalConstants.CHECKSUM_SHA_256) && !name.endsWith(GlobalConstants.SELF_METADATA) && !name.endsWith(GlobalConstants.FO_LIBRARY_METADATA) && !path.toString().contains("blobs/sha256") && !path.toString().contains("manifest/sha256");
         } catch (Exception ex) {
             log.warn(ExceptionUtils.getStackTrace(ex));
             return false;

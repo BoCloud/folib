@@ -14,6 +14,7 @@ import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlAttribute;
 import javax.xml.bind.annotation.XmlRootElement;
+import java.io.IOException;
 import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -22,6 +23,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * @author Veadan
@@ -327,7 +329,9 @@ public class DockerArtifactCoordinates
                 return false;
             }
             if (Files.isDirectory(path)) {
-                return deepSize == two && !fullPath.contains("blobs") && !fullPath.contains("manifest");
+                try (Stream<Path> pathStream = Files.list(path)) {
+                    return pathStream.anyMatch(DockerArtifactCoordinates::isManifestPath);
+                }
             }
             String name = path.getFileName().toString();
             return name.startsWith(SHA_256) && !name.endsWith(CHECKSUM_SHA_256) && !name.endsWith(SELF_METADATA) && !name.endsWith(FO_LIBRARY_METADATA) && !fullPath.contains("blobs/sha256") && !fullPath.contains("manifest/sha256");

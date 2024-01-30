@@ -3,6 +3,7 @@ package com.veadan.folib.services.impl;
 import com.beust.jcommander.internal.Sets;
 import com.veadan.folib.client.MutableRemoteRepositoryRetryArtifactDownloadConfiguration;
 import com.veadan.folib.configuration.*;
+import com.veadan.folib.constant.GlobalConstants;
 import com.veadan.folib.dispatch.ClusterDispatchNodeDto;
 import com.veadan.folib.event.repository.RepositoryEvent;
 import com.veadan.folib.event.repository.RepositoryEventListenerRegistry;
@@ -142,7 +143,11 @@ public class ConfigurationManagementServiceImpl
     @Override
     public void setBaseUrl(String baseUrl) throws IOException {
         modifyInLock(configuration -> {
-            configuration.setBaseUrl(baseUrl);
+            String finalBaseUrl = baseUrl;
+            if (!finalBaseUrl.endsWith(GlobalConstants.SEPARATOR)) {
+                finalBaseUrl = finalBaseUrl + GlobalConstants.SEPARATOR;
+            }
+            configuration.setBaseUrl(finalBaseUrl);
             CacheUtil<String, URI> cacheUtil = CacheUtil.getInstance();
             cacheUtil.remove("uri");
         });
