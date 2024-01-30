@@ -95,6 +95,7 @@ export default {
     'TheInfrastructure': 'The infrastructure',
     'Version': 'Version',
     'Metadata': 'Metadata ',
+    'MetadataKey': 'MetadataKey',
     'Create': 'New',
     'View': 'View',
     'ConanInformation': 'Conan Information',
