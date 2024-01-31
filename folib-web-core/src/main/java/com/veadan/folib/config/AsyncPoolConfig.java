@@ -124,6 +124,26 @@ public class AsyncPoolConfig {
     @Value("${folib.threadPool.asyncWsCommand.awaitTerminationSeconds}")
     private Integer asyncWsCommandArtifactAwaitTerminationSeconds;
 
+
+    @Value("${folib.threadPool.asyncApiBrowse.corePoolSize:#{T(java.lang.Runtime).getRuntime().availableProcessors()}}")
+    private Integer asyncApiBrowseArtifactCorePoolSize ;
+
+    @Value("${folib.threadPool.asyncApiBrowse.maxPoolSize:#{T(java.lang.Runtime).getRuntime().availableProcessors()*2}}")
+    private Integer asyncApiBrowseArtifactMaxPoolSize ;
+
+    @Value("${folib.threadPool.asyncApiBrowse.queueCapacity}")
+    private Integer asyncApiBrowseArtifactQueueCapacity;
+
+    @Value("${folib.threadPool.asyncApiBrowse.keepAliveSeconds}")
+    private Integer asyncApiBrowseArtifactKeepAliveSeconds;
+
+    @Value("${folib.threadPool.asyncApiBrowse.threadNamePrefix}")
+    private String asyncApiBrowseArtifactThreadNamePrefix;
+
+    @Value("${folib.threadPool.asyncApiBrowse.awaitTerminationSeconds}")
+    private Integer asyncApiBrowseArtifactAwaitTerminationSeconds;
+
+
     @Bean
     public ThreadPoolTaskExecutor asyncThreadPoolTaskExecutor() {
         return buildThreadPoolTaskExecutor(asyncCorePoolSize, asyncMaxPoolSize, asyncQueueCapacity, asyncKeepAliveSeconds, asyncThreadNamePrefix, asyncAwaitTerminationSeconds);
@@ -171,6 +191,26 @@ public class AsyncPoolConfig {
                 asyncWsCommandArtifactKeepAliveSeconds,
                 asyncWsCommandArtifactThreadNamePrefix,
                 asyncWsCommandArtifactAwaitTerminationSeconds);
+    }
+
+    @Bean
+    public ThreadPoolTaskExecutor asyncApiBrowseThreadPoolExecutor() {
+        ThreadPoolTaskExecutor threadPoolTaskExecutor = new ThreadPoolTaskExecutor();
+        threadPoolTaskExecutor.setRejectedExecutionHandler(new ThreadPoolExecutor.AbortPolicy());
+        if (asyncApiBrowseArtifactCorePoolSize == null || asyncApiBrowseArtifactCorePoolSize == 0) {
+            asyncApiBrowseArtifactCorePoolSize = Runtime.getRuntime().availableProcessors();
+        }
+        threadPoolTaskExecutor.setCorePoolSize(asyncApiBrowseArtifactCorePoolSize);
+        if (asyncApiBrowseArtifactMaxPoolSize == null || asyncApiBrowseArtifactMaxPoolSize == 0) {
+            asyncApiBrowseArtifactMaxPoolSize = Runtime.getRuntime().availableProcessors() * 2;
+        }
+        threadPoolTaskExecutor.setMaxPoolSize(asyncApiBrowseArtifactMaxPoolSize);
+        threadPoolTaskExecutor.setQueueCapacity(asyncApiBrowseArtifactQueueCapacity);
+        threadPoolTaskExecutor.setThreadNamePrefix(asyncApiBrowseArtifactThreadNamePrefix);
+        threadPoolTaskExecutor.setKeepAliveSeconds(asyncApiBrowseArtifactKeepAliveSeconds);
+        threadPoolTaskExecutor.setAwaitTerminationSeconds(asyncApiBrowseArtifactAwaitTerminationSeconds);
+        threadPoolTaskExecutor.initialize();
+        return threadPoolTaskExecutor;
     }
 
     @PreDestroy
