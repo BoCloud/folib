@@ -207,6 +207,8 @@ export default {
     'TotalNumberOfPackets': 'Total number of packets',
     'NumberOfQuestions': 'Number of questions',
     'SecurityScore': 'Security score',
+    'EventRecord':'Event record',
+    'PromotionRecord':'Promotion record',
     'GitRepositoryAddr': 'Git repository Addr',
     'GitProviderCredential': 'Git private repository credentials',
     'GitUsername': 'Git repository username',

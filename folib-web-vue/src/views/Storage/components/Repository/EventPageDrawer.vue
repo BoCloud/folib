@@ -2,7 +2,7 @@
   <a-drawer
       placement="right"
       width="65%"
-      title="事件"
+      :title="$t('Repository.EventRecord')"
       :visible="eventPageVisible"
       @close="eventDrawerClose"
       :zIndex="100"
@@ -19,8 +19,8 @@
           :activeKey="settingTabActiveKey"
           @change="settingTabChange($event)"
       >
-        <a-tab-pane :key="1" tab="分发/晋级记录">
-          <a-table :columns="tableColumns"
+        <a-tab-pane :key="1" :tab="$t('Repository.Distribution')+'/'+$t('Repository.promotionRecords')">
+          <a-table :columns="i18nTableColumns"
                    @change="tableChange"
                    :pagination="{pageSize: dataFilter.pageSize, current: dataFilter.pageNumber, total: dataFilter.total, showLessItems: true}"
                    :scroll="{ x: true }"
@@ -35,16 +35,16 @@
                   </template>
                   <template v-if="record.opsType === 2">
                     <template v-for="(info, index) in JSON.parse(record.targetPath)">
-                      分发节点{{index+1}}: {{info.dispatchClusterEnName}}
-                      <template v-if="info.targetStorageId">&nbsp;&nbsp;存储空间: {{info.targetStorageId||'-'}}</template>
-                      <template v-if="info.targetRepositoryId">&nbsp;&nbsp;仓库名称: {{info.targetRepositoryId||'-'}}</template>
+                      {{ $t('Repository.DistributionNode') }}{{index+1}}: {{info.dispatchClusterEnName}}
+                      <template v-if="info.targetStorageId">&nbsp;&nbsp;{{ $t('Repository.StorageSpace') }}: {{info.targetStorageId||'-'}}</template>
+                      <template v-if="info.targetRepositoryId">&nbsp;&nbsp;{{ $t('Repository.WarehouseName') }}: {{info.targetRepositoryId||'-'}}</template>
                       <br/>
                     </template>
                   </template>
                 </template>
                 <a>
                   <p class="copy-p">
-                    查看
+                    {{ $t('Repository.CheckOut') }}
                   </p>
                 </a>
               </a-tooltip>
@@ -58,7 +58,7 @@
                     </template>
                   <a>
                     <p class="copy-p">
-                      查看
+                      {{ $t('Repository.CheckOut') }}
                     </p>
                   </a>
                 </a-tooltip>
@@ -69,15 +69,15 @@
             </div>
             <div slot="opsType"
                  slot-scope="text, record">
-              {{ opsTypeMap[record.opsType] || "未知操作" }}
+              {{ opsTypeMap[record.opsType] || $t('Repository.UnknownOperation') }}
             </div>
             <div slot="status"
                  slot-scope="text, record">
-              {{ statusMap[record.status] || "未知状态" }}
+              {{ $t(statusMap[record.status]) || $t('Repository.UnknownState') }}
             </div>
             <div slot="slaveRecordCleared"
                  slot-scope="text, record">
-              {{ record.slaveRecordCleared ? '已清除':'未清除' }}
+              {{ record.slaveRecordCleared ? $t('Repository.Cleared'):$t('Repository.NotCleared') }}
             </div>
             <div slot="syncProgress"
                  slot-scope="text, record">
@@ -91,21 +91,21 @@
             <div slot="operation"
                  slot-scope="text, record">
               <div class="col-action">
-                <a-popconfirm :title="(currentClickRecord && currentClickRecord.status === 2 ? '当前制品正在同步中，':'')+'确定要进行制品补偿吗'"
+                <a-popconfirm :title="(currentClickRecord && currentClickRecord.status === 2 ? $t('Repository.CurrentProductIsSynchronizing'):'')+$t('Repository.SureMakeProductCompensation')"
                               okType="danger"
-                              ok-text="确定"
-                              cancel-text="取消"
+                              :ok-text="$t('Repository.Confirm')"
+                              :cancel-text="$t('Repository.Cancel')"
                               @confirm="">
                   <a-button type="link" v-if="record.status === 2 || record.status === 4" @click="clickRecord(record)"
                             size="small">
-                    <span class="text-danger">补偿</span>
+                    <span class="text-danger">{{ $t('Repository.Compensation') }}</span>
                   </a-button>
                 </a-popconfirm>
               </div>
             </div>
           </a-table>
         </a-tab-pane>
-        <a-tab-pane :key="2" tab="审计日志">
+        <a-tab-pane :key="2" :tab="$t('Repository.AuditLog')">
         </a-tab-pane>
       </a-tabs>
     </a-card>
@@ -134,65 +134,73 @@ export default {
       intervalId: undefined,
       settingTabActiveKey: 1,
       opsTypeMap: {
-        1: "制品晋级",
-        2: "制品分发"
+        1: "ProductPromotion",
+        2: "DistributionOfProducts"
       },
       statusMap: {
-        1: "就绪",
-        2: "同步中",
-        3: "成功",
-        4: "失败"
+        1: "Ready",
+        2: "InSync",
+        3: "Success",
+        4: "Failure"
       },
       tableColumns: [
         {
           title: '制品同步编号',
+          i18nKey: 'Repository.ProductSynchronousNumber',
           dataIndex: 'syncNo',
           key: 'syncNo',
-          width: 100
+          width: 180
         },
         {
           title: '源制品路径',
+          i18nKey: 'Repository.SourceProductPath',
           dataIndex: 'sourcePath',
           key: 'sourcePath',
-          width: 100
+          width: 120
         },
         {
           title: '目标制品路径信息',
+          i18nKey: 'Repository.TargetProductPathInformation',
           dataIndex: 'targetPath',
           key: 'targetPath',
-          width: 100,
+          width: 160,
           scopedSlots: {customRender: 'targetPath'}
         },
         {
           title: '制品操作',
+          i18nKey: 'Repository.ProductOperation',
           dataIndex: 'opsType',
           key: 'opsType',
-          width: 100,
+          width: 120,
           scopedSlots: {customRender: 'opsType'}
         },
         {
           title: '同步状态',
+          i18nKey: 'Repository.SynchronousState',
           dataIndex: 'status',
           key: 'status',
-          width: 100,
+          width: 120,
           scopedSlots: {customRender: 'status'}
         },
         {
           title: '从记录状态',
+          i18nKey: 'Repository.FromTheRecordState',
           dataIndex: 'slaveRecordCleared',
           key: 'slaveRecordCleared',
-          width: 100,
+          width: 120,
           scopedSlots: {customRender: 'slaveRecordCleared'}
         },
         {
           title: '同步进度',
+          i18nKey: 'Repository.SynchronizingProgress',
           dataIndex: 'syncProgress',
           key: 'syncProgress',
-          width: 100,
+          width: 120,
           scopedSlots: {customRender: 'syncProgress'}
         },
         {
           title: '失败原因',
+          i18nKey: 'Repository.CauseOfFailure',
           dataIndex: 'failedReason',
           key: 'failedReason',
           width: 100,
@@ -200,15 +208,17 @@ export default {
         },
         {
           title: '创建时间',
+          i18nKey: 'Repository.CreationTime',
           dataIndex: 'createTime',
           key: 'createTime',
-          width: 100,
+          width: 120,
           scopedSlots: {customRender: 'createTime'}
         },
         {
           title: '操作',
+          i18nKey: 'Repository.Operation',
           dataIndex: 'operation',
-          width: 100,
+          width: 110,
           scopedSlots: {customRender: 'operation'}
         }
       ],
@@ -227,6 +237,16 @@ export default {
     CronTask,
     Permission,
     UnionRepository,
+  },
+  computed: {
+    i18nTableColumns() {
+      return this.tableColumns.map(column => {
+        if (column.i18nKey) {
+          column.title = this.$t(column.i18nKey);
+        }
+        return column;
+      })
+    },
   },
   created() {
     this.dataFilter.storageId = this.folibRepository.storageId

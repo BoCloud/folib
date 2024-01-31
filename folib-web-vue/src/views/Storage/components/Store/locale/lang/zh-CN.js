@@ -95,6 +95,7 @@ export default {
     'TheInfrastructure': '基础架构',
     'Version': '版本',
     'Metadata': '元数据',
+    'MetadataKey': '元数据Key',
     'Create': '新增',
     'View': '查看',
     'ConanInformation': 'Conan信息',

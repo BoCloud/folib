@@ -94,7 +94,7 @@
               :style="{ fontSize: '28px', color: '#1890FF' }" />
           </a-tooltip>
         </a>
-        <a-table :columns="metadataColumns" :data-source="metadataList" rowKey="key" :scroll="{ x: true }">
+        <a-table :columns="i18nMetadataColumns" :data-source="metadataList" rowKey="key" :scroll="{ x: true }">
           <div slot="type" slot-scope="type">
             <span v-for="(item, index) in metadataTypes" :key="index">
               <span v-if="type === item.value">
@@ -406,27 +406,31 @@ export default {
       ],
       metadataColumns: [
         {
-          title: this.$t('Store.Metadata')+''+'Key',
+          i18nKey: 'Store.MetadataKey',
+          title: "元数据KEY",
           dataIndex: "key",
           key: "key",
           width: 150,
         },
         {
-          title: this.$t('Store.MetadataType'),
+          i18nKey: 'Store.MetadataType',
+          title: "元数据类型",
           dataIndex: "type",
           key: "type",
           width: 150,
           scopedSlots: { customRender: "type" },
         },
         {
-          title: this.$t('Store.MetadataValues'),
+          i18nKey: 'Store.MetadataValues',
+          title: "元数据值",
           dataIndex: "value",
           key: "value",
           width: 300,
           scopedSlots: { customRender: "value" },
         },
         {
-          title: this.$t('Store.Operations'),
+          i18nKey: 'Store.Operations',
+          title: "操作",
           dataIndex: "operation",
           width: 250,
           scopedSlots: { customRender: "operation" },
@@ -490,6 +494,16 @@ export default {
       selectedTag: 0,
       selectedColor: "#2db7f5"
     };
+  },
+  computed: {
+    i18nMetadataColumns() {
+      return this.metadataColumns.map(column => {
+        if (column.i18nKey) {
+          column.title = this.$t(column.i18nKey);
+        }
+        return column;
+      })
+    }
   },
   created() {
     if (isLogin()){

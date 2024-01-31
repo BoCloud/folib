@@ -88,10 +88,10 @@
                                             <a-card :bordered="false" class="card-billing-info">
                                                 <div class="col-info">
                                                     <a-descriptions :title="record.references.length + $t('Vulnerabilities.references')" :column="1">
-                                                        <a-descriptions-item label="{{ $t('Vulnerabilities.Instructions') }}">
+                                                        <a-descriptions-item :label="$t('Vulnerabilities.Instructions')">
                                                             {{ $t('Vulnerabilities.InformationSource') }}
                                                         </a-descriptions-item>
-                                                        <a-descriptions-item label="{{ $t('Vulnerabilities.Links') }}">
+                                                        <a-descriptions-item :label="$t('Vulnerabilities.Links')">
                                                             <p v-for="(ritem, index1) in record.references" :key="index1">
                                                                 {{ ritem.url }}
                                                             </p>
