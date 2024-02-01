@@ -1263,6 +1263,19 @@ export default {
   },
   computed: {},
   methods: {
+    message(status, type, message) {
+      let statusList = [401, 403]
+      if (statusList.includes(status)) {
+        return
+      }
+      if (!message) {
+        message = "操作成功"
+      }
+      this.$notification[type]({
+        message: message,
+        description: "",
+      })
+    },
     resetFolibRepository() {
       this.folibRepository = {
         allowsDeletion: true,
@@ -1453,9 +1466,8 @@ export default {
               this.getStorages();
             }).catch((err) => {
               let error = JSON.stringify(err.response.data)
-              this.$notification["error"]({
-                message: error.indexOf('The storage id already exists') !== -1 ? '存储空间名称已存在' : "创建失败",
-              })
+              let msg = error.indexOf('The storage id already exists') !== -1 ? '存储空间名称已存在' : "创建失败"
+              this.message(err.response.status, "error", msg)
             })
           }
         } else {
@@ -1834,9 +1846,8 @@ export default {
 
       }).catch((err) => {
         let error = JSON.stringify(err.response.data)
-        this.$notification["error"]({
-          message: error.indexOf('The repository id already exists') !== -1 ? '仓库名称已存在' : "创建失败",
-        })
+        let msg = error.indexOf('The repository id already exists') !== -1 ? '仓库名称已存在' : "创建失败"
+        this.message(err.response.status, "error", msg)
       })
 
     },

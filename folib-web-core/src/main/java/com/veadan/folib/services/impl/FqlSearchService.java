@@ -1,8 +1,10 @@
 package com.veadan.folib.services.impl;
 
+import cn.hutool.core.collection.CollectionUtil;
 import com.alibaba.fastjson.JSON;
 import com.google.common.collect.Lists;
 import com.veadan.folib.artifact.coordinates.DockerArtifactCoordinates;
+import com.veadan.folib.components.common.CommonComponent;
 import com.veadan.folib.data.criteria.Selector;
 import com.veadan.folib.dependency.snippet.CodeSnippet;
 import com.veadan.folib.dependency.snippet.SnippetGenerator;
@@ -48,6 +50,7 @@ import java.net.URL;
 import java.nio.file.Files;
 import java.time.ZoneId;
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Component
@@ -72,6 +75,10 @@ public class FqlSearchService extends GremlinVertexRepository<Artifact> implemen
     @Lazy
     private ConfigurationManagementService configurationManagementService;
 
+    @Inject
+    @Lazy
+    private CommonComponent commonComponent;
+
     @Override
     public SearchResults search(Selector<ArtifactEntity> selector) throws IOException {
 
@@ -93,7 +100,6 @@ public class FqlSearchService extends GremlinVertexRepository<Artifact> implemen
                                        String sortField,
                                        String sortOrder,
                                        List<String> repositoryIds,
-                                       Boolean openRepository,
                                        String safeLevel,
                                        Integer limit, Integer page) throws IOException {
 
@@ -110,22 +116,8 @@ public class FqlSearchService extends GremlinVertexRepository<Artifact> implemen
             pageable = PageRequest.of(page, limit).previous();
         }
         List<String> storageIdAndRepositoryIdList = null;
-        if (Boolean.TRUE.equals(openRepository)) {
-            final List<Storage> storageList = new ArrayList<>(configurationManagementService.getConfiguration()
-                    .getStorages()
-                    .values());
-            storageIdAndRepositoryIdList = Lists.newArrayList();
-            if (CollectionUtils.isNotEmpty(storageList)) {
-                for (Storage storage : storageList) {
-                    if (MapUtils.isNotEmpty(storage.getRepositories())) {
-                        for (Repository repository : storage.getRepositories().values()) {
-                            if (RepositoryScopeEnum.OPEN.getType().equals(repository.getScope())) {
-                                storageIdAndRepositoryIdList.add(String.format("%s-%s", storage.getId(), repository.getId()));
-                            }
-                        }
-                    }
-                }
-            }
+        if (!commonComponent.hasAdmin()) {
+            storageIdAndRepositoryIdList = resolveRepository();
             if (CollectionUtils.isEmpty(storageIdAndRepositoryIdList)) {
                 SearchResults result = new SearchResults();
                 result.setTotal(0);
@@ -259,5 +251,32 @@ public class FqlSearchService extends GremlinVertexRepository<Artifact> implemen
             }
         }
         return allStorageIdAndRepositoryIdList;
+    }
+
+    private List<String> resolveRepository() {
+        List<String> repositoryIdList = Lists.newArrayList();
+        if (!commonComponent.hasAdmin()) {
+            String username = commonComponent.loginUsername();
+            final List<Storage> storageList = new ArrayList<>(configurationManagementService.getConfiguration()
+                    .getStorages()
+                    .values());
+            String finalUsername = commonComponent.loginUsername();
+            List<Repository> repositoryList = storageList.stream().filter(s ->
+                    (CollectionUtil.isNotEmpty(s.getUsers()) && s.getUsers().contains(finalUsername)) ||
+                            (CollectionUtils.isNotEmpty(s.getRepositories().values()) && s.getRepositories().values().stream().anyMatch(repository -> RepositoryScopeEnum.OPEN.getType().equals(repository.getScope())))
+            ).filter(storage -> MapUtils.isNotEmpty(storage.getRepositories())).flatMap(storage -> storage.getRepositories().entrySet().stream()).map(Map.Entry::getValue).collect(Collectors.toList());
+            if (CollectionUtils.isNotEmpty(repositoryList)) {
+                boolean flag;
+                Storage storage;
+                for (Repository repository : repositoryList) {
+                    storage = repository.getStorage();
+                    flag = !username.equals(storage.getAdmin()) && (CollectionUtils.isEmpty(storage.getUsers()) || (CollectionUtils.isNotEmpty(storage.getUsers()) && !storage.getUsers().contains(username)));
+                    if (!flag || RepositoryScopeEnum.OPEN.getType().equals(repository.getScope())) {
+                        repositoryIdList.add(String.format("%s-%s", storage.getId(), repository.getId()));
+                    }
+                }
+            }
+        }
+        return repositoryIdList;
     }
 }

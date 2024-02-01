@@ -90,7 +90,7 @@ public class CleanupDockerRepositoryCronJob extends JavaCronJob {
     public void cleanupDockerRepository(String storageId, String repositoryId) {
         log.info("Start docker clean artifact job repository [{}] [{}]", storageId, repositoryId);
         Repository repository = configurationManagementService.getConfiguration().getStorage(storageId).getRepository(repositoryId);
-        if (!RepositoryTypeEnum.HOSTED.getType().equals(repository.getType())) {
+        if (RepositoryTypeEnum.GROUP.getType().equals(repository.getType())) {
             return;
         }
         if (StringUtils.isNotBlank(storageId) && StringUtils.isNotBlank(repositoryId)) {
@@ -111,7 +111,7 @@ public class CleanupDockerRepositoryCronJob extends JavaCronJob {
                     final Map<String, ? extends Repository> repositories = storage.getRepositories();
                     for (Repository repository : repositories.values()) {
                         try {
-                            if (DockerLayoutProvider.ALIAS.equals(repository.getLayout()) && RepositoryTypeEnum.HOSTED.getType().equals(repository.getType())) {
+                            if (DockerLayoutProvider.ALIAS.equals(repository.getLayout()) && !RepositoryTypeEnum.GROUP.getType().equals(repository.getType())) {
                                 cleanupDockerRepository(repository.getStorage().getId(), repository.getId());
                             }
                         } catch (Exception ex) {
@@ -174,6 +174,7 @@ public class CleanupDockerRepositoryCronJob extends JavaCronJob {
             log.warn("Docker repository [{}] [{}] repositoryPath [{}] not exists skip delete", repositoryPath.getStorageId(), repositoryPath.getRepositoryId(), repositoryPath.toString());
             return false;
         }
+        log.info("Docker repository [{}] [{}] repositoryPath [{}] try delete", repositoryPath.getStorageId(), repositoryPath.getRepositoryId(), RepositoryFiles.relativizePath(repositoryPath));
         if (ignoreTime) {
             artifactManagementService.delete(repositoryPath, true);
             return true;
@@ -224,8 +225,8 @@ public class CleanupDockerRepositoryCronJob extends JavaCronJob {
             for (Manifests manifests : imageManifest.getManifests()) {
                 RepositoryPath manifestPath = manifestRootRepositoryPath.resolve(manifests.getDigest());
                 if (!Files.exists(manifestPath)) {
-                    log.warn("Clean docker artifact job repository [{}] [{}] [{}] manifest [{}] not exists, The image is damaged and will be deleted", storageId, repositoryId, imageName, dockerArtifactCoordinates.getLayers());
-                    return null;
+                    log.warn("Clean docker artifact job repository [{}] [{}] [{}] manifest [{}] not exists", storageId, repositoryId, imageName, dockerArtifactCoordinates.getLayers());
+                    continue;
                 }
                 manifestString = Files.readString(manifestPath);
                 itemImageManifest = JSON.parseObject(manifestString, ImageManifest.class);

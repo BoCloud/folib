@@ -69,20 +69,23 @@
           <a-descriptions-item v-if="currentFileDetial" label="修改时间">
             {{ currentFileDetial.lastModified }}
           </a-descriptions-item>
-          <a-descriptions-item v-if="currentFileDetial" label="层数">
+          <a-descriptions-item v-if="currentFileDetial && currentFileDetial.manifest.layers" label="层数">
             {{ currentFileDetial.manifest.layers.length }}
           </a-descriptions-item>
-          <a-descriptions-item v-if="currentFileDetial" label="制作Docker版本">
+          <a-descriptions-item v-if="currentFileDetial && currentFileDetial.manifestConfig" label="制作Docker版本">
             {{ currentFileDetial.manifestConfig.docker_version }}
           </a-descriptions-item>
-          <a-descriptions-item v-if="currentFileDetial" label="镜像OS">
+          <a-descriptions-item v-if="currentFileDetial && currentFileDetial.manifestConfig" label="镜像OS">
             <a-tag> {{ currentFileDetial.manifestConfig.os }}</a-tag>
           </a-descriptions-item>
-          <a-descriptions-item v-if="currentFileDetial" label="基础架构">
+          <a-descriptions-item v-if="currentFileDetial && currentFileDetial.manifestConfig" label="基础架构">
             {{ currentFileDetial.manifestConfig.architecture }}
           </a-descriptions-item>
-          <a-descriptions-item v-if="currentFileDetial && currentFileDetial.manifestConfig.variant" label="版本">
+          <a-descriptions-item v-if="currentFileDetial && currentFileDetial.manifestConfig && currentFileDetial.manifestConfig.variant" label="版本">
             {{ currentFileDetial.manifestConfig.variant || ''}}
+          </a-descriptions-item>
+          <a-descriptions-item v-if="currentFileDetial && !currentFileDetial.manifestConfig" label="缓存状态">
+            {{ '未缓存' }}
           </a-descriptions-item>
         </a-descriptions>
       </a-tab-pane>

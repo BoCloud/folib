@@ -246,10 +246,6 @@ export default {
         }
       }
     },
-    openRepository: {
-      type: Boolean,
-      default: false,
-    },
     columns: {
       type: Array,
       default: [],
@@ -434,7 +430,6 @@ export default {
         beginDate: this.artifactQuery.beginDate,
         endDate: this.artifactQuery.endDate,
         regex: false,
-        openRepository: this.openRepository
       }
       this.loading = true
       fql(params).then((res) => {

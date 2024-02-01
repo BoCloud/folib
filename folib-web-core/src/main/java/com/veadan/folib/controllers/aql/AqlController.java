@@ -44,11 +44,10 @@ public class AqlController extends BaseController {
                                  @RequestParam(name = "sortField", required = false) String sortField,
                                  @RequestParam(name = "sortOrder", required = false) String sortOrder,
                                  @RequestParam(name = "repositoryIds", required = false) List<String> repositoryIds,
-                                 @RequestParam(name = "openRepository", required = false) Boolean openRepository,
                                  @RequestParam(name = "safeLevel", required = false) String safeLevel,
                                  @RequestParam(name = "limit", required = false) Integer limit,
                                  @RequestParam(name = "page", required = false) Integer page) throws IOException {
-        SearchResults result = fqlSearchService.artifactQuery(regex, artifactName, metadataSearch, storageId, repositoryId, beginDate, endDate, sortField, sortOrder, repositoryIds, openRepository, safeLevel, limit, page);
+        SearchResults result = fqlSearchService.artifactQuery(regex, artifactName, metadataSearch, storageId, repositoryId, beginDate, endDate, sortField, sortOrder, repositoryIds, safeLevel, limit, page);
         return ResponseEntity.ok(result);
     }
 

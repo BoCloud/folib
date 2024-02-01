@@ -5,6 +5,7 @@ import cn.hutool.core.collection.CollectionUtil;
 import cn.hutool.core.lang.UUID;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
+import com.beust.jcommander.internal.Sets;
 import com.google.common.collect.Lists;
 import com.veadan.folib.artifact.coordinates.DockerArtifactCoordinates;
 import com.veadan.folib.cloud.storage.s3fs.S3Iterator;
@@ -498,7 +499,10 @@ public class DockerArtifactController extends BaseArtifactController {
         String manifestSha256 = null, directory;
         String manifestString = new String(bytes, StandardCharsets.UTF_8);
         ImageManifest imageManifest = JSON.parseObject(manifestString, ImageManifest.class);
-        Set<String> layers = imageManifest.getLayers().stream().map(LayerManifest::getDigest).collect(Collectors.toSet());
+        Set<String> layers = Optional.ofNullable(imageManifest.getLayers()).orElse(Collections.emptyList()).stream().map(LayerManifest::getDigest).collect(Collectors.toSet());
+        if (Objects.nonNull(imageManifest.getConfig())) {
+            layers.add(imageManifest.getConfig().getDigest());
+        }
         try (InputStream stream = new ByteArrayInputStream(bytes); InputStream destStream = new ByteArrayInputStream(bytes)) {
             boolean isTag = false;
             if (!reference.startsWith("sha256:")) {
@@ -1077,16 +1081,22 @@ public class DockerArtifactController extends BaseArtifactController {
                 logger.warn("ImagePath [{}] digestOrTag [{}] manifest [{}} docker v1 version not currently supported", imagePath, digestOrTag, tempManifestRepositoryPath.getFileName().toString());
                 return null;
             }
+            Set<String> layers = Optional.ofNullable(imageManifest.getLayers()).orElse(Collections.emptyList()).stream().map(LayerManifest::getDigest).collect(Collectors.toSet());
+            if (Objects.nonNull(imageManifest.getConfig())) {
+                layers.add(imageManifest.getConfig().getDigest());
+            }
             MessageDigest shaDigest = MessageDigest.getInstance("SHA-256");
             //解析临时的manifest文件，生成 SHA-256 checksum
             String shaChecksum = "sha256:" + getFileChecksum(shaDigest, new ByteArrayInputStream(Files.readAllBytes(tempManifestRepositoryPath)));
             if (isTag) {
                 //写入到tag目录下的manifest文件中，tag下只能存在一个manifest
                 tagRepositoryPath = tempManifestRepositoryPath.resolveSibling(shaChecksum);
+                provideArtifact(tagRepositoryPath, layers);
                 artifactManagementService.store(tagRepositoryPath, tempManifestRepositoryPath);
             }
             //写入到仓库根目录下的manifest文件中
             manifestRepositoryPath = tempManifestRepositoryPath.getRoot().resolve(DockerLayoutProvider.MANIFEST).resolve(shaChecksum);
+            provideArtifact(manifestRepositoryPath, layers);
             artifactManagementService.store(manifestRepositoryPath, tempManifestRepositoryPath);
             return manifestRepositoryPath;
         } catch (Exception ex) {

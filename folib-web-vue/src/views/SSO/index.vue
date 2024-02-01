@@ -49,7 +49,7 @@ export default ({
 			}
 			store.dispatch("Token", token)
 			store.dispatch("GetInfo").then((resp) => {
-				this.$router.push({ name: 'storages' })
+				this.$router.push({ name: 'storagesHome' })
 				setTimeout(() => {
 					this.message("success","欢迎")
 				}, 100)

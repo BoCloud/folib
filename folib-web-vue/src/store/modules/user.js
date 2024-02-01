@@ -108,10 +108,12 @@ const user = {
         document.cookie = "token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;"
         localStorage.clear()
         sessionStorage.clear()
-        router.push({ name: 'login' })
+        const home = 'storagesHome'
+        if (router.currentRoute.name !== 'login') {
+          router.push({ name: home , query: { t: Date.now() } })
+        }      
       })
     }
-
   }
 }
 

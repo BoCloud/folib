@@ -1027,13 +1027,7 @@ export default {
       })
     },
     goBack () {
-      if (isLogin())
-      {
-        this.$router.push({ name: 'storages' })
-      } else
-      {
-        this.$router.push({ name: 'anonymousStorages' })
-      }
+      this.$router.push({ name: 'storagesHome' })
     },
     getLayoutTypeHandle () {
       return getLayoutType(this.folibRepository)
