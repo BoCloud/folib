@@ -37,8 +37,8 @@ public class RestArtifactResolverFactory
         Objects.requireNonNull(repository);
 
         RemoteRepositoryRetryArtifactDownloadConfiguration configuration = configurationManager.getConfiguration()
-                                                                                               .getRemoteRepositoriesConfiguration()
-                                                                                               .getRemoteRepositoryRetryArtifactDownloadConfiguration();
+                .getRemoteRepositoriesConfiguration()
+                .getRemoteRepositoryRetryArtifactDownloadConfiguration();
 
         String username = repository.getUsername();
         String password = repository.getPassword();
@@ -52,13 +52,13 @@ public class RestArtifactResolverFactory
                                         authenticationFeature)
                                 {
 
-                                    @Override
-                                    public boolean isAlive()
-                                    {
-                                        return true;
-                                    }
+            @Override
+            public boolean isAlive()
+            {
+                return true;
+            }
 
-                                };
+        };
     }
 
 }

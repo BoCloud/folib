@@ -204,6 +204,32 @@
           <prism-editor class="my-editor height-300" v-if="searchDataCurrentSelectItem && searchViewCodes"
             v-model="searchViewCodes" :highlight="highlighterHandle" :line-numbers="false" :readonly="true">
           </prism-editor>
+
+          <a-tabs v-if="searchDataCurrentSelectItem &&
+            searchDataCurrentSelectItem.manifestConfig &&
+            folibRepository.layout === 'Docker'
+            " class="tabs-sliding" default-active-key="1">
+            <a-tab-pane key="1" tab="Layers">
+              <a-timeline>
+                <a-timeline-item color="primary" v-for="(key, index) in searchDataCurrentSelectItem.manifestConfig.config" :key="index">
+                  {{ index }}
+                  <p>
+                    {{ searchDataCurrentSelectItem.manifestConfig.config[index] }}
+                  </p>
+                </a-timeline-item>
+              </a-timeline>
+            </a-tab-pane>
+            <a-tab-pane key="2" tab="制作历史">
+              <a-timeline>
+                <a-timeline-item color="primary" v-for="(key, index) in searchDataCurrentSelectItem.manifestConfig.history" :key="index">
+                  {{ formateDate(key.created) }}
+                  <p>
+                    {{ key.created_by }}
+                  </p>
+                </a-timeline-item>
+              </a-timeline>
+            </a-tab-pane>
+          </a-tabs>
         </div>
       </div>
     </a-drawer>
@@ -504,6 +530,30 @@ export default {
     },
     goBack() {
       this.reload()
+    },
+    formateDate(time) {
+      if (time) {
+        var date = new Date(time);
+        var Y = date.getFullYear() + "-";
+        var M =
+          (date.getMonth() + 1 < 10
+            ? "0" + (date.getMonth() + 1)
+            : date.getMonth() + 1) + "-";
+        var D =
+          (date.getDate() < 10 ? "0" + date.getDate() : date.getDate()) + " ";
+        var h =
+          (date.getHours() < 10 ? "0" + date.getHours() : date.getHours()) +
+          ":";
+        var m =
+          (date.getMinutes() < 10
+            ? "0" + date.getMinutes()
+            : date.getMinutes()) + ":";
+        var s =
+          (date.getSeconds() < 10
+            ? "0" + date.getSeconds()
+            : date.getSeconds()) + "";
+        return Y + M + D + h + m + s;
+      }
     },
   }
 }

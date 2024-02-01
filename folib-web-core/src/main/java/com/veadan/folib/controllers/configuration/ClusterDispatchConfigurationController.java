@@ -119,6 +119,21 @@ public class ClusterDispatchConfigurationController extends BaseConfigurationCon
             nodeDto.setCreateTime(LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
             clusterDispatchManagementService.createClusterNode(nodeDto);
 
+            // 连接到WsServer
+            final String clusterNodeHost = nodeDto.getClusterNodeHost();
+            final String baseUrl = configurationManager.getConfiguration().getBaseUrl();
+            final String originHost = UrlUtils.getHost(baseUrl);
+            final Integer originPort = UrlUtils.getPort(baseUrl);
+            final String destHost = UrlUtils.getHost(clusterNodeHost);
+            final Integer destPort = UrlUtils.getPort(clusterNodeHost);
+            final String destNodeName = String.format("%s:%s", destHost, destPort);
+            final String originNodeName = String.format("%s:%s", originHost, originPort);
+            final String destUri = String.format("/ws/folib/%s", originNodeName);
+            final boolean upResult = FolibWsClientRunManage.up(destNodeName, destHost, destPort, destUri, true);
+            if (!upResult) {
+                logger.warn("尝试连接到添加目标节点 [{}] [{}] [{}] [{}] 失败，请检查添加节点信息是否正确", destNodeName, destHost, destPort, destUri);
+            }
+
             // 向其他集群节点同步同步制品分发节点信息
             SyncClusterDispatchDto syncClusterDispatchDto =
                     new SyncClusterDispatchDto(nodeDto, SyncClusterDispatchEnum.ADD_OR_UPDATE);

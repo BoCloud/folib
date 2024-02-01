@@ -1,5 +1,6 @@
 package com.veadan.folib.utils;
 
+import com.veadan.folib.scanner.common.exception.BusinessException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
@@ -47,34 +48,29 @@ public class UrlUtils {
             String path = url.getPath();
             String hostUrl = url.getHost();
             String[] parts = path.split("/");
-            if (parts.length >= 0) {
-                String storageId = parts[1];
-                String repositoryId = parts[2];
-                return new String[]{storageId, repositoryId, hostUrl};
-            }
-
+            String storageId = parts[1];
+            String repositoryId = parts[2];
+            return new String[]{storageId, repositoryId, hostUrl};
         } catch (Exception e) {
             // URL 格式不正确或解析失败
+            throw new BusinessException(String.format("%s URL 格式不正确或解析失败", artifactPath));
         }
-        return null;
     }
 
-    public static Integer getPort(String urlStr)
-    {
+    public static Integer getPort(String urlStr) {
         if (urlStr.startsWith("https")) {
             return 443;
         }
         try {
             final URL url = new URL(urlStr);
-            return Optional.of(url.getPort()).map(p -> p < 0 ? 80:p).get();
+            return Optional.of(url.getPort()).map(p -> p < 0 ? 80 : p).get();
         } catch (MalformedURLException e) {
             log.error("解析端口错误", e);
             return null;
         }
     }
 
-    public static String getHost(String urlStr)
-    {
+    public static String getHost(String urlStr) {
         try {
             final URL url = new URL(urlStr);
             return url.getHost();

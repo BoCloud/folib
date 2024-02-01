@@ -46,6 +46,7 @@ public interface GlobalConstants {
     String DISTRIBUTED_LOCK_NAME = "distributedLock";
 
     /**
+     *
      * 分布式缓存名称
      */
     String DISTRIBUTED_CACHE_NAME = "distributedCache";
@@ -81,6 +82,7 @@ public interface GlobalConstants {
     long WAIT_LOCK_TIME = 30L;
 
     /**
+	 *
      * LONG_WAIT_LOCK_TIME
      */
     long LONG_WAIT_LOCK_TIME = 120L;

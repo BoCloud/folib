@@ -32,17 +32,17 @@ public class UserRepository extends GremlinVertexRepository<User> {
 
     public List<User> findUsersWithRole(String role) {
         return g().V().hasLabel(Vertices.SECURITY_ROLE).has(Properties.UUID, role).inE(Edges.USER_HAS_SECURITY_ROLES).outV()
-                .has(Properties.USER_TYPE, "general").has(Properties.ENABLED, true).map(adapter.fold()).dedup().toList();
+                .has(Properties.USER_TYPE, "general").has(Properties.CREATED, P.gt(0)).has(Properties.ENABLED, true).map(adapter.fold()).dedup().toList();
     }
 
     public List<User> findUsersWithRoles(List<String> roleList) {
         return g().V().hasLabel(Vertices.SECURITY_ROLE).has(Properties.UUID, P.within(roleList)).inE(Edges.USER_HAS_SECURITY_ROLES).outV()
-                .has(Properties.USER_TYPE, "general").has(Properties.ENABLED, true).map(adapter.fold()).dedup().toList();
+                .has(Properties.USER_TYPE, "general").has(Properties.CREATED, P.gt(0)).has(Properties.ENABLED, true).map(adapter.fold()).dedup().toList();
     }
 
     @Override
     public Iterable<User> findAll() {
-        return g().V().hasLabel(Vertices.USER).has(Properties.USER_TYPE, "general").map(adapter.fold()).toList();
+        return g().V().hasLabel(Vertices.USER).has(Properties.USER_TYPE, "general").has(Properties.CREATED, P.gt(0)).map(adapter.fold()).toList();
     }
 
     public List<User> findUsersPage(User user, int start, int end) {
@@ -54,7 +54,7 @@ public class UserRepository extends GremlinVertexRepository<User> {
     }
 
     private EntityTraversal<Vertex, Vertex> commonUserPage(User user) {
-        EntityTraversal<Vertex, Vertex> entityTraversal = g().V().hasLabel(Vertices.USER).has(Properties.USER_TYPE, "general");
+        EntityTraversal<Vertex, Vertex> entityTraversal = g().V().hasLabel(Vertices.USER).has(Properties.USER_TYPE, "general").has(Properties.CREATED, P.gt(0));
         if (StringUtils.isNotBlank(user.getUsername())) {
             entityTraversal = entityTraversal.has(Properties.UUID, Text.textContains(user.getUsername()));
         }

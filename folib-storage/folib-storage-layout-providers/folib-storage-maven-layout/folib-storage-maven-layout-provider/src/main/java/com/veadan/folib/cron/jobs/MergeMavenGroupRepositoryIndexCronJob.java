@@ -65,7 +65,7 @@ public class MergeMavenGroupRepositoryIndexCronJob
         return CronJobDefinition.newBuilder()
                                 .jobClass(MergeMavenGroupRepositoryIndexCronJob.class.getName())
                                 .name("定时合并Maven组合仓库的索引作业").scope(MAVEN)
-                                .description("该任务用于合并Maven组合仓库的索引，只有组合仓库才使用。")
+                                .description("该任务用于合并Maven组合仓库的索引，只有组合仓库才使用")
                                 .fields(FIELDS)
                                 .build();
     }

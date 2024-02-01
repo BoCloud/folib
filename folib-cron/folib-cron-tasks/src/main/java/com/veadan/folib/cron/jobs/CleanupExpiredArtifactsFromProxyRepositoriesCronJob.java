@@ -74,7 +74,7 @@ public class CleanupExpiredArtifactsFromProxyRepositoriesCronJob
                                 .jobClass(CleanupExpiredArtifactsFromProxyRepositoriesCronJob.class.getName())
                                 .name("代理仓库清理过期制品")
                                 .scope("SYSTEM")
-                                .description("可设定过期日期，该任务会过期日期之前的制品包。")
+                                .description("可设定过期日期，该任务会清理过期日期之前的制品包")
                                 .fields(FIELDS)
                                 .build();
     }

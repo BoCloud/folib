@@ -23,7 +23,7 @@
 //    protected Artifact handleEvent(RepositoryPath repositoryPath) throws IOException {
 //        Artifact artifactEntry = repositoryPath.getArtifactEntry();
 //        if (artifactEntry == null) {
-//            log.debug("No [{}] for [{}].",
+//            log.warn("No [{}] for [{}].",
 //                    Artifact.class.getSimpleName(),
 //                    repositoryPath);
 //

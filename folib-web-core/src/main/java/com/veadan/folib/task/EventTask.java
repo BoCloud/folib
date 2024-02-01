@@ -106,7 +106,7 @@ public class EventTask {
                                 }
                             }
                         } catch (Exception ex) {
-                            log.info("Handle eventPath [{}] lines [{}] error [{}] ms", eventPath.toString(), lines, ExceptionUtils.getStackTrace(ex));
+                            log.warn("Handle eventPath [{}] lines [{}] error [{}] ms", eventPath.toString(), lines, ExceptionUtils.getStackTrace(ex));
                         }
                         log.info("Handle eventPath [{}] lines [{}] finished take time [{}] ms", eventPath.toString(), lines, System.currentTimeMillis() - startTime);
                         deletePathList.add(eventPath);
@@ -142,11 +142,11 @@ public class EventTask {
             }
             if (ArtifactEventTypeEnum.EVENT_ARTIFACT_FILE_DOWNLOADED.getType() == artifactEventRecordHandle.getEventType()) {
                 artifactDownloadedEventHandler.handleEventRecord(repositoryPath, size, true);
-                log.info("Handle current line [{}] repositoryPath [{}] EVENT_ARTIFACT_FILE_DOWNLOADED finished artifactEventRecordList size [{}]", lines, repositoryPath.toString(), artifactEventRecordList.size());
+                log.debug("Handle current line [{}] repositoryPath [{}] EVENT_ARTIFACT_FILE_DOWNLOADED finished artifactEventRecordList size [{}]", lines, repositoryPath.toString(), artifactEventRecordList.size());
             }
         }
         //清理
         artifactEventRecordList.clear();
-        log.info("Clear artifactEventRecordList size [{}]", artifactEventRecordList.size());
+        log.debug("Clear artifactEventRecordList size [{}]", artifactEventRecordList.size());
     }
 }
