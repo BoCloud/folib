@@ -30,6 +30,10 @@ public class ArtifactSearchCondition {
      */
     private String path;
     /**
+     * 查询类型
+     */
+    private String type;
+    /**
      * 条件组集合
      */
     private List<ArtifactConditionGroup> artifactConditionGroups;

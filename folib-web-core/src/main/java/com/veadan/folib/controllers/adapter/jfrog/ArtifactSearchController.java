@@ -92,7 +92,7 @@ public class ArtifactSearchController extends JFrogBaseController {
             return ResponseEntity.ok(artifactSearchResult);
         }
         List<String> includeFields = Lists.newArrayList();
-        String repoKey = "repo", pathKey = "path";
+        String repoKey = "repo", pathKey = "path", typeKey = "type";
         String repositoryId = findJson.getString(repoKey);
         // 提取 "repo", "path" 和 "include" 字段
         String storageId = getDefaultStorageId(repositoryId);
@@ -152,7 +152,8 @@ public class ArtifactSearchController extends JFrogBaseController {
                 artifactSorts.add(ArtifactSort.builder().order(sortKey.replace("$", "")).keyList(keyList).build());
             }
         }
-        ArtifactSearchCondition artifactSearchCondition = ArtifactSearchCondition.builder().storageId(storageId).repositoryId(repositoryId).path("").artifactConditionGroups(artifactConditionGroups).artifactSorts(artifactSorts).build();
+        String type = findJson.getString(typeKey);
+        ArtifactSearchCondition artifactSearchCondition = ArtifactSearchCondition.builder().storageId(storageId).repositoryId(repositoryId).path("").type(type).artifactConditionGroups(artifactConditionGroups).artifactSorts(artifactSorts).build();
         String includePatternText = "\\.include\\((.*?)\\)";
         Pattern includePattern = Pattern.compile(includePatternText);
         Matcher includeMatcher = includePattern.matcher(query);

@@ -1,102 +1,95 @@
 <template>
-  <div class="artifact-base-data">
+  <div class="artifact-search-base-data">
     <a-tabs default-active-key="1" @change="artifactTabChange">
       <a-tab-pane key="1" tab="基本信息">
         <a-descriptions
-          v-if="folibRepository.layout !== 'Docker'"
+          v-if="repositoryType !== 'Docker' && artifact"
           title=""
           :column="1"
           style="word-break: break-all;word-wrap: break-word;"
         >
           <a-descriptions-item label="所属空间">
-            {{ currentTreeNode.storageId }}
+            {{ artifact.storageId }}
           </a-descriptions-item>
           <a-descriptions-item label="所属仓库">
-            {{ currentTreeNode.repositoryId }}
+            {{ artifact.repositoryId }}
           </a-descriptions-item>
           <a-descriptions-item label="名称">
-            {{ currentTreeNode.name }}
+            {{ artifactName }}
           </a-descriptions-item>
           <a-descriptions-item label="路径">
-            {{ currentTreeNode.artifactPath }}
+            {{ artifactPath }}
           </a-descriptions-item>
           <a-descriptions-item label="文件大小">
-            {{ fileSizeConver(currentTreeNode.size) }}
+            {{ fileSizeConver(artifact.sizeInBytes) }}
           </a-descriptions-item>
           <a-descriptions-item label="修改时间">
-            {{ formateDate(currentTreeNode.lastModified) }}
+            {{ currentArtifact.lastModified }}
           </a-descriptions-item>
-          <a-descriptions-item v-if="currentFileDetial" label="最近使用时间">
-            {{ currentFileDetial.lastUsedTime }}
+          <a-descriptions-item label="最近使用时间">
+            {{ currentArtifact.lastUsedTime }}
           </a-descriptions-item>
-          <a-descriptions-item v-if="currentFileDetial" label="下载次数">
-            {{ currentFileDetial.downloadCount }}
+          <a-descriptions-item label="下载次数">
+            {{ artifact.downloadCount }}
           </a-descriptions-item>
-          <template v-if="currentFileDetial && currentFileDetial.artifact && currentFileDetial.artifact.checksums" >
-            <a-descriptions-item :label="key" v-for="(value, key, index) in currentFileDetial.artifact.checksums" :key="index" span="2">
+          <template v-if="artifact && artifact.checksums">
+            <a-descriptions-item :label="key" v-for="(value, key, index) in artifact.checksums" :key="index" span="2">
               {{ value }}
             </a-descriptions-item>
           </template>
         </a-descriptions>
-        <div v-if="currentFileDetial && currentFileDetial.manifest && currentFileDetial.manifest.manifests">
-          <a-tag class="mb-10" :color="index === selectedTag? selectedColor : ''" v-for="(item, index) in currentFileDetial.manifest.manifests" :key="index" @click="clickTag(item, index)">
+        <div v-if="currentArtifact && currentArtifact.manifest && currentArtifact.manifest.manifests">
+          <a-tag class="mb-10" :color="index === selectedTag? selectedColor : ''" v-for="(item, index) in currentArtifact.manifest.manifests" :key="index" @click="clickTag(item, index)">
             <a> {{ item.platform.os + '/' + item.platform.architecture + (item.platform.variant? '/' + item.platform.variant : '') }} </a>
           </a-tag>
         </div>
         <a-descriptions
-          v-if="folibRepository.layout === 'Docker'"
+          v-if="repositoryType === 'Docker' && artifact"
           title=""
           :column="1"
         >
           <a-descriptions-item label="所属空间">
-            {{ currentTreeNode.storageId }}
+            {{ artifact.storageId }}
           </a-descriptions-item>
           <a-descriptions-item label="所属仓库">
-            {{ currentTreeNode.repositoryId }}
+            {{ artifact.repositoryId }}
           </a-descriptions-item>
-          <a-descriptions-item v-if="currentFileDetial" label="镜像名称">
-            {{ currentFileDetial.imageName }}
+          <a-descriptions-item v-if="artifact" label="镜像名称">
+            {{ artifact.artifactCoordinates.imageName }}
           </a-descriptions-item>
-          <a-descriptions-item :label="currentFileDetial ? '版本号' : '名称'">
-            {{ currentTreeNode.name }}
+          <a-descriptions-item :label="artifact ? '版本号' : '名称'">
+            {{ artifactName }}
           </a-descriptions-item>
-          <a-descriptions-item v-if="currentFileDetial" label="文件大小">
-            {{ fileSizeConver(currentFileDetial.size) }}
+          <a-descriptions-item v-if="artifact" label="文件大小">
+            {{ fileSizeConver(currentArtifact.size) }}
           </a-descriptions-item>
-          <a-descriptions-item v-if="currentFileDetial" label="SHA-256">
-            {{ currentFileDetial.sha256 }}
+          <a-descriptions-item v-if="artifact" label="SHA-256">
+            {{ currentArtifact.sha256 }}
           </a-descriptions-item>
-          <a-descriptions-item v-if="currentFileDetial" label="修改时间">
-            {{ currentFileDetial.lastModified }}
+          <a-descriptions-item v-if="artifact" label="修改时间">
+            {{ currentArtifact.lastModified }}
           </a-descriptions-item>
-          <a-descriptions-item v-if="currentFileDetial && currentFileDetial.manifest.layers" label="层数">
-            {{ currentFileDetial.manifest.layers.length }}
+          <a-descriptions-item v-if="currentArtifact && currentArtifact.manifest.layers" label="层数">
+            {{ currentArtifact.manifest.layers.length }}
           </a-descriptions-item>
-          <a-descriptions-item v-if="currentFileDetial && currentFileDetial.manifestConfig" label="制作Docker版本">
-            {{ currentFileDetial.manifestConfig.docker_version }}
+          <a-descriptions-item v-if="currentArtifact && currentArtifact.manifestConfig" label="制作Docker版本">
+            {{ currentArtifact.manifestConfig.docker_version }}
           </a-descriptions-item>
-          <a-descriptions-item v-if="currentFileDetial && currentFileDetial.manifestConfig" label="镜像OS">
-            <a-tag> {{ currentFileDetial.manifestConfig.os }}</a-tag>
+          <a-descriptions-item v-if="currentArtifact && currentArtifact.manifestConfig" label="镜像OS">
+            <a-tag> {{ currentArtifact.manifestConfig.os }}</a-tag>
           </a-descriptions-item>
-          <a-descriptions-item v-if="currentFileDetial && currentFileDetial.manifestConfig" label="基础架构">
-            {{ currentFileDetial.manifestConfig.architecture }}
+          <a-descriptions-item v-if="currentArtifact && currentArtifact.manifestConfig" label="基础架构">
+            {{ currentArtifact.manifestConfig.architecture }}
           </a-descriptions-item>
-          <a-descriptions-item v-if="currentFileDetial && currentFileDetial.manifestConfig && currentFileDetial.manifestConfig.variant" label="版本">
-            {{ currentFileDetial.manifestConfig.variant || ''}}
+          <a-descriptions-item v-if="currentArtifact && currentArtifact.manifestConfig && currentArtifact.manifestConfig.variant" label="版本">
+            {{ currentArtifact.manifestConfig.variant || ''}}
           </a-descriptions-item>
-          <a-descriptions-item v-if="currentFileDetial && !currentFileDetial.manifestConfig" label="缓存状态">
+          <a-descriptions-item v-if="currentArtifact && !currentArtifact.manifestConfig" label="缓存状态">
             {{ '未缓存' }}
           </a-descriptions-item>
         </a-descriptions>
       </a-tab-pane>
       <a-tab-pane key="2" tab="元数据">
-        <a v-if="metadataEnabled" @click="metadataHandler()">
-          <a-tooltip>
-            <template slot="title">新增</template>
-            <a-icon type="plus-circle" theme="filled" class="ml-30"
-              :style="{ fontSize: '28px', color: '#1890FF' }" />
-          </a-tooltip>
-        </a>
         <a-table :columns="metadataColumns" :data-source="metadataList" rowKey="key" :scroll="{ x: true }">
           <div slot="type" slot-scope="type">
             <span v-for="(item, index) in metadataTypes" :key="index">
@@ -135,61 +128,6 @@
             >
               查看
             </a-button>
-          </div>
-          <div slot="operation" slot-scope="text, record">
-            <div class="col-action" v-if="metadataEnabled">
-              <a-popconfirm
-                title="确定要删除吗？"
-                okType="danger"
-                ok-text="确定"
-                cancel-text="取消"
-                @confirm="deleteArtifactMetadata(record.key)"
-              >
-                <a-button type="link" size="small">
-                  <svg
-                    width="16"
-                    height="16"
-                    viewBox="0 0 20 20"
-                    fill="none"
-                    xmlns="http://www.w3.org/2000/svg"
-                  >
-                    <path
-                      class="fill-danger"
-                      fill-rule="evenodd"
-                      clip-rule="evenodd"
-                      d="M9 2C8.62123 2 8.27497 2.214 8.10557 2.55279L7.38197 4H4C3.44772 4 3 4.44772 3 5C3 5.55228 3.44772 6 4 6L4 16C4 17.1046 4.89543 18 6 18H14C15.1046 18 16 17.1046 16 16V6C16.5523 6 17 5.55228 17 5C17 4.44772 16.5523 4 16 4H12.618L11.8944 2.55279C11.725 2.214 11.3788 2 11 2H9ZM7 8C7 7.44772 7.44772 7 8 7C8.55228 7 9 7.44772 9 8V14C9 14.5523 8.55228 15 8 15C7.44772 15 7 14.5523 7 14V8ZM12 7C11.4477 7 11 7.44772 11 8V14C11 14.5523 11.4477 15 12 15C12.5523 15 13 14.5523 13 14V8C13 7.44772 12.5523 7 12 7Z"
-                      fill="#111827"
-                    />
-                  </svg>
-                  <span class="text-danger">DELETE</span>
-                </a-button>
-              </a-popconfirm>
-              <a-button
-                type="link"
-                size="small"
-                @click="metadataEditHandler(record)"
-              >
-                <svg
-                  width="16"
-                  height="16"
-                  viewBox="0 0 20 20"
-                  fill="none"
-                  xmlns="http://www.w3.org/2000/svg"
-                >
-                  <path
-                    class="fill-muted"
-                    d="M13.5858 3.58579C14.3668 2.80474 15.6332 2.80474 16.4142 3.58579C17.1953 4.36683 17.1953 5.63316 16.4142 6.41421L15.6213 7.20711L12.7929 4.37868L13.5858 3.58579Z"
-                    fill="#111827"
-                  />
-                  <path
-                    class="fill-muted"
-                    d="M11.3787 5.79289L3 14.1716V17H5.82842L14.2071 8.62132L11.3787 5.79289Z"
-                    fill="#111827"
-                  />
-                </svg>
-                <span class="text-dark">EDIT</span>
-              </a-button>
-            </div>
           </div>
         </a-table>
       </a-tab-pane>
@@ -267,14 +205,12 @@
     </a-tabs>
 
     <hr class="my-25" />
-
     <a-col
       :span="24"
       v-if="
-        currentFileDetial &&
-        currentFileDetial.snippets &&
-        currentFileDetial.snippets.length > 0 && 
-        currentFileDetial.snippets.map(e => e.code).filter(e => e).length > 0
+        currentArtifact && currentArtifact.snippets &&
+        currentArtifact.snippets.length > 0 && 
+        currentArtifact.snippets.map(e => e.code).filter(e => e).length > 0
       "
     >
       <a-card :bordered="false" class="card-billing-info">
@@ -283,10 +219,10 @@
             :title="'使用示例(' + codeParam.type + ')'"
             :column="1"
           >
-            <a-descriptions-item v-if="currentFileDetial">
+            <a-descriptions-item v-if="currentArtifact">
               <prism-editor
                 class="my-editor height-300"
-                v-if="currentFileDetial"
+                v-if="currentArtifact"
                 v-model="codeParam.code"
                 :highlight="highlighterHandle"
                 :line-numbers="false"
@@ -297,7 +233,7 @@
         </div>
         <div class="col-action">
           <a-button
-            v-for="(item, index) in this.currentFileDetial.snippets"
+            v-for="(item, index) in currentArtifact.snippets"
             :key="index"
             type="link"
             size="small"
@@ -369,13 +305,15 @@ import { quillEditor } from "vue-quill-editor";
 import { hasRole, isAdmin, isAnonymous, isLogin } from "@/utils/permission";
 
 export default {
-  name: "BaseData",
+  name: "ArtifactData",
   props: [
-    "currentTreeNode",
+    "artifactName",
+    "artifactPath",
+    "currentArtifact",
     "repositoryType",
-    "currentFileDetial",
+    "artifact",
     "folibRepository",
-    "successMsg",
+    "message",
   ],
   components: {
     PrismEditor,
@@ -428,12 +366,6 @@ export default {
           width: 300,
           scopedSlots: { customRender: "value" },
         },
-        {
-          title: "操作",
-          dataIndex: "operation",
-          width: 250,
-          scopedSlots: { customRender: "operation" },
-        },
       ],
       metadataEditorDrawerTitle: undefined,
       metadataEditorDrawerVisible: false,
@@ -453,7 +385,6 @@ export default {
         viewShow: true,
         value: undefined,
       },
-      showMetadataHandler: false,
       handlerMetadataType: 1,
       codeParam: {
         type: "",
@@ -502,23 +433,23 @@ export default {
   mounted() {
   },
   watch: {
-    currentFileDetial: function (val) {
+    currentArtifact: function (val) {
       if (val && val.snippets) {
         this.changeCodeType(val.snippets[0])
       }
       this.metadataShow()
     },
-    'currentTreeNode.artifactPath': function (newval, oldVal) {
+    'artifactPath': function (newval, oldVal) {
       this.conanInfoReset()
       this.conanPackageInfoReset()
       this.metadataList = []
-      if (this.currentTreeNode.type === 'file') {
+      if (this.artifact) {
         this.getMetadata()
         this.selectedTag = 0
-      } else if (newval && newval.split('/').length === 5 && this.folibRepository.layout === 'conan'){
+      } else if (newval && newval.split('/').length === 5 && repositoryType === 'conan'){
         this.conanInfoVisible = true
         this.getConanInfo()
-      } else if (newval && newval.split('/').length === 8 && this.folibRepository.layout === 'conan'){
+      } else if (newval && newval.split('/').length === 8 && repositoryType === 'conan'){
         this.conanPackageInfoVisible = true
         this.getConanPackageInfo()
       }
@@ -534,15 +465,11 @@ export default {
     },
     metadataShow() {
       this.metadataEnabled = isLogin() && this.folibRepository.type !== 'group' &&
-                          this.currentFileDetial &&
-                          this.currentFileDetial.artifact &&
-                          this.currentFileDetial.artifact.artifactFileExists   
+                          this.artifact &&
+                          this.artifact.artifactFileExists   
       if (!(typeof(this.metadataEnabled) == 'boolean')) {
         this.metadataEnabled = false
       }
-    },
-    metadataHandler() {
-      this.$emit("metadataHandler", 1)
     },
     artifactTabChange(activeKey) {
       this.metadataShow()
@@ -551,13 +478,13 @@ export default {
       }
     },
     getMetadata() {
-      if (this.currentTreeNode.type === 'file') {
+      if (this.artifact) {
         this.getMetadataConfiguration()
         getArtifact(
           this.repositoryType,
-          this.currentTreeNode.storageId,
-          this.currentTreeNode.repositoryId,
-          this.currentTreeNode.artifactPath
+          this.artifact.storageId,
+          this.artifact.repositoryId,
+          this.artifactPath
         ).then((res) => {
           this.handlerRespMetadata(res)
           this.$forceUpdate()
@@ -607,13 +534,13 @@ export default {
     deleteArtifactMetadata(metadataKey) {
       let data = {
         key: metadataKey,
-        storageId: this.currentTreeNode.storageId,
-        repositoryId: this.currentTreeNode.repositoryId,
-        artifactPath: this.currentTreeNode.artifactPath,
+        storageId: this.artifact.storageId,
+        repositoryId: this.artifact.repositoryId,
+        artifactPath: this.artifactPath,
       };
       deleteArtifactMetadata(data)
         .then((res) => {
-          this.successMsg("删除制品元数据成功");
+          this.message("删除制品元数据成功");
           this.getMetadata();
         })
         .finally(() => {});
@@ -673,9 +600,9 @@ export default {
     },
     getConanInfo() {
       let data = {
-        storageId: this.currentTreeNode.storageId, 
-        repositoryId: this.currentTreeNode.repositoryId, 
-        artifactPath: this.currentTreeNode.artifactPath
+        storageId: this.artifact.storageId, 
+        repositoryId: this.artifact.repositoryId, 
+        artifactPath: this.artifactPath
       }
       conanInfo(data).then((res) => {
           if (res) {
@@ -701,9 +628,9 @@ export default {
     },
     getConanPackageInfo() {
       let data = {
-        storageId: this.currentTreeNode.storageId, 
-        repositoryId: this.currentTreeNode.repositoryId, 
-        artifactPath: this.currentTreeNode.artifactPath
+        storageId: this.artifact.storageId, 
+        repositoryId: this.artifact.repositoryId, 
+        artifactPath: this.artifactPath
       }
       conanPackageInfo(data).then((res) => {
           if (res) {
@@ -723,12 +650,12 @@ export default {
       this.selectedTag = 0
       getArtifact(
         this.repositoryType,
-        this.currentTreeNode.storageId,
-        this.currentTreeNode.repositoryId,
-        this.currentTreeNode.artifactPath,
+        this.artifact.storageId,
+        this.artifact.repositoryId,
+        this.artifactPath,
         item.digest
       ).then((res) => {
-        this.$emit("setCurrentFileDetial", res)
+        this.$emit("setCurrentArtifact", res)
         this.selectedTag = index
         this.$forceUpdate()
       })

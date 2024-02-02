@@ -1991,34 +1991,28 @@ export default {
       this.usedVisible = false
     },
     viewCodeHandle () {
-      if (this.folibRepository.layout !== 'Docker')
+      if (this.folibRepository.layout !== 'Docker' && this.currentFileDetial && !this.currentFileDetial.listTree)
       {
-        if (this.currentFileDetial && !this.currentFileDetial.listTree)
-        { 
-          if (this.currentFileDetial.artifact) {
-            previewArtifact(this.currentTreeNode.storageId, this.currentTreeNode.repositoryId,this.currentTreeNode.artifactPath).then(res => {
-              if (res && res.length > 0) {
-                this.currentFileDetial.listTree = res
-                this.$forceUpdate()
-              } else {
-                let len = this.currentFileDetial.artifact.sizeInBytes
-                if (len && len > 1048576) {
-                  this.viewCodes = '该制品无法预览'
-                } else{
-                  this.viewArtifactFile()
-                }
+        if (this.currentFileDetial.artifact) {
+          previewArtifact(this.currentTreeNode.storageId, this.currentTreeNode.repositoryId,this.currentTreeNode.artifactPath).then(res => {
+            if (res && res.length > 0) {
+              this.currentFileDetial.listTree = res
+              this.$forceUpdate()
+            } else {
+              let len = this.currentFileDetial.artifact.sizeInBytes
+              if (len && len > 1048576) {
+                this.viewCodes = '该制品无法预览'
+              } else{
+                this.viewArtifactFile()
               }
-            })
-          } else {
-            this.viewArtifactFile()
-          }
-      } else
-      {
-        // this.viewCodes=this.currentManifest.config
+            }
+          })
+        } else {
+          this.viewArtifactFile()
+        }
       }
       this.viewCodeVisible = true
-    }
-  },
+    },
   viewArtifactFile () {
     viewArtifactFile(this.currentTreeNode.url).then(res => {
       if ('string' === typeof res && res.startsWith('PK'))

@@ -14,10 +14,7 @@ import com.veadan.folib.db.schema.Edges;
 import com.veadan.folib.db.schema.Properties;
 import com.veadan.folib.db.schema.Vertices;
 import com.veadan.folib.domain.*;
-import com.veadan.folib.enums.ArtifactFieldTypeEnum;
-import com.veadan.folib.enums.ArtifactSearchConditionTypeEnum;
-import com.veadan.folib.enums.SafeLevelEnum;
-import com.veadan.folib.enums.VulnerabilityPlatformEnum;
+import com.veadan.folib.enums.*;
 import com.veadan.folib.gremlin.adapters.ArtifactAdapter;
 import com.veadan.folib.gremlin.dsl.EntityTraversal;
 import com.veadan.folib.gremlin.dsl.EntityTraversalUtils;
@@ -189,7 +186,7 @@ public class ArtifactRepository extends GremlinVertexRepository<Artifact> {
         artifactSearchRange.setEndPos(count);
         artifactSearchRange.setTotal(count);
         List<Artifact> artifactList = entityTraversal.skip(offset).limit(limit)
-                .map(artifactAdapter.fold()).toList();
+                .map(artifactAdapter.aqlSearchFold(Optional.empty())).toList();
         artifactSearch.setResults(artifactList);
         return artifactSearch;
     }
@@ -586,6 +583,10 @@ public class ArtifactRepository extends GremlinVertexRepository<Artifact> {
                         }
                         if (ArtifactSearchConditionTypeEnum.MATCH.equals(artifactCondition.getArtifactSearchConditionTypeEnum())) {
                             if (Properties.ARTIFACT_PATH.equals(artifactCondition.getSearchKey())) {
+                                if (searchValue.equals(artifactCondition.getSearchValue()) && !AqlSearchTypeEnum.FILE.getType().equals(artifactSearchCondition.getType()) && !searchValue.endsWith(GlobalConstants.SEPARATOR)) {
+                                    searchValue = searchValue.concat(GlobalConstants.SEPARATOR);
+                                    artifactCondition.setSearchValue(searchValue);
+                                }
                                 orEntityTraversalList.add(__.has(artifactCondition.getSearchKey(), searchValue.equals(artifactCondition.getSearchValue()) ? Text.textPrefix(searchValue) : Text.textRegex(searchValue)));
                             } else {
                                 orEntityTraversalList.add(__.has(artifactCondition.getSearchKey(), searchValue.equals(artifactCondition.getSearchValue()) ? Text.textContains(searchValue) : Text.textRegex(searchValue)));
@@ -660,6 +661,10 @@ public class ArtifactRepository extends GremlinVertexRepository<Artifact> {
                         }
                         if (ArtifactSearchConditionTypeEnum.MATCH.equals(artifactCondition.getArtifactSearchConditionTypeEnum())) {
                             if (Properties.ARTIFACT_PATH.equals(artifactCondition.getSearchKey())) {
+                                if (searchValue.equals(artifactCondition.getSearchValue()) && !AqlSearchTypeEnum.FILE.getType().equals(artifactSearchCondition.getType()) && !searchValue.endsWith(GlobalConstants.SEPARATOR)) {
+                                    searchValue = searchValue.concat(GlobalConstants.SEPARATOR);
+                                    artifactCondition.setSearchValue(searchValue);
+                                }
                                 entityTraversal = entityTraversal.has(artifactCondition.getSearchKey(), searchValue.equals(artifactCondition.getSearchValue()) ? Text.textPrefix(searchValue) : Text.textRegex(searchValue));
                             } else {
                                 entityTraversal = entityTraversal.has(artifactCondition.getSearchKey(), searchValue.equals(artifactCondition.getSearchValue()) ? Text.textContains(searchValue) : Text.textRegex(searchValue));

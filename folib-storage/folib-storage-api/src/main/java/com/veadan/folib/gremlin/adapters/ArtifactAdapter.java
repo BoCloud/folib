@@ -370,6 +370,66 @@ public class ArtifactAdapter implements VertexEntityTraversalAdapter<Artifact> {
                 .map(this::map);
     }
 
+    public EntityTraversal<Vertex, Artifact> aqlSearchFold(Optional<Class<? extends GenericArtifactCoordinates>> layoutArtifactCoordinatesClass) {
+        return __.<Vertex, Object>project("id",
+                "uuid",
+                "storageId",
+                "repositoryId",
+                "storageIdAndRepositoryId",
+                "lastUpdated",
+                "lastUsed",
+                "created",
+                "sizeInBytes",
+                "downloadCount",
+                "safeLevel",
+                "checksums",
+                "artifactCoordinates",
+                "vulnerabilitiesCount",
+                "criticalVulnerabilitiesCount",
+                "highVulnerabilitiesCount",
+                "mediumVulnerabilitiesCount",
+                "lowVulnerabilitiesCount",
+                "suppressedVulnerabilitiesCount",
+                "metadata",
+                "artifactFileExists",
+                "enabled",
+                "createdBy",
+                "updatedBy",
+                "artifactName",
+                "artifactPath")
+                .by(__.id())
+                .by(__.enrichPropertyValue("uuid"))
+                .by(__.enrichPropertyValue("storageId"))
+                .by(__.enrichPropertyValue("repositoryId"))
+                .by(__.enrichPropertyValue("storageIdAndRepositoryId"))
+                .by(__.enrichPropertyValue("lastUpdated"))
+                .by(__.enrichPropertyValue("lastUsed"))
+                .by(__.enrichPropertyValue("created"))
+                .by(__.enrichPropertyValue("sizeInBytes"))
+                .by(__.enrichPropertyValue("downloadCount"))
+                .by(__.enrichPropertyValue("safeLevel"))
+                .by(__.enrichPropertyValues("checksums"))
+                .by(__.outE(Edges.ARTIFACT_HAS_ARTIFACT_COORDINATES)
+                        .mapToObject(__.inV()
+                                .map(artifactCoordinatesAdapter.fold(layoutArtifactCoordinatesClass))
+                                .map(EntityTraversalUtils::castToObject)))
+                .by(__.enrichPropertyValue("vulnerabilitiesCount"))
+                .by(__.enrichPropertyValue("criticalVulnerabilitiesCount"))
+                .by(__.enrichPropertyValue("highVulnerabilitiesCount"))
+                .by(__.enrichPropertyValue("mediumVulnerabilitiesCount"))
+                .by(__.enrichPropertyValue("lowVulnerabilitiesCount"))
+                .by(__.enrichPropertyValue("suppressedVulnerabilitiesCount"))
+                .by(__.enrichPropertyValue("metadata"))
+                .by(__.enrichPropertyValue("artifactFileExists"))
+                .by(__.enrichPropertyValue("enabled"))
+                .by(__.enrichPropertyValue("createdBy"))
+                .by(__.enrichPropertyValue("updatedBy"))
+                .by(__.enrichPropertyValue("artifactName"))
+                .by(__.enrichPropertyValue("artifactPath"))
+                .map(this::map);
+    }
+
+
     public EntityTraversal<Vertex, VulnerabilityArtifactDomain> vulnerabilityFold() {
         return __.<Vertex, Object>project("id", "vulnerabilityID",
                 "uuid",

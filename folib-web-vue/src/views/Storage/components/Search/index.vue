@@ -63,7 +63,7 @@
       </a-card>
     </a-col>
 
-    <a-drawer placement="right" width="75%" title="制品详情" :visible="artifactVisible" @close="artifactVisible = false"
+    <a-drawer placement="right" width="65%" title="制品详情" :visible="artifactVisible" @close="artifactVisible = false"
       :zIndex="100">
       <a-card :bordered="false" class="header-solid h-full card-profile-information"
         :bodyStyle="{ paddingTop: 0, paddingBottom: '16px' }" :headStyle="{ paddingRight: 0 }">
@@ -129,66 +129,15 @@
             </span>
           </h6>
         </template>
-        <a-button type="link" slot="extra" @click="searchViewCodeHandle()" v-if="folibRepository.layout !== 'Docker'">
+        <a-button type="link" slot="extra" @click="searchViewCodeHandle()">
           预览
           <a-icon :size="24" shape="square" type="eye"></a-icon>
         </a-button>
-        <a class="text-dark" :href="searchDataCurrentSelect ? searchDataCurrentSelect.url : ''" target="_blank">{{
+        <a class="text-dark" v-if="searchDataCurrentSelect.layout !== 'Docker'" :href="searchDataCurrentSelect ? searchDataCurrentSelect.url : ''" target="_blank">{{
           searchDataCurrentSelect ? searchDataCurrentSelect.url : "" }}</a>
         <hr class="my-25" />
-        <a-descriptions title="基本信息" :column="1" v-if="searchDataCurrentSelect">
-          <a-descriptions-item label="所属空间">
-            {{ searchDataCurrentSelect.storageId }}
-          </a-descriptions-item>
-          <a-descriptions-item label="所属仓库">
-            {{ searchDataCurrentSelect.repositoryId }}
-          </a-descriptions-item>
-          <a-descriptions-item label="名称">
-            {{ searchDataCurrentSelect.path }}
-          </a-descriptions-item>
-          <a-descriptions-item label="文件大小">
-            {{ fileSizeConver(searchDataCurrentSelect.sizeInBytes) }}
-          </a-descriptions-item>
-          <a-descriptions-item label="修改时间">
-            {{ searchDataCurrentSelect.lastUpdated }}
-          </a-descriptions-item>
-          <a-descriptions-item label="最近使用时间">
-            {{ searchDataCurrentSelect.lastUsed }}
-          </a-descriptions-item>
-          <a-descriptions-item v-if="searchDataCurrentSelect" label="下载次数">
-            {{ searchDataCurrentSelect.downloadCount }}
-          </a-descriptions-item>
-          <template v-if="searchDataCurrentSelect && searchDataCurrentSelect.checksums">
-            <a-descriptions-item :label="key" v-for="(value, key, index) in searchDataCurrentSelect.checksums"
-              :key="index">
-              {{ value }}
-            </a-descriptions-item>
-          </template>
-        </a-descriptions>
-        <hr class="my-25" />
-
-        <a-col :span="24" v-if="
-          searchDataCurrentSelectItem &&
-          searchDataCurrentSelectItem.snippets &&
-          searchDataCurrentSelectItem.snippets.length > 0
-        ">
-          <a-card :bordered="false" class="card-billing-info">
-            <div class="col-info">
-              <a-descriptions :title="'使用示例(' + codeParam.type + ')'" :column="1">
-                <a-descriptions-item v-if="searchDataCurrentSelectItem">
-                  <prism-editor class="my-editor height-300" v-if="searchDataCurrentSelectItem" v-model="codeParam.code"
-                    :highlight="highlighterHandle" :line-numbers="false" :readonly="true"></prism-editor>
-                </a-descriptions-item>
-              </a-descriptions>
-            </div>
-            <div class="col-action">
-              <a-button v-for="(item, index) in this.searchDataCurrentSelectItem.snippets" :key="index" type="link"
-                size="small" @click="changeCodeTye(item)">
-                <a-avatar :size="20" shape="square" :src="'images/folib/' + getCodeImg(item) + '.svg'" />
-              </a-button>
-            </div>
-          </a-card>
-        </a-col>
+        <ArtifactData ref="artifactData" v-if="artifactVisible && searchDataCurrentSelectItem" :artifactName="searchDataCurrentSelect.artifactName" :artifactPath="searchDataCurrentSelect.artifactPath" :currentArtifact="searchDataCurrentSelectItem" :repositoryType="searchDataCurrentSelect.layout" :artifact="searchDataCurrentSelectItem.artifact"
+        :folibRepository="folibRepository" @message="message" @setCurrentArtifact="setCurrentArtifact" />
       </a-card>
     </a-drawer>
 
@@ -206,8 +155,7 @@
           </prism-editor>
 
           <a-tabs v-if="searchDataCurrentSelectItem &&
-            searchDataCurrentSelectItem.manifestConfig &&
-            folibRepository.layout === 'Docker'
+            searchDataCurrentSelectItem.manifestConfig
             " class="tabs-sliding" default-active-key="1">
             <a-tab-pane key="1" tab="Layers">
               <a-timeline>
@@ -258,6 +206,7 @@ import {
 } from "@/api/folib"
 import { hasRole, isAdmin, hasPermission, isLogin } from "@/utils/permission"
 import VunlerabilityReport from '@/components/Vulnerabilities/VunlerabilityReport'
+import ArtifactData from './Data.vue'
 
 export default {
   inject: ["reload"],
@@ -279,7 +228,8 @@ export default {
   },
   components: {
     PrismEditor,
-    VunlerabilityReport
+    VunlerabilityReport,
+    ArtifactData
   },
   data() {
     return {
@@ -469,7 +419,7 @@ export default {
       this.search(this.artifactQuery.artifactName, null, 1)
     },
     searchViewCodeHandle() {
-      if (this.searchDataCurrentSelectItem && !this.searchDataCurrentSelectItem.listTree)
+      if (this.searchDataCurrentSelect.layout !== 'Docker' && this.searchDataCurrentSelectItem && !this.searchDataCurrentSelectItem.listTree)
         { 
           if (this.searchDataCurrentSelectItem.artifact) {
             previewArtifact(this.searchDataCurrentSelect.storageId, this.searchDataCurrentSelect.repositoryId,this.searchDataCurrentSelect.artifactPath).then(res => {
@@ -553,6 +503,12 @@ export default {
             ? "0" + date.getSeconds()
             : date.getSeconds()) + "";
         return Y + M + D + h + m + s;
+      }
+    },
+    setCurrentArtifact(currentArtifact) {
+      if (currentArtifact) {
+        this.searchDataCurrentSelectItem = currentArtifact
+        this.$forceUpdate()
       }
     },
   }
