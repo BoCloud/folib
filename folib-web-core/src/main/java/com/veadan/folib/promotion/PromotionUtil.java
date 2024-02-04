@@ -51,7 +51,6 @@ import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.http.HttpEntity;
-import org.apache.http.HttpHost;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpPost;
@@ -59,9 +58,7 @@ import org.apache.http.entity.ContentType;
 import org.apache.http.entity.mime.MultipartEntityBuilder;
 import org.apache.http.entity.mime.content.InputStreamBody;
 import org.apache.http.entity.mime.content.StringBody;
-import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
-import org.apache.http.impl.conn.BasicHttpClientConnectionManager;
 import org.glassfish.jersey.media.multipart.Boundary;
 import org.glassfish.jersey.media.multipart.FormDataMultiPart;
 import org.glassfish.jersey.media.multipart.file.StreamDataBodyPart;
@@ -644,7 +641,7 @@ public class PromotionUtil {
     }
 
     private String getRelativePath(String absolutePath, String storageId, String repostoryId) {
-        String temp = storageId + "/" + repostoryId;
+        String temp = storageId + File.separator + repostoryId;
         int fPathIndex = absolutePath.lastIndexOf(temp + File.separator);
         return absolutePath.substring(fPathIndex, absolutePath.length()).replace(temp + File.separator, "");
     }
