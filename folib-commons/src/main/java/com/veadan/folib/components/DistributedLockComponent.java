@@ -67,4 +67,14 @@ public class DistributedLockComponent {
             }
         }
     }
+
+    public boolean lock(String lockName, long waitTime, TimeUnit timeUnit, long releaseTime, TimeUnit releaseTimeUnit) {
+        log.debug("Get lock for [{}]", lockName);
+        try {
+            return hazelcastInstance.getMap(GlobalConstants.DISTRIBUTED_LOCK_NAME).tryLock(lockName, waitTime, timeUnit, releaseTime, releaseTimeUnit);
+        } catch (Exception ex) {
+            log.warn(ExceptionUtils.getStackTrace(ex));
+            return false;
+        }
+    }
 }

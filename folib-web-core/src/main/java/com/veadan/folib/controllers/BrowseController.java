@@ -228,7 +228,13 @@ public class BrowseController
 
             RepositoryPath repositoryPath = repositoryPathResolver.resolve(storageId, repositoryId);
             try {
-                DirectoryListing directoryListing = directoryListingService.fromRepositoryPath(repositoryPath);
+                Repository repository = repositoryPath.getRepository();
+                DirectoryListing directoryListing;
+                if (RepositoryTypeEnum.GROUP.getType().equals(repository.getType())) {
+                    directoryListing = directoryListingService.fromGroupRepositoryPath(repository, repositoryPath);
+                } else {
+                    directoryListing = directoryListingService.fromRepositoryPath(repositoryPath);
+                }
                 List<FileContent> imageDirList = directoryListing.getDirectories();
                 imageDirList = imageDirList.stream().filter(f -> !DockerLayoutProvider.BLOBS.equalsIgnoreCase(f.getName()) && !DockerLayoutProvider.MANIFEST.equalsIgnoreCase(f.getName())).collect(Collectors.toList());
                 jsonObject.put("directories", imageDirList);
@@ -242,10 +248,15 @@ public class BrowseController
         } else {
             RepositoryPath repositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, path);
             try {
-                DirectoryListing directoryListing = directoryListingService.fromRepositoryPath(repositoryPath);
-                List<FileContent> imageDirList = Lists.newArrayList(), directories = Lists.newArrayList();
+                Repository repository = repositoryPath.getRepository();
+                DirectoryListing directoryListing;
+                if (RepositoryTypeEnum.GROUP.getType().equals(repository.getType())) {
+                    directoryListing = directoryListingService.fromGroupRepositoryPath(repository, repositoryPath);
+                } else {
+                    directoryListing = directoryListingService.fromRepositoryPath(repositoryPath);
+                }                List<FileContent> imageDirList = Lists.newArrayList(), directories = Lists.newArrayList();
                 directoryListing.getDirectories().forEach(f -> {
-                    try (Stream<Path> pathStream = Files.list(repositoryPathResolver.resolve(storageId, repositoryId, f.getArtifactPath()))) {
+                    try (Stream<Path> pathStream = Files.list(repositoryPathResolver.resolve(f.getStorageId(), f.getRepositoryId(), f.getArtifactPath()))) {
                         if (pathStream.anyMatch(DockerArtifactCoordinates::isManifestPath)) {
                             imageDirList.add(f);
                         } else if (!DockerLayoutProvider.BLOBS.equalsIgnoreCase(f.getName()) && !DockerLayoutProvider.MANIFEST.equalsIgnoreCase(f.getName())) {
@@ -410,11 +421,8 @@ public class BrowseController
             if (acceptHeader != null && acceptHeader.contains(MediaType.APPLICATION_JSON_VALUE)) {
                 return ResponseEntity.ok(objectMapper.writer().writeValueAsString(directoryListing));
             }
-            URL resourceUrl = RepositoryFiles.readResourceUrl(repositoryPath);
-            String downloadBaseUrl = StringUtils.chomp(resourceUrl.toString(), "/");
             String currentUrl = StringUtils.chomp(request.getRequestURI(), "/");
             model.addAttribute("currentUrl", currentUrl);
-            model.addAttribute("downloadBaseUrl", downloadBaseUrl);
             model.addAttribute("directories", directoryListing.getDirectories());
             model.addAttribute("files", directoryListing.getFiles());
 

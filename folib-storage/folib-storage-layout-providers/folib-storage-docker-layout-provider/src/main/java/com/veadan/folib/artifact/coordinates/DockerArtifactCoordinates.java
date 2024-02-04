@@ -120,7 +120,7 @@ public class DockerArtifactCoordinates
         String tag = null;
         String[] strings = null;
         strings = path.split("/");
-        if (!path.contains("/blobs/")) {
+        if (!path.contains("/blobs/") && strings.length >= 2) {
             tag = strings[strings.length - 2];
         } else {
             tag = "v2";

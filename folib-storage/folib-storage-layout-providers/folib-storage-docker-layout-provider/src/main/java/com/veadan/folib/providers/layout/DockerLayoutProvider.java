@@ -1,12 +1,12 @@
 package com.veadan.folib.providers.layout;
 
+import com.google.common.collect.Lists;
 import com.veadan.folib.artifact.coordinates.DockerArtifactCoordinates;
 import com.veadan.folib.components.DockerAuthComponent;
 import com.veadan.folib.constant.GlobalConstants;
 import com.veadan.folib.domain.ArtifactIdGroup;
 import com.veadan.folib.domain.ArtifactIdGroupEntity;
 import com.veadan.folib.enums.DockerHeaderEnum;
-import com.veadan.folib.enums.ProductTypeEnum;
 import com.veadan.folib.providers.header.HeaderMappingRegistry;
 import com.veadan.folib.providers.io.RepositoryFileAttributeType;
 import com.veadan.folib.providers.io.RepositoryFiles;
@@ -26,10 +26,10 @@ import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
 import javax.inject.Inject;
-import javax.ws.rs.core.MultivaluedMap;
 import java.io.IOException;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
@@ -54,6 +54,9 @@ public class DockerLayoutProvider
 
     public static final String MANIFEST = "manifest";
 
+    public static final String MANIFESTS = "manifests";
+
+    public static final List<String> DOCKER_BLOBS_MANIFESTS_URL = Lists.newArrayList(MANIFESTS, BLOBS);
 
     @Inject
     private HeaderMappingRegistry headerMappingRegistry;
@@ -172,7 +175,30 @@ public class DockerLayoutProvider
         String remoteUrl = path.getRepository().getRemoteRepository().getUrl();
         remoteUrl = StringUtils.removeEnd(remoteUrl, GlobalConstants.SEPARATOR);
         if (remoteUrl.endsWith(GlobalConstants.DOCKER_V2)) {
-            remoteUrl = remoteUrl.concat(GlobalConstants.SEPARATOR).concat(GlobalConstants.DOCKER_DEFAULT_REPO);
+            try {
+                String artifactPath = RepositoryFiles.relativizePath(path), imagePath = "";
+                boolean concat = false;
+                DockerArtifactCoordinates dockerArtifactCoordinates;
+                if (DockerLayoutProvider.DOCKER_BLOBS_MANIFESTS_URL.stream().noneMatch(artifactPath::contains)) {
+                    dockerArtifactCoordinates = DockerArtifactCoordinates.parse(artifactPath);
+                    imagePath = dockerArtifactCoordinates.getName();
+                    if (imagePath.split(GlobalConstants.SEPARATOR).length <= 1) {
+                        concat = true;
+                    }
+                } else {
+                    dockerArtifactCoordinates = DockerArtifactCoordinates.parse(path.getTargetUrl());
+                    imagePath = dockerArtifactCoordinates.getName();
+                    if (imagePath.split(GlobalConstants.SEPARATOR).length <= 2) {
+                        concat = true;
+                    }
+                }
+                if (concat) {
+                    remoteUrl = remoteUrl.concat(GlobalConstants.SEPARATOR).concat(GlobalConstants.DOCKER_DEFAULT_REPO);
+                }
+            } catch (Exception ex) {
+                logger.warn("RepositoryPath [{}] parse coordinates error [{}]", path, ExceptionUtils.getStackTrace(ex));
+                throw new RuntimeException(ex.getMessage());
+            }
         }
         path.setTargetUrl(String.format("%s/%s", remoteUrl, StringUtils.removeStart(path.getTargetUrl(), GlobalConstants.SEPARATOR)));
         authToken(path);

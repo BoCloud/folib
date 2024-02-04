@@ -7,6 +7,7 @@ import com.veadan.folib.constant.GlobalConstants;
 import com.veadan.folib.enums.DockerHeaderEnum;
 import com.veadan.folib.providers.io.RepositoryFiles;
 import com.veadan.folib.providers.io.RepositoryPath;
+import com.veadan.folib.providers.layout.DockerLayoutProvider;
 import com.veadan.folib.providers.repository.proxied.ProxyRepositoryArtifactResolver;
 import com.veadan.folib.service.ProxyRepositoryConnectionPoolConfigurationService;
 import com.veadan.folib.storage.repository.remote.RemoteRepository;
@@ -110,7 +111,10 @@ public class ChecksumTagExpirationStrategy
         RemoteRepository remoteRepository = repositoryPath.getRepository().getRemoteRepository();
         String remoteUrl = StringUtils.removeEnd(remoteRepository.getUrl(), GlobalConstants.SEPARATOR);
         if (remoteUrl.endsWith(GlobalConstants.DOCKER_V2)) {
-            remoteUrl = remoteUrl.concat(GlobalConstants.SEPARATOR).concat(GlobalConstants.DOCKER_DEFAULT_REPO);
+            String imagePath = dockerArtifactCoordinates.getName();
+            if (imagePath.split(GlobalConstants.SEPARATOR).length <= 1) {
+                remoteUrl = remoteUrl.concat(GlobalConstants.SEPARATOR).concat(GlobalConstants.DOCKER_DEFAULT_REPO);
+            }
         }
         String targetUrl = String.format("%s/%s/manifests/%s", remoteUrl, StringUtils.removeEnd(dockerArtifactCoordinates.getName(), GlobalConstants.SEPARATOR), tag);
         Response response = null;
