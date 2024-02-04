@@ -91,7 +91,7 @@ public class PromotionUtil {
     protected ArtifactManagementService artifactManagementService;
 
     @Autowired
-    private ThreadPoolTaskExecutor asyncThreadPoolTaskExecutor;
+    private ThreadPoolTaskExecutor asyncCopyThreadPoolTaskExecutor;
 
     @Autowired
     private ProxyRepositoryConnectionPoolConfigurationService clientPool;
@@ -113,7 +113,7 @@ public class PromotionUtil {
     @Lazy
     private DockerComponent dockerComponent;
 
-    @Async("asyncThreadPoolTaskExecutor")
+    @Async("asyncCopyThreadPoolTaskExecutor")
     public void executeCopy(RepositoryPath path, Repository srcRepository, Repository targetRepository) {
         try {
             handleCopy(path, srcRepository, targetRepository);
@@ -322,7 +322,7 @@ public class PromotionUtil {
         }
     }
 
-    @Async("asyncThreadPoolTaskExecutor")
+    @Async("asyncCopyThreadPoolTaskExecutor")
     public void executeMove(ArtifactPromotion artifactPromotion) {
         final String srcStorageId = artifactPromotion.getSrcStorageId();
         final String srcRepositoryId = artifactPromotion.getSrcRepositoryId();
@@ -339,7 +339,7 @@ public class PromotionUtil {
             FutureTask<String> future = new FutureTask<String>(
                     new ArtifactPromotionCopyTask(srcPath, srcRepository, targetRepository));
             listTask.add(future);
-            asyncThreadPoolTaskExecutor.submit(future);
+            asyncCopyThreadPoolTaskExecutor.submit(future);
         });
         boolean delFlag = true;
         for (FutureTask<String> task : listTask) {
