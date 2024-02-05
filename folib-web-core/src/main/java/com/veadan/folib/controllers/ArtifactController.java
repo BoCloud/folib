@@ -17,6 +17,7 @@ import com.veadan.folib.forms.syncartifact.SyncArtifactForm;
 import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.scanner.common.msg.TableResultResponse;
 import com.veadan.folib.services.ArtifactWebService;
+import com.veadan.folib.services.MavenIndexerService;
 import com.veadan.folib.storage.Storage;
 import com.veadan.folib.storage.repository.Repository;
 import com.veadan.folib.task.EventTask;
@@ -69,6 +70,9 @@ public class ArtifactController extends BaseController {
     @Inject
     @Lazy
     private ArtifactComponent artifactComponent;
+
+    @Inject
+    private MavenIndexerService mavenIndexerService;
 
     @Inject
     @Lazy
@@ -358,4 +362,24 @@ public class ArtifactController extends BaseController {
         artifactWebService.dockerLayoutUpgrade(storageId, repositoryId, override);
         return ResponseEntity.ok("");
     }
+
+    @PreAuthorize("hasAuthority('ADMIN')")
+    @GetMapping(value = "/mavenIndexer/{storageId}/{repositoryId}")
+    public ResponseEntity<String> mavenIndexer(@PathVariable String storageId,
+                                               @PathVariable String repositoryId,
+                                               @RequestParam String mavenIndexerPath,
+                                               @RequestParam(required = false, name = "batch") Integer batch,
+                                               @RequestParam(required = false, name = "poolSize") Integer poolSize) throws Exception {
+        Storage storage = getStorage(storageId);
+        if (Objects.isNull(storage)) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(GlobalConstants.STORAGE_NOT_FOUND_MESSAGE);
+        }
+        Repository repository = storage.getRepository(repositoryId);
+        if (Objects.isNull(repository)) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(GlobalConstants.REPOSITORY_NOT_FOUND_MESSAGE);
+        }
+        mavenIndexerService.handlerMavenIndexerAndDownLoad(loginUsername(), repository, mavenIndexerPath, batch, poolSize);
+        return ResponseEntity.ok("");
+    }
+
 }
