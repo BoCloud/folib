@@ -32,6 +32,7 @@ public abstract class AbstractArtifactLocationHandler
     private RepositoryPath basePath;
 
 
+    @Override
     public LinkedHashMap<RepositoryPath, List<RepositoryPath>> getVisitedRootPaths()
     {
         return visitedRootPaths;

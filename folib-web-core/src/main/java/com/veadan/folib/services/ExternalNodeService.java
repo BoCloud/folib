@@ -52,7 +52,9 @@ public interface ExternalNodeService {
 
     /**
      * 外部节点仓库列表
+     *
+     * @param type 仓库类型
      * @return 外部节点仓库列表
      */
-    List<ExternalNodeRepositoryForm> getExternalNodeRepositories();
+    List<ExternalNodeRepositoryForm> getExternalNodeRepositories(String type);
 }

@@ -2,9 +2,9 @@ package com.veadan.folib.services.impl;
 
 import com.github.pagehelper.Page;
 import com.github.pagehelper.PageHelper;
+import com.google.common.collect.Lists;
 import com.veadan.folib.entity.ExternalNode;
 import com.veadan.folib.enums.ArtifactoryFolibRepositoryTypeEnum;
-import com.veadan.folib.enums.ArtifactoryRepositoryTypeEnum;
 import com.veadan.folib.forms.externalnode.ExternalNodeForm;
 import com.veadan.folib.forms.externalnode.ExternalNodeRepositoryForm;
 import com.veadan.folib.forms.externalnode.RepositoryForm;
@@ -101,7 +101,11 @@ public class ExternalNodeServiceImpl implements ExternalNodeService {
     }
 
     @Override
-    public List<ExternalNodeRepositoryForm> getExternalNodeRepositories() {
+    public List<ExternalNodeRepositoryForm> getExternalNodeRepositories(String type) {
+        if (StringUtils.isBlank(type)) {
+            type = ArtifactoryFolibRepositoryTypeEnum.GENERIC.getFoLibraryName();
+        }
+        List<String> packageTypes = Lists.newArrayList(ArtifactoryFolibRepositoryTypeEnum.queryNameByFoLibraryName(type));
         Example example = Example.builder(ExternalNode.class).build();
         Example.Criteria criteria = example.createCriteria();
         example.setOrderByClause("create_time");
@@ -110,7 +114,7 @@ public class ExternalNodeServiceImpl implements ExternalNodeService {
             ExternalNodeRepositoryForm externalNodeRepositoryForm = ExternalNodeRepositoryForm.builder().build();
             BeanUtils.copyProperties(externalNode, externalNodeRepositoryForm);
             externalNodeRepositoryForm.setKey(externalNodeRepositoryForm.getNodeName());
-            List<LightweightRepository> lightweightRepositories = jFrogService.listRepository(externalNode.getAddress(), externalNode.getUsername(), rsaUtils.decrypt(externalNode.getPassword()), ArtifactoryFolibRepositoryTypeEnum.GENERIC.getName());
+            List<LightweightRepository> lightweightRepositories = jFrogService.listRepository(externalNode.getAddress(), externalNode.getUsername(), rsaUtils.decrypt(externalNode.getPassword()), packageTypes);
             externalNodeRepositoryForm.setRepositories(Optional.ofNullable(lightweightRepositories).orElse(Collections.emptyList()).stream().map(lightweightRepository -> RepositoryForm.builder().name(lightweightRepository.getKey()).key(String.format("%s,%s", externalNodeRepositoryForm.getKey(), lightweightRepository.getKey())).artifactoryRepositoryType(externalNodeRepositoryForm.getType()).build()).collect(Collectors.toList()));
             return externalNodeRepositoryForm;
         }).collect(Collectors.toList());

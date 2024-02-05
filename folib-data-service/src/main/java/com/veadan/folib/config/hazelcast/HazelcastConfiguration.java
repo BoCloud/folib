@@ -98,6 +98,7 @@ public class HazelcastConfiguration
     {
         return new MapConfig().setName(name)
                 .setEvictionConfig(new EvictionConfig().setEvictionPolicy(evictionPolicy)
+                        .setSize(maxSize)
                         .setMaxSizePolicy(maxSizePolicy));
     }
 
@@ -124,7 +125,7 @@ public class HazelcastConfiguration
                                                                             tagsEvictionPolicy))
                                           .addMapConfig(authenticationCacheConfig(CacheName.User.AUTHENTICATIONS));
         //采用TCP/IP的方式，可以通过制定IP端口的方式，默认端口是5701可以通过参数指定；
-        config.setSecurityConfig(new SecurityConfig().setClientRealmConfig(groupConfigName, new RealmConfig().setUsernamePasswordIdentityConfig(groupConfigName, groupConfigPassword)));
+//        config.setSecurityConfig(new SecurityConfig().setClientRealmConfig(groupConfigName, new RealmConfig().setUsernamePasswordIdentityConfig(groupConfigName, groupConfigPassword)));
         config.setClusterName(groupConfigName);
         config.getNetworkConfig().getJoin().getMulticastConfig().setEnabled(false);
         config.getNetworkConfig().setPort(tcpIpPort);

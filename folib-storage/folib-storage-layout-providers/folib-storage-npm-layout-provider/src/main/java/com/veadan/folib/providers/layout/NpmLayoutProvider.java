@@ -40,6 +40,8 @@ public class NpmLayoutProvider
 
     public static final String  PACKAGE_JSON = "package.json";
 
+    public static final String  DEFAULT_PACKAGE_JSON_PATH = "package/package.json";
+
     public static final String DEFAULT_SUFFIX = "tgz";
 
     public static final Pattern NPM_URL_USERNAME_PATTERN = Pattern.compile(
@@ -58,12 +60,14 @@ public class NpmLayoutProvider
         logger.info("Registered layout provider '{}' with alias '{}'.", getClass().getCanonicalName(), ALIAS);
     }
 
-    protected NpmArtifactCoordinates getArtifactCoordinates(RepositoryPath path)
+    @Override
+    public NpmArtifactCoordinates getArtifactCoordinates(RepositoryPath path)
             throws IOException
     {
         return NpmArtifactCoordinates.parse(RepositoryFiles.relativizePath(path));
     }
 
+    @Override
     public boolean isArtifactMetadata(RepositoryPath path)
     {
         return path.getFileName().toString().endsWith(PACKAGE_JSON);

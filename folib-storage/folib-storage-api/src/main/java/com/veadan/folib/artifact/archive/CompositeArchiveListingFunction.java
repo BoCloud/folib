@@ -47,10 +47,19 @@ public class CompositeArchiveListingFunction
 
     @Override
     public byte[] getContentByFileName(RepositoryPath repositoryPath, Path path, String fileName) throws IOException {
-        String content = "";
         for (final ArchiveListingFunction leaf : leafs) {
             if (leaf.supports(repositoryPath)) {
                 return leaf.getContentByFileName(repositoryPath, path, fileName);
+            }
+        }
+        return null;
+    }
+
+    @Override
+    public byte[] getContentByEqualsFileName(RepositoryPath repositoryPath, Path path, String fileName) throws IOException {
+        for (final ArchiveListingFunction leaf : leafs) {
+            if (leaf.supports(repositoryPath)) {
+                return leaf.getContentByEqualsFileName(repositoryPath, path, fileName);
             }
         }
         return null;

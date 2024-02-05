@@ -36,28 +36,28 @@ public class RestArtifactResolverFactory
         Objects.requireNonNull(repository);
 
         RemoteRepositoryRetryArtifactDownloadConfiguration configuration = configurationManager.getConfiguration()
-                                                                                               .getRemoteRepositoriesConfiguration()
-                                                                                               .getRemoteRepositoryRetryArtifactDownloadConfiguration();
+                .getRemoteRepositoriesConfiguration()
+                .getRemoteRepositoryRetryArtifactDownloadConfiguration();
 
         String username = repository.getUsername();
         String password = repository.getPassword();
         String url = repository.getUrl();
 
-        final HttpAuthenticationFeature authenticationFeature = (!StringUtils.isEmpty(username) && !StringUtils.isEmpty(password)) ? HttpAuthenticationFeature.basic(username, password) : null;
+        final HttpAuthenticationFeature authenticationFeature = (StringUtils.isNotBlank(username) && StringUtils.isNotBlank(password)) ? HttpAuthenticationFeature.basic(username, password) : null;
 
         Client client  = proxyRepositoryConnectionPoolConfigurationService.getRestClient(repositoryPath.getStorageId(),repositoryPath.getRepositoryId());
-        return new RestArtifactResolver(client , url, repositoryPath.getTargetUrl(),
+        return new RestArtifactResolver(client , url, repositoryPath.getTargetUrl(), repositoryPath.getHeaders(),
                                         configuration,
                                         authenticationFeature)
                                 {
 
-                                    @Override
-                                    public boolean isAlive()
-                                    {
-                                        return true;
-                                    }
+            @Override
+            public boolean isAlive()
+            {
+                return true;
+            }
 
-                                };
+        };
     }
 
 }

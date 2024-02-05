@@ -53,12 +53,12 @@ public class ArtifactStorageController extends JFrogBaseController {
     @Inject
     private ArtifactWebService artifactWebService;
 
-    @ApiOperation(value = "JFrog存储")
+    @ApiOperation(value = "查询元数据")
     @ApiResponses(value = {@ApiResponse(code = 200, message = "OK")})
     @RequestMapping(value = {"/{repositoryId}/{artifactPath:.+}"}, method = {RequestMethod.GET})
     public ResponseEntity<Object> itemProperties(@PathVariable("repositoryId") String repositoryId, @PathVariable("artifactPath") String artifactPath,
                                                  @RequestParam(value = "properties", required = false) String properties, HttpServletRequest request) throws Exception {
-        String storageId = getDefaultStorageId();
+        String storageId = getDefaultStorageId(repositoryId);
         Storage storage = getStorage(storageId);
         if (Objects.isNull(storage)) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(handlerErrors(null, STORAGE_NOT_FOUND_MESSAGE));
@@ -126,13 +126,13 @@ public class ArtifactStorageController extends JFrogBaseController {
         return ResponseEntity.ok(artifactStorageInfo);
     }
 
-    @ApiOperation(value = "JFrog存储")
+    @ApiOperation(value = "设置元数据")
     @ApiResponses(value = {@ApiResponse(code = 200, message = "OK")})
     @PutMapping(value = {"/{repositoryId}/{artifactPath:.+}"})
     public ResponseEntity<Object> setItemProperties(@PathVariable("repositoryId") String repositoryId, @PathVariable("artifactPath") String artifactPath,
                                                     @RequestParam(value = "properties", required = false) String properties, HttpServletRequest request) throws Exception {
 
-        String storageId = getDefaultStorageId();
+        String storageId = getDefaultStorageId(repositoryId);
         Storage storage = getStorage(storageId);
         if (StringUtils.isBlank(properties)) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(handlerErrors(HttpStatus.BAD_REQUEST.value(), PROPERTIES_VALUE_CANNOT_BE_EMPTY));

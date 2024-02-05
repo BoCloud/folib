@@ -43,7 +43,7 @@
           {{ artifactData.artifact.repositoryId }}
         </a-descriptions-item>
         <a-descriptions-item :label="$t('Artifacts.ImageName')">
-          {{ artifactData.artifact.artifactCoordinates.imageName }}
+          {{ artifactData.artifact.artifactCoordinates.name }}
         </a-descriptions-item>
         <a-descriptions-item :label="$t('Artifacts.VersionNumber')">
           {{ artifactData.artifact.artifactCoordinates.version }}

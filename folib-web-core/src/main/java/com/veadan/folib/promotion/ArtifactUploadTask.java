@@ -13,6 +13,7 @@ import com.veadan.folib.artifact.MavenArtifactUtils;
 import com.veadan.folib.artifact.coordinates.NpmArtifactCoordinates;
 import com.veadan.folib.components.artifact.ArtifactComponent;
 import com.veadan.folib.config.NpmLayoutProviderConfig;
+import com.veadan.folib.domain.ArtifactIdGroupEntity;
 import com.veadan.folib.domain.ArtifactParse;
 import com.veadan.folib.domain.DockerManifest;
 import com.veadan.folib.entity.Dict;
@@ -31,6 +32,7 @@ import com.veadan.folib.services.RepositoryManagementService;
 import com.veadan.folib.storage.metadata.MetadataHelper;
 import com.veadan.folib.util.CommonUtils;
 import com.veadan.folib.util.MessageDigestUtils;
+import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.io.FilenameUtils;
@@ -54,12 +56,14 @@ import java.nio.file.Path;
 import java.util.*;
 import java.util.concurrent.Callable;
 
+@Data
 @Slf4j
 public class ArtifactUploadTask implements Callable<String> {
 
     private String storageId;
     private String repositoryId;
     private MultipartFile file;
+    private InputStream inputStream;
     private RepositoryManagementService repositoryManagementService;
     private RepositoryPathResolver repositoryPathResolver;
     private ArtifactManagementService artifactManagementService;
@@ -74,6 +78,7 @@ public class ArtifactUploadTask implements Callable<String> {
     private MavenRepositoryFeatures mavenRepositoryFeatures;
     private String parseArtifact;
     private ArtifactComponent artifactComponent;
+    private RepositoryPath repositoryPath;
 
     public ArtifactUploadTask() {
     }
@@ -110,6 +115,36 @@ public class ArtifactUploadTask implements Callable<String> {
         this.artifactComponent = SpringUtil.getBean(ArtifactComponent.class);
     }
 
+    public ArtifactUploadTask(String storageId,
+                              String repositoryId,
+                              InputStream inputStream,
+                              RepositoryPathResolver repositoryPathResolver,
+                              ArtifactManagementService artifactManagementService,
+                              PromotionUtil promotionUtil,
+                              LayoutProviderRegistry layoutProviderRegistry,
+                              ArtifactMetadataService artifactMetadataService,
+                              ArtifactRepository artifactRepository,
+                              MavenRepositoryFeatures mavenRepositoryFeatures,
+                              String tempPath,
+                              String fileRelativePath, String metaData, String uuid, String parseArtifact) {
+        this.storageId = storageId;
+        this.repositoryId = repositoryId;
+        this.inputStream = inputStream;
+        this.repositoryPathResolver = repositoryPathResolver;
+        this.artifactManagementService = artifactManagementService;
+        this.promotionUtil = promotionUtil;
+        this.layoutProviderRegistry = layoutProviderRegistry;
+        this.artifactMetadataService = artifactMetadataService;
+        this.artifactRepository = artifactRepository;
+        this.mavenRepositoryFeatures = mavenRepositoryFeatures;
+        this.tempPath = tempPath;
+        this.fileRelativePath = fileRelativePath;
+        this.metaData = metaData;
+        this.uuid = uuid;
+        this.parseArtifact = parseArtifact;
+        this.artifactComponent = SpringUtil.getBean(ArtifactComponent.class);
+    }
+
     @Override
     public String call() {
         String rs = "";
@@ -126,6 +161,8 @@ public class ArtifactUploadTask implements Callable<String> {
                     throw new IOException("artifact file not found");
                 }
                 is = Files.newInputStream(Path.of(artifactParse.getFilePath()));
+            } else if (Objects.nonNull(inputStream)) {
+                is = inputStream;
             }
             RepositoryPath repositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, fileRelativePath);
             if (RepositoryFiles.isChecksum(repositoryPath) || RepositoryFiles.isTrash(repositoryPath)) {
@@ -476,7 +513,7 @@ public class ArtifactUploadTask implements Callable<String> {
             }
             LayoutProvider layoutProvider = layoutProviderRegistry.getProvider(layout);
             if (Objects.nonNull(layoutProvider)) {
-                byte[] packageJsonBytes = layoutProvider.getContentByFileName(repositoryPath, path, NpmLayoutProvider.PACKAGE_JSON);
+                byte[] packageJsonBytes = layoutProvider.getContentByEqualsFileName(repositoryPath, path, NpmLayoutProvider.DEFAULT_PACKAGE_JSON_PATH);
                 String packageJson = new String(packageJsonBytes, StandardCharsets.UTF_8);
                 log.info("npm package.json：{}", packageJson);
                 RuntimeException runtimeException = new RuntimeException("package.json is not found in this file or package.json has an error");
@@ -497,10 +534,12 @@ public class ArtifactUploadTask implements Callable<String> {
                     try (InputStream inputStream = new BufferedInputStream(Files.newInputStream(path))) {
                         promotionUtil.setMetaData(repositoryPath, metaData);
                         artifactManagementService.store(repositoryPath, inputStream);
+                        this.repositoryPath = repositoryPath;
                     }
                     try (InputStream inputStream = new ByteArrayInputStream(packageJsonBytes)) {
                         artifactManagementService.store(repositoryPath.resolveSibling("package.json"), inputStream);
                     }
+                    artifactComponent.updateArtifactIdGroup(new ArtifactIdGroupEntity(storageId, repositoryId, npmArtifactCoordinates.getId()), "");
                 } catch (Exception ex) {
                     log.error("handlerNpmLayoutUpload file：{}，error：{}", artifactTempFile.getAbsolutePath(), ExceptionUtils.getStackTrace(ex));
                     throw runtimeException;
@@ -582,6 +621,9 @@ public class ArtifactUploadTask implements Callable<String> {
     private void handlerMavenStore(RepositoryPath repositoryPath, InputStream inputStream) throws Exception {
         mavenRepositoryFeatures.versionValidator(repositoryPath);
         artifactManagementService.store(repositoryPath, inputStream);
+        if (Objects.isNull(this.repositoryPath)) {
+            this.repositoryPath = repositoryPath;
+        }
     }
 
     /**

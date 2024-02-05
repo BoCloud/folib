@@ -1,5 +1,9 @@
 package com.veadan.folib.constant;
 
+import com.google.common.collect.Lists;
+
+import java.util.List;
+
 /**
  * @author leipenghui
  * @date 2022/11/29
@@ -24,7 +28,7 @@ public interface GlobalConstants {
     /**
      * 制品未找到
      */
-    String ARTIFACT_NOT_FOUND_MESSAGE = "The artifact was not found.";
+    String ARTIFACT_NOT_FOUND_MESSAGE = "The artifact [%s-%s-%s] was not found.";
 
     /**
      * UI 访问前缀key
@@ -36,4 +40,80 @@ public interface GlobalConstants {
      */
     String ANONYMOUS_TOKEN_KEY = "anonymousUser";
 
+    /**
+     * 分布式锁名称
+     */
+    String DISTRIBUTED_LOCK_NAME = "distributedLock";
+
+    /**
+     *
+     * 分布式缓存名称
+     */
+    String DISTRIBUTED_CACHE_NAME = "distributedCache";
+
+    /**
+     * SHA_256
+     */
+    String SHA_256 = "sha256";
+
+    /**
+     * CHECKSUM_SHA_256
+     */
+    String CHECKSUM_SHA_256 = ".sha256";
+
+    /**
+     * SELF_METADATA
+     */
+    String SELF_METADATA = ".metadata";
+
+    /**
+     * FO_LIBRARY_METADATA
+     */
+    String FO_LIBRARY_METADATA = ".foLibrary-metadata";
+
+    /**
+     * NO_DATA
+     */
+    String NO_DATA = "NO_DATA";
+
+    /**
+     * WAIT_LOCK_TIME
+     */
+    long WAIT_LOCK_TIME = 30L;
+
+    /**
+	 *
+     * LONG_WAIT_LOCK_TIME
+     */
+    long LONG_WAIT_LOCK_TIME = 120L;
+
+    /**
+     * point
+     */
+    String POINT = ".";
+
+    /**
+     * separator
+     */
+    String SEPARATOR = "/";
+
+    /**
+     * Docker层级信息目录名称列表
+     */
+    List<String> DOCKER_LAYER_DIR_NAME_LIST = Lists.newArrayList("blobs", "manifest");
+
+    /**
+     * maven后缀列表
+     */
+    List<String> MAVEN_EXTENSION_LIST = Lists.newArrayList(".jar", ".war", ".ear", ".pom");
+
+    /**
+     * docker v2
+     */
+    String DOCKER_V2 = "/v2";
+
+    /**
+     * library
+     */
+    String DOCKER_DEFAULT_REPO = "library";
 }

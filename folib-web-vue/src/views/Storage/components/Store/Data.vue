@@ -69,20 +69,23 @@
           <a-descriptions-item v-if="currentFileDetial" :label="$t('Store.ModifyTheTime')">
             {{ currentFileDetial.lastModified }}
           </a-descriptions-item>
-          <a-descriptions-item v-if="currentFileDetial" :label="$t('Store.NumberOfFloors')">
+          <a-descriptions-item v-if="currentFileDetial && currentFileDetial.manifest.layers" label="$t('Store.NumberOfFloors')">
             {{ currentFileDetial.manifest.layers.length }}
           </a-descriptions-item>
-          <a-descriptions-item v-if="currentFileDetial" :label="$t('Store.MakeADockerVersion')">
+          <a-descriptions-item v-if="currentFileDetial && currentFileDetial.manifestConfig" label="$t('Store.MakeADockerVersion')">
             {{ currentFileDetial.manifestConfig.docker_version }}
           </a-descriptions-item>
-          <a-descriptions-item v-if="currentFileDetial" :label="$t('Store.MirrorOS')">
+          <a-descriptions-item v-if="currentFileDetial && currentFileDetial.manifestConfig" label="$t('Store.MirrorOS')">
             <a-tag> {{ currentFileDetial.manifestConfig.os }}</a-tag>
           </a-descriptions-item>
-          <a-descriptions-item v-if="currentFileDetial" :label="$t('Store.TheInfrastructure')">
+          <a-descriptions-item v-if="currentFileDetial && currentFileDetial.manifestConfig" label="$t('Store.TheInfrastructure')">
             {{ currentFileDetial.manifestConfig.architecture }}
           </a-descriptions-item>
-          <a-descriptions-item v-if="currentFileDetial && currentFileDetial.manifestConfig.variant" :label="$t('Store.Version')">
+          <a-descriptions-item v-if="currentFileDetial && currentFileDetial.manifestConfig && currentFileDetial.manifestConfig.variant" label="$t('Store.Version')">
             {{ currentFileDetial.manifestConfig.variant || ''}}
+          </a-descriptions-item>
+          <a-descriptions-item v-if="currentFileDetial && !currentFileDetial.manifestConfig" label="缓存状态">
+            {{ '未缓存' }}
           </a-descriptions-item>
         </a-descriptions>
       </a-tab-pane>
@@ -298,7 +301,7 @@
             :key="index"
             type="link"
             size="small"
-            @click="changeCodeTye(item)"
+            @click="changeCodeType(item)"
           >
             <a-avatar
               :size="20"
@@ -515,7 +518,7 @@ export default {
   watch: {
     currentFileDetial: function (val) {
       if (val && val.snippets) {
-        this.changeCodeTye(val.snippets[0])
+        this.changeCodeType(val.snippets[0])
       }
       this.metadataShow()
     },
@@ -635,7 +638,7 @@ export default {
     highlighterHandle(code) {
       return highlight(code, languages.js); //returns html
     },
-    changeCodeTye(item) {
+    changeCodeType(item) {
       if (item) {
         this.codeParam = {
           type: item.name === "Maven 2" ? "maven" : item.name.toLowerCase(),

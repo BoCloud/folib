@@ -1,12 +1,11 @@
 package com.veadan.folib.io;
 
+import org.springframework.transaction.TransactionStatus;
+
 import java.nio.file.Path;
 import java.util.concurrent.locks.Lock;
 
-import org.springframework.transaction.TransactionStatus;
-
-public class RepositoryStreamContext
-{
+public class RepositoryStreamContext {
 
     private Path path;
 
@@ -18,63 +17,53 @@ public class RepositoryStreamContext
 
     private boolean artifactExists;
 
-    private String lockKey;
+    private Boolean isLocked;
 
-    public Path getPath()
-    {
+    public Path getPath() {
         return path;
     }
 
-    public void setPath(Path path)
-    {
+    public void setPath(Path path) {
         this.path = path;
     }
 
-    public Lock getLock()
-    {
+    public Lock getLock() {
         return lock;
     }
 
-    public void setLock(Lock lock)
-    {
+    public void setLock(Lock lock) {
         this.lock = lock;
     }
 
-    public boolean isOpened()
-    {
+    public boolean isOpened() {
         return opened;
     }
 
-    public void setOpened(boolean opened)
-    {
+    public void setOpened(boolean opened) {
         this.opened = opened;
     }
 
-    public TransactionStatus getTransaction()
-    {
+    public TransactionStatus getTransaction() {
         return transaction;
     }
 
-    public void setTransaction(TransactionStatus transaction)
-    {
+    public void setTransaction(TransactionStatus transaction) {
         this.transaction = transaction;
     }
 
-    public boolean getArtifactExists()
-    {
+    public boolean getArtifactExists() {
         return artifactExists;
     }
 
-    public void setArtifactExists(boolean artifactExists)
-    {
+    public void setArtifactExists(boolean artifactExists) {
         this.artifactExists = artifactExists;
     }
 
-    public String getLockKey() {
-        return lockKey;
+    public Boolean getLocked() {
+        return isLocked;
     }
 
-    public void setLockKey(String lockKey) {
-        this.lockKey = lockKey;
+    public void setLocked(Boolean locked) {
+        isLocked = locked;
     }
 }

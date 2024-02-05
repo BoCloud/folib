@@ -8,6 +8,7 @@ import com.veadan.folib.cron.jobs.JavaCronJob;
 import com.veadan.folib.cron.jobs.fields.*;
 import com.veadan.folib.providers.io.RepositoryPathResolver;
 import com.veadan.folib.storage.repository.Repository;
+import com.veadan.folib.storage.repository.RepositoryTypeEnum;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
@@ -64,6 +65,10 @@ public class CleanupArtifactsRepositoryCronJob extends JavaCronJob {
             Repository repository = configurationManager.getRepository(storageId, repositoryId);
             if (Objects.isNull(repository)) {
                 log.warn("Repository storageId [{}] repositoryId [{}] not found", storageId, repositoryId);
+                return;
+            }
+            if (RepositoryTypeEnum.GROUP.getType().equals(repository.getType())) {
+                log.warn("Repository storageId [{}] repositoryId [{}] is group type skip..", storageId, repositoryId);
                 return;
             }
             if (!NumberUtils.isDigits(storageDay) || Integer.parseInt(storageDay) <= 0) {

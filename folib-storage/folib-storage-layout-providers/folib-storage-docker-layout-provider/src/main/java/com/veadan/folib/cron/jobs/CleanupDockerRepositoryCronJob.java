@@ -1,9 +1,9 @@
 package com.veadan.folib.cron.jobs;
 
+import cn.hutool.json.JSONUtil;
 import com.alibaba.fastjson.JSON;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
-import com.google.common.collect.Sets;
 import com.veadan.folib.artifact.coordinates.DockerArtifactCoordinates;
 import com.veadan.folib.cron.domain.CronTaskConfigurationDto;
 import com.veadan.folib.cron.jobs.fields.*;
@@ -12,18 +12,15 @@ import com.veadan.folib.providers.io.RepositoryFiles;
 import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.providers.io.RepositoryPathResolver;
 import com.veadan.folib.providers.layout.DockerLayoutProvider;
+import com.veadan.folib.repositories.ArtifactRepository;
 import com.veadan.folib.schema2.ImageManifest;
-import com.veadan.folib.schema2.LayerManifest;
 import com.veadan.folib.schema2.Manifests;
 import com.veadan.folib.services.ArtifactManagementService;
 import com.veadan.folib.services.ConfigurationManagementService;
 import com.veadan.folib.storage.Storage;
 import com.veadan.folib.storage.repository.Repository;
 import com.veadan.folib.storage.repository.RepositoryTypeEnum;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import com.veadan.folib.util.RepositoryPathUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -31,15 +28,21 @@ import org.apache.commons.lang3.exception.ExceptionUtils;
 
 import javax.inject.Inject;
 import java.io.IOException;
+import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.nio.file.attribute.FileTime;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
-import java.util.*;
-import java.util.stream.Collectors;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Stream;
 
 /**
@@ -67,6 +70,9 @@ public class CleanupDockerRepositoryCronJob extends JavaCronJob {
     @Inject
     private ConfigurationManagementService configurationManagementService;
 
+    @Inject
+    private ArtifactRepository artifactRepository;
+
     @Override
     public void executeTask(CronTaskConfigurationDto config)
             throws Throwable {
@@ -83,24 +89,17 @@ public class CleanupDockerRepositoryCronJob extends JavaCronJob {
 
     public void cleanupDockerRepository(String storageId, String repositoryId) {
         log.info("Start docker clean artifact job repository [{}] [{}]", storageId, repositoryId);
+        Repository repository = configurationManagementService.getConfiguration().getStorage(storageId).getRepository(repositoryId);
+        if (RepositoryTypeEnum.GROUP.getType().equals(repository.getType())) {
+            return;
+        }
         if (StringUtils.isNotBlank(storageId) && StringUtils.isNotBlank(repositoryId)) {
-            try {
-                RepositoryPath rootRepositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, "");
-                List<Path> directoryList = getDirectory(rootRepositoryPath, Collections.emptyList());
-                if (CollectionUtils.isEmpty(directoryList)) {
-                    log.info("Docker repository [{}] [{}] is empty clean end", storageId, repositoryId);
-                    return;
-                }
-                log.info("Docker repository [{}] [{}] find images quantity [{}]", storageId, repositoryId, directoryList.size());
-                List<String> resultList = handlerImage(storageId, repositoryId, directoryList);
-                String successMsg = "ok", failMsg = "fail";
-                long success = resultList.stream().filter(successMsg::equals).count(), fail = resultList.stream().filter(failMsg::equals).count(), other = 0;
-                other = resultList.size() - success - fail;
-                log.info("Clean docker artifact job repository [{}] [{}] finished success [{}] fail [{}] other [{}]",
-                        storageId, repositoryId, success, fail, other);
-            } catch (Exception e) {
-                log.error("Clean docker artifact job repository [{}] [{}] error [{}]", storageId, repositoryId, ExceptionUtils.getStackTrace(e));
+            RepositoryPath rootRepositoryPath = repositoryPathResolver.resolve(storageId, repositoryId);
+            if (!Files.exists(rootRepositoryPath)) {
+                return;
             }
+            handleManifest(rootRepositoryPath);
+            handleBlobs(rootRepositoryPath);
         }
     }
 
@@ -112,7 +111,7 @@ public class CleanupDockerRepositoryCronJob extends JavaCronJob {
                     final Map<String, ? extends Repository> repositories = storage.getRepositories();
                     for (Repository repository : repositories.values()) {
                         try {
-                            if (DockerLayoutProvider.ALIAS.equals(repository.getLayout()) && RepositoryTypeEnum.HOSTED.getType().equals(repository.getType())) {
+                            if (DockerLayoutProvider.ALIAS.equals(repository.getLayout()) && !RepositoryTypeEnum.GROUP.getType().equals(repository.getType())) {
                                 cleanupDockerRepository(repository.getStorage().getId(), repository.getId());
                             }
                         } catch (Exception ex) {
@@ -126,141 +125,6 @@ public class CleanupDockerRepositoryCronJob extends JavaCronJob {
         } catch (Exception ex) {
             log.error(ExceptionUtils.getStackTrace(ex));
         }
-    }
-
-    public List<String> handlerImage(String storageId, String repositoryId, List<Path> directoryList) {
-        List<String> resultList = Lists.newArrayList();
-        RepositoryPath imageRepositoryPath, imageTagRepositoryPath, imageManifestsRepositoryPath, imageBlobsRepositoryPath;
-        String blobs = "blobs", manifest = "manifest", successMsg = "ok", failMsg = "fail";
-        List<String> excludeList = Lists.newArrayList(blobs, manifest);
-        List<Path> imageTagList = null;
-        List<DockerImageTag> dockerImageTagList = null;
-        DockerImageTag dockerImageTag = null;
-        boolean isContinue = false;
-        for (Path imagePath : directoryList) {
-            try {
-                imageRepositoryPath = (RepositoryPath) imagePath;
-                imageTagList = getDirectory(imageRepositoryPath, excludeList);
-                if (CollectionUtils.isEmpty(imageTagList)) {
-                    //镜像下无tag，删除镜像
-                    if (delete(imageRepositoryPath, false)) {
-                        resultList.add(successMsg);
-                        log.info("Docker repository [{}] [{}] image [{}] has no tag delete", storageId, repositoryId, imagePath.getFileName().toString());
-                    }
-                    continue;
-                }
-                imageManifestsRepositoryPath = imageRepositoryPath.resolve(manifest);
-                imageBlobsRepositoryPath = imageRepositoryPath.resolve(blobs);
-                dockerImageTagList = Lists.newArrayList();
-                for (Path imageTagPath : imageTagList) {
-                    imageTagRepositoryPath = (RepositoryPath) imageTagPath;
-                    dockerImageTag = handlerDockerImageTag(imageTagRepositoryPath, imageManifestsRepositoryPath, imageBlobsRepositoryPath, dockerImageTagList);
-                    if (Objects.isNull(dockerImageTag)) {
-                        //镜像tag无法读取manifest、blobs信息，删除tag
-                        if (delete(imageTagRepositoryPath, false)) {
-                            resultList.add(successMsg);
-                            log.info("Docker repository [{}] [{}] image [{}] tag [{}] not exists blobs delete", storageId, repositoryId, imagePath.getFileName().toString(), imageTagPath.getFileName().toString());
-                        }
-                    }
-                }
-                if (CollectionUtils.isEmpty(dockerImageTagList)) {
-                    //镜像下无tag，删除镜像
-                    if (delete(imageRepositoryPath,true)) {
-                        resultList.add(successMsg);
-                        log.info("Docker repository [{}] [{}] image [{}] not exists tag delete", storageId, repositoryId, imagePath.getFileName().toString());
-                    }
-                    continue;
-                }
-                Set<String> manifestSet = Sets.newLinkedHashSet(), blobSet = Sets.newLinkedHashSet();
-                dockerImageTagList.forEach(item -> {
-                    manifestSet.addAll(item.getManifests());
-                    blobSet.addAll(item.getBlobs());
-                });
-                isContinue = handlerManifest(imageRepositoryPath, storageId, repositoryId, imageManifestsRepositoryPath, manifestSet, resultList, successMsg, failMsg);
-                if (isContinue) {
-                    continue;
-                }
-                isContinue = handlerBlobs(imageRepositoryPath, storageId, repositoryId, imageBlobsRepositoryPath, blobSet, resultList, successMsg, failMsg);
-                if (isContinue) {
-                    continue;
-                }
-                if (!Files.exists(imageRepositoryPath) || Files.list(imageRepositoryPath).count() == 0) {
-                    //镜像目录为空删除镜像
-                    if (delete(imageRepositoryPath, true)) {
-                        resultList.add(successMsg);
-                        log.info("Docker repository [{}] [{}] image [{}] not exists files delete", storageId, repositoryId, imagePath.getFileName().toString());
-                    }
-                }
-            } catch (Exception ex) {
-                resultList.add(failMsg);
-                log.error("Clean docker artifact job repository [{}] [{}] [{}] error {}", storageId, repositoryId, imagePath, ExceptionUtils.getStackTrace(ex));
-            }
-        }
-        return resultList;
-    }
-
-    private boolean handlerManifest(RepositoryPath imageRepositoryPath, String storageId, String repositoryId, RepositoryPath imageManifestsRepositoryPath, Set<String> manifestSet, List<String> resultList, String successMsg, String failMsg) throws Exception {
-        boolean isContinue = false;
-        if (Files.exists(imageManifestsRepositoryPath) && CollectionUtils.isNotEmpty(manifestSet)) {
-            try (Stream<Path> pathStream = Files.list(imageManifestsRepositoryPath)) {
-                pathStream.forEach(p -> {
-                    try {
-                        RepositoryPath repositoryPath = (RepositoryPath) p;
-                        if (!RepositoryFiles.isChecksum(repositoryPath) && !RepositoryFiles.isArtifactMetadata(repositoryPath) && !manifestSet.contains(p.getFileName().toString())) {
-                            //在manifest中，该manifest文件未被tag使用，删除该manifest
-                            if (delete(repositoryPath, false)) {
-                                resultList.add(successMsg);
-                                log.info("Docker repository [{}] [{}] image [{}] manifest [{}] did not use delete", storageId, repositoryId, imageRepositoryPath.getFileName().toString(), p.toString());
-                            }
-                        }
-                    } catch (Exception ex) {
-                        resultList.add(failMsg);
-                        log.error(ExceptionUtils.getStackTrace(ex));
-                    }
-                });
-            }
-        }
-        if (!Files.exists(imageManifestsRepositoryPath) || Files.list(imageManifestsRepositoryPath).count() == 0) {
-            //manifest目录为空删除镜像
-            if (delete(imageRepositoryPath, true)) {
-                resultList.add(successMsg);
-                log.info("Docker repository [{}] [{}] image [{}] not exists manifest delete", storageId, repositoryId, imageRepositoryPath.getFileName().toString());
-            }
-            isContinue = true;
-        }
-        return isContinue;
-    }
-
-    private boolean handlerBlobs(RepositoryPath imageRepositoryPath, String storageId, String repositoryId, RepositoryPath imageBlobsRepositoryPath, Set<String> blobSet, List<String> resultList, String successMsg, String failMsg) throws Exception {
-        boolean isContinue = false;
-        if (Files.exists(imageBlobsRepositoryPath) && CollectionUtils.isNotEmpty(blobSet)) {
-            try (Stream<Path> pathStream = Files.list(imageBlobsRepositoryPath)) {
-                pathStream.forEach(p -> {
-                    try {
-                        RepositoryPath repositoryPath = (RepositoryPath) p;
-                        if (!RepositoryFiles.isChecksum(repositoryPath) && !RepositoryFiles.isArtifactMetadata(repositoryPath) && !blobSet.contains(p.getFileName().toString())) {
-                            //在blobs中，该blob文件未被tag使用，删除该blob
-                            if (delete(repositoryPath, false)) {
-                                resultList.add(successMsg);
-                                log.info("Docker repository [{}] [{}] image [{}] blob [{}] did not use delete", storageId, repositoryId, imageRepositoryPath.getFileName().toString(), p.toString());
-                            }
-                        }
-                    } catch (Exception ex) {
-                        resultList.add(failMsg);
-                        log.error(ExceptionUtils.getStackTrace(ex));
-                    }
-                });
-            }
-        }
-        if (!Files.exists(imageBlobsRepositoryPath) || Files.list(imageBlobsRepositoryPath).count() == 0) {
-            //blobs目录为空删除镜像
-            if (delete(imageRepositoryPath, true)) {
-                resultList.add(successMsg);
-                log.info("Docker repository [{}] [{}] image [{}] not exists blobs delete", storageId, repositoryId, imageRepositoryPath.getFileName().toString());
-            }
-            isContinue = true;
-        }
-        return isContinue;
     }
 
     private boolean compareTime(RepositoryPath repositoryPath) {
@@ -310,6 +174,7 @@ public class CleanupDockerRepositoryCronJob extends JavaCronJob {
             log.warn("Docker repository [{}] [{}] repositoryPath [{}] not exists skip delete", repositoryPath.getStorageId(), repositoryPath.getRepositoryId(), repositoryPath.toString());
             return false;
         }
+        log.info("Docker repository [{}] [{}] repositoryPath [{}] try delete", repositoryPath.getStorageId(), repositoryPath.getRepositoryId(), RepositoryFiles.relativizePath(repositoryPath));
         if (ignoreTime) {
             artifactManagementService.delete(repositoryPath, true);
             return true;
@@ -332,107 +197,36 @@ public class CleanupDockerRepositoryCronJob extends JavaCronJob {
                 .build();
     }
 
-    /**
-     * 获取仓库下的目录列表
-     *
-     * @param repositoryPath 仓库路径
-     * @param excludeList    要排除的列表
-     * @return 目录列表
-     * @throws IOException 异常
-     */
-    private List<Path> getDirectory(RepositoryPath repositoryPath, List<String> excludeList)
-            throws IOException {
-        List<Path> directoryList;
-        try (Stream<Path> pathStream = Files.list(repositoryPath)) {
-            directoryList = pathStream.filter(p -> !p.toString().startsWith(".") && !p.toString().contains("/.") && excludeList.stream().noneMatch(p.getFileName().toString()::equals))
-                    .filter(p -> {
-                        try {
-                            return !Files.isHidden(p) && Files.isDirectory(p);
-                        } catch (IOException e) {
-                            log.warn("Error accessing path [{}]", p);
-                            return false;
-                        }
-                    })
-                    .sorted()
-                    .collect(Collectors.toList());
-        }
-        return directoryList;
-    }
-
-    /**
-     * 处理manifest和blob文件
-     *
-     * @param repositoryPath             路径
-     * @param manifestRootRepositoryPath manifestRootRepositoryPath
-     * @param blobsRootRepositoryPath    blobsRootRepositoryPath
-     * @param dockerImageTagList         dockerImageTagList
-     * @return DockerImageTag
-     * @throws IOException io异常
-     */
-    public DockerImageTag handlerDockerImageTag(RepositoryPath repositoryPath, RepositoryPath
-            manifestRootRepositoryPath, RepositoryPath blobsRootRepositoryPath, List<DockerImageTag> dockerImageTagList) throws
-            IOException {
-        if (!Files.isDirectory(repositoryPath)) {
-            return null;
-        }
-        //当前版本下manifest文件信息
-        List<Path> pathList;
-        try (Stream<Path> pathStream = Files.list(repositoryPath)) {
-            pathList = pathStream.filter(f -> !Files.isDirectory(f) && DockerArtifactCoordinates.isManifestPath(f)).collect(Collectors.toList());
-        }
-        if (CollectionUtils.isEmpty(pathList)) {
-            log.warn("Clean docker artifact job repository [{}] [{}] manifest [{}] not exists, The image is damaged and will be deleted", repositoryPath.getStorageId(), repositoryPath.getRepositoryId(), repositoryPath);
-            return null;
-        }
-        RepositoryPath manifestRepositoryPath = manifestRootRepositoryPath.resolve(pathList.get(0).getFileName());
-        List<ImageManifest> imageManifestList = getImageManifests(manifestRepositoryPath);
-        if (CollectionUtils.isEmpty(imageManifestList)) {
-            return null;
-        }
-        Set<String> manifests = Sets.newLinkedHashSet(), blobs = Sets.newLinkedHashSet();
-        DockerImageTag dockerImage = DockerImageTag.builder().manifests(manifests).blobs(blobs).build();
-        for (ImageManifest imageManifest : imageManifestList) {
-            manifests.add(imageManifest.getDigest());
-            if (Objects.nonNull(imageManifest.getConfig())) {
-                if (!Files.exists(blobsRootRepositoryPath.resolve(imageManifest.getConfig().getDigest()))) {
-                    log.warn("Clean docker artifact job repository [{}] [{}] [{}] config blobs [{}] not exists, The image is damaged and will be deleted", repositoryPath.getStorageId(), repositoryPath.getRepositoryId(), repositoryPath.getFileName().toString(), imageManifest.getConfig().getDigest());
-                    return null;
-                }
-                blobs.add(imageManifest.getConfig().getDigest());
-            }
-            if (CollectionUtils.isNotEmpty(imageManifest.getLayers())) {
-                for (LayerManifest layerManifest : imageManifest.getLayers()) {
-                    if (!Files.exists(blobsRootRepositoryPath.resolve(layerManifest.getDigest()))) {
-                        log.warn("Clean docker artifact job repository [{}] [{}] [{}] blobs [{}] not exists, The image is damaged and will be deleted", repositoryPath.getStorageId(), repositoryPath.getRepositoryId(), repositoryPath.getFileName().toString(), layerManifest.getDigest());
-                        return null;
-                    }
-                    blobs.add(layerManifest.getDigest());
-                }
-            }
-        }
-        dockerImageTagList.add(dockerImage);
-        return dockerImage;
-    }
-
     public List<ImageManifest> getImageManifests(RepositoryPath repositoryPath) throws IOException {
         if (Objects.isNull(repositoryPath) || !Files.exists(repositoryPath)) {
             log.warn("Clean docker artifact job repository [{}] [{}] manifest [{}] not exists, The image is damaged and will be deleted", repositoryPath.getStorageId(), repositoryPath.getRepositoryId(), repositoryPath.toString());
             return null;
         }
+        String storageId = repositoryPath.getStorageId(), repositoryId = repositoryPath.getRepositoryId(), artifactPath = RepositoryFiles.relativizePath(repositoryPath);
         DockerArtifactCoordinates dockerArtifactCoordinates = DockerArtifactCoordinates.parse(RepositoryFiles.relativizePath(repositoryPath));
         String imageName = dockerArtifactCoordinates.getName();
         List<ImageManifest> imageManifestList = Lists.newArrayList();
         String manifestString = Files.readString(repositoryPath);
-        ImageManifest imageManifest = JSON.parseObject(manifestString, ImageManifest.class);
-        RepositoryPath manifestRootRepositoryPath = repositoryPathResolver.resolve(repositoryPath.getStorageId(), repositoryPath.getRepositoryId(), imageName + "/manifest");
+        if (!JSONUtil.isJson(manifestString)) {
+            log.warn("Clean docker artifact job repository [{}] [{}] manifest [{}] not is json format, The image is damaged and will be deleted", storageId, repositoryId, artifactPath);
+            return null;
+        }
+        ImageManifest imageManifest = null;
+        try {
+            imageManifest = JSON.parseObject(manifestString, ImageManifest.class);
+        } catch (Exception ex) {
+            log.warn("Clean docker artifact job repository [{}] [{}] manifest [{}] content [{}] parse error [{}]", storageId, repositoryId, artifactPath, manifestString, ExceptionUtils.getStackTrace(ex));
+            return null;
+        }
+        RepositoryPath manifestRootRepositoryPath = repositoryPathResolver.resolve(repositoryPath.getStorageId(), repositoryPath.getRepositoryId(), DockerLayoutProvider.MANIFEST);
         if (CollectionUtils.isNotEmpty(imageManifest.getManifests())) {
             //多架构镜像
             ImageManifest itemImageManifest = null;
             for (Manifests manifests : imageManifest.getManifests()) {
                 RepositoryPath manifestPath = manifestRootRepositoryPath.resolve(manifests.getDigest());
                 if (!Files.exists(manifestPath)) {
-                    log.warn("Clean docker artifact job repository [{}] [{}] [{}] manifest [{}] not exists, The image is damaged and will be deleted", repositoryPath.getStorageId(), repositoryPath.getRepositoryId(), imageName, dockerArtifactCoordinates.getLayers());
-                    return null;
+                    log.warn("Clean docker artifact job repository [{}] [{}] [{}] manifest [{}] not exists", storageId, repositoryId, imageName, dockerArtifactCoordinates.getLayers());
+                    continue;
                 }
                 manifestString = Files.readString(manifestPath);
                 itemImageManifest = JSON.parseObject(manifestString, ImageManifest.class);
@@ -441,28 +235,171 @@ public class CleanupDockerRepositoryCronJob extends JavaCronJob {
             }
         }
         if (!Files.exists(manifestRootRepositoryPath.resolve(dockerArtifactCoordinates.getLayers()))) {
-            log.warn("Clean docker artifact job repository [{}] [{}] [{}] manifest [{}] not exists, The image is damaged and will be deleted", repositoryPath.getStorageId(), repositoryPath.getRepositoryId(), imageName, dockerArtifactCoordinates.getLayers());
+            log.warn("Clean docker artifact job repository [{}] [{}] [{}] manifest [{}] not exists, The image is damaged and will be deleted", storageId, repositoryId, imageName, dockerArtifactCoordinates.getLayers());
             return null;
         }
         imageManifest.setDigest(dockerArtifactCoordinates.getLayers());
         imageManifestList.add(imageManifest);
         return imageManifestList;
     }
-}
 
-@Data
-@Builder
-@AllArgsConstructor
-@NoArgsConstructor
-class DockerImageTag {
+    private void handleManifest(RepositoryPath rootRepositoryPath) {
+        RepositoryPath manifestRootRepositoryPath = rootRepositoryPath.resolve(DockerLayoutProvider.MANIFEST);
+        if (!Files.exists(manifestRootRepositoryPath)) {
+            return;
+        }
+        //遍历仓库下manifest目录
+        try (Stream<Path> manifestPathStream = Files.list(manifestRootRepositoryPath)) {
+            AtomicLong manifestSuccessAtomicLong = new AtomicLong(0), manifestFailAtomicLong = new AtomicLong(0);
+            manifestPathStream.forEach(manifestPath -> {
+                RepositoryPath manifestRepositoryPath = (RepositoryPath) manifestPath;
+                try {
+                    if (RepositoryFiles.isChecksum(manifestRepositoryPath) || RepositoryFiles.isArtifactMetadata(manifestRepositoryPath) || !DockerArtifactCoordinates.isRealManifestPath(manifestPath)) {
+                        return;
+                    }
+                    log.info("Manifest repositoryPath [{}] [{}] [{}]", manifestRepositoryPath.getStorageId(), manifestRepositoryPath.getRepositoryId(), RepositoryFiles.relativizePath(manifestRepositoryPath));
+                    AtomicBoolean atomicBoolean = new AtomicBoolean(false);
+                    String manifestName = manifestRepositoryPath.getFileName().toString();
+                    //遍历仓库下所有的tag，判断是否有tag引用当前manifest
+                    Files.walkFileTree(rootRepositoryPath, new SimpleFileVisitor<Path>() {
+                        @Override
+                        public FileVisitResult visitFile(Path file,
+                                                         BasicFileAttributes attrs)
+                                throws IOException {
+                            RepositoryPath itemPath = (RepositoryPath) file;
+                            if (DockerArtifactCoordinates.isTagPath(itemPath)) {
+                                log.info("Tag repositoryPath [{}] [{}] [{}]", itemPath.getStorageId(), itemPath.getRepositoryId(), RepositoryFiles.relativizePath(itemPath));
+                                List<ImageManifest> imageManifestList = getImageManifests(itemPath);
+                                if (CollectionUtils.isNotEmpty(imageManifestList)) {
+                                    log.info("Tag repositoryPath [{}] [{}] [{}] find match manifest [{}]", itemPath.getStorageId(), itemPath.getRepositoryId(), RepositoryFiles.relativizePath(itemPath), manifestName);
+                                    atomicBoolean.set(imageManifestList.stream().filter(item -> StringUtils.isNotBlank(item.getDigest())).anyMatch(item -> manifestName.equals(item.getDigest())));
+                                }
+                            }
+                            if (atomicBoolean.get()) {
+                                return FileVisitResult.TERMINATE;
+                            }
+                            return FileVisitResult.CONTINUE;
+                        }
 
-    /**
-     * manifests
-     */
-    private Set<String> manifests;
+                        @Override
+                        public FileVisitResult preVisitDirectory(final Path dir, final BasicFileAttributes attrs) throws IOException {
+                            RepositoryPath itemPath = (RepositoryPath) dir;
+                            if (!Files.isSameFile(itemPath, itemPath.getRoot()) && !RepositoryPathUtil.include(2, itemPath, true) || (DockerArtifactCoordinates.DOCKER_LAYER_DIR_NAME_LIST.stream().anyMatch(item -> itemPath.getFileName().toString().equalsIgnoreCase(item)))) {
+                                log.info("RepositoryPath [{}] skip...", itemPath.toString());
+                                return FileVisitResult.SKIP_SUBTREE;
+                            }
+                            return FileVisitResult.CONTINUE;
+                        }
 
-    /**
-     * blobs
-     */
-    private Set<String> blobs;
+                        @Override
+                        public FileVisitResult postVisitDirectory(Path dir,
+                                                                  IOException exc)
+                                throws IOException {
+                            return FileVisitResult.CONTINUE;
+                        }
+                    });
+                    if (!atomicBoolean.get()) {
+                        try {
+                            //manifest不存在引用，删除
+                            String artifactPath = RepositoryFiles.relativizePath(manifestRepositoryPath);
+                            if (delete(manifestRepositoryPath, false)) {
+                                logger.info("Delete manifest repositoryPath [{}] [{}] [{}]", manifestRepositoryPath.getStorageId(), manifestRepositoryPath.getRepositoryId(), artifactPath);
+                                manifestSuccessAtomicLong.getAndIncrement();
+                            }
+                        } catch (IOException e) {
+                            manifestFailAtomicLong.getAndIncrement();
+                            log.warn(ExceptionUtils.getStackTrace(e));
+                        }
+                    }
+                } catch (Exception ex) {
+                    log.warn(ExceptionUtils.getStackTrace(ex));
+                }
+            });
+            long success = manifestSuccessAtomicLong.get(), fail = manifestFailAtomicLong.get();
+            log.info("Clean docker artifact job repository [{}] [{}] manifest finished success [{}] fail [{}]",
+                    rootRepositoryPath.getStorageId(), rootRepositoryPath.getRepositoryId(), success, fail);
+        } catch (Exception e) {
+            log.error("Clean docker artifact job repository [{}] [{}] manifest error [{}]", rootRepositoryPath.getStorageId(), rootRepositoryPath.getRepositoryId(), ExceptionUtils.getStackTrace(e));
+        }
+    }
+
+    private void handleBlobs(RepositoryPath rootRepositoryPath) {
+        RepositoryPath blobsRootRepositoryPath = rootRepositoryPath.resolve(DockerLayoutProvider.BLOBS);
+        if (!Files.exists(blobsRootRepositoryPath)) {
+            return;
+        }
+        RepositoryPath manifestRootRepositoryPath = rootRepositoryPath.resolve(DockerLayoutProvider.MANIFEST);
+        if (!Files.exists(manifestRootRepositoryPath)) {
+            return;
+        }
+        //遍历仓库下blobs目录
+        try (Stream<Path> blobsPathStream = Files.list(blobsRootRepositoryPath)) {
+            AtomicLong blobsDeleteSuccessAtomicLong = new AtomicLong(0), blobsDeleteFailAtomicLong = new AtomicLong(0);
+            blobsPathStream.forEach(blobPath -> {
+                RepositoryPath blobsRepositoryPath = (RepositoryPath) blobPath;
+                try {
+                    String blobName = blobPath.getFileName().toString();
+                    if (RepositoryFiles.isChecksum(blobsRepositoryPath) || RepositoryFiles.isArtifactMetadata(blobsRepositoryPath) || !DockerArtifactCoordinates.include(blobName)) {
+                        return;
+                    }
+                    log.info("Blob repositoryPath [{}] [{}] [{}]", blobsRepositoryPath.getStorageId(), blobsRepositoryPath.getRepositoryId(), RepositoryFiles.relativizePath(blobsRepositoryPath));
+                    AtomicBoolean atomicBoolean = new AtomicBoolean(false);
+                    //遍历仓库下的manifest目录，判断是否有manifest引用当前blob
+                    Files.walkFileTree(manifestRootRepositoryPath, new SimpleFileVisitor<Path>() {
+                        @Override
+                        public FileVisitResult visitFile(Path file,
+                                                         BasicFileAttributes attrs)
+                                throws IOException {
+                            RepositoryPath itemPath = (RepositoryPath) file;
+                            if (DockerArtifactCoordinates.isRealManifestPath(itemPath)) {
+                                log.info("Manifest repositoryPath [{}] [{}] [{}]", itemPath.getStorageId(), itemPath.getRepositoryId(), RepositoryFiles.relativizePath(itemPath));
+                                List<ImageManifest> imageManifestList = getImageManifests(itemPath);
+                                if (CollectionUtils.isNotEmpty(imageManifestList)) {
+                                    log.info("Manifest repositoryPath [{}] [{}] [{}] find match blob [{}]", itemPath.getStorageId(), itemPath.getRepositoryId(), RepositoryFiles.relativizePath(itemPath), blobName);
+                                    final boolean flag = imageManifestList.stream().filter(item -> Objects.nonNull(item.getConfig())).map(item -> item.getConfig().getDigest()).anyMatch(blobName::equals) || imageManifestList.stream().filter(item -> CollectionUtils.isNotEmpty(item.getLayers())).flatMap(item -> item.getLayers().stream()).anyMatch(item -> blobName.equals(item.getDigest()));
+                                    atomicBoolean.set(flag);
+                                }
+                            }
+                            if (atomicBoolean.get()) {
+                                return FileVisitResult.TERMINATE;
+                            }
+                            return FileVisitResult.CONTINUE;
+                        }
+
+                        @Override
+                        public FileVisitResult preVisitDirectory(final Path dir, final BasicFileAttributes attrs) throws IOException {
+                            return FileVisitResult.CONTINUE;
+                        }
+
+                        @Override
+                        public FileVisitResult postVisitDirectory(Path dir,
+                                                                  IOException exc)
+                                throws IOException {
+                            return FileVisitResult.CONTINUE;
+                        }
+                    });
+                    if (!atomicBoolean.get()) {
+                        try {
+                            //blob不存在引用，删除
+                            String artifactPath = RepositoryFiles.relativizePath(blobsRepositoryPath);
+                            if (delete(blobsRepositoryPath, false)) {
+                                logger.info("Delete blob repositoryPath [{}] [{}] [{}]", blobsRepositoryPath.getStorageId(), blobsRepositoryPath.getRepositoryId(), artifactPath);
+                                blobsDeleteSuccessAtomicLong.getAndIncrement();
+                            }
+                        } catch (Exception e) {
+                            blobsDeleteFailAtomicLong.getAndIncrement();
+                            log.warn(ExceptionUtils.getStackTrace(e));
+                        }
+                    }
+                } catch (Exception ex) {
+                    log.warn(ExceptionUtils.getStackTrace(ex));
+                }
+            });
+            long success = blobsDeleteSuccessAtomicLong.get(), fail = blobsDeleteFailAtomicLong.get();
+            log.info("Clean docker artifact job repository [{}] [{}] blobs finished success [{}] fail [{}]",
+                    rootRepositoryPath.getStorageId(), rootRepositoryPath.getRepositoryId(), success, fail);
+        } catch (Exception e) {
+            log.error("Clean docker artifact job repository [{}] [{}] blobs error [{}]", rootRepositoryPath.getStorageId(), rootRepositoryPath.getRepositoryId(), ExceptionUtils.getStackTrace(e));
+        }
+    }
 }

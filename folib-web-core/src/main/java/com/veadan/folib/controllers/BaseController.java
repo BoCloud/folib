@@ -1,8 +1,11 @@
 package com.veadan.folib.controllers;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.collect.Lists;
 import com.veadan.folib.artifact.coordinates.DockerArtifactCoordinates;
 import com.veadan.folib.authorization.dto.Role;
+import com.veadan.folib.authorization.dto.RoleDto;
+import com.veadan.folib.authorization.service.AuthorizationConfigService;
 import com.veadan.folib.configuration.Configuration;
 import com.veadan.folib.configuration.ConfigurationManager;
 import com.veadan.folib.configuration.MutableConfiguration;
@@ -14,6 +17,7 @@ import com.veadan.folib.domain.DirectoryListing;
 import com.veadan.folib.domain.FileContent;
 import com.veadan.folib.exception.ExceptionHandlingOutputStream;
 import com.veadan.folib.providers.io.RepositoryPath;
+import com.veadan.folib.providers.io.RepositoryPathLock;
 import com.veadan.folib.providers.io.RepositoryPathResolver;
 import com.veadan.folib.providers.layout.DockerLayoutProvider;
 import com.veadan.folib.repositories.ArtifactRepository;
@@ -22,7 +26,11 @@ import com.veadan.folib.services.ConfigurationManagementService;
 import com.veadan.folib.services.DirectoryListingService;
 import com.veadan.folib.storage.Storage;
 import com.veadan.folib.storage.repository.Repository;
+import com.veadan.folib.users.domain.Privileges;
 import com.veadan.folib.users.domain.SystemRole;
+import com.veadan.folib.users.dto.AccessModelDto;
+import com.veadan.folib.users.dto.RepositoryPrivilegesDto;
+import com.veadan.folib.users.dto.StoragePrivilegesDto;
 import com.veadan.folib.users.userdetails.SpringSecurityUser;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.IteratorUtils;
@@ -30,6 +38,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.core.io.InputStreamResource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -75,6 +84,9 @@ public abstract class BaseController {
     protected RepositoryPathResolver repositoryPathResolver;
 
     @Inject
+    protected RepositoryPathLock repositoryPathLock;
+
+    @Inject
     protected ArtifactResolutionService artifactResolutionService;
 
     @Inject
@@ -83,6 +95,10 @@ public abstract class BaseController {
 
     @Inject
     private ArtifactRepository artifactRepository;
+
+    @Inject
+    @Lazy
+    private AuthorizationConfigService authorizationConfigService;
 
     protected Configuration getConfiguration() {
         return configurationManagementService.getConfiguration();
@@ -370,6 +386,10 @@ public abstract class BaseController {
         return String.format("%s/%s/%s", StringUtils.chomp(configurationManager.getConfiguration().getBaseUrl(), "/"), storageId, repositoryId);
     }
 
+    protected String getBaseUrlSimple(String storageId, String repositoryId) {
+        return String.format("%s/%s/%s", StringUtils.chomp(configurationManager.getConfiguration().getBaseUrl().replace("http://", "").replace("https://", ""), "/"), storageId, repositoryId);
+    }
+
     /***
      * 获取制品RepositoryPath
      * @param storageId 存储空间名称
@@ -416,4 +436,29 @@ public abstract class BaseController {
         String artifactPath = fileContent.getArtifactPath();
         return artifactRepository.findOneArtifact(storageId, repositoryId, artifactPath);
     }
+
+    public boolean needValidatePathPrivileges(String storageId, String repositoryId) {
+        final List<RoleDto> roles = authorizationConfigService.getDto().getRoles().stream().filter(item -> item.getName().equals(loginUsername().toUpperCase())).collect(Collectors.toList());
+        if (CollectionUtils.isNotEmpty(roles)) {
+            final RoleDto roleDto = roles.get(0);
+            final AccessModelDto accessModelDto = roleDto.getAccessModel();
+            if (Objects.nonNull(accessModelDto)) {
+                Optional<StoragePrivilegesDto> storageOptional = accessModelDto.getStorageAuthorities(storageId);
+                if (storageOptional.isPresent()) {
+                    final StoragePrivilegesDto storagePrivilegesDto = storageOptional.get();
+                    Optional<RepositoryPrivilegesDto> repositoryOptional = storagePrivilegesDto.getRepositoryPrivileges(repositoryId);
+                    if (repositoryOptional.isPresent()) {
+                        return CollectionUtils.isNotEmpty(repositoryOptional.get().getPathPrivileges());
+                    }
+                }
+            }
+        }
+        return false;
+    }
+
+    public boolean validatePathPrivileges(String storageId, String repositoryId, List<String> paths, String authority) {
+        Collection<Privileges> storageAuthorities = loginUser().getStorageAuthorities(storageId, repositoryId, paths);
+        return storageAuthorities.stream().anyMatch(item -> item.getAuthority().equals(authority));
+    }
+
 }

@@ -36,6 +36,13 @@ public class ArtifactCacheRecord {
     private Long id;
 
     /**
+     * 节点ID
+     */
+    @ApiModelProperty("节点ID")
+    @Column(name = "node_id")
+    private String nodeId;
+
+    /**
      * 创建时间
      */
     @ApiModelProperty("创建时间")

@@ -1,17 +1,12 @@
 package com.veadan.folib.providers.io;
 
-import cn.hutool.extra.spring.SpringUtil;
 import com.veadan.folib.artifact.ArtifactNotFoundException;
-import com.veadan.folib.domain.ArtifactIdGroupEntity;
-import com.veadan.folib.enums.LockTypeEnum;
 import com.veadan.folib.io.*;
-import com.veadan.folib.services.RedLockService;
 import com.veadan.folib.util.CommonUtils;
 import org.apache.commons.io.input.CountingInputStream;
 import org.apache.commons.io.input.ProxyInputStream;
 import org.apache.commons.io.output.CountingOutputStream;
 import org.apache.commons.io.output.ProxyOutputStream;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -25,9 +20,6 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.file.Path;
 import java.util.Objects;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReadWriteLock;
 
 /**
  * @author xuxinping
@@ -38,26 +30,18 @@ public class RepositoryStreamSupport {
 
     private RepositoryStreamContext ctx = new RepositoryStreamContext();
 
-    protected final ReadWriteLock lockSource;
-
-    protected final RedLockService redLockService;
+    protected final RepositoryPathLock repositoryPathLock;
 
     protected final RepositoryStreamCallback callback;
 
     private final PlatformTransactionManager transactionManager;
 
-    private String lockType;
-
-    public RepositoryStreamSupport(ReadWriteLock lockSource,
+    public RepositoryStreamSupport(RepositoryPathLock repositoryPathLock,
                                    RepositoryStreamCallback callback,
                                    PlatformTransactionManager transactionManager) {
-        this.lockSource = lockSource;
-        this.redLockService = SpringUtil.getBean(RedLockService.class);
+        this.repositoryPathLock = repositoryPathLock;
         this.callback = callback;
         this.transactionManager = transactionManager;
-        String key = "lockType";
-        String value = System.getProperty(key);
-        this.lockType = LockTypeEnum.queryType(value);
     }
 
     protected void initContext(RepositoryStreamContext ctx) {
@@ -79,58 +63,24 @@ public class RepositoryStreamSupport {
             return;
         }
         RepositoryPath repositoryPath = (RepositoryPath) ctx.getPath();
-        String lockKey = repositoryPath.toString();
-        long waitTimeout = 30000L;
-        long leaseTime = 240000L;
-        if (LockTypeEnum.LOCAL.getType().equals(lockType)) {
-            logger.info("Locking [{}].", repositoryPath);
-            //本地锁
-            Lock lock = lockSource.writeLock();
-            ctx.setLock(lock);
-            try {
-                if (lock.tryLock(waitTimeout, TimeUnit.MILLISECONDS)) {
-                    logger.info("Locked [{}].", repositoryPath);
-                    try {
-                        open(repositoryPath);
-                    } catch (Exception ex) {
-                        lock.unlock();
-                        logger.error("Unlocked [{}] repositoryPath：{} lock error：{}", this.getClass().getSimpleName(), repositoryPath, ExceptionUtils.getStackTrace(ex));
-                        throw ex;
-                    }
-                } else {
-                    logger.warn("[{}] repositoryPath：{} was not get lock", this.getClass().getSimpleName(), repositoryPath);
+        try {
+            logger.debug("Locking [{}].", repositoryPath);
+            if (repositoryPathLock.lock(repositoryPath)) {
+                ctx.setLocked(true);
+                logger.debug("Locked [{}].", repositoryPath);
+                try {
+                    open(repositoryPath);
+                } catch (Exception ex) {
+                    unLock();
+                    logger.error("Unlocked [{}] repositoryPath [{}] lock error [{}]", this.getClass().getSimpleName(), repositoryPath, ExceptionUtils.getStackTrace(ex));
+                    throw ex;
                 }
-            } catch (Exception ex) {
-                logger.error("[{}] repositoryPath：{} lock error：{}", this.getClass().getSimpleName(), repositoryPath, ExceptionUtils.getStackTrace(ex));
-                throw new IOException(ex.getMessage());
+            } else {
+                logger.warn("[{}] repositoryPath [{}] was not get lock", this.getClass().getSimpleName(), repositoryPath);
             }
-        } else if (LockTypeEnum.DISTRIBUTION.getType().equals(lockType)) {
-            if (RepositoryFiles.isArtifact(repositoryPath)) {
-                ArtifactIdGroupEntity artifactIdGroupEntity = new ArtifactIdGroupEntity(repositoryPath.getStorageId(),
-                        repositoryPath.getRepositoryId(),
-                        RepositoryFiles.readCoordinates(repositoryPath).getId());
-                lockKey = artifactIdGroupEntity.getUuid();
-            }
-            ctx.setLockKey(lockKey);
-            logger.info("Locking [{}] by distribution lockKey {}.", repositoryPath, lockKey);
-            //分布式锁
-            try {
-                if (redLockService.tryLockTimeout(lockKey, waitTimeout, leaseTime)) {
-                    logger.info("Locked [{}] by distribution lockKey {}.", repositoryPath, lockKey);
-                    try {
-                        open(repositoryPath);
-                    } catch (Exception ex) {
-                        redLockService.unLock(lockKey);
-                        logger.error("Unlocked [{}] repositoryPath：{} distribution lockKey {} lock error：{}", this.getClass().getSimpleName(), repositoryPath, lockKey, ExceptionUtils.getStackTrace(ex));
-                        throw ex;
-                    }
-                } else {
-                    logger.warn("[{}] repositoryPath：{} was not get distribution lock", this.getClass().getSimpleName(), lockKey);
-                }
-            } catch (Exception ex) {
-                logger.error("[{}] repositoryPath：{} distribution lockKey {} lock error：{}", this.getClass().getSimpleName(), repositoryPath, lockKey, ExceptionUtils.getStackTrace(ex));
-                throw new IOException(ex.getMessage());
-            }
+        } catch (Exception ex) {
+            logger.error("RepositoryPath [{}] lock error [{}]", repositoryPath, ExceptionUtils.getStackTrace(ex));
+            throw new IOException(ex.getMessage());
         }
     }
 
@@ -157,25 +107,17 @@ public class RepositoryStreamSupport {
             }
             TransactionStatus transaction = ctx.getTransaction();
             if (transaction != null && (transaction.isRollbackOnly() || !transaction.isCompleted())) {
-                logger.info("Rollback [{}]", getContext().getPath());
+                logger.warn("Rollback [{}]", getContext().getPath());
                 transactionManager.rollback(transaction);
-                logger.info("Rollbedack [{}]", getContext().getPath());
+                logger.warn("Rolled back [{}]", getContext().getPath());
             }
         } finally {
-            if (LockTypeEnum.LOCAL.getType().equals(lockType)) {
-                if (Objects.nonNull(ctx.getLock())) {
-                    ctx.getLock().unlock();
-                    logger.info("Unlocked [{}].", path);
-                }
-                clearContext();
-            } else if (LockTypeEnum.DISTRIBUTION.getType().equals(lockType)) {
-                if (StringUtils.isNotBlank(ctx.getLockKey())) {
-                    redLockService.unLock(ctx.getLockKey());
-                    logger.info("Unlocked lockKey [{}] by distribution.", ctx.getLockKey());
-                }
-                clearContext();
+            if (Objects.nonNull(ctx.getLocked())) {
+                unLock();
+                logger.debug("Unlocked [{}].", path);
             }
-            logger.info("[{}] close {} take time：{} ms", this.getClass().getSimpleName(), path, System.currentTimeMillis() - startTime);
+            clearContext();
+            logger.debug("Close [{}] take time [{}] ms", path, System.currentTimeMillis() - startTime);
         }
     }
 
@@ -220,11 +162,11 @@ public class RepositoryStreamSupport {
         @Override
         public void flush()
                 throws IOException {
-            logger.info("Flushing [{}]", getContext().getPath());
+            logger.debug("Flushing [{}]", getContext().getPath());
 
             super.flush();
 
-            logger.info("Flushed [{}]", getContext().getPath());
+            logger.debug("Flushed [{}]", getContext().getPath());
 
             TransactionStatus transaction = ctx.getTransaction();
             if (transaction != null && !transaction.isRollbackOnly()) {
@@ -350,10 +292,10 @@ public class RepositoryStreamSupport {
                 throws IOException {
             TransactionStatus transaction = ctx.getTransaction();
             if (transaction != null && !transaction.isRollbackOnly()) {
-                logger.info("Commit [{}]", getContext().getPath());
+                logger.debug("Commit [{}]", getContext().getPath());
                 RepositoryStreamSupport.this.commitStoreIndex();
                 transactionManager.commit(transaction);
-                logger.info("Commited [{}]", getContext().getPath());
+                logger.debug("Commited [{}]", getContext().getPath());
                 callback.onStoreIndexAfter((RepositoryStreamReadContext) ctx);
             } else {
                 logger.warn("Skip commit [{}]", getContext().getPath());
@@ -365,17 +307,25 @@ public class RepositoryStreamSupport {
                 throws IOException {
             try {
                 Path path = getContext().getPath();
-                logger.info("{} start close", path);
+                logger.debug("[{}] start close", path);
                 super.close();
-                logger.info("{} end close", path);
+                logger.debug("[{}] end close", path);
             } finally {
                 Path path = getContext().getPath();
-                logger.info("{} finally start close", path);
+                logger.debug("[{}] finally start close", path);
                 RepositoryStreamSupport.this.close();
-                logger.info("{} finally end close", path);
+                logger.debug("[{}] finally end close", path);
             }
         }
 
+    }
+
+    private void unLock() {
+        Boolean locked = ctx.getLocked();
+        if (Boolean.TRUE.equals(locked)) {
+            logger.debug("Current ThreadName [{}] lockKey [{}] unlock", Thread.currentThread().getName(), ctx.getPath());
+            repositoryPathLock.unLock((RepositoryPath) ctx.getPath());
+        }
     }
 
 }

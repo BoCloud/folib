@@ -1,15 +1,17 @@
 package com.veadan.folib.services.impl;
 
+import cn.hutool.core.collection.CollectionUtil;
 import com.alibaba.fastjson.JSON;
 import com.google.common.collect.Lists;
 import com.veadan.folib.artifact.coordinates.DockerArtifactCoordinates;
-import com.veadan.folib.config.FolibPublicUtils;
+import com.veadan.folib.components.common.CommonComponent;
 import com.veadan.folib.data.criteria.Selector;
 import com.veadan.folib.dependency.snippet.CodeSnippet;
 import com.veadan.folib.dependency.snippet.SnippetGenerator;
 import com.veadan.folib.domain.Artifact;
 import com.veadan.folib.domain.ArtifactEntity;
 import com.veadan.folib.enums.RepositoryScopeEnum;
+import com.veadan.folib.enums.SafeLevelEnum;
 import com.veadan.folib.gremlin.adapters.ArtifactAdapter;
 import com.veadan.folib.gremlin.adapters.EntityTraversalAdapter;
 import com.veadan.folib.gremlin.repositories.GremlinVertexRepository;
@@ -27,7 +29,6 @@ import com.veadan.folib.storage.Storage;
 import com.veadan.folib.storage.repository.Repository;
 import com.veadan.folib.storage.search.SearchResult;
 import com.veadan.folib.storage.search.SearchResults;
-import com.veadan.folib.util.RepositoryPathUtil;
 import com.veadan.folib.utils.TreeUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
@@ -49,6 +50,7 @@ import java.net.URL;
 import java.nio.file.Files;
 import java.time.ZoneId;
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Component
@@ -73,6 +75,10 @@ public class FqlSearchService extends GremlinVertexRepository<Artifact> implemen
     @Lazy
     private ConfigurationManagementService configurationManagementService;
 
+    @Inject
+    @Lazy
+    private CommonComponent commonComponent;
+
     @Override
     public SearchResults search(Selector<ArtifactEntity> selector) throws IOException {
 
@@ -94,7 +100,6 @@ public class FqlSearchService extends GremlinVertexRepository<Artifact> implemen
                                        String sortField,
                                        String sortOrder,
                                        List<String> repositoryIds,
-                                       Boolean openRepository,
                                        String safeLevel,
                                        Integer limit, Integer page) throws IOException {
 
@@ -111,28 +116,17 @@ public class FqlSearchService extends GremlinVertexRepository<Artifact> implemen
             pageable = PageRequest.of(page, limit).previous();
         }
         List<String> storageIdAndRepositoryIdList = null;
-        if (Boolean.TRUE.equals(openRepository)) {
-            final List<Storage> storageList = new ArrayList<>(configurationManagementService.getConfiguration()
-                    .getStorages()
-                    .values());
-            storageIdAndRepositoryIdList = Lists.newArrayList();
-            if (CollectionUtils.isNotEmpty(storageList)) {
-                for (Storage storage : storageList) {
-                    if (MapUtils.isNotEmpty(storage.getRepositories())) {
-                        for (Repository repository : storage.getRepositories().values()) {
-                            if (RepositoryScopeEnum.OPEN.getType().equals(repository.getScope())) {
-                                storageIdAndRepositoryIdList.add(String.format("%s-%s", storage.getId(), repository.getId()));
-                            }
-                        }
-                    }
-                }
-            }
+        if (!commonComponent.hasAdmin()) {
+            storageIdAndRepositoryIdList = resolveRepository();
             if (CollectionUtils.isEmpty(storageIdAndRepositoryIdList)) {
                 SearchResults result = new SearchResults();
                 result.setTotal(0);
                 result.setResults(Collections.emptySet());
                 return result;
             }
+        }
+        if (SafeLevelEnum.SCAN_COMPLETE.getLevel().equalsIgnoreCase(safeLevel)) {
+            storageIdAndRepositoryIdList = getAllRepository();
         }
         Page<Artifact> artifacts = artifactRepository.findMatchingByIndex(pageable, regex, artifactName, metadataSearch, storageId, repositoryId, repositoryIds, storageIdAndRepositoryIdList, beginDate, endDate, safeLevel, sortField, sortOrder);
         List<Artifact> artifactEntityList = artifacts.getContent();
@@ -143,8 +137,6 @@ public class FqlSearchService extends GremlinVertexRepository<Artifact> implemen
         for (Artifact artifact : artifactEntityList) {
             SearchResult r = new SearchResult();
             result.getResults().add(r);
-
-            r.setMetadata(artifact.getMetadata());
             r.setStorageId(artifact.getStorageId());
             r.setRepositoryId(artifact.getRepositoryId());
             r.setArtifactCoordinates(artifact.getArtifactCoordinates());
@@ -186,7 +178,7 @@ public class FqlSearchService extends GremlinVertexRepository<Artifact> implemen
                 //docker
                 DockerArtifactCoordinates dockerArtifactCoordinates = (DockerArtifactCoordinates) artifact.getArtifactCoordinates();
                 r.setArtifactName(dockerArtifactCoordinates.getTAG());
-                r.setArtifactPath(String.format("%s/%s", dockerArtifactCoordinates.getName(), dockerArtifactCoordinates.getTAG()));
+                r.setArtifactPath(dockerArtifactCoordinates.getIMAGE_NAME().replace(":", "/"));
                 String blobs = "blobs";
                 String manifest = "manifest";
                 String artifactPath = repositoryPath.toAbsolutePath().toString();
@@ -196,18 +188,6 @@ public class FqlSearchService extends GremlinVertexRepository<Artifact> implemen
             } else {
                 r.setArtifactName(path.substring(path.lastIndexOf("/") + 1));
                 r.setArtifactPath(path);
-            }
-            if (Objects.nonNull(repository)) {
-                List<CodeSnippet> snippets = snippetGenerator.generateSnippets(repository.getLayout(),
-                        artifact.getArtifactCoordinates());
-                r.setSnippets(snippets);
-            }
-
-            TreeUtil treeUtil = new TreeUtil();
-            Set<String> fileNames = artifact.getArtifactArchiveListing().getFilenames();
-            if (fileNames != null && fileNames.size() > 0) {
-                List listTree = treeUtil.toTree(fileNames);
-                r.setTreeNode(listTree);
             }
         }
         return result;
@@ -225,7 +205,7 @@ public class FqlSearchService extends GremlinVertexRepository<Artifact> implemen
             if (CollectionUtils.isNotEmpty(imageManifest.getLayers())) {
                 layers = imageManifest.getLayers();
             } else if (CollectionUtils.isNotEmpty(imageManifest.getManifests())) {
-                RepositoryPath manifestPath = repositoryPathResolver.resolve(repositoryPath.getStorageId(), repositoryPath.getRepositoryId(), imageName + "/manifest/" + imageManifest.getManifests().get(0).getDigest());
+                RepositoryPath manifestPath = repositoryPathResolver.resolve(repositoryPath.getStorageId(), repositoryPath.getRepositoryId(), "manifest/" + imageManifest.getManifests().get(0).getDigest());
                 if (Objects.isNull(manifestPath) || !Files.exists(manifestPath)) {
                     return size;
                 }
@@ -240,5 +220,49 @@ public class FqlSearchService extends GremlinVertexRepository<Artifact> implemen
             log.warn("计算Docker镜像大小错误：镜像 [{}] [{}] 错误信息 [{}]", repositoryPath.toString(), imageName, ExceptionUtils.getStackTrace(ex));
         }
         return size;
+    }
+
+    private List<String> getAllRepository() {
+        final List<Storage> storageList = new ArrayList<>(configurationManagementService.getConfiguration()
+                .getStorages()
+                .values());
+        List<String> allStorageIdAndRepositoryIdList = Lists.newArrayList();
+        if (CollectionUtils.isNotEmpty(storageList)) {
+            for (Storage storage : storageList) {
+                if (MapUtils.isNotEmpty(storage.getRepositories())) {
+                    for (Repository repository : storage.getRepositories().values()) {
+                        allStorageIdAndRepositoryIdList.add(String.format("%s-%s", storage.getId(), repository.getId()));
+                    }
+                }
+            }
+        }
+        return allStorageIdAndRepositoryIdList;
+    }
+
+    private List<String> resolveRepository() {
+        List<String> repositoryIdList = Lists.newArrayList();
+        if (!commonComponent.hasAdmin()) {
+            String username = commonComponent.loginUsername();
+            final List<Storage> storageList = new ArrayList<>(configurationManagementService.getConfiguration()
+                    .getStorages()
+                    .values());
+            String finalUsername = commonComponent.loginUsername();
+            List<Repository> repositoryList = storageList.stream().filter(s ->
+                    (CollectionUtil.isNotEmpty(s.getUsers()) && s.getUsers().contains(finalUsername)) ||
+                            (CollectionUtils.isNotEmpty(s.getRepositories().values()) && s.getRepositories().values().stream().anyMatch(repository -> RepositoryScopeEnum.OPEN.getType().equals(repository.getScope())))
+            ).filter(storage -> MapUtils.isNotEmpty(storage.getRepositories())).flatMap(storage -> storage.getRepositories().entrySet().stream()).map(Map.Entry::getValue).collect(Collectors.toList());
+            if (CollectionUtils.isNotEmpty(repositoryList)) {
+                boolean flag;
+                Storage storage;
+                for (Repository repository : repositoryList) {
+                    storage = repository.getStorage();
+                    flag = !username.equals(storage.getAdmin()) && (CollectionUtils.isEmpty(storage.getUsers()) || (CollectionUtils.isNotEmpty(storage.getUsers()) && !storage.getUsers().contains(username)));
+                    if (!flag || RepositoryScopeEnum.OPEN.getType().equals(repository.getScope())) {
+                        repositoryIdList.add(String.format("%s-%s", storage.getId(), repository.getId()));
+                    }
+                }
+            }
+        }
+        return repositoryIdList;
     }
 }

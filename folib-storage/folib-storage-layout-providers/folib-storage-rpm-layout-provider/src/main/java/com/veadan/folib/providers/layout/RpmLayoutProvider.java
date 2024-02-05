@@ -57,7 +57,8 @@ public class RpmLayoutProvider extends AbstractLayoutProvider<RpmArtifactCoordin
         logger.info("Registered layout provider '{}' with alias '{}'.", getClass().getCanonicalName(), ALIAS);
     }
 
-    protected RpmArtifactCoordinates getArtifactCoordinates(RepositoryPath path)
+    @Override
+    public RpmArtifactCoordinates getArtifactCoordinates(RepositoryPath path)
             throws IOException    {
         return RpmArtifactCoordinates.parse(RepositoryFiles.relativizePath(path));
     }

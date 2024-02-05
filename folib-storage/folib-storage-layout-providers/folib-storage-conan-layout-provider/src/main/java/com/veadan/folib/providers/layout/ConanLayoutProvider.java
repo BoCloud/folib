@@ -52,7 +52,7 @@ public class ConanLayoutProvider extends AbstractLayoutProvider<ConanArtifactCoo
     }
 
     @Override
-    protected ConanArtifactCoordinates getArtifactCoordinates(RepositoryPath repositoryPath) throws IOException {
+    public ConanArtifactCoordinates getArtifactCoordinates(RepositoryPath repositoryPath) throws IOException {
         return ConanArtifactCoordinates.parse(RepositoryFiles.relativizePath(repositoryPath));
     }
 

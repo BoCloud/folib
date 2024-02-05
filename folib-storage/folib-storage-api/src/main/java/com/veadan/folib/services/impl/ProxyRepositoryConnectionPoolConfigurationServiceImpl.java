@@ -64,7 +64,7 @@ public class ProxyRepositoryConnectionPoolConfigurationServiceImpl
     private int maxTotal;
     @Value("${pool.defaultConnectionsPerRoute:5}")
     private int defaultMaxPerRoute;
-    @Value("${pool.idleConnectionsTimeoutInSeconds:300}")
+    @Value("${pool.idleConnectionsTimeoutInSeconds:600}")
     private int idleConnectionsTimeoutInSeconds;
 
     @PostConstruct
@@ -139,7 +139,7 @@ public class ProxyRepositoryConnectionPoolConfigurationServiceImpl
 
     @Override
     public Client getRestClient(String storageId, String repositoryId) {
-        logger.info("get rest client storageId [{}] repositoryId [{}]", storageId, repositoryId);
+        logger.debug("Get rest client storageId [{}] repositoryId [{}]", storageId, repositoryId);
         ClientConfig config = new ClientConfig();
 
         //全局代理
@@ -219,7 +219,7 @@ public class ProxyRepositoryConnectionPoolConfigurationServiceImpl
                     proxyType + repositoryProxyConfig.getHost() + ":" + repositoryProxyConfig.getPort());
             config.property(ClientProperties.PROXY_USERNAME, repositoryProxyConfig.getUsername());
             config.property(ClientProperties.PROXY_PASSWORD, repositoryProxyConfig.getPassword());
-            logger.info("get repository proxy config type [{}] host [{}] port [{}] username [{}]",
+            logger.debug("Get repository proxy config type [{}] host [{}] port [{}] username [{}]",
                     proxyType, repositoryProxyConfig.getHost(), repositoryProxyConfig.getPort(), repositoryProxyConfig.getUsername());
         } else {
             handleGlobalProxy(globalProxyConfig, config);
@@ -235,7 +235,7 @@ public class ProxyRepositoryConnectionPoolConfigurationServiceImpl
                         proxyType + globalProxyConfig.getHost() + ":" + globalProxyConfig.getPort());
                 config.property(ClientProperties.PROXY_USERNAME, globalProxyConfig.getUsername());
                 config.property(ClientProperties.PROXY_PASSWORD, globalProxyConfig.getPassword());
-                logger.info("get global proxy config type [{}] host [{}] port [{}] username [{}]",
+                logger.debug("Get global proxy config type [{}] host [{}] port [{}] username [{}]",
                         proxyType, globalProxyConfig.getHost(), globalProxyConfig.getPort(), globalProxyConfig.getUsername());
             }
         }

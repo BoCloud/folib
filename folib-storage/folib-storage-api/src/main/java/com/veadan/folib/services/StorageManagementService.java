@@ -19,4 +19,6 @@ public interface StorageManagementService
     void removeStorage(String storageId)
             throws IOException;
 
+    void handleStorageProvider(StorageDto storage) throws IOException;
+
 }

@@ -7,6 +7,7 @@ import com.veadan.folib.providers.io.RepositoryFiles;
 import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.providers.io.RepositoryPathResolver;
 import com.veadan.folib.services.ArtifactManagementService;
+import com.veadan.folib.util.RepositoryPathUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
@@ -20,7 +21,10 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.attribute.FileTime;
 import java.time.LocalDateTime;
-import java.util.*;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -62,7 +66,7 @@ public class DockerCleanupArtifactsProvider implements CleanupArtifactsProvider 
             RepositoryPath repositoryPath = repositoryPathResolver.resolve(storageId, repositoryId);
             String blobs = "blobs", manifest = "manifest", tag = "tag";
             List<String> excludeList = Lists.newArrayList(blobs, manifest);
-            List<Path> repositoryPathList = getDirectory(repositoryPath, Collections.emptyList());
+            List<RepositoryPath> repositoryPathList = RepositoryPathUtil.getDockerImagePaths(repositoryPath);
             if (CollectionUtils.isEmpty(repositoryPathList)) {
                 log.info("Repository storageId [{}] repositoryId [{}] not found artifacts", storageId, repositoryId);
                 return;
@@ -95,7 +99,7 @@ public class DockerCleanupArtifactsProvider implements CleanupArtifactsProvider 
 
     private void handlerTag(String storageId, String repositoryId, String storageDay, String storageCondition, RepositoryPath imageRepositoryPath, List<String> excludeList, List<Integer> resultList) throws Exception {
         Long storageQuantity = Long.parseLong(storageDay);
-        List<Path> tagRepositoryPathList = getDirectory(imageRepositoryPath, excludeList);
+        List<Path> tagRepositoryPathList = getTags(imageRepositoryPath, excludeList);
         log.info("Cleanup artifact job storageId [{}] repositoryId [{}] storageCondition [{}] storage quantity [{}] imagePath [{}] tag quantity [{}] tags [{}]", storageId, repositoryId, storageCondition, storageQuantity, imageRepositoryPath, tagRepositoryPathList.size(), tagRepositoryPathList.stream().map(p -> p.getFileName().toString()).collect(Collectors.joining(",")));
         if (CollectionUtils.isEmpty(tagRepositoryPathList) || tagRepositoryPathList.size() <= storageQuantity) {
             log.info("Cleanup artifact job storageId [{}] repositoryId [{}] storageCondition [{}] imagePath [{}] tag quantity [{}] less than or equal storage quantity [{}] skip", storageId, repositoryId, storageCondition, imageRepositoryPath, tagRepositoryPathList.size(), storageQuantity);
@@ -141,7 +145,7 @@ public class DockerCleanupArtifactsProvider implements CleanupArtifactsProvider 
     }
 
     private void handlerDay(String storageId, String repositoryId, String storageDay, String storageCondition, RepositoryPath imageRepositoryPath, List<String> excludeList, List<Integer> resultList) throws Exception {
-        List<Path> tagRepositoryPathList = getDirectory(imageRepositoryPath, excludeList);
+        List<Path> tagRepositoryPathList = getTags(imageRepositoryPath, excludeList);
         log.info("Cleanup artifact job storageId [{}] repositoryId [{}] storageCondition [{}] storage quantity [{}] imagePath [{}] tags [{}]", storageId, repositoryId, storageCondition, storageDay, imageRepositoryPath, tagRepositoryPathList.stream().map(p -> p.getFileName().toString()).collect(Collectors.joining(",")));
         if (CollectionUtils.isEmpty(tagRepositoryPathList)) {
             return;
@@ -199,7 +203,7 @@ public class DockerCleanupArtifactsProvider implements CleanupArtifactsProvider 
             log.warn("Cleanup storageId [{}] repositoryId [{}] path [{}] artifact not found", storageId, repositoryId, path);
             return null;
         }
-        RepositoryPath manifestRepositoryPath = repositoryPathResolver.resolve(repositoryPath.getStorageId(), repositoryPath.getRepositoryId(), repositoryPath.getParent().getParent().getFileName().toString() + File.separator + "manifest" + File.separator + repositoryPath.getFileName().toString());
+        RepositoryPath manifestRepositoryPath = repositoryPathResolver.resolve(repositoryPath.getStorageId(), repositoryPath.getRepositoryId(), "manifest" + File.separator + repositoryPath.getFileName().toString());
         if (!Files.exists(manifestRepositoryPath)) {
             log.warn("Cleanup storageId [{}] repositoryId [{}] path [{}] manifest file not exists", storageId, repositoryId, manifestRepositoryPath.toString());
             return null;
@@ -234,18 +238,18 @@ public class DockerCleanupArtifactsProvider implements CleanupArtifactsProvider 
     }
 
     /**
-     * 获取仓库下的目录列表
+     * 获取仓库下的tag列表
      *
      * @param repositoryPath 仓库路径
      * @param excludeList    要排除的列表
      * @return 目录列表
      * @throws IOException 异常
      */
-    private List<Path> getDirectory(RepositoryPath repositoryPath, List<String> excludeList)
+    private List<Path> getTags(RepositoryPath repositoryPath, List<String> excludeList)
             throws IOException {
         List<Path> directoryList;
         try (Stream<Path> pathStream = Files.list(repositoryPath)) {
-            directoryList = pathStream.filter(p -> !p.toString().startsWith(".") && !p.toString().contains("/.") && excludeList.stream().noneMatch(p.getFileName().toString()::equals))
+            directoryList = pathStream.filter(p -> !p.toString().startsWith(".") && !p.toString().contains("/.") && excludeList.stream().noneMatch(p.getFileName().toString()::equals) && RepositoryPathUtil.isDockerTag((RepositoryPath) p))
                     .filter(p -> {
                         try {
                             return !Files.isHidden(p) && Files.isDirectory(p);
@@ -272,7 +276,7 @@ public class DockerCleanupArtifactsProvider implements CleanupArtifactsProvider 
             throws IOException {
         Long size;
         try (Stream<Path> pathStream = Files.list(repositoryPath)) {
-            size = pathStream.filter(p -> !p.toString().startsWith(".") && !p.toString().contains("/.") && excludeList.stream().noneMatch(p.getFileName().toString()::equals))
+            size = pathStream.filter(p -> !p.toString().startsWith(".") && !p.toString().contains("/.") && excludeList.stream().noneMatch(p.getFileName().toString()::equals) && RepositoryPathUtil.isDockerTag((RepositoryPath) p))
                     .filter(p -> {
                         try {
                             return !Files.isHidden(p) && Files.isDirectory(p);

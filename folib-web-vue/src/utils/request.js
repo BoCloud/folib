@@ -13,6 +13,9 @@ const request = axios.create({
   timeout: 30000, // 请求超时时间
 });
 
+let messageContrl = {
+  status : false
+}
 // 异常拦截处理器
 const errorHandler = (error) => {
   if (error.response) {
@@ -20,58 +23,23 @@ const errorHandler = (error) => {
     // 从 localstorage 获取 token
     const token = storage.get(ACCESS_TOKEN);
     if (error.response.status === 403) {
-      notification.error({
-        message: "没有权限操作",
-        description: data.message,
-      });
+      messageCtl(messageContrl, "error", "没有权限操作", data.message)
     }
     if (error.response.status === 304) {
-      notification.error({
-        message: "操作失败",
-        description: data.message,
-      });
+      messageCtl(messageContrl, "error", "操作失败", data.message)
     }
     if (error.response.status === 401) {
-      let message = error.response.data.error;
+      let message = error.response.data.error
       if (message.indexOf("invalid.credentials") !== -1) {
-        setTimeout(() => {
-          notification.error({
-            message: "提示",
-            description: "账号或密码错误",
-          });
-        }, 100);
+        messageCtl(messageContrl, "error", "提示", "账号或密码错误")
       } else if (message.indexOf("User account is locked") !== -1) {
-        setTimeout(() => {
-          notification.error({
-            message: "提示",
-            description: "登录失败，用户未激活",
-          });
-        }, 100);
+        messageCtl(messageContrl, "error", "提示", "登录失败，用户未激活")
       } else {
-        setTimeout(() => {
-          notification.error({
-            message: "权限信息",
-            description: "登录信息已过期将为你转跳至登录页面",
-          });
-        }, 100);
+        messageCtl(messageContrl, "warning", "提示", "登录信息已过期或未登录")
       }
-      store.dispatch("Logout").then(() => {
-        window.location.reload();
+      store.dispatch("Logout").then(() => {   
       });
-
-      if (token) {
-      } else {
-      }
     }
-    // if(error.response.status === 500){
-    //   let msg = error.response.data.message?error.response.data.message:error.response.data.error?error.response.data.error:error.response.data
-    //   if (msg) {
-    //     notification.error({
-    //       message: "错误",
-    //       description: msg,
-    //     })
-    //   }
-    // }
   }
   return Promise.reject(error);
 };
@@ -115,6 +83,23 @@ const installer = {
     Vue.use(VueAxios, request);
   },
 };
+
+// 防止出现多个提示框的解决办法
+export function messageCtl(messageContrl, type, message, description) {
+  console.log("messageContrl ", messageContrl.status)
+  if(!messageContrl.status){
+    messageContrl.status = true
+    setTimeout(() => {
+      notification[type]({
+        message: message,
+        description: description,
+      })
+    }, 100)
+    setTimeout(() => {
+      messageContrl.status = false
+    }, 5000)
+  }
+}
 
 export default request;
 

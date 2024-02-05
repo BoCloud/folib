@@ -24,10 +24,28 @@ public interface ArchiveListingFunction {
 
     byte[] getContentByFileName(RepositoryPath repositoryPath, Path path, String fileName) throws IOException;
 
+    byte[] getContentByEqualsFileName(RepositoryPath repositoryPath, Path path, String fileName) throws IOException;
+
     default byte[] getContentByFileName(final ArchiveInputStream archiveInputStream, String fileName) throws IOException {
         ArchiveEntry entry;
         while ((entry = archiveInputStream.getNextEntry()) != null) {
             if (entry.getName().endsWith(fileName)) {
+                ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+                try (byteArrayOutputStream) {
+                    IOUtils.copy(archiveInputStream, byteArrayOutputStream);
+                } catch (IOException ex) {
+                    throw new IOException(ex);
+                }
+                return byteArrayOutputStream.toByteArray();
+            }
+        }
+        return null;
+    }
+
+    default byte[] getContentByEqualsFileName(final ArchiveInputStream archiveInputStream, String fileName) throws IOException {
+        ArchiveEntry entry;
+        while ((entry = archiveInputStream.getNextEntry()) != null) {
+            if (entry.getName().equals(fileName)) {
                 ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
                 try (byteArrayOutputStream) {
                     IOUtils.copy(archiveInputStream, byteArrayOutputStream);

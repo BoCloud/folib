@@ -16,6 +16,7 @@ import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 
 import java.lang.reflect.Method;
@@ -41,6 +42,10 @@ public class FolibApplicationRunner implements ApplicationRunner {
     @Autowired
     private DictService dictService;
 
+    @Autowired
+    @Lazy
+    private DistributedCacheComponent distributedCacheComponent;
+
     @Override
     public void run(ApplicationArguments args) throws Exception {
         this.initData();
@@ -53,12 +58,12 @@ public class FolibApplicationRunner implements ApplicationRunner {
         initSystemPropertiesData();
         int total = scanService.countProperties();
         boolean isFirst = total <= 1;
-        log.info("Table properties data total is {} ", total);
+        log.info("Table properties data total is [{}]", total);
         if (isFirst) {
             if (JanusGraphDbProfile.PROFILE_EMBEDDED.equals(System.getProperty(JanusGraphDbProfile.PROPERTY_PROFILE))) {
                 String clusterNodeTotal = System.getProperty("CLUSTER_NODE_TOTAL");
                 if (StringUtils.isNotBlank(clusterNodeTotal)) {
-                    log.info("Modify the cassandra replication factor ：{} ", clusterNodeTotal);
+                    log.info("Modify the cassandra replication factor [{}]", clusterNodeTotal);
                     nodeService.modifyReplicationFactor(Integer.parseInt(clusterNodeTotal));
                 }
             }
@@ -83,7 +88,7 @@ public class FolibApplicationRunner implements ApplicationRunner {
             Object proxyObject;
             Method targetMethod;
             for (Dict dict : dictList) {
-                if (methodKey.equals(dict.getDictKey())) {
+                if (methodKey.equals(dict.getDictKey()) && !UpgradeTaskStatusEnum.EXECUTING.getStatus().equals(dict.getComment())) {
                     try {
                         arr = dict.getDictValue().split("@");
                         clazz = Class.forName(arr[0]);
@@ -94,18 +99,22 @@ public class FolibApplicationRunner implements ApplicationRunner {
                         if (Objects.nonNull(targetMethod)) {
                             // 执行方法
                             if (StringUtils.isNotBlank(dict.getAlias())) {
+                                dict.setComment(UpgradeTaskStatusEnum.EXECUTING.getStatus());
+                                dictService.updateUnExecutedTask(dict);
                                 targetMethod.invoke(proxyObject, dict.getAlias());
                             } else {
+                                dict.setComment(UpgradeTaskStatusEnum.EXECUTING.getStatus());
+                                dictService.updateUnExecutedTask(dict);
                                 targetMethod.invoke(proxyObject);
                             }
-                            log.info("执行升级task：{} {}", clazz, methodName);
+                            log.info("执行升级task [{}] [{}]", clazz, methodName);
                             dict.setComment(UpgradeTaskStatusEnum.EXECUTED_SUCCESS.getStatus());
                             dictService.updateUnExecutedTask(dict);
                         }
                     } catch (Exception ex) {
                         dict.setComment(UpgradeTaskStatusEnum.EXECUTED_FAIL.getStatus());
                         dictService.updateUnExecutedTask(dict);
-                        log.error("执行升级task错误：{}", ExceptionUtils.getStackTrace(ex));
+                        log.error("执行升级task错误 [{}] [{}]", dict.getDictValue(), ExceptionUtils.getStackTrace(ex));
                     }
                 }
             }
@@ -137,6 +146,7 @@ public class FolibApplicationRunner implements ApplicationRunner {
         Optional.ofNullable(dictList).orElse(Collections.emptyList()).forEach(dict -> {
             if (StringUtils.isNotBlank(dict.getDictKey())) {
                 System.setProperty(dict.getDictKey(), dict.getDictValue());
+                distributedCacheComponent.put(dict.getDictKey(), dict.getDictValue());
                 log.info("Init System Properties Data key：{}, value：{}", dict.getDictKey(), dict.getDictValue());
             }
         });

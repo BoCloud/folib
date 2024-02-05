@@ -25,7 +25,7 @@
               </a-radio>
             </a-radio-group>
           </a-card>
-          <a-card :bordered="false" class="header-solid" v-if="this.folibRepository.type !== 'group'">
+          <a-card :bordered="false" class="header-solid">
             <template #title>
               <h6>{{ $t('Permission.VisibilityRange') }}</h6>
               <p v-if="permissionForm.scope === 1">{{ $t('Permission.StorageMembers') }}</p>
@@ -251,7 +251,7 @@ export default {
       this.getUsersList()
       this.getStorage()
       this.userRadioDefault = 0
-      if (this.folibRepository.layout !== 'Raw') {
+      if (this.folibRepository.layout !== 'Raw' && this.folibRepository.layout !== 'Maven 2') {
         this.permissionColumns.splice(this.permissionColumns.findIndex((item) => item.dataIndex === 'paths'), 1)
       }
     },

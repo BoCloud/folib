@@ -1,9 +1,11 @@
 package com.veadan.folib.promotion;
 
 import cn.hutool.extra.spring.SpringUtil;
+import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.storage.repository.Repository;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.exception.ExceptionUtils;
 
 import java.util.concurrent.Callable;
 
@@ -18,10 +20,10 @@ public class ArtifactPromotionCopyTask implements Callable<String> {
     private PromotionUtil promotionUtil;
 
     @Getter
-    private String path;
+    private RepositoryPath path;
 
     @Getter
-    private Repository destRepository;
+    private Repository targetRepository;
 
     @Getter
     private Repository srcRepository;
@@ -29,10 +31,10 @@ public class ArtifactPromotionCopyTask implements Callable<String> {
     public ArtifactPromotionCopyTask() {
     }
 
-    public ArtifactPromotionCopyTask(String path, Repository destRepository, Repository srcRepository) {
+    public ArtifactPromotionCopyTask(RepositoryPath path, Repository srcRepository, Repository targetRepository) {
         this.path = path;
-        this.destRepository = destRepository;
         this.srcRepository = srcRepository;
+        this.targetRepository = targetRepository;
         this.promotionUtil = SpringUtil.getBean(PromotionUtil.class);
     }
 
@@ -40,14 +42,10 @@ public class ArtifactPromotionCopyTask implements Callable<String> {
     public String call() {
         String rs = "";
         try {
-            if (path.startsWith("s3://")) {
-                promotionUtil.handleS3ArtifactCopy(path, destRepository, srcRepository);
-            } else {
-                promotionUtil.handleCopy(path, destRepository, srcRepository);
-            }
-            log.info("Artifact copyed [{}]", path);
+            promotionUtil.handleCopy(path, srcRepository, targetRepository);
+            log.info("Copy srcRepository [{}] [{}] targetRepository [{}] [{}] path [{}] finished", srcRepository.getStorage().getId(), srcRepository.getId(), targetRepository.getStorage().getId(), targetRepository.getId(), path);
         } catch (Exception e) {
-            log.error("ArtifactPromotionCopyTask Exception {} ", e.getMessage());
+            log.info("Copy srcRepository [{}] [{}] targetRepository [{}] [{}] path [{}] error [{}]", srcRepository.getStorage().getId(), srcRepository.getId(), targetRepository.getStorage().getId(), targetRepository.getId(), path, ExceptionUtils.getStackTrace(e));
             rs = e.getMessage();
         }
         return rs;

@@ -50,7 +50,9 @@ public interface ArtifactPromotionService {
 
     ResponseEntity artifactDispatch(ArtifactDispatch artifactDispatch);
 
-    void validateStorageAndRepository(String storageId, String repositoryId) throws Exception;
+    void validateStorageAndRepository(String storageId, String repositoryId);
+
+    void validateRemoteRepository(String targetUrl, String storageId, String repositoryId);
 
     /**
      * 查询上传进度

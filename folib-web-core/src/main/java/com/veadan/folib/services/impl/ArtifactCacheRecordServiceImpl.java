@@ -1,14 +1,15 @@
 package com.veadan.folib.services.impl;
 
 import com.github.pagehelper.PageHelper;
+import com.hazelcast.core.HazelcastInstance;
 import com.veadan.folib.components.artifact.ArtifactComponent;
+import com.veadan.folib.db.schema.util.IpUtils;
 import com.veadan.folib.domain.CacheSettings;
 import com.veadan.folib.entity.ArtifactCacheRecord;
 import com.veadan.folib.mapper.ArtifactCacheRecordMapper;
 import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.services.ArtifactCacheRecordService;
 import com.veadan.folib.util.FileSizeConvertUtils;
-import com.veadan.folib.utils.SnowflakeIdWorkerUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.io.FileUtils;
@@ -46,12 +47,14 @@ public class ArtifactCacheRecordServiceImpl implements ArtifactCacheRecordServic
     @Lazy
     private ArtifactComponent artifactComponent;
 
+    @Inject
+    private HazelcastInstance hazelcastInstance;
+
     @Override
     @Transactional(rollbackFor = Exception.class)
     public void saveArtifactCacheRecord(ArtifactCacheRecord artifactCacheRecord) {
         try {
             Date now = new Date();
-            SnowflakeIdWorkerUtils idWorker = new SnowflakeIdWorkerUtils(0, 0);
             if (StringUtils.isNotBlank(artifactCacheRecord.getArtifactPath())) {
                 int endIndex = artifactCacheRecord.getArtifactPath().length(), max = 768;
                 if (endIndex > max) {
@@ -59,7 +62,8 @@ public class ArtifactCacheRecordServiceImpl implements ArtifactCacheRecordServic
                 }
                 artifactCacheRecord.setArtifactPathPrefix(artifactCacheRecord.getArtifactPath().substring(0, endIndex));
             }
-            artifactCacheRecord.setId(idWorker.nextId());
+            artifactCacheRecord.setNodeId(getHostname());
+            artifactCacheRecord.setId(hazelcastInstance.getFlakeIdGenerator("artifactCacheRecordId").newId());
             artifactCacheRecord.setCreateTime(now);
             artifactCacheRecord.setUpdateTime(now);
             artifactCacheRecord.setLatestDownloadTime(now);
@@ -142,6 +146,7 @@ public class ArtifactCacheRecordServiceImpl implements ArtifactCacheRecordServic
         } else if (StringUtils.isNotBlank(artifactCacheRecord.getArtifactPath())) {
             Example example = Example.builder(ArtifactCacheRecord.class).build();
             Example.Criteria criteria = example.createCriteria();
+            criteria.andEqualTo("nodeId", getHostname());
             criteria.andEqualTo("storageId", artifactCacheRecord.getStorageId());
             criteria.andEqualTo("repositoryId", artifactCacheRecord.getRepositoryId());
             criteria.andEqualTo("artifactPath", artifactCacheRecord.getArtifactPath());
@@ -160,6 +165,7 @@ public class ArtifactCacheRecordServiceImpl implements ArtifactCacheRecordServic
         if (Objects.nonNull(artifactCacheRecord)) {
             example = Example.builder(ArtifactCacheRecord.class).build();
             Example.Criteria criteria = example.createCriteria();
+            criteria.andEqualTo("nodeId", getHostname());
             criteria.andEqualTo("storageId", artifactCacheRecord.getStorageId());
             criteria.andEqualTo("repositoryId", artifactCacheRecord.getRepositoryId());
             example.and().andLike("artifactPathPrefix", artifactCacheRecord.getArtifactPath() + "%");
@@ -172,6 +178,8 @@ public class ArtifactCacheRecordServiceImpl implements ArtifactCacheRecordServic
         }
         if (Objects.isNull(example)) {
             example = Example.builder(ArtifactCacheRecord.class).build();
+            Example.Criteria criteria = example.createCriteria();
+            criteria.andEqualTo("nodeId", getHostname());
         }
         example.setOrderByClause("latest_download_time asc, size desc");
         PageHelper.startPage(page, limit);
@@ -180,16 +188,16 @@ public class ArtifactCacheRecordServiceImpl implements ArtifactCacheRecordServic
 
     @Override
     public int getArtifactCacheRecordCount(ArtifactCacheRecord artifactCacheRecord) {
-        Example example = null;
+        Example example = Example.builder(ArtifactCacheRecord.class).build();
+        Example.Criteria criteria = example.createCriteria();
+        criteria.andEqualTo("nodeId", getHostname());
         if (Objects.nonNull(artifactCacheRecord)) {
-            example = Example.builder(ArtifactCacheRecord.class).build();
-            Example.Criteria criteria = example.createCriteria();
             criteria.andEqualTo("storageId", artifactCacheRecord.getStorageId());
             criteria.andEqualTo("repositoryId", artifactCacheRecord.getRepositoryId());
             example.and().andLike("artifactPathPrefix", artifactCacheRecord.getArtifactPath() + "%");
             return artifactCacheRecordMapper.selectCountByExample(example);
         }
-        return artifactCacheRecordMapper.selectCount(null);
+        return artifactCacheRecordMapper.selectCountByExample(example);
     }
 
     @Override
@@ -205,8 +213,11 @@ public class ArtifactCacheRecordServiceImpl implements ArtifactCacheRecordServic
     public void cleanupArtifactCacheDirectory(String directoryPath) throws Exception {
         File file = new File(directoryPath);
         if (file.exists()) {
-            FileUtils.forceDelete(file);
-            artifactCacheRecordMapper.delete(null);
+            FileUtils.cleanDirectory(file);
+            Example example = Example.builder(ArtifactCacheRecord.class).build();
+            Example.Criteria criteria = example.createCriteria();
+            criteria.andEqualTo("nodeId", getHostname());
+            artifactCacheRecordMapper.deleteByExample(example);
         }
     }
 
@@ -309,5 +320,9 @@ public class ArtifactCacheRecordServiceImpl implements ArtifactCacheRecordServic
         } catch (Exception ex) {
             log.warn(ExceptionUtils.getStackTrace(ex));
         }
+    }
+
+    private String getHostname() {
+        return IpUtils.getHostname();
     }
 }

@@ -1,4 +1,4 @@
-package com.veadan.folib.domain.adapter.jfrog;
+package com.veadan.folib.domain;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -14,12 +14,12 @@ import java.util.List;
 @AllArgsConstructor
 @NoArgsConstructor
 @Data
-public class ArtifactSearchResult {
+public class ArtifactSearch<T> {
 
     /**
      * 制品列表
      */
-    private List<ArtifactSearchInfo> results;
+    private List<T> results;
 
     /**
      * 分页信息

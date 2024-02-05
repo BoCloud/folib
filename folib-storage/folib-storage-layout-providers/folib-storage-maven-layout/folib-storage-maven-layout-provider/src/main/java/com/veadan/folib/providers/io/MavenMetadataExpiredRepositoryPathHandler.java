@@ -1,14 +1,14 @@
 package com.veadan.folib.providers.io;
 
+import com.veadan.folib.providers.layout.Maven2LayoutProvider;
 import com.veadan.folib.providers.repository.proxied.ProxyRepositoryArtifactResolver;
 import com.veadan.folib.storage.metadata.maven.ChecksumMetadataExpirationStrategy;
 import com.veadan.folib.storage.metadata.maven.MetadataExpirationStrategy;
-import com.veadan.folib.storage.metadata.maven.RefreshMetadataExpirationStrategy;
 import com.veadan.folib.storage.metadata.maven.MetadataExpirationStrategyType;
-import com.veadan.folib.storage.repository.RepositoryData;
+import com.veadan.folib.storage.metadata.maven.RefreshMetadataExpirationStrategy;
 import com.veadan.folib.storage.repository.Repository;
+import com.veadan.folib.storage.repository.RepositoryData;
 import com.veadan.folib.yaml.configuration.repository.MavenRepositoryConfiguration;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
@@ -17,15 +17,14 @@ import javax.inject.Inject;
 import java.io.IOException;
 import java.util.Optional;
 
-import static com.veadan.folib.storage.metadata.maven.MetadataExpirationStrategy.Decision.*;
+import static com.veadan.folib.storage.metadata.maven.MetadataExpirationStrategy.Decision.USABLE;
 
 /**
  * @author veadan
  */
 @Component
 public class MavenMetadataExpiredRepositoryPathHandler
-        implements MavenExpiredRepositoryPathHandler
-{
+        implements MavenExpiredRepositoryPathHandler {
 
     private static final Logger logger = LoggerFactory.getLogger(MavenMetadataExpiredRepositoryPathHandler.class);
 
@@ -40,47 +39,40 @@ public class MavenMetadataExpiredRepositoryPathHandler
 
     @Override
     public boolean supports(final RepositoryPath repositoryPath)
-            throws IOException
-    {
-        if (repositoryPath == null)
-        {
+            throws IOException {
+        if (repositoryPath == null) {
             return false;
         }
 
-        if (!RepositoryFiles.isMetadata(repositoryPath))
-        {
+        if (!Maven2LayoutProvider.ALIAS.equals(repositoryPath.getRepository().getLayout()) || !RepositoryFiles.isMetadata(repositoryPath)) {
             return false;
         }
 
         Repository repository = repositoryPath.getRepository();
-        return ((RepositoryData)repository).getRemoteRepository() != null;
+        return ((RepositoryData) repository).getRemoteRepository() != null;
     }
 
     @Override
     public void handleExpiration(final RepositoryPath repositoryPath)
-            throws IOException
-    {
+            throws IOException {
         MetadataExpirationStrategy metadataExpirationStrategy = getMetadataStrategy(repositoryPath);
         MetadataExpirationStrategy.Decision refetchMetadata = metadataExpirationStrategy.decide(repositoryPath);
 
-        if (refetchMetadata == USABLE)
-        {
+        if (refetchMetadata == USABLE) {
             return;
         }
         proxyRepositoryArtifactResolver.fetchRemoteResource(repositoryPath);
     }
 
-    private MetadataExpirationStrategy getMetadataStrategy(final RepositoryPath repositoryPath)
-    {
+    private MetadataExpirationStrategy getMetadataStrategy(final RepositoryPath repositoryPath) {
         MavenRepositoryConfiguration repositoryConfiguration =
                 (MavenRepositoryConfiguration) repositoryPath.getRepository().getRepositoryConfiguration();
 
         String strategy = Optional.ofNullable(repositoryConfiguration)
-                                  .map(MavenRepositoryConfiguration::getMetadataExpirationStrategy)
-                                  .orElse(null);
+                .map(MavenRepositoryConfiguration::getMetadataExpirationStrategy)
+                .orElse(null);
 
-        if (MetadataExpirationStrategyType.REFRESH == MetadataExpirationStrategyType.ofStrategy(strategy))
-        {
+        if (MetadataExpirationStrategyType.REFRESH == MetadataExpirationStrategyType.ofStrategy(strategy)) {
             return refreshMetadataStrategy;
         }
 

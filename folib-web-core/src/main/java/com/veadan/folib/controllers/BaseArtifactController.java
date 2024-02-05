@@ -6,7 +6,9 @@ import com.veadan.folib.controllers.support.ErrorResponseEntityBody;
 import com.veadan.folib.domain.Artifact;
 import com.veadan.folib.domain.CacheSettings;
 import com.veadan.folib.event.artifact.ArtifactEventListenerRegistry;
+import com.veadan.folib.providers.io.RepositoryFiles;
 import com.veadan.folib.providers.io.RepositoryPath;
+import com.veadan.folib.providers.layout.DockerLayoutProvider;
 import com.veadan.folib.services.ArtifactManagementService;
 import com.veadan.folib.services.DictService;
 import com.veadan.folib.storage.metadata.MetadataHelper;
@@ -20,7 +22,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.util.AntPathMatcher;
 import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.servlet.HandlerMapping;
 
 import javax.inject.Inject;
 import javax.servlet.http.HttpServletRequest;
@@ -76,8 +80,7 @@ public abstract class BaseArtifactController
             return true;
         }
         long startTime = System.currentTimeMillis();
-        logger.debug("Download {} 开始时间 {}", repositoryPath.toString(), startTime);
-        artifactComponent.beforeRead(repositoryPath);
+        logger.debug("Download [{}] 开始时间 [{}]", repositoryPath.toString(), startTime);
         if (ArtifactControllerHelper.isRangedRequest(httpHeaders)) {
             //分片
             logger.debug("RepositoryPath [{}] Detected ranged request.", path.toString());
@@ -96,13 +99,13 @@ public abstract class BaseArtifactController
                  WritableByteChannel responseChannel = Channels.newChannel(response.getOutputStream())) {
                 long fileSize = fileChannel.size();
                 for (long left = fileSize; left > 0; ) {
-                    logger.info("RepositoryPath [{}] position: [{}] left: [{}]", path.toString(), fileSize - left, left);
+                    logger.debug("RepositoryPath [{}] position [{}] left [{}]", path.toString(), fileSize - left, left);
                     left -= fileChannel.transferTo((fileSize - left), left, responseChannel);
                 }
             }
         }
         artifactComponent.afterRead(repositoryPath);
-        logger.debug("Download {} 结束时间 {}", repositoryPath.toString(), System.currentTimeMillis() - startTime);
+        logger.debug("Download [{}] 结束时间 [{}]", repositoryPath.toString(), System.currentTimeMillis() - startTime);
         return true;
     }
 
@@ -148,7 +151,11 @@ public abstract class BaseArtifactController
 
     public boolean artifactRealExists(RepositoryPath repositoryPath) {
         try {
-            return Objects.nonNull(repositoryPath) && Files.exists(repositoryPath) && Objects.nonNull(repositoryPath.getArtifactEntry()) && Boolean.TRUE.equals(repositoryPath.getArtifactEntry().getArtifactFileExists());
+            if (Objects.isNull(repositoryPath)) {
+                return false;
+            }
+            repositoryPath = repositoryPathResolver.resolve(repositoryPath.getStorageId(), repositoryPath.getRepositoryId(), RepositoryFiles.relativizePath(repositoryPath));
+            return Files.exists(repositoryPath) && Objects.nonNull(repositoryPath.getArtifactEntry());
         } catch (Exception ex) {
             logger.error("判断制品是否存在发生错误：{}", ExceptionUtils.getStackTrace(ex));
             return false;
@@ -166,20 +173,18 @@ public abstract class BaseArtifactController
             if (Objects.isNull(cacheSettings) || !cacheSettings.isEnabled()) {
                 return path;
             }
-            boolean existsCache = false;
-            Path backupPath = Files.createDirectories(Paths.get(cacheSettings.getDirectoryPath()));
+            Path cacheParentPath = Files.createDirectories(Paths.get(cacheSettings.getDirectoryPath()));
             String sourcePath = repositoryPath.toString();
             String prefix = String.format("/%s/%s/", storageId, repositoryId);
             String targetSubPath = sourcePath.substring(sourcePath.indexOf(prefix) + 1);
-            Path targetPath = backupPath.resolve(targetSubPath);
-            if (Files.exists(targetPath)) {
-                existsCache = true;
-            }
+            Path targetPath = cacheParentPath.resolve(targetSubPath);
+            boolean existsCache = Files.exists(targetPath) && (RepositoryFiles.isArtifactChecksum(FilenameUtils.getName(targetPath.getFileName().toString())) || RepositoryFiles.validateChecksum(repositoryPath, targetPath) || DockerLayoutProvider.ALIAS.equals(repositoryPath.getRepository().getLayout()));
             if (existsCache) {
                 logger.info("存在缓存 storageId [{}] repositoryId [{}]，源制品地址 [{}] 缓存制品地址 [{}]", storageId, repositoryId, sourcePath, targetPath.toString());
                 path = targetPath;
-                artifactComponent.asyncHandlerArtifactCacheRecord(repositoryPath, cacheSettings, targetPath);
+//                artifactComponent.asyncHandlerArtifactCacheRecord(repositoryPath, cacheSettings, targetPath);
             } else {
+                //不存在缓存，触发缓存事件
                 if (repositoryPath.toString().contains(MetadataHelper.MAVEN_METADATA_XML)) {
                     return path;
                 }
@@ -222,7 +227,7 @@ public abstract class BaseArtifactController
             //查询图库
             try {
                 artifact = repositoryPath.getArtifactEntry();
-                artifactComponent.asyncStoreArtifactMetadataFile(repositoryPath);
+                artifactComponent.storeArtifactMetadataFile(repositoryPath);
             } catch (Exception ex) {
                 logger.warn("查询制品信息 [{}] 错误 [{}]", repositoryPath, ExceptionUtils.getStackTrace(ex));
             }
@@ -236,9 +241,25 @@ public abstract class BaseArtifactController
              ObjectInputStream objectInputStream = new ObjectInputStream(inputStream)) {
             artifact = (Artifact) objectInputStream.readObject();
         } catch (Exception ex) {
+            try {
+                Files.deleteIfExists(path);
+            } catch (Exception e) {
+
+            }
             logger.warn("解析制品 [{}] 本地缓存.metadata文件错误 [{}]", path, ExceptionUtils.getStackTrace(ex));
         }
         return artifact;
     }
 
+    /**
+     * 提取请求路径中为/**的内容
+     *
+     * @param request 请求
+     * @return 提取请求路径中为/**的内容
+     */
+    protected String getExtractPath(final HttpServletRequest request) {
+        String path = (String) request.getAttribute(HandlerMapping.PATH_WITHIN_HANDLER_MAPPING_ATTRIBUTE);
+        String bestMatchPattern = (String) request.getAttribute(HandlerMapping.BEST_MATCHING_PATTERN_ATTRIBUTE);
+        return new AntPathMatcher().extractPathWithinPattern(bestMatchPattern, path);
+    }
 }

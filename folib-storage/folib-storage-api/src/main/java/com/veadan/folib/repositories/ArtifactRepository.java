@@ -6,25 +6,28 @@ import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import com.veadan.folib.artifact.coordinates.ArtifactLayoutDescription;
 import com.veadan.folib.artifact.coordinates.ArtifactLayoutLocator;
+import com.veadan.folib.components.DistributedLockComponent;
 import com.veadan.folib.configuration.ConfigurationManager;
 import com.veadan.folib.configuration.ConfigurationUtils;
+import com.veadan.folib.constant.GlobalConstants;
 import com.veadan.folib.db.schema.Edges;
 import com.veadan.folib.db.schema.Properties;
 import com.veadan.folib.db.schema.Vertices;
 import com.veadan.folib.domain.*;
-import com.veadan.folib.enums.ArtifactSearchConditionTypeEnum;
-import com.veadan.folib.enums.SafeLevelEnum;
-import com.veadan.folib.enums.VulnerabilityPlatformEnum;
+import com.veadan.folib.enums.*;
 import com.veadan.folib.gremlin.adapters.ArtifactAdapter;
 import com.veadan.folib.gremlin.dsl.EntityTraversal;
 import com.veadan.folib.gremlin.dsl.EntityTraversalUtils;
+import com.veadan.folib.gremlin.dsl.__;
 import com.veadan.folib.gremlin.repositories.GremlinVertexRepository;
 import com.veadan.folib.services.ConfigurationManagementService;
 import com.veadan.folib.storage.repository.RepositoryTypeEnum;
+import com.veadan.folib.util.CommonUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.compress.utils.Lists;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.tinkerpop.gremlin.process.traversal.Order;
 import org.apache.tinkerpop.gremlin.process.traversal.P;
 import org.apache.tinkerpop.gremlin.structure.Vertex;
@@ -38,6 +41,7 @@ import javax.inject.Inject;
 import javax.transaction.Transactional;
 import java.time.LocalDateTime;
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 
 @Slf4j
 @Repository
@@ -50,10 +54,33 @@ public class ArtifactRepository extends GremlinVertexRepository<Artifact> {
     ConfigurationManager configurationManager;
     @Inject
     ConfigurationManagementService configurationManagementService;
+    @Inject
+    DistributedLockComponent distributedLockComponent;
 
     @Override
     protected ArtifactAdapter adapter() {
         return artifactAdapter;
+    }
+
+    public void saveOrUpdate(Artifact artifact) {
+        if (distributedLockComponent.lock(artifact.getUuid(), GlobalConstants.WAIT_LOCK_TIME, TimeUnit.SECONDS)) {
+            try {
+                try {
+                    merge(artifact);
+                } catch (Exception ex) {
+                    if (CommonUtils.catchException(ex)) {
+                        log.warn("Handle artifact [{}] catch error", artifact.getUuid());
+                        return;
+                    }
+                    log.error("Handle artifact [{}] error [{}]", artifact.getUuid(), ExceptionUtils.getStackTrace(ex));
+                    throw new RuntimeException(ex.getMessage());
+                }
+            } finally {
+                distributedLockComponent.unLock(artifact.getUuid());
+            }
+        } else {
+            log.warn("Handle artifact [{}] was not get lock", artifact.getUuid());
+        }
     }
 
     public Page<Artifact> findMatching(Integer lastAccessedTimeInDays,
@@ -110,22 +137,26 @@ public class ArtifactRepository extends GremlinVertexRepository<Artifact> {
 
         List<Artifact> artifactList = buildEntityTraversal(regex, artifactName, metadataSearch, storageIdAndRepositoryIdList, storageId, repositoryId, repositoryIds, beginDate, endDate, safeLevel, sortField, sortOrder)
                 .range(low, high)
-                .map(artifactAdapter.fold(Optional.ofNullable(repository)
+                .map(artifactAdapter.searchFold(Optional.ofNullable(repository)
                         .map(com.veadan.folib.storage.repository.Repository::getLayout)
                         .map(ArtifactLayoutLocator.getLayoutByNameEntityMap()::get)
                         .map(ArtifactLayoutDescription::getArtifactCoordinatesClass))).toList();
         return new PageImpl<>(artifactList, pagination, count);
     }
 
-    public Page<Artifact> findMatchingByAql(Pageable pagination, ArtifactSearchCondition artifactSearchCondition) {
+    public ArtifactSearch<Artifact> findMatchingByAql(ArtifactPage pagination, ArtifactSearchCondition artifactSearchCondition) {
         com.veadan.folib.storage.repository.Repository repository = null;
         boolean isGroupRepository = false;
         String storageId = artifactSearchCondition.getStorageId(), repositoryId = artifactSearchCondition.getRepositoryId();
         List<String> storageIdAndRepositoryIdList = null;
+        ArtifactSearchRange artifactSearchRange = ArtifactSearchRange.builder().startPos(pagination.getOffset()).limit(pagination.getLimit()).endPos(0L).total(0L).build();
+        ArtifactSearch artifactSearch = ArtifactSearch.builder().build();
+        artifactSearch.setRange(artifactSearchRange);
+        artifactSearch.setResults(Collections.emptyList());
         if (StringUtils.isNotBlank(storageId) && StringUtils.isNotBlank(repositoryId)) {
             repository = configurationManager.getRepository(storageId, repositoryId);
             if (repository == null) {
-                return new PageImpl<>(Collections.emptyList(), pagination, 0);
+                return artifactSearch;
             }
             isGroupRepository = RepositoryTypeEnum.GROUP.getType().equals(repository.getType());
             if (isGroupRepository) {
@@ -137,14 +168,27 @@ public class ArtifactRepository extends GremlinVertexRepository<Artifact> {
         Long zero = 0L;
         Long count = buildEntityTraversalByAql(storageId, repositoryId, storageIdAndRepositoryIdList, artifactSearchCondition).count().tryNext().orElse(zero);
         if (zero.equals(count)) {
-            return new PageImpl<>(Collections.emptyList(), pagination, count);
+            return artifactSearch;
         }
-        long low = pagination.getPageNumber() * pagination.getPageSize();
-        long high = (pagination.getPageNumber() + 1) * pagination.getPageSize();
-        List<Artifact> artifactList = buildEntityTraversalByAql(storageId, repositoryId, storageIdAndRepositoryIdList, artifactSearchCondition)
-                .range(low, high)
-                .map(artifactAdapter.fold()).toList();
-        return new PageImpl<>(artifactList, pagination, count);
+        long offset = pagination.getOffset();
+        long limit = pagination.getLimit();
+        count = count - offset;
+        EntityTraversal<Vertex, Vertex> entityTraversal = buildEntityTraversalByAql(storageId, repositoryId, storageIdAndRepositoryIdList, artifactSearchCondition);
+        if (CollectionUtils.isEmpty(artifactSearchCondition.getArtifactSorts())) {
+            entityTraversal = entityTraversal.order().by(Properties.CREATED, Order.valueOf("desc"));
+        } else {
+            for (ArtifactSort artifactSort : artifactSearchCondition.getArtifactSorts()) {
+                for (String key : artifactSort.getKeyList()) {
+                    entityTraversal = entityTraversal.order().by(key, Order.valueOf(artifactSort.getOrder()));
+                }
+            }
+        }
+        artifactSearchRange.setEndPos(count);
+        artifactSearchRange.setTotal(count);
+        List<Artifact> artifactList = entityTraversal.skip(offset).limit(limit)
+                .map(artifactAdapter.aqlSearchFold(Optional.empty())).toList();
+        artifactSearch.setResults(artifactList);
+        return artifactSearch;
     }
 
     public Page<Artifact> findMatchingForThirdParty(Pageable pagination, String searchKeyword) {
@@ -243,6 +287,29 @@ public class ArtifactRepository extends GremlinVertexRepository<Artifact> {
             entityTraversal = entityTraversal.has(Properties.STORAGE_ID_AND_REPOSITORY_ID, P.within(storageIdAndRepositoryIdList));
         }
         return entityTraversal.count().tryNext().orElse(0L);
+    }
+
+    private EntityTraversal<Vertex, Vertex> buildEntityTraversalByStorageIdAndRepositoryId(String storageId, String repositoryId) {
+        EntityTraversal<Vertex, Vertex> entityTraversal = g().V().hasLabel(Vertices.ARTIFACT).has(Properties.ARTIFACT_FILE_EXISTS, true);
+        if (StringUtils.isNotBlank(storageId)) {
+            entityTraversal = entityTraversal.has(Properties.STORAGE_ID, storageId);
+        }
+        if (StringUtils.isNotBlank(repositoryId)) {
+            entityTraversal = entityTraversal.has(Properties.REPOSITORY_ID, repositoryId);
+        }
+        return entityTraversal;
+    }
+
+    public Long countAllByStorageIdAndRepositoryId(String storageId, String repositoryId) {
+       return buildEntityTraversalByStorageIdAndRepositoryId(storageId, repositoryId).count().tryNext().orElse(0L);
+    }
+
+    public List<Artifact> findByStorageIdAndRepositoryId(String storageId, String repositoryId, Pageable pageable) {
+        long low = pageable.getPageNumber() * pageable.getPageSize();
+        long high = (pageable.getPageNumber() + 1) * pageable.getPageSize();
+        return buildEntityTraversalByStorageIdAndRepositoryId(storageId, repositoryId)
+                .range(low, high)
+                .map(artifactAdapter.baseFold(Optional.empty())).toList();
     }
 
     public Long artifactsBytesStatistics(List<String> storageIdAndRepositoryIdList) {
@@ -500,42 +567,173 @@ public class ArtifactRepository extends GremlinVertexRepository<Artifact> {
                 entityTraversal = entityTraversal.has(Properties.ARTIFACT_PATH, Text.textContains(path));
             }
         }
-        List<ArtifactNameCondition> artifactNameConditions = artifactSearchCondition.getArtifactNameConditions();
-        if (CollectionUtils.isNotEmpty(artifactNameConditions)) {
-            String searchValue = "";
-            for (ArtifactNameCondition artifactNameCondition : artifactNameConditions) {
-                searchValue = artifactNameCondition.getSearchValue().replaceAll(asterisk, ".*");
-                if (ArtifactSearchConditionTypeEnum.MATCH.equals(artifactNameCondition.getArtifactSearchConditionTypeEnum())) {
-                    entityTraversal = entityTraversal.has(Properties.ARTIFACT_NAME, Text.textRegex(searchValue));
-                } else if (ArtifactSearchConditionTypeEnum.N_MATCH.equals(artifactNameCondition.getArtifactSearchConditionTypeEnum())) {
-                    entityTraversal = entityTraversal.has(Properties.ARTIFACT_NAME, Text.textNotRegex(searchValue));
-                } else if (ArtifactSearchConditionTypeEnum.EQ.equals(artifactNameCondition.getArtifactSearchConditionTypeEnum())) {
-                    entityTraversal = entityTraversal.has(Properties.ARTIFACT_NAME, searchValue);
-                } else if (ArtifactSearchConditionTypeEnum.NE.equals(artifactNameCondition.getArtifactSearchConditionTypeEnum())) {
-                    entityTraversal = entityTraversal.has(Properties.ARTIFACT_NAME, P.neq(searchValue));
+        for (ArtifactConditionGroup artifactConditionGroup : artifactSearchCondition.getArtifactConditionGroups()) {
+            if (ArtifactSearchConditionTypeEnum.OR.equals(artifactConditionGroup.getArtifactSearchConditionTypeEnum())) {
+                List<EntityTraversal<Vertex, Vertex>> orEntityTraversalList = Lists.newArrayList();
+                List<ArtifactCondition> artifactConditions = artifactConditionGroup.getArtifactConditions();
+                if (CollectionUtils.isNotEmpty(artifactConditions)) {
+                    String searchValue = "";
+                    for (ArtifactCondition artifactCondition : artifactConditions) {
+                        searchValue = artifactCondition.getSearchValue().replaceAll(asterisk, ".*");
+                        if (searchValue.endsWith(pathMatch)) {
+                            searchValue = searchValue.replace(pathMatch, "/.*");
+                        }
+                        if (point.equals(searchValue)) {
+                            continue;
+                        }
+                        if (ArtifactSearchConditionTypeEnum.MATCH.equals(artifactCondition.getArtifactSearchConditionTypeEnum())) {
+                            if (Properties.ARTIFACT_PATH.equals(artifactCondition.getSearchKey())) {
+                                if (searchValue.equals(artifactCondition.getSearchValue()) && !AqlSearchTypeEnum.FILE.getType().equals(artifactSearchCondition.getType()) && !searchValue.endsWith(GlobalConstants.SEPARATOR)) {
+                                    searchValue = searchValue.concat(GlobalConstants.SEPARATOR);
+                                    artifactCondition.setSearchValue(searchValue);
+                                }
+                                orEntityTraversalList.add(__.has(artifactCondition.getSearchKey(), searchValue.equals(artifactCondition.getSearchValue()) ? Text.textPrefix(searchValue) : Text.textRegex(searchValue)));
+                            } else {
+                                orEntityTraversalList.add(__.has(artifactCondition.getSearchKey(), searchValue.equals(artifactCondition.getSearchValue()) ? Text.textContains(searchValue) : Text.textRegex(searchValue)));
+                            }
+                        } else if (ArtifactSearchConditionTypeEnum.N_MATCH.equals(artifactCondition.getArtifactSearchConditionTypeEnum())) {
+                            if (Properties.ARTIFACT_PATH.equals(artifactCondition.getSearchKey())) {
+                                orEntityTraversalList.add(__.has(artifactCondition.getSearchKey(), searchValue.equals(artifactCondition.getSearchValue()) ? Text.textNotPrefix(searchValue) : Text.textNotRegex(searchValue)));
+                            } else {
+                                orEntityTraversalList.add(__.has(artifactCondition.getSearchKey(), searchValue.equals(artifactCondition.getSearchValue()) ? Text.textNotContains(searchValue) : Text.textNotRegex(searchValue)));
+                            }
+                        } else if (ArtifactSearchConditionTypeEnum.EQ.equals(artifactCondition.getArtifactSearchConditionTypeEnum())) {
+                            orEntityTraversalList.add(__.has(artifactCondition.getSearchKey(), searchValue));
+                        } else if (ArtifactSearchConditionTypeEnum.NE.equals(artifactCondition.getArtifactSearchConditionTypeEnum())) {
+                            orEntityTraversalList.add(__.has(artifactCondition.getSearchKey(), P.neq(searchValue)));
+                        }
+                    }
                 }
-            }
-        }
-        List<ArtifactMetadataCondition> artifactMetadataConditions = artifactSearchCondition.getArtifactMetadataConditions();
-        if (CollectionUtils.isNotEmpty(artifactMetadataConditions)) {
-            String metadataValue = "", regex = "";
-            for (ArtifactMetadataCondition artifactMetadataCondition : artifactMetadataConditions) {
-                regex = ".*\\\"%s\\\":\\{[^}]*\\\"value\\\":\\\"%s\\\"[^}]*}.*";
-                metadataValue = artifactMetadataCondition.getMedataValue();
-                if (ArtifactSearchConditionTypeEnum.EQ.equals(artifactMetadataCondition.getArtifactSearchConditionTypeEnum())) {
-                    regex = String.format(regex, artifactMetadataCondition.getMedataKey(), artifactMetadataCondition.getMedataValue());
-                    entityTraversal = entityTraversal.has(Properties.METADATA, Text.textRegex(regex));
-                } else if (ArtifactSearchConditionTypeEnum.NE.equals(artifactMetadataCondition.getArtifactSearchConditionTypeEnum())) {
-                    regex = String.format(regex, artifactMetadataCondition.getMedataKey(), artifactMetadataCondition.getMedataValue());
-                    entityTraversal = entityTraversal.has(Properties.METADATA, Text.textNotRegex(regex));
-                } else if (ArtifactSearchConditionTypeEnum.MATCH.equals(artifactMetadataCondition.getArtifactSearchConditionTypeEnum())) {
-                    metadataValue = metadataValue.replaceAll(asterisk, ".*");
-                    regex = String.format(regex, artifactMetadataCondition.getMedataKey(), metadataValue);
-                    entityTraversal = entityTraversal.has(Properties.METADATA, Text.textRegex(regex));
-                } else if (ArtifactSearchConditionTypeEnum.N_MATCH.equals(artifactMetadataCondition.getArtifactSearchConditionTypeEnum())) {
-                    metadataValue = metadataValue.replaceAll(asterisk, ".*");
-                    regex = String.format(regex, artifactMetadataCondition.getMedataKey(), metadataValue);
-                    entityTraversal = entityTraversal.has(Properties.METADATA, Text.textNotRegex(regex));
+                List<ArtifactNameCondition> artifactNameConditions = artifactConditionGroup.getArtifactNameConditions();
+                if (CollectionUtils.isNotEmpty(artifactNameConditions)) {
+                    String searchValue = "";
+                    for (ArtifactNameCondition artifactNameCondition : artifactNameConditions) {
+                        searchValue = artifactNameCondition.getSearchValue().replaceAll(asterisk, ".*");
+                        if (ArtifactSearchConditionTypeEnum.MATCH.equals(artifactNameCondition.getArtifactSearchConditionTypeEnum())) {
+                            orEntityTraversalList.add(__.has(Properties.ARTIFACT_NAME, searchValue.equals(artifactNameCondition.getSearchValue()) ? Text.textContains(searchValue) : Text.textRegex(searchValue)));
+                        } else if (ArtifactSearchConditionTypeEnum.N_MATCH.equals(artifactNameCondition.getArtifactSearchConditionTypeEnum())) {
+                            orEntityTraversalList.add(__.has(Properties.ARTIFACT_NAME, searchValue.equals(artifactNameCondition.getSearchValue()) ? Text.textNotContains(searchValue) : Text.textNotRegex(searchValue)));
+                        } else if (ArtifactSearchConditionTypeEnum.EQ.equals(artifactNameCondition.getArtifactSearchConditionTypeEnum())) {
+                            orEntityTraversalList.add(__.has(Properties.ARTIFACT_NAME, searchValue));
+                        } else if (ArtifactSearchConditionTypeEnum.NE.equals(artifactNameCondition.getArtifactSearchConditionTypeEnum())) {
+                            orEntityTraversalList.add(__.has(Properties.ARTIFACT_NAME, P.neq(searchValue)));
+                        }
+                    }
+                }
+                List<ArtifactMetadataCondition> artifactMetadataConditions = artifactConditionGroup.getArtifactMetadataConditions();
+                if (CollectionUtils.isNotEmpty(artifactMetadataConditions)) {
+                    String metadataValue = "", regex = "";
+                    for (ArtifactMetadataCondition artifactMetadataCondition : artifactMetadataConditions) {
+                        regex = ".*\\\"%s\\\":\\{[^}]*\\\"value\\\":\\\"%s\\\"[^}]*}.*";
+                        metadataValue = artifactMetadataCondition.getMedataValue();
+                        if (ArtifactSearchConditionTypeEnum.EQ.equals(artifactMetadataCondition.getArtifactSearchConditionTypeEnum())) {
+                            regex = String.format(regex, artifactMetadataCondition.getMedataKey(), artifactMetadataCondition.getMedataValue());
+                            orEntityTraversalList.add(__.has(Properties.METADATA, Text.textRegex(regex)));
+                        } else if (ArtifactSearchConditionTypeEnum.NE.equals(artifactMetadataCondition.getArtifactSearchConditionTypeEnum())) {
+                            regex = String.format(regex, artifactMetadataCondition.getMedataKey(), artifactMetadataCondition.getMedataValue());
+                            orEntityTraversalList.add(__.has(Properties.METADATA, Text.textNotRegex(regex)));
+                        } else if (ArtifactSearchConditionTypeEnum.MATCH.equals(artifactMetadataCondition.getArtifactSearchConditionTypeEnum())) {
+                            metadataValue = metadataValue.replaceAll(asterisk, ".*");
+                            regex = String.format(regex, artifactMetadataCondition.getMedataKey(), metadataValue);
+                            orEntityTraversalList.add(__.has(Properties.METADATA, Text.textRegex(regex)));
+                        } else if (ArtifactSearchConditionTypeEnum.N_MATCH.equals(artifactMetadataCondition.getArtifactSearchConditionTypeEnum())) {
+                            metadataValue = metadataValue.replaceAll(asterisk, ".*");
+                            regex = String.format(regex, artifactMetadataCondition.getMedataKey(), metadataValue);
+                            orEntityTraversalList.add(__.has(Properties.METADATA, Text.textNotRegex(regex)));
+                        }
+                    }
+                }
+                if (CollectionUtils.isNotEmpty(orEntityTraversalList)) {
+                    EntityTraversal[] orEntityTraversalArray = orEntityTraversalList.toArray(new EntityTraversal[orEntityTraversalList.size()]);
+                    entityTraversal = entityTraversal.or(orEntityTraversalArray);
+                }
+            } else if (ArtifactSearchConditionTypeEnum.AND.equals(artifactConditionGroup.getArtifactSearchConditionTypeEnum())) {
+                List<ArtifactCondition> artifactConditions = artifactConditionGroup.getArtifactConditions();
+                if (CollectionUtils.isNotEmpty(artifactConditions)) {
+                    String searchValue = "";
+                    for (ArtifactCondition artifactCondition : artifactConditions) {
+                        searchValue = artifactCondition.getSearchValue().replaceAll(asterisk, ".*");
+                        if (searchValue.endsWith(pathMatch)) {
+                            searchValue = searchValue.replace(pathMatch, "/.*");
+                        }
+                        if (point.equals(searchValue)) {
+                            continue;
+                        }
+                        if (ArtifactSearchConditionTypeEnum.MATCH.equals(artifactCondition.getArtifactSearchConditionTypeEnum())) {
+                            if (Properties.ARTIFACT_PATH.equals(artifactCondition.getSearchKey())) {
+                                if (searchValue.equals(artifactCondition.getSearchValue()) && !AqlSearchTypeEnum.FILE.getType().equals(artifactSearchCondition.getType()) && !searchValue.endsWith(GlobalConstants.SEPARATOR)) {
+                                    searchValue = searchValue.concat(GlobalConstants.SEPARATOR);
+                                    artifactCondition.setSearchValue(searchValue);
+                                }
+                                entityTraversal = entityTraversal.has(artifactCondition.getSearchKey(), searchValue.equals(artifactCondition.getSearchValue()) ? Text.textPrefix(searchValue) : Text.textRegex(searchValue));
+                            } else {
+                                entityTraversal = entityTraversal.has(artifactCondition.getSearchKey(), searchValue.equals(artifactCondition.getSearchValue()) ? Text.textContains(searchValue) : Text.textRegex(searchValue));
+                            }
+                        } else if (ArtifactSearchConditionTypeEnum.N_MATCH.equals(artifactCondition.getArtifactSearchConditionTypeEnum())) {
+                            if (Properties.ARTIFACT_PATH.equals(artifactCondition.getSearchKey())) {
+                                entityTraversal = entityTraversal.has(artifactCondition.getSearchKey(), searchValue.equals(artifactCondition.getSearchValue()) ? Text.textNotPrefix(searchValue) : Text.textNotRegex(searchValue));
+                            } else {
+                                entityTraversal = entityTraversal.has(artifactCondition.getSearchKey(), searchValue.equals(artifactCondition.getSearchValue()) ? Text.textNotContains(searchValue) : Text.textNotRegex(searchValue));
+                            }
+                        } else if (ArtifactSearchConditionTypeEnum.EQ.equals(artifactCondition.getArtifactSearchConditionTypeEnum())) {
+                            entityTraversal = entityTraversal.has(artifactCondition.getSearchKey(), searchValue);
+                        } else if (ArtifactSearchConditionTypeEnum.NE.equals(artifactCondition.getArtifactSearchConditionTypeEnum())) {
+                            entityTraversal = entityTraversal.has(artifactCondition.getSearchKey(), P.neq(searchValue));
+                        } else if (ArtifactSearchConditionTypeEnum.GTE.equals(artifactCondition.getArtifactSearchConditionTypeEnum())) {
+                            ArtifactFieldTypeEnum artifactFieldTypeEnum = ArtifactFieldTypeEnum.queryTypeEnum(artifactCondition.getSearchKey());
+                            if (Objects.nonNull(artifactFieldTypeEnum) && ArtifactFieldTypeEnum.CREATED.getType().equals(artifactFieldTypeEnum.getType())) {
+                                LocalDateTime localDateTime = DateUtil.parseLocalDateTime(searchValue, DatePattern.NORM_DATE_PATTERN);
+                                searchValue = EntityTraversalUtils.toLong(localDateTime) + "";
+                            }
+                            entityTraversal = entityTraversal.has(artifactCondition.getSearchKey(), P.gte(searchValue));
+                        } else if (ArtifactSearchConditionTypeEnum.LTE.equals(artifactCondition.getArtifactSearchConditionTypeEnum())) {
+                            ArtifactFieldTypeEnum artifactFieldTypeEnum = ArtifactFieldTypeEnum.queryTypeEnum(artifactCondition.getSearchKey());
+                            if (Objects.nonNull(artifactFieldTypeEnum) && ArtifactFieldTypeEnum.CREATED.getType().equals(artifactFieldTypeEnum.getType())) {
+                                LocalDateTime localDateTime = DateUtil.parseLocalDateTime(searchValue, DatePattern.NORM_DATE_PATTERN);
+                                searchValue = EntityTraversalUtils.toLong(localDateTime) + "";
+                            }
+                            entityTraversal = entityTraversal.has(artifactCondition.getSearchKey(), P.lte(searchValue));
+                        }
+                    }
+                }
+                List<ArtifactNameCondition> artifactNameConditions = artifactConditionGroup.getArtifactNameConditions();
+                if (CollectionUtils.isNotEmpty(artifactNameConditions)) {
+                    String searchValue = "";
+                    for (ArtifactNameCondition artifactNameCondition : artifactNameConditions) {
+                        searchValue = artifactNameCondition.getSearchValue().replaceAll(asterisk, ".*");
+                        if (ArtifactSearchConditionTypeEnum.MATCH.equals(artifactNameCondition.getArtifactSearchConditionTypeEnum())) {
+                            entityTraversal = entityTraversal.has(Properties.ARTIFACT_NAME, searchValue.equals(artifactNameCondition.getSearchValue()) ? Text.textContains(searchValue) : Text.textRegex(searchValue));
+                        } else if (ArtifactSearchConditionTypeEnum.N_MATCH.equals(artifactNameCondition.getArtifactSearchConditionTypeEnum())) {
+                            entityTraversal = entityTraversal.has(Properties.ARTIFACT_NAME, searchValue.equals(artifactNameCondition.getSearchValue()) ? Text.textNotContains(searchValue) : Text.textNotRegex(searchValue));
+                        } else if (ArtifactSearchConditionTypeEnum.EQ.equals(artifactNameCondition.getArtifactSearchConditionTypeEnum())) {
+                            entityTraversal = entityTraversal.has(Properties.ARTIFACT_NAME, searchValue);
+                        } else if (ArtifactSearchConditionTypeEnum.NE.equals(artifactNameCondition.getArtifactSearchConditionTypeEnum())) {
+                            entityTraversal = entityTraversal.has(Properties.ARTIFACT_NAME, P.neq(searchValue));
+                        }
+                    }
+                }
+                List<ArtifactMetadataCondition> artifactMetadataConditions = artifactConditionGroup.getArtifactMetadataConditions();
+                if (CollectionUtils.isNotEmpty(artifactMetadataConditions)) {
+                    String metadataValue = "", regex = "";
+                    for (ArtifactMetadataCondition artifactMetadataCondition : artifactMetadataConditions) {
+                        regex = ".*\\\"%s\\\":\\{[^}]*\\\"value\\\":\\\"%s\\\"[^}]*}.*";
+                        metadataValue = artifactMetadataCondition.getMedataValue();
+                        if (ArtifactSearchConditionTypeEnum.EQ.equals(artifactMetadataCondition.getArtifactSearchConditionTypeEnum())) {
+                            regex = String.format(regex, artifactMetadataCondition.getMedataKey(), artifactMetadataCondition.getMedataValue());
+                            entityTraversal = entityTraversal.has(Properties.METADATA, Text.textRegex(regex));
+                        } else if (ArtifactSearchConditionTypeEnum.NE.equals(artifactMetadataCondition.getArtifactSearchConditionTypeEnum())) {
+                            regex = String.format(regex, artifactMetadataCondition.getMedataKey(), artifactMetadataCondition.getMedataValue());
+                            entityTraversal = entityTraversal.has(Properties.METADATA, Text.textNotRegex(regex));
+                        } else if (ArtifactSearchConditionTypeEnum.MATCH.equals(artifactMetadataCondition.getArtifactSearchConditionTypeEnum())) {
+                            metadataValue = metadataValue.replaceAll(asterisk, ".*");
+                            regex = String.format(regex, artifactMetadataCondition.getMedataKey(), metadataValue);
+                            entityTraversal = entityTraversal.has(Properties.METADATA, Text.textRegex(regex));
+                        } else if (ArtifactSearchConditionTypeEnum.N_MATCH.equals(artifactMetadataCondition.getArtifactSearchConditionTypeEnum())) {
+                            metadataValue = metadataValue.replaceAll(asterisk, ".*");
+                            regex = String.format(regex, artifactMetadataCondition.getMedataKey(), metadataValue);
+                            entityTraversal = entityTraversal.has(Properties.METADATA, Text.textNotRegex(regex));
+                        }
+                    }
                 }
             }
         }
@@ -644,7 +842,7 @@ public class ArtifactRepository extends GremlinVertexRepository<Artifact> {
     public Artifact findOneArtifact(String storageId,
                                     String repositoryId,
                                     String path) {
-        log.info("FindOneArtifact storageId [{}] repositoryId [{}] path [{}]", storageId, repositoryId, path);
+        log.debug("FindOneArtifact storageId [{}] repositoryId [{}] path [{}]", storageId, repositoryId, path);
         com.veadan.folib.storage.repository.Repository repository = configurationManager.getRepository(storageId, repositoryId);
         long startTime = System.currentTimeMillis();
         EntityTraversal<Vertex, Artifact> t = g().V()
@@ -655,7 +853,7 @@ public class ArtifactRepository extends GremlinVertexRepository<Artifact> {
                         .map(ArtifactLayoutLocator.getLayoutByNameEntityMap()::get)
                         .map(ArtifactLayoutDescription::getArtifactCoordinatesClass)));
         Artifact artifact = t.tryNext().orElse(null);
-        log.info("FindOneArtifact storageId [{}] repositoryId [{}] path [{}] artifactExists [{}] take time [{}] ms", storageId, repositoryId, path, Objects.nonNull(artifact), System.currentTimeMillis() - startTime);
+        log.debug("FindOneArtifact storageId [{}] repositoryId [{}] path [{}] artifactExists [{}] take time [{}] ms", storageId, repositoryId, path, Objects.nonNull(artifact), System.currentTimeMillis() - startTime);
         return artifact;
     }
 
@@ -674,8 +872,8 @@ public class ArtifactRepository extends GremlinVertexRepository<Artifact> {
     }
 
     public Artifact findOneArtifactBase(String storageId,
-                                    String repositoryId,
-                                    String path) {
+                                        String repositoryId,
+                                        String path) {
         com.veadan.folib.storage.repository.Repository repository = configurationManager.getRepository(storageId, repositoryId);
         EntityTraversal<Vertex, Artifact> t = g().V()
                 .hasLabel(Vertices.ARTIFACT)
@@ -688,8 +886,14 @@ public class ArtifactRepository extends GremlinVertexRepository<Artifact> {
         return artifact;
     }
 
-    public List<Artifact> findPromotionMatchingByIndex(List<String> safeLevelList, List<String> promotionStatusList) {
-        return g().V().hasLabel(Vertices.ARTIFACT).has(Properties.ARTIFACT_FILE_EXISTS, true).has(Properties.SAFE_LEVEL, P.within(safeLevelList)).has(Properties.PROMOTION, P.within(promotionStatusList)).map(artifactAdapter.fold()).toList();
+    public long countPromotionMatchingByIndex(List<String> safeLevelList, List<String> promotionStatusList) {
+        return g().V().hasLabel(Vertices.ARTIFACT).has(Properties.ARTIFACT_FILE_EXISTS, true).has(Properties.SAFE_LEVEL, P.within(safeLevelList)).has(Properties.PROMOTION, P.within(promotionStatusList)).count().tryNext().orElse(0L);
+    }
+
+    public List<Artifact> findPromotionMatchingByIndex(List<String> safeLevelList, List<String> promotionStatusList, Pageable pageable) {
+        long low = pageable.getPageNumber() * pageable.getPageSize();
+        long high = (pageable.getPageNumber() + 1) * pageable.getPageSize();
+        return g().V().hasLabel(Vertices.ARTIFACT).has(Properties.ARTIFACT_FILE_EXISTS, true).has(Properties.SAFE_LEVEL, P.within(safeLevelList)).has(Properties.PROMOTION, P.within(promotionStatusList)).range(low, high).map(artifactAdapter.fold()).toList();
     }
 
     public Long artifactsCount() {
@@ -728,7 +932,21 @@ public class ArtifactRepository extends GremlinVertexRepository<Artifact> {
         if (Objects.isNull(limit)) {
             limit = 800;
         }
-        g().V().hasLabel(Vertices.ARTIFACT).has(Properties.CREATED, P.gt(0)).has(Properties.STORAGE_ID, storageId).has(Properties.REPOSITORY_ID, repositoryId).range(0, limit).drop();
+        g().V().hasLabel(Vertices.ARTIFACT).has(Properties.CREATED, P.gt(0)).has(Properties.STORAGE_ID, storageId).has(Properties.REPOSITORY_ID, repositoryId).limit(limit).drop().iterate();
+    }
+
+    public Long countDockerArtifactRelation(String storageId, String repositoryId, String uuid, String keyword, Integer type) {
+        EntityTraversal<Vertex, Vertex> entityTraversal = g().V().hasLabel(Vertices.ARTIFACT).has(Properties.STORAGE_ID, storageId).has(Properties.REPOSITORY_ID, repositoryId).has(Properties.UUID, Text.textNotPrefix(uuid));
+        if (type == 1) {
+            entityTraversal = entityTraversal.has(Properties.UUID, Text.textContains(keyword)).has(Properties.UUID, Text.textNotContains("blobs/sha256")).has(Properties.UUID, Text.textNotContains("manifest/sha256")).has(Properties.ARTIFACT_FILE_EXISTS, true);
+        } else if (type == 2) {
+            entityTraversal = entityTraversal.has(Properties.UUID, Text.textContains(keyword)).has(Properties.UUID, Text.textContains("manifest/sha256")).has(Properties.ARTIFACT_FILE_EXISTS, true);
+        } else if (type == 3) {
+            entityTraversal = entityTraversal.has(Properties.LAYERS, keyword).has(Properties.UUID, Text.textContains("manifest/sha256")).has(Properties.ARTIFACT_FILE_EXISTS, true);
+        }
+        long count = entityTraversal.count().tryNext().orElse(0L);
+        log.debug("Count for [{}] [{}] [{}] [{}] [{}] [{}]", storageId, repositoryId, uuid, keyword, type, count);
+        return count;
     }
 
 }

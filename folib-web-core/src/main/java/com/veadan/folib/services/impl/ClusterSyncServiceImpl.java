@@ -102,7 +102,8 @@ public class ClusterSyncServiceImpl implements ClusterSyncService {
         });
     }
 
-    private Set<String> getHostNodeList() {
+    @Override
+    public Set<String> getHostNodeList() {
         Set<String> nodeSet = Sets.newLinkedHashSet();
         try {
             CassandraClusterForm cassandraClusterForm = nodeComponent.cassandraClusterInfo();

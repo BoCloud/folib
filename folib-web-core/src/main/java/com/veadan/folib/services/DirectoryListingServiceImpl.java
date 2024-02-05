@@ -11,6 +11,7 @@ import com.veadan.folib.providers.io.RepositoryFiles;
 import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.providers.io.RepositoryPathResolver;
 import com.veadan.folib.scanner.common.exception.BusinessException;
+import com.veadan.folib.providers.layout.DockerLayoutProvider;
 import com.veadan.folib.scanner.common.util.SpringContextUtil;
 import com.veadan.folib.services.support.ArtifactRoutingRulesChecker;
 import com.veadan.folib.storage.Storage;
@@ -172,7 +173,7 @@ public class DirectoryListingServiceImpl implements DirectoryListingService {
 
         List<Path> contentPaths;
         try (Stream<Path> pathStream = Files.list(path)) {
-            contentPaths = pathStream.filter(p -> !p.toString().startsWith("."))
+            contentPaths = pathStream.filter(p -> !p.toString().startsWith(".") && !DockerLayoutProvider.MANIFEST.equalsIgnoreCase(p.getFileName().toString()) && !DockerLayoutProvider.BLOBS.equalsIgnoreCase(p.getFileName().toString()))
                     .filter(p -> !p.toString().contains("/.")
                             // 支持Cocoapods索引目录的显示
                             || p.toString().contains(".specs")

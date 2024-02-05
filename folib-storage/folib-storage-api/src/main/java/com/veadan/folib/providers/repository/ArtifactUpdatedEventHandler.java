@@ -38,7 +38,7 @@ public class ArtifactUpdatedEventHandler extends AsyncArtifactEntryHandler {
 
         Artifact artifactEntry = repositoryPath.getArtifactEntry();
         if (artifactEntry == null) {
-            log.warn("No [{}] for [{}].",
+            log.debug("No [{}] for [{}].",
                     Artifact.class.getSimpleName(),
                     repositoryPath);
 

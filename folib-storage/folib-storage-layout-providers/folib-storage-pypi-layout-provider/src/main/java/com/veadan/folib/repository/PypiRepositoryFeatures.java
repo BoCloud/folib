@@ -4,6 +4,7 @@ import com.alibaba.fastjson.JSONObject;
 import com.veadan.folib.artifact.coordinates.PypiArtifactCoordinates;
 import com.veadan.folib.configuration.Configuration;
 import com.veadan.folib.configuration.ConfigurationManager;
+import com.veadan.folib.constant.GlobalConstants;
 import com.veadan.folib.domain.ArtifactIdGroup;
 import com.veadan.folib.domain.ArtifactIdGroupEntity;
 import com.veadan.folib.domain.PypiPackageInfo;
@@ -153,7 +154,7 @@ public class PypiRepositoryFeatures
         List<PypiSearchResult> pypiSearchResult;
         try {
             restClient = proxyRepositoryConnectionPoolConfigurationService.getRestClient(storageId, repositoryId);
-            logger.info("Search Pypi packages for [{}].", targetUrl);
+            logger.debug("Search Pypi packages for [{}].", targetUrl);
             WebTarget service = restClient.target(targetUrl);
             authentication(service, remoteRepository.getUsername(), remoteRepository.getPassword());
             response = service.request(MediaType.TEXT_HTML).get();
@@ -201,7 +202,7 @@ public class PypiRepositoryFeatures
         ArtifactIdGroup artifactIdGroup = new ArtifactIdGroupEntity(storageId, repositoryId, pypiSearchRequest.getPackageName());
         try {
             restClient = proxyRepositoryConnectionPoolConfigurationService.getRestClient(storageId, repositoryId);
-            logger.info("Search Pypi packages for [{}].", targetUrl);
+            logger.debug("Search Pypi packages for [{}].", targetUrl);
             WebTarget service = restClient.target(targetUrl);
             authentication(service, remoteRepository.getUsername(), remoteRepository.getPassword());
             response = service.request(MediaType.TEXT_HTML).get();
@@ -213,8 +214,8 @@ public class PypiRepositoryFeatures
                 try {
                     long startTime = System.currentTimeMillis();
                     artifactIdGroup.setMetadata(JSONObject.toJSONString(pypiSearchResult));
-                    artifactIdGroupRepository.merge(artifactIdGroup);
-                    logger.info("[{}] storage [{}] repository [{}] update artifactIdGroup [{}] metadata take time [{}] ms", this.getClass().getSimpleName(), storageId, repositoryId, artifactIdGroup.getUuid(), System.currentTimeMillis() - startTime);
+                    artifactIdGroupRepository.saveOrUpdate(artifactIdGroup);
+                    logger.debug("[{}] storage [{}] repository [{}] update artifactIdGroup [{}] metadata take time [{}] ms", this.getClass().getSimpleName(), storageId, repositoryId, artifactIdGroup.getUuid(), System.currentTimeMillis() - startTime);
                 } catch (Exception ex) {
                     String realMessage = CommonUtils.getRealMessage(ex);
                     logger.warn("[{}] [{}] updateArtifactIdGroup error [{}]",
@@ -231,8 +232,8 @@ public class PypiRepositoryFeatures
                             itemArtifactIdGroup = new ArtifactIdGroupEntity(storageId, repositoryId, entry.getKey());
                             long startTime = System.currentTimeMillis();
                             itemArtifactIdGroup.setMetadata(JSONObject.toJSONString(entry.getValue()));
-                            artifactIdGroupRepository.merge(itemArtifactIdGroup);
-                            logger.info("[{}] storage [{}] repository [{}] update itemArtifactIdGroup [{}] metadata take time [{}] ms", this.getClass().getSimpleName(), storageId, repositoryId, itemArtifactIdGroup.getUuid(), System.currentTimeMillis() - startTime);
+                            artifactIdGroupRepository.saveOrUpdate(itemArtifactIdGroup);
+                            logger.debug("[{}] storage [{}] repository [{}] update itemArtifactIdGroup [{}] metadata take time [{}] ms", this.getClass().getSimpleName(), storageId, repositoryId, itemArtifactIdGroup.getUuid(), System.currentTimeMillis() - startTime);
                         } catch (Exception ex) {
                             String realMessage = CommonUtils.getRealMessage(ex);
                             logger.warn("[{}] [{}] itemArtifactIdGroup error [{}]",
@@ -279,13 +280,25 @@ public class PypiRepositoryFeatures
     }
 
     private List<PypiSearchResult> extractSearchResult(Repository repository, String targetUrl, String pypiSearchResult) {
+        final String storageId = repository.getStorage().getId(), repositoryId = repository.getId();
+        String prefix = "";
+        if (targetUrl.contains("/storages/")) {
+            prefix = targetUrl.substring(targetUrl.indexOf("/storages/"), targetUrl.indexOf("/simple/"));
+            if (!prefix.endsWith(GlobalConstants.SEPARATOR)) {
+                prefix = prefix + GlobalConstants.SEPARATOR;
+            }
+        }
+        String finalPrefix = prefix;
         Matcher matcher = PACKAGE_NAME_PATTERN.matcher(pypiSearchResult);
         return matcher.results()
                 .map(matchResult -> {
                     String artifactName = matchResult.group(2);
                     String artifactUrl = matchResult.group(1);
+                    if (StringUtils.isNotBlank(finalPrefix) && artifactUrl.contains(finalPrefix)) {
+                        artifactUrl = artifactUrl.replace(finalPrefix, "/../../");
+                    }
                     artifactUrl = resolveUrl(targetUrl, artifactUrl);
-                    return PypiSearchResult.builder().artifactName(artifactName).artifactUrl(artifactUrl).storageId(repository.getStorage().getId()).repositoryId(repository.getId()).groupName(PypiArtifactCoordinates.parse(artifactName).getId()).build();
+                    return PypiSearchResult.builder().artifactName(artifactName).artifactUrl(artifactUrl).storageId(storageId).repositoryId(repositoryId).groupName(PypiArtifactCoordinates.parse(artifactName).getId()).build();
                 })
                 .collect(Collectors.toList());
     }

@@ -9,9 +9,9 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class PromotionArtifactDto {
     private String srcStorageId;
-    private String srcRepostoryId;
+    private String srcRepositoryId;
     private String targetStorageId;
-    private String targetRepostoryId;
+    private String targetRepositoryId;
     private String path;
     private String uploadHost;
 

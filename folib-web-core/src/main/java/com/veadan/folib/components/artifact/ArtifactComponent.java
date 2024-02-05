@@ -1,6 +1,9 @@
 package com.veadan.folib.components.artifact;
 
+import cn.hutool.core.date.DatePattern;
+import cn.hutool.core.date.DateUtil;
 import cn.hutool.core.io.FileUtil;
+import cn.hutool.json.JSONUtil;
 import com.alibaba.fastjson.JSONObject;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -10,20 +13,20 @@ import com.veadan.folib.artifact.archive.JarArchiveListingFunction;
 import com.veadan.folib.artifact.coordinates.DockerArtifactCoordinates;
 import com.veadan.folib.artifact.coordinates.PypiArtifactCoordinates;
 import com.veadan.folib.cloud.storage.s3fs.S3Path;
+import com.veadan.folib.components.DistributedLockComponent;
 import com.veadan.folib.components.common.CommonComponent;
 import com.veadan.folib.config.NpmLayoutProviderConfig;
 import com.veadan.folib.configuration.*;
+import com.veadan.folib.constant.GlobalConstants;
 import com.veadan.folib.controllers.layout.pypi.PypiBrowsePackageHtmlResponseBuilder;
 import com.veadan.folib.data.criteria.Paginator;
 import com.veadan.folib.domain.*;
 import com.veadan.folib.entity.ArtifactCacheRecord;
 import com.veadan.folib.entity.Dict;
 import com.veadan.folib.entity.PackageNameBlock;
-import com.veadan.folib.enums.BlockTypeEnum;
-import com.veadan.folib.enums.ConditionTypeEnum;
-import com.veadan.folib.enums.DictTypeEnum;
-import com.veadan.folib.enums.PromotionStatusEnum;
+import com.veadan.folib.enums.*;
 import com.veadan.folib.event.artifact.ArtifactEventListenerRegistry;
+import com.veadan.folib.event.artifact.ArtifactEventTypeEnum;
 import com.veadan.folib.npm.metadata.*;
 import com.veadan.folib.providers.io.RepositoryFiles;
 import com.veadan.folib.providers.io.RepositoryPath;
@@ -41,11 +44,13 @@ import com.veadan.folib.repository.NpmRepositoryFeatures;
 import com.veadan.folib.repository.PypiRepositoryFeatures;
 import com.veadan.folib.service.ProxyRepositoryConnectionPoolConfigurationService;
 import com.veadan.folib.services.*;
+import com.veadan.folib.storage.metadata.MetadataHelper;
 import com.veadan.folib.storage.repository.Repository;
-import com.veadan.folib.storage.repository.RepositoryDto;
 import com.veadan.folib.storage.repository.RepositoryTypeEnum;
 import com.veadan.folib.util.CacheUtil;
 import com.veadan.folib.util.CommonUtils;
+import com.veadan.folib.util.FileSizeConvertUtils;
+import com.veadan.folib.util.LocalDateTimeInstance;
 import com.veadan.folib.utils.PypiPackageNameConverter;
 import com.veadan.folib.utils.VersionUtils;
 import lombok.extern.slf4j.Slf4j;
@@ -55,10 +60,15 @@ import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
+import org.apache.maven.artifact.ArtifactUtils;
+import org.apache.maven.artifact.repository.metadata.Metadata;
+import org.apache.maven.artifact.repository.metadata.Snapshot;
+import org.apache.maven.artifact.repository.metadata.Versioning;
 import org.apache.maven.model.Model;
 import org.apache.maven.model.io.xpp3.MavenXpp3Reader;
 import org.apache.maven.model.io.xpp3.MavenXpp3Writer;
 import org.codehaus.plexus.util.xml.pull.XmlPullParserException;
+import org.folib.util.Commons;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -74,11 +84,15 @@ import javax.ws.rs.client.Client;
 import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.Response;
 import java.io.*;
+import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
+import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * @author leipenghui
@@ -167,6 +181,14 @@ public class ArtifactComponent {
     @Qualifier("browseRepositoryDirectoryListingService")
     @Lazy
     private volatile DirectoryListingService directoryListingService;
+
+    @Inject
+    @Lazy
+    private DistributedLockComponent distributedLockComponent;
+
+    @Inject
+    @Lazy
+    private ArtifactMetadataService artifactMetadataService;
 
     /**
      * 读取文件内容
@@ -515,9 +537,9 @@ public class ArtifactComponent {
                 }
             }
             Set<String> vulnerabilities = Optional.ofNullable(vulnerabilitySet).orElse(Collections.emptySet()).stream().map(Vulnerability::getUuid).collect(Collectors.toSet());
-            MutableSecurityPolicyConfiguration mutableSecurityPolicyConfiguration = configurationManagementService.getMutableConfigurationClone().getSecurityPolicyConfiguration();
+            final SecurityPolicyConfiguration mutableSecurityPolicyConfiguration = configurationManagementService.getConfiguration().getSecurityPolicyConfiguration();
             if (Objects.nonNull(mutableSecurityPolicyConfiguration)) {
-                RepositoryDto repositoryDto = configurationManagementService.getMutableConfigurationClone().getStorage(storageId).getRepository(repositoryId);
+                final Repository repositoryDto = configurationManagementService.getConfiguration().getStorage(storageId).getRepository(repositoryId);
                 Set<String> repositoryBlacks = repositoryDto.getVulnerabilityBlacks();
                 Set<String> repositoryWhites = repositoryDto.getVulnerabilityWhites();
                 Set<String> platformBlacks = mutableSecurityPolicyConfiguration.getBlacks();
@@ -606,15 +628,12 @@ public class ArtifactComponent {
      */
     public Set<UnionTargetRepositoryConfiguration> getUnionTargetRepositories(String storageId, String repositoryId) {
         Set<UnionTargetRepositoryConfiguration> unionTargetRepositoryConfigurations = null;
-        RootRepositoryPath rootRepositoryPath = repositoryPathResolver.resolve(storageId, repositoryId);
-        if (Objects.nonNull(rootRepositoryPath)) {
-            Repository repository = rootRepositoryPath.getRepository();
-            if (Objects.nonNull(repository)) {
-                UnionRepositoryConfiguration unionRepositoryConfiguration = repository.getUnionRepositoryConfig();
-                if (Objects.nonNull(unionRepositoryConfiguration)) {
-                    if (Boolean.TRUE.equals(unionRepositoryConfiguration.getEnable()) && CollectionUtils.isNotEmpty(unionRepositoryConfiguration.getUnionTargetRepositories())) {
-                        unionTargetRepositoryConfigurations = unionRepositoryConfiguration.getUnionTargetRepositories();
-                    }
+        Repository repository = configurationManager.getRepository(storageId, repositoryId);
+        if (Objects.nonNull(repository)) {
+            UnionRepositoryConfiguration unionRepositoryConfiguration = repository.getUnionRepositoryConfig();
+            if (Objects.nonNull(unionRepositoryConfiguration)) {
+                if (Boolean.TRUE.equals(unionRepositoryConfiguration.getEnable()) && CollectionUtils.isNotEmpty(unionRepositoryConfiguration.getUnionTargetRepositories())) {
+                    unionTargetRepositoryConfigurations = unionRepositoryConfiguration.getUnionTargetRepositories();
                 }
             }
         }
@@ -629,9 +648,9 @@ public class ArtifactComponent {
      * @return 仓库信息
      */
     public Repository getRepository(String storageId, String repositoryId) {
-        RootRepositoryPath rootRepositoryPath = repositoryPathResolver.resolve(storageId, repositoryId);
-        if (Objects.nonNull(rootRepositoryPath) && Objects.nonNull(rootRepositoryPath.getRepository())) {
-            return rootRepositoryPath.getRepository();
+        Repository repository = configurationManager.getRepository(storageId, repositoryId);
+        if (Objects.nonNull(repository)) {
+            return repository;
         }
         return null;
     }
@@ -646,77 +665,58 @@ public class ArtifactComponent {
      * @param promotion    晋级状态
      */
     public void handlerArtifactPromotion(String node, String storageId, String repositoryId, String artifactPath, String promotion) {
-        handlerArtifactPromotion(node, null, storageId, repositoryId, artifactPath, promotion);
-    }
-
-    /**
-     * 更新晋级状态
-     *
-     * @param node      节点
-     * @param artifact  制品
-     * @param promotion 晋级状态
-     */
-    public void handlerArtifactPromotion(String node, Artifact artifact, String promotion) {
-        handlerArtifactPromotion(node, artifact, null, null, null, promotion);
-    }
-
-    /**
-     * 更新晋级状态
-     *
-     * @param node         节点
-     * @param artifact     制品
-     * @param storageId    存储空间
-     * @param repositoryId 仓库名称
-     * @param artifactPath 制品路径
-     * @param promotion    晋级状态
-     */
-    private void handlerArtifactPromotion(String node, Artifact artifact, String storageId, String repositoryId, String artifactPath, String promotion) {
-        Artifact updateArtifact = null;
-        if (Objects.nonNull(artifact)) {
-            updateArtifact = new ArtifactEntity(artifact.getNativeId(), artifact.getStorageId(), artifact.getRepositoryId(), artifact.getUuid(), artifact.getArtifactCoordinates());
-            updateArtifact.setPromotionNodes(artifact.getPromotionNodes());
-        } else if (StringUtils.isNotBlank(storageId) && StringUtils.isNotBlank(repositoryId) && StringUtils.isNotBlank(artifactPath)) {
-            RepositoryPath repositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, artifactPath);
-            if (Objects.nonNull(repositoryPath)) {
-                try {
-                    artifact = repositoryPath.getArtifactEntry();
-                    if (Objects.nonNull(artifact)) {
-                        updateArtifact = new ArtifactEntity(artifact.getNativeId(), artifact.getStorageId(), artifact.getRepositoryId(), artifact.getUuid(), artifact.getArtifactCoordinates());
-                        updateArtifact.setPromotionNodes(artifact.getPromotionNodes());
-                    }
-                } catch (Exception ex) {
-                    log.error("存储空间： {} 仓库：{} 制品：{} 错误：{}", storageId, repositoryId, artifactPath, ExceptionUtils.getStackTrace(ex));
-                }
-            }
-        }
-        if (Objects.nonNull(updateArtifact)) {
-            if (StringUtils.isBlank(node) || PromotionStatusEnum.FAIL.getStatus().equals(promotion) || PromotionStatusEnum.WAIT.getStatus().equals(promotion)) {
-                updateArtifact.setPromotion(promotion);
-            }
-            Set<String> promotionNodes = updateArtifact.getPromotionNodes();
-            if (StringUtils.isNotBlank(node)) {
-                if (CollectionUtils.isEmpty(promotionNodes)) {
-                    promotionNodes = Sets.newLinkedHashSet();
-                }
-                Iterator<String> iterable = promotionNodes.iterator();
-                String promotionNode = "";
-                while (iterable.hasNext()) {
-                    promotionNode = iterable.next();
-                    if (StringUtils.isNotBlank(promotionNode) && promotionNode.contains(node)) {
-                        //节点信息已存在，移除
-                        iterable.remove();
-                        log.debug("存储空间： {} 仓库：{} 制品：{} 节点：{} 已存在，移除", updateArtifact.getStorageId(), updateArtifact.getRepositoryId(), artifactPath, node);
+        String lockKey = String.format("%s-%s-%s-%s", "promotion", storageId, repositoryId, artifactPath);
+        if (distributedLockComponent.lock(lockKey, GlobalConstants.WAIT_LOCK_TIME)) {
+            try {
+                Artifact updateArtifact = null;
+                if (StringUtils.isNotBlank(storageId) && StringUtils.isNotBlank(repositoryId) && StringUtils.isNotBlank(artifactPath)) {
+                    RepositoryPath repositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, artifactPath);
+                    if (Objects.nonNull(repositoryPath)) {
+                        try {
+                            Artifact artifact = repositoryPath.getArtifactEntry();
+                            if (Objects.nonNull(artifact)) {
+                                updateArtifact = new ArtifactEntity(artifact.getNativeId(), artifact.getStorageId(), artifact.getRepositoryId(), artifact.getUuid(), artifact.getArtifactCoordinates());
+                                updateArtifact.setPromotionNodes(artifact.getPromotionNodes());
+                            }
+                        } catch (Exception ex) {
+                            log.error("存储空间： {} 仓库：{} 制品：{} 错误：{}", storageId, repositoryId, artifactPath, ExceptionUtils.getStackTrace(ex));
+                        }
                     }
                 }
-                promotionNode = String.format("%s,%s", node, promotion);
-                promotionNodes.add(promotionNode);
-                updateArtifact.setPromotionNodes(promotionNodes);
-                log.info("存储空间： {} 仓库：{} 制品：{} 晋级节点：{}", updateArtifact.getStorageId(), updateArtifact.getRepositoryId(), updateArtifact.getUuid(), promotionNodes);
+                if (Objects.nonNull(updateArtifact)) {
+                    if (StringUtils.isBlank(node) || PromotionStatusEnum.FAIL.getStatus().equals(promotion) || PromotionStatusEnum.WAIT.getStatus().equals(promotion)) {
+                        updateArtifact.setPromotion(promotion);
+                    }
+                    Set<String> promotionNodes = updateArtifact.getPromotionNodes();
+                    if (StringUtils.isNotBlank(node)) {
+                        if (CollectionUtils.isEmpty(promotionNodes)) {
+                            promotionNodes = Sets.newLinkedHashSet();
+                        }
+                        Iterator<String> iterable = promotionNodes.iterator();
+                        String promotionNode = "";
+                        while (iterable.hasNext()) {
+                            promotionNode = iterable.next();
+                            if (StringUtils.isNotBlank(promotionNode) && promotionNode.contains(node)) {
+                                //节点信息已存在，移除
+                                iterable.remove();
+                                log.debug("存储空间： {} 仓库：{} 制品：{} 节点：{} 已存在，移除", updateArtifact.getStorageId(), updateArtifact.getRepositoryId(), artifactPath, node);
+                            }
+                        }
+                        promotionNode = String.format("%s,%s", node, promotion);
+                        promotionNodes.add(promotionNode);
+                        updateArtifact.setPromotionNodes(promotionNodes);
+                        log.info("存储空间： {} 仓库：{} 制品：{} 晋级节点：{}", updateArtifact.getStorageId(), updateArtifact.getRepositoryId(), updateArtifact.getUuid(), promotionNodes);
+                    }
+                    if (CollectionUtils.isNotEmpty(promotionNodes) && promotionNodes.stream().allMatch(item -> item.contains(PromotionStatusEnum.SUCCESS.getStatus()))) {
+                        updateArtifact.setPromotion(PromotionStatusEnum.SUCCESS.getStatus());
+                    }
+                    artifactService.saveOrUpdateArtifact(updateArtifact);
+                }
+            } finally {
+                distributedLockComponent.unLock(lockKey);
             }
-            if (CollectionUtils.isNotEmpty(promotionNodes) && promotionNodes.stream().allMatch(item -> item.contains(PromotionStatusEnum.SUCCESS.getStatus()))) {
-                updateArtifact.setPromotion(PromotionStatusEnum.SUCCESS.getStatus());
-            }
-            artifactService.saveOrUpdateArtifact(updateArtifact);
+        } else {
+            log.warn("Handle artifact promotion status [{}] was not get lock", lockKey);
         }
     }
 
@@ -807,6 +807,31 @@ public class ArtifactComponent {
     }
 
     /**
+     * 校验metadata是否过期
+     *
+     * @param artifactIdGroup artifactIdGroup
+     * @return true 过期 false 未过期
+     */
+    public String getArtifactIdGroupMetadata(ArtifactIdGroup artifactIdGroup) {
+        if (Objects.isNull(artifactIdGroup) || StringUtils.isBlank(artifactIdGroup.getMetadata()) || !JSONUtil.isJson(artifactIdGroup.getMetadata())) {
+            return "";
+        }
+        JSONObject metadataJson = JSONObject.parseObject(artifactIdGroup.getMetadata());
+        String cacheTimeKey = "cacheTime", metadataKey = "metadata";
+        if (metadataJson.containsKey(cacheTimeKey)) {
+            Long cacheTimeLong = metadataJson.getLong(cacheTimeKey);
+            LocalDateTime cacheTime = Commons.toLocalDateTime(cacheTimeLong);
+            long timeout = 300L;
+            LocalDateTime nowDate = LocalDateTimeInstance.now();
+            LocalDateTime cacheExpireDate = cacheTime.plusSeconds(timeout);
+            if (!cacheExpireDate.isBefore(nowDate)) {
+                return metadataJson.getString(metadataKey);
+            }
+        }
+        return "";
+    }
+
+    /**
      * 查询NpmArtifactIdGroupCache
      *
      * @param repository       repository
@@ -848,16 +873,25 @@ public class ArtifactComponent {
     /**
      * 更新ArtifactIdGroup
      *
-     * @param uuid     uuid
-     * @param metadata metadata
+     * @param artifactIdGroup artifactIdGroup
+     * @param metadata        metadata
      */
-    public void updateArtifactIdGroup(String uuid, String metadata) {
+    public void updateArtifactIdGroup(ArtifactIdGroup artifactIdGroup, String metadata) {
+        String uuid = "";
         try {
             long startTime = System.currentTimeMillis();
-            ArtifactIdGroup artifactIdGroup = getArtifactIdGroup(uuid);
             if (Objects.nonNull(artifactIdGroup)) {
-                artifactIdGroup.setMetadata(metadata);
-                artifactIdGroupRepository.merge(artifactIdGroup);
+                uuid = artifactIdGroup.getUuid();
+                if (StringUtils.isNotBlank(metadata)) {
+                    JSONObject metadataJson = new JSONObject();
+                    LocalDateTime nowDate = LocalDateTimeInstance.now();
+                    metadataJson.put("cacheTime", Commons.toLong(nowDate));
+                    metadataJson.put("metadata", metadata);
+                    artifactIdGroup.setMetadata(metadataJson.toJSONString());
+                } else {
+                    artifactIdGroup.setMetadata(metadata);
+                }
+                artifactIdGroupRepository.saveOrUpdate(artifactIdGroup);
                 log.debug("[{}] updateArtifactIdGroup [{}] take time [{}] ms", this.getClass().getSimpleName(), uuid, System.currentTimeMillis() - startTime);
             }
         } catch (Exception ex) {
@@ -867,9 +901,7 @@ public class ArtifactComponent {
             if (CommonUtils.catchException(realMessage)) {
                 log.warn("[{}] [{}] updateArtifactIdGroup catch error",
                         this.getClass().getSimpleName(), uuid);
-                return;
             }
-            throw ex;
         }
     }
 
@@ -887,12 +919,36 @@ public class ArtifactComponent {
                                                  Collection<String> coordinateValues, RepositorySearchRequest repositorySearchRequest) {
         PackageFeed packageFeed = null;
         long startTime = System.currentTimeMillis();
-        if (RepositoryTypeEnum.PROXY.getType().equals(repository.getType())) {
-            packageFeed = npmRepositoryFeatures.handleViewPackage(repository.getStorage().getId(), repository.getId(), artifactId);
-        } else if (RepositoryTypeEnum.HOSTED.getType().equals(repository.getType())) {
-            packageFeed = handlePackageFeed(repository, artifactId, repositorySearchRequest);
+        String storageId = repository.getStorage().getId(), repositoryId = repository.getId();
+        ArtifactIdGroup artifactIdGroup = new ArtifactIdGroupEntity(repository.getStorage().getId(), repository.getId(), artifactId);
+        artifactIdGroup = getArtifactIdGroup(artifactIdGroup.getUuid());
+        String metadata = getArtifactIdGroupMetadata(artifactIdGroup);
+        if (StringUtils.isNotBlank(metadata)) {
+            if (JSONUtil.isJson(metadata)) {
+                log.info("Npm [{}] [{}] [{}] exists cache", storageId, repositoryId, artifactId);
+                try (InputStream inputStream = new ByteArrayInputStream(metadata.getBytes())) {
+                    packageFeed = npmJacksonMapper.readValue(inputStream, PackageFeed.class);
+                } catch (IOException ex) {
+                    log.error("[{}] storage [{}] repository [{}] artifactIdGroup [{}] metadata to packageFeed error [{}]", this.getClass().getSimpleName(), storageId, repositoryId, artifactIdGroup.getUuid(), ExceptionUtils.getStackTrace(ex));
+                }
+            }
+        } else {
+            if (RepositoryTypeEnum.PROXY.getType().equals(repository.getType())) {
+                packageFeed = npmRepositoryFeatures.handleViewPackage(storageId, repositoryId, artifactId);
+            } else if (RepositoryTypeEnum.HOSTED.getType().equals(repository.getType())) {
+                packageFeed = handlePackageFeed(repository, artifactId, repositorySearchRequest);
+            }
+            try {
+                String packageFeedJson = GlobalConstants.NO_DATA;
+                if (Objects.nonNull(packageFeed)) {
+                    packageFeedJson = npmJacksonMapper.writeValueAsString(packageFeed);
+                }
+                updateArtifactIdGroup(new ArtifactIdGroupEntity(repository.getStorage().getId(), repository.getId(), artifactId), packageFeedJson);
+            } catch (JsonProcessingException ex) {
+                log.warn("[{}] packageFeed 转换异常 [{}] error [{}]", this.getClass().getSimpleName(), JSONObject.toJSONString(packageFeed), ExceptionUtils.getStackTrace(ex));
+            }
         }
-        log.debug("[{}] getNpmArtifactPackageFeed storageId [{}] repositoryId [{}] artifactId [{}] coordinateValues [{}] take time [{}] ms", this.getClass().getSimpleName(), repository.getStorage().getId(), repository.getId(), artifactId, coordinateValues, System.currentTimeMillis() - startTime);
+        log.info("[{}] getNpmArtifactPackageFeed storageId [{}] repositoryId [{}] artifactId [{}] coordinateValues [{}] take time [{}] ms", this.getClass().getSimpleName(), repository.getStorage().getId(), repository.getId(), artifactId, coordinateValues, System.currentTimeMillis() - startTime);
         return packageFeed;
     }
 
@@ -1087,11 +1143,6 @@ public class ArtifactComponent {
         }
     }
 
-    @Async("asyncThreadPoolTaskExecutor")
-    public void asyncStoreArtifactMetadataFile(RepositoryPath repositoryPath) {
-        storeArtifactMetadataFile(repositoryPath);
-    }
-
     /**
      * 存储制品元数据文件
      *
@@ -1117,31 +1168,75 @@ public class ArtifactComponent {
         }
     }
 
-    @Async("eventTaskExecutor")
-    public void beforeRead(RepositoryPath repositoryPath) {
-        try {
-            if (Objects.isNull(repositoryPath) || !RepositoryFiles.isArtifact(repositoryPath)) {
-                return;
+    public Integer getLatestIndex() {
+        Path path = Path.of(getEventParentPath());
+        if (Files.exists(path)) {
+            try (Stream<Path> pathStream = Files.list(path)) {
+                List<Path> pathList = pathStream.sorted().collect(Collectors.toList());
+                if (CollectionUtils.isNotEmpty(pathList)) {
+                    Path eventPath = pathList.get(pathList.size() - 1);
+                    String filename = eventPath.getFileName().toString();
+                    filename = FilenameUtils.getBaseName(filename);
+                    List<String> nameSplitList = Arrays.asList(filename.split("_"));
+                    if (CollectionUtils.isNotEmpty(nameSplitList)) {
+                        String index = nameSplitList.get(nameSplitList.size() - 1);
+                        return Integer.parseInt(index);
+                    }
+                }
+            } catch (Exception ex) {
+                log.warn(ExceptionUtils.getStackTrace(ex));
             }
-            artifactEventListenerRegistry.dispatchArtifactDownloadingEvent(repositoryPath);
-        } catch (Exception ex) {
-            log.error("RepositoryPath beforeRead error ", ex);
+        }
+        return null;
+    }
+
+    public String getEventParentPath() {
+        return tempPath + File.separator + "artifactEvent";
+    }
+
+    public Path getEventPath(Integer index) throws IOException {
+        if (Objects.isNull(index)) {
+            index = 1;
+        }
+        String filename = DateUtil.format(DateUtil.date(), DatePattern.PURE_DATE_PATTERN) + "_index_%s.txt";
+        String filePath = getEventParentPath() + File.separator + String.format(filename, index);
+        log.debug("Event file path [{}]", filePath);
+        Path path = Path.of(filePath);
+        Files.createDirectories(path.getParent());
+        //每个事件文件20M大小
+        BigDecimal maxSize = BigDecimal.valueOf(20);
+        if (!Files.exists(path)) {
+            Files.createFile(path);
+        }
+        if (FileSizeConvertUtils.convertBytesWithDecimal(Files.size(path), FileUnitTypeEnum.MB.getUnit()).compareTo(maxSize) >= 0) {
+            return getEventPath(index + 1);
+        }
+        return path;
+    }
+
+    private void storeEvent(RepositoryPath repositoryPath, ArtifactEventTypeEnum artifactEventTypeEnum) throws IOException {
+        Path eventPath = getEventPath(getLatestIndex());
+        //追加写模式
+        try (BufferedWriter writer = Files.newBufferedWriter(eventPath, StandardCharsets.UTF_8, StandardOpenOption.APPEND)) {
+            ArtifactEventRecord artifactEventRecord = ArtifactEventRecord.builder().storageId(repositoryPath.getStorageId()).repositoryId(repositoryPath.getRepositoryId())
+                    .artifactPath(RepositoryFiles.relativizePath(repositoryPath)).eventType(artifactEventTypeEnum.getType()).build();
+            writer.write(JSONObject.toJSONString(artifactEventRecord) + System.lineSeparator());
         }
     }
 
-    @Async("eventTaskExecutor")
     public void afterRead(RepositoryPath repositoryPath) {
         try {
             if (Objects.isNull(repositoryPath) || !RepositoryFiles.isArtifact(repositoryPath)) {
                 return;
             }
-            artifactEventListenerRegistry.dispatchArtifactDownloadedEvent(repositoryPath);
+            long startTime = System.currentTimeMillis();
+            storeEvent(repositoryPath, ArtifactEventTypeEnum.EVENT_ARTIFACT_FILE_DOWNLOADED);
+            log.debug("Write EVENT_ARTIFACT_FILE_DOWNLOADED take time [{}] ms", System.currentTimeMillis() - startTime);
         } catch (Exception ex) {
-            log.error("RepositoryPath beforeRead error ", ex);
+            log.error("RepositoryPath afterRead error ", ex);
         }
     }
 
-    @Async("eventTaskExecutor")
     public void artifactCache(RepositoryPath repositoryPath) {
         try {
             artifactEventListenerRegistry.dispatchArtifactCacheEvent(repositoryPath);
@@ -1272,6 +1367,79 @@ public class ArtifactComponent {
             log.error(ExceptionUtils.getStackTrace(ex));
             return null;
         }
+    }
+
+    /**
+     * 获取metadata
+     *
+     * @param repositoryPath repositoryPath
+     * @param version        version
+     * @return metadata
+     */
+    private Metadata getMetadata(RepositoryPath repositoryPath, String version) {
+        Path metadataPath = null;
+        try {
+            Metadata metadata = null;
+            if (ArtifactUtils.isSnapshot(version)) {
+                metadataPath = MetadataHelper.getSnapshotMetadataPath(repositoryPath, version);
+            } else {
+                metadataPath = MetadataHelper.getMetadataPath(repositoryPath);
+            }
+            if (Files.exists(metadataPath)) {
+                try (InputStream inputStream = Files.newInputStream(metadataPath)) {
+                    metadata = artifactMetadataService.getMetadata(inputStream);
+                }
+            }
+            return metadata;
+        } catch (Exception ex) {
+            log.error("path：{}，getMetadata error：{}", metadataPath, ExceptionUtils.getStackTrace(ex));
+            throw new RuntimeException("path：【" + metadataPath + "】getMetadata error");
+        }
+    }
+
+    /**
+     * 计算版本号
+     *
+     * @param storageId    storageId
+     * @param repositoryId repositoryId
+     * @param groupId      groupId
+     * @param artifactId   artifactId
+     * @param version      version
+     * @param artifactName artifactName
+     * @return 版本号
+     */
+    private String calcLatestSnapshotVersion(String storageId, String repositoryId, String groupId, String artifactId, String version, String artifactName) {
+        if (ArtifactUtils.isSnapshot(version)) {
+            String artifactPath = String.format("%s/%s", groupId, artifactId);
+            RepositoryPath repositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, artifactPath);
+            try {
+                int buildNumber = 1;
+                Metadata metadata = getMetadata(repositoryPath, version);
+                if (Objects.nonNull(metadata)) {
+                    Versioning versioning = metadata.getVersioning();
+                    if (Objects.nonNull(versioning)) {
+                        Snapshot snapshot = versioning.getSnapshot();
+                        if (Objects.nonNull(snapshot)) {
+                            buildNumber = snapshot.getBuildNumber() + 1;
+                        }
+                    }
+                }
+                String timestamp = MetadataHelper.getDateFormatInstance().format(Calendar.getInstance().getTime());
+                artifactName = artifactName.replace("SNAPSHOT",
+                        timestamp.substring(0, 8) + "." + timestamp.substring(8) + "-" + buildNumber);
+            } catch (Exception ex) {
+                log.error("path：{}，calcLatestSnapshotVersion error：{}", repositoryPath.toAbsolutePath().toString(), ExceptionUtils.getStackTrace(ex));
+                throw new RuntimeException("path 【" + repositoryPath.toAbsolutePath().toString() + "】calcLatestSnapshotVersion error");
+            }
+        }
+        return artifactName;
+    }
+
+    public String calcMavenArtifactPath(String storageId, String repositoryId, String groupId, String artifactId, String version, String artifactName) {
+        if (groupId.contains(GlobalConstants.POINT)) {
+            groupId = groupId.replace(GlobalConstants.POINT, File.separator);
+        }
+        return String.format("%s/%s/%s/%s", groupId, artifactId, version, calcLatestSnapshotVersion(storageId, repositoryId, groupId, artifactId, version, artifactName));
     }
 
 }

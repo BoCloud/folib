@@ -369,13 +369,6 @@ export default {
           i18nRemark: 'Setting.uploadingTheSameArtifactAgain',
         },
         {
-          label: '制品下载',
-          i18nLabel: 'Setting.ArtifactDownload',
-          value: 'EVENT_ARTIFACT_FILE_DOWNLOADED',
-          remark: '下载制品时触发 URL',
-          i18nRemark: 'Setting.downloadingArtifact',
-        },
-        {
           label: '制品删除',
           i18nLabel: 'Setting.ArtifactDeletion',
           value: 'EVENT_ARTIFACT_PATH_DELETED',

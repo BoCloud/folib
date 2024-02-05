@@ -9,6 +9,7 @@ import cn.hutool.http.HttpUtil;
 import cn.hutool.http.Method;
 import cn.hutool.json.JSONUtil;
 import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.JSONObject;
 import com.veadan.folib.artifact.coordinates.DockerArtifactCoordinates;
 import com.veadan.folib.cloud.storage.s3fs.util.UriUtils;
 import com.veadan.folib.components.security.SecurityComponent;
@@ -147,18 +148,18 @@ public class FolibWsClientArtifactPullCommand implements FolibWsClientCommand<Pr
     public void execute(PromotionNodeOption promotionNodeOption) {
         Response response = null;
         try {
-            log.info("进入拉模式={}", true);
             final String syncNo = promotionNodeOption.getSyncNo();
+            log.info("Use ws pull model");
             final String sourcePath = UriUtils.decode(StringUtils.removeEnd(promotionNodeOption.getSourcePath(), "/"));
             final String targetPath = UriUtils.decode(StringUtils.removeEnd(promotionNodeOption.getTargetPath(), "/"));
             final String srcStorageId = parsePath(sourcePath)[0];
-            final String srcRepostoryId = parsePath(sourcePath)[1];
-            final String srcUrl = sourcePath.split("/" + srcStorageId + "/" + srcRepostoryId + "/")[0];
-            final String srcUri = sourcePath.split("/" + srcStorageId + "/" + srcRepostoryId + "/")[1];
+            final String srcRepositoryId = parsePath(sourcePath)[1];
+            final String srcUrl = sourcePath.split("/" + srcStorageId + "/" + srcRepositoryId + "/")[0];
+            final String srcUri = sourcePath.split("/" + srcStorageId + "/" + srcRepositoryId + "/")[1];
             final String targetStorageId = parsePath(targetPath)[0];
-            final String targetRepostoryId = parsePath(targetPath)[1];
+            final String targetRepositoryId = parsePath(targetPath)[1];
 
-            artifactPromotionService.validateStorageAndRepository(targetStorageId, targetRepostoryId);
+            artifactPromotionService.validateStorageAndRepository(targetStorageId, targetRepositoryId);
             // 从源仓路径 pull 到目标仓路径 获取目标主机的path 路径下的文件与目录 然后依次提交到任务队列里面后将文件存入仓库
             final String getFileRelativePathsUrl = srcUrl + API_ARTIFACT_FOLIB_PROMOTION_GET_FILE_RELATIVE_PATHS;
             // 获取需要拉取的文件集合信息
@@ -176,7 +177,7 @@ public class FolibWsClientArtifactPullCommand implements FolibWsClientCommand<Pr
             // 判断是否支持切片下载
             final List<ArtifactSliceDownloadInfoReq> sliceDownloadInfosQueryReq = getFileRelativePaths.stream()
                     .map(path -> new ArtifactSliceDownloadInfoReq()
-                            .setStorageId(srcStorageId).setRepositoryId(srcRepostoryId)
+                            .setStorageId(srcStorageId).setRepositoryId(srcRepositoryId)
                             .setPath(path)
                     ).collect(toList());
             List<ArtifactSliceDownloadInfoRes> artifactSliceDownloadInfoRes = this.doRequestReturnListEntity(Method.POST, srcUrl + BATCH_QUERY_ARTIFACT_GET_SLICE_DOWNLOAD_INFO_URL, (req) -> {

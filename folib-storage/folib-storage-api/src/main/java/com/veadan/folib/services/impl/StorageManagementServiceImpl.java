@@ -8,6 +8,8 @@ import com.veadan.folib.authorization.dto.RoleDto;
 import com.veadan.folib.authorization.service.AuthorizationConfigService;
 import com.veadan.folib.converters.RoleModelToRoleConverter;
 import com.veadan.folib.domain.*;
+import com.veadan.folib.enums.StorageProviderEnum;
+import com.veadan.folib.providers.storage.StorageProvider;
 import com.veadan.folib.services.ConfigurationManagementService;
 import com.veadan.folib.services.RepositoryManagementService;
 import com.veadan.folib.services.StorageManagementService;
@@ -16,6 +18,7 @@ import com.veadan.folib.storage.StorageDto;
 import com.veadan.folib.storage.repository.Repository;
 import com.veadan.folib.users.domain.Privileges;
 import com.veadan.folib.users.domain.SystemRole;
+import com.veadan.folib.users.dto.StoragePrivileges;
 import com.veadan.folib.users.service.UserService;
 import com.veadan.folib.users.service.impl.DatabaseUserService;
 import org.apache.commons.collections4.CollectionUtils;
@@ -28,10 +31,7 @@ import org.springframework.stereotype.Component;
 
 import javax.inject.Inject;
 import java.io.IOException;
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -82,6 +82,17 @@ public class StorageManagementServiceImpl implements StorageManagementService {
         handlerStorageAdminRole(storage.getAdmin(), "", null);
     }
 
+    @Override
+    public void handleStorageProvider(StorageDto storage) throws IOException {
+        if (StringUtils.isNotBlank(storage.getBasedir())) {
+            storage.setStorageProvider(StorageProviderEnum.S3.getType());
+        } else {
+            storage.setStorageProvider(StorageProviderEnum.LOCAL.getType());
+        }
+        logger.info("Storage [{}] storageProvider [{}]", storage.getId(), storage.getStorageProvider());
+        updateStorage(storage);
+    }
+
     /**
      * 处理原有的管理员角色
      *
@@ -125,6 +136,9 @@ public class StorageManagementServiceImpl implements StorageManagementService {
                     //存储空间角色已存在，先删除
                     authorizationConfigService.deleteRole(storageRoleName);
                     User user = userInfo(username);
+                    if (Objects.isNull(user)) {
+                        return;
+                    }
                     SecurityRoleEntity securityRole = new SecurityRoleEntity();
                     securityRole.setUuid(storageRoleName);
                     user.getRoles().remove(securityRole);
@@ -149,6 +163,9 @@ public class StorageManagementServiceImpl implements StorageManagementService {
                 RoleDto role = RoleModelToRoleConverter.convert(roleModel);
                 authorizationConfigService.addRole(role);
                 User user = userInfo(username);
+                if (Objects.isNull(user)) {
+                    return;
+                }
                 SecurityRoleEntity securityRole = new SecurityRoleEntity();
                 securityRole.setUuid(storageRoleName);
                 user.getRoles().add(securityRole);
@@ -177,6 +194,9 @@ public class StorageManagementServiceImpl implements StorageManagementService {
      */
     private boolean isAdmin(String username) {
         User user = userInfo(username);
+        if (Objects.isNull(user)) {
+            return false;
+        }
         return user.getRoles().stream().map(SecurityRole::getRoleName).collect(Collectors.toSet()).contains(SystemRole.ADMIN.name());
     }
 

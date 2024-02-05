@@ -22,7 +22,7 @@
                 </a-button>
                 <a-popconfirm :title="$t('Cache.sureClearCacheDirectory') + cacheForm.directoryPath + $t('Cache.cacheDirectory')" okType="danger" :ok-text="$t('Cache.BeSure')" :cancel-text="$t('Cache.Cancel')"
                   @confirm="cleanupCacheDirectory">
-                  <a-button class="ml-10" type="danger">
+                  <a-button class="ml-10" type="danger" v-if="cacheForm.directoryPath">
                     {{ $t('Cache.Empty') }}
                   </a-button>
                 </a-popconfirm>

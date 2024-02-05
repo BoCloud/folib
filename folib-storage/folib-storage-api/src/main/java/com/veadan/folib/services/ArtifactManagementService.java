@@ -120,6 +120,13 @@ public class ArtifactManagementService
         return doStore(repositoryPath, is);
     }
 
+    public long store(RepositoryPath repositoryPath,
+                      RepositoryPath sourcePath)
+            throws IOException
+    {
+        return doStore(repositoryPath, sourcePath);
+    }
+
     private long doStore(RepositoryPath repositoryPath,
                          InputStream is)
             throws IOException
@@ -140,7 +147,7 @@ public class ArtifactManagementService
         {
             throw new ArtifactStorageException(e);
         }
-        logger.info("DoStore {} take time：{} ms" , repositoryPath.toString(), System.currentTimeMillis() - startTime);
+        logger.info("DoStore [{}] take time [{}] ms." , repositoryPath.toString(), System.currentTimeMillis() - startTime);
 
         return result;
     }
@@ -154,7 +161,7 @@ public class ArtifactManagementService
         try (final RepositoryStreamSupport.RepositoryOutputStream aos = artifactResolutionService.getOutputStream(repositoryPath))
         {
             result = writeArtifact(repositoryPath, sourcePath, aos);
-            logger.info("Stored [{}] bytes for [{}].", result, repositoryPath);
+            logger.debug("Stored [{}] bytes for [{}].", result, repositoryPath);
             aos.flush();
         }
         catch (IOException e)
@@ -165,7 +172,7 @@ public class ArtifactManagementService
         {
             throw new ArtifactStorageException(e);
         }
-        logger.info("DoStore {} take time：{} ms" , repositoryPath.toString(), System.currentTimeMillis() - startTime);
+        logger.debug("DoStore [{}] take time [{}] ms" , repositoryPath.toString(), System.currentTimeMillis() - startTime);
 
         return result;
     }
@@ -176,7 +183,7 @@ public class ArtifactManagementService
         try (final RepositoryStreamSupport.RepositoryStoreIndexInputStream ins = artifactResolutionService.getStoreIndexInputStream(repositoryPath))
         {
             writeArtifactIndex(repositoryPath, ins);
-            logger.info("Stored index for [{}].", repositoryPath);
+            logger.debug("Stored index for [{}].", repositoryPath);
             ins.commitStoreIndex();
         }
         catch (IOException e)
@@ -213,7 +220,7 @@ public class ArtifactManagementService
 
         long startTime = System.currentTimeMillis();
         long totalAmountOfBytes = IOUtils.copy(is, os);
-        logger.info("IOUtils copy {} ,take time：{} ms" , repositoryPath.toString(), System.currentTimeMillis() - startTime);
+        logger.info("IOUtils copy [{}] take time [{}] ms" , repositoryPath.toString(), System.currentTimeMillis() - startTime);
 
         URI repositoryPathId = repositoryPath.toUri();
         Map<String, String> digestMap = aos.getDigestMap(repository.getLayout());
@@ -262,7 +269,7 @@ public class ArtifactManagementService
 
         long startTime = System.currentTimeMillis();
         long totalAmountOfBytes = Files.copy(sourcePath, os);
-        logger.info("Files copy {} ,take time：{} ms" , repositoryPath.toString(), System.currentTimeMillis() - startTime);
+        logger.debug("Files copy [{}] take time [{}] ms" , repositoryPath.toString(), System.currentTimeMillis() - startTime);
 
         URI repositoryPathId = repositoryPath.toUri();
         Map<String, String> digestMap = aos.getDigestMap(repository.getLayout());
@@ -340,10 +347,19 @@ public class ArtifactManagementService
                 });
     }
 
+    public void checksums(RepositoryPath repositoryPath, Map<String, String> digestMap)
+    {
+        if (Objects.nonNull(digestMap) && !digestMap.isEmpty())
+        {
+            addChecksumsToCacheManager(digestMap, repositoryPath.toUri());
+            writeChecksums(repositoryPath, digestMap);
+        }
+    }
+
     private void validateUploadedChecksumAgainstCache(byte[] checksum,
                                                       URI artifactPathId)
     {
-        logger.info("Received checksum: {}", new String(checksum, StandardCharsets.UTF_8));
+        logger.debug("Received checksum: {}", new String(checksum, StandardCharsets.UTF_8));
 
         String artifactPath = artifactPathId.toString();
         String artifactBasePath = artifactPath.substring(0, artifactPath.lastIndexOf('.'));
@@ -383,7 +399,7 @@ public class ArtifactManagementService
         Set<String> matched = matchingMap.get(Boolean.TRUE);
         Set<String> unmatched = matchingMap.get(Boolean.FALSE);
 
-        logger.info("Artifact checksum matchings: artifact-[{}]; ext-[{}]; matched-[{}];" +
+        logger.debug("Artifact checksum matchings: artifact-[{}]; ext-[{}]; matched-[{}];" +
                         " unmatched-[{}]; checksum-[{}]",
                 artifactBasePath,
                 checksumExtension,
@@ -402,10 +418,10 @@ public class ArtifactManagementService
                 .forEach(e -> checksumCacheManager.addArtifactChecksum(artifactPath.toString(), e.getKey(), e.getValue()));
     }
 
-    private boolean performRepositoryAcceptanceValidation(RepositoryPath path)
+    public boolean performRepositoryAcceptanceValidation(RepositoryPath path)
             throws IOException, ProviderImplementationException, ArtifactCoordinatesValidationException
     {
-        logger.info("Validate artifact with path [{}]", path);
+        logger.debug("Validate artifact with path [{}]", path);
 
         Repository repository = path.getFileSystem().getRepository();
 
@@ -417,7 +433,7 @@ public class ArtifactManagementService
         }
 
         ArtifactCoordinates coordinates = RepositoryFiles.readCoordinates(path);
-        logger.info("Validate artifact with coordinates [{}]", coordinates);
+        logger.debug("Validate artifact with coordinates [{}]", coordinates);
 
         try
         {
@@ -445,7 +461,7 @@ public class ArtifactManagementService
     private boolean performStoreIndexRepositoryAcceptanceValidation(RepositoryPath path)
             throws IOException, ProviderImplementationException, ArtifactCoordinatesValidationException
     {
-        logger.info("Validate artifact with path [{}]", path);
+        logger.debug("Validate artifact with path [{}]", path);
 
         Repository repository = path.getFileSystem().getRepository();
 
@@ -457,7 +473,7 @@ public class ArtifactManagementService
         }
 
         ArtifactCoordinates coordinates = RepositoryFiles.readCoordinates(path);
-        logger.info("Validate artifact with coordinates [{}]", coordinates);
+        logger.debug("Validate artifact with coordinates [{}]", coordinates);
 
         try
         {

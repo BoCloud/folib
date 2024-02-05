@@ -27,9 +27,9 @@ public class FolibWsServerSessionHealthCheckTimer {
 
             // 保持心跳，避免nginx反向代理配置断开
             if (!folibWsServerRun.ping()) {
-                log.info("【Ws连接健康定时任务】扫描到Ws连接（{}）断开，进行重连开始", folibWsServerRun.getWsUrl());
+                log.debug("【Ws连接健康定时任务】扫描到Ws连接（{}）断开，进行重连开始", folibWsServerRun.getWsUrl());
                 final boolean reUp = FolibWsClientRunManage.up(nodeName, host, port, uri, isForceUp, enableSSL);
-                log.info("【Ws连接健康定时任务】扫描到Ws连接（{}）断开，进行重连结束，重连结果：{}", folibWsServerRun.getWsUrl(), reUp);
+                log.debug("【Ws连接健康定时任务】扫描到Ws连接（{}）断开，进行重连结束，重连结果：{}", folibWsServerRun.getWsUrl(), reUp);
             }
         }
     }

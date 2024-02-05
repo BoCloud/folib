@@ -16,6 +16,7 @@ import com.veadan.folib.repositories.VulnerabilityRepository;
 import com.veadan.folib.storage.ArtifactResolutionException;
 import com.veadan.folib.storage.Storage;
 import com.veadan.folib.storage.repository.Repository;
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
@@ -251,7 +252,9 @@ public abstract class LayoutFileSystemProvider extends StorageFileSystemProvider
                 .orElseGet(() -> fetchArtifactEntry(repositoryPath));
         if (artifactEntry != null) {
             artifactEntityRepository.delete(artifactEntry);
-            vulnerabilityRepository.handlerVulnerabilityForArtifactDelete(artifactEntry.getVulnerabilities());
+            if (CollectionUtils.isNotEmpty(artifactEntry.getVulnerabilities())) {
+                vulnerabilityRepository.asyncHandlerVulnerabilityForArtifactDelete(repositoryPath, artifactEntry.getVulnerabilities());
+            }
         }
 
         super.doDeletePath(repositoryPath, force);

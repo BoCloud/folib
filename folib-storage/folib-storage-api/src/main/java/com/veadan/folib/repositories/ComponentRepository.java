@@ -1,7 +1,8 @@
 package com.veadan.folib.repositories;
 
-import com.alibaba.fastjson.JSONObject;
+import com.veadan.folib.components.DistributedLockComponent;
 import com.veadan.folib.configuration.ConfigurationManager;
+import com.veadan.folib.constant.GlobalConstants;
 import com.veadan.folib.db.schema.Edges;
 import com.veadan.folib.db.schema.Properties;
 import com.veadan.folib.db.schema.Vertices;
@@ -12,7 +13,6 @@ import com.veadan.folib.gremlin.dsl.EntityTraversal;
 import com.veadan.folib.gremlin.dsl.EntityTraversalUtils;
 import com.veadan.folib.gremlin.repositories.GremlinVertexRepository;
 import com.veadan.folib.util.CommonUtils;
-import com.veadan.folib.util.StripedLockUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
@@ -29,7 +29,6 @@ import javax.inject.Inject;
 import javax.transaction.Transactional;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.locks.Lock;
 
 /**
  * 组件顶点图数据交互
@@ -53,38 +52,32 @@ public class ComponentRepository extends GremlinVertexRepository<Component> {
     @Inject
     private JanusGraph janusGraph;
 
+    @Inject
+    DistributedLockComponent distributedLockComponent;
+
     @Override
     protected ComponentAdapter adapter() {
         return componentAdapter;
     }
 
     public void saveOrUpdate(Component component) {
-        Long waitLockTime = 30L;
-        Lock lock = StripedLockUtils.lock(component.getUuid());
-        try {
-            if (lock.tryLock(waitLockTime, TimeUnit.SECONDS)) {
+        if (distributedLockComponent.lock(component.getUuid(), GlobalConstants.WAIT_LOCK_TIME, TimeUnit.SECONDS)) {
+            try {
                 try {
-                    try {
-                        merge(component);
-                    } catch (Exception ex) {
-                        if (CommonUtils.catchException(ex)) {
-                            log.warn("[{}] [{}] saveOrUpdate catch error",
-                                    this.getClass().getSimpleName(), component.getUuid());
-                            return;
-                        }
-                        log.error("[{}] [{}] saveOrUpdate error [{}]",
-                                this.getClass().getSimpleName(), component.getUuid(), ExceptionUtils.getStackTrace(ex));
-                        throw new RuntimeException(ex.getMessage());
+                    merge(component);
+                } catch (Exception ex) {
+                    if (CommonUtils.catchException(ex)) {
+                        log.warn("Handle component [{}] catch error", component.getUuid());
+                        return;
                     }
-                } finally {
-                    lock.unlock();
+                    log.error("Handle component [{}] error [{}]", component.getUuid(), ExceptionUtils.getStackTrace(ex));
+                    throw new RuntimeException(ex.getMessage());
                 }
-            } else {
-                log.warn("保存组件顶点 {} 未获取到锁", JSONObject.toJSONString(component));
+            } finally {
+                distributedLockComponent.unLock(component.getUuid());
             }
-        } catch (Exception e) {
-            log.error("保存组件顶点 {} 错误：{}", JSONObject.toJSONString(component), ExceptionUtils.getStackTrace(e));
-            throw new RuntimeException(e);
+        } else {
+            log.warn("Handle component [{}] was not get lock", component.getUuid());
         }
     }
 

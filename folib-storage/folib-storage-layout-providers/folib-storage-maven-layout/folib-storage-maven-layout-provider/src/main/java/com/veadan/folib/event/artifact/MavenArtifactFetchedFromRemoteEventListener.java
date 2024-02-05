@@ -108,19 +108,17 @@ public class MavenArtifactFetchedFromRemoteEventListener
         Repository repository = metadataPath.getRepository();
         RemoteRepository remoteRepository = repository.getRemoteRepository();
         RestArtifactResolver client = restArtifactResolverFactory.newInstance(remoteRepository, artifactAbsolutePath);
-        
-        Lock lock = repositoryPathLock.lock(metadataPath).writeLock();
-        lock.lock();
 
-        try (InputStream is = new BufferedInputStream(new ProxyRepositoryInputStream(client, metadataPath)))
-        {
-            mergeMetadata(artifactAbsolutePath, is);
-        } 
-        finally
-        {
-            lock.unlock();
+        if (repositoryPathLock.lock(metadataPath)) {
+            try (InputStream is = new BufferedInputStream(new ProxyRepositoryInputStream(client, metadataPath)))
+            {
+                mergeMetadata(artifactAbsolutePath, is);
+            }
+            finally
+            {
+                repositoryPathLock.unLock(metadataPath);
+            }
         }
-        
     }
 
     private void mergeMetadata(RepositoryPath repositoryPath,

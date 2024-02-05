@@ -1,5 +1,13 @@
 package com.veadan.folib.providers.io;
 
+import com.veadan.folib.domain.Artifact;
+import com.veadan.folib.io.ProxyPathInvocationHandler;
+import com.veadan.folib.storage.Storage;
+import com.veadan.folib.storage.repository.Repository;
+import com.veadan.folib.util.PathUtils;
+import org.apache.commons.io.FilenameUtils;
+
+import javax.ws.rs.core.MultivaluedMap;
 import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Proxy;
@@ -15,25 +23,15 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 
-import org.apache.commons.io.FilenameUtils;
-import com.veadan.folib.domain.Artifact;
-import com.veadan.folib.io.ProxyPathInvocationHandler;
-import com.veadan.folib.storage.Storage;
-import com.veadan.folib.storage.repository.Repository;
-import com.veadan.folib.util.PathUtils;
-
 /**
  * This implementation decorates storage {@link Path} implementation, which can be an "Cloud Path" or common
  * "File System Path".
  *
  * @author @author veadan
- *
  * @see RepositoryPathResolver
- *
  */
 public class RepositoryPath
-        implements Path
-{
+        implements Path {
 
     private Path target;
 
@@ -49,27 +47,29 @@ public class RepositoryPath
 
     private String targetUrl;
 
+    private Boolean disableRemote;
+
+    private MultivaluedMap<String, Object> headers;
+
     protected String path;
 
+    private String artifactPath;
+
     public RepositoryPath(Path target,
-                          LayoutFileSystem fileSystem)
-    {
+                          LayoutFileSystem fileSystem) {
         this.target = target;
         this.fileSystem = fileSystem;
     }
 
-    public String getStorageId()
-    {
+    public String getStorageId() {
         return getRepository().getStorage().getId();
     }
 
-    public String getRepositoryId()
-    {
+    public String getRepositoryId() {
         return getRepository().getId();
     }
-    
-    public Path getTarget()
-    {
+
+    public Path getTarget() {
         return target;
     }
 
@@ -77,12 +77,11 @@ public class RepositoryPath
         this.target = target;
     }
 
-    public Artifact getArtifactEntry() throws IOException
-    {
+    public Artifact getArtifactEntry() throws IOException {
         return artifact;
     }
 
-    public Boolean getArtifactExist () throws IOException {
+    public Boolean getArtifactExist() throws IOException {
         return artifactExist;
     }
 
@@ -90,33 +89,32 @@ public class RepositoryPath
         this.artifact = artifact;
     }
 
-    public LayoutFileSystem getFileSystem()
-    {
+    @Override
+    public LayoutFileSystem getFileSystem() {
         return fileSystem;
     }
 
-    public Repository getRepository()
-    {
+    public Repository getRepository() {
         return getFileSystem().getRepository();
     }
 
-    public boolean isAbsolute()
-    {
+    @Override
+    public boolean isAbsolute() {
         return getTarget().isAbsolute();
     }
 
-    public RepositoryPath getRoot()
-    {
+    @Override
+    public RepositoryPath getRoot() {
         return getFileSystem().getRootDirectory();
     }
 
-    public Path getFileName()
-    {
+    @Override
+    public Path getFileName() {
         return getTarget().getFileName();
     }
 
-    public RepositoryPath getParent()
-    {
+    @Override
+    public RepositoryPath getParent() {
         RepositoryPath parent = wrap(getTarget().getParent());
 
         validateParent(parent);
@@ -124,51 +122,50 @@ public class RepositoryPath
         return parent;
     }
 
-    public int getNameCount()
-    {
+    @Override
+    public int getNameCount() {
         return getTarget().getNameCount();
     }
 
-    public RepositoryPath getName(int index)
-    {
+    @Override
+    public RepositoryPath getName(int index) {
         return wrap(getTarget().getName(index));
     }
 
+    @Override
     public RepositoryPath subpath(int beginIndex,
-                                  int endIndex)
-    {
+                                  int endIndex) {
         return wrap(getTarget().subpath(beginIndex, endIndex));
     }
 
-    public boolean startsWith(Path other)
-    {
+    @Override
+    public boolean startsWith(Path other) {
         return getTarget().startsWith(unwrap(other));
     }
 
-    public boolean startsWith(String other)
-    {
+    @Override
+    public boolean startsWith(String other) {
         return getTarget().startsWith(other);
     }
 
-    public boolean endsWith(Path other)
-    {
+    @Override
+    public boolean endsWith(Path other) {
         return getTarget().endsWith(other);
     }
 
-    public boolean endsWith(String other)
-    {
+    @Override
+    public boolean endsWith(String other) {
         return getTarget().endsWith(other);
     }
 
-    public RepositoryPath normalize()
-    {
+    @Override
+    public RepositoryPath normalize() {
         return wrap(getTarget().normalize());
     }
 
-    public RepositoryPath resolve(Path other)
-    {
-        if (other == null)
-        {
+    @Override
+    public RepositoryPath resolve(Path other) {
+        if (other == null) {
             return this;
         }
 
@@ -179,10 +176,9 @@ public class RepositoryPath
         return wrap(getTarget().resolve(other));
     }
 
-    public RepositoryPath resolve(String other)
-    {
-        if (other == null)
-        {
+    @Override
+    public RepositoryPath resolve(String other) {
+        if (other == null) {
             return this;
         }
 
@@ -191,8 +187,8 @@ public class RepositoryPath
         return wrap(getTarget().resolve(other));
     }
 
-    public RepositoryPath resolveSibling(Path other)
-    {
+    @Override
+    public RepositoryPath resolveSibling(Path other) {
         validatePathRelativized(other);
 
         other = unwrap(other);
@@ -204,19 +200,18 @@ public class RepositoryPath
         return result;
     }
 
-    protected Path unwrap(Path other)
-    {
+    protected Path unwrap(Path other) {
         other = other != null && Proxy.isProxyClass(other.getClass())
                 ? ((ProxyPathInvocationHandler) Proxy.getInvocationHandler(other)).getTarget()
                 : other;
 
-        other = other instanceof RepositoryPath ? ((RepositoryPath)other).getTarget() : other;
+        other = other instanceof RepositoryPath ? ((RepositoryPath) other).getTarget() : other;
 
         return other;
     }
 
-    public RepositoryPath resolveSibling(String other)
-    {
+    @Override
+    public RepositoryPath resolveSibling(String other) {
         validateStringPathRelativized(other);
 
         RepositoryPath result = wrap(getTarget().resolveSibling(other));
@@ -226,8 +221,8 @@ public class RepositoryPath
         return result;
     }
 
-    public RepositoryPath relativize(Path other)
-    {
+    @Override
+    public RepositoryPath relativize(Path other) {
         other = unwrap(other);
 
         return wrap(getTarget().relativize(other));
@@ -238,50 +233,42 @@ public class RepositoryPath
      *
      * @return
      */
-    public RepositoryPath relativize()
-    {
-        if (!isAbsolute())
-        {
+    public RepositoryPath relativize() {
+        if (!isAbsolute()) {
             return this;
         }
 
         RepositoryPath result = getFileSystem().getRootDirectory().relativize(this);
-        if (result.startsWith(LayoutFileSystem.TRASH) || result.startsWith(LayoutFileSystem.TEMP))
-        {
+        if (result.startsWith(LayoutFileSystem.TRASH) || result.startsWith(LayoutFileSystem.TEMP)) {
             result = result.subpath(1, result.getNameCount());
         }
 
         return result;
     }
 
-    public URI toUri()
-    {
-        if (uri != null)
-        {
+    @Override
+    public URI toUri() {
+        if (uri != null) {
             return uri;
         }
 
         Repository repository = getFileSystem().getRepository();
         Storage storage = repository.getStorage();
-        try
-        {
+        try {
             uri = new URI(StorageFileSystemProvider.FOLIB_SCHEME,
-                          null,
-                          "/" + storage.getId() + "/" + repository.getId() + "/" +
-                          FilenameUtils.separatorsToUnix(relativize().toString()),
-                          null);
-        }
-        catch (URISyntaxException e)
-        {
+                    null,
+                    "/" + storage.getId() + "/" + repository.getId() + "/" +
+                            FilenameUtils.separatorsToUnix(relativize().toString()),
+                    null);
+        } catch (URISyntaxException e) {
             uri = null;
         }
         return uri;
     }
 
-    public RepositoryPath toAbsolutePath()
-    {
-        if (!isAbsolute())
-        {
+    @Override
+    public RepositoryPath toAbsolutePath() {
+        if (!isAbsolute()) {
             RepositoryPath result = getFileSystem().getRootDirectory().resolve(this);
             result.artifact = this.artifact;
 
@@ -291,97 +278,85 @@ public class RepositoryPath
         return this;
     }
 
+    @Override
     public RepositoryPath toRealPath(LinkOption... options)
-            throws IOException
-    {
+            throws IOException {
         return wrap(getTarget().toRealPath(options));
     }
 
+    @Override
     @Deprecated
-    public File toFile()
-    {
+    public File toFile() {
         return getTarget().toFile();
     }
 
+    @Override
     public WatchKey register(WatchService watcher,
                              Kind<?>[] events,
                              Modifier... modifiers)
-            throws IOException
-    {
+            throws IOException {
         throw new UnsupportedOperationException();
     }
 
+    @Override
     public WatchKey register(WatchService watcher,
                              Kind<?>... events)
-            throws IOException
-    {
+            throws IOException {
         throw new UnsupportedOperationException();
     }
 
-    public Iterator<Path> iterator()
-    {
+    @Override
+    public Iterator<Path> iterator() {
         return getTarget().iterator();
     }
 
-    public int compareTo(Path other)
-    {
+    @Override
+    public int compareTo(Path other) {
         return getTarget().compareTo(unwrap(other));
     }
 
-    public RepositoryPath wrap(Path path)
-    {
+    public RepositoryPath wrap(Path path) {
         return new RepositoryPath(path, fileSystem);
     }
 
-    public String toString()
-    {
+    @Override
+    public String toString() {
         return getTarget().toString();
     }
 
     @Override
-    public boolean equals(Object obj)
-    {
-        return  getTarget().equals(obj instanceof RepositoryPath ? unwrap((Path) obj) : obj);
+    public boolean equals(Object obj) {
+        return getTarget().equals(obj instanceof RepositoryPath ? unwrap((Path) obj) : obj);
     }
 
     @Override
-    public int hashCode()
-    {
+    public int hashCode() {
         return getTarget().hashCode();
     }
 
-    private void validatePathRelativized(final Path other)
-    {
-        if (!PathUtils.isRelativized(unwrap(target), unwrap(other)))
-        {
+    private void validatePathRelativized(final Path other) {
+        if (!PathUtils.isRelativized(unwrap(target), unwrap(other))) {
             throw new RepositoryRelativePathConstructionException();
         }
     }
 
-    private void validateStringPathRelativized(final String other)
-    {
-        if (!PathUtils.isRelativized(unwrap(target), other))
-        {
+    private void validateStringPathRelativized(final String other) {
+        if (!PathUtils.isRelativized(unwrap(target), other)) {
             throw new RepositoryRelativePathConstructionException();
         }
     }
 
-    private void validateParent(final Path parent)
-    {
+    private void validateParent(final Path parent) {
         RootRepositoryPath root = getFileSystem().getRootDirectory();
-        if (parent.isAbsolute() && !parent.startsWith(root))
-        {
+        if (parent.isAbsolute() && !parent.startsWith(root)) {
             throw new RepositoryRelativePathConstructionException();
         }
     }
 
-    private void validateSibling(final Path result)
-    {
+    private void validateSibling(final Path result) {
         final Path sibling = result;
         final String repositoryRootPath = getRoot().toString(); // String, intentionally
-        if (sibling.isAbsolute() && !sibling.startsWith(repositoryRootPath))
-
-        {
+        if (sibling.isAbsolute() && !sibling.startsWith(repositoryRootPath)) {
             throw new PathExceededRootRepositoryPathException();
         }
     }
@@ -392,5 +367,29 @@ public class RepositoryPath
 
     public void setTargetUrl(String targetUrl) {
         this.targetUrl = targetUrl;
+    }
+
+    public MultivaluedMap<String, Object> getHeaders() {
+        return headers;
+    }
+
+    public void setHeaders(MultivaluedMap<String, Object> headers) {
+        this.headers = headers;
+    }
+
+    public String getArtifactPath() {
+        return artifactPath;
+    }
+
+    public void setArtifactPath(String artifactPath) {
+        this.artifactPath = artifactPath;
+    }
+
+    public Boolean getDisableRemote() {
+        return disableRemote;
+    }
+
+    public void setDisableRemote(Boolean disableRemote) {
+        this.disableRemote = disableRemote;
     }
 }

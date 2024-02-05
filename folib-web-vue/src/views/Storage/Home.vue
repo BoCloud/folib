@@ -1,5 +1,5 @@
 <template>
-  <div class="anonymous-storages">
+  <div class="anonymous-home">
      <!-- Header Background Image -->
      <div class="profile-nav-bg">
         <div
@@ -14,16 +14,16 @@
       </a-row>
     </div>
     <Storages v-if="!searchVisible && allowAnonymous" :anonymous="true" class="mt-15"/>
-    <Search ref="search" class="mt-20" v-if="searchVisible && allowAnonymous" :openRepository="true" :columns="columns"/>
+    <Search ref="search" class="mt-20" v-if="searchVisible && allowAnonymous" :columns="columns"/>
   </div>
 </template>
 <script>
 import {
   getAllowAnonymous,
 } from '@/api/settings'
-import Storages from "../Storage/Storages.vue"
+import Storages from "./Storages.vue"
 import SearchBox from "@/components/Tools/SearchBox"
-import Search from "../Storage/components/Search/index.vue"
+import Search from "./components/Search/index.vue"
 
 export default {
   data() {
@@ -117,7 +117,7 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-.anonymous-storages::v-deep {
+.anonymous-home::v-deep {
   .profile-nav-bg {
     display: flex;
     justify-content: center;

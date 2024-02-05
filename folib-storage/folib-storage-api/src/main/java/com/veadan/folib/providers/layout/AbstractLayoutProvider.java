@@ -63,7 +63,7 @@ public abstract class AbstractLayoutProvider<T extends LayoutArtifactCoordinates
 
     protected abstract boolean isArtifactMetadata(RepositoryPath repositoryPath);
 
-    protected abstract T getArtifactCoordinates(RepositoryPath repositoryPath) throws IOException;
+    public abstract T getArtifactCoordinates(RepositoryPath repositoryPath) throws IOException;
 
     protected Set<String> getDigestAlgorithmSet() {
         return Stream.of(MessageDigestAlgorithms.MD5, MessageDigestAlgorithms.SHA_1, MessageDigestAlgorithms.SHA_256)
@@ -232,6 +232,19 @@ public abstract class AbstractLayoutProvider<T extends LayoutArtifactCoordinates
         if (ARCHIVE_LISTING_FUNCTION.supports(repositoryPath)) {
             try {
                 return ARCHIVE_LISTING_FUNCTION.getContentByFileName(repositoryPath, path, fileName);
+            } catch (IOException e) {
+                logger.warn("Unable to file content in archive path {} using {}",
+                        repositoryPath, ARCHIVE_LISTING_FUNCTION, e);
+            }
+        }
+        return null;
+    }
+
+    @Override
+    public byte[] getContentByEqualsFileName(RepositoryPath repositoryPath, Path path, String fileName) {
+        if (ARCHIVE_LISTING_FUNCTION.supports(repositoryPath)) {
+            try {
+                return ARCHIVE_LISTING_FUNCTION.getContentByEqualsFileName(repositoryPath, path, fileName);
             } catch (IOException e) {
                 logger.warn("Unable to file content in archive path {} using {}",
                         repositoryPath, ARCHIVE_LISTING_FUNCTION, e);

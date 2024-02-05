@@ -1,6 +1,6 @@
 <template>
     <div class="vulnerability-report">
-        <a-drawer placement="right" width="65%" :title="$t('Vulnerabilities.ReportDetail')" :visible="reportVisible" @close="closeReport">
+        <a-drawer placement="right" width="55%" :title="$t('Vulnerabilities.ReportDetail')" :visible="reportVisible" @close="closeReport">
             <a-collapse default-active-key="1" :bordered="false" accordion>
                 <template #expandIcon="props">
                     <a-icon type="caret-right" :rotate="props.isActive ? 90 : 0" />

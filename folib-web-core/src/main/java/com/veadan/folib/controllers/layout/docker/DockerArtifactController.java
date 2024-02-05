@@ -5,22 +5,23 @@ import cn.hutool.core.collection.CollectionUtil;
 import cn.hutool.core.lang.UUID;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
+import com.beust.jcommander.internal.Sets;
 import com.google.common.collect.Lists;
 import com.veadan.folib.artifact.coordinates.DockerArtifactCoordinates;
 import com.veadan.folib.cloud.storage.s3fs.S3Iterator;
 import com.veadan.folib.cloud.storage.s3fs.S3Path;
-import com.veadan.folib.cluster.ClusterProperties;
 import com.veadan.folib.constant.GlobalConstants;
 import com.veadan.folib.controllers.BaseArtifactController;
 import com.veadan.folib.domain.*;
-import com.veadan.folib.entity.Dict;
-import com.veadan.folib.enums.DictTypeEnum;
+import com.veadan.folib.enums.DockerHeaderEnum;
 import com.veadan.folib.enums.RepositoryScopeEnum;
+import com.veadan.folib.providers.io.RepositoryFiles;
 import com.veadan.folib.providers.io.RepositoryPath;
+import com.veadan.folib.providers.io.RootRepositoryPath;
 import com.veadan.folib.providers.layout.DockerLayoutProvider;
 import com.veadan.folib.repositories.ArtifactRepository;
 import com.veadan.folib.schema2.ImageManifest;
-import com.veadan.folib.services.DictService;
+import com.veadan.folib.schema2.LayerManifest;
 import com.veadan.folib.services.DirectoryListingService;
 import com.veadan.folib.storage.Storage;
 import com.veadan.folib.storage.repository.Repository;
@@ -29,7 +30,6 @@ import com.veadan.folib.users.security.JwtAuthenticationClaimsProvider;
 import com.veadan.folib.users.security.JwtClaimsProvider;
 import com.veadan.folib.users.security.SecurityTokenProvider;
 import com.veadan.folib.users.userdetails.SpringSecurityUser;
-import com.veadan.folib.utils.DockerApiHeader;
 import com.veadan.folib.utils.FileUtils;
 import io.swagger.annotations.*;
 import org.apache.commons.collections4.CollectionUtils;
@@ -52,13 +52,14 @@ import javax.inject.Inject;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.ByteArrayInputStream;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.security.MessageDigest;
-import java.text.MessageFormat;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
@@ -94,12 +95,6 @@ public class DockerArtifactController extends BaseArtifactController {
     @JwtAuthenticationClaimsProvider.JwtAuthentication
     private JwtClaimsProvider jwtClaimsProvider;
 
-    @Inject
-    private ClusterProperties clusterProperties;
-
-    @Inject
-    private DictService dictService;
-
     /**
      * 文件进度
      */
@@ -121,14 +116,14 @@ public class DockerArtifactController extends BaseArtifactController {
     @ApiOperation(value = "v2")
     @PreAuthorize("authenticated")
     @RequestMapping(value = {"/v2/"}, method = {RequestMethod.GET})
-    public ResponseEntity checkRepositoryAccess(@RequestHeader(value = HttpHeaders.AUTHORIZATION, required = false) String authorization,
-                                                @RequestHeader HttpHeaders httpHeaders,
-                                                HttpServletRequest request,
-                                                HttpServletResponse response)
+    public ResponseEntity v2(@RequestHeader(value = HttpHeaders.AUTHORIZATION, required = false) String authorization,
+                             @RequestHeader HttpHeaders httpHeaders,
+                             HttpServletRequest request,
+                             HttpServletResponse response)
             throws Exception {
         response.reset();
         response.setDateHeader("Date", System.currentTimeMillis());
-        response.setHeader(DockerApiHeader.DOCKER_DISTRIBUTION_API_VERSION.key(), DockerApiHeader.DOCKER_DISTRIBUTION_API_VERSION.value());
+        response.setHeader(DockerHeaderEnum.DOCKER_DISTRIBUTION_API_VERSION.key(), DockerHeaderEnum.DOCKER_DISTRIBUTION_API_VERSION.value());
         setTokenUrl(request, response);
         if (Objects.isNull(authorization)) {
             return new ResponseEntity<>(unAuth(), HttpStatus.UNAUTHORIZED);
@@ -141,14 +136,14 @@ public class DockerArtifactController extends BaseArtifactController {
             @ApiResponse(code = 500, message = "An error occurred.")})
     @PreAuthorize("hasAuthority('ARTIFACTS_RESOLVE')")
     @RequestMapping(value = {"/v2/token"}, method = {RequestMethod.GET})
-    public ResponseEntity<Object> token(HttpServletResponse response) {
+    public ResponseEntity<Object> token(HttpServletResponse response, @RequestParam(value = "scope", required = false) String scope) {
         try {
             SecurityContext securityContext = SecurityContextHolder.getContext();
             Authentication authentication = securityContext.getAuthentication();
             if (Objects.isNull(authentication)) {
                 return new ResponseEntity<>(unAuth(), HttpStatus.UNAUTHORIZED);
             }
-            response.setHeader(DockerApiHeader.DOCKER_DISTRIBUTION_API_VERSION.key(), DockerApiHeader.DOCKER_DISTRIBUTION_API_VERSION.value());
+            response.setHeader(DockerHeaderEnum.DOCKER_DISTRIBUTION_API_VERSION.key(), DockerHeaderEnum.DOCKER_DISTRIBUTION_API_VERSION.value());
             int expireSeconds = 7200;
             if (authentication instanceof AnonymousAuthenticationToken) {
                 String username = authentication.getPrincipal().toString();
@@ -176,14 +171,68 @@ public class DockerArtifactController extends BaseArtifactController {
     }
 
     /**
+     * 校验层级是否已经存在
+     *
+     * @param httpHeaders
+     * @param request
+     * @param response
+     */
+    @ApiOperation(value = "Existing Layers 现有层")
+    @ApiImplicitParams({
+            @ApiImplicitParam(name = "storageId", value = "存储id", required = true),
+            @ApiImplicitParam(name = "repositoryId", value = "仓库id", required = true),
+            @ApiImplicitParam(name = "name", value = "制品名", required = true),
+            @ApiImplicitParam(name = "digest", value = "digest", required = true)
+    })
+    @PreAuthorize("hasAuthority('ARTIFACTS_VIEW')")
+    @RequestMapping(value = {"/v2/{storageId}/{repositoryId}/{name}/blobs/{digest}", "/v2/{storageId}/{repositoryId}/{name}/**/blobs/{digest}"}, method = {RequestMethod.HEAD}, consumes = MediaType.ALL_VALUE)
+    public ResponseEntity existingLayers(@RequestHeader HttpHeaders httpHeaders,
+                                         HttpServletRequest request,
+                                         HttpServletResponse response,
+                                         @PathVariable String storageId,
+                                         @PathVariable String repositoryId,
+                                         @PathVariable String name,
+                                         @PathVariable String digest
+    ) {
+        try {
+            String extractPath = getExtractPath(request);
+            if (StringUtils.isNotBlank(extractPath)) {
+                extractPath = extractPath.replace(String.format("/blobs/%s", digest), "");
+            }
+            response.reset();
+            response.addHeader(DockerHeaderEnum.DOCKER_DISTRIBUTION_API_VERSION.key(), DockerHeaderEnum.DOCKER_DISTRIBUTION_API_VERSION.value());
+            response.addHeader("Accept-Ranges", "bytes");
+            response.addHeader(DockerHeaderEnum.DOCKER_CONTENT_DIGEST.key(), digest);
+            String imagePath = resolveImagePath(name, extractPath);
+            String artifactPath = String.format("blobs/%s", digest);
+            RepositoryPath repositoryPath = artifactResolutionService.resolvePath(storageId, repositoryId, artifactPath);
+            boolean exists = artifactRealExists(repositoryPath);
+            logger.debug("StorageId [{}] repositoryId [{}] name [{}] extractPath [{}] imagePath [{}] artifactPath [{}] exists [{}]", storageId, repositoryId, name, extractPath, imagePath, artifactPath, exists);
+            //200已经存在 404不存在
+            if (exists) {
+                long size = Files.size(repositoryPath);
+                logger.debug("StorageId [{}] repositoryId [{}] name [{}] extractPath [{}] imagePath [{}] artifactPath [{}] size [{}]", storageId, repositoryId, name, extractPath, imagePath, artifactPath, size);
+                response.addHeader(DockerHeaderEnum.CONTENT_LENGTH.key(), size + "");
+                response.addHeader(DockerHeaderEnum.STREAM_CONTENT_TYPE.key(), DockerHeaderEnum.STREAM_CONTENT_TYPE.value());
+                return new ResponseEntity<>("OK", HttpStatus.OK);
+            } else {
+                return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+            }
+
+        } catch (Exception e) {
+            logger.error(e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
+        }
+    }
+
+    /**
      * Starting An Upload 开始上传
      *
      * @param httpHeaders
      * @param request
      * @param response
      */
-    //TODO {artifactPath:.+}
-    @ApiOperation(value = "tarting An Upload 开始上传")
+    @ApiOperation(value = "Starting An Upload 开始上传")
     @ApiImplicitParams({
             @ApiImplicitParam(name = "storageId", value = "存储id", required = true),
             @ApiImplicitParam(name = "repositoryId", value = "仓库id", required = true),
@@ -192,7 +241,7 @@ public class DockerArtifactController extends BaseArtifactController {
     @ApiResponses(value = {@ApiResponse(code = 200, message = "The artifact was deployed successfully."),
             @ApiResponse(code = 500, message = "An error occurred.")})
     @PreAuthorize("hasAuthority('ARTIFACTS_RESOLVE')")
-    @RequestMapping(value = {"/v2/{storageId}/{repositoryId}/{name}/blobs/uploads/"}, method = {RequestMethod.POST}, consumes = MediaType.APPLICATION_OCTET_STREAM_VALUE)
+    @RequestMapping(value = {"/v2/{storageId}/{repositoryId}/{name}/blobs/uploads/", "/v2/{storageId}/{repositoryId}/{name}/**/blobs/uploads/"}, method = {RequestMethod.POST}, consumes = MediaType.ALL_VALUE)
     public ResponseEntity<Object> startingAnUpload(@RequestHeader HttpHeaders httpHeaders,
                                                    Authentication authentication,
                                                    HttpServletRequest request,
@@ -218,10 +267,10 @@ public class DockerArtifactController extends BaseArtifactController {
             String url = new StringBuffer().append(request.getRequestURI()).append(uuid).toString();
             response.reset();
             response.setDateHeader("Date", System.currentTimeMillis());
-            response.setHeader(DockerApiHeader.DOCKER_DISTRIBUTION_API_VERSION.key(), DockerApiHeader.DOCKER_DISTRIBUTION_API_VERSION.value());
-            response.setHeader(DockerApiHeader.DOCKER_UPLOAD_UUID.key(), uuid);
-            response.setHeader(DockerApiHeader.LOCATION.key(), url);
-            response.setHeader(DockerApiHeader.CONTENT_LENGTH.key(), "0");
+            response.setHeader(DockerHeaderEnum.DOCKER_DISTRIBUTION_API_VERSION.key(), DockerHeaderEnum.DOCKER_DISTRIBUTION_API_VERSION.value());
+            response.setHeader(DockerHeaderEnum.DOCKER_UPLOAD_UUID.key(), uuid);
+            response.setHeader(DockerHeaderEnum.LOCATION.key(), url);
+            response.setHeader(DockerHeaderEnum.CONTENT_LENGTH.key(), "0");
             return new ResponseEntity<>(HttpStatus.ACCEPTED);
         } catch (Exception e) {
             logger.error(e.getMessage(), e);
@@ -230,6 +279,51 @@ public class DockerArtifactController extends BaseArtifactController {
 
     }
 
+    @ApiOperation(value = "Chunked Upload 分片上传")
+    @ApiImplicitParams({
+            @ApiImplicitParam(name = "storageId", value = "存储id", required = true),
+            @ApiImplicitParam(name = "repositoryId", value = "仓库id", required = true),
+            @ApiImplicitParam(name = "name", value = "制品名", required = true),
+            @ApiImplicitParam(name = "uuid", value = "uuid", required = true)
+    })
+    @ApiResponses(value = {@ApiResponse(code = 200, message = "The artifact was deployed successfully."),
+            @ApiResponse(code = 400, message = "An error occurred.")})
+    @PreAuthorize("hasAuthority('ARTIFACTS_DEPLOY')")
+    @RequestMapping(value = {"/v2/{storageId}/{repositoryId}/{name}/blobs/uploads/{uuid}", "/v2/{storageId}/{repositoryId}/{name}/**/blobs/uploads/{uuid}"}, method = {RequestMethod.PATCH}, consumes = MediaType.APPLICATION_OCTET_STREAM_VALUE)
+    public ResponseEntity<String> chunkedUpload(@RequestHeader HttpHeaders httpHeaders,
+                                                HttpServletRequest request,
+                                                HttpServletResponse response,
+                                                @PathVariable String storageId,
+                                                @PathVariable String repositoryId,
+                                                @PathVariable String name,
+                                                @PathVariable String uuid
+
+
+    ) throws Exception {
+        InputStream inputStream = request.getInputStream();
+        response.setCharacterEncoding("utf8");
+        String extractPath = getExtractPath(request);
+        if (StringUtils.isNotBlank(extractPath)) {
+            extractPath = extractPath.replace(String.format("/blobs/uploads/%s", uuid), "");
+        }
+        String imagePath = resolveImagePath(name, extractPath);
+        String targetFilePath = FileUtils.getBasePath() + storageId + "/" + repositoryId + "/" + imagePath + "/" + uuid;
+        Path targetPath = Path.of(targetFilePath);
+        Files.createDirectories(targetPath.getParent());
+        Files.copy(inputStream, targetPath, StandardCopyOption.REPLACE_EXISTING);
+        long fileSize = Files.size(targetPath);
+        updateRanges(uuid, fileSize);
+        String url = request.getRequestURI();
+        response.reset();
+        response.setDateHeader(DockerHeaderEnum.DATE.key(), System.currentTimeMillis());
+        response.setHeader(DockerHeaderEnum.DOCKER_DISTRIBUTION_API_VERSION.key(), DockerHeaderEnum.DOCKER_DISTRIBUTION_API_VERSION.value());
+        response.setHeader(DockerHeaderEnum.DOCKER_UPLOAD_UUID.key(), uuid);
+        response.setHeader(DockerHeaderEnum.LOCATION.key(), url);
+        response.setHeader(DockerHeaderEnum.RANGE.key(), "0-" + (getRanges().getOrDefault(uuid, 1L) - 1));
+        response.setHeader(DockerHeaderEnum.CONTENT_LENGTH.key(), "0");
+        //202 Accepted
+        return new ResponseEntity<>(HttpStatus.ACCEPTED);
+    }
 
     @ApiOperation(value = "Upload Progress 上传进度")
     @ApiImplicitParams({
@@ -241,7 +335,7 @@ public class DockerArtifactController extends BaseArtifactController {
     @ApiResponses(value = {@ApiResponse(code = 200, message = "The artifact was deployed successfully."),
             @ApiResponse(code = 400, message = "An error occurred.")})
     @PreAuthorize("hasAuthority('ARTIFACTS_DEPLOY')")
-    @RequestMapping(value = {"/v2/{storageId}/{repositoryId}/{name}/blobs/uploads/{uuid}"}, method = {RequestMethod.GET}, consumes = MediaType.APPLICATION_OCTET_STREAM_VALUE)
+    @RequestMapping(value = {"/v2/{storageId}/{repositoryId}/{name}/blobs/uploads/{uuid}", "/v2/{storageId}/{repositoryId}/{name}/**/blobs/uploads/{uuid}"}, method = {RequestMethod.GET}, consumes = MediaType.ALL_VALUE)
     public ResponseEntity<String> uploadProgress(@RequestHeader HttpHeaders httpHeaders,
                                                  HttpServletRequest request,
                                                  HttpServletResponse response,
@@ -251,13 +345,13 @@ public class DockerArtifactController extends BaseArtifactController {
                                                  @PathVariable String uuid
 
     ) {
-        response.setHeader(DockerApiHeader.LOCATION.key(), request.getRequestURI());
-        response.setHeader(DockerApiHeader.RANGE.key(), "0-" + (getRanges().getOrDefault(uuid, 1L) - 1));
-        response.setHeader(DockerApiHeader.DOCKER_UPLOAD_UUID.key(), uuid);
+        response.setHeader(DockerHeaderEnum.LOCATION.key(), request.getRequestURI());
+        response.setHeader(DockerHeaderEnum.RANGE.key(), "0-" + (getRanges().getOrDefault(uuid, 1L) - 1));
+        response.setHeader(DockerHeaderEnum.DOCKER_UPLOAD_UUID.key(), uuid);
         return new ResponseEntity<>("OK", HttpStatus.NO_CONTENT);
     }
 
-    @ApiOperation(value = "Monolithic Upload 单片上传")
+    @ApiOperation(value = "Monolithic Upload 单片上传、Completed Upload 上传完成")
     @ApiImplicitParams({
             @ApiImplicitParam(name = "storageId", value = "存储id", required = true),
             @ApiImplicitParam(name = "repositoryId", value = "仓库id", required = true),
@@ -267,7 +361,7 @@ public class DockerArtifactController extends BaseArtifactController {
     @ApiResponses(value = {@ApiResponse(code = 200, message = "The artifact was deployed successfully."),
             @ApiResponse(code = 400, message = "An error occurred.")})
     @PreAuthorize("hasAuthority('ARTIFACTS_RESOLVE')")
-    @RequestMapping(value = {"/v2/{storageId}/{repositoryId}/{name}/blobs/uploads/{uuid}"}, method = {RequestMethod.PUT}, consumes = MediaType.APPLICATION_OCTET_STREAM_VALUE)
+    @RequestMapping(value = {"/v2/{storageId}/{repositoryId}/{name}/blobs/uploads/{uuid}", "/v2/{storageId}/{repositoryId}/{name}/**/blobs/uploads/{uuid}"}, method = {RequestMethod.PUT}, consumes = MediaType.APPLICATION_OCTET_STREAM_VALUE)
     public ResponseEntity<Object> monolithicUpload(@RequestHeader HttpHeaders httpHeaders,
                                                    Authentication authentication,
                                                    HttpServletRequest request,
@@ -289,196 +383,41 @@ public class DockerArtifactController extends BaseArtifactController {
             return new ResponseEntity<>(unForbidden(storageId, repositoryId), HttpStatus.FORBIDDEN);
         }
         ResponseEntity result = new ResponseEntity<>(HttpStatus.CREATED);
+        String imagePath = "";
         try {
+            String extractPath = getExtractPath(request);
+            if (StringUtils.isNotBlank(extractPath)) {
+                extractPath = extractPath.replace(String.format("/blobs/uploads/%s", uuid), "");
+            }
+            imagePath = resolveImagePath(name, extractPath);
             int totalBytes = request.getContentLength();
             InputStream inputStream = request.getInputStream();
             if (totalBytes <= 0 || inputStream.available() == 0) {
                 totalBytes = getRanges().getOrDefault(uuid, 1L).intValue();
                 updateData(digest, uuid);
-                inputStream = getInputStreamData(storageId, repositoryId, name, digest);
+                inputStream = getInputStreamData(storageId, repositoryId, imagePath, digest);
             }
-            String artifactPath = String.format("%s/blobs/%s", name, digest);
+            String artifactPath = String.format("blobs/%s", digest);
             RepositoryPath repositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, artifactPath);
-            logger.info("storageId:{},repositoryId:{},name:{},digest:{},uuid:{}", storageId, repositoryId, name, digest, uuid);
+            logger.info("StorageId [{}] repositoryId [{}] name [{}] imagePath [{}] digest [{}] uuid [{}] artifactPath [{}]", storageId, repositoryId, name, imagePath, digest, uuid, artifactPath);
             artifactManagementService.validateAndStore(repositoryPath, inputStream);
-
             String url = request.getRequestURI();
             url = url.replace("uploads/", "").replace(uuid, digest);
-
             response.reset();
-            response.setDateHeader(DockerApiHeader.DATE.key(), System.currentTimeMillis());
-            response.setHeader(DockerApiHeader.DOCKER_DISTRIBUTION_API_VERSION.key(), DockerApiHeader.DOCKER_DISTRIBUTION_API_VERSION.value());
-            response.setHeader(DockerApiHeader.LOCATION.key(), url);
-            response.setHeader(DockerApiHeader.DOCKER_CONTENT_DIGEST.key(), digest);
-            response.setHeader(DockerApiHeader.CONTENT_RANGE.key(), "0-" + (totalBytes - 1));
-            response.setHeader(DockerApiHeader.CONTENT_LENGTH.key(), "0");
+            response.setDateHeader(DockerHeaderEnum.DATE.key(), System.currentTimeMillis());
+            response.setHeader(DockerHeaderEnum.DOCKER_DISTRIBUTION_API_VERSION.key(), DockerHeaderEnum.DOCKER_DISTRIBUTION_API_VERSION.value());
+            response.setHeader(DockerHeaderEnum.LOCATION.key(), url);
+            response.setHeader(DockerHeaderEnum.DOCKER_CONTENT_DIGEST.key(), digest);
+            response.setHeader(DockerHeaderEnum.CONTENT_RANGE.key(), "0-" + (totalBytes - 1));
+            response.setHeader(DockerHeaderEnum.CONTENT_LENGTH.key(), "0");
         } catch (Exception e) {
             logger.error(e.getMessage(), e);
             result = ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
         } finally {
-            deleteLayers(storageId, repositoryId, name, digest, uuid);
-            return result;
+            deleteLayers(storageId, repositoryId, imagePath, digest, uuid);
         }
-
+        return result;
     }
-
-
-    @ApiOperation(value = "Chunked Upload 分片上传")
-    @ApiImplicitParams({
-            @ApiImplicitParam(name = "storageId", value = "存储id", required = true),
-            @ApiImplicitParam(name = "repositoryId", value = "仓库id", required = true),
-            @ApiImplicitParam(name = "name", value = "制品名", required = true),
-            @ApiImplicitParam(name = "uuid", value = "uuid", required = true)
-    })
-    @ApiResponses(value = {@ApiResponse(code = 200, message = "The artifact was deployed successfully."),
-            @ApiResponse(code = 400, message = "An error occurred.")})
-    @PreAuthorize("hasAuthority('ARTIFACTS_DEPLOY')")
-    @RequestMapping(value = {"/v2/{storageId}/{repositoryId}/{name}/blobs/uploads/{uuid}"}, method = {RequestMethod.PATCH}, consumes = MediaType.APPLICATION_OCTET_STREAM_VALUE)
-    public ResponseEntity<String> chunkedUpload(@RequestHeader HttpHeaders httpHeaders,
-                                                HttpServletRequest request,
-                                                HttpServletResponse response,
-                                                @PathVariable String storageId,
-                                                @PathVariable String repositoryId,
-                                                @PathVariable String name,
-                                                @PathVariable String uuid
-
-
-    ) throws Exception {
-        InputStream inputStream = request.getInputStream();
-        response.setCharacterEncoding("utf8");
-        String targetFilePath = FileUtils.getBasePath() + storageId + "/" + repositoryId + "/" + name + "/" + uuid;
-        Path targetPath = Path.of(targetFilePath);
-        Files.createDirectories(targetPath.getParent());
-        Files.copy(inputStream, targetPath, StandardCopyOption.REPLACE_EXISTING);
-        long fileSize = Files.size(targetPath);
-        updateRanges(uuid, fileSize);
-        String url = request.getRequestURI();
-        response.reset();
-        response.setDateHeader(DockerApiHeader.DATE.key(), System.currentTimeMillis());
-        response.setHeader(DockerApiHeader.DOCKER_DISTRIBUTION_API_VERSION.key(), DockerApiHeader.DOCKER_DISTRIBUTION_API_VERSION.value());
-        response.setHeader(DockerApiHeader.DOCKER_UPLOAD_UUID.key(), uuid);
-        response.setHeader(DockerApiHeader.LOCATION.key(), url);
-        response.setHeader(DockerApiHeader.RANGE.key(), "0-" + (getRanges().getOrDefault(uuid, 1L) - 1));
-        response.setHeader(DockerApiHeader.CONTENT_LENGTH.key(), "0");
-        //202 Accepted
-        return new ResponseEntity<>(HttpStatus.ACCEPTED);
-    }
-
-
-    @ApiOperation(value = "Uploading the Layer 上传图层")
-    @ApiImplicitParams({
-            @ApiImplicitParam(name = "storageId", value = "存储id", required = true),
-            @ApiImplicitParam(name = "repositoryId", value = "仓库id", required = true),
-            @ApiImplicitParam(name = "name", value = "制品名", required = true),
-            @ApiImplicitParam(name = "uuid", value = "uuid", required = true)
-    })
-    @ApiResponses(value = {@ApiResponse(code = 200, message = "The artifact was deployed successfully."),
-            @ApiResponse(code = 400, message = "An error occurred.")})
-    @PreAuthorize("hasAuthority('ARTIFACTS_DEPLOY')")
-    @RequestMapping(value = {"/v2/{storageId}/{repositoryId}/{name}/blobs/uploads/{uuid}"}, method = {RequestMethod.POST}, consumes = MediaType.APPLICATION_OCTET_STREAM_VALUE)
-    public ResponseEntity<String> uploadingTheLayer(@RequestHeader HttpHeaders httpHeaders,
-                                                    HttpServletRequest request,
-                                                    HttpServletResponse response,
-                                                    @PathVariable String storageId,
-                                                    @PathVariable String repositoryId,
-                                                    @PathVariable String name
-
-    ) {
-        final String path = name;
-
-        try {
-            InputStream inputStream = request.getInputStream();
-            RepositoryPath repositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, path);
-            artifactManagementService.validateAndStore(repositoryPath, inputStream);
-            //202 Accepted
-            return new ResponseEntity<>(HttpStatus.ACCEPTED);
-        } catch (Exception e) {
-            logger.error(e.getMessage(), e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
-        }
-    }
-
-    /**
-     * Existing Layers 现有层
-     *
-     * @param httpHeaders
-     * @param request
-     * @param response
-     */
-    @ApiOperation(value = "Existing Layers 现有层")
-    @ApiImplicitParams({
-            @ApiImplicitParam(name = "storageId", value = "存储id", required = true),
-            @ApiImplicitParam(name = "repositoryId", value = "仓库id", required = true),
-            @ApiImplicitParam(name = "name", value = "制品名", required = true),
-            @ApiImplicitParam(name = "digest", value = "digest", required = true)
-    })
-    @PreAuthorize("hasAuthority('ARTIFACTS_VIEW')")
-    @RequestMapping(value = {"/v2/{storageId}/{repositoryId}/{name}/blobs/{digest}"}, method = {RequestMethod.HEAD}, consumes = MediaType.ALL_VALUE)
-    public ResponseEntity existingLayers(@RequestHeader HttpHeaders httpHeaders,
-                                         HttpServletRequest request,
-                                         HttpServletResponse response,
-                                         @PathVariable String storageId,
-                                         @PathVariable String repositoryId,
-                                         @PathVariable String name,
-                                         @PathVariable String digest
-    ) {
-        try {
-            //可以通过对 blob 存储 API 的请求来检查层是否存在。请求的格式应如下所示：HEAD
-            response.reset();
-            response.addHeader(DockerApiHeader.DOCKER_DISTRIBUTION_API_VERSION.key(), DockerApiHeader.DOCKER_DISTRIBUTION_API_VERSION.value());
-            response.addHeader("Accept-Ranges", "bytes");
-            response.addHeader(DockerApiHeader.DOCKER_CONTENT_DIGEST.key(), digest);
-            String artifactName = String.format("%s/blobs/%s", name, digest);
-            RepositoryPath repositoryPath = artifactResolutionService.resolvePath(storageId, repositoryId, artifactName);
-            //200已经存在 404不存在
-            if (artifactRealExists(repositoryPath)) {
-                Long size = repositoryPath.getArtifactEntry().getSizeInBytes();
-                if (Objects.isNull(size)) {
-                    size = 0L;
-                }
-                response.addHeader(DockerApiHeader.CONTENT_LENGTH.key(), size.toString());
-                response.addHeader(DockerApiHeader.STREAM_CONTENT_TYPE.key(), DockerApiHeader.STREAM_CONTENT_TYPE.value());
-                return new ResponseEntity<>("OK", HttpStatus.OK);
-            } else {
-                return new ResponseEntity<>(HttpStatus.NOT_FOUND);
-            }
-
-        } catch (Exception e) {
-            logger.error(e.getMessage(), e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
-        }
-    }
-
-    @ApiOperation(value = "Uploading the Layer 上传进度")
-    @ApiImplicitParams({
-            @ApiImplicitParam(name = "storageId", value = "存储id", required = true),
-            @ApiImplicitParam(name = "repositoryId", value = "仓库id", required = true),
-            @ApiImplicitParam(name = "name", value = "制品名", required = true),
-            @ApiImplicitParam(name = "uuid", value = "uuid", required = true)
-    })
-    @PreAuthorize("hasAuthority('ARTIFACTS_DEPLOY')")
-    @RequestMapping(value = {"/v2/{storageId}/{repName}/blobs/uploads/{uuid}"}, method = {RequestMethod.GET}, consumes = MediaType.ALL_VALUE)
-    public ResponseEntity uploadingTheLayer(@RequestHeader HttpHeaders httpHeaders,
-                                            HttpServletRequest request,
-                                            HttpServletResponse response,
-                                            @PathVariable String storageId,
-                                            @PathVariable String repositoryId,
-                                            @PathVariable String name,
-                                            @PathVariable String uuid
-    ) {
-        FileUtils utils = new FileUtils();
-        String fileDir = new StringBuffer().append(storageId).append("/").append(repositoryId).append("/").append(name).toString();
-        String fileName = uuid;
-        long range = utils.getOffset(fileDir, fileName);
-        response.reset();
-        response.setDateHeader(DockerApiHeader.DATE.key(), System.currentTimeMillis());
-        response.addHeader(DockerApiHeader.DOCKER_DISTRIBUTION_API_VERSION.key(), DockerApiHeader.DOCKER_DISTRIBUTION_API_VERSION.value());
-        response.addHeader(DockerApiHeader.RANGE.key(), "0-" + (range - 1));
-        response.addHeader(DockerApiHeader.LOCATION.key(), request.getRequestURI());
-        response.addHeader(DockerApiHeader.DOCKER_UPLOAD_UUID.key(), uuid);
-        return new ResponseEntity("", HttpStatus.NO_CONTENT);
-    }
-
 
     /**
      * Pushing an Image Manifest
@@ -499,7 +438,7 @@ public class DockerArtifactController extends BaseArtifactController {
             @ApiImplicitParam(name = "reference", value = "reference", required = true)
     })
     @PreAuthorize("hasAuthority('ARTIFACTS_RESOLVE')")
-    @RequestMapping(value = {"/v2/{storageId}/{repositoryId}/{name}/manifests/{reference}"}, method = {RequestMethod.PUT})
+    @RequestMapping(value = {"/v2/{storageId}/{repositoryId}/{name}/manifests/{reference}", "/v2/{storageId}/{repositoryId}/{name}/**/manifests/{reference}"}, method = {RequestMethod.PUT})
     public ResponseEntity pushingAnImageManifest(@RequestHeader HttpHeaders httpHeaders,
                                                  Authentication authentication,
                                                  HttpServletRequest request,
@@ -521,21 +460,25 @@ public class DockerArtifactController extends BaseArtifactController {
         String manifestSha256 = null;
         ResponseEntity result = ResponseEntity.status(HttpStatus.CREATED).build();
         try {
+            String extractPath = getExtractPath(request);
+            if (StringUtils.isNotBlank(extractPath)) {
+                extractPath = extractPath.replace(String.format("/manifests/%s", reference), "");
+            }
+            String imagePath = resolveImagePath(name, extractPath);
             InputStream inputStream = request.getInputStream();
             byte[] bytes = inputStream.readAllBytes();
-            logger.info("manifest.json size:{}", bytes.length);
-            manifestSha256 = handlerManifest(storageId, repositoryId, name, reference, bytes);
+            logger.info("StorageId [{}] repositoryId [{}] name [{}] imagePath [{}] reference [{}] size [{}]", storageId, repositoryId, name, imagePath, reference, bytes.length);
+            manifestSha256 = handlerManifest(storageId, repositoryId, imagePath, reference, bytes);
         } catch (Exception e) {
             logger.error(e.getMessage(), e);
             result = ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
-        } finally {
-            response.reset();
-            response.setDateHeader(DockerApiHeader.DATE.key(), System.currentTimeMillis());
-            response.addHeader(DockerApiHeader.DOCKER_DISTRIBUTION_API_VERSION.key(), DockerApiHeader.DOCKER_DISTRIBUTION_API_VERSION.value());
-            response.addHeader(DockerApiHeader.DOCKER_CONTENT_DIGEST.key(), manifestSha256);
-            response.addHeader(DockerApiHeader.CONTENT_LENGTH.key(), "0");
-            return result;
         }
+        response.reset();
+        response.setDateHeader(DockerHeaderEnum.DATE.key(), System.currentTimeMillis());
+        response.addHeader(DockerHeaderEnum.DOCKER_DISTRIBUTION_API_VERSION.key(), DockerHeaderEnum.DOCKER_DISTRIBUTION_API_VERSION.value());
+        response.addHeader(DockerHeaderEnum.DOCKER_CONTENT_DIGEST.key(), manifestSha256);
+        response.addHeader(DockerHeaderEnum.CONTENT_LENGTH.key(), "0");
+        return result;
     }
 
     /**
@@ -554,12 +497,18 @@ public class DockerArtifactController extends BaseArtifactController {
                            String reference,
                            byte[] bytes) {
         String manifestSha256 = null, directory;
+        String manifestString = new String(bytes, StandardCharsets.UTF_8);
+        ImageManifest imageManifest = JSON.parseObject(manifestString, ImageManifest.class);
+        Set<String> layers = Optional.ofNullable(imageManifest.getLayers()).orElse(Collections.emptyList()).stream().map(LayerManifest::getDigest).collect(Collectors.toSet());
+        if (Objects.nonNull(imageManifest.getConfig())) {
+            layers.add(imageManifest.getConfig().getDigest());
+        }
         try (InputStream stream = new ByteArrayInputStream(bytes); InputStream destStream = new ByteArrayInputStream(bytes)) {
             boolean isTag = false;
             if (!reference.startsWith("sha256:")) {
-                //Use SHA-1 algorithm
+                //Use SHA-256 algorithm
                 MessageDigest shaDigest = MessageDigest.getInstance("SHA-256");
-                //SHA-1 checksum
+                //SHA-256 checksum
                 String shaChecksum = getFileChecksum(shaDigest, new ByteArrayInputStream(bytes));
                 manifestSha256 = String.format("sha256:%s", shaChecksum);
                 directory = reference;
@@ -568,18 +517,18 @@ public class DockerArtifactController extends BaseArtifactController {
                 manifestSha256 = reference;
                 directory = "manifest";
             }
-            String artifactPath = String.format("%s/manifest/%s", name, manifestSha256);
+            String artifactPath = String.format("manifest/%s", manifestSha256);
             //判断镜像清单是否在
             if (!mirrorLayerExists(artifactPath, storageId, repositoryId)) {
                 RepositoryPath repositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, artifactPath);
-                logger.info(String.valueOf(System.currentTimeMillis()));
+                provideArtifact(repositoryPath, layers);
                 artifactManagementService.validateAndStore(repositoryPath, stream);
             }
             if (!isTag) {
                 return manifestSha256;
             }
             String destArtifactPath = String.format("%s/%s/%s", name, directory, manifestSha256);
-            logger.info("destArtifactPath：{}", destArtifactPath);
+            logger.info("Docker tag repositoryPath：[{}]", destArtifactPath);
             String artifactName = String.format("%s/%s", name, directory);
 
             //判断镜像清单是否发生变化
@@ -588,11 +537,13 @@ public class DockerArtifactController extends BaseArtifactController {
 
             //如果存在并发生变化删除更新
             if (Objects.isNull(tagSha256)) {
+                provideArtifact(destPath, layers);
                 artifactManagementService.validateAndStore(destPath, destStream);
             } else if (!Objects.equals(tagSha256, manifestSha256)) {
+                provideArtifact(destPath, layers);
+                artifactManagementService.validateAndStore(destPath, destStream);
                 RepositoryPath deletePath = repositoryPathResolver.resolve(storageId, repositoryId, destArtifactPath.replace(manifestSha256, tagSha256));
                 artifactManagementService.delete(deletePath, true);
-                artifactManagementService.validateAndStore(destPath, destStream);
             }
         } catch (Exception e) {
             logger.error(e.getMessage(), e);
@@ -671,7 +622,6 @@ public class DockerArtifactController extends BaseArtifactController {
         return utils.getFile(fileDir, fileName);
     }
 
-
     @ApiOperation(value = "Existing Manifests 现有清单")
     @ApiImplicitParams({
             @ApiImplicitParam(name = "storageId", value = "存储id", required = true),
@@ -680,7 +630,7 @@ public class DockerArtifactController extends BaseArtifactController {
             @ApiImplicitParam(name = "tag", value = "tag", required = true)
     })
     @PreAuthorize("hasAuthority('ARTIFACTS_VIEW')")
-    @RequestMapping(value = {"/v2/{storageId}/{repositoryId}/{name}/manifests/{reference}"}, method = {RequestMethod.HEAD}, consumes = MediaType.ALL_VALUE)
+    @RequestMapping(value = {"/v2/{storageId}/{repositoryId}/{name}/manifests/{reference}", "/v2/{storageId}/{repositoryId}/{name}/**/manifests/{reference}"}, method = {RequestMethod.HEAD}, consumes = MediaType.ALL_VALUE)
     public ResponseEntity existingManifests(@RequestHeader HttpHeaders httpHeaders,
                                             HttpServletRequest request,
                                             HttpServletResponse response,
@@ -688,35 +638,31 @@ public class DockerArtifactController extends BaseArtifactController {
                                             @PathVariable String repositoryId,
                                             @PathVariable String name,
                                             @PathVariable String reference) throws Exception {
-        //镜像不存在 404 Not Found
+        String extractPath = getExtractPath(request);
+        if (StringUtils.isNotBlank(extractPath)) {
+            extractPath = extractPath.replace(String.format("/manifests/%s", reference), "");
+        }
+        String imagePath = resolveImagePath(name, extractPath);
         ResponseEntity entity = ResponseEntity.status(HttpStatus.NOT_FOUND).build();
         String digest = "", contentLength = "0";
-        if (!reference.startsWith("sha256:")) {
-            String artifactName = String.format("%s/%s/", name, reference);
-            digest = getManifest(storageId, repositoryId, artifactName);
-        } else {
-            digest = reference;
-        }
         response.reset();
-        if (StringUtils.isNotBlank(digest)) {
-            String artifactPath = String.format("%s/manifest/%s", name, digest);
-            RepositoryPath repositoryPath = artifactResolutionService.resolvePath(storageId, repositoryId, artifactPath);
-            if (artifactRealExists(repositoryPath)) {
-                entity = ResponseEntity.status(HttpStatus.OK).build();
-                contentLength = Long.toString(repositoryPath.getArtifactEntry().getSizeInBytes());
-                ImageManifest imageManifest = JSON.parseObject(Files.readString(repositoryPath), ImageManifest.class);
-                response.addHeader(DockerApiHeader.DOCKER_CONTENT_TYPE.key(), imageManifest.getMediaType());
-            }
+        RepositoryPath repositoryPath = resolveManifest(storageId, repositoryId, imagePath, reference);
+        if (artifactRealExists(repositoryPath)) {
+            entity = ResponseEntity.status(HttpStatus.OK).build();
+            contentLength = Long.toString(repositoryPath.getArtifactEntry().getSizeInBytes());
+            ImageManifest imageManifest = JSON.parseObject(Files.readString(repositoryPath), ImageManifest.class);
+            response.addHeader(DockerHeaderEnum.DOCKER_CONTENT_TYPE.key(), imageManifest.getMediaType());
+            digest = repositoryPath.getFileName().toString();
         }
-        response.setDateHeader(DockerApiHeader.DATE.key(), System.currentTimeMillis());
-        response.addHeader(DockerApiHeader.RATELIMIT_LIMIT.key(), "100;w=21600");
-        response.addHeader(DockerApiHeader.RATELIMIT_REMAINING.key(), "100;w=21600");
-        response.addHeader(DockerApiHeader.STRICT_TRANSPORT_SECURITY.key(), "max-age=31536000");
-        response.addHeader(DockerApiHeader.DOCKER_CONTENT_DIGEST.key(), digest);
-        response.addHeader(DockerApiHeader.DOCKER_DISTRIBUTION_API_VERSION.key(), DockerApiHeader.DOCKER_DISTRIBUTION_API_VERSION.value());
-        response.addHeader(DockerApiHeader.DOCKER_RATELIMIT_SOURCE.key(), request.getRemoteHost());
-        response.addHeader(DockerApiHeader.ETAG.key(), digest);
-        response.addHeader(DockerApiHeader.CONTENT_LENGTH.key(), contentLength);
+        response.setDateHeader(DockerHeaderEnum.DATE.key(), System.currentTimeMillis());
+        response.addHeader(DockerHeaderEnum.RATE_LIMIT_LIMIT.key(), "100;w=21600");
+        response.addHeader(DockerHeaderEnum.RATE_LIMIT_REMAINING.key(), "100;w=21600");
+        response.addHeader(DockerHeaderEnum.STRICT_TRANSPORT_SECURITY.key(), "max-age=31536000");
+        response.addHeader(DockerHeaderEnum.DOCKER_CONTENT_DIGEST.key(), digest);
+        response.addHeader(DockerHeaderEnum.DOCKER_DISTRIBUTION_API_VERSION.key(), DockerHeaderEnum.DOCKER_DISTRIBUTION_API_VERSION.value());
+        response.addHeader(DockerHeaderEnum.DOCKER_RATE_LIMIT_SOURCE.key(), request.getRemoteHost());
+        response.addHeader(DockerHeaderEnum.ETAG.key(), digest);
+        response.addHeader(DockerHeaderEnum.CONTENT_LENGTH.key(), contentLength);
         return entity;
     }
 
@@ -728,14 +674,13 @@ public class DockerArtifactController extends BaseArtifactController {
         }
     }
 
-
     /**
      * 是否存在镜像层
      *
      * @return true 存在 false 不存在
      */
     private Boolean mirrorLayerExists(String artifactName, String storageId, String repositoryId) throws IOException {
-        return artifactRealExists(artifactResolutionService.resolvePath(storageId, repositoryId, artifactName));
+        return artifactRealExists(repositoryPathResolver.resolve(storageId, repositoryId, artifactName));
     }
 
     private String getLayers(String artifactName, String storageId, String repositoryId) throws IOException {
@@ -752,7 +697,7 @@ public class DockerArtifactController extends BaseArtifactController {
     }
 
     public Artifact getArtifact(String artifactName, String storageId, String repositoryId) throws IOException {
-        RepositoryPath repositoryPath = artifactResolutionService.resolvePath(storageId, repositoryId, artifactName);
+        RepositoryPath repositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, artifactName);
         if (Objects.isNull(repositoryPath) || !Files.exists(repositoryPath)) {
             return null;
         }
@@ -791,7 +736,7 @@ public class DockerArtifactController extends BaseArtifactController {
             @ApiImplicitParam(name = "digest", value = "digest", required = true)
     })
     @PreAuthorize("hasAuthority('ARTIFACTS_RESOLVE')")
-    @RequestMapping(value = {"/v2/{storageId}/{repositoryId}/{name}/manifests/{digest}"}, method = {RequestMethod.GET}, consumes = MediaType.ALL_VALUE)
+    @RequestMapping(value = {"/v2/{storageId}/{repositoryId}/{name}/manifests/{digest}", "/v2/{storageId}/{repositoryId}/{name}/**/manifests/{digest}"}, method = {RequestMethod.GET}, consumes = MediaType.ALL_VALUE)
     public ResponseEntity pullingAnImageManifest(@RequestHeader HttpHeaders httpHeaders,
                                                  HttpServletRequest request,
                                                  HttpServletResponse response,
@@ -799,27 +744,25 @@ public class DockerArtifactController extends BaseArtifactController {
                                                  @PathVariable String repositoryId,
                                                  @PathVariable String name,
                                                  @PathVariable String digest) {
-
-        ResponseEntity entity = new ResponseEntity<>(notFound("MANIFEST_UNKNOWN", "The named manifest is not known to the registry."), HttpStatus.NOT_FOUND);
-        if (!digest.startsWith("sha256:")) {
-            String artifactName = String.format("%s/%s/", name, digest);
-            String manifest = getManifest(storageId, repositoryId, artifactName);
-            if (StringUtils.isBlank(manifest)) {
-                return entity;
-            }
-            digest = manifest;
+        String extractPath = getExtractPath(request);
+        if (StringUtils.isNotBlank(extractPath)) {
+            extractPath = extractPath.replace(String.format("/manifests/%s", digest), "");
         }
+        String imagePath = resolveImagePath(name, extractPath);
+        ResponseEntity entity = new ResponseEntity<>(notFound("MANIFEST_UNKNOWN", "The named manifest is not known to the registry."), HttpStatus.NOT_FOUND);
         try {
-            String artifactPath = String.format("%s/manifest/%s", name, digest);
-            logger.info("pullingAnImageManifest params [storageId:{}, repositoryId:{}, artifactPath:{}", storageId, repositoryId, artifactPath);
-            RepositoryPath repositoryPath = artifactResolutionService.resolvePath(storageId, repositoryId, artifactPath);
+            String artifactPath = String.format("manifest/%s", digest);
+            logger.debug("StorageId [{}] repositoryId [{}] name [{}] imagePath [{}] digest [{}] artifactPath [{}]", storageId, repositoryId, name, imagePath, digest, artifactPath);
+            RepositoryPath repositoryPath = resolveManifest(storageId, repositoryId, imagePath, digest);
             if (artifactRealExists(repositoryPath)) {
                 vulnerabilityBlock(repositoryPath);
                 response.reset();
-                response.setDateHeader(DockerApiHeader.DATE.key(), System.currentTimeMillis());
                 entity = ResponseEntity.status(HttpStatus.OK).build();
-                response.addHeader(DockerApiHeader.DOCKER_CONTENT_DIGEST.key(), digest);
-                response.addHeader(DockerApiHeader.DOCKER_DISTRIBUTION_API_VERSION.key(), DockerApiHeader.DOCKER_DISTRIBUTION_API_VERSION.value());
+                digest = repositoryPath.getFileName().toString();
+                response.setDateHeader(DockerHeaderEnum.DATE.key(), System.currentTimeMillis());
+                response.addHeader(DockerHeaderEnum.DOCKER_CONTENT_DIGEST.key(), digest);
+                response.addHeader(DockerHeaderEnum.DOCKER_DISTRIBUTION_API_VERSION.key(), DockerHeaderEnum.DOCKER_DISTRIBUTION_API_VERSION.value());
+                response.addHeader(DockerHeaderEnum.ETAG.key(), digest);
                 provideArtifactDownloadResponse(request, response, httpHeaders, repositoryPath);
             }
         } catch (Exception e) {
@@ -836,7 +779,7 @@ public class DockerArtifactController extends BaseArtifactController {
             @ApiImplicitParam(name = "digest", value = "digest", required = true)
     })
     @PreAuthorize("hasAuthority('ARTIFACTS_RESOLVE')")
-    @RequestMapping(value = {"/v2/{storageId}/{repositoryId}/{name}/blobs/{digest}"}, method = {RequestMethod.GET}, consumes = MediaType.ALL_VALUE)
+    @RequestMapping(value = {"/v2/{storageId}/{repositoryId}/{name}/blobs/{digest}", "/v2/{storageId}/{repositoryId}/{name}/**/blobs/{digest}"}, method = {RequestMethod.GET}, consumes = MediaType.ALL_VALUE)
     public ResponseEntity pullingALayer(@RequestHeader HttpHeaders httpHeaders,
                                         HttpServletRequest request,
                                         HttpServletResponse response,
@@ -844,19 +787,39 @@ public class DockerArtifactController extends BaseArtifactController {
                                         @PathVariable String repositoryId,
                                         @PathVariable String name,
                                         @PathVariable String digest) {
-
-        String artifactPath = String.format("%s/blobs/%s", name, digest);
+        String extractPath = getExtractPath(request);
+        if (StringUtils.isNotBlank(extractPath)) {
+            extractPath = extractPath.replace(String.format("/blobs/%s", digest), "");
+        }
+        String imagePath = resolveImagePath(name, extractPath);
+        String artifactPath = String.format("blobs/%s", digest);
         ResponseEntity entity = ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+        Storage storage = getStorage(storageId);
+        if (Objects.isNull(storage)) {
+            entity = new ResponseEntity<>(notFound("", GlobalConstants.STORAGE_NOT_FOUND_MESSAGE), HttpStatus.NOT_FOUND);
+            return entity;
+        }
+        Repository repository = storage.getRepository(repositoryId);
+        if (Objects.isNull(repository)) {
+            entity = new ResponseEntity<>(notFound("", GlobalConstants.REPOSITORY_NOT_FOUND_MESSAGE), HttpStatus.NOT_FOUND);
+            return entity;
+        }
         try {
-            logger.info("pullingALayer params [storageId:{}, repositoryId:{}, artifactPath:{}", storageId, repositoryId, artifactPath);
-            RepositoryPath repositoryPath = artifactResolutionService.resolvePath(storageId, repositoryId, artifactPath);
+            logger.debug("StorageId [{}] repositoryId [{}] name [{}] imagePath [{}] digest [{}] artifactPath [{}]", storageId, repositoryId, name, imagePath, digest, artifactPath);
+            String targetUrl = String.format("%s/blobs/%s", StringUtils.removeEnd(imagePath, "/"), digest);
+            RepositoryPath repositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, artifactPath);
+            if (!artifactRealExists(repositoryPath)) {
+                repositoryPath.setTargetUrl(targetUrl);
+                repositoryPath.setArtifactPath(imagePath);
+                repositoryPath = artifactResolutionService.resolvePath(repositoryPath);
+            }
             if (artifactRealExists(repositoryPath)) {
                 vulnerabilityBlock(repositoryPath);
                 response.reset();
-                response.setDateHeader(DockerApiHeader.DATE.key(), System.currentTimeMillis());
-                response.addHeader(DockerApiHeader.STREAM_CONTENT_TYPE.key(), DockerApiHeader.STREAM_CONTENT_TYPE.value());
-                response.addHeader(DockerApiHeader.DOCKER_CONTENT_DIGEST.key(), digest);
-                response.addHeader(DockerApiHeader.DOCKER_DISTRIBUTION_API_VERSION.key(), DockerApiHeader.DOCKER_DISTRIBUTION_API_VERSION.value());
+                response.setDateHeader(DockerHeaderEnum.DATE.key(), System.currentTimeMillis());
+                response.addHeader(DockerHeaderEnum.STREAM_CONTENT_TYPE.key(), DockerHeaderEnum.STREAM_CONTENT_TYPE.value());
+                response.addHeader(DockerHeaderEnum.DOCKER_CONTENT_DIGEST.key(), digest);
+                response.addHeader(DockerHeaderEnum.DOCKER_DISTRIBUTION_API_VERSION.key(), DockerHeaderEnum.DOCKER_DISTRIBUTION_API_VERSION.value());
                 provideArtifactDownloadResponse(request, response, httpHeaders, repositoryPath);
                 entity = ResponseEntity.status(HttpStatus.OK).build();
             }
@@ -874,7 +837,7 @@ public class DockerArtifactController extends BaseArtifactController {
             @ApiImplicitParam(name = "n", value = "返回个数"),
             @ApiImplicitParam(name = "last", value = "last")})
     @PreAuthorize("hasAuthority('ARTIFACTS_RESOLVE')")
-    @RequestMapping(value = {"/v2/{storageId}/{repositoryId}/{name}/tags/list"}, method = {RequestMethod.GET}, consumes = MediaType.ALL_VALUE)
+    @RequestMapping(value = {"/v2/{storageId}/{repositoryId}/{name}/tags/list", "/v2/{storageId}/{repositoryId}/{name}/**/tags/list"}, method = {RequestMethod.GET}, consumes = MediaType.ALL_VALUE)
     public ResponseEntity<Object> listingImageTags(@RequestHeader HttpHeaders httpHeaders,
                                                    HttpServletRequest request,
                                                    HttpServletResponse response,
@@ -883,9 +846,15 @@ public class DockerArtifactController extends BaseArtifactController {
                                                    @PathVariable String name,
                                                    @RequestParam(name = "n", required = false) Integer n,
                                                    @RequestParam(name = "last", required = false) String last) {
+        String imagePath = "";
         try {
-            logger.info("Listing Image Tags [storageId:{}, repositoryId:{}, name:{}, n:{}, last:{}]", storageId, repositoryId, name, n, last);
-            RepositoryPath repositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, name);
+            String extractPath = getExtractPath(request);
+            if (StringUtils.isNotBlank(extractPath)) {
+                extractPath = extractPath.replace("/tags/list", "");
+            }
+            imagePath = resolveImagePath(name, extractPath);
+            logger.info("Listing Image Tags storageId [{}] repositoryId [{}] imagePath [{}] n [{}] last [{}]", storageId, repositoryId, imagePath, n, last);
+            RepositoryPath repositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, imagePath);
             List<FileContent> imageDirList = null;
             if (Files.exists(repositoryPath)) {
                 DirectoryListing directoryListing = directoryListingService.fromRepositoryPath(repositoryPath);
@@ -917,21 +886,21 @@ public class DockerArtifactController extends BaseArtifactController {
             if (CollectionUtils.isNotEmpty(resultList)) {
                 last = resultList.get(resultList.size() - 1);
                 if (Objects.nonNull(n) && n > 0 & endIndex <= size - 1) {
-                    link = "</v2/{0}/tags/list?last={1}&n={2}>; rel=\"next\"";
-                    link = MessageFormat.format(link, name, last, n);
+                    link = "</v2/%s/tags/list?last=%s&n=%s>; rel=\"next\"";
+                    link = String.format(link, String.format("%s/%s/%s", storageId, repositoryId, imagePath), last, n);
                 }
             }
-            logger.info("Listing Image Tags [storageId:{}, repositoryId:{}, name:{}, startIndex:{}, endIndex:{}, link:{}]", storageId, repositoryId, name, startIndex, endIndex, link);
-            DockerTags dockerTags = DockerTags.builder().name(name).tags(resultList).build();
+            logger.info("Listing Image Tags storageId [{}] repositoryId [{}] imagePath [{}] startIndex [{}] endIndex [{}] link [{}]", storageId, repositoryId, imagePath, startIndex, endIndex, link);
+            DockerTags dockerTags = DockerTags.builder().name(imagePath).tags(resultList).build();
             response.reset();
-            response.setDateHeader(DockerApiHeader.DATE.key(), System.currentTimeMillis());
-            response.addHeader(DockerApiHeader.DOCKER_DISTRIBUTION_API_VERSION.key(), DockerApiHeader.DOCKER_DISTRIBUTION_API_VERSION.value());
+            response.setDateHeader(DockerHeaderEnum.DATE.key(), System.currentTimeMillis());
+            response.addHeader(DockerHeaderEnum.DOCKER_DISTRIBUTION_API_VERSION.key(), DockerHeaderEnum.DOCKER_DISTRIBUTION_API_VERSION.value());
             if (StringUtils.isNotBlank(link)) {
                 response.addHeader(HttpHeaders.LINK, link);
             }
             return ResponseEntity.ok(dockerTags);
         } catch (Exception ex) {
-            logger.error("Listing Image Tags [storageId:{}, repositoryId:{}, name:{}, n:{}, last:{} error {}]", storageId, repositoryId, name, n, last, ExceptionUtils.getStackTrace(ex));
+            logger.error("Listing Image Tags storageId [{}] repositoryId [{}] imagePath [{}] n [{}] last [{}] error [{}]", storageId, repositoryId, imagePath, n, last, ExceptionUtils.getStackTrace(ex));
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(ex.getMessage());
         }
     }
@@ -949,9 +918,7 @@ public class DockerArtifactController extends BaseArtifactController {
                                              @RequestParam(name = "last", required = false) String last,
                                              Authentication authentication) {
         try {
-            String userAgent = request.getHeader("User-Agent");
-            boolean resultFlag = true;
-            logger.info("GET Catalog [n:{}, last:{} resultFlag {}]", n, last, resultFlag);
+            logger.info("GET Catalog n [{}] last [{}]", n, last);
             List<Storage> storageList = new ArrayList<>(configurationManagementService.getConfiguration()
                     .getStorages()
                     .values());
@@ -981,24 +948,20 @@ public class DockerArtifactController extends BaseArtifactController {
                         repositories = repositories.stream().filter((item -> RepositoryScopeEnum.OPEN.getType().equals(item.getScope()))).collect(Collectors.toList());
                     }
                     if (CollectionUtils.isNotEmpty(repositories)) {
-                        if (resultFlag) {
-                            repositories.forEach(repository -> {
-                                RepositoryPath repositoryPath = repositoryPathResolver.resolve(repository.getStorage().getId(), repository.getId());
-                                String prefix = String.format("%s/%s", repository.getStorage().getId(), repository.getId());
-                                if (Objects.nonNull(repositoryPath) && Files.exists(repositoryPath)) {
-                                    try {
-                                        DirectoryListing directoryListing = directoryListingService.fromRepositoryPath(repositoryPath);
-                                        if (Objects.nonNull(directoryListing) && CollectionUtils.isNotEmpty(directoryListing.getDirectories())) {
-                                            dataList.addAll(directoryListing.getDirectories().stream().filter(item -> StringUtils.isNotBlank(item.getName())).map(item -> String.format("%s/%s", prefix, item.getName())).collect(Collectors.toList()));
-                                        }
-                                    } catch (Exception ex) {
-                                        logger.error("GET Catalog directory listing error [{}]", ExceptionUtils.getStackTrace(ex));
+                        repositories.forEach(repository -> {
+                            RepositoryPath repositoryPath = repositoryPathResolver.resolve(repository.getStorage().getId(), repository.getId());
+                            String prefix = String.format("%s/%s", repository.getStorage().getId(), repository.getId());
+                            if (Objects.nonNull(repositoryPath) && Files.exists(repositoryPath)) {
+                                try {
+                                    DirectoryListing directoryListing = directoryListingService.fromRepositoryPath(repositoryPath);
+                                    if (Objects.nonNull(directoryListing) && CollectionUtils.isNotEmpty(directoryListing.getDirectories())) {
+                                        dataList.addAll(directoryListing.getDirectories().stream().filter(item -> StringUtils.isNotBlank(item.getName())).map(item -> String.format("%s/%s", prefix, item.getName())).collect(Collectors.toList()));
                                     }
+                                } catch (Exception ex) {
+                                    logger.error("GET Catalog directory listing error [{}]", ExceptionUtils.getStackTrace(ex));
                                 }
-                            });
-                        } else {
-                            dataList.addAll(repositories.stream().map(item -> String.format("%s/%s", item.getStorage().getId(), item.getId())).collect(Collectors.toList()));
-                        }
+                            }
+                        });
                     }
                 }
                 int size = dataList.size(), startIndex = 0, endIndex = size;
@@ -1024,19 +987,19 @@ public class DockerArtifactController extends BaseArtifactController {
                 if (CollectionUtils.isNotEmpty(resultList)) {
                     last = resultList.get(resultList.size() - 1);
                     if (Objects.nonNull(n) && n > 0 & endIndex <= size - 1) {
-                        link = "</v2/_catalog?last={0}&n={1}>; rel=\"next\"";
-                        link = MessageFormat.format(link, last, n);
+                        link = "</v2/_catalog?last=%s&n=%s>; rel=\"next\"";
+                        link = String.format(link, last, n);
 
-                        next = "/v2/_catalog?last={0}&n={1}";
-                        next = MessageFormat.format(next, last, n);
+                        next = "/v2/_catalog?last=%s&n=%s";
+                        next = String.format(next, last, n);
                     }
                 }
-                logger.info("GET Catalog [n:{}, last:{} startIndex:{}, endIndex:{}, link:{}]", n, last, startIndex, endIndex, link);
+                logger.info("GET Catalog n [{}] last [{}] startIndex [{}] endIndex [{}] link [{}]", n, last, startIndex, endIndex, link);
             }
             DockerCatalog dockerCatalog = DockerCatalog.builder().next(next).repositories(resultList).build();
             response.reset();
-            response.setDateHeader(DockerApiHeader.DATE.key(), System.currentTimeMillis());
-            response.addHeader(DockerApiHeader.DOCKER_DISTRIBUTION_API_VERSION.key(), DockerApiHeader.DOCKER_DISTRIBUTION_API_VERSION.value());
+            response.setDateHeader(DockerHeaderEnum.DATE.key(), System.currentTimeMillis());
+            response.addHeader(DockerHeaderEnum.DOCKER_DISTRIBUTION_API_VERSION.key(), DockerHeaderEnum.DOCKER_DISTRIBUTION_API_VERSION.value());
             if (StringUtils.isNotBlank(link)) {
                 response.addHeader(HttpHeaders.LINK, link);
             }
@@ -1052,137 +1015,134 @@ public class DockerArtifactController extends BaseArtifactController {
      *
      * @param storageId    存储空间名称
      * @param repositoryId 仓库名称
-     * @param artifactName 制品名称
-     * @return manifest
+     * @param imagePath    镜像路径
+     * @param digestOrTag  digestOrTag
+     * @return RepositoryPath tag或者manifest的RepositoryPath
      */
-    private String getManifest(String storageId, String repositoryId, String artifactName) {
-        Artifact artifact = null;
-        String manifest = "";
+    private RepositoryPath resolveManifest(String storageId, String repositoryId, String imagePath, String digestOrTag) {
+        imagePath = StringUtils.removeEnd(imagePath, GlobalConstants.SEPARATOR);
+        digestOrTag = StringUtils.removeEnd(digestOrTag, GlobalConstants.SEPARATOR);
+        boolean isTag = !digestOrTag.startsWith("sha256:");
+        String artifactPath = String.format("%s/%s", imagePath, digestOrTag);
+        if (!isTag) {
+            artifactPath = String.format("%s/%s", DockerLayoutProvider.MANIFEST, digestOrTag);
+        }
+        RepositoryPath repositoryPath = null;
         try {
-            RepositoryPath repositoryPath = artifactResolutionService.resolvePath(storageId, repositoryId, artifactName);
+            RootRepositoryPath rootRepositoryPath = repositoryPathResolver.resolve(storageId, repositoryId);
+            repositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, artifactPath);
+            repositoryPath.setDisableRemote(true);
+            repositoryPath = artifactResolutionService.resolvePath(repositoryPath);
             if (Objects.isNull(repositoryPath) || !Files.exists(repositoryPath)) {
-                return manifest;
+                return handleManifest(rootRepositoryPath, imagePath, digestOrTag);
             }
-            DirectoryListing directoryListing = directoryListingService.fromRepositoryPath(repositoryPath);
-            List<FileContent> fileContents = directoryListing.getFiles().stream().filter(file -> DockerArtifactCoordinates.include(file.getName())).collect(Collectors.toList());
-            FileContent fileContent = fileContents.get(0);
-            artifact = artifactRepository.findOneArtifact(storageId, repositoryId, fileContent.getArtifactPath());
+            if (isTag) {
+                DirectoryListing directoryListing = directoryListingService.fromRepositoryPath(repositoryPath);
+                List<FileContent> fileContents = directoryListing.getFiles().stream().filter(file -> DockerArtifactCoordinates.include(file.getName())).collect(Collectors.toList());
+                if (CollectionUtils.isNotEmpty(fileContents)) {
+                    FileContent fileContent = fileContents.get(0);
+                    repositoryPath = repositoryPathResolver.resolve(fileContent.getStorageId(), fileContent.getRepositoryId(), fileContent.getArtifactPath());
+                }
+            }
+            if (isTag) {
+                repositoryPath.setArtifactPath(RepositoryFiles.relativizePath(repositoryPath));
+            }
+            repositoryPath = artifactResolutionService.resolvePath(repositoryPath);
+            return repositoryPath;
         } catch (Exception e) {
             logger.error(e.getMessage(), e);
+        }
+        return null;
+    }
+
+    private RepositoryPath handleManifest(RootRepositoryPath rootRepositoryPath, String imagePath, String digestOrTag) {
+        RepositoryPath tempManifestRepositoryPath = null, tagRepositoryPath = null, manifestRepositoryPath = null;
+        try {
+            boolean isTag = !digestOrTag.startsWith("sha256:");
+            String targetPath = "";
+            if (isTag) {
+                targetPath = imagePath + GlobalConstants.SEPARATOR + digestOrTag;
+            } else {
+                targetPath = imagePath + GlobalConstants.SEPARATOR + ".temp_" + digestOrTag;
+            }
+            //从远程仓库获取镜像对应的manifest信息
+            String tempManifestPath = String.format("%s/%s", targetPath, "manifest.json");
+            String targetUrl = String.format("%s/manifests/%s", imagePath, digestOrTag);
+            tempManifestRepositoryPath = rootRepositoryPath.resolve(tempManifestPath);
+            tempManifestRepositoryPath.setTargetUrl(targetUrl);
+            tempManifestRepositoryPath.setArtifactPath(imagePath);
+            tempManifestRepositoryPath = artifactResolutionService.resolvePath(tempManifestRepositoryPath);
+            if (Objects.isNull(tempManifestRepositoryPath) || !Files.exists(tempManifestRepositoryPath)) {
+                return null;
+            }
+            ImageManifest imageManifest = JSON.parseObject(Files.readString(tempManifestRepositoryPath), ImageManifest.class);
+            Integer one = 1;
+            if (one.equals(imageManifest.getSchemaVersion())) {
+                logger.warn("ImagePath [{}] digestOrTag [{}] manifest [{}} docker v1 version not currently supported", imagePath, digestOrTag, tempManifestRepositoryPath.getFileName().toString());
+                return null;
+            }
+            Set<String> layers = Optional.ofNullable(imageManifest.getLayers()).orElse(Collections.emptyList()).stream().map(LayerManifest::getDigest).collect(Collectors.toSet());
+            if (Objects.nonNull(imageManifest.getConfig())) {
+                layers.add(imageManifest.getConfig().getDigest());
+            }
+            MessageDigest shaDigest = MessageDigest.getInstance("SHA-256");
+            //解析临时的manifest文件，生成 SHA-256 checksum
+            String shaChecksum = "sha256:" + getFileChecksum(shaDigest, new ByteArrayInputStream(Files.readAllBytes(tempManifestRepositoryPath)));
+            if (isTag) {
+                //写入到tag目录下的manifest文件中，tag下只能存在一个manifest
+                tagRepositoryPath = tempManifestRepositoryPath.resolveSibling(shaChecksum);
+                provideArtifact(tagRepositoryPath, layers);
+                artifactManagementService.store(tagRepositoryPath, tempManifestRepositoryPath);
+            }
+            //写入到仓库根目录下的manifest文件中
+            manifestRepositoryPath = tempManifestRepositoryPath.getRoot().resolve(DockerLayoutProvider.MANIFEST).resolve(shaChecksum);
+            provideArtifact(manifestRepositoryPath, layers);
+            artifactManagementService.store(manifestRepositoryPath, tempManifestRepositoryPath);
+            return manifestRepositoryPath;
+        } catch (Exception ex) {
+            logger.error(ExceptionUtils.getStackTrace(ex));
         } finally {
-            if (Objects.nonNull(artifact)) {
-                Map<String, String> mapCoordinates = artifact.getArtifactCoordinates().getCoordinates();
-                if (Objects.nonNull(mapCoordinates) && mapCoordinates.containsKey("layers")) {
-                    manifest = mapCoordinates.get("layers");
+            if (Objects.nonNull(tempManifestRepositoryPath) && Files.exists(tempManifestRepositoryPath)) {
+                try {
+                    RepositoryFiles.delete(tempManifestRepositoryPath, true);
+                } catch (Exception ex) {
+                    logger.warn(ExceptionUtils.getStackTrace(ex));
                 }
             }
         }
-        return manifest;
-    }
-
-    private boolean clusterOpen() {
-        return Boolean.TRUE.equals(clusterProperties.getOpenFlag());
+        return null;
     }
 
     private ConcurrentHashMap<String, Long> getRanges() {
-        if (!clusterOpen()) {
-            return ranges;
-        }
-        ConcurrentHashMap<String, Long> dictRanges = new ConcurrentHashMap<String, Long>();
-        List<Dict> dictList = dictService.selectLatestListDict(Dict.builder().dictType(DictTypeEnum.DOCKER_RANGES.getType()).build());
-        if (CollectionUtils.isNotEmpty(dictList)) {
-            for (Dict dict : dictList) {
-                if (StringUtils.isNotBlank(dict.getDictKey()) && StringUtils.isNotBlank(dict.getDictValue())) {
-                    dictRanges.put(dict.getDictKey(), Long.parseLong(dict.getDictValue()));
-                }
-            }
-        }
-        return dictRanges;
+        return ranges;
     }
 
     private void updateRanges(String uuid, long value) {
-        if (!clusterOpen()) {
-            if (ranges.containsKey(uuid)) {
-                ranges.replace(uuid, ranges.get(uuid) + value);
-            } else {
-                ranges.put(uuid, value);
-            }
-            return;
+        if (ranges.containsKey(uuid)) {
+            ranges.replace(uuid, ranges.get(uuid) + value);
+        } else {
+            ranges.put(uuid, value);
         }
-        List<Dict> dictList = dictService.selectLatestListDict(Dict.builder().dictType(DictTypeEnum.DOCKER_RANGES.getType()).build());
-        if (CollectionUtils.isNotEmpty(dictList)) {
-            for (Dict dict : dictList) {
-                if (StringUtils.isNotBlank(dict.getDictKey()) && StringUtils.isNotBlank(dict.getDictValue())) {
-                    if (uuid.equals(dict.getDictKey())) {
-                        //已存在
-                        value = Long.parseLong(dict.getDictValue()) + value;
-                        dict.setDictValue(value + "");
-                        dictService.saveOrUpdateDict(Dict.builder().dictType(DictTypeEnum.DOCKER_RANGES.getType()).dictKey(uuid).dictValue(dict.getDictValue()).build(), null);
-                        return;
-                    }
-                }
-            }
-        }
-        //不存在
-        dictService.saveOrUpdateDict(Dict.builder().dictType(DictTypeEnum.DOCKER_RANGES.getType()).dictKey(uuid).dictValue(value + "").build(), null);
     }
 
     private ConcurrentHashMap<String, String> getData() {
-        if (!clusterOpen()) {
-            return data;
-        }
-        ConcurrentHashMap<String, String> dictData = new ConcurrentHashMap<String, String>();
-        List<Dict> dictList = dictService.selectLatestListDict(Dict.builder().dictType(DictTypeEnum.DOCKER_DATA.getType()).build());
-        if (CollectionUtils.isNotEmpty(dictList)) {
-            for (Dict dict : dictList) {
-                if (StringUtils.isNotBlank(dict.getDictKey()) && StringUtils.isNotBlank(dict.getDictValue())) {
-                    dictData.put(dict.getDictKey(), dict.getDictValue());
-                }
-            }
-        }
-        return dictData;
+        return data;
     }
 
     private void updateData(String digest, String uuid) {
-        if (!clusterOpen()) {
-            if (data.containsKey(uuid)) {
-                data.replace(digest, uuid);
-            } else {
-                data.put(digest, uuid);
-            }
-            return;
+        if (data.containsKey(uuid)) {
+            data.replace(digest, uuid);
+        } else {
+            data.put(digest, uuid);
         }
-        List<Dict> dictList = dictService.selectLatestListDict(Dict.builder().dictType(DictTypeEnum.DOCKER_DATA.getType()).build());
-        if (CollectionUtils.isNotEmpty(dictList)) {
-            for (Dict dict : dictList) {
-                if (StringUtils.isNotBlank(dict.getDictKey()) && StringUtils.isNotBlank(dict.getDictValue())) {
-                    if (uuid.equals(dict.getDictKey())) {
-                        //已存在
-                        dict.setDictValue(uuid);
-                        dictService.saveOrUpdateDict(Dict.builder().dictType(DictTypeEnum.DOCKER_DATA.getType()).dictKey(digest).dictValue(dict.getDictValue()).build(), null);
-                        return;
-                    }
-                }
-            }
-        }
-        //不存在
-        dictService.saveOrUpdateDict(Dict.builder().dictType(DictTypeEnum.DOCKER_DATA.getType()).dictKey(digest).dictValue(uuid).build(), null);
     }
 
     private void removeData(String digest) {
-        if (!clusterOpen()) {
-            data.remove(digest);
-            return;
-        }
-        dictService.deleteDict(Dict.builder().dictType(DictTypeEnum.DOCKER_DATA.getType()).dictKey(digest).build());
+        data.remove(digest);
     }
 
     private void removeRanges(String uuid) {
-        if (!clusterOpen()) {
-            ranges.remove(uuid);
-            return;
-        }
-        dictService.deleteDict(Dict.builder().dictType(DictTypeEnum.DOCKER_RANGES.getType()).dictKey(uuid).build());
+        ranges.remove(uuid);
     }
 
     private Map<String, Object> unAuth() {
@@ -1201,7 +1161,7 @@ public class DockerArtifactController extends BaseArtifactController {
         Map<String, Object> result = new HashMap<>(1);
         Map<String, Object> resultData = new HashMap<>(1);
         resultData.put("code", "UNAUTHORIZED");
-        resultData.put("message", MessageFormat.format("access to the requested storage {0} repository {1} is forbidden", storageId, repositoryId));
+        resultData.put("message", String.format("access to the requested storage %s repository %s is forbidden", storageId, repositoryId));
         resultData.put("detail", null);
         List<Map> list = new ArrayList<>();
         list.add(resultData);
@@ -1225,12 +1185,26 @@ public class DockerArtifactController extends BaseArtifactController {
         String originalProtocol = request.getHeader("X-Forwarded-Proto"), https = "https";
         if (https.equals(originalProtocol)) {
             // 使用HTTPS协议
-            response.setHeader("WWW-Authenticate", MessageFormat.format("Bearer realm=\"{0}token\",service=\"{1}\"", "https://" + request.getServerName() + "/v2/", request.getServerName()));
+            response.setHeader("WWW-Authenticate", String.format("Bearer realm=\"%stoken\",service=\"%s\"", "https://" + request.getServerName() + "/v2/", request.getServerName()));
         } else {
             // 使用HTTP协议
-            response.setHeader("WWW-Authenticate", MessageFormat.format("Bearer realm=\"{0}token\",service=\"{1}\"", "http://" + request.getServerName() + ":" + request.getServerPort() + "/v2/", request.getServerName() + ":" + request.getServerPort()));
+            response.setHeader("WWW-Authenticate", String.format("Bearer realm=\"%stoken\",service=\"%s\"", "http://" + request.getServerName() + ":" + request.getServerPort() + "/v2/", request.getServerName() + ":" + request.getServerPort()));
         }
     }
 
-}
+    private void provideArtifact(RepositoryPath repositoryPath, Set<String> layers) throws IOException {
+        Artifact artifact = Optional.ofNullable(repositoryPath.getArtifactEntry())
+                .orElse(new ArtifactEntity(repositoryPath.getStorageId(), repositoryPath.getRepositoryId(),
+                        RepositoryFiles.readCoordinates(repositoryPath)));
+        artifact.setLayers(layers);
+        repositoryPath.setArtifact(artifact);
+    }
 
+    private String resolveImagePath(String name, String extractPath) {
+        String imagePath = name;
+        if (StringUtils.isNotBlank(extractPath)) {
+            imagePath = imagePath + File.separator + extractPath;
+        }
+        return imagePath;
+    }
+}

@@ -13,6 +13,7 @@ import lombok.NoArgsConstructor;
 import lombok.experimental.Accessors;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.socket.PingMessage;
+import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.springframework.web.socket.TextMessage;
 import org.springframework.web.socket.WebSocketSession;
 import org.springframework.web.socket.client.jetty.JettyWebSocketClient;
@@ -81,7 +82,7 @@ public class FolibWsClientRunManage extends FolibWsRunManage {
 
             return true;
         } catch (Exception e) {
-//            log.error("【FolibWs服务端运行管理器-启动】连接到节点（{}:{}）失败", host, port, e);
+            log.debug("【FolibWs服务端运行管理器-启动】连接到节点（{}:{}）失败 {}", host, port, ExceptionUtils.getStackTrace(e));
             return false;
         }
     }

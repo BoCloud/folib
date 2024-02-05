@@ -9,6 +9,7 @@ import com.veadan.folib.storage.metadata.maven.comparators.SnapshotVersionCompar
 import com.veadan.folib.storage.metadata.maven.io.filters.ArtifactVersionDirectoryFilter;
 import com.veadan.folib.storage.metadata.maven.versions.MetadataVersion;
 import com.veadan.folib.storage.metadata.maven.visitors.ArtifactVersionDirectoryVisitor;
+import com.veadan.folib.vo.Repository;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.maven.artifact.Artifact;
@@ -182,7 +183,10 @@ public class VersionCollector {
     public List<SnapshotVersion> collectTimestampedSnapshotVersions(Path artifactVersionPath)
             throws IOException {
         List<SnapshotVersion> snapshotVersions = new ArrayList<>();
-
+        if (!Files.exists(artifactVersionPath)) {
+            logger.warn("RepositoryPath [{}] not exists", artifactVersionPath);
+            return snapshotVersions;
+        }
         ArtifactVersionDirectoryVisitor artifactVersionDirectoryVisitor = new ArtifactVersionDirectoryVisitor();
 
         Files.walkFileTree(artifactVersionPath, artifactVersionDirectoryVisitor);
@@ -193,7 +197,6 @@ public class VersionCollector {
             if (Objects.isNull(gav)) {
                 continue;
             }
-            //TODO 非空判断 其他仓库的metadata.xml
             Artifact artifact = new DefaultArtifact(gav.getGroupId(),
                     gav.getArtifactId(),
                     gav.getVersion(),

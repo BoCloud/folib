@@ -68,7 +68,7 @@ public class CocoapodsLayoutProvider extends AbstractLayoutProvider<CocoapodsArt
     }
 
     @Override
-    protected CocoapodsArtifactCoordinates getArtifactCoordinates(RepositoryPath repositoryPath) throws IOException 
+    public CocoapodsArtifactCoordinates getArtifactCoordinates(RepositoryPath repositoryPath) throws IOException
     {
         final String relativizePath = RepositoryFiles.relativizePath(repositoryPath);
 
