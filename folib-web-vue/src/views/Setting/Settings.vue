@@ -143,7 +143,7 @@
                   <li>{{ $t('Setting.TransferSliceSize') }}</li>
                   <li>{{ $t('Setting.NodeSpeedLimit') }}</li>
                   <li>{{ $t('Setting.useBaseUrl') }}</li>
-                  <li>{{instanceName}}-{{ $t('Setting.communicationPort') }}</li>
+                  <li>{{instanceName}} {{ $t('Setting.communicationPort') }}</li>
                 </ul>
               </a-form>
             </a-card>

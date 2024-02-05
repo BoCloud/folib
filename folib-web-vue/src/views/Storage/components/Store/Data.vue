@@ -63,29 +63,29 @@
           <a-descriptions-item v-if="currentFileDetial" :label="$t('Store.FileSize')">
             {{ fileSizeConver(currentFileDetial.size) }}
           </a-descriptions-item>
-          <a-descriptions-item v-if="currentFileDetial" :label="SHA-256">
+          <a-descriptions-item v-if="currentFileDetial" label="SHA-256">
             {{ currentFileDetial.sha256 }}
           </a-descriptions-item>
           <a-descriptions-item v-if="currentFileDetial" :label="$t('Store.ModifyTheTime')">
             {{ currentFileDetial.lastModified }}
           </a-descriptions-item>
-          <a-descriptions-item v-if="currentFileDetial && currentFileDetial.manifest.layers" label="$t('Store.NumberOfFloors')">
+          <a-descriptions-item v-if="currentFileDetial && currentFileDetial.manifest.layers" :label="$t('Store.NumberOfFloors')">
             {{ currentFileDetial.manifest.layers.length }}
           </a-descriptions-item>
-          <a-descriptions-item v-if="currentFileDetial && currentFileDetial.manifestConfig" label="$t('Store.MakeADockerVersion')">
+          <a-descriptions-item v-if="currentFileDetial && currentFileDetial.manifestConfig" :label="$t('Store.MakeADockerVersion')">
             {{ currentFileDetial.manifestConfig.docker_version }}
           </a-descriptions-item>
-          <a-descriptions-item v-if="currentFileDetial && currentFileDetial.manifestConfig" label="$t('Store.MirrorOS')">
+          <a-descriptions-item v-if="currentFileDetial && currentFileDetial.manifestConfig" :label="$t('Store.MirrorOS')">
             <a-tag> {{ currentFileDetial.manifestConfig.os }}</a-tag>
           </a-descriptions-item>
-          <a-descriptions-item v-if="currentFileDetial && currentFileDetial.manifestConfig" label="$t('Store.TheInfrastructure')">
+          <a-descriptions-item v-if="currentFileDetial && currentFileDetial.manifestConfig" :label="$t('Store.TheInfrastructure')">
             {{ currentFileDetial.manifestConfig.architecture }}
           </a-descriptions-item>
-          <a-descriptions-item v-if="currentFileDetial && currentFileDetial.manifestConfig && currentFileDetial.manifestConfig.variant" label="$t('Store.Version')">
+          <a-descriptions-item v-if="currentFileDetial && currentFileDetial.manifestConfig && currentFileDetial.manifestConfig.variant" :label="$t('Store.Version')">
             {{ currentFileDetial.manifestConfig.variant || ''}}
           </a-descriptions-item>
-          <a-descriptions-item v-if="currentFileDetial && !currentFileDetial.manifestConfig" label="缓存状态">
-            {{ '未缓存' }}
+          <a-descriptions-item v-if="currentFileDetial && !currentFileDetial.manifestConfig" :label="$t('Store.CacheStatus')">
+            {{ $t('Store.Uncached') }}
           </a-descriptions-item>
         </a-descriptions>
       </a-tab-pane>

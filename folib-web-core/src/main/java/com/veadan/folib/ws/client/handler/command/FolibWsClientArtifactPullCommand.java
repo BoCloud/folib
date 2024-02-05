@@ -166,7 +166,7 @@ public class FolibWsClientArtifactPullCommand implements FolibWsClientCommand<Pr
             final PromotionFileRelativePath promotionFileRelativePath = this.doRequestReturnEntity(Method.POST, getFileRelativePathsUrl, (req) -> {
                 final ArtifactDto artifactDto = ArtifactDto.builder()
                         .storageId(srcStorageId)
-                        .repostoryId(srcRepostoryId)
+                        .repostoryId(srcRepositoryId)
                         .path(srcUri)
                         .build();
                 req.body(JSON.toJSONString(artifactDto));
@@ -186,7 +186,7 @@ public class FolibWsClientArtifactPullCommand implements FolibWsClientCommand<Pr
             }, ArtifactSliceDownloadInfoRes.class);
             // 过滤 .sha1、.sha256、.md5文件
             artifactSliceDownloadInfoRes = artifactSliceDownloadInfoRes.stream().filter(e -> {
-                final RepositoryPath destPath = repositoryPathResolver.resolve(targetStorageId, targetRepostoryId, e.getPath());
+                final RepositoryPath destPath = repositoryPathResolver.resolve(targetStorageId, targetRepositoryId, e.getPath());
                 try {
                     if (RepositoryFiles.isChecksum(destPath)) {
                         return false;
@@ -231,7 +231,7 @@ public class FolibWsClientArtifactPullCommand implements FolibWsClientCommand<Pr
                 final String path = artifactSliceDownloadInfoRe.getPath();
                 final Boolean usedSlice = artifactSliceDownloadInfoRe.getUsedSlice();
                 final List<DownloadPartInfo> downloadParInfotList = Optional.ofNullable(artifactSliceDownloadInfoRe.getDownloadPartList()).orElse(Collections.emptyList());
-                final RepositoryPath destPath = repositoryPathResolver.resolve(targetStorageId, targetRepostoryId, path);
+                final RepositoryPath destPath = repositoryPathResolver.resolve(targetStorageId, targetRepositoryId, path);
 ///                try {
 ///                    if (RepositoryFiles.isChecksum(destPath)) {
 ///                        return true;

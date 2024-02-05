@@ -1,35 +1,35 @@
 <template>
   <div class="artifact-search-base-data">
     <a-tabs default-active-key="1" @change="artifactTabChange">
-      <a-tab-pane key="1" tab="基本信息">
+      <a-tab-pane key="1" :tab="$t('Store.BasicInformation')">
         <a-descriptions
           v-if="repositoryType !== 'Docker' && artifact"
           title=""
           :column="1"
           style="word-break: break-all;word-wrap: break-word;"
         >
-          <a-descriptions-item label="所属空间">
+          <a-descriptions-item :label="$t('Store.OwningSpace')">
             {{ artifact.storageId }}
           </a-descriptions-item>
-          <a-descriptions-item label="所属仓库">
+          <a-descriptions-item :label="$t('Store.OwnedWarehouse')">
             {{ artifact.repositoryId }}
           </a-descriptions-item>
-          <a-descriptions-item label="名称">
+          <a-descriptions-item :label="$t('Store.Name')">
             {{ artifactName }}
           </a-descriptions-item>
-          <a-descriptions-item label="路径">
+          <a-descriptions-item :label="$t('Store.ThePath')">
             {{ artifactPath }}
           </a-descriptions-item>
-          <a-descriptions-item label="文件大小">
+          <a-descriptions-item :label="$t('Store.FileSize')">
             {{ fileSizeConver(artifact.sizeInBytes) }}
           </a-descriptions-item>
-          <a-descriptions-item label="修改时间">
+          <a-descriptions-item :label="$t('Store.ModifyTheTime')">
             {{ currentArtifact.lastModified }}
           </a-descriptions-item>
-          <a-descriptions-item label="最近使用时间">
+          <a-descriptions-item :label="$t('Store.LastUsedTime')">
             {{ currentArtifact.lastUsedTime }}
           </a-descriptions-item>
-          <a-descriptions-item label="下载次数">
+          <a-descriptions-item :label="$t('Store.DownloadTimes')">
             {{ artifact.downloadCount }}
           </a-descriptions-item>
           <template v-if="artifact && artifact.checksums">
@@ -48,49 +48,49 @@
           title=""
           :column="1"
         >
-          <a-descriptions-item label="所属空间">
+          <a-descriptions-item :label="$t('Store.OwningSpace')">
             {{ artifact.storageId }}
           </a-descriptions-item>
-          <a-descriptions-item label="所属仓库">
+          <a-descriptions-item :label="$t('Store.OwningSpace')">
             {{ artifact.repositoryId }}
           </a-descriptions-item>
-          <a-descriptions-item v-if="artifact" label="镜像名称">
+          <a-descriptions-item v-if="artifact" :label="$t('Store.ImageName')">
             {{ artifact.artifactCoordinates.imageName }}
           </a-descriptions-item>
-          <a-descriptions-item :label="artifact ? '版本号' : '名称'">
+          <a-descriptions-item :label="artifact ? $t('Store.VersionNumber') : $t('Store.Name')">
             {{ artifactName }}
           </a-descriptions-item>
-          <a-descriptions-item v-if="artifact" label="文件大小">
+          <a-descriptions-item v-if="artifact" :label="$t('Store.FileSize')">
             {{ fileSizeConver(currentArtifact.size) }}
           </a-descriptions-item>
           <a-descriptions-item v-if="artifact" label="SHA-256">
             {{ currentArtifact.sha256 }}
           </a-descriptions-item>
-          <a-descriptions-item v-if="artifact" label="修改时间">
+          <a-descriptions-item v-if="artifact" :label="$t('Store.ModifyTheTime')">
             {{ currentArtifact.lastModified }}
           </a-descriptions-item>
-          <a-descriptions-item v-if="currentArtifact && currentArtifact.manifest.layers" label="层数">
+          <a-descriptions-item v-if="currentArtifact && currentArtifact.manifest.layers" :label="$t('Store.NumberOfFloors')">
             {{ currentArtifact.manifest.layers.length }}
           </a-descriptions-item>
-          <a-descriptions-item v-if="currentArtifact && currentArtifact.manifestConfig" label="制作Docker版本">
+          <a-descriptions-item v-if="currentArtifact && currentArtifact.manifestConfig" :label="$t('Store.MakeADockerVersion')">
             {{ currentArtifact.manifestConfig.docker_version }}
           </a-descriptions-item>
-          <a-descriptions-item v-if="currentArtifact && currentArtifact.manifestConfig" label="镜像OS">
+          <a-descriptions-item v-if="currentArtifact && currentArtifact.manifestConfig" :label="$t('Store.MirrorOS')">
             <a-tag> {{ currentArtifact.manifestConfig.os }}</a-tag>
           </a-descriptions-item>
-          <a-descriptions-item v-if="currentArtifact && currentArtifact.manifestConfig" label="基础架构">
+          <a-descriptions-item v-if="currentArtifact && currentArtifact.manifestConfig" :label="$t('Store.TheInfrastructure')">
             {{ currentArtifact.manifestConfig.architecture }}
           </a-descriptions-item>
-          <a-descriptions-item v-if="currentArtifact && currentArtifact.manifestConfig && currentArtifact.manifestConfig.variant" label="版本">
+          <a-descriptions-item v-if="currentArtifact && currentArtifact.manifestConfig && currentArtifact.manifestConfig.variant" :label="$t('Store.Version')">
             {{ currentArtifact.manifestConfig.variant || ''}}
           </a-descriptions-item>
-          <a-descriptions-item v-if="currentArtifact && !currentArtifact.manifestConfig" label="缓存状态">
-            {{ '未缓存' }}
+          <a-descriptions-item v-if="currentArtifact && !currentArtifact.manifestConfig" :label="$t('Store.CacheStatus')">
+            {{ $t('Store.Uncached') }}
           </a-descriptions-item>
         </a-descriptions>
       </a-tab-pane>
-      <a-tab-pane key="2" tab="元数据">
-        <a-table :columns="metadataColumns" :data-source="metadataList" rowKey="key" :scroll="{ x: true }">
+      <a-tab-pane key="2" :tab="$t('Store.Metadata')">
+        <a-table :columns="i18nMetadataColumns" :data-source="metadataList" rowKey="key" :scroll="{ x: true }">
           <div slot="type" slot-scope="type">
             <span v-for="(item, index) in metadataTypes" :key="index">
               <span v-if="type === item.value">
@@ -118,7 +118,7 @@
               v-if="record.type === 'TEXT' || record.type === 'MD'"
               @click="metadataEditorDrawerShow(record)"
             >
-              查看
+            {{ $t('Store.View') }}
             </a-button>
             <a-button
               type="link"
@@ -126,53 +126,53 @@
               v-if="record.type === 'JSON'"
               @click="metadataPrismEditorDrawerShow(record)"
             >
-              查看
+            {{ $t('Store.View') }}
             </a-button>
           </div>
         </a-table>
       </a-tab-pane>
-      <a-tab-pane key="3" tab="Conan信息" v-if="conanInfoVisible">
+      <a-tab-pane key="3" :tab="$t('Store.ConanInformation')" v-if="conanInfoVisible">
         <a-descriptions
-          title="配置"
+          :title="$t('Store.Configure')"
           :column="1"
           style="word-break: break-all;word-wrap: break-word;"
         >
-          <a-descriptions-item label="包名">
+          <a-descriptions-item :label="$t('Store.PackageName')">
             {{ conanInfo.recipeInfo.name }}
           </a-descriptions-item>
-          <a-descriptions-item label="版本">
+          <a-descriptions-item :label="$t('Store.Version')">
             {{ conanInfo.recipeInfo.version }}
           </a-descriptions-item>
-          <a-descriptions-item label="用户">
+          <a-descriptions-item :label="$t('Store.User')">
             {{ conanInfo.recipeInfo.user }}
           </a-descriptions-item>
-          <a-descriptions-item label="频道">
+          <a-descriptions-item :label="$t('Store.Channel')">
             {{ conanInfo.recipeInfo.channel }}
           </a-descriptions-item>
-          <a-descriptions-item label="引用">
+          <a-descriptions-item :label="$t('Store.Quote')">
             {{ conanInfo.recipeInfo.reference }}
           </a-descriptions-item>
-          <a-descriptions-item label="作者">
+          <a-descriptions-item :label="$t('Store.TheAuthor')">
             {{ conanInfo.recipeInfo.author }}
           </a-descriptions-item>
-          <a-descriptions-item label="许可">
+          <a-descriptions-item :label="$t('Store.Permission')">
             {{ conanInfo.recipeInfo.license }}
           </a-descriptions-item>
-          <a-descriptions-item label="URL">
+          <a-descriptions-item :label="URL">
             {{ conanInfo.recipeInfo.url }}
           </a-descriptions-item>
         </a-descriptions>
         <a-descriptions
-          title="包信息"
+          :title="$t('Store.PackageInformation')"
           :column="1"
           style="word-break: break-all;word-wrap: break-word;"
         >
-          <a-descriptions-item label="包个数">
+          <a-descriptions-item :label="$t('Store.NumberOfPackets')">
             {{ conanInfo.packageCount }}
           </a-descriptions-item>
         </a-descriptions>
       </a-tab-pane>
-      <a-tab-pane key="4" tab="Conan包信息" v-if="conanPackageInfoVisible">
+      <a-tab-pane key="4" :tab="$t('Store.ConanBagInfo')" v-if="conanPackageInfoVisible">
         <a-descriptions
           title="Settings"
           :column="1"
@@ -216,7 +216,7 @@
       <a-card :bordered="false" class="card-billing-info">
         <div class="col-info">
           <a-descriptions
-            :title="'使用示例(' + codeParam.type + ')'"
+            :title="$t('Store.UseExamples') + '(' + codeParam.type + ')'"
             :column="1"
           >
             <a-descriptions-item v-if="currentArtifact">
@@ -325,15 +325,15 @@ export default {
       metadataConfigList: [],
       metadataTypes: [
         {
-          label: "数字",
+          label: this.$t('Store.Number'),
           value: "NUMERICAL",
         },
         {
-          label: "字符串",
+          label: this.$t('Store.String'),
           value: "STRING",
         },
         {
-          label: "文本",
+          label: this.$t('Store.Text'),
           value: "TEXT",
         },
         {
@@ -347,12 +347,14 @@ export default {
       ],
       metadataColumns: [
         {
+          i18nKey: 'Store.MetadataKey',
           title: "元数据KEY",
           dataIndex: "key",
           key: "key",
           width: 150,
         },
         {
+          i18nKey: 'Store.MetadataType',
           title: "元数据类型",
           dataIndex: "type",
           key: "type",
@@ -360,6 +362,7 @@ export default {
           scopedSlots: { customRender: "type" },
         },
         {
+          i18nKey: 'Store.MetadataValues',
           title: "元数据值",
           dataIndex: "value",
           key: "value",
@@ -424,6 +427,16 @@ export default {
       selectedTag: 0,
       selectedColor: "#2db7f5"
     };
+  },
+  computed: {
+    i18nMetadataColumns() {
+      return this.metadataColumns.map(column => {
+        if (column.i18nKey) {
+          column.title = this.$t(column.i18nKey);
+        }
+        return column;
+      })
+    }
   },
   created() {
     if (isLogin()){

@@ -54,6 +54,7 @@ export default {
     'NoData': 'No data',
     'NodeTypeSelect': 'Select a node type',
     'OtherTypeNode': 'Other types of artifact library nodes',
+    'OwnedStorage': 'Owned storage',
     'OwnedWarehouse': 'Owned warehouse',
     'ProductPath': 'Product path',
     'CreationTime': 'Creation time',
@@ -216,4 +217,12 @@ export default {
     //go
     'GoProxyConfig':'GoProxyConfig',
     'useGo':'To use this proxy, you need to modify the global proxy of Go in the following way.',
+    'CacheStatus': 'Cache status',
+    'Uncached': 'Uncached',
+    'ProductDetails': 'Product details',
+    'SearchList': 'Search list',
+    'StartDate': 'Start date',
+    'EndDate': 'End date',
+    'SelectDate': 'Select date',
+    'DisplayQuantity': 'Display quantity',
 }

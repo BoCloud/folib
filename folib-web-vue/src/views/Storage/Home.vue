@@ -31,52 +31,52 @@ export default {
       mouseEnter: false,
       columns: [
         {
-          title: "存储空间",
+          title: this.$t('Store.OwnedStorage'),
           dataIndex: "storageId",
           scopedSlots: { customRender: "storageId" },
           width: 150,
         },
         {
-          title: "所属仓库",
-          dataIndex: "repositoryId",
-          scopedSlots: { customRender: "repositoryId" },
-          width: 150,
+          title: this.$t('Store.OwnedWarehouse'),
+          dataIndex: 'repositoryId',
+          scopedSlots: { customRender: 'repositoryId' },
+          width: 150
         },
         {
-          title: "制品路径",
-          dataIndex: "path",
-          scopedSlots: { customRender: "path" },
-          width: 550,
+          title: this.$t('Store.ProductPath'),
+          dataIndex: 'path',
+          scopedSlots: { customRender: 'path' },
+          width: 550
         },
         {
-          title: "创建时间",
-          dataIndex: "created",
+          title: this.$t('Store.CreationTime'),
+          dataIndex: 'created',
           sorter: true,
-          sortDirections: ["descend", "ascend"],
-          scopedSlots: { customRender: "created" },
-          width: 200,
+          sortDirections: ['descend', 'ascend'],
+          scopedSlots: { customRender: 'created' },
+          width: 200
         },
         {
-          title: "最近使用时间",
-          dataIndex: "lastUsed",
+          title: this.$t('Store.LastUsedTime'),
+          dataIndex: 'lastUsed',
           sorter: true,
-          scopedSlots: { customRender: "lastUsed" },
-          width: 200,
+          scopedSlots: { customRender: 'lastUsed' },
+          width: 200
         },
         {
-          title: "下载次数",
-          dataIndex: "downloadCount",
+          title: this.$t('Store.DownloadTimes'),
+          dataIndex: 'downloadCount',
           sorter: true,
-          scopedSlots: { customRender: "created" },
-          width: 200,
+          scopedSlots: { customRender: 'created' },
+          width: 200
         },
         {
-          title: "制品大小",
-          dataIndex: "sizeInBytes",
+          title: this.$t('Store.ProductSize'),
+          dataIndex: 'sizeInBytes',
           sorter: true,
-          scopedSlots: { customRender: "sizeInBytes" },
-          width: 200,
-        },
+          scopedSlots: { customRender: 'sizeInBytes' },
+          width: 200
+        }
       ],
       searchVisible: false,
       allowAnonymous: false,

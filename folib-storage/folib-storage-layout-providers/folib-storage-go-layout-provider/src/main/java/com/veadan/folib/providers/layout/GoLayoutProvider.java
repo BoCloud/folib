@@ -54,7 +54,7 @@ public class GoLayoutProvider extends AbstractLayoutProvider<GoArtifactCoordinat
     }
 
     @Override
-    protected GoArtifactCoordinates getArtifactCoordinates(RepositoryPath path) throws IOException {
+    public GoArtifactCoordinates getArtifactCoordinates(RepositoryPath path) throws IOException {
 
         return GoArtifactCoordinates.parse(RepositoryFiles.relativizePath(path));
     }

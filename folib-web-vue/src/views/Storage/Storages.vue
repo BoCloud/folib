@@ -175,7 +175,7 @@
                     }}/{{ storageCreateData.id }}</strong>
                   </a-col>
                   <a-col class="ml-auto">
-                    <a-input v-if="customStorage" v-model="storagePrefix" :placeholder="storageCreateData.storageProvider ==='s3' ? '$t("Storage.BucketName")':'$t("Storage.ParentName")'"
+                    <a-input v-if="customStorage" v-model="storagePrefix" :placeholder="storageCreateData.storageProvider ==='s3' ? $t('Storage.BucketName') : $t('Storage.ParentDirectory')"
                       class="font-regular text-sm text-dark" style="width: 150px;">
                       <a-icon slot="prefix" type="cloud" v-if="storageCreateData.storageProvider ==='s3'"/>
                       <a-icon slot="prefix" type="appstore" v-else/>
@@ -261,7 +261,7 @@
                     }}/{{ currentStorage.id }}</strong>
                   </a-col>
                   <a-col class="ml-auto">
-                    <a-input v-if="customStorage" v-model="storagePrefix" :placeholder="currentStorage.storageProvider ==='s3' ? '$t("Storage.BucketName")':'$t("Storage.ParentName")'"
+                    <a-input v-if="customStorage" v-model="storagePrefix" :placeholder="currentStorage.storageProvider ==='s3' ? $t('Storage.BucketName') : $t('Storage.ParentDirectory')"
                       class="font-regular text-sm text-dark" style="width: 150px;">
                       <a-icon slot="prefix" type="cloud" v-if="currentStorage.storageProvider === 's3'"/>
                       <a-icon slot="prefix" type="appstore" v-else />
@@ -1334,7 +1334,7 @@ export default {
         return
       }
       if (!message) {
-        message = "操作成功"
+        message = this.$t('Storage.OperationSuccessful')
       }
       this.$notification[type]({
         message: message,

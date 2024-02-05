@@ -238,7 +238,7 @@ public class DirectoryListingServiceImpl implements DirectoryListingService {
         final boolean showChecksum = configurationManagementService.getConfiguration().getAdvancedConfiguration().isShowChecksum();
         List<Path> contentPaths;
         try (Stream<Path> pathStream = Files.list(path)) {
-            contentPaths = pathStream.filter(p -> !p.toString().startsWith("."))
+            contentPaths = pathStream.filter(p -> !p.toString().startsWith(".") && !DockerLayoutProvider.MANIFEST.equalsIgnoreCase(p.getFileName().toString()) && !DockerLayoutProvider.BLOBS.equalsIgnoreCase(p.getFileName().toString()))
                     .filter(p -> !p.toString().contains("/.")
                             // 支持Cocoapods索引目录的显示
                             || p.toString().contains(".specs")

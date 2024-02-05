@@ -422,38 +422,6 @@ public class PromotionUtil {
         promotionNodeOptionDto.setFileMetaDataMap(fileMetaDataMap);
         return promotionNodeOptionDto;
     }
-    
-    public PromotionNodeOptionDto getPromotionUploadDtoV2(PromotionArtifactDto promotionArtifactDto) throws Exception {
-        PromotionNodeOptionDto promotionNodeOptionDto = new PromotionNodeOptionDto();
-        promotionNodeOptionDto.setStorageId(promotionArtifactDto.getTargetStorageId());
-        promotionNodeOptionDto.setRepostoryId(promotionArtifactDto.getTargetRepostoryId());
-        Map<String, Map<String, InputStream>> fileInputStreamMap = new HashMap<>();
-        Map<String, Object> fileMetaDataMap = new HashMap<>();
-        Map<String, Map<String, Path>> filePathMap = new HashMap<>();
-        
-        if (promotionArtifactDto.getPath().startsWith("s3://")) {
-            filePathMap = this.loadS3PromotionUploadFilePathMap(promotionArtifactDto, fileMetaDataMap);
-        } else {
-            filePathMap = this.loadNfsPromotionUploadFilePathMap(promotionArtifactDto, fileMetaDataMap);
-        }
-        filePathMap.forEach((pathStr, pathMap) -> {
-            Map<String, InputStream> inputStreamPath = new HashMap<>();
-            pathMap.forEach((k, v) -> {
-                try {
-                    inputStreamPath.put(k, Files.newInputStream(v));
-                } catch (IOException e) {
-                    throw new RuntimeException(e);
-                }
-            });
-            fileInputStreamMap.put(pathStr, inputStreamPath);
-        });
-        
-        promotionNodeOptionDto.setPathMap(fileInputStreamMap);
-        promotionNodeOptionDto.setFilePathMap(filePathMap);
-        promotionNodeOptionDto.setFileMetaDataMap(fileMetaDataMap);
-        return promotionNodeOptionDto;
-    }
-
 
     private void handlePromotionUploadPath(PromotionArtifactDto promotionArtifactDto, Map<String, Map<String, RepositoryPath>> filePathMap, Map<String, Object> fileMetaDataMap) throws Exception {
         String absolutePath = promotionArtifactDto.getPath();
@@ -498,10 +466,6 @@ public class PromotionUtil {
             // 添加跨节点的元数据同步
             fileMetaDataMap.put(RepositoryFiles.relativizePath(srcRepositoryPath), getMetaData(srcRepositoryPath));
         }
-        
-        return filePathMap;
-    }
-
     }
 
     public void handleCopy(RepositoryPath path, Repository srcRepository, Repository targetRepository) throws Exception {
@@ -703,7 +667,7 @@ public class PromotionUtil {
     
     public List<ArtifactSliceUploadHttpEntityResponse> artifactSliceUpload(PromotionNodeOptionDto uploadDto, String targetUrl, String storageId, String repositoryId, String syncNo) {
         targetUrl = StringUtils.chomp(targetUrl, "/");
-        final Map<String, Map<String, Path>> filePathMap = uploadDto.getFilePathMap();
+        final Map<String, Map<String, RepositoryPath>> filePathMap = uploadDto.getPathMap();
         final long sliceByteSize = Optional.ofNullable(configurationManagementService.getConfiguration().getSliceMbSize()).orElse(0L) * (1024 * 1024);
         final HttpClient httpClient = HttpClients.createDefault();
         final HttpPost httpPost = new HttpPost(String.format("%s/api/artifact/folib/promotion/slice/upload", targetUrl));
@@ -750,7 +714,7 @@ public class PromotionUtil {
         }).collect(Collectors.toList());
     }
 
-    private List<ArtifactSliceUploadHttpEntityBuilder> getArtifactSliceUploadHttpEntityList(Map<String, Map<String, Path>> filePathMap, String storageId, String repositoryId, long chunkSize) {
+    private List<ArtifactSliceUploadHttpEntityBuilder> getArtifactSliceUploadHttpEntityList(Map<String, Map<String, RepositoryPath>> filePathMap, String storageId, String repositoryId, long chunkSize) {
         return filePathMap.values().stream().map(m -> {
             return m.entrySet().stream().map(entry -> {
                 final String saveUri = entry.getKey();

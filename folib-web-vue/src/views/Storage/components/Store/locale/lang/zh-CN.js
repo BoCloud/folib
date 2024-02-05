@@ -54,6 +54,7 @@ export default {
     'OtherTypeNode': '其他类型制品库节点',
     'selectAll': '全选',
     'NoData': '暂无数据',
+    'OwnedStorage': '存储空间',
     'OwnedWarehouse': '所属仓库',
     'ProductPath': '制品路径',
     'CreationTime': '创建时间',
@@ -216,4 +217,12 @@ export default {
     //go
     'GoProxyConfig':'配置go全局代理',
     'useGo':'为了使用此代理，你需要通过以下方式修改go的全局代理',
+    'CacheStatus': '缓存状态',
+    'Uncached': '未缓存',
+    'ProductDetails': '制品详情',
+    'SearchList': '搜索列表',
+    'StartDate': '开始日期',
+    'EndDate': '结束日期',
+    'SelectDate': '选择日期',
+    'DisplayQuantity': '显示数量',
 }
