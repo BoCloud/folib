@@ -32,6 +32,7 @@ import com.veadan.folib.services.RepositoryManagementService;
 import com.veadan.folib.storage.metadata.MetadataHelper;
 import com.veadan.folib.util.CommonUtils;
 import com.veadan.folib.util.MessageDigestUtils;
+import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.io.FilenameUtils;
@@ -55,6 +56,7 @@ import java.nio.file.Path;
 import java.util.*;
 import java.util.concurrent.Callable;
 
+@Data
 @Slf4j
 public class ArtifactUploadTask implements Callable<String> {
 
@@ -76,6 +78,7 @@ public class ArtifactUploadTask implements Callable<String> {
     private MavenRepositoryFeatures mavenRepositoryFeatures;
     private String parseArtifact;
     private ArtifactComponent artifactComponent;
+    private RepositoryPath repositoryPath;
 
     public ArtifactUploadTask() {
     }
@@ -531,6 +534,7 @@ public class ArtifactUploadTask implements Callable<String> {
                     try (InputStream inputStream = new BufferedInputStream(Files.newInputStream(path))) {
                         promotionUtil.setMetaData(repositoryPath, metaData);
                         artifactManagementService.store(repositoryPath, inputStream);
+                        this.repositoryPath = repositoryPath;
                     }
                     try (InputStream inputStream = new ByteArrayInputStream(packageJsonBytes)) {
                         artifactManagementService.store(repositoryPath.resolveSibling("package.json"), inputStream);
@@ -617,6 +621,9 @@ public class ArtifactUploadTask implements Callable<String> {
     private void handlerMavenStore(RepositoryPath repositoryPath, InputStream inputStream) throws Exception {
         mavenRepositoryFeatures.versionValidator(repositoryPath);
         artifactManagementService.store(repositoryPath, inputStream);
+        if (Objects.isNull(this.repositoryPath)) {
+            this.repositoryPath = repositoryPath;
+        }
     }
 
     /**

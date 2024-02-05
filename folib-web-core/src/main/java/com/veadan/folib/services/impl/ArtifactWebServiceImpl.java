@@ -73,6 +73,7 @@ import com.veadan.folib.util.RepositoryPathUtil;
 import com.veadan.folib.utils.TreeUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
@@ -112,6 +113,7 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.*;
 import java.util.concurrent.FutureTask;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -1038,6 +1040,145 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
                     }
                 });
             }
+        } catch (Exception ex) {
+            log.error(ExceptionUtils.getStackTrace(ex));
+        }
+    }
+
+    @Override
+    public void dockerLayoutUpgrade(String storageId, String repositoryId, Boolean override) throws Exception {
+        List<FutureTask<String>> futureTaskList = Lists.newArrayList();
+        FutureTask<String> futureTask;
+        Map<String, Storage> storageMap = configurationManagementService.getConfiguration().getStorages();
+        if (MapUtils.isNotEmpty(storageMap)) {
+            Repository repository;
+            for (Map.Entry<String, Storage> entry : storageMap.entrySet()) {
+                Map<String, ? extends Repository> repoMap = entry.getValue().getRepositories();
+                if (MapUtils.isEmpty(repoMap)) {
+                    continue;
+                }
+                if (StringUtils.isNotBlank(storageId) && !entry.getKey().equals(storageId)) {
+                    continue;
+                }
+                for (Map.Entry<String, ? extends Repository> repoEntry : repoMap.entrySet()) {
+                    repository = repoEntry.getValue();
+                    if (!DockerLayoutProvider.ALIAS.equals(repository.getLayout())) {
+                        continue;
+                    }
+                    if (StringUtils.isNotBlank(repositoryId) && !repoEntry.getKey().equals(repositoryId)) {
+                        continue;
+                    }
+                    final RepositoryPath rootRepositoryPath = repositoryPathResolver.resolve(repository.getStorage().getId(), repository.getId());
+                    if (!Files.exists(rootRepositoryPath)) {
+                        continue;
+                    }
+                    final RepositoryPath blobsRootRepositoryPath = rootRepositoryPath.resolve(DockerLayoutProvider.BLOBS);
+                    final RepositoryPath manifestRootRepositoryPath = rootRepositoryPath.resolve(DockerLayoutProvider.MANIFEST);
+                    if (!Boolean.TRUE.equals(override) && Files.exists(blobsRootRepositoryPath) && Files.exists(manifestRootRepositoryPath)) {
+                        continue;
+                    }
+                    futureTask = new FutureTask<String>(() -> {
+                        handleDockerRepo(rootRepositoryPath, blobsRootRepositoryPath, manifestRootRepositoryPath);
+                        return "";
+                    });
+                    futureTaskList.add(futureTask);
+                    asyncThreadPoolTaskExecutor.submit(futureTask);
+                }
+            }
+            for (FutureTask<String> task : futureTaskList) {
+                task.get();
+            }
+            log.info("DockerLayoutUpgrade all is finished");
+        }
+    }
+
+    @Override
+    public void dockerLayoutUpgradeAll() throws Exception {
+        dockerLayoutUpgrade(null, null, null);
+    }
+
+    private void handleDockerRepo(RepositoryPath rootRepositoryPath, RepositoryPath blobsRootRepositoryPath, RepositoryPath manifestRootRepositoryPath) {
+        AtomicLong imageAl = new AtomicLong(0), blobAl = new AtomicLong(0), manifestAl = new AtomicLong(0), copyBlobAl = new AtomicLong(0), copyManifestAl = new AtomicLong(0), deleteBlobAl = new AtomicLong(0), deleteManifestAl = new AtomicLong(0);
+        try (Stream<Path> pathStream = Files.list(rootRepositoryPath)) {
+            pathStream.forEach(path -> {
+                try {
+                    RepositoryPath imageRepositoryPath = (RepositoryPath) path;
+                    String filename = imageRepositoryPath.getFileName().toString();
+                    if (!filename.startsWith(GlobalConstants.POINT) && !RepositoryFiles.isTemp(imageRepositoryPath) && !RepositoryFiles.isTrash(imageRepositoryPath) && !Files.isHidden(imageRepositoryPath) && Files.isDirectory(imageRepositoryPath)) {
+                        log.info("Find image path [{}] [{}] [{}]", imageRepositoryPath.getStorageId(), imageRepositoryPath.getRepositoryId(), RepositoryFiles.relativizePath(imageRepositoryPath));
+                        imageAl.getAndIncrement();
+                        RepositoryPath blobsRepositoryPath = imageRepositoryPath.resolve(DockerLayoutProvider.BLOBS);
+                        if (Files.exists(blobsRepositoryPath)) {
+                            //遍历镜像目录下的blobs目录
+                            try (Stream<Path> blobsPathStream = Files.list(blobsRepositoryPath)) {
+                                blobsPathStream.forEach(blobsPath -> {
+                                    RepositoryPath blobRepositoryPath = (RepositoryPath) blobsPath;
+                                    try {
+                                        String blobName = blobRepositoryPath.getFileName().toString();
+                                        if (DockerArtifactCoordinates.include(blobName) && RepositoryFiles.isArtifact(blobRepositoryPath) && !RepositoryFiles.isArtifactChecksum(blobName) && !RepositoryFiles.isArtifactMetadata(blobRepositoryPath)) {
+                                            RepositoryPath targetBlobRepositoryPath = blobsRootRepositoryPath.resolve(blobName);
+                                            boolean exists = Files.exists(targetBlobRepositoryPath);
+                                            log.info("Find image [{}] [{}] [{}] source blob [{}] target [{}] exists [{}]", imageRepositoryPath.getStorageId(), imageRepositoryPath.getRepositoryId(), RepositoryFiles.relativizePath(imageRepositoryPath), RepositoryFiles.relativizePath(blobRepositoryPath), RepositoryFiles.relativizePath(targetBlobRepositoryPath), exists);
+                                            blobAl.getAndIncrement();
+                                            if (!exists) {
+                                                //不存在，blob复制到仓库blobs目录下
+                                                artifactManagementService.store(targetBlobRepositoryPath, blobRepositoryPath);
+                                                log.info("Find image [{}] [{}] [{}] source blob [{}] target [{}] copy finished", imageRepositoryPath.getStorageId(), imageRepositoryPath.getRepositoryId(), RepositoryFiles.relativizePath(imageRepositoryPath), RepositoryFiles.relativizePath(blobRepositoryPath), RepositoryFiles.relativizePath(targetBlobRepositoryPath));
+                                                copyBlobAl.getAndIncrement();
+                                            }
+                                            //删除源blob
+                                            RepositoryFiles.delete(blobRepositoryPath, true);
+                                            log.info("Find image [{}] [{}] [{}] source blob [{}] target [{}] source deleted", imageRepositoryPath.getStorageId(), imageRepositoryPath.getRepositoryId(), RepositoryFiles.relativizePath(imageRepositoryPath), RepositoryFiles.relativizePath(blobRepositoryPath), RepositoryFiles.relativizePath(targetBlobRepositoryPath));
+                                            deleteBlobAl.getAndIncrement();
+                                        }
+                                    } catch (Exception ex) {
+                                        log.error("Handle image [{}] [{}] blob [{}] error [{}]", imageRepositoryPath.getStorageId(), imageRepositoryPath.getRepositoryId(), blobRepositoryPath, ExceptionUtils.getStackTrace(ex));
+                                    }
+                                });
+                            }
+                            if (Files.list(blobsRepositoryPath).count() == 0) {
+                                RepositoryFiles.delete(blobsRepositoryPath, true);
+                            }
+                        }
+                        RepositoryPath manifestsRepositoryPath = imageRepositoryPath.resolve(DockerLayoutProvider.MANIFEST);
+                        if (Files.exists(manifestsRepositoryPath)) {
+                            //遍历镜像目录下的manifest目录
+                            try (Stream<Path> manifestPathStream = Files.list(manifestsRepositoryPath)) {
+                                manifestPathStream.forEach(manifestPath -> {
+                                    RepositoryPath manifestRepositoryPath = (RepositoryPath) manifestPath;
+                                    try {
+                                        String manifestName = manifestRepositoryPath.getFileName().toString();
+                                        if (DockerArtifactCoordinates.isRealManifestPath(manifestRepositoryPath)) {
+                                            RepositoryPath targetManifestRepositoryPath = manifestRootRepositoryPath.resolve(manifestName);
+                                            boolean exists = Files.exists(targetManifestRepositoryPath);
+                                            log.info("Find image [{}] [{}] [{}] source blob [{}] target [{}] exists [{}]", imageRepositoryPath.getStorageId(), imageRepositoryPath.getRepositoryId(), RepositoryFiles.relativizePath(imageRepositoryPath), RepositoryFiles.relativizePath(manifestRepositoryPath), RepositoryFiles.relativizePath(targetManifestRepositoryPath), exists);
+                                            manifestAl.getAndIncrement();
+                                            if (!exists) {
+                                                //不存在，manifest复制到仓库manifest目录下
+                                                artifactManagementService.store(targetManifestRepositoryPath, manifestRepositoryPath);
+                                                log.info("Find image [{}] [{}] [{}] source manifest [{}] target [{}] copy finished", imageRepositoryPath.getStorageId(), imageRepositoryPath.getRepositoryId(), RepositoryFiles.relativizePath(imageRepositoryPath), RepositoryFiles.relativizePath(manifestRepositoryPath), RepositoryFiles.relativizePath(targetManifestRepositoryPath));
+                                                copyManifestAl.getAndIncrement();
+                                            }
+                                            //删除源manifest
+                                            RepositoryFiles.delete(manifestRepositoryPath, true);
+                                            log.info("Find image [{}] [{}] [{}] source manifest [{}] target [{}] source deleted", imageRepositoryPath.getStorageId(), imageRepositoryPath.getRepositoryId(), RepositoryFiles.relativizePath(imageRepositoryPath), RepositoryFiles.relativizePath(manifestRepositoryPath), RepositoryFiles.relativizePath(targetManifestRepositoryPath));
+                                            deleteManifestAl.getAndIncrement();
+                                        }
+                                    } catch (Exception ex) {
+                                        log.error("Handle image [{}] [{}] manifest [{}] error [{}]", imageRepositoryPath.getStorageId(), imageRepositoryPath.getRepositoryId(), manifestRepositoryPath, ExceptionUtils.getStackTrace(ex));
+                                    }
+                                });
+                            }
+                            if (Files.list(manifestsRepositoryPath).count() == 0) {
+                                RepositoryFiles.delete(manifestsRepositoryPath, true);
+                            }
+                        }
+                    }
+                } catch (Exception ex) {
+                    log.error("Handle path [{}] error [{}]", path, ExceptionUtils.getStackTrace(ex));
+                }
+            });
+            log.info("DockerLayoutUpgrade [{}] is finished images [{}] blobs [{}] manifest [{}] copyBlobs [{}] copyManifest [{}] deleteBlobs [{}] deleteManifest [{}]", rootRepositoryPath.toString(), imageAl.get(), blobAl.get(), manifestAl.get(), copyBlobAl.get(), copyManifestAl.get(), deleteBlobAl.get(), deleteManifestAl.get());
         } catch (Exception ex) {
             log.error(ExceptionUtils.getStackTrace(ex));
         }

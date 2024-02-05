@@ -229,4 +229,21 @@ public interface ArtifactWebService {
      * @param path         路径
      */
     void cleanSnapshot(String storageId, String repositoryId, String path);
+
+    /**
+     * docker仓库旧版本升级
+     *
+     * @param storageId    存储空间
+     * @param repositoryId 仓库名称
+     * @param override     是否覆盖 true 是 false 否
+     * @throws Exception 异常
+     */
+    void dockerLayoutUpgrade(String storageId, String repositoryId, Boolean override) throws Exception;
+
+    /**
+     * docker仓库旧版本升级
+     *
+     * @throws Exception 异常
+     */
+    void dockerLayoutUpgradeAll() throws Exception;
 }

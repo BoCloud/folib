@@ -17,6 +17,10 @@ public enum UpgradeTaskStatusEnum {
      */
     UN_EXECUTED("unexecuted"),
     /**
+     * 执行中
+     */
+    EXECUTING("executing"),
+    /**
      * 执行成功
      */
     EXECUTED_SUCCESS("executed_success"),
