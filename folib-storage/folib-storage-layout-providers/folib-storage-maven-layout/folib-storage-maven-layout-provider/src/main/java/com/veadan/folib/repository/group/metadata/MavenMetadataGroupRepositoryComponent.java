@@ -34,7 +34,7 @@ public class MavenMetadataGroupRepositoryComponent
         final LayoutProvider layoutProvider = getRepositoryProvider(groupRepository);
         
         RepositoryPath repositoryPath = repositoryPathResolver.resolve(groupRepository, artifactPath);
-        Files.delete(repositoryPath);
+        Files.deleteIfExists(repositoryPath);
     }
 
     @Override

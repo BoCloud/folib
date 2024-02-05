@@ -23,13 +23,14 @@ import com.veadan.folib.controllers.cluster.dto.SyncUnionRepositoryDto;
 import com.veadan.folib.dispatch.ClusterDispatchNodeDto;
 import com.veadan.folib.domain.*;
 import com.veadan.folib.dto.ArtifactDispatchRepositoryDto;
-import com.veadan.folib.enums.ArtifactoryRepositoryTypeEnum;
-import com.veadan.folib.enums.NotifyScopesTypeEnum;
-import com.veadan.folib.enums.RepositoryScopeEnum;
+import com.veadan.folib.enums.*;
 import com.veadan.folib.event.repository.RepositoryEventListenerRegistry;
 import com.veadan.folib.forms.common.StorageTreeForm;
 import com.veadan.folib.forms.configuration.*;
 import com.veadan.folib.providers.io.RepositoryPath;
+import com.veadan.folib.providers.layout.DockerLayoutProvider;
+import com.veadan.folib.providers.layout.LayoutProvider;
+import com.veadan.folib.providers.layout.LayoutProviderRegistry;
 import com.veadan.folib.providers.storage.FileSystemStorageProvider;
 import com.veadan.folib.repository.RepositoryManagementStrategyException;
 import com.veadan.folib.service.ProxyRepositoryConnectionPoolConfigurationService;
@@ -77,6 +78,7 @@ import org.springframework.validation.BindingResult;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
+import javax.inject.Inject;
 import javax.validation.groups.Default;
 import javax.ws.rs.client.Client;
 import javax.ws.rs.client.Entity;
@@ -164,6 +166,14 @@ public class StoragesConfigurationController
     @Autowired
     private CommonComponent commonComponent;
 
+    @Inject
+    @Lazy
+    private DockerLayoutProvider dockerLayoutProvider;
+
+    @Inject
+    private LayoutProviderRegistry layoutProviderRegistry;
+
+
     public StoragesConfigurationController(ConfigurationManagementService configurationManagementService,
                                            StorageManagementService storageManagementService,
                                            RepositoryManagementService repositoryManagementService,
@@ -196,6 +206,9 @@ public class StoragesConfigurationController
             StorageDto storage = conversionService.convert(storageForm, StorageDto.class);
             if (StringUtils.isBlank(storage.getAdmin())) {
                 storage.setAdmin(NotifyScopesTypeEnum.ADMIN.getScope());
+            }
+            if (StringUtils.isBlank(storage.getStorageProvider())) {
+                storage.setStorageProvider(StorageProviderEnum.LOCAL.getType());
             }
             storageManagementService.createStorage(storage);
             // 向其他集群节点同步storage
@@ -671,6 +684,11 @@ public class StoragesConfigurationController
                 final RepositoryPath repositoryPath = repositoryPathResolver.resolve(new RepositoryData(repository));
                 if (!Files.exists(repositoryPath)) {
                     repositoryManagementService.createRepository(storageId, repository.getId());
+                }
+                if (Objects.isNull(existRepository) && !RepositoryTypeEnum.GROUP.getType().equals(repository.getType())) {
+                    //初始化仓库数据
+                    LayoutProvider layoutProvider = layoutProviderRegistry.getProvider(repositoryDto.getLayout());
+                    layoutProvider.initData(storageId, repositoryId);
                 }
                 SyncRepositoryDto syncRepositoryDto = new SyncRepositoryDto(repositoryDto, storageId, repositoryId, SyncRepositoryEnum.ADD_OR_UPDATE);
                 clusterSyncService.syncRepository(syncRepositoryDto);

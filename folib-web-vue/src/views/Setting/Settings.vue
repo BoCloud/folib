@@ -393,7 +393,7 @@
                   </a-col>
                   <a-col class="pl-15">
                     <p class="mb-0 font-semibold">保存操作</p>
-                    <small class="text-dark">该保存按钮将会针对以上4个部分的修改统一保存</small>
+                    <small class="text-dark">该保存按钮将会针对以上的修改统一保存</small>
                   </a-col>
                   <a-col :span="24"
                          :md="12"

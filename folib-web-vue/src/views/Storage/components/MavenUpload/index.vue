@@ -110,7 +110,11 @@ export default {
   },
   mounted() { },
   methods: {
-    message(type, message) {
+    message(status, type, message) {
+      let statusList = [401, 403]
+      if (statusList.includes(status)) {
+        return
+      }
       if (!message) {
         message = "操作成功"
       }
@@ -121,12 +125,12 @@ export default {
     },
     beforeUpload(file) {
       if (this.uploadForm.file) {
-        this.message("warning", "一次只能上传一个制品")
+        this.message(0, "warning", "一次只能上传一个制品")
         return false
       }
       let result = artifactCheck(this.folibRepository, file.name, file.size)
       if (!result.check) {
-        this.message("warning", result.msg)
+        this.message(0, "warning", result.msg)
         return false
       }
       this.uploadForm.file = file
@@ -187,14 +191,14 @@ export default {
         this.uploadForm.version = this.parseArtifact.version
         this.uploadForm.filePath = this.parseArtifact.filePath
         if (res.type === 2) {
-          this.message("warning", "非标准制品，请手动填写制品信息")
+          this.message(0, "warning", "非标准制品，请手动填写制品信息")
         }
       }).catch((err) => {
         let msg = err.response.data.error ? err.response.data.error : err.response.data
         console.log('upload error：', msg)
         let errStatusArr = [200, 500, 403, 304, 401]
         if (!errStatusArr.includes(err.response.status)) {
-          this.message("error", "错误编码：" + err.response.status)
+          this.message(err.response.status, "error", "错误编码：" + err.response.status)
         }
       })
     },
@@ -224,12 +228,12 @@ export default {
         this.loading = false
         this.close()
         this.reload()
-        this.message("success", "上传成功")
+        this.message(0, "success", "上传成功")
       }).catch((err) => {
         this.loading = true
         let msg = err.response.data.error ? err.response.data.error : err.response.data
         console.log('upload error：', msg)
-        this.message("error", msg)
+        this.message(err.response.status, "error", msg)
       }).finally(() => {
         // this.loading = false
       })

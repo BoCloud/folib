@@ -1,22 +1,20 @@
 package com.veadan.folib.providers.layout;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.nio.file.Path;
-import java.util.Set;
-
-import javax.annotation.Nonnull;
-
-import com.veadan.folib.repository.RepositoryManagementStrategy;
 import com.veadan.folib.artifact.coordinates.ArtifactCoordinates;
 import com.veadan.folib.domain.ArtifactGroup;
 import com.veadan.folib.providers.io.RepositoryPath;
+import com.veadan.folib.repository.RepositoryManagementStrategy;
+
+import javax.annotation.Nonnull;
+import javax.ws.rs.core.MultivaluedMap;
+import java.io.IOException;
+import java.nio.file.Path;
+import java.util.Set;
 
 /**
  * @author Veadan
  */
-public interface LayoutProvider<T extends ArtifactCoordinates>
-{
+public interface LayoutProvider<T extends ArtifactCoordinates> {
     RepositoryManagementStrategy getRepositoryManagementStrategy();
 
     @Nonnull
@@ -26,6 +24,8 @@ public interface LayoutProvider<T extends ArtifactCoordinates>
 
     byte[] getContentByFileName(RepositoryPath repositoryPath, Path path, String fileName);
 
+    byte[] getContentByEqualsFileName(RepositoryPath repositoryPath, Path path, String fileName);
+
     Set<String> getDefaultArtifactCoordinateValidators();
 
     String getAlias();
@@ -33,5 +33,13 @@ public interface LayoutProvider<T extends ArtifactCoordinates>
     @Nonnull
     Set<ArtifactGroup> getArtifactGroups(RepositoryPath path)
             throws IOException;
+
+    default void initData(String storageId, String repositoryId) {
+
+    }
+
+    default void targetUrl(RepositoryPath path) {
+
+    }
 
 }

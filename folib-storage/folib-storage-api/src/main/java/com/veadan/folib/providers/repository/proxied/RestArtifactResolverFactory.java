@@ -47,10 +47,10 @@ public class RestArtifactResolverFactory
         final HttpAuthenticationFeature authenticationFeature = (StringUtils.isNotBlank(username) && StringUtils.isNotBlank(password)) ? HttpAuthenticationFeature.basic(username, password) : null;
 
         Client client  = proxyRepositoryConnectionPoolConfigurationService.getRestClient(repositoryPath.getStorageId(),repositoryPath.getRepositoryId());
-        return new RestArtifactResolver(client , url, repositoryPath.getTargetUrl(),
-                configuration,
-                authenticationFeature)
-        {
+        return new RestArtifactResolver(client , url, repositoryPath.getTargetUrl(), repositoryPath.getHeaders(),
+                                        configuration,
+                                        authenticationFeature)
+                                {
 
             @Override
             public boolean isAlive()

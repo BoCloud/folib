@@ -1,11 +1,15 @@
 package com.veadan.folib.interceptors;
 
 import cn.hutool.core.collection.CollectionUtil;
+import cn.hutool.core.io.FileUtil;
 import cn.hutool.extra.spring.SpringUtil;
+import cn.hutool.json.JSONUtil;
 import com.alibaba.fastjson.JSONObject;
+import com.veadan.folib.components.artifact.ArtifactComponent;
 import com.veadan.folib.config.PermissionCheck;
 import com.veadan.folib.controllers.support.ErrorResponseEntityBody;
 import com.veadan.folib.dispatch.ClusterDispatchNodeDto;
+import com.veadan.folib.domain.ArtifactParse;
 import com.veadan.folib.scanner.common.util.IPUtil;
 import com.veadan.folib.services.ConfigurationManagementService;
 import com.veadan.folib.users.domain.Privileges;
@@ -15,7 +19,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.compress.utils.Lists;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.method.HandlerMethod;
@@ -108,6 +111,17 @@ public class PermissionCheckInterceptor implements HandlerInterceptor {
                     if (StringUtils.isNotBlank(filePath)) {
                         filePaths.add(filePath);
                     }
+                }
+            }
+            String parseArtifact = request.getParameter("parseArtifact");
+            if (StringUtils.isNotBlank(parseArtifact) && JSONUtil.isJson(parseArtifact)) {
+                ArtifactParse artifactParse = null;
+                artifactParse = JSONObject.parseObject(parseArtifact, ArtifactParse.class);
+                ArtifactComponent artifactComponent = SpringUtil.getBean(ArtifactComponent.class);
+                String artifactPath = artifactComponent.calcMavenArtifactPath(storageId, repositoryId, artifactParse.getGroupId(), artifactParse.getArtifactId(), artifactParse.getVersion(), FileUtil.getName(artifactParse.getFilePath()));
+                if (StringUtils.isNotBlank(artifactPath)) {
+                    filePaths = Lists.newArrayList();
+                    filePaths.add(artifactPath);
                 }
             }
             String body = StringUtils.EMPTY;

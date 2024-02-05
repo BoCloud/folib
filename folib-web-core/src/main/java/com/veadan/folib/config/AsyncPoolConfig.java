@@ -124,6 +124,24 @@ public class AsyncPoolConfig {
     @Value("${folib.threadPool.asyncWsCommand.awaitTerminationSeconds}")
     private Integer asyncWsCommandArtifactAwaitTerminationSeconds;
 
+    @Value("${folib.threadPool.asyncCopy.corePoolSize}")
+    private Integer asyncCopyCorePoolSize;
+
+    @Value("${folib.threadPool.asyncCopy.maxPoolSize}")
+    private Integer asyncCopyMaxPoolSize;
+
+    @Value("${folib.threadPool.asyncCopy.queueCapacity}")
+    private Integer asyncCopyQueueCapacity;
+
+    @Value("${folib.threadPool.asyncCopy.keepAliveSeconds}")
+    private Integer asyncCopyKeepAliveSeconds;
+
+    @Value("${folib.threadPool.asyncCopy.threadNamePrefix}")
+    private String asyncCopyThreadNamePrefix;
+
+    @Value("${folib.threadPool.asyncCopy.awaitTerminationSeconds}")
+    private Integer asyncCopyAwaitTerminationSeconds;
+
     @Bean
     public ThreadPoolTaskExecutor asyncThreadPoolTaskExecutor() {
         return buildThreadPoolTaskExecutor(asyncCorePoolSize, asyncMaxPoolSize, asyncQueueCapacity, asyncKeepAliveSeconds, asyncThreadNamePrefix, asyncAwaitTerminationSeconds);
@@ -173,6 +191,17 @@ public class AsyncPoolConfig {
                 asyncWsCommandArtifactAwaitTerminationSeconds);
     }
 
+    @Bean
+    public ThreadPoolTaskExecutor asyncCopyThreadPoolTaskExecutor() {
+        return buildThreadPoolTaskExecutor(
+                asyncCopyCorePoolSize,
+                asyncCopyMaxPoolSize,
+                asyncCopyQueueCapacity,
+                asyncCopyKeepAliveSeconds,
+                asyncCopyThreadNamePrefix,
+                asyncCopyAwaitTerminationSeconds);
+    }
+
     @PreDestroy
     public void shutdown() {
         asyncThreadPoolTaskExecutor().shutdown();
@@ -181,6 +210,7 @@ public class AsyncPoolConfig {
         asyncFetchRemotePackageThreadPoolTaskExecutor().shutdown();
         asyncScanThreadPoolTaskExecutor().shutdown();
         asyncWsCommandThreadPoolTaskExecutor().shutdown();
+        asyncCopyThreadPoolTaskExecutor().shutdown();
     }
 
     /**

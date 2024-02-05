@@ -64,22 +64,22 @@ public class RepositoryStreamSupport {
         }
         RepositoryPath repositoryPath = (RepositoryPath) ctx.getPath();
         try {
-            logger.info("Locking [{}].", repositoryPath);
+            logger.debug("Locking [{}].", repositoryPath);
             if (repositoryPathLock.lock(repositoryPath)) {
                 ctx.setLocked(true);
-                logger.info("Locked [{}].", repositoryPath);
+                logger.debug("Locked [{}].", repositoryPath);
                 try {
                     open(repositoryPath);
                 } catch (Exception ex) {
                     unLock();
-                    logger.error("Unlocked [{}] repositoryPath：{} lock error：{}", this.getClass().getSimpleName(), repositoryPath, ExceptionUtils.getStackTrace(ex));
+                    logger.error("Unlocked [{}] repositoryPath [{}] lock error [{}]", this.getClass().getSimpleName(), repositoryPath, ExceptionUtils.getStackTrace(ex));
                     throw ex;
                 }
             } else {
-                logger.warn("[{}] repositoryPath：{} was not get lock", this.getClass().getSimpleName(), repositoryPath);
+                logger.warn("[{}] repositoryPath [{}] was not get lock", this.getClass().getSimpleName(), repositoryPath);
             }
         } catch (Exception ex) {
-            logger.error("[{}] repositoryPath：{} lock error：{}", this.getClass().getSimpleName(), repositoryPath, ExceptionUtils.getStackTrace(ex));
+            logger.error("RepositoryPath [{}] lock error [{}]", repositoryPath, ExceptionUtils.getStackTrace(ex));
             throw new IOException(ex.getMessage());
         }
     }
@@ -107,17 +107,17 @@ public class RepositoryStreamSupport {
             }
             TransactionStatus transaction = ctx.getTransaction();
             if (transaction != null && (transaction.isRollbackOnly() || !transaction.isCompleted())) {
-                logger.info("Rollback [{}]", getContext().getPath());
+                logger.warn("Rollback [{}]", getContext().getPath());
                 transactionManager.rollback(transaction);
-                logger.info("Rollbedack [{}]", getContext().getPath());
+                logger.warn("Rolled back [{}]", getContext().getPath());
             }
         } finally {
             if (Objects.nonNull(ctx.getLocked())) {
                 unLock();
-                logger.info("Unlocked [{}].", path);
+                logger.debug("Unlocked [{}].", path);
             }
             clearContext();
-            logger.info("[{}] close {} take time：{} ms", this.getClass().getSimpleName(), path, System.currentTimeMillis() - startTime);
+            logger.debug("Close [{}] take time [{}] ms", path, System.currentTimeMillis() - startTime);
         }
     }
 
@@ -162,11 +162,11 @@ public class RepositoryStreamSupport {
         @Override
         public void flush()
                 throws IOException {
-            logger.info("Flushing [{}]", getContext().getPath());
+            logger.debug("Flushing [{}]", getContext().getPath());
 
             super.flush();
 
-            logger.info("Flushed [{}]", getContext().getPath());
+            logger.debug("Flushed [{}]", getContext().getPath());
 
             TransactionStatus transaction = ctx.getTransaction();
             if (transaction != null && !transaction.isRollbackOnly()) {
@@ -292,10 +292,10 @@ public class RepositoryStreamSupport {
                 throws IOException {
             TransactionStatus transaction = ctx.getTransaction();
             if (transaction != null && !transaction.isRollbackOnly()) {
-                logger.info("Commit [{}]", getContext().getPath());
+                logger.debug("Commit [{}]", getContext().getPath());
                 RepositoryStreamSupport.this.commitStoreIndex();
                 transactionManager.commit(transaction);
-                logger.info("Commited [{}]", getContext().getPath());
+                logger.debug("Commited [{}]", getContext().getPath());
                 callback.onStoreIndexAfter((RepositoryStreamReadContext) ctx);
             } else {
                 logger.warn("Skip commit [{}]", getContext().getPath());
@@ -307,14 +307,14 @@ public class RepositoryStreamSupport {
                 throws IOException {
             try {
                 Path path = getContext().getPath();
-                logger.info("{} start close", path);
+                logger.debug("[{}] start close", path);
                 super.close();
-                logger.info("{} end close", path);
+                logger.debug("[{}] end close", path);
             } finally {
                 Path path = getContext().getPath();
-                logger.info("{} finally start close", path);
+                logger.debug("[{}] finally start close", path);
                 RepositoryStreamSupport.this.close();
-                logger.info("{} finally end close", path);
+                logger.debug("[{}] finally end close", path);
             }
         }
 
@@ -323,7 +323,7 @@ public class RepositoryStreamSupport {
     private void unLock() {
         Boolean locked = ctx.getLocked();
         if (Boolean.TRUE.equals(locked)) {
-            logger.info("Current ThreadName [{}] lockKey [{}] unlock", Thread.currentThread().getName(), ctx.getPath());
+            logger.debug("Current ThreadName [{}] lockKey [{}] unlock", Thread.currentThread().getName(), ctx.getPath());
             repositoryPathLock.unLock((RepositoryPath) ctx.getPath());
         }
     }

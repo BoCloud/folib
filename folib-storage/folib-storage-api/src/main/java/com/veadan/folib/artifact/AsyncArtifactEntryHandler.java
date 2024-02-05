@@ -81,7 +81,7 @@ public abstract class AsyncArtifactEntryHandler {
         try {
             Artifact result = handleEvent(repositoryPath);
             if (result == null) {
-                logger.info("No [{}] result for event [{}] and path [{}].",
+                logger.debug("No [{}] result for event [{}] and path [{}].",
                         Artifact.class.getSimpleName(),
                         AsyncArtifactEntryHandler.this.getClass().getSimpleName(),
                         repositoryPath);

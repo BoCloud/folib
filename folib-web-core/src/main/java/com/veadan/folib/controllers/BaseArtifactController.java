@@ -182,7 +182,7 @@ public abstract class BaseArtifactController
             if (existsCache) {
                 logger.info("存在缓存 storageId [{}] repositoryId [{}]，源制品地址 [{}] 缓存制品地址 [{}]", storageId, repositoryId, sourcePath, targetPath.toString());
                 path = targetPath;
-                artifactComponent.asyncHandlerArtifactCacheRecord(repositoryPath, cacheSettings, targetPath);
+//                artifactComponent.asyncHandlerArtifactCacheRecord(repositoryPath, cacheSettings, targetPath);
             } else {
                 //不存在缓存，触发缓存事件
                 if (repositoryPath.toString().contains(MetadataHelper.MAVEN_METADATA_XML)) {

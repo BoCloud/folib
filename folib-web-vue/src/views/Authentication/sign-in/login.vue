@@ -151,7 +151,7 @@ export default {
 							})
 						}
 						//
-						this.$router.push({ name: 'storages' })
+						this.$router.push({ name: 'storagesHome' })
 						// 延迟 1 秒显示欢迎信息
 						setTimeout(() => {
 							this.$notification.success({

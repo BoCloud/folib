@@ -46,11 +46,13 @@ public class PypiLayoutProvider
                     getClass().getCanonicalName(), ALIAS );
     }
 
-    protected PypiArtifactCoordinates getArtifactCoordinates(RepositoryPath path) throws IOException
+    @Override
+    public PypiArtifactCoordinates getArtifactCoordinates(RepositoryPath path) throws IOException
     {
         return PypiArtifactCoordinates.parse(RepositoryFiles.relativizePath(path));
     }
 
+    @Override
     public boolean isArtifactMetadata(RepositoryPath path)
     {
         // TODO: Fix

@@ -119,6 +119,7 @@ authorizationConfiguration:
           - ARTIFACTS_RESOLVE
           - SEARCH_ARTIFACTS
           - ARTIFACTS_VIEW
+          - CONFIGURATION_VIEW_METADATA_CONFIGURATION
     - name: GENERAL
       description: 普通用户角色
       accessModel:

@@ -17,9 +17,6 @@ import org.springframework.web.bind.annotation.*;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
-import java.nio.ByteBuffer;
-import java.nio.channels.ReadableByteChannel;
-import java.nio.channels.WritableByteChannel;
 import java.nio.file.Files;
 
 import static org.springframework.http.HttpStatus.NOT_FOUND;
@@ -67,7 +64,7 @@ public class MavenArtifactController
             HttpServletResponse response)
             throws Exception {
         long startTime = System.currentTimeMillis();
-        logger.debug("Requested /{}/{}/{} startTime {} .", storageId, repositoryId, artifactPath, startTime);
+        logger.info("Requested /{}/{}/{}", storageId, repositoryId, artifactPath);
 //        artifactPath = correctIndexPathIfNecessary(repository, artifactPath);
         RepositoryPath repositoryPath = artifactResolutionService.resolvePath(storageId, repositoryId, artifactPath);
         vulnerabilityBlock(repositoryPath);

@@ -29,6 +29,11 @@ public class StorageForm {
     private String admin;
 
     /**
+     * 存储类型 local、s3
+     */
+    private String storageProvider;
+
+    /**
      * 普通用户
      */
     private Set<String> users = new LinkedHashSet<>();
@@ -74,6 +79,14 @@ public class StorageForm {
 
     public void setAdmin(String admin) {
         this.admin = admin;
+    }
+
+    public String getStorageProvider() {
+        return storageProvider;
+    }
+
+    public void setStorageProvider(String storageProvider) {
+        this.storageProvider = storageProvider;
     }
 
     public interface NewStorage

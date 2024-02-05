@@ -120,7 +120,7 @@
                       <a-icon type="question-circle" theme="filled" />
                     </small>
                   </a>
-                  <div v-if="$store.state.user.token && folibRepository.type !== 'group'">
+                  <div v-if="(isAdmin() || storageAdmin === $store.state.user.name) && folibRepository.type !== 'group'">
                     <span class="mr-15">{{
                       scan.onScan ? "扫描开启" : "扫描关闭"
                     }}</span>
@@ -967,6 +967,7 @@ export default {
       repositories: [],
       custom: false,
       enablUploadedLayout: ['Raw', 'php', 'Maven 2', 'npm', 'rpm'],
+      storageAdmin: '',
       permissions: [],
       mavenUploadVisible: false,
       uploadType: 1,
@@ -1026,13 +1027,7 @@ export default {
       })
     },
     goBack () {
-      if (isLogin())
-      {
-        this.$router.push({ name: 'storages' })
-      } else
-      {
-        this.$router.push({ name: 'anonymousStorages' })
-      }
+      this.$router.push({ name: 'storagesHome' })
     },
     getLayoutTypeHandle () {
       return getLayoutType(this.folibRepository)
@@ -1476,23 +1471,23 @@ export default {
             this.folibRepository.id,
             treeNode.dataRef.artifactPath
           ).then(res => {
-            if (res.directories.length > 0)
-            {
+            treeNode.dataRef.children = []
+            if (res.directories.length > 0) {
               const d = res.directories
+              
               d.forEach((item, index, d) => {
                 item.type = 'dir'
+                treeNode.dataRef.children.push(item)
               })
-              treeNode.dataRef.children = d
-            } else if (res.files.length > 0)
-            {
+            }
+            if (res.files.length > 0) {
               const a = res.files
               a.forEach((item, index, a) => {
                 item.isLeaf = true
                 item.type = 'file'
+                treeNode.dataRef.children.push(item)
               })
-              treeNode.dataRef.children = a
             }
-
             this.treeData = [...this.treeData]
             resolve()
           })
@@ -1630,7 +1625,7 @@ export default {
           this.folibRepository.id,
           this.folibRepository.policy
         )
-        this.getExternalNodeRepositories()
+        this.getExternalNodeRepositories({type: this.folibRepository.layout})
         this.operationTitle = '分发'
         this.customTitle = '分发到指定目录'
         // 下载  
@@ -1996,34 +1991,28 @@ export default {
       this.usedVisible = false
     },
     viewCodeHandle () {
-      if (this.folibRepository.layout !== 'Docker')
+      if (this.folibRepository.layout !== 'Docker' && this.currentFileDetial && !this.currentFileDetial.listTree)
       {
-        if (this.currentFileDetial && !this.currentFileDetial.listTree)
-        { 
-          if (this.currentFileDetial.artifact) {
-            previewArtifact(this.currentTreeNode.storageId, this.currentTreeNode.repositoryId,this.currentTreeNode.artifactPath).then(res => {
-              if (res && res.length > 0) {
-                this.currentFileDetial.listTree = res
-                this.$forceUpdate()
-              } else {
-                let len = this.currentFileDetial.artifact.sizeInBytes
-                if (len && len > 1048576) {
-                  this.viewCodes = '该制品无法预览'
-                } else{
-                  this.viewArtifactFile()
-                }
+        if (this.currentFileDetial.artifact) {
+          previewArtifact(this.currentTreeNode.storageId, this.currentTreeNode.repositoryId,this.currentTreeNode.artifactPath).then(res => {
+            if (res && res.length > 0) {
+              this.currentFileDetial.listTree = res
+              this.$forceUpdate()
+            } else {
+              let len = this.currentFileDetial.artifact.sizeInBytes
+              if (len && len > 1048576) {
+                this.viewCodes = '该制品无法预览'
+              } else{
+                this.viewArtifactFile()
               }
-            })
-          } else {
-            this.viewArtifactFile()
-          }
-      } else
-      {
-        // this.viewCodes=this.currentManifest.config
+            }
+          })
+        } else {
+          this.viewArtifactFile()
+        }
       }
       this.viewCodeVisible = true
-    }
-  },
+    },
   viewArtifactFile () {
     viewArtifactFile(this.currentTreeNode.url).then(res => {
       if ('string' === typeof res && res.startsWith('PK'))
@@ -2126,13 +2115,18 @@ export default {
         return fileSizeConver(size)
       }
     },
+    isAdmin() {
+      return isAdmin()
+    },
     queryStorageAndRepositoryPermission () {
+      this.storageAdmin = ""
       this.permissions = []
       getStorageAndRepositoryPermission(
         this.folibRepository.storageId,
         this.folibRepository.id
       ).then(res => {
-        this.permissions = res
+        this.storageAdmin = res.storageAdmin
+        this.permissions = res.permissions
         this.uploadEnabled =
           this.folibRepository.status.indexOf('Out of Service') === -1 &&
           this.enablUploadedLayout.includes(this.folibRepository.layout) &&
@@ -2201,8 +2195,8 @@ export default {
         this.$forceUpdate()
       }
     },
-    getExternalNodeRepositories() {
-      getExternalNodeRepositories().then(res => {
+    getExternalNodeRepositories(params) {
+      getExternalNodeRepositories(params).then(res => {
         if (res) {
           res.forEach(node => {
             let json = {key: node.key, artifactoryRepositoryType: '', children: [], }

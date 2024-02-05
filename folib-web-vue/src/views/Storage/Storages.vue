@@ -29,7 +29,7 @@
               <a-anchor-link v-for="(item, index) in storageData" :key="index" href="javascript:void(null)"
                 :class="{ slectActive: item.id === currentStorage.id }">
                 <div slot="title" class="ant-list-item-meta" @click="setCurrentStorage(item)">
-                  <a-icon :type="item.basedir === null ? 'appstore' : 'cloud'" theme="filled"
+                  <a-icon :type="item.storageProvider === 's3' ? 'cloud' : 'appstore'" theme="filled"
                     class="text-gray-6 text-lg" />
                   <h4 class="ant-list-item-meta-title">
                     <span class="font-regular">{{ item.id }}</span>
@@ -56,7 +56,7 @@
                       <template slot="title">
                         <span>S3存储</span>
                       </template>
-                      <a-icon style="margin-left: 15px" v-if="currentStorage.basedir != null" type="cloud"
+                      <a-icon style="margin-left: 15px" v-if="currentStorage.storageProvider === 's3'" type="cloud"
                         theme="filled" class="text-gray-6 text-lg" />
                     </a-tooltip>
                   </h4>
@@ -150,11 +150,11 @@
             </a-form-model-item>
             <a-form-model-item class="tags-field mb-10" label="存储类型" :colon="false">
               <a-radio-group name="radioGroup" default-value="local" @change="changeStorageType()"
-                v-model="storageCreateData.type">
+                v-model="storageCreateData.storageProvider">
                 <a-radio value="local">
                   本地存储
                 </a-radio>
-                <a-radio value="S3">
+                <a-radio value="s3">
                   S3存储
                 </a-radio>
               </a-radio-group>
@@ -165,26 +165,27 @@
               <li>S3存储：默认以存储空间名称作为桶名,您也可以自定义桶名称</li>
               <li><strong>注意：存储空间名称、存储类型、S3存储桶路径，一旦创建不可修改</strong></li>
             </ul>
-            <a-form-model-item v-if="storageCreateData.type === 'S3'" class="tags-field mb-10" label="S3路径"
+            <a-form-model-item class="tags-field mb-10" label="存储路径"
               :colon="false">
               <a-card :bordered="false" class="bg-gray-3 shadow-0 mb-24" :bodyStyle="{ padding: '8px' }">
                 <a-row type="flex" align="middle">
                   <a-col>
                     <strong class="font-semibold">{{
-                      storageCreateData.bucket ? '/' + storageCreateData.bucket : null
+                      storagePrefix ? '/' + storagePrefix : storageCreateData.storageProvider ==='local' ? '/storages' : ''
                     }}/{{ storageCreateData.id }}</strong>
                   </a-col>
                   <a-col class="ml-auto">
-                    <a-input v-if="storageCreateData.isNotCustom" v-model="storageCreateData.bucket" placeholder="桶名称"
+                    <a-input v-if="customStorage" v-model="storagePrefix" :placeholder="storageCreateData.storageProvider ==='s3' ? '桶名称':'父目录'"
                       class="font-regular text-sm text-dark" style="width: 150px;">
-                      <a-icon slot="prefix" type="cloud" />
+                      <a-icon slot="prefix" type="cloud" v-if="storageCreateData.storageProvider ==='s3'"/>
+                      <a-icon slot="prefix" type="appstore" v-else/>
                     </a-input>
-                    <a-button v-if="!storageCreateData.isNotCustom"
-                      @click="() => (storageCreateData.isNotCustom = true)" size="small" type="link"
+                    <a-button v-if="!customStorage"
+                      @click="() => (customStorage = true)" size="small" type="link"
                       class="ml-10 px-25 font-bold">自定义
                     </a-button>
-                    <a-button v-if="storageCreateData.isNotCustom"
-                      @click="() => (storageCreateData.isNotCustom = false, delete storageCreateData.bucket)"
+                    <a-button v-if="customStorage"
+                      @click="() => (customStorage = false, storagePrefix = null)"
                       size="small" type="link" class="ml-10 px-25 font-bold">取消自定义
                     </a-button>
                   </a-col>
@@ -237,11 +238,11 @@
             </a-form-item>
             <a-form-item class="tags-field mb-10" label="存储类型" :colon="false">
               <a-radio-group disabled name="radioGroup" default-value="local" @change="changeStorageUpdateType()"
-                v-model="currentStorage.type">
+                v-model="currentStorage.storageProvider">
                 <a-radio value="local">
                   本地存储
                 </a-radio>
-                <a-radio value="S3">
+                <a-radio value="s3">
                   S3存储
                 </a-radio>
               </a-radio-group>
@@ -251,25 +252,26 @@
               <li>存储空间名称不允许修改</li>
               <li>存储类型、S3类型的桶均不允许修改</li>
             </ul>
-            <a-form-item v-if="currentStorage.type === 'S3'" class="tags-field mb-10" label="S3路径" :colon="false">
+            <a-form-item class="tags-field mb-10" label="存储路径" :colon="false">
               <a-card :bordered="false" class="bg-gray-3 shadow-0 mb-24" :bodyStyle="{ padding: '8px' }">
                 <a-row type="flex" align="middle">
                   <a-col>
                     <strong class="font-semibold">{{
-                      currentStorage.bucket ? '/' + currentStorage.bucket : null
+                      storagePrefix ? '/' + storagePrefix : currentStorage.storageProvider ==='local' ? '/storages' : ''
                     }}/{{ currentStorage.id }}</strong>
                   </a-col>
                   <a-col class="ml-auto">
-                    <a-input v-if="currentStorage.isNotCustom" v-model="currentStorage.bucket" placeholder="桶名称"
+                    <a-input v-if="customStorage" v-model="storagePrefix" :placeholder="currentStorage.storageProvider ==='s3' ? '桶名称':'父目录'"
                       class="font-regular text-sm text-dark" style="width: 150px;">
-                      <a-icon slot="prefix" type="cloud" />
+                      <a-icon slot="prefix" type="cloud" v-if="currentStorage.storageProvider === 's3'"/>
+                      <a-icon slot="prefix" type="appstore" v-else />
                     </a-input>
-                    <a-button disabled v-if="!currentStorage.isNotCustom"
-                      @click="() => (currentStorage.isNotCustom = true)" size="small" type="link"
+                    <a-button disabled v-if="!customStorage"
+                      @click="() => (customStorage = true)" size="small" type="link"
                       class="ml-10 px-25 font-bold">自定义
                     </a-button>
-                    <a-button v-if="currentStorage.isNotCustom"
-                      @click="() => (currentStorage.isNotCustom = false, currentStorage.bucket = null)" size="small"
+                    <a-button v-if="customStorage"
+                      @click="() => (customStorage = false, storagePrefix = null)" size="small"
                       type="link" class="ml-10 px-25 font-bold">取消自定义
                     </a-button>
                   </a-col>
@@ -644,7 +646,7 @@
                 </a-col>
                 <a-col :span="6">
                   <a-form-item class="mb-10" label="策略" :colon="false">
-                    <a-select :disabled="layoutChecked === 'docker' || folibRepositoryEditDisabled"
+                    <a-select :disabled="folibRepositoryEditDisabled"
                       default-value="hosted" v-model="folibRepository.type">
                       <a-select-option value="hosted">
                         本地
@@ -1107,13 +1109,14 @@ export default {
       storageData: [],
       cronCanSetList: [],
       cronSettedList: [],
+      customStorage: false,
+      storagePrefix: null,
       currentStorage: {
         id: null,
         basedir: null,
         admin: undefined,
         users: [],
-        isNotCustom: false,
-        type: 'local',
+        storageProvider: 'local',
         bucket: null,
       },
       currentDefultStorage: {
@@ -1121,8 +1124,7 @@ export default {
         basedir: null,
         admin: undefined,
         users: [],
-        isNotCustom: false,
-        type: 'local',
+        storageProvider: 'local',
         bucket: null,
       },
       showsTorageFormModal: false,
@@ -1131,8 +1133,7 @@ export default {
         id: null,
         basedir: null,
         admin: undefined,
-        isNotCustom: false,
-        type: 'local',
+        storageProvider: 'local',
         bucket: null,
         users: []
       },
@@ -1140,8 +1141,7 @@ export default {
         id: null,
         basedir: null,
         admin: undefined,
-        isNotCustom: false,
-        type: 'local',
+        storageProvider: 'local',
         bucket: null,
         users: []
       },
@@ -1263,6 +1263,19 @@ export default {
   },
   computed: {},
   methods: {
+    message(status, type, message) {
+      let statusList = [401, 403]
+      if (statusList.includes(status)) {
+        return
+      }
+      if (!message) {
+        message = "操作成功"
+      }
+      this.$notification[type]({
+        message: message,
+        description: "",
+      })
+    },
     resetFolibRepository() {
       this.folibRepository = {
         allowsDeletion: true,
@@ -1309,18 +1322,12 @@ export default {
       }
     },
     changeStorageType() {
-      if (this.storageCreateData.type === 'S3') {
-        this.storageCreateData.isNotCustom = false
-      } else {
-        delete this.storageCreateData.bucket
-      }
+      this.customStorage = false
+      this.storagePrefix = null
     },
     changeStorageUpdateType() {
-      if (this.currentStorage.type === 'S3') {
-        this.currentStorage.isNotCustom = false
-      } else {
-        delete this.currentStorage.bucket
-      }
+      this.customStorage = false
+      this.storagePrefix = null
     },
     createHandleView() {
       checkMachineCode().then(res => {
@@ -1343,6 +1350,8 @@ export default {
             }, 1000);
           } else {
             this.showsTorageFormModal = true
+            this.storagePrefix = null
+            this.customStorage = false
             if (this.$refs.storageCreate) {
               this.$refs.storageCreate.resetFields()
             }
@@ -1352,11 +1361,6 @@ export default {
       })
     },
     updateHandleView() {
-      if (this.currentStorage.basedir !== null) {
-        this.currentStorage.type = 'S3'
-      } else {
-        this.currentStorage.type = 'local'
-      }
       this.showStorageUpdate = true
       this.getUsersList()
     },
@@ -1402,7 +1406,6 @@ export default {
     },
     storageDelHandle(e) {
       if (this.currentStorage.id != null) {
-        this.deleteStoragesKeyBuff()
         deleteStorages(this.currentStorage, false).then(response => {
           setTimeout(() => {
             this.$notification.success({
@@ -1421,21 +1424,8 @@ export default {
         })
       }
     },
-    deleteStoragesKeyBuff() {
-      if (this.currentStorage.id != null) {
-        if (this.currentStorage.type === 'S3') {
-          this.currentStorage.basedir = this.currentStorage.bucket ? '/' + this.currentStorage.bucket + '/' + this.currentStorage.id : '/' + this.currentStorage.id
-        } else {
-          this.currentStorage.basedir = null
-        }
-        delete this.currentStorage.bucket
-        delete this.currentStorage.isNotCustom
-        delete this.currentStorage.type
-      }
-    },
     storageForceDelHandle() {
       if (this.currentStorage.id != null) {
-        this.deleteStoragesKeyBuff()
         deleteStorages(this.currentStorage, true).then(response => {
           setTimeout(() => {
             this.$notification.success({
@@ -1458,15 +1448,11 @@ export default {
       this.$refs.storageCreate.validate(valid => {
         if (valid) {
           if (this.storageCreateData.id != null) {
-            if (this.storageCreateData.type === 'S3') {
-              this.storageCreateData.basedir = this.storageCreateData.bucket ? '/' + this.storageCreateData.bucket + '/' + this.storageCreateData.id : '/' + this.storageCreateData.id
+            if (this.storageCreateData.storageProvider === 's3') {
+              this.storageCreateData.basedir = this.storagePrefix ? '/' + this.storagePrefix + '/' + this.storageCreateData.id : '/' + this.storageCreateData.id
             } else {
-              this.storageCreateData.basedir = null
+              this.storageCreateData.basedir = this.storagePrefix ? '/' + this.storagePrefix + '/' + this.storageCreateData.id : null
             }
-            delete this.storageCreateData.bucket
-            delete this.storageCreateData.isNotCustom
-            delete this.storageCreateData.type
-
             createStorages(this.storageCreateData).then(response => {
               setTimeout(() => {
                 this.$notification.success({
@@ -1475,12 +1461,13 @@ export default {
               }, 100)
               this.showsTorageFormModal = false;
               this.storageCreateData = this.storageCreateDefultData
+              this.storagePrefix = null
+              this.customStorage = false
               this.getStorages();
             }).catch((err) => {
               let error = JSON.stringify(err.response.data)
-              this.$notification["error"]({
-                message: error.indexOf('The storage id already exists') !== -1 ? '存储空间名称已存在' : "创建失败",
-              })
+              let msg = error.indexOf('The storage id already exists') !== -1 ? '存储空间名称已存在' : "创建失败"
+              this.message(err.response.status, "error", msg)
             })
           }
         } else {
@@ -1490,15 +1477,15 @@ export default {
     },
     handleUpdateSubmit(e) {
       if (this.currentStorage.id != null) {
-        this.deleteStoragesKeyBuff()
         updateStorages(this.currentStorage).then(response => {
           setTimeout(() => {
             this.$notification.success({
               message: response.message,
             })
           }, 100)
-          this.showStorageUpdate = false;
-          this.getStorages();
+          this.showStorageUpdate = false
+          this.customStorage = false
+          this.getStorages()
         })
       }
     },
@@ -1525,15 +1512,15 @@ export default {
       this.currentStorage.id = item.id
       this.currentStorage.basedir = item.basedir
       this.currentStorage.admin = item.admin
+      this.currentStorage.storageProvider = item.storageProvider
+      if (!this.currentStorage.storageProvider) {
+        this.currentStorage.storageProvider = 'local'
+      }
       this.currentStorage.users = item.users
-      if (this.currentStorage.basedir !== null) {
-        this.currentStorage.type = 'S3'
-        this.currentStorage.isNotCustom = false
-        this.currentStorage.bucket = null
-      } else {
-        this.currentStorage.type = 'local'
-        this.currentStorage.isNotCustom = false
-        this.currentStorage.bucket = null
+      this.customStorage = false
+      this.storagePrefix = null
+      if (this.currentStorage.basedir) {
+        this.storagePrefix = this.currentStorage.basedir.replace("/" + this.currentStorage.id, "").replace("/", "")
       }
       this.getStorage(this.currentStorage.id)
     },
@@ -1591,7 +1578,7 @@ export default {
       this.getStoragesAndRepositories(layout, this.folibRepository.id)
     },
     getStoragesAndRepositories(layout, excludeRepositoryId) {
-      getStoragesAndRepositories({ layout: layout, excludeRepositoryId: excludeRepositoryId }).then(res => {
+      getStoragesAndRepositories({  excludeType: 'group', layout: layout, excludeRepositoryId: excludeRepositoryId }).then(res => {
         let repositories = []
         let id,arr
         res.forEach(item => {
@@ -1801,7 +1788,7 @@ export default {
     addOrUpdateRepositoryHandel(isNotSetCron) {
       this.folibRepository.id = this.folibRepositoryIds
       //构建basedir
-      if (this.currentStorage.basedir) {
+      if (this.currentStorage.storageProvider === 's3') {
         this.folibRepository.basedir = this.currentStorage.basedir + '/' + this.folibRepository.id
         this.folibRepository.storageProvider = 's3'
       } else {
@@ -1859,9 +1846,8 @@ export default {
 
       }).catch((err) => {
         let error = JSON.stringify(err.response.data)
-        this.$notification["error"]({
-          message: error.indexOf('The repository id already exists') !== -1 ? '仓库名称已存在' : "创建失败",
-        })
+        let msg = error.indexOf('The repository id already exists') !== -1 ? '仓库名称已存在' : "创建失败"
+        this.message(err.response.status, "error", msg)
       })
 
     },

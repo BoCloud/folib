@@ -52,7 +52,7 @@ public class EventTask {
     @Lazy
     private RepositoryPathResolver repositoryPathResolver;
 
-    @Scheduled(cron = "0 0/10 * * * ? ")
+    @Scheduled(cron = "0 0 1 * * ?")
     public void run() {
         log.info("EventTask starting time [{}]", DateUtil.now());
         handle("");

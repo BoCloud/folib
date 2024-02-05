@@ -1,6 +1,7 @@
 package com.veadan.folib.controllers;
 
 import com.alibaba.fastjson.JSON;
+import com.google.common.collect.Lists;
 import com.veadan.folib.components.artifact.ArtifactComponent;
 import com.veadan.folib.components.syncartifact.SyncArtifactProvider;
 import com.veadan.folib.components.syncartifact.SyncArtifactProviderRegistry;
@@ -9,7 +10,6 @@ import com.veadan.folib.configuration.ConfigurationManager;
 import com.veadan.folib.configuration.MetadataConfiguration;
 import com.veadan.folib.constant.GlobalConstants;
 import com.veadan.folib.domain.ArtifactStatistics;
-import com.veadan.folib.domain.StatusInfo;
 import com.veadan.folib.domain.thirdparty.ArtifactInfo;
 import com.veadan.folib.domain.thirdparty.ArtifactQuery;
 import com.veadan.folib.forms.artifact.ArtifactMetadataForm;
@@ -19,12 +19,15 @@ import com.veadan.folib.scanner.common.msg.TableResultResponse;
 import com.veadan.folib.services.ArtifactWebService;
 import com.veadan.folib.storage.Storage;
 import com.veadan.folib.storage.repository.Repository;
+import com.veadan.folib.task.EventTask;
+import com.veadan.folib.users.domain.Privileges;
 import com.veadan.folib.users.userdetails.SpringSecurityUser;
 import com.veadan.folib.validation.RequestBodyValidationException;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -66,6 +69,10 @@ public class ArtifactController extends BaseController {
     @Inject
     @Lazy
     private ArtifactComponent artifactComponent;
+
+    @Inject
+    @Lazy
+    private EventTask eventTask;
 
     private static final String STORAGE_NOT_FOUND = "The storage was not found.";
 
@@ -180,12 +187,28 @@ public class ArtifactController extends BaseController {
     @ApiResponses(value = {@ApiResponse(code = 200, message = "OK")})
     @PermissionCheck(resourceKey = "ARTIFACTS_DEPLOY", storageKey = "storageId", repositoryKey = "repositoryId")
     @PostMapping(value = "/store")
-    public ResponseEntity<StatusInfo> store(@RequestParam(name = "storageId") String storageId,
-                                            @RequestParam(name = "repositoryId") String repositoryId,
-                                            @RequestParam(name = "path", required = false) String path,
-                                            @RequestParam(name = "uuid", required = false) String uuid, @RequestParam(name = "file") MultipartFile file) {
+    public ResponseEntity<Object> store(@RequestParam(name = "storageId") String storageId,
+                                        @RequestParam(name = "repositoryId") String repositoryId,
+                                        @RequestParam(name = "path", required = false) String path,
+                                        @RequestParam(name = "uuid", required = false) String uuid, @RequestParam(name = "file") MultipartFile file) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         SpringSecurityUser userDetails = (SpringSecurityUser) authentication.getPrincipal();
+        Storage storage = getStorage(storageId);
+        if (Objects.isNull(storage)) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(GlobalConstants.STORAGE_NOT_FOUND_MESSAGE);
+        }
+        if (Objects.isNull(storage.getRepository(repositoryId))) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(GlobalConstants.REPOSITORY_NOT_FOUND_MESSAGE);
+        }
+        if (!hasAdmin() && needValidatePathPrivileges(storageId, repositoryId)) {
+            if (StringUtils.isBlank(path)) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).body("在此仓库中您的操作受限，请填写目标目录后再上传");
+            } else {
+                if (!validatePathPrivileges(storageId, repositoryId, Lists.newArrayList(path), Privileges.ARTIFACTS_DEPLOY.getAuthority())) {
+                    return ResponseEntity.status(HttpStatus.FORBIDDEN).body("没有权限操作");
+                }
+            }
+        }
         return ResponseEntity.ok(artifactWebService.store(userDetails.getUsername(), storageId, repositoryId, path, uuid, file));
     }
 
@@ -289,7 +312,7 @@ public class ArtifactController extends BaseController {
         }
         RepositoryPath repositoryPath = artifactComponent.getRepositoryPath(storageId, repositoryId, artifactPath);
         if (Objects.isNull(repositoryPath) || !Files.exists(repositoryPath)) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(GlobalConstants.ARTIFACT_NOT_FOUND_MESSAGE);
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(String.format(GlobalConstants.ARTIFACT_NOT_FOUND_MESSAGE, storageId, repositoryId, artifactPath));
         }
         artifactWebService.bomUpload(repositoryPath, file);
         return ResponseEntity.ok("success");
@@ -309,5 +332,30 @@ public class ArtifactController extends BaseController {
     @GetMapping(value = "/lockInfo")
     public ResponseEntity<Integer> lockInfo() {
         return ResponseEntity.ok(repositoryPathLock.getLockInfo());
+    }
+
+    @PreAuthorize("hasAuthority('ADMIN')")
+    @GetMapping(value = "/handleEvent")
+    public ResponseEntity<String> handleEvent(@RequestParam(value = "filename", required = false) String filename) {
+        eventTask.handle(filename);
+        return ResponseEntity.ok("");
+    }
+
+    @PreAuthorize("hasAuthority('ADMIN')")
+    @GetMapping(value = "/cleanSnapshot/{storageId}/{repositoryId}/{artifactPath:.+}")
+    public ResponseEntity<String> cleanSnapshot(@PathVariable String artifactPath,
+                                                @PathVariable String storageId,
+                                                @PathVariable String repositoryId) {
+        artifactWebService.cleanSnapshot(storageId, repositoryId, artifactPath);
+        return ResponseEntity.ok("");
+    }
+
+    @PreAuthorize("hasAuthority('ADMIN')")
+    @GetMapping(value = "/dockerLayoutUpgrade/{storageId}/{repositoryId}")
+    public ResponseEntity<String> dockerLayoutUpgrade(@PathVariable String storageId,
+                                                      @PathVariable String repositoryId,
+                                                      @RequestParam(required = false, name = "override") Boolean override) throws Exception {
+        artifactWebService.dockerLayoutUpgrade(storageId, repositoryId, override);
+        return ResponseEntity.ok("");
     }
 }

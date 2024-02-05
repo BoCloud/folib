@@ -36,6 +36,9 @@ public class StorageData implements Storage {
     private String admin;
 
     @JsonView(Views.ShortStorage.class)
+    private String storageProvider;
+
+    @JsonView(Views.ShortStorage.class)
     private Set<String> users;
 
     @JsonView(Views.LongStorage.class)
@@ -51,6 +54,7 @@ public class StorageData implements Storage {
         this.id = delegate.getId();
         this.basedir = delegate.getBasedir();
         this.admin = delegate.getAdmin();
+        this.storageProvider = delegate.getStorageProvider();
         this.users = delegate.getUsers();
         this.repositories = immuteRepositories(delegate.getRepositories());
     }
@@ -68,6 +72,11 @@ public class StorageData implements Storage {
     @Override
     public boolean containsRepository(final String repository) {
         return repositories.containsKey(repository);
+    }
+
+    @Override
+    public String getStorageProvider() {
+        return storageProvider;
     }
 
     @Override

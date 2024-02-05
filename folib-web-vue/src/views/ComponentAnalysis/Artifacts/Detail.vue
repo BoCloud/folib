@@ -141,7 +141,7 @@ export default {
   },
   watch: {
     $route(to, from) {
-      console.log("路由变化了");
+      // console.log("路由变化了");
       this.initialize();
     },
     deep: true,

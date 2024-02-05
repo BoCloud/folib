@@ -1,4 +1,4 @@
-package com.veadan.folib.domain.adapter.jfrog;
+package com.veadan.folib.domain;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonProperty;

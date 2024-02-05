@@ -19,7 +19,7 @@
     <a-menu theme="light" mode="inline" :open-keys="openKeys" @openChange="onOpenChange">
       <a-menu-item class="menu-item-header"> 制品管理 </a-menu-item>
       <a-menu-item>
-        <router-link :to="userInfo.token ? '/storage/list' : '/anonymous/storages'">
+        <router-link :to="'/storages/home'">
           <span class="icon">
             <a-icon type="appstore" theme="filled" class="m-0" />
           </span>

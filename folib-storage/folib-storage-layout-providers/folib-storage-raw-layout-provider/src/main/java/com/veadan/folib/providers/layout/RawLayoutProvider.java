@@ -42,11 +42,13 @@ public class RawLayoutProvider
                     getClass().getCanonicalName(), ALIAS);
     }
 
-    protected RawArtifactCoordinates getArtifactCoordinates(RepositoryPath path) throws IOException
+    @Override
+    public RawArtifactCoordinates getArtifactCoordinates(RepositoryPath path) throws IOException
     {
         return new RawArtifactCoordinates(RepositoryFiles.relativizePath(path));
     }
 
+    @Override
     public boolean isArtifactMetadata(RepositoryPath path)
     {
         return false;

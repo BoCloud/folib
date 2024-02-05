@@ -320,7 +320,7 @@ export default {
       this.$router.push('/personal')
     },
     toLogin() {
-      this.$router.push('/login')
+      this.$router.push({ name: 'login' })
     }
   },
   mounted: function () {

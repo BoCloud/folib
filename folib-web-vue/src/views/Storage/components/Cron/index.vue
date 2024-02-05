@@ -53,11 +53,11 @@
                 <span style="margin-left: 15px" class="mr-15" v-else>{{ f.name }}</span>
                 <a-input v-if="f.type === 'string'" v-model="f.value" size="small"
                   class="font-regular text-sm text-dark" style="width: 250px;" />
-                <a-input-number v-if="f.type === 'int' && f.name === 'numberToKeep'" v-model="f.value"
+                <a-input-number :min="1" v-if="f.type === 'int' && f.name === 'numberToKeep'" v-model="f.value"
                   size="small" class="font-regular text-sm text-dark" style="width: 120px;" />
                 <a-input-number :min="1" v-if="f.type === 'int' && f.name === 'storageDay'" v-model="f.value"
                                 size="small" class="font-regular text-sm text-dark" style="width: 120px;"/>  
-                <a-date-picker v-if="f.type === 'int' && f.name === 'keepPeriod'" v-model="f.value"
+                <a-input-number :min="1" v-if="f.type === 'int' && f.name === 'keepPeriod'" v-model="f.value"
                   size="small" class="font-regular text-sm text-dark" style="width: 120px;" />
                 <a-switch v-if="f.type === 'boolean'" v-model="f.value" @change="() => { $forceUpdate() }" />
               </a-col>

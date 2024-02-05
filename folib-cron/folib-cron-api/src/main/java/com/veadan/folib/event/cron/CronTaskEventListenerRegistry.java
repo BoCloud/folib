@@ -24,7 +24,7 @@ public class CronTaskEventListenerRegistry
     {
         CronTaskEvent event = new CronTaskEvent(CronTaskEventTypeEnum.EVENT_CRON_TASK_SAVED.getType(), uuid.toString());
 
-        logger.info("Dispatching CronTaskEventTypeEnum.EVENT_CRON_TASK_SAVED event for '{}'...", uuid);
+        logger.debug("Dispatching CronTaskEventTypeEnum.EVENT_CRON_TASK_SAVED event for '{}'...", uuid);
 
         dispatchEvent(event);
     }
@@ -34,7 +34,7 @@ public class CronTaskEventListenerRegistry
         CronTaskEvent event = new CronTaskEvent(CronTaskEventTypeEnum.EVENT_CRON_TASK_DELETED.getType(),
                                                 uuid.toString());
 
-        logger.info("Dispatching CronTaskEventTypeEnum.EVENT_CRON_TASK_DELETED event for '{}'...", uuid);
+        logger.debug("Dispatching CronTaskEventTypeEnum.EVENT_CRON_TASK_DELETED event for '{}'...", uuid);
 
         dispatchEvent(event);
     }
@@ -44,7 +44,7 @@ public class CronTaskEventListenerRegistry
         CronTaskEvent event = new CronTaskEvent(CronTaskEventTypeEnum.EVENT_CRON_TASK_EXECUTING.getType(),
                                                 uuid.toString());
 
-        logger.info("Dispatching CronTaskEventTypeEnum.EVENT_CRON_TASK_EXECUTING event for '{}'...", uuid);
+        logger.debug("Dispatching CronTaskEventTypeEnum.EVENT_CRON_TASK_EXECUTING event for '{}'...", uuid);
 
         dispatchEvent(event);
     }
@@ -54,7 +54,7 @@ public class CronTaskEventListenerRegistry
         CronTaskEvent event = new CronTaskEvent(CronTaskEventTypeEnum.EVENT_CRON_TASK_EXECUTION_COMPLETE.getType(),
                                                 uuid.toString());
 
-        logger.info("Dispatching CronTaskEventTypeEnum.EVENT_CRON_TASK_EXECUTION_COMPLETE event for '{}'...", uuid);
+        logger.debug("Dispatching CronTaskEventTypeEnum.EVENT_CRON_TASK_EXECUTION_COMPLETE event for '{}'...", uuid);
 
         dispatchEvent(event);
     }

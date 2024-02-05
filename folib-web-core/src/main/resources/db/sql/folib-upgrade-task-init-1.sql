@@ -1,5 +1,4 @@
-ALTER TABLE `dict`
-MODIFY COLUMN `alias` text CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NULL COMMENT '别名' AFTER `dict_value`;
+ALTER TABLE `dict` MODIFY `alias` text;
 
 INSERT INTO `dict` ( `dict_type`, `dict_key`, `dict_value`, `alias`, `comment` )
 VALUES

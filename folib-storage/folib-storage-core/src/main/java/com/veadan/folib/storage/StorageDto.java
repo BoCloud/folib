@@ -25,6 +25,8 @@ public class StorageDto
 
     private String admin;
 
+    private String storageProvider;
+
     private Set<String> users = new LinkedHashSet<>();
 
     private Map<String, RepositoryDto> repositories = new LinkedHashMap<>();
@@ -84,6 +86,15 @@ public class StorageDto
 
     public void setAdmin(String admin) {
         this.admin = admin;
+    }
+
+    @Override
+    public String getStorageProvider() {
+        return storageProvider;
+    }
+
+    public void setStorageProvider(String storageProvider) {
+        this.storageProvider = storageProvider;
     }
 
     @Override

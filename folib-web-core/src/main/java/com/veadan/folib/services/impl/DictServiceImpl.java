@@ -1,6 +1,7 @@
 package com.veadan.folib.services.impl;
 
 import com.google.common.collect.Lists;
+import com.veadan.folib.components.DistributedCacheComponent;
 import com.veadan.folib.domain.CacheSettings;
 import com.veadan.folib.entity.Dict;
 import com.veadan.folib.enums.DictTypeEnum;
@@ -14,6 +15,7 @@ import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import tk.mybatis.mapper.entity.Example;
@@ -32,6 +34,10 @@ public class DictServiceImpl implements DictService {
 
     @Autowired
     private DictMapper dictMapper;
+
+    @Autowired
+    @Lazy
+    private DistributedCacheComponent distributedCacheComponent;
 
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -69,7 +75,8 @@ public class DictServiceImpl implements DictService {
         }
         if (Boolean.TRUE.equals(dictForm.getOverrideSystemProperty())) {
             System.setProperty(dict.getDictKey(), dict.getDictValue());
-            log.info("更新系统属性：key {}，value：{}", dict.getDictKey(), dict.getDictValue());
+            log.info("更新系统属性 key [{}] value [{}]", dict.getDictKey(), dict.getDictValue());
+            distributedCacheComponent.put(dict.getDictKey(), dict.getDictValue());
         }
         String key = DictTypeEnum.CACHE_SETTINGS.getType();
         if (key.equals(dict.getDictType())) {
@@ -232,4 +239,5 @@ public class DictServiceImpl implements DictService {
         }
         dictMapper.deleteHistoryDataForUploadProcessBySeconds(seconds);
     }
+
 }

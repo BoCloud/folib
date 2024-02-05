@@ -218,89 +218,7 @@ public class NpmArtifactController
         try (InputStream inputStream = new ByteArrayInputStream(npmJacksonMapper.writeValueAsBytes(packageFeed))) {
             copyToResponse(inputStream, response);
         }
-        logger.info("[{}] viewPackageFeedWithScope storageId [{}] repositoryId [{}] packageId [{}] task time [{}] ms", this.getClass().getSimpleName(), repository.getStorage().getId(), repository.getId(), packageId, System.currentTimeMillis() - startTime);
-    }
-
-    private PackageFeed handlePackageFeed(Repository repository, String packageId, RepositorySearchRequest predicate, ArtifactIdGroup artifactIdGroup) {
-        final String storageId = repository.getStorage().getId();
-        final String repositoryId = repository.getId();
-        RepositoryProvider provider = repositoryProviderRegistry.getProvider(repository.getType());
-        Paginator paginator = new Paginator();
-        paginator.setProperty("version");
-        paginator.setUseLimit(Boolean.FALSE);
-        PackageFeed packageFeed = new PackageFeed();
-        packageFeed.setName(packageId);
-        packageFeed.setAdditionalProperty("_id", packageId);
-        Versions versions = new Versions();
-        packageFeed.setVersions(versions);
-
-        Time npmTime = new Time();
-        packageFeed.setTime(npmTime);
-
-        DistTags distTags = new DistTags();
-        packageFeed.setDistTags(distTags);
-        List<Path> searchResult = Collections.emptyList();
-        try {
-            searchResult = provider.search(storageId, repositoryId, predicate, paginator);
-        } catch (Exception ex) {
-            String realMessage = CommonUtils.getRealMessage(ex);
-            if (CommonUtils.catchException(realMessage)) {
-                logger.warn("Npm search catch error [{}]", realMessage);
-                for (int i = 0; i < 5; i++) {
-                    try {
-                        logger.warn("Npm search retry [{}]-[{}]", i, predicate.getArtifactId());
-                        searchResult = provider.search(storageId, repositoryId, predicate, paginator);
-                        if (CollectionUtils.isNotEmpty(searchResult)) {
-                            break;
-                        }
-                    } catch (Exception e) {
-                        realMessage = CommonUtils.getRealMessage(e);
-                        if (CommonUtils.catchException(realMessage)) {
-                            logger.warn("Npm search catch error [{}]", realMessage);
-                        } else {
-                            throw e;
-                        }
-                    }
-                }
-            } else {
-                throw ex;
-            }
-        }
-        searchResult.stream().map(npmPackageSupplier).forEach(p -> {
-            PackageVersion npmPackage = p.getNpmPackage();
-            versions.setAdditionalProperty(npmPackage.getVersion(), npmPackage);
-
-            npmTime.setAdditionalProperty(npmPackage.getVersion(), p.getReleaseDate());
-
-            Date created = npmTime.getCreated();
-            npmTime.setCreated(created == null || created.before(p.getReleaseDate()) ? p.getReleaseDate() : created);
-
-            Date modified = npmTime.getModified();
-            npmTime.setModified(modified == null || modified.before(p.getReleaseDate()) ? p.getReleaseDate()
-                    : modified);
-
-            if (p.isLastVersion()) {
-                distTags.setLatest(npmPackage.getVersion());
-            }
-
-        });
-        ArtifactIdGroup updateArtifactIdGroup = artifactIdGroup;
-        packageFeed.setAdditionalProperty("_rev", generateRevisionHashcode(packageFeed));
-        if (Objects.isNull(updateArtifactIdGroup) && CollectionUtils.isNotEmpty(searchResult)) {
-            Path path = searchResult.get(0);
-            if (path instanceof RepositoryPath) {
-                RepositoryPath repositoryPath = (RepositoryPath) path;
-                updateArtifactIdGroup = new ArtifactIdGroupEntity(repositoryPath.getStorageId(), repositoryPath.getRepositoryId(), packageId);
-            }
-        }
-        if (Objects.nonNull(updateArtifactIdGroup)) {
-            try {
-                artifactComponent.updateArtifactIdGroup(updateArtifactIdGroup.getUuid(), npmJacksonMapper.writeValueAsString(packageFeed));
-            } catch (JsonProcessingException ex) {
-                logger.error("[{}] packageFeed 转换异常 [{}] error [{}]", this.getClass().getSimpleName(), JSONObject.toJSONString(packageFeed), ExceptionUtils.getStackTrace(ex));
-            }
-        }
-        return packageFeed;
+        logger.debug("[{}] viewPackageFeedWithScope storageId [{}] repositoryId [{}] packageId [{}] task time [{}] ms", this.getClass().getSimpleName(), repository.getStorage().getId(), repository.getId(), packageId, System.currentTimeMillis() - startTime);
     }
 
     private String generateRevisionHashcode(PackageFeed packageFeed) {
@@ -370,7 +288,7 @@ public class NpmArtifactController
             RepositoryPath repositoryPath = artifactResolutionService.resolvePath(storageId, repositoryId, artifactPath);
             vulnerabilityBlock(repositoryPath);
             provideArtifactDownloadResponse(request, response, httpHeaders, repositoryPath);
-            logger.info("[{}] downloadPackageWithScope [{}] task time [{}] ms", this.getClass().getSimpleName(), repositoryPath.toString(), System.currentTimeMillis() - startTime);
+            logger.debug("[{}] downloadPackageWithScope [{}] task time [{}] ms", this.getClass().getSimpleName(), repositoryPath.toString(), System.currentTimeMillis() - startTime);
         } else {
             packageVersion = getPackageJsonVersion(packageNameWithVersion);
             artifactPath = String.format("%s/%s/%s/%s", packageScope, packageName, packageVersion, NpmLayoutProvider.PACKAGE_JSON);
@@ -423,7 +341,7 @@ public class NpmArtifactController
             RepositoryPath path = artifactResolutionService.resolvePath(storageId, repositoryId, coordinates.buildPath());
             vulnerabilityBlock(path);
             provideArtifactDownloadResponse(request, response, httpHeaders, path);
-            logger.info("[{}] downloadPackage [{}] task time [{}] ms", this.getClass().getSimpleName(), path.toString(), System.currentTimeMillis() - startTime);
+            logger.debug("[{}] downloadPackage [{}] task time [{}] ms", this.getClass().getSimpleName(), path.toString(), System.currentTimeMillis() - startTime);
         } else {
             packageVersion = getPackageJsonVersion(packageNameWithVersion);
             artifactPath = String.format("%s/%s/%s/%s", packageName, packageName, packageVersion, NpmLayoutProvider.PACKAGE_JSON);
@@ -464,9 +382,8 @@ public class NpmArtifactController
         Path packageTgz = packageEntry.getValue1();
 
         NpmArtifactCoordinates coordinates = NpmArtifactCoordinates.of(name, packageJson.getVersion());
-
         storeNpmPackage(repository, coordinates, packageJson, packageTgz);
-
+        artifactComponent.updateArtifactIdGroup(new ArtifactIdGroupEntity(storageId, repositoryId, coordinates.getId()), "");
         return ResponseEntity.ok("");
     }
 

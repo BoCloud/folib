@@ -228,6 +228,9 @@ public class ScanService {
                 //s3存储
                 if (repositoryPath.getFileSystem() instanceof DockerFileSystem) {
                     String temp = filePath.substring(filePath.indexOf(repositoryPath.getStorageId()));
+                    if (!temp.startsWith(File.separator)) {
+                        temp = File.separator + temp;
+                    }
                     S3Path s3Path = new S3Path(s3RepositoryPath.getFileSystem(), temp);
                     filePath = parentPath + File.separator + s3Path.getFileName();
                     artifactPath = s3Path;

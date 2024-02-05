@@ -60,12 +60,14 @@ public class NpmLayoutProvider
         logger.info("Registered layout provider '{}' with alias '{}'.", getClass().getCanonicalName(), ALIAS);
     }
 
-    protected NpmArtifactCoordinates getArtifactCoordinates(RepositoryPath path)
+    @Override
+    public NpmArtifactCoordinates getArtifactCoordinates(RepositoryPath path)
             throws IOException
     {
         return NpmArtifactCoordinates.parse(RepositoryFiles.relativizePath(path));
     }
 
+    @Override
     public boolean isArtifactMetadata(RepositoryPath path)
     {
         return path.getFileName().toString().endsWith(PACKAGE_JSON);

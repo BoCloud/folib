@@ -12,6 +12,7 @@ import com.veadan.folib.enums.UnionRepositorySyncTypeEnum;
 import com.veadan.folib.event.AsyncEventListener;
 import com.veadan.folib.event.artifact.ArtifactEvent;
 import com.veadan.folib.event.artifact.ArtifactEventTypeEnum;
+import com.veadan.folib.providers.io.RepositoryFiles;
 import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.providers.layout.DockerFileSystem;
 import com.veadan.folib.scanner.entity.ScanRules;
@@ -54,36 +55,37 @@ public class ArtifactEventPromotionListener {
         int source = (int) event.getSource();
         RepositoryPath repositoryPath = event.getPath();
         ArtifactEventTypeEnum artifactEventTypeEnum = ArtifactEventTypeEnum.queryArtifactEventTypeEnumByType(source);
-        log.debug("{} 监听到制品事件：{}，path路径：{}", ArtifactEventPromotionListener.class.getSimpleName(), artifactEventTypeEnum, repositoryPath);
+        log.debug("监听到制品事件 [{}]，path路径 [{}]", artifactEventTypeEnum, repositoryPath);
         if (Objects.isNull(artifactEventTypeEnum)) {
             return;
         }
         if (validateArtifactEvent(artifactEventTypeEnum) && artifactComponent.layoutSupports(repositoryPath)) {
             try {
-                Repository repository = repositoryPath.getRepository();
+                Repository repository = artifactComponent.getRepository(repositoryPath.getStorageId(), repositoryPath.getRepositoryId());
                 if (Objects.isNull(repository)) {
-                    log.debug("仓库不存在，无后续操作");
+                    log.debug("仓库 [{}] 不存在，无后续操作", RepositoryFiles.relativizePath(repositoryPath));
                     return;
                 }
                 Artifact artifact = repositoryPath.getArtifactEntry();
                 if (Objects.isNull(artifact)) {
-                    log.debug("制品不存在，无后续操作");
+                    log.debug("制品 [{}] 不存在，无后续操作", RepositoryFiles.relativizePath(repositoryPath));
                     return;
                 }
                 String storageId = repository.getStorage().getId();
                 String repositoryId = repository.getId();
                 UnionRepositoryConfiguration unionRepositoryConfiguration = repository.getUnionRepositoryConfig();
                 if (Objects.isNull(unionRepositoryConfiguration)) {
-                    log.debug("存储空间：{} 仓库：{} 未设置联邦仓库，无后续操作", storageId, repositoryId);
+                    log.debug("存储空间 [{}] 仓库 [{}] 未设置联邦仓库，无后续操作", storageId, repositoryId);
                     return;
                 }
                 if (Boolean.FALSE.equals(unionRepositoryConfiguration.getEnable())) {
-                    log.debug("存储空间：{} 仓库：{} 晋级未启用，无后续操作", storageId, repositoryId);
+                    log.debug("存储空间 [{}] 仓库 [{}] 晋级未启用，无后续操作", storageId, repositoryId);
                     return;
                 }
+                log.info("存储空间 [{}] 仓库 [{}] 联邦仓库信息 [{}]", storageId, repositoryId, JSONObject.toJSONString(unionRepositoryConfiguration));
                 Set<UnionTargetRepositoryConfiguration> unionTargetRepositoryConfigurations = unionRepositoryConfiguration.getUnionTargetRepositories();
                 if (CollectionUtils.isEmpty(unionTargetRepositoryConfigurations)) {
-                    log.debug("存储空间：{} 仓库：{} 未设置联邦目标仓库，无后续操作", storageId, repositoryId);
+                    log.debug("存储空间 [{}] 仓库 [{}] 未设置联邦目标仓库，无后续操作", storageId, repositoryId);
                     return;
                 }
                 String artifactPath = getArtifactPath(repositoryPath, artifact);
@@ -92,7 +94,7 @@ public class ArtifactEventPromotionListener {
                 if (UnionRepositorySyncTypeEnum.ARTIFACT_PATH.getType().equals(syncType)) {
                     //制品路径
                     Set<String> artifactPaths = unionRepositoryConfiguration.getArtifactPaths();
-                    log.debug("存储空间：{} 仓库：{} 制品配置路径：{}，制品路径：{}", storageId, repositoryId, artifactPaths, artifactPath);
+                    log.debug("存储空间 [{}] 仓库 [{}] 制品配置路径 [{}]，制品路径 [{}]", storageId, repositoryId, artifactPaths, artifactPath);
                     promotionFlag = artifactPaths.stream().allMatch("*"::equals) || artifactPaths.stream().anyMatch(artifactPath::contains);
                     if (!promotionFlag) {
                         //使用正则再匹配一次
@@ -102,13 +104,13 @@ public class ArtifactEventPromotionListener {
                     //元数据
                     JSONObject metadataJson = artifactComponent.getMetadata(artifact);
                     if (Objects.isNull(metadataJson)) {
-                        log.debug("存储空间：{} 仓库：{} 制品：{} 未找到元数据，无后续操作", storageId, repositoryId, artifactPath);
+                        log.debug("存储空间 [{}] 仓库 [{}] 制品 [{}] 未找到元数据，无后续操作", storageId, repositoryId, artifactPath);
                         return;
                     }
                     String metadataKey = unionRepositoryConfiguration.getMetadataKey();
                     String metadataValue = unionRepositoryConfiguration.getMetadataValue();
                     String valueKey = "value";
-                    log.debug("存储空间：{} 仓库：{} 制品：{} 配置元数据key：{} 配置元数据value：{} 元数据：{}", storageId, repositoryId, artifactPath, metadataKey, metadataValue, metadataJson);
+                    log.debug("存储空间 [{}] 仓库 [{}] 制品 [{}] 配置元数据key [{}] 配置元数据value [{}] 元数据 [{}]", storageId, repositoryId, artifactPath, metadataKey, metadataValue, metadataJson);
                     promotionFlag = metadataJson.containsKey(metadataKey) && metadataJson.getJSONObject(metadataKey).get(valueKey).equals(metadataValue);
                 }
                 if (promotionFlag) {
@@ -118,10 +120,10 @@ public class ArtifactEventPromotionListener {
                             .andEqualTo("repository", repositoryId);
                     List<ScanRules> scanRulesList = scanRulesMapper.selectByExample(example);
                     boolean scanEnable = CollectionUtils.isNotEmpty(scanRulesList);
-                    log.debug("自动晋级阻断开关状态：{}，仓库扫描状态：{}", promotionBlock, scanEnable);
+                    log.debug("自动晋级阻断开关状态 [{}]，仓库扫描状态 [{}]", promotionBlock, scanEnable);
                     if (promotionBlock && scanEnable) {
                         //加入晋级
-                        log.info("存储空间：{} 仓库：{} 制品：{} 满足初步晋级条件，晋级状态为待晋级", storageId, repositoryId, artifactPath);
+                        log.debug("存储空间 [{}] 仓库 [{}] 制品 [{}] 满足初步晋级条件，晋级状态为待晋级", storageId, repositoryId, artifactPath);
                         for (UnionTargetRepositoryConfiguration unionTargetRepository : unionTargetRepositoryConfigurations) {
                             artifactComponent.handlerArtifactPromotion(unionTargetRepository.getNode(), artifact.getStorageId(), artifact.getRepositoryId(), artifact.getArtifactPath(), PromotionStatusEnum.WAIT.getStatus());
                         }
@@ -132,14 +134,14 @@ public class ArtifactEventPromotionListener {
                                 ArtifactPromotionProvider artifactPromotionProvider = artifactPromotionProviderRegistry.getProvider(unionTargetRepository.getType());
                                 artifactPromotionProvider.promotion(repositoryPath, artifact.getArtifactPath(), unionTargetRepository);
                             } catch (Exception ex) {
-                                log.error("存储空间：{} 仓库：{} 处理自动晋级，repositoryPath：{} 联邦仓库：{} 错误：{}", storageId, repositoryId, repositoryPath, JSONObject.toJSONString(unionTargetRepository), ExceptionUtils.getStackTrace(ex));
+                                log.error("存储空间 [{}] 仓库 [{}] 处理自动晋级，repositoryPath [{}] 联邦仓库 [{}] 错误 [{}]", storageId, repositoryId, repositoryPath, JSONObject.toJSONString(unionTargetRepository), ExceptionUtils.getStackTrace(ex));
                                 artifactComponent.handlerArtifactPromotion(unionTargetRepository.getNode(), artifact.getStorageId(), artifact.getRepositoryId(), artifact.getArtifactPath(), PromotionStatusEnum.FAIL.getStatus());
                             }
                         }
                     }
                 }
             } catch (Exception ex) {
-                log.error("事件监听，处理自动晋级，事件类型：{} repositoryPath：{} 错误：{}", source, repositoryPath, ExceptionUtils.getStackTrace(ex));
+                log.error("事件监听，处理自动晋级，事件类型 [{}] repositoryPath [{}] 错误 [{}]", source, repositoryPath, ExceptionUtils.getStackTrace(ex));
             }
         }
     }

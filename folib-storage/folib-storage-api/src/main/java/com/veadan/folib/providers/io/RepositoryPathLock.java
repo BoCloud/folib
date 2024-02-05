@@ -34,7 +34,7 @@ public class RepositoryPathLock {
         if (StringUtils.isBlank(id)) {
             lockName = getLockName(repositoryPath);
         }
-        logger.info("Get lock for [{}]", lockName);
+        logger.debug("Get lock for [{}]", lockName);
         try {
             return hazelcastInstance.getMap(GlobalConstants.DISTRIBUTED_LOCK_NAME).tryLock(lockName, 30L, TimeUnit.SECONDS, 1800, TimeUnit.SECONDS);
         } catch (Exception ex) {
@@ -46,7 +46,7 @@ public class RepositoryPathLock {
     public void unLock(String lockName) {
         if (hazelcastInstance.getMap(GlobalConstants.DISTRIBUTED_LOCK_NAME).isLocked(lockName)) {
             hazelcastInstance.getMap(GlobalConstants.DISTRIBUTED_LOCK_NAME).forceUnlock(lockName);
-            logger.info("Unlocked for [{}]", lockName);
+            logger.debug("Unlocked for [{}]", lockName);
         }
     }
 

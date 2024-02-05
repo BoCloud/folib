@@ -22,4 +22,6 @@ public interface Storage
 
     boolean containsRepository(String repositoryId);
 
+    String getStorageProvider();
+
 }

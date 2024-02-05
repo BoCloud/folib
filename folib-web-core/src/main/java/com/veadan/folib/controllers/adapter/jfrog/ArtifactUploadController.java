@@ -3,6 +3,7 @@ package com.veadan.folib.controllers.adapter.jfrog;
 import cn.hutool.core.date.DateUtil;
 import cn.hutool.json.JSONUtil;
 import com.veadan.folib.components.promotion.ArtifactPromotionProviderRegistry;
+import com.veadan.folib.constant.GlobalConstants;
 import com.veadan.folib.dto.ArtifactUploadAdapterJfrogDto;
 import com.veadan.folib.dto.ArtifactUploadAdapterJfrogDto.Checksums;
 import com.veadan.folib.dto.ArtifactUploadAdapterJfrogDto.OriginalChecksums;
@@ -20,27 +21,20 @@ import com.veadan.folib.utils.UserUtils;
 import io.swagger.annotations.Api;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.tika.Tika;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.multipart.MultipartFile;
 
 import javax.activation.MimetypesFileTypeMap;
 import javax.inject.Inject;
-import javax.servlet.ServletInputStream;
 import javax.servlet.http.HttpServletRequest;
 import java.io.InputStream;
 import java.nio.file.Files;
-import java.util.Collections;
-import java.util.Date;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 
 /**
  * @author leipenghui
@@ -80,14 +74,13 @@ public class ArtifactUploadController extends JFrogBaseController {
                                     @RequestParam(value = "uuid", required = false) String uuid,
                                     @RequestParam(value = "metaData", required = false) String metaData,
                                     HttpServletRequest request) throws Exception {
-        String storageId = getDefaultStorageId();
+        String storageId = getDefaultStorageId(repositoryId);
         boolean checkRepository = checkRepository(storageId, repositoryId);
         if (!checkRepository) {
             return repositoryNotFound();
         }
         final InputStream inputStream = request.getInputStream();
         final String baseUrl = StringUtils.chomp(configurationManager.getConfiguration().getBaseUrl(), "/");
-        final String fileDownUrl = String.format("%s/artifactory/%s/%s", baseUrl, repositoryId, artifactPath);
         final String userName = UserUtils.getUsername();
 
         final ArtifactUploadTask artifactUploadTask = new ArtifactUploadTask(storageId, repositoryId, inputStream,
@@ -99,12 +92,22 @@ public class ArtifactUploadController extends JFrogBaseController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(msg);
         }
 
-        final RepositoryPath repositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, artifactPath);
+        RepositoryPath repositoryPath;
+        if (Objects.nonNull(artifactUploadTask.getRepositoryPath())) {
+            repositoryPath = artifactUploadTask.getRepositoryPath();
+        } else {
+            repositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, artifactPath);
+        }
+        if (Objects.isNull(repositoryPath.getArtifactEntry())) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(String.format(GlobalConstants.ARTIFACT_NOT_FOUND_MESSAGE, storageId, repositoryId, artifactPath));
+        }
+        final String finalArtifactPath = RepositoryFiles.relativizePath(repositoryPath);
+        final String fileDownUrl = String.format("%s/artifactory/%s/%s", baseUrl, repositoryId, finalArtifactPath);
         final Map<String, String> checksums = Optional.ofNullable(repositoryPath.getArtifactEntry().getChecksums()).orElse(Collections.emptyMap());
         final String sha256 = checksums.get("SHA-256");
         final ArtifactUploadAdapterJfrogDto artifactUploadAdapterJfrogDto = new ArtifactUploadAdapterJfrogDto();
         artifactUploadAdapterJfrogDto.setRepo(repositoryId);
-        artifactUploadAdapterJfrogDto.setPath(artifactPath);
+        artifactUploadAdapterJfrogDto.setPath(finalArtifactPath);
         artifactUploadAdapterJfrogDto.setCreated(DateUtil.format(new Date(), "yyyy-MM-dd HH:mm:ss"));
         artifactUploadAdapterJfrogDto.setCreatedBy(userName);
         artifactUploadAdapterJfrogDto.setDownloadUri(fileDownUrl);

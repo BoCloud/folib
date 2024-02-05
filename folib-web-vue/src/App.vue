@@ -7,7 +7,7 @@
 
 <template>
   <div id="app">
-    <component :is="layout" v-if="routerAlive">
+    <component :is="layout" v-if="routerAlive" :key="$route.fullPath">
       <router-view />
     </component>
   </div>

@@ -2,20 +2,27 @@ package com.veadan.folib.providers.repository;
 
 
 import com.alibaba.fastjson.JSONObject;
+import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
+import com.veadan.folib.components.DistributedCacheComponent;
 import com.veadan.folib.config.FolibPublicUtils;
+import com.veadan.folib.constant.GlobalConstants;
 import com.veadan.folib.data.criteria.Paginator;
 import com.veadan.folib.domain.Artifact;
 import com.veadan.folib.domain.ArtifactEntity;
+import com.veadan.folib.enums.ProductTypeEnum;
 import com.veadan.folib.io.RepositoryStreamReadContext;
 import com.veadan.folib.io.RepositoryStreamWriteContext;
 import com.veadan.folib.providers.io.*;
+import com.veadan.folib.providers.layout.LayoutProvider;
+import com.veadan.folib.providers.layout.LayoutProviderRegistry;
 import com.veadan.folib.providers.repository.event.ProxyRepositoryPathExpiredEvent;
 import com.veadan.folib.providers.repository.event.RemoteRepositorySearchEvent;
 import com.veadan.folib.providers.repository.proxied.ProxyRepositoryArtifactResolver;
 import com.veadan.folib.service.ProxyRepositoryConnectionPoolConfigurationService;
 import com.veadan.folib.services.ArtifactManagementService;
 import com.veadan.folib.storage.repository.Repository;
+import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -28,6 +35,8 @@ import javax.inject.Inject;
 import javax.ws.rs.client.Client;
 import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.MultivaluedHashMap;
+import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 import java.io.IOException;
 import java.io.InputStream;
@@ -69,6 +78,12 @@ public class ProxyRepositoryProvider
     @Autowired
     protected ArtifactManagementService artifactManagementService;
 
+    @Inject
+    private DistributedCacheComponent distributedCacheComponent;
+
+    @Inject
+    private LayoutProviderRegistry layoutProviderRegistry;
+
     @Override
     public String getAlias() {
         return ALIAS;
@@ -86,16 +101,25 @@ public class ProxyRepositoryProvider
         RepositoryPath targetPath = hostedRepositoryProvider.fetchPath(repositoryPath);
         if (targetPath == null) {
             targetPath = resolvePathExclusive(repositoryPath);
-        } else if (RepositoryFiles.hasExpired(targetPath)) {
-            eventPublisher.publishEvent(new ProxyRepositoryPathExpiredEvent(targetPath));
+        } else if (RepositoryFiles.hasExpired(targetPath) && !Files.isDirectory(targetPath)) {
+            if (StringUtils.isNotBlank(repositoryPath.getArtifactPath())) {
+                eventPublisher.publishEvent(new ProxyRepositoryPathExpiredEvent(repositoryPathResolver.resolve(targetPath.getRepository(), repositoryPath.getArtifactPath())));
+            } else {
+                eventPublisher.publishEvent(new ProxyRepositoryPathExpiredEvent(targetPath));
+            }
         }
 
         return targetPath;
     }
 
-    private RepositoryPath resolvePathExclusive(RepositoryPath repositoryPath)
+    public RepositoryPath resolvePathExclusive(RepositoryPath repositoryPath)
             throws IOException {
         try {
+            if (Boolean.TRUE.equals(repositoryPath.getDisableRemote())) {
+                return null;
+            }
+            LayoutProvider layoutProvider = layoutProviderRegistry.getProvider(repositoryPath.getRepository().getLayout());
+            layoutProvider.targetUrl(repositoryPath);
             return proxyRepositoryArtifactResolver.fetchRemoteResource(repositoryPath);
         } catch (IOException e) {
             logger.error("Failed to resolve Path for proxied artifact [{}]",

@@ -54,17 +54,17 @@ public class GeneralCleanupArtifactsProvider implements CleanupArtifactsProvider
     @Override
     public void cleanup(String storageId, String repositoryId, String path, String storageDay, String storageCondition) {
         try {
-            RepositoryPath repositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, path);
-            List<String> artifactPaths = RepositoryPathUtil.getFileRelativePaths(repositoryPath);
-            if (CollectionUtils.isEmpty(artifactPaths)) {
+            RepositoryPath rootRepositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, path);
+            List<RepositoryPath> repositoryPaths = RepositoryPathUtil.getPaths(rootRepositoryPath.getRepository().getLayout(), rootRepositoryPath);
+            if (CollectionUtils.isEmpty(repositoryPaths)) {
                 log.info("Repository storageId [{}] repositoryId [{}] not found artifacts", storageId, repositoryId);
                 return;
             }
-            log.info("Start cleanup artifact job [ storageId [{}] repositoryId [{}] storageCondition [{}] storageDay [{}]  artifactPaths [{}]", storageId, repositoryId, storageCondition, storageDay, artifactPaths.size());
+            log.info("Start cleanup artifact job [ storageId [{}] repositoryId [{}] storageCondition [{}] storageDay [{}]  artifactPaths [{}]", storageId, repositoryId, storageCondition, storageDay, repositoryPaths.size());
             List<Integer> resultList = Lists.newArrayList();
-            for (String artifactPath : artifactPaths) {
+            for (RepositoryPath repositoryPath : repositoryPaths) {
                 try {
-                    Integer result = cleanupArtifact(storageId, repositoryId, artifactPath, storageDay);
+                    Integer result = cleanupArtifact(storageId, repositoryId, repositoryPath, storageDay);
                     if (Objects.nonNull(result)) {
                         resultList.add(result);
                     }
@@ -80,10 +80,10 @@ public class GeneralCleanupArtifactsProvider implements CleanupArtifactsProvider
         }
     }
 
-    private Integer cleanupArtifact(String storageId, String repositoryId, String path, String storageDay) throws Exception {
+    private Integer cleanupArtifact(String storageId, String repositoryId, RepositoryPath repositoryPath, String storageDay) throws Exception {
         long tempDay = Long.parseLong(storageDay);
-        RepositoryPath repositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, path);
-        if (Objects.isNull(repositoryPath) || !Files.exists(repositoryPath)) {
+        String path = RepositoryFiles.relativizePath(repositoryPath);
+        if (!Files.exists(repositoryPath)) {
             log.warn("Cleanup storageId [{}] repositoryId [{}] path [{}] file not exists", storageId, repositoryId, repositoryPath);
             return null;
         }

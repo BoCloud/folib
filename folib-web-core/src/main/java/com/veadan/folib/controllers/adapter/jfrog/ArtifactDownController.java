@@ -25,7 +25,7 @@ public class ArtifactDownController extends JFrogBaseController {
     @GetMapping(value = "/{repositoryId}/{artifactPath:.+}")
     public ResponseEntity download(@PathVariable("repositoryId") String repositoryId, @RequestHeader HttpHeaders httpHeaders, @PathVariable String artifactPath,
                                    HttpServletRequest request, HttpServletResponse response) throws Exception {
-        final String storageId = getDefaultStorageId();
+        final String storageId = getDefaultStorageId(repositoryId);
         boolean checkRepository = checkRepository(storageId, repositoryId);
         if (!checkRepository) {
             return repositoryNotFound();

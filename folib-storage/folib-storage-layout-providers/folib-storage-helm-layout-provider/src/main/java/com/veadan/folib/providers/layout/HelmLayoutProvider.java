@@ -52,7 +52,7 @@ public class HelmLayoutProvider  extends AbstractLayoutProvider<HelmArtifactCoor
     }
 
     @Override
-    protected HelmArtifactCoordinates getArtifactCoordinates(RepositoryPath repositoryPath) throws IOException {
+    public HelmArtifactCoordinates getArtifactCoordinates(RepositoryPath repositoryPath) throws IOException {
         return HelmArtifactCoordinates.parse(RepositoryFiles.relativizePath(repositoryPath));
     }
 

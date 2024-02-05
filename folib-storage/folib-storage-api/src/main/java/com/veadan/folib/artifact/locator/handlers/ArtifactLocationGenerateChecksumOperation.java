@@ -26,6 +26,7 @@ public class ArtifactLocationGenerateChecksumOperation
 
     private boolean forceRegeneration = false;
 
+    @Override
     public void execute(RepositoryPath path)
             throws IOException
     {
