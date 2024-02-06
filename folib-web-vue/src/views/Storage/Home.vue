@@ -31,24 +31,28 @@ export default {
       mouseEnter: false,
       columns: [
         {
+          i18nKey: 'Store.OwnedStorage',
           title: this.$t('Store.OwnedStorage'),
           dataIndex: "storageId",
           scopedSlots: { customRender: "storageId" },
           width: 150,
         },
         {
+          i18nKey: 'Store.OwnedWarehouse',
           title: this.$t('Store.OwnedWarehouse'),
           dataIndex: 'repositoryId',
           scopedSlots: { customRender: 'repositoryId' },
           width: 150
         },
         {
+          i18nKey: 'Store.ProductPath',
           title: this.$t('Store.ProductPath'),
           dataIndex: 'path',
           scopedSlots: { customRender: 'path' },
           width: 550
         },
         {
+          i18nKey: 'Store.CreationTime',
           title: this.$t('Store.CreationTime'),
           dataIndex: 'created',
           sorter: true,
@@ -57,6 +61,7 @@ export default {
           width: 200
         },
         {
+          i18nKey: 'Store.LastUsedTime',
           title: this.$t('Store.LastUsedTime'),
           dataIndex: 'lastUsed',
           sorter: true,
@@ -64,6 +69,7 @@ export default {
           width: 200
         },
         {
+          i18nKey: 'Store.DownloadTimes',
           title: this.$t('Store.DownloadTimes'),
           dataIndex: 'downloadCount',
           sorter: true,
@@ -71,6 +77,7 @@ export default {
           width: 200
         },
         {
+          i18nKey: 'Store.ProductSize',
           title: this.$t('Store.ProductSize'),
           dataIndex: 'sizeInBytes',
           sorter: true,

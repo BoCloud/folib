@@ -35,7 +35,7 @@
             <span style="vertical-align: super;">{{ $t('Store.SearchList') }}</span>
           </h6>
         </template>
-        <a-table class="mt-20" :columns="columns" rowKey="url" :data-source="searchData" :scroll="{ x: true }" @change="handleTableChange"
+        <a-table class="mt-20" :columns="i18nColumns" rowKey="url" :data-source="searchData" :scroll="{ x: true }" @change="handleTableChange"
           :loading="loading" :pagination="{
             pageSize: artifactQuery.limit,
             current: artifactQuery.page,
@@ -266,6 +266,16 @@ export default {
       artifactVisible: false,
       reportVisible: false,
     }
+  },
+  computed: {
+    i18nColumns() {
+      return this.columns.map(column => {
+        if (column.i18nKey) {
+          column.title = this.$t(column.i18nKey);
+        }
+        return column;
+      })
+    },
   },
   created() {
 

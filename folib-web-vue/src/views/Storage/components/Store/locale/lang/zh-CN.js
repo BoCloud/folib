@@ -32,7 +32,7 @@ export default {
     'Cancel': '取消',
     'ProductionHistory': '制作历史',
     'TargetWarehouse': '目标仓库',
-    'InputWarehouse': '请输入目标仓库',
+    'InputTargetWarehouse': '请输入目标仓库',
     'SelectTargetWarehouse': '请选择目标仓库',
     'TargetDirectory': '目标目录',
     'InputTargetDirectory': '请输入目标目录',

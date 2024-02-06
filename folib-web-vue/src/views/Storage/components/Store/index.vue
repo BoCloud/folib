@@ -545,9 +545,9 @@
               <a-input v-decorator="[
                 'repostoryId',
                 {
-                  rules: [{ required: true, message: $t('Store.InputWarehouse') }],
+                  rules: [{ required: true, message: $t('Store.InputTargetWarehouse') }],
                 },
-              ]" :disabled="true" :placeholder="$t('Store.InputWarehouse')">
+              ]" :disabled="true" :placeholder="$t('Store.InputTargetWarehouse')">
               </a-input>
             </a-form-item>
             <a-form-item :label="$t('Store.SelectFile')">
@@ -583,9 +583,9 @@
               <a-input v-decorator="[
                 'repostoryId',
                 {
-                  rules: [{ required: true, message: $t('Store.InputWarehouse') }],
+                  rules: [{ required: true, message: $t('Store.InputTargetWarehouse') }],
                 },
-              ]" :disabled="true" :placeholder="$t('Store.InputWarehouse')">
+              ]" :disabled="true" :placeholder="$t('Store.InputTargetWarehouse')">
               </a-input>
             </a-form-item>
             <a-form-item :label="$t('Store.UploadMode')" v-if="folibRepository.layout === 'Maven 2'">
@@ -922,18 +922,21 @@ export default {
       searchViewCodes: null,
       columns: [
         {
+          i18nKey: 'Store.OwnedWarehouse',
           title: this.$t('Store.OwnedWarehouse'),
           dataIndex: 'repositoryId',
           scopedSlots: { customRender: 'repositoryId' },
           width: 150
         },
         {
+          i18nKey: 'Store.ProductPath',
           title: this.$t('Store.ProductPath'),
           dataIndex: 'path',
           scopedSlots: { customRender: 'path' },
           width: 550
         },
         {
+          i18nKey: 'Store.CreationTime',
           title: this.$t('Store.CreationTime'),
           dataIndex: 'created',
           sorter: true,
@@ -942,6 +945,7 @@ export default {
           width: 200
         },
         {
+          i18nKey: 'Store.LastUsedTime',
           title: this.$t('Store.LastUsedTime'),
           dataIndex: 'lastUsed',
           sorter: true,
@@ -949,6 +953,7 @@ export default {
           width: 200
         },
         {
+          i18nKey: 'Store.DownloadTimes',
           title: this.$t('Store.DownloadTimes'),
           dataIndex: 'downloadCount',
           sorter: true,
@@ -956,6 +961,7 @@ export default {
           width: 200
         },
         {
+          i18nKey: 'Store.ProductSize',
           title: this.$t('Store.ProductSize'),
           dataIndex: 'sizeInBytes',
           sorter: true,
@@ -996,6 +1002,16 @@ export default {
         "Docker"
       ]
     }
+  },
+  computed: {
+    i18nColumns() {
+      return this.columns.map(column => {
+        if (column.i18nKey) {
+          column.title = this.$t(column.i18nKey);
+        }
+        return column;
+      })
+    },
   },
   created () {
     this.initData()
