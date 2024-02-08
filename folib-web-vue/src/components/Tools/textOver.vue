@@ -61,8 +61,5 @@ export default {
 }
 </script>
 <style lang="scss" scoped>
-//.is-current > .el-tree-node__content .text_over {
-//  color: $primary-color;
-//  background: #ecf1fc !important;
-//}
+
 </style>
