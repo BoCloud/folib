@@ -15,9 +15,11 @@ import com.veadan.folib.utils.UrlUtils;
 import com.veadan.folib.validation.RequestBodyValidationException;
 import com.veadan.folib.ws.client.manage.FolibWsClientRunManage;
 import com.veadan.folib.ws.common.FolibWsAction;
+import com.veadan.folib.ws.common.FolibWsRunManageV2;
+import com.veadan.folib.ws.server.Command;
+import com.veadan.folib.ws.server.WSMessageRequest;
 import com.veadan.folib.ws.server.handler.command.FolibWsServerDeleteNodeInfoCommand;
 import com.veadan.folib.ws.server.handler.command.FolibWsServerSaveNodeInfoCommand;
-import com.veadan.folib.ws.server.manage.FolibWsServerRunManage;
 import io.swagger.annotations.*;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -30,11 +32,11 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 
+import javax.websocket.Session;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Collection;
 import java.util.Map;
-import java.util.Objects;
 
 
 /**
@@ -59,6 +61,10 @@ public class ClusterDispatchConfigurationController extends BaseConfigurationCon
     @Autowired
     private ConfigurationManagementService configurationManagementService;
 
+    @Autowired
+    private FolibWsRunManageV2 folibWsRunManageV2;
+
+
     protected ClusterDispatchConfigurationController(ConfigurationManagementService configurationManagementService) {
         super(configurationManagementService);
     }
@@ -74,18 +80,9 @@ public class ClusterDispatchConfigurationController extends BaseConfigurationCon
                 getMutableConfigurationClone().getClusterDispatchNode();
         final Collection<ClusterDispatchNodeDto> values = map.values();
         values.forEach(nodeDto -> {
-            if (nodeDto.getAutoRegister()) {
-                final FolibWsServerRunManage.FolibWsClientRun wsClientRun = FolibWsServerRunManage.getWsClientRun(nodeDto.getClusterEnName());
-                nodeDto.setWsClientOnline(null != wsClientRun && wsClientRun.getSessionStatus());
-            } else {
-                final String clusterNodeHost = nodeDto.getClusterNodeHost();
-                final String host = UrlUtils.getHost(clusterNodeHost);
-                final Integer port = UrlUtils.getPort(clusterNodeHost);
-///                final String nodeName = String.format("%s:%s", host, port);
-                final String nodeName = String.format("%s", host);
-                final FolibWsClientRunManage.FolibWsServerRun wsServerRun = FolibWsClientRunManage.getWsServerRun(nodeName);
-                nodeDto.setWsClientOnline(null != wsServerRun && wsServerRun.getSessionStatus());
-            }
+            String targetHostName = folibWsRunManageV2.getTargetHostName(nodeDto);
+            Session session = folibWsRunManageV2.getSession(targetHostName);
+            nodeDto.setWsClientOnline(session!=null&&session.isOpen());
         });
 
 
@@ -102,7 +99,7 @@ public class ClusterDispatchConfigurationController extends BaseConfigurationCon
     public ResponseEntity createClusterNode(@RequestBody ClusterDispatchNodeForm clusterDispatchNodeForm,
                                             BindingResult bindingResult,
                                             @RequestHeader(HttpHeaders.ACCEPT)
-                                                    String accept) {
+                                            String accept) {
         if (bindingResult.hasErrors()) {
             throw new RequestBodyValidationException("参数异常", bindingResult);
         }
@@ -113,16 +110,49 @@ public class ClusterDispatchConfigurationController extends BaseConfigurationCon
             nodeDto.setCreateTime(LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
             clusterDispatchManagementService.createClusterNode(nodeDto);
 
+            // 连接到WsServer
+            final String clusterNodeHost = nodeDto.getClusterNodeHost();
+            final String baseUrl = configurationManager.getConfiguration().getBaseUrl();
+            final String originHost = UrlUtils.getHost(baseUrl);
+            final Integer originPort = UrlUtils.getPort(baseUrl);
+            final String destHost = UrlUtils.getHost(clusterNodeHost);
+            final Integer destPort = UrlUtils.getPort(clusterNodeHost);
+            final String destNodeName = String.format("%s", destHost);
+///            final String destNodeName = String.format("%s", destHost, destPort);
+            final String originNodeName = String.format("%s:%s", originHost, originPort);
+            final String destUri = String.format("/wsv2/folib/%s", originNodeName);
+            final boolean enableSSL = HttpUtil.isHttps(clusterNodeHost);
+
+
+            String uri = String.format("%s://%s:%s", enableSSL ? "wss" : "ws", destHost, destPort + destUri);
+
+            String targetHostName = folibWsRunManageV2.getTargetHostName(nodeDto);
+
+            folibWsRunManageV2.connectToServer(targetHostName,uri);
+
             // 向其他集群节点同步同步制品分发节点信息
             SyncClusterDispatchDto syncClusterDispatchDto =
                     new SyncClusterDispatchDto(nodeDto, SyncClusterDispatchEnum.ADD_OR_UPDATE);
             clusterSyncService.syncClusterDispatch(syncClusterDispatchDto);
 
-            handleWsServer(clusterDispatchNodeForm, nodeDto);
+            // 向WsServer发送创建节点维护信息
+
+            final ClusterDispatchNodeDto registerNodeInfoDto = new ClusterDispatchNodeDto();
+            BeanUtils.copyProperties(clusterDispatchNodeForm, registerNodeInfoDto);
+            registerNodeInfoDto.setAutoRegister(true);
+            registerNodeInfoDto.setClusterNodeHost(baseUrl);
+            registerNodeInfoDto.setClusterEnName(originNodeName);
+            registerNodeInfoDto.setClusterCnName(String.format("【自动注册节点】%s", originNodeName));
+            registerNodeInfoDto.setClusterNodeDesc(String.format("【自动注册节点】禁止操作，此节点信息是由客户端节点（%s）向当前节点（%s）发起注册生成", originNodeName, destNodeName));
+
+            FolibWsServerSaveNodeInfoCommand.Payload payload = new FolibWsServerSaveNodeInfoCommand.Payload(registerNodeInfoDto,
+                    SyncClusterDispatchEnum.ADD_OR_UPDATE);
+            folibWsRunManageV2.sendRequest(targetHostName,new WSMessageRequest(Command.SERVER_INFO, payload));
+
             return getSuccessfulResponseEntity("ok", accept);
         } catch (BusinessException e) {
             return getExceptionResponseEntity(HttpStatus.INTERNAL_SERVER_ERROR, e.getMessage(), e, accept);
-        } catch (Exception e) {
+        }catch (Exception e) {
             return getExceptionResponseEntity(HttpStatus.INTERNAL_SERVER_ERROR, "新增制品分发节点信息失败", e, accept);
         }
     }
@@ -154,8 +184,6 @@ public class ClusterDispatchConfigurationController extends BaseConfigurationCon
             SyncClusterDispatchDto syncClusterDispatchDto =
                     new SyncClusterDispatchDto(nodeDto, SyncClusterDispatchEnum.ADD_OR_UPDATE);
             clusterSyncService.syncClusterDispatch(syncClusterDispatchDto);
-
-            handleWsServer(clusterDispatchNodeForm, nodeDto);
             return getSuccessfulResponseEntity("ok", accept);
         } catch (Exception e) {
             return getExceptionResponseEntity(HttpStatus.INTERNAL_SERVER_ERROR, "修改制品分发节点信息失败", e, accept);
@@ -216,46 +244,5 @@ public class ClusterDispatchConfigurationController extends BaseConfigurationCon
         }
     }
 
-    private void handleWsServer(ClusterDispatchNodeForm clusterDispatchNodeForm, ClusterDispatchNodeDto nodeDto) {
-        // 连接到WsServer
-        final String clusterNodeHost = nodeDto.getClusterNodeHost();
-        final String baseUrl = configurationManager.getConfiguration().getBaseUrl();
-        final String originHost = UrlUtils.getHost(baseUrl);
-        final Integer originPort = UrlUtils.getPort(baseUrl);
-        final String destHost = UrlUtils.getHost(clusterNodeHost);
-        final Integer destPort = UrlUtils.getPort(clusterNodeHost);
-        final String destNodeName = String.format("%s", destHost);
-///     final String destNodeName = String.format("%s", destHost, destPort);
-        final String originNodeName = String.format("%s:%s", originHost, originPort);
-        final String destUri = String.format("/ws/folib/%s", originNodeName);
-        final boolean enableSSL = HttpUtil.isHttps(clusterNodeHost);
-        // 向WsServer发送创建节点维护信息
-        FolibWsClientRunManage.FolibWsServerRun wsServerRun = FolibWsClientRunManage.getWsServerRun(destNodeName);
-        if (Objects.isNull(wsServerRun)) {
-            //未注册，尝试注册
-            final boolean upResult = FolibWsClientRunManage.up(destNodeName, destHost, destPort, destUri, true, enableSSL);
-            if (!upResult) {
-                logger.warn("尝试连接到添加目标节点 [{}] [{}] [{}] [{}] 失败，请检查添加节点信息是否正确", destNodeName, destHost, destPort, destUri);
-            } else {
-                //重新查询已注册的ws信息
-                wsServerRun = FolibWsClientRunManage.getWsServerRun(destNodeName);
-            }
-        }
-        if (null != wsServerRun) {
-            final ClusterDispatchNodeDto registerNodeInfoDto = new ClusterDispatchNodeDto();
-            BeanUtils.copyProperties(clusterDispatchNodeForm, registerNodeInfoDto);
-            registerNodeInfoDto.setAutoRegister(true);
-            registerNodeInfoDto.setClusterNodeHost(baseUrl);
-            registerNodeInfoDto.setClusterEnName(originNodeName);
-            registerNodeInfoDto.setClusterCnName(String.format("【自动注册节点】%s", originNodeName));
-            registerNodeInfoDto.setClusterNodeDesc(String.format("【自动注册节点】禁止操作，此节点信息是由客户端节点（%s）向当前节点（%s）发起注册生成", originNodeName, destNodeName));
-            final FolibWsAction folibWsAction = new FolibWsAction()
-                    .command(FolibWsServerSaveNodeInfoCommand.COMMAND)
-                    .payload(new FolibWsServerSaveNodeInfoCommand.Payload(registerNodeInfoDto,
-                            SyncClusterDispatchEnum.ADD_OR_UPDATE)
-                    );
-            wsServerRun.doAction(folibWsAction);
-        }
-    }
 
 }

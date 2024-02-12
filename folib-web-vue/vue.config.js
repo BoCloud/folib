@@ -13,10 +13,11 @@ module.exports = {
 	},
 	devServer: {
 		// development server port 8000
-		port: 9527,
+		port: 9528,
 		proxy: {
 			'/api': {
 				target: 'http://127.0.0.1:38080',
+				//target: 'http://192.168.42.128:38080',
 				// target: 'http://xpboot.cn:38080',
 				// target: 'http://10.10.33.145:38080',
 				pathRewrite: {

@@ -1,26 +1,32 @@
 package com.veadan.folib.services.impl;
 
-import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.io.FileUtil;
 import cn.hutool.core.io.IoUtil;
 import cn.hutool.core.lang.UUID;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
 import com.veadan.folib.cloud.storage.s3fs.util.UriUtils;
-import com.veadan.folib.components.IdGenerateUtils;
 import com.veadan.folib.components.artifact.ArtifactComponent;
 import com.veadan.folib.components.promotion.ArtifactPromotionProvider;
 import com.veadan.folib.components.promotion.ArtifactPromotionProviderRegistry;
 import com.veadan.folib.components.security.SecurityComponent;
-import com.veadan.folib.constant.ArtifactSyncRecordStatusEnum;
-import com.veadan.folib.constant.GlobalConstants;
-import com.veadan.folib.controllers.promotion.ArtifactPromotionController;
 import com.veadan.folib.dispatch.ClusterDispatchNodeDto;
-import com.veadan.folib.domain.*;
-import com.veadan.folib.dto.*;
+import com.veadan.folib.domain.AnalysisHtmlGetDirAndFilePath;
+import com.veadan.folib.domain.ArtifactDispatch;
+import com.veadan.folib.domain.ArtifactParse;
+import com.veadan.folib.domain.ArtifactPromotion;
+import com.veadan.folib.domain.PromotionFileRelativePath;
+import com.veadan.folib.domain.PromotionNodeOption;
+import com.veadan.folib.dto.ArtifactDto;
+import com.veadan.folib.dto.ArtifactPromotionInfoDto;
+import com.veadan.folib.dto.PromotionArtifactDto;
+import com.veadan.folib.dto.PromotionNodeOptionDto;
+import com.veadan.folib.dto.TargetDispatchRepositoryDto;
+import com.veadan.folib.dto.TargetRepositoyDto;
 import com.veadan.folib.entity.ArtifactSyncRecord;
 import com.veadan.folib.entity.Dict;
 import com.veadan.folib.enums.ArtifactSyncRecordOpsTypeEnum;
+import com.veadan.folib.constant.ArtifactSyncRecordStatusEnum;
 import com.veadan.folib.enums.ArtifactSyncRecordSyncModelEnum;
 import com.veadan.folib.enums.BusinessCodeEnum;
 import com.veadan.folib.mapper.ArtifactSyncRecordMapper;
@@ -34,7 +40,6 @@ import com.veadan.folib.promotion.PromotionUtil;
 import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.providers.io.RepositoryPathResolver;
 import com.veadan.folib.providers.layout.LayoutProviderRegistry;
-import com.veadan.folib.providers.storage.S3FileSystemStorageProvider;
 import com.veadan.folib.repositories.ArtifactRepository;
 import com.veadan.folib.repository.MavenRepositoryFeatures;
 import com.veadan.folib.scanner.common.exception.BusinessException;
@@ -47,9 +52,7 @@ import com.veadan.folib.services.ConfigurationManagementService;
 import com.veadan.folib.services.DictService;
 import com.veadan.folib.services.RepositoryManagementService;
 import com.veadan.folib.storage.repository.Repository;
-import com.veadan.folib.storage.repository.RepositoryTypeEnum;
 import com.veadan.folib.users.userdetails.SpringSecurityUser;
-import com.veadan.folib.util.SocketUtils;
 import com.veadan.folib.utils.FileUtils;
 import com.veadan.folib.utils.PropertiesUtils;
 import com.veadan.folib.utils.UrlUtils;
@@ -61,7 +64,6 @@ import org.apache.commons.fileupload.disk.DiskFileItem;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.maven.model.Model;
-import org.glassfish.jersey.client.ClientProperties;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -87,10 +89,14 @@ import javax.ws.rs.client.Client;
 import javax.ws.rs.client.Invocation;
 import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.Response;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.net.Socket;
-import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -120,7 +126,6 @@ import static com.veadan.folib.utils.UrlUtils.parsePath;
 public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
 
     private final String upLoadURI = "/api/artifact/folib/promotion/upload-files";
-    private final String REPOSITORY_URL = "api/configuration/folib/storages";
     private final String pullURI = "/api/artifact/folib/promotion/pull-files";
     private final String getFileRelativePaths = "/api/artifact/folib/promotion/getFileRelativePaths";
 
@@ -190,10 +195,6 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
     @Lazy
     private FolibWsClientArtifactPullCommand wsClientArtifactPullCommand;
 
-    @Inject
-    @Lazy
-    private IdGenerateUtils idGenerateUtils;
-
     @Override
     public ResponseEntity copy(ArtifactPromotion artifactPromotion) {
         try {
@@ -206,12 +207,12 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
             artifactPromotion.getTargetRepositoyList().forEach(x -> {
                 String destStorageId = x.getTargetStorageId();
                 String destRepositoryId = x.getTargetRepositoryId();
-                log.info("Copy [{}] from [{}] [{}] to [{}] [{}]...", artifactPromotion.getPath(), srcStorageId, srcRepositoryId, destStorageId,
+                log.info("Copying {} from {}:{} to {}:{}...", artifactPromotion.getPath(), srcStorageId, srcRepositoryId, destStorageId,
                         destRepositoryId);
                 singleCopy(artifactPromotion, srcRepository, destStorageId, destRepositoryId);
             });
         } catch (Exception e) {
-            log.error("Copy path params [{}] error [{}]", JSONObject.toJSONString(artifactPromotion), ExceptionUtils.getStackTrace(e));
+            log.error("Unable to copy artifact", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(e.getMessage());
         }
@@ -223,62 +224,62 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
         final String srcRepositoryId = artifactPromotion.getSrcRepositoryId();
 
         if (null == repositoryManagementService.getStorage(srcStorageId)) {
-            throw new IllegalArgumentException("The source storageId does not exist!");
+            throw new Exception("The source StorageId does not exist!");
         }
 
         Repository srcRepository = repositoryManagementService.getStorage(srcStorageId).getRepository(srcRepositoryId);
         if (null == srcRepository) {
-            throw new IllegalArgumentException("The source repositoryId does not exist!");
+            throw new Exception("The source RepositoryId does not exist!");
         }
 
-        if (!RepositoryTypeEnum.HOSTED.getType().equalsIgnoreCase(srcRepository.getType())) {
-            throw new IllegalArgumentException("The source repositoryId does not local");
+        if (!srcRepository.getType().equals("hosted")) {
+            throw new Exception("The source RepositoryId does not local");
         }
         artifactPromotion.setPath(UriUtils.decode(artifactPromotion.getPath()));
         final RepositoryPath srcRepositoryPath = repositoryPathResolver.resolve(srcRepository, artifactPromotion.getPath());
         if (!Files.exists(srcRepositoryPath)) {
-            throw new IllegalArgumentException("The source path does not exist!");
+            throw new Exception("The source path does not exist!");
         }
         List<TargetRepositoyDto> targetList = artifactPromotion.getTargetRepositoyList();
 
         if (CollectionUtils.isEmpty(targetList)) {
-            throw new IllegalArgumentException("The target repository is empty");
+            throw new Exception("The target is empty");
         }
         StringBuilder stringBuilder = new StringBuilder();
         for (TargetRepositoyDto dto : targetList) {
             String targetStorageId = dto.getTargetStorageId();
             String targetRepositoryId = dto.getTargetRepositoryId();
             if (null == repositoryManagementService.getStorage(targetStorageId)) {
-                stringBuilder.append("storage:").append(targetStorageId).append(" not exits");
+                stringBuilder.append("Storage : ").append(targetStorageId).append(" not exits");
                 continue;
             }
             Repository targetRepository = repositoryManagementService.getStorage(targetStorageId).getRepository(targetRepositoryId);
             if (null == targetRepository) {
-                stringBuilder.append(System.lineSeparator()).append(" repository:").append(targetRepositoryId).append(" not exits");
+                stringBuilder.append(System.lineSeparator()).append(" Repository : ").append(targetRepositoryId).append(" not exits");
                 continue;
             }
-            if (!RepositoryTypeEnum.HOSTED.getType().equalsIgnoreCase(targetRepository.getType())) {
-                stringBuilder.append(System.lineSeparator()).append(" repository:").append(targetRepositoryId).append(" does not local");
+            if (!targetRepository.getType().equals("hosted")) {
+                stringBuilder.append(System.lineSeparator()).append("Repository : ").append(targetRepositoryId).append("does not local");
             }
         }
         if (StringUtils.isNotBlank(stringBuilder.toString())) {
-            throw new IllegalArgumentException(stringBuilder.toString());
+            throw new Exception(stringBuilder.toString());
         }
     }
 
     private void singleCopy(ArtifactPromotion artifactPromotion, Repository srcRepository, String destStorageId, String destRepositoryId) {
         Repository destRepository = repositoryManagementService.getStorage(destStorageId).getRepository(destRepositoryId);
         RepositoryPath srcPath = repositoryPathResolver.resolve(srcRepository, artifactPromotion.getPath());
-        promotionUtil.executeCopy(srcPath, srcRepository, destRepository);
+        promotionUtil.executeHanleCopy(srcPath.getTarget().toString(), destRepository, srcRepository);
     }
 
     @Override
     public ResponseEntity move(ArtifactPromotion artifactPromotion) {
         try {
             checkParam(artifactPromotion);
-            promotionUtil.executeMove(artifactPromotion);
+            promotionUtil.executeHandleMove(artifactPromotion);
         } catch (Exception e) {
-            log.error("Move path params [{}] error [{}]", JSONObject.toJSONString(artifactPromotion), ExceptionUtils.getStackTrace(e));
+            log.error("Unable to move artifact", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(e.getMessage());
         }
@@ -286,69 +287,146 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
     }
 
     @Override
-    public ResponseEntity<String> nodeOption(PromotionNodeOption promotionNodeOption, HttpServletRequest request) {
+    public ResponseEntity<String> nodeOptionV2(PromotionNodeOption promotionNodeOption, HttpServletRequest request) {
         try {
-            String baseUrl = StringUtils.removeEnd(configurationManagementService.getConfiguration().getBaseUrl(), GlobalConstants.SEPARATOR);
-            Integer syncModel = promotionNodeOption.getSyncModel();
-            PromotionRepositoryInfo promotionRepositoryInfo = resolvePromotionRepository(promotionNodeOption);
-            String sourceStorageId = promotionRepositoryInfo.getSourceStorageId();
-            String sourceRepositoryId = promotionRepositoryInfo.getSourceRepositoryId();
-            String sourceBaseUrl = promotionRepositoryInfo.getSourceBaseUrl();
-            String sourceArtifactPath = promotionRepositoryInfo.getSourceArtifactPath();
-            String targetStorageId = promotionRepositoryInfo.getTargetStorageId();
-            String targetRepositoryId = promotionRepositoryInfo.getTargetRepositoryId();
-            String targetBaseUrl = promotionRepositoryInfo.getTargetBaseUrl();
-            if (sourceBaseUrl.equals(targetBaseUrl)) {
-                validateStorageAndRepository(sourceStorageId, sourceRepositoryId);
-                validateStorageAndRepository(targetStorageId, targetRepositoryId);
-                Repository destRepository = repositoryManagementService.getStorage(targetStorageId).getRepository(targetRepositoryId);
-                Repository srcRepository = repositoryManagementService.getStorage(sourceStorageId).getRepository(sourceRepositoryId);
-                RepositoryPath srcPath = repositoryPathResolver.resolve(sourceStorageId, sourceRepositoryId, sourceArtifactPath);
-                promotionUtil.executeCopy(srcPath, destRepository, srcRepository);
+            String sourcePath = UriUtils.decode(StringUtils.removeEnd(promotionNodeOption.getSourcePath(), "/"));
+            String targetPath = UriUtils.decode(StringUtils.removeEnd(promotionNodeOption.getTargetPath(), "/"));
+            final Integer syncModel = promotionNodeOption.getSyncModel();
+            final String syncNo = promotionNodeOption.getSyncNo();
+            String srcStorageId = parsePath(sourcePath)[0];
+            String srcRepostoryId = parsePath(sourcePath)[1];
+            String srcUrl = sourcePath.split("/" + srcStorageId + "/" + srcRepostoryId + "/")[0];
+            String srcUri = sourcePath.split("/" + srcStorageId + "/" + srcRepostoryId + "/")[1];
+            String targetStorageId = parsePath(targetPath)[0];
+            String targetRepostoryId = parsePath(targetPath)[1];
+            String targetUrl = targetPath.split("/" + targetStorageId + "/" + targetRepostoryId + "/")[0];
+            String targetUri = targetPath.split("/" + targetStorageId + "/" + targetRepostoryId + "/")[1];
+
+            log.info("sourcePath={},srcStorageId={},srcRepostoryId={}\ntargetPath={},targetStorageId={},targetRepostoryId={}", sourcePath, srcStorageId, srcRepostoryId, targetStorageId, targetStorageId, targetRepostoryId);
+            log.info("srcUrl={},srcUri={}", srcUrl, srcUri);
+            log.info("targetUrl={},targetUri={}", targetUrl, targetUri);
+            if (srcUrl.equals(targetUrl)) {
+                validateStorageAndRepository(srcStorageId, srcRepostoryId);
+                validateStorageAndRepository(targetStorageId, targetRepostoryId);
+                Repository destRepository = repositoryManagementService.getStorage(targetStorageId).getRepository(targetRepostoryId);
+                Repository srcRepository = repositoryManagementService.getStorage(srcStorageId).getRepository(srcRepostoryId);
+                RepositoryPath srcPath = repositoryPathResolver.resolve(srcStorageId, srcRepostoryId, srcUri);
+                promotionUtil.executeHanleCopy(srcPath.getTarget().toString(), destRepository, srcRepository);
                 return ResponseEntity.ok("ok");
             }
-            if (Objects.isNull(syncModel)) {
-                syncModel = ArtifactSyncRecordSyncModelEnum.PULL.getVal();
-                if (sourceBaseUrl.startsWith(baseUrl)) {
-                    syncModel = ArtifactSyncRecordSyncModelEnum.PUSH.getVal();
-                }
-            }
-            if (ArtifactSyncRecordSyncModelEnum.PUSH.getVal().equals(syncModel)) {
-                log.info("Use push model");
-                validateStorageAndRepository(sourceStorageId, sourceRepositoryId);
-                // 本地源 制品路径 推向 目标路径
-                Repository srcRepository = repositoryManagementService.getStorage(sourceStorageId).getRepository(sourceRepositoryId);
-                RepositoryPath srcPath = repositoryPathResolver.resolve(srcRepository, sourceArtifactPath);
-                //  遍历所有制品文件后逐步上传
-                String srcAbsolutePath = srcPath.getTarget().toString();
-                PromotionArtifactDto promotionArtifactDto = new PromotionArtifactDto(sourceStorageId, sourceRepositoryId,
-                        targetStorageId, targetRepositoryId, srcAbsolutePath, targetBaseUrl + upLoadURI);
 
-                PromotionNodeOptionDto uploadDto = promotionUtil.getPromotionUploadDto(promotionArtifactDto);
+            // 判断节点参数是 做推 push  或者 拉取 pull
+            String requestURL = request.getServerName();
+            log.info("requestURL={}", requestURL);
+
+            validateStorageAndRepository(srcStorageId, srcRepostoryId);
+
+            // 本地源 制品路径 推向 目标路径
+            Repository srcRepository = repositoryManagementService.getStorage(srcStorageId).getRepository(srcRepostoryId);
+            RepositoryPath srcPath = repositoryPathResolver.resolve(srcRepository, srcUri);
+            //  遍历所有制品文件后逐步上传
+            String srcAbsolutePath = srcPath.getTarget().toString();
+            PromotionArtifactDto promotionArtifactDto = new PromotionArtifactDto(srcStorageId, srcRepostoryId,
+                    targetStorageId, targetRepostoryId, srcAbsolutePath, targetUrl + upLoadURI);
+
+            PromotionNodeOptionDto uploadDto = promotionUtil.getPromotionUploadDtoV2(promotionArtifactDto);
 //
 //                //向目标仓库推包
-                promotionUtil.upload(targetBaseUrl + upLoadURI, uploadDto);
+//                promotionUtil.upload(targetUrl + upLoadURI, uploadDto);
+
+            // 异步制品切片上传
+            asyncThreadPoolTaskExecutor.submit(() -> {
+                promotionUtil.artifactSliceUploadV2(uploadDto, targetUrl, targetStorageId, targetRepostoryId, syncNo);
+                // 更新记录结果
+            });
+        } catch (Exception e) {
+            log.error("制品晋级错误 {}", ExceptionUtils.getStackTrace(e));
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(e.getMessage());
+        }
+        return ResponseEntity.ok("ok");
+    }
+    @Override
+    public ResponseEntity<String> nodeOption(PromotionNodeOption promotionNodeOption, HttpServletRequest request) {
+        try {
+            String sourcePath = UriUtils.decode(StringUtils.removeEnd(promotionNodeOption.getSourcePath(), "/"));
+            String targetPath = UriUtils.decode(StringUtils.removeEnd(promotionNodeOption.getTargetPath(), "/"));
+            final Integer syncModel = promotionNodeOption.getSyncModel();
+            final String syncNo = promotionNodeOption.getSyncNo();
+            String srcStorageId = parsePath(sourcePath)[0];
+            String srcRepostoryId = parsePath(sourcePath)[1];
+            String srcUrl = sourcePath.split("/" + srcStorageId + "/" + srcRepostoryId + "/")[0];
+            String srcUri = sourcePath.split("/" + srcStorageId + "/" + srcRepostoryId + "/")[1];
+            String targetStorageId = parsePath(targetPath)[0];
+            String targetRepostoryId = parsePath(targetPath)[1];
+            String targetUrl = targetPath.split("/" + targetStorageId + "/" + targetRepostoryId + "/")[0];
+            String targetUri = targetPath.split("/" + targetStorageId + "/" + targetRepostoryId + "/")[1];
+
+            log.info("sourcePath={},srcStorageId={},srcRepostoryId={}\ntargetPath={},targetStorageId={},targetRepostoryId={}", sourcePath, srcStorageId, srcRepostoryId, targetStorageId, targetStorageId, targetRepostoryId);
+            log.info("srcUrl={},srcUri={}", srcUrl, srcUri);
+            log.info("targetUrl={},targetUri={}", targetUrl, targetUri);
+            if (srcUrl.equals(targetUrl)) {
+                validateStorageAndRepository(srcStorageId, srcRepostoryId);
+                validateStorageAndRepository(targetStorageId, targetRepostoryId);
+                Repository destRepository = repositoryManagementService.getStorage(targetStorageId).getRepository(targetRepostoryId);
+                Repository srcRepository = repositoryManagementService.getStorage(srcStorageId).getRepository(srcRepostoryId);
+                RepositoryPath srcPath = repositoryPathResolver.resolve(srcStorageId, srcRepostoryId, srcUri);
+                promotionUtil.executeHanleCopy(srcPath.getTarget().toString(), destRepository, srcRepository);
+                return ResponseEntity.ok("ok");
+            }
+
+            // 判断节点参数是 做推 push  或者 拉取 pull
+            String requestURL = request.getServerName();
+            log.info("requestURL={}", requestURL);
+
+//            if (sourcePath.contains(requestURL)) {
+            if (ArtifactSyncRecordSyncModelEnum.PUSH.getVal().equals(syncModel)) {
+                log.info("进入推模式={}", true);
+                validateStorageAndRepository(srcStorageId, srcRepostoryId);
+
+                // 本地源 制品路径 推向 目标路径
+                Repository srcRepository = repositoryManagementService.getStorage(srcStorageId).getRepository(srcRepostoryId);
+                RepositoryPath srcPath = repositoryPathResolver.resolve(srcRepository, srcUri);
+                //  遍历所有制品文件后逐步上传
+                String srcAbsolutePath = srcPath.getTarget().toString();
+                PromotionArtifactDto promotionArtifactDto = new PromotionArtifactDto(srcStorageId, srcRepostoryId,
+                        targetStorageId, targetRepostoryId, srcAbsolutePath, targetUrl + upLoadURI);
+
+                PromotionNodeOptionDto uploadDto = promotionUtil.getPromotionUploadDtoV2(promotionArtifactDto);
+//
+//                //向目标仓库推包
+//                promotionUtil.upload(targetUrl + upLoadURI, uploadDto);
 
                 // 异步制品切片上传
-//                asyncThreadPoolTaskExecutor.submit(() -> {
-//                    final List<PromotionUtil.ArtifactSliceUploadHttpEntityResponse> uploadResults = promotionUtil.artifactSliceUpload(uploadDto, targetUrl, srcStorageId, srcRepostoryId, syncNo);
+                asyncThreadPoolTaskExecutor.submit(() -> {
+                     promotionUtil.artifactSliceUpload(uploadDto, targetUrl, targetStorageId, targetRepostoryId, syncNo);
                     // 更新记录结果
-//                });
+                });
 
+//            } else if (targetPath.contains(requestURL)) {
             } else if (ArtifactSyncRecordSyncModelEnum.PULL.getVal().equals(syncModel)) {
-                log.info("Use pull model");
+                log.info("进入拉模式={}", true);
                 // 通过Ws协议通知客户端进行拉取操作
-                final String targetHost = UrlUtils.getHost(targetBaseUrl);
-                final Integer targetPort = UrlUtils.getPort(targetBaseUrl);
+                final String targetHost = UrlUtils.getHost(targetUrl);
+                final Integer targetPort = UrlUtils.getPort(targetUrl);
                 final String nodeName = String.format("%s:%s", targetHost, targetPort);
                 final FolibWsServerRunManage.FolibWsClientRun wsClientRun = FolibWsServerRunManage.getWsClientRun(nodeName);
                 if (null == wsClientRun) {
-                    if (targetBaseUrl.startsWith(baseUrl)) {
+                    if (sourcePath.contains(requestURL)) {
+                        // 检查如果可以直接连接访问到目标节点，则将模式转换为push模式，兼容源头和请求一致时未找到或者未设置ws节点的情况
+                        try (final Socket socket = new Socket(targetHost, targetPort);) {
+                            socket.setSoTimeout(200);
+                            promotionNodeOption.setSyncModel(ArtifactSyncRecordSyncModelEnum.PUSH.getVal());
+                            return this.nodeOption(promotionNodeOption, request);
+                        } catch (Exception e) {
+                            throw new BusinessException("需要晋级的节点不可用，请检查节点是否配置正确");
+                        }
+                    } else if (targetPath.contains(requestURL)) {
+                        // 兼容请求和目标一致时，未注册自身ws节点的情况
                         wsClientArtifactPullCommand.execute(promotionNodeOption);
                         return ResponseEntity.ok("ok");
                     } else {
-                        promotionNodeOption.setSyncModel(ArtifactSyncRecordSyncModelEnum.PUSH.getVal());
-                        return this.nodeOption(promotionNodeOption, request);
+                        throw new BusinessException(String.format("客户端 host [%s] port [%s] 未连接，发送命令失败", targetHost, targetPort));
                     }
                 }
 
@@ -371,11 +449,6 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
     @Override
     public ResponseEntity nodeOptionAttachRecord(PromotionNodeOption promotionNodeOption, HttpServletRequest
             request) {
-        PromotionRepositoryInfo promotionRepositoryInfo = resolvePromotionRepository(promotionNodeOption);
-        if (ArtifactSyncRecordSyncModelEnum.PUSH.getVal().equals(promotionNodeOption.getSyncModel())) {
-            validateSourceRepositoryPath(promotionRepositoryInfo.getSourceStorageId(), promotionRepositoryInfo.getSourceRepositoryId(), promotionRepositoryInfo.getSourceArtifactPath());
-            validateRemoteRepository(promotionRepositoryInfo.getTargetBaseUrl(), promotionRepositoryInfo.getTargetStorageId(), promotionRepositoryInfo.getTargetRepositoryId());
-        }
         // 生成同步编号
         final String syncNo = String.format("SyncNo%s", UUID.randomUUID().toString(true));
         final SpringSecurityUser userDetails = (SpringSecurityUser) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
@@ -384,12 +457,16 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
         final ArtifactSyncRecord artifactSyncRecord = new ArtifactSyncRecord();
         
         try {
+            final String sourcePath = UriUtils.decode(StringUtils.removeEnd(promotionNodeOption.getSourcePath(), "/"));
+            final String srcStorageId = parsePath(sourcePath)[0];
+            final String srcRepositoryId = parsePath(sourcePath)[1];
+            final String srcUri = sourcePath.split("/" + srcStorageId + "/" + srcRepositoryId + "/")[1];
+    
             // 生成日志记录
-            artifactSyncRecord.setId(idGenerateUtils.generateId("artifactSyncRecordId"));
             artifactSyncRecord.setRequestHostName(requestHostName);
-            artifactSyncRecord.setSourceStorageId(promotionRepositoryInfo.getSourceStorageId());
-            artifactSyncRecord.setSourceRepositoryId(promotionRepositoryInfo.getSourceRepositoryId());
-            artifactSyncRecord.setSourcePath(promotionNodeOption.getSourcePath());
+            artifactSyncRecord.setSourceStorageId(srcStorageId);
+            artifactSyncRecord.setSourceRepositoryId(srcRepositoryId);
+            artifactSyncRecord.setSourcePath(srcUri);
             artifactSyncRecord.setTargetPath(promotionNodeOption.getTargetPath());
             artifactSyncRecord.setSyncNo(syncNo);
             artifactSyncRecord.setOpsType(ArtifactSyncRecordOpsTypeEnum.PROMOTION.getVal());
@@ -402,7 +479,7 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
             
             asyncThreadPoolTaskExecutor.execute(() ->
             { // 异步执行制品晋级
-                final ResponseEntity<String> re = this.nodeOption(promotionNodeOption, request);
+                final ResponseEntity<String> re = this.nodeOptionV2(promotionNodeOption, request);
 
                 if (FolibWsClientArtifactPullCommand.COMMAND.equals(re.getBody())) {
                     /** 异步使用回调更新状态等信息 {@linkplain ArtifactPromotionServiceImpl#artifactPullCallback(ArtifactPromotionNodeOptionCallbackReq)} */
@@ -652,7 +729,8 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
             validateStorageAndRepository(artifactDto.getStorageId(), artifactDto.getRepostoryId());
             RepositoryPath repositoryPath = repositoryPathResolver.resolve(artifactDto.getStorageId(),
                     artifactDto.getRepostoryId(), artifactDto.getPath());
-            PromotionFileRelativePath promotionFileRelativePath = promotionUtil.getFileRelativePaths(repositoryPath);
+            boolean isDockerVersionPath = promotionUtil.isDockerVersion(repositoryPath.getRepository().getLayout(), artifactDto.getPath());
+            PromotionFileRelativePath promotionFileRelativePath = promotionUtil.getFileRelativePaths(repositoryPath, isDockerVersionPath);
             return ResponseEntity.ok(promotionFileRelativePath);
         } catch (Exception e) {
             log.error("Get files relative paths exception {}", ExceptionUtils.getStackTrace(e));
@@ -749,40 +827,13 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
     }
 
     @Override
-    public void validateStorageAndRepository(String storageId, String repositoryId) {
+    public void validateStorageAndRepository(String storageId, String repositoryId) throws Exception {
         if (null == repositoryManagementService.getStorage(storageId)) {
-            throw new BusinessException("Storage [" + storageId + "] not exist!");
+            throw new Exception("Storage [" + storageId + "] not exist!");
         }
         Repository repository = repositoryManagementService.getStorage(storageId).getRepository(repositoryId);
         if (null == repository) {
-            throw new BusinessException("Repository [" + repositoryId + "]  not exist!");
-        }
-    }
-
-    @Override
-    public void validateRemoteRepository(String targetUrl, String storageId, String repositoryId) {
-        targetUrl = String.format("%s/%s/%s/%s", StringUtils.removeEnd(targetUrl, GlobalConstants.SEPARATOR), REPOSITORY_URL, storageId, repositoryId);
-        Response response = null;
-        try {
-            Client client = clientPool.getRestClient();
-            //连接建立超时时间
-            client.property(ClientProperties.CONNECT_TIMEOUT, 5000);
-            //读取内容超时时间
-            client.property(ClientProperties.READ_TIMEOUT, 5000);
-            WebTarget target = client.target(targetUrl);
-            Invocation.Builder builder = target.request();
-            securityComponent.securityTokenHeader(builder);
-            response = builder.head();
-            if (HttpStatus.OK.value() != response.getStatus()) {
-                throw new BusinessException(String.format("Remote repository [%s] [%s]  not exist!", storageId, repositoryId));
-            }
-        } catch (Exception ex) {
-            log.error("Validate remote repository [{}] [{}] [{}] error [{}]", targetUrl, storageId, repositoryId, ExceptionUtils.getStackTrace(ex));
-            throw new BusinessException(ex.getMessage());
-        } finally {
-            if (Objects.nonNull(response)) {
-                response.close();
-            }
+            throw new Exception("Repository [" + repositoryId + "]  not exist!");
         }
     }
 
@@ -838,7 +889,7 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
             log.error("获取下载文件流失败", e);
             return false;
         }
-        log.info("FinalKbps [{}]", finalKbps);
+
         if (finalKbps > 0) {
             // 限速下载
             // - 获取初始下载速度
@@ -1260,9 +1311,11 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
 
                 // 转存合并文件到Folib
 ///                artifactManagementService.store(artifactFilePath, Files.newInputStream(Path.of(mergeFilePath)));
-                final MockMultipartFile multipartFile = new MockMultipartFile(fileName, Files.newInputStream(Path.of(mergeFilePath)));
+
+                FileStreamMultipartFile fileStreamMultipartFile = new FileStreamMultipartFile(new File(mergeFilePath),fileName,"",null);
+
                 // 兼容原来上传逻辑
-                final ArtifactUploadTask artifactUploadTask = new ArtifactUploadTask(storageId, repositoryId, multipartFile,
+                final ArtifactUploadTask artifactUploadTask = new ArtifactUploadTask(storageId, repositoryId, fileStreamMultipartFile,
                         repositoryManagementService, repositoryPathResolver, artifactManagementService, promotionUtil, 
                         layoutProviderRegistry, artifactMetadataService, artifactRepository, mavenRepositoryFeatures, 
                         tempPath, path, metaDataJsonStr, null, null);
@@ -1307,44 +1360,5 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
         FileUtil.writeString(uploadStatusJsonObj.toJSONString(), sliceUploadStatusFile, StandardCharsets.UTF_8);
     }
 
-
-    private PromotionRepositoryInfo resolvePromotionRepository(PromotionNodeOption promotionNodeOption) {
-        try {
-            PromotionRepositoryInfo promotionRepositoryInfo = PromotionRepositoryInfo.builder().build();
-            String sourcePath = UriUtils.decode(StringUtils.removeEnd(promotionNodeOption.getSourcePath(), "/"));
-            String targetPath = UriUtils.decode(StringUtils.removeEnd(promotionNodeOption.getTargetPath(), "/"));
-            String sourceStorageId = parsePath(sourcePath)[0];
-            String sourceRepositoryId = parsePath(sourcePath)[1];
-            String sourceBaseUrl = sourcePath.split("/" + sourceStorageId + "/" + sourceRepositoryId + "/")[0];
-            String sourceArtifactPath = sourcePath.split("/" + sourceStorageId + "/" + sourceRepositoryId + "/")[1];
-            promotionRepositoryInfo.setSourceStorageId(sourceStorageId);
-            promotionRepositoryInfo.setSourceRepositoryId(sourceRepositoryId);
-            promotionRepositoryInfo.setSourceArtifactPath(sourceArtifactPath);
-            promotionRepositoryInfo.setSourceBaseUrl(sourceBaseUrl);
-            String targetStorageId = parsePath(targetPath)[0];
-            String targetRepositoryId = parsePath(targetPath)[1];
-            String targetBaseUrl = targetPath.split("/" + targetStorageId + "/" + targetRepositoryId + "/")[0];
-            String targetArtifactPath = targetPath.split("/" + targetStorageId + "/" + targetRepositoryId + "/")[1];
-            promotionRepositoryInfo.setTargetStorageId(targetStorageId);
-            promotionRepositoryInfo.setTargetRepositoryId(targetRepositoryId);
-            promotionRepositoryInfo.setTargetArtifactPath(targetArtifactPath);
-            promotionRepositoryInfo.setTargetBaseUrl(targetBaseUrl);
-            log.info("Promotion repository info [{}]", JSONObject.toJSONString(promotionRepositoryInfo));
-            log.info("Source info sourcePath [{}] sourceBaseUrl [{}] storageId [{}] repositoryId [{}] artifactPath [{}]", sourcePath, sourceBaseUrl, sourceStorageId, sourceRepositoryId, sourceArtifactPath);
-            log.info("Target info targetPath [{}] targetBaseUrl [{}] storageId [{}] repositoryId [{}] artifactPath [{}]", targetPath, targetBaseUrl, targetStorageId, targetRepositoryId, targetArtifactPath);
-            return promotionRepositoryInfo;
-        } catch (Exception ex) {
-            log.error(ExceptionUtils.getStackTrace(ex));
-            throw new BusinessException(String.format("resolve promotion repository info [%s] error [%s]", JSONObject.toJSONString(promotionNodeOption), ex.getMessage()));
-        }
-    }
-
-    private void validateSourceRepositoryPath(String storageId, String repositoryId, String artifactPath) {
-        validateStorageAndRepository(storageId, repositoryId);
-        RepositoryPath repositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, artifactPath);
-        if (Objects.isNull(repositoryPath) || !Files.exists(repositoryPath)) {
-            throw new BusinessException(String.format("Source repositoryPath [%s] [%s] [%s]  not exist!", storageId, repositoryId, artifactPath));
-        }
-    }
 
 }

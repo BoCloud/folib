@@ -1,9 +1,15 @@
 package com.veadan.folib.ws.client.timer;
 
+import com.veadan.folib.configuration.ConfigurationManager;
+import com.veadan.folib.services.ConfigurationManagementService;
 import com.veadan.folib.ws.client.manage.FolibWsClientRunManage;
+import com.veadan.folib.ws.common.FolibWsRunManageV2;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
+
+import javax.inject.Inject;
 
 /**
  * @author xiaodong.wang
@@ -14,6 +20,12 @@ import org.springframework.stereotype.Component;
 @Slf4j
 @Component
 public class FolibWsServerSessionHealthCheckTimer {
+    @Inject
+    protected ConfigurationManager configurationManager;
+    @Autowired
+    private ConfigurationManagementService configurationManagementService;
+    @Autowired
+    private FolibWsRunManageV2 folibWsRunManageV2;
 
     @Scheduled(cron = "0/5 * * * * ?")
     public void scan() {

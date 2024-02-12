@@ -3,9 +3,9 @@ package com.veadan.folib.services.impl;
 import cn.hutool.core.collection.CollUtil;
 import com.github.pagehelper.Page;
 import com.github.pagehelper.PageHelper;
+import com.veadan.folib.constant.ArtifactSyncRecordStatusEnum;
 import com.veadan.folib.entity.ArtifactSyncRecord;
 import com.veadan.folib.entity.ArtifactSyncSlaveRecord;
-import com.veadan.folib.constant.ArtifactSyncRecordStatusEnum;
 import com.veadan.folib.mapper.ArtifactSyncRecordMapper;
 import com.veadan.folib.mapper.ArtifactSyncSlaveRecordMapper;
 import com.veadan.folib.model.request.ArtifactSyncRecordPageReq;
@@ -19,6 +19,7 @@ import tk.mybatis.mapper.entity.Example;
 
 import javax.inject.Inject;
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -81,7 +82,7 @@ public class ArtifactSyncRecordServiceImpl implements ArtifactSyncRecordService 
                     final Long successCount = groupStatusMap.getOrDefault(ArtifactSyncRecordStatusEnum.SUCCESS.getVal(), 0L);
                     e.setSyncProgress(0D);
                     if (successCount > 0) {
-                        final double syncProgress = BigDecimal.valueOf(successCount).divide(new BigDecimal(sumCount)).setScale(2).doubleValue();
+                        final double syncProgress = BigDecimal.valueOf(successCount).divide(new BigDecimal(sumCount), 2, RoundingMode.HALF_UP).setScale(2).doubleValue();
                         e.setSyncProgress(syncProgress);
                         if (syncProgress >= 1.0D) {
                             e.setStatus(ArtifactSyncRecordStatusEnum.SUCCESS.getVal());

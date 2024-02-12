@@ -32,6 +32,7 @@ import java.util.concurrent.TimeUnit;
  * @since x.x.x
  */
 @Slf4j
+@Deprecated
 public class FolibWsClientRunManage extends FolibWsRunManage {
     private static final Map<String, FolibWsServerRun> FOLIB_WS_RUN_MAP = new ConcurrentHashMap<>();
     public static final JettyWebSocketClient WEB_SOCKET_CLIENT = new JettyWebSocketClient();

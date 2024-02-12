@@ -31,7 +31,8 @@ public interface ArtifactPromotionService {
     ResponseEntity move(ArtifactPromotion artifactPromotion);
 
     ResponseEntity<String> nodeOption(PromotionNodeOption promotionNodeOption, HttpServletRequest request);
-    
+    ResponseEntity<String> nodeOptionV2(PromotionNodeOption promotionNodeOption, HttpServletRequest request);
+
     ResponseEntity nodeOptionAttachRecord(PromotionNodeOption promotionNodeOption, HttpServletRequest request);
 
     Boolean artifactPullCallback(ArtifactPromotionNodeOptionCallbackReq model);
