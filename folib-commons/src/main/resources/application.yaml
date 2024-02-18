@@ -150,6 +150,13 @@ folib:
       keepAliveSeconds: 0
       threadNamePrefix: asyncCopy_
       awaitTerminationSeconds: 6
+    asyncEventLog:
+      corePoolSize: ${threadPool.common.core:12}
+      maxPoolSize: ${threadPool.common.max:12}
+      queueCapacity: ${threadPool.common.queue:10000}
+      keepAliveSeconds: 0
+      threadNamePrefix: asyncEventLog_
+      awaitTerminationSeconds: 6
 # Changes to these properties must also be applied to [folib/folib-web-integration-tests] and possibly the pipeline.
 # Please ping us on our chat channel (https://chat.carlspring.org/) to confirm.
 logging:

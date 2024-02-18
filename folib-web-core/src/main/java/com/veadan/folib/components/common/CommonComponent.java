@@ -25,6 +25,7 @@ import org.apache.http.client.config.RequestConfig;
 import org.glassfish.jersey.apache.connector.ApacheClientProperties;
 import org.glassfish.jersey.client.authentication.HttpAuthenticationFeature;
 import org.springframework.context.annotation.Lazy;
+import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
@@ -34,6 +35,8 @@ import javax.ws.rs.client.WebTarget;
 import java.io.IOException;
 import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.RejectedExecutionHandler;
+import java.util.concurrent.ThreadPoolExecutor;
 
 /**
  * @author leipenghui
@@ -196,5 +199,42 @@ public class CommonComponent {
         AuthorizationConfigDto authorizationConfigDto = authorizationConfigService.getDto();
         SyncAuthorizationDto syncAuthorizationDto = new SyncAuthorizationDto(authorizationConfigDto, SyncAuthorizationEnum.UPDATE);
         clusterSyncService.syncAuthorization(syncAuthorizationDto);
+    }
+
+    public ThreadPoolTaskExecutor buildThreadPoolTaskExecutor(Integer corePoolSize, Integer maxPoolSize, Integer queueCapacity, Integer keepAliveSeconds, String threadNamePrefix, Integer awaitTerminationSeconds, RejectedExecutionHandler rejectedExecutionHandler) {
+        ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
+        int availableCores = getAvailableCores();
+        log.info("Current available cpu cores [{}]", availableCores);
+        if (availableCores < 8) {
+            availableCores = 8;
+            log.info("Modify available cpu cores [{}]", availableCores);
+        }
+        if (corePoolSize > availableCores) {
+            executor.setCorePoolSize(availableCores);
+            executor.setMaxPoolSize(availableCores);
+        } else {
+            executor.setCorePoolSize(corePoolSize);
+            executor.setMaxPoolSize(maxPoolSize);
+        }
+        Integer maxQueueCapacity = 100000000;
+        if (queueCapacity > maxQueueCapacity) {
+            queueCapacity = maxQueueCapacity;
+        }
+        executor.setQueueCapacity(queueCapacity);
+        executor.setKeepAliveSeconds(keepAliveSeconds);
+        executor.setThreadNamePrefix(threadNamePrefix);
+        executor.setWaitForTasksToCompleteOnShutdown(true);
+        executor.setAwaitTerminationSeconds(awaitTerminationSeconds);
+        if (Objects.isNull(rejectedExecutionHandler)) {
+            rejectedExecutionHandler = new ThreadPoolExecutor.CallerRunsPolicy();
+        }
+        executor.setRejectedExecutionHandler(rejectedExecutionHandler);
+        executor.initialize();
+        log.info("Thread pool name [{}] core size [{}] max size [{}] queue capacity [{}]", executor.getThreadNamePrefix(), executor.getCorePoolSize(), executor.getMaxPoolSize(), queueCapacity);
+        return executor;
+    }
+
+    public int getAvailableCores() {
+        return Runtime.getRuntime().availableProcessors();
     }
 }
