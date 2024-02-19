@@ -1,6 +1,5 @@
 package com.veadan.folib.services.impl;
 
-import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.io.FileUtil;
 import cn.hutool.core.io.IoUtil;
 import cn.hutool.core.lang.UUID;
@@ -14,7 +13,6 @@ import com.veadan.folib.components.promotion.ArtifactPromotionProviderRegistry;
 import com.veadan.folib.components.security.SecurityComponent;
 import com.veadan.folib.constant.ArtifactSyncRecordStatusEnum;
 import com.veadan.folib.constant.GlobalConstants;
-import com.veadan.folib.controllers.promotion.ArtifactPromotionController;
 import com.veadan.folib.dispatch.ClusterDispatchNodeDto;
 import com.veadan.folib.domain.*;
 import com.veadan.folib.dto.*;
@@ -34,22 +32,14 @@ import com.veadan.folib.promotion.PromotionUtil;
 import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.providers.io.RepositoryPathResolver;
 import com.veadan.folib.providers.layout.LayoutProviderRegistry;
-import com.veadan.folib.providers.storage.S3FileSystemStorageProvider;
 import com.veadan.folib.repositories.ArtifactRepository;
 import com.veadan.folib.repository.MavenRepositoryFeatures;
 import com.veadan.folib.scanner.common.exception.BusinessException;
 import com.veadan.folib.service.ProxyRepositoryConnectionPoolConfigurationService;
-import com.veadan.folib.services.ArtifactManagementService;
-import com.veadan.folib.services.ArtifactMetadataService;
-import com.veadan.folib.services.ArtifactPromotionService;
-import com.veadan.folib.services.ArtifactResolutionService;
-import com.veadan.folib.services.ConfigurationManagementService;
-import com.veadan.folib.services.DictService;
-import com.veadan.folib.services.RepositoryManagementService;
+import com.veadan.folib.services.*;
 import com.veadan.folib.storage.repository.Repository;
 import com.veadan.folib.storage.repository.RepositoryTypeEnum;
 import com.veadan.folib.users.userdetails.SpringSecurityUser;
-import com.veadan.folib.util.SocketUtils;
 import com.veadan.folib.utils.FileUtils;
 import com.veadan.folib.utils.PropertiesUtils;
 import com.veadan.folib.utils.UrlUtils;
@@ -72,7 +62,6 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -87,22 +76,13 @@ import javax.ws.rs.client.Client;
 import javax.ws.rs.client.Invocation;
 import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.Response;
+import java.io.*;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
-import java.net.Socket;
-import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.FutureTask;
 import java.util.concurrent.TimeUnit;
@@ -288,29 +268,24 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
     @Override
     public ResponseEntity<String> nodeOptionV2(PromotionNodeOption promotionNodeOption, HttpServletRequest request) {
         try {
-            String sourcePath = UriUtils.decode(StringUtils.removeEnd(promotionNodeOption.getSourcePath(), "/"));
-            String targetPath = UriUtils.decode(StringUtils.removeEnd(promotionNodeOption.getTargetPath(), "/"));
-            final Integer syncModel = promotionNodeOption.getSyncModel();
+            String baseUrl = StringUtils.removeEnd(configurationManagementService.getConfiguration().getBaseUrl(), GlobalConstants.SEPARATOR);
+            Integer syncModel = promotionNodeOption.getSyncModel();
             final String syncNo = promotionNodeOption.getSyncNo();
-            String srcStorageId = parsePath(sourcePath)[0];
-            String srcRepostoryId = parsePath(sourcePath)[1];
-            String srcUrl = sourcePath.split("/" + srcStorageId + "/" + srcRepostoryId + "/")[0];
-            String srcUri = sourcePath.split("/" + srcStorageId + "/" + srcRepostoryId + "/")[1];
-            String targetStorageId = parsePath(targetPath)[0];
-            String targetRepostoryId = parsePath(targetPath)[1];
-            String targetUrl = targetPath.split("/" + targetStorageId + "/" + targetRepostoryId + "/")[0];
-            String targetUri = targetPath.split("/" + targetStorageId + "/" + targetRepostoryId + "/")[1];
-
-            log.info("sourcePath={},srcStorageId={},srcRepostoryId={}\ntargetPath={},targetStorageId={},targetRepostoryId={}", sourcePath, srcStorageId, srcRepostoryId, targetStorageId, targetStorageId, targetRepostoryId);
-            log.info("srcUrl={},srcUri={}", srcUrl, srcUri);
-            log.info("targetUrl={},targetUri={}", targetUrl, targetUri);
-            if (srcUrl.equals(targetUrl)) {
-                validateStorageAndRepository(srcStorageId, srcRepostoryId);
-                validateStorageAndRepository(targetStorageId, targetRepostoryId);
-                Repository destRepository = repositoryManagementService.getStorage(targetStorageId).getRepository(targetRepostoryId);
-                Repository srcRepository = repositoryManagementService.getStorage(srcStorageId).getRepository(srcRepostoryId);
-                RepositoryPath srcPath = repositoryPathResolver.resolve(srcStorageId, srcRepostoryId, srcUri);
-                promotionUtil.executeHanleCopy(srcPath.getTarget().toString(), destRepository, srcRepository);
+            PromotionRepositoryInfo promotionRepositoryInfo = resolvePromotionRepository(promotionNodeOption);
+            String sourceStorageId = promotionRepositoryInfo.getSourceStorageId();
+            String sourceRepositoryId = promotionRepositoryInfo.getSourceRepositoryId();
+            String sourceBaseUrl = promotionRepositoryInfo.getSourceBaseUrl();
+            String sourceArtifactPath = promotionRepositoryInfo.getSourceArtifactPath();
+            String targetStorageId = promotionRepositoryInfo.getTargetStorageId();
+            String targetRepositoryId = promotionRepositoryInfo.getTargetRepositoryId();
+            String targetBaseUrl = promotionRepositoryInfo.getTargetBaseUrl();
+            if (sourceBaseUrl.equals(targetBaseUrl)) {
+                validateStorageAndRepository(sourceStorageId, sourceRepositoryId);
+                validateStorageAndRepository(targetStorageId, targetRepositoryId);
+                Repository destRepository = repositoryManagementService.getStorage(targetStorageId).getRepository(targetRepositoryId);
+                Repository srcRepository = repositoryManagementService.getStorage(sourceStorageId).getRepository(sourceRepositoryId);
+                RepositoryPath srcPath = repositoryPathResolver.resolve(sourceStorageId, sourceRepositoryId, sourceArtifactPath);
+                promotionUtil.executeCopy(srcPath, destRepository, srcRepository);
                 return ResponseEntity.ok("ok");
             }
 
@@ -318,24 +293,24 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
             String requestURL = request.getServerName();
             log.info("requestURL={}", requestURL);
 
-            validateStorageAndRepository(srcStorageId, srcRepostoryId);
+            validateStorageAndRepository(sourceStorageId, sourceRepositoryId);
 
             // 本地源 制品路径 推向 目标路径
-            Repository srcRepository = repositoryManagementService.getStorage(srcStorageId).getRepository(srcRepostoryId);
-            RepositoryPath srcPath = repositoryPathResolver.resolve(srcRepository, srcUri);
+            Repository srcRepository = repositoryManagementService.getStorage(sourceStorageId).getRepository(sourceRepositoryId);
+            RepositoryPath srcPath = repositoryPathResolver.resolve(srcRepository, sourceArtifactPath);
             //  遍历所有制品文件后逐步上传
             String srcAbsolutePath = srcPath.getTarget().toString();
-            PromotionArtifactDto promotionArtifactDto = new PromotionArtifactDto(srcStorageId, srcRepostoryId,
-                    targetStorageId, targetRepostoryId, srcAbsolutePath, targetUrl + upLoadURI);
+            PromotionArtifactDto promotionArtifactDto = new PromotionArtifactDto(sourceStorageId, sourceRepositoryId,
+                    targetStorageId, targetRepositoryId, srcAbsolutePath, targetBaseUrl + upLoadURI);
 
-            PromotionNodeOptionDto uploadDto = promotionUtil.getPromotionUploadDtoV2(promotionArtifactDto);
-//
+            PromotionNodeOptionDto uploadDto = promotionUtil.getPromotionUploadDto(promotionArtifactDto);
+
 //                //向目标仓库推包
 //                promotionUtil.upload(targetUrl + upLoadURI, uploadDto);
 
             // 异步制品切片上传
             asyncThreadPoolTaskExecutor.submit(() -> {
-                promotionUtil.artifactSliceUploadV2(uploadDto, targetUrl, targetStorageId, targetRepostoryId, syncNo);
+                promotionUtil.artifactSliceUploadV2(uploadDto, targetBaseUrl, targetStorageId, targetRepositoryId, syncNo);
                 // 更新记录结果
             });
         } catch (Exception e) {
@@ -346,6 +321,7 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
         return ResponseEntity.ok("ok");
     }
     @Override
+    @Deprecated
     public ResponseEntity<String> nodeOption(PromotionNodeOption promotionNodeOption, HttpServletRequest request) {
         try {
             String baseUrl = StringUtils.removeEnd(configurationManagementService.getConfiguration().getBaseUrl(), GlobalConstants.SEPARATOR);
@@ -408,7 +384,7 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
                         return ResponseEntity.ok("ok");
                     } else {
                         promotionNodeOption.setSyncModel(ArtifactSyncRecordSyncModelEnum.PUSH.getVal());
-                        return this.nodeOption(promotionNodeOption, request);
+                        return this.nodeOptionV2(promotionNodeOption, request);
                     }
                 }
 

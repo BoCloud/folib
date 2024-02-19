@@ -27,7 +27,6 @@ import com.veadan.folib.providers.io.RepositoryFiles;
 import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.providers.io.RepositoryPathResolver;
 import com.veadan.folib.providers.layout.DockerLayoutProvider;
-import com.veadan.folib.scanner.common.exception.BusinessException;
 import com.veadan.folib.schema2.ImageManifest;
 import com.veadan.folib.schema2.LayerManifest;
 import com.veadan.folib.service.ProxyRepositoryConnectionPoolConfigurationService;
@@ -89,11 +88,12 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
-import java.net.Socket;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
-import java.util.concurrent.*;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.FutureTask;
+import java.util.concurrent.TimeoutException;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -128,7 +128,8 @@ public class PromotionUtil {
 
     @Autowired
     private ThreadPoolTaskExecutor asyncCopyThreadPoolTaskExecutor;
-
+    @Autowired
+    private ThreadPoolTaskExecutor asyncThreadPoolTaskExecutor;
     @Autowired
     private ProxyRepositoryConnectionPoolConfigurationService clientPool;
 
@@ -389,7 +390,7 @@ public class PromotionUtil {
                     dispatchNodeHost + "/api/artifact/folib/promotion/upload-files";
             PromotionArtifactDto promotionArtifactDto = new PromotionArtifactDto(srcStorageId, srcRepositoryId,
                     targetStorageId, targetRepositoryId, srcAbsolutePath, targetUploadUrl);
-            PromotionNodeOptionDto uploadDto = getPromotionUploadDtoV2(promotionArtifactDto);
+            PromotionNodeOptionDto uploadDto = getPromotionUploadDto(promotionArtifactDto);
 
             final String clusterNodeHost = dispatchNodeDto.getClusterNodeHost();
             final String nodeHost = UrlUtils.getHost(clusterNodeHost);
@@ -401,7 +402,7 @@ public class PromotionUtil {
             asyncThreadPoolTaskExecutor.submit(() -> {
                 try {
 
-                    this.artifactSliceUploadV2(uploadDto, StringUtils.chomp(dispatchNodeHost, "/"), uploadDto.getStorageId(), uploadDto.getRepostoryId(), syncNo);
+                    this.artifactSliceUploadV2(uploadDto, StringUtils.chomp(dispatchNodeHost, "/"), uploadDto.getStorageId(), uploadDto.getRepositoryId(), syncNo);
                 } catch (Exception e) {
                     log.error("异步制品切片上传失败", e);
                 }
@@ -504,14 +505,14 @@ public class PromotionUtil {
                             RepositoryPath srcBlobPath = repositoryPathResolver.resolve(srcStorageId, srcRepositoryId, DockerLayoutProvider.BLOBS + File.separator + layer);
                             log.info("Upload find blob srcRepositoryPath [{}]", srcBlobPath);
                             Map<String, RepositoryPath> blobPathMap = Maps.newLinkedHashMap();
-                            blobPathMap.put(srcBlobPath.getTarget().toAbsolutePath().toString(), srcBlobPath);
+                            blobPathMap.put(RepositoryFiles.relativizePath(srcBlobPath), srcBlobPath);
                             filePathMap.put(RepositoryFiles.relativizePath(srcBlobPath), blobPathMap);
                         }
                         if (StringUtils.isNotBlank(manifest.getDigest())) {
                             RepositoryPath srcMainFestPath = repositoryPathResolver.resolve(srcStorageId, srcRepositoryId, DockerLayoutProvider.MANIFEST + File.separator + manifest.getDigest());
                             log.info("Upload find manifest srcRepositoryPath [{}]", srcMainFestPath);
                             Map<String, RepositoryPath> mainFestPathMap = Maps.newLinkedHashMap();
-                            mainFestPathMap.put(srcMainFestPath.getTarget().toAbsolutePath().toString(), srcMainFestPath);
+                            mainFestPathMap.put(RepositoryFiles.relativizePath(srcMainFestPath), srcMainFestPath);
                             filePathMap.put(RepositoryFiles.relativizePath(srcMainFestPath), mainFestPathMap);
                         }
                     }
@@ -519,7 +520,7 @@ public class PromotionUtil {
             }
             log.info("Upload find srcRepositoryPath [{}]", srcRepositoryPath);
             Map<String, RepositoryPath> relativePathMap = Maps.newLinkedHashMap();
-            relativePathMap.put(srcRepositoryPath.toAbsolutePath().toString(), srcRepositoryPath);
+            relativePathMap.put(RepositoryFiles.relativizePath(srcRepositoryPath), srcRepositoryPath);
             filePathMap.put(RepositoryFiles.relativizePath(srcRepositoryPath), relativePathMap);
             // 添加跨节点的元数据同步
             fileMetaDataMap.put(RepositoryFiles.relativizePath(srcRepositoryPath), getMetaData(srcRepositoryPath));
@@ -722,7 +723,8 @@ public class PromotionUtil {
         }
         return Collections.emptyList();
     }
-    
+
+    @Deprecated
     public List<ArtifactSliceUploadHttpEntityResponse> artifactSliceUpload(PromotionNodeOptionDto uploadDto, String targetUrl, String storageId, String repositoryId, String syncNo) {
         targetUrl = StringUtils.chomp(targetUrl, "/");
         final Map<String, Map<String, RepositoryPath>> filePathMap = uploadDto.getPathMap();
@@ -772,6 +774,44 @@ public class PromotionUtil {
         }).collect(Collectors.toList());
     }
 
+    public void artifactSliceUploadV2(PromotionNodeOptionDto uploadDto, String targetUrl, String storageId, String repositoryId, String syncNo) {
+        targetUrl = StringUtils.chomp(targetUrl, "/");
+        final Map<String, Map<String, RepositoryPath>> filePathMap = uploadDto.getPathMap();
+        final long sliceByteSize = Optional.ofNullable(configurationManagementService.getConfiguration().getSliceMbSize()).orElse(0L) * (1024 * 1024);
+        final List<PromotionUtil.ArtifactSliceUploadHttpEntityBuilder> artifactSliceUploadHttpEntityList = this.getArtifactSliceUploadHttpEntityList(filePathMap, storageId, repositoryId, sliceByteSize);
+
+        // 记录制品从记录
+        String finalTargetUrl = targetUrl;
+        artifactSliceUploadHttpEntityList.stream().forEach(e -> {
+            final ArtifactSyncSlaveRecord artifactSyncSlaveRecord = new ArtifactSyncSlaveRecord();
+            artifactSyncSlaveRecord.setSourcePath(e.getPath());
+            artifactSyncSlaveRecord.setTargetPath(String.format("%s/%s/%s/%s-chunk%s?startLength=%s&chunkSize=%s&mergeId=%s", finalTargetUrl, e.getStorageId(), e.getRepositoryId(), e.getPath(), e.getChunkIndex(), e.getStartLength(), e.getChunkSize(), e.getMergeId()));
+            artifactSyncSlaveRecord.setSyncNo(syncNo);
+            artifactSyncSlaveRecord.setSyncModel(ArtifactSyncRecordSyncModelEnum.PUSH.getVal());
+            artifactSyncSlaveRecord.setStatus(ArtifactSyncRecordStatusEnum.IN_SYNC.getVal());
+//            artifactSyncSlaveRecord.setCreateBy(userName);
+            artifactSyncSlaveRecord.setCreateTime(new Date());
+
+            artifactSyncSlaveRecordMapper.insert(artifactSyncSlaveRecord);
+            e.setChunkArtifactRecordId(artifactSyncSlaveRecord.getId());
+        });
+        final String targetHost = UrlUtils.getHost(targetUrl);
+        final Integer targetPort = UrlUtils.getPort(targetUrl);
+        String targetHostName = String.format("%s:%s", targetHost, targetPort);
+        for (ArtifactSliceUploadHttpEntityBuilder builder : artifactSliceUploadHttpEntityList) {
+            ArtifactSliceUploadReq artifactSliceUploadReq = builder.buildV3();
+
+            try {
+                WSMessageResponse wsMessageResponse = folibWsRunManageV2.sendRequest(targetHostName, new WSMessageRequest(Command.UPLOAD, artifactSliceUploadReq));
+                log.info("wsMessageResponse:{}", wsMessageResponse.toString());
+            } catch (InterruptedException | ExecutionException | TimeoutException e) {
+                log.error("upload exception", e);
+            }
+
+            // 更新记录状态
+            artifactSyncSlaveRecordMapper.updateRecordStatus(builder.getChunkArtifactRecordId(), true ? ArtifactSyncRecordStatusEnum.SUCCESS.getVal() : ArtifactSyncRecordStatusEnum.FAILED.getVal(), new Date(), "pyq-failedReason");
+        }
+    }
     private List<ArtifactSliceUploadHttpEntityBuilder> getArtifactSliceUploadHttpEntityList(Map<String, Map<String, RepositoryPath>> filePathMap, String storageId, String repositoryId, long chunkSize) {
         return filePathMap.values().stream().map(m -> {
             return m.entrySet().stream().map(entry -> {

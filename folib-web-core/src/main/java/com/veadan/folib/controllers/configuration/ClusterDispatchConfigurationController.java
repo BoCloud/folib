@@ -20,12 +20,7 @@ import com.veadan.folib.ws.server.Command;
 import com.veadan.folib.ws.server.WSMessageRequest;
 import com.veadan.folib.ws.server.handler.command.FolibWsServerDeleteNodeInfoCommand;
 import com.veadan.folib.ws.server.handler.command.FolibWsServerSaveNodeInfoCommand;
-import com.veadan.folib.ws.server.manage.FolibWsServerRunManage;
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
-import io.swagger.annotations.ApiParam;
-import io.swagger.annotations.ApiResponse;
-import io.swagger.annotations.ApiResponses;
+import io.swagger.annotations.*;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.convert.ConversionService;
@@ -38,12 +33,12 @@ import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 
 import javax.websocket.DeploymentException;
+import javax.websocket.Session;
 import java.io.IOException;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Collection;
 import java.util.Map;
-import java.util.Objects;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeoutException;
 

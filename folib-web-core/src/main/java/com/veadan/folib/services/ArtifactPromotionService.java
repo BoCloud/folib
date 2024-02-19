@@ -30,6 +30,7 @@ public interface ArtifactPromotionService {
 
     ResponseEntity move(ArtifactPromotion artifactPromotion);
 
+    @Deprecated
     ResponseEntity<String> nodeOption(PromotionNodeOption promotionNodeOption, HttpServletRequest request);
     ResponseEntity<String> nodeOptionV2(PromotionNodeOption promotionNodeOption, HttpServletRequest request);
 
