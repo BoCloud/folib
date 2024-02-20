@@ -4,6 +4,7 @@ import com.hazelcast.core.HazelcastInstance;
 import com.veadan.folib.artifact.coordinates.ArtifactCoordinates;
 import com.veadan.folib.cloud.storage.s3fs.util.UriUtils;
 import com.veadan.folib.constant.GlobalConstants;
+import com.veadan.folib.enums.ProductTypeEnum;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.slf4j.Logger;
@@ -69,6 +70,13 @@ public class RepositoryPathLock {
     private String getLockName(RepositoryPath repositoryPath) throws IOException {
         URI uri = getURI(repositoryPath);
         String lockName = uri.toString();
+        if (ProductTypeEnum.Docker.getFoLibraryName().equals(repositoryPath.getRepository().getLayout())) {
+            //docker布局
+            final String artifactPath = RepositoryFiles.relativizePath(repositoryPath);
+            if (GlobalConstants.DOCKER_LAYER_DIR_NAME_LIST.stream().anyMatch(artifactPath::startsWith)) {
+                lockName = artifactPath;
+            }
+        }
         return String.format("%s:%s:%s", repositoryPath.getStorageId(), repositoryPath.getRepositoryId(), lockName);
     }
 
