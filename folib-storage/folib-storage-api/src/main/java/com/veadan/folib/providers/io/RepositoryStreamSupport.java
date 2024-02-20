@@ -323,7 +323,6 @@ public class RepositoryStreamSupport {
     private void unLock() {
         Boolean locked = ctx.getLocked();
         if (Boolean.TRUE.equals(locked)) {
-            logger.debug("Current ThreadName [{}] lockKey [{}] unlock", Thread.currentThread().getName(), ctx.getPath());
             repositoryPathLock.unLock((RepositoryPath) ctx.getPath());
         }
     }
