@@ -40,9 +40,7 @@ import com.veadan.folib.wrapper.BufferedInputStreamWrapper;
 import com.veadan.folib.ws.client.handler.command.FolibWsClientArtifactPullCommand;
 import com.veadan.folib.ws.common.FolibWsAction;
 import com.veadan.folib.ws.common.FolibWsRunManageV2;
-import com.veadan.folib.ws.server.Command;
-import com.veadan.folib.ws.server.WSMessageRequest;
-import com.veadan.folib.ws.server.WSMessageResponse;
+import com.veadan.folib.ws.server.*;
 import com.veadan.folib.ws.server.manage.FolibWsServerRunManage;
 import lombok.Data;
 import lombok.experimental.Accessors;
@@ -152,7 +150,10 @@ public class PromotionUtil {
     @Autowired
     @Lazy
     private FolibWsRunManageV2 folibWsRunManageV2;
-    private static final long MAX_SLICE_BYTE_SIZE = 1024L * 1024L * 1024L * 50L;//50MB
+    @Autowired
+    @Lazy
+    private PromotionTaskQueue promotionTaskQueue;
+    private static final long MAX_SLICE_BYTE_SIZE = 1024L * 1024L * 100L;//100MB
 
     @Async("asyncCopyThreadPoolTaskExecutor")
     public void executeCopy(RepositoryPath path, Repository srcRepository, Repository targetRepository) {
@@ -164,7 +165,7 @@ public class PromotionUtil {
         }
     }
 
-    @Async("asyncThreadPoolTaskExecutor")
+    //@Async("asyncThreadPoolTaskExecutor")
     public void executeHandleDispatch(ArtifactDispatch artifactDispatch) {
         // 设置上下文字段
         ThreadLocalUtil.set(ThreadLocalContextFieldNameEnum.ARTIFACT_DISPATCH_SYNC_NO.getFieldName(), artifactDispatch.getSyncNo());
@@ -190,80 +191,71 @@ public class PromotionUtil {
 
     public void handlerDispatch(Map<String, ClusterDispatchNodeDto> map, ArtifactDispatch artifactDispatch,
                                 TargetDispatchRepositoryDto targetDispatchRepositoryDto) {
-        Response response = null;
-        try {
-            String artifactPath = artifactDispatch.getPath();
-            String srcRepositoryId = artifactDispatch.getSrcRepositoryId();
-            String srcStorageId = artifactDispatch.getSrcStorageId();
-            String dispatchClusterName = targetDispatchRepositoryDto.getDispatchClusterEnName();
-            String targetStorageId = targetDispatchRepositoryDto.getTargetStorageId();
-            String targetRepositoryId = targetDispatchRepositoryDto.getTargetRepositoryId();
-            String type = artifactDispatch.getType();
-            String layout = artifactDispatch.getLayout();
-            String policy = artifactDispatch.getPolicy();
-            Boolean recordStatus = artifactDispatch.getRecordStatus();
+        String artifactPath = artifactDispatch.getPath();
+        String srcRepositoryId = artifactDispatch.getSrcRepositoryId();
+        String srcStorageId = artifactDispatch.getSrcStorageId();
+        String dispatchClusterName = targetDispatchRepositoryDto.getDispatchClusterEnName();
+        String targetStorageId = targetDispatchRepositoryDto.getTargetStorageId();
+        String targetRepositoryId = targetDispatchRepositoryDto.getTargetRepositoryId();
+        String type = artifactDispatch.getType();
+        String layout = artifactDispatch.getLayout();
+        String policy = artifactDispatch.getPolicy();
+        Boolean recordStatus = artifactDispatch.getRecordStatus();
 
-            // 因三级联动插件原因 全选一级 或者二级 会得到 存储空间或者仓库为空的情况 ，如果仓库为空则需要再查一遍分发集群仓库信息。
-            if (StringUtils.isBlank(dispatchClusterName)) {
-                log.error("分发集群名不为空!");
-                return;
+        // 因三级联动插件原因 全选一级 或者二级 会得到 存储空间或者仓库为空的情况 ，如果仓库为空则需要再查一遍分发集群仓库信息。
+        if (StringUtils.isBlank(dispatchClusterName)) {
+            log.error("分发集群名不为空!");
+            return;
+        }
+        ClusterDispatchNodeDto dispatchNodeDto = map.get(dispatchClusterName);
+        if (null == dispatchNodeDto) {
+            log.error("{} 分发配置不存在", dispatchClusterName);
+            return;
+        }
+        if (StringUtils.isBlank(targetStorageId) || StringUtils.isBlank(targetRepositoryId)) {
+            Map<String, ClusterDispatchNodeDto> dispatchMap = configurationManagementService.
+                    getMutableConfigurationClone().getClusterDispatchNode();
+            ClusterDispatchNodeDto clusterDispatchNodeDto = dispatchMap.get(dispatchClusterName);
+            ArtifactDispatchRepositoryDto dispatchRepositoryDto = ArtifactDispatchRepositoryDto.builder()
+                    .type(type)
+                    .layout(layout)
+                    .dispatchEnName(dispatchClusterName)
+                    .policy(policy).build();
+
+            log.info(" 请求分发获取仓库信息 {}", JSONUtil.toJsonStr(dispatchRepositoryDto));
+
+            String targetHostName = folibWsRunManageV2.getTargetHostName(clusterDispatchNodeDto);
+            WSMessageRequest wsMessageRequest = new WSMessageRequest(Command.STORAGES_REPOSITORY_TREE, dispatchRepositoryDto);
+            WSMessageResponse messageResponse = null;
+            try {
+                messageResponse = folibWsRunManageV2.sendRequest(targetHostName, wsMessageRequest);
+            } catch (InterruptedException | ExecutionException | TimeoutException e) {
+                throw new RuntimeException(e);
             }
-            ClusterDispatchNodeDto dispatchNodeDto = map.get(dispatchClusterName);
-            if (null == dispatchNodeDto) {
-                log.error("{} 分发配置不存在", dispatchClusterName);
-                return;
-            }
-            if (StringUtils.isBlank(targetStorageId) || StringUtils.isBlank(targetRepositoryId)) {
-                Map<String, ClusterDispatchNodeDto> dispatchMap = configurationManagementService.
-                        getMutableConfigurationClone().getClusterDispatchNode();
-                ClusterDispatchNodeDto clusterDispatchNodeDto = dispatchMap.get(dispatchClusterName);
-                ArtifactDispatchRepositoryDto dispatchRepositoryDto = ArtifactDispatchRepositoryDto.builder()
-                        .type(type)
-                        .layout(layout)
-                        .dispatchEnName(dispatchClusterName)
-                        .policy(policy).build();
+            DispatchStorageTree dispatchStorageTree = (DispatchStorageTree) messageResponse.getDate();
 
-                log.info(" 请求分发获取仓库信息 {}", JSONUtil.toJsonStr(dispatchRepositoryDto));
-
-                String targetHostName = folibWsRunManageV2.getTargetHostName(clusterDispatchNodeDto);
-                WSMessageRequest wsMessageRequest = new WSMessageRequest(Command.STORAGES_REPOSITORY_TREE, dispatchRepositoryDto);
-                WSMessageResponse messageResponse = null;
-                try {
-                    messageResponse = folibWsRunManageV2.sendRequest(targetHostName, wsMessageRequest);
-                } catch (InterruptedException | ExecutionException | TimeoutException e) {
-                    throw new RuntimeException(e);
+            List<StorageTreeForm> storageTreeForms = dispatchStorageTree.getList();
+            // 选存储空间下的全部仓库（同类型 同策略 同布局）
+            for (StorageTreeForm storageTreeForm : storageTreeForms) {
+                List<StorageTreeForm> storages = storageTreeForm.getChildren();
+                if (CollectionUtil.isEmpty(storages)) {
+                    continue;
                 }
-                DispatchStorageTree dispatchStorageTree = (DispatchStorageTree) messageResponse.getDate();
-
-                List<StorageTreeForm> storageTreeForms = dispatchStorageTree.getList();
-                // 选存储空间下的全部仓库（同类型 同策略 同布局）
-                for (StorageTreeForm storageTreeForm : storageTreeForms) {
-                    List<StorageTreeForm> storages = storageTreeForm.getChildren();
-                    if (CollectionUtil.isEmpty(storages)) {
+                for (StorageTreeForm storage : storages) {
+                    targetStorageId = storage.getName();
+                    List<StorageTreeForm> repos = storage.getChildren();
+                    if (CollectionUtil.isEmpty(repos)) {
                         continue;
                     }
-                    for (StorageTreeForm storage : storages) {
-                        targetStorageId = storage.getName();
-                        List<StorageTreeForm> repos = storage.getChildren();
-                        if (CollectionUtil.isEmpty(repos)) {
-                            continue;
-                        }
-                        for (StorageTreeForm repo : repos) {
-                            String tempRepoId = repo.getName();
-                            executeDispatchV2(artifactPath, srcRepositoryId, srcStorageId, targetStorageId, tempRepoId, dispatchNodeDto, recordStatus);
-                        }
-                        break;
+                    for (StorageTreeForm repo : repos) {
+                        String tempRepoId = repo.getName();
+                        executeDispatchV2(artifactPath, srcRepositoryId, srcStorageId, targetStorageId, tempRepoId, dispatchNodeDto, recordStatus);
                     }
+                    break;
                 }
-            } else {
-                executeDispatchV2(artifactPath, srcRepositoryId, srcStorageId, targetStorageId, targetRepositoryId, dispatchNodeDto, recordStatus);
             }
-        } catch (Exception e) {
-            log.error("分发错误： {}", ExceptionUtils.getStackTrace(e));
-        } finally {
-            if (Objects.nonNull(response)) {
-                response.close();
-            }
+        } else {
+            executeDispatchV2(artifactPath, srcRepositoryId, srcStorageId, targetStorageId, targetRepositoryId, dispatchNodeDto, recordStatus);
         }
     }
 
@@ -357,7 +349,6 @@ public class PromotionUtil {
         }
     }
   private void executeDispatchV2(String artifactPath, String srcRepositoryId, String srcStorageId, String targetStorageId, String targetRepositoryId, ClusterDispatchNodeDto dispatchNodeDto, Boolean recordStatus) {
-        Response response = null;
         try {
             StringBuilder strBuilder = new StringBuilder();
             String dispatchNodeHost = dispatchNodeDto.getClusterNodeHost();
@@ -397,19 +388,7 @@ public class PromotionUtil {
             final String nodeHost = UrlUtils.getHost(clusterNodeHost);
             final Integer nodePort = UrlUtils.getPort(clusterNodeHost);
             final String nodeName = String.format("%s:%s", nodeHost, nodePort);
-
-
-            // 异步制品切片上传
-            asyncThreadPoolTaskExecutor.submit(() -> {
-                try {
-
-                    this.artifactSliceUploadV2(uploadDto, StringUtils.chomp(dispatchNodeHost, "/"), uploadDto.getStorageId(), uploadDto.getRepositoryId(), syncNo);
-                } catch (Exception e) {
-                    log.error("异步制品切片上传失败", e);
-                }
-            });
-
-
+            this.artifactSliceUploadV3(uploadDto, StringUtils.chomp(dispatchNodeHost, "/"), uploadDto.getStorageId(), uploadDto.getRepositoryId(), syncNo);
             if (Boolean.TRUE.equals(recordStatus)) {
                 artifactComponent.handlerArtifactPromotion(dispatchNodeDto.getClusterEnName(), srcStorageId, srcRepositoryId, artifactPath, PromotionStatusEnum.SUCCESS.getStatus());
             }
@@ -423,9 +402,10 @@ public class PromotionUtil {
             log.error("分发 [{} {} {} {} {}] 失败 {} ",
                     dispatchNodeDto.getDispatchType(), dispatchNodeDto.getClusterEnName(),
                     targetStorageId, targetRepositoryId, artifactPath, ExceptionUtils.getStackTrace(e));
-        } finally {
-            if (Objects.nonNull(response)) {
-                response.close();
+            if (e instanceof RuntimeException) {
+                throw (RuntimeException) e;
+            } else {
+                throw new RuntimeException(e);
             }
         }
     }
@@ -774,7 +754,6 @@ public class PromotionUtil {
             return res;
         }).collect(Collectors.toList());
     }
-
     public void artifactSliceUploadV2(PromotionNodeOptionDto uploadDto, String targetUrl, String storageId, String repositoryId, String syncNo) {
         targetUrl = StringUtils.chomp(targetUrl, "/");
         final Map<String, Map<String, RepositoryPath>> filePathMap = uploadDto.getPathMap();
@@ -812,6 +791,50 @@ public class PromotionUtil {
             // 更新记录状态
             artifactSyncSlaveRecordMapper.updateRecordStatus(builder.getChunkArtifactRecordId(), true ? ArtifactSyncRecordStatusEnum.SUCCESS.getVal() : ArtifactSyncRecordStatusEnum.FAILED.getVal(), new Date(), "pyq-failedReason");
         }
+    }
+    public void artifactSliceUploadV3(PromotionNodeOptionDto uploadDto, String targetUrl, String storageId, String repositoryId, String syncNo) {
+        targetUrl = StringUtils.chomp(targetUrl, "/");
+
+        String targetHostName = folibWsRunManageV2.getTargetHostName(targetUrl);
+        TaskQueueManager taskQueueManager = promotionTaskQueue.getTaskQueueManager(targetHostName);
+        String finalTargetUrl1 = targetUrl;
+
+        taskQueueManager.submitTask(java.util.UUID.randomUUID().toString(), retryTask -> {
+            final Map<String, Map<String, RepositoryPath>> filePathMap = uploadDto.getPathMap();
+            final long sliceByteSize = Optional.ofNullable(configurationManagementService.getConfiguration().getSliceMbSize()).orElse(0L) * (1024 * 1024);
+            final List<PromotionUtil.ArtifactSliceUploadHttpEntityBuilder> artifactSliceUploadHttpEntityList = this.getArtifactSliceUploadHttpEntityList(filePathMap, storageId, repositoryId, sliceByteSize);
+
+            // 记录制品从记录
+            String finalTargetUrl = finalTargetUrl1;
+            artifactSliceUploadHttpEntityList.stream().forEach(e -> {
+                final ArtifactSyncSlaveRecord artifactSyncSlaveRecord = new ArtifactSyncSlaveRecord();
+                artifactSyncSlaveRecord.setSourcePath(e.getPath());
+                artifactSyncSlaveRecord.setTargetPath(String.format("%s/%s/%s/%s-chunk%s?startLength=%s&chunkSize=%s&mergeId=%s", finalTargetUrl, e.getStorageId(), e.getRepositoryId(), e.getPath(), e.getChunkIndex(), e.getStartLength(), e.getChunkSize(), e.getMergeId()));
+                artifactSyncSlaveRecord.setSyncNo(syncNo);
+                artifactSyncSlaveRecord.setSyncModel(ArtifactSyncRecordSyncModelEnum.PUSH.getVal());
+                artifactSyncSlaveRecord.setStatus(ArtifactSyncRecordStatusEnum.IN_SYNC.getVal());
+//            artifactSyncSlaveRecord.setCreateBy(userName);
+                artifactSyncSlaveRecord.setCreateTime(new Date());
+
+                artifactSyncSlaveRecordMapper.insert(artifactSyncSlaveRecord);
+                e.setChunkArtifactRecordId(artifactSyncSlaveRecord.getId());
+            });
+            int size = artifactSliceUploadHttpEntityList.size();
+            for (int i = 0; i < size; i++) {
+                ArtifactSliceUploadHttpEntityBuilder builder = artifactSliceUploadHttpEntityList.get(i);
+                ArtifactSliceUploadReq artifactSliceUploadReq = builder.buildV3();
+                try {
+                    log.info("WSMessageRequest upload slice {}/{} ,targetHostName:{} , path:{}", i + 1, size, targetHostName, artifactSliceUploadReq.getPath());
+                    WSMessageResponse wsMessageResponse = folibWsRunManageV2.sendRequest(targetHostName, new WSMessageRequest(Command.UPLOAD, artifactSliceUploadReq), 600);
+                    log.info("wsMessageResponse:{}", wsMessageResponse.toString());
+                } catch (InterruptedException | ExecutionException | TimeoutException e) {
+                    log.error("upload exception", e);
+                }
+
+                // 更新记录状态
+                artifactSyncSlaveRecordMapper.updateRecordStatus(builder.getChunkArtifactRecordId(), true ? ArtifactSyncRecordStatusEnum.SUCCESS.getVal() : ArtifactSyncRecordStatusEnum.FAILED.getVal(), new Date(), "pyq-failedReason");
+            }
+        });
     }
     private List<ArtifactSliceUploadHttpEntityBuilder> getArtifactSliceUploadHttpEntityList(Map<String, Map<String, RepositoryPath>> filePathMap, String storageId, String repositoryId, long chunkSize) {
         if (chunkSize <= 0 || chunkSize > MAX_SLICE_BYTE_SIZE) {

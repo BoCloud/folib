@@ -22,7 +22,10 @@ import com.veadan.folib.controllers.cluster.dto.SyncUnionRepositoryDto;
 import com.veadan.folib.dispatch.ClusterDispatchNodeDto;
 import com.veadan.folib.domain.*;
 import com.veadan.folib.dto.ArtifactDispatchRepositoryDto;
-import com.veadan.folib.enums.*;
+import com.veadan.folib.enums.ArtifactoryRepositoryTypeEnum;
+import com.veadan.folib.enums.NotifyScopesTypeEnum;
+import com.veadan.folib.enums.RepositoryScopeEnum;
+import com.veadan.folib.enums.StorageProviderEnum;
 import com.veadan.folib.event.repository.RepositoryEventListenerRegistry;
 import com.veadan.folib.forms.common.StorageTreeForm;
 import com.veadan.folib.forms.configuration.*;
@@ -85,8 +88,6 @@ import javax.ws.rs.core.Response;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.util.*;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeoutException;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -494,7 +495,6 @@ public class StoragesConfigurationController
                 getMutableConfigurationClone().getClusterDispatchNode();
         List<ClusterDispatchNodeDto> listDispatch =
                 map.values().stream().filter(x -> !x.getIsThisCluster()).collect(Collectors.toList());
-        Client client = clientPool.getRestClient();
         ArtifactDispatchRepositoryDto dispatchRepositoryDto = ArtifactDispatchRepositoryDto.builder()
                 .type(type)
                 .layout(layout)
@@ -510,8 +510,8 @@ public class StoragesConfigurationController
             WSMessageResponse messageResponse = null;
             try {
                 messageResponse =  folibWsRunManageV2.sendRequest(targetHostName, wsMessageRequest);
-            } catch (InterruptedException | ExecutionException | TimeoutException e) {
-                throw new RuntimeException(e);
+            } catch (Exception e) {
+                logger.warn("sendRequest fail,wsMessageRequest:{}",wsMessageRequest,e);
             }
             DispatchStorageTree dispatchStorageTree = (DispatchStorageTree) messageResponse.getDate();
             repoList.addAll(dispatchStorageTree.getList());

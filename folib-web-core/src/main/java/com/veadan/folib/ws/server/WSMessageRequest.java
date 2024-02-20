@@ -28,4 +28,12 @@ public class WSMessageRequest implements WSMessage {
     public WSMessageResponse buildResponse(Object responseData) {
         return new WSMessageResponse(id, command, responseData);
     }
+
+    @Override
+    public String toString() {
+        return "WSMessageRequest{" +
+                "id='" + id + '\'' +
+                ", command=" + command +
+                '}';
+    }
 }

@@ -83,9 +83,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.FutureTask;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -310,7 +308,7 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
 
             // 异步制品切片上传
             asyncThreadPoolTaskExecutor.submit(() -> {
-                promotionUtil.artifactSliceUploadV2(uploadDto, targetBaseUrl, targetStorageId, targetRepositoryId, syncNo);
+                promotionUtil.artifactSliceUploadV3(uploadDto, targetBaseUrl, targetStorageId, targetRepositoryId, syncNo);
                 // 更新记录结果
             });
         } catch (Exception e) {
@@ -727,8 +725,7 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
         artifactSyncRecordMapper.insert(artifactSyncRecord);
         
         try {
-            asyncThreadPoolTaskExecutor.execute(() ->
-            { // 异步执行制品晋级
+              // 异步执行制品晋级
                 final ResponseEntity<String> re = this.artifactDispatch(artifactDispatch);
 
                 // 更新同步的逻辑状态等信息，由于制品分发涉及多个制品，即成功状态是所有支配完成时更新
@@ -751,8 +748,8 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
                 artifactSyncRecordMapper.updateByPrimaryKey(artifactSyncRecord
                         .setUpdateTime(new Date())
                         .setUpdateBy(userName));
-            });
         } catch (Exception e) {
+            log.error("artifactDispatch exception", e);
             artifactSyncRecord.setStatus(ArtifactSyncRecordStatusEnum.FAILED.getVal());
             artifactSyncRecord.setFailedReason(e.getMessage());
 
@@ -760,6 +757,10 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
             artifactSyncRecordMapper.updateByPrimaryKey(artifactSyncRecord
                     .setUpdateTime(new Date())
                     .setUpdateBy(userName));
+
+            if (e instanceof RejectedExecutionException) {
+                throw new RuntimeException("The promotion queue is full , info:" + e.getMessage());
+            }
         }
 
         return ResponseEntity.ok(syncNo);

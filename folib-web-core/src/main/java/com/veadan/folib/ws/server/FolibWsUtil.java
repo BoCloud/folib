@@ -89,7 +89,6 @@ public class FolibWsUtil {
     }
 
     private static final ConcurrentHashMap<Session, ByteBuffer> messageBufferMap = new ConcurrentHashMap<>();
-    private Map<String, ByteBuffer> completeMessages = new ConcurrentHashMap<>();
     private Map<Session, Map<String, ByteBuffer>> sessionMessageBufferMap = new ConcurrentHashMap<>();
 
     public void onMessageV4(ByteBuffer message, Session session) {
@@ -99,6 +98,10 @@ public class FolibWsUtil {
         }
         String messageId = extractMessageId(message);
         boolean isLast = extractLastFlag(message);
+        /**
+         * 当一个messageId一直没收到isLast标记，之前的缓存不会释放，导致内存泄露
+         * 但是一般不会出现，因为一般是session连接强制被中断导致收不到isLast标记，而session一旦中断，就会释放引用，回收对象
+         */
         log.info("onMessageV3 messageId:{},isLast:{}", messageId, isLast);
         ByteBuffer completeMessage = sessionMessageBufferMap.computeIfAbsent(session, k -> new ConcurrentHashMap<>())
                 .compute(messageId, (id, existingBuffer) -> {

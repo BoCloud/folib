@@ -21,7 +21,10 @@ import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URL;
 import java.nio.ByteBuffer;
-import java.util.*;
+import java.util.Collection;
+import java.util.Map;
+import java.util.Optional;
+import java.util.UUID;
 import java.util.concurrent.*;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.stream.Collectors;
@@ -38,7 +41,6 @@ public class FolibWsRunManageV2 {
     private Map<Session, Long> sessionIdleMap = new ConcurrentHashMap<>();//
     private ConcurrentHashMap<String, CompletableFuture<WSMessageResponse>> REQUEST_FUTURES = new ConcurrentHashMap<>();
 
-
     @Inject
     protected ConfigurationManager configurationManager;
     @Autowired
@@ -46,6 +48,10 @@ public class FolibWsRunManageV2 {
 
     public String getTargetHostName(ClusterDispatchNodeDto nodeInfo) {
         String clusterNodeHost = nodeInfo.getClusterNodeHost();
+        return getTargetHostName(clusterNodeHost);
+    }
+
+    public String getTargetHostName(String clusterNodeHost) {
         URL destUrl = null;
         try {
             destUrl = new URL(clusterNodeHost);
@@ -56,6 +62,7 @@ public class FolibWsRunManageV2 {
         Integer destPort = UrlUtils.getPort(clusterNodeHost);
         return String.format("%s:%s", destHost, destPort);
     }
+
 
     @Scheduled(cron = "0/5 * * * * ?")
     public void Scheduled() {
@@ -82,7 +89,7 @@ public class FolibWsRunManageV2 {
                     final String originNodeName = String.format("%s:%s", originHost, originPort);
                     final String destUri = String.format("/wsv2/folib/%s", originNodeName);
                     final boolean enableSSL = HttpUtil.isHttps(clusterNodeHost);
-               //     String uri = "ws://" + destHost + ":" + destPort + destUri;
+                    //     String uri = "ws://" + destHost + ":" + destPort + destUri;
                     String uri = String.format("%s://%s:%s", enableSSL ? "wss" : "ws", destHost, destPort + destUri);
 
                     String targetHostName = getTargetHostName(nodeInfo);
@@ -209,6 +216,10 @@ public class FolibWsRunManageV2 {
     }
 
     public WSMessageResponse sendRequest(String targetHostName, WSMessageRequest wsMessageRequest) throws ExecutionException, InterruptedException, TimeoutException {
+        return sendRequest(targetHostName, wsMessageRequest, 5);
+    }
+
+    public WSMessageResponse sendRequest(String targetHostName, WSMessageRequest wsMessageRequest, int timeout) throws ExecutionException, InterruptedException, TimeoutException {
         Session session = getSession(targetHostName);
 
         if (session == null) {
@@ -219,8 +230,13 @@ public class FolibWsRunManageV2 {
         }
         CompletableFuture<WSMessageResponse> future = new CompletableFuture<>();
         REQUEST_FUTURES.put(wsMessageRequest.getId(), future);
-        sendBinary(targetHostName, wsMessageRequest);
-        WSMessageResponse wsMessageResponse = future.get(600, TimeUnit.SECONDS);
+        try {
+            sendBinary(targetHostName, wsMessageRequest);
+        } catch (Exception e) {
+            log.error("sendBinary fail", e);
+            future.completeExceptionally(e);
+        }
+        WSMessageResponse wsMessageResponse = future.get(timeout, TimeUnit.SECONDS);
         REQUEST_FUTURES.remove(wsMessageRequest.getId());
         return wsMessageResponse;
     }
@@ -243,7 +259,8 @@ public class FolibWsRunManageV2 {
     private final Map<Session, Long> sessionLastSendTime = new ConcurrentHashMap<>();
     private final Map<Session, Long> sessionBytesSent = new ConcurrentHashMap<>();
     private final Map<Session, ReentrantLock> sessionLocks = new ConcurrentHashMap<>();
-    public void sendBinary(Session session, ByteBuffer data, long finalKbps) throws IOException {
+
+    private void sendBinary(Session session, ByteBuffer data, long finalKbps) throws IOException {
         String messageId = UUID.randomUUID().toString();
         //缺省填充
         if (finalKbps <= 0) {
@@ -309,7 +326,7 @@ public class FolibWsRunManageV2 {
                 }
                 // 准备读取
                 chunk.flip();
-               // session.getBasicRemote().sendBinary(chunk);
+                // session.getBasicRemote().sendBinary(chunk);
 
                 CompletableFuture<Void> completableFuture = new CompletableFuture<>();
 
