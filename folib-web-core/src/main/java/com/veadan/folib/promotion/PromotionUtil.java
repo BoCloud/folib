@@ -152,6 +152,7 @@ public class PromotionUtil {
     @Autowired
     @Lazy
     private FolibWsRunManageV2 folibWsRunManageV2;
+    private static final long MAX_SLICE_BYTE_SIZE = 1024L * 1024L * 1024L * 50L;//50MB
 
     @Async("asyncCopyThreadPoolTaskExecutor")
     public void executeCopy(RepositoryPath path, Repository srcRepository, Repository targetRepository) {
@@ -802,7 +803,7 @@ public class PromotionUtil {
             ArtifactSliceUploadReq artifactSliceUploadReq = builder.buildV3();
 
             try {
-                WSMessageResponse wsMessageResponse = folibWsRunManageV2.sendRequest(targetHostName, new WSMessageRequest(Command.UPLOAD, artifactSliceUploadReq));
+                WSMessageResponse wsMessageResponse = folibWsRunManageV2.sendRequest(targetHostName, new WSMessageRequest(Command.UPLOAD, artifactSliceUploadReq),600);
                 log.info("wsMessageResponse:{}", wsMessageResponse.toString());
             } catch (InterruptedException | ExecutionException | TimeoutException e) {
                 log.error("upload exception", e);
@@ -813,11 +814,16 @@ public class PromotionUtil {
         }
     }
     private List<ArtifactSliceUploadHttpEntityBuilder> getArtifactSliceUploadHttpEntityList(Map<String, Map<String, RepositoryPath>> filePathMap, String storageId, String repositoryId, long chunkSize) {
+        if (chunkSize <= 0 || chunkSize > MAX_SLICE_BYTE_SIZE) {
+            chunkSize = MAX_SLICE_BYTE_SIZE;
+            log.info("chunkSize {} exceeds the maximum value {} , use MAX_SLICE_BYTE_SIZE {}",chunkSize,MAX_SLICE_BYTE_SIZE,MAX_SLICE_BYTE_SIZE);
+        }
+        long finalChunkSize = chunkSize;
         return filePathMap.values().stream().map(m -> {
             return m.entrySet().stream().map(entry -> {
                 final String saveUri = entry.getKey();
                 final Path path = entry.getValue();
-                return this.getArtifactSliceUploadHttpEntityList(storageId, repositoryId, saveUri, path, chunkSize);
+                return this.getArtifactSliceUploadHttpEntityList(storageId, repositoryId, saveUri, path, finalChunkSize);
             }).flatMap(Collection::stream).collect(Collectors.toList());
         }).flatMap(Collection::stream).collect(Collectors.toList());
     } 
