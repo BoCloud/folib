@@ -45,6 +45,8 @@ public class FolibWsRunManageV2 {
     protected ConfigurationManager configurationManager;
     @Autowired
     private ConfigurationManagementService configurationManagementService;
+    @Autowired
+    private Executor asyncThreadPoolTaskExecutor;
 
     public String getTargetHostName(ClusterDispatchNodeDto nodeInfo) {
         String clusterNodeHost = nodeInfo.getClusterNodeHost();
@@ -71,56 +73,59 @@ public class FolibWsRunManageV2 {
         clusterDispatchNode.values().stream()
                 // 排除自动注册的节点信息
                 .filter(e -> null != e.getAutoRegister() && !e.getAutoRegister())
-                .forEach((nodeInfo) -> {
-                    final String clusterNodeHost = nodeInfo.getClusterNodeHost();
-                    final URL destUrl;
-                    final URL originUrl;
-                    try {
-                        destUrl = new URL(clusterNodeHost);
-                        originUrl = new URL(configurationManager.getConfiguration().getBaseUrl());
-                    } catch (MalformedURLException e) {
-                        throw new RuntimeException(e);
-                    }
-                    final String originHost = originUrl.getHost();
-                    final Integer originPort = UrlUtils.getPort(originUrl.toString());
-                    final String destHost = destUrl.getHost();
-                    final Integer destPort = UrlUtils.getPort(clusterNodeHost);
-///                        final String destNodeName = String.format("%s:%s", destHost, destPort);
-                    final String originNodeName = String.format("%s:%s", originHost, originPort);
-                    final String destUri = String.format("/wsv2/folib/%s", originNodeName);
-                    final boolean enableSSL = HttpUtil.isHttps(clusterNodeHost);
-                    //     String uri = "ws://" + destHost + ":" + destPort + destUri;
-                    String uri = String.format("%s://%s:%s", enableSSL ? "wss" : "ws", destHost, destPort + destUri);
-
-                    String targetHostName = getTargetHostName(nodeInfo);
-                    Session session1 = FOLIB_WS_RUN_MAP.get(targetHostName);
-                    if (!(session1 != null && session1.isOpen())) {
-                        try {
-                            connectToServer(targetHostName, uri);
-                        } catch (DeploymentException | IOException e) {
-                            log.error("connectToServer fail , retry...", e);
-                        }
-                    } else {
-                        Long l = sessionIdleMap.get(session1);
-                        if (l != null) {
-                            long idleTime = System.currentTimeMillis() - l;
-                            if (idleTime < 1000 * 60) {
-                                return;
-                            }
-                            log.info("send ws HEARD_BEAT {}", targetHostName);
-                            try {
-                                WSMessageResponse wsMessageResponse = sendRequest(targetHostName, new WSMessageRequest(Command.HEARD_BEAT));
-                            } catch (InterruptedException | ExecutionException | TimeoutException e) {
-                                try {
-                                    session1.close();
-                                } catch (IOException ex) {
-                                    log.error("close exception", e);
-                                }
-                                log.error("ping Exception", e);
-                            }
-                        }
-                    }
+                .forEach(clusterDispatchNodeDto -> {
+                    asyncThreadPoolTaskExecutor.execute(() -> reconnectAndHeartbeat(clusterDispatchNodeDto));
                 });
+    }
+    public void reconnectAndHeartbeat(ClusterDispatchNodeDto nodeInfo){
+        final String clusterNodeHost = nodeInfo.getClusterNodeHost();
+        final URL destUrl;
+        final URL originUrl;
+        try {
+            destUrl = new URL(clusterNodeHost);
+            originUrl = new URL(configurationManager.getConfiguration().getBaseUrl());
+        } catch (MalformedURLException e) {
+            throw new RuntimeException(e);
+        }
+        final String originHost = originUrl.getHost();
+        final Integer originPort = UrlUtils.getPort(originUrl.toString());
+        final String destHost = destUrl.getHost();
+        final Integer destPort = UrlUtils.getPort(clusterNodeHost);
+///                        final String destNodeName = String.format("%s:%s", destHost, destPort);
+        final String originNodeName = String.format("%s:%s", originHost, originPort);
+        final String destUri = String.format("/wsv2/folib/%s", originNodeName);
+        final boolean enableSSL = HttpUtil.isHttps(clusterNodeHost);
+        //     String uri = "ws://" + destHost + ":" + destPort + destUri;
+        String uri = String.format("%s://%s:%s", enableSSL ? "wss" : "ws", destHost, destPort + destUri);
+
+        String targetHostName = getTargetHostName(nodeInfo);
+        Session session1 = FOLIB_WS_RUN_MAP.get(targetHostName);
+        if (!(session1 != null && session1.isOpen())) {
+            try {
+                connectToServer(targetHostName, uri);
+            } catch (DeploymentException | IOException e) {
+                log.error("connectToServer fail , retry...", e);
+            }
+        } else {
+            Long l = sessionIdleMap.get(session1);
+            if (l != null) {
+                long idleTime = System.currentTimeMillis() - l;
+                if (idleTime < 1000 * 20) {
+                    return;
+                }
+                log.info("send ws HEARD_BEAT {}", targetHostName);
+                try {
+                    WSMessageResponse wsMessageResponse = sendRequest(targetHostName, new WSMessageRequest(Command.HEARD_BEAT));
+                } catch (InterruptedException | ExecutionException | TimeoutException e) {
+                    try {
+                        session1.close();
+                    } catch (IOException ex) {
+                        log.error("close exception", e);
+                    }
+                    log.error("ping Exception", e);
+                }
+            }
+        }
     }
 
 //    public void startHeartbeat(String targetHostName) {
