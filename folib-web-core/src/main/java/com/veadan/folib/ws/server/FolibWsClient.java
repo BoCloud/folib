@@ -25,13 +25,12 @@ public class FolibWsClient {
 
     @OnOpen
     public void onOpen(Session session) {
-
         folibWsUtil.onOpen(targetHostName, session);
     }
 
     @OnClose
-    public void onClose(Session session) {
-        folibWsUtil.onClose(targetHostName, session);
+    public void onClose(Session session, CloseReason closeReason) {
+        folibWsUtil.onClose(targetHostName, session, closeReason);
     }
 
     @OnMessage
@@ -41,7 +40,6 @@ public class FolibWsClient {
 
     @OnError
     public void onError(Session session, Throwable error) {
-        log.error("WebSocket(nodeName = {})发生错误，错误信息为: {} ", targetHostName, error.getMessage());
-        error.printStackTrace();
+        folibWsUtil.onError(targetHostName,session,error);
     }
 }

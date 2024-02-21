@@ -8,6 +8,7 @@ import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
+import javax.websocket.CloseReason;
 import javax.websocket.Session;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
@@ -31,6 +32,12 @@ public class FolibWsUtil {
     @Autowired
     private FolibWsRunManageV2 folibWsRunManageV2;
 
+    private static final ConcurrentHashMap<Session, ByteBuffer> messageBufferMap = new ConcurrentHashMap<>();
+    private static final Map<Session, Map<String, ByteBuffer>> sessionMessageBufferMap = new ConcurrentHashMap<>();
+    // 用于存储每个会话的消息片段
+    private static final ConcurrentHashMap<Session, List<ByteBuffer>> messageFragmentsMap = new ConcurrentHashMap<>();
+
+
     public void onOpen(String targetHostName, Session session) {
         session.setMaxBinaryMessageBufferSize(1024 * 1024 * 1000);
         session.setMaxTextMessageBufferSize(1024 * 1024 * 1000);
@@ -43,13 +50,16 @@ public class FolibWsUtil {
         }
     }
 
-    public void onClose(String nodeId, Session session) {
-        log.info("连接关闭成功，nodeId = {} session_id = {}", nodeId, session.getId());
+    public void onClose(String nodeId, Session session, CloseReason closeReason) {
+        log.info("连接关闭成功,nodeId:{} session_id:{} closeReason:{}", nodeId, session.getId(), closeReason.toString());
+    }
+
+    public void onError(String targetHostName, Session session, Throwable error) {
+        log.error("WebSocket(nodeName = {})发生错误 ", targetHostName, error);
     }
 
     @Deprecated
     public void onMessage(byte[] message, Session session) {
-
         Object msgObj = KryoSerializationUtil.deserialize(message);
         if (msgObj instanceof WSMessageResponse) {
             processWSMessageResponse((WSMessageResponse) msgObj, session);
@@ -59,9 +69,6 @@ public class FolibWsUtil {
             throw new RuntimeException("unknown type :" + msgObj.getClass());
         }
     }
-
-    // 用于存储每个会话的消息片段
-    private static final ConcurrentHashMap<Session, List<ByteBuffer>> messageFragmentsMap = new ConcurrentHashMap<>();
 
     private ByteBuffer mergeFragments(List<ByteBuffer> fragments) {
         // 计算总大小
@@ -87,9 +94,6 @@ public class FolibWsUtil {
             }
         }
     }
-
-    private static final ConcurrentHashMap<Session, ByteBuffer> messageBufferMap = new ConcurrentHashMap<>();
-    private Map<Session, Map<String, ByteBuffer>> sessionMessageBufferMap = new ConcurrentHashMap<>();
 
     public void onMessageV4(ByteBuffer message, Session session) {
         String protocol = extractFolibWSProtocol(message);
