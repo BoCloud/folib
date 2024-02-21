@@ -77,7 +77,8 @@ public class FolibWsRunManageV2 {
                     asyncThreadPoolTaskExecutor.execute(() -> reconnectAndHeartbeat(clusterDispatchNodeDto));
                 });
     }
-    public void reconnectAndHeartbeat(ClusterDispatchNodeDto nodeInfo){
+
+    public void reconnectAndHeartbeat(ClusterDispatchNodeDto nodeInfo) {
         final String clusterNodeHost = nodeInfo.getClusterNodeHost();
         final URL destUrl;
         final URL originUrl;
@@ -190,23 +191,6 @@ public class FolibWsRunManageV2 {
         return FOLIB_WS_RUN_MAP.get(targetHostName);
     }
 
-    private void sendBinary(String targetHostName, WSMessage wsMessageRequest) throws ExecutionException, InterruptedException, TimeoutException {
-        Session session = getSession(targetHostName);
-        if (session == null) {
-            throw new RuntimeException("not found session with targetHostName:" + targetHostName);
-        }
-        if (!session.isOpen()) {
-            throw new RuntimeException("session is closed , with targetHostName:" + targetHostName);
-        }
-        final long kbps = Optional.ofNullable(configurationManagementService.getConfiguration().getKbps()).orElse(0) * (1024L);
-
-        final Collection<ClusterDispatchNodeDto> clusterDispatchNodeDtos = configurationManagementService.getMutableConfigurationClone().getClusterDispatchNode().values();
-        final Map<String, Long> nodeKbpsMap = clusterDispatchNodeDtos.stream().collect(Collectors.toMap(e -> String.format("%s:%s", UrlUtils.getHost(e.getClusterNodeHost()), UrlUtils.getPort(e.getClusterNodeHost())), e -> null != e.getKbps() ? e.getKbps() * 1024L : 0L));
-        final long finalKbps = Optional.ofNullable(nodeKbpsMap.get(targetHostName)).filter(k -> k > 0).orElse(kbps);
-
-        sendBinary(session, wsMessageRequest, finalKbps);
-    }
-
     private void sendBinary(Session session, WSMessage wsMessage, long finalKbps) throws ExecutionException, InterruptedException, TimeoutException {
         ByteBuffer byteBuffer = ByteBuffer.wrap(KryoSerializationUtil.serialize(wsMessage));
         sessionIdleMap.put(session, System.currentTimeMillis());
@@ -233,10 +217,18 @@ public class FolibWsRunManageV2 {
         if (!session.isOpen()) {
             throw new RuntimeException("session is closed , with targetHostName:" + targetHostName);
         }
+
+        final long kbps = Optional.ofNullable(configurationManagementService.getConfiguration().getKbps()).orElse(0) * (1024L);
+
+        final Collection<ClusterDispatchNodeDto> clusterDispatchNodeDtos = configurationManagementService.getMutableConfigurationClone().getClusterDispatchNode().values();
+        final Map<String, Long> nodeKbpsMap = clusterDispatchNodeDtos.stream().collect(Collectors.toMap(e -> String.format("%s:%s", UrlUtils.getHost(e.getClusterNodeHost()), UrlUtils.getPort(e.getClusterNodeHost())), e -> null != e.getKbps() ? e.getKbps() * 1024L : 0L));
+        final long finalKbps = Optional.ofNullable(nodeKbpsMap.get(targetHostName)).filter(k -> k > 0).orElse(kbps);
+
         CompletableFuture<WSMessageResponse> future = new CompletableFuture<>();
+
         REQUEST_FUTURES.put(wsMessageRequest.getId(), future);
         try {
-            sendBinary(targetHostName, wsMessageRequest);
+            sendBinary(session, wsMessageRequest, finalKbps);
         } catch (Exception e) {
             log.error("sendBinary fail", e);
             future.completeExceptionally(e);
@@ -252,10 +244,6 @@ public class FolibWsRunManageV2 {
 
     public CompletableFuture<WSMessageResponse> getFuture(String requestId) {
         return REQUEST_FUTURES.get(requestId);
-    }
-
-    public CompletableFuture<WSMessageResponse> releaseFuture(String requestId) {
-        return REQUEST_FUTURES.remove(requestId);
     }
 
 

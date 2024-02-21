@@ -35,11 +35,11 @@ public class FolibWsClient {
 
     @OnMessage
     public void onMessage(ByteBuffer message, Session session) {
-        folibWsUtil.onMessageV4(message, session);
+        folibWsUtil.onMessageV4(targetHostName, message, session);
     }
 
     @OnError
     public void onError(Session session, Throwable error) {
-        folibWsUtil.onError(targetHostName,session,error);
+        folibWsUtil.onError(targetHostName, session, error);
     }
 }

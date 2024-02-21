@@ -21,6 +21,7 @@ import com.veadan.folib.enums.ArtifactSyncRecordSyncModelEnum;
 import com.veadan.folib.enums.PromotionStatusEnum;
 import com.veadan.folib.enums.ThreadLocalContextFieldNameEnum;
 import com.veadan.folib.forms.common.StorageTreeForm;
+import com.veadan.folib.mapper.ArtifactSyncRecordMapper;
 import com.veadan.folib.mapper.ArtifactSyncSlaveRecordMapper;
 import com.veadan.folib.model.request.ArtifactSliceUploadReq;
 import com.veadan.folib.providers.io.RepositoryFiles;
@@ -32,7 +33,6 @@ import com.veadan.folib.schema2.LayerManifest;
 import com.veadan.folib.service.ProxyRepositoryConnectionPoolConfigurationService;
 import com.veadan.folib.services.*;
 import com.veadan.folib.storage.repository.Repository;
-import com.veadan.folib.users.userdetails.SpringSecurityUser;
 import com.veadan.folib.util.RepositoryPathUtil;
 import com.veadan.folib.util.ThreadLocalUtil;
 import com.veadan.folib.utils.UrlUtils;
@@ -69,7 +69,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -148,11 +147,11 @@ public class PromotionUtil {
     @Lazy
     private DockerComponent dockerComponent;
     @Autowired
-    @Lazy
     private FolibWsRunManageV2 folibWsRunManageV2;
     @Autowired
-    @Lazy
     private PromotionTaskQueue promotionTaskQueue;
+    @Autowired
+    private ArtifactSyncRecordMapper artifactSyncRecordMapper;
     private static final long MAX_SLICE_BYTE_SIZE = 1024L * 1024L * 100L;//100MB
 
     @Async("asyncCopyThreadPoolTaskExecutor")
@@ -184,7 +183,6 @@ public class PromotionUtil {
             return;
         }
         for (TargetDispatchRepositoryDto targetDispatchRepositoryDto : targetRepositoryList) {
-            // 异步并发处理
             handlerDispatch(map, artifactDispatch, targetDispatchRepositoryDto);
         }
     }
@@ -279,8 +277,6 @@ public class PromotionUtil {
             String dispatchType = dispatchNodeDto.getDispatchType();
             PromotionNodeOption promotionNodeOption = null;
             final String syncNo = ThreadLocalUtil.get(ThreadLocalContextFieldNameEnum.ARTIFACT_DISPATCH_SYNC_NO.getFieldName(), String.class);
-            final SpringSecurityUser userDetails = (SpringSecurityUser) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-            final String userName = Optional.ofNullable(userDetails).map(SpringSecurityUser::getUsername).orElse(null);
 
             log.info("分发 [{}] 开始", dispatchType);
             if (dispatchType.equals("pull")) {
@@ -795,53 +791,67 @@ public class PromotionUtil {
         TaskQueueManager taskQueueManager = promotionTaskQueue.getTaskQueueManager(targetHostName);
         String finalTargetUrl1 = targetUrl;
 
-        taskQueueManager.submitTask(java.util.UUID.randomUUID().toString(), retryTask -> {
-            final Map<String, Map<String, RepositoryPath>> filePathMap = uploadDto.getPathMap();
-            final long sliceByteSize = Optional.ofNullable(configurationManagementService.getConfiguration().getSliceMbSize()).orElse(0L) * (1024 * 1024);
-            final List<PromotionUtil.ArtifactSliceUploadHttpEntityBuilder> artifactSliceUploadHttpEntityList = this.getArtifactSliceUploadHttpEntityList(filePathMap, storageId, repositoryId, sliceByteSize);
-
-            // 记录制品从记录
-            String finalTargetUrl = finalTargetUrl1;
-            artifactSliceUploadHttpEntityList.forEach(e -> {
-                final ArtifactSyncSlaveRecord artifactSyncSlaveRecord = new ArtifactSyncSlaveRecord();
-                artifactSyncSlaveRecord.setSourcePath(e.getPath());
-                artifactSyncSlaveRecord.setTargetPath(String.format("%s/%s/%s/%s-chunk%s?startLength=%s&chunkSize=%s&mergeId=%s", finalTargetUrl, e.getStorageId(), e.getRepositoryId(), e.getPath(), e.getChunkIndex(), e.getStartLength(), e.getChunkSize(), e.getMergeId()));
-                artifactSyncSlaveRecord.setSyncNo(syncNo);
-                artifactSyncSlaveRecord.setSyncModel(ArtifactSyncRecordSyncModelEnum.PUSH.getVal());
-                artifactSyncSlaveRecord.setStatus(ArtifactSyncRecordStatusEnum.IN_SYNC.getVal());
-//            artifactSyncSlaveRecord.setCreateBy(userName);
-                artifactSyncSlaveRecord.setCreateTime(new Date());
-
-                artifactSyncSlaveRecordMapper.insert(artifactSyncSlaveRecord);
-                e.setChunkArtifactRecordId(artifactSyncSlaveRecord.getId());
-            });
-            int size = artifactSliceUploadHttpEntityList.size();
-            //分片上传
-            for (int i = 0; i < size; i++) {
-                ArtifactSliceUploadHttpEntityBuilder builder = artifactSliceUploadHttpEntityList.get(i);
-                ArtifactSliceUploadReq artifactSliceUploadReq = builder.buildV3();
-                int finalI = i;
-                try {
-                    new RetryTask() {
-                        @Override
-                        public void exec(RetryTask retryTask) {
-                            try {
-                                log.info("WSMessageRequest upload slice {}/{} ,targetHostName:{} , path:{}", finalI + 1, size, targetHostName, artifactSliceUploadReq.getPath());
-                                WSMessageResponse wsMessageResponse = folibWsRunManageV2.sendRequest(targetHostName, new WSMessageRequest(Command.UPLOAD, artifactSliceUploadReq), 600);
-                                log.info("wsMessageResponse:{}", wsMessageResponse.toString());
-                            } catch (Exception e) {
-                                log.error("upload exception", e);
-                            }
-                        }
-                    }.call();
-                    artifactSyncSlaveRecordMapper.updateRecordStatus(builder.getChunkArtifactRecordId(), ArtifactSyncRecordStatusEnum.SUCCESS.getVal(), new Date(), "");
-                } catch (Exception e) {
-                    // 更新记录状态
-                    artifactSyncSlaveRecordMapper.updateRecordStatus(builder.getChunkArtifactRecordId(), ArtifactSyncRecordStatusEnum.FAILED.getVal(), new Date(), e.getMessage());
-                    throw new RuntimeException(e);
+        taskQueueManager.submitTask(java.util.UUID.randomUUID().toString(), () -> {
+            try {
+                doArtifactSliceUploadV3(uploadDto, storageId, repositoryId, syncNo, finalTargetUrl1, targetHostName);
+            } catch (Exception e) {
+                artifactSyncRecordMapper.updateStatusAndFailedReasonBySyncNo(ArtifactSyncRecordStatusEnum.FAILED.getVal(), e.getMessage(), syncNo, new Date());
+                if (e instanceof RuntimeException) {
+                    throw (RuntimeException) e;
                 }
+                throw new RuntimeException(e);
             }
+
         });
+    }
+
+    private void doArtifactSliceUploadV3(PromotionNodeOptionDto uploadDto, String storageId, String repositoryId, String syncNo, String finalTargetUrl1, String targetHostName) throws Exception {
+        final Map<String, Map<String, RepositoryPath>> filePathMap = uploadDto.getPathMap();
+        final long sliceByteSize = Optional.ofNullable(configurationManagementService.getConfiguration().getSliceMbSize()).orElse(0L) * (1024 * 1024);
+        final List<ArtifactSliceUploadHttpEntityBuilder> artifactSliceUploadHttpEntityList = this.getArtifactSliceUploadHttpEntityList(filePathMap, storageId, repositoryId, sliceByteSize);
+
+        // 记录制品从记录
+        String finalTargetUrl = finalTargetUrl1;
+        artifactSliceUploadHttpEntityList.forEach(e -> {
+            final ArtifactSyncSlaveRecord artifactSyncSlaveRecord = new ArtifactSyncSlaveRecord();
+            artifactSyncSlaveRecord.setSourcePath(e.getPath());
+            artifactSyncSlaveRecord.setTargetPath(String.format("%s/%s/%s/%s-chunk%s?startLength=%s&chunkSize=%s&mergeId=%s", finalTargetUrl, e.getStorageId(), e.getRepositoryId(), e.getPath(), e.getChunkIndex(), e.getStartLength(), e.getChunkSize(), e.getMergeId()));
+            artifactSyncSlaveRecord.setSyncNo(syncNo);
+            artifactSyncSlaveRecord.setSyncModel(ArtifactSyncRecordSyncModelEnum.PUSH.getVal());
+            artifactSyncSlaveRecord.setStatus(ArtifactSyncRecordStatusEnum.IN_SYNC.getVal());
+//            artifactSyncSlaveRecord.setCreateBy(userName);
+            artifactSyncSlaveRecord.setCreateTime(new Date());
+
+            artifactSyncSlaveRecordMapper.insert(artifactSyncSlaveRecord);
+            e.setChunkArtifactRecordId(artifactSyncSlaveRecord.getId());
+        });
+        int size = artifactSliceUploadHttpEntityList.size();
+        //分片上传
+        for (int i = 0; i < size; i++) {
+            ArtifactSliceUploadHttpEntityBuilder builder = artifactSliceUploadHttpEntityList.get(i);
+            ArtifactSliceUploadReq artifactSliceUploadReq = builder.buildV3();
+            int finalI = i;
+            try {
+                new RetryTask() {
+                    @Override
+                    public void exec(RetryTask retryTask) throws Exception{
+                        try {
+                            log.info("WSMessageRequest upload slice {}/{} ,targetHostName:{} , path:{}", finalI + 1, size, targetHostName, artifactSliceUploadReq.getPath());
+                            WSMessageResponse wsMessageResponse = folibWsRunManageV2.sendRequest(targetHostName, new WSMessageRequest(Command.UPLOAD, artifactSliceUploadReq), 600);
+                            log.info("wsMessageResponse:{}", wsMessageResponse.toString());
+                        } catch (Exception e) {
+                            log.error("upload exception", e);
+                            throw e;
+                        }
+                    }
+                }.call();
+                artifactSyncSlaveRecordMapper.updateRecordStatus(builder.getChunkArtifactRecordId(), ArtifactSyncRecordStatusEnum.SUCCESS.getVal(), new Date(), "");
+            } catch (Exception e) {
+                // 更新记录状态
+                artifactSyncSlaveRecordMapper.updateRecordStatus(builder.getChunkArtifactRecordId(), ArtifactSyncRecordStatusEnum.FAILED.getVal(), new Date(), e.getMessage());
+                throw e;
+            }
+        }
     }
 
     private List<ArtifactSliceUploadHttpEntityBuilder> getArtifactSliceUploadHttpEntityList(Map<String, Map<String, RepositoryPath>> filePathMap, String storageId, String repositoryId, long chunkSize) {

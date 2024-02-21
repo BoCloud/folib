@@ -5,7 +5,6 @@ import lombok.extern.slf4j.Slf4j;
 
 import java.util.List;
 import java.util.concurrent.*;
-import java.util.function.Consumer;
 
 /**
  * @author pengYongQiang
@@ -16,7 +15,7 @@ import java.util.function.Consumer;
 @Slf4j
 public class TaskQueueManager {
     private final ExecutorService executorService;
-    private final ConcurrentHashMap<String, Future<Void>> taskMap = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<String, Future<?>> taskMap = new ConcurrentHashMap<>();
     private final static int QUEUE_SIZE = 3;
 
     public TaskQueueManager(String threadNamePrefix) {
@@ -26,24 +25,18 @@ public class TaskQueueManager {
                 new LinkedBlockingQueue<Runnable>(QUEUE_SIZE), threadFactory, new ThreadPoolExecutor.AbortPolicy());
     }
 
-    public synchronized String submitTask(String taskId, Consumer<RetryTask> consumer) {
+    public synchronized String submitTask(String taskId, Runnable runnable) {
         if (taskMap.containsKey(taskId)) {
             throw new IllegalArgumentException("Task with ID " + taskId + " already submitted.");
         }
-        RetryTask retryTask = new RetryTask() {
-            @Override
-            public void exec(RetryTask retryTask) {
-                consumer.accept(retryTask);
-            }
-        };
-        Future<Void> future = executorService.submit(retryTask);
+        Future<?> future = executorService.submit(runnable);
         taskMap.put(taskId, future);
         log.info("Task " + taskId + " submitted.");
         return taskId;
     }
 
     public synchronized boolean cancelTask(String taskId) {
-        Future<Void> future = taskMap.get(taskId);
+        Future<?> future = taskMap.get(taskId);
         if (future != null) {
             boolean cancelled = future.cancel(true); // 尝试取消任务
             if (cancelled) {

@@ -45,5 +45,5 @@ public abstract class RetryTask implements Callable<Void> {
         return null;
     }
 
-    protected abstract void exec(RetryTask retryTask);
+    protected abstract void exec(RetryTask retryTask) throws Exception;
 }
