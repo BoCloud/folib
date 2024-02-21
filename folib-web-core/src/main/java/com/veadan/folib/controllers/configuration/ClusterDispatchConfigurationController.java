@@ -189,18 +189,19 @@ public class ClusterDispatchConfigurationController extends BaseConfigurationCon
     public ResponseEntity deleteClusterDispatch(
             @PathVariable String clusterEnName,
             @RequestHeader(HttpHeaders.ACCEPT) String accept) {
-        try {
+
             final ClusterDispatchNodeDto nodeDto = new ClusterDispatchNodeDto();
             final SyncClusterDispatchDto syncClusterDispatchDto =
                     new SyncClusterDispatchDto(nodeDto, SyncClusterDispatchEnum.DELETE);
 
             final ClusterDispatchNodeDto clusterDispatchNodeDto = configurationManagementService.getMutableConfigurationClone().getClusterDispatchNode().get(clusterEnName);
             if (clusterDispatchNodeDto==null){
-                return getFailedResponseEntity(HttpStatus.BAD_REQUEST, String.format("not found ClusterDispatchNode info with clusterEnName %s",clusterEnName), accept);
+                throw new RuntimeException(String.format("not found ClusterDispatchNode info with clusterEnName %s",clusterEnName));
             }
             if (clusterDispatchNodeDto.getAutoRegister() != null && clusterDispatchNodeDto.getAutoRegister()) {
-                return getFailedResponseEntity(HttpStatus.BAD_REQUEST, "please delete it at the registration node side", accept);
+                throw new UnsupportedOperationException("please delete it at the registration node side");
             }
+        try {
             nodeDto.setClusterEnName(clusterEnName);
             clusterDispatchManagementService.deleteClusterNode(nodeDto);
             // 向其他集群节点同步制品分发节点信息

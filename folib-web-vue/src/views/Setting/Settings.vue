@@ -2669,6 +2669,12 @@ export default {
         .then(res => {
           this.successMsg(this.$t('Setting.DeleteDistributeConfigSuccess'))
         })
+        .catch(err => {
+          this.$notification['error']({
+            message: err.response.data.error,
+            description: ''
+          })
+        })
         .finally(() => {
           this.getArtifactDispatchConfig()
         })
