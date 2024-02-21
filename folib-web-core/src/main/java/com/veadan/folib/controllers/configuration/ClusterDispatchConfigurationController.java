@@ -196,10 +196,10 @@ public class ClusterDispatchConfigurationController extends BaseConfigurationCon
 
             final ClusterDispatchNodeDto clusterDispatchNodeDto = configurationManagementService.getMutableConfigurationClone().getClusterDispatchNode().get(clusterEnName);
             if (clusterDispatchNodeDto==null){
-                throw new RuntimeException(String.format("not found ClusterDispatchNode info with clusterEnName %s",clusterEnName));
+                return getFailedResponseEntity(HttpStatus.BAD_REQUEST, String.format("not found ClusterDispatchNode info with clusterEnName %s",clusterEnName), accept);
             }
             if (clusterDispatchNodeDto.getAutoRegister() != null && clusterDispatchNodeDto.getAutoRegister()) {
-                throw new UnsupportedOperationException("please delete it at the registration node side");
+                return getFailedResponseEntity(HttpStatus.BAD_REQUEST, "please delete it at the registration node side", accept);
             }
             nodeDto.setClusterEnName(clusterEnName);
             clusterDispatchManagementService.deleteClusterNode(nodeDto);
