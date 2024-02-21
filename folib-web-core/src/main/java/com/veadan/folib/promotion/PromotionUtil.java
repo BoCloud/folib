@@ -29,11 +29,14 @@ import com.veadan.folib.providers.io.RepositoryFiles;
 import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.providers.io.RepositoryPathResolver;
 import com.veadan.folib.providers.layout.DockerLayoutProvider;
+import com.veadan.folib.providers.layout.LayoutFileSystemProvider;
 import com.veadan.folib.schema2.ImageManifest;
 import com.veadan.folib.schema2.LayerManifest;
 import com.veadan.folib.service.ProxyRepositoryConnectionPoolConfigurationService;
 import com.veadan.folib.services.*;
+import com.veadan.folib.storage.metadata.maven.ChecksumMetadataExpirationStrategy;
 import com.veadan.folib.storage.repository.Repository;
+import com.veadan.folib.util.MessageDigestUtils;
 import com.veadan.folib.util.RepositoryPathUtil;
 import com.veadan.folib.util.ThreadLocalUtil;
 import com.veadan.folib.utils.UrlUtils;
@@ -47,6 +50,7 @@ import lombok.Data;
 import lombok.experimental.Accessors;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.codec.digest.DigestUtils;
+import org.apache.commons.codec.digest.MessageDigestAlgorithms;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -798,7 +802,7 @@ public class PromotionUtil {
             try {
                 new RetryTask(promotionConfig.getRetryCount()) {
                     @Override
-                    public void exec(RetryTask retryTask) throws Exception{
+                    public void exec(RetryTask retryTask) throws Exception {
                         try {
                             log.info("WSMessageRequest upload slice {}/{} ,targetHostName:{} , path:{}", finalI + 1, size, targetHostName, artifactSliceUploadReq.getPath());
                             WSMessageResponse wsMessageResponse = folibWsRunManageV2.sendRequest(targetHostName, new WSMessageRequest(Command.UPLOAD, artifactSliceUploadReq), promotionConfig.getWsRequestTimoutOfArtifactUpload());
@@ -827,24 +831,35 @@ public class PromotionUtil {
         return filePathMap.values().stream().map(m -> {
             return m.entrySet().stream().map(entry -> {
                 final String saveUri = entry.getKey();
-                final Path path = entry.getValue();
+                final RepositoryPath path = entry.getValue();
                 return this.getArtifactSliceUploadHttpEntityList(storageId, repositoryId, saveUri, path, finalChunkSize);
             }).flatMap(Collection::stream).collect(Collectors.toList());
         }).flatMap(Collection::stream).collect(Collectors.toList());
     }
 
 
-    private List<ArtifactSliceUploadHttpEntityBuilder> getArtifactSliceUploadHttpEntityList(String storageId, String repositoryId, String saveUri, Path artifactPath, long chunkSize) {
+    private List<ArtifactSliceUploadHttpEntityBuilder> getArtifactSliceUploadHttpEntityList(String storageId, String repositoryId, String saveUri, RepositoryPath sourceRepositoryPath, long chunkSize) {
         try {
-            final long fileLength = Files.size(artifactPath);
+            final long fileLength = Files.size(sourceRepositoryPath);
             final int threadCount = BigDecimal.valueOf(fileLength).divide(BigDecimal.valueOf(chunkSize), 0, RoundingMode.CEILING).intValue();
             //final String md5 = FileUtils.getMD5(Files.newInputStream(artifactPath));
-            log.info("calculate the file {} md5 , filesize:{}", artifactPath.toFile(), fileLength);
+            final String sourceStorageId = sourceRepositoryPath.getStorageId(), sourceRepositoryId = sourceRepositoryPath.getRepositoryId(), sourceArtifactPath = RepositoryFiles.relativizePath(sourceRepositoryPath);
+            log.info("calculate the file [{}] [{}] [{}] md5 file size [{}]", sourceStorageId, sourceRepositoryId, sourceArtifactPath, fileLength);
             long begin = System.currentTimeMillis();
-            final String md5 = DigestUtils.md5Hex(new FileInputStream(artifactPath.toFile().toString()));
-            log.info("calculated the file {} md5 is {} , filesize:{}, time consuming {}ms", artifactPath.toFile(), fileLength, md5, System.currentTimeMillis() - begin);
+            LayoutFileSystemProvider provider = (LayoutFileSystemProvider) sourceRepositoryPath.getFileSystem().provider();
+            final RepositoryPath checksumPath = provider.getChecksumPath(sourceRepositoryPath, MessageDigestAlgorithms.MD5);
+            String md5 = "";
+            if (Objects.nonNull(checksumPath) && Files.exists(checksumPath)) {
+                md5 = Files.readString(checksumPath);
+            }
+            if (StringUtils.isBlank(md5)) {
+                md5 = MessageDigestUtils.calculateChecksum(sourceRepositoryPath, MessageDigestAlgorithms.MD5);
+            }
+
+            log.info("calculated the file [{}] [{}] [{}] md5 is [{}]  file size [{}] time consuming [{}] ms", sourceStorageId, sourceRepositoryId, sourceArtifactPath, fileLength, md5, System.currentTimeMillis() - begin);
             final String mergeId = UUID.randomUUID().toString(true);
 
+            String finalMd5 = md5;
             return IntStream.range(0, threadCount).mapToObj(index -> {
                 long startLength = index * chunkSize;
                 try {
@@ -856,8 +871,8 @@ public class PromotionUtil {
                             .setMergeId(mergeId)
                             .setChunkIndex(index + 1)
                             .setChunkIndexMax(threadCount)
-                            .setOriginFileMd5(md5)
-                            .setArtifactPath(artifactPath)
+                            .setOriginFileMd5(finalMd5)
+                            .setArtifactPath(sourceRepositoryPath)
                             .setStartLength(startLength)
                             .setChunkSize(chunkSize);
                 } catch (Exception e) {
