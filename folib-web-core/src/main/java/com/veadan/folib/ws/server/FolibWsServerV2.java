@@ -32,18 +32,17 @@ public class FolibWsServerV2 {
     }
 
     @OnClose
-    public void onClose(@PathParam("nodeName") String nodeName, Session session) {
-        folibWsUtil.onClose(nodeName, session);
+    public void onClose(@PathParam("nodeName") String nodeName, Session session, CloseReason closeReason) {
+        folibWsUtil.onClose(nodeName, session, closeReason);
     }
 
     @OnMessage
     public void onMessage(@PathParam("nodeName") String nodeName, ByteBuffer message, Session session) {
-        folibWsUtil.onMessageV4(message, session);
+        folibWsUtil.onMessageV4(nodeName, message, session);
     }
 
     @OnError
     public void onError(@PathParam("nodeName") String nodeName, Session session, Throwable error) {
-        log.error("WebSocket(nodeName = {})发生错误，错误信息为: {} ", nodeName, error.getMessage());
-        error.printStackTrace();
+        folibWsUtil.onError(nodeName, session, error);
     }
 }

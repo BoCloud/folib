@@ -1,10 +1,16 @@
 package com.veadan.folib.components.promotion;
 
+import cn.hutool.core.lang.UUID;
+import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
 import com.veadan.folib.configuration.UnionTargetRepositoryConfiguration;
+import com.veadan.folib.constant.ArtifactSyncRecordStatusEnum;
 import com.veadan.folib.domain.ArtifactDispatch;
 import com.veadan.folib.dto.TargetDispatchRepositoryDto;
+import com.veadan.folib.entity.ArtifactSyncRecord;
+import com.veadan.folib.enums.ArtifactSyncRecordOpsTypeEnum;
 import com.veadan.folib.enums.ArtifactoryRepositoryTypeEnum;
+import com.veadan.folib.mapper.ArtifactSyncRecordMapper;
 import com.veadan.folib.promotion.PromotionUtil;
 import com.veadan.folib.providers.io.RepositoryPath;
 import lombok.extern.slf4j.Slf4j;
@@ -13,6 +19,8 @@ import org.springframework.stereotype.Component;
 import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 import java.util.Collections;
+import java.util.Date;
+import java.util.List;
 
 /**
  * @author leipenghui
@@ -26,6 +34,8 @@ public class InnerArtifactPromotionProvider implements ArtifactPromotionProvider
 
     @Inject
     private PromotionUtil promotionUtil;
+    @Inject
+    private ArtifactSyncRecordMapper artifactSyncRecordMapper;
 
     @PostConstruct
     @Override
@@ -40,10 +50,45 @@ public class InnerArtifactPromotionProvider implements ArtifactPromotionProvider
         String storageId = repositoryPath.getStorageId();
         String repositoryId = repositoryPath.getRepositoryId();
         TargetDispatchRepositoryDto targetDispatchRepository = TargetDispatchRepositoryDto.builder().dispatchClusterEnName(unionTargetRepositoryConfiguration.getNode()).targetStorageId(unionTargetRepositoryConfiguration.getStorageId()).targetRepositoryId(unionTargetRepositoryConfiguration.getRepositoryId()).build();
-        ArtifactDispatch artifactDispatch = ArtifactDispatch.builder().srcStorageId(storageId).srcRepositoryId(repositoryId).path(artifactPath)
-                .targetDispatchRepositoryList(Collections.singletonList(targetDispatchRepository)).recordStatus(true).build();
+        ArtifactDispatch artifactDispatch = ArtifactDispatch.builder()
+                .srcStorageId(storageId)
+                .srcRepositoryId(repositoryId)
+                .path(artifactPath)
+                .targetDispatchRepositoryList(Collections.singletonList(targetDispatchRepository))
+                .recordStatus(true).build();
         log.info("存储空间：{} 仓库：{} 制品：{} 目标节点：{} 目标节点类型：{} 目标存储空间：{} 目标仓库：{} 满足晋级条件，开始晋级", storageId, repositoryId, artifactPath, unionTargetRepositoryConfiguration.getNode(), unionTargetRepositoryConfiguration.getType(), unionTargetRepositoryConfiguration.getStorageId(), unionTargetRepositoryConfiguration.getRepositoryId());
-        promotionUtil.executeHandleDispatch(artifactDispatch);
+        final String syncNo = String.format("SyncNo%s", UUID.randomUUID().toString(true));
+        artifactDispatch.setSyncNo(syncNo);
+
+        final String srcStorageId = artifactDispatch.getSrcStorageId();
+        final String srcRepositoryId = artifactDispatch.getSrcRepositoryId();
+        final List<TargetDispatchRepositoryDto> targetDispatchRepositoryList = artifactDispatch.getTargetDispatchRepositoryList();
+        final String path = artifactDispatch.getPath();
+        // 生成日志记录
+        final ArtifactSyncRecord artifactSyncRecord = new ArtifactSyncRecord();
+        //artifactSyncRecord.setRequestHostName(requestHostName);
+        artifactSyncRecord.setSourceStorageId(srcStorageId);
+        artifactSyncRecord.setSourceRepositoryId(srcRepositoryId);
+        artifactSyncRecord.setSourcePath(String.format("%s/%s/%s", srcStorageId, srcRepositoryId, path));
+        artifactSyncRecord.setTargetPath(JSON.toJSONString(targetDispatchRepositoryList));
+        artifactSyncRecord.setSyncNo(syncNo);
+        artifactSyncRecord.setOpsType(ArtifactSyncRecordOpsTypeEnum.DISPATCH.getVal());
+///        artifactSyncRecord.setSyncModel(promotionNodeOption.getSyncModel());
+        artifactSyncRecord.setStatus(ArtifactSyncRecordStatusEnum.IN_SYNC.getVal());
+   //     artifactSyncRecord.setCreateBy(userName);
+        artifactSyncRecord.setCreateTime(new Date());
+        artifactSyncRecordMapper.insert(artifactSyncRecord);
+        try {
+            promotionUtil.executeHandleDispatch(artifactDispatch);
+        } catch (Exception e) {
+            artifactSyncRecord.setStatus(ArtifactSyncRecordStatusEnum.FAILED.getVal());
+            artifactSyncRecord.setFailedReason(e.getMessage());
+
+            // 更新日志结束开始时间
+            artifactSyncRecordMapper.updateByPrimaryKey(artifactSyncRecord
+                    .setUpdateTime(new Date()));
+            throw e;
+        }
     }
 
     @Override

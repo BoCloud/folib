@@ -21,7 +21,10 @@ import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URL;
 import java.nio.ByteBuffer;
-import java.util.*;
+import java.util.Collection;
+import java.util.Map;
+import java.util.Optional;
+import java.util.UUID;
 import java.util.concurrent.*;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.stream.Collectors;
@@ -38,14 +41,19 @@ public class FolibWsRunManageV2 {
     private Map<Session, Long> sessionIdleMap = new ConcurrentHashMap<>();//
     private ConcurrentHashMap<String, CompletableFuture<WSMessageResponse>> REQUEST_FUTURES = new ConcurrentHashMap<>();
 
-
     @Inject
     protected ConfigurationManager configurationManager;
     @Autowired
     private ConfigurationManagementService configurationManagementService;
+    @Autowired
+    private Executor asyncThreadPoolTaskExecutor;
 
     public String getTargetHostName(ClusterDispatchNodeDto nodeInfo) {
         String clusterNodeHost = nodeInfo.getClusterNodeHost();
+        return getTargetHostName(clusterNodeHost);
+    }
+
+    public String getTargetHostName(String clusterNodeHost) {
         URL destUrl = null;
         try {
             destUrl = new URL(clusterNodeHost);
@@ -57,6 +65,7 @@ public class FolibWsRunManageV2 {
         return String.format("%s:%s", destHost, destPort);
     }
 
+
     @Scheduled(cron = "0/5 * * * * ?")
     public void Scheduled() {
         // 初始化连接到集群服务端
@@ -64,56 +73,60 @@ public class FolibWsRunManageV2 {
         clusterDispatchNode.values().stream()
                 // 排除自动注册的节点信息
                 .filter(e -> null != e.getAutoRegister() && !e.getAutoRegister())
-                .forEach((nodeInfo) -> {
-                    final String clusterNodeHost = nodeInfo.getClusterNodeHost();
-                    final URL destUrl;
-                    final URL originUrl;
-                    try {
-                        destUrl = new URL(clusterNodeHost);
-                        originUrl = new URL(configurationManager.getConfiguration().getBaseUrl());
-                    } catch (MalformedURLException e) {
-                        throw new RuntimeException(e);
-                    }
-                    final String originHost = originUrl.getHost();
-                    final Integer originPort = UrlUtils.getPort(originUrl.toString());
-                    final String destHost = destUrl.getHost();
-                    final Integer destPort = UrlUtils.getPort(clusterNodeHost);
-///                        final String destNodeName = String.format("%s:%s", destHost, destPort);
-                    final String originNodeName = String.format("%s:%s", originHost, originPort);
-                    final String destUri = String.format("/wsv2/folib/%s", originNodeName);
-                    final boolean enableSSL = HttpUtil.isHttps(clusterNodeHost);
-               //     String uri = "ws://" + destHost + ":" + destPort + destUri;
-                    String uri = String.format("%s://%s:%s", enableSSL ? "wss" : "ws", destHost, destPort + destUri);
-
-                    String targetHostName = getTargetHostName(nodeInfo);
-                    Session session1 = FOLIB_WS_RUN_MAP.get(targetHostName);
-                    if (!(session1 != null && session1.isOpen())) {
-                        try {
-                            connectToServer(targetHostName, uri);
-                        } catch (DeploymentException | IOException e) {
-                            log.error("connectToServer fail , retry...", e);
-                        }
-                    } else {
-                        Long l = sessionIdleMap.get(session1);
-                        if (l != null) {
-                            long idleTime = System.currentTimeMillis() - l;
-                            if (idleTime < 1000 * 60) {
-                                return;
-                            }
-                            log.info("send ws HEARD_BEAT {}", targetHostName);
-                            try {
-                                WSMessageResponse wsMessageResponse = sendRequest(targetHostName, new WSMessageRequest(Command.HEARD_BEAT));
-                            } catch (InterruptedException | ExecutionException | TimeoutException e) {
-                                try {
-                                    session1.close();
-                                } catch (IOException ex) {
-                                    log.error("close exception", e);
-                                }
-                                log.error("ping Exception", e);
-                            }
-                        }
-                    }
+                .forEach(clusterDispatchNodeDto -> {
+                    asyncThreadPoolTaskExecutor.execute(() -> reconnectAndHeartbeat(clusterDispatchNodeDto));
                 });
+    }
+
+    public void reconnectAndHeartbeat(ClusterDispatchNodeDto nodeInfo) {
+        final String clusterNodeHost = nodeInfo.getClusterNodeHost();
+        final URL destUrl;
+        final URL originUrl;
+        try {
+            destUrl = new URL(clusterNodeHost);
+            originUrl = new URL(configurationManager.getConfiguration().getBaseUrl());
+        } catch (MalformedURLException e) {
+            throw new RuntimeException(e);
+        }
+        final String originHost = originUrl.getHost();
+        final Integer originPort = UrlUtils.getPort(originUrl.toString());
+        final String destHost = destUrl.getHost();
+        final Integer destPort = UrlUtils.getPort(clusterNodeHost);
+///                        final String destNodeName = String.format("%s:%s", destHost, destPort);
+        final String originNodeName = String.format("%s:%s", originHost, originPort);
+        final String destUri = String.format("/wsv2/folib/%s", originNodeName);
+        final boolean enableSSL = HttpUtil.isHttps(clusterNodeHost);
+        //     String uri = "ws://" + destHost + ":" + destPort + destUri;
+        String uri = String.format("%s://%s:%s", enableSSL ? "wss" : "ws", destHost, destPort + destUri);
+
+        String targetHostName = getTargetHostName(nodeInfo);
+        Session session1 = FOLIB_WS_RUN_MAP.get(targetHostName);
+        if (!(session1 != null && session1.isOpen())) {
+            try {
+                connectToServer(targetHostName, uri);
+            } catch (DeploymentException | IOException e) {
+                log.error("connectToServer fail , retry...", e);
+            }
+        } else {
+            Long l = sessionIdleMap.get(session1);
+            if (l != null) {
+                long idleTime = System.currentTimeMillis() - l;
+                if (idleTime < 1000 * 20) {
+                    return;
+                }
+                log.info("send ws HEARD_BEAT {}", targetHostName);
+                try {
+                    WSMessageResponse wsMessageResponse = sendRequest(targetHostName, new WSMessageRequest(Command.HEARD_BEAT));
+                } catch (InterruptedException | ExecutionException | TimeoutException e) {
+                    try {
+                        session1.close();
+                    } catch (IOException ex) {
+                        log.error("close exception", e);
+                    }
+                    log.error("ping Exception", e);
+                }
+            }
+        }
     }
 
 //    public void startHeartbeat(String targetHostName) {
@@ -178,23 +191,6 @@ public class FolibWsRunManageV2 {
         return FOLIB_WS_RUN_MAP.get(targetHostName);
     }
 
-    private void sendBinary(String targetHostName, WSMessage wsMessageRequest) throws ExecutionException, InterruptedException, TimeoutException {
-        Session session = getSession(targetHostName);
-        if (session == null) {
-            throw new RuntimeException("not found session with targetHostName:" + targetHostName);
-        }
-        if (!session.isOpen()) {
-            throw new RuntimeException("session is closed , with targetHostName:" + targetHostName);
-        }
-        final long kbps = Optional.ofNullable(configurationManagementService.getConfiguration().getKbps()).orElse(0) * (1024L);
-
-        final Collection<ClusterDispatchNodeDto> clusterDispatchNodeDtos = configurationManagementService.getMutableConfigurationClone().getClusterDispatchNode().values();
-        final Map<String, Long> nodeKbpsMap = clusterDispatchNodeDtos.stream().collect(Collectors.toMap(e -> String.format("%s:%s", UrlUtils.getHost(e.getClusterNodeHost()), UrlUtils.getPort(e.getClusterNodeHost())), e -> null != e.getKbps() ? e.getKbps() * 1024L : 0L));
-        final long finalKbps = Optional.ofNullable(nodeKbpsMap.get(targetHostName)).filter(k -> k > 0).orElse(kbps);
-
-        sendBinary(session, wsMessageRequest, finalKbps);
-    }
-
     private void sendBinary(Session session, WSMessage wsMessage, long finalKbps) throws ExecutionException, InterruptedException, TimeoutException {
         ByteBuffer byteBuffer = ByteBuffer.wrap(KryoSerializationUtil.serialize(wsMessage));
         sessionIdleMap.put(session, System.currentTimeMillis());
@@ -209,6 +205,10 @@ public class FolibWsRunManageV2 {
     }
 
     public WSMessageResponse sendRequest(String targetHostName, WSMessageRequest wsMessageRequest) throws ExecutionException, InterruptedException, TimeoutException {
+        return sendRequest(targetHostName, wsMessageRequest, 5);
+    }
+
+    public WSMessageResponse sendRequest(String targetHostName, WSMessageRequest wsMessageRequest, int timeout) throws ExecutionException, InterruptedException, TimeoutException {
         Session session = getSession(targetHostName);
 
         if (session == null) {
@@ -217,10 +217,23 @@ public class FolibWsRunManageV2 {
         if (!session.isOpen()) {
             throw new RuntimeException("session is closed , with targetHostName:" + targetHostName);
         }
+
+        final long kbps = Optional.ofNullable(configurationManagementService.getConfiguration().getKbps()).orElse(0) * (1024L);
+
+        final Collection<ClusterDispatchNodeDto> clusterDispatchNodeDtos = configurationManagementService.getMutableConfigurationClone().getClusterDispatchNode().values();
+        final Map<String, Long> nodeKbpsMap = clusterDispatchNodeDtos.stream().collect(Collectors.toMap(e -> String.format("%s:%s", UrlUtils.getHost(e.getClusterNodeHost()), UrlUtils.getPort(e.getClusterNodeHost())), e -> null != e.getKbps() ? e.getKbps() * 1024L : 0L));
+        final long finalKbps = Optional.ofNullable(nodeKbpsMap.get(targetHostName)).filter(k -> k > 0).orElse(kbps);
+
         CompletableFuture<WSMessageResponse> future = new CompletableFuture<>();
+
         REQUEST_FUTURES.put(wsMessageRequest.getId(), future);
-        sendBinary(targetHostName, wsMessageRequest);
-        WSMessageResponse wsMessageResponse = future.get(600, TimeUnit.SECONDS);
+        try {
+            sendBinary(session, wsMessageRequest, finalKbps);
+        } catch (Exception e) {
+            log.error("sendBinary fail", e);
+            future.completeExceptionally(e);
+        }
+        WSMessageResponse wsMessageResponse = future.get(timeout, TimeUnit.SECONDS);
         REQUEST_FUTURES.remove(wsMessageRequest.getId());
         return wsMessageResponse;
     }
@@ -233,17 +246,14 @@ public class FolibWsRunManageV2 {
         return REQUEST_FUTURES.get(requestId);
     }
 
-    public CompletableFuture<WSMessageResponse> releaseFuture(String requestId) {
-        return REQUEST_FUTURES.remove(requestId);
-    }
-
 
     private static final long _1_MB = 1024 * 1024; // 1MB
     private static final long DEFAULT_BYTES_PER_SECOND = _1_MB * 50; //缺省值50M
     private final Map<Session, Long> sessionLastSendTime = new ConcurrentHashMap<>();
     private final Map<Session, Long> sessionBytesSent = new ConcurrentHashMap<>();
     private final Map<Session, ReentrantLock> sessionLocks = new ConcurrentHashMap<>();
-    public void sendBinary(Session session, ByteBuffer data, long finalKbps) throws IOException {
+
+    private void sendBinary(Session session, ByteBuffer data, long finalKbps) throws IOException {
         String messageId = UUID.randomUUID().toString();
         //缺省填充
         if (finalKbps <= 0) {
@@ -309,7 +319,7 @@ public class FolibWsRunManageV2 {
                 }
                 // 准备读取
                 chunk.flip();
-               // session.getBasicRemote().sendBinary(chunk);
+                // session.getBasicRemote().sendBinary(chunk);
 
                 CompletableFuture<Void> completableFuture = new CompletableFuture<>();
 

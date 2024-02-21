@@ -83,9 +83,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.FutureTask;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -266,10 +264,8 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
     }
 
     @Override
-    public ResponseEntity<String> nodeOptionV2(PromotionNodeOption promotionNodeOption, HttpServletRequest request) {
+    public void nodeOptionV2(PromotionNodeOption promotionNodeOption, HttpServletRequest request) {
         try {
-            String baseUrl = StringUtils.removeEnd(configurationManagementService.getConfiguration().getBaseUrl(), GlobalConstants.SEPARATOR);
-            Integer syncModel = promotionNodeOption.getSyncModel();
             final String syncNo = promotionNodeOption.getSyncNo();
             PromotionRepositoryInfo promotionRepositoryInfo = resolvePromotionRepository(promotionNodeOption);
             String sourceStorageId = promotionRepositoryInfo.getSourceStorageId();
@@ -286,10 +282,8 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
                 Repository srcRepository = repositoryManagementService.getStorage(sourceStorageId).getRepository(sourceRepositoryId);
                 RepositoryPath srcPath = repositoryPathResolver.resolve(sourceStorageId, sourceRepositoryId, sourceArtifactPath);
                 promotionUtil.executeCopy(srcPath, destRepository, srcRepository);
-                return ResponseEntity.ok("ok");
             }
 
-            // 判断节点参数是 做推 push  或者 拉取 pull
             String requestURL = request.getServerName();
             log.info("requestURL={}", requestURL);
 
@@ -305,20 +299,15 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
 
             PromotionNodeOptionDto uploadDto = promotionUtil.getPromotionUploadDto(promotionArtifactDto);
 
-//                //向目标仓库推包
-//                promotionUtil.upload(targetUrl + upLoadURI, uploadDto);
-
-            // 异步制品切片上传
-            asyncThreadPoolTaskExecutor.submit(() -> {
-                promotionUtil.artifactSliceUploadV2(uploadDto, targetBaseUrl, targetStorageId, targetRepositoryId, syncNo);
-                // 更新记录结果
-            });
+            promotionUtil.artifactSliceUploadV3(uploadDto, targetBaseUrl, targetStorageId, targetRepositoryId, syncNo);
         } catch (Exception e) {
             log.error("制品晋级错误 {}", ExceptionUtils.getStackTrace(e));
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(e.getMessage());
+            if (e instanceof RuntimeException) {
+                throw (RuntimeException) e;
+            } else {
+                throw new RuntimeException(e);
+            }
         }
-        return ResponseEntity.ok("ok");
     }
     @Override
     @Deprecated
@@ -384,7 +373,7 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
                         return ResponseEntity.ok("ok");
                     } else {
                         promotionNodeOption.setSyncModel(ArtifactSyncRecordSyncModelEnum.PUSH.getVal());
-                        return this.nodeOptionV2(promotionNodeOption, request);
+                        return this.nodeOption(promotionNodeOption, request);
                     }
                 }
 
@@ -419,7 +408,7 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
         final String requestHostName = request.getServerName();
         final ArtifactSyncRecord artifactSyncRecord = new ArtifactSyncRecord();
         
-        try {
+
             // 生成日志记录
             artifactSyncRecord.setId(idGenerateUtils.generateId("artifactSyncRecordId"));
             artifactSyncRecord.setRequestHostName(requestHostName);
@@ -435,30 +424,15 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
             artifactSyncRecord.setCreateTime(new Date());
             artifactSyncRecordMapper.insert(artifactSyncRecord);
             promotionNodeOption.setSyncNo(syncNo);
-            
-            asyncThreadPoolTaskExecutor.execute(() ->
-            { // 异步执行制品晋级
-                final ResponseEntity<String> re = this.nodeOptionV2(promotionNodeOption, request);
 
-                if (FolibWsClientArtifactPullCommand.COMMAND.equals(re.getBody())) {
-                    /** 异步使用回调更新状态等信息 {@linkplain ArtifactPromotionServiceImpl#artifactPullCallback(ArtifactPromotionNodeOptionCallbackReq)} */
-                } else {
-                    // 更新同步的逻辑状态等信息
-                    if (HttpStatus.OK.equals(re.getStatusCode())) {
-                        artifactSyncRecord.setStatus(ArtifactSyncRecordStatusEnum.SUCCESS.getVal());
-                    } else {
-                        artifactSyncRecord.setStatus(ArtifactSyncRecordStatusEnum.FAILED.getVal());
-                        if (Objects.nonNull(re.getBody())) {
-                            artifactSyncRecord.setFailedReason(re.getBody().toString());
-                        }
-                    }
+        try {
+            this.nodeOptionV2(promotionNodeOption, request);
 
-                    // 更新日志结束开始时间
-                    artifactSyncRecordMapper.updateByPrimaryKey(artifactSyncRecord
-                            .setUpdateTime(new Date())
-                            .setUpdateBy(userName));
-                }
-            });
+            artifactSyncRecord.setStatus(ArtifactSyncRecordStatusEnum.SUCCESS.getVal());
+            // 更新日志结束开始时间
+            artifactSyncRecordMapper.updateByPrimaryKey(artifactSyncRecord
+                    .setUpdateTime(new Date())
+                    .setUpdateBy(userName));
         } catch (Exception e) {
             artifactSyncRecord.setStatus(ArtifactSyncRecordStatusEnum.FAILED.getVal());
             artifactSyncRecord.setFailedReason(e.getMessage());
@@ -467,6 +441,11 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
             artifactSyncRecordMapper.updateByPrimaryKey(artifactSyncRecord
                     .setUpdateTime(new Date())
                     .setUpdateBy(userName));
+            if (e instanceof RuntimeException) {
+                throw (RuntimeException) e;
+            } else {
+                throw new RuntimeException(e);
+            }
         }
 
         return ResponseEntity.ok(syncNo);
@@ -727,8 +706,7 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
         artifactSyncRecordMapper.insert(artifactSyncRecord);
         
         try {
-            asyncThreadPoolTaskExecutor.execute(() ->
-            { // 异步执行制品晋级
+              // 异步执行制品晋级
                 final ResponseEntity<String> re = this.artifactDispatch(artifactDispatch);
 
                 // 更新同步的逻辑状态等信息，由于制品分发涉及多个制品，即成功状态是所有支配完成时更新
@@ -751,8 +729,8 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
                 artifactSyncRecordMapper.updateByPrimaryKey(artifactSyncRecord
                         .setUpdateTime(new Date())
                         .setUpdateBy(userName));
-            });
         } catch (Exception e) {
+            log.error("artifactDispatch exception", e);
             artifactSyncRecord.setStatus(ArtifactSyncRecordStatusEnum.FAILED.getVal());
             artifactSyncRecord.setFailedReason(e.getMessage());
 
@@ -760,6 +738,10 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
             artifactSyncRecordMapper.updateByPrimaryKey(artifactSyncRecord
                     .setUpdateTime(new Date())
                     .setUpdateBy(userName));
+
+            if (e instanceof RejectedExecutionException) {
+                throw new RuntimeException("The promotion queue is full , info:" + e.getMessage());
+            }
         }
 
         return ResponseEntity.ok(syncNo);
