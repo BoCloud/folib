@@ -16,13 +16,12 @@ import java.util.concurrent.*;
 public class TaskQueueManager {
     private final ExecutorService executorService;
     private final ConcurrentHashMap<String, Future<?>> taskMap = new ConcurrentHashMap<>();
-    private final static int QUEUE_SIZE = 3;
 
-    public TaskQueueManager(String threadNamePrefix) {
+    public TaskQueueManager(String threadNamePrefix,int queueSize) {
         ThreadFactory threadFactory = ThreadFactoryBuilder.create().setNamePrefix(threadNamePrefix).build();
         executorService = new ThreadPoolExecutor(1, 1,
                 0L, TimeUnit.MILLISECONDS,
-                new LinkedBlockingQueue<Runnable>(QUEUE_SIZE), threadFactory, new ThreadPoolExecutor.AbortPolicy());
+                new LinkedBlockingQueue<Runnable>(queueSize), threadFactory, new ThreadPoolExecutor.AbortPolicy());
     }
 
     public synchronized String submitTask(String taskId, Runnable runnable) {

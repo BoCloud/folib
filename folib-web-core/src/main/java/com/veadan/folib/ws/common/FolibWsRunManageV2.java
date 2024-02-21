@@ -1,6 +1,7 @@
 package com.veadan.folib.ws.common;
 
 import cn.hutool.http.HttpUtil;
+import com.veadan.folib.config.PromotionConfig;
 import com.veadan.folib.configuration.ConfigurationManager;
 import com.veadan.folib.dispatch.ClusterDispatchNodeDto;
 import com.veadan.folib.promotion.KryoSerializationUtil;
@@ -47,6 +48,8 @@ public class FolibWsRunManageV2 {
     private ConfigurationManagementService configurationManagementService;
     @Autowired
     private Executor asyncThreadPoolTaskExecutor;
+    @Autowired
+    private PromotionConfig promotionConfig;
 
     public String getTargetHostName(ClusterDispatchNodeDto nodeInfo) {
         String clusterNodeHost = nodeInfo.getClusterNodeHost();
@@ -205,7 +208,7 @@ public class FolibWsRunManageV2 {
     }
 
     public WSMessageResponse sendRequest(String targetHostName, WSMessageRequest wsMessageRequest) throws ExecutionException, InterruptedException, TimeoutException {
-        return sendRequest(targetHostName, wsMessageRequest, 5);
+        return sendRequest(targetHostName, wsMessageRequest, promotionConfig.getWsRequestTimout());
     }
 
     public WSMessageResponse sendRequest(String targetHostName, WSMessageRequest wsMessageRequest, int timeout) throws ExecutionException, InterruptedException, TimeoutException {
