@@ -281,13 +281,13 @@ public class PromotionUtil {
             final String syncNo = ThreadLocalUtil.get(ThreadLocalContextFieldNameEnum.ARTIFACT_DISPATCH_SYNC_NO.getFieldName(), String.class);
             final SpringSecurityUser userDetails = (SpringSecurityUser) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
             final String userName = Optional.ofNullable(userDetails).map(SpringSecurityUser::getUsername).orElse(null);
-            
+
             log.info("分发 [{}] 开始", dispatchType);
             if (dispatchType.equals("pull")) {
                 promotionNodeOption = new PromotionNodeOption(sourcePath, targetPath);
                 promotionNodeOption.setSyncModel(ArtifactSyncRecordSyncModelEnum.PULL.getVal());
                 promotionNodeOption.setSyncNo(syncNo);
-                
+
                 // 通过Ws协议通知客户端拉取制品
                 final String clusterNodeHost = dispatchNodeDto.getClusterNodeHost();
                 final String nodeHost = UrlUtils.getHost(clusterNodeHost);
@@ -318,7 +318,7 @@ public class PromotionUtil {
                 PromotionNodeOptionDto uploadDto = getPromotionUploadDto(promotionArtifactDto);
 
                 upload(targetUploadUrl, uploadDto);
-                
+
                 // 异步制品切片上传
 //                asyncThreadPoolTaskExecutor.submit(() -> {
 //                    try {
@@ -327,8 +327,8 @@ public class PromotionUtil {
 //                        log.error("异步制品切片上传失败", e);
 //                    }
 //                });
-                
-                
+
+
                 if (Boolean.TRUE.equals(recordStatus)) {
                     artifactComponent.handlerArtifactPromotion(dispatchNodeDto.getClusterEnName(), srcStorageId, srcRepositoryId, artifactPath, PromotionStatusEnum.SUCCESS.getStatus());
                 }
@@ -348,7 +348,8 @@ public class PromotionUtil {
             }
         }
     }
-  private void executeDispatchV2(String artifactPath, String srcRepositoryId, String srcStorageId, String targetStorageId, String targetRepositoryId, ClusterDispatchNodeDto dispatchNodeDto, Boolean recordStatus) {
+
+    private void executeDispatchV2(String artifactPath, String srcRepositoryId, String srcStorageId, String targetStorageId, String targetRepositoryId, ClusterDispatchNodeDto dispatchNodeDto, Boolean recordStatus) {
         try {
             StringBuilder strBuilder = new StringBuilder();
             String dispatchNodeHost = dispatchNodeDto.getClusterNodeHost();
@@ -748,12 +749,13 @@ public class PromotionUtil {
                 res.setFailedReason(e.getMessage());
                 log.error("制品切片上传失败", e);
             }
-            
+
             // 更新记录状态
-            artifactSyncSlaveRecordMapper.updateRecordStatus(builder.getChunkArtifactRecordId(), res.getSuccess() ? ArtifactSyncRecordStatusEnum.SUCCESS.getVal():ArtifactSyncRecordStatusEnum.FAILED.getVal(), new Date(), res.getFailedReason());
+            artifactSyncSlaveRecordMapper.updateRecordStatus(builder.getChunkArtifactRecordId(), res.getSuccess() ? ArtifactSyncRecordStatusEnum.SUCCESS.getVal() : ArtifactSyncRecordStatusEnum.FAILED.getVal(), new Date(), res.getFailedReason());
             return res;
         }).collect(Collectors.toList());
     }
+
     public void artifactSliceUploadV2(PromotionNodeOptionDto uploadDto, String targetUrl, String storageId, String repositoryId, String syncNo) {
         targetUrl = StringUtils.chomp(targetUrl, "/");
         final Map<String, Map<String, RepositoryPath>> filePathMap = uploadDto.getPathMap();
@@ -782,7 +784,7 @@ public class PromotionUtil {
             ArtifactSliceUploadReq artifactSliceUploadReq = builder.buildV3();
 
             try {
-                WSMessageResponse wsMessageResponse = folibWsRunManageV2.sendRequest(targetHostName, new WSMessageRequest(Command.UPLOAD, artifactSliceUploadReq),600);
+                WSMessageResponse wsMessageResponse = folibWsRunManageV2.sendRequest(targetHostName, new WSMessageRequest(Command.UPLOAD, artifactSliceUploadReq), 600);
                 log.info("wsMessageResponse:{}", wsMessageResponse.toString());
             } catch (InterruptedException | ExecutionException | TimeoutException e) {
                 log.error("upload exception", e);
@@ -792,6 +794,7 @@ public class PromotionUtil {
             artifactSyncSlaveRecordMapper.updateRecordStatus(builder.getChunkArtifactRecordId(), true ? ArtifactSyncRecordStatusEnum.SUCCESS.getVal() : ArtifactSyncRecordStatusEnum.FAILED.getVal(), new Date(), "pyq-failedReason");
         }
     }
+
     public void artifactSliceUploadV3(PromotionNodeOptionDto uploadDto, String targetUrl, String storageId, String repositoryId, String syncNo) {
         targetUrl = StringUtils.chomp(targetUrl, "/");
 
@@ -806,7 +809,7 @@ public class PromotionUtil {
 
             // 记录制品从记录
             String finalTargetUrl = finalTargetUrl1;
-            artifactSliceUploadHttpEntityList.stream().forEach(e -> {
+            artifactSliceUploadHttpEntityList.forEach(e -> {
                 final ArtifactSyncSlaveRecord artifactSyncSlaveRecord = new ArtifactSyncSlaveRecord();
                 artifactSyncSlaveRecord.setSourcePath(e.getPath());
                 artifactSyncSlaveRecord.setTargetPath(String.format("%s/%s/%s/%s-chunk%s?startLength=%s&chunkSize=%s&mergeId=%s", finalTargetUrl, e.getStorageId(), e.getRepositoryId(), e.getPath(), e.getChunkIndex(), e.getStartLength(), e.getChunkSize(), e.getMergeId()));
@@ -820,26 +823,38 @@ public class PromotionUtil {
                 e.setChunkArtifactRecordId(artifactSyncSlaveRecord.getId());
             });
             int size = artifactSliceUploadHttpEntityList.size();
+            //分片上传
             for (int i = 0; i < size; i++) {
                 ArtifactSliceUploadHttpEntityBuilder builder = artifactSliceUploadHttpEntityList.get(i);
                 ArtifactSliceUploadReq artifactSliceUploadReq = builder.buildV3();
+                int finalI = i;
                 try {
-                    log.info("WSMessageRequest upload slice {}/{} ,targetHostName:{} , path:{}", i + 1, size, targetHostName, artifactSliceUploadReq.getPath());
-                    WSMessageResponse wsMessageResponse = folibWsRunManageV2.sendRequest(targetHostName, new WSMessageRequest(Command.UPLOAD, artifactSliceUploadReq), 600);
-                    log.info("wsMessageResponse:{}", wsMessageResponse.toString());
-                } catch (InterruptedException | ExecutionException | TimeoutException e) {
-                    log.error("upload exception", e);
+                    new RetryTask() {
+                        @Override
+                        public void exec(RetryTask retryTask) {
+                            try {
+                                log.info("WSMessageRequest upload slice {}/{} ,targetHostName:{} , path:{}", finalI + 1, size, targetHostName, artifactSliceUploadReq.getPath());
+                                WSMessageResponse wsMessageResponse = folibWsRunManageV2.sendRequest(targetHostName, new WSMessageRequest(Command.UPLOAD, artifactSliceUploadReq), 600);
+                                log.info("wsMessageResponse:{}", wsMessageResponse.toString());
+                            } catch (Exception e) {
+                                log.error("upload exception", e);
+                            }
+                        }
+                    }.call();
+                    artifactSyncSlaveRecordMapper.updateRecordStatus(builder.getChunkArtifactRecordId(), ArtifactSyncRecordStatusEnum.SUCCESS.getVal(), new Date(), "");
+                } catch (Exception e) {
+                    // 更新记录状态
+                    artifactSyncSlaveRecordMapper.updateRecordStatus(builder.getChunkArtifactRecordId(), ArtifactSyncRecordStatusEnum.FAILED.getVal(), new Date(), e.getMessage());
+                    throw new RuntimeException(e);
                 }
-
-                // 更新记录状态
-                artifactSyncSlaveRecordMapper.updateRecordStatus(builder.getChunkArtifactRecordId(), true ? ArtifactSyncRecordStatusEnum.SUCCESS.getVal() : ArtifactSyncRecordStatusEnum.FAILED.getVal(), new Date(), "pyq-failedReason");
             }
         });
     }
+
     private List<ArtifactSliceUploadHttpEntityBuilder> getArtifactSliceUploadHttpEntityList(Map<String, Map<String, RepositoryPath>> filePathMap, String storageId, String repositoryId, long chunkSize) {
         if (chunkSize <= 0 || chunkSize > MAX_SLICE_BYTE_SIZE) {
             chunkSize = MAX_SLICE_BYTE_SIZE;
-            log.info("chunkSize {} exceeds the maximum value {} , use MAX_SLICE_BYTE_SIZE {}",chunkSize,MAX_SLICE_BYTE_SIZE,MAX_SLICE_BYTE_SIZE);
+            log.info("chunkSize {} exceeds the maximum value {} , use MAX_SLICE_BYTE_SIZE {}", chunkSize, MAX_SLICE_BYTE_SIZE, MAX_SLICE_BYTE_SIZE);
         }
         long finalChunkSize = chunkSize;
         return filePathMap.values().stream().map(m -> {
@@ -849,9 +864,9 @@ public class PromotionUtil {
                 return this.getArtifactSliceUploadHttpEntityList(storageId, repositoryId, saveUri, path, finalChunkSize);
             }).flatMap(Collection::stream).collect(Collectors.toList());
         }).flatMap(Collection::stream).collect(Collectors.toList());
-    } 
-    
-    
+    }
+
+
     private List<ArtifactSliceUploadHttpEntityBuilder> getArtifactSliceUploadHttpEntityList(String storageId, String repositoryId, String saveUri, Path artifactPath, long chunkSize) {
         try {
             final long fileLength = Files.size(artifactPath);
@@ -868,32 +883,34 @@ public class PromotionUtil {
                 try {
 
                     return new ArtifactSliceUploadHttpEntityBuilder()
-                    .setStorageId(storageId)
-                    .setRepositoryId(repositoryId)
-                    .setPath(saveUri)
-                    .setMergeId(mergeId)
-                    .setChunkIndex(index + 1)
-                    .setChunkIndexMax(threadCount)
-                    .setOriginFileMd5(md5)
-                    .setArtifactPath(artifactPath)
-                    .setStartLength(startLength)
-                    .setChunkSize(chunkSize);
+                            .setStorageId(storageId)
+                            .setRepositoryId(repositoryId)
+                            .setPath(saveUri)
+                            .setMergeId(mergeId)
+                            .setChunkIndex(index + 1)
+                            .setChunkIndexMax(threadCount)
+                            .setOriginFileMd5(md5)
+                            .setArtifactPath(artifactPath)
+                            .setStartLength(startLength)
+                            .setChunkSize(chunkSize);
                 } catch (Exception e) {
                     log.error("构建文件切片HttpEntity请求失败", e);
                     return null;
                 }
             }).collect(Collectors.toList());
-        }catch (Exception e) {
+        } catch (Exception e) {
             log.error("构建文件切片请求集合失败", e);
             return Collections.emptyList();
         }
     }
 
-    
+
     @Data
     @Accessors(chain = true)
     public static class ArtifactSliceUploadHttpEntityBuilder {
-        /** 制品切片记录ID */
+        /**
+         * 制品切片记录ID
+         */
         private Long chunkArtifactRecordId;
         private String storageId;
         private String repositoryId;
@@ -905,7 +922,7 @@ public class PromotionUtil {
         private Path artifactPath;
         private Long startLength;
         private Long chunkSize;
-        
+
         public HttpEntity build() {
             try {
                 return MultipartEntityBuilder.create()
@@ -924,6 +941,7 @@ public class PromotionUtil {
                 return null;
             }
         }
+
         public ArtifactSliceUploadReq buildV3() {
             ArtifactSliceUploadReq artifactSliceUploadReq = new ArtifactSliceUploadReq();
             artifactSliceUploadReq.setStorageId(storageId);
@@ -947,15 +965,16 @@ public class PromotionUtil {
             artifactSliceUploadReq.setFile(multipartFile);
             return artifactSliceUploadReq;
         }
+
         public HashMap<String, Object> buildV2() {
             HashMap<String, Object> map = new HashMap<>();
             map.put("storageId", storageId);
-             map.put("repositoryId", repositoryId);
-             map.put("path", path);
-             map.put("mergeId", mergeId);
-             map.put("chunkIndex", String.valueOf(chunkIndex));
-             map.put("chunkIndexMax", String.valueOf(chunkIndexMax));
-             map.put("originFileMd5", originFileMd5);
+            map.put("repositoryId", repositoryId);
+            map.put("path", path);
+            map.put("mergeId", mergeId);
+            map.put("chunkIndex", String.valueOf(chunkIndex));
+            map.put("chunkIndexMax", String.valueOf(chunkIndexMax));
+            map.put("originFileMd5", originFileMd5);
             BufferedInputStreamWrapper bufferedInputStreamWrapper = null;
             try {
                 bufferedInputStreamWrapper = new BufferedInputStreamWrapper(Files.newInputStream(artifactPath), startLength, chunkSize);
@@ -964,7 +983,7 @@ public class PromotionUtil {
             }
             try {
                 byte[] bytes = bufferedInputStreamWrapper.readAllBytes();
-                map.put("file",bytes);
+                map.put("file", bytes);
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
@@ -972,10 +991,13 @@ public class PromotionUtil {
             return map;
         }
     }
- @Data
+
+    @Data
     @Accessors(chain = true)
     public static class ArtifactSliceUploadHttpEntityBuilderV2 {
-        /** 制品切片记录ID */
+        /**
+         * 制品切片记录ID
+         */
         private Long chunkArtifactRecordId;
         private String storageId;
         private String repositoryId;
@@ -991,12 +1013,12 @@ public class PromotionUtil {
         public HashMap<String, Object> buildV2() {
             HashMap<String, Object> map = new HashMap<>();
             map.put("storageId", storageId);
-             map.put("repositoryId", repositoryId);
-             map.put("path", path);
-             map.put("mergeId", mergeId);
-             map.put("chunkIndex", String.valueOf(chunkIndex));
-             map.put("chunkIndexMax", String.valueOf(chunkIndexMax));
-             map.put("originFileMd5", originFileMd5);
+            map.put("repositoryId", repositoryId);
+            map.put("path", path);
+            map.put("mergeId", mergeId);
+            map.put("chunkIndex", String.valueOf(chunkIndex));
+            map.put("chunkIndexMax", String.valueOf(chunkIndexMax));
+            map.put("originFileMd5", originFileMd5);
             try {
                 map.put("file", new InputStreamBody(new BufferedInputStreamWrapper(Files.newInputStream(artifactPath), startLength, chunkSize), "chunk" + chunkIndex));
             } catch (IOException e) {
@@ -1010,7 +1032,9 @@ public class PromotionUtil {
     @Data
     @Accessors(chain = true)
     public static class ArtifactSliceUploadHttpEntityResponse {
-        /** 制品切片记录ID */
+        /**
+         * 制品切片记录ID
+         */
         private Long chunkArtifactRecordId;
         private Boolean success;
         private String failedReason;

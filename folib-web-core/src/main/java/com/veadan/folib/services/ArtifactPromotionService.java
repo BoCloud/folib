@@ -32,7 +32,7 @@ public interface ArtifactPromotionService {
 
     @Deprecated
     ResponseEntity<String> nodeOption(PromotionNodeOption promotionNodeOption, HttpServletRequest request);
-    ResponseEntity<String> nodeOptionV2(PromotionNodeOption promotionNodeOption, HttpServletRequest request);
+    void nodeOptionV2(PromotionNodeOption promotionNodeOption, HttpServletRequest request);
 
     ResponseEntity nodeOptionAttachRecord(PromotionNodeOption promotionNodeOption, HttpServletRequest request);
 

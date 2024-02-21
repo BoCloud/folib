@@ -16,7 +16,7 @@ import java.util.function.Consumer;
 @Slf4j
 public class TaskQueueManager {
     private final ExecutorService executorService;
-    private final ConcurrentHashMap<String, Future<Boolean>> taskMap = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<String, Future<Void>> taskMap = new ConcurrentHashMap<>();
     private final static int QUEUE_SIZE = 3;
 
     public TaskQueueManager(String threadNamePrefix) {
@@ -30,20 +30,20 @@ public class TaskQueueManager {
         if (taskMap.containsKey(taskId)) {
             throw new IllegalArgumentException("Task with ID " + taskId + " already submitted.");
         }
-        RetryTask retryTask = new RetryTask(taskId) {
+        RetryTask retryTask = new RetryTask() {
             @Override
             public void exec(RetryTask retryTask) {
                 consumer.accept(retryTask);
             }
         };
-        Future<Boolean> future = executorService.submit(retryTask);
+        Future<Void> future = executorService.submit(retryTask);
         taskMap.put(taskId, future);
         log.info("Task " + taskId + " submitted.");
         return taskId;
     }
 
     public synchronized boolean cancelTask(String taskId) {
-        Future<Boolean> future = taskMap.get(taskId);
+        Future<Void> future = taskMap.get(taskId);
         if (future != null) {
             boolean cancelled = future.cancel(true); // 尝试取消任务
             if (cancelled) {

@@ -2,6 +2,7 @@ package com.veadan.folib.ws.server;
 
 import lombok.Getter;
 import lombok.ToString;
+import lombok.extern.slf4j.Slf4j;
 
 import java.util.concurrent.Callable;
 
@@ -12,31 +13,37 @@ import java.util.concurrent.Callable;
 
 @Getter
 @ToString
-public abstract class RetryTask implements Callable<Boolean> {
-    private final String taskId;
+@Slf4j
+public abstract class RetryTask implements Callable<Void> {
     private final int maxRetries;
     private int retryCount = 0;
 
 
-    public RetryTask(String taskId) {
-        this.taskId = taskId;
-        this.maxRetries = 3; // 最多重试3次
+    public RetryTask() {
+        this(3);
+    }
+
+    public RetryTask(int maxRetries) {
+        this.maxRetries = maxRetries;
     }
 
     @Override
-    public Boolean call() throws Exception {
+    public Void call() throws Exception {
         while (retryCount < maxRetries) {
             try {
                 exec(this);
-                return true;
+                return null;
             } catch (Exception e) {
                 retryCount++;
-                System.out.println("Retry " + retryCount + " for task: " + taskId);
+                log.warn("Retry " + retryCount + " for task: " + this, e);
+                if (retryCount == maxRetries) {
+                    log.info("Task " + this + " failed after " + retryCount + " attempts.");
+                    throw e;
+                }
             }
         }
-        System.out.println("Task " + taskId + " failed after " + retryCount + " attempts.");
-        return false; // 任务失败
+        return null;
     }
 
-    public abstract void exec(RetryTask retryTask);
+    protected abstract void exec(RetryTask retryTask);
 }
