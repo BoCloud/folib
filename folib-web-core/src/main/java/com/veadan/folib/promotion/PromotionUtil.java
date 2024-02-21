@@ -11,6 +11,7 @@ import com.google.common.collect.Maps;
 import com.veadan.folib.components.artifact.ArtifactComponent;
 import com.veadan.folib.components.layout.DockerComponent;
 import com.veadan.folib.components.security.SecurityComponent;
+import com.veadan.folib.config.PromotionConfig;
 import com.veadan.folib.configuration.ConfigurationManager;
 import com.veadan.folib.constant.ArtifactSyncRecordStatusEnum;
 import com.veadan.folib.dispatch.ClusterDispatchNodeDto;
@@ -152,6 +153,8 @@ public class PromotionUtil {
     private PromotionTaskQueue promotionTaskQueue;
     @Autowired
     private ArtifactSyncRecordMapper artifactSyncRecordMapper;
+    @Autowired
+    private PromotionConfig promotionConfig;
     private static final long MAX_SLICE_BYTE_SIZE = 1024L * 1024L * 100L;//100MB
 
     @Async("asyncCopyThreadPoolTaskExecutor")
@@ -745,45 +748,6 @@ public class PromotionUtil {
         }).collect(Collectors.toList());
     }
 
-    public void artifactSliceUploadV2(PromotionNodeOptionDto uploadDto, String targetUrl, String storageId, String repositoryId, String syncNo) {
-        targetUrl = StringUtils.chomp(targetUrl, "/");
-        final Map<String, Map<String, RepositoryPath>> filePathMap = uploadDto.getPathMap();
-        final long sliceByteSize = Optional.ofNullable(configurationManagementService.getConfiguration().getSliceMbSize()).orElse(0L) * (1024 * 1024);
-        final List<PromotionUtil.ArtifactSliceUploadHttpEntityBuilder> artifactSliceUploadHttpEntityList = this.getArtifactSliceUploadHttpEntityList(filePathMap, storageId, repositoryId, sliceByteSize);
-
-        // 记录制品从记录
-        String finalTargetUrl = targetUrl;
-        artifactSliceUploadHttpEntityList.stream().forEach(e -> {
-            final ArtifactSyncSlaveRecord artifactSyncSlaveRecord = new ArtifactSyncSlaveRecord();
-            artifactSyncSlaveRecord.setSourcePath(e.getPath());
-            artifactSyncSlaveRecord.setTargetPath(String.format("%s/%s/%s/%s-chunk%s?startLength=%s&chunkSize=%s&mergeId=%s", finalTargetUrl, e.getStorageId(), e.getRepositoryId(), e.getPath(), e.getChunkIndex(), e.getStartLength(), e.getChunkSize(), e.getMergeId()));
-            artifactSyncSlaveRecord.setSyncNo(syncNo);
-            artifactSyncSlaveRecord.setSyncModel(ArtifactSyncRecordSyncModelEnum.PUSH.getVal());
-            artifactSyncSlaveRecord.setStatus(ArtifactSyncRecordStatusEnum.IN_SYNC.getVal());
-//            artifactSyncSlaveRecord.setCreateBy(userName);
-            artifactSyncSlaveRecord.setCreateTime(new Date());
-
-            artifactSyncSlaveRecordMapper.insert(artifactSyncSlaveRecord);
-            e.setChunkArtifactRecordId(artifactSyncSlaveRecord.getId());
-        });
-        final String targetHost = UrlUtils.getHost(targetUrl);
-        final Integer targetPort = UrlUtils.getPort(targetUrl);
-        String targetHostName = String.format("%s:%s", targetHost, targetPort);
-        for (ArtifactSliceUploadHttpEntityBuilder builder : artifactSliceUploadHttpEntityList) {
-            ArtifactSliceUploadReq artifactSliceUploadReq = builder.buildV3();
-
-            try {
-                WSMessageResponse wsMessageResponse = folibWsRunManageV2.sendRequest(targetHostName, new WSMessageRequest(Command.UPLOAD, artifactSliceUploadReq), 600);
-                log.info("wsMessageResponse:{}", wsMessageResponse.toString());
-            } catch (InterruptedException | ExecutionException | TimeoutException e) {
-                log.error("upload exception", e);
-            }
-
-            // 更新记录状态
-            artifactSyncSlaveRecordMapper.updateRecordStatus(builder.getChunkArtifactRecordId(), true ? ArtifactSyncRecordStatusEnum.SUCCESS.getVal() : ArtifactSyncRecordStatusEnum.FAILED.getVal(), new Date(), "pyq-failedReason");
-        }
-    }
-
     public void artifactSliceUploadV3(PromotionNodeOptionDto uploadDto, String targetUrl, String storageId, String repositoryId, String syncNo) {
         targetUrl = StringUtils.chomp(targetUrl, "/");
 
@@ -832,12 +796,12 @@ public class PromotionUtil {
             ArtifactSliceUploadReq artifactSliceUploadReq = builder.buildV3();
             int finalI = i;
             try {
-                new RetryTask() {
+                new RetryTask(promotionConfig.getRetryCount()) {
                     @Override
                     public void exec(RetryTask retryTask) throws Exception{
                         try {
                             log.info("WSMessageRequest upload slice {}/{} ,targetHostName:{} , path:{}", finalI + 1, size, targetHostName, artifactSliceUploadReq.getPath());
-                            WSMessageResponse wsMessageResponse = folibWsRunManageV2.sendRequest(targetHostName, new WSMessageRequest(Command.UPLOAD, artifactSliceUploadReq), 600);
+                            WSMessageResponse wsMessageResponse = folibWsRunManageV2.sendRequest(targetHostName, new WSMessageRequest(Command.UPLOAD, artifactSliceUploadReq), promotionConfig.getWsRequestTimoutOfArtifactUpload());
                             log.info("wsMessageResponse:{}", wsMessageResponse.toString());
                         } catch (Exception e) {
                             log.error("upload exception", e);

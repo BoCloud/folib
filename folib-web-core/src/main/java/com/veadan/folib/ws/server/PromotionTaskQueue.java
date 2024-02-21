@@ -1,5 +1,6 @@
 package com.veadan.folib.ws.server;
 
+import com.veadan.folib.config.PromotionConfig;
 import com.veadan.folib.dispatch.ClusterDispatchNodeDto;
 import com.veadan.folib.services.ConfigurationManagementService;
 import com.veadan.folib.ws.common.FolibWsRunManageV2;
@@ -24,6 +25,9 @@ public class PromotionTaskQueue {
     @Autowired
     private FolibWsRunManageV2 folibWsRunManageV2;
 
+    @Autowired
+    private PromotionConfig promotionConfig;
+
     @PostConstruct
     public void init() {
         // 初始化连接到集群服务端
@@ -33,7 +37,7 @@ public class PromotionTaskQueue {
                 .filter(e -> null != e.getAutoRegister() && !e.getAutoRegister())
                 .forEach((nodeInfo) -> {
                     String targetHostName = folibWsRunManageV2.getTargetHostName(nodeInfo);
-                    PROMOTION_TASK_QUEUE.putIfAbsent(targetHostName, new TaskQueueManager("promotion_to_" + targetHostName));
+                    registerPromotionTaskQueue(targetHostName);
                 });
     }
 
@@ -42,7 +46,8 @@ public class PromotionTaskQueue {
     }
 
     public void registerPromotionTaskQueue(String targetHostName) {
-        PROMOTION_TASK_QUEUE.putIfAbsent(targetHostName, new TaskQueueManager("promotion_to_" + targetHostName));
+        TaskQueueManager taskQueueManager = new TaskQueueManager("promotion_to_" + targetHostName, promotionConfig.getQueueSize());
+        PROMOTION_TASK_QUEUE.putIfAbsent(targetHostName, taskQueueManager);
     }
 
     public void clearPromotionTaskQueue(String targetHostName) {

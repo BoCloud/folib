@@ -19,10 +19,6 @@ public abstract class RetryTask implements Callable<Void> {
     private int retryCount = 0;
 
 
-    public RetryTask() {
-        this(3);
-    }
-
     public RetryTask(int maxRetries) {
         this.maxRetries = maxRetries;
     }

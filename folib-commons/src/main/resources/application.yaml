@@ -64,6 +64,11 @@ scan:
   thread-pool: 200
 
 folib:
+  promotion:
+    queue-size: 1000
+    retry-count: 3
+    ws-request-timout: 5
+    ws-request-timout-of-artifact-upload: 600
   basedir: .
   home: ${folib.basedir}/folib
   vault: ${folib.basedir}/folib-vault
