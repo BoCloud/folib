@@ -120,7 +120,7 @@
                       <a-icon type="question-circle" theme="filled" />
                     </small>
                   </a>
-                  <div v-if="(isAdmin() || storageAdmin === $store.state.user.name) && folibRepository.type !== 'group'">
+                  <div v-if="(isAdmin() || (storageAdmin && storageAdmin === $store.state.user.name)) && folibRepository.type !== 'group'">
                     <span class="mr-15">{{
                       scan.onScan ? $t('Store.ScanOn') : $t('Store.ScanOff')
                     }}</span>

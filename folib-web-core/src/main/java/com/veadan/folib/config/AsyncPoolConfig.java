@@ -160,6 +160,24 @@ public class AsyncPoolConfig {
     @Value("${folib.threadPool.asyncCopy.awaitTerminationSeconds}")
     private Integer asyncCopyAwaitTerminationSeconds;
 
+    @Value("${folib.threadPool.asyncEventLog.corePoolSize}")
+    private Integer asyncEventLogCorePoolSize;
+
+    @Value("${folib.threadPool.asyncEventLog.maxPoolSize}")
+    private Integer asyncEventLogMaxPoolSize;
+
+    @Value("${folib.threadPool.asyncEventLog.queueCapacity}")
+    private Integer asyncEventLogQueueCapacity;
+
+    @Value("${folib.threadPool.asyncEventLog.keepAliveSeconds}")
+    private Integer asyncEventLogKeepAliveSeconds;
+
+    @Value("${folib.threadPool.asyncEventLog.threadNamePrefix}")
+    private String asyncEventLogThreadNamePrefix;
+
+    @Value("${folib.threadPool.asyncEventLog.awaitTerminationSeconds}")
+    private Integer asyncEventLogAwaitTerminationSeconds;
+
     @Bean
     public ThreadPoolTaskExecutor asyncThreadPoolTaskExecutor() {
         return buildThreadPoolTaskExecutor(asyncCorePoolSize, asyncMaxPoolSize, asyncQueueCapacity, asyncKeepAliveSeconds, asyncThreadNamePrefix, asyncAwaitTerminationSeconds);
@@ -240,6 +258,17 @@ public class AsyncPoolConfig {
                 asyncCopyAwaitTerminationSeconds);
     }
 
+    @Bean
+    public ThreadPoolTaskExecutor asyncEventLogThreadPoolTaskExecutor() {
+        return buildThreadPoolTaskExecutor(
+                asyncEventLogCorePoolSize,
+                asyncEventLogMaxPoolSize,
+                asyncEventLogQueueCapacity,
+                asyncEventLogKeepAliveSeconds,
+                asyncEventLogThreadNamePrefix,
+                asyncEventLogAwaitTerminationSeconds);
+    }
+
     @PreDestroy
     public void shutdown() {
         asyncThreadPoolTaskExecutor().shutdown();
@@ -249,6 +278,7 @@ public class AsyncPoolConfig {
         asyncScanThreadPoolTaskExecutor().shutdown();
         asyncWsCommandThreadPoolTaskExecutor().shutdown();
         asyncCopyThreadPoolTaskExecutor().shutdown();
+        asyncEventLogThreadPoolTaskExecutor().shutdown();
     }
 
     /**
