@@ -361,15 +361,8 @@ public class PromotionUtil {
                 strBuilder.append(targetStorageId);
             }
             strBuilder.append("/").append(targetRepositoryId).append("/").append(artifactPath);
-            String targetPath = strBuilder.toString();
-            String baseUrl = configurationManagementService.getConfiguration().getBaseUrl();
-            String sourcePath = baseUrl.endsWith("/") ? baseUrl + srcStorageId + "/" + srcRepositoryId + "/" + artifactPath :
-                    baseUrl + "/" + srcStorageId + "/" + srcRepositoryId + "/" + artifactPath;
             String dispatchType = dispatchNodeDto.getDispatchType();
-            PromotionNodeOption promotionNodeOption = null;
             final String syncNo = ThreadLocalUtil.get(ThreadLocalContextFieldNameEnum.ARTIFACT_DISPATCH_SYNC_NO.getFieldName(), String.class);
-            final SpringSecurityUser userDetails = (SpringSecurityUser) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-            final String userName = Optional.ofNullable(userDetails).map(SpringSecurityUser::getUsername).orElse(null);
 
             log.info("分发 [{}] 开始", dispatchType);
 

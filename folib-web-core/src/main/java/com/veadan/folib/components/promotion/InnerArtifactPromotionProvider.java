@@ -78,7 +78,17 @@ public class InnerArtifactPromotionProvider implements ArtifactPromotionProvider
    //     artifactSyncRecord.setCreateBy(userName);
         artifactSyncRecord.setCreateTime(new Date());
         artifactSyncRecordMapper.insert(artifactSyncRecord);
-        promotionUtil.executeHandleDispatch(artifactDispatch);
+        try {
+            promotionUtil.executeHandleDispatch(artifactDispatch);
+        } catch (Exception e) {
+            artifactSyncRecord.setStatus(ArtifactSyncRecordStatusEnum.FAILED.getVal());
+            artifactSyncRecord.setFailedReason(e.getMessage());
+
+            // 更新日志结束开始时间
+            artifactSyncRecordMapper.updateByPrimaryKey(artifactSyncRecord
+                    .setUpdateTime(new Date()));
+            throw e;
+        }
     }
 
     @Override
