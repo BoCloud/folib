@@ -281,7 +281,7 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
                 Repository destRepository = repositoryManagementService.getStorage(targetStorageId).getRepository(targetRepositoryId);
                 Repository srcRepository = repositoryManagementService.getStorage(sourceStorageId).getRepository(sourceRepositoryId);
                 RepositoryPath srcPath = repositoryPathResolver.resolve(sourceStorageId, sourceRepositoryId, sourceArtifactPath);
-                promotionUtil.executeCopy(srcPath, destRepository, srcRepository);
+                promotionUtil.executeCopy(srcPath, srcRepository, destRepository);
             }
 
             String requestURL = request.getServerName();
@@ -329,7 +329,7 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
                 Repository destRepository = repositoryManagementService.getStorage(targetStorageId).getRepository(targetRepositoryId);
                 Repository srcRepository = repositoryManagementService.getStorage(sourceStorageId).getRepository(sourceRepositoryId);
                 RepositoryPath srcPath = repositoryPathResolver.resolve(sourceStorageId, sourceRepositoryId, sourceArtifactPath);
-                promotionUtil.executeCopy(srcPath, destRepository, srcRepository);
+                promotionUtil.executeCopy(srcPath, srcRepository, destRepository);
                 return ResponseEntity.ok("ok");
             }
             if (Objects.isNull(syncModel)) {
