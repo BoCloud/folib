@@ -305,7 +305,7 @@ public class ConanArtifactController extends BaseArtifactController {
         final String storageId = repository.getStorage().getId();
         final String repositoryId = repository.getId();
         InputStream inputStream = request.getInputStream();
-        if (inputStream == null) {
+        if (inputStream == null || inputStream.available() == 0) {
             String checksumDeploy = request.getHeader("X-Checksum-Deploy"), checksumSha1 = request.getHeader("X-Checksum-Sha1");
             if (Boolean.TRUE.equals(Boolean.valueOf(checksumDeploy)) && StringUtils.isNotBlank(checksumSha1)) {
                 RepositoryPath repositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, path);
