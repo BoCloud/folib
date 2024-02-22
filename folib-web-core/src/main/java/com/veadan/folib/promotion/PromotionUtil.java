@@ -34,7 +34,6 @@ import com.veadan.folib.schema2.ImageManifest;
 import com.veadan.folib.schema2.LayerManifest;
 import com.veadan.folib.service.ProxyRepositoryConnectionPoolConfigurationService;
 import com.veadan.folib.services.*;
-import com.veadan.folib.storage.metadata.maven.ChecksumMetadataExpirationStrategy;
 import com.veadan.folib.storage.repository.Repository;
 import com.veadan.folib.util.MessageDigestUtils;
 import com.veadan.folib.util.RepositoryPathUtil;
@@ -49,7 +48,6 @@ import com.veadan.folib.ws.server.manage.FolibWsServerRunManage;
 import lombok.Data;
 import lombok.experimental.Accessors;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.codec.digest.MessageDigestAlgorithms;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.MapUtils;
@@ -68,6 +66,7 @@ import org.glassfish.jersey.media.multipart.Boundary;
 import org.glassfish.jersey.media.multipart.FormDataMultiPart;
 import org.glassfish.jersey.media.multipart.file.StreamDataBodyPart;
 import org.glassfish.jersey.media.multipart.internal.MultiPartWriter;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.http.HttpStatus;
@@ -85,7 +84,6 @@ import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.math.BigDecimal;
@@ -714,16 +712,8 @@ public class PromotionUtil {
         // 记录制品从记录
         String finalTargetUrl = targetUrl;
         artifactSliceUploadHttpEntityList.stream().forEach(e -> {
-            final ArtifactSyncSlaveRecord artifactSyncSlaveRecord = new ArtifactSyncSlaveRecord();
-            artifactSyncSlaveRecord.setSourcePath(e.getPath());
-            artifactSyncSlaveRecord.setTargetPath(String.format("%s/%s/%s/%s-chunk%s?startLength=%s&chunkSize=%s&mergeId=%s", finalTargetUrl, e.getStorageId(), e.getRepositoryId(), e.getPath(), e.getChunkIndex(), e.getStartLength(), e.getChunkSize(), e.getMergeId()));
-            artifactSyncSlaveRecord.setSyncNo(syncNo);
-            artifactSyncSlaveRecord.setSyncModel(ArtifactSyncRecordSyncModelEnum.PUSH.getVal());
-            artifactSyncSlaveRecord.setStatus(ArtifactSyncRecordStatusEnum.IN_SYNC.getVal());
-//            artifactSyncSlaveRecord.setCreateBy(userName);
-            artifactSyncSlaveRecord.setCreateTime(new Date());
-
-            artifactSyncSlaveRecordMapper.insert(artifactSyncSlaveRecord);
+            String targetPath = String.format("%s/%s/%s/%s-chunk%s?startLength=%s&chunkSize=%s&mergeId=%s", finalTargetUrl, e.getStorageId(), e.getRepositoryId(), e.getPath(), e.getChunkIndex(), e.getStartLength(), e.getChunkSize(), e.getMergeId());
+            final ArtifactSyncSlaveRecord artifactSyncSlaveRecord = insertArtifactSyncSlaveRecord(syncNo, e.getPath(), targetPath, ArtifactSyncRecordStatusEnum.IN_SYNC.getVal());
             e.setChunkArtifactRecordId(artifactSyncSlaveRecord.getId());
         });
 
@@ -763,6 +753,7 @@ public class PromotionUtil {
             try {
                 doArtifactSliceUploadV3(uploadDto, storageId, repositoryId, syncNo, finalTargetUrl1, targetHostName);
             } catch (Exception e) {
+                log.error("doArtifactSliceUploadV3 Exception", e);
                 artifactSyncRecordMapper.updateStatusAndFailedReasonBySyncNo(ArtifactSyncRecordStatusEnum.FAILED.getVal(), e.getMessage(), syncNo, new Date());
                 if (e instanceof RuntimeException) {
                     throw (RuntimeException) e;
@@ -776,21 +767,19 @@ public class PromotionUtil {
     private void doArtifactSliceUploadV3(PromotionNodeOptionDto uploadDto, String storageId, String repositoryId, String syncNo, String finalTargetUrl1, String targetHostName) throws Exception {
         final Map<String, Map<String, RepositoryPath>> filePathMap = uploadDto.getPathMap();
         final long sliceByteSize = Optional.ofNullable(configurationManagementService.getConfiguration().getSliceMbSize()).orElse(0L) * (1024 * 1024);
+        //从 filePathMap 中移除目标节点中已经存在的制品
+        remoteExistsArtifact(storageId, repositoryId, targetHostName, filePathMap, syncNo, finalTargetUrl1);
+        if (CollectionUtil.isEmpty(filePathMap)) {
+            return;
+        }
+
         final List<ArtifactSliceUploadHttpEntityBuilder> artifactSliceUploadHttpEntityList = this.getArtifactSliceUploadHttpEntityList(filePathMap, storageId, repositoryId, sliceByteSize);
 
         // 记录制品从记录
         String finalTargetUrl = finalTargetUrl1;
         artifactSliceUploadHttpEntityList.forEach(e -> {
-            final ArtifactSyncSlaveRecord artifactSyncSlaveRecord = new ArtifactSyncSlaveRecord();
-            artifactSyncSlaveRecord.setSourcePath(e.getPath());
-            artifactSyncSlaveRecord.setTargetPath(String.format("%s/%s/%s/%s-chunk%s?startLength=%s&chunkSize=%s&mergeId=%s", finalTargetUrl, e.getStorageId(), e.getRepositoryId(), e.getPath(), e.getChunkIndex(), e.getStartLength(), e.getChunkSize(), e.getMergeId()));
-            artifactSyncSlaveRecord.setSyncNo(syncNo);
-            artifactSyncSlaveRecord.setSyncModel(ArtifactSyncRecordSyncModelEnum.PUSH.getVal());
-            artifactSyncSlaveRecord.setStatus(ArtifactSyncRecordStatusEnum.IN_SYNC.getVal());
-//            artifactSyncSlaveRecord.setCreateBy(userName);
-            artifactSyncSlaveRecord.setCreateTime(new Date());
-
-            artifactSyncSlaveRecordMapper.insert(artifactSyncSlaveRecord);
+            String targetPath = String.format("%s/%s/%s/%s-chunk%s?startLength=%s&chunkSize=%s&mergeId=%s", finalTargetUrl, e.getStorageId(), e.getRepositoryId(), e.getPath(), e.getChunkIndex(), e.getStartLength(), e.getChunkSize(), e.getMergeId());
+            final ArtifactSyncSlaveRecord artifactSyncSlaveRecord = insertArtifactSyncSlaveRecord(syncNo, e.getPath(), targetPath, ArtifactSyncRecordStatusEnum.IN_SYNC.getVal());
             e.setChunkArtifactRecordId(artifactSyncSlaveRecord.getId());
         });
         int size = artifactSliceUploadHttpEntityList.size();
@@ -818,6 +807,70 @@ public class PromotionUtil {
                 // 更新记录状态
                 artifactSyncSlaveRecordMapper.updateRecordStatus(builder.getChunkArtifactRecordId(), ArtifactSyncRecordStatusEnum.FAILED.getVal(), new Date(), e.getMessage());
                 throw e;
+            }
+        }
+    }
+
+    @NotNull
+    private ArtifactSyncSlaveRecord insertArtifactSyncSlaveRecord(String syncNo, String sourcePath, String targetPath, Integer status) {
+        final ArtifactSyncSlaveRecord artifactSyncSlaveRecord = new ArtifactSyncSlaveRecord();
+        artifactSyncSlaveRecord.setSourcePath(sourcePath);
+        artifactSyncSlaveRecord.setTargetPath(targetPath);
+        artifactSyncSlaveRecord.setSyncNo(syncNo);
+        artifactSyncSlaveRecord.setSyncModel(ArtifactSyncRecordSyncModelEnum.PUSH.getVal());
+        artifactSyncSlaveRecord.setStatus(status);
+//            artifactSyncSlaveRecord.setCreateBy(userName);
+        artifactSyncSlaveRecord.setCreateTime(new Date());
+
+        artifactSyncSlaveRecordMapper.insert(artifactSyncSlaveRecord);
+        return artifactSyncSlaveRecord;
+    }
+
+    private void remoteExistsArtifact(String storageId, String repositoryId, String targetHostName, Map<String, Map<String, RepositoryPath>> filePathMap, String syncNo, String finalTargetUrl1) throws IOException, ExecutionException, InterruptedException, TimeoutException {
+
+        Iterator<Map.Entry<String, Map<String, RepositoryPath>>> iterator = filePathMap.entrySet().iterator();
+        while (iterator.hasNext()) {
+            Map.Entry<String, Map<String, RepositoryPath>> entry = iterator.next();
+
+            Iterator<Map.Entry<String, RepositoryPath>> interIterator = entry.getValue().entrySet().iterator();
+            if (interIterator.hasNext()) {
+                Map.Entry<String, RepositoryPath> interEntry = interIterator.next();
+
+                RepositoryPath repositoryPath = interEntry.getValue();
+
+
+                RepositoryPathExistCheck.RepositoryPathExistCheckBuilder builder = RepositoryPathExistCheck.builder().storageId(storageId)
+                        .repositoryId(repositoryId)
+                        .artifactPath(RepositoryFiles.relativizePath(repositoryPath))
+                        .digestAlgorithm(MessageDigestAlgorithms.SHA_1);
+
+                String layout = repositoryPath.getRepository().getLayout();
+                if (DockerLayoutProvider.ALIAS.equals(layout)) {
+                    builder.digestAlgorithm(MessageDigestAlgorithms.SHA_256);
+                }
+
+                LayoutFileSystemProvider provider = repositoryPath.getFileSystem().provider();
+                final RepositoryPath checksumPath = provider.getChecksumPath(repositoryPath, builder.build().getDigestAlgorithm());
+                if (Objects.nonNull(checksumPath) && Files.exists(checksumPath)) {
+                    builder.digest(Files.readString(checksumPath));
+                } else {
+                    log.warn("not found checksumPath ,info: [{}] [{}] [{}] ", checksumPath.getStorageId(), checksumPath.getRepositoryId(), RepositoryFiles.relativizePath(checksumPath));
+                    continue;
+                }
+
+
+                WSMessageRequest wsMessageRequest = new WSMessageRequest(Command.QUERY_ARTIFACT_EXISTS, builder.build());
+                WSMessageResponse wsMessageResponse = folibWsRunManageV2.sendRequest(targetHostName, wsMessageRequest);
+                Object date = wsMessageResponse.getDate();
+                if (Boolean.TRUE.equals(date)) {
+                    iterator.remove();
+                    String key = entry.getKey();
+                    String targetPath = String.format("%s/%s/%s/%s", finalTargetUrl1, storageId, repositoryId, key);
+                    //插入成功从记录
+                    insertArtifactSyncSlaveRecord(syncNo, key, targetPath, ArtifactSyncRecordStatusEnum.SUCCESS.getVal());
+                }
+            } else {
+                throw new RuntimeException(String.format("意外的异常，%s中存在超过1个value元素的Map", entry));
             }
         }
     }
