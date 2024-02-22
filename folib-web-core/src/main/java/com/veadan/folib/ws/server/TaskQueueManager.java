@@ -27,7 +27,7 @@ public class TaskQueueManager {
     public synchronized String submitTask(String taskId, Runnable runnable) {
         if (taskMap.containsKey(taskId)) {
             throw new IllegalArgumentException("Task with ID " + taskId + " already submitted.");
-        }
+        }//todo 异常被吞掉
         Future<?> future = executorService.submit(runnable);
         taskMap.put(taskId, future);
         log.info("Task " + taskId + " submitted.");
