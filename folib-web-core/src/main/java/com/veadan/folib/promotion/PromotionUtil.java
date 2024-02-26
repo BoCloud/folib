@@ -169,6 +169,25 @@ public class PromotionUtil {
         }
     }
 
+    @Async("asyncCopyThreadPoolTaskExecutor")
+    public void executePromotionCopy(String syncNo, String targetPath, RepositoryPath path, Repository srcRepository, Repository targetRepository) {
+        String artifactPath = "";
+        try {
+            artifactPath = RepositoryFiles.relativizePath(path);
+            handleCopy(path, srcRepository, targetRepository);
+            if (Files.exists(repositoryPathResolver.resolve(targetRepository.getStorage().getId(), targetRepository.getId(), artifactPath))) {
+                //插入成功从记录
+                insertArtifactSyncSlaveRecord(syncNo, artifactPath, targetPath, ArtifactSyncRecordStatusEnum.SUCCESS.getVal());
+            } else {
+                insertArtifactSyncSlaveRecord(syncNo, artifactPath, targetPath, ArtifactSyncRecordStatusEnum.FAILED.getVal());
+            }
+            log.info("Execute copy srcRepository [{}] [{}] targetRepository [{}] [{}] path [{}] finished", srcRepository.getStorage().getId(), srcRepository.getId(), targetRepository.getStorage().getId(), targetRepository.getId(), path);
+        } catch (Exception e) {
+            log.info("Execute copy srcRepository [{}] [{}] targetRepository [{}] [{}] path [{}] error [{}]", srcRepository.getStorage().getId(), srcRepository.getId(), targetRepository.getStorage().getId(), targetRepository.getId(), path, ExceptionUtils.getStackTrace(e));
+            insertArtifactSyncSlaveRecord(syncNo, artifactPath, targetPath, ArtifactSyncRecordStatusEnum.FAILED.getVal());
+        }
+    }
+
     //@Async("asyncThreadPoolTaskExecutor")
     public void executeHandleDispatch(ArtifactDispatch artifactDispatch) {
         // 设置上下文字段
@@ -532,6 +551,7 @@ public class PromotionUtil {
                                 artifactManagementService.store(targetBlobPath, inputStream);
                             } catch (Exception e) {
                                 log.error("Do copy srcRepositoryPath [{}] targetManiFestPath [{}] error [{}]", srcBlobPath, targetBlobPath, ExceptionUtils.getStackTrace(e));
+                                throw new Exception(e.getMessage());
                             }
                         }
                         if (StringUtils.isNotBlank(manifest.getDigest())) {
@@ -546,6 +566,7 @@ public class PromotionUtil {
                                 artifactManagementService.store(targetManiFestPath, inputStream);
                             } catch (Exception e) {
                                 log.error("Do copy srcRepositoryPath [{}] targetManiFestPath [{}] error [{}]", srcMainFestPath, targetManiFestPath, ExceptionUtils.getStackTrace(e));
+                                throw new Exception(e.getMessage());
                             }
                         }
                     }

@@ -83,7 +83,10 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
-import java.util.concurrent.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.FutureTask;
+import java.util.concurrent.RejectedExecutionException;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -275,13 +278,15 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
             String targetStorageId = promotionRepositoryInfo.getTargetStorageId();
             String targetRepositoryId = promotionRepositoryInfo.getTargetRepositoryId();
             String targetBaseUrl = promotionRepositoryInfo.getTargetBaseUrl();
+            String targetArtifactPath = promotionRepositoryInfo.getTargetArtifactPath();
             if (sourceBaseUrl.equals(targetBaseUrl)) {
                 validateStorageAndRepository(sourceStorageId, sourceRepositoryId);
                 validateStorageAndRepository(targetStorageId, targetRepositoryId);
                 Repository destRepository = repositoryManagementService.getStorage(targetStorageId).getRepository(targetRepositoryId);
                 Repository srcRepository = repositoryManagementService.getStorage(sourceStorageId).getRepository(sourceRepositoryId);
                 RepositoryPath srcPath = repositoryPathResolver.resolve(sourceStorageId, sourceRepositoryId, sourceArtifactPath);
-                promotionUtil.executeCopy(srcPath, srcRepository, destRepository);
+                String targetPath = String.format("%s/%s/%s/%s", targetBaseUrl, targetStorageId, targetRepositoryId, targetArtifactPath);
+                promotionUtil.executePromotionCopy(syncNo, targetPath, srcPath, srcRepository, destRepository);
                 return;
             }
 
@@ -310,6 +315,7 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
             }
         }
     }
+
     @Override
     @Deprecated
     public ResponseEntity<String> nodeOption(PromotionNodeOption promotionNodeOption, HttpServletRequest request) {
@@ -358,7 +364,7 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
                 // 异步制品切片上传
 //                asyncThreadPoolTaskExecutor.submit(() -> {
 //                    final List<PromotionUtil.ArtifactSliceUploadHttpEntityResponse> uploadResults = promotionUtil.artifactSliceUpload(uploadDto, targetUrl, srcStorageId, srcRepostoryId, syncNo);
-                    // 更新记录结果
+                // 更新记录结果
 //                });
 
             } else if (ArtifactSyncRecordSyncModelEnum.PULL.getVal().equals(syncModel)) {
@@ -393,14 +399,23 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
         return ResponseEntity.ok("ok");
     }
 
-    
+
     @Override
     public ResponseEntity nodeOptionAttachRecord(PromotionNodeOption promotionNodeOption, HttpServletRequest
             request) {
         PromotionRepositoryInfo promotionRepositoryInfo = resolvePromotionRepository(promotionNodeOption);
+        if (Objects.isNull(promotionNodeOption.getSyncModel())) {
+            promotionNodeOption.setSyncModel(ArtifactSyncRecordSyncModelEnum.PUSH.getVal());
+        }
         if (ArtifactSyncRecordSyncModelEnum.PUSH.getVal().equals(promotionNodeOption.getSyncModel())) {
             validateSourceRepositoryPath(promotionRepositoryInfo.getSourceStorageId(), promotionRepositoryInfo.getSourceRepositoryId(), promotionRepositoryInfo.getSourceArtifactPath());
-            validateRemoteRepository(promotionRepositoryInfo.getTargetBaseUrl(), promotionRepositoryInfo.getTargetStorageId(), promotionRepositoryInfo.getTargetRepositoryId());
+            String sourceBaseUrl = promotionRepositoryInfo.getSourceBaseUrl();
+            String targetBaseUrl = promotionRepositoryInfo.getTargetBaseUrl();
+            if (sourceBaseUrl.equals(targetBaseUrl)) {
+                validateStorageAndRepository(promotionRepositoryInfo.getTargetStorageId(), promotionRepositoryInfo.getTargetRepositoryId());
+            } else {
+                validateRemoteRepository(promotionRepositoryInfo.getTargetBaseUrl(), promotionRepositoryInfo.getTargetStorageId(), promotionRepositoryInfo.getTargetRepositoryId());
+            }
         }
         // 生成同步编号
         final String syncNo = String.format("SyncNo%s", UUID.randomUUID().toString(true));
@@ -408,23 +423,23 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
         final String userName = Optional.ofNullable(userDetails).map(SpringSecurityUser::getUsername).orElse(null);
         final String requestHostName = request.getServerName();
         final ArtifactSyncRecord artifactSyncRecord = new ArtifactSyncRecord();
-        
 
-            // 生成日志记录
-            artifactSyncRecord.setId(idGenerateUtils.generateId("artifactSyncRecordId"));
-            artifactSyncRecord.setRequestHostName(requestHostName);
-            artifactSyncRecord.setSourceStorageId(promotionRepositoryInfo.getSourceStorageId());
-            artifactSyncRecord.setSourceRepositoryId(promotionRepositoryInfo.getSourceRepositoryId());
-            artifactSyncRecord.setSourcePath(promotionNodeOption.getSourcePath());
-            artifactSyncRecord.setTargetPath(promotionNodeOption.getTargetPath());
-            artifactSyncRecord.setSyncNo(syncNo);
-            artifactSyncRecord.setOpsType(ArtifactSyncRecordOpsTypeEnum.PROMOTION.getVal());
-            artifactSyncRecord.setSyncModel(promotionNodeOption.getSyncModel());
-            artifactSyncRecord.setStatus(ArtifactSyncRecordStatusEnum.IN_SYNC.getVal());
-            artifactSyncRecord.setCreateBy(userName);
-            artifactSyncRecord.setCreateTime(new Date());
-            artifactSyncRecordMapper.insert(artifactSyncRecord);
-            promotionNodeOption.setSyncNo(syncNo);
+
+        // 生成日志记录
+        artifactSyncRecord.setId(idGenerateUtils.generateId("artifactSyncRecordId"));
+        artifactSyncRecord.setRequestHostName(requestHostName);
+        artifactSyncRecord.setSourceStorageId(promotionRepositoryInfo.getSourceStorageId());
+        artifactSyncRecord.setSourceRepositoryId(promotionRepositoryInfo.getSourceRepositoryId());
+        artifactSyncRecord.setSourcePath(promotionNodeOption.getSourcePath());
+        artifactSyncRecord.setTargetPath(promotionNodeOption.getTargetPath());
+        artifactSyncRecord.setSyncNo(syncNo);
+        artifactSyncRecord.setOpsType(ArtifactSyncRecordOpsTypeEnum.PROMOTION.getVal());
+        artifactSyncRecord.setSyncModel(promotionNodeOption.getSyncModel());
+        artifactSyncRecord.setStatus(ArtifactSyncRecordStatusEnum.IN_SYNC.getVal());
+        artifactSyncRecord.setCreateBy(userName);
+        artifactSyncRecord.setCreateTime(new Date());
+        artifactSyncRecordMapper.insert(artifactSyncRecord);
+        promotionNodeOption.setSyncNo(syncNo);
 
         try {
             this.nodeOptionV2(promotionNodeOption, request);
@@ -705,18 +720,18 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
         artifactSyncRecord.setCreateBy(userName);
         artifactSyncRecord.setCreateTime(new Date());
         artifactSyncRecordMapper.insert(artifactSyncRecord);
-        
-        try {
-              // 异步执行制品晋级
-                final ResponseEntity<String> re = this.artifactDispatch(artifactDispatch);
 
-                // 更新同步的逻辑状态等信息，由于制品分发涉及多个制品，即成功状态是所有支配完成时更新
-                if (!HttpStatus.OK.equals(re.getStatusCode())) {
-                    artifactSyncRecord.setStatus(ArtifactSyncRecordStatusEnum.FAILED.getVal());
-                    if (Objects.nonNull(re.getBody())) {
-                        artifactSyncRecord.setFailedReason(re.getBody().toString());
-                    }
+        try {
+            // 异步执行制品晋级
+            final ResponseEntity<String> re = this.artifactDispatch(artifactDispatch);
+
+            // 更新同步的逻辑状态等信息，由于制品分发涉及多个制品，即成功状态是所有支配完成时更新
+            if (!HttpStatus.OK.equals(re.getStatusCode())) {
+                artifactSyncRecord.setStatus(ArtifactSyncRecordStatusEnum.FAILED.getVal());
+                if (Objects.nonNull(re.getBody())) {
+                    artifactSyncRecord.setFailedReason(re.getBody().toString());
                 }
+            }
 //                if (HttpStatus.OK.equals(re.getStatusCode())) {
 //                    artifactSyncRecord.setStatus(ArtifactSyncRecordStatusEnum.SUCCESS.getVal());
 //                } else {
@@ -726,10 +741,10 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
 //                    }
 //                }
 
-                // 更新日志结束开始时间
-                artifactSyncRecordMapper.updateByPrimaryKey(artifactSyncRecord
-                        .setUpdateTime(new Date())
-                        .setUpdateBy(userName));
+            // 更新日志结束开始时间
+            artifactSyncRecordMapper.updateByPrimaryKey(artifactSyncRecord
+                    .setUpdateTime(new Date())
+                    .setUpdateBy(userName));
         } catch (Exception e) {
             log.error("artifactDispatch exception", e);
             artifactSyncRecord.setStatus(ArtifactSyncRecordStatusEnum.FAILED.getVal());
@@ -1280,12 +1295,12 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
                 // 转存合并文件到Folib
 ///                artifactManagementService.store(artifactFilePath, Files.newInputStream(Path.of(mergeFilePath)));
 
-                FileStreamMultipartFile fileStreamMultipartFile = new FileStreamMultipartFile(new File(mergeFilePath),fileName,"",null);
+                FileStreamMultipartFile fileStreamMultipartFile = new FileStreamMultipartFile(new File(mergeFilePath), fileName, "", null);
 
                 // 兼容原来上传逻辑
                 final ArtifactUploadTask artifactUploadTask = new ArtifactUploadTask(storageId, repositoryId, fileStreamMultipartFile,
-                        repositoryManagementService, repositoryPathResolver, artifactManagementService, promotionUtil, 
-                        layoutProviderRegistry, artifactMetadataService, artifactRepository, mavenRepositoryFeatures, 
+                        repositoryManagementService, repositoryPathResolver, artifactManagementService, promotionUtil,
+                        layoutProviderRegistry, artifactMetadataService, artifactRepository, mavenRepositoryFeatures,
                         tempPath, path, metaDataJsonStr, null, null);
                 final String result = artifactUploadTask.call();
                 if (StringUtils.isNotBlank(result)) {
