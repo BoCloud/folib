@@ -282,6 +282,7 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
                 Repository srcRepository = repositoryManagementService.getStorage(sourceStorageId).getRepository(sourceRepositoryId);
                 RepositoryPath srcPath = repositoryPathResolver.resolve(sourceStorageId, sourceRepositoryId, sourceArtifactPath);
                 promotionUtil.executeCopy(srcPath, srcRepository, destRepository);
+                return;
             }
 
             String requestURL = request.getServerName();
