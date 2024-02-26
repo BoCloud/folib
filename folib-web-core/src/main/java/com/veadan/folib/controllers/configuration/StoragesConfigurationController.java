@@ -55,6 +55,7 @@ import com.veadan.folib.users.service.impl.DatabaseUserService;
 import com.veadan.folib.users.userdetails.SpringSecurityUser;
 import com.veadan.folib.validation.RequestBodyValidationException;
 import com.veadan.folib.web.RepositoryMapping;
+import com.veadan.folib.ws.common.FolibWsRunManageUtil;
 import com.veadan.folib.ws.common.FolibWsRunManageV2;
 import com.veadan.folib.ws.server.Command;
 import com.veadan.folib.ws.server.WSMessageRequest;
@@ -505,7 +506,7 @@ public class StoragesConfigurationController
             dispatchRepositoryDto.setDispatchEnName(dispatchEnName);
             WSMessageRequest wsMessageRequest = new WSMessageRequest(Command.STORAGES_REPOSITORY_TREE,dispatchRepositoryDto);
 
-            String targetHostName = folibWsRunManageV2.getTargetHostName(clusterDispatchNodeDto);
+            String targetHostName = FolibWsRunManageUtil.getTargetHostName(clusterDispatchNodeDto);
 
             WSMessageResponse messageResponse = null;
             try {

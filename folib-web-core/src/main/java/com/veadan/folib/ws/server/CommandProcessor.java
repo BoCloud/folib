@@ -22,23 +22,22 @@ public abstract class CommandProcessor {
     public abstract Command getCommand();
 
     public void execute(WSMessageRequest wsMessageRequest, Session session) {
-        Object result = null;
+        WSMessageResponse wsMessageResponse = null;
         try {
-            log.info("CommandProcessor.doExecute command:{}",getCommand());
-            result = doExecute(wsMessageRequest, session);
+            log.info("CommandProcessor.doExecute command:{}", getCommand());
+            Object result = doExecute(wsMessageRequest, session);
+            wsMessageResponse = WSMessageResponse.ok(wsMessageRequest.getId(), wsMessageRequest.getCommand(), result);
         } catch (Exception e) {
             log.error("commandProcessor execute exception", e);
-            result = e;
-
+            wsMessageResponse = WSMessageResponse.error(wsMessageRequest.getId(), wsMessageRequest.getCommand(), e.getMessage());
         }
-        WSMessageResponse wsMessageResponse = wsMessageRequest.buildResponse(result);
         try {
-            log.info("CommandProcessor.sendResponse wsMessageResponse:{}",wsMessageResponse);
+            log.info("CommandProcessor.sendResponse wsMessageResponse:{}", wsMessageResponse);
             folibWsRunManageV2.sendResponse(session, wsMessageResponse);
         } catch (ExecutionException | InterruptedException | TimeoutException e) {
             throw new RuntimeException(e);
         }
     }
 
-    protected abstract Object doExecute(WSMessageRequest wsMessageRequest, Session session);
+    protected abstract Object doExecute(WSMessageRequest wsMessageRequest, Session session) throws Exception;
 }

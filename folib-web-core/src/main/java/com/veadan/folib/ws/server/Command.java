@@ -9,6 +9,7 @@ public enum Command {
     HEARD_BEAT,
     STORAGES_REPOSITORY_TREE,
     UPLOAD,
+    DELEGATE_UPLOAD,
     QUERY_ARTIFACT_EXISTS,
     SERVER_INFO;
 }

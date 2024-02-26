@@ -6,6 +6,7 @@ import com.veadan.folib.ws.common.FolibWsRunManageV2;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 
 import javax.websocket.CloseReason;
@@ -30,6 +31,8 @@ public class FolibWsUtil {
 
     @Autowired
     private FolibWsRunManageV2 folibWsRunManageV2;
+    @Autowired
+    private PromotionTaskQueue promotionTaskQueue;
 
     private static final ConcurrentHashMap<Session, ByteBuffer> messageBufferMap = new ConcurrentHashMap<>();
     private static final Map<Session, Map<String, ByteBuffer>> sessionMessageBufferMap = new ConcurrentHashMap<>();
@@ -40,13 +43,12 @@ public class FolibWsUtil {
     public void onOpen(String targetHostName, Session session) {
         session.setMaxBinaryMessageBufferSize(1024 * 1024 * 1000);
         session.setMaxTextMessageBufferSize(1024 * 1024 * 1000);
-        synchronized (targetHostName.intern()) {
-            Session priviousSession = folibWsRunManageV2.getSession(targetHostName);
-            if (null != priviousSession) {
-                folibWsRunManageV2.unRegisterSession(targetHostName);
-            }
-            folibWsRunManageV2.registerSession(targetHostName, session);
+        Session priviousSession = folibWsRunManageV2.getSession(targetHostName);
+        if (null != priviousSession) {
+            folibWsRunManageV2.unRegisterSession(targetHostName);
         }
+        folibWsRunManageV2.registerSession(targetHostName, session);
+        promotionTaskQueue.registerPromotionTaskQueue(targetHostName);
     }
 
     public void onClose(String nodeId, Session session, CloseReason closeReason) {
@@ -58,6 +60,7 @@ public class FolibWsUtil {
     }
 
 
+    @Async("asyncWsCommandThreadPoolTaskExecutor")
     public void onMessageV4(String nodeName, ByteBuffer message, Session session) {
         String protocol = extractFolibWSProtocol(message);
         if (!FOLIB_WS_PROTOCOL.equals(protocol)) {
@@ -122,21 +125,27 @@ public class FolibWsUtil {
     private void handleMessage(String nodeName, Session session, ByteBuffer message) {
         Object msgObj = KryoSerializationUtil.deserialize(message.array());
         if (msgObj instanceof WSMessageResponse) {
-            processWSMessageResponse(nodeName,(WSMessageResponse) msgObj, session);
+            processWSMessageResponse(nodeName, (WSMessageResponse) msgObj, session);
         } else if (msgObj instanceof WSMessageRequest) {
-            processWSMessage((WSMessageRequest) msgObj, session);
+            processWSMessageRequest((WSMessageRequest) msgObj, session);
         } else {
             throw new RuntimeException("unknown type :" + msgObj.getClass());
         }
     }
 
-    private void processWSMessageResponse(String nodeName,WSMessageResponse response, Session session) {
+    private void processWSMessageResponse(String nodeName, WSMessageResponse response, Session session) {
+        log.info("response {}", response);
         String id = response.getId();
         CompletableFuture<WSMessageResponse> future = folibWsRunManageV2.getFuture(id);
+        if (future == null) {
+            log.warn("id {} future is null", id);
+            return;
+        }
         future.complete(response);
     }
 
-    private void processWSMessage(WSMessageRequest msgObj, Session session) {
+    private void processWSMessageRequest(WSMessageRequest msgObj, Session session) {
+        log.info("request {}", msgObj);
         ObjectProvider<CommandProcessor> beanProvider = SpringContextUtil.getApplicationContext().getBeanProvider(CommandProcessor.class);
         for (CommandProcessor commandProcessor : beanProvider) {
             if (commandProcessor.getCommand().equals(msgObj.getCommand())) {

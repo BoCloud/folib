@@ -45,6 +45,11 @@ import com.veadan.folib.utils.PropertiesUtils;
 import com.veadan.folib.utils.UrlUtils;
 import com.veadan.folib.ws.client.handler.command.FolibWsClientArtifactPullCommand;
 import com.veadan.folib.ws.common.FolibWsAction;
+import com.veadan.folib.ws.common.FolibWsRunManageUtil;
+import com.veadan.folib.ws.common.FolibWsRunManageV2;
+import com.veadan.folib.ws.server.Command;
+import com.veadan.folib.ws.server.WSMessageRequest;
+import com.veadan.folib.ws.server.WSMessageResponse;
 import com.veadan.folib.ws.server.manage.FolibWsServerRunManage;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.fileupload.disk.DiskFileItem;
@@ -63,6 +68,7 @@ import org.springframework.context.annotation.Lazy;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
+import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
@@ -83,10 +89,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.FutureTask;
-import java.util.concurrent.RejectedExecutionException;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -174,6 +177,8 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
     @Inject
     @Lazy
     private IdGenerateUtils idGenerateUtils;
+    @Inject
+    private FolibWsRunManageV2 folibWsRunManageV2;
 
     @Override
     public ResponseEntity copy(ArtifactPromotion artifactPromotion) {
@@ -267,7 +272,7 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
     }
 
     @Override
-    public void nodeOptionV2(PromotionNodeOption promotionNodeOption, HttpServletRequest request) {
+    public CompletableFuture<Void> nodeOptionV2(PromotionNodeOption promotionNodeOption) {
         try {
             final String syncNo = promotionNodeOption.getSyncNo();
             PromotionRepositoryInfo promotionRepositoryInfo = resolvePromotionRepository(promotionNodeOption);
@@ -287,11 +292,9 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
                 RepositoryPath srcPath = repositoryPathResolver.resolve(sourceStorageId, sourceRepositoryId, sourceArtifactPath);
                 String targetPath = String.format("%s/%s/%s/%s", targetBaseUrl, targetStorageId, targetRepositoryId, targetArtifactPath);
                 promotionUtil.executePromotionCopy(syncNo, targetPath, srcPath, srcRepository, destRepository);
-                return;
+                return CompletableFuture.completedFuture(null);
             }
 
-            String requestURL = request.getServerName();
-            log.info("requestURL={}", requestURL);
 
             validateStorageAndRepository(sourceStorageId, sourceRepositoryId);
 
@@ -305,7 +308,9 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
 
             PromotionNodeOptionDto uploadDto = promotionUtil.getPromotionUploadDto(promotionArtifactDto);
 
-            promotionUtil.artifactSliceUploadV3(uploadDto, targetBaseUrl, targetStorageId, targetRepositoryId, syncNo);
+            CompletableFuture<Void> future = promotionUtil.artifactSliceUploadV3(uploadDto, targetBaseUrl, targetStorageId, targetRepositoryId, syncNo);
+
+            return future;
         } catch (Exception e) {
             log.error("制品晋级错误 {}", ExceptionUtils.getStackTrace(e));
             if (e instanceof RuntimeException) {
@@ -401,27 +406,37 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
 
 
     @Override
-    public ResponseEntity nodeOptionAttachRecord(PromotionNodeOption promotionNodeOption, HttpServletRequest
-            request) {
-        PromotionRepositoryInfo promotionRepositoryInfo = resolvePromotionRepository(promotionNodeOption);
-        if (Objects.isNull(promotionNodeOption.getSyncModel())) {
-            promotionNodeOption.setSyncModel(ArtifactSyncRecordSyncModelEnum.PUSH.getVal());
-        }
-        if (ArtifactSyncRecordSyncModelEnum.PUSH.getVal().equals(promotionNodeOption.getSyncModel())) {
-            validateSourceRepositoryPath(promotionRepositoryInfo.getSourceStorageId(), promotionRepositoryInfo.getSourceRepositoryId(), promotionRepositoryInfo.getSourceArtifactPath());
-            String sourceBaseUrl = promotionRepositoryInfo.getSourceBaseUrl();
-            String targetBaseUrl = promotionRepositoryInfo.getTargetBaseUrl();
-            if (sourceBaseUrl.equals(targetBaseUrl)) {
-                validateStorageAndRepository(promotionRepositoryInfo.getTargetStorageId(), promotionRepositoryInfo.getTargetRepositoryId());
-            } else {
-                validateRemoteRepository(promotionRepositoryInfo.getTargetBaseUrl(), promotionRepositoryInfo.getTargetStorageId(), promotionRepositoryInfo.getTargetRepositoryId());
+    public ResponseEntity nodeOptionAttachRecord(PromotionNodeOption promotionNodeOption, String requestHostName) {
+        String targetHostName = FolibWsRunManageUtil.getTargetHostName(promotionNodeOption.getTargetPath());
+        String sourceHostName = FolibWsRunManageUtil.getTargetHostName(promotionNodeOption.getSourcePath());
+
+
+
+        String selfHostName = FolibWsRunManageUtil.getTargetHostName(configurationManagementService.getConfiguration().getBaseUrl());
+        if (selfHostName.equals(sourceHostName)) {
+            final String syncNo = String.format("SyncNo%s", UUID.randomUUID().toString(true));
+            uploadArtifact(syncNo, promotionNodeOption, requestHostName);
+            return ResponseEntity.ok(syncNo);
+        }else if(selfHostName.equals(targetHostName)){
+            try {
+                //委托sourceHostName节点upload到本节点，对本节点来说是下载，1小时超时时间，等待下载完成
+                WSMessageResponse wsMessageResponse = folibWsRunManageV2.sendRequest(sourceHostName, new WSMessageRequest(Command.DELEGATE_UPLOAD, promotionNodeOption), 60 * 60);
+                log.info("DelegateUpload WSMessageResponse:{}",wsMessageResponse);
+                return ResponseEntity.ok("ok");
+            } catch (Exception e) {
+                throw new RuntimeException(e);
             }
         }
-        // 生成同步编号
-        final String syncNo = String.format("SyncNo%s", UUID.randomUUID().toString(true));
-        final SpringSecurityUser userDetails = (SpringSecurityUser) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-        final String userName = Optional.ofNullable(userDetails).map(SpringSecurityUser::getUsername).orElse(null);
-        final String requestHostName = request.getServerName();
+        throw new RuntimeException("At least one of the hostname in the targetPath or sourcePath parameters must be " + selfHostName);
+    }
+    public CompletableFuture<Void> uploadArtifact(String syncNo, PromotionNodeOption promotionNodeOption, String requestHostName) {
+        PromotionRepositoryInfo promotionRepositoryInfo = resolvePromotionRepository(promotionNodeOption);
+
+        String userName = Optional.ofNullable(SecurityContextHolder.getContext())
+                .map(SecurityContext::getAuthentication)
+                .map(auth -> (SpringSecurityUser) auth.getPrincipal())
+                .map(SpringSecurityUser::getUsername).orElse(null);
+
         final ArtifactSyncRecord artifactSyncRecord = new ArtifactSyncRecord();
 
 
@@ -440,15 +455,8 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
         artifactSyncRecord.setCreateTime(new Date());
         artifactSyncRecordMapper.insert(artifactSyncRecord);
         promotionNodeOption.setSyncNo(syncNo);
-
         try {
-            this.nodeOptionV2(promotionNodeOption, request);
-
-            artifactSyncRecord.setStatus(ArtifactSyncRecordStatusEnum.SUCCESS.getVal());
-            // 更新日志结束开始时间
-            artifactSyncRecordMapper.updateByPrimaryKey(artifactSyncRecord
-                    .setUpdateTime(new Date())
-                    .setUpdateBy(userName));
+            return this.nodeOptionV2(promotionNodeOption);
         } catch (Exception e) {
             artifactSyncRecord.setStatus(ArtifactSyncRecordStatusEnum.FAILED.getVal());
             artifactSyncRecord.setFailedReason(e.getMessage());
@@ -463,8 +471,6 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
                 throw new RuntimeException(e);
             }
         }
-
-        return ResponseEntity.ok(syncNo);
     }
 
     @Override

@@ -78,6 +78,13 @@ public class ArtifactPromotionController extends BaseArtifactController {
     }
 
 
+    /**
+     *
+     * @param promotionNodeOption sourcePath targetPath  制品晋级的来源和晋级的目标机器
+     * @param request 源请求
+     * @param bindingResult 校验
+     * @return  晋级的结果
+     */
     @PostMapping("/nodeOption")
     @PermissionCheck(resourceKey = "ARTIFACTS_PROMOTION")
     public ResponseEntity nodeOption(@RequestBody @Validated PromotionNodeOption promotionNodeOption,
@@ -87,7 +94,7 @@ public class ArtifactPromotionController extends BaseArtifactController {
         if (bindingResult.hasErrors()) {
             throw new RequestBodyValidationException("请求参数错误", bindingResult);
         }
-        return artifactPromotionService.nodeOptionAttachRecord(promotionNodeOption, request);
+        return artifactPromotionService.nodeOptionAttachRecord(promotionNodeOption, request.getServerName());
     }
 
 

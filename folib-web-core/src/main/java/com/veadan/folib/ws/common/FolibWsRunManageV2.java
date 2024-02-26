@@ -1,6 +1,5 @@
 package com.veadan.folib.ws.common;
 
-import cn.hutool.http.HttpUtil;
 import com.veadan.folib.config.PromotionConfig;
 import com.veadan.folib.configuration.ConfigurationManager;
 import com.veadan.folib.dispatch.ClusterDispatchNodeDto;
@@ -10,6 +9,7 @@ import com.veadan.folib.utils.UrlUtils;
 import com.veadan.folib.ws.server.*;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
@@ -18,9 +18,7 @@ import javax.websocket.ContainerProvider;
 import javax.websocket.DeploymentException;
 import javax.websocket.Session;
 import java.io.IOException;
-import java.net.MalformedURLException;
 import java.net.URI;
-import java.net.URL;
 import java.nio.ByteBuffer;
 import java.util.Collection;
 import java.util.Map;
@@ -51,23 +49,6 @@ public class FolibWsRunManageV2 {
     @Autowired
     private PromotionConfig promotionConfig;
 
-    public String getTargetHostName(ClusterDispatchNodeDto nodeInfo) {
-        String clusterNodeHost = nodeInfo.getClusterNodeHost();
-        return getTargetHostName(clusterNodeHost);
-    }
-
-    public String getTargetHostName(String clusterNodeHost) {
-        URL destUrl = null;
-        try {
-            destUrl = new URL(clusterNodeHost);
-        } catch (MalformedURLException e) {
-            throw new RuntimeException(e);
-        }
-        String destHost = destUrl.getHost();
-        Integer destPort = UrlUtils.getPort(clusterNodeHost);
-        return String.format("%s:%s", destHost, destPort);
-    }
-
 
     @Scheduled(cron = "0/5 * * * * ?")
     public void Scheduled() {
@@ -82,52 +63,35 @@ public class FolibWsRunManageV2 {
     }
 
     public void reconnectAndHeartbeat(ClusterDispatchNodeDto nodeInfo) {
-        final String clusterNodeHost = nodeInfo.getClusterNodeHost();
-        final URL destUrl;
-        final URL originUrl;
-        try {
-            destUrl = new URL(clusterNodeHost);
-            originUrl = new URL(configurationManager.getConfiguration().getBaseUrl());
-        } catch (MalformedURLException e) {
-            throw new RuntimeException(e);
-        }
-        final String originHost = originUrl.getHost();
-        final Integer originPort = UrlUtils.getPort(originUrl.toString());
-        final String destHost = destUrl.getHost();
-        final Integer destPort = UrlUtils.getPort(clusterNodeHost);
-///                        final String destNodeName = String.format("%s:%s", destHost, destPort);
-        final String originNodeName = String.format("%s:%s", originHost, originPort);
-        final String destUri = String.format("/wsv2/folib/%s", originNodeName);
-        final boolean enableSSL = HttpUtil.isHttps(clusterNodeHost);
-        //     String uri = "ws://" + destHost + ":" + destPort + destUri;
-        String uri = String.format("%s://%s:%s", enableSSL ? "wss" : "ws", destHost, destPort + destUri);
 
-        String targetHostName = getTargetHostName(nodeInfo);
+        String targetHostName = FolibWsRunManageUtil.getTargetHostName(nodeInfo);
         Session session1 = FOLIB_WS_RUN_MAP.get(targetHostName);
-        if (!(session1 != null && session1.isOpen())) {
-            try {
-                connectToServer(targetHostName, uri);
-            } catch (DeploymentException | IOException e) {
-                log.error("connectToServer fail , retry...", e);
-            }
-        } else {
-            Long l = sessionIdleMap.get(session1);
-            if (l != null) {
-                long idleTime = System.currentTimeMillis() - l;
-                if (idleTime < 1000 * 20) {
-                    return;
-                }
-                log.info("send ws HEARD_BEAT {}", targetHostName);
+        synchronized (targetHostName) {
+            if (!(session1 != null && session1.isOpen())) {
                 try {
-                    WSMessageResponse wsMessageResponse = sendRequest(targetHostName, new WSMessageRequest(Command.HEARD_BEAT));
-                } catch (InterruptedException | ExecutionException | TimeoutException e) {
-                    try {
-                        session1.close();
-                    } catch (IOException ex) {
-                        log.error("close exception", e);
-                    }
-                    log.error("ping Exception", e);
+                    connectToServerV2(nodeInfo);
+                } catch (DeploymentException | IOException e) {
+                    log.error("connectToServer fail , retry...", e);
                 }
+                return;
+            }
+        }
+        Long l = sessionIdleMap.get(session1);
+        if (l != null) {
+            long idleTime = System.currentTimeMillis() - l;
+            if (idleTime < 1000 * 20) {
+                return;
+            }
+            log.info("send ws HEARD_BEAT {}", targetHostName);
+            try {
+                WSMessageResponse wsMessageResponse = sendRequest(targetHostName, new WSMessageRequest(Command.HEARD_BEAT));
+            } catch (Exception e) {
+                try {
+                    session1.close();
+                } catch (IOException ex) {
+                    log.error("close exception", e);
+                }
+                log.error("ping Exception", e);
             }
         }
     }
@@ -158,36 +122,43 @@ public class FolibWsRunManageV2 {
 //    }
 
 
-    public Session connectToServer(String targetHostName, String uri) throws DeploymentException, IOException {
-        log.info("connect ws {}", uri);
-        FolibWsClient folibWsClient = new FolibWsClient(targetHostName, uri);
-        return ContainerProvider.getWebSocketContainer().connectToServer(folibWsClient, URI.create(uri));
+    public Session connectToServerV2(ClusterDispatchNodeDto nodeInfo) throws DeploymentException, IOException {
+        log.info("connect ws nodeInfo:{}", nodeInfo);
+        FolibWsClient folibWsClient = new FolibWsClient(nodeInfo, configurationManager);
+        return ContainerProvider.getWebSocketContainer().connectToServer(folibWsClient, URI.create(folibWsClient.getUri()));
     }
 
     public void registerSession(String targetHostName, Session session) {
-        if (!session.isOpen()) {
-            throw new IllegalStateException("registration of unopened sessions is not allowed");
+        synchronized (targetHostName.intern()) {
+            if (!session.isOpen()) {
+                throw new IllegalStateException("registration of unopened sessions is not allowed");
+            }
+            log.info("registerSession [targetHostName:{} session:{}]", targetHostName, session);
+            FOLIB_WS_RUN_MAP.put(targetHostName, session);
+            sessionIdleMap.put(session, System.currentTimeMillis());
         }
-        log.info("registerSession [targetHostName:{} session:{}]", targetHostName, session);
-        FOLIB_WS_RUN_MAP.put(targetHostName, session);
-        sessionIdleMap.put(session, System.currentTimeMillis());
     }
 
-    public Session unRegisterSession(String targetHostName) {
-        Session session = FOLIB_WS_RUN_MAP.remove(targetHostName);
-        sessionIdleMap.remove(session);
-        log.info("unRegisterSession [targetHostName:{} session:{}]", targetHostName, session);
-        if (session != null && session.isOpen()) {
-            try {
-                session.close();
-            } catch (IOException e) {
-                throw new RuntimeException(e);
+    public void unRegisterSession(String targetHostName) {
+        synchronized (targetHostName.intern()) {
+            Session session = FOLIB_WS_RUN_MAP.remove(targetHostName);
+            if (session == null) {
+                log.warn("session is null , targetHostName:{}", targetHostName);
+                return;
             }
+            log.info("unRegisterSession [targetHostName:{} session:{}]", targetHostName, session);
+            sessionIdleMap.remove(session);
+            if (session.isOpen()) {
+                try {
+                    session.close();
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+            sessionLastSendTime.remove(session);
+            sessionBytesSent.remove(session);
+            sessionLocks.remove(session);
         }
-        sessionLastSendTime.remove(session);
-        sessionBytesSent.remove(session);
-        sessionLocks.remove(session);
-        return session;
     }
 
     public Session getSession(String targetHostName) {
@@ -207,11 +178,15 @@ public class FolibWsRunManageV2 {
 
     }
 
-    public WSMessageResponse sendRequest(String targetHostName, WSMessageRequest wsMessageRequest) throws ExecutionException, InterruptedException, TimeoutException {
+    public WSMessageResponse sendRequest(String targetHostName, Command command) throws Exception {
+        return sendRequest(targetHostName, new WSMessageRequest(command));
+    }
+
+    public WSMessageResponse sendRequest(String targetHostName, WSMessageRequest wsMessageRequest) throws FolibWsRequestException {
         return sendRequest(targetHostName, wsMessageRequest, promotionConfig.getWsRequestTimout());
     }
 
-    public WSMessageResponse sendRequest(String targetHostName, WSMessageRequest wsMessageRequest, int timeout) throws ExecutionException, InterruptedException, TimeoutException {
+    public WSMessageResponse sendRequest(String targetHostName, WSMessageRequest wsMessageRequest, int timeout) throws FolibWsRequestException {
         Session session = getSession(targetHostName);
 
         if (session == null) {
@@ -231,14 +206,25 @@ public class FolibWsRunManageV2 {
 
         REQUEST_FUTURES.put(wsMessageRequest.getId(), future);
         try {
+            log.info("wsMessageRequest {}", wsMessageRequest);
             sendBinary(session, wsMessageRequest, finalKbps);
         } catch (Exception e) {
             log.error("sendBinary fail", e);
             future.completeExceptionally(e);
         }
-        WSMessageResponse wsMessageResponse = future.get(timeout, TimeUnit.SECONDS);
-        REQUEST_FUTURES.remove(wsMessageRequest.getId());
-        return wsMessageResponse;
+        WSMessageResponse wsMessageResponse;
+        try {
+            wsMessageResponse = future.get(timeout, TimeUnit.SECONDS);
+        } catch (ExecutionException | InterruptedException | TimeoutException e) {
+            throw new FolibWsRequestException(e);
+        } finally {
+            REQUEST_FUTURES.remove(wsMessageRequest.getId());
+        }
+        if (HttpStatus.OK.equals(wsMessageResponse.getStatus())) {
+            return wsMessageResponse;
+        } else {
+            throw new FolibWsRequestException((String) wsMessageResponse.getDate());
+        }
     }
 
     public void sendResponse(Session session, WSMessageResponse wsMessageResponse) throws ExecutionException, InterruptedException, TimeoutException {
@@ -327,6 +313,7 @@ public class FolibWsRunManageV2 {
                 CompletableFuture<Void> completableFuture = new CompletableFuture<>();
 
                 session.getAsyncRemote().sendBinary(chunk, result -> {
+                    log.info("sendBinary [result:{} , messageId:{}]", result, messageId);
                     if (result.isOK()) {
                         completableFuture.complete(null); // 完成Future
                     } else {
@@ -360,4 +347,14 @@ public class FolibWsRunManageV2 {
         }
     }
 
+}
+
+class FolibWsRequestException extends Exception {
+    public FolibWsRequestException(String message) {
+        super(message);
+    }
+
+    public FolibWsRequestException(Exception e) {
+        super(e);
+    }
 }

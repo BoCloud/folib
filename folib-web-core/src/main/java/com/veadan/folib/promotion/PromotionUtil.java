@@ -42,6 +42,7 @@ import com.veadan.folib.utils.UrlUtils;
 import com.veadan.folib.wrapper.BufferedInputStreamWrapper;
 import com.veadan.folib.ws.client.handler.command.FolibWsClientArtifactPullCommand;
 import com.veadan.folib.ws.common.FolibWsAction;
+import com.veadan.folib.ws.common.FolibWsRunManageUtil;
 import com.veadan.folib.ws.common.FolibWsRunManageV2;
 import com.veadan.folib.ws.server.*;
 import com.veadan.folib.ws.server.manage.FolibWsServerRunManage;
@@ -91,6 +92,7 @@ import java.math.RoundingMode;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.FutureTask;
 import java.util.concurrent.TimeoutException;
@@ -246,12 +248,12 @@ public class PromotionUtil {
 
             log.info(" 请求分发获取仓库信息 {}", JSONUtil.toJsonStr(dispatchRepositoryDto));
 
-            String targetHostName = folibWsRunManageV2.getTargetHostName(clusterDispatchNodeDto);
+            String targetHostName = FolibWsRunManageUtil.getTargetHostName(clusterDispatchNodeDto);
             WSMessageRequest wsMessageRequest = new WSMessageRequest(Command.STORAGES_REPOSITORY_TREE, dispatchRepositoryDto);
             WSMessageResponse messageResponse = null;
             try {
                 messageResponse = folibWsRunManageV2.sendRequest(targetHostName, wsMessageRequest);
-            } catch (InterruptedException | ExecutionException | TimeoutException e) {
+            } catch (Exception e) {
                 throw new RuntimeException(e);
             }
             DispatchStorageTree dispatchStorageTree = (DispatchStorageTree) messageResponse.getDate();
@@ -281,7 +283,8 @@ public class PromotionUtil {
         }
     }
 
-    private void executeDispatch(String artifactPath, String srcRepositoryId, String srcStorageId, String targetStorageId, String targetRepositoryId, ClusterDispatchNodeDto dispatchNodeDto, Boolean recordStatus) {
+    @Deprecated
+    public void executeDispatch(String artifactPath, String srcRepositoryId, String srcStorageId, String targetStorageId, String targetRepositoryId, ClusterDispatchNodeDto dispatchNodeDto, Boolean recordStatus) {
         Response response = null;
         try {
             StringBuilder strBuilder = new StringBuilder();
@@ -763,19 +766,24 @@ public class PromotionUtil {
         }).collect(Collectors.toList());
     }
 
-    public void artifactSliceUploadV3(PromotionNodeOptionDto uploadDto, String targetUrl, String storageId, String repositoryId, String syncNo) {
+    public CompletableFuture<Void> artifactSliceUploadV3(PromotionNodeOptionDto uploadDto, String targetUrl, String storageId, String repositoryId, String syncNo) {
         targetUrl = StringUtils.chomp(targetUrl, "/");
 
-        String targetHostName = folibWsRunManageV2.getTargetHostName(targetUrl);
+        String targetHostName = FolibWsRunManageUtil.getTargetHostName(targetUrl);
         TaskQueueManager taskQueueManager = promotionTaskQueue.getTaskQueueManager(targetHostName);
         String finalTargetUrl1 = targetUrl;
-
+        if (taskQueueManager == null) {
+            throw new RuntimeException("not found taskQueueManager by targetHostName:"+targetHostName);
+        }
+        CompletableFuture<Void> future = new CompletableFuture<>();
         taskQueueManager.submitTask(java.util.UUID.randomUUID().toString(), () -> {
             try {
                 doArtifactSliceUploadV3(uploadDto, storageId, repositoryId, syncNo, finalTargetUrl1, targetHostName);
+                future.complete(null);
             } catch (Exception e) {
                 log.error("doArtifactSliceUploadV3 Exception", e);
                 artifactSyncRecordMapper.updateStatusAndFailedReasonBySyncNo(ArtifactSyncRecordStatusEnum.FAILED.getVal(), e.getMessage(), syncNo, new Date());
+                future.completeExceptionally(e);
                 if (e instanceof RuntimeException) {
                     throw (RuntimeException) e;
                 }
@@ -783,6 +791,7 @@ public class PromotionUtil {
             }
 
         });
+        return future;
     }
 
     private void doArtifactSliceUploadV3(PromotionNodeOptionDto uploadDto, String storageId, String repositoryId, String syncNo, String finalTargetUrl1, String targetHostName) throws Exception {
@@ -808,6 +817,9 @@ public class PromotionUtil {
         for (int i = 0; i < size; i++) {
             ArtifactSliceUploadHttpEntityBuilder builder = artifactSliceUploadHttpEntityList.get(i);
             ArtifactSliceUploadReq artifactSliceUploadReq = builder.buildV3();
+            String path = artifactSliceUploadReq.getPath();
+            Object metadata = uploadDto.getFileMetaDataMap().get(path);
+            artifactSliceUploadReq.setMetaData(JSONObject.parseObject((String) metadata,Map.class));
             int finalI = i;
             try {
                 new RetryTask(promotionConfig.getRetryCount()) {
@@ -860,28 +872,32 @@ public class PromotionUtil {
                 RepositoryPath repositoryPath = interEntry.getValue();
 
 
-                RepositoryPathExistCheck.RepositoryPathExistCheckBuilder builder = RepositoryPathExistCheck.builder().storageId(storageId)
+                RepositoryPathExistCheck.RepositoryPathExistCheckBuilder builder = RepositoryPathExistCheck.builder()
+                        .storageId(storageId)
                         .repositoryId(repositoryId)
-                        .artifactPath(RepositoryFiles.relativizePath(repositoryPath))
-                        .digestAlgorithm(MessageDigestAlgorithms.SHA_1);
-
+                        .artifactPath(RepositoryFiles.relativizePath(repositoryPath));
+                String messageDigestAlgorithms = MessageDigestAlgorithms.SHA_1;
                 String layout = repositoryPath.getRepository().getLayout();
                 if (DockerLayoutProvider.ALIAS.equals(layout)) {
-                    builder.digestAlgorithm(MessageDigestAlgorithms.SHA_256);
+                    messageDigestAlgorithms = MessageDigestAlgorithms.SHA_256;
                 }
-
+                builder.digestAlgorithm(messageDigestAlgorithms);
                 LayoutFileSystemProvider provider = repositoryPath.getFileSystem().provider();
-                final RepositoryPath checksumPath = provider.getChecksumPath(repositoryPath, builder.build().getDigestAlgorithm());
+                final RepositoryPath checksumPath = provider.getChecksumPath(repositoryPath, messageDigestAlgorithms);
                 if (Objects.nonNull(checksumPath) && Files.exists(checksumPath)) {
                     builder.digest(Files.readString(checksumPath));
                 } else {
                     log.warn("not found checksumPath ,info: [{}] [{}] [{}] ", checksumPath.getStorageId(), checksumPath.getRepositoryId(), RepositoryFiles.relativizePath(checksumPath));
                     continue;
                 }
-
-
-                WSMessageRequest wsMessageRequest = new WSMessageRequest(Command.QUERY_ARTIFACT_EXISTS, builder.build());
-                WSMessageResponse wsMessageResponse = folibWsRunManageV2.sendRequest(targetHostName, wsMessageRequest);
+                RepositoryPathExistCheck repositoryPathExistCheck = builder.build();
+                WSMessageRequest wsMessageRequest = new WSMessageRequest(Command.QUERY_ARTIFACT_EXISTS, repositoryPathExistCheck);
+                WSMessageResponse wsMessageResponse = null;
+                try {
+                    wsMessageResponse = folibWsRunManageV2.sendRequest(targetHostName, wsMessageRequest, 20);
+                } catch (Exception e) {
+                    throw new RuntimeException("QueryArtifactExists exception , repositoryPathExistCheck:" + repositoryPathExistCheck);
+                }
                 Object date = wsMessageResponse.getDate();
                 if (Boolean.TRUE.equals(date)) {
                     iterator.remove();
