@@ -18,7 +18,7 @@
                       <a-avatar slot="avatar" src="images/folib/cluster_node.svg" />
                     </a-card-meta>
                   </template>
-                  <a-popconfirm slot="extra" :title="$t('Setting.DangerousOperation')" okType="danger" :ok-text="$t('Setting.BeSure')" cancel-text="$t('Setting.Cancel')"
+                  <a-popconfirm slot="extra" :title="$t('Setting.DangerousOperation')" okType="danger" :ok-text="$t('Setting.BeSure')" :cancel-text="$t('Setting.Cancel')"
                     v-if="cassandraClusterInfo.unreachableNodeList.indexOf(item.endpointWithPort.hostAddressAndPort) != -1"
                     class="remove-node-popconfirm"
                     @confirm="removeNode(cassandraClusterInfo.hostIDMap[item.endpointWithPort.hostAddressAndPort], item.endpointWithPort.hostAddressAndPort)">
