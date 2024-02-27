@@ -2620,6 +2620,12 @@ export default {
               this.showArtifactDispatchHandler = false
               this.getArtifactDispatchConfig()
             })
+            .catch(err => {
+              this.$notification['error']({
+                message: err.response.data.error,
+                description: ''
+              })
+            })
             .finally(() => {})
         } else {
           return false

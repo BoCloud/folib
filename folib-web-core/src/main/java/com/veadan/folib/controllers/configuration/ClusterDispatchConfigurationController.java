@@ -98,14 +98,32 @@ public class ClusterDispatchConfigurationController extends BaseConfigurationCon
         if (bindingResult.hasErrors()) {
             throw new RequestBodyValidationException("参数异常", bindingResult);
         }
-        try {
-            ClusterDispatchNodeDto existingNode = configurationManagementService.getMutableConfigurationClone().getClusterDispatchNode().get(clusterDispatchNodeForm.getClusterEnName());
 
-            // 创建分发节点
-            ClusterDispatchNodeDto nodeDto = new ClusterDispatchNodeDto();
-            BeanUtils.copyProperties(clusterDispatchNodeForm, nodeDto);
-            nodeDto.setAutoRegister(false);
-            nodeDto.setCreateTime(LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
+            ClusterDispatchNodeDto existingNode;
+            ClusterDispatchNodeDto nodeDto;
+            synchronized (this) {
+                Map<String, ClusterDispatchNodeDto> clusterDispatchNode = configurationManagementService.getMutableConfigurationClone().getClusterDispatchNode();
+                existingNode = clusterDispatchNode.get(clusterDispatchNodeForm.getClusterEnName());
+
+                // 创建分发节点
+                nodeDto = new ClusterDispatchNodeDto();
+                BeanUtils.copyProperties(clusterDispatchNodeForm, nodeDto);
+                nodeDto.setAutoRegister(false);
+                nodeDto.setCreateTime(LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
+
+                if (existingNode == null) {//新增操作
+                    String newHostName = FolibWsRunManageUtil.getTargetHostName(nodeDto);
+                    ClusterDispatchNodeDto exitedHostNameNodeDto = clusterDispatchNode.values().stream().filter(dto -> {
+                        String exitedHostName = FolibWsRunManageUtil.getTargetHostName(dto);
+                        return exitedHostName.equals(newHostName);
+                    }).findAny().orElse(null);
+                    //已经存在这个 hostName了
+                    if (exitedHostNameNodeDto != null) {
+                        throw new RuntimeException(String.format("已经存在 %s 节点",newHostName));
+                    }
+                }
+            }
+        try {
             clusterDispatchManagementService.createClusterNode(nodeDto);
 
             // 向其他集群节点同步同步制品分发节点信息
@@ -144,11 +162,32 @@ public class ClusterDispatchConfigurationController extends BaseConfigurationCon
             throw new RequestBodyValidationException("参数异常", bindingResult);
         }
 
-        try {
-            ClusterDispatchNodeDto existingNode = configurationManagementService.getMutableConfigurationClone().getClusterDispatchNode().get(clusterDispatchNodeForm.getClusterEnName());
 
-            ClusterDispatchNodeDto nodeDto = new ClusterDispatchNodeDto();
-            BeanUtils.copyProperties(clusterDispatchNodeForm, nodeDto);
+            ClusterDispatchNodeDto existingNode;
+            ClusterDispatchNodeDto nodeDto;
+            synchronized (this) {
+                Map<String, ClusterDispatchNodeDto> clusterDispatchNode = configurationManagementService.getMutableConfigurationClone().getClusterDispatchNode();
+                existingNode = clusterDispatchNode.get(clusterDispatchNodeForm.getClusterEnName());
+
+                // 创建分发节点
+                nodeDto = new ClusterDispatchNodeDto();
+                BeanUtils.copyProperties(clusterDispatchNodeForm, nodeDto);
+                nodeDto.setAutoRegister(false);
+                nodeDto.setCreateTime(LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
+
+                if (existingNode == null) {//新增操作
+                    String newHostName = FolibWsRunManageUtil.getTargetHostName(nodeDto);
+                    ClusterDispatchNodeDto exitedHostNameNodeDto = clusterDispatchNode.values().stream().filter(dto -> {
+                        String exitedHostName = FolibWsRunManageUtil.getTargetHostName(dto);
+                        return exitedHostName.equals(newHostName);
+                    }).findAny().orElse(null);
+                    //已经存在这个 hostName了
+                    if (exitedHostNameNodeDto != null) {
+                        throw new RuntimeException(String.format("已经存在 %s 节点",newHostName));
+                    }
+                }
+            }
+        try {
             clusterDispatchManagementService.createClusterNode(nodeDto);
 
             // 向其他集群节点同步制品分发节点信息

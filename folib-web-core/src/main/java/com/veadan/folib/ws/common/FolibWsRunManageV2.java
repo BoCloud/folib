@@ -313,7 +313,6 @@ public class FolibWsRunManageV2 {
                 CompletableFuture<Void> completableFuture = new CompletableFuture<>();
 
                 session.getAsyncRemote().sendBinary(chunk, result -> {
-                    log.info("sendBinary [result:{} , messageId:{}]", result, messageId);
                     if (result.isOK()) {
                         completableFuture.complete(null); // 完成Future
                     } else {

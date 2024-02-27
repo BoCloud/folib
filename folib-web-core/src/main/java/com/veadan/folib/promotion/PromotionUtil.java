@@ -35,9 +35,9 @@ import com.veadan.folib.schema2.LayerManifest;
 import com.veadan.folib.service.ProxyRepositoryConnectionPoolConfigurationService;
 import com.veadan.folib.services.*;
 import com.veadan.folib.storage.repository.Repository;
-import com.veadan.folib.util.MessageDigestUtils;
 import com.veadan.folib.util.RepositoryPathUtil;
 import com.veadan.folib.util.ThreadLocalUtil;
+import com.veadan.folib.utils.FileUtils;
 import com.veadan.folib.utils.UrlUtils;
 import com.veadan.folib.wrapper.BufferedInputStreamWrapper;
 import com.veadan.folib.ws.client.handler.command.FolibWsClientArtifactPullCommand;
@@ -781,7 +781,7 @@ public class PromotionUtil {
                 doArtifactSliceUploadV3(uploadDto, storageId, repositoryId, syncNo, finalTargetUrl1, targetHostName);
                 future.complete(null);
             } catch (Exception e) {
-                log.error("doArtifactSliceUploadV3 Exception", e);
+                log.error("doArtifactSliceUploadV3 Exception \n info:\nuploadDto:{}, storageId:{}, repositoryId:{}, syncNo:{}, finalTargetUrl1:{}, targetHostName:{}",uploadDto, storageId, repositoryId, syncNo, finalTargetUrl1, targetHostName, e);
                 artifactSyncRecordMapper.updateStatusAndFailedReasonBySyncNo(ArtifactSyncRecordStatusEnum.FAILED.getVal(), e.getMessage(), syncNo, new Date());
                 future.completeExceptionally(e);
                 if (e instanceof RuntimeException) {
@@ -829,6 +829,9 @@ public class PromotionUtil {
                             log.info("WSMessageRequest upload slice {}/{} ,targetHostName:{} , path:{}", finalI + 1, size, targetHostName, artifactSliceUploadReq.getPath());
                             WSMessageResponse wsMessageResponse = folibWsRunManageV2.sendRequest(targetHostName, new WSMessageRequest(Command.UPLOAD, artifactSliceUploadReq), promotionConfig.getWsRequestTimoutOfArtifactUpload());
                             log.info("wsMessageResponse:{}", wsMessageResponse.toString());
+                            if (!HttpStatus.OK.equals(wsMessageResponse.getStatus())) {
+                                throw new RuntimeException(String.valueOf(wsMessageResponse.getDate()));
+                            }
                         } catch (Exception e) {
                             log.error("upload exception", e);
                             throw e;
@@ -894,7 +897,7 @@ public class PromotionUtil {
                 WSMessageRequest wsMessageRequest = new WSMessageRequest(Command.QUERY_ARTIFACT_EXISTS, repositoryPathExistCheck);
                 WSMessageResponse wsMessageResponse = null;
                 try {
-                    wsMessageResponse = folibWsRunManageV2.sendRequest(targetHostName, wsMessageRequest, 20);
+                    wsMessageResponse = folibWsRunManageV2.sendRequest(targetHostName, wsMessageRequest, 60);
                 } catch (Exception e) {
                     throw new RuntimeException("QueryArtifactExists exception , repositoryPathExistCheck:" + repositoryPathExistCheck);
                 }
@@ -943,7 +946,7 @@ public class PromotionUtil {
                 md5 = Files.readString(checksumPath);
             }
             if (StringUtils.isBlank(md5)) {
-                md5 = MessageDigestUtils.calculateChecksum(sourceRepositoryPath, MessageDigestAlgorithms.MD5);
+                md5 = FileUtils.getMD5(Files.newInputStream(sourceRepositoryPath));
             }
 
             log.info("calculated the file [{}] [{}] [{}] md5 is [{}]  file size [{}] time consuming [{}] ms", sourceStorageId, sourceRepositoryId, sourceArtifactPath, fileLength, md5, System.currentTimeMillis() - begin);

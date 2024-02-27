@@ -5,6 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 
 import java.util.List;
 import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * @author pengYongQiang
@@ -16,21 +17,31 @@ import java.util.concurrent.*;
 public class TaskQueueManager {
     private final ExecutorService executorService;
     private final ConcurrentHashMap<String, Future<?>> taskMap = new ConcurrentHashMap<>();
+    private final AtomicLong LENGTH;
+    private final AtomicLong CURRENT_INDEX;
 
-    public TaskQueueManager(String threadNamePrefix,int queueSize) {
+    public TaskQueueManager(String threadNamePrefix, int queueSize) {
         ThreadFactory threadFactory = ThreadFactoryBuilder.create().setNamePrefix(threadNamePrefix).build();
         executorService = new ThreadPoolExecutor(1, 1,
                 0L, TimeUnit.MILLISECONDS,
                 new LinkedBlockingQueue<Runnable>(queueSize), threadFactory, new ThreadPoolExecutor.AbortPolicy());
+        LENGTH = new AtomicLong();
+        CURRENT_INDEX = new AtomicLong();
     }
 
     public synchronized String submitTask(String taskId, Runnable runnable) {
         if (taskMap.containsKey(taskId)) {
             throw new IllegalArgumentException("Task with ID " + taskId + " already submitted.");
         }//todo 异常被吞掉
-        Future<?> future = executorService.submit(runnable);
+        Runnable wrapper = () -> {
+            CURRENT_INDEX.incrementAndGet();
+            log.info("current promotion queue {}/{}", CURRENT_INDEX.get(), LENGTH.get());
+            runnable.run();
+        };
+        Future<?> future = executorService.submit(wrapper);
         taskMap.put(taskId, future);
         log.info("Task " + taskId + " submitted.");
+        LENGTH.incrementAndGet();
         return taskId;
     }
 

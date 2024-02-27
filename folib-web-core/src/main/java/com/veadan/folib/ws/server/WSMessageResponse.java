@@ -15,15 +15,6 @@ public class WSMessageResponse implements WSMessage {
     private Object date;
     private HttpStatus status = HttpStatus.OK;
 
-    @Override
-    public String toString() {
-        return "WSMessageResponse{" +
-                "id='" + id + '\'' +
-                ", command=" + command +
-                ", status=" + status +
-                '}';
-    }
-
     public WSMessageResponse(String id, Command command, Object date) {
         this.id = id;
         this.command = command;

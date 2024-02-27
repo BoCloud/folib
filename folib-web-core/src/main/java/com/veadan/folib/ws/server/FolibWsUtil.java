@@ -4,6 +4,7 @@ import com.veadan.folib.promotion.KryoSerializationUtil;
 import com.veadan.folib.scanner.common.util.SpringContextUtil;
 import com.veadan.folib.ws.common.FolibWsRunManageV2;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Async;
@@ -67,40 +68,64 @@ public class FolibWsUtil {
             throw new IllegalFormatFlagsException("unknown protocol:" + protocol);
         }
         String messageId = extractMessageId(message);
+        if (StringUtils.isBlank(messageId)){
+            throw new RuntimeException("protocol Exception");
+        }
         boolean isLast = extractLastFlag(message);
         /**
          * 当一个messageId一直没收到isLast标记，之前的缓存不会释放，导致内存泄露
          * 但是一般不会出现，因为一般是session连接强制被中断导致收不到isLast标记，而session一旦中断，就会释放引用，回收对象
          */
-        log.info("onMessageV3 messageId:{},isLast:{}", messageId, isLast);
-        ByteBuffer completeMessage = sessionMessageBufferMap.computeIfAbsent(session, k -> new ConcurrentHashMap<>())
-                .compute(messageId, (id, existingBuffer) -> {
-                    if (existingBuffer == null) {
-                        // 第一次接收此ID的数据，直接使用传入的数据大小作为初始大小
-                        return ByteBuffer.allocate(Math.max(message.remaining(), 1024 * 1024)); // 至少分配1024字节
-                    } else if (existingBuffer.remaining() < message.remaining()) {
-                        // 现有缓冲区不足以存储新增数据，需要扩容
-                        int newCapacity = existingBuffer.capacity() + message.remaining();
-                        ByteBuffer newBuffer = ByteBuffer.allocate(newCapacity);
-                        existingBuffer.flip(); // 切换为读模式
-                        newBuffer.put(existingBuffer); // 复制现有数据到新缓冲区
-                        return newBuffer;
-                    } else {
-                        // 现有缓冲区足够大，直接返回
-                        return existingBuffer;
+        synchronized (messageId.intern()){
+            log.info("onMessageV3 messageId:{},isLast:{}", messageId, isLast);
+            ByteBuffer completeMessage = sessionMessageBufferMap.computeIfAbsent(session, k -> new ConcurrentHashMap<>())
+                    .compute(messageId, (id, existingBuffer) -> {
+                        if (existingBuffer == null) {
+                            // 第一次接收此ID的数据，直接使用传入的数据大小作为初始大小
+                            return ByteBuffer.allocate(Math.max(message.remaining(), 1024 * 1024)); // 至少分配1024字节
+                        } else if (existingBuffer.remaining() < message.remaining()) {
+                            // 现有缓冲区不足以存储新增数据，需要扩容
+                            int newCapacity = existingBuffer.capacity() + message.remaining();
+                            ByteBuffer newBuffer = ByteBuffer.allocate(newCapacity);
+                            existingBuffer.flip(); // 切换为读模式
+                            newBuffer.put(existingBuffer); // 复制现有数据到新缓冲区
+                            return newBuffer;
+                        } else {
+                            // 现有缓冲区足够大，直接返回
+                            return existingBuffer;
+                        }
+                    });
+
+            completeMessage.put(message); // 添加新接收的数据
+
+            if (isLast) {
+                // 最后一片数据，处理完整消息
+                completeMessage.flip(); // 切换为读模式
+                try {
+                    handleMessage(nodeName, session, completeMessage);
+                } catch (Exception e) {
+                    WSMessageResponse error = WSMessageResponse.error(messageId, null, e.getMessage());
+                    try {
+                        new RetryTask(3) {
+                            @Override
+                            protected void exec(RetryTask retryTask) throws Exception {
+                                try {
+                                    folibWsRunManageV2.sendResponse(session, error);
+                                } catch (Exception ex) {
+                                    log.error("sendResponse exception , messageId: {}", messageId, ex);
+                                    throw new RuntimeException(ex);
+                                }
+                            }
+                        }.call();
+                    } catch (Exception ex) {
+                        throw new RuntimeException(ex);
                     }
-                });
-
-        completeMessage.put(message); // 添加新接收的数据
-
-        if (isLast) {
-            // 最后一片数据，处理完整消息
-            completeMessage.flip(); // 切换为读模式
-            handleMessage(nodeName, session, completeMessage);
-            sessionMessageBufferMap.get(session).remove(messageId); // 清理资源
-        } else {
-            // 更新缓冲区以便接收更多数据
-            sessionMessageBufferMap.get(session).put(messageId, completeMessage);
+                }
+                sessionMessageBufferMap.get(session).remove(messageId); // 清理资源
+            } else {
+                // 更新缓冲区以便接收更多数据
+                sessionMessageBufferMap.get(session).put(messageId, completeMessage);
+            }
         }
     }
 

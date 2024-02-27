@@ -1315,7 +1315,7 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
             }
         } catch (Exception e) {
             log.error("切片上传失败", e);
-            throw new BusinessException(BusinessCodeEnum.INTERNAL_SERVER_ERROR);
+            throw new BusinessException(e.getMessage());
         } finally {
             if (allSliceFileUploadCompleted) {
                 FileUtil.del(new File(artifactFileSliceUploadRootFolderPathStr));
