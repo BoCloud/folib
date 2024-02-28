@@ -358,4 +358,12 @@ public class ArtifactController extends BaseController {
         artifactWebService.dockerLayoutUpgrade(storageId, repositoryId, override);
         return ResponseEntity.ok("");
     }
+
+    @PreAuthorize("hasAuthority('ADMIN')")
+    @GetMapping(value = "/dockerLayoutDowngrade/{storageId}/{repositoryId}")
+    public ResponseEntity<String> dockerLayoutDowngrade(@PathVariable String storageId,
+                                                        @PathVariable String repositoryId) throws Exception {
+        artifactWebService.dockerLayoutDowngrade(storageId, repositoryId);
+        return ResponseEntity.ok("");
+    }
 }
