@@ -30,6 +30,7 @@ import com.veadan.folib.users.security.JwtAuthenticationClaimsProvider;
 import com.veadan.folib.users.security.JwtClaimsProvider;
 import com.veadan.folib.users.security.SecurityTokenProvider;
 import com.veadan.folib.users.userdetails.SpringSecurityUser;
+import com.veadan.folib.util.RepositoryPathUtil;
 import com.veadan.folib.utils.FileUtils;
 import io.swagger.annotations.*;
 import org.apache.commons.collections4.CollectionUtils;
@@ -855,12 +856,12 @@ public class DockerArtifactController extends BaseArtifactController {
             imagePath = resolveImagePath(name, extractPath);
             logger.info("Listing Image Tags storageId [{}] repositoryId [{}] imagePath [{}] n [{}] last [{}]", storageId, repositoryId, imagePath, n, last);
             RepositoryPath repositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, imagePath);
-            List<FileContent> imageDirList = null;
+            List<FileContent> tagDirList = null;
             if (Files.exists(repositoryPath)) {
                 DirectoryListing directoryListing = directoryListingService.fromRepositoryPath(repositoryPath);
-                imageDirList = directoryListing.getDirectories().stream().filter(f -> (!f.getName().equals("blobs")) && (!f.getName().equals("manifest"))).collect(Collectors.toList());
+                tagDirList = Optional.ofNullable(directoryListing.getDirectories()).orElse(Collections.emptyList()).stream().filter(item -> RepositoryPathUtil.isDockerTag(repositoryPathResolver.resolve(storageId, repositoryId, item.getArtifactPath()))).collect(Collectors.toList());
             }
-            List<String> tagList = Optional.ofNullable(imageDirList).orElse(Collections.emptyList()).stream().map(FileContent::getName).collect(Collectors.toList());
+            List<String> tagList = Optional.ofNullable(tagDirList).orElse(Collections.emptyList()).stream().map(FileContent::getName).collect(Collectors.toList());
             List<String> resultList;
             int size = tagList.size(), startIndex = 0, endIndex = size;
             if (StringUtils.isNotBlank(last)) {
@@ -953,9 +954,19 @@ public class DockerArtifactController extends BaseArtifactController {
                             String prefix = String.format("%s/%s", repository.getStorage().getId(), repository.getId());
                             if (Objects.nonNull(repositoryPath) && Files.exists(repositoryPath)) {
                                 try {
-                                    DirectoryListing directoryListing = directoryListingService.fromRepositoryPath(repositoryPath);
-                                    if (Objects.nonNull(directoryListing) && CollectionUtils.isNotEmpty(directoryListing.getDirectories())) {
-                                        dataList.addAll(directoryListing.getDirectories().stream().filter(item -> StringUtils.isNotBlank(item.getName())).map(item -> String.format("%s/%s", prefix, item.getName())).collect(Collectors.toList()));
+                                    List<RepositoryPath> repositoryPathList = RepositoryPathUtil.getDockerImagePaths(repositoryPath);
+                                    if (CollectionUtils.isNotEmpty(repositoryPathList)) {
+                                        repositoryPathList.forEach(item -> {
+                                            String path = "";
+                                            try {
+                                                path = RepositoryFiles.relativizePath(item);
+                                            } catch (Exception ex) {
+                                                logger.error(ExceptionUtils.getStackTrace(ex));
+                                            }
+                                            if (StringUtils.isNotBlank(path)) {
+                                                dataList.add(String.format("%s/%s", prefix, path));
+                                            }
+                                        });
                                     }
                                 } catch (Exception ex) {
                                     logger.error("GET Catalog directory listing error [{}]", ExceptionUtils.getStackTrace(ex));
