@@ -9,10 +9,15 @@ import com.veadan.folib.controllers.adapter.jfrog.dto.ArtifactData;
 import com.veadan.folib.controllers.adapter.jfrog.dto.WebhookDto;
 import com.veadan.folib.enums.JFrogEventTypeEnum;
 import com.veadan.folib.enums.ProductTypeEnum;
+import com.veadan.folib.providers.io.RepositoryFiles;
 import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.providers.io.RepositoryPathResolver;
 import com.veadan.folib.providers.io.RootRepositoryPath;
+import com.veadan.folib.providers.layout.DockerLayoutProvider;
 import com.veadan.folib.providers.layout.LayoutFileSystemProvider;
+import com.veadan.folib.schema2.ContainerConfigurationManifest;
+import com.veadan.folib.schema2.ImageManifest;
+import com.veadan.folib.schema2.LayerManifest;
 import com.veadan.folib.security.exceptions.ExpiredTokenException;
 import com.veadan.folib.security.exceptions.InvalidTokenException;
 import com.veadan.folib.services.ArtifactResolutionService;
@@ -20,6 +25,7 @@ import com.veadan.folib.storage.Storage;
 import com.veadan.folib.users.security.SecurityTokenProvider;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.codec.digest.MessageDigestAlgorithms;
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.springframework.http.HttpStatus;
@@ -31,8 +37,10 @@ import org.springframework.web.bind.annotation.RestController;
 
 import javax.inject.Inject;
 import javax.servlet.http.HttpServletRequest;
+import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.util.List;
 import java.util.Objects;
 
 /**
@@ -115,12 +123,39 @@ public class ArtifactWebHookController {
             }
             log.info("JFrog event repositoryPath [{}] [{}] [{}] digestAlgorithm [sha256] digest [{}] currentDigest [{}] not exists", storageId, repositoryId, artifactData.getPath(), artifactData.getSha256(), currentDigest);
             if (ProductTypeEnum.Docker.getName().equals(webhookDto.getDomain())) {
+                RepositoryPath tagRepositoryPath = null;
                 //docker
+                String imagePath = artifactData.getPath().replace("/" + artifactData.getTag() + "/manifest.json", "");
                 if (!artifactData.getTag().startsWith(GlobalConstants.SHA_256)) {
-                    dockerComponent.resolveManifest(storageId, repositoryId, artifactData.getPath().replace("/" + artifactData.getTag() + "/manifest.json", ""), artifactData.getTag());
+                    tagRepositoryPath = dockerComponent.resolveManifest(storageId, repositoryId, imagePath, artifactData.getTag());
                 } else {
                     String digest = artifactData.getTag().replace("__", ":");
                     dockerComponent.resolveManifest(storageId, repositoryId, artifactData.getPath().replace("/" + artifactData.getTag(), ""), digest);
+                }
+                List<ImageManifest> imageManifestList = dockerComponent.getImageManifests(tagRepositoryPath);
+                if (CollectionUtils.isNotEmpty(imageManifestList)) {
+                    RepositoryPath blobsRepositoryPath;
+                    for (ImageManifest imageManifest : imageManifestList) {
+                        ContainerConfigurationManifest containerConfigurationManifest = imageManifest.getConfig();
+                        if (Objects.nonNull(containerConfigurationManifest) && StringUtils.isNotBlank(containerConfigurationManifest.getDigest())) {
+                            blobsRepositoryPath = rootRepositoryPath.resolve(DockerLayoutProvider.BLOBS + File.separator + containerConfigurationManifest.getDigest());
+                            String targetUrl = String.format("%s/blobs/%s", StringUtils.removeEnd(imagePath, "/"), containerConfigurationManifest.getDigest());
+                            blobsRepositoryPath.setTargetUrl(targetUrl);
+                            blobsRepositoryPath.setArtifactPath(imagePath);
+                            artifactResolutionService.resolvePath(blobsRepositoryPath);
+                        }
+                        if (CollectionUtils.isNotEmpty(imageManifest.getLayers())) {
+                            for (LayerManifest layerManifest : imageManifest.getLayers()) {
+                                if (StringUtils.isNotBlank(layerManifest.getDigest())) {
+                                    blobsRepositoryPath = rootRepositoryPath.resolve(DockerLayoutProvider.BLOBS + File.separator + layerManifest.getDigest());
+                                    String targetUrl = String.format("%s/blobs/%s", StringUtils.removeEnd(imagePath, "/"), layerManifest.getDigest());
+                                    blobsRepositoryPath.setTargetUrl(targetUrl);
+                                    blobsRepositoryPath.setArtifactPath(imagePath);
+                                    artifactResolutionService.resolvePath(blobsRepositoryPath);
+                                }
+                            }
+                        }
+                    }
                 }
             } else {
                 artifactResolutionService.resolvePath(repositoryPath);
