@@ -1232,9 +1232,9 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
 
 
     private void handleDockerRepoDowngrade(RepositoryPath rootRepositoryPath, RepositoryPath blobsRootRepositoryPath, RepositoryPath manifestRootRepositoryPath) {
-        AtomicLong imageAl = new AtomicLong(0), blobAl = new AtomicLong(0), manifestAl = new AtomicLong(0), copyBlobAl = new AtomicLong(0), copyManifestAl = new AtomicLong(0), deleteBlobAl = new AtomicLong(0), deleteManifestAl = new AtomicLong(0);
+        AtomicLong imageAl = new AtomicLong(0), blobAl = new AtomicLong(0), manifestAl = new AtomicLong(0), copyBlobAl = new AtomicLong(0), copyManifestAl = new AtomicLong(0), deleteBlobAl = new AtomicLong(0), deleteManifestAl = new AtomicLong(0), rootBlobAl = new AtomicLong(0), rootManifestAl = new AtomicLong(0);
         try (Stream<Path> pathStream = Files.list(rootRepositoryPath)) {
-            pathStream.forEach(path -> {
+            pathStream.filter(item -> GlobalConstants.DOCKER_LAYER_DIR_NAME_LIST.stream().noneMatch(dir -> dir.equals(item.getFileName().toString()))).forEach(path -> {
                 try {
                     RepositoryPath imageRepositoryPath = (RepositoryPath) path;
                     String filename = imageRepositoryPath.getFileName().toString();
@@ -1320,6 +1320,7 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
             try (Stream<Path> blobStream = Files.list(blobsRootRepositoryPath)) {
                 blobStream.forEach(blobPath -> {
                     if (DockerArtifactCoordinates.include(blobPath.getFileName().toString())) {
+                        rootBlobAl.getAndIncrement();
                         try {
                             RepositoryFiles.delete((RepositoryPath) blobPath, true);
                             deleteBlobAl.getAndIncrement();
@@ -1336,6 +1337,7 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
             try (Stream<Path> manifestStream = Files.list(manifestRootRepositoryPath)) {
                 manifestStream.forEach(manifestPath -> {
                     if (DockerArtifactCoordinates.include(manifestPath.getFileName().toString())) {
+                        rootManifestAl.getAndIncrement();
                         try {
                             RepositoryFiles.delete((RepositoryPath) manifestPath, true);
                             deleteManifestAl.getAndIncrement();
@@ -1348,7 +1350,7 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
             if (Files.list(manifestRootRepositoryPath).count() == 0) {
                 RepositoryFiles.delete(manifestRootRepositoryPath, true);
             }
-            log.info("DockerLayoutDowngrade [{}] is finished images [{}] blobs [{}] manifest [{}] copyBlobs [{}] copyManifest [{}] deleteBlobs [{}] deleteManifest [{}]", rootRepositoryPath.toString(), imageAl.get(), blobAl.get(), manifestAl.get(), copyBlobAl.get(), copyManifestAl.get(), deleteBlobAl.get(), deleteManifestAl.get());
+            log.info("DockerLayoutDowngrade [{}] is finished images [{}] blobs [{}] manifest [{}] copyBlobs [{}] copyManifest [{}] rootBlobs [{}] rootManifest [{}] deleteBlobs [{}] deleteManifest [{}]", rootRepositoryPath.toString(), imageAl.get(), blobAl.get(), manifestAl.get(), copyBlobAl.get(), copyManifestAl.get(), rootBlobAl.get(), rootManifestAl.get(), deleteBlobAl.get(), deleteManifestAl.get());
         } catch (Exception ex) {
             log.error(ExceptionUtils.getStackTrace(ex));
         }
