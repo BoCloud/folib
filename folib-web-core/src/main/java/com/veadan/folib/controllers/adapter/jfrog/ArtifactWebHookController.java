@@ -1,12 +1,14 @@
 package com.veadan.folib.controllers.adapter.jfrog;
 
 import com.alibaba.fastjson.JSONObject;
+import com.veadan.folib.components.layout.DockerComponent;
 import com.veadan.folib.configuration.ConfigurationManager;
 import com.veadan.folib.configuration.ConfigurationUtils;
 import com.veadan.folib.constant.GlobalConstants;
 import com.veadan.folib.controllers.adapter.jfrog.dto.ArtifactData;
 import com.veadan.folib.controllers.adapter.jfrog.dto.WebhookDto;
 import com.veadan.folib.enums.JFrogEventTypeEnum;
+import com.veadan.folib.enums.ProductTypeEnum;
 import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.providers.io.RepositoryPathResolver;
 import com.veadan.folib.providers.io.RootRepositoryPath;
@@ -53,6 +55,9 @@ public class ArtifactWebHookController {
 
     @Inject
     protected ArtifactResolutionService artifactResolutionService;
+
+    @Inject
+    protected DockerComponent dockerComponent;
 
     @PostMapping("/webhook")
     public ResponseEntity<Object> webhook(@RequestBody String data, HttpServletRequest request) {
@@ -109,7 +114,17 @@ public class ArtifactWebHookController {
                 return ResponseEntity.ok("");
             }
             log.info("JFrog event repositoryPath [{}] [{}] [{}] digestAlgorithm [sha256] digest [{}] currentDigest [{}] not exists", storageId, repositoryId, artifactData.getPath(), artifactData.getSha256(), currentDigest);
-            artifactResolutionService.resolvePath(repositoryPath);
+            if (ProductTypeEnum.Docker.getName().equals(webhookDto.getDomain())) {
+                //docker
+                if (!artifactData.getTag().startsWith(GlobalConstants.SHA_256)) {
+                    dockerComponent.resolveManifest(storageId, repositoryId, artifactData.getPath().replace("/" + artifactData.getTag() + "/manifest.json", ""), artifactData.getTag());
+                } else {
+                    String digest = artifactData.getTag().replace("__", ":");
+                    dockerComponent.resolveManifest(storageId, repositoryId, artifactData.getPath().replace("/" + artifactData.getTag(), ""), digest);
+                }
+            } else {
+                artifactResolutionService.resolvePath(repositoryPath);
+            }
             return ResponseEntity.ok("");
         } catch (Exception ex) {
             log.error(ExceptionUtils.getStackTrace(ex));

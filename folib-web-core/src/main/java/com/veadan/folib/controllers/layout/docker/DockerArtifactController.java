@@ -10,6 +10,7 @@ import com.google.common.collect.Lists;
 import com.veadan.folib.artifact.coordinates.DockerArtifactCoordinates;
 import com.veadan.folib.cloud.storage.s3fs.S3Iterator;
 import com.veadan.folib.cloud.storage.s3fs.S3Path;
+import com.veadan.folib.components.layout.DockerComponent;
 import com.veadan.folib.constant.GlobalConstants;
 import com.veadan.folib.controllers.BaseArtifactController;
 import com.veadan.folib.domain.*;
@@ -37,6 +38,7 @@ import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -95,6 +97,10 @@ public class DockerArtifactController extends BaseArtifactController {
     @Inject
     @JwtAuthenticationClaimsProvider.JwtAuthentication
     private JwtClaimsProvider jwtClaimsProvider;
+
+    @Inject
+    @Lazy
+    private DockerComponent dockerComponent;
 
     /**
      * 文件进度
@@ -522,7 +528,7 @@ public class DockerArtifactController extends BaseArtifactController {
             //判断镜像清单是否在
             if (!mirrorLayerExists(artifactPath, storageId, repositoryId)) {
                 RepositoryPath repositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, artifactPath);
-                provideArtifact(repositoryPath, layers);
+                dockerComponent.provideArtifact(repositoryPath, layers);
                 artifactManagementService.validateAndStore(repositoryPath, stream);
             }
             if (!isTag) {
@@ -538,10 +544,10 @@ public class DockerArtifactController extends BaseArtifactController {
 
             //如果存在并发生变化删除更新
             if (Objects.isNull(tagSha256)) {
-                provideArtifact(destPath, layers);
+                dockerComponent.provideArtifact(destPath, layers);
                 artifactManagementService.validateAndStore(destPath, destStream);
             } else if (!Objects.equals(tagSha256, manifestSha256)) {
-                provideArtifact(destPath, layers);
+                dockerComponent.provideArtifact(destPath, layers);
                 artifactManagementService.validateAndStore(destPath, destStream);
                 RepositoryPath deletePath = repositoryPathResolver.resolve(storageId, repositoryId, destArtifactPath.replace(manifestSha256, tagSha256));
                 artifactManagementService.delete(deletePath, true);
@@ -647,7 +653,7 @@ public class DockerArtifactController extends BaseArtifactController {
         ResponseEntity entity = ResponseEntity.status(HttpStatus.NOT_FOUND).build();
         String digest = "", contentLength = "0";
         response.reset();
-        RepositoryPath repositoryPath = resolveManifest(storageId, repositoryId, imagePath, reference);
+        RepositoryPath repositoryPath = dockerComponent.resolveManifest(storageId, repositoryId, imagePath, reference);
         if (artifactRealExists(repositoryPath)) {
             entity = ResponseEntity.status(HttpStatus.OK).build();
             contentLength = Long.toString(repositoryPath.getArtifactEntry().getSizeInBytes());
@@ -754,7 +760,7 @@ public class DockerArtifactController extends BaseArtifactController {
         try {
             String artifactPath = String.format("manifest/%s", digest);
             logger.debug("StorageId [{}] repositoryId [{}] name [{}] imagePath [{}] digest [{}] artifactPath [{}]", storageId, repositoryId, name, imagePath, digest, artifactPath);
-            RepositoryPath repositoryPath = resolveManifest(storageId, repositoryId, imagePath, digest);
+            RepositoryPath repositoryPath = dockerComponent.resolveManifest(storageId, repositoryId, imagePath, digest);
             if (artifactRealExists(repositoryPath)) {
                 vulnerabilityBlock(repositoryPath);
                 response.reset();
@@ -1021,109 +1027,6 @@ public class DockerArtifactController extends BaseArtifactController {
         }
     }
 
-    /**
-     * 获取manifest
-     *
-     * @param storageId    存储空间名称
-     * @param repositoryId 仓库名称
-     * @param imagePath    镜像路径
-     * @param digestOrTag  digestOrTag
-     * @return RepositoryPath tag或者manifest的RepositoryPath
-     */
-    private RepositoryPath resolveManifest(String storageId, String repositoryId, String imagePath, String digestOrTag) {
-        imagePath = StringUtils.removeEnd(imagePath, GlobalConstants.SEPARATOR);
-        digestOrTag = StringUtils.removeEnd(digestOrTag, GlobalConstants.SEPARATOR);
-        boolean isTag = !digestOrTag.startsWith("sha256:");
-        String artifactPath = String.format("%s/%s", imagePath, digestOrTag);
-        if (!isTag) {
-            artifactPath = String.format("%s/%s", DockerLayoutProvider.MANIFEST, digestOrTag);
-        }
-        RepositoryPath repositoryPath = null;
-        try {
-            RootRepositoryPath rootRepositoryPath = repositoryPathResolver.resolve(storageId, repositoryId);
-            repositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, artifactPath);
-            repositoryPath.setDisableRemote(true);
-            repositoryPath = artifactResolutionService.resolvePath(repositoryPath);
-            if (Objects.isNull(repositoryPath) || !Files.exists(repositoryPath)) {
-                return handleManifest(rootRepositoryPath, imagePath, digestOrTag);
-            }
-            if (isTag) {
-                DirectoryListing directoryListing = directoryListingService.fromRepositoryPath(repositoryPath);
-                List<FileContent> fileContents = directoryListing.getFiles().stream().filter(file -> DockerArtifactCoordinates.include(file.getName())).collect(Collectors.toList());
-                if (CollectionUtils.isNotEmpty(fileContents)) {
-                    FileContent fileContent = fileContents.get(0);
-                    repositoryPath = repositoryPathResolver.resolve(fileContent.getStorageId(), fileContent.getRepositoryId(), fileContent.getArtifactPath());
-                }
-            }
-            if (isTag) {
-                repositoryPath.setArtifactPath(RepositoryFiles.relativizePath(repositoryPath));
-            }
-            repositoryPath = artifactResolutionService.resolvePath(repositoryPath);
-            return repositoryPath;
-        } catch (Exception e) {
-            logger.error(e.getMessage(), e);
-        }
-        return null;
-    }
-
-    private RepositoryPath handleManifest(RootRepositoryPath rootRepositoryPath, String imagePath, String digestOrTag) {
-        RepositoryPath tempManifestRepositoryPath = null, tagRepositoryPath = null, manifestRepositoryPath = null;
-        try {
-            boolean isTag = !digestOrTag.startsWith("sha256:");
-            String targetPath = "";
-            if (isTag) {
-                targetPath = imagePath + GlobalConstants.SEPARATOR + digestOrTag;
-            } else {
-                targetPath = imagePath + GlobalConstants.SEPARATOR + ".temp_" + digestOrTag;
-            }
-            //从远程仓库获取镜像对应的manifest信息
-            String tempManifestPath = String.format("%s/%s", targetPath, "manifest.json");
-            String targetUrl = String.format("%s/manifests/%s", imagePath, digestOrTag);
-            tempManifestRepositoryPath = rootRepositoryPath.resolve(tempManifestPath);
-            tempManifestRepositoryPath.setTargetUrl(targetUrl);
-            tempManifestRepositoryPath.setArtifactPath(imagePath);
-            tempManifestRepositoryPath = artifactResolutionService.resolvePath(tempManifestRepositoryPath);
-            if (Objects.isNull(tempManifestRepositoryPath) || !Files.exists(tempManifestRepositoryPath)) {
-                return null;
-            }
-            ImageManifest imageManifest = JSON.parseObject(Files.readString(tempManifestRepositoryPath), ImageManifest.class);
-            Integer one = 1;
-            if (one.equals(imageManifest.getSchemaVersion())) {
-                logger.warn("ImagePath [{}] digestOrTag [{}] manifest [{}} docker v1 version not currently supported", imagePath, digestOrTag, tempManifestRepositoryPath.getFileName().toString());
-                return null;
-            }
-            Set<String> layers = Optional.ofNullable(imageManifest.getLayers()).orElse(Collections.emptyList()).stream().map(LayerManifest::getDigest).collect(Collectors.toSet());
-            if (Objects.nonNull(imageManifest.getConfig())) {
-                layers.add(imageManifest.getConfig().getDigest());
-            }
-            MessageDigest shaDigest = MessageDigest.getInstance("SHA-256");
-            //解析临时的manifest文件，生成 SHA-256 checksum
-            String shaChecksum = "sha256:" + getFileChecksum(shaDigest, new ByteArrayInputStream(Files.readAllBytes(tempManifestRepositoryPath)));
-            if (isTag) {
-                //写入到tag目录下的manifest文件中，tag下只能存在一个manifest
-                tagRepositoryPath = tempManifestRepositoryPath.resolveSibling(shaChecksum);
-                provideArtifact(tagRepositoryPath, layers);
-                artifactManagementService.store(tagRepositoryPath, tempManifestRepositoryPath);
-            }
-            //写入到仓库根目录下的manifest文件中
-            manifestRepositoryPath = tempManifestRepositoryPath.getRoot().resolve(DockerLayoutProvider.MANIFEST).resolve(shaChecksum);
-            provideArtifact(manifestRepositoryPath, layers);
-            artifactManagementService.store(manifestRepositoryPath, tempManifestRepositoryPath);
-            return manifestRepositoryPath;
-        } catch (Exception ex) {
-            logger.error(ExceptionUtils.getStackTrace(ex));
-        } finally {
-            if (Objects.nonNull(tempManifestRepositoryPath) && Files.exists(tempManifestRepositoryPath)) {
-                try {
-                    RepositoryFiles.delete(tempManifestRepositoryPath, true);
-                } catch (Exception ex) {
-                    logger.warn(ExceptionUtils.getStackTrace(ex));
-                }
-            }
-        }
-        return null;
-    }
-
     private ConcurrentHashMap<String, Long> getRanges() {
         return ranges;
     }
@@ -1201,14 +1104,6 @@ public class DockerArtifactController extends BaseArtifactController {
             // 使用HTTP协议
             response.setHeader("WWW-Authenticate", String.format("Bearer realm=\"%stoken\",service=\"%s\"", "http://" + request.getServerName() + ":" + request.getServerPort() + "/v2/", request.getServerName() + ":" + request.getServerPort()));
         }
-    }
-
-    private void provideArtifact(RepositoryPath repositoryPath, Set<String> layers) throws IOException {
-        Artifact artifact = Optional.ofNullable(repositoryPath.getArtifactEntry())
-                .orElse(new ArtifactEntity(repositoryPath.getStorageId(), repositoryPath.getRepositoryId(),
-                        RepositoryFiles.readCoordinates(repositoryPath)));
-        artifact.setLayers(layers);
-        repositoryPath.setArtifact(artifact);
     }
 
     private String resolveImagePath(String name, String extractPath) {

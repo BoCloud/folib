@@ -21,6 +21,15 @@ public class ArtifactData {
      */
     private String name;
     /**
+     * 镜像名称
+     */
+    @JSONField(name = "image_name")
+    private String imageName;
+    /**
+     * tag
+     */
+    private String tag;
+    /**
      * 路径
      */
     private String path;

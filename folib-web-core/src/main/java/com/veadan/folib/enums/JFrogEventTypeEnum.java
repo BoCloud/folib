@@ -30,6 +30,10 @@ public enum JFrogEventTypeEnum {
      * moved
      */
     MOVED("moved", false),
+    /**
+     * pushed
+     */
+    PUSHED("pushed", true),
     ;
 
     /**
