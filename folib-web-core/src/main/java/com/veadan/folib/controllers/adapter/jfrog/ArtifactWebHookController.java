@@ -9,7 +9,6 @@ import com.veadan.folib.controllers.adapter.jfrog.dto.ArtifactData;
 import com.veadan.folib.controllers.adapter.jfrog.dto.WebhookDto;
 import com.veadan.folib.enums.JFrogEventTypeEnum;
 import com.veadan.folib.enums.ProductTypeEnum;
-import com.veadan.folib.providers.io.RepositoryFiles;
 import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.providers.io.RepositoryPathResolver;
 import com.veadan.folib.providers.io.RootRepositoryPath;
@@ -22,6 +21,7 @@ import com.veadan.folib.security.exceptions.ExpiredTokenException;
 import com.veadan.folib.security.exceptions.InvalidTokenException;
 import com.veadan.folib.services.ArtifactResolutionService;
 import com.veadan.folib.storage.Storage;
+import com.veadan.folib.storage.repository.remote.RemoteRepository;
 import com.veadan.folib.users.security.SecurityTokenProvider;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.codec.digest.MessageDigestAlgorithms;
@@ -123,35 +123,46 @@ public class ArtifactWebHookController {
             }
             log.info("JFrog event repositoryPath [{}] [{}] [{}] digestAlgorithm [sha256] digest [{}] currentDigest [{}] not exists", storageId, repositoryId, artifactData.getPath(), artifactData.getSha256(), currentDigest);
             if (ProductTypeEnum.Docker.getName().equals(webhookDto.getDomain())) {
-                RepositoryPath tagRepositoryPath = null;
                 //docker
                 String imagePath = artifactData.getPath().replace("/" + artifactData.getTag() + "/manifest.json", "");
+                RemoteRepository remoteRepository = repositoryPath.getRepository().getRemoteRepository();
+                String remoteUrl = StringUtils.removeEnd(remoteRepository.getUrl(), GlobalConstants.SEPARATOR);
+                String digestOrTag = "";
+                boolean isTag = false;
                 if (!artifactData.getTag().startsWith(GlobalConstants.SHA_256)) {
-                    tagRepositoryPath = dockerComponent.resolveManifest(storageId, repositoryId, imagePath, artifactData.getTag());
+                    digestOrTag = artifactData.getTag();
+                    isTag = true;
                 } else {
-                    String digest = artifactData.getTag().replace("__", ":");
-                    dockerComponent.resolveManifest(storageId, repositoryId, artifactData.getPath().replace("/" + artifactData.getTag(), ""), digest);
+                    digestOrTag = artifactData.getTag().replace("__", ":");
+                    String path = artifactData.getPath();
+                    imagePath = path.substring(0, path.indexOf("/" + artifactData.getTag()));
                 }
-                List<ImageManifest> imageManifestList = dockerComponent.getImageManifests(tagRepositoryPath);
-                if (CollectionUtils.isNotEmpty(imageManifestList)) {
-                    RepositoryPath blobsRepositoryPath;
-                    for (ImageManifest imageManifest : imageManifestList) {
-                        ContainerConfigurationManifest containerConfigurationManifest = imageManifest.getConfig();
-                        if (Objects.nonNull(containerConfigurationManifest) && StringUtils.isNotBlank(containerConfigurationManifest.getDigest())) {
-                            blobsRepositoryPath = rootRepositoryPath.resolve(DockerLayoutProvider.BLOBS + File.separator + containerConfigurationManifest.getDigest());
-                            String targetUrl = String.format("%s/blobs/%s", StringUtils.removeEnd(imagePath, "/"), containerConfigurationManifest.getDigest());
-                            blobsRepositoryPath.setTargetUrl(targetUrl);
-                            blobsRepositoryPath.setArtifactPath(imagePath);
-                            artifactResolutionService.resolvePath(blobsRepositoryPath);
-                        }
-                        if (CollectionUtils.isNotEmpty(imageManifest.getLayers())) {
-                            for (LayerManifest layerManifest : imageManifest.getLayers()) {
-                                if (StringUtils.isNotBlank(layerManifest.getDigest())) {
-                                    blobsRepositoryPath = rootRepositoryPath.resolve(DockerLayoutProvider.BLOBS + File.separator + layerManifest.getDigest());
-                                    String targetUrl = String.format("%s/blobs/%s", StringUtils.removeEnd(imagePath, "/"), layerManifest.getDigest());
-                                    blobsRepositoryPath.setTargetUrl(targetUrl);
-                                    blobsRepositoryPath.setArtifactPath(imagePath);
-                                    artifactResolutionService.resolvePath(blobsRepositoryPath);
+                if (!remoteUrl.endsWith(GlobalConstants.DOCKER_V2) || imagePath.split(GlobalConstants.SEPARATOR).length > 1) {
+                    imagePath = imagePath.replace(GlobalConstants.DOCKER_DEFAULT_REPO.concat(GlobalConstants.SEPARATOR), "");
+                }
+                RepositoryPath manifestRepositoryPath = dockerComponent.resolveManifest(storageId, repositoryId, imagePath, digestOrTag);
+                if (isTag && Objects.nonNull(manifestRepositoryPath)) {
+                    List<ImageManifest> imageManifestList = dockerComponent.getImageManifests(manifestRepositoryPath);
+                    if (CollectionUtils.isNotEmpty(imageManifestList)) {
+                        RepositoryPath blobsRepositoryPath;
+                        for (ImageManifest imageManifest : imageManifestList) {
+                            ContainerConfigurationManifest containerConfigurationManifest = imageManifest.getConfig();
+                            if (Objects.nonNull(containerConfigurationManifest) && StringUtils.isNotBlank(containerConfigurationManifest.getDigest())) {
+                                blobsRepositoryPath = rootRepositoryPath.resolve(DockerLayoutProvider.BLOBS + File.separator + containerConfigurationManifest.getDigest());
+                                String targetUrl = String.format("%s/blobs/%s", StringUtils.removeEnd(imagePath, "/"), containerConfigurationManifest.getDigest());
+                                blobsRepositoryPath.setTargetUrl(targetUrl);
+                                blobsRepositoryPath.setArtifactPath(imagePath);
+                                artifactResolutionService.resolvePath(blobsRepositoryPath);
+                            }
+                            if (CollectionUtils.isNotEmpty(imageManifest.getLayers())) {
+                                for (LayerManifest layerManifest : imageManifest.getLayers()) {
+                                    if (StringUtils.isNotBlank(layerManifest.getDigest())) {
+                                        blobsRepositoryPath = rootRepositoryPath.resolve(DockerLayoutProvider.BLOBS + File.separator + layerManifest.getDigest());
+                                        String targetUrl = String.format("%s/blobs/%s", StringUtils.removeEnd(imagePath, "/"), layerManifest.getDigest());
+                                        blobsRepositoryPath.setTargetUrl(targetUrl);
+                                        blobsRepositoryPath.setArtifactPath(imagePath);
+                                        artifactResolutionService.resolvePath(blobsRepositoryPath);
+                                    }
                                 }
                             }
                         }
