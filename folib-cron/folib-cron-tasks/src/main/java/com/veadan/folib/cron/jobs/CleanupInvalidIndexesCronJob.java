@@ -142,7 +142,7 @@ public class CleanupInvalidIndexesCronJob
                             if (CollectionUtils.isNotEmpty(artifact.getVulnerabilities())) {
                                 vulnerabilityRepository.handlerVulnerabilityForArtifactDelete(repositoryPath, artifact.getVulnerabilities());
                             }
-                            log.error("Cleanup invalid index storageId [{}] repositoryId [{}] artifactPath [{}] deleted", artifact.getStorageId(), artifact.getRepositoryId(), artifactPath);
+                            log.info("Cleanup invalid index storageId [{}] repositoryId [{}] artifactPath [{}] deleted", artifact.getStorageId(), artifact.getRepositoryId(), artifactPath);
                         }
                     } catch (Exception ex) {
                         log.error("Cleanup invalid index storageId [{}] repositoryId [{}] artifactPath [{}] error [{}]", artifact.getStorageId(), artifact.getRepositoryId(), artifactPath, ExceptionUtils.getStackTrace(ex));
