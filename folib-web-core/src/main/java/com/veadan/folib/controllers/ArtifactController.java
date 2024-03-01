@@ -351,11 +351,19 @@ public class ArtifactController extends BaseController {
     }
 
     @PreAuthorize("hasAuthority('ADMIN')")
-    @GetMapping(value = "/dockerLayoutUpgrade/{storageId}/{repositoryId}")
-    public ResponseEntity<String> dockerLayoutUpgrade(@PathVariable String storageId,
-                                                      @PathVariable String repositoryId,
+    @GetMapping(value = "/dockerLayoutUpgrade")
+    public ResponseEntity<String> dockerLayoutUpgrade(@RequestParam(required = false, name = "storageId") String storageId,
+                                                      @RequestParam(required = false, name = "repositoryId") String repositoryId,
                                                       @RequestParam(required = false, name = "override") Boolean override) throws Exception {
         artifactWebService.dockerLayoutUpgrade(storageId, repositoryId, override);
+        return ResponseEntity.ok("");
+    }
+
+    @PreAuthorize("hasAuthority('ADMIN')")
+    @GetMapping(value = "/dockerLayoutDowngrade")
+    public ResponseEntity<String> dockerLayoutDowngrade(@RequestParam(required = false, name = "storageId") String storageId,
+                                                        @RequestParam(required = false, name = "repositoryId") String repositoryId) throws Exception {
+        artifactWebService.dockerLayoutDowngrade(storageId, repositoryId);
         return ResponseEntity.ok("");
     }
 }
