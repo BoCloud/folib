@@ -223,9 +223,9 @@ public class AsyncPoolConfig {
     @Bean
     public ThreadPoolTaskExecutor asyncEventLogThreadPoolTaskExecutor() {
         return buildThreadPoolTaskExecutor(
-                asyncEventLogCorePoolSize,
-                asyncEventLogMaxPoolSize,
-                asyncEventLogQueueCapacity,
+                2,
+                2,
+                60,
                 asyncEventLogKeepAliveSeconds,
                 asyncEventLogThreadNamePrefix,
                 asyncEventLogAwaitTerminationSeconds);
