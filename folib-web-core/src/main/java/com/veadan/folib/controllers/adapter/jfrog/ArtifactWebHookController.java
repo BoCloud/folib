@@ -124,7 +124,8 @@ public class ArtifactWebHookController {
             log.info("JFrog event repositoryPath [{}] [{}] [{}] digestAlgorithm [sha256] digest [{}] currentDigest [{}] not exists", storageId, repositoryId, artifactData.getPath(), artifactData.getSha256(), currentDigest);
             if (ProductTypeEnum.Docker.getName().equals(webhookDto.getDomain())) {
                 //docker
-                String imagePath = artifactData.getPath().replace("/" + artifactData.getTag() + "/manifest.json", "");
+                String path = artifactData.getPath();
+                String imagePath = StringUtils.removeEnd(path.substring(0, path.indexOf(artifactData.getTag())), GlobalConstants.SEPARATOR);
                 RemoteRepository remoteRepository = repositoryPath.getRepository().getRemoteRepository();
                 String remoteUrl = StringUtils.removeEnd(remoteRepository.getUrl(), GlobalConstants.SEPARATOR);
                 String digestOrTag = "";
@@ -134,8 +135,6 @@ public class ArtifactWebHookController {
                     isTag = true;
                 } else {
                     digestOrTag = artifactData.getTag().replace("__", ":");
-                    String path = artifactData.getPath();
-                    imagePath = path.substring(0, path.indexOf("/" + artifactData.getTag()));
                 }
                 if (!remoteUrl.endsWith(GlobalConstants.DOCKER_V2) || imagePath.split(GlobalConstants.SEPARATOR).length > 1) {
                     imagePath = imagePath.replace(GlobalConstants.DOCKER_DEFAULT_REPO.concat(GlobalConstants.SEPARATOR), "");
