@@ -19,6 +19,7 @@ import com.veadan.folib.schema2.Manifests;
 import com.veadan.folib.services.ArtifactManagementService;
 import com.veadan.folib.services.ArtifactResolutionService;
 import com.veadan.folib.services.DirectoryListingService;
+import com.veadan.folib.util.RepositoryPathUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -91,7 +92,7 @@ public class DockerComponent {
             //多架构镜像
             ImageManifest itemImageManifest = null;
             for (Manifests manifests : imageManifest.getManifests()) {
-                RepositoryPath manifestPath = repositoryPathResolver.resolve(repositoryPath.getStorageId(), repositoryPath.getRepositoryId(),  "manifest/" + manifests.getDigest());
+                RepositoryPath manifestPath = repositoryPathResolver.resolve(repositoryPath.getStorageId(), repositoryPath.getRepositoryId(), "manifest/" + manifests.getDigest());
                 manifestString = readManifest(manifestPath);
                 if (StringUtils.isBlank(manifestString)) {
                     continue;
@@ -126,7 +127,7 @@ public class DockerComponent {
                     RepositoryPath manifestPath = repositoryPathResolver.resolve(repositoryPath.getStorageId(), repositoryPath.getRepositoryId(), "manifest/" + manifests.getDigest());
                     manifestString = readManifest(manifestPath);
                     if (StringUtils.isBlank(manifestString)) {
-                       continue;
+                        continue;
                     }
                     itemImageManifest = JSON.parseObject(manifestString, ImageManifest.class);
                     if (CollectionUtils.isNotEmpty(itemImageManifest.getLayers())) {
@@ -291,6 +292,15 @@ public class DockerComponent {
         return null;
     }
 
+    public void handleLayers(RepositoryPath sourceManifestPath, RepositoryPath targetManifestPath) throws IOException {
+        ImageManifest imageManifest = JSON.parseObject(Files.readString(sourceManifestPath), ImageManifest.class);
+        Set<String> layers = Optional.ofNullable(imageManifest.getLayers()).orElse(Collections.emptyList()).stream().map(LayerManifest::getDigest).collect(Collectors.toSet());
+        if (Objects.nonNull(imageManifest.getConfig())) {
+            layers.add(imageManifest.getConfig().getDigest());
+        }
+        provideArtifact(targetManifestPath, layers);
+    }
+
     public void provideArtifact(RepositoryPath repositoryPath, Set<String> layers) throws IOException {
         Artifact artifact = Optional.ofNullable(repositoryPath.getArtifactEntry())
                 .orElse(new ArtifactEntity(repositoryPath.getStorageId(), repositoryPath.getRepositoryId(),
@@ -327,6 +337,33 @@ public class DockerComponent {
 
         //return complete hash
         return sb.toString();
+    }
+
+    /**
+     * 获取仓库下的tag列表
+     *
+     * @param repositoryPath 仓库路径
+     * @param excludeList    要排除的列表
+     * @return 目录列表
+     * @throws IOException 异常
+     */
+    public List<Path> getTags(RepositoryPath repositoryPath, List<String> excludeList)
+            throws IOException {
+        List<Path> directoryList;
+        try (Stream<Path> pathStream = Files.list(repositoryPath)) {
+            directoryList = pathStream.filter(p -> !p.toString().startsWith(".") && !p.toString().contains("/.") && excludeList.stream().noneMatch(p.getFileName().toString()::equals) && RepositoryPathUtil.isDockerTag((RepositoryPath) p))
+                    .filter(p -> {
+                        try {
+                            return !Files.isHidden(p) && Files.isDirectory(p);
+                        } catch (IOException e) {
+                            log.warn("Error accessing path [{}] error [{}]", p, ExceptionUtils.getStackTrace(e));
+                            return false;
+                        }
+                    })
+                    .sorted()
+                    .collect(Collectors.toList());
+        }
+        return directoryList;
     }
 
 }
