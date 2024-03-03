@@ -1184,8 +1184,8 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
     }
 
     private void handleDockerRepoIntegrity(RepositoryPath rootRepositoryPath, RepositoryPath blobsRootRepositoryPath, RepositoryPath manifestRootRepositoryPath) {
-        AtomicLong imageAl = new AtomicLong(0), blobAl = new AtomicLong(0), manifestAl = new AtomicLong(0), manifestLayersAl = new AtomicLong(0), tagManifestAl = new AtomicLong(0), tagManifestLayersAl = new AtomicLong(0),
-                notExistsBlobAl = new AtomicLong(0), notExistsManifestAl = new AtomicLong(0), notExistsManifestLayersAl = new AtomicLong(0), notExistsTagManifestAl = new AtomicLong(0), notExistsTagManifestLayersAl = new AtomicLong(0);
+        AtomicLong imageAl = new AtomicLong(0), blobAl = new AtomicLong(0), blobArtifactAl = new AtomicLong(0), manifestAl = new AtomicLong(0), manifestLayersAl = new AtomicLong(0), tagManifestAl = new AtomicLong(0), tagManifestLayersAl = new AtomicLong(0),
+                notExistsBlobAl = new AtomicLong(0), notExistsBlobArtifactAl = new AtomicLong(0), notExistsManifestAl = new AtomicLong(0), notExistsManifestLayersAl = new AtomicLong(0), notExistsTagManifestAl = new AtomicLong(0), notExistsTagManifestLayersAl = new AtomicLong(0);
         try (Stream<Path> pathStream = Files.list(rootRepositoryPath)) {
             pathStream.filter(item -> GlobalConstants.DOCKER_LAYER_DIR_NAME_LIST.stream().noneMatch(dir -> dir.equals(item.getFileName().toString()))).forEach(path -> {
                 try {
@@ -1252,6 +1252,17 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
                                                         //config blob不存在
                                                         log.warn("Find image [{}] [{}] [{}] source config blob [{}] not exists", imageRepositoryPath.getStorageId(), imageRepositoryPath.getRepositoryId(), RepositoryFiles.relativizePath(tagRepositoryPath), RepositoryFiles.relativizePath(sourceConfigRepositoryPath));
                                                         notExistsBlobAl.getAndIncrement();
+                                                        log.warn("Find image [{}] [{}] [{}] source config blob [{}] artifact not exists", imageRepositoryPath.getStorageId(), imageRepositoryPath.getRepositoryId(), RepositoryFiles.relativizePath(tagRepositoryPath), RepositoryFiles.relativizePath(sourceConfigRepositoryPath));
+                                                        notExistsBlobArtifactAl.getAndIncrement();
+                                                    } else {
+                                                        Artifact artifact = artifactRepository.findOneArtifact(sourceConfigRepositoryPath.getStorageId(), sourceConfigRepositoryPath.getRepositoryId(), RepositoryFiles.relativizePath(sourceConfigRepositoryPath));
+                                                        if (Objects.isNull(artifact)) {
+                                                            //layers blob不存在
+                                                            log.warn("Find image [{}] [{}] [{}] source config blob [{}] artifact not exists", imageRepositoryPath.getStorageId(), imageRepositoryPath.getRepositoryId(), RepositoryFiles.relativizePath(tagRepositoryPath), RepositoryFiles.relativizePath(sourceConfigRepositoryPath));
+                                                            notExistsBlobArtifactAl.getAndIncrement();
+                                                        } else {
+                                                            blobArtifactAl.getAndIncrement();
+                                                        }
                                                     }
                                                 }
                                                 if (CollectionUtils.isNotEmpty(imageManifest.getLayers())) {
@@ -1264,6 +1275,17 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
                                                                 //layers blob不存在
                                                                 log.warn("Find image [{}] [{}] [{}] source layers blob [{}] not exists", imageRepositoryPath.getStorageId(), imageRepositoryPath.getRepositoryId(), RepositoryFiles.relativizePath(tagRepositoryPath), RepositoryFiles.relativizePath(sourceBlobRepositoryPath));
                                                                 notExistsBlobAl.getAndIncrement();
+                                                                log.warn("Find image [{}] [{}] [{}] source layers blob [{}] artifact not exists", imageRepositoryPath.getStorageId(), imageRepositoryPath.getRepositoryId(), RepositoryFiles.relativizePath(tagRepositoryPath), RepositoryFiles.relativizePath(sourceBlobRepositoryPath));
+                                                                notExistsBlobArtifactAl.getAndIncrement();
+                                                            } else {
+                                                                Artifact artifact = artifactRepository.findOneArtifact(sourceBlobRepositoryPath.getStorageId(), sourceBlobRepositoryPath.getRepositoryId(), RepositoryFiles.relativizePath(sourceBlobRepositoryPath));
+                                                                if (Objects.isNull(artifact)) {
+                                                                    //layers blob不存在
+                                                                    log.warn("Find image [{}] [{}] [{}] source layers blob [{}] artifact not exists", imageRepositoryPath.getStorageId(), imageRepositoryPath.getRepositoryId(), RepositoryFiles.relativizePath(tagRepositoryPath), RepositoryFiles.relativizePath(sourceBlobRepositoryPath));
+                                                                    notExistsBlobArtifactAl.getAndIncrement();
+                                                                } else {
+                                                                    blobArtifactAl.getAndIncrement();
+                                                                }
                                                             }
                                                         }
                                                     }
@@ -1281,9 +1303,9 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
                     log.error("Handle path [{}] error [{}]", path, ExceptionUtils.getStackTrace(ex));
                 }
             });
-            log.info("DockerIntegrity [{}] [{}] is finished images [{}] blobs [{}] manifest [{}] manifestLayers [{}] tagManifest [{}] tagManifestLayers [{}] notExistsBlob [{}] notExistsManifest [{}] notExistsManifestLayers [{}] notExistsTagManifest [{}] notExistsTagManifestLayers [{}]", rootRepositoryPath.getStorageId(), rootRepositoryPath.getRepositoryId(), imageAl.get(), blobAl.get(), manifestAl.get(), manifestLayersAl.get(), tagManifestAl.get(), tagManifestLayersAl.get(), notExistsBlobAl.get(), notExistsManifestAl.get(), notExistsManifestLayersAl.get(), notExistsTagManifestAl.get(), notExistsTagManifestLayersAl.get());
-            if (notExistsBlobAl.get() > 0 || notExistsManifestAl.get() > 0 || notExistsManifestLayersAl.get() > 0 || notExistsTagManifestAl.get() > 0 || notExistsTagManifestLayersAl.get() > 0) {
-                log.warn("DockerIntegrity [{}] [{}] is finished images [{}] blobs [{}] manifest [{}] manifestLayers [{}] tagManifest [{}] tagManifestLayers [{}] notExistsBlob [{}] notExistsManifest [{}] notExistsManifestLayers [{}] notExistsTagManifest [{}] notExistsTagManifestLayers [{}] is not Integrity", rootRepositoryPath.getStorageId(), rootRepositoryPath.getRepositoryId(), imageAl.get(), blobAl.get(), manifestAl.get(), manifestLayersAl.get(), tagManifestAl.get(), tagManifestLayersAl.get(), notExistsBlobAl.get(), notExistsManifestAl.get(), notExistsManifestLayersAl.get(), notExistsTagManifestAl.get(), notExistsTagManifestLayersAl.get());
+            log.info("DockerIntegrity [{}] [{}] is finished images [{}] blobs [{}] blobsArtifact [{}] manifest [{}] manifestLayers [{}] tagManifest [{}] tagManifestLayers [{}] notExistsBlob [{}] notExistsBlobArtifact [{}] notExistsManifest [{}] notExistsManifestLayers [{}] notExistsTagManifest [{}] notExistsTagManifestLayers [{}]", rootRepositoryPath.getStorageId(), rootRepositoryPath.getRepositoryId(), imageAl.get(), blobAl.get(), blobArtifactAl.get(), manifestAl.get(), manifestLayersAl.get(), tagManifestAl.get(), tagManifestLayersAl.get(), notExistsBlobAl.get(), notExistsBlobArtifactAl.get(), notExistsManifestAl.get(), notExistsManifestLayersAl.get(), notExistsTagManifestAl.get(), notExistsTagManifestLayersAl.get());
+            if (notExistsBlobAl.get() > 0 || notExistsManifestAl.get() > 0 || notExistsManifestLayersAl.get() > 0 || notExistsTagManifestAl.get() > 0 || notExistsTagManifestLayersAl.get() > 0 || notExistsBlobArtifactAl.get() > 0) {
+                log.warn("DockerIntegrity [{}] [{}] is finished images [{}] blobs [{}] blobsArtifact [{}] manifest [{}] manifestLayers [{}] tagManifest [{}] tagManifestLayers [{}] notExistsBlob [{}] notExistsBlobArtifact [{}] notExistsManifest [{}] notExistsManifestLayers [{}] notExistsTagManifest [{}] notExistsTagManifestLayers [{}] is not Integrity", rootRepositoryPath.getStorageId(), rootRepositoryPath.getRepositoryId(), imageAl.get(), blobAl.get(), blobArtifactAl.get(), manifestAl.get(), manifestLayersAl.get(), tagManifestAl.get(), tagManifestLayersAl.get(), notExistsBlobAl.get(), notExistsBlobArtifactAl.get(), notExistsManifestAl.get(), notExistsManifestLayersAl.get(), notExistsTagManifestAl.get(), notExistsTagManifestLayersAl.get());
             }
         } catch (Exception ex) {
             log.error(ExceptionUtils.getStackTrace(ex));
