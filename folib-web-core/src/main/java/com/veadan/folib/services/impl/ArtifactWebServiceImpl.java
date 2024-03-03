@@ -1138,6 +1138,158 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
         }
     }
 
+    @Override
+    public void dockerIntegrity(String storageId, String repositoryId) throws Exception {
+        long startTime = System.currentTimeMillis();
+        List<FutureTask<String>> futureTaskList = Lists.newArrayList();
+        FutureTask<String> futureTask;
+        Map<String, Storage> storageMap = configurationManagementService.getConfiguration().getStorages();
+        if (MapUtils.isNotEmpty(storageMap)) {
+            Repository repository;
+            for (Map.Entry<String, Storage> entry : storageMap.entrySet()) {
+                Map<String, ? extends Repository> repoMap = entry.getValue().getRepositories();
+                if (MapUtils.isEmpty(repoMap)) {
+                    continue;
+                }
+                if (StringUtils.isNotBlank(storageId) && !entry.getKey().equals(storageId)) {
+                    continue;
+                }
+                for (Map.Entry<String, ? extends Repository> repoEntry : repoMap.entrySet()) {
+                    repository = repoEntry.getValue();
+                    if (!DockerLayoutProvider.ALIAS.equals(repository.getLayout()) || RepositoryTypeEnum.GROUP.getType().equals(repository.getType())) {
+                        continue;
+                    }
+                    if (StringUtils.isNotBlank(repositoryId) && !repoEntry.getKey().equals(repositoryId)) {
+                        continue;
+                    }
+                    final RepositoryPath rootRepositoryPath = repositoryPathResolver.resolve(repository.getStorage().getId(), repository.getId());
+                    if (!Files.exists(rootRepositoryPath)) {
+                        continue;
+                    }
+                    final RepositoryPath blobsRootRepositoryPath = rootRepositoryPath.resolve(DockerLayoutProvider.BLOBS);
+                    final RepositoryPath manifestRootRepositoryPath = rootRepositoryPath.resolve(DockerLayoutProvider.MANIFEST);
+                    futureTask = new FutureTask<String>(() -> {
+                        handleDockerRepoIntegrity(rootRepositoryPath, blobsRootRepositoryPath, manifestRootRepositoryPath);
+                        return "";
+                    });
+                    futureTaskList.add(futureTask);
+                    asyncThreadPoolTaskExecutor.submit(futureTask);
+                }
+            }
+            for (FutureTask<String> task : futureTaskList) {
+                task.get();
+            }
+            log.info("DockerIntegrity all is finished task time [{}] ms", System.currentTimeMillis() - startTime);
+        }
+    }
+
+    private void handleDockerRepoIntegrity(RepositoryPath rootRepositoryPath, RepositoryPath blobsRootRepositoryPath, RepositoryPath manifestRootRepositoryPath) {
+        AtomicLong imageAl = new AtomicLong(0), blobAl = new AtomicLong(0), manifestAl = new AtomicLong(0), manifestLayersAl = new AtomicLong(0), tagManifestAl = new AtomicLong(0), tagManifestLayersAl = new AtomicLong(0),
+                notExistsBlobAl = new AtomicLong(0), notExistsManifestAl = new AtomicLong(0), notExistsManifestLayersAl = new AtomicLong(0), notExistsTagManifestAl = new AtomicLong(0), notExistsTagManifestLayersAl = new AtomicLong(0);
+        try (Stream<Path> pathStream = Files.list(rootRepositoryPath)) {
+            pathStream.filter(item -> GlobalConstants.DOCKER_LAYER_DIR_NAME_LIST.stream().noneMatch(dir -> dir.equals(item.getFileName().toString()))).forEach(path -> {
+                try {
+                    RepositoryPath imageRepositoryPath = (RepositoryPath) path;
+                    String filename = imageRepositoryPath.getFileName().toString();
+                    if (!filename.startsWith(GlobalConstants.POINT) && !RepositoryFiles.isTemp(imageRepositoryPath) && !RepositoryFiles.isTrash(imageRepositoryPath) && !Files.isHidden(imageRepositoryPath) && Files.isDirectory(imageRepositoryPath)) {
+                        log.info("Find image path [{}] [{}] [{}]", imageRepositoryPath.getStorageId(), imageRepositoryPath.getRepositoryId(), RepositoryFiles.relativizePath(imageRepositoryPath));
+                        imageAl.getAndIncrement();
+                        if (Files.exists(imageRepositoryPath)) {
+                            //遍历镜像目录下的tag目录
+                            try (Stream<Path> tagPathStream = Files.list(imageRepositoryPath)) {
+                                tagPathStream.forEach(tagPath -> {
+                                    RepositoryPath tagRepositoryPath = (RepositoryPath) tagPath;
+                                    try {
+                                        List<ImageManifest> imageManifestList = dockerComponent.getImageManifests(tagRepositoryPath);
+                                        if (CollectionUtils.isNotEmpty(imageManifestList)) {
+                                            for (ImageManifest imageManifest : imageManifestList) {
+                                                if (StringUtils.isNotBlank(imageManifest.getDigest())) {
+                                                    //manifest
+                                                    RepositoryPath sourceManifestRepositoryPath = manifestRootRepositoryPath.resolve(imageManifest.getDigest());
+                                                    manifestAl.getAndIncrement();
+                                                    if (!Files.exists(sourceManifestRepositoryPath)) {
+                                                        //manifest不存在
+                                                        log.warn("Find image [{}] [{}] [{}] source manifest [{}] not exists", imageRepositoryPath.getStorageId(), imageRepositoryPath.getRepositoryId(), RepositoryFiles.relativizePath(tagRepositoryPath), RepositoryFiles.relativizePath(sourceManifestRepositoryPath));
+                                                        notExistsManifestAl.getAndIncrement();
+                                                        log.warn("Find image [{}] [{}] [{}] source manifest [{}] layers not exists", imageRepositoryPath.getStorageId(), imageRepositoryPath.getRepositoryId(), RepositoryFiles.relativizePath(tagRepositoryPath), RepositoryFiles.relativizePath(sourceManifestRepositoryPath));
+                                                        notExistsManifestLayersAl.getAndIncrement();
+                                                    } else {
+                                                        Artifact artifact = artifactRepository.findOneArtifact(sourceManifestRepositoryPath.getStorageId(), sourceManifestRepositoryPath.getRepositoryId(), RepositoryFiles.relativizePath(sourceManifestRepositoryPath));
+                                                        if (Objects.isNull(artifact) || (Objects.nonNull(imageManifest.getConfig()) && CollectionUtils.isEmpty(artifact.getLayers()))) {
+                                                            //是单架构镜像并且layers字段为空
+                                                            log.warn("Find image [{}] [{}] [{}] source manifest [{}] layers not exists", imageRepositoryPath.getStorageId(), imageRepositoryPath.getRepositoryId(), RepositoryFiles.relativizePath(tagRepositoryPath), RepositoryFiles.relativizePath(sourceManifestRepositoryPath));
+                                                            notExistsManifestLayersAl.getAndIncrement();
+                                                        } else {
+                                                            manifestLayersAl.getAndIncrement();
+                                                        }
+                                                    }
+
+                                                    RepositoryPath tagManifestRepositoryPath = dockerComponent.getManifestPath(tagRepositoryPath);
+                                                    tagManifestAl.getAndIncrement();
+                                                    if (!Files.exists(tagManifestRepositoryPath)) {
+                                                        //manifest不存在
+                                                        log.warn("Find image [{}] [{}] [{}] source tag manifest [{}] not exists", imageRepositoryPath.getStorageId(), imageRepositoryPath.getRepositoryId(), RepositoryFiles.relativizePath(tagRepositoryPath), RepositoryFiles.relativizePath(tagManifestRepositoryPath));
+                                                        notExistsTagManifestAl.getAndIncrement();
+                                                        log.warn("Find image [{}] [{}] [{}] source tag manifest [{}] layers not exists", imageRepositoryPath.getStorageId(), imageRepositoryPath.getRepositoryId(), RepositoryFiles.relativizePath(tagRepositoryPath), RepositoryFiles.relativizePath(tagManifestRepositoryPath));
+                                                        notExistsTagManifestLayersAl.getAndIncrement();
+                                                    } else {
+                                                        Artifact artifact = artifactRepository.findOneArtifact(tagManifestRepositoryPath.getStorageId(), tagManifestRepositoryPath.getRepositoryId(), RepositoryFiles.relativizePath(tagManifestRepositoryPath));
+                                                        if (Objects.isNull(artifact) || (Objects.nonNull(imageManifest.getConfig()) && CollectionUtils.isEmpty(artifact.getLayers()))) {
+                                                            //是单架构镜像并且layers字段为空
+                                                            log.warn("Find image [{}] [{}] [{}] source tag manifest [{}] layers not exists", imageRepositoryPath.getStorageId(), imageRepositoryPath.getRepositoryId(), RepositoryFiles.relativizePath(tagRepositoryPath), RepositoryFiles.relativizePath(tagManifestRepositoryPath));
+                                                            notExistsTagManifestLayersAl.getAndIncrement();
+                                                        } else {
+                                                            tagManifestLayersAl.getAndIncrement();
+                                                        }
+                                                    }
+                                                }
+                                                ContainerConfigurationManifest containerConfigurationManifest = imageManifest.getConfig();
+                                                if (Objects.nonNull(containerConfigurationManifest) && StringUtils.isNotBlank(containerConfigurationManifest.getDigest())) {
+                                                    //config blob
+                                                    RepositoryPath sourceConfigRepositoryPath = blobsRootRepositoryPath.resolve(containerConfigurationManifest.getDigest());
+                                                    blobAl.getAndIncrement();
+                                                    if (!Files.exists(sourceConfigRepositoryPath)) {
+                                                        //config blob不存在
+                                                        log.warn("Find image [{}] [{}] [{}] source config blob [{}] not exists", imageRepositoryPath.getStorageId(), imageRepositoryPath.getRepositoryId(), RepositoryFiles.relativizePath(tagRepositoryPath), RepositoryFiles.relativizePath(sourceConfigRepositoryPath));
+                                                        notExistsBlobAl.getAndIncrement();
+                                                    }
+                                                }
+                                                if (CollectionUtils.isNotEmpty(imageManifest.getLayers())) {
+                                                    for (LayerManifest layerManifest : imageManifest.getLayers()) {
+                                                        if (StringUtils.isNotBlank(layerManifest.getDigest())) {
+                                                            //layers blob
+                                                            RepositoryPath sourceBlobRepositoryPath = blobsRootRepositoryPath.resolve(layerManifest.getDigest());
+                                                            blobAl.getAndIncrement();
+                                                            if (!Files.exists(sourceBlobRepositoryPath)) {
+                                                                //layers blob不存在
+                                                                log.warn("Find image [{}] [{}] [{}] source layers blob [{}] not exists", imageRepositoryPath.getStorageId(), imageRepositoryPath.getRepositoryId(), RepositoryFiles.relativizePath(tagRepositoryPath), RepositoryFiles.relativizePath(sourceBlobRepositoryPath));
+                                                                notExistsBlobAl.getAndIncrement();
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    } catch (Exception ex) {
+                                        log.error("Handle image [{}] [{}] tag [{}] error [{}]", imageRepositoryPath.getStorageId(), imageRepositoryPath.getRepositoryId(), tagRepositoryPath, ExceptionUtils.getStackTrace(ex));
+                                    }
+                                });
+                            }
+                        }
+                    }
+                } catch (Exception ex) {
+                    log.error("Handle path [{}] error [{}]", path, ExceptionUtils.getStackTrace(ex));
+                }
+            });
+            log.info("DockerIntegrity [{}] [{}] is finished images [{}] blobs [{}] manifest [{}] manifestLayers [{}] tagManifest [{}] tagManifestLayers [{}] notExistsBlob [{}] notExistsManifest [{}] notExistsManifestLayers [{}] notExistsTagManifest [{}] notExistsTagManifestLayers [{}]", rootRepositoryPath.getStorageId(), rootRepositoryPath.getRepositoryId(), imageAl.get(), blobAl.get(), manifestAl.get(), manifestLayersAl.get(), tagManifestAl.get(), tagManifestLayersAl.get(), notExistsBlobAl.get(), notExistsManifestAl.get(), notExistsManifestLayersAl.get(), notExistsTagManifestAl.get(), notExistsTagManifestLayersAl.get());
+            if (notExistsBlobAl.get() > 0 || notExistsManifestAl.get() > 0 || notExistsManifestLayersAl.get() > 0 || notExistsTagManifestAl.get() > 0 || notExistsTagManifestLayersAl.get() > 0) {
+                log.warn("DockerIntegrity [{}] [{}] is finished images [{}] blobs [{}] manifest [{}] manifestLayers [{}] tagManifest [{}] tagManifestLayers [{}] notExistsBlob [{}] notExistsManifest [{}] notExistsManifestLayers [{}] notExistsTagManifest [{}] notExistsTagManifestLayers [{}] is not Integrity", rootRepositoryPath.getStorageId(), rootRepositoryPath.getRepositoryId(), imageAl.get(), blobAl.get(), manifestAl.get(), manifestLayersAl.get(), tagManifestAl.get(), tagManifestLayersAl.get(), notExistsBlobAl.get(), notExistsManifestAl.get(), notExistsManifestLayersAl.get(), notExistsTagManifestAl.get(), notExistsTagManifestLayersAl.get());
+            }
+        } catch (Exception ex) {
+            log.error(ExceptionUtils.getStackTrace(ex));
+        }
+    }
+
     private void handleDockerRepoManifestLayers(RepositoryPath rootRepositoryPath, RepositoryPath manifestRootRepositoryPath) {
         AtomicLong imageAl = new AtomicLong(0), tagManifestAl = new AtomicLong(0), changeTagManifestAl = new AtomicLong(0), manifestAl = new AtomicLong(0), changeManifestAl = new AtomicLong(0);
         try {
