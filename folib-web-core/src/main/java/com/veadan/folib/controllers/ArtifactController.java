@@ -360,14 +360,6 @@ public class ArtifactController extends BaseController {
     }
 
     @PreAuthorize("hasAuthority('ADMIN')")
-    @GetMapping(value = "/dockerManifestLayers")
-    public ResponseEntity<String> dockerManifestLayers(@RequestParam(required = false, name = "storageId") String storageId,
-                                                      @RequestParam(required = false, name = "repositoryId") String repositoryId) throws Exception {
-        artifactWebService.dockerManifestLayers(storageId, repositoryId);
-        return ResponseEntity.ok("");
-    }
-
-    @PreAuthorize("hasAuthority('ADMIN')")
     @GetMapping(value = "/dockerIntegrity")
     public ResponseEntity<String> dockerIntegrity(@RequestParam(required = false, name = "storageId") String storageId,
                                                        @RequestParam(required = false, name = "repositoryId") String repositoryId) throws Exception {

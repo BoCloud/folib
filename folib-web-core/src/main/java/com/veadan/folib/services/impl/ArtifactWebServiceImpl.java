@@ -1095,50 +1095,6 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
     }
 
     @Override
-    public void dockerManifestLayers(String storageId, String repositoryId) throws Exception {
-        long startTime = System.currentTimeMillis();
-        List<FutureTask<String>> futureTaskList = Lists.newArrayList();
-        FutureTask<String> futureTask;
-        Map<String, Storage> storageMap = configurationManagementService.getConfiguration().getStorages();
-        if (MapUtils.isNotEmpty(storageMap)) {
-            Repository repository;
-            for (Map.Entry<String, Storage> entry : storageMap.entrySet()) {
-                Map<String, ? extends Repository> repoMap = entry.getValue().getRepositories();
-                if (MapUtils.isEmpty(repoMap)) {
-                    continue;
-                }
-                if (StringUtils.isNotBlank(storageId) && !entry.getKey().equals(storageId)) {
-                    continue;
-                }
-                for (Map.Entry<String, ? extends Repository> repoEntry : repoMap.entrySet()) {
-                    repository = repoEntry.getValue();
-                    if (!DockerLayoutProvider.ALIAS.equals(repository.getLayout()) || RepositoryTypeEnum.GROUP.getType().equals(repository.getType())) {
-                        continue;
-                    }
-                    if (StringUtils.isNotBlank(repositoryId) && !repoEntry.getKey().equals(repositoryId)) {
-                        continue;
-                    }
-                    final RepositoryPath rootRepositoryPath = repositoryPathResolver.resolve(repository.getStorage().getId(), repository.getId());
-                    if (!Files.exists(rootRepositoryPath)) {
-                        continue;
-                    }
-                    final RepositoryPath manifestRootRepositoryPath = rootRepositoryPath.resolve(DockerLayoutProvider.MANIFEST);
-                    futureTask = new FutureTask<String>(() -> {
-                        handleDockerRepoManifestLayers(rootRepositoryPath, manifestRootRepositoryPath);
-                        return "";
-                    });
-                    futureTaskList.add(futureTask);
-                    asyncThreadPoolTaskExecutor.submit(futureTask);
-                }
-            }
-            for (FutureTask<String> task : futureTaskList) {
-                task.get();
-            }
-            log.info("DockerManifestLayers all is finished task time [{}] ms", System.currentTimeMillis() - startTime);
-        }
-    }
-
-    @Override
     public void dockerIntegrity(String storageId, String repositoryId) throws Exception {
         long startTime = System.currentTimeMillis();
         List<FutureTask<String>> futureTaskList = Lists.newArrayList();
@@ -1312,67 +1268,6 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
         }
     }
 
-    private void handleDockerRepoManifestLayers(RepositoryPath rootRepositoryPath, RepositoryPath manifestRootRepositoryPath) {
-        AtomicLong imageAl = new AtomicLong(0), tagManifestAl = new AtomicLong(0), changeTagManifestAl = new AtomicLong(0), manifestAl = new AtomicLong(0), changeManifestAl = new AtomicLong(0);
-        try {
-            List<RepositoryPath> dockerImageRepositoryPaths = RepositoryPathUtil.getDockerImagePaths(rootRepositoryPath);
-            if (CollectionUtils.isNotEmpty(dockerImageRepositoryPaths)) {
-                for (RepositoryPath imageRepositoryPath : dockerImageRepositoryPaths) {
-                    try {
-                        imageAl.getAndIncrement();
-                        List<Path> tagList = dockerComponent.getTags(imageRepositoryPath, GlobalConstants.DOCKER_LAYER_DIR_NAME_LIST);
-                        if (CollectionUtils.isNotEmpty(tagList)) {
-                            RepositoryPath tagRepositoryPath, tagManifestRepositoryPath = null;
-                            for (Path tagPath : tagList) {
-                                try {
-                                    tagRepositoryPath = (RepositoryPath) tagPath;
-                                    tagManifestRepositoryPath = dockerComponent.getManifestPath(tagRepositoryPath);
-                                    if (Objects.isNull(tagManifestRepositoryPath) || !Files.exists(tagManifestRepositoryPath)) {
-                                        continue;
-                                    }
-                                    tagManifestAl.getAndIncrement();
-                                    dockerComponent.handleLayers(tagManifestRepositoryPath, tagManifestRepositoryPath);
-                                    artifactService.saveOrUpdateArtifact(tagManifestRepositoryPath.getArtifactEntry(), true);
-                                    changeTagManifestAl.getAndIncrement();
-                                    log.info("Find tag [{}] [{}] [{}] layers change to [{}]", tagManifestRepositoryPath.getStorageId(), tagManifestRepositoryPath.getRepositoryId(), RepositoryFiles.relativizePath(tagManifestRepositoryPath), tagManifestRepositoryPath.getArtifactEntry().getLayers());
-                                } catch (Exception ex) {
-                                    log.error("Handle tag [{}] [{}] [{}] error [{}]", imageRepositoryPath.getStorageId(), imageRepositoryPath.getRepositoryId(), RepositoryFiles.relativizePath(tagManifestRepositoryPath), ExceptionUtils.getStackTrace(ex));
-                                }
-                            }
-                        }
-                    } catch (Exception ex) {
-                        log.error("Handle image [{}] [{}] [{}] error [{}]", imageRepositoryPath.getStorageId(), imageRepositoryPath.getRepositoryId(), RepositoryFiles.relativizePath(imageRepositoryPath), ExceptionUtils.getStackTrace(ex));
-                    }
-                }
-            }
-            //仓库根目录下manifest目录
-            if (Files.exists(manifestRootRepositoryPath)) {
-                try (Stream<Path> manifestStream = Files.list(manifestRootRepositoryPath)) {
-                    manifestStream.forEach(manifestPath -> {
-                        if (DockerArtifactCoordinates.isRealManifestPath(manifestPath)) {
-                            manifestAl.getAndIncrement();
-                            RepositoryPath manifestRepositoryPath = (RepositoryPath) manifestPath;
-                            try {
-                                dockerComponent.handleLayers(manifestRepositoryPath, manifestRepositoryPath);
-                                artifactService.saveOrUpdateArtifact(manifestRepositoryPath.getArtifactEntry(), true);
-                                changeManifestAl.getAndIncrement();
-                                log.info("Find manifest [{}] [{}] [{}] layers change to [{}]", manifestRepositoryPath.getStorageId(), manifestRepositoryPath.getRepositoryId(), RepositoryFiles.relativizePath(manifestRepositoryPath), manifestRepositoryPath.getArtifactEntry().getLayers());
-                            } catch (Exception ex) {
-                                try {
-                                    log.error("Handle manifest [{}] [{}] [{}] error [{}]", manifestRepositoryPath.getStorageId(), manifestRepositoryPath.getRepositoryId(), RepositoryFiles.relativizePath(manifestRepositoryPath), ExceptionUtils.getStackTrace(ex));
-                                } catch (IOException ignore) {
-                                }
-                            }
-                        }
-                    });
-                }
-            }
-            log.info("DockerManifestLayers [{}] [{}] is finished images [{}] tagManifest [{}] changeTagManifest [{}] manifest [{}] changeManifest [{}]", rootRepositoryPath.getStorageId(), rootRepositoryPath.getRepositoryId(), imageAl.get(), tagManifestAl.get(), changeTagManifestAl.get(), manifestAl.get(), changeManifestAl.get());
-        } catch (Exception ex) {
-            log.error(ExceptionUtils.getStackTrace(ex));
-        }
-    }
-
     @Override
     public void dockerLayoutUpgradeAll() throws Exception {
         dockerLayoutUpgrade(null, null, null);
@@ -1436,7 +1331,7 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
                                             manifestAl.getAndIncrement();
                                             if (!exists) {
                                                 //不存在，manifest复制到仓库manifest目录下
-                                                dockerComponent.handleLayers(manifestRepositoryPath, targetManifestRepositoryPath);
+                                                dockerComponent.handleLayers(targetManifestRepositoryPath);
                                                 artifactManagementService.store(targetManifestRepositoryPath, manifestRepositoryPath);
                                                 //TODO 目标文件及db是否存在双重检查，都存在才可以删除源manifest
                                                 log.info("Find image [{}] [{}] [{}] source manifest [{}] target [{}] copy finished", imageRepositoryPath.getStorageId(), imageRepositoryPath.getRepositoryId(), RepositoryFiles.relativizePath(imageRepositoryPath), RepositoryFiles.relativizePath(manifestRepositoryPath), RepositoryFiles.relativizePath(targetManifestRepositoryPath));
@@ -1994,7 +1889,7 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
                                     }
                                     if (StringUtils.isNotBlank(manifest.getDigest())) {
                                         RepositoryPath manifestPath = repositoryPathResolver.resolve(repositoryPath.getStorageId(), repositoryPath.getRepositoryId(), DockerLayoutProvider.MANIFEST + File.separator + manifest.getDigest());
-                                        dockerComponent.handleLayers(manifestPath, manifestPath);
+                                        dockerComponent.handleLayers(manifestPath);
                                         artifactManagementService.validateAndStoreIndex(manifestPath);
                                     }
                                 }

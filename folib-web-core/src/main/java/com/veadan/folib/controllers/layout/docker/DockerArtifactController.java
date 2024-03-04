@@ -506,10 +506,6 @@ public class DockerArtifactController extends BaseArtifactController {
         String manifestSha256 = null, directory;
         String manifestString = new String(bytes, StandardCharsets.UTF_8);
         ImageManifest imageManifest = JSON.parseObject(manifestString, ImageManifest.class);
-        Set<String> layers = Optional.ofNullable(imageManifest.getLayers()).orElse(Collections.emptyList()).stream().map(LayerManifest::getDigest).collect(Collectors.toSet());
-        if (Objects.nonNull(imageManifest.getConfig())) {
-            layers.add(imageManifest.getConfig().getDigest());
-        }
         try (InputStream stream = new ByteArrayInputStream(bytes); InputStream destStream = new ByteArrayInputStream(bytes)) {
             boolean isTag = false;
             if (!reference.startsWith("sha256:")) {
@@ -528,7 +524,7 @@ public class DockerArtifactController extends BaseArtifactController {
             //判断镜像清单是否在
             if (!mirrorLayerExists(artifactPath, storageId, repositoryId)) {
                 RepositoryPath repositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, artifactPath);
-                dockerComponent.provideArtifact(repositoryPath, layers);
+                dockerComponent.provideArtifact(repositoryPath);
                 artifactManagementService.validateAndStore(repositoryPath, stream);
             }
             if (!isTag) {
@@ -544,10 +540,10 @@ public class DockerArtifactController extends BaseArtifactController {
 
             //如果存在并发生变化删除更新
             if (Objects.isNull(tagSha256)) {
-                dockerComponent.provideArtifact(destPath, layers);
+                dockerComponent.provideArtifact(destPath);
                 artifactManagementService.validateAndStore(destPath, destStream);
             } else if (!Objects.equals(tagSha256, manifestSha256)) {
-                dockerComponent.provideArtifact(destPath, layers);
+                dockerComponent.provideArtifact(destPath);
                 artifactManagementService.validateAndStore(destPath, destStream);
                 RepositoryPath deletePath = repositoryPathResolver.resolve(storageId, repositoryId, destArtifactPath.replace(manifestSha256, tagSha256));
                 artifactManagementService.delete(deletePath, true);
