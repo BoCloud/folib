@@ -76,6 +76,7 @@ import org.springframework.scheduling.annotation.Async;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.stereotype.Component;
 import org.springframework.web.multipart.MultipartFile;
+import scala.collection.mutable.StringBuilder;
 
 import javax.inject.Inject;
 import javax.ws.rs.client.Client;
@@ -820,6 +821,12 @@ public class PromotionUtil {
             String path = artifactSliceUploadReq.getPath();
             Object metadata = uploadDto.getFileMetaDataMap().get(path);
             artifactSliceUploadReq.setMetaData(JSONObject.parseObject((String) metadata,Map.class));
+
+//            try (InputStream inputStream = artifactSliceUploadReq.getFile().getInputStream();){
+//                String md5 = FileUtils.getMD5(inputStream);
+//                artifactSliceUploadReq.setSliceMd5(md5);
+//            }
+            log.info("artifactSliceUploadReq:{}",artifactSliceUploadReq);
             int finalI = i;
             try {
                 new RetryTask(promotionConfig.getRetryCount()) {

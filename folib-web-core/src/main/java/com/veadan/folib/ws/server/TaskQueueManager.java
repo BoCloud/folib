@@ -38,10 +38,10 @@ public class TaskQueueManager {
             log.info("current promotion queue {}/{}", CURRENT_INDEX.get(), LENGTH.get());
             runnable.run();
         };
+        LENGTH.incrementAndGet();
         Future<?> future = executorService.submit(wrapper);
         taskMap.put(taskId, future);
         log.info("Task " + taskId + " submitted.");
-        LENGTH.incrementAndGet();
         return taskId;
     }
 

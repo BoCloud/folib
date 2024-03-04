@@ -1243,6 +1243,7 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
         final Integer chunkNo = model.getChunkIndex();
         final Integer chunkNoMax = model.getChunkIndexMax();
         final String originFileMd5 = model.getOriginFileMd5();
+        final String sliceMd5 = model.getSliceMd5();
         final Map<String, Object> metaData = Optional.ofNullable(model.getMetaData()).orElse(Collections.emptyMap());
         final String metaDataJsonStr = JSON.toJSONString(metaData);
 
@@ -1253,6 +1254,15 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
         boolean allSliceFileUploadCompleted = false;
 
         try {
+            if (StringUtils.isNotBlank(sliceMd5)) {
+                try (InputStream inputStream1 = file.getInputStream();) {
+                    String md5 = FileUtils.getMD5(inputStream1);
+                    if (!sliceMd5.equals(md5)) {
+                        throw new BusinessException("sliceMd5 md5不一致");
+                    }
+                }
+            }
+
             if (!FileUtil.exist(artifactFileSliceUploadFile)) {
                 FileUtil.touch(artifactFileSliceUploadFile);
             }
@@ -1295,7 +1305,7 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
                 final String uploadArtifactFileMd5 = FileUtils.getMD5(mergeFilePath);
                 // 校验MD5
                 if (!originFileMd5.equals(uploadArtifactFileMd5)) {
-                    throw new BusinessException(BusinessCodeEnum.ARTIFACT_SLICE_UPLOAD_MD5_CHECK_FAILED);
+                    throw new BusinessException(String.format("%s , originFileMd5:%s , uploadArtifactFileMd5:%s",BusinessCodeEnum.ARTIFACT_SLICE_UPLOAD_MD5_CHECK_FAILED.getMessage(),originFileMd5,uploadArtifactFileMd5));
                 }
 
                 // 转存合并文件到Folib

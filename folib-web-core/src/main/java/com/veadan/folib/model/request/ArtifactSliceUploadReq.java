@@ -40,6 +40,8 @@ public class ArtifactSliceUploadReq {
     @ApiModelProperty("切片文件原始MD5（非切片文件的MD5）")
     @NotEmpty(message = "切片文件原始MD5不能为空")
     private String originFileMd5;
+    @ApiModelProperty("切片文件MD5")
+    private String sliceMd5;
     @ApiModelProperty("制品源数据")
     private Map<String, Object> metaData;
 }

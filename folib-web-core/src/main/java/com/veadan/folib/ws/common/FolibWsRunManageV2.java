@@ -5,11 +5,11 @@ import com.veadan.folib.configuration.ConfigurationManager;
 import com.veadan.folib.dispatch.ClusterDispatchNodeDto;
 import com.veadan.folib.promotion.KryoSerializationUtil;
 import com.veadan.folib.services.ConfigurationManagementService;
+import com.veadan.folib.util.FileSizeConvertUtils;
 import com.veadan.folib.utils.UrlUtils;
 import com.veadan.folib.ws.server.*;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
@@ -18,6 +18,8 @@ import javax.websocket.ContainerProvider;
 import javax.websocket.DeploymentException;
 import javax.websocket.Session;
 import java.io.IOException;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.net.URI;
 import java.nio.ByteBuffer;
 import java.util.Collection;
@@ -213,18 +215,14 @@ public class FolibWsRunManageV2 {
             future.completeExceptionally(e);
         }
         WSMessageResponse wsMessageResponse;
-        try {
+        try {//todo 出现异常将其关闭
             wsMessageResponse = future.get(timeout, TimeUnit.SECONDS);
         } catch (ExecutionException | InterruptedException | TimeoutException e) {
             throw new FolibWsRequestException(e);
         } finally {
             REQUEST_FUTURES.remove(wsMessageRequest.getId());
         }
-        if (HttpStatus.OK.equals(wsMessageResponse.getStatus())) {
-            return wsMessageResponse;
-        } else {
-            throw new FolibWsRequestException((String) wsMessageResponse.getDate());
-        }
+        return wsMessageResponse;
     }
 
     public void sendResponse(Session session, WSMessageResponse wsMessageResponse) throws ExecutionException, InterruptedException, TimeoutException {
@@ -237,10 +235,25 @@ public class FolibWsRunManageV2 {
 
 
     private static final long _1_MB = 1024 * 1024; // 1MB
+
+
     private static final long DEFAULT_BYTES_PER_SECOND = _1_MB * 50; //缺省值50M
     private final Map<Session, Long> sessionLastSendTime = new ConcurrentHashMap<>();
     private final Map<Session, Long> sessionBytesSent = new ConcurrentHashMap<>();
     private final Map<Session, ReentrantLock> sessionLocks = new ConcurrentHashMap<>();
+
+    public static void main(String[] args) {
+
+        long pastTime = 200;
+        BigDecimal second = BigDecimal.valueOf(pastTime).divide(BigDecimal.valueOf(1000), 2, RoundingMode.HALF_UP);
+        System.out.println(second);
+
+
+        long bytesCount = 500;
+        BigDecimal divide = BigDecimal.valueOf(0).divide(BigDecimal.valueOf(0), 2, RoundingMode.HALF_UP);
+        System.out.println(divide);
+        System.out.println(divide.multiply(BigDecimal.valueOf(1024)));
+    }
 
     private void sendBinary(Session session, ByteBuffer data, long finalKbps) throws IOException {
         String messageId = UUID.randomUUID().toString();
@@ -249,11 +262,13 @@ public class FolibWsRunManageV2 {
             finalKbps = DEFAULT_BYTES_PER_SECOND;
         }
 
-        long bytesToSend = data.remaining();
+        long dataSize = data.remaining();
+        long bytesToSend = dataSize;
         long startTime = System.currentTimeMillis();
         log.info("sendBinary [size:{} , finalKbps:{} Kbps, messageId:{}]", bytesToSend, finalKbps, messageId);
         sessionLocks.putIfAbsent(session, new ReentrantLock(true));
         ReentrantLock lock = sessionLocks.get(session);
+        int sendBytesCount = 0;
         while (bytesToSend > 0) {
             lock.lock();
             try {
@@ -295,14 +310,16 @@ public class FolibWsRunManageV2 {
                     continue;
                 }
                 // 计算本次可以发送的数据量，不超过待发送数据量和可用带宽允许的最大值
-                int chunkSize = (int) Math.min(bytesToSend, availableBandwidth);
+                int chunkSize1 = (int) Math.min(bytesToSend, availableBandwidth);
+                int chunkSize = Math.min(chunkSize1, 1024 * 1024);
                 // 准备数据包，包括协议头、消息ID和数据
                 byte[] bytes = FOLIB_WS_PROTOCOL.getBytes();
-                ByteBuffer chunk = ByteBuffer.allocate(chunkSize + bytes.length + messageId.getBytes().length + 1); // +1 for isLast flag
+                ByteBuffer chunk = ByteBuffer.allocate(chunkSize + 8 + bytes.length + messageId.getBytes().length);
                 chunk.put(bytes);
+                chunk.putLong(dataSize);
                 chunk.put(messageId.getBytes());
                 boolean isLast = bytesToSend == chunkSize; // 检查是否为最后一个片段
-                chunk.put((byte) (isLast ? 1 : 0)); // isLast flag
+                //chunk.put((byte) (isLast ? 1 : 0)); // isLast flag
                 for (int i = 0; i < chunkSize; i++) {
                     chunk.put(data.get());
                 }
@@ -311,7 +328,7 @@ public class FolibWsRunManageV2 {
                 // session.getBasicRemote().sendBinary(chunk);
 
                 CompletableFuture<Void> completableFuture = new CompletableFuture<>();
-
+                long l = System.currentTimeMillis();
                 session.getAsyncRemote().sendBinary(chunk, result -> {
                     if (result.isOK()) {
                         completableFuture.complete(null); // 完成Future
@@ -325,11 +342,9 @@ public class FolibWsRunManageV2 {
                 } catch (InterruptedException | ExecutionException e) {
                     throw new RuntimeException(e);
                 }
+                sendBytesCount += chunk.capacity();
+                long pastTime = System.currentTimeMillis() - startTime;
 
-
-                if (isLast) {
-                    log.info("send success , time consuming:{}ms", System.currentTimeMillis() - startTime);
-                }
                 // 更新已发送的数据量
                 sessionBytesSent.compute(session, (k, v) -> v + chunkSize);
                 // 如果已经到达计算周期（1秒），重置会话状态
@@ -340,6 +355,16 @@ public class FolibWsRunManageV2 {
                 // 减少待发送的数据量
                 bytesToSend -= chunkSize;
 
+                //日志输出
+                BigDecimal rate = BigDecimal.valueOf(0);
+                try {
+                    BigDecimal second = BigDecimal.valueOf(pastTime).divide(BigDecimal.valueOf(1000), 2, RoundingMode.HALF_UP);
+                    rate = BigDecimal.valueOf(sendBytesCount).divide(second, 2, RoundingMode.HALF_UP);
+                } catch (Exception ignored) { }
+                log.info("messageId:{} dataSize:{}/{}, current finalKbps {}ps", messageId, dataSize-bytesToSend, dataSize,FileSizeConvertUtils.convert(rate.longValue()));
+                if (isLast) {
+                    log.info("send success , time consuming:{}ms", System.currentTimeMillis() - startTime);
+                }
             } finally {
                 lock.unlock();
             }
