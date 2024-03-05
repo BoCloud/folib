@@ -91,7 +91,7 @@ public class DockerLayoutComponent {
     }
 
     public List<ImageManifest> getImageManifests(RepositoryPath repositoryPath) throws IOException {
-        log.info("Get manifest param [{}]", repositoryPath);
+        log.debug("Get manifest param [{}]", repositoryPath);
         if (!Files.exists(repositoryPath)) {
             return null;
         }

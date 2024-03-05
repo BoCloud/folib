@@ -173,7 +173,7 @@ public class RepositoryPathUtil {
                                                  BasicFileAttributes attrs)
                         throws IOException {
                     RepositoryPath itemPath = (RepositoryPath) file;
-                    log.info("Current path [{}]", itemPath);
+                    log.debug("Current path [{}]", itemPath);
                     if (include(1, itemPath, true) && !pathList.contains(itemPath.getParent().getParent())) {
                         log.info("Find image path [{}]", itemPath);
                         pathList.add(repositoryPathResolver.resolve(repositoryPath.getStorageId(), repositoryPath.getRepositoryId(), RepositoryFiles.relativizePath(itemPath.getParent().getParent())));
@@ -184,9 +184,9 @@ public class RepositoryPathUtil {
                 @Override
                 public FileVisitResult preVisitDirectory(final Path dir, final BasicFileAttributes attrs) throws IOException {
                     RepositoryPath itemPath = (RepositoryPath) dir;
-                    log.info("Current directory path [{}]", itemPath);
+                    log.debug("Current directory path [{}]", itemPath);
                     if (!Files.isSameFile(itemPath, itemPath.getRoot()) && !include(2, itemPath, true) || (CollectionUtils.isNotEmpty(excludeList) && excludeList.stream().anyMatch(item -> itemPath.getFileName().toString().equalsIgnoreCase(item)))) {
-                        log.info("RepositoryPath [{}] skip...", itemPath.toString());
+                        log.debug("RepositoryPath [{}] skip...", itemPath.toString());
                         return FileVisitResult.SKIP_SUBTREE;
                     }
                     return FileVisitResult.CONTINUE;

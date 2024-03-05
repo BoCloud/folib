@@ -19,6 +19,7 @@ import com.veadan.folib.schema2.Manifests;
 import com.veadan.folib.services.ArtifactManagementService;
 import com.veadan.folib.services.ArtifactResolutionService;
 import com.veadan.folib.services.DirectoryListingService;
+import com.veadan.folib.storage.repository.RepositoryTypeEnum;
 import com.veadan.folib.util.RepositoryPathUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
@@ -68,7 +69,7 @@ public class DockerComponent {
     private volatile DirectoryListingService directoryListingService;
 
     public List<ImageManifest> getImageManifests(RepositoryPath repositoryPath) throws IOException {
-        log.info("Get manifest param [{}]", repositoryPath);
+        log.debug("Get manifest param [{}]", repositoryPath);
         if (!Files.exists(repositoryPath)) {
             return null;
         }
@@ -217,6 +218,9 @@ public class DockerComponent {
             repositoryPath.setDisableRemote(true);
             repositoryPath = artifactResolutionService.resolvePath(repositoryPath);
             if (Objects.isNull(repositoryPath) || !Files.exists(repositoryPath)) {
+                if (RepositoryTypeEnum.HOSTED.getType().equals(rootRepositoryPath.getRepository().getType())) {
+                    return null;
+                }
                 return handleManifest(rootRepositoryPath, imagePath, digestOrTag);
             }
             if (isTag) {
