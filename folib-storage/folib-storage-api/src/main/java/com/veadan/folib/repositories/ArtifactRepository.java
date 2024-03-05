@@ -270,7 +270,7 @@ public class ArtifactRepository extends GremlinVertexRepository<Artifact> {
     }
 
     public List<Artifact> findMatchingBySafeLevels(List<String> storageIdAndRepositoryIdList, List<String> safeLevels) {
-        List<Artifact> artifactList = g().V().hasLabel(Vertices.ARTIFACT).has(Properties.STORAGE_ID_AND_REPOSITORY_ID, P.within(storageIdAndRepositoryIdList)).has(Properties.SAFE_LEVEL, P.within(safeLevels)).order().by(Properties.SAFE_LEVEL, Order.valueOf("desc")).range(0, 800).map(artifactAdapter.baseFold(Optional.empty())).toList();
+        List<Artifact> artifactList = g().V().hasLabel(Vertices.ARTIFACT).has(Properties.STORAGE_ID_AND_REPOSITORY_ID, P.within(storageIdAndRepositoryIdList)).has(Properties.SAFE_LEVEL, P.within(safeLevels)).order().by(Properties.SAFE_LEVEL, Order.valueOf("desc")).range(0, 300).map(artifactAdapter.baseFold(Optional.empty())).toList();
         return EntityTraversalUtils.reduceHierarchy(artifactList);
     }
 

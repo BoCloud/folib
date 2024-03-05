@@ -130,9 +130,9 @@ folib:
       threadNamePrefix: asyncFetchRemotePackage_
       awaitTerminationSeconds: 6
     asyncScan:
-      corePoolSize: ${threadPool.common.core:12}
-      maxPoolSize: ${threadPool.common.max:12}
-      queueCapacity: 80
+      corePoolSize: 2
+      maxPoolSize: 2
+      queueCapacity: 16
       keepAliveSeconds: 0
       threadNamePrefix: asyncScan_
       awaitTerminationSeconds: 0
