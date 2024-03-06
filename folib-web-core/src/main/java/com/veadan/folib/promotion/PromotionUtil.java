@@ -820,8 +820,9 @@ public class PromotionUtil {
             ArtifactSliceUploadReq artifactSliceUploadReq = builder.buildV3();
             String path = artifactSliceUploadReq.getPath();
             Object metadata = uploadDto.getFileMetaDataMap().get(path);
-            artifactSliceUploadReq.setMetaData(JSONObject.parseObject((String) metadata,Map.class));
-
+            if (Objects.nonNull(metadata) && StringUtils.isNotBlank(metadata.toString()) && JSONUtil.isJson(metadata.toString())) {
+                artifactSliceUploadReq.setMetaData(JSONObject.parseObject((String) metadata,Map.class));
+            }
 //            try (InputStream inputStream = artifactSliceUploadReq.getFile().getInputStream();){
 //                String md5 = FileUtils.getMD5(inputStream);
 //                artifactSliceUploadReq.setSliceMd5(md5);
