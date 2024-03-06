@@ -59,7 +59,7 @@ public class EventTask {
     @Lazy
     private ThreadPoolTaskExecutor asyncEventLogThreadPoolTaskExecutor;
 
-    @Scheduled(cron = "0 0 0/1 * * ? ")
+//    @Scheduled(cron = "0 0 0/1 * * ? ")
     public void run() {
         log.info("EventTask starting time [{}]", DateUtil.now());
         handle("");
