@@ -1287,7 +1287,7 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
                                 "manifests [%s] manifestsArtifact [%s] " +
                                 "notExistManifests [%s] notExistManifestsArtifact [%s] " +
                                 "tagManifests [%s] tagManifestsArtifact [%s] " +
-                                "notExistTagManifests [%s] notExistTagManifestsArtifact [%s] is not Integrity", rootRepositoryPath.getStorageId(), rootRepositoryPath.getRepositoryId(),
+                                "notExistTagManifests [%s] notExistTagManifestsArtifact [%s] is not integrity", rootRepositoryPath.getStorageId(), rootRepositoryPath.getRepositoryId(),
                         imagesAl.get(), tagsAl.get(),
                         blobsAl.get(), blobsArtifactAl.get(),
                         notExistBlobsAl.get(), notExistBlobsArtifactAl.get(),
