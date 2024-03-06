@@ -43,77 +43,7 @@ public class RpmArtifactGenerator {
             throws IOException,
             NoSuchAlgorithmException
     {
-//        Files.createDirectories(basePath);
-//
-//        imageManifestPath = basePath.resolve("distribution.manifest.v2.json");
-//
-//        configPath = basePath.resolve("container.image.v1.json");
-//
-//        ContainerConfigurationManifest config = new ContainerConfigurationManifest();
-//
-//        List<LayerManifest> layers = new ArrayList<LayerManifest>();
-//
-//        try (LayoutOutputStream configOutput = new LayoutOutputStream(
-//                new BufferedOutputStream(Files.newOutputStream(configPath, StandardOpenOption.CREATE))))
-//        {
-//            configOutput.addAlgorithm(MessageDigestAlgorithms.SHA_256);
-//            configOutput.setDigestStringifier(this::toUtf8);
-//
-//            configOutput.write(mapper.writeValueAsBytes(new HashMap<String, String>()));
-//
-//            String sha256 = configOutput.getDigestMap().get(MessageDigestAlgorithms.SHA_256);
-//            String digest = getDigest(sha256);
-//            config.setDigest(digest);
-//        }
-//
-//        Path tempLayerArchivePath = getLayerPath("layer.tar.gz.tmp");
-//        Files.createDirectories(tempLayerArchivePath.getParent());
-//
-//        String layerDigest;
-//
-//        try {
-//            try (
-//                    LayoutOutputStream layerOutput = new LayoutOutputStream(
-//                            new BufferedOutputStream(
-//                                    Files.newOutputStream(tempLayerArchivePath, StandardOpenOption.CREATE)));
-//                    GzipCompressorOutputStream gzipOut = new GzipCompressorOutputStream(layerOutput);
-//                    TarArchiveOutputStream tarOut = new TarArchiveOutputStream(gzipOut))
-//            {
-//                layerOutput.addAlgorithm(MessageDigestAlgorithms.SHA_256);
-//                layerOutput.setDigestStringifier(this::toUtf8);
-//
-//                writeLayer(tarOut);
-//
-//                String sha256 = layerOutput.getDigestMap().get(MessageDigestAlgorithms.SHA_256);
-//                layerDigest = getDigest(sha256);
-//
-//                LayerManifest layer = new LayerManifest();
-//                layer.setDigest(layerDigest);
-//
-//                layers.add(layer);
-//            }
-//
-//            Files.move(tempLayerArchivePath, getLayerPath(layerDigest));
-//        } finally {
-//            Files.deleteIfExists(tempLayerArchivePath);
-//        }
-//
-//        ImageManifest imageManifest = new ImageManifest();
-//        imageManifest.setConfig(config);
-//        imageManifest.setLayers(layers);
-//
-//        try (LayoutOutputStream manifestOutput = new LayoutOutputStream(
-//                new BufferedOutputStream(Files.newOutputStream(imageManifestPath, StandardOpenOption.CREATE))))
-//        {
-//            manifestOutput.addAlgorithm(MessageDigestAlgorithms.SHA_256);
-//            manifestOutput.setDigestStringifier(this::toUtf8);
-//
-//            manifestOutput.write(mapper.writeValueAsBytes(imageManifest));
-//
-//            String sha256 = manifestOutput.getDigestMap().get(MessageDigestAlgorithms.SHA_256);
-//            imageManifestDigest = getDigest(sha256);
-//        }
-        // TODO: set media types and schema versions to v2 / schema 2
+
     }
 
     private String getDigest(String sha256)

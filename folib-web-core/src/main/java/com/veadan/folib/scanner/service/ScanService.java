@@ -171,6 +171,7 @@ public class ScanService {
             artifactService.saveOrUpdateArtifact(artifact);
             log.error("执行扫描失败：{}", ExceptionUtils.getStackTrace(e));
         }
+        artifact.setReport("");
     }
 
     private boolean checkSize(long sizeInBytes) {

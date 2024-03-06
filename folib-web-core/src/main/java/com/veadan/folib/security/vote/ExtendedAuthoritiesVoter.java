@@ -86,6 +86,9 @@ public class ExtendedAuthoritiesVoter extends PreInvocationAuthorizationAdviceVo
                     return true;
                 }
                 repository = storage.getRepository(repositoryId);
+                if (Objects.isNull(repository)) {
+                    return true;
+                }
                 cacheUtil.put(key, repository);
             }
             return repository.isAllowAnonymous();

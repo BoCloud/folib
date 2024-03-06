@@ -16,6 +16,11 @@ public interface GlobalConstants {
     String REQUEST_PARAMS_ERROR = "请求参数错误，请检查";
 
     /**
+     * blob未找到
+     */
+    String DOCKER_BLOB_NOT_FOUND_MESSAGE = "The blob [%s] was not found.";
+
+    /**
      * 存储空间未找到
      */
     String STORAGE_NOT_FOUND_MESSAGE = "The storage was not found.";

@@ -195,10 +195,12 @@ public class BrowseController
                 }
                 if (StringUtils.isNotBlank(configDigest)) {
                     RepositoryPath manifestConfigPath = repositoryPathResolver.resolve(storageId, repositoryId, "blobs/" + configDigest);
-                    String manifestConfigString = Files.readString(manifestConfigPath);
-                    JSONObject object = JSON.parseObject(manifestConfigString);
-                    jsonObject.put("manifestConfig", object);
-                    jsonObject.put("sha256", configDigest);
+                    if (Files.exists(manifestConfigPath)) {
+                        String manifestConfigString = Files.readString(manifestConfigPath);
+                        JSONObject object = JSON.parseObject(manifestConfigString);
+                        jsonObject.put("manifestConfig", object);
+                        jsonObject.put("sha256", configDigest);
+                    }
                 }
                 Long size = Optional.ofNullable(imageManifest.getLayers()).orElse(Collections.emptyList()).stream().filter(item -> Objects.nonNull(item.getSize())).mapToLong(LayerManifest::getSize).sum();
                 jsonObject.put("snippets", snippets);

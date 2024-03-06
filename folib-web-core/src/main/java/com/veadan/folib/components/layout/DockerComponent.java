@@ -19,6 +19,7 @@ import com.veadan.folib.schema2.Manifests;
 import com.veadan.folib.services.ArtifactManagementService;
 import com.veadan.folib.services.ArtifactResolutionService;
 import com.veadan.folib.services.DirectoryListingService;
+import com.veadan.folib.storage.repository.RepositoryTypeEnum;
 import com.veadan.folib.util.RepositoryPathUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
@@ -32,10 +33,14 @@ import javax.inject.Inject;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.SimpleFileVisitor;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.security.MessageDigest;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -63,8 +68,8 @@ public class DockerComponent {
     @Qualifier("browseRepositoryDirectoryListingService")
     private volatile DirectoryListingService directoryListingService;
 
-    public List<ImageManifest> getImageManifests(RepositoryPath repositoryPath) throws Exception {
-        log.info("Get manifest param [{}]", repositoryPath);
+    public List<ImageManifest> getImageManifests(RepositoryPath repositoryPath) throws IOException {
+        log.debug("Get manifest param [{}]", repositoryPath);
         if (!Files.exists(repositoryPath)) {
             return null;
         }
@@ -213,6 +218,9 @@ public class DockerComponent {
             repositoryPath.setDisableRemote(true);
             repositoryPath = artifactResolutionService.resolvePath(repositoryPath);
             if (Objects.isNull(repositoryPath) || !Files.exists(repositoryPath)) {
+                if (RepositoryTypeEnum.HOSTED.getType().equals(rootRepositoryPath.getRepository().getType())) {
+                    return null;
+                }
                 return handleManifest(rootRepositoryPath, imagePath, digestOrTag);
             }
             if (isTag) {
@@ -260,22 +268,18 @@ public class DockerComponent {
                 log.warn("ImagePath [{}] digestOrTag [{}] manifest [{}} docker v1 version not currently supported", imagePath, digestOrTag, tempManifestRepositoryPath.getFileName().toString());
                 return null;
             }
-            Set<String> layers = Optional.ofNullable(imageManifest.getLayers()).orElse(Collections.emptyList()).stream().map(LayerManifest::getDigest).collect(Collectors.toSet());
-            if (Objects.nonNull(imageManifest.getConfig())) {
-                layers.add(imageManifest.getConfig().getDigest());
-            }
             MessageDigest shaDigest = MessageDigest.getInstance("SHA-256");
             //解析临时的manifest文件，生成 SHA-256 checksum
             String shaChecksum = "sha256:" + getFileChecksum(shaDigest, new ByteArrayInputStream(Files.readAllBytes(tempManifestRepositoryPath)));
             if (isTag) {
                 //写入到tag目录下的manifest文件中，tag下只能存在一个manifest
                 tagRepositoryPath = tempManifestRepositoryPath.resolveSibling(shaChecksum);
-                provideArtifact(tagRepositoryPath, layers);
+                provideArtifact(tagRepositoryPath);
                 artifactManagementService.store(tagRepositoryPath, tempManifestRepositoryPath);
             }
             //写入到仓库根目录下的manifest文件中
             manifestRepositoryPath = tempManifestRepositoryPath.getRoot().resolve(DockerLayoutProvider.MANIFEST).resolve(shaChecksum);
-            provideArtifact(manifestRepositoryPath, layers);
+            provideArtifact(manifestRepositoryPath);
             artifactManagementService.store(manifestRepositoryPath, tempManifestRepositoryPath);
             return manifestRepositoryPath;
         } catch (Exception ex) {
@@ -292,20 +296,14 @@ public class DockerComponent {
         return null;
     }
 
-    public void handleLayers(RepositoryPath sourceManifestPath, RepositoryPath targetManifestPath) throws IOException {
-        ImageManifest imageManifest = JSON.parseObject(Files.readString(sourceManifestPath), ImageManifest.class);
-        Set<String> layers = Optional.ofNullable(imageManifest.getLayers()).orElse(Collections.emptyList()).stream().map(LayerManifest::getDigest).collect(Collectors.toSet());
-        if (Objects.nonNull(imageManifest.getConfig())) {
-            layers.add(imageManifest.getConfig().getDigest());
-        }
-        provideArtifact(targetManifestPath, layers);
+    public void handleLayers(RepositoryPath targetManifestPath) throws IOException {
+        provideArtifact(targetManifestPath);
     }
 
-    public void provideArtifact(RepositoryPath repositoryPath, Set<String> layers) throws IOException {
+    public void provideArtifact(RepositoryPath repositoryPath) throws IOException {
         Artifact artifact = Optional.ofNullable(repositoryPath.getArtifactEntry())
                 .orElse(new ArtifactEntity(repositoryPath.getStorageId(), repositoryPath.getRepositoryId(),
                         RepositoryFiles.readCoordinates(repositoryPath)));
-        artifact.setLayers(layers);
         repositoryPath.setArtifact(artifact);
     }
 
@@ -365,5 +363,4 @@ public class DockerComponent {
         }
         return directoryList;
     }
-
 }

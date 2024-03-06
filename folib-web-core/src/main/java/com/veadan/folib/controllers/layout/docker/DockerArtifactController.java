@@ -5,7 +5,6 @@ import cn.hutool.core.collection.CollectionUtil;
 import cn.hutool.core.lang.UUID;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
-import com.beust.jcommander.internal.Sets;
 import com.google.common.collect.Lists;
 import com.veadan.folib.artifact.coordinates.DockerArtifactCoordinates;
 import com.veadan.folib.cloud.storage.s3fs.S3Iterator;
@@ -18,12 +17,11 @@ import com.veadan.folib.enums.DockerHeaderEnum;
 import com.veadan.folib.enums.RepositoryScopeEnum;
 import com.veadan.folib.providers.io.RepositoryFiles;
 import com.veadan.folib.providers.io.RepositoryPath;
-import com.veadan.folib.providers.io.RootRepositoryPath;
 import com.veadan.folib.providers.layout.DockerLayoutProvider;
 import com.veadan.folib.repositories.ArtifactRepository;
 import com.veadan.folib.schema2.ImageManifest;
-import com.veadan.folib.schema2.LayerManifest;
 import com.veadan.folib.services.DirectoryListingService;
+import com.veadan.folib.storage.ArtifactStorageException;
 import com.veadan.folib.storage.Storage;
 import com.veadan.folib.storage.repository.Repository;
 import com.veadan.folib.users.domain.Privileges;
@@ -225,7 +223,6 @@ public class DockerArtifactController extends BaseArtifactController {
             } else {
                 return new ResponseEntity<>(HttpStatus.NOT_FOUND);
             }
-
         } catch (Exception e) {
             logger.error(e.getMessage(), e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
@@ -269,6 +266,14 @@ public class DockerArtifactController extends BaseArtifactController {
             Collection<Privileges> allAuthorities = userDetails.getAllAuthorities(storageId, repositoryId, null);
             if (allAuthorities.stream().noneMatch(item -> item.getAuthority().equals(Privileges.ARTIFACTS_DEPLOY.getAuthority()))) {
                 return new ResponseEntity<>(unForbidden(storageId, repositoryId), HttpStatus.FORBIDDEN);
+            }
+            Storage storage = getStorage(storageId);
+            if (Objects.isNull(storage)) {
+                return new ResponseEntity<>(errMsg("NAME_UNKNOWN", GlobalConstants.STORAGE_NOT_FOUND_MESSAGE), HttpStatus.NOT_FOUND);
+            }
+            Repository repository = storage.getRepository(repositoryId);
+            if (Objects.isNull(repository)) {
+                return new ResponseEntity<>(errMsg("NAME_UNKNOWN", GlobalConstants.REPOSITORY_NOT_FOUND_MESSAGE), HttpStatus.NOT_FOUND);
             }
             String uuid = UUID.randomUUID().toString();
             String url = new StringBuffer().append(request.getRequestURI()).append(uuid).toString();
@@ -419,6 +424,10 @@ public class DockerArtifactController extends BaseArtifactController {
             response.setHeader(DockerHeaderEnum.CONTENT_LENGTH.key(), "0");
         } catch (Exception e) {
             logger.error(e.getMessage(), e);
+            if (e instanceof ArtifactStorageException) {
+                result = new ResponseEntity<>(errMsg("DENIED", e.getMessage()), HttpStatus.FORBIDDEN);
+                return result;
+            }
             result = ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
         } finally {
             deleteLayers(storageId, repositoryId, imagePath, digest, uuid);
@@ -478,6 +487,10 @@ public class DockerArtifactController extends BaseArtifactController {
             manifestSha256 = handlerManifest(storageId, repositoryId, imagePath, reference, bytes);
         } catch (Exception e) {
             logger.error(e.getMessage(), e);
+            if (e instanceof ArtifactStorageException) {
+                result = new ResponseEntity<>(errMsg("DENIED", e.getMessage()), HttpStatus.FORBIDDEN);
+                return result;
+            }
             result = ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
         }
         response.reset();
@@ -502,14 +515,10 @@ public class DockerArtifactController extends BaseArtifactController {
                            String repositoryId,
                            String name,
                            String reference,
-                           byte[] bytes) {
+                           byte[] bytes) throws Exception {
         String manifestSha256 = null, directory;
         String manifestString = new String(bytes, StandardCharsets.UTF_8);
         ImageManifest imageManifest = JSON.parseObject(manifestString, ImageManifest.class);
-        Set<String> layers = Optional.ofNullable(imageManifest.getLayers()).orElse(Collections.emptyList()).stream().map(LayerManifest::getDigest).collect(Collectors.toSet());
-        if (Objects.nonNull(imageManifest.getConfig())) {
-            layers.add(imageManifest.getConfig().getDigest());
-        }
         try (InputStream stream = new ByteArrayInputStream(bytes); InputStream destStream = new ByteArrayInputStream(bytes)) {
             boolean isTag = false;
             if (!reference.startsWith("sha256:")) {
@@ -528,7 +537,7 @@ public class DockerArtifactController extends BaseArtifactController {
             //判断镜像清单是否在
             if (!mirrorLayerExists(artifactPath, storageId, repositoryId)) {
                 RepositoryPath repositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, artifactPath);
-                dockerComponent.provideArtifact(repositoryPath, layers);
+                dockerComponent.provideArtifact(repositoryPath);
                 artifactManagementService.validateAndStore(repositoryPath, stream);
             }
             if (!isTag) {
@@ -544,16 +553,17 @@ public class DockerArtifactController extends BaseArtifactController {
 
             //如果存在并发生变化删除更新
             if (Objects.isNull(tagSha256)) {
-                dockerComponent.provideArtifact(destPath, layers);
+                dockerComponent.provideArtifact(destPath);
                 artifactManagementService.validateAndStore(destPath, destStream);
             } else if (!Objects.equals(tagSha256, manifestSha256)) {
-                dockerComponent.provideArtifact(destPath, layers);
+                dockerComponent.provideArtifact(destPath);
                 artifactManagementService.validateAndStore(destPath, destStream);
                 RepositoryPath deletePath = repositoryPathResolver.resolve(storageId, repositoryId, destArtifactPath.replace(manifestSha256, tagSha256));
                 artifactManagementService.delete(deletePath, true);
             }
         } catch (Exception e) {
             logger.error(e.getMessage(), e);
+            throw e;
         }
         return manifestSha256;
     }
@@ -756,7 +766,15 @@ public class DockerArtifactController extends BaseArtifactController {
             extractPath = extractPath.replace(String.format("/manifests/%s", digest), "");
         }
         String imagePath = resolveImagePath(name, extractPath);
-        ResponseEntity entity = new ResponseEntity<>(notFound("MANIFEST_UNKNOWN", "The named manifest is not known to the registry."), HttpStatus.NOT_FOUND);
+        Storage storage = getStorage(storageId);
+        if (Objects.isNull(storage)) {
+            return new ResponseEntity<>(errMsg("NAME_UNKNOWN", GlobalConstants.STORAGE_NOT_FOUND_MESSAGE), HttpStatus.NOT_FOUND);
+        }
+        Repository repository = storage.getRepository(repositoryId);
+        if (Objects.isNull(repository)) {
+            return new ResponseEntity<>(errMsg("NAME_UNKNOWN", GlobalConstants.REPOSITORY_NOT_FOUND_MESSAGE), HttpStatus.NOT_FOUND);
+        }
+        ResponseEntity entity = new ResponseEntity<>(errMsg("MANIFEST_UNKNOWN", "The named manifest is not known to the registry."), HttpStatus.NOT_FOUND);
         try {
             String artifactPath = String.format("manifest/%s", digest);
             logger.debug("StorageId [{}] repositoryId [{}] name [{}] imagePath [{}] digest [{}] artifactPath [{}]", storageId, repositoryId, name, imagePath, digest, artifactPath);
@@ -803,12 +821,12 @@ public class DockerArtifactController extends BaseArtifactController {
         ResponseEntity entity = ResponseEntity.status(HttpStatus.NOT_FOUND).build();
         Storage storage = getStorage(storageId);
         if (Objects.isNull(storage)) {
-            entity = new ResponseEntity<>(notFound("", GlobalConstants.STORAGE_NOT_FOUND_MESSAGE), HttpStatus.NOT_FOUND);
+            entity = new ResponseEntity<>(errMsg("NAME_UNKNOWN", GlobalConstants.STORAGE_NOT_FOUND_MESSAGE), HttpStatus.NOT_FOUND);
             return entity;
         }
         Repository repository = storage.getRepository(repositoryId);
         if (Objects.isNull(repository)) {
-            entity = new ResponseEntity<>(notFound("", GlobalConstants.REPOSITORY_NOT_FOUND_MESSAGE), HttpStatus.NOT_FOUND);
+            entity = new ResponseEntity<>(errMsg("NAME_UNKNOWN", GlobalConstants.REPOSITORY_NOT_FOUND_MESSAGE), HttpStatus.NOT_FOUND);
             return entity;
         }
         try {
@@ -1083,7 +1101,7 @@ public class DockerArtifactController extends BaseArtifactController {
         return result;
     }
 
-    private Map<String, Object> notFound(String code, String msg) {
+    private Map<String, Object> errMsg(String code, String msg) {
         Map<String, Object> result = new HashMap<>(1);
         Map<String, Object> resultData = new HashMap<>(1);
         resultData.put("code", code);
