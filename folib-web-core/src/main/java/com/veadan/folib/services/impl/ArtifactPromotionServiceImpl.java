@@ -43,6 +43,7 @@ import com.veadan.folib.users.userdetails.SpringSecurityUser;
 import com.veadan.folib.utils.FileUtils;
 import com.veadan.folib.utils.PropertiesUtils;
 import com.veadan.folib.utils.UrlUtils;
+import com.veadan.folib.utils.UserUtils;
 import com.veadan.folib.ws.client.handler.command.FolibWsClientArtifactPullCommand;
 import com.veadan.folib.ws.common.FolibWsAction;
 import com.veadan.folib.ws.common.FolibWsRunManageUtil;
@@ -410,14 +411,8 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
         String targetHostName = FolibWsRunManageUtil.getTargetHostName(promotionNodeOption.getTargetPath());
         String sourceHostName = FolibWsRunManageUtil.getTargetHostName(promotionNodeOption.getSourcePath());
 
-
-
         String selfHostName = FolibWsRunManageUtil.getTargetHostName(configurationManagementService.getConfiguration().getBaseUrl());
-        if (selfHostName.equals(sourceHostName)) {
-            final String syncNo = String.format("SyncNo%s", UUID.randomUUID().toString(true));
-            uploadArtifact(syncNo, promotionNodeOption, requestHostName);
-            return ResponseEntity.ok(syncNo);
-        }else if(selfHostName.equals(targetHostName)){
+        if(selfHostName.equals(targetHostName)){
             try {
                 //委托sourceHostName节点upload到本节点，对本节点来说是下载，1小时超时时间，等待下载完成
                 WSMessageResponse wsMessageResponse = folibWsRunManageV2.sendRequest(sourceHostName, new WSMessageRequest(Command.DELEGATE_UPLOAD, promotionNodeOption), 60 * 60);
@@ -427,18 +422,29 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
                 throw new RuntimeException(e);
             }
         }
-        throw new RuntimeException("At least one of the hostname in the targetPath or sourcePath parameters must be " + selfHostName);
+        final String syncNo = String.format("SyncNo%s", UUID.randomUUID().toString(true));
+        uploadArtifact(syncNo, promotionNodeOption, requestHostName);
+        return ResponseEntity.ok(syncNo);
     }
+
+    @Override
     public CompletableFuture<Void> uploadArtifact(String syncNo, PromotionNodeOption promotionNodeOption, String requestHostName) {
         PromotionRepositoryInfo promotionRepositoryInfo = resolvePromotionRepository(promotionNodeOption);
-
-        String userName = Optional.ofNullable(SecurityContextHolder.getContext())
-                .map(SecurityContext::getAuthentication)
-                .map(auth -> (SpringSecurityUser) auth.getPrincipal())
-                .map(SpringSecurityUser::getUsername).orElse(null);
-
+        if (Objects.isNull(promotionNodeOption.getSyncModel())) {
+            promotionNodeOption.setSyncModel(ArtifactSyncRecordSyncModelEnum.PUSH.getVal());
+        }
+        if (ArtifactSyncRecordSyncModelEnum.PUSH.getVal().equals(promotionNodeOption.getSyncModel())) {
+            validateSourceRepositoryPath(promotionRepositoryInfo.getSourceStorageId(), promotionRepositoryInfo.getSourceRepositoryId(), promotionRepositoryInfo.getSourceArtifactPath());
+            String sourceBaseUrl = promotionRepositoryInfo.getSourceBaseUrl();
+            String targetBaseUrl = promotionRepositoryInfo.getTargetBaseUrl();
+            if (sourceBaseUrl.equals(targetBaseUrl)) {
+                validateStorageAndRepository(promotionRepositoryInfo.getTargetStorageId(), promotionRepositoryInfo.getTargetRepositoryId());
+            } else {
+                validateRemoteRepository(promotionRepositoryInfo.getTargetBaseUrl(), promotionRepositoryInfo.getTargetStorageId(), promotionRepositoryInfo.getTargetRepositoryId());
+            }
+        }
+        String userName = UserUtils.getUsername();
         final ArtifactSyncRecord artifactSyncRecord = new ArtifactSyncRecord();
-
 
         // 生成日志记录
         artifactSyncRecord.setId(idGenerateUtils.generateId("artifactSyncRecordId"));
