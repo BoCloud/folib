@@ -132,7 +132,7 @@ public class CleanupInvalidIndexesCronJob
                 artifactList = page.getContent();
                 for (Artifact artifact : artifactList) {
                     try {
-                        if (LocalDateTime.now().minusMinutes(1).isBefore(artifact.getCreated())) {
+                        if (LocalDateTime.now().minusMinutes(10).isBefore(artifact.getCreated())) {
                             continue;
                         }
                         artifactPath = artifact.getArtifactCoordinates().buildPath();
