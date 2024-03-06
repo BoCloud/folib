@@ -4,6 +4,7 @@ import cn.hutool.json.JSONUtil;
 import com.alibaba.fastjson.JSON;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
+import com.google.common.collect.Sets;
 import com.veadan.folib.artifact.coordinates.DockerArtifactCoordinates;
 import com.veadan.folib.cron.domain.CronTaskConfigurationDto;
 import com.veadan.folib.cron.jobs.fields.*;
@@ -258,7 +259,8 @@ public class CleanupDockerRepositoryCronJob extends JavaCronJob {
                         return;
                     }
                     log.info("Manifest repositoryPath [{}] [{}] [{}]", manifestRepositoryPath.getStorageId(), manifestRepositoryPath.getRepositoryId(), RepositoryFiles.relativizePath(manifestRepositoryPath));
-                    AtomicBoolean atomicBoolean = new AtomicBoolean(false);
+                    AtomicBoolean atomicBoolean = new AtomicBoolean(true);
+                    final Set<Boolean> flagSet = Sets.newConcurrentHashSet();
                     String manifestName = manifestRepositoryPath.getFileName().toString();
                     //遍历仓库下所有的tag，判断是否有tag引用当前manifest
                     Files.walkFileTree(rootRepositoryPath, new SimpleFileVisitor<Path>() {
@@ -271,12 +273,13 @@ public class CleanupDockerRepositoryCronJob extends JavaCronJob {
                                 log.info("Tag repositoryPath [{}] [{}] [{}]", itemPath.getStorageId(), itemPath.getRepositoryId(), RepositoryFiles.relativizePath(itemPath));
                                 List<ImageManifest> imageManifestList = getImageManifests(itemPath);
                                 if (CollectionUtils.isNotEmpty(imageManifestList)) {
-                                    log.info("Tag repositoryPath [{}] [{}] [{}] find match manifest [{}]", itemPath.getStorageId(), itemPath.getRepositoryId(), RepositoryFiles.relativizePath(itemPath), manifestName);
-                                    atomicBoolean.set(imageManifestList.stream().filter(item -> StringUtils.isNotBlank(item.getDigest())).anyMatch(item -> manifestName.equals(item.getDigest())));
+                                    final boolean flag = imageManifestList.stream().filter(item -> StringUtils.isNotBlank(item.getDigest())).anyMatch(item -> manifestName.equals(item.getDigest()));
+                                    flagSet.add(flag);
+                                    if (flag) {
+                                        log.info("Tag repositoryPath [{}] [{}] [{}] find match manifest [{}]", itemPath.getStorageId(), itemPath.getRepositoryId(), RepositoryFiles.relativizePath(itemPath), manifestName);
+                                        return FileVisitResult.TERMINATE;
+                                    }
                                 }
-                            }
-                            if (atomicBoolean.get()) {
-                                return FileVisitResult.TERMINATE;
                             }
                             return FileVisitResult.CONTINUE;
                         }
@@ -298,12 +301,13 @@ public class CleanupDockerRepositoryCronJob extends JavaCronJob {
                             return FileVisitResult.CONTINUE;
                         }
                     });
+                    atomicBoolean.set(flagSet.contains(true));
                     if (!atomicBoolean.get()) {
                         try {
                             //manifest不存在引用，删除
                             String artifactPath = RepositoryFiles.relativizePath(manifestRepositoryPath);
                             if (delete(manifestRepositoryPath, false)) {
-                                logger.info("Delete manifest repositoryPath [{}] [{}] [{}]", manifestRepositoryPath.getStorageId(), manifestRepositoryPath.getRepositoryId(), artifactPath);
+                                logger.info("Manifest repositoryPath [{}] [{}] [{}] is deleted", manifestRepositoryPath.getStorageId(), manifestRepositoryPath.getRepositoryId(), artifactPath);
                                 manifestSuccessAtomicLong.getAndIncrement();
                             }
                         } catch (IOException e) {
@@ -343,7 +347,8 @@ public class CleanupDockerRepositoryCronJob extends JavaCronJob {
                         return;
                     }
                     log.info("Blob repositoryPath [{}] [{}] [{}]", blobsRepositoryPath.getStorageId(), blobsRepositoryPath.getRepositoryId(), RepositoryFiles.relativizePath(blobsRepositoryPath));
-                    AtomicBoolean atomicBoolean = new AtomicBoolean(false);
+                    AtomicBoolean atomicBoolean = new AtomicBoolean(true);
+                    final Set<Boolean> flagSet = Sets.newConcurrentHashSet();
                     //遍历仓库下的manifest目录，判断是否有manifest引用当前blob
                     Files.walkFileTree(manifestRootRepositoryPath, new SimpleFileVisitor<Path>() {
                         @Override
@@ -355,13 +360,13 @@ public class CleanupDockerRepositoryCronJob extends JavaCronJob {
                                 log.info("Manifest repositoryPath [{}] [{}] [{}]", itemPath.getStorageId(), itemPath.getRepositoryId(), RepositoryFiles.relativizePath(itemPath));
                                 List<ImageManifest> imageManifestList = getImageManifests(itemPath);
                                 if (CollectionUtils.isNotEmpty(imageManifestList)) {
-                                    log.info("Manifest repositoryPath [{}] [{}] [{}] find match blob [{}]", itemPath.getStorageId(), itemPath.getRepositoryId(), RepositoryFiles.relativizePath(itemPath), blobName);
                                     final boolean flag = imageManifestList.stream().filter(item -> Objects.nonNull(item.getConfig())).map(item -> item.getConfig().getDigest()).anyMatch(blobName::equals) || imageManifestList.stream().filter(item -> CollectionUtils.isNotEmpty(item.getLayers())).flatMap(item -> item.getLayers().stream()).anyMatch(item -> blobName.equals(item.getDigest()));
-                                    atomicBoolean.set(flag);
+                                    flagSet.add(flag);
+                                    if (flag) {
+                                        log.info("Manifest repositoryPath [{}] [{}] [{}] find match blob [{}]", itemPath.getStorageId(), itemPath.getRepositoryId(), RepositoryFiles.relativizePath(itemPath), blobName);
+                                        return FileVisitResult.TERMINATE;
+                                    }
                                 }
-                            }
-                            if (atomicBoolean.get()) {
-                                return FileVisitResult.TERMINATE;
                             }
                             return FileVisitResult.CONTINUE;
                         }
@@ -378,12 +383,13 @@ public class CleanupDockerRepositoryCronJob extends JavaCronJob {
                             return FileVisitResult.CONTINUE;
                         }
                     });
+                    atomicBoolean.set(flagSet.contains(true));
                     if (!atomicBoolean.get()) {
                         try {
                             //blob不存在引用，删除
                             String artifactPath = RepositoryFiles.relativizePath(blobsRepositoryPath);
                             if (delete(blobsRepositoryPath, false)) {
-                                logger.info("Delete blob repositoryPath [{}] [{}] [{}]", blobsRepositoryPath.getStorageId(), blobsRepositoryPath.getRepositoryId(), artifactPath);
+                                logger.info("Blob repositoryPath [{}] [{}] [{}] is deleted", blobsRepositoryPath.getStorageId(), blobsRepositoryPath.getRepositoryId(), artifactPath);
                                 blobsDeleteSuccessAtomicLong.getAndIncrement();
                             }
                         } catch (Exception e) {

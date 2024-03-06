@@ -241,6 +241,14 @@ public interface ArtifactWebService {
     void dockerLayoutUpgrade(String storageId, String repositoryId, Boolean override) throws Exception;
 
     /**
+     * docker完整性校验
+     * @param storageId    存储空间
+     * @param repositoryId 仓库名称
+     * @throws Exception 异常
+     */
+    void dockerIntegrity(String storageId, String repositoryId) throws Exception;
+
+    /**
      * docker仓库新版本降级
      *
      * @param storageId    存储空间

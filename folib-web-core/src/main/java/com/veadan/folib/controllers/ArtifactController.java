@@ -360,6 +360,14 @@ public class ArtifactController extends BaseController {
     }
 
     @PreAuthorize("hasAuthority('ADMIN')")
+    @GetMapping(value = "/dockerIntegrity")
+    public ResponseEntity<String> dockerIntegrity(@RequestParam(required = false, name = "storageId") String storageId,
+                                                       @RequestParam(required = false, name = "repositoryId") String repositoryId) throws Exception {
+        artifactWebService.dockerIntegrity(storageId, repositoryId);
+        return ResponseEntity.ok("");
+    }
+
+    @PreAuthorize("hasAuthority('ADMIN')")
     @GetMapping(value = "/dockerLayoutDowngrade")
     public ResponseEntity<String> dockerLayoutDowngrade(@RequestParam(required = false, name = "storageId") String storageId,
                                                         @RequestParam(required = false, name = "repositoryId") String repositoryId) throws Exception {
