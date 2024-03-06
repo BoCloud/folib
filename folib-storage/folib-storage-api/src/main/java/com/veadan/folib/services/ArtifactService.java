@@ -30,8 +30,9 @@ public interface ArtifactService {
      * 查找制品和扫描报告
      *
      * @param repositoryPath 制品路径
+     * @param report         true 返回安全报告 false 不返回安全报告
      * @return 制品
      * @throws IOException io异常
      */
-    Artifact findArtifactReport(RepositoryPath repositoryPath) throws IOException;
+    Artifact findArtifact(RepositoryPath repositoryPath, Boolean report) throws IOException;
 }

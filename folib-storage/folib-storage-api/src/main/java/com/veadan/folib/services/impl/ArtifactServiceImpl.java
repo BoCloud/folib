@@ -97,7 +97,10 @@ public class ArtifactServiceImpl implements ArtifactService {
     }
 
     @Override
-    public Artifact findArtifactReport(RepositoryPath repositoryPath) throws IOException {
+    public Artifact findArtifact(RepositoryPath repositoryPath, Boolean report) throws IOException {
+        if (Boolean.FALSE.equals(report)) {
+            return artifactRepository.findOneArtifact(repositoryPath.getStorageId(), repositoryPath.getRepositoryId(), RepositoryFiles.relativizePath(repositoryPath));
+        }
         return artifactRepository.findArtifactReport(repositoryPath.getStorageId(), repositoryPath.getRepositoryId(), RepositoryFiles.relativizePath(repositoryPath));
     }
 
