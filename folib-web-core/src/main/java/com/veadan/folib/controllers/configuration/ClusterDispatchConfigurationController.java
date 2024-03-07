@@ -26,6 +26,7 @@ import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 
 import javax.websocket.Session;
+import java.io.IOException;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Collection;
@@ -249,7 +250,7 @@ public class ClusterDispatchConfigurationController extends BaseConfigurationCon
             clusterSyncService.syncClusterDispatch(syncClusterDispatchDto);
             //清理晋级任务队列
             String targetHostName = FolibWsRunManageUtil.getTargetHostName(clusterDispatchNodeDto);
-            folibWsRunManageV2.unRegisterSession(targetHostName);
+            folibWsRunManageV2.unRegisterSession(targetHostName,"node delete");
             promotionTaskQueue.clearPromotionTaskQueue(targetHostName);
             return ResponseEntity.ok("ok");
         } catch (Exception e) {
@@ -264,7 +265,14 @@ public class ClusterDispatchConfigurationController extends BaseConfigurationCon
 //        } catch (Exception e) {
 //            logger.error("connectToServer Exception",e);
 //        }
-
+        Session session = folibWsRunManageV2.getSession(FolibWsRunManageUtil.getTargetHostName(nodeDto));
+        if (session != null && session.isOpen()) {
+            try {
+                session.close();
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        }
         // 向其他集群节点同步同步制品分发节点信息
         SyncClusterDispatchDto syncClusterDispatchDto =
                 new SyncClusterDispatchDto(nodeDto, SyncClusterDispatchEnum.ADD_OR_UPDATE);

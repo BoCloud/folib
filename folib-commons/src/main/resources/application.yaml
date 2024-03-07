@@ -67,7 +67,7 @@ folib:
   promotion:
     queue-size: 1000
     retry-count: 3
-    ws-request-timout: 5
+    ws-request-timout: 10
     ws-request-timout-of-artifact-upload: 600
   basedir: .
   home: ${folib.basedir}/folib
@@ -142,8 +142,8 @@ folib:
       threadNamePrefix: asyncScan_
       awaitTerminationSeconds: 0
     asyncWsCommand:
-      corePoolSize: ${threadPool.common.core:12}
-      maxPoolSize: ${threadPool.common.max:12}
+      corePoolSize: 12
+      maxPoolSize: 200
       queueCapacity: 200000
       keepAliveSeconds: 0
       threadNamePrefix: asyncWsCommand_

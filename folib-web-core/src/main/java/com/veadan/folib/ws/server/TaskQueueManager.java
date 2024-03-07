@@ -20,9 +20,9 @@ public class TaskQueueManager {
     private final AtomicLong LENGTH;
     private final AtomicLong CURRENT_INDEX;
 
-    public TaskQueueManager(String threadNamePrefix, int queueSize) {
+    public TaskQueueManager(String threadNamePrefix, int queueSize,int thread) {
         ThreadFactory threadFactory = ThreadFactoryBuilder.create().setNamePrefix(threadNamePrefix).build();
-        executorService = new ThreadPoolExecutor(1, 1,
+        executorService = new ThreadPoolExecutor(thread, thread,
                 0L, TimeUnit.MILLISECONDS,
                 new LinkedBlockingQueue<Runnable>(queueSize), threadFactory, new ThreadPoolExecutor.AbortPolicy());
         LENGTH = new AtomicLong();

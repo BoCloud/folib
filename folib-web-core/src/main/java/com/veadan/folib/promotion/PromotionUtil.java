@@ -35,9 +35,9 @@ import com.veadan.folib.schema2.LayerManifest;
 import com.veadan.folib.service.ProxyRepositoryConnectionPoolConfigurationService;
 import com.veadan.folib.services.*;
 import com.veadan.folib.storage.repository.Repository;
+import com.veadan.folib.util.MessageDigestUtils;
 import com.veadan.folib.util.RepositoryPathUtil;
 import com.veadan.folib.util.ThreadLocalUtil;
-import com.veadan.folib.utils.FileUtils;
 import com.veadan.folib.utils.UrlUtils;
 import com.veadan.folib.wrapper.BufferedInputStreamWrapper;
 import com.veadan.folib.ws.client.handler.command.FolibWsClientArtifactPullCommand;
@@ -954,7 +954,8 @@ public class PromotionUtil {
                 md5 = Files.readString(checksumPath);
             }
             if (StringUtils.isBlank(md5)) {
-                md5 = FileUtils.getMD5(Files.newInputStream(sourceRepositoryPath));
+                md5 = MessageDigestUtils.calculateChecksum(sourceRepositoryPath, MessageDigestAlgorithms.MD5);
+                //md5 = FileUtils.getMD5(Files.newInputStream(sourceRepositoryPath));
             }
 
             log.info("calculated the file [{}] [{}] [{}] md5 is [{}]  file size [{}] time consuming [{}] ms", sourceStorageId, sourceRepositoryId, sourceArtifactPath, fileLength, md5, System.currentTimeMillis() - begin);

@@ -19,6 +19,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.LinkedBlockingQueue;
 
 import static com.veadan.folib.ws.common.FolibWsRunManageV2.FOLIB_WS_PROTOCOL;
 
@@ -48,20 +49,23 @@ public class FolibWsUtil {
         session.setMaxTextMessageBufferSize(1024 * 1024 * 1000);
         Session priviousSession = folibWsRunManageV2.getSession(targetHostName);
         if (null != priviousSession) {
-            folibWsRunManageV2.unRegisterSession(targetHostName);
+            folibWsRunManageV2.unRegisterSession(targetHostName,targetHostName+" node already exists");
         }
         folibWsRunManageV2.registerSession(targetHostName, session);
         promotionTaskQueue.registerPromotionTaskQueue(targetHostName);
     }
 
     public void onClose(String nodeId, Session session, CloseReason closeReason) {
+        folibWsRunManageV2.cleanFuture(session);
         log.info("连接关闭成功,nodeId:{} session_id:{} closeReason:{}", nodeId, session.getId(), closeReason.toString());
     }
 
     public void onError(String targetHostName, Session session, Throwable error) {
+        folibWsRunManageV2.cleanFuture(session);
         log.error("WebSocket(nodeName = {})发生错误 ", targetHostName, error);
     }
 
+    private final ConcurrentHashMap<String, LinkedBlockingQueue<ByteBuffer>> queueMap = new ConcurrentHashMap<>();
 
     //@Async("asyncWsCommandThreadPoolTaskExecutor")
     public void onMessageV4(String nodeName, ByteBuffer message, Session session) {
@@ -77,6 +81,41 @@ public class FolibWsUtil {
         if (StringUtils.isBlank(messageId)) {
             throw new RuntimeException("protocol Exception ,messageId");
         }
+
+        LinkedBlockingQueue<ByteBuffer> queue1 = queueMap.computeIfAbsent(messageId, k -> {
+            LinkedBlockingQueue<ByteBuffer> queue = new LinkedBlockingQueue<>();
+            asyncWsCommandThreadPoolTaskExecutor.execute(() -> {
+                while (true){
+                    ByteBuffer take = null;
+                    try {
+                        take = queue.take();
+                    } catch (InterruptedException e) {
+                        throw new RuntimeException(e);
+                    }
+
+                    boolean finish = consumerMsg(nodeName, take, session, messageId, messageSize);
+                    if (finish){
+                        queue.clear();
+                        queueMap.remove(messageId);
+                        break;
+                    }
+                }
+            });
+            return queue;
+        });
+        log.info("copy ByteBuffer, messageId:{}",messageId);
+        ByteBuffer copy = ByteBuffer.allocate(message.remaining());
+        copy.put(message);
+        copy.flip();
+        try {
+            queue1.put(copy);
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
+        log.info("copy ByteBuffer success, messageId:{},queueSize:{}",messageId,queue1.size());
+    }
+
+    private boolean consumerMsg(String nodeName, ByteBuffer message, Session session, String messageId, long messageSize) {
         // boolean isLast = extractLastFlag(message);
         /**
          * 当一个messageId一直没收到isLast标记，之前的缓存不会释放，导致内存泄露
@@ -109,7 +148,7 @@ public class FolibWsUtil {
         int capacity = completeMessage.capacity();
         log.info("onMessageV3 messageId:{},received:{}/{}", messageId, capacity, messageSize);
         if (capacity == messageSize) {
-            asyncWsCommandThreadPoolTaskExecutor.execute(() -> {
+
                 // 最后一片数据，处理完整消息
                 completeMessage.flip(); // 切换为读模式
                 try {
@@ -117,12 +156,13 @@ public class FolibWsUtil {
                 } catch (Exception e) {
                     handleExceptionMessage(session, e, messageId);
                 }
-            });
+
             sessionMessageBufferMap.get(session).remove(messageId); // 清理资源
         } else {
             // 更新缓冲区以便接收更多数据
             sessionMessageBufferMap.get(session).put(messageId, completeMessage);
         }
+        return capacity == messageSize;
     }
 
     private void handleExceptionMessage(Session session, Exception e, String messageId) {
@@ -181,7 +221,7 @@ public class FolibWsUtil {
     private void processWSMessageResponse(String nodeName, WSMessageResponse response, Session session) {
         log.info("response {}", response);
         String id = response.getId();
-        CompletableFuture<WSMessageResponse> future = folibWsRunManageV2.getFuture(id);
+        CompletableFuture<WSMessageResponse> future = folibWsRunManageV2.getFuture(session,id);
         if (future == null) {
             log.warn("id {} future is null", id);
             return;

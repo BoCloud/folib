@@ -42,7 +42,7 @@ public class PromotionTaskQueue {
 
     public void registerPromotionTaskQueue(String targetHostName) {
         log.info("registerPromotionTaskQueue {}",targetHostName);
-        TaskQueueManager taskQueueManager = new TaskQueueManager("promotion_to_" + targetHostName, promotionConfig.getQueueSize());
+        TaskQueueManager taskQueueManager = new TaskQueueManager("promotion_to_" + targetHostName, promotionConfig.getQueueSize(), promotionConfig.getThread());
         PROMOTION_TASK_QUEUE.putIfAbsent(targetHostName, taskQueueManager);
     }
 

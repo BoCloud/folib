@@ -37,6 +37,7 @@ public abstract class RetryTask implements Callable<Void> {
                     throw e;
                 }
             }
+            Thread.sleep(3000);//等待三秒重试
         }
         return null;
     }

@@ -210,6 +210,7 @@ run()
     ##制品晋级配置
     JAVA_OPTS+=" -Dfolib.promotion.ws-request-timout-of-artifact-upload=${FOLIB_PROMOTION_WS_REQUEST_TIMOUT_OF_ARTIFACT_UPLOAD}"
     JAVA_OPTS+=" -Dfolib.promotion.queue-size=${FOLIB_PROMOTION_QUEUE_SIZE}"
+    JAVA_OPTS+=" -Dfolib.promotion.thread=${FOLIB_PROMOTION_THREAD}"
     JAVA_OPTS+=" -Dfolib.promotion.retry-count=${FOLIB_PROMOTION_RETRY_COUNT}"
     JAVA_OPTS+=" -Dfolib.promotion.ws-request-timout=${FOLIB_PROMOTION_WS_REQUEST_TIMOUT}"
 

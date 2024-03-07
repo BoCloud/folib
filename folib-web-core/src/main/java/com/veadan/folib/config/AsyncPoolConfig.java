@@ -218,13 +218,14 @@ public class AsyncPoolConfig {
 
     @Bean
     public ThreadPoolTaskExecutor asyncWsCommandThreadPoolTaskExecutor() {
-        return buildThreadPoolTaskExecutor(
+        return buildThreadPoolTaskExecutorV2(
                 asyncWsCommandArtifactCorePoolSize,
                 asyncWsCommandArtifactMaxPoolSize,
                 asyncWsCommandArtifactQueueCapacity,
                 asyncWsCommandArtifactKeepAliveSeconds,
                 asyncWsCommandArtifactThreadNamePrefix,
-                asyncWsCommandArtifactAwaitTerminationSeconds);
+                asyncWsCommandArtifactAwaitTerminationSeconds,
+                null);
     }
 
     @Bean
@@ -323,6 +324,29 @@ public class AsyncPoolConfig {
             executor.setCorePoolSize(corePoolSize);
             executor.setMaxPoolSize(maxPoolSize);
         }
+        Integer maxQueueCapacity = 100000000;
+        if (queueCapacity > maxQueueCapacity) {
+            queueCapacity = maxQueueCapacity;
+        }
+        executor.setQueueCapacity(queueCapacity);
+        executor.setKeepAliveSeconds(keepAliveSeconds);
+        executor.setThreadNamePrefix(threadNamePrefix);
+        executor.setWaitForTasksToCompleteOnShutdown(true);
+        executor.setAwaitTerminationSeconds(awaitTerminationSeconds);
+        if (Objects.isNull(rejectedExecutionHandler)) {
+            rejectedExecutionHandler = new ThreadPoolExecutor.CallerRunsPolicy();
+        }
+        executor.setRejectedExecutionHandler(rejectedExecutionHandler);
+        executor.initialize();
+        log.info("Thread pool name [{}] core size [{}] max size [{}] queue capacity [{}]", executor.getThreadNamePrefix(), executor.getCorePoolSize(), executor.getMaxPoolSize(), queueCapacity);
+        return executor;
+    }
+
+    private ThreadPoolTaskExecutor buildThreadPoolTaskExecutorV2(Integer corePoolSize, Integer maxPoolSize, Integer queueCapacity, Integer keepAliveSeconds, String threadNamePrefix, Integer awaitTerminationSeconds, RejectedExecutionHandler rejectedExecutionHandler) {
+        ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
+
+        executor.setCorePoolSize(corePoolSize);
+        executor.setMaxPoolSize(maxPoolSize);
         Integer maxQueueCapacity = 100000000;
         if (queueCapacity > maxQueueCapacity) {
             queueCapacity = maxQueueCapacity;

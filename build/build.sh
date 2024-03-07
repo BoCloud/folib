@@ -1,7 +1,7 @@
 #!/bin/bash
 set -ex
 
-IMAGE_NAME="hub.idpops.iflytek.work/folib-common/docker-repo/folib-server"                # 你的镜像名称
+IMAGE_NAME="172.30.193.101:38080/folib-common/docker-repo/folib-server"                # 你的镜像名称
 TAG=$(date +%Y%m%d-%H%M)
 
 SECONDS=0

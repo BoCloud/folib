@@ -40,6 +40,8 @@ import com.veadan.folib.services.*;
 import com.veadan.folib.storage.repository.Repository;
 import com.veadan.folib.storage.repository.RepositoryTypeEnum;
 import com.veadan.folib.users.userdetails.SpringSecurityUser;
+import com.veadan.folib.util.MessageDigestUtils;
+import com.veadan.folib.util.ThreadLocalUtil;
 import com.veadan.folib.utils.FileUtils;
 import com.veadan.folib.utils.PropertiesUtils;
 import com.veadan.folib.utils.UrlUtils;
@@ -53,6 +55,7 @@ import com.veadan.folib.ws.server.WSMessageRequest;
 import com.veadan.folib.ws.server.WSMessageResponse;
 import com.veadan.folib.ws.server.manage.FolibWsServerRunManage;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.codec.digest.MessageDigestAlgorithms;
 import org.apache.commons.fileupload.disk.DiskFileItem;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
@@ -69,7 +72,6 @@ import org.springframework.context.annotation.Lazy;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
-import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
@@ -412,7 +414,11 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
         String sourceHostName = FolibWsRunManageUtil.getTargetHostName(promotionNodeOption.getSourcePath());
 
         String selfHostName = FolibWsRunManageUtil.getTargetHostName(configurationManagementService.getConfiguration().getBaseUrl());
-        if(selfHostName.equals(targetHostName)){
+        if (selfHostName.equals(sourceHostName)) {
+            final String syncNo = String.format("SyncNo%s", UUID.randomUUID().toString(true));
+            uploadArtifact(syncNo, promotionNodeOption, requestHostName);
+            return ResponseEntity.ok(syncNo);
+        }else if(selfHostName.equals(targetHostName)){
             try {
                 //委托sourceHostName节点upload到本节点，对本节点来说是下载，1小时超时时间，等待下载完成
                 WSMessageResponse wsMessageResponse = folibWsRunManageV2.sendRequest(sourceHostName, new WSMessageRequest(Command.DELEGATE_UPLOAD, promotionNodeOption), 60 * 60);
@@ -422,9 +428,7 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
                 throw new RuntimeException(e);
             }
         }
-        final String syncNo = String.format("SyncNo%s", UUID.randomUUID().toString(true));
-        uploadArtifact(syncNo, promotionNodeOption, requestHostName);
-        return ResponseEntity.ok(syncNo);
+        throw new RuntimeException("At least one of the hostname in the targetPath or sourcePath parameters must be " + selfHostName);
     }
 
     @Override
@@ -1260,14 +1264,6 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
         boolean allSliceFileUploadCompleted = false;
 
         try {
-            if (StringUtils.isNotBlank(sliceMd5)) {
-                try (InputStream inputStream1 = file.getInputStream();) {
-                    String md5 = FileUtils.getMD5(inputStream1);
-                    if (!sliceMd5.equals(md5)) {
-                        throw new BusinessException("sliceMd5 md5不一致");
-                    }
-                }
-            }
 
             if (!FileUtil.exist(artifactFileSliceUploadFile)) {
                 FileUtil.touch(artifactFileSliceUploadFile);
@@ -1308,7 +1304,7 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
                 if (!mergeResult) {
                     throw new BusinessException(BusinessCodeEnum.ARTIFACT_SLICE_UPLOAD_CHUNK_FILE_MERGE_FAILED);
                 }
-                final String uploadArtifactFileMd5 = FileUtils.getMD5(mergeFilePath);
+                final String uploadArtifactFileMd5 = MessageDigestUtils.calculateChecksum(new File(mergeFilePath).toPath(), MessageDigestAlgorithms.MD5);
                 // 校验MD5
                 if (!originFileMd5.equals(uploadArtifactFileMd5)) {
                     throw new BusinessException(String.format("%s , originFileMd5:%s , uploadArtifactFileMd5:%s",BusinessCodeEnum.ARTIFACT_SLICE_UPLOAD_MD5_CHECK_FAILED.getMessage(),originFileMd5,uploadArtifactFileMd5));

@@ -1,5 +1,6 @@
 package com.veadan.folib.ws.common;
 
+import com.google.common.util.concurrent.RateLimiter;
 import com.veadan.folib.config.PromotionConfig;
 import com.veadan.folib.configuration.ConfigurationManager;
 import com.veadan.folib.dispatch.ClusterDispatchNodeDto;
@@ -14,9 +15,7 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
 import javax.inject.Inject;
-import javax.websocket.ContainerProvider;
-import javax.websocket.DeploymentException;
-import javax.websocket.Session;
+import javax.websocket.*;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -40,7 +39,9 @@ public class FolibWsRunManageV2 {
     private Map<String, Session> FOLIB_WS_RUN_MAP = new ConcurrentHashMap<>();
     public static final String FOLIB_WS_PROTOCOL = "folib_WS_protocol";
     private Map<Session, Long> sessionIdleMap = new ConcurrentHashMap<>();//
-    private ConcurrentHashMap<String, CompletableFuture<WSMessageResponse>> REQUEST_FUTURES = new ConcurrentHashMap<>();
+    private ConcurrentHashMap<Session, Map<String,CompletableFuture<WSMessageResponse>>> REQUEST_FUTURES = new ConcurrentHashMap<>();
+    private ConcurrentHashMap<Session, RateLimiter> RATE_LIMITER_MAP = new ConcurrentHashMap<>();
+    private ConcurrentHashMap<String, ReentrantLock> REENTRANT_LOCK__MAP = new ConcurrentHashMap<>();
 
     @Inject
     protected ConfigurationManager configurationManager;
@@ -50,7 +51,7 @@ public class FolibWsRunManageV2 {
     private Executor asyncThreadPoolTaskExecutor;
     @Autowired
     private PromotionConfig promotionConfig;
-
+    private WebSocketContainer webSocketContainer = ContainerProvider.getWebSocketContainer();
 
     @Scheduled(cron = "0/5 * * * * ?")
     public void Scheduled() {
@@ -67,33 +68,44 @@ public class FolibWsRunManageV2 {
     public void reconnectAndHeartbeat(ClusterDispatchNodeDto nodeInfo) {
 
         String targetHostName = FolibWsRunManageUtil.getTargetHostName(nodeInfo);
-        Session session1 = FOLIB_WS_RUN_MAP.get(targetHostName);
-        synchronized (targetHostName) {
-            if (!(session1 != null && session1.isOpen())) {
-                try {
-                    connectToServerV2(nodeInfo);
-                } catch (DeploymentException | IOException e) {
-                    log.error("connectToServer fail , retry...", e);
+        ReentrantLock reentrantLock = REENTRANT_LOCK__MAP.computeIfAbsent(targetHostName, s -> new ReentrantLock());
+
+        boolean tryLock = reentrantLock.tryLock();
+        try {
+            if (tryLock) {
+                Session session1 = FOLIB_WS_RUN_MAP.get(targetHostName);
+                synchronized (targetHostName) {
+                    if (!(session1 != null && session1.isOpen())) {
+                        try {
+                            connectToServerV2(nodeInfo);
+                        } catch (DeploymentException | IOException e) {
+                            log.error("connectToServer fail , retry...", e);
+                        }
+                        return;
+                    }
                 }
-                return;
-            }
-        }
-        Long l = sessionIdleMap.get(session1);
-        if (l != null) {
-            long idleTime = System.currentTimeMillis() - l;
-            if (idleTime < 1000 * 20) {
-                return;
-            }
-            log.info("send ws HEARD_BEAT {}", targetHostName);
-            try {
-                WSMessageResponse wsMessageResponse = sendRequest(targetHostName, new WSMessageRequest(Command.HEARD_BEAT));
-            } catch (Exception e) {
-                try {
-                    session1.close();
-                } catch (IOException ex) {
-                    log.error("close exception", e);
+                Long l = sessionIdleMap.get(session1);
+                if (l != null) {
+                    long idleTime = System.currentTimeMillis() - l;
+                    if (idleTime < 1000 * 20) {
+                        return;
+                    }
+                    log.info("send ws HEARD_BEAT {}", targetHostName);
+                    try {
+                        WSMessageResponse wsMessageResponse = sendRequest(targetHostName, new WSMessageRequest(Command.HEARD_BEAT));
+                    } catch (Exception e) {
+                        log.error(String.format("ping Exception,close session:%s",session1), e);
+                        try {
+                            session1.close(new CloseReason(CloseReason.CloseCodes.NORMAL_CLOSURE,"HEARD_BEAT timeout"));
+                        } catch (IOException ex) {
+                            log.error("close exception", e);
+                        }
+                    }
                 }
-                log.error("ping Exception", e);
+            }
+        } finally {
+            if (tryLock) {
+                reentrantLock.unlock();
             }
         }
     }
@@ -127,7 +139,7 @@ public class FolibWsRunManageV2 {
     public Session connectToServerV2(ClusterDispatchNodeDto nodeInfo) throws DeploymentException, IOException {
         log.info("connect ws nodeInfo:{}", nodeInfo);
         FolibWsClient folibWsClient = new FolibWsClient(nodeInfo, configurationManager);
-        return ContainerProvider.getWebSocketContainer().connectToServer(folibWsClient, URI.create(folibWsClient.getUri()));
+        return webSocketContainer.connectToServer(folibWsClient, URI.create(folibWsClient.getUri()));
     }
 
     public void registerSession(String targetHostName, Session session) {
@@ -141,7 +153,7 @@ public class FolibWsRunManageV2 {
         }
     }
 
-    public void unRegisterSession(String targetHostName) {
+    public void unRegisterSession(String targetHostName,String reason) {
         synchronized (targetHostName.intern()) {
             Session session = FOLIB_WS_RUN_MAP.remove(targetHostName);
             if (session == null) {
@@ -152,7 +164,7 @@ public class FolibWsRunManageV2 {
             sessionIdleMap.remove(session);
             if (session.isOpen()) {
                 try {
-                    session.close();
+                    session.close(new CloseReason(CloseReason.CloseCodes.NORMAL_CLOSURE, reason));
                 } catch (IOException e) {
                     throw new RuntimeException(e);
                 }
@@ -160,6 +172,16 @@ public class FolibWsRunManageV2 {
             sessionLastSendTime.remove(session);
             sessionBytesSent.remove(session);
             sessionLocks.remove(session);
+            RATE_LIMITER_MAP.remove(session);
+        }
+    }
+
+    public void cleanFuture(Session session) {
+        Map<String, CompletableFuture<WSMessageResponse>> futureMap = REQUEST_FUTURES.get(session);
+        if (futureMap!=null){
+            for (CompletableFuture<WSMessageResponse> value : futureMap.values()) {
+                value.completeExceptionally(new RuntimeException("session close, session:"+session.toString()));
+            }
         }
     }
 
@@ -169,9 +191,9 @@ public class FolibWsRunManageV2 {
 
     private void sendBinary(Session session, WSMessage wsMessage, long finalKbps) throws ExecutionException, InterruptedException, TimeoutException {
         ByteBuffer byteBuffer = ByteBuffer.wrap(KryoSerializationUtil.serialize(wsMessage));
-        sessionIdleMap.put(session, System.currentTimeMillis());
+
         try {
-            sendBinary(session, byteBuffer, finalKbps);
+            sendBinaryV2(session, byteBuffer, finalKbps);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -195,6 +217,15 @@ public class FolibWsRunManageV2 {
             throw new RuntimeException("not found session with targetHostName:" + targetHostName);
         }
         if (!session.isOpen()) {
+            Map<String, ClusterDispatchNodeDto> clusterDispatchNode = configurationManagementService.getMutableConfigurationClone().getClusterDispatchNode();
+            ClusterDispatchNodeDto clusterDispatchNodeDto = clusterDispatchNode.values().stream().filter(dto -> {
+                return targetHostName.equals(FolibWsRunManageUtil.getTargetHostName(dto));
+            }).findAny().orElse(null);
+            log.warn("session is closed reconnectAndHeartbeat,{}",clusterDispatchNodeDto);
+            reconnectAndHeartbeat(clusterDispatchNodeDto);
+            session = getSession(targetHostName);
+        }
+        if (!session.isOpen()) {
             throw new RuntimeException("session is closed , with targetHostName:" + targetHostName);
         }
 
@@ -206,7 +237,8 @@ public class FolibWsRunManageV2 {
 
         CompletableFuture<WSMessageResponse> future = new CompletableFuture<>();
 
-        REQUEST_FUTURES.put(wsMessageRequest.getId(), future);
+        Map<String, CompletableFuture<WSMessageResponse>> futureMap = REQUEST_FUTURES.computeIfAbsent(session, session1 -> new ConcurrentHashMap<>());
+        futureMap.put(wsMessageRequest.getId(), future);
         try {
             log.info("wsMessageRequest {}", wsMessageRequest);
             sendBinary(session, wsMessageRequest, finalKbps);
@@ -220,7 +252,7 @@ public class FolibWsRunManageV2 {
         } catch (ExecutionException | InterruptedException | TimeoutException e) {
             throw new FolibWsRequestException(e);
         } finally {
-            REQUEST_FUTURES.remove(wsMessageRequest.getId());
+            futureMap.remove(wsMessageRequest.getId());
         }
         return wsMessageResponse;
     }
@@ -229,8 +261,12 @@ public class FolibWsRunManageV2 {
         sendBinary(session, wsMessageResponse, 0L);
     }
 
-    public CompletableFuture<WSMessageResponse> getFuture(String requestId) {
-        return REQUEST_FUTURES.get(requestId);
+    public CompletableFuture<WSMessageResponse> getFuture(Session session,String requestId) {
+        Map<String, CompletableFuture<WSMessageResponse>> futureMap = REQUEST_FUTURES.get(session);
+        if (futureMap != null) {
+            return futureMap.get(requestId);
+        }
+        return null;
     }
 
 
@@ -242,19 +278,76 @@ public class FolibWsRunManageV2 {
     private final Map<Session, Long> sessionBytesSent = new ConcurrentHashMap<>();
     private final Map<Session, ReentrantLock> sessionLocks = new ConcurrentHashMap<>();
 
-    public static void main(String[] args) {
-
-        long pastTime = 200;
-        BigDecimal second = BigDecimal.valueOf(pastTime).divide(BigDecimal.valueOf(1000), 2, RoundingMode.HALF_UP);
-        System.out.println(second);
 
 
-        long bytesCount = 500;
-        BigDecimal divide = BigDecimal.valueOf(0).divide(BigDecimal.valueOf(0), 2, RoundingMode.HALF_UP);
-        System.out.println(divide);
-        System.out.println(divide.multiply(BigDecimal.valueOf(1024)));
+    private void sendBinaryV2(Session session, ByteBuffer data, long finalKbps) throws IOException {
+        String messageId = UUID.randomUUID().toString();
+        //缺省填充
+        if (finalKbps <= 0) {
+            finalKbps = DEFAULT_BYTES_PER_SECOND;
+        }
+        long finalKbps1 = finalKbps;
+        RateLimiter rateLimiter = RATE_LIMITER_MAP.computeIfAbsent(session, s -> RateLimiter.create(finalKbps1));
+
+        int dataSize = data.remaining();
+        int bytesToSend = dataSize;
+        long startTime = System.currentTimeMillis();
+        log.info("sendBinary [size:{} , finalKbps:{} Kbps, messageId:{}]", bytesToSend, finalKbps, messageId);
+        sessionLocks.putIfAbsent(session, new ReentrantLock(true));
+        int sendBytesCount = 0;
+        while (bytesToSend > 0) {
+                sessionIdleMap.put(session, System.currentTimeMillis());
+                int chunkSize = Math.min(bytesToSend, 1024 * 1024);
+                // 准备数据包，包括协议头、消息ID和数据
+                byte[] bytes = FOLIB_WS_PROTOCOL.getBytes();
+                int i1 = chunkSize + 8 + bytes.length + messageId.getBytes().length;
+
+                ByteBuffer chunk = ByteBuffer.allocate(i1);
+                chunk.put(bytes);
+                chunk.putLong(dataSize);
+                chunk.put(messageId.getBytes());
+                boolean isLast = bytesToSend == chunkSize; // 检查是否为最后一个片段
+                //chunk.put((byte) (isLast ? 1 : 0)); // isLast flag
+                rateLimiter.acquire(chunkSize);
+                for (int i = 0; i < chunkSize; i++) {
+                    chunk.put(data.get());
+                }
+                // 准备读取
+                chunk.flip();
+                // session.getBasicRemote().sendBinary(chunk);
+
+                CompletableFuture<Void> completableFuture = new CompletableFuture<>();
+                long l = System.currentTimeMillis();
+                session.getAsyncRemote().sendBinary(chunk, result -> {
+                    if (result.isOK()) {
+                        completableFuture.complete(null); // 完成Future
+                    } else {
+                        completableFuture.completeExceptionally(result.getException()); // 完成Future并传递异常
+                    }
+                });
+
+                try {
+                    completableFuture.get(); // 阻塞等待直到Future完成
+                } catch (InterruptedException | ExecutionException e) {
+                    throw new RuntimeException(e);
+                }
+                sendBytesCount += chunk.capacity();
+                long pastTime = System.currentTimeMillis() - startTime;
+                // 减少待发送的数据量
+                 bytesToSend -= chunkSize;
+                //日志输出
+                BigDecimal rate = BigDecimal.valueOf(0);
+                try {
+                    BigDecimal second = BigDecimal.valueOf(pastTime).divide(BigDecimal.valueOf(1000), 2, RoundingMode.HALF_UP);
+                    rate = BigDecimal.valueOf(sendBytesCount).divide(second, 2, RoundingMode.HALF_UP);
+                } catch (Exception ignored) { }
+                log.info("messageId:{} dataSize:{}/{}, current finalKbps {}ps", messageId, dataSize-bytesToSend, dataSize,FileSizeConvertUtils.convert(rate.longValue()));
+                if (isLast) {
+                    log.info("send success , time consuming:{}ms", System.currentTimeMillis() - startTime);
+                }
+        }
+
     }
-
     private void sendBinary(Session session, ByteBuffer data, long finalKbps) throws IOException {
         String messageId = UUID.randomUUID().toString();
         //缺省填充

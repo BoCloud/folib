@@ -21,6 +21,10 @@ public class PromotionConfig {
      */
     private int queueSize = 1000;
     /**
+     * 每个seesion可并行晋级的数量
+     */
+    private int thread = 2;
+    /**
      * 切片传输失败重试次数
      */
     private int retryCount = 3;
@@ -31,7 +35,7 @@ public class PromotionConfig {
     /**
      * 使用ws发送请求的超时时间
      */
-    private int wsRequestTimout = 5;
+    private int wsRequestTimout = 10;
 
     @PostConstruct
     public void init() {
