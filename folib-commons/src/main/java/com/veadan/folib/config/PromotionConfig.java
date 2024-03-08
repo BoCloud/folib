@@ -33,9 +33,18 @@ public class PromotionConfig {
      */
     private int wsRequestTimoutOfArtifactUpload = 600;
     /**
-     * 使用ws发送请求的超时时间
+     * 使用ws发送请求后等待响应的超时时间，秒单位
      */
     private int wsRequestTimout = 10;
+    /**
+     * 使用ws通道空闲超时时间，当没有数据传输时，达到这个时间会释放连接
+     * 如果连接被防火墙强制打断，此时连接无法收发数据，等待30S后，主动关闭连接
+     */
+    private int wsMaxSessionIdleTimeout = 1000 * 30;
+    /**
+     * 当WS隧道空闲多少秒后开始发送心跳
+     */
+    private int wsHeardBeatIdleTime = 1000 * 20;
 
     @PostConstruct
     public void init() {

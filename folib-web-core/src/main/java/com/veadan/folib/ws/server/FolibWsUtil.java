@@ -56,12 +56,15 @@ public class FolibWsUtil {
     }
 
     public void onClose(String nodeId, Session session, CloseReason closeReason) {
-        folibWsRunManageV2.cleanFuture(session);
-        log.info("连接关闭成功,nodeId:{} session_id:{} closeReason:{}", nodeId, session.getId(), closeReason.toString());
+        String msg = String.format("连接关闭成功,nodeId:%s session_id:%s closeReason:%s", nodeId, session.getId(), closeReason.toString());
+        folibWsRunManageV2.cleanFuture(session, new RuntimeException(msg));
+        log.info(msg);
     }
 
     public void onError(String targetHostName, Session session, Throwable error) {
-        folibWsRunManageV2.cleanFuture(session);
+        if (session != null) {
+            folibWsRunManageV2.cleanFuture(session, error);
+        }
         log.error("WebSocket(nodeName = {})发生错误 ", targetHostName, error);
     }
 
@@ -145,9 +148,9 @@ public class FolibWsUtil {
                 });
 
         completeMessage.put(message); // 添加新接收的数据
-        int capacity = completeMessage.capacity();
-        log.info("onMessageV3 messageId:{},received:{}/{}", messageId, capacity, messageSize);
-        if (capacity == messageSize) {
+        int position = completeMessage.position();
+        log.info("onMessageV3 messageId:{},received:{}/{}", messageId, position, messageSize);
+        if (position == messageSize) {
 
                 // 最后一片数据，处理完整消息
                 completeMessage.flip(); // 切换为读模式
@@ -158,11 +161,13 @@ public class FolibWsUtil {
                 }
 
             sessionMessageBufferMap.get(session).remove(messageId); // 清理资源
+        } else if (position > messageSize) {
+            throw new IllegalStateException("Received data exceeds actual message size");
         } else {
             // 更新缓冲区以便接收更多数据
             sessionMessageBufferMap.get(session).put(messageId, completeMessage);
         }
-        return capacity == messageSize;
+        return position == messageSize;
     }
 
     private void handleExceptionMessage(Session session, Exception e, String messageId) {

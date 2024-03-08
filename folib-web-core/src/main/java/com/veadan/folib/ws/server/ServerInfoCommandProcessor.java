@@ -4,9 +4,12 @@ import com.veadan.folib.dispatch.ClusterDispatchNodeDto;
 import com.veadan.folib.scanner.common.util.SpringContextUtil;
 import com.veadan.folib.services.ClusterDispatchManagementService;
 import com.veadan.folib.services.ClusterSyncService;
+import com.veadan.folib.services.ConfigurationManagementService;
+import com.veadan.folib.ws.common.FolibWsRunManageUtil;
 import com.veadan.folib.ws.server.handler.command.FolibWsServerSaveNodeInfoCommand;
 import org.springframework.stereotype.Component;
 
+import javax.inject.Inject;
 import javax.websocket.Session;
 import java.io.IOException;
 import java.time.LocalDateTime;
@@ -22,6 +25,8 @@ public class ServerInfoCommandProcessor extends CommandProcessor {
     public Command getCommand() {
         return Command.SERVER_INFO;
     }
+    @Inject
+    private ConfigurationManagementService configurationManagementService;
 
     @Override
     public String doExecute(WSMessageRequest wsMessageRequest, Session session) {
@@ -30,7 +35,14 @@ public class ServerInfoCommandProcessor extends CommandProcessor {
         final ClusterDispatchNodeDto nodeDto = payload.getNodeDto();
         nodeDto.setCreateTime(LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
         try {
-            SpringContextUtil.getBean(ClusterDispatchManagementService.class).createClusterNode(nodeDto);
+            ClusterDispatchManagementService bean = SpringContextUtil.getBean(ClusterDispatchManagementService.class);
+            ClusterDispatchNodeDto existsNode = configurationManagementService.getMutableConfigurationClone().getClusterDispatchNode().get(FolibWsRunManageUtil.getTargetHostName(nodeDto));
+            if (existsNode != null) {
+                nodeDto.setKbps(existsNode.getKbps());
+                nodeDto.setDispatchType(existsNode.getDispatchType());
+                nodeDto.setIsThisCluster(existsNode.getIsThisCluster());
+            }
+            bean.createClusterNode(nodeDto);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }

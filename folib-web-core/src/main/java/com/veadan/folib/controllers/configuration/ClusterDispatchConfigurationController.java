@@ -109,10 +109,11 @@ public class ClusterDispatchConfigurationController extends BaseConfigurationCon
                 // 创建分发节点
                 nodeDto = new ClusterDispatchNodeDto();
                 BeanUtils.copyProperties(clusterDispatchNodeForm, nodeDto);
-                nodeDto.setAutoRegister(false);
+
                 nodeDto.setCreateTime(LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
 
                 if (existingNode == null) {//新增操作
+                    nodeDto.setAutoRegister(false);
                     String newHostName = FolibWsRunManageUtil.getTargetHostName(nodeDto);
                     ClusterDispatchNodeDto exitedHostNameNodeDto = clusterDispatchNode.values().stream().filter(dto -> {
                         String exitedHostName = FolibWsRunManageUtil.getTargetHostName(dto);
@@ -173,10 +174,10 @@ public class ClusterDispatchConfigurationController extends BaseConfigurationCon
                 // 创建分发节点
                 nodeDto = new ClusterDispatchNodeDto();
                 BeanUtils.copyProperties(clusterDispatchNodeForm, nodeDto);
-                nodeDto.setAutoRegister(false);
                 nodeDto.setCreateTime(LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
 
                 if (existingNode == null) {//新增操作
+                    nodeDto.setAutoRegister(false);
                     String newHostName = FolibWsRunManageUtil.getTargetHostName(nodeDto);
                     ClusterDispatchNodeDto exitedHostNameNodeDto = clusterDispatchNode.values().stream().filter(dto -> {
                         String exitedHostName = FolibWsRunManageUtil.getTargetHostName(dto);

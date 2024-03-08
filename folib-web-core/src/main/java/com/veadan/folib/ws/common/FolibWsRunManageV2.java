@@ -14,6 +14,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
+import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 import javax.websocket.*;
 import java.io.IOException;
@@ -51,22 +52,29 @@ public class FolibWsRunManageV2 {
     private Executor asyncThreadPoolTaskExecutor;
     @Autowired
     private PromotionConfig promotionConfig;
-    private WebSocketContainer webSocketContainer = ContainerProvider.getWebSocketContainer();
+    private WebSocketContainer webSocketContainer ;
+
+    @PostConstruct
+    public void init() {
+        webSocketContainer = ContainerProvider.getWebSocketContainer();
+        webSocketContainer.setDefaultMaxSessionIdleTimeout(promotionConfig.getWsMaxSessionIdleTimeout());
+    }
 
     @Scheduled(cron = "0/5 * * * * ?")
     public void Scheduled() {
         // 初始化连接到集群服务端
         final Map<String, ClusterDispatchNodeDto> clusterDispatchNode = configurationManagementService.getMutableConfigurationClone().getClusterDispatchNode();
-        clusterDispatchNode.values().stream()
-                // 排除自动注册的节点信息
-                .filter(e -> null != e.getAutoRegister() && !e.getAutoRegister())
+        clusterDispatchNode.values()
                 .forEach(clusterDispatchNodeDto -> {
                     asyncThreadPoolTaskExecutor.execute(() -> reconnectAndHeartbeat(clusterDispatchNodeDto));
                 });
     }
 
     public void reconnectAndHeartbeat(ClusterDispatchNodeDto nodeInfo) {
-
+        if (null != nodeInfo.getAutoRegister() && nodeInfo.getAutoRegister()){
+            //自动注册的节点不处理，直接返回
+            return;
+        }
         String targetHostName = FolibWsRunManageUtil.getTargetHostName(nodeInfo);
         ReentrantLock reentrantLock = REENTRANT_LOCK__MAP.computeIfAbsent(targetHostName, s -> new ReentrantLock());
 
@@ -87,7 +95,7 @@ public class FolibWsRunManageV2 {
                 Long l = sessionIdleMap.get(session1);
                 if (l != null) {
                     long idleTime = System.currentTimeMillis() - l;
-                    if (idleTime < 1000 * 20) {
+                    if (idleTime < promotionConfig.getWsHeardBeatIdleTime()) {
                         return;
                     }
                     log.info("send ws HEARD_BEAT {}", targetHostName);
@@ -176,11 +184,11 @@ public class FolibWsRunManageV2 {
         }
     }
 
-    public void cleanFuture(Session session) {
+    public void cleanFuture(Session session,Throwable error) {
         Map<String, CompletableFuture<WSMessageResponse>> futureMap = REQUEST_FUTURES.get(session);
         if (futureMap!=null){
             for (CompletableFuture<WSMessageResponse> value : futureMap.values()) {
-                value.completeExceptionally(new RuntimeException("session close, session:"+session.toString()));
+                value.completeExceptionally(error);
             }
         }
     }
@@ -211,6 +219,7 @@ public class FolibWsRunManageV2 {
     }
 
     public WSMessageResponse sendRequest(String targetHostName, WSMessageRequest wsMessageRequest, int timeout) throws FolibWsRequestException {
+        CompletableFuture<WSMessageResponse> future = new CompletableFuture<>();
         Session session = getSession(targetHostName);
 
         if (session == null) {
@@ -235,7 +244,7 @@ public class FolibWsRunManageV2 {
         final Map<String, Long> nodeKbpsMap = clusterDispatchNodeDtos.stream().collect(Collectors.toMap(e -> String.format("%s:%s", UrlUtils.getHost(e.getClusterNodeHost()), UrlUtils.getPort(e.getClusterNodeHost())), e -> null != e.getKbps() ? e.getKbps() * 1024L : 0L));
         final long finalKbps = Optional.ofNullable(nodeKbpsMap.get(targetHostName)).filter(k -> k > 0).orElse(kbps);
 
-        CompletableFuture<WSMessageResponse> future = new CompletableFuture<>();
+
 
         Map<String, CompletableFuture<WSMessageResponse>> futureMap = REQUEST_FUTURES.computeIfAbsent(session, session1 -> new ConcurrentHashMap<>());
         futureMap.put(wsMessageRequest.getId(), future);
@@ -288,16 +297,20 @@ public class FolibWsRunManageV2 {
         }
         long finalKbps1 = finalKbps;
         RateLimiter rateLimiter = RATE_LIMITER_MAP.computeIfAbsent(session, s -> RateLimiter.create(finalKbps1));
-
+        rateLimiter.setRate(finalKbps);
         int dataSize = data.remaining();
         int bytesToSend = dataSize;
         long startTime = System.currentTimeMillis();
         log.info("sendBinary [size:{} , finalKbps:{} Kbps, messageId:{}]", bytesToSend, finalKbps, messageId);
         sessionLocks.putIfAbsent(session, new ReentrantLock(true));
         int sendBytesCount = 0;
+        int minimumPacketsize = 1024 * 1024;
+        if (minimumPacketsize > finalKbps) {
+            minimumPacketsize = (int) finalKbps;
+        }
         while (bytesToSend > 0) {
                 sessionIdleMap.put(session, System.currentTimeMillis());
-                int chunkSize = Math.min(bytesToSend, 1024 * 1024);
+                int chunkSize = Math.min(bytesToSend, minimumPacketsize);
                 // 准备数据包，包括协议头、消息ID和数据
                 byte[] bytes = FOLIB_WS_PROTOCOL.getBytes();
                 int i1 = chunkSize + 8 + bytes.length + messageId.getBytes().length;
@@ -318,7 +331,9 @@ public class FolibWsRunManageV2 {
 
                 CompletableFuture<Void> completableFuture = new CompletableFuture<>();
                 long l = System.currentTimeMillis();
-                session.getAsyncRemote().sendBinary(chunk, result -> {
+                RemoteEndpoint.Async asyncRemote = session.getAsyncRemote();
+                asyncRemote.setSendTimeout(10);
+                asyncRemote.sendBinary(chunk, result -> {
                     if (result.isOK()) {
                         completableFuture.complete(null); // 完成Future
                     } else {
