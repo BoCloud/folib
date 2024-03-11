@@ -201,6 +201,7 @@ import {
 import {
   fql,
   getArtifact,
+  getArtifactReport,
   previewArtifact,
   viewArtifactFile,
 } from "@/api/folib"
@@ -354,9 +355,19 @@ export default {
           this.scanReport.high = artifact.highVulnerabilitiesCount
           this.scanReport.medium = artifact.mediumVulnerabilitiesCount
           this.scanReport.low = artifact.lowVulnerabilitiesCount
-          this.scanReport.report = JSON.parse(artifact.report)
+          getArtifactReport(
+            item.layout,
+            item.storageId,
+            item.repositoryId,
+            item.artifactPath
+          ).then(res => { 
+            if (res.artifact && res.artifact.safeLevel === "scanComplete")
+            {
+              this.scanReport.report = JSON.parse(res.artifact.report)
+            }
+          })
         }
-      });
+      })
       this.artifactVisible = true
     },
     handleTableChange(pagination, filters, sorter) {

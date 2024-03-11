@@ -453,7 +453,7 @@ public class BrowseController
 
     private Artifact getArtifact(RepositoryPath repositoryPath, Boolean report) {
         try {
-            return artifactService.findArtifactReport(repositoryPath);
+            return artifactService.findArtifact(repositoryPath, report);
         } catch (Exception ex) {
             logger.warn(ExceptionUtils.getStackTrace(ex));
         }
