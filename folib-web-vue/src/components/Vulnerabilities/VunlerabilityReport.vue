@@ -141,9 +141,9 @@
                                             </div>
                                         </div>
                                     </template>
-                                    <template slot="v2_exploitabilityScore" slot-scope="text, record">{{ record.cvssV2.score
+                                    <template slot="v2_exploitabilityScore" slot-scope="text, record" v-if="record.cvssV2">{{ record.cvssV2.score
                                     }}</template>
-                                    <template slot="v3_exploitabilityScore" slot-scope="text, record">{{
+                                    <template slot="v3_exploitabilityScore" slot-scope="text, record" v-if="record.cvssV3">{{
                                         record.cvssV3.baseScore }}</template>
                                     <template slot="versionStartIncluding" slot-scope="text, record">{{
                                         record.matchedVulnerableSoftware.versionStartIncluding

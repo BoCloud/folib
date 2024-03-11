@@ -1,6 +1,5 @@
 package com.veadan.folib.controllers.layout.npm;
 
-import com.alibaba.fastjson.JSONObject;
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -16,11 +15,12 @@ import com.veadan.folib.controllers.BaseArtifactController;
 import com.veadan.folib.data.criteria.Paginator;
 import com.veadan.folib.domain.Artifact;
 import com.veadan.folib.domain.ArtifactEntity;
-import com.veadan.folib.domain.ArtifactIdGroup;
 import com.veadan.folib.domain.ArtifactIdGroupEntity;
 import com.veadan.folib.npm.NpmSearchRequest;
 import com.veadan.folib.npm.NpmViewRequest;
-import com.veadan.folib.npm.metadata.*;
+import com.veadan.folib.npm.metadata.PackageFeed;
+import com.veadan.folib.npm.metadata.PackageVersion;
+import com.veadan.folib.npm.metadata.SearchResults;
 import com.veadan.folib.providers.ProviderImplementationException;
 import com.veadan.folib.providers.io.RepositoryFiles;
 import com.veadan.folib.providers.io.RepositoryPath;
@@ -33,17 +33,17 @@ import com.veadan.folib.repository.NpmRepositoryFeatures.ViewPackageEventListene
 import com.veadan.folib.storage.repository.Repository;
 import com.veadan.folib.storage.validation.artifact.ArtifactCoordinatesValidationException;
 import com.veadan.folib.users.userdetails.SpringSecurityUser;
-import com.veadan.folib.util.CommonUtils;
 import com.veadan.folib.web.LayoutRequestMapping;
 import com.veadan.folib.web.RepositoryMapping;
 import io.swagger.annotations.Api;
 import org.apache.commons.codec.digest.DigestUtils;
-import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
 import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
 import org.apache.commons.compress.compressors.gzip.GzipCompressorInputStream;
+import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.IOUtils;
-import org.apache.commons.lang3.exception.ExceptionUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.graalvm.compiler.replacements.StringUTF16Substitutions;
 import org.javatuples.Pair;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.http.HttpHeaders;
@@ -81,7 +81,7 @@ import java.util.stream.Collectors;
  */
 @RestController
 @LayoutRequestMapping(NpmArtifactCoordinates.LAYOUT_NAME)
-@Api(description = "npm坐标控制器",tags = "npm坐标控制器")
+@Api(description = "npm坐标控制器", tags = "npm坐标控制器")
 public class NpmArtifactController
         extends BaseArtifactController {
 
@@ -161,8 +161,43 @@ public class NpmArtifactController
         response.getOutputStream().write(npmJacksonMapper.writeValueAsBytes(searchResults));
     }
 
+    @GetMapping(path = "{storageId}/{repositoryId}/-/binary/{artifactPath:.+}")
+    @PreAuthorize("hasAuthority('ARTIFACTS_RESOLVE')")
+    public void viewBinaryFeedWithScope(@RepositoryMapping Repository repository,
+                                        @PathVariable(name = "storageId") String storageId,
+                                        @PathVariable(name = "repositoryId") String repositoryId,
+                                        @PathVariable(name = "artifactPath") String artifactPath,
+                                        HttpServletRequest request,
+                                        HttpServletResponse response,
+                                        @RequestHeader HttpHeaders httpHeaders)
+            throws Exception {
+        String extension = FilenameUtils.getExtension(artifactPath);
+        if (StringUtils.isNotBlank(extension)) {
+            String prefix = String.format("/storages/%s/%s", storageId, repositoryId);
+            String packageId = request.getRequestURI().substring(prefix.length() + 1);
+            RepositoryPath repositoryPath = artifactResolutionService.resolvePath(storageId, repositoryId, packageId);
+            vulnerabilityBlock(repositoryPath);
+            provideArtifactDownloadResponse(request, response, httpHeaders, repositoryPath);
+            return;
+        }
+        long startTime = System.currentTimeMillis();
+        response.setContentType(MediaType.APPLICATION_JSON_VALUE);
+        String prefix = String.format("/storages/%s/%s", storageId, repositoryId);
+        String packageId = request.getRequestURI().substring(prefix.length());
+        String binaryFeed = artifactComponent.getNpmArtifactIdGroupBinaryCache(repository, packageId);
+        if (Objects.isNull(binaryFeed)) {
+            String msg = "{\"error\":\"[NOT_FOUND] %s not found\"}";
+            response.setStatus(HttpStatus.NOT_FOUND.value());
+            response.getOutputStream().write(String.format(msg, packageId).getBytes());
+            return;
+        }
+        try (InputStream inputStream = new ByteArrayInputStream(binaryFeed.getBytes(StandardCharsets.UTF_8))) {
+            copyToResponse(inputStream, response);
+        }
+        logger.debug("[{}] viewPackageFeedWithScope storageId [{}] repositoryId [{}] packageId [{}] task time [{}] ms", this.getClass().getSimpleName(), repository.getStorage().getId(), repository.getId(), packageId, System.currentTimeMillis() - startTime);
+    }
 
-    @GetMapping(path = "{storageId}/{repositoryId}/{packageScope}/{packageName:[^-].+}/{packageVersion}")
+    @GetMapping(path = "{storageId}/{repositoryId}/{packageScope:[^-].+}/{packageName:[^-].+}/{packageVersion}")
     @PreAuthorize("hasAuthority('ARTIFACTS_RESOLVE')")
     public void viewPackageWithScope(@RepositoryMapping Repository repository,
                                      @PathVariable(name = "packageScope") String packageScope,
@@ -195,7 +230,7 @@ public class NpmArtifactController
         response.getOutputStream().write(npmJacksonMapper.writeValueAsBytes(npmPackage));
     }
 
-    @GetMapping(path = "{storageId}/{repositoryId}/{packageScope}/{packageName}")
+    @GetMapping(path = "{storageId}/{repositoryId}/{packageScope:[^-].+}/{packageName}")
     @PreAuthorize("hasAuthority('ARTIFACTS_RESOLVE')")
     public void viewPackageFeedWithScope(@RepositoryMapping Repository repository,
                                          @PathVariable(name = "packageScope") String packageScope,

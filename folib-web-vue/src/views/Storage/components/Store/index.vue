@@ -778,6 +778,7 @@ import {
 import {
   browse,
   getArtifact,
+  getArtifactReport,
   previewArtifact,
   viewArtifactFile,
   fql,
@@ -1587,7 +1588,7 @@ export default {
           }
           if (isLogin() && this.currentFileDetial.artifact)
           {
-            if (this.currentFileDetial.artifact.safeLevel === 'scanComplete')
+            if (this.currentFileDetial.artifact.safeLevel === "scanComplete")
             {
               this.scanReport.show = true
               this.scanReport.vulnerabilitesCount = this.currentFileDetial.artifact.vulnerabilitiesCount
@@ -1595,9 +1596,18 @@ export default {
               this.scanReport.high = this.currentFileDetial.artifact.highVulnerabilitiesCount
               this.scanReport.medium = this.currentFileDetial.artifact.mediumVulnerabilitiesCount
               this.scanReport.low = this.currentFileDetial.artifact.lowVulnerabilitiesCount
-              this.scanReport.report = JSON.parse(
-                this.currentFileDetial.artifact.report
-              )
+              getArtifactReport(this.repositoryType,
+                this.currentTreeNode.storageId,
+                this.currentTreeNode.repositoryId,
+                this.currentTreeNode.artifactPath
+              ).then(res => { 
+                if (res.artifact && res.artifact.safeLevel === "scanComplete")
+                {
+                  this.scanReport.report = JSON.parse(
+                      res.artifact.report
+                  )
+                }
+              })
             } else if (this.currentFileDetial.artifact.safeLevel === 'scanFail') {
               this.scanReport.fail = true
             }

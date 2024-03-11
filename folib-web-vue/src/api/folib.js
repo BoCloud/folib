@@ -117,6 +117,16 @@ export function getArtifact (type,storageId,repositoryId,path, digest){
     digest = ''
   }
   return axios({
+    url: '/api/browse/getArtifact/'+storageId+'/'+repositoryId+'/'+path+'?type='+type + '&digest=' + digest + '&report=' + false,
+    method: 'get'
+  })
+}
+
+export function getArtifactReport (type,storageId,repositoryId,path, digest){
+  if (!digest) {
+    digest = ''
+  }
+  return axios({
     url: '/api/browse/getArtifact/'+storageId+'/'+repositoryId+'/'+path+'?type='+type + '&digest=' + digest + '&report=' + true,
     method: 'get'
   })

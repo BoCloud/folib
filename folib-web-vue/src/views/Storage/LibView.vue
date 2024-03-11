@@ -141,7 +141,6 @@ import {
   formateDate,
 } from "@/utils/layoutUtil";
 import {
-  getArtifact,
   viewArtifactFile,
   getLibraryFilter
 } from "@/api/folib";

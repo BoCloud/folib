@@ -821,7 +821,7 @@ public class ArtifactComponent {
         if (metadataJson.containsKey(cacheTimeKey)) {
             Long cacheTimeLong = metadataJson.getLong(cacheTimeKey);
             LocalDateTime cacheTime = Commons.toLocalDateTime(cacheTimeLong);
-            long timeout = 300L;
+            long timeout = 3600L;
             LocalDateTime nowDate = LocalDateTimeInstance.now();
             LocalDateTime cacheExpireDate = cacheTime.plusSeconds(timeout);
             if (!cacheExpireDate.isBefore(nowDate)) {
@@ -868,6 +868,32 @@ public class ArtifactComponent {
             packageFeed = getNpmArtifactPackageFeed(repository, artifactId, coordinateValues, predicate);
         }
         return packageFeed;
+    }
+
+    /**
+     * 查询NpmArtifactIdGroupCache
+     *
+     * @param repository       repository
+     * @param artifactId       artifactId
+     * @return packageFeed
+     */
+    public String getNpmArtifactIdGroupBinaryCache(Repository repository, String artifactId) {
+        String binaryFeed = null;
+        if (repository.isGroupRepository()) {
+            String repositoryBinaryFeed = "";
+            for (String storageAndRepositoryId : repository.getGroupRepositories()) {
+                String sId = ConfigurationUtils.getStorageId(repository.getStorage().getId(), storageAndRepositoryId);
+                String rId = ConfigurationUtils.getRepositoryId(storageAndRepositoryId);
+                repositoryBinaryFeed = getNpmArtifactIdGroupBinary(repository, configurationManager.getRepository(sId, rId), artifactId);
+                if (StringUtils.isNotBlank(repositoryBinaryFeed)) {
+                    binaryFeed = repositoryBinaryFeed;
+                    return binaryFeed;
+                }
+            }
+        } else {
+            binaryFeed = getNpmArtifactIdGroupBinary(repository, repository, artifactId);
+        }
+        return binaryFeed;
     }
 
     /**
@@ -1004,6 +1030,45 @@ public class ArtifactComponent {
                 .collect(Collectors.joining());
         return packageFeed.getVersions().getAdditionalProperties().size() + "-" +
                 DigestUtils.sha1Hex(versionsShaSum).substring(0, 16);
+    }
+
+    /**
+     * @param sourceRepository 源仓库
+     * @param repository repository
+     * @param artifactId artifactId
+     * @return npm binary
+     */
+    public String getNpmArtifactIdGroupBinary(Repository sourceRepository, Repository repository, String artifactId) {
+        String binaryFeed = null;
+        long startTime = System.currentTimeMillis();
+        String storageId = repository.getStorage().getId(), repositoryId = repository.getId();
+        ArtifactIdGroup artifactIdGroup = new ArtifactIdGroupEntity(repository.getStorage().getId(), repository.getId(), artifactId);
+        artifactIdGroup = getArtifactIdGroup(artifactIdGroup.getUuid());
+        String metadata = getArtifactIdGroupMetadata(artifactIdGroup);
+        if (StringUtils.isNotBlank(metadata)) {
+            if (JSONUtil.isJson(metadata)) {
+                log.info("Npm [{}] [{}] [{}] exists cache", storageId, repositoryId, artifactId);
+                binaryFeed = metadata;
+                return binaryFeed;
+            }
+        } else {
+            if (RepositoryTypeEnum.PROXY.getType().equals(repository.getType())) {
+                binaryFeed = npmRepositoryFeatures.handleViewBinary(sourceRepository, storageId, repositoryId, artifactId);
+            } else if (RepositoryTypeEnum.HOSTED.getType().equals(repository.getType())) {
+                return null;
+            }
+            try {
+                String npmBinaryJson = GlobalConstants.NO_DATA;
+                if (Objects.nonNull(binaryFeed)) {
+                    npmBinaryJson = binaryFeed;
+                }
+                updateArtifactIdGroup(new ArtifactIdGroupEntity(repository.getStorage().getId(), repository.getId(), artifactId), npmBinaryJson);
+            } catch (Exception ex) {
+                log.warn("Error [{}]", ExceptionUtils.getStackTrace(ex));
+            }
+        }
+        log.info("[{}] getNpmArtifactPackageFeed storageId [{}] repositoryId [{}] artifactId [{}] take time [{}] ms", this.getClass().getSimpleName(), repository.getStorage().getId(), repository.getId(), artifactId, System.currentTimeMillis() - startTime);
+        return binaryFeed;
     }
 
     /**
