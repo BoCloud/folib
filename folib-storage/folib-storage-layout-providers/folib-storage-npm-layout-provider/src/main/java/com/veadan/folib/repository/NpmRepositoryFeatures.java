@@ -1,6 +1,7 @@
 package com.veadan.folib.repository;
 
 import cn.hutool.json.JSONUtil;
+import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonParser;
@@ -11,6 +12,7 @@ import com.veadan.folib.artifact.coordinates.NpmArtifactCoordinates;
 import com.veadan.folib.config.NpmLayoutProviderConfig.NpmObjectMapper;
 import com.veadan.folib.configuration.Configuration;
 import com.veadan.folib.configuration.ConfigurationManager;
+import com.veadan.folib.constant.GlobalConstants;
 import com.veadan.folib.domain.ArtifactIdGroup;
 import com.veadan.folib.domain.ArtifactIdGroupEntity;
 import com.veadan.folib.npm.NpmSearchRequest;
@@ -63,6 +65,7 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
+import java.net.URL;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.concurrent.Executor;
@@ -372,6 +375,49 @@ public class NpmRepositoryFeatures implements RepositoryFeatures {
         }
     }
 
+    public String fetchRemoteBinaryFeed(String storageId,
+                                        String repositoryId,
+                                        String packageId) {
+        String binaryFeed = null;
+        Storage storage = getConfiguration().getStorage(storageId);
+        Repository repository = storage.getRepository(repositoryId);
+
+        RemoteRepository remoteRepository = repository.getRemoteRepository();
+        if (remoteRepository == null) {
+            return null;
+        }
+        String url = "";
+        long startTime = System.currentTimeMillis();
+        Client restClient = proxyRepositoryConnectionPoolConfigurationService.getRestClient(storageId, repositoryId);
+        Response response = null;
+        try {
+            WebTarget service = restClient.target(remoteRepository.getUrl());
+            authentication(service, remoteRepository.getUsername(), remoteRepository.getPassword());
+            service = service.path(packageId);
+            url = service.getUri().toString();
+            logger.debug("Downloading NPM remote binary feed for [{}].", url);
+            response = service.request(MediaType.APPLICATION_JSON).get();
+            if (response.getStatus() == HttpStatus.SC_OK) {
+                String readString = response.readEntity(String.class);
+                if (StringUtils.isNotBlank(readString)) {
+                    binaryFeed = readString;
+                }
+            } else {
+                displayResponseError(url, response);
+                return null;
+            }
+            logger.debug("Downloaded NPM remote binary feed for [{}] take time [{}] ms.", url, System.currentTimeMillis() - startTime);
+        } catch (Exception e) {
+            logger.error("Failed to fetch NPM remote binary feed [{}]", url, e);
+            return binaryFeed;
+        } finally {
+            if (Objects.nonNull(response)) {
+                response.close();
+            }
+        }
+        return binaryFeed;
+    }
+
     /**
      * 返回错误信息
      *
@@ -506,6 +552,50 @@ public class NpmRepositoryFeatures implements RepositoryFeatures {
             }
         }
         return packageFeed;
+    }
+
+    public String handleViewBinary(Repository sourceRepository, String storageId, String repositoryId, String packageId) {
+        String binaryFeed = null;
+        Storage storage = getConfiguration().getStorage(storageId);
+        Repository repository = storage.getRepository(repositoryId);
+        RemoteRepository remoteRepository = repository.getRemoteRepository();
+        if (remoteRepository == null) {
+            return binaryFeed;
+        }
+        ArtifactIdGroup artifactIdGroup = new ArtifactIdGroupEntity(storageId, repositoryId, packageId);
+        binaryFeed = fetchRemoteBinaryFeed(storage.getId(), repository.getId(),
+                packageId);
+        if (StringUtils.isBlank(binaryFeed)) {
+            //兼容代理源不能使用的情况
+            artifactIdGroup = artifactIdGroupRepository.findByArtifactIdGroup(artifactIdGroup.getUuid());
+            if (Objects.nonNull(artifactIdGroup)) {
+                String metadata = getArtifactIdGroupMetadata(artifactIdGroup);
+                if (StringUtils.isNotBlank(metadata) && JSONUtil.isJson(metadata)) {
+                    binaryFeed = metadata;
+                }
+            }
+        } else if (JSONUtil.isJson(binaryFeed)) {
+            String baseUrl = StringUtils.removeEnd(configurationManager.getConfiguration().getBaseUrl(), GlobalConstants.SEPARATOR);
+            String repositoryBaseUrl = baseUrl + String.format("/storages/%s/%s", sourceRepository.getStorage().getId(), sourceRepository.getId());
+            logger.debug("[{}] storage [{}] repository [{}] repositoryBaseUrl is [{}]", this.getClass().getSimpleName(), storageId, repositoryId, repositoryBaseUrl);
+            JSONArray jsonArray = JSONArray.parseArray(binaryFeed);
+            JSONObject jsonObject;
+            String key = "url";
+            URL url;
+            for (int i = 0; i < jsonArray.size(); i++) {
+                try {
+                    jsonObject = jsonArray.getJSONObject(i);
+                    if (jsonObject.containsKey(key)) {
+                        url = new URL(jsonObject.getString(key));
+                        jsonObject.put(key, repositoryBaseUrl + url.getPath());
+                    }
+                } catch (Exception ex) {
+                    logger.warn(ExceptionUtils.getStackTrace(ex));
+                }
+            }
+            binaryFeed = jsonArray.toJSONString();
+        }
+        return binaryFeed;
     }
 
     /**

@@ -444,11 +444,11 @@ public class PromotionUtil {
                                 log.info("Do copy srcRepositoryPath [{}] targetRepositoryPath [{}] exists skip...", srcBlobPath.toString(), targetBlobPath.toString());
                                 continue;
                             }
-                            log.info("Do copy srcRepositoryPath [{}] targetManiFestPath [{}]", srcBlobPath, targetBlobPath);
+                            log.info("Do copy srcRepositoryPath [{}] targetBlobPath [{}]", srcBlobPath, targetBlobPath);
                             try (InputStream inputStream = Files.newInputStream(srcBlobPath)) {
                                 artifactManagementService.store(targetBlobPath, inputStream);
                             } catch (Exception e) {
-                                log.error("Do copy srcRepositoryPath [{}] targetManiFestPath [{}] error [{}]", srcBlobPath, targetBlobPath, ExceptionUtils.getStackTrace(e));
+                                log.error("Do copy srcRepositoryPath [{}] targetBlobPath [{}] error [{}]", srcBlobPath, targetBlobPath, ExceptionUtils.getStackTrace(e));
                             }
                         }
                         if (StringUtils.isNotBlank(manifest.getDigest())) {
@@ -468,13 +468,13 @@ public class PromotionUtil {
                     }
                 }
             }
-            log.info("Do copy srcRepositoryPath [{}] targetManiFestPath [{}]", srcRepositoryPath, targetRepositoryPath);
+            log.info("Do copy srcRepositoryPath [{}] targetRepositoryPath [{}]", srcRepositoryPath, targetRepositoryPath);
             try (InputStream is = Files.newInputStream(srcRepositoryPath)) {
                 //同步metadata
                 setMetaData(targetRepositoryPath, getMetaData(srcRepositoryPath));
                 artifactManagementService.store(targetRepositoryPath, is);
             } catch (IOException e) {
-                log.error("Do copy srcRepositoryPath [{}] targetManiFestPath [{}] error [{}]", srcRepositoryPath, targetRepositoryPath, ExceptionUtils.getStackTrace(e));
+                log.error("Do copy srcRepositoryPath [{}] targetRepositoryPath [{}] error [{}]", srcRepositoryPath, targetRepositoryPath, ExceptionUtils.getStackTrace(e));
                 throw new Exception(e.getMessage());
             }
         }
