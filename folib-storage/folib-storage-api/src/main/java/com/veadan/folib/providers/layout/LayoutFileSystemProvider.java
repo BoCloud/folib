@@ -1,8 +1,11 @@
 package com.veadan.folib.providers.layout;
 
 import com.veadan.folib.artifact.ArtifactNotFoundException;
+import com.veadan.folib.artifact.coordinates.ArtifactCoordinates;
 import com.veadan.folib.domain.Artifact;
-import com.veadan.folib.domain.Vulnerability;
+import com.veadan.folib.domain.ArtifactIdGroup;
+import com.veadan.folib.domain.ArtifactIdGroupEntity;
+import com.veadan.folib.enums.ProductTypeEnum;
 import com.veadan.folib.event.artifact.ArtifactEventListenerRegistry;
 import com.veadan.folib.event.repository.RepositoryEventListenerRegistry;
 import com.veadan.folib.io.*;
@@ -11,6 +14,7 @@ import com.veadan.folib.providers.io.RepositoryFileAttributeType;
 import com.veadan.folib.providers.io.RepositoryFiles;
 import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.providers.io.StorageFileSystemProvider;
+import com.veadan.folib.repositories.ArtifactIdGroupRepository;
 import com.veadan.folib.repositories.ArtifactRepository;
 import com.veadan.folib.repositories.VulnerabilityRepository;
 import com.veadan.folib.storage.ArtifactResolutionException;
@@ -33,11 +37,7 @@ import java.nio.file.OpenOption;
 import java.nio.file.Path;
 import java.nio.file.spi.FileSystemProvider;
 import java.security.NoSuchAlgorithmException;
-import java.util.Collections;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
-import java.util.stream.Collectors;
+import java.util.*;
 import java.util.stream.Stream;
 
 /**
@@ -59,6 +59,9 @@ public abstract class LayoutFileSystemProvider extends StorageFileSystemProvider
 
     @Inject
     private ArtifactRepository artifactEntityRepository;
+
+    @Inject
+    private ArtifactIdGroupRepository artifactIdGroupRepository;
 
     @Inject
     private VulnerabilityRepository vulnerabilityRepository;
@@ -252,6 +255,15 @@ public abstract class LayoutFileSystemProvider extends StorageFileSystemProvider
                 .orElseGet(() -> fetchArtifactEntry(repositoryPath));
         if (artifactEntry != null) {
             artifactEntityRepository.delete(artifactEntry);
+            ArtifactCoordinates c = RepositoryFiles.readCoordinates(repositoryPath);
+            if (Objects.nonNull(c) && StringUtils.isNotBlank(c.getId()) && ProductTypeEnum.Npm.getFoLibraryName().equals(repositoryPath.getRepository().getLayout())) {
+                ArtifactIdGroup artifactIdGroup = new ArtifactIdGroupEntity(artifactEntry.getStorageId(), artifactEntry.getRepositoryId(), c.getId());
+                artifactIdGroup = artifactIdGroupRepository.findByArtifactIdGroup(artifactIdGroup.getUuid());
+                if (Objects.nonNull(artifactIdGroup) && StringUtils.isNotBlank(artifactIdGroup.getMetadata())) {
+                    artifactIdGroup.setMetadata("");
+                    artifactIdGroupRepository.saveOrUpdate(artifactIdGroup);
+                }
+            }
             if (CollectionUtils.isNotEmpty(artifactEntry.getVulnerabilities())) {
                 vulnerabilityRepository.asyncHandlerVulnerabilityForArtifactDelete(repositoryPath, artifactEntry.getVulnerabilities());
             }
@@ -338,7 +350,7 @@ public abstract class LayoutFileSystemProvider extends StorageFileSystemProvider
 
     private void deleteArtifactMedataFile(RepositoryPath repositoryPath) {
         try {
-            if (Files.exists(repositoryPath) && Files.isSameFile(repositoryPath.getRoot(),repositoryPath)) {
+            if (Files.exists(repositoryPath) && Files.isSameFile(repositoryPath.getRoot(), repositoryPath)) {
                 return;
             }
             String artifactMetadataFileName = "." + FilenameUtils.getName(repositoryPath.getFileName().toString()) + ".metadata";
