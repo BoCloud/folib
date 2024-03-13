@@ -38,7 +38,7 @@ public class FolibWsServerV2 {
 
     @OnMessage
     public void onMessage(@PathParam("nodeName") String nodeName, ByteBuffer message, Session session) {
-        folibWsUtil.onMessageV4(nodeName, message, session);
+        folibWsUtil.onMessage(nodeName, message, session);
     }
 
     @OnError

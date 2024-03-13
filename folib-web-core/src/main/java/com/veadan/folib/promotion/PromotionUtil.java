@@ -799,7 +799,7 @@ public class PromotionUtil {
         final Map<String, Map<String, RepositoryPath>> filePathMap = uploadDto.getPathMap();
         final long sliceByteSize = Optional.ofNullable(configurationManagementService.getConfiguration().getSliceMbSize()).orElse(0L) * (1024 * 1024);
         //从 filePathMap 中移除目标节点中已经存在的制品
-        remoteExistsArtifact(storageId, repositoryId, targetHostName, filePathMap, syncNo, finalTargetUrl1);
+        //remoteExistsArtifact(storageId, repositoryId, targetHostName, filePathMap, syncNo, finalTargetUrl1);
         if (CollectionUtil.isEmpty(filePathMap)) {
             return;
         }

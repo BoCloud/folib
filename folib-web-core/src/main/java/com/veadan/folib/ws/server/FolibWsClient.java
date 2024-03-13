@@ -90,7 +90,7 @@ public class FolibWsClient {
 
     @OnMessage
     public void onMessage(ByteBuffer message, Session session) {
-        folibWsUtil.onMessageV4(targetHostName, message, session);
+        folibWsUtil.onMessage(targetHostName, message, session);
     }
 
     @OnError

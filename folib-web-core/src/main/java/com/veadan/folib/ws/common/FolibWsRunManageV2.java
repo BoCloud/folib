@@ -302,13 +302,15 @@ public class FolibWsRunManageV2 {
         int bytesToSend = dataSize;
         long startTime = System.currentTimeMillis();
         log.info("sendBinary [size:{} , finalKbps:{} Kbps, messageId:{}]", bytesToSend, finalKbps, messageId);
-        sessionLocks.putIfAbsent(session, new ReentrantLock(true));
+        ReentrantLock reentrantLock = sessionLocks.computeIfAbsent(session, session1 -> new ReentrantLock(true));
         int sendBytesCount = 0;
         int minimumPacketsize = 1024 * 1024;
         if (minimumPacketsize > finalKbps) {
             minimumPacketsize = (int) finalKbps;
         }
         while (bytesToSend > 0) {
+            reentrantLock.lock();
+            try {
                 sessionIdleMap.put(session, System.currentTimeMillis());
                 int chunkSize = Math.min(bytesToSend, minimumPacketsize);
                 // 准备数据包，包括协议头、消息ID和数据
@@ -349,17 +351,21 @@ public class FolibWsRunManageV2 {
                 sendBytesCount += chunk.capacity();
                 long pastTime = System.currentTimeMillis() - startTime;
                 // 减少待发送的数据量
-                 bytesToSend -= chunkSize;
+                bytesToSend -= chunkSize;
                 //日志输出
                 BigDecimal rate = BigDecimal.valueOf(0);
                 try {
                     BigDecimal second = BigDecimal.valueOf(pastTime).divide(BigDecimal.valueOf(1000), 2, RoundingMode.HALF_UP);
                     rate = BigDecimal.valueOf(sendBytesCount).divide(second, 2, RoundingMode.HALF_UP);
-                } catch (Exception ignored) { }
-                log.info("messageId:{} dataSize:{}/{}, current finalKbps {}ps", messageId, dataSize-bytesToSend, dataSize,FileSizeConvertUtils.convert(rate.longValue()));
+                } catch (Exception ignored) {
+                }
+                log.info("messageId:{} dataSize:{}/{}, current finalKbps {}ps", messageId, dataSize - bytesToSend, dataSize, FileSizeConvertUtils.convert(rate.longValue()));
                 if (isLast) {
                     log.info("send success , time consuming:{}ms", System.currentTimeMillis() - startTime);
                 }
+            } finally {
+                reentrantLock.unlock();
+            }
         }
 
     }

@@ -71,7 +71,7 @@ public class FolibWsUtil {
     private final ConcurrentHashMap<String, LinkedBlockingQueue<ByteBuffer>> queueMap = new ConcurrentHashMap<>();
 
     //@Async("asyncWsCommandThreadPoolTaskExecutor")
-    public void onMessageV4(String nodeName, ByteBuffer message, Session session) {
+    public void onMessage(String nodeName, ByteBuffer message, Session session) {
         String protocol = extractFolibWSProtocol(message);
         if (!FOLIB_WS_PROTOCOL.equals(protocol)) {
             throw new IllegalFormatFlagsException("unknown protocol:" + protocol);
@@ -85,6 +85,10 @@ public class FolibWsUtil {
             throw new RuntimeException("protocol Exception ,messageId");
         }
 
+        /**
+         * 这里不直接放到线程池处理，而是放到队列为了保证每个messageId的ByteBuffer在并发情况下都是有序的
+         * 如果顺序不一致，会导致二进制反序列化出现错误。
+         */
         LinkedBlockingQueue<ByteBuffer> queue1 = queueMap.computeIfAbsent(messageId, k -> {
             LinkedBlockingQueue<ByteBuffer> queue = new LinkedBlockingQueue<>();
             asyncWsCommandThreadPoolTaskExecutor.execute(() -> {
@@ -121,7 +125,7 @@ public class FolibWsUtil {
     private boolean consumerMsg(String nodeName, ByteBuffer message, Session session, String messageId, long messageSize) {
         // boolean isLast = extractLastFlag(message);
         /**
-         * 当一个messageId一直没收到isLast标记，之前的缓存不会释放，导致内存泄露
+         * 当一个message一直没收到完整数据长度，之前的缓存不会释放，导致内存泄露
          * 但是一般不会出现，因为一般是session连接强制被中断导致收不到isLast标记，而session一旦中断，就会释放引用，回收对象
          */
 
@@ -207,10 +211,6 @@ public class FolibWsUtil {
         return new String(messageIdBytes, StandardCharsets.UTF_8);
     }
 
-    private boolean extractLastFlag(ByteBuffer message) {
-        byte lastFlag = message.get();
-        return lastFlag == 1;
-    }
 
     private void handleMessage(String nodeName, Session session, ByteBuffer message) {
         Object msgObj = KryoSerializationUtil.deserialize(message.array());
