@@ -154,8 +154,8 @@ public class RepositoryPathUtil {
      * @param repositoryPath 路径
      */
     public static List<RepositoryPath> getDockerImagePaths(RepositoryPath repositoryPath) {
-        String blobs = "blobs", manifest = "manifest";
-        List<String> excludeList = Lists.newArrayList(blobs, manifest);
+        String blobs = "blobs", manifest = "manifest", temp = ".temp";
+        List<String> excludeList = Lists.newArrayList(blobs, manifest, temp);
         List<RepositoryPath> pathList = Lists.newArrayList();
         if (!Files.exists(repositoryPath)) {
             log.warn("Path [{}] not exists", repositoryPath);

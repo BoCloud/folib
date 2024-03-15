@@ -121,4 +121,9 @@ public interface GlobalConstants {
      * library
      */
     String DOCKER_DEFAULT_REPO = "library";
+
+    /**
+     * docker level single
+     */
+    String DOCKER_LEVEL_SINGLE = "single";
 }
