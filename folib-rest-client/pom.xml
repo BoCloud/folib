@@ -113,15 +113,15 @@
 
     <repositories>
         <repository>
-            <id>devops-release</id>
-            <url>http://58.210.154.140:13011/repository/devops-release</url>
+            <id>folib-local-maven</id>
+            <url>https://public.folib.com/storages/folib/folib-maven-local</url>
         </repository>
     </repositories>
 
     <distributionManagement>
         <repository>
-            <id>devops-release</id>
-            <url>http://58.210.154.140:13011/repository/devops-release</url>
+            <id>folib-local-maven</id>
+            <url>https://public.folib.com/storages/folib/folib-maven-local</url>
         </repository>
     </distributionManagement>
 
