@@ -57,7 +57,7 @@
 
 		</div>
 		<div v-if="dalyOut||haveError" class="header-col header-btn">
-			<a-button size="small" type="dark" class="px-30 border-dark" shape="round" href="https://www.bocloud.com.cn/product/BeyondFolibrary" target="_blank">{{ $t('Headers.PurchaseFullVersion') }}</a-button>
+			<a-button size="small" type="dark" class="px-30 border-dark" shape="round" target="_blank">{{ $t('Headers.PurchaseFullVersion') }}</a-button>
 		</div>
 
     <div v-if="!(dalyOut||haveError)" class="header-col header-btn">
