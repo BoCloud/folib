@@ -16,6 +16,7 @@ export default {
     'unmodifiableNote': 'Note: The storage space name, storage type, and S3 bucket path cannot be modified once created.',
     'S3Path': 'S3 path',
     'BucketName': 'Bucket name',
+    'ParentDirectory': 'Parent directory',
     'Custom': 'Custom',
     'cancelCustom': 'cancel custom',
     'Administrator': 'Administrator',

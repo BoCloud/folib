@@ -15,6 +15,7 @@ export default {
     'unmodifiableNote': '注意：存储空间名称、存储类型、S3存储桶路径，一旦创建不可修改',
     'S3Path': 'S3路径',
     'BucketName': '桶名称',
+    'ParentDirectory': '父目录',
     'Custom': '自定义',
     'cancelCustom': '取消自定义',
     'Administrator': '管理员选择',
