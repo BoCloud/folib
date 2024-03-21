@@ -9,7 +9,6 @@ import com.veadan.folib.configuration.UnionTargetRepositoryConfiguration;
 import com.veadan.folib.domain.Artifact;
 import com.veadan.folib.enums.PromotionStatusEnum;
 import com.veadan.folib.enums.UnionRepositorySyncTypeEnum;
-import com.veadan.folib.event.AsyncEventListener;
 import com.veadan.folib.event.artifact.ArtifactEvent;
 import com.veadan.folib.event.artifact.ArtifactEventTypeEnum;
 import com.veadan.folib.providers.io.RepositoryFiles;
@@ -22,6 +21,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.springframework.context.annotation.Lazy;
+import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
 import tk.mybatis.mapper.entity.Example;
 
@@ -50,17 +50,18 @@ public class ArtifactEventPromotionListener {
     @Lazy
     private ScanRulesMapper scanRulesMapper;
 
-    @AsyncEventListener
+    @EventListener
     public void handle(final ArtifactEvent<RepositoryPath> event) {
-        int source = (int) event.getSource();
-        RepositoryPath repositoryPath = event.getPath();
-        ArtifactEventTypeEnum artifactEventTypeEnum = ArtifactEventTypeEnum.queryArtifactEventTypeEnumByType(source);
-        log.debug("监听到制品事件 [{}]，path路径 [{}]", artifactEventTypeEnum, repositoryPath);
-        if (Objects.isNull(artifactEventTypeEnum)) {
-            return;
-        }
-        if (validateArtifactEvent(artifactEventTypeEnum) && artifactComponent.layoutSupports(repositoryPath)) {
-            try {
+        try {
+            int source = (int) event.getSource();
+            RepositoryPath repositoryPath = event.getPath();
+            ArtifactEventTypeEnum artifactEventTypeEnum = ArtifactEventTypeEnum.queryArtifactEventTypeEnumByType(source);
+            log.debug("监听到制品事件 [{}]，path路径 [{}]", artifactEventTypeEnum, repositoryPath);
+            if (Objects.isNull(artifactEventTypeEnum)) {
+                return;
+            }
+            if (validateArtifactEvent(artifactEventTypeEnum) && artifactComponent.layoutSupports(repositoryPath)) {
+
                 Repository repository = artifactComponent.getRepository(repositoryPath.getStorageId(), repositoryPath.getRepositoryId());
                 if (Objects.isNull(repository)) {
                     log.debug("仓库 [{}] 不存在，无后续操作", RepositoryFiles.relativizePath(repositoryPath));
@@ -140,9 +141,9 @@ public class ArtifactEventPromotionListener {
                         }
                     }
                 }
-            } catch (Exception ex) {
-                log.error("事件监听，处理自动晋级，事件类型 [{}] repositoryPath [{}] 错误 [{}]", source, repositoryPath, ExceptionUtils.getStackTrace(ex));
             }
+        } catch (Exception ex) {
+            log.error("事件监听，处理自动晋级，事件类型 [{}] repositoryPath [{}] error [{}]", event.getSource(), event.getPath(), ExceptionUtils.getStackTrace(ex));
         }
     }
 

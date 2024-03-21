@@ -160,6 +160,24 @@ public class AsyncPoolConfig {
     @Value("${folib.threadPool.asyncEventLog.awaitTerminationSeconds}")
     private Integer asyncEventLogAwaitTerminationSeconds;
 
+    @Value("${folib.threadPool.asyncPromotion.corePoolSize}")
+    private Integer asyncPromotionCorePoolSize;
+
+    @Value("${folib.threadPool.asyncPromotion.maxPoolSize}")
+    private Integer asyncPromotionMaxPoolSize;
+
+    @Value("${folib.threadPool.asyncPromotion.queueCapacity}")
+    private Integer asyncPromotionQueueCapacity;
+
+    @Value("${folib.threadPool.asyncPromotion.keepAliveSeconds}")
+    private Integer asyncPromotionKeepAliveSeconds;
+
+    @Value("${folib.threadPool.asyncPromotion.threadNamePrefix}")
+    private String asyncPromotionThreadNamePrefix;
+
+    @Value("${folib.threadPool.asyncPromotion.awaitTerminationSeconds}")
+    private Integer asyncPromotionAwaitTerminationSeconds;
+
     @Bean
     public ThreadPoolTaskExecutor asyncThreadPoolTaskExecutor() {
         return buildThreadPoolTaskExecutor(asyncCorePoolSize, asyncMaxPoolSize, asyncQueueCapacity, asyncKeepAliveSeconds, asyncThreadNamePrefix, asyncAwaitTerminationSeconds);
@@ -231,6 +249,17 @@ public class AsyncPoolConfig {
                 asyncEventLogAwaitTerminationSeconds);
     }
 
+    @Bean
+    public ThreadPoolTaskExecutor asyncPromotionPoolTaskExecutor() {
+        return buildThreadPoolTaskExecutor(
+                asyncPromotionCorePoolSize,
+                asyncPromotionMaxPoolSize,
+                asyncPromotionQueueCapacity,
+                asyncPromotionKeepAliveSeconds,
+                asyncPromotionThreadNamePrefix,
+                asyncPromotionAwaitTerminationSeconds);
+    }
+
     @PreDestroy
     public void shutdown() {
         asyncThreadPoolTaskExecutor().shutdown();
@@ -241,6 +270,7 @@ public class AsyncPoolConfig {
         asyncWsCommandThreadPoolTaskExecutor().shutdown();
         asyncCopyThreadPoolTaskExecutor().shutdown();
         asyncEventLogThreadPoolTaskExecutor().shutdown();
+        asyncPromotionPoolTaskExecutor().shutdown();
     }
 
     /**

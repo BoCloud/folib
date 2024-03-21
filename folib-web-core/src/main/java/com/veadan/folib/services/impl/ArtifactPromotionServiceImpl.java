@@ -116,6 +116,9 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
     private ThreadPoolTaskExecutor asyncThreadPoolTaskExecutor;
 
     @Autowired
+    private ThreadPoolTaskExecutor asyncPromotionPoolTaskExecutor;
+
+    @Autowired
     private ProxyRepositoryConnectionPoolConfigurationService clientPool;
 
     @Inject
@@ -364,7 +367,7 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
         artifactSyncRecordMapper.insert(artifactSyncRecord);
 
         try {
-            asyncThreadPoolTaskExecutor.execute(() ->
+            asyncPromotionPoolTaskExecutor.execute(() ->
             { // 异步执行制品晋级
                 ResponseEntity re = this.nodeOption(promotionNodeOption, request);
                 if (HttpStatus.OK.equals(re.getStatusCode())) {
