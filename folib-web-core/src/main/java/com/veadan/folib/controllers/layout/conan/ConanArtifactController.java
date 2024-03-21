@@ -1,13 +1,16 @@
 package com.veadan.folib.controllers.layout.conan;
 
+import com.alibaba.fastjson.JSONObject;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
+import com.veadan.folib.constant.GlobalConstants;
 import com.veadan.folib.controllers.BaseArtifactController;
 import com.veadan.folib.domain.*;
 import com.veadan.folib.dto.ConanInfoDto;
 import com.veadan.folib.event.artifact.ArtifactEventListenerRegistry;
+import com.veadan.folib.providers.io.RepositoryFiles;
 import com.veadan.folib.providers.io.RepositoryPath;
-import com.veadan.folib.scanner.common.util.DateUtils;
+import com.veadan.folib.service.ArtifactIndexService;
 import com.veadan.folib.services.ConanArtifactServer;
 import com.veadan.folib.services.DirectoryListingService;
 import com.veadan.folib.storage.repository.Repository;
@@ -22,10 +25,12 @@ import org.apache.commons.codec.digest.MessageDigestAlgorithms;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
@@ -42,7 +47,6 @@ import java.nio.file.Files;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 
 //@LayoutRequestMapping("conan")
 @RestController
@@ -67,10 +71,15 @@ public class ConanArtifactController extends BaseArtifactController {
     @Qualifier("browseRepositoryDirectoryListingService")
     private volatile DirectoryListingService directoryListingService;
 
+    @Inject
+    private ArtifactIndexService artifactIndexService;
+
     @PreAuthorize("hasAuthority('ARTIFACTS_RESOLVE')")
     @GetMapping(value = "{storageId}/{repositoryId}/v1/ping")
     public ResponseEntity ping(@RequestHeader HttpHeaders httpHeaders,
                                HttpServletRequest request, HttpServletResponse response) {
+        response.setHeader("X-Conan-Server-Version", "0.20.0");
+        response.setHeader("X-Conan-Server-Capabilities", "complex_search,checksum_deploy,revisions,matrix_params");
         return new ResponseEntity<>("ok", HttpStatus.OK);
     }
 
@@ -110,7 +119,7 @@ public class ConanArtifactController extends BaseArtifactController {
     }
 
     @PreAuthorize("hasAuthority('ARTIFACTS_RESOLVE')")
-    @GetMapping(value = "{storageId}/{repositoryId}/v1/users/authenticate")
+    @GetMapping(value = {"{storageId}/{repositoryId}/v1/users/authenticate", "{storageId}/{repositoryId}/v2/users/authenticate"})
     public ResponseEntity userAuthenticate(Authentication authentication,
                                            @RequestHeader(HttpHeaders.ACCEPT) String accept,
                                            @RequestHeader HttpHeaders httpHeaders,
@@ -283,7 +292,7 @@ public class ConanArtifactController extends BaseArtifactController {
 
         RepositoryPath repositoryPath = artifactResolutionService.resolvePath(storageId, repositoryId, path);
         if (repositoryPath == null && path.endsWith("/conan_export.tgz")) {
-            path = path.replaceAll("(?<=.*?/)conan_export.tgz$", "conan_sources.tgz");
+            path = path.replaceAll("/conan_export.tgz", "/conan_sources.tgz");
             repositoryPath = artifactResolutionService.resolvePath(storageId, repositoryId, path);
         }
         if (Objects.isNull(repositoryPath) || !Files.exists(repositoryPath)) {
@@ -350,7 +359,7 @@ public class ConanArtifactController extends BaseArtifactController {
     }
 
     @PreAuthorize("hasAuthority('ARTIFACTS_RESOLVE')")
-    @GetMapping(value = "{storageId}/{repositoryId}/v2/conans/{name}/{version}/{user}/{channel}/revisions")
+    @GetMapping(value = "{storageId}/{repositoryId}/v2/conans/{name}/{version}/{user}/{channel}/{revisions}")
     public ResponseEntity revisions(
             @RepositoryMapping Repository repository,
             @PathVariable("storageId") String storageId,
@@ -358,26 +367,84 @@ public class ConanArtifactController extends BaseArtifactController {
             @PathVariable("name") String name,
             @PathVariable("version") String version,
             @PathVariable("user") String user,
-            @PathVariable("channel") String channel) throws Exception {
-        Map<String, Object> map = new HashMap<String, Object>();
-        String artifactPath = String.format("%s/%s/%s/%s", user, name, version, channel);
+            @PathVariable("channel") String channel,
+            @PathVariable("revisions") String revisions,
+            HttpServletRequest request) throws Exception {
+        String artifactPath = String.format("%s/%s/%s/%s/%s", user, name, version, channel, "index.json");
         RepositoryPath repositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, artifactPath);
-        if (Objects.isNull(repositoryPath) || !Files.exists(repositoryPath)) {
+        if (!Files.exists(repositoryPath) || RepositoryFiles.hasRefreshContent(repositoryPath)) {
+            String targetUrl = String.format("/v2/conans/%s/%s/%s/%s/revisions", name, version, user, channel);
+            repositoryPath.setTargetUrl(targetUrl);
+            artifactResolutionService.resolvePath(repositoryPath);
+        }
+        if (!Files.exists(repositoryPath)) {
             return new ResponseEntity<>(errMsg(HttpStatus.NOT_FOUND.value(), HttpStatus.NOT_FOUND.getReasonPhrase()), HttpStatus.NOT_FOUND);
         }
-        DirectoryListing directoryListing = directoryListingService.fromRepositoryPath(repositoryPath);
-        if (Objects.isNull(directoryListing) || CollectionUtils.isEmpty(directoryListing.getDirectories())) {
+        String revisionsInfo = Files.readString(repositoryPath);
+        if (StringUtils.isBlank(revisionsInfo)) {
             return new ResponseEntity<>(errMsg(HttpStatus.NOT_FOUND.value(), HttpStatus.NOT_FOUND.getReasonPhrase()), HttpStatus.NOT_FOUND);
         }
-        String reference = String.format("%s/%s@%s/%s", name, version, user, channel);
-        ConanRevisions conanRevisions = ConanRevisions.builder().reference(reference).build();
-        List<ConanRevision> revisions = directoryListing.getDirectories().stream().map(item -> ConanRevision.builder().revision(item.getName()).time(DateUtils.getTimeZoneConvertDate2String(item.getLastModified(), "UTC")).build()).collect(Collectors.toList());
-        conanRevisions.setRevisions(revisions);
-        return new ResponseEntity<>(map, HttpStatus.OK);
+        ConanRevisions conanRevisions = JSONObject.parseObject(revisionsInfo, ConanRevisions.class);
+        if (CollectionUtils.isEmpty(conanRevisions.getRevisions())) {
+            return new ResponseEntity<>(errMsg(HttpStatus.NOT_FOUND.value(), HttpStatus.NOT_FOUND.getReasonPhrase()), HttpStatus.NOT_FOUND);
+        }
+        if (GlobalConstants.LATEST.equals(revisions)) {
+            return new ResponseEntity<>(conanRevisions.getRevisions().get(0), HttpStatus.OK);
+        }
+        return new ResponseEntity<>(conanRevisions, HttpStatus.OK);
     }
 
     @PreAuthorize("hasAuthority('ARTIFACTS_RESOLVE')")
-    @GetMapping(value = "{storageId}/{repositoryId}/v2/conans/{name}/{version}/{user}/{channel}/revisions/{revisionId}/packages/{packageId}/revisions")
+    @GetMapping(value = "{storageId}/{repositoryId}/v2/conans/{name}/{version}/{user}/{channel}/revisions/{revisionId}/files")
+    public ResponseEntity revisionsFiles(
+            @RepositoryMapping Repository repository,
+            @PathVariable("storageId") String storageId,
+            @PathVariable("repositoryId") String repositoryId,
+            @PathVariable("name") String name,
+            @PathVariable("version") String version,
+            @PathVariable("user") String user,
+            @PathVariable("channel") String channel,
+            @PathVariable("revisionId") String revisionId,
+            HttpServletRequest request,
+            HttpServletResponse response) throws Exception {
+        String result = "{\"files\":{\"conan_export.tgz\":{},\"conanmanifest.txt\":{},\"conanfile.py\":{}}}";
+        response.setContentType(MediaType.APPLICATION_JSON_VALUE);
+        return new ResponseEntity<>(result, HttpStatus.OK);
+    }
+
+    @PreAuthorize("hasAuthority('ARTIFACTS_RESOLVE')")
+    @GetMapping(value = "{storageId}/{repositoryId}/v2/conans/{name}/{version}/{user}/{channel}/revisions/{revisionId}/files/{filePath:.+}")
+    public void downloadRevisionsFiles(
+            @RequestHeader HttpHeaders httpHeaders,
+            @RepositoryMapping Repository repository,
+            @PathVariable("storageId") String storageId,
+            @PathVariable("repositoryId") String repositoryId,
+            @PathVariable("name") String name,
+            @PathVariable("version") String version,
+            @PathVariable("user") String user,
+            @PathVariable("channel") String channel,
+            @PathVariable("revisionId") String revisionId,
+            @PathVariable("filePath") String filePath,
+            HttpServletRequest request,
+            HttpServletResponse response) throws Exception {
+        String artifactPath = String.format("%s/%s/%s/%s/%s/export/%s", user, name, version, channel, revisionId, filePath);
+        RepositoryPath repositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, artifactPath);
+        if (!Files.exists(repositoryPath)) {
+            String targetUrl = request.getRequestURI();
+            targetUrl = targetUrl.substring(String.format("/%s/%s/", storageId, repositoryId).length());
+            repositoryPath.setTargetUrl(targetUrl);
+            artifactResolutionService.resolvePath(repositoryPath);
+            if (!Files.exists(repositoryPath) && artifactPath.endsWith("conan_export.tgz")) {
+                artifactPath = artifactPath.replace("conan_export.tgz", "conan_sources.tgz");
+                repositoryPath = artifactResolutionService.resolvePath(storageId, repositoryId, artifactPath);
+            }
+        }
+        vulnerabilityBlock(repositoryPath);
+        provideArtifactDownloadResponse(request, response, httpHeaders, repositoryPath);
+    }
+
+    @PreAuthorize("hasAuthority('ARTIFACTS_RESOLVE')")
+    @GetMapping(value = "{storageId}/{repositoryId}/v2/conans/{name}/{version}/{user}/{channel}/revisions/{revisionId}/packages/{packageId}/{revisions}")
     public ResponseEntity revisionsPackages(
             @RepositoryMapping Repository repository,
             @PathVariable("storageId") String storageId,
@@ -387,22 +454,82 @@ public class ConanArtifactController extends BaseArtifactController {
             @PathVariable("user") String user,
             @PathVariable("channel") String channel,
             @PathVariable("revisionId") String revisionId,
-            @PathVariable("packageId") String packageId) throws Exception {
-        Map<String, Object> map = new HashMap<String, Object>();
-        String artifactPath = String.format("%s/%s/%s/%s/%s/package/%s", user, name, version, channel, revisionId, packageId);
+            @PathVariable("packageId") String packageId,
+            @PathVariable("revisions") String revisions) throws Exception {
+        String artifactPath = String.format("%s/%s/%s/%s/%s/package/%s/%s", user, name, version, channel, revisionId, packageId, "index.json");
         RepositoryPath repositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, artifactPath);
-        if (Objects.isNull(repositoryPath) || !Files.exists(repositoryPath)) {
+        if (!Files.exists(repositoryPath) || RepositoryFiles.hasRefreshContent(repositoryPath)) {
+            String targetUrl = String.format("/v2/conans/%s/%s/%s/%s/revisions/%s/packages/%s/revisions", name, version, user, channel, revisionId, packageId);
+            repositoryPath.setTargetUrl(targetUrl);
+            artifactResolutionService.resolvePath(repositoryPath);
+        }
+        if (!Files.exists(repositoryPath)) {
             return new ResponseEntity<>(errMsg(HttpStatus.NOT_FOUND.value(), HttpStatus.NOT_FOUND.getReasonPhrase()), HttpStatus.NOT_FOUND);
         }
-        DirectoryListing directoryListing = directoryListingService.fromRepositoryPath(repositoryPath);
-        if (Objects.isNull(directoryListing) || CollectionUtils.isEmpty(directoryListing.getDirectories())) {
+        String revisionsInfo = Files.readString(repositoryPath);
+        if (StringUtils.isBlank(revisionsInfo)) {
             return new ResponseEntity<>(errMsg(HttpStatus.NOT_FOUND.value(), HttpStatus.NOT_FOUND.getReasonPhrase()), HttpStatus.NOT_FOUND);
         }
-        String packageReference = String.format("%s/%s@%s/%s#%s:%s", name, version, user, channel, revisionId, packageId);
-        ConanPackagesRevisions conanPackagesRevisions = ConanPackagesRevisions.builder().packageReference(packageReference).build();
-        List<ConanRevision> revisions = directoryListing.getDirectories().stream().map(item -> ConanRevision.builder().revision(item.getName()).time(DateUtils.getTimeZoneConvertDate2String(item.getLastModified(), "UTC")).build()).collect(Collectors.toList());
-        conanPackagesRevisions.setRevisions(revisions);
-        return new ResponseEntity<>(map, HttpStatus.OK);
+        ConanPackagesRevisions conanPackagesRevisions = JSONObject.parseObject(revisionsInfo, ConanPackagesRevisions.class);
+        if (CollectionUtils.isEmpty(conanPackagesRevisions.getRevisions())) {
+            return new ResponseEntity<>(errMsg(HttpStatus.NOT_FOUND.value(), HttpStatus.NOT_FOUND.getReasonPhrase()), HttpStatus.NOT_FOUND);
+        }
+        if (GlobalConstants.LATEST.equals(revisions)) {
+            return new ResponseEntity<>(conanPackagesRevisions.getRevisions().get(0), HttpStatus.OK);
+        }
+        return new ResponseEntity<>(conanPackagesRevisions, HttpStatus.OK);
+    }
+
+
+    @PreAuthorize("hasAuthority('ARTIFACTS_RESOLVE')")
+    @GetMapping(value = "{storageId}/{repositoryId}/v2/conans/{name}/{version}/{user}/{channel}/revisions/{revisionId}/packages/{packageId}/{revisions}/{packageRevisionId}/files")
+    public ResponseEntity packagesFiles(
+            @RepositoryMapping Repository repository,
+            @PathVariable("storageId") String storageId,
+            @PathVariable("repositoryId") String repositoryId,
+            @PathVariable("name") String name,
+            @PathVariable("version") String version,
+            @PathVariable("user") String user,
+            @PathVariable("channel") String channel,
+            @PathVariable("revisionId") String revisionId,
+            @PathVariable("packageId") String packageId,
+            @PathVariable("revisions") String revisions,
+            @PathVariable("packageRevisionId") String packageRevisionId,
+            HttpServletRequest request,
+            HttpServletResponse response) throws Exception {
+        String result = "{\"files\":{\"conaninfo.txt\":{},\"conan_package.tgz\":{},\"conanmanifest.txt\":{}}}";
+        response.setContentType(MediaType.APPLICATION_JSON_VALUE);
+        return new ResponseEntity<>(result, HttpStatus.OK);
+    }
+
+    @PreAuthorize("hasAuthority('ARTIFACTS_RESOLVE')")
+    @GetMapping(value = "{storageId}/{repositoryId}/v2/conans/{name}/{version}/{user}/{channel}/revisions/{revisionId}/packages/{packageId}/{revisions}/{packageRevisionId}/files/{filePath:.+}")
+    public void downloadPackagesFiles(
+            @RequestHeader HttpHeaders httpHeaders,
+            @RepositoryMapping Repository repository,
+            @PathVariable("storageId") String storageId,
+            @PathVariable("repositoryId") String repositoryId,
+            @PathVariable("name") String name,
+            @PathVariable("version") String version,
+            @PathVariable("user") String user,
+            @PathVariable("channel") String channel,
+            @PathVariable("revisionId") String revisionId,
+            @PathVariable("packageId") String packageId,
+            @PathVariable("revisions") String revisions,
+            @PathVariable("packageRevisionId") String packageRevisionId,
+            @PathVariable("filePath") String filePath,
+            HttpServletRequest request,
+            HttpServletResponse response) throws Exception {
+        String artifactPath = String.format("%s/%s/%s/%s/%s/package/%s/%s/%s", user, name, version, channel, revisionId, packageId, packageRevisionId, filePath);
+        RepositoryPath repositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, artifactPath);
+        if (!Files.exists(repositoryPath)) {
+            String targetUrl = request.getRequestURI();
+            targetUrl = targetUrl.substring(String.format("/%s/%s/", storageId, repositoryId).length());
+            repositoryPath.setTargetUrl(targetUrl);
+            artifactResolutionService.resolvePath(repositoryPath);
+        }
+        vulnerabilityBlock(repositoryPath);
+        provideArtifactDownloadResponse(request, response, httpHeaders, repositoryPath);
     }
 
     @PreAuthorize("hasAuthority('ARTIFACTS_DEPLOY')")
@@ -435,6 +562,7 @@ public class ConanArtifactController extends BaseArtifactController {
         try (InputStream bufferedInputStream = new BufferedInputStream(inputStream)) {
             logger.info("Conan v2 upload file storageId [{}] repositoryId [{}] artifactPath [{}]", storageId, repositoryId, artifactPath);
             artifactManagementService.validateAndStore(repositoryPath, bufferedInputStream);
+            writeRevisionsIndex(storageId, repositoryId, user, name, version, channel);
             return ResponseEntity.status(HttpStatus.CREATED).body("The artifact was deployed successfully.");
         } catch (Exception e) {
             logger.error(e.getMessage(), e);
@@ -443,7 +571,7 @@ public class ConanArtifactController extends BaseArtifactController {
     }
 
     @PreAuthorize("hasAuthority('ARTIFACTS_DEPLOY')")
-    @PutMapping(value = "{storageId}/{repositoryId}/v2/conans/{name}/{version}/{user}/{channel}/revisions/{revisionId}/packages/{packageId}/revisions/{fileId}/files/{filePath:.+}")
+    @PutMapping(value = "{storageId}/{repositoryId}/v2/conans/{name}/{version}/{user}/{channel}/revisions/{revisionId}/packages/{packageId}/revisions/{packageRevisionId}/files/{filePath:.+}")
     public ResponseEntity uploadPackages(
             @RepositoryMapping Repository repository,
             @PathVariable("storageId") String storageId,
@@ -454,9 +582,9 @@ public class ConanArtifactController extends BaseArtifactController {
             @PathVariable("channel") String channel,
             @PathVariable("revisionId") String revisionId,
             @PathVariable("packageId") String packageId,
-            @PathVariable("fileId") String fileId,
+            @PathVariable("packageRevisionId") String packageRevisionId,
             @PathVariable("filePath") String filePath, HttpServletRequest request) throws Exception {
-        String artifactPath = String.format("%s/%s/%s/%s/%s/package/%s/%s/%s", user, name, version, channel, revisionId, packageId, fileId, filePath);
+        String artifactPath = String.format("%s/%s/%s/%s/%s/package/%s/%s/%s", user, name, version, channel, revisionId, packageId, packageRevisionId, filePath);
         RepositoryPath repositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, artifactPath);
         InputStream inputStream = request.getInputStream();
         if (inputStream == null || inputStream.available() == 0) {
@@ -474,6 +602,7 @@ public class ConanArtifactController extends BaseArtifactController {
         try (InputStream bufferedInputStream = new BufferedInputStream(inputStream)) {
             logger.info("Conan v2 upload package storageId [{}] repositoryId [{}] artifactPath [{}]", storageId, repositoryId, artifactPath);
             artifactManagementService.validateAndStore(repositoryPath, bufferedInputStream);
+            writePackagesRevisionsIndex(storageId, repositoryId, user, name, version, channel, revisionId, packageId);
             return ResponseEntity.status(HttpStatus.CREATED).body("The artifact was deployed successfully.");
         } catch (Exception e) {
             logger.error(e.getMessage(), e);
@@ -599,5 +728,25 @@ public class ConanArtifactController extends BaseArtifactController {
         list.add(resultData);
         result.put("errors", list);
         return result;
+    }
+
+    private void writeRevisionsIndex(String storageId, String repositoryId, String user, String name, String version, String channel) {
+        try {
+            String artifactPath = String.format("%s/%s/%s/%s", user, name, version, channel);
+            RepositoryPath repositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, artifactPath);
+            artifactIndexService.rebuildIndex(repositoryPath);
+        } catch (Exception ex) {
+            logger.error(ExceptionUtils.getStackTrace(ex));
+        }
+    }
+
+    private void writePackagesRevisionsIndex(String storageId, String repositoryId, String user, String name, String version, String channel, String revisionId, String packageId) {
+        try {
+            String artifactPath = String.format("%s/%s/%s/%s/%s/package/%s", user, name, version, channel, revisionId, packageId);
+            RepositoryPath repositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, artifactPath);
+            artifactIndexService.rebuildIndex(repositoryPath);
+        } catch (Exception ex) {
+            logger.error(ExceptionUtils.getStackTrace(ex));
+        }
     }
 }

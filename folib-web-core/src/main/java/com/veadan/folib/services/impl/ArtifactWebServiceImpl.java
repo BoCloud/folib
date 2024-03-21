@@ -1338,6 +1338,12 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
                                             boolean fileExist = Files.exists(targetBlobRepositoryPath);
                                             Artifact artifact = artifactRepository.findOneArtifact(targetBlobRepositoryPath.getStorageId(), targetBlobRepositoryPath.getRepositoryId(), RepositoryFiles.relativizePath(targetBlobRepositoryPath));
                                             boolean artifactExist = Objects.nonNull(artifact);
+                                            if (fileExist && !artifactExist) {
+                                                //文件存在、db中不存在
+                                                artifactManagementService.validateAndStoreIndex(targetBlobRepositoryPath);
+                                                artifact = artifactRepository.findOneArtifact(targetBlobRepositoryPath.getStorageId(), targetBlobRepositoryPath.getRepositoryId(), RepositoryFiles.relativizePath(targetBlobRepositoryPath));
+                                                artifactExist = Objects.nonNull(artifact);
+                                            }
                                             if (fileExist && artifactExist) {
                                                 //目标文件及db是否存在双重检查，都存在才可以删除源blob
                                                 log.info("Find image [{}] [{}] [{}] source blob [{}] target [{}] copy finished", imageRepositoryPath.getStorageId(), imageRepositoryPath.getRepositoryId(), RepositoryFiles.relativizePath(imageRepositoryPath), RepositoryFiles.relativizePath(blobRepositoryPath), RepositoryFiles.relativizePath(targetBlobRepositoryPath));
@@ -1381,6 +1387,12 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
                                             boolean fileExist = Files.exists(targetManifestRepositoryPath);
                                             Artifact artifact = artifactRepository.findOneArtifact(targetManifestRepositoryPath.getStorageId(), targetManifestRepositoryPath.getRepositoryId(), RepositoryFiles.relativizePath(targetManifestRepositoryPath));
                                             boolean artifactExist = Objects.nonNull(artifact);
+                                            if (fileExist && !artifactExist) {
+                                                //文件存在、db中不存在
+                                                artifactManagementService.validateAndStoreIndex(targetManifestRepositoryPath);
+                                                artifact = artifactRepository.findOneArtifact(targetManifestRepositoryPath.getStorageId(), targetManifestRepositoryPath.getRepositoryId(), RepositoryFiles.relativizePath(targetManifestRepositoryPath));
+                                                artifactExist = Objects.nonNull(artifact);
+                                            }
                                             if (fileExist && artifactExist) {
                                                 //目标文件及db是否存在双重检查，都存在才可以删除源manifest
                                                 log.info("Find image [{}] [{}] [{}] source manifest [{}] target [{}] copy finished", imageRepositoryPath.getStorageId(), imageRepositoryPath.getRepositoryId(), RepositoryFiles.relativizePath(imageRepositoryPath), RepositoryFiles.relativizePath(manifestRepositoryPath), RepositoryFiles.relativizePath(targetManifestRepositoryPath));

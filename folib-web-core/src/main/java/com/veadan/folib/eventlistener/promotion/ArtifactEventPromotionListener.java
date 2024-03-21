@@ -9,7 +9,6 @@ import com.veadan.folib.configuration.UnionTargetRepositoryConfiguration;
 import com.veadan.folib.domain.Artifact;
 import com.veadan.folib.enums.PromotionStatusEnum;
 import com.veadan.folib.enums.UnionRepositorySyncTypeEnum;
-import com.veadan.folib.event.AsyncEventListener;
 import com.veadan.folib.event.artifact.ArtifactEvent;
 import com.veadan.folib.event.artifact.ArtifactEventTypeEnum;
 import com.veadan.folib.providers.io.RepositoryFiles;
@@ -22,6 +21,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.springframework.context.annotation.Lazy;
+import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
 import tk.mybatis.mapper.entity.Example;
 
@@ -50,7 +50,7 @@ public class ArtifactEventPromotionListener {
     @Lazy
     private ScanRulesMapper scanRulesMapper;
 
-    @AsyncEventListener
+    @EventListener
     public void handle(final ArtifactEvent<RepositoryPath> event) {
         int source = (int) event.getSource();
         RepositoryPath repositoryPath = event.getPath();

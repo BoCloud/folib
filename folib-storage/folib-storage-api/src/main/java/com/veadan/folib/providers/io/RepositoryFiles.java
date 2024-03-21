@@ -93,6 +93,11 @@ public abstract class RepositoryFiles {
         return (Boolean) Files.getAttribute(path, formatAttributes(RepositoryFileAttributeType.EXPIRED));
     }
 
+    public static Boolean hasRefreshContent(RepositoryPath path)
+            throws IOException {
+        return (Boolean) Files.getAttribute(path, formatAttributes(RepositoryFileAttributeType.REFRESH_CONTENT));
+    }
+
     public static ArtifactCoordinates readCoordinates(RepositoryPath path)
             throws IOException {
         return (ArtifactCoordinates) Files.getAttribute(path,
