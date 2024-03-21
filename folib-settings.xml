@@ -9,7 +9,7 @@
         <mirror>
             <id>folib-group-maven</id>
             <name>folib-group-maven</name>
-            <url>http://58.210.154.140:2477/storages/folib-common/folib-group-maven</url>
+            <url>https://public.folib.com/storages/folib/folib-maven-group</url>
             <mirrorOf>central</mirrorOf>
         </mirror>
 

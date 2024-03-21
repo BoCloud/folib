@@ -10,6 +10,7 @@ import com.veadan.folib.artifact.coordinates.DockerArtifactCoordinates;
 import com.veadan.folib.components.artifact.ArtifactComponent;
 import com.veadan.folib.components.layout.DockerComponent;
 import com.veadan.folib.domain.Artifact;
+import com.veadan.folib.enums.DockerHeaderEnum;
 import com.veadan.folib.enums.PromotionStatusEnum;
 import com.veadan.folib.forms.externalnode.ExternalNodeForm;
 import com.veadan.folib.providers.io.RepositoryFiles;
@@ -22,7 +23,6 @@ import com.veadan.folib.schema2.LayerManifest;
 import com.veadan.folib.services.ExternalNodeService;
 import com.veadan.folib.services.JFrogService;
 import com.veadan.folib.util.RSAUtils;
-import com.veadan.folib.enums.DockerHeaderEnum;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.codec.digest.MessageDigestAlgorithms;
 import org.apache.commons.collections4.CollectionUtils;
@@ -43,6 +43,7 @@ import org.jfrog.artifactory.client.model.File;
 import org.jfrog.artifactory.client.model.LightweightRepository;
 import org.jfrog.artifactory.client.model.impl.RepositoryTypeImpl;
 import org.springframework.http.HttpStatus;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
 import javax.inject.Inject;
@@ -108,9 +109,15 @@ public class JFrogServiceImpl implements JFrogService {
     }
 
     @Override
+    @Async("asyncPromotionPoolTaskExecutor")
     public boolean uploadItem(String nodeName, String repositoryName, RepositoryPath repositoryPath, String artifactPath, Boolean recordStatus) {
         ExternalNodeForm externalNodeForm = getExternalNodeForm(nodeName);
         if (Objects.isNull(externalNodeForm)) {
+            try {
+                artifactComponent.deleteArtifactPromotionNode(repositoryPath.getArtifactEntry(), nodeName);
+            } catch (Exception ex) {
+                log.error(ExceptionUtils.getStackTrace(ex));
+            }
             throw new BusinessException(String.format("制品库[%s]节点信息不存在", nodeName));
         }
         String address = externalNodeForm.getAddress(), username = externalNodeForm.getUsername(), password = externalNodeForm.getPassword();
