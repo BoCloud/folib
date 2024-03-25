@@ -69,7 +69,6 @@ public interface JFrogService {
      * @param repositoryPath 制品
      * @param artifactPath   路径
      * @param recordStatus   是否记录状态 true（记录）其他（不记录）
-     * @return 结果
      */
-    boolean uploadItem(String nodeName, String repositoryName, RepositoryPath repositoryPath, String artifactPath, Boolean recordStatus);
+    void uploadItem(String nodeName, String repositoryName, RepositoryPath repositoryPath, String artifactPath, Boolean recordStatus);
 }

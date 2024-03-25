@@ -43,7 +43,7 @@ import org.jfrog.artifactory.client.model.File;
 import org.jfrog.artifactory.client.model.LightweightRepository;
 import org.jfrog.artifactory.client.model.impl.RepositoryTypeImpl;
 import org.springframework.http.HttpStatus;
-import org.springframework.scheduling.annotation.Async;
+import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.stereotype.Service;
 
 import javax.inject.Inject;
@@ -71,6 +71,9 @@ public class JFrogServiceImpl implements JFrogService {
 
     @Inject
     private RepositoryPathResolver repositoryPathResolver;
+
+    @Inject
+    private ThreadPoolTaskExecutor asyncPromotionPoolTaskExecutor;
 
     @Inject
     private RSAUtils rsaUtils;
@@ -109,57 +112,59 @@ public class JFrogServiceImpl implements JFrogService {
     }
 
     @Override
-    @Async("asyncPromotionPoolTaskExecutor")
-    public boolean uploadItem(String nodeName, String repositoryName, RepositoryPath repositoryPath, String artifactPath, Boolean recordStatus) {
-        ExternalNodeForm externalNodeForm = getExternalNodeForm(nodeName);
-        if (Objects.isNull(externalNodeForm)) {
-            try {
-                artifactComponent.deleteArtifactPromotionNode(repositoryPath.getArtifactEntry(), nodeName);
-            } catch (Exception ex) {
-                log.error(ExceptionUtils.getStackTrace(ex));
-            }
-            throw new BusinessException(String.format("制品库[%s]节点信息不存在", nodeName));
-        }
-        String address = externalNodeForm.getAddress(), username = externalNodeForm.getUsername(), password = externalNodeForm.getPassword();
-        Artifactory artifactory = getArtifactory(address, username, password);
-        if (DockerLayoutProvider.ALIAS.equalsIgnoreCase(repositoryPath.getRepository().getLayout())) {
-            //Docker镜像
-            boolean flag = true;
-            try {
-                uploadImageTag(artifactory, repositoryName, repositoryPath);
-                if (Boolean.TRUE.equals(recordStatus)) {
-                    artifactComponent.handlerArtifactPromotion(nodeName, repositoryPath.getStorageId(), repositoryPath.getRepositoryId(), artifactPath, PromotionStatusEnum.SUCCESS.getStatus());
+    public void uploadItem(String nodeName, String repositoryName, RepositoryPath repositoryPath, String artifactPath, Boolean recordStatus) {
+        asyncPromotionPoolTaskExecutor.execute(() -> {
+            ExternalNodeForm externalNodeForm = getExternalNodeForm(nodeName);
+            if (Objects.isNull(externalNodeForm)) {
+                try {
+                    artifactComponent.deleteArtifactPromotionNode(repositoryPath.getArtifactEntry(), nodeName);
+                } catch (Exception ex) {
+                    log.error(ExceptionUtils.getStackTrace(ex));
                 }
-            } catch (Exception ex) {
-                flag = false;
-                log.error(ExceptionUtils.getStackTrace(ex));
-                if (Boolean.TRUE.equals(recordStatus)) {
-                    artifactComponent.handlerArtifactPromotion(nodeName, repositoryPath.getStorageId(), repositoryPath.getRepositoryId(), artifactPath, PromotionStatusEnum.FAIL.getStatus());
+                log.error(String.format("制品库[%s]节点信息不存在", nodeName));
+                return;
+            }
+            String address = externalNodeForm.getAddress(), username = externalNodeForm.getUsername(), password = externalNodeForm.getPassword();
+            Artifactory artifactory = getArtifactory(address, username, password);
+            if (DockerLayoutProvider.ALIAS.equalsIgnoreCase(repositoryPath.getRepository().getLayout())) {
+                //Docker镜像
+                try {
+                    uploadImageTag(artifactory, repositoryName, repositoryPath);
+                    if (Boolean.TRUE.equals(recordStatus)) {
+                        artifactComponent.handlerArtifactPromotion(nodeName, repositoryPath.getStorageId(), repositoryPath.getRepositoryId(), artifactPath, PromotionStatusEnum.SUCCESS.getStatus());
+                    }
+                } catch (Exception ex) {
+                    log.error(ExceptionUtils.getStackTrace(ex));
+                    if (Boolean.TRUE.equals(recordStatus)) {
+                        artifactComponent.handlerArtifactPromotion(nodeName, repositoryPath.getStorageId(), repositoryPath.getRepositoryId(), artifactPath, PromotionStatusEnum.FAIL.getStatus());
+                    }
                 }
+                return;
             }
-            return flag;
-        }
-        artifactPath = URLUtil.encode(artifactPath);
-        //TODO 使用checksum校验，已存在跳过上传制品，仅上传元数据
-        try (InputStream inputStream = FileUtil.getInputStream(repositoryPath)) {
-            File file = artifactory.repository(repositoryName).upload(artifactPath, inputStream).bySha1Checksum(repositoryPath.getArtifactEntry().getChecksums().get(MessageDigestAlgorithms.SHA_1)).doUpload();
-            if (Objects.nonNull(file)) {
-                syncMetadata(artifactory, repositoryName, repositoryPath);
-            }
-            if (Boolean.TRUE.equals(recordStatus)) {
+            String realArtifactPath = URLUtil.encode(artifactPath);
+            //TODO 使用checksum校验，已存在跳过上传制品，仅上传元数据
+            try (InputStream inputStream = FileUtil.getInputStream(repositoryPath)) {
+                File file = artifactory.repository(repositoryName).upload(realArtifactPath, inputStream).bySha1Checksum(repositoryPath.getArtifactEntry().getChecksums().get(MessageDigestAlgorithms.SHA_1)).doUpload();
                 if (Objects.nonNull(file)) {
-                    artifactComponent.handlerArtifactPromotion(nodeName, repositoryPath.getStorageId(), repositoryPath.getRepositoryId(), artifactPath, PromotionStatusEnum.SUCCESS.getStatus());
-                } else {
-                    artifactComponent.handlerArtifactPromotion(nodeName, repositoryPath.getStorageId(), repositoryPath.getRepositoryId(), artifactPath, PromotionStatusEnum.FAIL.getStatus());
+                    syncMetadata(artifactory, repositoryName, repositoryPath);
                 }
+                if (Boolean.TRUE.equals(recordStatus)) {
+                    if (Objects.nonNull(file)) {
+                        artifactComponent.handlerArtifactPromotion(nodeName, repositoryPath.getStorageId(), repositoryPath.getRepositoryId(), realArtifactPath, PromotionStatusEnum.SUCCESS.getStatus());
+                    } else {
+                        artifactComponent.handlerArtifactPromotion(nodeName, repositoryPath.getStorageId(), repositoryPath.getRepositoryId(), realArtifactPath, PromotionStatusEnum.FAIL.getStatus());
+                    }
+                }
+                log.info("存储空间：{} 仓库：{} 制品：{} 目标节点：{} 目标节点类型：{} 目标仓库：{} 目标路径：{} 上传结果：{}", repositoryPath.getStorageId(), repositoryPath.getRepositoryId(), realArtifactPath, externalNodeForm.getNodeName(), externalNodeForm.getType(), repositoryName, realArtifactPath, Objects.nonNull(file));
+            } catch (Exception ex) {
+                if (Boolean.TRUE.equals(recordStatus)) {
+                    artifactComponent.handlerArtifactPromotion(nodeName, repositoryPath.getStorageId(), repositoryPath.getRepositoryId(), realArtifactPath, PromotionStatusEnum.FAIL.getStatus());
+                }
+                log.error("上传制品失败：{}", ExceptionUtils.getStackTrace(ex));
+                log.info("存储空间：{} 仓库：{} 制品：{} 目标节点：{} 目标节点类型：{} 目标仓库：{} 目标路径：{} 上传结果：{}", repositoryPath.getStorageId(), repositoryPath.getRepositoryId(), realArtifactPath, externalNodeForm.getNodeName(), externalNodeForm.getType(), repositoryName, realArtifactPath, PromotionStatusEnum.FAIL.getStatus());
+                getExceptionCode(ex);
             }
-            return Objects.nonNull(file);
-        } catch (Exception ex) {
-            log.error("上传制品失败：{}", ExceptionUtils.getStackTrace(ex));
-            log.info("存储空间：{} 仓库：{} 制品：{} 目标节点：{} 目标节点类型：{} 目标仓库：{} 目标路径：{} 上传结果：{}", repositoryPath.getStorageId(), repositoryPath.getRepositoryId(), artifactPath, externalNodeForm.getNodeName(), externalNodeForm.getType(), repositoryName, artifactPath, PromotionStatusEnum.FAIL.getStatus());
-            getExceptionCode(ex);
-            throw new BusinessException("制品上传失败:" + ex.getMessage());
-        }
+        });
     }
 
     /**

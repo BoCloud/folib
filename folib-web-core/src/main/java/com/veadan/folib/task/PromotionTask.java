@@ -8,16 +8,20 @@ import com.veadan.folib.components.artifact.ArtifactComponent;
 import com.veadan.folib.components.promotion.ArtifactPromotionProvider;
 import com.veadan.folib.components.promotion.ArtifactPromotionProviderRegistry;
 import com.veadan.folib.configuration.UnionTargetRepositoryConfiguration;
+import com.veadan.folib.dispatch.ClusterDispatchNodeDto;
 import com.veadan.folib.domain.Artifact;
+import com.veadan.folib.enums.ArtifactoryRepositoryTypeEnum;
 import com.veadan.folib.enums.PromotionStatusEnum;
 import com.veadan.folib.enums.SafeLevelEnum;
 import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.providers.io.RepositoryPathResolver;
 import com.veadan.folib.providers.layout.DockerLayoutProvider;
 import com.veadan.folib.repositories.ArtifactRepository;
+import com.veadan.folib.services.ConfigurationManagementService;
 import com.veadan.folib.storage.repository.Repository;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.data.domain.PageRequest;
@@ -54,6 +58,10 @@ public class PromotionTask {
     @Inject
     @Lazy
     private ArtifactPromotionProviderRegistry artifactPromotionProviderRegistry;
+
+    @Inject
+    @Lazy
+    protected ConfigurationManagementService configurationManagementService;
 
     @Inject
     @Lazy
@@ -113,14 +121,21 @@ public class PromotionTask {
                                 }
                                 //开始晋级
                                 unionTargetRepositories = artifactComponent.getUnionTargetRepositories(storageId, repositoryId);
+                                List<UnionTargetRepositoryConfiguration> unionTargetRepositoryConfigurations;
                                 if (CollectionUtils.isNotEmpty(unionTargetRepositories)) {
                                     Map<String, List<UnionTargetRepositoryConfiguration>> unionTargetRepositoryConfigurationGroupMap = Optional.ofNullable(unionTargetRepositories).orElse(Collections.emptySet()).stream().collect(Collectors.groupingBy(UnionTargetRepositoryConfiguration::getNode));
                                     //成功的节点跳过 其余的继续晋级
                                     for (String node : artifact.getPromotionNodes()) {
                                         try {
                                             node = node.split(",")[0];
+                                            unionTargetRepositoryConfigurations = unionTargetRepositoryConfigurationGroupMap.get(node);
+                                            if (CollectionUtils.isEmpty(unionTargetRepositoryConfigurations)) {
+                                                artifactComponent.deleteArtifactPromotionNode(artifact, node);
+                                                log.info("存储空间：{} 仓库：{} 处理自动晋级，制品：{} 联邦仓库：{} 不存在，移除节点", storageId, repositoryId, artifactPath, node);
+                                                continue;
+                                            }
                                             unionTargetRepository = unionTargetRepositoryConfigurationGroupMap.get(node).get(0);
-                                            if (Objects.isNull(unionTargetRepository)) {
+                                            if (ArtifactoryRepositoryTypeEnum.INNER.getType().equals(unionTargetRepository.getType()) && !checkInner(node)) {
                                                 artifactComponent.deleteArtifactPromotionNode(artifact, node);
                                                 log.info("存储空间：{} 仓库：{} 处理自动晋级，制品：{} 联邦仓库：{} 不存在，移除节点", storageId, repositoryId, artifactPath, node);
                                                 continue;
@@ -137,6 +152,16 @@ public class PromotionTask {
                                         } catch (Exception ex) {
                                             log.error("存储空间：{} 仓库：{} 处理自动晋级，制品：{} 联邦仓库：{} 错误：{}", storageId, repositoryId, artifactPath, JSONObject.toJSONString(unionTargetRepository), ExceptionUtils.getStackTrace(ex));
                                             artifactComponent.handlerArtifactPromotion(node, artifact.getStorageId(), artifact.getRepositoryId(), artifact.getArtifactPath(), PromotionStatusEnum.FAIL.getStatus());
+                                        }
+                                    }
+                                    artifactComponent.checkArtifactPromotion(artifact);
+                                } else {
+                                    for (String node : artifact.getPromotionNodes()) {
+                                        node = node.split(",")[0];
+                                        nodePromotionStatus = getNodePromotionStatus(artifact.getPromotionNodes(), node);
+                                        if (!PromotionStatusEnum.SUCCESS.getStatus().equals(nodePromotionStatus)) {
+                                            //联邦仓库配置不存在，删除节点
+                                            artifactComponent.deleteArtifactPromotionNode(artifact, node);
                                         }
                                     }
                                 }
@@ -193,4 +218,14 @@ public class PromotionTask {
         }
         return artifactPath;
     }
+
+    private boolean checkInner(String node) {
+        Map<String, ClusterDispatchNodeDto> map = configurationManagementService.
+                getMutableConfigurationClone().getClusterDispatchNode();
+        if (MapUtils.isEmpty(map)) {
+            return false;
+        }
+        return map.containsKey(node);
+    }
+
 }
