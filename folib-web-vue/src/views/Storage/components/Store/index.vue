@@ -1444,7 +1444,7 @@ export default {
           "sudo tee /etc/docker/daemon.json <<-'EOF'\n" +
           '{\n' +
           '"insecure-registries": ["' +
-          this.baseUrl.replace('http://', '').replace('/', '') +
+          this.baseUrl.replace('http://', '').replace('https://', '').replace('/', '') +
           '"]\n' +
           '}\n' +
           'EOF\n' +
@@ -1455,7 +1455,7 @@ export default {
           "sudo tee /etc/docker/daemon.json <<-'EOF'\n" +
           '{\n' +
           '"insecure-registries": ["' +
-          this.baseUrl.replace('http://', '').replace('/', '') +
+          this.baseUrl.replace('http://', '').replace('https://', '').replace('/', '') +
           '"]\n' +
           '}\n' +
           'EOF\n' +
@@ -1464,7 +1464,7 @@ export default {
         this.dockerCode.windows =
           '{\n' +
           '  "insecure-registries": ["' +
-          this.baseUrl.replace('http://', '').replace('/', '') +
+          this.baseUrl.replace('http://', '').replace('https://', '').replace('/', '') +
           '"]\n' +
           '}'
         this.dockerCode.macos = this.dockerCode.windows

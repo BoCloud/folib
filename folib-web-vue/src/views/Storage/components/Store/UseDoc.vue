@@ -766,7 +766,7 @@
             class="my-editor height-300"
             :value="
               'docker build -t ' +
-              baseUrl.replace('http://', '') +
+              baseUrl.replace('http://', '').replace('https://','') +
               folibRepository.storageId +
               '/' +
               folibRepository.id +
@@ -775,6 +775,28 @@
             :highlight="highlighterHandle"
             :line-numbers="false"
             :readonly="true"
+          ></prism-editor>
+        </a-timeline-item>
+
+        <a-timeline-item color="primary">
+          {{ $t('Store.ImageBuildx') }}
+          <small>{{ $t('Store.ImageBuildxTips') }}</small>
+          <p>
+            {{ $t('Store.ImageBuildxRules') }}
+          </p>
+          <prism-editor
+              class="my-editor height-300"
+              :value="
+              'docker buildx build --platform linux/amd64,linux/arm/v6,linux/arm/v7,linux/arm64/v8 -t ' +
+              baseUrl.replace('http://', '').replace('https://','') +
+              folibRepository.storageId +
+              '/' +
+              folibRepository.id +
+              '/demo:latest . --push'
+            "
+              :highlight="highlighterHandle"
+              :line-numbers="false"
+              :readonly="true"
           ></prism-editor>
         </a-timeline-item>
       </a-timeline>
