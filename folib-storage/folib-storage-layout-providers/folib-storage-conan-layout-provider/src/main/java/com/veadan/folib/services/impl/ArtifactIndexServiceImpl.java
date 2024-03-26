@@ -9,7 +9,6 @@ import com.veadan.folib.configuration.ConfigurationManager;
 import com.veadan.folib.domain.ConanPackagesRevisions;
 import com.veadan.folib.domain.ConanRevision;
 import com.veadan.folib.domain.ConanRevisions;
-import com.veadan.folib.event.artifact.ArtifactEventListenerRegistry;
 import com.veadan.folib.providers.io.RepositoryFiles;
 import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.providers.io.RepositoryPathResolver;
@@ -17,12 +16,13 @@ import com.veadan.folib.providers.layout.ConanLayoutProvider;
 import com.veadan.folib.service.ArtifactIndexService;
 import com.veadan.folib.storage.Storage;
 import com.veadan.folib.storage.repository.Repository;
+import com.veadan.folib.storage.repository.RepositoryTypeEnum;
 import com.veadan.folib.util.CommonUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
-import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Service;
 
 import javax.inject.Inject;
 import java.io.IOException;
@@ -40,14 +40,11 @@ import java.util.stream.Stream;
  * @date 2024/3/20
  **/
 @Slf4j
-@Component
+@Service
 public class ArtifactIndexServiceImpl implements ArtifactIndexService {
 
     @Inject
     private ConfigurationManager configurationManager;
-
-    @Inject
-    private ArtifactEventListenerRegistry artifactEventListenerRegistry;
 
     @Inject
     private RepositoryPathResolver repositoryPathResolver;
@@ -60,6 +57,10 @@ public class ArtifactIndexServiceImpl implements ArtifactIndexService {
         if (!ConanLayoutProvider.ALIAS.equals(repository.getLayout())) {
             log.warn("Trying to rebuild index of repository {} with unsupported layout {} ", repository.getId(),
                     repository.getLayout());
+            return;
+        }
+
+        if (!RepositoryTypeEnum.HOSTED.getType().equals(repository.getType())) {
             return;
         }
 
