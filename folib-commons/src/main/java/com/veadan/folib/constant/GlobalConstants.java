@@ -126,4 +126,9 @@ public interface GlobalConstants {
      * latest
      */
     String LATEST = "latest";
+
+    /**
+     * asterisk
+     */
+    String ASTERISK = "*";
 }

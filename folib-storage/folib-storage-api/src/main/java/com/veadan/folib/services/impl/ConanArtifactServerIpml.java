@@ -1,18 +1,23 @@
 package com.veadan.folib.services.impl;
 
 import com.beust.jcommander.internal.Maps;
+import com.veadan.folib.configuration.ConfigurationManager;
+import com.veadan.folib.configuration.ConfigurationUtils;
 import com.veadan.folib.providers.repository.RepositoryProvider;
 import com.veadan.folib.providers.repository.RepositoryProviderRegistry;
 import com.veadan.folib.services.ConanArtifactServer;
 import com.veadan.folib.storage.repository.Repository;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
+import javax.inject.Inject;
 import java.io.IOException;
 import java.util.Map;
+import java.util.Objects;
 
 @Service
 @Slf4j
@@ -20,6 +25,9 @@ public class ConanArtifactServerIpml implements ConanArtifactServer {
 
     @Autowired
     private RepositoryProviderRegistry repositoryProviderRegistry;
+
+    @Inject
+    protected ConfigurationManager configurationManager;
 
     @Override
     public ResponseEntity searchConanPackage(Repository repository, String query) {

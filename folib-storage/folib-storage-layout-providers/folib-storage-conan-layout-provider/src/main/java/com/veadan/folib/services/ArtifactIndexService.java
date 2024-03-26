@@ -1,4 +1,4 @@
-package com.veadan.folib.service;
+package com.veadan.folib.services;
 
 import com.veadan.folib.providers.io.RepositoryPath;
 

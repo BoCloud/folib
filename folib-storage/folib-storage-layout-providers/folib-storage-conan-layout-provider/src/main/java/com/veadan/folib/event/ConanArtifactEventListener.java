@@ -6,7 +6,7 @@ import com.veadan.folib.event.artifact.ArtifactEventTypeEnum;
 import com.veadan.folib.providers.io.RepositoryFiles;
 import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.providers.layout.ConanLayoutProvider;
-import com.veadan.folib.service.ArtifactIndexService;
+import com.veadan.folib.services.ArtifactIndexService;
 import com.veadan.folib.storage.repository.Repository;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Component;

@@ -24,7 +24,8 @@ import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
                  "com.veadan.folib.yaml",
                  "com.veadan.folib.dependency",
                  "com.veadan.folib.domain",
-                 "com.veadan.folib.booters"
+                 "com.veadan.folib.booters",
+                 "com.veadan.folib.component"
 })
 @EnableAsync
 public class StorageApiConfig

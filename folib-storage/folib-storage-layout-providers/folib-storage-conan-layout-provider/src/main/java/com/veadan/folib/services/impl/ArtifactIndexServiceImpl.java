@@ -1,4 +1,4 @@
-package com.veadan.folib.service.impl;
+package com.veadan.folib.services.impl;
 
 import com.alibaba.fastjson.JSONObject;
 import com.google.common.collect.Lists;
@@ -13,7 +13,7 @@ import com.veadan.folib.providers.io.RepositoryFiles;
 import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.providers.io.RepositoryPathResolver;
 import com.veadan.folib.providers.layout.ConanLayoutProvider;
-import com.veadan.folib.service.ArtifactIndexService;
+import com.veadan.folib.services.ArtifactIndexService;
 import com.veadan.folib.storage.Storage;
 import com.veadan.folib.storage.repository.Repository;
 import com.veadan.folib.storage.repository.RepositoryTypeEnum;

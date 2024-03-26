@@ -79,6 +79,28 @@ public class ConanArtifactIndex {
         return flag;
     }
 
+    public static boolean isReferenceIndexJSON(Path path) {
+        if (!(path instanceof RepositoryPath)) {
+            return false;
+        }
+        boolean flag = false;
+        try {
+            RepositoryPath repositoryPath = (RepositoryPath) path;
+            boolean ignore = RepositoryFiles.isHidden(repositoryPath) || RepositoryFiles.isArtifactMetadata(repositoryPath) || RepositoryFiles.isTrash(repositoryPath) || RepositoryFiles.isTemp(repositoryPath);
+            if (ignore) {
+                return false;
+            }
+            String relativizePath = RepositoryFiles.relativizePath(repositoryPath);
+            String[] pathArr = relativizePath.split(GlobalConstants.SEPARATOR);
+            if (pathArr.length == 5 && repositoryPath.getFileName().toString().endsWith(ConanArtifactIndex.INDEX_JSON_NAME)) {
+                flag = true;
+            }
+        } catch (Exception ex) {
+            log.error(ExceptionUtils.getStackTrace(ex));
+        }
+        return flag;
+    }
+
     public static boolean include(Path path) {
         if (!(path instanceof RepositoryPath)) {
             return false;

@@ -5,7 +5,7 @@ import com.veadan.folib.cron.domain.CronTaskConfigurationDto;
 import com.veadan.folib.cron.jobs.fields.*;
 import com.veadan.folib.providers.io.RepositoryPathResolver;
 import com.veadan.folib.providers.layout.ConanLayoutProvider;
-import com.veadan.folib.service.ArtifactIndexService;
+import com.veadan.folib.services.ArtifactIndexService;
 import com.veadan.folib.services.ConfigurationManagementService;
 import com.veadan.folib.storage.Storage;
 import com.veadan.folib.storage.repository.Repository;
