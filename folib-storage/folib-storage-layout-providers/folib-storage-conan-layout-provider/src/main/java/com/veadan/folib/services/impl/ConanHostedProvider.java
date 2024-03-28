@@ -2,6 +2,7 @@ package com.veadan.folib.services.impl;
 
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
+import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.veadan.folib.artifact.coordinates.ConanArtifactIndex;
 import com.veadan.folib.configuration.ConfigurationManager;
@@ -18,7 +19,6 @@ import com.veadan.folib.services.ConanProvider;
 import com.veadan.folib.storage.repository.Repository;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.codec.digest.MessageDigestAlgorithms;
-import org.apache.commons.compress.utils.Lists;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.springframework.stereotype.Component;
@@ -28,6 +28,7 @@ import javax.inject.Inject;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.regex.Matcher;
@@ -125,7 +126,7 @@ public class ConanHostedProvider implements ConanProvider {
             return null;
         }
         JSONObject data = new JSONObject();
-        String baseUrl = getBaseUrl(repository);
+        String baseUrl = getRepositoryBaseUrl(repository);
         try (Stream<Path> pathStream = Files.walk(repositoryPath)) {
             pathStream.filter(item -> {
                 try {
@@ -158,7 +159,7 @@ public class ConanHostedProvider implements ConanProvider {
             return null;
         }
         JSONObject data = new JSONObject();
-        String baseUrl = getBaseUrl(repository);
+        String baseUrl = getRepositoryBaseUrl(repository);
         try (Stream<Path> pathStream = Files.walk(repositoryPath)) {
             pathStream.filter(item -> {
                 try {
@@ -237,7 +238,7 @@ public class ConanHostedProvider implements ConanProvider {
             return null;
         }
         JSONObject data = new JSONObject();
-        String exportManifestUrl = getBaseUrl(repository) + "/v1/files/" + path;
+        String exportManifestUrl = getRepositoryBaseUrl(repository) + "/v1/files/" + path;
         data.put("conanmanifest.txt", exportManifestUrl);
         return data;
     }
@@ -258,6 +259,7 @@ public class ConanHostedProvider implements ConanProvider {
         if (StringUtils.isBlank(content)) {
             return null;
         }
+        List<String> requiresKeyList = Lists.newArrayList("[full_requires]", "[requires]");
         boolean flag = false;
         Map<String, String> map = Maps.newLinkedHashMap();
         String[] lines = content.split("\\r?\\n");
@@ -269,6 +271,10 @@ public class ConanHostedProvider implements ConanProvider {
                 flag = false;
             }
             if (flag && StringUtils.isNotBlank(line.trim())) {
+                if (requiresKeyList.stream().anyMatch(item -> item.equalsIgnoreCase(key))) {
+                    map.put(line, "");
+                    continue;
+                }
                 String[] keyValue = line.split("=", 2);
                 if (keyValue.length == 2) {
                     String itemKey = keyValue[0].trim();
@@ -280,8 +286,8 @@ public class ConanHostedProvider implements ConanProvider {
         return map;
     }
 
-    protected String getBaseUrl(Repository repository) {
-        return String.format("%s/%s/%s", StringUtils.chomp(configurationManager.getConfiguration().getBaseUrl(), "/"), repository.getStorage().getId(), repository.getId());
+    protected String getRepositoryBaseUrl(Repository repository) {
+        return String.format("%s/storages/%s/%s", StringUtils.chomp(configurationManager.getConfiguration().getBaseUrl(), "/"), repository.getStorage().getId(), repository.getId());
     }
 
 }

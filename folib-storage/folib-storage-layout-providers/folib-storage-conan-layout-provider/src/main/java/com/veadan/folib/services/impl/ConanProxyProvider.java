@@ -129,7 +129,7 @@ public class ConanProxyProvider implements ConanProvider {
             return null;
         }
         if (HttpStatus.OK.value() == responseResult.getHttpStatus() && ResponseDataTypeEnum.JSON.equals(responseResult.getDataType()) && StringUtils.isNotBlank(responseResult.getData())) {
-            String baseUrl = getBaseUrl(repository);
+            String baseUrl = getRepositoryBaseUrl(repository);
             data = JSONObject.parseObject(responseResult.getData());
             String value = "";
             for (String key : data.keySet()) {
@@ -143,8 +143,8 @@ public class ConanProxyProvider implements ConanProvider {
         return data;
     }
 
-    protected String getBaseUrl(Repository repository) {
-        return String.format("%s/%s/%s", StringUtils.chomp(configurationManager.getConfiguration().getBaseUrl(), "/"), repository.getStorage().getId(), repository.getId());
+    protected String getRepositoryBaseUrl(Repository repository) {
+        return String.format("%s/storages/%s/%s", StringUtils.chomp(configurationManager.getConfiguration().getBaseUrl(), "/"), repository.getStorage().getId(), repository.getId());
     }
 
 }

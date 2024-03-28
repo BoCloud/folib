@@ -131,4 +131,9 @@ public interface GlobalConstants {
      * asterisk
      */
     String ASTERISK = "*";
+
+    /**
+     * download
+     */
+    String DOWNLOAD = "download";
 }

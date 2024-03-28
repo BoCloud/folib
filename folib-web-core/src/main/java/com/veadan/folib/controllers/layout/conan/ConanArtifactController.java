@@ -4,22 +4,22 @@ import cn.hutool.json.JSONUtil;
 import com.alibaba.fastjson.JSONObject;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
+import com.veadan.folib.artifact.coordinates.ConanArtifactCoordinates;
 import com.veadan.folib.constant.GlobalConstants;
 import com.veadan.folib.controllers.BaseArtifactController;
-import com.veadan.folib.domain.*;
-import com.veadan.folib.dto.ConanInfoDto;
-import com.veadan.folib.event.artifact.ArtifactEventListenerRegistry;
+import com.veadan.folib.domain.ConanPackagesRevisions;
+import com.veadan.folib.domain.ConanRevisions;
 import com.veadan.folib.providers.io.RepositoryFiles;
 import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.providers.layout.LayoutFileSystemProvider;
 import com.veadan.folib.services.ArtifactIndexService;
 import com.veadan.folib.services.ConanService;
-import com.veadan.folib.services.DirectoryListingService;
 import com.veadan.folib.storage.repository.Repository;
 import com.veadan.folib.users.security.JwtAuthenticationClaimsProvider;
 import com.veadan.folib.users.security.JwtClaimsProvider;
 import com.veadan.folib.users.security.SecurityTokenProvider;
 import com.veadan.folib.users.userdetails.SpringSecurityUser;
+import com.veadan.folib.web.LayoutRequestMapping;
 import com.veadan.folib.web.RepositoryMapping;
 import io.swagger.annotations.Api;
 import lombok.extern.slf4j.Slf4j;
@@ -28,8 +28,6 @@ import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -41,23 +39,17 @@ import org.springframework.web.bind.annotation.*;
 import javax.inject.Inject;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import javax.validation.Valid;
 import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.util.*;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
-//@LayoutRequestMapping("conan")
+@LayoutRequestMapping(ConanArtifactCoordinates.LAYOUT_NAME)
 @RestController
 @Slf4j
 @Api(description = "Conan坐标控制器", tags = "Conan坐标控制器")
 public class ConanArtifactController extends BaseArtifactController {
-
-    @Autowired
-    private ArtifactEventListenerRegistry artifactEventListenerRegistry;
 
     @Inject
     private SecurityTokenProvider securityTokenProvider;
@@ -65,10 +57,6 @@ public class ConanArtifactController extends BaseArtifactController {
     @Inject
     @JwtAuthenticationClaimsProvider.JwtAuthentication
     private JwtClaimsProvider jwtClaimsProvider;
-
-    @Inject
-    @Qualifier("browseRepositoryDirectoryListingService")
-    private volatile DirectoryListingService directoryListingService;
 
     @Inject
     private ArtifactIndexService artifactIndexService;
@@ -219,7 +207,7 @@ public class ConanArtifactController extends BaseArtifactController {
             return new ResponseEntity<>("", HttpStatus.NOT_FOUND);
         }
 
-        String url = getBaseUrl(repository);
+        String url = getRepositoryBaseUrl(repository);
         obj.entrySet().forEach(entry -> {
             String packageName = entry.getKey();
             entry.setValue(String.format("%s/v1/files/%s/%s/%s/%s/0/export/%s", url, user, name, version, channel, packageName));
@@ -253,7 +241,7 @@ public class ConanArtifactController extends BaseArtifactController {
                                                 @PathVariable("channel") String channel,
                                                 @PathVariable("packageId") String packageId,
                                                 @RequestBody(required = false) LinkedHashMap<String, String> obj) {
-        String url = getBaseUrl(repository);
+        String url = getRepositoryBaseUrl(repository);
         obj.entrySet().forEach(entry -> {
             String packageName = entry.getKey();
             entry.setValue(String.format("%s/v1/files/%s/%s/%s/%s/0/package/%s/0/%s", url, user, name, version, channel, packageId, packageName));
@@ -672,112 +660,19 @@ public class ConanArtifactController extends BaseArtifactController {
     }
 
     @PreAuthorize("hasAuthority('ARTIFACTS_RESOLVE')")
-    @RequestMapping(value = {"/api/conan/info"}, method = {RequestMethod.POST})
-    public ResponseEntity<ConanInfo> info(@RequestHeader HttpHeaders httpHeaders,
-                                          @RequestBody @Valid ConanInfoDto conanInfoDto,
-                                          HttpServletRequest request,
-                                          HttpServletResponse response)
+    @RequestMapping(value = {"/{storageId}/{repositoryId}/download/{artifactPath:.+}"}, method = {RequestMethod.GET, RequestMethod.HEAD})
+    public void download(@RepositoryMapping Repository repository,
+                         @RequestHeader HttpHeaders httpHeaders,
+                         @PathVariable("storageId") String storageId,
+                         @PathVariable("repositoryId") String repositoryId,
+                         @PathVariable("artifactPath") String artifactPath,
+                         HttpServletRequest request,
+                         HttpServletResponse response)
             throws Exception {
-        final String storageId = conanInfoDto.getStorageId();
-        final String repositoryId = conanInfoDto.getRepositoryId();
-        final String artifactPath = conanInfoDto.getArtifactPath();
-        log.info("Requested get conan info {}/{}/{}.", storageId, repositoryId, artifactPath);
-        List<String> list = Arrays.asList(artifactPath.split("/"));
-        Integer packageCount = 0;
-        String user = list.get(0);
-        String name = list.get(1);
-        String version = list.get(2);
-        String channel = list.get(3);
-        String reference = String.format("%s/%s@%s/%s", name, version, user, channel);
-        ConanRecipeInfo conanRecipeInfo = ConanRecipeInfo.builder().name(name).version(version).user(user).channel(channel).reference(reference).build();
-        String conanFilePath = artifactPath + "/export/conanfile.py";
-        RepositoryPath conanFileRepositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, conanFilePath);
-        if (Files.exists(conanFileRepositoryPath)) {
-            String conanFileString = Files.readString(conanFileRepositoryPath);
-            String author = extractValue(conanFileString, "author\\s*=\\s*\"(.*?)\"");
-            conanRecipeInfo.setAuthor(author);
-            String license = extractValue(conanFileString, "license\\s*=\\s*\"(.*?)\"");
-            conanRecipeInfo.setLicense(license);
-            String url = extractValue(conanFileString, "url\\s*=\\s*\"(.*?)\"");
-            conanRecipeInfo.setUrl(url);
-        }
-        String packageParentPath = artifactPath + "/package";
-        RepositoryPath packageParentRepositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, packageParentPath);
-        if (Files.exists(packageParentRepositoryPath)) {
-            DirectoryListing directoryListing = directoryListingService.fromRepositoryPath(packageParentRepositoryPath);
-            packageCount = CollectionUtils.isNotEmpty(directoryListing.getDirectories()) ? directoryListing.getDirectories().size() : 0;
-        }
-        return ResponseEntity.ok(ConanInfo.builder().recipeInfo(conanRecipeInfo).packageCount(packageCount).build());
-    }
-
-    @PreAuthorize("hasAuthority('ARTIFACTS_RESOLVE')")
-    @RequestMapping(value = {"/api/conan/packageInfo"}, method = {RequestMethod.POST})
-    public ResponseEntity<ConanPackageInfo> packageInfo(@RequestHeader HttpHeaders httpHeaders,
-                                                        @RequestBody @Valid ConanInfoDto conanInfoDto,
-                                                        HttpServletRequest request,
-                                                        HttpServletResponse response)
-            throws Exception {
-        final String storageId = conanInfoDto.getStorageId();
-        final String repositoryId = conanInfoDto.getRepositoryId();
-        final String artifactPath = conanInfoDto.getArtifactPath();
-        log.info("Requested get conan package info {}/{}/{}.", storageId, repositoryId, artifactPath);
-        ConanPackageInfo conanPackageInfo = null;
-        String conanInfoPath = artifactPath + "/conaninfo.txt";
-        RepositoryPath conanInfoRepositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, conanInfoPath);
-        if (Files.exists(conanInfoRepositoryPath)) {
-            String conanInfoString = Files.readString(conanInfoRepositoryPath);
-            Map<String, String> settingsMap = getPackageInfo(conanInfoString, "[settings]");
-            Map<String, String> optionsMap = getPackageInfo(conanInfoString, "[options]");
-            Map<String, String> requiresMap = getPackageInfo(conanInfoString, "[full_requires]");
-            conanPackageInfo = ConanPackageInfo.builder().settings(settingsMap).options(optionsMap).requires(requiresMap).build();
-        }
-        return ResponseEntity.ok(conanPackageInfo);
-    }
-
-    private static String extractValue(String input, String patternStr) {
-        if (StringUtils.isBlank(input)) {
-            return "";
-        }
-        Pattern pattern = Pattern.compile(patternStr);
-        Matcher matcher = pattern.matcher(input);
-        if (matcher.find()) {
-            String value = matcher.group(1);
-            value = value.replaceAll("<.*?>", "");
-            return value;
-        } else {
-            return "";
-        }
-    }
-
-    private static Map<String, String> getPackageInfo(String content, String key) {
-        if (StringUtils.isBlank(content)) {
-            return null;
-        }
-        String requiresKey = "[full_requires]";
-        boolean flag = false;
-        Map<String, String> map = Maps.newLinkedHashMap();
-        String[] lines = content.split("\\r?\\n");
-        for (String line : lines) {
-            if (key.equalsIgnoreCase(line.trim())) {
-                flag = true;
-                continue;
-            } else if (line.trim().startsWith("[")) {
-                flag = false;
-            }
-            if (flag && StringUtils.isNotBlank(line.trim())) {
-                if (requiresKey.equalsIgnoreCase(key)) {
-                    map.put(line, "");
-                    continue;
-                }
-                String[] keyValue = line.split("=", 2);
-                if (keyValue.length == 2) {
-                    String itemKey = keyValue[0].trim();
-                    String itemValue = keyValue[1].trim();
-                    map.put(itemKey, itemValue);
-                }
-            }
-        }
-        return map;
+        log.info("Requested download conan {}/{}/{}.", storageId, repositoryId, artifactPath);
+        RepositoryPath repositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, artifactPath);
+        vulnerabilityBlock(repositoryPath);
+        provideArtifactDownloadResponse(request, response, httpHeaders, repositoryPath);
     }
 
     private Map<String, Object> errMsg(int status, String msg) {
