@@ -6,11 +6,12 @@ import com.veadan.folib.configuration.ConfigurationManager;
 import com.veadan.folib.configuration.ConfigurationUtils;
 import com.veadan.folib.domain.SearchResults;
 import com.veadan.folib.enums.ConanSearchRepositoryTypeEnum;
-import com.veadan.folib.services.ConanSearchProvider;
+import com.veadan.folib.services.ConanProvider;
 import com.veadan.folib.storage.repository.Repository;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.compress.utils.Lists;
+import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
@@ -22,10 +23,10 @@ import java.util.Objects;
  **/
 @Slf4j
 @Component
-public class ConanSearchGroupProvider implements ConanSearchProvider {
+public class ConanGroupProvider implements ConanProvider {
 
     @Inject
-    private ConanSearchProviderRegistry conanSearchProviderRegistry;
+    private ConanProviderRegistry conanProviderRegistry;
 
     @Inject
     protected ConfigurationManager configurationManager;
@@ -33,25 +34,29 @@ public class ConanSearchGroupProvider implements ConanSearchProvider {
     @PostConstruct
     @Override
     public void register() {
-        conanSearchProviderRegistry.addProvider(ConanSearchRepositoryTypeEnum.CONAN_GROUP.getType(), this);
-        log.info("Registered conan search provider '[{}]' with alias '[{}]'.",
+        conanProviderRegistry.addProvider(ConanSearchRepositoryTypeEnum.CONAN_GROUP.getType(), this);
+        log.info("Registered conan provider '[{}]' with alias '[{}]'.",
                 getClass().getCanonicalName(), ConanSearchRepositoryTypeEnum.CONAN_GROUP.getType());
     }
 
     @Override
-    public SearchResults search(Repository repository, String query) {
+    public SearchResults search(String version, Repository repository, String query) {
         SearchResults searchResults = SearchResults.builder().results(Lists.newArrayList()).build(), subSearchResults;
         for (String storageAndRepositoryId : repository.getGroupRepositories()) {
-            String sId = ConfigurationUtils.getStorageId(repository.getStorage().getId(), storageAndRepositoryId);
-            String rId = ConfigurationUtils.getRepositoryId(storageAndRepositoryId);
-            Repository subRepository = configurationManager.getRepository(sId, rId);
-            if (!isRepositoryResolvable(subRepository)) {
-                continue;
-            }
-            ConanSearchProvider conanSearchProvider = conanSearchProviderRegistry.getProvider(ConanSearchRepositoryTypeEnum.resolveType(subRepository.getType()));
-            subSearchResults = conanSearchProvider.search(subRepository, query);
-            if (Objects.nonNull(subSearchResults) && CollectionUtils.isNotEmpty(subSearchResults.getResults())) {
-                searchResults.getResults().addAll(subSearchResults.getResults());
+            try {
+                String sId = ConfigurationUtils.getStorageId(repository.getStorage().getId(), storageAndRepositoryId);
+                String rId = ConfigurationUtils.getRepositoryId(storageAndRepositoryId);
+                Repository subRepository = configurationManager.getRepository(sId, rId);
+                if (!isRepositoryResolvable(subRepository)) {
+                    continue;
+                }
+                ConanProvider conanSearchProvider = conanProviderRegistry.getProvider(ConanSearchRepositoryTypeEnum.resolveType(subRepository.getType()));
+                subSearchResults = conanSearchProvider.search(version, subRepository, query);
+                if (Objects.nonNull(subSearchResults) && CollectionUtils.isNotEmpty(subSearchResults.getResults())) {
+                    searchResults.getResults().addAll(subSearchResults.getResults());
+                }
+            } catch (Exception ex) {
+                log.error(ExceptionUtils.getStackTrace(ex));
             }
         }
         return searchResults;
@@ -61,17 +66,141 @@ public class ConanSearchGroupProvider implements ConanSearchProvider {
     public JSONObject revisionsSearch(Repository repository, String artifactPath, String url) {
         JSONObject data = new JSONObject(), subData;
         for (String storageAndRepositoryId : repository.getGroupRepositories()) {
-            String sId = ConfigurationUtils.getStorageId(repository.getStorage().getId(), storageAndRepositoryId);
-            String rId = ConfigurationUtils.getRepositoryId(storageAndRepositoryId);
-            Repository subRepository = configurationManager.getRepository(sId, rId);
-            if (!isRepositoryResolvable(subRepository)) {
-                continue;
+            try {
+                String sId = ConfigurationUtils.getStorageId(repository.getStorage().getId(), storageAndRepositoryId);
+                String rId = ConfigurationUtils.getRepositoryId(storageAndRepositoryId);
+                Repository subRepository = configurationManager.getRepository(sId, rId);
+                if (!isRepositoryResolvable(subRepository)) {
+                    continue;
+                }
+                ConanProvider conanSearchProvider = conanProviderRegistry.getProvider(ConanSearchRepositoryTypeEnum.resolveType(subRepository.getType()));
+                subData = conanSearchProvider.revisionsSearch(subRepository, artifactPath, url);
+                if (Objects.nonNull(subData) && !JSONUtil.isNull(subData) && subData.keySet().size() > 0) {
+                    data = subData;
+                    break;
+                }
+            } catch (Exception ex) {
+                log.error(ExceptionUtils.getStackTrace(ex));
             }
-            ConanSearchProvider conanSearchProvider = conanSearchProviderRegistry.getProvider(ConanSearchRepositoryTypeEnum.resolveType(subRepository.getType()));
-            subData = conanSearchProvider.revisionsSearch(subRepository, artifactPath, url);
-            if (Objects.nonNull(subData) && !JSONUtil.isNull(subData) && subData.keySet().size() > 0) {
-                data = subData;
-                break;
+        }
+        return data;
+    }
+
+    @Override
+    public JSONObject downloadUrls(Repository repository, String name, String version, String user, String channel) {
+        JSONObject data = new JSONObject(), subData;
+        for (String storageAndRepositoryId : repository.getGroupRepositories()) {
+            try {
+                String sId = ConfigurationUtils.getStorageId(repository.getStorage().getId(), storageAndRepositoryId);
+                String rId = ConfigurationUtils.getRepositoryId(storageAndRepositoryId);
+                Repository subRepository = configurationManager.getRepository(sId, rId);
+                if (!isRepositoryResolvable(subRepository)) {
+                    continue;
+                }
+                ConanProvider conanSearchProvider = conanProviderRegistry.getProvider(ConanSearchRepositoryTypeEnum.resolveType(subRepository.getType()));
+                subData = conanSearchProvider.downloadUrls(subRepository, name, version, user, channel);
+                if (Objects.nonNull(subData) && !JSONUtil.isNull(subData) && subData.keySet().size() > 0) {
+                    data = subData;
+                    break;
+                }
+            } catch (Exception ex) {
+                log.error(ExceptionUtils.getStackTrace(ex));
+            }
+        }
+        return data;
+    }
+
+    @Override
+    public JSONObject packageDownloadUrls(Repository repository, String name, String version, String user, String channel, String packageId) {
+        JSONObject data = new JSONObject(), subData;
+        for (String storageAndRepositoryId : repository.getGroupRepositories()) {
+            try {
+                String sId = ConfigurationUtils.getStorageId(repository.getStorage().getId(), storageAndRepositoryId);
+                String rId = ConfigurationUtils.getRepositoryId(storageAndRepositoryId);
+                Repository subRepository = configurationManager.getRepository(sId, rId);
+                if (!isRepositoryResolvable(subRepository)) {
+                    continue;
+                }
+                ConanProvider conanSearchProvider = conanProviderRegistry.getProvider(ConanSearchRepositoryTypeEnum.resolveType(subRepository.getType()));
+                subData = conanSearchProvider.packageDownloadUrls(subRepository, name, version, user, channel, packageId);
+                if (Objects.nonNull(subData) && !JSONUtil.isNull(subData) && subData.keySet().size() > 0) {
+                    data = subData;
+                    break;
+                }
+            } catch (Exception ex) {
+                log.error(ExceptionUtils.getStackTrace(ex));
+            }
+        }
+        return data;
+    }
+
+    @Override
+    public JSONObject digest(Repository repository, String name, String version, String user, String channel) {
+        JSONObject data = new JSONObject(), subData;
+        for (String storageAndRepositoryId : repository.getGroupRepositories()) {
+            try {
+                String sId = ConfigurationUtils.getStorageId(repository.getStorage().getId(), storageAndRepositoryId);
+                String rId = ConfigurationUtils.getRepositoryId(storageAndRepositoryId);
+                Repository subRepository = configurationManager.getRepository(sId, rId);
+                if (!isRepositoryResolvable(subRepository)) {
+                    continue;
+                }
+                ConanProvider conanSearchProvider = conanProviderRegistry.getProvider(ConanSearchRepositoryTypeEnum.resolveType(subRepository.getType()));
+                subData = conanSearchProvider.digest(subRepository, name, version, user, channel);
+                if (Objects.nonNull(subData) && !JSONUtil.isNull(subData) && subData.keySet().size() > 0) {
+                    data = subData;
+                    break;
+                }
+            } catch (Exception ex) {
+                log.error(ExceptionUtils.getStackTrace(ex));
+            }
+        }
+        return data;
+    }
+
+    @Override
+    public JSONObject packageDigest(Repository repository, String name, String version, String user, String channel, String packageId) {
+        JSONObject data = new JSONObject(), subData;
+        for (String storageAndRepositoryId : repository.getGroupRepositories()) {
+            try {
+                String sId = ConfigurationUtils.getStorageId(repository.getStorage().getId(), storageAndRepositoryId);
+                String rId = ConfigurationUtils.getRepositoryId(storageAndRepositoryId);
+                Repository subRepository = configurationManager.getRepository(sId, rId);
+                if (!isRepositoryResolvable(subRepository)) {
+                    continue;
+                }
+                ConanProvider conanSearchProvider = conanProviderRegistry.getProvider(ConanSearchRepositoryTypeEnum.resolveType(subRepository.getType()));
+                subData = conanSearchProvider.packageDigest(subRepository, name, version, user, channel, packageId);
+                if (Objects.nonNull(subData) && !JSONUtil.isNull(subData) && subData.keySet().size() > 0) {
+                    data = subData;
+                    break;
+                }
+            } catch (Exception ex) {
+                log.error(ExceptionUtils.getStackTrace(ex));
+            }
+        }
+        return data;
+    }
+
+    @Override
+    public JSONObject getPackageInfo(Repository repository, String name, String version, String user, String channel, String packageId, String url) {
+        JSONObject data = new JSONObject(), subData;
+        for (String storageAndRepositoryId : repository.getGroupRepositories()) {
+            try {
+                String sId = ConfigurationUtils.getStorageId(repository.getStorage().getId(), storageAndRepositoryId);
+                String rId = ConfigurationUtils.getRepositoryId(storageAndRepositoryId);
+                Repository subRepository = configurationManager.getRepository(sId, rId);
+                if (!isRepositoryResolvable(subRepository)) {
+                    continue;
+                }
+                ConanProvider conanSearchProvider = conanProviderRegistry.getProvider(ConanSearchRepositoryTypeEnum.resolveType(subRepository.getType()));
+                subData = conanSearchProvider.getPackageInfo(subRepository, name, version, user, channel, packageId, url);
+                if (Objects.nonNull(subData) && !JSONUtil.isNull(subData) && subData.keySet().size() > 0) {
+                    data = subData;
+                    break;
+                }
+            } catch (Exception ex) {
+                log.error(ExceptionUtils.getStackTrace(ex));
             }
         }
         return data;

@@ -4,17 +4,20 @@ import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import com.google.common.collect.Maps;
 import com.veadan.folib.artifact.coordinates.ConanArtifactIndex;
+import com.veadan.folib.configuration.ConfigurationManager;
 import com.veadan.folib.constant.GlobalConstants;
 import com.veadan.folib.domain.ConanRevisions;
 import com.veadan.folib.domain.SearchResults;
 import com.veadan.folib.enums.ConanSearchRepositoryTypeEnum;
+import com.veadan.folib.providers.io.RepositoryFiles;
 import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.providers.io.RepositoryPathResolver;
 import com.veadan.folib.providers.io.RootRepositoryPath;
-import com.veadan.folib.services.ArtifactManagementService;
-import com.veadan.folib.services.ConanSearchProvider;
+import com.veadan.folib.providers.layout.LayoutFileSystemProvider;
+import com.veadan.folib.services.ConanProvider;
 import com.veadan.folib.storage.repository.Repository;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.codec.digest.MessageDigestAlgorithms;
 import org.apache.commons.compress.utils.Lists;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
@@ -36,13 +39,13 @@ import java.util.stream.Stream;
  **/
 @Slf4j
 @Component
-public class ConanSearchHostedProvider implements ConanSearchProvider {
+public class ConanHostedProvider implements ConanProvider {
 
     @Inject
-    private ConanSearchProviderRegistry conanSearchProviderRegistry;
+    private ConanProviderRegistry conanProviderRegistry;
 
     @Inject
-    private ArtifactManagementService artifactManagementService;
+    private ConfigurationManager configurationManager;
 
     @Inject
     private RepositoryPathResolver repositoryPathResolver;
@@ -50,13 +53,13 @@ public class ConanSearchHostedProvider implements ConanSearchProvider {
     @PostConstruct
     @Override
     public void register() {
-        conanSearchProviderRegistry.addProvider(ConanSearchRepositoryTypeEnum.CONAN_HOSTED.getType(), this);
-        log.info("Registered conan search provider '[{}]' with alias '[{}]'.",
+        conanProviderRegistry.addProvider(ConanSearchRepositoryTypeEnum.CONAN_HOSTED.getType(), this);
+        log.info("Registered conan provider '[{}]' with alias '[{}]'.",
                 getClass().getCanonicalName(), ConanSearchRepositoryTypeEnum.CONAN_HOSTED.getType());
     }
 
     @Override
-    public SearchResults search(Repository repository, String query) {
+    public SearchResults search(String version, Repository repository, String query) {
         if (StringUtils.isNotBlank(query) && query.contains(GlobalConstants.ASTERISK)) {
             query = query.replaceAll("\\*", ".*");
         }
@@ -114,6 +117,131 @@ public class ConanSearchHostedProvider implements ConanSearchProvider {
         return data;
     }
 
+    @Override
+    public JSONObject downloadUrls(Repository repository, String name, String version, String user, String channel) {
+        String artifactPath = String.format("%s/%s/%s/%s/0/export", user, name, version, channel);
+        RepositoryPath repositoryPath = repositoryPathResolver.resolve(repository.getStorage().getId(), repository.getId(), artifactPath);
+        if (Objects.isNull(repositoryPath) || !Files.exists(repositoryPath)) {
+            return null;
+        }
+        JSONObject data = new JSONObject();
+        String baseUrl = getBaseUrl(repository);
+        try (Stream<Path> pathStream = Files.walk(repositoryPath)) {
+            pathStream.filter(item -> {
+                try {
+                    return RepositoryFiles.isArtifact((RepositoryPath) item);
+                } catch (Exception ex) {
+                    log.error(ExceptionUtils.getStackTrace(ex));
+                }
+                return false;
+            })
+                    .sorted()
+                    .forEach(item -> {
+                        try {
+                            String filename = item.getFileName().toString();
+                            data.put(filename, String.format("%s/v1/files/%s/%s/%s/%s/0/export/%s", baseUrl, user, name, version, channel, filename));
+                        } catch (Exception ex) {
+                            log.error(ExceptionUtils.getStackTrace(ex));
+                        }
+                    });
+        } catch (IOException ex) {
+            log.error(ExceptionUtils.getStackTrace(ex));
+        }
+        return data;
+    }
+
+    @Override
+    public JSONObject packageDownloadUrls(Repository repository, String name, String version, String user, String channel, String packageId) {
+        String artifactPath = String.format("%s/%s/%s/%s/0/package/%s/0", user, name, version, channel, packageId);
+        RepositoryPath repositoryPath = repositoryPathResolver.resolve(repository.getStorage().getId(), repository.getId(), artifactPath);
+        if (Objects.isNull(repositoryPath) || !Files.exists(repositoryPath)) {
+            return null;
+        }
+        JSONObject data = new JSONObject();
+        String baseUrl = getBaseUrl(repository);
+        try (Stream<Path> pathStream = Files.walk(repositoryPath)) {
+            pathStream.filter(item -> {
+                try {
+                    return RepositoryFiles.isArtifact((RepositoryPath) item);
+                } catch (Exception ex) {
+                    log.error(ExceptionUtils.getStackTrace(ex));
+                }
+                return false;
+            })
+                    .sorted()
+                    .forEach(item -> {
+                        try {
+                            String filename = item.getFileName().toString();
+                            data.put(filename, String.format("%s/v1/files/%s/%s/%s/%s/0/package/%s/0/%s", baseUrl, user, name, version, channel, packageId, filename));
+                        } catch (Exception ex) {
+                            log.error(ExceptionUtils.getStackTrace(ex));
+                        }
+                    });
+        } catch (IOException ex) {
+            log.error(ExceptionUtils.getStackTrace(ex));
+        }
+        return data;
+    }
+
+    @Override
+    public JSONObject digest(Repository repository, String name, String version, String user, String channel) {
+        String path = String.format("%s/%s/%s/%s/0/export/conanmanifest.txt", user, name, version, channel);
+        return commonDigest(repository, path);
+    }
+
+    @Override
+    public JSONObject packageDigest(Repository repository, String name, String version, String user, String channel, String packageId) {
+        String path = String.format("%s/%s/%s/%s/0/package/%s/0/conanmanifest.txt", user, name, version, channel, packageId);
+        return commonDigest(repository, path);
+    }
+
+    @Override
+    public JSONObject getPackageInfo(Repository repository, String name, String version, String user, String channel, String packageId, String url) {
+        String artifactPath = String.format("%s/%s/%s/%s/0/package/%s/0/", user, name, version, channel, packageId);
+        RepositoryPath repositoryPath = repositoryPathResolver.resolve(repository.getStorage().getId(), repository.getId(), artifactPath);
+        if (Objects.isNull(repositoryPath) || !Files.exists(repositoryPath)) {
+            return null;
+        }
+        JSONObject data = new JSONObject();
+        LayoutFileSystemProvider provider = repositoryPath.getFileSystem().provider();
+        try (Stream<Path> pathStream = Files.walk(repositoryPath)) {
+            pathStream.filter(item -> {
+                try {
+                    return RepositoryFiles.isArtifact((RepositoryPath) item);
+                } catch (Exception ex) {
+                    log.error(ExceptionUtils.getStackTrace(ex));
+                }
+                return false;
+            })
+                    .sorted()
+                    .forEach(item -> {
+                        try {
+                            final RepositoryPath checksumPath = provider.getChecksumPath((RepositoryPath) item, MessageDigestAlgorithms.MD5);
+                            if (Objects.nonNull(checksumPath) && Files.exists(checksumPath)) {
+                                String filename = item.getFileName().toString();
+                                data.put(filename, Files.readString(checksumPath));
+                            }
+                        } catch (Exception ex) {
+                            log.error(ExceptionUtils.getStackTrace(ex));
+                        }
+                    });
+        } catch (IOException ex) {
+            log.error(ExceptionUtils.getStackTrace(ex));
+        }
+        return data;
+    }
+
+    private JSONObject commonDigest(Repository repository, String path) {
+        RepositoryPath repositoryPath = repositoryPathResolver.resolve(repository.getStorage().getId(), repository.getId(), path);
+        if (Objects.isNull(repositoryPath) || !Files.exists(repositoryPath)) {
+            return null;
+        }
+        JSONObject data = new JSONObject();
+        String exportManifestUrl = getBaseUrl(repository) + "/v1/files/" + path;
+        data.put("conanmanifest.txt", exportManifestUrl);
+        return data;
+    }
+
     private void resolveContent(JSONObject data, String content) {
         // 使用正则表达式匹配带括号的键
         final String regex = "\\[(.*?)\\]";
@@ -122,7 +250,7 @@ public class ConanSearchHostedProvider implements ConanSearchProvider {
         // 循环匹配键
         while (matcher.find()) {
             String key = matcher.group(1);
-            data.put(key, getPackageInfo(content, key));
+            data.put(key, getPackageInfo(content, "[" + key + "]"));
         }
     }
 
@@ -150,6 +278,10 @@ public class ConanSearchHostedProvider implements ConanSearchProvider {
             }
         }
         return map;
+    }
+
+    protected String getBaseUrl(Repository repository) {
+        return String.format("%s/%s/%s", StringUtils.chomp(configurationManager.getConfiguration().getBaseUrl(), "/"), repository.getStorage().getId(), repository.getId());
     }
 
 }

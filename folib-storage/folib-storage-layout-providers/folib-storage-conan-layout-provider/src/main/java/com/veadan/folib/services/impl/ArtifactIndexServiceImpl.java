@@ -4,8 +4,10 @@ import com.alibaba.fastjson.JSONObject;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.veadan.folib.artifact.coordinates.ConanArtifactIndex;
+import com.veadan.folib.components.DistributedLockComponent;
 import com.veadan.folib.configuration.Configuration;
 import com.veadan.folib.configuration.ConfigurationManager;
+import com.veadan.folib.constant.GlobalConstants;
 import com.veadan.folib.domain.ConanPackagesRevisions;
 import com.veadan.folib.domain.ConanRevision;
 import com.veadan.folib.domain.ConanRevisions;
@@ -49,6 +51,9 @@ public class ArtifactIndexServiceImpl implements ArtifactIndexService {
     @Inject
     private RepositoryPathResolver repositoryPathResolver;
 
+    @Inject
+    private DistributedLockComponent distributedLockComponent;
+
     @Override
     public void rebuildIndex(String storageId, String repositoryId, String artifactPath) {
         Storage storage = getConfiguration().getStorage(storageId);
@@ -71,18 +76,23 @@ public class ArtifactIndexServiceImpl implements ArtifactIndexService {
         if (!Files.exists(repositoryBasePath)) {
             return;
         }
-
-        try (Stream<Path> pathStream = Files.walk(repositoryBasePath)) {
-            pathStream.filter(Files::isDirectory)
-                    // Skip directories which start with a dot (like, for example: .index)
-                    .filter(ConanArtifactIndex::isIndexDirectory)
-                    // Note: Sorting can be expensive:
-                    .sorted()
-                    .forEach(this::execute);
-        } catch (IOException ex) {
-            log.error(ExceptionUtils.getStackTrace(ex));
+        String key = "ConanIndex_" + repositoryBasePath.toString();
+        if (distributedLockComponent.lock(key, GlobalConstants.WAIT_LOCK_TIME)) {
+            try {
+                try (Stream<Path> pathStream = Files.walk(repositoryBasePath)) {
+                    pathStream.filter(Files::isDirectory)
+                            // Skip directories which start with a dot (like, for example: .index)
+                            .filter(ConanArtifactIndex::isIndexDirectory)
+                            // Note: Sorting can be expensive:
+                            .sorted()
+                            .forEach(this::execute);
+                } catch (IOException ex) {
+                    log.error(ExceptionUtils.getStackTrace(ex));
+                }
+            } finally {
+                distributedLockComponent.unLock(key);
+            }
         }
-
     }
 
     @Override

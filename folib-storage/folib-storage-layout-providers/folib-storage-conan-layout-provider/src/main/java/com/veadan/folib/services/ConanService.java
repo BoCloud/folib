@@ -1,5 +1,6 @@
 package com.veadan.folib.services;
 
+import com.alibaba.fastjson.JSONObject;
 import com.veadan.folib.domain.SearchResults;
 import com.veadan.folib.storage.repository.Repository;
 
@@ -12,11 +13,12 @@ public interface ConanService {
     /**
      * 搜索
      *
+     * @param version    conan 接口版本
      * @param repository 仓库
      * @param query      关键词
      * @return 结果
      */
-    SearchResults search(Repository repository, String query);
+    SearchResults search(String version, Repository repository, String query);
 
     /**
      * 搜索
@@ -27,4 +29,68 @@ public interface ConanService {
      * @return 结果
      */
     Object revisionsSearch(Repository repository, String artifactPath, String url);
+
+    /**
+     * conan v1 downloadUrls
+     *
+     * @param repository 仓库
+     * @param name       name
+     * @param version    version
+     * @param user       user
+     * @param channel    channel
+     * @return 结果
+     */
+    JSONObject downloadUrls(Repository repository, String name, String version, String user, String channel);
+
+    /**
+     * conan v1 package downloadUrls
+     *
+     * @param repository 仓库
+     * @param name       name
+     * @param version    version
+     * @param user       user
+     * @param channel    channel
+     * @param packageId  packageId
+     * @return 结果
+     */
+    JSONObject packageDownloadUrls(Repository repository, String name, String version, String user, String channel, String packageId);
+
+    /**
+     * conan v1 digest inspect命令使用
+     *
+     * @param repository 仓库
+     * @param name       name
+     * @param version    version
+     * @param user       user
+     * @param channel    channel
+     * @return 结果
+     */
+    JSONObject digest(Repository repository, String name, String version, String user, String channel);
+
+    /**
+     * conan v1 packageDigest inspect命令使用
+     *
+     * @param repository 仓库
+     * @param name       name
+     * @param version    version
+     * @param user       user
+     * @param channel    channel
+     * @param packageId  packageId
+     * @return 结果
+     */
+    JSONObject packageDigest(Repository repository, String name, String version, String user, String channel, String packageId);
+
+    /**
+     * conan v1 getPackageInfo
+     *
+     * @param repository 仓库
+     * @param name       name
+     * @param version    version
+     * @param user       user
+     * @param channel    channel
+     * @param packageId  packageId
+     * @param url        url
+     * @return 结果
+     */
+    JSONObject getPackageInfo(Repository repository, String name, String version, String user, String channel, String packageId, String url);
 }
