@@ -2,6 +2,7 @@ package com.veadan.folib.services.impl;
 
 import com.alibaba.fastjson.JSONObject;
 import com.veadan.folib.configuration.ConfigurationManager;
+import com.veadan.folib.domain.ConanRevisions;
 import com.veadan.folib.domain.SearchResults;
 import com.veadan.folib.enums.ConanSearchRepositoryTypeEnum;
 import com.veadan.folib.services.ConanProvider;
@@ -36,6 +37,12 @@ public class ConanServiceImpl implements ConanService {
     public Object revisionsSearch(Repository repository, String artifactPath, String url) {
         ConanProvider conanSearchProvider = conanProviderRegistry.getProvider(ConanSearchRepositoryTypeEnum.resolveType(repository.getType()));
         return conanSearchProvider.revisionsSearch(repository, artifactPath, url);
+    }
+
+    @Override
+    public JSONObject revisions(Repository repository, String artifactPath, String targetUrl) {
+        ConanProvider conanSearchProvider = conanProviderRegistry.getProvider(ConanSearchRepositoryTypeEnum.resolveType(repository.getType()));
+        return conanSearchProvider.revisions(repository, artifactPath, targetUrl);
     }
 
     @Override

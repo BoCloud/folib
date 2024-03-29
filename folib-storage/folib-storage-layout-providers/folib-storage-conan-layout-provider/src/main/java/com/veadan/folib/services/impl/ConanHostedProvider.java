@@ -119,6 +119,21 @@ public class ConanHostedProvider implements ConanProvider {
     }
 
     @Override
+    public JSONObject revisions(Repository repository, String artifactPath, String targetUrl) {
+        RepositoryPath repositoryPath = repositoryPathResolver.resolve(repository, artifactPath);
+        if (Objects.isNull(repositoryPath) || !Files.exists(repositoryPath)) {
+            return null;
+        }
+        try {
+            String data = Files.readString(repositoryPath);
+            return JSONObject.parseObject(data);
+        } catch (Exception ex) {
+            log.error(ExceptionUtils.getStackTrace(ex));
+        }
+        return null;
+    }
+
+    @Override
     public JSONObject downloadUrls(Repository repository, String name, String version, String user, String channel) {
         String artifactPath = String.format("%s/%s/%s/%s/0/export", user, name, version, channel);
         RepositoryPath repositoryPath = repositoryPathResolver.resolve(repository.getStorage().getId(), repository.getId(), artifactPath);

@@ -87,6 +87,30 @@ public class ConanGroupProvider implements ConanProvider {
     }
 
     @Override
+    public JSONObject revisions(Repository repository, String artifactPath, String targetUrl) {
+        JSONObject data = null, subData;
+        for (String storageAndRepositoryId : repository.getGroupRepositories()) {
+            try {
+                String sId = ConfigurationUtils.getStorageId(repository.getStorage().getId(), storageAndRepositoryId);
+                String rId = ConfigurationUtils.getRepositoryId(storageAndRepositoryId);
+                Repository subRepository = configurationManager.getRepository(sId, rId);
+                if (!isRepositoryResolvable(subRepository)) {
+                    continue;
+                }
+                ConanProvider conanSearchProvider = conanProviderRegistry.getProvider(ConanSearchRepositoryTypeEnum.resolveType(subRepository.getType()));
+                subData = conanSearchProvider.revisions(subRepository, artifactPath, targetUrl);
+                if (Objects.nonNull(subData) && !JSONUtil.isNull(subData) && subData.keySet().size() > 0) {
+                    data = subData;
+                    break;
+                }
+            } catch (Exception ex) {
+                log.error(ExceptionUtils.getStackTrace(ex));
+            }
+        }
+        return data;
+    }
+
+    @Override
     public JSONObject downloadUrls(Repository repository, String name, String version, String user, String channel) {
         JSONObject data = new JSONObject(), subData;
         for (String storageAndRepositoryId : repository.getGroupRepositories()) {

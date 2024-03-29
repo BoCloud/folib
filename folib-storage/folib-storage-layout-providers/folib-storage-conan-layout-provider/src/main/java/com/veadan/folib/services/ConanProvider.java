@@ -1,6 +1,7 @@
 package com.veadan.folib.services;
 
 import com.alibaba.fastjson.JSONObject;
+import com.veadan.folib.domain.ConanRevisions;
 import com.veadan.folib.domain.SearchResults;
 import com.veadan.folib.storage.repository.Repository;
 
@@ -33,6 +34,16 @@ public interface ConanProvider {
      * @return 结果
      */
     JSONObject revisionsSearch(Repository repository, String artifactPath, String url);
+
+    /**
+     * conan v2 revisions revisionsPackages
+     *
+     * @param repository   仓库
+     * @param artifactPath artifactPath
+     * @param targetUrl    targetUrl
+     * @return 结果
+     */
+    JSONObject revisions(Repository repository, String artifactPath, String targetUrl);
 
     /**
      * conan v1 downloadUrls

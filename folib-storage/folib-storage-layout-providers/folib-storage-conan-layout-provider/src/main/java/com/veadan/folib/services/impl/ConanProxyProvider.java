@@ -8,15 +8,20 @@ import com.veadan.folib.domain.SearchResults;
 import com.veadan.folib.domain.client.ResponseResult;
 import com.veadan.folib.enums.ConanSearchRepositoryTypeEnum;
 import com.veadan.folib.enums.ResponseDataTypeEnum;
+import com.veadan.folib.providers.io.RepositoryFiles;
+import com.veadan.folib.providers.io.RepositoryPath;
+import com.veadan.folib.providers.io.RepositoryPathResolver;
 import com.veadan.folib.services.ConanProvider;
 import com.veadan.folib.storage.repository.Repository;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
 import javax.inject.Inject;
+import java.nio.file.Files;
 import java.util.Objects;
 
 /**
@@ -34,6 +39,9 @@ public class ConanProxyProvider implements ConanProvider {
 
     @Inject
     private ConfigurationManager configurationManager;
+
+    @Inject
+    private RepositoryPathResolver repositoryPathResolver;
 
     @PostConstruct
     @Override
@@ -65,6 +73,34 @@ public class ConanProxyProvider implements ConanProvider {
     @Override
     public JSONObject revisionsSearch(Repository repository, String artifactPath, String url) {
         return commonUrlJSONData(repository, url);
+    }
+
+    @Override
+    public JSONObject revisions(Repository repository, String artifactPath, String targetUrl) {
+        RepositoryPath indexJsonRepositoryPath = repositoryPathResolver.resolve(repository, artifactPath);
+        try {
+            JSONObject indexData = null;
+            if (Objects.isNull(indexJsonRepositoryPath) || !Files.exists(indexJsonRepositoryPath) || RepositoryFiles.hasRefreshContent(indexJsonRepositoryPath)) {
+                if (RepositoryFiles.hasRefreshContent(indexJsonRepositoryPath)) {
+                    log.info("Conan indexJsonRepositoryPath [{}] [{}] [{}] refresh content", indexJsonRepositoryPath.getStorageId(), indexJsonRepositoryPath.getRepositoryId(), artifactPath);
+                }
+                indexData = commonUrlJSONData(repository, targetUrl);
+                if (Objects.isNull(indexData)) {
+                    return null;
+                }
+                try {
+                    Files.writeString(indexJsonRepositoryPath, indexData.toJSONString());
+                } catch (Exception ex) {
+                    log.error(ExceptionUtils.getStackTrace(ex));
+                }
+            } else {
+                indexData = JSONObject.parseObject(Files.readString(indexJsonRepositoryPath));
+            }
+            return indexData;
+        } catch (Exception ex) {
+            log.error(ExceptionUtils.getStackTrace(ex));
+        }
+        return null;
     }
 
     @Override

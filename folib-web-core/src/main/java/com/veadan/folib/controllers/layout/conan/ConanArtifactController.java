@@ -9,7 +9,6 @@ import com.veadan.folib.constant.GlobalConstants;
 import com.veadan.folib.controllers.BaseArtifactController;
 import com.veadan.folib.domain.ConanPackagesRevisions;
 import com.veadan.folib.domain.ConanRevisions;
-import com.veadan.folib.providers.io.RepositoryFiles;
 import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.providers.layout.LayoutFileSystemProvider;
 import com.veadan.folib.services.ArtifactIndexService;
@@ -402,21 +401,13 @@ public class ConanArtifactController extends BaseArtifactController {
             @PathVariable("revisions") String revisions,
             HttpServletRequest request) throws Exception {
         String artifactPath = String.format("%s/%s/%s/%s/%s", user, name, version, channel, "index.json");
-        RepositoryPath repositoryPath = getLocalRepositoryPath(storageId, repositoryId, artifactPath);
-        if (!Files.exists(repositoryPath) || RepositoryFiles.hasRefreshContent(repositoryPath)) {
-            String targetUrl = String.format("/v2/conans/%s/%s/%s/%s/revisions", name, version, user, channel);
-            repositoryPath.setTargetUrl(targetUrl);
-            repositoryPath = artifactResolutionService.resolvePath(repositoryPath);
-        }
-        if (Objects.isNull(repositoryPath) || !Files.exists(repositoryPath)) {
+        String targetUrl = String.format("/v2/conans/%s/%s/%s/%s/revisions", name, version, user, channel);
+        JSONObject data = conanService.revisions(repository, artifactPath, targetUrl);
+        if (Objects.isNull(data)) {
             return new ResponseEntity<>(errMsg(HttpStatus.NOT_FOUND.value(), HttpStatus.NOT_FOUND.getReasonPhrase()), HttpStatus.NOT_FOUND);
         }
-        String revisionsInfo = Files.readString(repositoryPath);
-        if (StringUtils.isBlank(revisionsInfo)) {
-            return new ResponseEntity<>(errMsg(HttpStatus.NOT_FOUND.value(), HttpStatus.NOT_FOUND.getReasonPhrase()), HttpStatus.NOT_FOUND);
-        }
-        ConanRevisions conanRevisions = JSONObject.parseObject(revisionsInfo, ConanRevisions.class);
-        if (CollectionUtils.isEmpty(conanRevisions.getRevisions())) {
+        ConanRevisions conanRevisions = JSONObject.parseObject(data.toJSONString(), ConanRevisions.class);
+        if (Objects.isNull(conanRevisions) || CollectionUtils.isEmpty(conanRevisions.getRevisions())) {
             return new ResponseEntity<>(errMsg(HttpStatus.NOT_FOUND.value(), HttpStatus.NOT_FOUND.getReasonPhrase()), HttpStatus.NOT_FOUND);
         }
         if (GlobalConstants.LATEST.equals(revisions)) {
@@ -507,20 +498,12 @@ public class ConanArtifactController extends BaseArtifactController {
             @PathVariable("packageId") String packageId,
             @PathVariable("revisions") String revisions) throws Exception {
         String artifactPath = String.format("%s/%s/%s/%s/%s/package/%s/%s", user, name, version, channel, revisionId, packageId, "index.json");
-        RepositoryPath repositoryPath = getLocalRepositoryPath(storageId, repositoryId, artifactPath);
-        if (!Files.exists(repositoryPath) || RepositoryFiles.hasRefreshContent(repositoryPath)) {
-            String targetUrl = String.format("/v2/conans/%s/%s/%s/%s/revisions/%s/packages/%s/revisions", name, version, user, channel, revisionId, packageId);
-            repositoryPath.setTargetUrl(targetUrl);
-            repositoryPath = artifactResolutionService.resolvePath(repositoryPath);
-        }
-        if (Objects.isNull(repositoryPath) || !Files.exists(repositoryPath)) {
+        String targetUrl = String.format("/v2/conans/%s/%s/%s/%s/revisions/%s/packages/%s/revisions", name, version, user, channel, revisionId, packageId);
+        JSONObject data = conanService.revisions(repository, artifactPath, targetUrl);
+        if (Objects.isNull(data)) {
             return new ResponseEntity<>(errMsg(HttpStatus.NOT_FOUND.value(), HttpStatus.NOT_FOUND.getReasonPhrase()), HttpStatus.NOT_FOUND);
         }
-        String revisionsInfo = Files.readString(repositoryPath);
-        if (StringUtils.isBlank(revisionsInfo)) {
-            return new ResponseEntity<>(errMsg(HttpStatus.NOT_FOUND.value(), HttpStatus.NOT_FOUND.getReasonPhrase()), HttpStatus.NOT_FOUND);
-        }
-        ConanPackagesRevisions conanPackagesRevisions = JSONObject.parseObject(revisionsInfo, ConanPackagesRevisions.class);
+        ConanPackagesRevisions conanPackagesRevisions = JSONObject.parseObject(data.toJSONString(), ConanPackagesRevisions.class);
         if (CollectionUtils.isEmpty(conanPackagesRevisions.getRevisions())) {
             return new ResponseEntity<>(errMsg(HttpStatus.NOT_FOUND.value(), HttpStatus.NOT_FOUND.getReasonPhrase()), HttpStatus.NOT_FOUND);
         }

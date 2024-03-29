@@ -1,6 +1,7 @@
 package com.veadan.folib.providers.layout;
 
 import com.veadan.folib.artifact.coordinates.ConanArtifactCoordinates;
+import com.veadan.folib.artifact.coordinates.ConanArtifactIndex;
 import com.veadan.folib.constant.GlobalConstants;
 import com.veadan.folib.providers.header.HeaderMappingRegistry;
 import com.veadan.folib.providers.io.RepositoryFileAttributeType;
@@ -18,6 +19,7 @@ import org.springframework.stereotype.Component;
 import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 import java.io.IOException;
+import java.nio.file.Files;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Map;
@@ -87,9 +89,21 @@ public class ConanLayoutProvider extends AbstractLayoutProvider<ConanArtifactCoo
         for (RepositoryFileAttributeType attributeType : attributeTypes) {
             Object value = result.get(attributeType);
             switch (attributeType) {
+                case ARTIFACT:
+                    value = (Boolean) value && !isConanMetadata(repositoryPath);
+                    if (value != null) {
+                        result.put(attributeType, value);
+                    }
+                    break;
+                case METADATA:
+                    value = (Boolean) value || isConanMetadata(repositoryPath);
+                    if (value != null) {
+                        result.put(attributeType, value);
+                    }
+                    break;
                 case REFRESH_CONTENT:
                     final Instant halfAnHourAgo = Instant.now().minus(30, ChronoUnit.MINUTES);
-                    value = BooleanUtils.isTrue((Boolean) value) || (repositoryPath.getFileName().toString().endsWith("index.json")
+                    value = BooleanUtils.isTrue((Boolean) value) || (Files.exists(repositoryPath) && isConanMetadata(repositoryPath)
                             &&
                             !RepositoryFiles.wasModifiedAfter(repositoryPath,
                                     halfAnHourAgo));
@@ -103,5 +117,8 @@ public class ConanLayoutProvider extends AbstractLayoutProvider<ConanArtifactCoo
         return result;
     }
 
+    public boolean isConanMetadata(RepositoryPath path) {
+        return path.getFileName().toString().endsWith(ConanArtifactIndex.INDEX_JSON_NAME);
+    }
 }
 
