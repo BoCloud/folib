@@ -811,11 +811,17 @@ public class ArtifactAdapter implements VertexEntityTraversalAdapter<Artifact> {
             t = t.property(single, "artifactFileExists", entity.getArtifactFileExists());
         }
         if (StringUtils.isNotBlank(entity.getPromotion())) {
-            t = t.property(single, "promotion", entity.getPromotion());
+            if (drop.equals(entity.getPromotion())) {
+                t = t.property(single, "promotion", "");
+            } else {
+                t = t.property(single, "promotion", entity.getPromotion());
+            }
         }
         if (CollectionUtils.isNotEmpty(entity.getPromotionNodes())) {
             t = t.sideEffect(__.properties("promotionNodes").drop());
-            t = t.property("promotionNodes", entity.getPromotionNodes());
+            if (!entity.getPromotionNodes().contains(drop)) {
+                t = t.property("promotionNodes", entity.getPromotionNodes());
+            }
         }
         if (Objects.nonNull(entity.getEnabled())) {
             t = t.property(single, "enabled", entity.getEnabled());

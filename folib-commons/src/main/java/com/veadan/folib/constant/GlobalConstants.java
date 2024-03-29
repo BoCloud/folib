@@ -141,4 +141,9 @@ public interface GlobalConstants {
      * download
      */
     String DOWNLOAD = "download";
+    
+   /**
+     * drop
+     */
+    String DROP = "drop";
 }

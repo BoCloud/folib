@@ -20,6 +20,7 @@ import com.veadan.folib.configuration.*;
 import com.veadan.folib.constant.GlobalConstants;
 import com.veadan.folib.controllers.layout.pypi.PypiBrowsePackageHtmlResponseBuilder;
 import com.veadan.folib.data.criteria.Paginator;
+import com.veadan.folib.dispatch.ClusterDispatchNodeDto;
 import com.veadan.folib.domain.*;
 import com.veadan.folib.entity.ArtifactCacheRecord;
 import com.veadan.folib.entity.Dict;
@@ -57,6 +58,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.codec.digest.MessageDigestAlgorithms;
 import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
@@ -728,7 +730,7 @@ public class ArtifactComponent {
     public void checkArtifactPromotion(Artifact artifact) {
         if (Objects.nonNull(artifact)) {
             Set<String> promotionNodes = artifact.getPromotionNodes();
-            if (CollectionUtils.isNotEmpty(promotionNodes) && promotionNodes.stream().allMatch(PromotionStatusEnum.SUCCESS.getStatus()::contains)) {
+            if (CollectionUtils.isNotEmpty(promotionNodes) && promotionNodes.stream().allMatch(item -> item.contains(PromotionStatusEnum.SUCCESS.getStatus()))) {
                 artifact.setPromotion(PromotionStatusEnum.SUCCESS.getStatus());
                 artifactService.saveOrUpdateArtifact(artifact);
             }
@@ -753,12 +755,17 @@ public class ArtifactComponent {
                     if (StringUtils.isNotBlank(promotionNode) && promotionNode.contains(node)) {
                         //节点信息已存在，移除
                         iterable.remove();
-                        log.debug("存储空间： {} 仓库：{} 制品：{} 节点：{} 不存在，移除", artifact.getStorageId(), artifact.getRepositoryId(), artifact.getArtifactPath(), node);
+                        log.info("存储空间： {} 仓库：{} 制品：{} 节点：{} 不存在，移除", artifact.getStorageId(), artifact.getRepositoryId(), artifact.getArtifactPath(), node);
                     }
                 }
-                if (CollectionUtils.isNotEmpty(promotionNodes) && promotionNodes.stream().allMatch(PromotionStatusEnum.SUCCESS.getStatus()::contains)) {
+                if (CollectionUtils.isNotEmpty(promotionNodes) && promotionNodes.stream().allMatch(item -> item.contains(PromotionStatusEnum.SUCCESS.getStatus()))) {
                     updateArtifact.setPromotion(PromotionStatusEnum.SUCCESS.getStatus());
                 }
+                if (CollectionUtils.isEmpty(promotionNodes)) {
+                    updateArtifact.setPromotion(GlobalConstants.DROP);
+                    promotionNodes.add(GlobalConstants.DROP);
+                }
+                updateArtifact.setPromotionNodes(promotionNodes);
                 artifactService.saveOrUpdateArtifact(updateArtifact);
             }
         }
@@ -873,8 +880,8 @@ public class ArtifactComponent {
     /**
      * 查询NpmArtifactIdGroupCache
      *
-     * @param repository       repository
-     * @param artifactId       artifactId
+     * @param repository repository
+     * @param artifactId artifactId
      * @return packageFeed
      */
     public String getNpmArtifactIdGroupBinaryCache(Repository repository, String artifactId) {
@@ -1034,8 +1041,8 @@ public class ArtifactComponent {
 
     /**
      * @param sourceRepository 源仓库
-     * @param repository repository
-     * @param artifactId artifactId
+     * @param repository       repository
+     * @param artifactId       artifactId
      * @return npm binary
      */
     public String getNpmArtifactIdGroupBinary(Repository sourceRepository, Repository repository, String artifactId) {

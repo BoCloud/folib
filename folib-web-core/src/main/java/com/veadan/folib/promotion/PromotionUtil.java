@@ -123,7 +123,7 @@ public class PromotionUtil {
         }
     }
 
-    @Async("asyncThreadPoolTaskExecutor")
+    @Async("asyncPromotionPoolTaskExecutor")
     public void executeHandleDispatch(ArtifactDispatch artifactDispatch) {
         // 获取分发配置信息
         Map<String, ClusterDispatchNodeDto> map = configurationManagementService.

@@ -52,15 +52,16 @@ public class ArtifactEventPromotionListener {
 
     @EventListener
     public void handle(final ArtifactEvent<RepositoryPath> event) {
-        int source = (int) event.getSource();
-        RepositoryPath repositoryPath = event.getPath();
-        ArtifactEventTypeEnum artifactEventTypeEnum = ArtifactEventTypeEnum.queryArtifactEventTypeEnumByType(source);
-        log.debug("监听到制品事件 [{}]，path路径 [{}]", artifactEventTypeEnum, repositoryPath);
-        if (Objects.isNull(artifactEventTypeEnum)) {
-            return;
-        }
-        if (validateArtifactEvent(artifactEventTypeEnum) && artifactComponent.layoutSupports(repositoryPath)) {
-            try {
+        try {
+            int source = (int) event.getSource();
+            RepositoryPath repositoryPath = event.getPath();
+            ArtifactEventTypeEnum artifactEventTypeEnum = ArtifactEventTypeEnum.queryArtifactEventTypeEnumByType(source);
+            log.debug("监听到制品事件 [{}]，path路径 [{}]", artifactEventTypeEnum, repositoryPath);
+            if (Objects.isNull(artifactEventTypeEnum)) {
+                return;
+            }
+            if (validateArtifactEvent(artifactEventTypeEnum) && artifactComponent.layoutSupports(repositoryPath)) {
+
                 Repository repository = artifactComponent.getRepository(repositoryPath.getStorageId(), repositoryPath.getRepositoryId());
                 if (Objects.isNull(repository)) {
                     log.debug("仓库 [{}] 不存在，无后续操作", RepositoryFiles.relativizePath(repositoryPath));
@@ -140,9 +141,9 @@ public class ArtifactEventPromotionListener {
                         }
                     }
                 }
-            } catch (Exception ex) {
-                log.error("事件监听，处理自动晋级，事件类型 [{}] repositoryPath [{}] 错误 [{}]", source, repositoryPath, ExceptionUtils.getStackTrace(ex));
             }
+        } catch (Exception ex) {
+            log.error("事件监听，处理自动晋级，事件类型 [{}] repositoryPath [{}] error [{}]", event.getSource(), event.getPath(), ExceptionUtils.getStackTrace(ex));
         }
     }
 

@@ -1,33 +1,25 @@
 package com.veadan.folib.components.promotion;
 
-import com.veadan.folib.artifact.coordinates.DockerArtifactCoordinates;
 import com.veadan.folib.components.layout.DockerComponent;
 import com.veadan.folib.configuration.UnionTargetRepositoryConfiguration;
 import com.veadan.folib.domain.ArtifactDispatch;
-import com.veadan.folib.dto.PromotionArtifactDto;
-import com.veadan.folib.dto.PromotionNodeOptionDto;
 import com.veadan.folib.dto.TargetDispatchRepositoryDto;
 import com.veadan.folib.enums.ArtifactoryRepositoryTypeEnum;
-import com.veadan.folib.enums.PromotionStatusEnum;
 import com.veadan.folib.promotion.PromotionUtil;
 import com.veadan.folib.providers.io.RepositoryFiles;
 import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.providers.io.RepositoryPathResolver;
-import com.veadan.folib.providers.layout.DockerLayoutProvider;
 import com.veadan.folib.services.JFrogService;
 import com.veadan.folib.util.RepositoryPathUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
-import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
 import javax.inject.Inject;
-import java.io.InputStream;
 import java.nio.file.Files;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 
 /**
@@ -66,8 +58,7 @@ public class JFrogArtifactPromotionProvider implements ArtifactPromotionProvider
         String repositoryId = repositoryPath.getRepositoryId();
         artifactPath = artifactPath.replace(String.format("%s/%s/", storageId, repositoryId), "");
         log.info("存储空间：{} 仓库：{} 制品：{} 目标节点：{} 目标节点类型：{} 目标仓库：{} 目标路径：{} 满足晋级条件，开始晋级", storageId, repositoryId, artifactPath, unionTargetRepositoryConfiguration.getNode(), unionTargetRepositoryConfiguration.getType(), unionTargetRepositoryConfiguration.getRepositoryId(), artifactPath);
-        boolean success = jFrogService.uploadItem(unionTargetRepositoryConfiguration.getNode(), unionTargetRepositoryConfiguration.getRepositoryId(), repositoryPath, artifactPath, true);
-        log.info("存储空间：{} 仓库：{} 制品：{} 目标节点：{} 目标节点类型：{} 目标仓库：{} 目标路径：{} 晋级结果：{}", storageId, repositoryId, artifactPath, unionTargetRepositoryConfiguration.getNode(), unionTargetRepositoryConfiguration.getType(), unionTargetRepositoryConfiguration.getRepositoryId(), artifactPath, success ? PromotionStatusEnum.SUCCESS.getStatus() : PromotionStatusEnum.FAIL.getStatus());
+        jFrogService.uploadItem(unionTargetRepositoryConfiguration.getNode(), unionTargetRepositoryConfiguration.getRepositoryId(), repositoryPath, artifactPath, true);
     }
 
     @Override
@@ -91,8 +82,7 @@ public class JFrogArtifactPromotionProvider implements ArtifactPromotionProvider
                     }
                     uploadArtifactPath = RepositoryFiles.relativizePath(repositoryPath);
                     log.info("存储空间：{} 仓库：{} 制品：{} 目标节点：{} 目标节点类型：{} 目标仓库：{} 目标路径：{} 开始分发", storageId, repositoryId, artifactPath, item.getDispatchClusterEnName(), item.getArtifactoryRepositoryType(), item.getTargetRepositoryId(), uploadArtifactPath);
-                    boolean success = jFrogService.uploadItem(item.getDispatchClusterEnName(), item.getTargetRepositoryId(), repositoryPath, uploadArtifactPath, false);
-                    log.info("存储空间：{} 仓库：{} 制品：{} 目标节点：{} 目标节点类型：{} 目标仓库：{} 目标路径：{} 分发结果：{}", storageId, repositoryId, artifactPath, item.getDispatchClusterEnName(), item.getArtifactoryRepositoryType(), item.getTargetRepositoryId(), uploadArtifactPath, success ? PromotionStatusEnum.SUCCESS.getStatus() : PromotionStatusEnum.FAIL.getStatus());
+                    jFrogService.uploadItem(item.getDispatchClusterEnName(), item.getTargetRepositoryId(), repositoryPath, uploadArtifactPath, false);
                 }
             } catch (Exception ex) {
                 log.error("存储空间：{} 仓库：{} 制品：{} 目标节点：{} 目标节点类型：{} 目标仓库：{} 分发错误：{}", storageId, repositoryId, artifactPath, item.getDispatchClusterEnName(), item.getArtifactoryRepositoryType(), item.getTargetRepositoryId(), ExceptionUtils.getStackTrace(ex));
