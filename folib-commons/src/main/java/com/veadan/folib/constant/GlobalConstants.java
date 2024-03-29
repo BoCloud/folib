@@ -126,4 +126,19 @@ public interface GlobalConstants {
      * docker level single
      */
     String DOCKER_LEVEL_SINGLE = "single";
+    
+    /**
+     * latest
+     */
+    String LATEST = "latest";
+
+    /**
+     * asterisk
+     */
+    String ASTERISK = "*";
+
+    /**
+     * download
+     */
+    String DOWNLOAD = "download";
 }

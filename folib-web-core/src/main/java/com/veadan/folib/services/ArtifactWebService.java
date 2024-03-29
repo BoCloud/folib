@@ -222,15 +222,6 @@ public interface ArtifactWebService {
     void bomUpload(RepositoryPath repositoryPath, MultipartFile file);
 
     /**
-     * 清理snapshot遗留数据
-     *
-     * @param storageId    存储空间
-     * @param repositoryId 仓库名称
-     * @param path         路径
-     */
-    void cleanSnapshot(String storageId, String repositoryId, String path);
-
-    /**
      * docker仓库旧版本升级
      *
      * @param storageId    存储空间
