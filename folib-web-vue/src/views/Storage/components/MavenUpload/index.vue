@@ -1,19 +1,19 @@
 <template>
   <div>
-    <a-modal v-model="visible" title="上传" :maskClosable="false" centered :footer="null">
+    <a-modal v-model="visible" :title="$t('Store.Upload')" :maskClosable="false" centered :footer="null">
       <a-form-model layout="horizontal" ref="uploadForm" :model="uploadForm" :rules="uploadRules" :hideRequiredMark="true"
         @submit.prevent="upload">
         <a-row :gutter="[24]">
           <a-col :span="24">
-            <a-form-model-item class="mb-10" label="目标仓库" :colon="false" prop="repositoryId">
-              <a-input :disabled="true" placeholder="请输入目标仓库" v-model="uploadForm.repositoryId" />
+            <a-form-model-item class="mb-10" :label="$t('Store.TargetWarehouse')" :colon="false" prop="repositoryId">
+              <a-input :disabled="true" :placeholder="$t('Store.InputTargetWarehouse')" v-model="uploadForm.repositoryId" />
             </a-form-model-item>
           </a-col>
           <a-col :span="24">
-            <a-form-model-item class="mb-10" label="制品文件" :colon="false" prop="file">
+            <a-form-model-item class="mb-10" :label="$t('Store.Product')" :colon="false" prop="file">
               <a-upload name="file" :multiple="false" :before-upload="beforeUpload" :remove="handleRemove"
                 :fileList="fileList" :customRequest="customRequest" :accept="'.jar,.war,.pom'">
-                <a-button> <a-icon type="upload" />选择文件</a-button>
+                <a-button> <a-icon type="upload" />{{ $t('Store.SelectFile') }}</a-button>
                 <a-progress :percent="percent" v-if="percent > 0" size="small"
                   :stroke-color="{ '0%': '#108ee9', '100%': '#108ee9', }" />
               </a-upload>
@@ -21,23 +21,23 @@
           </a-col>
           <a-col :span="24">
             <a-form-model-item v-if="this.parseArtifact.type" class="mb-10" label="GroupId" :colon="false" prop="groupId">
-              <a-input placeholder="请输入GroupId" v-model="uploadForm.groupId" />
+              <a-input :placeholder="$t('Store.PleaseEnter') + 'GroupId'" v-model="uploadForm.groupId" />
             </a-form-model-item>
           </a-col>
           <a-col :span="24">
             <a-form-model-item v-if="this.parseArtifact.type" class="mb-10" label="ArtifactId" :colon="false"
               prop="artifactId">
-              <a-input placeholder="请输入ArtifactId" v-model="uploadForm.artifactId" />
+              <a-input :placeholder="$t('Store.PleaseEnter') + 'ArtifactId'" v-model="uploadForm.artifactId" />
             </a-form-model-item>
           </a-col>
           <a-col :span="24">
             <a-form-model-item v-if="this.parseArtifact.type" class="mb-10" label="Version" :colon="false" prop="version">
-              <a-input placeholder="请输入Version" v-model="uploadForm.version" />
+              <a-input :placeholder="$t('Store.PleaseEnter') + 'Version'" v-model="uploadForm.version" />
             </a-form-model-item>
           </a-col>
           <a-col :span="24" class="text-center">
-            <a-button key="submit" class="px-30" size="small" type="primary" :loading="loading" @click="upload">上传</a-button>
-            <a-button key="back" @click="close" class="px-30 ml-10" size="small">取消</a-button>
+            <a-button key="submit" class="px-30" size="small" type="primary" :loading="loading" @click="upload">{{ $t('Store.Upload') }}</a-button>
+            <a-button key="back" @click="close" class="px-30 ml-10" size="small">{{ $t('Store.Cancel') }}</a-button>
           </a-col>
         </a-row>
       </a-form-model>
@@ -72,11 +72,11 @@ export default {
   data() {
     return {
       uploadRules: {
-        repositoryId: [{ required: true, message: "请选择目标仓库", trigger: "blur" }],
-        file: [{ required: true, message: "请选择制品文件", trigger: ["blur", "change"] }],
-        groupId: [{ required: true, message: "请输入GroupId", trigger: "blur" }],
-        artifactId: [{ required: true, message: "请输入ArtifactId", trigger: "blur" }],
-        version: [{ required: true, message: "请输入Version", trigger: "blur" }],
+        repositoryId: [{ required: true, message: this.$t('Store.InputTargetWarehouse'), trigger: "blur" }],
+        file: [{ required: true, message: this.$t('Store.SelectFile'), trigger: ["blur", "change"] }],
+        groupId: [{ required: true, message: this.$t('Store.PleaseEnter') + 'GroupId', trigger: "blur" }],
+        artifactId: [{ required: true, message: this.$t('Store.PleaseEnter') + 'ArtifactId', trigger: "blur" }],
+        version: [{ required: true, message: this.$t('Store.PleaseEnter') + 'Version', trigger: "blur" }],
       },
       uploadForm: {
         storageId: undefined,
@@ -116,7 +116,7 @@ export default {
         return
       }
       if (!message) {
-        message = "操作成功"
+        message = this.$t("Store.OperationSuccess")
       }
       this.$notification[type]({
         message: message,
@@ -125,7 +125,7 @@ export default {
     },
     beforeUpload(file) {
       if (this.uploadForm.file) {
-        this.message(0, "warning", "一次只能上传一个制品")
+        this.message(0, "warning", this.$t("Store.ArtifactSingleUploadLimit"))
         return false
       }
       let result = artifactCheck(this.folibRepository, file.name, file.size)
@@ -191,14 +191,14 @@ export default {
         this.uploadForm.version = this.parseArtifact.version
         this.uploadForm.filePath = this.parseArtifact.filePath
         if (res.type === 2) {
-          this.message(0, "warning", "非标准制品，请手动填写制品信息")
+          this.message(0, "warning", this.$t("Store.NonStandardArtifact"))
         }
       }).catch((err) => {
         let msg = err.response.data.error ? err.response.data.error : err.response.data
         console.log('upload error：', msg)
         let errStatusArr = [200, 500, 403, 304, 401]
         if (!errStatusArr.includes(err.response.status)) {
-          this.message(err.response.status, "error", "错误编码：" + err.response.status)
+          this.message(err.response.status, "error", "err code:" + err.response.status)
         }
       })
     },
@@ -228,7 +228,7 @@ export default {
         this.loading = false
         this.close()
         this.reload()
-        this.message(0, "success", "上传成功")
+        this.message(0, "success", this.$t("Store.OperationSuccess"))
       }).catch((err) => {
         this.loading = true
         let msg = err.response.data.error ? err.response.data.error : err.response.data

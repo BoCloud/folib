@@ -43,6 +43,8 @@ export default {
     'SelectUploadMode': '请选择上传方式',
     'Product': '制品',
     'ZipUpload': '压缩包',
+    'ArtifactSingleUploadLimit': '一次只能上传一个制品',
+    'NonStandardArtifact': '非标准制品，请手动填写制品信息',
     'ProductUpload': '此方式支持多个制品包批量上传，一次不能超过10个文件',
     'ZipFileUpload': '此方式支持上传一个ZIP文件格式的压缩包，大小不能超过',
     'unzippedDirectory': '压缩包将会解压到仓库内的此目录下',

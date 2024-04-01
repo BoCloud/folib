@@ -43,6 +43,8 @@ export default {
     'SelectUploadMode': 'Please select upload method',
     'Product': 'Product',
     'ZipUpload': 'Zip file',
+    'ArtifactSingleUploadLimit': 'Only one artifact can be uploaded at a time',
+    'NonStandardArtifact': 'Non standard artifact, please manually fill in artifact information',
     'ProductUpload': 'This method supports batch upload of multiple product packages, and cannot exceed 10 files at a time',
     'ZipFileUpload': 'In this mode, you can upload a ZIP file with a maximum size of ',
     'unzippedDirectory': 'The package will be unzipped to this directory in the repository ',
