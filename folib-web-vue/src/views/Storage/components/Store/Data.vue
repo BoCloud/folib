@@ -537,6 +537,30 @@ export default {
         this.getConanPackageInfo()
       }
     },
+    '$i18n.locale': function (newValue, oldValue) {
+      this.metadataTypes = [
+        {
+          label: this.$t('Store.Number'),
+          value: "NUMERICAL",
+        },
+        {
+          label: this.$t('Store.String'),
+          value: "STRING",
+        },
+        {
+          label: this.$t('Store.Text'),
+          value: "TEXT",
+        },
+        {
+          label: "Markdown",
+          value: "MD",
+        },
+        {
+          label: "JSON",
+          value: "JSON",
+        },
+      ]
+    },
   },
   methods: {
     getMetadataConfiguration () {

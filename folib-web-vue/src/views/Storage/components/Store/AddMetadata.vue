@@ -2,10 +2,10 @@
   <div>
     <a-modal
       v-model="showMetadata"
-      :title="handlerMetadataType === 1 ? $t('Create')+$t('Metadata') : $t('Modify')+$t('Metadata')"
+      :title="handlerMetadataType === 1 ? $t('Store.Create')+$t('Store.Metadata') : $t('Store.Modify')+$t('Store.Metadata')"
       :maskClosable="false"
-      :cancelText="$t('Cancel')"
-      :okText="$t('Confirm')"
+      :cancelText="$t('Store.Cancel')"
+      :okText="$t('Store.Confirm')"
       @cancel="metadataHandlerCancel()"
       @ok="metadataHandlerConfirm()"
       centered
@@ -21,7 +21,7 @@
           <a-col :span="24">
             <a-form-model-item
               class="mb-10"
-              :label="$t('Custom')+'KEY'"
+              :label="$t('Store.Custom')+'KEY'"
               :colon="false"
               prop="custom"
             >
@@ -35,7 +35,7 @@
           <a-col :span="24" v-if="!metadataForm.custom">
             <a-form-model-item
               class="mb-10"
-              :label="$t('Metadata')+'KEY'"
+              :label="$t('Store.Metadata')+'KEY'"
               :colon="false"
               prop="key"
             >
@@ -43,7 +43,7 @@
                 :disabled="handlerMetadataType !== 1"
                 v-model="metadataForm.key"
                 @change="metadataKeyChange"
-                :placeholder="$t('PleaseSelect')+$t('Metadata')+'KEY'"
+                :placeholder="$t('Store.PleaseSelect')+$t('Store.Metadata')+'KEY'"
                 show-search
                 optionFilterProp="value"
               >
@@ -60,13 +60,13 @@
           <a-col :span="24" v-if="metadataForm.custom">
             <a-form-model-item
               class="mb-10"
-              :label="$t('Metadata')+'KEY'"
+              :label="$t('Store.Metadata')+'KEY'"
               :colon="false"
               prop="customKey"
             >
               <a-input
                 :disabled="handlerMetadataType !== 1"
-                :placeholder="$t('PleaseEnter')+$t('Metadata')+'KEY'"
+                :placeholder="$t('Store.PleaseEnter')+$t('Store.Metadata')+'KEY'"
                 v-model="metadataForm.customKey"
               />
             </a-form-model-item>
@@ -74,7 +74,7 @@
           <a-col :span="24">
             <a-form-model-item
               class="mb-10"
-              :label="$t('Metadata')+$t('Type')"
+              :label="$t('Store.Metadata')+$t('Store.Type')"
               :colon="false"
               prop="type"
             >
@@ -82,12 +82,12 @@
                 :disabled="!metadataForm.custom"
                 v-model="metadataForm.type"
                 @change="metadataTypeChange"
-                :placeholder="$t('PleaseSelect')+$t('Metadata')+$t('Type')"
+                :placeholder="$t('Store.PleaseSelect')+$t('Store.Metadata')+$t('Store.Type')"
                 show-search
                 optionFilterProp="label"
               >
                 <a-select-option
-                  v-for="(item, index) in metadataTypes"
+                  v-for="(item, index) in i18nMetadataTypes"
                   :label="item.label"
                   :key="index"
                   :value="item.value"
@@ -100,19 +100,19 @@
           <a-col :span="24">
             <a-form-model-item
               class="mb-30"
-              :label="$t('Metadata')+$t('value')"
+              :label="$t('Store.Metadata')+$t('Store.value')"
               :colon="false"
               prop="value"
             >
               <a-input
                 v-if="metadataInput"
-                :placeholder="$t('PleaseEnter')+$t('Metadata')+$t('value')"
+                :placeholder="$t('Store.PleaseEnter')+$t('Store.Metadata')+$t('Store.value')"
                 v-model="metadataForm.value"
               />
               <a-input-number
                 v-if="metadataNumber"
                 style="width: 100%"
-                :placeholder="$t('PleaseEnter')+$t('Metadata')+$t('value')"
+                :placeholder="$t('Store.PleaseEnter')+$t('Store.Metadata')+$t('Store.value')"
                 v-model="metadataForm.value"
               />
               <quill-editor
@@ -127,7 +127,7 @@
                 v-model="metadataForm.value"
                 :highlight="highlighterHandle"
                 :line-numbers="true"
-                :placeholder="$t('EnterSomethingHere')"
+                :placeholder="$t('Store.EnterSomethingHere')"
                 :readonly="false"
               >
               </prism-editor>
@@ -174,20 +174,20 @@ export default {
   data() {
     return {
       metadataRules: {
-        key: [{ required: true, message: this.$t('PleaseSelect')+this.$t('Metadata')+'KEY', trigger: "blur" }],
+        key: [{ required: true, message: this.$t('Store.PleaseSelect')+this.$t('Store.Metadata')+'KEY', trigger: "blur" }],
         customKey: [
-          { required: true, message: this.$t('PleaseSelect')+this.$t('Metadata')+'KEY', trigger: "blur" },
+          { required: true, message: this.$t('Store.PleaseSelect')+this.$t('Store.Metadata')+'KEY', trigger: "blur" },
           {
             min: 1,
             max: 30,
-            message: this.$t('KEYLength'),
+            message: this.$t('Store.KEYLength'),
             trigger: "blur",
           },
         ],
         type: [
-          { required: true, message: this.$t('PleaseSelect')+this.$t('Metadata')+this.$t('Type'), trigger: "blur" },
+          { required: true, message: this.$t('Store.PleaseSelect')+this.$t('Store.Metadata')+this.$t('Store.Type'), trigger: "blur" },
         ],
-        value: [{ required: true, message: this.$t('PleaseEnter')+this.$t('Metadata')+this.$t('value'), trigger: "blur" }],
+        value: [{ required: true, message: this.$t('Store.PleaseEnter')+this.$t('Store.Metadata')+this.$t('Store.value'), trigger: "blur" }],
       },
        metadataForm: {
         key: undefined,
@@ -203,6 +203,16 @@ export default {
       metadataNumber: false,
       showMetadata: false,
     };
+  },
+  computed: {
+    i18nMetadataTypes() {
+      return this.metadataTypes.map(item => {
+        if (item.i18nKey) {
+          item.label = this.$t(item.i18nKey);
+        }
+        return item;
+      });
+    }
   },
   created() {
     if (this.propMetadataForm) {
@@ -303,19 +313,19 @@ export default {
               .then((res) => {
                 if (res === "repeat") {
                   this.$notification["warning"]({
-                    message: this.$t('Metadata')+'KEY'+this.$t('ItExists'),
+                    message: this.$t('Store.Metadata')+'KEY'+this.$t('Store.ItExists'),
                     description: "",
                   });
                   return false;
                 }
-                this.successMsg(this.$t('Create')+this.$t('MetadataSuccess'));
+                this.successMsg(this.$t('Store.Create')+this.$t('Store.MetadataSuccess'));
                 this.$emit("metadataReflesh");
               })
               .finally(() => {});
           } else {
             updateArtifactMetadata(data)
               .then((res) => {
-                this.successMsg(this.$t('Modify')+this.$t('MetadataSuccess'));
+                this.successMsg(this.$t('Store.Modify')+this.$t('Store.MetadataSuccess'));
                 this.$emit("metadataReflesh");
               })
               .finally(() => {});
