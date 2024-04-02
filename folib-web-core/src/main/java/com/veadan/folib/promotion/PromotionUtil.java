@@ -191,22 +191,20 @@ public class PromotionUtil {
         }
     }
 
-    //@Async("asyncThreadPoolTaskExecutor")
     public void executeHandleDispatch(ArtifactDispatch artifactDispatch) {
         // 设置上下文字段
         ThreadLocalUtil.set(ThreadLocalContextFieldNameEnum.ARTIFACT_DISPATCH_SYNC_NO.getFieldName(), artifactDispatch.getSyncNo());
-
         // 获取分发配置信息
         Map<String, ClusterDispatchNodeDto> map = configurationManagementService.
                 getMutableConfigurationClone().getClusterDispatchNode();
         if (MapUtil.isEmpty(map)) {
-            log.error("分发配置为空!");
+            log.error("Distribution error,distribution configuration not found, please set distribution configuration first.");
             return;
         }
         List<TargetDispatchRepositoryDto> targetRepositoryList = artifactDispatch.getTargetDispatchRepositoryList();
         String artifactPath = artifactDispatch.getPath();
         if (StringUtils.isBlank(artifactPath)) {
-            log.warn("分发 path 不为空");
+            log.error("Distribution error, artifactPath is empty.");
             return;
         }
         for (TargetDispatchRepositoryDto targetDispatchRepositoryDto : targetRepositoryList) {
@@ -227,14 +225,13 @@ public class PromotionUtil {
         String policy = artifactDispatch.getPolicy();
         Boolean recordStatus = artifactDispatch.getRecordStatus();
 
-        // 因三级联动插件原因 全选一级 或者二级 会得到 存储空间或者仓库为空的情况 ，如果仓库为空则需要再查一遍分发集群仓库信息。
         if (StringUtils.isBlank(dispatchClusterName)) {
-            log.error("分发集群名不为空!");
+            log.error("Distribution target node not specified..");
             return;
         }
         ClusterDispatchNodeDto dispatchNodeDto = map.get(dispatchClusterName);
         if (null == dispatchNodeDto) {
-            log.error("{} 分发配置不存在", dispatchClusterName);
+            log.error("Distribution configuration [{}] does not exist", dispatchClusterName);
             return;
         }
         if (StringUtils.isBlank(targetStorageId) || StringUtils.isBlank(targetRepositoryId)) {
@@ -246,9 +243,7 @@ public class PromotionUtil {
                     .layout(layout)
                     .dispatchEnName(dispatchClusterName)
                     .policy(policy).build();
-
-            log.info(" 请求分发获取仓库信息 {}", JSONUtil.toJsonStr(dispatchRepositoryDto));
-
+            log.info("Request to obtain distribution target node warehouse information [{}]", JSONUtil.toJsonStr(dispatchRepositoryDto));
             String targetHostName = FolibWsRunManageUtil.getTargetHostName(clusterDispatchNodeDto);
             WSMessageRequest wsMessageRequest = new WSMessageRequest(Command.STORAGES_REPOSITORY_TREE, dispatchRepositoryDto);
             WSMessageResponse messageResponse = null;
@@ -276,7 +271,6 @@ public class PromotionUtil {
                         String tempRepoId = repo.getName();
                         executeDispatchV2(artifactPath, srcRepositoryId, srcStorageId, targetStorageId, tempRepoId, dispatchNodeDto, recordStatus);
                     }
-                    break;
                 }
             }
         } else {

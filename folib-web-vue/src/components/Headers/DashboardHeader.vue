@@ -348,7 +348,7 @@ export default {
         } else {
           clearInterval(intervalId)
         }
-      }, 300);
+      }, 3000);
     },
     incompleted (){
       this.notFinishUploadList = this.uploadProcessList.filter(item => item.dictValue < 100 && (!item.comment || item.comment.length <1))

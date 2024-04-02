@@ -69,11 +69,11 @@
             </div>
             <div slot="opsType"
                  slot-scope="text, record">
-              {{ opsTypeMap[record.opsType] || $t('Repository.UnknownOperation') }}
+              {{ $t('Repository.' + opsTypeMap[record.opsType]) || $t('Repository.UnknownOperation') }}
             </div>
             <div slot="status"
                  slot-scope="text, record">
-              {{ $t(statusMap[record.status]) || $t('Repository.UnknownState') }}
+              {{ $t('Repository.' + statusMap[record.status]) || $t('Repository.UnknownState') }}
             </div>
             <div slot="slaveRecordCleared"
                  slot-scope="text, record">
@@ -94,8 +94,7 @@
                 <a-popconfirm :title="(currentClickRecord && currentClickRecord.status === 2 ? $t('Repository.CurrentProductIsSynchronizing'):'')+$t('Repository.SureMakeProductCompensation')"
                               okType="danger"
                               :ok-text="$t('Repository.Confirm')"
-                              :cancel-text="$t('Repository.Cancel')"
-                              @confirm="">
+                              :cancel-text="$t('Repository.Cancel')">
                   <a-button type="link" v-if="record.status === 2 || record.status === 4" @click="clickRecord(record)"
                             size="small">
                     <span class="text-danger">{{ $t('Repository.Compensation') }}</span>
@@ -260,7 +259,7 @@ export default {
         this.getArtifactSyncRecordPage()
         this.intervalId = setInterval(() => {
           this.getArtifactSyncRecordPage()
-        }, 1000);
+        }, 3000);
       } else {
         if (this.intervalId) {
           clearInterval(this.intervalId);

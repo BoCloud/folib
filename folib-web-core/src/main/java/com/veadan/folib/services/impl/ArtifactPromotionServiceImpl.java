@@ -20,6 +20,7 @@ import com.veadan.folib.entity.ArtifactSyncRecord;
 import com.veadan.folib.entity.Dict;
 import com.veadan.folib.enums.ArtifactSyncRecordOpsTypeEnum;
 import com.veadan.folib.enums.ArtifactSyncRecordSyncModelEnum;
+import com.veadan.folib.enums.ArtifactoryRepositoryTypeEnum;
 import com.veadan.folib.enums.BusinessCodeEnum;
 import com.veadan.folib.mapper.ArtifactSyncRecordMapper;
 import com.veadan.folib.model.request.ArtifactPromotionNodeOptionCallbackReq;
@@ -715,6 +716,12 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
         final List<TargetDispatchRepositoryDto> targetDispatchRepositoryList = artifactDispatch.getTargetDispatchRepositoryList();
         final String path = artifactDispatch.getPath();
 
+        Map<String, List<TargetDispatchRepositoryDto>> groupByMap = artifactDispatch.getTargetDispatchRepositoryList().stream().collect(Collectors.groupingBy(TargetDispatchRepositoryDto::getArtifactoryRepositoryType));
+        if (groupByMap.containsKey(ArtifactoryRepositoryTypeEnum.JFROG.getType())) {
+            this.artifactDispatch(artifactDispatch);
+            return ResponseEntity.ok("");
+        }
+
         // 生成同步编号
         final String syncNo = String.format("SyncNo%s", UUID.randomUUID().toString(true));
         artifactDispatch.setSyncNo(syncNo);
@@ -781,7 +788,7 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
 
     @Override
     public ResponseEntity artifactDispatch(ArtifactDispatch artifactDispatch) {
-        log.info("start artifact dispatch");
+        log.info("Start artifact dispatch [{}] ...", JSONObject.toJSONString(artifactDispatch));
         try {
             artifactDispatch.setPath(UriUtils.decode(artifactDispatch.getPath()));
         } catch (Exception ex) {

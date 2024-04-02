@@ -50,7 +50,7 @@ export default {
     'unzippedDirectory': 'The package will be unzipped to this directory in the repository ',
     'NodeType': 'Node type',
     'InternalNode': 'Internal node',
-    'ProductWarehouseNode': 'Product warehouse node',
+    'ProductWarehouseNode': ' artifact repository nodes',
     'ExternalNode': 'External node',
     'selectAll': 'Select all',
     'NoData': 'No data',

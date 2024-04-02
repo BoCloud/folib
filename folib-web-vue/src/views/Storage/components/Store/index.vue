@@ -689,26 +689,23 @@
             <a-form-item class="tags-field mb-10" :label="$t('Store.TargetWarehouse')" :colon="false" ref="targetRepositories"
               prop="targetRepositories">
               <div class="selectdrop">
-                <gb-ant-select-multiple-cascader allowClear style="width:100%;" :placeholder="$t('Store.SelectTargetWarehouse')" v-decorator="[
-                  'targetRepositories',
-                  {
-                    initialValue: [],
-                    rules: [
+                  <a-tree-select  v-decorator="[
+                      'targetRepositories',
                       {
-                        required: true,
-                        message: $t('Store.SelectTargetWarehouse'),
-                        type: 'array',
+                        initialValue: [],
+                        rules: [
+                          {
+                            required: true,
+                            message: $t('Store.SelectTargetWarehouse'),
+                            type: 'array',
+                          },
+                        ],
                       },
-                    ],
-                  },
-                ]" :selectOptionsConfig="{
-  key: 'key',
-  value: 'key',
-  text: 'key',
-  children: 'children'
-}" :allText="$t('Store.selectAll')" :noDataText="$t('Store.NoData')" dropdownClassName="customer-multiple-cascader"
-                  :treeData="repositories" @handleCheckboxChange="handleCheckboxChange" v-if="artifactoryType === 1" />
-
+                    ]" style="width: 100%" treeCheckable :maxTagCount="6"
+                    :dropdown-style="{ maxHeight: '400px', overflow: 'auto' }" :tree-data="repositories"
+                    :placeholder="$t('Store.SelectTargetWarehouse')" allow-clear show-search
+                    :replaceFields="{ children: 'children', title: 'key', key: 'key', value: 'key' }" v-if="artifactoryType === 1" >
+                  </a-tree-select>
                 <gb-ant-select-two-cascader allowClear style="width:100%;" :placeholder="$t('Store.SelectTargetWarehouse')" v-decorator="[
                 'targetRepositories',
                 {
@@ -1819,7 +1816,7 @@ export default {
             this.repositories.push(item)
           }
         })
-        this.repositories = [this.repositories]
+        this.repositories = this.repositories
       })
     },
     queryPermissionStoragesAndRepositories (
