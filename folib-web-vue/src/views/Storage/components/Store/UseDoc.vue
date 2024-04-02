@@ -465,21 +465,36 @@
         <a-timeline-item color="primary">
           {{ Conan$t('Store.Configuration') }}
           <p>{{ $t('Store.conanConfig') }}</p>
-
+          <p></p>
           <prism-editor
             class="my-editor height-300"
             :value="
-              'conan remote add   ' +
+              '1. conan 客户端1.X\n' +
+              '#将conan仓添加到本地\n' +
+              'conan remote add ' +
               folibRepository.id +
-              '   ' +
+              ' ' +
               baseUrl +
+              'storages/' +
               folibRepository.storageId +
               '/' +
               folibRepository.id +
-              '   false\n' +
-              '\n' +
-              'conan user -p [password] -r a_local_conan [username]   #添加访问用户名密码'
-            "
+              ' false\n' +
+              '#添加访问用户名密码 \n' +
+              'conan user -p [password] -r ' + folibRepository.id +' [username] \n\n' +
+              '2. conan 客户端2.X\n' +
+              '#将conan仓添加到本地\n' +
+              'conan remote add ' +
+              folibRepository.id +
+              ' ' +
+              baseUrl +
+              'storages/' +
+              folibRepository.storageId +
+              '/' +
+              folibRepository.id +
+              ' --insecure -f\n ' +
+              '#添加访问用户名密码 \n' +
+              'conan remote login -p [password] ' + folibRepository.id + ' [username]'"
             :highlight="highlighterHandle"
             :line-numbers="false"
             :readonly="true"
@@ -491,37 +506,33 @@
           <prism-editor
             class="my-editor height-300"
             :value="
-              '1.   搜索本地已有的Conan' +
+              '1. conan 客户端1.X\n' +
+              '#搜索本地已有的包' +
               '\n' +
+              'conan search ' +
               '\n' +
-              'conan  search ' +
+              '#打包到本地并下载依赖' +
               '\n' +
-              '2.   上传本地包到   ' +
+              'conan create . -r ' +
+              folibRepository.id + '\n' +
+              '#上传本地包\n' +
+              'conan upload example/1.0 -r ' +
               folibRepository.id +
+              ' -c --all --force' +
+              '\n\n' +
+              '2. conan 客户端2.X\n' +
+              '#搜索本地已有的包' +
               '\n' +
+              'conan list [pattern]' +
               '\n' +
-              '例如上传 zulu-openjdk/11.0.15 ' +
+              '#打包到本地并下载依赖' +
               '\n' +
-              'conan  upload  zulu-openjdk/11.0.15@ -r ' +
+              'conan create . -r ' +
+              folibRepository.id + '\n' +
+              '#上传本地包\n' +
+              'conan upload example/1.0 -r ' +
               folibRepository.id +
-              '  --all' +
-              '\n' +
-              '\n' +
-              '3.   下载与搜索   ' +
-              folibRepository.id +
-              '\n' +
-              '\n' +
-              '例如下载 ' +
-              folibRepository.id +
-              '  zulu-openjdk/11.0.15 ' +
-              '\n' +
-              '\n' +
-              'conan   search    zulu-openjdk -r   ' +
-              folibRepository.id +
-              '\n' +
-              'conan   download   zulu-openjdk/11.0.15@    -r   ' +
-              folibRepository.id +
-              '\n'
+              ' -c --force'
             "
             :highlight="highlighterHandle"
             :line-numbers="false"
@@ -537,11 +548,15 @@
           </p>
           <prism-editor
             class="my-editor height-300"
-            :value="'conan  remote list  #查询已加入的仓库' + '\n'"
+            :value="'#查询已添加的远程仓库\n conan remote list'"
             :highlight="highlighterHandle"
             :line-numbers="false"
             :readonly="true"
           ></prism-editor>
+          <p>
+            更多命令请参考官网
+            <a href="https://docs.conan.io/en/latest/reference/commands.html" target="_blank">https://docs.conan.io/en/latest/reference/commands.html</a>
+          </p>
         </a-timeline-item>
       </a-timeline>
       <a-timeline v-if="repositoryType === 'yarn'">
@@ -1024,7 +1039,7 @@ export default {
   created() {
     if (this.baseUrl) {
       this.repositoryUrl = this.baseUrl + 'storages/' + this.folibRepository.storageId + '/' + this.folibRepository.id
-      if (this.repositoryType && (this.repositoryType === 'docker' || this.repositoryType === 'conan')) {
+      if (this.repositoryType && this.repositoryType === 'docker') {
         let baseUrlArr = this.baseUrl.split('://')
         this.repositoryUrl = baseUrlArr[1] + this.folibRepository.storageId + '/' + this.folibRepository.id
       }

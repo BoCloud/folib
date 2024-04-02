@@ -14,5 +14,6 @@ public abstract class JavaCronJob
     public static final String DOCKER="DOCKER";
     public static final String NUGET="NUGET";
     public static final String COCOAPODS="COCOAPODS";
+    public static final String CONAN="CONAN";
 
 }

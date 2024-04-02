@@ -1,16 +1,9 @@
 package com.veadan.folib.providers.repository;
 
-
-import com.alibaba.fastjson.JSONObject;
-import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
 import com.veadan.folib.components.DistributedCacheComponent;
-import com.veadan.folib.config.FolibPublicUtils;
-import com.veadan.folib.constant.GlobalConstants;
 import com.veadan.folib.data.criteria.Paginator;
 import com.veadan.folib.domain.Artifact;
 import com.veadan.folib.domain.ArtifactEntity;
-import com.veadan.folib.enums.ProductTypeEnum;
 import com.veadan.folib.io.RepositoryStreamReadContext;
 import com.veadan.folib.io.RepositoryStreamWriteContext;
 import com.veadan.folib.providers.io.*;
@@ -21,31 +14,19 @@ import com.veadan.folib.providers.repository.event.RemoteRepositorySearchEvent;
 import com.veadan.folib.providers.repository.proxied.ProxyRepositoryArtifactResolver;
 import com.veadan.folib.service.ProxyRepositoryConnectionPoolConfigurationService;
 import com.veadan.folib.services.ArtifactManagementService;
-import com.veadan.folib.storage.repository.Repository;
-import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 
 import javax.inject.Inject;
-import javax.ws.rs.client.Client;
-import javax.ws.rs.client.WebTarget;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.MultivaluedHashMap;
-import javax.ws.rs.core.MultivaluedMap;
-import javax.ws.rs.core.Response;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 
 /**
@@ -99,7 +80,7 @@ public class ProxyRepositoryProvider
     protected RepositoryPath fetchPath(RepositoryPath repositoryPath)
             throws IOException {
         RepositoryPath targetPath = hostedRepositoryProvider.fetchPath(repositoryPath);
-        if (targetPath == null) {
+        if (targetPath == null || RepositoryFiles.hasRefreshContent(targetPath)) {
             targetPath = resolvePathExclusive(repositoryPath);
         } else if (RepositoryFiles.hasExpired(targetPath) && !Files.isDirectory(targetPath)) {
             if (StringUtils.isNotBlank(repositoryPath.getArtifactPath())) {
@@ -156,104 +137,6 @@ public class ProxyRepositoryProvider
                       String repositoryId,
                       RepositorySearchRequest predicate) {
         return hostedRepositoryProvider.count(storageId, repositoryId, predicate);
-    }
-
-    @Override
-    public Map<String, Object> searchConanPackage(Repository repository, String query) throws Exception {
-        String siteUrl = repository.getRemoteRepository().getUrl();
-        String pingUrl = siteUrl.endsWith("/") ? siteUrl + "v1/ping" : siteUrl + "/v1/ping";
-        String searchPackage = siteUrl.endsWith("/") ? siteUrl + "v1/conans/search" : siteUrl + "/v1/conans/search";
-
-        Client client = clientPool.getRestClient();
-        WebTarget pingTarget = client.target(pingUrl);
-        Response response = pingTarget.request().get();
-        if (response.getStatus() != 200) {
-            throw new Exception("{} get error" + pingUrl);
-        }
-        WebTarget searchTarget = client.target(StringUtils.isNotBlank(query) ? searchPackage + "?q=" + query : searchPackage);
-        Response searchResponse = searchTarget.request().get();
-        if (searchResponse.getStatus() != 200) {
-            throw new Exception("{} get error" + searchPackage);
-        }
-        return searchResponse.readEntity(Map.class);
-    }
-
-    @Override
-    public ResponseEntity searchConanDownLoadUrl(Repository repository, String name, String version, String user, String channel) {
-        ResponseEntity responseEntity = ResponseEntity.status(HttpStatus.NOT_FOUND).build();
-        String storageId = repository.getStorage().getId();
-        String repositoryId = repository.getId();
-        String remoteRepositoryUrl = repository.getRemoteRepository().getUrl();
-
-        Client client = clientPool.getRestClient();
-        WebTarget target = client.target(String.format("%s/v1/conans/%s/%s/%s/%s/download_urls", remoteRepositoryUrl, name, version, user, channel));
-        Response response = target.request(MediaType.APPLICATION_JSON_TYPE).get();
-        String jsonResult = response.readEntity(String.class);
-        JSONObject jsonObj = JSONObject.parseObject(jsonResult);
-        List<String> list = Arrays.asList("conan_sources.tgz", "conan_export.tgz", "conanmanifest.txt", "conanfile.py");
-
-        String filePathTemplate = String.format("%s/%s/%s/%s", user, name, version, channel);
-
-        Map<String, String> dataMap = Maps.newHashMap();
-        String localUrl = FolibPublicUtils.getRepositoryWebServerUrl(repository);
-        for (String filename : list) {
-            try {
-                String remoteUrl = jsonObj.getString(filename);
-                Response res = client.target(remoteUrl).request().get();
-                if (res.getStatus() != 200) {
-                    logger.error("{} get error", remoteUrl);
-//                    continue;
-                    return responseEntity;
-                }
-                InputStream is = res.readEntity(InputStream.class);
-                String filePath = remoteUrl.substring(remoteUrl.indexOf(filePathTemplate));
-                RepositoryPath repositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, filePath);
-                logger.info("conan {} {} upload path {}", storageId, repositoryId, filePath);
-                artifactManagementService.store(repositoryPath, is);
-                dataMap.put(filename, String.format("%s/v1/files/%s", localUrl, filePath));
-//                if ("conan_export.tgz".equals(filename)) {
-//                    byte[] contentByFileName = TarGzArchiveListingFunction.INSTANCE.getContentByFileName(repositoryPath, "conandata.yml");
-//                    Map<String, Map<String, Map<String, Object>>> properties;
-//                    Yaml yaml = new Yaml();
-//                    properties = yaml.load(new ByteArrayInputStream(contentByFileName));
-//                    Object o = properties.get("sources").get(version).get("url");
-//                    String targetSourceUrl;
-//                    if (o instanceof String) {
-//                        targetSourceUrl = (String) o;
-//                    } else {
-//                        targetSourceUrl = (String) ((List<?>) o).get(0);
-//                    }
-//                    String targetSourceFilename = targetSourceUrl.substring(targetSourceUrl.lastIndexOf("/") + 1);
-//                    logger.info("conan download target url src package: {}", targetSourceUrl);
-//                    Response targetSourceRes = client.target(targetSourceUrl).request().get();
-//                    InputStream targetSourceIs = targetSourceRes.readEntity(InputStream.class);
-//                    String targetSourcePath = String.format("%s/%s/%s/%s/package/%s", name, version, user, channel, targetSourceFilename);
-//                    RepositoryPath targetSourceRepositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, targetSourcePath);
-//                    logger.info("conan {} {} upload path {}", storageId, repositoryId, filePath);
-//                    artifactManagementService.store(targetSourceRepositoryPath, targetSourceIs);
-//                }
-            } catch (Exception e) {
-                logger.error("conan {} {} download or store target file error.", storageId, repositoryId, e);
-            } finally {
-
-            }
-        }
-        return ResponseEntity.ok(dataMap);
-    }
-
-    @Override
-    public Map<String, Object> searchConanPackageInfo(Repository repository, String packageName, String version, String username, String channel) {
-        String url = repository.getRemoteRepository().getUrl();
-        String reqUrl = url.endsWith("/") ? url + "v1/conans/" + packageName + "/" + version + "/_/_/search" :
-                url + "/v1/conans/" + packageName + "/" + version + "/_/_/search";
-        Client client = clientPool.getRestClient();
-        WebTarget target = client.target(reqUrl);
-        Response response = target.request().get();
-        if (response.getStatus() != 200) {
-            logger.error("requset {} error", reqUrl);
-            return null;
-        }
-        return response.readEntity(Map.class);
     }
 
     @Override

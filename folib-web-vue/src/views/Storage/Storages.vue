@@ -2108,7 +2108,7 @@ export default {
       if (this.baseUrl) {
         repositoryUrl = this.baseUrl + 'storages/' + repository.storageId + '/' + repository.id
         let layout = repository.layout.toLowerCase()
-        if (layout === 'docker' || layout === 'conan') {
+        if (layout === 'docker') {
           let baseUrlArr = this.baseUrl.split('://')
           repositoryUrl = baseUrlArr[1] + repository.storageId + '/' + repository.id
         }

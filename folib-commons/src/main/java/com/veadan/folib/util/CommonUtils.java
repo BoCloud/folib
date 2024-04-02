@@ -11,6 +11,9 @@ import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.Instant;
+import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -173,5 +176,19 @@ public class CommonUtils {
             log.error("字符拼接错误：{}", ExceptionUtils.getStackTrace(ex));
         }
         return preStr;
+    }
+
+    /**
+     * 毫秒数转为UTC时间
+     *
+     * @param millis 毫秒数
+     * @return UTC时间
+     */
+    public static String getConvertMillis2String(long millis) {
+        // 将毫秒数转换为Instant对象
+        Instant instant = Instant.ofEpochMilli(millis);
+        // 转换为UTC时间
+        DateTimeFormatter formatter = DateTimeFormatter.ISO_INSTANT;
+        return instant.atOffset(ZoneOffset.UTC).format(formatter);
     }
 }
