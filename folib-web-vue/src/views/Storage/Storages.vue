@@ -794,10 +794,10 @@
                 </a-col>
 
                 <!--git  layoutChecked === 'go' -->
-                <template v-if="layoutChecked === 'go' ">
+                <div v-if="layoutChecked === 'go' ">
 
-                  <template v-if="folibRepository.repositoryConfiguration">
-                      <template v-for="(item,index) in folibRepository.repositoryConfiguration.gitVCS">
+                  <div v-if="folibRepository.repositoryConfiguration">
+                      <div v-for="(item,index) in folibRepository.repositoryConfiguration.gitVCS" :key="index">
                         <a-col :span="12">
                           <a-form-item class="mb-10" :label="$t('Storage.GitProviderCredential')" :colon="false">
                             <a-input :placeholder="$t('Storage.AddressFormat')"
@@ -823,13 +823,13 @@
                             <a-button @click="delGitItem(index)">{{ $t('Storage.Delete') }}</a-button>
                           </a-form-item>
                         </a-col>
-                      </template>
-                    </template>
+                      </div>
+                    </div>
                     <a-col :span="24">
                         <a-button @click="addGitItem()">{{ $t('Storage.AddGitCredential') }}</a-button>
                     </a-col>
 
-                </template>
+                </div>
                 <a-col :span="4">
                   <a-form-item class="mb-10" :label="$t('Storage.TimedCheck')" :colon="false">
                     <a-input :placeholder="$t('Storage.DefaultTime')" v-model="folibRepository.remoteRepository.checkIntervalSeconds"

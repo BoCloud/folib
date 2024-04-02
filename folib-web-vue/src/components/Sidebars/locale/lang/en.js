@@ -1,9 +1,9 @@
 export default {
-    'ProductManagement': 'Product management',
-    'ProductWarehouse': 'Product warehouse',
+    'ProductManagement': 'Artifact management',
+    'ProductWarehouse': 'Artifact repository',
     'SecurityScanning': 'Security scanning',
-    'OpenSourceGovernance': 'Open source governance',
-    'ProductAnalysis': 'Product analysis',
+    'OpenSourceGovernance': 'Artifact analysis',
+    'ProductAnalysis': 'Artifact analysis',
     'OpenSourceComponents': 'Open source components',
     'VulnerabilityDatabase': 'Vulnerability database',
     'CertificateStore': 'Certificate store',

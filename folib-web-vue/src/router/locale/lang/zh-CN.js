@@ -8,7 +8,7 @@ export default {
     'HealthMonitoring': '健康监测',
     'SeniorOperations': '高级运维',
     'ProductAnalysis': '制品分析',
-    'OpenSourceGovernance': '开源治理',
+    'OpenSourceGovernance': '制品分析',
     'VulnerabilityDatabase': '漏洞库',
     'CertificateStore': '证书库',
     'StorageAnalysis': '存储分析',

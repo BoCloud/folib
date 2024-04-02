@@ -2,7 +2,7 @@ export default {
     'ProductManagement': '制品管理',
     'ProductWarehouse': '制品仓库',
     'SecurityScanning': '安全扫描',
-    'OpenSourceGovernance': '开源治理',
+    'OpenSourceGovernance': '制品分析',
     'ProductAnalysis': '制品分析',
     'OpenSourceComponents': '开源组件',
     'VulnerabilityDatabase': '漏洞库',

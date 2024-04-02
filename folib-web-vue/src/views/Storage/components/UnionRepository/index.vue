@@ -6,42 +6,42 @@
         <a-col :span="24">
           <a-card :bordered="false" class="header-solid" :bodyStyle="{ paddingTop: '8px', paddingBottom: '8px', paddingLeft: '16px', paddingRight: '16px' }">
             <template #title>
-              <h6>联邦仓库制品晋级</h6>
-              <p v-if="unionRepositoryForm.enable === true">联邦仓库制品晋级已开启</p>
-              <p v-else>联邦仓库制品晋级已关闭</p>
+              <h6>{{ $t('UnionRepository.FederatedRepositoryArtifactPromotion') }}</h6>
+              <p v-if="unionRepositoryForm.enable === true">{{ $t('UnionRepository.FederatedRepositoryArtifactPromotionHasBeenInitiated') }}</p>
+              <p v-else>{{ $t('UnionRepository.FederatedRepositoryArtifactPromotionHasBeenClosed') }}</p>
             </template>
             <a-radio-group v-model="unionRepositoryForm.enable">
               <a-radio :value="true">
-                开启&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                {{ $t('UnionRepository.On') }}&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
               </a-radio>
               <a-radio :value="false">
-                关闭
+                {{ $t('UnionRepository.Off') }}
               </a-radio>
             </a-radio-group>
           </a-card>
           <a-card :bordered="false" class="header-solid" :bodyStyle="{ paddingTop: '8px', paddingBottom: '8px', paddingLeft: '16px', paddingRight: '16px' }">
             <template #title>
-              <h6>晋级规则</h6>
+              <h6>{{ $t('UnionRepository.PromotionRules') }}</h6>
             </template>
             <a-radio-group v-model="unionRepositoryForm.syncType" @change="syncChange">
               <a-radio :value="1">
-                <span>制品路径</span>
+                <span>{{ $t('UnionRepository.ArtifactPaths') }}</span>
                 <a-popover placement="topLeft">
                   <template slot="content">
-                    <p class="mb-0">输入关键词用于匹配制品路径，支持正则表达式，</p>
-                    <p class="mb-0">普通示例：example可匹配制品路径中包含example的制品，</p>
-                    <p class="mb-0">正则示例：(.*example.*)(.*V1.*)可匹配镜像名包含example，</p>
-                    <p class="mb-0">镜像版本包含V1的镜像</p>
+                    <p class="mb-0">{{ $t('UnionRepository.ArtifactPathTips1') }}</p>
+                    <p class="mb-0">{{ $t('UnionRepository.ArtifactPathTips2') }}</p>
+                    <p class="mb-0">{{ $t('UnionRepository.ArtifactPathTips3') }}</p>
+                    <p class="mb-0">{{ $t('UnionRepository.ArtifactPathTips4') }}</p>
                   </template>
                   <a class="ml-5"><a-icon type="question-circle" theme="filled" /></a>
                 </a-popover>
               </a-radio>
               <a-radio :value="2">
-                <span>元数据</span>
+                <span>{{ $t('UnionRepository.Metadata') }}</span>
                 <a-popover placement="topLeft">
                   <template slot="content">
-                    <p class="mb-0">输入元数据KEY及元数据值，字符相等匹配</p>
-                    <p class="mb-0">用于匹配制品元数据中包含该KEY及值的制品</p>
+                    <p class="mb-0">{{ $t('UnionRepository.MetadataTips1') }}</p>
+                    <p class="mb-0">{{ $t('UnionRepository.MetadataTips2') }}</p>
                   </template>
                   <a class="ml-5"><a-icon type="question-circle" theme="filled" /></a>
                 </a-popover>
@@ -52,41 +52,41 @@
             <a-row v-if="unionRepositoryForm.syncType === 1">
               <a-col :span="8">
                 <a-form-model-item prop="artifactPaths" class="mb-0">
-                  <a-input placeholder="请输入包路径" :maxLength="200" v-model="unionRepositoryForm.artifactPaths" />
+                  <a-input :placeholder="$t('UnionRepository.PleaseEnter') + $t('UnionRepository.ArtifactPaths')" :maxLength="200" v-model="unionRepositoryForm.artifactPaths" />
                 </a-form-model-item>
               </a-col>
             </a-row>
             <a-row v-if="unionRepositoryForm.syncType === 2">
               <a-col :span="8">
                 <a-form-model-item prop="metadataKey" class="mb-0">
-                  <a-input placeholder="请输入元数据KEY" :maxLength="100" v-model="unionRepositoryForm.metadataKey" />
+                  <a-input :placeholder="$t('UnionRepository.PleaseEnter') + $t('UnionRepository.MetadataKey')" :maxLength="100" v-model="unionRepositoryForm.metadataKey" />
                 </a-form-model-item>
                 <a-form-model-item prop="metadataValue" class="mt-10 mb-0" >
-                  <a-input placeholder="请输入元数据值" :maxLength="200" v-model="unionRepositoryForm.metadataValue"/>
+                  <a-input :placeholder="$t('UnionRepository.PleaseEnter') + $t('UnionRepository.MetadataValue')" :maxLength="200" v-model="unionRepositoryForm.metadataValue"/>
                 </a-form-model-item>
               </a-col>
             </a-row>
           </a-card>
           <a-card :bordered="false" class="header-solid" :bodyStyle="{ paddingTop: '8px', paddingBottom: '8px', paddingLeft: '16px', paddingRight: '16px' }">
             <template #title>
-              <h6>联邦仓库选择</h6>
-              <p>选择其他集群的制品仓库组成联邦仓库</p>
+              <h6>{{ $t('UnionRepository.FederatedRepositorySelect') }}</h6>
+              <p>{{ $t('UnionRepository.FederatedRepositorySelectTips') }}</p>
             </template>
             <a-radio-group v-model="unionRepositoryForm.artifactoryType" @change="typeChange">
               <a-radio :value="1">
-                <span>内部节点</span>
+                <span>{{ $t('UnionRepository.InnerNodes') }}</span>
                 <a-popover placement="topLeft">
                   <template slot="content">
-                    <p class="mb-0">{{instanceName + '制品库节点'}}</p>
+                    <p class="mb-0">{{instanceName + $t('UnionRepository.ArtifactRepositoryNode')}}</p>
                   </template>
                   <a class="ml-5"><a-icon type="question-circle" theme="filled" /></a>
                 </a-popover>
               </a-radio>
               <a-radio :value="2" v-if="this.enableUnionRepository.includes(this.folibRepository.layout)">
-                <span>外部节点</span>
+                <span>{{ $t('UnionRepository.ThirdpartyNodes') }}</span>
                 <a-popover placement="topLeft">
                   <template slot="content">
-                    <p class="mb-0">其他类型制品库节点</p>
+                    <p class="mb-0">{{ $t('UnionRepository.OtherType')  + $t('UnionRepository.ArtifactRepositoryNode') }}</p>
                   </template>
                   <a class="ml-5"><a-icon type="question-circle" theme="filled" /></a>
                 </a-popover>
@@ -98,16 +98,16 @@
                   <a-col :span="8">
                     <a-tree-select v-model="selectTargetRepositories" style="width: 100%"
                       :dropdown-style="{ maxHeight: '400px', overflow: 'auto' }" :tree-data="targetRepositories"
-                      placeholder="请选择联邦仓库" allow-clear show-search @change="targetRepositoriesChange"
+                      :placeholder="$t('UnionRepository.PleaseSlectRepository')" allow-clear show-search @change="targetRepositoriesChange"
                       :replaceFields="{ children: 'children', title: 'key', key: 'key', value: 'key' }">
                     </a-tree-select>
                   </a-col>
                 </a-row>
                 <a-table v-if="unionRepositoryForm.unionTargetRepositories && unionRepositoryForm.unionTargetRepositories.length > 0"
-                  :columns="targetRepositoriesColumns" :data-source="unionRepositoryForm.unionTargetRepositories" :pagination="false" :scroll="{ x: true }"
+                  :columns="targetRepositoriesI18nColumns" :data-source="unionRepositoryForm.unionTargetRepositories" :pagination="false" :scroll="{ x: true }"
                   :row-key="(r, i) => i.toString()">
                   <template slot="operation" slot-scope="text, record, index">
-                    <a-popconfirm title="确定要删除吗？" okType="danger" ok-text="确定" cancel-text="取消"
+                    <a-popconfirm :title="$t('UnionRepository.DeleteConfirm')" okType="danger" :ok-text="$t('UnionRepository.Confirm')" :cancel-text="$t('UnionRepository.Cancel')"
                       @confirm="tableTargetRepositoriesDelete(index, record)">
                       <a-button type="link" size="small">
                         <svg width="16" height="16" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -128,16 +128,16 @@
                   <a-col :span="8">
                     <a-tree-select v-model="selectTargetRepositories" style="width: 100%"
                       :dropdown-style="{ maxHeight: '400px', overflow: 'auto' }" :tree-data="externalNodeRepositories"
-                      placeholder="请选择联邦仓库" allow-clear show-search @change="targetExternalNodeRepositoriesChange"
+                      :placeholder="$t('UnionRepository.PleaseSlectRepository')" allow-clear show-search @change="targetExternalNodeRepositoriesChange"
                       :replaceFields="{ children: 'repositories', title: 'key', key: 'key', value: 'key' }">
                     </a-tree-select>
                   </a-col>
                 </a-row>
                 <a-table v-if="unionTargetExternalNodeRepositories && unionTargetExternalNodeRepositories.length > 0"
-                  :columns="externalNodeRepositoriesColumns" :data-source="unionTargetExternalNodeRepositories" :pagination="false" :scroll="{ x: true }"
+                  :columns="externalNodeRepositoriesI18nColumns" :data-source="unionTargetExternalNodeRepositories" :pagination="false" :scroll="{ x: true }"
                   :row-key="(r, i) => i.toString()">
                   <template slot="operation" slot-scope="text, record, index">
-                    <a-popconfirm title="确定要删除吗？" okType="danger" ok-text="确定" cancel-text="取消"
+                    <a-popconfirm :title="$t('UnionRepository.DeleteConfirm')" okType="danger" :ok-text="$t('UnionRepository.Confirm')" :cancel-text="$t('UnionRepository.Cancel')"
                       @confirm="tableTargetExternalNodeRepositoriesDelete(index, record)">
                       <a-button type="link" size="small">
                         <svg width="16" height="16" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -155,10 +155,10 @@
           </a-card>
           <a-form-model-item :wrapper-col="{ span: 14, offset: 4 }">
             <a-button type="primary" @click="unionRepositoryFormSubmit">
-              保存
+              {{ $t('UnionRepository.Save') }}
             </a-button>
             <a-button class="ml-10" @click="unionRepositoryFormReset">
-              取消
+              {{ $t('UnionRepository.Cancel') }}
             </a-button>
           </a-form-model-item>
         </a-col>
@@ -188,7 +188,7 @@ export default {
     const artifactPathsValidator = (rule, value, callBack) => {
       if (this.unionRepositoryForm.enable && this.unionRepositoryForm.syncType === 1) {
         if (!value) {
-          callBack("请输入包路径")
+          callBack(this.$t('UnionRepository.PleaseEnter') + this.$t('UnionRepository.ArtifactPaths'))
         } else {
           callBack()
         }
@@ -199,7 +199,7 @@ export default {
     const metadataKeyValidator = (rule, value, callBack) => {
       if (this.unionRepositoryForm.enable && this.unionRepositoryForm.syncType === 2) {
         if (!value) {
-          callBack("请输入元数据KEY")
+          callBack(this.$t('UnionRepository.PleaseEnter') + this.$t('UnionRepository.MetadataKey'))
         } else {
           callBack()
         }
@@ -210,7 +210,7 @@ export default {
     const metadataValueValidator = (rule, value, callBack) => {
       if (this.unionRepositoryForm.enable && this.unionRepositoryForm.syncType === 2) {
         if (!value) {
-          callBack("请输入元数据值")
+          callBack(this.$t('UnionRepository.PleaseEnter') + this.$t('UnionRepository.MetadataValue'))
         } else {
           callBack()
         }
@@ -235,12 +235,14 @@ export default {
       targetRepositoriesColumns: [
         {
           title: "节点",
+          i18nKey: 'UnionRepository.Node',
           dataIndex: "node",
           scopedSlots: { customRender: "node" },
           width: 150,
         },
         {
           title: "存储空间",
+          i18nKey: 'UnionRepository.Storage',
           dataIndex: "storageId",
           scopedSlots: { customRender: "storageId" },
           align: "left",
@@ -248,6 +250,7 @@ export default {
         },
         {
           title: "仓库名称",
+          i18nKey: 'UnionRepository.Repository',
           dataIndex: "repositoryId",
           scopedSlots: { customRender: "repositoryId" },
           align: "left",
@@ -255,6 +258,7 @@ export default {
         },
         {
           title: "操作",
+          i18nKey: 'UnionRepository.Operation',
           dataIndex: "operation",
           scopedSlots: { customRender: "operation" },
           width: 150,
@@ -262,34 +266,36 @@ export default {
       ],
       unionRepositoryRules: {
         enable: [
-          { required: false, trigger: ['blur', 'change'], message: '请选择是否开启制品晋级', },
+          { required: false, trigger: ['blur', 'change'], message: this.$t('UnionRepository.AritfactPromotionRuleTips'), },
         ],
         syncType: [
-          { required: false, trigger: ['blur', 'change'], message: '请选择晋级规则', },
+          { required: false, trigger: ['blur', 'change'], message: this.$t('UnionRepository.PromotionRuleTips'), },
         ],
         artifactPaths: [
           { required: false, trigger: ['blur', 'change'], validator: artifactPathsValidator },
-          { min: 1, max: 200, message: '包路径长度在1到200个字符', trigger: 'blur' },
+          { min: 1, max: 200, message: this.$t('UnionRepository.ArtifactPathRulesTips'), trigger: 'blur' },
         ],
         metadataKey: [
           { required: false, trigger: ['blur', 'change'], validator: metadataKeyValidator },
-          { min: 1, max: 100, message: '元数据KEY长度在1到100个字符', trigger: 'blur' },
+          { min: 1, max: 100, message: this.$t('UnionRepository.MetadataKeyRulesTips'), trigger: 'blur' },
         ],
         metadataValue: [
           { required: false, trigger: ['blur', 'change'], validator: metadataValueValidator },
-          { min: 1, max: 200, message: '元数据值长度在1到200个字符', trigger: 'blur' },
+          { min: 1, max: 200, message: this.$t('UnionRepository.MetadataValueRulesTips'), trigger: 'blur' },
         ],
       },
       instanceName: '',
       externalNodeRepositoriesColumns: [
         {
           title: "节点",
+          i18nKey: 'UnionRepository.Node',
           dataIndex: "node",
           scopedSlots: { customRender: "node" },
           width: 150,
         },
         {
           title: "制品库类型",
+          i18nKey: 'UnionRepository.RepositoryType',
           dataIndex: "type",
           scopedSlots: { customRender: "type" },
           align: "left",
@@ -297,6 +303,7 @@ export default {
         },
         {
           title: "仓库名称",
+          i18nKey: 'UnionRepository.Repository',
           dataIndex: "repositoryId",
           scopedSlots: { customRender: "repositoryId" },
           align: "left",
@@ -304,6 +311,7 @@ export default {
         },
         {
           title: "操作",
+          i18nKey: 'UnionRepository.Operation',
           dataIndex: "operation",
           scopedSlots: { customRender: "operation" },
           width: 150,
@@ -318,6 +326,24 @@ export default {
   },
   components: {
 
+  },
+  computed: {
+    targetRepositoriesI18nColumns() {
+      return this.targetRepositoriesColumns.map(column => {
+        if (column.i18nKey) {
+          column.title = this.$t(column.i18nKey);
+        }
+        return column;
+      })
+    },
+    externalNodeRepositoriesI18nColumns() {
+      return this.externalNodeRepositoriesColumns.map(column => {
+        if (column.i18nKey) {
+          column.title = this.$t(column.i18nKey);
+        }
+        return column;
+      })
+    },
   },
   created() {
     this.initData()
@@ -366,7 +392,7 @@ export default {
     },
     successMsg(message) {
       if (!message) {
-        message = "操作成功"
+        message = this.$t("UnionRepository.OperateSuccess")
       }
       this.$notification["success"]({
         message: message,
@@ -479,13 +505,13 @@ export default {
           }
           if (data.enable && (!data.unionTargetRepositories || data.unionTargetRepositories.length === 0)) {
             this.$notification.warning({
-              message: "请选择联邦仓库",
+              message: this.$t("UnionRepository.PleaseSlectRepository"),
               description: "",
             })
             return false
           }
           unionRepositoryConfig(this.folibRepository.storageId,this.folibRepository.id,data).then(res => {
-            this.successMsg("联邦仓库保存成功")
+            this.successMsg()
             setTimeout(() => {
               this.$emit('settingDrawerClose')
             }, 100)
