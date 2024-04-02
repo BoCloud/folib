@@ -223,7 +223,7 @@
         </a-row>
       </a-col>
     </a-row>
-    <a-modal v-model="deleteVisible" title="$t('Users.DeleteConfirmation')" :footer="null" :forceRender="true" on-back="deleteVisible = false">
+    <a-modal v-model="deleteVisible" :title="$t('Users.DeleteConfirmation')" :footer="null" :forceRender="true" on-back="deleteVisible = false">
 
       <a-row :gutter="[24]">
         <a-col :span="24">
@@ -256,9 +256,9 @@ export default ({
       if (value) {
         var reg = /(?!^(\d+|[a-zA-Z]+|[~!@#$%^&*()_.]+)$)^[\w~!@#$%^&*()_.]{8,16}$/
         if (reg.test(value) === false) {
-          callback(new Error(this.$('passwordFormat')))
+          callback(new Error(this.$t('Users.passwordFormat')))
         } else if (value.length < 8 || value.length > 16) {
-          callback(new Error(this.$('passwordLength')))
+          callback(new Error(this.$t('Users.passwordLength')))
         } else {
           callback()
         }
@@ -271,7 +271,7 @@ export default ({
     const checkUsername = (rule, value, callback) => {
       if (value) {
         if (value.length < 2 || value.length > 30) {
-          callback(new Error(this.$('userNameLength')))
+          callback(new Error(this.$t('Users.userNameLength')))
         } else {
           callback()
         }
