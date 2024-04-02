@@ -197,7 +197,7 @@
 
           <prism-editor
             class="my-editor height-300"
-            :value="'-Dsbt.override.build.repos=true ## 忽略工程自定义的 resolvers，采用全局配置\n'"
+            :value="'-Dsbt.override.build.repos=true ## ' + this.$t('Store.SBTIgnore') + '\n'"
             :highlight="highlighterHandle"
             :line-numbers="false"
             :readonly="true"
@@ -266,7 +266,7 @@
               folibRepository.id +
               '\n' +
               '\n' +
-              'npm config list #查看npm当前配置'
+              'npm config list #' + this.$t('Store.NpmConfig')
             "
             :highlight="highlighterHandle"
             :line-numbers="false"
@@ -293,8 +293,8 @@
               'email=yours4@example.com\n' +
               '_auth=YWRtaW46cGFzc3dvcmQ=\n' +
               '\n' +
-              '; `_auth` 是 base64 的token\n' +
-              '; 你也可以采用用户名密码模式:\n' +
+              '; `_auth` ' + this.$t('Store.IS') + ' base64 token\n' +
+              '; ' + this.$t('Store.NpmAuth') + ':\n' +
               '; username=admin\n' +
               '; _password=password'
             "
@@ -311,7 +311,7 @@
           <prism-editor
             class="my-editor height-300"
             :value="
-              'npm install   #安装依赖\n' + '\n' + 'npm publish  #上传依赖'
+              'npm install   #' + this.$t('Store.NpmInstall') + '\n' + '\n' + 'npm publish  #' + this.$t('Store.NpmPublish')
             "
             :highlight="highlighterHandle"
             :line-numbers="false"
@@ -359,11 +359,11 @@
           <prism-editor
             class="my-editor height-300"
             :value="
-              'yum clean all #清除YUM缓存' +
+              'yum clean all #' + this.$t('Store.RpmClean') +
               '\n' +
-              'yum repolist #显示所有仓库' +
+              'yum repolist #' + this.$t('Store.RpmRepoList') +
               '\n' +
-              'yum install --downloadonly --downloaddir=/folib_test/mysql mysql #拉mysql 相关rpm包到/folib_test/mysql 目录下'
+              'yum install --downloadonly --downloaddir=/folib_test/mysql mysql'
             "
             :highlight="highlighterHandle"
             :line-numbers="false"
@@ -406,22 +406,22 @@
           <prism-editor
             class="my-editor height-300"
             :value="
-              '1.   https://github.com/chartmuseum/helm-push/releases 下载各个系统下的 helm-cm-push 安装包' +
+              '1.   https://github.com/chartmuseum/helm-push/releases ' + this.$t('Store.HelmCMPush') +
               '\n' +
-              '2.   把安装包复制到 helm 的plugins目录下解压     ' +
-              '\n' +
-              '\n' +
+              '2.   ' + this.$t('Store.HelmDecompression') +
               '\n' +
               '\n' +
-              'helm-cm-push 命令上传' +
               '\n' +
               '\n' +
-              '1. 进入 helm-cm-push plugins 插件bin目录       #helm env 查看plugins目录位置' +
+              'helm-cm-push ' + this.$t('Store.HelmUploadCmd') +
               '\n' +
               '\n' +
-              '2.   执行上传' +
+              '1. ' + this.$t('Store.HelmUploadCmdBin') +
               '\n' +
-              '例如 ：上传/app/fluentd-4.5.2.tgz 的chart包 到' +
+              '\n' +
+              '2.  ' + this.$t('Store.HelmUploadExecute') +
+              '\n' +
+              this.$t('Store.HelmUploadExample') +
               folibRepository.id +
               '\n' +
               '\n' +
@@ -429,7 +429,7 @@
               folibRepository.id +
               '\n' +
               '\n' +
-              '参数说明：第一个参数是cahrt 包全路径   第二个参数是加入到本地的helm 仓库名. --username  --password 可选鉴权使用' +
+              this.$t('Store.HelmUploadParamsExplain') +
               '\n'
             "
             :highlight="highlighterHandle"
@@ -444,15 +444,15 @@
           <prism-editor
             class="my-editor height-300"
             :value="
-              'helm reop update  #更新本地仓库' +
+              'helm reop update  #' + this.$t('Store.HelmRepoUpdate') +
               '\n' +
               '\n' +
-              'helm search repo mysql     #搜索本地的mysql charts' +
+              'helm search repo mysql     #' + this.$t('Store.HelmRepoSearch') +
               '\n' +
               '\n' +
               'helm pull  ' +
               folibRepository.id +
-              '/mysql   ./    #将最新的mysql 下载到本地  --version 可指定版本' +
+              '/mysql   ./    #' + this.$t('Store.HelmPull') +
               '\n'
             "
             :highlight="highlighterHandle"
@@ -463,14 +463,13 @@
       </a-timeline>
       <a-timeline v-if="repositoryType === 'conan'">
         <a-timeline-item color="primary">
-          {{ Conan$t('Store.Configuration') }}
-          <p>{{ $t('Store.conanConfig') }}</p>
+          Conan {{ $t('Store.Configuration') }}
           <p></p>
           <prism-editor
             class="my-editor height-300"
             :value="
-              '1. conan 客户端1.X\n' +
-              '#将conan仓添加到本地\n' +
+              '1. conan ' + this.$t('Store.Client') + '1.X\n' +
+              '#' + this.$t('Store.ConanRepositoryAdd') + '\n' +
               'conan remote add ' +
               folibRepository.id +
               ' ' +
@@ -480,10 +479,10 @@
               '/' +
               folibRepository.id +
               ' false\n' +
-              '#添加访问用户名密码 \n' +
+              '#' + this.$t('Store.ConanLogin') + ' \n' +
               'conan user -p [password] -r ' + folibRepository.id +' [username] \n\n' +
-              '2. conan 客户端2.X\n' +
-              '#将conan仓添加到本地\n' +
+              '2. conan '+ this.$t('Store.Client') + '2.X\n' +
+              '#' + this.$t('Store.ConanRepositoryAdd') + '\n' +
               'conan remote add ' +
               folibRepository.id +
               ' ' +
@@ -493,7 +492,7 @@
               '/' +
               folibRepository.id +
               ' --insecure -f\n ' +
-              '#添加访问用户名密码 \n' +
+              '#' + this.$t('Store.ConanLogin') + ' \n' +
               'conan remote login -p [password] ' + folibRepository.id + ' [username]'"
             :highlight="highlighterHandle"
             :line-numbers="false"
@@ -506,30 +505,30 @@
           <prism-editor
             class="my-editor height-300"
             :value="
-              '1. conan 客户端1.X\n' +
-              '#搜索本地已有的包' +
+              '1. conan '+ this.$t('Store.Client') + '1.X\n' +
+              '#' + this.$t('Store.ConanSearch') +
               '\n' +
               'conan search ' +
               '\n' +
-              '#打包到本地并下载依赖' +
+              '#' + this.$t('Store.ConanCreate') +
               '\n' +
               'conan create . -r ' +
               folibRepository.id + '\n' +
-              '#上传本地包\n' +
+              '#' + this.$t('Store.ConanUpload') + '\n' +
               'conan upload example/1.0 -r ' +
               folibRepository.id +
               ' -c --all --force' +
               '\n\n' +
-              '2. conan 客户端2.X\n' +
-              '#搜索本地已有的包' +
+              '2. conan '+ this.$t('Store.Client') + '2.X\n' +
+              '#' + this.$t('Store.ConanSearch') +
               '\n' +
               'conan list [pattern]' +
               '\n' +
-              '#打包到本地并下载依赖' +
+              '#' + this.$t('Store.ConanCreate') +
               '\n' +
               'conan create . -r ' +
               folibRepository.id + '\n' +
-              '#上传本地包\n' +
+              '#' + this.$t('Store.ConanUpload') + '\n' +
               'conan upload example/1.0 -r ' +
               folibRepository.id +
               ' -c --force'
@@ -542,19 +541,16 @@
 
         <a-timeline-item color="primary">
           Conan {{ $t('Store.UsuallyCommand') }}
-          <p>
-            {{ $t('Store.HelmCommand') }}
-            https://docs.conan.io/en/latest/reference/commands.html
-          </p>
+          <p></p>
           <prism-editor
             class="my-editor height-300"
-            :value="'#查询已添加的远程仓库\n conan remote list'"
+            :value="'#' + this.$t('Store.ConanRemoteList') + '\n conan remote list'"
             :highlight="highlighterHandle"
             :line-numbers="false"
             :readonly="true"
           ></prism-editor>
           <p>
-            更多命令请参考官网
+            {{ $t('Store.HelmCommand') }}
             <a href="https://docs.conan.io/en/latest/reference/commands.html" target="_blank">https://docs.conan.io/en/latest/reference/commands.html</a>
           </p>
         </a-timeline-item>
@@ -576,7 +572,7 @@
               folibRepository.id +
               '\n' +
               '\n' +
-              'yarn config get registry #查看npm当前配置'
+              'yarn config get registry #' + this.$t('Store.NpmConfig')
             "
             :highlight="highlighterHandle"
             :line-numbers="false"
@@ -603,8 +599,8 @@
               'email=yours4@example.com\n' +
               '_auth=YWRtaW46cGFzc3dvcmQ=\n' +
               '\n' +
-              '; `_auth` 是 base64 的token\n' +
-              '; 你也可以采用用户名密码模式:\n' +
+              '; `_auth` ' + this.$t('Store.IS') + ' base64 token\n' +
+              '; ' + this.$t('Store.NpmAuth') + ':\n' +
               '; username=admin\n' +
               '; _password=password'
             "
@@ -621,7 +617,7 @@
           <prism-editor
             class="my-editor height-300"
             :value="
-              'yarn install   #安装依赖\n' + '\n' + 'yarn publish  #上传依赖'
+              'yarn install   #' + this.$t('Store.NpmInstall') + '\n' + '\n' + 'yarn publish  #' + this.$t('Store.NpmPublish')
             "
             :highlight="highlighterHandle"
             :line-numbers="false"
@@ -650,8 +646,8 @@
               'local\n' +
               '\n' +
               '[pypi]\n' +
-              'username:你的用户名\n' +
-              'password:你的密码\n' +
+              'username:[username]\n' +
+              'password:[password]\n' +
               '\n' +
               '[local]\n' +
               'repository:' +
@@ -661,8 +657,8 @@
               '/' +
               folibRepository.id +
               '\n' +
-              'username: 你的用户名\n' +
-              'password: 你的密码'
+              'username:[username]\n' +
+              'password:[password]'
             "
             :highlight="highlighterHandle"
             :line-numbers="false"
