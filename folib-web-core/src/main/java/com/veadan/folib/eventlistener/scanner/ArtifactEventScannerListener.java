@@ -76,6 +76,20 @@ public class ArtifactEventScannerListener {
             return;
         }
         log.debug("Start handler artifact scan [{}] path [{}]", ArtifactEventTypeEnum.queryArtifactEventTypeEnumByType(source), repositoryPath);
+        handle(repositoryPath, source);
+    }
+
+    public Artifact handle(RepositoryPath repositoryPath, int source) {
+        if (!Files.exists(repositoryPath)) {
+            try {
+                if (Objects.nonNull(repositoryPath.getArtifactEntry())) {
+                    handlerUnwantedScan(repositoryPath, source);
+                }
+            } catch (Exception ex) {
+                log.error(ExceptionUtils.getStackTrace(ex));
+            }
+            return null;
+        }
         if (repositoryPath.getFileSystem() instanceof DockerFileSystem) {
             //docker布局
             boolean isStoredEvent = ArtifactEventTypeEnum.EVENT_ARTIFACT_PATH_DELETED.getType() != source && ArtifactEventTypeEnum.EVENT_ARTIFACT_DIRECTORY_PATH_DELETED.getType() != source;
@@ -83,16 +97,16 @@ public class ArtifactEventScannerListener {
                 Path path = repositoryPath.getTarget();
                 if (path instanceof S3Path) {
                     //S3存储
-                    handlerDockerS3Path(repositoryPath, path, source);
+                    return handlerDockerS3Path(repositoryPath, path, source);
                 } else {
-                    handlerDockerFilePath(repositoryPath, source);
+                    return handlerDockerFilePath(repositoryPath, source);
                 }
             } else {
-                handlerScan(repositoryPath, source);
+                return handlerScan(repositoryPath, source);
             }
         } else {
             //非docker布局
-            handlerScan(repositoryPath, source);
+            return handlerScan(repositoryPath, source);
         }
     }
 
@@ -103,7 +117,7 @@ public class ArtifactEventScannerListener {
      * @param path           path
      * @param source         事件类型
      */
-    private void handlerDockerS3Path(RepositoryPath repositoryPath, Path path, Integer source) {
+    private Artifact handlerDockerS3Path(RepositoryPath repositoryPath, Path path, Integer source) {
         String parentPath = "";
         try {
             //S3存储
@@ -133,7 +147,7 @@ public class ArtifactEventScannerListener {
                     tempPath = parentPath + File.separator + temp;
                     handlerDockerBlobFile(repositoryPath, filePaths, digestTempFile.getPath(), tempPath);
                 }
-                handlerScan(repositoryPath, source, filePaths);
+                return handlerScan(repositoryPath, source, filePaths);
             }
         } catch (Exception ex) {
             log.error("处理S3存储docker布局制品事件错误：{}", ExceptionUtils.getStackTrace(ex));
@@ -143,6 +157,7 @@ public class ArtifactEventScannerListener {
                 FileUtil.del(new File(parentPath));
             }
         }
+        return null;
     }
 
 
@@ -152,7 +167,7 @@ public class ArtifactEventScannerListener {
      * @param repositoryPath 制品路径
      * @param source         事件类型
      */
-    private void handlerDockerFilePath(RepositoryPath repositoryPath, Integer source) {
+    private Artifact handlerDockerFilePath(RepositoryPath repositoryPath, Integer source) {
         String filePath = repositoryPath.toAbsolutePath().toString();
         File file = FileUtil.file(filePath);
         //版本目录
@@ -172,8 +187,9 @@ public class ArtifactEventScannerListener {
                 blobsPath = repositoryPath.getRoot() + File.separator + "blobs" + File.separator + digest;
                 handlerDockerBlobFile(repositoryPath, filePaths, blobsPath, tempPath);
             }
-            handlerScan(repositoryPath, source, filePaths);
+            return handlerScan(repositoryPath, source, filePaths);
         }
+        return null;
     }
 
     private List<String> getImageManifest(RepositoryPath repositoryPath) {
@@ -246,16 +262,17 @@ public class ArtifactEventScannerListener {
      * @param repositoryPath 制品信息
      * @param source         事件类型
      */
-    private void handlerScan(RepositoryPath repositoryPath, int source) {
+    private Artifact handlerScan(RepositoryPath repositoryPath, int source) {
+        Artifact artifact = null;
         if (ArtifactEventTypeEnum.EVENT_ARTIFACT_PATH_DELETED.getType() != source && ArtifactEventTypeEnum.EVENT_ARTIFACT_DIRECTORY_PATH_DELETED.getType() != source) {
             try {
-                Artifact artifact = repositoryPath.getArtifactEntry();
+                artifact = repositoryPath.getArtifactEntry();
                 if (artifact == null) {
                     log.debug("No [{}] for [{}].",
                             Artifact.class.getSimpleName(),
                             repositoryPath);
 
-                    return;
+                    return null;
                 }
                 artifact.setSafeLevel(SafeLevelEnum.UN_SCAN.getLevel());
                 Set<String> filePaths = Sets.newLinkedHashSet();
@@ -266,6 +283,7 @@ public class ArtifactEventScannerListener {
                 log.error("获取Artifact错误：{}", ExceptionUtils.getStackTrace(ex));
             }
         }
+        return artifact;
     }
 
     /**
@@ -275,16 +293,17 @@ public class ArtifactEventScannerListener {
      * @param source         事件类型
      * @param filePaths      文件路径集合
      */
-    private void handlerScan(RepositoryPath repositoryPath, int source, Set<String> filePaths) {
+    private Artifact handlerScan(RepositoryPath repositoryPath, int source, Set<String> filePaths) {
+        Artifact artifact = null;
         if (ArtifactEventTypeEnum.EVENT_ARTIFACT_PATH_DELETED.getType() != source && ArtifactEventTypeEnum.EVENT_ARTIFACT_DIRECTORY_PATH_DELETED.getType() != source) {
             try {
-                Artifact artifact = repositoryPath.getArtifactEntry();
+                artifact = repositoryPath.getArtifactEntry();
                 if (artifact == null) {
                     log.debug("No [{}] for [{}].",
                             Artifact.class.getSimpleName(),
                             repositoryPath);
 
-                    return;
+                    return artifact;
                 }
                 artifact.setSafeLevel(SafeLevelEnum.UN_SCAN.getLevel());
                 artifact.setFilePaths(filePaths);
@@ -293,6 +312,7 @@ public class ArtifactEventScannerListener {
                 log.error("获取Artifact错误：{}", ExceptionUtils.getStackTrace(ex));
             }
         }
+        return artifact;
     }
 
     /**

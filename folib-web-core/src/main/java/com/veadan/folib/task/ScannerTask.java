@@ -12,7 +12,6 @@ import com.veadan.folib.scanner.mapper.ScanRulesMapper;
 import com.veadan.folib.scanner.service.ScanService;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
-import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -60,6 +59,7 @@ public class ScannerTask {
                 }
                 List<String> storageIdAndRepositoryIdList = scanRulesList.stream().map(item -> String.format("%s-%s", item.getStorage(), item.getRepository())).collect(Collectors.toList());
                 List<String> safeLevels = Lists.newArrayList();
+                safeLevels.add(SafeLevelEnum.INIT.getLevel());
                 safeLevels.add(SafeLevelEnum.SCANNING.getLevel());
                 safeLevels.add(SafeLevelEnum.SCAN_FAIL.getLevel());
                 safeLevels.add(SafeLevelEnum.UN_SCAN.getLevel());
