@@ -366,15 +366,9 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
                         targetStorageId, targetRepositoryId, srcAbsolutePath, targetBaseUrl + upLoadURI);
 
                 PromotionNodeOptionDto uploadDto = promotionUtil.getPromotionUploadDto(promotionArtifactDto);
-//
+
 //                //向目标仓库推包
                 promotionUtil.upload(targetBaseUrl + upLoadURI, uploadDto);
-
-                // 异步制品切片上传
-//                asyncThreadPoolTaskExecutor.submit(() -> {
-//                    final List<PromotionUtil.ArtifactSliceUploadHttpEntityResponse> uploadResults = promotionUtil.artifactSliceUpload(uploadDto, targetUrl, srcStorageId, srcRepostoryId, syncNo);
-                // 更新记录结果
-//                });
 
             } else if (ArtifactSyncRecordSyncModelEnum.PULL.getVal().equals(syncModel)) {
                 log.info("Use pull model");

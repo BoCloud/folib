@@ -315,6 +315,7 @@ public class AsyncPoolConfig {
                 asyncWsHeartbeatKeepAliveSeconds,
                 asyncWsHeartbeatThreadNamePrefix,
                 asyncWsHeartbeatAwaitTerminationSeconds);
+    }
 
     @Bean
     public ThreadPoolTaskExecutor asyncPromotionPoolTaskExecutor() {

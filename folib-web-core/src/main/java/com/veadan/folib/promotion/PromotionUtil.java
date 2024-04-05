@@ -132,8 +132,6 @@ public class PromotionUtil {
     @Autowired
     private ThreadPoolTaskExecutor asyncCopyThreadPoolTaskExecutor;
     @Autowired
-    private ThreadPoolTaskExecutor asyncThreadPoolTaskExecutor;
-    @Autowired
     private ProxyRepositoryConnectionPoolConfigurationService clientPool;
 
     @Autowired
@@ -336,16 +334,6 @@ public class PromotionUtil {
                 PromotionNodeOptionDto uploadDto = getPromotionUploadDto(promotionArtifactDto);
 
                 upload(targetUploadUrl, uploadDto);
-
-                // 异步制品切片上传
-//                asyncThreadPoolTaskExecutor.submit(() -> {
-//                    try {
-//                        this.artifactSliceUpload(uploadDto, StringUtils.chomp(dispatchNodeHost, "/"), uploadDto.getStorageId(), uploadDto.getRepostoryId(), syncNo);
-//                    } catch (Exception e) {
-//                        log.error("异步制品切片上传失败", e);
-//                    }
-//                });
-
 
                 if (Boolean.TRUE.equals(recordStatus)) {
                     artifactComponent.handlerArtifactPromotion(dispatchNodeDto.getClusterEnName(), srcStorageId, srcRepositoryId, artifactPath, PromotionStatusEnum.SUCCESS.getStatus());

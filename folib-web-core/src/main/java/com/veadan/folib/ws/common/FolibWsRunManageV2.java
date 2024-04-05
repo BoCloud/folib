@@ -1,7 +1,9 @@
 package com.veadan.folib.ws.common;
 
 import com.google.common.util.concurrent.RateLimiter;
+import com.veadan.folib.components.DistributedCacheComponent;
 import com.veadan.folib.components.DistributedLockComponent;
+import com.veadan.folib.components.node.NodeComponent;
 import com.veadan.folib.config.PromotionConfig;
 import com.veadan.folib.configuration.ConfigurationManager;
 import com.veadan.folib.dispatch.ClusterDispatchNodeDto;
@@ -56,6 +58,10 @@ public class FolibWsRunManageV2 {
     private PromotionConfig promotionConfig;
     @Autowired
     private DistributedLockComponent distributedLockComponent;
+    @Autowired
+    private DistributedCacheComponent distributedCacheComponent;
+    @Autowired
+    private NodeComponent nodeComponent;
     private WebSocketContainer webSocketContainer;
 
     @PostConstruct
@@ -66,17 +72,12 @@ public class FolibWsRunManageV2 {
 
     @Scheduled(cron = "0/5 * * * * ?")
     public void wsContainerTask() {
-//        String lockKey = "WS_CONTAINER_KEY";
-//        if (distributedLockComponent.lock(lockKey, 30, TimeUnit.SECONDS, 9999, TimeUnit.DAYS)) {
-//            // 初始化连接到集群服务端
-//            final Map<String, ClusterDispatchNodeDto> clusterDispatchNode = configurationManagementService.getMutableConfigurationClone().getClusterDispatchNode();
-//            clusterDispatchNode.values()
-//                    .forEach(clusterDispatchNodeDto -> {
-//                        asyncWsHeartbeatThreadPoolTaskExecutor.execute(() -> reconnectAndHeartbeat(clusterDispatchNodeDto));
-//                    });
-//        } else {
-//            log.warn("WsContainerTask [{}] was not get lock", lockKey);
-//        }
+        // 初始化连接到集群服务端
+        final Map<String, ClusterDispatchNodeDto> clusterDispatchNode = configurationManagementService.getMutableConfigurationClone().getClusterDispatchNode();
+        clusterDispatchNode.values()
+                .forEach(clusterDispatchNodeDto -> {
+                    asyncWsHeartbeatThreadPoolTaskExecutor.execute(() -> reconnectAndHeartbeat(clusterDispatchNodeDto));
+                });
     }
 
     public void reconnectAndHeartbeat(ClusterDispatchNodeDto nodeInfo) {
