@@ -396,7 +396,6 @@ public class FolibWsClientArtifactPullCommand implements FolibWsClientCommand<Pr
                 log.error("发起请求响应状态不正确（RequestURL：{}，ResponseBody：{}）", url, body);
                 throw new BusinessException("发起请求响应状态不正确");
             }
-
             return JSON.parseObject(body, responseClass);
         } catch (Exception e) {
             log.error("发起请求失败（{}）", url, e);

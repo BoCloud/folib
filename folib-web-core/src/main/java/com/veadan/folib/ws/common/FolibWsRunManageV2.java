@@ -1,6 +1,7 @@
 package com.veadan.folib.ws.common;
 
 import com.google.common.util.concurrent.RateLimiter;
+import com.veadan.folib.components.DistributedLockComponent;
 import com.veadan.folib.config.PromotionConfig;
 import com.veadan.folib.configuration.ConfigurationManager;
 import com.veadan.folib.dispatch.ClusterDispatchNodeDto;
@@ -12,6 +13,7 @@ import com.veadan.folib.ws.server.*;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
@@ -40,7 +42,7 @@ public class FolibWsRunManageV2 {
     private Map<String, Session> FOLIB_WS_RUN_MAP = new ConcurrentHashMap<>();
     public static final String FOLIB_WS_PROTOCOL = "folib_WS_protocol";
     private Map<Session, Long> sessionIdleMap = new ConcurrentHashMap<>();//
-    private ConcurrentHashMap<Session, Map<String,CompletableFuture<WSMessageResponse>>> REQUEST_FUTURES = new ConcurrentHashMap<>();
+    private ConcurrentHashMap<Session, Map<String, CompletableFuture<WSMessageResponse>>> REQUEST_FUTURES = new ConcurrentHashMap<>();
     private ConcurrentHashMap<Session, RateLimiter> RATE_LIMITER_MAP = new ConcurrentHashMap<>();
     private ConcurrentHashMap<String, ReentrantLock> REENTRANT_LOCK__MAP = new ConcurrentHashMap<>();
 
@@ -49,10 +51,12 @@ public class FolibWsRunManageV2 {
     @Autowired
     private ConfigurationManagementService configurationManagementService;
     @Autowired
-    private Executor asyncThreadPoolTaskExecutor;
+    private ThreadPoolTaskExecutor asyncWsHeartbeatThreadPoolTaskExecutor;
     @Autowired
     private PromotionConfig promotionConfig;
-    private WebSocketContainer webSocketContainer ;
+    @Autowired
+    private DistributedLockComponent distributedLockComponent;
+    private WebSocketContainer webSocketContainer;
 
     @PostConstruct
     public void init() {
@@ -61,17 +65,22 @@ public class FolibWsRunManageV2 {
     }
 
     @Scheduled(cron = "0/5 * * * * ?")
-    public void Scheduled() {
-        // 初始化连接到集群服务端
-        final Map<String, ClusterDispatchNodeDto> clusterDispatchNode = configurationManagementService.getMutableConfigurationClone().getClusterDispatchNode();
-        clusterDispatchNode.values()
-                .forEach(clusterDispatchNodeDto -> {
-                    asyncThreadPoolTaskExecutor.execute(() -> reconnectAndHeartbeat(clusterDispatchNodeDto));
-                });
+    public void wsContainerTask() {
+//        String lockKey = "WS_CONTAINER_KEY";
+//        if (distributedLockComponent.lock(lockKey, 30, TimeUnit.SECONDS, 9999, TimeUnit.DAYS)) {
+//            // 初始化连接到集群服务端
+//            final Map<String, ClusterDispatchNodeDto> clusterDispatchNode = configurationManagementService.getMutableConfigurationClone().getClusterDispatchNode();
+//            clusterDispatchNode.values()
+//                    .forEach(clusterDispatchNodeDto -> {
+//                        asyncWsHeartbeatThreadPoolTaskExecutor.execute(() -> reconnectAndHeartbeat(clusterDispatchNodeDto));
+//                    });
+//        } else {
+//            log.warn("WsContainerTask [{}] was not get lock", lockKey);
+//        }
     }
 
     public void reconnectAndHeartbeat(ClusterDispatchNodeDto nodeInfo) {
-        if (null != nodeInfo.getAutoRegister() && nodeInfo.getAutoRegister()){
+        if (null != nodeInfo.getAutoRegister() && nodeInfo.getAutoRegister()) {
             //自动注册的节点不处理，直接返回
             return;
         }
@@ -102,9 +111,9 @@ public class FolibWsRunManageV2 {
                     try {
                         WSMessageResponse wsMessageResponse = sendRequest(targetHostName, new WSMessageRequest(Command.HEARD_BEAT));
                     } catch (Exception e) {
-                        log.error(String.format("ping Exception,close session:%s",session1), e);
+                        log.error(String.format("ping Exception,close session:%s", session1), e);
                         try {
-                            session1.close(new CloseReason(CloseReason.CloseCodes.NORMAL_CLOSURE,"HEARD_BEAT timeout"));
+                            session1.close(new CloseReason(CloseReason.CloseCodes.NORMAL_CLOSURE, "HEARD_BEAT timeout"));
                         } catch (IOException ex) {
                             log.error("close exception", e);
                         }
@@ -161,7 +170,7 @@ public class FolibWsRunManageV2 {
         }
     }
 
-    public void unRegisterSession(String targetHostName,String reason) {
+    public void unRegisterSession(String targetHostName, String reason) {
         synchronized (targetHostName.intern()) {
             Session session = FOLIB_WS_RUN_MAP.remove(targetHostName);
             if (session == null) {
@@ -184,9 +193,9 @@ public class FolibWsRunManageV2 {
         }
     }
 
-    public void cleanFuture(Session session,Throwable error) {
+    public void cleanFuture(Session session, Throwable error) {
         Map<String, CompletableFuture<WSMessageResponse>> futureMap = REQUEST_FUTURES.get(session);
-        if (futureMap!=null){
+        if (futureMap != null) {
             for (CompletableFuture<WSMessageResponse> value : futureMap.values()) {
                 value.completeExceptionally(error);
             }
@@ -230,7 +239,7 @@ public class FolibWsRunManageV2 {
             ClusterDispatchNodeDto clusterDispatchNodeDto = clusterDispatchNode.values().stream().filter(dto -> {
                 return targetHostName.equals(FolibWsRunManageUtil.getTargetHostName(dto));
             }).findAny().orElse(null);
-            log.warn("session is closed reconnectAndHeartbeat,{}",clusterDispatchNodeDto);
+            log.warn("session is closed reconnectAndHeartbeat,{}", clusterDispatchNodeDto);
             reconnectAndHeartbeat(clusterDispatchNodeDto);
             session = getSession(targetHostName);
         }
@@ -243,7 +252,6 @@ public class FolibWsRunManageV2 {
         final Collection<ClusterDispatchNodeDto> clusterDispatchNodeDtos = configurationManagementService.getMutableConfigurationClone().getClusterDispatchNode().values();
         final Map<String, Long> nodeKbpsMap = clusterDispatchNodeDtos.stream().collect(Collectors.toMap(e -> String.format("%s:%s", UrlUtils.getHost(e.getClusterNodeHost()), UrlUtils.getPort(e.getClusterNodeHost())), e -> null != e.getKbps() ? e.getKbps() * 1024L : 0L));
         final long finalKbps = Optional.ofNullable(nodeKbpsMap.get(targetHostName)).filter(k -> k > 0).orElse(kbps);
-
 
 
         Map<String, CompletableFuture<WSMessageResponse>> futureMap = REQUEST_FUTURES.computeIfAbsent(session, session1 -> new ConcurrentHashMap<>());
@@ -270,7 +278,7 @@ public class FolibWsRunManageV2 {
         sendBinary(session, wsMessageResponse, 0L);
     }
 
-    public CompletableFuture<WSMessageResponse> getFuture(Session session,String requestId) {
+    public CompletableFuture<WSMessageResponse> getFuture(Session session, String requestId) {
         Map<String, CompletableFuture<WSMessageResponse>> futureMap = REQUEST_FUTURES.get(session);
         if (futureMap != null) {
             return futureMap.get(requestId);
@@ -286,7 +294,6 @@ public class FolibWsRunManageV2 {
     private final Map<Session, Long> sessionLastSendTime = new ConcurrentHashMap<>();
     private final Map<Session, Long> sessionBytesSent = new ConcurrentHashMap<>();
     private final Map<Session, ReentrantLock> sessionLocks = new ConcurrentHashMap<>();
-
 
 
     private void sendBinaryV2(Session session, ByteBuffer data, long finalKbps) throws IOException {
@@ -369,6 +376,7 @@ public class FolibWsRunManageV2 {
         }
 
     }
+
     private void sendBinary(Session session, ByteBuffer data, long finalKbps) throws IOException {
         String messageId = UUID.randomUUID().toString();
         //缺省填充
@@ -474,8 +482,9 @@ public class FolibWsRunManageV2 {
                 try {
                     BigDecimal second = BigDecimal.valueOf(pastTime).divide(BigDecimal.valueOf(1000), 2, RoundingMode.HALF_UP);
                     rate = BigDecimal.valueOf(sendBytesCount).divide(second, 2, RoundingMode.HALF_UP);
-                } catch (Exception ignored) { }
-                log.info("messageId:{} dataSize:{}/{}, current finalKbps {}ps", messageId, dataSize-bytesToSend, dataSize,FileSizeConvertUtils.convert(rate.longValue()));
+                } catch (Exception ignored) {
+                }
+                log.info("messageId:{} dataSize:{}/{}, current finalKbps {}ps", messageId, dataSize - bytesToSend, dataSize, FileSizeConvertUtils.convert(rate.longValue()));
                 if (isLast) {
                     log.info("send success , time consuming:{}ms", System.currentTimeMillis() - startTime);
                 }

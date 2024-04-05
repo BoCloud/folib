@@ -178,6 +178,24 @@ public class AsyncPoolConfig {
     @Value("${folib.threadPool.asyncEventLog.awaitTerminationSeconds}")
     private Integer asyncEventLogAwaitTerminationSeconds;
 
+    @Value("${folib.threadPool.asyncWsHeartbeat.corePoolSize}")
+    private Integer asyncWsHeartbeatCorePoolSize;
+
+    @Value("${folib.threadPool.asyncWsHeartbeat.maxPoolSize}")
+    private Integer asyncWsHeartbeatMaxPoolSize;
+
+    @Value("${folib.threadPool.asyncWsHeartbeat.queueCapacity}")
+    private Integer asyncWsHeartbeatQueueCapacity;
+
+    @Value("${folib.threadPool.asyncWsHeartbeat.keepAliveSeconds}")
+    private Integer asyncWsHeartbeatKeepAliveSeconds;
+
+    @Value("${folib.threadPool.asyncWsHeartbeat.threadNamePrefix}")
+    private String asyncWsHeartbeatThreadNamePrefix;
+
+    @Value("${folib.threadPool.asyncWsHeartbeat.awaitTerminationSeconds}")
+    private Integer asyncWsHeartbeatAwaitTerminationSeconds;
+
     @Bean
     public ThreadPoolTaskExecutor asyncThreadPoolTaskExecutor() {
         return buildThreadPoolTaskExecutor(asyncCorePoolSize, asyncMaxPoolSize, asyncQueueCapacity, asyncKeepAliveSeconds, asyncThreadNamePrefix, asyncAwaitTerminationSeconds);
@@ -270,6 +288,17 @@ public class AsyncPoolConfig {
                 asyncEventLogAwaitTerminationSeconds);
     }
 
+    @Bean
+    public ThreadPoolTaskExecutor asyncWsHeartbeatThreadPoolTaskExecutor() {
+        return buildThreadPoolTaskExecutor(
+                asyncWsHeartbeatCorePoolSize,
+                asyncWsHeartbeatMaxPoolSize,
+                asyncWsHeartbeatQueueCapacity,
+                asyncWsHeartbeatKeepAliveSeconds,
+                asyncWsHeartbeatThreadNamePrefix,
+                asyncWsHeartbeatAwaitTerminationSeconds);
+    }
+
     @PreDestroy
     public void shutdown() {
         asyncThreadPoolTaskExecutor().shutdown();
@@ -280,6 +309,7 @@ public class AsyncPoolConfig {
         asyncWsCommandThreadPoolTaskExecutor().shutdown();
         asyncCopyThreadPoolTaskExecutor().shutdown();
         asyncEventLogThreadPoolTaskExecutor().shutdown();
+        asyncWsHeartbeatThreadPoolTaskExecutor().shutdown();
     }
 
     /**

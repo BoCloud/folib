@@ -58,8 +58,10 @@ public class ClientComponent {
                         }
                     }
                 }
+                client = proxyRepositoryConnectionPoolConfigurationService.getRestClient(storageId, repositoryId);
+            } else {
+                client = proxyRepositoryConnectionPoolConfigurationService.getRestClient();
             }
-            client = proxyRepositoryConnectionPoolConfigurationService.getRestClient(storageId, repositoryId);
             //连接建立超时时间
             client.property(ClientProperties.CONNECT_TIMEOUT, 10000);
             //读取内容超时时间
@@ -76,7 +78,7 @@ public class ClientComponent {
             response = builder.get();
             String responseBody = response.readEntity(String.class);
             if (HttpStatus.SC_OK != response.getStatus()) {
-                log.debug("Url response error [{}] [{}] [{}] [{}]", targetUrl, headers, response.getStatus(), responseBody);
+                log.info("Url response error [{}] [{}] [{}] [{}]", targetUrl, headers, response.getStatus(), responseBody);
             }
             ResponseResult responseResult = ResponseResult.builder().build();
             responseResult.setHttpStatus(response.getStatus());
