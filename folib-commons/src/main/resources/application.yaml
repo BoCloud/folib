@@ -135,9 +135,9 @@ folib:
       threadNamePrefix: asyncFetchRemotePackage_
       awaitTerminationSeconds: 6
     asyncScan:
-      corePoolSize: ${threadPool.scan.core:2}
-      maxPoolSize: ${threadPool.scan.max:2}
-      queueCapacity: ${threadPool.scan.queue:20}
+      corePoolSize: 2
+      maxPoolSize: 2
+      queueCapacity: 16
       keepAliveSeconds: 0
       threadNamePrefix: asyncScan_
       awaitTerminationSeconds: 0
@@ -163,9 +163,9 @@ folib:
       threadNamePrefix: asyncCopy_
       awaitTerminationSeconds: 6
     asyncEventLog:
-      corePoolSize: ${threadPool.eventLog.core:2}
-      maxPoolSize: ${threadPool.eventLog.max:2}
-      queueCapacity: ${threadPool.eventLog.queue:100}
+      corePoolSize: 2
+      maxPoolSize: 2
+      queueCapacity: ${threadPool.common.queue:10000}
       keepAliveSeconds: 0
       threadNamePrefix: asyncEventLog_
       awaitTerminationSeconds: 6
@@ -175,6 +175,13 @@ folib:
       queueCapacity: ${threadPool.common.queue:100000000}
       keepAliveSeconds: 0
       threadNamePrefix: asyncWsHeartbeat_
+      awaitTerminationSeconds: 6
+    asyncPromotion:
+      corePoolSize: ${threadPool.common.core:12}
+      maxPoolSize: ${threadPool.common.max:12}
+      queueCapacity: ${threadPool.common.queue:100000000}
+      keepAliveSeconds: 0
+      threadNamePrefix: asyncPromotion_
       awaitTerminationSeconds: 6
 # Changes to these properties must also be applied to [folib/folib-web-integration-tests] and possibly the pipeline.
 # Please ping us on our chat channel (https://chat.carlspring.org/) to confirm.

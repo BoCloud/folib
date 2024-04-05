@@ -195,6 +195,24 @@ public class AsyncPoolConfig {
 
     @Value("${folib.threadPool.asyncWsHeartbeat.awaitTerminationSeconds}")
     private Integer asyncWsHeartbeatAwaitTerminationSeconds;
+    
+    @Value("${folib.threadPool.asyncPromotion.corePoolSize}")
+    private Integer asyncPromotionCorePoolSize;
+
+    @Value("${folib.threadPool.asyncPromotion.maxPoolSize}")
+    private Integer asyncPromotionMaxPoolSize;
+
+    @Value("${folib.threadPool.asyncPromotion.queueCapacity}")
+    private Integer asyncPromotionQueueCapacity;
+
+    @Value("${folib.threadPool.asyncPromotion.keepAliveSeconds}")
+    private Integer asyncPromotionKeepAliveSeconds;
+
+    @Value("${folib.threadPool.asyncPromotion.threadNamePrefix}")
+    private String asyncPromotionThreadNamePrefix;
+
+    @Value("${folib.threadPool.asyncPromotion.awaitTerminationSeconds}")
+    private Integer asyncPromotionAwaitTerminationSeconds;
 
     @Bean
     public ThreadPoolTaskExecutor asyncThreadPoolTaskExecutor() {
@@ -297,6 +315,16 @@ public class AsyncPoolConfig {
                 asyncWsHeartbeatKeepAliveSeconds,
                 asyncWsHeartbeatThreadNamePrefix,
                 asyncWsHeartbeatAwaitTerminationSeconds);
+
+    @Bean
+    public ThreadPoolTaskExecutor asyncPromotionPoolTaskExecutor() {
+        return buildThreadPoolTaskExecutor(
+                asyncPromotionCorePoolSize,
+                asyncPromotionMaxPoolSize,
+                asyncPromotionQueueCapacity,
+                asyncPromotionKeepAliveSeconds,
+                asyncPromotionThreadNamePrefix,
+                asyncPromotionAwaitTerminationSeconds);
     }
 
     @PreDestroy
@@ -310,6 +338,7 @@ public class AsyncPoolConfig {
         asyncCopyThreadPoolTaskExecutor().shutdown();
         asyncEventLogThreadPoolTaskExecutor().shutdown();
         asyncWsHeartbeatThreadPoolTaskExecutor().shutdown();
+        asyncPromotionPoolTaskExecutor().shutdown();
     }
 
     /**

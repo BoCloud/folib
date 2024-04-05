@@ -5,6 +5,7 @@ import com.alibaba.fastjson.JSONObject;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.veadan.folib.artifact.coordinates.ConanArtifactCoordinates;
+import com.veadan.folib.artifact.coordinates.ConanArtifactIndex;
 import com.veadan.folib.constant.GlobalConstants;
 import com.veadan.folib.controllers.BaseArtifactController;
 import com.veadan.folib.domain.ConanPackagesRevisions;
@@ -400,7 +401,7 @@ public class ConanArtifactController extends BaseArtifactController {
             @PathVariable("channel") String channel,
             @PathVariable("revisions") String revisions,
             HttpServletRequest request) throws Exception {
-        String artifactPath = String.format("%s/%s/%s/%s/%s", user, name, version, channel, "index.json");
+        String artifactPath = String.format("%s/%s/%s/%s/%s", user, name, version, channel, ConanArtifactIndex.INDEX_JSON_NAME);
         String targetUrl = String.format("/v2/conans/%s/%s/%s/%s/revisions", name, version, user, channel);
         JSONObject data = conanService.revisions(repository, artifactPath, targetUrl);
         if (Objects.isNull(data)) {
@@ -497,7 +498,7 @@ public class ConanArtifactController extends BaseArtifactController {
             @PathVariable("revisionId") String revisionId,
             @PathVariable("packageId") String packageId,
             @PathVariable("revisions") String revisions) throws Exception {
-        String artifactPath = String.format("%s/%s/%s/%s/%s/package/%s/%s", user, name, version, channel, revisionId, packageId, "index.json");
+        String artifactPath = String.format("%s/%s/%s/%s/%s/package/%s/%s", user, name, version, channel, revisionId, packageId, ConanArtifactIndex.INDEX_JSON_NAME);
         String targetUrl = String.format("/v2/conans/%s/%s/%s/%s/revisions/%s/packages/%s/revisions", name, version, user, channel, revisionId, packageId);
         JSONObject data = conanService.revisions(repository, artifactPath, targetUrl);
         if (Objects.isNull(data)) {
@@ -640,6 +641,46 @@ public class ConanArtifactController extends BaseArtifactController {
             logger.error(e.getMessage(), e);
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body(e.getMessage());
         }
+    }
+
+    @PreAuthorize("hasAuthority('ARTIFACTS_RESOLVE')")
+    @GetMapping(value = "{storageId}/{repositoryId}/{user}/{name}/{version}/{channel}/{revisionId}/package/{packageId}/index.json")
+    public void downloadPackageIndexJSON(
+            @RepositoryMapping Repository repository,
+            @RequestHeader HttpHeaders httpHeaders,
+            @PathVariable("storageId") String storageId,
+            @PathVariable("repositoryId") String repositoryId,
+            @PathVariable("user") String user,
+            @PathVariable("name") String name,
+            @PathVariable("version") String version,
+            @PathVariable("channel") String channel,
+            @PathVariable("revisionId") String revisionId,
+            @PathVariable("packageId") String packageId,
+            HttpServletRequest request,
+            HttpServletResponse response) throws Exception {
+        String artifactPath = String.format("%s/%s/%s/%s/%s/package/%s/%s", user, name, version, channel, revisionId, packageId, ConanArtifactIndex.INDEX_JSON_NAME);
+        RepositoryPath repositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, artifactPath);
+        vulnerabilityBlock(repositoryPath);
+        provideArtifactDownloadResponse(request, response, httpHeaders, repositoryPath);
+    }
+
+    @PreAuthorize("hasAuthority('ARTIFACTS_RESOLVE')")
+    @GetMapping(value = "{storageId}/{repositoryId}/{user}/{name}/{version}/{channel}/index.json")
+    public void downloadIndexJSON(
+            @RepositoryMapping Repository repository,
+            @RequestHeader HttpHeaders httpHeaders,
+            @PathVariable("storageId") String storageId,
+            @PathVariable("repositoryId") String repositoryId,
+            @PathVariable("user") String user,
+            @PathVariable("name") String name,
+            @PathVariable("version") String version,
+            @PathVariable("channel") String channel,
+            HttpServletRequest request,
+            HttpServletResponse response) throws Exception {
+        String artifactPath = String.format("%s/%s/%s/%s/%s", user, name, version, channel, ConanArtifactIndex.INDEX_JSON_NAME);
+        RepositoryPath repositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, artifactPath);
+        vulnerabilityBlock(repositoryPath);
+        provideArtifactDownloadResponse(request, response, httpHeaders, repositoryPath);
     }
 
     @PreAuthorize("hasAuthority('ARTIFACTS_RESOLVE')")
