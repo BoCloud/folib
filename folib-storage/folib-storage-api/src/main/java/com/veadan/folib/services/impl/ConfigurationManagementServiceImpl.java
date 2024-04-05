@@ -197,10 +197,10 @@ public class ConfigurationManagementServiceImpl
         StorageDto storageDto = configuration.getStorage(storage.getId());
         storageDto.setUsers(storage.getUsers());
         storageDto.setAdmin(storage.getAdmin());
-        if (StringUtils.isNotBlank(storage.getStorageProvider())) {
+        if (StringUtils.isBlank(storageDto.getStorageProvider()) && StringUtils.isNotBlank(storage.getStorageProvider())) {
             storageDto.setStorageProvider(storage.getStorageProvider());
         }
-        checkUsersContainsAdmin(storage);
+        checkUsersContainsAdmin(storageDto);
         modifyInLock(configuration -> configuration.addStorage(storageDto));
     }
 

@@ -8,16 +8,13 @@ import cn.hutool.extra.compress.extractor.Extractor;
 import cn.hutool.extra.spring.SpringUtil;
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.veadan.folib.artifact.MavenArtifactUtils;
 import com.veadan.folib.artifact.coordinates.NpmArtifactCoordinates;
 import com.veadan.folib.components.artifact.ArtifactComponent;
-import com.veadan.folib.config.NpmLayoutProviderConfig;
 import com.veadan.folib.domain.ArtifactIdGroupEntity;
 import com.veadan.folib.domain.ArtifactParse;
 import com.veadan.folib.domain.DockerManifest;
 import com.veadan.folib.entity.Dict;
-import com.veadan.folib.npm.metadata.PackageVersion;
 import com.veadan.folib.providers.io.RepositoryFiles;
 import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.providers.io.RepositoryPathResolver;
@@ -35,7 +32,6 @@ import com.veadan.folib.util.MessageDigestUtils;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
-import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.maven.artifact.ArtifactUtils;
@@ -44,11 +40,8 @@ import org.apache.maven.artifact.repository.metadata.Snapshot;
 import org.apache.maven.artifact.repository.metadata.Versioning;
 import org.apache.maven.index.artifact.Gav;
 import org.apache.maven.model.Model;
-import org.springframework.context.annotation.Lazy;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.multipart.MultipartFile;
 
-import javax.inject.Inject;
 import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -375,8 +368,7 @@ public class ArtifactUploadTask implements Callable<String> {
             }
             Gav artifactGav = MavenArtifactUtils.convertPathToGav(artifactRepositoryPath);
             byte[] pomBytes = layoutProvider.getContentByFileName(repositoryPath, path, "pom.xml");
-            String artifactName = fileRelativePath;
-            String pomName = FilenameUtils.getBaseName(artifactName) + ".pom";
+            String pomName = String.format("%s-%s", artifactId, version) + ".pom";
             File pomTempFile = null;
             if (Objects.nonNull(pomBytes)) {
                 //包内存在pom，直接使用
