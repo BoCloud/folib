@@ -917,7 +917,7 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
         try {
             Artifact artifact = artifactRepository.findOneArtifactBase(repositoryPath.getStorageId(), repositoryPath.getRepositoryId(), RepositoryFiles.relativizePath(repositoryPath));
             if (Objects.nonNull(artifact)) {
-                scanService.doScan(artifact);
+                scanService.syncScan(Lists.newArrayList(artifact));
             }
         } catch (Exception ex) {
             log.error(ExceptionUtils.getStackTrace(ex));

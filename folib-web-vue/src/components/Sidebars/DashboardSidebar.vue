@@ -36,7 +36,7 @@
       </a-menu-item>
       <a-menu-item v-if="this.userInfo.roles.indexOf('ADMIN') > -1 || this.userInfo.roles.indexOf('OPEN_SOURCE_MANAGE') > -1" class="menu-item-header">
         <hr class="mt-5" />
-        开源治理
+        制品分析
       </a-menu-item>
       <a-menu-item v-if="this.userInfo.roles.indexOf('ADMIN') > -1 || this.userInfo.roles.indexOf('OPEN_SOURCE_MANAGE') > -1">
         <router-link to="/artifacts">
