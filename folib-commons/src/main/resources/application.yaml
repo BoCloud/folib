@@ -137,7 +137,7 @@ folib:
     asyncScan:
       corePoolSize: 2
       maxPoolSize: 2
-      queueCapacity: 16
+      queueCapacity: 20
       keepAliveSeconds: 0
       threadNamePrefix: asyncScan_
       awaitTerminationSeconds: 0
