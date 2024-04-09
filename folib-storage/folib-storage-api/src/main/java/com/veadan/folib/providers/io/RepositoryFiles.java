@@ -40,6 +40,10 @@ public abstract class RepositoryFiles {
     }
 
     public static Boolean isArtifactMetadata(RepositoryPath path) {
+        RepositoryPath root = path.getRoot();
+        if (path.equals(root)) {
+            return false;
+        }
         String fileName = path.getFileName().toString();
         String parentFileName = path.getParent().getFileName().toString();
         boolean flag = false;
