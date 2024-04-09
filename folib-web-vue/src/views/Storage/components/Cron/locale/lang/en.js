@@ -7,6 +7,7 @@ export default {
     'NotExecutedImmediately': 'Not executed immediately',
     'OtherParameters': 'Other parameters:',
     'Days': 'Days',
+    'Tag': 'Tag',
     'RetentionDaysNum': 'Number of retention days',
     'KeepTheNumber': 'Keep the number',
     'Success': 'Success',

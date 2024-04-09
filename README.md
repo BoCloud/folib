@@ -83,7 +83,7 @@ folib-1.0:latest
 | FOLIB_MYSQL_DB               | MySQL数据库名称                    | folib_scanner | 是       |                     |
 | FOLIB_MYSQL_USER             | MySQL数据库账号                    |               | 是       |                     |
 | FOLIB_MYSQL_PASSWORD         | MySQL数据库密码                    |               | 是       |                     |
-| FOLIB_NVD                    | 安全策略镜像地址                   | nvd.folib.com | 否       |                     |
+| FOLIB_NVD                    | 安全策略镜像地址                   | nvd.folib.com/feeds/json/cve/1.1 | 否       |                     |
 | FOLIB_JMX_PORT               | JMX监控端口                        | 7199          | 是       |                     |
 | FOLIB_REMOTE_DB_HOST         | 外置图数据库持久化地址             | 127.0.0.1     | 否       | db_REMOTE模式下有效 |
 | FOLIB_REMOTE_DB_PORT         | 外置图数据库持久化端口             | 49142         | 否       | db_REMOTE模式下有效 |

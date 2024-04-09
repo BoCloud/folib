@@ -115,6 +115,7 @@ export default {
       storageConditions: [
         {
           label: "Tag",
+          i18nKey: 'Cron.Tag',
           value: "tag"
         },
         {
@@ -125,7 +126,7 @@ export default {
       ],
     }
   },
-  components: {
+  computed: {
     i18nStorageConditions() {
       return this.storageConditions.map(column => {
         if (column.i18nKey) {

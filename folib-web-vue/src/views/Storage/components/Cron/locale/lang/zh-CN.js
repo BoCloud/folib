@@ -7,6 +7,7 @@ export default {
     'NotExecutedImmediately': '不立即执行',
     'OtherParameters': '其他参数：',
     'Days': '天数',
+    'Tag': 'Tag',
     'RetentionDaysNum': '保留天数',
     'KeepTheNumber': '保留个数',
     'Success': '成功',
