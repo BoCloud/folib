@@ -191,4 +191,25 @@ public class CommonUtils {
         DateTimeFormatter formatter = DateTimeFormatter.ISO_INSTANT;
         return instant.atOffset(ZoneOffset.UTC).format(formatter);
     }
+
+    /**
+     * 比较两个map是否一致
+     *
+     * @param map1 map1
+     * @param map2 map2
+     * @return true 两个map一致 false 两个map不一致
+     */
+    public static boolean areMapsEqual(Map<String, String> map1, Map<String, String> map2) {
+        if (map1.size() != map2.size()) {
+            return false;
+        }
+        for (Map.Entry<String, String> entry : map1.entrySet()) {
+            String key = entry.getKey();
+            String value = entry.getValue();
+            if (!map2.containsKey(key) || !map2.get(key).equals(value)) {
+                return false;
+            }
+        }
+        return true;
+    }
 }

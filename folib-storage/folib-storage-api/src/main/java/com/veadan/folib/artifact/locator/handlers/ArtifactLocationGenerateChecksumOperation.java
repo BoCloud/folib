@@ -1,14 +1,11 @@
 package com.veadan.folib.artifact.locator.handlers;
 
-import com.veadan.folib.providers.io.RepositoryFiles;
 import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.providers.layout.LayoutFileSystemProvider;
 
 import java.io.IOException;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
-import java.util.stream.Stream;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -24,32 +21,14 @@ public class ArtifactLocationGenerateChecksumOperation
 
     private Path previousPath;
 
+    private String lastModifiedTime;
+
     private boolean forceRegeneration = false;
 
     @Override
     public void execute(RepositoryPath path)
             throws IOException
     {
-        try (Stream<Path> pathStream = Files.list(path))
-        {
-            boolean containsMetadata = pathStream.anyMatch(p -> {
-                try
-                {
-                    return RepositoryFiles.isMetadata((RepositoryPath) p);
-                }
-                catch (IOException e)
-                {
-                    logger.error("Failed to read attributes for [{}]", p, e);
-                }
-                return false;
-            });
-            if (!containsMetadata)
-            {
-                logger.info("Target path [{}] does not contains any metadata, so we don't need to execute any operations.",
-                             path);
-                return;
-            }
-        }
 
         RepositoryPath parentPath = path;
 
@@ -85,7 +64,7 @@ public class ArtifactLocationGenerateChecksumOperation
         RepositoryPath basePath = parentPath;
         LayoutFileSystemProvider provider = (LayoutFileSystemProvider) basePath.getFileSystem()
                                                                                                    .provider();
-        provider.storeChecksum(basePath, forceRegeneration);
+        provider.storeChecksum(basePath, lastModifiedTime, forceRegeneration);
     }
 
     public boolean getForceRegeneration()
@@ -96,5 +75,13 @@ public class ArtifactLocationGenerateChecksumOperation
     public void setForceRegeneration(boolean forceRegeneration)
     {
         this.forceRegeneration = forceRegeneration;
+    }
+
+    public String getLastModifiedTime() {
+        return lastModifiedTime;
+    }
+
+    public void setLastModifiedTime(String lastModifiedTime) {
+        this.lastModifiedTime = lastModifiedTime;
     }
 }
