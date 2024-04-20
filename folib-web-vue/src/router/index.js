@@ -211,7 +211,7 @@ let routes = [
 		component: () => import('../views/Setting/Advanced.vue'),
 	},
 	/**
-   * 开源治理相关
+   * 制品分析相关
    */
   {
     path: "/artifacts",
@@ -219,8 +219,8 @@ let routes = [
     layout: "dashboard",
     meta: {
       title: "制品分析",
-      sidebarMap: ["开源治理", "制品分析"],
-      breadcrumbs: ["开源治理", "制品分析"],
+      sidebarMap: ["制品分析", "制品分析"],
+      breadcrumbs: ["制品分析", "制品分析"],
     },
     component: () => import("../views/ComponentAnalysis/Artifacts/index.vue"),
   },
@@ -230,8 +230,8 @@ let routes = [
     layout: "dashboard",
     meta: {
       title: "制品详情",
-      sidebarMap: ["开源治理", "制品分析", "制品详情"],
-      breadcrumbs: ["开源治理", "制品分析", "制品详情"],
+      sidebarMap: ["制品分析", "制品分析", "制品详情"],
+      breadcrumbs: ["制品分析", "制品分析", "制品详情"],
     },
     component: () => import("../views/ComponentAnalysis/Artifacts/Detail.vue"),
   },
@@ -241,8 +241,8 @@ let routes = [
     layout: "dashboard",
     meta: {
       title: "开源组件",
-      sidebarMap: ["开源治理", "开源组件"],
-      breadcrumbs: ["开源治理", "开源组件"],
+      sidebarMap: ["制品分析", "开源组件"],
+      breadcrumbs: ["制品分析", "开源组件"],
     },
     component: () => import("../views/ComponentAnalysis/Module/index.vue"),
   },
@@ -252,8 +252,8 @@ let routes = [
     layout: "dashboard",
     meta: {
       title: "组件详情",
-      sidebarMap: ["开源治理", "开源组件", "组件详情"],
-      breadcrumbs: ["开源治理", "开源组件", "组件详情"],
+      sidebarMap: ["制品分析", "开源组件", "组件详情"],
+      breadcrumbs: ["制品分析", "开源组件", "组件详情"],
     },
     component: () => import("../views/ComponentAnalysis/Module/Detail.vue"),
   },
@@ -263,8 +263,8 @@ let routes = [
     layout: "dashboard",
     meta: {
       title: "漏洞库",
-      sidebarMap: ["开源治理", "漏洞库"],
-      breadcrumbs: ["开源治理", "漏洞库"],
+      sidebarMap: ["制品分析", "漏洞库"],
+      breadcrumbs: ["制品分析", "漏洞库"],
     },
     component: () => import("../views/ComponentAnalysis/Vulnerabilities/index.vue"),
   },
@@ -274,8 +274,8 @@ let routes = [
     layout: "dashboard",
     meta: {
       title: "漏洞详情",
-      sidebarMap: ["开源治理", "漏洞库", "漏洞详情"],
-      breadcrumbs: ["开源治理", "漏洞库", "漏洞详情"],
+      sidebarMap: ["制品分析", "漏洞库", "漏洞详情"],
+      breadcrumbs: ["制品分析", "漏洞库", "漏洞详情"],
     },
     component: () => import("../views/ComponentAnalysis/Vulnerabilities/Detail.vue"),
   },
@@ -285,8 +285,8 @@ let routes = [
     layout: "dashboard",
     meta: {
       title: "证书库",
-      sidebarMap: ["开源治理", "证书库"],
-      breadcrumbs: ["开源治理", "证书库"],
+      sidebarMap: ["制品分析", "证书库"],
+      breadcrumbs: ["制品分析", "证书库"],
     },
     component: () => import("../views/ComponentAnalysis/Licenses/index.vue"),
   },
@@ -296,8 +296,8 @@ let routes = [
     layout: "dashboard",
     meta: {
       title: "证书详情",
-      sidebarMap: ["开源治理", "证书库", "证书详情"],
-      breadcrumbs: ["开源治理", "证书库", "证书详情"],
+      sidebarMap: ["制品分析", "证书库", "证书详情"],
+      breadcrumbs: ["制品分析", "证书库", "证书详情"],
     },
     component: () => import("../views/ComponentAnalysis/Licenses/Detail.vue"),
   },
@@ -313,8 +313,8 @@ let routes = [
   //   layout: "dashboard",
   //   meta: {
   //     title: "策略管理",
-  //     sidebarMap: ["开源治理", "策略管理"],
-  //     breadcrumbs: ["开源治理", "策略管理"],
+  //     sidebarMap: ["制品分析", "策略管理"],
+  //     breadcrumbs: ["制品分析", "策略管理"],
   //   },
   //   component: () => import("../views/ComponentAnalysis/Policy/index.vue"),
   // },

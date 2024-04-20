@@ -2172,7 +2172,7 @@ export default {
           '/' +
           this.folibRepository.id
         let layout = this.folibRepository.layout.toLowerCase()
-        if (layout === 'docker' || layout === 'conan') {
+        if (layout === 'docker') {
           let baseUrlArr = this.baseUrl.split('://')
           repositoryUrl =
             baseUrlArr[1] +

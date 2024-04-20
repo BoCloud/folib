@@ -123,6 +123,26 @@ public interface GlobalConstants {
     String DOCKER_DEFAULT_REPO = "library";
 
     /**
+     * docker level single
+     */
+    String DOCKER_LEVEL_SINGLE = "single";
+    
+    /**
+     * latest
+     */
+    String LATEST = "latest";
+
+    /**
+     * asterisk
+     */
+    String ASTERISK = "*";
+
+    /**
+     * download
+     */
+    String DOWNLOAD = "download";
+    
+   /**
      * drop
      */
     String DROP = "drop";

@@ -342,15 +342,6 @@ public class ArtifactController extends BaseController {
     }
 
     @PreAuthorize("hasAuthority('ADMIN')")
-    @GetMapping(value = "/cleanSnapshot/{storageId}/{repositoryId}/{artifactPath:.+}")
-    public ResponseEntity<String> cleanSnapshot(@PathVariable String artifactPath,
-                                                @PathVariable String storageId,
-                                                @PathVariable String repositoryId) {
-        artifactWebService.cleanSnapshot(storageId, repositoryId, artifactPath);
-        return ResponseEntity.ok("");
-    }
-
-    @PreAuthorize("hasAuthority('ADMIN')")
     @GetMapping(value = "/dockerLayoutUpgrade")
     public ResponseEntity<String> dockerLayoutUpgrade(@RequestParam(required = false, name = "storageId") String storageId,
                                                       @RequestParam(required = false, name = "repositoryId") String repositoryId,

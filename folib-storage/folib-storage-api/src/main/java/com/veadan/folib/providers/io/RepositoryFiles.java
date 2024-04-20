@@ -40,6 +40,10 @@ public abstract class RepositoryFiles {
     }
 
     public static Boolean isArtifactMetadata(RepositoryPath path) {
+        RepositoryPath root = path.getRoot();
+        if (path.equals(root)) {
+            return false;
+        }
         String fileName = path.getFileName().toString();
         String parentFileName = path.getParent().getFileName().toString();
         boolean flag = false;
@@ -91,6 +95,11 @@ public abstract class RepositoryFiles {
     public static Boolean hasExpired(RepositoryPath path)
             throws IOException {
         return (Boolean) Files.getAttribute(path, formatAttributes(RepositoryFileAttributeType.EXPIRED));
+    }
+
+    public static Boolean hasRefreshContent(RepositoryPath path)
+            throws IOException {
+        return (Boolean) Files.getAttribute(path, formatAttributes(RepositoryFileAttributeType.REFRESH_CONTENT));
     }
 
     public static ArtifactCoordinates readCoordinates(RepositoryPath path)

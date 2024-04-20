@@ -170,6 +170,10 @@ public abstract class AbstractLayoutProvider<T extends LayoutArtifactCoordinates
                     value = false;
 
                     break;
+                case REFRESH_CONTENT:
+                    value = false;
+
+                    break;
 
             }
             if (value != null) {

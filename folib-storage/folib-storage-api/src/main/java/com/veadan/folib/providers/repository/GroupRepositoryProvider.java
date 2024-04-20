@@ -1,8 +1,6 @@
 package com.veadan.folib.providers.repository;
 
 
-import cn.hutool.core.collection.CollectionUtil;
-import com.beust.jcommander.internal.Maps;
 import com.veadan.folib.artifact.coordinates.ArtifactCoordinates;
 import com.veadan.folib.configuration.ConfigurationUtils;
 import com.veadan.folib.data.criteria.Paginator;
@@ -26,8 +24,6 @@ import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.maven.index.artifact.M2ArtifactRecognizer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 
 import javax.inject.Inject;
@@ -302,61 +298,6 @@ public class GroupRepositoryProvider
             count = count + repositoryProvider.count(r.getStorage().getId(), r.getId(), predicate);
         }
         return count;
-    }
-
-    @Override
-    public Map<String, Object> searchConanPackage(Repository repository, String query) {
-        Set<Repository> groupRepositorySet = groupRepositorySetCollector.collect(repository);
-        for (Repository x : groupRepositorySet) {
-            try {
-                RepositoryProvider repositoryProvider = repositoryProviderRegistry.getProvider(x.getType());
-                Map<String, Object> rsMap = repositoryProvider.searchConanPackage(x, query);
-                if (rsMap.get("results") instanceof List) {
-                    List pacakges = (List) rsMap.get("results");
-                    if (CollectionUtil.isNotEmpty(pacakges)) {
-                        return rsMap;
-                    }
-                }
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        }
-        return Maps.newHashMap();
-    }
-
-    @Override
-    public ResponseEntity searchConanDownLoadUrl(Repository repository, String name, String version, String user, String channel) {
-        Set<Repository> groupRepositorySet = groupRepositorySetCollector.collect(repository);
-        for (Repository x : groupRepositorySet) {
-            try {
-                RepositoryProvider repositoryProvider = repositoryProviderRegistry.getProvider(x.getType());
-                ResponseEntity responseEntity = repositoryProvider.searchConanDownLoadUrl(x, name, version, user, channel);
-                if (HttpStatus.NOT_FOUND.value() != responseEntity.getStatusCode().value()) {
-                    return responseEntity;
-                }
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        }
-        return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
-    }
-
-    @Override
-    public Map<String, Object> searchConanPackageInfo(Repository repository, String name, String version, String user, String channel) {
-
-        Set<Repository> groupRepositorySet = groupRepositorySetCollector.collect(repository);
-        for (Repository x : groupRepositorySet) {
-            try {
-                RepositoryProvider repositoryProvider = repositoryProviderRegistry.getProvider(x.getType());
-                Map<String, Object> rsMap = repositoryProvider.searchConanPackageInfo(x, name, version, user, channel);
-                if (CollectionUtil.isNotEmpty(rsMap)) {
-                    return rsMap;
-                }
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        }
-        return Maps.newHashMap();
     }
 
 }

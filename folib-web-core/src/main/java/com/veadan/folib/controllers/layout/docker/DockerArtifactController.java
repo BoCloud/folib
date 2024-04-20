@@ -963,6 +963,7 @@ public class DockerArtifactController extends BaseArtifactController {
                                 (CollectionUtils.isNotEmpty(s.getRepositories().values()) && s.getRepositories().values().stream().anyMatch(repository -> RepositoryScopeEnum.OPEN.getType().equals(repository.getScope()))))
                         .collect(Collectors.toCollection(LinkedList::new));
                 List<Repository> repositories;
+                String dockerLevel = System.getProperty("DockerLevel");
                 for (Storage storage : storageList) {
                     boolean flag = !hasAdmin() && !username.equals(storage.getAdmin()) && (CollectionUtils.isNotEmpty(storage.getUsers()) && !storage.getUsers().contains(username));
                     repositories = new LinkedList<Repository>(storage.getRepositories().values());
@@ -974,27 +975,34 @@ public class DockerArtifactController extends BaseArtifactController {
                     }
                     if (CollectionUtils.isNotEmpty(repositories)) {
                         repositories.forEach(repository -> {
-                            RepositoryPath repositoryPath = repositoryPathResolver.resolve(repository.getStorage().getId(), repository.getId());
-                            String prefix = String.format("%s/%s", repository.getStorage().getId(), repository.getId());
-                            if (Objects.nonNull(repositoryPath) && Files.exists(repositoryPath)) {
-                                try {
-                                    List<RepositoryPath> repositoryPathList = RepositoryPathUtil.getDockerImagePaths(repositoryPath);
-                                    if (CollectionUtils.isNotEmpty(repositoryPathList)) {
-                                        repositoryPathList.forEach(item -> {
-                                            String path = "";
-                                            try {
-                                                path = RepositoryFiles.relativizePath(item);
-                                            } catch (Exception ex) {
-                                                logger.error(ExceptionUtils.getStackTrace(ex));
-                                            }
-                                            if (StringUtils.isNotBlank(path)) {
-                                                dataList.add(String.format("%s/%s", prefix, path));
-                                            }
-                                        });
+                            try {
+                                RepositoryPath repositoryPath = repositoryPathResolver.resolve(repository.getStorage().getId(), repository.getId());
+                                String prefix = String.format("%s/%s", repository.getStorage().getId(), repository.getId());
+                                if (Objects.nonNull(repositoryPath) && Files.exists(repositoryPath)) {
+                                    if (GlobalConstants.DOCKER_LEVEL_SINGLE.equals(dockerLevel)) {
+                                        DirectoryListing directoryListing = directoryListingService.fromRepositoryPath(repositoryPath);
+                                        if (Objects.nonNull(directoryListing) && CollectionUtils.isNotEmpty(directoryListing.getDirectories())) {
+                                            dataList.addAll(directoryListing.getDirectories().stream().filter(item -> StringUtils.isNotBlank(item.getName())).map(item -> String.format("%s/%s", prefix, item.getName())).collect(Collectors.toList()));
+                                        }
+                                    } else {
+                                        List<RepositoryPath> repositoryPathList = RepositoryPathUtil.getDockerImagePaths(repositoryPath);
+                                        if (CollectionUtils.isNotEmpty(repositoryPathList)) {
+                                            repositoryPathList.forEach(item -> {
+                                                String path = "";
+                                                try {
+                                                    path = RepositoryFiles.relativizePath(item);
+                                                } catch (Exception ex) {
+                                                    logger.error(ExceptionUtils.getStackTrace(ex));
+                                                }
+                                                if (StringUtils.isNotBlank(path)) {
+                                                    dataList.add(String.format("%s/%s", prefix, path));
+                                                }
+                                            });
+                                        }
                                     }
-                                } catch (Exception ex) {
-                                    logger.error("GET Catalog directory listing error [{}]", ExceptionUtils.getStackTrace(ex));
                                 }
+                            } catch (Exception ex) {
+                                logger.error("GET Catalog directory listing error [{}]", ExceptionUtils.getStackTrace(ex));
                             }
                         });
                     }

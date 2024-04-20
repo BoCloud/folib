@@ -201,7 +201,7 @@ public class DirectoryListingServiceImpl implements DirectoryListingService {
             }
             if (Boolean.TRUE.equals(fileAttributes.get("isDirectory"))) {
                 file.setUrl(calculateDirectoryUrl(file));
-
+                file.setLastModified(new Date(((FileTime) fileAttributes.get("lastModifiedTime")).toMillis()));
                 directories.add(file);
 
                 continue;

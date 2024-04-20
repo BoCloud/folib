@@ -917,7 +917,7 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
         try {
             Artifact artifact = artifactRepository.findOneArtifactBase(repositoryPath.getStorageId(), repositoryPath.getRepositoryId(), RepositoryFiles.relativizePath(repositoryPath));
             if (Objects.nonNull(artifact)) {
-                scanService.doScan(artifact);
+                scanService.syncScan(Lists.newArrayList(artifact));
             }
         } catch (Exception ex) {
             log.error(ExceptionUtils.getStackTrace(ex));
@@ -971,77 +971,6 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
         } catch (Exception ex) {
             log.error(ExceptionUtils.getStackTrace(ex));
             throw new RuntimeException(ex.getMessage());
-        }
-    }
-
-    @Override
-    public void cleanSnapshot(String storageId, String repositoryId, String artifactPath) {
-        RepositoryPath rootRepositoryPath = repositoryPathResolver.resolve(storageId, repositoryId);
-        if (StringUtils.isNotBlank(artifactPath)) {
-            rootRepositoryPath = rootRepositoryPath.resolve(artifactPath);
-        }
-        try {
-            List<RepositoryPath> removeRepositoryPathList = Lists.newArrayList();
-            Files.walkFileTree(rootRepositoryPath, new SimpleFileVisitor<Path>() {
-                @Override
-                public FileVisitResult visitFile(Path file,
-                                                 BasicFileAttributes attrs)
-                        throws IOException {
-                    RepositoryPath repositoryPath, artifactRepositoryPath;
-                    Gav gav;
-                    boolean deleteFlag;
-                    repositoryPath = (RepositoryPath) file;
-                    if (!RepositoryFiles.isArtifact(repositoryPath) ||
-                            RepositoryFiles.isMetadata(repositoryPath)) {
-                        return FileVisitResult.CONTINUE;
-                    }
-                    gav = MavenArtifactUtils.convertPathToGav(repositoryPath);
-                    if (Objects.isNull(gav)) {
-                        return FileVisitResult.CONTINUE;
-                    }
-                    if (StringUtils.isBlank(gav.getVersion()) || !ArtifactUtils.isSnapshot(gav.getVersion())) {
-                        return FileVisitResult.CONTINUE;
-                    }
-                    if (StringUtils.isNotBlank(gav.getClassifier()) && gav.getClassifier().contains("jdk")) {
-                        return FileVisitResult.CONTINUE;
-                    }
-                    deleteFlag = true;
-                    for (String extension : GlobalConstants.MAVEN_EXTENSION_LIST) {
-                        artifactRepositoryPath = repositoryPath.resolveSibling(gav.getArtifactId()
-                                .concat("-")
-                                .concat(gav.getVersion())
-                                .concat(extension));
-
-                        if (Files.exists(artifactRepositoryPath)) {
-                            deleteFlag = false;
-                            break;
-                        }
-                    }
-                    if (deleteFlag) {
-                        removeRepositoryPathList.add(repositoryPath);
-                    }
-                    return FileVisitResult.CONTINUE;
-                }
-
-                @Override
-                public FileVisitResult postVisitDirectory(Path dir,
-                                                          IOException exc)
-                        throws IOException {
-                    return FileVisitResult.CONTINUE;
-                }
-            });
-            if (CollectionUtils.isNotEmpty(removeRepositoryPathList)) {
-                removeRepositoryPathList.forEach(repositoryPath -> {
-                    try {
-                        RepositoryFiles.delete(repositoryPath, true);
-                        log.info("Snapshot repositoryPath [{}] is removed", repositoryPath.toString());
-                    } catch (Exception ex) {
-                        log.warn(ExceptionUtils.getStackTrace(ex));
-                    }
-                });
-            }
-        } catch (Exception ex) {
-            log.error(ExceptionUtils.getStackTrace(ex));
         }
     }
 
@@ -1338,6 +1267,12 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
                                             boolean fileExist = Files.exists(targetBlobRepositoryPath);
                                             Artifact artifact = artifactRepository.findOneArtifact(targetBlobRepositoryPath.getStorageId(), targetBlobRepositoryPath.getRepositoryId(), RepositoryFiles.relativizePath(targetBlobRepositoryPath));
                                             boolean artifactExist = Objects.nonNull(artifact);
+                                            if (fileExist && !artifactExist) {
+                                                //文件存在、db中不存在
+                                                artifactManagementService.validateAndStoreIndex(targetBlobRepositoryPath);
+                                                artifact = artifactRepository.findOneArtifact(targetBlobRepositoryPath.getStorageId(), targetBlobRepositoryPath.getRepositoryId(), RepositoryFiles.relativizePath(targetBlobRepositoryPath));
+                                                artifactExist = Objects.nonNull(artifact);
+                                            }
                                             if (fileExist && artifactExist) {
                                                 //目标文件及db是否存在双重检查，都存在才可以删除源blob
                                                 log.info("Find image [{}] [{}] [{}] source blob [{}] target [{}] copy finished", imageRepositoryPath.getStorageId(), imageRepositoryPath.getRepositoryId(), RepositoryFiles.relativizePath(imageRepositoryPath), RepositoryFiles.relativizePath(blobRepositoryPath), RepositoryFiles.relativizePath(targetBlobRepositoryPath));
@@ -1381,6 +1316,12 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
                                             boolean fileExist = Files.exists(targetManifestRepositoryPath);
                                             Artifact artifact = artifactRepository.findOneArtifact(targetManifestRepositoryPath.getStorageId(), targetManifestRepositoryPath.getRepositoryId(), RepositoryFiles.relativizePath(targetManifestRepositoryPath));
                                             boolean artifactExist = Objects.nonNull(artifact);
+                                            if (fileExist && !artifactExist) {
+                                                //文件存在、db中不存在
+                                                artifactManagementService.validateAndStoreIndex(targetManifestRepositoryPath);
+                                                artifact = artifactRepository.findOneArtifact(targetManifestRepositoryPath.getStorageId(), targetManifestRepositoryPath.getRepositoryId(), RepositoryFiles.relativizePath(targetManifestRepositoryPath));
+                                                artifactExist = Objects.nonNull(artifact);
+                                            }
                                             if (fileExist && artifactExist) {
                                                 //目标文件及db是否存在双重检查，都存在才可以删除源manifest
                                                 log.info("Find image [{}] [{}] [{}] source manifest [{}] target [{}] copy finished", imageRepositoryPath.getStorageId(), imageRepositoryPath.getRepositoryId(), RepositoryFiles.relativizePath(imageRepositoryPath), RepositoryFiles.relativizePath(manifestRepositoryPath), RepositoryFiles.relativizePath(targetManifestRepositoryPath));

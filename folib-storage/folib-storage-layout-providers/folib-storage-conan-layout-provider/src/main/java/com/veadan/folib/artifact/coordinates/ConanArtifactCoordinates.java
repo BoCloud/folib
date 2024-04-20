@@ -1,6 +1,7 @@
 package com.veadan.folib.artifact.coordinates;
 
 
+import com.veadan.folib.constant.GlobalConstants;
 import com.veadan.folib.db.schema.Vertices;
 import com.veadan.folib.domain.LayoutArtifactCoordinatesEntity;
 import lombok.extern.slf4j.Slf4j;
@@ -72,6 +73,6 @@ public class ConanArtifactCoordinates extends LayoutArtifactCoordinatesEntity<Co
 
     @Override
     public URI convertToResource(ConanArtifactCoordinates c) {
-        return URI.create(convertToPath(c));
+        return URI.create(GlobalConstants.DOWNLOAD.concat(GlobalConstants.SEPARATOR).concat(convertToPath(c)));
     }
 }

@@ -21,6 +21,8 @@ import com.veadan.folib.entity.License;
 import com.veadan.folib.enums.DictTypeEnum;
 import com.veadan.folib.enums.SafeLevelEnum;
 import com.veadan.folib.enums.VulnerabilityPlatformEnum;
+import com.veadan.folib.event.artifact.ArtifactEventTypeEnum;
+import com.veadan.folib.eventlistener.scanner.ArtifactEventScannerListener;
 import com.veadan.folib.forms.dict.DictForm;
 import com.veadan.folib.forms.scanner.ScannerReportForm;
 import com.veadan.folib.providers.io.RepositoryPath;
@@ -54,7 +56,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.scheduling.annotation.Async;
-import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.stereotype.Service;
 
 import javax.inject.Inject;
@@ -108,7 +109,7 @@ public class ScanService {
     private ArtifactComponent artifactComponent;
 
     @Inject
-    private ThreadPoolTaskExecutor asyncScanThreadPoolTaskExecutor;
+    private ArtifactEventScannerListener artifactEventScannerListener;
 
     @Value("${folib.temp}")
     private String tempPath;
@@ -151,7 +152,7 @@ public class ScanService {
             for (String filePath : filePaths) {
                 filePath = parseFilePath(filePath);
                 //执行扫描
-                dependencies =  scanWorker(artifact, filePath);
+                dependencies = scanWorker(artifact, filePath);
                 if (Objects.isNull(dependencies)) {
                     continue;
                 }
@@ -190,14 +191,32 @@ public class ScanService {
 
     @Async("asyncScanThreadPoolTaskExecutor")
     public void asyncScan(List<Artifact> artifactList) {
+        syncScan(artifactList);
+    }
+
+    public void syncScan(List<Artifact> artifactList) {
         if (CollectionUtils.isEmpty(artifactList)) {
             return;
         }
         long startTime = System.currentTimeMillis();
         log.info("Artifact asyncScan batch size [{}] starts with [{}]", artifactList.size(), DateUtil.format(DateUtil.date(), DatePattern.NORM_DATETIME_MS_FORMATTER));
+        RepositoryPath repositoryPath = null;
         for (Artifact artifact : artifactList) {
-            doScan(artifact);
-            Checksum.clearCache();
+            try {
+                if (SafeLevelEnum.INIT.getLevel().equals(artifact.getSafeLevel())) {
+                    //扫描状态为init的制品，重新解析下看最终是否支持扫描
+                    repositoryPath = repositoryPathResolver.resolve(artifact.getStorageId(), artifact.getRepositoryId(), artifact.getArtifactPath());
+                    repositoryPath.setArtifact(artifact);
+                    Artifact initArtifact = artifactEventScannerListener.handle(repositoryPath, ArtifactEventTypeEnum.EVENT_ARTIFACT_FILE_STORED.getType());
+                    if (Objects.isNull(initArtifact) || SafeLevelEnum.UNWANTED_SCAN.getLevel().equals(initArtifact.getSafeLevel())) {
+                        continue;
+                    }
+                }
+                doScan(artifact);
+                Checksum.clearCache();
+            } catch (Exception ex) {
+                log.error(ExceptionUtils.getStackTrace(ex));
+            }
         }
         long endTime = System.currentTimeMillis();
         log.info("Artifact asyncScan batch size [{}] ends with [{}] take time [{}] seconds", artifactList.size(), DateUtil.format(DateUtil.date(), DatePattern.NORM_DATETIME_MS_FORMATTER), (endTime - startTime) / 1000);
