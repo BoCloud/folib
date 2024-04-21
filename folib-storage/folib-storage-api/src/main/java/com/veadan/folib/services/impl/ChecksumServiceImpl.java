@@ -42,6 +42,7 @@ public class ChecksumServiceImpl
     public void regenerateChecksum(String storageId,
                                    String repositoryId,
                                    String basePath,
+                                   String lastModifiedTime,
                                    boolean forceRegeneration)
         throws IOException
     {
@@ -63,11 +64,9 @@ public class ChecksumServiceImpl
         
         ArtifactLocationGenerateChecksumOperation operation = new ArtifactLocationGenerateChecksumOperation();
         operation.setBasePath(repositoryBasePath);
+        operation.setLastModifiedTime(lastModifiedTime);
         operation.setForceRegeneration(forceRegeneration);
-
-        ArtifactDirectoryLocator locator = new ArtifactDirectoryLocator();
-        locator.setOperation(operation);
-        locator.locateArtifactDirectories();
+        operation.execute(repositoryBasePath);
     }
 
     public Configuration getConfiguration()

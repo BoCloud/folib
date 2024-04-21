@@ -60,6 +60,8 @@
                                 size="small" class="font-regular text-sm text-dark" style="width: 120px;"/>  
                 <a-input-number :min="1" v-if="f.type === 'int' && f.name === 'keepPeriod'" v-model="f.value"
                   size="small" class="font-regular text-sm text-dark" style="width: 120px;" />
+                <a-input-number :min="1" v-if="f.name === 'lastModifiedTime'" v-model="f.value"
+                  size="small" class="font-regular text-sm text-dark" style="width: 120px;"/>
                 <a-switch v-if="f.type === 'boolean'" v-model="f.value" @change="() => { $forceUpdate() }" />
               </a-col>
               <a-col v-if="folibRepository.layout.toLowerCase() === 'docker' && f.name ==='storageCondition'" class="ml-auto">

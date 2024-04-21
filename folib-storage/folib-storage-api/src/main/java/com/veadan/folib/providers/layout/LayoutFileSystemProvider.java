@@ -1,5 +1,6 @@
 package com.veadan.folib.providers.layout;
 
+import com.google.common.collect.Maps;
 import com.veadan.folib.artifact.ArtifactNotFoundException;
 import com.veadan.folib.artifact.coordinates.ArtifactCoordinates;
 import com.veadan.folib.domain.Artifact;
@@ -20,7 +21,10 @@ import com.veadan.folib.repositories.VulnerabilityRepository;
 import com.veadan.folib.storage.ArtifactResolutionException;
 import com.veadan.folib.storage.Storage;
 import com.veadan.folib.storage.repository.Repository;
+import com.veadan.folib.util.CommonUtils;
+import com.veadan.folib.util.LocalDateTimeInstance;
 import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
@@ -35,8 +39,13 @@ import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.OpenOption;
 import java.nio.file.Path;
+import java.nio.file.attribute.BasicFileAttributes;
+import java.nio.file.attribute.FileTime;
 import java.nio.file.spi.FileSystemProvider;
 import java.security.NoSuchAlgorithmException;
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.*;
 import java.util.stream.Stream;
 
@@ -163,13 +172,40 @@ public abstract class LayoutFileSystemProvider extends StorageFileSystemProvider
     public void storeChecksum(RepositoryPath basePath,
                               boolean forceRegeneration)
             throws IOException {
+        storeChecksum(basePath, "", forceRegeneration);
+    }
+
+    private LocalDateTime getFileUpdateTime(RepositoryPath repositoryPath) {
+        LocalDateTime lastModifiedDateTime = null;
+        try {
+            BasicFileAttributes attributes = Files.readAttributes(repositoryPath, BasicFileAttributes.class);
+            FileTime fileTime = attributes.lastModifiedTime();
+            // 将FileTime转换为Instant
+            Instant instant = fileTime.toInstant();
+            // 将Instant转换为LocalDateTime
+            lastModifiedDateTime = instant.atZone(ZoneId.of("Asia/Shanghai")).toLocalDateTime();
+        } catch (IOException ex) {
+            logger.error(ExceptionUtils.getStackTrace(ex));
+        }
+        return lastModifiedDateTime;
+    }
+
+    public void storeChecksum(RepositoryPath basePath, String lastModifiedTime,
+                              boolean forceRegeneration)
+            throws IOException {
         try (Stream<Path> pathStream = Files.walk(basePath)) {
             pathStream
-                    .filter(p -> !Files.isDirectory(p))
                     .filter(p -> {
                         try {
-                            return !Boolean.TRUE.equals(RepositoryFiles.isChecksum((RepositoryPath) p));
-                        } catch (IOException e) {
+                            boolean flag = !Files.isDirectory(p) && !Boolean.TRUE.equals(RepositoryFiles.isChecksum((RepositoryPath) p)) && !RepositoryFiles.isArtifactMetadata((RepositoryPath) p);
+                            if (flag && StringUtils.isNotBlank(lastModifiedTime)) {
+                                LocalDateTime lastModifiedDateTime = getFileUpdateTime((RepositoryPath) p);
+                                if (Objects.nonNull(lastModifiedDateTime)) {
+                                    flag = LocalDateTime.now().minusDays(Integer.parseInt(lastModifiedTime)).isBefore(lastModifiedDateTime);
+                                }
+                            }
+                            return flag;
+                        } catch (Exception e) {
                             logger.error("Failed to read attributes for [{}]", p, e);
                         }
                         return false;
@@ -184,7 +220,6 @@ public abstract class LayoutFileSystemProvider extends StorageFileSystemProvider
         }
     }
 
-
     protected void writeChecksum(RepositoryPath path,
                                  boolean force)
             throws IOException {
@@ -194,7 +229,9 @@ public abstract class LayoutFileSystemProvider extends StorageFileSystemProvider
                 //calculate checksum while reading the stream
             }
             String layout = path.getRepository().getLayout();
+            final Artifact artifact = artifactEntityRepository.findOneArtifact(path.getStorageId(), path.getRepositoryId(), RepositoryFiles.relativizePath(path));
             Set<String> digestAlgorithmSet = path.getFileSystem().getDigestAlgorithmSet();
+            final Map<String, String> checksumMap = Maps.newHashMap();
             digestAlgorithmSet.stream()
                     .forEach(p ->
                     {
@@ -206,11 +243,24 @@ public abstract class LayoutFileSystemProvider extends StorageFileSystemProvider
                         }
                         try {
                             Files.write(checksumPath, checksum.getBytes());
+                            checksumMap.put(p, checksum);
                         } catch (IOException e) {
                             logger.error("Failed to write checksum for [{}]",
                                     checksumPath.toString(), e);
                         }
                     });
+            try {
+                if (Objects.nonNull(artifact) && MapUtils.isNotEmpty(checksumMap) && !CommonUtils.areMapsEqual(artifact.getChecksums(), checksumMap)) {
+                    logger.info("Artifact storageId [{}] repositoryId [{}] path [{}] checksums update old checksums [{}] new checksums [{}]", artifact.getStorageId(), artifact.getRepositoryId(), artifact.getArtifactPath(), artifact.getChecksums(), checksumMap);
+                    artifact.setChecksums(checksumMap);
+                    artifact.setSizeInBytes(Files.size(path));
+                    artifact.setLastUpdated(LocalDateTimeInstance.now());
+                    artifactEntityRepository.saveOrUpdate(artifact);
+                }
+            } catch (Exception ex) {
+                logger.error("Update artifact checksums for [{}] error [{}]",
+                        path.toString(), ExceptionUtils.getStackTrace(ex));
+            }
         }
     }
 

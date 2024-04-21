@@ -30,15 +30,19 @@ public class RegenerateChecksumCronJob
 
     private static final String PROPERTY_FORCE_REGENERATION = "forceRegeneration";
 
+    private static final String PROPERTY_LAST_MODIFIED_TIME = "lastModifiedTime";
+
     private static final Set<CronJobField> FIELDS = ImmutableSet.of(
             new CronJobStorageIdAutocompleteField(new CronJobStringTypeField(
                     new CronJobOptionalField(new CronJobNamedField(PROPERTY_STORAGE_ID)))),
             new CronJobRepositoryIdAutocompleteField(new CronJobStringTypeField(
                     new CronJobOptionalField(new CronJobNamedField(PROPERTY_REPOSITORY_ID)))),
             new CronJobBooleanTypeField(
-                    new CronJobOptionalField(new CronJobNamedField(PROPERTY_FORCE_REGENERATION))),
+                    new CronJobOptionalField(new CronJobAliasNamedField(new CronJobNamedField(PROPERTY_FORCE_REGENERATION), "是否强制覆盖"))),
             new CronJobStringTypeField(
-                    new CronJobOptionalField(new CronJobNamedField(PROPERTY_BASE_PATH))));
+                    new CronJobOptionalField(new CronJobAliasNamedField(new CronJobNamedField(PROPERTY_BASE_PATH), "仓库相对路径"))),
+            new CronJobIntegerTypeField(
+                    new CronJobOptionalField(new CronJobAliasNamedField(new CronJobNamedField(PROPERTY_LAST_MODIFIED_TIME), "几天内的制品"))));
 
     @Inject
     private ChecksumService checksumService;
@@ -53,7 +57,7 @@ public class RegenerateChecksumCronJob
         String storageId = config.getProperty(PROPERTY_STORAGE_ID);
         String repositoryId = config.getProperty(PROPERTY_REPOSITORY_ID);
         String basePath = config.getProperty(PROPERTY_BASE_PATH);
-
+        String lastModifiedTime = config.getProperty(PROPERTY_LAST_MODIFIED_TIME);
         /**
          * The values of forceRegeneration are:
          * - true  - to re-write existing checksum and to regenerate missing checksum,
@@ -66,16 +70,16 @@ public class RegenerateChecksumCronJob
             Map<String, Storage> storages = getStorages();
             for (String storage : storages.keySet())
             {
-                regenerateRepositoriesChecksum(storage, forceRegeneration);
+                regenerateRepositoriesChecksum(storage, lastModifiedTime, forceRegeneration);
             }
         }
         else if (repositoryId == null)
         {
-            regenerateRepositoriesChecksum(storageId, forceRegeneration);
+            regenerateRepositoriesChecksum(storageId, lastModifiedTime, forceRegeneration);
         }
         else
         {
-            checksumService.regenerateChecksum(storageId, repositoryId, basePath, forceRegeneration);
+            checksumService.regenerateChecksum(storageId, repositoryId, basePath, lastModifiedTime, forceRegeneration);
         }
     }
 
@@ -86,7 +90,7 @@ public class RegenerateChecksumCronJob
                                 .jobClass(RegenerateChecksumCronJob.class.getName())
                                 .name("定时重新生成制品的Checksum文件")
                                 .scope(GLOBAL)
-                                .description("该任务用于重新生成Checksum,但需要指定仓库下的基础路径(PROPERTY_BASE_PATH)")
+                                .description("该任务用于重新生成制品的Checksum文件")
                                 .fields(FIELDS)
                                 .build();
     }
@@ -95,11 +99,12 @@ public class RegenerateChecksumCronJob
      * To regenerate artifact's checksum in repositories
      *
      * @param storageId         path of storage
+     * @param lastModifiedTime  处理多少天内的制品
      * @param forceRegeneration true - to re-write existing checksum and to regenerate missing checksum,
      *                          false - to regenerate missing checksum only
      * @throws IOException
      */
-    private void regenerateRepositoriesChecksum(String storageId,
+    private void regenerateRepositoriesChecksum(String storageId, String lastModifiedTime,
                                                 boolean forceRegeneration)
             throws IOException
     {
@@ -107,7 +112,7 @@ public class RegenerateChecksumCronJob
 
         for (String repositoryId : repositories.keySet())
         {
-            checksumService.regenerateChecksum(storageId, repositoryId, null, forceRegeneration);
+            checksumService.regenerateChecksum(storageId, repositoryId, null, lastModifiedTime, forceRegeneration);
         }
     }
 
