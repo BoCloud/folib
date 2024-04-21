@@ -561,7 +561,7 @@
                       <div class="checkbox-label" :class="[layoutChecked === 'go' ? 'active' : '']">
                         <a-tooltip>
                           <template slot="title">
-                            下一个版本更新即将呈现🤝
+                            后续版本更新即将呈现🤝
                           </template>
                         <a-avatar :size="44" shape="square"
                                   style="border-radius: 8px; background-image: linear-gradient( 310deg, #020202, #5c6391 );">
@@ -575,7 +575,7 @@
                       <div class="checkbox-label" :class="[layoutChecked === 'gems' ? 'active' : '']">
                         <a-tooltip>
                           <template slot="title">
-                            下一个版本更新即将呈现🤝
+                            后续版本更新即将呈现🤝
                           </template>
                         <a-avatar :size="44" shape="square"
                                   style="border-radius: 8px; background-image: linear-gradient( 310deg, #020202, #5c6391 );">
@@ -589,7 +589,7 @@
                       <div class="checkbox-label" :class="[layoutChecked === 'rust' ? 'active' : '']">
                         <a-tooltip>
                           <template slot="title">
-                            下一个版本更新即将呈现🤝
+                            后续版本更新即将呈现🤝
                           </template>
                         <a-avatar :size="44" shape="square"
                                   style="border-radius: 8px; background-image: linear-gradient( 310deg, #020202, #5c6391 );">
@@ -603,7 +603,7 @@
                       <div class="checkbox-label" :class="[layoutChecked === 'huggingface' ? 'active' : '']">
                         <a-tooltip>
                           <template slot="title">
-                            下一个版本更新即将呈现🤝
+                            后续版本更新即将呈现🤝
                           </template>
                         <a-avatar :size="44" shape="square"
                                   style="border-radius: 8px; background-image: linear-gradient( 310deg, #020202, #5c6391 );">
@@ -612,6 +612,20 @@
                         </a-tooltip>
                       </div>
                       <h6>huggingface</h6>
+                    </a-col>
+                    <a-col :span="4">
+                      <div class="checkbox-label" :class="[layoutChecked === 'hmos' ? 'active' : '']">
+                        <a-tooltip>
+                          <template slot="title">
+                            后续版本更新即将呈现🤝
+                          </template>
+                        <a-avatar :size="44" shape="square"
+                                  style="border-radius: 8px; background-image: linear-gradient( 310deg, #020202, #5c6391 );">
+                          <img src="images/folib/hmos.svg" style="width: 100%;" alt="">
+                        </a-avatar>
+                        </a-tooltip>
+                      </div>
+                      <h6>hmos</h6>
                     </a-col>
                   </a-row>
                   <a-checkbox-group class="d-none" v-model="checkedList" :options="checkboxOptions" />
