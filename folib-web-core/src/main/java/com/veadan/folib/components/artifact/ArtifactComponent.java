@@ -832,7 +832,8 @@ public class ArtifactComponent {
             LocalDateTime nowDate = LocalDateTimeInstance.now();
             LocalDateTime cacheExpireDate = cacheTime.plusSeconds(timeout);
             if (!cacheExpireDate.isBefore(nowDate)) {
-                return metadataJson.getString(metadataKey);
+                String data = metadataJson.getString(metadataKey);
+                return GlobalConstants.NO_DATA.equals(data) ? "" : data;
             }
         }
         return "";
