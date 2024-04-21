@@ -25,19 +25,20 @@ public abstract class RetryTask implements Callable<Void> {
 
     @Override
     public Void call() throws Exception {
-        while (retryCount < maxRetries) {
+        while (retryCount <= maxRetries) {
             try {
                 exec(this);
                 return null;
             } catch (Exception e) {
                 retryCount++;
                 log.warn("Retry " + retryCount + " for task: " + this, e);
-                if (retryCount == maxRetries) {
-                    log.info("Task " + this + " failed after " + retryCount + " attempts.");
+                if (retryCount > maxRetries) {
+                    log.warn("Task " + this + " failed after " + retryCount + " attempts.");
                     throw e;
                 }
             }
-            Thread.sleep(3000);//等待三秒重试
+            //等待6秒重试
+            Thread.sleep(6000);
         }
         return null;
     }

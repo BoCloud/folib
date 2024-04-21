@@ -32,7 +32,7 @@ public class ArtifactSliceCleanTimer {
     @Scheduled(cron = "0 0 0 * * ?")
     public void clean() {
         log.info("==================================清理制品缓存切片文件-BEGIN==================================");
-        final String allArtifactFileSliceRootFolderPathStr = String.format("%s/artifactSlice/", StringUtils.chomp(tempPath, "/"));
+        final String allArtifactFileSliceRootFolderPathStr = String.format("%s/artifactSliceUpload/", StringUtils.chomp(tempPath, "/"));
         final StringBuilder fileCleanLog = new StringBuilder();
         final File file = new File(allArtifactFileSliceRootFolderPathStr);
         this.recursionFiles(file, (f) -> {

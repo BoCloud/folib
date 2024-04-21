@@ -1,6 +1,10 @@
 package com.veadan.folib.artifact.coordinates;
 
+import com.veadan.folib.cloud.storage.s3fs.util.UriUtils;
+import lombok.extern.slf4j.Slf4j;
+
 import java.net.URI;
+
 
 public interface ArtifactCoordinatesResourceConverter<C extends ArtifactCoordinates<C, V>, V extends Comparable<V>>
 {
@@ -9,7 +13,12 @@ public interface ArtifactCoordinatesResourceConverter<C extends ArtifactCoordina
 
     default URI convertToResource(C artifactCoordinates)
     {
-        return URI.create(convertToPath(artifactCoordinates));
+       try {
+           return URI.create(UriUtils.encode(convertToPath(artifactCoordinates)));
+       } catch (Exception ex) {
+           ex.printStackTrace();
+           throw new RuntimeException(ex.getMessage());
+       }
     }
 
 }

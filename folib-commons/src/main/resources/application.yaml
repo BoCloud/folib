@@ -66,6 +66,7 @@ scan:
 folib:
   promotion:
     queue-size: 1000
+    thread: 2
     retry-count: 3
     ws-request-timout: 10
     ws-request-timout-of-artifact-upload: 600

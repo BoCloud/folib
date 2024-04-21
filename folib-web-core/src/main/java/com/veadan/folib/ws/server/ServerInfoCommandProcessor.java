@@ -36,12 +36,6 @@ public class ServerInfoCommandProcessor extends CommandProcessor {
         nodeDto.setCreateTime(LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
         try {
             ClusterDispatchManagementService bean = SpringContextUtil.getBean(ClusterDispatchManagementService.class);
-            ClusterDispatchNodeDto existsNode = configurationManagementService.getMutableConfigurationClone().getClusterDispatchNode().get(FolibWsRunManageUtil.getTargetHostName(nodeDto));
-            if (existsNode != null) {
-                nodeDto.setKbps(existsNode.getKbps());
-                nodeDto.setDispatchType(existsNode.getDispatchType());
-                nodeDto.setIsThisCluster(existsNode.getIsThisCluster());
-            }
             bean.createClusterNode(nodeDto);
         } catch (IOException e) {
             throw new RuntimeException(e);

@@ -6,6 +6,7 @@ import com.veadan.folib.storage.Storage;
 import com.veadan.folib.storage.repository.Repository;
 import com.veadan.folib.util.PathUtils;
 import org.apache.commons.io.FilenameUtils;
+import org.apache.commons.lang3.StringUtils;
 
 import javax.ws.rs.core.MultivaluedMap;
 import java.io.File;
@@ -379,6 +380,13 @@ public class RepositoryPath
 
     public String getArtifactPath() {
         return artifactPath;
+    }
+
+    public String getPath() {
+        if (StringUtils.isBlank(path)) {
+            path = FilenameUtils.separatorsToUnix(relativize().toString());
+        }
+        return path;
     }
 
     public void setArtifactPath(String artifactPath) {

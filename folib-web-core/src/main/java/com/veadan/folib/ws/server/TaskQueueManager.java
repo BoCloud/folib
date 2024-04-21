@@ -16,7 +16,7 @@ import java.util.concurrent.atomic.AtomicLong;
 @Slf4j
 public class TaskQueueManager {
     private final ExecutorService executorService;
-    private final ConcurrentHashMap<String, Future<?>> taskMap = new ConcurrentHashMap<>();
+//    private final ConcurrentHashMap<String, Future<?>> taskMap = new ConcurrentHashMap<>();
     private final AtomicLong LENGTH;
     private final AtomicLong CURRENT_INDEX;
 
@@ -30,37 +30,40 @@ public class TaskQueueManager {
     }
 
     public synchronized String submitTask(String taskId, Runnable runnable) {
-        if (taskMap.containsKey(taskId)) {
-            throw new IllegalArgumentException("Task with ID " + taskId + " already submitted.");
-        }//todo 异常被吞掉
+//        if (taskMap.containsKey(taskId)) {
+//            throw new IllegalArgumentException("Task with ID " + taskId + " already submitted.");
+//        }
+        //todo 异常被吞掉
         Runnable wrapper = () -> {
             CURRENT_INDEX.incrementAndGet();
-            log.info("current promotion queue {}/{}", CURRENT_INDEX.get(), LENGTH.get());
+            log.info("Current promotion queue index [{}] [{}]", CURRENT_INDEX.get(), LENGTH.get());
             runnable.run();
         };
         LENGTH.incrementAndGet();
         Future<?> future = executorService.submit(wrapper);
-        taskMap.put(taskId, future);
+//        taskMap.put(taskId, future);
         log.info("Task " + taskId + " submitted.");
         return taskId;
     }
 
-    public synchronized boolean cancelTask(String taskId) {
-        Future<?> future = taskMap.get(taskId);
-        if (future != null) {
-            boolean cancelled = future.cancel(true); // 尝试取消任务
-            if (cancelled) {
-                taskMap.remove(taskId); // 从映射中移除已取消的任务
-                log.info("Task " + taskId + " cancelled.");
-            }
-            return cancelled;
-        }
-        return false;
-    }
+//    public synchronized boolean cancelTask(String taskId) {
+//        Future<?> future = taskMap.get(taskId);
+//        if (future != null) {
+//            // 尝试取消任务
+//            boolean cancelled = future.cancel(true);
+//            if (cancelled) {
+//                // 从映射中移除已取消的任务
+//                taskMap.remove(taskId);
+//                log.info("Task " + taskId + " cancelled.");
+//            }
+//            return cancelled;
+//        }
+//        return false;
+//    }
 
     public synchronized void shutdownAndCancelTasks() {
-        taskMap.values().forEach(booleanFuture -> booleanFuture.cancel(true));
-        taskMap.clear();
+//        taskMap.values().forEach(booleanFuture -> booleanFuture.cancel(true));
+//        taskMap.clear();
         List<Runnable> awaitingTasks = executorService.shutdownNow();
         log.info("cancelled {} awaiting task", awaitingTasks.size());
     }

@@ -27,22 +27,25 @@ public class FolibWsServerV2 {
 
     @OnOpen
     public void onOpen(@PathParam("nodeName") String nodeName, Session session) {
-
+        log.info("NodeName [{}] session [{}]", nodeName, session.getId());
         folibWsUtil.onOpen(nodeName, session);
     }
 
     @OnClose
     public void onClose(@PathParam("nodeName") String nodeName, Session session, CloseReason closeReason) {
+        log.info("NodeName [{}] session [{}]", nodeName, session.getId());
         folibWsUtil.onClose(nodeName, session, closeReason);
     }
 
     @OnMessage
     public void onMessage(@PathParam("nodeName") String nodeName, ByteBuffer message, Session session) {
+        log.info("NodeName [{}] session [{}]", nodeName, session.getId());
         folibWsUtil.onMessage(nodeName, message, session);
     }
 
     @OnError
     public void onError(@PathParam("nodeName") String nodeName, Session session, Throwable error) {
+        log.info("NodeName [{}] session [{}]", nodeName, session.getId());
         folibWsUtil.onError(nodeName, session, error);
     }
 }

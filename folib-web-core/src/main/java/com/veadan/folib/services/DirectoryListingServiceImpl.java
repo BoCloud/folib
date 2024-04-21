@@ -22,6 +22,7 @@ import lombok.Data;
 import org.apache.commons.codec.digest.MessageDigestAlgorithms;
 import org.apache.commons.collections4.ListUtils;
 import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
@@ -272,7 +273,8 @@ public class DirectoryListingServiceImpl implements DirectoryListingService {
                 BuildFileContentTaskResult buildFileContentTaskResult = object.get();
                 result.merge(buildFileContentTaskResult);
             }
-        } catch (InterruptedException | ExecutionException e) {
+        } catch (Exception e) {
+            logger.error(ExceptionUtils.getStackTrace(e));
             throw new BusinessException(e.getMessage());
         }
 

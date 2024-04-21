@@ -216,5 +216,4 @@ export default {
     'GitPassword': 'Git repository password/token',
     'GitProvider': 'Git Provider',
     'AddGitCredential': 'add Git repository Credential',
-    'ParentDirectory': 'Parent directory',
 }

@@ -76,7 +76,7 @@ public class ClusterDispatchConfigurationController extends BaseConfigurationCon
                 getMutableConfigurationClone().getClusterDispatchNode();
         final Collection<ClusterDispatchNodeDto> values = map.values();
         values.forEach(nodeDto -> {
-            String targetHostName = FolibWsRunManageUtil.getTargetHostName(nodeDto);
+            String targetHostName = FolibWsRunManageUtil.getSimpleTargetHostName(nodeDto);
             Session session = folibWsRunManageV2.getSession(targetHostName);
             nodeDto.setWsClientOnline(session != null && session.isOpen());
         });
@@ -114,9 +114,9 @@ public class ClusterDispatchConfigurationController extends BaseConfigurationCon
 
                 if (existingNode == null) {//新增操作
                     nodeDto.setAutoRegister(false);
-                    String newHostName = FolibWsRunManageUtil.getTargetHostName(nodeDto);
+                    String newHostName = FolibWsRunManageUtil.getSimpleTargetHostName(nodeDto);
                     ClusterDispatchNodeDto exitedHostNameNodeDto = clusterDispatchNode.values().stream().filter(dto -> {
-                        String exitedHostName = FolibWsRunManageUtil.getTargetHostName(dto);
+                        String exitedHostName = FolibWsRunManageUtil.getSimpleTargetHostName(dto);
                         return exitedHostName.equals(newHostName);
                     }).findAny().orElse(null);
                     //已经存在这个 hostName了
@@ -178,9 +178,9 @@ public class ClusterDispatchConfigurationController extends BaseConfigurationCon
 
                 if (existingNode == null) {//新增操作
                     nodeDto.setAutoRegister(false);
-                    String newHostName = FolibWsRunManageUtil.getTargetHostName(nodeDto);
+                    String newHostName = FolibWsRunManageUtil.getSimpleTargetHostName(nodeDto);
                     ClusterDispatchNodeDto exitedHostNameNodeDto = clusterDispatchNode.values().stream().filter(dto -> {
-                        String exitedHostName = FolibWsRunManageUtil.getTargetHostName(dto);
+                        String exitedHostName = FolibWsRunManageUtil.getSimpleTargetHostName(dto);
                         return exitedHostName.equals(newHostName);
                     }).findAny().orElse(null);
                     //已经存在这个 hostName了

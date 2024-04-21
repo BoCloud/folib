@@ -199,9 +199,9 @@ public class BrowseController
                         String manifestConfigString = Files.readString(manifestConfigPath);
                         JSONObject object = JSON.parseObject(manifestConfigString);
                         jsonObject.put("manifestConfig", object);
-                        jsonObject.put("sha256", configDigest);
                     }
                 }
+                jsonObject.put("sha256", artifact.getArtifactName());
                 Long size = Optional.ofNullable(imageManifest.getLayers()).orElse(Collections.emptyList()).stream().filter(item -> Objects.nonNull(item.getSize())).mapToLong(LayerManifest::getSize).sum();
                 jsonObject.put("snippets", snippets);
                 jsonObject.put("manifest", imageManifest);

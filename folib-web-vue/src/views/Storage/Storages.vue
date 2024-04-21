@@ -907,7 +907,7 @@
                   </a-form-item>
                 </a-col>
                 <a-col :span="4">
-                  <a-form-item class="mb-10" :label="$t('Storage.Port')" :colon="false">
+                  <a-form-item class="mb-10" :label="$t('Storage.Protocol')" :colon="false">
                     <a-select default-value="None" :allowClear="true" v-model="folibRepository.proxyConfiguration.type" :placeholder="$t('Storage.Protocol')">
                       <a-select-option value="HTTP">
                         HTTP

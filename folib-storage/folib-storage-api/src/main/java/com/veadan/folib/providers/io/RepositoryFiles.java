@@ -174,7 +174,7 @@ public abstract class RepositoryFiles {
             return p.path;
         }
 
-        return p.path = relativizeUri(p).toString();
+        return p.path = p.getPath();
     }
 
     public static URI resolveResource(RepositoryPath p)

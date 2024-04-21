@@ -2,6 +2,7 @@ package com.veadan.folib.ws.server;
 
 import com.veadan.folib.promotion.KryoSerializationUtil;
 import com.veadan.folib.scanner.common.util.SpringContextUtil;
+import com.veadan.folib.ws.common.FolibWsRunManageUtil;
 import com.veadan.folib.ws.common.FolibWsRunManageV2;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -17,6 +18,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.IllegalFormatFlagsException;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -45,19 +47,21 @@ public class FolibWsUtil {
 
 
     public void onOpen(String targetHostName, Session session) {
+        targetHostName = getTargetHostName(targetHostName);
         session.setMaxBinaryMessageBufferSize(1024 * 1024 * 1000);
         session.setMaxTextMessageBufferSize(1024 * 1024 * 1000);
-        Session priviousSession = folibWsRunManageV2.getSession(targetHostName);
-        if (null != priviousSession) {
-            folibWsRunManageV2.unRegisterSession(targetHostName,targetHostName+" node already exists");
+        Session previousSession = folibWsRunManageV2.getSession(targetHostName);
+        if (null != previousSession) {
+            folibWsRunManageV2.unRegisterSession(targetHostName, targetHostName + " node already exists");
         }
         folibWsRunManageV2.registerSession(targetHostName, session);
         promotionTaskQueue.registerPromotionTaskQueue(targetHostName);
     }
 
     public void onClose(String nodeId, Session session, CloseReason closeReason) {
-        String msg = String.format("连接关闭成功,nodeId:%s session_id:%s closeReason:%s", nodeId, session.getId(), closeReason.toString());
+        String msg = String.format("Connection closed successfully nodeId [%s] sessionId [%s] closeReason [%s]", nodeId, session.getId(), closeReason.toString());
         folibWsRunManageV2.cleanFuture(session, new RuntimeException(msg));
+        folibWsRunManageV2.unRegisterSession(folibWsRunManageV2.getTargetNode(session), closeReason.toString());
         log.info(msg);
     }
 
@@ -65,7 +69,7 @@ public class FolibWsUtil {
         if (session != null) {
             folibWsRunManageV2.cleanFuture(session, error);
         }
-        log.error("WebSocket(nodeName = {})发生错误 ", targetHostName, error);
+        log.error("WebSocket targetHostName [{}] error [{}]", targetHostName, error);
     }
 
     private final ConcurrentHashMap<String, LinkedBlockingQueue<ByteBuffer>> queueMap = new ConcurrentHashMap<>();
@@ -73,16 +77,17 @@ public class FolibWsUtil {
     //@Async("asyncWsCommandThreadPoolTaskExecutor")
     public void onMessage(String nodeName, ByteBuffer message, Session session) {
         String protocol = extractFolibWSProtocol(message);
+        log.info("Received message nodeName [{}] current WS map [{}]", nodeName, folibWsRunManageV2.printWs());
         if (!FOLIB_WS_PROTOCOL.equals(protocol)) {
-            throw new IllegalFormatFlagsException("unknown protocol:" + protocol);
+            throw new IllegalFormatFlagsException("Unknown protocol:" + protocol);
         }
         long messageSize = extractMessageSize(message);
         if (messageSize == 0) {
-            throw new RuntimeException("protocol Exception ,messageSize");
+            throw new RuntimeException("Protocol exception messageSize");
         }
         String messageId = extractMessageId(message);
         if (StringUtils.isBlank(messageId)) {
-            throw new RuntimeException("protocol Exception ,messageId");
+            throw new RuntimeException("Protocol exception messageId");
         }
 
         /**
@@ -92,16 +97,16 @@ public class FolibWsUtil {
         LinkedBlockingQueue<ByteBuffer> queue1 = queueMap.computeIfAbsent(messageId, k -> {
             LinkedBlockingQueue<ByteBuffer> queue = new LinkedBlockingQueue<>();
             asyncWsCommandThreadPoolTaskExecutor.execute(() -> {
-                while (true){
+                while (true) {
                     ByteBuffer take = null;
                     try {
                         take = queue.take();
-                    } catch (InterruptedException e) {
+                    } catch (Exception e) {
                         throw new RuntimeException(e);
                     }
 
                     boolean finish = consumerMsg(nodeName, take, session, messageId, messageSize);
-                    if (finish){
+                    if (finish) {
                         queue.clear();
                         queueMap.remove(messageId);
                         break;
@@ -110,16 +115,16 @@ public class FolibWsUtil {
             });
             return queue;
         });
-        log.info("copy ByteBuffer, messageId:{}",messageId);
+        log.debug("Copy ByteBuffer nodeName [{}] messageId [{}]", nodeName, messageId);
         ByteBuffer copy = ByteBuffer.allocate(message.remaining());
         copy.put(message);
         copy.flip();
         try {
             queue1.put(copy);
-        } catch (InterruptedException e) {
+        } catch (Exception e) {
             throw new RuntimeException(e);
         }
-        log.info("copy ByteBuffer success, messageId:{},queueSize:{}",messageId,queue1.size());
+        log.debug("Copy ByteBuffer success nodeName [{}] messageId [{}] queueSize [{}]", nodeName, messageId, queue1.size());
     }
 
     private boolean consumerMsg(String nodeName, ByteBuffer message, Session session, String messageId, long messageSize) {
@@ -151,20 +156,23 @@ public class FolibWsUtil {
                     }
                 });
 
-        completeMessage.put(message); // 添加新接收的数据
+        // 添加新接收的数据
+        completeMessage.put(message);
         int position = completeMessage.position();
-        log.info("onMessageV3 messageId:{},received:{}/{}", messageId, position, messageSize);
+        log.info("NodeName [{}] messageId [{}] received [{}/{}]", nodeName, messageId, position, messageSize);
         if (position == messageSize) {
 
-                // 最后一片数据，处理完整消息
-                completeMessage.flip(); // 切换为读模式
-                try {
-                    handleMessage(nodeName, session, completeMessage);
-                } catch (Exception e) {
-                    handleExceptionMessage(session, e, messageId);
-                }
-
-            sessionMessageBufferMap.get(session).remove(messageId); // 清理资源
+            // 最后一片数据，处理完整消息，切换为读模式
+            completeMessage.flip();
+            Object msgObj = null;
+            try {
+                msgObj = KryoSerializationUtil.deserialize(completeMessage.array());
+                handleMessage(nodeName, session, msgObj);
+            } catch (Exception e) {
+                handleExceptionMessage(nodeName, session, msgObj, messageId, e);
+            }
+            // 清理资源
+            sessionMessageBufferMap.get(session).remove(messageId);
         } else if (position > messageSize) {
             throw new IllegalStateException("Received data exceeds actual message size");
         } else {
@@ -174,17 +182,25 @@ public class FolibWsUtil {
         return position == messageSize;
     }
 
-    private void handleExceptionMessage(Session session, Exception e, String messageId) {
-        log.error("handleMessage Exception", e);
-        WSMessageResponse error = WSMessageResponse.error(messageId, null, e.getMessage());
+    private void handleExceptionMessage(String nodeName, Session session, Object msgObj, String messageId, Exception e) {
+        log.error("HandleMessage exception nodeName [{}] sessionId [{}] messageId [{}] ", nodeName, session.getId(), messageId, e);
+        if (Objects.isNull(msgObj) || !(msgObj instanceof WSMessage)) {
+            throw new RuntimeException(String.format("HandleMessage exception nodeName [%s] sessionId [%s] messageId [%s] message content error or is null", nodeName, session.getId(), messageId));
+        }
+        WSMessage wsMessage = (WSMessage) msgObj;
+        WSMessageResponse error = WSMessageResponse.error(wsMessage.getId(), null, e.getMessage());
         try {
             new RetryTask(3) {
                 @Override
                 protected void exec(RetryTask retryTask) throws Exception {
                     try {
-                        folibWsRunManageV2.sendResponse(session, error);
+                        Session wsSession =  session;
+                        if (Objects.isNull(wsSession) || !wsSession.isOpen()) {
+                            wsSession = folibWsRunManageV2.getSession(nodeName);
+                        }
+                        folibWsRunManageV2.sendResponse(nodeName, wsSession, error);
                     } catch (Exception ex) {
-                        log.error("sendResponse exception , messageId: {}", messageId, ex);
+                        log.error("SendResponse exception messageId [{}] error [{}]", messageId, ex);
                         throw new RuntimeException(ex);
                     }
                 }
@@ -212,38 +228,48 @@ public class FolibWsUtil {
     }
 
 
-    private void handleMessage(String nodeName, Session session, ByteBuffer message) {
-        Object msgObj = KryoSerializationUtil.deserialize(message.array());
+    private void handleMessage(String nodeName, Session session, Object msgObj) {
         if (msgObj instanceof WSMessageResponse) {
             processWSMessageResponse(nodeName, (WSMessageResponse) msgObj, session);
         } else if (msgObj instanceof WSMessageRequest) {
-            processWSMessageRequest((WSMessageRequest) msgObj, session);
+            processWSMessageRequest(nodeName, (WSMessageRequest) msgObj, session);
         } else {
             throw new RuntimeException("unknown type :" + msgObj.getClass());
         }
     }
 
     private void processWSMessageResponse(String nodeName, WSMessageResponse response, Session session) {
-        log.info("response {}", response);
+        log.info("NodeName [{}] response [{}]", nodeName, response);
         String id = response.getId();
-        CompletableFuture<WSMessageResponse> future = folibWsRunManageV2.getFuture(session,id);
+        CompletableFuture<WSMessageResponse> future = folibWsRunManageV2.getFuture(session, id);
         if (future == null) {
-            log.warn("id {} future is null", id);
+            log.warn("ID [{}] future is null", id);
             return;
         }
         future.complete(response);
     }
 
-    private void processWSMessageRequest(WSMessageRequest msgObj, Session session) {
-        log.info("request {}", msgObj);
+    private void processWSMessageRequest(String nodeName, WSMessageRequest msgObj, Session session) {
+        log.info("NodeName [{}] Request [{}]", nodeName, msgObj);
         ObjectProvider<CommandProcessor> beanProvider = SpringContextUtil.getApplicationContext().getBeanProvider(CommandProcessor.class);
         for (CommandProcessor commandProcessor : beanProvider) {
             if (commandProcessor.getCommand().equals(msgObj.getCommand())) {
-                commandProcessor.execute(msgObj, session);
+                commandProcessor.execute(nodeName, msgObj, session);
                 return;
             }
         }
-        throw new RuntimeException(String.format("not found CommandProcessor with Command %s", msgObj.getCommand()));
+        throw new RuntimeException(String.format("Not found CommandProcessor with Command %s", msgObj.getCommand()));
+    }
+
+    private String getTargetHostName(String targetHostName) {
+        if (StringUtils.isBlank(targetHostName)) {
+            throw new RuntimeException("Param targetHostName cannot be empty");
+        }
+        String split = "_";
+        if (targetHostName.contains(split)) {
+            return targetHostName;
+        }
+        return targetHostName + FolibWsRunManageUtil.getEndpoint();
     }
 
 }

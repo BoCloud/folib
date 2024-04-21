@@ -31,8 +31,15 @@ public class PromotionNodeOption {
     @ApiModelProperty("同步模式（1：推；2：拉）")
     private Integer syncModel;
 
-    @ApiModelProperty("制品同步编号，无需调用方提供")
+    /**
+     * 制品同步编号，无需调用方提供
+     */
     private String syncNo;
+
+    /**
+     * WS通道目标节点，无需调用方提供
+     */
+    private String targetNode;
 
     public PromotionNodeOption(String sourcePath, String targetPath) {
         this.sourcePath = sourcePath;

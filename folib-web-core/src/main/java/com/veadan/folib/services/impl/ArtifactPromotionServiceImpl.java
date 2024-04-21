@@ -42,7 +42,6 @@ import com.veadan.folib.storage.repository.Repository;
 import com.veadan.folib.storage.repository.RepositoryTypeEnum;
 import com.veadan.folib.users.userdetails.SpringSecurityUser;
 import com.veadan.folib.util.MessageDigestUtils;
-import com.veadan.folib.util.ThreadLocalUtil;
 import com.veadan.folib.utils.FileUtils;
 import com.veadan.folib.utils.PropertiesUtils;
 import com.veadan.folib.utils.UrlUtils;
@@ -61,7 +60,6 @@ import org.apache.commons.fileupload.disk.DiskFileItem;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.maven.model.Model;
-import org.glassfish.jersey.client.ClientProperties;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -298,7 +296,9 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
                 promotionUtil.executePromotionCopy(syncNo, targetPath, srcPath, srcRepository, destRepository);
                 return CompletableFuture.completedFuture(null);
             }
-
+            if (StringUtils.isBlank(promotionNodeOption.getTargetNode())) {
+                promotionNodeOption.setTargetNode(FolibWsRunManageUtil.getTargetNode(promotionNodeOption.getTargetPath()));
+            }
 
             validateStorageAndRepository(sourceStorageId, sourceRepositoryId);
 
@@ -312,7 +312,7 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
 
             PromotionNodeOptionDto uploadDto = promotionUtil.getPromotionUploadDto(promotionArtifactDto);
 
-            CompletableFuture<Void> future = promotionUtil.artifactSliceUploadV3(uploadDto, targetBaseUrl, targetStorageId, targetRepositoryId, syncNo);
+            CompletableFuture<Void> future = promotionUtil.artifactSliceUploadV3(uploadDto, targetBaseUrl, promotionNodeOption.getTargetNode(), targetStorageId, targetRepositoryId, syncNo);
 
             return future;
         } catch (Exception e) {
@@ -405,19 +405,20 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
 
     @Override
     public ResponseEntity nodeOptionAttachRecord(PromotionNodeOption promotionNodeOption, String requestHostName) {
-        String targetHostName = FolibWsRunManageUtil.getTargetHostName(promotionNodeOption.getTargetPath());
-        String sourceHostName = FolibWsRunManageUtil.getTargetHostName(promotionNodeOption.getSourcePath());
+        String targetHostName = FolibWsRunManageUtil.getSimpleTargetHostName(promotionNodeOption.getTargetPath());
+        String sourceHostName = FolibWsRunManageUtil.getSimpleTargetHostName(promotionNodeOption.getSourcePath());
 
-        String selfHostName = FolibWsRunManageUtil.getTargetHostName(configurationManagementService.getConfiguration().getBaseUrl());
+        String selfHostName = FolibWsRunManageUtil.getSimpleTargetHostName(configurationManagementService.getConfiguration().getBaseUrl());
         if (selfHostName.equals(sourceHostName)) {
             final String syncNo = String.format("SyncNo%s", UUID.randomUUID().toString(true));
             uploadArtifact(syncNo, promotionNodeOption, requestHostName);
             return ResponseEntity.ok(syncNo);
-        }else if(selfHostName.equals(targetHostName)){
+        } else if (selfHostName.equals(targetHostName)) {
             try {
                 //委托sourceHostName节点upload到本节点，对本节点来说是下载，1小时超时时间，等待下载完成
-                WSMessageResponse wsMessageResponse = folibWsRunManageV2.sendRequest(sourceHostName, new WSMessageRequest(Command.DELEGATE_UPLOAD, promotionNodeOption), 60 * 60);
-                log.info("DelegateUpload WSMessageResponse:{}",wsMessageResponse);
+                String sourceNodeName = FolibWsRunManageUtil.getTargetHostName(promotionNodeOption.getSourcePath());
+                WSMessageResponse wsMessageResponse = folibWsRunManageV2.sendRequest(sourceNodeName, new WSMessageRequest(Command.DELEGATE_UPLOAD, promotionNodeOption), 60 * 60);
+                log.info("DelegateUpload WSMessageResponse:{}", wsMessageResponse);
                 return ResponseEntity.ok("ok");
             } catch (Exception e) {
                 throw new RuntimeException(e);
@@ -432,6 +433,7 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
         if (Objects.isNull(promotionNodeOption.getSyncModel())) {
             promotionNodeOption.setSyncModel(ArtifactSyncRecordSyncModelEnum.PUSH.getVal());
         }
+        String targetNode = promotionNodeOption.getTargetNode();
         if (ArtifactSyncRecordSyncModelEnum.PUSH.getVal().equals(promotionNodeOption.getSyncModel())) {
             validateSourceRepositoryPath(promotionRepositoryInfo.getSourceStorageId(), promotionRepositoryInfo.getSourceRepositoryId(), promotionRepositoryInfo.getSourceArtifactPath());
             String sourceBaseUrl = promotionRepositoryInfo.getSourceBaseUrl();
@@ -439,7 +441,11 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
             if (sourceBaseUrl.equals(targetBaseUrl)) {
                 validateStorageAndRepository(promotionRepositoryInfo.getTargetStorageId(), promotionRepositoryInfo.getTargetRepositoryId());
             } else {
-                validateRemoteRepository(promotionRepositoryInfo.getTargetBaseUrl(), promotionRepositoryInfo.getTargetStorageId(), promotionRepositoryInfo.getTargetRepositoryId());
+                if (StringUtils.isBlank(targetNode)) {
+                    targetNode = FolibWsRunManageUtil.getTargetNode(promotionNodeOption.getTargetPath());
+                    promotionNodeOption.setTargetNode(targetNode);
+                }
+                validateRemoteRepository(targetNode, promotionRepositoryInfo.getTargetStorageId(), promotionRepositoryInfo.getTargetRepositoryId());
             }
         }
         String userName = UserUtils.getUsername();
@@ -811,29 +817,12 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
     }
 
     @Override
-    public void validateRemoteRepository(String targetUrl, String storageId, String repositoryId) {
-        targetUrl = String.format("%s/%s/%s/%s", StringUtils.removeEnd(targetUrl, GlobalConstants.SEPARATOR), REPOSITORY_URL, storageId, repositoryId);
-        Response response = null;
+    public void validateRemoteRepository(String targetNode, String storageId, String repositoryId) {
         try {
-            Client client = clientPool.getRestClient();
-            //连接建立超时时间
-            client.property(ClientProperties.CONNECT_TIMEOUT, 5000);
-            //读取内容超时时间
-            client.property(ClientProperties.READ_TIMEOUT, 5000);
-            WebTarget target = client.target(targetUrl);
-            Invocation.Builder builder = target.request();
-            securityComponent.securityTokenHeader(builder);
-            response = builder.head();
-            if (HttpStatus.OK.value() != response.getStatus()) {
-                throw new BusinessException(String.format("Remote repository [%s] [%s]  not exist!", storageId, repositoryId));
-            }
+            folibWsRunManageV2.sendRequest(targetNode, new WSMessageRequest(Command.CHECK_TARGET_NODE_REPOSITORY, RepositoryInfo.builder().storageId(storageId).repositoryId(repositoryId).build()));
         } catch (Exception ex) {
-            log.error("Validate remote repository [{}] [{}] [{}] error [{}]", targetUrl, storageId, repositoryId, ExceptionUtils.getStackTrace(ex));
+            log.error("Validate remote repository [{}] [{}] [{}] error [{}]", targetNode, storageId, repositoryId, ExceptionUtils.getStackTrace(ex));
             throw new BusinessException(ex.getMessage());
-        } finally {
-            if (Objects.nonNull(response)) {
-                response.close();
-            }
         }
     }
 
@@ -1308,7 +1297,7 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
                 final String uploadArtifactFileMd5 = MessageDigestUtils.calculateChecksum(new File(mergeFilePath).toPath(), MessageDigestAlgorithms.MD5);
                 // 校验MD5
                 if (!originFileMd5.equals(uploadArtifactFileMd5)) {
-                    throw new BusinessException(String.format("%s , originFileMd5:%s , uploadArtifactFileMd5:%s",BusinessCodeEnum.ARTIFACT_SLICE_UPLOAD_MD5_CHECK_FAILED.getMessage(),originFileMd5,uploadArtifactFileMd5));
+                    throw new BusinessException(String.format("%s , originFileMd5:%s , uploadArtifactFileMd5:%s", BusinessCodeEnum.ARTIFACT_SLICE_UPLOAD_MD5_CHECK_FAILED.getMessage(), originFileMd5, uploadArtifactFileMd5));
                 }
 
                 // 转存合并文件到Folib

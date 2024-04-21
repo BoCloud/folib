@@ -17,11 +17,11 @@ import javax.annotation.PostConstruct;
 @Slf4j
 public class PromotionConfig {
     /**
-     * 每个seesion可堆积的任务队列长度
+     * 每个session可堆积的任务队列长度
      */
     private int queueSize = 1000;
     /**
-     * 每个seesion可并行晋级的数量
+     * 每个session可并行晋级的数量
      */
     private int thread = 2;
     /**
@@ -38,9 +38,9 @@ public class PromotionConfig {
     private int wsRequestTimout = 10;
     /**
      * 使用ws通道空闲超时时间，当没有数据传输时，达到这个时间会释放连接
-     * 如果连接被防火墙强制打断，此时连接无法收发数据，等待30S后，主动关闭连接
+     * 如果连接被防火墙强制打断，此时连接无法收发数据，等待60S后，主动关闭连接
      */
-    private int wsMaxSessionIdleTimeout = 1000 * 30;
+    private int wsMaxSessionIdleTimeout = 1000 * 60;
     /**
      * 当WS隧道空闲多少秒后开始发送心跳
      */

@@ -55,7 +55,7 @@ public interface ArtifactPromotionService {
 
     void validateStorageAndRepository(String storageId, String repositoryId);
 
-    void validateRemoteRepository(String targetUrl, String storageId, String repositoryId);
+    void validateRemoteRepository(String targetNode, String storageId, String repositoryId);
 
     /**
      * 查询上传进度

@@ -51,7 +51,7 @@ public class FolibWsClient {
 
     @OnOpen
     public void onOpen(Session session) {
-        log.info("onOpen {}", this);
+        log.info("OnOpen [{}]", this);
         folibWsUtil.onOpen(targetHostName, session);
         try {
             // 连接到WsServer
@@ -78,7 +78,7 @@ public class FolibWsClient {
                     SyncClusterDispatchEnum.ADD_OR_UPDATE);
             folibWsRunManageV2.sendRequest(targetHostName, new WSMessageRequest(Command.SERVER_INFO, payload));
         } catch (Exception e) {
-            log.error("send server info exception",e);
+            log.error("Send server info exception", e);
         }
 
     }

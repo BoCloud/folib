@@ -94,9 +94,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.FutureTask;
-import java.util.concurrent.TimeoutException;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -385,10 +383,8 @@ public class PromotionUtil {
             PromotionNodeOptionDto uploadDto = getPromotionUploadDto(promotionArtifactDto);
 
             final String clusterNodeHost = dispatchNodeDto.getClusterNodeHost();
-            final String nodeHost = UrlUtils.getHost(clusterNodeHost);
-            final Integer nodePort = UrlUtils.getPort(clusterNodeHost);
-            final String nodeName = String.format("%s:%s", nodeHost, nodePort);
-            this.artifactSliceUploadV3(uploadDto, StringUtils.chomp(dispatchNodeHost, "/"), uploadDto.getStorageId(), uploadDto.getRepositoryId(), syncNo);
+            final String targetNode = FolibWsRunManageUtil.getTargetNode(clusterNodeHost);
+            this.artifactSliceUploadV3(uploadDto, StringUtils.chomp(dispatchNodeHost, "/"), targetNode, uploadDto.getStorageId(), uploadDto.getRepositoryId(), syncNo);
             if (Boolean.TRUE.equals(recordStatus)) {
                 artifactComponent.handlerArtifactPromotion(dispatchNodeDto.getClusterEnName(), srcStorageId, srcRepositoryId, artifactPath, PromotionStatusEnum.SUCCESS.getStatus());
             }
@@ -749,22 +745,24 @@ public class PromotionUtil {
         }).collect(Collectors.toList());
     }
 
-    public CompletableFuture<Void> artifactSliceUploadV3(PromotionNodeOptionDto uploadDto, String targetUrl, String storageId, String repositoryId, String syncNo) {
+    public CompletableFuture<Void> artifactSliceUploadV3(PromotionNodeOptionDto uploadDto, String targetUrl, String targetNode, String storageId, String repositoryId, String syncNo) {
         targetUrl = StringUtils.chomp(targetUrl, "/");
 
-        String targetHostName = FolibWsRunManageUtil.getTargetHostName(targetUrl);
-        TaskQueueManager taskQueueManager = promotionTaskQueue.getTaskQueueManager(targetHostName);
+        String targetHostName = targetNode;
+        TargetTaskQueueManager targetTaskQueueManager = promotionTaskQueue.getTaskQueueManager(targetHostName);
         String finalTargetUrl1 = targetUrl;
-        if (taskQueueManager == null) {
-            throw new RuntimeException("not found taskQueueManager by targetHostName:"+targetHostName);
+        if (targetTaskQueueManager == null) {
+            throw new RuntimeException("not found taskQueueManager by targetHostName:" + targetHostName);
         }
+        targetHostName = targetTaskQueueManager.getTargetHostName();
         CompletableFuture<Void> future = new CompletableFuture<>();
-        taskQueueManager.submitTask(java.util.UUID.randomUUID().toString(), () -> {
+        String finalTargetHostName = targetHostName;
+        targetTaskQueueManager.getTaskQueueManager().submitTask(java.util.UUID.randomUUID().toString(), () -> {
             try {
-                doArtifactSliceUploadV3(uploadDto, storageId, repositoryId, syncNo, finalTargetUrl1, targetHostName);
+                doArtifactSliceUploadV3(uploadDto, storageId, repositoryId, syncNo, finalTargetUrl1, finalTargetHostName);
                 future.complete(null);
             } catch (Exception e) {
-                log.error("doArtifactSliceUploadV3 Exception \n info:\nuploadDto:{}, storageId:{}, repositoryId:{}, syncNo:{}, finalTargetUrl1:{}, targetHostName:{}",uploadDto, storageId, repositoryId, syncNo, finalTargetUrl1, targetHostName, e);
+                log.error("doArtifactSliceUploadV3 Exception \n info:\nuploadDto:{}, storageId:{}, repositoryId:{}, syncNo:{}, finalTargetUrl1:{}, targetHostName:{}", uploadDto, storageId, repositoryId, syncNo, finalTargetUrl1, finalTargetHostName, e);
                 artifactSyncRecordMapper.updateStatusAndFailedReasonBySyncNo(ArtifactSyncRecordStatusEnum.FAILED.getVal(), e.getMessage(), syncNo, new Date());
                 future.completeExceptionally(e);
                 if (e instanceof RuntimeException) {
@@ -799,17 +797,18 @@ public class PromotionUtil {
         //分片上传
         for (int i = 0; i < size; i++) {
             ArtifactSliceUploadHttpEntityBuilder builder = artifactSliceUploadHttpEntityList.get(i);
+            //100M切片
             ArtifactSliceUploadReq artifactSliceUploadReq = builder.buildV3();
             String path = artifactSliceUploadReq.getPath();
             Object metadata = uploadDto.getFileMetaDataMap().get(path);
             if (Objects.nonNull(metadata) && StringUtils.isNotBlank(metadata.toString()) && JSONUtil.isJson(metadata.toString())) {
-                artifactSliceUploadReq.setMetaData(JSONObject.parseObject((String) metadata,Map.class));
+                artifactSliceUploadReq.setMetaData(JSONObject.parseObject((String) metadata, Map.class));
             }
 //            try (InputStream inputStream = artifactSliceUploadReq.getFile().getInputStream();){
 //                String md5 = FileUtils.getMD5(inputStream);
 //                artifactSliceUploadReq.setSliceMd5(md5);
 //            }
-            log.info("artifactSliceUploadReq:{}",artifactSliceUploadReq);
+            log.info("artifactSliceUploadReq:{}", artifactSliceUploadReq);
             int finalI = i;
             try {
                 new RetryTask(promotionConfig.getRetryCount()) {
@@ -817,6 +816,7 @@ public class PromotionUtil {
                     public void exec(RetryTask retryTask) throws Exception {
                         try {
                             log.info("WSMessageRequest upload slice {}/{} ,targetHostName:{} , path:{}", finalI + 1, size, targetHostName, artifactSliceUploadReq.getPath());
+                            //TODO 切片文件写到内存，没有重用，定时重试
                             WSMessageResponse wsMessageResponse = folibWsRunManageV2.sendRequest(targetHostName, new WSMessageRequest(Command.UPLOAD, artifactSliceUploadReq), promotionConfig.getWsRequestTimoutOfArtifactUpload());
                             log.info("wsMessageResponse:{}", wsMessageResponse.toString());
                             if (!HttpStatus.OK.equals(wsMessageResponse.getStatus())) {
@@ -852,7 +852,7 @@ public class PromotionUtil {
         return artifactSyncSlaveRecord;
     }
 
-    private void remoteExistsArtifact(String storageId, String repositoryId, String targetHostName, Map<String, Map<String, RepositoryPath>> filePathMap, String syncNo, String finalTargetUrl1) throws IOException, ExecutionException, InterruptedException, TimeoutException {
+    private void remoteExistsArtifact(String storageId, String repositoryId, String targetHostName, Map<String, Map<String, RepositoryPath>> filePathMap, String syncNo, String finalTargetUrl1) throws Exception {
 
         Iterator<Map.Entry<String, Map<String, RepositoryPath>>> iterator = filePathMap.entrySet().iterator();
         while (iterator.hasNext()) {
@@ -927,7 +927,7 @@ public class PromotionUtil {
             final int threadCount = BigDecimal.valueOf(fileLength).divide(BigDecimal.valueOf(chunkSize), 0, RoundingMode.CEILING).intValue();
             //final String md5 = FileUtils.getMD5(Files.newInputStream(artifactPath));
             final String sourceStorageId = sourceRepositoryPath.getStorageId(), sourceRepositoryId = sourceRepositoryPath.getRepositoryId(), sourceArtifactPath = RepositoryFiles.relativizePath(sourceRepositoryPath);
-            log.info("calculate the file [{}] [{}] [{}] md5 file size [{}]", sourceStorageId, sourceRepositoryId, sourceArtifactPath, fileLength);
+            log.info("Calculate the file [{}] [{}] [{}] file size [{}]", sourceStorageId, sourceRepositoryId, sourceArtifactPath, fileLength);
             long begin = System.currentTimeMillis();
             LayoutFileSystemProvider provider = (LayoutFileSystemProvider) sourceRepositoryPath.getFileSystem().provider();
             final RepositoryPath checksumPath = provider.getChecksumPath(sourceRepositoryPath, MessageDigestAlgorithms.MD5);
@@ -940,7 +940,7 @@ public class PromotionUtil {
                 //md5 = FileUtils.getMD5(Files.newInputStream(sourceRepositoryPath));
             }
 
-            log.info("calculated the file [{}] [{}] [{}] md5 is [{}]  file size [{}] time consuming [{}] ms", sourceStorageId, sourceRepositoryId, sourceArtifactPath, fileLength, md5, System.currentTimeMillis() - begin);
+            log.info("calculated the file [{}] [{}] [{}] md5 is [{}] file size [{}] time consuming [{}] ms", sourceStorageId, sourceRepositoryId, sourceArtifactPath, md5, fileLength, System.currentTimeMillis() - begin);
             final String mergeId = UUID.randomUUID().toString(true);
 
             String finalMd5 = md5;

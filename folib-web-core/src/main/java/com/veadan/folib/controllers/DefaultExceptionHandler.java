@@ -106,7 +106,7 @@ public class DefaultExceptionHandler extends ResponseEntityExceptionHandler
     {
         ResponseEntityBody body = new ResponseEntityBody(ex.getMessage());
         HttpHeaders headers = new HttpHeaders();
-        return handleExceptionInternal(ex, body, headers, HttpStatus.SERVICE_UNAVAILABLE, request);
+        return handleExceptionInternal(ex, body, headers, HttpStatus.INTERNAL_SERVER_ERROR, request);
     }
 
     @ExceptionHandler(Exception.class)

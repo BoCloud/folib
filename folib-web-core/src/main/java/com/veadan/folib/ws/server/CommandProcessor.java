@@ -6,8 +6,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import javax.websocket.Session;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeoutException;
 
 /**
  * @author pengYongQiang
@@ -21,20 +19,20 @@ public abstract class CommandProcessor {
 
     public abstract Command getCommand();
 
-    public void execute(WSMessageRequest wsMessageRequest, Session session) {
+    public void execute(String nodeName, WSMessageRequest wsMessageRequest, Session session) {
         WSMessageResponse wsMessageResponse = null;
         try {
-            log.info("CommandProcessor.doExecute command:{}", getCommand());
+            log.info("CommandProcessor.doExecute nodeName [{}] command [{}]", nodeName, getCommand());
             Object result = doExecute(wsMessageRequest, session);
             wsMessageResponse = WSMessageResponse.ok(wsMessageRequest.getId(), wsMessageRequest.getCommand(), result);
         } catch (Exception e) {
-            log.error("commandProcessor execute exception", e);
+            log.error("commandProcessor nodeName [{}] execute exception [{}]", nodeName, e);
             wsMessageResponse = WSMessageResponse.error(wsMessageRequest.getId(), wsMessageRequest.getCommand(), e.getMessage());
         }
         try {
-            log.info("CommandProcessor.sendResponse wsMessageResponse:{}", wsMessageResponse);
-            folibWsRunManageV2.sendResponse(session, wsMessageResponse);
-        } catch (ExecutionException | InterruptedException | TimeoutException e) {
+            log.info("CommandProcessor.sendResponse nodeName [{}] wsMessageResponse [{}]", nodeName, wsMessageResponse);
+            folibWsRunManageV2.sendResponse(nodeName, session, wsMessageResponse);
+        } catch (Exception e) {
             throw new RuntimeException(e);
         }
     }

@@ -501,21 +501,20 @@ public class StoragesConfigurationController
                 .layout(layout)
                 .policy(policy).build();
         List<StorageTreeForm> repoList = new LinkedList<>();
+        WSMessageRequest wsMessageRequest = null;
+        WSMessageResponse messageResponse = null;
         for (ClusterDispatchNodeDto clusterDispatchNodeDto : listDispatch) {
-            final String dispatchEnName = clusterDispatchNodeDto.getClusterEnName();
-            dispatchRepositoryDto.setDispatchEnName(dispatchEnName);
-            WSMessageRequest wsMessageRequest = new WSMessageRequest(Command.STORAGES_REPOSITORY_TREE,dispatchRepositoryDto);
-
-            String targetHostName = FolibWsRunManageUtil.getTargetHostName(clusterDispatchNodeDto);
-
-            WSMessageResponse messageResponse = null;
             try {
-                messageResponse =  folibWsRunManageV2.sendRequest(targetHostName, wsMessageRequest);
+                final String dispatchEnName = clusterDispatchNodeDto.getClusterEnName();
+                dispatchRepositoryDto.setDispatchEnName(dispatchEnName);
+                wsMessageRequest = new WSMessageRequest(Command.STORAGES_REPOSITORY_TREE, dispatchRepositoryDto);
+                String targetHostName = FolibWsRunManageUtil.getTargetNode(clusterDispatchNodeDto.getClusterNodeHost());
+                messageResponse = folibWsRunManageV2.sendRequest(targetHostName, wsMessageRequest);
+                DispatchStorageTree dispatchStorageTree = (DispatchStorageTree) messageResponse.getDate();
+                repoList.addAll(dispatchStorageTree.getList());
             } catch (Exception e) {
-                logger.warn("sendRequest fail,wsMessageRequest:{}",wsMessageRequest,e);
+                logger.warn("sendRequest fail,wsMessageRequest:{}", wsMessageRequest, e);
             }
-            DispatchStorageTree dispatchStorageTree = (DispatchStorageTree) messageResponse.getDate();
-            repoList.addAll(dispatchStorageTree.getList());
         }
         // 发送获取仓库信息Task
         return ResponseEntity.ok(repoList);

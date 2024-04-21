@@ -33,7 +33,6 @@ import com.veadan.folib.storage.repository.remote.RemoteRepository;
 import com.veadan.folib.storage.validation.artifact.version.GenericReleaseVersionValidator;
 import com.veadan.folib.storage.validation.artifact.version.GenericSnapshotVersionValidator;
 import com.veadan.folib.storage.validation.deployment.RedeploymentValidator;
-import com.veadan.folib.util.LocalDateTimeInstance;
 import com.veadan.folib.yaml.configuration.repository.NpmRepositoryConfigurationData;
 import com.veadan.folib.yaml.configuration.repository.remote.NpmRemoteRepositoryConfiguration;
 import com.veadan.folib.yaml.configuration.repository.remote.NpmRemoteRepositoryConfigurationDto;
@@ -42,7 +41,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.http.HttpStatus;
 import org.apache.http.client.config.RequestConfig;
-import org.folib.util.Commons;
 import org.glassfish.jersey.apache.connector.ApacheClientProperties;
 import org.glassfish.jersey.client.authentication.HttpAuthenticationFeature;
 import org.slf4j.Logger;
@@ -66,7 +64,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
 import java.net.URL;
-import java.time.LocalDateTime;
 import java.util.*;
 import java.util.concurrent.Executor;
 
@@ -599,10 +596,10 @@ public class NpmRepositoryFeatures implements RepositoryFeatures {
     }
 
     /**
-     * 校验metadata是否过期
+     * 获取metadata
      *
      * @param artifactIdGroup artifactIdGroup
-     * @return true 过期 false 未过期
+     * @return metadata
      */
     public String getArtifactIdGroupMetadata(ArtifactIdGroup artifactIdGroup) {
         if (Objects.isNull(artifactIdGroup) || StringUtils.isBlank(artifactIdGroup.getMetadata()) || !JSONUtil.isJson(artifactIdGroup.getMetadata())) {
@@ -611,14 +608,8 @@ public class NpmRepositoryFeatures implements RepositoryFeatures {
         JSONObject metadataJson = JSONObject.parseObject(artifactIdGroup.getMetadata());
         String cacheTimeKey = "cacheTime", metadataKey = "metadata";
         if (metadataJson.containsKey(cacheTimeKey)) {
-            Long cacheTimeLong = metadataJson.getLong(cacheTimeKey);
-            LocalDateTime cacheTime = Commons.toLocalDateTime(cacheTimeLong);
-            long timeout = 300L;
-            LocalDateTime nowDate = LocalDateTimeInstance.now();
-            LocalDateTime cacheExpireDate = cacheTime.plusSeconds(timeout);
-            if (!cacheExpireDate.isBefore(nowDate)) {
-                return metadataJson.getString(metadataKey);
-            }
+            String data = metadataJson.getString(metadataKey);
+            return GlobalConstants.NO_DATA.equals(data) ? "" : data;
         }
         return "";
     }
