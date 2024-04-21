@@ -828,7 +828,7 @@ public class ArtifactComponent {
         if (metadataJson.containsKey(cacheTimeKey)) {
             Long cacheTimeLong = metadataJson.getLong(cacheTimeKey);
             LocalDateTime cacheTime = Commons.toLocalDateTime(cacheTimeLong);
-            long timeout = 1800L;
+            long timeout = 3600L;
             LocalDateTime nowDate = LocalDateTimeInstance.now();
             LocalDateTime cacheExpireDate = cacheTime.plusSeconds(timeout);
             if (!cacheExpireDate.isBefore(nowDate)) {
