@@ -368,7 +368,7 @@ public class ArtifactUploadTask implements Callable<String> {
             }
             Gav artifactGav = MavenArtifactUtils.convertPathToGav(artifactRepositoryPath);
             byte[] pomBytes = layoutProvider.getContentByFileName(repositoryPath, path, "pom.xml");
-            String pomName = String.format("%s-%s", artifactId, version) + ".pom";
+            String pomName = String.format("%s-%s", artifactId, artifactGav.getVersion()) + ".pom";
             File pomTempFile = null;
             if (Objects.nonNull(pomBytes)) {
                 //包内存在pom，直接使用
@@ -382,7 +382,7 @@ public class ArtifactUploadTask implements Callable<String> {
                 artifactComponent.pomGenerator(sourceGroupId, artifactId, version, pomTempFile.getAbsolutePath());
             }
             String pomPath = String.format("%s/%s/%s/%s", groupId, artifactId, version, pomName);
-            log.info("maven2 layout xml path ：{}，properties：{}，artifactParse: {}, groupId：{}，artifactId：{}, version：{} artifactPath：{}", pomTempFile.getAbsolutePath(), properties, artifactParse, groupId, artifactId, version, pomPath);
+            log.info("maven2 layout xml path ：{}，properties：{}，artifactParse: {}, groupId：{}，artifactId：{}, version：{} gavVersion: {} artifactPath：{}", pomTempFile.getAbsolutePath(), properties, artifactParse, groupId, artifactId, version, artifactGav.getVersion(), pomPath);
             RepositoryPath pomRepositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, pomPath);
             isValidGavPath = MavenArtifactUtils.isGAV(pomRepositoryPath);
             if (!isValidGavPath) {
