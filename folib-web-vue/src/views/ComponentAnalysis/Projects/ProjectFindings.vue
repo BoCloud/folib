@@ -78,133 +78,143 @@
                 <template slot="suppressed" slot-scope="suppressed">
                     {{ suppressed ? $t(`Projects.Suppressed_${suppressed}`) : $t(`Projects.Suppressed_false`) }}
                 </template>
+              <span slot="expandIcon" slot-scope="props">
+                    <img
+                        src="@/assets/img/pull-down.svg"
+                        alt="pull-down"
+                        :class="{'is-expand': props.expanded}"
+                        @click="props.onExpand"
+                    >
+                </span>
+              <div slot="expandedRowRender" slot-scope="record">
+                <vuln-expanded-content ref="VulnExpanded" :record="record"></vuln-expanded-content>
+              </div>
+<!--                <div slot="expandedRowRender" slot-scope="record" style="margin: 0">-->
+<!--                    <div class="by-flex by-row-between by-col-top">-->
+<!--                        <div class="disabled-textarea by-m-r-20">-->
+<!--                            <div class="textarea-label">{{ $t('Projects.Description') }}</div>-->
+<!--                            <a-input-->
+<!--                                :defaultValue="record.vulnerability.description"-->
+<!--                                type="textarea"-->
+<!--                                disabled-->
+<!--                                :rows="6"-->
+<!--                            ></a-input>-->
+<!--                        </div>-->
+<!--                        <div class="disabled-textarea">-->
+<!--                            <div class="textarea-label">{{ $t('Projects.AuditTrail') }}</div>-->
+<!--                            <a-input-->
+<!--                                type="textarea"-->
+<!--                                v-model="commentsData"-->
+<!--                                :defaultValue="commentsData"-->
+<!--                                disabled-->
+<!--                                :rows="6"-->
+<!--                            ></a-input>-->
+<!--                        </div>-->
+<!--                    </div>-->
+<!--                    <div class="commit by-m-t-20">-->
+<!--                        <div class="commit-label">{{ $t('Projects.Commit') }}</div>-->
+<!--                        <a-input-->
+<!--                            :placeholder="$t('Projects.CommitPlaceholder')"-->
+<!--                            type="textarea"-->
+<!--                            :rows="6"-->
+<!--                            :defaultValue="comment"-->
+<!--                            v-model="comment"-->
+<!--                            class="by-m-t-10 by-m-b-10"-->
 
-                <div slot="expandedRowRender" slot-scope="record" style="margin: 0">
-                    <div class="by-flex by-row-between by-col-top">
-                        <div class="disabled-textarea by-m-r-20">
-                            <div class="textarea-label">{{ $t('Projects.Description') }}</div>
-                            <a-input
-                                :defaultValue="record.vulnerability.description"
-                                type="textarea"
-                                disabled
-                                :rows="6"
-                            ></a-input>
-                        </div>
-                        <div class="disabled-textarea">
-                            <div class="textarea-label">{{ $t('Projects.AuditTrail') }}</div>
-                            <a-input
-                                type="textarea"
-                                v-model="commentsData"
-                                :defaultValue="commentsData"
-                                disabled
-                                :rows="6"
-                            ></a-input>
-                        </div>
-                    </div>
-                    <div class="commit by-m-t-20">
-                        <div class="commit-label">{{ $t('Projects.Commit') }}</div>
-                        <a-input
-                            :placeholder="$t('Projects.CommitPlaceholder')"
-                            type="textarea"
-                            :rows="6"
-                            :defaultValue="comment"
-                            v-model="comment"
-                            class="by-m-t-10 by-m-b-10"
+<!--                        ></a-input>-->
+<!--                        <a-button class="add-commit" @click="addCommit">{{-->
+<!--                                $t('Projects.AddCommit')-->
+<!--                            }}-->
+<!--                        </a-button>-->
+<!--                    </div>-->
+<!--                    <div class="by-flex by-m-t-20">-->
+<!--                        <div class="by-flex">-->
+<!--                            <a-tooltip placement="topLeft" :title="$t('Projects.AnalysisPrompt')"-->
+<!--                                       arrow-point-at-center>-->
+<!--                                <span class="by-m-r-10">{{ $t('Projects.Analysis') }}</span>-->
+<!--                                <a-select-->
+<!--                                    v-model="analysisState"-->
+<!--                                    class="analysis"-->
+<!--                                    @change="handleAnalysisChange"-->
+<!--                                >-->
+<!--                                    <a-select-option-->
+<!--                                        v-for="(item, i) in analysisOptions"-->
+<!--                                        :value="item.value"-->
+<!--                                        :key="i"-->
+<!--                                    >-->
+<!--                                        {{ $t(`Projects.${item.label}`) }}-->
+<!--                                    </a-select-option>-->
+<!--                                </a-select>-->
+<!--                            </a-tooltip>-->
+<!--                        </div>-->
+<!--                        <div class="by-m-l-45 by-flex">-->
+<!--                            <span class="by-m-r-10">{{ $t('Projects.Suppressed') }}</span>-->
+<!--                            <a-switch-->
+<!--                                v-model="isSuppressed"-->
+<!--                                checked-children="是"-->
+<!--                                un-checked-children="否"-->
+<!--                                @change="handleSuppressedChange"-->
+<!--                            />-->
+<!--                        </div>-->
+<!--                        <div class="by-m-l-45 by-flex">-->
+<!--                            <a-tooltip placement="topLeft" :title="$t('Projects.JustificationPrompt')"-->
+<!--                                       arrow-point-at-center>-->
+<!--                                <span class="by-m-r-10">{{ $t('Projects.Justification') }}</span>-->
+<!--                                <a-select-->
+<!--                                    v-model="justificationState"-->
+<!--                                    class="analysis"-->
+<!--                                    :disabled="isJustification"-->
+<!--                                    @change="handleJustificationChange"-->
+<!--                                >-->
+<!--                                    <a-select-option-->
+<!--                                        v-for="(item, i) in justificationOptions"-->
+<!--                                        :value="item.value"-->
+<!--                                        :key="i"-->
+<!--                                    >-->
+<!--                                        {{ $t(`Projects.${item.label}`) }}-->
+<!--                                    </a-select-option>-->
+<!--                                </a-select>-->
+<!--                            </a-tooltip>-->
+<!--                        </div>-->
+<!--                        <div class="by-m-l-45 by-flex">-->
+<!--                            <a-tooltip placement="topLeft" :title="$t('Projects.VendorResponsePrompt')"-->
+<!--                                       arrow-point-at-center>-->
+<!--                                <span class="by-m-r-10">{{ $t('Projects.VendorResponse') }}</span>-->
+<!--                                <a-select-->
+<!--                                    v-model="vendorResponseState"-->
+<!--                                    class="analysis"-->
+<!--                                    @change="handleVendorResponseChange"-->
+<!--                                >-->
+<!--                                    <a-select-option-->
+<!--                                        v-for="(item, i) in vendorResponseOptions"-->
+<!--                                        :value="item.value"-->
+<!--                                        :key="i"-->
+<!--                                    >-->
+<!--                                        {{ $t(`Projects.${item.label}`) }}-->
+<!--                                    </a-select-option>-->
+<!--                                </a-select>-->
+<!--                            </a-tooltip>-->
+<!--                        </div>-->
 
-                        ></a-input>
-                        <a-button class="add-commit" @click="addCommit">{{
-                                $t('Projects.AddCommit')
-                            }}
-                        </a-button>
-                    </div>
-                    <div class="by-flex by-m-t-20">
-                        <div class="by-flex">
-                            <a-tooltip placement="topLeft" :title="$t('Projects.AnalysisPrompt')"
-                                       arrow-point-at-center>
-                                <span class="by-m-r-10">{{ $t('Projects.Analysis') }}</span>
-                                <a-select
-                                    v-model="analysisState"
-                                    class="analysis"
-                                    @change="handleAnalysisChange"
-                                >
-                                    <a-select-option
-                                        v-for="(item, i) in analysisOptions"
-                                        :value="item.value"
-                                        :key="i"
-                                    >
-                                        {{ $t(`Projects.${item.label}`) }}
-                                    </a-select-option>
-                                </a-select>
-                            </a-tooltip>
-                        </div>
-                        <div class="by-m-l-45 by-flex">
-                            <span class="by-m-r-10">{{ $t('Projects.Suppressed') }}</span>
-                            <a-switch
-                                v-model="isSuppressed"
-                                checked-children="是"
-                                un-checked-children="否"
-                                @change="handleSuppressedChange"
-                            />
-                        </div>
-                        <div class="by-m-l-45 by-flex">
-                            <a-tooltip placement="topLeft" :title="$t('Projects.JustificationPrompt')"
-                                       arrow-point-at-center>
-                                <span class="by-m-r-10">{{ $t('Projects.Justification') }}</span>
-                                <a-select
-                                    v-model="justificationState"
-                                    class="analysis"
-                                    :disabled="isJustification"
-                                    @change="handleJustificationChange"
-                                >
-                                    <a-select-option
-                                        v-for="(item, i) in justificationOptions"
-                                        :value="item.value"
-                                        :key="i"
-                                    >
-                                        {{ $t(`Projects.${item.label}`) }}
-                                    </a-select-option>
-                                </a-select>
-                            </a-tooltip>
-                        </div>
-                        <div class="by-m-l-45 by-flex">
-                            <a-tooltip placement="topLeft" :title="$t('Projects.VendorResponsePrompt')"
-                                       arrow-point-at-center>
-                                <span class="by-m-r-10">{{ $t('Projects.VendorResponse') }}</span>
-                                <a-select
-                                    v-model="vendorResponseState"
-                                    class="analysis"
-                                    @change="handleVendorResponseChange"
-                                >
-                                    <a-select-option
-                                        v-for="(item, i) in vendorResponseOptions"
-                                        :value="item.value"
-                                        :key="i"
-                                    >
-                                        {{ $t(`Projects.${item.label}`) }}
-                                    </a-select-option>
-                                </a-select>
-                            </a-tooltip>
-                        </div>
-
-                    </div>
-                    <div class="commit by-m-t-20">
-                        <div class="commit-label">{{ $t('Projects.Details') }}</div>
-                        <a-tooltip placement="topLeft" :title="$t('Projects.DetailsPrompt')"
-                                   arrow-point-at-center>
-                            <a-input
-                                :placeholder="$t('Projects.DetailsPlaceholder')"
-                                type="textarea"
-                                :rows="6"
-                                class="by-m-t-10 by-m-b-10"
-                                v-model="analysisDetails"
-                            ></a-input>
-                            <a-button class="add-commit" @click="addCommit">{{
-                                    $t('Projects.UpdateDetails')
-                                }}
-                            </a-button>
-                        </a-tooltip>
-                    </div>
-                </div>
+<!--                    </div>-->
+<!--                    <div class="commit by-m-t-20">-->
+<!--                        <div class="commit-label">{{ $t('Projects.Details') }}</div>-->
+<!--                        <a-tooltip placement="topLeft" :title="$t('Projects.DetailsPrompt')"-->
+<!--                                   arrow-point-at-center>-->
+<!--                            <a-input-->
+<!--                                :placeholder="$t('Projects.DetailsPlaceholder')"-->
+<!--                                type="textarea"-->
+<!--                                :rows="6"-->
+<!--                                class="by-m-t-10 by-m-b-10"-->
+<!--                                v-model="analysisDetails"-->
+<!--                            ></a-input>-->
+<!--                            <a-button class="add-commit" @click="addCommit">{{-->
+<!--                                    $t('Projects.UpdateDetails')-->
+<!--                                }}-->
+<!--                            </a-button>-->
+<!--                        </a-tooltip>-->
+<!--                    </div>-->
+<!--                </div>-->
             </a-table>
         </a-card>
     </div>
@@ -218,9 +228,11 @@ import {
     getVulnerabilitiesAnalysis
 } from "@/api/projects.js"
 import {formatTimestamp} from "@/utils/util.js"
-
+import VulnExpandedContent from "./Components/VulnExpandedContent"
 export default {
-    components: {},
+    components: {
+      VulnExpandedContent
+    },
     computed: {
         i18nColumns() {
             return this.columns.map((column) => {
@@ -489,25 +501,36 @@ export default {
 
         handleExpand(expanded, record) {
             if (expanded) {
-                this.isSuppressed = record.analysis.isSuppressed;
-                this.analysisState = record.analysis.state ? record.analysis.state : this.analysisState;
-                this.projectUuid = record.component.project;
-                this.componentUuid = record.component.uuid;
-                this.vulnerabilityUuid = record.vulnerability.uuid;
-                getVulnerabilitiesAnalysis(this.projectUuid, this.componentUuid, this.vulnerabilityUuid).then((res) => {
-                    if (res.status === 200) {
-                        this.isSuppressed = res.data.suppressed;
-                        this.analysisState = res.data.state ? res.data.state : this.analysisState;
-                        this.justificationState = res.data.analysisJustification ? res.data.analysisJustification : this.justificationState;
-                        this.vendorResponseState = res.data.analysisResponse ? res.data.analysisResponse : this.vendorResponseState;
-                        this.analysisDetails = res.data.analysisDetails ? res.data.analysisDetails : this.analysisDetails;
-                        this.analysisComments = res.data.analysisComments;
-                        this.getAuditVal();
-                    }
-                }).finally(() => {
-                    this.loading = false
-                });
+              this.$nextTick(() => {
+                console.log(this.$refs.VulnExpanded)
+                // 在这里放置你想要执行的代码，它将在 DOM 更新之后执行
+                this.$refs.VulnExpanded.open()
+              });
+              //this.$refs.VulnExpandedContent.open()
+                // this.isSuppressed = record.analysis.isSuppressed;
+                // this.analysisState = record.analysis.state ? record.analysis.state : this.analysisState;
+                // this.projectUuid = record.component.project;
+                // this.componentUuid = record.component.uuid;
+                // this.vulnerabilityUuid = record.vulnerability.uuid;
+                // getVulnerabilitiesAnalysis(this.projectUuid, this.componentUuid, this.vulnerabilityUuid).then((res) => {
+                //     if (res.status === 200) {
+                //         this.isSuppressed = res.data.suppressed;
+                //         this.analysisState = res.data.state ? res.data.state : this.analysisState;
+                //         this.justificationState = res.data.analysisJustification ? res.data.analysisJustification : this.justificationState;
+                //         this.vendorResponseState = res.data.analysisResponse ? res.data.analysisResponse : this.vendorResponseState;
+                //         this.analysisDetails = res.data.analysisDetails ? res.data.analysisDetails : this.analysisDetails;
+                //         this.analysisComments = res.data.analysisComments;
+                //         this.getAuditVal();
+                //     }
+                // }).finally(() => {
+                //     this.loading = false
+                // });
 
+            }else {
+              this.$nextTick(() => {
+                // 在这里放置你想要执行的代码，它将在 DOM 更新之后执行
+                this.$refs.VulnExpanded.close()
+              });
             }
         },
 

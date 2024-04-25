@@ -18,7 +18,7 @@
                 :data-source="projectsData"
                 :loading="loading"
                 @change="handleChangeTable"
-                @expandedRowsChange="handleExpandedRowsChange"
+                @expanded="handleExpand"
                 :pagination="{
                     pageSize: queryParams.pageSize,
                     current: queryParams.pageNumber,
@@ -50,68 +50,71 @@
                         @click="props.onExpand"
                     >
                 </span>
-                <div slot="expandedRowRender" slot-scope="record" style="margin: 0">
-                    <div class="by-flex by-row-between by-col-top">
-                        <div class="disabled-textarea by-m-r-20">
-                            <div class="textarea-label">{{ $t('Projects.Condition') }}</div>
-                            <a-input
-                                :defaultValue="getConditionVal(record.policyCondition)"
-                                type="textarea"
-                                disabled
-                                :rows="6"
-                            ></a-input>
-                        </div>
-                        <div class="disabled-textarea">
-                            <div class="textarea-label">{{ $t('Projects.AuditTrail') }}</div>
-                            <a-input
-                                :defaultValue="getAuditVal(record)"
-                                v-model="commentsData"
-                                type="textarea"
-                                disabled
-                                :rows="6"
-                            ></a-input>
-                        </div>
-                    </div>
-                    <div class="commit by-m-t-20">
-                        <div class="commit-label">{{ $t('Projects.Commit') }}</div>
-                        <a-input
-                            v-model="commit"
-                            :placeholder="$t('Projects.CommitPlaceholder')"
-                            type="textarea"
-                            :rows="6"
-                            class="by-m-t-10 by-m-b-10"
-                            @change="handleChange"
-                        ></a-input>
-                        <a-button class="add-commit" @click="addCommit(record)">{{ $t('Projects.AddCommit') }}</a-button>
-                    </div>
-                    <div class="by-flex by-m-t-20">
-                        <div class="by-flex">
-                            <span class="by-m-r-10">{{ $t('Projects.Analysis') }}</span>
-                            <a-select
-                                v-model="analysisState"
-                                class="analysis"
-                                @change="handleAnalysisChange"
-                            >
-                                <a-select-option
-                                    v-for="(item, i) in analysisOptions"
-                                    :value="item.value"
-                                    :key="i"
-                                >
-                                    {{ $t(`Projects.${item.label}`) }}
-                                </a-select-option>
-                            </a-select>
-                        </div>
-                        <div class="by-m-l-45 by-flex">
-                            <span class="by-m-r-10">{{ $t('Projects.Suppressed') }}</span>
-                            <a-switch
-                                v-model="isSuppressed"
-                                checked-children="是"
-                                un-checked-children="否"
-                                @change="onSuppressChange"
-                            />
-                        </div>
-                    </div>
-                </div>
+              <div slot="expandedRowRender" slot-scope="record">
+                <policy-expanded-content  ref="PolicyExpanded" :record="record"></policy-expanded-content>
+              </div>
+<!--                <div slot="expandedRowRender" slot-scope="record" style="margin: 0">-->
+<!--                    <div class="by-flex by-row-between by-col-top">-->
+<!--                        <div class="disabled-textarea by-m-r-20">-->
+<!--                            <div class="textarea-label">{{ $t('Projects.Condition') }}</div>-->
+<!--                            <a-input-->
+<!--                                :defaultValue="getConditionVal(record.policyCondition)"-->
+<!--                                type="textarea"-->
+<!--                                disabled-->
+<!--                                :rows="6"-->
+<!--                            ></a-input>-->
+<!--                        </div>-->
+<!--                        <div class="disabled-textarea">-->
+<!--                            <div class="textarea-label">{{ $t('Projects.AuditTrail') }}</div>-->
+<!--                            <a-input-->
+<!--                                :defaultValue="getAuditVal(record)"-->
+<!--                                v-model="commentsData"-->
+<!--                                type="textarea"-->
+<!--                                disabled-->
+<!--                                :rows="6"-->
+<!--                            ></a-input>-->
+<!--                        </div>-->
+<!--                    </div>-->
+<!--                    <div class="commit by-m-t-20">-->
+<!--                        <div class="commit-label">{{ $t('Projects.Commit') }}</div>-->
+<!--                        <a-input-->
+<!--                            v-model="commit"-->
+<!--                            :placeholder="$t('Projects.CommitPlaceholder')"-->
+<!--                            type="textarea"-->
+<!--                            :rows="6"-->
+<!--                            class="by-m-t-10 by-m-b-10"-->
+<!--                            @change="handleChange"-->
+<!--                        ></a-input>-->
+<!--                        <a-button class="add-commit" @click="addCommit(record)">{{ $t('Projects.AddCommit') }}</a-button>-->
+<!--                    </div>-->
+<!--                    <div class="by-flex by-m-t-20">-->
+<!--                        <div class="by-flex">-->
+<!--                            <span class="by-m-r-10">{{ $t('Projects.Analysis') }}</span>-->
+<!--                            <a-select-->
+<!--                                v-model="analysisState"-->
+<!--                                class="analysis"-->
+<!--                                @change="handleAnalysisChange"-->
+<!--                            >-->
+<!--                                <a-select-option-->
+<!--                                    v-for="(item, i) in analysisOptions"-->
+<!--                                    :value="item.value"-->
+<!--                                    :key="i"-->
+<!--                                >-->
+<!--                                    {{ $t(`Projects.${item.label}`) }}-->
+<!--                                </a-select-option>-->
+<!--                            </a-select>-->
+<!--                        </div>-->
+<!--                        <div class="by-m-l-45 by-flex">-->
+<!--                            <span class="by-m-r-10">{{ $t('Projects.Suppressed') }}</span>-->
+<!--                            <a-switch-->
+<!--                                v-model="isSuppressed"-->
+<!--                                checked-children="是"-->
+<!--                                un-checked-children="否"-->
+<!--                                @change="onSuppressChange"-->
+<!--                            />-->
+<!--                        </div>-->
+<!--                    </div>-->
+<!--                </div>-->
             </a-table>
         </a-card>
     </div>
@@ -121,9 +124,11 @@
 import {addViolationAnalysis, getViolationProjects} from "@/api/projects.js"
 import { formatTimestamp } from "@/utils/util.js"
 import {addProjectToPolicy} from "@/api/policy";
+import PolicyExpandedContent from "@/views/ComponentAnalysis/Projects/Components/PolicyExpandedContent.vue";
+import VulnExpandedContent from "@/views/ComponentAnalysis/Projects/Components/VulnExpandedContent.vue";
 
 export default {
-    components: {},
+    components: {VulnExpandedContent, PolicyExpandedContent},
     computed: {
         i18nColumns() {
             return this.columns.map((column) => {
@@ -374,28 +379,28 @@ ${item.comment}
             });
         },
 
-        // handleExpand(expanded, record) {
-        //     if (expanded) {
-        //          console.log("record", record);
-        //          console.log("expanded", expanded);
-        //         // // 在展开时设置表单的初始值
-        //         // this.violationRowData = record;
-        //         // this.analysisRowData = record.analysis ? record.analysis : {};
-        //         // if (!this.analysisRowData || !this.analysisRowData.analysisComments) {
-        //         //     return;
-        //         // }
-        //         // let comment = ''
-        //     }
-        // },
-        handleExpandedRowsChange(expandedRowKeys){
-            console.log("expandedRowKeys", expandedRowKeys);
-            this.projectsData.filter(item => {
-                if (item.uuid === expandedRowKeys[expandedRowKeys.length - 1]) {
-                    this.violationRowData = item;
-                    this.analysisRowData = item.analysis ? item.analysis : {};
-                  }
-            })
+        handleExpand(expanded, record) {
+            if (expanded) {
+              this.$nextTick(() => {
+                console.log(this.$refs.PolicyExpanded)
+                this.$refs.PolicyExpanded.open()
+              });
+            }
         },
+        // handleExpandedRowsChange(expandedRowKeys){
+        //     // console.log("expandedRowKeys", expandedRowKeys);
+        //
+        //   this.$nextTick(() => {
+        //     console.log(this.$refs.PolicyExpanded)
+        //    let data = this.projectsData.filter(item => {
+        //       if (item.uuid === expandedRowKeys[expandedRowKeys.length - 1]) {
+        //         this.violationRowData = item;
+        //         this.analysisRowData = item.analysis ? item.analysis : {};
+        //       }
+        //     })
+        //     this.$refs.PolicyExpanded.open(expandedRowKeys)
+        //   });
+        // },
         handleAnalysisChange(value){
             this.analysisState = value;
             let data = {

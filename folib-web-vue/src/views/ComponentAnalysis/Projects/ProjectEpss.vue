@@ -184,11 +184,11 @@ export default {
         },
         handleGoCom(row) {
             console.log(row)
-            this.$router.push(`/componentsDetail/${row.component.uuid}`)
+            this.$router.push(`/componentDetail/${row.component.uuid}`)
         },
 
         handleGoVul(row) {
-            this.$router.push(`/vulnerabilitiesDetail/${row.vulnerability.source}/${row.vulnerability.vulnId}`)
+            this.$router.push(`/vulnerabilities/vulnerabilitiesDetail/${row.vulnerability.vulnId}?source=2`)
         },
     },
 }
