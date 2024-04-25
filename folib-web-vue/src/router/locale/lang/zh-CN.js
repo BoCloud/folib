@@ -9,6 +9,7 @@ export default {
     'SeniorOperations': '高级运维',
     'ProductAnalysis': '制品分析',
     'OpenSourceGovernance': '制品分析',
+    'BOMAnalysis': 'BOM分析',
     'VulnerabilityDatabase': '漏洞库',
     'CertificateStore': '证书库',
     'StorageAnalysis': '存储分析',
@@ -27,4 +28,9 @@ export default {
     'PromptInformation': '提示信息',
     'upgradePremiumVersion': '此功能为高级版尊享，如需体验，请升级为高级版',
     'Well': '好的',
+    //bom start
+    'ProjectsAnalysis': '项目分析',
+    'ProjectsAnalysisDetail': '项目分析详情',
+    'ProjectsDetails': '项目详情',
+    //bom end
 }

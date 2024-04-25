@@ -58,7 +58,10 @@ request.interceptors.request.use((config) => {
     const hasWordDependency = config.url.includes("/dependency");
     // 有/dependency
     if (hasWordDependency) {
-      config.headers["X-Api-Key"] = "pheWYMqsYbJOaOQlDI48mIvOPI1d39ks";
+      const foEyesConfig = localStorage.getItem("FOEYES_CONFIG")
+      if (foEyesConfig) {
+        config.headers["X-Api-Key"] = JSON.parse(foEyesConfig).accessKey
+      }
     } else {
       config.headers[ACCESS_TOKEN] = "Bearer " + token;
     }

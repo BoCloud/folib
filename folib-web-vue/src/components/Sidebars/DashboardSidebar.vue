@@ -46,6 +46,14 @@
           <span class="label">{{ $t('Sidebars.ProductAnalysis') }}</span>
         </router-link>
       </a-menu-item>
+      <a-menu-item v-if="(this.userInfo.roles.indexOf('ADMIN') > -1 || this.userInfo.roles.indexOf('OPEN_SOURCE_MANAGE') > -1) && foeyesEnable">
+        <router-link to="/projects">
+          <span class="icon">
+            <a-icon type="profile" theme="filled" class="m-0" />
+          </span>
+          <span class="label">{{ $t('Sidebars.BOMAnalysis') }}</span>
+        </router-link>
+      </a-menu-item>
       <a-menu-item v-if="this.userInfo.roles.indexOf('ADMIN') > -1 || this.userInfo.roles.indexOf('OPEN_SOURCE_MANAGE') > -1">
         <router-link to="/components">
           <span class="icon">
@@ -141,6 +149,9 @@
 <script>
 import store from "@/store";
 import { hasRole, isAdmin, isAnonymous, isLogin } from "@/utils/permission";
+import {
+  getCacheConfig
+} from "@/api/foEyes";
 export default {
   props: {
     // Sidebar collapsed status.
@@ -166,11 +177,13 @@ export default {
       rootSubmenuKeys: ["dashboards", "pages", "applications", "ecommerce", "authentication", "basic", "components", "changelog"],
       openKeys: this.$route.meta.sidebarMap,
       userInfo: {},
-      instanceName:sessionStorage.getItem("instanceName")||""
+      instanceName:sessionStorage.getItem("instanceName")||"",
+      foeyesEnable: false
     };
   },
   created() {
     this.userInfo = store.state.user;
+    this.getFoEyesEnable()
   },
   methods: {
     onOpenChange(openKeys) {
@@ -181,7 +194,14 @@ export default {
       } else {
         this.openKeys = latestOpenKey ? [latestOpenKey] : [];
       }
+      this.getFoEyesEnable()
     },
+    getFoEyesEnable() {
+      const cacheConfig = getCacheConfig()
+      if (cacheConfig) {
+        this.foeyesEnable = cacheConfig.enable
+      }
+    }
   },
 };
 </script>

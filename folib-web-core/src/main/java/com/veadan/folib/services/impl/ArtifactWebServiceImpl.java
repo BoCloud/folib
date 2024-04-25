@@ -17,7 +17,6 @@ import com.fasterxml.jackson.dataformat.xml.XmlMapper;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.sun.management.HotSpotDiagnosticMXBean;
-import com.veadan.folib.artifact.MavenArtifactUtils;
 import com.veadan.folib.artifact.coordinates.DockerArtifactCoordinates;
 import com.veadan.folib.artifact.coordinates.MavenArtifactCoordinates;
 import com.veadan.folib.authorization.dto.Role;
@@ -26,12 +25,16 @@ import com.veadan.folib.cluster.SyncMetadataEnum;
 import com.veadan.folib.components.DistributedLockComponent;
 import com.veadan.folib.components.artifact.ArtifactComponent;
 import com.veadan.folib.components.layout.DockerComponent;
+import com.veadan.folib.components.thirdparty.foeyes.FoEyesComponent;
+import com.veadan.folib.components.thirdparty.foeyes.enums.UploadStatusEnum;
 import com.veadan.folib.configuration.ConfigurationUtils;
 import com.veadan.folib.configuration.MutableMetadataConfiguration;
 import com.veadan.folib.constant.GlobalConstants;
 import com.veadan.folib.controllers.ResponseMessage;
 import com.veadan.folib.controllers.cluster.dto.SyncMetadataDto;
 import com.veadan.folib.domain.*;
+import com.veadan.folib.domain.bom.Bom;
+import com.veadan.folib.domain.bom.FoEyes;
 import com.veadan.folib.domain.thirdparty.ArtifactInfo;
 import com.veadan.folib.domain.thirdparty.ArtifactQuery;
 import com.veadan.folib.entity.Dict;
@@ -76,8 +79,6 @@ import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
-import org.apache.maven.artifact.ArtifactUtils;
-import org.apache.maven.index.artifact.Gav;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -181,6 +182,9 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
     @Inject
     @Lazy
     private DockerComponent dockerComponent;
+
+    @Inject
+    private FoEyesComponent foEyesComponent;
 
     @Value("${folib.temp}")
     private String tempPath;
@@ -945,9 +949,7 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
 
     @Override
     public void bomUpload(RepositoryPath repositoryPath, MultipartFile file) {
-        String filename = FilenameUtils.getName(repositoryPath.getFileName().toString());
-        String filePath = "." + filename + ".foLibrary-metadata/bom.json";
-        RepositoryPath bomRepositoryPath = repositoryPath.getParent().resolve(filePath);
+        RepositoryPath bomRepositoryPath = artifactComponent.getBomRepositoryPath(repositoryPath);
         try {
             log.info("Upload bom repositoryPath [{}] bomPath [{}]", repositoryPath.toString(), bomRepositoryPath.toString());
             Files.createDirectories(bomRepositoryPath.getParent());
@@ -959,19 +961,27 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
                 while ((charsRead = reader.read(buffer, 0, batchSize)) != -1) {
                     stringBuilder.append(buffer, 0, charsRead);
                 }
-                String bom = stringBuilder.toString();
-                if (!JSONUtil.isJson(bom)) {
+                String bomContent = stringBuilder.toString();
+                if (!JSONUtil.isJson(bomContent)) {
                     throw new IllegalArgumentException("BOM content must be in JSON format");
                 }
-                JSONObject bomJson = new JSONObject();
-                bomJson.put("bomId", "");
-                bomJson.put("bomValue", JSONObject.parseObject(bom));
-                Files.write(bomRepositoryPath, bomJson.toJSONString().getBytes(StandardCharsets.UTF_8), StandardOpenOption.TRUNCATE_EXISTING, StandardOpenOption.CREATE);
+                FoEyes foEyes = FoEyes.builder().uploadStatus(UploadStatusEnum.WAIT_UPLOAD.getType()).build();
+                Bom bom = Bom.builder().bomId("").bomValue(JSONObject.parseObject(bomContent)).foEyes(foEyes).build();
+                Files.write(bomRepositoryPath, JSONObject.toJSONString(bom).getBytes(StandardCharsets.UTF_8), StandardOpenOption.TRUNCATE_EXISTING, StandardOpenOption.CREATE);
+            }
+            if (foEyesComponent.enable()) {
+                //将SBOM传给foeyes
+                foEyesComponent.bomUpload(repositoryPath, bomRepositoryPath);
             }
         } catch (Exception ex) {
             log.error(ExceptionUtils.getStackTrace(ex));
             throw new RuntimeException(ex.getMessage());
         }
+    }
+
+    @Override
+    public boolean foEyesEnable() {
+        return foEyesComponent.enable();
     }
 
     @Override

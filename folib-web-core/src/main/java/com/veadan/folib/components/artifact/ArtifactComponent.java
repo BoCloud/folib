@@ -1515,4 +1515,10 @@ public class ArtifactComponent {
         return String.format("%s/%s/%s/%s", groupId, artifactId, version, calcLatestSnapshotVersion(storageId, repositoryId, groupId, artifactId, version, artifactName));
     }
 
+    public RepositoryPath getBomRepositoryPath(RepositoryPath repositoryPath) {
+        String filename = FilenameUtils.getName(repositoryPath.getFileName().toString());
+        String filePath = "." + filename + ".foLibrary-metadata/bom.json";
+        return repositoryPath.resolveSibling(filePath);
+    }
+
 }

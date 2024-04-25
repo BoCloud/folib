@@ -1,0 +1,286 @@
+/* 全局设置样式 */
+.by-relative,
+.by-rela {
+  position: relative;
+}
+
+.by-absolute,
+.by-abso {
+  position: absolute;
+}
+
+.by-float-left {
+  float: left;
+}
+
+.by-float-right {
+  float: right;
+}
+
+.by-inline-block {
+  display: inline-block;
+}
+
+// 自定义z-index
+@for $i from 0 to 500 {
+  .by-z-index-#{$i} {
+    z-index: $i;
+  }
+}
+
+image {
+  display: inline-block;
+}
+
+text {
+  box-sizing: border-box;
+}
+
+.by-font-normal {
+  font-size: 14px;
+}
+
+.by-font-xs {
+  font-size: 22px;
+}
+
+.by-font-sm {
+  font-size: 26px;
+}
+
+.by-font-md {
+  font-size: 28px;
+}
+
+.by-font-lg {
+  font-size: 30px;
+}
+
+.by-font-xl {
+  font-size: 34px;
+}
+
+.by-flex {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+}
+
+.by-flex-wrap {
+  flex-wrap: wrap;
+}
+
+.by-flex-nowrap {
+  flex-wrap: nowrap;
+}
+
+.by-col-center {
+  align-items: center;
+}
+
+.by-col-top {
+  align-items: flex-start;
+}
+
+.by-col-bottom {
+  align-items: flex-end;
+}
+
+.by-col-stretch {
+  align-items: stretch;
+}
+
+.by-row-center {
+  justify-content: center;
+}
+
+.by-row-left {
+  justify-content: flex-start;
+}
+
+.by-row-right {
+  justify-content: flex-end;
+}
+
+.by-row-between {
+  justify-content: space-between;
+}
+
+.by-row-around {
+  justify-content: space-around;
+}
+
+.by-text-left {
+  text-align: left;
+}
+
+.by-text-center {
+  text-align: center;
+}
+
+.by-text-right {
+  text-align: right;
+}
+
+.by-flex-col {
+  display: flex;
+  flex-direction: column;
+}
+
+// 定义flex等分
+@for $i from 0 through 24 {
+  .by-flex-#{$i} {
+    flex: $i;
+  }
+}
+
+// 定义字体(px)单位
+@for $i from 9 to 40 {
+  .by-font-#{$i} {
+    font-size: $i + px;
+  }
+}
+
+// 定义字体(rem)单位
+@for $i from 9 to 40 {
+  .by-f-r-#{$i} {
+    font-size: $i*0.1 + rem;
+  }
+}
+
+// 定义字体粗细
+@for $i from 100 to 900 {
+  @if $i % 100 == 0 {
+    .by-f-w-#{$i} {
+      font-weight: $i;
+    }
+  }
+}
+
+@for $i from 0 to 1000 {
+  // 定义宽度
+  .by-w-#{$i} {
+    width: $i + px !important;
+  }
+  // 定义最小宽度
+  .by-w-min-#{$i} {
+    min-width: $i + px !important;
+  }
+  // 定义最大宽度
+  .by-w-max-#{$i} {
+    max-width: $i + px !important;
+  }
+  // 定义高度
+  .by-h-#{$i} {
+    height: $i + px !important;
+  }
+  // 定义最小高度
+  .by-h-min-#{$i} {
+    min-height: $i + px !important;
+  }
+  // 定义最大高度
+  .by-h-max-#{$i} {
+    max-height: $i + px !important;
+  }
+  // 定义旋转角度
+  .by-rotate-z-#{$i} {
+    transform: rotateZ($i + deg);
+  }
+  // line-height
+  .by-l-h-#{$i} {
+    line-height: $i + px !important;
+  }
+  // top
+  .by-top-#{$i} {
+    top: $i + px !important;
+  }
+}
+
+@for $i from 0 to 101 {
+  // 定义百分比宽度
+  .by-w-per-#{$i} {
+    width: percentage($i*0.01) !important;
+  }
+  // 定义百分比高度
+  .by-h-per-#{$i} {
+    height: percentage($i*0.01) !important;
+  }
+}
+
+// 自定义弹性高度
+@for $i from 0 to 500 {
+  .card-height-class-#{$i} {
+    height: calc(var(--vh) * 100 - #{$i + px}) !important;
+  }
+}
+
+// 定义内外边距，历遍1-180
+@for $i from 0 through 180 {
+  // 得出：by-margin-30或者by-m-30
+  .by-margin-#{$i}, .by-m-#{$i} {
+    margin: $i + px !important;
+  }
+
+  // 得出：by-padding-30或者by-p-30
+  .by-padding-#{$i}, .by-p-#{$i} {
+    padding: $i + px !important;
+  }
+
+  @each $short, $long in l left, t top, r right, b bottom {
+    // 缩写版，结果如： by-m-l-30
+    // 定义外边距
+    .by-m-#{$short}-#{$i} {
+      margin-#{$long}: $i + px !important;
+    }
+
+    // 定义内边距
+    .by-p-#{$short}-#{$i} {
+      padding-#{$long}: $i + px !important;
+    }
+
+    // 完整版，结果如：by-margin-left-30
+    // 定义外边距
+    .by-margin-#{$long}-#{$i} {
+      margin-#{$long}: $i + px !important;
+    }
+
+    // 定义内边距
+    .by-padding-#{$long}-#{$i} {
+      padding-#{$long}: $i + px !important;
+    }
+  }
+}
+
+.by-line-1 {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.by-hidden {
+  overflow: hidden;
+}
+
+.by-pointer {
+  cursor: pointer;
+}
+
+//伪类样式
+@mixin Pseudo($width, $height, $top, $right, $bot, $left) {
+  content: '';
+  position: absolute;
+  width: $width;
+  height: $height;
+  @if($top) {
+    top: $top;
+  }
+  @if($right) {
+    right: $right;
+  }
+  @if($bot) {
+    bottom: $bot;
+  }
+  @if($left) {
+    left: $left;
+  }
+}

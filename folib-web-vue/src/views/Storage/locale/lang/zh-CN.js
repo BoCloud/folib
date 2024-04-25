@@ -154,6 +154,7 @@ export default {
     'PermissionSetting': '权限设置',
     'TimingPolicy': '定时策略',
     'FederatedRepository': '联邦仓库',
+    'Scan': '扫描',
     // LibView.vue
     'Details': '详情',
     'Statistics': '统计',

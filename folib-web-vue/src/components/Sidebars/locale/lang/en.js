@@ -3,6 +3,7 @@ export default {
     'ProductWarehouse': 'Artifact repository',
     'SecurityScanning': 'Security scanning',
     'OpenSourceGovernance': 'Artifact analysis',
+    'BOMAnalysis': 'BOM analysis',
     'ProductAnalysis': 'Artifact analysis',
     'OpenSourceComponents': 'Open source components',
     'VulnerabilityDatabase': 'Vulnerability database',

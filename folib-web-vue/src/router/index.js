@@ -224,6 +224,45 @@ let routes = [
     },
     component: () => import("../views/ComponentAnalysis/Artifacts/index.vue"),
   },
+	{
+		path: "/projects",
+		name: "projects",
+		layout: "dashboard",
+		meta: {
+			title: 'router.BOMAnalysis',
+      sidebarMap: ['router.OpenSourceGovernance', 'router.BOMAnalysis'],
+      breadcrumbs: ['router.OpenSourceGovernance', 'router.BOMAnalysis'],
+		},
+		component: () => import("../views/ComponentAnalysis/Projects/index.vue"),
+	},
+	{
+		path: "/projectsDetail/:id",
+		name: "projectsDetail",
+		layout: "dashboard",
+		meta: {
+			title: 'router.ProjectsAnalysisDetail',
+			sidebarMap: ['router.Homepage', 'router.ProjectsAnalysis', 'router.ProjectsDetails'],
+			breadcrumbs: ['router.Homepage', 'router.ProjectsAnalysis', 'router.ProjectsDetails'],
+			permission: 'VIEW_PORTFOLIO',
+			activeMenu: "/projects"
+
+
+		},
+		component: () => import("../views/ComponentAnalysis/Projects/Detail.vue"),
+	},
+	{
+		path: "/componentDetail/:id",
+		name: "componentDetail",
+		layout: "dashboard",
+		meta: {
+			title: 'router.ComponentDetails',
+			sidebarMap: ['router.Homepage', 'router.ProjectsAnalysis', 'router.ComponentDetails'],
+			breadcrumbs: ['router.Homepage', 'router.ProjectsAnalysis', 'router.ComponentDetails'],
+			permission: 'VIEW_PORTFOLIO',
+			activeMenu: "/projects"
+		},
+		component: () => import("../views/ComponentAnalysis/Projects/ComponentDetail.vue"),
+	},
   {
     path: "/artifacts/artifactsDetail",
     name: "artifactsDetail",

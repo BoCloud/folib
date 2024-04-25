@@ -9,6 +9,7 @@ export default {
     'SeniorOperations': 'Senior Operations',
     'ProductAnalysis': 'Artifact analysis',
     'OpenSourceGovernance': 'Artifact analysis',
+    'BOMAnalysis': 'BOM analysis',
     'VulnerabilityDatabase': 'Vulnerability database',
     'CertificateStore': 'Certificate store',
     'StorageAnalysis': 'Storage analysis',
@@ -27,4 +28,9 @@ export default {
     'PromptInformation': 'Prompt information',
     'upgradePremiumVersion': 'This feature is for the premium version, if you need to experience, please upgrade to the premium version',
     'Well': 'Well',
+    //bom start
+    'ProjectsAnalysis': 'Projects Analysis',
+    'ProjectsAnalysisDetail': 'Projects Analysis Detail',
+    'ProjectsDetails': 'Projects details',
+    //bom end
 }

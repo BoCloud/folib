@@ -155,6 +155,7 @@ export default {
     'PermissionSetting': 'Permission setting',
     'TimingPolicy': 'Timing policy',
     'FederatedRepository': 'Federated repository',
+    'Scan': 'Scan',
     // LibView.vue
     'Details': 'Details',
     'Statistics': 'Statistics',

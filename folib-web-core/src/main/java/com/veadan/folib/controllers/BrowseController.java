@@ -1,20 +1,21 @@
 package com.veadan.folib.controllers;
 
 import cn.hutool.core.date.DateUtil;
-import cn.hutool.extra.spring.SpringUtil;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import com.google.common.collect.Lists;
 import com.veadan.folib.artifact.coordinates.DockerArtifactCoordinates;
 import com.veadan.folib.booters.PropertiesBooter;
-import com.veadan.folib.cloud.storage.s3fs.S3FileSystem;
-import com.veadan.folib.cloud.storage.s3fs.S3Path;
+import com.veadan.folib.components.artifact.ArtifactComponent;
+import com.veadan.folib.components.thirdparty.foeyes.enums.UploadStatusEnum;
 import com.veadan.folib.dependency.snippet.CodeSnippet;
 import com.veadan.folib.dependency.snippet.SnippetGenerator;
 import com.veadan.folib.domain.Artifact;
 import com.veadan.folib.domain.DirectoryListing;
 import com.veadan.folib.domain.FileContent;
+import com.veadan.folib.domain.bom.Bom;
+import com.veadan.folib.domain.bom.FoEyes;
 import com.veadan.folib.providers.io.RepositoryFiles;
 import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.providers.layout.DockerLayoutProvider;
@@ -33,7 +34,6 @@ import com.veadan.folib.utils.TreeUtil;
 import com.veadan.folib.web.RepositoryMapping;
 import io.swagger.annotations.*;
 import org.apache.commons.collections4.CollectionUtils;
-import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.slf4j.Logger;
@@ -53,12 +53,8 @@ import javax.inject.Inject;
 import javax.servlet.http.HttpServletRequest;
 import java.io.File;
 import java.io.IOException;
-import java.net.URL;
-import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.SimpleFileVisitor;
-import java.nio.file.attribute.BasicFileAttributes;
 import java.text.SimpleDateFormat;
 import java.time.ZoneId;
 import java.util.*;
@@ -102,6 +98,10 @@ public class BrowseController
     @Inject
     @Lazy
     private ArtifactService artifactService;
+
+    @Inject
+    @Lazy
+    private ArtifactComponent artifactComponent;
 
     @GetMapping(value = "/getArtifact/{storageId}/{repositoryId}/{artifactPath:.+}")
     public ResponseEntity getArtifact(@PathVariable String artifactPath,
@@ -152,6 +152,7 @@ public class BrowseController
                 jsonObject.put("sha", artifact.getChecksums().get("SHA-1"));
                 jsonObject.put("md5", artifact.getChecksums().get("MD5"));
                 jsonObject.put("artifact", artifact);
+                getBom(jsonObject, repositoryPath);
             }
         } else {
             RepositoryPath repositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, artifactPath);
@@ -165,7 +166,7 @@ public class BrowseController
                 jsonObject.put("artifact", artifact);
                 String manifestString = Files.readString(versionPath);
 
-                String imageName = getBaseUrlSimple(storageId, repositoryId)  + "/" + dockerArtifactCoordinates.getIMAGE_NAME();
+                String imageName = getBaseUrlSimple(storageId, repositoryId) + "/" + dockerArtifactCoordinates.getIMAGE_NAME();
                 String code = "docker  pull  " + imageName;
                 CodeSnippet codeSnippet = new CodeSnippet("Docker", code);
                 List<CodeSnippet> snippets = new ArrayList<>();
@@ -211,6 +212,7 @@ public class BrowseController
                 jsonObject.put("lastModified", format);
                 jsonObject.put("size", size);
                 jsonObject.put("imageName", imageName);
+                getBom(jsonObject, versionPath);
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }
@@ -256,7 +258,8 @@ public class BrowseController
                     directoryListing = directoryListingService.fromGroupRepositoryPath(repository, repositoryPath);
                 } else {
                     directoryListing = directoryListingService.fromRepositoryPath(repositoryPath);
-                }                List<FileContent> imageDirList = Lists.newArrayList(), directories = Lists.newArrayList();
+                }
+                List<FileContent> imageDirList = Lists.newArrayList(), directories = Lists.newArrayList();
                 directoryListing.getDirectories().forEach(f -> {
                     try (Stream<Path> pathStream = Files.list(repositoryPathResolver.resolve(f.getStorageId(), f.getRepositoryId(), f.getArtifactPath()))) {
                         if (pathStream.anyMatch(DockerArtifactCoordinates::isManifestPath)) {
@@ -458,6 +461,30 @@ public class BrowseController
             logger.warn(ExceptionUtils.getStackTrace(ex));
         }
         return null;
+    }
+
+    private void getBom(JSONObject data, RepositoryPath repositoryPath) {
+        try {
+            data.put("bom", false);
+            RepositoryPath bomRepositoryPath = artifactComponent.getBomRepositoryPath(repositoryPath);
+            if (!Files.exists(bomRepositoryPath)) {
+                return;
+            }
+            Bom bom = JSONObject.parseObject(Files.readString(bomRepositoryPath), Bom.class);
+            if (Objects.isNull(bom)) {
+                return;
+            }
+            FoEyes foEyes = bom.getFoEyes();
+            if (Objects.isNull(foEyes)) {
+                return;
+            }
+            if (!UploadStatusEnum.UPLOAD_SUCCESS.getType().equals(foEyes.getUploadStatus())) {
+                return;
+            }
+            data.put("bom", true);
+        } catch (Exception ex) {
+            logger.error("Get repositoryPath [{}] bom info error [{}]", repositoryPath.toString(), ExceptionUtils.getStackTrace(ex));
+        }
     }
 
 }

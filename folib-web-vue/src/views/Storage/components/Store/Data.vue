@@ -264,6 +264,40 @@
           </a-descriptions-item>
         </a-descriptions>
       </a-tab-pane>
+      <a-tab-pane key="5" :tab="$t('Store.BomInformation')" v-if="currentFileDetial && currentFileDetial.artifact && currentFileDetial.bom">
+        <a-descriptions
+          title=""
+          :column="1"
+        >
+          <a-descriptions-item label="">
+            <a @click="handleGoDetail()">{{ $t('Store.ViewDetail') }}</a>
+          </a-descriptions-item>
+          <a-descriptions-item :label="$t('Store.Seriousness')">
+            <a-tag color="#f86c6b"> {{ projectInfo.metrics.critical }} </a-tag>
+          </a-descriptions-item>
+          <a-descriptions-item :label="$t('Store.HighRisk')">
+            <a-tag color="#fd8c00"> {{ projectInfo.metrics.high }}  </a-tag>
+          </a-descriptions-item>
+          <a-descriptions-item :label="$t('Store.MediumRisk')">
+            <a-tag color="#ffc107"> {{ projectInfo.metrics.medium }} </a-tag>
+          </a-descriptions-item>
+          <a-descriptions-item :label="$t('Store.LowRisk')">
+            <a-tag color="#4dbd74"> {{ projectInfo.metrics.low }} </a-tag>
+          </a-descriptions-item>
+          <a-descriptions-item :label="$t('Store.Unassigned')">
+            <a-tag color="#777777"> {{ projectInfo.metrics.unassigned }} </a-tag>
+          </a-descriptions-item>
+          <a-descriptions-item :label="$t('Store.VulnerabilitiesNum')">
+            <a-tag color="#FF4A2B"> {{ projectInfo.metrics.vulnerabilities }} </a-tag>
+          </a-descriptions-item>
+          <a-descriptions-item :label="$t('Store.RiskScore')">
+            <a-tag color="#21A8D8"> {{ projectInfo.metrics.inheritedRiskScore }} </a-tag>
+          </a-descriptions-item>
+          <a-descriptions-item :label="$t('Store.NumberOfComponents')">
+            <a-tag color="#0599FE"> {{ projectInfo.metrics.components }} </a-tag>
+          </a-descriptions-item>
+        </a-descriptions>
+      </a-tab-pane>
     </a-tabs>
 
     <hr class="gradient-line" />
@@ -354,6 +388,7 @@
 import store from "store";
 import { fileSizeConver, formateDate } from "@/utils/layoutUtil";
 import { getArtifact } from "@/api/folib";
+import { getProjectInfo } from "@/api/foEyes";
 import {  deleteArtifactMetadata, conanInfo, conanPackageInfo } from "@/api/artifact";
 import { getMetadataConfiguration } from '@/api/settings'
 import { PrismEditor } from "vue-prism-editor";
@@ -495,7 +530,21 @@ export default {
       },
       conanPackageInfoVisible: false,
       selectedTag: 0,
-      selectedColor: "#2db7f5"
+      selectedColor: "#2db7f5",
+      projectInfo: {
+        metrics: {
+          critical: 0,
+          high: 0,
+          medium: 0,
+          low: 0,
+          unassigned: 0,
+          vulnerabilities: 0,
+          vulnerableComponents: 0,
+          components: 0,
+          suppressed: 0,
+          inheritedRiskScore: 0,
+        }
+      }
     };
   },
   computed: {
@@ -521,6 +570,7 @@ export default {
         this.changeCodeType(val.snippets[0])
       }
       this.metadataShow()
+      this.queryProjectInfo()
     },
     'currentTreeNode.artifactPath': function (newval, oldVal) {
       this.conanInfoReset()
@@ -770,6 +820,19 @@ export default {
         this.selectedTag = index
         this.$forceUpdate()
       })
+    },
+    queryProjectInfo() {
+      if (!this.currentFileDetial || !this.currentFileDetial.artifact) {
+        return false
+      }
+      let artifact = this.currentFileDetial.artifact
+      getProjectInfo(artifact.storageId, artifact.repositoryId, artifact.artifactPath).then((res) => {
+        this.projectInfo = res
+      })
+    },
+    handleGoDetail() {
+      const routeUrl = this.$router.resolve({path: `/projectsDetail/${this.projectInfo.uuid}`})
+      window.open(routeUrl.href, '_blank')
     },
   },
 };

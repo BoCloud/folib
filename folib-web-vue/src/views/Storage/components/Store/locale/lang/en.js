@@ -120,6 +120,7 @@ export default {
     'MetadataValues': 'Metadata values',
     'Operations': 'Operations',
     'DeletedProductSuccess': 'Deleted product metadata successfully',
+    'BomInformation': 'Bom information',
     // UseDoc
     'Instructions': 'Instructions for use',
     'GlobalConfiguration': ' global configuration',
@@ -255,4 +256,9 @@ export default {
     'EndDate': 'End date',
     'SelectDate': 'Select date',
     'DisplayQuantity': 'Display quantity',
+    'Unassigned': 'Unassigned',
+    'RiskScore': 'Risk Score',
+    'NumberOfComponents': 'Number of components',
+    'VulnerabilitiesNum': 'Number of vulnerabilities',
+    'ViewDetail': 'View detail',
 }

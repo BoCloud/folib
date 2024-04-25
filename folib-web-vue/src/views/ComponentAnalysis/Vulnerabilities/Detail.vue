@@ -40,7 +40,7 @@
       <a-tab-pane key="1" :tab="$t('Vulnerabilities.GeneralView')">
         <VulnerabilitiesOverView v-if="tabActive == 1" :vulnerability="vulnerability"></VulnerabilitiesOverView>
       </a-tab-pane>
-      <a-tab-pane key="2" :tab="$t('Vulnerabilities.AffectedProducts')">
+      <a-tab-pane key="2" :tab="$t('Vulnerabilities.AffectedProducts')" v-if="source!=2">
         <AffectedArtifacts v-if="tabActive == 2"></AffectedArtifacts>
       </a-tab-pane>
     </a-tabs>
@@ -59,8 +59,8 @@ export default {
     return {
       tabActive: 1,
       vulnerability: {},
-      source: null,
       vulnId: null,
+      source: 1,
     };
   },
   created() {
@@ -103,7 +103,9 @@ export default {
   },
   methods: {
     initialize() {
-      const id = this.$route.params.id;
+      const id = this.$route.params.id
+      const source = this.$route.query.source
+      this.source = source
       getVulnerabilityDetail(id).then((res) => {
         this.vulnerability = {}
         if (res) {

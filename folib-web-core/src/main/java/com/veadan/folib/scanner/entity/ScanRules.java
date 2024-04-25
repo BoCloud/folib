@@ -25,31 +25,58 @@ import java.io.Serializable;
 public class ScanRules implements Serializable {
 private static final long serialVersionUID = 1L;
 
-		//
+	/**
+	 * id
+	 */
 	@Id
 	@Column(name = "id")
 	private String id;
-	
-		//仓库名称
+
+	/**
+	 * 仓库名称
+	 */
 	@ApiModelProperty("仓库名称")
 	@Column(name = "repository")
 	private String repository;
-	
-		//存储空间
+
+	/**
+	 * 存储空间
+	 */
 	@ApiModelProperty("存储空间")
 	@Column(name = "storage")
 	private String storage;
-	
-		//是否扫描
+
+	/**
+	 * 是否扫描
+	 */
 	@ApiModelProperty("是否扫描")
 	@Column(name = "on_scan")
 	private Boolean onScan;
-	
-		//扫描规则
+
+	/**
+	 * bom扫描是否开启
+	 */
+	@ApiModelProperty("bom扫描是否开启")
+	@Column(name = "bom_on_scan")
+	private Boolean bomOnScan;
+
+	/**
+	 * 父项目id
+	 */
+	@ApiModelProperty("父项目id")
+	@Column(name = "project_uuid")
+	private String projectUuid;
+
+	/**
+	 * 扫描规则
+	 */
 	@ApiModelProperty("扫描规则")
 	@Column(name = "scan_rule")
 	private String scanRule;
 
+	/**
+	 * layout
+	 */
 	@ApiModelProperty("layout")
 	@Column(name = "layout")
 	private String layout;

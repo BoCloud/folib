@@ -2,13 +2,17 @@ export default {
     // index.vue
     'groupNameQuery': '输入组名称查询',
     'componentNameQuery': '输入组件名称查询',
-    'versionQuery': '输入组件名称查询',
+    'versionQuery': '输入版本号查询',
     'ComponentName': '组件名称',
     'VersionNumber': '版本号',
     'Group': '组',
-    'Licence': '许可证',
+    'PackageURL': '包地址',
+    'SWID': '标签标识',
+    'ProjectName': '项目名称',
+    'RiskScore': '风险评分',
     'Vulnerability': '漏洞',
     'GeneralView': '总览',
+    'Licence': '许可证',
     // ComponentVulnerabilities.vue
     'ComponentVersion': '组件版本',
     'ComponentDescription': '组件描述',
@@ -40,5 +44,4 @@ export default {
     'IntroducingTime': '引入时间',
     'HighestVulnerabilityLevel': '最高漏洞等级',
     'RecommendedFixVersion': '建议修复版本',
-
 }
