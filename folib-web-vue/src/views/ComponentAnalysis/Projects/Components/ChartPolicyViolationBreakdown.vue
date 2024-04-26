@@ -6,7 +6,7 @@
       <div class="progress-group">
         <div class="progress-group-header">
           <a-icon type="alert" />
-          <span class="title">{{ $t("Projects.SecurityRisk") }}</span>
+          <span class="title ml-5">{{ $t("Projects.SecurityRisk") }}</span>
           <span class="ml-auto font-weight-bold"
             >{{ securityCount }} <span class="text-muted small">({{ securityPercent }}%)</span></span
           >
@@ -18,7 +18,7 @@
       <div class="progress-group">
         <div class="progress-group-header">
           <a-icon type="trophy" />
-          <span class="title">{{ $t("Projects.LicenseRisk") }}</span>
+          <span class="title ml-5">{{ $t("Projects.LicenseRisk") }}</span>
           <span class="ml-auto font-weight-bold"
             >{{ licenseCount }} <span class="text-muted small">({{ licensePercent }}%)</span></span
           >
@@ -30,7 +30,7 @@
       <div class="progress-group">
         <div class="progress-group-header">
           <a-icon type="select" />
-          <span class="title">{{ $t("Projects.OperationalRisk") }}</span>
+          <span class="title ml-5">{{ $t("Projects.OperationalRisk") }}</span>
           <span class="ml-auto font-weight-bold"
             >{{ operationalCount }} <span class="text-muted small">({{ operationalPercent }}%)</span></span
           >

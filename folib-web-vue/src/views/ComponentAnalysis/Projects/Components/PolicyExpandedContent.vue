@@ -117,11 +117,20 @@ export default {
 
     }
   },
+  created() {
+    this.open();
+  },
   methods: {
     formatTimestamp,
     open() {
       this.violationRowData = this.record;
       this.analysisRowData = this.record.analysis ? this.record.analysis : {};
+    },
+    clone(){
+      this.violationRowData = {};
+      this.analysisRowData = {};
+      this.commentsData = '';
+      this.analysisState='NOT_SET';
     },
     getConditionVal({subject, operator, value}) {
       return `subject == ${subject} && value ${operator} ${value}`

@@ -19,12 +19,9 @@
                 :loading="loading"
                 @change="handleChangeTable"
                 @expanded="handleExpand"
-                :pagination="{
-                    pageSize: queryParams.pageSize,
-                    current: queryParams.pageNumber,
-                    total: queryParams.total || 0,
-                    showLessItems: true,
-                }"
+                @expandedRowsChange="onExpandedRowsChange"
+                :expanded-row-keys="expandedRowKeys"
+                :pagination="pagination"
             >
                 <template slot="name" slot-scope="name, row">
                     <a-button type="link" @click="handleGoDetail(row)">
@@ -217,13 +214,29 @@ export default {
             isSuppressed: false,
             analysisRowData:{},
             violationRowData:{},
-            commentsData:''
+            commentsData:'',
+            expandedRowKeys: [],
+            pagination: {
+              pageSize: 10,
+              current: 1,
+              total: 0,
+              sortOrder: "",
+              sortName: "",
+              searchText: null,
+              showLessItems: true,
+            },
 
         }
 
     },
     created() {
         this.getData()
+    },
+    watch: {
+      // 监听分页变化，每当页码变化时自动关闭展开的行
+      'pagination.current'(newValue, oldValue) {
+        this.expandedRowKeys = [];
+      },
     },
     methods: {
         formatTimestamp,
@@ -236,62 +249,23 @@ export default {
                 this.projectsData = res.data
                 this.loading = false;
             })
-            // this.projectsData = [
-            //     {
-            //         type: "SECURITY",
-            //         uuid: "519ce9e2-a726-4836-a6fc-e28da3011116",
-            //         timestamp: 1710841338996,
-            //         policyCondition: {
-            //             subject: 'SEVERITY',
-            //             operator: 'IS_NOT',
-            //             value: 'LOW',
-            //             policy: {
-            //                 name: 'heiyou'
-            //             }
-            //         },
-            //         component: {
-            //             name: 'struts-core'
-            //         },
-            //         analysis: {
-            //             analysisState: "NOT_SET",
-            //             isSuppressed: false,
-            //             analysisComments: [
-            //                 {
-            //                     comment: "Unsuppressed",
-            //                     commenter: "admin",
-            //                     timestamp: 1711589754146
-            //                 },
-            //                 {
-            //                     comment: "Unsuppressed",
-            //                     commenter: "admin",
-            //                     timestamp: 1711589754146
-            //                 },
-            //                 {
-            //                     comment: "Unsuppressed",
-            //                     commenter: "admin",
-            //                     timestamp: 1711589754146
-            //                 },
-            //                 {
-            //                     comment: "Unsuppressed",
-            //                     commenter: "admin",
-            //                     timestamp: 1711589754146
-            //                 },
-            //             ]
-            //         }
-            //     }
-            // ]
+
+        },
+        onExpandedRowsChange(keys) {
+          // 更新展开的行的键值
+          this.expandedRowKeys = keys;
         },
         handleChangeTable(pagination, filters, sorter) {
             if (pagination) {
-                this.queryParams.pageNumber = pagination.current
+                this.pagination.current = pagination.current
             }
-            this.queryParams.sortName = sorter.field
+            this.pagination.sortName = sorter.field
             if (sorter && sorter.order === "descend") {
-                this.queryParams.sortOrder = "desc"
+                this.pagination.sortOrder = "desc"
             } else if (sorter && sorter.order === "ascend") {
-                this.queryParams.sortOrder = "asc"
+                this.pagination.sortOrder = "asc"
             } else {
-                this.queryParams.sortOrder = ""
+                this.pagination.sortOrder = ""
             }
             this.getData()
         },
@@ -382,9 +356,16 @@ ${item.comment}
         handleExpand(expanded, record) {
             if (expanded) {
               this.$nextTick(() => {
-                console.log(this.$refs.PolicyExpanded)
-                this.$refs.PolicyExpanded.open()
+                this.expandedRowKeys.push(record.key);
               });
+            }else {
+              this.$nextTick(() => {
+                this.$refs.PolicyExpanded.clone()
+              });
+              const index = this.expandedRowKeys.indexOf(record.key);
+              if (index !== -1) {
+                this.expandedRowKeys.splice(index, 1);
+              }
             }
         },
         // handleExpandedRowsChange(expandedRowKeys){

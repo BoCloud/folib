@@ -12,18 +12,16 @@
                 </a-col>
             </div>
             <a-table
-                rowKey="uuid"
+                :rowKey="getRowKey"
                 @expand="handleExpand"
                 class="mt-20"
                 :columns="i18nColumns"
                 :data-source="projectsData"
                 @change="handleChangeTable"
-                :pagination="{
-          pageSize: queryParams.pageSize,
-          current: queryParams.pageNumber,
-          total: queryParams.total || 0,
-          showLessItems: true,
-        }"
+                @expandedRowsChange="onExpandedRowsChange"
+                :expanded-row-keys="expandedRowKeys"
+                :pagination="pagination"
+
             >
                 <template slot="name" slot-scope="name, row">
                     <a-button type="link" @click="handleGoCom(row)">
@@ -89,6 +87,7 @@
               <div slot="expandedRowRender" slot-scope="record">
                 <vuln-expanded-content ref="VulnExpanded" :record="record"></vuln-expanded-content>
               </div>
+
 <!--                <div slot="expandedRowRender" slot-scope="record" style="margin: 0">-->
 <!--                    <div class="by-flex by-row-between by-col-top">-->
 <!--                        <div class="disabled-textarea by-m-r-20">-->
@@ -457,13 +456,37 @@ export default {
             analysisComments: [],
             commentsData: '',
             comment: '',
+          expandedRowKeys: [],
+          pagination: {
+            pageSize: 10,
+            current: 1,
+            total: 0,
+            sortOrder: "",
+            sortName: "",
+            searchText: null,
+            showLessItems: true,
+          },
         }
     },
-    created() {
-        this.getData()
+  created() {
+    this.getData()
+  },
+  watch: {
+    // 监听分页变化，每当页码变化时自动关闭展开的行
+    'pagination.current'(newValue, oldValue) {
+      this.expandedRowKeys = [];
     },
+  },
     methods: {
         formatTimestamp,
+        getRowKey(record, index) {
+          // 使用数据的索引作为 rowKey
+          return index;
+        },
+      onExpandedRowsChange(keys) {
+        // 更新展开的行的键值
+        this.expandedRowKeys = keys;
+      },
         // 获取表格数据
         getData() {
             const uuid = this.$route.params.id
@@ -474,15 +497,15 @@ export default {
         },
         handleChangeTable(pagination, filters, sorter) {
             if (pagination) {
-                this.queryParams.pageNumber = pagination.current
+                this.pagination.current = pagination.current
             }
-            this.queryParams.sortName = sorter.field
+            this.pagination.sortName = sorter.field
             if (sorter && sorter.order === "descend") {
-                this.queryParams.sortOrder = "desc"
+                this.pagination.sortOrder = "desc"
             } else if (sorter && sorter.order === "ascend") {
-                this.queryParams.sortOrder = "asc"
+                this.pagination.sortOrder = "asc"
             } else {
-                this.queryParams.sortOrder = ""
+                this.pagination.sortOrder = ""
             }
             this.getData()
         },
@@ -502,35 +525,18 @@ export default {
         handleExpand(expanded, record) {
             if (expanded) {
               this.$nextTick(() => {
-                console.log(this.$refs.VulnExpanded)
-                // 在这里放置你想要执行的代码，它将在 DOM 更新之后执行
-                this.$refs.VulnExpanded.open()
+                this.expandedRowKeys.push(record.key);
               });
-              //this.$refs.VulnExpandedContent.open()
-                // this.isSuppressed = record.analysis.isSuppressed;
-                // this.analysisState = record.analysis.state ? record.analysis.state : this.analysisState;
-                // this.projectUuid = record.component.project;
-                // this.componentUuid = record.component.uuid;
-                // this.vulnerabilityUuid = record.vulnerability.uuid;
-                // getVulnerabilitiesAnalysis(this.projectUuid, this.componentUuid, this.vulnerabilityUuid).then((res) => {
-                //     if (res.status === 200) {
-                //         this.isSuppressed = res.data.suppressed;
-                //         this.analysisState = res.data.state ? res.data.state : this.analysisState;
-                //         this.justificationState = res.data.analysisJustification ? res.data.analysisJustification : this.justificationState;
-                //         this.vendorResponseState = res.data.analysisResponse ? res.data.analysisResponse : this.vendorResponseState;
-                //         this.analysisDetails = res.data.analysisDetails ? res.data.analysisDetails : this.analysisDetails;
-                //         this.analysisComments = res.data.analysisComments;
-                //         this.getAuditVal();
-                //     }
-                // }).finally(() => {
-                //     this.loading = false
-                // });
 
             }else {
               this.$nextTick(() => {
                 // 在这里放置你想要执行的代码，它将在 DOM 更新之后执行
                 this.$refs.VulnExpanded.close()
               });
+              const index = this.expandedRowKeys.indexOf(record.key);
+              if (index !== -1) {
+                this.expandedRowKeys.splice(index, 1);
+              }
             }
         },
 

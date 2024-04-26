@@ -157,6 +157,13 @@ export default {
       }
     }
   },
+  beforeUpdate() {
+    // 只有当 props 改变时才重新渲染组件
+    if (this.record === this.$props.record) {
+      return false;
+    }
+    return true;
+  },
   data() {
     return {
       visible: false,
@@ -267,6 +274,9 @@ export default {
       ],
     }
   },
+  created() {
+    this.open();
+  },
   methods: {
     formatTimestamp,
     handleSuppressedChange() {
@@ -308,7 +318,10 @@ export default {
       });
     },
     close(){
-      this.visible= false;
+      this.clear();
+      this.visible = false;
+    },
+    clear(){
       this.loading = false;
       this.analysisState = 'NOT_SET';
       this.justificationState = 'NOT_SET';
@@ -324,7 +337,6 @@ export default {
       this.analysisComments = [];
       this.commentsData = '';
       this.comment = '';
-      this.visible = true;
     },
     addCommit() {
       const data = {
@@ -346,6 +358,8 @@ export default {
           this.vendorResponseState = res.data.analysisResponse ? res.data.analysisResponse : this.vendorResponseState;
           this.analysisDetails = res.data.analysisDetails ? res.data.analysisDetails : this.analysisDetails;
           this.analysisComments = res.data.analysisComments;
+          this.comment = '';
+          this.analysisDetails = '';
           this.$notification.success({
             message: this.$t('Projects.UpdateMessage'),
             description: "",
