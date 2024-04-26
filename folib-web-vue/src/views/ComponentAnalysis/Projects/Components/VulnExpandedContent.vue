@@ -348,7 +348,7 @@ export default {
         "analysisResponse": this.vendorResponseState,
         "analysisDetails": this.analysisDetails === '' ? null : this.analysisDetails,
         "comment": this.comment === '' ? null : this.comment,
-        "isSuppressed": this.isSuppressed
+        "isSuppressed": this.isSuppressed ? this.isSuppressed : false,
       }
       addVulnerabilitiesAnalysis(data).then((res) => {
         if (res.status === 200) {
