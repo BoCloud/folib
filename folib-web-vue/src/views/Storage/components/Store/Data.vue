@@ -268,7 +268,7 @@
         <div class="ml-20 mb-10">          
           <a @click="handleGoDetail()"><a-icon type="link" /> {{ $t('Store.ViewDetail') }}</a>
         </div>
-        <div class="bar">
+        <div class="bar" v-if="projectInfo && projectInfo.metrics">
           <div class="card-inner">
             <div class="bar-card">
               <div class="callout b-severity-critical">
