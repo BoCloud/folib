@@ -265,38 +265,74 @@
         </a-descriptions>
       </a-tab-pane>
       <a-tab-pane key="5" :tab="$t('Store.BomInformation')" v-if="currentFileDetial && currentFileDetial.artifact && currentFileDetial.bom">
-        <a-descriptions
-          title=""
-          :column="1"
-        >
-          <a-descriptions-item label="">
-            <a @click="handleGoDetail()">{{ $t('Store.ViewDetail') }}</a>
-          </a-descriptions-item>
-          <a-descriptions-item :label="$t('Store.Seriousness')">
-            <a-tag color="#f86c6b"> {{ projectInfo.metrics.critical }} </a-tag>
-          </a-descriptions-item>
-          <a-descriptions-item :label="$t('Store.HighRisk')">
-            <a-tag color="#fd8c00"> {{ projectInfo.metrics.high }}  </a-tag>
-          </a-descriptions-item>
-          <a-descriptions-item :label="$t('Store.MediumRisk')">
-            <a-tag color="#ffc107"> {{ projectInfo.metrics.medium }} </a-tag>
-          </a-descriptions-item>
-          <a-descriptions-item :label="$t('Store.LowRisk')">
-            <a-tag color="#4dbd74"> {{ projectInfo.metrics.low }} </a-tag>
-          </a-descriptions-item>
-          <a-descriptions-item :label="$t('Store.Unassigned')">
-            <a-tag color="#777777"> {{ projectInfo.metrics.unassigned }} </a-tag>
-          </a-descriptions-item>
-          <a-descriptions-item :label="$t('Store.VulnerabilitiesNum')">
-            <a-tag color="#FF4A2B"> {{ projectInfo.metrics.vulnerabilities }} </a-tag>
-          </a-descriptions-item>
-          <a-descriptions-item :label="$t('Store.RiskScore')">
-            <a-tag color="#21A8D8"> {{ projectInfo.metrics.inheritedRiskScore }} </a-tag>
-          </a-descriptions-item>
-          <a-descriptions-item :label="$t('Store.NumberOfComponents')">
-            <a-tag color="#0599FE"> {{ projectInfo.metrics.components }} </a-tag>
-          </a-descriptions-item>
-        </a-descriptions>
+        <div class="ml-20 mb-10">          
+          <a @click="handleGoDetail()"><a-icon type="link" /> {{ $t('Store.ViewDetail') }}</a>
+        </div>
+        <div class="bar">
+          <div class="card-inner">
+            <div class="bar-card">
+              <div class="callout b-severity-critical">
+                <div class="text">
+                  <div class="text-muted">{{ $t("Store.Seriousness") }}</div>
+                  <strong>{{ projectInfo.metrics.critical }}</strong>
+                </div>
+              </div>
+            </div>
+            <div class="bar-card">
+              <div class="callout b-severity-high">
+                <div class="text">
+                  <div class="text-muted">{{ $t("Store.HighRisk") }}</div>
+                  <strong>{{ projectInfo.metrics.high }}</strong>
+                </div>
+              </div>
+            </div>
+            <div class="bar-card">
+              <div class="callout b-severity-medium">
+                <div class="text">
+                  <div class="text-muted">{{ $t("Store.MediumRisk") }}</div>
+                  <strong>{{ projectInfo.metrics.medium }}</strong>
+                </div>
+              </div>
+            </div>
+            <div class="bar-card">
+              <div class="callout b-severity-low">
+                <div class="text">
+                  <div class="text-muted">{{ $t("Store.LowRisk") }}</div>
+                  <strong>{{ projectInfo.metrics.low }}</strong>
+                </div>
+              </div>
+            </div>
+            <div class="bar-card">
+              <div class="callout b-severity-unassigned">
+                <div class="text">
+                  <div class="text-muted">{{ $t("Store.Unassigned") }}</div>
+                  <strong>{{ projectInfo.metrics.unassigned }}</strong>
+                </div>
+              </div>
+            </div>
+            <div class="bar-card">
+              <div class="callout b-severity-info">
+                <div class="text">
+                  <div class="text-muted">{{ $t("Store.RiskScore") }}</div>
+                  <strong>{{ projectInfo.metrics.inheritedRiskScore }}</strong>
+                </div>
+              </div>
+            </div>
+            <div class="bar-card">
+              <div class="callout b-number-of-components">
+                <div class="text">
+                  <div class="text-muted">{{ $t("Store.NumberOfComponents") }}</div>
+                  <strong>{{ projectInfo.metrics.components }}</strong>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="wrapper-com">
+          <a-card :bordered="true" class="header-solid h-full" :bodyStyle="{ padding: 10 }">
+            <ChartPolicyViolationBreakdown :metrics="vulnerabilitiesData"></ChartPolicyViolationBreakdown>
+          </a-card>
+        </div>
       </a-tab-pane>
     </a-tabs>
 
@@ -391,6 +427,7 @@ import { getArtifact } from "@/api/folib";
 import { getProjectInfo } from "@/api/foEyes";
 import {  deleteArtifactMetadata, conanInfo, conanPackageInfo } from "@/api/artifact";
 import { getMetadataConfiguration } from '@/api/settings'
+import { getProjectsVulnerabilities } from "@/api/projects.js"
 import { PrismEditor } from "vue-prism-editor";
 import "vue-prism-editor/dist/prismeditor.min.css"; // import the styles somewhere
 // import highlighting library (you can use any library you want just return html string)
@@ -402,6 +439,7 @@ import "quill/dist/quill.core.css";
 import "quill/dist/quill.snow.css";
 import { quillEditor } from "vue-quill-editor";
 import { hasRole, isAdmin, isAnonymous, isLogin } from "@/utils/permission";
+import ChartPolicyViolationBreakdown from "../../../ComponentAnalysis/Projects/Components/ChartPolicyViolationBreakdown.vue"
 
 export default {
   name: "BaseData",
@@ -415,6 +453,7 @@ export default {
   components: {
     PrismEditor,
     quillEditor,
+    ChartPolicyViolationBreakdown,
   },
   data() {
     return {
@@ -532,6 +571,7 @@ export default {
       selectedTag: 0,
       selectedColor: "#2db7f5",
       projectInfo: {
+        uuid:'',
         metrics: {
           critical: 0,
           high: 0,
@@ -544,7 +584,8 @@ export default {
           suppressed: 0,
           inheritedRiskScore: 0,
         }
-      }
+      },
+      vulnerabilitiesData: [],
     };
   },
   computed: {
@@ -636,6 +677,8 @@ export default {
       this.metadataShow()
       if (activeKey === "2") {
         this.getMetadata()
+      } else if (activeKey === "5") {
+        this.getProjectsVulnerabilities()
       }
     },
     getMetadata() {
@@ -828,12 +871,71 @@ export default {
       let artifact = this.currentFileDetial.artifact
       getProjectInfo(artifact.storageId, artifact.repositoryId, artifact.artifactPath).then((res) => {
         this.projectInfo = res
+        this.getProjectsVulnerabilities()
       })
     },
     handleGoDetail() {
       const routeUrl = this.$router.resolve({path: `/projectsDetail/${this.projectInfo.uuid}`})
       window.open(routeUrl.href, '_blank')
     },
+    getProjectsVulnerabilities() {
+      const uuid = this.projectInfo.uuid
+      if (!uuid) {
+        return false
+      }
+      getProjectsVulnerabilities(uuid).then((res) => {
+        this.vulnerabilitiesData = res.data
+      })
+    },
   },
 };
 </script>
+
+<style lang="scss" scoped>
+::v-deep .part-title {
+    font-size: 18px;
+    font-weight: 600;
+}
+::v-deep .part-sub-title {
+    font-size: 11px;
+    color: rgba(115, 129, 143, 0.7);
+}
+.callout {
+  height: 50px;
+  position: relative;
+  padding: 0 1rem;
+  margin: 1rem 0;
+  border-left: 4px solid #0b1015;
+  border-radius: 0.25rem;
+  border-left-color: #6dd9ff;
+}
+strong {
+  font-size: 20px;
+}
+.bar {
+  width: 100%;
+  .card-inner {
+    width: 100%;
+    display: flex;
+    justify-content: space-evenly;
+  }
+}
+.bar {
+  width: 100%;
+  .card-inner {
+    width: 100%;
+    display: flex;
+    justify-content: space-evenly;
+  }
+}
+.bar-card {
+  height: 100px;
+}
+.wrapper-com {
+  width: 100%;
+  display: block;
+  .header-solid {
+    margin: 10px 10px 0px 10px;
+  }
+}
+</style>

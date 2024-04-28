@@ -127,28 +127,28 @@
         </a-card>
         <!-- <a-card :bordered="false" class="header-solid h-full" :bodyStyle="{ padding: 0 }"> -->
         <a-tabs class="tabs-sliding" v-model="tabActive" @change="handleChangeTabs">
-            <a-tab-pane key="1" :tab="$t('Projects.GeneralView')">
+            <a-tab-pane key="1" :tab="(source==1?$t('Projects.Repository'):$t('Projects.Artifact')) + $t('Projects.GeneralView')">
                 <ProjectDashboard v-if="tabActive == 1"></ProjectDashboard>
             </a-tab-pane>
-            <a-tab-pane key="2" :tab="$t('Projects.Component')">
+            <a-tab-pane key="2" :tab="$t('Projects.Component')" v-if="this.source!=1">
                 <ProjectComponents v-if="tabActive == 2"></ProjectComponents>
             </a-tab-pane>
-            <a-tab-pane key="3" :tab="$t('Projects.Services')">
+            <!-- <a-tab-pane key="3" :tab="$t('Projects.Services')" v-if="this.source!=1">
                 <ProjectServices v-if="tabActive == 3"></ProjectServices>
-            </a-tab-pane>
-            <a-tab-pane key="7" :tab="$t('Projects.DependencyGraph')">
+            </a-tab-pane> -->
+            <a-tab-pane key="7" :tab="$t('Projects.DependencyGraph')" v-if="this.source!=1">
                 <DependencyGraph v-if="tabActive == 7" :uuid="uuid" :pro-name="project.name"></DependencyGraph>
             </a-tab-pane>
-            <a-tab-pane key="4" :tab="$t('Projects.AuditVulnerabilities')">
+            <a-tab-pane key="4" :tab="$t('Projects.AuditVulnerabilities')" v-if="this.source!=1">
                 <ProjectFindings v-if="tabActive == 4"></ProjectFindings>
             </a-tab-pane>
-            <a-tab-pane key="5" :tab="$t('Projects.ExploitPredictions')">
+            <a-tab-pane key="5" :tab="$t('Projects.ExploitPredictions')" v-if="this.source!=1">
                 <ProjectEpss v-if="tabActive == 5"></ProjectEpss>
             </a-tab-pane>
-            <a-tab-pane key="6" :tab="$t('Projects.PolicyViolations')">
+            <a-tab-pane key="6" :tab="$t('Projects.PolicyViolations')" v-if="this.source!=1">
                 <ProjectPolicyViolations v-if="tabActive == 6"></ProjectPolicyViolations>
             </a-tab-pane>
-            <a-tab-pane v-if="project.parentProject" key="8" :tab="$t('Projects.ProjectChildren')">
+            <a-tab-pane v-if="this.source==1" key="8" :tab="$t('Projects.Artifacts')">
                 <ProjectChildren v-if="tabActive == 8" :uuid="project.uuid"></ProjectChildren>
             </a-tab-pane>
             <div style="display: flex;" slot="tabBarExtraContent">
@@ -158,7 +158,7 @@
                         {{ $t('Projects.UploadBOM') }}
                     </a-button> -->
                 </div>
-                <div>
+                <!-- <div>
                     <a-dropdown>
                         <a-menu slot="overlay" @click="handleMenuClick">
                             <a-menu-item key="1" >{{ $t('Projects.Inventory') }}</a-menu-item>
@@ -168,7 +168,7 @@
                             <a-icon type="down"/>
                         </a-button>
                     </a-dropdown>
-                </div>
+                </div> -->
             </div>
         </a-tabs>
         <!-- </a-card> -->
@@ -229,6 +229,7 @@ export default {
             currentRiskScore: 0,
             uuid: '',
             componentId: '',
+            source: 1,
         }
     },
     created() {
@@ -236,6 +237,7 @@ export default {
     },
     mounted() {
         const { componentId } = this.$route.query
+        this.source = this.$route.query.source
         this.componentId = componentId
         if (componentId) this.tabActive = '7'
     },

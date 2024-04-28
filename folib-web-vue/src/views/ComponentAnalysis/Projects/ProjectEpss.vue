@@ -5,12 +5,12 @@
             <div class="table">
                 <div class="mx-25 search">
                     <a-col :span="24" class="text-right">
-                        <a-input-search
+                        <!-- <a-input-search
                             :placeholder="$t('Projects.EnterVulnerabilityNumber')"
                             class="v-search"
                             v-model="queryParams.searchText"
                             @search="handheTableSearch()"
-                        />
+                        /> -->
                     </a-col>
                 </div>
                 <a-table

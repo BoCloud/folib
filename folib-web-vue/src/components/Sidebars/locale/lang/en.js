@@ -4,7 +4,7 @@ export default {
     'SecurityScanning': 'Security scanning',
     'OpenSourceGovernance': 'Artifact analysis',
     'BOMAnalysis': 'BOM analysis',
-    'ProductAnalysis': 'Artifact analysis',
+    'ProductAnalysis': 'Artifact scan',
     'OpenSourceComponents': 'Open source components',
     'VulnerabilityDatabase': 'Vulnerability database',
     'CertificateStore': 'Certificate store',

@@ -8,6 +8,7 @@ export default {
     'DownloadTimes': '下载次数',
     'ProductSize': '制品大小',
     'Vulnerability': '漏洞',
+    'RepositorySelect': '请选择仓库查询',
     // Detail.vue
     'GeneralView': '总览',
     'Component': '组件',

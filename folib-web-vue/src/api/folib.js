@@ -182,6 +182,13 @@ export function insertOrUpdateRules (data) {
   })
 }
 
+export function queryOnScanTree (data) {
+  return axios({
+    url: '/api/scanRules/queryOnScanTree',
+    method: 'get'
+  })
+}
+
 export function queryBomOnScanTree (data) {
   return axios({
     url: '/api/scanRules/queryBomOnScanTree',

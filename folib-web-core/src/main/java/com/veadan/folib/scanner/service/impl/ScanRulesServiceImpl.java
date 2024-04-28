@@ -9,12 +9,17 @@ import com.veadan.folib.domain.Tree;
 import com.veadan.folib.scanner.biz.ScanRulesBiz;
 import com.veadan.folib.scanner.entity.ScanRules;
 import com.veadan.folib.scanner.service.ScanRulesService;
+import com.veadan.folib.services.ConfigurationManagementService;
+import com.veadan.folib.storage.Storage;
+import com.veadan.folib.storage.repository.Repository;
 import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.collections4.MapUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import tk.mybatis.mapper.entity.Example;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -32,6 +37,9 @@ public class ScanRulesServiceImpl implements ScanRulesService {
 
     @Autowired
     private FoEyesComponent foEyesComponent;
+
+    @Autowired
+    private ConfigurationManagementService configurationManagementService;
 
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -68,6 +76,37 @@ public class ScanRulesServiceImpl implements ScanRulesService {
         Map<String, List<ScanRules>> storageMap = scanRulesList.stream().collect(Collectors.groupingBy(ScanRules::getStorage));
         for (Map.Entry<String, List<ScanRules>> entry : storageMap.entrySet()) {
             treeList.add(Tree.builder().label(entry.getKey()).value(entry.getKey()).children(entry.getValue().stream().map(item -> Tree.builder().label(item.getRepository()).value(item.getProjectUuid()).build()).collect(Collectors.toList())).build());
+        }
+        return treeList;
+    }
+
+    @Override
+    public List<ScanRules> queryOnScanList() {
+        Example example = new Example(ScanRules.class);
+        example.createCriteria().andEqualTo("onScan", 1);
+        return scanRulesBiz.selectByExample(example);
+    }
+
+    @Override
+    public List<Tree> queryOnScanTree() {
+        final List<Storage> storageList = new ArrayList<>(configurationManagementService.getConfiguration()
+                .getStorages()
+                .values());
+        if (CollectionUtils.isEmpty(storageList)) {
+            return null;
+        }
+        List<Tree> treeList = Lists.newArrayList();
+        Tree tree;
+        if (CollectionUtils.isNotEmpty(storageList)) {
+            for (Storage storage : storageList) {
+                tree = Tree.builder().label(storage.getId()).value(storage.getId()).children(Lists.newArrayList()).build();
+                if (MapUtils.isNotEmpty(storage.getRepositories())) {
+                    for (Repository repository : storage.getRepositories().values()) {
+                        tree.getChildren().add(Tree.builder().label(repository.getId()).value(repository.getId()).build());
+                    }
+                }
+                treeList.add(tree);
+            }
         }
         return treeList;
     }

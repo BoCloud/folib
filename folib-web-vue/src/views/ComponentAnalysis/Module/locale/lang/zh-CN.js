@@ -8,7 +8,7 @@ export default {
     'Group': '组',
     'PackageURL': '包地址',
     'SWID': '标签标识',
-    'ProjectName': '项目名称',
+    'ProjectName': '制品名称',
     'RiskScore': '风险评分',
     'Vulnerability': '漏洞',
     'GeneralView': '总览',

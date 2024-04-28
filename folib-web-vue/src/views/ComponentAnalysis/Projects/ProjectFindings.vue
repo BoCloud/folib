@@ -19,7 +19,7 @@
                 :data-source="projectsData"
                 @change="handleChangeTable"
                 @expandedRowsChange="onExpandedRowsChange"
-                :expanded-row-keys="expandedRowKeys"
+                :expanded-row-keys.sync="expandedRowKeys"
                 :pagination="pagination"
 
             >

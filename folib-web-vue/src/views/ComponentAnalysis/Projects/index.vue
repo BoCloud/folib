@@ -1,6 +1,6 @@
 <template>
     <div class="wrapper">
-        <HeaderEcharts></HeaderEcharts>
+        <!-- <HeaderEcharts></HeaderEcharts> -->
         <a-tabs
             class="tabs-sliding"
             :default-active-key="1"
@@ -12,7 +12,7 @@
                     <div class="mx-25 search">
                         <a-col :span="24" class="text-right">                        
                             <a-input-search
-                                :placeholder="$t('Projects.ProjectNameQuery')"
+                                :placeholder="$t('Projects.RepositoryNameQuery')"
                                 class="v-search"
                                 v-model="queryParams.searchText"
                                 @search="handheTableSearch()"
@@ -296,10 +296,10 @@ export default {
             },
             columns: [
                 {
-                    title: "项目名称",
-                    i18nKey: "Projects.ProjectName",
+                    title: "仓库名称",
+                    i18nKey: "Projects.RepositoryName",
                     dataIndex: "name",
-                    sorter: true,
+                    sorter: false,
                     scopedSlots: {customRender: "name"},
                     sortDirections: ["descend", "ascend"],
                     width: "180px",
@@ -308,7 +308,7 @@ export default {
                     title: "上次导入清单",
                     i18nKey: "Projects.LastBOMImport",
                     dataIndex: "lastBomImport",
-                    sorter: true,
+                    sorter: false,
                     scopedSlots: {customRender: "lastBomImport"},
                     sortDirections: ["descend", "ascend"],
                     width: "200px",
@@ -317,7 +317,7 @@ export default {
                     title: "清单格式",
                     i18nKey: "Projects.BOMFormat",
                     dataIndex: "lastBomImportFormat",
-                    sorter: true,
+                    sorter: false,
                     width: "140px",
                     scopedSlots: {customRender: "lastBomImportFormat"},
                     sortDirections: ["descend", "ascend"],
@@ -326,7 +326,7 @@ export default {
                     title: "风险评分",
                     i18nKey: "Projects.RiskScore",
                     dataIndex: "lastInheritedRiskScore",
-                    sorter: true,
+                    sorter: false,
                     width: "120px",
                     sortDirections: ["descend", "ascend"],
                 },
@@ -334,7 +334,7 @@ export default {
                     title: "违反政策",
                     i18nKey: "Projects.PolicyViolations",
                     dataIndex: "metrics",
-                    sorter: true,
+                    sorter: false,
                     width: "150px",
                     scopedSlots: {customRender: "policyViolations"},
                     sortDirections: ["descend", "ascend"],
@@ -437,7 +437,7 @@ export default {
             this.getData()
         },
         handleGoDetail(row) {
-            this.$router.push(`/projectsDetail/${row.uuid}`)
+            this.$router.push(`/repositoryDetail/${row.uuid}?source=1`)
         },
         handheTableSearch() {
             this.queryParams.pageNumber = 1

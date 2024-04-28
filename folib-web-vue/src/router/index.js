@@ -236,13 +236,28 @@ let routes = [
 		component: () => import("../views/ComponentAnalysis/Projects/index.vue"),
 	},
 	{
+		path: "/repositoryDetail/:id",
+		name: "repositoryDetail",
+		layout: "dashboard",
+		meta: {
+			title: 'router.RepositoryAnalysisDetail',
+			sidebarMap: ['router.OpenSourceGovernance', 'router.ProjectsAnalysis', 'router.RepositoryDetails'],
+			breadcrumbs: ['router.OpenSourceGovernance', 'router.ProjectsAnalysis', 'router.RepositoryDetails'],
+			permission: 'VIEW_PORTFOLIO',
+			activeMenu: "/projects"
+
+
+		},
+		component: () => import("../views/ComponentAnalysis/Projects/Detail.vue"),
+	},
+	{
 		path: "/projectsDetail/:id",
 		name: "projectsDetail",
 		layout: "dashboard",
 		meta: {
 			title: 'router.ProjectsAnalysisDetail',
-			sidebarMap: ['router.Homepage', 'router.ProjectsAnalysis', 'router.ProjectsDetails'],
-			breadcrumbs: ['router.Homepage', 'router.ProjectsAnalysis', 'router.ProjectsDetails'],
+			sidebarMap: ['router.OpenSourceGovernance', 'router.ProjectsAnalysis', 'router.ProjectsDetails'],
+			breadcrumbs: ['router.OpenSourceGovernance', 'router.ProjectsAnalysis', 'router.ProjectsDetails'],
 			permission: 'VIEW_PORTFOLIO',
 			activeMenu: "/projects"
 
@@ -256,8 +271,8 @@ let routes = [
 		layout: "dashboard",
 		meta: {
 			title: 'router.ComponentDetails',
-			sidebarMap: ['router.Homepage', 'router.ProjectsAnalysis', 'router.ComponentDetails'],
-			breadcrumbs: ['router.Homepage', 'router.ProjectsAnalysis', 'router.ComponentDetails'],
+			sidebarMap: ['router.OpenSourceGovernance', 'router.ProjectsAnalysis', 'router.ComponentDetails'],
+			breadcrumbs: ['router.OpenSourceGovernance', 'router.ProjectsAnalysis', 'router.ComponentDetails'],
 			permission: 'VIEW_PORTFOLIO',
 			activeMenu: "/projects"
 		},

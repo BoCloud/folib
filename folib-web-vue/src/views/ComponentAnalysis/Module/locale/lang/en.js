@@ -8,7 +8,7 @@ export default {
     'Group': 'Group',
     'PackageURL': 'Package URL',
     'SWID': 'SWID',
-    'ProjectName': 'Project Name',
+    'ProjectName': 'Artifact Name',
     'RiskScore': 'Risk Score',
     'Vulnerability': 'Vulnerability',
     'GeneralView': 'General view',

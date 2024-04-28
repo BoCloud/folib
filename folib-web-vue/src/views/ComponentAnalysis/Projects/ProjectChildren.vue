@@ -3,13 +3,13 @@
         <a-card :bordered="false" style="margin-top: 20px; margin-bottom: 20px">
             <div class="mx-25 search">
                 <a-col :span="24" class="text-right">
-                    <a-cascader :placeholder="$t('Projects.ParentProjectQuery')" class="parent-project-query" 
+                    <a-cascader :placeholder="$t('Projects.ParentProjectQuery')" class="parent-project-query"  v-if="source==2"
                         v-model="queryParams.parentId"
                         :showSearch="{ parentProjectFilter }"
                         :allowClear="false"
                         :options="repositoryList" @change="parentProjectChange"/>
                     <a-input-search
-                    :placeholder="$t('Projects.ProjectNameQuery')"
+                    :placeholder="$t('Projects.ArtifactNameQuery')"
                     class="v-search"
                     v-model="queryParams.searchText"
                     @search="handheTableSearch()"
@@ -130,7 +130,7 @@ export default {
                     title: "项目名称",
                     i18nKey: "Projects.ProjectName",
                     dataIndex: "name",
-                    sorter: true,
+                    sorter: false,
                     scopedSlots: {customRender: "name"},
                     sortDirections: ["descend", "ascend"],
                     width: "150px",
@@ -139,7 +139,7 @@ export default {
                     title: "上次导入清单",
                     i18nKey: "Projects.LastBOMImport",
                     dataIndex: "lastBomImport",
-                    sorter: true,
+                    sorter: false,
                     scopedSlots: {customRender: "lastBomImport"},
                     sortDirections: ["descend", "ascend"],
                     width: "200px",
@@ -148,7 +148,7 @@ export default {
                     title: "清单格式",
                     i18nKey: "Projects.BOMFormat",
                     dataIndex: "lastBomImportFormat",
-                    sorter: true,
+                    sorter: false,
                     width: "140px",
                     scopedSlots: {customRender: "lastBomImportFormat"},
                     sortDirections: ["descend", "ascend"],
@@ -157,7 +157,7 @@ export default {
                     title: "风险评分",
                     i18nKey: "Projects.RiskScore",
                     dataIndex: "lastInheritedRiskScore",
-                    sorter: true,
+                    sorter: false,
                     width: "120px",
                     sortDirections: ["descend", "ascend"],
                 },
@@ -165,7 +165,7 @@ export default {
                     title: "违反政策",
                     i18nKey: "Projects.PolicyViolations",
                     dataIndex: "metrics",
-                    sorter: true,
+                    sorter: false,
                     width: "150px",
                     scopedSlots: {customRender: "policyViolations"},
                     sortDirections: ["descend", "ascend"],
@@ -196,12 +196,15 @@ export default {
     methods: {
         formatTimestamp,
         queryBomOnScanTreeList() {
+            this.repositoryList = []
             queryBomOnScanTree().then((res) => {
-                this.repositoryList = res
-                if (!this.parentId && this.repositoryList) {
-                    this.parentId = this.repositoryList[0].children[0].value
-                    this.queryParams.parentId = [this.repositoryList[0].value, this.parentId]
-                    this.getProjectData()
+                if (res) {
+                    this.repositoryList = res
+                    if (!this.parentId && this.repositoryList) {
+                        this.parentId = this.repositoryList[0].children[0].value
+                        this.queryParams.parentId = [this.repositoryList[0].value, this.parentId]
+                        this.getProjectData()
+                    }
                 }
             })
         },
@@ -243,7 +246,7 @@ export default {
         },
         handleGoDetail(row) {
             if(row.uuid && row.uuid !== this.parentId){
-                this.$router.push(`/projectsDetail/${row.uuid}?t=` + Date.now())
+                this.$router.push(`/projectsDetail/${row.uuid}?source=2&t=` + Date.now())
             }
         },
         handleGoLicense(row) {

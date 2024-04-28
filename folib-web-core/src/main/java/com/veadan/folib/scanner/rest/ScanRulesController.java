@@ -33,4 +33,9 @@ public class ScanRulesController extends BaseController<ScanRulesBiz, ScanRules,
     public ResponseEntity queryBomOnScanTree() {
         return ResponseEntity.ok(scanRulesService.queryBomOnScanTree());
     }
+
+    @GetMapping("/queryOnScanTree")
+    public ResponseEntity queryOnScanTree() {
+        return ResponseEntity.ok(scanRulesService.queryOnScanTree());
+    }
 }

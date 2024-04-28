@@ -31,4 +31,18 @@ public interface ScanRulesService {
      * @return 开启Bom的仓库树结构
      */
     List<Tree> queryBomOnScanTree();
+
+    /**
+     * 查询开启扫描的仓库列表
+     *
+     * @return 开启扫描的仓库列表
+     */
+    List<ScanRules> queryOnScanList();
+
+    /**
+     * 查询开启扫描的仓库树结构
+     *
+     * @return 开启扫描的仓库树结构
+     */
+    List<Tree> queryOnScanTree();
 }

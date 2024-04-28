@@ -7,7 +7,7 @@ export default {
     'SetupManagement': 'Setup management',
     'HealthMonitoring': 'Health monitoring',
     'SeniorOperations': 'Senior Operations',
-    'ProductAnalysis': 'Artifact analysis',
+    'ProductAnalysis': 'Artifact scan',
     'OpenSourceGovernance': 'Artifact analysis',
     'BOMAnalysis': 'BOM analysis',
     'VulnerabilityDatabase': 'Vulnerability database',
@@ -29,8 +29,10 @@ export default {
     'upgradePremiumVersion': 'This feature is for the premium version, if you need to experience, please upgrade to the premium version',
     'Well': 'Well',
     //bom start
-    'ProjectsAnalysis': 'Projects Analysis',
-    'ProjectsAnalysisDetail': 'Projects Analysis Detail',
-    'ProjectsDetails': 'Projects details',
+    'ProjectsAnalysis': 'BOM Analysis',
+    'ProjectsAnalysisDetail': 'Artifact Analysis Detail',
+    'ProjectsDetails': 'Artifact Analysis',
+    'RepositoryAnalysisDetail': 'Repository Analysis Detail',
+    'RepositoryDetails': 'Repository Analysis',
     //bom end
 }

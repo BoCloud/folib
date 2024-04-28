@@ -8,6 +8,7 @@ export default {
     'DownloadTimes': 'Download times',
     'ProductSize': 'Product size',
     'Vulnerability': 'Vulnerability',
+    'RepositorySelect': 'Please select a repository for query',
     // Detail.vue
     'GeneralView': 'General view',
     'Component': 'Component',

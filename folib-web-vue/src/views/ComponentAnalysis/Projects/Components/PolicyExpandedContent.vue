@@ -171,7 +171,7 @@ ${item.comment}
             message: this.$t('Projects.UpdateMessage'),
             description: "",
           });
-          this.getData();
+          this.getData(res);
         }
       }).catch(error => {
         this.$message.error(error.response.data)
@@ -221,12 +221,17 @@ ${item.comment}
             message: this.$t('Projects.UpdateMessage'),
             description: "",
           });
-          this.getData();
+          this.getData(res);
         }
       }).catch(error => {
         this.$message.error(error.response.data)
       }).finally(() => {
       });
+    },
+    getData(res) {
+      let result = res.data;
+      this.analysisRowData = result ? result : {};
+      this.getAuditVal()
     }
   }
 }

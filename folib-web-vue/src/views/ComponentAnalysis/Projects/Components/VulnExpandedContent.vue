@@ -274,6 +274,11 @@ export default {
       ],
     }
   },
+  watch: {
+    record: function (newVal, oldVal) {
+      this.clear()
+    },
+  },
   created() {
     this.open();
   },

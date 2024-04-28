@@ -270,8 +270,7 @@ export default {
             this.getData()
         },
         handleGoDetail(row) {
-            console.log("row", row)
-            this.$router.push(`/componentsDetail/${row.component.uuid}`)
+            this.$router.push(`/componentDetail/${row.component.uuid}`)
         },
         handheTableSearch() {
             this.queryParams.pageNumber = 1
