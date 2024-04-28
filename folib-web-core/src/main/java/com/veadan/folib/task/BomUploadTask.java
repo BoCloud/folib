@@ -60,7 +60,7 @@ public class BomUploadTask {
     @Lazy
     private FoEyesComponent foEyesComponent;
 
-    @Scheduled(cron = "0 0/1 * * * ? ")
+    @Scheduled(cron = "0 0/5 * * * ? ")
     public void run() {
         log.info("BomUploadTask starting time [{}]", DateUtil.now());
         if (!foEyesComponent.enable()) {
