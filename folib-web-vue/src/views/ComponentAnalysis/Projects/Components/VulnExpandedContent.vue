@@ -277,6 +277,7 @@ export default {
   watch: {
     record: function (newVal, oldVal) {
       this.clear()
+      this.init(newVal)
     },
   },
   created() {
@@ -300,6 +301,29 @@ export default {
         this.isJustification = true
       }
       this.addCommit();
+    },
+    init(newVal) {
+      if (!newVal) {
+        return false
+      }
+      this.isSuppressed = newVal.analysis.isSuppressed;
+      this.analysisState = newVal.analysis.state ? newVal.analysis.state : this.analysisState;
+      this.projectUuid = newVal.component.project;
+      this.componentUuid = newVal.component.uuid;
+      this.vulnerabilityUuid = newVal.vulnerability.uuid;
+      getVulnerabilitiesAnalysis(this.projectUuid, this.componentUuid, this.vulnerabilityUuid).then((res) => {
+        if (res.status === 200) {
+          this.isSuppressed = res.data.suppressed;
+          this.analysisState = res.data.state ? res.data.state : this.analysisState;
+          this.justificationState = res.data.analysisJustification ? res.data.analysisJustification : this.justificationState;
+          this.vendorResponseState = res.data.analysisResponse ? res.data.analysisResponse : this.vendorResponseState;
+          this.analysisDetails = res.data.analysisDetails ? res.data.analysisDetails : this.analysisDetails;
+          this.analysisComments = res.data.analysisComments;
+          this.getAuditVal();
+        }
+      }).finally(() => {
+        this.loading = false
+      });
     },
     open() {
       this.visible = true;

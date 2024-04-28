@@ -24,7 +24,6 @@
                 class="mt-20"
                 :columns="i18nColumns"
                 :data-source="projectsData"
-                :row-selection="{ onChange: handleSelectionChange }"
                 @change="handleChangeTable"
                 :pagination="{
           pageSize: queryParams.pageSize,
