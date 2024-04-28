@@ -424,7 +424,7 @@
 import store from "store";
 import { fileSizeConver, formateDate } from "@/utils/layoutUtil";
 import { getArtifact } from "@/api/folib";
-import { getProjectInfo } from "@/api/foEyes";
+import { getProjectInfo, getCacheConfig } from "@/api/foEyes";
 import {  deleteArtifactMetadata, conanInfo, conanPackageInfo } from "@/api/artifact";
 import { getMetadataConfiguration } from '@/api/settings'
 import { getProjectsVulnerabilities } from "@/api/projects.js"
@@ -864,7 +864,17 @@ export default {
         this.$forceUpdate()
       })
     },
+    getFoEyesEnable () {
+      const cacheConfig = getCacheConfig()
+      if (cacheConfig) {
+        return cacheConfig.enable
+      }
+      return false
+    },
     queryProjectInfo() {
+      if (!this.getFoEyesEnable()) {
+        return false
+      }
       if (!this.currentFileDetial || !this.currentFileDetial.artifact) {
         return false
       }
