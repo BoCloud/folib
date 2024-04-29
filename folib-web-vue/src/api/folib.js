@@ -182,6 +182,20 @@ export function insertOrUpdateRules (data) {
   })
 }
 
+export function queryOnScanTree (data) {
+  return axios({
+    url: '/api/scanRules/queryOnScanTree',
+    method: 'get'
+  })
+}
+
+export function queryBomOnScanTree (data) {
+  return axios({
+    url: '/api/scanRules/queryBomOnScanTree',
+    method: 'get'
+  })
+}
+
 export function getCount () {
   return axios({
     url: '/api/scanner/getCount',
@@ -458,6 +472,13 @@ export function unionRepositoryConfig (storageId,repositoryId,data) {
     url: '/api/configuration/folib/storages/'+storageId+'/'+repositoryId+'/unionRepository',
     method: 'put',
     data: data
+  })
+}
+
+export function getFoEyesEnable () {
+  return axios({
+    url: '/api/scanner/foEyesEnable',
+    method: 'get'
   })
 }
 

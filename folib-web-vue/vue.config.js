@@ -27,7 +27,7 @@ module.exports = {
 				proxyTimeout: 15 * 60 * 1000,
 			},
 			'/dependency': {
-				target: 'http://192.168.5.101:8081',
+				target: 'http://10.10.28.61:9527',
 				// target: 'http://192.168.5.101:8081',
 				// target: 'http://xpboot.cn:38080',
 				// target: 'http://10.10.33.145:38080',

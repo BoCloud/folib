@@ -109,6 +109,9 @@ import { encrypt } from "@/utils/jsencrypt"
 import {
   getSsoList,
 } from '@/api/sso'
+import {
+  getConfig,
+} from '@/api/foEyes'
 import  Clients  from "../../../components/loginClients/clients";
 export default {
   components:{
@@ -149,11 +152,13 @@ export default {
 						if (res.token != null) {
 							store.dispatch("GetInfo").then((res) => {
 							})
+							getConfig().then((res) => {
+								localStorage.setItem("FOEYES_CONFIG", JSON.stringify(res))
+							})
 						}
-						//
-						this.$router.push({ name: 'storagesHome' })
-						// 延迟 1 秒显示欢迎信息
+						// 延迟显示欢迎信息
 						setTimeout(() => {
+							this.$router.push({ name: 'storagesHome' })
 							this.$notification.success({
 								message: this.$t('Authentication.Welcome'),
 							})

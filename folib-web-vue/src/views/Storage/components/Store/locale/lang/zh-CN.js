@@ -120,6 +120,7 @@ export default {
     'MetadataValues': '元数据值',
     'Operations': '操作',
     'DeletedProductSuccess': '删除制品元数据成功',
+    'BomInformation': 'Bom信息',
     // UseDoc
     'Instructions': '使用说明',
     'GlobalConfiguration': '全局配置',
@@ -255,4 +256,9 @@ export default {
     'EndDate': '结束日期',
     'SelectDate': '选择日期',
     'DisplayQuantity': '显示数量',
+    'Unassigned': '未分配',
+    'RiskScore': '风险评分',
+    'NumberOfComponents': '组件数量',
+    'VulnerabilitiesNum': '漏洞数量',
+    'ViewDetail': '查看详情',
 }

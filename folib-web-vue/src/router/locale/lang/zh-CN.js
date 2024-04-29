@@ -7,8 +7,9 @@ export default {
     'SetupManagement': '设置管理',
     'HealthMonitoring': '健康监测',
     'SeniorOperations': '高级运维',
-    'ProductAnalysis': '制品分析',
+    'ProductAnalysis': '制品扫描',
     'OpenSourceGovernance': '制品分析',
+    'BOMAnalysis': 'BOM分析',
     'VulnerabilityDatabase': '漏洞库',
     'CertificateStore': '证书库',
     'StorageAnalysis': '存储分析',
@@ -27,4 +28,11 @@ export default {
     'PromptInformation': '提示信息',
     'upgradePremiumVersion': '此功能为高级版尊享，如需体验，请升级为高级版',
     'Well': '好的',
+    //bom start
+    'ProjectsAnalysis': 'BOM分析',
+    'RepositoryAnalysisDetail': '仓库分析详情',
+    'RepositoryDetails': '仓库分析',
+    'ProjectsAnalysisDetail': '制品分析详情',
+    'ProjectsDetails': '制品分析',
+    //bom end
 }

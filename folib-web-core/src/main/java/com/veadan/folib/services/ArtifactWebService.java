@@ -222,6 +222,12 @@ public interface ArtifactWebService {
     void bomUpload(RepositoryPath repositoryPath, MultipartFile file);
 
     /**
+     * foeyes是否可用
+     * @return true 可用 false 不可用
+     */
+    boolean foEyesEnable();
+
+    /**
      * docker仓库旧版本升级
      *
      * @param storageId    存储空间

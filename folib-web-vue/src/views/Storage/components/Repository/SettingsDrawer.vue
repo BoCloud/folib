@@ -19,7 +19,7 @@
         :activeKey="settingTabActiveKey"
         @change="settingTabChange($event)"
       >
-      <a-tab-pane :key="1":tab="$t('Storage.PermissionSetting')">
+      <a-tab-pane :key="1" :tab="$t('Storage.PermissionSetting')">
         <Permission :folibRepository="this.folibRepository" :settingVisible="settingVisible" @settingDrawerClose="settingDrawerClose"></Permission>
       </a-tab-pane>
       <a-tab-pane :key="2" :tab="$t('Storage.TimingPolicy')">
@@ -28,16 +28,22 @@
       <a-tab-pane :key="3" :tab="$t('Storage.FederatedRepository')" v-if="this.folibRepository.type === 'hosted'">
         <UnionRepository :folibRepository="this.folibRepository" :settingVisible="settingVisible" @settingDrawerClose="settingDrawerClose"></UnionRepository>
       </a-tab-pane>
+      <a-tab-pane :key="4" :tab="$t('Storage.Scan')" v-if="(isAdmin() || (storageAdmin && storageAdmin === $store.state.user.name)) && this.folibRepository.type !== 'group'">
+        <Scan :folibRepository="this.folibRepository" :settingVisible="settingVisible" @settingDrawerClose="settingDrawerClose"></Scan>
+      </a-tab-pane>
       </a-tabs>
     </a-card>
   </a-drawer>
 </template>
 <script>
 import {
+  getStorageAndRepositoryPermission
 } from "@/api/folib"
+import { hasRole, isAdmin, isAnonymous, isLogin } from '@/utils/permission'
 import Permission from '../Permission/index.vue'
 import CronTask from "../Cron/index.vue"
 import UnionRepository from "../UnionRepository/index.vue"
+import Scan from "../Scan/index.vue"
 
 export default {
   props: {
@@ -53,12 +59,14 @@ export default {
   data() {
     return {
       settingTabActiveKey: 1,
+      storageAdmin: '',
     }
   },
   components: {
     CronTask,
     Permission,
     UnionRepository,
+    Scan,
   },
   created() {
 
@@ -66,15 +74,31 @@ export default {
   mounted() {},
   watch: {
     settingVisible: function (val) {
-      this.settingTabActiveKey = 1
+      this.initData()
     },
   },
   methods: {
+    initData() {
+      this.settingTabActiveKey = 1
+      this.queryStorageAdmin()
+    },
     settingTabChange(activeKey) {
       this.settingTabActiveKey = activeKey
     },
     settingDrawerClose() {
       this.$emit('settingDrawerClose')
+    },
+    isAdmin() {
+      return isAdmin()
+    },
+    queryStorageAdmin () {
+      this.storageAdmin = ''
+      getStorageAndRepositoryPermission(
+        this.folibRepository.storageId,
+        this.folibRepository.id
+      ).then(res => {
+        this.storageAdmin = res.storageAdmin
+      })
     },
   },
 };

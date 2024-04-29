@@ -9,6 +9,7 @@
         <result property="repository" column="repository"/>
         <result property="storage" column="storage"/>
         <result property="onScan" column="on_scan"/>
+        <result property="sbomOnScan" column="sbom_on_scan"/>
         <result property="layout" column="layout"/>
         <result property="scanRule" column="scan_rule"/>
     </resultMap>

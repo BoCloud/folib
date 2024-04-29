@@ -4,6 +4,11 @@
     <a-card :bordered="false" style="margin-top: 20px; margin-bottom: 20px; overflow-y: auto" class="header-solid" >
       <div class="mx-25 search">
         <a-col :span="24" class="text-right">
+          <a-cascader :placeholder="$t('Artifacts.RepositorySelect')" class="repository-query"
+                        v-model="selectRepository"
+                        :showSearch="{ repositoryFilter }"
+                        :allowClear="true"
+                        :options="repositoryList" @change="repositoryChange"/>
           <a-input-search :placeholder="$t('Artifacts.ArtifactPathQuery')" class="v-search" v-model="queryParams.artifactName" @search="handheTableSearch()" />
         </a-col>
       </div>
@@ -53,6 +58,7 @@ import { getProjectsList } from "@/api/projects.js";
 import { formatTimestamp } from "@/utils/util.js";
 import {
   fql,
+  queryOnScanTree
 } from "@/api/folib";
 import {
   getFileImage,
@@ -199,7 +205,7 @@ export default {
         metadataSearch: null,
         storageId: null,
         repositoryId: null,
-        limit: 5,
+        limit: 10,
         page: 1,
         total: 0,
         sortField: null,
@@ -207,6 +213,8 @@ export default {
         beginDate: null,
         endDate: null,
       },
+      selectRepository: [],
+      repositoryList: []
     };
   },
   computed: {
@@ -220,10 +228,35 @@ export default {
     },
   },
   created() {
+    this.queryOnScanTreeList()
     this.getData()
   },
   methods: {
     formatTimestamp,
+    queryOnScanTreeList() {
+      this.repositoryList = []
+      queryOnScanTree().then((res) => {
+        if (res) {
+          this.repositoryList = res
+        }
+      })
+    },
+    repositoryChange(value) {
+      if (value && value.length > 0) {
+        this.selectRepository = value
+        this.queryParams.storageId = value[0]
+        this.queryParams.repositoryId = value[1]
+      } else {
+        this.selectRepository = []
+        this.queryParams.storageId = null
+        this.queryParams.repositoryId = null
+      }
+      this.queryParams.page = 1
+      this.getData()
+    },
+    repositoryFilter(inputValue, path) {
+      return path.some(option => option.label.toLowerCase().indexOf(inputValue.toLowerCase()) > -1);
+    },
     // 获取表格数据
     fileSizeConver(size) {
       if (size) {
@@ -292,5 +325,11 @@ export default {
   min-width: 150px;
   margin-left: 5px;
   margin-bottom: 8px;
+}
+.repository-query {
+    min-width: 220px;
+}
+.repository-query::v-deep .ant-cascader-picker-label {
+    padding: 0 30px 0 12px;
 }
 </style>
