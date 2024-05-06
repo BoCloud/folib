@@ -27,9 +27,9 @@ import java.util.List;
  * @author leipenghui
  * @date 2024/4/25
  **/
-@WebFilter(urlPatterns = "/dependency/*", filterName = "httpProxyFilter")
+@WebFilter(urlPatterns = "/dependency/*", filterName = "foEyesHttpProxyFilter")
 @Slf4j
-public class HttpProxyFilter implements Filter {
+public class FoEyesHttpProxyFilter implements Filter {
 
     @Inject
     private FoEyesProperties foEyesProperties;

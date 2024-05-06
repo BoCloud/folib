@@ -85,11 +85,11 @@
 
                 </template>
                 <template slot="vulnerabilities" slot-scope="vulnerabilities, row">
-                    <a-tag color="#f86c6b">{{ row.metrics.critical }} </a-tag>
-                    <a-tag color="#fd8c00">{{ row.metrics.high }} </a-tag>
-                    <a-tag color="#ffc107">{{ row.metrics.medium }} </a-tag>
-                    <a-tag color="#4dbd74"> {{ row.metrics.low }}</a-tag>
-                    <a-tag color="#777777"> {{ row.metrics.unassigned }}</a-tag>
+                    <a-tag color="#f86c6b">{{ row.metrics && row.metrics.critical ? row.metrics.critical : 0  }} </a-tag>
+                    <a-tag color="#fd8c00">{{ row.metrics && row.metrics.high ? row.metrics.high : 0  }} </a-tag>
+                    <a-tag color="#ffc107">{{ row.metrics && row.metrics.medium ? row.metrics.medium : 0  }} </a-tag>
+                    <a-tag color="#4dbd74"> {{ row.metrics && row.metrics.low ? row.metrics.low : 0 }}</a-tag>
+                    <a-tag color="#777777"> {{ row.metrics && row.metrics.unassigned ? row.metrics.unassigned : 0 }}</a-tag>
                 </template>
             </a-table>
         </a-card>

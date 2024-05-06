@@ -13,7 +13,7 @@ import java.util.Set;
 /**
  * @author leipenghui
  **/
-@WebFilter(urlPatterns = "/*")
+@WebFilter(urlPatterns = "/api/artifact/folib/promotion/*")
 public class WrapperRequestFilter implements Filter {
 
     private static final Set<String> FILTER_PATHS = Collections.unmodifiableSet(Sets.newHashSet("/api/artifact/folib/promotion/"));
