@@ -5,7 +5,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.http.*;
 import org.springframework.http.converter.StringHttpMessageConverter;
-import org.springframework.stereotype.Component;
 import org.springframework.util.MultiValueMap;
 import org.springframework.util.StreamUtils;
 import org.springframework.web.client.RestTemplate;
@@ -28,7 +27,6 @@ import java.util.List;
  * @author leipenghui
  * @date 2024/4/25
  **/
-@Component
 @WebFilter(urlPatterns = "/dependency/*", filterName = "httpProxyFilter")
 @Slf4j
 public class HttpProxyFilter implements Filter {
@@ -46,6 +44,7 @@ public class HttpProxyFilter implements Filter {
         HttpServletRequest req = (HttpServletRequest) request;
         String requestURI = req.getRequestURI();
         String allowedPath = "/dependency/";
+        log.info("[ {} ] 接收到请求...URI:{} before", this.getClass().getSimpleName(), requestURI);
         if (!requestURI.startsWith(allowedPath)) {
             filterChain.doFilter(request, response);
             return;
