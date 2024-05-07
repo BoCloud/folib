@@ -213,7 +213,7 @@ public class ScanService {
                     }
                 }
                 doScan(artifact);
-                Checksum.clearCache();
+//                Checksum.clearCache();
             } catch (Exception ex) {
                 log.error(ExceptionUtils.getStackTrace(ex));
             }
