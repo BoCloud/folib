@@ -44,7 +44,6 @@ public class FoEyesHttpProxyFilter implements Filter {
         HttpServletRequest req = (HttpServletRequest) request;
         String requestURI = req.getRequestURI();
         String allowedPath = "/dependency/";
-        log.info("[ {} ] 接收到请求...URI:{} before", this.getClass().getSimpleName(), requestURI);
         if (!requestURI.startsWith(allowedPath)) {
             filterChain.doFilter(request, response);
             return;
