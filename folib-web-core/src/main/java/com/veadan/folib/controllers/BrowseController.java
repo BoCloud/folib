@@ -405,6 +405,9 @@ public class BrowseController
         final String repositoryId = repository.getId();
         logger.info("Requested browsing repository content at {}/{}/{} ", storageId, repositoryId, rawPath);
         try {
+            if (DockerLayoutProvider.ALIAS.equals(repository.getLayout()) && acceptHeader != null && acceptHeader.contains(MediaType.APPLICATION_JSON_VALUE)) {
+                return getDockerArtifact(storageId, repositoryId, rawPath);
+            }
             final RepositoryPath repositoryPath = repositoryPathResolver.resolve(repository, rawPath);
             DirectoryListing directoryListing = null;
             if (RepositoryTypeEnum.GROUP.getType().equals(repository.getType())) {
