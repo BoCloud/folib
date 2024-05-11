@@ -15,6 +15,8 @@ import com.veadan.folib.configuration.ConfigurationManager;
 import com.veadan.folib.constant.GlobalConstants;
 import com.veadan.folib.domain.ArtifactIdGroup;
 import com.veadan.folib.domain.ArtifactIdGroupEntity;
+import com.veadan.folib.enums.NpmPacketSuffix;
+import com.veadan.folib.enums.NpmSubLayout;
 import com.veadan.folib.npm.NpmSearchRequest;
 import com.veadan.folib.npm.NpmViewRequest;
 import com.veadan.folib.npm.metadata.*;
@@ -514,6 +516,7 @@ public class NpmRepositoryFeatures implements RepositoryFeatures {
         ArtifactIdGroup artifactIdGroup = new ArtifactIdGroupEntity(storageId, repositoryId, packageId);
         packageFeed = fetchRemotePackageFeed(storage.getId(), repository.getId(),
                 packageId);
+        final String packageSuffix = NpmSubLayout.OHNPM.getValue().equals(repository.getSubLayout()) ? NpmPacketSuffix.HAR.getValue() : NpmPacketSuffix.TGZ.getValue();
         if (Objects.nonNull(packageFeed)) {
             String separator = "/";
             String baseUrl = StringUtils.chomp(configurationManager.getConfiguration().getBaseUrl(), separator);
@@ -527,7 +530,7 @@ public class NpmRepositoryFeatures implements RepositoryFeatures {
                 for (Map.Entry<String, PackageVersion> versionEntry : versions.getAdditionalProperties().entrySet()) {
                     Dist dist = versionEntry.getValue().getDist();
                     if (Objects.nonNull(dist) && StringUtils.isNotBlank(dist.getTarball())) {
-                        npmArtifactCoordinates = NpmArtifactCoordinates.of(versionEntry.getValue().getName(), versionEntry.getValue().getVersion());
+                        npmArtifactCoordinates = NpmArtifactCoordinates.of(versionEntry.getValue().getName(), versionEntry.getValue().getVersion(),packageSuffix);
                         uri = npmArtifactCoordinates.convertToResource(npmArtifactCoordinates);
                         dist.setTarball(repositoryBaseUrl + uri.toString());
                     }

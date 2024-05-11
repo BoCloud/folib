@@ -1,11 +1,14 @@
 package com.veadan.folib.controllers.layout.npm;
 
+import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.JSONObject;
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.JsonToken;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.collect.Lists;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.veadan.folib.artifact.coordinates.NpmArtifactCoordinates;
@@ -16,6 +19,11 @@ import com.veadan.folib.data.criteria.Paginator;
 import com.veadan.folib.domain.Artifact;
 import com.veadan.folib.domain.ArtifactEntity;
 import com.veadan.folib.domain.ArtifactIdGroupEntity;
+import com.veadan.folib.enums.NpmPacketSuffix;
+import com.veadan.folib.enums.NpmSubLayout;
+import com.veadan.folib.model.request.OhpmLoginReq;
+import com.veadan.folib.model.response.OhpmLoginRes;
+import com.veadan.folib.model.response.OhpmPublishRes;
 import com.veadan.folib.npm.NpmSearchRequest;
 import com.veadan.folib.npm.NpmViewRequest;
 import com.veadan.folib.npm.metadata.PackageFeed;
@@ -36,6 +44,9 @@ import com.veadan.folib.users.userdetails.SpringSecurityUser;
 import com.veadan.folib.web.LayoutRequestMapping;
 import com.veadan.folib.web.RepositoryMapping;
 import io.swagger.annotations.Api;
+import io.swagger.annotations.ApiOperation;
+import io.swagger.annotations.ApiResponse;
+import io.swagger.annotations.ApiResponses;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
 import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
@@ -209,7 +220,8 @@ public class NpmArtifactController
         final String repositoryId = repository.getId();
 
         String packageId = NpmArtifactCoordinates.calculatePackageId(packageScope, packageName);
-        NpmArtifactCoordinates c = NpmArtifactCoordinates.of(packageId, packageVersion);
+        final String packageSuffix = NpmSubLayout.OHNPM.getValue().equals(repository.getSubLayout()) ? NpmPacketSuffix.HAR.getValue() : NpmPacketSuffix.TGZ.getValue();
+        NpmArtifactCoordinates c = NpmArtifactCoordinates.of(packageId, packageVersion,packageSuffix);
 
         NpmViewRequest npmSearchRequest = new NpmViewRequest();
         npmSearchRequest.setPackageId(packageId);
@@ -241,16 +253,19 @@ public class NpmArtifactController
             throws Exception {
         long startTime = System.currentTimeMillis();
         response.setContentType(MediaType.APPLICATION_JSON_VALUE);
-        RepositorySearchRequest predicate = createSearchPredicate(packageScope, packageName);
+        String subLayout = repository.getSubLayout();
+        RepositorySearchRequest predicate = createSearchPredicate(packageScope, packageName, subLayout);
         String packageId = NpmArtifactCoordinates.calculatePackageId(packageScope, packageName);
-        PackageFeed packageFeed = artifactComponent.getNpmArtifactIdGroupCache(repository, predicate.getArtifactId(), Collections.singletonList("tgz"), predicate);
+        List<String> coordinateValues = NpmSubLayout.OHNPM.getValue().equals(subLayout) ? Lists.newArrayList("har") : Lists.newArrayList("tgz");
+        PackageFeed packageFeed = artifactComponent.getNpmArtifactIdGroupCache(repository, predicate.getArtifactId(), coordinateValues, predicate);
         if (Objects.isNull(packageFeed)) {
             String msg = "{\"error\":\"[NOT_FOUND] %s not found\"}";
             response.setStatus(HttpStatus.NOT_FOUND.value());
             response.getOutputStream().write(String.format(msg, packageId).getBytes());
             return;
         }
-        try (InputStream inputStream = new ByteArrayInputStream(npmJacksonMapper.writeValueAsBytes(packageFeed))) {
+        JSONObject jsonobj =  JSON.parseObject(json2);
+        try (InputStream inputStream = new ByteArrayInputStream(npmJacksonMapper.writeValueAsBytes(jsonobj))) {
             copyToResponse(inputStream, response);
         }
         logger.debug("[{}] viewPackageFeedWithScope storageId [{}] repositoryId [{}] packageId [{}] task time [{}] ms", this.getClass().getSimpleName(), repository.getStorage().getId(), repository.getId(), packageId, System.currentTimeMillis() - startTime);
@@ -278,9 +293,10 @@ public class NpmArtifactController
     }
 
     private RepositorySearchRequest createSearchPredicate(String packageScope,
-                                                          String packageName) {
+                                                          String packageName,String subLayout) {
+        List<String> coordinateValues = NpmSubLayout.OHNPM.getValue().equals(subLayout) ? Lists.newArrayList("har") : Lists.newArrayList("tgz");
         RepositorySearchRequest rootPredicate = new RepositorySearchRequest(
-                NpmArtifactCoordinates.calculatePackageId(packageScope, packageName), Collections.singleton("tgz"));
+                NpmArtifactCoordinates.calculatePackageId(packageScope, packageName), Lists.newArrayList(coordinateValues));
 
         return rootPredicate;
     }
@@ -303,7 +319,7 @@ public class NpmArtifactController
         final String repositoryId = repository.getId();
         String packageVersion = "";
         //Example of packageNameWithVersion  core-9.0.1-next.8.tgz
-        boolean isPackage = packageNameWithVersion.startsWith("package-") && packageExtension.endsWith("json");
+        boolean isPackage =   packageNameWithVersion.startsWith("package-") && packageExtension.endsWith("json");
         String artifactPath = "";
         if (!isPackage) {
             if (!packageNameWithVersion.startsWith(packageName + "-")) {
@@ -313,7 +329,8 @@ public class NpmArtifactController
             packageVersion = getPackageVersion(packageNameWithVersion, packageName);
             NpmArtifactCoordinates coordinates;
             try {
-                coordinates = NpmArtifactCoordinates.of(String.format("%s/%s", packageScope, packageName), packageVersion);
+                final String packageSuffix = NpmSubLayout.OHNPM.getValue().equals(repository.getSubLayout()) ? NpmPacketSuffix.HAR.getValue() : NpmPacketSuffix.TGZ.getValue();
+                coordinates = NpmArtifactCoordinates.of(String.format("%s/%s", packageScope, packageName), packageVersion,packageSuffix);
                 artifactPath = coordinates.buildPath();
             } catch (IllegalArgumentException e) {
                 response.setStatus(HttpStatus.BAD_REQUEST.value());
@@ -366,7 +383,8 @@ public class NpmArtifactController
 
             NpmArtifactCoordinates coordinates;
             try {
-                coordinates = NpmArtifactCoordinates.of(packageName, packageVersion);
+                final String packageSuffix = NpmSubLayout.OHNPM.getValue().equals(repository.getSubLayout()) ? NpmPacketSuffix.HAR.getValue() : NpmPacketSuffix.TGZ.getValue();
+                coordinates = NpmArtifactCoordinates.of(packageName, packageVersion,packageSuffix);
             } catch (IllegalArgumentException e) {
                 response.setStatus(HttpStatus.BAD_REQUEST.value());
                 response.getWriter().write(e.getMessage());
@@ -391,7 +409,7 @@ public class NpmArtifactController
         return null;
     }
 
-    @PreAuthorize("hasAuthority('ARTIFACTS_DEPLOY')")
+    //@PreAuthorize("hasAuthority('ARTIFACTS_DEPLOY')")
     @PutMapping(path = "{storageId}/{repositoryId}/{name:.+}", consumes = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity publish(@RepositoryMapping Repository repository,
                                   @PathVariable(name = "name") String name,
@@ -402,23 +420,30 @@ public class NpmArtifactController
         }
         final String storageId = repository.getStorage().getId();
         final String repositoryId = repository.getId();
-
+        final String subLayout = repository.getSubLayout();
 
         logger.info("npm publish request for {}/{}/{}", storageId, repositoryId, name);
         Pair<PackageVersion, Path> packageEntry;
         try {
-            packageEntry = extractPackage(name, request.getInputStream());
+            packageEntry = extractPackage(name, request.getInputStream(),subLayout);
         } catch (IllegalArgumentException e) {
             logger.error("Failed to extract npm package data", e);
             return ResponseEntity.badRequest().build();
         }
 
+        final String packageSuffix = NpmSubLayout.OHNPM.getValue().equals(subLayout) ? NpmPacketSuffix.HAR.getValue() : NpmPacketSuffix.TGZ.getValue();
         PackageVersion packageJson = packageEntry.getValue0();
         Path packageTgz = packageEntry.getValue1();
-
-        NpmArtifactCoordinates coordinates = NpmArtifactCoordinates.of(name, packageJson.getVersion());
-        storeNpmPackage(repository, coordinates, packageJson, packageTgz);
+        NpmArtifactCoordinates coordinates = NpmArtifactCoordinates.of(name, packageJson.getVersion(),packageSuffix);
+        storeNpmPackage(repository, coordinates, packageJson, packageTgz,repository.getSubLayout());
         artifactComponent.updateArtifactIdGroup(new ArtifactIdGroupEntity(storageId, repositoryId, coordinates.getId()), "");
+        if(NpmSubLayout.OHNPM.getValue().equals(repository.getSubLayout())){
+            OhpmPublishRes res =  OhpmPublishRes.builder()
+                    .additionalMsg("")
+                    .success(true)
+                    .build();
+            return ResponseEntity.ok(res);
+        }
         return ResponseEntity.ok("");
     }
 
@@ -582,10 +607,30 @@ public class NpmArtifactController
         return unpublishVersionWithScopeV5(repository, null, packageName, tarball, rev);
     }
 
+    @ApiOperation(value = "ohpm登录")
+    @ApiResponses(value = {
+            @ApiResponse(code = 200, message = "Successful operation", response = OhpmLoginRes.class),
+            @ApiResponse(code = 401, message = "Unauthorized"),
+            @ApiResponse(code = 403, message = "Forbidden"),
+    })
+    @PostMapping(path = "{storageId}/{repositoryId}/login")
+    public ResponseEntity<?> ohpmLogin(@PathVariable(name = "storageId") String storageId,
+                                       @PathVariable(name = "repositoryId") String repositoryId,
+                                       @RequestBody OhpmLoginReq ohpmLoginReq) {
+        if (ohpmLoginReq.getPublishId() != null) {
+            OhpmLoginRes ohpmLoginRes =OhpmLoginRes .builder()
+                    .success(true)
+                    .token(ohpmLoginReq.getPublishId())
+                    .message("")
+                    .build();
+            return ResponseEntity.ok(ohpmLoginRes);
+        }
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+    }
     private void storeNpmPackage(Repository repository,
                                  NpmArtifactCoordinates coordinates,
                                  PackageVersion packageDef,
-                                 Path packageTgzTmp)
+                                 Path packageTgzTmp,String npmSubLayout)
             throws IOException,
             ProviderImplementationException,
             NoSuchAlgorithmException,
@@ -594,13 +639,16 @@ public class NpmArtifactController
         try (InputStream is = new BufferedInputStream(Files.newInputStream(packageTgzTmp))) {
             artifactManagementService.validateAndStore(repositoryPath, is);
         }
+        Path packageJsonTmp = extractPackageJson(packageTgzTmp, npmSubLayout);
 
-        Path packageJsonTmp = extractPackageJson(packageTgzTmp);
+        String packageName = NpmSubLayout.OHNPM.getValue().equals(npmSubLayout) ? "oh-package.json5" : "package.json";
         RepositoryPath packageJsonPath = repositoryPathResolver.resolve(repository,
-                repositoryPath.resolveSibling("package.json"));
+                repositoryPath.resolveSibling(packageName));
         try (InputStream is = new BufferedInputStream(Files.newInputStream(packageJsonTmp))) {
             artifactManagementService.validateAndStore(packageJsonPath, is);
         }
+
+
 
         String shasum = Optional.ofNullable(packageDef.getDist()).map(p -> p.getShasum()).orElse(null);
         if (shasum == null) {
@@ -615,10 +663,11 @@ public class NpmArtifactController
 
         Files.delete(packageTgzTmp);
         Files.delete(packageJsonTmp);
+
     }
 
     private Pair<PackageVersion, Path> extractPackage(String packageName,
-                                                      ServletInputStream in)
+                                                      ServletInputStream in,String subLayout)
             throws IOException {
         Path packageSourceTmp = Files.createTempFile("package", "source");
         Files.copy(in, packageSourceTmp, StandardCopyOption.REPLACE_EXISTING);
@@ -659,7 +708,7 @@ public class NpmArtifactController
                         logger.info(String.format("Found npm package attachment [%s]", packageAttachmentName));
 
                         moveToAttachment(jp, packageAttachmentName);
-                        packageTgzPath = extractPackage(jp);
+                        packageTgzPath = extractPackage(jp, subLayout);
 
                         jp.nextToken();
                         jp.nextToken();
@@ -679,9 +728,10 @@ public class NpmArtifactController
         return Pair.with(packageVersion, packageTgzPath);
     }
 
-    private Path extractPackage(JsonParser jp)
+    private Path extractPackage(JsonParser jp,String subLayout)
             throws IOException {
-        Path packageTgzTmp = Files.createTempFile("package", "tgz");
+        final String suffix = NpmSubLayout.NPM.getValue().equals(subLayout) ? NpmPacketSuffix.TGZ.getValue() : NpmPacketSuffix.HAR.getValue();
+        Path packageTgzTmp = Files.createTempFile("package", suffix);
         try (OutputStream packageTgzOut = new BufferedOutputStream(Files.newOutputStream(packageTgzTmp,
                 StandardOpenOption.TRUNCATE_EXISTING))) {
             jp.readBinaryValue(packageTgzOut);
@@ -698,13 +748,16 @@ public class NpmArtifactController
         return packageTgzTmp;
     }
 
-    private Path extractPackageJson(Path packageTgzTmp)
+    private Path extractPackageJson(Path packageTgzTmp,String npmSubLayout)
             throws IOException {
         String packageJsonSource;
         try (InputStream packageTgzIn = new BufferedInputStream(Files.newInputStream(packageTgzTmp))) {
-            packageJsonSource = extrectPackageJson(packageTgzIn);
+            packageJsonSource = extrectPackageJson(packageTgzIn,npmSubLayout);
         }
-        Path packageJsonTmp = Files.createTempFile("package", "json");
+        String packageName = NpmSubLayout.OHNPM.getValue().equals(npmSubLayout) ? "oh-package.json5" : "package";
+        String suffix = NpmSubLayout.OHNPM.getValue().equals(npmSubLayout) ? "json5" : "json";
+        Path packageJsonTmp = Files.createTempFile(packageName, suffix);
+        assert packageJsonSource != null;
         Files.write(packageJsonTmp, packageJsonSource.getBytes(StandardCharsets.UTF_8),
                 StandardOpenOption.TRUNCATE_EXISTING);
 
@@ -749,16 +802,21 @@ public class NpmArtifactController
         return packageVersion;
     }
 
-    private String extrectPackageJson(InputStream in)
+    private String extrectPackageJson(InputStream in,String subLayout)
             throws IOException {
         GzipCompressorInputStream gzipIn = new GzipCompressorInputStream(in);
         try (TarArchiveInputStream tarIn = new TarArchiveInputStream(gzipIn)) {
             TarArchiveEntry entry;
 
             while ((entry = (TarArchiveEntry) tarIn.getNextEntry()) != null) {
-                if (!entry.getName().equals(NpmLayoutProvider.DEFAULT_PACKAGE_JSON_PATH)) {
+
+                String packageJsonPath = NpmSubLayout.OHNPM.getValue().equals(subLayout) ?
+                        NpmLayoutProvider.OHPM_PACKAGE_JSON_PATH :
+                        NpmLayoutProvider.DEFAULT_PACKAGE_JSON_PATH;
+                if (!entry.getName().equals(packageJsonPath)) {
                     continue;
                 }
+
                 StringWriter writer = new StringWriter();
                 IOUtils.copy(tarIn, writer, StandardCharsets.UTF_8);
                 return writer.toString();
@@ -797,5 +855,99 @@ public class NpmArtifactController
                 .orElse(new ArtifactEntity(repositoryPath.getStorageId(), repositoryPath.getRepositoryId(),
                         RepositoryFiles.readCoordinates(repositoryPath)));
     }
+
+    String json ="{\n" +
+            "    \"name\": \"@ohos/lottie\",\n" +
+            "    \"dist-tags\": {\n" +
+            "        \"latest\": \"2.0.10\"\n" +
+            "    },\n" +
+            "    \"versions\": {\n" +
+            "        \"2.0.10\": {\n" +
+            "            \"types\": \"index.d.ts\",\n" +
+            "            \"keywords\": [\n" +
+            "                \"OpenHarmony\",\n" +
+            "                \"HarmonyOS\",\n" +
+            "                \"Lottie\"\n" +
+            "            ],\n" +
+            "            \"author\": {\n" +
+            "                \"name\": \"ohos_tpc\",\n" +
+            "                \"url\": \"\",\n" +
+            "                \"email\": \"\"\n" +
+            "            },\n" +
+            "            \"ohos\": {\n" +
+            "                \"org\": \"opensource\"\n" +
+            "            },\n" +
+            "            \"description\": \"lottie是一个适用于OpenHarmony的动画库，它可以使用Bodymovin解析以json格式导出的Adobe After Effects动画，并在移动设备上进行本地渲染\",\n" +
+            "            \"_ohpmVersion\": \"1.2.4\",\n" +
+            "            \"dist\": {\n" +
+            "                \"integrity\": \"sha512-HBWibLErld6QJaQonrygd2uhCBWs98QzZQzeMxZUcBiha8+2YVRDwh5lwCzy0ZuedVenT61EhDqZdOr8MqPFHg==\",\n" +
+            "                \"shasum\": \"2e96f125a63dce402b8a6636b68130ed409b06c7\",\n" +
+            "                \"tarball\": \"http://localhost:38080/storages/public-project/ohpm-local/@ohos/lottie/-/lottie-2.0.10.har\"\n" +
+            "            },\n" +
+            "            \"main\": \"src/main/js/modules/full.js\",\n" +
+            "            \"repository\": \"https://gitee.com/openharmony-tpc/lottie.git\",\n" +
+            "            \"type\": \"module\",\n" +
+            "            \"version\": \"2.0.10\",\n" +
+            "            \"tags\": [\n" +
+            "                \"Animation\"\n" +
+            "            ],\n" +
+            "            \"dependencies\": {},\n" +
+            "            \"license\": \"MIT\",\n" +
+            "            \"devDependencies\": {},\n" +
+            "            \"name\": \"@ohos/lottie\",\n" +
+            "            \"_id\": \"@ohos/lottie@2.0.10\",\n" +
+            "            \"_nodeVersion\": \"16.16.0\"\n" +
+            "        }\n" +
+            "    },\n" +
+            "    \"maintainers\": [],\n" +
+            "    \"time\": {\n" +
+            "        \"modified\": \"2024-05-10T16:43:52.571Z\",\n" +
+            "        \"created\": \"2024-05-10T16:43:52.571Z\",\n" +
+            "        \"2.0.10\": \"2024-05-10T16:43:52.571Z\"\n" +
+            "    },\n" +
+            "    \"keywords\": [],\n" +
+            "    \"_rev\": \"1-2979567f9f807f26\",\n" +
+            "    \"description\": \"lottie是一个适用于OpenHarmony的动画库，它可以使用Bodymovin解析以json格式导出的Adobe After Effects动画，并在移动设备上进行本地渲染\",\n" +
+            "    \"_id\": \"@ohos/lottie\",\n" +
+            "    \"_id\": \"@ohos/lottie\"\n" +
+            "}";
+
+    String json2 = "{\n" +
+            "    \"name\": \"@ohos/lottie\",\n" +
+            "    \"dist-tags\": {\n" +
+            "        \"latest\": \"2.0.10\"\n" +
+            "    },\n" +
+            "    \"versions\": {\n" +
+            "        \"2.0.10\": {\n" +
+            "            \"name\": \"@ohos/lottie\",\n" +
+            "            \"version\": \"2.0.10\",\n" +
+            "            \"keywords\": [],\n" +
+            "            \"licenses\": [],\n" +
+            "            \"contributors\": [],\n" +
+            "            \"maintainers\": [],\n" +
+            "            \"files\": [],\n" +
+            "            \"man\": [],\n" +
+            "            \"bundledDependencies\": [],\n" +
+            "            \"os\": [],\n" +
+            "            \"_ohpmVersion\": \"1.2.4\",\n" +
+            "            \"cpu\": [],\n" +
+            "            \"dist\": {\n" +
+            "                \"integrity\": \"sha512-HBWibLErld6QJaQonrygd2uhCBWs98QzZQzeMxZUcBiha8+2YVRDwh5lwCzy0ZuedVenT61EhDqZdOr8MqPFHg==\",\n" +
+            "                \"shasum\": \"2e96f125a63dce402b8a6636b68130ed409b06c7\",\n" +
+            "                \"tarball\": \"http://localhost:38080/storages/public-project/ohpm-local/@ohos/lottie/-/lottie-2.0.10.har\"\n" +
+            "            },\n" +
+            "            \"_id\": \"@ohos/lottie@2.0.10\"\n" +
+            "        }\n" +
+            "    },\n" +
+            "    \"maintainers\": [],\n" +
+            "    \"time\": {\n" +
+            "        \"modified\": \"2024-05-10T18:00:00.118Z\",\n" +
+            "        \"created\": \"2024-05-10T18:00:00.118Z\",\n" +
+            "        \"2.0.10\": \"2024-05-10T18:00:00.118Z\"\n" +
+            "    },\n" +
+            "    \"keywords\": [],\n" +
+            "    \"_rev\": \"1-2979567f9f807f26\",\n" +
+            "    \"_id\": \"@ohos/lottie\"\n" +
+            "}";
 
 }

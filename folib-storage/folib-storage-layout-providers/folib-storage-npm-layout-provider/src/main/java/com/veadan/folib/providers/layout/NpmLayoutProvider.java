@@ -41,7 +41,7 @@ public class NpmLayoutProvider
     public static final String  PACKAGE_JSON = "package.json";
 
     public static final String  DEFAULT_PACKAGE_JSON_PATH = "package/package.json";
-
+    public static final String  OHPM_PACKAGE_JSON_PATH = "package/oh-package.json5";
     public static final String DEFAULT_SUFFIX = "tgz";
 
     public static final Pattern NPM_URL_USERNAME_PATTERN = Pattern.compile(

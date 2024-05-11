@@ -571,6 +571,16 @@
                       <h6>Go</h6>
                     </a-col>
                     <a-col :span="4">
+                        <div class="checkbox-label" :class="[layoutChecked === 'ohpm' ? 'active' : '']"
+                               @click="toggleCheckbox('ohpm')">
+                            <a-avatar :size="44" shape="square"
+                                        style="border-radius: 8px; background-image: linear-gradient( 310deg, #020202, #5c6391 );">
+                                <img src="images/folib/ohpm.svg" style="width: 100%;" alt="">
+                            </a-avatar>
+                        </div>
+                        <h6>Ohpm</h6>
+                    </a-col>
+                    <a-col :span="4">
                       <div class="checkbox-label" :class="[layoutChecked === 'gems' ? 'active' : '']">
                         <a-tooltip>
                           <template slot="title">

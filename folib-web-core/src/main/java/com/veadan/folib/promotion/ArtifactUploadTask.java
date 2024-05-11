@@ -15,6 +15,8 @@ import com.veadan.folib.domain.ArtifactIdGroupEntity;
 import com.veadan.folib.domain.ArtifactParse;
 import com.veadan.folib.domain.DockerManifest;
 import com.veadan.folib.entity.Dict;
+import com.veadan.folib.enums.NpmPacketSuffix;
+import com.veadan.folib.enums.NpmSubLayout;
 import com.veadan.folib.providers.io.RepositoryFiles;
 import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.providers.io.RepositoryPathResolver;
@@ -519,7 +521,9 @@ public class ArtifactUploadTask implements Callable<String> {
                     if (StringUtils.isBlank(name) || StringUtils.isBlank(version)) {
                         throw runtimeException;
                     }
-                    NpmArtifactCoordinates npmArtifactCoordinates = NpmArtifactCoordinates.of(name, version);
+
+                    final String packagesuffix = NpmSubLayout.OHNPM.getValue().equals(repositoryPath.getRepository().getSubLayout()) ? NpmPacketSuffix.HAR.getValue() :  NpmPacketSuffix.TGZ.getValue();
+                    NpmArtifactCoordinates npmArtifactCoordinates = NpmArtifactCoordinates.of(name, version, packagesuffix);
                     String artifactPath = npmArtifactCoordinates.convertToPath(npmArtifactCoordinates);
                     log.info("The fileRelativePath：{} artifactPath：{}", fileRelativePath, artifactPath);
                     repositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, artifactPath);

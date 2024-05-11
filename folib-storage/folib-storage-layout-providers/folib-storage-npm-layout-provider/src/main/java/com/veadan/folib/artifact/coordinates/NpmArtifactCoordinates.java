@@ -43,7 +43,7 @@ public class NpmArtifactCoordinates extends LayoutArtifactCoordinatesEntity<NpmA
 
     public static final String NPM_NAME_REGEX = "[a-zA-Z0-9][\\w-.]*";
 
-    public static final String NPM_EXTENSION_REGEX = "(tgz|json)";
+    public static final String NPM_EXTENSION_REGEX = "(tgz|json|har|json5)";
 
     public static final String NPM_PACKAGE_PATH_REGEX = "(@?" + NPM_NAME_REGEX + ")/(" + NPM_NAME_REGEX + ")/(" +
                                                         NPM_VERSION_REGEX + ")/" + NPM_NAME_REGEX + "(-(" +
@@ -270,16 +270,16 @@ public class NpmArtifactCoordinates extends LayoutArtifactCoordinatesEntity<NpmA
     }
 
     public static NpmArtifactCoordinates of(String packageId,
-                                            String version)
+                                            String version,String packagingSuffixes)
     {
         if (packageId.contains("/"))
         {
             String[] nameSplit = packageId.split("/");
 
-            return new NpmArtifactCoordinates(nameSplit[0], nameSplit[1], version, "tgz");
+            return new NpmArtifactCoordinates(nameSplit[0], nameSplit[1], version, packagingSuffixes);
         }
 
-        return new NpmArtifactCoordinates(null, packageId, version, "tgz");
+        return new NpmArtifactCoordinates(null, packageId, version, packagingSuffixes);
     }
 
     public static String calculatePackageId(String packageScope, String packageName)
