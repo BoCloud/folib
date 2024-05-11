@@ -469,15 +469,8 @@ public class RestClient extends ArtifactClient {
                 if (folderJson.containsKey(directoriesKey) && StringUtils.isNotBlank(folderJson.getString(directoriesKey))) {
                     directories = JSONArray.parseArray(folderJson.getString(directoriesKey), Folder.class);
                     if (!CollectionUtils.isEmpty(directories)) {
-                        if ("docker".equalsIgnoreCase(layout) && StringUtils.isNotBlank(path)) {
-                            //docker布局
-                            dockerFiles = directories.stream().filter(f -> (!"blobs".equalsIgnoreCase(f.getName())) && (!"manifest".equalsIgnoreCase(f.getName()))).collect(Collectors.toList());
-                            dockerFiles.forEach(item -> item.setFolder(false));
-                            folders.addAll(dockerFiles);
-                        } else {
-                            directories.forEach(item -> item.setFolder(true));
-                            folders.addAll(directories);
-                        }
+                        directories.forEach(item -> item.setFolder(true));
+                        folders.addAll(directories);
                     }
                 }
                 if (folderJson.containsKey(filesKey) && StringUtils.isNotBlank(folderJson.getString(filesKey))) {
