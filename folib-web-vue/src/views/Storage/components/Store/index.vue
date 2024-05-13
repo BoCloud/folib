@@ -109,7 +109,7 @@
                       <a-icon type="cloud-upload" />
                     </small>
                   </a>
-                  <a v-if="uploadEnabled && folibRepository.layout !== 'rpm'"><small style="padding-right: 20px" @click="handleUpload">
+                  <a v-if="uploadEnabled && folibRepository.layout !== 'rpm' && folibRepository.subLayout !== 'ohpm'"><small style="padding-right: 20px" @click="handleUpload">
                       {{ $t('Store.BatchUpload') }}
                       <a-icon type="cloud-upload" />
                     </small>
@@ -1468,20 +1468,20 @@ export default {
       }
       this.usedVisible = true
     },
-    scannerChange () {
-      this.scan.id =
-        this.folibRepository.storageId + '-' + this.folibRepository.id
-      this.scan.repository = this.folibRepository.id
-      this.scan.storage = this.folibRepository.storageId
-      this.scan.layout = this.folibRepository.layout
-      insertOrUpdateRules(this.scan).then(res => {
-        setTimeout(() => {
-          this.$notification.success({
-            message: this.scan.onScan ? '开启扫描' : '关闭扫描'
-          })
-        }, 100)
-      })
-    },
+    // scannerChange () {
+    //   this.scan.id =
+    //     this.folibRepository.storageId + '-' + this.folibRepository.id
+    //   this.scan.repository = this.folibRepository.id
+    //   this.scan.storage = this.folibRepository.storageId
+    //   this.scan.layout = this.folibRepository.layout
+    //   insertOrUpdateRules(this.scan).then(res => {
+    //     setTimeout(() => {
+    //       this.$notification.success({
+    //         message: this.scan.onScan ? '开启扫描' : '关闭扫描'
+    //       })
+    //     }, 100)
+    //   })
+    // },
     onLoadData (treeNode) {
       this.currentFileDetial = null
       if (this.folibRepository.layout === 'Docker')
