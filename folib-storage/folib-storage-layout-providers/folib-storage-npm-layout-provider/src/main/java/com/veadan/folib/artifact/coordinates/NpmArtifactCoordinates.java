@@ -198,6 +198,8 @@ public class NpmArtifactCoordinates extends LayoutArtifactCoordinatesEntity<NpmA
         String path = convertToPath(c);
         if (path.endsWith(NpmLayoutProvider.PACKAGE_JSON)) {
             return URI.create(String.format("%s/-/%s-%s.%s", c.getId(), "package", c.getVersion(), "json"));
+        }else if (path.endsWith(NpmLayoutProvider.OH_PACKAGE_JSON)){
+            return URI.create(String.format("%s/-/%s-%s.%s", c.getId(), "oh-package", c.getVersion(), "json5"));
         }
         return URI.create(String.format("%s/-/%s", c.getId(), c.getArtifactFileName()));
     }
@@ -215,6 +217,8 @@ public class NpmArtifactCoordinates extends LayoutArtifactCoordinatesEntity<NpmA
         if ("json".equals(getExtension()))
         {
             return "package.json";
+        }else if ("json5".equals(getExtension())){
+            return "oh-package.json5";
         }
         return String.format("%s-%s.%s", getName(), getVersion(), getExtension());
     }

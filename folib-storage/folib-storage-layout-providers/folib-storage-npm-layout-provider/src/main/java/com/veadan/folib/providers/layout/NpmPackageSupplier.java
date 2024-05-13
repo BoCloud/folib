@@ -6,14 +6,17 @@ import com.veadan.folib.artifact.ArtifactTag;
 import com.veadan.folib.artifact.coordinates.NpmArtifactCoordinates;
 import com.veadan.folib.config.NpmLayoutProviderConfig;
 import com.veadan.folib.domain.Artifact;
+import com.veadan.folib.enums.NpmSubLayout;
 import com.veadan.folib.npm.metadata.Dependency;
 import com.veadan.folib.npm.metadata.Dist;
 import com.veadan.folib.npm.metadata.PackageVersion;
 import com.veadan.folib.providers.io.RepositoryFiles;
 import com.veadan.folib.providers.io.RepositoryPath;
+import com.veadan.folib.providers.io.RepositoryPathResolver;
 import com.veadan.folib.services.ArtifactTagService;
 import org.apache.commons.codec.digest.MessageDigestAlgorithms;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
@@ -49,6 +52,9 @@ public class NpmPackageSupplier implements Function<Path, NpmPackageDesc> {
     @NpmLayoutProviderConfig.NpmObjectMapper
     private ObjectMapper npmJacksonMapper;
 
+    @Inject
+    protected RepositoryPathResolver repositoryPathResolver;
+
     @Override
     public NpmPackageDesc apply(Path path) {
         RepositoryPath repositoryPath = (RepositoryPath) path;
@@ -72,7 +78,18 @@ public class NpmPackageSupplier implements Function<Path, NpmPackageDesc> {
         npmPackageDesc.setReleaseDate(releaseDate);
 
         PackageVersion npmPackage = null;
-        byte[] packageJsonBytes = layoutProvider.getContentByFileName(repositoryPath, repositoryPath, NpmLayoutProvider.DEFAULT_PACKAGE_JSON_PATH);
+        byte[] packageJsonBytes = null;
+        if (NpmSubLayout.OHNPM.getValue().equals(repositoryPath.getRepository().getSubLayout())) {
+            try {
+                RepositoryPath packageJsonPath = repositoryPathResolver.resolve(repositoryPath.getRepository(),
+                        repositoryPath.resolveSibling("oh-package.json5"));
+                packageJsonBytes = Files.readAllBytes(packageJsonPath);
+            } catch (IOException ex) {
+                logger.error("apply  read oh-package.json5 error [{}]", ExceptionUtils.getStackTrace(ex));
+            }
+        } else {
+            packageJsonBytes = layoutProvider.getContentByFileName(repositoryPath, repositoryPath, NpmLayoutProvider.DEFAULT_PACKAGE_JSON_PATH);
+        }
         if (Objects.nonNull(packageJsonBytes)) {
             String packageJson = new String(packageJsonBytes, StandardCharsets.UTF_8);
             try {
