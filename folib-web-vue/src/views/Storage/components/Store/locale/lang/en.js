@@ -146,6 +146,7 @@ export default {
     'ivyCode': 'You need to change the ${USER_HOME}/.ivy2/ivysettings.xml file to add the following code:',
     'ConfiguringGlobalConfig': 'Configuring Global configuration',
     'ConfigMirror': 'You can configure npm mirror globally as follows:',
+    'OhpmConfigMirror': 'You can configure ohpm\'s mirror globally as follows.',
     'ViewNpm': 'View the current npm configuration',
     'EngineerAllocation': 'Engineering allocation',
     'validCurrent': 'This method is valid only for the current project',
@@ -261,4 +262,10 @@ export default {
     'NumberOfComponents': 'Number of components',
     'VulnerabilitiesNum': 'Number of vulnerabilities',
     'ViewDetail': 'View detail',
+    "SshKeygen":"Generate public and private keys with the tool ssh-keygen",
+    "PrivateKeyPath":"Setting the private key path",
+    "SetRepository":"Setting up the warehouse",
+    "SetPublishingRepository":"Setting up a Publishing Library",
+    "SslCheck":"ssl checksum",
+    "OhpmConfig":"View the current ohpm configuration",
 }

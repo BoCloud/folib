@@ -146,6 +146,7 @@ export default {
     'ivyCode': '你需要修改 ${USER_HOME}/.ivy2/ivysettings.xml，文件中加入以下代码:',
     'ConfiguringGlobalConfig': '配置全局配置',
     'ConfigMirror': '你可以全局配置npm的mirror,操作如下:',
+    'OhpmConfigMirror': '你可以全局配置ohpm的mirror,操作如下:',
     'ViewNpm': '查看npm当前配置',
     'EngineerAllocation': '工程配置',
     'validCurrent': '该方式只对当前工程生效',
@@ -261,4 +262,12 @@ export default {
     'NumberOfComponents': '组件数量',
     'VulnerabilitiesNum': '漏洞数量',
     'ViewDetail': '查看详情',
+    "SshKeygen":"利用工具ssh-keygen生成公、私钥",
+    "PrivateKeyPath":"设置私钥路径",
+    "SetPublishingId":"设置发布用户",
+    "SetRepository":"设置仓库",
+    "SetPublishingRepository":"设置发布库",
+    "SslCheck":"ssl校验",
+    "OhpmConfig":"查看当前ohpm配置",
+
 }

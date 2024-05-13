@@ -249,7 +249,7 @@
           ></prism-editor>
         </a-timeline-item>
       </a-timeline>
-      <a-timeline v-if="repositoryType === 'npm'">
+      <a-timeline v-if="repositoryType === 'npm' ">
         <a-timeline-item color="primary">
           NPM{{ $t('Store.GlobalConfiguration') }}
           <small>NPM{{ $t('Store.Configuration') }}{{ $t('Store.GlobalConfiguration') }}</small>
@@ -274,6 +274,7 @@
           >
           </prism-editor>
         </a-timeline-item>
+
         <a-timeline-item color="primary">
           {{ $t('Store.EngineerAllocation') }}
           <small>{{ $t('Store.validCurrent') }}</small>
@@ -990,6 +991,54 @@
           </prism-editor>
         </a-timeline-item>
       </a-timeline>
+      <a-timeline v-if="repositoryType === 'ohpm' ">
+            <a-timeline-item color="primary">
+                OHPM{{ $t('Store.GlobalConfiguration') }}
+                <small>OHPM{{ $t('Store.Configuration') }}{{ $t('Store.GlobalConfiguration') }}</small>
+                <p>{{ $t('Store.OhpmConfigMirror') }}</p>
+
+                <prism-editor
+                        class="my-editor height-300"
+                        :value="
+              '#'+this.$t('Store.SshKeygen')+'\n'+
+              'ssh-keygen -m PEM -t RSA -b 4096 -f your_key_path \n'+
+              '#'+this.$t('Store.PrivateKeyPath')+'\n'+
+              'ohpm config set key_path your_key_path \n'+
+              '#'+this.$t('Store.SetPublishingId')+'\n'+
+              'ohpm config set publish_id your_publish_id \n'+
+              '#'+this.$t('Store.SetRepository')+'\n'+
+              'ohpm config set repository '+baseUrl+'storages/'+folibRepository.storageId+'/'+folibRepository.id+'\n'+
+              '#'+this.$t('Store.SetPublishingRepository')+'\n'+
+              'ohpm config set publish_registry '+baseUrl+'storages/'+folibRepository.storageId+'/'+folibRepository.id+'\n'+
+              '#'+this.$t('Store.SslCheck')+'\n'+
+              'ohpm config set strict_ssl false \n'+
+              '\n' +
+              '#' +this.$t('Store.OhpmConfig')+'\n'+
+              'ohpm config list -j '
+            "
+                        :highlight="highlighterHandle"
+                        :line-numbers="false"
+                        :readonly="true"
+                >
+                </prism-editor>
+            </a-timeline-item>
+            <a-timeline-item color="primary">
+                {{ $t('Store.CommandOperation') }}
+                <small>OHPM {{ $t('Store.UsuallyCommand') }}</small>
+                <p>{{ $t('Store.UsuallyUse') }}OHPM{{ $t('Store.specificRefer') }}https://ohpm.openharmony.cn/</p>
+
+                <prism-editor
+                        class="my-editor height-300"
+                        :value="
+              '#'+   this.$t('Store.NpmInstall')+ '\n ohnpm install   \n\n'
+              + '#' + this.$t('Store.NpmPublish')+'\n'+ 'ohpm publish'
+            "
+                        :highlight="highlighterHandle"
+                        :line-numbers="false"
+                        :readonly="true"
+                ></prism-editor>
+            </a-timeline-item>
+        </a-timeline>
       <a-timeline>
         <a-timeline-item color="primary">
           {{ $t('Store.WarehouseAddress') }}
@@ -1033,6 +1082,9 @@ export default {
     };
   },
   created() {
+      console.log("ch",(this.repositoryType === 'npm' && this.folibRepository.subLayout === 'ohpm'))
+      console.log("repositoryType",this.repositoryType )
+      console.log("folibRepository",this.folibRepository )
     if (this.baseUrl) {
       this.repositoryUrl = this.baseUrl + 'storages/' + this.folibRepository.storageId + '/' + this.folibRepository.id
       if (this.repositoryType && this.repositoryType === 'docker') {
