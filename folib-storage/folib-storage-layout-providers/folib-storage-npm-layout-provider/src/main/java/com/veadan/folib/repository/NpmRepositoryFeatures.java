@@ -9,6 +9,7 @@ import com.fasterxml.jackson.core.JsonToken;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.veadan.folib.artifact.coordinates.NpmArtifactCoordinates;
+import com.veadan.folib.components.DistributedCacheComponent;
 import com.veadan.folib.config.NpmLayoutProviderConfig.NpmObjectMapper;
 import com.veadan.folib.configuration.Configuration;
 import com.veadan.folib.configuration.ConfigurationManager;
@@ -23,7 +24,6 @@ import com.veadan.folib.providers.repository.RepositorySearchRequest;
 import com.veadan.folib.providers.repository.event.RemoteRepositorySearchEvent;
 import com.veadan.folib.repositories.ArtifactIdGroupRepository;
 import com.veadan.folib.service.ProxyRepositoryConnectionPoolConfigurationService;
-import com.veadan.folib.services.ArtifactManagementService;
 import com.veadan.folib.services.ConfigurationManagementService;
 import com.veadan.folib.storage.Storage;
 import com.veadan.folib.storage.repository.Repository;
@@ -33,7 +33,6 @@ import com.veadan.folib.storage.repository.remote.RemoteRepository;
 import com.veadan.folib.storage.validation.artifact.version.GenericReleaseVersionValidator;
 import com.veadan.folib.storage.validation.artifact.version.GenericSnapshotVersionValidator;
 import com.veadan.folib.storage.validation.deployment.RedeploymentValidator;
-import com.veadan.folib.util.LocalDateTimeInstance;
 import com.veadan.folib.yaml.configuration.repository.NpmRepositoryConfigurationData;
 import com.veadan.folib.yaml.configuration.repository.remote.NpmRemoteRepositoryConfiguration;
 import com.veadan.folib.yaml.configuration.repository.remote.NpmRemoteRepositoryConfigurationDto;
@@ -42,8 +41,8 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.http.HttpStatus;
 import org.apache.http.client.config.RequestConfig;
-import org.folib.util.Commons;
 import org.glassfish.jersey.apache.connector.ApacheClientProperties;
+import org.glassfish.jersey.client.ClientProperties;
 import org.glassfish.jersey.client.authentication.HttpAuthenticationFeature;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -66,7 +65,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
 import java.net.URL;
-import java.time.LocalDateTime;
 import java.util.*;
 import java.util.concurrent.Executor;
 
@@ -117,7 +115,7 @@ public class NpmRepositoryFeatures implements RepositoryFeatures {
 
     @Inject
     @Lazy
-    private ArtifactManagementService artifactManagementService;
+    private DistributedCacheComponent distributedCacheComponent;
 
     @PostConstruct
     public void init() {
@@ -166,7 +164,7 @@ public class NpmRepositoryFeatures implements RepositoryFeatures {
         Client restClient = proxyRepositoryConnectionPoolConfigurationService.getRestClient(storageId, repositoryId);
         try {
             logger.debug("Search NPM packages for [{}].", remoteRepositoryUrl);
-
+            clientConfig(restClient);
             WebTarget service = restClient.target(remoteRepository.getUrl());
             authentication(service, remoteRepository.getUsername(), remoteRepository.getPassword());
             service = service.path("-/v1/search").queryParam("text", text).queryParam("size", size);
@@ -235,7 +233,7 @@ public class NpmRepositoryFeatures implements RepositoryFeatures {
                 getRestClient(repository.getStorage().getId(), repository.getId());
         try {
             logger.debug("Fetching remote changes for [{}] since [{}].", replicateUrl, since);
-
+            clientConfig(restClient);
             WebTarget service = restClient.target(replicateUrl);
             authentication(service, repository.getRemoteRepository().getUsername(), repository.getRemoteRepository().getPassword());
             service = service.path("_changes");
@@ -337,6 +335,7 @@ public class NpmRepositoryFeatures implements RepositoryFeatures {
         Client restClient = proxyRepositoryConnectionPoolConfigurationService.getRestClient(storageId, repositoryId);
         Response response = null;
         try {
+            clientConfig(restClient);
             WebTarget service = restClient.target(remoteRepository.getUrl());
             authentication(service, remoteRepository.getUsername(), remoteRepository.getPassword());
             service = service.path(packageId);
@@ -391,6 +390,7 @@ public class NpmRepositoryFeatures implements RepositoryFeatures {
         Client restClient = proxyRepositoryConnectionPoolConfigurationService.getRestClient(storageId, repositoryId);
         Response response = null;
         try {
+            clientConfig(restClient);
             WebTarget service = restClient.target(remoteRepository.getUrl());
             authentication(service, remoteRepository.getUsername(), remoteRepository.getPassword());
             service = service.path(packageId);
@@ -651,5 +651,21 @@ public class NpmRepositoryFeatures implements RepositoryFeatures {
             webTarget.property(ApacheClientProperties.REQUEST_CONFIG,
                     RequestConfig.custom().setCircularRedirectsAllowed(true).build());
         }
+    }
+
+    private void clientConfig(Client client) {
+        Integer connectTimeOut = globalClientConnectTimeOut();
+        if (Objects.nonNull(connectTimeOut)) {
+            client.property(ClientProperties.CONNECT_TIMEOUT, connectTimeOut);
+        }
+    }
+
+    private Integer globalClientConnectTimeOut() {
+        String key = "globalClientConnectTimeOut";
+        String globalClientConnectTimeOut = distributedCacheComponent.get(key);
+        if (StringUtils.isBlank(globalClientConnectTimeOut)) {
+            return null;
+        }
+        return Integer.parseInt(globalClientConnectTimeOut);
     }
 }
