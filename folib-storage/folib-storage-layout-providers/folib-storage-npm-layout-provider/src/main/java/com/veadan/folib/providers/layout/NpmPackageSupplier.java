@@ -78,18 +78,9 @@ public class NpmPackageSupplier implements Function<Path, NpmPackageDesc> {
         npmPackageDesc.setReleaseDate(releaseDate);
 
         PackageVersion npmPackage = null;
-        byte[] packageJsonBytes = null;
-        if (NpmSubLayout.OHNPM.getValue().equals(repositoryPath.getRepository().getSubLayout())) {
-            try {
-                RepositoryPath packageJsonPath = repositoryPathResolver.resolve(repositoryPath.getRepository(),
-                        repositoryPath.resolveSibling("oh-package.json5"));
-                packageJsonBytes = Files.readAllBytes(packageJsonPath);
-            } catch (IOException ex) {
-                logger.error("apply  read oh-package.json5 error [{}]", ExceptionUtils.getStackTrace(ex));
-            }
-        } else {
-            packageJsonBytes = layoutProvider.getContentByFileName(repositoryPath, repositoryPath, NpmLayoutProvider.DEFAULT_PACKAGE_JSON_PATH);
-        }
+        String packagePath = NpmSubLayout.OHNPM.getValue().equals(repositoryPath.getRepository().getSubLayout()) ? NpmLayoutProvider.OHPM_PACKAGE_JSON_PATH : NpmLayoutProvider.DEFAULT_PACKAGE_JSON_PATH;
+        byte[] packageJsonBytes = layoutProvider.getContentByFileName(repositoryPath, repositoryPath, packagePath);
+
         if (Objects.nonNull(packageJsonBytes)) {
             String packageJson = new String(packageJsonBytes, StandardCharsets.UTF_8);
             try {
