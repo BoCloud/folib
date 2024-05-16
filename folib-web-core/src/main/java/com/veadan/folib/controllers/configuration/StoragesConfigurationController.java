@@ -509,6 +509,13 @@ public class StoragesConfigurationController
                 dispatchRepositoryDto.setDispatchEnName(dispatchEnName);
                 wsMessageRequest = new WSMessageRequest(Command.STORAGES_REPOSITORY_TREE, dispatchRepositoryDto);
                 String targetHostName = FolibWsRunManageUtil.getTargetNode(clusterDispatchNodeDto.getClusterNodeHost());
+                if (StringUtils.isBlank(targetHostName)) {
+                    //WS目标节点未找到，尝试转发到集群中其他节点处理
+                    targetHostName = FolibWsRunManageUtil.getTargetHostName(clusterDispatchNodeDto.getClusterNodeHost());
+                    if (folibWsRunManageV2.forward(targetHostName)) {
+                        return null;
+                    }
+                }
                 messageResponse = folibWsRunManageV2.sendRequest(targetHostName, wsMessageRequest);
                 DispatchStorageTree dispatchStorageTree = (DispatchStorageTree) messageResponse.getDate();
                 repoList.addAll(dispatchStorageTree.getList());

@@ -35,7 +35,7 @@ public interface ArtifactPromotionService {
     ResponseEntity<String> nodeOption(PromotionNodeOption promotionNodeOption, HttpServletRequest request);
     CompletableFuture<Void> nodeOptionV2(PromotionNodeOption promotionNodeOption);
 
-    ResponseEntity nodeOptionAttachRecord(PromotionNodeOption promotionNodeOption, String requestHostName);
+    ResponseEntity nodeOptionAttachRecord(PromotionNodeOption promotionNodeOption, String requestHostName, HttpServletResponse response);
     CompletableFuture<Void> uploadArtifact(String syncNo, PromotionNodeOption promotionNodeOption, String requestHostName);
     Boolean artifactPullCallback(ArtifactPromotionNodeOptionCallbackReq model);
 
@@ -49,9 +49,9 @@ public interface ArtifactPromotionService {
 
     ResponseEntity getFileRelativePaths(ArtifactDto artifactDto);
 
-    ResponseEntity artifactDispatchAttachRecord(ArtifactDispatch artifactDispatch, HttpServletRequest request);
+    List<String> artifactDispatchAttachRecord(ArtifactDispatch artifactDispatch, HttpServletRequest request);
 
-    ResponseEntity artifactDispatch(ArtifactDispatch artifactDispatch);
+    List<String> artifactDispatch(ArtifactDispatch artifactDispatch);
 
     void validateStorageAndRepository(String storageId, String repositoryId);
 

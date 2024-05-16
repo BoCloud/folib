@@ -13,6 +13,7 @@ import com.veadan.folib.enums.ArtifactoryRepositoryTypeEnum;
 import com.veadan.folib.mapper.ArtifactSyncRecordMapper;
 import com.veadan.folib.promotion.PromotionUtil;
 import com.veadan.folib.providers.io.RepositoryPath;
+import com.veadan.folib.utils.UserUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
@@ -46,7 +47,7 @@ public class InnerArtifactPromotionProvider implements ArtifactPromotionProvider
     }
 
     @Override
-    public void promotion(RepositoryPath repositoryPath, String artifactPath, UnionTargetRepositoryConfiguration unionTargetRepositoryConfiguration) {
+    public List<String> promotion(RepositoryPath repositoryPath, String artifactPath, UnionTargetRepositoryConfiguration unionTargetRepositoryConfiguration) {
         String storageId = repositoryPath.getStorageId();
         String repositoryId = repositoryPath.getRepositoryId();
         TargetDispatchRepositoryDto targetDispatchRepository = TargetDispatchRepositoryDto.builder().dispatchClusterEnName(unionTargetRepositoryConfiguration.getNode()).targetStorageId(unionTargetRepositoryConfiguration.getStorageId()).targetRepositoryId(unionTargetRepositoryConfiguration.getRepositoryId()).build();
@@ -57,43 +58,12 @@ public class InnerArtifactPromotionProvider implements ArtifactPromotionProvider
                 .targetDispatchRepositoryList(Collections.singletonList(targetDispatchRepository))
                 .recordStatus(true).build();
         log.info("存储空间：{} 仓库：{} 制品：{} 目标节点：{} 目标节点类型：{} 目标存储空间：{} 目标仓库：{} 满足晋级条件，开始晋级", storageId, repositoryId, artifactPath, unionTargetRepositoryConfiguration.getNode(), unionTargetRepositoryConfiguration.getType(), unionTargetRepositoryConfiguration.getStorageId(), unionTargetRepositoryConfiguration.getRepositoryId());
-        final String syncNo = String.format("SyncNo%s", UUID.randomUUID().toString(true));
-        artifactDispatch.setSyncNo(syncNo);
-
-        final String srcStorageId = artifactDispatch.getSrcStorageId();
-        final String srcRepositoryId = artifactDispatch.getSrcRepositoryId();
-        final List<TargetDispatchRepositoryDto> targetDispatchRepositoryList = artifactDispatch.getTargetDispatchRepositoryList();
-        final String path = artifactDispatch.getPath();
-        // 生成日志记录
-        final ArtifactSyncRecord artifactSyncRecord = new ArtifactSyncRecord();
-        //artifactSyncRecord.setRequestHostName(requestHostName);
-        artifactSyncRecord.setSourceStorageId(srcStorageId);
-        artifactSyncRecord.setSourceRepositoryId(srcRepositoryId);
-        artifactSyncRecord.setSourcePath(String.format("%s/%s/%s", srcStorageId, srcRepositoryId, path));
-        artifactSyncRecord.setTargetPath(JSON.toJSONString(targetDispatchRepositoryList));
-        artifactSyncRecord.setSyncNo(syncNo);
-        artifactSyncRecord.setOpsType(ArtifactSyncRecordOpsTypeEnum.DISPATCH.getVal());
-///        artifactSyncRecord.setSyncModel(promotionNodeOption.getSyncModel());
-        artifactSyncRecord.setStatus(ArtifactSyncRecordStatusEnum.IN_SYNC.getVal());
-   //     artifactSyncRecord.setCreateBy(userName);
-        artifactSyncRecord.setCreateTime(new Date());
-        artifactSyncRecordMapper.insert(artifactSyncRecord);
-        try {
-            promotionUtil.executeHandleDispatch(artifactDispatch);
-        } catch (Exception e) {
-            artifactSyncRecord.setStatus(ArtifactSyncRecordStatusEnum.FAILED.getVal());
-            artifactSyncRecord.setFailedReason(e.getMessage());
-
-            // 更新日志结束开始时间
-            artifactSyncRecordMapper.updateByPrimaryKey(artifactSyncRecord
-                    .setUpdateTime(new Date()));
-            throw e;
-        }
+        return promotionUtil.executeHandleDispatch(artifactDispatch);
     }
 
     @Override
-    public void dispatch(ArtifactDispatch artifactDispatch) {
+    public List<String> dispatch(ArtifactDispatch artifactDispatch) {
         log.info("存储空间：{} 仓库：{} 制品：{} 目标节点类型 inner 准备分发 {}", artifactDispatch.getSrcStorageId(), artifactDispatch.getSrcRepositoryId(), artifactDispatch.getPath(), JSONObject.toJSONString(artifactDispatch));
-        promotionUtil.executeHandleDispatch(artifactDispatch);
+        return promotionUtil.executeHandleDispatch(artifactDispatch);
     }
 }

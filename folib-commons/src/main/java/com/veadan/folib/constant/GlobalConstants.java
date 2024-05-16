@@ -146,4 +146,9 @@ public interface GlobalConstants {
      * drop
      */
     String DROP = "drop";
+
+    /**
+     * ws节点key
+     */
+    String WS_NODE_KEY = "WS_NODE_KEY";
 }

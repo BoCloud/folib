@@ -5,8 +5,11 @@ import com.veadan.folib.authentication.api.ldap.LdapAuthenticationConfigurationM
 import com.veadan.folib.authentication.api.ldap.LdapConfiguration;
 import com.veadan.folib.authorization.dto.AuthorizationConfigDto;
 import com.veadan.folib.authorization.service.AuthorizationConfigService;
+import com.veadan.folib.cluster.FolibLockProperties;
 import com.veadan.folib.cluster.SyncAuthorizationEnum;
 import com.veadan.folib.cluster.SyncStorageEnum;
+import com.veadan.folib.components.DistributedCacheComponent;
+import com.veadan.folib.constant.GlobalConstants;
 import com.veadan.folib.controllers.cluster.dto.SyncAuthorizationDto;
 import com.veadan.folib.controllers.cluster.dto.SyncStorageDto;
 import com.veadan.folib.forms.configuration.ServerSettingsForm;
@@ -24,6 +27,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.http.client.config.RequestConfig;
 import org.glassfish.jersey.apache.connector.ApacheClientProperties;
 import org.glassfish.jersey.client.authentication.HttpAuthenticationFeature;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.security.core.Authentication;
@@ -33,6 +37,7 @@ import org.springframework.stereotype.Component;
 import javax.inject.Inject;
 import javax.ws.rs.client.WebTarget;
 import java.io.IOException;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.RejectedExecutionHandler;
@@ -64,6 +69,12 @@ public class CommonComponent {
     @Inject
     @Lazy
     private ClusterSyncService clusterSyncService;
+
+    @Inject
+    private DistributedCacheComponent distributedCacheComponent;
+
+    @Inject
+    private FolibLockProperties folibLockProperties;
 
     /**
      * Client WebTarget 构建认证信息
@@ -236,5 +247,45 @@ public class CommonComponent {
 
     public int getAvailableCores() {
         return Runtime.getRuntime().availableProcessors();
+    }
+
+    public void putWsNode(String targetHostName) {
+        String wsNodes = distributedCacheComponent.get(GlobalConstants.WS_NODE_KEY);
+        List<String> wsNodeList = Lists.newArrayList();
+        if (StringUtils.isNotBlank(wsNodes)) {
+            wsNodeList = Lists.newArrayList(wsNodes.split(","));
+        }
+        String lockIp = folibLockProperties.getFolibLockIp();
+        if (StringUtils.isNotBlank(lockIp)) {
+            int port = System.getProperty("folib.port") != null ?
+                    Integer.parseInt(System.getProperty("folib.port")) :
+                    38080;
+            String wsNode = String.format("%s_http://%s:%s", targetHostName, lockIp, port);
+            if (!wsNodeList.contains(wsNode)) {
+                wsNodeList.add(wsNode);
+            }
+            String value = String.join(",", wsNodeList);
+            distributedCacheComponent.put(GlobalConstants.WS_NODE_KEY, value);
+            log.info("Cache WS node [{}]", value);
+        }
+    }
+
+    public void removeWsNode(String targetHostName) {
+        String wsNodes = distributedCacheComponent.get(GlobalConstants.WS_NODE_KEY);
+        if (StringUtils.isBlank(wsNodes)) {
+            return;
+        }
+        List<String> wsNodeList = Lists.newArrayList(wsNodes.split(","));
+        String lockIp = folibLockProperties.getFolibLockIp();
+        if (StringUtils.isNotBlank(lockIp)) {
+            int port = System.getProperty("folib.port") != null ?
+                    Integer.parseInt(System.getProperty("folib.port")) :
+                    38080;
+            String wsNode = String.format("%s_http://%s:%s", targetHostName, lockIp, port);
+            wsNodeList.remove(wsNode);
+            String value = String.join(",", wsNodeList);
+            distributedCacheComponent.put(GlobalConstants.WS_NODE_KEY, value);
+            log.info("Cache WS node [{}]", value);
+        }
     }
 }

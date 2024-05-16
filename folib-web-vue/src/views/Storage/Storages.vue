@@ -165,7 +165,7 @@
               <li>{{ $t('Storage.BucketNameDefinition') }}</li>
               <li><strong>{{ $t('Storage.unmodifiableNote') }}</strong></li>
             </ul>
-            <a-form-model-item class="tags-field mb-10" :label="$t('Storage.S3Path')"
+            <a-form-model-item class="tags-field mb-10" :label="storageCreateData.storageProvider=='local'?$t('Storage.LocalPath'):$t('Storage.S3Path')"
               :colon="false">
               <a-card :bordered="false" class="bg-gray-3 shadow-0 mb-24" :bodyStyle="{ padding: '8px' }">
                 <a-row type="flex" align="middle">
@@ -252,7 +252,7 @@
               <li>{{ $t('Storage.SpaceNameRemain') }}</li>
               <li>{{ $t('Storage.BucketRemain') }}</li>
             </ul>
-            <a-form-item class="tags-field mb-10" :label="$t('Storage.S3Path')" :colon="false">
+            <a-form-item class="tags-field mb-10" :label="currentStorage.storageProvider=='local'?$t('Storage.LocalPath'):$t('Storage.S3Path')" :colon="false">
               <a-card :bordered="false" class="bg-gray-3 shadow-0 mb-24" :bodyStyle="{ padding: '8px' }">
                 <a-row type="flex" align="middle">
                   <a-col>

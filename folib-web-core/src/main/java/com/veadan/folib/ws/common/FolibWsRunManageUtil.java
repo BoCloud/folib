@@ -64,7 +64,8 @@ public class FolibWsRunManageUtil {
         FolibWsRunManageV2 wsRunManageV2 = SpringContextUtil.getBean(FolibWsRunManageV2.class);
         targetNode = wsRunManageV2.getTargetNode(targetNode);
         if (StringUtils.isBlank(targetNode)) {
-            throw new RuntimeException(String.format("Target node [%s] not found ws session, please check target node status", getSimpleTargetHostName(clusterNodeHost)));
+            return "";
+//            throw new RuntimeException(String.format("Target node [%s] not found ws session, please check target node status", getSimpleTargetHostName(clusterNodeHost)));
         }
         Session session = wsRunManageV2.getSession(targetNode, true);
         if (Objects.isNull(session) || !session.isOpen()) {
