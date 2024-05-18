@@ -60,9 +60,9 @@ public class ProxyRepositoryConnectionPoolConfigurationServiceImpl
     @Autowired
     private ConfigurationManagementService configurationManagementService;
 
-    @Value("${pool.maxConnections:200}")
+    @Value("${pool.maxConnections:500}")
     private int maxTotal;
-    @Value("${pool.defaultConnectionsPerRoute:5}")
+    @Value("${pool.defaultConnectionsPerRoute:10}")
     private int defaultMaxPerRoute;
     @Value("${pool.idleConnectionsTimeoutInSeconds:600}")
     private int idleConnectionsTimeoutInSeconds;

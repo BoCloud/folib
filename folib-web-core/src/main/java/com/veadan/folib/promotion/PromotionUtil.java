@@ -17,10 +17,9 @@ import com.veadan.folib.constant.ArtifactSyncRecordStatusEnum;
 import com.veadan.folib.dispatch.ClusterDispatchNodeDto;
 import com.veadan.folib.domain.*;
 import com.veadan.folib.dto.*;
+import com.veadan.folib.entity.ArtifactSyncRecord;
 import com.veadan.folib.entity.ArtifactSyncSlaveRecord;
-import com.veadan.folib.enums.ArtifactSyncRecordSyncModelEnum;
-import com.veadan.folib.enums.PromotionStatusEnum;
-import com.veadan.folib.enums.ThreadLocalContextFieldNameEnum;
+import com.veadan.folib.enums.*;
 import com.veadan.folib.forms.common.StorageTreeForm;
 import com.veadan.folib.mapper.ArtifactSyncRecordMapper;
 import com.veadan.folib.mapper.ArtifactSyncSlaveRecordMapper;
@@ -30,6 +29,7 @@ import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.providers.io.RepositoryPathResolver;
 import com.veadan.folib.providers.layout.DockerLayoutProvider;
 import com.veadan.folib.providers.layout.LayoutFileSystemProvider;
+import com.veadan.folib.scanner.common.exception.BusinessException;
 import com.veadan.folib.schema2.ImageManifest;
 import com.veadan.folib.schema2.LayerManifest;
 import com.veadan.folib.service.ProxyRepositoryConnectionPoolConfigurationService;
@@ -39,6 +39,7 @@ import com.veadan.folib.util.MessageDigestUtils;
 import com.veadan.folib.util.RepositoryPathUtil;
 import com.veadan.folib.util.ThreadLocalUtil;
 import com.veadan.folib.utils.UrlUtils;
+import com.veadan.folib.utils.UserUtils;
 import com.veadan.folib.wrapper.BufferedInputStreamWrapper;
 import com.veadan.folib.ws.client.handler.command.FolibWsClientArtifactPullCommand;
 import com.veadan.folib.ws.common.FolibWsAction;
@@ -187,29 +188,59 @@ public class PromotionUtil {
         }
     }
 
-    public void executeHandleDispatch(ArtifactDispatch artifactDispatch) {
-        // 设置上下文字段
-        ThreadLocalUtil.set(ThreadLocalContextFieldNameEnum.ARTIFACT_DISPATCH_SYNC_NO.getFieldName(), artifactDispatch.getSyncNo());
+    public List<String> executeHandleDispatch(ArtifactDispatch artifactDispatch) {
         // 获取分发配置信息
         Map<String, ClusterDispatchNodeDto> map = configurationManagementService.
                 getMutableConfigurationClone().getClusterDispatchNode();
         if (MapUtil.isEmpty(map)) {
             log.error("Distribution error,distribution configuration not found, please set distribution configuration first.");
-            return;
+            throw new BusinessException("Distribution error,distribution configuration not found, please set distribution configuration first.");
         }
         List<TargetDispatchRepositoryDto> targetRepositoryList = artifactDispatch.getTargetDispatchRepositoryList();
         String artifactPath = artifactDispatch.getPath();
         if (StringUtils.isBlank(artifactPath)) {
             log.error("Distribution error, artifactPath is empty.");
-            return;
+            throw new BusinessException("Distribution error, artifactPath is empty.");
         }
+        List<String> syncNoList = Lists.newArrayList();
+        final String sourceStorageId = artifactDispatch.getSrcStorageId();
+        final String sourceRepositoryId = artifactDispatch.getSrcRepositoryId();
         for (TargetDispatchRepositoryDto targetDispatchRepositoryDto : targetRepositoryList) {
-            handlerDispatch(map, artifactDispatch, targetDispatchRepositoryDto);
+            try {
+                // 生成日志记录
+                final ArtifactSyncRecord artifactSyncRecord = new ArtifactSyncRecord();
+                // 生成同步编号
+                final String syncNo = String.format("SyncNo%s", UUID.randomUUID().toString(true));
+                artifactDispatch.setSyncNo(syncNo);
+                artifactSyncRecord.setSourceStorageId(sourceStorageId);
+                artifactSyncRecord.setSourceRepositoryId(sourceRepositoryId);
+                artifactSyncRecord.setSourcePath(String.format("%s/%s/%s", sourceStorageId, sourceRepositoryId, artifactPath));
+                artifactSyncRecord.setTargetPath(JSON.toJSONString(Collections.singletonList(targetDispatchRepositoryDto)));
+                artifactSyncRecord.setSyncNo(syncNo);
+                artifactSyncRecord.setOpsType(ArtifactSyncRecordOpsTypeEnum.DISPATCH.getVal());
+                artifactSyncRecord.setStatus(ArtifactSyncRecordStatusEnum.IN_SYNC.getVal());
+                artifactSyncRecord.setCreateBy(UserUtils.getUsername());
+                artifactSyncRecord.setCreateTime(new Date());
+                artifactSyncRecordMapper.insert(artifactSyncRecord);
+                syncNoList.add(syncNo);
+                try {
+                    handlerDispatch(map, artifactDispatch, targetDispatchRepositoryDto, syncNo);
+                } catch (Exception ex) {
+                    artifactSyncRecord.setStatus(ArtifactSyncRecordStatusEnum.FAILED.getVal());
+                    artifactSyncRecord.setFailedReason(ex.getMessage());
+                    // 更新日志结束开始时间
+                    artifactSyncRecordMapper.updateByPrimaryKey(artifactSyncRecord
+                            .setUpdateTime(new Date()));
+                }
+            } catch (Exception ex) {
+                log.error("Distribution target [{}] error [{}]", JSONObject.toJSONString(targetDispatchRepositoryDto), ExceptionUtils.getStackTrace(ex));
+            }
         }
+        return syncNoList;
     }
 
     public void handlerDispatch(Map<String, ClusterDispatchNodeDto> map, ArtifactDispatch artifactDispatch,
-                                TargetDispatchRepositoryDto targetDispatchRepositoryDto) {
+                                TargetDispatchRepositoryDto targetDispatchRepositoryDto, String syncNo) {
         String artifactPath = artifactDispatch.getPath();
         String srcRepositoryId = artifactDispatch.getSrcRepositoryId();
         String srcStorageId = artifactDispatch.getSrcStorageId();
@@ -265,12 +296,12 @@ public class PromotionUtil {
                     }
                     for (StorageTreeForm repo : repos) {
                         String tempRepoId = repo.getName();
-                        executeDispatchV2(artifactPath, srcRepositoryId, srcStorageId, targetStorageId, tempRepoId, dispatchNodeDto, recordStatus);
+                        executeDispatchV2(artifactPath, srcRepositoryId, srcStorageId, targetStorageId, tempRepoId, dispatchNodeDto, syncNo, recordStatus);
                     }
                 }
             }
         } else {
-            executeDispatchV2(artifactPath, srcRepositoryId, srcStorageId, targetStorageId, targetRepositoryId, dispatchNodeDto, recordStatus);
+            executeDispatchV2(artifactPath, srcRepositoryId, srcStorageId, targetStorageId, targetRepositoryId, dispatchNodeDto, syncNo, recordStatus);
         }
     }
 
@@ -353,7 +384,7 @@ public class PromotionUtil {
         }
     }
 
-    private void executeDispatchV2(String artifactPath, String srcRepositoryId, String srcStorageId, String targetStorageId, String targetRepositoryId, ClusterDispatchNodeDto dispatchNodeDto, Boolean recordStatus) {
+    private void executeDispatchV2(String artifactPath, String srcRepositoryId, String srcStorageId, String targetStorageId, String targetRepositoryId, ClusterDispatchNodeDto dispatchNodeDto, String syncNo, Boolean recordStatus) {
         try {
             StringBuilder strBuilder = new StringBuilder();
             String dispatchNodeHost = dispatchNodeDto.getClusterNodeHost();
@@ -366,7 +397,6 @@ public class PromotionUtil {
             }
             strBuilder.append("/").append(targetRepositoryId).append("/").append(artifactPath);
             String dispatchType = dispatchNodeDto.getDispatchType();
-            final String syncNo = ThreadLocalUtil.get(ThreadLocalContextFieldNameEnum.ARTIFACT_DISPATCH_SYNC_NO.getFieldName(), String.class);
 
             log.info("分发 [{}] 开始", dispatchType);
 
@@ -383,7 +413,20 @@ public class PromotionUtil {
             PromotionNodeOptionDto uploadDto = getPromotionUploadDto(promotionArtifactDto);
 
             final String clusterNodeHost = dispatchNodeDto.getClusterNodeHost();
-            final String targetNode = FolibWsRunManageUtil.getTargetNode(clusterNodeHost);
+            String targetNode = FolibWsRunManageUtil.getTargetNode(clusterNodeHost);
+            if (StringUtils.isBlank(targetNode)) {
+                //WS目标节点未找到，尝试转发到集群中其他节点处理
+                targetNode = FolibWsRunManageUtil.getTargetHostName(clusterNodeHost);
+                List<TargetDispatchRepositoryDto> targetDispatchRepositoryList = Lists.newArrayList();
+                targetDispatchRepositoryList.add(TargetDispatchRepositoryDto.builder().dispatchClusterEnName(dispatchNodeDto.getClusterEnName()).targetStorageId(targetStorageId).targetRepositoryId(targetRepositoryId).artifactoryRepositoryType(ArtifactoryRepositoryTypeEnum.INNER.getType()).build());
+                ArtifactDispatch artifactDispatch = ArtifactDispatch.builder().srcStorageId(srcStorageId).srcRepositoryId(srcRepositoryId).path(artifactPath).type(srcRepository.getType()).layout(srcRepository.getLayout()).policy(srcRepository.getPolicy())
+                        .targetDispatchRepositoryList(targetDispatchRepositoryList).build();
+                if (folibWsRunManageV2.dispatch(targetNode, artifactDispatch)) {
+                    //删除当前节点分发记录
+                    artifactSyncRecordMapper.delete(ArtifactSyncRecord.builder().syncNo(syncNo).build());
+                    return;
+                }
+            }
             this.artifactSliceUploadV3(uploadDto, StringUtils.chomp(dispatchNodeHost, "/"), targetNode, uploadDto.getStorageId(), uploadDto.getRepositoryId(), syncNo);
             if (Boolean.TRUE.equals(recordStatus)) {
                 artifactComponent.handlerArtifactPromotion(dispatchNodeDto.getClusterEnName(), srcStorageId, srcRepositoryId, artifactPath, PromotionStatusEnum.SUCCESS.getStatus());

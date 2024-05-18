@@ -165,7 +165,7 @@
               <li>{{ $t('Storage.BucketNameDefinition') }}</li>
               <li><strong>{{ $t('Storage.unmodifiableNote') }}</strong></li>
             </ul>
-            <a-form-model-item class="tags-field mb-10" :label="$t('Storage.S3Path')"
+            <a-form-model-item class="tags-field mb-10" :label="storageCreateData.storageProvider=='local'?$t('Storage.LocalPath'):$t('Storage.S3Path')"
               :colon="false">
               <a-card :bordered="false" class="bg-gray-3 shadow-0 mb-24" :bodyStyle="{ padding: '8px' }">
                 <a-row type="flex" align="middle">
@@ -252,7 +252,7 @@
               <li>{{ $t('Storage.SpaceNameRemain') }}</li>
               <li>{{ $t('Storage.BucketRemain') }}</li>
             </ul>
-            <a-form-item class="tags-field mb-10" :label="$t('Storage.S3Path')" :colon="false">
+            <a-form-item class="tags-field mb-10" :label="currentStorage.storageProvider=='local'?$t('Storage.LocalPath'):$t('Storage.S3Path')" :colon="false">
               <a-card :bordered="false" class="bg-gray-3 shadow-0 mb-24" :bodyStyle="{ padding: '8px' }">
                 <a-row type="flex" align="middle">
                   <a-col>
@@ -579,6 +579,20 @@
                             </a-avatar>
                         </div>
                         <h6>Ohpm</h6>
+                    </a-col>
+                    <a-col :span="4">
+                      <div class="checkbox-label" :class="[layoutChecked === 'debian' ? 'active' : '']">
+                        <a-tooltip>
+                          <template slot="title">
+                            {{ $t('Storage.NextVersion') }}🤝
+                          </template>
+                        <a-avatar :size="44" shape="square"
+                                  style="border-radius: 8px; background-image: linear-gradient( 310deg, #020202, #5c6391 );">
+                          <img src="images/folib/debian.svg" style="width: 100%;" alt="">
+                        </a-avatar>
+                        </a-tooltip>
+                      </div>
+                      <h6>Debian</h6>
                     </a-col>
                     <a-col :span="4">
                       <div class="checkbox-label" :class="[layoutChecked === 'gems' ? 'active' : '']">

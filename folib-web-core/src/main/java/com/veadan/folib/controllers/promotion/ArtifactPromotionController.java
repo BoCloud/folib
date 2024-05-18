@@ -89,12 +89,13 @@ public class ArtifactPromotionController extends BaseArtifactController {
     @PermissionCheck(resourceKey = "ARTIFACTS_PROMOTION")
     public ResponseEntity nodeOption(@RequestBody @Validated PromotionNodeOption promotionNodeOption,
                                      HttpServletRequest request,
+                                     HttpServletResponse response,
                                      BindingResult bindingResult) {
         logger.info("NodeOption params [{}]", JSONObject.toJSONString(promotionNodeOption));
         if (bindingResult.hasErrors()) {
             throw new RequestBodyValidationException("请求参数错误", bindingResult);
         }
-        return artifactPromotionService.nodeOptionAttachRecord(promotionNodeOption, request.getServerName());
+        return artifactPromotionService.nodeOptionAttachRecord(promotionNodeOption, request.getServerName(), response);
     }
 
 
@@ -159,7 +160,7 @@ public class ArtifactPromotionController extends BaseArtifactController {
         if (bindingResult.hasErrors()) {
             throw new RequestBodyValidationException("请求参数错误", bindingResult);
         }
-        return artifactPromotionService.artifactDispatchAttachRecord(artifactDispatch, request);
+        return ResponseEntity.ok(artifactPromotionService.artifactDispatchAttachRecord(artifactDispatch, request));
     }
 
     @PostMapping("/parseArtifact")

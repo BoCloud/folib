@@ -5,6 +5,7 @@ import cn.hutool.core.io.IoUtil;
 import cn.hutool.core.lang.UUID;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
+import com.google.common.collect.Lists;
 import com.veadan.folib.cloud.storage.s3fs.util.UriUtils;
 import com.veadan.folib.components.IdGenerateUtils;
 import com.veadan.folib.components.artifact.ArtifactComponent;
@@ -40,7 +41,6 @@ import com.veadan.folib.service.ProxyRepositoryConnectionPoolConfigurationServic
 import com.veadan.folib.services.*;
 import com.veadan.folib.storage.repository.Repository;
 import com.veadan.folib.storage.repository.RepositoryTypeEnum;
-import com.veadan.folib.users.userdetails.SpringSecurityUser;
 import com.veadan.folib.util.MessageDigestUtils;
 import com.veadan.folib.utils.FileUtils;
 import com.veadan.folib.utils.PropertiesUtils;
@@ -56,6 +56,7 @@ import com.veadan.folib.ws.server.WSMessageResponse;
 import com.veadan.folib.ws.server.manage.FolibWsServerRunManage;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.codec.digest.MessageDigestAlgorithms;
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.fileupload.disk.DiskFileItem;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
@@ -71,9 +72,10 @@ import org.springframework.context.annotation.Lazy;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
-import org.springframework.util.CollectionUtils;
+import org.springframework.web.context.request.RequestAttributes;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.multipart.commons.CommonsMultipartFile;
 
@@ -296,9 +298,6 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
                 promotionUtil.executePromotionCopy(syncNo, targetPath, srcPath, srcRepository, destRepository);
                 return CompletableFuture.completedFuture(null);
             }
-            if (StringUtils.isBlank(promotionNodeOption.getTargetNode())) {
-                promotionNodeOption.setTargetNode(FolibWsRunManageUtil.getTargetNode(promotionNodeOption.getTargetPath()));
-            }
 
             validateStorageAndRepository(sourceStorageId, sourceRepositoryId);
 
@@ -404,19 +403,24 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
 
 
     @Override
-    public ResponseEntity nodeOptionAttachRecord(PromotionNodeOption promotionNodeOption, String requestHostName) {
+    public ResponseEntity nodeOptionAttachRecord(PromotionNodeOption promotionNodeOption, String requestHostName, HttpServletResponse response) {
         String targetHostName = FolibWsRunManageUtil.getSimpleTargetHostName(promotionNodeOption.getTargetPath());
         String sourceHostName = FolibWsRunManageUtil.getSimpleTargetHostName(promotionNodeOption.getSourcePath());
-
         String selfHostName = FolibWsRunManageUtil.getSimpleTargetHostName(configurationManagementService.getConfiguration().getBaseUrl());
         if (selfHostName.equals(sourceHostName)) {
             final String syncNo = String.format("SyncNo%s", UUID.randomUUID().toString(true));
             uploadArtifact(syncNo, promotionNodeOption, requestHostName);
+            if (response.isCommitted()) {
+                return null;
+            }
             return ResponseEntity.ok(syncNo);
         } else if (selfHostName.equals(targetHostName)) {
             try {
                 //委托sourceHostName节点upload到本节点，对本节点来说是下载，1小时超时时间，等待下载完成
                 String sourceNodeName = FolibWsRunManageUtil.getTargetHostName(promotionNodeOption.getSourcePath());
+                if (folibWsRunManageV2.forward(sourceNodeName)) {
+                    return null;
+                }
                 WSMessageResponse wsMessageResponse = folibWsRunManageV2.sendRequest(sourceNodeName, new WSMessageRequest(Command.DELEGATE_UPLOAD, promotionNodeOption), 60 * 60);
                 log.info("DelegateUpload WSMessageResponse:{}", wsMessageResponse);
                 return ResponseEntity.ok("ok");
@@ -434,17 +438,28 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
             promotionNodeOption.setSyncModel(ArtifactSyncRecordSyncModelEnum.PUSH.getVal());
         }
         String targetNode = promotionNodeOption.getTargetNode();
+        String sourceBaseUrl = promotionRepositoryInfo.getSourceBaseUrl();
+        String targetBaseUrl = promotionRepositoryInfo.getTargetBaseUrl();
+        if (!sourceBaseUrl.equals(targetBaseUrl)) {
+            //不是同一个节点下的复制制品
+            if (StringUtils.isBlank(targetNode)) {
+                //无默认WS目标节点，解析WS目标节点
+                targetNode = FolibWsRunManageUtil.getTargetNode(promotionNodeOption.getTargetPath());
+                if (StringUtils.isBlank(targetNode)) {
+                    //WS目标节点未找到，尝试转发到集群中其他节点处理
+                    targetNode = FolibWsRunManageUtil.getTargetHostName(promotionNodeOption.getTargetPath());
+                    if (folibWsRunManageV2.forward(targetNode)) {
+                        return null;
+                    }
+                }
+                promotionNodeOption.setTargetNode(targetNode);
+            }
+        }
         if (ArtifactSyncRecordSyncModelEnum.PUSH.getVal().equals(promotionNodeOption.getSyncModel())) {
             validateSourceRepositoryPath(promotionRepositoryInfo.getSourceStorageId(), promotionRepositoryInfo.getSourceRepositoryId(), promotionRepositoryInfo.getSourceArtifactPath());
-            String sourceBaseUrl = promotionRepositoryInfo.getSourceBaseUrl();
-            String targetBaseUrl = promotionRepositoryInfo.getTargetBaseUrl();
             if (sourceBaseUrl.equals(targetBaseUrl)) {
                 validateStorageAndRepository(promotionRepositoryInfo.getTargetStorageId(), promotionRepositoryInfo.getTargetRepositoryId());
             } else {
-                if (StringUtils.isBlank(targetNode)) {
-                    targetNode = FolibWsRunManageUtil.getTargetNode(promotionNodeOption.getTargetPath());
-                    promotionNodeOption.setTargetNode(targetNode);
-                }
                 validateRemoteRepository(targetNode, promotionRepositoryInfo.getTargetStorageId(), promotionRepositoryInfo.getTargetRepositoryId());
             }
         }
@@ -710,84 +725,26 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
     }
 
     @Override
-    public ResponseEntity artifactDispatchAttachRecord(ArtifactDispatch artifactDispatch, HttpServletRequest request) {
-        final String srcStorageId = artifactDispatch.getSrcStorageId();
-        final String srcRepositoryId = artifactDispatch.getSrcRepositoryId();
-        final List<TargetDispatchRepositoryDto> targetDispatchRepositoryList = artifactDispatch.getTargetDispatchRepositoryList();
-        final String path = artifactDispatch.getPath();
-
+    public List<String> artifactDispatchAttachRecord(ArtifactDispatch artifactDispatch, HttpServletRequest request) {
+        List<String> syncNoList = Lists.newArrayList();
         Map<String, List<TargetDispatchRepositoryDto>> groupByMap = artifactDispatch.getTargetDispatchRepositoryList().stream().collect(Collectors.groupingBy(TargetDispatchRepositoryDto::getArtifactoryRepositoryType));
         if (groupByMap.containsKey(ArtifactoryRepositoryTypeEnum.JFROG.getType())) {
             this.artifactDispatch(artifactDispatch);
-            return ResponseEntity.ok("");
+            return syncNoList;
         }
-
-        // 生成同步编号
-        final String syncNo = String.format("SyncNo%s", UUID.randomUUID().toString(true));
-        artifactDispatch.setSyncNo(syncNo);
-        final SpringSecurityUser userDetails = (SpringSecurityUser) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-        final String userName = Optional.ofNullable(userDetails).map(SpringSecurityUser::getUsername).orElse(null);
-        final String requestHostName = request.getServerName();
-
-        // 生成日志记录
-        final ArtifactSyncRecord artifactSyncRecord = new ArtifactSyncRecord();
-        artifactSyncRecord.setRequestHostName(requestHostName);
-        artifactSyncRecord.setSourceStorageId(srcStorageId);
-        artifactSyncRecord.setSourceRepositoryId(srcRepositoryId);
-        artifactSyncRecord.setSourcePath(String.format("%s/%s/%s", srcStorageId, srcRepositoryId, path));
-        artifactSyncRecord.setTargetPath(JSON.toJSONString(targetDispatchRepositoryList));
-        artifactSyncRecord.setSyncNo(syncNo);
-        artifactSyncRecord.setOpsType(ArtifactSyncRecordOpsTypeEnum.DISPATCH.getVal());
-///        artifactSyncRecord.setSyncModel(promotionNodeOption.getSyncModel());
-        artifactSyncRecord.setStatus(ArtifactSyncRecordStatusEnum.IN_SYNC.getVal());
-        artifactSyncRecord.setCreateBy(userName);
-        artifactSyncRecord.setCreateTime(new Date());
-        artifactSyncRecordMapper.insert(artifactSyncRecord);
-
         try {
-            // 异步执行制品晋级
-            final ResponseEntity<String> re = this.artifactDispatch(artifactDispatch);
-
-            // 更新同步的逻辑状态等信息，由于制品分发涉及多个制品，即成功状态是所有支配完成时更新
-            if (!HttpStatus.OK.equals(re.getStatusCode())) {
-                artifactSyncRecord.setStatus(ArtifactSyncRecordStatusEnum.FAILED.getVal());
-                if (Objects.nonNull(re.getBody())) {
-                    artifactSyncRecord.setFailedReason(re.getBody().toString());
-                }
-            }
-//                if (HttpStatus.OK.equals(re.getStatusCode())) {
-//                    artifactSyncRecord.setStatus(ArtifactSyncRecordStatusEnum.SUCCESS.getVal());
-//                } else {
-//                    artifactSyncRecord.setStatus(ArtifactSyncRecordStatusEnum.FAILED.getVal());
-//                    if (Objects.nonNull(re.getBody())) {
-//                        artifactSyncRecord.setFailedReason(re.getBody().toString());
-//                    }
-//                }
-
-            // 更新日志结束开始时间
-            artifactSyncRecordMapper.updateByPrimaryKey(artifactSyncRecord
-                    .setUpdateTime(new Date())
-                    .setUpdateBy(userName));
+            syncNoList = this.artifactDispatch(artifactDispatch);
         } catch (Exception e) {
             log.error("artifactDispatch exception", e);
-            artifactSyncRecord.setStatus(ArtifactSyncRecordStatusEnum.FAILED.getVal());
-            artifactSyncRecord.setFailedReason(e.getMessage());
-
-            // 更新日志结束开始时间
-            artifactSyncRecordMapper.updateByPrimaryKey(artifactSyncRecord
-                    .setUpdateTime(new Date())
-                    .setUpdateBy(userName));
-
             if (e instanceof RejectedExecutionException) {
                 throw new RuntimeException("The promotion queue is full , info:" + e.getMessage());
             }
         }
-
-        return ResponseEntity.ok(syncNo);
+        return syncNoList;
     }
 
     @Override
-    public ResponseEntity artifactDispatch(ArtifactDispatch artifactDispatch) {
+    public List<String> artifactDispatch(ArtifactDispatch artifactDispatch) {
         log.info("Start artifact dispatch [{}] ...", JSONObject.toJSONString(artifactDispatch));
         try {
             artifactDispatch.setPath(UriUtils.decode(artifactDispatch.getPath()));
@@ -795,14 +752,18 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
             log.warn(ExceptionUtils.getStackTrace(ex));
         }
         Map<String, List<TargetDispatchRepositoryDto>> groupByMap = artifactDispatch.getTargetDispatchRepositoryList().stream().collect(Collectors.groupingBy(TargetDispatchRepositoryDto::getArtifactoryRepositoryType));
+        List<String> syncNoList = Lists.newArrayList(), itemSyncNoList;
         for (Map.Entry<String, List<TargetDispatchRepositoryDto>> item : groupByMap.entrySet()) {
             ArtifactPromotionProvider artifactPromotionProvider = artifactPromotionProviderRegistry.getProvider(item.getKey());
             ArtifactDispatch itemArtifactDispatch = new ArtifactDispatch();
             BeanUtils.copyProperties(artifactDispatch, itemArtifactDispatch);
             itemArtifactDispatch.setTargetDispatchRepositoryList(item.getValue());
-            artifactPromotionProvider.dispatch(itemArtifactDispatch);
+            itemSyncNoList = artifactPromotionProvider.dispatch(itemArtifactDispatch);
+            if (CollectionUtils.isNotEmpty(itemSyncNoList)) {
+                syncNoList.addAll(itemSyncNoList);
+            }
         }
-        return ResponseEntity.ok("ok");
+        return syncNoList;
     }
 
     @Override

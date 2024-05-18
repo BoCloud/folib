@@ -2,9 +2,12 @@ package com.veadan.folib.ws.common;
 
 import com.alibaba.fastjson.JSONObject;
 import com.google.common.util.concurrent.RateLimiter;
+import com.veadan.folib.components.common.CommonComponent;
+import com.veadan.folib.components.ws.WSForwardComponent;
 import com.veadan.folib.config.PromotionConfig;
 import com.veadan.folib.configuration.ConfigurationManager;
 import com.veadan.folib.dispatch.ClusterDispatchNodeDto;
+import com.veadan.folib.domain.ArtifactDispatch;
 import com.veadan.folib.promotion.KryoSerializationUtil;
 import com.veadan.folib.services.ConfigurationManagementService;
 import com.veadan.folib.util.FileSizeConvertUtils;
@@ -15,6 +18,7 @@ import org.apache.commons.collections4.MapUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
+import org.springframework.security.access.intercept.RunAsManager;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
@@ -58,6 +62,12 @@ public class FolibWsRunManageV2 {
 
     @Autowired
     private PromotionConfig promotionConfig;
+
+    @Autowired
+    private CommonComponent commonComponent;
+
+    @Autowired
+    private WSForwardComponent wsForwardComponent;
 
     private WebSocketContainer webSocketContainer;
 
@@ -143,6 +153,7 @@ public class FolibWsRunManageV2 {
             FOLIB_WS_RUN_MAP.put(targetHostName, session);
             sessionIdleMap.put(session, System.currentTimeMillis());
             log.info("RegisterSession targetHostName [{}] session [{}] []", targetHostName, session);
+            commonComponent.putWsNode(getSimpleTargetHostName(targetHostName));
             printWs();
         }
     }
@@ -167,6 +178,7 @@ public class FolibWsRunManageV2 {
             sessionBytesSent.remove(session);
             sessionLocks.remove(session);
             RATE_LIMITER_MAP.remove(getSimpleTargetHostName(targetHostName));
+            commonComponent.removeWsNode(getSimpleTargetHostName(targetHostName));
             printWs();
         }
     }
@@ -209,7 +221,7 @@ public class FolibWsRunManageV2 {
         return targetHostName;
     }
 
-    private String getSimpleTargetHostName(String targetHostName) {
+    public String getSimpleTargetHostName(String targetHostName) {
         return targetHostName.split("_")[0];
     }
 
@@ -424,6 +436,31 @@ public class FolibWsRunManageV2 {
         log.warn("Current WS map is null");
         return "";
     }
+
+    public boolean forward(String targetNodeName) {
+        try {
+            Session session = getSession(targetNodeName);
+            if (session == null || !session.isOpen()) {
+                return wsForwardComponent.forward(targetNodeName);
+            }
+            return false;
+        } catch (Exception ex) {
+            throw new RuntimeException(ex);
+        }
+    }
+
+    public boolean dispatch(String targetNodeName, ArtifactDispatch artifactDispatch) {
+        try {
+            Session session = getSession(targetNodeName);
+            if (session == null || !session.isOpen()) {
+                return wsForwardComponent.dispatch(targetNodeName, artifactDispatch);
+            }
+            return false;
+        } catch (Exception ex) {
+            throw new RuntimeException(ex);
+        }
+    }
+
 }
 
 class FolibWsRequestException extends Exception {

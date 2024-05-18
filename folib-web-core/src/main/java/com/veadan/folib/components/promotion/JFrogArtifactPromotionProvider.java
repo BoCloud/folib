@@ -53,16 +53,17 @@ public class JFrogArtifactPromotionProvider implements ArtifactPromotionProvider
     }
 
     @Override
-    public void promotion(RepositoryPath repositoryPath, String artifactPath, UnionTargetRepositoryConfiguration unionTargetRepositoryConfiguration) {
+    public List<String> promotion(RepositoryPath repositoryPath, String artifactPath, UnionTargetRepositoryConfiguration unionTargetRepositoryConfiguration) {
         String storageId = repositoryPath.getStorageId();
         String repositoryId = repositoryPath.getRepositoryId();
         artifactPath = artifactPath.replace(String.format("%s/%s/", storageId, repositoryId), "");
         log.info("存储空间：{} 仓库：{} 制品：{} 目标节点：{} 目标节点类型：{} 目标仓库：{} 目标路径：{} 满足晋级条件，开始晋级", storageId, repositoryId, artifactPath, unionTargetRepositoryConfiguration.getNode(), unionTargetRepositoryConfiguration.getType(), unionTargetRepositoryConfiguration.getRepositoryId(), artifactPath);
         jFrogService.uploadItem(unionTargetRepositoryConfiguration.getNode(), unionTargetRepositoryConfiguration.getRepositoryId(), repositoryPath, artifactPath, true);
+        return null;
     }
 
     @Override
-    public void dispatch(ArtifactDispatch artifactDispatch) {
+    public List<String> dispatch(ArtifactDispatch artifactDispatch) {
         String storageId = artifactDispatch.getSrcStorageId();
         String repositoryId = artifactDispatch.getSrcRepositoryId();
         String artifactPath = artifactDispatch.getPath().replace(String.format("%s/%s/", storageId, repositoryId), ""), uploadArtifactPath = "";
@@ -88,6 +89,7 @@ public class JFrogArtifactPromotionProvider implements ArtifactPromotionProvider
                 log.error("存储空间：{} 仓库：{} 制品：{} 目标节点：{} 目标节点类型：{} 目标仓库：{} 分发错误：{}", storageId, repositoryId, artifactPath, item.getDispatchClusterEnName(), item.getArtifactoryRepositoryType(), item.getTargetRepositoryId(), ExceptionUtils.getStackTrace(ex));
             }
         }
+        return null;
     }
 
     private boolean artifactRealExists(RepositoryPath repositoryPath) {

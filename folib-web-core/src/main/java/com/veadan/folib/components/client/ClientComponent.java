@@ -78,7 +78,7 @@ public class ClientComponent {
             response = builder.get();
             String responseBody = response.readEntity(String.class);
             if (HttpStatus.SC_OK != response.getStatus()) {
-                log.info("Url response error [{}] [{}] [{}] [{}]", targetUrl, headers, response.getStatus(), responseBody);
+                log.error("Url response error [{}] [{}] [{}] [{}]", targetUrl, headers, response.getStatus(), responseBody);
             }
             ResponseResult responseResult = ResponseResult.builder().build();
             responseResult.setHttpStatus(response.getStatus());
