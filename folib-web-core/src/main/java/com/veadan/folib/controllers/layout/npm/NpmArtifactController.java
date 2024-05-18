@@ -10,6 +10,7 @@ import com.fasterxml.jackson.core.JsonToken;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.databind.deser.std.JsonNodeDeserializer;
 import com.google.common.collect.Lists;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -54,9 +55,13 @@ import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
 import org.apache.commons.codec.digest.DigestUtils;
+import org.apache.commons.compress.archivers.ArchiveEntry;
 import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
 import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
+import org.apache.commons.compress.archivers.tar.TarArchiveOutputStream;
 import org.apache.commons.compress.compressors.gzip.GzipCompressorInputStream;
+import org.apache.commons.compress.compressors.gzip.GzipCompressorOutputStream;
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -692,6 +697,7 @@ public class NpmArtifactController
         Path packageSourceTmp = Files.createTempFile("package", "source");
         Files.copy(in, packageSourceTmp, StandardCopyOption.REPLACE_EXISTING);
 
+
         PackageVersion packageVersion = null;
         Path packageTgzPath = null;
 
@@ -728,7 +734,8 @@ public class NpmArtifactController
                         logger.info(String.format("Found npm package attachment [%s]", packageAttachmentName));
 
                         moveToAttachment(jp, packageAttachmentName);
-                        packageTgzPath = extractPackage(jp, subLayout);
+                        String ohpmVersion = NpmSubLayout.OHNPM.getValue().equals(subLayout) ? packageVersion.getOhpmVersion() : null;
+                        packageTgzPath = extractPackage(jp, subLayout,ohpmVersion);
 
                         jp.nextToken();
                         jp.nextToken();
@@ -748,7 +755,7 @@ public class NpmArtifactController
         return Pair.with(packageVersion, packageTgzPath);
     }
 
-    private Path extractPackage(JsonParser jp,String subLayout)
+    private Path extractPackage(JsonParser jp,String subLayout,String ohpmVersion)
             throws IOException {
         final String suffix = NpmSubLayout.NPM.getValue().equals(subLayout) ? NpmPacketSuffix.TGZ.getValue() : NpmPacketSuffix.HAR.getValue();
         Path packageTgzTmp = Files.createTempFile("package", suffix);
@@ -756,13 +763,18 @@ public class NpmArtifactController
                 StandardOpenOption.TRUNCATE_EXISTING))) {
             jp.readBinaryValue(packageTgzOut);
         }
+        if(NpmSubLayout.OHNPM.getValue().equals(subLayout)){
+            changeHar(packageTgzTmp,ohpmVersion);
+        };
 
         long packageSize = Files.size(packageTgzTmp);
 
         Assert.isTrue(FIELD_NAME_LENGTH.equals(jp.nextFieldName()), "Failed to validate package content length.");
         jp.nextToken();
 
-        Assert.isTrue(packageSize == jp.getLongValue(), "Invalid package content length.");
+        if(!NpmSubLayout.OHNPM.getValue().equals(subLayout)) {
+            Assert.isTrue(packageSize == jp.getLongValue(), "Invalid package content length.");
+        }
         jp.nextToken();
 
         return packageTgzTmp;
@@ -894,4 +906,99 @@ public class NpmArtifactController
                         RepositoryFiles.readCoordinates(repositoryPath)));
     }
 
+    public static void untarGz(String tarGzFilePath, String destDirectory) throws IOException {
+        File destDir = new File(destDirectory);
+        if (!destDir.exists()) {
+            destDir.mkdirs();
+        }
+
+        try (InputStream fis = new BufferedInputStream( Files.newInputStream(Path.of(tarGzFilePath)));
+             GzipCompressorInputStream gcis = new GzipCompressorInputStream(fis);
+             TarArchiveInputStream tais = new TarArchiveInputStream(gcis)) {
+
+            TarArchiveEntry entry;
+            while ((entry = tais.getNextTarEntry()) != null) {
+                File outputFile = new File(destDir, entry.getName());
+                if (entry.isDirectory()) {
+                    if (!outputFile.exists()) {
+                        outputFile.mkdirs();
+                    }
+                } else {
+                    // Ensure parent directory exists
+                    File parent = outputFile.getParentFile();
+                    if (!parent.exists()) {
+                        parent.mkdirs();
+                    }
+                    try (OutputStream os = new FileOutputStream(outputFile)) {
+                        byte[] buffer = new byte[4096];
+                        int len;
+                        while ((len = tais.read(buffer)) != -1) {
+                            os.write(buffer, 0, len);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    public  void createHar(String sourceDirectory, String harFilePath) throws IOException {
+        try (FileOutputStream fos = new FileOutputStream(harFilePath);
+             GzipCompressorOutputStream gcos = new GzipCompressorOutputStream(fos);
+             TarArchiveOutputStream tarOut = new TarArchiveOutputStream(gcos)) {
+
+            addFilesToTar(sourceDirectory, "", tarOut);
+        }
+    }
+
+    private  void addFilesToTar(String sourceDir, String currentPath, TarArchiveOutputStream tarOut) throws IOException {
+        File file = new File(sourceDir, currentPath);
+        String[] files = file.list();
+        if (files != null) {
+            for (String fileName : files) {
+                File f = new File(file, fileName);
+                String entryName = currentPath + "/" + f.getName();
+                ArchiveEntry entry = tarOut.createArchiveEntry(f, entryName);
+                tarOut.putArchiveEntry(entry);
+                if (f.isDirectory()) {
+                    tarOut.closeArchiveEntry();
+                    addFilesToTar(sourceDir, entryName, tarOut);
+                } else {
+                    try (FileInputStream fis = new FileInputStream(f)) {
+                        byte[] buffer = new byte[1024];
+                        int len;
+                        while ((len = fis.read(buffer)) != -1) {
+                            tarOut.write(buffer, 0, len);
+                        }
+                    }
+                    tarOut.closeArchiveEntry();
+                }
+            }
+        }
+    }
+
+    private void changeHar(Path source,String ohpmVersion) throws IOException {
+
+
+        // 1. 解压到临时目录
+        File tempDir = Files.createTempDirectory("har-extract").toFile();
+
+        File file = new File("/Users/mac/DevEcoStudioProjects/demo/kk.har");
+        untarGz(source.toFile().getPath(), tempDir.getPath());
+
+        String newJsonContent = Files.readString(Path.of(tempDir.getPath(), "/package/oh-package.json5"));//tempDir.getPath("oh-package.json5").toString();
+        JSONObject version = objectMapper.readValue(newJsonContent, JSONObject.class);
+        version.put("_ohpmVersion",ohpmVersion);
+        // 2. 修改文件
+        File jsonFile = new File(tempDir, "/package/oh-package.json5");
+        if (jsonFile.exists()) {
+            objectMapper.enable(SerializationFeature.INDENT_OUTPUT);
+            FileUtils.writeStringToFile(jsonFile, objectMapper.writeValueAsString(version), StandardCharsets.UTF_8);
+        }
+
+
+        // 3. 重新压缩
+        createHar(tempDir.getPath(), source.toFile().getPath());
+        FileUtils.deleteDirectory(tempDir);
+
+    }
 }
