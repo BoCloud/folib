@@ -268,4 +268,5 @@ export default {
     "SetPublishingRepository":"Setting up a Publishing Library",
     "SslCheck":"ssl checksum",
     "OhpmConfig":"View the current ohpm configuration",
+    "SetPublishingId":"Setting up Publishing Users",
 }
