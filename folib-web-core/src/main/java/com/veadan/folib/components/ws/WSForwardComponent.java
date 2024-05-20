@@ -15,7 +15,6 @@ import org.glassfish.jersey.client.ClientProperties;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.http.*;
-import org.springframework.http.converter.StringHttpMessageConverter;
 import org.springframework.stereotype.Component;
 import org.springframework.util.MultiValueMap;
 import org.springframework.util.StreamUtils;
@@ -35,7 +34,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintWriter;
 import java.net.URI;
-import java.nio.charset.StandardCharsets;
 import java.util.*;
 
 /**
@@ -60,6 +58,9 @@ public class WSForwardComponent {
     @Autowired
     @Lazy
     private FolibWsRunManageV2 folibWsRunManageV2;
+
+    @Autowired
+    private RestTemplate restTemplate;
 
     private final String DISPATCH_API_ENDPOINT = "/api/artifact/folib/promotion/artifactDispatch";
 
@@ -117,9 +118,6 @@ public class WSForwardComponent {
         }
         // 封装发http请求
         RequestEntity requestEntity = new RequestEntity(body, headers, httpMethod, URI.create(url));
-        RestTemplate restTemplate = new RestTemplate();
-        // 编码格式转换
-        restTemplate.getMessageConverters().set(1, new StringHttpMessageConverter(StandardCharsets.UTF_8));
         ResponseEntity<String> result = restTemplate.exchange(requestEntity, String.class);
         // 将转发请求得到的结果和响应头返回客户端
         String resultBody = result.getBody();
@@ -176,9 +174,7 @@ public class WSForwardComponent {
         log.info("接收到分发请求，目标[{}]...", nodeUrl);
         Client client = proxyRepositoryConnectionPoolConfigurationService.getRestClient();
         //连接建立超时时间
-        client.property(ClientProperties.CONNECT_TIMEOUT, 5000);
-        //读取内容超时时间
-        client.property(ClientProperties.READ_TIMEOUT, 30000);
+        client.property(ClientProperties.CONNECT_TIMEOUT, 10000);
         String targetUrl = StringUtils.removeEnd(nodeUrl, GlobalConstants.SEPARATOR) + DISPATCH_API_ENDPOINT;
         WebTarget target = client.target(targetUrl);
         Invocation.Builder builder = target.request(javax.ws.rs.core.MediaType.APPLICATION_JSON);
