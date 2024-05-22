@@ -580,6 +580,18 @@
                         </div>
                         <h6>Ohpm</h6>
                     </a-col>
+
+                    <a-col :span="4">
+                        <div class="checkbox-label" :class="[layoutChecked === 'GitLfs' ? 'active' : '']"
+                               @click="toggleCheckbox('GitLfs')">
+                              <a-avatar :size="44" shape="square"
+                                        style="border-radius: 8px; background-image: linear-gradient( 310deg, #020202, #5c6391 );">
+                                  <img src="images/folib/gitlfs.svg" style="width: 100%;" alt="">
+                              </a-avatar>
+                        </div>
+                        <h6>Git LFS</h6>
+                    </a-col>
+
                     <a-col :span="4">
                       <div class="checkbox-label" :class="[layoutChecked === 'debian' ? 'active' : '']">
                         <a-tooltip>

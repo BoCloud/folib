@@ -44,6 +44,7 @@
         <module>folib-storage-conan-layout-provider</module>
         <module>folib-storage-cocoapods-layout-provider</module>
         <module>folib-storage-go-layout-provider</module>
+        <module>folib-storage-gitlfs-layout-provider</module>
     </modules>
 
     <dependencies>
