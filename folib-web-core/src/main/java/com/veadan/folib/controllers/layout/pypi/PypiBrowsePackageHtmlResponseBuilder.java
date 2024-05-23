@@ -100,7 +100,7 @@ public class PypiBrowsePackageHtmlResponseBuilder {
         PypiArtifactCoordinates artifactCoordinates = null;
         for (PypiSearchResult pypiSearchResult : pypiSearchResultList) {
             artifactCoordinates = PypiArtifactCoordinates.parse(pypiSearchResult.getArtifactName());
-            packageLinks.append("<a href=\"" + "/storages/").append(pypiSearchResult.getStorageId()).append("/").append(pypiSearchResult.getRepositoryId()).append("/packages/").append(artifactCoordinates.getFileName()).append("\">").append(artifactCoordinates.getFileName()).append("</a><br>\n");
+            packageLinks.append("<a href=\"" + "/storages/").append(pypiSearchResult.getStorageId()).append("/").append(pypiSearchResult.getRepositoryId()).append("/packages/").append(pypiSearchResult.getArtifactPath()).append("\">").append(artifactCoordinates.getFileName()).append("</a><br>\n");
         }
         return packageLinks.toString();
     }

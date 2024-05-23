@@ -4,6 +4,7 @@ import com.alibaba.fastjson.JSONObject;
 import com.google.common.collect.Sets;
 import com.veadan.folib.artifact.coordinates.PypiArtifactCoordinates;
 import com.veadan.folib.components.artifact.ArtifactComponent;
+import com.veadan.folib.constant.GlobalConstants;
 import com.veadan.folib.controllers.BaseArtifactController;
 import com.veadan.folib.domain.ArtifactIdGroup;
 import com.veadan.folib.domain.ArtifactIdGroupEntity;
@@ -20,6 +21,7 @@ import com.veadan.folib.storage.validation.artifact.ArtifactCoordinatesValidatio
 import com.veadan.folib.utils.PypiPackageNameConverter;
 import com.veadan.folib.web.LayoutRequestMapping;
 import com.veadan.folib.web.RepositoryMapping;
+import io.micrometer.core.instrument.util.StringUtils;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiResponse;
@@ -29,7 +31,6 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
@@ -183,7 +184,7 @@ public class PypiArtifactController extends BaseArtifactController {
             @ApiResponse(code = HttpURLConnection.HTTP_INTERNAL_ERROR, message = "An error occurred while executing download request."),
             @ApiResponse(code = HttpURLConnection.HTTP_UNAVAILABLE, message = "Service Unavailable.")})
     @PreAuthorize("hasAuthority('ARTIFACTS_RESOLVE')")
-    @RequestMapping(path = "/{storageId}/{repositoryId}/packages/{artifactName}", method = RequestMethod.GET)
+    @RequestMapping(path = "/{storageId}/{repositoryId}/packages/{artifactName:.+}", method = RequestMethod.GET)
     public void downloadPackage(@RepositoryMapping Repository repository,
                                 @PathVariable(name = "artifactName") String artifactName,
                                 HttpServletRequest request,
@@ -207,9 +208,9 @@ public class PypiArtifactController extends BaseArtifactController {
         String targetUrl = null;
         if (repository.isProxyRepository() && Objects.nonNull(repository.getRemoteRepository())) {
             ArtifactIdGroup artifactIdGroup = getArtifactIdGroup(repository, coordinates);
-            if (Objects.nonNull(artifactIdGroup) && StringUtils.hasText(artifactIdGroup.getMetadata())) {
+            if (Objects.nonNull(artifactIdGroup) && StringUtils.isNotBlank(artifactIdGroup.getMetadata())) {
                 List<PypiSearchResult> pypiSearchRequestList = JSONObject.parseArray(artifactIdGroup.getMetadata(), PypiSearchResult.class);
-                Optional<PypiSearchResult> optionalPypiSearchResult = pypiSearchRequestList.stream().filter(item -> item.getArtifactName().equals(artifactName)).findFirst();
+                Optional<PypiSearchResult> optionalPypiSearchResult = pypiSearchRequestList.stream().filter(item -> item.getArtifactName().equals(coordinates.getFileName())).findFirst();
                 if (optionalPypiSearchResult.isPresent()) {
                     targetUrl = optionalPypiSearchResult.get().getArtifactUrl();
                 }
@@ -306,14 +307,14 @@ public class PypiArtifactController extends BaseArtifactController {
     }
 
     private boolean isValidFileType(String fileType) {
-        if (StringUtils.isEmpty(fileType)) {
+        if (StringUtils.isBlank(fileType)) {
             return false;
         }
         return VALID_FILE_TYPES.contains(fileType);
     }
 
     private boolean isValidAction(String action) {
-        if (StringUtils.isEmpty(action)) {
+        if (StringUtils.isBlank(action)) {
             return false;
         }
         return VALID_ACTIONS.contains(action);

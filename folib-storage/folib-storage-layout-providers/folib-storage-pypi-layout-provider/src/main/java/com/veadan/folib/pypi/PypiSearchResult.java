@@ -13,6 +13,7 @@ public class PypiSearchResult {
 
     private String artifactName;
     private String artifactUrl;
+    private String artifactPath;
     private String storageId;
     private String repositoryId;
     private String groupName;

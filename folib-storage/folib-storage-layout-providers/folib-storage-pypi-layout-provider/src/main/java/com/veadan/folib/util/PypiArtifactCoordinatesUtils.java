@@ -43,9 +43,10 @@ public class PypiArtifactCoordinatesUtils
         }
 
         String fileName = FilenameUtils.getName(path);
-
-        return path.endsWith(".tar.gz") ? parseSourcePackage(fileName) :
-               parseWheelPackage(fileName);
+        PypiArtifactCoordinates pypiArtifactCoordinates =  path.endsWith(".tar.gz") ? parseSourcePackage(fileName) :
+                parseWheelPackage(fileName);
+        pypiArtifactCoordinates.setPath(path);
+        return pypiArtifactCoordinates;
     }
 
     private static PypiArtifactCoordinates parseSourcePackage(String path)

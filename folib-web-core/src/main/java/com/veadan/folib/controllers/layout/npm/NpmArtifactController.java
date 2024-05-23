@@ -12,6 +12,7 @@ import com.google.common.collect.Lists;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.veadan.folib.artifact.coordinates.NpmArtifactCoordinates;
+import com.veadan.folib.authentication.api.password.PasswordAuthentication;
 import com.veadan.folib.components.artifact.ArtifactComponent;
 import com.veadan.folib.config.NpmLayoutProviderConfig.NpmObjectMapper;
 import com.veadan.folib.controllers.BaseArtifactController;
@@ -39,6 +40,7 @@ import com.veadan.folib.providers.repository.RepositoryProviderRegistry;
 import com.veadan.folib.providers.repository.RepositorySearchRequest;
 import com.veadan.folib.repository.NpmRepositoryFeatures.SearchPackagesEventListener;
 import com.veadan.folib.repository.NpmRepositoryFeatures.ViewPackageEventListener;
+import com.veadan.folib.scanner.common.util.Base64Utils;
 import com.veadan.folib.storage.repository.Repository;
 import com.veadan.folib.storage.validation.artifact.ArtifactCoordinatesValidationException;
 import com.veadan.folib.users.service.UserService;
@@ -71,6 +73,8 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.InsufficientAuthenticationException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -144,6 +148,9 @@ public class NpmArtifactController
 
     @Inject
     private ThreadPoolTaskExecutor asyncFetchRemotePackageThreadPoolTaskExecutor;
+
+    @Inject
+    private AuthenticationManager authenticationManager;
 
     @GetMapping(path = "{storageId}/{repositoryId}/-/v1/search")
     @PreAuthorize("hasAuthority('ARTIFACTS_RESOLVE')")
@@ -632,12 +639,18 @@ public class NpmArtifactController
                                        @RequestBody OhpmLoginReq ohpmLoginReq) {
 
         if (ohpmLoginReq.getPublishId() != null) {
-            String username = ohpmLoginReq.getPublishId();
+            JSONObject data = new JSONObject();
+            String publishId = ohpmLoginReq.getPublishId();
+            String basic = Base64Utils.decode(publishId);
+            String[] accountArr = basic.split(":");
+            if (accountArr.length != 2) {
+                data.put("success", false);
+                data.put("error", "The username or password is null!");
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(data);
+            }
+            String username = accountArr[0], password = accountArr[1];
             try {
-                User user = userService.findByUsername(username);
-                if (Objects.isNull(user)) {
-                    return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
-                }
+                authenticationManager.authenticate(new PasswordAuthentication(username, password));
                 String token = userService.generateSecurityToken(username, 7200);
                 OhpmLoginRes ohpmLoginRes = OhpmLoginRes.builder()
                         .success(true)
@@ -645,7 +658,13 @@ public class NpmArtifactController
                         .message("")
                         .build();
                 return ResponseEntity.ok(ohpmLoginRes);
-            } catch (JoseException e) {
+            } catch (Exception e) {
+                logger.error(ExceptionUtils.getStackTrace(e));
+                if (e instanceof BadCredentialsException) {
+                    data.put("success", false);
+                    data.put("error", "The username or password is invalid!");
+                    return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(data);
+                }
                 return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
             }
 

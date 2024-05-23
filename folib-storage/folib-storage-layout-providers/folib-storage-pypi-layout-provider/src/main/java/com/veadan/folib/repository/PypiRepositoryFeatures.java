@@ -297,8 +297,9 @@ public class PypiRepositoryFeatures
                     if (StringUtils.isNotBlank(finalPrefix) && artifactUrl.contains(finalPrefix)) {
                         artifactUrl = artifactUrl.replace(finalPrefix, "/../../");
                     }
+                    String artifactPath = artifactUrl.substring(artifactUrl.indexOf("/packages/") + "/packages/".length());
                     artifactUrl = resolveUrl(targetUrl, artifactUrl);
-                    return PypiSearchResult.builder().artifactName(artifactName).artifactUrl(artifactUrl).storageId(storageId).repositoryId(repositoryId).groupName(PypiArtifactCoordinates.parse(artifactName).getId()).build();
+                    return PypiSearchResult.builder().artifactName(artifactName).artifactPath(artifactPath).artifactUrl(artifactUrl).storageId(storageId).repositoryId(repositoryId).groupName(PypiArtifactCoordinates.parse(artifactName).getId()).build();
                 })
                 .collect(Collectors.toList());
     }

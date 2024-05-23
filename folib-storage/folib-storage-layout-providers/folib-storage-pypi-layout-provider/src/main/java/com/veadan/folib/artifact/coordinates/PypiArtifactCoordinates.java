@@ -254,6 +254,7 @@ public class PypiArtifactCoordinates
         setCoordinate(PLATFORM, platform);
     }
 
+    @Override
     @ArtifactLayoutCoordinate
     public String getPath() {
         return getCoordinate(PATH);
@@ -274,18 +275,19 @@ public class PypiArtifactCoordinates
     {
         String fileName = SOURCE_EXTENSION.equals(c.getPackaging()) ? c.buildSourcePackageFileName()
                                                                   : c.buildWheelPackageFileName();
-
-        return String.format("%s/%s/%s",
-                             c.getId(),
-                             c.getVersion(),
-                             fileName);
+        if (StringUtils.isBlank(c.getPath()) || fileName.equals(c.getPath())) {
+            return String.format("%s/%s/%s",
+                    c.getId(),
+                    c.getVersion(),
+                    fileName);
+        }
+        return c.getPath();
     }
 
     @Override
     public URI convertToResource(PypiArtifactCoordinates artifactCoordinates) {
-        String fileName = SOURCE_EXTENSION.equals(artifactCoordinates.getPackaging()) ? artifactCoordinates.buildSourcePackageFileName()
-                : artifactCoordinates.buildWheelPackageFileName();
-        return URI.create(String.format("packages/%s", fileName));
+        String path = convertToPath(artifactCoordinates);
+        return URI.create(String.format("packages/%s", path));
     }
 
     private String buildSourcePackageFileName()
