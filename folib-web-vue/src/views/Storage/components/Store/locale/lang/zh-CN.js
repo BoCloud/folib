@@ -269,5 +269,13 @@ export default {
     "SetPublishingRepository":"设置发布库",
     "SslCheck":"ssl校验",
     "OhpmConfig":"查看当前ohpm配置",
+    'LfsInitialization':'初始化',
+    'LfsAddFile':'添加文件到 lfs',
+    'SetLfs':'设置GitLfs仓库',
+    'ShowLfs':'查看配置',
+    "LfsClone":"克隆",
+    "LfsPull":"拉取",
+    "LfsPush":"推送",
+
 
 }

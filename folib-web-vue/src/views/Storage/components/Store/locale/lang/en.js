@@ -269,4 +269,11 @@ export default {
     "SslCheck":"ssl checksum",
     "OhpmConfig":"View the current ohpm configuration",
     "SetPublishingId":"Setting up Publishing Users",
+    'LfsInitialization':'Initialization',
+    'LfsAddFile':'Adding files to lfs',
+    'SetLfs':'Setting up a GitLfs repository',
+    'ShowLfs':'View Configuration',
+    "LfsClone":"Clone",
+    "LfsPull":"Pull",
+    "LfsPush":"Push",
 }

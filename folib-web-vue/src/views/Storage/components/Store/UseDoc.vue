@@ -1039,7 +1039,51 @@
                 ></prism-editor>
             </a-timeline-item>
         </a-timeline>
-      <a-timeline>
+
+      <a-timeline v-if="repositoryType === 'GitLfs' ">
+            <a-timeline-item color="primary">
+                GitLfs{{ $t('Store.LfsInitialization') }}
+                <small>GitLfs{{ $t('Store.Configuration') }}{{ $t('Store.LfsInitialization') }}</small>
+
+                <prism-editor
+                        class="my-editor height-300"
+                        :value="
+              '\n#'+this.$t('Store.LfsInitialization')+'\n'+
+              'git  lfs  install \n'+
+              '#'+this.$t('Store.LfsAddFile')+'\n'+
+              'git  lfs  track  *.psd  \n'+
+              '#'+this.$t('Store.SetLfs')+'\n'+
+              'git  config  lfs.url  '+baseUrl+'storages/'+folibRepository.storageId+'/'+folibRepository.id+'\n'+
+              '\n' +
+              '#' +this.$t('Store.ShowLfs')+'\n'+
+              'git  config  --list '
+            "
+                        :highlight="highlighterHandle"
+                        :line-numbers="false"
+                        :readonly="true"
+                >
+                </prism-editor>
+            </a-timeline-item>
+            <a-timeline-item color="primary">
+                {{ $t('Store.CommandOperation') }}
+                <small>GitLfs {{ $t('Store.UsuallyCommand') }}</small>
+                <p>{{ $t('Store.UsuallyUse') }}GitLfs{{ $t('Store.specificRefer') }}https://git-lfs.com</p>
+
+                <prism-editor
+                        class="my-editor height-300"
+                        :value="
+              '#'+ this.$t('Store.LfsClone')+ '\n git  clone  --config  lfs.url='+baseUrl+'storages/'+folibRepository.storageId+'/'+folibRepository.id+'  [repository-url]  \n\n'+
+              '#' + this.$t('Store.LfsPull')+'\n'+ 'git  pull \n\n'+
+              '#' + this.$t('Store.LfsPush')+'\n'+ 'git  push  -u  origin  master'
+            "
+                        :highlight="highlighterHandle"
+                        :line-numbers="false"
+                        :readonly="true"
+                ></prism-editor>
+            </a-timeline-item>
+        </a-timeline>
+
+        <a-timeline>
         <a-timeline-item color="primary">
           {{ $t('Store.WarehouseAddress') }}
           <small>{{ $t('Store.WarehouseUseAddress') }}</small>
@@ -1082,9 +1126,6 @@ export default {
     };
   },
   created() {
-      console.log("ch",(this.repositoryType === 'npm' && this.folibRepository.subLayout === 'ohpm'))
-      console.log("repositoryType",this.repositoryType )
-      console.log("folibRepository",this.folibRepository )
     if (this.baseUrl) {
       this.repositoryUrl = this.baseUrl + 'storages/' + this.folibRepository.storageId + '/' + this.folibRepository.id
       if (this.repositoryType && this.repositoryType === 'docker') {
