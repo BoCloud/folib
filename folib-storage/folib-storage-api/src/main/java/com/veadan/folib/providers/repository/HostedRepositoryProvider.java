@@ -78,7 +78,7 @@ public class HostedRepositoryProvider extends AbstractRepositoryProvider {
         RootRepositoryPath rootRepositoryPath = repositoryPathResolver.resolve(repository);
         long startTime = System.currentTimeMillis();
         List<Artifact> searchResult = artifactIdGroupRepository.findArtifactsGremlin(storageId, repositoryId, predicate.getArtifactId(),
-                predicate.getCoordinateValues(), paginator.getSkip(), paginator.getLimit(), paginator.getUseLimit());
+                predicate.getUseArtifactName(), predicate.getCoordinateValues(), paginator.getSkip(), paginator.getLimit(), paginator.getUseLimit());
         logger.info("FindArtifacts storageId [{}] repositoryId [{}] artifactId [{}] coordinateValues [{}] skip [{}] limit [{}] useLimit [{}] artifactListSize [{}] take time [{}] ms", storageId, repositoryId, predicate.getArtifactId(), predicate.getCoordinateValues(), paginator.getSkip(), paginator.getLimit(), paginator.getUseLimit(), searchResult.size(), System.currentTimeMillis() - startTime);
         for (Artifact artifactEntry : searchResult) {
 
@@ -98,7 +98,7 @@ public class HostedRepositoryProvider extends AbstractRepositoryProvider {
                       String repositoryId,
                       RepositorySearchRequest predicate) {
         return artifactIdGroupRepository.commonCountArtifacts(storageId, repositoryId, predicate.getArtifactId(),
-                predicate.getCoordinateValues());
+                predicate.getUseArtifactName(), predicate.getCoordinateValues());
     }
 
     @Override

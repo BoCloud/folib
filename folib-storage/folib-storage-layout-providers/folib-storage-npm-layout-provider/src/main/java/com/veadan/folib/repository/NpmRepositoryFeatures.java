@@ -625,6 +625,7 @@ public class NpmRepositoryFeatures implements RepositoryFeatures {
                                    RepositorySearchRequest predicate) {
         return artifactIdGroupRepository.commonArtifactsExists(storageId, repositoryId,
                 predicate.getArtifactId(),
+                predicate.getUseArtifactName(),
                 predicate.getCoordinateValues());
     }
 
@@ -633,6 +634,7 @@ public class NpmRepositoryFeatures implements RepositoryFeatures {
                                RepositorySearchRequest predicate) {
         return artifactIdGroupRepository.commonCountArtifacts(storageId, repositoryId,
                 predicate.getArtifactId(),
+                predicate.getUseArtifactName(),
                 predicate.getCoordinateValues());
     }
 

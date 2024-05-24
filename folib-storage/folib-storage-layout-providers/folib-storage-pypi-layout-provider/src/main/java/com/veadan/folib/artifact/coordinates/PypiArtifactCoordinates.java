@@ -1,5 +1,6 @@
 package com.veadan.folib.artifact.coordinates;
 
+import com.google.common.collect.Lists;
 import com.veadan.folib.artifact.coordinates.versioning.SemanticVersion;
 import com.veadan.folib.db.schema.Vertices;
 import com.veadan.folib.domain.LayoutArtifactCoordinatesEntity;
@@ -11,6 +12,7 @@ import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlRootElement;
 import java.net.URI;
+import java.util.List;
 
 /**
  * This class is an {@link ArtifactCoordinates} implementation for pypi artifacts
@@ -53,6 +55,8 @@ public class PypiArtifactCoordinates
     public static final String WHEEL_EXTENSION = "whl";
 
     public static final String PATH = "path";
+
+    public static final List<String> EXTENSION_LIST = Lists.newArrayList(WHEEL_EXTENSION, SOURCE_EXTENSION);
 
     public PypiArtifactCoordinates()
     {

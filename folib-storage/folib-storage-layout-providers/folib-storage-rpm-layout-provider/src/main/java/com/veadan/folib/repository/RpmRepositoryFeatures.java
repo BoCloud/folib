@@ -501,6 +501,7 @@ public class RpmRepositoryFeatures implements RepositoryFeatures
     {
         return artifactIdGroupRepository.commonArtifactsExists(storageId, repositoryId,
                 predicate.getArtifactId(),
+                predicate.getUseArtifactName(),
                 predicate.getCoordinateValues());
     }
 

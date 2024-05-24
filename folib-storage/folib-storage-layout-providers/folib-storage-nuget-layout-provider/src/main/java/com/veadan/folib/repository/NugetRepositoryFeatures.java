@@ -279,6 +279,7 @@ public class NugetRepositoryFeatures
             String storageId = event.getStorageId();
             Long packageCount = artifactIdGroupRepository.commonCountArtifacts(storageId, repositoryId,
                                                                          predicate.getArtifactId(),
+                                                                         predicate.getUseArtifactName(),
                                                                          predicate.getCoordinateValues());
 
             logger.info("Remote repository [{}] cached package count is [{}]", repository.getId(), packageCount);
