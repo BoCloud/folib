@@ -1130,7 +1130,12 @@ public class ArtifactComponent {
                 String rId = ConfigurationUtils.getRepositoryId(storageAndRepositoryId);
                 itemObj = getPypiArtifactPackageFeed(configurationManager.getRepository(sId, rId), pypiSearchRequest);
                 if (Objects.nonNull(itemObj)) {
-                    packageFeedSet.addAll((List<PypiSearchResult>) itemObj);
+                    if (itemObj instanceof String) {
+                        html = (String) itemObj;
+                        return html;
+                    } else {
+                        packageFeedSet.addAll((List<PypiSearchResult>) itemObj);
+                    }
                 }
             }
             if (CollectionUtils.isNotEmpty(packageFeedSet)) {
