@@ -39,7 +39,6 @@ import com.veadan.folib.providers.repository.RepositoryProviderRegistry;
 import com.veadan.folib.providers.repository.RepositorySearchRequest;
 import com.veadan.folib.repository.NpmRepositoryFeatures.SearchPackagesEventListener;
 import com.veadan.folib.repository.NpmRepositoryFeatures.ViewPackageEventListener;
-import com.veadan.folib.scanner.common.util.Base64Utils;
 import com.veadan.folib.storage.repository.Repository;
 import com.veadan.folib.storage.validation.artifact.ArtifactCoordinatesValidationException;
 import com.veadan.folib.users.service.UserService;
@@ -639,7 +638,8 @@ public class NpmArtifactController
         if (ohpmLoginReq.getPublishId() != null) {
             JSONObject data = new JSONObject();
             String publishId = ohpmLoginReq.getPublishId();
-            String basic = Base64Utils.decode(publishId);
+            byte[] decoded = Base64.getDecoder().decode(publishId);
+            String basic = new String(decoded, StandardCharsets.UTF_8);
             String[] accountArr = basic.split(":");
             if (accountArr.length != 2) {
                 data.put("success", false);
