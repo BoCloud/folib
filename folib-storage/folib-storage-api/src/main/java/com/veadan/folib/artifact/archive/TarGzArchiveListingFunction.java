@@ -70,7 +70,7 @@ public enum TarGzArchiveListingFunction
     @Override
     public boolean supports(final RepositoryPath path) {
         final Path fileName = path.getFileName();
-        return fileName != null && (fileName.toString().endsWith("tar.gz") || fileName.toString().endsWith("tgz"));
+        return fileName != null && (fileName.toString().endsWith("tar.gz") || fileName.toString().endsWith("tgz") || fileName.toString().endsWith("har"));
     }
 
 }

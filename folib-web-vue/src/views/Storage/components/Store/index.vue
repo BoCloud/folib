@@ -109,7 +109,7 @@
                       <a-icon type="cloud-upload" />
                     </small>
                   </a>
-                  <a v-if="uploadEnabled && folibRepository.layout !== 'rpm'"><small style="padding-right: 20px" @click="handleUpload">
+                  <a v-if="uploadEnabled && folibRepository.layout !== 'rpm' && folibRepository.subLayout !== 'ohpm'"><small style="padding-right: 20px" @click="handleUpload">
                       批量上传
                       <a-icon type="cloud-upload" />
                     </small>

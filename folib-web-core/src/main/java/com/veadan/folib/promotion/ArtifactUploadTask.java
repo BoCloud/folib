@@ -15,6 +15,8 @@ import com.veadan.folib.domain.ArtifactIdGroupEntity;
 import com.veadan.folib.domain.ArtifactParse;
 import com.veadan.folib.domain.DockerManifest;
 import com.veadan.folib.entity.Dict;
+import com.veadan.folib.enums.NpmPacketSuffix;
+import com.veadan.folib.enums.NpmSubLayout;
 import com.veadan.folib.providers.io.RepositoryFiles;
 import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.providers.io.RepositoryPathResolver;
@@ -494,18 +496,25 @@ public class ArtifactUploadTask implements Callable<String> {
         File parentTempFile = null;
         try {
             String supportedExt = "tgz";
+            String ohpmExt = "har";
             //npm布局
             parentTempFile = new File(tempPath + File.separator + UUID.randomUUID() + File.separator);
             File artifactTempFile = new File(parentTempFile.getAbsolutePath() + File.separator + fileRelativePath);
             FileUtil.writeFromStream(is, artifactTempFile);
             Path path = Path.of(artifactTempFile.getAbsolutePath());
             String ext = FileUtil.extName(artifactTempFile);
-            if (!supportedExt.equals(ext)) {
-                throw new RuntimeException("Only the tgz suffix is supported");
+
+            boolean isOhnpmSubLayout = NpmSubLayout.OHNPM.getValue().equals(repositoryPath.getRepository().getSubLayout());
+            String expectedExtension = isOhnpmSubLayout ? ohpmExt : supportedExt;
+            if(!expectedExtension.equals(ext)){
+                String errorMessage = isOhnpmSubLayout ? "Only the .har suffix is supported" : "Only the .tgz suffix is supported";
+                throw new RuntimeException(errorMessage);
             }
+
             LayoutProvider layoutProvider = layoutProviderRegistry.getProvider(layout);
             if (Objects.nonNull(layoutProvider)) {
-                byte[] packageJsonBytes = layoutProvider.getContentByEqualsFileName(repositoryPath, path, NpmLayoutProvider.DEFAULT_PACKAGE_JSON_PATH);
+                String packagePath =  isOhnpmSubLayout ? NpmLayoutProvider.OHPM_PACKAGE_JSON_PATH : NpmLayoutProvider.DEFAULT_PACKAGE_JSON_PATH;
+                byte[] packageJsonBytes = layoutProvider.getContentByEqualsFileName(repositoryPath, path, packagePath);
                 String packageJson = new String(packageJsonBytes, StandardCharsets.UTF_8);
                 log.info("npm package.json：{}", packageJson);
                 RuntimeException runtimeException = new RuntimeException("package.json is not found in this file or package.json has an error");
@@ -519,7 +528,9 @@ public class ArtifactUploadTask implements Callable<String> {
                     if (StringUtils.isBlank(name) || StringUtils.isBlank(version)) {
                         throw runtimeException;
                     }
-                    NpmArtifactCoordinates npmArtifactCoordinates = NpmArtifactCoordinates.of(name, version);
+
+                    final String packagesuffix = NpmSubLayout.OHNPM.getValue().equals(repositoryPath.getRepository().getSubLayout()) ? NpmPacketSuffix.HAR.getValue() :  NpmPacketSuffix.TGZ.getValue();
+                    NpmArtifactCoordinates npmArtifactCoordinates = NpmArtifactCoordinates.of(name, version, packagesuffix);
                     String artifactPath = npmArtifactCoordinates.convertToPath(npmArtifactCoordinates);
                     log.info("The fileRelativePath：{} artifactPath：{}", fileRelativePath, artifactPath);
                     repositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, artifactPath);

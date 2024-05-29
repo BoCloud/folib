@@ -38,7 +38,7 @@ export function genLayoutType(layout) {
     if (layout === "maven" || layout === "ivy" || layout === "sbt" || layout === "gradle") {
         return "Maven 2"
     }
-    if (layout === "npm" || layout === "yarn") {
+    if (layout === "npm" || layout === "yarn" || layout === "ohpm") {
 
         return "npm"
     }

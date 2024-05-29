@@ -43,11 +43,11 @@ public class NpmArtifactCoordinates extends LayoutArtifactCoordinatesEntity<NpmA
 
     public static final String NPM_NAME_REGEX = "[a-zA-Z0-9][\\w-.]*";
 
-    public static final String NPM_EXTENSION_REGEX = "(tgz|json)";
+    public static final String NPM_EXTENSION_REGEX = "(tgz|json|har|json5)";
 
     public static final String NPM_PACKAGE_PATH_REGEX = "(@?" + NPM_NAME_REGEX + ")/(" + NPM_NAME_REGEX + ")/(" +
-                                                        NPM_VERSION_REGEX + ")/" + NPM_NAME_REGEX + "(-(" +
-                                                        NPM_VERSION_REGEX + "))?\\." + NPM_EXTENSION_REGEX;
+            NPM_VERSION_REGEX + ")/" + NPM_NAME_REGEX + "(-(" +
+            NPM_VERSION_REGEX + "))?\\." + NPM_EXTENSION_REGEX;
 
     private static final Pattern NPM_NAME_PATTERN = Pattern.compile(NPM_NAME_REGEX);
 
@@ -125,9 +125,9 @@ public class NpmArtifactCoordinates extends LayoutArtifactCoordinatesEntity<NpmA
     {
         Matcher matcher = NPM_NAME_PATTERN.matcher(name);
         Assert.isTrue(matcher.matches(),
-                      String.format("The artifact's name [%s] should follow the NPM specification " +
-                                    "(https://docs.npmjs.com/files/package.json#name).",
-                                    name));
+                String.format("The artifact's name [%s] should follow the NPM specification " +
+                                "(https://docs.npmjs.com/files/package.json#name).",
+                        name));
 
         setCoordinate(NAME, name);
     }
@@ -198,6 +198,8 @@ public class NpmArtifactCoordinates extends LayoutArtifactCoordinatesEntity<NpmA
         String path = convertToPath(c);
         if (path.endsWith(NpmLayoutProvider.PACKAGE_JSON)) {
             return URI.create(String.format("%s/-/%s-%s.%s", c.getId(), "package", c.getVersion(), "json"));
+        }else if (path.endsWith(NpmLayoutProvider.OH_PACKAGE_JSON)){
+            return URI.create(String.format("%s/-/%s-%s.%s", c.getId(), "oh-package", c.getVersion(), "json5"));
         }
         return URI.create(String.format("%s/-/%s", c.getId(), c.getArtifactFileName()));
     }
@@ -215,6 +217,8 @@ public class NpmArtifactCoordinates extends LayoutArtifactCoordinatesEntity<NpmA
         if ("json".equals(getExtension()))
         {
             return "package.json";
+        }else if ("json5".equals(getExtension())){
+            return "oh-package.json5";
         }
         return String.format("%s-%s.%s", getName(), getVersion(), getExtension());
     }
@@ -252,9 +256,9 @@ public class NpmArtifactCoordinates extends LayoutArtifactCoordinatesEntity<NpmA
         Matcher matcher = NPM_PATH_PATTERN.matcher(path);
 
         Assert.isTrue(matcher.matches(),
-                      String.format("Illegal artifact path [%s], NPM artifact path should be in the form of " +
-                                    "'{artifactGroup}/{artifactName}/{artifactVersion}/{artifactFile}'.",
-                                    path));
+                String.format("Illegal artifact path [%s], NPM artifact path should be in the form of " +
+                                "'{artifactGroup}/{artifactName}/{artifactVersion}/{artifactFile}'.",
+                        path));
 
         String group = matcher.group(1);
         String name = matcher.group(2);
@@ -270,16 +274,16 @@ public class NpmArtifactCoordinates extends LayoutArtifactCoordinatesEntity<NpmA
     }
 
     public static NpmArtifactCoordinates of(String packageId,
-                                            String version)
+                                            String version,String packagingSuffixes)
     {
         if (packageId.contains("/"))
         {
             String[] nameSplit = packageId.split("/");
 
-            return new NpmArtifactCoordinates(nameSplit[0], nameSplit[1], version, "tgz");
+            return new NpmArtifactCoordinates(nameSplit[0], nameSplit[1], version, packagingSuffixes);
         }
 
-        return new NpmArtifactCoordinates(null, packageId, version, "tgz");
+        return new NpmArtifactCoordinates(null, packageId, version, packagingSuffixes);
     }
 
     public static String calculatePackageId(String packageScope, String packageName)

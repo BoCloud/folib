@@ -40,8 +40,10 @@ public class NpmLayoutProvider
 
     public static final String  PACKAGE_JSON = "package.json";
 
-    public static final String  DEFAULT_PACKAGE_JSON_PATH = "package/package.json";
+    public static final String  OH_PACKAGE_JSON = "oh-package.json5";
 
+    public static final String  DEFAULT_PACKAGE_JSON_PATH = "package/package.json";
+    public static final String  OHPM_PACKAGE_JSON_PATH = "package/oh-package.json5";
     public static final String DEFAULT_SUFFIX = "tgz";
 
     public static final Pattern NPM_URL_USERNAME_PATTERN = Pattern.compile(
@@ -76,7 +78,7 @@ public class NpmLayoutProvider
     public boolean isNpmMetadata(RepositoryPath path)
     {
         return path.getFileName().toString().endsWith("package-lock.json") ||
-               path.getFileName().toString().endsWith("npm-shrinkwrap.json");
+                path.getFileName().toString().endsWith("npm-shrinkwrap.json");
     }
 
     @Override
@@ -85,7 +87,7 @@ public class NpmLayoutProvider
             throws IOException
     {
         Map<RepositoryFileAttributeType, Object> result = super.getRepositoryFileAttributes(repositoryPath,
-                                                                                            attributeTypes);
+                attributeTypes);
 
         for (RepositoryFileAttributeType attributeType : attributeTypes)
         {
@@ -141,7 +143,7 @@ public class NpmLayoutProvider
     public Set<String> getDigestAlgorithmSet()
     {
         return Stream.of(MessageDigestAlgorithms.MD5, MessageDigestAlgorithms.SHA_1, MessageDigestAlgorithms.SHA_256, MessageDigestAlgorithms.SHA_512)
-                     .collect(Collectors.toSet());
+                .collect(Collectors.toSet());
     }
 
 }

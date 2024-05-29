@@ -949,6 +949,55 @@
           </prism-editor>
         </a-timeline-item>
       </a-timeline>
+      <a-timeline v-if="repositoryType === 'ohpm' ">
+          <a-timeline-item color="primary">
+              OHPM全局配置
+              <small>OHPM全局配置</small>
+              <p>你可以全局配置ohpm的mirror，操作如下:</p>
+
+              <prism-editor
+                      class="my-editor height-300"
+                      :value="
+            '#使用工具ssh-keygen生成公、私钥 \n'+
+            'ssh-keygen -m PEM -t RSA -b 4096 -f {your_key_path} \n'+
+            '#设置私钥路径 \n'+
+            'ohpm config set key_path {your_key_path} \n'+
+            '#设置发布用户 \n'+
+            'ohpm config set publish_id {your_publish_id} \n'+
+            '#your_publish_id 为 Base64(用户名:密码) 编码后的结果，例如用户名为example，密码为password，则 your_publish_id 为ZXhhbXBsZTpwYXNzd29yZA==\n'+
+            '#设置仓库 \n'+
+            'ohpm config set registry '+baseUrl+'storages/'+folibRepository.storageId+'/'+folibRepository.id+'\n'+
+            '#设置发布库 \n'+
+            'ohpm config set publish_registry '+baseUrl+'storages/'+folibRepository.storageId+'/'+folibRepository.id+'\n'+
+            '#ssl校验 \n'+
+            'ohpm config set strict_ssl false \n'+
+            '\n' +
+            '#查看当前ohpm配置 \n'+
+            'ohpm config list -j '
+          "
+                      :highlight="highlighterHandle"
+                      :line-numbers="false"
+                      :readonly="true"
+              >
+              </prism-editor>
+          </a-timeline-item>
+          <a-timeline-item color="primary">
+              命令操作
+              <small>OHPM 通常使用命令</small>
+              <p>和通常 OHPM一样使用，具体参阅：https://ohpm.openharmony.cn/</p>
+
+              <prism-editor
+                      class="my-editor height-300"
+                      :value="
+            '#安装依赖 \n ohpm install   \n\n'
+            + '#上传制品 \n'+ 'ohpm publish'
+          "
+                      :highlight="highlighterHandle"
+                      :line-numbers="false"
+                      :readonly="true"
+              ></prism-editor>
+          </a-timeline-item>
+      </a-timeline>
       <a-timeline>
         <a-timeline-item color="primary">
           仓库地址
