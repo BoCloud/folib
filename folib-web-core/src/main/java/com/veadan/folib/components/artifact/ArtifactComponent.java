@@ -20,7 +20,6 @@ import com.veadan.folib.configuration.*;
 import com.veadan.folib.constant.GlobalConstants;
 import com.veadan.folib.controllers.layout.pypi.PypiBrowsePackageHtmlResponseBuilder;
 import com.veadan.folib.data.criteria.Paginator;
-import com.veadan.folib.dispatch.ClusterDispatchNodeDto;
 import com.veadan.folib.domain.*;
 import com.veadan.folib.entity.ArtifactCacheRecord;
 import com.veadan.folib.entity.Dict;
@@ -58,7 +57,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.codec.digest.MessageDigestAlgorithms;
 import org.apache.commons.collections4.CollectionUtils;
-import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
@@ -265,7 +263,7 @@ public class ArtifactComponent {
      * @return true 支持 false 不支持
      */
     public boolean layoutSupportsForScan(RepositoryPath repositoryPath) {
-        return layoutSupports(repositoryPath, false, true);
+        return layoutSupports(repositoryPath, false, true, false);
     }
 
     /**
@@ -275,7 +273,7 @@ public class ArtifactComponent {
      * @return true 支持 false 不支持
      */
     public boolean layoutSupportsForBlock(RepositoryPath repositoryPath) {
-        return layoutSupports(repositoryPath, true, false);
+        return layoutSupports(repositoryPath, true, false, false);
     }
 
     /**
@@ -286,7 +284,17 @@ public class ArtifactComponent {
      * @return true 支持 false 不支持
      */
     public boolean layoutSupports(RepositoryPath repositoryPath) {
-        return layoutSupports(repositoryPath, false, false);
+        return layoutSupports(repositoryPath, false, false, false);
+    }
+
+    /**
+     * 晋级 校验制品类型是否是该布局支持的类型
+     *
+     * @param repositoryPath 仓库地址
+     * @return true 支持 false 不支持
+     */
+    public boolean layoutSupportsForPromotion(RepositoryPath repositoryPath) {
+        return layoutSupports(repositoryPath, false, false, true);
     }
 
     /**
@@ -295,9 +303,10 @@ public class ArtifactComponent {
      * @param repositoryPath 仓库地址
      * @param block          阻断 true
      * @param scan           安全扫描 true
+     * @param promotion      晋级 true
      * @return true 支持 false 不支持
      */
-    public boolean layoutSupports(RepositoryPath repositoryPath, Boolean block, Boolean scan) {
+    public boolean layoutSupports(RepositoryPath repositoryPath, Boolean block, Boolean scan, Boolean promotion) {
         boolean flag = false;
         if (Objects.isNull(repositoryPath)) {
             log.warn("RepositoryPath [{}] does not exist", repositoryPath);
@@ -325,6 +334,9 @@ public class ArtifactComponent {
         } else if (repositoryPath.getFileSystem() instanceof NpmFileSystem) {
             log.debug("npm布局");
             List<String> suffixList = Arrays.asList("package.json", ".tgz");
+            if (Boolean.TRUE.equals(promotion)) {
+                suffixList = Arrays.asList(".tgz", ".har");
+            }
             flag = endsWith(repositoryPath.getFileName().toString(), suffixList);
         } else if (repositoryPath.getFileSystem() instanceof NugetFileSystem) {
             log.debug("nuget布局");
