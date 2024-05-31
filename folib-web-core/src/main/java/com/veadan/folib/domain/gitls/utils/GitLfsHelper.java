@@ -43,7 +43,7 @@ public class GitLfsHelper {
     }
 
     public static String getArtifactLfsUrl(String baseUrl, String storageId,String repositoryId, String oidPath,  String oid) {
-        return java.lang.String.join(GitLfsConstants.PATH_SEPARATOR, baseUrl, storageId,repositoryId, oidPath + oid );
+        return java.lang.String.join(GitLfsConstants.PATH_SEPARATOR, baseUrl, storageId,repositoryId, oidPath );
     }
 
     public static void addChecksumVerificationHeader(Map<String, String> headers, String oid) {
