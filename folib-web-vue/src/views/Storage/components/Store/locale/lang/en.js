@@ -276,4 +276,7 @@ export default {
     "LfsClone":"Clone",
     "LfsPull":"Pull",
     "LfsPush":"Push",
+    "LfsAddLock":"Locking files",
+    "LfsGetLocks":"Viewing Locked Status",
+    "LfsUnlock":"Unlocking files"
 }

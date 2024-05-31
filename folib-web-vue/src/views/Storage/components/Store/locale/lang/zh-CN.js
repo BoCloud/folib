@@ -276,6 +276,8 @@ export default {
     "LfsClone":"克隆",
     "LfsPull":"拉取",
     "LfsPush":"推送",
-
+    "LfsAddLock":"锁定文件",
+    "LfsGetLocks":"查看锁定状态",
+    "LfsUnlock":"解锁文件"
 
 }

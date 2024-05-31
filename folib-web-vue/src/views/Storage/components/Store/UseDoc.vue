@@ -1072,9 +1072,12 @@
                 <prism-editor
                         class="my-editor height-300"
                         :value="
-              '#'+ this.$t('Store.LfsClone')+ '\n git  clone  --config  lfs.url='+baseUrl+'storages/'+folibRepository.storageId+'/'+folibRepository.id+'  [repository-url]  \n\n'+
-              '#' + this.$t('Store.LfsPull')+'\n'+ 'git  pull \n\n'+
-              '#' + this.$t('Store.LfsPush')+'\n'+ 'git  push  -u  origin  master'
+              '#'+ this.$t('Store.LfsClone')+ '\n git  clone  --config  lfs.url='+baseUrl+'storages/'+folibRepository.storageId+'/'+folibRepository.id+'  [repository-url]  \n'+
+              '#' + this.$t('Store.LfsPull')+'\n'+ 'git  lfs  pull \n'+
+              '#' + this.$t('Store.LfsPush')+'\n'+ 'git  lfs  push  origin  master\n'+
+              '#' + this.$t('Store.LfsAddLock')+'\n'+ 'git  lfs  lock  [文件名]\n'+
+              '#' + this.$t('Store.LfsGetLocks')+'\n'+ 'git lfs locks\n' +
+              '#' + this.$t('Store.LfsUnlock')+'\n'+ 'git lfs unlock [文件名]\n'
             "
                         :highlight="highlighterHandle"
                         :line-numbers="false"
