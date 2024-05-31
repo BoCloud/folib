@@ -95,13 +95,23 @@ public class GitLfsBatchRes {
 
     public static class LfsDownloadRes {
         private String href;
+        @JsonInclude(JsonInclude.Include.NON_NULL)
+        private LfsErrorRes error;
 
         public String getHref() {
             return href;
         }
 
+        public LfsErrorRes getError() {
+            return error;
+        }
+
         public void setHref(String href) {
             this.href = href;
+        }
+
+        public void setError(LfsErrorRes error) {
+            this.error = error;
         }
 
     }
@@ -128,4 +138,33 @@ public class GitLfsBatchRes {
             this.sha256 = sha256;
         }
     }
+
+    public static class LfsErrorRes {
+        private Integer code;
+        private String message;
+
+        public LfsErrorRes(Integer code, String message) {
+            this.code = code;
+            this.message = message;
+        }
+
+        public LfsErrorRes() {
+        }
+
+        public Integer getCode() {
+            return code;
+        }
+
+        public String getMessage() {
+            return message;
+        }
+
+        public void setCode(Integer code) {
+            this.code = code;
+        }
+
+        public void setMessage(String message) {
+            this.message = message;
+        }
+}
 }

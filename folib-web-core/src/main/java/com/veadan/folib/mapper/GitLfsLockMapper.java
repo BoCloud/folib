@@ -1,0 +1,25 @@
+package com.veadan.folib.mapper;
+
+import com.veadan.folib.entity.ArtifactCacheRecord;
+import com.veadan.folib.entity.GitLfsLockEntity;
+import com.veadan.folib.scanner.common.base.CommonMapper;
+import org.springframework.stereotype.Component;
+import org.apache.ibatis.annotations.Param;
+import java.util.List;
+
+@Component
+public interface GitLfsLockMapper extends CommonMapper<GitLfsLockEntity> {
+
+    /**
+     * 分页查询指定行数据
+     *
+     * @return 对象列表
+     */
+    List<GitLfsLockEntity> queryAllByLimit(@Param("storageId") String storageId,
+                                           @Param("repositoryId") String repositoryId,
+                                           @Param("path") String path,
+                                           @Param("id") String id,
+                                           @Param("offset") int cursor,
+                                           @Param("pageSize") int pageSize,
+                                           @Param("ref") String refSpec);
+}
