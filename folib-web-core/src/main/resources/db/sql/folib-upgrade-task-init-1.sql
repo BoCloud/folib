@@ -1,5 +1,3 @@
-ALTER TABLE `dict` MODIFY `alias` text;
-
-INSERT INTO `dict` ( `dict_type`, `dict_key`, `dict_value`, `alias`, `comment` )
+INSERT INTO dict ( dict_type, dict_key, dict_value, alias, "comment" )
 VALUES
 	( 'folib_upgrade_task', 'method', 'com.veadan.folib.authorization.service.AuthorizationConfigService@handlerRole', '{\"accessModel\":{\"apiAuthorities\":[\"SEARCH_ARTIFACTS\",\"ARTIFACTS_VIEW\",\"ARTIFACTS_RESOLVE\",\"VIEW_USER\",\"CONFIGURATION_VIEW_STORAGE_CONFIGURATION\",\"CONFIGURATION_VIEW_REPOSITORY\",\"CONFIGURATION_VIEW_BASE_URL\",\"CONFIGURATION_VIEW_METADATA_CONFIGURATION\",\"CONFIGURATION_ADD_UPDATE_METADATA\",\"CONFIGURATION_DELETE_METADATA_CONFIGURATION\",\"ARTIFACTS_DEPLOY\",\"ARTIFACTS_DELETE\",\"ARTIFACTS_MOVE\",\"ARTIFACTS_COPY\",\"ARTIFACTS_PROMOTION\"],\"storageAuthorities\":[]},\"description\":\"具有制品上传、删除、移动、复制、晋级权限\",\"name\":\"ARTIFACTS_MANAGER\"}', 'unexecuted' );

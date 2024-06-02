@@ -269,5 +269,5 @@ export default {
     "SetPublishingRepository":"设置发布库",
     "SslCheck":"ssl校验",
     "OhpmConfig":"查看当前ohpm配置",
-
+    "PublishIdTip": "your_publish_id 为 Base64(用户名:密码) 编码后的结果，例如用户名为example，密码为password，则 your_publish_id 为ZXhhbXBsZTpwYXNzd29yZA==",
 }

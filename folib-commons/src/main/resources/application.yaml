@@ -9,10 +9,10 @@ server:
 spring:
   datasource:
     type: com.alibaba.druid.pool.DruidDataSource
-    driver-class-name: com.mysql.cj.jdbc.Driver
-    url: jdbc:mysql://${folib.mysql.host:127.0.0.1}:${folib.mysql.port:3306}/${folib.mysql.db:folib_scanner}?createDatabaseIfNotExist=true&useSSL=false&tinyInt1isBit=false&allowPublicKeyRetrieval=true&useUnicode=true&characterEncoding=UTF8
-    username: ${folib.mysql.user:root}
-    password: ${folib.mysql.password:123456}
+    driver-class-name: dm.jdbc.driver.DmDriver
+    url: jdbc:dm://${folib.mysql.host:127.0.0.1}:${folib.mysql.port:15236}/${folib.mysql.db:folib_scanner}?createDatabaseIfNotExist=true&useSSL=false&tinyInt1isBit=false&allowPublicKeyRetrieval=true&useUnicode=true&characterEncoding=UTF8&comOra=true&compatibleMode=oracle&keywords=(reference)
+    username: ${folib.mysql.user:SYSDBA}
+    password: ${folib.mysql.password:SYSDBA001}
     schema: classpath:db/sql/database-init.sql
   liquibase:
       change-log: classpath:db/changelog-master.xml
@@ -52,8 +52,8 @@ spring:
     password: ${folib.redis.password:123456}
 mybatis:
   mapper-locations: "classpath*:mapper/*.xml"
-#  configuration:
-#    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+  configuration:
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
 mapper:
   mappers: com.veadan.folib.scanner.common.base.CommonMapper
   identity: MYSQL

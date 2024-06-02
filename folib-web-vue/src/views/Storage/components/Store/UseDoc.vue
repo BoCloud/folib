@@ -1001,13 +1001,14 @@
                         class="my-editor height-300"
                         :value="
               '#'+this.$t('Store.SshKeygen')+'\n'+
-              'ssh-keygen -m PEM -t RSA -b 4096 -f your_key_path \n'+
+              'ssh-keygen -m PEM -t RSA -b 4096 -f {your_key_path}  \n'+
               '#'+this.$t('Store.PrivateKeyPath')+'\n'+
-              'ohpm config set key_path your_key_path \n'+
+              'ohpm config set key_path {your_key_path}  \n'+
               '#'+this.$t('Store.SetPublishingId')+'\n'+
-              'ohpm config set publish_id your_publish_id \n'+
+              'ohpm config set publish_id {your_publish_id}  \n'+
+              '#'+this.$t('Store.PublishIdTip')+'\n'+
               '#'+this.$t('Store.SetRepository')+'\n'+
-              'ohpm config set repository '+baseUrl+'storages/'+folibRepository.storageId+'/'+folibRepository.id+'\n'+
+              'ohpm config set registry '+baseUrl+'storages/'+folibRepository.storageId+'/'+folibRepository.id+'\n'+
               '#'+this.$t('Store.SetPublishingRepository')+'\n'+
               'ohpm config set publish_registry '+baseUrl+'storages/'+folibRepository.storageId+'/'+folibRepository.id+'\n'+
               '#'+this.$t('Store.SslCheck')+'\n'+

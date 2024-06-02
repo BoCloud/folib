@@ -161,6 +161,7 @@ public class AuthorizationConfigServiceImpl
     @Override
     public void handlerRole(String roleInfo) {
         try {
+            roleInfo = roleInfo.replace("\\\"", "\"");
             ObjectMapper objectMapper = new ObjectMapper();
             RoleDto role = objectMapper.readValue(roleInfo, RoleDto.class);
             if (getDto().getRoles().stream().anyMatch(item -> item.getName().equals(role.getName()))) {

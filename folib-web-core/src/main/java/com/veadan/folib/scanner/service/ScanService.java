@@ -116,7 +116,7 @@ public class ScanService {
 
     private Settings getSettings() {
         Settings settings = new Settings();
-        settings.setString(Settings.KEYS.DB_DRIVER_NAME, "com.mysql.cj.jdbc.Driver");
+        settings.setString(Settings.KEYS.DB_DRIVER_NAME, scanConfig.getDriverClassName());
         settings.setString(Settings.KEYS.DB_CONNECTION_STRING, scanConfig.getDbUrl());
         settings.setString(Settings.KEYS.DB_USER, scanConfig.getDbUser());
         settings.setString(Settings.KEYS.DB_PASSWORD, scanConfig.getDbPass());
@@ -213,7 +213,7 @@ public class ScanService {
                     }
                 }
                 doScan(artifact);
-//                Checksum.clearCache();
+                Checksum.clearCache();
             } catch (Exception ex) {
                 log.error(ExceptionUtils.getStackTrace(ex));
             }

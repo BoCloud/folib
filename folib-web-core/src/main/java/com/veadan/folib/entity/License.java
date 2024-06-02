@@ -122,6 +122,6 @@ public class License implements Serializable {
      * 备注
      */
     @ApiModelProperty("备注")
-    @Column(name = "comment")
+    @Column(name = "\"comment\"")
     private String comment;
 }
