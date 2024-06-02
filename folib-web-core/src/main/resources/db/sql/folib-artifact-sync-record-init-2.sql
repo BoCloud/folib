@@ -3,11 +3,11 @@ alter table artifact_sync_record
 comment on column "artifact_sync_record"."request_host_name" is '请求主机名称';
 
 alter table artifact_sync_record
-    add column source_storage_id longvarchar;
+    add column source_storage_id varchar(6000);
 comment on column "artifact_sync_record"."source_storage_id" is '源制品存储空间ID';
 
 alter table artifact_sync_record
-    add column source_repository_id longvarchar;
+    add column source_repository_id varchar(6000);
 comment on column "artifact_sync_record"."source_repository_id" is '源制品仓库ID';
 
 alter table artifact_sync_record

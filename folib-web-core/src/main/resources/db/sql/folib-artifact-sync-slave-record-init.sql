@@ -2,8 +2,8 @@ DROP TABLE IF EXISTS artifact_sync_slave_record;
 
 CREATE TABLE artifact_sync_slave_record (
 	"id" BIGINT NOT NULL AUTO_INCREMENT COMMENT '主键',
-	"source_path" LONGVARCHAR DEFAULT '' NULL COMMENT '制品源路径',
-	"target_path" LONGVARCHAR DEFAULT '' NULL COMMENT '制品目标路径',
+	"source_path" VARCHAR(6000) DEFAULT '' NULL COMMENT '制品源路径',
+	"target_path" VARCHAR(6000) DEFAULT '' NULL COMMENT '制品目标路径',
 	"sync_no" VARCHAR(64) DEFAULT '' NULL COMMENT '制品同步编号',
 	"failed_reason" LONGVARCHAR DEFAULT '' NULL COMMENT '失败的原因',
 	"sync_model" INT DEFAULT 1 NULL COMMENT '同步模式（1：推；2：拉）',

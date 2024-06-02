@@ -401,9 +401,9 @@ export default {
         url: [
           { required: true, trigger: ['blur'], validator: acceptUrlValidator },
         ],
-        accessToken: [
-          { min: 1, max: 255, trigger: 'blur', validator: accessTokenValidator },
-        ],
+        // accessToken: [
+        //   { min: 1, max: 255, trigger: 'blur', validator: accessTokenValidator },
+        // ],
         events: [
           { required: true, trigger: ['blur', 'change'], validator: eventsValidator },
         ],
