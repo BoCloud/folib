@@ -8,6 +8,7 @@ import com.google.common.collect.Lists;
 import com.veadan.folib.artifact.coordinates.DockerArtifactCoordinates;
 import com.veadan.folib.booters.PropertiesBooter;
 import com.veadan.folib.components.artifact.ArtifactComponent;
+import com.veadan.folib.components.scan.ScanComponent;
 import com.veadan.folib.components.thirdparty.foeyes.enums.UploadStatusEnum;
 import com.veadan.folib.dependency.snippet.CodeSnippet;
 import com.veadan.folib.dependency.snippet.SnippetGenerator;
@@ -102,6 +103,10 @@ public class BrowseController
     @Inject
     @Lazy
     private ArtifactComponent artifactComponent;
+
+    @Inject
+    @Lazy
+    private ScanComponent scanComponent;
 
     @GetMapping(value = "/getArtifact/{storageId}/{repositoryId}/{artifactPath:.+}")
     public ResponseEntity getArtifact(@PathVariable String artifactPath,
@@ -459,7 +464,25 @@ public class BrowseController
 
     private Artifact getArtifact(RepositoryPath repositoryPath, Boolean report) {
         try {
-            return artifactService.findArtifact(repositoryPath, report);
+            Artifact artifact = artifactService.findArtifact(repositoryPath, report);
+            try {
+                if (Objects.nonNull(artifact) && Boolean.TRUE.equals(report)) {
+                    String defaultContent = "[]", reportContent = artifact.getReport();
+                    if (StringUtils.isNotBlank(reportContent) && !defaultContent.equals(reportContent)) {
+                        //图库report字段存在值，移除图库report字段的值，写入到文件中
+                        scanComponent.writeReport(repositoryPath, reportContent);
+                        artifact.setReport(defaultContent);
+                        artifactService.saveOrUpdateArtifact(artifact);
+                    } else {
+                        //图库report字段不存在值，读取扫描报告文件
+                        reportContent = scanComponent.readReport(repositoryPath);
+                        artifact.setReport(reportContent);
+                    }
+                }
+            } catch (Exception ex) {
+                logger.error("Handle artifact [{}] report error [{}]", repositoryPath.toString(), ExceptionUtils.getStackTrace(ex));
+            }
+            return artifact;
         } catch (Exception ex) {
             logger.warn(ExceptionUtils.getStackTrace(ex));
         }

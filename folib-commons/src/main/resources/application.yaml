@@ -136,9 +136,9 @@ folib:
       threadNamePrefix: asyncFetchRemotePackage_
       awaitTerminationSeconds: 6
     asyncScan:
-      corePoolSize: 2
-      maxPoolSize: 2
-      queueCapacity: 20
+      corePoolSize: ${threadPool.scan.core:2}
+      maxPoolSize: ${threadPool.scan.max:2}
+      queueCapacity: ${threadPool.scan.queue:20}
       keepAliveSeconds: 0
       threadNamePrefix: asyncScan_
       awaitTerminationSeconds: 0
@@ -164,9 +164,9 @@ folib:
       threadNamePrefix: asyncCopy_
       awaitTerminationSeconds: 6
     asyncEventLog:
-      corePoolSize: 2
-      maxPoolSize: 2
-      queueCapacity: ${threadPool.common.queue:10000}
+      corePoolSize: ${threadPool.eventLog.core:2}
+      maxPoolSize: ${threadPool.eventLog.max:2}
+      queueCapacity: ${threadPool.eventLog.queue:100}
       keepAliveSeconds: 0
       threadNamePrefix: asyncEventLog_
       awaitTerminationSeconds: 6
@@ -260,11 +260,11 @@ s3fs:
     connections: 1000
   protocol: http
   region: folib
-  uri: s3://192.168.5.101:7800
+  uri: s3://192.168.5.103:9000
   access:
-    key: 3BX2H5JPQT9FL5N1OOI3
+    key: admin
   secret:
-    key: folib@v587
+    key: admin123
 rsa:
   privateKey: MIICdQIBADANBgkqhkiG9w0BAQEFAASCAl8wggJbAgEAAoGBAIyu/3z87O6l94pIricIgo1VpYvNuK/StdlehIaQM6R9PmDAr5/phnFYWJEh+ZhMUIl6c/qIvcQr0y0Q2FRPF6085l4QLvbJI+FQ9xSspKWFGEzUuoEVogOtjlBz0Fl3VXO0wmZSrCnUhF14PWWBNz5e0X1ZIVEreGWj4XrCR+NjAgMBAAECgYB53Kig2vJdstQfK9/3Hc8AoHzbAiOF4e710ILZkRW62WZsJty6l22GxzFI3nY3L3vf6nuGPGatBA1UDzBkr3Jgqm0TSKSqlZokmCs3v1/gtkr/TSt36F58lAswR4I5iPdcDXkNfViidzqnvCahpwWpUAjteeUsx1hBQM1p8gWvOQJBANFs78S/EXfmkxy0d4Pf7uoFRXlrMC4SpP/9AjKHaRexbLesG4jYXLclx16pZXj7VqOWBORcVBKn9y1guFOnYdUCQQCr+G3EsX++e8G32lYmYnNp082Fg+tGSz2RG/LrwDqJOSyuB87LFJcRphNdo266f23SpQI2luqh91ByiBatPRRXAkBNlZTyB3LaP4JqlPTd1xz0d4V4aNxNhTy5VSr2OzIUw/cpyEnfFYCrnQRSLmFYQ4yiR9aCHy5KRw2MMxO2cgENAkAs9RRVQIYB2T6qftTY0hIUD4ACMJuYU+Ezh1f5U9a5uw24LWhdZPOddIpJh4lSDjA6ylKKzOdoEkygtH0hKv+fAkBcHH9QUQsUE40ffNcITptbMJGfQzkl3yYCwuM8xrK3KyvYLSk5qL+xcCnTloboTjVNuwgJWuiujBy6DlAZTAj/
   publicKey: MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQCMrv98/OzupfeKSK4nCIKNVaWLzbiv0rXZXoSGkDOkfT5gwK+f6YZxWFiRIfmYTFCJenP6iL3EK9MtENhUTxetPOZeEC72ySPhUPcUrKSlhRhM1LqBFaIDrY5Qc9BZd1VztMJmUqwp1IRdeD1lgTc+XtF9WSFRK3hlo+F6wkfjYwIDAQAB
