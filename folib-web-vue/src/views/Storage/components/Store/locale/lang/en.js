@@ -269,4 +269,5 @@ export default {
     "SslCheck":"ssl checksum",
     "OhpmConfig":"View the current ohpm configuration",
     "SetPublishingId":"Setting up Publishing Users",
+    "PublishIdTip": "The result encoded with Base64 (username: password) is the yourpublish_id. For example, if the username is example and the password is password, then yourpublish_id is ZXhhbXBsZTpwYXNzd29yZA==",
 }
