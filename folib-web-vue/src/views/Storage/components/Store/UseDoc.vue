@@ -1031,7 +1031,7 @@
                 <prism-editor
                         class="my-editor height-300"
                         :value="
-              '#'+   this.$t('Store.NpmInstall')+ '\n ohnpm install   \n\n'
+              '#'+   this.$t('Store.NpmInstall')+ '\n ohpm install   \n\n'
               + '#' + this.$t('Store.NpmPublish')+'\n'+ 'ohpm publish'
             "
                         :highlight="highlighterHandle"

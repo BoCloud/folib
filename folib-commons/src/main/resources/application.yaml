@@ -138,7 +138,7 @@ folib:
     asyncScan:
       corePoolSize: ${threadPool.scan.core:2}
       maxPoolSize: ${threadPool.scan.max:2}
-      queueCapacity: ${threadPool.scan.queue:20}
+      queueCapacity: ${threadPool.scan.queue:12}
       keepAliveSeconds: 0
       threadNamePrefix: asyncScan_
       awaitTerminationSeconds: 0

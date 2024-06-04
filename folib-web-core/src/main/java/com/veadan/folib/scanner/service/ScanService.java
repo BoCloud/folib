@@ -218,9 +218,10 @@ public class ScanService {
                     }
                 }
                 doScan(artifact);
-                Checksum.clearCache();
             } catch (Exception ex) {
                 log.error(ExceptionUtils.getStackTrace(ex));
+            } finally {
+                Checksum.clearCache();
             }
         }
         long endTime = System.currentTimeMillis();
