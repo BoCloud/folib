@@ -676,9 +676,9 @@ export default {
       this.webhookLogInfoVisible = false
     },
     doTestWebhook(event, item) {
-      let e = this.events[event.key]
+      let e = item.eventList[event.key]
       testWebhook({uuid: item.uuid, events: [e.value]}).then((res) => {
-        this.successMsg(this.$t('Setting.TestedWebhook') + [" + e.label + "] + this.$t('Setting.successTestWebhook'))
+        this.successMsg(this.$t('Setting.TestedWebhook') + "[" + e.label + "]" + this.$t('Setting.successTestWebhook'))
       })
     }
   },
