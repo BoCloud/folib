@@ -28,8 +28,7 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
 @ComponentScan({"com.veadan.folib.repository",
         "com.veadan.folib.providers",
         "com.veadan.folib.services",
-        "com.veadan.folib.storage",
-        "com.veadan.folib.gitls.service"})
+        "com.veadan.folib.storage"})
 public class GitLfsLayoutProviderConfig {
 
     public static final String FILE_SYSTEM_ALIAS = "LayoutFileSystemFactory." + GitLfsLayoutProvider.ALIAS;
