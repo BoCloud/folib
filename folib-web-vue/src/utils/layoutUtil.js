@@ -42,7 +42,7 @@ export function genLayoutType(layout) {
 
         return "npm"
     }
-    return layout === "nuget" ? "NuGet" : layout === "raw" ? "Raw" : layout === "pypi" ? "PyPi" : layout === "docker" ? "Docker" : layout === "rpm" ? "rpm" : layout =="gitlfs" ? "GitLfs" : layout;
+    return layout === "nuget" ? "NuGet" : layout === "raw" ? "Raw" : layout === "pypi" ? "PyPi" : layout === "docker" ? "Docker" : layout === "rpm" ? "rpm" : layout ==="gitlfs" ? "GitLfs" :   layout ==="huggingface" ? "HuggingFace":layout;
 
 }
 
