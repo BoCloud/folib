@@ -109,7 +109,7 @@
                       <a-icon type="cloud-upload" />
                     </small>
                   </a>
-                  <a v-if="uploadEnabled && folibRepository.layout !== 'rpm' && folibRepository.subLayout !== 'ohpm'"><small style="padding-right: 20px" @click="handleUpload">
+                  <a v-if="uploadEnabled && folibRepository.layout !== 'rpm' && folibRepository.subLayout !== 'ohpm' && folibRepository.subLayout !== 'go'"><small style="padding-right: 20px" @click="handleUpload">
                       {{ $t('Store.BatchUpload') }}
                       <a-icon type="cloud-upload" />
                     </small>

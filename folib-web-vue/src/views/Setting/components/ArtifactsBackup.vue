@@ -161,12 +161,6 @@ export default {
     }
   },
   computed: {
-
-  },
-  created() {
-    this.initData()
-  },
-  watch: {
     i18nArtifactsBackupColumns() {
       return this.artifactsBackupColumns.map(column => {
         if (column.i18nKey) {
@@ -175,6 +169,12 @@ export default {
         return column;
       })
     },
+  },
+  created() {
+    this.initData()
+  },
+  watch: {
+
   },
   mounted() { },
   methods: {

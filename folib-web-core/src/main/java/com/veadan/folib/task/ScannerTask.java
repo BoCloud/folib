@@ -12,6 +12,7 @@ import com.veadan.folib.scanner.mapper.ScanRulesMapper;
 import com.veadan.folib.scanner.service.ScanService;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
+import org.owasp.dependencycheck.utils.Checksum;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -71,6 +72,7 @@ public class ScannerTask {
                         scanService.asyncScan(itemList);
                     }
                 }
+                Checksum.clearCache();
                 log.info("ScannerTask thread name [{}] time [{}]", Thread.currentThread().getName(), DateUtil.now());
             } finally {
                 distributedLockComponent.unLock(lockName, 3500L);

@@ -24,5 +24,6 @@
     <include file="classpath:db/changelog/changelog_artifact_cache_record_update.xml"/>
     <include file="classpath:db/changelog/changelog_upgrade_task_init_4.xml"/>
     <include file="classpath:db/changelog/changelog_scan_rules_update.xml"/>
+    <include file="classpath:db/changelog/changelog_upgrade_dependency_check.xml"/>
     <!--后续增加的按照写对应的sql与changelog-->
 </databaseChangeLog>

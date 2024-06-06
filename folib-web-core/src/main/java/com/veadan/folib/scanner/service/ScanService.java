@@ -8,10 +8,12 @@ import cn.hutool.json.JSONUtil;
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONException;
 import com.alibaba.fastjson.JSONObject;
+import com.alibaba.fastjson.serializer.SerializerFeature;
 import com.beust.jcommander.internal.Sets;
 import com.veadan.folib.cloud.storage.s3fs.S3Path;
 import com.veadan.folib.components.artifact.ArtifactComponent;
 import com.veadan.folib.components.license.LicenseComponent;
+import com.veadan.folib.components.scan.ScanComponent;
 import com.veadan.folib.domain.Artifact;
 import com.veadan.folib.domain.Component;
 import com.veadan.folib.domain.ComponentEntity;
@@ -111,12 +113,15 @@ public class ScanService {
     @Inject
     private ArtifactEventScannerListener artifactEventScannerListener;
 
+    @Inject
+    private ScanComponent scanComponent;
+
     @Value("${folib.temp}")
     private String tempPath;
 
     private Settings getSettings() {
         Settings settings = new Settings();
-        settings.setString(Settings.KEYS.DB_DRIVER_NAME, "com.mysql.cj.jdbc.Driver");
+        settings.setString(Settings.KEYS.DB_DRIVER_NAME, scanConfig.getDriverClassName());
         settings.setString(Settings.KEYS.DB_CONNECTION_STRING, scanConfig.getDbUrl());
         settings.setString(Settings.KEYS.DB_USER, scanConfig.getDbUser());
         settings.setString(Settings.KEYS.DB_PASSWORD, scanConfig.getDbPass());
@@ -213,9 +218,10 @@ public class ScanService {
                     }
                 }
                 doScan(artifact);
-//                Checksum.clearCache();
             } catch (Exception ex) {
                 log.error(ExceptionUtils.getStackTrace(ex));
+            } finally {
+                Checksum.clearCache();
             }
         }
         long endTime = System.currentTimeMillis();
@@ -329,7 +335,8 @@ public class ScanService {
             }
             return count2.compareTo(count1);
         });
-        artifact.setReport(JSONArray.toJSONString(dependencyList));
+        artifact.setReport("[]");
+        scanComponent.writeReport(artifact, dependencyList);
         Set<Vulnerability> vulnerabilitySet = Sets.newHashSet();
         int evidenceQuantity = 0;
         Set<Component> componentSet = Sets.newLinkedHashSet();
