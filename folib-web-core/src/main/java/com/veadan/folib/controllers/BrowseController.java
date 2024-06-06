@@ -471,22 +471,30 @@ public class BrowseController
                     if (StringUtils.isNotBlank(reportContent) && !defaultContent.equals(reportContent)) {
                         //图库report字段存在值，移除图库report字段的值，写入到文件中
                         scanComponent.writeReport(repositoryPath, reportContent);
-                        artifact.setReport(defaultContent);
-                        artifactService.saveOrUpdateArtifact(artifact);
+                        resetReport(artifact, defaultContent);
                     } else {
                         //图库report字段不存在值，读取扫描报告文件
                         reportContent = scanComponent.readReport(repositoryPath);
-                        artifact.setReport(reportContent);
                     }
+                    artifact.setReport(reportContent);
                 }
             } catch (Exception ex) {
-                logger.error("Handle artifact [{}] report error [{}]", repositoryPath.toString(), ExceptionUtils.getStackTrace(ex));
+                logger.warn("Handle artifact [{}] report error [{}]", repositoryPath.toString(), ExceptionUtils.getStackTrace(ex));
             }
             return artifact;
         } catch (Exception ex) {
             logger.warn(ExceptionUtils.getStackTrace(ex));
         }
         return null;
+    }
+
+    private void resetReport(Artifact artifact, String defaultContent) {
+        try {
+            artifact.setReport(defaultContent);
+            artifactService.saveOrUpdateArtifact(artifact);
+        } catch (Exception ex) {
+            logger.warn("Reset artifact [{}] report error [{}]", artifact.getUuid(), ExceptionUtils.getStackTrace(ex));
+        }
     }
 
     private void getBom(JSONObject data, RepositoryPath repositoryPath) {
