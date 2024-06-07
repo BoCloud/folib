@@ -4,7 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import com.veadan.folib.controllers.layout.npm.NpmUser;
 import com.veadan.folib.authentication.api.password.PasswordAuthentication;
-import com.veadan.folib.providers.layout.NpmLayoutProvider;
+import com.veadan.folib.providers.layout.PubLayoutProvider;
 
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.Authentication;
@@ -28,7 +28,7 @@ public class NpmLoginAuthenticationSupplier
 
     public NpmLoginAuthenticationSupplier()
     {
-        super(NpmLayoutProvider.ALIAS);
+        super(PubLayoutProvider.ALIAS);
     }
 
     @CheckForNull
@@ -55,7 +55,7 @@ public class NpmLoginAuthenticationSupplier
         }
 
         return RequestMethod.PUT.name().equalsIgnoreCase(request.getMethod()) &&
-               request.getRequestURI().contains(NpmLayoutProvider.NPM_USER_PATH);
+               request.getRequestURI().contains(PubLayoutProvider.NPM_USER_PATH);
     }
 
     private NpmUser deserializeNpmUser(HttpServletRequest request)
@@ -83,7 +83,7 @@ public class NpmLoginAuthenticationSupplier
 
     private boolean usernamesMatch(String url, String bodyUsername)
     {
-        Matcher urlUsernameMatcher = NpmLayoutProvider.NPM_URL_USERNAME_PATTERN.matcher(url);
+        Matcher urlUsernameMatcher = PubLayoutProvider.NPM_URL_USERNAME_PATTERN.matcher(url);
 
         return  urlUsernameMatcher.find() &&
                 urlUsernameMatcher.group(1).equals(bodyUsername);
