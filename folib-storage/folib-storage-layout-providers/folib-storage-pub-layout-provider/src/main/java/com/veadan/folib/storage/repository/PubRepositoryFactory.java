@@ -1,32 +1,29 @@
 package com.veadan.folib.storage.repository;
 
 import com.veadan.folib.providers.layout.PubLayoutProvider;
-import com.veadan.folib.repository.NpmRepositoryFeatures;
+import com.veadan.folib.repository.PubRepositoryFeatures;
+import org.springframework.stereotype.Component;
 
 import javax.inject.Inject;
 import java.util.LinkedHashSet;
 
-import org.springframework.stereotype.Component;
-
 /**
- * @author Veadan
+ * @author leipenghui
  */
 @Component
-public class NpmRepositoryFactory
-        implements RepositoryFactory
-{
+public class PubRepositoryFactory
+        implements RepositoryFactory {
 
     @Inject
-    private NpmRepositoryFeatures npmRepositoryFeatures;
+    private PubRepositoryFeatures pubRepositoryFeatures;
 
 
     @Override
-    public RepositoryDto createRepository(String repositoryId)
-    {
+    public RepositoryDto createRepository(String repositoryId) {
         RepositoryDto repository = new RepositoryDto(repositoryId);
         repository.setLayout(PubLayoutProvider.ALIAS);
         repository.setArtifactCoordinateValidators(
-                new LinkedHashSet<>(npmRepositoryFeatures.getDefaultArtifactCoordinateValidators()));
+                new LinkedHashSet<>(pubRepositoryFeatures.getDefaultArtifactCoordinateValidators()));
 
         return repository;
     }

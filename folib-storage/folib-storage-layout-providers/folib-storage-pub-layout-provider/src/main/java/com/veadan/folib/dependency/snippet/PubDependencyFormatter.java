@@ -53,14 +53,7 @@ public class PubDependencyFormatter
     public String getDependencySnippet(ArtifactCoordinates artifactCoordinates)
     {
         PubArtifactCoordinates coordinates = (PubArtifactCoordinates) artifactCoordinates;
-
-        String sb = (coordinates.getScope() != null ? "\"" + coordinates.getScope() + "/" : "\"") +
-                    "" + coordinates.getName() + "\" : " +
-                    "\"" + coordinates.getVersion() + "\"\n";
-
-        // TODO: Add support for scopes
-
-        return sb;
+        return "dart pub add " + coordinates.getName();
     }
 
 }
