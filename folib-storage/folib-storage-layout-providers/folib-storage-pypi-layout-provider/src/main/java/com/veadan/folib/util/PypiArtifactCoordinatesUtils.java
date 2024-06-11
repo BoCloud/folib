@@ -86,6 +86,8 @@ public class PypiArtifactCoordinatesUtils
 
     private static PypiArtifactCoordinates parseWheelPackage(String path)
     {
+        String extension = FilenameUtils.getExtension(path);
+        String fullExtension = GlobalConstants.POINT + extension;
         String[] splitArray = path.split("-");
 
         // check for invalid file format
@@ -106,7 +108,7 @@ public class PypiArtifactCoordinatesUtils
         {
             languageImplementationVersion = splitArray[2];
             abi = splitArray[3];
-            platform = splitArray[4].substring(0, splitArray[4].indexOf(".whl"));
+            platform = splitArray[4].substring(0, splitArray[4].indexOf(fullExtension));
 
         }
         // build tag is included
@@ -115,7 +117,7 @@ public class PypiArtifactCoordinatesUtils
             build = splitArray[2];
             languageImplementationVersion = splitArray[3];
             abi = splitArray[4];
-            platform = splitArray[5].substring(0, splitArray[5].indexOf(".whl"));
+            platform = splitArray[5].substring(0, splitArray[5].indexOf(fullExtension));
         }
 
         return new PypiArtifactCoordinates(distribution,
@@ -123,7 +125,7 @@ public class PypiArtifactCoordinatesUtils
                                            build,
                                            languageImplementationVersion,
                                            abi,
-                                           platform, PypiArtifactCoordinates.WHEEL_EXTENSION);
+                                           platform, fullExtension);
     }
 
     public static void main(String[] args) {

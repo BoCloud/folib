@@ -53,6 +53,8 @@ public class PypiArtifactCoordinates
 
     public static final List<String> WHEEL_EXTENSION_LIST = Lists.newArrayList("whl", "egg", "exe");
 
+    public static final List<String> EXTENSION_LIST = Lists.newArrayList("tar.gz", "tar", "zip", "whl", "egg", "exe");
+
     public static final String PATH = "path";
 
     public PypiArtifactCoordinates() {
