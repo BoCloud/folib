@@ -5,12 +5,15 @@ import com.veadan.folib.client.CloseableRestResponse;
 import com.veadan.folib.client.RestArtifactResolver;
 import com.veadan.folib.providers.io.RepositoryFiles;
 import com.veadan.folib.providers.io.RepositoryPath;
+import lombok.extern.slf4j.Slf4j;
+import org.glassfish.jersey.client.ClientResponse;
 
 import javax.ws.rs.core.Response;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
 
+@Slf4j
 public class RemoteArtifactStreamFetcher
 {
 
@@ -62,10 +65,11 @@ public class RemoteArtifactStreamFetcher
         CloseableRestResponse connection = client.get(resource.toString(), offset);
 
         Response response = connection.getResponse();
+
         if (response.getStatus() == 404)
         {
             terminateConnection(connection);
-            
+            log.warn("Artifact not found response for [{}]", response.toString());
             throw new ArtifactNotFoundException(resource);
         }
         if (response.getStatus() != 200 || response.getEntity() == null)
@@ -73,7 +77,7 @@ public class RemoteArtifactStreamFetcher
             terminateConnection(connection);
             
             throw new IOException(String.format("Unreadable response for %s. Response status is %s",
-                                                resource, response.getStatus()));
+                    response.toString(), response.getStatus()));
         }
 
         return connection;
