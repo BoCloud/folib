@@ -1,6 +1,7 @@
 package com.veadan.folib.util;
 
 import com.veadan.folib.artifact.coordinates.PypiArtifactCoordinates;
+import com.veadan.folib.constant.GlobalConstants;
 import com.veadan.folib.domain.PypiPackageInfo;
 
 import java.util.regex.Matcher;
@@ -52,7 +53,9 @@ public class PypiArtifactCoordinatesUtils
     {
         try
         {
-            String packageNameWithoutExtension = path.substring(0, path.lastIndexOf(".tar.gz"));
+            String extension = FilenameUtils.getExtension(path);
+            String fullExtension = GlobalConstants.POINT + extension;
+            String packageNameWithoutExtension = path.substring(0, path.lastIndexOf(fullExtension));
             String distribution = packageNameWithoutExtension.substring(0,
                                                                         packageNameWithoutExtension.lastIndexOf("-"));
             String version = packageNameWithoutExtension.substring(packageNameWithoutExtension.lastIndexOf("-") + 1);
@@ -69,7 +72,7 @@ public class PypiArtifactCoordinatesUtils
                 throw new IllegalArgumentException(String.format("Invalid name [%s] for source package.", distribution));
             }
 
-            return new PypiArtifactCoordinates(distribution, version, PypiArtifactCoordinates.SOURCE_EXTENSION);
+            return new PypiArtifactCoordinates(distribution, version, extension);
         }
         catch (IllegalArgumentException iae)
         {

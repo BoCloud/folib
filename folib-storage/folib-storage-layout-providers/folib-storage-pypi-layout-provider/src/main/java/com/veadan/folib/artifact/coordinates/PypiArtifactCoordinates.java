@@ -1,5 +1,6 @@
 package com.veadan.folib.artifact.coordinates;
 
+import com.google.common.collect.Lists;
 import com.veadan.folib.artifact.coordinates.versioning.SemanticVersion;
 import com.veadan.folib.db.schema.Vertices;
 import com.veadan.folib.domain.LayoutArtifactCoordinatesEntity;
@@ -11,15 +12,16 @@ import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlRootElement;
 import java.net.URI;
+import java.util.List;
 
 /**
  * This class is an {@link ArtifactCoordinates} implementation for pypi artifacts
- *
- * Proper path for this coordinates is in the format of: 
+ * <p>
+ * Proper path for this coordinates is in the format of:
  * {distribution}-{version}(-{build tag})?-{python tag}-{abi tag}-{platform tag}.whl.
  * for wheel packages and {distribution}-{version}.tar.gz for source packages
  * Examples: distribution-1.0.1-1-py27-none-any.whl, distribution-1.0.1.tar.gz
- * 
+ *
  * @author alecg956
  */
 @NodeEntity(Vertices.PYPI_ARTIFACT_COORDINATES)
@@ -27,8 +29,7 @@ import java.net.URI;
 @XmlAccessorType(XmlAccessType.NONE)
 @ArtifactCoordinatesLayout(name = PypiArtifactCoordinates.LAYOUT_NAME, alias = PypiArtifactCoordinates.LAYOUT_ALIAS)
 public class PypiArtifactCoordinates
-    extends LayoutArtifactCoordinatesEntity<PypiArtifactCoordinates, SemanticVersion>
-{
+        extends LayoutArtifactCoordinatesEntity<PypiArtifactCoordinates, SemanticVersion> {
 
     public static final String LAYOUT_NAME = "PyPi";
 
@@ -48,34 +49,33 @@ public class PypiArtifactCoordinates
 
     public static final String PACKAGING = "packaging";
 
-    public static final String SOURCE_EXTENSION = "tar.gz";
+    public static final List<String> SOURCE_EXTENSION_LIST = Lists.newArrayList("tar.gz", "tar", "zip");
 
-    public static final String WHEEL_EXTENSION = "whl";
+    public static final List<String> WHEEL_EXTENSION_LIST = Lists.newArrayList("whl", "egg", "exe");
 
     public static final String PATH = "path";
 
-    public PypiArtifactCoordinates()
-    {
+    public PypiArtifactCoordinates() {
         resetCoordinates(DISTRIBUTION,
-                         VERSION,
-                         BUILD,
-                         LANGUAGE_IMPLEMENTATION_VERSION,
-                         ABI,
-                         PLATFORM,
-                         PACKAGING);
+                VERSION,
+                BUILD,
+                LANGUAGE_IMPLEMENTATION_VERSION,
+                ABI,
+                PLATFORM,
+                PACKAGING);
     }
 
     /**
      * This method takes in all artifact coordinates of a PyPi package filename, with build being
      * the empty string if it is not included in the filename
      *
-     * @param distribution Uniquely identifying artifact coordinate (required)
-     * @param version Packages current version (required)
-     * @param build Build_tag parameter (optional)
+     * @param distribution                  Uniquely identifying artifact coordinate (required)
+     * @param version                       Packages current version (required)
+     * @param build                         Build_tag parameter (optional)
      * @param languageImplementationVersion Language and Implementation version argument (optional)
-     * @param abi ABI tag parameter (optional)
-     * @param platform Platform tag parameter (optional)
-     * @param packaging Packaging of artifact (required)
+     * @param abi                           ABI tag parameter (optional)
+     * @param platform                      Platform tag parameter (optional)
+     * @param packaging                     Packaging of artifact (required)
      */
     public PypiArtifactCoordinates(String distribution,
                                    String version,
@@ -83,40 +83,32 @@ public class PypiArtifactCoordinates
                                    String languageImplementationVersion,
                                    String abi,
                                    String platform,
-                                   String packaging)
-    {
+                                   String packaging) {
         this();
 
-        if (StringUtils.isBlank(packaging))
-        {
+        if (StringUtils.isBlank(packaging)) {
             throw new IllegalArgumentException("The packaging field is mandatory.");
         }
 
-        if (!packaging.equals(SOURCE_EXTENSION) && !packaging.equals(WHEEL_EXTENSION))
-        {
+        if (!SOURCE_EXTENSION_LIST.contains(packaging) && WHEEL_EXTENSION_LIST.contains(packaging)) {
             throw new IllegalArgumentException("The artifact has incorrect packaging");
         }
 
-        if (packaging.equals(SOURCE_EXTENSION))
-        {
-            if (StringUtils.isBlank(distribution) || StringUtils.isBlank(version))
-            {
+        if (SOURCE_EXTENSION_LIST.contains(packaging)) {
+            if (StringUtils.isBlank(distribution) || StringUtils.isBlank(version)) {
                 throw new IllegalArgumentException(
                         "The distribution and version fields are mandatory for source package.");
             }
         }
 
-        if (packaging.equals(WHEEL_EXTENSION))
-        {
+        if (WHEEL_EXTENSION_LIST.contains(packaging)) {
             if (StringUtils.isBlank(distribution) || StringUtils.isBlank(version) || StringUtils.isBlank(platform)
-                || StringUtils.isBlank(languageImplementationVersion) || StringUtils.isBlank(abi))
-            {
+                    || StringUtils.isBlank(languageImplementationVersion) || StringUtils.isBlank(abi)) {
                 throw new IllegalArgumentException("The distribution, version, languageImplementationVersion, abi, and " +
-                                                   "platform fields are mandatory for wheel package.");
+                        "platform fields are mandatory for wheel package.");
             }
 
-            if (!StringUtils.isBlank(build) && !Character.isDigit(build.charAt(0)))
-            {
+            if (!StringUtils.isBlank(build) && !Character.isDigit(build.charAt(0))) {
                 throw new IllegalArgumentException("Illegal build tag!");
             }
         }
@@ -135,11 +127,10 @@ public class PypiArtifactCoordinates
      * the empty string if it is not included in the filename
      *
      * @param distribution Uniquely identifying artifact coordinate (required)
-     * @param version Packages current version (required)
-     * @param packaging Packaging of artifact (required)
+     * @param version      Packages current version (required)
+     * @param packaging    Packaging of artifact (required)
      */
-    public PypiArtifactCoordinates(String distribution, String version, String packaging)
-    {
+    public PypiArtifactCoordinates(String distribution, String version, String packaging) {
         this(distribution, version, null, null, null, null, packaging);
     }
 
@@ -147,8 +138,7 @@ public class PypiArtifactCoordinates
      * @param path The filename of the PyPi package
      * @return Returns a PyPiArtifactCoordinates object with all included coordinates set
      */
-    public static PypiArtifactCoordinates parse(String path)
-    {
+    public static PypiArtifactCoordinates parse(String path) {
         return PypiArtifactCoordinatesUtils.parse(path);
     }
 
@@ -156,16 +146,14 @@ public class PypiArtifactCoordinates
      * @return Returns distribution coordinate value (serves as the unique ID)
      */
     @Override
-    public String getId()
-    {
+    public String getId() {
         return getCoordinate(DISTRIBUTION);
     }
 
     /**
      * @param id DISTRIBUTION coordinate will take this value
      */
-    public void setId(String id)
-    {
+    public void setId(String id) {
         setCoordinate(DISTRIBUTION, id);
     }
 
@@ -174,32 +162,28 @@ public class PypiArtifactCoordinates
      * @return Returns the BUILD coordinate value
      */
     @ArtifactLayoutCoordinate
-    public String getBuild()
-    {
+    public String getBuild() {
         return getCoordinate(BUILD);
     }
 
     /**
      * @param build BUILD coordinate will take this value
      */
-    public void setBuild(String build)
-    {
+    public void setBuild(String build) {
         setCoordinate(BUILD, build);
     }
 
     /**
      * @param packaging PACKAGING of artifact
      */
-    public void setPackaging(String packaging)
-    {
+    public void setPackaging(String packaging) {
         setCoordinate(PACKAGING, packaging);
     }
 
     /**
      * @return Returns PACKAGING of artifact
      */
-    public String getPackaging()
-    {
+    public String getPackaging() {
         return getCoordinate(PACKAGING);
     }
 
@@ -207,16 +191,14 @@ public class PypiArtifactCoordinates
      * @return Returns the LANGUAGE_IMPLEMENTATION_VERSION coordinate value
      */
     @ArtifactLayoutCoordinate
-    public String getLanguageImplementationVersion()
-    {
+    public String getLanguageImplementationVersion() {
         return getCoordinate(LANGUAGE_IMPLEMENTATION_VERSION);
     }
 
     /**
      * @param lang LANGUAGE_IMPLEMENTATION_VERSION takes this value
      */
-    public void setLanguageImplementationVersion(String lang)
-    {
+    public void setLanguageImplementationVersion(String lang) {
         setCoordinate(LANGUAGE_IMPLEMENTATION_VERSION, lang);
     }
 
@@ -224,16 +206,14 @@ public class PypiArtifactCoordinates
      * @return Returns the ABI coordinate value
      */
     @ArtifactLayoutCoordinate
-    public String getAbi()
-    {
+    public String getAbi() {
         return getCoordinate(ABI);
     }
 
     /**
      * @param abi ABI coordinate takes this value
      */
-    public void setAbi(String abi)
-    {
+    public void setAbi(String abi) {
         setCoordinate(ABI, abi);
     }
 
@@ -241,19 +221,18 @@ public class PypiArtifactCoordinates
      * @return Returns the PLATFORM coordinate value
      */
     @ArtifactLayoutCoordinate
-    public String getPlatform()
-    {
+    public String getPlatform() {
         return getCoordinate(PLATFORM);
     }
 
     /**
      * @param platform PLATFORM coordinate takes this value
      */
-    public void setPlatform(String platform)
-    {
+    public void setPlatform(String platform) {
         setCoordinate(PLATFORM, platform);
     }
 
+    @Override
     @ArtifactLayoutCoordinate
     public String getPath() {
         return getCoordinate(PATH);
@@ -270,63 +249,56 @@ public class PypiArtifactCoordinates
      * @return Returns the reconstructed path from the stored coordinate values
      */
     @Override
-    public String convertToPath(PypiArtifactCoordinates c)
-    {
-        String fileName = SOURCE_EXTENSION.equals(c.getPackaging()) ? c.buildSourcePackageFileName()
-                                                                  : c.buildWheelPackageFileName();
+    public String convertToPath(PypiArtifactCoordinates c) {
+        String fileName = SOURCE_EXTENSION_LIST.contains(c.getPackaging()) ? c.buildSourcePackageFileName()
+                : c.buildWheelPackageFileName();
 
         return String.format("%s/%s/%s",
-                             c.getId(),
-                             c.getVersion(),
-                             fileName);
+                c.getId(),
+                c.getVersion(),
+                fileName);
     }
 
     @Override
     public URI convertToResource(PypiArtifactCoordinates artifactCoordinates) {
-        String fileName = SOURCE_EXTENSION.equals(artifactCoordinates.getPackaging()) ? artifactCoordinates.buildSourcePackageFileName()
+        String fileName = SOURCE_EXTENSION_LIST.contains(artifactCoordinates.getPackaging()) ? artifactCoordinates.buildSourcePackageFileName()
                 : artifactCoordinates.buildWheelPackageFileName();
         return URI.create(String.format("packages/%s", fileName));
     }
 
-    private String buildSourcePackageFileName()
-    {
+    private String buildSourcePackageFileName() {
         return String.format("%s-%s.%s",
-                             getId(),
-                             getVersion(),
-                             getPackaging());
+                getId(),
+                getVersion(),
+                getPackaging());
     }
 
-    public String buildWheelPackageFileName()
-    {
+    public String buildWheelPackageFileName() {
         String path;
 
-        if (StringUtils.isBlank(getBuild()))
-        {
+        if (StringUtils.isBlank(getBuild())) {
             path = String.format("%s-%s-%s-%s-%s.%s",
-                                 getId(),
-                                 getVersion(),
-                                 getLanguageImplementationVersion(),
-                                 getAbi(),
-                                 getPlatform(), getPackaging());
-        }
-        else
-        {
+                    getId(),
+                    getVersion(),
+                    getLanguageImplementationVersion(),
+                    getAbi(),
+                    getPlatform(), getPackaging());
+        } else {
             path = String.format("%s-%s-%s-%s-%s-%s.%s",
-                                 getId(),
-                                 getVersion(),
-                                 getBuild(),
-                                 getLanguageImplementationVersion(),
-                                 getAbi(),
-                                 getPlatform(),
-                                 getPackaging());
+                    getId(),
+                    getVersion(),
+                    getBuild(),
+                    getLanguageImplementationVersion(),
+                    getAbi(),
+                    getPlatform(),
+                    getPackaging());
         }
 
         return path;
     }
 
-    public boolean isSourcePackage()
-    {
-        return SOURCE_EXTENSION.equals(getPackaging());
+    public boolean isSourcePackage() {
+        return SOURCE_EXTENSION_LIST.contains(getPackaging());
     }
 
     public String getFileName() {
@@ -338,20 +310,15 @@ public class PypiArtifactCoordinates
      * @return Returns the native version of the package
      */
     @Override
-    public SemanticVersion getNativeVersion()
-    {
+    public SemanticVersion getNativeVersion() {
         String versionLocal = getVersion();
 
-        if (versionLocal == null)
-        {
+        if (versionLocal == null) {
             return null;
         }
-        try
-        {
+        try {
             return SemanticVersion.parse(versionLocal);
-        }
-        catch (IllegalArgumentException e)
-        {
+        } catch (IllegalArgumentException e) {
             return null;
         }
     }
