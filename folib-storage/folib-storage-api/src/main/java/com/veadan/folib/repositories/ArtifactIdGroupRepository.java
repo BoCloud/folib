@@ -145,6 +145,16 @@ public class ArtifactIdGroupRepository extends GremlinVertexRepository<ArtifactI
     public List<Artifact> findArtifactsGremlin(String storageId,
                                                String repositoryId,
                                                String artifactId,
+                                               Collection<String> coordinateValues,
+                                               Long skip,
+                                               Integer limit,
+                                               Boolean useLimit) {
+        return findArtifactsGremlin(storageId, repositoryId, artifactId, false, coordinateValues, skip, limit, useLimit);
+    }
+
+    public List<Artifact> findArtifactsGremlin(String storageId,
+                                               String repositoryId,
+                                               String artifactId,
                                                Boolean useArtifactName,
                                                Collection<String> coordinateValues,
                                                Long skip,
@@ -181,9 +191,23 @@ public class ArtifactIdGroupRepository extends GremlinVertexRepository<ArtifactI
     public long commonCountArtifacts(String storageId,
                                      String repositoryId,
                                      String artifactId,
+                                     Collection<String> coordinateValues) {
+        return commonFindArtifacts(storageId, repositoryId, artifactId, false, coordinateValues).count().tryNext().orElse(0L);
+    }
+
+    public long commonCountArtifacts(String storageId,
+                                     String repositoryId,
+                                     String artifactId,
                                      Boolean useArtifactName,
                                      Collection<String> coordinateValues) {
         return commonFindArtifacts(storageId, repositoryId, artifactId, useArtifactName, coordinateValues).count().tryNext().orElse(0L);
+    }
+
+    public Boolean commonArtifactsExists(String storageId,
+                                         String repositoryId,
+                                         String artifactId,
+                                         Collection<String> coordinateValues) {
+        return commonCountArtifacts(storageId, repositoryId, artifactId, false, coordinateValues) > 0L;
     }
 
     public Boolean commonArtifactsExists(String storageId,
