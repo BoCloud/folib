@@ -15,7 +15,7 @@ import com.veadan.folib.artifact.coordinates.PypiArtifactCoordinates;
 import com.veadan.folib.cloud.storage.s3fs.S3Path;
 import com.veadan.folib.components.DistributedLockComponent;
 import com.veadan.folib.components.common.CommonComponent;
-import com.veadan.folib.config.PubLayoutProviderConfig;
+import com.veadan.folib.config.NpmLayoutProviderConfig;
 import com.veadan.folib.configuration.*;
 import com.veadan.folib.constant.GlobalConstants;
 import com.veadan.folib.controllers.layout.pypi.PypiBrowsePackageHtmlResponseBuilder;
@@ -150,11 +150,11 @@ public class ArtifactComponent {
 
     @Inject
     @Lazy
-    private PubPackageSupplier npmPackageSupplier;
+    private NpmPackageSupplier npmPackageSupplier;
 
     @Inject
     @Lazy
-    @PubLayoutProviderConfig.NpmObjectMapper
+    @NpmLayoutProviderConfig.NpmObjectMapper
     private ObjectMapper npmJacksonMapper;
 
     @Inject
@@ -331,7 +331,7 @@ public class ArtifactComponent {
             } else {
                 flag = JarArchiveListingFunction.INSTANCE.supports(repositoryPath) || endsWith(repositoryPath.getFileName().toString(), Collections.singletonList(".pom"));
             }
-        } else if (repositoryPath.getFileSystem() instanceof PubFileSystem) {
+        } else if (repositoryPath.getFileSystem() instanceof NpmFileSystem) {
             log.debug("npm布局");
             List<String> suffixList = Arrays.asList("package.json", ".tgz");
             if (Boolean.TRUE.equals(promotion)) {
@@ -402,7 +402,7 @@ public class ArtifactComponent {
             } else if (Maven2LayoutProvider.ALIAS.equals(layout)) {
                 log.debug("maven布局");
                 flag = endsWith(filePath, Lists.newArrayList(".pom", ".jar", ".war", ".ear"));
-            } else if (PubLayoutProvider.ALIAS.equals(layout)) {
+            } else if (NpmLayoutProvider.ALIAS.equals(layout)) {
                 log.debug("npm布局");
                 List<String> suffixList = Arrays.asList("package.json", ".tgz");
                 flag = endsWith(filePath, suffixList);

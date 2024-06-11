@@ -30,7 +30,7 @@ public enum ArtifactoryFolibRepositoryTypeEnum {
     /**
      * Npm
      */
-    NPM("Npm", PubArtifactCoordinates.LAYOUT_NAME),
+    NPM("Npm", NpmArtifactCoordinates.LAYOUT_NAME),
     /**
      * Raw
      */

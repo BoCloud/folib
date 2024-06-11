@@ -10,7 +10,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.veadan.folib.artifact.coordinates.PubArtifactCoordinates;
 import com.veadan.folib.components.DistributedCacheComponent;
-import com.veadan.folib.config.PubLayoutProviderConfig.NpmObjectMapper;
+import com.veadan.folib.config.PubLayoutProviderConfig.PubObjectMapper;
 import com.veadan.folib.configuration.Configuration;
 import com.veadan.folib.configuration.ConfigurationManager;
 import com.veadan.folib.constant.GlobalConstants;
@@ -103,8 +103,8 @@ public class PubRepositoryFeatures implements RepositoryFeatures {
     private Executor eventTaskExecutor;
 
     @Inject
-    @NpmObjectMapper
-    private ObjectMapper npmJacksonMapper;
+    @PubObjectMapper
+    private ObjectMapper pubJacksonMapper;
 
     @Inject
     private PubPackageFeedParser npmPackageFeedParser;
@@ -153,7 +153,7 @@ public class PubRepositoryFeatures implements RepositoryFeatures {
             service = service.path("-/v1/search").queryParam("text", text).queryParam("size", size);
 
             InputStream inputStream = service.request().buildGet().invoke(InputStream.class);
-            searchResults = npmJacksonMapper.readValue(inputStream, SearchResults.class);
+            searchResults = pubJacksonMapper.readValue(inputStream, SearchResults.class);
 
             logger.debug("Searched PUB packages for [{}].", remoteRepository.getUrl());
 
@@ -247,7 +247,7 @@ public class PubRepositoryFeatures implements RepositoryFeatures {
         try (InputStream is = request.invoke(InputStream.class)) {
 
             JsonParser jp = jfactory.createParser(is);
-            jp.setCodec(npmJacksonMapper);
+            jp.setCodec(pubJacksonMapper);
 
             Assert.isTrue(jp.nextToken() == JsonToken.START_OBJECT, "pub changes feed should be JSON object.");
             Assert.isTrue(jp.nextFieldName().equals("results"), "pub changes feed should contains `results` field.");
@@ -267,7 +267,7 @@ public class PubRepositoryFeatures implements RepositoryFeatures {
 
                 Change change;
                 try {
-                    change = npmJacksonMapper.readValue(changeValue, Change.class);
+                    change = pubJacksonMapper.readValue(changeValue, Change.class);
                 } catch (Exception e) {
                     logger.error("Failed to parse PUB changes feed [{}] since [{}]: \n {}",
                             repositoryConfiguration.getReplicateUrl(),
@@ -328,7 +328,7 @@ public class PubRepositoryFeatures implements RepositoryFeatures {
             if (response.getStatus() == HttpStatus.SC_OK) {
                 String readString = response.readEntity(String.class);
                 try (InputStream inputStream = new ByteArrayInputStream(readString.getBytes())) {
-                    packageFeed = npmJacksonMapper.readValue(inputStream, PackageFeed.class);
+                    packageFeed = pubJacksonMapper.readValue(inputStream, PackageFeed.class);
                 }
             } else {
                 displayResponseError(url, response);
@@ -528,7 +528,7 @@ public class PubRepositoryFeatures implements RepositoryFeatures {
                 String metadata = getArtifactIdGroupMetadata(artifactIdGroup);
                 if (StringUtils.isNotBlank(metadata) && JSONUtil.isJson(metadata)) {
                     try (InputStream inputStream = new ByteArrayInputStream(metadata.getBytes())) {
-                        packageFeed = npmJacksonMapper.readValue(inputStream, PackageFeed.class);
+                        packageFeed = pubJacksonMapper.readValue(inputStream, PackageFeed.class);
                     } catch (IOException ex) {
                         logger.error("[{}] storage [{}] repository [{}] artifactIdGroup [{}] metadata to packageFeed error [{}]", this.getClass().getSimpleName(), storageId, repositoryId, artifactIdGroup.getUuid(), ExceptionUtils.getStackTrace(ex));
                     }

@@ -5,7 +5,7 @@ import cn.hutool.http.HttpUtil;
 import com.veadan.folib.components.artifact.ArtifactComponent;
 import com.veadan.folib.configuration.ConfigurationManager;
 import com.veadan.folib.forms.syncartifact.SyncArtifactForm;
-import com.veadan.folib.providers.layout.PubLayoutProvider;
+import com.veadan.folib.providers.layout.NpmLayoutProvider;
 import com.veadan.folib.storage.repository.Repository;
 import com.veadan.folib.storage.repository.RepositoryTypeEnum;
 import lombok.extern.slf4j.Slf4j;
@@ -56,9 +56,9 @@ public class NpmSyncArtifactProvider implements SyncArtifactProvider {
     @PostConstruct
     @Override
     public void register() {
-        syncArtifactProviderRegistry.addProvider(PubLayoutProvider.ALIAS, this);
+        syncArtifactProviderRegistry.addProvider(NpmLayoutProvider.ALIAS, this);
         log.info("Registered sync artifact '{}' with alias '{}'.",
-                getClass().getCanonicalName(), PubLayoutProvider.ALIAS);
+                getClass().getCanonicalName(), NpmLayoutProvider.ALIAS);
     }
 
     @Override

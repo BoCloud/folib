@@ -12,7 +12,7 @@
         <relativePath/>
     </parent>
 
-    <artifactId>folib-storage-npm-layout-provider</artifactId>
+    <artifactId>folib-storage-pub-layout-provider</artifactId>
     <version>1.0-SNAPSHOT</version>
     <packaging>jar</packaging>
 

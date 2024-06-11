@@ -4,7 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import com.veadan.folib.controllers.layout.npm.NpmUser;
 import com.veadan.folib.authentication.api.password.PasswordAuthentication;
-import com.veadan.folib.providers.layout.PubLayoutProvider;
+import com.veadan.folib.providers.layout.NpmLayoutProvider;
 
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.Authentication;
@@ -28,7 +28,7 @@ public class NpmLoginAuthenticationSupplier
 
     public NpmLoginAuthenticationSupplier()
     {
-        super(PubLayoutProvider.ALIAS);
+        super(NpmLayoutProvider.ALIAS);
     }
 
     @CheckForNull
@@ -38,7 +38,7 @@ public class NpmLoginAuthenticationSupplier
         NpmUser npmUser = deserializeNpmUser(request);
 
         if (!isValidNpmUser(npmUser) ||
-            !usernamesMatch(request.getRequestURI(), npmUser.getName()))
+                !usernamesMatch(request.getRequestURI(), npmUser.getName()))
         {
             throw new BadCredentialsException("invalid.credentials");
         }
@@ -55,7 +55,7 @@ public class NpmLoginAuthenticationSupplier
         }
 
         return RequestMethod.PUT.name().equalsIgnoreCase(request.getMethod()) &&
-               request.getRequestURI().contains(PubLayoutProvider.NPM_USER_PATH);
+                request.getRequestURI().contains(NpmLayoutProvider.NPM_USER_PATH);
     }
 
     private NpmUser deserializeNpmUser(HttpServletRequest request)
@@ -77,13 +77,13 @@ public class NpmLoginAuthenticationSupplier
     private boolean isValidNpmUser(NpmUser npmUser)
     {
         return npmUser != null &&
-               npmUser.getName() != null &&
-               npmUser.getPassword() != null;
+                npmUser.getName() != null &&
+                npmUser.getPassword() != null;
     }
 
     private boolean usernamesMatch(String url, String bodyUsername)
     {
-        Matcher urlUsernameMatcher = PubLayoutProvider.NPM_URL_USERNAME_PATTERN.matcher(url);
+        Matcher urlUsernameMatcher = NpmLayoutProvider.NPM_URL_USERNAME_PATTERN.matcher(url);
 
         return  urlUsernameMatcher.find() &&
                 urlUsernameMatcher.group(1).equals(bodyUsername);
