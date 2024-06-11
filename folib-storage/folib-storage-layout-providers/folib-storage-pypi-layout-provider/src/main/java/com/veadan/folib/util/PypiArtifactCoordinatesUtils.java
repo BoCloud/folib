@@ -1,5 +1,6 @@
 package com.veadan.folib.util;
 
+import cn.hutool.core.io.file.FileNameUtil;
 import com.veadan.folib.artifact.coordinates.PypiArtifactCoordinates;
 import com.veadan.folib.constant.GlobalConstants;
 import com.veadan.folib.domain.PypiPackageInfo;
@@ -37,15 +38,17 @@ public class PypiArtifactCoordinatesUtils
      */
     public static PypiArtifactCoordinates parse(String path)
     {
-        if (!path.endsWith(".tar.gz") && !path.endsWith(".whl"))
-        {
-            log.info("The artifact packaging can be only 'tar.gz' or '.whl' path [{}]", path);
-            throw new IllegalArgumentException("The artifact packaging can be only 'tar.gz' or '.whl'");
+        String extension = FilenameUtils.getExtension(path);
+        if (path.endsWith(PypiArtifactCoordinates.FULL_TAR_GZ_SUFFIX)) {
+            extension = PypiArtifactCoordinates.TAR_GZ_SUFFIX;
         }
-
+        if (!PypiArtifactCoordinates.EXTENSION_LIST.contains(extension))
+        {
+            log.info("The artifact packaging can be only {} path [{}]", PypiArtifactCoordinates.EXTENSION_LIST, path);
+            throw new IllegalArgumentException(String.format("The artifact packaging can be only %s, [%s]", PypiArtifactCoordinates.EXTENSION_LIST, path));
+        }
         String fileName = FilenameUtils.getName(path);
-
-        return path.endsWith(".tar.gz") ? parseSourcePackage(fileName) :
+        return PypiArtifactCoordinates.SOURCE_EXTENSION_LIST.contains(extension) ? parseSourcePackage(fileName) :
                parseWheelPackage(fileName);
     }
 
@@ -54,6 +57,9 @@ public class PypiArtifactCoordinatesUtils
         try
         {
             String extension = FilenameUtils.getExtension(path);
+            if (path.endsWith(PypiArtifactCoordinates.FULL_TAR_GZ_SUFFIX)) {
+                extension = PypiArtifactCoordinates.TAR_GZ_SUFFIX;
+            }
             String fullExtension = GlobalConstants.POINT + extension;
             String packageNameWithoutExtension = path.substring(0, path.lastIndexOf(fullExtension));
             String distribution = packageNameWithoutExtension.substring(0,
@@ -125,7 +131,7 @@ public class PypiArtifactCoordinatesUtils
                                            build,
                                            languageImplementationVersion,
                                            abi,
-                                           platform, fullExtension);
+                                           platform, extension);
     }
 
     public static void main(String[] args) {

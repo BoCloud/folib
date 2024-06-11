@@ -49,11 +49,15 @@ public class PypiArtifactCoordinates
 
     public static final String PACKAGING = "packaging";
 
-    public static final List<String> SOURCE_EXTENSION_LIST = Lists.newArrayList("tar.gz", "tar", "zip");
+    public static final List<String> SOURCE_EXTENSION_LIST = Lists.newArrayList("tar.gz", "zip");
 
-    public static final List<String> WHEEL_EXTENSION_LIST = Lists.newArrayList("whl", "egg", "exe");
+    public static final List<String> WHEEL_EXTENSION_LIST = Lists.newArrayList("whl");
 
-    public static final List<String> EXTENSION_LIST = Lists.newArrayList("tar.gz", "tar", "zip", "whl", "egg", "exe");
+    public static final List<String> EXTENSION_LIST = Lists.newArrayList("tar.gz", "zip", "whl");
+
+    public static final String FULL_TAR_GZ_SUFFIX = ".tar.gz";
+
+    public static final String TAR_GZ_SUFFIX = "tar.gz";
 
     public static final String PATH = "path";
 
@@ -92,7 +96,7 @@ public class PypiArtifactCoordinates
             throw new IllegalArgumentException("The packaging field is mandatory.");
         }
 
-        if (!SOURCE_EXTENSION_LIST.contains(packaging) && WHEEL_EXTENSION_LIST.contains(packaging)) {
+        if (!SOURCE_EXTENSION_LIST.contains(packaging) && !WHEEL_EXTENSION_LIST.contains(packaging)) {
             throw new IllegalArgumentException("The artifact has incorrect packaging");
         }
 
