@@ -1185,7 +1185,7 @@ public class ArtifactComponent {
                 obj = pypiSearchResultList;
             }
         } else if (RepositoryTypeEnum.HOSTED.getType().equals(repository.getType())) {
-            final String packageNameToDownload = PypiPackageNameConverter.escapeSpecialCharacters(pypiSearchRequest.getPackageName());
+            final String packageNameToDownload = PypiPackageNameConverter.escapeSpecialCharacters(pypiSearchRequest.getPackageName()) + "-";
             obj = handlePypiLocalRepository(repository, packageNameToDownload);
         }
         log.debug("[{}] getPypiArtifactPackageFeed storageId [{}] repositoryId [{}] artifactId [{}] take time [{}] ms", this.getClass().getSimpleName(), repository.getStorage().getId(), repository.getId(), pypiSearchRequest.getPackageName(), System.currentTimeMillis() - startTime);
@@ -1195,7 +1195,7 @@ public class ArtifactComponent {
     private String handlePypiLocalRepository(Repository repository, String packageNameToDownload) {
         String html = null;
         RepositoryProvider provider = repositoryProviderRegistry.getProvider(repository.getType());
-        RepositorySearchRequest predicate = new RepositorySearchRequest(packageNameToDownload, Collections.singleton(PypiArtifactCoordinates.WHEEL_EXTENSION));
+        RepositorySearchRequest predicate = new RepositorySearchRequest(packageNameToDownload, true, PypiArtifactCoordinates.EXTENSION_LIST);
         Paginator paginator = new Paginator();
         List<Path> searchResult = provider.search(repository.getStorage().getId(), repository.getId(),
                 predicate, paginator);

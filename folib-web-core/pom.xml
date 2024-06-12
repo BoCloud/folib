@@ -340,28 +340,12 @@
         <dependency>
             <groupId>org.owasp</groupId>
             <artifactId>dependency-check-core</artifactId>
-            <version>8.4.3</version>
-            <exclusions>
-                <exclusion>
-                    <groupId>org.apache.commons</groupId>
-                    <artifactId>commons-lang3</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>org.apache.commons</groupId>
-                    <artifactId>commons-text</artifactId>
-                </exclusion>
-            </exclusions>
+            <version>7.1.0</version>
         </dependency>
         <dependency>
             <groupId>org.owasp</groupId>
             <artifactId>dependency-check-utils</artifactId>
-            <version>8.4.3</version>
-            <exclusions>
-                <exclusion>
-                    <groupId>org.apache.commons</groupId>
-                    <artifactId>commons-lang3</artifactId>
-                </exclusion>
-            </exclusions>
+            <version>7.1.0</version>
         </dependency>
 
         <!-- 数据库相关 -->

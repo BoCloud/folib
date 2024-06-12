@@ -1,0 +1,1 @@
+UPDATE properties SET `value` = '5.2' WHERE id = "version";
