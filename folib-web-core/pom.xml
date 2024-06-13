@@ -252,11 +252,6 @@
         </dependency>
         <dependency>
             <groupId>${project.groupId}</groupId>
-            <artifactId>folib-storage-gitlfs-layout-provider</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>${project.groupId}</groupId>
             <artifactId>folib-client</artifactId>
             <version>1.1.1-RELEASE</version>
         </dependency>
@@ -696,6 +691,16 @@
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-websocket</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>folib-storage-gitlfs-layout-provider</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>folib-storage-huggingface-layout-provider</artifactId>
+            <version>${project.version}</version>
         </dependency>
     </dependencies>
 
