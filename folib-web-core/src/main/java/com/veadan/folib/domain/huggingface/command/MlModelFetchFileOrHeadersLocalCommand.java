@@ -11,6 +11,7 @@ import com.veadan.folib.domain.huggingface.model.request.MlModelRequestContext;
 import com.veadan.folib.domain.huggingface.utils.HttpUtils;
 import com.veadan.folib.domain.huggingface.utils.MlModelUtils;
 import com.veadan.folib.exception.ExceptionHandlingOutputStream;
+import com.veadan.folib.io.LazyInputStream;
 import com.veadan.folib.providers.io.RepositoryFiles;
 import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.providers.io.RepositoryPathResolver;
@@ -26,12 +27,15 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.FileSystemResource;
+import org.springframework.core.io.InputStreamResource;
 import org.springframework.core.io.Resource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -55,8 +59,11 @@ public class MlModelFetchFileOrHeadersLocalCommand {
     private ArtifactComponent artifactComponent;
 
     protected ArtifactResolutionService artifactResolutionService;
+
     protected RepositoryPathResolver repositoryPathResolver;
-    public MlModelFetchFileOrHeadersLocalCommand() {
+    public MlModelFetchFileOrHeadersLocalCommand(ArtifactResolutionService artifactResolutionService,RepositoryPathResolver repositoryPathResolver) {
+        this.artifactResolutionService = artifactResolutionService;
+        this.repositoryPathResolver = repositoryPathResolver;
     }
 
     public ResponseEntity<?> fetchFile(MlModelRequestContext requestContext, RevisionData modelInfo) {
@@ -95,19 +102,23 @@ public class MlModelFetchFileOrHeadersLocalCommand {
         log.debug("Received fetch {} request for repo {}, organization {}, model {}, generatedSha1 {}, fileName {}", isFile ? "file" : "header", repositoryId, organization, modelName, modelInfo.getSha(), filename);
         String artifactPath = MlModelUtils.getFilePath(organization, modelName, revisionFolder, modelInfo
                 .getLastModified(), filename);
+        String artifactSh2Path = MlModelUtils.getFilePath(organization, modelName, revisionFolder, modelInfo
+                .getLastModified(), String.join(".",filename,"sha256"));
         try {
-            RepositoryPath repositoryPath = repositoryPathResolver.resolve(requestContext.getStorageId(), requestContext.getRepositoryId(), artifactPath);
-            String sha2 = getArtifactsh2(requestContext.getStorageId(),requestContext.getRepositoryId(),artifactPath);
+            RepositoryPath repositoryPath = repositoryPathResolver.resolve(requestContext.getStorageId(),
+                    requestContext.getRepositoryId(),
+                    artifactPath);
+            String sha2 = getArtifactsh2(requestContext.getStorageId(),requestContext.getRepositoryId(),artifactSh2Path);
             long artifactSize = getArtifactSize(requestContext.getStorageId(),requestContext.getRepositoryId(),artifactPath);
             return buildSuccessfulResponse(repositoryPath,artifactSize,sha2, modelInfo.getSha());
         } catch (Exception e) {
-            log.warn("Failed to find artifact {} in repo {}", artifactPath, repositoryId);
+            log.error("Failed to find artifact {} in repo {}", artifactPath, repositoryId);
             return returnErrorResponse();
         }
     }
 
     protected String getArtifactsh2(String storageId, String repositoryId, String path){
-        RepositoryPath sha2Path = repositoryPathResolver.resolve(storageId, repositoryId, String.join(".",path));
+        RepositoryPath sha2Path = repositoryPathResolver.resolve(storageId, repositoryId, path);
         try {
             return Files.readString(sha2Path);
         } catch (IOException e) {
@@ -137,12 +148,17 @@ public class MlModelFetchFileOrHeadersLocalCommand {
         if (repoCommit == null) {
             throw new NullPointerException("repoCommit is marked non-null but is null");
         }
-        Resource file = new FileSystemResource(filePath);
-        return ResponseEntity.ok()
-                .header("ETag", etag)
-                .header("Content-Length", Long.valueOf(size).toString())
-                .header("X-Repo-Commit", repoCommit)
-                .body(file);
+        try (InputStream in = Files.newInputStream(filePath)) {
+            InputStreamResource resource = new InputStreamResource(in);
+            return ResponseEntity.ok()
+                    .header("ETag", etag)
+                    .header("Content-Length", Long.valueOf(size).toString())
+                    .header("X-Repo-Commit", repoCommit)
+                    .header("Content-Type", "application/octet-stream")
+                    .body(resource);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     void artifactDownloadResponse(HttpServletResponse response,

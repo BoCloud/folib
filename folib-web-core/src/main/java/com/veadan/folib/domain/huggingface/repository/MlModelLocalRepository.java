@@ -12,6 +12,7 @@ import com.veadan.folib.providers.io.RepositoryPathResolver;
 import com.veadan.folib.providers.layout.HuggingFaceLayoutProvider;
 import com.veadan.folib.repositories.ArtifactRepository;
 import com.veadan.folib.services.ArtifactManagementService;
+import com.veadan.folib.services.ArtifactResolutionService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
@@ -41,6 +42,8 @@ public class MlModelLocalRepository implements MlModelRepository {
     private DistributedLockComponent distributedLockComponent;
     @Inject
     private HuggingFaceLayoutProvider layoutProvider;
+    @Inject
+    protected ArtifactResolutionService artifactResolutionService;
     /**
      * 获取请求头
      * @param context 请求上下文
@@ -52,7 +55,7 @@ public class MlModelLocalRepository implements MlModelRepository {
             throw new NullPointerException("context is marked non-null but is null");
         }
         RevisionData revisionData = fetchRevisionData(context);
-        return new MlModelFetchFileOrHeadersLocalCommand().fetchFile(context, revisionData);
+        return new MlModelFetchFileOrHeadersLocalCommand(artifactResolutionService,repositoryPathResolver).fetchFile(context, revisionData);
     }
 
     /**
@@ -120,7 +123,7 @@ public class MlModelLocalRepository implements MlModelRepository {
             throw new NullPointerException("context is marked non-null but is null");
         }
         RevisionData revisionData = fetchRevisionData(context);
-        return (new MlModelFetchFileOrHeadersLocalCommand()).fetchFile(context, revisionData);
+        return (new MlModelFetchFileOrHeadersLocalCommand(artifactResolutionService,repositoryPathResolver)).fetchFile(context, revisionData);
     }
 
     /**

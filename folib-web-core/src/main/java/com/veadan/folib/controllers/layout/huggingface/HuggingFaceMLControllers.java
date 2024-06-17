@@ -52,8 +52,7 @@ public class HuggingFaceMLControllers extends BaseArtifactController {
     @ApiOperation(value = "从具有组织名称的特定修订中获取文件头响应", nickname = "getFileHeaderWithOrganizationParam")
     @PreAuthorize("hasAuthority('ARTIFACTS_RESOLVE')")
     @RequestMapping(path = "{storageId}/{repositoryId}/{organization}/{modelName}/resolve/{revision}/{filename:.+}",
-            method = RequestMethod.HEAD,
-            produces = {"application/octet-stream"}
+            method = RequestMethod.HEAD
     )
     public ResponseEntity<?> getHead(@RepositoryMapping Repository repository,
                                      HttpServletRequest request,
@@ -77,8 +76,7 @@ public class HuggingFaceMLControllers extends BaseArtifactController {
     @ApiOperation(value = "从没有组织名称的特定修订中获取文件头响应", nickname = "getFileHeaderWithoutOrganizationParam")
     @PreAuthorize("hasAuthority('ARTIFACTS_RESOLVE')")
     @RequestMapping(path = "{storageId}/{repositoryId}/{modelName}/resolve/{revision}/{filename:.+}",
-            method = RequestMethod.HEAD,
-            produces = {"application/octet-stream"}
+            method = RequestMethod.HEAD
     )
     public ResponseEntity<?> getHead(@RepositoryMapping Repository repository,
                                      HttpServletRequest request,
