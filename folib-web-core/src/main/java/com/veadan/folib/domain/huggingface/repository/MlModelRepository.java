@@ -1,6 +1,7 @@
 package com.veadan.folib.domain.huggingface.repository;
 
 import java.io.InputStream;
+import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.core.Response;
 
 import com.veadan.folib.domain.gitls.model.GitLfsBatchJson;
@@ -19,7 +20,7 @@ public interface MlModelRepository {
      * @param paramMlModelRequestContext 请求上下文
      * @return
      */
-    ResponseEntity<?> fetchHeaders( MlModelRequestContext paramMlModelRequestContext);
+    ResponseEntity<?> fetchHeaders(MlModelRequestContext paramMlModelRequestContext, HttpServletResponse response);
 
     /**
      * 上传文件

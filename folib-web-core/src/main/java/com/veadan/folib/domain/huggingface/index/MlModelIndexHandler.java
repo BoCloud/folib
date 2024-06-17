@@ -43,7 +43,7 @@ public class MlModelIndexHandler {
     private HuggingFaceLayoutProvider layoutProvider;
 
     public MlModelIndexHandler(RepositoryPathResolver repositoryPathResolver, ArtifactManagementService artifactManagementService, HuggingFaceLayoutProvider layoutProvider) {
-        this.fetchRevisionLocalCommand = new MlModelFetchRevisionLocalCommand();
+        this.fetchRevisionLocalCommand = new MlModelFetchRevisionLocalCommand(repositoryPathResolver);
         this.repositoryPathResolver = repositoryPathResolver;
         this.artifactManagementService = artifactManagementService;
         this.layoutProvider = layoutProvider;
@@ -87,7 +87,7 @@ public class MlModelIndexHandler {
             if (latestRevisionTimestamp != null &&
                     MlModelUtils.isIsoInstantFormat(latestRevisionTimestamp) && dataToSerialize
                     .getLastModified() != null &&
-                    MlModelUtils.isIsoInstantFormat(dataToSerialize.getLastModified())) {
+                    MlModelUtils.isIsoInstantFormat(dataToSerialize.getLastModified()) && !latestRevisionTimestamp.equals(subRevisionFolder)) {
                 Date deletionDate, latestRevisionDate = MlModelUtils.convertToDate(latestRevisionTimestamp);
                 Date uploadRevisionDate = MlModelUtils.convertToDate(dataToSerialize.getLastModified());
                 if (latestRevisionDate.before(uploadRevisionDate) || latestRevisionDate.equals(uploadRevisionDate)) {
@@ -187,6 +187,7 @@ public class MlModelIndexHandler {
             });
 
         } catch (IOException e) {
+            log.error("访问文件失败: " + repositoryPath.toString());
             e.printStackTrace();
         }
 

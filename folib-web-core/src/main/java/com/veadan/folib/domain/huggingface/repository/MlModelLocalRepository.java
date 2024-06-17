@@ -17,6 +17,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 import javax.inject.Inject;
+import javax.servlet.http.HttpServletResponse;
 import java.io.InputStream;
 
 @Service
@@ -44,7 +45,7 @@ public class MlModelLocalRepository implements MlModelRepository {
      * @return
      */
     @Override
-    public ResponseEntity<?> fetchHeaders(MlModelRequestContext context) {
+    public ResponseEntity<?> fetchHeaders(MlModelRequestContext context, HttpServletResponse response) {
         if (context == null) {
             throw new NullPointerException("context is marked non-null but is null");
         }
@@ -66,7 +67,7 @@ public class MlModelLocalRepository implements MlModelRepository {
         if (filesRequest == null) {
             throw new NullPointerException("filesRequest is marked non-null but is null");
         }
-        return (new MlModelPreUploadDirLocalCommand()).preUploadDir(context, filesRequest);
+        return (new MlModelPreUploadDirLocalCommand(repositoryPathResolver)).preUploadDir(context, filesRequest);
     }
 
     /**
@@ -85,7 +86,7 @@ public class MlModelLocalRepository implements MlModelRepository {
             throw new NullPointerException("lfsInfoPayload is marked non-null but is null");
         }
 
-        MlModelLfsPreUploadCommand preUploadCommand = new MlModelLfsPreUploadCommand(artifactRepository,configurationManager);
+        MlModelLfsPreUploadCommand preUploadCommand = new MlModelLfsPreUploadCommand(artifactRepository,configurationManager,repositoryPathResolver,artifactManagementService);
         return preUploadCommand.preUploadBatch(context.getStorageId(),context.getRepositoryId(), context.getOrg(), context.getModelName(), lfsInfoPayload, context.getRequest());
     }
 
@@ -148,7 +149,7 @@ public class MlModelLocalRepository implements MlModelRepository {
             throw new NullPointerException("context is marked non-null but is null");
         }
         try {
-            return new MlModelFetchRevisionLocalCommand().fetchRevision(context);
+            return new MlModelFetchRevisionLocalCommand(repositoryPathResolver).fetchRevision(context);
         } catch (Exception e) {
             e.printStackTrace();
         }

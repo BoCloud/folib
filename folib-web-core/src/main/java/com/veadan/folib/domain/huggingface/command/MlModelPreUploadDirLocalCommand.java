@@ -1,5 +1,11 @@
 package com.veadan.folib.domain.huggingface.command;
 
+import java.io.IOException;
+import java.nio.file.FileVisitResult;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.SimpleFileVisitor;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Stream;
@@ -8,6 +14,8 @@ import javax.annotation.Nonnull;
 import com.veadan.folib.domain.huggingface.constant.MlModelSystemProperties;
 import com.veadan.folib.domain.huggingface.model.request.*;
 import com.veadan.folib.domain.huggingface.utils.MlModelUtils;
+import com.veadan.folib.providers.io.RepositoryPath;
+import com.veadan.folib.providers.io.RepositoryPathResolver;
 import lombok.Generated;
 import lombok.NonNull;
 import org.slf4j.Logger;
@@ -21,17 +29,17 @@ public class MlModelPreUploadDirLocalCommand {
     //private final PackageHandlerSecurityService securityService;
 
 
-    //todo lfsFileMinSize
+    //用于判断是否使用lfs上传
     private final long lfsFileMinSize=100000000;
 
     public static final String REGULAR_UPLOAD_TYPE = "regular";
 
     public static final String LFS_UPLOAD_TYPE = "lfs";
 
-    public MlModelPreUploadDirLocalCommand() {
+    protected RepositoryPathResolver repositoryPathResolver;
 
-        //this.lfsFileMinSize = packageHandlerService.systemPropsService().getLongValue(MlModelSystemProperties.ML_MODEL_LFS_FILE_MIN_SIZE
-        //        .name(), (Long) MlModelSystemProperties.ML_MODEL_LFS_FILE_MIN_SIZE.defaultValue()).longValue();
+    public MlModelPreUploadDirLocalCommand(RepositoryPathResolver repositoryPathResolver) {
+        this.repositoryPathResolver = repositoryPathResolver;
     }
 
     /**
@@ -77,16 +85,53 @@ public class MlModelPreUploadDirLocalCommand {
      * @param context 上下文对象
      */
     void assertModuleAlreadyExist(MlModelRequestContext context) {
-        //todo 待实现
         String repositoryId = context.getRepositoryId();
-        //Stream<PackageArtifact> leadFiles = this.searchService.findArtifactsChildren(repoKey, MlModelUtils.getModelRevisionPath(context))
-        //        .filter(artifact -> ".folib_huggingface_model_info.json".equals(artifact.getName()));
-        //String subRevisionPath = leadFiles.findFirst().map(artifact -> artifact.getPath().replace(".folib_huggingface_model_info.json", "")).orElse(null);
-        //if (subRevisionPath != null && !this.securityService.canDelete(repoKey, subRevisionPath)) {
-        //    String message = String.format("HuggingFace ML module conflict. Module: %s already exist in repoKey: %s.", subRevisionPath, repoKey);
-        //    log.info(message);
-        //    throw new RuntimeException(message);
-        //}
+        String storageId = context.getStorageId();
+
+        RepositoryPath repositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, MlModelUtils.getModelRevisionPath(context));
+        if (!Files.exists(repositoryPath)) {
+            return;
+        }
+        List<Path> fileList = new ArrayList<>();
+        try {
+            Files.walkFileTree(repositoryPath, new SimpleFileVisitor<>() {
+                @Override
+                public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs) {
+                    // 在这里可以处理目录（如果需要的话）
+                    return FileVisitResult.CONTINUE;
+                }
+
+                @Override
+                public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) {
+                    if (!file.getFileName().toString().startsWith(".")
+                            && !file.getFileName().toString().endsWith(".metadata")
+                            && !file.getFileName().toString().endsWith(".md5")
+                            && !file.getFileName().toString().endsWith(".sha1")
+                            && !file.getFileName().toString().endsWith(".sha256")) {
+                        fileList.add(file);
+                    }
+                    return FileVisitResult.CONTINUE;
+                }
+
+                @Override
+                public FileVisitResult visitFileFailed(Path file, IOException exc) {
+                    // 处理无法访问的文件
+                    log.error("访问文件失败: " + file.toString());
+                    exc.printStackTrace();
+                    return FileVisitResult.CONTINUE;
+                }
+            });
+
+        } catch (IOException e) {
+            log.error("访问文件失败: " + repositoryPath.toString());
+            e.printStackTrace();
+        }
+        String subRevisionPath = fileList.stream().findFirst().map(artifact -> artifact.getFileName().toString().replace(".folib_huggingface_model_info.json", "")).orElse(null);
+        if (subRevisionPath != null) {
+            String message = String.format("HuggingFace ML module conflict. Module: %s already exist in repoKey: %s.", subRevisionPath, repositoryId);
+            log.info(message);
+            throw new RuntimeException(message);
+        }
     }
 
     /**

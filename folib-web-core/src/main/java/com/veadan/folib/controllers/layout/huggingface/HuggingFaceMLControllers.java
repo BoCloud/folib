@@ -25,6 +25,7 @@ import org.springframework.web.bind.annotation.*;
 
 import javax.inject.Inject;
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.concurrent.Semaphore;
@@ -42,6 +43,8 @@ public class HuggingFaceMLControllers extends BaseArtifactController {
     private static final String EMPTY_REVISION = "tmp";
 
     private static final String HF_DEFAULT_REVISION = "main";
+
+    //并发控制
     private static final int MAX_CONCURRENT_THREADS = 5;
     private final Semaphore concurrentCommitExecutionsLimit = new Semaphore(MAX_CONCURRENT_THREADS);
 
@@ -54,6 +57,7 @@ public class HuggingFaceMLControllers extends BaseArtifactController {
     )
     public ResponseEntity<?> getHead(@RepositoryMapping Repository repository,
                                      HttpServletRequest request,
+                                     HttpServletResponse response,
                                      @PathVariable("organization") String organizationName,
                                      @PathVariable("modelName") String modelName,
                                      @PathVariable("revision") String revision,
@@ -66,7 +70,7 @@ public class HuggingFaceMLControllers extends BaseArtifactController {
                 .revision(revision)
                 .file(filename)
                 .request(request).build();
-        return mlModelLocalRepository.fetchHeaders(context);
+        return mlModelLocalRepository.fetchHeaders(context,response);
     }
 
 
@@ -78,6 +82,7 @@ public class HuggingFaceMLControllers extends BaseArtifactController {
     )
     public ResponseEntity<?> getHead(@RepositoryMapping Repository repository,
                                      HttpServletRequest request,
+                                     HttpServletResponse response,
                                      @PathVariable("modelName") String modelName,
                                      @PathVariable("revision") String revision,
                                      @PathVariable("filename") String filename) {
@@ -89,7 +94,7 @@ public class HuggingFaceMLControllers extends BaseArtifactController {
                 .file(filename)
                 .request(request)
                 .build();
-        return mlModelLocalRepository.fetchHeaders(context);
+        return mlModelLocalRepository.fetchHeaders(context,response);
     }
 
 

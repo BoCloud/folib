@@ -81,7 +81,7 @@ public class MlModelUploadDirLocalCommand {
                                         ArtifactManagementService artifactManagementService,
                                         HuggingFaceLayoutProvider layoutProvide,
                                         ArtifactRepository artifactRepository) {
-        this.preUploadDirLocalCommand = new MlModelPreUploadDirLocalCommand();
+        this.preUploadDirLocalCommand = new MlModelPreUploadDirLocalCommand(repositoryPathResolver);
         this.repositoryPathResolver = repositoryPathResolver;
         this.artifactManagementService = artifactManagementService;
         this.layoutProvide = layoutProvide;
@@ -252,11 +252,14 @@ public class MlModelUploadDirLocalCommand {
             //this.repositoryService.copy(repoKey, repoKey, sourcePath, destinationPath);
             RepositoryPath srcPath =  repositoryPathResolver.resolve(storageId, repositoryId, sourcePath);
             RepositoryPath destPath = repositoryPathResolver.resolve(storageId, repositoryId, destinationPath);
-            try {
-                artifactManagementService.validateAndStore(destPath, new BufferedInputStream(Files.newInputStream(srcPath)));
+            try (InputStream inputStream = Files.newInputStream(srcPath) ;
+                 BufferedInputStream bufferedInputStream = new BufferedInputStream(inputStream)){
+                artifactManagementService.validateAndStore(destPath, bufferedInputStream);
             } catch (IOException |  ProviderImplementationException | ArtifactCoordinatesValidationException e) {
                 log.error("Failed to copy file with oid {} for repo {}, organization {}, modelName {}, revision {}", oid, repositoryId, organization, modelName, revision);
                 throw new RuntimeException(e);
+            }finally {
+                log.info("Failed to copy file with oid {} for repo {}, organization {}, modelName {}, revision {}", oid, repositoryId, organization, modelName, revision);
             }
         }
 
@@ -273,13 +276,13 @@ public class MlModelUploadDirLocalCommand {
         }
         uploadedFiles.add(path);
         String contentPath = uploadInfo.getValue().get("content");
-        try {
-            if (skipUploading(storageId,repositoryId, path, contentPath)) {
-                return;
-            }
-            RepositoryPath repositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, path);
-            Path filePath = Paths.get(contentPath, new String[0]);
-            artifactManagementService.validateAndStore(repositoryPath, new BufferedInputStream(Files.newInputStream(filePath)));
+        if (skipUploading(storageId,repositoryId, path, contentPath)) {
+            return;
+        }
+        RepositoryPath repositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, path);
+        Path filePath = Paths.get(contentPath, new String[0]);
+        try (InputStream  inputStream= Files.newInputStream(filePath)){
+            artifactManagementService.validateAndStore(repositoryPath, inputStream);
         } catch (IOException | ProviderImplementationException | ArtifactCoordinatesValidationException e) {
             log.error("upload file error", e);
         } finally {
@@ -291,11 +294,18 @@ public class MlModelUploadDirLocalCommand {
     private boolean skipUploading(String storageId,String repositoryId, String path, String contentPath) {
 
         try {
-            String sha2 = MlModelUtils.sha2(contentPath);
+
             Artifact artifact= artifactRepository.findOneArtifact(storageId, repositoryId, path);
+            if(artifact ==null){
+                return false;
+            }
+            String sha2 = MlModelUtils.sha2(contentPath);
+            if (sha2 == null) {
+                return false;
+            }
             RepositoryPath repositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, path);
             String sha23 = MlModelUtils.sha2(repositoryPath.getPath());
-            if (artifact != null && sha2.equals(sha23)) {
+            if (sha2.equals(sha23)) {
                 log.debug("Skipping upload of file {} since it already exists in repo {}", path, repositoryId);
                 return true;
             }
