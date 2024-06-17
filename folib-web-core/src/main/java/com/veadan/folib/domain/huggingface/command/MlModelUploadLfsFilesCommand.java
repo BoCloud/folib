@@ -48,7 +48,7 @@ public class MlModelUploadLfsFilesCommand {
         }
         log.debug("Received upload lfs file request for repo/organization/modelName/file '{}'/'{}'/'{}'/'{}'", context
                 .getRepositoryId(), context.getOrg(), context.getModelName(), context.getFile());
-        try {
+        try (stream){
             String uploadPath = MlModelUtils.getLfsTmpUploadPath(context.getOrg(), context.getModelName(), context.getFile());
             Artifact artifact = artifactRepository.findOneArtifact(context.getStorageId(), context.getRepositoryId(), uploadPath);
             if (artifact == null) {

@@ -223,8 +223,7 @@ public class HuggingFaceMLControllers extends BaseArtifactController {
     @ApiOperation(value = "上传组织名称参数的 LFS", nickname = "UploadLFSWithOrganizationNameParam")
     @PreAuthorize("hasAuthority('ARTIFACTS_RESOLVE')")
     @RequestMapping(path = "{storageId}/{repositoryId}/api/complete_multipart/{organization}/{modelName}/{oid}",
-            method = RequestMethod.PUT,
-            consumes = {"application/json"}
+            method = RequestMethod.PUT
     )
     public ResponseEntity<?> uploadMultipart(@RepositoryMapping Repository repository,
                                              HttpServletRequest request,

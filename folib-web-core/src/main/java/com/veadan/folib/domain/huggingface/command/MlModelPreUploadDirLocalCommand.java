@@ -29,8 +29,8 @@ public class MlModelPreUploadDirLocalCommand {
     //private final PackageHandlerSecurityService securityService;
 
 
-    //用于判断是否使用lfs上传
-    private final long lfsFileMinSize=100000000;
+    //用于判断是否使用lfs上传 1073741824 Bytes 1G
+    private final long lfsFileMinSize=209715200;
 
     public static final String REGULAR_UPLOAD_TYPE = "regular";
 

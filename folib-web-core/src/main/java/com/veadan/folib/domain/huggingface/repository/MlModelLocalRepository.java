@@ -1,5 +1,6 @@
 package com.veadan.folib.domain.huggingface.repository;
 
+import com.veadan.folib.components.DistributedLockComponent;
 import com.veadan.folib.configuration.ConfigurationManager;
 import com.veadan.folib.domain.gitls.model.GitLfsBatchJson;
 import com.veadan.folib.domain.huggingface.command.*;
@@ -36,7 +37,8 @@ public class MlModelLocalRepository implements MlModelRepository {
 
     @Inject
     protected ArtifactManagementService artifactManagementService;
-
+    @Inject
+    private DistributedLockComponent distributedLockComponent;
     @Inject
     private HuggingFaceLayoutProvider layoutProvider;
     /**
@@ -104,7 +106,7 @@ public class MlModelLocalRepository implements MlModelRepository {
         if (bodyStream == null) {
             throw new NullPointerException("bodyStream is marked non-null but is null");
         }
-        return (new MlModelUploadDirLocalCommand(repositoryPathResolver, artifactManagementService, layoutProvider,artifactRepository)).uploadDir(context, bodyStream);
+        return (new MlModelUploadDirLocalCommand(repositoryPathResolver, artifactManagementService, layoutProvider,artifactRepository,distributedLockComponent)).uploadDir(context, bodyStream);
     }
 
     /**

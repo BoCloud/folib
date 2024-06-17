@@ -21,6 +21,7 @@ import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import javax.annotation.Nullable;
 
+import com.veadan.folib.components.DistributedLockComponent;
 import com.veadan.folib.domain.Artifact;
 import com.veadan.folib.domain.huggingface.common.ConflictsGuard;
 import com.veadan.folib.domain.huggingface.index.MlModelIndexHandler;
@@ -75,12 +76,13 @@ public class MlModelUploadDirLocalCommand {
     private HuggingFaceLayoutProvider layoutProvide;
     private MlModelIndexHandler indexHandler;
     private ArtifactRepository artifactRepository;
-
+    private DistributedLockComponent distributedLockComponent;
 
     public MlModelUploadDirLocalCommand(RepositoryPathResolver repositoryPathResolver,
                                         ArtifactManagementService artifactManagementService,
                                         HuggingFaceLayoutProvider layoutProvide,
-                                        ArtifactRepository artifactRepository) {
+                                        ArtifactRepository artifactRepository,
+                                        DistributedLockComponent distributedLockComponent) {
         this.preUploadDirLocalCommand = new MlModelPreUploadDirLocalCommand(repositoryPathResolver);
         this.repositoryPathResolver = repositoryPathResolver;
         this.artifactManagementService = artifactManagementService;
@@ -163,7 +165,7 @@ public class MlModelUploadDirLocalCommand {
                 if ("header".equals(uploadInfo.getKey())) {
                     continue;
                 }
-                String pathOnFS =  uploadInfo.getValue().get("content");
+                String pathOnFS = uploadInfo.getValue().get("content");
                 deleteTempFileFromFS(pathOnFS);
             }
             throw e;
@@ -238,32 +240,31 @@ public class MlModelUploadDirLocalCommand {
         String fileName = uploadInfo.getValue().get("path");
         String path = MlModelUtils.getFilePath(organization, modelName, revision, subRevision, fileName);
         uploadedFiles.add(path);
+        String oidFilePath = MlModelUtils.getLfsTmpUploadPath(organization, modelName, oid);
+        Artifact artifact = artifactRepository.findOneArtifact(storageId, repositoryId, oidFilePath);
 
-        Artifact artifact= artifactRepository.findOneArtifact(storageId, repositoryId, path);
-        //Stream<PackageArtifact> oidFiles = this.searchService.findArtifactsChildrenWithName(repoKey,
-        //        MlModelUtils.getLfsTmpUploadDir(organization, modelName), oid + "*");
-        //Optional<PackageArtifact> any = oidFiles.findAny();
-        if (artifact !=null) {
+        if (artifact == null) {
             log.warn("No content for oid {} found for repo {}, organization {}, modelName {}, revision {}", oid, repositoryId, organization, modelName, revision);
         } else {
-            String sourcePath =  MlModelUtils.getLfsTmpUploadPath(organization, modelName, oid);
+
+            String sourcePath = artifact.getArtifactPath();
             String destinationPath = MlModelUtils.getFilePath(organization, modelName, revision, subRevision, fileName);
             log.debug("Copying file with oid {} for repo {}, organization {}, modelName {}, revision {}", oid, repositoryId, organization, modelName, revision);
             //this.repositoryService.copy(repoKey, repoKey, sourcePath, destinationPath);
-            RepositoryPath srcPath =  repositoryPathResolver.resolve(storageId, repositoryId, sourcePath);
+            RepositoryPath srcPath = repositoryPathResolver.resolve(storageId, repositoryId, sourcePath);
             RepositoryPath destPath = repositoryPathResolver.resolve(storageId, repositoryId, destinationPath);
-            try (InputStream inputStream = Files.newInputStream(srcPath) ;
-                 BufferedInputStream bufferedInputStream = new BufferedInputStream(inputStream)){
+            try (InputStream inputStream = Files.newInputStream(srcPath);
+                 BufferedInputStream bufferedInputStream = new BufferedInputStream(inputStream)) {
                 artifactManagementService.validateAndStore(destPath, bufferedInputStream);
-            } catch (IOException |  ProviderImplementationException | ArtifactCoordinatesValidationException e) {
+            } catch (IOException | ProviderImplementationException | ArtifactCoordinatesValidationException e) {
                 log.error("Failed to copy file with oid {} for repo {}, organization {}, modelName {}, revision {}", oid, repositoryId, organization, modelName, revision);
                 throw new RuntimeException(e);
-            }finally {
+            } finally {
                 log.info("Failed to copy file with oid {} for repo {}, organization {}, modelName {}, revision {}", oid, repositoryId, organization, modelName, revision);
             }
         }
-
     }
+
 
     private void processGenericFileUpload(String storageId, String repositoryId, String organization, String modelName, String revision, String subRevision, Set<String> uploadedFiles, MlKeyValue uploadInfo) throws IOException {
         String path = MlModelUtils.getFilePath(organization, modelName, revision, subRevision, uploadInfo
@@ -276,12 +277,12 @@ public class MlModelUploadDirLocalCommand {
         }
         uploadedFiles.add(path);
         String contentPath = uploadInfo.getValue().get("content");
-        if (skipUploading(storageId,repositoryId, path, contentPath)) {
+        if (skipUploading(storageId, repositoryId, path, contentPath)) {
             return;
         }
         RepositoryPath repositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, path);
         Path filePath = Paths.get(contentPath, new String[0]);
-        try (InputStream  inputStream= Files.newInputStream(filePath)){
+        try (InputStream inputStream = Files.newInputStream(filePath)) {
             artifactManagementService.validateAndStore(repositoryPath, inputStream);
         } catch (IOException | ProviderImplementationException | ArtifactCoordinatesValidationException e) {
             log.error("upload file error", e);
@@ -291,12 +292,12 @@ public class MlModelUploadDirLocalCommand {
         }
     }
 
-    private boolean skipUploading(String storageId,String repositoryId, String path, String contentPath) {
+    private boolean skipUploading(String storageId, String repositoryId, String path, String contentPath) {
 
         try {
 
-            Artifact artifact= artifactRepository.findOneArtifact(storageId, repositoryId, path);
-            if(artifact ==null){
+            Artifact artifact = artifactRepository.findOneArtifact(storageId, repositoryId, path);
+            if (artifact == null) {
                 return false;
             }
             String sha2 = MlModelUtils.sha2(contentPath);
@@ -327,7 +328,7 @@ public class MlModelUploadDirLocalCommand {
                 String key = valueParser.getCurrentName();
                 valueParser.nextToken();
                 if ("content".equals(key)) {
-                    String filePath = String.join("/",tmpUploadDir.toAbsolutePath().toString(),"huggingface_" + UUID.randomUUID());
+                    String filePath = String.join("/", tmpUploadDir.toAbsolutePath().toString(), "huggingface_" + UUID.randomUUID());
                     try {
                         FileOutputStream fos = new FileOutputStream(filePath);
                         try {
