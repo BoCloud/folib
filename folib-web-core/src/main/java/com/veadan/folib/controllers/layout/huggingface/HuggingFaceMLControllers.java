@@ -14,7 +14,6 @@ import com.veadan.folib.web.LayoutRequestMapping;
 import com.veadan.folib.web.RepositoryMapping;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
-import lombok.Generated;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
@@ -422,7 +421,7 @@ public class HuggingFaceMLControllers extends BaseArtifactController {
             produces = {"application/json"}
     )
     public ResponseEntity<?> passMetadataValidation(InputStream body) {
-        return ResponseEntity.ok().build();
+        return ResponseEntity.ok("{}");
     }
 
 }
