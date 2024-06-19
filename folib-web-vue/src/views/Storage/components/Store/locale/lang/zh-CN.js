@@ -296,5 +296,18 @@ export default {
     "RepositoryName":"仓库名称",
     "TargetPath":"制品在仓库中的存放路径，格式为go.mod中的module值+@v+文件名称",
     "ArtifactSelf":"制品文件",
-    "ArtifactThree":"三个文件依次上传至制品库"
+    "ArtifactThree":"三个文件依次上传至制品库",
+    //pub
+    'PubConfigMirror': '你可以全局配置pub的mirror,操作如下:',
+    "PubAdd": "添加依赖",
+    "PubCacheClean": "清除依赖缓存",
+    "PubGet":"下载依赖项",
+    "PubPublish":"上传制品",
+    "PubPublishConfig":"上传制品配置",
+    "PubPublishConfigMirror":"在pubspec.yaml中配置publish_to为当前仓库",
+    "PubPublishTokenConfig":"添加授权信息",
+    "GetToken": "获取token",
+    "AddToken": "向Pub客户端添加令牌，如果仓库允许匿名访问，则无需该操作",
+    "ExportPub": "为了让Pub客户端使用该仓库，您需要运行以下命令设置环境变量",
+
 }

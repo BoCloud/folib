@@ -1,13 +1,21 @@
 package com.veadan.folib.providers.layout;
 
+import com.alibaba.fastjson.JSONObject;
+import com.veadan.folib.artifact.ArtifactNotFoundException;
 import com.veadan.folib.artifact.coordinates.PubArtifactCoordinates;
+import com.veadan.folib.constants.PubConstants;
+import com.veadan.folib.domain.PubPackageMetadata;
+import com.veadan.folib.domain.PubPackageVersionMetadata;
 import com.veadan.folib.providers.io.RepositoryFileAttributeType;
 import com.veadan.folib.providers.io.RepositoryFiles;
 import com.veadan.folib.providers.io.RepositoryPath;
+import com.veadan.folib.providers.io.RepositoryPathResolver;
 import com.veadan.folib.repository.PubRepositoryFeatures;
 import com.veadan.folib.repository.PubRepositoryManagementStrategy;
 import com.veadan.folib.repository.RepositoryManagementStrategy;
 import org.apache.commons.codec.digest.MessageDigestAlgorithms;
+import org.apache.commons.lang3.BooleanUtils;
+import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
@@ -15,9 +23,14 @@ import org.springframework.stereotype.Component;
 import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 import java.io.IOException;
+import java.net.URI;
+import java.nio.file.Files;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -32,25 +45,14 @@ public class PubLayoutProvider
 
     public static final String ALIAS = PubArtifactCoordinates.LAYOUT_NAME;
 
-    public static final String PUB_USER_PATH = "-/user/org.couchdb.user:";
-
-    public static final String PACKAGE_JSON = "package.json";
-
-    public static final String OH_PACKAGE_JSON = "oh-package.json5";
-
-    public static final String DEFAULT_PACKAGE_JSON_PATH = "package/package.json";
-    public static final String OHPM_PACKAGE_JSON_PATH = "package/oh-package.json5";
-    public static final String DEFAULT_SUFFIX = "tgz";
-
-    public static final Pattern PUB_URL_USERNAME_PATTERN = Pattern.compile(
-            "(?:" + PubLayoutProvider.PUB_USER_PATH + ")(.*)");
-
     @Inject
     private PubRepositoryManagementStrategy pubRepositoryManagementStrategy;
 
     @Inject
     private PubRepositoryFeatures pubRepositoryFeatures;
 
+    @Inject
+    private RepositoryPathResolver repositoryPathResolver;
 
     @PostConstruct
     public void register() {
@@ -65,11 +67,19 @@ public class PubLayoutProvider
 
     @Override
     public boolean isArtifactMetadata(RepositoryPath path) {
-        return path.getFileName().toString().endsWith(PACKAGE_JSON);
+        return isPubSpec(path);
     }
 
     public boolean isPubMetadata(RepositoryPath path) {
         return path.getFileName().toString().endsWith("pubspec.lock");
+    }
+
+    public boolean isPubSpec(RepositoryPath path) {
+        return PubConstants.PUB_SPEC_YAML.equals(path.getFileName().toString());
+    }
+
+    public boolean isPubPackageJson(RepositoryPath path) {
+        return path.getFileName().toString().endsWith(".json");
     }
 
     @Override
@@ -98,13 +108,51 @@ public class PubLayoutProvider
                     }
 
                     break;
+                case REFRESH_CONTENT:
+                    final Instant halfAnHourAgo = Instant.now().minus(refreshContentInterval(repositoryPath), ChronoUnit.MINUTES);
+                    value = BooleanUtils.isTrue((Boolean) value) || (Files.exists(repositoryPath) && isPubPackageJson(repositoryPath)
+                            &&
+                            !RepositoryFiles.wasModifiedAfter(repositoryPath,
+                                    halfAnHourAgo));
+                    result.put(attributeType, value);
+                    break;
                 default:
 
                     break;
             }
         }
-
         return result;
+    }
+
+    @Override
+    public void targetUrl(RepositoryPath path) throws IOException {
+        PubArtifactCoordinates pubArtifactCoordinates = null;
+        URI uri = null;
+        try {
+            String artifactPath = RepositoryFiles.relativizePath(path);
+            pubArtifactCoordinates = PubArtifactCoordinates.parse(artifactPath);
+            String packagePath = PubConstants.PACKAGE_JSON_PATH + pubArtifactCoordinates.getName() + PubConstants.PACKAGE_JSON_EXTENSION;
+            RepositoryPath packageJsonRepositoryPath = repositoryPathResolver.resolve(path.getRepository(), packagePath);
+            uri = pubArtifactCoordinates.convertToResource(pubArtifactCoordinates);
+            if (Objects.isNull(packageJsonRepositoryPath) || !Files.exists(packageJsonRepositoryPath)) {
+                throw new ArtifactNotFoundException(uri, String.format("Path packageName [%s] packageJsonRepositoryPath not exists", pubArtifactCoordinates.getName()));
+            }
+            PubPackageMetadata pubPackageMetadata = JSONObject.parseObject(Files.readString(packageJsonRepositoryPath), PubPackageMetadata.class);
+            PubArtifactCoordinates finalPubArtifactCoordinates = pubArtifactCoordinates;
+            Optional<PubPackageVersionMetadata> optionalPubPackageVersionMetadata = pubPackageMetadata.getVersions().stream().filter(item -> item.getVersion().equals(finalPubArtifactCoordinates.getVersion())).findFirst();
+            if (optionalPubPackageVersionMetadata.isEmpty()) {
+                throw new ArtifactNotFoundException(uri, String.format("Path packageName [%s] version [%s] not exists", pubArtifactCoordinates.getName(), pubArtifactCoordinates.getVersion()));
+            }
+            PubPackageVersionMetadata pubPackageVersionMetadata = optionalPubPackageVersionMetadata.get();
+            path.setTargetUrl(pubPackageVersionMetadata.getSourceArchiveUrl());
+        } catch (Exception ex) {
+            logger.warn("RepositoryPath [{}] parse coordinates error [{}]", path, ExceptionUtils.getStackTrace(ex));
+            if (ex instanceof ArtifactNotFoundException) {
+                throw new ArtifactNotFoundException(uri, String.format("Path packageName [%s] version [%s] not exists", pubArtifactCoordinates.getName(), pubArtifactCoordinates.getVersion()));
+            } else {
+                throw new RuntimeException(ex.getMessage());
+            }
+        }
     }
 
     @Override
@@ -127,5 +175,4 @@ public class PubLayoutProvider
         return Stream.of(MessageDigestAlgorithms.MD5, MessageDigestAlgorithms.SHA_1, MessageDigestAlgorithms.SHA_256, MessageDigestAlgorithms.SHA_512)
                 .collect(Collectors.toSet());
     }
-
 }

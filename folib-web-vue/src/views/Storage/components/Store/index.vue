@@ -616,7 +616,7 @@
                   getValueFromEvent: normFile,
                 },
               ]" name="files" :multiple="uploadType === 1 ? true : false" :beforeUpload="beforeUpload" list-type="text"
-                :accept="uploadType === 1 ? (folibRepository.layout === 'Raw' ? '*' : folibRepository.layout === 'npm' ? '.tgz' : '.jar,.war,.pom') : ('.zip')">
+                :accept="uploadType === 1 ? (folibRepository.layout === 'Raw' ? '*' : folibRepository.layout === 'npm' ? '.tgz' : folibRepository.layout === 'pub' ? '.gz' :'.jar,.war,.pom') : ('.zip')">
                 <a-button>
                   <a-icon type="upload" />
                   {{ $t('Store.SelectFile') }}</a-button>
@@ -982,7 +982,7 @@ export default {
       showOperationDispatchFormModal: false,
       repositories: [],
       custom: false,
-      enablUploadedLayout: ['Raw', 'php', 'Maven 2', 'npm', 'rpm', 'go'],
+      enablUploadedLayout: ['Raw', 'php', 'Maven 2', 'npm', 'rpm', 'go', 'pub'],
       storageAdmin: '',
       permissions: [],
       mavenUploadVisible: false,

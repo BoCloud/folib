@@ -1117,7 +1117,54 @@ go 1.20' :readonly="true">
                         :readonly="true"
                 ></prism-editor>
             </a-timeline-item>
-        </a-timeline>
+      </a-timeline>
+      <a-timeline v-if="repositoryType === 'pub'">
+        <a-timeline-item color="primary" v-if="folibRepository.type !== 'hosted'">
+          Pub {{ $t('Store.GlobalConfiguration') }}
+          <small>Pub{{ $t('Store.Configuration') }}{{ $t('Store.GlobalConfiguration') }}</small>
+          <p>{{ $t('Store.PubConfigMirror') }}</p>
+          <small><a @click="getUserSecurityToken">{{  $t('Store.GetToken') }}</a></small>
+          <prism-editor class="my-editor height-300"
+                        :highlight="highlighterHandle" :line-numbers="false" :value='"#" + this.$t("Store.AddToken") + "\ndart pub token add "  + "\"" + repositoryUrl + "\"\n#" + this.$t("Store.ExportPub") + "\nexport PUB_HOSTED_URL=" + "\"" + repositoryUrl + "\""' :readonly="true">
+          </prism-editor>
+          <br>
+        </a-timeline-item>
+        <a-timeline-item color="primary" v-if="folibRepository.type === 'hosted'">
+          Pub {{ $t('Store.PubPublishConfig') }}
+          <p>{{ $t('Store.PubPublishConfigMirror') }}</p>
+          <prism-editor class="my-editor height-300"
+                        :highlight="highlighterHandle" :line-numbers="false" :value='"publish_to: " + repositoryUrl' :readonly="true">
+          </prism-editor>
+          <p>{{ $t('Store.PubPublishTokenConfig') }}</p>
+          <small><a @click="getUserSecurityToken">获取token</a></small>
+          <prism-editor class="my-editor height-300"
+                        :highlight="highlighterHandle" :line-numbers="false" :value='"dart pub token add "  + "\"" + repositoryUrl + "\""' :readonly="true">
+          </prism-editor>
+          <p>{{ $t('Store.PubPublish') }}</p>
+          <prism-editor class="my-editor height-300"
+                        :highlight="highlighterHandle" :line-numbers="false" :value='"dart pub publish"' :readonly="true">
+          </prism-editor>
+          <br>
+        </a-timeline-item>
+        <a-timeline-item color="primary">
+            {{ $t('Store.CommandOperation') }}
+            <small>Pub {{ $t('Store.UsuallyCommand') }}</small>
+            <p>{{ $t('Store.UsuallyUse') }}Pub{{ $t('Store.specificRefer') }}https://dart.cn/tools/dart-tool</p>
+
+            <prism-editor
+                    class="my-editor height-300"
+                    :value="
+          '#' +   this.$t('Store.PubAdd')+ '\n dart pub add   \n' +
+          '#' +   this.$t('Store.PubCacheClean')+ '\n dart pub cache clean   \n' + 
+          '#' +   this.$t('Store.PubGet')+'\n dart pub get   \n' + 
+          '#' +   this.$t('Store.PubPublish')+ '\n dart pub publish   \n'
+        "
+                    :highlight="highlighterHandle"
+                    :line-numbers="false"
+                    :readonly="true"
+            ></prism-editor>
+        </a-timeline-item>
+      </a-timeline>
       <a-timeline>
         <a-timeline-item color="primary">
           {{ $t('Store.WarehouseAddress') }}
@@ -1142,6 +1189,7 @@ import { highlight, languages } from "prismjs/components/prism-core";
 import "prismjs/components/prism-clike";
 import "prismjs/components/prism-javascript";
 import "prismjs/themes/prism-tomorrow.css";
+import { generateUserSecurityToken } from "@/api/users";
 export default {
   props: [
     "usedVisible",
@@ -1179,7 +1227,7 @@ export default {
       return highlight(code, languages.js); //returns html
     },
     closeUsedVisibleDialog(code) {
-      this.$emit("close");
+      this.$emit("close")
     },
     copy(code) {
       var input = document.createElement("input"); // $t('Store.创建')input$t('Store.对象')
@@ -1195,6 +1243,11 @@ export default {
         })
       }, 100)
     },
+    getUserSecurityToken() {
+      generateUserSecurityToken({expireSeconds: 1892160000}).then((res) => {
+        this.copy(res)
+      }).finally(() => {})
+    }
   },
 };
 </script>

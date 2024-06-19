@@ -10,6 +10,7 @@ import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import com.veadan.folib.artifact.MavenArtifactUtils;
 import com.veadan.folib.artifact.coordinates.NpmArtifactCoordinates;
+import com.veadan.folib.artifact.coordinates.PubArtifactCoordinates;
 import com.veadan.folib.components.artifact.ArtifactComponent;
 import com.veadan.folib.domain.ArtifactIdGroupEntity;
 import com.veadan.folib.domain.ArtifactParse;
@@ -173,6 +174,8 @@ public class ArtifactUploadTask implements Callable<String> {
                 handlerMavenLayoutUpload(is, layout, repositoryPath, artifactParse);
             } else if (NpmLayoutProvider.ALIAS.equals(layout)) {
                 handlerNpmLayoutUpload(is, layout, repositoryPath);
+            } else if (PubLayoutProvider.ALIAS.equals(layout)) {
+                handlerPubLayoutUpload(is, layout, repositoryPath);
             } else {
                 promotionUtil.setMetaData(repositoryPath, metaData);
                 artifactManagementService.store(repositoryPath, is);
@@ -506,14 +509,14 @@ public class ArtifactUploadTask implements Callable<String> {
 
             boolean isOhnpmSubLayout = NpmSubLayout.OHNPM.getValue().equals(repositoryPath.getRepository().getSubLayout());
             String expectedExtension = isOhnpmSubLayout ? ohpmExt : supportedExt;
-            if(!expectedExtension.equals(ext)){
+            if (!expectedExtension.equals(ext)) {
                 String errorMessage = isOhnpmSubLayout ? "Only the .har suffix is supported" : "Only the .tgz suffix is supported";
                 throw new RuntimeException(errorMessage);
             }
 
             LayoutProvider layoutProvider = layoutProviderRegistry.getProvider(layout);
             if (Objects.nonNull(layoutProvider)) {
-                String packagePath =  isOhnpmSubLayout ? NpmLayoutProvider.OHPM_PACKAGE_JSON_PATH : NpmLayoutProvider.DEFAULT_PACKAGE_JSON_PATH;
+                String packagePath = isOhnpmSubLayout ? NpmLayoutProvider.OHPM_PACKAGE_JSON_PATH : NpmLayoutProvider.DEFAULT_PACKAGE_JSON_PATH;
                 byte[] packageJsonBytes = layoutProvider.getContentByEqualsFileName(repositoryPath, path, packagePath);
                 String packageJson = new String(packageJsonBytes, StandardCharsets.UTF_8);
                 log.info("npm package.json：{}", packageJson);
@@ -529,7 +532,7 @@ public class ArtifactUploadTask implements Callable<String> {
                         throw runtimeException;
                     }
 
-                    final String packagesuffix = NpmSubLayout.OHNPM.getValue().equals(repositoryPath.getRepository().getSubLayout()) ? NpmPacketSuffix.HAR.getValue() :  NpmPacketSuffix.TGZ.getValue();
+                    final String packagesuffix = NpmSubLayout.OHNPM.getValue().equals(repositoryPath.getRepository().getSubLayout()) ? NpmPacketSuffix.HAR.getValue() : NpmPacketSuffix.TGZ.getValue();
                     NpmArtifactCoordinates npmArtifactCoordinates = NpmArtifactCoordinates.of(name, version, packagesuffix);
                     String artifactPath = npmArtifactCoordinates.convertToPath(npmArtifactCoordinates);
                     log.info("The fileRelativePath：{} artifactPath：{}", fileRelativePath, artifactPath);
@@ -612,6 +615,52 @@ public class ArtifactUploadTask implements Callable<String> {
             }
         }
         return artifactName;
+    }
+
+    /**
+     * 处理pub布局制品上传
+     *
+     * @param is             is
+     * @param layout         layout
+     * @param repositoryPath repositoryPath
+     */
+    private void handlerPubLayoutUpload(InputStream is, String layout, RepositoryPath repositoryPath) {
+        File parentTempFile = null;
+        try {
+            parentTempFile = new File(tempPath + File.separator + UUID.randomUUID() + File.separator);
+            File artifactTempFile = new File(parentTempFile.getAbsolutePath() + File.separator + fileRelativePath);
+            FileUtil.writeFromStream(is, artifactTempFile);
+            Path path = Path.of(artifactTempFile.getAbsolutePath());
+            if (!fileRelativePath.endsWith(PubArtifactCoordinates.PUB_EXTENSION)) {
+                String errorMessage = "Only the .tar.gz suffix is supported";
+                throw new RuntimeException(errorMessage);
+            }
+
+            LayoutProvider layoutProvider = layoutProviderRegistry.getProvider(layout);
+            if (Objects.nonNull(layoutProvider)) {
+                try {
+                    PubArtifactCoordinates pubArtifactCoordinates = PubArtifactCoordinates.packageNameParse(fileRelativePath);
+                    String artifactPath = pubArtifactCoordinates.convertToPath(pubArtifactCoordinates);
+                    log.info("The fileRelativePath：{} artifactPath：{}", fileRelativePath, artifactPath);
+                    repositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, artifactPath);
+                    try (InputStream inputStream = new BufferedInputStream(Files.newInputStream(path))) {
+                        promotionUtil.setMetaData(repositoryPath, metaData);
+                        artifactManagementService.store(repositoryPath, inputStream);
+                        this.repositoryPath = repositoryPath;
+                    }
+                } catch (Exception ex) {
+                    log.error("handlerPubLayoutUpload file：{}，error：{}", artifactTempFile.getAbsolutePath(), ExceptionUtils.getStackTrace(ex));
+                    throw ex;
+                }
+            }
+        } catch (Exception ex) {
+            log.error("handlerPubLayoutUpload path：{}，error：{}", repositoryPath.toAbsolutePath(), ExceptionUtils.getStackTrace(ex));
+            throw new RuntimeException(ex.getMessage());
+        } finally {
+            if (Objects.nonNull(parentTempFile)) {
+                FileUtil.del(parentTempFile);
+            }
+        }
     }
 
     /**

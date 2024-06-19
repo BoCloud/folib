@@ -378,6 +378,10 @@ public class ArtifactComponent {
             } else {
                 flag = true;
             }
+        } else if (repositoryPath.getFileSystem() instanceof PubFileSystem) {
+            log.debug("pub布局");
+            List<String> allSuffixList = Lists.newArrayList(".tar.gz");
+            flag = endsWith(repositoryPath.getFileName().toString(), allSuffixList);
         }
         log.debug("制品路径 [{}] 布局 [{}] 是否是该布局支持的制品类型 [{}]", repositoryPath.toString(), repositoryPath.getRepository().getLayout(), flag);
         return flag;
@@ -437,6 +441,10 @@ public class ArtifactComponent {
                 List<String> suffixList = Collections.singletonList(".tar.gz");
                 flag = endsWith(filePath, suffixList);
                 log.debug("Cocoapods布局");
+            } else if (PubLayoutProvider.ALIAS.equals(layout)) {
+                log.debug("pub布局");
+                List<String> suffixList = Collections.singletonList(".tar.gz");
+                flag = endsWith(filePath, suffixList);
             }
             log.debug("制品路径 [{}] 布局 [{}] 是否是该布局支持的制品类型 [{}]", filePath, layout, flag);
         }

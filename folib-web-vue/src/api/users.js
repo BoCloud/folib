@@ -44,7 +44,13 @@ export function delUser (username) {
   })
 }
 
-
+export function generateUserSecurityToken (data) {
+  return axios({
+    url: '/api/users/generate-current-security-token',
+    method: 'get',
+    params: data
+  })
+}
 
 
 

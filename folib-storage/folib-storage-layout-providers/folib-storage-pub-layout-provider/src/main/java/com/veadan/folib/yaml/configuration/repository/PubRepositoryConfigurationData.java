@@ -19,17 +19,10 @@ import javax.xml.bind.annotation.XmlAccessorType;
 public class PubRepositoryConfigurationData
         extends CustomRepositoryConfiguration {
 
-    private boolean allowsUnpublish;
-
     public PubRepositoryConfigurationData() {
 
     }
 
     public PubRepositoryConfigurationData(final PubRepositoryConfigurationDto delegate) {
-        this.allowsUnpublish = delegate.allowsUnpublish();
-    }
-
-    public boolean isAllowsUnpublish() {
-        return allowsUnpublish;
     }
 }

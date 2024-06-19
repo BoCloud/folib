@@ -11,23 +11,9 @@ import javax.xml.bind.annotation.XmlAccessorType;
 @XmlAccessorType(XmlAccessType.FIELD)
 public class PubRemoteRepositoryConfiguration extends CustomRemoteRepositoryConfigurationData {
 
-    private Long lastChangeId = 0L;
-    private String replicateUrl;
-
     PubRemoteRepositoryConfiguration() {
     }
 
     PubRemoteRepositoryConfiguration(PubRemoteRepositoryConfigurationDto delegate) {
-        this.lastChangeId = delegate.getLastChangeId();
-        this.replicateUrl = delegate.getReplicateUrl();
     }
-
-    public Long getLastChangeId() {
-        return lastChangeId;
-    }
-
-    public String getReplicateUrl() {
-        return replicateUrl;
-    }
-
 }

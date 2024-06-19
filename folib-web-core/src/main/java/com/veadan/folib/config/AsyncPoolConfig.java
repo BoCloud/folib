@@ -214,6 +214,24 @@ public class AsyncPoolConfig {
     @Value("${folib.threadPool.asyncPromotion.awaitTerminationSeconds}")
     private Integer asyncPromotionAwaitTerminationSeconds;
 
+    @Value("${folib.threadPool.asyncDeleteArtifact.corePoolSize}")
+    private Integer asyncDeleteArtifactCorePoolSize;
+
+    @Value("${folib.threadPool.asyncDeleteArtifact.maxPoolSize}")
+    private Integer asyncDeleteArtifactMaxPoolSize;
+
+    @Value("${folib.threadPool.asyncDeleteArtifact.queueCapacity}")
+    private Integer asyncDeleteArtifactQueueCapacity;
+
+    @Value("${folib.threadPool.asyncDeleteArtifact.keepAliveSeconds}")
+    private Integer asyncDeleteArtifactKeepAliveSeconds;
+
+    @Value("${folib.threadPool.asyncDeleteArtifact.threadNamePrefix}")
+    private String asyncDeleteArtifactThreadNamePrefix;
+
+    @Value("${folib.threadPool.asyncDeleteArtifact.awaitTerminationSeconds}")
+    private Integer asyncDeleteArtifactAwaitTerminationSeconds;
+
     @Bean
     public ThreadPoolTaskExecutor asyncThreadPoolTaskExecutor() {
         return buildThreadPoolTaskExecutor(asyncCorePoolSize, asyncMaxPoolSize, asyncQueueCapacity, asyncKeepAliveSeconds, asyncThreadNamePrefix, asyncAwaitTerminationSeconds);
@@ -328,6 +346,17 @@ public class AsyncPoolConfig {
                 asyncPromotionAwaitTerminationSeconds);
     }
 
+    @Bean
+    public ThreadPoolTaskExecutor asyncDeleteArtifactTaskExecutor() {
+        return buildThreadPoolTaskExecutor(
+                asyncDeleteArtifactCorePoolSize,
+                asyncDeleteArtifactMaxPoolSize,
+                asyncDeleteArtifactQueueCapacity,
+                asyncDeleteArtifactKeepAliveSeconds,
+                asyncDeleteArtifactThreadNamePrefix,
+                asyncDeleteArtifactAwaitTerminationSeconds);
+    }
+
     @PreDestroy
     public void shutdown() {
         asyncThreadPoolTaskExecutor().shutdown();
@@ -340,6 +369,7 @@ public class AsyncPoolConfig {
         asyncEventLogThreadPoolTaskExecutor().shutdown();
         asyncWsHeartbeatThreadPoolTaskExecutor().shutdown();
         asyncPromotionPoolTaskExecutor().shutdown();
+        asyncDeleteArtifactTaskExecutor().shutdown();
     }
 
     /**

@@ -3,6 +3,9 @@ package com.veadan.folib.artifact.coordinates;
 import com.veadan.folib.artifact.coordinates.versioning.SemanticVersion;
 import com.veadan.folib.db.schema.Vertices;
 import com.veadan.folib.domain.LayoutArtifactCoordinatesEntity;
+import com.veadan.folib.utils.PubUtils;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.neo4j.ogm.annotation.NodeEntity;
 import org.springframework.util.Assert;
 
@@ -21,6 +24,7 @@ import java.util.regex.Pattern;
  *
  * @author leipenghui
  */
+@Slf4j
 @NodeEntity(Vertices.PUB_ARTIFACT_COORDINATES)
 @XmlRootElement(name = "pubArtifactCoordinates")
 @XmlAccessorType(XmlAccessType.NONE)
@@ -31,18 +35,26 @@ public class PubArtifactCoordinates extends LayoutArtifactCoordinatesEntity<PubA
 
     public static final String LAYOUT_ALIAS = LAYOUT_NAME;
 
-    public static final String PUB_VERSION_REGEX = "(\\d+)\\.(\\d+)(?:\\.)?(\\d*)(\\.|-|\\+)?([0-9A-Za-z-.]*)?";
+    public static final String PUB_VERSION_REGEX = "(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)(?:-([0-9A-Za-z-]+(?:\\.[0-9A-Za-z-]+)*))?(?:\\+([0-9A-Za-z-]+(?:\\.[0-9A-Za-z-]+)*))?";
 
-    public static final String PUB_NAME_REGEX = "[a-z0-9_][\\w-.]*";
+    public static final String PUB_NAME_REGEX = "[a-z_][a-z_\\d-]*";
 
     public static final String PUB_EXTENSION_REGEX = "(tar.gz)";
 
-    public static final String PUB_PACKAGE_PATH_REGEX = "(" + PUB_NAME_REGEX + ")/" + PUB_NAME_REGEX + "(-(" +
-            PUB_VERSION_REGEX + "))?\\." + PUB_EXTENSION_REGEX;
+    public static final String PUB_EXTENSION = "tar.gz";
 
-    private static final Pattern PUB_NAME_PATTERN = Pattern.compile(PUB_NAME_REGEX);
+    public static final String PUB_PACKAGE_NAME_REGEX = "(" + PUB_NAME_REGEX + ")" + "-(" +
+            PUB_VERSION_REGEX + ")\\." + PUB_EXTENSION_REGEX;
+
+    public static final String PUB_PACKAGE_PATH_REGEX = "(" + PUB_NAME_REGEX + ")/" + PUB_PACKAGE_NAME_REGEX;
+
+    public static final Pattern PUB_NAME_PATTERN = Pattern.compile(PUB_NAME_REGEX);
+
+    private static final Pattern PUB_PACKAGE_NAME_PATTERN = Pattern.compile(PUB_PACKAGE_NAME_REGEX);
 
     private static final Pattern PUB_PATH_PATTERN = Pattern.compile(PUB_PACKAGE_PATH_REGEX);
+
+    private static final Pattern PUB_VERSION_PATTERN = Pattern.compile(PUB_VERSION_REGEX);
 
     private static final Pattern PUB_EXTENSION_PATTERN = Pattern.compile(PUB_EXTENSION_REGEX);
 
@@ -91,7 +103,8 @@ public class PubArtifactCoordinates extends LayoutArtifactCoordinatesEntity<PubA
 
     @Override
     public void setVersion(String version) {
-        SemanticVersion.parse(version);
+        Matcher matcher = PUB_VERSION_PATTERN.matcher(version);
+        Assert.isTrue(matcher.matches(), "Invalid artifact version");
         super.setVersion(version);
     }
 
@@ -114,7 +127,7 @@ public class PubArtifactCoordinates extends LayoutArtifactCoordinatesEntity<PubA
 
     @Override
     public URI convertToResource(PubArtifactCoordinates c) {
-        return URI.create(String.format("%s/versions/%s", c.getName(), c.getArtifactFileName()));
+        return URI.create(String.format("packages/%s/versions/%s", c.getName(), c.getArtifactFileName()));
     }
 
     public String getArtifactFileName() {
@@ -137,15 +150,33 @@ public class PubArtifactCoordinates extends LayoutArtifactCoordinatesEntity<PubA
 
     public static PubArtifactCoordinates parse(String path) {
         Matcher matcher = PUB_PATH_PATTERN.matcher(path);
+        String msg = String.format("Illegal artifact path [%s], PUB artifact path should be in the form of " +
+                        "'/{artifactName}/{artifactFile}'.",
+                path);
+        Assert.isTrue(matcher.matches(), msg);
+        String name = matcher.group(1);
+        String version = matcher.group(3);
+        String extension = matcher.group(9);
+        if (StringUtils.isBlank(name) || StringUtils.isBlank(version) || StringUtils.isBlank(extension)) {
+            log.warn("Path [{}] name [{}] version [{}] extension [{}] pattern [{}] parse error", path, name, version, extension, PUB_PATH_PATTERN.toString());
+            throw new RuntimeException(msg);
+        }
+        return new PubArtifactCoordinates(name, version, extension);
+    }
 
-        Assert.isTrue(matcher.matches(),
-                String.format("Illegal artifact path [%s], PUB artifact path should be in the form of " +
-                                "'/{artifactName}/{artifactFile}'.",
-                        path));
-
+    public static PubArtifactCoordinates packageNameParse(String packageName) {
+        Matcher matcher = PUB_PACKAGE_NAME_PATTERN.matcher(packageName);
+        String msg = String.format("Illegal artifact path [%s], PUB artifact name should be in the form of " +
+                        "'{artifactFile}'.",
+                packageName);
+        Assert.isTrue(matcher.matches(), msg);
         String name = matcher.group(1);
         String version = matcher.group(2);
-        String extension = matcher.group(14);
+        String extension = matcher.group(8);
+        if (StringUtils.isBlank(name) || StringUtils.isBlank(version) || StringUtils.isBlank(extension)) {
+            log.warn("Path [{}] packageName [{}] version [{}] extension [{}] pattern [{}] parse error", packageName, name, version, extension, PUB_PATH_PATTERN.toString());
+            throw new RuntimeException(msg);
+        }
         return new PubArtifactCoordinates(name, version, extension);
     }
 

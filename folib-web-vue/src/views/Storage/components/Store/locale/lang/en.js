@@ -296,5 +296,17 @@ export default {
     "RepositoryName":"Repository name",
     "TargetPath":"The storage path of the artifact in the repository, in the format of module value+@ v+file name in go.mod",
     "ArtifactSelf":"artifact file",
-    "ArtifactThree":"Upload three files in sequence to the artifact library"
+    "ArtifactThree":"Upload three files in sequence to the artifact library",
+    //pub
+    'PubConfigMirror': 'You can globally configure the mirror of the pub, as follows:',
+    "PubAdd": "Add Dependency",
+    "PubCacheClean": "Clear dependency cache",
+    "PubGet":"Download Dependencies",
+    "PubPublish":"Upload artifacts",
+    "PubPublishConfig":"Upload artifacts configuration",
+    "PubPublishConfigMirror":"Configure publish_to as the current warehouse in pubspec.yaml",
+    "PubPublishTokenConfig":"Add authorization information",
+    "GetToken": "Get token",
+    "AddToken": "Add a token to the Pub client, if anonymous access is allowed in the repository, then this operation is not required",
+    "ExportPub": "In order for the Pub command-line client to use the repository, you need to run the following command to set the environment variables",
 }

@@ -1,8 +1,6 @@
 package com.veadan.folib.config;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.veadan.folib.booters.PropertiesBooter;
-import com.veadan.folib.npm.metadata.jackson.NpmJacksonMapperFactory;
 import com.veadan.folib.providers.io.LayoutFileSystemFactory;
 import com.veadan.folib.providers.io.LayoutFileSystemProviderFactory;
 import com.veadan.folib.providers.layout.LayoutFileSystemProvider;
@@ -18,13 +16,8 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Scope;
 
 import javax.inject.Inject;
-import javax.inject.Qualifier;
-import java.lang.annotation.Documented;
-import java.lang.annotation.Retention;
 import java.nio.file.FileSystem;
 import java.nio.file.spi.FileSystemProvider;
-
-import static java.lang.annotation.RetentionPolicy.RUNTIME;
 
 @Configuration
 @ComponentScan({"com.veadan.folib.dependency.snippet",
@@ -32,6 +25,7 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
         "com.veadan.folib.providers",
         "com.veadan.folib.services",
         "com.veadan.folib.storage",
+        "com.veadan.folib.indexer",
 })
 public class PubLayoutProviderConfig {
 
@@ -41,12 +35,6 @@ public class PubLayoutProviderConfig {
 
     @Inject
     protected StorageProviderRegistry storageProviderRegistry;
-
-    @Bean
-    @PubObjectMapper
-    public ObjectMapper pubJacksonMapper() {
-        return NpmJacksonMapperFactory.createObjectMapper();
-    }
 
     @Bean(FILE_SYSTEM_PROVIDER_ALIAS)
     public LayoutFileSystemProviderFactory pubRepositoryFileSystemProviderFactory() {
@@ -85,13 +73,6 @@ public class PubLayoutProviderConfig {
                                                  FileSystem storageFileSystem,
                                                  LayoutFileSystemProvider provider) {
         return new PubFileSystem(propertiesBooter, repository, storageFileSystem, provider);
-    }
-
-    @Documented
-    @Qualifier
-    @Retention(RUNTIME)
-    public static @interface PubObjectMapper {
-
     }
 
 }
