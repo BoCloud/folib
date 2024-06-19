@@ -1040,7 +1040,8 @@
             </a-timeline-item>
         </a-timeline>
 
-      <a-timeline v-if="repositoryType === 'GitLfs' ">
+
+        <a-timeline v-if="repositoryType === 'GitLfs' ">
             <a-timeline-item color="primary">
                 GitLfs{{ $t('Store.LfsInitialization') }}
                 <small>GitLfs{{ $t('Store.Configuration') }}{{ $t('Store.LfsInitialization') }}</small>
@@ -1085,6 +1086,78 @@
                 ></prism-editor>
             </a-timeline-item>
         </a-timeline>
+        <a-timeline v-if="repositoryType === 'HuggingFace' ">
+            <a-timeline-item color="primary">
+                {{ $t('Store.HuggingFaceMLConfigure') }}
+                <p></p>
+                <small>{{$t('Store.HuggingFaceMLConfigureInfo')}}</small>
+                <p></p>
+                <prism-editor
+                        class="my-editor height-300"
+                        :value="
+              'export HF_HUB_ETAG_TIMEOUT=1500000000 \n'+
+              'export HF_ENDPOINT='+baseUrl+'storages/'+folibRepository.storageId+'/'+folibRepository.id+'\n'"
+                        :highlight="highlighterHandle"
+                        :line-numbers="false"
+                        :readonly="true"
+                >
+                </prism-editor>
+                <small>{{$t('Store.HuggingFaceMLConfigureInfo2')}}</small>
+                <small>{{$t('Store.HuggingFaceMLConfigureToken')}}</small>
+                <p></p>
+                <prism-editor
+                        class="my-editor height-300"
+                        :value="
+              'export HF_TOKEN='+this.userToken"
+                        :highlight="highlighterHandle"
+                        :line-numbers="false"
+                        :readonly="true"
+                >
+                </prism-editor>
+            </a-timeline-item>
+            <a-timeline-item color="primary">
+                {{ $t('Store.HuggingFaceMLUpload') }}
+                <p></p>
+                <small>{{ $t('Store.HuggingFaceMLUploadInfo') }}</small>
+                <p></p>
+                <prism-editor
+                        class="my-editor height-300"
+                        :value="
+                          'from huggingface_hub import HfApi \n'+
+                          'api = HfApi()\n'+
+                          'api.upload_folder(\n'+
+                          '\tfolder_path='+'{folder_name}, \t\t# folder to upload location on the FS \n'+
+                          '\trepo_id='+'{model_name}'+', \t\t# defines the name under which model will be saved in the local repo. (models--${model_name})\n'+
+                          '\trevision='+'{model_revision}'+', \t\t# represents git revision under which files are stored (main by default) (snapshots/${revision}/...files)\n'+
+                          '\trepo_type='+'model'+'\n'+')'
+                          "
+                        :highlight="highlighterHandle"
+                        :line-numbers="false"
+                        :readonly="true"
+                ></prism-editor>
+            </a-timeline-item>
+
+            <a-timeline-item color="primary">
+                {{ $t('Store.HuggingFaceMLDownload') }}
+                <p></p>
+                <small>{{ $t('Store.HuggingFaceMLDownloadInfo') }}</small>
+                <p></p>
+                <prism-editor
+                        class="my-editor height-300"
+                        :value="
+                'from huggingface_hub import snapshot_download \n'+
+                'snapshot_download(\n'+
+                '\trepo_id='+'{'+'model_name'+'}'+', revision='+'{'+'model_revision'+'}'+', etag_timeout=1500000000 \n)'
+                "
+                        :highlight="highlighterHandle"
+                        :line-numbers="false"
+                        :readonly="true"
+                ></prism-editor>
+                <p></p>
+                <small>{{ $t('Store.HuggingFaceMLDownloadInfo2') }}<a href="https://jfrog.com/help/r/jfrog-artifactory-documentation/resolve-hugging-face-models-using-libraries">{{ $t('Store.HuggingFaceMLDownloadInfo3') }}</a></small>
+
+            </a-timeline-item>
+        </a-timeline>
 
         <a-timeline>
         <a-timeline-item color="primary">
@@ -1110,6 +1183,7 @@ import { highlight, languages } from "prismjs/components/prism-core";
 import "prismjs/components/prism-clike";
 import "prismjs/components/prism-javascript";
 import "prismjs/themes/prism-tomorrow.css";
+import {getUserToken} from "@/api/users";
 export default {
   props: [
     "usedVisible",
@@ -1125,7 +1199,8 @@ export default {
   },
   data() {
     return {
-      repositoryUrl: ''
+      repositoryUrl: '',
+      userToken:''
     };
   },
   created() {
@@ -1136,8 +1211,11 @@ export default {
         this.repositoryUrl = baseUrlArr[1] + this.folibRepository.storageId + '/' + this.folibRepository.id
       }
     }
+
   },
-  mounted() {},
+  mounted() {
+      this.huggingfaceInit();
+  },
   methods: {
     highlighterHandle(code) {
       return highlight(code, languages.js); //returns html
@@ -1159,6 +1237,15 @@ export default {
         })
       }, 100)
     },
+    huggingfaceInit(){
+        if(this.folibRepository.layout === 'HuggingFace' ){
+            const username = this.$store.state.user.name
+            const expireSeconds = 86400;
+            getUserToken(username,expireSeconds).then(res => {
+                 this.userToken = res;
+            })
+        }
+    }
   },
 };
 </script>

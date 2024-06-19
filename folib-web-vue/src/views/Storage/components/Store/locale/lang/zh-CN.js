@@ -278,6 +278,20 @@ export default {
     "LfsPush":"推送",
     "LfsAddLock":"锁定文件",
     "LfsGetLocks":"查看锁定状态",
-    "LfsUnlock":"解锁文件"
+    "LfsUnlock":"解锁文件",
+    "HuggingFaceMLConfigure":"配置",
+    "HuggingFaceMLConfigureInfo":"要配置 Hugging Face 客户端与 FoLib 协同工作，请使用以下命令添加您的版本库",
+    "HuggingFaceMLConfigureInfo2":"对于 0.19.0 及以上版本的 Hugging Face 客户端，HF_HUB_ETAG_TIMEOUT 参数允许您使用管道和标记符解析模型。",
+    "HuggingFaceMLConfigureToken":"然后，要通过 FoLib 验证 Hugging Face 客户端，请运行以下命令。",
+    "HuggingFaceMLUpload":"上传模型",
+    "HuggingFaceMLUploadInfo":"要将模型上传到 FoLib 资源库中，需要使用 huggingface_hub 库:",
+    "HuggingFaceMLDownload":"下载模型",
+    "HuggingFaceMLDownloadInfo":"要从 FoLib 资源库解析一个模型，需要使用 huggingface 客户端命令:",
+    "HuggingFaceMLDownloadInfo2":"如果您使用的是 0.19.0 及以上版本的 Hugging Face 客户端并启用了 HF_HUB_ETAG_TIMEOUT 参数，现在可以使用变换器和扩散器等库解析模型。",
+    "HuggingFaceMLDownloadInfo3":"了解更多信息",
+
+
+
+
 
 }

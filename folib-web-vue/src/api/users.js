@@ -44,7 +44,15 @@ export function delUser (username) {
   })
 }
 
-
+export function getUserToken (username,expireSeconds) {
+  return axios({
+    url: '/api/users/'+username+'/generate-security-token',
+    method: 'get',
+    query: {
+      'expireSeconds': expireSeconds
+    }
+  })
+}
 
 
 

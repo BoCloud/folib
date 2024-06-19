@@ -278,5 +278,15 @@ export default {
     "LfsPush":"Push",
     "LfsAddLock":"Locking files",
     "LfsGetLocks":"Viewing Locked Status",
-    "LfsUnlock":"Unlocking files"
+    "LfsUnlock":"Unlocking files",
+    "HuggingFaceMLConfigure":"Configure",
+    "HuggingFaceMLConfigureInfo":"To configure the Hugging Face client to work with FoLib, add your repository using the following command",
+    "HuggingFaceMLConfigureInfo2":"For Hugging Face client version 0.19.0 and above, the HF_HUB_ETAG_TIMEOUT parameter allows you to resolve models using pipelines and tokenizer.",
+    "HuggingFaceMLConfigureToken":"Then, to authenticate the Hugging Face client against FoLib, run the following command.",
+    "HuggingFaceMLUpload":"Upload model",
+    "HuggingFaceMLUploadInfo":"To upload a model into an FoLib repository you need to use the huggingface_hub library:",
+    "HuggingFaceMLDownload":"Download model",
+    "HuggingFaceMLDownloadInfo":"To resolve a model from an FoLib repository you need to use the huggingface client command:",
+    "HuggingFaceMLDownloadInfo2":"If you using Hugging Face client version 0.19.0 and above and have enabled the HF_HUB_ETAG_TIMEOUT parameter, you can now resolve models using libraries such as transformers and diffusers, among others.",
+    "HuggingFaceMLDownloadInfo3":"Learn more",
 }
