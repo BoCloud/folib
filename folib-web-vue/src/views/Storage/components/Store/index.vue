@@ -623,7 +623,7 @@
               </a-upload>
             </a-form-item>
             <a-form-item class="tags-field mb-10" prop="targetPath" :colon="false"
-              v-if="(folibRepository.layout !== 'Maven 2' && folibRepository.layout !== 'npm') || uploadType === 2">
+              v-if="(!targetDirectoryExcludeLayout.includes(folibRepository.layout)) || uploadType === 2">
               <template slot="label">
                 {{ $t('Store.TargetDirectory') }}
                 <a-popover placement="topLeft" v-if="uploadType === 2">
@@ -983,6 +983,7 @@ export default {
       repositories: [],
       custom: false,
       enablUploadedLayout: ['Raw', 'php', 'Maven 2', 'npm', 'rpm', 'go', 'pub'],
+      targetDirectoryExcludeLayout: ['Maven 2', 'npm', 'pub'],
       storageAdmin: '',
       permissions: [],
       mavenUploadVisible: false,

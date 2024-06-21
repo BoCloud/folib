@@ -127,7 +127,7 @@ public class CleanupInvalidIndexesCronJob
             } else {
                 pageable = PageRequest.of(currentPage, batchSize).previous();
             }
-            page = artifactRepository.findMatchingByIndex(pageable, false, null, null, storageId, repositoryId, null, null, null, null, null, null, null);
+            page = artifactRepository.findMatchingByIndex(pageable, false, null, null, storageId, repositoryId, null, null, null, null, null, null, null, null, null);
             if (CollectionUtils.isNotEmpty(page.getContent())) {
                 artifactList = page.getContent();
                 for (Artifact artifact : artifactList) {

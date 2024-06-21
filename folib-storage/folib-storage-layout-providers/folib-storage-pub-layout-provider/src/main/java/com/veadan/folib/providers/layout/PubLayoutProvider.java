@@ -1,5 +1,6 @@
 package com.veadan.folib.providers.layout;
 
+import cn.hutool.crypto.digest.SM3;
 import com.alibaba.fastjson.JSONObject;
 import com.veadan.folib.artifact.ArtifactNotFoundException;
 import com.veadan.folib.artifact.coordinates.PubArtifactCoordinates;
@@ -172,7 +173,7 @@ public class PubLayoutProvider
 
     @Override
     public Set<String> getDigestAlgorithmSet() {
-        return Stream.of(MessageDigestAlgorithms.MD5, MessageDigestAlgorithms.SHA_1, MessageDigestAlgorithms.SHA_256, MessageDigestAlgorithms.SHA_512)
+        return Stream.of(MessageDigestAlgorithms.MD5, MessageDigestAlgorithms.SHA_1, MessageDigestAlgorithms.SHA_256, MessageDigestAlgorithms.SHA_512, SM3.ALGORITHM_NAME)
                 .collect(Collectors.toSet());
     }
 }

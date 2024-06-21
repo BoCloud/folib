@@ -1,5 +1,6 @@
 package com.veadan.folib.io;
 
+import com.veadan.folib.enums.ProductTypeEnum;
 import com.veadan.folib.util.MessageDigestUtils;
 import org.apache.commons.codec.digest.MessageDigestAlgorithms;
 import org.carlspring.commons.io.MultipleDigestOutputStream;
@@ -82,7 +83,7 @@ public class LayoutOutputStream extends MultipleDigestOutputStream
             digestMap = getDigests().entrySet()
                                     .stream()
                                     .collect(Collectors.toMap(Map.Entry::getKey,
-                                                              e -> "npm".equals(layout) && MessageDigestAlgorithms.SHA_512.equals(e.getKey()) ?  printBase64Binary( e.getValue()
+                                                              e -> ProductTypeEnum.Npm.getFoLibraryName().equalsIgnoreCase(layout) && MessageDigestAlgorithms.SHA_512.equals(e.getKey()) ?  printBase64Binary( e.getValue()
                                                                       .digest()) : stringifyDigest(digestStringifier,
                                                                       e.getValue()
                                                                               .digest())));
