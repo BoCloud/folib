@@ -635,8 +635,8 @@
                       <h6>Rust</h6>
                     </a-col>
                     <a-col :span="4">
-                      <div class="checkbox-label" :class="[layoutChecked === 'huggingface' ? 'active' : '']"
-                      @click="toggleCheckbox('huggingface')">
+                      <div class="checkbox-label" :class="[layoutChecked === 'HuggingFace' ? 'active' : '']"
+                      @click="toggleCheckbox('HuggingFace')">
                         <a-avatar :size="44" shape="square"
                                   style="border-radius: 8px; background-image: linear-gradient( 310deg, #020202, #5c6391 );">
                           <img src="images/folib/huggingface.svg" style="width: 100%;" alt="">
