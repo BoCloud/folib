@@ -78,11 +78,11 @@ public class HuggingFaceMLControllers extends BaseArtifactController {
     private static final String EMPTY_REVISION = "tmp";
 
     //用于判断是否使用lfs上传 1073741824 Bytes 1G
-    private final long lfsFileMinSize=209715200;
+    private final long lfsFileMinSize = 209715200;
 
     private static final String HF_DEFAULT_REVISION = "main";
 
-    private static final String Temp_UploadDir = "hfml_upload";
+    private static final String TEMP_UPLOAD_DIR = "hfml_upload";
 
     private static final JsonFactory JSON_FACTORY = new JsonFactory();
 
@@ -99,8 +99,6 @@ public class HuggingFaceMLControllers extends BaseArtifactController {
     )
     public ResponseEntity<?> getHead(@RepositoryMapping Repository repository,
                                      HttpServletRequest request,
-                                     HttpServletResponse response,
-                                     @RequestHeader HttpHeaders headers,
                                      @PathVariable("organization") String organizationName,
                                      @PathVariable("modelName") String modelName,
                                      @PathVariable("revision") String revision,
@@ -115,42 +113,10 @@ public class HuggingFaceMLControllers extends BaseArtifactController {
                 .file(filename)
                 .request(request).build();
 
-        String remoteBaseUrl = repository.getRemoteRepository() == null ? null : repository.getRemoteRepository().getUrl();
-        RevisionData revisionData = fetchRevision(context,remoteBaseUrl);
-        return fetch(context,  revisionData, remoteBaseUrl);
-        //String alternativeUrl = MlModelRemoteUtils.getHuggingFaceAlternativeFileUrl(context, remoteBaseUrl);
-        //String revisionLocal = context.getRevision();
-        //if(revision.equals(revisionData.getSha()) && repository.getRemoteRepository()!=null){
-        //    revisionLocal = "main";
-        //}
-        //String modelInfoPath = MlModelUtils.getFilePath(context.getOrg(), context.getModelName(), revisionLocal, revisionData.getLastModified(), context.getFile());
-        //RepositoryPath tagPath = repositoryPathResolver.resolve(context.getStorageId(), context.getRepositoryId(), modelInfoPath);
-        //tagPath.setTargetUrl(alternativeUrl);
-        //RepositoryPath repositoryPath = artifactResolutionService.resolvePath(tagPath);
-        //vulnerabilityBlock(repositoryPath);
-        //LayoutFileSystemProvider provider = repositoryPathResolver.resolve(repository.getStorage().getId(), repository.getId()).getFileSystem().provider();
-        //final RepositoryPath sha1Path = provider.getChecksumPath(repositoryPath, MessageDigestAlgorithms.SHA_1);
-        //if(Files.exists(sha1Path)){
-        //    String sha1 = Files.readString(sha1Path);
-        //    headers.set("ETag", sha1);
-        //}
-        //if(Files.exists(repositoryPath)){
-        //    long artifactSize = Files.size(repositoryPath);
-        //    headers.set("Content-Length", Long.valueOf(artifactSize).toString());
-        //}
-        //headers.set("X-Repo-Commit", revision);
-        //headers.set("Content-Type", "application/octet-stream");
-        //try (InputStream in = Files.newInputStream(tagPath)) {
-        //    InputStreamResource resource = new InputStreamResource(in);
-        //    return ResponseEntity.ok()
-        //            .headers(headers)
-        //            .body(resource);
-        //} catch (IOException e) {
-        //    throw new RuntimeException(e);
-        //}
-        //provideArtifactDownloadResponse(request, response, headers, repositoryPath);
-        //return fetch(context, true, revisionData, remoteBaseUrl);
-        //return strategyFactory.getStrategy(repository.getType()).fetchHeaders(context, response);
+        String remoteBaseUrl = getRemoteUrl(repository);
+        RevisionData revisionData = fetchRevision(context, remoteBaseUrl);
+        //RevisionData revisionData = fetchRevisionData( context,  repository);
+        return fetch(context, revisionData, remoteBaseUrl);
     }
 
 
@@ -161,7 +127,6 @@ public class HuggingFaceMLControllers extends BaseArtifactController {
     )
     public ResponseEntity<?> getHead(@RepositoryMapping Repository repository,
                                      HttpServletRequest request,
-                                     HttpServletResponse response,
                                      @PathVariable("modelName") String modelName,
                                      @PathVariable("revision") String revision,
                                      @PathVariable("filename") String filename) throws Exception {
@@ -173,8 +138,8 @@ public class HuggingFaceMLControllers extends BaseArtifactController {
                 .file(filename)
                 .request(request)
                 .build();
-        String remoteBaseUrl = repository.getRemoteRepository() == null ? null : repository.getRemoteRepository().getUrl();
-        RevisionData revisionData = fetchRevision(context,remoteBaseUrl);
+        String remoteBaseUrl = getRemoteUrl(repository);
+        RevisionData revisionData = fetchRevision(context, remoteBaseUrl);
         return fetch(context, revisionData, remoteBaseUrl);
         //return strategyFactory.getStrategy(repository.getType()).fetchHeaders(context, response);
     }
@@ -199,10 +164,10 @@ public class HuggingFaceMLControllers extends BaseArtifactController {
                 .file(filename)
                 .request(request)
                 .build();
-        String remoteBaseUrl = repository.getRemoteRepository() == null ? null : repository.getRemoteRepository().getUrl();
-        RevisionData revisionData = fetchRevision(context,remoteBaseUrl);
+        String remoteBaseUrl = getRemoteUrl(repository);
+        RevisionData revisionData = fetchRevision(context, remoteBaseUrl);
         return fetch(context, revisionData, remoteBaseUrl);
-       // return strategyFactory.getStrategy(repository.getType()).fetchFile(context);
+        // return strategyFactory.getStrategy(repository.getType()).fetchFile(context);
 
     }
 
@@ -225,9 +190,9 @@ public class HuggingFaceMLControllers extends BaseArtifactController {
                 .file(filename)
                 .request(request)
                 .build();
-        String remoteBaseUrl = repository.getRemoteRepository() == null ? null : repository.getRemoteRepository().getUrl();
-        RevisionData revisionData = fetchRevision(context,remoteBaseUrl);
-        return fetch(context,  revisionData, remoteBaseUrl);
+        String remoteBaseUrl = getRemoteUrl(repository);
+        RevisionData revisionData = fetchRevision(context, remoteBaseUrl);
+        return fetch(context, revisionData, remoteBaseUrl);
         //return strategyFactory.getStrategy(repository.getType()).fetchFile(context);
 
     }
@@ -248,9 +213,9 @@ public class HuggingFaceMLControllers extends BaseArtifactController {
                 .modelName(modelName)
                 .revision(HF_DEFAULT_REVISION)
                 .request(request).build();
-        String remoteBaseUrl = repository.getRemoteRepository() == null ? null : repository.getRemoteRepository().getUrl();
-        return ResponseEntity.ok(fetchRevision(context,remoteBaseUrl));
-       // return ResponseEntity.ok(strategyFactory.getStrategy(repository.getType()).fetchRevisionData(context));
+        String remoteBaseUrl = getRemoteUrl(repository);
+        return ResponseEntity.ok(fetchRevision(context, remoteBaseUrl));
+        // return ResponseEntity.ok(strategyFactory.getStrategy(repository.getType()).fetchRevisionData(context));
     }
 
     @ApiOperation(value = "获取没有组织参数的主要修订信息", nickname = "getMainRevisionInfoWithoutOrganizationParam")
@@ -268,8 +233,8 @@ public class HuggingFaceMLControllers extends BaseArtifactController {
                 .revision(HF_DEFAULT_REVISION)
                 .request(request)
                 .build();
-        String remoteBaseUrl = repository.getRemoteRepository() == null ? null : repository.getRemoteRepository().getUrl();
-        return ResponseEntity.ok(fetchRevision(context,remoteBaseUrl));
+        String remoteBaseUrl = getRemoteUrl(repository);
+        return ResponseEntity.ok(fetchRevision(context, remoteBaseUrl));
         //return ResponseEntity.ok(strategyFactory.getStrategy(repository.getType()).fetchRevisionData(context));
     }
 
@@ -296,7 +261,8 @@ public class HuggingFaceMLControllers extends BaseArtifactController {
                 .revision(revision)
                 .request(request)
                 .build();
-        String alternativeUrl = repository.getRemoteRepository() == null ? null : MlModelRemoteUtils.getModelInfoAlternativeUrl(context.getOrg(), context.getModelName(), context.getRevision(), repository.getRemoteRepository().getUrl());
+        String remoteBaseUrl = getRemoteUrl(repository);
+        String alternativeUrl = repository.getRemoteRepository() == null ? null : MlModelRemoteUtils.getModelInfoAlternativeUrl(context.getOrg(), context.getModelName(), context.getRevision(), remoteBaseUrl);
         String modelInfoPath = MlModelUtils.getLatestModelInfoPath(context);
         RepositoryPath tagPath = repositoryPathResolver.resolve(repository.getStorage().getId(), repository.getId(), modelInfoPath);
         tagPath.setTargetUrl(alternativeUrl);
@@ -313,11 +279,11 @@ public class HuggingFaceMLControllers extends BaseArtifactController {
     )
     @PreAuthorize("hasAuthority('ARTIFACTS_RESOLVE')")
     public void getRevisionData(@RepositoryMapping Repository repository,
-                                             HttpServletRequest request,
-                                             HttpServletResponse response,
-                                             @RequestHeader HttpHeaders headers,
-                                             @PathVariable("modelName") String modelName,
-                                             @PathVariable("revision") String revision) throws Exception {
+                                HttpServletRequest request,
+                                HttpServletResponse response,
+                                @RequestHeader HttpHeaders headers,
+                                @PathVariable("modelName") String modelName,
+                                @PathVariable("revision") String revision) throws Exception {
         MlModelRequestContext context = MlModelRequestContext.builder()
                 .storageId(repository.getStorage().getId())
                 .repositoryId(repository.getId())
@@ -325,7 +291,8 @@ public class HuggingFaceMLControllers extends BaseArtifactController {
                 .revision(revision)
                 .request(request)
                 .build();
-        String alternativeUrl = repository.getRemoteRepository() == null ? null : MlModelRemoteUtils.getModelInfoAlternativeUrl(context.getOrg(), context.getModelName(), context.getRevision(), getRepositoryBaseUrl(repository));
+        String remoteBaseUrl = getRemoteUrl(repository);
+        String alternativeUrl = repository.getRemoteRepository() == null ? null : MlModelRemoteUtils.getModelInfoAlternativeUrl(context.getOrg(), context.getModelName(), context.getRevision(), remoteBaseUrl);
         String modelInfoPath = MlModelUtils.getLatestModelInfoPath(context);
         RepositoryPath tagPath = repositoryPathResolver.resolve(repository.getStorage().getId(), repository.getId(), modelInfoPath);
         tagPath.setTargetUrl(alternativeUrl);
@@ -356,7 +323,7 @@ public class HuggingFaceMLControllers extends BaseArtifactController {
                 .revision(EMPTY_REVISION)
                 .build();
 
-        return  uploadLfsFile(context, inputStream);
+        return uploadLfsFile(context, inputStream);
 
     }
 
@@ -377,7 +344,7 @@ public class HuggingFaceMLControllers extends BaseArtifactController {
                 .request(request)
                 .revision(EMPTY_REVISION).build();
 
-        return  uploadLfsFile(context, request.getInputStream());
+        return uploadLfsFile(context, request.getInputStream());
     }
 
 
@@ -392,7 +359,7 @@ public class HuggingFaceMLControllers extends BaseArtifactController {
                                               HttpServletRequest request,
                                               @PathVariable("organization") String organization,
                                               @PathVariable("modelName") String modelName,
-                                              @RequestBody GitLfsBatchJson lfsInfoPayload) {
+                                              @RequestBody GitLfsBatchJson lfsInfoPayload) throws IOException {
         MlModelRequestContext context = MlModelRequestContext.builder()
                 .storageId(repository.getStorage().getId())
                 .repositoryId(repository.getId())
@@ -415,7 +382,7 @@ public class HuggingFaceMLControllers extends BaseArtifactController {
     public ResponseEntity<?> handleLfsObjects(@RepositoryMapping Repository repository,
                                               HttpServletRequest request,
                                               @PathVariable("modelName") String modelName,
-                                              @RequestBody GitLfsBatchJson lfsInfoPayload) {
+                                              @RequestBody GitLfsBatchJson lfsInfoPayload) throws IOException {
         MlModelRequestContext context = MlModelRequestContext.builder()
                 .storageId(repository.getStorage().getId())
                 .repositoryId(repository.getId())
@@ -451,7 +418,7 @@ public class HuggingFaceMLControllers extends BaseArtifactController {
                 .file("")
                 .build();
 
-       // MlFilesResponse mlFilesResponse = strategyFactory.getStrategy(repository.getType()).handlePreUpload(context, filesRequest);
+        // MlFilesResponse mlFilesResponse = strategyFactory.getStrategy(repository.getType()).handlePreUpload(context, filesRequest);
         return ResponseEntity.ok(preUploadDir(context, filesRequest));
 
     }
@@ -583,11 +550,11 @@ public class HuggingFaceMLControllers extends BaseArtifactController {
     }
 
 
-    private ResponseEntity<?> fetch(MlModelRequestContext context, RevisionData modelInfo,String remoteBaseUrl) throws IOException {
+    private ResponseEntity<?> fetch(MlModelRequestContext context, RevisionData modelInfo, String remoteBaseUrl) throws IOException {
         String revision = context.getRevision();
-        String alternativeUrl = remoteBaseUrl ==null ? null : MlModelRemoteUtils.getHuggingFaceAlternativeFileUrl(context, remoteBaseUrl);
+        String alternativeUrl = remoteBaseUrl == null ? null : MlModelRemoteUtils.getHuggingFaceAlternativeFileUrl(context, remoteBaseUrl);
         String revisionLocal = context.getRevision();
-        if(revision.equals(modelInfo.getSha()) && StrUtil.isNotBlank(remoteBaseUrl)){
+        if (revision.equals(modelInfo.getSha()) && StrUtil.isNotBlank(remoteBaseUrl)) {
             revisionLocal = "main";
         }
         String modelInfoPath = MlModelUtils.getFilePath(context.getOrg(), context.getModelName(), revisionLocal, modelInfo.getLastModified(), context.getFile());
@@ -600,11 +567,11 @@ public class HuggingFaceMLControllers extends BaseArtifactController {
             LayoutFileSystemProvider provider = repositoryPathResolver.resolve(context.getStorageId(), context.getRepositoryId()).getFileSystem().provider();
             final RepositoryPath sha1Path = provider.getChecksumPath(repositoryPath, MessageDigestAlgorithms.SHA_1);
             HttpHeaders headers = new HttpHeaders();
-            if(Files.exists(sha1Path)){
+            if (Files.exists(sha1Path)) {
                 String sha1 = Files.readString(sha1Path);
                 headers.set("ETag", sha1);
             }
-            if(Files.exists(repositoryPath)){
+            if (Files.exists(repositoryPath)) {
                 long artifactSize = Files.size(repositoryPath);
                 headers.set("Content-Length", Long.valueOf(artifactSize).toString());
             }
@@ -623,7 +590,8 @@ public class HuggingFaceMLControllers extends BaseArtifactController {
 
     }
 
-    public RevisionData fetchRevision(MlModelRequestContext requestContext,String remoteBaseUrl) throws Exception {
+
+    public RevisionData fetchRevision(MlModelRequestContext requestContext, String remoteBaseUrl) throws Exception {
         RevisionData revisionData;
 
         if (requestContext == null) {
@@ -634,12 +602,12 @@ public class HuggingFaceMLControllers extends BaseArtifactController {
                 .getRevision());
         String latestLeadFilePath = getLatestLeadFilePath(requestContext);
         if (latestLeadFilePath == null) {
-            return fetchLeadFileByGeneratedSha1Value(requestContext,remoteBaseUrl);
+            return fetchLeadFileByGeneratedSha1Value(requestContext, remoteBaseUrl);
         }
         try {
 
             RepositoryPath repositoryPath = repositoryPathResolver.resolve(requestContext.getStorageId(), requestContext.getRepositoryId(), latestLeadFilePath);
-            try(InputStream leadStream = Files.newInputStream(repositoryPath)) {
+            try (InputStream leadStream = Files.newInputStream(repositoryPath)) {
                 revisionData = MlModelUtils.createObjectMapper().readValue(leadStream, RevisionData.class);
                 String leadFilePath = MlModelUtils.getFilePath(requestContext.getOrg(), requestContext.getModelName(), requestContext
                         .getRevision(), revisionData.getLastModified(), LEAD_FILE_NAME);
@@ -648,18 +616,20 @@ public class HuggingFaceMLControllers extends BaseArtifactController {
                 requestContext.setVersionFolder(revisionFolder);
             }
         } catch (Exception e) {
-            return afterFailedToFetchLatestModelInfo(requestContext, latestLeadFilePath, e,remoteBaseUrl);
+            return afterFailedToFetchLatestModelInfo(requestContext, latestLeadFilePath, e, remoteBaseUrl);
 
         }
         return revisionData;
     }
 
-    private String getLatestLeadFilePath(MlModelRequestContext context) {
+    private String getLatestLeadFilePath(MlModelRequestContext context) throws IOException {
         if (context == null) {
             throw new NullPointerException("context is marked non-null but is null");
         }
-        RepositoryPath repositoryPath = repositoryPathResolver.resolve(context.getStorageId(), context.getRepositoryId(), MlModelUtils.getModelRevisionPath(context));
-        if (!Files.exists(repositoryPath)){
+
+        RepositoryPath tagPath = repositoryPathResolver.resolve(context.getStorageId(), context.getRepositoryId(), MlModelUtils.getModelRevisionPath(context));
+        RepositoryPath repositoryPath = artifactResolutionService.resolvePath(tagPath);
+        if (repositoryPath == null || !Files.exists(repositoryPath)) {
             return null;
         }
         List<RepositoryPath> fileList = new ArrayList<>();
@@ -723,7 +693,7 @@ public class HuggingFaceMLControllers extends BaseArtifactController {
         return null;
     }
 
-    private RevisionData fetchLeadFileByGeneratedSha1Value(MlModelRequestContext requestContext,String remoteBaseUrl) throws RuntimeException, IOException {
+    private RevisionData fetchLeadFileByGeneratedSha1Value(MlModelRequestContext requestContext, String remoteBaseUrl) throws RuntimeException, IOException {
         if (requestContext == null) {
             throw new NullPointerException("requestContext is marked non-null but is null");
         }
@@ -731,11 +701,11 @@ public class HuggingFaceMLControllers extends BaseArtifactController {
                 .getRepositoryId(), requestContext.modelId(), requestContext.getRevision());
         String leadFilePath = getLeadFilePathByGeneratedSha1(requestContext, requestContext.getRevision());
 
-        if(remoteBaseUrl!=null){
-            RevisionData revisionData =  getRemoteRevisionData(requestContext);
+        if (remoteBaseUrl != null) {
+            RevisionData revisionData = getRemoteRevisionData(requestContext, remoteBaseUrl);
             if (StringUtils.isNotBlank(revisionData.getLastModified())) {
-                leadFilePath = MlModelRemoteUtils.getFilePath(requestContext.getOrg(), requestContext.getModelName(), revisionData.getLastModified(),requestContext.getFile());
-                String revisionFolder = String.join("/","main",revisionData.getLastModified());
+                leadFilePath = MlModelRemoteUtils.getFilePath(requestContext.getOrg(), requestContext.getModelName(), revisionData.getLastModified(), requestContext.getFile());
+                String revisionFolder = String.join("/", "main", revisionData.getLastModified());
                 requestContext.setVersionFolder(revisionFolder);
                 return revisionData;
             }
@@ -756,7 +726,7 @@ public class HuggingFaceMLControllers extends BaseArtifactController {
             return downloadRevisionData(requestContext, leadFilePath);
         }
         log.warn("Could not find model info object for repoKey:{}, modelId:{}, revision:{}", requestContext.getRepositoryId(), requestContext.modelId(), requestContext.getRevision());
-        throw new RuntimeException("Could not find model info file");
+        return null;
     }
 
 
@@ -773,14 +743,15 @@ public class HuggingFaceMLControllers extends BaseArtifactController {
             log.error("Could not fetch a model info file for repoKey:{}, path:{}, message:{}", context.getRepositoryId(), path, e.getMessage());
             log.debug("Could not fetch a model info file for repoKey:{}, path:{}", context.getRepositoryId(), path, e);
             log.debug("Got 404 status while tried to fetch model info stream for repoKey:{}, path:{} about to try to fetch it by the internal generated revision as:{}", context.getRepositoryId(), path, context.getRevision());
-            return fetchLeadFileByGeneratedSha1Value(context,remoteBaseUrl);
+            return fetchLeadFileByGeneratedSha1Value(context, remoteBaseUrl);
         }
     }
 
-    private String getLeadFilePathByGeneratedSha1(MlModelRequestContext context, String generatedSha1) {
-        String revisionPath =   MlModelUtils.getModelRevisionPath( context);
-        RepositoryPath repositoryPath = repositoryPathResolver.resolve(context.getStorageId(), context.getRepositoryId(), revisionPath);
-        if(!Files.exists(repositoryPath)){
+    private String getLeadFilePathByGeneratedSha1(MlModelRequestContext context, String generatedSha1) throws IOException {
+        String revisionPath = MlModelUtils.getModelRevisionPath(context);
+        RepositoryPath tagPath = repositoryPathResolver.resolve(context.getStorageId(), context.getRepositoryId(), revisionPath);
+        RepositoryPath repositoryPath = artifactResolutionService.resolvePath(tagPath);
+        if (repositoryPath == null || !Files.exists(repositoryPath)) {
             return null;
         }
         List<RepositoryPath> fileList = new ArrayList<>();
@@ -813,7 +784,8 @@ public class HuggingFaceMLControllers extends BaseArtifactController {
             log.error("访问文件失败: " + repositoryPath.toString());
             e.printStackTrace();
         }
-        return fileList.stream().filter(pa -> LEAD_FILE_NAME.equals(pa.getFileName())).findFirst().map(RepositoryPath::getPath).orElse(null);
+
+        return fileList.stream().filter(pa -> LEAD_FILE_NAME.equals(pa.getFileName().toString())).findFirst().map(RepositoryPath::getPath).orElse(null);
     }
 
     private RevisionData downloadRevisionData(MlModelRequestContext requestContext, String leadFilePath) {
@@ -824,23 +796,11 @@ public class HuggingFaceMLControllers extends BaseArtifactController {
             throw new NullPointerException("leadFilePath is marked non-null but is null");
         }
         try {
-            RepositoryPath repositoryPath = repositoryPathResolver.resolve(requestContext.getStorageId(), requestContext.getRepositoryId(), leadFilePath);
-            InputStream leadStream = Files.newInputStream(repositoryPath);
-            try {
-                RevisionData revisionData = MlModelUtils.createObjectMapper().readValue(leadStream, RevisionData.class);
-                if (leadStream != null) {
-                    leadStream.close();
-                }
-                return revisionData;
-            } catch (Throwable throwable) {
-                if (leadStream != null) {
-                    try {
-                        leadStream.close();
-                    } catch (Throwable throwable1) {
-                        throwable.addSuppressed(throwable1);
-                    }
-                }
-                throw throwable;
+            RepositoryPath tagPath = repositoryPathResolver.resolve(requestContext.getStorageId(), requestContext.getRepositoryId(), leadFilePath);
+            RepositoryPath repositoryPath = artifactResolutionService.resolvePath(tagPath);
+
+            try (InputStream leadStream = Files.newInputStream(repositoryPath);) {
+                return MlModelUtils.createObjectMapper().readValue(leadStream, RevisionData.class);
             }
         } catch (IOException e) {
             log.warn("Failed to fetch revision data for for repo {}, organization {}, model {}, revision {}", requestContext
@@ -848,11 +808,18 @@ public class HuggingFaceMLControllers extends BaseArtifactController {
             throw new RuntimeException("No artifacts found for revision " + requestContext.getRevision());
         }
     }
-    private RevisionData getRemoteRevisionData(MlModelRequestContext context) throws IOException {
-        String modelInfoPath =  MlModelRemoteUtils.getLatestModelInfoPath( context);
-        RepositoryPath path = repositoryPathResolver.resolve(context.getStorageId(), context.getRepositoryId(), modelInfoPath);
+
+    private RevisionData getRemoteRevisionData(MlModelRequestContext context, String remoteBaseUrl) throws IOException {
+        String modelInfoPath = MlModelRemoteUtils.getLatestModelInfoPath(context);
+        //RepositoryPath path = repositoryPathResolver.resolve(context.getStorageId(), context.getRepositoryId(), modelInfoPath);
+
+        String alternativeUrl = remoteBaseUrl == null ? null : MlModelRemoteUtils.getHuggingFaceAlternativeFileUrl(context, remoteBaseUrl);
+        RepositoryPath tagPath = repositoryPathResolver.resolve(context.getStorageId(), context.getRepositoryId(), modelInfoPath);
+        tagPath.setTargetUrl(alternativeUrl);
+        RepositoryPath repositoryPath = artifactResolutionService.resolvePath(tagPath);
+
         ObjectMapper objectMapper = MlModelUtils.createObjectMapper();
-        return objectMapper.readValue(Files.readAllBytes(path), RevisionData.class);
+        return objectMapper.readValue(Files.readAllBytes(repositoryPath), RevisionData.class);
     }
 
     public ResponseEntity<?> uploadLfsFile(MlModelRequestContext context, InputStream stream) {
@@ -864,11 +831,12 @@ public class HuggingFaceMLControllers extends BaseArtifactController {
         }
         log.debug("Received upload lfs file request for repo/organization/modelName/file '{}'/'{}'/'{}'/'{}'", context
                 .getRepositoryId(), context.getOrg(), context.getModelName(), context.getFile());
-        try (stream){
+        try (stream) {
             String uploadPath = MlModelUtils.getLfsTmpUploadPath(context.getOrg(), context.getModelName(), context.getFile());
             Artifact artifact = artifactRepository.findOneArtifact(context.getStorageId(), context.getRepositoryId(), uploadPath);
             if (artifact == null) {
-                RepositoryPath repositoryPath = repositoryPathResolver.resolve(context.getStorageId(), context.getRepositoryId(), uploadPath);
+                RepositoryPath tagPath = repositoryPathResolver.resolve(context.getStorageId(), context.getRepositoryId(), uploadPath);
+                RepositoryPath repositoryPath = artifactResolutionService.resolvePath(tagPath);
                 artifactManagementService.validateAndStore(repositoryPath, stream);
             }
             return ResponseEntity.ok(uploadPath);
@@ -879,9 +847,9 @@ public class HuggingFaceMLControllers extends BaseArtifactController {
     }
 
 
-    public GitLfsBatchJson preUploadBatch(MlModelRequestContext context, GitLfsBatchJson batchLfsJson) {
-        String storageId =context.getStorageId();
-        String repositoryId =context.getRepositoryId();
+    public GitLfsBatchJson preUploadBatch(MlModelRequestContext context, GitLfsBatchJson batchLfsJson) throws IOException {
+        String storageId = context.getStorageId();
+        String repositoryId = context.getRepositoryId();
         String organization = context.getOrg();
         String modelName = context.getModelName();
         HttpServletRequest request = context.getRequest();
@@ -924,7 +892,7 @@ public class HuggingFaceMLControllers extends BaseArtifactController {
         return new GitLfsBatchJson(responseJsons);
     }
 
-    private boolean tryToReuseExistingSha2(String storageId, String repositoryId, String organization, String modelName, GitLfsJson requestJson) {
+    private boolean tryToReuseExistingSha2(String storageId, String repositoryId, String organization, String modelName, GitLfsJson requestJson) throws IOException {
         if (storageId == null) {
             throw new NullPointerException("storageId is marked non-null but is null");
         }
@@ -937,7 +905,11 @@ public class HuggingFaceMLControllers extends BaseArtifactController {
 
         String lfsTmpUploadPath = MlModelUtils.getLfsTmpUploadPath(organization, modelName, requestJson.getOid());
 
-        RepositoryPath repositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, "");
+        RepositoryPath tagPath = repositoryPathResolver.resolve(storageId, repositoryId, "");
+        RepositoryPath repositoryPath = artifactResolutionService.resolvePath(tagPath);
+        if (repositoryPath == null || !Files.exists(repositoryPath)) {
+            return false;
+        }
         List<RepositoryPath> artifactList = new ArrayList<>();
         try {
             //todo 性能优化调整成数据库查询
@@ -977,9 +949,10 @@ public class HuggingFaceMLControllers extends BaseArtifactController {
         boolean found = false;
         if (packageArtifact != null) {
             if (!lfsTmpUploadPath.equals(packageArtifact.getPath())) {
-                RepositoryPath tagPath = repositoryPathResolver.resolve(storageId, repositoryId, lfsTmpUploadPath);
+                RepositoryPath tagArtPath = repositoryPathResolver.resolve(storageId, repositoryId, lfsTmpUploadPath);
+                RepositoryPath artPath = artifactResolutionService.resolvePath(tagArtPath);
                 try (InputStream inputStream = Files.newInputStream(packageArtifact);) {
-                    artifactManagementService.validateAndStore(tagPath, inputStream);
+                    artifactManagementService.validateAndStore(artPath, inputStream);
                 } catch (IOException | ProviderImplementationException | ArtifactCoordinatesValidationException e) {
                     throw new RuntimeException(e);
                 }
@@ -1008,6 +981,7 @@ public class HuggingFaceMLControllers extends BaseArtifactController {
 
     /**
      * pre 上传目录
+     *
      * @param context      上下文对象
      * @param filesRequest 上传文件请求
      */
@@ -1046,6 +1020,7 @@ public class HuggingFaceMLControllers extends BaseArtifactController {
 
     /**
      * 验证名称
+     *
      * @param context 上下文对象
      */
     public void assertValidNames(MlModelRequestContext context) {
@@ -1077,6 +1052,7 @@ public class HuggingFaceMLControllers extends BaseArtifactController {
 
     /**
      * 验证模块是否已经存在
+     *
      * @param context 上下文对象
      */
     void assertModuleAlreadyExist(MlModelRequestContext context) {
@@ -1084,7 +1060,7 @@ public class HuggingFaceMLControllers extends BaseArtifactController {
         String storageId = context.getStorageId();
 
         RepositoryPath repositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, MlModelUtils.getModelRevisionPath(context));
-        if (!Files.exists(repositoryPath)) {
+        if (repositoryPath == null || !Files.exists(repositoryPath)) {
             return;
         }
         List<Path> fileList = new ArrayList<>();
@@ -1167,25 +1143,13 @@ public class HuggingFaceMLControllers extends BaseArtifactController {
         }
         List<MlKeyValue> genericFilesData = new ArrayList<>();
         try {
-            JsonParser jsonParser = JSON_FACTORY.createParser(jsonInputStream);
-            try {
+            try (JsonParser jsonParser = JSON_FACTORY.createParser(jsonInputStream)) {
                 while (jsonParser.nextToken() != null) {
                     if (jsonParser.getCurrentToken() == JsonToken.START_OBJECT) {
                         genericFilesData.add(parseKeyValue(tmpUploadDir, jsonParser));
                     }
                 }
-                if (jsonParser != null) {
-                    jsonParser.close();
-                }
-            } catch (Throwable throwable) {
-                if (jsonParser != null) {
-                    try {
-                        jsonParser.close();
-                    } catch (Throwable throwable1) {
-                        throwable.addSuppressed(throwable1);
-                    }
-                }
-                throw throwable;
+                jsonParser.close();
             }
         } catch (Exception e) {
             for (MlKeyValue uploadInfo : genericFilesData) {
@@ -1213,7 +1177,7 @@ public class HuggingFaceMLControllers extends BaseArtifactController {
                 mlKeyValue.setKey(jsonParser.getValueAsString());
                 continue;
             }
-            if (field.equals("value")) {
+            if ("value".equals(field)) {
                 mlKeyValue.setValue(readValueAsMap(jsonParser, tmpUploadDir));
             }
         }
@@ -1222,13 +1186,13 @@ public class HuggingFaceMLControllers extends BaseArtifactController {
 
     @VisibleForTesting
     public void deleteTempFileFromFS(String pathOnFS) throws IOException {
-        Files.deleteIfExists(Paths.get(pathOnFS, new String[0]));
+        Files.deleteIfExists(Paths.get(pathOnFS));
     }
 
     private MlKeyValue uploadStream(InputStream bodyStream, Set<String> uploadedFiles, String storageId, String repositoryId, String organization, String modelName, String revision, String subRevisionFolder) {
         try {
             // 创建一个临时目录
-            Path tempDir = Files.createTempDirectory(Temp_UploadDir);
+            Path tempDir = Files.createTempDirectory(TEMP_UPLOAD_DIR);
             List<MlKeyValue> mlKeyValues = extractParamsFromJson(bodyStream, tempDir);
             return uploadEntries(mlKeyValues, storageId, repositoryId, organization, modelName, revision, subRevisionFolder, uploadedFiles);
         } catch (IOException e) {
@@ -1308,13 +1272,13 @@ public class HuggingFaceMLControllers extends BaseArtifactController {
             return;
         }
         RepositoryPath repositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, path);
-        Path filePath = Paths.get(contentPath, new String[0]);
+        Path filePath = Paths.get(contentPath);
         try (InputStream inputStream = Files.newInputStream(filePath)) {
             artifactManagementService.validateAndStore(repositoryPath, inputStream);
         } catch (IOException | ProviderImplementationException | ArtifactCoordinatesValidationException e) {
             log.error("upload file error", e);
         } finally {
-            Path tmpUploadPath = Paths.get(contentPath, new String[0]);
+            Path tmpUploadPath = Paths.get(contentPath);
             Files.deleteIfExists(tmpUploadPath);
         }
     }
@@ -1337,11 +1301,6 @@ public class HuggingFaceMLControllers extends BaseArtifactController {
                 log.debug("Skipping upload of file {} since it already exists in repo {}", path, repositoryId);
                 return true;
             }
-            //PackageArtifact existingArtifact = this.downloadService.getArtifact(repositoryId, path);
-            //if (existingArtifact != null && existingArtifact.getSha2().equals(sha2)) {
-            //    log.debug("Skipping upload of file {} since it already exists in repo {}", path, repoKey);
-            //    return true;
-            //}
         } catch (Exception e) {
             log.debug("Artifact {} does not exist in repo {}", path, repositoryId);
         }
@@ -1393,11 +1352,6 @@ public class HuggingFaceMLControllers extends BaseArtifactController {
         } catch (Exception e) {
             log.error("Error while processing upload complete for repo: {}, model name is: {}", requestContext.getRepositoryId(), fullModelName, e);
         }
-        //this.packageHandlerService.securityService()
-        //        .callAsSystem(() -> {
-        //            createdAndUploadLeadFile(requestContext, subRevisionFolder);
-        //            return null;
-        //        });
         log.debug("MlModel index calculation ended successfully for repo: {}, model name is: {}", requestContext.getRepositoryId(), fullModelName);
     }
 
@@ -1411,7 +1365,7 @@ public class HuggingFaceMLControllers extends BaseArtifactController {
         if (MlModelUtils.isReleaseRevision(requestContext)) {
             RevisionData latestRevision;
             try {
-                latestRevision = fetchRevision(requestContext ,null) ;
+                latestRevision = fetchRevision(requestContext, null);
             } catch (Exception packageException) {
                 log.debug("Latest lead file for model: {}, revision: {} doesn't exist. It can happen on the first upload", modelName, revision);
                 latestRevision = dataToSerialize;
@@ -1459,20 +1413,11 @@ public class HuggingFaceMLControllers extends BaseArtifactController {
 
     private void updateLeadFile(String subRevisionFolder, String storageId, String repositoryId, String organization, String modelName, String revision, RevisionData dataToSerialize) throws IOException, ProviderImplementationException, ArtifactCoordinatesValidationException {
         String leadFilePath = MlModelUtils.getFilePath(organization, modelName, revision, subRevisionFolder, ".folib_huggingface_model_info.json");
-        //this.packageHandlerService.uploadService().upload(repositoryId, leadFilePath, new ByteArrayInputStream(
-        //        MlModelUtils.createObjectMapper().writeValueAsBytes(dataToSerialize)));
         Multimap<String, String> attributes = MlModelUtils.extractAttributesFromRevisionData(dataToSerialize, repositoryId, organization, modelName, revision);
         if (!attributes.isEmpty()) {
             log.debug("Setting attributes {} for repo {} model {} revision {} organization {}", attributes, repositoryId, modelName, revision, organization);
             RepositoryPath repositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, leadFilePath);
             artifactManagementService.validateAndStore(repositoryPath, new ByteArrayInputStream(MlModelUtils.createObjectMapper().enable(SerializationFeature.INDENT_OUTPUT).writeValueAsString(dataToSerialize).getBytes()));
-            //this.repositoryService.setAttributes(repoKey, leadFilePath, attributes);
-            //PackageArtifact artifact = this.downloadService.getArtifact(repoKey, leadFilePath);
-            //if (artifact == null) {
-            //    log.warn("Failed to retrieve artifact for repo {} model {} revision {} organization {}", repoKey, modelName, revision, organization);
-            //    return;
-            //}
-            //this.metadataServiceIndexer.indexPackageAsync(artifact, attributes);
         }
     }
 
@@ -1486,6 +1431,10 @@ public class HuggingFaceMLControllers extends BaseArtifactController {
         String requestedRevisionPath = MlModelUtils.getFilePath(organization, modelName, revision, subRevisionFolder, "");
         RepositoryPath repositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, requestedRevisionPath);
         List<Path> fileList = new ArrayList<>();
+
+        if (repositoryPath == null || !Files.exists(repositoryPath)) {
+            return null;
+        }
 
         try {
             Files.walkFileTree(repositoryPath, new SimpleFileVisitor<>() {
@@ -1523,7 +1472,7 @@ public class HuggingFaceMLControllers extends BaseArtifactController {
 
         fileList.forEach(artifact -> {
             SiblingItem sibling = new SiblingItem();
-            if (artifact.getFileName().toString().equalsIgnoreCase("readme.md")) {
+            if ("readme.md".equals(artifact.getFileName().toString())) {
                 readmePaths.add(artifact.toAbsolutePath().toString());
             }
             sibling.setFileName(artifact.getFileName().toString().replace(requestedRevisionPath, ""));
@@ -1538,8 +1487,8 @@ public class HuggingFaceMLControllers extends BaseArtifactController {
             try {
                 //InputStream stream = this.downloadService.getStream(repositoryId, readmePath);
                 byte[] packageJsonBytes = layoutProvider.getContentByFileName(repositoryPath, repositoryPath, readmePath);
-                InputStream stream = new ByteArrayInputStream(packageJsonBytes);
-                try {
+
+                try (InputStream stream = new ByteArrayInputStream(packageJsonBytes)) {
                     dataToSerialize = MlModelIndexUtils.parseReadme(stream);
                     if (StringUtils.isBlank(dataToSerialize.getModelId())) {
                         dataToSerialize.setModelId(MlModelUtils.getModelId(organization, modelName));
@@ -1548,18 +1497,7 @@ public class HuggingFaceMLControllers extends BaseArtifactController {
                     log.info("Parsed readme file for repo {} model {} revision {} organization {} license {}", repositoryId, dataToSerialize
                             .getModelId(), revision, organization, dataToSerialize
                             .getCardData().getLicense());
-                    if (stream != null) {
-                        stream.close();
-                    }
-                } catch (Throwable throwable) {
-                    if (stream != null) {
-                        try {
-                            stream.close();
-                        } catch (Throwable throwable1) {
-                            throwable.addSuppressed(throwable1);
-                        }
-                    }
-                    throw throwable;
+
                 }
             } catch (Exception e) {
                 log.error("Failed to parse readme file for repo {} model {} revision {} organization {}", repositoryId, modelName, revision, organization, e);
@@ -1571,11 +1509,29 @@ public class HuggingFaceMLControllers extends BaseArtifactController {
         }
         dataToSerialize.setSha(MlModelUtils.getGeneratedCommitHash(revision, subRevisionFolder));
         dataToSerialize.setLastModified(subRevisionFolder);
-        dataToSerialize.setTags(new LinkedList());
+        dataToSerialize.setTags(new LinkedList<>());
         dataToSerialize.setId(MlModelUtils.getModelId(organization, modelName));
         dataToSerialize.setPrivateProperty(false);
         dataToSerialize.setSiblings(dataToSerialize
-                .getSiblings().stream().filter(sibling -> !sibling.getFileName().equalsIgnoreCase(".folib_huggingface_model_info.json")).collect(Collectors.toList()));
+                .getSiblings().stream().filter(sibling ->
+                        ".folib_huggingface_model_info.json".equalsIgnoreCase(sibling.getFileName())).collect(Collectors.toList()));
         return dataToSerialize;
+    }
+
+    public String getRemoteUrl(Repository repository) {
+        String remoteUrl = null;
+        if (repository.getGroupRepositories() != null) {
+            for (String group : repository.getGroupRepositories()) {
+                Repository groupRepository = configurationManager.getRepository(group);
+
+                if (groupRepository.getRemoteRepository() != null) {
+                    remoteUrl = groupRepository.getRemoteRepository() == null ? null : groupRepository.getRemoteRepository().getUrl();
+                    break;
+                }
+            }
+        } else if (repository.getRemoteRepository() != null) {
+            remoteUrl = repository.getRemoteRepository().getUrl();
+        }
+        return remoteUrl;
     }
 }
