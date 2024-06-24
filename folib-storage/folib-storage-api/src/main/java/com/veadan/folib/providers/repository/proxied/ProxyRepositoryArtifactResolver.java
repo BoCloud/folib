@@ -64,7 +64,8 @@ public class ProxyRepositoryArtifactResolver {
         Repository repository = repositoryPath.getFileSystem().getRepository();
         final RemoteRepository remoteRepository = repository.getRemoteRepository();
         if (!remoteRepositoryAlivenessCacheManager.isAlive(remoteRepository)) {
-            logger.debug("Remote repository '{}' is down.", remoteRepository.getUrl());
+            logger.warn("Remote repository '{}' is down.", remoteRepository.getUrl());
+            return null;
         }
 
         RestArtifactResolver client = restArtifactResolverFactory.newInstance(remoteRepository,repositoryPath);

@@ -149,6 +149,13 @@ public class NpmArtifactController
     @Inject
     private AuthenticationManager authenticationManager;
 
+    @Override
+    @PreAuthorize("authenticated")
+    @GetMapping(value = "/{storageId}/{repositoryId}")
+    public ResponseEntity<String> checkRepositoryAccess() {
+        return super.checkRepositoryAccess();
+    }
+
     @GetMapping(path = "{storageId}/{repositoryId}/-/v1/search")
     @PreAuthorize("hasAuthority('ARTIFACTS_RESOLVE')")
     public void search(@RepositoryMapping Repository repository,

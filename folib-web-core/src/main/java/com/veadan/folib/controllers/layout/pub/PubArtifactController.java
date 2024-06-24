@@ -77,6 +77,13 @@ public class PubArtifactController
     @Lazy
     private PubPackageMetadataIndexer pubPackageMetadataIndexer;
 
+    @Override
+    @PreAuthorize("authenticated")
+    @GetMapping(value = "/{storageId}/{repositoryId}")
+    public ResponseEntity<String> checkRepositoryAccess() {
+        return super.checkRepositoryAccess();
+    }
+
     @GetMapping(path = "{storageId}/{repositoryId}/api/packages/{packageName}/versions/{version}")
     @ApiOperation(value = "Inspect the version of a PUB package.", nickname = "inspectSpecificVersion", notes = "Deprecated as of Dart 2.8, use \"listAllVersions\" instead.")
     @ApiResponses({@ApiResponse(code = 200, message = "OK", response = PubPackageVersionMetadata.class), @ApiResponse(code = 403, message = "Forbidden. User has no read permission"), @ApiResponse(code = 404, message = "Package Not Found")})

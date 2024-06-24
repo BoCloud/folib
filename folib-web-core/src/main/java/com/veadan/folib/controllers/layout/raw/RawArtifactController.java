@@ -30,6 +30,13 @@ public class RawArtifactController
         extends BaseArtifactController
 {
 
+    @Override
+    @PreAuthorize("authenticated")
+    @GetMapping(value = "/{storageId}/{repositoryId}")
+    public ResponseEntity<String> checkRepositoryAccess() {
+        return super.checkRepositoryAccess();
+    }
+
     @ApiOperation(value = "Used to deploy an artifact")
     @ApiResponses(value = { @ApiResponse(code = 200, message = "The artifact was deployed successfully."),
                             @ApiResponse(code = 400, message = "An error occurred.") })

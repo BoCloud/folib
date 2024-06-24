@@ -36,6 +36,12 @@ public class HelmArtifactController extends BaseArtifactController {
     @Autowired
     private ProxyRepositoryArtifactResolver proxyRepositoryArtifactResolver;
 
+    @Override
+    @PreAuthorize("authenticated")
+    @GetMapping(value = "/{storageId}/{repositoryId}")
+    public ResponseEntity<String> checkRepositoryAccess() {
+        return super.checkRepositoryAccess();
+    }
 
     @ApiOperation(value = "Used to retrieve an artifact")
     @ApiResponses(value = {@ApiResponse(code = 200, message = ""),

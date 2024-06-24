@@ -47,6 +47,13 @@ public class RpmArtifactController extends BaseArtifactController {
 
     private final Object lock = new Object();
 
+    @Override
+    @PreAuthorize("authenticated")
+    @GetMapping(value = "/{storageId}/{repositoryId}")
+    public ResponseEntity<String> checkRepositoryAccess() {
+        return super.checkRepositoryAccess();
+    }
+
     @ApiOperation(value = "Deletes a path from a repository.")
     @ApiResponses(value = {@ApiResponse(code = 200, message = "The artifact was deleted."),
             @ApiResponse(code = 400, message = "Bad request."),
