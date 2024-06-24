@@ -44,11 +44,12 @@ public class RestArtifactResolverFactory
         String url = repository.getUrl();
 
         final HttpAuthenticationFeature authenticationFeature = (StringUtils.isNotBlank(username) && StringUtils.isNotBlank(password)) ? HttpAuthenticationFeature.basic(username, password) : null;
-
+        final BearerTokenAuthFilter bearerTokenAuthFilter = (StringUtils.isEmpty(username) && StringUtils.isNotBlank(password))  ? new BearerTokenAuthFilter( password) : null;
         Client client  = proxyRepositoryConnectionPoolConfigurationService.getRestClient(repositoryPath.getStorageId(),repositoryPath.getRepositoryId());
         return new RestArtifactResolver(client , url, repositoryPath.getTargetUrl(), repositoryPath.getHeaders(),
                                         configuration,
-                                        authenticationFeature)
+                                        authenticationFeature,
+                                        bearerTokenAuthFilter)
                                 {
 
             @Override

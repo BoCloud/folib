@@ -1,6 +1,7 @@
 package com.veadan.folib.client;
 
 import javax.ws.rs.client.Client;
+import javax.ws.rs.client.ClientRequestFilter;
 import javax.ws.rs.client.Invocation;
 import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.Feature;
@@ -32,11 +33,14 @@ public class RestArtifactResolver
     private Feature authentication;
     private RemoteRepositoryRetryArtifactDownloadConfiguration configuration;
 
+    private ClientRequestFilter bearerTokenAuthFilter;
+
     public RestArtifactResolver(Client client,
                                 String repositoryBaseUrl,
                                 String targetUrl,
                                 MultivaluedMap<String, Object> headers,
-                                RemoteRepositoryRetryArtifactDownloadConfiguration configuration)
+                                RemoteRepositoryRetryArtifactDownloadConfiguration configuration,
+                                ClientRequestFilter bearerTokenAuthFilter)
     {
         this.client = client;
         //连接建立超时时间
@@ -48,6 +52,7 @@ public class RestArtifactResolver
         this.headers = headers;
         this.repositoryBaseUrl = normalize(repositoryBaseUrl);
         this.configuration = configuration;
+        this.bearerTokenAuthFilter = bearerTokenAuthFilter;
     }
 
     public RestArtifactResolver(Client client,
@@ -55,9 +60,10 @@ public class RestArtifactResolver
                                 String targetUrl,
                                 MultivaluedMap<String, Object> headers,
                                 RemoteRepositoryRetryArtifactDownloadConfiguration configuration,
-                                Feature authentication)
+                                Feature authentication,
+                                ClientRequestFilter bearerTokenAuthFilter )
     {
-        this(client, repositoryBaseUrl, targetUrl, headers, configuration);
+        this(client, repositoryBaseUrl, targetUrl, headers, configuration,bearerTokenAuthFilter);
         this.authentication = authentication;
     }
 
@@ -160,6 +166,9 @@ public class RestArtifactResolver
             if (authentication != null)
             {
                 target.register(authentication);
+            }
+            if (bearerTokenAuthFilter != null) {
+                target.register(bearerTokenAuthFilter);
             }
             return this;
         }

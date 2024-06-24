@@ -28,7 +28,7 @@
       <a-tab-pane :key="3" :tab="$t('Storage.FederatedRepository')" v-if="this.folibRepository.type === 'hosted'">
         <UnionRepository :folibRepository="this.folibRepository" :settingVisible="settingVisible" @settingDrawerClose="settingDrawerClose"></UnionRepository>
       </a-tab-pane>
-      <a-tab-pane :key="4" :tab="$t('Storage.Scan')" v-if="(isAdmin() || (storageAdmin && storageAdmin === $store.state.user.name)) && this.folibRepository.type !== 'group'">
+      <a-tab-pane :key="4" :tab="$t('Storage.Scan')" v-if="(isAdmin() || (storageAdmin && storageAdmin === $store.state.user.name)) && this.folibRepository.type !== 'group' && this.folibRepository.layout !== 'HuggingFace' ">
         <Scan :folibRepository="this.folibRepository" :settingVisible="settingVisible" @settingDrawerClose="settingDrawerClose"></Scan>
       </a-tab-pane>
       </a-tabs>
@@ -71,7 +71,11 @@ export default {
   created() {
 
   },
-  mounted() {},
+  mounted() {
+      // console.log("user:",this.$store.state.user.name)
+      // console.log('folibRepository:', this.folibRepository);
+      // console.log('settingVisible:', this.settingVisible);
+  },
   watch: {
     settingVisible: function (val) {
       this.initData()

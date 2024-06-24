@@ -42,8 +42,7 @@ export function genLayoutType(layout) {
 
         return "npm"
     }
-    return layout === "nuget" ? "NuGet" : layout === "raw" ? "Raw" : layout === "pypi" ? "PyPi" : layout === "docker" ? "Docker" : layout === "Pub" ? "pub" : layout === "rpm" ? "rpm" : layout;
-
+    return layout === "nuget" ? "NuGet" : layout === "raw" ? "Raw" : layout === "pypi" ? "PyPi" : layout === "docker" ? "Docker" : layout === "rpm" ? "rpm" : layout ==="gitlfs" ? "GitLfs" :   layout ==="huggingface" ? "HuggingFace": layout === "Pub" ? "pub" : layout;
 }
 
 export function groupRepositoriesBuild(repositories) {
