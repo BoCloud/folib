@@ -279,7 +279,7 @@ swagger:
   enable: ${folib.swagger.enable:false}
 thirdParty:
   foeyes:
-    enable: ${folib.thirdParty.foeyes.enable:true}
+    enable: ${folib.thirdParty.foeyes.enable:false}
     baseUrl: ${folib.thirdParty.foeyes.baseUrl:http://10.10.28.61:9527}
     accessKey: ${folib.thirdParty.foeyes.accessKey:racdvMVzV9Wnqu8NAfQkyrsD0a2N0fNE}
     username: ""
