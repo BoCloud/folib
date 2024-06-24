@@ -102,7 +102,7 @@ public class ConanLayoutProvider extends AbstractLayoutProvider<ConanArtifactCoo
                     }
                     break;
                 case REFRESH_CONTENT:
-                    final Instant halfAnHourAgo = Instant.now().minus(30, ChronoUnit.MINUTES);
+                    final Instant halfAnHourAgo = Instant.now().minus(refreshContentInterval(repositoryPath), ChronoUnit.MINUTES);
                     value = BooleanUtils.isTrue((Boolean) value) || (Files.exists(repositoryPath) && isConanMetadata(repositoryPath)
                             &&
                             !RepositoryFiles.wasModifiedAfter(repositoryPath,

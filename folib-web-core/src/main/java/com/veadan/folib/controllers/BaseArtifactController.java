@@ -198,6 +198,9 @@ public abstract class BaseArtifactController
 
     private Artifact getArtifact(RepositoryPath repositoryPath) throws IOException {
         Artifact artifact = null;
+        if (Files.isSameFile(repositoryPath.getRoot(), repositoryPath)) {
+            return null;
+        }
         String fileName = "." + FilenameUtils.getName(repositoryPath.getFileName().toString()) + ".metadata";
         if (repositoryPath.getTarget() instanceof S3Path) {
             CacheUtil<String, String> cacheUtil = CacheUtil.getInstance();

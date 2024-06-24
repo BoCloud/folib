@@ -3,7 +3,11 @@ package com.veadan.folib.storage.repository.remote.heartbeat;
 import java.util.Objects;
 
 import javax.annotation.Nonnull;
+import javax.validation.constraints.NotNull;
 
+import cn.hutool.extra.spring.SpringUtil;
+import com.veadan.folib.configuration.ConfigurationManager;
+import com.veadan.folib.storage.repository.Repository;
 import com.veadan.folib.storage.repository.remote.RemoteRepository;
 import com.veadan.folib.storage.repository.remote.heartbeat.monitor.RemoteRepositoryHeartbeatMonitorStrategy;
 import org.slf4j.Logger;
@@ -18,7 +22,7 @@ class RemoteRepositoryHeartbeatMonitor
 
     private static final Logger logger = LoggerFactory.getLogger(RemoteRepositoryHeartbeatMonitor.class);
 
-    private final RemoteRepository remoteRepository;
+    private final String storageAndRepositoryId;
 
     private final RemoteRepositoryAlivenessService remoteRepositoryCacheManager;
 
@@ -26,31 +30,43 @@ class RemoteRepositoryHeartbeatMonitor
 
     RemoteRepositoryHeartbeatMonitor(@Nonnull RemoteRepositoryAlivenessService remoteRepositoryCacheManager,
                                      @Nonnull RemoteRepositoryHeartbeatMonitorStrategy monitorStrategy,
-                                     @Nonnull RemoteRepository remoteRepository)
+                                     @Nonnull String storageAndRepositoryId)
     {
         Objects.requireNonNull(remoteRepositoryCacheManager);
         Objects.requireNonNull(monitorStrategy);
-        Objects.requireNonNull(remoteRepository);
+        Objects.requireNonNull(storageAndRepositoryId);
 
         this.remoteRepositoryCacheManager = remoteRepositoryCacheManager;
         this.monitorStrategy = monitorStrategy;
-        this.remoteRepository = remoteRepository;
+        this.storageAndRepositoryId = storageAndRepositoryId;
     }
 
     @Override
     public void run()
     {
         boolean isAlive = false;
+        Repository repository = null;
+        RemoteRepository remoteRepository = null;
         try
         {
+            ConfigurationManager configurationManager = SpringUtil.getBean(ConfigurationManager.class);
+            repository = configurationManager.getRepository(storageAndRepositoryId);
+            if (Objects.isNull(repository)) {
+                return;
+            }
+            remoteRepository = repository.getRemoteRepository();
+            if (Objects.isNull(remoteRepository)) {
+                return;
+            }
             isAlive = monitorStrategy.isAlive(remoteRepository.getUrl());
         }
         catch (Exception ex)
         {
-            logger.error("Problem determining remote repository [{}] aliveness", remoteRepository.getUrl(), ex);
+            logger.error("Problem determining remote repository [{}] [{}] aliveness", storageAndRepositoryId, remoteRepository.getUrl(), ex);
         }
 
-        logger.info("Thread name is [{}]. Remote repository [{}] is alive ? [{}]", Thread.currentThread().getName(),
+        logger.info("Thread name is [{}]. Remote repository [{}] [{}] is alive ? [{}]", Thread.currentThread().getName(),
+                     storageAndRepositoryId,
                      remoteRepository.getUrl(),
                      isAlive);
         remoteRepositoryCacheManager.put(remoteRepository, isAlive);

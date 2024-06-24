@@ -125,7 +125,7 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
     private PromotionUtil promotionUtil;
 
     @Autowired
-    private ThreadPoolTaskExecutor asyncThreadPoolTaskExecutor;
+    private ThreadPoolTaskExecutor asyncPromotionPoolTaskExecutor;
 
     @Autowired
     private ProxyRepositoryConnectionPoolConfigurationService clientPool;
@@ -620,7 +620,7 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
                         repositoryManagementService, repositoryPathResolver, artifactManagementService, promotionUtil, layoutProviderRegistry, artifactMetadataService, artifactRepository, mavenRepositoryFeatures, tempPath, fileRelativePath, metaData, uuid, null);
                 FutureTask<String> task = new FutureTask<String>(artifactUploadTask);
                 listTask.add(task);
-                asyncThreadPoolTaskExecutor.submit(task);
+                asyncPromotionPoolTaskExecutor.submit(task);
             }
             StringBuilder temp = new StringBuilder();
             for (FutureTask<String> task : listTask) {
@@ -657,7 +657,7 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
                     repositoryManagementService, repositoryPathResolver, artifactManagementService, promotionUtil, layoutProviderRegistry, artifactMetadataService, artifactRepository, mavenRepositoryFeatures, tempPath, FileUtil.getName(artifactParse.getFilePath()), null, null, parseArtifact);
             FutureTask<String> futureTask = new FutureTask<String>(artifactUploadTask);
             listTask.add(futureTask);
-            asyncThreadPoolTaskExecutor.submit(futureTask);
+            asyncPromotionPoolTaskExecutor.submit(futureTask);
             StringBuilder temp = new StringBuilder();
             for (FutureTask<String> task : listTask) {
                 try {

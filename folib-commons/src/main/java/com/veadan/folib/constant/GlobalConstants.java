@@ -82,6 +82,11 @@ public interface GlobalConstants {
     String NO_DATA = "NO_DATA";
 
     /**
+     * DEFAULT_REFRESH_CONTENT_INTERVAL
+     */
+    int DEFAULT_REFRESH_CONTENT_INTERVAL = 60;
+
+    /**
      * WAIT_LOCK_TIME
      */
     long WAIT_LOCK_TIME = 60L;
@@ -151,4 +156,9 @@ public interface GlobalConstants {
      * ws节点key
      */
     String WS_NODE_KEY = "WS_NODE_KEY";
+
+    /**
+     * NotFound
+     */
+    String NOT_FOUND = "NotFound";
 }

@@ -980,94 +980,94 @@
           </prism-editor>
         </a-timeline-item>
       </a-timeline>
-        <a-timeline v-if="repositoryType === 'go'">
-            <a-timeline-item color="primary" v-if="folibRepository.type !== 'hosted'">
-                {{ $t('Store.GoProxyConfig') }}
-                <p>
-                    {{ $t('Store.useGo') }}
-                </p>
-                <prism-editor class="my-editor height-300"
-                              :highlight="highlighterHandle" :line-numbers="false" :value='"go env -w GOPROXY="+repositoryUrl' :readonly="true">
-                </prism-editor>
-            </a-timeline-item>
-            <a-timeline-item color="primary" v-if="folibRepository.type !== 'hosted'">
-                {{ $t('Store.CommandOperation') }}
-                <small>Go {{ $t('Store.UsuallyCommand') }}</small>
-                <p>{{ $t('Store.UsuallyUse') }}Go{{ $t('Store.specificRefer') }}https://go.dev</p>
+      <a-timeline v-if="repositoryType === 'go'">
+        <a-timeline-item color="primary" v-if="folibRepository.type !== 'hosted'">
+          {{ $t('Store.GoProxyConfig') }}
+          <p>
+            {{ $t('Store.useGo') }}
+          </p>
+          <prism-editor class="my-editor height-300"
+                        :highlight="highlighterHandle" :line-numbers="false" :value='"go env -w GOPROXY="+repositoryUrl' :readonly="true">
+          </prism-editor>
+        </a-timeline-item>
+        <a-timeline-item color="primary" v-if="folibRepository.type !== 'hosted'">
+            {{ $t('Store.CommandOperation') }}
+            <small>Go {{ $t('Store.UsuallyCommand') }}</small>
+            <p>{{ $t('Store.UsuallyUse') }}Go{{ $t('Store.specificRefer') }}https://go.dev</p>
 
-                <prism-editor
-                        class="my-editor height-300"
-                        :value="
+            <prism-editor
+                    class="my-editor height-300"
+                    :value="
           '#' +   this.$t('Store.GoGet')+ '\n go get   \n' +
-          '#' +   this.$t('Store.GoClean')+ '\n go clean -modcache   \n' +
+          '#' +   this.$t('Store.GoClean')+ '\n go clean -modcache   \n' + 
           '#' +   this.$t('Store.GoDownload')+'\n go mod download'
         "
-                        :highlight="highlighterHandle"
-                        :line-numbers="false"
-                        :readonly="true"
-                ></prism-editor>
-            </a-timeline-item>
-            <a-timeline-item color="primary" v-if="folibRepository.type === 'hosted'">
-                {{ $t('Store.GoUploadPreparation') }}
-                <p>
-                    {{ $t('Store.GoUploadCreateFile') }}
-                </p>
-                <p>
-                    <strong>1、*.info</strong> <br>
-                    {{ $t('Store.GoFilenameFormat') }}：<strong>{{ $t('Store.Version') }}.info</strong> <br>
-                    *.info {{ $t('Store.GoInfoFormat') }} <br>
-                    <strong>{"Version":"{{ $t('Store.Version') }}","Time","{{ $t('Store.GoInfoTime') }}"}</strong> <br>
-                    {{ $t('Store.Example') }}：<br>
-                    {{ $t('Store.Version') }}：<strong>v1.1</strong> <br>
-                    {{ $t('Store.Filename') }}：<strong>v1.1.info</strong> <br>
-                    {{ $t('Store.FileContent') }}：<strong>{"Version":"v1.1","Time","2024-01-08T13:53:26Z"}</strong> <br><br>
-                    <strong>2、*.mod</strong> <br>
-                    {{ $t('Store.GoFilenameFormat') }}：<strong>{{ $t('Store.Version') }}.mod</strong> <br>
-                    <strong>{{ $t('Store.GoModFormat') }}</strong> <br>
-                    {{ $t('Store.Example') }}：<br>
-                    {{ $t('Store.Filename') }}：<strong>v1.1.mod</strong> <br>
-                    {{ $t('Store.FileContent') }}：<prism-editor class="my-editor height-300"
-                                                                :highlight="highlighterHandle" :line-numbers="false" value='module example.com/example/hello-world
+                    :highlight="highlighterHandle"
+                    :line-numbers="false"
+                    :readonly="true"
+            ></prism-editor>
+        </a-timeline-item>
+        <a-timeline-item color="primary" v-if="folibRepository.type === 'hosted'">
+          {{ $t('Store.GoUploadPreparation') }}
+          <p>
+            {{ $t('Store.GoUploadCreateFile') }}
+          </p>
+          <p>
+            <strong>1、*.info</strong> <br>
+            {{ $t('Store.GoFilenameFormat') }}：<strong>{{ $t('Store.Version') }}.info</strong> <br>
+            *.info {{ $t('Store.GoInfoFormat') }} <br>
+            <strong>{"Version":"{{ $t('Store.Version') }}","Time","{{ $t('Store.GoInfoTime') }}"}</strong> <br>
+            {{ $t('Store.Example') }}：<br>
+            {{ $t('Store.Version') }}：<strong>v1.1</strong> <br>
+            {{ $t('Store.Filename') }}：<strong>v1.1.info</strong> <br>
+            {{ $t('Store.FileContent') }}：<strong>{"Version":"v1.1","Time","2024-01-08T13:53:26Z"}</strong> <br><br>
+            <strong>2、*.mod</strong> <br>
+            {{ $t('Store.GoFilenameFormat') }}：<strong>{{ $t('Store.Version') }}.mod</strong> <br>
+            <strong>{{ $t('Store.GoModFormat') }}</strong> <br>
+            {{ $t('Store.Example') }}：<br>
+            {{ $t('Store.Filename') }}：<strong>v1.1.mod</strong> <br>
+            {{ $t('Store.FileContent') }}：<prism-editor class="my-editor height-300"
+                        :highlight="highlighterHandle" :line-numbers="false" value='module example.com/example/hello-world
 go 1.20' :readonly="true">
-                </prism-editor> <br><br>
-                    <strong>3、*.zip</strong> <br>
-                    {{ $t('Store.GoFilenameFormat') }}：<strong>{{ $t('Store.Version') }}.zip</strong> <br>
-                    <strong>{{ $t('Store.GoZipFormat') }}</strong> <br>
-                    {{ $t('Store.Example') }}： <br>
-                    {{ $t('Store.Filename') }}：<strong>v1.1.zip</strong> <br>
-                    {{ $t('Store.FileContent') }}： {{ $t('Store.GoZipConentTip1') }}<br>
-                    {{ $t('Store.GoZipConentTip2') }}<br>
-                </p>
-            </a-timeline-item>
-            <a-timeline-item color="primary" v-if="folibRepository.type === 'hosted'">
-                {{ $t('Store.GoUploadCommand')}}
-                <p>
-                    {{ $t('Store.GoUploadUseFolib')}}
-                </p>
-                <p>
-                    1、{{ $t('Store.Login')}}
-                </p>
-                <prism-editor class="my-editor height-300"
-                              :highlight="highlighterHandle" :line-numbers="false" value='folib server login -H [host-url]' :readonly="true"></prism-editor>
-                <prism-editor class="my-editor height-300"
-                              :highlight="highlighterHandle" :line-numbers="false" :value="'#' + this.$t('Store.Example') + ' \nfolib server login -H ' + this.baseDomain" :readonly="true"></prism-editor>
+            </prism-editor> <br><br>
+            <strong>3、*.zip</strong> <br>
+            {{ $t('Store.GoFilenameFormat') }}：<strong>{{ $t('Store.Version') }}.zip</strong> <br>
+            <strong>{{ $t('Store.GoZipFormat') }}</strong> <br>
+            {{ $t('Store.Example') }}： <br>
+            {{ $t('Store.Filename') }}：<strong>v1.1.zip</strong> <br>
+            {{ $t('Store.FileContent') }}： {{ $t('Store.GoZipConentTip1') }}<br>
+            {{ $t('Store.GoZipConentTip2') }}<br>
+          </p>
+        </a-timeline-item>
+        <a-timeline-item color="primary" v-if="folibRepository.type === 'hosted'">
+          {{ $t('Store.GoUploadCommand')}}
+          <p>
+            {{ $t('Store.GoUploadUseFolib')}}
+          </p>
+          <p>
+            1、{{ $t('Store.Login')}}
+          </p>
+          <prism-editor class="my-editor height-300"
+                        :highlight="highlighterHandle" :line-numbers="false" value='folib server login -H [host-url]' :readonly="true"></prism-editor>
+          <prism-editor class="my-editor height-300"
+                        :highlight="highlighterHandle" :line-numbers="false" :value="'#' + this.$t('Store.Example') + ' \nfolib server login -H ' + this.baseDomain" :readonly="true"></prism-editor>
 
-                <p>
-                    2、{{ $t('Store.Upload')}}
-                </p>
-                <prism-editor class="my-editor height-300"
-                              :highlight="highlighterHandle" :line-numbers="false" value='folib artifact upload -S [storageID] -r [repositoryID] -T [TargetPath] -f [filePath]' :readonly="true"></prism-editor>
-                <p>
-                    {{ $t('Store.ParameterExplanation') }}： <br>
-                    storageID：{{ $t('Store.StorageName') }} <br>
-                    repositoryID：{{ $t('Store.RepositoryName') }} <br>
-                    TargetPath：{{ $t('Store.TargetPath') }} <br>
-                    filePath：{{ $t('Store.ArtifactSelf') }}
-                </p>
-                *.info、*.mod、*.zip {{ $t('Store.ArtifactThree') }}
-                <prism-editor class="my-editor height-300"
-                              :highlight="highlighterHandle" :line-numbers="false" :value="'#' + this.$t('Store.Example') + ' \n folib artifact upload -S ' + folibRepository.storageId + ' -r ' + folibRepository.id + ' -T example.com/example/hello-world/@v/v1.1.info -f v1.1.info \n folib artifact upload -S ' + folibRepository.storageId + ' -r ' + folibRepository.id + ' -T example.com/example/hello-world/@v/v1.1.mod -f v1.1.mod \n folib artifact upload -S ' + folibRepository.storageId + ' -r ' + folibRepository.id + ' -T example.com/example/hello-world/@v/v1.1.zip -f v1.1.zip'" :readonly="true"></prism-editor>
-            </a-timeline-item>
+          <p>
+            2、{{ $t('Store.Upload')}}
+          </p>
+          <prism-editor class="my-editor height-300"
+                        :highlight="highlighterHandle" :line-numbers="false" value='folib artifact upload -S [storageID] -r [repositoryID] -T [TargetPath] -f [filePath]' :readonly="true"></prism-editor>
+          <p>
+            {{ $t('Store.ParameterExplanation') }}： <br>
+            storageID：{{ $t('Store.StorageName') }} <br>
+            repositoryID：{{ $t('Store.RepositoryName') }} <br>
+            TargetPath：{{ $t('Store.TargetPath') }} <br>
+            filePath：{{ $t('Store.ArtifactSelf') }}
+          </p>
+          *.info、*.mod、*.zip {{ $t('Store.ArtifactThree') }}
+          <prism-editor class="my-editor height-300"
+                        :highlight="highlighterHandle" :line-numbers="false" :value="'#' + this.$t('Store.Example') + ' \n folib artifact upload -S ' + folibRepository.storageId + ' -r ' + folibRepository.id + ' -T example.com/example/hello-world/@v/v1.1.info -f v1.1.info \n folib artifact upload -S ' + folibRepository.storageId + ' -r ' + folibRepository.id + ' -T example.com/example/hello-world/@v/v1.1.mod -f v1.1.mod \n folib artifact upload -S ' + folibRepository.storageId + ' -r ' + folibRepository.id + ' -T example.com/example/hello-world/@v/v1.1.zip -f v1.1.zip'" :readonly="true"></prism-editor>
+        </a-timeline-item>
       </a-timeline>
       <a-timeline v-if="repositoryType === 'ohpm' ">
             <a-timeline-item color="primary">
@@ -1079,13 +1079,14 @@ go 1.20' :readonly="true">
                         class="my-editor height-300"
                         :value="
               '#'+this.$t('Store.SshKeygen')+'\n'+
-              'ssh-keygen -m PEM -t RSA -b 4096 -f your_key_path \n'+
+              'ssh-keygen -m PEM -t RSA -b 4096 -f {your_key_path}  \n'+
               '#'+this.$t('Store.PrivateKeyPath')+'\n'+
-              'ohpm config set key_path your_key_path \n'+
+              'ohpm config set key_path {your_key_path}  \n'+
               '#'+this.$t('Store.SetPublishingId')+'\n'+
-              'ohpm config set publish_id your_publish_id \n'+
+              'ohpm config set publish_id {your_publish_id}  \n'+
+              '#'+this.$t('Store.PublishIdTip')+'\n'+
               '#'+this.$t('Store.SetRepository')+'\n'+
-              'ohpm config set repository '+baseUrl+'storages/'+folibRepository.storageId+'/'+folibRepository.id+'\n'+
+              'ohpm config set registry '+baseUrl+'storages/'+folibRepository.storageId+'/'+folibRepository.id+'\n'+
               '#'+this.$t('Store.SetPublishingRepository')+'\n'+
               'ohpm config set publish_registry '+baseUrl+'storages/'+folibRepository.storageId+'/'+folibRepository.id+'\n'+
               '#'+this.$t('Store.SslCheck')+'\n'+
@@ -1108,7 +1109,7 @@ go 1.20' :readonly="true">
                 <prism-editor
                         class="my-editor height-300"
                         :value="
-              '#'+   this.$t('Store.NpmInstall')+ '\n ohnpm install   \n\n'
+              '#'+   this.$t('Store.NpmInstall')+ '\n ohpm install   \n\n'
               + '#' + this.$t('Store.NpmPublish')+'\n'+ 'ohpm publish'
             "
                         :highlight="highlighterHandle"
@@ -1234,6 +1235,53 @@ go 1.20' :readonly="true">
 
             </a-timeline-item>
         </a-timeline>
+      <a-timeline v-if="repositoryType === 'pub'">
+        <a-timeline-item color="primary" v-if="folibRepository.type !== 'hosted'">
+          Pub {{ $t('Store.GlobalConfiguration') }}
+          <small>Pub{{ $t('Store.Configuration') }}{{ $t('Store.GlobalConfiguration') }}</small>
+          <p>{{ $t('Store.PubConfigMirror') }}</p>
+          <small><a @click="getUserSecurityToken">{{  $t('Store.GetToken') }}</a></small>
+          <prism-editor class="my-editor height-300"
+                        :highlight="highlighterHandle" :line-numbers="false" :value='"#" + this.$t("Store.AddToken") + "\ndart pub token add "  + "\"" + repositoryUrl + "\"\n#" + this.$t("Store.ExportPub") + "\nexport PUB_HOSTED_URL=" + "\"" + repositoryUrl + "\""' :readonly="true">
+          </prism-editor>
+          <br>
+        </a-timeline-item>
+        <a-timeline-item color="primary" v-if="folibRepository.type === 'hosted'">
+          Pub {{ $t('Store.PubPublishConfig') }}
+          <p>{{ $t('Store.PubPublishConfigMirror') }}</p>
+          <prism-editor class="my-editor height-300"
+                        :highlight="highlighterHandle" :line-numbers="false" :value='"publish_to: " + repositoryUrl' :readonly="true">
+          </prism-editor>
+          <p>{{ $t('Store.PubPublishTokenConfig') }}</p>
+          <small><a @click="getUserSecurityToken">获取token</a></small>
+          <prism-editor class="my-editor height-300"
+                        :highlight="highlighterHandle" :line-numbers="false" :value='"dart pub token add "  + "\"" + repositoryUrl + "\""' :readonly="true">
+          </prism-editor>
+          <p>{{ $t('Store.PubPublish') }}</p>
+          <prism-editor class="my-editor height-300"
+                        :highlight="highlighterHandle" :line-numbers="false" :value='"dart pub publish"' :readonly="true">
+          </prism-editor>
+          <br>
+        </a-timeline-item>
+        <a-timeline-item color="primary">
+            {{ $t('Store.CommandOperation') }}
+            <small>Pub {{ $t('Store.UsuallyCommand') }}</small>
+            <p>{{ $t('Store.UsuallyUse') }}Pub{{ $t('Store.specificRefer') }}https://dart.cn/tools/dart-tool</p>
+
+            <prism-editor
+                    class="my-editor height-300"
+                    :value="
+          '#' +   this.$t('Store.PubAdd')+ '\n dart pub add   \n' +
+          '#' +   this.$t('Store.PubCacheClean')+ '\n dart pub cache clean   \n' + 
+          '#' +   this.$t('Store.PubGet')+'\n dart pub get   \n' + 
+          '#' +   this.$t('Store.PubPublish')+ '\n dart pub publish   \n'
+        "
+                    :highlight="highlighterHandle"
+                    :line-numbers="false"
+                    :readonly="true"
+            ></prism-editor>
+        </a-timeline-item>
+      </a-timeline>
       <a-timeline>
         <a-timeline-item color="primary">
           {{ $t('Store.WarehouseAddress') }}
@@ -1259,6 +1307,7 @@ import "prismjs/components/prism-clike";
 import "prismjs/components/prism-javascript";
 import "prismjs/themes/prism-tomorrow.css";
 import {getUserToken} from "@/api/users";
+import { generateUserSecurityToken } from "@/api/users";
 export default {
   props: [
     "usedVisible",
@@ -1280,7 +1329,6 @@ export default {
     };
   },
   created() {
-      console.log("ch",(this.repositoryType === 'npm' && this.folibRepository.subLayout === 'ohpm'))
       console.log("repositoryType",this.repositoryType )
       console.log("folibRepository",this.folibRepository )
     if (this.baseUrl) {
@@ -1300,7 +1348,7 @@ export default {
       return highlight(code, languages.js); //returns html
     },
     closeUsedVisibleDialog(code) {
-      this.$emit("close");
+      this.$emit("close")
     },
     copy(code) {
       var input = document.createElement("input"); // $t('Store.创建')input$t('Store.对象')
@@ -1316,7 +1364,7 @@ export default {
         })
       }, 100)
     },
-      huggingfaceInit(){
+     huggingfaceInit(){
           if(this.folibRepository.layout === 'HuggingFace' ){
               const username = this.$store.state.user.name
               const expireSeconds = 86400;
@@ -1324,7 +1372,12 @@ export default {
                   this.userToken = res;
               })
           }
-      }
+      },
+    getUserSecurityToken() {
+      generateUserSecurityToken({expireSeconds: 1892160000}).then((res) => {
+        this.copy(res)
+      }).finally(() => {})
+    }
   },
 };
 </script>

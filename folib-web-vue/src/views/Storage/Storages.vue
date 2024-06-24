@@ -593,6 +593,16 @@
                     </a-col>
 
                     <a-col :span="4">
+                      <div class="checkbox-label" :class="[layoutChecked === 'pub' ? 'active' : '']"
+                        @click="toggleCheckbox('pub')">
+                        <a-avatar :size="44" shape="square"
+                          style="border-radius: 8px; background-image: linear-gradient( 310deg, #020202, #5c6391 );">
+                          <img src="images/folib/pub.svg" style="width: 100%;" alt="">
+                        </a-avatar>
+                      </div>
+                      <h6>Pub</h6>
+                    </a-col>
+                    <a-col :span="4">
                       <div class="checkbox-label" :class="[layoutChecked === 'debian' ? 'active' : '']">
                         <a-tooltip>
                           <template slot="title">

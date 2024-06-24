@@ -1,9 +1,12 @@
 package com.veadan.folib.providers.layout;
 
+import cn.hutool.crypto.digest.SM3;
 import com.google.common.collect.ImmutableSet;
 import com.veadan.folib.artifact.archive.*;
 import com.veadan.folib.artifact.coordinates.ArtifactCoordinates;
+import com.veadan.folib.components.DistributedCacheComponent;
 import com.veadan.folib.configuration.ConfigurationManager;
+import com.veadan.folib.constant.GlobalConstants;
 import com.veadan.folib.domain.ArtifactGroup;
 import com.veadan.folib.domain.ArtifactIdGroup;
 import com.veadan.folib.domain.LayoutArtifactCoordinatesEntity;
@@ -17,6 +20,7 @@ import com.veadan.folib.storage.Storage;
 import com.veadan.folib.storage.repository.Repository;
 import com.veadan.folib.util.CacheUtil;
 import org.apache.commons.codec.digest.MessageDigestAlgorithms;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.web.util.UriComponentsBuilder;
@@ -58,6 +62,9 @@ public abstract class AbstractLayoutProvider<T extends LayoutArtifactCoordinates
     @Inject
     protected StorageProviderRegistry storageProviderRegistry;
 
+    @Inject
+    private DistributedCacheComponent distributedCacheComponent;
+
     @Override
     public abstract Set<String> getDefaultArtifactCoordinateValidators();
 
@@ -66,7 +73,7 @@ public abstract class AbstractLayoutProvider<T extends LayoutArtifactCoordinates
     public abstract T getArtifactCoordinates(RepositoryPath repositoryPath) throws IOException;
 
     protected Set<String> getDigestAlgorithmSet() {
-        return Stream.of(MessageDigestAlgorithms.MD5, MessageDigestAlgorithms.SHA_1, MessageDigestAlgorithms.SHA_256)
+        return Stream.of(MessageDigestAlgorithms.MD5, MessageDigestAlgorithms.SHA_1, MessageDigestAlgorithms.SHA_256, SM3.ALGORITHM_NAME)
                 .collect(Collectors.toSet());
     }
 
@@ -273,4 +280,15 @@ public abstract class AbstractLayoutProvider<T extends LayoutArtifactCoordinates
 
         return artifactIdGroup.map(ArtifactGroup.class::cast).map(Collections::singleton).orElse(Collections.emptySet());
     }
+
+    @Override
+    public int refreshContentInterval(RepositoryPath repositoryPath) {
+        String key = repositoryPath.getRepository().getLayout().toUpperCase() + "_REFRESH_CONTENT_INTERVAL";
+        String refreshContentInterval = distributedCacheComponent.get(key);
+        if (StringUtils.isBlank(refreshContentInterval)) {
+            return GlobalConstants.DEFAULT_REFRESH_CONTENT_INTERVAL;
+        }
+        return Integer.parseInt(refreshContentInterval);
+    }
+
 }

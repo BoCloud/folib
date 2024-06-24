@@ -17,6 +17,7 @@ import com.veadan.folib.users.userdetails.FolibUserToUserDetails;
 import com.veadan.folib.users.userdetails.SpringSecurityUser;
 import com.veadan.folib.users.userdetails.UserDetailsMapper;
 import com.veadan.folib.util.RSAUtils;
+import com.veadan.folib.util.UserUtils;
 import com.veadan.folib.validation.RequestBodyValidationException;
 import io.swagger.annotations.*;
 import org.apache.commons.lang3.StringUtils;
@@ -271,6 +272,37 @@ public class UserController
                                                 @ApiParam(value = "Token effective seconds") @RequestParam(required = false) Integer expireSeconds,
                                                 @RequestHeader(HttpHeaders.ACCEPT) String accept)
             throws JoseException {
+        User user = userService.findByUsername(username);
+        if (user == null) {
+            return getNotFoundResponseEntity(NOT_FOUND_USER, accept);
+        }
+        String securityToken = userService.generateSecurityToken(username, expireSeconds);
+        if (securityToken == null) {
+            String message = String.format("Failed to generate SecurityToken, probably you should first set " +
+                    "SecurityTokenKey for the user: %s", username);
+
+            return getFailedResponseEntity(HttpStatus.BAD_REQUEST, message, accept);
+        }
+
+        Object body = getTokenEntityBody(securityToken, accept);
+
+        return ResponseEntity.ok(body);
+    }
+
+    @ApiOperation(value = "Generate a new security token for the current user.")
+    @ApiResponses(value = {@ApiResponse(code = 200, message = SUCCESSFUL_GENERATE_SECURITY_TOKEN),
+            @ApiResponse(code = 400, message = FAILED_GENERATE_SECURITY_TOKEN),
+            @ApiResponse(code = 404, message = NOT_FOUND_USER)})
+    @GetMapping(value = "/generate-current-security-token",
+            produces = {MediaType.TEXT_PLAIN_VALUE,
+                    MediaType.APPLICATION_JSON_VALUE})
+    public ResponseEntity generateCurrentSecurityToken(@ApiParam(value = "Token effective seconds") @RequestParam(required = false) Integer expireSeconds,
+                                                @RequestHeader(HttpHeaders.ACCEPT) String accept)
+            throws JoseException {
+        String username = UserUtils.getUsername();
+        if (StringUtils.isBlank(username)) {
+            return getNotFoundResponseEntity(NOT_FOUND_USER, accept);
+        }
         User user = userService.findByUsername(username);
         if (user == null) {
             return getNotFoundResponseEntity(NOT_FOUND_USER, accept);

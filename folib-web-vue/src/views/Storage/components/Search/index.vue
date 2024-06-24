@@ -239,6 +239,7 @@ export default {
       artifactQuery: {
         artifactName: null,
         metadataSearch: null,
+        digest: null,
         storageId: null,
         repositoryId: null,
         limit: 5,
@@ -408,9 +409,15 @@ export default {
         if (this.searchType === 1) {
           this.artifactQuery.artifactName = searchValue
           this.artifactQuery.metadataSearch = null
+          this.artifactQuery.digest = null
         } else if (this.searchType === 2) {
           this.artifactQuery.metadataSearch = searchValue
           this.artifactQuery.artifactName = null
+          this.artifactQuery.digest = null
+        } else if (this.searchType === 3) {
+          this.artifactQuery.digest = searchValue
+          this.artifactQuery.artifactName = null
+          this.artifactQuery.metadataSearch = null
         }
       }
       this.artifactQuery.storageId = this.folibRepository.storageId
@@ -418,6 +425,7 @@ export default {
       let params = {
         artifactName: this.artifactQuery.artifactName,
         metadataSearch: this.artifactQuery.metadataSearch,
+        digest: this.artifactQuery.digest,
         storageId: this.artifactQuery.storageId,
         repositoryId: this.artifactQuery.repositoryId,
         limit: this.artifactQuery.limit,

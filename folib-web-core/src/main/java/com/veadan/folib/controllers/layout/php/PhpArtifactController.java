@@ -70,6 +70,13 @@ public class PhpArtifactController extends BaseArtifactController {
     @Inject
     private ArtifactComponent artifactComponent;
 
+    @Override
+    @PreAuthorize("authenticated")
+    @GetMapping(value = "/{storageId}/{repositoryId}")
+    public ResponseEntity<String> checkRepositoryAccess() {
+        return super.checkRepositoryAccess();
+    }
+
     @GetMapping(path = "{storageId}/{repositoryId}/search")
     @PreAuthorize("hasAuthority('ARTIFACTS_RESOLVE')")
     public void search(@RepositoryMapping Repository repository,

@@ -46,6 +46,7 @@
         <module>folib-storage-go-layout-provider</module>
         <module>folib-storage-gitlfs-layout-provider</module>
         <module>folib-storage-huggingface-layout-provider</module>
+        <module>folib-storage-pub-layout-provider</module>
     </modules>
 
     <dependencies>
