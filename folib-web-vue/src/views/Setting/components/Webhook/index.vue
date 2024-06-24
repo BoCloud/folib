@@ -401,9 +401,9 @@ export default {
         url: [
           { required: true, trigger: ['blur'], validator: acceptUrlValidator },
         ],
-        accessToken: [
-          { min: 1, max: 255, trigger: 'blur', validator: accessTokenValidator },
-        ],
+        // accessToken: [
+        //   { min: 1, max: 255, trigger: 'blur', validator: accessTokenValidator },
+        // ],
         events: [
           { required: true, trigger: ['blur', 'change'], validator: eventsValidator },
         ],
@@ -676,9 +676,9 @@ export default {
       this.webhookLogInfoVisible = false
     },
     doTestWebhook(event, item) {
-      let e = this.events[event.key]
+      let e = item.eventList[event.key]
       testWebhook({uuid: item.uuid, events: [e.value]}).then((res) => {
-        this.successMsg(this.$t('Setting.TestedWebhook') + [" + e.label + "] + this.$t('Setting.successTestWebhook'))
+        this.successMsg(this.$t('Setting.TestedWebhook') + "[" + e.label + "]" + this.$t('Setting.successTestWebhook'))
       })
     }
   },

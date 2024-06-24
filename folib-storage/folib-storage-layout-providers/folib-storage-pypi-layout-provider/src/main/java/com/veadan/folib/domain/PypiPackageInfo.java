@@ -25,7 +25,7 @@ public class PypiPackageInfo
             "(\\+[a-z0-9]+([-_.][a-z0-9]+)*)?$";
 
     // local version identifiers
-    public static final String NAME_FORMAT = "<a href=\"(.+?)\".*>(.+?\\.(:?tar.gz|whl).*)</a>";
+    public static final String NAME_FORMAT = "<a href=\"(.+?)\".*>(.+?\\.(:?tar.gz|whl|zip).*)</a>";
 
     @NotNull
     @PypiMetadataKey(name = "Metadata-Version")

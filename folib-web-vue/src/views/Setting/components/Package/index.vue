@@ -2,18 +2,18 @@
   <a-card class="header-solid package-name">
     <div class="mx-25 search">
 			<a-col :span="24" class="text-right">
-				<a-input-search placeholder="输入包名称查询" class="v-search"
+				<a-input-search :placeholder="$t('Package.PackageNameQuery')" class="v-search"
 					v-model="packageNameQuery.packageName" @search="handleSearch()" />
 			</a-col>
 		</div>
-    <a-table :columns="packageNameColumns" :data-source="packageNameList" :scroll="{ x: true }"
+    <a-table :columns="i18nPackageNameColumns" :data-source="packageNameList" :scroll="{ x: true }"
       @change="handleChangeTable"
       :loading="loading"
       :pagination="{ pageSize: packageNameQuery.limit, current: packageNameQuery.page, total: packageNameQuery.total, showLessItems: true }"
       :row-key="(r, i) => i.toString()">
       <div slot="operation" slot-scope="text, record">
         <div class="col-action">
-          <a-popconfirm title="确定要删除吗？" okType="danger" ok-text="确定" cancel-text="取消"
+          <a-popconfirm :title="$t('Package.SureDelete')" okType="danger" :ok-text="$t('Package.Confirm')" :cancel-text="$t('Package.Cancel')"
             @confirm="packageNameHandlerDelete(record)">
             <a-button type="link" size="small">
               <svg width="16" height="16" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -40,11 +40,22 @@ export default {
   ],
   components: {
   },
+  computed: {
+    i18nPackageNameColumns() {
+      return this.packageNameColumns.map(column => {
+        if (column.i18nKey) {
+          column.title = this.$t(column.i18nKey);
+        }
+        return column;
+      })
+    },
+  },
   data() {
     return {
       packageNameColumns: [
         {
-          title: '包名',
+          title: '包名称',
+          i18nKey: 'Package.PackageName',
           dataIndex: 'packageName',
           key: 'packageName',
           width: 150,
@@ -52,6 +63,7 @@ export default {
         },
         {
           title: '条件类型',
+          i18nKey: 'Package.ConditionType',
           dataIndex: 'conditionValue',
           key: 'conditionValue',
           width: 150,
@@ -59,6 +71,7 @@ export default {
         },
         {
           title: '版本号',
+          i18nKey: 'Package.Version',
           dataIndex: 'version',
           key: 'version',
           width: 150,
@@ -66,6 +79,7 @@ export default {
         },
         {
           title: '操作',
+          i18nKey: 'Package.Operate',
           dataIndex: 'operation',
           width: 100,
           scopedSlots: { customRender: 'operation' },
@@ -88,7 +102,7 @@ export default {
   methods: {
     successMsg(message) {
       if (!message) {
-        message = "操作成功"
+        message = this.$t("Package.OperateSuccess")
       }
       this.$notification["success"]({
         message: message,
@@ -118,7 +132,7 @@ export default {
     },
     packageNameHandlerDelete(record) {
       deletePackageNameBlock({id: record.id}).then(res => {
-        this.successMsg('删除包名 ' + record.packageName + ' 成功')
+        this.successMsg(this.$t('Package.DeletePackage') + ' ' + record.packageName + this.$t('Package.Success'))
       }).catch(err => {
         this.$notification['error']({
           message: err.response.data.error,

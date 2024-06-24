@@ -4,7 +4,6 @@ import com.veadan.folib.components.thirdparty.foeyes.FoEyesProperties;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.http.*;
-import org.springframework.http.converter.StringHttpMessageConverter;
 import org.springframework.util.MultiValueMap;
 import org.springframework.util.StreamUtils;
 import org.springframework.web.client.RestTemplate;
@@ -18,7 +17,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintWriter;
 import java.net.URI;
-import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.List;
@@ -33,6 +31,9 @@ public class FoEyesHttpProxyFilter implements Filter {
 
     @Inject
     private FoEyesProperties foEyesProperties;
+
+    @Inject
+    private RestTemplate restTemplate;
 
     @Override
     public void init(FilterConfig filterConfig) throws ServletException {
@@ -66,9 +67,6 @@ public class FoEyesHttpProxyFilter implements Filter {
         }
         // 封装发http请求
         RequestEntity requestEntity = new RequestEntity(body, headers, httpMethod, URI.create(url));
-        RestTemplate restTemplate = new RestTemplate();
-        // 编码格式转换
-        restTemplate.getMessageConverters().set(1, new StringHttpMessageConverter(StandardCharsets.UTF_8));
         ResponseEntity<String> result = restTemplate.exchange(requestEntity, String.class);
         // 将转发请求得到的结果和响应头返回客户端
         String resultBody = result.getBody();

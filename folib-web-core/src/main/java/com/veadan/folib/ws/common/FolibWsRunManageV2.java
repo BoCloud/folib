@@ -161,6 +161,8 @@ public class FolibWsRunManageV2 {
     public void unRegisterSession(String targetHostName, String reason) {
         synchronized (targetHostName.intern()) {
             Session session = FOLIB_WS_RUN_MAP.remove(targetHostName);
+            RATE_LIMITER_MAP.remove(getSimpleTargetHostName(targetHostName));
+            commonComponent.removeWsNode(getSimpleTargetHostName(targetHostName));
             if (session == null) {
                 log.warn("Session is null targetHostName [{}]", targetHostName);
                 return;
@@ -177,8 +179,6 @@ public class FolibWsRunManageV2 {
             sessionLastSendTime.remove(session);
             sessionBytesSent.remove(session);
             sessionLocks.remove(session);
-            RATE_LIMITER_MAP.remove(getSimpleTargetHostName(targetHostName));
-            commonComponent.removeWsNode(getSimpleTargetHostName(targetHostName));
             printWs();
         }
     }

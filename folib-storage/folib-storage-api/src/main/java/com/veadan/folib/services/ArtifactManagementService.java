@@ -367,7 +367,7 @@ public class ArtifactManagementService
 
         if (!matchesChecksum(checksum, artifactBasePath, checksumExtension))
         {
-            logger.error("The checksum for {} [{}] is invalid!",
+            logger.warn("The checksum for {} [{}] is invalid!",
                     artifactPath,
                     new String(checksum, StandardCharsets.UTF_8));
         }

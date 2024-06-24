@@ -38,10 +38,7 @@ import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.function.Supplier;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -293,7 +290,7 @@ public class GoFallbackRemoteArtifactInputStream extends AbsFallbackRemoteArtifa
             fileType = artifactCoordinates.getExtension();
         } else {
             String path = RepositoryFiles.relativizePath(repositoryPath);
-            InitArtifactAttributes(path);
+            initArtifactAttributes(path);
         }
 
         Supplier<InputStream> stringInputStreamFunction = fileTypeAndProcessorMap.get(fileType);
@@ -338,7 +335,7 @@ public class GoFallbackRemoteArtifactInputStream extends AbsFallbackRemoteArtifa
         throw new RuntimeException("initVersionType failed. Unable to determine VersionType");
     }
 
-    private void InitArtifactAttributes(String path) {
+    private void initArtifactAttributes(String path) {
 
         if (path.endsWith("/@v/list")) {
             moduleName = path.substring(0, path.length() - "/@v/list".length());
@@ -367,6 +364,9 @@ public class GoFallbackRemoteArtifactInputStream extends AbsFallbackRemoteArtifa
 
     private void initGitCredentialsProvider() {
         GoRepositoryConfigurationData repositoryConfiguration = (GoRepositoryConfigurationData) repositoryPath.getRepository().getRepositoryConfiguration();
+        if (Objects.isNull(repositoryConfiguration)) {
+            return;
+        }
         List<Map<String, String>> gitVCSList = repositoryConfiguration.getGitVCS();
         if (gitVCSList == null) {
             return;
