@@ -296,7 +296,7 @@ export default {
     "RepositoryName":"Repository name",
     "TargetPath":"The storage path of the artifact in the repository, in the format of module value+@ v+file name in go.mod",
     "ArtifactSelf":"artifact file",
-    "ArtifactThree":"Upload three files in sequence to the artifact library"，
+    "ArtifactThree":"Upload three files in sequence to the artifact library",
     'LfsInitialization':'Initialization',
     'LfsAddFile':'Adding files to lfs',
     'SetLfs':'Setting up a GitLfs repository',
