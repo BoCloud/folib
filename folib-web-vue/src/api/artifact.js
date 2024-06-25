@@ -147,3 +147,15 @@ export function conanPackageInfo (data) {
     data: data
   })
 }
+
+export function dockerArtifactUpload (storageId,repositoryId,formData) {
+  return axios({
+    url: '/storages/'+storageId+'/'+repositoryId+'/upload',
+    method: 'post',
+    timeout: 15 * 60 * 1000,
+    headers: {
+      'Content-Type': "multipart/form-data",
+    },
+    data: formData
+  })
+}

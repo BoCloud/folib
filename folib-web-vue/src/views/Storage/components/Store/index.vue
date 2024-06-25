@@ -97,6 +97,12 @@
                     align-items: center;
                     justify-content: flex-end;
                   ">
+                    <a   v-if="folibRepository.layout === 'Docker' && folibRepository.type === 'hosted'">
+                        <small style="padding-right: 20px" @click="handleDockerUploud">
+                            {{ $t('Store.Upload') }}
+                            <a-icon type="cloud-upload" />
+                        </small>
+                    </a>
                   <a v-if="uploadEnabled && folibRepository.layout === 'rpm'">
                     <small style="padding-right: 20px" @click="handleRpmUpload">
                       {{ $t('Store.Upload') }}
@@ -573,6 +579,72 @@
       </a-form>
     </a-modal>
     <!--   rpm 上传表单 end -->
+    <!-- docker上传表单 -->
+      <a-modal v-model="showDockerUploadFormModal" :footer="null" :forceRender="true" :centered="true"
+               :title="$t('Store.Upload')"
+               on-ok="showDockerUploadFormModal = false">
+          <a-form :form="dockerUploadForm" ref="dockerUploadForm" layout="horizontal" @submit.prevent="handleDockerUploadSubmit">
+              <a-row :gutter="[24]">
+                  <a-col :span="24">
+                      <a-form-item class="tags-field mb-10" :label="$t('Store.TargetWarehouse')" prop="repostoryId" :colon="false">
+                          <a-input  :disabled="true" :placeholder="$t('Store.InputTargetWarehouse')" v-model="folibRepository.id">
+                          </a-input>
+                      </a-form-item>
+
+                  </a-col>
+
+                  <a-col :span="24" class="text-center">
+
+                      <a-form-item :label="$t('Store.SelectFile')">
+                          <a-upload v-decorator="[
+                'files',
+                {
+                  rules: [{ required: true, message: $t('Store.PleaseSelectFile') }],
+                  valuePropName: 'fileList',
+                  getValueFromEvent: normFile,
+                },
+              ]" name="files" :multiple="false" :beforeUpload="beforeUpload" list-type="text" accept=".tar">
+                              <a-button>
+                                  <a-icon type="upload"/>
+                                  {{ $t('Store.SelectFile') }}
+                              </a-button>
+                          </a-upload>
+                      </a-form-item>
+
+                  </a-col>
+                  <a-col :span="24">
+                      <a-form-item class="tags-field mb-10" :label="$t('Store.ImageTag')" prop="imageTag"
+                                   :colon="false">
+                          <a-input
+                                  v-decorator="[
+                                      'imageTag',
+                                      {
+                                        rules: [
+                                          {
+                                            required: true,
+                                            pattern: /^[a-zA-Z0-9_\-\./]+(?:\/[a-zA-Z0-9_\-\./]+)?:[a-zA-Z0-9_\-\./]+$/,
+                                            message: $t('Store.InputImageTag'),
+                                          },
+                                        ],
+                                      },
+                                    ]"
+                                  :disabled="false"
+                                  :placeholder="$t('Store.InputImageTag')"
+                          />
+                      </a-form-item>
+                  </a-col>
+                  <a-col :span="24" class="text-center">
+                      <a-button key="submit" class="px-30" size="small" type="primary" htmlType="submit">
+                          {{ $t('Store.Upload') }}
+                      </a-button>
+                      <a-button key="back" @click="uploadDockerFormModalClose()" class="px-30 ml-10" size="small">
+                          {{ $t('Store.Cancel') }}
+                      </a-button>
+                  </a-col>
+              </a-row>
+          </a-form>
+      </a-modal>
+
     <!-- raw 、maven、npm 上传 -->
     <a-modal v-model="showUploadFormModal" :footer="null" :forceRender="true" :centered="true" :title="$t('Store.Upload')"
       on-ok="showUploadFormModal = false">
@@ -789,13 +861,13 @@ import {
   getArtifactDispatchStoragesAndRepositories
 } from '@/api/folib'
 import {
-  artifactCopy,
-  artifactMove,
-  artifactUpload,
-  artifactUploadProgress,
-  rpmArtifactUpload,
-  artifactDispatch,
-  artifactUploadZip
+    artifactCopy,
+    artifactMove,
+    artifactUpload,
+    artifactUploadProgress,
+    rpmArtifactUpload,
+    artifactDispatch,
+    artifactUploadZip, dockerArtifactUpload
 } from '@/api/artifact'
 import { getMetadataConfiguration } from '@/api/settings'
 import { hasRole, isAdmin, isAnonymous, isLogin } from '@/utils/permission'
@@ -844,8 +916,10 @@ export default {
       repositoryType: null,
       rpmUploadForm: this.$form.createForm(this, { name: 'rpmUpload_form' }),
       uploadForm: this.$form.createForm(this, { name: 'upload_form' }),
+      dockerUploadForm: this.$form.createForm(this, { name: 'dockerUpload_form' }),
       showUploadFormModal: false,
       showRpmUploadFormModal: false,
+      showDockerUploadFormModal: false,
       uploadEnabled: false,
       copyEnabled: false,
       dispatchEnabled: false,
@@ -1109,6 +1183,23 @@ export default {
         })
       }, 100)
     },
+     handleDockerUploud(){
+        this.dockerUploadForm.resetFields()
+        this.$nextTick(() => {
+            if (this.$refs.dockerUploadForm)
+            {
+                this.dockerUploadForm.setFieldsValue({
+                    repositoryId: this.folibRepository.id
+                })
+            }
+        })
+        console.log("repositoryId", this.folibRepository);
+        this.showDockerUploadFormModal =true;
+    },
+    uploadDockerFormModalClose () {
+          this.dockerUploadForm.resetFields()
+          this.showDockerUploadFormModal = false
+    },
     handleRpmUpload () {
       this.rpmUploadForm.resetFields()
       this.$nextTick(() => {
@@ -1173,6 +1264,48 @@ export default {
         description: ''
       })
     },
+      handleDockerUploadSubmit (e) {
+          e.preventDefault()
+          this.dockerUploadForm.validateFields((err, values) => {
+              if (!err)
+              {
+                  if (values.files.length > 10)
+                  {
+                      this.$notification['warning']({
+                          message: this.$t('Store.UploadCount'),
+                          description: ''
+                      })
+                      return false
+                  }
+                  let fileList = []
+                  for (let item of values.files)
+                  {
+                      let fileName = item.name.replace(':', '/')
+                      let result = artifactCheck(
+                          this.folibRepository,
+                          fileName,
+                          item.size
+                      )
+                      if (!result.check)
+                      {
+                          this.message('warning', result.msg)
+                          return false
+                      }
+                      item.name = fileName
+                      fileList.push(item)
+                  }
+                  fileList.forEach(item => {
+                      this.handlerDockerUploadFile(
+                          values.imageTag,
+                          item.name.replace(':', '/'),
+                          item.originFileObj
+                      )
+                  })
+                  this.successMsg(this.$t('Store.CheckProgress'))
+                  this.uploadDockerFormModalClose()
+              }
+          })
+      },
     handleRpmUploadSubmit (e) {
       e.preventDefault()
       this.rpmUploadForm.validateFields((err, values) => {
@@ -1215,6 +1348,33 @@ export default {
         }
       })
     },
+    handlerDockerUploadFile (imageTag, fileName, file) {
+          file = new File([file], fileName)
+          const formData = new FormData()
+          formData.append('imageTag', imageTag)
+          formData.append('file', file)
+        dockerArtifactUpload(
+              this.folibRepository.storageId,
+              this.folibRepository.id,
+              formData
+          )
+              .then(res => { })
+              .catch(err => {
+                  let msg = err.response.data.error
+                      ? err.response.data.error
+                      : err.response.data
+                  console.log('rpm upload error：', msg)
+                  let errStatusArr = [200, 500, 403, 304, 401]
+                  if (!errStatusArr.includes(err.response.status))
+                  {
+                      this.$notification['error']({
+                          message: this.$t('Store.EncodingError') + err.response.status,
+                          description: ''
+                      })
+                  }
+              })
+              .finally(() => { })
+      },
     handlerRpmUploadFile (targetPath, fileName, file) {
       file = new File([file], fileName)
       let filePathMap = {}

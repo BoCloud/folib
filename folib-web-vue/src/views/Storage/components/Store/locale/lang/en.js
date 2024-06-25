@@ -317,4 +317,6 @@ export default {
     "HuggingFaceMLDownloadInfo":"To resolve a model from an FoLib repository you need to use the huggingface client command:",
     "HuggingFaceMLDownloadInfo2":"If you using Hugging Face client version 0.19.0 and above and have enabled the HF_HUB_ETAG_TIMEOUT parameter, you can now resolve models using libraries such as transformers and diffusers, among others.",
     "HuggingFaceMLDownloadInfo3":"Learn more",
+    'ImageTag': 'image tag',
+    'InputImageTag': 'Please enter the image tag',
 }

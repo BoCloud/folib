@@ -317,5 +317,7 @@ export default {
     "HuggingFaceMLDownloadInfo":"要从 FoLib 资源库解析一个模型，需要使用 huggingface 客户端命令:",
     "HuggingFaceMLDownloadInfo2":"如果您使用的是 0.19.0 及以上版本的 Hugging Face 客户端并启用了 HF_HUB_ETAG_TIMEOUT 参数，现在可以使用变换器和扩散器等库解析模型。",
     "HuggingFaceMLDownloadInfo3":"了解更多信息",
+    'ImageTag': '镜像标签',
+    'InputImageTag': '请输入镜像标签',
 
 }
