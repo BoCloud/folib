@@ -5,6 +5,7 @@ import com.veadan.folib.components.DistributedCacheComponent;
 import com.veadan.folib.service.ProxyRepositoryConnectionPoolConfigurationService;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpStatus;
+import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.CloseableHttpClient;
@@ -39,7 +40,12 @@ class HttpGetRemoteRepositoryCheckStrategy
         try {
             List<Integer> allowAccessList = getAllowAccessList();
             try (final CloseableHttpClient httpClient = proxyRepositoryConnectionPoolConfigurationService.getHttpClient()) {
-                try (final CloseableHttpResponse httpResponse = httpClient.execute(new HttpGet(remoteRepositoryUrl))) {
+                RequestConfig requestConfig = RequestConfig.custom()
+                        .setConnectTimeout(10000)
+                        .build();
+                HttpGet httpGet = new HttpGet(remoteRepositoryUrl);
+                httpGet.setConfig(requestConfig);
+                try (final CloseableHttpResponse httpResponse = httpClient.execute(httpGet)) {
 
                     int statusCode = httpResponse.getStatusLine().getStatusCode();
                     logger.info("The remote repository url [{}] allow access [{}] response status [{}]", remoteRepositoryUrl, allowAccessList.stream().map(String::valueOf).collect(Collectors.joining(",")), statusCode);
