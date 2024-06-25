@@ -10,6 +10,9 @@
         <a-menu-item :key="2">
           {{ $t('Tools.Metadata') }}
         </a-menu-item>
+        <a-menu-item :key="3">
+          {{ $t('Tools.DigestChecksum') }}
+        </a-menu-item>
       </a-menu>
       <a-button> {{ $t('Tools.Dimension') }} <a-icon type="down" /> </a-button>
     </a-dropdown>

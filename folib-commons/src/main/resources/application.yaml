@@ -154,7 +154,7 @@ folib:
 #       maxPoolSize: 12
       queueCapacity: 500
       keepAliveSeconds: 0
-      threadNamePrefix: ApiBrowsePool_
+      threadNamePrefix: asyncApiBrowse_
       awaitTerminationSeconds: 6
     asyncCopy:
       corePoolSize: ${threadPool.common.core:12}
@@ -183,6 +183,13 @@ folib:
       queueCapacity: ${threadPool.common.queue:100000000}
       keepAliveSeconds: 0
       threadNamePrefix: asyncPromotion_
+      awaitTerminationSeconds: 6
+    asyncDeleteArtifact:
+      corePoolSize: ${threadPool.common.core:12}
+      maxPoolSize: ${threadPool.common.max:12}
+      queueCapacity: ${threadPool.common.queue:100000}
+      keepAliveSeconds: 0
+      threadNamePrefix: asyncDeleteArtifact_
       awaitTerminationSeconds: 6
 # Changes to these properties must also be applied to [folib/folib-web-integration-tests] and possibly the pipeline.
 # Please ping us on our chat channel (https://chat.carlspring.org/) to confirm.

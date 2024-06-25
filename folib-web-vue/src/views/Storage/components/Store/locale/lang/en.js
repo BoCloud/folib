@@ -317,6 +317,18 @@ export default {
     "HuggingFaceMLDownloadInfo":"To resolve a model from an FoLib repository you need to use the huggingface client command:",
     "HuggingFaceMLDownloadInfo2":"If you using Hugging Face client version 0.19.0 and above and have enabled the HF_HUB_ETAG_TIMEOUT parameter, you can now resolve models using libraries such as transformers and diffusers, among others.",
     "HuggingFaceMLDownloadInfo3":"Learn more",
+    //pub
+    'PubConfigMirror': 'You can globally configure the mirror of the pub, as follows:',
+    "PubAdd": "Add Dependency",
+    "PubCacheClean": "Clear dependency cache",
+    "PubGet":"Download Dependencies",
+    "PubPublish":"Upload artifacts",
+    "PubPublishConfig":"Upload artifacts configuration",
+    "PubPublishConfigMirror":"Configure publish_to as the current warehouse in pubspec.yaml",
+    "PubPublishTokenConfig":"Add authorization information",
+    "GetToken": "Get token",
+    "AddToken": "Add a token to the Pub client, if anonymous access is allowed in the repository, then this operation is not required",
+    "ExportPub": "In order for the Pub command-line client to use the repository, you need to run the following command to set the environment variables",
     'ImageTag': 'image tag',
     'InputImageTag': 'Please enter the image tag',
 }

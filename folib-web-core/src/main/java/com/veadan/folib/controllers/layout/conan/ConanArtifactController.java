@@ -64,6 +64,13 @@ public class ConanArtifactController extends BaseArtifactController {
     @Inject
     private ConanService conanService;
 
+    @Override
+    @PreAuthorize("authenticated")
+    @GetMapping(value = "/{storageId}/{repositoryId}")
+    public ResponseEntity<String> checkRepositoryAccess() {
+        return super.checkRepositoryAccess();
+    }
+
     @PreAuthorize("hasAuthority('ARTIFACTS_RESOLVE')")
     @GetMapping(value = "{storageId}/{repositoryId}/v1/ping")
     public ResponseEntity ping(@RequestHeader HttpHeaders httpHeaders,

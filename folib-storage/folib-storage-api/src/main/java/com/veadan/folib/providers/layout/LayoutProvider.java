@@ -1,6 +1,8 @@
 package com.veadan.folib.providers.layout;
 
+import com.veadan.folib.artifact.ArtifactNotFoundException;
 import com.veadan.folib.artifact.coordinates.ArtifactCoordinates;
+import com.veadan.folib.constant.GlobalConstants;
 import com.veadan.folib.domain.ArtifactGroup;
 import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.repository.RepositoryManagementStrategy;
@@ -38,8 +40,11 @@ public interface LayoutProvider<T extends ArtifactCoordinates> {
 
     }
 
-    default void targetUrl(RepositoryPath path) {
+    default void targetUrl(RepositoryPath path) throws IOException {
 
     }
 
+    default int refreshContentInterval(RepositoryPath repositoryPath) {
+        return GlobalConstants.DEFAULT_REFRESH_CONTENT_INTERVAL;
+    }
 }

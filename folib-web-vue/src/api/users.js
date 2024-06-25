@@ -51,6 +51,14 @@ export function getUserToken (username,expireSeconds) {
     query: {
       'expireSeconds': expireSeconds
     }
+   })
+}
+
+export function generateUserSecurityToken (data) {
+  return axios({
+    url: '/api/users/generate-current-security-token',
+    method: 'get',
+    params: data
   })
 }
 

@@ -317,6 +317,18 @@ export default {
     "HuggingFaceMLDownloadInfo":"要从 FoLib 资源库解析一个模型，需要使用 huggingface 客户端命令:",
     "HuggingFaceMLDownloadInfo2":"如果您使用的是 0.19.0 及以上版本的 Hugging Face 客户端并启用了 HF_HUB_ETAG_TIMEOUT 参数，现在可以使用变换器和扩散器等库解析模型。",
     "HuggingFaceMLDownloadInfo3":"了解更多信息",
+    //pub
+    'PubConfigMirror': '你可以全局配置pub的mirror,操作如下:',
+    "PubAdd": "添加依赖",
+    "PubCacheClean": "清除依赖缓存",
+    "PubGet":"下载依赖项",
+    "PubPublish":"上传制品",
+    "PubPublishConfig":"上传制品配置",
+    "PubPublishConfigMirror":"在pubspec.yaml中配置publish_to为当前仓库",
+    "PubPublishTokenConfig":"添加授权信息",
+    "GetToken": "获取token",
+    "AddToken": "向Pub客户端添加令牌，如果仓库允许匿名访问，则无需该操作",
+    "ExportPub": "为了让Pub客户端使用该仓库，您需要运行以下命令设置环境变量",
     'ImageTag': '镜像标签',
     'InputImageTag': '请输入镜像标签',
 

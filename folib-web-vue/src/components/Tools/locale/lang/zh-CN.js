@@ -3,4 +3,5 @@ export default {
     'Ordinary': '普通',
     'Metadata': '元数据',
     'Dimension': '维度',
+    'DigestChecksum': '校验码',
 }

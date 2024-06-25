@@ -246,6 +246,11 @@
             <scope>compile</scope>
         </dependency>
         <dependency>
+            <groupId>org.bouncycastle</groupId>
+            <artifactId>bcprov-jdk15on</artifactId>
+            <version>1.70</version>
+        </dependency>
+        <dependency>
             <groupId>cn.hutool</groupId>
             <artifactId>hutool-all</artifactId>
             <version>5.7.20</version>
@@ -267,6 +272,11 @@
             <groupId>com.alibaba</groupId>
             <artifactId>fastjson</artifactId>
             <version>1.2.83</version>
+        </dependency>
+        <dependency>
+            <groupId>com.github.zafarkhaja</groupId>
+            <artifactId>java-semver</artifactId>
+            <version>0.9.0</version>
         </dependency>
     </dependencies>
 

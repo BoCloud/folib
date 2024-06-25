@@ -34,6 +34,13 @@ import javax.servlet.http.HttpServletResponse;
 @Api(description = "go坐标控制器",tags = "go坐标控制器")
 public class GoArtifactController extends BaseArtifactController {
 
+    @Override
+    @PreAuthorize("authenticated")
+    @GetMapping(value = "/{storageId}/{repositoryId}")
+    public ResponseEntity<String> checkRepositoryAccess() {
+        return super.checkRepositoryAccess();
+    }
+
 //
 //    @ApiOperation(value = "Used to retrieve an sumdb(not support)")
 //    @ApiResponses(value = {@ApiResponse(code = 200, message = ""),

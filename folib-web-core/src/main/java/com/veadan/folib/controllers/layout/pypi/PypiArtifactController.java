@@ -74,6 +74,13 @@ public class PypiArtifactController extends BaseArtifactController {
     @Lazy
     private ArtifactComponent artifactComponent;
 
+    @Override
+    @PreAuthorize("authenticated")
+    @GetMapping(value = "/{storageId}/{repositoryId}")
+    public ResponseEntity<String> checkRepositoryAccess() {
+        return super.checkRepositoryAccess();
+    }
+
     @ApiOperation(value = "This end point will be used to upload/deploy python package.")
     @ApiResponses(value = {@ApiResponse(code = HttpURLConnection.HTTP_OK, message = "python package was deployed successfully."),
             @ApiResponse(code = HttpURLConnection.HTTP_INTERNAL_ERROR, message = "An error occurred while executing request."),

@@ -47,7 +47,7 @@ import java.util.concurrent.TimeUnit;
 @Repository
 @Transactional
 public class ArtifactRepository extends GremlinVertexRepository<Artifact> {
-    //查找标记
+
     @Inject
     ArtifactAdapter artifactAdapter;
     @Inject
@@ -110,6 +110,8 @@ public class ArtifactRepository extends GremlinVertexRepository<Artifact> {
                                               String beginDate,
                                               String endDate,
                                               String safeLevel,
+                                              String digestAlgorithm,
+                                              String digest,
                                               String sortField,
                                               String sortOrder) {
         com.veadan.folib.storage.repository.Repository repository = null;
@@ -127,7 +129,7 @@ public class ArtifactRepository extends GremlinVertexRepository<Artifact> {
             }
         }
         Long zero = 0L;
-        Long count = buildEntityTraversal(regex, artifactName, metadataSearch, storageIdAndRepositoryIdList, storageId, repositoryId, repositoryIds, beginDate, endDate, safeLevel, sortField, sortOrder).count().tryNext().orElse(zero);
+        Long count = buildEntityTraversal(regex, artifactName, metadataSearch, storageIdAndRepositoryIdList, storageId, repositoryId, repositoryIds, beginDate, endDate, safeLevel, digestAlgorithm, digest, sortField, sortOrder).count().tryNext().orElse(zero);
         if (zero.equals(count)) {
             return new PageImpl<>(Collections.emptyList(), pagination, count);
         }
@@ -135,7 +137,7 @@ public class ArtifactRepository extends GremlinVertexRepository<Artifact> {
         long high = (pagination.getPageNumber() + 1) * pagination.getPageSize();
 
 
-        List<Artifact> artifactList = buildEntityTraversal(regex, artifactName, metadataSearch, storageIdAndRepositoryIdList, storageId, repositoryId, repositoryIds, beginDate, endDate, safeLevel, sortField, sortOrder)
+        List<Artifact> artifactList = buildEntityTraversal(regex, artifactName, metadataSearch, storageIdAndRepositoryIdList, storageId, repositoryId, repositoryIds, beginDate, endDate, safeLevel, digestAlgorithm, digest, sortField, sortOrder)
                 .range(low, high)
                 .map(artifactAdapter.searchFold(Optional.ofNullable(repository)
                         .map(com.veadan.folib.storage.repository.Repository::getLayout)
@@ -301,7 +303,7 @@ public class ArtifactRepository extends GremlinVertexRepository<Artifact> {
     }
 
     public Long countAllByStorageIdAndRepositoryId(String storageId, String repositoryId) {
-       return buildEntityTraversalByStorageIdAndRepositoryId(storageId, repositoryId).count().tryNext().orElse(0L);
+        return buildEntityTraversalByStorageIdAndRepositoryId(storageId, repositoryId).count().tryNext().orElse(0L);
     }
 
     public List<Artifact> findByStorageIdAndRepositoryId(String storageId, String repositoryId, Pageable pageable) {
@@ -497,6 +499,8 @@ public class ArtifactRepository extends GremlinVertexRepository<Artifact> {
                                                                  String beginDate,
                                                                  String endDate,
                                                                  String safeLevel,
+                                                                 String digestAlgorithm,
+                                                                 String digest,
                                                                  String sortField,
                                                                  String sortOrder) {
         EntityTraversal<Vertex, Vertex> entityTraversal = g().V().hasLabel(Vertices.ARTIFACT);
@@ -537,6 +541,12 @@ public class ArtifactRepository extends GremlinVertexRepository<Artifact> {
         }
         if (StringUtils.isNotBlank(safeLevel)) {
             entityTraversal = entityTraversal.has(Properties.SAFE_LEVEL, safeLevel);
+        }
+        if (StringUtils.isNotBlank(digestAlgorithm) && StringUtils.isNotBlank(digest)) {
+            String digestSearch = String.format("{%s}%s", digestAlgorithm.toUpperCase(), digest);
+            entityTraversal = entityTraversal.has(Properties.CHECKSUMS, P.within(digestSearch));
+        } else if (StringUtils.isNotBlank(digest)) {
+            entityTraversal = entityTraversal.has(Properties.CHECKSUMS, Text.textContains(digest));
         }
         if (StringUtils.isNotBlank(sortField) && StringUtils.isNotBlank(sortOrder)) {
             entityTraversal = entityTraversal.order().by(sortField, Order.valueOf(sortOrder));
