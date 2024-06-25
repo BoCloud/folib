@@ -89,6 +89,9 @@ public class PubProxyProvider implements PubProvider {
                 }
                 packageData = commonUrlJSONData(repository, targetUrl);
                 if (Objects.isNull(packageData)) {
+                    if (Files.exists(packageJsonRepositoryPath)) {
+                        return JSONObject.parseObject(Files.readString(packageJsonRepositoryPath));
+                    }
                     return null;
                 }
                 try {
