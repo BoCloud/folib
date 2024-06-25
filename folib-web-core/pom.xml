@@ -702,6 +702,13 @@
             <artifactId>folib-storage-huggingface-layout-provider</artifactId>
             <version>${project.version}</version>
         </dependency>
+        <!-- https://mvnrepository.com/artifact/com.google.cloud.tools/jib-core -->
+        <dependency>
+            <groupId>com.google.cloud.tools</groupId>
+            <artifactId>jib-core</artifactId>
+            <version>0.24.0</version>
+        </dependency>
+
     </dependencies>
 
     <profiles>

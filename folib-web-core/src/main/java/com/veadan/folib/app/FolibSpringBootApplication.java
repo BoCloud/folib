@@ -40,7 +40,7 @@ public class FolibSpringBootApplication {
 
             System.setProperty(JanusGraphDbProfile.PROPERTY_PROFILE, JanusGraphDbProfile.PROFILE_EMBEDDED);
         }
-
+        System.setProperty("sendCredentialsOverHttp", "true");
         SpringApplication application = new SpringApplication(FolibSpringBootApplication.class);
         application.setApplicationStartup(new BufferingApplicationStartup(1500));
         applicationContext = application.run(args);
