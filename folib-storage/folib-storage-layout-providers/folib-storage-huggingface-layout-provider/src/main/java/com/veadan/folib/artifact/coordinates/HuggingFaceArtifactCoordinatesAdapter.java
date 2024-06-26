@@ -1,7 +1,8 @@
-package com.veadan.folib.gremlin.adapters;
+package com.veadan.folib.artifact.coordinates;
 
 import com.veadan.folib.artifact.coordinates.HuggingFaceArtifactCoordinates;
 import com.veadan.folib.db.schema.Vertices;
+import com.veadan.folib.gremlin.adapters.LayoutArtifactCoordinatesAdapter;
 import org.springframework.stereotype.Component;
 
 @Component
