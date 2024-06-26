@@ -44,14 +44,14 @@ class RemoteRepositoryHeartbeatMonitor
     @Override
     public void run()
     {
-        boolean isAlive = false;
+        boolean isAlive = true;
         Repository repository = null;
         RemoteRepository remoteRepository = null;
         try
         {
             ConfigurationManager configurationManager = SpringUtil.getBean(ConfigurationManager.class);
             repository = configurationManager.getRepository(storageAndRepositoryId);
-            if (Objects.isNull(repository)) {
+            if (Objects.isNull(repository) || !repository.isProxyRepository()) {
                 return;
             }
             remoteRepository = repository.getRemoteRepository();

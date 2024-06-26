@@ -86,6 +86,9 @@ public class ConanProxyProvider implements ConanProvider {
                 }
                 indexData = commonUrlJSONData(repository, targetUrl);
                 if (Objects.isNull(indexData)) {
+                    if (Files.exists(indexJsonRepositoryPath)) {
+                        return JSONObject.parseObject(Files.readString(indexJsonRepositoryPath));
+                    }
                     return null;
                 }
                 try {

@@ -55,7 +55,7 @@ public class RestArtifactResolverFactory
             @Override
             public boolean isAlive()
             {
-                return true;
+                return remoteRepositoryAlivenessCacheManager.isAlive(repository);
             }
 
         };
