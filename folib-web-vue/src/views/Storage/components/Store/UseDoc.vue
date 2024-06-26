@@ -1167,8 +1167,6 @@ go 1.20' :readonly="true">
             <a-timeline-item color="primary">
                 {{ $t('Store.HuggingFaceMLConfigure') }}
                 <p></p>
-                <small>{{$t('Store.HuggingFaceMLConfigureInfo')}}</small>
-                <p></p>
                 <prism-editor
                         class="my-editor height-300"
                         :value="
@@ -1195,8 +1193,6 @@ go 1.20' :readonly="true">
             <a-timeline-item color="primary">
                 {{ $t('Store.HuggingFaceMLUpload') }}
                 <p></p>
-                <small>{{ $t('Store.HuggingFaceMLUploadInfo') }}</small>
-                <p></p>
                 <prism-editor
                         class="my-editor height-300"
                         :value="
@@ -1216,8 +1212,6 @@ go 1.20' :readonly="true">
 
             <a-timeline-item color="primary">
                 {{ $t('Store.HuggingFaceMLDownload') }}
-                <p></p>
-                <small>{{ $t('Store.HuggingFaceMLDownloadInfo') }}</small>
                 <p></p>
                 <prism-editor
                         class="my-editor height-300"
@@ -1366,9 +1360,7 @@ export default {
     },
      huggingfaceInit(){
           if(this.folibRepository.layout === 'HuggingFace' ){
-              const username = this.$store.state.user.name
-              const expireSeconds = 86400;
-              getUserToken(username,expireSeconds).then(res => {
+              generateUserSecurityToken({expireSeconds: 1892160000}).then((res) => {
                   this.userToken = res;
               })
           }
