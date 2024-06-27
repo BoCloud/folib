@@ -140,7 +140,7 @@ public class DockerArtifactController extends BaseArtifactController {
     @ApiResponses(value = {@ApiResponse(code = 200, message = "token."),
             @ApiResponse(code = 500, message = "An error occurred.")})
     @PreAuthorize("hasAuthority('ARTIFACTS_RESOLVE')")
-    @RequestMapping(value = {"/v2/token"}, method = {RequestMethod.GET})
+    @RequestMapping(value = {"/v2/token"}, method = {RequestMethod.GET, RequestMethod.POST})
     public ResponseEntity<Object> token(HttpServletResponse response, @RequestParam(value = "scope", required = false) String scope) {
         try {
             SecurityContext securityContext = SecurityContextHolder.getContext();
