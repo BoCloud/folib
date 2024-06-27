@@ -331,4 +331,5 @@ export default {
     "ExportPub": "In order for the Pub command-line client to use the repository, you need to run the following command to set the environment variables",
     'ImageTag': 'image tag',
     'InputImageTag': 'Please enter the image tag',
+    "ImageTagSpecification": "Image Tag Specification: [PATH]/[NAME]:[TAG]",
 }

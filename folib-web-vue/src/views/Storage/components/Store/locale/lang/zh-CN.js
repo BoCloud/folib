@@ -331,5 +331,6 @@ export default {
     "ExportPub": "为了让Pub客户端使用该仓库，您需要运行以下命令设置环境变量",
     'ImageTag': '镜像标签',
     'InputImageTag': '请输入镜像标签',
+    "ImageTagSpecification": "镜像标签规范: [PATH]/[NAME]:[TAG]",
 
 }
