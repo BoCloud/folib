@@ -1,6 +1,7 @@
 package com.veadan.folib.controllers.promotion;
 
 import com.alibaba.fastjson.JSONObject;
+import com.veadan.folib.components.security.SecurityComponent;
 import com.veadan.folib.config.PermissionCheck;
 import com.veadan.folib.controllers.BaseArtifactController;
 import com.veadan.folib.domain.ArtifactDispatch;
@@ -39,6 +40,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
+import javax.inject.Inject;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.util.List;
@@ -57,6 +59,9 @@ public class ArtifactPromotionController extends BaseArtifactController {
 
     @Autowired
     private ArtifactPromotionService artifactPromotionService;
+
+    @Inject
+    private SecurityComponent securityComponent;
 
     @PostMapping("/copy")
     @PermissionCheck(resourceKey = "ARTIFACTS_COPY", storageKey = "srcStorageId", repositoryKey = "srcRepositoryId")
@@ -120,8 +125,11 @@ public class ArtifactPromotionController extends BaseArtifactController {
                                  @RequestParam("repostoryId") String repositoryId,
                                  @RequestParam("filePathMap") String filePathMap,
                                  @RequestParam(name = "fileMetaDataMap", required = false) String fileMetaDataMap,
-                                 @RequestParam(name = "uuid", required = false) String uuid) {
-        return artifactPromotionService.upload(files, storageId, repositoryId, filePathMap, fileMetaDataMap, uuid);
+                                 @RequestParam(name = "uuid", required = false) String uuid,
+                                 @RequestParam(name = "imageTag", required = false) String imageTag) {
+        String baseUrl =getBaseUrl();
+        String token =  securityComponent.getSecurityToken();
+        return artifactPromotionService.upload(files, storageId, repositoryId, filePathMap, fileMetaDataMap, uuid, imageTag, baseUrl, token);
     }
 
     @PostMapping(value = "/upload")

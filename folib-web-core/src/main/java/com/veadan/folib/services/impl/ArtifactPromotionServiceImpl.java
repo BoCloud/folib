@@ -604,7 +604,7 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
 
     @Override
     public ResponseEntity upload(MultipartFile[] files, String storageId, String repositoryId, String
-            filePathMap, String fileMetaDataMap, String uuid) {
+            filePathMap, String fileMetaDataMap, String uuid,String imageTag,String baseUrl,String token) {
         try {
             validateStorageAndRepository(storageId, repositoryId);
             List<FutureTask<String>> listTask = new ArrayList<>();
@@ -616,8 +616,12 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
                 String fileOriginalName = ((DiskFileItem) ((CommonsMultipartFile) file).getFileItem()).getName();
                 String fileRelativePath = mapType.get(fileOriginalName);
                 String metaData = metaDataMap.getOrDefault(fileRelativePath, "").toString();
+                //ArtifactUploadTask artifactUploadTask = new ArtifactUploadTask(storageId, repositoryId, file,
+                //        repositoryManagementService, repositoryPathResolver, artifactManagementService, promotionUtil, layoutProviderRegistry, artifactMetadataService, artifactRepository, mavenRepositoryFeatures, tempPath, fileRelativePath, metaData, uuid, null);
                 ArtifactUploadTask artifactUploadTask = new ArtifactUploadTask(storageId, repositoryId, file,
-                        repositoryManagementService, repositoryPathResolver, artifactManagementService, promotionUtil, layoutProviderRegistry, artifactMetadataService, artifactRepository, mavenRepositoryFeatures, tempPath, fileRelativePath, metaData, uuid, null);
+                        repositoryManagementService, repositoryPathResolver, artifactManagementService, promotionUtil, layoutProviderRegistry, artifactMetadataService,
+                        artifactRepository, mavenRepositoryFeatures, tempPath, fileRelativePath, metaData, uuid, null,imageTag,baseUrl,token);
+
                 FutureTask<String> task = new FutureTask<String>(artifactUploadTask);
                 listTask.add(task);
                 asyncPromotionPoolTaskExecutor.submit(task);
