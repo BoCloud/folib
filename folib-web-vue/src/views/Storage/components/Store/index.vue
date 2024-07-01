@@ -515,7 +515,7 @@
               ]" style="width:10%;" @change="customChange">
               </a-switch>
             </a-form-item> -->
-            <a-form-item class="tags-field mb-10" v-if="!custom" :label="$t('Store.TargetDirectory')" prop="path" :colon="false">
+            <a-form-item class="tags-field mb-10" v-if="!custom" :label="$t('Store.TargetDirectory')" prop="path" :colon="false" style="display:none;">
               <a-input v-decorator="[
                 'path',
                 {
@@ -524,6 +524,15 @@
               ]" :disabled="true" :placeholder="$t('Store.TargetDirectory')">
               </a-input>
             </a-form-item>
+              <a-form-item class="tags-field mb-10" v-if="!custom" :label="$t('Store.TargetDirectory')" prop="targetPath" :colon="false" >
+                  <a-input v-decorator="[
+                'targetPath',
+                {
+                  rules: [{ required: true, message: $t('Store.TargetDirectory') }],
+                },
+              ]" :disabled="isTargetPatDisabled" :placeholder="$t('Store.TargetDirectory')" >
+                  </a-input>
+              </a-form-item>
             <a-form-item class="tags-field mb-10" v-if="custom" :label="$t('Store.TargetDirectory')" prop="path" :colon="false">
               <a-input v-decorator="[
                 'path',
@@ -996,6 +1005,8 @@ export default {
       searchDataCurrentSelect: {},
       searchViewCodeVisible: false,
       searchViewCodes: null,
+      //目标目录是否disabled
+      isTargetPatDisabled: true,
       columns: [
         {
           i18nKey: 'Store.OwnedWarehouse',
@@ -1787,11 +1798,13 @@ export default {
     },
     handleMenuClick (active) {
       this.operationForm.resetFields()
+      this.isTargetPatDisabled =   this.folibRepository.layout !== 'Raw';
       this.$nextTick(() => {
         if (this.$refs.operationForm)
         {
           this.operationForm.setFieldsValue({
             path: this.currentTreeNode.artifactPath,
+            targetPath: this.currentTreeNode.artifactPath,
             type: 1,
           })
         }
@@ -1898,12 +1911,14 @@ export default {
           })
           let data = {
             path: values.path,
+            targetPath: values. targetPath,
             srcStorageId: this.folibRepository.storageId,
             srcRepositoryId: this.folibRepository.id,
             targetRepositoyList: targetRepositoyList
           }
           let dispatchData = {
             path: values.path,
+            targetPath: values. targetPath,
             srcStorageId: this.folibRepository.storageId,
             srcRepositoryId: this.folibRepository.id,
             targetDispatchRepositoryList: targetDispatchRepositoryList,
