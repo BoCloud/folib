@@ -507,7 +507,7 @@ public class ArtifactUploadTask implements Callable<String> {
             Path path = Path.of(artifactTempFile.getAbsolutePath());
             String ext = FileUtil.extName(artifactTempFile);
 
-            boolean isOhnpmSubLayout = NpmSubLayout.OHNPM.getValue().equals(repositoryPath.getRepository().getSubLayout());
+            boolean isOhnpmSubLayout = NpmSubLayout.OHPM.getValue().equals(repositoryPath.getRepository().getSubLayout());
             String expectedExtension = isOhnpmSubLayout ? ohpmExt : supportedExt;
             if (!expectedExtension.equals(ext)) {
                 String errorMessage = isOhnpmSubLayout ? "Only the .har suffix is supported" : "Only the .tgz suffix is supported";
@@ -532,7 +532,7 @@ public class ArtifactUploadTask implements Callable<String> {
                         throw runtimeException;
                     }
 
-                    final String packagesuffix = NpmSubLayout.OHNPM.getValue().equals(repositoryPath.getRepository().getSubLayout()) ? NpmPacketSuffix.HAR.getValue() : NpmPacketSuffix.TGZ.getValue();
+                    final String packagesuffix = NpmSubLayout.OHPM.getValue().equals(repositoryPath.getRepository().getSubLayout()) ? NpmPacketSuffix.HAR.getValue() : NpmPacketSuffix.TGZ.getValue();
                     NpmArtifactCoordinates npmArtifactCoordinates = NpmArtifactCoordinates.of(name, version, packagesuffix);
                     String artifactPath = npmArtifactCoordinates.convertToPath(npmArtifactCoordinates);
                     log.info("The fileRelativePath：{} artifactPath：{}", fileRelativePath, artifactPath);

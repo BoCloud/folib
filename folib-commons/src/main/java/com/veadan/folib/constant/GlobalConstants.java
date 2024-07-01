@@ -161,4 +161,9 @@ public interface GlobalConstants {
      * NotFound
      */
     String NOT_FOUND = "NotFound";
+
+    /**
+     * @
+     */
+    String AT = "@";
 }
