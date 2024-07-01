@@ -160,12 +160,13 @@ public class PromotionUtil {
     private static final long MAX_SLICE_BYTE_SIZE = 1024L * 1024L * 100L;//100MB
 
     @Async("asyncCopyThreadPoolTaskExecutor")
-    public void executeCopy(RepositoryPath path, Repository srcRepository, Repository targetRepository) {
+    public void executeCopy(RepositoryPath sourcePath, Repository srcRepository, RepositoryPath targetPath,Repository targetRepository) {
         try {
-            handleCopy(path, srcRepository, targetRepository);
-            log.info("Execute copy srcRepository [{}] [{}] targetRepository [{}] [{}] path [{}] finished", srcRepository.getStorage().getId(), srcRepository.getId(), targetRepository.getStorage().getId(), targetRepository.getId(), path);
+            //handleCopy(sourcePath, srcRepository, targetRepository);
+            handleCopy( sourcePath,  srcRepository, targetPath,  targetRepository);
+            log.info("Execute copy srcRepository [{}] [{}] targetRepository [{}] [{}] path [{}] finished", srcRepository.getStorage().getId(), srcRepository.getId(), targetRepository.getStorage().getId(), targetRepository.getId(), sourcePath);
         } catch (Exception e) {
-            log.info("Execute copy srcRepository [{}] [{}] targetRepository [{}] [{}] path [{}] error [{}]", srcRepository.getStorage().getId(), srcRepository.getId(), targetRepository.getStorage().getId(), targetRepository.getId(), path, ExceptionUtils.getStackTrace(e));
+            log.info("Execute copy srcRepository [{}] [{}] targetRepository [{}] [{}] path [{}] error [{}]", srcRepository.getStorage().getId(), srcRepository.getId(), targetRepository.getStorage().getId(), targetRepository.getId(), sourcePath, ExceptionUtils.getStackTrace(e));
         }
     }
 
@@ -463,8 +464,9 @@ public class PromotionUtil {
             String targetStorageId = target.getTargetStorageId();
             String targetRepositoryId = target.getTargetRepositoryId();
             Repository targetRepository = repositoryManagementService.getStorage(targetStorageId).getRepository(targetRepositoryId);
+            RepositoryPath targetPath = artifactPromotion.getTargetPath() == null ? null : repositoryPathResolver.resolve(targetRepository, artifactPromotion.getTargetPath());
             FutureTask<String> future = new FutureTask<String>(
-                    new ArtifactPromotionCopyTask(srcPath, srcRepository, targetRepository));
+                    new ArtifactPromotionCopyTask(srcPath, srcRepository,targetPath, targetRepository));
             listTask.add(future);
             asyncCopyThreadPoolTaskExecutor.submit(future);
         });
@@ -554,6 +556,77 @@ public class PromotionUtil {
         final boolean isDocker = DockerLayoutProvider.ALIAS.equalsIgnoreCase(srcRepository.getLayout());
         for (RepositoryPath srcRepositoryPath : list) {
             RepositoryPath targetRepositoryPath = repositoryPathResolver.resolve(targetStorageId, targetRepositoryId, RepositoryFiles.relativizePath(srcRepositoryPath));
+            if (!RepositoryFiles.isArtifact(srcRepositoryPath)) {
+                log.info(String.format("RepositoryPath：%s not is artifact skip", srcRepositoryPath));
+                continue;
+            }
+            if (isDocker) {
+                List<ImageManifest> imageManifestList = dockerComponent.getImageManifests(srcRepositoryPath);
+                if (CollectionUtils.isNotEmpty(imageManifestList)) {
+                    for (ImageManifest manifest : imageManifestList) {
+                        List<String> layerList = getAllLayerList(manifest);
+                        //blobs
+                        for (String layer : layerList) {
+                            RepositoryPath srcBlobPath = repositoryPathResolver.resolve(srcStorageId, srcRepositoryId, DockerLayoutProvider.BLOBS + File.separator + layer);
+                            RepositoryPath targetBlobPath = repositoryPathResolver.resolve(targetStorageId, targetRepositoryId, RepositoryFiles.relativizePath(srcBlobPath));
+                            if (Files.exists(targetBlobPath)) {
+                                log.info("Do copy srcRepositoryPath [{}] targetRepositoryPath [{}] exists skip...", srcBlobPath.toString(), targetBlobPath.toString());
+                                continue;
+                            }
+                            log.info("Do copy srcRepositoryPath [{}] targetManiFestPath [{}]", srcBlobPath, targetBlobPath);
+                            try (InputStream inputStream = Files.newInputStream(srcBlobPath)) {
+                                artifactManagementService.store(targetBlobPath, inputStream);
+                            } catch (Exception e) {
+                                log.error("Do copy srcRepositoryPath [{}] targetManiFestPath [{}] error [{}]", srcBlobPath, targetBlobPath, ExceptionUtils.getStackTrace(e));
+                                throw new Exception(e.getMessage());
+                            }
+                        }
+                        if (StringUtils.isNotBlank(manifest.getDigest())) {
+                            RepositoryPath srcMainFestPath = repositoryPathResolver.resolve(srcStorageId, srcRepositoryId, DockerLayoutProvider.MANIFEST + File.separator + manifest.getDigest());
+                            RepositoryPath targetManiFestPath = repositoryPathResolver.resolve(targetStorageId, targetRepositoryId, RepositoryFiles.relativizePath(srcMainFestPath));
+                            if (Files.exists(targetManiFestPath)) {
+                                log.info("Do copy srcRepositoryPath [{}] targetRepositoryPath [{}] exists skip...", srcMainFestPath.toString(), targetManiFestPath.toString());
+                                continue;
+                            }
+                            log.info("Do copy srcRepositoryPath [{}] targetManiFestPath [{}]", srcMainFestPath, targetManiFestPath);
+                            try (InputStream inputStream = Files.newInputStream(srcMainFestPath)) {
+                                artifactManagementService.store(targetManiFestPath, inputStream);
+                            } catch (Exception e) {
+                                log.error("Do copy srcRepositoryPath [{}] targetManiFestPath [{}] error [{}]", srcMainFestPath, targetManiFestPath, ExceptionUtils.getStackTrace(e));
+                                throw new Exception(e.getMessage());
+                            }
+                        }
+                    }
+                }
+            }
+            log.info("Do copy srcRepositoryPath [{}] targetManiFestPath [{}]", srcRepositoryPath, targetRepositoryPath);
+            try (InputStream is = Files.newInputStream(srcRepositoryPath)) {
+                //同步metadata
+                setMetaData(targetRepositoryPath, getMetaData(srcRepositoryPath));
+                artifactManagementService.store(targetRepositoryPath, is);
+            } catch (IOException e) {
+                log.error("Do copy srcRepositoryPath [{}] targetManiFestPath [{}] error [{}]", srcRepositoryPath, targetRepositoryPath, ExceptionUtils.getStackTrace(e));
+                throw new Exception(e.getMessage());
+            }
+        }
+    }
+
+    public void handleCopy(RepositoryPath sourcePath, Repository srcRepository,RepositoryPath targetPath, Repository targetRepository) throws Exception {
+        final String srcStorageId = srcRepository.getStorage().getId(),
+                srcRepositoryId = srcRepository.getId(),
+                targetStorageId = targetRepository.getStorage().getId(),
+                targetRepositoryId = targetRepository.getId();
+        List<RepositoryPath> list = RepositoryPathUtil.getPaths(srcRepository.getLayout(), sourcePath);
+        final boolean isDocker = DockerLayoutProvider.ALIAS.equalsIgnoreCase(srcRepository.getLayout());
+        for (RepositoryPath srcRepositoryPath : list) {
+
+            RepositoryPath path  = srcRepositoryPath;
+            if(targetPath !=null){
+                String filePath = path.getPath().replace(sourcePath.getPath(),targetPath.getPath());
+                path= repositoryPathResolver.resolve(targetRepository, filePath);
+            }
+
+            RepositoryPath targetRepositoryPath = repositoryPathResolver.resolve(targetStorageId, targetRepositoryId, RepositoryFiles.relativizePath(path));
             if (!RepositoryFiles.isArtifact(srcRepositoryPath)) {
                 log.info(String.format("RepositoryPath：%s not is artifact skip", srcRepositoryPath));
                 continue;

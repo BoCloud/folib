@@ -259,7 +259,8 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
     private void singleCopy(ArtifactPromotion artifactPromotion, Repository srcRepository, String destStorageId, String destRepositoryId) {
         Repository destRepository = repositoryManagementService.getStorage(destStorageId).getRepository(destRepositoryId);
         RepositoryPath srcPath = repositoryPathResolver.resolve(srcRepository, artifactPromotion.getPath());
-        promotionUtil.executeCopy(srcPath, srcRepository, destRepository);
+        RepositoryPath targetPath =  artifactPromotion.getTargetPath() == null ? null : repositoryPathResolver.resolve(destRepository,artifactPromotion.getTargetPath());
+        promotionUtil.executeCopy(srcPath, srcRepository, targetPath, destRepository);
     }
 
     @Override
@@ -344,7 +345,7 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
                 Repository destRepository = repositoryManagementService.getStorage(targetStorageId).getRepository(targetRepositoryId);
                 Repository srcRepository = repositoryManagementService.getStorage(sourceStorageId).getRepository(sourceRepositoryId);
                 RepositoryPath srcPath = repositoryPathResolver.resolve(sourceStorageId, sourceRepositoryId, sourceArtifactPath);
-                promotionUtil.executeCopy(srcPath, srcRepository, destRepository);
+                promotionUtil.executeCopy(srcPath, srcRepository, null,destRepository);
                 return ResponseEntity.ok("ok");
             }
             if (Objects.isNull(syncModel)) {
