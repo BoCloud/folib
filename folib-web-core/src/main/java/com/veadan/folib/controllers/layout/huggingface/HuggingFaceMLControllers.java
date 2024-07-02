@@ -837,7 +837,11 @@ public class HuggingFaceMLControllers extends BaseArtifactController {
             if (artifact == null) {
                 RepositoryPath tagPath = repositoryPathResolver.resolve(context.getStorageId(), context.getRepositoryId(), uploadPath);
                 RepositoryPath repositoryPath = artifactResolutionService.resolvePath(tagPath);
-                artifactManagementService.validateAndStore(repositoryPath, stream);
+                if(repositoryPath != null){
+                    artifactManagementService.validateAndStore(repositoryPath, stream);
+                }else {
+                    artifactManagementService.validateAndStore(tagPath, stream);
+                }
             }
             return ResponseEntity.ok(uploadPath);
         } catch (IOException | ProviderImplementationException | ArtifactCoordinatesValidationException e) {
@@ -945,15 +949,15 @@ public class HuggingFaceMLControllers extends BaseArtifactController {
             log.error("访问文件失败: " + repositoryPath.toString());
             e.printStackTrace();
         }
-        RepositoryPath packageArtifact = artifactList.stream().findFirst().orElse(null);
+        RepositoryPath packageArtifact = artifactList.stream().filter(paths -> paths.getFileName().toString().equals(requestJson.getOid())).findFirst().orElse(null);
         boolean found = false;
         if (packageArtifact != null) {
             if (!lfsTmpUploadPath.equals(packageArtifact.getPath())) {
                 RepositoryPath tagArtPath = repositoryPathResolver.resolve(storageId, repositoryId, lfsTmpUploadPath);
                 RepositoryPath artPath = artifactResolutionService.resolvePath(tagArtPath);
                 try (InputStream inputStream = Files.newInputStream(packageArtifact);) {
-                    artifactManagementService.validateAndStore(artPath, inputStream);
-                } catch (IOException | ProviderImplementationException | ArtifactCoordinatesValidationException e) {
+                    artifactManagementService.store(artPath, inputStream);
+                } catch (IOException  e) {
                     throw new RuntimeException(e);
                 }
             }
@@ -1097,7 +1101,7 @@ public class HuggingFaceMLControllers extends BaseArtifactController {
             log.error("访问文件失败: " + repositoryPath.toString());
             e.printStackTrace();
         }
-        String subRevisionPath = fileList.stream().findFirst().map(artifact -> artifact.getFileName().toString().replace(".folib_huggingface_model_info.json", "")).orElse(null);
+        String subRevisionPath = fileList.stream().filter(artifact -> artifact.getFileName().toString().equals(".folib_huggingface_model_info.json")).findFirst().map(artifact -> artifact.getFileName().toString()).orElse(null);
         if (subRevisionPath != null) {
             String message = String.format("HuggingFace ML module conflict. Module: %s already exist in repoKey: %s.", subRevisionPath, repositoryId);
             log.info(message);

@@ -84,14 +84,6 @@ public class HuggingFaceLayoutProvider extends AbstractLayoutProvider<HuggingFac
                         }
 
                         break;
-                    //case METADATA:
-                    //    value = (Boolean) value || isPubMetadata(repositoryPath);
-                    //
-                    //    if (value != null) {
-                    //        result.put(attributeType, value);
-                    //    }
-                    //
-                    //    break;
                     case REFRESH_CONTENT:
                         final Instant halfAnHourAgo = Instant.now().minus(refreshContentInterval(repositoryPath), ChronoUnit.MINUTES);
                         value = BooleanUtils.isTrue((Boolean) value) || (Files.exists(repositoryPath) && isHfmlPackageJson(repositoryPath)
