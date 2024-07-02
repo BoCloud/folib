@@ -561,7 +561,7 @@ public class HuggingFaceMLControllers extends BaseArtifactController {
         RepositoryPath tagPath = repositoryPathResolver.resolve(context.getStorageId(), context.getRepositoryId(), modelInfoPath);
         tagPath.setTargetUrl(alternativeUrl);
         RepositoryPath repositoryPath = artifactResolutionService.resolvePath(tagPath);
-
+        repositoryPath = repositoryPath == null ? tagPath : repositoryPath;
         try (InputStream in = Files.newInputStream(repositoryPath)) {
             vulnerabilityBlock(repositoryPath);
             LayoutFileSystemProvider provider = repositoryPathResolver.resolve(context.getStorageId(), context.getRepositoryId()).getFileSystem().provider();
@@ -629,6 +629,7 @@ public class HuggingFaceMLControllers extends BaseArtifactController {
 
         RepositoryPath tagPath = repositoryPathResolver.resolve(context.getStorageId(), context.getRepositoryId(), MlModelUtils.getModelRevisionPath(context));
         RepositoryPath repositoryPath = artifactResolutionService.resolvePath(tagPath);
+        repositoryPath = repositoryPath == null ? tagPath : repositoryPath;
         if (repositoryPath == null || !Files.exists(repositoryPath)) {
             return null;
         }
@@ -751,6 +752,7 @@ public class HuggingFaceMLControllers extends BaseArtifactController {
         String revisionPath = MlModelUtils.getModelRevisionPath(context);
         RepositoryPath tagPath = repositoryPathResolver.resolve(context.getStorageId(), context.getRepositoryId(), revisionPath);
         RepositoryPath repositoryPath = artifactResolutionService.resolvePath(tagPath);
+        repositoryPath = repositoryPath == null ? tagPath : repositoryPath;
         if (repositoryPath == null || !Files.exists(repositoryPath)) {
             return null;
         }
@@ -798,7 +800,7 @@ public class HuggingFaceMLControllers extends BaseArtifactController {
         try {
             RepositoryPath tagPath = repositoryPathResolver.resolve(requestContext.getStorageId(), requestContext.getRepositoryId(), leadFilePath);
             RepositoryPath repositoryPath = artifactResolutionService.resolvePath(tagPath);
-
+            repositoryPath = repositoryPath == null ? tagPath : repositoryPath;
             try (InputStream leadStream = Files.newInputStream(repositoryPath);) {
                 return MlModelUtils.createObjectMapper().readValue(leadStream, RevisionData.class);
             }
@@ -817,6 +819,7 @@ public class HuggingFaceMLControllers extends BaseArtifactController {
         RepositoryPath tagPath = repositoryPathResolver.resolve(context.getStorageId(), context.getRepositoryId(), modelInfoPath);
         tagPath.setTargetUrl(alternativeUrl);
         RepositoryPath repositoryPath = artifactResolutionService.resolvePath(tagPath);
+        repositoryPath = repositoryPath == null ? tagPath : repositoryPath;
 
         ObjectMapper objectMapper = MlModelUtils.createObjectMapper();
         return objectMapper.readValue(Files.readAllBytes(repositoryPath), RevisionData.class);
@@ -837,6 +840,7 @@ public class HuggingFaceMLControllers extends BaseArtifactController {
             if (artifact == null) {
                 RepositoryPath tagPath = repositoryPathResolver.resolve(context.getStorageId(), context.getRepositoryId(), uploadPath);
                 RepositoryPath repositoryPath = artifactResolutionService.resolvePath(tagPath);
+                repositoryPath = repositoryPath == null ? tagPath : repositoryPath;
                 if(repositoryPath != null){
                     artifactManagementService.validateAndStore(repositoryPath, stream);
                 }else {
@@ -911,6 +915,7 @@ public class HuggingFaceMLControllers extends BaseArtifactController {
 
         RepositoryPath tagPath = repositoryPathResolver.resolve(storageId, repositoryId, "");
         RepositoryPath repositoryPath = artifactResolutionService.resolvePath(tagPath);
+        repositoryPath = repositoryPath == null ? tagPath : repositoryPath;
         if (repositoryPath == null || !Files.exists(repositoryPath)) {
             return false;
         }
@@ -955,6 +960,7 @@ public class HuggingFaceMLControllers extends BaseArtifactController {
             if (!lfsTmpUploadPath.equals(packageArtifact.getPath())) {
                 RepositoryPath tagArtPath = repositoryPathResolver.resolve(storageId, repositoryId, lfsTmpUploadPath);
                 RepositoryPath artPath = artifactResolutionService.resolvePath(tagArtPath);
+                artPath = artPath == null ? tagArtPath : artPath;
                 try (InputStream inputStream = Files.newInputStream(packageArtifact);) {
                     artifactManagementService.store(artPath, inputStream);
                 } catch (IOException  e) {
@@ -1524,7 +1530,7 @@ public class HuggingFaceMLControllers extends BaseArtifactController {
 
     public String getRemoteUrl(Repository repository) {
         String remoteUrl = null;
-        if (repository.getGroupRepositories() != null) {
+        if (repository.getGroupRepositories() != null && repository.getGroupRepositories().size() > 0) {
             for (String group : repository.getGroupRepositories()) {
                 Repository groupRepository = configurationManager.getRepository(group);
 
