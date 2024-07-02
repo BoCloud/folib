@@ -673,7 +673,7 @@
               ]" :disabled="true" :placeholder="$t('Store.InputTargetWarehouse')">
               </a-input>
             </a-form-item>
-            <a-form-item :label="$t('Store.UploadMode')" v-if="folibRepository.layout === 'Maven 2'">
+            <a-form-item :label="$t('Store.UploadMode')" v-if="folibRepository.layout === 'Maven 2'  || folibRepository.layout === 'Raw'">
               <a-radio-group v-decorator="[
                 'type',
                 {
