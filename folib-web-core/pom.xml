@@ -713,7 +713,12 @@
             <artifactId>jib-core</artifactId>
             <version>0.27.1</version>
         </dependency>
-        <!-- https://mvnrepository.com/artifact/com.github.junrar/junrar -->
+        <dependency>
+            <groupId>com.google.cloud.tools</groupId>
+            <artifactId>jib-build-plan</artifactId>
+            <version>0.4.0</version>
+            <scope>runtime</scope>
+        </dependency>
         <dependency>
             <groupId>com.github.junrar</groupId>
             <artifactId>junrar</artifactId>
