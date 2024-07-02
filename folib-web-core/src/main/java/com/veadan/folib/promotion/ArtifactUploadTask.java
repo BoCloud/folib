@@ -825,6 +825,7 @@ public class ArtifactUploadTask implements Callable<String> {
                    .map(Path::toFile)
                    .forEach(File::delete);
        }catch (Exception e){
+           e.printStackTrace();
            log.error("docker upload error uuid: {} ,storageId:{} ,repositoryId:{} ,tag:{}", uuid,storageId,repositoryId,tag);
        }
 
