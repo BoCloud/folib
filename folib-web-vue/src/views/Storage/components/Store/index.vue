@@ -235,7 +235,7 @@
               <a-col :span="8" class="text-right">
                 <a-dropdown v-if="$store.state.user.token && currentTreeNode.url" class="mr-30" placement="bottomCenter">
                   <span style="font-size: 16px; cursor: pointer">
-                    {{ $t('Store.More') }}
+                    {{ $t('Store.More')  }}
                     <a-icon type="more" class="text-muted" style="font-size: 16px" />
                   </span>
                   <template #overlay>
@@ -269,9 +269,15 @@
                       </a-menu-item>
 
                       <a-menu-item key="6"
-                        v-if="folibRepository.layout !== 'Docker' && currentTreeNode && currentTreeNode.type === 'file' && currentFileDetial && currentFileDetial.artifact">
+                                   v-if="folibRepository.layout !== 'Docker' && currentTreeNode && currentTreeNode.type === 'file' && currentFileDetial && currentFileDetial.artifact">
                         <a-icon type="download" />{{ $t('Store.DownLoad') }}
                       </a-menu-item>
+
+                        <a-menu-item key="7"
+                                     v-if="(folibRepository.layout === 'Raw' && currentTreeNode && currentTreeNode.type === 'dir') ">
+                            <a-icon type="download" />{{ $t('Store.DownLoad') }}
+                        </a-menu-item>
+
                     </a-menu>
                   </template>
                 </a-dropdown>
@@ -589,7 +595,7 @@
     </a-modal>
     <!--   rpm 上传表单 end -->
     <!-- docker上传表单 -->
-      <a-modal v-model="showDockerUploadFormModal" :footer="null" :forceRender="true" :centered="true"
+    <a-modal v-model="showDockerUploadFormModal" :footer="null" :forceRender="true" :centered="true"
                :title="$t('Store.Upload')"
                on-ok="showDockerUploadFormModal = false">
           <a-form :form="dockerUploadForm" ref="dockerUploadForm" layout="horizontal" @submit.prevent="handleDockerUploadSubmit">
@@ -1844,14 +1850,20 @@ export default {
      	this.operationTitle = this.$t('Store.Distribute')
         this.customTitle = this.$t('Store.DistributeCustomDirectory')
         // 下载  
-      } else if (active.key === '6')
-      {
-        let url = this.currentTreeNode.url
-        if (url)
-        {
-          window.open(url)
-        }
+      } else if (active.key === '6') {
+          let url = this.currentTreeNode.url
+          if (url) {
+              window.open(url)
+          }
 
+      } else if (active.key === '7') {
+          if (this.currentTreeNode.type === 'dir') {
+              let url = this.currentTreeNode.url
+              if (url) {
+                  url = url.replace("api/browse", "storages")
+                  window.open(url)
+              }
+          }
       }
     },
     getArtifactoryRepositoryType(key) {
