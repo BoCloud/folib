@@ -7,6 +7,7 @@ import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
 import com.google.common.collect.Lists;
 import com.veadan.folib.artifact.coordinates.DockerArtifactCoordinates;
+import com.veadan.folib.authentication.api.password.PasswordAuthentication;
 import com.veadan.folib.cloud.storage.s3fs.S3Iterator;
 import com.veadan.folib.cloud.storage.s3fs.S3Path;
 import com.veadan.folib.components.layout.DockerComponent;
@@ -28,6 +29,8 @@ import com.veadan.folib.users.domain.Privileges;
 import com.veadan.folib.users.security.JwtAuthenticationClaimsProvider;
 import com.veadan.folib.users.security.JwtClaimsProvider;
 import com.veadan.folib.users.security.SecurityTokenProvider;
+import com.veadan.folib.users.service.UserService;
+import com.veadan.folib.users.service.impl.DatabaseUserService;
 import com.veadan.folib.users.userdetails.SpringSecurityUser;
 import com.veadan.folib.util.RepositoryPathUtil;
 import com.veadan.folib.utils.FileUtils;
@@ -43,6 +46,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.authentication.AnonymousAuthenticationToken;
+import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -100,6 +104,13 @@ public class DockerArtifactController extends BaseArtifactController {
     @Lazy
     private DockerComponent dockerComponent;
 
+    @Inject
+    @DatabaseUserService.Database
+    private UserService userService;
+
+    @Inject
+    private AuthenticationManager authenticationManager;
+
     /**
      * 文件进度
      */
@@ -141,7 +152,7 @@ public class DockerArtifactController extends BaseArtifactController {
             @ApiResponse(code = 500, message = "An error occurred.")})
     @PreAuthorize("hasAuthority('ARTIFACTS_RESOLVE')")
     @RequestMapping(value = {"/v2/token"}, method = {RequestMethod.GET, RequestMethod.POST})
-    public ResponseEntity<Object> token(HttpServletResponse response, @RequestParam(value = "scope", required = false) String scope) {
+    public ResponseEntity<Object> token(HttpServletRequest request, HttpServletResponse response, @RequestParam(value = "username", required = false) String username, @RequestParam(value = "password", required = false) String password, @RequestParam(value = "scope", required = false) String scope) {
         try {
             SecurityContext securityContext = SecurityContextHolder.getContext();
             Authentication authentication = securityContext.getAuthentication();
@@ -150,8 +161,18 @@ public class DockerArtifactController extends BaseArtifactController {
             }
             response.setHeader(DockerHeaderEnum.DOCKER_DISTRIBUTION_API_VERSION.key(), DockerHeaderEnum.DOCKER_DISTRIBUTION_API_VERSION.value());
             int expireSeconds = 7200;
+            if (StringUtils.isNotBlank(username) && StringUtils.isNotBlank(password)) {
+                //Oauth2
+                authenticationManager.authenticate(new PasswordAuthentication(username, password));
+                String token = userService.generateSecurityToken(username, expireSeconds);
+                JSONObject resultData = new JSONObject();
+                resultData.put("access_token", token);
+                resultData.put("scope", scope);
+                resultData.put("expires_in", expireSeconds);
+                return ResponseEntity.ok(resultData);
+            }
             if (authentication instanceof AnonymousAuthenticationToken) {
-                String username = authentication.getPrincipal().toString();
+                username = authentication.getPrincipal().toString();
                 Map<String, String> claimMap = Collections.singletonMap(GlobalConstants.ANONYMOUS_TOKEN_KEY, username);
                 JSONObject resultData = new JSONObject();
                 String token = securityTokenProvider.getToken(username, claimMap, expireSeconds, null);
