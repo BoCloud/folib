@@ -1,6 +1,5 @@
 package com.veadan.folib.controllers.layout.pypi;
 
-import com.alibaba.fastjson.JSONObject;
 import com.google.common.collect.Sets;
 import com.veadan.folib.artifact.coordinates.PypiArtifactCoordinates;
 import com.veadan.folib.components.artifact.ArtifactComponent;
@@ -9,11 +8,8 @@ import com.veadan.folib.domain.ArtifactIdGroup;
 import com.veadan.folib.domain.ArtifactIdGroupEntity;
 import com.veadan.folib.providers.ProviderImplementationException;
 import com.veadan.folib.providers.io.RepositoryPath;
-import com.veadan.folib.providers.repository.RepositoryProviderRegistry;
-import com.veadan.folib.pypi.PypiSearchRequest;
-import com.veadan.folib.pypi.PypiSearchResult;
 import com.veadan.folib.repository.PypiRepositoryFeatures;
-import com.veadan.folib.services.ArtifactCoordinatesService;
+import com.veadan.folib.services.PypiService;
 import com.veadan.folib.storage.metadata.pypi.PypiArtifactMetadata;
 import com.veadan.folib.storage.repository.Repository;
 import com.veadan.folib.storage.validation.artifact.ArtifactCoordinatesValidationException;
@@ -41,7 +37,10 @@ import javax.ws.rs.core.MediaType;
 import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.net.URI;
-import java.util.*;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
 
 /**
  * Rest End Points for Pypi Artifacts requests.
@@ -51,7 +50,7 @@ import java.util.*;
  */
 @RestController
 @LayoutRequestMapping(PypiArtifactCoordinates.LAYOUT_NAME)
-@Api(description = "python坐标控制器",tags = "python坐标控制器")
+@Api(description = "python坐标控制器", tags = "python坐标控制器")
 public class PypiArtifactController extends BaseArtifactController {
 
     private static final Set<String> VALID_ACTIONS = Sets.newHashSet("file_upload");
@@ -59,16 +58,10 @@ public class PypiArtifactController extends BaseArtifactController {
     private static final Set<String> VALID_FILE_TYPES = Sets.newHashSet("sdist", "bdist_wheel");
 
     @Inject
-    private RepositoryProviderRegistry repositoryProviderRegistry;
-
-    @Inject
-    private PypiBrowsePackageHtmlResponseBuilder htmlResponseBuilder;
-
-    @Inject
     private PypiRepositoryFeatures.PypiSearchPackagesEventListener pypiSearchPackagesEventListener;
 
     @Inject
-    private ArtifactCoordinatesService artifactCoordinatesService;
+    private PypiService pypiService;
 
     @Inject
     @Lazy
@@ -119,7 +112,6 @@ public class PypiArtifactController extends BaseArtifactController {
                         .body("Invalid value for \":action\" parameter. Valid action values are "
                                 + VALID_ACTIONS);
             }
-
             PypiArtifactMetadata pypiArtifactMetadata = new PypiArtifactMetadata().withAction(action)
                     .withAuthor(author)
                     .withAuthorEmail(authorEmail)
@@ -190,7 +182,7 @@ public class PypiArtifactController extends BaseArtifactController {
             @ApiResponse(code = HttpURLConnection.HTTP_INTERNAL_ERROR, message = "An error occurred while executing download request."),
             @ApiResponse(code = HttpURLConnection.HTTP_UNAVAILABLE, message = "Service Unavailable.")})
     @PreAuthorize("hasAuthority('ARTIFACTS_RESOLVE')")
-    @RequestMapping(path = "/{storageId}/{repositoryId}/packages/{artifactName}", method = RequestMethod.GET)
+    @RequestMapping(path = "/{storageId}/{repositoryId}/packages/{artifactName:.+}", method = RequestMethod.GET)
     public void downloadPackage(@RepositoryMapping Repository repository,
                                 @PathVariable(name = "artifactName") String artifactName,
                                 HttpServletRequest request,
@@ -210,22 +202,9 @@ public class PypiArtifactController extends BaseArtifactController {
             response.setStatus(HttpStatus.BAD_REQUEST.value());
             return;
         }
-
-        String targetUrl = null;
-        if (repository.isProxyRepository() && Objects.nonNull(repository.getRemoteRepository())) {
-            ArtifactIdGroup artifactIdGroup = getArtifactIdGroup(repository, coordinates);
-            if (Objects.nonNull(artifactIdGroup) && StringUtils.hasText(artifactIdGroup.getMetadata())) {
-                List<PypiSearchResult> pypiSearchRequestList = JSONObject.parseArray(artifactIdGroup.getMetadata(), PypiSearchResult.class);
-                Optional<PypiSearchResult> optionalPypiSearchResult = pypiSearchRequestList.stream().filter(item -> item.getArtifactName().equals(artifactName)).findFirst();
-                if (optionalPypiSearchResult.isPresent()) {
-                    targetUrl = optionalPypiSearchResult.get().getArtifactUrl();
-                }
-            }
-        }
         RepositoryPath repositoryPath = artifactResolutionService.resolvePath(
                 repository.getStorage().getId(),
                 repository.getId(),
-                targetUrl,
                 coordinates.buildPath());
         vulnerabilityBlock(repositoryPath);
         provideArtifactDownloadResponse(request, response, headers, repositoryPath);
@@ -286,7 +265,7 @@ public class PypiArtifactController extends BaseArtifactController {
         logger.info("Get package path request for storageId -> [{}] , repositoryId -> [{}], packageName -> [{}]",
                 repository.getStorage().getId(),
                 repository.getId(), packageNameToDownload);
-        String html = artifactComponent.getPypiArtifactIdGroupCache(repository, new PypiSearchRequest(packageName));
+        String html = pypiService.packages(repository, packageName, packageName);
         return ResponseEntity.status(HttpStatus.OK).body(html);
     }
 

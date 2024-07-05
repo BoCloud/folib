@@ -2,8 +2,10 @@ package com.veadan.folib.artifact.coordinates;
 
 import com.google.common.collect.Lists;
 import com.veadan.folib.artifact.coordinates.versioning.SemanticVersion;
+import com.veadan.folib.constant.GlobalConstants;
 import com.veadan.folib.db.schema.Vertices;
 import com.veadan.folib.domain.LayoutArtifactCoordinatesEntity;
+import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.util.PypiArtifactCoordinatesUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.neo4j.ogm.annotation.NodeEntity;
@@ -49,11 +51,12 @@ public class PypiArtifactCoordinates
 
     public static final String PACKAGING = "packaging";
 
-    public static final List<String> SOURCE_EXTENSION_LIST = Lists.newArrayList("tar.gz", "zip");
+    public static final List<String> SOURCE_EXTENSION_LIST = Lists.newArrayList("exe", "tar.gz", "bz2", "rpm", "deb", "zip", "tgz", "dmg", "msi");
 
-    public static final List<String> WHEEL_EXTENSION_LIST = Lists.newArrayList("whl");
+    public static final List<String> WHEEL_EXTENSION_LIST = Lists.newArrayList("whl", "egg");
 
-    public static final List<String> EXTENSION_LIST = Lists.newArrayList("tar.gz", "zip", "whl");
+    public static final List<String> EXTENSION_LIST = Lists.newArrayList("exe", "tar.gz", "bz2", "rpm", "deb", "zip", "tgz", "egg", "dmg", "msi",
+            "whl");
 
     public static final String FULL_TAR_GZ_SUFFIX = ".tar.gz";
 
@@ -255,21 +258,23 @@ public class PypiArtifactCoordinates
      * @return Returns the reconstructed path from the stored coordinate values
      */
     @Override
-    public String convertToPath(PypiArtifactCoordinates c) {
+    public String convertToPath(PypiArtifactCoordinates c)
+    {
         String fileName = SOURCE_EXTENSION_LIST.contains(c.getPackaging()) ? c.buildSourcePackageFileName()
                 : c.buildWheelPackageFileName();
-
-        return String.format("%s/%s/%s",
-                c.getId(),
-                c.getVersion(),
-                fileName);
+        if (StringUtils.isBlank(c.getPath()) || fileName.equals(c.getPath())) {
+            return String.format("%s/%s/%s",
+                    c.getId(),
+                    c.getVersion(),
+                    fileName);
+        }
+        return c.getPath();
     }
 
     @Override
     public URI convertToResource(PypiArtifactCoordinates artifactCoordinates) {
-        String fileName = SOURCE_EXTENSION_LIST.contains(artifactCoordinates.getPackaging()) ? artifactCoordinates.buildSourcePackageFileName()
-                : artifactCoordinates.buildWheelPackageFileName();
-        return URI.create(String.format("packages/%s", fileName));
+        String path = convertToPath(artifactCoordinates);
+        return URI.create(String.format("packages/%s", path));
     }
 
     private String buildSourcePackageFileName() {
@@ -327,6 +332,14 @@ public class PypiArtifactCoordinates
         } catch (IllegalArgumentException e) {
             return null;
         }
+    }
+
+    public static PypiArtifactCoordinates resolveName(String artifactPath)
+    {
+        PypiArtifactCoordinates pypiArtifactCoordinates = new PypiArtifactCoordinates();
+        String[] arr = artifactPath.split(GlobalConstants.SEPARATOR);
+        pypiArtifactCoordinates.setId(arr[0]);
+        return pypiArtifactCoordinates;
     }
 
 }
