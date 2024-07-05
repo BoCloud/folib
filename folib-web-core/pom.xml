@@ -714,12 +714,6 @@
             <version>0.27.1</version>
         </dependency>
         <dependency>
-            <groupId>com.google.cloud.tools</groupId>
-            <artifactId>jib-build-plan</artifactId>
-            <version>0.4.0</version>
-            <scope>runtime</scope>
-        </dependency>
-        <dependency>
             <groupId>com.github.junrar</groupId>
             <artifactId>junrar</artifactId>
             <version>7.5.5</version>
