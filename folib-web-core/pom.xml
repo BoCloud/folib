@@ -713,7 +713,6 @@
             <artifactId>jib-core</artifactId>
             <version>0.27.1</version>
         </dependency>
-        <!-- https://mvnrepository.com/artifact/com.github.junrar/junrar -->
         <dependency>
             <groupId>com.github.junrar</groupId>
             <artifactId>junrar</artifactId>
