@@ -399,6 +399,12 @@
                         <a-icon type="download" />
                         {{ $t('Store.DownLoad') }}
                       </a-menu-item>
+
+                        <a-menu-item key="7"
+                                     v-if="folibRepository.layout === 'Docker' && currentTreeNode && currentTreeNode.type === 'file' && currentFileDetial && currentFileDetial.artifact">
+                            <a-icon type="download" />
+                            {{ $t('Store.DownLoad') }}
+                        </a-menu-item>
                     </a-menu>
                   </template>
                 </a-dropdown>
@@ -425,8 +431,8 @@
 
           <hr class="gradient-line" />
           <BaseData ref="BaseData" :currentTreeNode="currentTreeNode" :repositoryType="repositoryType"
-            :currentFileDetial="currentFileDetial" :successMsg="successMsg" :folibRepository="folibRepository"
-            @metadataEditHandler="metadataEditHandler" @metadataHandler="metadataHandler" @setCurrentFileDetial="setCurrentFileDetial"/>
+            :currentFileDetial="currentFileDetial" :successMsg="successMsg" :folibRepository="folibRepository" @messageArchitectureChild="handleArchitectureMessage"
+                    @metadataEditHandler="metadataEditHandler" @metadataHandler="metadataHandler" @setCurrentFileDetial="setCurrentFileDetial"/>
         </a-card>
       </a-col>
     </a-row>
@@ -957,7 +963,7 @@ export default {
       currentFileDetial: null,
       currentTreeNode: {},
       detialVisible: false,
-
+      targetArchitecture: null,
       metadataList: [],
       metadataConfigList: [],
       metadataEditorDrawerTitle: undefined,
@@ -1215,7 +1221,6 @@ export default {
                 })
             }
         })
-        console.log("repositoryId", this.folibRepository);
         this.showDockerUploadFormModal =true;
     },
     uploadDockerFormModalClose () {
@@ -1387,7 +1392,6 @@ export default {
                     let msg = err.response.data.error
                         ? err.response.data.error
                         : err.response.data
-                    console.log('upload error：', msg)
                     let errStatusArr = [200, 500, 403, 304, 401]
                     if (!errStatusArr.includes(err.response.status))
                     {
@@ -1863,9 +1867,33 @@ export default {
                   url = url.replace("api/browse", "storages")
                   window.open(url)
               }
+          }else if (this.currentTreeNode.type === 'file') {
+              let uri = this.currentTreeNode.url;
+              const str = this.currentFileDetial.imageName;
+
+            // 使用正则表达式匹配第三个 '/' 后的部分
+              const regex = /^([^\/]*\/){3}(.*)$/;
+              const match = str.match(regex);
+
+              const result = match ? match[2] : '';
+              if (uri) {
+                  const url = new URL(uri);
+                  // 获取协议（http: 或 https:）
+                  const protocol = url.protocol;
+                  // 获取主机名（不包括路径和查询字符串）
+                  const hostname = url.hostname;
+                  // 获取端口号，如果没有指定则默认为 80（http）或 443（https）
+                  const port = url.port ? `:${url.port}` : '';
+                  const params = this.targetArchitecture === null ? '' : '?platform=' + this.targetArchitecture;
+                  const baseUrl = `${protocol}//${hostname}${port}/storages/` + this.currentTreeNode.storageId + '/' + this.currentTreeNode.repositoryId + '/download/' + result + params;
+                  window.open(baseUrl)
+              }
           }
       }
     },
+      handleArchitectureMessage(message){
+          this.targetArchitecture = message;
+      },
     getArtifactoryRepositoryType(key) {
       let artifactoryRepositoryType = ''
       this.externalNodeRepositories.forEach(node => {
