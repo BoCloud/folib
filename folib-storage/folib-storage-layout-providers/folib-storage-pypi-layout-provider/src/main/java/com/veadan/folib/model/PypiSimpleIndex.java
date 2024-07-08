@@ -51,7 +51,7 @@ public class PypiSimpleIndex {
             packageName = this.entries.first().getName();
         }
         StringBuilder sb = new StringBuilder(String.format("<!DOCTYPE html>\n<html><head><title>Simple Index</title><meta name=\"api-version\" value=\"2\" />" +
-                "<title>Links for \" + %s + \"</title>\n</head><body><h1>Links for \" + %s + \"</h1><br>\n", packageName, packageName));
+                "<title>Links for %s</title>\n</head><body><h1>Links for %s</h1><br>\n", packageName, packageName));
         for (PypiIndexEntry entry : this.entries) {
             sb.append(entry.toString()).append("<br>");
         }

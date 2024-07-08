@@ -203,14 +203,14 @@ public class NpmPackageMetadataIndexer {
         writeOrDeletePackageMetadataFile(repositoryPath, npmArtifactCoordinates, storageId, repositoryId, packageName, npmIndexTypeEnum, packageFeed);
     }
 
-    private void indexType(RepositoryPath repositoryPath, NpmArtifactCoordinates npmArtifactCoordinates, String storageId, String repositoryId, String packageName, NpmIndexTypeEnum pubIndexTypeEnum, PackageFeed packageFeed) {
+    private void indexType(RepositoryPath repositoryPath, NpmArtifactCoordinates npmArtifactCoordinates, String storageId, String repositoryId, String packageName, NpmIndexTypeEnum npmIndexTypeEnum, PackageFeed packageFeed) {
         try {
-            switch (pubIndexTypeEnum.getType()) {
+            switch (npmIndexTypeEnum.getType()) {
                 case "add":
-                    handleAddPubPackage(packageFeed, repositoryPath, npmArtifactCoordinates, storageId, repositoryId, packageName);
+                    handleAddNpmPackage(packageFeed, repositoryPath, npmArtifactCoordinates, storageId, repositoryId, packageName);
                     break;
                 case "delete":
-                    handleDeletePubPackage(packageFeed, repositoryPath, npmArtifactCoordinates, storageId, repositoryId, packageName);
+                    handleDeleteNpmPackage(packageFeed, repositoryPath, npmArtifactCoordinates, storageId, repositoryId, packageName);
                     break;
                 default:
                     ;
@@ -220,7 +220,7 @@ public class NpmPackageMetadataIndexer {
         }
     }
 
-    private void writeOrDeletePackageMetadataFile(RepositoryPath repositoryPath, NpmArtifactCoordinates pubArtifactCoordinates, String storageId, String repositoryId, String packageName, NpmIndexTypeEnum npmIndexTypeEnum, PackageFeed packageFeed) throws Exception {
+    private void writeOrDeletePackageMetadataFile(RepositoryPath repositoryPath, NpmArtifactCoordinates npmArtifactCoordinates, String storageId, String repositoryId, String packageName, NpmIndexTypeEnum npmIndexTypeEnum, PackageFeed packageFeed) throws Exception {
         String packageMetadataFilePath = NpmUtils.getPackageMetadataPath(packageFeed.getName());
         RepositoryPath packageJsonRepositoryPath = repositoryPathResolver.resolve(repositoryPath.getRepository(), packageMetadataFilePath);
         if (MapUtils.isNotEmpty(packageFeed.getVersions().getAdditionalProperties())) {
@@ -233,17 +233,17 @@ public class NpmPackageMetadataIndexer {
         }
     }
 
-    private void handleDeletePubPackage(PackageFeed packageFeed, RepositoryPath repositoryPath, NpmArtifactCoordinates npmArtifactCoordinates, String storageId, String repositoryId, String packageName) throws Exception {
+    private void handleDeleteNpmPackage(PackageFeed packageFeed, RepositoryPath repositoryPath, NpmArtifactCoordinates npmArtifactCoordinates, String storageId, String repositoryId, String packageName) throws Exception {
         log.debug("Handling Delete for package: '{}', version: '{}'", packageName, npmArtifactCoordinates.getVersion());
         removeVersionFromPackageMetadata(packageFeed, npmArtifactCoordinates.getVersion());
     }
 
-    private void handleAddPubPackage(PackageFeed packageFeed, RepositoryPath repositoryPath, NpmArtifactCoordinates npmArtifactCoordinates, String storageId, String repositoryId, String packageName) throws Exception {
+    private void handleAddNpmPackage(PackageFeed packageFeed, RepositoryPath repositoryPath, NpmArtifactCoordinates npmArtifactCoordinates, String storageId, String repositoryId, String packageName) throws Exception {
         log.debug("Handling Add for package: '{}', version: '{}'", packageName, npmArtifactCoordinates.getVersion());
-        addPubPackage(repositoryPath, npmArtifactCoordinates, packageName, packageFeed);
+        addNpmPackage(repositoryPath, npmArtifactCoordinates, packageName, packageFeed);
     }
 
-    private void addPubPackage(RepositoryPath repositoryPath, NpmArtifactCoordinates npmArtifactCoordinates, String packageName, PackageFeed packageFeed) throws Exception {
+    private void addNpmPackage(RepositoryPath repositoryPath, NpmArtifactCoordinates npmArtifactCoordinates, String packageName, PackageFeed packageFeed) throws Exception {
         try (InputStream inputStream = Files.newInputStream(repositoryPath);) {
             Pair<PackageVersion, Path> packageVersionPathPair = npmComponent.extractPackage(packageName, inputStream, repositoryPath.getRepository().getSubLayout());
             PackageVersion packageVersion = packageVersionPathPair.getValue0();
@@ -273,7 +273,7 @@ public class NpmPackageMetadataIndexer {
     }
 
     protected String getRepositoryBaseUrl(Repository repository) {
-        return String.format("%s/storages/%s/%s", StringUtils.chomp(configurationManager.getConfiguration().getBaseUrl(), "/"), repository.getStorage().getId(), repository.getId());
+        return String.format("%s/storages/%s/%s/", StringUtils.chomp(configurationManager.getConfiguration().getBaseUrl(), "/"), repository.getStorage().getId(), repository.getId());
     }
 
     private void sort(List<String> packageVersionList) {
