@@ -8,10 +8,18 @@ import cn.hutool.extra.compress.extractor.Extractor;
 import cn.hutool.extra.spring.SpringUtil;
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
+import com.github.junrar.Archive;
+import com.github.junrar.exception.RarException;
+import com.github.junrar.rarfile.FileHeader;
+import com.google.cloud.tools.jib.api.Containerizer;
+import com.google.cloud.tools.jib.api.Jib;
+import com.google.cloud.tools.jib.api.RegistryImage;
+import com.google.cloud.tools.jib.api.TarImage;
 import com.veadan.folib.artifact.MavenArtifactUtils;
 import com.veadan.folib.artifact.coordinates.NpmArtifactCoordinates;
 import com.veadan.folib.artifact.coordinates.PubArtifactCoordinates;
 import com.veadan.folib.components.artifact.ArtifactComponent;
+import com.veadan.folib.components.layout.DockerComponent;
 import com.veadan.folib.domain.ArtifactIdGroupEntity;
 import com.veadan.folib.domain.ArtifactParse;
 import com.veadan.folib.domain.DockerManifest;
@@ -32,9 +40,16 @@ import com.veadan.folib.services.RepositoryManagementService;
 import com.veadan.folib.storage.metadata.MetadataHelper;
 import com.veadan.folib.util.CommonUtils;
 import com.veadan.folib.util.MessageDigestUtils;
+import com.veadan.folib.utils.CompressionFormatUtils;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.compress.archivers.ArchiveEntry;
+import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
+import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
+import org.apache.commons.compress.archivers.tar.TarArchiveOutputStream;
+import org.apache.commons.compress.compressors.gzip.GzipCompressorInputStream;
+import org.apache.commons.compress.utils.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.maven.artifact.ArtifactUtils;
@@ -43,14 +58,19 @@ import org.apache.maven.artifact.repository.metadata.Snapshot;
 import org.apache.maven.artifact.repository.metadata.Versioning;
 import org.apache.maven.index.artifact.Gav;
 import org.apache.maven.model.Model;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.*;
 import java.util.concurrent.Callable;
+import java.util.zip.GZIPInputStream;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
 
 @Data
 @Slf4j
@@ -75,6 +95,9 @@ public class ArtifactUploadTask implements Callable<String> {
     private String parseArtifact;
     private ArtifactComponent artifactComponent;
     private RepositoryPath repositoryPath;
+    private String imageTag;
+    private String baseUrl;
+    private String token ;
 
     public ArtifactUploadTask() {
     }
@@ -141,6 +164,47 @@ public class ArtifactUploadTask implements Callable<String> {
         this.artifactComponent = SpringUtil.getBean(ArtifactComponent.class);
     }
 
+    public ArtifactUploadTask(String storageId,
+                              String repositoryId,
+                              MultipartFile file,
+                              RepositoryManagementService repositoryManagementService,
+                              RepositoryPathResolver repositoryPathResolver,
+                              ArtifactManagementService artifactManagementService,
+                              PromotionUtil promotionUtil,
+                              LayoutProviderRegistry layoutProviderRegistry,
+                              ArtifactMetadataService artifactMetadataService,
+                              ArtifactRepository artifactRepository,
+                              MavenRepositoryFeatures mavenRepositoryFeatures,
+                              String tempPath,
+                              String fileRelativePath,
+                              String metaData,
+                              String uuid,
+                              String parseArtifact,
+                              String imageTag,
+                              String baseUrl,
+                              String token) {
+        this.storageId = storageId;
+        this.repositoryId = repositoryId;
+        this.file = file;
+        this.repositoryManagementService = repositoryManagementService;
+        this.repositoryPathResolver = repositoryPathResolver;
+        this.artifactManagementService = artifactManagementService;
+        this.promotionUtil = promotionUtil;
+        this.layoutProviderRegistry = layoutProviderRegistry;
+        this.artifactMetadataService = artifactMetadataService;
+        this.artifactRepository = artifactRepository;
+        this.mavenRepositoryFeatures = mavenRepositoryFeatures;
+        this.tempPath = tempPath;
+        this.fileRelativePath = fileRelativePath;
+        this.metaData = metaData;
+        this.uuid = uuid;
+        this.parseArtifact = parseArtifact;
+        this.artifactComponent = SpringUtil.getBean(ArtifactComponent.class);
+        this.imageTag = imageTag;
+        this.baseUrl = baseUrl;
+        this.token = token;
+    }
+
     @Override
     public String call() {
         String rs = "";
@@ -176,6 +240,9 @@ public class ArtifactUploadTask implements Callable<String> {
                 handlerNpmLayoutUpload(is, layout, repositoryPath);
             } else if (PubLayoutProvider.ALIAS.equals(layout)) {
                 handlerPubLayoutUpload(is, layout, repositoryPath);
+            }else if(DockerLayoutProvider.ALIAS.equals(layout)){
+                handlerDockerUploadProcess(this.storageId,  this.repositoryId, this.imageTag, this.file,this.baseUrl);
+
             } else {
                 promotionUtil.setMetaData(repositoryPath, metaData);
                 artifactManagementService.store(repositoryPath, is);
@@ -721,5 +788,50 @@ public class ArtifactUploadTask implements Callable<String> {
             dictService.saveOrUpdateDict(Dict.builder().dictKey(uuid).comment(comment).build(), null);
         }
     }
+
+    private void handlerDockerUploadProcess(final String storageId,  final String repositoryId, final String path, final MultipartFile multipartFile,String  baseUrl){
+        log.info("Requested get docker application file {}/{}/{}.", storageId, repositoryId, path);
+        String url = String.join("/", baseUrl,storageId, repositoryId, path);
+
+        final String prefix1 = "http://";
+        final String prefix2 = "https://";
+        String tag = url.replaceAll("^" + prefix1, "");
+        if (url.contains(prefix1)) {
+            tag = url.replaceAll("^" + prefix1, "");
+        } else if (url.contains(prefix2)) {
+            tag = url.replaceAll("^" + prefix2, "");
+        }
+       try {
+           String token = this.token;//securityComponent.getSecurityToken();
+               String uuid = UUID.randomUUID().toString();
+           String TEMP_UPLOAD_DIR = String.join("/",tempPath, uuid);
+           // 将文件保存到指定目录下
+           String fileName = multipartFile.getOriginalFilename();
+           Path tempDirectory = Files.createDirectory(Path.of(TEMP_UPLOAD_DIR));
+           Path localPath = Paths.get(String.join("/", tempDirectory.toString(), fileName));
+
+           Files.copy(multipartFile.getInputStream(), localPath);
+
+           Path localPath2 = DockerParsePacketsUtil.parsePackets(localPath,tempDirectory);
+           Jib.from(TarImage.at(localPath2))
+                   .containerize(Containerizer.to(
+                           RegistryImage
+                                   .named(tag)
+                                   .addCredential("<token>", token)
+                   ).setAllowInsecureRegistries(true));
+
+           Files.walk(tempDirectory)
+                   .sorted(Comparator.reverseOrder())
+                   .map(Path::toFile)
+                   .forEach(File::delete);
+       }catch (Exception e){
+           e.printStackTrace();
+           log.error("docker upload error uuid: {} ,storageId:{} ,repositoryId:{} ,tag:{}", uuid,storageId,repositoryId,tag);
+       }
+
+
+    }
+
+
 
 }

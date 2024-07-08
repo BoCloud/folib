@@ -307,6 +307,7 @@ export default {
     "LfsAddLock":"锁定文件",
     "LfsGetLocks":"查看锁定状态",
     "LfsUnlock":"解锁文件",
+    "LfsFilename":"文件名",
     "HuggingFaceMLConfigure":"配置",
     "HuggingFaceMLConfigureInfo":"要配置 Hugging Face 客户端与 FoLib 协同工作，请使用以下命令添加您的版本库",
     "HuggingFaceMLConfigureInfo2":"对于 0.19.0 及以上版本的 Hugging Face 客户端，HF_HUB_ETAG_TIMEOUT 参数允许您使用管道和标记符解析模型。",
@@ -331,5 +332,6 @@ export default {
     "ExportPub": "为了让Pub客户端使用该仓库，您需要运行以下命令设置环境变量",
     'ImageTag': '镜像标签',
     'InputImageTag': '请输入镜像标签',
+    "ImageTagSpecification": "镜像标签规范: [PATH]/[NAME]:[TAG]",
 
 }

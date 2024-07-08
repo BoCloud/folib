@@ -420,6 +420,28 @@ public class NpmArtifactController
         }
         return null;
     }
+    
+    @PreAuthorize("hasAuthority('ARTIFACTS_RESOLVE')")
+    @GetMapping(path = "{storageId}/{repositoryId}/{packageScope}/{packageName}/{packageVersion}/{fileName}.{fileExtension}")
+    public void downloadPackageWithScopeFile(@RepositoryMapping Repository repository,
+                                                           @PathVariable(name = "packageScope") String packageScope,
+                                                           @PathVariable(name = "packageName") String packageName,
+                                                           @PathVariable(name = "packageVersion") String packageVersion,
+                                                           @PathVariable(name = "fileName") String fileName,
+                                                           @PathVariable(name = "fileExtension") String fileExtension,
+                                                           @RequestHeader HttpHeaders httpHeaders,
+                                                           HttpServletRequest request,
+                                                           HttpServletResponse response)
+            throws Exception {
+        final String storageId = repository.getStorage().getId();
+        final String repositoryId = repository.getId();
+        String path = packageScope + File.separator + packageName + File.separator + packageVersion + File.separator + fileName + GlobalConstants.POINT + fileExtension;
+        logger.info("Requested /{}/{}/{}.", storageId, repositoryId, path);
+
+        RepositoryPath repositoryPath = artifactResolutionService.resolvePath(storageId, repositoryId, path);
+        vulnerabilityBlock(repositoryPath);
+        provideArtifactDownloadResponse(request, response, httpHeaders, repositoryPath);
+    }
 
     @PreAuthorize("hasAuthority('ARTIFACTS_DEPLOY')")
     @PutMapping(path = "{storageId}/{repositoryId}/{name:.+}", consumes = MediaType.APPLICATION_JSON_VALUE)

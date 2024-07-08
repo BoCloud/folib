@@ -592,8 +592,7 @@
                       </a-form-item>
 
                   </a-col>
-
-                  <a-col :span="24" class="text-center">
+                  <a-col :span="24" >
 
                       <a-form-item :label="$t('Store.SelectFile')">
                           <a-upload v-decorator="[
@@ -603,7 +602,7 @@
                   valuePropName: 'fileList',
                   getValueFromEvent: normFile,
                 },
-              ]" name="files" :multiple="false" :beforeUpload="beforeUpload" list-type="text" accept=".tar">
+              ]" name="files" :multiple="false" :beforeUpload="beforeUpload" list-type="text" accept=".gz,.tar,.zip,.giz">
                               <a-button>
                                   <a-icon type="upload"/>
                                   {{ $t('Store.SelectFile') }}
@@ -613,8 +612,11 @@
 
                   </a-col>
                   <a-col :span="24">
-                      <a-form-item class="tags-field mb-10" :label="$t('Store.ImageTag')" prop="imageTag"
+                      <a-form-item class="tags-field mb-10 label-with-icon "  :label="$t('Store.ImageTag')" prop="imageTag"
                                    :colon="false">
+                          <div>
+                              <span> {{ $t('Store.ImageTagSpecification') }}</span>
+                          </div>
                           <a-input
                                   v-decorator="[
                                       'imageTag',
@@ -633,6 +635,8 @@
                           />
                       </a-form-item>
                   </a-col>
+
+
                   <a-col :span="24" class="text-center">
                       <a-button key="submit" class="px-30" size="small" type="primary" htmlType="submit">
                           {{ $t('Store.Upload') }}
@@ -867,7 +871,7 @@ import {
     artifactUploadProgress,
     rpmArtifactUpload,
     artifactDispatch,
-    artifactUploadZip, dockerArtifactUpload
+    artifactUploadZip
 } from '@/api/artifact'
 import { getMetadataConfiguration } from '@/api/settings'
 import { hasRole, isAdmin, isAnonymous, isLogin } from '@/utils/permission'
@@ -1265,7 +1269,7 @@ export default {
         description: ''
       })
     },
-      handleDockerUploadSubmit (e) {
+    handleDockerUploadSubmit (e) {
           e.preventDefault()
           this.dockerUploadForm.validateFields((err, values) => {
               if (!err)
@@ -1351,30 +1355,32 @@ export default {
     },
     handlerDockerUploadFile (imageTag, fileName, file) {
           file = new File([file], fileName)
+          let filePathMap ={};
+          filePathMap[fileName] = imageTag ? imageTag : fileName;
           const formData = new FormData()
+          formData.append('storageId', this.folibRepository.storageId)
+          formData.append('repostoryId', this.folibRepository.id)
+          formData.append('filePathMap', JSON.stringify(filePathMap))
           formData.append('imageTag', imageTag)
-          formData.append('file', file)
-        dockerArtifactUpload(
-              this.folibRepository.storageId,
-              this.folibRepository.id,
-              formData
-          )
-              .then(res => { })
-              .catch(err => {
-                  let msg = err.response.data.error
-                      ? err.response.data.error
-                      : err.response.data
-                  console.log('rpm upload error：', msg)
-                  let errStatusArr = [200, 500, 403, 304, 401]
-                  if (!errStatusArr.includes(err.response.status))
-                  {
-                      this.$notification['error']({
-                          message: this.$t('Store.EncodingError') + err.response.status,
-                          description: ''
-                      })
-                  }
-              })
-              .finally(() => { })
+          formData.append('files', file)
+          let uuid = uuidv4()
+          artifactUploadProgress(formData, uuid, fileName)
+                .then(res => { })
+                .catch(err => {
+                    let msg = err.response.data.error
+                        ? err.response.data.error
+                        : err.response.data
+                    console.log('upload error：', msg)
+                    let errStatusArr = [200, 500, 403, 304, 401]
+                    if (!errStatusArr.includes(err.response.status))
+                    {
+                        this.$notification['error']({
+                            message: this.$t('Store.EncodingError') + err.response.status,
+                            description: ''
+                        })
+                    }
+                })
+                .finally(() => { })
       },
     handlerRpmUploadFile (targetPath, fileName, file) {
       file = new File([file], fileName)
