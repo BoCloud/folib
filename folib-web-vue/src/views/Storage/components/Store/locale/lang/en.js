@@ -307,6 +307,7 @@ export default {
     "LfsAddLock":"Locking files",
     "LfsGetLocks":"Viewing Locked Status",
     "LfsUnlock":"Unlocking files",
+    "LfsFilename":"filename",
     "HuggingFaceMLConfigure":"Configure",
     "HuggingFaceMLConfigureInfo":"To configure the Hugging Face client to work with FoLib, add your repository using the following command",
     "HuggingFaceMLConfigureInfo2":"For Hugging Face client version 0.19.0 and above, the HF_HUB_ETAG_TIMEOUT parameter allows you to resolve models using pipelines and tokenizer.",

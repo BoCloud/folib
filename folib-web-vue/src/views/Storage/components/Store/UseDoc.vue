@@ -1117,118 +1117,118 @@ go 1.20' :readonly="true">
                         :readonly="true"
                 ></prism-editor>
             </a-timeline-item>
-        </a-timeline>
-        <a-timeline v-if="repositoryType === 'GitLfs' ">
-            <a-timeline-item color="primary">
-                GitLfs{{ $t('Store.LfsInitialization') }}
-                <small>GitLfs{{ $t('Store.Configuration') }}{{ $t('Store.LfsInitialization') }}</small>
+      </a-timeline>
+      <a-timeline v-if="repositoryType === 'gitlfs' ">
+          <a-timeline-item color="primary">
+              GitLfs{{ $t('Store.LfsInitialization') }}
+              <small>GitLfs{{ $t('Store.Configuration') }}{{ $t('Store.LfsInitialization') }}</small>
 
-                <prism-editor
-                        class="my-editor height-300"
-                        :value="
-              '\n#'+this.$t('Store.LfsInitialization')+'\n'+
-              'git  lfs  install \n'+
-              '#'+this.$t('Store.LfsAddFile')+'\n'+
-              'git  lfs  track  *.psd  \n'+
-              '#'+this.$t('Store.SetLfs')+'\n'+
-              'git  config  lfs.url  '+baseUrl+'storages/'+folibRepository.storageId+'/'+folibRepository.id+'\n'+
-              '\n' +
-              '#' +this.$t('Store.ShowLfs')+'\n'+
-              'git  config  --list '
-            "
-                        :highlight="highlighterHandle"
-                        :line-numbers="false"
-                        :readonly="true"
-                >
-                </prism-editor>
-            </a-timeline-item>
-            <a-timeline-item color="primary">
-                {{ $t('Store.CommandOperation') }}
-                <small>GitLfs {{ $t('Store.UsuallyCommand') }}</small>
-                <p>{{ $t('Store.UsuallyUse') }}GitLfs{{ $t('Store.specificRefer') }}https://git-lfs.com</p>
+              <prism-editor
+                      class="my-editor height-300"
+                      :value="
+            '\n#'+this.$t('Store.LfsInitialization')+'\n'+
+            'git  lfs  install \n'+
+            '#'+this.$t('Store.LfsAddFile')+'\n'+
+            'git  lfs  track  *.psd  \n'+
+            '#'+this.$t('Store.SetLfs')+'\n'+
+            'git  config  lfs.url  '+baseUrl+'storages/'+folibRepository.storageId+'/'+folibRepository.id+'\n'+
+            '\n' +
+            '#' +this.$t('Store.ShowLfs')+'\n'+
+            'git  config  --list '
+          "
+                      :highlight="highlighterHandle"
+                      :line-numbers="false"
+                      :readonly="true"
+              >
+              </prism-editor>
+          </a-timeline-item>
+          <a-timeline-item color="primary">
+              {{ $t('Store.CommandOperation') }}
+              <small>GitLfs {{ $t('Store.UsuallyCommand') }}</small>
+              <p>{{ $t('Store.UsuallyUse') }}GitLfs{{ $t('Store.specificRefer') }}https://git-lfs.com</p>
 
-                <prism-editor
-                        class="my-editor height-300"
-                        :value="
-              '#'+ this.$t('Store.LfsClone')+ '\n git  clone  --config  lfs.url='+baseUrl+'storages/'+folibRepository.storageId+'/'+folibRepository.id+'  [repository-url]  \n'+
-              '#' + this.$t('Store.LfsPull')+'\n'+ 'git  lfs  pull \n'+
-              '#' + this.$t('Store.LfsPush')+'\n'+ 'git  lfs  push  origin  master\n'+
-              '#' + this.$t('Store.LfsAddLock')+'\n'+ 'git  lfs  lock  [文件名]\n'+
-              '#' + this.$t('Store.LfsGetLocks')+'\n'+ 'git lfs locks\n' +
-              '#' + this.$t('Store.LfsUnlock')+'\n'+ 'git lfs unlock [文件名]\n'
-            "
-                        :highlight="highlighterHandle"
-                        :line-numbers="false"
-                        :readonly="true"
-                ></prism-editor>
-            </a-timeline-item>
-        </a-timeline>
-        <a-timeline v-if="repositoryType === 'HuggingFace' ">
-            <a-timeline-item color="primary">
-                {{ $t('Store.HuggingFaceMLConfigure') }}
-                <p></p>
-                <prism-editor
-                        class="my-editor height-300"
-                        :value="
-              'export HF_HUB_ETAG_TIMEOUT=1500000000 \n'+
-              'export HF_ENDPOINT='+baseUrl+'storages/'+folibRepository.storageId+'/'+folibRepository.id+'\n'"
-                        :highlight="highlighterHandle"
-                        :line-numbers="false"
-                        :readonly="true"
-                >
-                </prism-editor>
-                <small>{{$t('Store.HuggingFaceMLConfigureInfo2')}}</small>
-                <small>{{$t('Store.HuggingFaceMLConfigureToken')}}</small>
-                <p></p>
-                <prism-editor
-                        class="my-editor height-300"
-                        :value="
-              'export HF_TOKEN='+this.userToken"
-                        :highlight="highlighterHandle"
-                        :line-numbers="false"
-                        :readonly="true"
-                >
-                </prism-editor>
-            </a-timeline-item>
-            <a-timeline-item color="primary">
-                {{ $t('Store.HuggingFaceMLUpload') }}
-                <p></p>
-                <prism-editor
-                        class="my-editor height-300"
-                        :value="
-                          'from huggingface_hub import HfApi \n'+
-                          'api = HfApi()\n'+
-                          'api.upload_folder(\n'+
-                          '\tfolder_path='+'{folder_name}, \t\t# folder to upload location on the FS \n'+
-                          '\trepo_id='+'{model_name}'+', \t\t# defines the name under which model will be saved in the local repo. (models--${model_name})\n'+
-                          '\trevision='+'{model_revision}'+', \t\t# represents git revision under which files are stored (main by default) (snapshots/${revision}/...files)\n'+
-                          '\trepo_type='+'model'+'\n'+')'
-                          "
-                        :highlight="highlighterHandle"
-                        :line-numbers="false"
-                        :readonly="true"
-                ></prism-editor>
-            </a-timeline-item>
+              <prism-editor
+                      class="my-editor height-300"
+                      :value="
+            '#'+ this.$t('Store.LfsClone')+ '\n git  clone  --config  lfs.url='+baseUrl+'storages/'+folibRepository.storageId+'/'+folibRepository.id+'  [repository-url]  \n'+
+            '#' + this.$t('Store.LfsPull')+'\n'+ 'git  lfs  pull \n'+
+            '#' + this.$t('Store.LfsPush')+'\n'+ 'git  lfs  push  origin  master\n'+
+            '#' + this.$t('Store.LfsAddLock')+'\n'+ 'git  lfs  lock  [' + this.$t('Store.LfsFilename') + '] \n'+
+            '#' + this.$t('Store.LfsGetLocks')+'\n'+ 'git lfs locks\n' +
+            '#' + this.$t('Store.LfsUnlock')+'\n'+ 'git lfs unlock [' + this.$t('Store.LfsFilename') + ']\n'
+          "
+                      :highlight="highlighterHandle"
+                      :line-numbers="false"
+                      :readonly="true"
+              ></prism-editor>
+          </a-timeline-item>
+      </a-timeline>
+      <a-timeline v-if="repositoryType === 'huggingface' ">
+          <a-timeline-item color="primary">
+              {{ $t('Store.HuggingFaceMLConfigure') }}
+              <p></p>
+              <prism-editor
+                      class="my-editor height-300"
+                      :value="
+            'export HF_HUB_ETAG_TIMEOUT=1500000000 \n'+
+            'export HF_ENDPOINT='+baseUrl+'storages/'+folibRepository.storageId+'/'+folibRepository.id+'\n'"
+                      :highlight="highlighterHandle"
+                      :line-numbers="false"
+                      :readonly="true"
+              >
+              </prism-editor>
+              <small>{{$t('Store.HuggingFaceMLConfigureInfo2')}}</small>
+              <small>{{$t('Store.HuggingFaceMLConfigureToken')}}</small>
+              <p></p>
+              <prism-editor
+                      class="my-editor height-300"
+                      :value="
+            'export HF_TOKEN='+this.userToken"
+                      :highlight="highlighterHandle"
+                      :line-numbers="false"
+                      :readonly="true"
+              >
+              </prism-editor>
+          </a-timeline-item>
+          <a-timeline-item color="primary">
+              {{ $t('Store.HuggingFaceMLUpload') }}
+              <p></p>
+              <prism-editor
+                      class="my-editor height-300"
+                      :value="
+                        'from huggingface_hub import HfApi \n'+
+                        'api = HfApi()\n'+
+                        'api.upload_folder(\n'+
+                        '\tfolder_path='+'{folder_name}, \t\t# folder to upload location on the FS \n'+
+                        '\trepo_id='+'{model_name}'+', \t\t# defines the name under which model will be saved in the local repo. (models--${model_name})\n'+
+                        '\trevision='+'{model_revision}'+', \t\t# represents git revision under which files are stored (main by default) (snapshots/${revision}/...files)\n'+
+                        '\trepo_type='+'model'+'\n'+')'
+                        "
+                      :highlight="highlighterHandle"
+                      :line-numbers="false"
+                      :readonly="true"
+              ></prism-editor>
+          </a-timeline-item>
 
-            <a-timeline-item color="primary">
-                {{ $t('Store.HuggingFaceMLDownload') }}
-                <p></p>
-                <prism-editor
-                        class="my-editor height-300"
-                        :value="
-                'from huggingface_hub import snapshot_download \n'+
-                'snapshot_download(\n'+
-                '\trepo_id='+'{'+'model_name'+'}'+', revision='+'{'+'model_revision'+'}'+', etag_timeout=1500000000 \n)'
-                "
-                        :highlight="highlighterHandle"
-                        :line-numbers="false"
-                        :readonly="true"
-                ></prism-editor>
-                <p></p>
-                <small>{{ $t('Store.HuggingFaceMLDownloadInfo2') }}<a href="https://jfrog.com/help/r/jfrog-artifactory-documentation/resolve-hugging-face-models-using-libraries">{{ $t('Store.HuggingFaceMLDownloadInfo3') }}</a></small>
+          <a-timeline-item color="primary">
+              {{ $t('Store.HuggingFaceMLDownload') }}
+              <p></p>
+              <prism-editor
+                      class="my-editor height-300"
+                      :value="
+              'from huggingface_hub import snapshot_download \n'+
+              'snapshot_download(\n'+
+              '\trepo_id='+'{'+'model_name'+'}'+', revision='+'{'+'model_revision'+'}'+', etag_timeout=1500000000 \n)'
+              "
+                      :highlight="highlighterHandle"
+                      :line-numbers="false"
+                      :readonly="true"
+              ></prism-editor>
+              <p></p>
+              <small>{{ $t('Store.HuggingFaceMLDownloadInfo2') }}<a href="https://jfrog.com/help/r/jfrog-artifactory-documentation/resolve-hugging-face-models-using-libraries">{{ $t('Store.HuggingFaceMLDownloadInfo3') }}</a></small>
 
-            </a-timeline-item>
-        </a-timeline>
+          </a-timeline-item>
+      </a-timeline>
       <a-timeline v-if="repositoryType === 'pub'">
         <a-timeline-item color="primary" v-if="folibRepository.type !== 'hosted'">
           Pub {{ $t('Store.GlobalConfiguration') }}
