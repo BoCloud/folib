@@ -868,7 +868,7 @@
           :highlight="highlighterHandle" :line-numbers="false" :readonly="true"></prism-editor>
         </a-timeline-item>
         <a-timeline-item color="primary">
-          {{ Composer$t('Store.Configuration') }}
+          Composer {{ $t('Store.Configuration') }}
           <p>
             {{ $t('Store.Method1') }}
           </p>
