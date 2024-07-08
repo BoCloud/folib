@@ -196,7 +196,7 @@ export default {
     'Unconfigure': 'Unconfigure',
     'GlobalCancel': 'Global cancel',
     'ProjectCancel': 'Project cancellations',
-    'useApi': 'Upload using the API or the page upload buttons',
+    'useAPI': 'Upload using the API or the page upload buttons',
     'GeneralPurpose': 'General purpose',
     'useCocoapods': 'In order to use cocoapods in Artifactory, you need to install "cocoapods-art". Plugins Install cocoapods-art as follows:',
     'UseStandards': 'repo-art uses the authentication specified in the standards ',
