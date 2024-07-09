@@ -9,7 +9,7 @@ export default {
     'ProductSize': '制品大小',
     'Vulnerability': '漏洞',
     'RepositorySelect': '请选择仓库查询',
-    // Detail.vue
+    // index.vue
     'GeneralView': '总览',
     'Component': '组件',
     // ArtifactDashboard.vue

@@ -35,4 +35,8 @@ export default {
     'ProjectsAnalysisDetail': '制品分析详情',
     'ProjectsDetails': '制品分析',
     //bom end
+    
+    'StatisticalOverview':'统计概览',
+    'AdvancementCockpits':'晋级驾驶舱',
+    'AdvancementCockpitsInfo':'晋级驾驶舱详情',
 }

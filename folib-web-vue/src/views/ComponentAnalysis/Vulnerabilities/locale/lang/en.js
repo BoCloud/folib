@@ -56,7 +56,7 @@ export default {
     'VulnerabilityType': 'Vulnerability type',
     'AffectedProducts': 'Affected products',
     'Level': 'Level',
-    // Detail.vue
+    // index.vue
     'GeneralView': 'General view',
     'Information': 'Information',
     // VulnerabilitiesOverView.vue

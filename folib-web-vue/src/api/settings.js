@@ -155,6 +155,13 @@ export function getArtifactSyncRecordPage(dataFilter){
   })
 }
 
+export function getArtifactSyncRecordStatisticsPage(dataFilter){
+  return axios({
+    url: '/api/artifactSyncRecord/statisticsPage?'+objToUrlQuery(dataFilter),
+    method: 'get'
+  })
+}
+
 function objToUrlQuery(obj) {
   if (undefined !== obj && obj) {
     return Object.keys(obj).map(k => k+"="+obj[k]).join("&")
