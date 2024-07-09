@@ -148,8 +148,9 @@ public class DockerStorageController extends BaseArtifactController {
         //设置文件下载名称和类型
         response.setHeader(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + tarName + "\"");
         response.setContentType("application/octet-stream");
-        copyToResponse(Files.newInputStream(Path.of(String.join("/", tempPaths.toString(), tarName))), response);
-
+        InputStream is = Files.newInputStream(Path.of(String.join("/", tempPaths.toString(), tarName)));
+        copyToResponse(is, response);
+        is.close();
         //删除零时文件和目录
         Files.walk(tempPaths)
                 .sorted(Comparator.reverseOrder())
