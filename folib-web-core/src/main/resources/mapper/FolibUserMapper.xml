@@ -1,0 +1,224 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.veadan.folib.mapper.FolibUserMapper">
+    <resultMap type="com.veadan.folib.entity.FolibUser" id="FolibUserMap">
+        <result property="id" column="id"/>
+        <result property="username" column="username"/>
+        <result property="password" column="password"/>
+        <result property="originalPassword" column="original_password"/>
+        <result property="avatar" column="avatar"/>
+        <result property="email" column="email"/>
+        <result property="userType" column="user_type"/>
+        <result property="enabled" column="enabled"/>
+        <result property="sourceId" column="source_id"/>
+        <result property="deleted" column="deleted"/>
+        <result property="createBy" column="CREATE_BY"/>
+        <result property="createTime" column="CREATE_TIME"/>
+        <result property="updateBy" column="UPDATE_BY"/>
+        <result property="updateTime" column="UPDATE_TIME"/>
+    </resultMap>
+
+    <!-- 通过ID查询单条数据 -->
+    <select id="queryById" resultMap="FolibUserMap">
+        select
+            id,username,password,original_password,avatar,email,user_type,enabled,source_id,deleted,CREATE_BY,CREATE_TIME,UPDATE_BY,UPDATE_TIME
+        from folib_user
+        where id = #{id}
+    </select>
+
+    <!--分页查询指定行数据-->
+    <select id="queryAllByLimit" resultMap="FolibUserMap">
+        select
+        id,username,password,original_password,avatar,email,user_type,enabled,source_id,deleted,CREATE_BY,CREATE_TIME,UPDATE_BY,UPDATE_TIME
+        from folib_user
+        <where>
+            <if test="id != null and id != ''">
+                and id = #{id}
+            </if>
+            <if test="username != null and username != ''">
+                and username = #{username}
+            </if>
+            <if test="password != null and password != ''">
+                and password = #{password}
+            </if>
+            <if test="originalPassword != null and originalPassword != ''">
+                and original_password = #{originalPassword}
+            </if>
+            <if test="avatar != null and avatar != ''">
+                and avatar = #{avatar}
+            </if>
+            <if test="email != null and email != ''">
+                and email = #{email}
+            </if>
+            <if test="userType != null and userType != ''">
+                and user_type = #{userType}
+            </if>
+            <if test="enabled != null and enabled != ''">
+                and enabled = #{enabled}
+            </if>
+            <if test="sourceId != null and sourceId != ''">
+                and source_id = #{sourceId}
+            </if>
+            <if test="deleted != null and deleted != ''">
+                and deleted = #{deleted}
+            </if>
+            <if test="createBy != null and createBy != ''">
+                and CREATE_BY = #{createBy}
+            </if>
+            <if test="createTime != null and createTime != ''">
+                and CREATE_TIME = #{createTime}
+            </if>
+            <if test="updateBy != null and updateBy != ''">
+                and UPDATE_BY = #{updateBy}
+            </if>
+            <if test="updateTime != null and updateTime != ''">
+                and UPDATE_TIME = #{updateTime}
+            </if>
+        </where>
+        limit #{pageable.offset}, #{pageable.pageSize}
+    </select>
+
+    <!--统计总行数-->
+    <select id="count" resultType="java.lang.Long">
+        select count(1)
+        from folib_user
+        <where>
+            <if test="id != null and id != ''">
+                and id = #{id}
+            </if>
+            <if test="username != null and username != ''">
+                and username = #{username}
+            </if>
+            <if test="password != null and password != ''">
+                and password = #{password}
+            </if>
+            <if test="originalPassword != null and originalPassword != ''">
+                and original_password = #{originalPassword}
+            </if>
+            <if test="avatar != null and avatar != ''">
+                and avatar = #{avatar}
+            </if>
+            <if test="email != null and email != ''">
+                and email = #{email}
+            </if>
+            <if test="userType != null and userType != ''">
+                and user_type = #{userType}
+            </if>
+            <if test="enabled != null and enabled != ''">
+                and enabled = #{enabled}
+            </if>
+            <if test="sourceId != null and sourceId != ''">
+                and source_id = #{sourceId}
+            </if>
+            <if test="deleted != null and deleted != ''">
+                and deleted = #{deleted}
+            </if>
+            <if test="createBy != null and createBy != ''">
+                and CREATE_BY = #{createBy}
+            </if>
+            <if test="createTime != null and createTime != ''">
+                and CREATE_TIME = #{createTime}
+            </if>
+            <if test="updateBy != null and updateBy != ''">
+                and UPDATE_BY = #{updateBy}
+            </if>
+            <if test="updateTime != null and updateTime != ''">
+                and UPDATE_TIME = #{updateTime}
+            </if>
+        </where>
+    </select>
+
+    <!--新增数据-->
+    <insert id="insert" keyProperty="id" useGeneratedKeys="true">
+        insert into folib_user(id,username,password,original_password,avatar,email,user_type,enabled,source_id,deleted,CREATE_BY,CREATE_TIME,UPDATE_BY,UPDATE_TIME)
+        values (#{id},#{username},#{password},#{originalPassword},#{avatar},#{email},#{userType},#{enabled},#{sourceId},#{deleted},#{createBy},#{createTime},#{updateBy},#{updateTime})
+    </insert>
+
+    <!-- 批量新增数据 -->
+    <insert id="insertBatch" keyProperty="id" useGeneratedKeys="true">
+        insert into folib_user(id,username,password,original_password,avatar,email,user_type,enabled,source_id,deleted,CREATE_BY,CREATE_TIME,UPDATE_BY,UPDATE_TIME)
+        values
+        <foreach collection="entities" item="entity" separator=",">
+            (#{entity.id},#{entity.username},#{entity.password},#{entity.originalPassword},#{entity.avatar},#{entity.email},#{entity.userType},#{entity.enabled},#{entity.sourceId},#{entity.deleted},#{entity.createBy},#{entity.createTime},#{entity.updateBy},#{entity.updateTime})
+        </foreach>
+    </insert>
+
+    <!-- 批量新增或按主键更新数据 -->
+    <insert id="insertOrUpdateBatch" keyProperty="id" useGeneratedKeys="true">
+        insert into folib_user(id,username,password,original_password,avatar,email,user_type,enabled,source_id,deleted,CREATE_BY,CREATE_TIME,UPDATE_BY,UPDATE_TIME)
+        values
+        <foreach collection="entities" item="entity" separator=",">
+            (#{entity.id},#{entity.username},#{entity.password},#{entity.originalPassword},#{entity.avatar},#{entity.email},#{entity.userType},#{entity.enabled},#{entity.sourceId},#{entity.deleted},#{entity.createBy},#{entity.createTime},#{entity.updateBy},#{entity.updateTime})
+        </foreach>
+        on duplicate key update
+        id=values(id),
+        username=values(username),
+        password=values(password),
+        original_password=values(original_password),
+        avatar=values(avatar),
+        email=values(email),
+        user_type=values(user_type),
+        enabled=values(enabled),
+        source_id=values(source_id),
+        deleted=values(deleted),
+        CREATE_BY=values(CREATE_BY),
+        CREATE_TIME=values(CREATE_TIME),
+        UPDATE_BY=values(UPDATE_BY),
+        UPDATE_TIME=values(UPDATE_TIME)
+    </insert>
+
+    <!-- 更新数据 -->
+    <update id="update">
+        update folib_user
+        <set>
+            <if test="id != null and id != ''">
+                id = #{id},
+            </if>
+            <if test="username != null and username != ''">
+                username = #{username},
+            </if>
+            <if test="password != null and password != ''">
+                password = #{password},
+            </if>
+            <if test="originalPassword != null and originalPassword != ''">
+                original_password = #{originalPassword},
+            </if>
+            <if test="avatar != null and avatar != ''">
+                avatar = #{avatar},
+            </if>
+            <if test="email != null and email != ''">
+                email = #{email},
+            </if>
+            <if test="userType != null and userType != ''">
+                user_type = #{userType},
+            </if>
+            <if test="enabled != null and enabled != ''">
+                enabled = #{enabled},
+            </if>
+            <if test="sourceId != null and sourceId != ''">
+                source_id = #{sourceId},
+            </if>
+            <if test="deleted != null and deleted != ''">
+                deleted = #{deleted},
+            </if>
+            <if test="createBy != null and createBy != ''">
+                CREATE_BY = #{createBy},
+            </if>
+            <if test="createTime != null and createTime != ''">
+                CREATE_TIME = #{createTime},
+            </if>
+            <if test="updateBy != null and updateBy != ''">
+                UPDATE_BY = #{updateBy},
+            </if>
+            <if test="updateTime != null and updateTime != ''">
+                UPDATE_TIME = #{updateTime},
+            </if>
+        </set>
+        where id = #{id}
+    </update>
+
+    <!--通过主键删除-->
+    <delete id="deleteById">
+        delete from folib_user where id = #{id}
+    </delete>
+</mapper>
