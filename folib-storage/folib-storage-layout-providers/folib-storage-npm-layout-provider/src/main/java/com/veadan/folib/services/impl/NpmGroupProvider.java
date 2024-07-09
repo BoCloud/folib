@@ -8,12 +8,14 @@ import com.veadan.folib.npm.metadata.PackageVersion;
 import com.veadan.folib.services.NpmProvider;
 import com.veadan.folib.storage.repository.Repository;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.compress.utils.Lists;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
 import javax.inject.Inject;
+import java.util.List;
 import java.util.Objects;
 
 //import com.veadan.folib.domain.PubPackageVersionMetadata;
@@ -43,7 +45,9 @@ public class NpmGroupProvider implements NpmProvider {
     @Override
     public PackageVersion packageVersion(Repository repository, String packageName, String version, String targetUrl) {
         PackageVersion npmPackageVersionMetadata = null, subPubPackageVersionMetadata;
-        for (String storageAndRepositoryId : repository.getGroupRepositories()) {
+        List<String> storageAndRepositoryIdList = Lists.newArrayList();
+        configurationManager.resolveGroupRepository(repository, storageAndRepositoryIdList);
+        for (String storageAndRepositoryId : storageAndRepositoryIdList) {
             try {
                 String sId = ConfigurationUtils.getStorageId(repository.getStorage().getId(), storageAndRepositoryId);
                 String rId = ConfigurationUtils.getRepositoryId(storageAndRepositoryId);
@@ -67,7 +71,9 @@ public class NpmGroupProvider implements NpmProvider {
     @Override
     public PackageFeed packageFeed(Repository repository, String packageName, String targetUrl) {
         PackageFeed packageJson = null, subData;
-        for (String storageAndRepositoryId : repository.getGroupRepositories()) {
+        List<String> storageAndRepositoryIdList = Lists.newArrayList();
+        configurationManager.resolveGroupRepository(repository, storageAndRepositoryIdList);
+        for (String storageAndRepositoryId : storageAndRepositoryIdList) {
             try {
                 String sId = ConfigurationUtils.getStorageId(repository.getStorage().getId(), storageAndRepositoryId);
                 String rId = ConfigurationUtils.getRepositoryId(storageAndRepositoryId);
@@ -91,7 +97,9 @@ public class NpmGroupProvider implements NpmProvider {
     @Override
     public String binary(Repository repository, String packageName, String targetUrl) {
         String binaryData = null, subBinaryData;
-        for (String storageAndRepositoryId : repository.getGroupRepositories()) {
+        List<String> storageAndRepositoryIdList = Lists.newArrayList();
+        configurationManager.resolveGroupRepository(repository, storageAndRepositoryIdList);
+        for (String storageAndRepositoryId : storageAndRepositoryIdList) {
             try {
                 String sId = ConfigurationUtils.getStorageId(repository.getStorage().getId(), storageAndRepositoryId);
                 String rId = ConfigurationUtils.getRepositoryId(storageAndRepositoryId);

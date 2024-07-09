@@ -181,7 +181,7 @@ export default {
             projectsData: [],
             queryParams: {
                 pageNumber: 1,
-                pageSize: 10,
+                pageSize: 1,
                 total: 0,
                 searchText: "",
                 parentId: [],

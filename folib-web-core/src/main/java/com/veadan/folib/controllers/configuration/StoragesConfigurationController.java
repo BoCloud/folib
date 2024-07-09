@@ -1000,7 +1000,9 @@ public class StoragesConfigurationController
         if (repository.isGroupRepository()) {
             repository = configurationManagementService.getMutableConfigurationClone().getStorage(repository.getStorage().getId()).getRepository(repository.getId());
             Set<String> vulnerabilityWhites = repository.getVulnerabilityWhites(), vulnerabilityBlacks = repository.getVulnerabilityBlacks();
-            for (String storageAndRepositoryId : repository.getGroupRepositories()) {
+            List<String> storageAndRepositoryIdList = Lists.newArrayList();
+            configurationManager.resolveGroupRepository(repository, storageAndRepositoryIdList);
+            for (String storageAndRepositoryId : storageAndRepositoryIdList) {
                 String sId = ConfigurationUtils.getStorageId(repository.getStorage().getId(), storageAndRepositoryId);
                 String rId = ConfigurationUtils.getRepositoryId(storageAndRepositoryId);
                 Repository subRepository = configurationManagementService.getMutableConfigurationClone().getStorage(sId).getRepository(rId);

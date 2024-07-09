@@ -16,6 +16,7 @@ import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
 import javax.inject.Inject;
+import java.util.List;
 import java.util.Objects;
 
 /**
@@ -42,7 +43,7 @@ public class ConanGroupProvider implements ConanProvider {
     @Override
     public SearchResults search(String version, Repository repository, String query) {
         SearchResults searchResults = SearchResults.builder().results(Lists.newArrayList()).build(), subSearchResults;
-        for (String storageAndRepositoryId : repository.getGroupRepositories()) {
+        for (String storageAndRepositoryId : getStorageAndRepositoryIdList(repository)) {
             try {
                 String sId = ConfigurationUtils.getStorageId(repository.getStorage().getId(), storageAndRepositoryId);
                 String rId = ConfigurationUtils.getRepositoryId(storageAndRepositoryId);
@@ -65,7 +66,7 @@ public class ConanGroupProvider implements ConanProvider {
     @Override
     public JSONObject revisionsSearch(Repository repository, String artifactPath, String url) {
         JSONObject data = new JSONObject(), subData;
-        for (String storageAndRepositoryId : repository.getGroupRepositories()) {
+        for (String storageAndRepositoryId : getStorageAndRepositoryIdList(repository)) {
             try {
                 String sId = ConfigurationUtils.getStorageId(repository.getStorage().getId(), storageAndRepositoryId);
                 String rId = ConfigurationUtils.getRepositoryId(storageAndRepositoryId);
@@ -89,7 +90,7 @@ public class ConanGroupProvider implements ConanProvider {
     @Override
     public JSONObject revisions(Repository repository, String artifactPath, String targetUrl) {
         JSONObject data = null, subData;
-        for (String storageAndRepositoryId : repository.getGroupRepositories()) {
+        for (String storageAndRepositoryId : getStorageAndRepositoryIdList(repository)) {
             try {
                 String sId = ConfigurationUtils.getStorageId(repository.getStorage().getId(), storageAndRepositoryId);
                 String rId = ConfigurationUtils.getRepositoryId(storageAndRepositoryId);
@@ -113,7 +114,7 @@ public class ConanGroupProvider implements ConanProvider {
     @Override
     public JSONObject downloadUrls(Repository repository, String name, String version, String user, String channel) {
         JSONObject data = new JSONObject(), subData;
-        for (String storageAndRepositoryId : repository.getGroupRepositories()) {
+        for (String storageAndRepositoryId : getStorageAndRepositoryIdList(repository)) {
             try {
                 String sId = ConfigurationUtils.getStorageId(repository.getStorage().getId(), storageAndRepositoryId);
                 String rId = ConfigurationUtils.getRepositoryId(storageAndRepositoryId);
@@ -137,7 +138,7 @@ public class ConanGroupProvider implements ConanProvider {
     @Override
     public JSONObject packageDownloadUrls(Repository repository, String name, String version, String user, String channel, String packageId) {
         JSONObject data = new JSONObject(), subData;
-        for (String storageAndRepositoryId : repository.getGroupRepositories()) {
+        for (String storageAndRepositoryId : getStorageAndRepositoryIdList(repository)) {
             try {
                 String sId = ConfigurationUtils.getStorageId(repository.getStorage().getId(), storageAndRepositoryId);
                 String rId = ConfigurationUtils.getRepositoryId(storageAndRepositoryId);
@@ -161,7 +162,7 @@ public class ConanGroupProvider implements ConanProvider {
     @Override
     public JSONObject digest(Repository repository, String name, String version, String user, String channel) {
         JSONObject data = new JSONObject(), subData;
-        for (String storageAndRepositoryId : repository.getGroupRepositories()) {
+        for (String storageAndRepositoryId : getStorageAndRepositoryIdList(repository)) {
             try {
                 String sId = ConfigurationUtils.getStorageId(repository.getStorage().getId(), storageAndRepositoryId);
                 String rId = ConfigurationUtils.getRepositoryId(storageAndRepositoryId);
@@ -185,7 +186,7 @@ public class ConanGroupProvider implements ConanProvider {
     @Override
     public JSONObject packageDigest(Repository repository, String name, String version, String user, String channel, String packageId) {
         JSONObject data = new JSONObject(), subData;
-        for (String storageAndRepositoryId : repository.getGroupRepositories()) {
+        for (String storageAndRepositoryId : getStorageAndRepositoryIdList(repository)) {
             try {
                 String sId = ConfigurationUtils.getStorageId(repository.getStorage().getId(), storageAndRepositoryId);
                 String rId = ConfigurationUtils.getRepositoryId(storageAndRepositoryId);
@@ -209,7 +210,7 @@ public class ConanGroupProvider implements ConanProvider {
     @Override
     public JSONObject getPackageInfo(Repository repository, String name, String version, String user, String channel, String packageId, String url) {
         JSONObject data = new JSONObject(), subData;
-        for (String storageAndRepositoryId : repository.getGroupRepositories()) {
+        for (String storageAndRepositoryId : getStorageAndRepositoryIdList(repository)) {
             try {
                 String sId = ConfigurationUtils.getStorageId(repository.getStorage().getId(), storageAndRepositoryId);
                 String rId = ConfigurationUtils.getRepositoryId(storageAndRepositoryId);
@@ -238,6 +239,11 @@ public class ConanGroupProvider implements ConanProvider {
             return false;
         }
         return true;
+    }
+
+    private List<String> getStorageAndRepositoryIdList(Repository repository) {
+        List<String> storageAndRepositoryIdList = Lists.newArrayList();
+        return configurationManager.resolveGroupRepository(repository, storageAndRepositoryIdList);
     }
 
 }
