@@ -222,6 +222,7 @@ public class PromotionUtil {
                 artifactSyncRecord.setStatus(ArtifactSyncRecordStatusEnum.IN_SYNC.getVal());
                 artifactSyncRecord.setCreateBy(UserUtils.getUsername());
                 artifactSyncRecord.setCreateTime(new Date());
+                artifactSyncRecord.setSyncModel(1);
                 artifactSyncRecordMapper.insert(artifactSyncRecord);
                 syncNoList.add(syncNo);
                 try {

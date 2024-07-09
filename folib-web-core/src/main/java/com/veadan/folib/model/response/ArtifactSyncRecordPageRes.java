@@ -28,6 +28,12 @@ public class ArtifactSyncRecordPageRes {
     @ApiModelProperty("请求主机名称")
     private String requestHostName;
 
+    @ApiModelProperty("源存储空间")
+    private String sourceStorageId;
+
+    @ApiModelProperty("源源仓库")
+    private String sourceRepositoryId;
+
     /**
      * 源制品路径
      */
