@@ -75,6 +75,12 @@ public class FoEyesHttpProxyFilter implements Filter {
         if (contentType != null) {
             resp.setContentType(contentType.toString());
         }
+        // 设置响应头部
+        resultHeaders.forEach((headerName, headerValues) -> {
+            for (String headerValue : headerValues) {
+                resp.addHeader(headerName, headerValue);
+            }
+        });
         // 在getWriter之前执行，否则不生效
         resp.setCharacterEncoding("UTF-8");
         PrintWriter writer = resp.getWriter();

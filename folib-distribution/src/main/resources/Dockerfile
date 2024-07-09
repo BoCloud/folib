@@ -1,4 +1,4 @@
-FROM public.folib.com/folib/folib-docker/folib-base:1.2.3
+FROM  public.folib.com/folib/folib-docker/folib-base:1.2.3
 MAINTAINER folib.com
 ENV TZ=Asia/Shanghai
 # 项目构建文件结构 环境变量

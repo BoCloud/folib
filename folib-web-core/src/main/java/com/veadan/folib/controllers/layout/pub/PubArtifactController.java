@@ -43,6 +43,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.core.MediaType;
 import java.io.BufferedInputStream;
+import java.io.File;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -190,5 +191,27 @@ public class PubArtifactController
                                              @PathVariable(name = "repositoryId") String repositoryId, HttpServletResponse response) {
         response.setHeader("Content-Type", PubConstants.CONTENT_TYPE);
         return ResponseEntity.ok(PubConstants.GET_FINALIZE_DEPLOYMENT_RESULT);
+    }
+
+    @ApiOperation(value = "Used to retrieve an artifact")
+    @ApiResponses(value = {@ApiResponse(code = 200, message = ""),
+            @ApiResponse(code = 400, message = "An error occurred.")})
+    @PreAuthorize("hasAuthority('ARTIFACTS_RESOLVE')")
+    @GetMapping(path = "{storageId}/{repositoryId}/{packageName}/{artifactName}")
+    public void download(@RepositoryMapping Repository repository,
+                         @RequestHeader HttpHeaders httpHeaders,
+                         @PathVariable String packageName,
+                         @PathVariable String artifactName,
+                         HttpServletRequest request,
+                         HttpServletResponse response)
+            throws Exception {
+        final String storageId = repository.getStorage().getId();
+        final String repositoryId = repository.getId();
+        String path = packageName + File.separator + artifactName;
+        logger.info("Requested /{}/{}/{}.", storageId, repositoryId, path);
+
+        RepositoryPath repositoryPath = artifactResolutionService.resolvePath(storageId, repositoryId, path);
+        vulnerabilityBlock(repositoryPath);
+        provideArtifactDownloadResponse(request, response, httpHeaders, repositoryPath);
     }
 }
