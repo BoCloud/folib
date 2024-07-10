@@ -67,7 +67,7 @@ public abstract class RepositoryFiles {
         if (StringUtils.isBlank(name)) {
             return true;
         }
-        List<String> checksumList = Lists.newArrayList(".md5", ".sha1", ".sha256", ".sha512");
+        List<String> checksumList = Lists.newArrayList(".md5", ".sha1", ".sha256", ".sha512", ".sm3");
         return checksumList.stream().anyMatch(name::endsWith);
     }
 
