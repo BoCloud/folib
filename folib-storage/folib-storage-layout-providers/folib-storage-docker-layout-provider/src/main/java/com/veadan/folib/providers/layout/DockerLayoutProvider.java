@@ -131,11 +131,11 @@ public class DockerLayoutProvider
 
                     break;
                 case REFRESH_CONTENT:
-                    final Instant thirtySecondsAgo = Instant.now().minus(30, ChronoUnit.SECONDS);
+                    final Instant halfAnHourAgo = Instant.now().minus(refreshContentInterval(repositoryPath), ChronoUnit.MINUTES);
                     value = BooleanUtils.isTrue((Boolean) value) || (!RepositoryTypeEnum.HOSTED.getType().equals(repositoryPath.getRepository().getType()) && (DockerArtifactCoordinates.isDockerTag(repositoryPath) || DockerArtifactCoordinates.isRealManifestPath(repositoryPath))
                             &&
                             !RepositoryFiles.wasModifiedAfter(repositoryPath,
-                                    thirtySecondsAgo));
+                                    halfAnHourAgo));
 
                     result.put(attributeType, value);
 
