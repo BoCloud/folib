@@ -80,16 +80,21 @@ public class ProxyRepositoryProvider
     protected RepositoryPath fetchPath(RepositoryPath repositoryPath)
             throws IOException {
         RepositoryPath targetPath = hostedRepositoryProvider.fetchPath(repositoryPath);
-        if (targetPath == null || RepositoryFiles.hasRefreshContent(targetPath)) {
+        if (targetPath == null) {
             targetPath = resolvePathExclusive(repositoryPath);
-        } else if (RepositoryFiles.hasExpired(targetPath) && !Files.isDirectory(targetPath)) {
+        } else if (RepositoryFiles.hasRefreshContent(targetPath)) {
+            targetPath = resolvePathExclusive(repositoryPath);
+            if (Objects.isNull(targetPath)) {
+                targetPath = hostedRepositoryProvider.fetchPath(repositoryPath);
+            }
+        }
+        if (Objects.nonNull(targetPath) && RepositoryFiles.hasExpired(targetPath) && !Files.isDirectory(targetPath)) {
             if (StringUtils.isNotBlank(repositoryPath.getArtifactPath())) {
                 eventPublisher.publishEvent(new ProxyRepositoryPathExpiredEvent(repositoryPathResolver.resolve(targetPath.getRepository(), repositoryPath.getArtifactPath())));
             } else {
                 eventPublisher.publishEvent(new ProxyRepositoryPathExpiredEvent(targetPath));
             }
         }
-
         return targetPath;
     }
 

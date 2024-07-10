@@ -15,6 +15,7 @@ import com.veadan.folib.repositories.ArtifactIdGroupRepository;
 import com.veadan.folib.repository.DockerRepositoryFeatures;
 import com.veadan.folib.repository.DockerRepositoryManagementStrategy;
 import com.veadan.folib.repository.RepositoryManagementStrategy;
+import com.veadan.folib.storage.repository.RepositoryTypeEnum;
 import com.veadan.folib.storage.repository.remote.RemoteRepository;
 import org.apache.commons.codec.digest.MessageDigestAlgorithms;
 import org.apache.commons.lang3.BooleanUtils;
@@ -131,7 +132,7 @@ public class DockerLayoutProvider
                     break;
                 case REFRESH_CONTENT:
                     final Instant thirtySecondsAgo = Instant.now().minus(30, ChronoUnit.SECONDS);
-                    value = BooleanUtils.isTrue((Boolean) value) || ((DockerArtifactCoordinates.isDockerTag(repositoryPath) || DockerArtifactCoordinates.isRealManifestPath(repositoryPath))
+                    value = BooleanUtils.isTrue((Boolean) value) || (!RepositoryTypeEnum.HOSTED.getType().equals(repositoryPath.getRepository().getType()) && (DockerArtifactCoordinates.isDockerTag(repositoryPath) || DockerArtifactCoordinates.isRealManifestPath(repositoryPath))
                             &&
                             !RepositoryFiles.wasModifiedAfter(repositoryPath,
                                     thirtySecondsAgo));
