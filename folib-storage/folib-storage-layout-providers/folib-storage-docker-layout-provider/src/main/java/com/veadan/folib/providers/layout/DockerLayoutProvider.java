@@ -129,6 +129,16 @@ public class DockerLayoutProvider
                     result.put(attributeType, value);
 
                     break;
+                case REFRESH_CONTENT:
+                    final Instant thirtySecondsAgo = Instant.now().minus(30, ChronoUnit.SECONDS);
+                    value = BooleanUtils.isTrue((Boolean) value) || ((DockerArtifactCoordinates.isDockerTag(repositoryPath) || DockerArtifactCoordinates.isRealManifestPath(repositoryPath))
+                            &&
+                            !RepositoryFiles.wasModifiedAfter(repositoryPath,
+                                    thirtySecondsAgo));
+
+                    result.put(attributeType, value);
+
+                    break;
                 default:
 
                     break;

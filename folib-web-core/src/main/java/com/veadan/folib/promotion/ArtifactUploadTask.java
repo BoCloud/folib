@@ -451,7 +451,7 @@ public class ArtifactUploadTask implements Callable<String> {
                 //包内不存在pom，需生成pom
                 pomName = String.format("%s-%s", artifactId, artifactGav.getVersion()) + ".pom";
                 pomTempFile = new File(parentTempFile.getAbsolutePath() + File.separator + pomName);
-                artifactComponent.pomGenerator(sourceGroupId, artifactId, version, pomTempFile.getAbsolutePath());
+                artifactComponent.pomGenerator(sourceGroupId, artifactId, version, pomTempFile.getAbsolutePath(), artifactGav.getExtension());
             }
             String pomPath = String.format("%s/%s/%s/%s", groupId, artifactId, version, pomName);
             log.info("maven2 layout xml path ：{}，properties：{}，artifactParse: {}, groupId：{}，artifactId：{}, version：{} gavVersion: {} artifactPath：{}", pomTempFile.getAbsolutePath(), properties, artifactParse, groupId, artifactId, version, artifactGav.getVersion(), pomPath);

@@ -12,7 +12,7 @@
           <a-col :span="24">
             <a-form-model-item class="mb-10" :label="$t('Store.Product')" :colon="false" prop="file">
               <a-upload name="file" :multiple="false" :before-upload="beforeUpload" :remove="handleRemove"
-                :fileList="fileList" :customRequest="customRequest" :accept="'.jar,.war,.pom,'">
+                :fileList="fileList" :customRequest="customRequest" :accept="'.jar,.war,.pom,.aar'">
                 <a-button> <a-icon type="upload" />{{ $t('Store.SelectFile') }}</a-button>
                 <a-progress :percent="percent" v-if="percent > 0" size="small"
                   :stroke-color="{ '0%': '#108ee9', '100%': '#108ee9', }" />

@@ -529,8 +529,9 @@ public class ArtifactComponent {
      * @param artifactId artifactId
      * @param version    version
      * @param pomPath    pomPath
+     * @param packaging packaging
      */
-    public void pomGenerator(String groupId, String artifactId, String version, String pomPath) {
+    public void pomGenerator(String groupId, String artifactId, String version, String pomPath, String packaging) {
         FileWriter fileWriter = null;
         try {
             // 创建Maven项目模型
@@ -539,6 +540,9 @@ public class ArtifactComponent {
             model.setGroupId(groupId);
             model.setArtifactId(artifactId);
             model.setVersion(version);
+            if (StringUtils.isNotBlank(packaging)) {
+                model.setPackaging(packaging);
+            }
             // 保存POM文件
             MavenXpp3Writer writer = new MavenXpp3Writer();
             fileWriter = new FileWriter(pomPath);

@@ -2,6 +2,7 @@ package com.veadan.folib.controllers.layout.pypi;
 
 import com.google.common.collect.Sets;
 import com.veadan.folib.artifact.coordinates.PypiArtifactCoordinates;
+import com.veadan.folib.components.PypiBrowsePackageHtmlResponseBuilder;
 import com.veadan.folib.components.artifact.ArtifactComponent;
 import com.veadan.folib.controllers.BaseArtifactController;
 import com.veadan.folib.domain.ArtifactIdGroup;
@@ -25,7 +26,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.util.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
@@ -58,14 +59,14 @@ public class PypiArtifactController extends BaseArtifactController {
     private static final Set<String> VALID_FILE_TYPES = Sets.newHashSet("sdist", "bdist_wheel");
 
     @Inject
-    private PypiRepositoryFeatures.PypiSearchPackagesEventListener pypiSearchPackagesEventListener;
-
-    @Inject
     private PypiService pypiService;
 
     @Inject
     @Lazy
     private ArtifactComponent artifactComponent;
+
+    @Inject
+    private PypiBrowsePackageHtmlResponseBuilder pypiBrowsePackageHtmlResponseBuilder;
 
     @Override
     @PreAuthorize("authenticated")
@@ -266,6 +267,9 @@ public class PypiArtifactController extends BaseArtifactController {
                 repository.getStorage().getId(),
                 repository.getId(), packageNameToDownload);
         String html = pypiService.packages(repository, packageName, packageName);
+        if (StringUtils.isBlank(html)) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(pypiBrowsePackageHtmlResponseBuilder.nouFound());
+        }
         return ResponseEntity.status(HttpStatus.OK).body(html);
     }
 

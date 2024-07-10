@@ -1027,11 +1027,7 @@ public class StoragesConfigurationController
         final String storageId = repository.getStorage().getId();
         final String repositoryId = repository.getId();
         try {
-            String storageIdAndRepositoryId = String.format("%s:%s", storageId, repositoryId);
-            List<Repository> repositoryList = Lists.newArrayList();
-            for (Map.Entry<String, Storage> entry : configurationManagementService.getConfiguration().getStorages().entrySet()) {
-                repositoryList.addAll(Optional.ofNullable(entry.getValue().getRepositories()).orElse(Collections.emptyMap()).values().stream().filter(item -> item.isGroupRepository() && item.getGroupRepositories().contains(storageIdAndRepositoryId)).collect(Collectors.toList()));
-            }
+            List<Repository> repositoryList = configurationManagementService.getConfiguration().getGroupRepositoriesContaining(storageId , repositoryId);
             if (CollectionUtils.isNotEmpty(repositoryList)) {
                 return getFailedResponseEntity(HttpStatus.INTERNAL_SERVER_ERROR, String.format(FAILED_REPOSITORY_REMOVAL_EXISTS_GROUP_REPOSITORY, repositoryList.stream().map(item -> String.format("%s:%s", item.getStorage().getId(), item.getId())).collect(Collectors.joining(","))), accept);
             }
