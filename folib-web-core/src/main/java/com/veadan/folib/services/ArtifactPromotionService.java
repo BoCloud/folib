@@ -51,6 +51,8 @@ public interface ArtifactPromotionService {
 
     List<String> artifactDispatchAttachRecord(ArtifactDispatch artifactDispatch, HttpServletRequest request);
 
+    String retryArtifactDispatchAttachRecord(String syncNo,String type, HttpServletRequest request);
+
     List<String> artifactDispatch(ArtifactDispatch artifactDispatch);
 
     void validateStorageAndRepository(String storageId, String repositoryId);

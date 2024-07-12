@@ -33,4 +33,10 @@ public interface ArtifactPromotionProvider {
      * @return 分发编号
      */
     List<String> dispatch(ArtifactDispatch artifactDispatch);
+
+    /**
+     * 重试
+     * @param syncNo 分发编号
+     */
+    void retryDispatch(String syncNo);
 }

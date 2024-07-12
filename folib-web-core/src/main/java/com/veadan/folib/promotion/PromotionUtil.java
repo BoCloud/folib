@@ -241,6 +241,55 @@ public class PromotionUtil {
         return syncNoList;
     }
 
+    public void executeHandleRetryDispatch(String syncNo) {
+        // 获取分发配置信息
+        Map<String, ClusterDispatchNodeDto> map = configurationManagementService.
+                getMutableConfigurationClone().getClusterDispatchNode();
+        if (MapUtil.isEmpty(map)) {
+            log.error("Distribution error,distribution configuration not found, please set distribution configuration first.");
+            throw new BusinessException("Distribution error,distribution configuration not found, please set distribution configuration first.");
+        }
+
+        ArtifactSyncRecord artifactSyncRecord = artifactSyncRecordMapper.selectBySyncNo(syncNo);
+        List<TargetDispatchRepositoryDto> targetRepositoryList = JSON.parseArray(artifactSyncRecord.getTargetPath(), TargetDispatchRepositoryDto.class);
+        String artifactPath = artifactSyncRecord.getSourcePath();
+        if (StringUtils.isBlank(artifactPath)) {
+            log.error("Distribution error, artifactPath is empty.");
+            throw new BusinessException("Distribution error, artifactPath is empty.");
+        }
+        Repository repository = repositoryManagementService.getStorage(artifactSyncRecord.getSourceStorageId()).getRepository(artifactSyncRecord.getSourceRepositoryId());
+        ArtifactDispatch artifactDispatch = new ArtifactDispatch();
+        artifactDispatch.setSrcStorageId(artifactSyncRecord.getSourceStorageId());
+        artifactDispatch.setSrcRepositoryId(artifactSyncRecord.getSourceRepositoryId());
+        artifactDispatch.setPath(artifactPath);
+        artifactDispatch.setTargetDispatchRepositoryList(targetRepositoryList);
+        artifactDispatch.setSyncNo(syncNo);
+
+        artifactDispatch.setType(repository.getType());
+        artifactDispatch.setLayout(repository.getLayout());
+        artifactDispatch.setPolicy(repository.getPolicy());
+
+
+        for (TargetDispatchRepositoryDto targetDispatchRepositoryDto : targetRepositoryList) {
+            try {
+                try {
+
+                    artifactSyncRecord.setStatus(ArtifactSyncRecordStatusEnum.IN_SYNC.getVal());
+                    artifactSyncRecord.setCreateBy(UserUtils.getUsername());
+                    artifactSyncRecordMapper.updateByPrimaryKey(artifactSyncRecord);
+                    handlerDispatch(map, artifactDispatch, targetDispatchRepositoryDto, syncNo);
+                } catch (Exception ex) {
+                    artifactSyncRecord.setStatus(ArtifactSyncRecordStatusEnum.FAILED.getVal());
+                    artifactSyncRecord.setFailedReason(ex.getMessage());
+                    // 更新日志结束开始时间
+                    artifactSyncRecordMapper.updateByPrimaryKey(artifactSyncRecord.setUpdateTime(new Date()));
+                }
+            } catch (Exception ex) {
+                log.error("Distribution target [{}] error [{}]", JSONObject.toJSONString(targetDispatchRepositoryDto), ExceptionUtils.getStackTrace(ex));
+            }
+        }
+    }
+
     public void handlerDispatch(Map<String, ClusterDispatchNodeDto> map, ArtifactDispatch artifactDispatch,
                                 TargetDispatchRepositoryDto targetDispatchRepositoryDto, String syncNo) {
         String artifactPath = artifactDispatch.getPath();

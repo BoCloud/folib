@@ -66,4 +66,10 @@ public class InnerArtifactPromotionProvider implements ArtifactPromotionProvider
         log.info("存储空间：{} 仓库：{} 制品：{} 目标节点类型 inner 准备分发 {}", artifactDispatch.getSrcStorageId(), artifactDispatch.getSrcRepositoryId(), artifactDispatch.getPath(), JSONObject.toJSONString(artifactDispatch));
         return promotionUtil.executeHandleDispatch(artifactDispatch);
     }
+
+    @Override
+    public void retryDispatch(String syncNo) {
+        log.info("重试分发 分发编号:{} 目标节点类型 inner 准备重试分发 ", syncNo);
+        promotionUtil.executeHandleRetryDispatch(syncNo);
+    }
 }

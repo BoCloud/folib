@@ -171,6 +171,20 @@ public class ArtifactPromotionController extends BaseArtifactController {
         return ResponseEntity.ok(artifactPromotionService.artifactDispatchAttachRecord(artifactDispatch, request));
     }
 
+    /**
+     * 重试制品分发
+     *
+     * @param syncNo  syncNo
+     * @param type    type
+     * @param request request
+     * @return ResponseEntity
+     */
+    @PostMapping(value = "/retryAtifactDispatch/{syncNo}/{type}")
+    @PermissionCheck(resourceKey = "CONFIGURATION_ADD_UPDATE_STORAGE")
+    public ResponseEntity<?> retryAtifactDispatch(@PathVariable("syncNo") String syncNo, @PathVariable("type") String type, HttpServletRequest request) {
+        return ResponseEntity.ok(artifactPromotionService.retryArtifactDispatchAttachRecord(syncNo,type, request));
+    }
+
     @PostMapping("/parseArtifact")
     @PermissionCheck(resourceKey = "ARTIFACTS_DEPLOY", storageKey = "storageId", repositoryKey = "repositoryId")
     public ResponseEntity<ArtifactParse> parseArtifact(@RequestParam("storageId") String storageId,

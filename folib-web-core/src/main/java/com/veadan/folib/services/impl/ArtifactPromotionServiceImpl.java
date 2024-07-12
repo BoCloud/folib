@@ -749,6 +749,29 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
     }
 
     @Override
+    public String retryArtifactDispatchAttachRecord(String syncNo,String type, HttpServletRequest request) {
+        if (ArtifactoryRepositoryTypeEnum.JFROG.getType().equals(type)) {
+            this.retryArtifactDispatch(syncNo,type);
+
+        }
+        try {
+            this.retryArtifactDispatch(syncNo,type);
+        } catch (Exception e) {
+            log.error("retry artifactDispatch exception", e);
+            if (e instanceof RejectedExecutionException) {
+                throw new RuntimeException("The promotion queue is full , info:" + e.getMessage());
+            }
+        }
+        return syncNo;
+    }
+
+    public void retryArtifactDispatch(String syncNo, String type) {
+        log.info("Start retry artifact dispatch syncNo:{} ...", syncNo);
+        ArtifactPromotionProvider artifactPromotionProvider = artifactPromotionProviderRegistry.getProvider(type);
+        artifactPromotionProvider.retryDispatch(syncNo);
+    }
+
+    @Override
     public List<String> artifactDispatch(ArtifactDispatch artifactDispatch) {
         log.info("Start artifact dispatch [{}] ...", JSONObject.toJSONString(artifactDispatch));
         try {

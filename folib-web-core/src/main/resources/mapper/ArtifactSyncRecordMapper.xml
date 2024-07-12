@@ -43,4 +43,14 @@
             and create_time &lt; #{time}
         </where>
     </select>
+
+    <select id="selectBySyncNo" resultMap="artifactSyncRecordResultMap">
+        select * from artifact_sync_record
+        <where>
+            1 = 1
+            <if test="syncNo != null and syncNo.trim() != ''">
+                and sync_no = #{syncNo}
+            </if>
+        </where>
+    </select>
 </mapper>
