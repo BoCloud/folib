@@ -28,4 +28,6 @@ public interface ArtifactSyncSlaveRecordMapper extends SelectByIdsMapper<Artifac
     List<ArtifactSyncSlaveRecord> selectListBySyncNoList(@Param("syncNoList") List<String> syncNoList);
     
     Boolean batchDeleteBySyncNoList(@Param("syncNoList") List<String> syncNoList);
+
+    ArtifactSyncSlaveRecord selectBySyncNo(@Param("syncNo") String syncNo);
 }

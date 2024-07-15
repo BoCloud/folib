@@ -215,11 +215,13 @@ public class ClusterDispatchConfigurationController extends BaseConfigurationCon
         }
         //先注册
         String newHostName = FolibWsRunManageUtil.getTargetHostName(nodeDto);
-        promotionTaskQueue.registerPromotionTaskQueue(newHostName);
+        //promotionTaskQueue.registerPromotionTaskQueue(newHostName);
+        promotionTaskQueue.registerV2PromotionTaskQueue(newHostName);
         if (existingNode != null) {
             //清理之前的
             String targetHostName = FolibWsRunManageUtil.getTargetHostName(existingNode);
-            promotionTaskQueue.clearPromotionTaskQueue(targetHostName);
+            //promotionTaskQueue.clearPromotionTaskQueue(targetHostName);
+            promotionTaskQueue.clearV2PromotionTaskQueue(targetHostName);
         }
     }
 
@@ -252,7 +254,8 @@ public class ClusterDispatchConfigurationController extends BaseConfigurationCon
             //清理晋级任务队列
             String targetHostName = FolibWsRunManageUtil.getTargetHostName(clusterDispatchNodeDto);
             folibWsRunManageV2.unRegisterSession(targetHostName,"node delete");
-            promotionTaskQueue.clearPromotionTaskQueue(targetHostName);
+            //promotionTaskQueue.clearPromotionTaskQueue(targetHostName);
+            promotionTaskQueue.clearV2PromotionTaskQueue(targetHostName);
             return ResponseEntity.ok("ok");
         } catch (Exception e) {
             return getExceptionResponseEntity(HttpStatus.INTERNAL_SERVER_ERROR, "修改制品分发节点信息失败", e, accept);

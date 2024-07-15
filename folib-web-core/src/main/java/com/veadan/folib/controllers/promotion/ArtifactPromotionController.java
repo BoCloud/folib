@@ -103,6 +103,20 @@ public class ArtifactPromotionController extends BaseArtifactController {
         return artifactPromotionService.nodeOptionAttachRecord(promotionNodeOption, request.getServerName(), response);
     }
 
+    /**
+     * 重试晋级
+     * @param syncNo 同步任务号
+     * @param request
+     * @param response
+     * @return
+     */
+    @PostMapping("/retryNodeOption/{syncNo}")
+    @PermissionCheck(resourceKey = "ARTIFACTS_PROMOTION")
+    public ResponseEntity retryNodeOption(@PathVariable("syncNo") String syncNo,
+                                     HttpServletRequest request,
+                                     HttpServletResponse response) {
+        return artifactPromotionService.retryNodeOptionAttachRecord(syncNo, request.getServerName(), response);
+    }
 
 ///    @PostMapping("/nodeOptionCallback")
 ///    @PermissionCheck(resourceKey = "ARTIFACTS_PROMOTION")
@@ -306,4 +320,18 @@ public class ArtifactPromotionController extends BaseArtifactController {
             return Result.error(e);
         } 
     }
+
+    /**
+     * 更新任务优先级
+     * @param syncNo 同步编号
+     * @param priority 优先级
+     * @return
+     */
+    @PostMapping(value = "/updateTaskQueuePriority/{syncNo}/{priority}")
+    @PermissionCheck(resourceKey = "CONFIGURATION_ADD_UPDATE_STORAGE")
+    public ResponseEntity<?> updateTaskQueuePriority(@PathVariable("syncNo") String syncNo, @PathVariable("priority") int priority) {
+        return ResponseEntity.ok(artifactPromotionService.updateTaskQueuePriority(syncNo,priority));
+    }
+
+
 }

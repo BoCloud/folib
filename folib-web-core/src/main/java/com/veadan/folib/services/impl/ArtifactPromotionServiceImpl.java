@@ -18,12 +18,14 @@ import com.veadan.folib.dispatch.ClusterDispatchNodeDto;
 import com.veadan.folib.domain.*;
 import com.veadan.folib.dto.*;
 import com.veadan.folib.entity.ArtifactSyncRecord;
+import com.veadan.folib.entity.ArtifactSyncSlaveRecord;
 import com.veadan.folib.entity.Dict;
 import com.veadan.folib.enums.ArtifactSyncRecordOpsTypeEnum;
 import com.veadan.folib.enums.ArtifactSyncRecordSyncModelEnum;
 import com.veadan.folib.enums.ArtifactoryRepositoryTypeEnum;
 import com.veadan.folib.enums.BusinessCodeEnum;
 import com.veadan.folib.mapper.ArtifactSyncRecordMapper;
+import com.veadan.folib.mapper.ArtifactSyncSlaveRecordMapper;
 import com.veadan.folib.model.request.ArtifactPromotionNodeOptionCallbackReq;
 import com.veadan.folib.model.request.ArtifactSliceDownloadInfoReq;
 import com.veadan.folib.model.request.ArtifactSliceUploadReq;
@@ -51,6 +53,7 @@ import com.veadan.folib.ws.common.FolibWsAction;
 import com.veadan.folib.ws.common.FolibWsRunManageUtil;
 import com.veadan.folib.ws.common.FolibWsRunManageV2;
 import com.veadan.folib.ws.server.Command;
+import com.veadan.folib.ws.server.Priority;
 import com.veadan.folib.ws.server.WSMessageRequest;
 import com.veadan.folib.ws.server.WSMessageResponse;
 import com.veadan.folib.ws.server.manage.FolibWsServerRunManage;
@@ -170,6 +173,9 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
 
     @Inject
     private ArtifactSyncRecordMapper artifactSyncRecordMapper;
+
+    @Inject
+    private ArtifactSyncSlaveRecordMapper artifactSyncSlaveRecordMapper;
 
     @Inject
     private ConfigurationManagementService configurationManagementService;
@@ -433,6 +439,30 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
     }
 
     @Override
+    public ResponseEntity<?> retryNodeOptionAttachRecord(String syncNo, String requestHostName, HttpServletResponse response) {
+
+        ArtifactSyncSlaveRecord artifactSyncSlaveRecord = artifactSyncSlaveRecordMapper.selectBySyncNo(syncNo);
+        PromotionNodeOption promotionNodeOption = new PromotionNodeOption();
+        promotionNodeOption.setSourcePath(artifactSyncSlaveRecord.getSourcePath());
+        promotionNodeOption.setTargetPath(artifactSyncSlaveRecord.getTargetPath());
+        promotionNodeOption.setSyncModel(artifactSyncSlaveRecord.getSyncModel());
+        promotionNodeOption.setSyncNo(syncNo);
+
+        String targetHostName = FolibWsRunManageUtil.getSimpleTargetHostName(promotionNodeOption.getTargetPath());
+        String sourceHostName = FolibWsRunManageUtil.getSimpleTargetHostName(promotionNodeOption.getSourcePath());
+        String selfHostName = FolibWsRunManageUtil.getSimpleTargetHostName(configurationManagementService.getConfiguration().getBaseUrl());
+        promotionNodeOption.setTargetNode(targetHostName);
+        if (selfHostName.equals(sourceHostName)) {
+            retryUploadArtifact(syncNo, promotionNodeOption, requestHostName);
+            if (response.isCommitted()) {
+                return null;
+            }
+            return ResponseEntity.ok(syncNo);
+        }
+        throw new RuntimeException("At least one of the hostname in the targetPath or sourcePath parameters must be " + selfHostName);
+    }
+
+    @Override
     public CompletableFuture<Void> uploadArtifact(String syncNo, PromotionNodeOption promotionNodeOption, String requestHostName) {
         PromotionRepositoryInfo promotionRepositoryInfo = resolvePromotionRepository(promotionNodeOption);
         if (Objects.isNull(promotionNodeOption.getSyncModel())) {
@@ -481,6 +511,74 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
         artifactSyncRecord.setCreateBy(userName);
         artifactSyncRecord.setCreateTime(new Date());
         artifactSyncRecordMapper.insert(artifactSyncRecord);
+        promotionNodeOption.setSyncNo(syncNo);
+        try {
+            return this.nodeOptionV2(promotionNodeOption);
+        } catch (Exception e) {
+            artifactSyncRecord.setStatus(ArtifactSyncRecordStatusEnum.FAILED.getVal());
+            artifactSyncRecord.setFailedReason(e.getMessage());
+
+            // 更新日志结束开始时间
+            artifactSyncRecordMapper.updateByPrimaryKey(artifactSyncRecord
+                    .setUpdateTime(new Date())
+                    .setUpdateBy(userName));
+            if (e instanceof RuntimeException) {
+                throw (RuntimeException) e;
+            } else {
+                throw new RuntimeException(e);
+            }
+        }
+    }
+
+    public CompletableFuture<Void> retryUploadArtifact(String syncNo, PromotionNodeOption promotionNodeOption, String requestHostName) {
+
+        PromotionRepositoryInfo promotionRepositoryInfo = resolvePromotionRepository(promotionNodeOption);
+        if (Objects.isNull(promotionNodeOption.getSyncModel())) {
+            promotionNodeOption.setSyncModel(ArtifactSyncRecordSyncModelEnum.PUSH.getVal());
+        }
+        String targetNode = promotionNodeOption.getTargetNode();
+        String sourceBaseUrl = promotionRepositoryInfo.getSourceBaseUrl();
+        String targetBaseUrl = promotionRepositoryInfo.getTargetBaseUrl();
+        if (!sourceBaseUrl.equals(targetBaseUrl)) {
+            //不是同一个节点下的复制制品
+            if (StringUtils.isBlank(targetNode)) {
+                //无默认WS目标节点，解析WS目标节点
+                targetNode = FolibWsRunManageUtil.getTargetNode(promotionNodeOption.getTargetPath());
+                if (StringUtils.isBlank(targetNode)) {
+                    //WS目标节点未找到，尝试转发到集群中其他节点处理
+                    targetNode = FolibWsRunManageUtil.getTargetHostName(promotionNodeOption.getTargetPath());
+                    if (folibWsRunManageV2.forward(targetNode)) {
+                        return null;
+                    }
+                }
+                promotionNodeOption.setTargetNode(targetNode);
+            }
+        }
+        if (ArtifactSyncRecordSyncModelEnum.PUSH.getVal().equals(promotionNodeOption.getSyncModel())) {
+            validateSourceRepositoryPath(promotionRepositoryInfo.getSourceStorageId(), promotionRepositoryInfo.getSourceRepositoryId(), promotionRepositoryInfo.getSourceArtifactPath());
+            if (sourceBaseUrl.equals(targetBaseUrl)) {
+                validateStorageAndRepository(promotionRepositoryInfo.getTargetStorageId(), promotionRepositoryInfo.getTargetRepositoryId());
+            } else {
+                validateRemoteRepository(targetNode, promotionRepositoryInfo.getTargetStorageId(), promotionRepositoryInfo.getTargetRepositoryId());
+            }
+        }
+        String userName = UserUtils.getUsername();
+
+        final ArtifactSyncRecord artifactSyncRecord = artifactSyncRecordMapper.selectBySyncNo(syncNo);
+
+        // 生成日志记录
+        artifactSyncRecord.setRequestHostName(requestHostName);
+        artifactSyncRecord.setSourceStorageId(promotionRepositoryInfo.getSourceStorageId());
+        artifactSyncRecord.setSourceRepositoryId(promotionRepositoryInfo.getSourceRepositoryId());
+        artifactSyncRecord.setSourcePath(promotionNodeOption.getSourcePath());
+        artifactSyncRecord.setTargetPath(promotionNodeOption.getTargetPath());
+        artifactSyncRecord.setSyncNo(syncNo);
+        artifactSyncRecord.setOpsType(ArtifactSyncRecordOpsTypeEnum.PROMOTION.getVal());
+        artifactSyncRecord.setSyncModel(promotionNodeOption.getSyncModel());
+        artifactSyncRecord.setStatus(ArtifactSyncRecordStatusEnum.IN_SYNC.getVal());
+        artifactSyncRecord.setCreateBy(userName);
+        artifactSyncRecord.setCreateTime(new Date());
+        artifactSyncRecordMapper.updateByPrimaryKey(artifactSyncRecord);
         promotionNodeOption.setSyncNo(syncNo);
         try {
             return this.nodeOptionV2(promotionNodeOption);
@@ -1380,4 +1478,31 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
         }
     }
 
+    /**
+     * 更新任务队列优先级
+     *
+     * @param syncNo   同步编号
+     * @param newPriority 优先级
+     * @return
+     */
+    @Override
+    public ResponseEntity<?> updateTaskQueuePriority(String syncNo, int newPriority) {
+        // 获取分发配置信息
+        Map<String, ClusterDispatchNodeDto> map = configurationManagementService.
+                getMutableConfigurationClone().getClusterDispatchNode();
+        ArtifactSyncRecord artifactSyncRecord = artifactSyncRecordMapper.selectBySyncNo(syncNo);
+        List<TargetDispatchRepositoryDto> targetRepositoryList = JSON.parseArray(artifactSyncRecord.getTargetPath(), TargetDispatchRepositoryDto.class);
+        Priority priority = Priority.getPriority(newPriority);
+        if(priority == null){
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("优先级值不合法");
+        }
+        for (TargetDispatchRepositoryDto targetDispatchRepositoryDto : targetRepositoryList) {
+            String dispatchClusterName = targetDispatchRepositoryDto.getDispatchClusterEnName();
+            ClusterDispatchNodeDto dispatchNodeDto = map.get(dispatchClusterName);
+            String targetHostName = FolibWsRunManageUtil.getTargetHostName(dispatchNodeDto);
+            promotionUtil.updateTaskQueuePriority(targetHostName, syncNo,  priority);
+        }
+
+        return ResponseEntity.ok().build();
+    }
 }

@@ -35,4 +35,19 @@
             #{syncNo}
         </foreach>
     </delete>
+
+    <select id="selectBySyncNo" resultMap="artifactSyncSlaveRecordResultMap">
+        select id,
+               source_path,
+               target_path,
+               sync_no,
+               status,
+               failed_reason,
+               create_by,
+               create_time,
+               update_by,
+               update_time
+        from artifact_sync_slave_record
+        where sync_no = #{syncNo}
+    </select>
 </mapper>

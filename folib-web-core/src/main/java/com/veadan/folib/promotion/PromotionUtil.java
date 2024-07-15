@@ -915,15 +915,36 @@ public class PromotionUtil {
         targetUrl = StringUtils.chomp(targetUrl, "/");
 
         String targetHostName = targetNode;
-        TargetTaskQueueManager targetTaskQueueManager = promotionTaskQueue.getTaskQueueManager(targetHostName);
+        //TargetTaskQueueManager targetTaskQueueManager = promotionTaskQueue.getTaskQueueManager(targetHostName);
+
+        TargetTaskQueueV2Manager  targetV2TaskQueueManager= promotionTaskQueue.getTaskQueueV2Manager(targetHostName);
         String finalTargetUrl1 = targetUrl;
-        if (targetTaskQueueManager == null) {
+        //if (targetTaskQueueManager == null) {
+        //    throw new RuntimeException("not found taskQueueManager by targetHostName:" + targetHostName);
+        //}
+        if (targetV2TaskQueueManager == null) {
             throw new RuntimeException("not found taskQueueManager by targetHostName:" + targetHostName);
         }
-        targetHostName = targetTaskQueueManager.getTargetHostName();
+        //targetHostName = targetTaskQueueManager.getTargetHostName();
+        targetHostName = targetV2TaskQueueManager.getTargetHostName();
         CompletableFuture<Void> future = new CompletableFuture<>();
         String finalTargetHostName = targetHostName;
-        targetTaskQueueManager.getTaskQueueManager().submitTask(java.util.UUID.randomUUID().toString(), () -> {
+        //targetTaskQueueManager.getTaskQueueManager().submitTask(java.util.UUID.randomUUID().toString(), () -> {
+        //    try {
+        //        doArtifactSliceUploadV3(uploadDto, storageId, repositoryId, syncNo, finalTargetUrl1, finalTargetHostName);
+        //        future.complete(null);
+        //    } catch (Exception e) {
+        //        log.error("doArtifactSliceUploadV3 Exception \n info:\nuploadDto:{}, storageId:{}, repositoryId:{}, syncNo:{}, finalTargetUrl1:{}, targetHostName:{}", uploadDto, storageId, repositoryId, syncNo, finalTargetUrl1, finalTargetHostName, e);
+        //        artifactSyncRecordMapper.updateStatusAndFailedReasonBySyncNo(ArtifactSyncRecordStatusEnum.FAILED.getVal(), e.getMessage(), syncNo, new Date());
+        //        future.completeExceptionally(e);
+        //        if (e instanceof RuntimeException) {
+        //            throw (RuntimeException) e;
+        //        }
+        //        throw new RuntimeException(e);
+        //    }
+        //
+        //});
+        targetV2TaskQueueManager.getTaskQueueV2Manager().submitTask(syncNo,Priority.HIGH ,() -> {
             try {
                 doArtifactSliceUploadV3(uploadDto, storageId, repositoryId, syncNo, finalTargetUrl1, finalTargetHostName);
                 future.complete(null);
@@ -1134,8 +1155,12 @@ public class PromotionUtil {
             log.error("构建文件切片请求集合失败", e);
             return Collections.emptyList();
         }
+
     }
 
+    public void updateTaskQueuePriority(String targetHostName,String syncNo, Priority priority){
+        promotionTaskQueue.updateTaskQueuePriority(targetHostName,syncNo,priority);
+    }
 
     @Data
     @Accessors(chain = true)
