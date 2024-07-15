@@ -73,9 +73,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.stereotype.Service;
-import org.springframework.web.context.request.RequestAttributes;
-import org.springframework.web.context.request.RequestContextHolder;
-import org.springframework.web.context.request.ServletRequestAttributes;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.multipart.commons.CommonsMultipartFile;
 
@@ -604,7 +601,7 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
 
     @Override
     public ResponseEntity upload(MultipartFile[] files, String storageId, String repositoryId, String
-            filePathMap, String fileMetaDataMap, String uuid,String imageTag,String baseUrl,String token) {
+            filePathMap, String fileMetaDataMap, String uuid, String imageTag, String fileType, String baseUrl, String token) {
         try {
             validateStorageAndRepository(storageId, repositoryId);
             List<FutureTask<String>> listTask = new ArrayList<>();
@@ -620,7 +617,7 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
                 //        repositoryManagementService, repositoryPathResolver, artifactManagementService, promotionUtil, layoutProviderRegistry, artifactMetadataService, artifactRepository, mavenRepositoryFeatures, tempPath, fileRelativePath, metaData, uuid, null);
                 ArtifactUploadTask artifactUploadTask = new ArtifactUploadTask(storageId, repositoryId, file,
                         repositoryManagementService, repositoryPathResolver, artifactManagementService, promotionUtil, layoutProviderRegistry, artifactMetadataService,
-                        artifactRepository, mavenRepositoryFeatures, tempPath, fileRelativePath, metaData, uuid, null,imageTag,baseUrl,token);
+                        artifactRepository, mavenRepositoryFeatures, tempPath, fileRelativePath, metaData, uuid, null, imageTag, fileType, baseUrl, token);
 
                 FutureTask<String> task = new FutureTask<String>(artifactUploadTask);
                 listTask.add(task);

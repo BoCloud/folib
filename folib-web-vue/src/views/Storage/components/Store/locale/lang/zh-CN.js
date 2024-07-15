@@ -333,5 +333,6 @@ export default {
     'ImageTag': '镜像标签',
     'InputImageTag': '请输入镜像标签',
     "ImageTagSpecification": "镜像标签规范: [PATH]/[NAME]:[TAG]",
-
+    'Image': '镜像文件',
+    'SubsidiaryFiles': '附属文件',
 }

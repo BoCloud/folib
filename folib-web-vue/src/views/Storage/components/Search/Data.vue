@@ -202,6 +202,88 @@
           </a-descriptions-item>
         </a-descriptions>
       </a-tab-pane>
+      <a-tab-pane key="5" :tab="$t('Store.BomInformation')" v-if="currentArtifact && currentArtifact.artifact && currentArtifact.bom">
+        <div class="ml-20 mb-10">          
+          <a @click="handleGoDetail()"><a-icon type="link" /> {{ $t('Store.ViewDetail') }}</a>
+        </div>
+        <div class="bar" v-if="projectInfo && projectInfo.metrics">
+          <div class="card-inner">
+            <div class="bar-card">
+              <div class="callout b-severity-critical">
+                <div class="text">
+                  <div class="text-muted">{{ $t("Store.Seriousness") }}</div>
+                  <strong>{{ projectInfo.metrics.critical }}</strong>
+                </div>
+              </div>
+            </div>
+            <div class="bar-card">
+              <div class="callout b-severity-high">
+                <div class="text">
+                  <div class="text-muted">{{ $t("Store.HighRisk") }}</div>
+                  <strong>{{ projectInfo.metrics.high }}</strong>
+                </div>
+              </div>
+            </div>
+            <div class="bar-card">
+              <div class="callout b-severity-medium">
+                <div class="text">
+                  <div class="text-muted">{{ $t("Store.MediumRisk") }}</div>
+                  <strong>{{ projectInfo.metrics.medium }}</strong>
+                </div>
+              </div>
+            </div>
+            <div class="bar-card">
+              <div class="callout b-severity-low">
+                <div class="text">
+                  <div class="text-muted">{{ $t("Store.LowRisk") }}</div>
+                  <strong>{{ projectInfo.metrics.low }}</strong>
+                </div>
+              </div>
+            </div>
+            <div class="bar-card">
+              <div class="callout b-severity-unassigned">
+                <div class="text">
+                  <div class="text-muted">{{ $t("Store.Unassigned") }}</div>
+                  <strong>{{ projectInfo.metrics.unassigned }}</strong>
+                </div>
+              </div>
+            </div>
+            <div class="bar-card">
+              <div class="callout b-severity-info">
+                <div class="text">
+                  <div class="text-muted">{{ $t("Store.RiskScore") }}</div>
+                  <strong>{{ projectInfo.metrics.inheritedRiskScore }}</strong>
+                </div>
+              </div>
+            </div>
+            <div class="bar-card">
+              <div class="callout b-number-of-components">
+                <div class="text">
+                  <div class="text-muted">{{ $t("Store.NumberOfComponents") }}</div>
+                  <strong>{{ projectInfo.metrics.components }}</strong>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="wrapper-com">
+          <a-card :bordered="true" class="header-solid h-full" :bodyStyle="{ padding: 10 }">
+            <ChartPolicyViolationBreakdown :metrics="vulnerabilitiesData"></ChartPolicyViolationBreakdown>
+          </a-card>
+        </div>
+      </a-tab-pane>
+      <a-tab-pane key="6" :tab="$t('Store.SubsidiaryFiles')" v-if="currentArtifact && currentArtifact.subsidiaryFiles">
+        <a-list item-layout="horizontal" :data-source="currentArtifact.subsidiaryFiles" :pagination="currentArtifact.subsidiaryFiles.length === 0 ? false : { pageSize: 5, total: currentArtifact.subsidiaryFiles.length, showLessItems: true }" >
+          <a-list-item slot="renderItem" :key="index" slot-scope="item, index">
+            <a slot="actions" :href="item.url" target="_blank">{{$t('Store.DownLoad')}}</a>
+            <a-list-item-meta
+              :description="item.url"
+            >
+              <a slot="title" :href="item.url" target="_blank">{{ item.name }}</a>
+            </a-list-item-meta>
+          </a-list-item>
+        </a-list>
+      </a-tab-pane>
     </a-tabs>
 
     <hr class="my-25" />
@@ -290,6 +372,7 @@
 import store from "store";
 import { fileSizeConver, formateDate } from "@/utils/layoutUtil";
 import { getArtifact } from "@/api/folib";
+import { getProjectInfo, getCacheConfig } from "@/api/foEyes";
 import {  deleteArtifactMetadata, conanInfo, conanPackageInfo } from "@/api/artifact";
 import { getMetadataConfiguration } from '@/api/settings'
 import { PrismEditor } from "vue-prism-editor";
@@ -303,6 +386,8 @@ import "quill/dist/quill.core.css";
 import "quill/dist/quill.snow.css";
 import { quillEditor } from "vue-quill-editor";
 import { hasRole, isAdmin, isAnonymous, isLogin } from "@/utils/permission";
+import { getProjectsVulnerabilities } from "@/api/projects.js"
+import ChartPolicyViolationBreakdown from "../../../ComponentAnalysis/Projects/Components/ChartPolicyViolationBreakdown.vue"
 
 export default {
   name: "ArtifactData",
@@ -318,6 +403,7 @@ export default {
   components: {
     PrismEditor,
     quillEditor,
+    ChartPolicyViolationBreakdown,
   },
   data() {
     return {
@@ -425,7 +511,23 @@ export default {
       },
       conanPackageInfoVisible: false,
       selectedTag: 0,
-      selectedColor: "#2db7f5"
+      selectedColor: "#2db7f5",
+      projectInfo: {
+        uuid:'',
+        metrics: {
+          critical: 0,
+          high: 0,
+          medium: 0,
+          low: 0,
+          unassigned: 0,
+          vulnerabilities: 0,
+          vulnerableComponents: 0,
+          components: 0,
+          suppressed: 0,
+          inheritedRiskScore: 0,
+        }
+      },
+      vulnerabilitiesData: [],
     };
   },
   computed: {
@@ -488,6 +590,8 @@ export default {
       this.metadataShow()
       if (activeKey === "2") {
         this.getMetadata()
+      } else if (activeKey === "5") {
+        this.getProjectsVulnerabilities()
       }
     },
     getMetadata() {
@@ -673,6 +777,87 @@ export default {
         this.$forceUpdate()
       })
     },
+    getFoEyesEnable () {
+      const cacheConfig = getCacheConfig()
+      if (cacheConfig) {
+        return cacheConfig.enable
+      }
+      return false
+    },
+    queryProjectInfo() {
+      if (!this.getFoEyesEnable()) {
+        return false
+      }
+      if (!this.currentFileDetial || !this.currentFileDetial.artifact) {
+        return false
+      }
+      let artifact = this.currentFileDetial.artifact
+      getProjectInfo(artifact.storageId, artifact.repositoryId, artifact.artifactPath).then((res) => {
+        this.projectInfo = res
+        this.getProjectsVulnerabilities()
+      })
+    },
+    handleGoDetail() {
+      const routeUrl = this.$router.resolve({path: `/projectsDetail/${this.projectInfo.uuid}`})
+      window.open(routeUrl.href, '_blank')
+    },
+    getProjectsVulnerabilities() {
+      const uuid = this.projectInfo.uuid
+      if (!uuid) {
+        return false
+      }
+      getProjectsVulnerabilities(uuid).then((res) => {
+        this.vulnerabilitiesData = res.data
+      })
+    },
   },
 };
 </script>
+<style lang="scss" scoped>
+::v-deep .part-title {
+    font-size: 18px;
+    font-weight: 600;
+}
+::v-deep .part-sub-title {
+    font-size: 11px;
+    color: rgba(115, 129, 143, 0.7);
+}
+.callout {
+  height: 50px;
+  position: relative;
+  padding: 0 1rem;
+  margin: 1rem 0;
+  border-left: 4px solid #0b1015;
+  border-radius: 0.25rem;
+  border-left-color: #6dd9ff;
+}
+strong {
+  font-size: 20px;
+}
+.bar {
+  width: 100%;
+  .card-inner {
+    width: 100%;
+    display: flex;
+    justify-content: space-evenly;
+  }
+}
+.bar {
+  width: 100%;
+  .card-inner {
+    width: 100%;
+    display: flex;
+    justify-content: space-evenly;
+  }
+}
+.bar-card {
+  height: 100px;
+}
+.wrapper-com {
+  width: 100%;
+  display: block;
+  .header-solid {
+    margin: 10px 10px 0px 10px;
+  }
+}
+</style>

@@ -17,6 +17,7 @@ import com.veadan.folib.repository.DockerRepositoryManagementStrategy;
 import com.veadan.folib.repository.RepositoryManagementStrategy;
 import com.veadan.folib.storage.repository.RepositoryTypeEnum;
 import com.veadan.folib.storage.repository.remote.RemoteRepository;
+import com.veadan.folib.utils.DockerUtils;
 import org.apache.commons.codec.digest.MessageDigestAlgorithms;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -28,6 +29,7 @@ import org.springframework.stereotype.Component;
 import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 import java.io.IOException;
+import java.nio.file.Files;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
@@ -98,6 +100,19 @@ public class DockerLayoutProvider
         return Objects.equals(IMAGES_MANIFEST, path.getFileName().toString());
     }
 
+    public boolean isSubsidiaryFile(RepositoryPath path) {
+       try {
+           if (path.getRoot().toAbsolutePath().toString().equals(path.toAbsolutePath().toString())) {
+               return false;
+           }
+           String parentFilename = path.getParent().getFileName().toString();
+           return Objects.equals(DockerUtils.SUBSIDIARY_PATH, parentFilename);
+       } catch (Exception ex) {
+           logger.error(ExceptionUtils.getStackTrace(ex));
+       }
+       return false;
+    }
+
     @Override
     protected Map<RepositoryFileAttributeType, Object> getRepositoryFileAttributes(RepositoryPath repositoryPath,
                                                                                    RepositoryFileAttributeType... attributeTypes)
@@ -109,7 +124,7 @@ public class DockerLayoutProvider
             Object value = result.get(attributeType);
             switch (attributeType) {
                 case ARTIFACT:
-                    value = (Boolean) value && !isMetadata(repositoryPath);
+                    value = (Boolean) value && !isMetadata(repositoryPath) && !isSubsidiaryFile(repositoryPath);
 
                     result.put(attributeType, value);
 

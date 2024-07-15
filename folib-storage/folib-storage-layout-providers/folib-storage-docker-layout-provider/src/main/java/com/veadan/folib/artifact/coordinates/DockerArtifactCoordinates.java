@@ -5,6 +5,7 @@ import com.veadan.folib.db.schema.Vertices;
 import com.veadan.folib.domain.LayoutArtifactCoordinatesEntity;
 import com.veadan.folib.providers.io.RepositoryFiles;
 import com.veadan.folib.providers.io.RepositoryPath;
+import com.veadan.folib.utils.DockerUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
@@ -141,6 +142,8 @@ public class DockerArtifactCoordinates
         } else if (strings[strings.length - 1].contains("manifest.json")) {
             artifactPath = Arrays.stream(strings).filter(data -> !Objects.equals(layers, data) || !Objects.equals(finalImageName, data))
                     .collect(Collectors.joining("/"));
+        } else if (path.contains(DockerUtils.SUBSIDIARY)) {
+            artifactPath = path;
         }
         if (StringUtils.isBlank(artifactPath)) {
             throw new IllegalArgumentException(String.format("Path [%s] not a standard Docker layout file", path));

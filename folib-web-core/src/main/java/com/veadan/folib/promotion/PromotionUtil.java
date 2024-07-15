@@ -38,6 +38,7 @@ import com.veadan.folib.storage.repository.Repository;
 import com.veadan.folib.util.MessageDigestUtils;
 import com.veadan.folib.util.RepositoryPathUtil;
 import com.veadan.folib.util.ThreadLocalUtil;
+import com.veadan.folib.utils.DockerUtils;
 import com.veadan.folib.utils.UrlUtils;
 import com.veadan.folib.utils.UserUtils;
 import com.veadan.folib.wrapper.BufferedInputStreamWrapper;
@@ -544,6 +545,22 @@ public class PromotionUtil {
             filePathMap.put(RepositoryFiles.relativizePath(srcRepositoryPath), relativePathMap);
             // 添加跨节点的元数据同步
             fileMetaDataMap.put(RepositoryFiles.relativizePath(srcRepositoryPath), getMetaData(srcRepositoryPath));
+            if (isDocker) {
+                List<DockerSubsidiary> dockerSubsidiaries = DockerUtils.getDockerSubsidiaryFilePaths(srcRepositoryPath);
+                if (CollectionUtils.isNotEmpty(dockerSubsidiaries)) {
+                    RepositoryPath srcDockerSubsidiaryRepositoryPath;
+                    Map<String, RepositoryPath> dockerSubsidiaryPathMap;
+                    for (DockerSubsidiary dockerSubsidiary : dockerSubsidiaries) {
+                        srcDockerSubsidiaryRepositoryPath = repositoryPathResolver.resolve(srcStorageId, srcRepositoryId, dockerSubsidiary.getPath());
+                        if (Files.exists(srcDockerSubsidiaryRepositoryPath)) {
+                            log.info("Upload find subsidiary srcRepositoryPath [{}]", srcDockerSubsidiaryRepositoryPath);
+                            dockerSubsidiaryPathMap = Maps.newLinkedHashMap();
+                            dockerSubsidiaryPathMap.put(RepositoryFiles.relativizePath(srcDockerSubsidiaryRepositoryPath), srcDockerSubsidiaryRepositoryPath);
+                            filePathMap.put(RepositoryFiles.relativizePath(srcDockerSubsidiaryRepositoryPath), dockerSubsidiaryPathMap);
+                        }
+                    }
+                }
+            }
         }
     }
 
@@ -567,7 +584,7 @@ public class PromotionUtil {
                         for (String layer : layerList) {
                             RepositoryPath srcBlobPath = repositoryPathResolver.resolve(srcStorageId, srcRepositoryId, DockerLayoutProvider.BLOBS + File.separator + layer);
                             RepositoryPath targetBlobPath = repositoryPathResolver.resolve(targetStorageId, targetRepositoryId, RepositoryFiles.relativizePath(srcBlobPath));
-                            if (Files.exists(targetBlobPath)) {
+                            if (Files.exists(targetBlobPath) && RepositoryFiles.validateChecksum(srcBlobPath, targetBlobPath)) {
                                 log.info("Do copy srcRepositoryPath [{}] targetRepositoryPath [{}] exists skip...", srcBlobPath.toString(), targetBlobPath.toString());
                                 continue;
                             }
@@ -582,7 +599,7 @@ public class PromotionUtil {
                         if (StringUtils.isNotBlank(manifest.getDigest())) {
                             RepositoryPath srcMainFestPath = repositoryPathResolver.resolve(srcStorageId, srcRepositoryId, DockerLayoutProvider.MANIFEST + File.separator + manifest.getDigest());
                             RepositoryPath targetManiFestPath = repositoryPathResolver.resolve(targetStorageId, targetRepositoryId, RepositoryFiles.relativizePath(srcMainFestPath));
-                            if (Files.exists(targetManiFestPath)) {
+                            if (Files.exists(targetManiFestPath) && RepositoryFiles.validateChecksum(srcMainFestPath, targetManiFestPath)) {
                                 log.info("Do copy srcRepositoryPath [{}] targetRepositoryPath [{}] exists skip...", srcMainFestPath.toString(), targetManiFestPath.toString());
                                 continue;
                             }
@@ -605,6 +622,30 @@ public class PromotionUtil {
             } catch (IOException e) {
                 log.error("Do copy srcRepositoryPath [{}] targetManiFestPath [{}] error [{}]", srcRepositoryPath, targetRepositoryPath, ExceptionUtils.getStackTrace(e));
                 throw new Exception(e.getMessage());
+            }
+            if (isDocker) {
+                List<DockerSubsidiary> dockerSubsidiaries = DockerUtils.getDockerSubsidiaryFilePaths(srcRepositoryPath);
+                if (CollectionUtils.isNotEmpty(dockerSubsidiaries)) {
+                    RepositoryPath srcDockerSubsidiaryRepositoryPath, targetDockerSubsidiaryRepositoryPath = null;
+                    for (DockerSubsidiary dockerSubsidiary : dockerSubsidiaries) {
+                        srcDockerSubsidiaryRepositoryPath = repositoryPathResolver.resolve(srcStorageId, srcRepositoryId, dockerSubsidiary.getPath());
+                        if (Files.exists(srcDockerSubsidiaryRepositoryPath)) {
+                            targetDockerSubsidiaryRepositoryPath = repositoryPathResolver.resolve(targetStorageId, targetRepositoryId, dockerSubsidiary.getPath());
+                            if (Files.exists(targetDockerSubsidiaryRepositoryPath) && RepositoryFiles.validateChecksum(srcDockerSubsidiaryRepositoryPath, targetDockerSubsidiaryRepositoryPath)) {
+                                log.info("Do copy srcRepositoryPath [{}] targetRepositoryPath [{}] exists skip...", srcDockerSubsidiaryRepositoryPath.toString(), targetDockerSubsidiaryRepositoryPath.toString());
+                                continue;
+                            }
+                            log.info("Do copy srcRepositoryPath [{}] targetDockerSubsidiaryRepositoryPath [{}]", srcDockerSubsidiaryRepositoryPath, targetDockerSubsidiaryRepositoryPath);
+                            try (InputStream is = Files.newInputStream(srcDockerSubsidiaryRepositoryPath)) {
+                                //同步附属文件
+                                artifactManagementService.store(targetDockerSubsidiaryRepositoryPath, is);
+                            } catch (IOException e) {
+                                log.error("Do copy srcRepositoryPath [{}] targetDockerSubsidiaryRepositoryPath [{}] error [{}]", srcDockerSubsidiaryRepositoryPath, targetDockerSubsidiaryRepositoryPath, ExceptionUtils.getStackTrace(e));
+                                throw new Exception(e.getMessage());
+                            }
+                        }
+                    }
+                }
             }
         }
     }
@@ -638,6 +679,19 @@ public class PromotionUtil {
             log.info("Pull find srcRepositoryPath [{}]", srcRepositoryPath);
             repositoryPaths.add(RepositoryFiles.relativizePath(srcRepositoryPath));
             metaData.put(RepositoryFiles.relativizePath(srcRepositoryPath), getMetaData(srcRepositoryPath));
+            if (isDocker) {
+                List<DockerSubsidiary> dockerSubsidiaries = DockerUtils.getDockerSubsidiaryFilePaths(srcRepositoryPath);
+                if (CollectionUtils.isNotEmpty(dockerSubsidiaries)) {
+                    RepositoryPath srcDockerSubsidiaryRepositoryPath;
+                    for (DockerSubsidiary dockerSubsidiary : dockerSubsidiaries) {
+                        srcDockerSubsidiaryRepositoryPath = repositoryPathResolver.resolve(srcStorageId, srcRepositoryId, dockerSubsidiary.getPath());
+                        if (Files.exists(srcDockerSubsidiaryRepositoryPath)) {
+                            log.info("Pull find subsidiary srcRepositoryPath [{}]", srcDockerSubsidiaryRepositoryPath);
+                            repositoryPaths.add(RepositoryFiles.relativizePath(srcDockerSubsidiaryRepositoryPath));
+                        }
+                    }
+                }
+            }
         }
         return new PromotionFileRelativePath(repositoryPaths, metaData);
     }

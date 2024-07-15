@@ -69,6 +69,9 @@ public class ConfigurationManager implements StoragesConfigurationManager {
                     if (Objects.nonNull(storage)) {
                         Repository subRepository = storage.getRepository(rId);
                         if (Objects.nonNull(subRepository)) {
+                            if (!isRepositoryResolvable(subRepository)) {
+                                continue;
+                            }
                             if (RepositoryTypeEnum.GROUP.getType().equals(subRepository.getType())) {
                                 resolveGroupRepository(subRepository, storageAndRepositoryIdList);
                             } else if (!storageAndRepositoryIdList.contains(storageAndRepositoryId)) {
@@ -83,5 +86,15 @@ public class ConfigurationManager implements StoragesConfigurationManager {
         }
         log.info("Repository [{}] [{}] storageAndRepositoryIdList [{}]", repository.getStorage().getId(), repository.getId(), String.join(",", storageAndRepositoryIdList));
         return storageAndRepositoryIdList;
+    }
+
+    public boolean isRepositoryResolvable(Repository repository) {
+        final boolean isInService = repository.isInService();
+        if (!isInService) {
+            log.info("- Repository [{}] is not in service, skipping...",
+                    repository.getStorageIdAndRepositoryId());
+            return false;
+        }
+        return true;
     }
 }

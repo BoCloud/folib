@@ -28,16 +28,7 @@ import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.annotation.Validated;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.ModelAttribute;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestHeader;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.inject.Inject;
@@ -84,11 +75,10 @@ public class ArtifactPromotionController extends BaseArtifactController {
 
 
     /**
-     *
      * @param promotionNodeOption sourcePath targetPath  制品晋级的来源和晋级的目标机器
-     * @param request 源请求
-     * @param bindingResult 校验
-     * @return  晋级的结果
+     * @param request             源请求
+     * @param bindingResult       校验
+     * @return 晋级的结果
      */
     @PostMapping("/nodeOption")
     @PermissionCheck(resourceKey = "ARTIFACTS_PROMOTION")
@@ -126,10 +116,11 @@ public class ArtifactPromotionController extends BaseArtifactController {
                                  @RequestParam("filePathMap") String filePathMap,
                                  @RequestParam(name = "fileMetaDataMap", required = false) String fileMetaDataMap,
                                  @RequestParam(name = "uuid", required = false) String uuid,
-                                 @RequestParam(name = "imageTag", required = false) String imageTag) {
-        String baseUrl =getBaseUrl();
-        String token =  securityComponent.getSecurityToken();
-        return artifactPromotionService.upload(files, storageId, repositoryId, filePathMap, fileMetaDataMap, uuid, imageTag, baseUrl, token);
+                                 @RequestParam(name = "imageTag", required = false) String imageTag,
+                                 @RequestParam(name = "fileType", required = false) String fileType) {
+        String baseUrl = getBaseUrl();
+        String token = securityComponent.getSecurityToken();
+        return artifactPromotionService.upload(files, storageId, repositoryId, filePathMap, fileMetaDataMap, uuid, imageTag, fileType, baseUrl, token);
     }
 
     @PostMapping(value = "/upload")
@@ -290,6 +281,6 @@ public class ArtifactPromotionController extends BaseArtifactController {
         } catch (Exception e) {
             log.error("通过Header传参方式，文件切片上传失败", e);
             return Result.error(e);
-        } 
+        }
     }
 }

@@ -3,9 +3,11 @@ package com.veadan.folib.providers.io;
 import com.google.common.collect.Lists;
 import com.veadan.folib.artifact.coordinates.ArtifactCoordinates;
 import com.veadan.folib.cloud.storage.s3fs.S3Path;
+import com.veadan.folib.constant.GlobalConstants;
 import com.veadan.folib.enums.ProductTypeEnum;
 import com.veadan.folib.util.CacheUtil;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 
@@ -244,6 +246,31 @@ public abstract class RepositoryFiles {
                 cacheSha1 = Files.readString(sha1CachePath);
             }
             return sourceSha1.equals(cacheSha1);
+        } catch (Exception ex) {
+            log.warn(ExceptionUtils.getStackTrace(ex));
+        }
+        return false;
+    }
+
+    public static boolean validateChecksum(RepositoryPath repositoryPath, RepositoryPath targetRepositoryPath) {
+        try {
+            Set<String> digestAlgorithmSet = repositoryPath.getFileSystem().getDigestAlgorithmSet();
+            String digestAlgorithm = "sha1";
+            if (CollectionUtils.isNotEmpty(digestAlgorithmSet)) {
+                digestAlgorithm = digestAlgorithmSet.stream().findFirst().orElse("");
+            }
+            String extension = GlobalConstants.POINT + digestAlgorithm.replaceAll("-", "").toLowerCase();
+            //对比checksum
+            String sourceDigestAlgorithm = "sourceDigestAlgorithm", targetDigestAlgorithm = "targetDigestAlgorithm";
+            RepositoryPath sourceDigestAlgorithmRepositoryPath = repositoryPath.resolveSibling(repositoryPath.getFileName() + extension);
+            if (Files.exists(sourceDigestAlgorithmRepositoryPath)) {
+                sourceDigestAlgorithm = Files.readString(sourceDigestAlgorithmRepositoryPath);
+            }
+            Path targetDigestAlgorithmTargetPath = targetRepositoryPath.resolveSibling(targetRepositoryPath.getFileName() + extension);
+            if (Files.exists(targetDigestAlgorithmTargetPath)) {
+                targetDigestAlgorithm = Files.readString(targetDigestAlgorithmTargetPath);
+            }
+            return sourceDigestAlgorithm.equals(targetDigestAlgorithm);
         } catch (Exception ex) {
             log.warn(ExceptionUtils.getStackTrace(ex));
         }
