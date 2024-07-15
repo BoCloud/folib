@@ -51,7 +51,7 @@ import com.veadan.folib.users.domain.SystemRole;
 import com.veadan.folib.users.domain.Users;
 import com.veadan.folib.users.dto.PathPrivilegesDto;
 import com.veadan.folib.users.service.UserService;
-import com.veadan.folib.users.service.impl.DatabaseUserService;
+import com.veadan.folib.users.service.impl.RelationalDatabaseUserService;
 import com.veadan.folib.users.userdetails.SpringSecurityUser;
 import com.veadan.folib.validation.RequestBodyValidationException;
 import com.veadan.folib.web.RepositoryMapping;
@@ -154,7 +154,7 @@ public class StoragesConfigurationController
     private RepositoryEventListenerRegistry repositoryEventListenerRegistry;
 
     @Autowired
-    @DatabaseUserService.Database
+    @RelationalDatabaseUserService.RelationalDatabase
     @Lazy
     private UserService userService;
 

@@ -1,7 +1,7 @@
 package com.veadan.folib.scanner.mapper;
 
 import com.veadan.folib.scanner.common.base.BaseQuery;
-import com.veadan.folib.scanner.common.base.CommonMapper;
+import com.veadan.folib.common.base.CommonMapper;
 import com.veadan.folib.scanner.entity.*;
 import org.apache.ibatis.annotations.Param;
 

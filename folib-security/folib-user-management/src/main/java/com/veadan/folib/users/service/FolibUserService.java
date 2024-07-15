@@ -1,0 +1,30 @@
+package com.veadan.folib.users.service;
+
+import com.veadan.folib.domain.User;
+import com.veadan.folib.domain.UserEntity;
+import com.veadan.folib.entity.FolibUser;
+
+import java.util.List;
+
+/**
+  * @Description: 用户服务
+  * @auther: fengmaogen
+  * @CreateDate: 2024/7/9 21:16
+  */
+public interface FolibUserService {
+
+
+    void deleteByUserName(String username);
+
+    FolibUser findByUserName(String username);
+
+    UserEntity save(UserEntity userEntity);
+
+    Iterable<User> findAll();
+
+    Long countUsers(User user);
+
+    List<User> findUsersPage(User user, int start, Integer limit);
+
+    boolean saveOrUpdateBatch(List<UserEntity> userEntitys);
+}

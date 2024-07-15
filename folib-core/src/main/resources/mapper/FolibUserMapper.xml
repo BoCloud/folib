@@ -11,11 +11,11 @@
         <result property="userType" column="user_type"/>
         <result property="enabled" column="enabled"/>
         <result property="sourceId" column="source_id"/>
-        <result property="deleted" column="deleted"/>
-        <result property="createBy" column="CREATE_BY"/>
-        <result property="createTime" column="CREATE_TIME"/>
-        <result property="updateBy" column="UPDATE_BY"/>
-        <result property="updateTime" column="UPDATE_TIME"/>
+        <result property="deleted" column="deleted" />
+        <result property="createBy" column="create_by"/>
+        <result property="createTime" column="create_time"/>
+        <result property="updateBy" column="update_by"/>
+        <result property="updateTime" column="update_time"/>
     </resultMap>
 
     <!-- 通过ID查询单条数据 -->

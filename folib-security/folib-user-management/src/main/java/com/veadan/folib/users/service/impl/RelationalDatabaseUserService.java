@@ -2,26 +2,31 @@ package com.veadan.folib.users.service.impl;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
+import com.veadan.folib.converts.UserConvert;
 import com.veadan.folib.data.CacheName;
 import com.veadan.folib.domain.PageResultResponse;
 import com.veadan.folib.domain.SecurityRole;
 import com.veadan.folib.domain.User;
 import com.veadan.folib.domain.UserEntity;
+import com.veadan.folib.entity.FolibUser;
 import com.veadan.folib.repositories.UserRepository;
 import com.veadan.folib.users.domain.SystemRole;
 import com.veadan.folib.users.domain.Users;
 import com.veadan.folib.users.security.JwtAuthenticationClaimsProvider;
 import com.veadan.folib.users.security.JwtClaimsProvider;
 import com.veadan.folib.users.security.SecurityTokenProvider;
+import com.veadan.folib.users.service.FolibUserService;
 import com.veadan.folib.users.service.UserService;
 import com.veadan.folib.users.userdetails.SpringSecurityUser;
 import com.veadan.folib.users.userdetails.UserDetailsMapper;
 import com.veadan.folib.util.LocalDateTimeInstance;
 import org.apache.commons.lang3.StringUtils;
 import org.jose4j.lang.JoseException;
+import org.springframework.beans.BeanUtils;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Component;
+import com.veadan.folib.users.service.impl.RelationalDatabaseUserService.RelationalDatabase;
 
 import javax.inject.Inject;
 import javax.inject.Qualifier;
@@ -41,40 +46,40 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
  * @author xuxinping
  */
 @Component
-@RelationalDatabaseUserService.RelationalDatabase
+@RelationalDatabase
 @Transactional
 public class RelationalDatabaseUserService implements UserService
 {
 
     @Inject
     private SecurityTokenProvider tokenProvider;
-    
-    @Inject
-    protected UserRepository userRepository;
-
     @Inject
     private UserDetailsMapper userDetailsMapper;
-
     @Inject
     @JwtAuthenticationClaimsProvider.JwtAuthentication
     private JwtClaimsProvider jwtClaimsProvider;
+    @Inject
+    protected FolibUserService folibUserService;
+    @Inject
+    protected UserRepository userRepository;
 
     @Override
     @CacheEvict(cacheNames = CacheName.User.AUTHENTICATIONS, key = "#p0")
     public void deleteByUsername(String username)
     {
-        userRepository.deleteById(username);
+        folibUserService.deleteByUserName(username);
     }
 
     @Override
     public List<User> findUserByRoles(List<String> rolesList) {
-        return userRepository.findUsersWithRoles(rolesList);
+        //FIXME 通过存储id、仓库id、指定权限查询关联的用户
+        return null;
     }
 
     @Override
     public UserEntity findByUsername(String username)
     {
-        return userRepository.findById(username).map(UserEntity.class::cast).orElse(null);
+        return Optional.of(folibUserService.findByUserName(username)).map(UserEntity.class::cast).orElse(null);
     }
 
     @Override
@@ -132,7 +137,7 @@ public class RelationalDatabaseUserService implements UserService
     @Override
     public Users getUsers()
     {
-        Iterable<User> users = userRepository.findAll();
+        Iterable<User> users = folibUserService.findAll();
         return new Users(StreamSupport.stream(users.spliterator(), false).collect(Collectors.toSet()));
     }
 
@@ -146,23 +151,18 @@ public class RelationalDatabaseUserService implements UserService
         }
         int start = (page - 1) * limit;
         limit = page * limit;
-        long count = userRepository.countUsers(user);
+        long count = folibUserService.countUsers(user);
         if (count == 0L) {
             return null;
         }
-        List<User> userList = userRepository.findUsersPage(user, start, limit);
+        List<User> userList = folibUserService.findUsersPage(user, start, limit);
         return new PageResultResponse<User>(count, userList);
     }
 
     @Override
     public void revokeEveryone(String roleToRevoke)
     {
-        List<User> resultList = userRepository.findUsersWithRole(roleToRevoke);
-
-        resultList.forEach(user -> {
-            user.getRoles().remove(roleToRevoke);
-            save(user);
-        });
+        //FIXME 删除角色关联的用户、用户组
     }
 
     @Override
@@ -191,13 +191,9 @@ public class RelationalDatabaseUserService implements UserService
         userEntity.setLastUpdated(now);
         userEntity.setUserType("general");
         userEntity.setAvatar(user.getAvatar());
+        FolibUser folibUser = FolibUser.builder().build();
 
-//        if (StringUtils.isNotBlank(user.getSourceId()) || StringUtils.isNotBlank(userEntity.getSourceId()))
-//        {
-//            throw new IllegalStateException("Can't modify external users.");
-//        }
-        
-        return userRepository.save(userEntity);
+        return folibUserService.save(userEntity);
     }
 
     @Override
@@ -216,7 +212,7 @@ public class RelationalDatabaseUserService implements UserService
         userEntity.setEmail(user.getEmail());
         userEntity.setLastUpdated(now);
         userEntity.setUserType("general");
-        return userRepository.save(userEntity);
+        return folibUserService.save(userEntity);
     }
 
     public void expireUser(String username, boolean clearSourceId)
@@ -229,7 +225,7 @@ public class RelationalDatabaseUserService implements UserService
             externalUserEntry.setSourceId("empty");
         }
 
-        userRepository.save(externalUserEntry);
+        folibUserService.save(externalUserEntry);
     }
 
     @Documented
@@ -237,6 +233,15 @@ public class RelationalDatabaseUserService implements UserService
     @Qualifier
     public @interface RelationalDatabase
     {
+    }
+
+    public boolean syncUser() {
+        Iterable<User> users = userRepository.findAll();
+        List<User> userInfos = StreamSupport.stream(users.spliterator(), false).collect(Collectors.toList());
+
+        List<UserEntity> userEntities = UserConvert.INSTANCE.UserListToUserEntityList(userInfos);
+        //FIXME 处理用户关联的角色、用户添加默认组
+        return folibUserService.saveOrUpdateBatch(userEntities);
     }
 
 }

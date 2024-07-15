@@ -2,7 +2,7 @@ package com.veadan.folib.mapper;
 
 import java.util.List;
 
-import com.veadan.folib.scanner.common.base.CommonMapper;
+import com.veadan.folib.common.base.CommonMapper;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 import org.springframework.data.domain.Pageable;

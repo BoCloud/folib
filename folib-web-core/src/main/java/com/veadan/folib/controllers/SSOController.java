@@ -20,8 +20,8 @@ import com.veadan.folib.services.ClusterSyncService;
 import com.veadan.folib.users.domain.SystemRole;
 import com.veadan.folib.users.dto.UserDto;
 import com.veadan.folib.users.service.UserService;
-import com.veadan.folib.users.service.impl.DatabaseUserService;
 import com.veadan.folib.users.service.impl.EncodedPasswordUser;
+import com.veadan.folib.users.service.impl.RelationalDatabaseUserService;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiResponse;
@@ -63,7 +63,7 @@ public class SSOController {
     private AuthorizationConfigServiceImpl authorizationConfigService;
 
     @Inject
-    @DatabaseUserService.Database
+    @RelationalDatabaseUserService.RelationalDatabase
     private UserService userService;
 
     @Inject

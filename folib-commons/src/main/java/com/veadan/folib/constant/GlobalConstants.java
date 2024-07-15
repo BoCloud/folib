@@ -161,4 +161,13 @@ public interface GlobalConstants {
      * NotFound
      */
     String NOT_FOUND = "NotFound";
+
+    /**
+     * 删除
+     */
+    String DELETED = "1";
+    /**
+     * 未删除
+     */
+    String NOT_DELETED = "0";
 }

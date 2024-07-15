@@ -3,6 +3,7 @@
 package com.veadan.folib.scanner.common.base;
 
 
+import com.veadan.folib.common.base.CommonMapper;
 import com.veadan.folib.configuration.MutableConfiguration;
 import com.veadan.folib.security.authentication.JwtTokenFetcher;
 import com.veadan.folib.services.ConfigurationManagementService;

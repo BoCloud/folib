@@ -21,7 +21,7 @@ import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.services.PubService;
 import com.veadan.folib.storage.repository.Repository;
 import com.veadan.folib.users.service.UserService;
-import com.veadan.folib.users.service.impl.DatabaseUserService;
+import com.veadan.folib.users.service.impl.RelationalDatabaseUserService;
 import com.veadan.folib.web.LayoutRequestMapping;
 import com.veadan.folib.web.RepositoryMapping;
 import io.swagger.annotations.Api;
@@ -64,7 +64,7 @@ public class PubArtifactController
     private static final String PACKAGES_ENDPOINT = "/api/packages/";
 
     @Inject
-    @DatabaseUserService.Database
+    @RelationalDatabaseUserService.RelationalDatabase
     private UserService userService;
 
     @Inject

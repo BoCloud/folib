@@ -11,11 +11,8 @@ import com.veadan.folib.scanner.common.msg.TableResultResponse;
 import com.veadan.folib.users.dto.UserDto;
 import com.veadan.folib.users.security.AuthoritiesProvider;
 import com.veadan.folib.users.service.UserService;
-import com.veadan.folib.users.service.impl.DatabaseUserService.Database;
 import com.veadan.folib.users.service.impl.EncodedPasswordUser;
-import com.veadan.folib.users.userdetails.FolibUserToUserDetails;
-import com.veadan.folib.users.userdetails.SpringSecurityUser;
-import com.veadan.folib.users.userdetails.UserDetailsMapper;
+import com.veadan.folib.users.service.impl.RelationalDatabaseUserService;
 import com.veadan.folib.util.RSAUtils;
 import com.veadan.folib.util.UserUtils;
 import com.veadan.folib.validation.RequestBodyValidationException;
@@ -80,7 +77,7 @@ public class UserController
     public static final String USER_DELETE_FORBIDDEN = "禁止删除此帐户";
 
     @Inject
-    @Database
+    @RelationalDatabaseUserService.RelationalDatabase
     private UserService userService;
 
     @Inject
@@ -97,6 +94,17 @@ public class UserController
 
     @ApiOperation(value = "Used to retrieve all users")
     @ApiResponses(value = {@ApiResponse(code = 200, message = SUCCESSFUL_GET_USERS)})
+    //@PreAuthorize("hasAuthority('VIEW_USER')")
+    @GetMapping(produces = {MediaType.APPLICATION_JSON_VALUE}, path = "/syncYamlUser")
+    @ResponseBody
+    public ResponseEntity syncYamlUser() {
+        boolean result = ((RelationalDatabaseUserService) userService).syncUser();
+
+         return ResponseEntity.ok(result);
+    }
+
+    @ApiOperation(value = "Used to retrieve all users")
+    @ApiResponses(value = {@ApiResponse(code = 200, message = SUCCESSFUL_GET_USERS)})
     @PreAuthorize("hasAuthority('VIEW_USER')")
     @GetMapping(produces = {MediaType.APPLICATION_JSON_VALUE})
     @ResponseBody
@@ -107,6 +115,7 @@ public class UserController
                 .sorted(Comparator.comparing(User::getUsername))
                 .map(UserOutput::fromUser)
                 .collect(Collectors.toList());
+
 
         return getJSONListResponseEntityBody("users", users);
     }

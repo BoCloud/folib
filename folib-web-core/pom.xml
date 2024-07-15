@@ -120,6 +120,11 @@
     </build>
 
     <dependencies>
+        <dependency>
+            <groupId>com.veadan.folib</groupId>
+            <artifactId>folib-core</artifactId>
+            <version>1.0-SNAPSHOT</version>
+        </dependency>
         <!-- Strongbox dependencies -->
         <dependency>
             <groupId>${project.groupId}</groupId>
