@@ -14,30 +14,27 @@
             <a-table rowKey="uuid" class="mt-20" size="middle" :columns="i18nColumns2" :data-source="vulnerabilityDatabaseData"
                      @change="handleChangeTable" :scroll="{ x: true }" :loading="vulnerabilityTableLoading"
                      :pagination="{ pageSize: queryParams.pageSize, current: queryParams.pageNumber, total: queryParams.total, showLessItems: true }">
-                <template slot="cve" slot-scope="cve, row">
-                    <a-button type="link" @click="handleGoDetail(row)">
-                        {{ cve }}
-                    </a-button>
-                </template>
-                <template slot="cweList" slot-scope="cweList">
-                    {{ cweList?cweList.join(","):'' }}
-                </template>
                 <template slot="status" slot-scope="status">
                     <a-tag :color="status === 1 ? 'gray' : status === 2 ? 'blue' : status === 3 ? 'green' : 'red'">
                         {{ status === 1 ? $t('AdvancementCockpits.Ready') : status === 2 ? $t('AdvancementCockpits.Syncing') : status === 3 ? $t('AdvancementCockpits.Success') : $t('AdvancementCockpits.Failed')}}
                     </a-tag>
                 </template>
                 <template slot="syncProgress" slot-scope="syncProgress,row">
-                    <a-progress type="circle" :width="40"  :percent="(syncProgress * 100).toFixed(0)" :status="row.status === 4 ?'exception':''" size="small" />
+                    <a-progress type="circle"
+                                :width="40"
+                                :percent="(syncProgress * 100)"
+                                :status="row.status === 4 ? 'exception': row.status === 3 ? 'success' : row.status === 2 ? 'normal': 'active' "
+                                size="small"
+                    />
                 </template>
                 <template slot="slaveRecordCleared" slot-scope="slaveRecordCleared,row">
-                    <a-tag :color="slaveRecordCleared ? 'red' : 'gray'">
+                    <a-tag :color="row.slaveRecordCleared ? 'red' : 'gray'">
                         {{ slaveRecordCleared ? $t('AdvancementCockpits.Removals') : $t('AdvancementCockpits.NotCleared')}}
                     </a-tag>
                 </template>
                 <template slot="opsType" slot-scope="opsType,row">
                     <a-tag :color="opsType ===1 ? 'orange' : 'purple'">
-                        {{ slaveRecordCleared ? $t('AdvancementCockpits.ProductUpgrade') : $t('AdvancementCockpits.Distribution')}}
+                        {{ opsType ===1 ? $t('AdvancementCockpits.ProductUpgrade') : opsType ===2 ? $t('AdvancementCockpits.Distribution') : $t('AdvancementCockpits.Uncharted')}}
                     </a-tag>
                 </template>
                 <template slot="syncModel" slot-scope="syncModel">
@@ -45,7 +42,7 @@
                 </template>
                 <div slot="failedReason"
                      slot-scope="text, record">
-                    <template v-if="record.failedReason">
+                    <template v-if="record.failedReason && record.status ===4">
                         <a-tooltip>
                             <template slot="title">
                                 {{record.failedReason}}
@@ -65,10 +62,10 @@
                      slot-scope="text, record">
                     <a-tooltip>
                         <template slot="title">
-                            <template v-if="record.opsType === 1">
+                            <template v-if="record.opsType &&  record.opsType === 1">
                                 {{record.targetPath}}
                             </template>
-                            <template v-if="record.opsType === 2">
+                            <template v-if="record.opsType && record.opsType === 2">
                                 <template v-for="(info, index) in JSON.parse(record.targetPath)">
                                     {{ $t('Repository.DistributionNode') }}{{index+1}}: {{info.dispatchClusterEnName}}
                                     <template v-if="info.targetStorageId">&nbsp;&nbsp;{{ $t('Repository.StorageSpace') }}: {{info.targetStorageId||'-'}}</template>
@@ -87,21 +84,21 @@
                 <div slot="operation"
                      slot-scope="text, record">
                     <div class="col-action">
-                        <a-popconfirm :title="(currentClickRecord && currentClickRecord.status === 2 ? $t('Repository.CurrentProductIsSynchronizing'):'')+$t('Repository.SureMakeProductCompensation')"
+                        <a-popconfirm :title="getProductStatusMessage()"
                                       okType="danger"
                                       :ok-text="$t('Repository.Confirm')"
                                       :cancel-text="$t('Repository.Cancel')">
-                            <a-button type="link" v-if="record.status === 4 " @click="clickRecord(record)"
+                            <a-button type="link" @click="clickRecord(record)" v-if="record.status === 4"
                                       size="small">
                                 <span class="text-danger">{{ $t('Repository.Compensation') }}</span>
                             </a-button>
 
                         </a-popconfirm>
-                        <a-popconfirm :title="(currentClickRecord && (currentClickRecord.status === 1  || currentClickRecord.status ===2)? $t('Repository.CurrentProductIsSynchronizing'):'')+$t('AdvancementCockpits.SetTop')"
+                        <a-popconfirm :title="getTitle()"
                                       okType="danger"
                                       :ok-text="$t('Repository.Confirm')"
                                       :cancel-text="$t('Repository.Cancel')">
-                            <a-button type="link" v-if="record.status === 1 || record.status === 2" @click="clickRecord(record)"
+                            <a-button type="link" v-if="record.status === 1 || record.status === 2" @click="updatePriority(record)"
                                       size="small">
                                 <span class="text-danger">{{ $t('AdvancementCockpits.SetTop') }}</span>
                             </a-button>
@@ -117,6 +114,7 @@
 import { getVulnerabilitiesList } from "@/api/vulnerabilities.js";
 import { formatTimestamp } from "@/utils/util.js";
 import {getArtifactSyncRecordPage, getArtifactSyncRecordStatisticsPage} from "@/api/settings";
+import {retryAtifactDispatch, retryNodeOption} from "@/api/artifact";
 
 
 export default {
@@ -221,6 +219,7 @@ export default {
 
             ],
             vulnerabilityDatabaseData: [],
+            currentClickRecord: null,
             vulnerabilityTableLoading: false,
             queryParams: {
                 pageNumber: 1,
@@ -255,86 +254,23 @@ export default {
     },
     methods: {
         formatTimestamp,
+        getProductStatusMessage() {
+            if (this.currentClickRecord != null && this.currentClickRecord.status === 4) {
+                return this.$t('Repository.CurrentProductIsSynchronizing') + this.$t('Repository.SureMakeProductCompensation');
+            } else {
+                return this.$t('Repository.SureMakeProductCompensation');
+            }
+        },
+        getTitle(){
+            if (this.currentClickRecord && (this.currentClickRecord.status === 1  || this.currentClickRecord.status ===2)) {
+                this.$t('Repository.CurrentProductIsSynchronizing')
+            }else{
+                this.$t('AdvancementCockpits.SetTop');
+            }
+        },
         // 获取表格数据
         getData() {
             this.vulnerabilityTableLoading = true
-            let data = {
-                "total" : 1,
-                "rows" : [ {
-                "id" : 1,
-                "requestHostName" : null,
-                 "sourceStorageId":"public-project",
-                 "sourceRepositoryId":"raw-local",
-                "sourcePath" : "ccc/parentDir.zip",
-                "targetPath" : "[{\"artifactoryRepositoryType\":\"inner\",\"dispatchClusterEnName\":\"dev\",\"targetRepositoryId\":\"hufan\",\"targetStorageId\":\"demo\"}]",
-                "opsType" : 2,
-                "syncNo" : "SyncNoaec9db6cec494c20bad9ab301645d1ff",
-                "syncModel" : 1,
-                "status" : 2,
-                "failedReason" : null,
-                "createBy" : "admin",
-                "createTime" : "2024-07-08 14:34:33",
-                "updateBy" : null,
-                "updateTime" : null,
-                "slaveRecordCleared" : false,
-                "syncProgress" : 0.6
-            } ,{
-                    "id" : 2,
-                    "requestHostName" : null,
-                    "sourceStorageId":"public-project",
-                    "sourceRepositoryId":"raw-local",
-                    "sourcePath" : "ccc/parentDir.zip",
-                    "targetPath" : "[{\"artifactoryRepositoryType\":\"inner\",\"dispatchClusterEnName\":\"dev\",\"targetRepositoryId\":\"hufan\",\"targetStorageId\":\"demo\"}]",
-                    "opsType" : 2,
-                    "syncNo" : "SyncNoaec9db6cec494c20bad9ab301645d1ff",
-                    "syncModel" : 1,
-                    "status" : 3,
-                    "failedReason" : null,
-                    "createBy" : "admin",
-                    "createTime" : "2024-07-08 14:34:33",
-                    "updateBy" : null,
-                    "updateTime" : null,
-                    "slaveRecordCleared" : false,
-                    "syncProgress" : 1.0
-                },{
-                    "id" : 3,
-                    "requestHostName" : null,
-                    "sourceStorageId":"public-project",
-                    "sourceRepositoryId":"raw-local",
-                    "sourcePath" : "ccc/parentDir.zip",
-                    "targetPath" : "[{\"artifactoryRepositoryType\":\"inner\",\"dispatchClusterEnName\":\"dev\",\"targetRepositoryId\":\"hufan\",\"targetStorageId\":\"demo\"}]",
-                    "opsType" : 2,
-                    "syncNo" : "SyncNoaec9db6cec494c20bad9ab301645d1ff",
-                    "syncModel" : 2,
-                    "status" : 1,
-                    "failedReason" : null,
-                    "createBy" : "admin",
-                    "createTime" : "2024-07-08 14:34:33",
-                    "updateBy" : null,
-                    "updateTime" : null,
-                    "slaveRecordCleared" : false,
-                    "syncProgress" : 0
-                } ,{
-                    "id" : 4,
-                    "requestHostName" : null,
-                    "sourceStorageId":"public-project",
-                    "sourceRepositoryId":"raw-local",
-                    "sourcePath" : "ccc/parentDir.zip",
-                    "targetPath" : "[{\"artifactoryRepositoryType\":\"inner\",\"dispatchClusterEnName\":\"dev\",\"targetRepositoryId\":\"hufan\",\"targetStorageId\":\"demo\"}]",
-                    "opsType" : 2,
-                    "syncNo" : "SyncNoaec9db6cec494c20bad9ab301645d1ff",
-                    "syncModel" : 2,
-                    "status" : 4,
-                    "failedReason" : null,
-                    "createBy" : "admin",
-                    "createTime" : "2024-07-08 14:34:33",
-                    "updateBy" : null,
-                    "updateTime" : null,
-                    "slaveRecordCleared" : false,
-                    "syncProgress" : 0.6
-                } ,]
-            }
-
             getArtifactSyncRecordPage(this.queryParams)
                 .then(res => {
                     this.dataFilter.total = res.data.total
@@ -343,15 +279,6 @@ export default {
                 }).finally(() => {
                     this.vulnerabilityTableLoading = false
                 })
-            // this.queryParams.total = data.total
-            // this.vulnerabilityDatabaseData = data.rows
-            // this.vulnerabilityTableLoading = false;
-            // getVulnerabilitiesList(this.queryParams).then((res) => {
-            //     this.queryParams.total = res.data.total
-            //     this.vulnerabilityDatabaseData = res.data.rows
-            // }).finally(() => {
-            //     this.vulnerabilityTableLoading = false
-            // })
         },
         handleChangeTable(pagination, filters, sorter) {
             if (pagination) {
@@ -376,7 +303,43 @@ export default {
         },
         clickRecord(v) {
             this.currentClickRecord = v
+            let sycnNo = this.currentClickRecord.syncNo;
+            //1：制品晋级；2：制品分发
+            let opsType = this.currentClickRecord.opsType;
+            if(opsType === 1){
+                this.vulnerabilityTableLoading = true
+                retryNodeOption(sycnNo).then(res =>{
+                        this.$message.success("操作成功");
+                        this.handleChangeTable();
+                }).finally(() => {
+                    this.vulnerabilityTableLoading = false
+                });
+            }else if(opsType === 2){
+                const jsonArrayString = JSON.parse(this.currentClickRecord.targetPath);
+                let type = jsonArrayString[0].artifactoryRepositoryType;
+                retryAtifactDispatch(sycnNo,type).then(res =>{
+                    this.$message.success("操作成功");
+                    this.handleChangeTable();
+                }).finally(() => {
+                    this.vulnerabilityTableLoading = false
+                });
+            }
+
+            console.log("currentClickRecord:",this.currentClickRecord)
         },
+        updatePriority(v){
+            this.currentClickRecord = v
+            let sycnNo = this.currentClickRecord.syncNo;
+            this.vulnerabilityTableLoading = true
+            updateTaskQueuePriority(sycnNo,0).then(res =>{
+                this.$message.success("操作成功");
+                this.handleChangeTable();
+            }).finally(() => {
+                this.vulnerabilityTableLoading = false
+            })
+
+
+        }
     },
 };
 </script>

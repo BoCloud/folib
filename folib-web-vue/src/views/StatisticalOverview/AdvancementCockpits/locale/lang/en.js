@@ -23,6 +23,7 @@ export default {
     'SetTop': 'Set Top',
     'EnterVulnerabilitySourceStorageId': 'Input source storage space',
     'EnterVulnerabilitySourceRepositoryId': 'Input source warehouse',
+    'Uncharted': 'uncharted'
    
     
 }

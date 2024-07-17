@@ -23,4 +23,5 @@ export default {
     'SetTop': '置顶',
     'EnterVulnerabilitySourceStorageId': '输入源存储空间查询',
     'EnterVulnerabilitySourceRepositoryId': '输入源仓库查询',
+    'Uncharted': '未定义'
 }
