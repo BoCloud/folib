@@ -41,6 +41,7 @@ public class DynamicPriorityTask implements Callable<Void>, Comparable<DynamicPr
         this.priority.set(initialPriority);
         this.taskId = taskId;
         this.executeFunction = callback;
+        this.futureTask = new ComparableFutureTask(this);
     }
 
     public void setPriority(int newPriority) {
