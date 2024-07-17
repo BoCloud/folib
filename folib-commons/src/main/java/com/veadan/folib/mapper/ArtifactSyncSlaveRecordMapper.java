@@ -3,6 +3,7 @@ package com.veadan.folib.mapper;
 import com.veadan.folib.entity.ArtifactSyncSlaveRecord;
 import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Update;
+import org.mockito.internal.matchers.And;
 import org.springframework.stereotype.Component;
 import tk.mybatis.mapper.common.Mapper;
 import tk.mybatis.mapper.common.MySqlMapper;
@@ -29,5 +30,7 @@ public interface ArtifactSyncSlaveRecordMapper extends SelectByIdsMapper<Artifac
     
     Boolean batchDeleteBySyncNoList(@Param("syncNoList") List<String> syncNoList);
 
-    ArtifactSyncSlaveRecord selectBySyncNo(@Param("syncNo") String syncNo);
+    List<ArtifactSyncSlaveRecord> selectBySyncNo(@Param("syncNo") String syncNo);
+
+    ArtifactSyncSlaveRecord  selectBySyncNoAndStatus(@Param("syncNo") String syncNo,@Param("status") Integer status);
 }
