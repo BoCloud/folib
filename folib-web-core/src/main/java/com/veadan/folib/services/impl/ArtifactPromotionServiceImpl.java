@@ -175,9 +175,6 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
     private ArtifactSyncRecordMapper artifactSyncRecordMapper;
 
     @Inject
-    private ArtifactSyncSlaveRecordMapper artifactSyncSlaveRecordMapper;
-
-    @Inject
     private ConfigurationManagementService configurationManagementService;
 
     @Inject
@@ -317,6 +314,7 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
                     targetStorageId, targetRepositoryId, srcAbsolutePath, targetBaseUrl + upLoadURI);
 
             PromotionNodeOptionDto uploadDto = promotionUtil.getPromotionUploadDto(promotionArtifactDto);
+            uploadDto.setRetry(promotionNodeOption.isRetry());
 
             CompletableFuture<Void> future = promotionUtil.artifactSliceUploadV3(uploadDto, targetBaseUrl, promotionNodeOption.getTargetNode(), targetStorageId, targetRepositoryId, syncNo);
 
@@ -440,18 +438,21 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
 
     @Override
     public ResponseEntity<?> retryNodeOptionAttachRecord(String syncNo, String requestHostName, HttpServletResponse response) {
-
-        ArtifactSyncSlaveRecord artifactSyncSlaveRecord = artifactSyncSlaveRecordMapper.selectBySyncNo(syncNo);
+        ArtifactSyncRecord  artifactSyncRecord = artifactSyncRecordMapper.selectBySyncNo(syncNo);
+        if(artifactSyncRecord == null){
+            throw new RuntimeException("Synchronization record not found");
+        }
         PromotionNodeOption promotionNodeOption = new PromotionNodeOption();
-        promotionNodeOption.setSourcePath(artifactSyncSlaveRecord.getSourcePath());
-        promotionNodeOption.setTargetPath(artifactSyncSlaveRecord.getTargetPath());
-        promotionNodeOption.setSyncModel(artifactSyncSlaveRecord.getSyncModel());
+        promotionNodeOption.setSourcePath(artifactSyncRecord.getSourcePath());
+        promotionNodeOption.setTargetPath(artifactSyncRecord.getTargetPath());
+        promotionNodeOption.setSyncModel(artifactSyncRecord.getSyncModel());
         promotionNodeOption.setSyncNo(syncNo);
 
         String targetHostName = FolibWsRunManageUtil.getSimpleTargetHostName(promotionNodeOption.getTargetPath());
-        String sourceHostName = FolibWsRunManageUtil.getSimpleTargetHostName(promotionNodeOption.getSourcePath());
+        String sourceHostName = FolibWsRunManageUtil.getSimpleTargetHostName(artifactSyncRecord.getSourcePath());
         String selfHostName = FolibWsRunManageUtil.getSimpleTargetHostName(configurationManagementService.getConfiguration().getBaseUrl());
         promotionNodeOption.setTargetNode(targetHostName);
+        promotionNodeOption.setRetry(true);
         if (selfHostName.equals(sourceHostName)) {
             retryUploadArtifact(syncNo, promotionNodeOption, requestHostName);
             if (response.isCommitted()) {

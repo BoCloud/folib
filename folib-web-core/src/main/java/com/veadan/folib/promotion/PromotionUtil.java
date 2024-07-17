@@ -64,6 +64,7 @@ import org.apache.http.entity.mime.MultipartEntityBuilder;
 import org.apache.http.entity.mime.content.InputStreamBody;
 import org.apache.http.entity.mime.content.StringBody;
 import org.apache.http.impl.client.HttpClients;
+import org.glassfish.jersey.client.ChunkParser;
 import org.glassfish.jersey.media.multipart.Boundary;
 import org.glassfish.jersey.media.multipart.FormDataMultiPart;
 import org.glassfish.jersey.media.multipart.file.StreamDataBodyPart;
@@ -93,9 +94,12 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.security.NoSuchAlgorithmException;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.FutureTask;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -226,7 +230,7 @@ public class PromotionUtil {
                 artifactSyncRecordMapper.insert(artifactSyncRecord);
                 syncNoList.add(syncNo);
                 try {
-                    handlerDispatch(map, artifactDispatch, targetDispatchRepositoryDto, syncNo);
+                    handlerDispatch(map, artifactDispatch, targetDispatchRepositoryDto, syncNo,false);
                 } catch (Exception ex) {
                     artifactSyncRecord.setStatus(ArtifactSyncRecordStatusEnum.FAILED.getVal());
                     artifactSyncRecord.setFailedReason(ex.getMessage());
@@ -277,7 +281,7 @@ public class PromotionUtil {
                     artifactSyncRecord.setStatus(ArtifactSyncRecordStatusEnum.IN_SYNC.getVal());
                     artifactSyncRecord.setCreateBy(UserUtils.getUsername());
                     artifactSyncRecordMapper.updateByPrimaryKey(artifactSyncRecord);
-                    handlerDispatch(map, artifactDispatch, targetDispatchRepositoryDto, syncNo);
+                    handlerDispatch(map, artifactDispatch, targetDispatchRepositoryDto, syncNo,true);
                 } catch (Exception ex) {
                     artifactSyncRecord.setStatus(ArtifactSyncRecordStatusEnum.FAILED.getVal());
                     artifactSyncRecord.setFailedReason(ex.getMessage());
@@ -291,7 +295,7 @@ public class PromotionUtil {
     }
 
     public void handlerDispatch(Map<String, ClusterDispatchNodeDto> map, ArtifactDispatch artifactDispatch,
-                                TargetDispatchRepositoryDto targetDispatchRepositoryDto, String syncNo) {
+                                TargetDispatchRepositoryDto targetDispatchRepositoryDto, String syncNo, boolean isRetry) {
         String artifactPath = artifactDispatch.getPath();
         String srcRepositoryId = artifactDispatch.getSrcRepositoryId();
         String srcStorageId = artifactDispatch.getSrcStorageId();
@@ -347,12 +351,12 @@ public class PromotionUtil {
                     }
                     for (StorageTreeForm repo : repos) {
                         String tempRepoId = repo.getName();
-                        executeDispatchV2(artifactPath, srcRepositoryId, srcStorageId, targetStorageId, tempRepoId, dispatchNodeDto, syncNo, recordStatus);
+                        executeDispatchV2(artifactPath, srcRepositoryId, srcStorageId, targetStorageId, tempRepoId, dispatchNodeDto, syncNo, recordStatus,isRetry);
                     }
                 }
             }
         } else {
-            executeDispatchV2(artifactPath, srcRepositoryId, srcStorageId, targetStorageId, targetRepositoryId, dispatchNodeDto, syncNo, recordStatus);
+            executeDispatchV2(artifactPath, srcRepositoryId, srcStorageId, targetStorageId, targetRepositoryId, dispatchNodeDto, syncNo, recordStatus,isRetry);
         }
     }
 
@@ -435,7 +439,7 @@ public class PromotionUtil {
         }
     }
 
-    private void executeDispatchV2(String artifactPath, String srcRepositoryId, String srcStorageId, String targetStorageId, String targetRepositoryId, ClusterDispatchNodeDto dispatchNodeDto, String syncNo, Boolean recordStatus) {
+    private void executeDispatchV2(String artifactPath, String srcRepositoryId, String srcStorageId, String targetStorageId, String targetRepositoryId, ClusterDispatchNodeDto dispatchNodeDto, String syncNo, Boolean recordStatus,boolean isRetry) {
         try {
             StringBuilder strBuilder = new StringBuilder();
             String dispatchNodeHost = dispatchNodeDto.getClusterNodeHost();
@@ -462,6 +466,8 @@ public class PromotionUtil {
             PromotionArtifactDto promotionArtifactDto = new PromotionArtifactDto(srcStorageId, srcRepositoryId,
                     targetStorageId, targetRepositoryId, srcAbsolutePath, targetUploadUrl);
             PromotionNodeOptionDto uploadDto = getPromotionUploadDto(promotionArtifactDto);
+            //设置是否是重试
+            uploadDto.setRetry(isRetry);
 
             final String clusterNodeHost = dispatchNodeDto.getClusterNodeHost();
             String targetNode = FolibWsRunManageUtil.getTargetNode(clusterNodeHost);
@@ -946,7 +952,11 @@ public class PromotionUtil {
         //});
         targetV2TaskQueueManager.getTaskQueueV2Manager().submitTask(syncNo,Priority.HIGH ,() -> {
             try {
-                doArtifactSliceUploadV3(uploadDto, storageId, repositoryId, syncNo, finalTargetUrl1, finalTargetHostName);
+                if(uploadDto.isRetry()){
+                    retryArtifactSliceUploadV3( uploadDto,  storageId,  repositoryId,  syncNo,  finalTargetUrl1,  finalTargetHostName);
+                }else {
+                    doArtifactSliceUploadV3(uploadDto, storageId, repositoryId, syncNo, finalTargetUrl1, finalTargetHostName);
+                }
                 future.complete(null);
             } catch (Exception e) {
                 log.error("doArtifactSliceUploadV3 Exception \n info:\nuploadDto:{}, storageId:{}, repositoryId:{}, syncNo:{}, finalTargetUrl1:{}, targetHostName:{}", uploadDto, storageId, repositoryId, syncNo, finalTargetUrl1, finalTargetHostName, e);
@@ -1024,6 +1034,61 @@ public class PromotionUtil {
         }
     }
 
+    private void retryArtifactSliceUploadV3(PromotionNodeOptionDto uploadDto, String storageId, String repositoryId, String syncNo, String finalTargetUrl1, String targetHostName) throws Exception {
+        final Map<String, Map<String, RepositoryPath>> filePathMap = uploadDto.getPathMap();
+        final long sliceByteSize = Optional.ofNullable(configurationManagementService.getConfiguration().getSliceMbSize()).orElse(0L) * (1024 * 1024);
+        if (CollectionUtil.isEmpty(filePathMap)) {
+            return;
+        }
+
+        List<ArtifactSyncSlaveRecord> artifactSyncSlaveRecords = artifactSyncSlaveRecordMapper.selectBySyncNo(syncNo);
+        artifactSyncSlaveRecords  = artifactSyncSlaveRecords.stream()
+                .filter(e -> e.getStatus().equals(ArtifactSyncRecordStatusEnum.FAILED.getVal()) || e.getStatus().equals(ArtifactSyncRecordStatusEnum.IN_SYNC.getVal()))
+                .sorted(Comparator.comparingLong(ArtifactSyncSlaveRecord::getId))
+                .collect(Collectors.toList());
+
+
+        final List<ArtifactSliceUploadHttpEntityBuilder> artifactSliceUploadHttpEntityList = this.getArtifactSliceUploadHttpEntityList(artifactSyncSlaveRecords, syncNo);
+
+        int size = artifactSliceUploadHttpEntityList.size();
+        //分片上传
+        for (int i = 0; i < size; i++) {
+            ArtifactSliceUploadHttpEntityBuilder builder = artifactSliceUploadHttpEntityList.get(i);
+            //100M切片
+            ArtifactSliceUploadReq artifactSliceUploadReq = builder.buildV3();
+            String path = artifactSliceUploadReq.getPath();
+            Object metadata = uploadDto.getFileMetaDataMap().get(path);
+            if (Objects.nonNull(metadata) && StringUtils.isNotBlank(metadata.toString()) && JSONUtil.isJson(metadata.toString())) {
+                artifactSliceUploadReq.setMetaData(JSONObject.parseObject((String) metadata, Map.class));
+            }
+            log.info("artifactSliceUploadReq:{}", artifactSliceUploadReq);
+            int finalI = i;
+            try {
+                new RetryTask(promotionConfig.getRetryCount()) {
+                    @Override
+                    public void exec(RetryTask retryTask) throws Exception {
+                        try {
+                            log.info("WSMessageRequest upload slice {}/{} ,targetHostName:{} , path:{}", finalI + 1, size, targetHostName, artifactSliceUploadReq.getPath());
+                            //TODO 切片文件写到内存，没有重用，定时重试
+                            WSMessageResponse wsMessageResponse = folibWsRunManageV2.sendRequest(targetHostName, new WSMessageRequest(Command.UPLOAD, artifactSliceUploadReq), promotionConfig.getWsRequestTimoutOfArtifactUpload());
+                            log.info("wsMessageResponse:{}", wsMessageResponse.toString());
+                            if (!HttpStatus.OK.equals(wsMessageResponse.getStatus())) {
+                                throw new RuntimeException(String.valueOf(wsMessageResponse.getDate()));
+                            }
+                        } catch (Exception e) {
+                            log.error("upload exception", e);
+                            throw e;
+                        }
+                    }
+                }.call();
+                artifactSyncSlaveRecordMapper.updateRecordStatus(builder.getChunkArtifactRecordId(), ArtifactSyncRecordStatusEnum.SUCCESS.getVal(), new Date(), "");
+            } catch (Exception e) {
+                // 更新记录状态
+                artifactSyncSlaveRecordMapper.updateRecordStatus(builder.getChunkArtifactRecordId(), ArtifactSyncRecordStatusEnum.FAILED.getVal(), new Date(), e.getMessage());
+                throw e;
+            }
+        }
+    }
     @NotNull
     private ArtifactSyncSlaveRecord insertArtifactSyncSlaveRecord(String syncNo, String sourcePath, String targetPath, Integer status) {
         final ArtifactSyncSlaveRecord artifactSyncSlaveRecord = new ArtifactSyncSlaveRecord();
@@ -1107,6 +1172,81 @@ public class PromotionUtil {
         }).flatMap(Collection::stream).collect(Collectors.toList());
     }
 
+    private List<ArtifactSliceUploadHttpEntityBuilder> getArtifactSliceUploadHttpEntityList( List<ArtifactSyncSlaveRecord> artifactSyncSlaveRecords,String syncNo) {
+        ArtifactSyncRecord artifactSyncRecord = artifactSyncRecordMapper.selectBySyncNo(syncNo);
+        if(artifactSyncRecord != null){
+            return artifactSyncSlaveRecords.stream().map(syncSlaveRecord -> {
+                return getArtifactSliceUploadHttpEntity(syncSlaveRecord, artifactSyncRecord.getSourceStorageId(), artifactSyncRecord.getSourceRepositoryId());
+            }).collect(Collectors.toList());
+        }
+       throw new RuntimeException("Synchronization record not found");
+    }
+
+    public ArtifactSliceUploadHttpEntityBuilder getArtifactSliceUploadHttpEntity(@NotNull ArtifactSyncSlaveRecord artifactSyncSlaveRecord,String sourceStorageId, String sourceRepositoryId) {
+        try {
+            String url = artifactSyncSlaveRecord.getTargetPath();
+
+            // Regular expression to match the URL pattern
+            String regex = ".*/([^/]+)/([^/]+)/.*-([^?]+)\\?startLength=([^&]+)&chunkSize=([^&]+)&mergeId=([^&]+)";
+            Pattern pattern = Pattern.compile(regex);
+            Matcher matcher = pattern.matcher(url);
+
+            if (matcher.matches()) {
+                String storageId = matcher.group(1);
+                String repositoryId = matcher.group(2);
+                String chunk = matcher.group(3);
+                Long startLength = Long.valueOf(matcher.group(4));
+                Long chunkSize = Long.valueOf(matcher.group(5));
+                String mergeId = matcher.group(6);
+
+                long begin = System.currentTimeMillis();
+                RepositoryPath sourceRepositoryPath = repositoryPathResolver.resolve(sourceStorageId, sourceRepositoryId, artifactSyncSlaveRecord.getSourcePath());
+                final long fileLength = Files.size(sourceRepositoryPath);
+                log.info("Calculate the file [{}] [{}] [{}] file size [{}]", sourceStorageId, sourceRepositoryId, sourceRepositoryPath.getPath(), fileLength);
+                final int threadCount = BigDecimal.valueOf(fileLength).divide(BigDecimal.valueOf(chunkSize), 0, RoundingMode.CEILING).intValue();
+                LayoutFileSystemProvider provider = (LayoutFileSystemProvider) sourceRepositoryPath.getFileSystem().provider();
+                final RepositoryPath checksumPath = provider.getChecksumPath(sourceRepositoryPath, MessageDigestAlgorithms.MD5);
+                String md5 = "";
+                if (Objects.nonNull(checksumPath) && Files.exists(checksumPath)) {
+                    md5 = Files.readString(checksumPath);
+                }
+                if (StringUtils.isBlank(md5)) {
+                    md5 = MessageDigestUtils.calculateChecksum(sourceRepositoryPath, MessageDigestAlgorithms.MD5);
+                    //md5 = FileUtils.getMD5(Files.newInputStream(sourceRepositoryPath));
+                }
+                Integer ChunkIndex = getChunkIndex(chunk);
+                log.info("calculated the file [{}] [{}] [{}] md5 is [{}] file size [{}] time consuming [{}] ms", storageId, repositoryId, sourceRepositoryPath.getPath(), md5, fileLength, System.currentTimeMillis() - begin);
+                return new ArtifactSliceUploadHttpEntityBuilder()
+                        .setStorageId(storageId)
+                        .setChunkArtifactRecordId(artifactSyncSlaveRecord.getId())
+                        .setRepositoryId(repositoryId)
+                        .setPath(artifactSyncSlaveRecord.getSourcePath())
+                        .setMergeId(mergeId)
+                        .setChunkIndex(ChunkIndex)
+                        .setChunkIndexMax(threadCount)
+                        .setOriginFileMd5(md5)
+                        .setArtifactPath(sourceRepositoryPath)
+                        .setStartLength(startLength)
+                        .setChunkSize(chunkSize);
+            }
+            throw new RuntimeException("URL does not match the expected pattern.");
+        } catch (Exception e) {
+            log.error("构建文件切片请求集合失败", e);
+            return null;
+        }
+    }
+
+    private Integer getChunkIndex(String chunk){
+        String regex = "chunk(\\d+)";
+        Pattern pattern = Pattern.compile(regex);
+        Matcher matcher = pattern.matcher(chunk);
+
+        if (matcher.matches()) {
+            String chunkNumber = matcher.group(1);
+            return Integer.parseInt(chunkNumber);
+        }
+        throw new RuntimeException("chunk is not a number");
+    }
 
     private List<ArtifactSliceUploadHttpEntityBuilder> getArtifactSliceUploadHttpEntityList(String storageId, String repositoryId, String saveUri, RepositoryPath sourceRepositoryPath, long chunkSize) {
         try {
