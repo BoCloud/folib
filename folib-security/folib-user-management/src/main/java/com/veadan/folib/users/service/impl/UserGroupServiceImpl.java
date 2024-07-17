@@ -1,0 +1,75 @@
+package com.veadan.folib.users.service.impl;
+
+import com.veadan.folib.entity.UserGroup;
+import com.veadan.folib.mapper.UserGroupMapper;
+import com.veadan.folib.users.service.UserGroupService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+ /**
+ * 用户组;(user_group)表服务实现类
+ * @author : http://www.chiner.pro
+ * @date : 2024-7-17
+ */
+@Service
+public class UserGroupServiceImpl implements UserGroupService {
+    @Autowired
+    private UserGroupMapper userGroupMapper;
+    
+    /** 
+     * 通过ID查询单条数据 
+     *
+     * @param id 主键
+     * @return 实例对象
+     */
+    public UserGroup queryById(Long id){
+        return userGroupMapper.queryById(id);
+    }
+    
+    /** 
+     * 分页查询
+     *
+     * @param userGroup 筛选条件
+     * @param pageRequest 分页对象
+     * @return 查询结果
+     */
+    public Page<UserGroup> paginQuery(UserGroup userGroup, PageRequest pageRequest){
+        long total = userGroupMapper.count(userGroup);
+        return new PageImpl<>(userGroupMapper.queryAllByLimit(userGroup, pageRequest), pageRequest, total);
+    }
+    
+    /** 
+     * 新增数据
+     *
+     * @param userGroup 实例对象
+     * @return 实例对象
+     */
+    public UserGroup insert(UserGroup userGroup){
+        userGroupMapper.insert(userGroup);
+        return userGroup;
+    }
+    
+    /** 
+     * 更新数据
+     *
+     * @param userGroup 实例对象
+     * @return 实例对象
+     */
+    public UserGroup update(UserGroup userGroup){
+        userGroupMapper.update(userGroup);
+        return queryById(userGroup.getId());
+    }
+    
+    /** 
+     * 通过主键删除数据
+     *
+     * @param id 主键
+     * @return 是否成功
+     */
+    public boolean deleteById(Long id){
+        int total = userGroupMapper.deleteById(id);
+        return total > 0;
+    }
+}

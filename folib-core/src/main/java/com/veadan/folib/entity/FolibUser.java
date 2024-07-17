@@ -32,9 +32,8 @@ public class FolibUser implements Serializable,Cloneable{
      private static final long serialVersionUID = 1L;
     /** 主键 */
     @Id
-    @GeneratedValue(generator = "JDBC",strategy = GenerationType.IDENTITY)
     @ApiModelProperty(name = "主键",notes = "")
-    private Long id ;
+    private String id ;
     /** 用户名 */
     @ApiModelProperty(name = "用户名",notes = "")
     private String username ;
