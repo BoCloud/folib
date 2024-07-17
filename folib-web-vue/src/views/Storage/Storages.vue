@@ -1352,7 +1352,6 @@ export default {
     if (!this.currentStorage.id && this.storageData && this.storageData.length > 0) {
       this.currentStorage.id = this.storageData[0].id
     }
-
     this.getStorage(this.currentStorage.id)
   },
   computed: {

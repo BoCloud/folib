@@ -338,6 +338,7 @@
         <a-list item-layout="horizontal" :data-source="currentFileDetial.subsidiaryFiles" :pagination="currentFileDetial.subsidiaryFiles.length === 0 ? false : { pageSize: 5, total: currentFileDetial.subsidiaryFiles.length, showLessItems: true }" >
           <a-list-item slot="renderItem" :key="index" slot-scope="item, index">
             <a slot="actions" :href="item.url" target="_blank">{{$t('Store.DownLoad')}}</a>
+            <a slot="actions" v-if="deleteEnabled" @click="deleteSubsidiaryHandle(index, item)" >{{$t('Store.Delete')}}</a>
             <a-list-item-meta
               :description="item.url"
             >
@@ -435,9 +436,9 @@
 <script>
 import store from "store";
 import { fileSizeConver, formateDate } from "@/utils/layoutUtil";
-import { getArtifact } from "@/api/folib";
+import { getArtifact, deleteArtifact, getStorageAndRepositoryPermission } from "@/api/folib";
 import { getProjectInfo, getCacheConfig } from "@/api/foEyes";
-import {  deleteArtifactMetadata, conanInfo, conanPackageInfo } from "@/api/artifact";
+import { deleteArtifactMetadata, conanInfo, conanPackageInfo } from "@/api/artifact";
 import { getMetadataConfiguration } from '@/api/settings'
 import { getProjectsVulnerabilities } from "@/api/projects.js"
 import { PrismEditor } from "vue-prism-editor";
@@ -598,6 +599,7 @@ export default {
         }
       },
       vulnerabilitiesData: [],
+      deleteEnabled: false,
     };
   },
   computed: {
@@ -624,6 +626,7 @@ export default {
       }
       this.metadataShow()
       this.queryProjectInfo()
+      this.queryStorageAndRepositoryPermission()
     },
     'currentTreeNode.artifactPath': function (newval, oldVal) {
       this.conanInfoReset()
@@ -908,6 +911,59 @@ export default {
       getProjectsVulnerabilities(uuid).then((res) => {
         this.vulnerabilitiesData = res.data
       })
+    },
+    queryStorageAndRepositoryPermission () {
+      if (!this.currentFileDetial || !this.currentFileDetial.artifact) {
+        return false
+      }
+      let artifact = this.currentFileDetial.artifact
+      let permissions = []
+      getStorageAndRepositoryPermission(
+        artifact.storageId,
+        artifact.repositoryId
+      ).then(res => {
+        permissions = res.permissions
+        this.deleteEnabled =
+          this.folibRepository.type !== 'group' &&
+          (hasRole('ARTIFACTS_MANAGER') ||
+          permissions.includes('ARTIFACTS_DELETE'))
+      })
+    },
+    deleteSubsidiaryHandle(index, item) {
+      if (!this.currentFileDetial || !this.currentFileDetial.artifact) {
+        return false
+      }
+      let artifact = this.currentFileDetial.artifact
+      deleteArtifact(
+        artifact.storageId,
+        artifact.repositoryId,
+        item.path
+      ).then(res => {
+        this.currentFileDetial.subsidiaryFiles.splice(index, 1)
+        setTimeout(() => {
+          this.$notification.success({
+            message: this.$t('Store.DeletionSuccessful')
+          })
+        }, 100)
+      }).catch(err => {
+        let errStatusArr = [403, 401]
+        if (errStatusArr.includes(err.response.status)) {
+          return false
+        }
+        let msg = err.response.data.message
+          ? err.response.data.message
+          : err.response.data.error
+            ? err.response.data.error
+            : err.response.data
+        if (!msg || msg.length === 0 || typeof msg === 'object')
+        {
+          msg = this.$t('Store.DeletionFailed')
+        }
+        this.$notification.error({
+          message: msg,
+          description: ''
+        })
+      }).finally(() => { })
     },
   },
 };
