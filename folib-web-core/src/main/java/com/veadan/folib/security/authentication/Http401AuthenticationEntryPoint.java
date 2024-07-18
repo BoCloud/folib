@@ -48,7 +48,7 @@ public class Http401AuthenticationEntryPoint implements AuthenticationEntryPoint
         if (authenticate)
         {
             ConfigurationManagementService configurationManagementService = SpringUtil.getBean(ConfigurationManagementService.class);
-            response.setHeader("WWW-Authenticate", "Basic realm=\"" + String.format(FOLIB_REALM, configurationManagementService.getMutableConfigurationClone().getInstanceName()) + "\"");
+            response.setHeader("WWW-Authenticate", "Basic realm=\"" + String.format(FOLIB_REALM, configurationManagementService.getConfiguration().getInstanceName()) + "\"");
         }
 
         response.setContentType(MediaType.APPLICATION_JSON_VALUE);

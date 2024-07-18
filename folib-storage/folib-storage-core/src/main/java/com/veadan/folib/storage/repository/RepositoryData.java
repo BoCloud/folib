@@ -57,6 +57,8 @@ public class RepositoryData
 
     private long artifactMaxSize;
 
+    private long repositoryMaxSize;
+
     private boolean trashEnabled;
 
     private boolean allowsForceDeletion;
@@ -134,6 +136,7 @@ public class RepositoryData
         this.secured = delegate.isSecured();
         this.status = delegate.getStatus();
         this.artifactMaxSize = delegate.getArtifactMaxSize();
+        this.repositoryMaxSize = delegate.getRepositoryMaxSize();
         this.trashEnabled = delegate.isTrashEnabled();
         this.allowsForceDeletion = delegate.isAllowsForceDeletion();
         this.allowsDeployment = delegate.isAllowsDeployment();
@@ -256,6 +259,11 @@ public class RepositoryData
     @Override
     public long getArtifactMaxSize() {
         return artifactMaxSize;
+    }
+
+    @Override
+    public long getRepositoryMaxSize() {
+        return repositoryMaxSize;
     }
 
     @Override

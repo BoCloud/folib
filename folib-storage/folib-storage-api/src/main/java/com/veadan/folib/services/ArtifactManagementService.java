@@ -21,6 +21,7 @@ import com.veadan.folib.storage.Storage;
 import com.veadan.folib.storage.checksum.ArtifactChecksum;
 import com.veadan.folib.storage.checksum.ChecksumCacheManager;
 import com.veadan.folib.storage.repository.Repository;
+import com.veadan.folib.storage.repository.RepositoryTypeEnum;
 import com.veadan.folib.storage.validation.ArtifactCoordinatesValidator;
 import com.veadan.folib.storage.validation.artifact.ArtifactCoordinatesValidationException;
 import com.veadan.folib.storage.validation.artifact.ArtifactCoordinatesValidatorRegistry;
@@ -117,6 +118,7 @@ public class ArtifactManagementService
                       InputStream is)
             throws IOException
     {
+        performStoreRepositoryAcceptanceValidation(repositoryPath);
         return doStore(repositoryPath, is);
     }
 
@@ -124,6 +126,7 @@ public class ArtifactManagementService
                       RepositoryPath sourcePath)
             throws IOException
     {
+        performStoreRepositoryAcceptanceValidation(repositoryPath);
         return doStore(repositoryPath, sourcePath);
     }
 
@@ -454,7 +457,52 @@ public class ArtifactManagementService
 
         artifactOperationsValidator.checkAllowsRedeployment(repository, coordinates);
         artifactOperationsValidator.checkAllowsDeployment(repository);
+        if (RepositoryTypeEnum.HOSTED.getType().equals(repository.getType())) {
+            artifactOperationsValidator.checkRepositorySize(path);
+        }
+        return true;
+    }
 
+
+    public boolean performStoreRepositoryAcceptanceValidation(RepositoryPath path)
+            throws IOException
+    {
+        logger.debug("Validate artifact with path [{}]", path);
+
+        Repository repository = path.getFileSystem().getRepository();
+
+        artifactOperationsValidator.validate(path);
+
+        if (!RepositoryFiles.isArtifact(path))
+        {
+            return true;
+        }
+
+        ArtifactCoordinates coordinates = RepositoryFiles.readCoordinates(path);
+        logger.debug("Validate artifact with coordinates [{}]", coordinates);
+
+        try
+        {
+            for (String validatorKey : repository.getArtifactCoordinateValidators())
+            {
+                ArtifactCoordinatesValidator validator = artifactCoordinatesValidatorRegistry.getProvider(
+                        validatorKey);
+                if (validator.supports(repository))
+                {
+                    validator.validate(repository, coordinates);
+                }
+            }
+        }
+        catch (Exception e)
+        {
+            throw new ArtifactStorageException(e);
+        }
+//
+//        artifactOperationsValidator.checkAllowsRedeployment(repository, coordinates);
+//        artifactOperationsValidator.checkAllowsDeployment(repository);
+        if (RepositoryTypeEnum.HOSTED.getType().equals(repository.getType())) {
+            artifactOperationsValidator.checkRepositorySize(path);
+        }
         return true;
     }
 

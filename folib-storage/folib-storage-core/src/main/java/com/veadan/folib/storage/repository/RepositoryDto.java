@@ -42,6 +42,8 @@ public class RepositoryDto
 
     private long artifactMaxSize;
 
+    private long repositoryMaxSize;
+
     private boolean trashEnabled;
 
     private boolean allowsForceDeletion;
@@ -401,6 +403,15 @@ public class RepositoryDto
 
     public void setArtifactMaxSize(long artifactMaxSize) {
         this.artifactMaxSize = artifactMaxSize;
+    }
+
+    @Override
+    public long getRepositoryMaxSize() {
+        return repositoryMaxSize;
+    }
+
+    public void setRepositoryMaxSize(long repositoryMaxSize) {
+        this.repositoryMaxSize = repositoryMaxSize;
     }
 
     @Override

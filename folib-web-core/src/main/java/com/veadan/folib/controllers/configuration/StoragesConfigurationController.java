@@ -645,26 +645,29 @@ public class StoragesConfigurationController
                 throw new RequestBodyValidationException(FAILED_SAVE_REPOSITORY, bindingResult);
             }
             RepositoryDto repository = conversionService.convert(repositoryForm, RepositoryDto.class);
+            if (Objects.isNull(repository)) {
+                return getFailedResponseEntity(HttpStatus.BAD_REQUEST, "The repository params is null", accept);
+            }
             if (repositoryForm.getArtifactMaxSize() == 0) {
-                assert repository != null;
-                repository.setArtifactMaxSize(214748364800L);
+                repository.setArtifactMaxSize(107374182400L);
+            }
+            if (repositoryForm.getRepositoryMaxSize() == 0) {
+                repositoryForm.setRepositoryMaxSize(1099511627776000L);
             }
             Repository existRepository = storage.getRepository(repositoryId);
-            boolean result = Objects.nonNull(existRepository) && Objects.nonNull(repository) && (!repository.getLayout().equals(existRepository.getLayout()) || (Objects.nonNull(existRepository.getSubLayout()) && !existRepository.getSubLayout().equals(repository.getSubLayout())));
+            boolean result = Objects.nonNull(existRepository) && (!repository.getLayout().equals(existRepository.getLayout()) || (Objects.nonNull(existRepository.getSubLayout()) && !existRepository.getSubLayout().equals(repository.getSubLayout())));
             if (result) {
                 //判断重复
                 return getFailedResponseEntity(HttpStatus.BAD_REQUEST, "The repository id already exists", accept);
             }
             try {
                 logger.info("Creating repository {}:{}...", storageId, repositoryId);
-
                 configurationManagementService.saveRepository(storageId, repository);
                 RepositoryDto repositoryDto = getMutableConfigurationClone().getStorage(storageId)
                         .getRepository(repositoryId);
-
                 final RepositoryPath repositoryPath = repositoryPathResolver.resolve(new RepositoryData(repository));
                 if (!Files.exists(repositoryPath)) {
-                    repositoryManagementService.createRepository(storageId, repository.getId());
+                    repositoryManagementService.createRepository(storageId, repositoryId);
                 }
                 if (Objects.isNull(existRepository) && !RepositoryTypeEnum.GROUP.getType().equals(repository.getType())) {
                     //初始化仓库数据

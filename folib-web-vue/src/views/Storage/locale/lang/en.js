@@ -68,6 +68,7 @@ export default {
     'WarehousePath': 'Warehouse path',
     'DistributedRemain': 'The current storage is distributed, and storage path definition is not supported',
     'ItemLimit': 'Item Size Limit (MB)',
+    'RepositorySizeLimit': 'Repository Size Limit (TB)',
     'ServiceStatus': 'Service status',
     'OpenService': 'In Service',
     'ShutdownService': 'Out of Service',

@@ -1,7 +1,7 @@
 package com.veadan.folib.services.impl;
 
 import com.veadan.folib.artifact.coordinates.NpmArtifactCoordinates;
-import com.veadan.folib.component.StorageClientComponent;
+import com.veadan.folib.components.StorageClientComponent;
 import com.veadan.folib.components.NpmComponent;
 import com.veadan.folib.configuration.ConfigurationManager;
 import com.veadan.folib.constant.GlobalConstants;

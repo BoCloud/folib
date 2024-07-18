@@ -29,6 +29,7 @@ public enum RepositoryFormConverter
         result.setSecured(source.isSecured());
         result.setStatus(source.getStatus());
         result.setArtifactMaxSize(source.getArtifactMaxSize());
+        result.setRepositoryMaxSize(source.getRepositoryMaxSize());
         result.setTrashEnabled(source.isTrashEnabled());
         result.setAllowsForceDeletion(source.isAllowsForceDeletion());
         result.setAllowsDeployment(source.isAllowsDeployment());

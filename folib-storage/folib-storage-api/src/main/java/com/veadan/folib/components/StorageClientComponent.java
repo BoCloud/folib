@@ -1,4 +1,4 @@
-package com.veadan.folib.component;
+package com.veadan.folib.components;
 
 import cn.hutool.json.JSONUtil;
 import com.alibaba.fastjson.JSONObject;

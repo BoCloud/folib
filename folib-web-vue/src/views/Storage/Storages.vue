@@ -727,6 +727,12 @@
                   </a-form-item>
                 </a-col>
                 <a-col :span="6">
+                  <a-form-item class="mb-10" :label="$t('Storage.RepositorySizeLimit')" :colon="false">
+                    <a-input v-model="repositoryMaxSize" addon-after="TB">
+                    </a-input>
+                  </a-form-item>
+                </a-col>
+                <a-col :span="6">
                   <a-form-item class="mb-10" :label="$t('Storage.ServiceStatus')" :colon="false">
                     <a-select default-value="In Service" v-model="folibRepository.status">
                       <a-select-option value="In Service">
@@ -1260,6 +1266,7 @@ export default {
       form: this.$form.createForm(this, { name: 'steps' }),
       folibRepositoryIds: "",
       artifactMaxSize: 100,
+      repositoryMaxSize: 10,
       folibRepositoryEditDisabled: false,
       folibRepository: {
         allowsDeletion: true,
@@ -1269,6 +1276,7 @@ export default {
         allowsRedeployment: false,
         artifactCoordinateValidators: null,
         artifactMaxSize: 100,
+        repositoryMaxSize: 10,
         basedir: null,
         checksumHeadersEnabled: true,
         groupRepositories: [],
@@ -1390,6 +1398,7 @@ export default {
         allowsRedeployment: false,
         artifactCoordinateValidators: null,
         artifactMaxSize: 100,
+        repositoryMaxSize: 10,
         basedir: null,
         checksumHeadersEnabled: true,
         groupRepositories: [],
@@ -1923,6 +1932,7 @@ export default {
       delete this.folibRepository.customConfigurations
       delete this.folibRepository.storageId
       this.folibRepository.artifactMaxSize = this.artifactMaxSize * 1024 * 1024
+      this.folibRepository.repositoryMaxSize = this.repositoryMaxSize * 1024 * 1024 * 1024 * 1024
       addOrUpdateRepository(this.currentStorage.id, this.folibRepository.id, this.folibRepository).then(res => {
         if (!res.error) {
           setTimeout(() => {
@@ -2022,6 +2032,7 @@ export default {
           }
           this.layoutChecked = getLayoutType(res)
           this.artifactMaxSize = this.folibRepository.artifactMaxSize / (1024 * 1024)
+          this.repositoryMaxSize = this.folibRepository.repositoryMaxSize / (1024 * 1024 * 1024 * 1024)
           this.folibRepositoryIds = this.folibRepository.id
           this.folibRepositoryEditDisabled = true
           this.folibVisible = true
