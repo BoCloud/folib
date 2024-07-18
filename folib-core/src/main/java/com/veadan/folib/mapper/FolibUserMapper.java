@@ -3,6 +3,7 @@ package com.veadan.folib.mapper;
 import java.util.List;
 
 import com.veadan.folib.common.base.CommonMapper;
+import com.veadan.folib.dto.UserDTO;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 import org.springframework.data.domain.Pageable;
@@ -15,7 +16,15 @@ import com.veadan.folib.entity.FolibUser;
  */
 @Mapper
 public interface FolibUserMapper extends CommonMapper<FolibUser> {
-    /** 
+     /**
+      * 分页查询指定行数据
+      *
+      * @param folibUser 查询条件
+      * @param pageable 分页对象
+      * @return 对象列表
+      */
+     List<UserDTO> queryAllUserRoleByLimit(FolibUser folibUser, @Param("pageable") String refType, @Param("pageable") Pageable pageable);
+    /**
      * 通过ID查询单条数据 
      *
      * @param id 主键

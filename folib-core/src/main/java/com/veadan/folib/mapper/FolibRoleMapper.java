@@ -8,7 +8,7 @@ import com.veadan.folib.entity.FolibRole;
 
  /**
  * 角色信息;(folib_role)表数据库访问层
- * @author : http://www.chiner.pro
+ * @author : Fengmaogen
  * @date : 2024-7-17
  */
 @Mapper

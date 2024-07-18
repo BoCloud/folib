@@ -3,6 +3,7 @@ package com.veadan.folib.users.domain;
 import java.io.Serializable;
 import java.time.LocalDateTime;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -40,6 +41,7 @@ public class UserData implements Serializable, User
 
     private final Set<SecurityRole> roles;
 
+    private Set<Long> groupIds = new HashSet<>();
     private final String securityTokenKey;
 
     private final LocalDateTime lastUpdate;
@@ -121,6 +123,13 @@ public class UserData implements Serializable, User
     public Set<SecurityRole> getRoles()
     {
         return roles;
+    }
+
+    @Override
+    public Set<Long> getGroupIds() {
+        return groupIds != null ? new HashSet<>(groupIds)
+                : new HashSet<>();
+
     }
 
     @Override

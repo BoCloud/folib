@@ -4,9 +4,11 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import com.veadan.folib.entity.Resource;
 
- /**
+import java.util.List;
+
+/**
  * 资源表;(resource)表服务接口
- * @author : http://www.chiner.pro
+ * @author : Fengmaogen
  * @date : 2024-7-17
  */
 public interface ResourceService{
@@ -46,4 +48,8 @@ public interface ResourceService{
      * @return 是否成功
      */
     boolean deleteById(Long id);
+
+     int saveBatch(List<Resource> collect);
+
+    Resource queryResource(Resource build);
 }

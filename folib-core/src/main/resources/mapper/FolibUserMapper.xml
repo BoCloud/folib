@@ -26,6 +26,102 @@
         where id = #{id}
     </select>
 
+
+    <!--分页查询指定行数据-->
+    <select id="queryAllUserRoleByLimit" resultType="com.veadan.folib.dto.UserDTO">
+        SELECT
+            fu.*,
+            GROUP_CONCAT(distinct rrr.role_id) AS roles,
+            GROUP_CONCAT(DISTINCT CONCAT_WS('', rrr.storage_provilege, rrr.repository_privilege, rrr.path_privilege)) AS authorities
+        FROM folib_user fu
+        LEFT JOIN
+        (
+        <if test="refType == null or refType == '' " >
+            SELECT rrr1.role_id,
+            rrr1.storage_provilege,
+            rrr1.repository_privilege,
+            rrr1.path_privilege,
+            rrr1.entity_id AS user_id
+            FROM role_resource_ref rrr1 WHERE rrr1.ref_type = 1
+            UNION
+            allSELECT rrr2.role_id,
+            rrr2.storage_provilege,
+            rrr2.repository_privilege,
+            rrr2.path_privilege,
+            ugr.user_id AS user_id
+            FROM user_group_ref ugr
+            JOIN role_resource_ref rrr2
+            ON ugr.user_group_id = rrr2.entity_id
+            WHERE rrr2.ref_type = 2
+        </if>
+        <if test="refType == '1' " >
+            SELECT rrr1.role_id,
+            rrr1.storage_provilege,
+            rrr1.repository_privilege,
+            rrr1.path_privilege,
+            rrr1.entity_id AS user_id
+            FROM role_resource_ref rrr1
+            WHERE rrr1.ref_type = 1
+        </if>
+        <if test="refType == '2' " >
+            SELECT rrr1.role_id,
+            rrr1.storage_provilege,
+            rrr1.repository_privilege,
+            rrr1.path_privilege,
+            rrr1.entity_id AS user_id
+            FROM role_resource_ref rrr1
+            WHERE rrr1.ref_type = 1
+        </if>
+        ) rrr
+        ON fu.id = rrr.user_id
+        <where>
+            <if test="id != null and id != ''">
+                and id = #{id}
+            </if>
+            <if test="username != null and username != ''">
+                and username = #{username}
+            </if>
+            <if test="password != null and password != ''">
+                and password = #{password}
+            </if>
+            <if test="originalPassword != null and originalPassword != ''">
+                and original_password = #{originalPassword}
+            </if>
+            <if test="avatar != null and avatar != ''">
+                and avatar = #{avatar}
+            </if>
+            <if test="email != null and email != ''">
+                and email = #{email}
+            </if>
+            <if test="userType != null and userType != ''">
+                and user_type = #{userType}
+            </if>
+            <if test="enabled != null and enabled != ''">
+                and enabled = #{enabled}
+            </if>
+            <if test="sourceId != null and sourceId != ''">
+                and source_id = #{sourceId}
+            </if>
+            <if test="deleted != null and deleted != ''">
+                and deleted = #{deleted}
+            </if>
+            <if test="createBy != null and createBy != ''">
+                and CREATE_BY = #{createBy}
+            </if>
+            <if test="createTime != null and createTime != ''">
+                and CREATE_TIME = #{createTime}
+            </if>
+            <if test="updateBy != null and updateBy != ''">
+                and UPDATE_BY = #{updateBy}
+            </if>
+            <if test="updateTime != null and updateTime != ''">
+                and UPDATE_TIME = #{updateTime}
+            </if>
+        </where>
+        group by fu.id
+        limit #{pageable.offset}, #{pageable.pageSize}
+    </select>
+
     <!--分页查询指定行数据-->
     <select id="queryAllByLimit" resultMap="FolibUserMap">
         select

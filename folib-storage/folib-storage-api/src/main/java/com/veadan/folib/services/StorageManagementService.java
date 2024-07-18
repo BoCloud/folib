@@ -1,8 +1,10 @@
 package com.veadan.folib.services;
 
+import com.veadan.folib.storage.Storage;
 import com.veadan.folib.storage.StorageDto;
 
 import java.io.IOException;
+import java.util.Collection;
 
 /**
  * @author mtodorov
@@ -21,4 +23,5 @@ public interface StorageManagementService
 
     void handleStorageProvider(StorageDto storage) throws IOException;
 
+    void syncYamlStorageUsers(Collection<Storage> values);
 }

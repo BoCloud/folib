@@ -34,6 +34,7 @@ public class UserForm
     private boolean enabled;
 
     private Set<String> roles;
+    private Set<Long> groupIds;
 
     private String securityTokenKey;
 

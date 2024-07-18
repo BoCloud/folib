@@ -9,12 +9,15 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.experimental.Accessors;
 
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
 import java.io.Serializable;
 import java.util.Date;
 
  /**
  * 用户组;
- * @author : http://www.chiner.pro
+ * @author : Fengmaogen
  * @date : 2024-7-17
  */
  @Data
@@ -27,6 +30,8 @@ public class UserGroup implements Serializable,Cloneable {
      /**
       * 主键
       */
+     @Id
+     @GeneratedValue(generator = "JDBC",strategy = GenerationType.IDENTITY)
      @ApiModelProperty(name = "主键", notes = "")
      private Long id;
      /**
@@ -49,6 +54,9 @@ public class UserGroup implements Serializable,Cloneable {
       */
      @ApiModelProperty(name = "是否删除", notes = "")
      private String deleted;
+      /** 是否默认 */
+      @ApiModelProperty(name = "是否默认", notes = "")
+      private String isDefault;
      /** 创建人 */
      @ApiModelProperty(name = "创建人",notes = "")
      private String createBy ;

@@ -36,6 +36,7 @@ public class UserEntity extends DomainEntity implements User
     @Relationship(type = USER_HAS_SECURITY_ROLES, direction = OUTGOING)
     private Set<SecurityRole> roles = new HashSet<>();
 
+    private Set<Long> groupIds = new HashSet<>();
     private String securityTokenKey;
 
     @Convert(DateConverter.class)
@@ -88,6 +89,13 @@ public class UserEntity extends DomainEntity implements User
     public Set<SecurityRole> getRoles()
     {
         return roles;
+    }
+
+    @Override
+    public Set<Long> getGroupIds() {
+        return groupIds != null ? new HashSet<>(groupIds)
+                : new HashSet<>();
+
     }
 
     public void setRoles(Set<SecurityRole> roles)

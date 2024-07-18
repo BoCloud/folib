@@ -4,6 +4,7 @@ import com.veadan.folib.constant.GlobalConstants;
 import com.veadan.folib.converts.UserConvert;
 import com.veadan.folib.domain.User;
 import com.veadan.folib.domain.UserEntity;
+import com.veadan.folib.dto.UserDTO;
 import com.veadan.folib.entity.FolibUser;
 import com.veadan.folib.mapper.FolibUserMapper;
 import com.veadan.folib.users.service.FolibUserService;
@@ -40,7 +41,7 @@ public class FolibUserServiceImpl implements FolibUserService {
 
     @Override
     public FolibUser findByUserName(String username) {
-        FolibUser user = FolibUser.builder().username(username).deleted(GlobalConstants.NOT_DELETED).build();
+        FolibUser user = FolibUser.builder().id(username).deleted(GlobalConstants.NOT_DELETED).build();
         return folibUserMapper.selectOne(user);
     }
 
@@ -91,10 +92,9 @@ public class FolibUserServiceImpl implements FolibUserService {
         FolibUser folibUser = new FolibUser();
         BeanUtils.copyProperties(user, folibUser);
         PageRequest pageRequest = PageRequest.of(start, limit);
-        List<FolibUser> folibUsers = folibUserMapper.queryAllByLimit(folibUser, pageRequest);
-        List<User> users = new ArrayList<>();
-        BeanUtils.copyProperties(folibUsers, users);
-        return users;
+        List<UserDTO> folibUsers = folibUserMapper.queryAllUserRoleByLimit(folibUser, null, pageRequest);
+        List<UserEntity> userEntities = UserConvert.INSTANCE.UserDTOsToUserList(folibUsers);
+        return new ArrayList<>(userEntities);
     }
 
     @Override

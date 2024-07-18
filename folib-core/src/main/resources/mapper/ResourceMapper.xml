@@ -2,13 +2,13 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.veadan.folib.mapper.ResourceMapper">
     <resultMap type="com.veadan.folib.entity.Resource" id="ResourceMap">
-        <result property="id" column="id" jdbcType="bigint"/>
-        <result property="apiAuthoritie" column="api_authoritie" jdbcType="String"/>
-        <result property="storageId" column="storage_id" jdbcType="String"/>
-        <result property="repositoryId" column="repository_id" jdbcType="String"/>
-        <result property="path" column="path" jdbcType="String"/>
-        <result property="createBy" column="create_by" jdbcType="String"/>
-        <result property="createTime" column="create_time" jdbcType="timestamp"/>
+        <result property="id" column="id" />
+        <result property="apiAuthoritie" column="api_authoritie" />
+        <result property="storageId" column="storage_id" />
+        <result property="repositoryId" column="repository_id"/>
+        <result property="path" column="path" />
+        <result property="createBy" column="create_by"/>
+        <result property="createTime" column="create_time"/>
     </resultMap>
 
     <!-- 通过ID查询单条数据 -->

@@ -2,16 +2,16 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.veadan.folib.mapper.RoleResourceRefMapper">
     <resultMap type="com.veadan.folib.entity.RoleResourceRef" id="RoleResourceRefMap">
-        <result property="id" column="id" jdbcType="String"/>
-        <result property="roleId" column="role_id" jdbcType="Integer"/>
-        <result property="entityId" column="entity_id" jdbcType="String"/>
-        <result property="refType" column="ref_type" jdbcType="String"/>
-        <result property="resourceId" column="resource_id" jdbcType="String"/>
-        <result property="storageProvilege" column="storage_provilege" jdbcType="String"/>
-        <result property="repositoryPrivilege" column="repository_privilege" jdbcType="String"/>
-        <result property="pathPrivilege" column="path_privilege" jdbcType="String"/>
-        <result property="createBy" column="create_by" jdbcType="String"/>
-        <result property="createTime" column="create_time" jdbcType="timestamp"/>
+        <result property="id" column="id"/>
+        <result property="roleId" column="role_id"/>
+        <result property="entityId" column="entity_id"/>
+        <result property="refType" column="ref_type" />
+        <result property="resourceId" column="resource_id"/>
+        <result property="storageProvilege" column="storage_provilege"/>
+        <result property="repositoryPrivilege" column="repository_privilege"/>
+        <result property="pathPrivilege" column="path_privilege"/>
+        <result property="createBy" column="create_by"/>
+        <result property="createTime" column="create_time"/>
     </resultMap>
 
     <!-- 通过ID查询单条数据 -->
@@ -98,6 +98,15 @@
                 and create_time = #{createTime}
             </if>
         </where>
+    </select>
+    <select id="queryAllByRoleId" resultType="com.veadan.folib.entity.RoleResourceRef">
+        select
+        id,role_id,entity_id,ref_type,resource_id,storage_provilege,repository_privilege,path_privilege,create_by,create_time
+        from role_resource_ref
+        where role_id in
+        <foreach collection="roleIds" item="roleId" open="(" separator="," close=")">
+            #{roleId}
+        </foreach>
     </select>
 
     <!--新增数据-->

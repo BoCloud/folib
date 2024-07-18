@@ -1,46 +1,46 @@
 package com.veadan.folib.users.service;
 
-import com.veadan.folib.entity.UserGroup;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import com.veadan.folib.entity.UserGroupRef;
 
 import java.util.List;
 
 /**
- * 用户组;(user_group)表服务接口
+ * 用户组关联表;(user_group_ref)表服务接口
  * @author : Fengmaogen
- * @date : 2024-7-17
+ * @date : 2024-7-18
  */
-public interface UserGroupService{
+public interface UserGroupRefService{
     /** 
      * 通过ID查询单条数据 
      *
      * @param id 主键
      * @return 实例对象
      */
-    UserGroup queryById(Long id);
+    UserGroupRef queryById(Long id);
     /** 
      * 分页查询
      *
-     * @param userGroup 筛选条件
+     * @param userGroupRef 筛选条件
      * @param pageRequest 分页对象
      * @return 查询结果
      */
-    Page<UserGroup> paginQuery(UserGroup userGroup, PageRequest pageRequest);
+    Page<UserGroupRef> paginQuery(UserGroupRef userGroupRef, PageRequest pageRequest);
     /** 
      * 新增数据
      *
-     * @param userGroup 实例对象
+     * @param userGroupRef 实例对象
      * @return 实例对象
      */
-    UserGroup insert(UserGroup userGroup);
+    UserGroupRef insert(UserGroupRef userGroupRef);
     /** 
      * 更新数据
      *
-     * @param userGroup 实例对象
+     * @param userGroupRef 实例对象
      * @return 实例对象
      */
-    UserGroup update(UserGroup userGroup);
+    UserGroupRef update(UserGroupRef userGroupRef);
     /** 
      * 通过主键删除数据
      *
@@ -48,12 +48,10 @@ public interface UserGroupService{
      * @return 是否成功
      */
     boolean deleteById(Long id);
-
     /**
-     * 列表查询
-     *
-     * @param userGroup   筛选条件
-     * @return 查询结果
+     * 批量保存用户组关系
+     * @param entities
+     * @return
      */
-    List<UserGroup> queryUserGroupList(UserGroup userGroup);
+    int saveBath(List<UserGroupRef> entities);
 }

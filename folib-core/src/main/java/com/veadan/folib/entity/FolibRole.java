@@ -17,7 +17,7 @@ import java.util.Date;
 
  /**
  * 角色信息;
- * @author : http://www.chiner.pro
+ * @author : Fengmaogen
  * @date : 2024-7-17
  */
 
@@ -33,7 +33,6 @@ public class FolibRole implements Serializable,Cloneable {
       * 主键
       */
      @Id
-     @GeneratedValue
      @ApiModelProperty(name = "主键", notes = "")
      private String id;
      /**

@@ -8,9 +8,12 @@ import org.springframework.stereotype.Service;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
- /**
+
+import java.util.List;
+
+/**
  * 用户组;(user_group)表服务实现类
- * @author : http://www.chiner.pro
+ * @author : Fengmaogen
  * @date : 2024-7-17
  */
 @Service
@@ -71,5 +74,10 @@ public class UserGroupServiceImpl implements UserGroupService {
     public boolean deleteById(Long id){
         int total = userGroupMapper.deleteById(id);
         return total > 0;
+    }
+
+    @Override
+    public List<UserGroup> queryUserGroupList(UserGroup userGroup) {
+        return userGroupMapper.select(userGroup);
     }
 }

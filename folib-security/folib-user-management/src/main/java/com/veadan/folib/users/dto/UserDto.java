@@ -36,6 +36,7 @@ public class UserDto
     private Boolean enabled = true;
 
     private Set<String> roles = new HashSet<>();
+    private Set<Long> groupIds = new HashSet<>();
 
     private String securityTokenKey;
 
@@ -96,6 +97,12 @@ public class UserDto
         return roles != null ? roles.stream()
                                     .map(role -> new SecurityRoleEntity(role))
                                     .collect(Collectors.toSet())
+                             : new HashSet<>();
+    }
+
+    @Override
+    public Set<Long> getGroupIds() {
+         return groupIds != null ? new HashSet<>(groupIds)
                              : new HashSet<>();
     }
 

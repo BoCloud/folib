@@ -11,6 +11,7 @@ import lombok.NoArgsConstructor;
 import lombok.experimental.Accessors;
 
 import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
 import java.io.Serializable;
@@ -18,7 +19,7 @@ import java.util.Date;
 
  /**
  * 权限表;
- * @author : http://www.chiner.pro
+ * @author : Fengmaogen
  * @date : 2024-7-17
  */
  @Data
@@ -33,14 +34,14 @@ public class RoleResourceRef implements Serializable,Cloneable {
       * 主键
       */
      @Id
-     @GeneratedValue
+     @GeneratedValue(generator = "JDBC",strategy = GenerationType.IDENTITY)
      @ApiModelProperty(name = "主键", notes = "")
      private String id;
      /**
       * 角色id
       */
      @ApiModelProperty(name = "角色id", notes = "")
-     private Integer roleId;
+     private String roleId;
      /**
       * 对象id
       */
@@ -54,8 +55,8 @@ public class RoleResourceRef implements Serializable,Cloneable {
      /**
       * 资源id;[1-api、2-存储空间、3-仓库、4-路径]
       */
-     @ApiModelProperty(name = "资源id", notes = "[1-api、2-存储空间、3-仓库、4-路径]")
-     private String resourceId;
+     @ApiModelProperty(name = "资源id", notes = "")
+     private Long resourceId;
      /**
       * 存储空间权限
       */
@@ -83,4 +84,24 @@ public class RoleResourceRef implements Serializable,Cloneable {
      @JsonFormat(timezone = "GMT+8", pattern = "yyyy-MM-dd HH:mm:ss")
      private Date createTime;
 
+      /**
+       * api权限
+       */
+      @ApiModelProperty(name = "api权限", notes = "")
+      private transient String apiAuthoritie;
+      /**
+       * 存储空间id
+       */
+      @ApiModelProperty(name = "存储空间id", notes = "")
+      private transient String storageId;
+      /**
+       * 仓库id
+       */
+      @ApiModelProperty(name = "仓库id", notes = "")
+      private transient String repositoryId;
+      /**
+       * 路径
+       */
+      @ApiModelProperty(name = "路径", notes = "")
+      private transient String path;
  }

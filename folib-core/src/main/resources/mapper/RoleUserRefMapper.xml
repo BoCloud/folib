@@ -2,12 +2,12 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.veadan.folib.mapper.RoleUserRefMapper">
     <resultMap type="com.veadan.folib.entity.RoleUserRef" id="RoleUserRefMap">
-        <result property="id" column="id" jdbcType="bigint"/>
-        <result property="roleId" column="role_id" jdbcType="String"/>
-        <result property="entityId" column="entity_id" jdbcType="String"/>
-        <result property="refType" column="ref_type" jdbcType="String"/>
-        <result property="createBy" column="CREATE_BY" jdbcType="String"/>
-        <result property="createTime" column="CREATE_TIME" jdbcType="timestamp"/>
+        <result property="id" column="id"/>
+        <result property="roleId" column="role_id"/>
+        <result property="entityId" column="entity_id"/>
+        <result property="refType" column="ref_type"/>
+        <result property="createBy" column="CREATE_BY"/>
+        <result property="createTime" column="CREATE_TIME"/>
     </resultMap>
 
     <!-- 通过ID查询单条数据 -->

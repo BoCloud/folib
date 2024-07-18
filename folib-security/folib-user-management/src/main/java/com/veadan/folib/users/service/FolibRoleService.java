@@ -4,12 +4,23 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import com.veadan.folib.entity.FolibRole;
 
- /**
+import java.util.Collection;
+import java.util.List;
+
+/**
  * 角色信息;(folib_role)表服务接口
- * @author : http://www.chiner.pro
+ * @author : Fengmaogen
  * @date : 2024-7-17
  */
 public interface FolibRoleService{
+    //通过用户查询用户关联的权限
+
+    //通过角色id查询查询权限
+     FolibRole queryByRoleId(List<String> roleIds);
+     /**
+      * 同步配置权限
+      */
+     void syncYamlAuthorizationConfig();
     /** 
      * 通过ID查询单条数据 
      *

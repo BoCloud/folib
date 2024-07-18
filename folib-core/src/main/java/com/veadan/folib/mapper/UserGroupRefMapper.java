@@ -9,7 +9,7 @@ import java.util.List;
 
  /**
  * 用户组关联表;(user_group_ref)表数据库访问层
- * @author : http://www.chiner.pro
+ * @author : Fengmaogen
  * @date : 2024-7-17
  */
 @Mapper

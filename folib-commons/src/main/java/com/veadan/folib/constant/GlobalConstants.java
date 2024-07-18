@@ -170,4 +170,22 @@ public interface GlobalConstants {
      * 未删除
      */
     String NOT_DELETED = "0";
+
+    /**
+     * 默认
+     */
+    String DEFALUT = "1";
+    /**
+     *  非默认
+     */
+    String NOT_DEFALUT = "0";
+    /**
+     * 角色关联类型-用户
+     */
+    String ROLE_TYPE_USER = "1";
+    /**
+     * 角色关联类型-用户组
+     */
+    String ROLE_TYPE_USER_GROUP = "2";
+
 }

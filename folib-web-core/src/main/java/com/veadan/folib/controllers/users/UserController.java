@@ -8,8 +8,10 @@ import com.veadan.folib.domain.PageResultResponse;
 import com.veadan.folib.domain.User;
 import com.veadan.folib.forms.users.UserForm;
 import com.veadan.folib.scanner.common.msg.TableResultResponse;
+import com.veadan.folib.services.StorageManagementService;
 import com.veadan.folib.users.dto.UserDto;
 import com.veadan.folib.users.security.AuthoritiesProvider;
+import com.veadan.folib.users.service.FolibRoleService;
 import com.veadan.folib.users.service.UserService;
 import com.veadan.folib.users.service.impl.EncodedPasswordUser;
 import com.veadan.folib.users.service.impl.RelationalDatabaseUserService;
@@ -91,13 +93,23 @@ public class UserController
 
     @Inject
     private RSAUtils rsaUtils;
+    @Inject
+    private FolibRoleService folibRoleService;
+    @Inject
+    private StorageManagementService storageManagementService;
 
-    @ApiOperation(value = "Used to retrieve all users")
+
+    @ApiOperation(value = "sync yaml users and roles")
     @ApiResponses(value = {@ApiResponse(code = 200, message = SUCCESSFUL_GET_USERS)})
     //@PreAuthorize("hasAuthority('VIEW_USER')")
-    @GetMapping(produces = {MediaType.APPLICATION_JSON_VALUE}, path = "/syncYamlUser")
+    @GetMapping(produces = {MediaType.APPLICATION_JSON_VALUE}, path = "/syncYamlData")
     @ResponseBody
-    public ResponseEntity syncYamlUser() {
+    public ResponseEntity syncYamlData() {
+        //同步存储空间用户
+        storageManagementService.syncYamlStorageUsers(configurationManagementService.getConfiguration().getStorages().values());
+        //同步角色
+        folibRoleService.syncYamlAuthorizationConfig();
+        //同步用户
         boolean result = ((RelationalDatabaseUserService) userService).syncUser();
 
          return ResponseEntity.ok(result);

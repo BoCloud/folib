@@ -8,7 +8,7 @@ import com.veadan.folib.entity.RoleUserRef;
 
  /**
  * 角色用户关联表;(role_user_ref)表数据库访问层
- * @author : http://www.chiner.pro
+ * @author : Fengmaogen
  * @date : 2024-7-17
  */
 @Mapper

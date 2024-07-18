@@ -8,9 +8,12 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
- /**
+
+import java.util.List;
+
+/**
  * 资源表;(resource)表服务实现类
- * @author : http://www.chiner.pro
+ * @author : Fengmaogen
  * @date : 2024-7-17
  */
 @Service
@@ -71,5 +74,15 @@ public class ResourceServiceImpl implements ResourceService {
     public boolean deleteById(Long id){
         int total = resourceMapper.deleteById(id);
         return total > 0;
+    }
+
+    @Override
+    public int saveBatch(List<Resource> collect) {
+        return resourceMapper.insertBatch(collect);
+    }
+
+    @Override
+    public Resource queryResource(Resource resource) {
+        return resourceMapper.selectOne(resource);
     }
 }

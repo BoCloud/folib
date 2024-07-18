@@ -10,6 +10,7 @@ import lombok.NoArgsConstructor;
 import lombok.experimental.Accessors;
 
 import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
 import java.io.Serializable;
@@ -17,7 +18,7 @@ import java.util.Date;
 
  /**
  * 角色用户关联表;
- * @author : http://www.chiner.pro
+ * @author : Fengmaogen
  * @date : 2024-7-17
  */
  @Data
@@ -32,7 +33,7 @@ public class RoleUserRef implements Serializable,Cloneable {
       * 主键
       */
      @Id
-     @GeneratedValue
+     @GeneratedValue(generator = "JDBC",strategy = GenerationType.IDENTITY)
      @ApiModelProperty(name = "主键", notes = "")
      private Long id;
      /**

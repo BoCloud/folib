@@ -2,6 +2,7 @@ package com.veadan.folib.users.service.impl;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
+import com.veadan.folib.constant.GlobalConstants;
 import com.veadan.folib.converts.UserConvert;
 import com.veadan.folib.data.CacheName;
 import com.veadan.folib.domain.PageResultResponse;
@@ -9,17 +10,20 @@ import com.veadan.folib.domain.SecurityRole;
 import com.veadan.folib.domain.User;
 import com.veadan.folib.domain.UserEntity;
 import com.veadan.folib.entity.FolibUser;
+import com.veadan.folib.entity.RoleResourceRef;
+import com.veadan.folib.entity.UserGroup;
+import com.veadan.folib.entity.UserGroupRef;
 import com.veadan.folib.repositories.UserRepository;
 import com.veadan.folib.users.domain.SystemRole;
 import com.veadan.folib.users.domain.Users;
 import com.veadan.folib.users.security.JwtAuthenticationClaimsProvider;
 import com.veadan.folib.users.security.JwtClaimsProvider;
 import com.veadan.folib.users.security.SecurityTokenProvider;
-import com.veadan.folib.users.service.FolibUserService;
-import com.veadan.folib.users.service.UserService;
+import com.veadan.folib.users.service.*;
 import com.veadan.folib.users.userdetails.SpringSecurityUser;
 import com.veadan.folib.users.userdetails.UserDetailsMapper;
 import com.veadan.folib.util.LocalDateTimeInstance;
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.jose4j.lang.JoseException;
 import org.springframework.beans.BeanUtils;
@@ -61,6 +65,12 @@ public class RelationalDatabaseUserService implements UserService
     @Inject
     protected FolibUserService folibUserService;
     @Inject
+    private UserGroupService userGroupService;
+    @Inject
+    private UserGroupRefService userGroupRefService;
+    @Inject
+    private RoleResourceRefService roleResourceRefService;
+    @Inject
     protected UserRepository userRepository;
 
     @Override
@@ -79,7 +89,8 @@ public class RelationalDatabaseUserService implements UserService
     @Override
     public UserEntity findByUsername(String username)
     {
-        return Optional.of(folibUserService.findByUserName(username)).map(UserEntity.class::cast).orElse(null);
+        FolibUser byUserName = folibUserService.findByUserName(username);
+        return UserConvert.INSTANCE.FolibUserUserEntity(byUserName);
     }
 
     @Override
@@ -191,7 +202,11 @@ public class RelationalDatabaseUserService implements UserService
         userEntity.setLastUpdated(now);
         userEntity.setUserType("general");
         userEntity.setAvatar(user.getAvatar());
-        FolibUser folibUser = FolibUser.builder().build();
+
+        List<UserGroupRef> ref = new ArrayList<>();
+        user.getGroupIds().forEach(item ->
+                ref.add(UserGroupRef.builder().userGroupId(item).userId(user.getUuid()).build()));
+        userGroupRefService.saveBath(ref);
 
         return folibUserService.save(userEntity);
     }
@@ -240,8 +255,35 @@ public class RelationalDatabaseUserService implements UserService
         List<User> userInfos = StreamSupport.stream(users.spliterator(), false).collect(Collectors.toList());
 
         List<UserEntity> userEntities = UserConvert.INSTANCE.UserListToUserEntityList(userInfos);
+        //用户信息入库
+        folibUserService.saveOrUpdateBatch(userEntities);
         //FIXME 处理用户关联的角色、用户添加默认组
-        return folibUserService.saveOrUpdateBatch(userEntities);
+        List<UserGroup> userGroups = userGroupService.queryUserGroupList(UserGroup.builder().isDefault(GlobalConstants.DEFALUT).deleted(GlobalConstants.NOT_DELETED).build());
+        if(CollectionUtils.isNotEmpty(userEntities)) {
+            //用户组关系入库
+            if(CollectionUtils.isNotEmpty(userGroups)){
+                List<UserGroupRef> userGroupRefs = new ArrayList<>(userGroups.size()*userEntities.size());
+                userGroups.forEach(userGroup -> {
+                    userEntities.forEach(userEntity -> {
+                        userGroupRefs.add(UserGroupRef.builder().userGroupId(userGroup.getId()).userId(userEntity.getUuid()).build());
+                    });
+                });
+                userGroupRefService.saveBath(userGroupRefs);
+            }
+            //用户权限入库
+            List<RoleResourceRef> roleResourceRefs = new ArrayList<>(userEntities.size());
+            userEntities.forEach(userEntity -> {
+                Set<SecurityRole> roles = userEntity.getRoles();
+                if(CollectionUtils.isNotEmpty(roles)){
+                    roles.forEach(securityRole -> {
+                        roleResourceRefs.add(RoleResourceRef.builder().roleId(securityRole.getUuid()).entityId(userEntity.getUuid()).refType(GlobalConstants.ROLE_TYPE_USER).build());
+                    });
+                }
+            });
+            roleResourceRefService.saveBath(roleResourceRefs);
+        }
+
+        return true;
     }
 
 }

@@ -1,5 +1,6 @@
 package com.veadan.folib.mapper;
 
+import com.veadan.folib.common.base.CommonMapper;
 import com.veadan.folib.entity.UserGroup;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
@@ -9,11 +10,11 @@ import java.util.List;
 
  /**
  * 用户组;(user_group)表数据库访问层
- * @author : http://www.chiner.pro
+ * @author : Fengmaogen
  * @date : 2024-7-17
  */
 @Mapper
-public interface UserGroupMapper{
+public interface UserGroupMapper extends CommonMapper<UserGroup> {
     /** 
      * 通过ID查询单条数据 
      *

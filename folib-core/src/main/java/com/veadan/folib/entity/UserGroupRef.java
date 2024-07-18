@@ -10,6 +10,7 @@ import lombok.NoArgsConstructor;
 import lombok.experimental.Accessors;
 
 import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
 import java.io.Serializable;
@@ -17,7 +18,7 @@ import java.util.Date;
 
  /**
  * 用户组关联表;
- * @author : http://www.chiner.pro
+ * @author : Fengmaogen
  * @date : 2024-7-17
  */
  @Data
@@ -32,7 +33,7 @@ public class UserGroupRef implements Serializable,Cloneable {
       * 主键
       */
      @Id
-     @GeneratedValue
+     @GeneratedValue(generator = "JDBC",strategy = GenerationType.IDENTITY)
      @ApiModelProperty(name = "主键", notes = "")
      private Long id;
      /**
@@ -43,8 +44,8 @@ public class UserGroupRef implements Serializable,Cloneable {
      /**
       * 角色id
       */
-     @ApiModelProperty(name = "角色id", notes = "")
-     private Long userId;
+     @ApiModelProperty(name = "用户id", notes = "")
+     private String userId;
      /**
       * 创建人
       */
