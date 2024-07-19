@@ -23,7 +23,14 @@ export default {
     'SetTop': 'Set Top',
     'EnterVulnerabilitySourceStorageId': 'Input source storage space',
     'EnterVulnerabilitySourceRepositoryId': 'Input source warehouse',
-    'Uncharted': 'uncharted'
+    'Uncharted': 'uncharted',
+    'FailedCount' : 'Failed Count',
+    'SuccessCount' : 'Success Count',
+    'TotalCount' : 'Total Count',
+    'FileSizeCount': 'Total file size (G)',
+    '30daysData': 'Data in the last 30 days',
+    '30DaysPromotionRanking': 'Top 10 Warehouses within 30 Advancement Rankings',
+    'TrendsInPromotionStatusWithin30':'Trends in promotion status within 30'
    
     
 }

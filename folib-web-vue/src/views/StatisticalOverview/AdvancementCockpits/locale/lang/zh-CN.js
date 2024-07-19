@@ -23,5 +23,15 @@ export default {
     'SetTop': '置顶',
     'EnterVulnerabilitySourceStorageId': '输入源存储空间查询',
     'EnterVulnerabilitySourceRepositoryId': '输入源仓库查询',
-    'Uncharted': '未定义'
+    'Uncharted': '未定义',
+    'FailedCount' : '失败数量',
+    'SuccessCount' : '成功数量',
+    'TotalCount' : '总数量',
+    'FileSizeCount': '总文件大小(G)',
+    '30daysData': '近30天数据',
+    '30DaysPromotionRanking': '30内晋级排名前10仓库',
+    'TrendsInPromotionStatusWithin30':'30内晋级状态趋势统计',
+
+
+
 }

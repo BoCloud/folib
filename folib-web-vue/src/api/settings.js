@@ -155,16 +155,30 @@ export function getArtifactSyncRecordPage(dataFilter){
   })
 }
 
-export function getArtifactSyncRecordStatisticsPage(dataFilter){
-  return axios({
-    url: '/api/artifactSyncRecord/statisticsPage?'+objToUrlQuery(dataFilter),
-    method: 'get'
-  })
-}
-
 function objToUrlQuery(obj) {
   if (undefined !== obj && obj) {
     return Object.keys(obj).map(k => k+"="+obj[k]).join("&")
   }
   return ""
+}
+
+export function getArtifactSyncRecordCount(){
+  return axios({
+    url: '/api/artifactSyncRecord/getCount/30',
+    method: 'get'
+  })
+}
+
+export function getStatusTrends(){
+  return axios({
+    url: '/api/artifactSyncRecord/getStatusTrends/30',
+    method: 'get'
+  })
+}
+
+export function fileSizeStatisticsByWarehouse(days, limitNumber){
+  return axios({
+    url: '/api/artifactSyncRecord/fileSizeStatisticsByWarehouse/'+days+'/'+limitNumber,
+    method: 'get',
+  })
 }
