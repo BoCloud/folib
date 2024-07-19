@@ -177,19 +177,21 @@ public class PromotionUtil {
     @Async("asyncCopyThreadPoolTaskExecutor")
     public void executePromotionCopy(String syncNo, String targetPath, RepositoryPath path, Repository srcRepository, Repository targetRepository) {
         String artifactPath = "";
+        long fileSize =0;
         try {
             artifactPath = RepositoryFiles.relativizePath(path);
+            fileSize = Files.size(path);
             handleCopy(path, srcRepository, targetRepository);
             if (Files.exists(repositoryPathResolver.resolve(targetRepository.getStorage().getId(), targetRepository.getId(), artifactPath))) {
                 //插入成功从记录
-                insertArtifactSyncSlaveRecord(syncNo, artifactPath, targetPath, ArtifactSyncRecordStatusEnum.SUCCESS.getVal());
+                insertArtifactSyncSlaveRecord(syncNo, artifactPath, targetPath, ArtifactSyncRecordStatusEnum.SUCCESS.getVal(),fileSize);
             } else {
-                insertArtifactSyncSlaveRecord(syncNo, artifactPath, targetPath, ArtifactSyncRecordStatusEnum.FAILED.getVal());
+                insertArtifactSyncSlaveRecord(syncNo, artifactPath, targetPath, ArtifactSyncRecordStatusEnum.FAILED.getVal(),fileSize);
             }
             log.info("Execute copy srcRepository [{}] [{}] targetRepository [{}] [{}] path [{}] finished", srcRepository.getStorage().getId(), srcRepository.getId(), targetRepository.getStorage().getId(), targetRepository.getId(), path);
         } catch (Exception e) {
             log.info("Execute copy srcRepository [{}] [{}] targetRepository [{}] [{}] path [{}] error [{}]", srcRepository.getStorage().getId(), srcRepository.getId(), targetRepository.getStorage().getId(), targetRepository.getId(), path, ExceptionUtils.getStackTrace(e));
-            insertArtifactSyncSlaveRecord(syncNo, artifactPath, targetPath, ArtifactSyncRecordStatusEnum.FAILED.getVal());
+            insertArtifactSyncSlaveRecord(syncNo, artifactPath, targetPath, ArtifactSyncRecordStatusEnum.FAILED.getVal(),fileSize);
         }
     }
 
@@ -888,7 +890,7 @@ public class PromotionUtil {
         String finalTargetUrl = targetUrl;
         artifactSliceUploadHttpEntityList.stream().forEach(e -> {
             String targetPath = String.format("%s/%s/%s/%s-chunk%s?startLength=%s&chunkSize=%s&mergeId=%s", finalTargetUrl, e.getStorageId(), e.getRepositoryId(), e.getPath(), e.getChunkIndex(), e.getStartLength(), e.getChunkSize(), e.getMergeId());
-            final ArtifactSyncSlaveRecord artifactSyncSlaveRecord = insertArtifactSyncSlaveRecord(syncNo, e.getPath(), targetPath, ArtifactSyncRecordStatusEnum.IN_SYNC.getVal());
+            final ArtifactSyncSlaveRecord artifactSyncSlaveRecord = insertArtifactSyncSlaveRecord(syncNo, e.getPath(), targetPath, ArtifactSyncRecordStatusEnum.IN_SYNC.getVal(),e.getChunkSize());
             e.setChunkArtifactRecordId(artifactSyncSlaveRecord.getId());
         });
 
@@ -913,6 +915,12 @@ public class PromotionUtil {
 
             // 更新记录状态
             artifactSyncSlaveRecordMapper.updateRecordStatus(builder.getChunkArtifactRecordId(), res.getSuccess() ? ArtifactSyncRecordStatusEnum.SUCCESS.getVal() : ArtifactSyncRecordStatusEnum.FAILED.getVal(), new Date(), res.getFailedReason());
+            if(res.getSuccess()){
+                updateRecordStatus( ArtifactSyncRecordStatusEnum.SUCCESS.getVal(), syncNo,null);
+            }else {
+                updateRecordStatus( ArtifactSyncRecordStatusEnum.FAILED.getVal(), syncNo,res.getFailedReason());
+            }
+
             return res;
         }).collect(Collectors.toList());
     }
@@ -987,7 +995,7 @@ public class PromotionUtil {
         String finalTargetUrl = finalTargetUrl1;
         artifactSliceUploadHttpEntityList.forEach(e -> {
             String targetPath = String.format("%s/%s/%s/%s-chunk%s?startLength=%s&chunkSize=%s&mergeId=%s", finalTargetUrl, e.getStorageId(), e.getRepositoryId(), e.getPath(), e.getChunkIndex(), e.getStartLength(), e.getChunkSize(), e.getMergeId());
-            final ArtifactSyncSlaveRecord artifactSyncSlaveRecord = insertArtifactSyncSlaveRecord(syncNo, e.getPath(), targetPath, ArtifactSyncRecordStatusEnum.IN_SYNC.getVal());
+            final ArtifactSyncSlaveRecord artifactSyncSlaveRecord = insertArtifactSyncSlaveRecord(syncNo, e.getPath(), targetPath, ArtifactSyncRecordStatusEnum.IN_SYNC.getVal(),e.getChunkSize());
             e.setChunkArtifactRecordId(artifactSyncSlaveRecord.getId());
         });
         int size = artifactSliceUploadHttpEntityList.size();
@@ -1026,9 +1034,11 @@ public class PromotionUtil {
                     }
                 }.call();
                 artifactSyncSlaveRecordMapper.updateRecordStatus(builder.getChunkArtifactRecordId(), ArtifactSyncRecordStatusEnum.SUCCESS.getVal(), new Date(), "");
+                updateRecordStatus(ArtifactSyncRecordStatusEnum.SUCCESS.getVal(), syncNo, null);
             } catch (Exception e) {
                 // 更新记录状态
                 artifactSyncSlaveRecordMapper.updateRecordStatus(builder.getChunkArtifactRecordId(), ArtifactSyncRecordStatusEnum.FAILED.getVal(), new Date(), e.getMessage());
+                updateRecordStatus( ArtifactSyncRecordStatusEnum.FAILED.getVal(), syncNo, e.getMessage());
                 throw e;
             }
         }
@@ -1082,15 +1092,17 @@ public class PromotionUtil {
                     }
                 }.call();
                 artifactSyncSlaveRecordMapper.updateRecordStatus(builder.getChunkArtifactRecordId(), ArtifactSyncRecordStatusEnum.SUCCESS.getVal(), new Date(), "");
+                updateRecordStatus(ArtifactSyncRecordStatusEnum.SUCCESS.getVal(), syncNo, null);
             } catch (Exception e) {
                 // 更新记录状态
                 artifactSyncSlaveRecordMapper.updateRecordStatus(builder.getChunkArtifactRecordId(), ArtifactSyncRecordStatusEnum.FAILED.getVal(), new Date(), e.getMessage());
+                updateRecordStatus(ArtifactSyncRecordStatusEnum.FAILED.getVal(), syncNo, e.getMessage());
                 throw e;
             }
         }
     }
     @NotNull
-    private ArtifactSyncSlaveRecord insertArtifactSyncSlaveRecord(String syncNo, String sourcePath, String targetPath, Integer status) {
+    private ArtifactSyncSlaveRecord insertArtifactSyncSlaveRecord(String syncNo, String sourcePath, String targetPath, Integer status, long fileSize) {
         final ArtifactSyncSlaveRecord artifactSyncSlaveRecord = new ArtifactSyncSlaveRecord();
         artifactSyncSlaveRecord.setSourcePath(sourcePath);
         artifactSyncSlaveRecord.setTargetPath(targetPath);
@@ -1099,6 +1111,7 @@ public class PromotionUtil {
         artifactSyncSlaveRecord.setStatus(status);
 //            artifactSyncSlaveRecord.setCreateBy(userName);
         artifactSyncSlaveRecord.setCreateTime(new Date());
+        artifactSyncSlaveRecord.setFileSize(fileSize);
 
         artifactSyncSlaveRecordMapper.insert(artifactSyncSlaveRecord);
         return artifactSyncSlaveRecord;
@@ -1148,8 +1161,9 @@ public class PromotionUtil {
                     iterator.remove();
                     String key = entry.getKey();
                     String targetPath = String.format("%s/%s/%s/%s", finalTargetUrl1, storageId, repositoryId, key);
+                    long fileSize = Files.size(repositoryPath);
                     //插入成功从记录
-                    insertArtifactSyncSlaveRecord(syncNo, key, targetPath, ArtifactSyncRecordStatusEnum.SUCCESS.getVal());
+                    insertArtifactSyncSlaveRecord(syncNo, key, targetPath, ArtifactSyncRecordStatusEnum.SUCCESS.getVal(),fileSize);
                 }
             } else {
                 throw new RuntimeException(String.format("意外的异常，%s中存在超过1个value元素的Map", entry));
@@ -1273,8 +1287,13 @@ public class PromotionUtil {
             String finalMd5 = md5;
             return IntStream.range(0, threadCount).mapToObj(index -> {
                 long startLength = index * chunkSize;
+                long currentChunkSize = chunkSize;
+                // 如果是最后一个切片，调整其大小
+                if (index == threadCount - 1) {
+                    long remainingSize = fileLength - startLength;
+                    currentChunkSize = Math.min(chunkSize, remainingSize);
+                }
                 try {
-
                     return new ArtifactSliceUploadHttpEntityBuilder()
                             .setStorageId(storageId)
                             .setRepositoryId(repositoryId)
@@ -1285,7 +1304,7 @@ public class PromotionUtil {
                             .setOriginFileMd5(finalMd5)
                             .setArtifactPath(sourceRepositoryPath)
                             .setStartLength(startLength)
-                            .setChunkSize(chunkSize);
+                            .setChunkSize(currentChunkSize);
                 } catch (Exception e) {
                     log.error("构建文件切片HttpEntity请求失败", e);
                     return null;
@@ -1301,7 +1320,18 @@ public class PromotionUtil {
     public void updateTaskQueuePriority(String targetHostName,String syncNo, Priority priority){
         promotionTaskQueue.updateTaskQueuePriority(targetHostName,syncNo,priority);
     }
+    public void updateRecordStatus(Integer status, String syncNo, String failedReason){
+        if(ArtifactSyncRecordStatusEnum.SUCCESS.getVal().equals(status)){
+            List<ArtifactSyncSlaveRecord> artifactSyncSlaveRecords =artifactSyncSlaveRecordMapper.selectBySyncNo(syncNo);
+            long count = artifactSyncSlaveRecords.stream().filter(artifactSyncSlaveRecord -> ArtifactSyncRecordStatusEnum.SUCCESS.getVal().equals(artifactSyncSlaveRecord.getStatus())).count();
+            if(count == artifactSyncSlaveRecords.size()){
+                artifactSyncRecordMapper.updateStatusAndFailedReasonBySyncNo(status,"",syncNo,new Date());
+            }
+        }else if(ArtifactSyncRecordStatusEnum.FAILED.getVal().equals(status)){
+            artifactSyncRecordMapper.updateStatusAndFailedReasonBySyncNo(status,failedReason,syncNo,new Date());
+        }
 
+    }
     @Data
     @Accessors(chain = true)
     public static class ArtifactSliceUploadHttpEntityBuilder {
