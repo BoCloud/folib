@@ -2,8 +2,9 @@ package com.veadan.folib.mapper;
 
 import com.veadan.folib.entity.ArtifactSyncSlaveRecord;
 import org.apache.ibatis.annotations.Param;
+import org.apache.ibatis.annotations.Select;
 import org.apache.ibatis.annotations.Update;
-import org.mockito.internal.matchers.And;
+
 import org.springframework.stereotype.Component;
 import tk.mybatis.mapper.common.Mapper;
 import tk.mybatis.mapper.common.MySqlMapper;
@@ -22,7 +23,6 @@ import java.util.List;
  */
 @Component
 public interface ArtifactSyncSlaveRecordMapper extends SelectByIdsMapper<ArtifactSyncSlaveRecord>, Mapper<ArtifactSyncSlaveRecord>, DeleteByIdsMapper<ArtifactSyncSlaveRecord>, MySqlMapper<ArtifactSyncSlaveRecord> {
-    
     @Update("update artifact_sync_slave_record set status = #{status}, update_time = #{updateTime}, failed_reason = #{failedReason} where id = #{id}")
     Boolean updateRecordStatus(@Param("id") Long id, @Param("status") Integer status, @Param("updateTime") Date updateTime, @Param("failedReason") String failedReason);
     
@@ -33,4 +33,7 @@ public interface ArtifactSyncSlaveRecordMapper extends SelectByIdsMapper<Artifac
     List<ArtifactSyncSlaveRecord> selectBySyncNo(@Param("syncNo") String syncNo);
 
     ArtifactSyncSlaveRecord  selectBySyncNoAndStatus(@Param("syncNo") String syncNo,@Param("status") Integer status);
+
+    @Select("select sum(file_size) from artifact_sync_slave_record where update_time > date_sub(now(), interval #{days} day)")
+    Long  statisticsFileSize(@Param("days") Integer days);
 }

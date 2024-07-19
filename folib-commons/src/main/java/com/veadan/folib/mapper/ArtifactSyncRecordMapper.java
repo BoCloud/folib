@@ -1,5 +1,8 @@
 package com.veadan.folib.mapper;
 
+import ch.qos.logback.core.util.FileSize;
+import com.veadan.folib.dto.ArtifactSyncRecordCountDto;
+import com.veadan.folib.dto.FileSizeStatisticsDto;
 import com.veadan.folib.entity.ArtifactSyncRecord;
 import org.apache.ibatis.annotations.Param;
 import org.springframework.stereotype.Component;
@@ -27,4 +30,10 @@ public interface ArtifactSyncRecordMapper extends SelectByIdsMapper<ArtifactSync
     List<ArtifactSyncRecord> selectClearRecordList(@Param("storageId") String storageId, @Param("repositoryId") String repositoryId, @Param("time") Date time);
 
     ArtifactSyncRecord selectBySyncNo(@NotNull @Param("syncNo") String syncNo);
+
+    ArtifactSyncRecordCountDto countArtifactSyncRecord(@Param("days") Integer days);
+
+    List<ArtifactSyncRecordCountDto> countByDateArtifactSyncRecord(@Param("days") Integer days);
+
+   List<FileSizeStatisticsDto> fileSizeStatisticsByWarehouse(@Param("days") Integer days,@Param("limitNumber") Integer limitNumber);
 }
