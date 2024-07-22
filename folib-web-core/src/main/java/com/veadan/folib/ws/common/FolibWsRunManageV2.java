@@ -24,7 +24,7 @@ import org.springframework.stereotype.Component;
 import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 import javax.websocket.*;
-import java.io.IOException;
+import java.io.*;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.net.URI;
@@ -255,7 +255,6 @@ public class FolibWsRunManageV2 {
         //session.getBasicRemote().sendBinary(byteBuffer);
 
     }
-
     public WSMessageResponse sendRequest(String targetHostName, Command command) throws Exception {
         return sendRequest(targetHostName, new WSMessageRequest(command));
     }
@@ -330,56 +329,70 @@ public class FolibWsRunManageV2 {
     private final Map<Session, Long> sessionBytesSent = new ConcurrentHashMap<>();
     private final Map<Session, ReentrantLock> sessionLocks = new ConcurrentHashMap<>();
 
-    private void sendBinaryV2(String targetNode, Session session, ByteBuffer data, long finalKbps) throws IOException {
+
+    public void sendBinaryV2(String targetNode, Session session, ByteBuffer data, long finalKbps) throws IOException {
         String messageId = UUID.randomUUID().toString();
-        //缺省填充
+
         if (finalKbps <= 0) {
             finalKbps = DEFAULT_BYTES_PER_SECOND;
         }
+
         long finalKbps1 = finalKbps;
         RateLimiter rateLimiter = RATE_LIMITER_MAP.computeIfAbsent(getSimpleTargetHostName(targetNode), s -> RateLimiter.create(finalKbps1));
         rateLimiter.setRate(finalKbps);
+
         int dataSize = data.remaining();
-        int bytesToSend = dataSize;
         long startTime = System.currentTimeMillis();
-        log.info("About to be sendBinary targetNode [{}] messageId [{}] sessionId [{}] finalKbps [{}] size [{}]", targetNode, messageId, session.getId(), finalKbps, bytesToSend);
+
+        log.info("About to sendBinary targetNode [{}] messageId [{}] sessionId [{}] finalKbps [{}] size [{}]", targetNode, messageId, session.getId(), finalKbps, dataSize);
+
         ReentrantLock reentrantLock = sessionLocks.computeIfAbsent(session, session1 -> new ReentrantLock(true));
         int sendBytesCount = 0;
-        //TCP通道一次只能处理一个消息，每次发送1M数据，为了解决TCP  队头阻塞，如果实际网络较小，发送过大的数据，会导致时间变长，比如发送20M，实际网络1M，则需要20S，在这个时间内会阻碍其他WS消息处理，心跳超时，会导致主动断开WS通道
         int minimumPacketSize = 1024 * 1024;
+        //TCP通道一次只能处理一个消息，每次发送1M数据，为了解决TCP  队头阻塞，如果实际网络较小，发送过大的数据，会导致时间变长，比如发送20M，实际网络1M，则需要20S，在这个时间内会阻碍其他WS消息处理，心跳超时，会导致主动断开WS通道
         if (minimumPacketSize > finalKbps) {
             minimumPacketSize = (int) finalKbps;
         }
-        while (bytesToSend > 0) {
+
+        // 将ByteBuffer转换为InputStream
+        byte[] dataArray = new byte[data.remaining()];
+        data.get(dataArray);
+        ByteArrayInputStream inputStream = new ByteArrayInputStream(dataArray);
+
+        // 预先计算协议字节和消息ID字节
+        byte[] protocolBytes = FOLIB_WS_PROTOCOL.getBytes();
+        byte[] messageIdBytes = messageId.getBytes();
+
+        while (inputStream.available() > 0) {
             long lockStartTime = System.currentTimeMillis();
             reentrantLock.lock();
             //公平锁保证多线程，同一个session按照顺序发送WS消息，如果不加，并发时可能乱序处理，可能和操作系统有关，导致最开始的消息一直未发送，发送超时后，会导致WS通道断开
             try {
                 sessionIdleMap.put(session, System.currentTimeMillis());
-                int chunkSize = Math.min(bytesToSend, minimumPacketSize);
-                // 准备数据包，包括协议头、消息ID和数据
-                byte[] bytes = FOLIB_WS_PROTOCOL.getBytes();
-                int i1 = chunkSize + 8 + bytes.length + messageId.getBytes().length;
+                int chunkSize = Math.min(inputStream.available(), minimumPacketSize);
 
-                ByteBuffer chunk = ByteBuffer.allocate(i1);
-                chunk.put(bytes);
+                ByteBuffer chunk = ByteBuffer.allocate(chunkSize + 8 + protocolBytes.length + messageIdBytes.length);
+                chunk.put(protocolBytes);
                 chunk.putLong(dataSize);
-                chunk.put(messageId.getBytes());
+                chunk.put(messageIdBytes);
+
+                byte[] chunkArray = new byte[chunkSize];
+                // 流中读取数据
+                int bytesRead = inputStream.read(chunkArray);
+                if (bytesRead != chunkSize) {
+                    throw new IOException("Unexpected end of input stream");
+                }
+                chunk.put(chunkArray);
+                // 准备读取
+                chunk.flip();
                 //尝试从rateLimiter中获取chunkSize个许可，如果无法获取到，就会阻塞，上传超时时间10分钟，委托上传超时时间60分钟，发送超时后，会导致WS通道断开
                 double timeConsuming = rateLimiter.acquire(chunkSize);
                 log.info("RateLimiter targetNode [{}] messageId [{}] sessionId [{}] rate [{}] acquire [{}] time consuming [{} s] ...", targetNode, messageId, session.getId(), (long) rateLimiter.getRate(), chunkSize, timeConsuming);
-                for (int i = 0; i < chunkSize; i++) {
-                    //每次发送chunkSize大小的数据
-                    chunk.put(data.get());
-                }
-                // 准备读取
-                chunk.flip();
-                // session.getBasicRemote().sendBinary(chunk);
 
                 CompletableFuture<Void> completableFuture = new CompletableFuture<>();
-                long l = System.currentTimeMillis();
                 RemoteEndpoint.Async asyncRemote = session.getAsyncRemote();
                 asyncRemote.setSendTimeout(10);
+
                 asyncRemote.sendBinary(chunk, result -> {
                     if (result.isOK()) {
                         // 完成Future
@@ -396,21 +409,20 @@ public class FolibWsRunManageV2 {
                 } catch (Exception ex) {
                     throw new RuntimeException(ex);
                 }
+
                 sendBytesCount += chunk.capacity();
                 long pastTime = System.currentTimeMillis() - startTime;
-                // 减少待发送的数据量
-                bytesToSend -= chunkSize;
-                //日志输出
+
                 BigDecimal rate = BigDecimal.valueOf(0);
                 try {
                     BigDecimal second = BigDecimal.valueOf(pastTime).divide(BigDecimal.valueOf(1000), 2, RoundingMode.HALF_UP);
                     rate = BigDecimal.valueOf(sendBytesCount).divide(second, 2, RoundingMode.HALF_UP);
                 } catch (Exception ignored) {
-
                 }
-                log.info("Send targetNode [{}] messageId [{}] sessionId [{}] already send [{}] remaining [{}] finalKbps [{} ps ] ...", targetNode, messageId, session.getId(),
-                        dataSize - bytesToSend, dataSize, FileSizeConvertUtils.convert(rate.longValue()));
-                if (bytesToSend <= 0) {
+
+                log.info("Send targetNode [{}] messageId [{}] sessionId [{}] already send [{}] remaining [{}] finalKbps [{} ps] ...", targetNode, messageId, session.getId(), dataSize - inputStream.available(), dataSize, FileSizeConvertUtils.convert(rate.longValue()));
+
+                if (inputStream.available() <= 0) {
                     log.info("Send finished targetNode [{}] messageId [{}] sessionId [{}] already send [{}] time consuming [{} ms] lock info {} ]", targetNode, messageId, session.getId(), dataSize, System.currentTimeMillis() - startTime, reentrantLock.toString());
                 }
             } finally {
