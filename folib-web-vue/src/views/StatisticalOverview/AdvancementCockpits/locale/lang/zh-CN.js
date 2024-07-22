@@ -8,7 +8,7 @@ export default {
     'Status': '同步状态',
     'SlaveRecordCleared': '从记录状态',
     'SyncProgress': '同步进度',
-    'FailedReason': '失败原理',
+    'FailedReason': '失败原因',
     'CreateTime': '创建时间',
     'Operational': '操作',
     'Ready': '就绪',
