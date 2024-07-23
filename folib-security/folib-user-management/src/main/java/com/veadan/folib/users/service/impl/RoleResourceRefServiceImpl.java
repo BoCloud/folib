@@ -90,4 +90,9 @@ public class RoleResourceRefServiceImpl implements RoleResourceRefService {
     public List<RoleResourceRef> queryRefsByRoleIds(List<String> roleIds) {
         return this.roleResourceRefMapper.queryAllByRoleId(roleIds);
     }
+
+    @Override
+    public void removeByIds(List<String> removeRefIds) {
+        roleResourceRefMapper.deleteByRefIds(removeRefIds);
+    }
 }

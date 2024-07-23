@@ -139,7 +139,7 @@ public class StorageManagementServiceImpl implements StorageManagementService {
                     Resource finalResource = resource;
                     users.forEach(user -> {
                         userRef.add(RoleResourceRef.builder().roleId(finalFolibRole.getId()).resourceId(finalResource.getId())
-                                .entityId(user).refType(GlobalConstants.ROLE_TYPE_USER).build());
+                                .entityId(user).refType(GlobalConstants.ROLE_TYPE_USER).resourceType(GlobalConstants.RESOURCE_TYPE_STORAGE).build());
                     });
                     roleResourceRefService.saveBath(userRef);
                 }

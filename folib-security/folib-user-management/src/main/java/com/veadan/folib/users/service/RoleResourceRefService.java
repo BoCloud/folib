@@ -69,4 +69,6 @@ public interface RoleResourceRefService{
      * @return
      */
     List<RoleResourceRef> queryRefsByRoleIds(List<String> roleIds);
+
+    void removeByIds(List<String> removeRefIds);
 }

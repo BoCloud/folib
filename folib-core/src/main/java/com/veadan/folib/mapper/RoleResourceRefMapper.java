@@ -73,4 +73,11 @@ public interface RoleResourceRefMapper extends CommonMapper<RoleResourceRef> {
     int deleteById(String id);
 
      List<RoleResourceRef> queryAllByRoleId(@Param("roleIds") List<String> roleIds);
+     /**
+      * 通过主键批量删除数据
+      *
+      * @param refIds 主键
+      * @return 影响行数
+      */
+     int deleteByRefIds(@Param("refIds") List<String> refIds);
  }

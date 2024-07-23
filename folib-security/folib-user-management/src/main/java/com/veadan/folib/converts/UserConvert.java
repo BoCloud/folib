@@ -8,11 +8,13 @@ import com.veadan.folib.dto.UserDTO;
 import com.veadan.folib.entity.FolibUser;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
+import org.mapstruct.MappingTarget;
 import org.mapstruct.Mappings;
 import org.mapstruct.factory.Mappers;
 
 import java.time.LocalDateTime;
 import java.time.ZoneId;
+import java.time.ZoneOffset;
 import java.util.Date;
 import java.util.List;
 import java.util.Set;
@@ -37,10 +39,11 @@ public interface UserConvert {
             @Mapping(source = "updateTime", target = "lastUpdated")})
     UserEntity FolibUserUserEntity(FolibUser folibUser);
 
-    @Mappings({@Mapping(source = "uuid", target = "username"),
-            @Mapping(source = "uuid", target = "id"),
-            @Mapping(source = "lastUpdated", target = "updateTime")})
     List<FolibUser> UserEntitysToFolibuiltyList(List<UserEntity> folibUserList);
+
+    @Mappings({@Mapping(source = "folibUser.username", target = "id"),
+            @Mapping(source = "lastUpdated", target = "updateTime")})
+    FolibUser UserEntityToFolibUser(UserEntity folibUser);
 
     @Mappings({@Mapping(source = "roles", target = "roles")})
     List<UserEntity> UserDTOsToUserList(List<UserDTO> usrerDTOList);
@@ -53,6 +56,10 @@ public interface UserConvert {
     }
     // 自定义方法将 Date 转换为 LocalDateTime
     default LocalDateTime map(Date updateTime) {
-        return updateTime != null ? LocalDateTime.ofInstant(updateTime.toInstant(), ZoneId.systemDefault()) : null;
+        return updateTime != null ? updateTime.toInstant().atZone(ZoneId.systemDefault()).toLocalDateTime(): null;
     }
+    default Date map(LocalDateTime lastUpdated) {
+        return lastUpdated != null ? Date.from(lastUpdated.atZone(ZoneId.systemDefault()).toInstant()) : null;
+    }
+
 }

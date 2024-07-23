@@ -187,5 +187,21 @@ public interface GlobalConstants {
      * 角色关联类型-用户组
      */
     String ROLE_TYPE_USER_GROUP = "2";
+    /**
+     * 资源类型-api
+     */
+    String RESOURCE_TYPE_API = "1";
+    /**
+     * 资源类型-存储空间
+     */
+    String RESOURCE_TYPE_STORAGE = "2";
+    /**
+     * 资源类型-仓库
+     */
+    String RESOURCE_TYPE_REPOSITORY = "3";
+    /**
+     * 资源类型-路径
+     */
+    String RESOURCE_TYPE_PATH = "4";
 
 }

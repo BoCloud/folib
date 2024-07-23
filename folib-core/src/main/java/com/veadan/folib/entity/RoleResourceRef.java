@@ -53,10 +53,15 @@ public class RoleResourceRef implements Serializable,Cloneable {
      @ApiModelProperty(name = "关联类型[用户、用户组]", notes = "[1-用户id、2-用户组id]")
      private String refType;
      /**
-      * 资源id;[1-api、2-存储空间、3-仓库、4-路径]
+      * 资源id
       */
      @ApiModelProperty(name = "资源id", notes = "")
      private Long resourceId;
+     /**
+      * 资源类型;[1-api、2-存储空间、3-仓库、4-路径]
+      */
+     @ApiModelProperty(name = "资源类型", notes = "")
+     private String resourceType;
      /**
       * 存储空间权限
       */
