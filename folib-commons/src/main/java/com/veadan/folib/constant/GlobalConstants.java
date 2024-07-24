@@ -204,4 +204,12 @@ public interface GlobalConstants {
      */
     String RESOURCE_TYPE_PATH = "4";
 
+    /**
+     * 用户启用
+     */
+    String USER_ENABLE = "true";
+    /**
+     * 用户禁用
+     */
+    String USER_NOT_ENABL = "false";
 }

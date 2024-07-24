@@ -60,7 +60,7 @@ public class FolibUser implements Serializable,Cloneable{
     private String sourceId ;
     /** 是否删除 */
     @ApiModelProperty(name = "是否删除",notes = "")
-    private String deleted ;
+    private String deleted = "0" ;
     /** 创建人 */
     @ApiModelProperty(name = "创建人",notes = "")
     private String createBy ;

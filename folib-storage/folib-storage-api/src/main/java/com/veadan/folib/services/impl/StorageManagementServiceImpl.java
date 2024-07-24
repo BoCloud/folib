@@ -122,13 +122,13 @@ public class StorageManagementServiceImpl implements StorageManagementService {
                         resource = resourceService.insert(resoucreParam);
                     }
                     //创建角色
-                    String roleId = String.format("storage_%s_user", storageId);
+                    String roleId = String.format("STORAGE_%s_USER", storageId);
                     FolibRole folibRole = folibRoleService.queryById(roleId);
                     if(Objects.isNull(folibRole)) {
                         folibRole = FolibRole.builder()
                                 .id(roleId)
                                 .cnName(String.format("存储空间%s用户", storageId))
-                                .enName(String.format("storage_%s_user", storageId))
+                                .enName(String.format("STORAGE_%s_USER", storageId))
                                 .isDefault(GlobalConstants.NOT_DEFALUT).deleted(GlobalConstants.NOT_DELETED)
                                 .description(String.format("存储空间%s下的普通用户", storageId))
                                 .build();

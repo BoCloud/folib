@@ -63,6 +63,7 @@ public class FolibRoleServiceImpl implements FolibRoleService {
                 List<RoleResourceRef> storagePrivilegeRoles = new ArrayList<>();
                 List<RoleResourceRef> repositoryPrivilegeRoles = new ArrayList<>();
                 List<RoleResourceRef> apiUserPrivilegeRoles = new ArrayList<>();
+                List<RoleResourceRef> allRefs = new ArrayList<>();
                 List<Resource> resources = new ArrayList<>();
 
                 roles.forEach(roleDto -> {
@@ -118,7 +119,7 @@ public class FolibRoleServiceImpl implements FolibRoleService {
                     List<RoleResourceRef> roleResourceRefs = roleResourceRefService.queryRefsByRoleIds(folibRoles.stream().map(FolibRole::getId).collect(Collectors.toList()));
                     Map<String, List<RoleResourceRef>> userRoles = roleResourceRefs.stream().collect(Collectors.groupingBy(RoleResourceRef::getRoleId));
 
-                    List<RoleResourceRef> storageRef = storagePrivilegeRoles.stream().peek(roleResourceRef -> {
+                    storagePrivilegeRoles.forEach(roleResourceRef -> {
                         if (userRoles.containsKey(roleResourceRef.getRoleId())) {
                             userRoles.get(roleResourceRef.getRoleId()).forEach(ref -> {
                                 roleResourceRef.setEntityId(ref.getEntityId());
@@ -127,13 +128,12 @@ public class FolibRoleServiceImpl implements FolibRoleService {
                                 if (storageMap.containsKey(roleResourceRef.getStorageId())) {
                                     roleResourceRef.setResourceId(storageMap.get(roleResourceRef.getStorageId()).getId());
                                 }
+                                allRefs.add(roleResourceRef);
                             });
                         }
-                    }).collect(Collectors.toList());
-                    if(CollectionUtils.isNotEmpty(storageRef)) {
-                        roleResourceRefService.saveBath(storageRef);
-                    }
-                    List<RoleResourceRef> repositoryRef = repositoryPrivilegeRoles.stream().peek(roleResourceRef -> {
+                    });
+
+                    repositoryPrivilegeRoles.forEach(roleResourceRef -> {
                         if (userRoles.containsKey(roleResourceRef.getRoleId())) {
                             userRoles.get(roleResourceRef.getRoleId()).forEach(ref -> {
                                 roleResourceRef.setEntityId(ref.getEntityId());
@@ -142,13 +142,12 @@ public class FolibRoleServiceImpl implements FolibRoleService {
                                 if (repositoryMap.containsKey(roleResourceRef.getRepositoryId())) {
                                     roleResourceRef.setResourceId(repositoryMap.get(roleResourceRef.getRepositoryId()).getId());
                                 }
+                                allRefs.add(roleResourceRef);
                             });
                         }
-                    }).collect(Collectors.toList());
-                    if(CollectionUtils.isNotEmpty(repositoryRef)){
-                        roleResourceRefService.saveBath(repositoryRef);
-                    }
-                    List<RoleResourceRef> pathRef = pathPrivilegeRoles.stream().peek(roleResourceRef -> {
+                    });
+
+                    pathPrivilegeRoles.forEach(roleResourceRef -> {
                         if (userRoles.containsKey(roleResourceRef.getRoleId())) {
                             userRoles.get(roleResourceRef.getRoleId()).forEach(ref -> {
                                 roleResourceRef.setEntityId(ref.getEntityId());
@@ -157,13 +156,12 @@ public class FolibRoleServiceImpl implements FolibRoleService {
                                 if (pathMap.containsKey(roleResourceRef.getPath())) {
                                     roleResourceRef.setResourceId(pathMap.get(roleResourceRef.getPath()).getId());
                                 }
+                                allRefs.add(roleResourceRef);
                             });
                         }
-                    }).collect(Collectors.toList());
-                    if(CollectionUtils.isNotEmpty(pathRef)){
-                        roleResourceRefService.saveBath(pathRef);
-                    }
-                    List<RoleResourceRef> apiRef = apiUserPrivilegeRoles.stream().peek(roleResourceRef -> {
+                    });
+
+                    apiUserPrivilegeRoles.forEach(roleResourceRef -> {
                         if (userRoles.containsKey(roleResourceRef.getRoleId())) {
                             userRoles.get(roleResourceRef.getRoleId()).forEach(ref -> {
                                 roleResourceRef.setEntityId(ref.getEntityId());
@@ -172,11 +170,12 @@ public class FolibRoleServiceImpl implements FolibRoleService {
                                 if (apiMap.containsKey(roleResourceRef.getApiAuthoritie())) {
                                     roleResourceRef.setResourceId(apiMap.get(roleResourceRef.getApiAuthoritie()).getId());
                                 }
+                                allRefs.add(roleResourceRef);
                             });
                         }
-                    }).collect(Collectors.toList());
-                    if (CollectionUtils.isNotEmpty(apiRef)) {
-                        roleResourceRefService.saveBath(apiRef);
+                    });
+                    if (CollectionUtils.isNotEmpty(allRefs)) {
+                        roleResourceRefService.saveBath(allRefs);
                     }
                     //清理未关联资源的用户权限
                     List<String> removeRefIds = roleResourceRefs.stream().filter(ref -> StringUtils.isNotEmpty(ref.getResourceType())).map(RoleResourceRef::getId).collect(Collectors.toList());
