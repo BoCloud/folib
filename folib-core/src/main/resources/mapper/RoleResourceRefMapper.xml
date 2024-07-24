@@ -109,6 +109,51 @@
             #{roleId}
         </foreach>
     </select>
+    <select id="queryRolesByUserName" resultType="com.veadan.folib.dto.UserRoleDTO">
+        select
+        fr.*,
+        GROUP_CONCAT(distinct rrr.storage_provilege) AS storageProvilege,
+        GROUP_CONCAT(distinct rrr.repository_privilege) AS repositoryPrivilege,
+        GROUP_CONCAT(distinct rrr.path_privilege) AS pathPrivilege
+        from
+        folib_user fu
+        left join
+        (select
+            rrr1.role_id,
+            rrr1.storage_provilege,
+            rrr1.repository_privilege,
+            rrr1.path_privilege,
+            rrr1.entity_id as user_id
+        from
+            role_resource_ref rrr1
+        where
+            rrr1.ref_type = 1
+        union all
+        select
+            rrr2.role_id,
+            rrr2.storage_provilege,
+            rrr2.repository_privilege,
+            rrr2.path_privilege,
+            ugr.user_id as user_id
+        from
+            user_group_ref ugr
+        join role_resource_ref rrr2
+                on
+            ugr.user_group_id = rrr2.entity_id
+        where
+            rrr2.ref_type = 2 ) rrr
+        rrr on
+        fu.id = rrr.user_id
+        left join folib_role fr on
+        fu.id = rrr.user_id
+        and fr.id = rrr.role_id
+        where fr.deleted = "0"
+        <if test="username != null and username != ''">
+            and fu.id = #{username}
+        </if>
+        group by fr.id
+        limit #{pageable.offset}, #{pageable.pageSize}
+    </select>
 
     <!--新增数据-->
     <insert id="insert" keyProperty="id" useGeneratedKeys="true">

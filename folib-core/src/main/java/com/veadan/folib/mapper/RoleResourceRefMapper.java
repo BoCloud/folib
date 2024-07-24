@@ -2,8 +2,10 @@ package com.veadan.folib.mapper;
 import java.util.List;
 
 import com.veadan.folib.common.base.CommonMapper;
+import com.veadan.folib.dto.UserRoleDTO;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import com.veadan.folib.entity.RoleResourceRef;
 
@@ -80,4 +82,6 @@ public interface RoleResourceRefMapper extends CommonMapper<RoleResourceRef> {
       * @return 影响行数
       */
      int deleteByRefIds(@Param("refIds") List<String> refIds);
+
+     List<UserRoleDTO> queryRolesByUserName(String userName, PageRequest pageRequest);
  }

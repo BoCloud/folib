@@ -18,7 +18,7 @@
         select
             id,group_name,description,join_group,deleted,create_by,create_time,update_by,update_time
         from user_group
-        where id = #{id}
+        where id = #{id} and deleted = '0'
     </select>
 
     <!--分页查询指定行数据-->
@@ -92,6 +92,20 @@
             </if>
         </where>
     </select>
+    <select id="queryGroupDetailById" resultType="com.veadan.folib.dto.UserGroupDTO">
+        select
+            ug.*,
+            group_concat(distinct ugr.user_id) as userIds,
+            GROUP_CONCAT(distinct rrr.role_id) AS roleIds
+        from
+            user_group ug
+                left join user_group_ref ugr on
+                ug.id = ugr.user_group_id
+                left join role_resource_ref rrr on
+                rrr.entity_id = ug.id
+                    and rrr.ref_type = 2
+        where ug.deleted = 0;
+    </select>
 
     <!--新增数据-->
     <insert id="insert" keyProperty="id" useGeneratedKeys="true">
@@ -131,12 +145,6 @@
     <update id="update">
         update user_group
         <set>
-            <if test="id != null and id != ''">
-                id = #{id},
-            </if>
-            <if test="groupName != null and groupName != ''">
-                group_name = #{groupName},
-            </if>
             <if test="description != null and description != ''">
                 description = #{description},
             </if>

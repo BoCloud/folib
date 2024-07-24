@@ -64,6 +64,24 @@
             </if>
         </where>
     </select>
+    <select id="queryPrivilegeByGroup" resultType="com.veadan.folib.dto.RoleResourceRefDTO">
+        select
+            rrr.role_id,
+            rrr.resource_type,
+            group_concat(distinct rrr.storage_provilege) as storageProvileges,
+            group_concat(distinct rrr.repository_privilege) as repositoryPrivilege,
+            group_concat(distinct rrr.path_privilege) as pathPrivilege
+        from
+            role_resource_ref rrr
+        where
+            rrr.entity_id = #{entityId}
+          and rrr.ref_type = #{refType}
+          and rrr.role_id in
+              <foreach collection="roleIds" item="roleId" open="(" separator="," close=")" >
+                #{roleId}
+              </foreach>
+        group by role_id;
+    </select>
 
     <!--新增数据-->
     <insert id="insert" keyProperty="id" useGeneratedKeys="true">

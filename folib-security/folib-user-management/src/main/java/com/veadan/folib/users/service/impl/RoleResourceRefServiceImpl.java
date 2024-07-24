@@ -1,5 +1,6 @@
 package com.veadan.folib.users.service.impl;
 
+import com.veadan.folib.dto.UserRoleDTO;
 import com.veadan.folib.entity.RoleResourceRef;
 import com.veadan.folib.mapper.RoleResourceRefMapper;
 import com.veadan.folib.users.service.RoleResourceRefService;
@@ -94,5 +95,15 @@ public class RoleResourceRefServiceImpl implements RoleResourceRefService {
     @Override
     public void removeByIds(List<String> removeRefIds) {
         roleResourceRefMapper.deleteByRefIds(removeRefIds);
+    }
+
+    /**
+     * 根据用户id查询关联的角色权限
+     * @param userName 用户名
+     * @param pageRequest 分页参数
+     */
+    @Override
+    public List<UserRoleDTO> getRolesByUserName(String userName, PageRequest pageRequest) {
+        return roleResourceRefMapper.queryRolesByUserName(userName, pageRequest);
     }
 }

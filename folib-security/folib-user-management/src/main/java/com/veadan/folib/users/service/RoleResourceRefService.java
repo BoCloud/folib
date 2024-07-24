@@ -1,5 +1,6 @@
 package com.veadan.folib.users.service;
 
+import com.veadan.folib.dto.UserRoleDTO;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import com.veadan.folib.entity.RoleResourceRef;
@@ -71,4 +72,6 @@ public interface RoleResourceRefService{
     List<RoleResourceRef> queryRefsByRoleIds(List<String> roleIds);
 
     void removeByIds(List<String> removeRefIds);
+
+    List<UserRoleDTO> getRolesByUserName(String userName, PageRequest pageRequest);
 }

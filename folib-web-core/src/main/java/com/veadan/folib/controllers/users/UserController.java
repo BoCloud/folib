@@ -4,14 +4,17 @@ import com.veadan.folib.controllers.BaseController;
 import com.veadan.folib.controllers.users.support.TokenEntityBody;
 import com.veadan.folib.controllers.users.support.UserOutput;
 import com.veadan.folib.controllers.users.support.UserResponseEntity;
+import com.veadan.folib.converters.users.UserGroupConvert;
 import com.veadan.folib.domain.PageResultResponse;
 import com.veadan.folib.domain.User;
+import com.veadan.folib.entity.UserGroup;
 import com.veadan.folib.forms.users.UserForm;
 import com.veadan.folib.scanner.common.msg.TableResultResponse;
 import com.veadan.folib.services.StorageManagementService;
 import com.veadan.folib.users.dto.UserDto;
 import com.veadan.folib.users.security.AuthoritiesProvider;
 import com.veadan.folib.users.service.FolibRoleService;
+import com.veadan.folib.users.service.UserGroupService;
 import com.veadan.folib.users.service.UserService;
 import com.veadan.folib.users.service.impl.EncodedPasswordUser;
 import com.veadan.folib.users.service.impl.RelationalDatabaseUserService;
@@ -57,6 +60,7 @@ public class UserController
     public static final String NOT_FOUND_USER = "指定的用户不存在!";
 
     public static final String SUCCESSFUL_GET_USERS = "已成功检索用户.";
+    public static final String SUCCESSFUL_GET_USER_GROUP = "已成功检索用户组.";
 
     public static final String SUCCESSFUL_UPDATE_USER = "用户更新成功.";
 
@@ -97,11 +101,12 @@ public class UserController
     private FolibRoleService folibRoleService;
     @Inject
     private StorageManagementService storageManagementService;
-
+    @Inject
+    private UserGroupService userGroupService;
 
     @ApiOperation(value = "sync yaml users and roles")
     @ApiResponses(value = {@ApiResponse(code = 200, message = SUCCESSFUL_GET_USERS)})
-    //@PreAuthorize("hasAuthority('VIEW_USER')")
+    //@PreAuthorize("hasAuthority('VIEW_USER_ROLE')")
     @GetMapping(produces = {MediaType.APPLICATION_JSON_VALUE}, path = "/syncYamlData")
     @ResponseBody
     public ResponseEntity syncYamlData() {

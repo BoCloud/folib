@@ -1,6 +1,7 @@
 package com.veadan.folib.mapper;
 
 import com.veadan.folib.common.base.CommonMapper;
+import com.veadan.folib.dto.UserGroupDTO;
 import com.veadan.folib.entity.UserGroup;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
@@ -72,4 +73,6 @@ public interface UserGroupMapper extends CommonMapper<UserGroup> {
      * @return 影响行数
      */
     int deleteById(Long id);
-}
+
+     UserGroupDTO queryGroupDetailById(Long groupId);
+ }

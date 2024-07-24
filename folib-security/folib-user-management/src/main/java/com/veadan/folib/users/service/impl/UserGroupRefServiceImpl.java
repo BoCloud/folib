@@ -1,5 +1,6 @@
 package com.veadan.folib.users.service.impl;
 
+import com.veadan.folib.dto.RoleResourceRefDTO;
 import com.veadan.folib.entity.UserGroupRef;
 import com.veadan.folib.mapper.UserGroupRefMapper;
 import com.veadan.folib.users.service.UserGroupRefService;
@@ -83,5 +84,15 @@ public class UserGroupRefServiceImpl implements UserGroupRefService {
      */
     public int saveBath(List<UserGroupRef> entities) {
         return userGroupRefMapper.insertBatch(entities);
+    }
+
+    @Override
+    public RoleResourceRefDTO queryPrivilegeByGroup(Long groupId, String refType, List<String> roleIds) {
+        return userGroupRefMapper.queryPrivilegeByGroup(groupId, refType, roleIds);
+    }
+
+    @Override
+    public void deleteByUserGroupId(Long id) {
+        userGroupRefMapper.delete(UserGroupRef.builder().userGroupId(id).build());
     }
 }

@@ -1,5 +1,7 @@
 package com.veadan.folib.mapper;
 
+import com.veadan.folib.common.base.CommonMapper;
+import com.veadan.folib.dto.RoleResourceRefDTO;
 import com.veadan.folib.entity.UserGroupRef;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
@@ -13,7 +15,7 @@ import java.util.List;
  * @date : 2024-7-17
  */
 @Mapper
-public interface UserGroupRefMapper{
+public interface UserGroupRefMapper extends CommonMapper<UserGroupRef> {
     /** 
      * 通过ID查询单条数据 
      *
@@ -71,4 +73,6 @@ public interface UserGroupRefMapper{
      * @return 影响行数
      */
     int deleteById(Long id);
-}
+
+     RoleResourceRefDTO queryPrivilegeByGroup(@Param("entityId")Long groupId,@Param("refType") String refType, @Param("roleIds") List<String> roleIds);
+ }

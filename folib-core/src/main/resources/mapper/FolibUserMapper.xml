@@ -44,7 +44,7 @@
             rrr1.entity_id AS user_id
             FROM role_resource_ref rrr1 WHERE rrr1.ref_type = 1
             UNION
-            allSELECT rrr2.role_id,
+            all SELECT rrr2.role_id,
             rrr2.storage_provilege,
             rrr2.repository_privilege,
             rrr2.path_privilege,

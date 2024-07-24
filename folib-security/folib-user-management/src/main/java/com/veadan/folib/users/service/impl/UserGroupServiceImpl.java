@@ -1,5 +1,7 @@
 package com.veadan.folib.users.service.impl;
 
+import com.veadan.folib.constant.GlobalConstants;
+import com.veadan.folib.dto.UserGroupDTO;
 import com.veadan.folib.entity.UserGroup;
 import com.veadan.folib.mapper.UserGroupMapper;
 import com.veadan.folib.users.service.UserGroupService;
@@ -49,7 +51,7 @@ public class UserGroupServiceImpl implements UserGroupService {
      * @param userGroup 实例对象
      * @return 实例对象
      */
-    public UserGroup insert(UserGroup userGroup){
+    public UserGroup save(UserGroup userGroup){
         userGroupMapper.insert(userGroup);
         return userGroup;
     }
@@ -72,12 +74,22 @@ public class UserGroupServiceImpl implements UserGroupService {
      * @return 是否成功
      */
     public boolean deleteById(Long id){
-        int total = userGroupMapper.deleteById(id);
-        return total > 0;
+        int update = userGroupMapper.update(UserGroup.builder().id(id).deleted(GlobalConstants.DELETED).build());
+        return update > 0;
     }
 
     @Override
     public List<UserGroup> queryUserGroupList(UserGroup userGroup) {
         return userGroupMapper.select(userGroup);
+    }
+
+    @Override
+    public List<UserGroup> findAll() {
+        return userGroupMapper.select(UserGroup.builder().deleted(GlobalConstants.NOT_DELETED).build());
+    }
+
+    @Override
+    public UserGroupDTO queryGroupDetailById(Long groupId) {
+        return userGroupMapper.queryGroupDetailById(groupId);
     }
 }

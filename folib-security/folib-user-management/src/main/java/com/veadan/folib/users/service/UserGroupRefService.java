@@ -1,5 +1,6 @@
 package com.veadan.folib.users.service;
 
+import com.veadan.folib.dto.RoleResourceRefDTO;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import com.veadan.folib.entity.UserGroupRef;
@@ -54,4 +55,8 @@ public interface UserGroupRefService{
      * @return
      */
     int saveBath(List<UserGroupRef> entities);
+
+    RoleResourceRefDTO queryPrivilegeByGroup(Long groupId, String refType, List<String> roleIds);
+
+    void deleteByUserGroupId(Long id);
 }
