@@ -14,6 +14,7 @@ import java.util.concurrent.locks.ReentrantLock;
 /**
  * 任务队列管理v2
  */
+@Deprecated
 public class TaskQueueV2Manager {
 
     private static final Logger log = LoggerFactory.getLogger(TaskQueueV2Manager.class);

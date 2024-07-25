@@ -11,6 +11,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 /**
  * 动态优先级任务
  */
+@Deprecated
 public class DynamicPriorityTask implements Callable<Void>, Comparable<DynamicPriorityTask> {
 
     private static final Logger log = LoggerFactory.getLogger(DynamicPriorityTask.class);

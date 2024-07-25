@@ -18,6 +18,7 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 @Component
 @Slf4j
+@Deprecated
 public class PromotionTaskQueue {
 
     private ConcurrentHashMap<String, TaskQueueManager> PROMOTION_TASK_QUEUE = new ConcurrentHashMap<>();
