@@ -85,4 +85,15 @@ public class ResourceServiceImpl implements ResourceService {
     public Resource queryResource(Resource resource) {
         return resourceMapper.selectOne(resource);
     }
+
+    @Override
+    public List<Resource> queryResourceList(Resource resource) {
+        return resourceMapper.select(resource);
+    }
+
+
+    @Override
+    public List<Resource> findAll() {
+        return resourceMapper.selectAll();
+    }
 }

@@ -149,7 +149,7 @@ public class RoleController extends BaseController {
         return getSuccessfulResponseEntity(SUCCESSFUL_CREATE_ROLE, accept);
     }
 
-    @ApiOperation(value = "用户组详情查询")
+    @ApiOperation(value = "角色详情查询")
     @ApiResponses(value = {@ApiResponse(code = 200, message = SUCCESSFUL_GET_ROLE),
             @ApiResponse(code = 404, message = NOT_FOUND_ROLE)})
     @PreAuthorize("hasAuthority('VIEW_ROLE')")

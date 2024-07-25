@@ -52,4 +52,6 @@ public interface ResourceService{
      int saveBatch(List<Resource> collect);
 
     Resource queryResource(Resource build);
+    List<Resource> queryResourceList(Resource resource);
+    List<Resource> findAll();
 }
